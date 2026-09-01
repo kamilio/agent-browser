@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "scope": "network-transport-only",
+  "startedAt": "2026-09-01T15:31:28.924Z",
+  "finishedAt": "2026-09-01T15:31:30.337Z",
+  "runtime": {
+    "node": "24.3.0",
+    "bun": "1.3.8"
+  },
+  "checks": [
+    {
+      "url": "https://example.com/",
+      "kind": "static",
+      "passed": true,
+      "finalUrl": "https://example.com/",
+      "status": 200,
+      "contentType": "text/html",
+      "encoding": "utf-8",
+      "markerPresent": true,
+      "encodedBytes": 318,
+      "decodedBytes": 559,
+      "sha256": "ff67a9d764d6a2367a187734e697f6a53217db9a21c101d410a113ca871a299d",
+      "redirectCount": 0,
+      "elapsedMs": 31
+    },
+    {
+      "url": "https://news.ycombinator.com/",
+      "kind": "static-links",
+      "passed": true,
+      "finalUrl": "https://news.ycombinator.com/",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "encoding": "utf-8",
+      "markerPresent": true,
+      "encodedBytes": 5553,
+      "decodedBytes": 34288,
+      "sha256": "01fbc5cbcd74f746605babe327568817a6ba4c6ea4b2cbea3429542360e44dad",
+      "redirectCount": 0,
+      "elapsedMs": 231
+    },
+    {
+      "url": "https://books.toscrape.com/",
+      "kind": "static-catalog",
+      "passed": true,
+      "finalUrl": "https://books.toscrape.com/",
+      "status": 200,
+      "contentType": "text/html",
+      "encoding": "utf-8",
+      "markerPresent": true,
+      "encodedBytes": 5276,
+      "decodedBytes": 51294,
+      "sha256": "9fdd63da34161ebd13408d7a85105f83ec3c9f351c5d77cd0aa578790e121c1e",
+      "redirectCount": 0,
+      "elapsedMs": 96
+    },
+    {
+      "url": "https://quotes.toscrape.com/js/",
+      "kind": "javascript-shell-only",
+      "passed": true,
+      "finalUrl": "https://quotes.toscrape.com/js/",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "encoding": "utf-8",
+      "markerPresent": true,
+      "encodedBytes": 1758,
+      "decodedBytes": 5808,
+      "sha256": "a9067d4438044d45a1a895ed6939df4fa4d0487e17b82053dd694ad425466074",
+      "redirectCount": 0,
+      "elapsedMs": 53
+    }
+  ],
+  "allPassed": true,
+  "metrics": {
+    "requests": 4,
+    "redirects": 0,
+    "encodedBytes": 12905,
+    "decodedBytes": 91949,
+    "active": 0,
+    "closed": true
+  },
+  "rssBeforeBytes": 49426432,
+  "rssAfterBytes": 61759488,
+  "limitations": [
+    "No HTML parsing, DOM actions or JavaScript execution is exercised.",
+    "Memory values are process samples, not peak or per-session measurements."
+  ]
+}

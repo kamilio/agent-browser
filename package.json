@@ -1,0 +1,20 @@
+{
+	"name": "@automations/browser-agent",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"main": "dist/src/index.js",
+	"types": "dist/src/index.d.ts",
+	"exports": {
+		".": { "types": "./dist/src/index.d.ts", "import": "./dist/src/index.js" },
+		"./node": { "types": "./dist/src/node-transport.d.ts", "import": "./dist/src/node-transport.js" }
+	},
+	"scripts": {
+		"build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json --outDir dist",
+		"check:network-sites": "node dist/scripts/check-network-sites.js",
+		"check:form-echo": "node dist/scripts/check-form-echo.js",
+		"test": "node ../../node_modules/vitest/vitest.mjs run src --maxWorkers=1",
+		"typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",
+		"lint": "biome check src scripts"
+	}
+}

@@ -1,0 +1,431 @@
+import {
+	controlChecked,
+	controlValue,
+	isControlDisabled,
+	optionSelected,
+} from "./controls.js";
+import type { DocumentNode, DocumentTree } from "./document.js";
+import { AgentBrowserError } from "./errors.js";
+
+export interface SnapshotOptions {
+	root?: string;
+	maxBytes?: number;
+	maxEntries?: number;
+	maxDepth?: number;
+	maxStringLength?: number;
+}
+
+export interface SnapshotEntry {
+	ref: string;
+	role: string;
+	name: string;
+	depth: number;
+	level?: number;
+	value?: string;
+	checked?: boolean;
+	selected?: boolean;
+	disabled?: boolean;
+	readonly?: boolean;
+	required?: boolean;
+	protected?: boolean;
+	href?: string;
+}
+
+export interface SemanticSnapshot {
+	document: string;
+	scope: string;
+	revision: number;
+	entries: SnapshotEntry[];
+	truncated: boolean;
+}
+
+export type SnapshotDiff =
+	| { reset: true; snapshot: SemanticSnapshot }
+	| {
+			reset: false;
+			document: string;
+			fromRevision: number;
+			revision: number;
+			updated: SnapshotEntry[];
+			removed: string[];
+			order: string[];
+	  };
+
+const ignoredTags = new Set(["head", "script", "style", "template"]);
+const leafRoles = new Set(["button", "link", "heading", "img", "textbox"]);
+const roles = new Set([
+	"article",
+	"banner",
+	"button",
+	"checkbox",
+	"combobox",
+	"complementary",
+	"contentinfo",
+	"dialog",
+	"document",
+	"form",
+	"generic",
+	"group",
+	"heading",
+	"img",
+	"link",
+	"list",
+	"listbox",
+	"listitem",
+	"main",
+	"navigation",
+	"option",
+	"progressbar",
+	"radio",
+	"region",
+	"row",
+	"rowgroup",
+	"search",
+	"searchbox",
+	"separator",
+	"slider",
+	"spinbutton",
+	"status",
+	"switch",
+	"table",
+	"cell",
+	"columnheader",
+	"rowheader",
+	"textbox",
+]);
+const tagRoles: Record<string, string> = Object.assign(Object.create(null), {
+	a: "link",
+	article: "article",
+	aside: "complementary",
+	button: "button",
+	form: "form",
+	h1: "heading",
+	h2: "heading",
+	h3: "heading",
+	h4: "heading",
+	h5: "heading",
+	h6: "heading",
+	hr: "separator",
+	img: "img",
+	li: "listitem",
+	main: "main",
+	nav: "navigation",
+	ol: "list",
+	ul: "list",
+	option: "option",
+	progress: "progressbar",
+	table: "table",
+	tbody: "rowgroup",
+	td: "cell",
+	textarea: "textbox",
+	th: "columnheader",
+	thead: "rowgroup",
+	tr: "row",
+});
+const encoder = new TextEncoder();
+
+function clean(text: string, trim = true) {
+	const result = text.replace(/\s+/gu, " ").replace(/[\p{Cc}\p{Cf}]/gu, "");
+	return trim ? result.trim() : result;
+}
+
+function hidden(node: DocumentNode) {
+	return (
+		ignoredTags.has(node.tagName) ||
+		Object.hasOwn(node.attributes, "hidden") ||
+		Object.hasOwn(node.attributes, "inert") ||
+		node.attributes["aria-hidden"]?.toLowerCase() === "true" ||
+		(node.tagName === "input" &&
+			node.attributes.type?.toLowerCase() === "hidden")
+	);
+}
+
+function roleOf(node: DocumentNode): string | undefined {
+	if (node.kind === "text") return "text";
+	if (node.kind !== "element") return undefined;
+	const explicit = node.attributes.role
+		?.split(/\s+/)
+		.find((role) => roles.has(role));
+	if (explicit) return explicit;
+	if (
+		node.attributes.role === "none" ||
+		node.attributes.role === "presentation"
+	)
+		return undefined;
+	if (node.tagName === "a" && !Object.hasOwn(node.attributes, "href"))
+		return undefined;
+	if (node.tagName === "input") {
+		const type = node.attributes.type?.toLowerCase() ?? "text";
+		if (["button", "submit", "reset", "image", "file"].includes(type))
+			return "button";
+		if (type === "checkbox" || type === "radio") return type;
+		if (type === "range") return "slider";
+		if (type === "number") return "spinbutton";
+		if (type === "search") return "searchbox";
+		return "textbox";
+	}
+	if (node.tagName === "select")
+		return Object.hasOwn(node.attributes, "multiple") ||
+			Number(node.attributes.size) > 1
+			? "listbox"
+			: "combobox";
+	if (
+		Object.hasOwn(node.attributes, "contenteditable") &&
+		node.attributes.contenteditable !== "false"
+	)
+		return "textbox";
+	return tagRoles[node.tagName];
+}
+
+export function snapshotDocument(
+	tree: DocumentTree,
+	options: SnapshotOptions = {},
+): SemanticSnapshot {
+	const maxBytes = options.maxBytes ?? 16_384;
+	const maxEntries = options.maxEntries ?? 1000;
+	const maxDepth = options.maxDepth ?? 256;
+	const maxStringLength = options.maxStringLength ?? 512;
+	for (const [name, value, minimum, maximum] of [
+		["maxBytes", maxBytes, 256, 1_048_576],
+		["maxEntries", maxEntries, 1, 10_000],
+		["maxDepth", maxDepth, 0, 1024],
+		["maxStringLength", maxStringLength, 1, 16_384],
+	] as const) {
+		if (!Number.isSafeInteger(value) || value < minimum || value > maximum)
+			throw new AgentBrowserError(
+				"invalid-input",
+				`Invalid snapshot limit: ${name}`,
+			);
+	}
+	const start =
+		options.root === undefined ? tree.root : tree.resolve(options.root).id;
+	const result: SemanticSnapshot = {
+		document: tree.reference(tree.root),
+		scope: tree.reference(start),
+		revision: tree.revision,
+		entries: [],
+		truncated: false,
+	};
+	const nodes = new Map<number, Readonly<DocumentNode>>();
+	const visible = new Set<number>();
+	const text = new Map<number, string>();
+	const ids = new Map<string, number>();
+	const labels = new Map<string, string[]>();
+	for (const { node } of tree.walk()) {
+		nodes.set(node.id, node);
+		if ((node.parent === null || visible.has(node.parent)) && !hidden(node))
+			visible.add(node.id);
+		if (node.attributes.id && !ids.has(node.attributes.id))
+			ids.set(node.attributes.id, node.id);
+	}
+	for (const node of Array.from(nodes.values()).reverse()) {
+		if (!visible.has(node.id)) continue;
+		let content = node.kind === "text" ? clean(node.data, false) : "";
+		for (const child of node.children) {
+			content += text.get(child) ?? "";
+			if (content.length > maxStringLength) break;
+		}
+		text.set(node.id, clean(content, false).slice(0, maxStringLength + 1));
+	}
+	for (const node of nodes.values()) {
+		if (
+			node.tagName !== "label" ||
+			!visible.has(node.id) ||
+			!node.attributes.for
+		)
+			continue;
+		const values = labels.get(node.attributes.for) ?? [];
+		values.push(text.get(node.id) ?? "");
+		labels.set(node.attributes.for, values);
+	}
+	const limit = (value: string) => {
+		const normalized = clean(value);
+		if (normalized.length <= maxStringLength) return normalized;
+		result.truncated = true;
+		let clipped = normalized.slice(0, maxStringLength);
+		if (/[\uD800-\uDBFF]$/.test(clipped)) clipped = clipped.slice(0, -1);
+		return clipped;
+	};
+	const nameOf = (node: DocumentNode, role: string) => {
+		const references =
+			node.attributes["aria-labelledby"]?.trim().split(/\s+/) ?? [];
+		const labelled = references
+			.map((reference) => text.get(ids.get(reference) ?? -1) ?? "")
+			.filter(Boolean);
+		if (labelled.length) return limit(labelled.join(" "));
+		if (node.attributes["aria-label"])
+			return limit(node.attributes["aria-label"]);
+		const associated = labels.get(node.attributes.id);
+		if (associated?.length) return limit(associated.join(" "));
+		if (["input", "textarea", "select"].includes(node.tagName)) {
+			let parent = nodes.get(node.parent ?? -1);
+			while (parent) {
+				if (parent.tagName === "label") return limit(text.get(parent.id) ?? "");
+				parent = nodes.get(parent.parent ?? -1);
+			}
+		}
+		if (node.tagName === "img")
+			return limit(node.attributes.alt ?? node.attributes.title ?? "");
+		if (
+			node.tagName === "input" &&
+			node.attributes.type?.toLowerCase() === "file"
+		)
+			return limit(node.attributes.title ?? "Choose files");
+		if (node.tagName === "input" && role === "button")
+			return limit(
+				node.attributes.alt ??
+					node.attributes.value ??
+					node.attributes.title ??
+					"",
+			);
+		if (
+			(leafRoles.has(role) && role !== "textbox") ||
+			role === "text" ||
+			role === "option"
+		)
+			return limit(text.get(node.id) ?? "");
+		return limit(node.attributes.title ?? node.attributes.placeholder ?? "");
+	};
+	let usedBytes = encoder.encode(JSON.stringify(result)).byteLength;
+	const pending = [{ id: start, depth: 0 }];
+	while (pending.length) {
+		const current = pending.pop();
+		if (!current || !visible.has(current.id)) continue;
+		const node = nodes.get(current.id);
+		if (!node) continue;
+		const role = roleOf(node);
+		let nextDepth = current.depth;
+		if (role && (role !== "text" || text.get(node.id)?.trim())) {
+			if (current.depth > maxDepth) {
+				result.truncated = true;
+				continue;
+			}
+			const entry: SnapshotEntry = {
+				ref: tree.reference(node.id),
+				role,
+				name: nameOf(node, role),
+				depth: current.depth,
+			};
+			if (role === "heading") {
+				const level = Number(
+					node.attributes["aria-level"] ?? node.tagName.slice(1),
+				);
+				if (Number.isSafeInteger(level) && level > 0) entry.level = level;
+			}
+			for (const state of ["disabled", "readonly", "required"] as const)
+				if (
+					Object.hasOwn(node.attributes, state) ||
+					node.attributes[`aria-${state}`] === "true"
+				)
+					entry[state] = true;
+			if (isControlDisabled(tree, node.id)) entry.disabled = true;
+			if (["checkbox", "radio", "switch"].includes(role))
+				entry.checked =
+					node.tagName === "input"
+						? controlChecked(tree, node.id)
+						: (node.control.checked ??
+							(Object.hasOwn(node.attributes, "checked") ||
+								node.attributes["aria-checked"] === "true"));
+			if (role === "option")
+				entry.selected =
+					node.tagName === "option"
+						? optionSelected(tree, node.id)
+						: (node.control.selected ??
+							(Object.hasOwn(node.attributes, "selected") ||
+								node.attributes["aria-selected"] === "true"));
+			if (["input", "textarea", "select"].includes(node.tagName)) {
+				const type = node.attributes.type?.toLowerCase();
+				if (type === "password" || type === "file") entry.protected = true;
+				else if (!["checkbox", "radio", "button"].includes(role))
+					entry.value = limit(controlValue(tree, node.id));
+			}
+			if (role === "link" && node.attributes.href !== undefined) {
+				try {
+					const url = new URL(node.attributes.href, tree.url);
+					if (["http:", "https:", "mailto:", "tel:"].includes(url.protocol)) {
+						url.username = "";
+						url.password = "";
+						entry.href = limit(url.href);
+					}
+				} catch {}
+			}
+			const entryBytes =
+				encoder.encode(JSON.stringify(entry)).byteLength +
+				(result.entries.length ? 1 : 0);
+			if (
+				result.entries.length >= maxEntries ||
+				usedBytes + entryBytes > maxBytes
+			) {
+				result.truncated = true;
+				break;
+			}
+			usedBytes += entryBytes;
+			result.entries.push(entry);
+			nextDepth++;
+		}
+		if (role && leafRoles.has(role)) continue;
+		for (let index = node.children.length - 1; index >= 0; index--)
+			pending.push({ id: node.children[index], depth: nextDepth });
+	}
+	return result;
+}
+
+export function diffSnapshots(
+	previous: SemanticSnapshot | undefined,
+	current: SemanticSnapshot,
+): SnapshotDiff {
+	if (
+		!previous ||
+		previous.document !== current.document ||
+		previous.scope !== current.scope ||
+		previous.truncated ||
+		current.truncated ||
+		previous.revision > current.revision
+	)
+		return { reset: true, snapshot: current };
+	const prior = new Map(previous.entries.map((entry) => [entry.ref, entry]));
+	const next = new Set(current.entries.map((entry) => entry.ref));
+	return {
+		reset: false,
+		document: current.document,
+		fromRevision: previous.revision,
+		revision: current.revision,
+		updated: current.entries.filter(
+			(entry) => JSON.stringify(entry) !== JSON.stringify(prior.get(entry.ref)),
+		),
+		removed: previous.entries
+			.filter((entry) => !next.has(entry.ref))
+			.map((entry) => entry.ref),
+		order: current.entries.map((entry) => entry.ref),
+	};
+}
+
+export function renderSnapshot(
+	snapshot: SemanticSnapshot,
+	maxBytes = 16_384,
+): string {
+	if (!Number.isSafeInteger(maxBytes) || maxBytes < 64 || maxBytes > 1_048_576)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid text snapshot byte limit",
+		);
+	const marker = "… snapshot truncated\n";
+	const lines: string[] = [];
+	let bytes = 0;
+	let truncated = snapshot.truncated;
+	for (const entry of snapshot.entries) {
+		const states = Object.entries(entry).filter(
+			([key]) => !["name", "role", "depth", "ref"].includes(key),
+		);
+		const line = `${"  ".repeat(Math.min(1024, Math.max(0, entry.depth)))}- ${clean(entry.role)} ${JSON.stringify(clean(entry.name))} [ref=${clean(entry.ref)}]${states.map(([key, value]) => ` [${key}=${JSON.stringify(typeof value === "string" ? clean(value) : value)}]`).join("")}\n`;
+		const size = encoder.encode(line).byteLength;
+		if (bytes + size + encoder.encode(marker).byteLength > maxBytes) {
+			truncated = true;
+			break;
+		}
+		bytes += size;
+		lines.push(line);
+	}
+	if (truncated) lines.push(marker);
+	return lines.join("");
+}

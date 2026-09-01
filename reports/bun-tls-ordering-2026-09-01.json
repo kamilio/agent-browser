@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "scope": "local-bun-tls-ordering-diagnostic",
+  "checkedAt": "2026-09-01T15:41:59.508Z",
+  "bun": "1.3.8",
+  "hostnameMismatchRejected": true,
+  "identityChecks": 1,
+  "receivedRequests": 1,
+  "errorCode": "ERR_TLS_CERT_ALTNAME_INVALID",
+  "passed": false,
+  "requirement": "Reject the mismatched certificate before sending any HTTP request.",
+  "fixture": "Only the package's deliberately public local test certificate and loopback server are used."
+}
