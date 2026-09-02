@@ -1,8 +1,60 @@
 # Upstream SafeJS migration
 
-Status: September 2, 2026. Implementation and released-package verification are
-pending. This is a migration contract, not a claim that the browser already uses
-the resolved upstream APIs.
+Status: September 2, 2026. A public extension adapter is implemented and tested
+against mock contracts; released-package verification and default activation are
+pending. Production still uses the experimental adapter. `EXTENSION-RUNTIME.md`
+describes the implementation, lifecycle and explicit unrun release gates.
+
+September 2, 19:34 UTC upstream comment: #550's implementation is pushed as
+`7984fa903602e6561b342a140f472978827094b7`. Pinned source confirms the console-only
+`builtinOverrides` option, registered extension ownership and collision checks.
+The maintainer reports passing upstream/installed-tarball tests and queued release
+jobs while keeping the issue open for artifact/provenance verification. This is
+not a completed local release gate. Reinspection still finds workspace poe-code
+4.0.48, global poe-code 13.0.10 and no installed scoped SafeJS package. No denied
+download or alternate artifact acquisition was retried.
+
+September 2, 19:12 UTC: #549 is confirmed closed (17:47:48 UTC), with its final
+maintainer comment recommending poe-code 14.0.17. The local test engine was not
+changed. Read-only source inspection at
+`c458b92d312580a2f9b32c9aa5e84b3aed77ea5e` identifies a distinct console ownership
+requirement: an extension exporting console collides with the builtin before
+setup; the builtin sink only supplies log/error, not shared Window identity or
+the browser's full console methods. #540 explicitly requested this strict default
+collision policy, so it is not being reopened or characterized as a regression.
+
+New enhancement #550 requests an explicit, host-authorized builtin-console
+replacement mechanism while preserving default collision and intrinsic checks.
+The issue's creation, open state and exact body were verified. The published body
+is `contributions/safejs-console-override-issue.md`. This is source-supported API
+scope, not a claimed installed-release failure. No guest source rewrite, duplicated
+console state or private-runtime workaround is used.
+
+Later September 2 recheck: #550 remains open. The maintainer's 19:14:13 UTC
+comment proposes a narrowly validated `builtinOverrides: { console:
+"extension-name" }` realm authorization, requiring an owned host object and
+retaining caller/extension/intrinsic collision protection. Implementation and
+Node/Bun consumer/lifecycle tests are planned; this comment is not evidence that
+the API is implemented, published, installed or accepted by this browser.
+
+September 2, 18:55 UTC local gate: `scripts/check-nested-callbacks.ts` fails its
+first synchronous host-method assertion against the existing experimental core.
+The guest continues before the listener and receives a Promise rather than the
+method's eventual primitive result. Observed order is
+`before, sync:start, false, after, listener, sync:end`; expected listener-prefix
+completion precedes the guest's result/after markers. The bounded probe closes
+its realm and preserves both traces in
+`reports/nested-callbacks-safejs-fixture-2026-09-02.json` (completed false, zero
+passes). Later nested/async-tail assertions are not reached, not passed.
+
+Do not expose guest dispatch/focus/reset methods as plain async host methods on
+this legacy core: that changes synchronous browser semantics. No such wrapper,
+native eval, fixed-microtask approximation or SDK patch was shipped. Migration
+must use the declared upstream nested-operation contract and rerun the actual
+consumer gates; this result does not report a failure against the released SDK
+or reopen an already resolved upstream issue. Read-only local reinspection still
+finds workspace poe-code 4.0.48, global poe-code 13.0.10 and no installed scoped
+SafeJS artifact. No denied download was retried or substituted.
 
 September 2, 17:37 UTC upstream update: the #549 implementation is pushed as
 `c458b92d312580a2f9b32c9aa5e84b3aed77ea5e`. Its named contract adds optional
@@ -121,8 +173,8 @@ AGENT_BROWSER_SAFEJS_RELEASE_ROOT=/absolute/path/to/approved/package AGENT_BROWS
 ```
 
 Replace `0.1.XX` with the actual artifact version; the loader rejects this
-placeholder. The probe requires the post-#549 API, not merely #547's callback
-release. The root must declare `@poe-platform/safe-js` and a contained public
+placeholder. The probe requires post-#550 console authorization as well as named
+mutation and callback phases. The root must declare `@poe-platform/safe-js` and a contained public
 `./core` import. Manifest/export symlinks cannot escape the selected root. These
 checks validate selection, not registry provenance or all transitive imports;
 the artifact itself must be trusted. No dependency is installed by this command.
@@ -193,7 +245,45 @@ This is a tested construction boundary, **not a released-SDK adapter**. Wiring i
 into lazy extension setup, resolving the builtin `console` collision and adapting
 the remaining error/result/lifecycle contracts still require release validation.
 
-### Remaining gates
+### Runtime lifecycle boundary
+
+`src/page-runtime.ts` separates the page owner from SDK-specific realm creation,
+budget construction, result conversion, error class identity and callback entry
+points. The existing experimental implementation is isolated in
+`legacyPageRuntime`; production still selects that implementation. Existing
+`PageScriptCore`, `PageRealm` and `PageRealmOptions` imports remain compatible.
+
+`PageScripts` also accepts a trusted `PageRuntimeFactory`. Its setup callback is
+the only route to `PageBindings`, and may run eagerly or during first evaluation.
+Unused lazy owners can close without constructing capabilities. Initialization
+shares the source evaluation's timeout and cancellation; repeated setup, failed
+setup and late setup after close are rejected and native wrappers are revoked.
+Source/run/result limits and callback-prefix ordering stay in the browser owner.
+The runtime returns tagged success/failure results; failed results are never
+copied as successful values. Error codes/budget names still pass a bounded,
+sanitized projection. Adapter closure clears callback bookkeeping even if its
+close operation rejects.
+
+For a lazy factory, capability getters are unavailable before setup constructs
+bindings, and metrics omit DOM/timer sections until those owners exist.
+The additive initialized metric records completed runtime initialization. The
+existing eager adapter still exposes its capabilities immediately. This is a
+trusted integration boundary, not guest plugin loading or a second JS engine.
+
+Factory tests use mock runtimes to cover lazy setup, tagged/public diagnostics,
+fatal closure, partial failure, timeout/cancel, source bounds, concurrency and
+separate callback prefix/result phases. Actual experimental-core regressions
+exercise the moved legacy adapter. Neither category proves a released extension
+adapter: builtin console, actual release selection and public consumer gates
+still need completion.
+
+Checkpoint evidence: 1,240 tests across 58 files, including fourteen runtime-owner
+contract cases, plus 81 actual experimental-core checks across bindings, terminal
+search, classList, storage, action waiting and fetch/CORS. The package build,
+changed-test strict type checks, focused lint/format and diff checks pass. Reports
+are indexed under `reports/README.md`. No dependency or service was changed.
+
+### Remaining release gates
 
 - [ ] Obtain permission for the previously denied released-SDK download; inspect
   the exact package without dependency installation or lifecycle scripts.
@@ -202,6 +292,8 @@ the remaining error/result/lifecycle contracts still require release validation.
 - [ ] Resolve callback phases through the public API and the probes above.
 - [ ] Invoke the extracted `PageBindings` construction from one owned extension
   setup, after validating initialization timing and builtin-global handling.
+- [ ] Resolve #550's explicit builtin-console ownership through public APIs and
+  verify console/window/self identity without rewriting guest declarations.
 - [ ] Adapt results, limits, cancellation, guest retention and cleanup together.
 - [ ] Test distinct documents/realms, stale and foreign capabilities, setup
   failure, repeated closure, budgets and interrupted evaluation.

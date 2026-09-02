@@ -11,6 +11,207 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+September 2, contextual HTML insertion checkpoint: page code can assign outerHTML
+and call insertAdjacentHTML at all four positions. Native adjacent nodes retain
+identity, listeners and current control values; replacements create new nodes
+and leave old guest capabilities detached. Shared bounded staging validates
+parse/depth/node/text/reference constraints before changing committed state.
+Document roots, detached targets, fragment/html contexts, tables, form ancestors,
+null conversion and inert inserted scripts have explicit tests and limitations.
+
+1,421 tests pass across 65 files, including 26 new insertion cases. Twelve actual
+experimental-core checks pass through an interpreted card UI driven by native
+fill/click, plus 41 existing-core mutation/select/selection/wait regressions.
+Build, strict changed-test checks, focused formatting and diff checks pass.
+No dependency, default runtime or service changed. New public-site, live-terminal,
+framework and released-artifact acceptance remain unverified. See `HTML-INSERTION.md`.
+
+## Previous checkpoints
+
+September 2, modern DOM mutation checkpoint: interpreted append/prepend,
+replaceChildren, before/after/replaceWith and replaceChild now mutate the native
+document, preserving moved node identities/listeners and stable references.
+Text/comments receive ChildNode methods. Native replacement preflights depth,
+cycles and references; script document hierarchy rules account for removed roots.
+Conversion ordering, partial failure behavior and allocation limits are explicit
+in `DOM-MUTATIONS.md`; no full DOM/framework or garbage-collection claim is made.
+
+1,395 tests pass across 64 files, including 32 mutation cases and 726 model-checked
+overlapping argument combinations. Twelve actual experimental-core fixture checks
+exercise native fill/click into an interpreted task list, retained listeners after
+reordering/replacement, semantic changes, fragments, text and cleanup. Another 29
+existing-core selection/control/action-wait regression checks pass. Build, strict
+changed-test checks, focused formatting and diff checks also pass. No dependency,
+service, default-runtime or real-site/live-PTY acceptance change was made.
+
+September 2, public-extension adapter checkpoint: `extensionPageRuntime` now
+implements the inspected public extension contract, including exact globals,
+explicit console ownership, retained timer arguments, original callback phase
+promises, lazy setup, sanitized errors and fail-closed lifetime cancellation.
+Native ports remain separate from interpreter ownership. The CLI/service default
+has not switched, and no package was downloaded or dependency added.
+
+1,297 tests pass across 60 files, including 19 adapter mock-contract cases.
+Seven in-memory probes also pass 92 checks against the existing experimental
+core through the legacy adapter. Build, strict changed-test checks, formatting
+and diff checks pass. The raw released-SDK probe now checks console authorization
+and fresh evaluation during a pending callback tail. A separate released-page
+consumer covers native bindings, events, timers, storage and reload cleanup.
+Both consumers compile but remain unrun against a released artifact; the new
+adapter is not accepted for production. See `EXTENSION-RUNTIME.md` for gates.
+
+The latest inspected #550 comment (September 2, 19:34 UTC) reports implementation
+pushed at `7984fa903602e6561b342a140f472978827094b7` and release jobs queued.
+Pinned source was inspected. This is not installed-artifact acceptance, confirmed
+release publication or a new real-site/live-terminal result.
+
+September 2, text-locator checkpoint: shared native targets now support literal
+`getByText`, `getByLabel`, `getByPlaceholder`, `getByAltText` and `getByTitle`, in
+addition to role/test-ID/CSS/ref targeting. Text queries use normalized complete
+candidate text and smallest matching elements. Label queries respect native
+association and ARIA-label precedence, including password fields; attribute
+queries compare raw values as data. Hidden duplicates remain ambiguous. Native
+actionability, bounded waiting, command deadlines and action ordering are unchanged.
+
+1,278 tests pass across 59 files, including 37 new text/label/attribute parser,
+resolution and resource cases plus a shared-host integration test. Eleven actual
+experimental-core shared-host checks pass: interpreted fill/change/click handlers,
+text-span bubbling, updated labels, timer-created targets, ambiguity rejection,
+safe inspection and preserved snapshot-diff state. Label queries avoid copying
+unrelated page text; text/cache/reference bounds fail closed rather than accepting
+truncated uniqueness. Build, strict changed-test type checks, focused lint/format
+and diff checks pass. No dependency or SDK switch was made. New fixtures are in
+memory, not real-site/live-PTY/released-SDK or complete Playwright parity gates.
+
+That checkpoint's #550 recheck found it open; the maintainer's September 2, 19:14 UTC
+comment proposes explicit realm builtin-console authorization with ownership and
+lifecycle tests. The later source observation is recorded in the latest checkpoint.
+
+September 2, page-runtime checkpoint: the page owner now separates SDK-specific
+realm/budget construction, result conversion, error identity and callback entry
+points behind a runtime boundary. The legacy adapter remains the production
+implementation. Trusted runtime factories can initialize bindings lazily, return
+tagged failures and own public lifecycle APIs without requiring the legacy SDK's
+global helpers or error constructor. Browser limits, prefix/result ordering,
+sanitized results, cancellation and native-owner cleanup remain enforced.
+
+1,240 tests pass across 58 files, including fourteen new runtime-owner contract
+cases. Eighty-one actual experimental-core regressions pass across bindings (7),
+terminal search (9), classList (14), storage (19), action waiting (8) and fetch/CORS
+(24). Build, strict changed-test type checks, focused lint/format and diff checks
+pass. These are in-memory fixtures; terminal streams are mocked.
+
+Upstream #549 is confirmed closed. A separate, source-supported console ownership
+enhancement was filed as poe-code #550 and its exact body verified; builtin
+collision protection currently prevents an extension-owned global console from
+sharing the browser Window console. No lexical rewrite, SDK patch or dependency
+switch was added. The actual released-SDK adapter, new release acceptance,
+real-site/live-PTY gates and full browser parity remain incomplete. See
+`SAFEJS-UPSTREAM-MIGRATION.md` and the contribution draft for the precise boundary.
+
+September 2, terminal-search checkpoint: `s`/`S` run bounded backend literal/regex
+search beyond the locally retained snapshot. Results require fresh scoped
+inspection before activation; `U` restores the root. Native document checks
+reject navigation races, removed inspected nodes fall back to root on refresh,
+and search text cannot become CLI options or switch sessions. Local `/` search
+remains unchanged. See `TERMINAL.md` for controls and scope limitations.
+
+1,226 tests pass across 57 files, including 41 terminal projection/mock-stream
+tests. Nine actual experimental-core checks pass through an in-memory command
+host and mock terminal streams: a target beyond the truncated root prefix is
+found, inspected and activated, its interpreted mutation is visible, and the
+observer/diff baseline and detach cleanup are preserved. Build, strict changed-
+test type checks and focused formatting/lint pass. No dependencies, services or
+SDK versions changed. Real-site/live-PTY and released-SDK acceptance remain open;
+the separate legacy nested-callback gate remains failing, not silently waived.
+
+September 2, snapshot-search checkpoint: `find` now returns live snapshot matches,
+actionable refs, ancestor paths and context, with literal and bounded-NFA regex
+matching. It does not consume snapshot-diff state or execute queries as code.
+Compilation, matching and UTF-8 output have explicit bounds. See
+`SNAPSHOT-SEARCH.md` for the implemented profile and remaining parity gates.
+
+1,212 tests pass across 56 files, plus eight actual experimental-core command-host
+search/action checks. A separate nested-callback diagnostic fails on the old
+experimental runtime: plain async host methods return too early for synchronous
+browser APIs. Its negative evidence is preserved in the migration document;
+guest eventful methods were not papered over. No SDK/dependency switch or new
+real-site/live-PTY acceptance is included.
+
+September 2, script-form checkpoint: interpreted document.forms/form.elements
+now expose live native ownership, including external controls. Multi-match named
+lookups create bounded live radio groups whose values share native checked state.
+Reflected metadata configures native GET/POST preparation; native radio actions
+still run interpreted event handlers. See `SCRIPT-FORMS.md` for the supported
+surface and missing guest submit/reset/validation/named-property APIs.
+
+1,144 tests pass across 54 files, including sixteen new binding/collection cases.
+Nine actual experimental-core form checks plus ten selection-state and eight
+action-wait regressions pass. All new fixtures are in memory, without dependency
+changes or new real-site/live-PTY/released-SDK acceptance.
+
+September 2, persistent-selection checkpoint: DocumentTree now owns option
+selectedness and dirtiness rather than re-deriving selection from attributes.
+Moves/removals, mode changes, attribute nodes, copies and form resets update the
+same native state used by scripts, snapshots and form preparation. Fallback
+eligibility avoids repeated scans of a growing all-disabled option list. See
+`SELECTION-STATE.md` for the bounded contract and remaining conformance gaps.
+
+1,128 tests pass across 53 files, including 22 new state/mutation/resource cases.
+Ten new actual experimental-core checks and nineteen property/waiting regressions
+pass. No dependency/SDK changes or public-site/live-PTY acceptance are included.
+
+September 2, script-select checkpoint: interpreted select/option properties now
+share native control state, live options/selectedOptions collections, native
+form serialization and action handlers. select.remove(index) removes the option
+instead of accidentally removing the select. This fixes the property gap found
+by the earlier action-wait probe. See `SCRIPT-SELECT.md` for the supported surface
+and explicit dirtiness/mutation/collection-write limitations.
+
+1,070 tests pass across 49 files, including nineteen new binding tests. Eleven
+actual experimental-core checks exercise properties and form serialization;
+eight action-wait and eight locator regressions pass. No SDK/dependency change,
+public-site/PTY acceptance or service activation is included.
+
+September 2, native action-wait checkpoint: shared-host click/fill/select/check/
+uncheck now wait for the supported target/control readiness states, under the
+existing command deadline. Queries are cached by document/revision; ambiguous
+targets and stale refs fail, and an action is never replayed after dispatch.
+Waiting cleans up on timeout/session close and respects native event-idle waits.
+See `ACTION-WAITING.md` for the partial contract and remaining layout/ARIA gaps.
+
+1,051 tests pass across 48 files, including thirteen new waiter cases and three
+shared-host deadline/cleanup cases. Eight actual experimental-core command-host checks
+exercise delayed interpreted DOM mutations. No dependency, released-SDK switch,
+public-site/PTY acceptance or service activation is included in this checkpoint.
+
+September 2, literal locator checkpoint: native targets now accept the supported
+`getByRole`/`getByTestId` syntax alongside refs/CSS, without executing expressions.
+The shared command path observes current names, labels, IDs and visibility,
+rejects ambiguity, and retains ordinary actionability checks. Expanded role
+candidate traversal and propagated name-truncation flags prevent false uniqueness
+from collapsed descendants or clipped text. See `TARGET-LOCATORS.md`.
+
+1,035 tests pass across 47 files, including 28 parser/resolution cases. Eight
+actual experimental-core action checks pass, plus the fourteen class-list
+regressions. Full ARIA semantics, other locator methods, regex/chaining,
+auto-waiting, actual CLI/parity and released-SDK acceptance remain open. No
+dependency, SDK modification/download, live-site/PTY run or service activation.
+
+September 2, DOM inspection checkpoint: the additive `dom` command and exported
+`inspectDom` read live native structure, current controls and stable refs with
+explicit subtree/depth/node/content limits. A shared-session playground DOM pane
+adds reference/selector scoping and Root reset, using inert text rather than
+executing inspected markup. Password/file values are redacted in both attribute
+and current-control paths. See `DOM-INSPECTION.md` for privacy and coverage limits.
+
+1,006 tests pass across 46 files, including 22 inspector cases and terminal
+regressions. Eight actual experimental-core checks verify post-script mutation,
+redaction, scoped truncation and observational reads. No new dependency, SDK
+download, service start, live-site/PTY probe or visual UI acceptance was added.
+Inline tree expansion/highlighting, complete style/layout inspection and the
+original broader browser/release acceptance gates remain open.
+
 September 2, capability-construction checkpoint: `PageBindings` now constructs
 the browser's native capabilities through a narrow context, independently of SDK
 realm creation, evaluation, Budget and error constructors. `PageScripts` keeps its

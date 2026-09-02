@@ -2,6 +2,32 @@ import { expect, it } from "vitest";
 import { parseInvocation } from "./cli-parser.js";
 import { commands } from "./commands.js";
 
+it("accepts bounded DOM subtree inspection without changing baseline command syntax", () => {
+	expect(
+		parseInvocation([
+			"-s=inspect",
+			"dom",
+			"#content",
+			"--depth=0",
+			"--max-nodes=12",
+			"--max-code-units=2048",
+		]),
+	).toMatchObject({
+		command: "dom",
+		session: "inspect",
+		arguments: ["#content"],
+		options: { depth: 0, "max-nodes": 12, "max-code-units": 2048 },
+	});
+	for (const option of [
+		"--depth=65",
+		"--depth=-1",
+		"--max-nodes=2049",
+		"--max-code-units=1023",
+	])
+		expect(() => parseInvocation(["dom", option])).toThrow();
+	expect(() => parseInvocation(["dom", "e1", "e2"])).toThrow();
+});
+
 it("accepts bounded structured extraction as an additive agent command", () => {
 	expect(
 		parseInvocation([

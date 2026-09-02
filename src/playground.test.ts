@@ -1,14 +1,42 @@
 import { expect, it } from "vitest";
+import { DocumentTree } from "./document.js";
+import { inspectDom } from "./dom-inspection.js";
 import { playgroundHtml } from "./playground-assets.js";
 import {
 	parsePlaygroundCommand,
 	playgroundConsole,
+	playgroundDom,
 	playgroundNetwork,
 	playgroundText,
 	playgroundUrl,
 } from "./playground.js";
 import type { SessionRequests } from "./session.js";
 import type { SemanticSnapshot } from "./snapshot.js";
+
+it("formats actual DOM structure as inert text with refs, controls and truncation disclosures", () => {
+	const tree = new DocumentTree("https://example.com/");
+	try {
+		const input = tree.createElement("input", {
+			type: "password",
+			value: "not-for-display",
+		});
+		tree.append(tree.root, input);
+		tree.append(tree.root, tree.createComment("<script>alert(1)</script>"));
+		const output = playgroundDom(inspectDom(tree));
+		expect(output).toContain(`[${tree.reference(input)}] <input>`);
+		expect(output).toContain("password/file value redacted");
+		expect(output).not.toContain("not-for-display");
+		expect(output).toContain('"<script>alert(1)</script>"');
+		expect(playgroundDom(inspectDom(tree, { maxDepth: 0 }))).toContain(
+			"0/2 children shown",
+		);
+		expect(playgroundHtml).toContain('id="dom-output"');
+		expect(playgroundHtml).toContain('id="dom-target"');
+		expect(playgroundHtml).toContain('data-view="dom"');
+	} finally {
+		tree.close();
+	}
+});
 
 it("renders scoped request metadata and clearly distinguishes failed navigation attempts", () => {
 	const snapshot: SessionRequests = {

@@ -157,7 +157,7 @@ function hidden(node: DocumentNode) {
 	);
 }
 
-function roleOf(node: DocumentNode): string | undefined {
+function roleOf(node: DocumentNode, locator = false): string | undefined {
 	if (node.kind === "text") return "text";
 	if (node.kind !== "element") return undefined;
 	const explicit = node.attributes.role
@@ -173,6 +173,26 @@ function roleOf(node: DocumentNode): string | undefined {
 		return undefined;
 	if (node.tagName === "input") {
 		const type = node.attributes.type?.toLowerCase() ?? "text";
+		if (
+			locator &&
+			[
+				"color",
+				"date",
+				"datetime-local",
+				"file",
+				"month",
+				"password",
+				"time",
+				"week",
+			].includes(type)
+		)
+			return undefined;
+		if (
+			locator &&
+			["text", "email", "tel", "url", "search"].includes(type) &&
+			Object.hasOwn(node.attributes, "list")
+		)
+			return "combobox";
 		if (["button", "submit", "reset", "image", "file"].includes(type))
 			return "button";
 		if (type === "checkbox" || type === "radio") return type;
@@ -197,6 +217,46 @@ function roleOf(node: DocumentNode): string | undefined {
 export function snapshotDocument(
 	tree: DocumentTree,
 	options: SnapshotOptions = {},
+): SemanticSnapshot {
+	return collectSnapshot(tree, options, false);
+}
+
+export function snapshotRoleCandidates(
+	tree: DocumentTree,
+	role: string,
+): readonly SnapshotEntry[] {
+	if (!roles.has(role))
+		throw new AgentBrowserError(
+			"unsupported",
+			"Role is outside the supported semantic subset",
+		);
+	if (tree.nodeCount > 50_000)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Role locator document limit exceeded",
+		);
+	const snapshot = collectSnapshot(
+		tree,
+		{
+			maxBytes: 1_048_576,
+			maxEntries: 10_000,
+			maxDepth: 1024,
+			maxStringLength: 16_384,
+		},
+		true,
+	);
+	if (snapshot.truncated)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Role locator requires complete, untruncated candidate names",
+		);
+	return snapshot.entries.filter((entry) => entry.role === role);
+}
+
+function collectSnapshot(
+	tree: DocumentTree,
+	options: SnapshotOptions,
+	expandLeafRoles: boolean,
 ): SemanticSnapshot {
 	const maxBytes = options.maxBytes ?? 16_384;
 	const maxEntries = options.maxEntries ?? 1000;
@@ -243,6 +303,8 @@ export function snapshotDocument(
 	const visible = new Set<number>();
 	const styles = documentStyles(tree);
 	const text = new Map<number, string>();
+	const incompleteText = new Set<number>();
+	const incompleteLabels = new Set<number>();
 	const ids = new Map<string, number>();
 	const labels = new Map<number, string[]>();
 	for (const { node } of tree.walk()) {
@@ -264,9 +326,16 @@ export function snapshotDocument(
 			node.kind === "text" && visible.has(node.id)
 				? clean(node.data, false)
 				: "";
+		if (expandLeafRoles && content.length > maxStringLength)
+			incompleteText.add(node.id);
 		for (const child of node.children) {
+			if (expandLeafRoles && incompleteText.has(child))
+				incompleteText.add(node.id);
 			content += text.get(child) ?? "";
-			if (content.length > maxStringLength) break;
+			if (content.length > maxStringLength) {
+				if (expandLeafRoles) incompleteText.add(node.id);
+				break;
+			}
 		}
 		text.set(node.id, clean(content, false).slice(0, maxStringLength + 1));
 	}
@@ -274,6 +343,7 @@ export function snapshotDocument(
 		if (node.tagName !== "label" || !visible.has(node.id)) continue;
 		const control = labelControl(tree, node.id);
 		if (control === undefined) continue;
+		if (incompleteText.has(node.id)) incompleteLabels.add(control);
 		const values = labels.get(control) ?? [];
 		values.push(text.get(node.id) ?? "");
 		labels.set(control, values);
@@ -286,17 +356,24 @@ export function snapshotDocument(
 		if (/[\uD800-\uDBFF]$/.test(clipped)) clipped = clipped.slice(0, -1);
 		return clipped;
 	};
+	const nameText = (id: number) => {
+		if (incompleteText.has(id)) result.truncated = true;
+		return text.get(id) ?? "";
+	};
 	const nameOf = (node: DocumentNode, role: string) => {
 		const references =
 			node.attributes["aria-labelledby"]?.trim().split(/\s+/) ?? [];
 		const labelled = references
-			.map((reference) => text.get(ids.get(reference) ?? -1) ?? "")
+			.map((reference) => nameText(ids.get(reference) ?? -1))
 			.filter(Boolean);
 		if (labelled.length) return limit(labelled.join(" "));
 		if (node.attributes["aria-label"])
 			return limit(node.attributes["aria-label"]);
 		const associated = labels.get(node.id);
-		if (associated?.length) return limit(associated.join(" "));
+		if (associated?.length) {
+			if (incompleteLabels.has(node.id)) result.truncated = true;
+			return limit(associated.join(" "));
+		}
 		if (node.tagName === "img")
 			return limit(node.attributes.alt ?? node.attributes.title ?? "");
 		if (
@@ -316,7 +393,7 @@ export function snapshotDocument(
 			role === "text" ||
 			role === "option"
 		)
-			return limit(text.get(node.id) ?? "");
+			return limit(nameText(node.id));
 		return limit(node.attributes.title ?? node.attributes.placeholder ?? "");
 	};
 	let usedBytes = encoder.encode(JSON.stringify(result)).byteLength;
@@ -326,7 +403,9 @@ export function snapshotDocument(
 		if (!current || !included.has(current.id)) continue;
 		const node = nodes.get(current.id);
 		if (!node) continue;
-		const role = visible.has(current.id) ? roleOf(node) : undefined;
+		const role = visible.has(current.id)
+			? roleOf(node, expandLeafRoles)
+			: undefined;
 		let nextDepth = current.depth;
 		if (role && (role !== "text" || text.get(node.id)?.trim())) {
 			if (current.depth > maxDepth) {
@@ -404,7 +483,7 @@ export function snapshotDocument(
 			result.entries.push(entry);
 			nextDepth++;
 		}
-		if (role && leafRoles.has(role)) continue;
+		if (!expandLeafRoles && role && leafRoles.has(role)) continue;
 		for (let index = node.children.length - 1; index >= 0; index--)
 			pending.push({ id: node.children[index], depth: nextDepth });
 	}
@@ -441,6 +520,13 @@ export function diffSnapshots(
 	};
 }
 
+export function renderSnapshotEntry(entry: SnapshotEntry): string {
+	const states = Object.entries(entry).filter(
+		([key]) => !["name", "role", "depth", "ref"].includes(key),
+	);
+	return `${"  ".repeat(Math.min(1024, Math.max(0, entry.depth)))}- ${clean(entry.role)} ${JSON.stringify(clean(entry.name))} [ref=${clean(entry.ref)}]${states.map(([key, value]) => ` [${key}=${JSON.stringify(typeof value === "string" ? clean(value) : value)}]`).join("")}`;
+}
+
 export function renderSnapshot(
 	snapshot: SemanticSnapshot,
 	maxBytes = 16_384,
@@ -461,10 +547,7 @@ export function renderSnapshot(
 	let bytes = lines.length ? encoder.encode(lines[0]).byteLength : 0;
 	let truncated = snapshot.truncated;
 	for (const entry of snapshot.entries) {
-		const states = Object.entries(entry).filter(
-			([key]) => !["name", "role", "depth", "ref"].includes(key),
-		);
-		const line = `${"  ".repeat(Math.min(1024, Math.max(0, entry.depth)))}- ${clean(entry.role)} ${JSON.stringify(clean(entry.name))} [ref=${clean(entry.ref)}]${states.map(([key, value]) => ` [${key}=${JSON.stringify(typeof value === "string" ? clean(value) : value)}]`).join("")}\n`;
+		const line = `${renderSnapshotEntry(entry)}\n`;
 		const size = encoder.encode(line).byteLength;
 		if (bytes + size + encoder.encode(marker).byteLength > maxBytes) {
 			truncated = true;

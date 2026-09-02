@@ -3,90 +3,14 @@ import { join, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { processReadRoot } from "../src/node-process-boundary.js";
 
-export interface ReleasedInvocation {
-	synchronous: Promise<void>;
-	result: Promise<unknown>;
-}
-
-export interface ReleasedHostDefinition {
-	properties?: Record<
-		string,
-		{ get?: () => unknown; set?: (value: unknown) => void }
-	>;
-	methods?: Record<string, (...args: readonly unknown[]) => unknown>;
-	indexed?: {
-		length(): number;
-		get(index: number): unknown;
-		maxLength: number;
-	};
-	named?: {
-		keys(): readonly string[];
-		get(name: string): unknown;
-		set?(name: string, value: unknown): void;
-		delete?(name: string): boolean;
-		maxKeys: number;
-		maxKeyCodeUnits: number;
-		enumerable?: boolean;
-	};
-}
-
-export interface ReleasedContext {
-	readonly signal: AbortSignal;
-	onCleanup(cleanup: () => void | Promise<void>): void;
-	createHostObject(definition: ReleasedHostDefinition): object;
-	startCallback(
-		callback: unknown,
-		options?: { thisValue?: unknown; args?: readonly unknown[] },
-	): ReleasedInvocation;
-	releaseCallback(callback: unknown): void;
-	retainGuestArguments<
-		Operation extends (...args: readonly unknown[]) => unknown,
-	>(operation: Operation, from: number): Operation;
-	releaseGuestReference(reference: unknown): void;
-	nestedOperation<Operation extends (...args: readonly unknown[]) => unknown>(
-		operation: Operation,
-	): Operation;
-	evaluateNested(source: string): Promise<void>;
-}
-
-export interface ReleasedRealm {
-	evaluate(
-		source: string,
-	): Promise<{ ok: boolean; returnValue?: unknown; error?: unknown }>;
-	startCallback: ReleasedContext["startCallback"];
-	releaseCallback: ReleasedContext["releaseCallback"];
-	close(): Promise<void>;
-}
-
-export interface ReleasedCore {
-	Budget: new (options: {
-		maxSteps: number;
-		deadline: number;
-		dataSize: number;
-	}) => unknown;
-	defineExtension(definition: {
-		manifest: {
-			version: 1;
-			name: string;
-			globals: readonly string[];
-			capabilities?: readonly string[];
-		};
-		setup(context: ReleasedContext): { globals: Record<string, unknown> };
-	}): unknown;
-	createRealm(options: {
-		extensions: readonly unknown[];
-		grants?: readonly string[];
-		budget: unknown;
-		signal: AbortSignal;
-		limits?: {
-			hostObjects?: number;
-			callbacks?: number;
-			guestReferences?: number;
-			cleanups?: number;
-			nestedEvaluations?: number;
-		};
-	}): ReleasedRealm;
-}
+import type { ReleasedCore } from "../src/safejs-extension-types.js";
+export type {
+	ReleasedInvocation,
+	ReleasedHostDefinition,
+	ReleasedContext,
+	ReleasedRealm,
+	ReleasedCore,
+} from "../src/safejs-extension-types.js";
 
 export async function loadReleasedCore(
 	packageRoot: unknown,

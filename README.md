@@ -16,6 +16,56 @@ names is not completion of that scope.
 
 ## Current status
 
+`HTML-INSERTION.md` adds outerHTML replacement and all four insertAdjacentHTML
+positions using the existing contextual parser. Existing adjacent nodes retain
+identity and control state; replacements create fresh nodes; inserted scripts
+remain inert. Quota/parse failures leave committed state unchanged.
+
+`DOM-MUTATIONS.md` adds interpreted append/prepend/replaceChildren, sibling
+before/after/replaceWith and replaceChild over the same native document. Moving
+nodes preserves references and listeners; bounded hierarchy checks reject invalid
+replacements. Native and actual-interpreter in-memory checks pass.
+
+`EXTENSION-RUNTIME.md` describes the new public SafeJS extension adapter: owned
+browser globals, explicit console authorization, callbacks and lifecycle cleanup.
+Its mock-contract tests pass; released-artifact acceptance remains unrun. The
+CLI/service still uses the existing experimental runtime, with no dependency change.
+
+`SNAPSHOT-SEARCH.md` adds `find` with literal/bounded-regex matching, actionable
+refs, context and explicit resource/truncation metadata. It runs natively,
+without page evaluation, and preserves snapshot-diff state. Regex/CLI parity
+remains partial.
+
+`SCRIPT-FORMS.md` adds live form/control collections, radio-group value access,
+and reflected form/control properties. Interpreted configuration feeds native
+form request preparation. Guest submit/reset/validation methods remain missing.
+
+`SELECTION-STATE.md` makes native selectedness persistent across option moves,
+removal, mode changes, cloning and resets, with separate default/dirty state.
+Interpreted mutations and native form submission/reset share the same state.
+
+`SCRIPT-SELECT.md` adds interpreted select/option properties and stable live
+option collections backed by native form state. Scripted selection reaches
+native submission and actions; full option dirtiness/mutation rules remain open.
+
+`ACTION-WAITING.md` adds bounded pre-dispatch waiting to shared-host click,
+fill, select, check and uncheck. Waiting respects command deadlines and session
+closure without replaying dispatched actions. Layout stability, hit-testing
+and full ARIA actionability are not implemented.
+
+`TARGET-LOCATORS.md` adds literal role, test-ID, text, label, placeholder, alt-text
+and title targets to the shared native action/inspection path, without evaluating
+locator expressions. Text/label queries use bounded complete candidate matching;
+password fields can be addressed by labels without manufacturing textbox roles.
+Native and actual experimental-core action checks pass; broader locator grammar,
+ARIA conformance and full Playwright CLI parity remain open.
+
+`DOM-INSPECTION.md` adds a bounded `dom` API/CLI command and a shared-session
+playground DOM pane. It inspects real post-script structure, stable refs, hidden
+nodes and current controls, with password/file value redaction and explicit
+truncation. Native, command-host and actual experimental-core checks pass;
+the new pane's visual interaction gate remains unverified.
+
 `CLASS-LISTS.md` adds live, bounded classList mutation and iteration. An actual
 interpreted handler now reveals a CSS-hidden action, preserves its stable
 reference, lets the agent activate it, and hides it again without fetching a new
@@ -67,8 +117,10 @@ remain unverified; this is partial structured extraction, not full conformance.
 
 `TERMINAL.md` adds an interactive `terminal [url]` frontend: keyboard selection,
 native link/form actions, history, URL entry and shared-session observation, plus
-wrapped row scrolling and literal forward/backward search. Eighty focused tests
-pass, including 27 terminal tests. Real PTY/public-site
+wrapped row scrolling and literal forward/backward search. Backend literal/regex
+search can reach beyond the retained prefix; results require fresh scoped
+inspection before activation. Mock-stream tests and an actual experimental-core
+in-memory probe cover search, interpreted clicks, stale refs and cleanup. Real PTY/public-site
 validation remains unverified because permission review denied that probe; this
 is not yet a terminal acceptance claim. No new runtime dependency is added.
 

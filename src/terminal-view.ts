@@ -1,3 +1,5 @@
+import { AgentBrowserError } from "./errors.js";
+import type { SnapshotSearch } from "./snapshot-search.js";
 import type { SemanticSnapshot, SnapshotEntry } from "./snapshot.js";
 
 export interface TerminalKey {
@@ -7,10 +9,14 @@ export interface TerminalKey {
 	shift?: boolean;
 }
 
-export type TerminalAction = string[] | "refresh" | "quit" | undefined;
+export type TerminalRequest =
+	| string[]
+	| { kind: "inspect"; ref: string; document: string }
+	| "root";
+export type TerminalAction = TerminalRequest | "refresh" | "quit" | undefined;
 
 interface Prompt {
-	kind: "open" | "fill" | "select" | "find";
+	kind: "open" | "fill" | "select" | "find" | "search" | "regex";
 	value: string;
 	ref?: string;
 	protected?: boolean;
@@ -81,6 +87,10 @@ export class TerminalView {
 	private match?: { ref: string; offset: number };
 	private prompt?: Prompt;
 	private pasting = false;
+	private results?: SnapshotSearch;
+	private resultIndex = 0;
+	private resultQuery = "";
+	private resultRegex = false;
 
 	constructor(private readonly session: string) {}
 
@@ -88,9 +98,80 @@ export class TerminalView {
 		return this.prompt !== undefined;
 	}
 
+	get searching() {
+		return this.results !== undefined;
+	}
+
+	showSearch(results: SnapshotSearch, query: string, regex = false) {
+		if (
+			!results ||
+			typeof results.document !== "string" ||
+			results.document.length > 128 ||
+			!Array.isArray(results.matches) ||
+			results.matches.length > 500 ||
+			!Number.isSafeInteger(results.matched) ||
+			results.matched < results.matches.length ||
+			!Number.isSafeInteger(results.scannedEntries) ||
+			results.scannedEntries < results.matched ||
+			results.scannedEntries > 10_000 ||
+			typeof query !== "string" ||
+			query.length > 1024
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid terminal search result",
+			);
+		let size = 0;
+		for (const match of results.matches) {
+			if (
+				!match ||
+				typeof match.ref !== "string" ||
+				match.ref.length > 128 ||
+				!Number.isSafeInteger(match.line) ||
+				match.line < 1 ||
+				!Array.isArray(match.context) ||
+				match.context.length > 21
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid terminal search match",
+				);
+			for (const line of match.context) {
+				if (
+					!line ||
+					typeof line.text !== "string" ||
+					line.text.length > 32_768 ||
+					!Number.isSafeInteger(line.line)
+				)
+					throw new AgentBrowserError(
+						"invalid-input",
+						"Invalid terminal search context",
+					);
+				size += line.text.length;
+				if (size > 262_144)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Terminal search result too large",
+					);
+			}
+		}
+		this.results = results;
+		this.resultIndex = 0;
+		this.resultQuery = query;
+		this.resultRegex = regex;
+		this.status =
+			"Search is a partial projection; Enter inspects, not activates";
+	}
+
+	dismissSearch() {
+		this.results = undefined;
+	}
+
 	update(snapshot: SemanticSnapshot, url: string) {
 		const previousRow = this.cursorRow();
 		const sameDocument = snapshot.document === this.snapshot?.document;
+		if (this.results && this.results.document !== snapshot.document)
+			this.dismissSearch();
 		const reference = sameDocument
 			? this.snapshot?.entries[this.selected]?.ref
 			: undefined;
@@ -167,6 +248,40 @@ export class TerminalView {
 			this.prompt = { kind: "open", value: "" };
 			return;
 		}
+		if (text === "s" || text === "S") {
+			this.prompt = { kind: text === "S" ? "regex" : "search", value: "" };
+			return;
+		}
+		if (text === "U") return "root";
+		if (this.results) {
+			if (key.name === "escape") {
+				this.dismissSearch();
+				return "refresh";
+			}
+			if (text === "u")
+				return this.searchRequest(this.resultQuery, this.resultRegex);
+			if (key.name === "return" || key.name === "enter") {
+				const match = this.results.matches[this.resultIndex];
+				if (match)
+					return {
+						kind: "inspect",
+						ref: match.ref,
+						document: this.results.document,
+					};
+			} else if (text === "j" || key.name === "down") this.resultIndex++;
+			else if (text === "k" || key.name === "up") this.resultIndex--;
+			else if (text === " " || key.name === "pagedown")
+				this.resultIndex += this.pageSize;
+			else if (key.name === "pageup") this.resultIndex -= this.pageSize;
+			else if (key.name === "home") this.resultIndex = 0;
+			else if (key.name === "end")
+				this.resultIndex = this.results.matches.length - 1;
+			this.resultIndex = Math.max(
+				0,
+				Math.min(this.resultIndex, this.results.matches.length - 1),
+			);
+			return;
+		}
 		if (text === "/") {
 			this.prompt = { kind: "find", value: "" };
 			return;
@@ -213,6 +328,7 @@ export class TerminalView {
 				index ? "" : "Resize terminal to at least 6 rows".slice(0, width),
 			);
 		this.pageSize = height - 5;
+		if (this.results) return this.renderSearch(width, height);
 		const prefix = width > 2 ? 2 : 0;
 		if (this.contentWidth !== width - prefix) {
 			const previousRow = this.cursorRow();
@@ -247,15 +363,51 @@ export class TerminalView {
 			: "Semantic view";
 		const prompt = this.prompt;
 		return [
-			`Agent browser | session ${this.session} | ${mode}${page?.truncated ? " | truncated" : ""}`,
+			`Agent browser | session ${this.session} | ${mode}${page?.truncated ? " | truncated" : ""}${page && page.scope !== "root" && page.scope !== page.document ? ` | scope ${page.scope}` : ""}`,
 			this.url,
 			`j/k scroll | Tab control | Enter act | e edit | / find | n/N next/prev (${entries.length ? this.selected + 1 : 0}/${entries.length})`,
 			...content,
 			this.status,
 			prompt
 				? `${prompt.kind}${prompt.ref ? ` ${prompt.ref}` : ""}> ${prompt.protected ? "*".repeat(Math.min(80, prompt.value.length)) : prompt.value}`
-				: "g URL | b/f history | r reload | u refresh | q detach | Ctrl-C cancel",
+				: "g URL | s/S search/regex | U root | b/f history | r reload | u refresh | q detach",
 		].map((line) => terminalText(line).slice(0, width));
+	}
+
+	private renderSearch(width: number, height: number) {
+		const results = this.results as SnapshotSearch;
+		const start = Math.max(0, this.resultIndex - this.pageSize + 1);
+		const content = results.matches
+			.slice(start, start + this.pageSize)
+			.map(
+				(match, index) =>
+					`${start + index === this.resultIndex ? ">" : " "} [${match.ref}] ${match.context.find((line) => line.line === match.line)?.text ?? `line ${match.line}`}`,
+			);
+		while (content.length < this.pageSize) content.push("");
+		return [
+			`Agent browser | session ${this.session} | partial backend search${results.truncated ? " | truncated" : ""}`,
+			`${this.resultRegex ? "Regex" : "Literal"}: ${this.resultQuery}`,
+			`${results.matched} matches in ${results.scannedEntries} scanned entries; ${results.matches.length} returned`,
+			...content,
+			this.status,
+			this.prompt
+				? `${this.prompt.kind}> ${this.prompt.value}`
+				: "j/k choose | Enter inspect | u rerun | s/S query | Esc back | U root | q detach",
+		]
+			.slice(0, height)
+			.map((line) => terminalText(line).slice(0, width));
+	}
+
+	private searchRequest(query: string, regex: boolean) {
+		return [
+			"find",
+			"--max-results=100",
+			"--context=1",
+			"--max-bytes=32768",
+			...(regex ? ["--regex"] : []),
+			"--",
+			query,
+		];
 	}
 
 	private cursorRow() {
@@ -355,8 +507,11 @@ export class TerminalView {
 
 	private append(text: string) {
 		if (!this.prompt) return;
-		if (this.prompt.value.length + text.length > 16_384) {
-			this.status = "Input too long (maximum 16384 code units)";
+		const maximum = ["search", "regex"].includes(this.prompt.kind)
+			? 1024
+			: 16_384;
+		if (this.prompt.value.length + text.length > maximum) {
+			this.status = `Input too long (maximum ${maximum} code units)`;
 			return;
 		}
 		this.prompt.value += text;
@@ -365,6 +520,14 @@ export class TerminalView {
 	private submit(): TerminalAction {
 		const prompt = this.prompt;
 		if (!prompt) return;
+		if (prompt.kind === "search" || prompt.kind === "regex") {
+			if (!prompt.value) {
+				this.status = "Enter a nonempty backend search query";
+				return;
+			}
+			this.prompt = undefined;
+			return this.searchRequest(prompt.value, prompt.kind === "regex");
+		}
 		if (prompt.kind === "find") {
 			this.prompt = undefined;
 			if (prompt.value) {

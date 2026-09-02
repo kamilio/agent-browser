@@ -1,0 +1,41 @@
+{
+  "startedAt": "2026-09-02T18:55:17.796Z",
+  "finishedAt": "2026-09-02T18:55:17.874Z",
+  "scope": "existing-experimental-core-in-memory-command-host",
+  "completed": true,
+  "checks": [
+    {
+      "label": "Shared command-host find returns an actionable ref with snapshot context",
+      "passed": true
+    },
+    {
+      "label": "Common price and case-insensitive regex searches work without page evaluation",
+      "passed": true
+    },
+    {
+      "label": "Search excludes hidden content and protected password values",
+      "passed": true
+    },
+    {
+      "label": "The found ref activates the interpreted handler and search sees its live mutation",
+      "passed": true
+    },
+    {
+      "label": "Search does not consume the host snapshot-diff baseline",
+      "passed": true
+    },
+    {
+      "label": "Result and UTF-8 budgets report omitted matches explicitly",
+      "passed": true
+    },
+    {
+      "label": "Oversized regex compilation fails safely and the command queue remains usable",
+      "passed": true
+    },
+    {
+      "label": "Plain search rendering includes stable paths and highlighted context lines",
+      "passed": true
+    }
+  ],
+  "passed": 8
+}

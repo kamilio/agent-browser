@@ -76,9 +76,9 @@ it("binds innerHTML parsing and live HTML serialization to the owned document", 
 	);
 	button.setAttribute("title", '"<&>');
 	expect(button.outerHTML).toContain('title="&quot;&lt;&amp;&gt;"');
-	expect(() => {
-		button.outerHTML = "replacement";
-	}).toThrow("not implemented");
+	button.outerHTML = "replacement";
+	expect(button.parentNode).toBeNull();
+	expect(document.body.innerHTML).toBe("<section>replacement</section>");
 	tree.close();
 	expect(() => button.innerHTML).toThrow("closed");
 });

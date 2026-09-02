@@ -66,7 +66,7 @@ clearTimeout(canceledId);
 `);
 	await waitUntil(
 		() =>
-			scripts.metrics().timers.active === 0 &&
+			scripts.metrics().timers?.active === 0 &&
 			scripts.metrics().pendingCallbacks === 0,
 	);
 	check(
@@ -96,8 +96,8 @@ clearTimeout(canceledId);
 	check(
 		"Closing the owner clears pending callbacks and capability state",
 		scripts.metrics().pendingCallbacks === 0 &&
-			scripts.metrics().timers.closed &&
-			scripts.metrics().dom.classLists.closed,
+			scripts.metrics().timers?.closed === true &&
+			scripts.metrics().dom?.classLists.closed === true,
 	);
 	check(
 		"Guest shutdown preserves native document interactions",

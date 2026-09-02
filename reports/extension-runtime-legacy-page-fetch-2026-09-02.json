@@ -1,0 +1,103 @@
+{
+  "startedAt": "2026-09-02T19:53:25.979Z",
+  "finishedAt": "2026-09-02T19:53:26.101Z",
+  "scope": "Actual explicitly selected SafeJS core, parsed HTML and interpreted asynchronous callbacks with an in-memory mock transport. No HTTP server, public network, PTY, child process or browser service is started. Not a substitute for denied live acceptance gates.",
+  "checks": [
+    {
+      "label": "Actual interpreted Promise callbacks receive fetch JSON",
+      "passed": true
+    },
+    {
+      "label": "The interpreted fetch callback updates the retained semantic document",
+      "passed": true
+    },
+    {
+      "label": "One document, script and fetch request are recorded by the same session",
+      "passed": true
+    },
+    {
+      "label": "Request diagnostics omit query secrets",
+      "passed": true
+    },
+    {
+      "label": "Response header capabilities do not expose Set-Cookie",
+      "passed": true
+    },
+    {
+      "label": "Explicit same-origin mode rejects before the mock transport is invoked",
+      "passed": true
+    },
+    {
+      "label": "Response bodies are consumed once across real realm evaluations",
+      "passed": true
+    },
+    {
+      "label": "Real SafeJS reads permitted cross-origin JSON after a preflight",
+      "passed": true
+    },
+    {
+      "label": "Cross-origin JSON updates the same live DOM",
+      "passed": true
+    },
+    {
+      "label": "Cross-origin preflight has no credentials or request body",
+      "passed": true
+    },
+    {
+      "label": "Denied preflight never sends the requested DELETE",
+      "passed": true
+    },
+    {
+      "label": "The real session distinguishes preflight diagnostics",
+      "passed": true
+    },
+    {
+      "label": "The real session separates CORS decisions from successful HTTP statuses",
+      "passed": true
+    },
+    {
+      "label": "Real SafeJS consumes a routed CORS response without calling the transport",
+      "passed": true
+    },
+    {
+      "label": "The session identifies mocked responses and retains the CORS check",
+      "passed": true
+    },
+    {
+      "label": "Page fetch checks routes on manual redirect hops without sending the mocked target",
+      "passed": true
+    },
+    {
+      "label": "Interpreted fetch follows a fully mocked redirect without calling the transport",
+      "passed": true
+    },
+    {
+      "label": "Both mocked redirect hops retain route identity and CORS observations",
+      "passed": true
+    },
+    {
+      "label": "Interpreted fetch rejects a mocked redirect in error mode without transport fallback",
+      "passed": true
+    },
+    {
+      "label": "Interpreted fetch exposes a filtered manual mocked redirect",
+      "passed": true
+    },
+    {
+      "label": "Unroute restores the ordinary transport and its CORS policy",
+      "passed": true
+    },
+    {
+      "label": "A real interpreted fetch can own a pending mocked network request",
+      "passed": true
+    },
+    {
+      "label": "Closing the page aborts pending interpreted fetch work without transport cooperation",
+      "passed": true
+    },
+    {
+      "label": "Closing the real page owner releases fetch bodies and requests",
+      "passed": true
+    }
+  ]
+}

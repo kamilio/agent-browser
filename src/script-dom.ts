@@ -9,7 +9,11 @@ import { documentBaseUrl } from "./document-url.js";
 import { writeDocument } from "./document-write.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
-import { setInnerHtml } from "./html-content.js";
+import {
+	insertAdjacentHtml,
+	setInnerHtml,
+	setOuterHtml,
+} from "./html-content.js";
 import { serializeHtml } from "./html-serialization.js";
 import { InlineStyles } from "./inline-styles.js";
 import { ScriptAttributes } from "./script-attributes.js";
@@ -19,7 +23,10 @@ import {
 	ScriptEventBindings,
 	type ScriptEventOptions,
 } from "./script-events.js";
+import { scriptFormProperties } from "./script-form.js";
 import type { ScriptLocation } from "./script-location.js";
+import { scriptMutationMethods } from "./script-mutations.js";
+import { scriptSelectBindings } from "./script-select.js";
 import type { ScriptStorage } from "./script-storage.js";
 import { scriptUrlProperties } from "./script-urls.js";
 import { DocumentQueries } from "./selectors.js";
@@ -194,30 +201,12 @@ export class ScriptDom {
 					this.read(id);
 					return this.node(this.tree.clone(id, Boolean(deep)));
 				},
-				appendChild: (child) => {
-					this.read(id);
-					const childId = this.identify(child);
-					this.insert(id, childId);
-					return this.node(childId);
-				},
-				insertBefore: (child, before) => {
-					this.read(id);
-					const childId = this.identify(child);
-					this.insert(
-						id,
-						childId,
-						before == null ? undefined : this.identify(before),
-					);
-					return this.node(childId);
-				},
-				removeChild: (child) => {
-					this.read(id);
-					const childId = this.identify(child);
-					if (this.read(childId).parent !== id)
-						throw new AgentBrowserError("not-found", "Node is not a child");
-					this.tree.remove(childId);
-					return this.node(childId);
-				},
+				...scriptMutationMethods(this.tree, id, {
+					read: (target) => this.read(target),
+					identify: (value) => this.identify(value),
+					node: (target) => this.node(target),
+					string: domString,
+				}),
 				hasChildNodes: () => this.read(id).children.length > 0,
 			},
 		};
@@ -292,6 +281,12 @@ export class ScriptDom {
 			};
 		}
 		if (initial.kind === "document") {
+			definition.properties.forms = {
+				get: () => {
+					this.read(id);
+					return this.collections.get(id, "tag", "form");
+				},
+			};
 			if (this.storage)
 				definition.properties.cookie = {
 					get: () => {
@@ -390,6 +385,17 @@ export class ScriptDom {
 			});
 		}
 		if (initial.kind === "element") {
+			Object.assign(
+				definition.properties,
+				scriptFormProperties(
+					this.tree,
+					id,
+					() => this.read(id),
+					(target) => this.node(target),
+					this.collections,
+					domString,
+				),
+			);
 			definition.properties.classList = {
 				get: () => this.classLists.get(id),
 				set: (value) => this.classLists.setValue(id, value),
@@ -423,12 +429,9 @@ export class ScriptDom {
 						this.read(id);
 						return serializeHtml(this.tree, id, { includeSelf: true });
 					},
-					set: () => {
+					set: (value: unknown) => {
 						this.read(id);
-						throw new AgentBrowserError(
-							"unsupported",
-							"outerHTML replacement is not implemented",
-						);
+						setOuterHtml(this.tree, id, value === null ? "" : domString(value));
 					},
 				},
 				tagName: { get: () => this.read(id).tagName.toUpperCase() },
@@ -437,6 +440,20 @@ export class ScriptDom {
 				title: this.attribute(id, "title"),
 			});
 			Object.assign(definition.methods, {
+				insertAdjacentHTML: (...args: readonly unknown[]) => {
+					this.read(id);
+					if (args.length < 2)
+						throw new AgentBrowserError(
+							"invalid-input",
+							"Adjacent HTML requires position and markup",
+						);
+					insertAdjacentHtml(
+						this.tree,
+						id,
+						domString(args[0]),
+						domString(args[1]),
+					);
+				},
 				getAttributeNode: (...args: readonly unknown[]) => {
 					this.read(id);
 					if (!args.length)
@@ -464,10 +481,6 @@ export class ScriptDom {
 				removeAttribute: (name: unknown) => {
 					this.read(id);
 					this.tree.removeAttribute(id, domString(name));
-				},
-				remove: () => {
-					this.read(id);
-					this.tree.remove(id);
 				},
 				matches: (selector: unknown) => {
 					this.read(id);
@@ -503,6 +516,16 @@ export class ScriptDom {
 					},
 				};
 			}
+			const select = scriptSelectBindings(
+				this.tree,
+				id,
+				() => this.read(id),
+				(target) => this.node(target),
+				this.collections,
+				domString,
+			);
+			Object.assign(definition.properties, select.properties);
+			Object.assign(definition.methods, select.methods);
 		}
 		const capability = this.factory.createHostObject(definition);
 		if (!capability || typeof capability !== "object")
@@ -570,28 +593,6 @@ export class ScriptDom {
 		if (parent === null) return null;
 		const siblings = this.read(parent).children;
 		return this.optional(siblings[siblings.indexOf(id) + direction]);
-	}
-	private insert(parentId: number, childId: number, before?: number) {
-		const parent = this.read(parentId);
-		if (parent.kind === "document") {
-			const child = this.read(childId);
-			const incoming = child.kind === "fragment" ? child.children : [childId];
-			const moving = new Set(incoming);
-			let elements = parent.children.filter(
-				(current) =>
-					!moving.has(current) && this.read(current).kind === "element",
-			).length;
-			for (const current of incoming) {
-				const node = this.read(current);
-				if (node.kind === "element") elements++;
-				if (node.kind === "text" || elements > 1)
-					throw new AgentBrowserError(
-						"invalid-input",
-						"Invalid document child hierarchy",
-					);
-			}
-		}
-		this.tree.insert(parentId, childId, before);
 	}
 	private write(values: readonly unknown[], newline: boolean) {
 		this.read(this.tree.root);

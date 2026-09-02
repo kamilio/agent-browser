@@ -1,0 +1,41 @@
+{
+  "startedAt": "2026-09-02T18:42:50.226Z",
+  "finishedAt": "2026-09-02T18:42:50.698Z",
+  "scope": "existing-experimental-core-in-memory-command-host",
+  "completed": true,
+  "checks": [
+    {
+      "label": "Role-targeted click waits for an interpreted timer and runs exactly once",
+      "passed": true
+    },
+    {
+      "label": "Fill waits for readonly removal before its interpreted input handler",
+      "passed": true
+    },
+    {
+      "label": "Select waits for an interpreted option insertion and changes once",
+      "passed": true
+    },
+    {
+      "label": "Check waits for interpreted enabled state",
+      "passed": true
+    },
+    {
+      "label": "Uncheck preserves immediate native state changes",
+      "passed": true
+    },
+    {
+      "label": "Missing role target is resolved after interpreted attachment",
+      "passed": true
+    },
+    {
+      "label": "Expired action never dispatches after the target later becomes enabled",
+      "passed": true
+    },
+    {
+      "label": "Session closure aborts pending action waiting and drains command accounting",
+      "passed": true
+    }
+  ],
+  "passed": 8
+}

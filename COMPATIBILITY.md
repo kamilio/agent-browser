@@ -35,7 +35,7 @@ and implementation will be used; do not copy Cloudflare's logo or claim affiliat
 
 | ID | Required capability | Acceptance evidence | Status |
 | --- | --- | --- | --- |
-| K01 | HTML parsing, DOM identity and mutation | Malformed markup, entities, trees, selectors and mutation fixtures; relevant web-platform tests. | Partial parser, identity, bounded queries, fragments, cloning, live tag/class/children collections, Attr/NamedNodeMap, classList mutations/iteration, baseURI and URL attribute reflection (`HTML.md`, `DOM-FRAGMENTS.md`, `LIVE-COLLECTIONS.md`, `DOM-ATTRIBUTES.md`, `CLASS-LISTS.md`, `PAGE-URLS.md`). Session-owned Location navigation, finite-JSON History state/session-wide length and bounded guest traversal are implemented (`PAGE-HISTORY.md`); bare global Location assignment and complete navigation/task semantics remain unsupported or unverified. Namespace/prototype completeness, full collection/NodeList/DOMTokenList, parser/DOM conformance and web-platform coverage remain open |
+| K01 | HTML parsing, DOM identity and mutation | Malformed markup, entities, trees, selectors and mutation fixtures; relevant web-platform tests. | Partial parser, identity-preserving ParentNode/ChildNode insertion/replacement (`DOM-MUTATIONS.md`), contextual outerHTML/insertAdjacentHTML with bounded staging (`HTML-INSERTION.md`), bounded queries, fragments, cloning, live tag/class/children collections, Attr/NamedNodeMap, classList mutations/iteration, baseURI and URL attribute reflection (`HTML.md`, `DOM-FRAGMENTS.md`, `LIVE-COLLECTIONS.md`, `DOM-ATTRIBUTES.md`, `CLASS-LISTS.md`, `PAGE-URLS.md`). Session-owned Location navigation, finite-JSON History state/session-wide length and bounded guest traversal are implemented (`PAGE-HISTORY.md`); bare global Location assignment and complete navigation/task semantics remain unsupported or unverified. Namespace/prototype completeness, full collection/NodeList/DOMTokenList, parser/DOM conformance and web-platform coverage remain open |
 | K02 | CSS styles and layout | Cascade, inheritance, sizing, overflow and layout fixtures; compare public page structure and captures. | Partial: bounded display/visibility cascade, media viewport and live inline declarations with thirteen native-browser anchors; full CSSOM, computed styles and layout/captures pending (`CSS.md`, `INLINE-STYLES.md`) |
 | K03 | Page JavaScript and modules | Inline/external/module scripts, promises, events, timers and script errors in isolated sessions. | Partial opt-in classic loading, events, parser writes, bounded identity-preserving timers, guest constructor inheritance, ordinary Object intrinsics and owned Date values/journaled clocks (`SCRIPT-LOADING.md`, `DOCUMENT-WRITE.md`, `PAGE-TIMERS.md`, `SAFEJS-FUNCTION-OBJECTS.md`, `SAFEJS-OBJECT-PROTOTYPE.md`, `SAFEJS-DATE.md`); host-task checkpoints now preserve responsiveness and native navigation after script timeout (`SAFEJS-COOPERATION.md`). Date snapshots/locale formatting, complete intrinsic graphs/coercion and property descriptors, nested inline writes, modules, full task/microtask semantics, same-document script recovery and public dynamic-site acceptance remain open; both current public navigations return readable HTML but their scripts hit the unchanged source timeout |
 | K04 | Framework-driven pages | Real TodoMVC vanilla, React, Vue, Angular and Preact: add/edit/toggle/filter/delete demo todos. | Pending. A self-authored storage-backed vanilla fixture now supports actual interpreted agent add/toggle/remove and reload restoration (`PAGE-STORAGE.md`); it does not satisfy real TodoMVC/framework acceptance |
@@ -72,8 +72,8 @@ claim equivalent browser conformance from matching five example sites.
 | --- | --- | --- | --- |
 | G01 | URL entry and navigation | Hosts/URLs normalized; invalid schemes rejected; loading/error/stop states visible. | Pending |
 | G02 | Curated example cards | General/docs/news and all five TodoMVC variants; every card uses our backend. | Pending |
-| G03 | Inspect workspace | Live page and terminal/semantic view with URL/back/forward/reload controls. | Partial keyboard terminal frontend with unit-tested shared-session actions/history (`TERMINAL.md`); real PTY/public-site gate denied and unverified, combined inspect workspace remains open |
-| G04 | DOM and accessibility | Expand nodes, inspect attributes/styles, locate refs and highlight corresponding output. | Pending |
+| G03 | Inspect workspace | Live page and terminal/semantic view with URL/back/forward/reload controls. | Partial keyboard terminal frontend with shared-session actions/history, backend search and fresh scoped inspection (`TERMINAL.md`); mock-stream and actual-core in-memory checks only; real PTY/public-site gate denied and unverified, combined inspect workspace remains open |
+| G04 | DOM and accessibility | Expand nodes, inspect attributes/styles, locate refs and highlight corresponding output. | Partial bounded native `dom` API and playground text/subtree pane with refs, attributes, hidden nodes and current controls (`DOM-INSPECTION.md`). Native/shared-host and actual experimental-core mutation checks pass; new visual UI, inline expansion/highlighting, style sidebar and complete accessibility inspection remain open |
 | G05 | Console | Real page logs, evaluation results and exceptions; no fabricated sample logs. | Partial page-owned logs/error codes, severity-filtered CLI and tested Console pane (`PAGE-CONSOLE.md`); full console/error/source semantics remain open |
 | G06 | Network | Real request timing/status/size, failures and policy blocks with sensitive data redacted. | Partial bounded document/script/stylesheet/fetch/preflight metadata and Network pane (`NETWORK-JOURNAL.md`), with per-hop CORS results separate from HTTP completion; validated with in-memory transports, real experimental-core SafeJS and formatter tests. New visual/public-site gates, complete fetch/CORS/XHR and detailed wire timing remain open |
 | G07 | Memory and execution | Actual runtime/host measurements labelled accurately, plus CPU/wall budgets and stop reasons. | Pending |
@@ -105,8 +105,8 @@ extensions must be additive, not require rewriting existing command workflows.
 | P01 | `open`, `goto`, `close`, `go-back`, `go-forward`, `reload` | URL/history/error/session behavior through separate CLI invocations. | Pending |
 | P02 | `click`, `dblclick`, `hover`, `drag`, `drop` | Event ordering, mouse buttons, drag data and files. | Pending |
 | P03 | `type`, `fill --submit`, `select`, `upload`, `check`, `uncheck` | Real document/control state and native default actions, including disabled controls. | Pending |
-| P04 | `snapshot`, `find` | Whole/scoped/depth/boxes snapshots, files, refs, literal/regex searches. | Pending |
-| P05 | CSS and Playwright locator targets | Role/name/test-id/selector targeting, ambiguity/actionability and stale-reference errors. | Pending |
+| P04 | `snapshot`, `find` | Whole/scoped/depth/boxes snapshots, files, refs, literal/regex searches. | Partial native snapshots and bounded literal/regex find with refs, context and truncation metadata (`SNAPSHOT-SEARCH.md`). Shared-host/actual experimental-core checks pass. Full regex, boxes/files, separate CLI and upstream parity acceptance remain open |
+| P05 | CSS and Playwright locator targets | Role/name/test-id/selector targeting, ambiguity/actionability and stale-reference errors. | Partial literal role/test-ID/text/label/placeholder/alt-text/title parsing and strict live native resolution, alongside refs/CSS (`TARGET-LOCATORS.md`). Native/shared-host and actual experimental-core action checks cover text normalization, label precedence, password fill, smallest-text click bubbling, mutation, ambiguity and fail-closed bounds. Partial pre-action readiness waiting is described in `ACTION-WAITING.md`; no dispatched action replay. Regex/chaining, complete ARIA naming/states, shadow/frames, layout/hit-testing and actual CLI/parity acceptance remain open |
 | P06 | `eval`, `run-code` | Page/element expressions and supported Playwright-style page operations; never evaluate site code on host. | Pending |
 | P07 | `dialog-accept`, `dialog-dismiss` | Alert/confirm/prompt lifecycle and response semantics. | Pending |
 | P08 | `resize`, `press`, `keydown`, `keyup` | Viewport and keyboard/modifier/focus semantics. | Partial: logical CSS viewport and bounded press/type/focus; physical layout and held keys pending |
@@ -246,6 +246,28 @@ further echoes exercise label forwarding, reset defaults and refilled values. No
 prove parsing, website script execution or browser submission. Storage/control
 and event/query/history helpers alone do not complete browser-level state/actions
 rows. Same-document traversal is not proof of full P03 back/forward behavior.
+
+The `SCRIPT-SELECT.md` checkpoint adds interpreted select/option value and state
+properties, stable live option collections, and select.remove(index) semantics.
+Actual experimental-core writes feed native form request preparation and native
+selection feeds interpreted handlers/getters. Nineteen binding tests and eleven
+actual-core checks pass, alongside action-wait/locator regressions. Full option
+dirtiness/mutation-reset algorithms, collection writes, constructors and complete
+form APIs remain open; this advances K09/P03 but completes neither full row.
+
+`SELECTION-STATE.md` closes common native selection-repair/dirtiness gaps from
+that checkpoint: option moves/removal, repeated mode changes, clean-peer default
+changes, copies and form resets share persistent document state. There are 22
+new native mutation/resource cases and ten actual-core checks, plus nineteen
+property/waiting regressions. Modern ownership exclusions and complete native
+interaction/validation behavior remain open; K09/P03 remain incomplete.
+
+`SCRIPT-FORMS.md` adds live document/form collections, multi-match radio-group
+values and reflected form/control properties. Sixteen native cases and nine
+actual-core checks demonstrate shared native ownership, radio events and GET/POST
+request preparation, with eighteen selection/waiting regressions. No request is
+sent in these new fixtures. Guest submit/reset/validation methods, full radio
+state semantics and complete form conformance remain open; K09/P03 stay incomplete.
 
 Link every completed row to code and executable tests. Preserve failed tests and
 known gaps. A landing-page mockup, parser-only CLI, screenshots from another

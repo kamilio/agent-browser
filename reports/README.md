@@ -4,6 +4,162 @@ These files record **foundation and partial-frontend probes**, not general brows
 Checking a marker in downloaded HTML does not prove parsing, page JavaScript,
 element actions, rendering, terminal browsing or playground operation.
 
+- `html-insertion-focused-2026-09-02.json`: 1,421 passing tests across 65 files,
+  including 26 contextual outerHTML/insertAdjacentHTML tests and updated script
+  adapter/capability expectations.
+- `html-insertion-safejs-fixture-2026-09-02.json`: 12 actual existing experimental
+  interpreter checks for native actions, fresh replacement references, retained
+  adjacent controls, explicit listeners, inert scripts, table/fragment context,
+  failed-parse atomicity and owner cleanup.
+- `html-insertion-script-mutations-regression-2026-09-02.json` (12),
+  `html-insertion-script-select-regression-2026-09-02.json` (11),
+  `html-insertion-selection-state-regression-2026-09-02.json` (10) and
+  `html-insertion-action-wait-regression-2026-09-02.json` (8): 41 further actual
+  existing-core checks. All new evidence is in-memory, not public-site,
+  live-terminal, released-SDK or full framework acceptance. `HTML-INSERTION.md`
+  records the scope and the initially corrected snapshot-line expectation.
+
+- `script-mutations-focused-2026-09-02.json`: 1,395 passing tests across 64 files,
+  including 32 mutation cases with 726 overlapping-argument model checks, plus
+  regression coverage for HTML fragments/content and inline styles.
+- `script-mutations-safejs-fixture-2026-09-02.json`: 12 passing actual existing
+  experimental-core checks for an interpreted task-list UI driven by native
+  fill/click. Covers node/listener identity, references, snapshots, reordering,
+  fragment and sibling replacement, text operations, rejection and cleanup.
+  Fixtures are in memory; this is not new public-site, live-terminal, released-SDK
+  or full framework acceptance. See `DOM-MUTATIONS.md` for resource limitations.
+- `script-mutations-script-select-regression-2026-09-02.json` (11),
+  `script-mutations-selection-state-regression-2026-09-02.json` (10) and
+  `script-mutations-action-wait-regression-2026-09-02.json` (8): another 29 actual
+  existing-core in-memory checks for controls, forms, selection repair and action
+  waiting after the native insertion/refactoring changes.
+
+- `extension-runtime-focused-2026-09-02.json`: 1,297 passes across 60 files,
+  including 19 public adapter mock-contract tests. These verify ownership,
+  explicit console authorization, initialization, budgets, error projection,
+  cancellation, revocation, callback forwarding and cleanup, not an interpreter.
+- `extension-runtime-legacy-page-bindings-2026-09-02.json` (7),
+  `extension-runtime-legacy-terminal-search-2026-09-02.json` (9),
+  `extension-runtime-legacy-class-list-2026-09-02.json` (14),
+  `extension-runtime-legacy-page-storage-2026-09-02.json` (19),
+  `extension-runtime-legacy-action-wait-2026-09-02.json` (8),
+  `extension-runtime-legacy-page-fetch-2026-09-02.json` (24) and
+  `extension-runtime-legacy-text-locators-2026-09-02.json` (11): 92 actual
+  experimental-core regression checks through the unchanged legacy adapter.
+  Fixtures/transports/terminal streams are in memory. These do not execute the
+  new extension adapter or establish released-SDK, public-site or live-PTY parity.
+  The compiled raw-release and released-page consumers remain unrun; no passing
+  release report was fabricated. See `EXTENSION-RUNTIME.md` for acceptance gates.
+
+- `text-locators-focused-2026-09-02.json`: 1,278 passes across 59 files, including
+  37 new literal text/label/attribute grammar, matching, mutation and resource
+  cases, plus shared-host action/inspection coverage.
+- `text-locators-safejs-fixture-2026-09-02.json`: eleven actual experimental-core
+  shared-host checks for label/password fill, native checkbox changes, placeholder
+  input handlers, title/alt inspection, nested text click bubbling, interpreted
+  label edits, timer-created targets, hidden duplicates, rejected executable
+  arguments and untouched snapshot-diff state. All fixtures are in memory; this
+  does not prove separate CLI, live terminal, real-site or released-SDK parity.
+
+- `page-runtime-focused-2026-09-02.json`: 1,240 passes across 58 files, including
+  fourteen new trusted-runtime factory/owner tests. These cover lazy setup,
+  tagged failure handling, sanitized diagnostics, partial/fatal cleanup,
+  initialization timeout/cancel, source limits, concurrency, callback phases
+  and observable close failures. Mock factories are not a released-SDK gate.
+- `page-runtime-bindings-regression-2026-09-02.json` (7),
+  `page-runtime-terminal-regression-2026-09-02.json` (9),
+  `page-runtime-class-list-regression-2026-09-02.json` (14),
+  `page-runtime-page-storage-regression-2026-09-02.json` (19),
+  `page-runtime-action-wait-regression-2026-09-02.json` (8) and
+  `page-runtime-page-fetch-regression-2026-09-02.json` (24): 81 passing actual
+  experimental-core checks through the extracted legacy adapter. Documents,
+  transports and terminal streams are in memory/mocked. No new public-site,
+  live-PTY or released-package acceptance is implied.
+
+- `terminal-search-focused-2026-09-02.json`: 1,226 passes across 57 files,
+  including 41 terminal projection/mock-stream tests. New cases cover backend
+  search, option-like queries, scoped inspection before activation, navigation
+  races, missing-node fallback, result bounds and cancellation.
+- `terminal-search-safejs-fixture-2026-09-02.json`: nine actual experimental-core
+  checks using an in-memory command host and mock terminal streams. Finds a
+  target beyond the root snapshot's truncated prefix, inspects and activates it,
+  observes its interpreted mutation, returns to root, detaches safely and
+  preserves a complete diff baseline. Not a real PTY, public website, separate
+  CLI process or released-SDK test.
+
+- `snapshot-search-focused-2026-09-02.json`: 1,212 passes across 56 files,
+  including 58 bounded matcher tests, eight native search tests and two new
+  command-host search/diff tests.
+- `snapshot-search-safejs-fixture-2026-09-02.json`: eight actual experimental-core
+  command-host checks, including activation of a found ref, interpreted mutation,
+  search updates, budgets and queue recovery. Fixtures are in memory.
+- `nested-callbacks-safejs-fixture-2026-09-02.json`: **failing legacy-runtime
+  compatibility gate**, completed false with zero passes. Preserves expected and
+  observed ordering when a guest calls an async host method that invokes a guest
+  callback. Guest execution resumes before the listener. Later assertions are
+  unrun. This is neither a green browser result nor a released-SDK defect report.
+
+- `script-form-focused-2026-09-02.json`: 1,144 passes across 54 files, including
+  sixteen live form/control/group/property/ownership/resource cases.
+- `script-form-safejs-fixture-2026-09-02.json`: nine actual experimental-core
+  checks. Interpreted form values and metadata feed native GET/POST preparation;
+  native radio actions update live groups and interpreted handlers. No network
+  POST is made, and guest submit/reset methods are not implemented by this work.
+- `script-form-selection-state-regression-2026-09-02.json`: ten actual-core
+  selection-state regressions.
+- `script-form-action-wait-regression-2026-09-02.json`: eight actual-core
+  waiting/cancellation regressions. All are in-memory, not real-site or released-
+  SDK acceptance.
+
+- `selection-state-focused-2026-09-02.json`: 1,128 passes across 53 files,
+  including 22 mutation/default/dirty-state/copy/reset/resource cases. The
+  5,000-option work-count case covers the growing all-disabled-list path only.
+- `selection-state-safejs-fixture-2026-09-02.json`: ten actual experimental-core
+  checks of interpreted mutations and shared native form preparation/reset.
+- `selection-state-script-select-regression-2026-09-02.json`: eleven actual-core
+  select property/collection/native-action regressions.
+- `selection-state-action-wait-regression-2026-09-02.json`: eight actual-core
+  command-host waiting/cancellation regressions. All are in-memory fixtures,
+  not full browser, released-SDK or real-site acceptance.
+
+- `script-select-focused-2026-09-02.json`: 1,070 passes across 49 files,
+  including nineteen script-visible select/option property and collection cases.
+- `script-select-safejs-fixture-2026-09-02.json`: eleven actual experimental-core
+  checks covering interpreted properties, live collections, native form request
+  preparation and native/interpreted event-state agreement.
+- `script-select-action-wait-regression-2026-09-02.json`: eight checks using
+  interpreted option.value and select.value, replacing the earlier probe's
+  attribute/native-read workaround without replacing its historical report.
+- `script-select-target-locators-regression-2026-09-02.json`: eight existing
+  interpreted/native locator-action regressions. All fixtures are in memory;
+  no full selection-algorithm, released-SDK or real-site acceptance is claimed.
+
+- `action-wait-focused-2026-09-02.json`: 1,051 passes across 48 files, including
+  thirteen pre-action readiness/cancellation cases and three command-host
+  waiting/deadline/session-close checks. No action replay or native layout claim.
+- `action-wait-safejs-fixture-2026-09-02.json`: eight passing actual experimental-core,
+  in-memory command-host probe of delayed interpreted DOM mutations and native
+  action dispatch. At this historical checkpoint select state was read natively,
+  not through the then-missing guest select/option value properties. This is not
+  released-SDK or real-site evidence.
+
+- `target-locators-focused-2026-09-02.json`: 1,035 passes across 47 files,
+  including 28 literal parser/resolution cases. Covers native role/name and
+  exact test-ID data matching, expression rejection, hidden/duplicate candidates,
+  clipped-name ambiguity, shared command actions and browser regressions.
+- `target-locators-safejs-fixture-2026-09-02.json`: eight actual experimental-core
+  checks of role-targeted fill, interpreted handlers, visibility changes, ID
+  changes and duplicate rejection. This does not execute Playwright, a separate
+  CLI/IPC process, a public site, a visual observer or the released SDK.
+
+- `dom-inspection-focused-2026-09-02.json`: 1,006 passes across 46 files, including
+  22 native inspector cases plus command-host, parser, formatter and existing
+  terminal/browser regressions. Test input/output streams are not a live PTY.
+- `dom-inspection-safejs-fixture-2026-09-02.json`: eight actual experimental-core
+  checks of interpreted DOM/control mutations, stable refs, password redaction,
+  scoped truncation and unchanged revision. The playground formatter consumes
+  that real document data, but no observer UI, public site or released SDK runs.
+
 - `page-bindings-focused-2026-09-02.json`: 954 passes across 43 files, including
   twelve runtime-independent capability construction/lifecycle cases. Covers
   returned timer registrations, cleanup after partial construction, native owner

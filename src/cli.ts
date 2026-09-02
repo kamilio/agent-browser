@@ -16,6 +16,10 @@ import { runTerminal } from "./node-terminal.js";
 import { NodeNetworkTransport } from "./node-transport.js";
 import { playgroundCss, playgroundHtml } from "./playground-assets.js";
 import { BrowserSession } from "./session.js";
+import {
+	type SnapshotSearch,
+	renderSnapshotSearch,
+} from "./snapshot-search.js";
 import { type SemanticSnapshot, renderSnapshot } from "./snapshot.js";
 
 function host() {
@@ -247,6 +251,12 @@ async function main() {
 		!invocation.options.diff
 	)
 		console.log(renderSnapshot(result.data as SemanticSnapshot));
+	else if (
+		!invocation.options.json &&
+		"data" in result &&
+		invocation.command === "find"
+	)
+		console.log(renderSnapshotSearch(result.data as SnapshotSearch));
 	else if (
 		!invocation.options.json &&
 		"data" in result &&

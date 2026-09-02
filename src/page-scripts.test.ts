@@ -45,7 +45,7 @@ it("owns timers on the page and cancels them when the document closes", async ()
 		setTimeout(callback: unknown, delay: number): number;
 	};
 	window.setTimeout(callback, 20);
-	expect(scripts.metrics().timers.active).toBe(1);
+	expect(scripts.metrics().timers?.active).toBe(1);
 	test.tree.close();
 	await scripts.close();
 	await vi.advanceTimersByTimeAsync(20);

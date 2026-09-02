@@ -46,9 +46,13 @@ Cross-document adoption/import and fabricated node objects are not permitted.
 
 ## Remaining compatibility work
 
+- The later `DOM-MUTATIONS.md` checkpoint adds ParentNode/ChildNode insertion and
+  replacement methods and `replaceChild`, including identity-preserving argument
+  conversion and document replacement validation. Full DOM conformance remains open.
 - The later `HTML-CONTENT.md` checkpoint adds contextual fragment parsing and
-  innerHTML replacement/readback. OuterHTML replacement, insertAdjacentHTML,
-  template contents and full contextual parser conformance remain open.
+  innerHTML replacement/readback. `HTML-INSERTION.md` adds outerHTML replacement
+  and insertAdjacentHTML. Template contents and full contextual parser conformance
+  remain open.
 - Document cloning explicitly reports unsupported. Doctypes, namespaces,
   custom-element reactions, shadow roots and full DOM hierarchy/exception types
   are not implemented. The internal `DocumentTree` remains a general document

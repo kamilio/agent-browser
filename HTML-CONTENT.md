@@ -10,8 +10,9 @@ No dependencies or SafeJS source changes are added by this checkpoint.
 - `element.innerHTML` gets serialized children and sets contextually parsed
   content. Null becomes empty text; other supported primitive values use the
   adapter's existing conversion. Arbitrary object coercion remains unsupported.
-- `element.outerHTML` gets serialized markup including the element. Its setter
-  explicitly reports unsupported rather than silently ignoring a replacement.
+- `element.outerHTML` gets serialized markup including the element. The later
+  `HTML-INSERTION.md` checkpoint adds its setter and `insertAdjacentHTML`, with
+  contextual staging, atomic failure handling and unchanged resource limits.
 - `parseHtmlFragment(source, url, context, options)` returns an owned staging
   tree and fragment ID. The caller must close that tree. Context declares the
   element tag, ancestor-form presence and optional scripting mode.
@@ -82,8 +83,9 @@ treat returned HTML as trusted UI content.
 Template contents, namespace-aware SVG/MathML, frameset parsing, custom elements,
 shadow roots, full table/select insertion modes, formatting reconstruction,
 complete named entities and quirks-mode behavior remain incomplete or explicitly
-unsupported. `insertAdjacentHTML`, outerHTML replacement, and general dynamic
-script insertion are still open. Full HTML conformance, all Kitesurf features,
+unsupported. The later `HTML-INSERTION.md` checkpoint adds `insertAdjacentHTML`
+and outerHTML replacement; general dynamic script insertion remains open.
+Full HTML conformance, all Kitesurf features,
 the complete CLI superset and visual playground exports are not claimed.
 
 ## Verification

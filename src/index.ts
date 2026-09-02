@@ -1,5 +1,21 @@
 export { AgentBrowserError, type ErrorCode } from "./errors.js";
 export {
+	extensionPageRuntime,
+	extensionPageRuntimeLimits,
+} from "./extension-page-runtime.js";
+export type {
+	ReleasedCore,
+	ReleasedContext,
+	ReleasedRealm,
+} from "./safejs-extension-types.js";
+export {
+	findInDocument,
+	renderSnapshotSearch,
+	type SnapshotSearch,
+	type SnapshotSearchMatch,
+	type SnapshotSearchOptions,
+} from "./snapshot-search.js";
+export {
 	NetworkRoutes,
 	type NetworkRoute,
 	type RouteFulfillment,
@@ -196,7 +212,11 @@ export {
 	type ScriptLoadReport,
 } from "./document-script-state.js";
 export { htmlParseInfo, type HtmlParseInfo } from "./html-info.js";
-export { setInnerHtml } from "./html-content.js";
+export {
+	insertAdjacentHtml,
+	setInnerHtml,
+	setOuterHtml,
+} from "./html-content.js";
 export {
 	readPageConsole,
 	type PageConsoleSnapshot,
@@ -219,6 +239,13 @@ export {
 	type ScriptEventOptions,
 } from "./script-events.js";
 export type { TimerLimits } from "./page-timers.js";
+export type {
+	PageRuntime,
+	PageRuntimeError,
+	PageRuntimeFactory,
+	PageRuntimeOptions,
+	PageRuntimeResult,
+} from "./page-runtime.js";
 export {
 	PageScripts,
 	type PageScriptCore,
@@ -238,3 +265,14 @@ export {
 	type ScriptLimits,
 	type ScriptEvaluation,
 } from "./safejs.js";
+export {
+	inspectDom,
+	type DomInspection,
+	type DomInspectionOptions,
+	type InspectedDomNode,
+} from "./dom-inspection.js";
+export {
+	parseTargetLocator,
+	resolveBrowserTarget,
+	type TargetLocator,
+} from "./target-locator.js";

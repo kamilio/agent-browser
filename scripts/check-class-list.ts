@@ -169,9 +169,9 @@ try {
 	check(
 		"Document replacement revokes the old class-list owner and releases its cache",
 		previous?.closed === true &&
-			previous.metrics().dom.classLists.closed &&
-			previous.metrics().dom.classLists.lists === 0 &&
-			previous.metrics().dom.classLists.cachedCodeUnits === 0,
+			previous.metrics().dom?.classLists.closed === true &&
+			previous.metrics().dom?.classLists.lists === 0 &&
+			previous.metrics().dom?.classLists.cachedCodeUnits === 0,
 	);
 	console.log(
 		JSON.stringify(

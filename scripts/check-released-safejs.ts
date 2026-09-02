@@ -261,6 +261,10 @@ try {
 			"Realm callback progresses while an earlier async tail is pending",
 			!settled && JSON.stringify(phases.marks) === '["prefix","second"]',
 		);
+		check(
+			"A new source evaluation progresses after a callback prefix while its async tail remains pending",
+			(await phases.evaluate("return 1;")) === 1 && !settled,
+		);
 		phases.release();
 		check(
 			"Callback result preserves async ordering and returned data",
@@ -323,6 +327,83 @@ try {
 	} finally {
 		await cancellation.close();
 	}
+	const consoleAbort = new AbortController();
+	const consoleMessages: unknown[] = [];
+	let consoleCleanups = 0;
+	let consoleSetups = 0;
+	const consoleExtension = loaded.core.defineExtension({
+		manifest: {
+			version: 1,
+			name: "browser-console-probe",
+			globals: ["console", "window", "self"],
+		},
+		setup(owner) {
+			consoleSetups++;
+			owner.onCleanup(() => {
+				consoleCleanups++;
+			});
+			const console = owner.createHostObject({
+				methods: {
+					warn: (value) => {
+						consoleMessages.push(value);
+					},
+				},
+			});
+			const window = owner.createHostObject({
+				properties: { console: { get: () => console } },
+			});
+			return { globals: { console, window, self: window } };
+		},
+	});
+	const consoleOptions = {
+		extensions: [consoleExtension],
+		signal: consoleAbort.signal,
+		budget: new loaded.core.Budget({
+			maxSteps: 10_000,
+			deadline: Date.now() + 2000,
+			dataSize: 1_048_576,
+		}),
+	};
+	let collision = false;
+	let unauthorized: ReleasedRealm | undefined;
+	try {
+		unauthorized = loaded.core.createRealm(consoleOptions);
+	} catch {
+		collision = true;
+	} finally {
+		if (unauthorized) await bounded(unauthorized.close(), consoleAbort);
+	}
+	check(
+		"Builtin console remains protected without explicit authorization before setup",
+		collision && consoleSetups === 0,
+	);
+	const consoleRealm = loaded.core.createRealm({
+		...consoleOptions,
+		builtinOverrides: { console: "browser-console-probe" },
+	});
+	try {
+		const result = await bounded(
+			consoleRealm.evaluate(
+				'console.warn("owned"); return console === window.console && console === self.console;',
+			),
+			consoleAbort,
+		);
+		check(
+			"Authorized console and Window aliases share the actual owned host object",
+			result.ok &&
+				result.returnValue === true &&
+				consoleMessages.length === 1 &&
+				consoleMessages[0] === "owned" &&
+				consoleSetups === 1,
+		);
+	} finally {
+		await bounded(consoleRealm.close(), consoleAbort);
+	}
+	await bounded(consoleRealm.close(), consoleAbort);
+	check(
+		"Authorized console cleanup runs once across repeated owner closure",
+		consoleCleanups === 1,
+	);
 	completed = true;
 } catch (error) {
 	failure = {

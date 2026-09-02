@@ -316,7 +316,13 @@ export class DocumentInteractions {
 		this.events.close();
 	}
 
-	private actionable(reference: string, allowHidden = false) {
+	actionability(
+		reference: string,
+		allowHidden = false,
+	): {
+		node: Readonly<DocumentNode>;
+		blocked?: "hidden-inert-disabled" | "css-hidden";
+	} {
 		if (this.events.metrics().closed)
 			throw new AgentBrowserError("closed", "Document interactions are closed");
 		const node = this.tree.resolve(reference);
@@ -341,16 +347,25 @@ export class DocumentInteractions {
 					isControlDisabled(this.tree, ancestor.id)) ||
 				(ancestor.tagName === "input" && inputType(ancestor) === "hidden")
 			)
-				throw new AgentBrowserError(
-					"not-actionable",
-					"Target is hidden, inert or disabled",
-				);
+				return { node, blocked: "hidden-inert-disabled" };
 			ancestor =
 				ancestor.parent === null ? undefined : this.tree.get(ancestor.parent);
 		}
 		if (!allowHidden && !documentStyles(this.tree).get(node.id).visible)
-			throw new AgentBrowserError("not-actionable", "Target is hidden by CSS");
-		return node;
+			return { node, blocked: "css-hidden" };
+		return { node };
+	}
+
+	private actionable(reference: string, allowHidden = false) {
+		const state = this.actionability(reference, allowHidden);
+		if (state.blocked)
+			throw new AgentBrowserError(
+				"not-actionable",
+				state.blocked === "css-hidden"
+					? "Target is hidden by CSS"
+					: "Target is hidden, inert or disabled",
+			);
+		return state.node;
 	}
 
 	private *activateLabel(

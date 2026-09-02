@@ -1,4 +1,5 @@
 import type { CommandResult } from "./command-host.js";
+import type { DomInspection } from "./dom-inspection.js";
 import type { PageConsoleSnapshot } from "./page-console.js";
 import type { SessionRequests } from "./session.js";
 import type { SemanticSnapshot } from "./snapshot.js";
@@ -89,6 +90,41 @@ export function playgroundText(snapshot: SemanticSnapshot) {
 	);
 }
 
+export function playgroundDom(snapshot: DomInspection) {
+	const lines = [
+		`${snapshot.document} · revision ${snapshot.revision} · subtree ${snapshot.root}`,
+		"Native DOM, including hidden nodes; not a rendered or accessibility tree.",
+	];
+	for (const node of snapshot.nodes) {
+		const indent = "  ".repeat(node.depth);
+		lines.push(
+			`${indent}[${node.ref}] ${node.kind === "element" ? `<${node.name}>` : node.name}${node.nameTruncated ? " …" : ""}`,
+		);
+		for (const attribute of node.attributes)
+			lines.push(
+				`${indent}  @${JSON.stringify(attribute.name)} = ${JSON.stringify(attribute.value)}${attribute.truncated ? " …" : ""}`,
+			);
+		if (node.attributesTruncated) lines.push(`${indent}  … attributes omitted`);
+		if (node.text !== undefined)
+			lines.push(
+				`${indent}  ${JSON.stringify(node.text)}${node.textTruncated ? " …" : ""}`,
+			);
+		if (node.control)
+			lines.push(`${indent}  current control: ${JSON.stringify(node.control)}`);
+		if (node.protected) lines.push(`${indent}  password/file value redacted`);
+		if (node.childrenTruncated)
+			lines.push(
+				`${indent}  … ${node.returnedChildren}/${node.childCount} children shown; inspect ${node.ref} to narrow the subtree`,
+			);
+	}
+	if (snapshot.truncated)
+		lines.push("Partial output: depth, node or content limits reached.");
+	const output = lines.join("\n");
+	return output.length > 65_536
+		? `${output.slice(0, 65_536)}\n… display limit reached`
+		: output;
+}
+
 export function playgroundConsole(snapshot: PageConsoleSnapshot) {
 	if (!snapshot.started)
 		return "No page runtime has started; no console messages have been captured.";
@@ -130,6 +166,7 @@ function startPlayground() {
 	let selectedSession = "default";
 	let generation = 0;
 	let activeView = "text";
+	let domTarget = "";
 	let consoleEnabled = false;
 	let inspectedDocument: string | null = null;
 	const requests = new Set<AbortController>();
@@ -148,6 +185,8 @@ function startPlayground() {
 		"click",
 		"fill",
 		"download-html",
+		"dom-inspect",
+		"dom-root",
 	];
 
 	function updateControls() {
@@ -203,6 +242,7 @@ function startPlayground() {
 		text("console-output", "Waiting for the selected document…");
 		text("html-output", "Waiting for the selected document…");
 		text("network-output", "Waiting for the selected tab…");
+		text("dom-output", "Waiting for the selected document…");
 	}
 
 	function disconnect() {
@@ -215,6 +255,8 @@ function startPlayground() {
 		hasDocument = false;
 		consoleEnabled = false;
 		inspectedDocument = null;
+		domTarget = "";
+		input("dom-target").value = "";
 		element("pairing").hidden = true;
 		text(
 			"text-output",
@@ -226,6 +268,7 @@ function startPlayground() {
 		text("console-output", "Not connected.");
 		text("html-output", "No HTML yet.");
 		text("network-output", "Not connected.");
+		text("dom-output", "Not connected.");
 		text("script-mode", "Connect to inspect page-script availability.");
 		text("document-state", "No document");
 		text("command-output", "");
@@ -327,6 +370,9 @@ function startPlayground() {
 			hasDocument = !!selected?.documentRef;
 			if (inspectedDocument !== (selected?.documentRef ?? null)) {
 				inspectedDocument = selected?.documentRef ?? null;
+				domTarget = "";
+				input("dom-target").value = "";
+				text("dom-output", "Waiting for this document’s DOM…");
 				text("console-output", "Waiting for this document’s console…");
 				text("html-output", "Waiting for this document’s HTML…");
 				text("network-output", "Waiting for this tab’s requests…");
@@ -361,6 +407,34 @@ function startPlayground() {
 					"document-state",
 					`${snapshot.document} · ${snapshot.entries.length} entries${snapshot.truncated ? " · truncated" : ""}`,
 				);
+				if (activeView === "dom") {
+					try {
+						const result = (
+							await command([
+								"dom",
+								...(domTarget ? [domTarget] : []),
+								"--depth=4",
+								"--max-nodes=128",
+								"--max-code-units=32768",
+							])
+						).data as DomInspection;
+						if (generation !== ownGeneration) return;
+						text(
+							"dom-output",
+							result.document === selected?.documentRef
+								? playgroundDom(result)
+								: "Document changed during inspection; waiting for refresh…",
+						);
+					} catch (error) {
+						if (generation === ownGeneration)
+							text(
+								"dom-output",
+								error instanceof Error
+									? error.message
+									: "DOM inspection failed",
+							);
+					}
+				}
 				if (activeView === "console" || activeView === "html") {
 					const output = `${activeView}-output`;
 					try {
@@ -402,6 +476,7 @@ function startPlayground() {
 				text("document-state", "No document");
 				text("console-output", "No committed document in this tab.");
 				text("html-output", "No committed document in this tab.");
+				text("dom-output", "No committed document in this tab.");
 			}
 			if (activeView === "network") {
 				if (!exists) text("network-output", "No open tab.");
@@ -651,6 +726,20 @@ function startPlayground() {
 		} catch (error) {
 			failure(error);
 		}
+	});
+	element("dom-form").addEventListener("submit", (event) => {
+		event.preventDefault();
+		if (!token || working || !hasDocument) return;
+		domTarget = input("dom-target").value.trim();
+		invalidateReads();
+		void refresh();
+	});
+	button("dom-root").addEventListener("click", () => {
+		if (!token || working || !hasDocument) return;
+		domTarget = "";
+		input("dom-target").value = "";
+		invalidateReads();
+		void refresh();
 	});
 	for (const example of document.querySelectorAll<HTMLButtonElement>(
 		"[data-url]",

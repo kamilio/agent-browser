@@ -1,0 +1,41 @@
+{
+  "startedAt": "2026-09-02T18:08:07.609Z",
+  "finishedAt": "2026-09-02T18:08:07.713Z",
+  "scope": "existing-experimental-core-in-memory",
+  "completed": true,
+  "checks": [
+    {
+      "label": "Role/name targeting fills a native control and runs its interpreted handler",
+      "passed": true
+    },
+    {
+      "label": "Role targeting does not select a hidden action",
+      "passed": true
+    },
+    {
+      "label": "Test-ID targeting does not bypass native visibility checks",
+      "passed": true
+    },
+    {
+      "label": "The same role locator sees a live interpreted visibility change",
+      "passed": true
+    },
+    {
+      "label": "The resolved stable ref activates the actual interpreted button listener",
+      "passed": true
+    },
+    {
+      "label": "Test-ID lookups observe interpreted attribute changes without replacing the node",
+      "passed": true
+    },
+    {
+      "label": "An interpreted duplicate makes subsequent targeting fail rather than selecting the first",
+      "passed": true
+    },
+    {
+      "label": "CSS and saved-reference targeting still reach the same native node",
+      "passed": true
+    }
+  ],
+  "passed": 8
+}

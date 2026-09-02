@@ -1,60 +1,31 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
-import { type PageBindingOptions, PageBindings } from "./page-bindings.js";
-import type { PageConsole } from "./page-console.js";
-import type { PageFetch } from "./page-fetch.js";
-import type { PageTimers } from "./page-timers.js";
 import {
-	type SafeJsBudget,
+	type PageBindingOptions,
+	PageBindings,
+	pageBindingGlobalNames,
+} from "./page-bindings.js";
+import {
+	type PageRuntime,
+	type PageRuntimeError,
+	type PageRuntimeFactory,
+	type PageScriptCore,
+	legacyPageRuntime,
+} from "./page-runtime.js";
+import {
 	type ScriptEvaluation,
 	type ScriptLimits,
 	scriptJsonResult,
 	scriptLimits,
 } from "./safejs.js";
-import type { ScriptDom, ScriptHostObjectFactory } from "./script-dom.js";
 import type { ScriptCallbackRuntime } from "./script-events.js";
-import type { ScriptHistory } from "./script-history.js";
-import type { ScriptLocation } from "./script-location.js";
-import type { ScriptStorage } from "./script-storage.js";
 import type { SessionPage } from "./session.js";
 
-export interface PageRealm {
-	readonly closed: boolean;
-	evaluate(
-		source: string,
-		options?: { signal?: AbortSignal; filename?: string },
-	): Promise<{ returnValue?: unknown }>;
-	close(): Promise<void>;
-}
-
-export interface PageRealmOptions {
-	bindings: Record<string, unknown>;
-	budget: SafeJsBudget;
-	signal: AbortSignal;
-	maxSourceLength: number;
-	maxEvaluations: number;
-	sink: { log(...values: unknown[]): void; error(...values: unknown[]): void };
-}
-
-export interface PageScriptCore extends ScriptHostObjectFactory {
-	Budget: new (options: {
-		maxSteps: number;
-		maxCallDepth?: number;
-		stringLength?: number;
-		arrayLength?: number;
-		dataSize?: number;
-	}) => SafeJsBudget;
-	SandboxError: new (
-		...args: never[]
-	) => Error & { code: string; budget?: string };
-	createRealm(options: PageRealmOptions): PageRealm;
-	startCallback: ScriptCallbackRuntime["startCallback"];
-	deepCopyFromSandbox(value: unknown): unknown;
-	retainGuestArguments<
-		Operation extends (...args: readonly unknown[]) => unknown,
-	>(operation: Operation, from: number): Operation;
-	releaseGuestReference(value: unknown): boolean;
-}
+export type {
+	PageRealm,
+	PageRealmOptions,
+	PageScriptCore,
+} from "./page-runtime.js";
 
 export interface PageScriptOptions extends PageBindingOptions {
 	limits?: Partial<ScriptLimits>;
@@ -64,21 +35,13 @@ export interface PageScriptOptions extends PageBindingOptions {
 const ownedDocuments = new WeakSet<DocumentTree>();
 
 export class PageScripts {
-	readonly dom: ScriptDom;
-	readonly window: object;
-	readonly console: PageConsole;
-	readonly timers: PageTimers;
-	readonly network?: PageFetch;
-	readonly location: ScriptLocation;
-	readonly history?: ScriptHistory;
-	readonly storage?: ScriptStorage;
 	readonly limits: Readonly<ScriptLimits>;
-	private readonly budget: SafeJsBudget;
 	private readonly lifetime = new AbortController();
 	private readonly pending = new Set<Promise<unknown>>();
 	private readonly prefixes = new Set<Promise<void>>();
 	private readonly maxPending: number;
-	private realm?: PageRealm;
+	private runtime?: PageRuntime;
+	private initialized = false;
 	private bindings?: PageBindings;
 	private active?: AbortController;
 	private closing?: Promise<void>;
@@ -89,26 +52,16 @@ export class PageScripts {
 
 	constructor(
 		page: Pick<SessionPage, "document" | "interactions">,
-		private readonly core: PageScriptCore,
+		core: PageScriptCore | PageRuntimeFactory,
 		options: PageScriptOptions = {},
 	) {
-		if (
-			!core ||
-			![
-				core.Budget,
-				core.SandboxError,
-				core.createRealm,
-				core.createHostObject,
-				core.startCallback,
-				core.deepCopyFromSandbox,
-				core.retainGuestArguments,
-				core.releaseGuestReference,
-			].every((value) => typeof value === "function")
-		)
-			throw new AgentBrowserError(
-				"unsupported",
-				"The extended public SafeJS core is required",
-			);
+		const factory =
+			core &&
+			typeof core === "object" &&
+			"createPageRuntime" in core &&
+			typeof core.createPageRuntime === "function"
+				? core
+				: legacyPageRuntime(core as PageScriptCore);
 		if (!options || typeof options !== "object" || Array.isArray(options))
 			throw new AgentBrowserError(
 				"invalid-input",
@@ -141,55 +94,49 @@ export class PageScripts {
 				"invalid-input",
 				"Page scripts require this document's active Window dispatcher",
 			);
-		this.budget = new core.Budget({
-			maxSteps: this.limits.maxSteps,
-			maxCallDepth: this.limits.maxCallDepth,
-			stringLength: this.limits.maxStringLength,
-			arrayLength: this.limits.maxArrayLength,
-			dataSize: this.limits.maxDataSize,
-		});
 		ownedDocuments.add(page.document);
 		this.unregisterClose = page.document.onClose(() => {
 			void this.close().catch(() => undefined);
 		});
 		try {
-			const bindings = new PageBindings(
-				page,
-				core,
-				{
-					isClosed: () => this.closed,
-					startCallback: (callback, args, value) =>
-						this.startCallback(callback, args, value),
-					fail: (error) => {
-						if (error !== undefined) this.recordFailure("callback", error);
-						void this.close().catch(() => undefined);
-					},
-					onConsoleCall: () => {
-						this.consoleCalls++;
-					},
-				},
-				options,
-			);
-			this.bindings = bindings;
-			this.dom = bindings.dom;
-			this.window = bindings.window;
-			this.console = bindings.console;
-			this.timers = bindings.timers;
-			this.network = bindings.network;
-			this.location = bindings.location;
-			this.history = bindings.history;
-			this.storage = bindings.storage;
 			const record = (level: "log" | "error", values: unknown[]) => {
 				if (this.closed) return;
 				this.consoleCalls++;
-				this.console.buffer.write(level, values);
+				this.bindings?.console.buffer.write(level, values);
 			};
-			this.realm = core.createRealm({
-				bindings: bindings.globals,
-				budget: this.budget,
+			this.runtime = factory.createPageRuntime({
+				limits: this.limits,
 				signal: this.lifetime.signal,
-				maxSourceLength: this.limits.maxSourceCodeUnits,
-				maxEvaluations: this.limits.maxRuns,
+				globals: pageBindingGlobalNames(page.document, options),
+				onClosed: () => {
+					if (!this.active) void this.close().catch(() => undefined);
+				},
+				setup: (context) => {
+					this.ensureOpen();
+					if (this.bindings)
+						throw new AgentBrowserError(
+							"invalid-input",
+							"Page runtime setup may run only once",
+						);
+					this.bindings = new PageBindings(
+						page,
+						context,
+						{
+							isClosed: () => this.closed,
+							startCallback: (callback, args, receiver) =>
+								this.startCallback(callback, args, receiver),
+							fail: (error) => {
+								if (error !== undefined) this.recordFailure("callback", error);
+								void this.close().catch(() => undefined);
+							},
+							onConsoleCall: () => {
+								this.consoleCalls++;
+							},
+						},
+						options,
+					);
+					return this.bindings.globals;
+				},
 				sink: {
 					log: (...values) => record("log", values),
 					error: (...values) => record("error", values),
@@ -202,7 +149,32 @@ export class PageScripts {
 	}
 
 	get closed() {
-		return this.closedValue || this.realm?.closed === true;
+		return this.closedValue || this.runtime?.closed === true;
+	}
+
+	get dom() {
+		return this.requireBindings().dom;
+	}
+	get window() {
+		return this.requireBindings().window;
+	}
+	get console() {
+		return this.requireBindings().console;
+	}
+	get timers() {
+		return this.requireBindings().timers;
+	}
+	get network() {
+		return this.requireBindings().network;
+	}
+	get location() {
+		return this.requireBindings().location;
+	}
+	get history() {
+		return this.requireBindings().history;
+	}
+	get storage() {
+		return this.requireBindings().storage;
 	}
 
 	async evaluate(
@@ -249,8 +221,8 @@ export class PageScripts {
 				"resource-limit",
 				"Page script source or evaluation limit exceeded",
 			);
-		const realm = this.realm;
-		if (!realm)
+		const runtime = this.runtime;
+		if (!runtime)
 			throw new AgentBrowserError("closed", "Page realm is unavailable");
 		const controller = new AbortController();
 		const abort = () => controller.abort();
@@ -271,19 +243,37 @@ export class PageScripts {
 			);
 		};
 		try {
+			if (!this.initialized) {
+				await this.initializeRuntime(runtime, controller.signal);
+				await interrupted();
+				this.requireBindings();
+				this.initialized = true;
+			}
 			while (this.prefixes.size) {
 				await this.waitForPrefixes(controller.signal);
 				await interrupted();
 			}
 			this.ensureOpen();
-			const evaluated = await realm.evaluate(source, {
+			const evaluated = await runtime.evaluate(source, {
 				signal: controller.signal,
 				filename: options.filename,
 			});
 			await interrupted();
+			if (!evaluated.ok) {
+				const error = this.safeError(evaluated.error);
+				this.recordDiagnostic("evaluation", error);
+				if (runtime.closed) await this.close();
+				return {
+					engine: "poe-safe-js",
+					partial: true,
+					ok: false,
+					error,
+					metrics: this.evaluationMetrics(),
+				};
+			}
 			const copied = options.discardResult
 				? undefined
-				: await this.core.deepCopyFromSandbox(evaluated.returnValue);
+				: await runtime.copyResult(evaluated.returnValue);
 			await interrupted();
 			return {
 				engine: "poe-safe-js",
@@ -297,42 +287,35 @@ export class PageScripts {
 		} catch (error) {
 			await interrupted();
 			this.recordFailure("evaluation", error);
-			if (realm.closed) await this.close();
+			if (!this.initialized || runtime.closed) await this.close();
 			if (error instanceof AgentBrowserError) throw error;
-			const known = error instanceof this.core.SandboxError;
 			return {
 				engine: "poe-safe-js",
 				partial: true,
 				ok: false,
-				error: {
-					code:
-						known && /^[A-Za-z_-]{1,64}$/.test(error.code)
-							? error.code
-							: "script-error",
-					...(known &&
-					typeof error.budget === "string" &&
-					/^[A-Za-z]{1,32}$/.test(error.budget)
-						? { budget: error.budget }
-						: {}),
-				},
+				error: this.safeError(runtime.errorDetails(error)),
 				metrics: this.evaluationMetrics(),
 			};
 		} finally {
 			clearTimeout(timer);
 			options.signal?.removeEventListener("abort", abort);
 			if (this.active === controller) this.active = undefined;
+			if (runtime.closed && !this.closedValue) await this.close();
 		}
 	}
 
 	metrics() {
 		return Object.freeze({
 			...this.evaluationMetrics(),
+			initialized: this.initialized,
 			evaluations: this.evaluations,
 			pendingCallbacks: this.pending.size,
 			active: !!this.active,
 			closed: this.closed,
-			dom: this.dom.metrics(),
-			...(this.network ? { fetch: this.network.metrics() } : {}),
+			...(this.bindings ? { dom: this.bindings.dom.metrics() } : {}),
+			...(this.bindings?.network
+				? { fetch: this.bindings.network.metrics() }
+				: {}),
 		});
 	}
 
@@ -340,9 +323,12 @@ export class PageScripts {
 		if (this.closing) return this.closing;
 		this.closedValue = true;
 		this.closing = Promise.resolve().then(async () => {
-			await this.realm?.close();
-			this.pending.clear();
-			this.prefixes.clear();
+			try {
+				await this.runtime?.close();
+			} finally {
+				this.pending.clear();
+				this.prefixes.clear();
+			}
 		});
 		this.active?.abort();
 		this.lifetime.abort();
@@ -368,10 +354,12 @@ export class PageScripts {
 		}
 		let invocation: ReturnType<ScriptCallbackRuntime["startCallback"]>;
 		try {
-			invocation = this.core.startCallback(callback, args, options);
+			if (!this.runtime)
+				throw new AgentBrowserError("closed", "Page runtime is unavailable");
+			invocation = this.runtime.startCallback(callback, args, options);
 		} catch (error) {
 			this.recordFailure("callback", error);
-			if (this.realm?.closed) void this.close().catch(() => undefined);
+			if (this.runtime?.closed) void this.close().catch(() => undefined);
 			throw error;
 		}
 		this.pending.add(invocation.result);
@@ -380,7 +368,7 @@ export class PageScripts {
 		void invocation.synchronous.then(prefixComplete, prefixComplete);
 		const complete = () => {
 			this.pending.delete(invocation.result);
-			if (this.realm?.closed) void this.close().catch(() => undefined);
+			if (this.runtime?.closed) void this.close().catch(() => undefined);
 		};
 		void invocation.result.then(complete, (error) => {
 			this.recordFailure("callback", error);
@@ -390,17 +378,37 @@ export class PageScripts {
 	}
 
 	private recordFailure(source: "evaluation" | "callback", error: unknown) {
+		this.recordDiagnostic(
+			source,
+			this.safeError(
+				error instanceof AgentBrowserError
+					? { code: error.code }
+					: (this.runtime?.errorDetails(error) ?? { code: "script-error" }),
+			),
+		);
+	}
+
+	private safeError(error: PageRuntimeError): PageRuntimeError {
+		return {
+			code:
+				typeof error?.code === "string" && /^[A-Za-z_-]{1,64}$/.test(error.code)
+					? error.code
+					: "script-error",
+			...(typeof error?.budget === "string" &&
+			/^[A-Za-z]{1,32}$/.test(error.budget)
+				? { budget: error.budget }
+				: {}),
+		};
+	}
+
+	private recordDiagnostic(
+		source: "evaluation" | "callback",
+		error: PageRuntimeError,
+	) {
 		if (this.closedValue) return;
-		const code =
-			(error instanceof this.core.SandboxError ||
-				error instanceof AgentBrowserError) &&
-			typeof error.code === "string" &&
-			/^[A-Za-z_-]{1,64}$/.test(error.code)
-				? error.code
-				: "script-error";
-		this.console.buffer.write(
+		this.bindings?.console.buffer.write(
 			"error",
-			[`Page ${source} failed: ${code}`],
+			[`Page ${source} failed: ${error.code}`],
 			source,
 		);
 	}
@@ -421,12 +429,35 @@ export class PageScripts {
 
 	private evaluationMetrics() {
 		return {
-			steps: this.budget.stepsUsed,
-			peakCallDepth: this.budget.peakCallDepth,
-			peakDataSize: this.budget.peakDataSize,
+			steps: this.runtime?.budget.stepsUsed ?? 0,
+			peakCallDepth: this.runtime?.budget.peakCallDepth ?? 0,
+			peakDataSize: this.runtime?.budget.peakDataSize ?? 0,
 			consoleCalls: this.consoleCalls,
-			timers: this.timers.metrics(),
+			...(this.bindings ? { timers: this.bindings.timers.metrics() } : {}),
 		};
+	}
+
+	private async initializeRuntime(runtime: PageRuntime, signal: AbortSignal) {
+		let abort = () => {};
+		const interrupted = new Promise<void>((resolve) => {
+			abort = resolve;
+			signal.addEventListener("abort", abort, { once: true });
+			if (signal.aborted) resolve();
+		});
+		try {
+			await Promise.race([runtime.initialize(), interrupted]);
+		} finally {
+			signal.removeEventListener("abort", abort);
+		}
+	}
+
+	private requireBindings() {
+		if (!this.bindings)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Page bindings have not been initialized by evaluation",
+			);
+		return this.bindings;
 	}
 
 	private ensureOpen() {

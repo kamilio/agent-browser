@@ -1,3 +1,11 @@
+import {
+	controlChecked,
+	formControls,
+	inputType,
+	radioGroup,
+	selectOptions,
+	selectedOptions,
+} from "./controls.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import type { ScriptHostObjectFactory } from "./script-dom.js";
@@ -10,7 +18,14 @@ export interface ScriptCollectionLimits {
 	maxQueryCodeUnits: number;
 }
 
-type CollectionKind = "tag" | "class" | "children";
+type CollectionKind =
+	| "tag"
+	| "class"
+	| "children"
+	| "options"
+	| "selected-options"
+	| "form-controls"
+	| "form-named";
 interface CollectionState {
 	capability: object;
 	ids: number[];
@@ -23,6 +38,7 @@ export class ScriptCollections {
 	private cachedEntries = 0;
 	private refreshes = 0;
 	private closed = false;
+	private nextGroup = 0;
 
 	constructor(
 		private readonly tree: DocumentTree,
@@ -69,8 +85,15 @@ export class ScriptCollections {
 		const wanted =
 			kind === "tag"
 				? query.replace(/[A-Z]/g, (letter) => letter.toLowerCase())
-				: tokens.join(" ");
-		const key = JSON.stringify([owner, kind, wanted]);
+				: kind === "class"
+					? tokens.join(" ")
+					: query;
+		const key = JSON.stringify([
+			owner,
+			kind,
+			wanted,
+			kind === "form-named" ? this.nextGroup++ : null,
+		]);
 		const existing = this.collections.get(key);
 		if (existing) return existing.capability;
 		if (this.collections.size >= this.limits.maxCollections)
@@ -97,6 +120,12 @@ export class ScriptCollections {
 				if (node.id === owner || node.kind !== "element") continue;
 				let matches =
 					kind === "children" ||
+					kind === "options" ||
+					kind === "selected-options" ||
+					kind === "form-controls" ||
+					(kind === "form-named" &&
+						(node.attributes.id === wanted ||
+							node.attributes.name === wanted)) ||
 					(kind === "tag" && (wanted === "*" || node.tagName === wanted));
 				if (kind === "class" && tokens.length > 0) {
 					const classes = node.attributes.class ?? "";
@@ -125,6 +154,43 @@ export class ScriptCollections {
 			return ids;
 		};
 		state.capability = this.factory.createHostObject({
+			...(kind === "form-named"
+				? {
+						properties: {
+							value: {
+								get: () => {
+									for (const id of entries()) {
+										const node = this.tree.get(id);
+										if (
+											node.tagName === "input" &&
+											inputType(node) === "radio" &&
+											controlChecked(this.tree, id)
+										)
+											return node.attributes.value ?? "on";
+									}
+									return "";
+								},
+								set: (value: unknown) => {
+									const wanted = String(argument([value]));
+									for (const id of entries()) {
+										const node = this.tree.get(id);
+										if (
+											node.tagName !== "input" ||
+											inputType(node) !== "radio" ||
+											(node.attributes.value ?? "on") !== wanted
+										)
+											continue;
+										for (const peer of radioGroup(this.tree, id))
+											this.tree.setControl(peer.id, {
+												checked: peer.id === id,
+											});
+										break;
+									}
+								},
+							},
+						},
+					}
+				: {}),
 			indexed: {
 				maxLength: this.limits.maxItems,
 				length: () => entries().length,
@@ -149,24 +215,36 @@ export class ScriptCollections {
 					const id = entries()[index];
 					return id === undefined ? null : this.node(id);
 				},
-				namedItem: (...args) => {
-					const name = String(argument(args));
-					this.checkQuery(name);
-					const ids = entries();
-					if (!name) return null;
-					let work = 0;
-					for (const id of ids) {
-						if (++work > this.limits.maxWork)
-							throw new AgentBrowserError(
-								"resource-limit",
-								"Script collection lookup limit exceeded",
-							);
-						const node = this.tree.get(id);
-						if (node.attributes.id === name || node.attributes.name === name)
-							return this.node(id);
-					}
-					return null;
-				},
+				...(kind === "form-named"
+					? {}
+					: {
+							namedItem: (...args: readonly unknown[]) => {
+								const name = String(argument(args));
+								this.checkQuery(name);
+								const ids = entries();
+								if (!name) return null;
+								let work = 0;
+								let found: number | undefined;
+								for (const id of ids) {
+									if (++work > this.limits.maxWork)
+										throw new AgentBrowserError(
+											"resource-limit",
+											"Script collection lookup limit exceeded",
+										);
+									const node = this.tree.get(id);
+									if (
+										node.attributes.id === name ||
+										node.attributes.name === name
+									) {
+										if (kind !== "form-controls") return this.node(id);
+										if (found !== undefined)
+											return this.get(owner, "form-named", name);
+										found = id;
+									}
+								}
+								return found === undefined ? null : this.node(found);
+							},
+						}),
 			},
 		});
 		if (!state.capability || typeof state.capability !== "object")
@@ -192,7 +270,20 @@ export class ScriptCollections {
 		this.tree.get(owner);
 	}
 	private *candidates(owner: number, kind: CollectionKind) {
-		if (kind === "children") {
+		if (kind === "form-controls" || kind === "form-named") {
+			for (const node of formControls(this.tree, owner))
+				if (!(node.tagName === "input" && inputType(node) === "image"))
+					yield node;
+		} else if (kind === "options" || kind === "selected-options") {
+			if (this.tree.get(owner).tagName !== "select")
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Expected a select collection owner",
+				);
+			yield* kind === "options"
+				? selectOptions(this.tree, owner)
+				: selectedOptions(this.tree, owner);
+		} else if (kind === "children") {
 			for (const id of this.tree.get(owner).children) yield this.tree.get(id);
 		} else {
 			for (const { node } of this.tree.walk(owner)) yield node;

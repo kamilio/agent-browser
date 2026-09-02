@@ -1,0 +1,36 @@
+{
+  "startedAt": "2026-09-02T19:53:23.365Z",
+  "finishedAt": "2026-09-02T19:53:23.447Z",
+  "scope": "existing-experimental-core-in-memory",
+  "checks": [
+    {
+      "label": "Page capability extraction preserves document and Window aliases",
+      "passed": true
+    },
+    {
+      "label": "Global timeout retains the original guest argument",
+      "passed": true
+    },
+    {
+      "label": "Window interval retains the original guest argument across firings",
+      "passed": true
+    },
+    {
+      "label": "Both timer paths preserve Window receivers and shared mutations",
+      "passed": true
+    },
+    {
+      "label": "Canceled retained timers do not run",
+      "passed": true
+    },
+    {
+      "label": "Closing the owner clears pending callbacks and capability state",
+      "passed": true
+    },
+    {
+      "label": "Guest shutdown preserves native document interactions",
+      "passed": true
+    }
+  ],
+  "passed": 7
+}

@@ -1,0 +1,29 @@
+{
+  "startedAt": "2026-09-02T18:55:32.793Z",
+  "finishedAt": "2026-09-02T18:55:32.852Z",
+  "scope": "existing-experimental-core-in-memory",
+  "completed": false,
+  "checks": [
+    {
+      "label": "Guest host-method call observes listener prefix and a non-Promise result before continuing",
+      "passed": false,
+      "expected": [
+        "before",
+        "sync:start",
+        "listener",
+        "sync:end",
+        true,
+        "after"
+      ],
+      "observed": [
+        "before",
+        "sync:start",
+        false,
+        "after",
+        "listener",
+        "sync:end"
+      ]
+    }
+  ],
+  "passed": 0
+}

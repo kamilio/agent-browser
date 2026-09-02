@@ -1,16 +1,22 @@
+import { type WaitingAction, runWhenActionable } from "./action-wait.js";
 import { type Invocation, parseInvocation } from "./cli-parser.js";
 import { commands } from "./commands.js";
+import { inspectDom } from "./dom-inspection.js";
 import { AgentBrowserError } from "./errors.js";
 import { type ExtractionOptions, extractDocument } from "./extraction.js";
 import { serializeHtml } from "./html-serialization.js";
 import { readPageConsole } from "./page-console.js";
 import type { ScriptEvaluation } from "./safejs.js";
+import { scriptMutationLimits } from "./script-mutations.js";
 import { BrowserSession, type SessionPage } from "./session.js";
+import { findInDocument } from "./snapshot-search.js";
 import {
 	type SemanticSnapshot,
 	diffSnapshots,
 	renderSnapshot,
 } from "./snapshot.js";
+import { resolveBrowserTarget } from "./target-locator.js";
+import { textLocatorLimits } from "./text-locator.js";
 
 export interface CommandHostOptions {
 	websiteScripts?: boolean;
@@ -85,8 +91,10 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 	check: [],
 	uncheck: [],
 	snapshot: ["depth", "diff", "max-bytes", "observe"],
+	find: ["regex", "max-results", "context", "max-bytes"],
 	text: [],
 	html: ["max-code-units"],
+	dom: ["depth", "max-nodes", "max-code-units"],
 	extract: ["format", "max-bytes", "max-nodes", "depth"],
 	requests: [],
 	request: [],
@@ -224,6 +232,30 @@ export class BrowserCommandHost {
 			engine: "independent-typescript",
 			documentFormats: this.formats,
 			websiteJavaScript: this.websiteScripts,
+			domMutations: {
+				partial: true,
+				parentNode: ["append", "prepend", "replaceChildren"],
+				childNode: ["before", "after", "replaceWith", "remove"],
+				replaceChild: true,
+				maxArguments: scriptMutationLimits.maxArguments,
+				objectStringCoercion: false,
+				crossDocumentAdoption: false,
+				mutationObservers: false,
+			},
+			htmlInsertion: {
+				partial: true,
+				innerHTML: true,
+				outerHTML: true,
+				insertAdjacentHTML: [
+					"beforebegin",
+					"afterbegin",
+					"beforeend",
+					"afterend",
+				],
+				insertedScripts: "inert",
+				trustedTypes: false,
+				sanitization: false,
+			},
 			domTokens: {
 				partial: true,
 				classList: true,
@@ -281,6 +313,56 @@ export class BrowserCommandHost {
 					mode: this.websiteScripts ? "parser-blocking-subset" : "disabled",
 					nestedInline: false,
 					documentReplacement: false,
+				},
+			},
+			domInspection: {
+				partial: true,
+				scoped: true,
+				hiddenNodes: true,
+				passwordFileValuesRedacted: true,
+				layout: false,
+			},
+			locators: {
+				partial: true,
+				methods: [
+					"getByRole",
+					"getByTestId",
+					"getByText",
+					"getByLabel",
+					"getByPlaceholder",
+					"getByAltText",
+					"getByTitle",
+				],
+				roleOptions: ["name", "exact"],
+				textOptions: ["exact"],
+				textLimits: textLocatorLimits,
+				textAndLabelIncludeHidden: true,
+				regularExpressions: false,
+				chaining: false,
+				autoWait: true,
+			},
+			actionWaiting: {
+				partial: true,
+				commands: ["click", "fill", "select", "check", "uncheck"],
+				intervalMs: 25,
+				maxPolls: 2048,
+				stableLayout: false,
+				hitTesting: false,
+				replayActions: false,
+			},
+			snapshotSearch: {
+				partial: true,
+				literalCaseSensitive: true,
+				context: 3,
+				maxPatternCodeUnits: 1024,
+				maxStates: 2048,
+				maxWork: 4_000_000,
+				regex: {
+					engine: "bounded-nfa",
+					flags: ["i", "m", "s"],
+					ignoreCase: "ascii",
+					backreferences: false,
+					lookarounds: false,
 				},
 			},
 			pageEvaluation: !!this.evaluatePage,
@@ -628,19 +710,7 @@ export class BrowserCommandHost {
 
 	private target(browser: BrowserSession, tabId: string, value: string) {
 		const page = browser.page(tabId);
-		if (/^e[1-9][0-9]*$/.test(value)) {
-			page.document.resolve(value);
-			return value;
-		}
-		const matches = page.queries.querySelectorAll(value);
-		if (!matches.length)
-			throw new AgentBrowserError("not-found", "Target matched no elements");
-		if (matches.length !== 1)
-			throw new AgentBrowserError(
-				"not-actionable",
-				"Target matched multiple elements",
-			);
-		return page.document.reference(matches[0]);
+		return resolveBrowserTarget(page.document, page.queries, value);
 	}
 
 	private async run(
@@ -821,6 +891,16 @@ export class BrowserCommandHost {
 				}),
 			};
 		}
+		if (invocation.command === "dom") {
+			return inspectDom(browser.page(tabId).document, {
+				...(args[0] === undefined
+					? {}
+					: { root: this.target(browser, tabId, args[0]) }),
+				maxDepth: options.depth as number | undefined,
+				maxNodes: options["max-nodes"] as number | undefined,
+				maxCodeUnits: options["max-code-units"] as number | undefined,
+			});
+		}
 		if (invocation.command === "extract") {
 			return extractDocument(browser.page(tabId).document, {
 				...(args[0] === undefined
@@ -840,6 +920,13 @@ export class BrowserCommandHost {
 					: { maxDepth: Number(options.depth) }),
 			});
 		}
+		if (invocation.command === "find")
+			return findInDocument(browser.page(tabId).document, args[0], {
+				regex: options.regex as boolean | undefined,
+				maxResults: options["max-results"] as number | undefined,
+				context: options.context as number | undefined,
+				maxBytes: options["max-bytes"] as number | undefined,
+			});
 		if (invocation.command === "snapshot" || invocation.command === "text") {
 			const snapshot = browser.snapshot(tabId, {
 				...(args[0] === undefined
@@ -892,39 +979,62 @@ export class BrowserCommandHost {
 				);
 			return result;
 		}
-		const target = this.target(browser, tabId, args[0]);
-		if (invocation.command === "fill") {
-			const interaction = await actions.fillAsync(target, args[1]);
-			if (!options.submit) return interaction;
-			if (interaction.defaultPrevented) return { interaction };
-			const result = await browser.press(tabId, "Enter", { signal });
-			if (result.keyboard.defaultAction && !result.navigation && !result.form)
+		const waitingAction: WaitingAction =
+			invocation.command === "fill"
+				? { kind: "fill", value: args[1] }
+				: invocation.command === "select"
+					? { kind: "select", values: [args[1]] }
+					: invocation.command === "check" || invocation.command === "uncheck"
+						? { kind: "checked", checked: invocation.command === "check" }
+						: { kind: "click" };
+		return runWhenActionable(
+			() => browser.page(tabId),
+			args[0],
+			waitingAction,
+			signal,
+			async (page, target) => {
+				const actions = page.interactions;
+				if (invocation.command === "fill") {
+					const interaction = await actions.fillAsync(target, args[1]);
+					if (!options.submit) return interaction;
+					if (interaction.defaultPrevented) return { interaction };
+					const result = await browser.press(tabId, "Enter", { signal });
+					if (
+						result.keyboard.defaultAction &&
+						!result.navigation &&
+						!result.form
+					)
+						throw new AgentBrowserError(
+							"unsupported",
+							"Keyboard default action is not implemented",
+						);
+					return { interaction, ...result };
+				}
+				if (invocation.command === "check" || invocation.command === "uncheck")
+					return actions.setCheckedAsync(
+						target,
+						invocation.command === "check",
+					);
+				if (invocation.command === "select")
+					return actions.selectAsync(target, [args[1]]);
+				if (invocation.command === "click") {
+					const result = await browser.click(tabId, target, { signal });
+					if (
+						result.interaction.defaultAction &&
+						!result.navigation &&
+						!result.form
+					)
+						throw new AgentBrowserError(
+							"unsupported",
+							"Click event ran, but its pending default action is not implemented",
+						);
+					return result;
+				}
 				throw new AgentBrowserError(
 					"unsupported",
-					"Keyboard default action is not implemented",
+					"Command dispatch is not implemented",
 				);
-			return { interaction, ...result };
-		}
-		if (invocation.command === "check" || invocation.command === "uncheck")
-			return actions.setCheckedAsync(target, invocation.command === "check");
-		if (invocation.command === "select")
-			return actions.selectAsync(target, [args[1]]);
-		if (invocation.command === "click") {
-			const result = await browser.click(tabId, target, { signal });
-			if (
-				result.interaction.defaultAction &&
-				!result.navigation &&
-				!result.form
-			)
-				throw new AgentBrowserError(
-					"unsupported",
-					"Click event ran, but its pending default action is not implemented",
-				);
-			return result;
-		}
-		throw new AgentBrowserError(
-			"unsupported",
-			"Command dispatch is not implemented",
+			},
 		);
 	}
 

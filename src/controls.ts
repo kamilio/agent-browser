@@ -59,6 +59,7 @@ interface ControlIndex {
 	controls: Map<number | undefined, Readonly<DocumentNode>[]>;
 	disabled: Set<number>;
 	options: Map<number, Readonly<DocumentNode>[]>;
+	optionOwners: Map<number, number>;
 	datalist: Set<number>;
 	radioGroups: Map<string, Readonly<DocumentNode>[]>;
 	radioChecked: Set<number>;
@@ -125,6 +126,7 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 		controls: new Map(),
 		disabled: new Set(),
 		options: new Map(),
+		optionOwners: new Map(),
 		datalist: new Set(),
 		radioGroups: new Map(),
 		radioChecked: new Set(),
@@ -203,6 +205,7 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 					const options = index.options.get(ancestor.id) ?? [];
 					options.push(node);
 					index.options.set(ancestor.id, options);
+					index.optionOwners.set(node.id, ancestor.id);
 					break;
 				}
 				ancestor = nodes.get(ancestor.parent ?? -1);
@@ -233,25 +236,9 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 		const winner = selected.at(-1);
 		if (winner) index.radioChecked.add(winner.id);
 	}
-	for (const [id, options] of index.options) {
-		const select = nodes.get(id);
-		if (!select) continue;
-		let selected = options.filter(
-			(option) =>
-				option.control.selected ?? Object.hasOwn(option.attributes, "selected"),
-		);
-		if (!Object.hasOwn(select.attributes, "multiple")) {
-			if (selected.length) selected = selected.slice(-1);
-			else if (
-				!options.some((option) => option.control.selected !== undefined) &&
-				!(Number.parseInt(select.attributes.size ?? "", 10) > 1)
-			) {
-				const first = options.find((option) => !index.disabled.has(option.id));
-				selected = first ? [first] : [];
-			}
-		}
-		for (const option of selected) index.selected.add(option.id);
-	}
+	for (const options of index.options.values())
+		for (const option of options)
+			if (option.control.selected) index.selected.add(option.id);
 	const firstLabelableDescendant = new Map<number, number>();
 	for (const node of [...nodes.values()].reverse()) {
 		for (const childId of node.children) {
@@ -319,19 +306,40 @@ export function selectedOptions(tree: DocumentTree, id: number) {
 }
 
 export function optionSelected(tree: DocumentTree, id: number) {
+	const node = tree.get(id);
+	const index = indexFor(tree, id);
+	return index.optionOwners.has(id)
+		? index.selected.has(id)
+		: (node.control.selected ?? Object.hasOwn(node.attributes, "selected"));
+}
+
+export function optionOwner(tree: DocumentTree, id: number) {
 	tree.get(id);
-	return indexFor(tree, id).selected.has(id);
+	return indexFor(tree, id).optionOwners.get(id);
+}
+
+export function optionText(tree: DocumentTree, id: number) {
+	const parts: string[] = [];
+	const skipped = new Set<number>();
+	for (const { node } of tree.walk(id)) {
+		if (
+			node.tagName === "script" ||
+			(node.parent !== null && skipped.has(node.parent))
+		) {
+			skipped.add(node.id);
+			continue;
+		}
+		if (node.kind === "text") parts.push(node.data);
+	}
+	return parts
+		.join("")
+		.replace(/[\t\n\f\r ]+/g, " ")
+		.replace(/^ | $/g, "");
 }
 
 export function optionValue(tree: DocumentTree, id: number) {
 	const option = tree.get(id);
-	return (
-		option.attributes.value ??
-		tree
-			.textContent(id)
-			.replace(/[\t\n\f\r ]+/g, " ")
-			.replace(/^ | $/g, "")
-	);
+	return option.attributes.value ?? optionText(tree, id);
 }
 
 export function controlChecked(tree: DocumentTree, id: number) {
@@ -386,6 +394,13 @@ function editable(tree: DocumentTree, reference: string) {
 	return node;
 }
 
+export function isTextControl(node: Readonly<DocumentNode>) {
+	return (
+		node.tagName === "textarea" ||
+		(node.tagName === "input" && textTypes.has(inputType(node)))
+	);
+}
+
 export function validateTextControl(
 	tree: DocumentTree,
 	reference: string,
@@ -397,10 +412,7 @@ export function validateTextControl(
 			"Control value must be a string",
 		);
 	const node = editable(tree, reference);
-	if (
-		node.tagName !== "textarea" &&
-		(node.tagName !== "input" || !textTypes.has(inputType(node)))
-	)
+	if (!isTextControl(node))
 		throw new AgentBrowserError(
 			"not-actionable",
 			"Expected a text or number control",
@@ -492,6 +504,20 @@ export function selectControlValues(
 	reference: string,
 	values: readonly string[],
 ) {
+	const prepared = prepareSelectControlValues(tree, reference, values);
+	tree.setSelectSelection(
+		tree.resolve(reference).id,
+		[...prepared.selected],
+		true,
+	);
+	return prepared.values;
+}
+
+export function prepareSelectControlValues(
+	tree: DocumentTree,
+	reference: string,
+	values: readonly string[],
+) {
 	if (
 		!Array.isArray(values) ||
 		values.length > 5000 ||
@@ -526,9 +552,11 @@ export function selectControlValues(
 			: matches.slice(0, 1)
 		).map((option) => option.id),
 	);
-	for (const option of options)
-		tree.setControl(option.id, { selected: selected.has(option.id) });
-	return options
-		.filter((option) => selected.has(option.id))
-		.map((option) => optionValue(tree, option.id));
+	return {
+		options,
+		selected,
+		values: options
+			.filter((option) => selected.has(option.id))
+			.map((option) => optionValue(tree, option.id)),
+	};
 }

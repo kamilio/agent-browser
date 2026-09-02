@@ -196,7 +196,9 @@ it("derives select defaults without confusing a disabled select with a disabled 
 	tree.removeAttribute(second, "selected");
 	expect(controlValue(tree, select)).toBe("first");
 	tree.setAttribute(select, "size", "2");
-	expect(selectedOptions(tree, select)).toEqual([]);
+	expect(selectedOptions(tree, select).map((option) => option.id)).toEqual([
+		first,
+	]);
 });
 
 it("selects values, supports empty selections and preserves state on failures", () => {

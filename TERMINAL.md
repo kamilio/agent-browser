@@ -44,11 +44,49 @@ not select an alternate evaluator or bypass the service's network policy.
 | `g` | Open a URL; bare hostnames use HTTPS. |
 | `/`, then Enter | Find literal text in the retained snapshot; an empty prompt repeats the last query. |
 | `n` / `N` | Next/previous occurrence, wrapping across the retained snapshot. |
+| `s` / `S`, then Enter | Search the backend snapshot projection with a case-sensitive literal / bounded regex. |
+| `U` | Leave search or scoped inspection and return to the document root. |
 | `b` / `f` | Back/forward in the shared tab's history. |
 | `r` / `u` | Reload the document / refresh the observer snapshot. |
 | Escape | Cancel a prompt without submitting. |
 | Ctrl-U / Backspace | Clear a prompt / remove its last code point. |
 | `q` outside prompts / Ctrl-C | Detach; cancel this frontend's pending request, not the session. |
+
+## Backend search and scoped inspection
+
+`/` remains a fast, case-insensitive search of locally retained text. `s` and `S`
+instead call the shared `find` API, which can reach nodes beyond the terminal's
+default 16 KiB observer snapshot. Search is still a bounded semantic projection,
+not an unrestricted full-page text index. The panel reports matches in scanned
+entries, returned results and truncation; see `SNAPSHOT-SEARCH.md` for coverage
+and the supported regex subset. Backend prompts allow 1,024 code units, and use
+the CLI's `--` delimiter so query text cannot become options or select a session.
+
+In the results panel, use `j`/`k`, arrows, Home/End or page keys to choose a match.
+Enter **inspects**, rather than activates: the frontend verifies the selected
+document, requests `snapshot <ref> --observe`, and verifies the document again.
+Only after that fresh scoped view appears does another Enter perform the usual
+control action. The header discloses scope. Refresh and subsequent actions stay
+within that scope; if the node disappears, refresh falls back to the root.
+These checks are not an atomic transaction across independent API calls.
+
+`u` reruns the current search while its panel is open. Escape leaves the panel
+and refreshes the prior view. `U` returns to the whole-document observer view.
+`s`/`S` start a new query; Escape inside a prompt cancels only that prompt.
+Automatic polling pauses while viewing search results as well as while editing,
+so results are not silently replaced by a root snapshot. Displayed results can
+therefore age; inspection rejects a changed document or missing reference.
+No search text is evaluated as page JavaScript. Results use the existing
+terminal-safe escaping and bounded rows/columns.
+
+September 2 evidence: `terminal-search.test.ts` covers projection, navigation,
+input/CLI separation and result bounds. Mock-stream `node-terminal.test.ts`
+checks inspection/activation separation, navigation races, removed nodes and
+cancellation. `check:terminal-search` uses the actual experimental SafeJS core,
+an in-memory command host and **mock terminal streams** to find a button beyond
+the retained root prefix, inspect it, run its interpreted click handler, observe
+the mutation, return to root and preserve another agent's diff baseline. This
+is not a real PTY, separate CLI process, public website or released-SDK gate.
 
 Actions and edits affect the real shared document. Submitting a form uses the
 engine's existing form/navigation behavior; this frontend adds no implicit
@@ -58,7 +96,7 @@ exception messages or command arguments.
 
 ## Ownership and bounds
 
-- The terminal refreshes every 1.5 seconds when not editing, with at most one
+- The terminal refreshes every 1.5 seconds when not editing or viewing search results, with at most one
   frontend operation in flight. It requests `snapshot --observe`, so it does not
   consume another agent's diff baseline. This is bounded polling, not streaming
   deltas or an atomic read across independent commands.

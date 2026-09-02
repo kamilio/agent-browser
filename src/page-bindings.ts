@@ -38,6 +38,26 @@ export interface PageBindingLifecycle extends ScriptCallbackRuntime {
 	onConsoleCall(): void;
 }
 
+export function pageBindingGlobalNames(
+	document: SessionPage["document"],
+	options: PageBindingOptions = {},
+): readonly string[] {
+	return Object.freeze([
+		...(pageStoragePort(document) ? ["localStorage", "sessionStorage"] : []),
+		...(pageHistoryPort(document) ? ["history"] : []),
+		"location",
+		...(options.fetch !== undefined ? ["fetch"] : []),
+		"setTimeout",
+		"setInterval",
+		"clearTimeout",
+		"clearInterval",
+		"console",
+		"document",
+		"window",
+		"self",
+	]);
+}
+
 export class PageBindings {
 	readonly dom: ScriptDom;
 	readonly window: object;

@@ -1,3 +1,4 @@
+import { DocumentSelection } from "./document-selection.js";
 import { canRewriteDocumentUrl } from "./document-url.js";
 import { AgentBrowserError } from "./errors.js";
 
@@ -73,6 +74,10 @@ export class DocumentTree {
 	private textCodeUnits = 0;
 	private closed = false;
 	private closeHandlers = new Set<() => void>();
+	private readonly selections = new DocumentSelection(
+		(id) => this.node(id),
+		(id) => this.changed("control", id),
+	);
 
 	constructor(url: string, limits: Partial<DocumentLimits> = {}) {
 		this.currentUrl = new URL(url).href;
@@ -195,6 +200,7 @@ export class DocumentTree {
 			node.attributes[key] = value;
 			this.textCodeUnits += key.length + value.length;
 		}
+		this.selections.initialize(id);
 		return id;
 	}
 
@@ -257,6 +263,10 @@ export class DocumentTree {
 			const copy = this.node(copyId);
 			Object.assign(copy.attributes, source.attributes);
 			copy.control = { ...source.control };
+			this.selections.initialize(copyId, {
+				state: sourceTree.selections,
+				id: source.id,
+			});
 			this.textCodeUnits += extraText(source);
 			copies.set(source.id, copyId);
 			const parent =
@@ -270,10 +280,51 @@ export class DocumentTree {
 		const copy = copies.get(id);
 		if (copy === undefined)
 			throw new AgentBrowserError("not-found", "Clone root was not allocated");
+		this.selections.moved(copy);
 		return copy;
 	}
 
 	replaceChildrenFrom(
+		parentId: number,
+		sourceTree: DocumentTree,
+		fragmentId: number,
+	) {
+		const imported = this.importFragment(parentId, sourceTree, fragmentId);
+		this.replaceChildren(parentId, imported);
+	}
+
+	insertChildrenFrom(
+		parentId: number,
+		sourceTree: DocumentTree,
+		fragmentId: number,
+		before?: number,
+	) {
+		if (before !== undefined && this.node(before).parent !== parentId)
+			throw new AgentBrowserError(
+				"not-found",
+				"Insertion reference is not a child",
+			);
+		const imported = this.importFragment(parentId, sourceTree, fragmentId);
+		if (imported !== undefined) this.insert(parentId, imported, before);
+	}
+
+	replaceChildFrom(
+		parentId: number,
+		sourceTree: DocumentTree,
+		fragmentId: number,
+		previousId: number,
+	) {
+		if (this.node(previousId).parent !== parentId)
+			throw new AgentBrowserError(
+				"not-found",
+				"Replacement target is not a child",
+			);
+		const imported = this.importFragment(parentId, sourceTree, fragmentId);
+		if (imported === undefined) this.remove(previousId);
+		else this.replace(parentId, imported, previousId);
+	}
+
+	private importFragment(
 		parentId: number,
 		sourceTree: DocumentTree,
 		fragmentId: number,
@@ -303,18 +354,9 @@ export class DocumentTree {
 					"resource-limit",
 					"Document depth limit exceeded",
 				);
-		const imported = fragment.children.length
+		return fragment.children.length
 			? this.copyFrom(sourceTree, fragmentId)
 			: undefined;
-		const previous = parent.children;
-		parent.children = [];
-		for (const child of previous) {
-			this.node(child).parent = null;
-			this.changed("remove", child);
-		}
-		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
-			this.currentFocus = null;
-		if (imported !== undefined) this.insert(parentId, imported);
 	}
 
 	get(id: number): Readonly<DocumentNode> {
@@ -331,7 +373,7 @@ export class DocumentTree {
 		this.insert(parent, child);
 	}
 
-	insert(parentId: number, childId: number, before?: number) {
+	private checkInsertion(parentId: number, childId: number, before?: number) {
 		const parent = this.node(parentId);
 		const child = this.node(childId);
 		if (
@@ -368,6 +410,13 @@ export class DocumentTree {
 						"resource-limit",
 						"Document depth limit exceeded",
 					);
+		return children;
+	}
+
+	insert(parentId: number, childId: number, before?: number) {
+		const children = this.checkInsertion(parentId, childId, before);
+		const parent = this.node(parentId);
+		const child = this.node(childId);
 		if (before === childId) return;
 		if (child.kind === "fragment") {
 			const index =
@@ -380,6 +429,7 @@ export class DocumentTree {
 			child.children = [];
 			for (const moving of children) {
 				this.node(moving).parent = parentId;
+				this.selections.moved(moving);
 				this.changed("insert", moving);
 			}
 			return;
@@ -399,10 +449,43 @@ export class DocumentTree {
 					: parent.children.indexOf(before);
 			parent.children.splice(index, 0, moving);
 			node.parent = parentId;
+			this.selections.moved(moving);
 			this.changed("insert", moving);
 		}
 		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
 			this.currentFocus = null;
+	}
+
+	replace(parentId: number, childId: number, previousId: number) {
+		this.checkInsertion(parentId, childId, previousId);
+		const siblings = this.node(parentId).children;
+		let before = siblings[siblings.indexOf(previousId) + 1];
+		if (before === childId) before = siblings[siblings.indexOf(childId) + 1];
+		if (this.node(childId).kind !== "fragment") this.remove(childId);
+		if (this.node(previousId).parent === parentId) this.remove(previousId);
+		this.insert(parentId, childId, before);
+	}
+
+	replaceChildren(parentId: number, childId?: number) {
+		const parent = this.node(parentId);
+		if (!["document", "fragment", "element"].includes(parent.kind))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid replacement parent",
+			);
+		if (childId !== undefined) this.checkInsertion(parentId, childId);
+		if (childId !== undefined && this.node(childId).kind !== "fragment")
+			this.remove(childId);
+		const previous = parent.children;
+		parent.children = [];
+		for (const child of previous) {
+			this.node(child).parent = null;
+			this.selections.moved(child);
+			this.changed("remove", child);
+		}
+		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
+			this.currentFocus = null;
+		if (childId !== undefined) this.insert(parentId, childId);
 	}
 
 	remove(id: number) {
@@ -411,6 +494,7 @@ export class DocumentTree {
 		const parent = this.node(node.parent);
 		parent.children.splice(parent.children.indexOf(id), 1);
 		node.parent = null;
+		this.selections.moved(id);
 		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
 			this.currentFocus = null;
 		this.changed("remove", id);
@@ -438,6 +522,7 @@ export class DocumentTree {
 		if (attribute) attribute.value = value;
 		this.textCodeUnits += change;
 		this.changed("attribute", id);
+		this.selections.attribute(id, key);
 	}
 
 	removeAttribute(id: number, name: string) {
@@ -454,6 +539,7 @@ export class DocumentTree {
 			this.attachedAttributes.get(id)?.delete(key);
 		}
 		this.changed("attribute", id);
+		this.selections.attribute(id, key);
 	}
 
 	createAttribute(name: string, value = ""): number {
@@ -533,6 +619,7 @@ export class DocumentTree {
 		this.attributeMap(id).set(attribute.name, attributeId);
 		this.textCodeUnits += change;
 		this.changed("attribute", id);
+		this.selections.attribute(id, attribute.name);
 		return original;
 	}
 
@@ -599,7 +686,33 @@ export class DocumentTree {
 		this.checkTextBudget(change);
 		this.textCodeUnits += change;
 		node.control = { ...node.control, ...state };
+		if (node.tagName === "option" && state.selected !== undefined)
+			this.selections.setOption(id, state.selected);
 		this.changed("control", id);
+	}
+
+	setSelectSelection(
+		id: number,
+		selected: readonly number[],
+		dirtyAll = false,
+	) {
+		this.ensureOpen();
+		if (typeof dirtyAll !== "boolean")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Expected boolean selection dirtiness",
+			);
+		this.selections.setSelect(id, selected, dirtyAll);
+	}
+
+	setOptionSelected(id: number, selected: boolean) {
+		this.ensureOpen();
+		if (typeof selected !== "boolean")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Expected boolean selected state",
+			);
+		this.selections.setOption(id, selected);
 	}
 
 	clearControl(id: number, fields: readonly (keyof ControlState)[]) {
@@ -618,6 +731,10 @@ export class DocumentTree {
 			);
 		let changed = false;
 		for (const field of new Set<keyof ControlState>(fields)) {
+			if (field === "selected" && node.tagName === "option") {
+				this.selections.clearOption(id);
+				continue;
+			}
 			if (!Object.hasOwn(node.control, field)) continue;
 			if (field === "value")
 				this.textCodeUnits -= node.control.value?.length ?? 0;
@@ -741,6 +858,7 @@ export class DocumentTree {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		this.selections.close();
 		this.nodes.clear();
 		this.attributeRecords.clear();
 		this.attachedAttributes.clear();

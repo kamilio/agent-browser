@@ -1,5 +1,17 @@
 # Shared-session playground
 
+September 2 targeting addition: shared target fields and the CLI command box now
+accept the literal role/test-ID subset documented in `TARGET-LOCATORS.md`, in
+addition to refs and CSS. Resolution is native and strict about ambiguity; no
+locator expression is executed as JavaScript. This adds no visual UI acceptance.
+
+September 2 DOM addition: the DOM pane reads bounded native structure from the
+same selected document. Scope it by stable ref or unique CSS selector, or return
+to Root. It displays hidden nodes, attributes, text/comments and current control
+state as inert text, with password/file values redacted. `DOM-INSPECTION.md`
+records bounds and missing full-inspector features. Actual interpreted mutation,
+shared-host and formatter tests pass; no new visual UI run is claimed.
+
 September 2 Network addition: the Network pane reads the selected tab's latest
 network-navigation journal, including failed attempts that leave an old document
 displayed. It shows bounded redacted request metadata; `request <index>` in the

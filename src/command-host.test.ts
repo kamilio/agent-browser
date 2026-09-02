@@ -1,11 +1,13 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { BrowserCommandHost, type CommandHostOptions } from "./command-host.js";
 import { DocumentTree } from "./document.js";
+import type { DomInspection } from "./dom-inspection.js";
 import { controlledEventListener } from "./events.js";
 import type { DocumentExtraction } from "./extraction.js";
 import type { NetworkRequest, NetworkResponse } from "./network.js";
 import { PageConsole } from "./page-console.js";
 import { BrowserSession } from "./session.js";
+import type { SnapshotSearch } from "./snapshot-search.js";
 import type { SemanticSnapshot } from "./snapshot.js";
 
 const hosts: BrowserCommandHost[] = [];
@@ -69,6 +71,219 @@ function fixture(
 
 afterEach(() => {
 	for (const host of hosts.splice(0)) host.close();
+	vi.useRealTimers();
+});
+
+it("find searches live snapshots without consuming the snapshot diff baseline", async () => {
+	const { host } = fixture();
+	await host.execute(["open", url]);
+	const baseline = (await host.execute(["snapshot"])).data as SemanticSnapshot;
+	const search = (await host.execute(["find", "Name", "--context=0"]))
+		.data as SnapshotSearch;
+	expect(search.matched).toBe(1);
+	await host.execute(["fill", search.matches[0].ref, "edited"]);
+	const edited = (await host.execute(["find", "edited", "--max-results=1"]))
+		.data as SnapshotSearch;
+	expect(edited.matches[0].ref).toBe(search.matches[0].ref);
+	expect((await host.execute(["snapshot", "--diff"])).data).toMatchObject({
+		reset: false,
+		fromRevision: baseline.revision,
+		updated: [
+			expect.objectContaining({ ref: search.matches[0].ref, value: "edited" }),
+		],
+	});
+});
+
+it("find supports bounded regex flags but rejects unsupported regular-expression features", async () => {
+	const { host } = fixture();
+	await host.execute(["open", url]);
+	expect(
+		(await host.execute(["find", "--regex", "/name/i"])).data,
+	).toMatchObject({ matched: 1 });
+	await expect(
+		host.execute(["find", "--regex", "(a)\\1"]),
+	).rejects.toMatchObject({ code: "unsupported" });
+	expect((await host.execute(["find", "absent"])).data).toMatchObject({
+		matched: 0,
+		truncated: false,
+	});
+});
+
+it("waits for a native target to become enabled and dispatches only once", async () => {
+	vi.useFakeTimers();
+	const { host, sessions } = fixture();
+	await host.execute(["open", url]);
+	const browser = sessions.get("default");
+	if (!browser) throw new Error("Missing fixture session");
+	const page = browser.page(browser.tabs()[0].id);
+	const node = page.document.createElement("button", {
+		id: "late",
+		disabled: "",
+	});
+	page.document.append(page.document.root, node);
+	const listener = vi.fn();
+	page.interactions.events.addEventListener(node, "click", listener);
+	const waiting = host.execute(["click", "#late", "--timeout=100"]);
+	await vi.advanceTimersByTimeAsync(30);
+	expect(listener).not.toHaveBeenCalled();
+	page.document.removeAttribute(node, "disabled");
+	await vi.advanceTimersByTimeAsync(25);
+	await waiting;
+	expect(listener).toHaveBeenCalledTimes(1);
+	expect(host.metrics().pendingCommands).toBe(0);
+	expect(vi.getTimerCount()).toBe(0);
+});
+
+it("times out pre-action waiting without blocking the queue or dispatching later", async () => {
+	vi.useFakeTimers();
+	const { host, sessions } = fixture();
+	await host.execute(["open", url]);
+	const browser = sessions.get("default");
+	if (!browser) throw new Error("Missing fixture session");
+	const page = browser.page(browser.tabs()[0].id);
+	const node = page.document.get(page.document.root).children[0];
+	page.document.setAttribute(node, "readonly", "");
+	const listener = vi.fn();
+	page.interactions.events.addEventListener(node, "input", listener);
+	const waiting = host.execute(["fill", "#name", "late", "--timeout=40"]);
+	const rejected = expect(waiting).rejects.toMatchObject({ code: "timeout" });
+	const queued = host.execute(["snapshot"]);
+	await vi.advanceTimersByTimeAsync(45);
+	await rejected;
+	await queued;
+	page.document.removeAttribute(node, "readonly");
+	await vi.advanceTimersByTimeAsync(100);
+	expect(listener).not.toHaveBeenCalled();
+	expect(host.metrics().pendingCommands).toBe(0);
+	expect(vi.getTimerCount()).toBe(0);
+});
+
+it("closes a session while its native action is waiting", async () => {
+	vi.useFakeTimers();
+	const { host } = fixture();
+	await host.execute(["open", url]);
+	const waiting = host.execute(["click", "#missing"]);
+	const rejected = expect(waiting).rejects.toMatchObject({ code: "closed" });
+	await vi.advanceTimersByTimeAsync(1);
+	await host.execute(["close"]);
+	await rejected;
+	expect(host.metrics().pendingCommands).toBe(0);
+	expect(vi.getTimerCount()).toBe(0);
+});
+
+it("inspects the shared live DOM by selector/ref without consuming snapshot diff baselines", async () => {
+	const { host } = fixture();
+	await host.execute(["open", url]);
+	const baseline = await host.execute(["snapshot"]);
+	const first = (await host.execute(["dom", "#name", "--depth=0"]))
+		.data as DomInspection;
+	expect(first.nodes).toHaveLength(1);
+	expect(first.nodes[0].name).toBe("input");
+	await host.execute(["fill", first.root, "edited"]);
+	const updated = (await host.execute(["dom", first.root]))
+		.data as DomInspection;
+	expect(updated.nodes[0].control?.value).toBe("edited");
+	expect(updated.revision).toBeGreaterThan(first.revision);
+	expect((await host.execute(["snapshot", "--diff"])).data).toMatchObject({
+		reset: false,
+		fromRevision: (baseline.data as SemanticSnapshot).revision,
+		updated: [expect.objectContaining({ ref: first.root, value: "edited" })],
+	});
+	await expect(host.execute(["dom", "input"])).rejects.toMatchObject({
+		code: "not-actionable",
+	});
+	await host.execute(["reload"]);
+	await expect(host.execute(["dom", first.root])).rejects.toMatchObject({
+		code: "stale-reference",
+	});
+});
+
+it("routes role/test-ID targets through native actions and subtree inspection", async () => {
+	const { host, sessions } = fixture();
+	await host.execute(["open", url]);
+	await host.execute([
+		"fill",
+		"getByRole('textbox', {name: 'Name', exact: true})",
+		"locator value",
+	]);
+	const node = (
+		await host.execute(["dom", "getByRole('textbox', {name: 'Name'})"])
+	).data as DomInspection;
+	expect(node.nodes[0].control?.value).toBe("locator value");
+	const browser = sessions.get("default");
+	if (!browser) throw new Error("Missing fixture session");
+	const tree = browser.page(browser.tabs()[0].id).document;
+	tree.setAttribute(tree.resolve(node.root).id, "data-testid", "name-field");
+	await host.execute(["fill", "getByTestId('name-field')", "updated value"]);
+	expect((await host.execute(["dom", node.root])).data).toMatchObject({
+		nodes: [
+			expect.objectContaining({
+				control: expect.objectContaining({ value: "updated value" }),
+			}),
+		],
+	});
+	await host.execute(["check", "getByRole('checkbox', {name: 'Enabled'})"]);
+	expect((await host.execute(["dom", "#enabled"])).data).toMatchObject({
+		nodes: [
+			expect.objectContaining({
+				control: expect.objectContaining({ checked: true }),
+			}),
+		],
+	});
+	await expect(
+		host.execute(["fill", "getByRole('textbox').first()", "must not apply"]),
+	).rejects.toMatchObject({ code: "unsupported" });
+	expect((await host.execute(["capabilities"])).data).toMatchObject({
+		locators: {
+			partial: true,
+			methods: [
+				"getByRole",
+				"getByTestId",
+				"getByText",
+				"getByLabel",
+				"getByPlaceholder",
+				"getByAltText",
+				"getByTitle",
+			],
+			autoWait: true,
+		},
+	});
+});
+
+it("routes text, label and attribute locators through native state and observation", async () => {
+	const { host, sessions, requests } = fixture();
+	await host.execute(["open", url]);
+	const browser = sessions.get("default");
+	if (!browser) throw new Error("Missing fixture session");
+	const page = browser.page(browser.tabs()[0].id);
+	const name = page.queries.querySelector("#name");
+	const next = page.queries.querySelector("#next");
+	if (name === null || next === null) throw new Error("Missing fixture nodes");
+	page.document.setAttribute(name, "placeholder", "Enter name");
+	page.document.setAttribute(name, "title", "Name field");
+	page.document.setTextContent(next, "Continue");
+	await host.execute(["fill", "getByLabel('Name', {exact:true})", "first"]);
+	await host.execute(["fill", "getByPlaceholder('enter name')", "second"]);
+	expect(
+		(await host.execute(["dom", "getByTitle('Name field')"])).data,
+	).toMatchObject({
+		nodes: [
+			expect.objectContaining({
+				control: expect.objectContaining({ value: "second" }),
+			}),
+		],
+	});
+	expect(
+		(await host.execute(["snapshot", "getByText('Continue')"])).data,
+	).toMatchObject({ scope: page.document.reference(next) });
+	expect(requests).toHaveLength(1);
+	await expect(
+		host.execute([
+			"fill",
+			"getByLabel('Name', {exact: String('yes')})",
+			"never",
+		]),
+	).rejects.toMatchObject({ code: "invalid-input" });
 });
 
 it("owns route fulfillment in named sessions and exposes registration, use and removal", async () => {
@@ -364,6 +579,30 @@ it("provides honest help/capabilities without opening sessions or executing page
 	expect((await host.execute(["capabilities"])).data).toMatchObject({
 		websiteJavaScript: false,
 		fullPlaywrightCliSuperset: false,
+		domMutations: {
+			partial: true,
+			parentNode: ["append", "prepend", "replaceChildren"],
+			childNode: ["before", "after", "replaceWith", "remove"],
+			replaceChild: true,
+			maxArguments: 1024,
+			objectStringCoercion: false,
+			crossDocumentAdoption: false,
+			mutationObservers: false,
+		},
+		htmlInsertion: {
+			partial: true,
+			innerHTML: true,
+			outerHTML: true,
+			insertAdjacentHTML: [
+				"beforebegin",
+				"afterbegin",
+				"beforeend",
+				"afterend",
+			],
+			insertedScripts: "inert",
+			trustedTypes: false,
+			sanitization: false,
+		},
 	});
 	expect((await host.execute(["--version"])).data).toMatchObject({
 		version: "0.1.0",
