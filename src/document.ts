@@ -67,6 +67,7 @@ export class DocumentTree {
 	readonly root: number;
 	readonly limits: Readonly<DocumentLimits>;
 	private nodes = new Map<number, MutableNode>();
+	private nodeViews = new Map<number, Readonly<DocumentNode>>();
 	private attributeRecords = new Map<number, DocumentAttribute>();
 	private attachedAttributes = new Map<number, Map<string, number>>();
 	private changes: DocumentChange[] = [];
@@ -361,12 +362,16 @@ export class DocumentTree {
 
 	get(id: number): Readonly<DocumentNode> {
 		const node = this.node(id);
-		return Object.freeze({
+		const cached = this.nodeViews.get(id);
+		if (cached) return cached;
+		const view = Object.freeze({
 			...node,
 			attributes: Object.freeze({ ...node.attributes }),
 			children: Object.freeze([...node.children]),
 			control: Object.freeze({ ...node.control }),
 		});
+		this.nodeViews.set(id, view);
+		return view;
 	}
 
 	append(parent: number, child: number) {
@@ -419,6 +424,7 @@ export class DocumentTree {
 		const child = this.node(childId);
 		if (before === childId) return;
 		if (child.kind === "fragment") {
+			if (children.length) this.nodeViews.delete(childId);
 			const index =
 				before === undefined
 					? parent.children.length
@@ -438,6 +444,7 @@ export class DocumentTree {
 			const node = this.node(moving);
 			if (node.parent !== null) {
 				const previousParent = this.node(node.parent);
+				this.nodeViews.delete(previousParent.id);
 				previousParent.children.splice(
 					previousParent.children.indexOf(moving),
 					1,
@@ -477,6 +484,7 @@ export class DocumentTree {
 		if (childId !== undefined && this.node(childId).kind !== "fragment")
 			this.remove(childId);
 		const previous = parent.children;
+		if (previous.length) this.nodeViews.delete(parentId);
 		parent.children = [];
 		for (const child of previous) {
 			this.node(child).parent = null;
@@ -492,6 +500,7 @@ export class DocumentTree {
 		const node = this.node(id);
 		if (node.parent === null) return;
 		const parent = this.node(node.parent);
+		this.nodeViews.delete(parent.id);
 		parent.children.splice(parent.children.indexOf(id), 1);
 		node.parent = null;
 		this.selections.moved(id);
@@ -860,6 +869,7 @@ export class DocumentTree {
 		this.closed = true;
 		this.selections.close();
 		this.nodes.clear();
+		this.nodeViews.clear();
 		this.attributeRecords.clear();
 		this.attachedAttributes.clear();
 		this.currentTarget = null;
@@ -946,6 +956,12 @@ export class DocumentTree {
 	}
 
 	private changed(kind: DocumentChange["kind"], target: number) {
+		if (["insert", "remove", "attribute", "text", "control"].includes(kind))
+			this.nodeViews.delete(target);
+		if (kind === "insert") {
+			const parent = this.nodes.get(target)?.parent;
+			if (parent !== null && parent !== undefined) this.nodeViews.delete(parent);
+		}
 		this.currentRevision++;
 		this.changes.push({ revision: this.currentRevision, kind, target });
 		if (this.changes.length > this.limits.maxChanges) this.changes.shift();

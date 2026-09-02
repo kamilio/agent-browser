@@ -1,7 +1,7 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { compileSearchPattern } from "./search-pattern.js";
-import { renderSnapshotEntry, snapshotDocument } from "./snapshot.js";
+import { renderSnapshotEntry, scanSnapshotEntries } from "./snapshot.js";
 
 export interface SnapshotSearchOptions {
 	regex?: boolean;
@@ -66,81 +66,84 @@ export function findInDocument(
 				"Invalid snapshot search limits",
 			);
 	const pattern = options.regex ? compileSearchPattern(query) : undefined;
-	const snapshot = snapshotDocument(tree, {
-		maxBytes: 1_048_576,
-		maxEntries: 10_000,
-		maxDepth: 256,
-		maxStringLength: 4096,
-	});
-	const lines = snapshot.entries.map(renderSnapshotEntry);
-	const parents: number[] = [];
-	const stack: number[] = [];
-	const indexes: number[] = [];
 	const work = { remaining: 4_000_000 };
-	for (let index = 0; index < lines.length; index++) {
-		const entry = snapshot.entries[index];
-		while (
-			stack.length &&
-			snapshot.entries[stack[stack.length - 1]].depth >= entry.depth
-		)
-			stack.pop();
-		parents.push(stack.at(-1) ?? -1);
-		stack.push(index);
+	const result: SnapshotSearch = {
+		partial: true,
+		document: tree.reference(tree.root),
+		revision: tree.revision,
+		matched: 0,
+		scannedEntries: 0,
+		matches: [],
+		snapshotTruncated: false,
+		resultsTruncated: false,
+		truncated: false,
+		workUsed: 0,
+		limits,
+	};
+	const encoder = new TextEncoder();
+	let bytes = encoder.encode(JSON.stringify(result)).byteLength + 64;
+	let outputStopped = false;
+	const recent: SnapshotSearchMatch["context"] = [];
+	const ancestors: { ref: string; depth: number }[] = [];
+	const pending: SnapshotSearchMatch[] = [];
+	const finish = (match: SnapshotSearchMatch) => {
+		const cost = encoder.encode(JSON.stringify(match)).byteLength + 1;
+		if (bytes + cost > limits.maxBytes) {
+			outputStopped = true;
+			pending.length = 0;
+			return;
+		}
+		result.matches.push(match);
+		bytes += cost;
+	};
+	const scan = scanSnapshotEntries(tree, (entry) => {
+		const line = {
+			line: ++result.scannedEntries,
+			ref: entry.ref,
+			text: renderSnapshotEntry(entry),
+		};
+		while (ancestors.length && (ancestors.at(-1)?.depth ?? -1) >= entry.depth)
+			ancestors.pop();
 		let matched: boolean;
-		if (pattern) matched = pattern.test(lines[index], work);
+		if (pattern) matched = pattern.test(line.text, work);
 		else {
-			work.remaining -= lines[index].length + query.length;
+			work.remaining -= line.text.length + query.length;
 			if (work.remaining < 0)
 				throw new AgentBrowserError(
 					"resource-limit",
 					"Search work limit exceeded",
 				);
-			matched = lines[index].includes(query);
+			matched = line.text.includes(query);
 		}
-		if (matched) indexes.push(index);
+		for (const match of pending) match.context.push(line);
+		if (matched) {
+			result.matched++;
+			if (!outputStopped && result.matched <= limits.maxResults)
+				pending.push({
+					ref: entry.ref,
+					line: line.line,
+					path: ancestors.map((parent) => parent.ref),
+					context: [...recent, line],
+				});
+		}
+		while (pending.length && pending[0].line + limits.context <= line.line) {
+			const match = pending.shift();
+			if (match) finish(match);
+		}
+		ancestors.push({ ref: entry.ref, depth: entry.depth });
+		if (limits.context) {
+			recent.push(line);
+			if (recent.length > limits.context) recent.shift();
+		}
+	});
+	while (pending.length) {
+		const match = pending.shift();
+		if (match) finish(match);
 	}
-	const result: SnapshotSearch = {
-		partial: true,
-		document: snapshot.document,
-		revision: snapshot.revision,
-		matched: indexes.length,
-		scannedEntries: lines.length,
-		matches: [],
-		snapshotTruncated: snapshot.truncated,
-		resultsTruncated: false,
-		truncated: snapshot.truncated,
-		workUsed: 4_000_000 - work.remaining,
-		limits,
-	};
-	const encoder = new TextEncoder();
-	let bytes = encoder.encode(JSON.stringify(result)).byteLength + 64;
-	for (const index of indexes.slice(0, limits.maxResults)) {
-		const path: string[] = [];
-		for (let parent = parents[index]; parent >= 0; parent = parents[parent])
-			path.unshift(snapshot.entries[parent].ref);
-		const context: SnapshotSearchMatch["context"] = [];
-		for (
-			let line = Math.max(0, index - limits.context);
-			line <= Math.min(lines.length - 1, index + limits.context);
-			line++
-		)
-			context.push({
-				line: line + 1,
-				ref: snapshot.entries[line].ref,
-				text: lines[line],
-			});
-		const match = {
-			ref: snapshot.entries[index].ref,
-			line: index + 1,
-			path,
-			context,
-		};
-		const cost = encoder.encode(JSON.stringify(match)).byteLength + 1;
-		if (bytes + cost > limits.maxBytes) break;
-		result.matches.push(match);
-		bytes += cost;
-	}
-	result.resultsTruncated = result.matches.length < indexes.length;
+	result.snapshotTruncated = scan.truncated;
+	result.truncated = scan.truncated;
+	result.workUsed = 4_000_000 - work.remaining;
+	result.resultsTruncated = result.matches.length < result.matched;
 	result.truncated ||= result.resultsTruncated;
 	while (
 		encoder.encode(JSON.stringify(result)).byteLength > limits.maxBytes &&

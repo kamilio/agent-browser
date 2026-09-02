@@ -579,6 +579,12 @@ it("provides honest help/capabilities without opening sessions or executing page
 	expect((await host.execute(["capabilities"])).data).toMatchObject({
 		websiteJavaScript: false,
 		fullPlaywrightCliSuperset: false,
+		snapshotSearch: {
+			streaming: true,
+			maxDocumentNodes: 50_000,
+			maxStringLength: 4096,
+			maxWork: 4_000_000,
+		},
 		domMutations: {
 			partial: true,
 			parentNode: ["append", "prepend", "replaceChildren"],

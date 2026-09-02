@@ -352,6 +352,9 @@ export class BrowserCommandHost {
 			},
 			snapshotSearch: {
 				partial: true,
+				streaming: true,
+				maxDocumentNodes: 50_000,
+				maxStringLength: 4096,
 				literalCaseSensitive: true,
 				context: 3,
 				maxPatternCodeUnits: 1024,

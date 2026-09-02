@@ -16,6 +16,11 @@ names is not completion of that scope.
 
 ## Current status
 
+`SESSION-RESOURCES.md` measures native session workloads and documents remaining
+memory costs. It exposed a large-page search cutoff: `find` now streams semantic
+entries with bounded result/context storage rather than first materializing a
+10,000-entry snapshot. JavaScript/real-site resource acceptance remains open.
+
 `HTML-INSERTION.md` adds outerHTML replacement and all four insertAdjacentHTML
 positions using the existing contextual parser. Existing adjacent nodes retain
 identity and control state; replacements create fresh nodes; inserted scripts

@@ -62,6 +62,8 @@
 		"check:released-page": "node dist/scripts/check-released-page.js",
 		"check:script-mutations": "node dist/scripts/check-script-mutations.js",
 		"check:html-insertion": "node dist/scripts/check-html-insertion.js",
+		"check:session-resources": "node dist/scripts/check-session-resources.js",
+		"check:streaming-search": "node dist/scripts/check-streaming-search.js",
 		"check:page-bindings": "node dist/scripts/check-page-bindings.js",
 		"check:dom-inspection": "node dist/scripts/check-dom-inspection.js",
 		"check:target-locators": "node dist/scripts/check-target-locators.js",

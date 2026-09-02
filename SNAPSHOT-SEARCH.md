@@ -1,6 +1,6 @@
 # Bounded snapshot search
 
-`find` now searches the current native semantic snapshot and returns matching
+`find` now streams the current native semantic projection and returns matching
 node refs with ancestor-ref paths and surrounding snapshot lines. It does not
 evaluate page JavaScript, fetch another document or consume snapshot-diff state.
 The same command host serves the CLI and the existing playground command input.
@@ -43,7 +43,9 @@ Unicode properties/code-point escapes and other flags fail explicitly.
 - Compilation: at most 8,192 expression visits, including empty repetitions
   that would otherwise expand without consuming states.
 - Matching: a shared 4,000,000-unit charged work budget across the snapshot.
-- Source projection: 1 MiB, 10,000 entries, depth 256, 4,096-code-unit strings.
+- Source scan: at most 50,000 owned document nodes, depth 256 and
+  4,096-code-unit strings. Detached nodes count toward the ownership limit.
+  Search no longer stops at a serialized 1 MiB/10,000-entry snapshot boundary.
 - Output: defaults to 100 matches, context 3 and 32 KiB of serialized UTF-8 JSON;
   hard maxima are 500 matches, context 10 and 256 KiB.
 
@@ -57,7 +59,46 @@ The underlying snapshot determines visibility, name calculation and protected
 value handling. Hidden nodes and password values are excluded/redacted by that
 layer; this is not general secret sanitization of arbitrary page text or URLs.
 
+## Streaming implementation
+
+The September 2 resource checkpoint found that a 5,000-row page's last action was
+beyond the old materialized-projection boundary. The shared semantic collector
+now has an internal visitor path. Search consumes entries one at a time, counts
+all matches and retains only bounded prior context, pending following-context
+windows, ancestor refs and the result prefix that fits the output budget.
+It no longer retains every rendered line, entry-parent index or matched index.
+
+The result/context layer is bounded independently of emitted entry count. The
+underlying semantic collector still builds document-scale visibility/name/index
+data, so this is **not constant-memory DOM traversal**. Existing name/depth
+truncation remains visible in `snapshotTruncated`; exceeding document or matcher
+work bounds fails instead of reporting a successful incomplete count. Ordinary
+snapshots and role-locator limits remain unchanged.
+
+Pending snippets receive following context as entries arrive and finalize at EOF
+when necessary. If the first unreturned match cannot fit, later matches are not
+substituted to disguise the omitted prefix. UTF-8 output accounting, protected
+values, paths, ordering, regex semantics and snapshot-diff independence remain
+unchanged. `capabilities.snapshotSearch` advertises streaming and the ownership
+and name bounds. No page evaluation is involved in native search.
+
 ## Evidence and remaining gates
+
+`reports/streaming-search-focused-2026-09-02.json` records 1,431 passes across 65
+files, including ten new scan cases: beyond 10,000 entries and 1 MiB, overlapping
+contexts/paths against a materialized oracle, tail windows, output-prefix bounds,
+full counts, work exhaustion and owner limits.
+
+`reports/streaming-search-safejs-fixture-2026-09-02.json` records nine actual
+experimental-core checks on a 5,500-row in-memory page. A streamed final-button
+ref supports scoped inspection and activation of an interpreted listener; search
+observes its mutation, preserves bounded result counts and leaves a complete
+scoped diff baseline untouched. Snapshot-search (8), mock-terminal-search (9) and
+text-locator (11) regression reports add 28 actual existing-core checks.
+`SESSION-RESOURCES.md` reports five fresh-process native workloads, their failures
+before this correction and their remaining memory limitations.
+
+Earlier checkpoint evidence:
 
 `reports/snapshot-search-focused-2026-09-02.json` records 1,212 passes across 56
 files: 58 matcher tests, eight native search tests, two added command-host tests

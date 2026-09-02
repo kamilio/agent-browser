@@ -11,6 +11,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+September 2, resource/streaming-search checkpoint: five fresh-process native
+session profiles now measure HTML loading, snapshots, search, actions, replacement,
+diffs and cleanup. Initial evidence exposed a large-page search cutoff and an
+incorrect harness expectation for truncated-snapshot resets. Search now streams
+semantic entries without a serialized 1 MiB/10,000-entry cutoff, retaining bounded
+result/context windows under unchanged matcher work/output limits. Default
+snapshot and role-locator limits are unchanged; name/depth clipping stays visible.
+
+1,431 tests pass across 65 files. Nine actual experimental-core large-page checks
+and 28 search/mock-terminal/locator regressions pass. Five final native resource
+profiles pass 201 correctness/cleanup assertions; all 31 page documents close.
+The small run peaks at 63.4 MiB RSS, but the 5,000-row native-only run reaches
+226.4 MiB. These are not interpreter, public-site or CLI cold-start measurements;
+the larger memory cost is an open optimization target, not lightweight acceptance.
+Initial failed reports are retained. Build, strict changed-test checks, focused
+formatting and diff checks pass. No dependency, service or SDK switch was made.
+See `SESSION-RESOURCES.md` and `SNAPSHOT-SEARCH.md`; the full goal stays active.
+
+## Previous checkpoints
+
 September 2, contextual HTML insertion checkpoint: page code can assign outerHTML
 and call insertAdjacentHTML at all four positions. Native adjacent nodes retain
 identity, listeners and current control values; replacements create new nodes
@@ -25,8 +45,6 @@ fill/click, plus 41 existing-core mutation/select/selection/wait regressions.
 Build, strict changed-test checks, focused formatting and diff checks pass.
 No dependency, default runtime or service changed. New public-site, live-terminal,
 framework and released-artifact acceptance remain unverified. See `HTML-INSERTION.md`.
-
-## Previous checkpoints
 
 September 2, modern DOM mutation checkpoint: interpreted append/prepend,
 replaceChildren, before/after/replaceWith and replaceChild now mutate the native

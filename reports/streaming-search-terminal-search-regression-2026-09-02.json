@@ -1,0 +1,47 @@
+{
+  "startedAt": "2026-09-02T20:22:55.469Z",
+  "finishedAt": "2026-09-02T20:22:55.644Z",
+  "scope": "existing-experimental-core-in-memory-command-host-mock-terminal-streams",
+  "realPty": false,
+  "realNetwork": false,
+  "completed": true,
+  "checks": [
+    {
+      "label": "Target lies outside the truncated default observer snapshot",
+      "passed": true
+    },
+    {
+      "label": "Real experimental interpreter installs the click handler",
+      "passed": true
+    },
+    {
+      "label": "Mock terminal finds the target beyond its retained root prefix",
+      "passed": true
+    },
+    {
+      "label": "First Enter requests fresh scoped inspection without activation",
+      "passed": true
+    },
+    {
+      "label": "Second Enter activates that ref and renders its interpreted mutation",
+      "passed": true
+    },
+    {
+      "label": "Regex search sees the changed native snapshot without another eval",
+      "passed": true
+    },
+    {
+      "label": "Root navigation restores the ordinary observer projection",
+      "passed": true
+    },
+    {
+      "label": "Detaching restores mock stream state without closing the shared session",
+      "passed": true
+    },
+    {
+      "label": "Terminal observers and searches do not consume the snapshot diff baseline",
+      "passed": true
+    }
+  ],
+  "passed": 9
+}

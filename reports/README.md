@@ -4,6 +4,22 @@ These files record **foundation and partial-frontend probes**, not general brows
 Checking a marker in downloaded HTML does not prove parsing, page JavaScript,
 element actions, rendering, terminal browsing or playground operation.
 
+- `streaming-search-focused-2026-09-02.json`: 1,431 passes across 65 files,
+  including ten new streaming/context/large-source/work-bound cases.
+- `streaming-search-safejs-fixture-2026-09-02.json`: nine actual existing-core
+  checks on a 5,500-row in-memory document, including interpreted activation of
+  its final searched button and untouched scoped diff state.
+- `streaming-search-snapshot-search-regression-2026-09-02.json` (8),
+  `streaming-search-terminal-search-regression-2026-09-02.json` (9) and
+  `streaming-search-text-locators-regression-2026-09-02.json` (11): 28 further
+  actual existing-core checks. Terminal streams are mocked, not a live PTY.
+- `session-resources-{small,medium,large,retained,churn}-2026-09-02.json`: five
+  fresh-process native-only profiles, 201 functional/cleanup assertions. The
+  corresponding `*-before-streaming-2026-09-02.json` reports retain the initial
+  observations, including two failed checks. `SESSION-RESOURCES.md` explains why
+  they are not equivalent performance baselines. Native peak RSS ranges from
+  63.4 to 226.4 MiB; no forced GC, page JS, wire traffic or full-browser claim.
+
 - `html-insertion-focused-2026-09-02.json`: 1,421 passing tests across 65 files,
   including 26 contextual outerHTML/insertAdjacentHTML tests and updated script
   adapter/capability expectations.

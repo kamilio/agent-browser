@@ -221,6 +221,45 @@ export function snapshotDocument(
 	return collectSnapshot(tree, options, false);
 }
 
+export function scanSnapshotEntries(
+	tree: DocumentTree,
+	visit: (entry: SnapshotEntry) => void,
+): Omit<SemanticSnapshot, "entries"> & { scannedEntries: number } {
+	if (typeof visit !== "function")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"A snapshot visitor is required",
+		);
+	if (tree.nodeCount > 50_000)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Snapshot scan document limit exceeded",
+		);
+	let scannedEntries = 0;
+	const snapshot = collectSnapshot(
+		tree,
+		{
+			maxBytes: 1_048_576,
+			maxEntries: 10_000,
+			maxDepth: 256,
+			maxStringLength: 4096,
+		},
+		false,
+		(entry) => {
+			scannedEntries++;
+			visit(entry);
+		},
+	);
+	return {
+		document: snapshot.document,
+		scope: snapshot.scope,
+		revision: snapshot.revision,
+		truncated: snapshot.truncated,
+		...(snapshot.html ? { html: snapshot.html } : {}),
+		scannedEntries,
+	};
+}
+
 export function snapshotRoleCandidates(
 	tree: DocumentTree,
 	role: string,
@@ -257,6 +296,7 @@ function collectSnapshot(
 	tree: DocumentTree,
 	options: SnapshotOptions,
 	expandLeafRoles: boolean,
+	visit?: (entry: SnapshotEntry) => void,
 ): SemanticSnapshot {
 	const maxBytes = options.maxBytes ?? 16_384;
 	const maxEntries = options.maxEntries ?? 1000;
@@ -469,18 +509,21 @@ function collectSnapshot(
 					}
 				} catch {}
 			}
-			const entryBytes =
-				encoder.encode(JSON.stringify(entry)).byteLength +
-				(result.entries.length ? 1 : 0);
-			if (
-				result.entries.length >= maxEntries ||
-				usedBytes + entryBytes > maxBytes
-			) {
-				result.truncated = true;
-				break;
+			if (visit) visit(entry);
+			else {
+				const entryBytes =
+					encoder.encode(JSON.stringify(entry)).byteLength +
+					(result.entries.length ? 1 : 0);
+				if (
+					result.entries.length >= maxEntries ||
+					usedBytes + entryBytes > maxBytes
+				) {
+					result.truncated = true;
+					break;
+				}
+				usedBytes += entryBytes;
+				result.entries.push(entry);
 			}
-			usedBytes += entryBytes;
-			result.entries.push(entry);
 			nextDepth++;
 		}
 		if (!expandLeafRoles && role && leafRoles.has(role)) continue;
