@@ -16,6 +16,32 @@ names is not completion of that scope.
 
 ## Current status
 
+`CLASS-LISTS.md` adds live, bounded classList mutation and iteration. An actual
+interpreted handler now reveals a CSS-hidden action, preserves its stable
+reference, lets the agent activate it, and hides it again without fetching a new
+document. This remains a partial DOMTokenList implementation, not full framework
+or public-site compatibility.
+
+`PAGE-STORAGE.md` binds explicit local/session Storage methods and document.cookie
+to the session's real stores and cookie jar. An interpreted, agent-driven todo
+fixture survives reload and verifies origin/tab/session isolation and HttpOnly
+protection. `STORAGE-EVENTS.md` adds bounded cross-tab notifications and interpreted
+UI synchronization without reload. Named properties remain unsupported; #549
+requests the missing upstream named-mutation capability. Evidence is in-memory, not new
+public framework/site acceptance.
+
+`PAGE-HISTORY.md` adds finite-JSON History state and push/replace methods with
+session-wide length. Reload and cross-document restoration happen before parser
+scripts, and interpreted traversal events preserve prefix order. Guest
+back/forward/go use a bounded, cancelable session task queue shared with Location
+navigation; evidence uses in-memory IO, not new public-site acceptance.
+
+`PAGE-URLS.md` adds live page Location reads, DOM baseURI and reflected hyperlink
+and resource URLs. Location methods, Window/document setters and component writes
+now navigate through the owning session. Fragment URLs update synchronously with
+deferred events; replace preserves adjacent history. Bare global assignment,
+full task ordering and navigation conformance remain incomplete.
+
 `PAGE-FETCH.md` adds bounded document-owned `fetch` to explicitly configured
 SafeJS page runtimes. Ten real-interpreter in-memory checks verify Promise/JSON
 callbacks updating the DOM, shared diagnostics and pending-request cancellation.

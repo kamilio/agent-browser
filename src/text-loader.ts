@@ -45,6 +45,7 @@ export function loadTextDocument(
 		context.limits,
 	);
 	try {
+		context.initializeDocument?.(tree);
 		const pre = tree.createElement("pre");
 		tree.append(tree.root, pre);
 		tree.append(pre, tree.createText(text));

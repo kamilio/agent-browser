@@ -36,13 +36,19 @@ import {
 	type NetworkTransport,
 	parseNetworkUrl,
 } from "./network.js";
+import { recordPageTraversalError } from "./page-console.js";
 import type { PageFetchTransport } from "./page-fetch.js";
+import { type PageHistoryPort, bindPageHistory } from "./page-history.js";
+import { type PageStoragePort, bindPageStorage } from "./page-storage.js";
+import { PageTraversals } from "./page-traversals.js";
 import { DocumentQueries } from "./selectors.js";
 import { type SnapshotOptions, snapshotDocument } from "./snapshot.js";
+import { PageStorageEvents } from "./storage-events.js";
 import { BrowserStorage, type StorageLimits } from "./storage.js";
 import { type DocumentStyles, documentStyles } from "./styles.js";
 
 export interface DocumentLoaderContext {
+	readonly initializeDocument?: (tree: DocumentTree) => void;
 	readonly fetch?: PageFetchTransport;
 	readonly signal: AbortSignal;
 	readonly tabId: string;
@@ -137,6 +143,7 @@ export interface SessionKeyResult {
 }
 
 interface TabState {
+	pageTraversals: PageTraversals;
 	journal: NetworkJournal;
 	networkNavigation: number;
 	networkDocument: string | null;
@@ -152,6 +159,7 @@ interface TabState {
 interface NavigationJob {
 	controller: AbortController;
 	tab: TabState;
+	pageTraversal: boolean;
 }
 
 interface HistoryNavigation {
@@ -190,6 +198,7 @@ export class BrowserSession {
 	readonly cookies: CookieJar;
 	readonly storage: BrowserStorage;
 	readonly routes = new NetworkRoutes();
+	private readonly storageEvents = new PageStorageEvents();
 	private readonly transport: NetworkTransport;
 	private readonly loadDocument: DocumentLoader;
 	private tabStates = new Map<string, TabState>();
@@ -200,6 +209,7 @@ export class BrowserSession {
 	private commits = 0;
 	private cleanupErrors = 0;
 	private closed = false;
+	private readonly pageTraversalSignals = new WeakSet<AbortSignal>();
 
 	constructor(options: BrowserSessionOptions) {
 		if (
@@ -260,10 +270,13 @@ export class BrowserSession {
 					`Invalid session document limit: ${name}`,
 				);
 		this.cookies = new CookieJar(options.cookieLimits);
-		this.storage = new BrowserStorage({
-			...options.storageLimits,
-			maxTabs: this.limits.maxTabs,
-		});
+		this.storage = new BrowserStorage(
+			{
+				...options.storageLimits,
+				maxTabs: this.limits.maxTabs,
+			},
+			(mutation) => this.storageEvents.publish(mutation),
+		);
 		this.loadDocument = options.loadDocument;
 		let transport: NetworkTransport | undefined;
 		try {
@@ -284,6 +297,7 @@ export class BrowserSession {
 				this.cleanup(() => transport?.close());
 			this.cookies.close();
 			this.storage.close();
+			this.storageEvents.close();
 			throw error;
 		}
 	}
@@ -310,8 +324,33 @@ export class BrowserSession {
 			options.opener === undefined ? undefined : this.tab(options.opener);
 		const id = `tab-${this.nextTabId++}`;
 		this.storage.openTab(id, opener?.id);
-		const tab = {
+		const tab: TabState = {
 			id,
+			pageTraversals: new PageTraversals(async (document, action, signal) => {
+				await documentInteractions(document).events.whenIdle(signal);
+				if (this.tab(id).page?.document !== document)
+					throw new AgentBrowserError(
+						"closed",
+						"Traversal document is no longer active",
+					);
+				this.pageTraversalSignals.add(signal);
+				try {
+					if (action.kind === "fragment") return await action.run(signal);
+					if (action.kind === "navigate")
+						return await this.startNavigation(
+							id,
+							action.url,
+							{ signal },
+							false,
+							undefined,
+							undefined,
+							action.replace,
+						);
+					return await this.go(id, action.delta, { signal });
+				} finally {
+					this.pageTraversalSignals.delete(signal);
+				}
+			}, recordPageTraversalError),
 			viewport: { width: 1280, height: 720 },
 			journal: new NetworkJournal(),
 			networkNavigation: 0,
@@ -608,6 +647,7 @@ export class BrowserSession {
 
 	stop(id: string) {
 		const tab = this.tab(id);
+		tab.pageTraversals.cancel();
 		tab.job?.controller.abort(
 			new AgentBrowserError("aborted", "Navigation stopped"),
 		);
@@ -615,6 +655,7 @@ export class BrowserSession {
 
 	closeTab(id: string) {
 		const tab = this.tab(id);
+		tab.pageTraversals.close();
 		this.tabStates.delete(id);
 		if (this.selected === id)
 			this.selected = this.tabStates.keys().next().value ?? null;
@@ -631,6 +672,11 @@ export class BrowserSession {
 			tabs: this.tabStates.size,
 			selectedTab: this.selected,
 			pendingLoads: this.jobs.size,
+			pageTraversals: Object.freeze(
+				[...this.tabStates.values()].map((tab) =>
+					Object.freeze({ tabId: tab.id, ...tab.pageTraversals.metrics() }),
+				),
+			),
 			navigations: this.navigations,
 			commits: this.commits,
 			cleanupErrors: this.cleanupErrors,
@@ -643,6 +689,7 @@ export class BrowserSession {
 			},
 			cookies: this.cookies.metrics(),
 			storage: this.storage.metrics(),
+			storageEvents: this.storageEvents.metrics(),
 		});
 	}
 
@@ -657,6 +704,7 @@ export class BrowserSession {
 		this.tabStates.clear();
 		this.selected = null;
 		for (const tab of tabs) {
+			tab.pageTraversals.close();
 			if (tab.page) this.cleanup(() => tab.page?.document.close());
 			tab.page = undefined;
 			tab.history.close();
@@ -666,6 +714,7 @@ export class BrowserSession {
 		this.cleanup(() => this.routes.close());
 		this.cleanup(() => this.cookies.close());
 		this.cleanup(() => this.storage.close());
+		this.cleanup(() => this.storageEvents.close());
 	}
 
 	private ensureOpen() {
@@ -679,7 +728,24 @@ export class BrowserSession {
 				this.routes.fulfill(request),
 			);
 		const mocked = this.routes.fulfill(input);
-		if (mocked) return mocked;
+		if (mocked) {
+			if ([301, 302, 303, 307, 308].includes(mocked.status)) {
+				if (input.redirect === "error")
+					throw new AgentBrowserError(
+						"policy-denied",
+						"Redirects are disabled",
+					);
+				if (
+					(input.redirect ?? "follow") === "follow" &&
+					mocked.headers.location
+				)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Automatic redirects with active routes are not implemented",
+					);
+			}
+			return mocked;
+		}
 		if (
 			!this.routes.metrics().routes ||
 			(input.redirect ?? "follow") !== "follow"
@@ -762,6 +828,7 @@ export class BrowserSession {
 		reload: boolean,
 		request?: NetworkRequest,
 		history?: HistoryNavigation,
+		replaceDocument = false,
 	): Promise<NavigationResult> {
 		const tab = this.tab(id);
 		this.validateNavigationOptions(options);
@@ -789,8 +856,15 @@ export class BrowserSession {
 				"resource-limit",
 				"Session navigation limit exceeded",
 			);
+		if (!inputSignal || !this.pageTraversalSignals.has(inputSignal))
+			tab.pageTraversals.cancel();
 		const controller = new AbortController();
-		const job = { controller, tab };
+		const job = {
+			controller,
+			tab,
+			pageTraversal:
+				!!inputSignal && this.pageTraversalSignals.has(inputSignal),
+		};
 		const previousJob = tab.job;
 		tab.job = job;
 		this.jobs.add(job);
@@ -812,7 +886,16 @@ export class BrowserSession {
 			this.limits.navigationTimeoutMs,
 		);
 		const task = Promise.resolve()
-			.then(() => this.performNavigation(job, url, reload, request, history))
+			.then(() =>
+				this.performNavigation(
+					job,
+					url,
+					reload,
+					request,
+					history,
+					replaceDocument,
+				),
+			)
 			.finally(() => {
 				clearTimeout(timer);
 				inputSignal?.removeEventListener("abort", abort);
@@ -832,6 +915,7 @@ export class BrowserSession {
 		reload: boolean,
 		request?: NetworkRequest,
 		history?: HistoryNavigation,
+		replaceDocument = false,
 	): Promise<NavigationResult> {
 		this.assertCurrent(job);
 		const tab = job.tab;
@@ -870,7 +954,11 @@ export class BrowserSession {
 			currentResource.hash = "";
 			nextResource.hash = "";
 			if (currentResource.href === nextResource.href) {
-				await previous.history.navigateFragment(url.href, false, signal);
+				await previous.history.navigateFragment(
+					url.href,
+					replaceDocument,
+					signal,
+				);
 				this.assertCurrent(job);
 				return this.result("same-document", tab);
 			}
@@ -937,6 +1025,194 @@ export class BrowserSession {
 		const fetchCspBlocked = Object.keys(response.headers).some(
 			(name) => name.toLowerCase() === "content-security-policy",
 		);
+		const postDocument =
+			request?.method === "POST" &&
+			!response.redirects.some((redirect) =>
+				[301, 302, 303].includes(redirect.status),
+			);
+		const initializeDocument = (document: DocumentTree) => {
+			if (!(document instanceof DocumentTree))
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Loader must initialize a document tree",
+				);
+			if (candidate === document) {
+				this.assertCurrent(job);
+				return;
+			}
+			if (ownedDocuments.has(document))
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Loader returned an already owned document",
+				);
+			if (candidate) {
+				this.cleanup(() => document.close());
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Loader must initialize one document",
+				);
+			}
+			candidate = document;
+			ownsCandidate = true;
+			ownedDocuments.add(document);
+			try {
+				this.assertCurrent(job);
+				if (document.url !== responseUrl)
+					throw new AgentBrowserError(
+						"invalid-input",
+						"Loaded document URL must match the final response URL",
+					);
+				for (const [name, limit] of Object.entries(this.documentLimits))
+					if (document.limits[name as keyof DocumentLimits] > limit)
+						throw new AgentBrowserError(
+							"resource-limit",
+							"Loader document limits exceed session limits",
+						);
+				document.onClose(() => {
+					tab.pageTraversals.retire(document);
+					fetchLifetime.abort(
+						new AgentBrowserError("closed", "Fetch document is closed"),
+					);
+				});
+				const documentHistory = sharedDocumentHistory(
+					document,
+					documentInteractions(document).events,
+				);
+				if (history)
+					documentHistory.restore({
+						...history.archive,
+						entries: history.archive.entries.map((entry, index) =>
+							index === history.archive.index
+								? { ...entry, url: responseUrl }
+								: entry,
+						),
+					});
+				const ensureOwner = () => {
+					this.ensureOpen();
+					document.get(document.root);
+					if (committed) {
+						if (tab.page?.document !== document)
+							throw new AgentBrowserError(
+								"closed",
+								"History document is no longer active",
+							);
+					} else {
+						this.assertCurrent(job);
+						checkHistory();
+					}
+				};
+				const length = (archive: HistoryArchive) => {
+					ensureOwner();
+					return tab.history.previewLength(
+						committed ? undefined : previous?.history.capture(),
+						archive,
+						{
+							post: !!postDocument,
+							replace: history?.kind === "reload",
+							replaceDocument,
+							target: committed ? undefined : history?.target,
+							committed,
+						},
+					);
+				};
+				const storageOrigin = new URL(responseUrl).origin;
+				const ensureStorageOwner = () => {
+					ensureOwner();
+					if (new URL(document.url).origin !== storageOrigin)
+						throw new AgentBrowserError(
+							"policy-denied",
+							"Document storage origin changed",
+						);
+				};
+				const storagePort = Object.freeze<PageStoragePort>({
+					area: (kind) => {
+						ensureStorageOwner();
+						return kind === "local"
+							? this.storage.localStorage(tab.id, document.url, document)
+							: this.storage.sessionStorage(tab.id, document.url, document);
+					},
+					readCookie: () => {
+						ensureStorageOwner();
+						return this.cookies.documentCookie(document.url, document.url);
+					},
+					writeCookie: (value) => {
+						ensureStorageOwner();
+						this.cookies.setDocumentCookie(document.url, value, document.url);
+					},
+				});
+				bindPageStorage(document, storagePort);
+				this.storageEvents.register(
+					document,
+					tab.id,
+					documentInteractions(document).events,
+					(kind) => storagePort.area(kind),
+				);
+				bindPageHistory(
+					document,
+					Object.freeze<PageHistoryPort>({
+						snapshot: () => {
+							ensureOwner();
+							return {
+								state: documentHistory.snapshot().state,
+								length: length(documentHistory.capture()),
+							};
+						},
+						pushState: (state, url) => {
+							ensureOwner();
+							documentHistory.pushState(state, url, length);
+						},
+						replaceState: (state, url) => {
+							ensureOwner();
+							documentHistory.replaceState(state, url, length);
+						},
+						traverse: (delta) => {
+							ensureOwner();
+							if (committed && tab.job && !tab.job.pageTraversal)
+								throw new AgentBrowserError(
+									"aborted",
+									"An explicit navigation is already in progress",
+								);
+							tab.pageTraversals.enqueue(document, delta);
+						},
+						navigate: (input, replace) => {
+							ensureOwner();
+							if (committed && tab.job && !tab.job.pageTraversal)
+								throw new AgentBrowserError(
+									"aborted",
+									"An explicit navigation is already in progress",
+								);
+							const target = parseNetworkUrl(input);
+							const currentResource = new URL(document.url);
+							const nextResource = new URL(target.href);
+							currentResource.hash = "";
+							nextResource.hash = "";
+							const replaceEntry =
+								replace || !committed || target.href === document.url;
+							if (
+								currentResource.href === nextResource.href &&
+								urlFragment(target) !== null
+							)
+								tab.pageTraversals.enqueueFragment(document, () =>
+									documentHistory.prepareFragment(
+										target.href,
+										replaceEntry,
+										length,
+									),
+								);
+							else
+								tab.pageTraversals.enqueueNavigation(
+									document,
+									target.href,
+									replaceEntry,
+								);
+						},
+					}),
+				);
+			} catch (error) {
+				this.cleanup(() => document.close());
+				throw error;
+			}
+		};
 		const fetch: PageFetchTransport = (input, context) =>
 			journal.run(
 				context?.preflight ? "preflight" : "fetch",
@@ -1033,9 +1309,10 @@ export class BrowserSession {
 				context?.cors ? context.observeCorsResult : undefined,
 			);
 		try {
-			candidate = await this.loadDocument(
+			const loaded = await this.loadDocument(
 				response,
 				Object.freeze({
+					initializeDocument,
 					signal,
 					tabId: tab.id,
 					limits: this.documentLimits,
@@ -1112,36 +1389,15 @@ export class BrowserSession {
 						}),
 				}),
 			);
-			if (!(candidate instanceof DocumentTree))
+			if (!(loaded instanceof DocumentTree))
 				throw new AgentBrowserError(
 					"invalid-input",
 					"Loader must return a document tree",
 				);
-			if (ownedDocuments.has(candidate))
-				throw new AgentBrowserError(
-					"invalid-input",
-					"Loader returned an already owned document",
-				);
-			ownsCandidate = true;
-			ownedDocuments.add(candidate);
+			initializeDocument(loaded);
+			candidate = loaded;
 			this.assertCurrent(job);
 			candidate.reference(candidate.root);
-			candidate.onClose(() =>
-				fetchLifetime.abort(
-					new AgentBrowserError("closed", "Fetch document is closed"),
-				),
-			);
-			if (candidate.url !== responseUrl)
-				throw new AgentBrowserError(
-					"invalid-input",
-					"Loaded document URL must match the final response URL",
-				);
-			for (const [name, limit] of Object.entries(this.documentLimits))
-				if (candidate.limits[name as keyof DocumentLimits] > limit)
-					throw new AgentBrowserError(
-						"resource-limit",
-						"Loader document limits exceed session limits",
-					);
 			const styles = documentStyles(candidate);
 			styles.setViewport(tab.viewport.width, tab.viewport.height);
 			const interactions = documentInteractions(candidate);
@@ -1149,15 +1405,6 @@ export class BrowserSession {
 				candidate,
 				interactions.events,
 			);
-			if (history)
-				documentHistory.restore({
-					...history.archive,
-					entries: history.archive.entries.map((entry, index) =>
-						index === history.archive.index
-							? { ...entry, url: responseUrl }
-							: entry,
-					),
-				});
 			const page = Object.freeze({
 				fetch,
 				document: candidate,
@@ -1166,17 +1413,20 @@ export class BrowserSession {
 				queries: new DocumentQueries(candidate),
 				history: documentHistory,
 			});
-			candidate.setTargetElement(selectDocumentFragmentTarget(candidate));
+			candidate.setTargetElement(
+				selectDocumentFragmentTarget(candidate, new URL(responseUrl)),
+			);
 			styles.metrics();
 			this.assertCurrent(job);
 			checkHistory();
-			const postDocument =
-				request?.method === "POST" &&
-				!response.redirects.some((redirect) =>
-					[301, 302, 303].includes(redirect.status),
-				);
 			if (history?.target)
 				tab.history.commitTraversal(history.target, documentHistory.capture());
+			else if (replaceDocument)
+				tab.history.replaceDocument(
+					previous?.history.capture(),
+					documentHistory.capture(),
+					postDocument,
+				);
 			else
 				tab.history.record(
 					previous?.history.capture(),
@@ -1188,6 +1438,8 @@ export class BrowserSession {
 			tab.networkDocument = candidate.reference(candidate.root);
 			tab.postDocument = postDocument;
 			committed = true;
+			this.storageEvents.activate(candidate);
+			tab.pageTraversals.activate(candidate);
 			this.commits++;
 			if (previous) this.cleanup(() => previous.document.close());
 			this.assertCurrent(job);

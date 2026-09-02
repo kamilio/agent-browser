@@ -10,12 +10,14 @@ import {
 } from "./events.js";
 import { BrowserFocusEvent } from "./focus.js";
 import { BrowserSubmitEvent } from "./form-actions.js";
+import { BrowserHashChangeEvent, BrowserPopStateEvent } from "./history.js";
 import { BrowserInputEvent } from "./input-events.js";
 import { BrowserKeyboardEvent } from "./keyboard.js";
 import type {
 	ScriptHostObjectDefinition,
 	ScriptHostObjectFactory,
 } from "./script-dom.js";
+import { BrowserStorageEvent } from "./storage-events.js";
 
 export interface ScriptCallbackRuntime {
 	startCallback(
@@ -33,6 +35,7 @@ export interface ScriptEventOptions {
 	events: DocumentEvents;
 	callbacks: ScriptCallbackRuntime;
 	window?: object;
+	storageArea?: (kind: "local" | "session") => object | null;
 }
 
 interface ScriptListener {
@@ -243,6 +246,36 @@ export class ScriptEventBindings {
 					event[name] = Boolean(value);
 				},
 			};
+		if (event instanceof BrowserPopStateEvent)
+			properties.state = {
+				get: () => {
+					this.ensureOpen();
+					return event.state;
+				},
+			};
+		if (event instanceof BrowserHashChangeEvent)
+			for (const name of ["oldURL", "newURL"] as const)
+				properties[name] = {
+					get: () => {
+						this.ensureOpen();
+						return event[name];
+					},
+				};
+		if (event instanceof BrowserStorageEvent) {
+			for (const name of ["key", "oldValue", "newValue", "url"] as const)
+				properties[name] = {
+					get: () => {
+						this.ensureOpen();
+						return event[name];
+					},
+				};
+			properties.storageArea = {
+				get: () => {
+					this.ensureOpen();
+					return this.options.storageArea?.(event.storageKind) ?? null;
+				},
+			};
+		}
 		if (event instanceof BrowserInputEvent)
 			for (const name of ["data", "inputType", "isComposing"] as const)
 				properties[name] = {

@@ -1,12 +1,9 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
-import { type ConsoleLimits, PageConsole } from "./page-console.js";
-import {
-	PageFetch,
-	type PageFetchLimits,
-	type PageFetchTransport,
-} from "./page-fetch.js";
-import { PageTimers, type TimerLimits } from "./page-timers.js";
+import { type PageBindingOptions, PageBindings } from "./page-bindings.js";
+import type { PageConsole } from "./page-console.js";
+import type { PageFetch } from "./page-fetch.js";
+import type { PageTimers } from "./page-timers.js";
 import {
 	type SafeJsBudget,
 	type ScriptEvaluation,
@@ -14,12 +11,11 @@ import {
 	scriptJsonResult,
 	scriptLimits,
 } from "./safejs.js";
-import {
-	ScriptDom,
-	type ScriptHostObjectFactory,
-	domString,
-} from "./script-dom.js";
+import type { ScriptDom, ScriptHostObjectFactory } from "./script-dom.js";
 import type { ScriptCallbackRuntime } from "./script-events.js";
+import type { ScriptHistory } from "./script-history.js";
+import type { ScriptLocation } from "./script-location.js";
+import type { ScriptStorage } from "./script-storage.js";
 import type { SessionPage } from "./session.js";
 
 export interface PageRealm {
@@ -60,13 +56,9 @@ export interface PageScriptCore extends ScriptHostObjectFactory {
 	releaseGuestReference(value: unknown): boolean;
 }
 
-export interface PageScriptOptions {
-	fetch?: PageFetchTransport;
-	fetchLimits?: Partial<PageFetchLimits>;
+export interface PageScriptOptions extends PageBindingOptions {
 	limits?: Partial<ScriptLimits>;
 	maxPendingCallbacks?: number;
-	consoleLimits?: Partial<ConsoleLimits>;
-	timerLimits?: Partial<TimerLimits>;
 }
 
 const ownedDocuments = new WeakSet<DocumentTree>();
@@ -77,6 +69,9 @@ export class PageScripts {
 	readonly console: PageConsole;
 	readonly timers: PageTimers;
 	readonly network?: PageFetch;
+	readonly location: ScriptLocation;
+	readonly history?: ScriptHistory;
+	readonly storage?: ScriptStorage;
 	readonly limits: Readonly<ScriptLimits>;
 	private readonly budget: SafeJsBudget;
 	private readonly lifetime = new AbortController();
@@ -84,6 +79,7 @@ export class PageScripts {
 	private readonly prefixes = new Set<Promise<void>>();
 	private readonly maxPending: number;
 	private realm?: PageRealm;
+	private bindings?: PageBindings;
 	private active?: AbortController;
 	private closing?: Promise<void>;
 	private closedValue = false;
@@ -157,95 +153,39 @@ export class PageScripts {
 			void this.close().catch(() => undefined);
 		});
 		try {
-			if (options.fetch !== undefined) {
-				if (typeof options.fetch !== "function")
-					throw new AgentBrowserError(
-						"invalid-input",
-						"Invalid page fetch transport",
-					);
-				this.network = new PageFetch(page.document, core, options.fetch, {
-					limits: options.fetchLimits,
-				});
-			}
-			this.timers = new PageTimers(
+			const bindings = new PageBindings(
+				page,
+				core,
 				{
 					isClosed: () => this.closed,
 					startCallback: (callback, args, value) =>
 						this.startCallback(callback, args, value),
+					fail: (error) => {
+						if (error !== undefined) this.recordFailure("callback", error);
+						void this.close().catch(() => undefined);
+					},
+					onConsoleCall: () => {
+						this.consoleCalls++;
+					},
 				},
-				() => this.window,
-				(error) => {
-					if (error !== undefined) this.recordFailure("callback", error);
-					void this.close().catch(() => undefined);
-				},
-				options.timerLimits,
-				(value) => core.releaseGuestReference(value),
+				options,
 			);
-			core.retainGuestArguments(this.timers.methods.setTimeout, 2);
-			core.retainGuestArguments(this.timers.methods.setInterval, 2);
-			this.window = core.createHostObject({
-				properties: {
-					console: { get: () => this.console.object },
-					document: { get: () => this.dom.document },
-					window: { get: () => this.window },
-					self: { get: () => this.window },
-					top: { get: () => this.window },
-					parent: { get: () => this.window },
-				},
-				methods: {
-					...(this.network ? { fetch: this.network.fetch } : {}),
-					...this.timers.methods,
-					addEventListener: (type, callback, value) => {
-						this.ensureOpen();
-						this.dom.eventBindings?.add(
-							windowTarget,
-							domString(type),
-							callback,
-							value,
-						);
-					},
-					removeEventListener: (type, callback, value) => {
-						this.ensureOpen();
-						this.dom.eventBindings?.remove(
-							windowTarget,
-							domString(type),
-							callback,
-							value,
-						);
-					},
-				},
-			});
-			this.dom = new ScriptDom(page.document, core, {
-				events,
-				window: this.window,
-				callbacks: {
-					isClosed: () => this.closed,
-					startCallback: (callback, args, value) =>
-						this.startCallback(callback, args, value),
-				},
-			});
-			this.console = new PageConsole(page.document, core, {
-				limits: options.consoleLimits,
-				isClosed: () => this.closed,
-				onCall: () => {
-					this.consoleCalls++;
-				},
-				describe: (value) => this.dom.consoleLabel(value),
-			});
+			this.bindings = bindings;
+			this.dom = bindings.dom;
+			this.window = bindings.window;
+			this.console = bindings.console;
+			this.timers = bindings.timers;
+			this.network = bindings.network;
+			this.location = bindings.location;
+			this.history = bindings.history;
+			this.storage = bindings.storage;
 			const record = (level: "log" | "error", values: unknown[]) => {
 				if (this.closed) return;
 				this.consoleCalls++;
 				this.console.buffer.write(level, values);
 			};
 			this.realm = core.createRealm({
-				bindings: {
-					...(this.network ? { fetch: this.network.fetch } : {}),
-					...this.timers.methods,
-					console: this.console.object,
-					document: this.dom.document,
-					window: this.window,
-					self: this.window,
-				},
+				bindings: bindings.globals,
 				budget: this.budget,
 				signal: this.lifetime.signal,
 				maxSourceLength: this.limits.maxSourceCodeUnits,
@@ -391,6 +331,7 @@ export class PageScripts {
 			pendingCallbacks: this.pending.size,
 			active: !!this.active,
 			closed: this.closed,
+			dom: this.dom.metrics(),
 			...(this.network ? { fetch: this.network.metrics() } : {}),
 		});
 	}
@@ -405,9 +346,7 @@ export class PageScripts {
 		});
 		this.active?.abort();
 		this.lifetime.abort();
-		this.timers?.close();
-		this.network?.close();
-		this.dom?.close();
+		this.bindings?.close();
 		this.unregisterClose();
 		return this.closing;
 	}

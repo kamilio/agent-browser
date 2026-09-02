@@ -59,6 +59,22 @@ Metrics are immutable snapshots. Request counts include attempted hops/DNS
 lookups; encoded and decoded counters measure body bytes, not TLS/header costs.
 They include bytes observed before a quota rejects a chunk.
 
+The optional `requestWithRoutes(request, resolveRoute)` API uses the same native
+driver, consulting a synchronous trusted resolver before each hop's DNS/exchange.
+Its metadata argument contains URL, method and signal only. The session supplies
+its own `NetworkRoutes.fulfill`; no guest handler or unrestricted browser engine
+is exposed. Routed responses are validated, headers normalized and copied, and
+body ownership detached. Invalid results fail rather than triggering a real send.
+
+Request, response/header, redirect and cumulative decoded-body limits still apply.
+Mocked attempts and decoded bytes are included in the main counters; optional
+`mockedRequests` and `mockedDecodedBytes` identify their subsets. These include
+validated mock data observed before a byte-limit rejection. Encoded counters
+remain actual encoded stream bytes. A monotonic deadline check also detects
+overdue synchronous routing work between async checkpoints, without claiming to
+preempt arbitrary host callbacks. `ROUTING.md` documents the
+adapter-dependent fallback and the mock-only validation evidence for this change.
+
 Optional externally owned `cookieJar` state enables bounded cookie sessions when
 requests include an explicit cookie/credentials context. Redirect response cookies
 are processed before following; outgoing jar cookies are recomputed for every hop,

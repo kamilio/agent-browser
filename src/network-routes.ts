@@ -31,7 +31,6 @@ const encoder = new TextEncoder();
 const forbiddenHeaders = new Set([
 	"set-cookie",
 	"set-cookie2",
-	"location",
 	"content-encoding",
 	"transfer-encoding",
 	"content-length",
@@ -134,6 +133,11 @@ export class NetworkRoutes {
 			)
 				throw new AgentBrowserError("invalid-input", "Invalid route header");
 			const lower = name.toLowerCase();
+			if (lower === "location" && Object.hasOwn(headers, lower))
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Duplicate route Location header",
+				);
 			if (forbiddenHeaders.has(lower))
 				throw new AgentBrowserError(
 					"unsupported",

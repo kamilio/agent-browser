@@ -108,6 +108,81 @@ it("can fulfill the initial hop without DNS and preserves detached response owne
 	expect(exchange).not.toHaveBeenCalled();
 });
 
+it("follows an entirely routed redirect chain with native POST rewriting and no DNS or exchange", async () => {
+	const { transport, resolver, exchange, routes } = fixture();
+	routes.add("**/start", {
+		status: 303,
+		headers: { Location: "https://target.example/final#target" },
+	});
+	const final = routes.add("**/final", { body: "final mock" });
+	const methods: (string | undefined)[] = [];
+	const result = await transport.requestWithRoutes(
+		{
+			url: "https://source.example/start#source",
+			method: "POST",
+			body: "payload",
+		},
+		(input) => {
+			methods.push(input.method);
+			return routes.fulfill(input);
+		},
+	);
+	expect(methods).toEqual(["POST", "GET"]);
+	expect(result).toMatchObject({
+		url: "https://target.example/final#target",
+		routeId: final.id,
+		redirects: [
+			{ status: 303, location: "https://target.example/final#target" },
+		],
+	});
+	expect(new TextDecoder().decode(result.body)).toBe("final mock");
+	expect(resolver).not.toHaveBeenCalled();
+	expect(exchange).not.toHaveBeenCalled();
+});
+
+it("keeps manual/error modes and redirect limits for entirely mocked responses", async () => {
+	const { transport, resolver, exchange, routes } = fixture({
+		limits: { maxRedirects: 2 },
+	});
+	routes.add("**/loop", { status: 302, headers: { location: "/loop" } });
+	const resolve: NetworkRouteResolver = (input) => routes.fulfill(input);
+	expect(
+		await transport.requestWithRoutes(
+			{ url: "https://example.com/loop", redirect: "manual" },
+			resolve,
+		),
+	).toMatchObject({ status: 302, redirects: [] });
+	await expect(
+		transport.requestWithRoutes(
+			{ url: "https://example.com/loop", redirect: "error" },
+			resolve,
+		),
+	).rejects.toMatchObject({ code: "policy-denied" });
+	await expect(
+		transport.requestWithRoutes({ url: "https://example.com/loop" }, resolve),
+	).rejects.toMatchObject({ code: "resource-limit" });
+	expect(resolver).not.toHaveBeenCalled();
+	expect(exchange).not.toHaveBeenCalled();
+	expect(transport.metrics().active).toBe(0);
+});
+
+it("rejects a mocked HTTPS downgrade before consulting a destination rule", async () => {
+	const { transport, resolver, exchange, routes } = fixture();
+	routes.add("**/start", {
+		status: 302,
+		headers: { location: "http://target.example/final" },
+	});
+	routes.add("**/final", { body: "must not be read" });
+	await expect(
+		transport.requestWithRoutes({ url: "https://example.com/start" }, (input) =>
+			routes.fulfill(input),
+		),
+	).rejects.toMatchObject({ code: "policy-denied" });
+	expect(routes.metrics().fulfilled).toBe(1);
+	expect(resolver).not.toHaveBeenCalled();
+	expect(exchange).not.toHaveBeenCalled();
+});
+
 it.each([
 	[301, "GET"],
 	[302, "GET"],
@@ -204,6 +279,8 @@ it.each([
 	"http://target.example/mocked",
 	"https://user:secret@target.example/mocked",
 	"https://target.example:25/mocked",
+	"https://127.0.0.1/mocked",
+	"https://localhost/mocked",
 ])("rejects unsafe redirect %s before resolving its route", async (target) => {
 	const { transport, exchange, routes } = fixture();
 	routes.add("**/mocked", { body: "mock" });

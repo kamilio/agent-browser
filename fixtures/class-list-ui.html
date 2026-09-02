@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Class-list agent fixture</title>
+  <style>.concealed { display: none; }</style>
+</head>
+<body>
+<h1>Class-driven actions</h1>
+<button id="reveal">Show details</button>
+<button id="secret" class="concealed">Private action</button>
+<p id="status">Waiting</p>
+<div id="tokens" class=" a a b "></div>
+<script>
+var secretClasses = document.getElementById("secret").classList;
+document.getElementById("reveal").addEventListener("click", function() {
+  secretClasses.toggle("concealed", false);
+  secretClasses.add("enabled");
+  document.getElementById("status").classList.value = "shown";
+});
+document.getElementById("secret").addEventListener("click", function() {
+  document.getElementById("status").textContent = "Activated";
+  document.getElementById("status").classList.replace("shown", "activated");
+});
+</script>
+</body>
+</html>

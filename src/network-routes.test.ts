@@ -119,7 +119,7 @@ it("preserves route state when an invalid or over-budget registration fails", ()
 		{ body: "large" },
 		{ status: 101 },
 		{ body: "x", status: 204 },
-		{ body: "x", headers: { Location: "/elsewhere" } },
+		{ body: "x", headers: { "Content-Length": "1" } },
 		{ body: "x", headers: { "Set-Cookie": "private=1" } },
 	];
 	for (const options of invalidOptions)
@@ -145,6 +145,28 @@ it("requires real fulfillment instead of silently ignoring rewrite-only options"
 			contentType: "text/plain\r\nInjected: value",
 		}),
 	).toThrow("header");
+});
+
+it("retains a single redirect Location without following it inside the rule table", () => {
+	const routes = new NetworkRoutes();
+	routes.add("**/start", {
+		status: 302,
+		headers: { Location: " /next?value=one " },
+	});
+	expect(routes.fulfill({ url: "https://example.com/start" })).toMatchObject({
+		status: 302,
+		headers: { location: ["/next?value=one"] },
+		redirects: [],
+		routeId: 1,
+	});
+	const before = routes.list();
+	expect(() =>
+		routes.add("**/ambiguous", {
+			status: 302,
+			headers: { Location: "/one", location: "/two" },
+		}),
+	).toThrow("Location");
+	expect(routes.list()).toEqual(before);
 });
 
 it("honors HEAD and null-body statuses while retaining bounded lifetime delivery accounting", () => {

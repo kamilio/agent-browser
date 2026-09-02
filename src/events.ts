@@ -201,6 +201,7 @@ export class DocumentEvents {
 	private droppedErrors = 0;
 	private closed = false;
 	private interrupted = new Set<(error: AgentBrowserError) => void>();
+	private idleWaiters = new Set<(error?: AgentBrowserError) => void>();
 	private unregisterClose: () => unknown;
 
 	constructor(
@@ -351,16 +352,33 @@ export class DocumentEvents {
 		return !event.defaultPrevented;
 	}
 
-	async dispatchEventAsync(target: number, event: BrowserEvent) {
+	async dispatchEventAsync(
+		target: number,
+		event: BrowserEvent,
+		signal?: AbortSignal,
+	) {
+		if (signal !== undefined && !(signal instanceof AbortSignal))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid event dispatch signal",
+			);
+		if (signal?.aborted)
+			throw new AgentBrowserError("aborted", "Event dispatch aborted");
 		for (const record of this.dispatch(target, event)) {
 			const invoke = controlledListeners.get(record.callback);
 			try {
-				if (invoke) await this.waitForPrefix(invoke(record.target, event));
+				if (signal?.aborted)
+					throw new AgentBrowserError("aborted", "Event dispatch aborted");
+				if (invoke)
+					await this.waitForPrefix(invoke(record.target, event), signal);
 				else if (typeof record.callback === "function")
 					record.callback.call(record.target, event);
 				else record.callback.handleEvent(event);
+				if (signal?.aborted)
+					throw new AgentBrowserError("aborted", "Event dispatch aborted");
 			} catch (error) {
 				if (
+					signal?.aborted ||
 					this.closed ||
 					(invoke &&
 						error instanceof AgentBrowserError &&
@@ -422,7 +440,37 @@ export class DocumentEvents {
 			state.stopped = false;
 			state.immediate = false;
 			state.passive = false;
+			if (this.depth === 0) for (const finish of this.idleWaiters) finish();
 		}
+	}
+
+	whenIdle(signal: AbortSignal): Promise<void> {
+		this.ensureOpen();
+		if (!(signal instanceof AbortSignal))
+			throw new AgentBrowserError("invalid-input", "Invalid event idle signal");
+		if (signal.aborted)
+			return Promise.reject(
+				new AgentBrowserError("aborted", "Event idle wait aborted"),
+			);
+		if (this.depth === 0) return Promise.resolve();
+		if (this.idleWaiters.size >= 16)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Event idle wait limit exceeded",
+			);
+		return new Promise<void>((resolve, reject) => {
+			const finish = (error?: AgentBrowserError) => {
+				this.idleWaiters.delete(finish);
+				signal.removeEventListener("abort", abort);
+				if (error) reject(error);
+				else resolve();
+			};
+			const abort = () =>
+				finish(new AgentBrowserError("aborted", "Event idle wait aborted"));
+			this.idleWaiters.add(finish);
+			signal.addEventListener("abort", abort, { once: true });
+			if (signal.aborted) abort();
+		});
 	}
 
 	drainErrors(): readonly BrowserListenerError[] {
@@ -444,6 +492,8 @@ export class DocumentEvents {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		for (const finish of this.idleWaiters)
+			finish(new AgentBrowserError("closed", "Document events are closed"));
 		for (const reject of this.interrupted)
 			reject(new AgentBrowserError("closed", "Document events are closed"));
 		this.interrupted.clear();
@@ -509,7 +559,7 @@ export class DocumentEvents {
 		return path;
 	}
 
-	private waitForPrefix(pending: Promise<void>) {
+	private waitForPrefix(pending: Promise<void>, signal?: AbortSignal) {
 		if (this.closed) {
 			void pending.catch(() => undefined);
 			return Promise.reject(
@@ -517,15 +567,26 @@ export class DocumentEvents {
 			);
 		}
 		return new Promise<void>((resolve, reject) => {
-			const interrupt = (error: AgentBrowserError) => reject(error);
+			const cleanup = () => {
+				this.interrupted.delete(interrupt);
+				signal?.removeEventListener("abort", abort);
+			};
+			const interrupt = (error: AgentBrowserError) => {
+				cleanup();
+				reject(error);
+			};
+			const abort = () =>
+				interrupt(new AgentBrowserError("aborted", "Event dispatch aborted"));
 			this.interrupted.add(interrupt);
+			signal?.addEventListener("abort", abort, { once: true });
+			if (signal?.aborted) abort();
 			pending.then(
 				() => {
-					this.interrupted.delete(interrupt);
+					cleanup();
 					resolve();
 				},
 				(error) => {
-					this.interrupted.delete(interrupt);
+					cleanup();
 					reject(error);
 				},
 			);

@@ -12,6 +12,27 @@ import type { ScriptHostObjectDefinition } from "./script-dom.js";
 
 afterEach(() => vi.useRealTimers());
 
+it("shares live Location aliases and revokes them with the page realm", async () => {
+	const test = fixture();
+	const scripts = new PageScripts(
+		{ document: test.tree, interactions: test.actions },
+		test.core,
+	);
+	const location = test.options().bindings.location as { href: string };
+	const window = scripts.window as { location: object };
+	const document = scripts.dom.document as { location: object };
+	expect(window.location).toBe(location);
+	expect(document.location).toBe(location);
+	test.tree.setUrl("https://example.com/next#fragment");
+	expect(location.href).toBe(test.tree.url);
+	expect(() => {
+		window.location = {};
+	}).toThrow("not implemented");
+	await scripts.close();
+	expect(() => location.href).toThrow("closed");
+	test.tree.close();
+});
+
 it("owns timers on the page and cancels them when the document closes", async () => {
 	vi.useFakeTimers();
 	const test = fixture();
@@ -273,6 +294,7 @@ it("creates one persistent realm with live document/window aliases and explicit 
 		"clearTimeout",
 		"console",
 		"document",
+		"location",
 		"self",
 		"setInterval",
 		"setTimeout",

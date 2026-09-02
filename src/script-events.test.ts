@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { BrowserEvent, DocumentEvents } from "./events.js";
 import { BrowserFocusEvent } from "./focus.js";
 import { BrowserSubmitEvent } from "./form-actions.js";
+import { BrowserHashChangeEvent, BrowserPopStateEvent } from "./history.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { BrowserInputEvent } from "./input-events.js";
 import { BrowserKeyboardEvent } from "./keyboard.js";
@@ -14,6 +15,35 @@ interface GuestNode {
 	addEventListener(type: string, listener: unknown, options?: unknown): void;
 	removeEventListener(type: string, listener: unknown, options?: unknown): void;
 }
+
+it("exposes history event data through owned event capabilities", async () => {
+	const { tree, events, target, button } = fixture();
+	const results: unknown[] = [];
+	button.addEventListener("popstate", (event: { state: unknown }) =>
+		results.push(event.state),
+	);
+	button.addEventListener(
+		"hashchange",
+		(event: { oldURL: string; newURL: string }) =>
+			results.push([event.oldURL, event.newURL]),
+	);
+	await events.dispatchEventAsync(
+		target,
+		new BrowserPopStateEvent({ page: 1 }),
+	);
+	await events.dispatchEventAsync(
+		target,
+		new BrowserHashChangeEvent(
+			"https://example.com/#one",
+			"https://example.com/#two",
+		),
+	);
+	expect(results).toEqual([
+		{ page: 1 },
+		["https://example.com/#one", "https://example.com/#two"],
+	]);
+	tree.close();
+});
 
 it("does not copy registered listeners when cloning a node", async () => {
 	const { tree, target, events, button } = fixture();

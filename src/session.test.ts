@@ -8,6 +8,7 @@ import type {
 	NetworkResponse,
 	NetworkTransport,
 } from "./network.js";
+import { pageHistoryPort } from "./page-history.js";
 import {
 	BrowserSession,
 	type BrowserSessionOptions,
@@ -109,6 +110,90 @@ function fixture(
 
 afterEach(() => {
 	for (const session of sessions.splice(0)) session.close();
+});
+
+it("rejects fresh old-page traversal while an explicit navigation is pending", async () => {
+	const started = deferred<void>();
+	const result = deferred<NetworkResponse>();
+	const { session } = fixture({}, async (input) => {
+		if (input.url.endsWith("/pending")) {
+			started.resolve();
+			return result.promise;
+		}
+		return response(input.url);
+	});
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	const port = pageHistoryPort(session.page(tab).document);
+	if (!port) throw new Error("Missing history port");
+	const navigation = session.navigate(tab, "https://example.com/pending");
+	await started.promise;
+	expect(() => port.traverse(-1)).toThrow("explicit navigation");
+	result.resolve(response("https://example.com/pending"));
+	await navigation;
+	expect(session.metrics().pageTraversals[0].accepted).toBe(0);
+});
+
+it("initializes a custom loader document once without resetting its parser-time history", async () => {
+	const { session } = fixture({
+		loadDocument: (response, context) => {
+			const tree = documentFixture(response, context);
+			context.initializeDocument?.(tree);
+			const history = pageHistoryPort(tree);
+			if (!history) throw new Error("Missing initialized history");
+			history.pushState({ initialized: true }, "/route");
+			context.initializeDocument?.(tree);
+			return tree;
+		},
+	});
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	expect(session.page(tab).history.snapshot()).toMatchObject({
+		state: { initialized: true },
+		length: 2,
+		url: "https://example.com/route",
+	});
+});
+
+it("closes both unowned documents when a loader returns a different initialized candidate", async () => {
+	const created: DocumentTree[] = [];
+	const { session } = fixture({
+		loadDocument: (response, context) => {
+			const first = documentFixture(response, context);
+			const second = documentFixture(response, context);
+			created.push(first, second);
+			context.initializeDocument?.(first);
+			return second;
+		},
+	});
+	const tab = session.createTab().id;
+	await expect(session.navigate(tab, initialUrl)).rejects.toThrow(
+		"one document",
+	);
+	expect(created.map((tree) => tree.nodeCount)).toEqual([0, 0]);
+});
+
+it("disposes a candidate initialized after its navigation has been stopped", async () => {
+	const started = deferred<DocumentLoaderContext>();
+	const loaded = deferred<DocumentTree>();
+	const { session } = fixture({
+		loadDocument: (_response, context) => {
+			started.resolve(context);
+			return loaded.promise;
+		},
+	});
+	const tab = session.createTab().id;
+	const navigation = expect(
+		session.navigate(tab, initialUrl),
+	).rejects.toMatchObject({ code: "aborted" });
+	const context = await started.promise;
+	session.stop(tab);
+	await navigation;
+	const late = new DocumentTree(initialUrl, context.limits);
+	expect(() => context.initializeDocument?.(late)).toThrow();
+	expect(late.nodeCount).toBe(0);
+	loaded.resolve(late);
+	await vi.waitFor(() => expect(session.metrics().pendingLoads).toBe(0));
 });
 
 it("keeps request diagnostics scoped to a tab's latest network navigation", async () => {
@@ -330,6 +415,26 @@ it("prevents automatic transport redirects from silently bypassing active routes
 	expect(requests).toHaveLength(1);
 	expect(requests[0].redirect).toBe("manual");
 	expect(session.routes.metrics().fulfilled).toBe(0);
+});
+
+it("exposes manual redirect mocks but fails closed for navigation on an incapable adapter", async () => {
+	const { session, requests } = fixture();
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	session.routes.add("**/mock", {
+		status: 302,
+		headers: { Location: "/target" },
+	});
+	const fetch = session.page(tab).fetch;
+	if (!fetch) throw new Error("Expected document fetch port");
+	expect(
+		await fetch({ url: "https://example.com/mock", redirect: "manual" }),
+	).toMatchObject({ status: 302, headers: { location: ["/target"] } });
+	await expect(
+		session.navigate(tab, "https://example.com/mock"),
+	).rejects.toMatchObject({ code: "unsupported" });
+	expect(requests).toHaveLength(1);
+	expect(session.page(tab).document.url).toBe(initialUrl);
 });
 
 it("revokes the old fetch port on replacement but preserves it across fragment navigation", async () => {

@@ -1,0 +1,91 @@
+{
+  "startedAt": "2026-09-02T16:56:09.550Z",
+  "finishedAt": "2026-09-02T16:56:09.748Z",
+  "scope": "Existing experimental SafeJS, actual parser/DOM/history/events and session-owned task queue over in-memory transport. No public site, socket, server, PTY, service activation or released-SDK migration.",
+  "checks": [
+    {
+      "label": "Interpreted back queues traversal and returns before changing history state",
+      "passed": true
+    },
+    {
+      "label": "The queued traversal updates the same document and runs interpreted popstate",
+      "passed": true
+    },
+    {
+      "label": "Interpreted forward restores the next state without a fetch",
+      "passed": true
+    },
+    {
+      "label": "Interpreted go() returns undefined while requesting reload",
+      "passed": true
+    },
+    {
+      "label": "Reload creates a new realm with restored state before parser scripts",
+      "passed": true
+    },
+    {
+      "label": "Parser-requested traversal waits for its document to commit",
+      "passed": true
+    },
+    {
+      "label": "Parser-requested back crosses document boundaries through the session",
+      "passed": true
+    },
+    {
+      "label": "Stop cancels queued guest work before another request",
+      "passed": true
+    },
+    {
+      "label": "Explicit agent navigation supersedes already queued page traversal",
+      "passed": true
+    },
+    {
+      "label": "Failed asynchronous traversal preserves the old page and makes no forbidden request",
+      "passed": true
+    },
+    {
+      "label": "Traversal failure diagnostics expose a sanitized code, not private URL data",
+      "passed": true
+    },
+    {
+      "label": "Interpreted Location hash writes update URL and history synchronously",
+      "passed": true
+    },
+    {
+      "label": "Deferred interpreted hashchange observes captured old and new URLs without fetching",
+      "passed": true
+    },
+    {
+      "label": "Window Location assignment queues session navigation and returns to its caller",
+      "passed": true
+    },
+    {
+      "label": "Window Location assignment commits a fresh document and retires the old owner",
+      "passed": true
+    },
+    {
+      "label": "Location reload restores history state before creating the new realm",
+      "passed": true
+    },
+    {
+      "label": "Location replace preserves adjacent backward and forward entries",
+      "passed": true
+    },
+    {
+      "label": "Document Location assignment uses the same owned navigation path",
+      "passed": true
+    },
+    {
+      "label": "Interpreted Location component writes navigate with the resolved URL",
+      "passed": true
+    },
+    {
+      "label": "Parser-time Location assignment waits for commit and replaces the loading entry",
+      "passed": true
+    },
+    {
+      "label": "Asynchronous Location failures preserve the owner and sanitize navigation diagnostics",
+      "passed": true
+    }
+  ]
+}

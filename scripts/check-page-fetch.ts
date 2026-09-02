@@ -241,6 +241,54 @@ try {
 			requests.length === beforeRoute + 1 &&
 			browser.requests(tab).entries.at(-1)?.routeId === routed.id,
 	);
+	const redirectRoute = browser.routes.add("**/mock-hop", {
+		status: 302,
+		headers: {
+			location: "https://api.fixture.invalid/routed",
+			"access-control-allow-origin": "*",
+		},
+	});
+	const beforeMockedRedirect = requests.length;
+	const mockedRedirect = await owner.evaluate(
+		'var mockHop = await fetch("https://api.fixture.invalid/mock-hop"); var mockHopData = await mockHop.json(); return mockHop.redirected && mockHopData.title === "Loaded from a route";',
+	);
+	check(
+		"Interpreted fetch follows a fully mocked redirect without calling the transport",
+		mockedRedirect.ok &&
+			mockedRedirect.value === true &&
+			requests.length === beforeMockedRedirect,
+	);
+	check(
+		"Both mocked redirect hops retain route identity and CORS observations",
+		JSON.stringify(
+			browser
+				.requests(tab)
+				.entries.slice(-2)
+				.map((entry) => [entry.routeId, entry.cors]),
+		) ===
+			JSON.stringify([
+				[redirectRoute.id, "allowed"],
+				[routed.id, "allowed"],
+			]),
+	);
+	const mockedRedirectError = await owner.evaluate(
+		'try { await fetch("https://api.fixture.invalid/mock-hop", {redirect: "error"}); return false; } catch (error) { return true; }',
+	);
+	check(
+		"Interpreted fetch rejects a mocked redirect in error mode without transport fallback",
+		mockedRedirectError.ok &&
+			mockedRedirectError.value === true &&
+			requests.length === beforeMockedRedirect,
+	);
+	const mockedRedirectManual = await owner.evaluate(
+		'var manualHop = await fetch("https://api.fixture.invalid/mock-hop", {redirect: "manual"}); return manualHop.type === "opaqueredirect" && manualHop.status === 0;',
+	);
+	check(
+		"Interpreted fetch exposes a filtered manual mocked redirect",
+		mockedRedirectManual.ok &&
+			mockedRedirectManual.value === true &&
+			requests.length === beforeMockedRedirect,
+	);
 	browser.routes.remove("**/routed");
 	const beforeRemoval = requests.length;
 	const afterRemoval = await owner.evaluate(

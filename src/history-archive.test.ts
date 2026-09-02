@@ -3,6 +3,24 @@ import { DocumentTree } from "./document.js";
 import { DocumentEvents } from "./events.js";
 import { DocumentHistory } from "./history.js";
 
+it("validates a detached frozen prospective archive before committing state", () => {
+	const { tree, history } = fixture();
+	const before = history.capture();
+	const revision = history.revision;
+	expect(() =>
+		history.pushState({ changed: true }, "?changed", (archive) => {
+			expect(Object.isFrozen(archive)).toBe(true);
+			expect(Object.isFrozen(archive.entries[1])).toBe(true);
+			expect(archive.entries[1].serialized).toBe('{"changed":true}');
+			throw new Error("denied");
+		}),
+	).toThrow("denied");
+	expect(history.capture()).toEqual(before);
+	expect(history.revision).toBe(revision);
+	expect(tree.url).toBe(before.entries[0].url);
+	tree.close();
+});
+
 function fixture(url = "https://example.com/a") {
 	const tree = new DocumentTree(url);
 	return {

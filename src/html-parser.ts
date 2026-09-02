@@ -96,6 +96,7 @@ const sections = new Set(["tbody", "thead", "tfoot"]);
 export interface HtmlParseOptions {
 	limits?: Partial<DocumentLimits>;
 	signal?: AbortSignal;
+	initializeDocument?: (tree: DocumentTree) => void;
 }
 
 export interface HtmlFragmentContext {
@@ -363,6 +364,7 @@ function* parseHtmlSteps(
 				"resource-limit",
 				"HTML source text limit exceeded",
 			);
+		if (!fragment && !fragmentDocument) options.initializeDocument?.(tree);
 		const normalize = (text: string) =>
 			text.replace(/\r\n?/g, "\n").replace(/\0|\p{Cs}/gu, () => {
 				issue("invalid-unicode-replaced");

@@ -139,8 +139,10 @@ export {
 	BrowserStorage,
 	type StorageArea,
 	type StorageLimits,
+	type StorageMutation,
 	type LocalStorageState,
 } from "./storage.js";
+export { BrowserStorageEvent } from "./storage-events.js";
 export {
 	NetworkPolicy,
 	decodeResponseText,

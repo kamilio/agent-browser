@@ -4,11 +4,44 @@ Status: September 2, 2026. Implementation and released-package verification are
 pending. This is a migration contract, not a claim that the browser already uses
 the resolved upstream APIs.
 
+September 2, 17:37 UTC upstream update: the #549 implementation is pushed as
+`c458b92d312580a2f9b32c9aa5e84b3aed77ea5e`. Its named contract adds optional
+synchronous `set(name, value)` and `delete(name)` providers. The maintainer's
+comment reports passing upstream tests and release jobs still running; this
+observation does not establish a published version or local runtime acceptance.
+The old experimental SDK remains the only locally available browser test core.
+
+September 2, 17:04 UTC verification: #547 is now closed (closed at 16:19:22 UTC).
+The maintainer reports `@poe-platform/safe-js@0.1.36`, commit
+`fff9f787555f1b3e72dc88f7683bcbecffcc143e`, with installed Node/Bun consumer tests
+for `realm.startCallback` and `context.startCallback`, each returning frozen
+`synchronous`/`result` promises. Current source exposes the requested contract.
+These are upstream release/source observations, not local released-SDK tests.
+The previously denied package download has not been retried or substituted.
+
+September 2, 17:05 UTC: #549 requests bounded writable named host-object properties
+for Storage-style assignment/deletion. The exact filed body is
+`contributions/safejs-named-mutations-issue.md`; creation and body were verified.
+Current source at `521363bf16bdc9ae63f60f7ba47d57c03f2011fc` still has read-only
+named providers and only fixed property setters. This is new enhancement scope,
+not a claim that #546's explicitly read-only contract is broken. Browser storage
+methods work; named assignment in the experimental core does not persist. No
+Proxy, state-copy mirror or private-runtime import was introduced to mask it.
+
+Earlier observations below are historical:
+
 September 2, 15:35 UTC: poe-code #547 now requests an explicit public callback
 phase contract. The issue is verified open and its body matches
 `contributions/safejs-callback-phases-issue.md`. It is an API enhancement/guidance
 request supported by source inspection and the local experimental-core probe,
 not a claimed defect reproduced against the released package.
+
+September 2, 15:42 UTC maintainer update: implementation of public `startCallback`
+and separate prefix/result completion is in progress, with focused tests and full
+consumer checks underway. The issue remained open at the subsequent check. This
+is an upstream progress report, not a verified published release or completed
+browser integration. No additional issue or local workaround is needed for this
+same contract while that work proceeds.
 
 ## Inspected evidence
 
@@ -39,7 +72,7 @@ package was downloaded or installed for this inspection.
 | Errors | Exported `SandboxError` constructor | Not exported by the inspected core | Use the public result/error contract rather than a private class identity. |
 | Cancellation | Per-evaluation signal and `realm.closed` | Realm lifetime signal; no public `closed` field or evaluation signal | Track browser-owned closure and abort the lifetime for fatal timeout/cancellation. |
 | Limits | Browser-specific realm source/evaluation options | Explicit supported realm options and resource collection limits | Keep source/run limits in the adapter; pass only upstream-supported options. |
-| Callbacks | Separate synchronous-prefix and final-result promises | `invokeCallback` returns one completion promise | Resolve the dispatch-phase contract before replacing the existing event adapter. |
+| Callbacks | Global function with separate synchronous-prefix and final-result promises | Realm/context `startCallback` now returns both phases | Adapt the receiver and argument shape; verify dispatch ordering against the actual release. |
 
 Indexed and named host-object declarations now exist upstream. Preserve live
 identity, bounds, ownership and revocation tests when moving those declarations
@@ -51,10 +84,12 @@ into extension setup; closure of #545/#546 is not browser-integration evidence.
 The event dispatcher needs to finish the listener's synchronous work before
 deciding default actions, without waiting for an async listener's final result.
 
-The inspected upstream implementation uses an internal async-prefix mechanism,
-but its public `invokeCallback` returns the final result after awaiting the guest
-value. Its public types expose no separate prefix-completion handle. This source
-inspection establishes a contract mismatch, not a tested defect in the release.
+The earlier pre-#547 source exposed only final-result `invokeCallback`. That
+contract gap is now resolved upstream: the public realm and extension context
+both expose `startCallback(callback, { thisValue, args })` returning separate
+`synchronous` and `result` promises. The browser has not yet runtime-validated
+this released API; its legacy adapter still uses a global function with a
+different argument shape.
 
 Do not adapt the API by resolving the prefix immediately, by awaiting the final
 result for both phases, or by assuming a fixed number of microtask turns. Those
@@ -69,9 +104,44 @@ a public consumer probe against the actual release that covers:
 4. Nested dispatch, listener ordering and synchronous listener failures.
 5. Close/abort while a callback is pending, with no retained guest handles.
 
-The explicit phase capability is requested in #547, with an invitation for a
-supported existing-API example if one already expresses the boundary. Completed
-issues were not reopened; the host-constructor proposal remains separate.
+The explicit phase capability from #547 no longer requires another upstream
+issue. Completed issues were not reopened; the host-constructor proposal remains
+separate.
+
+## Released-contract acceptance probe
+
+`scripts/check-released-safejs.ts` prepares a separate, fail-closed public
+extension consumer. It does not modify the browser runtime, load private SDK
+modules, download packages, fall back to the experimental core, or use host
+JavaScript evaluation for guest programs. Select an already available, approved
+artifact and its exact version explicitly:
+
+```bash
+AGENT_BROWSER_SAFEJS_RELEASE_ROOT=/absolute/path/to/approved/package AGENT_BROWSER_SAFEJS_RELEASE_VERSION=0.1.XX node packages/browser-agent/dist/scripts/check-released-safejs.js --trace
+```
+
+Replace `0.1.XX` with the actual artifact version; the loader rejects this
+placeholder. The probe requires the post-#549 API, not merely #547's callback
+release. The root must declare `@poe-platform/safe-js` and a contained public
+`./core` import. Manifest/export symlinks cannot escape the selected root. These
+checks validate selection, not registry provenance or all transitive imports;
+the artifact itself must be trusted. No dependency is installed by this command.
+
+The prepared gates cover live indexed/named host capabilities, named mutation,
+fixed-member precedence, nested operation ordering, both callback entry points,
+retained guest arguments and revocation, callback cancellation, and one-time
+cleanup. Each async wait is bounded; each realm also has step, data and deadline
+budgets. Reports distinguish selected package identity, completed checks,
+selection/contract failure, unverified publication provenance and unverified
+browser integration. **These release gates have not yet run against a released
+SDK.** Loader tests use deliberately inert export stubs and are not interpreter
+or published-consumer conformance tests.
+
+Source inspection also confirms that extension setup is lazy (first evaluation),
+whereas the browser currently constructs capabilities before realm creation.
+Reserved builtin globals conflict with extension exports. Do not equate a
+passing standalone probe with resolution of those construction/global-binding
+differences or migration of limits, errors, results and cancellation.
 
 ## Experimental-core contract probe
 
@@ -94,12 +164,44 @@ AGENT_BROWSER_SAFEJS_SOURCE_ROOT=/absolute/path/to/candidate/packages/safe-js no
 
 ## Implementation and acceptance order
 
+### Capability construction boundary
+
+`src/page-bindings.ts` now owns DOM, Window, Location, History, Storage, timers,
+fetch and console capability construction. Its context needs only
+`createHostObject`, `retainGuestArguments` and `releaseGuestReference`; it has no
+Budget, realm, evaluator, result conversion or SDK error-constructor dependency.
+Callback phases, fatal timer failure and console accounting are explicit
+lifecycle hooks. The current `PageScripts` adapter supplies those operations from
+the existing core and still owns evaluation limits, cancellation and results.
+
+Setup registers timer retention before exposing either global or Window methods,
+and uses the operation returned by registration rather than assuming the input
+function was modified in place. Partial construction failure closes previously
+created capabilities. Closing bindings cancels guest work and revokes their native
+wrappers without closing the borrowed native document event dispatcher. The
+document's console buffer remains readable for diagnostics until document close.
+
+Twelve native boundary tests cover construction without realm APIs, timer wrapper
+selection, argument release, callback receivers, console accounting, owner close,
+partial failure and invalid/mismatched owners. Seven actual experimental-core
+checks additionally verify retained guest identity across timeout/interval calls,
+shared mutations, cancellation, pending-callback cleanup and native interaction
+survival. The broader suite passes 954 tests across 43 files; existing interpreted
+storage/event, navigation, fetch/CORS and class-list probes also pass.
+
+This is a tested construction boundary, **not a released-SDK adapter**. Wiring it
+into lazy extension setup, resolving the builtin `console` collision and adapting
+the remaining error/result/lifecycle contracts still require release validation.
+
+### Remaining gates
+
 - [ ] Obtain permission for the previously denied released-SDK download; inspect
   the exact package without dependency installation or lifecycle scripts.
 - [ ] Verify actual package exports and runtime behavior with public consumer
   tests; do not substitute repository source for the published artifact.
 - [ ] Resolve callback phases through the public API and the probes above.
-- [ ] Move browser capability construction into one owned extension setup.
+- [ ] Invoke the extracted `PageBindings` construction from one owned extension
+  setup, after validating initialization timing and builtin-global handling.
 - [ ] Adapt results, limits, cancellation, guest retention and cleanup together.
 - [ ] Test distinct documents/realms, stale and foreign capabilities, setup
   failure, repeated closure, budgets and interrupted evaluation.

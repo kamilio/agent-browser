@@ -134,7 +134,7 @@ it("validates route headers atomically and accepts repeated baseline header argu
 		["--headers=[]"],
 		['--headers={"X-Test":false}'],
 		["--header=missing-colon"],
-		["--header=Location: /other"],
+		["--header=Transfer-Encoding: chunked"],
 		["--header=Set-Cookie: private=1"],
 	])
 		await expect(
@@ -142,6 +142,35 @@ it("validates route headers atomically and accepts repeated baseline header argu
 		).rejects.toBeDefined();
 	expect(browser.routes.list()).toHaveLength(1);
 	expect((await host.execute(["unroute"])).data).toEqual({ removed: 1 });
+});
+
+it("accepts redirect mock headers and rejects duplicate Location declarations atomically", async () => {
+	const { host, sessions } = fixture();
+	expect(host.capabilities().routing).toMatchObject({
+		redirectFulfillment: true,
+		transportRedirectHops: "adapter-dependent",
+	});
+	await host.execute(["open"]);
+	await host.execute([
+		"route",
+		"**/start",
+		"--status=302",
+		"--header=Location: /next",
+	]);
+	const browser = [...sessions.values()][0];
+	expect(
+		browser.routes.fulfill({ url: "https://example.com/start" })?.headers
+			.location,
+	).toEqual(["/next"]);
+	for (const headers of [
+		["--header=Location: /one", "--header=location: /two"],
+		['--headers={"Location":"/one","location":"/two"}'],
+		['--headers={"Location":"/one"}', "--header=location: /two"],
+	])
+		await expect(
+			host.execute(["route", "**/ambiguous", "--status=302", ...headers]),
+		).rejects.toMatchObject({ code: "invalid-input" });
+	expect(browser.routes.list()).toHaveLength(1);
 });
 
 it("reads redacted request diagnostics without fetching or changing the snapshot baseline", async () => {

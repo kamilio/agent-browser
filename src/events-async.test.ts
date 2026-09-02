@@ -14,6 +14,61 @@ function fixture() {
 	return { tree, button, events };
 }
 
+it("bounds idle waiters and releases them when the owning document closes", async () => {
+	const { tree, button, events } = fixture();
+	events.addEventListener(
+		button,
+		"click",
+		controlledEventListener(() => new Promise<void>(() => {})),
+	);
+	const dispatch = events.dispatchEventAsync(button, new BrowserEvent("click"));
+	const waiting = Promise.allSettled(
+		Array.from({ length: 16 }, () =>
+			events.whenIdle(new AbortController().signal),
+		),
+	);
+	expect(() => events.whenIdle(new AbortController().signal)).toThrow("limit");
+	tree.close();
+	await expect(dispatch).rejects.toMatchObject({ code: "closed" });
+	expect((await waiting).every((result) => result.status === "rejected")).toBe(
+		true,
+	);
+	expect(events.metrics().activeDispatches).toBe(0);
+});
+
+it("cancels a controlled prefix wait and unwinds event dispatch without closing the document", async () => {
+	const { tree, button, events } = fixture();
+	const controller = new AbortController();
+	const trace: string[] = [];
+	let release!: () => void;
+	const prefix = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	events.addEventListener(
+		button,
+		"click",
+		controlledEventListener(() => prefix),
+		{ once: true },
+	);
+	events.addEventListener(tree.root, "click", () => {
+		trace.push("bubble");
+	});
+	const event = new BrowserEvent("click", { bubbles: true });
+	const dispatch = events.dispatchEventAsync(button, event, controller.signal);
+	controller.abort();
+	await expect(dispatch).rejects.toMatchObject({ code: "aborted" });
+	expect(trace).toEqual([]);
+	expect(events.metrics().activeDispatches).toBe(0);
+	expect(event.currentTarget).toBeNull();
+	release();
+	await events.dispatchEventAsync(
+		button,
+		new BrowserEvent("click", { bubbles: true }),
+	);
+	expect(trace).toEqual(["bubble"]);
+	tree.close();
+});
+
 it("waits for a controlled synchronous phase before bubbling and deciding cancellation", async () => {
 	const { tree, button, events } = fixture();
 	const trace: string[] = [];

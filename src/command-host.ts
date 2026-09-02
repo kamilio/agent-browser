@@ -224,11 +224,51 @@ export class BrowserCommandHost {
 			engine: "independent-typescript",
 			documentFormats: this.formats,
 			websiteJavaScript: this.websiteScripts,
+			domTokens: {
+				partial: true,
+				classList: true,
+				indexed: true,
+				iteration: true,
+				valueAssignment: true,
+				forEach: false,
+				iteratorMethods: false,
+			},
+			pageUrls: {
+				location: "session-owned",
+				baseURI: true,
+				hyperlinkComponents: true,
+				resourceAttributes: true,
+				locationNavigation: true,
+				globalLocationAssignment: false,
+				fragmentWrites: "synchronous-url-deferred-events",
+				historyBindings: true,
+			},
+			pageStorage: {
+				partial: true,
+				localStorage: true,
+				sessionStorage: true,
+				documentCookie: true,
+				namedProperties: false,
+				storageEvents: true,
+				eventScheduling: "bounded-session-task-queue",
+				persistence: "in-memory-session-lifetime",
+			},
+			pageHistory: {
+				partial: true,
+				state: "finite-json",
+				pushState: true,
+				replaceState: true,
+				length: "session-wide",
+				guestTraversal: true,
+				traversalScheduling: "bounded-session-task-queue",
+				stateIdentity: false,
+			},
 			routing: {
 				enabled: true,
 				partial: true,
 				scope: "session",
 				fulfillment: true,
+				redirectFulfillment: true,
 				requestRewriting: false,
 				transportRedirectHops: "adapter-dependent",
 			},
@@ -637,7 +677,13 @@ export class BrowserCommandHost {
 							"invalid-input",
 							"Route header values must be strings",
 						);
-					headers[name.toLowerCase()] = value;
+					const lower = name.toLowerCase();
+					if (lower === "location" && Object.hasOwn(headers, lower))
+						throw new AgentBrowserError(
+							"invalid-input",
+							"Duplicate route Location header",
+						);
+					headers[lower] = value;
 				}
 			}
 			for (const header of (options.header ?? []) as string[]) {
@@ -649,6 +695,11 @@ export class BrowserCommandHost {
 					);
 				const name = header.slice(0, colon).trim().toLowerCase();
 				const value = header.slice(colon + 1).trim();
+				if (name === "location" && Object.hasOwn(headers, name))
+					throw new AgentBrowserError(
+						"invalid-input",
+						"Duplicate route Location header",
+					);
 				headers[name] = Object.hasOwn(headers, name)
 					? `${headers[name]}, ${value}`
 					: value;

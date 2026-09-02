@@ -4,6 +4,97 @@ These files record **foundation and partial-frontend probes**, not general brows
 Checking a marker in downloaded HTML does not prove parsing, page JavaScript,
 element actions, rendering, terminal browsing or playground operation.
 
+- `page-bindings-focused-2026-09-02.json`: 954 passes across 43 files, including
+  twelve runtime-independent capability construction/lifecycle cases. Covers
+  returned timer registrations, cleanup after partial construction, native owner
+  survival and existing browser regressions. This does not test the new SDK.
+- `page-bindings-safejs-fixture-2026-09-02.json`: seven actual experimental-core
+  checks for alias identity, retained timeout/interval arguments, shared guest
+  mutations, cancellation, owner cleanup and surviving native interactions.
+  Entirely in-memory; no released artifact, public site or terminal is exercised.
+
+- `released-sdk-loader-focused-2026-09-02.json`: 942 passes across 42 files,
+  including 24 loader selection tests. Test modules contain inert export stubs;
+  they test exact package/version selection, public export requirements, bounded
+  manifests and path/symlink containment, not interpreter behavior. No released
+  SDK acceptance result is claimed. The separately prepared public-extension
+  probe remains unexecuted against a released artifact.
+
+- `class-lists-focused-2026-09-02.json`: 918 passes across 41 files, including 35
+  class-list cases; bounded classList identity, mutations,
+  conversion, atomicity, cache limits and related browser/DOM/CSS regressions.
+- `class-lists-safejs-fixture-2026-09-02.json`: fourteen actual interpreted class-list
+  mutation changes native CSS visibility and actionability without a reload.
+  Also exercises live iteration, forwarded assignment, readonly indices and
+  cleanup. No public framework/site, released-SDK, PTY or service gate is claimed.
+
+- `storage-events-focused-2026-09-02.json`: 723 passes across 37 files; native mutation capture and bounded
+  document delivery, with session integration and existing browser regressions.
+  Tests cover source exclusion, origin/tab filtering, candidate activation,
+  ordering, cancellation, quota/no-op suppression and retained/lifetime limits.
+- `storage-events-safejs-fixture-2026-09-02.json`: nineteen actual interpreted storage and
+  cross-tab event workflows. Agent mutation rerenders another page through its
+  storage listener, without a reload. Named-write behavior remains a separately
+  recorded unsupported gap. No public site, wire, PTY or release acceptance.
+
+- `page-storage-focused-2026-09-02.json`: 707 passes across 36 files, including 27
+  page-binding cases; page Storage/cookie bindings plus native
+  stores, cookie jar, session and existing browser regressions. Covers ownership,
+  isolation, opener cloning, imports, conversion, quotas, HttpOnly and revocation.
+- `page-storage-safejs-fixture-2026-09-02.json`: twelve actual interpreted workflow
+  checks over a self-authored todo page and in-memory responses. Agent input,
+  interpreted handlers, persisted rendering after reload, isolation and HttpOnly
+  are exercised. Unsupported named writes are recorded separately, not counted
+  as a passing compatibility feature. No public framework/live-site/PTY gate.
+
+- `page-navigation-focused-2026-09-02.json`: 615 passes across 33 files; Location, shared queue,
+  replacement-archive and existing browser regression tests. Covers immediate
+  fragment changes, deferred notifications, adjacent history, parser branches,
+  cancellation, ownership and resource-limit atomicity.
+- `page-navigation-safejs-fixture-2026-09-02.json`: 21 existing-core interpreted
+  History/Location checks over in-memory responses, including ten new Location
+  checks. No live-site, released-SDK, PTY or service acceptance is implied.
+
+- `page-traversals-focused-2026-09-02.json`: 592 passes across 32 files, including
+  deferred session traversal, parser staging, source retirement, cancellation,
+  event-idle boundaries, primitive deltas, quotas and failure diagnostics.
+- `page-traversals-safejs-fixture-2026-09-02.json`: eleven existing-core checks
+  with actual interpreted back/forward/reload and parser-triggered cross-document
+  movement. Cancellation and a resource failure preserve policy/ownership.
+  All responses are in-memory; no live-site, PTY, service or release gate.
+
+- `page-history-focused-2026-09-02.json`: 557 passes across thirty files, including
+  state restoration before parser scripts, session-wide length, branching,
+  atomic budgets, candidate cleanup, event-prefix ordering and cancellation.
+- `page-history-safejs-fixture-2026-09-02.json`: thirteen existing-core checks
+  with actual interpreted state methods, popstate/hashchange callbacks, reload
+  restoration and cross-document branching. All responses are in-memory; no
+  released SDK, live network, PTY, service or deployed-playground gate is claimed.
+
+- `page-urls-focused-2026-09-02.json`: 356 passes across twenty files, including
+  twenty URL-reflection cases and page-runtime alias/lifecycle coverage. Strict
+  package/test compilation and formatting also pass.
+- `page-urls-safejs-fixture-2026-09-02.json`: fifteen existing-core checks with
+  actual interpreted Location reads, base/link/resource edits, explicit mutation
+  rejection, same-document navigation and following the edited link through an
+  in-memory session transport. No live site, released SDK, PTY or service gate.
+
+- `redirect-mocking-focused-2026-09-02.json`: 290 passes across fourteen files,
+  including twenty-four mocked-wire native-driver cases. Adds entirely routed
+  redirects, method transitions, modes/limits, unsafe-target rejection, atomic
+  Location configuration and safe incapable-adapter navigation behavior.
+- `redirect-mocking-safejs-fixture-2026-09-02.json`: twenty-four checks against the
+  existing experimental core. Interpreted fetch follows fully mocked redirects,
+  retains per-hop CORS/journal evidence, rejects error-mode redirects and exposes
+  filtered manual responses. No real network, released SDK, PTY or service gate.
+
+- `native-routing-focused-2026-09-02.json`: 284 passes across fourteen files.
+  Twenty-one native-driver cases use mocked resolver/wire exchange to verify
+  per-hop routing, credentials/methods, ownership, policy, limits, deadlines and
+  session HTML loading. The real stream consumer also processes an in-memory
+  body for shared-budget coverage. Strict builds/formatting pass; no live wire,
+  TLS, actual DNS, public-site or separate-CLI gate is claimed.
+
 - `routing-focused-2026-09-02.json`: 263 passes across thirteen files, including
   bounded glob matching/oracle cases, atomic limits, copies/cleanup, actual HTML
   and stylesheet replacement, named-session commands, attribution and safe

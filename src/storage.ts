@@ -20,6 +20,17 @@ export interface StorageArea {
 	entries(): readonly (readonly [string, string])[];
 }
 
+export interface StorageMutation {
+	readonly kind: "local" | "session";
+	readonly tabId: string;
+	readonly origin: string;
+	readonly url: string;
+	readonly source?: object;
+	readonly key: string | null;
+	readonly oldValue: string | null;
+	readonly newValue: string | null;
+}
+
 export interface LocalStorageState {
 	origins: {
 		origin: string;
@@ -45,10 +56,6 @@ function string(value: unknown): asserts value is string {
 		);
 }
 
-function originOf(url: string) {
-	return parseNetworkUrl(url).origin;
-}
-
 function validId(id: string) {
 	if (typeof id !== "string" || !/^[a-z0-9][a-z0-9_.-]{0,63}$/i.test(id))
 		throw new AgentBrowserError("invalid-input", "Invalid storage tab ID");
@@ -60,8 +67,17 @@ export class BrowserStorage {
 	private tabs = new Map<string, TabStorage>();
 	private closed = false;
 	private currentRevision = 0;
+	private notificationFailures = 0;
 
-	constructor(limits: Partial<StorageLimits> = {}) {
+	constructor(
+		limits: Partial<StorageLimits> = {},
+		private readonly onMutation?: (mutation: StorageMutation) => unknown,
+	) {
+		if (onMutation !== undefined && typeof onMutation !== "function")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid storage mutation observer",
+			);
 		this.limits = Object.freeze({
 			maxTabs: 32,
 			maxAreas: 256,
@@ -113,11 +129,11 @@ export class BrowserStorage {
 		this.currentRevision++;
 	}
 
-	localStorage(tabId: string, url: string): StorageArea {
-		return this.area("local", tabId, url);
+	localStorage(tabId: string, url: string, source?: object): StorageArea {
+		return this.area("local", tabId, url, source);
 	}
-	sessionStorage(tabId: string, url: string): StorageArea {
-		return this.area("session", tabId, url);
+	sessionStorage(tabId: string, url: string, source?: object): StorageArea {
+		return this.area("session", tabId, url, source);
 	}
 
 	metrics() {
@@ -128,6 +144,7 @@ export class BrowserStorage {
 			entries: stores.reduce((sum, store) => sum + store.values.size, 0),
 			bytes: stores.reduce((sum, store) => sum + store.bytes, 0),
 			revision: this.currentRevision,
+			notificationFailures: this.notificationFailures,
 			closed: this.closed,
 		});
 	}
@@ -225,9 +242,43 @@ export class BrowserStorage {
 		kind: "local" | "session",
 		tabId: string,
 		url: string,
+		source?: object,
 	): StorageArea {
+		if (source !== undefined && (source === null || typeof source !== "object"))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid storage mutation source",
+			);
 		const tab = this.tab(tabId);
-		const origin = originOf(url);
+		const target = parseNetworkUrl(url);
+		const origin = target.origin;
+		const notify = (
+			key: string | null,
+			oldValue: string | null,
+			newValue: string | null,
+		) => {
+			if (!this.onMutation) return;
+			try {
+				const result = this.onMutation(
+					Object.freeze({
+						kind,
+						tabId,
+						origin,
+						url: target.href,
+						source,
+						key,
+						oldValue,
+						newValue,
+					}),
+				);
+				if (result !== undefined)
+					void Promise.resolve(result).catch(() => {
+						this.notificationFailures++;
+					});
+			} catch {
+				this.notificationFailures++;
+			}
+		};
 		const map = () => {
 			this.ensureOpen();
 			if (this.tabs.get(tabId) !== tab)
@@ -293,6 +344,7 @@ export class BrowserStorage {
 				store.bytes = bytes;
 				areas.set(origin, store);
 				this.currentRevision++;
+				notify(key, old ?? null, value);
 			},
 			removeItem: (key: string) => {
 				string(key);
@@ -304,9 +356,15 @@ export class BrowserStorage {
 				store.values.delete(key);
 				if (!store.values.size) areas.delete(origin);
 				this.currentRevision++;
+				notify(key, previous, null);
 			},
 			clear: () => {
-				if (map().delete(origin)) this.currentRevision++;
+				const areas = map();
+				const changed = !!areas.get(origin)?.values.size;
+				if (areas.delete(origin)) {
+					this.currentRevision++;
+					if (changed) notify(null, null, null);
+				}
 			},
 			entries: () =>
 				Object.freeze(

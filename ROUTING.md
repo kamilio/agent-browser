@@ -29,6 +29,7 @@ Additional examples:
 agent-browser -s=mock route '**/api/users' --body='[{"id":1,"name":"Example"}]' --content-type=application/json
 agent-browser -s=mock route '**/*.{png,jpg,jpeg}' --status=404
 agent-browser -s=mock route '**/api/data' --body='{}' --header='Access-Control-Allow-Origin: *'
+agent-browser -s=mock route '**/old-page' --status=302 --header='Location: /new-page'
 agent-browser -s=mock unroute
 ```
 
@@ -59,8 +60,11 @@ This implementation does not claim every current upstream option or output shape
   contain sensitive information; treat route listings as configuration data.
 - Journal entries carry `routeId`, including through `request <index>` and the
   playground Network pane. Encoded wire bytes are zero for a fulfilled mock;
-  decoded bytes count the replacement payload. Session `metrics.routes` reports
-  fulfillment and retained/delivered bytes separately from real transport metrics.
+  an aggregate redirect chain can also include earlier wire bytes. Decoded bytes
+  count the final replacement payload. Session `metrics.routes` reports mock-only
+  fulfillment and retained/delivered bytes. The route-aware Node transport also
+  includes mocked attempts/decoded bodies in its existing transport budgets and
+  exposes `mockedRequests` and `mockedDecodedBytes` as subsets of those counters.
 
 The portable API is `BrowserSession.routes`, backed by exported `NetworkRoutes`:
 `add(pattern, options)`, `list()`, `remove(pattern?)`, `fulfill(request)`, `metrics()`
@@ -102,18 +106,44 @@ still apply. Supplying a mock does not grant page code access to its contents.
 Unmatched requests remain subject to the existing transport's URL, DNS/address,
 TLS, cookie and resource policies. Matched responses perform no DNS or outbound IO.
 
-**Automatic transport redirects are stopped while routes are active.** For
-unmatched requests that would normally auto-follow, the session requests manual
-redirects and returns `unsupported` on a redirect with Location. It does not let
-the adapter silently send a later request that should have been mocked. Page
-fetch already follows redirects hop by hop and therefore checks routes on each
-hop; its existing CORS and redirect policies remain in force.
+**The Node adapter now checks routes inside its native redirect loop.** Its
+optional `NetworkTransport.requestWithRoutes(request, resolveRoute)` operation
+consults the session's rules before DNS or exchange for each hop. Request and URL
+validation, redirect limits, method/body rewriting, cookie recomputation,
+credential stripping and the shared deadline remain in the existing driver.
+Mocked bodies also consume its response/cumulative byte budgets. A monotonic
+deadline check covers synchronous routing work, not only timer-driven awaits.
+
+Other adapters without this operation still fail closed: with active rules the
+session requests manual redirects and returns `unsupported` on a redirect with
+Location, including an initially mocked redirect during navigation. They cannot
+silently send a later request that should have been mocked or commit the redirect
+body as the destination document.
+Session `metrics.routes.automaticRedirects` identifies the selected adapter's
+support; global capabilities describe it as adapter-dependent. Page fetch's own
+manual redirect loop continues checking routes on every hop with its CORS policy.
+
+The optional resolver is trusted host code, synchronous, and receives only URL,
+method and the operation's abort signal, not credential headers or request body.
+Invalid providers/responses fail closed rather than falling through to the wire.
+It is not a facility for running guest JavaScript or unbounded async route handlers.
+The elapsed-time check rejects overdue results after a custom resolver returns;
+it cannot preempt arbitrary trusted host code. The session's own pattern matcher
+has the separate finite work budget described above.
 
 Responses are UTF-8 text with status 200–599. HEAD returns no body; nonempty bodies
 with 204/205/304 are rejected. Explicit content type overrides a supplied
-Content-Type header. Set-Cookie/Set-Cookie2, Location, Content-Encoding,
+Content-Type header. A single Location header supports relative or absolute
+redirect targets. Duplicate case-insensitive Location declarations are rejected
+atomically, including mixed JSON/repeated CLI header options. The native driver
+and page-fetch loop resolve and validate each target when requested; registering
+a rule does not grant permission to follow an unsafe target. Manual/error modes
+and redirect limits remain enforced. Page JavaScript receives a filtered
+`opaqueredirect` response in manual mode, not the raw host response.
+
+Set-Cookie/Set-Cookie2, Content-Encoding,
 Content-Length, Transfer-Encoding, Connection and Trailer response headers are
-currently rejected. Redirect mocking, cookie effects, compression, binary/file
+currently rejected. Cookie effects, compression, binary/file
 bodies, arbitrary handlers, request rewriting/removal, abort/delay rules,
 service-worker interception and full upstream pattern/output parity remain open.
 
@@ -122,10 +152,30 @@ separate requirement still needs its own complete mutation/retrieval audit.
 
 ## Verification
 
+`reports/redirect-mocking-focused-2026-09-02.json` records 290 passing tests across
+fourteen files, including twenty-four native-driver cases. Added coverage includes
+entirely mocked redirect chains, POST rewriting, manual/error handling, loop
+limits, unsafe destinations, atomic Location validation and safe adapter fallback.
+`reports/redirect-mocking-safejs-fixture-2026-09-02.json` records twenty-four passing
+checks against the existing experimental SafeJS core, including entirely mocked
+cross-origin redirects, per-hop journal/CORS results and guest manual/error modes.
+All transport/DNS/exchange here is in-memory or mocked; these are not live-site,
+HTTP/TLS, terminal, deployed-playground or published-SDK acceptance results.
+
+`reports/native-routing-focused-2026-09-02.json` records 284 passing tests across
+fourteen files. Twenty-one cases in `src/node-route-transport.test.ts` exercise the
+actual native request/redirect driver with **mocked resolver and wire exchange**:
+interception before target DNS, method/body transitions, cookie/header handling,
+URL and address rejection, limits, response ownership, timeout/close, and real
+session HTML loading. A memory stream runs through the real body-consumption
+pipeline to check shared byte accounting. No server, socket, actual DNS lookup or
+public request is performed. This does not replace the outstanding live HTTP/TLS
+and website regression gates.
+
 `reports/routing-focused-2026-09-02.json` records 263 passing tests across thirteen
 files: glob semantics and a bounded oracle, atomic retention, delivery bounds,
 copies, cancellation, session isolation, actual HTML/stylesheet parsing, command
-registration/removal, journal/Network rendering, and fail-closed redirects.
+registration/removal, journal/Network rendering, and fallback-adapter redirects.
 
 `reports/routing-safejs-fixture-2026-09-02.json` records twenty passing checks using
 the existing experimental SafeJS core. Interpreted fetch consumes routed JSON,

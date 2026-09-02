@@ -46,7 +46,7 @@ interface Entry {
 	bytes: number;
 }
 interface Job {
-	run: () => HistorySnapshot;
+	run: () => HistorySnapshot | Promise<HistorySnapshot>;
 	resolve: (value: HistorySnapshot) => void;
 	reject: (error: unknown) => void;
 }
@@ -404,15 +404,33 @@ export class DocumentHistory {
 		);
 	}
 
-	pushState(state: HistoryValue, url?: string | null) {
+	pushState(
+		state: HistoryValue,
+		url?: string | null,
+		validate?: (archive: HistoryArchive) => void,
+	) {
 		this.charge();
-		this.commit(this.resolve(url), serializeState(state, this.limits), false);
+		this.commit(
+			this.resolve(url),
+			serializeState(state, this.limits),
+			false,
+			validate,
+		);
 		return this.snapshot();
 	}
 
-	replaceState(state: HistoryValue, url?: string | null) {
+	replaceState(
+		state: HistoryValue,
+		url?: string | null,
+		validate?: (archive: HistoryArchive) => void,
+	) {
 		this.charge();
-		this.commit(this.resolve(url), serializeState(state, this.limits), true);
+		this.commit(
+			this.resolve(url),
+			serializeState(state, this.limits),
+			true,
+			validate,
+		);
 		return this.snapshot();
 	}
 
@@ -433,7 +451,7 @@ export class DocumentHistory {
 				"unsupported",
 				"Reload requires the navigation controller",
 			);
-		return this.enqueue(() => {
+		return this.enqueue(async () => {
 			if (signal?.aborted)
 				throw new AgentBrowserError("aborted", "History traversal aborted");
 			if (delta < -this.index || delta >= this.entries.length - this.index)
@@ -444,7 +462,7 @@ export class DocumentHistory {
 			this.index = target;
 			this.revisionValue++;
 			this.tree.setTargetElement(selectDocumentFragmentTarget(this.tree));
-			this.notify(oldURL, this.snapshot());
+			await this.notify(oldURL, this.snapshot(), signal);
 			return this.snapshot();
 		});
 	}
@@ -471,41 +489,74 @@ export class DocumentHistory {
 				"invalid-input",
 				"Invalid fragment navigation",
 			);
-		return this.enqueue(() => {
+		return this.enqueue(async () => {
 			if (signal?.aborted)
 				throw new AgentBrowserError("aborted", "Fragment navigation aborted");
-			let next: URL;
-			try {
-				next = new URL(url, documentBaseUrl(this.tree));
-			} catch {
-				throw new AgentBrowserError(
-					"invalid-input",
-					"Invalid fragment navigation URL",
-				);
-			}
-			const current = new URL(this.tree.url);
-			const currentResource = new URL(current.href);
-			const nextResource = new URL(next.href);
-			currentResource.hash = "";
-			nextResource.hash = "";
-			if (currentResource.href !== nextResource.href)
-				throw new AgentBrowserError(
-					"unsupported",
-					"Cross-document navigation requires a document loader",
-				);
-			if (next.href === current.href) {
-				this.tree.setTargetElement(selectDocumentFragmentTarget(this.tree));
-				return this.snapshot();
-			}
+			await this.applyFragment(url, replace)(signal);
+			return this.snapshot();
+		});
+	}
+
+	prepareFragment(
+		url: string,
+		replace = false,
+		validate?: (archive: HistoryArchive) => void,
+	) {
+		this.charge();
+		return this.applyFragment(url, replace, validate);
+	}
+
+	private applyFragment(
+		url: string,
+		replace: boolean,
+		validate?: (archive: HistoryArchive) => void,
+	) {
+		this.ensureActive();
+		if (
+			typeof url !== "string" ||
+			url.length > 16_384 ||
+			typeof replace !== "boolean"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid fragment navigation",
+			);
+		let next: URL;
+		try {
+			next = new URL(url, documentBaseUrl(this.tree));
+		} catch {
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid fragment navigation URL",
+			);
+		}
+		const current = new URL(this.tree.url);
+		const currentResource = new URL(current.href);
+		const nextResource = new URL(next.href);
+		currentResource.hash = "";
+		nextResource.hash = "";
+		if (currentResource.href !== nextResource.href)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Cross-document navigation requires a document loader",
+			);
+		const changed = next.href !== current.href;
+		if (changed)
 			this.commit(
 				this.resolve(next.href),
 				serializeState(null, this.limits),
 				replace,
+				validate,
 			);
-			this.tree.setTargetElement(selectDocumentFragmentTarget(this.tree));
-			this.notify(current.href, this.snapshot());
-			return this.snapshot();
-		});
+		this.tree.setTargetElement(selectDocumentFragmentTarget(this.tree));
+		const snapshot = this.snapshot();
+		return async (signal?: AbortSignal) => {
+			this.ensureActive();
+			if (signal?.aborted)
+				throw new AgentBrowserError("aborted", "Fragment navigation aborted");
+			if (changed) await this.notify(current.href, snapshot, signal);
+			return snapshot;
+		};
 	}
 
 	metrics() {
@@ -558,6 +609,7 @@ export class DocumentHistory {
 		url: string,
 		state: { serialized: string; bytes: number },
 		replace: boolean,
+		validate?: (archive: HistoryArchive) => void,
 	) {
 		this.ensureActive();
 		const entry: Entry = {
@@ -588,6 +640,16 @@ export class DocumentHistory {
 				"resource-limit",
 				"Total history state byte limit exceeded",
 			);
+		validate?.(
+			Object.freeze({
+				index: replace ? this.index : next.length - 1,
+				entries: Object.freeze(
+					next.map(({ key, url, serialized }) =>
+						Object.freeze({ key, url, serialized }),
+					),
+				),
+			}),
+		);
 		this.tree.setUrl(url);
 		this.entries = next;
 		this.revisionValue++;
@@ -595,16 +657,22 @@ export class DocumentHistory {
 		this.evictions += evicted;
 	}
 
-	private notify(oldURL: string, snapshot: HistorySnapshot) {
-		this.events.dispatchEvent(
+	private async notify(
+		oldURL: string,
+		snapshot: HistorySnapshot,
+		signal?: AbortSignal,
+	) {
+		await this.events.dispatchEventAsync(
 			this.windowTarget,
 			new BrowserPopStateEvent(snapshot.state),
+			signal,
 		);
 		this.ensureActive();
 		if (urlFragment(new URL(oldURL)) !== urlFragment(new URL(snapshot.url)))
-			this.events.dispatchEvent(
+			await this.events.dispatchEventAsync(
 				this.windowTarget,
 				new BrowserHashChangeEvent(oldURL, snapshot.url),
+				signal,
 			);
 	}
 
@@ -624,14 +692,14 @@ export class DocumentHistory {
 	private schedule() {
 		if (this.scheduled || this.running || !this.queue.length) return;
 		this.scheduled = true;
-		queueMicrotask(() => {
+		queueMicrotask(async () => {
 			this.scheduled = false;
 			const job = this.queue.shift();
 			if (!job) return;
 			this.running = true;
 			try {
 				this.ensureActive();
-				job.resolve(job.run());
+				job.resolve(await job.run());
 			} catch (error) {
 				job.reject(error);
 			} finally {

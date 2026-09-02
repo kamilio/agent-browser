@@ -84,7 +84,12 @@ export class NavigationHistory {
 		const index = this.groups.findIndex((group) => group === target.identity);
 		if (index < 0)
 			throw new AgentBrowserError("aborted", "History target was discarded");
-		const next = [...this.groups];
+		const known = new Set(
+			this.groups[index].archive.entries.map((entry) => entry.key),
+		);
+		const next = archive.entries.some((entry) => !known.has(entry.key))
+			? this.groups.slice(0, index + 1)
+			: [...this.groups];
 		next[index] = this.group(archive, target.post);
 		this.apply(next, index);
 	}
@@ -97,7 +102,12 @@ export class NavigationHistory {
 	) {
 		if (current) this.sync(current);
 		if (replace && this.index >= 0) {
-			const next = [...this.groups];
+			const known = new Set(
+				this.groups[this.index].archive.entries.map((entry) => entry.key),
+			);
+			const next = archive.entries.some((entry) => !known.has(entry.key))
+				? this.groups.slice(0, this.index + 1)
+				: [...this.groups];
 			next[this.index] = this.group(archive, post);
 			this.apply(next, this.index);
 			return;
@@ -120,9 +130,68 @@ export class NavigationHistory {
 		this.apply(next, next.length - 1);
 	}
 
+	replaceDocument(
+		current: HistoryArchive | undefined,
+		archive: HistoryArchive,
+		post: boolean,
+	) {
+		const preview = new NavigationHistory(this.maxDocuments, this.maxBytes);
+		preview.groups = [...this.groups];
+		preview.index = this.index;
+		if (current) preview.sync(current);
+		const group = preview.groups[preview.index];
+		if (!group) {
+			preview.record(undefined, archive, post, false);
+		} else {
+			const next = preview.groups.slice(0, preview.index);
+			const before = group.archive.entries.slice(0, group.archive.index);
+			if (before.length)
+				next.push(
+					this.group({ entries: before, index: before.length - 1 }, group.post),
+				);
+			const active = next.length;
+			next.push(this.group(archive, post));
+			if (archive.entries.length === 1) {
+				const after = group.archive.entries.slice(group.archive.index + 1);
+				if (after.length)
+					next.push(this.group({ entries: after, index: 0 }, group.post));
+				next.push(...preview.groups.slice(preview.index + 1));
+			}
+			preview.apply(next, active);
+		}
+		this.groups = preview.groups;
+		this.index = preview.index;
+		this.evictions += preview.evictions;
+	}
+
 	close() {
 		this.groups = [];
 		this.index = -1;
+	}
+
+	previewLength(
+		current: HistoryArchive | undefined,
+		archive: HistoryArchive,
+		options: {
+			post: boolean;
+			replace: boolean;
+			replaceDocument?: boolean;
+			target?: TraversalTarget;
+			committed?: boolean;
+		},
+	) {
+		const preview = new NavigationHistory(this.maxDocuments, this.maxBytes);
+		preview.groups = [...this.groups];
+		preview.index = this.index;
+		if (options.committed) preview.sync(archive);
+		else if (options.target) preview.commitTraversal(options.target, archive);
+		else if (options.replaceDocument)
+			preview.replaceDocument(current, archive, options.post);
+		else preview.record(current, archive, options.post, options.replace);
+		return preview.groups.reduce(
+			(total, group) => total + group.archive.entries.length,
+			0,
+		);
 	}
 
 	private sync(archive: HistoryArchive) {

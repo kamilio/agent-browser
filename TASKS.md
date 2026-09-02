@@ -11,6 +11,162 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+September 2, capability-construction checkpoint: `PageBindings` now constructs
+the browser's native capabilities through a narrow context, independently of SDK
+realm creation, evaluation, Budget and error constructors. `PageScripts` keeps its
+existing public behavior while delegating this setup and cleanup. Both timer
+surfaces now use returned retention registrations. Partial setup failure revokes
+constructed capabilities; guest shutdown preserves native document interactions.
+
+954 tests pass across 43 files, including twelve construction/lifecycle cases.
+Seven actual experimental-core binding checks pass, plus the 19 storage/event,
+21 navigation, 24 fetch/CORS and 14 class-list regressions. This advances the
+released-SDK migration structure without claiming that migration has run. No
+dependency, SDK patch/download, live-site/PTY run or service activation was added.
+
+September 2, released-SDK probe preparation: a separate public-extension consumer
+now requires an explicit local `@poe-platform/safe-js` artifact and exact version.
+It prepares callback-phase, guest-retention, host-property, nested-operation and
+cleanup gates without silently selecting the old experimental core. See
+`SAFEJS-UPSTREAM-MIGRATION.md` for the command and remaining adapter differences.
+
+942 tests pass across 42 files, including 24 release-loader selection tests.
+The compiled probe is verified to exit nonzero and report zero completed checks
+when no artifact is selected. These are loader/failure-path tests, **not released
+SDK acceptance**. No package download, install, live-site/PTY execution or browser
+runtime switch occurred. The previously denied download still needs permission;
+upstream implementation/source observations are not a substitute for that gate.
+
+September 2, class-list checkpoint: classList is now live and identity-preserving,
+with bounded token mutation, value forwarding, indexing and iteration. Attribute
+changes update the same native selectors/CSS/snapshots/actionability state. The
+actual interpreter fixture reveals, activates and re-hides an action through
+native agent clicks without another response. Atomic validation, resource limits,
+cache reuse/recovery and old-owner revocation are tested in `CLASS-LISTS.md`.
+
+918 tests pass across 41 files, including 35 class-list cases. Fourteen actual
+interpreter checks pass, as do the earlier 19 storage/event, 21 navigation and
+24 fetch/CORS checks. Strict compilation, formatting and diff checks pass.
+
+DOMTokenList iterator helpers/prototypes and exception/coercion parity remain
+incomplete. No SDK patch, dependency, native engine, live/PTY probe or service
+activation was added. Full framework and broader browser acceptance remain open.
+
+September 2, storage-event checkpoint: successful native mutations now capture
+change records and notify eligible documents through a bounded session queue.
+Source exclusion, origin/tab isolation, event-area identity, candidate commit,
+cancellation, no-op suppression and capacity/lifetime limits are tested. The
+actual SafeJS todo fixture now rerenders a second tab after an agent action in the
+first, without reloading or fetching another response. `STORAGE-EVENTS.md` records
+the contract, resource drops and explicit administrative-write semantics.
+
+723 tests pass across 37 files. The coordinator/observer suite has thirteen cases;
+the page-storage integration suite has thirty. Typechecking and formatting pass.
+Nineteen interpreted storage/event workflow checks pass, as do the 21-check
+navigation and 24-check fetch/CORS regressions.
+
+Evidence uses in-memory responses and the existing experimental core. No new
+dependency, SDK modification, live/PTY probe or service activation was added.
+Named Storage properties, full scheduler/event conformance, frames, released-SDK
+migration and the broader browser acceptance gates remain open.
+
+September 2, page-storage checkpoint: parser/realm-owned localStorage and
+sessionStorage methods now use the existing native stores, and document.cookie
+uses the existing jar with HttpOnly protection. Origin/tab/session isolation,
+opener copying, quotas, state import and revocation are tested. An actual SafeJS
+todo fixture supports agent add/toggle/remove and reload persistence; it is our
+own fixture, not public TodoMVC/framework acceptance. See `PAGE-STORAGE.md`.
+
+707 tests pass across 36 files; twelve actual-interpreter workflow checks pass,
+with the named-write gap recorded separately rather than counted as a feature.
+The 21-check navigation and 24-check fetch/CORS interpreter regressions also pass.
+
+Named Storage writes were tested and do not persist in the experimental core.
+Current upstream named providers are read-only; enhancement #549 was filed and
+its exact body verified, with no Proxy/state-mirror workaround. #547 was verified
+closed with upstream release 0.1.36, but local released-package migration is still
+unverified. Storage events, named properties, broader compatibility and denied
+live/PTY gates remain open. No new dependency or service activation was added.
+
+September 2, Location-navigation checkpoint: methods, Window/document setters and
+URL components now use owned navigation; same-resource fragment URLs change
+synchronously with deferred events. Cross-document replacement preserves adjacent
+entries, and parser pushState branching discards forward history. Queue admission,
+archive budgets, cancellation, policy, candidate retirement and diagnostics are
+shared with guest History work. `PAGE-URLS.md` records the exact partial contract.
+
+615 passing tests across 33 files are in `page-navigation-focused-2026-09-02.json`;
+21 actual existing-core checks are in `page-navigation-safejs-fixture-2026-09-02.json`.
+No new dependency, SDK modification, live connection, PTY or service activation.
+Bare global Location assignment, full browser scheduling/component semantics,
+released-SDK migration and denied live acceptance gates remain open. The 72-hour
+goal is still active and the full requested browser is not complete.
+
+September 2, guest-traversal checkpoint: History back/forward/go now queue owned
+session navigation rather than rejecting or using only the local document list.
+Parser requests wait for commit, current event dispatch finishes before traversal, and
+retired/failed sources lose queued work. Stop/explicit navigation cancel requests;
+per-tab pending/lifetime bounds and existing session/network policies apply.
+Metrics and sanitized navigation-console records expose asynchronous outcomes.
+
+592 tests pass across 32 files; eleven existing-core SafeJS checks exercise actual
+interpreted back/forward/reload, cross-document parser requests, restoration and
+cancellation over in-memory responses. No dependency, SDK change, live network,
+service activation or previously denied gate was added. Location navigation,
+complete task semantics, full cloning/identity and the full browser goal remain
+unfinished. `PAGE-HISTORY.md` records the implemented contract and limitations.
+
+September 2, page-History checkpoint: `PAGE-HISTORY.md` adds session-owned finite-JSON
+state, push/replace methods and session-wide length to interpreted pages. Document
+initialization restores state before parser scripts; reload/back branches retain
+or discard forward documents correctly. Candidate initialization is idempotent,
+validated and cleaned up on failure/cancellation without harming the old page.
+
+Same-document traversal now delivers interpreted popstate/hashchange data in
+prefix order; canceled event waits release the history queue. 557 tests pass
+across thirty files, plus thirteen actual experimental-core SafeJS fixture checks.
+No new dependencies, SDK changes, real network, service activation or previously
+denied gates are involved. Guest traversal, Location navigation, complete cloning
+and state identity remain open; the original full browser goal is unchanged.
+
+September 2, page-URL checkpoint: `PAGE-URLS.md` records shared live Location
+reads, DOM baseURI and reflected hyperlink/resource URLs. Interpreted code can
+inspect the actual document URL and change a link's destination before the owning
+browser follows it. Same-document navigation preserves the realm; replacement
+revokes it. Location writes fail explicitly rather than pretending to navigate.
+
+356 tests pass across twenty files; fifteen existing-core SafeJS checks verify
+the real interpreter, DOM and navigation over in-memory responses. No dependency,
+SDK change, service activation or denied live gate is involved. History and
+Location-triggered navigation remain open; the document records the required
+loader/session ownership integration instead of misrepresenting document-only
+history as full browser history. The full browser goal remains incomplete.
+
+September 2, redirect-mocking checkpoint: route fulfillment now accepts a single
+Location header. Entirely mocked redirect chains use the native driver's method,
+URL, deadline and resource policies; interpreted fetch retains per-hop CORS and
+manual/error behavior. Duplicate Location declarations fail atomically. Adapters
+without native route-aware redirects reject automatic mocked navigation rather
+than committing a redirect body or silently falling through to the network.
+
+290 tests pass across fourteen files; twenty-four existing-core SafeJS fixture
+checks pass with in-memory transport. No dependencies, released-SDK verification,
+service changes, public websites or previously denied live gates are involved.
+Routing remains partial and the full browser goal remains incomplete.
+
+September 2, native routing checkpoint: the Node adapter now offers the optional
+`requestWithRoutes` transport capability. Session rules are checked inside the
+existing redirect driver before DNS/exchange, preserving its policy, cookie,
+method/body and lifetime handling. Mock bodies share transport byte budgets;
+mock-only metric subsets distinguish them. Synchronous route work also receives
+an absolute elapsed-time check. Other adapters retain the safe manual fallback.
+
+284 tests pass across fourteen files, including twenty-one native-driver cases
+with mocked DNS/wire exchange, real in-memory stream consumption, and actual
+session HTML loading. Strict package/new-test compilation and formatting pass.
+No live HTTP/TLS/site, service activation, dependency or SDK migration is claimed.
+The full browser and previously denied live acceptance gates remain incomplete.
+
 September 2, routing checkpoint: `ROUTING.md` adds session-owned route fulfillment,
 listing and removal. Matched requests receive bounded replacement content without
 calling the transport; the journal/Network pane records route IDs. Actual HTML,

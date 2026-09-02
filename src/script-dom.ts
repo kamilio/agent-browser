@@ -5,6 +5,7 @@ import {
 	radioGroup,
 } from "./controls.js";
 import { documentScriptState } from "./document-script-state.js";
+import { documentBaseUrl } from "./document-url.js";
 import { writeDocument } from "./document-write.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -12,11 +13,15 @@ import { setInnerHtml } from "./html-content.js";
 import { serializeHtml } from "./html-serialization.js";
 import { InlineStyles } from "./inline-styles.js";
 import { ScriptAttributes } from "./script-attributes.js";
+import { ScriptClassLists } from "./script-class-list.js";
 import { ScriptCollections } from "./script-collections.js";
 import {
 	ScriptEventBindings,
 	type ScriptEventOptions,
 } from "./script-events.js";
+import type { ScriptLocation } from "./script-location.js";
+import type { ScriptStorage } from "./script-storage.js";
+import { scriptUrlProperties } from "./script-urls.js";
 import { DocumentQueries } from "./selectors.js";
 
 export interface ScriptHostObjectDefinition {
@@ -50,6 +55,7 @@ export class ScriptDom {
 	private readonly collections: ScriptCollections;
 	private readonly inlineStyles: InlineStyles;
 	private readonly attributes: ScriptAttributes;
+	private readonly classLists: ScriptClassLists;
 	private readonly capabilities = new Map<number, object>();
 	private identities = new WeakMap<object, number>();
 	private closed = false;
@@ -59,6 +65,8 @@ export class ScriptDom {
 		private readonly tree: DocumentTree,
 		private readonly factory: ScriptHostObjectFactory,
 		events?: ScriptEventOptions,
+		private readonly location?: ScriptLocation,
+		private readonly storage?: ScriptStorage,
 	) {
 		if (typeof factory?.createHostObject !== "function")
 			throw new AgentBrowserError(
@@ -67,6 +75,7 @@ export class ScriptDom {
 			);
 		this.queries = new DocumentQueries(tree);
 		this.inlineStyles = new InlineStyles(tree, factory);
+		this.classLists = new ScriptClassLists(tree, factory);
 		this.attributes = new ScriptAttributes(tree, factory, (id) =>
 			this.node(id),
 		);
@@ -97,6 +106,12 @@ export class ScriptDom {
 			Pick<ScriptHostObjectDefinition, "properties" | "methods">
 		> = {
 			properties: {
+				baseURI: {
+					get: () => {
+						this.read(id);
+						return documentBaseUrl(this.tree);
+					},
+				},
 				nodeType: {
 					get: () =>
 						({ document: 9, fragment: 11, element: 1, text: 3, comment: 8 })[
@@ -277,6 +292,25 @@ export class ScriptDom {
 			};
 		}
 		if (initial.kind === "document") {
+			if (this.storage)
+				definition.properties.cookie = {
+					get: () => {
+						this.read(id);
+						return this.storage?.readCookie();
+					},
+					set: (value) => {
+						this.read(id);
+						this.storage?.writeCookie(value);
+					},
+				};
+			if (this.location)
+				definition.properties.location = {
+					get: () => {
+						this.read(id);
+						return this.location?.object;
+					},
+					set: (value) => this.location?.navigate(value),
+				};
 			Object.assign(definition.properties, {
 				readyState: {
 					get: () => {
@@ -356,6 +390,17 @@ export class ScriptDom {
 			});
 		}
 		if (initial.kind === "element") {
+			definition.properties.classList = {
+				get: () => this.classLists.get(id),
+				set: (value) => this.classLists.setValue(id, value),
+			};
+			Object.assign(
+				definition.properties,
+				scriptUrlProperties(this.tree, id, () => this.read(id), domString),
+			);
+			if (initial.tagName === "a" || initial.tagName === "area")
+				definition.methods.toString = () =>
+					String(definition.properties.href.get());
 			definition.properties.attributes = { get: () => this.attributes.map(id) };
 			definition.properties.style = {
 				get: () => this.inlineStyles.get(id),
@@ -478,6 +523,7 @@ export class ScriptDom {
 		this.collections.close();
 		this.inlineStyles.close();
 		this.attributes.close();
+		this.classLists.close();
 		this.capabilities.clear();
 		this.identities = new WeakMap();
 		this.unregisterClose();
@@ -492,6 +538,10 @@ export class ScriptDom {
 			: node.kind === "fragment"
 				? "#document-fragment"
 				: `#${node.kind}`;
+	}
+
+	metrics() {
+		return Object.freeze({ classLists: this.classLists.metrics() });
 	}
 
 	private read(id: number): Readonly<DocumentNode> {

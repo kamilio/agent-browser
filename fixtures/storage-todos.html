@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head><title>Storage-backed agent todo fixture</title></head>
+<body>
+<h1>Agent todos</h1>
+<form id="add-form">
+  <label for="new-todo">New todo</label>
+  <input id="new-todo" name="todo">
+  <button id="add-todo" type="submit">Add todo</button>
+</form>
+<p id="status" role="status">Loading</p>
+<ul id="todos"></ul>
+<script>
+var todos = JSON.parse(localStorage.getItem("agent-todos") || "[]");
+var visits = Number(sessionStorage.getItem("visits") || "0") + 1;
+sessionStorage.setItem("visits", String(visits));
+function renderTodos() {
+  var list = document.getElementById("todos");
+  list.textContent = "";
+  for (var index = 0; index < todos.length; index++) {
+    var item = document.createElement("li");
+    var label = document.createElement("span");
+    label.textContent = todos[index].label + (todos[index].done ? " (done)" : " (pending)");
+    item.appendChild(label);
+    var toggle = document.createElement("button");
+    toggle.setAttribute("id", "toggle-" + index);
+    toggle.setAttribute("data-index", String(index));
+    toggle.setAttribute("data-action", "toggle");
+    toggle.textContent = "Toggle " + todos[index].label;
+    item.appendChild(toggle);
+    var remove = document.createElement("button");
+    remove.setAttribute("id", "remove-" + index);
+    remove.setAttribute("data-index", String(index));
+    remove.setAttribute("data-action", "remove");
+    remove.textContent = "Remove " + todos[index].label;
+    item.appendChild(remove);
+    list.appendChild(item);
+  }
+  document.getElementById("status").textContent = todos.length + " todos; visit " + visits;
+}
+function saveTodos() {
+  localStorage.setItem("agent-todos", JSON.stringify(todos));
+  renderTodos();
+}
+document.getElementById("add-form").addEventListener("submit", function(event) {
+  event.preventDefault();
+  var input = document.getElementById("new-todo");
+  if (!input.value) return;
+  todos.push({ label: input.value, done: false });
+  input.value = "";
+  saveTodos();
+});
+document.getElementById("todos").addEventListener("click", function(event) {
+  var action = event.target.getAttribute("data-action");
+  var position = Number(event.target.getAttribute("data-index"));
+  if (action === "toggle") todos[position].done = !todos[position].done;
+  else if (action === "remove") todos.splice(position, 1);
+  else return;
+  saveTodos();
+});
+window.addEventListener("storage", function(event) {
+  if (event.storageArea !== localStorage) return;
+  if (event.key !== "agent-todos" && event.key !== null) return;
+  todos = JSON.parse(localStorage.getItem("agent-todos") || "[]");
+  renderTodos();
+});
+renderTodos();
+</script>
+</body>
+</html>

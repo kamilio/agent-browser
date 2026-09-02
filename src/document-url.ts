@@ -27,9 +27,10 @@ export function decodeUrlFragment(fragment: string) {
 
 export function selectDocumentFragmentTarget(
 	tree: DocumentTree,
+	url = new URL(tree.url),
 ): number | null {
 	tree.reference(tree.root);
-	const fragment = urlFragment(new URL(tree.url));
+	const fragment = urlFragment(url);
 	if (!fragment) return null;
 	const decoded = decodeUrlFragment(fragment);
 	let rawId: number | null = null;

@@ -23,7 +23,10 @@ Custom evaluation hosts must use the page-console adapter to capture messages.
 
 Results identify the current document reference and URL, sequence, retained
 messages, eviction/clear counters and limits. Each entry includes timestamp,
-level, source (`console`, `evaluation` or `callback`), text and truncation flag.
+level, source (`console`, `evaluation`, `callback` or `navigation`), text and
+truncation flag. Session-owned guest History/Location failures use `navigation`
+with `Page navigation failed: CODE`, not a raw host error or URL
+(`PAGE-HISTORY.md`, `PAGE-URLS.md`).
 The timestamp is a wall-clock sample, not a CPU/execution measurement. Document
 identity distinguishes navigation from a cleared buffer; IDs never repeat within
 one buffer. Retrieval does not execute guest code or consume console history.

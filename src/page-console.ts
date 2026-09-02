@@ -1,5 +1,5 @@
 import type { DocumentTree } from "./document.js";
-import { AgentBrowserError } from "./errors.js";
+import { AgentBrowserError, type ErrorCode } from "./errors.js";
 import type { ScriptHostObjectFactory } from "./script-dom.js";
 
 export type ConsoleLevel = "debug" | "log" | "info" | "warning" | "error";
@@ -15,7 +15,7 @@ export interface ConsoleEntry {
 	sequence: number;
 	timeMs: number;
 	level: ConsoleLevel;
-	source: "console" | "evaluation" | "callback";
+	source: "console" | "evaluation" | "callback" | "navigation";
 	text: string;
 	truncated: boolean;
 }
@@ -261,6 +261,13 @@ export class ConsoleBuffer {
 }
 
 const pageConsoles = new WeakMap<DocumentTree, ConsoleBuffer>();
+
+export function recordPageTraversalError(tree: DocumentTree, code: ErrorCode) {
+	tree.get(tree.root);
+	pageConsoles
+		.get(tree)
+		?.write("error", [`Page navigation failed: ${code}`], "navigation");
+}
 export type PageConsoleSnapshot = ReturnType<ConsoleBuffer["read"]> & {
 	document: string;
 	url: string;

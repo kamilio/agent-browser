@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { DocumentTree } from "./document.js";
-import { DocumentEvents } from "./events.js";
+import { DocumentEvents, controlledEventListener } from "./events.js";
 import {
 	type BrowserHashChangeEvent,
 	type BrowserPopStateEvent,
@@ -11,6 +11,66 @@ import {
 import { DocumentInteractions } from "./interactions.js";
 import { DocumentQueries } from "./selectors.js";
 import { snapshotDocument } from "./snapshot.js";
+
+it("aborts history event waits without blocking the next traversal", async () => {
+	const { tree, history, events, windowTarget } = fixture();
+	history.pushState(1, "#one");
+	history.pushState(2, "#two");
+	let release!: () => void;
+	const prefix = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	events.addEventListener(
+		windowTarget,
+		"popstate",
+		controlledEventListener(() => prefix),
+		{ once: true },
+	);
+	const controller = new AbortController();
+	const back = history.go(-1, controller.signal);
+	await Promise.resolve();
+	controller.abort();
+	await expect(back).rejects.toMatchObject({ code: "aborted" });
+	expect(history.snapshot().state).toBe(1);
+	expect((await history.forward()).state).toBe(2);
+	expect(events.metrics().activeDispatches).toBe(0);
+	release();
+	tree.close();
+});
+
+it("awaits controlled popstate prefixes before hashchange and the next traversal", async () => {
+	const { tree, history, events, windowTarget } = fixture();
+	history.pushState({ entry: 1 }, "#one");
+	history.pushState({ entry: 2 }, "#two");
+	const trace: string[] = [];
+	let release!: () => void;
+	const prefix = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	events.addEventListener(
+		windowTarget,
+		"popstate",
+		controlledEventListener(async () => {
+			trace.push("prefix");
+			await prefix;
+			trace.push("complete");
+		}),
+		{ once: true },
+	);
+	events.addEventListener(windowTarget, "hashchange", () => {
+		trace.push("hash");
+	});
+	const back = history.back();
+	await Promise.resolve();
+	expect(trace).toEqual(["prefix"]);
+	const forward = history.forward();
+	expect(history.metrics()).toMatchObject({ running: true, pending: 1 });
+	release();
+	await Promise.all([back, forward]);
+	expect(trace).toEqual(["prefix", "complete", "hash", "hash"]);
+	expect(history.snapshot().state).toEqual({ entry: 2 });
+	tree.close();
+});
 
 function fixture(limits: Partial<HistoryLimits> = {}) {
 	const tree = new DocumentTree("https://example.com/start?base=1");

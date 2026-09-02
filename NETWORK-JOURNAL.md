@@ -43,9 +43,11 @@ compare the tab/navigation pair when retaining a detail reference.
 ## Captured metadata
 
 `ROUTING.md` adds `routeId` for requests fulfilled from a session-owned rule.
-Their wire byte count is zero and decoded size describes the replacement body.
-The playground identifies them as mock routes; no rule body or header is copied
-into the journal.
+Direct mock responses have zero wire bytes and decoded size describes the
+replacement body. A native redirect chain ending in a mock retains its preceding
+redirect metadata and can include earlier wire bytes; `routeId` identifies its
+final fulfillment, not every hop. The playground identifies the mock route; no
+rule body or header is copied into the journal.
 
 - Initial document requests, script/stylesheet callbacks and page fetch ports, including
   callback-level mixed-content policy failures. No headers or bodies are retained.
