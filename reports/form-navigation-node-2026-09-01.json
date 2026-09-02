@@ -1,0 +1,103 @@
+{
+  "startedAt": "2026-09-01T18:35:48.229Z",
+  "finishedAt": "2026-09-01T18:35:48.498Z",
+  "scope": "Constructed form controls added to real loaded JSON; host listeners, not website JavaScript. Session click/requestSubmit performs actual POST navigation and loads echo JSON. No HTML parsing or full-site form compatibility claimed.",
+  "checks": [
+    {
+      "encoding": "application/x-www-form-urlencoded",
+      "passed": true,
+      "valuesMatch": true,
+      "fileMatches": true,
+      "submitEvents": 1,
+      "oldDocumentClosed": true,
+      "replayPrevented": true,
+      "response": {
+        "url": "https://httpbingo.org/post",
+        "status": 200,
+        "bytes": 982,
+        "redirects": 0
+      },
+      "metrics": {
+        "tabs": 1,
+        "selectedTab": "tab-1",
+        "pendingLoads": 0,
+        "navigations": 2,
+        "commits": 2,
+        "cleanupErrors": 0,
+        "closed": false,
+        "network": {
+          "requests": 2,
+          "redirects": 0,
+          "encodedBytes": 808,
+          "decodedBytes": 1403,
+          "active": 0,
+          "closed": false
+        },
+        "cookies": {
+          "cookies": 0,
+          "accepted": 0,
+          "rejected": 0,
+          "rejections": {},
+          "closed": false
+        },
+        "storage": {
+          "tabs": 1,
+          "areas": 0,
+          "entries": 0,
+          "bytes": 0,
+          "revision": 1,
+          "closed": false
+        }
+      },
+      "rssBytes": 68702208
+    },
+    {
+      "encoding": "multipart/form-data",
+      "passed": true,
+      "valuesMatch": true,
+      "fileMatches": true,
+      "submitEvents": 1,
+      "oldDocumentClosed": true,
+      "replayPrevented": true,
+      "response": {
+        "url": "https://httpbingo.org/post",
+        "status": 200,
+        "bytes": 1550,
+        "redirects": 0
+      },
+      "metrics": {
+        "tabs": 1,
+        "selectedTab": "tab-1",
+        "pendingLoads": 0,
+        "navigations": 2,
+        "commits": 2,
+        "cleanupErrors": 0,
+        "closed": false,
+        "network": {
+          "requests": 2,
+          "redirects": 0,
+          "encodedBytes": 958,
+          "decodedBytes": 1971,
+          "active": 0,
+          "closed": false
+        },
+        "cookies": {
+          "cookies": 0,
+          "accepted": 0,
+          "rejected": 0,
+          "rejections": {},
+          "closed": false
+        },
+        "storage": {
+          "tabs": 1,
+          "areas": 0,
+          "entries": 0,
+          "bytes": 0,
+          "revision": 1,
+          "closed": false
+        }
+      },
+      "rssBytes": 69783552
+    }
+  ]
+}

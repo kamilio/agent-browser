@@ -1,11 +1,12 @@
 import {
-	fillTextControl,
-	selectControlValues,
-	setControlChecked,
+	controlChecked,
+	controlValue,
+	selectedOptions,
 } from "../src/controls.js";
 import { DocumentTree } from "../src/document.js";
 import { AgentBrowserError } from "../src/errors.js";
 import { prepareFormSubmission } from "../src/forms.js";
+import { DocumentInteractions } from "../src/interactions.js";
 import { decodeResponseText } from "../src/network.js";
 import { NodeNetworkTransport } from "../src/node-transport.js";
 
@@ -27,6 +28,12 @@ try {
 		"multipart/form-data",
 	]) {
 		const tree = new DocumentTree("https://httpbingo.org/forms/post");
+		const interactions = new DocumentInteractions(tree);
+		const eventSequence: string[] = [];
+		for (const type of ["beforeinput", "input", "click", "change", "reset"])
+			interactions.events.addEventListener(tree.root, type, (event) => {
+				eventSequence.push(event.type);
+			});
 		try {
 			const form = tree.createElement("form", {
 				action: "/post",
@@ -36,14 +43,26 @@ try {
 			tree.append(tree.root, form);
 			const text = tree.createElement("input", { name: "probe" });
 			tree.append(form, text);
-			fillTextControl(tree, tree.reference(text), "agent-browser-validation");
+			const eventResult = tree.createElement("input", {
+				type: "hidden",
+				name: "event_result",
+				value: "unhandled",
+			});
+			tree.append(form, eventResult);
+			interactions.events.addEventListener(text, "input", () =>
+				tree.setControl(eventResult, { value: "input-handled" }),
+			);
+			interactions.fill(tree.reference(text), "agent-browser-validation");
 			const checkbox = tree.createElement("input", {
+				id: "enabled",
 				name: "enabled",
 				type: "checkbox",
 				value: "yes",
 			});
 			tree.append(form, checkbox);
-			setControlChecked(tree, tree.reference(checkbox), true);
+			const label = tree.createElement("label", { for: "enabled" });
+			tree.append(form, label);
+			const firstLabelActivation = interactions.click(tree.reference(label));
 			const select = tree.createElement("select", {
 				name: "choice",
 				multiple: "",
@@ -53,7 +72,21 @@ try {
 				const option = tree.createElement("option", { value });
 				tree.append(select, option);
 			}
-			selectControlValues(tree, tree.reference(select), ["one", "two"]);
+			interactions.select(tree.reference(select), ["one", "two"]);
+			const reset = interactions.forms.reset(tree.reference(form));
+			const resetRestoredDefaults =
+				reset.reset &&
+				controlValue(tree, text) === "" &&
+				controlValue(tree, eventResult) === "unhandled" &&
+				!controlChecked(tree, checkbox) &&
+				selectedOptions(tree, select).length === 0;
+			interactions.fill(tree.reference(text), "agent-browser-validation");
+			const secondLabelActivation = interactions.click(tree.reference(label));
+			const labelActivationMatches =
+				firstLabelActivation.label?.forwarded === true &&
+				secondLabelActivation.label?.forwarded === true &&
+				controlChecked(tree, checkbox);
+			interactions.select(tree.reference(select), ["one", "two"]);
 			const files = new Map<
 				number,
 				{ name: string; type: string; data: Uint8Array }[]
@@ -88,13 +121,53 @@ try {
 				enctype !== "multipart/form-data" ||
 				JSON.stringify(response?.files?.upload) ===
 					JSON.stringify(["agent-browser-fixture"]);
+			const echoedEventMutation =
+				JSON.stringify(response?.form?.event_result) ===
+				JSON.stringify(["input-handled"]);
+			const eventSequenceMatches =
+				JSON.stringify(eventSequence) ===
+				JSON.stringify([
+					"beforeinput",
+					"input",
+					"click",
+					"change",
+					"click",
+					"input",
+					"change",
+					"input",
+					"change",
+					"reset",
+					"beforeinput",
+					"input",
+					"click",
+					"change",
+					"click",
+					"input",
+					"change",
+					"input",
+					"change",
+				]);
+			const eventErrors = interactions.events.drainErrors().length;
 			checks.push({
 				endpoint: "https://httpbingo.org/post",
 				enctype,
-				passed: result.status === 200 && valuesMatch && fileMatches,
+				passed:
+					result.status === 200 &&
+					valuesMatch &&
+					fileMatches &&
+					echoedEventMutation &&
+					eventSequenceMatches &&
+					resetRestoredDefaults &&
+					labelActivationMatches &&
+					eventErrors === 0,
 				status: result.status,
 				valuesMatch,
 				fileMatches,
+				echoedEventMutation,
+				eventSequenceMatches,
+				resetRestoredDefaults,
+				labelActivationMatches,
+				eventErrors,
 				requestBytes:
 					typeof plan.request.body === "string"
 						? new TextEncoder().encode(plan.request.body).byteLength
@@ -127,8 +200,8 @@ const allPassed = checks.every((check) => check.passed);
 console.log(
 	JSON.stringify(
 		{
-			schemaVersion: 1,
-			scope: "form-serialization-and-transport-only",
+			schemaVersion: 3,
+			scope: "host-label-reset-control-form-transport-only",
 			startedAt,
 			finishedAt: new Date().toISOString(),
 			node: process.versions.node,
@@ -138,6 +211,8 @@ console.log(
 			limitations: [
 				"Document trees are deliberately constructed fixtures, not parsed website HTML.",
 				"No page JavaScript, browser navigation, submit events or constraint validation is exercised.",
+				"Event handlers are trusted host fixture callbacks, not website code evaluated in a page runtime.",
+				"File bytes are supplied explicitly after reset; intrinsic FileList reset is not implemented or tested.",
 				"Only non-sensitive demo fields are sent to a designated HTTP testing service; echoed client IPs and headers are not retained.",
 			],
 		},

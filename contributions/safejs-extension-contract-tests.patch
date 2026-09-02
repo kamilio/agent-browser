@@ -1,0 +1,173 @@
+diff --git a/packages/safe-js/src/extensions.test.ts b/packages/safe-js/src/extensions.test.ts
+new file mode 100644
+index 0000000..554784d
+--- /dev/null
++++ b/packages/safe-js/src/extensions.test.ts
+@@ -0,0 +1,167 @@
++import { describe, expect, it, vi } from "vitest";
++
++import { Budget, createHostObject, createRealm, defineExtension } from "./core.js";
++import type { ExtensionContext } from "./extensions.js";
++
++function counterExtension(setup = vi.fn()) {
++  return defineExtension({
++    apiVersion: 1,
++    name: "test.counter",
++    capabilities: ["counter"],
++    globals: ["counter"],
++    setup(context) {
++      setup(context);
++      let count = 0;
++      return { counter: () => ++count };
++    }
++  });
++}
++
++describe("explicit realm extensions", () => {
++  it("initializes lazily once and isolates each realm's factory state", async () => {
++    const setup = vi.fn();
++    const extension = counterExtension(setup);
++    const first = createRealm({ extensions: [extension], allowedCapabilities: ["counter"] });
++    const second = createRealm({ extensions: [extension], allowedCapabilities: ["counter"] });
++    try {
++      expect(setup).not.toHaveBeenCalled();
++      expect((await first.evaluate("counter()")).returnValue).toBe(1);
++      expect((await first.evaluate("counter()")).returnValue).toBe(2);
++      expect((await second.evaluate("counter()")).returnValue).toBe(1);
++      expect(setup).toHaveBeenCalledTimes(2);
++      expect(first.extensions).toEqual([{
++        apiVersion: 1, name: "test.counter", capabilities: ["counter"], globals: ["counter"]
++      }]);
++      expect(Object.isFrozen(first.extensions)).toBe(true);
++      expect(Object.isFrozen(first.extensions[0].capabilities)).toBe(true);
++    } finally {
++      await Promise.all([first.close(), second.close()]);
++    }
++  });
++
++  it("does not acquire resources if closed before evaluation", async () => {
++    const setup = vi.fn();
++    const realm = createRealm({ extensions: [counterExtension(setup)], allowedCapabilities: ["counter"] });
++    await realm.close();
++    expect(setup).not.toHaveBeenCalled();
++  });
++
++  it("denies missing capabilities before setup or source execution", () => {
++    const setup = vi.fn();
++    expect(() => createRealm({ extensions: [counterExtension(setup)] })).toThrow("capability");
++    expect(setup).not.toHaveBeenCalled();
++  });
++
++  it("rejects duplicate extensions and global collisions before setup", () => {
++    const setup = vi.fn();
++    const extension = counterExtension(setup);
++    expect(() => createRealm({ extensions: [extension, extension], allowedCapabilities: ["counter"] })).toThrow("Duplicate extension");
++    expect(() => createRealm({ extensions: [extension], allowedCapabilities: ["counter"], bindings: { counter: 1 } })).toThrow("global");
++    const intrinsic = defineExtension({ apiVersion: 1, name: "test.intrinsic", capabilities: [], globals: ["Object"], setup });
++    expect(() => createRealm({ extensions: [intrinsic] })).toThrow("global");
++    expect(setup).not.toHaveBeenCalled();
++  });
++
++  it("rejects conflicting globals across differently named extensions", () => {
++    const first = counterExtension();
++    const second = defineExtension({ apiVersion: 1, name: "test.other", capabilities: [], globals: ["counter"], setup: () => ({ counter: 2 }) });
++    expect(() => createRealm({ extensions: [first, second], allowedCapabilities: ["counter"] })).toThrow("global");
++  });
++
++  it.each([
++    { apiVersion: 2 }, { name: "" }, { globals: ["same", "same"] },
++    { capabilities: ["same", "same"] }, { unknown: true }, { setup: 1 }
++  ])("rejects invalid or incompatible manifests: %j", (change) => {
++    expect(() => defineExtension({
++      apiVersion: 1, name: "test.invalid", capabilities: [], globals: [], setup: () => ({}), ...change
++    } as never)).toThrow();
++  });
++
++  it("does not invoke accessor declarations", () => {
++    const read = vi.fn();
++    const definition = Object.defineProperty({}, "setup", { get: read, enumerable: true });
++    expect(() => defineExtension(definition as never)).toThrow();
++    expect(read).not.toHaveBeenCalled();
++  });
++
++  it("awaits reverse-order disposal once with cancellation already visible", async () => {
++    const stages: string[] = [];
++    const extension = defineExtension({
++      apiVersion: 1, name: "test.cleanup", capabilities: [], globals: [],
++      setup(context) {
++        context.onDispose(() => { stages.push(`first:${context.signal.aborted}`); });
++        context.onDispose(async () => { await Promise.resolve(); stages.push("second"); });
++        return {};
++      }
++    });
++    const realm = createRealm({ extensions: [extension] });
++    await realm.evaluate("1");
++    await Promise.all([realm.close(), realm.close()]);
++    expect(stages).toEqual(["second", "first:true"]);
++  });
++
++  it("cleans partial initialization before rejecting evaluation", async () => {
++    const stages: string[] = [];
++    const first = defineExtension({ apiVersion: 1, name: "test.first", capabilities: [], globals: [], setup(context) {
++      context.onDispose(() => { stages.push("first"); });
++      return {};
++    } });
++    const failing = defineExtension({ apiVersion: 1, name: "test.failing", capabilities: [], globals: [], setup(context) {
++      context.onDispose(async () => { await Promise.resolve(); stages.push("failing"); });
++      throw new Error("setup failed");
++    } });
++    const realm = createRealm({ extensions: [first, failing] });
++    await expect(realm.evaluate("1")).rejects.toThrow("setup failed");
++    expect(realm.closed).toBe(true);
++    expect(stages).toEqual(["failing", "first"]);
++    await realm.close();
++  });
++
++  it.each([{}, { unexpected: 1 }, Promise.resolve({ value: 1 })])("rejects undeclared, missing or asynchronous factory results", async (result) => {
++    const cleanup = vi.fn();
++    const extension = defineExtension({ apiVersion: 1, name: "test.result", capabilities: [], globals: ["value"], setup(context) {
++      context.onDispose(cleanup);
++      return result as never;
++    } });
++    const realm = createRealm({ extensions: [extension] });
++    await expect(realm.evaluate("value")).rejects.toBeDefined();
++    expect(cleanup).toHaveBeenCalledOnce();
++    await realm.close();
++  });
++
++  it("reports disposer failures but still attempts every cleanup", async () => {
++    const cleanup = vi.fn();
++    const extension = defineExtension({ apiVersion: 1, name: "test.fail-close", capabilities: [], globals: [], setup(context) {
++      context.onDispose(cleanup);
++      context.onDispose(() => { throw new Error("cleanup failed"); });
++      return {};
++    } });
++    const realm = createRealm({ extensions: [extension] });
++    await realm.evaluate("1");
++    await expect(realm.close()).rejects.toBeInstanceOf(AggregateError);
++    expect(cleanup).toHaveBeenCalledOnce();
++  });
++
++  it("charges extension work to the existing budget without exposing the budget", async () => {
++    let context: ExtensionContext | undefined;
++    const extension = defineExtension({ apiVersion: 1, name: "test.work", capabilities: [], globals: ["work"], setup(current) {
++      context = current;
++      return { work: () => current.charge(1000) };
++    } });
++    const realm = createRealm({ extensions: [extension], budget: new Budget({ maxSteps: 500 }) });
++    await expect(realm.evaluate('try { work(); } catch (error) { "hidden"; }')).rejects.toMatchObject({ code: "budgetExceeded" });
++    expect(context).not.toHaveProperty("budget");
++    expect(() => context?.charge(1)).toThrow();
++    await realm.close();
++  });
++
++  it("revokes extension host-object access after close", async () => {
++    const read = vi.fn(() => 7);
++    const extension = defineExtension({ apiVersion: 1, name: "test.host", capabilities: [], globals: ["host"], setup: () => ({ host: createHostObject({ properties: { value: { get: read } } }) }) });
++    const realm = createRealm({ extensions: [extension] });
++    expect((await realm.evaluate("host.value")).returnValue).toBe(7);
++    await realm.close();
++    await expect(realm.evaluate("host.value")).rejects.toMatchObject({ code: "aborted" });
++    expect(read).toHaveBeenCalledOnce();
++  });
++});

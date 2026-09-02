@@ -1,0 +1,97 @@
+{
+  "startedAt": "2026-09-02T03:41:26.159Z",
+  "finishedAt": "2026-09-02T03:41:29.215Z",
+  "runtime": "v22.22.0",
+  "scope": "Bounded diagnostic interception around the actual extended SafeJS public realm API for two unauthenticated public sites. Source hashes, bounded own-data error fields and at most 140 source characters around a public script failure; no full website bodies, credentials or native stacks. Runs in a disposable diagnostic process with an external timeout and heap ceiling, not the production permission-restricted session actor. No page behavior or script sources are replaced.",
+  "sites": [
+    {
+      "url": "https://books.toscrape.com/",
+      "navigation": true,
+      "scripts": {
+        "mode": "classic",
+        "partial": true,
+        "discovered": 8,
+        "executed": 1,
+        "skipped": 5,
+        "failed": 2,
+        "external": 2,
+        "sourceBytes": 92731,
+        "halted": true,
+        "complete": true,
+        "issues": {
+          "fetch-policy-denied": 1,
+          "execution-timeout": 1,
+          "realm-halted": 5
+        }
+      },
+      "sources": [
+        {
+          "filename": "https://books.toscrape.com/",
+          "length": 102,
+          "sha256": "0d3e86a58a03a2b938d189180c573f2c87e1bf200627bc15369dd29d22271495",
+          "elapsedMs": 8
+        },
+        {
+          "filename": "https://books.toscrape.com/static/oscar/js/jquery/jquery-1.9.1.min.js",
+          "length": 92629,
+          "sha256": "c12f6098e641aaca96c60215800f18f5671039aecf812217fab3c0d152f6adb4",
+          "elapsedMs": 1174
+        }
+      ],
+      "errors": [
+        {
+          "name": "SandboxError",
+          "code": "aborted",
+          "message": "aborted"
+        }
+      ],
+      "response": {
+        "url": "https://books.toscrape.com/",
+        "status": 200,
+        "bytes": 51294,
+        "redirects": 0
+      }
+    },
+    {
+      "url": "https://quotes.toscrape.com/js/",
+      "navigation": true,
+      "scripts": {
+        "mode": "classic",
+        "partial": true,
+        "discovered": 2,
+        "executed": 0,
+        "skipped": 1,
+        "failed": 1,
+        "external": 1,
+        "sourceBytes": 84345,
+        "halted": true,
+        "complete": true,
+        "issues": {
+          "execution-timeout": 1,
+          "realm-halted": 1
+        }
+      },
+      "sources": [
+        {
+          "filename": "https://quotes.toscrape.com/static/jquery.js",
+          "length": 84345,
+          "sha256": "f16ab224bb962910558715c82f58c10c3ed20f153ddfaa199029f141b5b0255c",
+          "elapsedMs": 1209
+        }
+      ],
+      "errors": [
+        {
+          "name": "SandboxError",
+          "code": "aborted",
+          "message": "aborted"
+        }
+      ],
+      "response": {
+        "url": "https://quotes.toscrape.com/js/",
+        "status": 200,
+        "bytes": 5808,
+        "redirects": 0
+      }
+    }
+  ]
+}

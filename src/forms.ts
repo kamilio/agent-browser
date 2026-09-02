@@ -9,6 +9,7 @@ import {
 	optionValue,
 	selectedOptions,
 } from "./controls.js";
+import { documentBaseTarget, documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { type NetworkRequest, parseNetworkUrl } from "./network.js";
@@ -51,17 +52,24 @@ function submitButton(node: Readonly<DocumentNode>) {
 		: node.tagName === "input" && ["submit", "image"].includes(inputType(node));
 }
 
-function documentBase(tree: DocumentTree) {
-	for (const { node } of tree.walk()) {
-		if (node.tagName !== "base" || !Object.hasOwn(node.attributes, "href"))
-			continue;
-		try {
-			return new URL(node.attributes.href, tree.url).href;
-		} catch {
-			return tree.url;
-		}
-	}
-	return tree.url;
+export function resolveFormSubmitter(
+	tree: DocumentTree,
+	formReference: string,
+	reference?: string,
+) {
+	const form = tree.resolve(formReference);
+	if (form.tagName !== "form")
+		throw new AgentBrowserError("invalid-input", "Expected a form reference");
+	const submitter =
+		reference === undefined ? undefined : tree.resolve(reference);
+	if (
+		submitter &&
+		(!submitButton(submitter) ||
+			formOwner(tree, submitter.id) !== form.id ||
+			isControlDisabled(tree, submitter.id))
+	)
+		throw new AgentBrowserError("not-actionable", "Invalid form submitter");
+	return { form, submitter };
 }
 
 function direction(tree: DocumentTree, id: number) {
@@ -285,17 +293,11 @@ export function prepareFormSubmission(
 		maxEntries > 50_000
 	)
 		throw new AgentBrowserError("invalid-input", "Invalid form limits");
-	const submitter =
-		options.submitter === undefined
-			? undefined
-			: tree.resolve(options.submitter);
-	if (
-		submitter &&
-		(!submitButton(submitter) ||
-			formOwner(tree, submitter.id) !== form.id ||
-			isControlDisabled(tree, submitter.id))
-	)
-		throw new AgentBrowserError("not-actionable", "Invalid form submitter");
+	const { submitter } = resolveFormSubmitter(
+		tree,
+		formReference,
+		options.submitter,
+	);
 	const methodValue = (
 		submitter?.attributes.formmethod ??
 		form.attributes.method ??
@@ -311,7 +313,10 @@ export function prepareFormSubmission(
 		submitter?.attributes.formaction ?? form.attributes.action ?? "";
 	let url: URL;
 	try {
-		url = new URL(action || tree.url, action ? documentBase(tree) : tree.url);
+		url = new URL(
+			action || tree.url,
+			action ? documentBaseUrl(tree) : tree.url,
+		);
 	} catch {
 		throw new AgentBrowserError("invalid-input", "Invalid form action URL");
 	}
@@ -387,7 +392,10 @@ export function prepareFormSubmission(
 		formRef: formReference,
 		...(options.submitter ? { submitterRef: options.submitter } : {}),
 		target:
-			submitter?.attributes.formtarget ?? form.attributes.target ?? "_self",
+			(submitter?.attributes.formtarget ??
+				form.attributes.target ??
+				documentBaseTarget(tree)) ||
+			"_self",
 		skipValidation:
 			Object.hasOwn(form.attributes, "novalidate") ||
 			(!!submitter && Object.hasOwn(submitter.attributes, "formnovalidate")),

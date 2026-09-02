@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-09-02T01:03:00.262Z",
+  "baseline": "safejs-regex-assertions-full-2026-09-01.json",
+  "candidate": "safejs-guest-references-native-config-2026-09-02.json",
+  "sameFailedFiles": true,
+  "sameFailedAssertions": true,
+  "failedFiles": 54,
+  "failedAssertions": 30,
+  "additionalPassingTests": 11,
+  "baselinePassed": 7946,
+  "candidatePassed": 7957
+}

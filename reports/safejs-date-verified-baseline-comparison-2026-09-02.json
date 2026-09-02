@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-09-02T03:31:35.004Z",
+  "baseline": "safejs-retention-escape-final-2026-09-02.json",
+  "candidate": "safejs-date-final-verified-2026-09-02.json",
+  "baselinePassed": 8067,
+  "candidatePassed": 8089,
+  "failedAssertions": 30,
+  "skipped": 6,
+  "failedFiles": 54,
+  "identicalFailedAssertions": true,
+  "identicalFailedFiles": true,
+  "addedFailures": [],
+  "removedFailures": []
+}

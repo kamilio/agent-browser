@@ -1,0 +1,92 @@
+{
+  "startedAt": "2026-09-02T01:03:18.003Z",
+  "finishedAt": "2026-09-02T01:03:19.369Z",
+  "runtime": "v22.22.0",
+  "scope": "Actual extended SafeJS in owned browser processes. Fixture source schedules timers automatically. Optional public documents use manually injected, controlled evaluation; this is not automatic real-site JavaScript compatibility. Public requests are read-only. No credentials or raw public page bodies retained.",
+  "checks": [
+    {
+      "label": "Automatic page script schedules timers during real owned-process HTML loading",
+      "passed": true
+    },
+    {
+      "label": "Timer callbacks preserve extra argument identity and post-scheduling mutations",
+      "passed": true
+    },
+    {
+      "label": "Timer callbacks receive Window this and no parser currentScript",
+      "passed": true
+    },
+    {
+      "label": "Timeout and interval share cancellation IDs across global and Window methods",
+      "passed": true
+    },
+    {
+      "label": "Semantic text exposes DOM changes made by an automatic timer",
+      "passed": true
+    },
+    {
+      "label": "Actual timer console diagnostics are retained on the shared document",
+      "passed": true
+    },
+    {
+      "label": "Deferred arguments preserve cycles, closures and live DOM capabilities",
+      "passed": true
+    },
+    {
+      "label": "Async intervals re-arm after their synchronous prefix and allow nested awaited timers",
+      "passed": true
+    },
+    {
+      "label": "Ordinary timer callback failure is sanitized without killing a healthy realm",
+      "passed": true
+    },
+    {
+      "label": "Source-string handlers fail explicitly rather than executing a hidden evaluator",
+      "passed": true
+    },
+    {
+      "label": "Timer metrics expose cumulative work and no retained active timers after completion",
+      "passed": true
+    },
+    {
+      "label": "Navigation owns a fresh realm and timer ID space",
+      "passed": true
+    },
+    {
+      "label": "A recurring timer stops at the configured cumulative callback limit",
+      "passed": true
+    },
+    {
+      "label": "Timer limit failure leaves readable diagnostics instead of silently dropping work",
+      "passed": true
+    },
+    {
+      "label": "Unsettled timer callbacks hit the shared pending-callback bound once",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: controlled timer evaluation mutates the real parsed document",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: controlled timer evaluation mutates the real parsed document",
+      "passed": true
+    }
+  ],
+  "sites": [
+    {
+      "url": "https://example.com/",
+      "controlledTimerEvaluation": true,
+      "fullTextIncludesMarker": true,
+      "fullTextTruncated": false
+    },
+    {
+      "url": "https://books.toscrape.com/",
+      "controlledTimerEvaluation": true,
+      "fullTextIncludesMarker": false,
+      "fullTextTruncated": true
+    }
+  ],
+  "ownedProcessesClosed": true,
+  "parentRssBytes": 57999360
+}

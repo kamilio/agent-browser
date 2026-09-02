@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-09-02T03:11:34.321Z",
+  "finishedAt": "2026-09-02T03:11:37.561Z",
+  "runtime": "v22.22.0",
+  "scope": "Actual separate CLI invocations, owned session processes and the paired playground API share real parsed public pages and explicit extended-SafeJS evaluations. Public requests are read-only GETs; canceled links make no remote mutations. Website-authored scripts are not automatically loaded. This is not a visual playground UI test. Credentials, raw responses and script results are not retained.",
+  "checks": [
+    {
+      "label": "CLI without runtime-selection environment reads actual service capabilities",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: lexical state survives separate CLI invocations",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: native CLI click dispatches guest callback and cancels navigation",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: native snapshot sees guest DOM changes",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: actual CLI HTML extraction reads the changed live tree",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: actual CLI console reads page-owned severity-filtered messages",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: separate CLI commands await a real timer and inspect its live DOM mutation",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: lexical state survives separate CLI invocations",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: native CLI click dispatches guest callback and cancels navigation",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: native snapshot sees guest DOM changes",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: actual CLI HTML extraction reads the changed live tree",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: actual CLI console reads page-owned severity-filtered messages",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: separate CLI commands await a real timer and inspect its live DOM mutation",
+      "passed": true
+    },
+    {
+      "label": "Named sessions have separate owned process identities",
+      "passed": true
+    },
+    {
+      "label": "Guest lexical globals stay isolated across sessions",
+      "passed": true
+    },
+    {
+      "label": "Paired playground API evaluates inside the existing CLI page realm",
+      "passed": true
+    },
+    {
+      "label": "Separate CLI reads the paired client's live DOM mutation",
+      "passed": true
+    },
+    {
+      "label": "CLI timeout returns only after the runaway guest process exits",
+      "passed": true
+    },
+    {
+      "label": "Other session remains live after one guest process fails",
+      "passed": true
+    },
+    {
+      "label": "Failed actor is removed without automatic restart",
+      "passed": true
+    },
+    {
+      "label": "close-all waits for all owned process exits",
+      "passed": true
+    },
+    {
+      "label": "Owned foreground service exits cleanly",
+      "passed": true
+    }
+  ],
+  "parentRssBytes": 75325440
+}

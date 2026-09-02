@@ -1,11 +1,20 @@
+import { canRewriteDocumentUrl } from "./document-url.js";
 import { AgentBrowserError } from "./errors.js";
 
-export type NodeKind = "document" | "element" | "text" | "comment";
+export type NodeKind = "document" | "fragment" | "element" | "text" | "comment";
 
 export interface ControlState {
 	value?: string;
 	checked?: boolean;
+	indeterminate?: boolean;
 	selected?: boolean;
+}
+
+export interface DocumentAttribute {
+	id: number;
+	name: string;
+	value: string;
+	ownerElement: number | null;
 }
 
 export interface DocumentNode {
@@ -35,17 +44,30 @@ export interface DocumentLimits {
 
 export interface DocumentChange {
 	revision: number;
-	kind: "insert" | "remove" | "attribute" | "text" | "control";
+	kind:
+		| "insert"
+		| "remove"
+		| "attribute"
+		| "text"
+		| "control"
+		| "location"
+		| "focus"
+		| "style"
+		| "target";
 	target: number;
 }
 
 let nextNodeId = 1;
 
 export class DocumentTree {
-	readonly url: string;
+	private currentUrl: string;
+	private currentTarget: number | null = null;
+	private currentFocus: number | null = null;
 	readonly root: number;
 	readonly limits: Readonly<DocumentLimits>;
 	private nodes = new Map<number, MutableNode>();
+	private attributeRecords = new Map<number, DocumentAttribute>();
+	private attachedAttributes = new Map<number, Map<string, number>>();
 	private changes: DocumentChange[] = [];
 	private currentRevision = 0;
 	private textCodeUnits = 0;
@@ -53,7 +75,7 @@ export class DocumentTree {
 	private closeHandlers = new Set<() => void>();
 
 	constructor(url: string, limits: Partial<DocumentLimits> = {}) {
-		this.url = new URL(url).href;
+		this.currentUrl = new URL(url).href;
 		this.limits = Object.freeze({
 			maxNodes: limits.maxNodes ?? 50_000,
 			maxDepth: limits.maxDepth ?? 256,
@@ -70,8 +92,77 @@ export class DocumentTree {
 		return this.currentRevision;
 	}
 
+	invalidatePresentation() {
+		this.ensureOpen();
+		this.changed("style", this.root);
+	}
+
+	get url() {
+		return this.currentUrl;
+	}
+
+	get targetElement() {
+		return this.currentTarget;
+	}
+
+	get activeElement() {
+		return this.currentFocus !== null &&
+			this.nodes.has(this.currentFocus) &&
+			this.isConnected(this.currentFocus)
+			? this.currentFocus
+			: null;
+	}
+
+	setActiveElement(id: number | null) {
+		this.ensureOpen();
+		if (id !== null) {
+			this.element(id);
+			if (!this.isConnected(id))
+				throw new AgentBrowserError(
+					"not-actionable",
+					"Cannot focus a detached element",
+				);
+		}
+		if (id === this.currentFocus) return;
+		this.currentFocus = id;
+		this.changed("focus", this.root);
+	}
+
+	setTargetElement(id: number | null) {
+		this.ensureOpen();
+		if (id !== null) this.element(id);
+		if (id === this.currentTarget) return;
+		this.currentTarget = id;
+		this.changed("target", this.root);
+	}
+
+	setUrl(value: string) {
+		this.ensureOpen();
+		if (typeof value !== "string" || value.length > 16_384)
+			throw new AgentBrowserError("invalid-input", "Invalid document URL");
+		let target: URL;
+		try {
+			target = new URL(value);
+		} catch {
+			throw new AgentBrowserError("invalid-input", "Invalid document URL");
+		}
+		if (target.href.length > 16_384)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Document URL limit exceeded",
+			);
+		if (!canRewriteDocumentUrl(new URL(this.currentUrl), target))
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Document URL rewrite is not permitted",
+			);
+		if (target.href === this.currentUrl) return;
+		this.currentUrl = target.href;
+		this.changed("location", this.root);
+	}
+
 	get nodeCount() {
-		return this.nodes.size;
+		return this.nodes.size + this.attributeRecords.size;
 	}
 
 	createElement(tagName: string, attributes: Record<string, string> = {}) {
@@ -115,6 +206,117 @@ export class DocumentTree {
 		return this.allocate("comment", "", data);
 	}
 
+	createFragment() {
+		return this.allocate("fragment", "", "");
+	}
+
+	clone(id: number, deep = false): number {
+		return this.copyFrom(this, id, deep);
+	}
+
+	copyFrom(sourceTree: DocumentTree, id: number, deep = true): number {
+		this.ensureOpen();
+		const original = sourceTree.get(id);
+		if (original.kind === "document")
+			throw new AgentBrowserError(
+				"unsupported",
+				"Document cloning is not supported",
+			);
+		const entries = deep
+			? [...sourceTree.walk(id)]
+			: [{ node: original, depth: 0 }];
+		if (entries.some(({ depth }) => depth > this.limits.maxDepth))
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Document depth limit exceeded",
+			);
+		const sources = entries.map(({ node }) => node);
+		if (
+			this.nodeCount + sources.length > this.limits.maxNodes ||
+			!Number.isSafeInteger(nextNodeId + sources.length - 1)
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Document node limit exceeded",
+			);
+		const extraText = (node: Readonly<DocumentNode>) =>
+			Object.entries(node.attributes).reduce(
+				(total, [name, value]) => total + name.length + value.length,
+				node.control.value?.length ?? 0,
+			);
+		this.checkTextBudget(
+			sources.reduce(
+				(total, node) =>
+					total + node.tagName.length + node.data.length + extraText(node),
+				0,
+			),
+		);
+		const copies = new Map<number, number>();
+		for (const source of sources) {
+			const copyId = this.allocate(source.kind, source.tagName, source.data);
+			const copy = this.node(copyId);
+			Object.assign(copy.attributes, source.attributes);
+			copy.control = { ...source.control };
+			this.textCodeUnits += extraText(source);
+			copies.set(source.id, copyId);
+			const parent =
+				source.parent === null ? undefined : copies.get(source.parent);
+			if (parent !== undefined) {
+				copy.parent = parent;
+				this.node(parent).children.push(copyId);
+				this.changed("insert", copyId);
+			}
+		}
+		const copy = copies.get(id);
+		if (copy === undefined)
+			throw new AgentBrowserError("not-found", "Clone root was not allocated");
+		return copy;
+	}
+
+	replaceChildrenFrom(
+		parentId: number,
+		sourceTree: DocumentTree,
+		fragmentId: number,
+	) {
+		const parent = this.node(parentId);
+		if (parent.kind !== "element" && parent.kind !== "fragment")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Replacement target must be an element or fragment",
+			);
+		const fragment = sourceTree.get(fragmentId);
+		if (fragment.kind !== "fragment")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Replacement source must be a fragment",
+			);
+		let depth = 0;
+		let ancestor: MutableNode | undefined = parent;
+		while (ancestor) {
+			depth++;
+			ancestor =
+				ancestor.parent === null ? undefined : this.node(ancestor.parent);
+		}
+		for (const entry of sourceTree.walk(fragmentId))
+			if (entry.depth > 0 && depth + entry.depth - 1 > this.limits.maxDepth)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Document depth limit exceeded",
+				);
+		const imported = fragment.children.length
+			? this.copyFrom(sourceTree, fragmentId)
+			: undefined;
+		const previous = parent.children;
+		parent.children = [];
+		for (const child of previous) {
+			this.node(child).parent = null;
+			this.changed("remove", child);
+		}
+		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
+			this.currentFocus = null;
+		if (imported !== undefined) this.insert(parentId, imported);
+	}
+
 	get(id: number): Readonly<DocumentNode> {
 		const node = this.node(id);
 		return Object.freeze({
@@ -133,7 +335,7 @@ export class DocumentTree {
 		const parent = this.node(parentId);
 		const child = this.node(childId);
 		if (
-			!["document", "element"].includes(parent.kind) ||
+			!["document", "fragment", "element"].includes(parent.kind) ||
 			child.kind === "document"
 		)
 			throw new AgentBrowserError(
@@ -157,27 +359,50 @@ export class DocumentTree {
 			ancestor =
 				ancestor.parent === null ? undefined : this.node(ancestor.parent);
 		}
-		for (const entry of this.walk(childId))
-			if (parentDepth + entry.depth > this.limits.maxDepth)
-				throw new AgentBrowserError(
-					"resource-limit",
-					"Document depth limit exceeded",
-				);
+		const children =
+			child.kind === "fragment" ? [...child.children] : [childId];
+		for (const moving of children)
+			for (const entry of this.walk(moving))
+				if (parentDepth + entry.depth > this.limits.maxDepth)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Document depth limit exceeded",
+					);
 		if (before === childId) return;
-		if (child.parent !== null) {
-			const previousParent = this.node(child.parent);
-			previousParent.children.splice(
-				previousParent.children.indexOf(childId),
-				1,
-			);
+		if (child.kind === "fragment") {
+			const index =
+				before === undefined
+					? parent.children.length
+					: parent.children.indexOf(before);
+			parent.children = parent.children
+				.slice(0, index)
+				.concat(children, parent.children.slice(index));
+			child.children = [];
+			for (const moving of children) {
+				this.node(moving).parent = parentId;
+				this.changed("insert", moving);
+			}
+			return;
 		}
-		const index =
-			before === undefined
-				? parent.children.length
-				: parent.children.indexOf(before);
-		parent.children.splice(index, 0, childId);
-		child.parent = parentId;
-		this.changed("insert", childId);
+		for (const moving of children) {
+			const node = this.node(moving);
+			if (node.parent !== null) {
+				const previousParent = this.node(node.parent);
+				previousParent.children.splice(
+					previousParent.children.indexOf(moving),
+					1,
+				);
+			}
+			const index =
+				before === undefined
+					? parent.children.length
+					: parent.children.indexOf(before);
+			parent.children.splice(index, 0, moving);
+			node.parent = parentId;
+			this.changed("insert", moving);
+		}
+		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
+			this.currentFocus = null;
 	}
 
 	remove(id: number) {
@@ -186,6 +411,8 @@ export class DocumentTree {
 		const parent = this.node(node.parent);
 		parent.children.splice(parent.children.indexOf(id), 1);
 		node.parent = null;
+		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
+			this.currentFocus = null;
 		this.changed("remove", id);
 	}
 
@@ -196,12 +423,19 @@ export class DocumentTree {
 		const key = name.toLowerCase();
 		const previous = node.attributes[key];
 		if (previous === value) return;
+		const attributeId = this.attachedAttributes.get(id)?.get(key);
+		const attribute =
+			attributeId === undefined
+				? undefined
+				: this.attributeRecords.get(attributeId);
 		const change =
 			value.length -
 			(previous?.length ?? 0) +
-			(previous === undefined ? key.length : 0);
+			(previous === undefined ? key.length : 0) +
+			(attribute === undefined ? 0 : value.length - attribute.value.length);
 		this.checkTextBudget(change);
 		node.attributes[key] = value;
+		if (attribute) attribute.value = value;
 		this.textCodeUnits += change;
 		this.changed("attribute", id);
 	}
@@ -213,7 +447,122 @@ export class DocumentTree {
 		if (!Object.hasOwn(node.attributes, key)) return;
 		this.textCodeUnits -= key.length + node.attributes[key].length;
 		delete node.attributes[key];
+		const attributeId = this.attachedAttributes.get(id)?.get(key);
+		if (attributeId !== undefined) {
+			const attribute = this.attributeRecord(attributeId);
+			attribute.ownerElement = null;
+			this.attachedAttributes.get(id)?.delete(key);
+		}
 		this.changed("attribute", id);
+	}
+
+	createAttribute(name: string, value = ""): number {
+		this.ensureOpen();
+		this.validateAttribute(name);
+		this.validateString(value);
+		if (
+			this.nodeCount >= this.limits.maxNodes ||
+			!Number.isSafeInteger(nextNodeId)
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Document node limit exceeded",
+			);
+		const key = name.toLowerCase();
+		this.checkTextBudget(key.length + value.length);
+		const id = nextNodeId++;
+		this.attributeRecords.set(id, { id, name: key, value, ownerElement: null });
+		this.textCodeUnits += key.length + value.length;
+		return id;
+	}
+
+	getAttributeNode(id: number, name: string): number | null {
+		this.validateString(name);
+		const key = name.toLowerCase();
+		const value = this.element(id).attributes[key];
+		if (value === undefined) return null;
+		const existing = this.attachedAttributes.get(id)?.get(key);
+		if (existing !== undefined) return existing;
+		const attributeId = this.createAttribute(key, value);
+		this.attributeRecord(attributeId).ownerElement = id;
+		this.attributeMap(id).set(key, attributeId);
+		return attributeId;
+	}
+
+	getAttributeRecord(id: number): Readonly<DocumentAttribute> {
+		return Object.freeze({ ...this.attributeRecord(id) });
+	}
+
+	setAttributeValue(id: number, value: string) {
+		this.validateString(value);
+		const attribute = this.attributeRecord(id);
+		if (attribute.ownerElement !== null) {
+			this.setAttribute(attribute.ownerElement, attribute.name, value);
+			return;
+		}
+		const change = value.length - attribute.value.length;
+		this.checkTextBudget(change);
+		attribute.value = value;
+		this.textCodeUnits += change;
+	}
+
+	setAttributeNode(id: number, attributeId: number): number | null {
+		const node = this.element(id);
+		const attribute = this.attributeRecord(attributeId);
+		if (attribute.ownerElement === id) return attributeId;
+		if (attribute.ownerElement !== null)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Attribute is already in use by another element",
+			);
+		const previous = node.attributes[attribute.name];
+		const change =
+			attribute.value.length -
+			(previous?.length ?? 0) +
+			(previous === undefined ? attribute.name.length : 0);
+		const captured = this.attachedAttributes.get(id)?.get(attribute.name);
+		const captureCost =
+			previous === undefined || captured !== undefined
+				? 0
+				: attribute.name.length + previous.length;
+		this.checkTextBudget(change + captureCost);
+		const original = this.getAttributeNode(id, attribute.name);
+		if (original !== null) this.attributeRecord(original).ownerElement = null;
+		node.attributes[attribute.name] = attribute.value;
+		attribute.ownerElement = id;
+		this.attributeMap(id).set(attribute.name, attributeId);
+		this.textCodeUnits += change;
+		this.changed("attribute", id);
+		return original;
+	}
+
+	removeAttributeNode(id: number, attributeId: number): number {
+		this.element(id);
+		const attribute = this.attributeRecord(attributeId);
+		if (attribute.ownerElement !== id)
+			throw new AgentBrowserError(
+				"not-found",
+				"Attribute is not attached to this element",
+			);
+		this.removeAttribute(id, attribute.name);
+		return attributeId;
+	}
+
+	private attributeRecord(id: number): DocumentAttribute {
+		this.ensureOpen();
+		const attribute = this.attributeRecords.get(id);
+		if (!attribute)
+			throw new AgentBrowserError("not-found", "Unknown document attribute");
+		return attribute;
+	}
+
+	private attributeMap(id: number): Map<string, number> {
+		let attributes = this.attachedAttributes.get(id);
+		if (!attributes) {
+			attributes = new Map();
+			this.attachedAttributes.set(id, attributes);
+		}
+		return attributes;
 	}
 
 	setData(id: number, data: string) {
@@ -239,7 +588,7 @@ export class DocumentTree {
 		for (const [key, value] of Object.entries(state)) {
 			if (key === "value") this.validateString(value);
 			else if (
-				!["checked", "selected"].includes(key) ||
+				!["checked", "selected", "indeterminate"].includes(key) ||
 				typeof value !== "boolean"
 			)
 				throw new AgentBrowserError("invalid-input", "Invalid control state");
@@ -253,11 +602,64 @@ export class DocumentTree {
 		this.changed("control", id);
 	}
 
+	clearControl(id: number, fields: readonly (keyof ControlState)[]) {
+		const node = this.element(id);
+		if (
+			!Array.isArray(fields) ||
+			fields.length > 4 ||
+			fields.some(
+				(field) =>
+					!["value", "checked", "selected", "indeterminate"].includes(field),
+			)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid control reset fields",
+			);
+		let changed = false;
+		for (const field of new Set<keyof ControlState>(fields)) {
+			if (!Object.hasOwn(node.control, field)) continue;
+			if (field === "value")
+				this.textCodeUnits -= node.control.value?.length ?? 0;
+			delete node.control[field];
+			changed = true;
+		}
+		if (changed) this.changed("control", id);
+	}
+
 	textContent(id: number) {
 		const parts: string[] = [];
 		for (const { node } of this.walk(id))
 			if (node.kind === "text") parts.push(node.data);
 		return parts.join("");
+	}
+
+	setTextContent(id: number, data: string) {
+		this.validateString(data);
+		const node = this.node(id);
+		if (node.kind === "document") return;
+		if (node.kind === "text" || node.kind === "comment") {
+			this.setData(id, data);
+			return;
+		}
+		let replacement: number | undefined;
+		if (data !== "") {
+			let depth = 0;
+			let ancestor: MutableNode | undefined = node;
+			while (ancestor) {
+				depth++;
+				ancestor =
+					ancestor.parent === null ? undefined : this.node(ancestor.parent);
+			}
+			if (depth > this.limits.maxDepth)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Document depth limit exceeded",
+				);
+			replacement = this.createText(data);
+		}
+		for (const child of [...node.children]) this.remove(child);
+		if (replacement !== undefined) this.append(id, replacement);
 	}
 
 	*walk(
@@ -275,9 +677,13 @@ export class DocumentTree {
 	}
 
 	isConnected(id: number) {
+		return this.rootOf(id) === this.root;
+	}
+
+	rootOf(id: number) {
 		let node = this.node(id);
 		while (node.parent !== null) node = this.node(node.parent);
-		return node.id === this.root;
+		return node.id;
 	}
 
 	reference(id: number) {
@@ -336,6 +742,10 @@ export class DocumentTree {
 		if (this.closed) return;
 		this.closed = true;
 		this.nodes.clear();
+		this.attributeRecords.clear();
+		this.attachedAttributes.clear();
+		this.currentTarget = null;
+		this.currentFocus = null;
 		this.changes = [];
 		this.textCodeUnits = 0;
 		const failures: unknown[] = [];
@@ -356,7 +766,7 @@ export class DocumentTree {
 		this.ensureOpen();
 		this.validateString(data);
 		if (
-			this.nodes.size >= this.limits.maxNodes ||
+			this.nodeCount >= this.limits.maxNodes ||
 			!Number.isSafeInteger(nextNodeId)
 		)
 			throw new AgentBrowserError(

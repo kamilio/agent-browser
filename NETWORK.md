@@ -47,7 +47,7 @@ library and declarations live in `dist/src`. Consumers import the core from
 `@automations/browser-agent/node`. No browser executable is required.
 
 `NodeNetworkTransport.request` accepts an HTTP(S) URL, method, string headers,
-an optional string/byte body, redirect mode and abort signal. It returns final
+an optional string/byte body, redirect mode, abort signal and cookie context. It returns final
 URL/status, duplicate-preserving response headers, decoded body bytes, redirect
 history, encoded-body byte count and elapsed time. HTTP error statuses are
 responses, not transport exceptions. `decodeResponseText` handles a declared
@@ -58,6 +58,12 @@ HTML meta-charset sniffing still belongs to the future HTML loader.
 Metrics are immutable snapshots. Request counts include attempted hops/DNS
 lookups; encoded and decoded counters measure body bytes, not TLS/header costs.
 They include bytes observed before a quota rejects a chunk.
+
+Optional externally owned `cookieJar` state enables bounded cookie sessions when
+requests include an explicit cookie/credentials context. Redirect response cookies
+are processed before following; outgoing jar cookies are recomputed for every hop,
+not copied across paths or hosts. `COOKIES.md` defines the security boundary and
+unsupported Domain/Partitioned scope. Closing a transport does not close the jar.
 
 ## Enforced transport policy
 
@@ -94,9 +100,12 @@ The adapter implements direct connections; HTTP proxies are not implemented.
 - Page-level CORS, CSP, mixed-content and Fetch/XHR behavior. **Never expose this
   raw host transport directly to an untrusted page VM.** Its response headers
   include Set-Cookie and other private session data for future browser internals.
-- Cookie jars, automatic authentication, referrer policy, cache, downloads,
+- Domain/partitioned cookies and complete page cookie semantics; automatic
+  authentication, referrer policy, cache, downloads,
   WebSockets, streaming page APIs and frame/network partitioning.
-- HTML decoding integration, parsing, scripts, navigation actions and DOM updates.
+- HTML decoding integration, parsing, website scripts and page-driven resource loading.
+  `BrowserSession` now loads/reloads real plain-text/JSON documents and handles
+  same-tab link intents through its explicit loader (`SESSION.md`).
 - A browser session's simulation transport: dry-run must intercept all mutations
   and ensure later reads observe the simulated state before an agent API ships.
 - A verified Bun or Workers network backend. Node is the initial supported host;

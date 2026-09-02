@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "scope": "real-text-json-document-session-only",
+  "startedAt": "2026-09-01T17:45:01.328Z",
+  "finishedAt": "2026-09-01T17:45:03.128Z",
+  "node": "22.22.0",
+  "checks": [
+    {
+      "label": "real text response becomes a document",
+      "url": "https://www.rfc-editor.org/rfc/rfc9110.txt",
+      "passed": true,
+      "markerMatches": true,
+      "stalePrevious": true,
+      "response": {
+        "url": "https://www.rfc-editor.org/rfc/rfc9110.txt",
+        "status": 200,
+        "bytes": 502941,
+        "redirects": 0
+      },
+      "documentNodes": 3,
+      "textCodeUnits": 502906,
+      "textSha256": "ad3b38b7806783d5066714f7ac9aadcba8cec1605a400c7380173737a8adf902",
+      "snapshotEntries": 1,
+      "snapshotBytes": 632,
+      "elapsedMs": 154,
+      "memory": {
+        "rss": 82579456,
+        "heapTotal": 30900224,
+        "heapUsed": 19574776,
+        "external": 4602841,
+        "arrayBuffers": 1115990
+      }
+    },
+    {
+      "label": "real text response becomes a document",
+      "url": "https://httpbingo.org/json",
+      "passed": true,
+      "markerMatches": true,
+      "stalePrevious": true,
+      "response": {
+        "url": "https://httpbingo.org/json",
+        "status": 200,
+        "bytes": 421,
+        "redirects": 0
+      },
+      "documentNodes": 3,
+      "textCodeUnits": 421,
+      "textSha256": "910555f743af4ae6ca59a9ed6014ff87bbc12569037ba33d3e45eca930c33020",
+      "snapshotEntries": 1,
+      "snapshotBytes": 462,
+      "elapsedMs": 79,
+      "memory": {
+        "rss": 81453056,
+        "heapTotal": 28667904,
+        "heapUsed": 10294552,
+        "external": 3588786,
+        "arrayBuffers": 97157
+      }
+    },
+    {
+      "label": "reload creates a fresh document",
+      "url": "https://httpbingo.org/json",
+      "passed": true,
+      "markerMatches": true,
+      "stalePrevious": true,
+      "response": {
+        "url": "https://httpbingo.org/json",
+        "status": 200,
+        "bytes": 421,
+        "redirects": 0
+      },
+      "documentNodes": 3,
+      "textCodeUnits": 421,
+      "textSha256": "910555f743af4ae6ca59a9ed6014ff87bbc12569037ba33d3e45eca930c33020",
+      "snapshotEntries": 1,
+      "snapshotBytes": 462,
+      "elapsedMs": 46,
+      "memory": {
+        "rss": 81453056,
+        "heapTotal": 28667904,
+        "heapUsed": 10676792,
+        "external": 3614535,
+        "arrayBuffers": 118128
+      }
+    },
+    {
+      "label": "HTML is explicitly unsupported by text loader",
+      "passed": true,
+      "rejectedAsUnsupported": true,
+      "previousDocumentPreserved": true,
+      "error": {
+        "code": "unsupported",
+        "message": "This loader supports plain text and JSON, not HTML or executable documents"
+      }
+    }
+  ],
+  "allPassed": true,
+  "metrics": {
+    "tabs": 0,
+    "selectedTab": null,
+    "pendingLoads": 0,
+    "navigations": 4,
+    "commits": 3,
+    "cleanupErrors": 0,
+    "closed": true,
+    "network": {
+      "requests": 4,
+      "redirects": 0,
+      "encodedBytes": 140377,
+      "decodedBytes": 504342,
+      "active": 0,
+      "closed": true
+    },
+    "cookies": {
+      "cookies": 0,
+      "accepted": 0,
+      "rejected": 1,
+      "rejections": {
+        "domain-unsupported": 1
+      },
+      "closed": true
+    },
+    "storage": {
+      "tabs": 0,
+      "areas": 0,
+      "entries": 0,
+      "bytes": 0,
+      "revision": 1,
+      "closed": true
+    }
+  },
+  "initialMemory": {
+    "rss": 61992960,
+    "heapTotal": 11636736,
+    "heapUsed": 8156296,
+    "external": 3567180,
+    "arrayBuffers": 211441
+  },
+  "finalMemory": {
+    "rss": 81723392,
+    "heapTotal": 28667904,
+    "heapUsed": 10924272,
+    "external": 3638633,
+    "arrayBuffers": 138568
+  },
+  "limitations": [
+    "Only plain text and JSON responses are loaded; HTML rejection is expected evidence of a missing feature, not browser compatibility.",
+    "Documents use literal preformatted text nodes, not fabricated HTML parsing or links.",
+    "No page scripts, forms, CSS layout, terminal CLI, playground or cross-document back/forward are exercised.",
+    "Memory values are instantaneous whole-process measurements, not peak browser/session memory or an isolated benchmark.",
+    "Response bodies, cookie values and client-identifying headers are not retained in reports."
+  ]
+}

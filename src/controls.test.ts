@@ -14,6 +14,29 @@ import {
 import { DocumentTree } from "./document.js";
 import { snapshotDocument } from "./snapshot.js";
 
+it("indexes disabled and selected controls within detached fragment roots", () => {
+	const tree = new DocumentTree("https://example.com/");
+	const fragment = tree.createFragment();
+	const fieldset = tree.createElement("fieldset", { disabled: "" });
+	const input = tree.createElement("input");
+	const select = tree.createElement("select");
+	const option = tree.createElement("option", { value: "detached" });
+	tree.append(fragment, fieldset);
+	tree.append(fieldset, input);
+	tree.append(fragment, select);
+	tree.append(select, option);
+	expect(isControlDisabled(tree, input)).toBe(true);
+	expect(controlValue(tree, select)).toBe("detached");
+	expect(optionSelected(tree, option)).toBe(true);
+	const copiedSelect = tree.clone(select, true);
+	expect(controlValue(tree, copiedSelect)).toBe("detached");
+	tree.append(tree.root, fragment);
+	expect(controlValue(tree, copiedSelect)).toBe("detached");
+	expect(controlValue(tree, select)).toBe("detached");
+	expect(isControlDisabled(tree, input)).toBe(true);
+	tree.close();
+});
+
 function fixture() {
 	const tree = new DocumentTree("https://example.com/form");
 	const add = (

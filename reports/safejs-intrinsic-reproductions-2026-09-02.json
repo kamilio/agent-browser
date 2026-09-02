@@ -1,0 +1,41 @@
+{
+  "checkedAt": "2026-09-02T01:25:47.647Z",
+  "runtime": "v22.22.0",
+  "base": "7fbbd81fd99c46928bcf314ad89410b946d203cc",
+  "scope": "Actual local public-core candidate; not a claim that upstream main was executed",
+  "checks": [
+    {
+      "source": "Date.now()",
+      "ok": false,
+      "error": {
+        "name": "ReferenceError",
+        "code": "UNBOUND_IDENTIFIER",
+        "message": "Identifier 'Date' is not defined."
+      }
+    },
+    {
+      "source": "({}).toString.call([])",
+      "ok": false,
+      "error": {
+        "name": "TypeError",
+        "message": "Cannot read properties of null or undefined."
+      }
+    },
+    {
+      "source": "Object.prototype.toString.call([])",
+      "ok": false,
+      "error": {
+        "name": "TypeError",
+        "message": "Cannot read properties of null or undefined."
+      }
+    },
+    {
+      "source": "Object.getPrototypeOf({})",
+      "ok": false,
+      "error": {
+        "name": "TypeError",
+        "message": "Attempted to call a non-function value."
+      }
+    }
+  ]
+}

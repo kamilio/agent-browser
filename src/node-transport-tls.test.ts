@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { createServer } from "node:https";
 import type { TLSSocket } from "node:tls";
 import { afterAll, afterEach, beforeAll, expect, it } from "vitest";
+import { CookieJar } from "./cookies.js";
 import {
 	NodeNetworkTransport,
 	type NodeTransportOptions,
@@ -87,6 +88,30 @@ it("rejects a trusted certificate for the wrong hostname before transmitting HTT
 		}),
 	).rejects.toMatchObject({ code: "network-error" });
 	expect(requests).toBe(before);
+});
+
+it("does not transmit jar credentials before validating the original TLS hostname", async () => {
+	const before = requests;
+	const wrongOrigin = origin.replace("fixture.test", "wrong.fixture.test");
+	const jar = new CookieJar();
+	try {
+		jar.setCookie(wrongOrigin, "credential=synthetic; Secure; Path=/", {
+			siteUrl: wrongOrigin,
+		});
+		await expect(
+			client({ allowPrivateOrigins: [wrongOrigin], cookieJar: jar }).request({
+				url: wrongOrigin,
+				cookieContext: {
+					siteUrl: wrongOrigin,
+					credentials: "include",
+					topLevelNavigation: true,
+				},
+			}),
+		).rejects.toMatchObject({ code: "network-error" });
+		expect(requests).toBe(before);
+	} finally {
+		jar.close();
+	}
 });
 
 it("rejects a downgrade redirect after a valid HTTPS connection", async () => {

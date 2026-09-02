@@ -1,0 +1,320 @@
+import { cssDeclarationStatements } from "./css-parser.js";
+import { AgentBrowserError } from "./errors.js";
+
+export interface InlineDeclaration {
+	name: string;
+	value: string;
+	important: boolean;
+}
+
+const wide = new Set(["initial", "inherit", "unset", "revert"]);
+const sides = ["top", "right", "bottom", "left"];
+const keywords: Record<string, string[]> = {
+	display:
+		"none contents block inline inline-block list-item flex inline-flex grid inline-grid flow-root table inline-table table-row table-cell table-row-group table-header-group table-footer-group table-column table-column-group table-caption".split(
+			" ",
+		),
+	visibility: ["visible", "hidden", "collapse"],
+	position: ["static", "relative", "absolute", "fixed", "sticky"],
+	float: ["none", "left", "right", "inline-start", "inline-end"],
+	clear: ["none", "left", "right", "both", "inline-start", "inline-end"],
+	"box-sizing": ["content-box", "border-box"],
+	overflow: ["visible", "hidden", "clip", "scroll", "auto"],
+	"overflow-x": ["visible", "hidden", "clip", "scroll", "auto"],
+	"overflow-y": ["visible", "hidden", "clip", "scroll", "auto"],
+};
+const lengths = new Set([
+	...sides,
+	"width",
+	"height",
+	"min-width",
+	"min-height",
+	"max-width",
+	"max-height",
+	...sides.map((side) => `margin-${side}`),
+	...sides.map((side) => `padding-${side}`),
+]);
+export const inlineProperties = [
+	...Object.keys(keywords),
+	...lengths,
+	"all",
+	"margin",
+	"padding",
+	"opacity",
+	"z-index",
+	"color",
+	"background-color",
+];
+const supported = new Set(inlineProperties);
+const colors = new Set(
+	"transparent currentcolor black silver gray white maroon red purple fuchsia green lime olive yellow navy blue teal aqua orange rebeccapurple".split(
+		" ",
+	),
+);
+const trim = (value: string) =>
+	value.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "");
+
+export function declarationName(name: string): string {
+	return name.startsWith("--")
+		? name
+		: name.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
+}
+
+function tokens(
+	source: string,
+): { value: string; important: boolean } | undefined {
+	let output = "";
+	let quote = "";
+	let bang = -1;
+	const stack: string[] = [];
+	for (let index = 0; index < source.length; index++) {
+		const character = source[index];
+		if (character === "\\") {
+			if (index + 1 >= source.length) return undefined;
+			output += character + source[++index];
+			continue;
+		}
+		if (quote) {
+			if (character === quote) quote = "";
+			else if (/[\n\r\f]/.test(character)) return undefined;
+			output += character;
+			continue;
+		}
+		if (source.startsWith("/*", index)) {
+			const end = source.indexOf("*/", index + 2);
+			if (end < 0) break;
+			index = end + 1;
+			output += " ";
+			continue;
+		}
+		if (character === '"' || character === "'") quote = character;
+		else if (character === "(" || character === "[" || character === "{") {
+			stack.push(character === "(" ? ")" : character === "[" ? "]" : "}");
+			if (stack.length > 32)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"CSS component nesting limit exceeded",
+				);
+		} else if (character === ")" || character === "]" || character === "}") {
+			if (stack.pop() !== character) return undefined;
+		} else if (!stack.length && character === ";") return undefined;
+		else if (!stack.length && character === "!") {
+			if (bang >= 0) return undefined;
+			bang = output.length;
+		}
+		output += character;
+	}
+	if (quote || stack.length) return undefined;
+	let important = false;
+	if (bang >= 0) {
+		if (!/^![\t\n\f\r ]*important[\t\n\f\r ]*$/i.test(output.slice(bang)))
+			return undefined;
+		important = true;
+		output = output.slice(0, bang);
+	}
+	return { value: trim(output), important };
+}
+
+function normalize(name: string, source: string): string | undefined {
+	if (name.startsWith("--"))
+		return /^--[\w-]+$/.test(name) && source ? source : undefined;
+	if (!supported.has(name)) return undefined;
+	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
+	if (wide.has(value)) return value;
+	if (keywords[name]?.includes(value)) return value;
+	if (
+		name === "display" &&
+		/^(block|inline) (flow|flow-root|flex|grid|table)$/.test(value)
+	)
+		return value;
+	if (lengths.has(name)) {
+		if (
+			value === "auto" &&
+			!name.startsWith("padding-") &&
+			!name.startsWith("max-")
+		)
+			return value;
+		if (value === "none" && name.startsWith("max-")) return value;
+		const match =
+			/^([+-]?(?:\d+(?:\.\d*)?|\.\d+))(px|em|rem|ex|ch|vw|vh|vmin|vmax|cm|mm|q|in|pt|pc|%)?$/.exec(
+				value,
+			);
+		if (!match) return undefined;
+		const number = Number(match[1]);
+		if (!Number.isFinite(number) || (!match[2] && number !== 0))
+			return undefined;
+		if (number < 0 && !sides.includes(name) && !name.startsWith("margin-"))
+			return undefined;
+		return `${number}${match[2] ?? "px"}`;
+	}
+	if (
+		name === "opacity" &&
+		/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value) &&
+		Number.isFinite(Number(value))
+	)
+		return String(Number(value));
+	if (
+		name === "z-index" &&
+		(value === "auto" ||
+			(/^[+-]?\d+$/.test(value) && Number.isSafeInteger(Number(value))))
+	)
+		return value === "auto" ? value : String(Number(value));
+	if (name === "color" || name === "background-color") {
+		if (colors.has(value)) return value;
+		const match = /^#([\da-f]{3}|[\da-f]{6})$/.exec(value);
+		if (match) {
+			const hex =
+				match[1].length === 3
+					? [...match[1]].map((character) => character.repeat(2)).join("")
+					: match[1];
+			return `rgb(${[0, 2, 4].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16)).join(", ")})`;
+		}
+		const rgb = /^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/.exec(value);
+		if (rgb)
+			return `rgb(${rgb
+				.slice(1)
+				.map((channel) => Math.min(255, Number(channel)))
+				.join(", ")})`;
+	}
+	return undefined;
+}
+
+export function expandDeclaration(
+	name: string,
+	source: string,
+	important: boolean,
+): InlineDeclaration[] {
+	if (name === "margin" || name === "padding") {
+		const parts = source.toLowerCase().split(/[\t\n\f\r ]+/);
+		if (
+			parts.length < 1 ||
+			parts.length > 4 ||
+			(parts.length > 1 && parts.some((part) => wide.has(part)))
+		)
+			return [];
+		const values = [
+			parts[0],
+			parts[1] ?? parts[0],
+			parts[2] ?? parts[0],
+			parts[3] ?? parts[1] ?? parts[0],
+		];
+		const expanded = sides.map((side, index) => ({
+			name: `${name}-${side}`,
+			value: normalize(`${name}-${side}`, values[index]),
+			important,
+		}));
+		return expanded.every((entry) => entry.value !== undefined)
+			? (expanded as InlineDeclaration[])
+			: [];
+	}
+	const value = normalize(name, source);
+	return value === undefined ? [] : [{ name, value, important }];
+}
+
+export function parseInlineDeclarations(
+	source: string,
+	maxDeclarations: number,
+): InlineDeclaration[] {
+	let count = 0;
+	const result: InlineDeclaration[] = [];
+	for (const statement of cssDeclarationStatements(source, () => {})) {
+		if (!trim(statement)) continue;
+		if (++count > maxDeclarations)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"CSS declaration limit exceeded",
+			);
+		const parsed = tokens(statement);
+		if (!parsed) continue;
+		const colon = parsed.value.indexOf(":");
+		if (colon < 0) continue;
+		const name = declarationName(trim(parsed.value.slice(0, colon)));
+		for (const entry of expandDeclaration(
+			name,
+			trim(parsed.value.slice(colon + 1)),
+			parsed.important,
+		)) {
+			const previous = result.findIndex(
+				(existing) => existing.name === entry.name,
+			);
+			if (previous >= 0) {
+				if (result[previous].important && !entry.important) continue;
+				result.splice(previous, 1);
+			}
+			result.push(entry);
+			if (result.length > maxDeclarations)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"CSS declaration limit exceeded",
+				);
+		}
+	}
+	return result;
+}
+
+export function propertyDeclarations(
+	entries: InlineDeclaration[],
+	name: string,
+): InlineDeclaration[] {
+	const names =
+		name === "margin" || name === "padding"
+			? sides.map((side) => `${name}-${side}`)
+			: [name];
+	return names.flatMap((wanted) =>
+		entries.filter((entry) => entry.name === wanted),
+	);
+}
+
+export function propertyValue(
+	entries: InlineDeclaration[],
+	name: string,
+): string {
+	const found = propertyDeclarations(entries, name);
+	if (name !== "margin" && name !== "padding") return found[0]?.value ?? "";
+	if (
+		found.length !== 4 ||
+		found.some((entry) => entry.important !== found[0].important)
+	)
+		return "";
+	const values = found.map((entry) => entry.value);
+	if (values.some((value) => wide.has(value)))
+		return values.every((value) => value === values[0]) ? values[0] : "";
+	if (values[3] === values[1]) values.pop();
+	if (values.length === 3 && values[2] === values[0]) values.pop();
+	if (values.length === 2 && values[1] === values[0]) values.pop();
+	return values.join(" ");
+}
+
+export function serializeDeclarations(entries: InlineDeclaration[]): string {
+	const emitted = new Set<string>();
+	const output: string[] = [];
+	for (const entry of entries) {
+		if (emitted.has(entry.name)) continue;
+		const shorthand = /^(margin|padding)-/.exec(entry.name)?.[1];
+		const value =
+			shorthand && !entries.some((candidate) => candidate.name === "all")
+				? propertyValue(entries, shorthand)
+				: "";
+		if (shorthand && value) {
+			for (const side of sides) emitted.add(`${shorthand}-${side}`);
+			output.push(
+				`${shorthand}: ${value}${entry.important ? " !important" : ""};`,
+			);
+		} else
+			output.push(
+				`${entry.name}: ${entry.value}${entry.important ? " !important" : ""};`,
+			);
+	}
+	return output.join(" ");
+}
+
+export function directDeclaration(
+	name: string,
+	source: string,
+	important: boolean,
+): InlineDeclaration[] {
+	const parsed = tokens(source);
+	return parsed && !parsed.important
+		? expandDeclaration(name, parsed.value, important)
+		: [];
+}

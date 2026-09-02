@@ -2,10 +2,15 @@ import {
 	controlChecked,
 	controlValue,
 	isControlDisabled,
+	labelControl,
 	optionSelected,
 } from "./controls.js";
+import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { activeFocus } from "./focus.js";
+import { htmlParseInfo } from "./html-info.js";
+import { documentStyles } from "./styles.js";
 
 export interface SnapshotOptions {
 	root?: string;
@@ -23,6 +28,9 @@ export interface SnapshotEntry {
 	level?: number;
 	value?: string;
 	checked?: boolean;
+	indeterminate?: boolean;
+	targeted?: boolean;
+	focused?: boolean;
 	selected?: boolean;
 	disabled?: boolean;
 	readonly?: boolean;
@@ -37,6 +45,7 @@ export interface SemanticSnapshot {
 	revision: number;
 	entries: SnapshotEntry[];
 	truncated: boolean;
+	html?: { partial: true; scripting: boolean; issues: number };
 }
 
 export type SnapshotDiff =
@@ -51,7 +60,15 @@ export type SnapshotDiff =
 			order: string[];
 	  };
 
-const ignoredTags = new Set(["head", "script", "style", "template"]);
+const ignoredTags = new Set([
+	"head",
+	"script",
+	"style",
+	"template",
+	"iframe",
+	"noembed",
+	"noframes",
+]);
 const leafRoles = new Set(["button", "link", "heading", "img", "textbox"]);
 const roles = new Set([
 	"article",
@@ -199,28 +216,54 @@ export function snapshotDocument(
 	}
 	const start =
 		options.root === undefined ? tree.root : tree.resolve(options.root).id;
+	const baseUrl = documentBaseUrl(tree);
+	const focused = activeFocus(tree);
+	const html = htmlParseInfo(tree);
 	const result: SemanticSnapshot = {
 		document: tree.reference(tree.root),
 		scope: tree.reference(start),
 		revision: tree.revision,
 		entries: [],
 		truncated: false,
+		...(html
+			? {
+					html: {
+						partial: true as const,
+						scripting: html.scripting,
+						issues: Object.values(html.issues).reduce(
+							(total, count) => total + count,
+							0,
+						),
+					},
+				}
+			: {}),
 	};
 	const nodes = new Map<number, Readonly<DocumentNode>>();
+	const included = new Set<number>();
 	const visible = new Set<number>();
+	const styles = documentStyles(tree);
 	const text = new Map<number, string>();
 	const ids = new Map<string, number>();
-	const labels = new Map<string, string[]>();
+	const labels = new Map<number, string[]>();
 	for (const { node } of tree.walk()) {
 		nodes.set(node.id, node);
-		if ((node.parent === null || visible.has(node.parent)) && !hidden(node))
-			visible.add(node.id);
+		if (
+			(node.parent === null || included.has(node.parent)) &&
+			!hidden(node) &&
+			styles.get(node.id).displayed
+		) {
+			included.add(node.id);
+			if (styles.get(node.id).visible) visible.add(node.id);
+		}
 		if (node.attributes.id && !ids.has(node.attributes.id))
 			ids.set(node.attributes.id, node.id);
 	}
 	for (const node of Array.from(nodes.values()).reverse()) {
-		if (!visible.has(node.id)) continue;
-		let content = node.kind === "text" ? clean(node.data, false) : "";
+		if (!included.has(node.id)) continue;
+		let content =
+			node.kind === "text" && visible.has(node.id)
+				? clean(node.data, false)
+				: "";
 		for (const child of node.children) {
 			content += text.get(child) ?? "";
 			if (content.length > maxStringLength) break;
@@ -228,15 +271,12 @@ export function snapshotDocument(
 		text.set(node.id, clean(content, false).slice(0, maxStringLength + 1));
 	}
 	for (const node of nodes.values()) {
-		if (
-			node.tagName !== "label" ||
-			!visible.has(node.id) ||
-			!node.attributes.for
-		)
-			continue;
-		const values = labels.get(node.attributes.for) ?? [];
+		if (node.tagName !== "label" || !visible.has(node.id)) continue;
+		const control = labelControl(tree, node.id);
+		if (control === undefined) continue;
+		const values = labels.get(control) ?? [];
 		values.push(text.get(node.id) ?? "");
-		labels.set(node.attributes.for, values);
+		labels.set(control, values);
 	}
 	const limit = (value: string) => {
 		const normalized = clean(value);
@@ -255,15 +295,8 @@ export function snapshotDocument(
 		if (labelled.length) return limit(labelled.join(" "));
 		if (node.attributes["aria-label"])
 			return limit(node.attributes["aria-label"]);
-		const associated = labels.get(node.attributes.id);
+		const associated = labels.get(node.id);
 		if (associated?.length) return limit(associated.join(" "));
-		if (["input", "textarea", "select"].includes(node.tagName)) {
-			let parent = nodes.get(node.parent ?? -1);
-			while (parent) {
-				if (parent.tagName === "label") return limit(text.get(parent.id) ?? "");
-				parent = nodes.get(parent.parent ?? -1);
-			}
-		}
 		if (node.tagName === "img")
 			return limit(node.attributes.alt ?? node.attributes.title ?? "");
 		if (
@@ -290,10 +323,10 @@ export function snapshotDocument(
 	const pending = [{ id: start, depth: 0 }];
 	while (pending.length) {
 		const current = pending.pop();
-		if (!current || !visible.has(current.id)) continue;
+		if (!current || !included.has(current.id)) continue;
 		const node = nodes.get(current.id);
 		if (!node) continue;
-		const role = roleOf(node);
+		const role = visible.has(current.id) ? roleOf(node) : undefined;
 		let nextDepth = current.depth;
 		if (role && (role !== "text" || text.get(node.id)?.trim())) {
 			if (current.depth > maxDepth) {
@@ -319,6 +352,14 @@ export function snapshotDocument(
 				)
 					entry[state] = true;
 			if (isControlDisabled(tree, node.id)) entry.disabled = true;
+			if (node.id === tree.targetElement) entry.targeted = true;
+			if (node.id === focused) entry.focused = true;
+			if (
+				node.tagName === "input" &&
+				node.attributes.type?.toLowerCase() === "checkbox" &&
+				node.control.indeterminate
+			)
+				entry.indeterminate = true;
 			if (["checkbox", "radio", "switch"].includes(role))
 				entry.checked =
 					node.tagName === "input"
@@ -341,7 +382,7 @@ export function snapshotDocument(
 			}
 			if (role === "link" && node.attributes.href !== undefined) {
 				try {
-					const url = new URL(node.attributes.href, tree.url);
+					const url = new URL(node.attributes.href, baseUrl);
 					if (["http:", "https:", "mailto:", "tel:"].includes(url.protocol)) {
 						url.username = "";
 						url.password = "";
@@ -410,8 +451,14 @@ export function renderSnapshot(
 			"Invalid text snapshot byte limit",
 		);
 	const marker = "… snapshot truncated\n";
-	const lines: string[] = [];
-	let bytes = 0;
+	const lines: string[] = snapshot.html
+		? [
+				snapshot.html.scripting
+					? "# HTML partial; classic JS partial\n"
+					: "# HTML partial; JS off\n",
+			]
+		: [];
+	let bytes = lines.length ? encoder.encode(lines[0]).byteLength : 0;
 	let truncated = snapshot.truncated;
 	for (const entry of snapshot.entries) {
 		const states = Object.entries(entry).filter(

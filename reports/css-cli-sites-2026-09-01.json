@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "scope": "real-cli-html-css-subsets-text-json-navigation",
+  "startedAt": "2026-09-01T20:04:35.994Z",
+  "finishedAt": "2026-09-01T20:04:39.669Z",
+  "node": "22.22.0",
+  "checks": [
+    {
+      "label": "foreground service starts without printing its auth token",
+      "passed": true
+    },
+    {
+      "label": "open public JSON through CLI",
+      "passed": true
+    },
+    {
+      "label": "snapshot sees real JSON document",
+      "passed": true,
+      "entries": 1,
+      "snapshotBytes": 462
+    },
+    {
+      "label": "separate CLI invocation preserves local storage",
+      "passed": true
+    },
+    {
+      "label": "named sessions isolate local storage",
+      "passed": true
+    },
+    {
+      "label": "goto public text replaces the document",
+      "passed": true
+    },
+    {
+      "label": "unsupported XML fails without replacing the current document",
+      "passed": true
+    },
+    {
+      "label": "reload invalidates previous document references",
+      "passed": true
+    },
+    {
+      "label": "CLI back reloads the prior real JSON document without appending history",
+      "passed": true
+    },
+    {
+      "label": "CLI forward reloads real RFC text with fresh references",
+      "passed": true
+    },
+    {
+      "label": "real HTML produces semantic headings and links with explicit partial/JS-disabled metadata",
+      "passed": true
+    },
+    {
+      "label": "real table-based news HTML exposes parsed link references without running its script",
+      "passed": true,
+      "entries": 224,
+      "truncated": true,
+      "issues": 4
+    },
+    {
+      "label": "public catalog loads external stylesheets with explicit partial/no-layout diagnostics",
+      "passed": true,
+      "css": {
+        "partial": true,
+        "properties": [
+          "display",
+          "visibility"
+        ],
+        "layout": false,
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "externalSheets": 3,
+        "rules": 2433,
+        "declarations": 3916,
+        "codeUnits": 227815,
+        "work": 1859545,
+        "issues": {
+          "unimplemented-css-property": 3735,
+          "unimplemented-css-at-rule": 10,
+          "unimplemented-or-invalid-css-selector": 23
+        }
+      }
+    },
+    {
+      "label": "actual public stylesheet makes the first product thumbnail block-level",
+      "passed": true,
+      "style": {
+        "reference": "e1746",
+        "display": "block",
+        "visibility": "visible",
+        "displayed": true,
+        "visible": true,
+        "partial": true,
+        "layout": false
+      }
+    },
+    {
+      "label": "CLI clicks a real book link by parsed ref and reads the product HTML",
+      "passed": true,
+      "listingEntries": 189,
+      "productEntries": 59
+    },
+    {
+      "label": "HTML back traversal reloads the listing with fresh references",
+      "passed": true
+    },
+    {
+      "label": "close-all removes only the service's named sessions",
+      "passed": true
+    },
+    {
+      "label": "stop-server exits cleanly",
+      "passed": true
+    },
+    {
+      "label": "private connection file is removed on shutdown",
+      "passed": true
+    }
+  ],
+  "allPassed": true,
+  "limitations": [
+    "A package-owned foreground service and separate CLI processes are exercised, not a Chromium/Firefox engine.",
+    "Public JSON/plain text and a bounded HTML parser are exercised. HTML semantics are partial; website JavaScript is disabled.",
+    "The visibility cascade loads public stylesheets and checks a computed display value; no full CSS layout, image rendering, script or screenshot equivalence is claimed.",
+    "Parsed HTML link traversal and text/JSON history are exercised. No website JavaScript, BFCache, full history lifecycle, artifact rendering, automatic launch or playground UI is exercised by this CLI probe.",
+    "Only synthetic local in-memory storage is mutated; authentication tokens, page bodies and process output are not retained."
+  ]
+}

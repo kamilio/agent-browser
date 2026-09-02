@@ -1,0 +1,1089 @@
+import {
+	controlChecked,
+	inputType,
+	isControlDisabled,
+	optionSelected,
+	radioGroup,
+} from "./controls.js";
+import type { DocumentNode, DocumentTree } from "./document.js";
+import { AgentBrowserError } from "./errors.js";
+import { activeFocus } from "./focus.js";
+
+export interface QueryLimits {
+	maxSelectorCodeUnits: number;
+	maxComponents: number;
+	maxNesting: number;
+	maxIndexedNodes: number;
+	maxWork: number;
+	maxResults: number;
+	maxCachedSelectors: number;
+	maxMemoEntries: number;
+}
+
+type Relation = " " | ">" | "+" | "~";
+type AttributeOperator = "=" | "~=" | "|=" | "^=" | "$=" | "*=";
+type SimpleSelector =
+	| { kind: "tag" | "id" | "class"; value: string }
+	| {
+			kind: "attribute";
+			name: string;
+			operator?: AttributeOperator;
+			value?: string;
+			insensitive?: boolean;
+	  }
+	| { kind: "pseudo"; name: string }
+	| {
+			kind: "logical";
+			name: "is" | "where" | "not" | "has";
+			selectors: Selector[];
+	  }
+	| {
+			kind: "nth";
+			step: number;
+			offset: number;
+			reverse: boolean;
+			ofType: boolean;
+			of?: Selector[];
+	  };
+interface SelectorPart {
+	tests: SimpleSelector[];
+	relation?: Relation;
+}
+type Selector = SelectorPart[];
+interface CompiledSelector {
+	selectors: Selector[];
+	nativeState: boolean;
+}
+
+export type SelectorSpecificity = readonly [number, number, number];
+
+export function compareSpecificity(
+	left: SelectorSpecificity,
+	right: SelectorSpecificity,
+) {
+	return left[0] - right[0] || left[1] - right[1] || left[2] - right[2];
+}
+
+function selectorSpecificity(selector: Selector): SelectorSpecificity {
+	const total: [number, number, number] = [0, 0, 0];
+	const maximum = (selectors: Selector[]) =>
+		selectors
+			.map(selectorSpecificity)
+			.reduce<SelectorSpecificity>(
+				(best, candidate) =>
+					compareSpecificity(candidate, best) > 0 ? candidate : best,
+				[0, 0, 0],
+			);
+	for (const part of selector)
+		for (const test of part.tests) {
+			let value: SelectorSpecificity = [0, 0, 0];
+			if (test.kind === "id") value = [1, 0, 0];
+			else if (test.kind === "tag") value = [0, 0, test.value === "*" ? 0 : 1];
+			else if (test.kind === "logical")
+				value =
+					test.name === "where"
+						? [0, 0, 0]
+						: maximum(
+								test.name === "has"
+									? test.selectors.map((relative) => relative.slice(1))
+									: test.selectors,
+							);
+			else if (test.kind === "nth") {
+				const nested = test.of ? maximum(test.of) : [0, 0, 0];
+				value = [nested[0], nested[1] + 1, nested[2]];
+			} else value = [0, 1, 0];
+			for (let index = 0; index < 3; index++) total[index] += value[index];
+		}
+	return total;
+}
+
+const whitespace = /[\t\n\f\r ]/;
+const nameStart = /[a-zA-Z_\u0080-\uffff]/;
+const nameChar = /[a-zA-Z0-9_\-\u0080-\uffff]/;
+const statePseudos = new Set([
+	"checked",
+	"indeterminate",
+	"enabled",
+	"disabled",
+	"required",
+	"optional",
+]);
+const simplePseudos = new Set([
+	"scope",
+	"root",
+	"target",
+	"focus",
+	"focus-within",
+	"empty",
+	"first-child",
+	"last-child",
+	"only-child",
+	"first-of-type",
+	"last-of-type",
+	"only-of-type",
+	"link",
+	"any-link",
+	"visited",
+	...statePseudos,
+]);
+const insensitiveAttributes = new Set([
+	"accept",
+	"accept-charset",
+	"align",
+	"alink",
+	"axis",
+	"bgcolor",
+	"charset",
+	"checked",
+	"clear",
+	"codetype",
+	"color",
+	"compact",
+	"declare",
+	"defer",
+	"dir",
+	"direction",
+	"disabled",
+	"enctype",
+	"face",
+	"frame",
+	"hreflang",
+	"http-equiv",
+	"lang",
+	"language",
+	"link",
+	"media",
+	"method",
+	"multiple",
+	"nohref",
+	"noresize",
+	"noshade",
+	"nowrap",
+	"readonly",
+	"rel",
+	"rev",
+	"rules",
+	"scope",
+	"scrolling",
+	"selected",
+	"shape",
+	"target",
+	"text",
+	"type",
+	"valign",
+	"valuetype",
+	"vlink",
+]);
+
+function asciiLower(value: string) {
+	return value.replace(/[A-Z]/g, (character) => character.toLowerCase());
+}
+function syntax(message: string): never {
+	throw new AgentBrowserError("invalid-input", `Invalid selector: ${message}`);
+}
+function unsupported(message: string): never {
+	throw new AgentBrowserError(
+		"unsupported",
+		`Unsupported selector: ${message}`,
+	);
+}
+
+class SelectorParser {
+	private position = 0;
+	private components = 0;
+	private nativeState = false;
+	private readonly source: string;
+	constructor(
+		source: string,
+		private readonly limits: Readonly<QueryLimits>,
+	) {
+		if (typeof source !== "string") syntax("expected a string");
+		if (source.length > limits.maxSelectorCodeUnits)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Selector text limit exceeded",
+			);
+		this.source = source
+			.replace(/\r\n?/g, "\n")
+			.replace(/\f/g, "\n")
+			.replace(/\0/g, "\ufffd");
+	}
+	parse(): CompiledSelector {
+		const selectors = this.list(0, false, false);
+		if (this.position !== this.source.length) syntax("unexpected token");
+		return { selectors, nativeState: this.nativeState };
+	}
+	private list(
+		depth: number,
+		relative: boolean,
+		insideHas: boolean,
+	): Selector[] {
+		if (depth > this.limits.maxNesting)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Selector nesting limit exceeded",
+			);
+		const result: Selector[] = [];
+		this.space();
+		while (true) {
+			const parts: Selector = [];
+			if (relative) parts.push({ tests: [{ kind: "pseudo", name: "scope" }] });
+			let relation: Relation | undefined;
+			if (relative) relation = this.combinator() ?? " ";
+			this.space();
+			parts.push({ tests: this.compound(depth, insideHas), relation });
+			while (true) {
+				const spaced = this.space();
+				const next = this.source[this.position];
+				if (!next || next === "," || next === ")") break;
+				const explicit = this.combinator();
+				if (!explicit && !spaced) syntax("expected a combinator");
+				this.space();
+				parts.push({
+					tests: this.compound(depth, insideHas),
+					relation: explicit ?? " ",
+				});
+			}
+			result.push(parts);
+			if (this.source[this.position] !== ",") break;
+			this.position++;
+			this.space();
+		}
+		return result;
+	}
+	private compound(depth: number, insideHas: boolean) {
+		const tests: SimpleSelector[] = [];
+		if (this.source[this.position] === "*") {
+			this.position++;
+			tests.push({ kind: "tag", value: "*" });
+			this.component();
+		} else if (this.startsIdentifier()) {
+			tests.push({ kind: "tag", value: asciiLower(this.identifier()) });
+			this.component();
+		}
+		while (true) {
+			this.comments();
+			const next = this.source[this.position];
+			if (next === "#" || next === ".") {
+				this.position++;
+				tests.push({
+					kind: next === "#" ? "id" : "class",
+					value: this.identifier(),
+				});
+			} else if (next === "[") tests.push(this.attribute());
+			else if (next === ":") tests.push(this.pseudo(depth, insideHas));
+			else break;
+			this.component();
+		}
+		if (this.source[this.position] === "|")
+			unsupported("namespaces and column combinators");
+		if (!tests.length) syntax("expected a compound selector");
+		return tests;
+	}
+	private attribute(): SimpleSelector {
+		this.position++;
+		this.space();
+		const name = asciiLower(this.identifier());
+		this.space();
+		if (this.source[this.position] === "]") {
+			this.position++;
+			return { kind: "attribute", name };
+		}
+		const pair = this.source.slice(this.position, this.position + 2);
+		let operator: AttributeOperator;
+		if (["~=", "|=", "^=", "$=", "*="].includes(pair)) {
+			operator = pair as AttributeOperator;
+			this.position += 2;
+		} else if (this.source[this.position] === "=") {
+			operator = "=";
+			this.position++;
+		} else if (this.source[this.position] === "|")
+			unsupported("attribute namespaces");
+		else syntax("expected an attribute operator");
+		this.space();
+		const quote = this.source[this.position];
+		const value =
+			quote === '"' || quote === "'" ? this.string() : this.identifier();
+		this.space();
+		let insensitive: boolean | undefined;
+		if (this.source[this.position] !== "]") {
+			const flag = asciiLower(this.identifier());
+			if (flag !== "i" && flag !== "s") syntax("unknown attribute flag");
+			insensitive = flag === "i";
+			this.space();
+		}
+		this.expect("]");
+		return { kind: "attribute", name, operator, value, insensitive };
+	}
+	private pseudo(depth: number, insideHas: boolean): SimpleSelector {
+		this.position++;
+		if (this.source[this.position] === ":") unsupported("pseudo-elements");
+		const name = asciiLower(this.identifier());
+		if (this.source[this.position] !== "(") {
+			if (!simplePseudos.has(name)) unsupported(`:${name}`);
+			if (insideHas && name === "scope") unsupported(":scope inside :has");
+			if (statePseudos.has(name)) this.nativeState = true;
+			return { kind: "pseudo", name };
+		}
+		this.position++;
+		if (["is", "where", "not", "has"].includes(name)) {
+			if (name === "has" && insideHas) syntax("nested :has");
+			const selectors = this.list(
+				depth + 1,
+				name === "has",
+				insideHas || name === "has",
+			);
+			this.expect(")");
+			return {
+				kind: "logical",
+				name: name as "is" | "where" | "not" | "has",
+				selectors,
+			};
+		}
+		if (
+			[
+				"nth-child",
+				"nth-last-child",
+				"nth-of-type",
+				"nth-last-of-type",
+			].includes(name)
+		) {
+			const start = this.position;
+			while (
+				this.position < this.source.length &&
+				this.source[this.position] !== ")"
+			) {
+				if (
+					this.source.slice(this.position, this.position + 2).toLowerCase() ===
+						"of" &&
+					whitespace.test(this.source[this.position - 1] ?? "") &&
+					whitespace.test(this.source[this.position + 2] ?? "")
+				)
+					break;
+				if (this.source.slice(this.position, this.position + 2) === "/*")
+					unsupported("comments within An+B expressions");
+				this.position++;
+			}
+			const formula = this.formula(this.source.slice(start, this.position));
+			let of: Selector[] | undefined;
+			if (this.source[this.position] !== ")") {
+				if (name.includes("of-type"))
+					syntax("of-list on a typed child selector");
+				this.position += 2;
+				of = this.list(depth + 1, false, insideHas);
+			}
+			this.expect(")");
+			return {
+				kind: "nth",
+				...formula,
+				of,
+				reverse: name.includes("last"),
+				ofType: name.includes("of-type"),
+			};
+		}
+		unsupported(`:${name}()`);
+	}
+	private formula(input: string) {
+		const value = asciiLower(input.trim());
+		if (value === "odd") return { step: 2, offset: 1 };
+		if (value === "even") return { step: 2, offset: 0 };
+		let step = 0;
+		let offset: number;
+		if (/^[+-]?\d+$/.test(value)) offset = Number(value);
+		else {
+			const match = /^([+-]?\d*)n(?:\s*([+-])\s*(\d+))?$/.exec(value);
+			if (!match) syntax("invalid An+B expression");
+			step =
+				match[1] === "" || match[1] === "+"
+					? 1
+					: match[1] === "-"
+						? -1
+						: Number(match[1]);
+			offset = match[3] ? Number(`${match[2]}${match[3]}`) : 0;
+		}
+		if (
+			!Number.isSafeInteger(step) ||
+			!Number.isSafeInteger(offset) ||
+			Math.abs(step) > 1_000_000_000 ||
+			Math.abs(offset) > 1_000_000_000
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Selector numeric limit exceeded",
+			);
+		return { step, offset };
+	}
+	private startsIdentifier() {
+		const current = this.source[this.position] ?? "";
+		const next = this.source[this.position + 1] ?? "";
+		return (
+			nameStart.test(current) ||
+			current === "\\" ||
+			(current === "-" &&
+				(nameStart.test(next) || next === "-" || next === "\\"))
+		);
+	}
+	private identifier() {
+		if (!this.startsIdentifier()) syntax("expected an identifier");
+		let result = "";
+		while (this.position < this.source.length) {
+			const current = this.source[this.position];
+			if (current === "\\") result += this.escape();
+			else if (nameChar.test(current)) {
+				result += current;
+				this.position++;
+			} else break;
+		}
+		return result;
+	}
+	private string() {
+		const quote = this.source[this.position++];
+		let result = "";
+		while (this.position < this.source.length) {
+			const current = this.source[this.position];
+			if (current === quote) {
+				this.position++;
+				return result;
+			}
+			if (current === "\n") syntax("newline in a string");
+			if (current === "\\" && this.source[this.position + 1] === "\n")
+				this.position += 2;
+			else if (current === "\\") result += this.escape();
+			else {
+				result += current;
+				this.position++;
+			}
+		}
+		syntax("unterminated string");
+	}
+	private escape() {
+		this.position++;
+		const current = this.source[this.position];
+		if (!current) return "\ufffd";
+		if (current === "\n") syntax("invalid escape");
+		if (!/[0-9a-f]/i.test(current)) {
+			this.position++;
+			return current;
+		}
+		let hex = "";
+		while (hex.length < 6 && /[0-9a-f]/i.test(this.source[this.position] ?? ""))
+			hex += this.source[this.position++];
+		if (whitespace.test(this.source[this.position] ?? "")) this.position++;
+		const point = Number.parseInt(hex, 16);
+		return String.fromCodePoint(
+			point === 0 || point > 0x10ffff || (point >= 0xd800 && point <= 0xdfff)
+				? 0xfffd
+				: point,
+		);
+	}
+	private combinator(): Relation | undefined {
+		const next = this.source[this.position];
+		if (next === ">" || next === "+" || next === "~") {
+			this.position++;
+			return next;
+		}
+		return undefined;
+	}
+	private comments() {
+		while (this.source.slice(this.position, this.position + 2) === "/*") {
+			const end = this.source.indexOf("*/", this.position + 2);
+			if (end === -1) syntax("unterminated comment");
+			this.position = end + 2;
+		}
+	}
+	private space() {
+		let spaced = false;
+		while (true) {
+			this.comments();
+			if (!whitespace.test(this.source[this.position] ?? "")) break;
+			spaced = true;
+			this.position++;
+		}
+		return spaced;
+	}
+	private expect(token: string) {
+		if (this.source[this.position] !== token) syntax(`expected ${token}`);
+		this.position++;
+	}
+	private component() {
+		if (++this.components > this.limits.maxComponents)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Selector component limit exceeded",
+			);
+	}
+}
+
+interface NodeInfo {
+	node: Readonly<DocumentNode>;
+	start: number;
+	end: number;
+	children: number[];
+	previous: number | null;
+	position: number;
+	count: number;
+	typePosition: number;
+	typeCount: number;
+}
+interface TreeIndex {
+	root: number;
+	revision: number;
+	nodes: Map<number, NodeInfo>;
+	elements: NodeInfo[];
+	documentElement?: number;
+	targetElement?: number;
+	focusElement?: number;
+}
+interface MatchContext {
+	index: TreeIndex;
+	work: number;
+	workLimit: number;
+	memoEntries: number;
+	nth: Map<
+		SimpleSelector,
+		Map<string, { positions: Map<number, number>; total: number }>
+	>;
+}
+
+export class DocumentQueries {
+	readonly limits: Readonly<QueryLimits>;
+	private cache = new Map<string, CompiledSelector>();
+	private index: TreeIndex | undefined;
+	private closed = false;
+	private lastWork = 0;
+	private unregisterClose: () => unknown;
+
+	constructor(
+		private readonly tree: DocumentTree,
+		limits: Partial<QueryLimits> = {},
+	) {
+		this.limits = Object.freeze({
+			maxSelectorCodeUnits: 8192,
+			maxComponents: 256,
+			maxNesting: 16,
+			maxIndexedNodes: 50_000,
+			maxWork: 5_000_000,
+			maxResults: 10_000,
+			maxCachedSelectors: 32,
+			maxMemoEntries: 100_000,
+			...limits,
+		});
+		for (const value of Object.values(this.limits))
+			if (!Number.isSafeInteger(value) || value < 1)
+				throw new AgentBrowserError("invalid-input", "Invalid query limit");
+		this.unregisterClose = tree.onClose(() => this.close());
+	}
+
+	querySelectorAll(selector: string, root = this.tree.root): readonly number[] {
+		return Object.freeze(this.query(selector, root, false));
+	}
+	querySelector(selector: string, root = this.tree.root): number | null {
+		return this.query(selector, root, true)[0] ?? null;
+	}
+	matchingSpecificities(
+		selector: string,
+		maxWork = this.limits.maxWork,
+	): ReadonlyMap<number, SelectorSpecificity> {
+		if (
+			!Number.isSafeInteger(maxWork) ||
+			maxWork < 1 ||
+			maxWork > this.limits.maxWork
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid selector work budget",
+			);
+		return this.operation(
+			selector,
+			this.tree.root,
+			(compiled, context) => {
+				const scope = context.index.documentElement ?? this.tree.root;
+				const weights = compiled.selectors.map(selectorSpecificity);
+				const result = new Map<number, SelectorSpecificity>();
+				for (const candidate of context.index.elements) {
+					this.tick(context);
+					let best: SelectorSpecificity | undefined;
+					for (let index = 0; index < compiled.selectors.length; index++) {
+						if (
+							this.match(
+								candidate.node.id,
+								compiled.selectors[index],
+								compiled.selectors[index].length - 1,
+								scope,
+								context,
+							) &&
+							(!best || compareSpecificity(weights[index], best) > 0)
+						)
+							best = weights[index];
+					}
+					if (best) {
+						if (result.size >= this.limits.maxResults)
+							throw new AgentBrowserError(
+								"resource-limit",
+								"Query result limit exceeded",
+							);
+						result.set(
+							candidate.node.id,
+							Object.freeze([...best]) as SelectorSpecificity,
+						);
+					}
+				}
+				return result;
+			},
+			maxWork,
+		);
+	}
+	matches(id: number, selector: string) {
+		return this.operation(selector, id, (compiled, context) => {
+			this.requireElement(id, context);
+			return this.matchList(id, compiled.selectors, id, context);
+		});
+	}
+	closest(id: number, selector: string): number | null {
+		return this.operation(selector, id, (compiled, context) => {
+			this.requireElement(id, context);
+			let current: number | null = id;
+			while (current !== null) {
+				if (this.matchList(current, compiled.selectors, id, context))
+					return current;
+				current = context.index.nodes.get(current)?.node.parent ?? null;
+			}
+			return null;
+		});
+	}
+	metrics() {
+		return Object.freeze({
+			cachedSelectors: this.cache.size,
+			indexedNodes: this.index?.nodes.size ?? 0,
+			lastWork: this.lastWork,
+			closed: this.closed,
+		});
+	}
+	close() {
+		if (this.closed) return;
+		this.closed = true;
+		this.cache.clear();
+		this.index = undefined;
+		this.unregisterClose();
+	}
+	private query(selector: string, root: number, first: boolean) {
+		return this.operation(selector, root, (compiled, context) => {
+			const anchor = context.index.nodes.get(root);
+			if (!anchor)
+				throw new AgentBrowserError("not-found", "Query root was not found");
+			const scope =
+				anchor.node.kind === "document"
+					? (context.index.documentElement ?? root)
+					: root;
+			const result: number[] = [];
+			for (const candidate of context.index.elements) {
+				this.tick(context);
+				if (candidate.start <= anchor.start || candidate.start >= anchor.end)
+					continue;
+				if (
+					!this.matchList(candidate.node.id, compiled.selectors, scope, context)
+				)
+					continue;
+				if (result.length >= this.limits.maxResults)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Query result limit exceeded",
+					);
+				result.push(candidate.node.id);
+				if (first) break;
+			}
+			return result;
+		});
+	}
+	private operation<T>(
+		selector: string,
+		root: number,
+		run: (compiled: CompiledSelector, context: MatchContext) => T,
+		workLimit = this.limits.maxWork,
+	): T {
+		if (this.closed)
+			throw new AgentBrowserError("closed", "Document queries are closed");
+		let compiled = this.cache.get(selector);
+		if (!compiled) {
+			compiled = new SelectorParser(selector, this.limits).parse();
+			if (this.cache.size >= this.limits.maxCachedSelectors) {
+				const oldest = this.cache.keys().next().value;
+				if (oldest !== undefined) this.cache.delete(oldest);
+			}
+			this.cache.set(selector, compiled);
+		} else {
+			this.cache.delete(selector);
+			this.cache.set(selector, compiled);
+		}
+		const index = this.indexFor(root);
+		if (compiled.nativeState && index.root !== this.tree.root)
+			unsupported("native control state in detached trees");
+		const context: MatchContext = {
+			index,
+			work: 0,
+			workLimit,
+			memoEntries: 0,
+			nth: new Map(),
+		};
+		try {
+			return run(compiled, context);
+		} finally {
+			this.lastWork = context.work;
+		}
+	}
+	private indexFor(id: number): TreeIndex {
+		let root = this.tree.get(id);
+		if (!["element", "document", "fragment"].includes(root.kind))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Query root must be an element, document or fragment",
+			);
+		while (root.parent !== null) root = this.tree.get(root.parent);
+		if (
+			this.index?.root === root.id &&
+			this.index.revision === this.tree.revision
+		)
+			return this.index;
+		this.index = undefined;
+		const nodes = new Map<number, NodeInfo>();
+		const elements: NodeInfo[] = [];
+		const stack: { info: NodeInfo; depth: number }[] = [];
+		for (const { node, depth } of this.tree.walk(root.id)) {
+			if (nodes.size >= this.limits.maxIndexedNodes)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Query node index limit exceeded",
+				);
+			while (stack.length && stack[stack.length - 1].depth >= depth) {
+				const previous = stack.pop();
+				if (previous) previous.info.end = nodes.size;
+			}
+			const info: NodeInfo = {
+				node,
+				start: nodes.size,
+				end: 0,
+				children: [],
+				previous: null,
+				position: 1,
+				count: 1,
+				typePosition: 1,
+				typeCount: 1,
+			};
+			nodes.set(node.id, info);
+			stack.push({ info, depth });
+			if (node.kind === "element") elements.push(info);
+		}
+		for (const { info } of stack) info.end = nodes.size;
+		for (const parent of nodes.values()) {
+			parent.children = parent.node.children.filter(
+				(child) => nodes.get(child)?.node.kind === "element",
+			);
+			const counts = new Map<string, number>();
+			for (const child of parent.children) {
+				const tag = nodes.get(child)?.node.tagName ?? "";
+				counts.set(tag, (counts.get(tag) ?? 0) + 1);
+			}
+			const positions = new Map<string, number>();
+			for (let position = 0; position < parent.children.length; position++) {
+				const child = nodes.get(parent.children[position]);
+				if (!child) continue;
+				child.position = position + 1;
+				child.count = parent.children.length;
+				child.previous = parent.children[position - 1] ?? null;
+				child.typePosition = (positions.get(child.node.tagName) ?? 0) + 1;
+				child.typeCount = counts.get(child.node.tagName) ?? 1;
+				positions.set(child.node.tagName, child.typePosition);
+			}
+		}
+		this.index = {
+			root: root.id,
+			revision: this.tree.revision,
+			nodes,
+			elements,
+			targetElement: this.tree.targetElement ?? undefined,
+			focusElement: activeFocus(this.tree) ?? undefined,
+			documentElement:
+				root.kind === "document" ? nodes.get(root.id)?.children[0] : undefined,
+		};
+		return this.index;
+	}
+	private matchList(
+		id: number,
+		selectors: Selector[],
+		scope: number,
+		context: MatchContext,
+	): boolean {
+		return selectors.some((selector) =>
+			this.match(id, selector, selector.length - 1, scope, context),
+		);
+	}
+	private match(
+		id: number,
+		selector: Selector,
+		position: number,
+		scope: number,
+		context: MatchContext,
+	): boolean {
+		this.tick(context);
+		const info = context.index.nodes.get(id);
+		if (!info || info.node.kind !== "element") return false;
+		const part = selector[position];
+		if (!part.tests.every((test) => this.test(info, test, scope, context)))
+			return false;
+		if (position === 0) return true;
+		const relation = part.relation;
+		let previous =
+			relation === "+" || relation === "~" ? info.previous : info.node.parent;
+		while (previous !== null) {
+			if (this.match(previous, selector, position - 1, scope, context))
+				return true;
+			if (relation === ">" || relation === "+") break;
+			const ancestor = context.index.nodes.get(previous);
+			previous =
+				relation === "~"
+					? (ancestor?.previous ?? null)
+					: (ancestor?.node.parent ?? null);
+		}
+		return false;
+	}
+	private test(
+		info: NodeInfo,
+		test: SimpleSelector,
+		scope: number,
+		context: MatchContext,
+	): boolean {
+		this.tick(context);
+		const node = info.node;
+		if (test.kind === "tag") {
+			if (test.value === "*") return true;
+			this.tick(context, node.tagName.length + test.value.length);
+			return node.tagName === test.value;
+		}
+		if (test.kind === "id") {
+			this.tick(context, (node.attributes.id?.length ?? 0) + test.value.length);
+			return node.attributes.id === test.value;
+		}
+		if (test.kind === "class") {
+			const value = node.attributes.class ?? "";
+			this.tick(context, value.length + test.value.length);
+			return value.split(/[\t\n\f\r ]+/).includes(test.value);
+		}
+		if (test.kind === "attribute")
+			return this.attributeMatches(node, test, context);
+		if (test.kind === "logical") {
+			if (test.name === "has") {
+				for (const candidate of context.index.elements) {
+					this.tick(context);
+					if (
+						this.matchList(candidate.node.id, test.selectors, node.id, context)
+					)
+						return true;
+				}
+				return false;
+			}
+			const matched = this.matchList(node.id, test.selectors, scope, context);
+			return test.name === "not" ? !matched : matched;
+		}
+		if (test.kind === "nth") return this.nth(info, test, scope, context);
+		if (test.kind !== "pseudo") return false;
+		switch (test.name) {
+			case "scope":
+				return node.id === scope;
+			case "root":
+				return node.id === context.index.documentElement;
+			case "target":
+				return node.id === context.index.targetElement;
+			case "focus":
+				return node.id === context.index.focusElement;
+			case "focus-within": {
+				const focused =
+					context.index.focusElement === undefined
+						? undefined
+						: context.index.nodes.get(context.index.focusElement);
+				return (
+					!!focused && info.start <= focused.start && info.end >= focused.end
+				);
+			}
+			case "empty":
+				return node.children.every((child) => {
+					this.tick(context);
+					const childNode = context.index.nodes.get(child)?.node;
+					return (
+						childNode?.kind !== "element" &&
+						!(childNode?.kind === "text" && childNode.data.length)
+					);
+				});
+			case "first-child":
+				return info.position === 1;
+			case "last-child":
+				return info.position === info.count;
+			case "only-child":
+				return info.count === 1;
+			case "first-of-type":
+				return info.typePosition === 1;
+			case "last-of-type":
+				return info.typePosition === info.typeCount;
+			case "only-of-type":
+				return info.typeCount === 1;
+			case "link":
+			case "any-link":
+				return (
+					["a", "area"].includes(node.tagName) &&
+					Object.hasOwn(node.attributes, "href")
+				);
+			case "visited":
+				return false;
+			case "checked":
+				return node.tagName === "option"
+					? optionSelected(this.tree, node.id)
+					: node.tagName === "input" &&
+							["checkbox", "radio"].includes(inputType(node)) &&
+							controlChecked(this.tree, node.id);
+			case "indeterminate": {
+				if (node.tagName === "progress")
+					return !Object.hasOwn(node.attributes, "value");
+				if (node.tagName !== "input") return false;
+				if (inputType(node) === "checkbox")
+					return node.control.indeterminate ?? false;
+				if (inputType(node) !== "radio") return false;
+				const group = radioGroup(this.tree, node.id);
+				this.tick(context, group.length);
+				return !group.some((candidate) =>
+					controlChecked(this.tree, candidate.id),
+				);
+			}
+			case "disabled":
+			case "enabled":
+				return (
+					[
+						"button",
+						"input",
+						"select",
+						"textarea",
+						"fieldset",
+						"option",
+						"optgroup",
+					].includes(node.tagName) &&
+					isControlDisabled(this.tree, node.id) === (test.name === "disabled")
+				);
+			case "required":
+			case "optional": {
+				const eligible =
+					["select", "textarea"].includes(node.tagName) ||
+					(node.tagName === "input" &&
+						![
+							"hidden",
+							"range",
+							"color",
+							"submit",
+							"image",
+							"reset",
+							"button",
+						].includes(inputType(node)));
+				return (
+					eligible &&
+					Object.hasOwn(node.attributes, "required") ===
+						(test.name === "required")
+				);
+			}
+			default:
+				return false;
+		}
+	}
+	private attributeMatches(
+		node: Readonly<DocumentNode>,
+		test: Extract<SimpleSelector, { kind: "attribute" }>,
+		context: MatchContext,
+	) {
+		if (!Object.hasOwn(node.attributes, test.name)) return false;
+		if (!test.operator) return true;
+		let value = node.attributes[test.name];
+		let expected = test.value ?? "";
+		this.tick(context, value.length + expected.length);
+		if (test.insensitive ?? insensitiveAttributes.has(test.name)) {
+			value = asciiLower(value);
+			expected = asciiLower(expected);
+		}
+		switch (test.operator) {
+			case "=":
+				return value === expected;
+			case "~=":
+				return (
+					!!expected &&
+					!/[\t\n\f\r ]/.test(expected) &&
+					value.split(/[\t\n\f\r ]+/).includes(expected)
+				);
+			case "|=":
+				return value === expected || value.startsWith(`${expected}-`);
+			case "^=":
+				return !!expected && value.startsWith(expected);
+			case "$=":
+				return !!expected && value.endsWith(expected);
+			case "*=":
+				return !!expected && value.includes(expected);
+		}
+	}
+	private nth(
+		info: NodeInfo,
+		test: Extract<SimpleSelector, { kind: "nth" }>,
+		scope: number,
+		context: MatchContext,
+	) {
+		let position = test.ofType ? info.typePosition : info.position;
+		let total = test.ofType ? info.typeCount : info.count;
+		if (test.of) {
+			const key = `${scope}:${info.node.parent ?? "root"}`;
+			let tables = context.nth.get(test);
+			if (!tables) {
+				tables = new Map();
+				context.nth.set(test, tables);
+			}
+			let table = tables.get(key);
+			if (!table) {
+				if (++context.memoEntries > this.limits.maxMemoEntries)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Query memo limit exceeded",
+					);
+				const siblings =
+					info.node.parent === null
+						? [info.node.id]
+						: (context.index.nodes.get(info.node.parent)?.children ?? []);
+				const positions = new Map<number, number>();
+				for (const sibling of siblings) {
+					if (!this.matchList(sibling, test.of, scope, context)) continue;
+					if (++context.memoEntries > this.limits.maxMemoEntries)
+						throw new AgentBrowserError(
+							"resource-limit",
+							"Query memo limit exceeded",
+						);
+					positions.set(sibling, positions.size + 1);
+				}
+				table = { positions, total: positions.size };
+				tables.set(key, table);
+			}
+			position = table.positions.get(info.node.id) ?? 0;
+			total = table.total;
+			if (!position) return false;
+		}
+		if (test.reverse) position = total - position + 1;
+		if (test.step === 0) return position === test.offset;
+		const multiple = (position - test.offset) / test.step;
+		return Number.isInteger(multiple) && multiple >= 0;
+	}
+	private requireElement(id: number, context: MatchContext) {
+		if (context.index.nodes.get(id)?.node.kind !== "element")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Expected an element query target",
+			);
+	}
+	private tick(context: MatchContext, amount = 1) {
+		context.work += amount;
+		if (context.work > context.workLimit)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Query work limit exceeded",
+			);
+	}
+}

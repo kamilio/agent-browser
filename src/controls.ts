@@ -52,6 +52,7 @@ const textTypes = new Set([
 ]);
 
 interface ControlIndex {
+	root: number;
 	revision: number;
 	nodes: Map<number, Readonly<DocumentNode>>;
 	owners: Map<number, number | undefined>;
@@ -62,6 +63,7 @@ interface ControlIndex {
 	radioGroups: Map<string, Readonly<DocumentNode>[]>;
 	radioChecked: Set<number>;
 	selected: Set<number>;
+	labels: Map<number, number>;
 }
 
 const indexes = new WeakMap<DocumentTree, ControlIndex>();
@@ -71,6 +73,35 @@ export function inputType(node: Readonly<DocumentNode>) {
 	return inputTypes.has(type) ? type : "text";
 }
 
+export function isLabelable(node: Readonly<DocumentNode>) {
+	return (
+		["button", "meter", "output", "progress", "select", "textarea"].includes(
+			node.tagName,
+		) ||
+		(node.tagName === "input" && inputType(node) !== "hidden")
+	);
+}
+
+export function isInteractiveElement(node: Readonly<DocumentNode>) {
+	return (
+		[
+			"button",
+			"details",
+			"embed",
+			"iframe",
+			"label",
+			"select",
+			"textarea",
+		].includes(node.tagName) ||
+		(node.tagName === "input" && inputType(node) !== "hidden") ||
+		(node.tagName === "a" && Object.hasOwn(node.attributes, "href")) ||
+		(["audio", "video"].includes(node.tagName) &&
+			Object.hasOwn(node.attributes, "controls")) ||
+		(["img", "object"].includes(node.tagName) &&
+			Object.hasOwn(node.attributes, "usemap"))
+	);
+}
+
 function radioKey(index: ControlIndex, node: Readonly<DocumentNode>) {
 	return JSON.stringify([
 		index.owners.get(node.id) ?? null,
@@ -78,14 +109,16 @@ function radioKey(index: ControlIndex, node: Readonly<DocumentNode>) {
 	]);
 }
 
-function indexFor(tree: DocumentTree): ControlIndex {
+function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 	tree.reference(tree.root);
+	const root = tree.rootOf(target);
 	const cached = indexes.get(tree);
-	if (cached?.revision === tree.revision) return cached;
+	if (cached?.root === root && cached.revision === tree.revision) return cached;
 	const nodes = new Map(
-		Array.from(tree.walk(), ({ node }) => [node.id, node] as const),
+		Array.from(tree.walk(root), ({ node }) => [node.id, node] as const),
 	);
 	const index: ControlIndex = {
+		root,
 		revision: tree.revision,
 		nodes,
 		owners: new Map(),
@@ -96,6 +129,7 @@ function indexFor(tree: DocumentTree): ControlIndex {
 		radioGroups: new Map(),
 		radioChecked: new Set(),
 		selected: new Set(),
+		labels: new Map(),
 	};
 	const htmlIds = new Map<string, number>();
 	const firstLegends = new Map<number, number>();
@@ -218,36 +252,67 @@ function indexFor(tree: DocumentTree): ControlIndex {
 		}
 		for (const option of selected) index.selected.add(option.id);
 	}
+	const firstLabelableDescendant = new Map<number, number>();
+	for (const node of [...nodes.values()].reverse()) {
+		for (const childId of node.children) {
+			const child = nodes.get(childId);
+			const candidate =
+				child && isLabelable(child)
+					? child.id
+					: firstLabelableDescendant.get(childId);
+			if (candidate !== undefined) {
+				firstLabelableDescendant.set(node.id, candidate);
+				break;
+			}
+		}
+		if (node.tagName !== "label") continue;
+		const target = Object.hasOwn(node.attributes, "for")
+			? htmlIds.get(node.attributes.for)
+			: firstLabelableDescendant.get(node.id);
+		const control = target === undefined ? undefined : nodes.get(target);
+		if (control && isLabelable(control)) index.labels.set(node.id, control.id);
+	}
 	if (!cached) tree.onClose(() => indexes.delete(tree));
 	indexes.set(tree, index);
 	return index;
 }
 
+export function labelControl(tree: DocumentTree, id: number) {
+	if (tree.get(id).tagName !== "label")
+		throw new AgentBrowserError("invalid-input", "Expected a label element");
+	if (!tree.isConnected(id))
+		throw new AgentBrowserError(
+			"unsupported",
+			"Detached label associations are not implemented",
+		);
+	return indexFor(tree).labels.get(id);
+}
+
 export function formOwner(tree: DocumentTree, id: number) {
 	tree.get(id);
-	return indexFor(tree).owners.get(id);
+	return indexFor(tree, id).owners.get(id);
 }
 export function formControls(tree: DocumentTree, formId: number) {
 	if (tree.get(formId).tagName !== "form")
 		throw new AgentBrowserError("invalid-input", "Expected a form");
-	return [...(indexFor(tree).controls.get(formId) ?? [])];
+	return [...(indexFor(tree, formId).controls.get(formId) ?? [])];
 }
 export function isControlDisabled(tree: DocumentTree, id: number) {
 	tree.get(id);
-	return indexFor(tree).disabled.has(id);
+	return indexFor(tree, id).disabled.has(id);
 }
 export function isInsideDatalist(tree: DocumentTree, id: number) {
 	tree.get(id);
-	return indexFor(tree).datalist.has(id);
+	return indexFor(tree, id).datalist.has(id);
 }
 export function selectOptions(tree: DocumentTree, id: number) {
 	tree.get(id);
-	return [...(indexFor(tree).options.get(id) ?? [])];
+	return [...(indexFor(tree, id).options.get(id) ?? [])];
 }
 
 export function selectedOptions(tree: DocumentTree, id: number) {
 	tree.get(id);
-	const index = indexFor(tree);
+	const index = indexFor(tree, id);
 	return (index.options.get(id) ?? []).filter((option) =>
 		index.selected.has(option.id),
 	);
@@ -255,7 +320,7 @@ export function selectedOptions(tree: DocumentTree, id: number) {
 
 export function optionSelected(tree: DocumentTree, id: number) {
 	tree.get(id);
-	return indexFor(tree).selected.has(id);
+	return indexFor(tree, id).selected.has(id);
 }
 
 export function optionValue(tree: DocumentTree, id: number) {
@@ -273,7 +338,7 @@ export function controlChecked(tree: DocumentTree, id: number) {
 	const node = tree.get(id);
 	if (inputType(node) !== "radio" || !node.attributes.name)
 		return node.control.checked ?? Object.hasOwn(node.attributes, "checked");
-	return indexFor(tree).radioChecked.has(id);
+	return indexFor(tree, id).radioChecked.has(id);
 }
 
 export function controlValue(tree: DocumentTree, id: number): string {
@@ -321,7 +386,7 @@ function editable(tree: DocumentTree, reference: string) {
 	return node;
 }
 
-export function fillTextControl(
+export function validateTextControl(
 	tree: DocumentTree,
 	reference: string,
 	value: string,
@@ -353,12 +418,36 @@ export function fillTextControl(
 			"invalid-input",
 			"Invalid numeric control value",
 		);
+	return node;
+}
+
+export function fillTextControl(
+	tree: DocumentTree,
+	reference: string,
+	value: string,
+) {
+	const node = validateTextControl(tree, reference, value);
 	tree.setControl(node.id, {
 		value:
 			node.tagName === "textarea"
 				? value.replace(/\r\n?/g, "\n")
 				: value.replace(/[\r\n]/g, ""),
 	});
+}
+
+export function radioGroup(
+	tree: DocumentTree,
+	id: number,
+): readonly Readonly<DocumentNode>[] {
+	const node = tree.get(id);
+	if (node.tagName !== "input" || inputType(node) !== "radio")
+		throw new AgentBrowserError("invalid-input", "Expected a radio control");
+	const index = indexFor(tree, id);
+	return Object.freeze(
+		node.attributes.name
+			? [...(index.radioGroups.get(radioKey(index, node)) ?? [node])]
+			: [node],
+	);
 }
 
 export function setControlChecked(

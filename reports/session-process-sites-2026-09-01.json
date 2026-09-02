@@ -1,0 +1,143 @@
+{
+  "startedAt": "2026-09-01T22:22:56.562Z",
+  "finishedAt": "2026-09-01T22:22:59.899Z",
+  "runtime": "v22.22.0",
+  "scope": "Actual locally extended SafeJS public core in an owned process containing the entire browser session, document model and native actions. Public website requests are read-only GETs. Probe scripts are explicit, not automatically loaded website JavaScript. Link cancellation and fragment navigation make no remote mutations. No credentials or raw page responses retained. Parent RSS is not child or peak memory.",
+  "processes": [
+    {
+      "pid": 982376,
+      "session": "healthy",
+      "version": "0.0.1",
+      "packageName": "@poe-code/safe-js",
+      "permissions": {
+        "enabled": true,
+        "filesystemWrite": false,
+        "childProcess": false,
+        "worker": false,
+        "addons": false,
+        "wasi": false,
+        "stringCodeGenerationDisabled": true
+      }
+    },
+    {
+      "pid": 982387,
+      "session": "default",
+      "version": "0.0.1",
+      "packageName": "@poe-code/safe-js",
+      "permissions": {
+        "enabled": true,
+        "filesystemWrite": false,
+        "childProcess": false,
+        "worker": false,
+        "addons": false,
+        "wasi": false,
+        "stringCodeGenerationDisabled": true
+      }
+    },
+    {
+      "pid": 982402,
+      "session": "default",
+      "version": "0.0.1",
+      "packageName": "@poe-code/safe-js",
+      "permissions": {
+        "enabled": true,
+        "filesystemWrite": false,
+        "childProcess": false,
+        "worker": false,
+        "addons": false,
+        "wasi": false,
+        "stringCodeGenerationDisabled": true
+      }
+    },
+    {
+      "pid": 982421,
+      "session": "default",
+      "version": "0.0.1",
+      "packageName": "@poe-code/safe-js",
+      "permissions": {
+        "enabled": true,
+        "filesystemWrite": false,
+        "childProcess": false,
+        "worker": false,
+        "addons": false,
+        "wasi": false,
+        "stringCodeGenerationDisabled": true
+      }
+    }
+  ],
+  "checks": [
+    {
+      "label": "https://example.com/: actual SDK realm and Window aliases",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: persistent lexical state",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: live DOM capability and JSON projection",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: native text snapshot observes the same document",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: native click and Window callbacks cancel navigation",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: fragment navigation preserves the realm and DOM identity",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: replacement document receives a fresh realm",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: owned process termination confirmed",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: actual SDK realm and Window aliases",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: persistent lexical state",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: live DOM capability and JSON projection",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: native text snapshot observes the same document",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: native click and Window callbacks cancel navigation",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: fragment navigation preserves the realm and DOM identity",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: replacement document receives a fresh realm",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: owned process termination confirmed",
+      "passed": true
+    },
+    {
+      "label": "Actual guest infinite loop is terminated by the external command deadline",
+      "passed": true
+    },
+    {
+      "label": "Another owned session remains responsive",
+      "passed": true
+    }
+  ],
+  "parentRssBytes": 51654656
+}

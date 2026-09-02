@@ -2,6 +2,47 @@ import { expect, it } from "vitest";
 import { parseInvocation } from "./cli-parser.js";
 import { commands } from "./commands.js";
 
+it("accepts bounded structured extraction as an additive agent command", () => {
+	expect(
+		parseInvocation([
+			"extract",
+			"#article",
+			"--format=json",
+			"--max-bytes=4096",
+			"--max-nodes=50",
+			"--depth=10",
+		]),
+	).toMatchObject({
+		command: "extract",
+		arguments: ["#article"],
+		options: { format: "json", "max-bytes": 4096, "max-nodes": 50, depth: 10 },
+	});
+	expect(
+		parseInvocation([
+			"extract",
+			"--max-bytes=1048576",
+			"--max-nodes=50000",
+			"--depth=0",
+		]).options,
+	).toMatchObject({ "max-bytes": 1_048_576, "max-nodes": 50_000, depth: 0 });
+});
+
+it("accepts an additive terminal frontend without changing named session semantics", () => {
+	expect(
+		parseInvocation(["-s=reading", "terminal", "https://example.com/"]),
+	).toMatchObject({
+		command: "terminal",
+		session: "reading",
+		arguments: ["https://example.com/"],
+	});
+	expect(
+		parseInvocation(["terminal"], { PLAYWRIGHT_CLI_SESSION: "reading" }),
+	).toMatchObject({ command: "terminal", session: "reading", arguments: [] });
+	expect(() =>
+		parseInvocation(["terminal", "https://example.com/", "extra"]),
+	).toThrow();
+});
+
 it("preserves Playwright-style named session, reference and option conventions", () => {
 	expect(
 		parseInvocation([

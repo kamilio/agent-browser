@@ -1,3 +1,4 @@
+import type { CookieRequestContext } from "./cookies.js";
 import { AgentBrowserError } from "./errors.js";
 
 export interface NetworkLimits {
@@ -18,9 +19,11 @@ export interface NetworkRequest {
 	body?: string | Uint8Array;
 	redirect?: "follow" | "manual" | "error";
 	signal?: AbortSignal;
+	cookieContext?: CookieRequestContext;
 }
 
 export interface NetworkResponse {
+	routeId?: number;
 	url: string;
 	status: number;
 	headers: Readonly<Record<string, readonly string[]>>;
@@ -31,6 +34,8 @@ export interface NetworkResponse {
 }
 
 export interface NetworkMetrics {
+	mockedRequests?: number;
+	mockedDecodedBytes?: number;
 	requests: number;
 	redirects: number;
 	encodedBytes: number;
@@ -41,9 +46,17 @@ export interface NetworkMetrics {
 
 export interface NetworkTransport {
 	request(request: NetworkRequest): Promise<NetworkResponse>;
+	requestWithRoutes?(
+		request: NetworkRequest,
+		resolveRoute: NetworkRouteResolver,
+	): Promise<NetworkResponse>;
 	metrics(): Readonly<NetworkMetrics>;
 	close(): void;
 }
+
+export type NetworkRouteResolver = (
+	request: Readonly<Pick<NetworkRequest, "url" | "method" | "signal">>,
+) => NetworkResponse | undefined;
 
 export interface NetworkPolicyOptions {
 	allowPrivateOrigins?: readonly string[];

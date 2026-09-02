@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-09-02T02:49:08.489Z",
+  "scope": "Self-sample summary from an externally timed read-only public-site CPU profile. Full profile remains a local temporary artifact. No benchmark threshold or general engine speed claim.",
+  "totalSamples": 9165,
+  "traversalSamples": 6181,
+  "traversalFraction": 0.6744135297326787,
+  "hotPath": [
+    "evaluateNode",
+    "reconcileDataBudget",
+    "reconcileCompiledValues",
+    "measureSandboxData",
+    "visit"
+  ],
+  "source": "packages/safe-js/src/interp/values.ts:416"
+}

@@ -1,8 +1,8 @@
 import { createServer } from "node:http";
 import { expect, it } from "vitest";
-import { fillTextControl, setControlChecked } from "./controls.js";
 import { DocumentTree } from "./document.js";
 import { prepareFormSubmission } from "./forms.js";
+import { DocumentInteractions } from "./interactions.js";
 import { NodeNetworkTransport } from "./node-transport.js";
 
 it.each([
@@ -63,6 +63,12 @@ it.each([
 		const origin = `http://127.0.0.1:${address.port}`;
 		const network = new NodeNetworkTransport({ allowPrivateOrigins: [origin] });
 		const tree = new DocumentTree(`${origin}/form`);
+		const interactions = new DocumentInteractions(tree);
+		const observedEvents: string[] = [];
+		for (const type of ["beforeinput", "input", "click", "change"])
+			interactions.events.addEventListener(tree.root, type, (event) => {
+				observedEvents.push(event.type);
+			});
 		try {
 			const form = tree.createElement("form", {
 				action: "/echo",
@@ -72,14 +78,23 @@ it.each([
 			tree.append(tree.root, form);
 			const input = tree.createElement("input", { name: "query" });
 			tree.append(form, input);
-			fillTextControl(tree, tree.reference(input), "日本語 search");
+			interactions.fill(tree.reference(input), "日本語 search");
 			const checkbox = tree.createElement("input", {
 				type: "checkbox",
 				name: "enabled",
 				value: "yes",
 			});
 			tree.append(form, checkbox);
-			setControlChecked(tree, tree.reference(checkbox), true);
+			interactions.setChecked(tree.reference(checkbox), true);
+			expect(observedEvents).toEqual([
+				"beforeinput",
+				"input",
+				"change",
+				"click",
+				"input",
+				"change",
+			]);
+			expect(interactions.events.drainErrors()).toEqual([]);
 			const files = new Map<
 				number,
 				{ name: string; type: string; data: Uint8Array }[]
@@ -120,6 +135,10 @@ it.each([
 			network.close();
 			server.closeAllConnections();
 			await new Promise<void>((resolve) => server.close(() => resolve()));
+			expect(interactions.events.metrics()).toMatchObject({
+				closed: true,
+				listeners: 0,
+			});
 		}
 	},
 );

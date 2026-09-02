@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-09-02T03:50:01.110Z",
+  "baseline": "safejs-date-final-verified-2026-09-02.json",
+  "candidate": "safejs-cooperation-final-verified-2026-09-02.json",
+  "baselinePassed": 8089,
+  "candidatePassed": 8104,
+  "failedAssertions": 30,
+  "skipped": 6,
+  "failedFiles": 54,
+  "identicalFailedAssertions": true,
+  "identicalFailedFiles": true,
+  "addedFailures": [],
+  "removedFailures": []
+}

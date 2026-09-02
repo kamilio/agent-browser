@@ -1,0 +1,106 @@
+{
+  "startedAt": "2026-09-01T22:55:40.458Z",
+  "finishedAt": "2026-09-01T22:55:41.815Z",
+  "runtime": "v22.22.0",
+  "scope": "Actual extended SafeJS in owned browser processes, automatically loading HTTP document script elements without manual eval injection. Fixture evaluation commands only inspect resulting state. A temporary loopback fixture is explicitly allowed by trusted host policy; optional public sites use the normal private-network-denying policy. Public requests are read-only. Site compatibility failures are recorded separately and are not passing dynamic-site acceptance. No credentials or raw public page bodies retained.",
+  "checks": [
+    {
+      "label": "Actual owned-process navigation automatically executes inline, deferred and async script resources",
+      "passed": true
+    },
+    {
+      "label": "Head/body scripts observe parser boundaries rather than a prebuilt DOM",
+      "passed": true
+    },
+    {
+      "label": "Scripts and load handlers see their expected currentScript identity",
+      "passed": true
+    },
+    {
+      "label": "Deferred, DOMContentLoaded, async and load phases execute in the fixture's expected order",
+      "passed": true
+    },
+    {
+      "label": "Native text output includes automatically generated page state",
+      "passed": true
+    },
+    {
+      "label": "Native commands dispatch listeners installed by website scripts",
+      "passed": true
+    },
+    {
+      "label": "Data blocks and noscript markup are not executed",
+      "passed": true
+    },
+    {
+      "label": "Reload creates a fresh realm and re-executes that document's scripts once",
+      "passed": true
+    },
+    {
+      "label": "CSP does not silently permit script fetch or execution",
+      "passed": true
+    },
+    {
+      "label": "Source failure reports a halted realm while retaining readable HTML",
+      "passed": true
+    },
+    {
+      "label": "Navigation recovers from a halted page using a new document and realm",
+      "passed": true
+    },
+    {
+      "label": "https://books.toscrape.com/: real website script handling is reported explicitly",
+      "passed": true
+    },
+    {
+      "label": "https://quotes.toscrape.com/js/: real website script handling is reported explicitly",
+      "passed": true
+    }
+  ],
+  "sites": [
+    {
+      "url": "https://books.toscrape.com/",
+      "navigation": true,
+      "scripts": {
+        "mode": "classic",
+        "partial": true,
+        "discovered": 7,
+        "executed": 0,
+        "skipped": 5,
+        "failed": 2,
+        "external": 1,
+        "sourceBytes": 102,
+        "halted": true,
+        "complete": true,
+        "issues": {
+          "fetch-policy-denied": 1,
+          "execution-script-error": 1,
+          "realm-halted": 5
+        }
+      },
+      "acceptance": "partial-or-failed-script-compatibility"
+    },
+    {
+      "url": "https://quotes.toscrape.com/js/",
+      "navigation": true,
+      "scripts": {
+        "mode": "classic",
+        "partial": true,
+        "discovered": 2,
+        "executed": 0,
+        "skipped": 1,
+        "failed": 1,
+        "external": 1,
+        "sourceBytes": 84345,
+        "halted": true,
+        "complete": true,
+        "issues": {
+          "execution-script-error": 1,
+          "realm-halted": 1
+        }
+      },
+      "acceptance": "partial-or-failed-script-compatibility"
+    }
+  ],
+  "parentRssBytes": 59260928
+}

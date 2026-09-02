@@ -1,0 +1,152 @@
+{
+  "sameDiagnostics": true,
+  "baselineCount": 29,
+  "currentCount": 29,
+  "diagnostics": [
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 18049,
+      "message": "'add.value' is possibly 'null' or 'undefined'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 18049,
+      "message": "'binding.value' is possibly 'null' or 'undefined'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 18049,
+      "message": "'binding.value' is possibly 'null' or 'undefined'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 18049,
+      "message": "'closure.value' is possibly 'null' or 'undefined'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 18049,
+      "message": "'collect.value' is possibly 'null' or 'undefined'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 18049,
+      "message": "'factorial.value' is possibly 'null' or 'undefined'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 18049,
+      "message": "'factorial.value' is possibly 'null' or 'undefined'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 18049,
+      "message": "'time.value' is possibly 'null' or 'undefined'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2304,
+      "message": "Cannot find name 'SandboxGenerator'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2322,
+      "message": "Type 'SandboxArguments' is not assignable to type 'RuntimeSnapshotValue'.\n  Type 'SandboxArguments' is missing the following properties from type 'RuntimeSnapshotValue[]': length, pop, push, concat, and 29 more."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2322,
+      "message": "Type 'SandboxArguments' is not assignable to type 'RuntimeSnapshotValue'.\n  Type 'SandboxArguments' is missing the following properties from type 'RuntimeSnapshotValue[]': length, pop, push, concat, and 29 more."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2322,
+      "message": "Type 'SandboxArguments' is not assignable to type 'RuntimeSnapshotValue'.\n  Type 'SandboxArguments' is missing the following properties from type 'RuntimeSnapshotValue[]': length, pop, push, concat, and 29 more."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2322,
+      "message": "Type 'SandboxArguments' is not assignable to type 'RuntimeSnapshotValue'.\n  Type 'SandboxArguments' is missing the following properties from type 'RuntimeSnapshotValue[]': length, pop, push, concat, and 29 more."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2322,
+      "message": "Type 'SandboxArguments' is not assignable to type 'RuntimeSnapshotValue'.\n  Type 'SandboxArguments' is missing the following properties from type 'RuntimeSnapshotValue[]': length, pop, push, concat, and 29 more."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'call' does not exist on type 'SandboxObject | Float32Array<ArrayBufferLike> | SandboxArray | SandboxClosure | SandboxGenerator | SandboxMap | SandboxSet | SandboxPromise | SandboxRegex'.\n  Property 'call' does not exist on type 'Float32Array<ArrayBufferLike>'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'call' does not exist on type 'string | number | boolean | SandboxObject | Float32Array<ArrayBufferLike> | SandboxArray | SandboxClosure | ... 4 more ... | SandboxRegex'.\n  Property 'call' does not exist on type 'string'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'call' does not exist on type 'string | number | boolean | SandboxObject | Float32Array<ArrayBufferLike> | SandboxArray | SandboxClosure | ... 4 more ... | SandboxRegex'.\n  Property 'call' does not exist on type 'string'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'call' does not exist on type 'string | number | boolean | SandboxObject | Float32Array<ArrayBufferLike> | SandboxArray | SandboxClosure | ... 4 more ... | SandboxRegex'.\n  Property 'call' does not exist on type 'string'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'call' does not exist on type 'string | number | boolean | SandboxObject | Float32Array<ArrayBufferLike> | SandboxArray | SandboxClosure | ... 4 more ... | SandboxRegex'.\n  Property 'call' does not exist on type 'string'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'call' does not exist on type 'string | number | boolean | SandboxObject | Float32Array<ArrayBufferLike> | SandboxArray | SandboxClosure | ... 4 more ... | SandboxRegex'.\n  Property 'call' does not exist on type 'string'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'callee' does not exist on type 'string | number | boolean | SandboxObject | Float32Array<ArrayBufferLike> | SandboxArray | SandboxClosure | ... 4 more ... | SandboxRegex'.\n  Property 'callee' does not exist on type 'string'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'now' does not exist on type 'string | number | boolean | SandboxObject | Float32Array<ArrayBufferLike> | SandboxArray | SandboxClosure | ... 4 more ... | SandboxRegex'.\n  Property 'now' does not exist on type 'string'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'self' does not exist on type 'SandboxObject | Float32Array<ArrayBufferLike> | SandboxArray | SandboxClosure | SandboxGenerator | SandboxMap | SandboxSet | SandboxPromise | SandboxRegex'.\n  Property 'self' does not exist on type 'Float32Array<ArrayBufferLike>'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'self' does not exist on type 'string | number | boolean | SandboxObject | Float32Array<ArrayBufferLike> | SandboxArray | SandboxClosure | ... 4 more ... | SandboxRegex'.\n  Property 'self' does not exist on type 'string'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'value' does not exist on type 'ScopeLookupResult'.\n  Property 'value' does not exist on type '{ found: false; }'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'value' does not exist on type 'ScopeLookupResult'.\n  Property 'value' does not exist on type '{ found: false; }'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2339,
+      "message": "Property 'value' does not exist on type 'ScopeLookupResult'.\n  Property 'value' does not exist on type '{ found: false; }'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2345,
+      "message": "Argument of type '{ source: string; currentAstNodeId: number; scopeChain: { id: number; bindings: { regex: SandboxRegex; }; }[]; callStack: never[]; pendingPromises: never[]; }' is not assignable to parameter of type 'SerializeInput'.\n  Property 'moduleBindings' is missing in type '{ source: string; currentAstNodeId: number; scopeChain: { id: number; bindings: { regex: SandboxRegex; }; }[]; callStack: never[]; pendingPromises: never[]; }' but required in type 'SerializeInput'."
+    },
+    {
+      "file": "/tmp/agent-browser-safejs-13.0.10/packages/safe-js/src/snapshot/restore.test.ts",
+      "code": 2769,
+      "message": "No overload matches this call.\n  Overload 1 of 2, '(o: {}): string[]', gave the following error.\n    Argument of type 'SandboxValue' is not assignable to parameter of type '{}'.\n      Type 'undefined' is not assignable to type '{}'.\n  Overload 2 of 2, '(o: object): string[]', gave the following error.\n    Argument of type 'SandboxValue' is not assignable to parameter of type 'object'.\n      Type 'undefined' is not assignable to type 'object'."
+    }
+  ]
+}

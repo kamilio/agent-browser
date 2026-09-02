@@ -1,0 +1,9 @@
+{
+	"date": "2026-09-01",
+	"scope": "Initial compiled-core DOM event probe with the default one-million-step realm budget in the deliberately infinite callback failure case",
+	"passed": false,
+	"exitCode": 124,
+	"timeoutMs": 50000,
+	"reportBytes": 0,
+	"detail": "The enclosing timeout terminated the process before its final JSON report. No per-check trace was enabled; the point of suspension is not proven. This is retained failure evidence, not a passing test. The follow-up adds trace output and an explicit 5000-step budget for the deliberate exhaustion fixture."
+}

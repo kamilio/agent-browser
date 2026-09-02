@@ -1,0 +1,82 @@
+{
+  "startedAt": "2026-09-01T21:39:36.013Z",
+  "finishedAt": "2026-09-01T21:39:36.629Z",
+  "runtime": "v22.22.0",
+  "scope": "Explicit test-source execution using the locally extended compiled SafeJS public core and our own document model. Public sites are read-only HTTP loads; injected scripts use actual guest DOM addEventListener/removeEventListener bindings and modify only local trees. Host-dispatched events are not a native click/default-action pipeline. No website-authored scripts, browser engine or automatic page-script execution are enabled. No raw responses or credentials are retained.",
+  "sites": false,
+  "checks": [
+    {
+      "label": "SafeJS textContent setter changes the authoritative semantic snapshot",
+      "passed": true
+    },
+    {
+      "label": "Separate script sources retain DOM object identity",
+      "passed": true
+    },
+    {
+      "label": "Created nodes support lookup, parent identity and attributes",
+      "passed": true
+    },
+    {
+      "label": "Created script content appears in snapshots",
+      "passed": true
+    },
+    {
+      "label": "Live input state differs from unchanged default attributes",
+      "passed": true
+    },
+    {
+      "label": "Detached nodes retain identity without appearing in document lookup",
+      "passed": true
+    },
+    {
+      "label": "The DOM grant does not expose ambient network or host process",
+      "passed": true
+    },
+    {
+      "label": "Guest addEventListener deduplicates across separate sources: fixture",
+      "passed": true
+    },
+    {
+      "label": "Cancellation and bubbling wait for guest prefix, not pending await: fixture",
+      "passed": true
+    },
+    {
+      "label": "Independent source can run while the callback awaits: fixture",
+      "passed": true
+    },
+    {
+      "label": "Retained guest event reflects completed dispatch state: fixture",
+      "passed": true
+    },
+    {
+      "label": "Resumed callback changes the authoritative snapshot: fixture",
+      "passed": true
+    },
+    {
+      "label": "Guest removeEventListener removes the original callback: fixture",
+      "passed": true
+    },
+    {
+      "label": "Guest once/passive options survive safe conversion: fixture",
+      "passed": true
+    },
+    {
+      "label": "Capture and target guest listeners share one live event: fixture",
+      "passed": true
+    },
+    {
+      "label": "Ordinary guest errors are reported without trusting a spoofed fatal code",
+      "passed": true
+    },
+    {
+      "label": "Resumed guest listener failure is observed once without closing the realm",
+      "passed": true
+    },
+    {
+      "label": "Actual interpreter budget exhaustion aborts dispatch before later native listeners",
+      "passed": true
+    }
+  ],
+  "rssBytes": 91009024
+}

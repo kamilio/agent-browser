@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 2,
+  "scope": "host-event-control-form-transport-only",
+  "startedAt": "2026-09-01T16:31:12.821Z",
+  "finishedAt": "2026-09-01T16:31:14.027Z",
+  "node": "22.22.0",
+  "checks": [
+    {
+      "endpoint": "https://httpbingo.org/post",
+      "enctype": "application/x-www-form-urlencoded",
+      "passed": true,
+      "status": 200,
+      "valuesMatch": true,
+      "fileMatches": true,
+      "echoedEventMutation": true,
+      "eventSequenceMatches": true,
+      "eventErrors": 0,
+      "requestBytes": 91,
+      "responseBytes": 1136,
+      "elapsedMs": 140,
+      "constructedDocument": true
+    },
+    {
+      "endpoint": "https://httpbingo.org/post",
+      "enctype": "multipart/form-data",
+      "passed": true,
+      "status": 200,
+      "valuesMatch": true,
+      "fileMatches": true,
+      "echoedEventMutation": true,
+      "eventSequenceMatches": true,
+      "eventErrors": 0,
+      "requestBytes": 809,
+      "responseBytes": 2023,
+      "elapsedMs": 58,
+      "constructedDocument": true
+    }
+  ],
+  "allPassed": true,
+  "metrics": {
+    "requests": 2,
+    "redirects": 0,
+    "encodedBytes": 1326,
+    "decodedBytes": 3159,
+    "active": 0,
+    "closed": true
+  },
+  "limitations": [
+    "Document trees are deliberately constructed fixtures, not parsed website HTML.",
+    "No page JavaScript, browser navigation, submit events or constraint validation is exercised.",
+    "Event handlers are trusted host fixture callbacks, not website code evaluated in a page runtime.",
+    "Only non-sensitive demo fields are sent to a designated HTTP testing service; echoed client IPs and headers are not retained."
+  ]
+}

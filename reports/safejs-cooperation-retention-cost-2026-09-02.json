@@ -1,0 +1,37 @@
+{
+  "checkedAt": "2026-09-02T03:43:09.450Z",
+  "runtime": "v22.22.0",
+  "scope": "Bounded diagnostic of identical arithmetic with unused live host capabilities through the compiled public core. No browser DOM, network, native evaluator, relaxed production limits or disabled accounting checks. Run under an external process timeout; timing is evidence, not a fixed wall-clock unit-test assertion.",
+  "cases": [
+    {
+      "hostObjects": 0,
+      "propertiesPerObject": 10,
+      "elapsedMs": 16,
+      "cpuMs": 29,
+      "steps": 652,
+      "timerFiredDuringEvaluation": true,
+      "getterCalls": 0,
+      "correct": true
+    },
+    {
+      "hostObjects": 10,
+      "propertiesPerObject": 10,
+      "elapsedMs": 35,
+      "cpuMs": 63,
+      "steps": 652,
+      "timerFiredDuringEvaluation": true,
+      "getterCalls": 0,
+      "correct": true
+    },
+    {
+      "hostObjects": 30,
+      "propertiesPerObject": 10,
+      "elapsedMs": 59,
+      "cpuMs": 67,
+      "steps": 652,
+      "timerFiredDuringEvaluation": true,
+      "getterCalls": 0,
+      "correct": true
+    }
+  ]
+}

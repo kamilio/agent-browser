@@ -11,6 +11,12 @@ import { type Readable, Transform, Writable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { checkServerIdentity } from "node:tls";
 import { createBrotliDecompress, createGunzip, createInflate } from "node:zlib";
+import {
+	CookieJar,
+	type CookieRequestContext,
+	cookieSameSite,
+	normalizeCookieContext,
+} from "./cookies.js";
 import { AgentBrowserError } from "./errors.js";
 import {
 	type NetworkLimits,
@@ -19,6 +25,7 @@ import {
 	type NetworkPolicyOptions,
 	type NetworkRequest,
 	type NetworkResponse,
+	type NetworkRouteResolver,
 	type NetworkTransport,
 	addressFamily,
 	networkHostname,
@@ -33,6 +40,7 @@ export interface NodeTransportOptions extends NetworkPolicyOptions {
 	limits?: Partial<NetworkLimits>;
 	resolver?: AddressResolver;
 	certificateAuthorities?: readonly string[];
+	cookieJar?: CookieJar;
 }
 
 const redirectStatuses = new Set([301, 302, 303, 307, 308]);
@@ -160,6 +168,90 @@ function responseHeaders(
 	return Object.freeze(headers);
 }
 
+function routedResponse(
+	input: NetworkResponse,
+	url: URL,
+	method: string,
+	maxHeaderBytes: number,
+): Omit<NetworkResponse, "url" | "redirects" | "elapsedMs"> {
+	const invalid = () =>
+		new AgentBrowserError("invalid-input", "Invalid routed response");
+	if (
+		!input ||
+		typeof input !== "object" ||
+		!Number.isInteger(input.status) ||
+		input.status < 200 ||
+		input.status > 599 ||
+		!(input.body instanceof Uint8Array) ||
+		input.encodedBytes !== 0 ||
+		!Array.isArray(input.redirects) ||
+		input.redirects.length ||
+		!input.headers ||
+		typeof input.headers !== "object" ||
+		Array.isArray(input.headers)
+	)
+		throw invalid();
+	if (
+		(method === "HEAD" || [204, 205, 304].includes(input.status)) &&
+		input.body.length
+	)
+		throw invalid();
+	let responseUrl: URL;
+	try {
+		responseUrl = new URL(input.url);
+	} catch {
+		throw invalid();
+	}
+	responseUrl.hash = "";
+	const expectedUrl = new URL(url);
+	expectedUrl.hash = "";
+	if (responseUrl.href !== expectedUrl.href) throw invalid();
+	if (
+		input.routeId !== undefined &&
+		(!Number.isSafeInteger(input.routeId) || input.routeId < 1)
+	)
+		throw invalid();
+	const headers: Record<string, readonly string[]> = Object.create(null);
+	const entries = Object.entries(input.headers);
+	if (entries.length > 128)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Routed header limit exceeded",
+		);
+	let bytes = 0;
+	for (const [name, values] of entries) {
+		if (!Array.isArray(values) || values.length > 128) throw invalid();
+		const key = name.toLowerCase();
+		try {
+			validateHeaderName(name);
+		} catch {
+			throw invalid();
+		}
+		for (const value of values) {
+			if (typeof value !== "string") throw invalid();
+			try {
+				validateHeaderValue(name, value);
+			} catch {
+				throw invalid();
+			}
+			bytes += Buffer.byteLength(key) + Buffer.byteLength(value) + 4;
+			if (bytes > maxHeaderBytes)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Routed header limit exceeded",
+				);
+		}
+		headers[key] = Object.freeze([...(headers[key] ?? []), ...values]);
+	}
+	return {
+		status: input.status,
+		headers: Object.freeze(headers),
+		body: input.body,
+		encodedBytes: 0,
+		...(input.routeId === undefined ? {} : { routeId: input.routeId }),
+	};
+}
+
 function wireHeaders(
 	url: URL,
 	headers: Record<string, string>,
@@ -189,9 +281,12 @@ export class NodeNetworkTransport implements NetworkTransport {
 	private readonly policy: NetworkPolicy;
 	private readonly resolver: AddressResolver;
 	private readonly certificateAuthorities?: string[];
+	private readonly cookieJar?: CookieJar;
 	private readonly active = new Set<AbortController>();
 	private closed = false;
 	private counts = {
+		mockedRequests: 0,
+		mockedDecodedBytes: 0,
 		requests: 0,
 		redirects: 0,
 		encodedBytes: 0,
@@ -264,6 +359,12 @@ export class NodeNetworkTransport implements NetworkTransport {
 		}
 		this.policy = new NetworkPolicy(options);
 		this.resolver = options.resolver ?? resolveAddresses;
+		if (
+			options.cookieJar !== undefined &&
+			!(options.cookieJar instanceof CookieJar)
+		)
+			throw new AgentBrowserError("invalid-input", "Invalid cookie jar");
+		this.cookieJar = options.cookieJar;
 	}
 
 	metrics(): Readonly<NetworkMetrics> {
@@ -280,7 +381,26 @@ export class NodeNetworkTransport implements NetworkTransport {
 			controller.abort(new AgentBrowserError("closed", "Transport is closed"));
 	}
 
-	async request(input: NetworkRequest): Promise<NetworkResponse> {
+	request(input: NetworkRequest): Promise<NetworkResponse> {
+		return this.perform(input);
+	}
+
+	async requestWithRoutes(
+		input: NetworkRequest,
+		resolveRoute: NetworkRouteResolver,
+	): Promise<NetworkResponse> {
+		if (typeof resolveRoute !== "function")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"A route resolver is required",
+			);
+		return this.perform(input, resolveRoute);
+	}
+
+	private async perform(
+		input: NetworkRequest,
+		resolveRoute?: NetworkRouteResolver,
+	): Promise<NetworkResponse> {
 		if (this.closed)
 			throw new AgentBrowserError("closed", "Transport is closed");
 		if (
@@ -328,6 +448,34 @@ export class NodeNetworkTransport implements NetworkTransport {
 				"GET and HEAD cannot have a request body",
 			);
 		const headers = normalizeHeaders(input.headers, this.limits.maxHeaderBytes);
+		let cookieContext: CookieRequestContext | undefined;
+		if (this.cookieJar && Object.hasOwn(headers, "cookie"))
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Cookie header is controlled by the session jar",
+			);
+		if (input.cookieContext !== undefined) {
+			const context = normalizeCookieContext(input.cookieContext);
+			if (
+				!this.cookieJar ||
+				!["omit", "same-origin", "include"].includes(
+					input.cookieContext.credentials,
+				)
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Cookie context requires a jar and valid credentials mode",
+				);
+			cookieContext = {
+				...context,
+				credentials: input.cookieContext.credentials,
+			};
+		}
+		const cookieOrigin = cookieContext?.siteUrl
+			? new URL(cookieContext.siteUrl).origin
+			: null;
+		let originTainted = cookieOrigin !== url.origin;
+		let siteTainted = cookieContext?.crossSiteRedirect ?? false;
 		if (typeof input.body === "string")
 			headers["content-type"] ??= "text/plain;charset=UTF-8";
 		if (this.active.size >= this.limits.maxConcurrent)
@@ -349,33 +497,89 @@ export class NodeNetworkTransport implements NetworkTransport {
 			this.limits.timeoutMs,
 		);
 		const start = performance.now();
+		const ensureActive = () => {
+			if (signal.aborted) throw abortReason(signal);
+			if (performance.now() - start >= this.limits.timeoutMs)
+				throw new AgentBrowserError("timeout", "Network deadline exceeded");
+		};
 		const redirects: { url: string; status: number; location: string }[] = [];
 		let encodedBytes = 0;
 		this.active.add(controller);
 		try {
 			while (true) {
-				if (signal.aborted) throw abortReason(signal);
+				ensureActive();
+				const useCookies =
+					this.cookieJar &&
+					cookieContext &&
+					cookieContext.credentials !== "omit" &&
+					(cookieContext.credentials === "include" ||
+						(!originTainted && cookieOrigin === url.origin));
+				const hopContext = cookieContext && {
+					...cookieContext,
+					method,
+					crossSiteRedirect: siteTainted,
+				};
+				if (this.cookieJar) Reflect.deleteProperty(headers, "cookie");
+				if (useCookies && hopContext) {
+					const value = this.cookieJar?.cookieHeader(url.href, hopContext);
+					if (value) headers.cookie = value;
+				}
 				if (this.counts.requests >= this.limits.maxRequests)
 					throw new AgentBrowserError(
 						"resource-limit",
 						"Session request limit exceeded",
 					);
 				this.counts.requests++;
-				const hostname = networkHostname(url);
-				const addresses = addressFamily(hostname)
-					? [hostname]
-					: await awaitWithSignal(this.resolver(hostname, signal), signal);
-				this.policy.checkAddresses(url.href, addresses);
-				if (signal.aborted) throw abortReason(signal);
-				const response = await this.exchange(
-					url,
-					addresses[0],
-					method,
-					headers,
-					body,
-					redirect,
-					signal,
-				);
+				const storeCookies =
+					useCookies && hopContext
+						? (values: NetworkResponse["headers"]) => {
+								for (const value of values["set-cookie"] ?? [])
+									this.cookieJar?.setCookie(url.href, value, hopContext);
+							}
+						: undefined;
+				const resolved = resolveRoute?.({ url: url.href, method, signal });
+				ensureActive();
+				let response: Omit<NetworkResponse, "url" | "redirects" | "elapsedMs">;
+				if (resolved !== undefined) {
+					response = routedResponse(
+						resolved,
+						url,
+						method,
+						this.limits.maxHeaderBytes,
+					);
+					ensureActive();
+					this.counts.mockedRequests++;
+					this.counts.mockedDecodedBytes += response.body.length;
+					this.counts.decodedBytes += response.body.length;
+					if (
+						response.body.length > this.limits.maxResponseBytes ||
+						this.counts.decodedBytes > this.limits.maxTotalBytes
+					)
+						throw new AgentBrowserError(
+							"resource-limit",
+							"Routed response byte limit exceeded",
+						);
+					response = { ...response, body: new Uint8Array(response.body) };
+					storeCookies?.(response.headers);
+				} else {
+					const hostname = networkHostname(url);
+					const addresses = addressFamily(hostname)
+						? [hostname]
+						: await awaitWithSignal(this.resolver(hostname, signal), signal);
+					this.policy.checkAddresses(url.href, addresses);
+					ensureActive();
+					response = await this.exchange(
+						url,
+						addresses[0],
+						method,
+						headers,
+						body,
+						redirect,
+						signal,
+						storeCookies,
+					);
+				}
+				ensureActive();
 				encodedBytes += response.encodedBytes;
 				const location = response.headers.location;
 				if (!redirectStatuses.has(response.status) || redirect === "manual")
@@ -440,6 +644,11 @@ export class NodeNetworkTransport implements NetworkTransport {
 					for (const name of ["authorization", "cookie", "referer"])
 						delete headers[name];
 				}
+				originTainted ||= next.origin !== cookieOrigin;
+				if (cookieContext)
+					siteTainted ||=
+						!cookieSameSite(url.href, cookieContext.siteUrl) ||
+						!cookieSameSite(next.href, cookieContext.siteUrl);
 				url = next;
 			}
 		} catch (error) {
@@ -472,6 +681,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 		body: Buffer<ArrayBuffer> | undefined,
 		redirect: string,
 		signal: AbortSignal,
+		onHeaders?: (headers: NetworkResponse["headers"]) => void,
 	): Promise<Omit<NetworkResponse, "url" | "redirects" | "elapsedMs">> {
 		return new Promise((resolve, reject) => {
 			let incoming: IncomingMessage | undefined;
@@ -544,6 +754,12 @@ export class NodeNetworkTransport implements NetworkTransport {
 					}
 					const status = response.statusCode ?? 0;
 					const responseHeaderValues = responseHeaders(response);
+					try {
+						onHeaders?.(responseHeaderValues);
+					} catch (error) {
+						fail(error);
+						return;
+					}
 					if (
 						method === "HEAD" ||
 						[204, 205, 304].includes(status) ||

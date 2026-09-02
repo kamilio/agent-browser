@@ -1,0 +1,47 @@
+{
+  "startedAt": "2026-09-02T04:56:09.864Z",
+  "finishedAt": "2026-09-02T04:56:09.947Z",
+  "scope": "Actual explicitly selected SafeJS core, parsed HTML and interpreted asynchronous callbacks with an in-memory mock transport. No HTTP server, public network, PTY, child process or browser service is started. Not a substitute for denied live acceptance gates.",
+  "checks": [
+    {
+      "label": "Actual interpreted Promise callbacks receive fetch JSON",
+      "passed": true
+    },
+    {
+      "label": "The interpreted fetch callback updates the retained semantic document",
+      "passed": true
+    },
+    {
+      "label": "One document, script and fetch request are recorded by the same session",
+      "passed": true
+    },
+    {
+      "label": "Request diagnostics omit query secrets",
+      "passed": true
+    },
+    {
+      "label": "Response header capabilities do not expose Set-Cookie",
+      "passed": true
+    },
+    {
+      "label": "Cross-origin rejection occurs before the mock transport is invoked",
+      "passed": true
+    },
+    {
+      "label": "Response bodies are consumed once across real realm evaluations",
+      "passed": true
+    },
+    {
+      "label": "A real interpreted fetch can own a pending mocked network request",
+      "passed": true
+    },
+    {
+      "label": "Closing the page aborts pending interpreted fetch work without transport cooperation",
+      "passed": true
+    },
+    {
+      "label": "Closing the real page owner releases fetch bodies and requests",
+      "passed": true
+    }
+  ]
+}

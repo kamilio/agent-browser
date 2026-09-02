@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "scope": "host-cookie-transport-session-only",
+  "startedAt": "2026-09-01T17:31:45.896Z",
+  "finishedAt": "2026-09-01T17:31:48.219Z",
+  "node": "22.22.0",
+  "endpoint": "https://httpbingo.org",
+  "checks": [
+    {
+      "label": "redirect sets and echoes the synthetic cookie",
+      "passed": true,
+      "status": 200,
+      "valueMatches": true,
+      "redirectMatches": true,
+      "redirectCount": 1,
+      "responseBytes": 76,
+      "elapsedMs": 134
+    },
+    {
+      "label": "later request keeps the same session",
+      "passed": true,
+      "status": 200,
+      "valueMatches": true,
+      "redirectMatches": true,
+      "redirectCount": 0,
+      "responseBytes": 76,
+      "elapsedMs": 44
+    },
+    {
+      "label": "independent jar has no session cookie",
+      "passed": true,
+      "status": 200,
+      "valueMatches": true,
+      "redirectMatches": true,
+      "redirectCount": 0,
+      "responseBytes": 20,
+      "elapsedMs": 46
+    },
+    {
+      "label": "redirect deletes the synthetic cookie",
+      "passed": true,
+      "status": 200,
+      "valueMatches": true,
+      "redirectMatches": true,
+      "redirectCount": 1,
+      "responseBytes": 20,
+      "elapsedMs": 96
+    }
+  ],
+  "allPassed": true,
+  "metrics": {
+    "transport": {
+      "requests": 5,
+      "redirects": 2,
+      "encodedBytes": 184,
+      "decodedBytes": 172,
+      "active": 0,
+      "closed": true
+    },
+    "isolatedTransport": {
+      "requests": 1,
+      "redirects": 0,
+      "encodedBytes": 24,
+      "decodedBytes": 20,
+      "active": 0,
+      "closed": true
+    },
+    "jar": {
+      "cookies": 0,
+      "accepted": 2,
+      "rejected": 0,
+      "rejections": {},
+      "closed": true
+    },
+    "isolatedJar": {
+      "cookies": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "rejections": {},
+      "closed": true
+    }
+  },
+  "limitations": [
+    "Only fixed synthetic cookie values are sent to a designated public HTTP test service.",
+    "Cookie values, Set-Cookie headers, echoed client IPs and response bodies are not retained in this report.",
+    "No HTML parsing, website JavaScript, page document.cookie binding or browser navigation is exercised.",
+    "Domain and Partitioned cookies are explicitly rejected; same-site uses a conservative exact-host scheme boundary, not a Public Suffix List."
+  ]
+}

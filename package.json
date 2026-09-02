@@ -3,16 +3,59 @@
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
+	"bin": { "agent-browser": "dist/src/cli.js" },
 	"main": "dist/src/index.js",
 	"types": "dist/src/index.d.ts",
 	"exports": {
 		".": { "types": "./dist/src/index.d.ts", "import": "./dist/src/index.js" },
-		"./node": { "types": "./dist/src/node-transport.d.ts", "import": "./dist/src/node-transport.js" }
+		"./node": {
+			"types": "./dist/src/node-transport.d.ts",
+			"import": "./dist/src/node-transport.js"
+		},
+		"./node-safe-js": {
+			"types": "./dist/src/node-safejs.d.ts",
+			"import": "./dist/src/node-safejs.js"
+		},
+		"./node-script-process": {
+			"types": "./dist/src/node-script-process.d.ts",
+			"import": "./dist/src/node-script-process.js"
+		},
+		"./node-session-process": {
+			"types": "./dist/src/node-session-process.d.ts",
+			"import": "./dist/src/node-session-process.js"
+		},
+		"./node-session-host": {
+			"types": "./dist/src/node-session-host.d.ts",
+			"import": "./dist/src/node-session-host.js"
+		}
 	},
 	"scripts": {
+		"cli": "node dist/src/cli.js",
 		"build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json --outDir dist",
 		"check:network-sites": "node dist/scripts/check-network-sites.js",
 		"check:form-echo": "node dist/scripts/check-form-echo.js",
+		"check:form-navigation": "node dist/scripts/check-form-navigation.js",
+		"check:keyboard-navigation": "node dist/scripts/check-keyboard-navigation.js",
+		"check:html-form": "node dist/scripts/check-html-form.js",
+		"check:safe-js": "node dist/scripts/check-safejs.js",
+		"check:script-process": "node dist/scripts/check-script-process.js",
+		"check:script-dom": "node dist/scripts/check-script-dom.js",
+		"check:script-actions": "node dist/scripts/check-script-actions.js",
+		"check:session-process": "node dist/scripts/check-session-process.js",
+		"check:process-cli": "node dist/scripts/check-process-cli.js",
+		"check:website-scripts": "node dist/scripts/check-website-scripts.js",
+		"check:page-timers": "node dist/scripts/check-page-timers.js",
+		"diagnose:site-scripts": "node --max-old-space-size=192 dist/scripts/diagnose-site-scripts.js",
+		"check:cookie-session": "node dist/scripts/check-cookie-session.js",
+		"check:session-sites": "node dist/scripts/check-session-sites.js",
+		"check:cli-sites": "node dist/scripts/check-cli-sites.js",
+		"check:playground-ui": "node dist/scripts/check-playground-ui.js",
+		"check:terminal": "node dist/scripts/check-terminal.js",
+		"check:terminal-resources": "node dist/scripts/check-terminal-resources.js",
+		"check:extraction": "node dist/scripts/check-extraction.js",
+		"check:page-fetch": "node dist/scripts/check-page-fetch.js",
+		"check:callback-phases": "node dist/scripts/check-callback-phases.js",
+		"check:query-resources": "node dist/scripts/check-query-resources.js",
 		"test": "node ../../node_modules/vitest/vitest.mjs run src --maxWorkers=1",
 		"typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",
 		"lint": "biome check src scripts"

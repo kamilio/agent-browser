@@ -1,0 +1,78 @@
+{
+  "startedAt": "2026-09-01T21:59:33.225Z",
+  "finishedAt": "2026-09-01T21:59:33.807Z",
+  "runtime": "v22.22.0",
+  "scope": "Actual locally extended SafeJS public-core execution against native form, focus, input, keyboard, selection, checkbox, label and session-link actions. Sources are explicit trusted probe scripts, not website-authored JavaScript. Optional public sites are read-only HTML downloads; real links are canceled or rewritten locally to same-document fragments. No form is sent, no server data is mutated, and no raw responses or credentials are retained. This in-process probe is not the production isolation boundary.",
+  "sites": true,
+  "checks": [
+    {
+      "label": "Native fill runs guest beforeinput before applying the value",
+      "passed": true
+    },
+    {
+      "label": "Guest click sees checkbox preactivation and can cancel it",
+      "passed": true
+    },
+    {
+      "label": "Reset defaults complete without awaiting the guest handler's pending promise",
+      "passed": true
+    },
+    {
+      "label": "Async handler continuation runs after the native reset default",
+      "passed": true
+    },
+    {
+      "label": "Native submit serialization includes guest field/action changes",
+      "passed": true
+    },
+    {
+      "label": "Native typing honors guest keydown cancellation and delivers keyup",
+      "passed": true
+    },
+    {
+      "label": "Native selection dispatches the guest change listener",
+      "passed": true
+    },
+    {
+      "label": "Label forwarding reuses native activation after a once guest listener was removed",
+      "passed": true
+    },
+    {
+      "label": "Native fixture reports no swallowed guest listener failures",
+      "passed": true
+    },
+    {
+      "label": "Native real-link click is canceled by a guest listener: https://example.com/",
+      "passed": true
+    },
+    {
+      "label": "Real-page semantic output includes guest click mutation: https://example.com/",
+      "passed": true
+    },
+    {
+      "label": "Native link default uses the guest-rewritten fragment without a request: https://example.com/",
+      "passed": true
+    },
+    {
+      "label": "Fragment navigation preserves the live script document and listener health: https://example.com/",
+      "passed": true
+    },
+    {
+      "label": "Native real-link click is canceled by a guest listener: https://books.toscrape.com/",
+      "passed": true
+    },
+    {
+      "label": "Real-page semantic output includes guest click mutation: https://books.toscrape.com/",
+      "passed": true
+    },
+    {
+      "label": "Native link default uses the guest-rewritten fragment without a request: https://books.toscrape.com/",
+      "passed": true
+    },
+    {
+      "label": "Fragment navigation preserves the live script document and listener health: https://books.toscrape.com/",
+      "passed": true
+    }
+  ],
+  "rssBytes": 126107648
+}

@@ -1,0 +1,36 @@
+{
+  "recordedAt": "2026-09-01T23:21:12.527Z",
+  "scope": "Minimal public run API reproductions against the local v13.0.10-based candidate. Current upstream main separately inspected at 1a13eb31dd2671828ed3419d9397d7264b5b6788; no claim that this command executes that newer checkout.",
+  "results": [
+    {
+      "name": "guest function own property",
+      "source": "function Counter() {} Counter.label = \"counter\"; return Counter.label;",
+      "expected": "counter",
+      "ok": false,
+      "error": {
+        "name": "TypeError",
+        "message": "Assignment expressions require a sandbox object property."
+      }
+    },
+    {
+      "name": "guest constructor prototype method",
+      "source": "function Counter() { this.value = 7; } Counter.prototype.read = function() { return this.value; }; return new Counter().read();",
+      "expected": 7,
+      "ok": false,
+      "error": {
+        "name": "TypeError",
+        "message": "Cannot assign properties of null or undefined."
+      }
+    },
+    {
+      "name": "guest constructor instanceof",
+      "source": "function Counter() {} return new Counter() instanceof Counter;",
+      "expected": true,
+      "ok": false,
+      "error": {
+        "name": "TypeError",
+        "message": "Constructor prototypes are not supported; check a brand property instead."
+      }
+    }
+  ]
+}

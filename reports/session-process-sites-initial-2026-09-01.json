@@ -1,0 +1,54 @@
+{
+  "startedAt": "2026-09-01T22:22:26.078Z",
+  "finishedAt": "2026-09-01T22:22:26.319Z",
+  "runtime": "v22.22.0",
+  "scope": "Actual locally extended SafeJS public core in an owned process containing the entire browser session, document model and native actions. Public website requests are read-only GETs. Probe scripts are explicit, not automatically loaded website JavaScript. Link cancellation and fragment navigation make no remote mutations. No credentials or raw page responses retained. Parent RSS is not child or peak memory.",
+  "processes": [
+    {
+      "pid": 981975,
+      "session": "healthy",
+      "version": "0.0.1",
+      "packageName": "@poe-code/safe-js",
+      "permissions": {
+        "enabled": true,
+        "filesystemWrite": false,
+        "childProcess": false,
+        "worker": false,
+        "addons": false,
+        "wasi": false,
+        "stringCodeGenerationDisabled": true
+      }
+    },
+    {
+      "pid": 981985,
+      "session": "default",
+      "version": "0.0.1",
+      "packageName": "@poe-code/safe-js",
+      "permissions": {
+        "enabled": true,
+        "filesystemWrite": false,
+        "childProcess": false,
+        "worker": false,
+        "addons": false,
+        "wasi": false,
+        "stringCodeGenerationDisabled": true
+      }
+    }
+  ],
+  "checks": [
+    {
+      "label": "https://example.com/: actual SDK realm and Window aliases",
+      "passed": true
+    },
+    {
+      "label": "https://example.com/: persistent lexical state",
+      "passed": false
+    },
+    {
+      "label": "Owned session real-site probe",
+      "passed": false,
+      "error": "probe-failed"
+    }
+  ],
+  "parentRssBytes": 50921472
+}

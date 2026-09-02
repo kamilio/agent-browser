@@ -1,0 +1,59 @@
+{
+  "startedAt": "2026-09-01T19:31:10.401Z",
+  "finishedAt": "2026-09-01T19:31:10.537Z",
+  "scope": "Actual public HTML parsed into our document model. No constructed controls, attribute edits, validation bypass, host listeners or browser-engine fallback. Synthetic values are submitted only to the public httpbingo demo. Optional email/time fields remain empty; nonempty validation for those types is not implemented. Website JavaScript remains disabled. No raw body, headers or credentials are recorded.",
+  "checks": [
+    {
+      "label": "Parsed public HTML form supports type/fill/check/Enter and real POST echo",
+      "passed": true,
+      "matches": true,
+      "parsed": {
+        "parser": "independent-html-subset",
+        "partial": true,
+        "scripting": false,
+        "issues": {},
+        "encoding": "utf-8"
+      },
+      "initialNodes": 94,
+      "response": {
+        "url": "https://httpbingo.org/post",
+        "status": 200,
+        "bytes": 1269,
+        "redirects": 0
+      },
+      "metrics": {
+        "tabs": 1,
+        "selectedTab": "tab-1",
+        "pendingLoads": 0,
+        "navigations": 2,
+        "commits": 2,
+        "cleanupErrors": 0,
+        "closed": false,
+        "network": {
+          "requests": 2,
+          "redirects": 0,
+          "encodedBytes": 1260,
+          "decodedBytes": 2667,
+          "active": 0,
+          "closed": false
+        },
+        "cookies": {
+          "cookies": 0,
+          "accepted": 0,
+          "rejected": 0,
+          "rejections": {},
+          "closed": false
+        },
+        "storage": {
+          "tabs": 1,
+          "areas": 0,
+          "entries": 0,
+          "bytes": 0,
+          "revision": 1,
+          "closed": false
+        }
+      },
+      "rssBytes": 74358784
+    }
+  ]
+}

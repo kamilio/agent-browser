@@ -1,0 +1,777 @@
+diff --git a/packages/safe-js/src/core.test.ts b/packages/safe-js/src/core.test.ts
+index 0e635c4..b22ba34 100644
+--- a/packages/safe-js/src/core.test.ts
++++ b/packages/safe-js/src/core.test.ts
+@@ -4,15 +4,17 @@ import * as core from "./core.js";
+ import { Budget } from "./interp/budget.js";
+ import { lint } from "./lint.js";
+ import { run } from "./run.js";
++import { createRealm } from "./realm.js";
+ 
+ describe("@poe-code/safe-js/core", () => {
+   it("exports the lightweight interpreter surface without agent spawning", () => {
+     expect(core.Budget).toBe(Budget);
+     expect(core.lint).toBe(lint);
+     expect(core.run).toBe(run);
++    expect(core.createRealm).toBe(createRealm);
+     expect(core.createReplayableRandom({ seed: 123 }).next()).toBe(0.2837369213812053);
+     expect(Object.keys(core).sort()).toEqual(
+-      ["Budget", "createReplayableRandom", "run", "lint"].sort()
++      ["Budget", "createRealm", "createReplayableRandom", "run", "lint"].sort()
+     );
+   });
+ });
+diff --git a/packages/safe-js/src/core.ts b/packages/safe-js/src/core.ts
+index 1482148..6ea48ba 100644
+--- a/packages/safe-js/src/core.ts
++++ b/packages/safe-js/src/core.ts
+@@ -1,5 +1,6 @@
+ export { lint, type Diagnostic, type Fix, type LintFixResult, type LintOptions } from "./lint.js";
+ export { run } from "./run.js";
++export { createRealm, type Realm, type RealmOptions, type RealmResult } from "./realm.js";
+ export { createReplayableRandom, type ReplayableRandom } from "./random.js";
+ export type { RunClock, RunClockSnapshot, RunRandom } from "./run.js";
+ export { Budget } from "./interp/budget.js";
+diff --git a/packages/safe-js/src/index.test.ts b/packages/safe-js/src/index.test.ts
+index bdba5ff..ed2e0f4 100644
+--- a/packages/safe-js/src/index.test.ts
++++ b/packages/safe-js/src/index.test.ts
+@@ -32,6 +32,7 @@ import { findExportedConstInitializer } from "./loader/find-exported.js";
+ import { hashSource } from "./parse/hash.js";
+ import { restore } from "./restore.js";
+ import { run } from "./run.js";
++import { createRealm } from "./realm.js";
+ import { runHarness, runHarnessPair } from "./runner/run-harness.js";
+ import { noopOtelSink } from "./observability/otel.js";
+ import { FileSnapshotBackend } from "./snapshot/backend.js";
+@@ -50,6 +51,7 @@ describe("@poe-code/safe-js public exports", () => {
+     expect(api.lint).toBe(lint);
+     expect(lint).toBe(lintFromIndex);
+     expect(api.run).toBe(run);
++    expect(api.createRealm).toBe(createRealm);
+     expect(api.runHarness).toBe(runHarness);
+     expect(api.runHarnessPair).toBe(runHarnessPair);
+     expect(api.noopOtelSink).toBe(noopOtelSink);
+diff --git a/packages/safe-js/src/index.ts b/packages/safe-js/src/index.ts
+index e4a6601..cc120df 100644
+--- a/packages/safe-js/src/index.ts
++++ b/packages/safe-js/src/index.ts
+@@ -22,6 +22,7 @@ export const deepCopyFromSandbox: {
+ } = copyFromSandboxInternal;
+ export { lint, type Diagnostic, type Fix, type LintFixResult, type LintOptions } from "./lint.js";
+ export { run } from "./run.js";
++export { createRealm, type Realm, type RealmOptions, type RealmResult } from "./realm.js";
+ export { createReplayableRandom, type ReplayableRandom } from "./random.js";
+ export type { RunClock, RunClockSnapshot, RunRandom } from "./run.js";
+ export { noopOtelSink } from "./observability/otel.js";
+diff --git a/packages/safe-js/src/interp/promise-tracker.ts b/packages/safe-js/src/interp/promise-tracker.ts
+index e3d1233..cb8585a 100644
+--- a/packages/safe-js/src/interp/promise-tracker.ts
++++ b/packages/safe-js/src/interp/promise-tracker.ts
+@@ -8,6 +8,7 @@ type TrackedPromise = {
+   observed: boolean;
+   promise: SandboxPromise;
+   rejectionReason?: SandboxValue;
++  fulfilledValue?: SandboxValue;
+   rejected: boolean;
+ };
+ 
+@@ -21,6 +22,18 @@ export class SandboxPromiseRejectionTracker {
+     return this.fatalRejection;
+   }
+ 
++  *retainedValues(): Iterable<SandboxValue> {
++    for (const record of this.records) {
++      yield record.promise;
++      yield record.fulfilledValue;
++      yield record.rejectionReason;
++    }
++  }
++
++  clear(): void {
++    this.records.clear();
++  }
++
+   onFatalRejection(interrupt: (error: SandboxError) => void): () => void {
+     if (this.fatalRejection === undefined) this.fatalWaiters.add(interrupt);
+     else interrupt(this.fatalRejection);
+@@ -66,7 +79,9 @@ export class SandboxPromiseRejectionTracker {
+ 
+     const pending = outcome ?? promise.promise;
+     pending.then(
+-      () => undefined,
++      (value) => {
++        record.fulfilledValue = value;
++      },
+       (reason: SandboxValue) => {
+         if (
+           this.fatalRejection === undefined &&
+diff --git a/packages/safe-js/src/realm.ts b/packages/safe-js/src/realm.ts
+new file mode 100644
+index 0000000..6c97bac
+--- /dev/null
++++ b/packages/safe-js/src/realm.ts
+@@ -0,0 +1,231 @@
++import { AsyncLocalStorage } from "node:async_hooks";
++
++import { parseExecutableModule } from "./parse/parser.js";
++import type { ParseResult } from "./parse.js";
++import { Budget, SandboxError } from "./interp/budget.js";
++import { CompileScope } from "./interp/regex/compile-guard.js";
++import { interpret, Scope, type InterpreterStats } from "./interp/interpreter.js";
++import { wrapCallerInjectedBindings, type CallerInjectedBinding } from "./interp/host-bridge.js";
++import { wrapCancelableBindings } from "./interp/cancel.js";
++import { runResources, type RunResources } from "./interp/resources.js";
++import {
++  createSandboxPromiseRejectionTracker,
++  withSandboxPromiseRejectionTracker
++} from "./interp/promise-tracker.js";
++import { createConsoleJsonGlobals, type ConsoleSink } from "./interp/globals/console-json.js";
++import { createCollectionGlobals } from "./interp/globals/collections.js";
++import { createFloat32ArrayGlobal } from "./interp/globals/float32array.js";
++import { createErrorGlobals } from "./interp/globals/error.js";
++import { createMathGlobals } from "./interp/globals/math.js";
++import { createObjectArrayGlobals } from "./interp/globals/object-array.js";
++import { createMiscGlobals } from "./interp/globals/misc.js";
++import { createPromiseGlobals } from "./interp/promise.js";
++import { createRegexGlobals } from "./interp/globals/regex.js";
++import type { SandboxValue } from "./interp/values.js";
++import { UnhandledRejectionError } from "./run.js";
++
++export type RealmOptions = {
++  bindings?: Record<string, CallerInjectedBinding>;
++  budget?: Budget;
++  maxSourceLength?: number;
++  maxEvaluations?: number;
++  signal?: AbortSignal;
++  sink?: ConsoleSink;
++};
++
++export type RealmResult = {
++  returnValue?: SandboxValue;
++  stats: InterpreterStats;
++};
++
++export type Realm = {
++  readonly closed: boolean;
++  evaluate(
++    source: string,
++    options?: { filename?: string; signal?: AbortSignal }
++  ): Promise<RealmResult>;
++  close(): Promise<void>;
++};
++
++export function createRealm(options: RealmOptions = {}): Realm {
++  const maxSourceLength = options.maxSourceLength ?? 1_048_576;
++  const maxEvaluations = options.maxEvaluations ?? 128;
++  for (const limit of [maxSourceLength, maxEvaluations]) {
++    if (!Number.isSafeInteger(limit) || limit < 1)
++      throw new TypeError("Realm limits must be positive safe integers.");
++  }
++  const budget =
++    options.budget ??
++    new Budget({
++      maxSteps: 1_000_000,
++      maxCallDepth: 64,
++      stringLength: 262_144,
++      arrayLength: 16_384,
++      dataSize: 4_194_304
++    });
++  const operation = budget.acquireCompileOwner(true);
++  const compilation = new CompileScope(operation.owner);
++  const controller = new AbortController();
++  const tracker = createSandboxPromiseRejectionTracker();
++  budget.setRetainedValues(tracker, () => tracker.retainedValues());
++  const cleanups = new Set<() => Promise<void>>();
++  const sourceOwner = {};
++  const resources: RunResources = {
++    signal: controller.signal,
++    add(close) {
++      if (controller.signal.aborted) throw new SandboxError("aborted");
++      cleanups.add(close);
++    }
++  };
++  const lifecycle = { hostCallbackDepth: 0, hostCallbackContext: new AsyncLocalStorage<true>() };
++  let scope: Scope | undefined;
++  let active: Promise<RealmResult> | undefined;
++  let cleanup: Promise<void> | undefined;
++  let sourceLength = 0;
++  let evaluations = 0;
++  const cancel = () => controller.abort(new SandboxError("aborted"));
++  const abort = () => {
++    cancel();
++    if (active === undefined) void finish().catch(() => undefined);
++  };
++  const finish = (): Promise<void> => {
++    cleanup ??= Promise.resolve().then(async () => {
++      options.signal?.removeEventListener("abort", abort);
++      const outcomes = await Promise.allSettled(
++        [...cleanups].map((close) => Promise.resolve().then(close))
++      );
++      cleanups.clear();
++      tracker.clear();
++      budget.setRetainedValues(tracker, undefined);
++      scope = undefined;
++      compilation.dispose();
++      budget.setRetainedDataUsage(sourceOwner, 0);
++      operation.release();
++      const failures = outcomes.flatMap((outcome) =>
++        outcome.status === "rejected" ? [outcome.reason] : []
++      );
++      if (failures.length > 0) throw new AggregateError(failures, "SafeJS realm cleanup failed.");
++    });
++    return cleanup;
++  };
++  options.signal?.addEventListener("abort", abort, { once: true });
++  if (options.signal?.aborted) cancel();
++  try {
++    if (controller.signal.aborted) throw new SandboxError("aborted");
++    const builtins = {
++      ...createConsoleJsonGlobals({ budget, compileOwner: operation.owner, sink: options.sink }),
++      ...createCollectionGlobals({ budget }),
++      Float32Array: createFloat32ArrayGlobal(budget),
++      ...createErrorGlobals({ budget }),
++      ...createMathGlobals({ random: Math.random }),
++      ...createObjectArrayGlobals({ budget }),
++      ...createMiscGlobals({ budget }),
++      ...createPromiseGlobals({ budget }),
++      ...createRegexGlobals(operation.owner)
++    };
++    const bindings = wrapCallerInjectedBindings(options.bindings ?? {}, {
++      budget,
++      compileOwner: operation.owner,
++      signal: controller.signal,
++      lifecycle
++    });
++    const globals = new Scope(builtins, undefined, undefined, { chargeData: false });
++    scope = new Scope(
++      {},
++      globals.child(wrapCancelableBindings(bindings, controller.signal)),
++      undefined,
++      { functionBoundary: true }
++    );
++  } catch (error) {
++    cancel();
++    options.signal?.removeEventListener("abort", abort);
++    compilation.dispose();
++    budget.setRetainedValues(tracker, undefined);
++    tracker.clear();
++    operation.release();
++    throw error;
++  }
++
++  return {
++    get closed() {
++      return controller.signal.aborted;
++    },
++    async evaluate(source, evaluationOptions = {}) {
++      if (controller.signal.aborted) throw new SandboxError("aborted");
++      if (active !== undefined || lifecycle.hostCallbackDepth > 0)
++        throw new SandboxError("reentry");
++      const signal = evaluationOptions.signal;
++      signal?.addEventListener("abort", cancel, { once: true });
++      if (signal?.aborted) cancel();
++      const execute = async (): Promise<RealmResult> => {
++        if (controller.signal.aborted) throw new SandboxError("aborted");
++        if (typeof source !== "string") throw new TypeError("Realm source must be a string.");
++        sourceLength += source.length;
++        if (sourceLength > maxSourceLength)
++          throw new SandboxError({
++            budget: "stringLength",
++            current: sourceLength,
++            limit: maxSourceLength
++          });
++        evaluations += 1;
++        if (evaluations > maxEvaluations)
++          throw new SandboxError({ budget: "steps", current: evaluations, limit: maxEvaluations });
++        budget.setRetainedDataUsage(sourceOwner, sourceLength);
++        const module = parseExecutableModule(source, evaluationOptions.filename, operation.owner);
++        if (
++          module.body.some(
++            (statement) =>
++              statement.type === "ImportDeclaration" ||
++              statement.type === "ExportNamedDeclaration" ||
++              statement.type === "ExportDefaultDeclaration"
++          )
++        ) {
++          throw new TypeError("Persistent realms evaluate scripts, not modules.");
++        }
++        const statement = module.body.length === 1 ? module.body[0] : undefined;
++        const executable: ParseResult =
++          statement?.type === "ExpressionStatement"
++            ? statement.expression
++            : { type: "BlockStatement", body: module.body, span: module.span };
++        const result = await interpret(executable, {
++          budget,
++          compilation,
++          scope,
++          useScopeDirectly: true,
++          signal: controller.signal,
++          surfaceUnhandledThrows: true
++        });
++        if (!result.ok) throw result.error;
++        const unhandled = await tracker.findUnhandledRejection();
++        if (unhandled !== undefined)
++          throw new UnhandledRejectionError(unhandled.reason, unhandled.span);
++        if (controller.signal.aborted) throw new SandboxError("aborted");
++        return { returnValue: result.returnValue, stats: result.stats };
++      };
++      active = Promise.resolve().then(() =>
++        runResources.run(resources, () => withSandboxPromiseRejectionTracker(tracker, execute))
++      );
++      let failed = false;
++      try {
++        return await active;
++      } catch (error) {
++        failed = true;
++        const failure = controller.signal.aborted ? controller.signal.reason : error;
++        cancel();
++        throw failure;
++      } finally {
++        active = undefined;
++        signal?.removeEventListener("abort", cancel);
++        if (controller.signal.aborted) {
++          if (failed) await finish().catch(() => undefined);
++          else await finish();
++        }
++      }
++    },
++    async close() {
++      cancel();
++      await active?.catch(() => undefined);
++      await finish();
++    }
++  };
++}
+diff --git a/packages/safe-js/src/realm.test.ts b/packages/safe-js/src/realm.test.ts
+new file mode 100644
+index 0000000..aab8545
+--- /dev/null
++++ b/packages/safe-js/src/realm.test.ts
+@@ -0,0 +1,329 @@
++import { describe, expect, it, vi } from "vitest";
++
++import { createRealm } from "./core.js";
++import { Budget, SandboxError } from "./interp/budget.js";
++import { deepCopyFromSandbox } from "./interp/values.js";
++import { runResources } from "./interp/resources.js";
++
++describe("persistent realm", () => {
++  it("keeps lexical state, object identity and old closures without replay", async () => {
++    const record = vi.fn();
++    const realm = createRealm({ bindings: { record } });
++    try {
++      await realm.evaluate(
++        "let count = 1; const object = { count: 2 }; function next() { count += object.count; return count; } record(count);"
++      );
++      await realm.evaluate("const alias = object; object.count = 4;");
++      const result = await realm.evaluate("[next(), next(), object === alias, count]");
++      expect(deepCopyFromSandbox(result.returnValue)).toEqual([5, 9, true, 9]);
++      expect(record).toHaveBeenCalledExactlyOnceWith(1);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("isolates independent realms", async () => {
++    const first = createRealm();
++    const second = createRealm();
++    try {
++      await first.evaluate("let count = 11;");
++      expect((await second.evaluate("typeof count")).returnValue).toBe("undefined");
++      expect((await first.evaluate("count")).returnValue).toBe(11);
++    } finally {
++      await Promise.all([first.close(), second.close()]);
++    }
++  });
++
++  it("retains regexes and asynchronous functions across sources", async () => {
++    const realm = createRealm();
++    try {
++      await realm.evaluate(
++        "const matcher = /ab+/; async function check(value) { return matcher.test(await Promise.resolve(value)); }"
++      );
++      expect((await realm.evaluate('await check("abbb")')).returnValue).toBe(true);
++      expect((await realm.evaluate('await check("xyz")')).returnValue).toBe(false);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("fails closed on declaration conflicts and parse failures", async () => {
++    for (const source of ["let count = 2;", "let = ;"]) {
++      const realm = createRealm();
++      await realm.evaluate("let count = 1;");
++      await expect(realm.evaluate(source)).rejects.toBeDefined();
++      await expect(realm.evaluate("count")).rejects.toMatchObject({ code: "aborted" });
++      await realm.close();
++    }
++  });
++
++  it("charges cumulative steps and cannot catch fatal exhaustion", async () => {
++    const budget = new Budget({ maxSteps: 120 });
++    const realm = createRealm({ budget });
++    await realm.evaluate("let count = 0;");
++    const before = budget.stepsUsed;
++    await realm.evaluate("count += 1;");
++    expect(budget.stepsUsed).toBeGreaterThan(before);
++    await expect(
++      realm.evaluate("try { while (true) { count += 1; } } catch (error) { count = 0; }")
++    ).rejects.toMatchObject({ code: "budgetExceeded", budget: "steps" });
++    await expect(realm.evaluate("count")).rejects.toMatchObject({ code: "aborted" });
++    await realm.close();
++  });
++
++  it("rejects overlap without aborting the already-running job", async () => {
++    let settle!: (value: number) => void;
++    let entered!: () => void;
++    const started = new Promise<void>((resolve) => {
++      entered = resolve;
++    });
++    const realm = createRealm({
++      bindings: {
++        wait: () => {
++          entered();
++          return new Promise<number>((resolve) => {
++            settle = resolve;
++          });
++        }
++      }
++    });
++    const pending = realm.evaluate("await wait()");
++    await started;
++    await expect(realm.evaluate("1")).rejects.toMatchObject({ code: "reentry" });
++    settle(42);
++    expect((await pending).returnValue).toBe(42);
++    await realm.close();
++  });
++
++  it("cancels a pending await and closes permanently", async () => {
++    const controller = new AbortController();
++    let entered!: () => void;
++    const started = new Promise<void>((resolve) => {
++      entered = resolve;
++    });
++    const realm = createRealm({
++      bindings: {
++        wait: () => {
++          entered();
++          return new Promise(() => undefined);
++        }
++      }
++    });
++    const pending = realm.evaluate("await wait()", { signal: controller.signal });
++    const rejection = expect(pending).rejects.toBeInstanceOf(SandboxError);
++    await started;
++    controller.abort();
++    await rejection;
++    await expect(realm.evaluate("1")).rejects.toMatchObject({ code: "aborted" });
++    await realm.close();
++  });
++
++  it("revokes host-retained guest callbacks on close", async () => {
++    let callback!: () => Promise<unknown>;
++    const effect = vi.fn();
++    const realm = createRealm({
++      bindings: {
++        save: (value: unknown) => {
++          callback = value as typeof callback;
++        },
++        effect
++      }
++    });
++    await realm.evaluate("save(() => effect());");
++    await realm.evaluate("1");
++    await realm.close();
++    await expect(callback()).rejects.toBeDefined();
++    expect(effect).not.toHaveBeenCalled();
++    await realm.close();
++  });
++
++  it("closes on an unhandled promise rejection", async () => {
++    const realm = createRealm();
++    await expect(realm.evaluate('Promise.reject("failure"); 1;')).rejects.toMatchObject({
++      name: "UnhandledRejectionError"
++    });
++    await expect(realm.evaluate("1")).rejects.toMatchObject({ code: "aborted" });
++    await realm.close();
++  });
++
++  it("bounds cumulative source, not just individual programs", async () => {
++    const realm = createRealm({ maxSourceLength: 20 });
++    await realm.evaluate("let count = 0;");
++    await expect(realm.evaluate("count += 1;")).rejects.toMatchObject({
++      code: "budgetExceeded",
++      budget: "stringLength"
++    });
++    await realm.close();
++  });
++
++  it("does not expose host globals or module imports", async () => {
++    const realm = createRealm();
++    expect(
++      deepCopyFromSandbox(
++        (await realm.evaluate("[typeof process, typeof require, typeof fetch, typeof Function]"))
++          .returnValue
++      )
++    ).toEqual(["undefined", "undefined", "undefined", "undefined"]);
++    await expect(realm.evaluate('import { readFile } from "fs";')).rejects.toBeDefined();
++    await realm.close();
++  });
++
++  it("waits for an interrupted active job when closing", async () => {
++    let entered!: () => void;
++    const started = new Promise<void>((resolve) => {
++      entered = resolve;
++    });
++    const effect = vi.fn();
++    const realm = createRealm({
++      bindings: {
++        wait: () => {
++          entered();
++          return new Promise(() => undefined);
++        },
++        effect
++      }
++    });
++    const pending = realm.evaluate("await wait(); effect();");
++    const rejection = expect(pending).rejects.toMatchObject({ code: "aborted" });
++    await started;
++    await realm.close();
++    await rejection;
++    expect(effect).not.toHaveBeenCalled();
++    expect(realm.closed).toBe(true);
++  });
++
++  it("keeps retained guest callbacks live between evaluations", async () => {
++    let callback!: () => Promise<unknown>;
++    const realm = createRealm({
++      bindings: {
++        save: (value: unknown) => {
++          callback = value as typeof callback;
++        }
++      }
++    });
++    try {
++      await realm.evaluate("let count = 0; save(() => { count += 1; return count; });");
++      await realm.evaluate("count += 10;");
++      expect(await callback()).toBe(11);
++      expect((await realm.evaluate("count")).returnValue).toBe(11);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("does not let finally replace a fatal budget error", async () => {
++    const realm = createRealm({ budget: new Budget({ maxSteps: 100 }) });
++    await expect(
++      realm.evaluate(
++        'function exhaust() { try { while (true) {} } finally { return "escaped"; } } exhaust();'
++      )
++    ).rejects.toMatchObject({ code: "budgetExceeded", budget: "steps" });
++    expect(realm.closed).toBe(true);
++    await realm.close();
++  });
++
++  it("bounds retained data across evaluations", async () => {
++    const realm = createRealm({ budget: new Budget({ maxSteps: 100_000, dataSize: 8_000 }) });
++    await realm.evaluate("const retained = [];");
++    let exhausted = false;
++    for (let attempt = 0; attempt < 30; attempt += 1) {
++      try {
++        await realm.evaluate('retained.push("x".repeat(500));');
++      } catch (error) {
++        expect(error).toMatchObject({ code: "budgetExceeded", budget: "dataSize" });
++        exhausted = true;
++        break;
++      }
++    }
++    expect(exhausted).toBe(true);
++    expect(realm.closed).toBe(true);
++    await realm.close();
++  });
++
++  it("bounds evaluation count and rejects invalid limits", async () => {
++    for (const limit of [0, -1, 1.5, Infinity, NaN]) {
++      expect(() => createRealm({ maxEvaluations: limit })).toThrow(TypeError);
++      expect(() => createRealm({ maxSourceLength: limit })).toThrow(TypeError);
++    }
++    const realm = createRealm({ maxEvaluations: 1 });
++    await realm.evaluate("1");
++    await expect(realm.evaluate("2")).rejects.toMatchObject({ code: "budgetExceeded" });
++    await realm.close();
++  });
++
++  it("rejects pre-aborted creation and evaluation without effects", async () => {
++    const signal = AbortSignal.abort();
++    expect(() => createRealm({ signal })).toThrow(SandboxError);
++    const effect = vi.fn();
++    const realm = createRealm({ bindings: { effect } });
++    await expect(realm.evaluate("effect()", { signal })).rejects.toMatchObject({ code: "aborted" });
++    expect(effect).not.toHaveBeenCalled();
++    await realm.close();
++  });
++
++  it("keeps granted resources until close and closes each once", async () => {
++    const cleanup = vi.fn(async () => undefined);
++    const realm = createRealm({
++      bindings: {
++        acquire: () => {
++          runResources.getStore()!.add(cleanup);
++        }
++      }
++    });
++    await realm.evaluate("acquire();");
++    await realm.evaluate("1");
++    expect(cleanup).not.toHaveBeenCalled();
++    await realm.close();
++    await realm.close();
++    expect(cleanup).toHaveBeenCalledTimes(1);
++  });
++
++  it("automatically releases idle resources on lifetime cancellation", async () => {
++    const controller = new AbortController();
++    const cleanup = vi.fn(async () => undefined);
++    const realm = createRealm({
++      signal: controller.signal,
++      bindings: {
++        acquire: () => {
++          runResources.getStore()!.add(cleanup);
++        }
++      }
++    });
++    await realm.evaluate("acquire();");
++    controller.abort();
++    await new Promise<void>((resolve) => setImmediate(resolve));
++    expect(cleanup).toHaveBeenCalledTimes(1);
++    await realm.close();
++  });
++
++  it("preserves fatal errors when resource cleanup also fails", async () => {
++    const cleanup = vi.fn(async () => {
++      throw new Error("cleanup failure");
++    });
++    const realm = createRealm({
++      budget: new Budget({ maxSteps: 100 }),
++      bindings: {
++        acquire: () => {
++          runResources.getStore()!.add(cleanup);
++        }
++      }
++    });
++    await realm.evaluate("acquire();");
++    await expect(realm.evaluate("while (true) {}")).rejects.toMatchObject({
++      code: "budgetExceeded"
++    });
++    await expect(realm.close()).rejects.toBeInstanceOf(AggregateError);
++    expect(cleanup).toHaveBeenCalledTimes(1);
++  });
++
++  it("accounts for promises retained only by rejection tracking", async () => {
++    const realm = createRealm({ budget: new Budget({ maxSteps: 100_000, dataSize: 256 }) });
++    try {
++      await expect(
++        realm.evaluate("for (let index = 0; index < 300; index += 1) { new Promise(() => {}); }")
++      ).rejects.toMatchObject({ code: "budgetExceeded", budget: "dataSize" });
++    } finally {
++      await realm.close();
++    }
++  });
++});
+diff --git a/docs/plans/browser-realms.md b/docs/plans/browser-realms.md
+new file mode 100644
+index 0000000..4d9bcc1
+--- /dev/null
++++ b/docs/plans/browser-realms.md
+@@ -0,0 +1,91 @@
++# Persistent realms and explicit host objects
++
++Status: initial realm extension implemented locally, September 1, 2026. No contribution is published.
++The browser user explicitly authorizes extending SafeJS and possibly contributing
++later. SafeJS is the only allowed interpreter dependency; no new dependency may
++be introduced. This checkout is detached at v13.0.10 / 7fbbd81fd99c46928bcf314ad89410b946d203cc.
++
++## Purpose and separation
++
++Keep reusable interpreter capabilities here. Keep HTML, DOM, browser events,
++navigation, network policy, layout and browser clients in the browser package.
++Do not add browser-specific command names, URL policies or site-specific patches
++to SafeJS. Preserve the existing run/replay/snapshot contracts.
++
++The installed SDK remains untouched until an extension is tested and explicitly
++selected by the browser adapter. Use only public exports from the browser; do not
++make it depend on private Scope/interpreter/value implementation paths.
++
++## Extension A: disposable persistent realm
++
++The first implementation exports `createRealm` from the normal and lightweight
++core entrypoints. Twenty-one focused tests pass, including lexical/closure/object
++persistence, no effect replay, lifetime budgets, tracked-promise retention,
++single-flight rejection, cancellation, resource disposal and post-close callback
++revocation. A TypeScript-compiled public-core consumer passes six further checks.
++The installed global runtime and browser integration remain unchanged.
++
++The initial contract deliberately fails closed on every evaluation failure. It
++uses cumulative lifetime budgets and conservatively accounts all submitted source
++and tracked promises until close. It does not implement realm snapshots, module
++imports, guest dynamic code generation, DOM properties or a browser event loop.
++Full-suite validation is not green with the available shared test tooling: missing
++existing upstream dependencies and filesystem type-fixture resolution failures are
++retained in the browser evidence reports. No dependency was installed to mask them.
++This is an experimental contribution candidate, not a security-reviewed release.
++
++- Add an explicit public factory with evaluate and close lifecycle operations.
++- Preserve lexical bindings, object identity and closures across separately parsed
++  source evaluations without replaying prior host effects or concatenating old
++  source each time. Do not implement it by repeatedly restoring a run snapshot
++  with a different source hash.
++- Treat realm access as a trusted-host operation. Do not add guest eval, Function,
++  global host access, dynamic import or ambient modules.
++- Enforce single-flight jobs, cancellation, step/call/data/compilation budgets,
++  retained-source/value accounting and revocation on close. Fatal engine errors
++  remain uncatchable by guests. Old closures and regexes must remain accounted for.
++- Specify which errors leave a usable realm and which dispose it. An interrupted
++  job must not leave an apparently idle realm with continuing host effects.
++- Preserve error identity, promise rejection tracking and cleanup guarantees.
++  Snapshot support for a realm is separate work; reject unsupported capture rather
++  than fabricating a restorable state.
++
++Write failing public-API tests first: persistent state/closure identity; two-realm
++isolation; declaration conflicts; source failure behavior; no effect replay;
++promise jobs; overlap; pending cancellation; retained budgets; close/revocation;
++and guest attempts to suppress fatal budget errors. Existing run tests must pass
++unchanged, including adversarial errors, host callbacks and replay.
++
++## Extension B: explicitly branded host-object capabilities
++
++- Design a public host-object capability with finite explicitly granted members,
++  property reads/writes and method calls, not arbitrary host-object reflection.
++- Support identity-preserving wrapper caching so repeated DOM lookup can return
++  the same guest object. The browser supplies the DOM implementation.
++- All values and arguments cross the existing safe conversion and budgeting
++  boundary. Unknown host prototypes, getters, constructors and functions stay
++  rejected unless represented by the new explicit capability mechanism.
++- Keep capability bookkeeping inaccessible to guest-created structural lookalikes.
++  Cover descriptor/prototype/constructor escape attempts, cycles, aliasing,
++  read-only members, error sanitization and post-close revocation.
++- Make unsupported serialization/replay of live capabilities explicit. Never
++  silently deep-copy a live object and then describe it as a faithful binding.
++
++Write failing tests before implementation for property mutation/read-after-write,
++identity, method receiver behavior, lifecycle and adversarial impostors. Browser
++integration must then verify actual textContent/value/attribute/child mutations
++and cancelable event/default-action ordering; a get/set-shaped custom API alone
++does not satisfy DOM compatibility.
++
++## Validation and contribution preparation
++
++- Existing scope baseline: 28 tests passed using the already-installed repository
++  test tooling. The checkout's node_modules link is test-only; no installation or
++  manifest/lockfile change occurred.
++- Run focused public-API tests, relevant interpreter/bridge/budget/replay tests,
++  then the full SafeJS suite and public-export consumer checks.
++- Keep patches self-contained, document intentional gaps, and carry no browser
++  implementation or additional dependency into this package.
++- Do not commit, push, open issues/PRs or publish without a separate instruction.
++- Do not alter the installed global package in place. The browser should select
++  a tested build explicitly and record its source/version.
