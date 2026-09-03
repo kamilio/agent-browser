@@ -146,14 +146,11 @@ it.each(["pattern", "min", "max", "step"])(
 	},
 );
 
-it.each(["range", "color"])(
-	"does not invent validity for %s inputs",
-	(type) => {
-		const { add, submit } = fixture();
-		add("input", { type, value: nonemptyValues[type] ?? "nonempty" });
-		expect(() => submit()).toThrow(/not implemented/);
-	},
-);
+it.each(["color"])("does not invent validity for %s inputs", (type) => {
+	const { add, submit } = fixture();
+	add("input", { type, value: nonemptyValues[type] ?? "nonempty" });
+	expect(() => submit()).toThrow(/not implemented/);
+});
 
 it.each(["date", "month", "week", "time", "datetime-local"])(
 	"validates empty and nonempty %s controls",

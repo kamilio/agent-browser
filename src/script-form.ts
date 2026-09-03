@@ -88,6 +88,9 @@ export function scriptFormProperties(
 		properties.placeholder = attribute("placeholder");
 	}
 	if (tag === "input") {
+		properties.min = attribute("min");
+		properties.max = attribute("max");
+		properties.step = attribute("step");
 		properties.defaultValue = attribute("value");
 		properties.defaultChecked = booleanAttribute("checked");
 		properties.multiple = booleanAttribute("multiple");

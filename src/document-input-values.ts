@@ -39,13 +39,43 @@ export class DocumentInputValues {
 		attribute: string,
 		next: string | undefined,
 	): InputValueChange | undefined {
-		if (!["value", "type", "multiple"].includes(attribute)) return undefined;
+		if (
+			!["value", "type", "multiple", "min", "max", "step"].includes(attribute)
+		)
+			return undefined;
 		const node = this.node(id);
 		if (node.tagName !== "input") return undefined;
 		const dirty = this.dirty.has(id);
+		const before = inputType(node);
+		if (
+			before === "range" &&
+			["min", "max", "step", "value"].includes(attribute)
+		) {
+			const attributes = { ...node.attributes };
+			if (next === undefined) delete attributes[attribute];
+			else attributes[attribute] = next;
+			const current =
+				attribute === "value" && !dirty
+					? (next ?? "")
+					: sanitizeInputValue(
+							before,
+							node.control.value ?? node.attributes.value ?? "",
+							node.attributes,
+						);
+			const value = sanitizeInputValue(before, current, attributes);
+			return {
+				value:
+					!dirty &&
+					value ===
+						sanitizeInputValue(before, attributes.value ?? "", attributes)
+						? undefined
+						: value,
+				dirty,
+			};
+		}
+		if (["min", "max", "step"].includes(attribute)) return undefined;
 		if (attribute === "value")
 			return dirty ? undefined : { value: undefined, dirty: false };
-		const before = inputType(node);
 		if (attribute === "multiple") {
 			if (before !== "email") return undefined;
 			const attributes: Record<string, string> =

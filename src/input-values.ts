@@ -2,6 +2,7 @@ import type { DocumentNode } from "./document.js";
 import { sanitizeCalendarInput } from "./input-calendar.js";
 import { sanitizeEmailValue } from "./input-email.js";
 import { validNumberValue } from "./input-number.js";
+import { sanitizeRangeInput } from "./input-range.js";
 
 const types = new Set([
 	"hidden",
@@ -51,6 +52,7 @@ export function sanitizeInputValue(
 	raw: string,
 	attributes: Readonly<Record<string, string>>,
 ): string {
+	if (type === "range") return sanitizeRangeInput(raw, attributes);
 	const calendar = sanitizeCalendarInput(type, raw);
 	if (calendar !== undefined) return calendar;
 	if (type === "email")

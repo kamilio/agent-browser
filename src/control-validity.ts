@@ -15,6 +15,7 @@ import { AgentBrowserError } from "./errors.js";
 import type { FormSubmissionOptions } from "./forms.js";
 import { validEmailValue } from "./input-email.js";
 import { numberValidity } from "./input-number.js";
+import { rangeValidity } from "./input-range.js";
 
 export const validityProperties = [
 	"valueMissing",
@@ -92,6 +93,10 @@ export function controlValidity(
 	}
 	if (node.tagName === "input" && type === "number") {
 		Object.assign(flags, numberValidity(value, node.attributes));
+		return finish();
+	}
+	if (node.tagName === "input" && type === "range") {
+		Object.assign(flags, rangeValidity(value, node.attributes));
 		return finish();
 	}
 	if (node.tagName === "input") {

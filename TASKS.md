@@ -19,6 +19,21 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Range-state checkpoint: `INPUT-RANGE.md` adds midpoint defaults, clamping and
+exact decimal step alignment to range values. The native value owner preserves
+current state across min/max/step/default edits, resets, type changes and Attr
+operations. Range page assignments and input min/max/step reflection use the same
+state. A same-attribute quota preflight closes a current-value allocation gap.
+Three initial regressions fail before implementation; 60 new cases include a
+finite-grid oracle and owner/atomicity coverage. Focused checks pass 437 / seven
+files; full native checks pass 7,207 / 211 files. The isolated owned patch passes
+production/new-test type checks and 4,447 / 150 available native files. Build and
+nine-source lint pass. Range user actions/presentation/numeric methods, color and
+pattern profiles, precision parity and runtime/site/socket/UI gates remain open.
+No unapproved acceptance probe ran.
+
+### Previous calendar-fill checkpoint
+
 Calendar-fill checkpoint: `CALENDAR-FILL.md` connects all five calendar types to
 native sync/async fill and the command action-wait gate. Values normalize before
 the write, targets revalidate after focus callbacks, and direct input/change

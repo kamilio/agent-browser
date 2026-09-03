@@ -842,6 +842,7 @@ export class ScriptDom {
 				"email",
 				"password",
 				"number",
+				"range",
 				"date",
 				"month",
 				"week",

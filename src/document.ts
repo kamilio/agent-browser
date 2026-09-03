@@ -563,6 +563,7 @@ export class DocumentTree {
 		const inputChange = this.inputValues.prepare(id, key, value);
 		if (previous === value) {
 			if (inputChange && inputChange.value !== node.control.value) {
+				this.checkTextBudget(this.inputValueDelta(id, inputChange));
 				this.applyInputValueChange(id, inputChange);
 				this.changed("control", id);
 			}

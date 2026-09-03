@@ -67,6 +67,13 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 range-state continuation: `INPUT-RANGE.md` adds midpoint defaults,
+clamping and decimal step alignment, with current-value ownership across bound/
+default/type changes. Page range values and string min/max/step reflection now
+share native validation. Sixty new cases include finite-grid and quota regressions;
+focused checks pass 437 / seven files. Range user actions/presentation, numeric
+page methods and actual runtime/site/socket/UI acceptance remain open.
+
 September 3 calendar-action continuation: `CALENDAR-FILL.md` connects all five
 calendar types to native fill and the command action-wait gate. Direct commits
 emit input/change, preserve listener edits and revalidate after focus callbacks;
