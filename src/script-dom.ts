@@ -24,6 +24,7 @@ import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlAttributeName } from "./html-attribute-name.js";
 import { ScriptDatasets } from "./script-dataset.js";
+import { ElementTraversal } from "./element-traversal.js";
 import {
 	type DocumentElementSizes,
 	documentElementSizes,
@@ -88,6 +89,7 @@ export class ScriptDom {
 	private readonly inlineStyles: InlineStyles;
 	private readonly attributes: ScriptAttributes;
 	private readonly datasets: ScriptDatasets;
+	private readonly elementTraversal: ElementTraversal;
 	private readonly relations: NodeRelations;
 	private readonly classLists: ScriptClassLists;
 	private readonly geometry: ScriptGeometry;
@@ -114,6 +116,7 @@ export class ScriptDom {
 		this.inlineStyles = new InlineStyles(tree, factory);
 		this.classLists = new ScriptClassLists(tree, factory);
 		this.datasets = new ScriptDatasets(tree, factory);
+		this.elementTraversal = new ElementTraversal(tree);
 		this.geometry = new ScriptGeometry(tree, factory);
 		this.elementSizes = documentElementSizes(tree);
 		this.computedStyles = new ComputedStyles(tree, factory);
@@ -290,6 +293,22 @@ export class ScriptDom {
 				},
 			});
 		if (["document", "fragment", "element"].includes(initial.kind)) {
+			for (const [name, method] of [
+				["firstElementChild", "first"],
+				["lastElementChild", "last"],
+			] as const)
+				definition.properties[name] = {
+					get: () => {
+						this.read(id);
+						return this.optional(this.elementTraversal[method](id));
+					},
+				};
+			definition.properties.childElementCount = {
+				get: () => {
+					this.read(id);
+					return this.elementTraversal.count(id);
+				},
+			};
 			Object.assign(definition.properties, {
 				children: {
 					get: () => {
@@ -313,6 +332,17 @@ export class ScriptDom {
 				},
 			});
 		}
+		if (["element", "text", "comment"].includes(initial.kind))
+			for (const [name, method] of [
+				["previousElementSibling", "previous"],
+				["nextElementSibling", "next"],
+			] as const)
+				definition.properties[name] = {
+					get: () => {
+						this.read(id);
+						return this.optional(this.elementTraversal[method](id));
+					},
+				};
 		if (initial.kind === "document" || initial.kind === "element") {
 			for (const [name, kind] of [
 				["getElementsByTagName", "tag"],
@@ -694,6 +724,7 @@ export class ScriptDom {
 		this.inlineStyles.close();
 		this.attributes.close();
 		this.datasets.close();
+		this.elementTraversal.close();
 		this.relations.close();
 		this.classLists.close();
 		this.geometry.close();

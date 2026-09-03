@@ -67,6 +67,11 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 element-traversal continuation: `ELEMENT-TRAVERSAL.md` adds native
+element-only child/sibling access with shared identity, mutation-aware bounded
+caching and independently instrumented work counts. Full NodeList/prototype,
+actual runtime, site, socket and UI acceptance remain open.
+
 September 3 dataset continuation: `DATASET.md` adds live native data-attribute
 properties with bounded named setters/deleters, shared Attr identity and failure
 atomicity. Attribute parsing and native lookup now preserve non-ASCII case. Actual

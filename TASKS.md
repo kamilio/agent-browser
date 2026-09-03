@@ -19,6 +19,19 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Element-traversal checkpoint: `ELEMENT-TRAVERSAL.md` adds readonly native
+element-child and element-sibling access, including CharacterData sibling lookup.
+Eight initial reproductions failed; thirty-one new cases cover identity, mutation,
+closure, cache bounds and recovery. An independently instrumented 3,000-child walk
+builds once and uses 10,003 native tree reads, not repeated full sibling scans.
+Focused validation passes 119 tests / five files; full native validation passes
+6,299 / 194 files. The isolated patch passes typechecking and 3,539 tests / 133
+available native files. Build, strict test types and targeted lint/formatting pass.
+Live NodeLists, prototypes, actual SafeJS, framework/site, socket and terminal/UI
+acceptance remain open; no unapproved probe has run.
+
+### Previous dataset checkpoint
+
 Dataset checkpoint: `DATASET.md` adds live native data-attribute properties with
 bounded named setters/deleters, Attr identity, selector/serialization consistency
 and failure atomicity. Shared attribute-name normalization now folds only ASCII,

@@ -51,6 +51,7 @@
   "src/element-offsets.test.ts",
   "src/element-scroll.test.ts",
   "src/element-sizes.test.ts",
+  "src/element-traversal.test.ts",
   "src/events-async.test.ts",
   "src/events.test.ts",
   "src/extension-page-runtime.test.ts",
