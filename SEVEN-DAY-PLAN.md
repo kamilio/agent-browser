@@ -60,6 +60,11 @@ September 3 CLI continuation: `STATE-TRANSFER.md` connects native `state-save` a
 frame size and injected process-dispatch evidence are distinct from the still-open
 real socket/process/runtime, upstream parity and authentication gates.
 
+September 3 callback continuation: `CALLBACK-OWNERSHIP.md` fixes native admission
+and prefix ownership independently of Promise identity, including synchronous
+runtime reentrancy. Public-runtime contract tests are not released-SDK execution
+or retained-graph throughput evidence; those approved-runtime gates remain open.
+
 ## Acceptance and safety
 
 - Keep every requirement in `COMPATIBILITY.md`; do not turn missing behavior into

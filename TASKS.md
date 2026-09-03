@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Callback-ownership checkpoint: `CALLBACK-OWNERSHIP.md` reserves admission and source
+prefix barriers before runtime callback entry, counts invocations independently of
+Promise identity, and releases admission only after both completion phases settle.
+Four native reproductions failed before the fix; thirteen new cases now pass,
+including reentrant startup, malformed phases, shutdown and 1,000 sequential calls.
+Focused validation passes 83 tests / four explicit native files. Build, strict
+runtime-test checking, test-file lint and two-source formatting pass; pre-existing
+PageScripts import-order warnings are preserved.
+The full working tree passes 5,943 tests / 183 explicit native files, with no
+unhandled errors. No actual SafeJS or live acceptance probe is claimed.
+The isolated change passes typechecking and 3,183 tests / 122 available allowlisted
+files without the pre-existing unfinished feature work.
+
+Next: approved released-SDK callback/lifetime and retained-graph performance gates,
+plus real state-transfer socket/process and authentication acceptance. Native
+adapter-contract tests are not evidence for those runtime, site or portability gates.
+
+### Previous state-transfer checkpoint
+
 State-transfer checkpoint: `STATE-TRANSFER.md` connects CLI `state-save`/`state-load`
 to the private-file and atomic-owner layers. Transfers reserve bounded memory,
 expire, are revoked on session recreation, and validate chunks/acknowledgements without

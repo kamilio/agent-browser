@@ -39,7 +39,7 @@ export class PageScripts {
 	readonly limits: Readonly<ScriptLimits>;
 	private readonly lifetime = new AbortController();
 	private readonly clock = new PageClock();
-	private readonly pending = new Set<Promise<unknown>>();
+	private readonly pending = new Set<symbol>();
 	private readonly prefixes = new Set<Promise<void>>();
 	private readonly maxPending: number;
 	private runtime?: PageRuntime;
@@ -356,28 +356,61 @@ export class PageScripts {
 			void this.close().catch(() => undefined);
 			throw error;
 		}
+		const slot = Symbol("page-callback");
+		let releasePrefix = () => {};
+		const prefix = new Promise<void>((resolve) => {
+			releasePrefix = resolve;
+		});
+		let prefixFinished = false;
+		let resultFinished = false;
+		this.pending.add(slot);
+		this.prefixes.add(prefix);
+		const prefixComplete = () => {
+			if (prefixFinished) return;
+			prefixFinished = true;
+			this.prefixes.delete(prefix);
+			releasePrefix();
+			if (resultFinished) this.pending.delete(slot);
+		};
+		const complete = () => {
+			resultFinished = true;
+			if (prefixFinished) this.pending.delete(slot);
+			if (this.runtime?.closed) void this.close().catch(() => undefined);
+		};
 		let invocation: ReturnType<ScriptCallbackRuntime["startCallback"]>;
+		let started = false;
 		try {
 			if (!this.runtime)
 				throw new AgentBrowserError("closed", "Page runtime is unavailable");
-			invocation = this.runtime.startCallback(callback, args, options);
+			const candidate = this.runtime.startCallback(callback, args, options);
+			started = true;
+			const synchronous = candidate?.synchronous;
+			const result = candidate?.result;
+			invocation = {
+				synchronous: Promise.resolve(synchronous),
+				result: Promise.resolve(result),
+			};
+			void invocation.synchronous.then(prefixComplete, prefixComplete);
+			void invocation.result.then(complete, (error) => {
+				this.recordFailure("callback", error);
+				complete();
+			});
+			if (
+				typeof synchronous?.then !== "function" ||
+				typeof result?.then !== "function"
+			)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Invalid page callback completion phases",
+				);
 		} catch (error) {
+			resultFinished = true;
+			prefixComplete();
 			this.recordFailure("callback", error);
-			if (this.runtime?.closed) void this.close().catch(() => undefined);
+			if (started || this.runtime?.closed)
+				void this.close().catch(() => undefined);
 			throw error;
 		}
-		this.pending.add(invocation.result);
-		this.prefixes.add(invocation.synchronous);
-		const prefixComplete = () => this.prefixes.delete(invocation.synchronous);
-		void invocation.synchronous.then(prefixComplete, prefixComplete);
-		const complete = () => {
-			this.pending.delete(invocation.result);
-			if (this.runtime?.closed) void this.close().catch(() => undefined);
-		};
-		void invocation.result.then(complete, (error) => {
-			this.recordFailure("callback", error);
-			complete();
-		});
 		return invocation;
 	}
 

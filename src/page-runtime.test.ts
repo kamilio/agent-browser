@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { DocumentTree } from "./document.js";
+import { BrowserEvent } from "./events.js";
 import { DocumentInteractions } from "./interactions.js";
 import type { PageBindingContext } from "./page-bindings.js";
 import { readPageConsole } from "./page-console.js";
@@ -20,7 +21,7 @@ afterEach(async () => {
 	vi.useRealTimers();
 });
 
-function fixture(timeoutMs = 1000) {
+function fixture(timeoutMs = 1000, maxPendingCallbacks = 128) {
 	const tree = new DocumentTree("https://example.com/");
 	const interactions = new DocumentInteractions(tree);
 	let options: PageRuntimeOptions | undefined;
@@ -72,6 +73,7 @@ function fixture(timeoutMs = 1000) {
 	};
 	const scripts = new PageScripts({ document: tree, interactions }, factory, {
 		limits: { timeoutMs },
+		maxPendingCallbacks,
 	});
 	owners.push({ scripts, tree });
 	return {
@@ -86,6 +88,226 @@ function fixture(timeoutMs = 1000) {
 		},
 	};
 }
+
+function callbackDispatch(test: ReturnType<typeof fixture>) {
+	const window = test.scripts.window as {
+		addEventListener(type: string, callback: () => void): void;
+	};
+	window.addEventListener("callback-budget", () => {});
+	const target = test.interactions.events.windowTarget;
+	if (target === null) throw new Error("Missing Window target");
+	return () => {
+		const dispatched = test.interactions.events.dispatchEventAsync(
+			target,
+			new BrowserEvent("callback-budget"),
+		);
+		void dispatched.catch(() => undefined);
+		return dispatched;
+	};
+}
+
+it("counts distinct callbacks even when the runtime shares their completion Promise", async () => {
+	const test = fixture(1000, 2);
+	await test.scripts.evaluate("initialize");
+	const dispatch = callbackDispatch(test);
+	const result = new Promise<unknown>(() => {});
+	const synchronous = Promise.resolve();
+	test.runtime.startCallback.mockReturnValue({ synchronous, result });
+	await dispatch();
+	await dispatch();
+	expect(test.scripts.metrics().pendingCallbacks).toBe(2);
+	await expect(dispatch()).rejects.toMatchObject({ code: "closed" });
+	expect(test.runtime.startCallback).toHaveBeenCalledTimes(2);
+	await test.scripts.close();
+	expect(test.scripts.metrics().pendingCallbacks).toBe(0);
+});
+
+it("keeps a callback slot until both public completion phases settle", async () => {
+	const test = fixture(1000, 1);
+	await test.scripts.evaluate("initialize");
+	const dispatch = callbackDispatch(test);
+	let release = () => {};
+	const synchronous = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	test.runtime.startCallback.mockReturnValue({
+		synchronous,
+		result: Promise.resolve(),
+	});
+	const pending = dispatch();
+	await Promise.resolve();
+	await Promise.resolve();
+	expect(test.scripts.metrics().pendingCallbacks).toBe(1);
+	release();
+	await pending;
+	expect(test.scripts.metrics().pendingCallbacks).toBe(0);
+});
+
+it("reserves callback capacity before a runtime can synchronously reenter dispatch", async () => {
+	const test = fixture(1000, 1);
+	await test.scripts.evaluate("initialize");
+	const dispatch = callbackDispatch(test);
+	let entered = false;
+	let nested: Promise<unknown> | undefined;
+	test.runtime.startCallback.mockImplementation(() => {
+		if (!entered) {
+			entered = true;
+			nested = dispatch().catch((error) => error);
+		}
+		return { synchronous: Promise.resolve(), result: Promise.resolve() };
+	});
+	await dispatch().catch((error) => error);
+	await nested;
+	expect(test.runtime.startCallback).toHaveBeenCalledTimes(1);
+	expect(test.scripts.closed).toBe(true);
+	await test.scripts.close();
+	expect(test.scripts.metrics().pendingCallbacks).toBe(0);
+});
+
+it("blocks reentrant source evaluation until the starting callback publishes and completes its prefix", async () => {
+	const test = fixture();
+	await test.scripts.evaluate("initialize");
+	const dispatch = callbackDispatch(test);
+	let release = () => {};
+	const synchronous = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	let evaluation: ReturnType<PageScripts["evaluate"]> | undefined;
+	test.runtime.startCallback.mockImplementation(() => {
+		evaluation = test.scripts.evaluate("reentrant-source");
+		void evaluation.catch(() => undefined);
+		return { synchronous, result: Promise.resolve() };
+	});
+	const pending = dispatch();
+	await Promise.resolve();
+	expect(test.runtime.evaluate).toHaveBeenCalledTimes(1);
+	release();
+	await pending;
+	expect(await evaluation).toMatchObject({ ok: true });
+	expect(test.runtime.evaluate).toHaveBeenCalledTimes(2);
+});
+
+it.each(["resolve", "reject"])(
+	"releases every invocation sharing a tail when it %ss",
+	async (outcome) => {
+		const test = fixture(1000, 2);
+		await test.scripts.evaluate("initialize");
+		const dispatch = callbackDispatch(test);
+		let settle = () => {};
+		const result = new Promise<void>((resolve, reject) => {
+			settle =
+				outcome === "resolve"
+					? resolve
+					: () => reject(new Error("synthetic-tail-error"));
+		});
+		test.runtime.startCallback.mockReturnValue({
+			synchronous: Promise.resolve(),
+			result,
+		});
+		await dispatch();
+		await dispatch();
+		expect(test.scripts.metrics().pendingCallbacks).toBe(2);
+		settle();
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(test.scripts.metrics().pendingCallbacks).toBe(0);
+		expect(test.scripts.closed).toBe(false);
+		await dispatch();
+		expect(test.scripts.metrics().pendingCallbacks).toBe(0);
+	},
+);
+
+it("releases the reserved slot after a synchronous runtime failure without poisoning a healthy runtime", async () => {
+	const test = fixture(1000, 1);
+	await test.scripts.evaluate("initialize");
+	const dispatch = callbackDispatch(test);
+	test.runtime.startCallback.mockImplementationOnce(() => {
+		throw new Error("synthetic-runtime-error");
+	});
+	await dispatch().catch(() => undefined);
+	expect(test.scripts.metrics().pendingCallbacks).toBe(0);
+	expect(test.scripts.closed).toBe(false);
+	expect(JSON.stringify(readPageConsole(test.tree))).toContain(
+		"Page callback failed: runtime-failure",
+	);
+	await dispatch();
+	expect(test.runtime.startCallback).toHaveBeenCalledTimes(2);
+	expect(test.scripts.metrics().pendingCallbacks).toBe(0);
+});
+
+it.each(["missing", "prefix", "result", "rejected-result"])(
+	"revokes malformed callback phase contracts: %s",
+	async (kind) => {
+		const test = fixture(1000, 1);
+		await test.scripts.evaluate("initialize");
+		const dispatch = callbackDispatch(test);
+		test.runtime.startCallback.mockImplementation(() => {
+			const value =
+				kind === "missing"
+					? undefined
+					: {
+							synchronous: kind === "result" ? Promise.resolve() : undefined,
+							result:
+								kind === "result"
+									? undefined
+									: kind === "rejected-result"
+										? Promise.reject(new Error("synthetic-runtime-error"))
+										: Promise.resolve(),
+						};
+			return value as ReturnType<PageRuntime["startCallback"]>;
+		});
+		await expect(dispatch()).rejects.toMatchObject({ code: "closed" });
+		await test.scripts.close();
+		expect(test.scripts.metrics().pendingCallbacks).toBe(0);
+		expect(test.runtime.close).toHaveBeenCalledTimes(1);
+		expect(test.scripts.metrics().dom?.classLists.closed).toBe(true);
+		expect(test.interactions.events.metrics().closed).toBe(false);
+	},
+);
+
+it("cancels a prefix-blocked source and does not revive slots when phases settle after closure", async () => {
+	const test = fixture();
+	await test.scripts.evaluate("initialize");
+	const dispatch = callbackDispatch(test);
+	let release = () => {};
+	const phase = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	test.runtime.startCallback.mockReturnValue({
+		synchronous: phase,
+		result: phase,
+	});
+	const dispatched = dispatch();
+	const evaluation = test.scripts.evaluate("blocked-source");
+	const cancelled = expect(evaluation).rejects.toMatchObject({
+		code: "closed",
+	});
+	await test.scripts.close();
+	await cancelled;
+	await expect(dispatched).rejects.toMatchObject({ code: "closed" });
+	release();
+	await Promise.resolve();
+	await Promise.resolve();
+	expect(test.scripts.metrics().pendingCallbacks).toBe(0);
+	expect(test.runtime.evaluate).toHaveBeenCalledTimes(1);
+});
+
+it("repeated shared settled phases do not accumulate callback slots", async () => {
+	const test = fixture(1000, 1);
+	await test.scripts.evaluate("initialize");
+	const dispatch = callbackDispatch(test);
+	const phase = Promise.resolve();
+	test.runtime.startCallback.mockReturnValue({
+		synchronous: phase,
+		result: phase,
+	});
+	for (let index = 0; index < 1000; index++) {
+		await dispatch();
+		expect(test.scripts.metrics().pendingCallbacks).toBe(0);
+	}
+	expect(test.runtime.startCallback).toHaveBeenCalledTimes(1000);
+	expect(test.scripts.closed).toBe(false);
+});
 
 it("creates lazy bindings once, preserves aliases and forwards source options", async () => {
 	const test = fixture();
