@@ -69,6 +69,7 @@
   "src/focus.test.ts",
   "src/font-relative-box.test.ts",
   "src/form-actions.test.ts",
+  "src/form-defaults.test.ts",
   "src/formatting-tree.test.ts",
   "src/forms.test.ts",
   "src/geometry-command.test.ts",

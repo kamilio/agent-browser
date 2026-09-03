@@ -67,6 +67,12 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 form-default continuation: `FORM-DEFAULTS.md` adds input/textarea
+defaults and fixes clean textarea values to use direct text children. Native
+reset/submission/selector checks pass. A separate reproduction exposes existing
+radio checked-attribute mutation ordering; correct its shared state owner next.
+Actual SafeJS, site, socket and UI acceptance remain open.
+
 September 3 numeric-reference continuation: `HTML-NUMERIC-REFERENCES.md` adds
 missing numeric diagnostics and preserves reference issues in discarded duplicate
 attributes. Native scalar, split-input and shared-content tests do not establish

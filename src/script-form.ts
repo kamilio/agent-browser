@@ -1,3 +1,4 @@
+import { textareaDefaultValue } from "./control-defaults.js";
 import { formControls, formOwner, inputType } from "./controls.js";
 import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
@@ -66,6 +67,8 @@ export function scriptFormProperties(
 		properties.placeholder = attribute("placeholder");
 	}
 	if (tag === "input") {
+		properties.defaultValue = attribute("value");
+		properties.defaultChecked = booleanAttribute("checked");
 		properties.multiple = booleanAttribute("multiple");
 		properties.type = {
 			get: () => inputType(read()),
@@ -75,6 +78,17 @@ export function scriptFormProperties(
 			},
 		};
 	}
+	if (tag === "textarea")
+		properties.defaultValue = {
+			get: () => {
+				read();
+				return textareaDefaultValue(tree, id);
+			},
+			set: (value) => {
+				read();
+				tree.setTextContent(id, string(value));
+			},
+		};
 	if (tag === "button") {
 		properties.type = attribute(
 			"type",

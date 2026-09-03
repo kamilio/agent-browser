@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Form-default checkpoint: `FORM-DEFAULTS.md` adds input defaultValue/defaultChecked
+and textarea defaultValue through shared attribute/text owners. Clean textarea
+values now ignore nested element text. Seven baseline reproductions fail;
+forty-four new cases cover dirty state, reset, native submission, serialization,
+checked selectors, quotas and closure. Focused validation passes 112 / six files;
+full native validation passes 6,470 / 198 files. Build, strict test types and
+targeted lint/formatting pass. An isolated test's
+dependency on uncommitted placeholder support was removed; the corrected isolated
+patch typechecks and passes 3,710 / 137 available native files. A separate native
+reproduction exposes existing radio checked-attribute mutation ordering: the
+earlier clean radio does not take selection from a later checked peer. Correct
+the shared checkedness/dirty-state owner next. Actual runtime/site/socket/UI
+acceptance and full form compatibility remain open; no unapproved probe ran.
+
+### Previous numeric-reference checkpoint
+
 Numeric-reference checkpoint: `HTML-NUMERIC-REFERENCES.md` adds missing-digit,
 control and noncharacter diagnostics without changing decoded values. Discarded
 duplicate attribute values now retain reference issues; their first value still

@@ -1,3 +1,4 @@
+import { textareaDefaultValue } from "./control-defaults.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 
@@ -356,7 +357,10 @@ export function controlValue(tree: DocumentTree, id: number): string {
 		return selected ? optionValue(tree, selected.id) : "";
 	}
 	if (node.tagName === "textarea")
-		return (node.control.value ?? tree.textContent(id)).replace(/\r\n?/g, "\n");
+		return (node.control.value ?? textareaDefaultValue(tree, id)).replace(
+			/\r\n?/g,
+			"\n",
+		);
 	const type = inputType(node);
 	const fallback =
 		type === "checkbox" || type === "radio"
