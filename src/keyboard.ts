@@ -1,4 +1,5 @@
 import { lengthApplies, parseLengthLimit } from "./control-length.js";
+import { rangeKeyboardAction } from "./range-keyboard.js";
 import {
 	controlValue,
 	fillTextControl,
@@ -26,6 +27,7 @@ interface Key {
 	shift: boolean;
 	control: boolean;
 	meta: boolean;
+	alt?: boolean;
 }
 export interface KeyboardResult {
 	reference: string;
@@ -60,7 +62,7 @@ export class BrowserKeyboardEvent extends BrowserEvent {
 		return this.#key.meta;
 	}
 	get altKey() {
-		return false;
+		return this.#key.alt ?? false;
 	}
 	get repeat() {
 		return false;
@@ -73,7 +75,7 @@ export class BrowserKeyboardEvent extends BrowserEvent {
 	}
 }
 
-function parseKey(input: string): Key {
+function parseKey(input: string, range = false): Key {
 	if (typeof input !== "string" || !input || input.length > 128)
 		throw new AgentBrowserError("invalid-input", "Invalid keyboard key");
 	const parts = input === "+" ? [input] : input.split("+");
@@ -81,7 +83,10 @@ function parseKey(input: string): Key {
 	const modifiers = new Set(parts.map((part) => part.toLowerCase()));
 	if (
 		modifiers.size !== parts.length ||
-		[...modifiers].some((part) => !["shift", "control", "meta"].includes(part))
+		[...modifiers].some(
+			(part) =>
+				!["shift", "control", "meta", ...(range ? ["alt"] : [])].includes(part),
+		)
 	)
 		throw new AgentBrowserError(
 			"unsupported",
@@ -94,6 +99,14 @@ function parseKey(input: string): Key {
 		delete: "Delete",
 		arrowleft: "ArrowLeft",
 		arrowright: "ArrowRight",
+		...(range
+			? {
+					arrowup: "ArrowUp",
+					arrowdown: "ArrowDown",
+					pageup: "PageUp",
+					pagedown: "PageDown",
+				}
+			: {}),
 		home: "Home",
 		end: "End",
 		escape: "Escape",
@@ -114,6 +127,7 @@ function parseKey(input: string): Key {
 	const meta = modifiers.has("meta");
 	const shift = modifiers.has("shift");
 	if (
+		!range &&
 		(control || meta) &&
 		(control === meta || shift || key.toLowerCase() !== "a")
 	)
@@ -131,7 +145,7 @@ function parseKey(input: string): Key {
 				: Object.values(names).includes(key)
 					? key
 					: "";
-	return { key, code, shift, control, meta };
+	return { key, code, shift, control, meta, alt: modifiers.has("alt") };
 }
 
 function previousOffset(value: string, offset: number) {
@@ -223,8 +237,12 @@ export class DocumentKeyboard {
 	}
 
 	private *pressAction(input: string): EventAction<KeyboardResult> {
-		const key = parseKey(input);
 		const id = this.focus.active();
+		const node = id === null ? undefined : this.tree.get(id);
+		const key = parseKey(
+			input,
+			node?.tagName === "input" && inputType(node) === "range",
+		);
 		const target = id ?? this.tree.root;
 		let keyUpSent = false;
 		const keyboard = this;
@@ -246,6 +264,7 @@ export class DocumentKeyboard {
 				this.focus.active() === id &&
 				!key.control &&
 				!key.meta &&
+				!key.alt &&
 				(Array.from(key.key).length === 1 || key.key === "Enter")
 			)
 				permitted = yield {
@@ -265,11 +284,21 @@ export class DocumentKeyboard {
 							["text", "search", "url", "tel", "password"].includes(
 								inputType(node),
 							));
-					if (key.control || key.meta) {
-						this.editable(false);
-						const caret = this.selection(id);
-						caret.anchor = 0;
-						caret.position = caret.value.length;
+					if (node.tagName === "input" && inputType(node) === "range") {
+						if (!key.control && !key.meta && !key.alt)
+							yield* rangeKeyboardAction(this.tree, this.focus, id, key.key);
+					} else if (key.control || key.meta || key.alt) {
+						if (
+							!key.alt &&
+							!key.shift &&
+							key.control !== key.meta &&
+							key.key.toLowerCase() === "a"
+						) {
+							this.editable(false);
+							const caret = this.selection(id);
+							caret.anchor = 0;
+							caret.position = caret.value.length;
+						}
 					} else if (
 						["ArrowLeft", "ArrowRight", "Home", "End"].includes(key.key)
 					) {

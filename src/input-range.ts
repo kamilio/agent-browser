@@ -5,10 +5,19 @@ import {
 	validNumberValue,
 } from "./input-number.js";
 
-function bounds(attributes: Readonly<Record<string, string>>) {
+export function rangeSettings(attributes: Readonly<Record<string, string>>) {
+	const minimum = parseNumberAttribute(attributes.min);
+	const parsedStep = parseNumberAttribute(attributes.step);
 	return {
-		minimum: parseNumberAttribute(attributes.min) ?? 0,
+		minimum: minimum ?? 0,
 		maximum: parseNumberAttribute(attributes.max) ?? 100,
+		base: minimum ?? parseNumberAttribute(attributes.value) ?? 0,
+		step:
+			attributes.step?.toLowerCase() === "any"
+				? undefined
+				: parsedStep !== undefined && parsedStep > 0
+					? parsedStep
+					: 1,
 	};
 }
 
@@ -46,7 +55,7 @@ export function sanitizeRangeInput(
 	raw: string,
 	attributes: Readonly<Record<string, string>>,
 ): string {
-	const { minimum, maximum } = bounds(attributes);
+	const { minimum, maximum, base, step } = rangeSettings(attributes);
 	const valid = validNumberValue(raw);
 	const difference = maximum - minimum;
 	const fallback =
@@ -58,13 +67,7 @@ export function sanitizeRangeInput(
 	const original = valid ? Number(raw) : fallback;
 	let value = Math.max(minimum, original);
 	if (maximum >= minimum) value = Math.min(maximum, value);
-	if (attributes.step?.toLowerCase() !== "any") {
-		const parsed = parseNumberAttribute(attributes.step);
-		const step = parsed !== undefined && parsed > 0 ? parsed : 1;
-		const base =
-			parseNumberAttribute(attributes.min) ??
-			parseNumberAttribute(attributes.value) ??
-			0;
+	if (step !== undefined) {
 		value = align(value, minimum, maximum, base, step);
 	}
 	return valid && value === original ? raw : String(value);
@@ -74,7 +77,7 @@ export function rangeValidity(
 	value: string,
 	attributes: Readonly<Record<string, string>>,
 ) {
-	const { minimum, maximum } = bounds(attributes);
+	const { minimum, maximum } = rangeSettings(attributes);
 	return {
 		...numberValidity(value, attributes),
 		rangeUnderflow: Number(value) < minimum,

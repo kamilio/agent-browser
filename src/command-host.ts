@@ -1,3 +1,4 @@
+import { rangeKeyboardCapabilities } from "./range-keyboard.js";
 import { type WaitingAction, runWhenActionable } from "./action-wait.js";
 import { imageMediaTypes } from "./image-decoder.js";
 import {
@@ -396,6 +397,7 @@ export class BrowserCommandHost {
 				chaining: false,
 				autoWait: true,
 			},
+			rangeKeyboard: rangeKeyboardCapabilities,
 			actionWaiting: {
 				partial: true,
 				commands: ["click", "fill", "select", "check", "uncheck"],

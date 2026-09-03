@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Slider-key checkpoint: `RANGE-KEYBOARD.md` adds arrows, Home/End and page steps
+to native ranges with bounded decimal arithmetic, shared constraints and an
+explicit any-step/direction policy. The command capability and library export
+describe the partial profile. Three initial regressions fail; 52 new cases cover
+keys, events, cancellation, callbacks, numeric limits, quotas and command routing.
+Focused checks pass 224 / six files; full native checks pass 7,301 / 213 files.
+Isolated compilation exposed missing navigation/Alt admission in the older
+committed keyboard parser; slider-scoped support preserves its non-range limits
+without bundling the pending keyboard rewrite. The isolated owned patch passes
+production/new-test type checks and 4,541 / 152 available native files. Working
+build and six-source lint pass. Pointer dragging, orientation/presentation,
+platform event fidelity and real runtime/site/socket/TTY gates remain open.
+No unapproved acceptance probe ran.
+
+### Previous range-fill checkpoint
+
 Range-fill checkpoint: `RANGE-FILL.md` connects range controls to direct native
 fill and command action-wait admission. Requests that need clamping or rounding
 fail before the action write; readonly is correctly inapplicable to range while

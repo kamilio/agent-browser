@@ -67,6 +67,13 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 slider-key continuation: `RANGE-KEYBOARD.md` adds arrows, Home/End
+and page increments to focused native ranges, with bounded decimal stepping and
+shared state. Capability reporting describes the explicit any-step/direction
+policy. Fifty-two new cases include cancellation, mutation and command coverage;
+focused validation passes 224 / six files. Pointer dragging, orientation/presentation
+and actual runtime/site/socket/TTY acceptance remain open.
+
 September 3 range-action continuation: `RANGE-FILL.md` connects range controls to
 direct native fill and command readiness. Requests requiring clamping or rounding
 fail instead of silently changing the requested value. Readonly applicability is

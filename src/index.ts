@@ -1,4 +1,5 @@
 export { AgentBrowserError, type ErrorCode } from "./errors.js";
+export { rangeKeyboardCapabilities } from "./range-keyboard.js";
 export {
 	capturePng,
 	capturePdf,
