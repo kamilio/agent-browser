@@ -1,4 +1,4 @@
-# Agent browser: 72-hour implementation tasks
+# Agent browser implementation tasks
 
 Standalone location: `~/project/agent-browser` as of September 3, 2026.
 `MIGRATION.md` records the preserved history, independent tooling and native
@@ -6,7 +6,10 @@ validation boundary. Keep making atomic commits for completed new work; do not
 push unless requested. The original browser scope and acceptance gates remain.
 
 Started: September 1, 2026, approximately 14:58 UTC.
-Work window: through September 4, 2026, approximately 14:58 UTC.
+Original work window: through September 4, 2026, approximately 14:58 UTC.
+Extended September 3: continue for seven more days, through September 10, 2026,
+approximately 17:42 UTC. `SEVEN-DAY-PLAN.md` defines the current priorities and
+acceptance gates without reducing the requested browser scope.
 Status: active; foundation work, not a completed browser.
 
 Scope additions confirmed by the user: cover all Kitesurf features, provide a
