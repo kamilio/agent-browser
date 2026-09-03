@@ -458,8 +458,7 @@ export class DocumentInteractions {
 				previous !== undefined &&
 				group.some((node) => node.id === previous)
 			) {
-				for (const node of group)
-					this.tree.setControl(node.id, { checked: node.id === previous });
+				this.tree.setInputChecked(previous, true, false);
 			} else this.tree.setControl(current.id, { checked: false });
 		}
 	}

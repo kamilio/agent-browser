@@ -1,3 +1,4 @@
+import { DocumentCheckedness } from "./document-checkedness.js";
 import { DocumentSelection } from "./document-selection.js";
 import { canRewriteDocumentUrl } from "./document-url.js";
 import { AgentBrowserError } from "./errors.js";
@@ -88,6 +89,10 @@ export class DocumentTree {
 		(change: Readonly<DocumentChange>) => void
 	>();
 	private readonly selections = new DocumentSelection(
+		(id) => this.node(id),
+		(id) => this.changed("control", id),
+	);
+	private readonly checkedness = new DocumentCheckedness(
 		(id) => this.node(id),
 		(id) => this.changed("control", id),
 	);
@@ -215,6 +220,7 @@ export class DocumentTree {
 			this.textCodeUnits += key.length + value.length;
 		}
 		this.selections.initialize(id);
+		this.checkedness.initialize(id);
 		return id;
 	}
 
@@ -281,6 +287,10 @@ export class DocumentTree {
 				state: sourceTree.selections,
 				id: source.id,
 			});
+			this.checkedness.initialize(copyId, {
+				state: sourceTree.checkedness,
+				id: source.id,
+			});
 			this.textCodeUnits += extraText(source);
 			copies.set(source.id, copyId);
 			const parent =
@@ -295,6 +305,7 @@ export class DocumentTree {
 		if (copy === undefined)
 			throw new AgentBrowserError("not-found", "Clone root was not allocated");
 		this.selections.moved(copy);
+		this.checkedness.moved(copy);
 		return copy;
 	}
 
@@ -449,6 +460,7 @@ export class DocumentTree {
 			for (const moving of children) {
 				this.node(moving).parent = parentId;
 				this.selections.moved(moving);
+				this.checkedness.moved(moving);
 				this.changed("insert", moving);
 			}
 			return;
@@ -470,6 +482,7 @@ export class DocumentTree {
 			parent.children.splice(index, 0, moving);
 			node.parent = parentId;
 			this.selections.moved(moving);
+			this.checkedness.moved(moving);
 			this.changed("insert", moving);
 		}
 		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
@@ -502,6 +515,7 @@ export class DocumentTree {
 		for (const child of previous) {
 			this.node(child).parent = null;
 			this.selections.moved(child);
+			this.checkedness.moved(child);
 			this.changed("remove", child);
 		}
 		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
@@ -517,6 +531,7 @@ export class DocumentTree {
 		parent.children.splice(parent.children.indexOf(id), 1);
 		node.parent = null;
 		this.selections.moved(id);
+		this.checkedness.moved(id);
 		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
 			this.currentFocus = null;
 		this.changed("remove", id);
@@ -549,6 +564,7 @@ export class DocumentTree {
 		this.textCodeUnits += change;
 		this.changed("attribute", id);
 		this.selections.attribute(id, key);
+		this.checkedness.attribute(id, key, previous);
 	}
 
 	toggleAttribute(id: number, name: string, force?: boolean): boolean {
@@ -571,6 +587,7 @@ export class DocumentTree {
 		const node = this.element(id);
 		const key = htmlAttributeName(name);
 		if (!Object.hasOwn(node.attributes, key)) return;
+		const previous = node.attributes[key];
 		this.textCodeUnits -= key.length + node.attributes[key].length;
 		removeHtmlAttribute(node.attributes, key);
 		const attributeId = this.attachedAttributes.get(id)?.get(key);
@@ -581,6 +598,7 @@ export class DocumentTree {
 		}
 		this.changed("attribute", id);
 		this.selections.attribute(id, key);
+		this.checkedness.attribute(id, key, previous);
 	}
 
 	createAttribute(name: string, value = ""): number {
@@ -661,6 +679,7 @@ export class DocumentTree {
 		this.textCodeUnits += change;
 		this.changed("attribute", id);
 		this.selections.attribute(id, attribute.name);
+		this.checkedness.attribute(id, attribute.name, previous);
 		return original;
 	}
 
@@ -866,7 +885,20 @@ export class DocumentTree {
 		node.control = { ...node.control, ...state };
 		if (node.tagName === "option" && state.selected !== undefined)
 			this.selections.setOption(id, state.selected);
+		if (node.tagName === "input" && state.checked !== undefined)
+			this.checkedness.set(id, state.checked);
 		this.changed("control", id);
+	}
+
+	setInputChecked(id: number, checked: boolean, dirty = true) {
+		const node = this.element(id);
+		if (
+			node.tagName !== "input" ||
+			typeof checked !== "boolean" ||
+			typeof dirty !== "boolean"
+		)
+			throw new AgentBrowserError("invalid-input", "Invalid input checkedness");
+		this.checkedness.set(id, checked, dirty);
 	}
 
 	setSelectSelection(
@@ -909,6 +941,10 @@ export class DocumentTree {
 			);
 		let changed = false;
 		for (const field of new Set<keyof ControlState>(fields)) {
+			if (field === "checked" && node.tagName === "input") {
+				this.checkedness.clear(id);
+				continue;
+			}
 			if (field === "selected" && node.tagName === "option") {
 				this.selections.clearOption(id);
 				continue;
@@ -1055,6 +1091,7 @@ export class DocumentTree {
 		if (this.closed) return;
 		this.closed = true;
 		this.selections.close();
+		this.checkedness.close();
 		this.nodes.clear();
 		this.nodeViews.clear();
 		this.attributeRecords.clear();

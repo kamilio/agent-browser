@@ -1,9 +1,4 @@
-import {
-	controlChecked,
-	controlValue,
-	inputType,
-	radioGroup,
-} from "./controls.js";
+import { controlChecked, controlValue, inputType } from "./controls.js";
 import { documentScriptState } from "./document-script-state.js";
 import {
 	documentBody,
@@ -668,12 +663,8 @@ export class ScriptDom {
 						return controlChecked(this.tree, id);
 					},
 					set: (value) => {
-						const node = this.read(id);
-						const checked = Boolean(value);
-						if (inputType(node) === "radio" && checked)
-							for (const peer of radioGroup(this.tree, id))
-								this.tree.setControl(peer.id, { checked: peer.id === id });
-						else this.tree.setControl(id, { checked });
+						this.read(id);
+						this.tree.setInputChecked(id, Boolean(value));
 					},
 				};
 			}

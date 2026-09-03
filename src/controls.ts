@@ -63,7 +63,6 @@ interface ControlIndex {
 	optionOwners: Map<number, number>;
 	datalist: Set<number>;
 	radioGroups: Map<string, Readonly<DocumentNode>[]>;
-	radioChecked: Set<number>;
 	selected: Set<number>;
 	labels: Map<number, number>;
 }
@@ -130,7 +129,6 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 		optionOwners: new Map(),
 		datalist: new Set(),
 		radioGroups: new Map(),
-		radioChecked: new Set(),
 		selected: new Set(),
 		labels: new Map(),
 	};
@@ -181,7 +179,10 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 			index.disabled.add(node.id);
 		if (associatedTags.has(node.tagName)) {
 			let owner: number | undefined;
-			if (Object.hasOwn(node.attributes, "form")) {
+			if (
+				nodes.get(root)?.kind === "document" &&
+				Object.hasOwn(node.attributes, "form")
+			) {
 				const target = nodes.get(htmlIds.get(node.attributes.form) ?? -1);
 				if (target?.tagName === "form") owner = target.id;
 			} else {
@@ -222,20 +223,6 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 			group.push(node);
 			index.radioGroups.set(key, group);
 		}
-	}
-	for (const group of index.radioGroups.values()) {
-		const explicit = group.filter(
-			(candidate) => candidate.control.checked === true,
-		);
-		const selected = explicit.length
-			? explicit
-			: group.filter(
-					(candidate) =>
-						candidate.control.checked ??
-						Object.hasOwn(candidate.attributes, "checked"),
-				);
-		const winner = selected.at(-1);
-		if (winner) index.radioChecked.add(winner.id);
 	}
 	for (const options of index.options.values())
 		for (const option of options)
@@ -345,9 +332,7 @@ export function optionValue(tree: DocumentTree, id: number) {
 
 export function controlChecked(tree: DocumentTree, id: number) {
 	const node = tree.get(id);
-	if (inputType(node) !== "radio" || !node.attributes.name)
-		return node.control.checked ?? Object.hasOwn(node.attributes, "checked");
-	return indexFor(tree, id).radioChecked.has(id);
+	return node.control.checked ?? Object.hasOwn(node.attributes, "checked");
 }
 
 export function controlValue(tree: DocumentTree, id: number): string {
@@ -485,22 +470,7 @@ export function setControlChecked(
 			"not-actionable",
 			"Expected a checkbox or radio",
 		);
-	if (inputType(node) === "radio" && node.attributes.name) {
-		const index = indexFor(tree);
-		const states = (index.radioGroups.get(radioKey(index, node)) ?? []).map(
-			(candidate) => ({
-				id: candidate.id,
-				checked:
-					candidate.id === node.id
-						? checked
-						: checked
-							? false
-							: controlChecked(tree, candidate.id),
-			}),
-		);
-		for (const state of states)
-			tree.setControl(state.id, { checked: state.checked });
-	} else tree.setControl(node.id, { checked });
+	tree.setInputChecked(node.id, checked);
 }
 
 export function selectControlValues(

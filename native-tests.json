@@ -146,6 +146,7 @@
   "src/portable-boundary.test.ts",
   "src/programmatic-click.test.ts",
   "src/query-state-cache.test.ts",
+  "src/radio-state.test.ts",
   "src/raster-image.test.ts",
   "src/raster.test.ts",
   "src/reference-images.test.ts",

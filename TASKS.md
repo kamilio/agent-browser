@@ -19,6 +19,21 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Radio-state checkpoint: `RADIO-STATE.md` fixes the reproduced radio selection bug
+with a native checkedness owner that separates dirty/default/automatic peer state.
+Attribute transitions, group/form/root changes, reset, clone/import and canceled
+activation preserve actual selection rather than recomputing it from defaults.
+Eight baseline cases failed; thirty-five new cases include 500 deterministic
+model transitions and a 2,001-radio switch requiring at most six native node reads.
+Focused validation passes 196 / nine files; full native validation passes 6,505 /
+199 files. The isolated owned patch typechecks and passes 3,745 / 138 available
+native files. Build, strict test types and targeted lint/formatting pass; existing
+import ordering is preserved. Parser form associations, repeated structural work,
+input type value transitions and actual runtime/site/socket/UI gates remain open.
+No unapproved probe ran.
+
+### Previous form-default checkpoint
+
 Form-default checkpoint: `FORM-DEFAULTS.md` adds input defaultValue/defaultChecked
 and textarea defaultValue through shared attribute/text owners. Clean textarea
 values now ignore nested element text. Seven baseline reproductions fail;

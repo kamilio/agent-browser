@@ -67,6 +67,12 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 radio-state continuation: `RADIO-STATE.md` fixes checkedness mutation
+ordering and separates default/dirty/automatic peer state in a shared native
+owner. Reset, cloning, form-reference changes and cancellation are exercised;
+large-group writes avoid full scans. Parser form associations, structural scaling
+and actual runtime/site/socket/UI acceptance remain open.
+
 September 3 form-default continuation: `FORM-DEFAULTS.md` adds input/textarea
 defaults and fixes clean textarea values to use direct text children. Native
 reset/submission/selector checks pass. A separate reproduction exposes existing

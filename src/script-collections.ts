@@ -2,7 +2,6 @@ import {
 	controlChecked,
 	formControls,
 	inputType,
-	radioGroup,
 	selectOptions,
 	selectedOptions,
 } from "./controls.js";
@@ -188,10 +187,7 @@ export class ScriptCollections {
 											(node.attributes.value ?? "on") !== wanted
 										)
 											continue;
-										for (const peer of radioGroup(this.tree, id))
-											this.tree.setControl(peer.id, {
-												checked: peer.id === id,
-											});
+										this.tree.setInputChecked(id, true);
 										break;
 									}
 								},
