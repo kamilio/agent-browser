@@ -5,6 +5,12 @@ import {
 	radioGroup,
 } from "./controls.js";
 import { documentScriptState } from "./document-script-state.js";
+import {
+	documentBody,
+	documentElement,
+	documentHead,
+	setDocumentBody,
+} from "./document-elements.js";
 import { documentImages } from "./document-images.js";
 import { NodeRelations } from "./node-relations.js";
 import { documentBaseUrl } from "./document-url.js";
@@ -399,22 +405,24 @@ export class ScriptDom {
 				body: {
 					get: () => {
 						this.read(id);
-						return this.optional(this.queries.querySelector("body"));
+						return this.optional(documentBody(this.tree));
+					},
+					set: (value: unknown) => {
+						this.read(id);
+						setDocumentBody(this.tree, this.identify(value));
 					},
 				},
 				head: {
 					get: () => {
 						this.read(id);
-						return this.optional(this.queries.querySelector("head"));
+						return this.optional(documentHead(this.tree));
 					},
 				},
 				documentElement: {
-					get: () =>
-						this.optional(
-							this.read(id).children.find(
-								(child) => this.read(child).kind === "element",
-							),
-						),
+					get: () => {
+						this.read(id);
+						return this.optional(documentElement(this.tree));
+					},
 				},
 			});
 			Object.assign(definition.methods, {

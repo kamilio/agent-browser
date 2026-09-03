@@ -19,6 +19,18 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Structural-document checkpoint: `DOCUMENT-ELEMENTS.md` adds native body replacement
+and direct-child head/body selection, sharing helpers with document title creation.
+Eleven initial regressions failed; thirty-four new cases cover identity, moves,
+no-op behavior, resource/cycle failures, native focus and downstream tree consumers.
+Focused validation passes 109 tests / five files. The full working tree passes
+6,175 tests / 189 native files with no unhandled errors. After correcting a setter
+type annotation, build, strict test types and source lint/formatting pass. Foreign
+adoption, DOMException parity, frameset browsing, guest-runtime, real-site, socket
+and UI acceptance remain open; no unapproved live probe has run.
+
+### Previous title checkpoint
+
 Document-title checkpoint: `DOCUMENT-TITLE.md` adds live `document.title` and
 `HTMLTitleElement.text`, with shared extraction semantics, literal mutation,
 native identity and bounded atomic creation. Twenty initial cases failed before

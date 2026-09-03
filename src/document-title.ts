@@ -1,3 +1,4 @@
+import { documentElement, documentHead } from "./document-elements.js";
 import { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 
@@ -30,23 +31,14 @@ export function documentTitle(tree: DocumentTree): string {
 export function setDocumentTitle(tree: DocumentTree, value: string): void {
 	if (typeof value !== "string")
 		throw new AgentBrowserError("invalid-input", "Expected title text");
-	const element = tree
-		.get(tree.root)
-		.children.find((id) => tree.get(id).kind === "element");
+	const element = documentElement(tree);
 	if (element === undefined) return;
 	const title = titleElement(tree);
 	if (title !== undefined) {
 		tree.setTextContent(title, value);
 		return;
 	}
-	const root = tree.get(element);
-	const head =
-		root.tagName === "html"
-			? root.children.find(
-					(id) =>
-						tree.get(id).kind === "element" && tree.get(id).tagName === "head",
-				)
-			: undefined;
+	const head = documentHead(tree);
 	if (head === undefined) return;
 	const staged = new DocumentTree(tree.url, tree.limits);
 	try {

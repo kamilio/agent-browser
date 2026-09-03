@@ -67,6 +67,11 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 structural-DOM continuation: `DOCUMENT-ELEMENTS.md` adds native body
+replacement and correct direct-child head/body selection, sharing readers with
+title creation. Native identity, validation failures and downstream tree consumers
+are tested; cross-document adoption and actual runtime/site/UI gates remain open.
+
 September 3 title continuation: `DOCUMENT-TITLE.md` adds live native document/title
 text bindings and shares their semantics with extraction metadata. Atomic creation,
 quota failures and isolated owners are checked without substituting native host

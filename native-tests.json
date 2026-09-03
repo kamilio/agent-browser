@@ -31,6 +31,7 @@
   "src/css-text.test.ts",
   "src/css-variables.test.ts",
   "src/deflate.test.ts",
+  "src/document-elements.test.ts",
   "src/document-fragments.test.ts",
   "src/document-geometry.test.ts",
   "src/document-images.test.ts",
