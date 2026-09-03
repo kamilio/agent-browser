@@ -67,6 +67,11 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 attribute-contract continuation: `ATTRIBUTE-OPERATIONS.md` adds native
+toggle/presence operations, required-argument guards and own-attribute reads.
+No-op identity, control/style integration and failure atomicity are tested;
+attribute enumeration and actual runtime/site/socket/UI gates remain open.
+
 September 3 element-traversal continuation: `ELEMENT-TRAVERSAL.md` adds native
 element-only child/sibling access with shared identity, mutation-aware bounded
 caching and independently instrumented work counts. Full NodeList/prototype,

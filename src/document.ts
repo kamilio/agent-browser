@@ -538,6 +538,21 @@ export class DocumentTree {
 		this.selections.attribute(id, key);
 	}
 
+	toggleAttribute(id: number, name: string, force?: boolean): boolean {
+		this.validateAttribute(name);
+		if (force !== undefined && typeof force !== "boolean")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Expected a boolean attribute force",
+			);
+		const key = htmlAttributeName(name);
+		const present = Object.hasOwn(this.element(id).attributes, key);
+		const wanted = force ?? !present;
+		if (wanted && !present) this.setAttribute(id, key, "");
+		else if (!wanted && present) this.removeAttribute(id, key);
+		return wanted;
+	}
+
 	removeAttribute(id: number, name: string) {
 		this.validateAttribute(name);
 		const node = this.element(id);

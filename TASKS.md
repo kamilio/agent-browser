@@ -19,6 +19,19 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Attribute-contract checkpoint: `ATTRIBUTE-OPERATIONS.md` adds native toggling and
+presence queries, required-argument guards and own-attribute reads. Ten initial
+reproductions failed; two additional failures exposed inherited-property leakage.
+Forty-four new cases now cover no-op identity, control/style state, coercion,
+Unicode names, closure and failure atomicity. Focused validation passes 121 tests
+/ five files; full native validation passes 6,343 / 195 files. The isolated patch
+passes typechecking and 3,583 tests / 134 available native files. Build, strict
+test types and targeted lint/formatting pass. Attribute enumeration/order,
+namespaces and actual SafeJS/site/socket/terminal/UI gates remain open; no
+unapproved probe has run.
+
+### Previous element-traversal checkpoint
+
 Element-traversal checkpoint: `ELEMENT-TRAVERSAL.md` adds readonly native
 element-child and element-sibling access, including CharacterData sibling lookup.
 Eight initial reproductions failed; thirty-one new cases cover identity, mutation,

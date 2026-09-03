@@ -22,7 +22,6 @@ import {
 import { writeDocument } from "./document-write.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
-import { htmlAttributeName } from "./html-attribute-name.js";
 import { ScriptDatasets } from "./script-dataset.js";
 import { ElementTraversal } from "./element-traversal.js";
 import {
@@ -505,6 +504,7 @@ export class ScriptDom {
 			});
 		}
 		if (initial.kind === "element") {
+			Object.assign(definition.methods, this.attributes.elementMethods(id));
 			definition.properties.dataset = {
 				get: () => {
 					this.read(id);
@@ -643,21 +643,6 @@ export class ScriptDom {
 					this.attributes.set(id, attribute),
 				removeAttributeNode: (attribute: unknown) =>
 					this.attributes.remove(id, attribute),
-				getAttribute: (name: unknown) =>
-					this.read(id).attributes[htmlAttributeName(domString(name))] ?? null,
-				hasAttribute: (name: unknown) =>
-					Object.hasOwn(
-						this.read(id).attributes,
-						htmlAttributeName(domString(name)),
-					),
-				setAttribute: (name: unknown, value: unknown) => {
-					this.read(id);
-					this.tree.setAttribute(id, domString(name), domString(value));
-				},
-				removeAttribute: (name: unknown) => {
-					this.read(id);
-					this.tree.removeAttribute(id, domString(name));
-				},
 				matches: (selector: unknown) => {
 					this.read(id);
 					return this.queries.matches(id, domString(selector));

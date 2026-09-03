@@ -2,6 +2,7 @@
   "src/action-wait.test.ts",
   "src/adjacent-insertion.test.ts",
   "src/async-actions.test.ts",
+  "src/attribute-operations.test.ts",
   "src/bitmap-font.test.ts",
   "src/block-width.test.ts",
   "src/borders.test.ts",

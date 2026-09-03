@@ -1,6 +1,7 @@
 import type { DocumentTree } from "./document.js";
-import type { NodeRelations } from "./node-relations.js";
 import { AgentBrowserError } from "./errors.js";
+import { htmlAttributeName } from "./html-attribute-name.js";
+import type { NodeRelations } from "./node-relations.js";
 import {
 	type ScriptHostObjectDefinition,
 	type ScriptHostObjectFactory,
@@ -21,6 +22,54 @@ export class ScriptAttributes {
 		private readonly node: (id: number) => object,
 		private readonly relations: NodeRelations,
 	) {}
+
+	elementMethods(
+		id: number,
+	): NonNullable<ScriptHostObjectDefinition["methods"]> {
+		const read = () => {
+			this.ensureOpen();
+			const node = this.tree.get(id);
+			if (node.kind !== "element")
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Attribute methods require an element",
+				);
+			return node;
+		};
+		read();
+		return {
+			getAttribute: (...args) => {
+				const attributes = read().attributes;
+				const name = htmlAttributeName(this.argument(args, 1));
+				return Object.hasOwn(attributes, name) ? attributes[name] : null;
+			},
+			hasAttribute: (...args) =>
+				Object.hasOwn(
+					read().attributes,
+					htmlAttributeName(this.argument(args, 1)),
+				),
+			hasAttributes: () => Object.keys(read().attributes).length > 0,
+			setAttribute: (...args) => {
+				read();
+				const name = this.argument(args, 2);
+				this.tree.setAttribute(id, name, domString(args[1]));
+			},
+			removeAttribute: (...args) => {
+				const attributes = read().attributes;
+				const name = htmlAttributeName(this.argument(args, 1));
+				if (Object.hasOwn(attributes, name))
+					this.tree.removeAttribute(id, name);
+			},
+			toggleAttribute: (...args) => {
+				read();
+				return this.tree.toggleAttribute(
+					id,
+					this.argument(args, 1),
+					args[1] === undefined ? undefined : Boolean(args[1]),
+				);
+			},
+		};
+	}
 
 	map(id: number): object {
 		this.ensureOpen();
