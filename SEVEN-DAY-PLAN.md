@@ -42,6 +42,10 @@ expiry, host/path/security preservation and all-or-nothing validation. This is a
 prerequisite for `state-save`/`state-load`, not a substitute for their private-file
 and CLI acceptance gates. Integrate storage and client-side file operations next.
 
+September 3 progress: `COOKIE-STATE.md` implements that cookie primitive with
+39 new native cases. Cookie/storage regressions pass 104 tests across three files;
+CLI file integration and the combined cookie/local-storage transaction remain next.
+
 ## Acceptance and safety
 
 - Keep every requirement in `COMPATIBILITY.md`; do not turn missing behavior into

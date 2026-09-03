@@ -34,21 +34,78 @@ export type CookieSetResult =
 	| { accepted: true; deleted: boolean }
 	| { accepted: false; reason: CookieRejection };
 
-interface StoredCookie {
-	name: string;
-	value: string;
-	host: string;
-	path: string;
-	secure: boolean;
-	httpOnly: boolean;
-	sameSite: "strict" | "lax" | "none";
-	expires: number | null;
+export interface CookieStateEntry {
+	readonly name: string;
+	readonly value: string;
+	readonly host: string;
+	readonly path: string;
+	readonly secure: boolean;
+	readonly httpOnly: boolean;
+	readonly sameSite: "strict" | "lax" | "none";
+	readonly expires: number | null;
+}
+
+export interface CookieState {
+	readonly schemaVersion: 1;
+	readonly cookies: readonly CookieStateEntry[];
+}
+
+export const cookieStateLimits = Object.freeze({ maxBytes: 16_777_216 });
+
+interface StoredCookie extends CookieStateEntry {
 	created: number;
 }
 
 const encoder = new TextEncoder();
 const safeMethods = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 const maximumLifetime = 400 * 24 * 60 * 60 * 1000;
+const stateFields = [
+	"name",
+	"value",
+	"host",
+	"path",
+	"secure",
+	"httpOnly",
+	"sameSite",
+	"expires",
+] as const;
+const stateEnvelopeBytes = JSON.stringify({
+	schemaVersion: 1,
+	cookies: [],
+}).length;
+
+function stateRecord(input: unknown, fields: readonly string[]) {
+	if (
+		!input ||
+		typeof input !== "object" ||
+		Array.isArray(input) ||
+		![Object.prototype, null].includes(Object.getPrototypeOf(input)) ||
+		Reflect.ownKeys(input).length !== fields.length
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid cookie state record");
+	const result: Record<string, unknown> = Object.create(null);
+	for (const field of fields) {
+		const descriptor = Object.getOwnPropertyDescriptor(input, field);
+		if (!descriptor || !("value" in descriptor))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid cookie state field",
+			);
+		result[field] = descriptor.value;
+	}
+	return result;
+}
+
+function stateSize(bytes: number, cookie: CookieStateEntry, index: number) {
+	const total =
+		bytes + encoder.encode(JSON.stringify(cookie)).byteLength + (index ? 1 : 0);
+	if (total > cookieStateLimits.maxBytes)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Cookie state exceeds its byte limit",
+		);
+	return total;
+}
 
 export function cookiePathMatches(path: string, cookiePath: string) {
 	return (
@@ -212,6 +269,151 @@ export class CookieJar {
 
 	documentCookie(url: string, siteUrl: string | null): string {
 		return this.retrieve(url, { siteUrl }, true);
+	}
+
+	exportState(): CookieState {
+		this.assertOpen();
+		this.prune(this.now());
+		let bytes = stateEnvelopeBytes;
+		const cookies = Array.from(this.cookies.values())
+			.sort((left, right) => left.created - right.created)
+			.map((stored, index) => {
+				const { created: _created, ...cookie } = stored;
+				bytes = stateSize(bytes, cookie, index);
+				return Object.freeze(cookie);
+			});
+		return Object.freeze({ schemaVersion: 1, cookies: Object.freeze(cookies) });
+	}
+
+	replaceState(input: unknown) {
+		this.assertOpen();
+		const state = stateRecord(input, ["schemaVersion", "cookies"]);
+		if (state.schemaVersion !== 1 || !Array.isArray(state.cookies))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid cookie state schema",
+			);
+		if (state.cookies.length > this.limits.maxCookies)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Cookie state exceeds the cookie limit",
+			);
+		if (Reflect.ownKeys(state.cookies).length !== state.cookies.length + 1)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid cookie state array",
+			);
+		const now = this.now();
+		const replacement = new Map<string, StoredCookie>();
+		const keys = new Set<string>();
+		const hosts = new Map<string, number>();
+		let bytes = stateEnvelopeBytes;
+		for (let index = 0; index < state.cookies.length; index++) {
+			const descriptor = Object.getOwnPropertyDescriptor(
+				state.cookies,
+				String(index),
+			);
+			if (!descriptor || !("value" in descriptor))
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid cookie state array entry",
+				);
+			const row = stateRecord(descriptor.value, stateFields);
+			if (
+				typeof row.name !== "string" ||
+				typeof row.value !== "string" ||
+				typeof row.host !== "string" ||
+				typeof row.path !== "string" ||
+				typeof row.secure !== "boolean" ||
+				typeof row.httpOnly !== "boolean" ||
+				typeof row.sameSite !== "string" ||
+				!["strict", "lax", "none"].includes(row.sameSite) ||
+				!(
+					row.expires === null ||
+					(Number.isSafeInteger(row.expires) && Number(row.expires) >= 0)
+				)
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid cookie state values",
+				);
+			if (row.name.length + row.value.length + 1 > this.limits.maxCookieBytes)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Cookie state entry exceeds the cookie byte limit",
+				);
+			const unquoted =
+				row.value.length >= 2 &&
+				row.value.startsWith('"') &&
+				row.value.endsWith('"')
+					? row.value.slice(1, -1)
+					: row.value;
+			if (
+				!/^[!#$%&'*+.^_`|~0-9a-z-]+$/i.test(row.name) ||
+				!/^[\x21\x23-\x2b\x2d-\x3a\x3c-\x5b\x5d-\x7e]*$/.test(unquoted) ||
+				row.host.length > 16_384 ||
+				!row.host.length ||
+				row.path.length > 16_384 ||
+				!row.path.startsWith("/") ||
+				/[^\t\x20-\x7e]/.test(row.path) ||
+				(row.sameSite === "none" && !row.secure) ||
+				(row.name.toLowerCase().startsWith("__secure-") && !row.secure) ||
+				(row.name.toLowerCase().startsWith("__host-") &&
+					(!row.secure || row.path !== "/"))
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid cookie state attributes",
+				);
+			const host = parseNetworkUrl(`http://${row.host}`);
+			if (
+				host.hostname !== row.host ||
+				host.host !== row.host ||
+				host.pathname !== "/" ||
+				host.search ||
+				host.hash
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Cookie state host is not canonical",
+				);
+			const cookie: CookieStateEntry = {
+				name: row.name,
+				value: row.value,
+				host: row.host,
+				path: row.path,
+				secure: row.secure,
+				httpOnly: row.httpOnly,
+				sameSite: row.sameSite as CookieStateEntry["sameSite"],
+				expires: row.expires as number | null,
+			};
+			bytes = stateSize(bytes, cookie, index);
+			const key = JSON.stringify([cookie.host, cookie.name, cookie.path]);
+			if (keys.has(key))
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Duplicate cookie state entry",
+				);
+			keys.add(key);
+			if (cookie.expires !== null && cookie.expires <= now) continue;
+			const count = (hosts.get(cookie.host) ?? 0) + 1;
+			if (count > this.limits.maxCookiesPerHost)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Cookie state exceeds the per-host limit",
+				);
+			hosts.set(cookie.host, count);
+			replacement.set(key, {
+				...cookie,
+				expires:
+					cookie.expires === null
+						? null
+						: Math.min(cookie.expires, now + maximumLifetime),
+				created: replacement.size,
+			});
+		}
+		this.cookies = replacement;
+		this.sequence = replacement.size;
 	}
 
 	metrics() {

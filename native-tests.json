@@ -16,6 +16,7 @@
   "src/computed-styles.test.ts",
   "src/control-rendering.test.ts",
   "src/controls.test.ts",
+  "src/cookie-state.test.ts",
   "src/cookies.test.ts",
   "src/css-background.test.ts",
   "src/css-box.test.ts",

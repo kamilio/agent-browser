@@ -89,6 +89,9 @@ export {
 } from "./session.js";
 export {
 	CookieJar,
+	cookieStateLimits,
+	type CookieState,
+	type CookieStateEntry,
 	cookieSameSite,
 	cookiePathMatches,
 	type CookieContext,

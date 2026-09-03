@@ -19,6 +19,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Cookie-state checkpoint: `COOKIE-STATE.md` adds bounded native export and atomic
+replacement, preserving host/path/security data, creation order and absolute
+expiry without exposing state to page JavaScript. Thirty-nine new cases pass;
+cookie/storage regressions total 104 tests across three files. The full working
+tree passes 5,803 tests / 179 explicit native files, while the isolated staged
+change passes 3,043 tests / 118 available files. Build, strict cookie-test checks
+and three-file lint/format checks pass. No live/runtime probe is claimed.
+
+Next: combine cookie and local-storage validation before either owner changes,
+then implement private CLI `state-save`/`state-load` file round trips. This native
+primitive does not complete those CLI or real authentication acceptance gates.
+
+### Previous playground-tab checkpoint
+
 Node-relations checkpoint: `contains`, `compareDocumentPosition`, `isSameNode`
 and `isEqualNode` work on document/fragment/element/text/comment/attribute
 capabilities. Bounded iterative traversal, owner revocation and live ordering are
