@@ -67,6 +67,14 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 numeric-constraint continuation: `INPUT-NUMBER.md` enables native
+number min/max/step validation with shared strict value admission and separate
+HTML numeric-attribute prefix parsing. Bounded canonical-decimal arithmetic avoids
+overflowing differences and rounded integral quotients. The 110-case file covers
+5,265 independent lattice cases and long inputs. Cross-engine precision boundaries,
+UI bad input, numeric page APIs, calendar constraints and actual runtime/site/
+socket/UI acceptance remain open.
+
 September 3 email continuation: `INPUT-EMAIL.md` enables native single/multiple
 email submission validation, corrects token sanitization and makes multiple-mode
 changes preserve current state. Sixty-three new cases cover syntax, state, events,

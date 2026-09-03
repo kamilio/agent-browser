@@ -1,6 +1,7 @@
 import type { DocumentNode } from "./document.js";
 import { sanitizeCalendarInput } from "./input-calendar.js";
 import { sanitizeEmailValue } from "./input-email.js";
+import { validNumberValue } from "./input-number.js";
 
 const types = new Set([
 	"hidden",
@@ -58,11 +59,6 @@ export function sanitizeInputValue(
 	if (["text", "search", "tel", "url", "password"].includes(type))
 		value = value.replace(/[\r\n]/g, "");
 	if (type === "url") value = value.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "");
-	if (
-		type === "number" &&
-		(!/^-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value) ||
-			!Number.isFinite(Number(value)))
-	)
-		return "";
+	if (type === "number" && !validNumberValue(value)) return "";
 	return value;
 }

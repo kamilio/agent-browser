@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Numeric-constraint checkpoint: `INPUT-NUMBER.md` enables native number submission
+checks for min/max/step instead of rejecting nonempty controls as unsupported.
+Strict value admission remains shared; numeric attributes follow the distinct
+HTML prefix parser. Bounded canonical-decimal arithmetic handles tiny steps and
+overflowing differences without rounding a quotient into false validity. Seven
+initial submission regressions fail; the two existing newline guards already pass.
+The new 110-case file includes 5,265 lattice combinations, finite extremes, long
+inputs, dynamic constraints, page values, defaults/reset and event ordering.
+Focused validation passes 331 / seven files; full native validation passes
+6,840 / 205 files. An isolated owned patch typechecks and passes 4,080 / 144
+available native files. Build, strict test types and targeted lint pass. Numeric
+precision parity, UI bad input, page validity/conversion/stepping, calendar
+constraints and actual runtime/site/socket/UI gates remain open. No unapproved
+probe ran; numeric validation does not imply those broader acceptance gates.
+
+### Previous email-value checkpoint
+
 Email-value checkpoint: `INPUT-EMAIL.md` adds native single/multiple-address
 validation for form submission and corrects multiple token sanitization. Toggling
 multiple no longer resurrects old whitespace; current/default dirtiness, copying,

@@ -1,6 +1,7 @@
 import { textareaDefaultValue } from "./control-defaults.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { validNumberValue } from "./input-number.js";
 import { inputType, sanitizeInputValue } from "./input-values.js";
 
 export { inputType } from "./input-values.js";
@@ -372,8 +373,7 @@ export function validateTextControl(
 		node.tagName === "input" &&
 		inputType(node) === "number" &&
 		value &&
-		(!/^-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value) ||
-			!Number.isFinite(Number(value)))
+		!validNumberValue(value)
 	)
 		throw new AgentBrowserError(
 			"invalid-input",

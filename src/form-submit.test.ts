@@ -4,7 +4,6 @@ import { BrowserSubmitEvent } from "./form-actions.js";
 import { DocumentInteractions } from "./interactions.js";
 
 const nonemptyValues: Record<string, string> = {
-	number: "12",
 	date: "2024-01-01",
 	month: "2024-01",
 	week: "2024-W01",
@@ -147,7 +146,7 @@ it.each(["pattern", "min", "max", "step", "minlength", "maxlength"])(
 	},
 );
 
-it.each(["number", "date", "range", "color"])(
+it.each(["date", "range", "color"])(
 	"does not invent validity for %s inputs",
 	(type) => {
 		const { add, submit } = fixture();
@@ -156,7 +155,7 @@ it.each(["number", "date", "range", "color"])(
 	},
 );
 
-it.each(["number", "date", "month", "week", "time", "datetime-local"])(
+it.each(["date", "month", "week", "time", "datetime-local"])(
 	"validates empty %s controls without claiming nonempty type support",
 	(type) => {
 		const { tree, add, submit } = fixture();

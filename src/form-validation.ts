@@ -14,10 +14,14 @@ import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import type { FormSubmissionOptions } from "./forms.js";
 import { validEmailValue } from "./input-email.js";
+import {
+	type NumberConstraintFailure,
+	numberConstraintFailure,
+} from "./input-number.js";
 
 export interface InvalidFormControl {
 	reference: string;
-	reason: "value-missing" | "type-mismatch";
+	reason: "value-missing" | "type-mismatch" | NumberConstraintFailure;
 }
 
 export function invalidFormControls(
@@ -78,6 +82,15 @@ export function invalidFormControls(
 					reference: tree.reference(control.id),
 					reason: "value-missing",
 				});
+			continue;
+		}
+		if (control.tagName === "input" && type === "number") {
+			const reason = numberConstraintFailure(
+				controlValue(tree, control.id),
+				control.attributes,
+			);
+			if (reason)
+				invalid.push({ reference: tree.reference(control.id), reason });
 			continue;
 		}
 		if (
