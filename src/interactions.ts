@@ -1,3 +1,4 @@
+import { prepareControlFill } from "./control-fill.js";
 import {
 	controlChecked,
 	fillTextControl,
@@ -9,7 +10,6 @@ import {
 	radioGroup,
 	selectControlValues,
 	setControlChecked,
-	validateTextControl,
 } from "./controls.js";
 import { documentBaseTarget, documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
@@ -97,12 +97,25 @@ export class DocumentInteractions {
 		value: string,
 	): EventAction<InteractionResult> {
 		const node = this.actionable(reference);
-		validateTextControl(this.tree, reference, value);
+		const prepared = prepareControlFill(this.tree, reference, value);
 		if ((yield* this.focus.focusAction(reference)) !== node.id)
 			throw new AgentBrowserError(
 				"not-actionable",
 				"Focus changed before fill",
 			);
+		if (prepared.calendar) {
+			this.actionable(reference);
+			const current = prepareControlFill(this.tree, reference, value);
+			if (current.type !== prepared.type)
+				throw new AgentBrowserError(
+					"not-actionable",
+					"Control type changed before fill",
+				);
+			this.tree.setControl(node.id, { value: current.value }, "user");
+			this.focus.markCommitted(node.id);
+			yield* this.inputAndChange(node.id);
+			return this.result(reference, false);
+		}
 		const allowed = yield {
 			target: node.id,
 			event: new BrowserInputEvent(

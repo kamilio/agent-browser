@@ -104,6 +104,13 @@ export class DocumentFocus {
 			this.baseline.dirty = true;
 	}
 
+	markCommitted(id: number) {
+		if (this.baseline?.id === id && this.tree.activeElement === id) {
+			this.baseline.value = controlValue(this.tree, id);
+			this.baseline.dirty = false;
+		}
+	}
+
 	focus(reference: string | null) {
 		return runEventAction(this.events, this.focusAction(reference));
 	}

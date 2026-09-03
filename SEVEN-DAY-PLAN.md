@@ -67,6 +67,13 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 calendar-action continuation: `CALENDAR-FILL.md` connects all five
+calendar types to native fill and the command action-wait gate. Direct commits
+emit input/change, preserve listener edits and revalidate after focus callbacks;
+text fill remains unchanged. The 51 new cases include an injected command host.
+Focused validation passes 261 / seven files. Pickers, character editing, numeric
+page APIs and actual runtime/site/socket/UI acceptance remain open.
+
 September 3 calendar-validation continuation: `CALENDAR-VALIDITY.md` adds range
 and step flags for date, month, ISO week, time and local datetime, including
 midnight-spanning ranges and bounded exact arithmetic for large years. The 101

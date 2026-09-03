@@ -19,6 +19,21 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Calendar-fill checkpoint: `CALENDAR-FILL.md` connects all five calendar types to
+native sync/async fill and the command action-wait gate. Values normalize before
+the write, targets revalidate after focus callbacks, and direct input/change
+commits avoid duplicate blur changes without erasing listener-created text edits.
+Six initial regressions fail; 51 new cases include controlled async prefixes,
+quota failures and an injected command host. Focused checks pass 261 / seven files;
+the final full native suite passes 7,148 / 210 files. After removing a test-only
+dependency on pre-existing placeholder work, the isolated owned patch typechecks
+and passes 4,388 / 149 available native files. Build, strict new-test types and
+five-source lint pass. Calendar character editing/pickers/numeric APIs, broader
+fill types and actual runtime/site/socket/UI acceptance remain open. No unapproved
+probe ran.
+
+### Previous calendar-validation checkpoint
+
 Calendar-validation checkpoint: `CALENDAR-VALIDITY.md` adds date/month/week/time/
 local-datetime range and step flags to native forms and live page validity. Time
 ranges can span midnight; independent range/step failures coexist. Calendar

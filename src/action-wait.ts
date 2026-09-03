@@ -1,9 +1,8 @@
+import { isFillableControl, prepareControlFill } from "./control-fill.js";
 import {
 	controlChecked,
 	inputType,
-	isTextControl,
 	prepareSelectControlValues,
-	validateTextControl,
 } from "./controls.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -52,14 +51,14 @@ function ready(page: ActionPage, reference: string, action: WaitingAction) {
 	const status = page.interactions.actionability(reference);
 	const node = status.node;
 	if (action.kind === "fill") {
-		if (!isTextControl(node))
+		if (!isFillableControl(node))
 			throw new AgentBrowserError(
 				"not-actionable",
-				"Expected a text or number control",
+				"Expected a text, number or calendar control",
 			);
 		if (status.blocked) return false;
 		if (Object.hasOwn(node.attributes, "readonly")) return false;
-		validateTextControl(page.document, reference, action.value);
+		prepareControlFill(page.document, reference, action.value);
 	} else if (action.kind === "checked") {
 		if (
 			node.tagName !== "input" ||
