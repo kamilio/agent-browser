@@ -19,6 +19,21 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Calendar-value checkpoint: `INPUT-CALENDAR.md` adds shared date/month/week/time/
+local-datetime sanitization and native page setters without host Date/timezones.
+Invalid input clears; local datetime normalizes; defaults, dirty state, copying,
+reset and submission retain the existing native ownership rules. All 21 initial
+regressions fail before the fix. Seventy-five new cases include 24,000 month-end
+candidates across a full Gregorian cycle, week boundaries and 100,000-digit years.
+Focused validation passes 175 / four files; full native validation passes
+6,641 / 202 files. The isolated owned patch typechecks and passes 3,881 / 141
+available native files. Build, strict test types and targeted lint/format pass.
+Calendar constraints/pickers/fill/type, numeric/date conversion, range/color
+sanitizers and actual runtime/site/socket/UI gates remain open. No unapproved
+probe ran; form-data serialization does not establish validated-submit support.
+
+### Previous input-type value checkpoint
+
 Input-type value checkpoint: `INPUT-TYPE-VALUES.md` adds a native value-state owner
 and shared mode/sanitizer helpers. Type changes transfer reflected defaults,
 reset or preserve dirtiness appropriately and do not resurrect sanitized text.

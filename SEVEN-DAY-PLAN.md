@@ -67,6 +67,13 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 calendar-value continuation: `INPUT-CALENDAR.md` adds strict native
+date/month/week/time/local-datetime syntax and page setters, including Gregorian
+cycle arithmetic, large years and canonical local times without host timezones.
+The 75 new cases include an independent 400-year oracle. Calendar constraints,
+pickers, fill/type interactions, range/color sanitizers and actual runtime/site/
+socket/UI acceptance remain open; native serialization is not validated submit.
+
 September 3 input-value continuation: `INPUT-TYPE-VALUES.md` adds native value-mode
 transfers and separate dirty metadata, preventing stale value resurrection across
 type changes. Combined text costs are checked before mutation. Calendar/range/

@@ -1,4 +1,5 @@
 import type { DocumentNode } from "./document.js";
+import { sanitizeCalendarInput } from "./input-calendar.js";
 
 const types = new Set([
 	"hidden",
@@ -48,6 +49,8 @@ export function sanitizeInputValue(
 	raw: string,
 	attributes: Readonly<Record<string, string>>,
 ): string {
+	const calendar = sanitizeCalendarInput(type, raw);
+	if (calendar !== undefined) return calendar;
 	let value = raw;
 	if (["text", "search", "tel", "url", "email", "password"].includes(type))
 		value = value.replace(/[\r\n]/g, "");

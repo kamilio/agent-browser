@@ -30,6 +30,7 @@ import {
 	setOuterHtml,
 } from "./html-content.js";
 import { serializeHtml } from "./html-serialization.js";
+import { sanitizeInputValue } from "./input-values.js";
 import { InlineStyles } from "./inline-styles.js";
 import { ComputedStyles } from "./computed-styles.js";
 import { ScriptAttributes } from "./script-attributes.js";
@@ -818,15 +819,28 @@ export class ScriptDom {
 			return;
 		}
 		if (
-			!["text", "search", "tel", "url", "email", "password", "number"].includes(
-				type,
-			)
+			![
+				"text",
+				"search",
+				"tel",
+				"url",
+				"email",
+				"password",
+				"number",
+				"date",
+				"month",
+				"week",
+				"time",
+				"datetime-local",
+			].includes(type)
 		)
 			throw new AgentBrowserError(
 				"unsupported",
 				"This input value mode is not implemented for scripts",
 			);
-		this.tree.setControl(id, { value: text.replace(/[\r\n]/g, "") });
+		this.tree.setControl(id, {
+			value: sanitizeInputValue(type, text, node.attributes),
+		});
 	}
 }
 

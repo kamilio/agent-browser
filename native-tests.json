@@ -98,6 +98,7 @@
   "src/inline-flex-intrinsic.test.ts",
   "src/inline-flex.test.ts",
   "src/inline-styles.test.ts",
+  "src/input-calendar-values.test.ts",
   "src/input-type-values.test.ts",
   "src/intrinsic-widths.test.ts",
   "src/jpeg-decoder.test.ts",
