@@ -19,6 +19,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+State-transport preparation: `STATE-TRANSPORT.md` and its separately gated script
+cover real foreground-service/CLI state round trips, failure atomicity, isolation,
+restart and private-file cleanup. Build, source formatting/lint and refusal without
+the explicit probe flag pass. The socket/process authorization was declined:
+the probe did not run and no live report was generated. Obtain new explicit
+authorization before executing it. Native counts below are prior evidence,
+not a new run or proof that these acceptance checks pass.
+
+### Previous callback checkpoint
+
 Callback-ownership checkpoint: `CALLBACK-OWNERSHIP.md` reserves admission and source
 prefix barriers before runtime callback entry, counts invocations independently of
 Promise identity, and releases admission only after both completion phases settle.

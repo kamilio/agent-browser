@@ -67,6 +67,12 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 transport preparation: `STATE-TRANSPORT.md` documents a bounded real
+foreground-service/CLI state probe. Static checks and the no-authorization guard
+pass. Its separate socket/process authorization was declined; no live evidence
+was generated. Request new explicit authorization before running it; state
+transport, website authentication and released-runtime gates remain open.
+
 - Keep every requirement in `COMPATIBILITY.md`; do not turn missing behavior into
   a passing compatibility claim by returning `unsupported`.
 - Run focused native tests first, then the explicit safe suite. Record failures,
