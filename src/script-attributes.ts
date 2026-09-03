@@ -49,6 +49,7 @@ export class ScriptAttributes {
 					htmlAttributeName(this.argument(args, 1)),
 				),
 			hasAttributes: () => Object.keys(read().attributes).length > 0,
+			getAttributeNames: () => this.names(id),
 			setAttribute: (...args) => {
 				read();
 				const name = this.argument(args, 2);
@@ -85,19 +86,7 @@ export class ScriptAttributes {
 				"resource-limit",
 				"Script attribute map limit exceeded",
 			);
-		const names = (): string[] => {
-			this.ensureOpen();
-			const keys = Object.keys(this.tree.get(id).attributes);
-			if (
-				keys.length > 4096 ||
-				keys.reduce((total, key) => total + key.length, 0) > 65_536
-			)
-				throw new AgentBrowserError(
-					"resource-limit",
-					"Script attribute key limit exceeded",
-				);
-			return keys;
-		};
+		const names = () => this.names(id);
 		const methods: NonNullable<ScriptHostObjectDefinition["methods"]> = {
 			item: (...args) => {
 				this.argument(args, 1);
@@ -323,6 +312,20 @@ export class ScriptAttributes {
 		if (!attribute)
 			throw new AgentBrowserError("not-found", "Attribute was not found");
 		return this.remove(id, attribute);
+	}
+
+	private names(id: number): string[] {
+		this.ensureOpen();
+		const names = this.tree.getAttributeNames(id);
+		if (
+			names.length > 4096 ||
+			names.reduce((total, name) => total + name.length, 0) > 65_536
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Script attribute key limit exceeded",
+			);
+		return names;
 	}
 
 	private argument(args: readonly unknown[], minimum: number): string {

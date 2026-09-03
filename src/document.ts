@@ -2,6 +2,14 @@ import { DocumentSelection } from "./document-selection.js";
 import { canRewriteDocumentUrl } from "./document-url.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlAttributeName } from "./html-attribute-name.js";
+import {
+	createHtmlAttributes,
+	htmlAttributeEntries,
+	htmlAttributeNames,
+	removeHtmlAttribute,
+	setHtmlAttribute,
+	snapshotHtmlAttributes,
+} from "./html-attributes.js";
 
 export type NodeKind = "document" | "fragment" | "element" | "text" | "comment";
 
@@ -184,7 +192,8 @@ export class DocumentTree {
 			Array.isArray(attributes)
 		)
 			throw new AgentBrowserError("invalid-input", "Invalid attributes");
-		for (const [name, value] of Object.entries(attributes)) {
+		const entries = htmlAttributeEntries(attributes);
+		for (const [name, value] of entries) {
 			this.validateAttribute(name);
 			if (typeof value !== "string")
 				throw new AgentBrowserError(
@@ -192,17 +201,17 @@ export class DocumentTree {
 					"Attribute values must be strings",
 				);
 		}
-		const length = Object.entries(attributes).reduce(
+		const length = entries.reduce(
 			(total, [name, value]) => total + name.length + value.length,
 			tagName.length,
 		);
 		this.checkTextBudget(length);
 		const id = this.allocate("element", tagName.toLowerCase(), "");
 		const node = this.node(id);
-		for (const [name, value] of Object.entries(attributes)) {
+		for (const [name, value] of entries) {
 			const key = htmlAttributeName(name);
 			if (Object.hasOwn(node.attributes, key)) continue;
-			node.attributes[key] = value;
+			setHtmlAttribute(node.attributes, key, value);
 			this.textCodeUnits += key.length + value.length;
 		}
 		this.selections.initialize(id);
@@ -266,7 +275,7 @@ export class DocumentTree {
 		for (const source of sources) {
 			const copyId = this.allocate(source.kind, source.tagName, source.data);
 			const copy = this.node(copyId);
-			Object.assign(copy.attributes, source.attributes);
+			copy.attributes = createHtmlAttributes(source.attributes);
 			copy.control = { ...source.control };
 			this.selections.initialize(copyId, {
 				state: sourceTree.selections,
@@ -370,7 +379,7 @@ export class DocumentTree {
 		if (cached) return cached;
 		const view = Object.freeze({
 			...node,
-			attributes: Object.freeze({ ...node.attributes }),
+			attributes: snapshotHtmlAttributes(node.attributes),
 			children: Object.freeze([...node.children]),
 			control: Object.freeze({ ...node.control }),
 		});
@@ -513,6 +522,10 @@ export class DocumentTree {
 		this.changed("remove", id);
 	}
 
+	getAttributeNames(id: number): string[] {
+		return htmlAttributeNames(this.element(id).attributes);
+	}
+
 	setAttribute(id: number, name: string, value: string) {
 		this.validateAttribute(name);
 		this.validateString(value);
@@ -531,7 +544,7 @@ export class DocumentTree {
 			(previous === undefined ? key.length : 0) +
 			(attribute === undefined ? 0 : value.length - attribute.value.length);
 		this.checkTextBudget(change);
-		node.attributes[key] = value;
+		setHtmlAttribute(node.attributes, key, value);
 		if (attribute) attribute.value = value;
 		this.textCodeUnits += change;
 		this.changed("attribute", id);
@@ -559,7 +572,7 @@ export class DocumentTree {
 		const key = htmlAttributeName(name);
 		if (!Object.hasOwn(node.attributes, key)) return;
 		this.textCodeUnits -= key.length + node.attributes[key].length;
-		delete node.attributes[key];
+		removeHtmlAttribute(node.attributes, key);
 		const attributeId = this.attachedAttributes.get(id)?.get(key);
 		if (attributeId !== undefined) {
 			const attribute = this.attributeRecord(attributeId);
@@ -642,7 +655,7 @@ export class DocumentTree {
 		this.checkTextBudget(change + captureCost);
 		const original = this.getAttributeNode(id, attribute.name);
 		if (original !== null) this.attributeRecord(original).ownerElement = null;
-		node.attributes[attribute.name] = attribute.value;
+		setHtmlAttribute(node.attributes, attribute.name, attribute.value);
 		attribute.ownerElement = id;
 		this.attributeMap(id).set(attribute.name, attributeId);
 		this.textCodeUnits += change;
@@ -1082,7 +1095,7 @@ export class DocumentTree {
 			id,
 			kind,
 			tagName,
-			attributes: Object.create(null),
+			attributes: createHtmlAttributes(),
 			data,
 			parent: null,
 			children: [],

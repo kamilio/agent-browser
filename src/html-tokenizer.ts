@@ -1,5 +1,6 @@
 import { AgentBrowserError } from "./errors.js";
 import { htmlAttributeName } from "./html-attribute-name.js";
+import { createHtmlAttributes, setHtmlAttribute } from "./html-attributes.js";
 import { decodeHtmlEntities } from "./html-entities.js";
 
 export type HtmlToken =
@@ -194,7 +195,7 @@ export class HtmlTokenizer {
 				"unsupported",
 				"HTML tag name is outside the document model",
 			);
-		const attributes: Record<string, string> = Object.create(null);
+		const attributes = createHtmlAttributes();
 		let count = 0;
 		while (this.offset < this.source.length) {
 			this.skipWhitespace();
@@ -269,7 +270,12 @@ export class HtmlTokenizer {
 			}
 			if (Object.hasOwn(attributes, attribute))
 				this.issue("duplicate-attribute");
-			else attributes[attribute] = decodeHtmlEntities(value, true, this.issue);
+			else
+				setHtmlAttribute(
+					attributes,
+					attribute,
+					decodeHtmlEntities(value, true, this.issue),
+				);
 		}
 		this.issue("unterminated-tag");
 		return undefined;

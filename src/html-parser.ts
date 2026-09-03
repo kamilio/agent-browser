@@ -1,5 +1,6 @@
 import { type DocumentLimits, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { htmlAttributeEntries } from "./html-attributes.js";
 import { decodeHtmlEntities } from "./html-entities.js";
 import { setHtmlParseInfo } from "./html-info.js";
 import { HtmlTokenizer } from "./html-tokenizer.js";
@@ -467,7 +468,7 @@ function* parseHtmlSteps(
 			}
 		};
 		const merge = (id: number, attributes: Record<string, string>) => {
-			for (const [name, value] of Object.entries(attributes))
+			for (const [name, value] of htmlAttributeEntries(attributes))
 				if (!Object.hasOwn(tree.get(id).attributes, name))
 					tree.setAttribute(id, name, value);
 		};

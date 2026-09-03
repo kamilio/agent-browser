@@ -109,7 +109,7 @@ function compare(first: Identity, second: Identity, budget: Budget): number {
 		firstAttribute &&
 		secondAttribute
 	) {
-		for (const name in first.owner.tree.get(firstId).attributes) {
+		for (const name of first.owner.tree.getAttributeNames(firstId)) {
 			budget.visit();
 			if (budget.text(name, secondAttribute.name)) return 34;
 			if (budget.text(name, firstAttribute.name)) return 36;

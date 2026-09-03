@@ -67,6 +67,11 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 attribute-order continuation: `ATTRIBUTE-ORDER.md` adds native
+`getAttributeNames()` and preserves integer-like attribute insertion order across
+tokenization, mutation, NamedNodeMap access, copies and serialization. Native
+limits and closure are tested; actual runtime/site/socket/UI gates remain open.
+
 September 3 attribute-contract continuation: `ATTRIBUTE-OPERATIONS.md` adds native
 toggle/presence operations, required-argument guards and own-attribute reads.
 No-op identity, control/style integration and failure atomicity are tested;

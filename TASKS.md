@@ -19,6 +19,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Attribute-order checkpoint: `ATTRIBUTE-ORDER.md` adds native getAttributeNames
+and a shared ordered attribute representation without Proxy value dictionaries.
+Integer-like names retain their slots across tokenization, mutation, frozen
+snapshots, NamedNodeMap indices, Attr comparison, cloning/import and serialization.
+After correcting a serializer fixture option, eight baseline reproductions failed
+against original HEAD; twenty-five new cases now pass. Focused validation passes
+196 tests / six files; full native validation passes 6,368 / 196 files. The
+isolated patch passes typechecking and 3,608 tests / 135 available native files.
+Build, strict test types and targeted lint/formatting pass. Namespace duplicates,
+full WebIDL/prototypes and actual runtime/site/socket/UI gates remain open; no
+unapproved probe has run.
+
+### Previous attribute-contract checkpoint
+
 Attribute-contract checkpoint: `ATTRIBUTE-OPERATIONS.md` adds native toggling and
 presence queries, required-argument guards and own-attribute reads. Ten initial
 reproductions failed; two additional failures exposed inherited-property leakage.

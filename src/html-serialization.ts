@@ -1,5 +1,6 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { htmlAttributeEntries } from "./html-attributes.js";
 
 const voidTags = new Set([
 	"area",
@@ -121,7 +122,7 @@ export function serializeHtml(
 		}
 		if (entry.include && node.kind === "element") {
 			append(`<${node.tagName}`);
-			for (const [name, value] of Object.entries(node.attributes)) {
+			for (const [name, value] of htmlAttributeEntries(node.attributes)) {
 				append(` ${name}="`);
 				appendEscaped(value, true);
 				append('"');
