@@ -20,6 +20,8 @@ export interface ScriptCollectionLimits {
 
 type CollectionKind =
 	| "tag"
+	| "links"
+	| "anchors"
 	| "class"
 	| "children"
 	| "options"
@@ -126,6 +128,12 @@ export class ScriptCollections {
 					(kind === "form-named" &&
 						(node.attributes.id === wanted ||
 							node.attributes.name === wanted)) ||
+					(kind === "links" &&
+						(node.tagName === "a" || node.tagName === "area") &&
+						Object.hasOwn(node.attributes, "href")) ||
+					(kind === "anchors" &&
+						node.tagName === "a" &&
+						Object.hasOwn(node.attributes, "name")) ||
 					(kind === "tag" && (wanted === "*" || node.tagName === wanted));
 				if (kind === "class" && tokens.length > 0) {
 					const classes = node.attributes.class ?? "";

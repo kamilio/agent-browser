@@ -67,6 +67,11 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 live-collection continuation: `DOCUMENT-COLLECTIONS.md` adds native
+document links, scripts, anchors and embed/plugin collections through the shared
+bounded collection owner. Saved capabilities track attribute and structural
+mutations; actual SafeJS, site, socket and UI acceptance remain separate gates.
+
 September 3 structural-DOM continuation: `DOCUMENT-ELEMENTS.md` adds native body
 replacement and correct direct-child head/body selection, sharing readers with
 title creation. Native identity, validation failures and downstream tree consumers

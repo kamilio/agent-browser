@@ -19,6 +19,18 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Live-document-collection checkpoint: `DOCUMENT-COLLECTIONS.md` adds native links,
+scripts, anchors, embeds and the plugins alias using the existing bounded owner.
+Seventeen initial reproductions failed; thirty-eight new tests cover live member
+updates, identity, filtered lookup, closure and resource-failure recovery. Focused
+validation passes 104 tests / four files; the full native working tree passes
+6,213 tests / 190 files. An isolated owned-patch snapshot passes typechecking and
+3,453 tests / 129 available native files. Build, strict test types and targeted
+lint/formatting pass. Guest-runtime, namespaces, framework/site, real socket and
+terminal/playground acceptance remain open; no unapproved probe has run.
+
+### Previous structural-document checkpoint
+
 Structural-document checkpoint: `DOCUMENT-ELEMENTS.md` adds native body replacement
 and direct-child head/body selection, sharing helpers with document title creation.
 Eleven initial regressions failed; thirty-four new cases cover identity, moves,

@@ -356,6 +356,19 @@ export class ScriptDom {
 					return this.collections.get(id, "tag", "img");
 				},
 			};
+			for (const [name, kind, query] of [
+				["scripts", "tag", "script"],
+				["embeds", "tag", "embed"],
+				["plugins", "tag", "embed"],
+				["links", "links", ""],
+				["anchors", "anchors", ""],
+			] as const)
+				definition.properties[name] = {
+					get: () => {
+						this.read(id);
+						return this.collections.get(id, kind, query);
+					},
+				};
 			if (this.storage)
 				definition.properties.cookie = {
 					get: () => {
