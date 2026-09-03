@@ -103,7 +103,7 @@ export class DocumentInteractions {
 				"not-actionable",
 				"Focus changed before fill",
 			);
-		if (prepared.calendar) {
+		if (prepared.direct) {
 			this.actionable(reference);
 			const current = prepareControlFill(this.tree, reference, value);
 			if (current.type !== prepared.type)

@@ -1,4 +1,8 @@
-import { isFillableControl, prepareControlFill } from "./control-fill.js";
+import {
+	isFillableControl,
+	isFillReadOnly,
+	prepareControlFill,
+} from "./control-fill.js";
 import {
 	controlChecked,
 	inputType,
@@ -54,10 +58,10 @@ function ready(page: ActionPage, reference: string, action: WaitingAction) {
 		if (!isFillableControl(node))
 			throw new AgentBrowserError(
 				"not-actionable",
-				"Expected a text, number or calendar control",
+				"Expected a text, number, calendar or range control",
 			);
 		if (status.blocked) return false;
-		if (Object.hasOwn(node.attributes, "readonly")) return false;
+		if (isFillReadOnly(node)) return false;
 		prepareControlFill(page.document, reference, action.value);
 	} else if (action.kind === "checked") {
 		if (

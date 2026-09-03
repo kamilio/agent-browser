@@ -107,6 +107,7 @@
   "src/input-email.test.ts",
   "src/input-number.test.ts",
   "src/input-range.test.ts",
+  "src/range-fill.test.ts",
   "src/input-type-values.test.ts",
   "src/intrinsic-widths.test.ts",
   "src/jpeg-decoder.test.ts",

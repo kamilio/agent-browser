@@ -67,6 +67,15 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 range-action continuation: `RANGE-FILL.md` connects range controls to
+direct native fill and command readiness. Requests requiring clamping or rounding
+fail instead of silently changing the requested value. Readonly applicability is
+shared across admission and execution, while focus-time changes still revalidate.
+The 42 new cases include an injected command host; focused validation passes
+189 tests across six explicit native files.
+Pointer/keyboard slider interaction, presentation and actual runtime/site/socket/
+UI acceptance remain open.
+
 September 3 range-state continuation: `INPUT-RANGE.md` adds midpoint defaults,
 clamping and decimal step alignment, with current-value ownership across bound/
 default/type changes. Page range values and string min/max/step reflection now

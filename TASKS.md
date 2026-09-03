@@ -19,6 +19,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Range-fill checkpoint: `RANGE-FILL.md` connects range controls to direct native
+fill and command action-wait admission. Requests that need clamping or rounding
+fail before the action write; readonly is correctly inapplicable to range while
+remaining effective for text/calendar controls. Focus-time constraints revalidate
+and committed input/change events preserve listener rewrites. Three initial
+regressions fail; 42 new cases include an injected command host and atomic quota
+failure. Focused checks pass 189 / six files; full native checks pass 7,249 / 212
+files. The isolated owned patch passes production/new-test type checks and 4,489 /
+151 available native files. Build and four-source lint pass. Slider pointer/
+keyboard interaction, presentation, numeric page methods and real runtime/site/
+socket/UI acceptance remain open. No unapproved probe ran.
+
+### Previous range-state checkpoint
+
 Range-state checkpoint: `INPUT-RANGE.md` adds midpoint defaults, clamping and
 exact decimal step alignment to range values. The native value owner preserves
 current state across min/max/step/default edits, resets, type changes and Attr

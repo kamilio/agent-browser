@@ -7,6 +7,8 @@ import {
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { sanitizeCalendarInput } from "./input-calendar.js";
+import { validNumberValue } from "./input-number.js";
+import { sanitizeRangeInput } from "./input-range.js";
 
 function calendarControl(node: Readonly<DocumentNode>): boolean {
 	return (
@@ -18,7 +20,18 @@ function calendarControl(node: Readonly<DocumentNode>): boolean {
 }
 
 export function isFillableControl(node: Readonly<DocumentNode>): boolean {
-	return isTextControl(node) || calendarControl(node);
+	return (
+		isTextControl(node) ||
+		calendarControl(node) ||
+		(node.tagName === "input" && inputType(node) === "range")
+	);
+}
+
+export function isFillReadOnly(node: Readonly<DocumentNode>): boolean {
+	return (
+		(isTextControl(node) || calendarControl(node)) &&
+		Object.hasOwn(node.attributes, "readonly")
+	);
 }
 
 export function prepareControlFill(
@@ -35,23 +48,37 @@ export function prepareControlFill(
 	const type = inputType(node);
 	if (isTextControl(node)) {
 		validateTextControl(tree, reference, value);
-		return { node, type, value, calendar: false };
+		return { node, type, value, direct: false };
 	}
-	if (!calendarControl(node))
+	if (!isFillableControl(node))
 		throw new AgentBrowserError(
 			"not-actionable",
-			"Expected a text, number or calendar control",
+			"Expected a text, number, calendar or range control",
 		);
 	if (isControlDisabled(tree, node.id))
 		throw new AgentBrowserError("not-actionable", "Control is disabled");
-	if (Object.hasOwn(node.attributes, "readonly"))
+	if (isFillReadOnly(node))
 		throw new AgentBrowserError("not-actionable", "Control is readonly");
 	const trimmed = value.trim();
+	if (type === "range") {
+		if (!validNumberValue(trimmed))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Range fill requires a finite numeric value",
+			);
+		const sanitized = sanitizeRangeInput(trimmed, node.attributes);
+		if (sanitized !== trimmed)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Range fill would clamp or round the requested value",
+			);
+		return { node, type, value: sanitized, direct: true };
+	}
 	const sanitized = sanitizeCalendarInput(type, trimmed);
 	if (sanitized === undefined || (trimmed !== "" && sanitized === ""))
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Invalid calendar control value",
 		);
-	return { node, type, value: sanitized, calendar: true };
+	return { node, type, value: sanitized, direct: true };
 }
