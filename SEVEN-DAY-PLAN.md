@@ -50,6 +50,11 @@ September 3 continuation: `BROWSER-STATE.md` adds the combined transaction and
 hardens local-storage imports. Both owners validate before either changes; retained
 session storage counts toward quotas. Private CLI file round trips remain next.
 
+September 3 file-boundary continuation: `STATE-FILES.md` adds native Node private
+file save/load with explicit atomic overwrite, bounded reads and guarded cleanup.
+Library round trips pass; bounded command/process transfer and CLI wiring remain
+next. This does not close the CLI or real-account acceptance gates.
+
 ## Acceptance and safety
 
 - Keep every requirement in `COMPATIBILITY.md`; do not turn missing behavior into

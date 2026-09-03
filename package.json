@@ -12,6 +12,10 @@
 			"types": "./dist/src/node-transport.d.ts",
 			"import": "./dist/src/node-transport.js"
 		},
+		"./node-state-file": {
+			"types": "./dist/src/node-state-file.d.ts",
+			"import": "./dist/src/node-state-file.js"
+		},
 		"./node-safe-js": {
 			"types": "./dist/src/node-safejs.d.ts",
 			"import": "./dist/src/node-safejs.js"

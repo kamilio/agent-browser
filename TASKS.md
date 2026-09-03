@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+State-file checkpoint: `STATE-FILES.md` adds Node-only private JSON file save/load
+for cookie/local-storage owners, with a 128 MiB ceiling, Unix ownership checks,
+symlink/hard-link refusal, exclusive creation and explicit atomic overwrite.
+Forty-six new native cases pass; focused state/cookie/storage coverage passes
+135 tests / four explicit files. The UID-mapped sandbox fails the strict directory
+policy; the authorized real-ownership run passes without weakening it.
+The full native suite passes 5,889 tests / 181 files. Production build, strict new
+test checking, two-source lint/format and package-subpath import checks pass.
+The isolated change passes typechecking and 3,129 tests / 120 available allowlisted
+files, without pre-existing unfinished features. No live/runtime gate is claimed.
+
+Next: bounded session-scoped state transfer over command/process protocols, then
+CLI `state-save`/`state-load` integration. Library file tests do not complete P12,
+real authentication reuse, portability or live/runtime acceptance gates.
+
+### Previous browser-state checkpoint
+
 Browser-state checkpoint: `BROWSER-STATE.md` adds combined native cookie/local-storage
 export and all-or-nothing replacement. Both owners validate before either changes;
 existing owner identities and storage handles survive, session storage is retained,

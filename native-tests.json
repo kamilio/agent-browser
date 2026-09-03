@@ -101,6 +101,7 @@
   "src/network-journal.test.ts",
   "src/network-routes.test.ts",
   "src/node-capture.test.ts",
+  "src/node-state-file.test.ts",
   "src/node-relations.test.ts",
   "src/node-route-transport.test.ts",
   "src/node-session-host.test.ts",
