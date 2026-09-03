@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Mutation-capture checkpoint: `MUTATION-RECORDS.md` adds immutable native records
+for attributes, character data and child lists, including old strings, ancestry,
+logical siblings and grouped fragment/replacement operations. Three baseline
+failures and two later replacement-shape regressions are fixed. Fifty new
+tests include collector bounds/errors, quotas, page/HTML integration and a 4,000
+text-node normalization case; focused checks pass 261 / nine files. Broad tests
+catch a self-insertion view-cache regression; logical record capture now preserves
+the no-op cache identity and revision, with a dedicated regression.
+Final full native validation passes 7,549 / 216 files; the isolated owned patch
+passes 4,789 / 155 available files. Production/new-test types, build and three-source
+lint pass. Pending pointer/activation changes remain outside the isolated patch
+and commit; the original pending document additions/removals are preserved.
+This is the shared capture layer, not a page MutationObserver implementation.
+Next are observer filtering/options, transient registrations, bounded queues and
+runtime-correct delivery. All existing framework/live/runtime gates remain open.
+
+### Previous input-stepping checkpoint
+
 Input-stepping checkpoint: `INPUT-STEPPING.md` adds page `stepUp`/`stepDown`
 for all seven applicable input types, sharing constraints and numeric serializers.
 Seven initial regressions fail before implementation. One hundred new native

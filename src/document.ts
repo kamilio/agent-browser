@@ -72,6 +72,19 @@ export interface DocumentChange {
 	target: number;
 }
 
+export interface DocumentMutation {
+	readonly type: "attributes" | "characterData" | "childList";
+	readonly target: number;
+	readonly ancestors: readonly number[];
+	readonly addedNodes: readonly number[];
+	readonly removedNodes: readonly number[];
+	readonly previousSibling: number | null;
+	readonly nextSibling: number | null;
+	readonly attributeName: string | null;
+	readonly attributeNamespace: null;
+	readonly oldValue: string | null;
+}
+
 let nextNodeId = 1;
 
 export class DocumentTree {
@@ -94,6 +107,9 @@ export class DocumentTree {
 	private changeHandlers = new Set<
 		(change: Readonly<DocumentChange>) => void
 	>();
+	private mutationHandlers = new Set<(record: DocumentMutation) => void>();
+	private mutationNotifications = 0;
+	private mutationCollectorFailures = 0;
 	private readonly selections = new DocumentSelection(
 		(id) => this.node(id),
 		(id) => this.changed("control", id),
@@ -456,20 +472,62 @@ export class DocumentTree {
 	}
 
 	insert(parentId: number, childId: number, before?: number) {
-		const children = this.checkInsertion(parentId, childId, before);
+		this.insertInternal(parentId, childId, before);
+	}
+
+	private insertInternal(
+		parentId: number,
+		childId: number,
+		reference?: number,
+		suppress = false,
+	) {
+		const children = this.checkInsertion(parentId, childId, reference);
 		const parent = this.node(parentId);
 		const child = this.node(childId);
-		if (before === childId) return;
+		if (reference === childId) {
+			const index = parent.children.indexOf(childId);
+			const siblings = {
+				previousSibling: parent.children[index - 1] ?? null,
+				nextSibling: parent.children[index + 1] ?? null,
+			};
+			this.mutation(
+				"childList",
+				parentId,
+				{ ...siblings, removedNodes: [childId] },
+				false,
+			);
+			if (!suppress)
+				this.mutation(
+					"childList",
+					parentId,
+					{ ...siblings, addedNodes: [childId] },
+					false,
+				);
+			return;
+		}
+		const before = reference;
 		if (child.kind === "fragment") {
 			if (children.length) this.nodeViews.delete(childId);
 			const index =
 				before === undefined
 					? parent.children.length
 					: parent.children.indexOf(before);
+			const previousSibling = parent.children[index - 1] ?? null;
+			const nextSibling = parent.children[index] ?? null;
 			parent.children = parent.children
 				.slice(0, index)
 				.concat(children, parent.children.slice(index));
 			child.children = [];
+			for (const moving of children) this.node(moving).parent = parentId;
+			this.childMutation(childId, [], children);
+			if (!suppress)
+				this.childMutation(
+					parentId,
+					children,
+					[],
+					previousSibling,
+					nextSibling,
+				);
 			for (const moving of children) {
 				this.node(moving).parent = parentId;
 				this.selections.moved(moving);
@@ -482,18 +540,40 @@ export class DocumentTree {
 			const node = this.node(moving);
 			if (node.parent !== null) {
 				const previousParent = this.node(node.parent);
+				const previousIndex = previousParent.children.indexOf(moving);
+				const previousSibling =
+					previousParent.children[previousIndex - 1] ?? null;
+				const nextSibling = previousParent.children[previousIndex + 1] ?? null;
 				this.nodeViews.delete(previousParent.id);
 				previousParent.children.splice(
 					previousParent.children.indexOf(moving),
 					1,
+				);
+				node.parent = null;
+				this.childMutation(
+					previousParent.id,
+					[],
+					[moving],
+					previousSibling,
+					nextSibling,
 				);
 			}
 			const index =
 				before === undefined
 					? parent.children.length
 					: parent.children.indexOf(before);
+			const previousSibling = parent.children[index - 1] ?? null;
+			const nextSibling = parent.children[index] ?? null;
 			parent.children.splice(index, 0, moving);
 			node.parent = parentId;
+			if (!suppress)
+				this.childMutation(
+					parentId,
+					[moving],
+					[],
+					previousSibling,
+					nextSibling,
+				);
 			this.selections.moved(moving);
 			this.checkedness.moved(moving);
 			this.changed("insert", moving);
@@ -503,13 +583,23 @@ export class DocumentTree {
 	}
 
 	replace(parentId: number, childId: number, previousId: number) {
-		this.checkInsertion(parentId, childId, previousId);
+		const added = this.checkInsertion(parentId, childId, previousId);
 		const siblings = this.node(parentId).children;
 		let before = siblings[siblings.indexOf(previousId) + 1];
+		const previousSibling = siblings[siblings.indexOf(previousId) - 1] ?? null;
 		if (before === childId) before = siblings[siblings.indexOf(childId) + 1];
 		if (this.node(childId).kind !== "fragment") this.remove(childId);
-		if (this.node(previousId).parent === parentId) this.remove(previousId);
-		this.insert(parentId, childId, before);
+		const removed =
+			this.node(previousId).parent === parentId ? [previousId] : [];
+		if (removed.length) this.removeInternal(previousId, true);
+		this.insertInternal(parentId, childId, before, true);
+		this.childMutation(
+			parentId,
+			added,
+			removed,
+			previousSibling,
+			before ?? null,
+		);
 	}
 
 	replaceChildren(parentId: number, childId?: number) {
@@ -519,9 +609,8 @@ export class DocumentTree {
 				"invalid-input",
 				"Invalid replacement parent",
 			);
-		if (childId !== undefined) this.checkInsertion(parentId, childId);
-		if (childId !== undefined && this.node(childId).kind !== "fragment")
-			this.remove(childId);
+		const added =
+			childId === undefined ? [] : this.checkInsertion(parentId, childId);
 		const previous = parent.children;
 		if (previous.length) this.nodeViews.delete(parentId);
 		parent.children = [];
@@ -533,16 +622,27 @@ export class DocumentTree {
 		}
 		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
 			this.currentFocus = null;
-		if (childId !== undefined) this.insert(parentId, childId);
+		if (childId !== undefined)
+			this.insertInternal(parentId, childId, undefined, true);
+		this.childMutation(parentId, added, previous);
 	}
 
 	remove(id: number) {
+		this.removeInternal(id);
+	}
+
+	private removeInternal(id: number, suppress = false) {
 		const node = this.node(id);
 		if (node.parent === null) return;
 		const parent = this.node(node.parent);
+		const index = parent.children.indexOf(id);
+		const previousSibling = parent.children[index - 1] ?? null;
+		const nextSibling = parent.children[index + 1] ?? null;
 		this.nodeViews.delete(parent.id);
 		parent.children.splice(parent.children.indexOf(id), 1);
 		node.parent = null;
+		if (!suppress)
+			this.childMutation(parent.id, [], [id], previousSibling, nextSibling);
 		this.selections.moved(id);
 		this.checkedness.moved(id);
 		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
@@ -567,6 +667,10 @@ export class DocumentTree {
 				this.applyInputValueChange(id, inputChange);
 				this.changed("control", id);
 			}
+			this.mutation("attributes", id, {
+				attributeName: key,
+				oldValue: previous,
+			});
 			return;
 		}
 		const attributeId = this.attachedAttributes.get(id)?.get(key);
@@ -584,6 +688,10 @@ export class DocumentTree {
 		if (attribute) attribute.value = value;
 		this.textCodeUnits += change;
 		this.applyInputValueChange(id, inputChange);
+		this.mutation("attributes", id, {
+			attributeName: key,
+			oldValue: previous ?? null,
+		});
 		this.changed("attribute", id);
 		this.selections.attribute(id, key);
 		this.checkedness.attribute(id, key, previous);
@@ -623,6 +731,7 @@ export class DocumentTree {
 			this.attachedAttributes.get(id)?.delete(key);
 		}
 		this.applyInputValueChange(id, inputChange);
+		this.mutation("attributes", id, { attributeName: key, oldValue: previous });
 		this.changed("attribute", id);
 		this.selections.attribute(id, key);
 		this.checkedness.attribute(id, key, previous);
@@ -712,6 +821,10 @@ export class DocumentTree {
 		this.attributeMap(id).set(attribute.name, attributeId);
 		this.textCodeUnits += change;
 		this.applyInputValueChange(id, inputChange);
+		this.mutation("attributes", id, {
+			attributeName: attribute.name,
+			oldValue: previous ?? null,
+		});
 		this.changed("attribute", id);
 		this.selections.attribute(id, attribute.name);
 		this.checkedness.attribute(id, attribute.name, previous);
@@ -748,6 +861,10 @@ export class DocumentTree {
 	}
 
 	setData(id: number, data: string) {
+		this.setDataInternal(id, data);
+	}
+
+	private setDataInternal(id: number, data: string, notify = true) {
 		this.validateString(data);
 		const node = this.node(id);
 		if (node.kind !== "text" && node.kind !== "comment")
@@ -755,11 +872,16 @@ export class DocumentTree {
 				"invalid-input",
 				"Only text/comment nodes have data",
 			);
-		if (node.data === data) return;
+		if (node.data === data) {
+			if (notify) this.mutation("characterData", id, { oldValue: data });
+			return;
+		}
+		const previous = node.data;
 		const change = data.length - node.data.length;
 		this.checkTextBudget(change);
 		node.data = data;
 		this.textCodeUnits += change;
+		if (notify) this.mutation("characterData", id, { oldValue: previous });
 		this.changed("text", id);
 	}
 
@@ -784,15 +906,20 @@ export class DocumentTree {
 			throw new AgentBrowserError("invalid-input", "Only text nodes can split");
 		this.checkDataOffset(node, offset, 0);
 		const suffix = node.data.slice(offset);
+		const previous = node.data;
 		const following = this.allocate("text", "", "");
-		this.setData(id, node.data.slice(0, offset));
-		this.setData(following, suffix);
+		this.setDataInternal(id, node.data.slice(0, offset), false);
+		this.setDataInternal(following, suffix, false);
 		if (node.parent !== null) {
 			const parent = this.node(node.parent);
+			const nextSibling =
+				parent.children[parent.children.indexOf(id) + 1] ?? null;
 			parent.children.splice(parent.children.indexOf(id) + 1, 0, following);
 			this.node(following).parent = parent.id;
+			this.childMutation(parent.id, [following], [], id, nextSibling);
 			this.changed("insert", following);
 		}
+		this.mutation("characterData", id, { oldValue: previous });
 		return following;
 	}
 
@@ -817,61 +944,92 @@ export class DocumentTree {
 	}
 
 	normalize(id: number) {
-		const pending = [this.node(id)];
 		const plans: {
 			parent: MutableNode;
-			children: number[];
-			removed: MutableNode[];
-			runs: { survivor: MutableNode; members: MutableNode[] }[];
+			survivor?: MutableNode;
+			members: MutableNode[];
+			previousSibling: number | null;
+			nextSibling: number | null;
 		}[] = [];
+		const pending = [
+			{ parent: this.node(id), index: 0, children: [] as number[] },
+		];
+		const parents = [...pending];
 		let additional = 0;
 		while (pending.length) {
-			const parent = pending.pop();
-			if (!parent || !parent.children.length) continue;
-			const children: number[] = [];
-			const removed: MutableNode[] = [];
-			const runs: { survivor: MutableNode; members: MutableNode[] }[] = [];
-			let index = 0;
-			while (index < parent.children.length) {
-				const child = this.node(parent.children[index]);
-				if (child.kind !== "text") {
-					children.push(child.id);
-					if (child.children.length) pending.push(child);
-					index++;
-					continue;
-				}
-				const members: MutableNode[] = [];
-				let length = 0;
-				while (index < parent.children.length) {
-					const member = this.node(parent.children[index]);
-					if (member.kind !== "text") break;
-					members.push(member);
-					length += member.data.length;
-					index++;
-				}
-				const survivor = members.find((member) => member.data.length > 0);
-				if (survivor) {
-					children.push(survivor.id);
-					additional += length - survivor.data.length;
-					if (length > survivor.data.length) runs.push({ survivor, members });
-				}
-				for (const member of members)
-					if (member !== survivor) removed.push(member);
+			const frame = pending[pending.length - 1];
+			const { parent } = frame;
+			if (frame.index >= parent.children.length) {
+				pending.pop();
+				continue;
 			}
-			if (removed.length) plans.push({ parent, children, removed, runs });
+			const node = this.node(parent.children[frame.index]);
+			if (node.kind !== "text") {
+				frame.children.push(node.id);
+				frame.index++;
+				if (node.children.length) {
+					const child = { parent: node, index: 0, children: [] as number[] };
+					pending.push(child);
+					parents.push(child);
+				}
+				continue;
+			}
+			const members: MutableNode[] = [];
+			const previousSibling = frame.children.at(-1) ?? null;
+			let length = 0;
+			while (frame.index < parent.children.length) {
+				const member = this.node(parent.children[frame.index]);
+				if (member.kind !== "text") break;
+				frame.index++;
+				members.push(member);
+				length += member.data.length;
+			}
+			const survivor = members.find((member) => member.data.length > 0);
+			if (survivor) {
+				additional += length - survivor.data.length;
+				frame.children.push(survivor.id);
+			}
+			plans.push({
+				parent,
+				survivor,
+				members,
+				previousSibling,
+				nextSibling: parent.children[frame.index] ?? null,
+			});
 		}
 		this.checkTextBudget(additional);
+		for (const { parent, children } of parents) {
+			if (children.length === parent.children.length) continue;
+			parent.children = children;
+			this.nodeViews.delete(parent.id);
+		}
 		for (const plan of plans) {
-			for (const run of plan.runs)
-				this.setData(
-					run.survivor.id,
-					run.members.map((member) => member.data).join(""),
-				);
-			plan.parent.children = plan.children;
-			this.nodeViews.delete(plan.parent.id);
-			for (const removed of plan.removed) {
-				removed.parent = null;
-				this.changed("remove", removed.id);
+			for (const member of plan.members)
+				if (member !== plan.survivor) {
+					member.parent = null;
+					this.nodeViews.delete(member.id);
+				}
+		}
+		for (const plan of plans) {
+			let previousSibling = plan.previousSibling;
+			for (let index = 0; index < plan.members.length; index++) {
+				const member = plan.members[index];
+				if (member === plan.survivor) {
+					this.setData(
+						member.id,
+						plan.members.map((entry) => entry.data).join(""),
+					);
+					previousSibling = member.id;
+				} else {
+					this.childMutation(
+						plan.parent.id,
+						[],
+						[member.id],
+						previousSibling,
+						plan.members[index + 1]?.id ?? plan.nextSibling,
+					);
+					this.changed("remove", member.id);
+				}
 			}
 		}
 	}
@@ -1071,8 +1229,15 @@ export class DocumentTree {
 				);
 			replacement = this.createText(data);
 		}
-		for (const child of [...node.children]) this.remove(child);
-		if (replacement !== undefined) this.append(id, replacement);
+		const removed = [...node.children];
+		for (const child of removed) this.removeInternal(child, true);
+		if (replacement !== undefined)
+			this.insertInternal(id, replacement, undefined, true);
+		this.childMutation(
+			id,
+			replacement === undefined ? [] : [replacement],
+			removed,
+		);
 	}
 
 	*walk(
@@ -1153,6 +1318,33 @@ export class DocumentTree {
 		};
 	}
 
+	onMutation(handler: (record: DocumentMutation) => void) {
+		this.ensureOpen();
+		if (typeof handler !== "function")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid document mutation collector",
+			);
+		if (!this.mutationHandlers.has(handler) && this.mutationHandlers.size >= 32)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Document mutation collector limit exceeded",
+			);
+		this.mutationHandlers.add(handler);
+		return () => {
+			this.mutationHandlers.delete(handler);
+		};
+	}
+
+	mutationMetrics() {
+		return Object.freeze({
+			collectors: this.mutationHandlers.size,
+			notifications: this.mutationNotifications,
+			collectorFailures: this.mutationCollectorFailures,
+			closed: this.closed,
+		});
+	}
+
 	onClose(handler: () => void) {
 		this.ensureOpen();
 		if (typeof handler !== "function")
@@ -1185,6 +1377,7 @@ export class DocumentTree {
 		this.currentFocus = null;
 		this.changes = [];
 		this.changeHandlers.clear();
+		this.mutationHandlers.clear();
 		this.textCodeUnits = 0;
 		const failures: unknown[] = [];
 		const handlers = [...this.closeHandlers];
@@ -1299,6 +1492,66 @@ export class DocumentTree {
 				"resource-limit",
 				"Document text limit exceeded",
 			);
+	}
+
+	private childMutation(
+		target: number,
+		addedNodes: readonly number[],
+		removedNodes: readonly number[],
+		previousSibling: number | null = null,
+		nextSibling: number | null = null,
+	) {
+		if (!addedNodes.length && !removedNodes.length) return;
+		this.mutation("childList", target, {
+			addedNodes,
+			removedNodes,
+			previousSibling,
+			nextSibling,
+		});
+	}
+
+	private mutation(
+		type: DocumentMutation["type"],
+		target: number,
+		values: Partial<DocumentMutation>,
+		invalidate = true,
+	) {
+		if (!this.mutationHandlers.size) return;
+		if (invalidate) {
+			this.nodeViews.delete(target);
+			for (const id of [
+				...(values.addedNodes ?? []),
+				...(values.removedNodes ?? []),
+			])
+				this.nodeViews.delete(id);
+		}
+		const ancestors: number[] = [];
+		let ancestor: number | null = target;
+		while (ancestor !== null) {
+			ancestors.push(ancestor);
+			ancestor = this.node(ancestor).parent;
+		}
+		const record: DocumentMutation = Object.freeze({
+			type,
+			target,
+			ancestors: Object.freeze(ancestors),
+			addedNodes: Object.freeze([...(values.addedNodes ?? [])]),
+			removedNodes: Object.freeze([...(values.removedNodes ?? [])]),
+			previousSibling: values.previousSibling ?? null,
+			nextSibling: values.nextSibling ?? null,
+			attributeName: values.attributeName ?? null,
+			attributeNamespace: null,
+			oldValue: values.oldValue ?? null,
+		});
+		this.mutationNotifications++;
+		for (const handler of [...this.mutationHandlers]) {
+			if (!this.mutationHandlers.has(handler)) continue;
+			try {
+				handler(record);
+			} catch {
+				this.mutationCollectorFailures++;
+			}
+		}
 	}
 
 	private changed(kind: DocumentChange["kind"], target: number) {

@@ -67,6 +67,13 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 mutation-capture continuation: `MUTATION-RECORDS.md` adds immutable
+native attribute/character/child records at the shared document mutation methods.
+This supplies information missing from the presentation log, but is not a page
+MutationObserver implementation. Observer filtering, transient registrations,
+bounded queues and runtime-correct delivery are next; framework and live gates
+remain open.
+
 September 3 input-stepping continuation: `INPUT-STEPPING.md` adds page
 `stepUp`/`stepDown` to the seven applicable native input types with exact bounded
 decimal alignment, current/default ownership and silent script writes. Native

@@ -220,6 +220,7 @@ export {
 	type DocumentNode,
 	type DocumentLimits,
 	type DocumentChange,
+	type DocumentMutation,
 } from "./document.js";
 export { loadBrowserDocument } from "./document-loader.js";
 export {
