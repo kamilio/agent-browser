@@ -107,6 +107,7 @@
   "src/input-email.test.ts",
   "src/input-number.test.ts",
   "src/input-range.test.ts",
+  "src/input-stepping.test.ts",
   "src/input-value-number.test.ts",
   "src/range-fill.test.ts",
   "src/range-keyboard.test.ts",

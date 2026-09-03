@@ -19,6 +19,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Input-stepping checkpoint: `INPUT-STEPPING.md` adds page `stepUp`/`stepDown`
+for all seven applicable input types, sharing constraints and numeric serializers.
+Seven initial regressions fail before implementation. One hundred new native
+cases cover signed counts, alignment/bounds, numeric limits, calendar conversion,
+ownership, event silence, quotas and closure; focused checks pass 537 / seven
+files. Full native validation passes 7,499 / 215 files; an isolated owned patch
+passes 4,739 / 154 available files. Production/new-test types, working build and
+four-source lint pass. Exact arithmetic rejects nonrepresentable targets without
+mutation; pre-existing pending work is excluded from the isolated checkpoint.
+Fractional calendar/endpoint and periodic-time behavior remain explicit compatibility
+work, alongside guest coercion and real runtime/site/socket/TTY acceptance gates.
+
+### Previous numeric-property checkpoint
+
 Numeric-property checkpoint: `INPUT-VALUE-NUMBER.md` adds live `valueAsNumber`
 for all seven applicable input types. Native tests cover numeric/calendar
 conversion, range sanitization, primitive coercion, exception ordering, quotas,

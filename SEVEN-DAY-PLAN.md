@@ -67,6 +67,12 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 input-stepping continuation: `INPUT-STEPPING.md` adds page
+`stepUp`/`stepDown` to the seven applicable native input types with exact bounded
+decimal alignment, current/default ownership and silent script writes. Native
+coverage is distinct from full calendar/periodic-range/coercion compatibility
+and the still-open released-runtime, site, socket and terminal acceptance gates.
+
 September 3 slider-key continuation: `RANGE-KEYBOARD.md` adds arrows, Home/End
 and page increments to focused native ranges, with bounded decimal stepping and
 shared state. Capability reporting describes the explicit any-step/direction

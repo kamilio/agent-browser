@@ -10,9 +10,37 @@ import type { DocumentNode, DocumentTree } from "./document.js";
 import { isValidationCandidate, validationMessage } from "./form-validation.js";
 import { inputNumberValue, inputValueAsNumber } from "./input-value-number.js";
 import { sanitizeInputValue } from "./input-values.js";
+import { stepInputValue } from "./input-stepping.js";
 import type { ScriptCollections } from "./script-collections.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
 import type { ScriptValidity } from "./script-validity.js";
+
+export function scriptFormMethods(
+	tree: DocumentTree,
+	id: number,
+	read: () => Readonly<DocumentNode>,
+): NonNullable<ScriptHostObjectDefinition["methods"]> {
+	if (read().tagName !== "input") return {};
+	const step = (direction: 1 | -1, count: unknown) => {
+		const node = read();
+		const type = inputType(node);
+		const value = stepInputValue(
+			type,
+			controlValue(tree, id),
+			node.attributes,
+			direction,
+			count,
+		);
+		if (value !== undefined)
+			tree.setControl(id, {
+				value: sanitizeInputValue(type, value, node.attributes),
+			});
+	};
+	return {
+		stepUp: (count?: unknown) => step(1, count),
+		stepDown: (count?: unknown) => step(-1, count),
+	};
+}
 
 export function scriptFormProperties(
 	tree: DocumentTree,

@@ -41,7 +41,7 @@ import {
 	ScriptEventBindings,
 	type ScriptEventOptions,
 } from "./script-events.js";
-import { scriptFormProperties } from "./script-form.js";
+import { scriptFormMethods, scriptFormProperties } from "./script-form.js";
 import { ScriptValidity } from "./script-validity.js";
 import { supportsConstraintValidation } from "./form-validation.js";
 import { ScriptGeometry } from "./script-geometry.js";
@@ -561,6 +561,10 @@ export class ScriptDom {
 					domString,
 					this.validity,
 				),
+			);
+			Object.assign(
+				definition.methods,
+				scriptFormMethods(this.tree, id, () => this.read(id)),
 			);
 			if (supportsConstraintValidation(initial.tagName))
 				definition.methods.setCustomValidity = (
