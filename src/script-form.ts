@@ -2,6 +2,7 @@ import { textareaDefaultValue } from "./control-defaults.js";
 import { formControls, formOwner, inputType } from "./controls.js";
 import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
+import { isValidationCandidate, validationMessage } from "./form-validation.js";
 import type { ScriptCollections } from "./script-collections.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
 
@@ -51,6 +52,18 @@ export function scriptFormProperties(
 		].includes(tag)
 	) {
 		properties.name = attribute("name");
+		properties.willValidate = {
+			get: () => {
+				read();
+				return isValidationCandidate(tree, id);
+			},
+		};
+		properties.validationMessage = {
+			get: () => {
+				read();
+				return validationMessage(tree, id);
+			},
+		};
 		properties.form = {
 			get: () => {
 				read();

@@ -42,6 +42,7 @@ import {
 	type ScriptEventOptions,
 } from "./script-events.js";
 import { scriptFormProperties } from "./script-form.js";
+import { supportsConstraintValidation } from "./form-validation.js";
 import { ScriptGeometry } from "./script-geometry.js";
 import type { ScriptLocation } from "./script-location.js";
 import { scriptMutationMethods } from "./script-mutations.js";
@@ -557,6 +558,15 @@ export class ScriptDom {
 					domString,
 				),
 			);
+			if (supportsConstraintValidation(initial.tagName))
+				definition.methods.setCustomValidity = (
+					...args: readonly unknown[]
+				) => {
+					this.read(id);
+					if (!args.length)
+						throw new TypeError("setCustomValidity requires a message");
+					this.tree.setCustomValidity(id, domString(args[0]));
+				};
 			definition.properties.classList = {
 				get: () => this.classLists.get(id),
 				set: (value) => this.classLists.setValue(id, value),

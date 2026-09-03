@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Custom-validity checkpoint: `CUSTOM-VALIDITY.md` adds document-owned custom
+messages with normalized, atomic retained-text accounting. Page setters and
+candidacy/message getters share native submission state; native check-validity
+actions support synchronous or awaited controlled callbacks without submitting.
+All six initial regressions fail. Fifty-three new cases cover candidate states,
+detached trees, quotas, defaults/reset, cloning, closure and invalid-event ordering.
+Focused validation passes 279 / six files; full native validation passes
+6,893 / 206 files. The isolated owned patch typechecks and passes 4,133 / 145
+available native files. Build, strict test types and targeted lint pass, preserving
+pre-existing import order. Synchronous page checkValidity, full multi-flag validity,
+localized/reporting UI, remaining constraints and actual runtime/site/socket/UI
+acceptance remain open. No guest callback is treated as synchronously completed;
+no unapproved acceptance probe ran.
+
+### Previous numeric-constraint checkpoint
+
 Numeric-constraint checkpoint: `INPUT-NUMBER.md` enables native number submission
 checks for min/max/step instead of rejecting nonempty controls as unsupported.
 Strict value admission remains shared; numeric attributes follow the distinct

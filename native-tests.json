@@ -32,6 +32,7 @@
   "src/css-paint.test.ts",
   "src/css-text.test.ts",
   "src/css-variables.test.ts",
+  "src/custom-validity.test.ts",
   "src/deflate.test.ts",
   "src/document-attributes.test.ts",
   "src/document-collections.test.ts",

@@ -87,6 +87,7 @@ export class DocumentTree {
 	private changes: DocumentChange[] = [];
 	private currentRevision = 0;
 	private textCodeUnits = 0;
+	private readonly customValidity = new Map<number, string>();
 	private closed = false;
 	private closeHandlers = new Set<() => void>();
 	private changeHandlers = new Set<
@@ -895,6 +896,25 @@ export class DocumentTree {
 			);
 	}
 
+	getCustomValidity(id: number): string {
+		this.element(id);
+		return this.customValidity.get(id) ?? "";
+	}
+
+	setCustomValidity(id: number, message: string) {
+		this.element(id);
+		this.validateString(message);
+		const value = message.replace(/\r\n?/g, "\n");
+		const previous = this.customValidity.get(id) ?? "";
+		if (previous === value) return;
+		const change = value.length - previous.length;
+		this.checkTextBudget(change);
+		if (value) this.customValidity.set(id, value);
+		else this.customValidity.delete(id);
+		this.textCodeUnits += change;
+		this.changed("control", id);
+	}
+
 	setControl(id: number, state: ControlState) {
 		const node = this.element(id);
 		if (!state || typeof state !== "object" || Array.isArray(state))
@@ -1127,6 +1147,7 @@ export class DocumentTree {
 		this.selections.close();
 		this.checkedness.close();
 		this.inputValues.close();
+		this.customValidity.clear();
 		this.nodes.clear();
 		this.nodeViews.clear();
 		this.attributeRecords.clear();

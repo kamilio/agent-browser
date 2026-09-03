@@ -9,7 +9,9 @@ import {
 import { BrowserEvent, type DocumentEvents } from "./events.js";
 import {
 	type InvalidFormControl,
+	invalidControl,
 	invalidFormControls,
+	supportsConstraintValidation,
 } from "./form-validation.js";
 import {
 	type FormSubmissionOptions,
@@ -59,6 +61,43 @@ export class DocumentForms {
 				"invalid-input",
 				"Form actions require this document's active events",
 			);
+	}
+
+	checkValidity(reference: string): boolean {
+		return runEventAction(this.events, this.checkValidityAction(reference));
+	}
+
+	checkValidityAsync(reference: string): Promise<boolean> {
+		return runEventActionAsync(
+			this.events,
+			this.checkValidityAction(reference),
+		);
+	}
+
+	*checkValidityAction(reference: string): EventAction<boolean> {
+		if (this.events.metrics().closed)
+			throw new AgentBrowserError("closed", "Document form actions are closed");
+		const node = this.tree.resolve(reference);
+		if (node.tagName !== "form" && !supportsConstraintValidation(node.tagName))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Expected a form or validation control",
+			);
+		const invalid =
+			node.tagName === "form"
+				? invalidFormControls(this.tree, node.id, {})
+				: [invalidControl(this.tree, node.id)].filter(
+						(entry): entry is InvalidFormControl => entry !== undefined,
+					);
+		const targets = invalid.map(
+			(entry) => this.tree.resolve(entry.reference).id,
+		);
+		for (const target of targets)
+			yield {
+				target,
+				event: new BrowserEvent("invalid", { cancelable: true }),
+			};
+		return targets.length === 0;
 	}
 
 	requestSubmit(

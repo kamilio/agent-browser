@@ -67,6 +67,13 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 custom-validity continuation: `CUSTOM-VALIDITY.md` adds document-owned,
+quota-accounted custom errors and shared candidacy/message evaluation. Page setters
+now affect native submission; native synchronous/asynchronous check-validity actions
+dispatch invalid events without submitting. The 53 new cases include ownership,
+callbacks and failure cleanup. Page synchronous checkValidity, full ValidityState,
+reported UI and actual runtime/site/socket/UI acceptance remain open.
+
 September 3 numeric-constraint continuation: `INPUT-NUMBER.md` enables native
 number min/max/step validation with shared strict value admission and separate
 HTML numeric-attribute prefix parsing. Bounded canonical-decimal arithmetic avoids
