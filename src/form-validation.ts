@@ -14,6 +14,8 @@ export interface InvalidFormControl {
 	reason:
 		| "value-missing"
 		| "type-mismatch"
+		| "too-long"
+		| "too-short"
 		| "custom-error"
 		| NumberConstraintFailure;
 }
@@ -92,6 +94,8 @@ export function validationMessage(tree: DocumentTree, id: number): string {
 	return {
 		"value-missing": "Please fill out this field.",
 		"type-mismatch": "Please enter a value in the required format.",
+		"too-long": "Please shorten this value to the permitted maximum length.",
+		"too-short": "Please lengthen this value to the required minimum length.",
 		"range-underflow": "Value is below the permitted minimum.",
 		"range-overflow": "Value is above the permitted maximum.",
 		"step-mismatch": "Please enter a value matching the allowed step.",
@@ -127,13 +131,17 @@ function invalidControls(
 			? "value-missing"
 			: flags.typeMismatch
 				? "type-mismatch"
-				: flags.rangeUnderflow
-					? "range-underflow"
-					: flags.rangeOverflow
-						? "range-overflow"
-						: flags.stepMismatch
-							? "step-mismatch"
-							: undefined;
+				: flags.tooLong
+					? "too-long"
+					: flags.tooShort
+						? "too-short"
+						: flags.rangeUnderflow
+							? "range-underflow"
+							: flags.rangeOverflow
+								? "range-overflow"
+								: flags.stepMismatch
+									? "step-mismatch"
+									: undefined;
 		if (reason) invalid.push({ reference: tree.reference(control.id), reason });
 	}
 	return invalid;

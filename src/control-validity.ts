@@ -1,3 +1,4 @@
+import { lengthValidity } from "./control-length.js";
 import {
 	controlChecked,
 	controlValue,
@@ -65,6 +66,10 @@ export function controlValidity(
 			"Expected a validation control",
 		);
 	const value = controlValue(tree, id);
+	Object.assign(
+		flags,
+		lengthValidity(node, value, tree.wasUserEditedValue(id)),
+	);
 	const required = Object.hasOwn(node.attributes, "required");
 	const mutable =
 		!isControlDisabled(tree, id) && !Object.hasOwn(node.attributes, "readonly");
@@ -89,7 +94,7 @@ export function controlValidity(
 		return finish();
 	}
 	if (
-		["pattern", "min", "max", "step", "minlength", "maxlength"].some(
+		["pattern", "min", "max", "step"].some(
 			(name) =>
 				Object.hasOwn(node.attributes, name) &&
 				!(

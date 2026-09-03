@@ -137,7 +137,7 @@ it("validates absolute URL inputs without restricting their submission data sche
 	expect(submit().invalid).toEqual([]);
 });
 
-it.each(["pattern", "min", "max", "step", "minlength", "maxlength"])(
+it.each(["pattern", "min", "max", "step"])(
 	"fails explicitly for unsupported %s instead of bypassing validation",
 	(attribute) => {
 		const { add, submit } = fixture();

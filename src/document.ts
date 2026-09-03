@@ -88,6 +88,7 @@ export class DocumentTree {
 	private currentRevision = 0;
 	private textCodeUnits = 0;
 	private readonly customValidity = new Map<number, string>();
+	private readonly userEditedValues = new Set<number>();
 	private closed = false;
 	private closeHandlers = new Set<() => void>();
 	private changeHandlers = new Set<
@@ -289,6 +290,8 @@ export class DocumentTree {
 			const copy = this.node(copyId);
 			copy.attributes = createHtmlAttributes(source.attributes);
 			copy.control = { ...source.control };
+			if (sourceTree.userEditedValues.has(source.id))
+				this.userEditedValues.add(copyId);
 			this.selections.initialize(copyId, {
 				state: sourceTree.selections,
 				id: source.id,
@@ -915,10 +918,29 @@ export class DocumentTree {
 		this.changed("control", id);
 	}
 
-	setControl(id: number, state: ControlState) {
+	wasUserEditedValue(id: number): boolean {
+		this.element(id);
+		return this.userEditedValues.has(id);
+	}
+
+	setControl(
+		id: number,
+		state: ControlState,
+		origin: "script" | "user" = "script",
+	) {
 		const node = this.element(id);
 		if (!state || typeof state !== "object" || Array.isArray(state))
 			throw new AgentBrowserError("invalid-input", "Invalid control state");
+		if (
+			!["script", "user"].includes(origin) ||
+			(origin === "user" &&
+				(!["input", "textarea"].includes(node.tagName) ||
+					state.value === undefined))
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid control value origin",
+			);
 		for (const [key, value] of Object.entries(state)) {
 			if (key === "value") this.validateString(value);
 			else if (
@@ -933,6 +955,10 @@ export class DocumentTree {
 		this.checkTextBudget(change);
 		this.textCodeUnits += change;
 		node.control = { ...node.control, ...state };
+		if (state.value !== undefined) {
+			if (origin === "user") this.userEditedValues.add(id);
+			else this.userEditedValues.delete(id);
+		}
 		if (node.tagName === "input" && state.value !== undefined)
 			this.inputValues.markDirty(id);
 		if (node.tagName === "option" && state.selected !== undefined)
@@ -993,6 +1019,7 @@ export class DocumentTree {
 			);
 		let changed = false;
 		for (const field of new Set<keyof ControlState>(fields)) {
+			if (field === "value" && this.userEditedValues.delete(id)) changed = true;
 			if (field === "value" && node.tagName === "input")
 				this.inputValues.reset(id);
 			if (field === "checked" && node.tagName === "input") {
@@ -1148,6 +1175,7 @@ export class DocumentTree {
 		this.checkedness.close();
 		this.inputValues.close();
 		this.customValidity.clear();
+		this.userEditedValues.clear();
 		this.nodes.clear();
 		this.nodeViews.clear();
 		this.attributeRecords.clear();
@@ -1252,6 +1280,8 @@ export class DocumentTree {
 		change: InputValueChange | undefined,
 	) {
 		if (!change) return;
+		if (!change.dirty || this.node(id).control.value !== change.value)
+			this.userEditedValues.delete(id);
 		this.textCodeUnits += this.inputValueDelta(id, change);
 		if (change.defaultValue !== undefined) {
 			setHtmlAttribute(this.node(id).attributes, "value", change.defaultValue);

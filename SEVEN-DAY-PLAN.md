@@ -67,6 +67,13 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 text-length continuation: `TEXT-LENGTH.md` adds user-edit-aware native
+minlength/maxlength flags, shared keyboard limit parsing and value-origin lifecycle
+ownership. The 63 new cases distinguish page assignments from native user edits,
+including same-value writes, cancellation, reset, clone/import and quota failure.
+Focused validation passes 381 / seven files. Pattern/calendar profiles, richer
+page validation APIs and actual runtime/site/socket/UI acceptance remain open.
+
 September 3 live-validity continuation: `VALIDITY-STATE.md` adds stable readonly
 page validity objects backed by shared native flags, including simultaneous numeric
 and custom errors. Per-revision snapshots and bounded, reentrancy-safe capability

@@ -18,6 +18,7 @@
   "src/click-actionability.test.ts",
   "src/command-host.test.ts",
   "src/computed-styles.test.ts",
+  "src/control-length.test.ts",
   "src/control-rendering.test.ts",
   "src/controls.test.ts",
   "src/cookie-state.test.ts",

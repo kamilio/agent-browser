@@ -19,6 +19,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Text-length checkpoint: `TEXT-LENGTH.md` adds native minlength/maxlength flags
+with document-owned user-edit provenance, shared keyboard integer-limit parsing
+and normalized API-value counting. Script assignments, including same-string
+writes, clear provenance; canceled actions and rejected quota writes preserve it.
+Reset, clone/import, type sanitization and close follow the native value owner.
+All four initial regressions fail before implementation; 63 new cases pass.
+Focused checks pass 381 / seven files; full native checks pass 6,997 / 208 files.
+The isolated owned patch typechecks and passes 4,237 / 147 available native files.
+Build, strict focused-test types and nine-source lint pass. Pattern and calendar
+profiles, page length reflection, richer validation APIs and actual runtime/site/
+socket/UI acceptance remain open. No unapproved acceptance probe ran.
+
+### Previous live-validity checkpoint
+
 Live-validity checkpoint: `VALIDITY-STATE.md` exposes stable readonly page validity
 objects backed by shared native flags, rather than a single prioritized reason.
 Numeric range/step and custom errors can coexist. Required-state evaluation now

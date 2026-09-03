@@ -1,3 +1,4 @@
+import { lengthApplies, parseLengthLimit } from "./control-length.js";
 import {
 	controlValue,
 	fillTextControl,
@@ -454,14 +455,11 @@ export class DocumentKeyboard {
 		if (start === end && inputType === "deleteContentForward")
 			end = nextOffset(caret.value, end);
 		const next = caret.value.slice(0, start) + text + caret.value.slice(end);
-		const maximum = this.tree.get(id).attributes.maxlength;
-		if (
-			text &&
-			maximum !== undefined &&
-			/^\d+$/.test(maximum) &&
-			next.length > Number(maximum)
-		)
-			return true;
+		const node = this.tree.get(id);
+		const maximum = lengthApplies(node)
+			? parseLengthLimit(node.attributes.maxlength)
+			: undefined;
+		if (text && maximum !== undefined && next.length > maximum) return true;
 		if (next === caret.value) return true;
 		if (
 			!(yield {

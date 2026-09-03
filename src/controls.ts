@@ -388,12 +388,16 @@ export function fillTextControl(
 	value: string,
 ) {
 	const node = validateTextControl(tree, reference, value);
-	tree.setControl(node.id, {
-		value:
-			node.tagName === "textarea"
-				? value.replace(/\r\n?/g, "\n")
-				: value.replace(/[\r\n]/g, ""),
-	});
+	tree.setControl(
+		node.id,
+		{
+			value:
+				node.tagName === "textarea"
+					? value.replace(/\r\n?/g, "\n")
+					: sanitizeInputValue(inputType(node), value, node.attributes),
+		},
+		"user",
+	);
 }
 
 export function radioGroup(

@@ -157,7 +157,7 @@ it.each(["min", "max", "step"])(
 	},
 );
 
-it.each(["pattern", "minlength", "maxlength"])(
+it.each(["pattern"])(
 	"retains explicit unsupported email constraint %s",
 	(attribute) => {
 		expect(() => fixture("user@host", { [attribute]: "1" }).submit()).toThrow(
