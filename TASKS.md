@@ -19,6 +19,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Dataset checkpoint: `DATASET.md` adds live native data-attribute properties with
+bounded named setters/deleters, Attr identity, selector/serialization consistency
+and failure atomicity. Shared attribute-name normalization now folds only ASCII,
+preserving distinct Unicode names through parsing, creation and lookup. Sixteen
+initial reproductions failed; forty-six new cases pass. Two reviewed offline
+files restore nine omitted cases to the explicit allowlist. Focused validation
+passes 132 tests / six files; full native validation passes 6,268 / 193 files.
+The isolated patch passes typechecking and 3,508 tests / 132 available native
+files. Build, strict test types and targeted lint/formatting pass. Actual SafeJS
+named-property, framework/site, socket and terminal/playground gates remain open;
+no unapproved probe has run.
+
+### Previous live-collection checkpoint
+
 Live-document-collection checkpoint: `DOCUMENT-COLLECTIONS.md` adds native links,
 scripts, anchors, embeds and the plugins alias using the existing bounded owner.
 Seventeen initial reproductions failed; thirty-eight new tests cover live member

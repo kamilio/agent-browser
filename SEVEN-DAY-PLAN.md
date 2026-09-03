@@ -67,6 +67,11 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 dataset continuation: `DATASET.md` adds live native data-attribute
+properties with bounded named setters/deleters, shared Attr identity and failure
+atomicity. Attribute parsing and native lookup now preserve non-ASCII case. Actual
+SafeJS named-property, framework/site, socket and UI validation remain open.
+
 September 3 live-collection continuation: `DOCUMENT-COLLECTIONS.md` adds native
 document links, scripts, anchors and embed/plugin collections through the shared
 bounded collection owner. Saved capabilities track attribute and structural

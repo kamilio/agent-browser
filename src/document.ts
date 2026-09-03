@@ -1,6 +1,7 @@
 import { DocumentSelection } from "./document-selection.js";
 import { canRewriteDocumentUrl } from "./document-url.js";
 import { AgentBrowserError } from "./errors.js";
+import { htmlAttributeName } from "./html-attribute-name.js";
 
 export type NodeKind = "document" | "fragment" | "element" | "text" | "comment";
 
@@ -199,7 +200,7 @@ export class DocumentTree {
 		const id = this.allocate("element", tagName.toLowerCase(), "");
 		const node = this.node(id);
 		for (const [name, value] of Object.entries(attributes)) {
-			const key = name.toLowerCase();
+			const key = htmlAttributeName(name);
 			if (Object.hasOwn(node.attributes, key)) continue;
 			node.attributes[key] = value;
 			this.textCodeUnits += key.length + value.length;
@@ -516,7 +517,7 @@ export class DocumentTree {
 		this.validateAttribute(name);
 		this.validateString(value);
 		const node = this.element(id);
-		const key = name.toLowerCase();
+		const key = htmlAttributeName(name);
 		const previous = node.attributes[key];
 		if (previous === value) return;
 		const attributeId = this.attachedAttributes.get(id)?.get(key);
@@ -540,7 +541,7 @@ export class DocumentTree {
 	removeAttribute(id: number, name: string) {
 		this.validateAttribute(name);
 		const node = this.element(id);
-		const key = name.toLowerCase();
+		const key = htmlAttributeName(name);
 		if (!Object.hasOwn(node.attributes, key)) return;
 		this.textCodeUnits -= key.length + node.attributes[key].length;
 		delete node.attributes[key];
@@ -566,7 +567,7 @@ export class DocumentTree {
 				"resource-limit",
 				"Document node limit exceeded",
 			);
-		const key = name.toLowerCase();
+		const key = htmlAttributeName(name);
 		this.checkTextBudget(key.length + value.length);
 		const id = nextNodeId++;
 		this.attributeRecords.set(id, { id, name: key, value, ownerElement: null });
@@ -576,7 +577,7 @@ export class DocumentTree {
 
 	getAttributeNode(id: number, name: string): number | null {
 		this.validateString(name);
-		const key = name.toLowerCase();
+		const key = htmlAttributeName(name);
 		const value = this.element(id).attributes[key];
 		if (value === undefined) return null;
 		const existing = this.attachedAttributes.get(id)?.get(key);

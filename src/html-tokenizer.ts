@@ -1,4 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
+import { htmlAttributeName } from "./html-attribute-name.js";
 import { decodeHtmlEntities } from "./html-entities.js";
 
 export type HtmlToken =
@@ -228,9 +229,9 @@ export class HtmlTokenizer {
 				!/[\t\n\f\r />=]/.test(this.source[this.offset])
 			)
 				this.offset++;
-			const attribute = this.source
-				.slice(attributeStart, this.offset)
-				.toLowerCase();
+			const attribute = htmlAttributeName(
+				this.source.slice(attributeStart, this.offset),
+			);
 			if (!attribute || /[\t\n\f\r "'/>=]/.test(attribute))
 				throw new AgentBrowserError(
 					"unsupported",

@@ -22,6 +22,8 @@ import {
 import { writeDocument } from "./document-write.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { htmlAttributeName } from "./html-attribute-name.js";
+import { ScriptDatasets } from "./script-dataset.js";
 import {
 	type DocumentElementSizes,
 	documentElementSizes,
@@ -59,6 +61,8 @@ export interface ScriptHostObjectDefinition {
 		enumerable?: boolean;
 		keys: () => readonly string[];
 		get: (name: string) => unknown;
+		set?: (name: string, value: unknown) => void;
+		delete?: (name: string) => boolean;
 	};
 	indexed?: {
 		maxLength: number;
@@ -83,6 +87,7 @@ export class ScriptDom {
 	private readonly collections: ScriptCollections;
 	private readonly inlineStyles: InlineStyles;
 	private readonly attributes: ScriptAttributes;
+	private readonly datasets: ScriptDatasets;
 	private readonly relations: NodeRelations;
 	private readonly classLists: ScriptClassLists;
 	private readonly geometry: ScriptGeometry;
@@ -108,6 +113,7 @@ export class ScriptDom {
 		this.queries = new DocumentQueries(tree);
 		this.inlineStyles = new InlineStyles(tree, factory);
 		this.classLists = new ScriptClassLists(tree, factory);
+		this.datasets = new ScriptDatasets(tree, factory);
 		this.geometry = new ScriptGeometry(tree, factory);
 		this.elementSizes = documentElementSizes(tree);
 		this.computedStyles = new ComputedStyles(tree, factory);
@@ -469,6 +475,12 @@ export class ScriptDom {
 			});
 		}
 		if (initial.kind === "element") {
+			definition.properties.dataset = {
+				get: () => {
+					this.read(id);
+					return this.datasets.get(id);
+				},
+			};
 			if (initial.tagName === "img") {
 				const images = documentImages(this.tree);
 				images.get(id);
@@ -602,11 +614,11 @@ export class ScriptDom {
 				removeAttributeNode: (attribute: unknown) =>
 					this.attributes.remove(id, attribute),
 				getAttribute: (name: unknown) =>
-					this.read(id).attributes[domString(name).toLowerCase()] ?? null,
+					this.read(id).attributes[htmlAttributeName(domString(name))] ?? null,
 				hasAttribute: (name: unknown) =>
 					Object.hasOwn(
 						this.read(id).attributes,
-						domString(name).toLowerCase(),
+						htmlAttributeName(domString(name)),
 					),
 				setAttribute: (name: unknown, value: unknown) => {
 					this.read(id);
@@ -681,6 +693,7 @@ export class ScriptDom {
 		this.collections.close();
 		this.inlineStyles.close();
 		this.attributes.close();
+		this.datasets.close();
 		this.relations.close();
 		this.classLists.close();
 		this.geometry.close();
