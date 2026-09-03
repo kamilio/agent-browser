@@ -1,5 +1,9 @@
 import { AgentBrowserError } from "./errors.js";
 import { parseNetworkUrl } from "./network.js";
+import {
+	type StateReplacement,
+	prepareStateReplacement,
+} from "./state-replacement.js";
 
 export interface CookieLimits {
 	maxCookies: number;
@@ -286,6 +290,12 @@ export class CookieJar {
 	}
 
 	replaceState(input: unknown) {
+		const replacement = this[prepareStateReplacement](input);
+		replacement.assertReady();
+		replacement.commit();
+	}
+
+	[prepareStateReplacement](input: unknown): StateReplacement {
 		this.assertOpen();
 		const state = stateRecord(input, ["schemaVersion", "cookies"]);
 		if (state.schemaVersion !== 1 || !Array.isArray(state.cookies))
@@ -412,8 +422,13 @@ export class CookieJar {
 				created: replacement.size,
 			});
 		}
-		this.cookies = replacement;
-		this.sequence = replacement.size;
+		return {
+			assertReady: () => this.assertOpen(),
+			commit: () => {
+				this.cookies = replacement;
+				this.sequence = replacement.size;
+			},
+		};
 	}
 
 	metrics() {

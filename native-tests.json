@@ -5,6 +5,7 @@
   "src/bitmap-font.test.ts",
   "src/block-width.test.ts",
   "src/borders.test.ts",
+  "src/browser-state.test.ts",
   "src/capture-artifacts.test.ts",
   "src/capture-assets.test.ts",
   "src/character-data.test.ts",

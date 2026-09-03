@@ -46,6 +46,10 @@ September 3 progress: `COOKIE-STATE.md` implements that cookie primitive with
 39 new native cases. Cookie/storage regressions pass 104 tests across three files;
 CLI file integration and the combined cookie/local-storage transaction remain next.
 
+September 3 continuation: `BROWSER-STATE.md` adds the combined transaction and
+hardens local-storage imports. Both owners validate before either changes; retained
+session storage counts toward quotas. Private CLI file round trips remain next.
+
 ## Acceptance and safety
 
 - Keep every requirement in `COMPATIBILITY.md`; do not turn missing behavior into

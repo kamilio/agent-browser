@@ -1,5 +1,11 @@
 import { AgentBrowserError } from "./errors.js";
 import { parseNetworkUrl } from "./network.js";
+import {
+	type StateReplacement,
+	prepareStateReplacement,
+	stateArray,
+	stateRecord,
+} from "./state-replacement.js";
 
 export interface StorageLimits {
 	maxTabs: number;
@@ -163,26 +169,20 @@ export class BrowserStorage {
 	}
 
 	replaceLocalState(input: unknown) {
+		const replacement = this[prepareStateReplacement](input);
+		replacement.assertReady();
+		replacement.commit();
+	}
+
+	[prepareStateReplacement](input: unknown): StateReplacement {
 		this.ensureOpen();
-		if (
-			!input ||
-			typeof input !== "object" ||
-			!("origins" in input) ||
-			!Array.isArray(input.origins) ||
-			input.origins.length > this.limits.maxAreas
-		)
-			throw new AgentBrowserError(
-				"invalid-input",
-				"Invalid local storage state",
-			);
+		const state = stateRecord(input, ["origins"]);
 		const replacement = new Map<string, Store>();
-		for (const item of input.origins) {
-			if (
-				!item ||
-				typeof item !== "object" ||
-				typeof item.origin !== "string" ||
-				!Array.isArray(item.localStorage)
-			)
+		let totalBytes = 0;
+		let totalEntries = 0;
+		for (const value of stateArray(state.origins, this.limits.maxAreas)) {
+			const item = stateRecord(value, ["origin", "localStorage"]);
+			if (typeof item.origin !== "string")
 				throw new AgentBrowserError(
 					"invalid-input",
 					"Invalid local storage origin",
@@ -198,37 +198,52 @@ export class BrowserStorage {
 					"invalid-input",
 					"Invalid or duplicate storage origin",
 				);
-			if (item.localStorage.length > this.limits.maxEntriesPerArea)
-				throw new AgentBrowserError(
-					"resource-limit",
-					"Storage entry limit exceeded",
-				);
 			const store: Store = { values: new Map(), bytes: 0 };
-			for (const entry of item.localStorage) {
-				if (!entry || typeof entry !== "object")
-					throw new AgentBrowserError("invalid-input", "Invalid storage entry");
+			for (const value of stateArray(
+				item.localStorage,
+				this.limits.maxEntriesPerArea,
+			)) {
+				const entry = stateRecord(value, ["name", "value"]);
 				string(entry.name);
 				string(entry.value);
 				if (store.values.has(entry.name))
 					throw new AgentBrowserError("invalid-input", "Duplicate storage key");
-				store.bytes += 2 * (entry.name.length + entry.value.length);
+				const bytes = 2 * (entry.name.length + entry.value.length);
+				store.bytes += bytes;
+				totalBytes += bytes;
+				totalEntries++;
 				if (store.bytes > this.limits.maxAreaBytes)
 					throw new AgentBrowserError(
 						"resource-limit",
 						"Storage area byte limit exceeded",
 					);
+				if (
+					totalBytes > this.limits.maxTotalBytes ||
+					totalEntries > this.limits.maxTotalEntries
+				)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Storage profile limit exceeded",
+					);
 				store.values.set(entry.name, entry.value);
 			}
 			replacement.set(url.origin, store);
 		}
-		this.validateStores([
-			...replacement.values(),
-			...Array.from(this.tabs.values()).flatMap((tab) => [
-				...tab.session.values(),
-			]),
-		]);
-		this.local = replacement;
-		this.currentRevision++;
+		return {
+			assertReady: () => {
+				this.ensureOpen();
+				this.validateStores([
+					...replacement.values(),
+					...Array.from(this.tabs.values()).flatMap((tab) => [
+						...tab.session.values(),
+					]),
+				]);
+			},
+			commit: () => {
+				this.local = replacement;
+				this.currentRevision++;
+			},
+		};
 	}
 
 	close() {

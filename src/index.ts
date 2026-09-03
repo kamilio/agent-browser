@@ -178,6 +178,12 @@ export {
 } from "./storage.js";
 export { BrowserStorageEvent } from "./storage-events.js";
 export {
+	exportBrowserState,
+	replaceBrowserState,
+	type BrowserState,
+	type BrowserStateOwner,
+} from "./browser-state.js";
+export {
 	NetworkPolicy,
 	decodeResponseText,
 	addressFamily,

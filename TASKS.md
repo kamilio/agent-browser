@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Browser-state checkpoint: `BROWSER-STATE.md` adds combined native cookie/local-storage
+export and all-or-nothing replacement. Both owners validate before either changes;
+existing owner identities and storage handles survive, session storage is retained,
+and failed imports leave storage revisions unchanged. Local-state records reject
+accessors and malformed arrays, with aggregate quotas enforced while staging.
+
+Forty new cases pass; focused cookie/storage coverage passes 157 tests / five files.
+The full working tree passes 5,843 tests / 180 explicit native files. Production
+build, strict focused-test checking and five-source lint/format checks pass.
+The isolated change passes typechecking and 3,083 tests / 119 available allowlisted
+files without the pre-existing unfinished work. No live/runtime probe is claimed.
+
+Next: private CLI `state-save`/`state-load` round trips with bounded reads, private
+permissions, atomic writes and symlink/failure handling. Real authentication reuse
+and live website, socket, real TTY/PTY and SafeJS acceptance gates remain open.
+
+### Previous cookie-state checkpoint
+
 Cookie-state checkpoint: `COOKIE-STATE.md` adds bounded native export and atomic
 replacement, preserving host/path/security data, creation order and absolute
 expiry without exposing state to page JavaScript. Thirty-nine new cases pass;
