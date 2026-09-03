@@ -42,6 +42,7 @@ import {
 	type ScriptEventOptions,
 } from "./script-events.js";
 import { scriptFormProperties } from "./script-form.js";
+import { ScriptValidity } from "./script-validity.js";
 import { supportsConstraintValidation } from "./form-validation.js";
 import { ScriptGeometry } from "./script-geometry.js";
 import type { ScriptLocation } from "./script-location.js";
@@ -88,6 +89,7 @@ export class ScriptDom {
 	private readonly elementTraversal: ElementTraversal;
 	private readonly relations: NodeRelations;
 	private readonly classLists: ScriptClassLists;
+	private readonly validity: ScriptValidity;
 	private readonly geometry: ScriptGeometry;
 	private readonly elementSizes: DocumentElementSizes;
 	private readonly computedStyles: ComputedStyles;
@@ -111,6 +113,7 @@ export class ScriptDom {
 		this.queries = new DocumentQueries(tree);
 		this.inlineStyles = new InlineStyles(tree, factory);
 		this.classLists = new ScriptClassLists(tree, factory);
+		this.validity = new ScriptValidity(tree, factory);
 		this.datasets = new ScriptDatasets(tree, factory);
 		this.elementTraversal = new ElementTraversal(tree);
 		this.geometry = new ScriptGeometry(tree, factory);
@@ -556,6 +559,7 @@ export class ScriptDom {
 					(target) => this.node(target),
 					this.collections,
 					domString,
+					this.validity,
 				),
 			);
 			if (supportsConstraintValidation(initial.tagName))
@@ -714,6 +718,7 @@ export class ScriptDom {
 		this.elementTraversal.close();
 		this.relations.close();
 		this.classLists.close();
+		this.validity.close();
 		this.geometry.close();
 		this.computedStyles.close();
 		this.capabilities.clear();

@@ -5,6 +5,7 @@ import type { DocumentNode, DocumentTree } from "./document.js";
 import { isValidationCandidate, validationMessage } from "./form-validation.js";
 import type { ScriptCollections } from "./script-collections.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
+import type { ScriptValidity } from "./script-validity.js";
 
 export function scriptFormProperties(
 	tree: DocumentTree,
@@ -13,6 +14,7 @@ export function scriptFormProperties(
 	wrap: (id: number) => object,
 	collections: ScriptCollections,
 	string: (value: unknown) => string,
+	validity: ScriptValidity,
 ) {
 	const properties: NonNullable<ScriptHostObjectDefinition["properties"]> = {};
 	const tag = read().tagName;
@@ -52,6 +54,12 @@ export function scriptFormProperties(
 		].includes(tag)
 	) {
 		properties.name = attribute("name");
+		properties.validity = {
+			get: () => {
+				read();
+				return validity.get(id);
+			},
+		};
 		properties.willValidate = {
 			get: () => {
 				read();

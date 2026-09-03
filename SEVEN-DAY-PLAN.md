@@ -67,6 +67,13 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 live-validity continuation: `VALIDITY-STATE.md` adds stable readonly
+page validity objects backed by shared native flags, including simultaneous numeric
+and custom errors. Per-revision snapshots and bounded, reentrancy-safe capability
+ownership are verified in 45 new cases. Unsupported constraint profiles, independent
+queries within those profiles, UI bad-input state, synchronous page checking and
+actual runtime/site/socket/UI acceptance remain open.
+
 September 3 custom-validity continuation: `CUSTOM-VALIDITY.md` adds document-owned,
 quota-accounted custom errors and shared candidacy/message evaluation. Page setters
 now affect native submission; native synchronous/asynchronous check-validity actions

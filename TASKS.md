@@ -19,6 +19,21 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Live-validity checkpoint: `VALIDITY-STATE.md` exposes stable readonly page validity
+objects backed by shared native flags, rather than a single prioritized reason.
+Numeric range/step and custom errors can coexist. Required-state evaluation now
+distinguishes immutable controls and radios without a group name. Four initial
+page regressions fail; 45 new cases include per-revision caching, bounded factory
+admission, reentrancy and a reproduced escaped-getter revival fixed by state identity.
+Focused validation passes 324 / seven files; full native validation passes
+6,938 / 207 files. The isolated owned patch typechecks and passes 4,178 / 146
+available native files. Build, strict test types and targeted lint pass. Unsupported
+constraint profiles and per-flag queries within them, UI bad input, synchronous page
+checks, complete reporting/WebIDL behavior and actual runtime/site/socket/UI gates
+remain open. No unapproved acceptance probe ran.
+
+### Previous custom-validity checkpoint
+
 Custom-validity checkpoint: `CUSTOM-VALIDITY.md` adds document-owned custom
 messages with normalized, atomic retained-text accounting. Page setters and
 candidacy/message getters share native submission state; native check-validity

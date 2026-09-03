@@ -203,6 +203,7 @@
   "src/trace-export.test.ts",
   "src/trace-review.test.ts",
   "src/trace-view.test.ts",
+  "src/validity-state.test.ts",
   "src/viewport-scroll.test.ts",
   "src/wheel-command.test.ts"
 ]

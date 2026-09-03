@@ -42,19 +42,36 @@ function stepMismatch(value: number, base: number, step: number) {
 	return (current - initial) % interval !== 0n;
 }
 
+export function numberValidity(
+	value: string,
+	attributes: Readonly<Record<string, string>>,
+) {
+	const result = {
+		rangeUnderflow: false,
+		rangeOverflow: false,
+		stepMismatch: false,
+	};
+	if (!validNumberValue(value)) return result;
+	const number = Number(value);
+	const minimum = parseNumberAttribute(attributes.min);
+	const maximum = parseNumberAttribute(attributes.max);
+	result.rangeUnderflow = minimum !== undefined && number < minimum;
+	result.rangeOverflow = maximum !== undefined && number > maximum;
+	if (attributes.step?.toLowerCase() === "any") return result;
+	const parsedStep = parseNumberAttribute(attributes.step);
+	const step = parsedStep !== undefined && parsedStep > 0 ? parsedStep : 1;
+	const base = minimum ?? parseNumberAttribute(attributes.value) ?? 0;
+	result.stepMismatch = stepMismatch(number, base, step);
+	return result;
+}
+
 export function numberConstraintFailure(
 	value: string,
 	attributes: Readonly<Record<string, string>>,
 ): NumberConstraintFailure | undefined {
-	if (!validNumberValue(value)) return undefined;
-	const number = Number(value);
-	const minimum = parseNumberAttribute(attributes.min);
-	const maximum = parseNumberAttribute(attributes.max);
-	if (minimum !== undefined && number < minimum) return "range-underflow";
-	if (maximum !== undefined && number > maximum) return "range-overflow";
-	if (attributes.step?.toLowerCase() === "any") return undefined;
-	const parsedStep = parseNumberAttribute(attributes.step);
-	const step = parsedStep !== undefined && parsedStep > 0 ? parsedStep : 1;
-	const base = minimum ?? parseNumberAttribute(attributes.value) ?? 0;
-	return stepMismatch(number, base, step) ? "step-mismatch" : undefined;
+	const flags = numberValidity(value, attributes);
+	if (flags.rangeUnderflow) return "range-underflow";
+	if (flags.rangeOverflow) return "range-overflow";
+	if (flags.stepMismatch) return "step-mismatch";
+	return undefined;
 }
