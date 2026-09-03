@@ -857,7 +857,7 @@ function startPlayground() {
 					throw new Error("Invalid pairing response");
 				text(
 					"pair-command",
-					`node packages/browser-agent/dist/src/cli.js playground --pair ${pair.code}`,
+					`node dist/src/cli.js playground --pair ${pair.code}`,
 				);
 				element("pairing").hidden = false;
 				text("pair-status", "Waiting for local CLI approval…");

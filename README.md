@@ -1,5 +1,8 @@
 # Agent browser
 
+Standalone repository: `~/project/agent-browser`. `MIGRATION.md` records preserved
+history and setup; new completed changes receive atomic commits without pushes.
+
 An in-progress lightweight, agent-first browser implemented in TypeScript.
 This is a new engine, not the Chromium-backed `browser-terminal` alternative.
 It must become meaningfully better than curl: semantic document snapshots,
@@ -480,23 +483,21 @@ exports and full Kitesurf playground parity remain missing.
 
 ## Development
 
-From the repository root, using the existing development tools:
+From `~/project/agent-browser`, using the existing development tools:
 
 ```bash
-bun run --cwd packages/browser-agent test
-bun run --cwd packages/browser-agent typecheck
-node_modules/.bin/biome check packages/browser-agent/src packages/browser-agent/scripts
-bun run --cwd packages/browser-agent build
-bun run --cwd packages/browser-agent check:network-sites
-bun run --cwd packages/browser-agent check:cookie-session
-bun run --cwd packages/browser-agent check:session-sites
-bun run --cwd packages/browser-agent check:cli-sites
-bun run --cwd packages/browser-agent check:form-echo
-bun run --cwd packages/browser-agent check:query-resources
+npm run build
+npm run typecheck
+npm test
+npm test -- src/playground-capture.test.ts
+npm run lint
 ```
 
-The network probe makes four opt-in public GET requests; the form probe makes
-two public demo POST requests with fixed non-sensitive data. Both run on Node.
-The query-resource probe uses constructed local fixtures and makes no requests.
+The default test command uses `native-tests.json`, an explicit native-fixture
+allowlist. Public-site, socket, real-terminal and SafeJS probes are separate opt-in
+checks; they are not run by `npm test`. Historical investigation documents describe
+their original environments and authorization requirements.
+
 Build first; package exports point to compiled ESM/declarations in `dist/src`.
-No dependency install or root-workspace package linking has been performed.
+The already-installed development tooling was copied offline. No new runtime
+dependency, registry download or link back to the automations workspace is added.

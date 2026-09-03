@@ -1,1 +1,10 @@
 dist/
+node_modules/
+.turbo/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.automations/
+.poe-code/
+tmp/

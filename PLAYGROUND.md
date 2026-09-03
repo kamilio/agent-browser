@@ -49,14 +49,14 @@ claiming they are always disabled. No new visual UI run is claimed here.
 From the repository root:
 
 ```bash
-bun run --cwd packages/browser-agent build
-node packages/browser-agent/dist/src/cli.js serve
+bun run build
+node dist/src/cli.js serve
 ```
 
 Keep that foreground process running. In another terminal:
 
 ```bash
-node packages/browser-agent/dist/src/cli.js playground
+node dist/src/cli.js playground
 ```
 
 Open the printed loopback URL in your browser. Select **Request connection**, then
@@ -126,6 +126,10 @@ Host and cross-origin restrictions still apply (`CLI.md`).
 
 ## Verification
 
+This section records historical live checks, not the default standalone native
+suite. The legacy UI probe requires the separate automations watchable-browser
+tool and its original environment; do not run it as a standalone acceptance test.
+
 The Node suite includes real HTTP pairing/revocation tests, scope restrictions,
 token expiry/quotas, fixed assets/CSP, pure frontend parsing/URL handling,
 observer diff isolation and actual subprocess approval. No external dependencies
@@ -135,7 +139,7 @@ session and an isolated foreground service:
 ```bash
 AGENT_BROWSER_RUNTIME_DIR=/tmp/your-isolated-runtime \
 PLAYGROUND_TEST_BROWSER_SESSION=your-task-owned-session-id \
-node packages/browser-agent/dist/scripts/check-playground-ui.js
+node dist/scripts/check-playground-ui.js
 ```
 
 Run from the repository root. The probe uses the existing `bun run browser` tool;

@@ -1,5 +1,10 @@
 # Agent browser: 72-hour implementation tasks
 
+Standalone location: `~/project/agent-browser` as of September 3, 2026.
+`MIGRATION.md` records the preserved history, independent tooling and native
+validation boundary. Keep making atomic commits for completed new work; do not
+push unless requested. The original browser scope and acceptance gates remain.
+
 Started: September 1, 2026, approximately 14:58 UTC.
 Work window: through September 4, 2026, approximately 14:58 UTC.
 Status: active; foundation work, not a completed browser.

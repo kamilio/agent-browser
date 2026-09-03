@@ -1,5 +1,5 @@
 {
-	"name": "@automations/browser-agent",
+	"name": "agent-browser",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
@@ -29,6 +29,12 @@
 			"import": "./dist/src/node-session-host.js"
 		}
 	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/bun": "1.3.14",
+		"typescript": "5.9.3",
+		"vitest": "4.1.10"
+	},
 	"scripts": {
 		"check:node-relations": "node dist/scripts/check-node-relations.js",
 		"cli": "node dist/src/cli.js",
@@ -36,7 +42,7 @@
 		"check:jpeg-decoder": "node dist/scripts/check-jpeg-decoder.js",
 		"check:jpeg-performance": "node dist/scripts/check-jpeg-performance.js",
 		"check:image-resources": "node dist/scripts/check-image-resources.js",
-		"build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json --outDir dist",
+		"build": "node node_modules/typescript/bin/tsc -p tsconfig.json --outDir dist",
 		"check:computed-styles": "node dist/scripts/check-computed-styles.js",
 		"check:inline-box": "node dist/scripts/check-inline-box.js",
 		"check:element-sizes": "node dist/scripts/check-element-sizes.js",
@@ -113,8 +119,8 @@
 		"check:snapshot-search": "node dist/scripts/check-snapshot-search.js",
 		"probe:nested-callbacks": "node dist/scripts/check-nested-callbacks.js",
 		"check:query-resources": "node dist/scripts/check-query-resources.js",
-		"test": "node ../../node_modules/vitest/vitest.mjs run src --maxWorkers=1",
-		"typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",
-		"lint": "biome check src scripts"
+		"test": "node node_modules/vitest/vitest.mjs run --maxWorkers=1",
+		"typecheck": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",
+		"lint": "node node_modules/@biomejs/biome/bin/biome check src scripts"
 	}
 }

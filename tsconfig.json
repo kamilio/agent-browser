@@ -1,6 +1,21 @@
 {
-	"extends": "../../tsconfig.base.json",
-	"compilerOptions": { "lib": ["ES2022", "DOM", "DOM.Iterable"] },
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"verbatimModuleSyntax": true,
+		"types": ["bun"],
+		"lib": ["ES2022", "DOM", "DOM.Iterable"]
+	},
 	"include": ["src", "scripts"],
 	"exclude": ["src/**/*.test.ts"]
 }

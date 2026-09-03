@@ -11,14 +11,14 @@ Build the package using the existing workspace TypeScript tool, then start its
 foreground service:
 
 ```sh
-node node_modules/typescript/bin/tsc -p packages/browser-agent/tsconfig.json --outDir packages/browser-agent/dist
-node packages/browser-agent/dist/src/cli.js serve
+node node_modules/typescript/bin/tsc -p tsconfig.json --outDir dist
+node dist/src/cli.js serve
 ```
 
 In another terminal:
 
 ```sh
-node packages/browser-agent/dist/src/cli.js -s=research terminal https://example.com/
+node dist/src/cli.js -s=research terminal https://example.com/
 ```
 
 Omit the URL to attach without navigating an existing session. A new session

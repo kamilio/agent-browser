@@ -18,7 +18,7 @@ let Process: typeof import("./node-script-process.js").SafeJsProcess;
 beforeAll(async () => {
 	await execute(process.execPath, [
 		fileURLToPath(
-			new URL("../../../node_modules/typescript/bin/tsc", import.meta.url),
+			new URL("../node_modules/typescript/bin/tsc", import.meta.url),
 		),
 		"-p",
 		fileURLToPath(new URL("../tsconfig.json", import.meta.url)),

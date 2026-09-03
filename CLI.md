@@ -50,24 +50,24 @@ is unchanged; a capability flag is not evidence that a page's scripts succeeded.
 From the repository root, build and start the package-owned foreground service:
 
 ```bash
-bun run --cwd packages/browser-agent build
-node packages/browser-agent/dist/src/cli.js serve
+bun run build
+node dist/src/cli.js serve
 ```
 
 In another terminal:
 
 ```bash
-node packages/browser-agent/dist/src/cli.js -s=research open https://httpbingo.org/json
-node packages/browser-agent/dist/src/cli.js -s=research snapshot
-node packages/browser-agent/dist/src/cli.js -s=research localstorage-set example synthetic-value
-node packages/browser-agent/dist/src/cli.js -s=research localstorage-get example --json
-node packages/browser-agent/dist/src/cli.js list
-node packages/browser-agent/dist/src/cli.js close-all
-node packages/browser-agent/dist/src/cli.js stop-server
+node dist/src/cli.js -s=research open https://httpbingo.org/json
+node dist/src/cli.js -s=research snapshot
+node dist/src/cli.js -s=research localstorage-set example synthetic-value
+node dist/src/cli.js -s=research localstorage-get example --json
+node dist/src/cli.js list
+node dist/src/cli.js close-all
+node dist/src/cli.js stop-server
 ```
 
 The manifest declares the eventual `agent-browser` executable; no install/link or
-dependency operation has been performed. `bun run --cwd packages/browser-agent cli`
+dependency operation has been performed. `bun run cli`
 also runs the built frontend. `--help`, command help, `--version` and `capabilities`
 work without a running service. The service does **not** automatically start on
 `open` yet. Keep its foreground terminal open, or use your own explicit supervisor.
@@ -230,7 +230,7 @@ unverified process. Do not claim full baseline session lifecycle parity yet.
   is ephemeral; no token, response body or raw process output is retained.
 
 Run the opt-in public check after building with
-`bun run --cwd packages/browser-agent check:cli-sites`.
+`bun run check:cli-sites`.
 The later `reports/html-cli-sites-2026-09-01.json` run has 17 passing assertions,
 including actual Example Domain/Hacker News parsing, Books to Scrape ref-driven
 navigation/back and XML failure preservation. `HTML.md` records scope and limitations.
