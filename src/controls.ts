@@ -1,6 +1,9 @@
 import { textareaDefaultValue } from "./control-defaults.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { inputType, sanitizeInputValue } from "./input-values.js";
+
+export { inputType } from "./input-values.js";
 
 const associatedTags = new Set([
 	"button",
@@ -17,30 +20,6 @@ const fieldsetAffected = new Set([
 	"input",
 	"select",
 	"textarea",
-]);
-const inputTypes = new Set([
-	"hidden",
-	"text",
-	"search",
-	"tel",
-	"url",
-	"email",
-	"password",
-	"date",
-	"month",
-	"week",
-	"time",
-	"datetime-local",
-	"number",
-	"range",
-	"color",
-	"checkbox",
-	"radio",
-	"file",
-	"submit",
-	"image",
-	"reset",
-	"button",
 ]);
 const textTypes = new Set([
 	"text",
@@ -68,11 +47,6 @@ interface ControlIndex {
 }
 
 const indexes = new WeakMap<DocumentTree, ControlIndex>();
-
-export function inputType(node: Readonly<DocumentNode>) {
-	const type = node.attributes.type?.toLowerCase() ?? "text";
-	return inputTypes.has(type) ? type : "text";
-}
 
 export function isLabelable(node: Readonly<DocumentNode>) {
 	return (
@@ -347,6 +321,7 @@ export function controlValue(tree: DocumentTree, id: number): string {
 			"\n",
 		);
 	const type = inputType(node);
+	if (node.tagName === "input" && type === "file") return "";
 	const fallback =
 		type === "checkbox" || type === "radio"
 			? "on"
@@ -355,25 +330,10 @@ export function controlValue(tree: DocumentTree, id: number): string {
 				: type === "reset"
 					? "Reset"
 					: "";
-	let value = node.control.value ?? node.attributes.value ?? fallback;
+	const value = node.control.value ?? node.attributes.value ?? fallback;
 	if (node.tagName !== "input")
 		return node.control.value ?? node.attributes.value ?? "";
-	if (textTypes.has(type) && type !== "number")
-		value = value.replace(/[\r\n]/g, "");
-	if (type === "url" || type === "email")
-		value = value.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "");
-	if (type === "email" && Object.hasOwn(node.attributes, "multiple"))
-		value = value
-			.split(",")
-			.map((part) => part.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, ""))
-			.join(",");
-	if (
-		type === "number" &&
-		(!/^-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value) ||
-			!Number.isFinite(Number(value)))
-	)
-		return "";
-	return value;
+	return sanitizeInputValue(type, value, node.attributes);
 }
 
 function editable(tree: DocumentTree, reference: string) {

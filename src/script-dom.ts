@@ -794,6 +794,15 @@ export class ScriptDom {
 			return;
 		}
 		const type = inputType(node);
+		if (type === "file") {
+			if (text !== "")
+				throw new DOMException(
+					"File input values can only be cleared",
+					"InvalidStateError",
+				);
+			this.tree.clearControl(id, ["value"]);
+			return;
+		}
 		if (
 			[
 				"checkbox",

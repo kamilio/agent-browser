@@ -1,4 +1,8 @@
 import { DocumentCheckedness } from "./document-checkedness.js";
+import {
+	DocumentInputValues,
+	type InputValueChange,
+} from "./document-input-values.js";
 import { DocumentSelection } from "./document-selection.js";
 import { canRewriteDocumentUrl } from "./document-url.js";
 import { AgentBrowserError } from "./errors.js";
@@ -96,6 +100,7 @@ export class DocumentTree {
 		(id) => this.node(id),
 		(id) => this.changed("control", id),
 	);
+	private readonly inputValues = new DocumentInputValues((id) => this.node(id));
 
 	constructor(url: string, limits: Partial<DocumentLimits> = {}) {
 		this.currentUrl = new URL(url).href;
@@ -289,6 +294,10 @@ export class DocumentTree {
 			});
 			this.checkedness.initialize(copyId, {
 				state: sourceTree.checkedness,
+				id: source.id,
+			});
+			this.inputValues.initialize(copyId, {
+				state: sourceTree.inputValues,
 				id: source.id,
 			});
 			this.textCodeUnits += extraText(source);
@@ -547,7 +556,14 @@ export class DocumentTree {
 		const node = this.element(id);
 		const key = htmlAttributeName(name);
 		const previous = node.attributes[key];
-		if (previous === value) return;
+		const inputChange = this.inputValues.prepare(id, key, value);
+		if (previous === value) {
+			if (inputChange && inputChange.value !== node.control.value) {
+				this.applyInputValueChange(id, inputChange);
+				this.changed("control", id);
+			}
+			return;
+		}
 		const attributeId = this.attachedAttributes.get(id)?.get(key);
 		const attribute =
 			attributeId === undefined
@@ -558,10 +574,11 @@ export class DocumentTree {
 			(previous?.length ?? 0) +
 			(previous === undefined ? key.length : 0) +
 			(attribute === undefined ? 0 : value.length - attribute.value.length);
-		this.checkTextBudget(change);
+		this.checkTextBudget(change + this.inputValueDelta(id, inputChange));
 		setHtmlAttribute(node.attributes, key, value);
 		if (attribute) attribute.value = value;
 		this.textCodeUnits += change;
+		this.applyInputValueChange(id, inputChange);
 		this.changed("attribute", id);
 		this.selections.attribute(id, key);
 		this.checkedness.attribute(id, key, previous);
@@ -588,6 +605,10 @@ export class DocumentTree {
 		const key = htmlAttributeName(name);
 		if (!Object.hasOwn(node.attributes, key)) return;
 		const previous = node.attributes[key];
+		const inputChange = this.inputValues.prepare(id, key, undefined);
+		this.checkTextBudget(
+			-key.length - previous.length + this.inputValueDelta(id, inputChange),
+		);
 		this.textCodeUnits -= key.length + node.attributes[key].length;
 		removeHtmlAttribute(node.attributes, key);
 		const attributeId = this.attachedAttributes.get(id)?.get(key);
@@ -596,6 +617,7 @@ export class DocumentTree {
 			attribute.ownerElement = null;
 			this.attachedAttributes.get(id)?.delete(key);
 		}
+		this.applyInputValueChange(id, inputChange);
 		this.changed("attribute", id);
 		this.selections.attribute(id, key);
 		this.checkedness.attribute(id, key, previous);
@@ -661,6 +683,11 @@ export class DocumentTree {
 				"Attribute is already in use by another element",
 			);
 		const previous = node.attributes[attribute.name];
+		const inputChange = this.inputValues.prepare(
+			id,
+			attribute.name,
+			attribute.value,
+		);
 		const change =
 			attribute.value.length -
 			(previous?.length ?? 0) +
@@ -670,13 +697,16 @@ export class DocumentTree {
 			previous === undefined || captured !== undefined
 				? 0
 				: attribute.name.length + previous.length;
-		this.checkTextBudget(change + captureCost);
+		this.checkTextBudget(
+			change + captureCost + this.inputValueDelta(id, inputChange),
+		);
 		const original = this.getAttributeNode(id, attribute.name);
 		if (original !== null) this.attributeRecord(original).ownerElement = null;
 		setHtmlAttribute(node.attributes, attribute.name, attribute.value);
 		attribute.ownerElement = id;
 		this.attributeMap(id).set(attribute.name, attributeId);
 		this.textCodeUnits += change;
+		this.applyInputValueChange(id, inputChange);
 		this.changed("attribute", id);
 		this.selections.attribute(id, attribute.name);
 		this.checkedness.attribute(id, attribute.name, previous);
@@ -883,6 +913,8 @@ export class DocumentTree {
 		this.checkTextBudget(change);
 		this.textCodeUnits += change;
 		node.control = { ...node.control, ...state };
+		if (node.tagName === "input" && state.value !== undefined)
+			this.inputValues.markDirty(id);
 		if (node.tagName === "option" && state.selected !== undefined)
 			this.selections.setOption(id, state.selected);
 		if (node.tagName === "input" && state.checked !== undefined)
@@ -941,6 +973,8 @@ export class DocumentTree {
 			);
 		let changed = false;
 		for (const field of new Set<keyof ControlState>(fields)) {
+			if (field === "value" && node.tagName === "input")
+				this.inputValues.reset(id);
 			if (field === "checked" && node.tagName === "input") {
 				this.checkedness.clear(id);
 				continue;
@@ -1092,6 +1126,7 @@ export class DocumentTree {
 		this.closed = true;
 		this.selections.close();
 		this.checkedness.close();
+		this.inputValues.close();
 		this.nodes.clear();
 		this.nodeViews.clear();
 		this.attributeRecords.clear();
@@ -1170,6 +1205,40 @@ export class DocumentTree {
 	private validateString(value: unknown): asserts value is string {
 		if (typeof value !== "string")
 			throw new AgentBrowserError("invalid-input", "Expected a string");
+	}
+
+	private inputValueDelta(id: number, change: InputValueChange | undefined) {
+		if (!change) return 0;
+		const node = this.node(id);
+		let delta = (change.value?.length ?? 0) - (node.control.value?.length ?? 0);
+		if (change.defaultValue !== undefined) {
+			const previous = node.attributes.value;
+			delta +=
+				change.defaultValue.length -
+				(previous?.length ?? 0) +
+				(previous === undefined ? "value".length : 0);
+			const attributeId = this.attachedAttributes.get(id)?.get("value");
+			if (attributeId !== undefined)
+				delta +=
+					change.defaultValue.length -
+					this.attributeRecord(attributeId).value.length;
+		}
+		return delta;
+	}
+
+	private applyInputValueChange(
+		id: number,
+		change: InputValueChange | undefined,
+	) {
+		if (!change) return;
+		this.textCodeUnits += this.inputValueDelta(id, change);
+		if (change.defaultValue !== undefined) {
+			setHtmlAttribute(this.node(id).attributes, "value", change.defaultValue);
+			const attributeId = this.attachedAttributes.get(id)?.get("value");
+			if (attributeId !== undefined)
+				this.attributeRecord(attributeId).value = change.defaultValue;
+		}
+		this.inputValues.apply(id, change);
 	}
 
 	private checkTextBudget(change: number) {

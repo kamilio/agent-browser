@@ -19,6 +19,21 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Input-type value checkpoint: `INPUT-TYPE-VALUES.md` adds a native value-state owner
+and shared mode/sanitizer helpers. Type changes transfer reflected defaults,
+reset or preserve dirtiness appropriately and do not resurrect sanitized text.
+File-mode reads do not expose value attributes as selected files. Thirteen
+baseline regressions fail; thirty-six new cases cover mutation paths, reset,
+copy/import, submission, exact retained-text costs, quota atomicity and closure.
+Focused validation passes 181 / seven files; full native validation passes
+6,566 / 201 files. The isolated owned patch
+typechecks and passes 3,806 / 140 available native files. Build, strict test types
+and targeted lint/formatting pass with pre-existing import order retained.
+Complete sanitizers, native FileList, cursor state, non-type constraint mutations
+and actual runtime/site/socket/UI acceptance remain open; no unapproved probe ran.
+
+### Previous explicit-form cache checkpoint
+
 Explicit-form cache checkpoint: `RADIO-FORM-CACHE.md` removes repeated root scans
 for stable form-ID dependencies, including cached missing IDs and radios with
 unrelated unique IDs. Five initial performance cases fail; twenty-five new cases

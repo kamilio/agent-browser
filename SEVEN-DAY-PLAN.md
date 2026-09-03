@@ -67,6 +67,12 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 input-value continuation: `INPUT-TYPE-VALUES.md` adds native value-mode
+transfers and separate dirty metadata, preventing stale value resurrection across
+type changes. Combined text costs are checked before mutation. Calendar/range/
+color sanitization, native file selection, cursor behavior and actual runtime/
+site/socket/UI acceptance remain open.
+
 September 3 explicit-form scaling continuation: `RADIO-FORM-CACHE.md` adds
 ID-dependent positive/negative owner caching with last-reference eviction.
 The 1,000-radio construction fixture drops from 523,499 to 21,002 native node
