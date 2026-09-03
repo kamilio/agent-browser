@@ -19,6 +19,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Explicit-form cache checkpoint: `RADIO-FORM-CACHE.md` removes repeated root scans
+for stable form-ID dependencies, including cached missing IDs and radios with
+unrelated unique IDs. Five initial performance cases fail; twenty-five new cases
+cover invalidation, negative results, retention, failure and closure. Constructing
+1,000 radios drops from 523,499 to 21,002 native node reads; 100 group-name edits
+after unrelated ID insertion drop from 51,200 to 900. Focused validation passes
+60 / two files; full native validation passes 6,530 / 200 files. The isolated
+patch typechecks and passes 3,770 / 139 available native files. Build, strict test
+types and targeted lint/formatting pass. Cold/relevant-ID lookup, broader
+structural scaling, parser form associations and actual runtime/site/socket/UI
+acceptance remain open; no unapproved probe ran.
+
+### Previous radio-state checkpoint
+
 Radio-state checkpoint: `RADIO-STATE.md` fixes the reproduced radio selection bug
 with a native checkedness owner that separates dirty/default/automatic peer state.
 Attribute transitions, group/form/root changes, reset, clone/import and canceled

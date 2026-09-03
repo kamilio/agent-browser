@@ -67,6 +67,12 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 explicit-form scaling continuation: `RADIO-FORM-CACHE.md` adds
+ID-dependent positive/negative owner caching with last-reference eviction.
+The 1,000-radio construction fixture drops from 523,499 to 21,002 native node
+reads, including radios with unrelated unique IDs. Cold/relevant-ID lookup,
+broader structural scaling and actual runtime/site/socket/UI gates remain open.
+
 September 3 radio-state continuation: `RADIO-STATE.md` fixes checkedness mutation
 ordering and separates default/dirty/automatic peer state in a shared native
 owner. Reset, cloning, form-reference changes and cancellation are exercised;

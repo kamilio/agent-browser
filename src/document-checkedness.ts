@@ -19,6 +19,7 @@ export class DocumentCheckedness {
 	private readonly selected = new Map<string, number>();
 	private readonly references = new Map<number, string>();
 	private readonly formReferences = new Map<string, Set<number>>();
+	private readonly formLookups = new Map<string, number | null>();
 	private readonly radios = new Set<number>();
 
 	constructor(
@@ -59,9 +60,11 @@ export class DocumentCheckedness {
 		} else if (name === "id") {
 			const affected = new Set<number>();
 			for (const value of [previous, node.attributes.id])
-				if (value !== undefined)
+				if (value !== undefined) {
+					this.formLookups.delete(value);
 					for (const target of this.formReferences.get(value) ?? [])
 						affected.add(target);
+				}
 			this.regroup(affected);
 		}
 	}
@@ -72,9 +75,11 @@ export class DocumentCheckedness {
 		const referenced = new Set<number>();
 		for (const node of this.walk(root)) {
 			if (radio(node)) affected.add(node.id);
-			if (Object.hasOwn(node.attributes, "id"))
+			if (Object.hasOwn(node.attributes, "id")) {
+				this.formLookups.delete(node.attributes.id);
 				for (const target of this.formReferences.get(node.attributes.id) ?? [])
 					referenced.add(target);
+			}
 		}
 		for (const target of referenced) affected.add(target);
 		this.regroup(affected);
@@ -86,37 +91,42 @@ export class DocumentCheckedness {
 		this.selected.clear();
 		this.references.clear();
 		this.formReferences.clear();
+		this.formLookups.clear();
 		this.radios.clear();
 	}
 
 	private track(id: number) {
+		const node = this.node(id);
+		const isRadio = radio(node);
+		if (isRadio) this.radios.add(id);
+		else this.radios.delete(id);
+		const reference =
+			isRadio && Object.hasOwn(node.attributes, "form")
+				? node.attributes.form
+				: undefined;
 		const previous = this.references.get(id);
+		if (previous === reference) return;
 		if (previous !== undefined) {
 			const entries = this.formReferences.get(previous);
 			entries?.delete(id);
-			if (!entries?.size) this.formReferences.delete(previous);
+			if (!entries?.size) {
+				this.formReferences.delete(previous);
+				this.formLookups.delete(previous);
+			}
 			this.references.delete(id);
 		}
-		const node = this.node(id);
-		if (!radio(node)) {
-			this.radios.delete(id);
-			return;
-		}
-		this.radios.add(id);
-		if (Object.hasOwn(node.attributes, "form")) {
-			const name = node.attributes.form;
-			const entries = this.formReferences.get(name) ?? new Set<number>();
+		if (reference !== undefined) {
+			const entries = this.formReferences.get(reference) ?? new Set<number>();
 			entries.add(id);
-			this.formReferences.set(name, entries);
-			this.references.set(id, name);
+			this.formReferences.set(reference, entries);
+			this.references.set(id, reference);
 		}
 	}
 
 	private regroup(ids: Iterable<number>) {
-		const lookups = new Map<number, Map<string, number>>();
 		const changes: { id: number; key: string | undefined }[] = [];
 		for (const id of ids) {
-			const key = this.key(id, lookups);
+			const key = this.key(id);
 			if (key === this.members.get(id)) continue;
 			this.leave(id);
 			changes.push({ id, key });
@@ -175,7 +185,7 @@ export class DocumentCheckedness {
 		this.selected.set(key, id);
 	}
 
-	private key(id: number, lookups: Map<number, Map<string, number>>) {
+	private key(id: number) {
 		const node = this.node(id);
 		if (!radio(node) || !node.attributes.name) return undefined;
 		let root = node;
@@ -185,19 +195,17 @@ export class DocumentCheckedness {
 			if (owner === null && root.tagName === "form") owner = root.id;
 		}
 		if (root.kind === "document" && Object.hasOwn(node.attributes, "form")) {
-			let lookup = lookups.get(root.id);
-			if (!lookup) {
-				lookup = new Map();
+			if (!this.formLookups.has(node.attributes.form)) {
+				const lookup = new Map<string, number>();
 				for (const entry of this.walk(root.id))
 					if (entry.attributes.id && !lookup.has(entry.attributes.id))
 						lookup.set(entry.attributes.id, entry.id);
-				lookups.set(root.id, lookup);
+				for (const reference of this.formReferences.keys())
+					this.formLookups.set(reference, lookup.get(reference) ?? null);
 			}
-			const target = lookup.get(node.attributes.form);
+			const target = this.formLookups.get(node.attributes.form);
 			owner =
-				target !== undefined && this.node(target).tagName === "form"
-					? target
-					: null;
+				target != null && this.node(target).tagName === "form" ? target : null;
 		}
 		return JSON.stringify([root.id, owner, node.attributes.name]);
 	}
