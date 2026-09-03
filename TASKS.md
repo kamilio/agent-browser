@@ -19,6 +19,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Calendar-validation checkpoint: `CALENDAR-VALIDITY.md` adds date/month/week/time/
+local-datetime range and step flags to native forms and live page validity. Time
+ranges can span midnight; independent range/step failures coexist. Calendar
+arithmetic handles large years with bounded modular intermediates and no host
+timezone dependency. Five initial regressions fail before implementation; 101
+new cases include independent two-cycle day/week oracles and large-year checks.
+Focused validation passes 470 / seven files; full native validation passes
+7,097 / 209 files. The isolated owned patch typechecks and passes 4,337 / 148
+available native files. Build, strict focused-test types and five-source lint
+pass. Calendar editing/pickers/numeric page APIs, pattern/range/color profiles and
+runtime/site/socket/UI acceptance remain open. No unapproved probe ran.
+
+### Previous text-length checkpoint
+
 Text-length checkpoint: `TEXT-LENGTH.md` adds native minlength/maxlength flags
 with document-owned user-edit provenance, shared keyboard integer-limit parsing
 and normalized API-value counting. Script assignments, including same-string

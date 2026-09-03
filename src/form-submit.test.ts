@@ -146,7 +146,7 @@ it.each(["pattern", "min", "max", "step"])(
 	},
 );
 
-it.each(["date", "range", "color"])(
+it.each(["range", "color"])(
 	"does not invent validity for %s inputs",
 	(type) => {
 		const { add, submit } = fixture();
@@ -156,7 +156,7 @@ it.each(["date", "range", "color"])(
 );
 
 it.each(["date", "month", "week", "time", "datetime-local"])(
-	"validates empty %s controls without claiming nonempty type support",
+	"validates empty and nonempty %s controls",
 	(type) => {
 		const { tree, add, submit } = fixture();
 		const field = add("input", {
@@ -172,7 +172,8 @@ it.each(["date", "month", "week", "time", "datetime-local"])(
 			{ reference: tree.reference(field), reason: "value-missing" },
 		]);
 		tree.setControl(field, { value: nonemptyValues[type] ?? "nonempty" });
-		expect(() => submit()).toThrow("not implemented");
+		tree.setAttribute(field, "step", "any");
+		expect(submit().invalid).toEqual([]);
 	},
 );
 

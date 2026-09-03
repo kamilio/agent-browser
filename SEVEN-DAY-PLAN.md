@@ -67,6 +67,14 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 calendar-validation continuation: `CALENDAR-VALIDITY.md` adds range
+and step flags for date, month, ISO week, time and local datetime, including
+midnight-spanning ranges and bounded exact arithmetic for large years. The 101
+new cases include independent Gregorian/ISO-week oracles and live submission
+integration; focused validation passes 470 / seven files. Calendar editing/UI and
+numeric page APIs, pattern/range/color profiles and runtime/site/socket/UI gates
+remain open.
+
 September 3 text-length continuation: `TEXT-LENGTH.md` adds user-edit-aware native
 minlength/maxlength flags, shared keyboard limit parsing and value-origin lifecycle
 ownership. The 63 new cases distinguish page assignments from native user edits,

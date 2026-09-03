@@ -23,7 +23,7 @@ export function parseNumberAttribute(
 	return Number.isFinite(number) ? (number === 0 ? 0 : number) : undefined;
 }
 
-function decimal(number: number) {
+export function decimalNumber(number: number) {
 	const [significand, exponent = "0"] = number.toString().split("e");
 	const point = significand.indexOf(".");
 	return {
@@ -34,7 +34,7 @@ function decimal(number: number) {
 }
 
 function stepMismatch(value: number, base: number, step: number) {
-	const parts = [value, base, step].map(decimal);
+	const parts = [value, base, step].map(decimalNumber);
 	const exponent = Math.min(...parts.map((part) => part.exponent));
 	const [current, initial, interval] = parts.map(
 		(part) => part.coefficient * 10n ** BigInt(part.exponent - exponent),

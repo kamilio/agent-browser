@@ -1,3 +1,4 @@
+import { calendarValidity } from "./calendar-validity.js";
 import { lengthValidity } from "./control-length.js";
 import {
 	controlChecked,
@@ -92,6 +93,13 @@ export function controlValidity(
 	if (node.tagName === "input" && type === "number") {
 		Object.assign(flags, numberValidity(value, node.attributes));
 		return finish();
+	}
+	if (node.tagName === "input") {
+		const calendar = calendarValidity(type, value, node.attributes);
+		if (calendar) {
+			Object.assign(flags, calendar);
+			return finish();
+		}
 	}
 	if (
 		["pattern", "min", "max", "step"].some(
