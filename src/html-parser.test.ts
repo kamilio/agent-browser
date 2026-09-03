@@ -193,9 +193,9 @@ it.each([
 	expect(tree.textContent(node("p").id)).toBe("after");
 });
 
-it("records unresolved named entities, missing doctypes and malformed formatting honestly", () => {
+it("decodes standard names while recording unknown names and parser limitations honestly", () => {
 	const tree = parseHtmlDocument(
-		"<b><i>text</b>&CounterClockwiseContourIntegral;</i>",
+		"<b><i>text</b>&CounterClockwiseContourIntegral;&BrowserUnknownEntity;</i>",
 		"https://example.com",
 	);
 	expect(htmlParseInfo(tree)?.issues).toMatchObject({
@@ -204,7 +204,7 @@ it("records unresolved named entities, missing doctypes and malformed formatting
 		"formatting-reconstruction-not-implemented": 1,
 	});
 	expect(renderSnapshot(snapshotDocument(tree))).toContain(
-		"&CounterClockwiseContourIntegral;",
+		"∳&BrowserUnknownEntity;",
 	);
 });
 

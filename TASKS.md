@@ -19,6 +19,19 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+HTML named-reference checkpoint: `HTML-ENTITIES.md` adds the complete reviewed
+WHATWG mapping, longest matching and attribute ambiguity handling to the shared
+native parser. Twenty initial regressions failed; fifty new cases cover all 2,231
+spellings, all parser-input splits, dynamic HTML and existing numeric behavior.
+Focused validation passes 128 tests / five files; the full working tree passes
+6,018 tests / 185 explicit native files with no unhandled errors. Build, strict
+test types, five-source lint/format and byte-for-byte offline regeneration pass.
+No runtime dependency is added. Template/framework, numeric diagnostic, released
+SafeJS, real-site, socket and UI acceptance gates remain open. The unapproved
+state-transport probe has not run.
+
+### Previous timer checkpoint
+
 Timer-ownership checkpoint: `TIMER-OWNERSHIP.md` reserves pending callbacks before
 runtime entry, retains both completion phases and revokes records/alarms on close.
 Seven native reproductions failed before the correction. Twelve new timer cases

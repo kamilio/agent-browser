@@ -70,6 +70,7 @@
   "src/hit-testing.test.ts",
   "src/hover.test.ts",
   "src/html-content.test.ts",
+  "src/html-entities.test.ts",
   "src/html-fragment.test.ts",
   "src/html-insertion.test.ts",
   "src/html-parser.test.ts",

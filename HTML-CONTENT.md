@@ -7,6 +7,10 @@ No dependencies or SafeJS source changes are added by this checkpoint.
 
 ## API and commands
 
+September 3 update: `HTML-ENTITIES.md` replaces the incomplete named-entity table
+mentioned in this historical checkpoint. Documents and contextual/dynamic fragments
+share the full reviewed mapping; other parser/runtime limitations remain open.
+
 - `element.innerHTML` gets serialized children and sets contextually parsed
   content. Null becomes empty text; other supported primitive values use the
   adapter's existing conversion. Arbitrary object coercion remains unsupported.

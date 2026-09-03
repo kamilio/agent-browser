@@ -17,6 +17,11 @@ replacement and bounded live HTML extraction through the CLI/API.
 
 ## What works now
 
+September 3 update: `HTML-ENTITIES.md` supersedes the small named-reference subset
+described in this historical checkpoint. The native parser now uses the complete
+reviewed WHATWG mapping and longest-match/attribute-ambiguity behavior. Other
+parser limitations and the original paths and measurements below remain unchanged.
+
 The asynchronous `loadBrowserDocument` accepts explicit `text/html`, plain text and JSON. HTML is
 tokenized into our owned document tree, rather than being stripped into a string
 or rendered by Chromium/Firefox. Parsed elements have the same stable references,

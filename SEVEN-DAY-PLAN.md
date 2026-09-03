@@ -67,6 +67,11 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 parser continuation: `HTML-ENTITIES.md` replaces the common-name subset
+with the full reviewed WHATWG named-reference data and correct longest matching.
+Native corpus, split-input and shared HTML-content checks are separate from the
+still-open real-site, released-runtime and user-interface acceptance gates.
+
 September 3 timer continuation: `TIMER-OWNERSHIP.md` fixes callback admission,
 two-phase retention and immediate closure cleanup. The previously omitted native
 fake-timer tests are explicitly allowlisted after review. This advances scheduler
