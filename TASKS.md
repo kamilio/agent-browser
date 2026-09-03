@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Email-value checkpoint: `INPUT-EMAIL.md` adds native single/multiple-address
+validation for form submission and corrects multiple token sanitization. Toggling
+multiple no longer resurrects old whitespace; current/default dirtiness, copying,
+reset and quota admission share the existing state owner. Eight baseline cases
+fail; sixty-three new cases cover syntax, submit events, page properties, long
+inputs and linear edge trimming. The reviewed native form-submit suite is now
+explicitly allowlisted, with obsolete unsupported-email and raw-calendar fixtures
+updated. Focused validation passes 239 / seven files; the final full native run
+passes 6,732 / 204 files. An isolated owned patch typechecks and passes
+3,972 / 143 available native files. Build, strict test types and targeted lint
+pass. An earlier mixed-source run timed out on the new whitespace regression;
+test limits were not increased. Email pattern/length/IDN UI behavior and actual
+runtime/site/socket/UI acceptance remain open; no unapproved probe ran.
+
+### Previous calendar-value checkpoint
+
 Calendar-value checkpoint: `INPUT-CALENDAR.md` adds shared date/month/week/time/
 local-datetime sanitization and native page setters without host Date/timezones.
 Invalid input clears; local datetime normalizes; defaults, dirty state, copying,

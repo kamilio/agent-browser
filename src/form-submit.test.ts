@@ -3,6 +3,15 @@ import { DocumentTree } from "./document.js";
 import { BrowserSubmitEvent } from "./form-actions.js";
 import { DocumentInteractions } from "./interactions.js";
 
+const nonemptyValues: Record<string, string> = {
+	number: "12",
+	date: "2024-01-01",
+	month: "2024-01",
+	week: "2024-W01",
+	time: "12:00",
+	"datetime-local": "2024-01-01T12:00",
+};
+
 function fixture() {
 	const tree = new DocumentTree("https://example.com/start");
 	const actions = new DocumentInteractions(tree);
@@ -138,16 +147,16 @@ it.each(["pattern", "min", "max", "step", "minlength", "maxlength"])(
 	},
 );
 
-it.each(["email", "number", "date", "range", "color"])(
+it.each(["number", "date", "range", "color"])(
 	"does not invent validity for %s inputs",
 	(type) => {
 		const { add, submit } = fixture();
-		add("input", { type, value: type === "number" ? "12" : "nonempty" });
+		add("input", { type, value: nonemptyValues[type] ?? "nonempty" });
 		expect(() => submit()).toThrow(/not implemented/);
 	},
 );
 
-it.each(["email", "number", "date", "month", "week", "time", "datetime-local"])(
+it.each(["number", "date", "month", "week", "time", "datetime-local"])(
 	"validates empty %s controls without claiming nonempty type support",
 	(type) => {
 		const { tree, add, submit } = fixture();
@@ -163,7 +172,7 @@ it.each(["email", "number", "date", "month", "week", "time", "datetime-local"])(
 		expect(submit().invalid).toEqual([
 			{ reference: tree.reference(field), reason: "value-missing" },
 		]);
-		tree.setControl(field, { value: type === "number" ? "12" : "nonempty" });
+		tree.setControl(field, { value: nonemptyValues[type] ?? "nonempty" });
 		expect(() => submit()).toThrow("not implemented");
 	},
 );

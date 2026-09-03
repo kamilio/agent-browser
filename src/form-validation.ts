@@ -13,6 +13,7 @@ import {
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import type { FormSubmissionOptions } from "./forms.js";
+import { validEmailValue } from "./input-email.js";
 
 export interface InvalidFormControl {
 	reference: string;
@@ -80,8 +81,14 @@ export function invalidFormControls(
 			continue;
 		}
 		if (
-			["pattern", "min", "max", "step", "minlength", "maxlength"].some((name) =>
-				Object.hasOwn(control.attributes, name),
+			["pattern", "min", "max", "step", "minlength", "maxlength"].some(
+				(name) =>
+					Object.hasOwn(control.attributes, name) &&
+					!(
+						control.tagName === "input" &&
+						type === "email" &&
+						["min", "max", "step"].includes(name)
+					),
 			)
 		)
 			throw new AgentBrowserError(
@@ -96,6 +103,7 @@ export function invalidFormControls(
 				"tel",
 				"password",
 				"url",
+				"email",
 				"checkbox",
 				"radio",
 				"file",
@@ -139,6 +147,18 @@ export function invalidFormControls(
 			invalid.push({
 				reference: tree.reference(control.id),
 				reason: "value-missing",
+			});
+		else if (
+			control.tagName === "input" &&
+			type === "email" &&
+			!validEmailValue(
+				controlValue(tree, control.id),
+				Object.hasOwn(control.attributes, "multiple"),
+			)
+		)
+			invalid.push({
+				reference: tree.reference(control.id),
+				reason: "type-mismatch",
 			});
 		else if (
 			control.tagName === "input" &&

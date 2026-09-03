@@ -1,5 +1,6 @@
 import type { DocumentNode } from "./document.js";
 import { sanitizeCalendarInput } from "./input-calendar.js";
+import { sanitizeEmailValue } from "./input-email.js";
 
 const types = new Set([
 	"hidden",
@@ -51,16 +52,12 @@ export function sanitizeInputValue(
 ): string {
 	const calendar = sanitizeCalendarInput(type, raw);
 	if (calendar !== undefined) return calendar;
+	if (type === "email")
+		return sanitizeEmailValue(raw, Object.hasOwn(attributes, "multiple"));
 	let value = raw;
-	if (["text", "search", "tel", "url", "email", "password"].includes(type))
+	if (["text", "search", "tel", "url", "password"].includes(type))
 		value = value.replace(/[\r\n]/g, "");
-	if (type === "url" || type === "email")
-		value = value.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "");
-	if (type === "email" && Object.hasOwn(attributes, "multiple"))
-		value = value
-			.split(",")
-			.map((part) => part.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, ""))
-			.join(",");
+	if (type === "url") value = value.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "");
 	if (
 		type === "number" &&
 		(!/^-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value) ||

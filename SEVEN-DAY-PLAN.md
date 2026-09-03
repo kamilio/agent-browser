@@ -67,6 +67,13 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 email continuation: `INPUT-EMAIL.md` enables native single/multiple
+email submission validation, corrects token sanitization and makes multiple-mode
+changes preserve current state. Sixty-three new cases cover syntax, state, events,
+resource admission and long inputs. Reviewed native form-submit tests are now
+explicitly allowlisted. Email pattern/length/IDN UI behavior and actual runtime/
+site/socket/UI acceptance remain open.
+
 September 3 calendar-value continuation: `INPUT-CALENDAR.md` adds strict native
 date/month/week/time/local-datetime syntax and page setters, including Gregorian
 cycle arithmetic, large years and canonical local times without host timezones.

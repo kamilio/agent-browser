@@ -39,13 +39,32 @@ export class DocumentInputValues {
 		attribute: string,
 		next: string | undefined,
 	): InputValueChange | undefined {
-		if (attribute !== "value" && attribute !== "type") return undefined;
+		if (!["value", "type", "multiple"].includes(attribute)) return undefined;
 		const node = this.node(id);
 		if (node.tagName !== "input") return undefined;
 		const dirty = this.dirty.has(id);
 		if (attribute === "value")
 			return dirty ? undefined : { value: undefined, dirty: false };
 		const before = inputType(node);
+		if (attribute === "multiple") {
+			if (before !== "email") return undefined;
+			const attributes: Record<string, string> =
+				next === undefined ? {} : { multiple: next };
+			const initial = node.attributes.value ?? "";
+			const current = sanitizeInputValue(
+				before,
+				node.control.value ?? initial,
+				node.attributes,
+			);
+			const value = sanitizeInputValue(before, current, attributes);
+			return {
+				value:
+					!dirty && value === sanitizeInputValue(before, initial, attributes)
+						? undefined
+						: value,
+				dirty,
+			};
+		}
 		const after = inputTypeName(next);
 		if (before === after) return undefined;
 		const beforeMode = inputValueMode(before);
