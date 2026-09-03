@@ -67,6 +67,11 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 numeric-reference continuation: `HTML-NUMERIC-REFERENCES.md` adds
+missing numeric diagnostics and preserves reference issues in discarded duplicate
+attributes. Native scalar, split-input and shared-content tests do not establish
+full parser conformance or close actual runtime/site/socket/UI acceptance gates.
+
 September 3 attribute-order continuation: `ATTRIBUTE-ORDER.md` adds native
 `getAttributeNames()` and preserves integer-like attribute insertion order across
 tokenization, mutation, NamedNodeMap access, copies and serialization. Native

@@ -19,6 +19,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Numeric-reference checkpoint: `HTML-NUMERIC-REFERENCES.md` adds missing-digit,
+control and noncharacter diagnostics without changing decoded values. Discarded
+duplicate attribute values now retain reference issues; their first value still
+wins. Twenty-three initial reproductions failed; fifty-eight new cases now pass,
+including every noncharacter, C0/C1 mappings and split-input retry behavior.
+After correcting one ambiguous named-reference fixture, focused validation passes
+185 tests / six files; full native validation passes 6,426 / 197 files. The
+isolated patch passes typechecking and 3,666 tests / 136 available native files.
+Build, strict test types and targeted lint/formatting pass. Full parser recovery,
+source-input diagnostics and actual runtime/site/socket/UI acceptance remain
+open; no unapproved probe has run.
+
+### Previous attribute-order checkpoint
+
 Attribute-order checkpoint: `ATTRIBUTE-ORDER.md` adds native getAttributeNames
 and a shared ordered attribute representation without Proxy value dictionaries.
 Integer-like names retain their slots across tokenization, mutation, frozen

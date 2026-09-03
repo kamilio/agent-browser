@@ -82,6 +82,7 @@
   "src/html-entities.test.ts",
   "src/html-fragment.test.ts",
   "src/html-insertion.test.ts",
+  "src/html-numeric-references.test.ts",
   "src/html-parser.test.ts",
   "src/html-script-parser.test.ts",
   "src/html-tokenizer-input.test.ts",

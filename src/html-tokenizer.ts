@@ -268,14 +268,10 @@ export class HtmlTokenizer {
 					value = this.source.slice(start, this.offset);
 				}
 			}
-			if (Object.hasOwn(attributes, attribute))
-				this.issue("duplicate-attribute");
-			else
-				setHtmlAttribute(
-					attributes,
-					attribute,
-					decodeHtmlEntities(value, true, this.issue),
-				);
+			const duplicate = Object.hasOwn(attributes, attribute);
+			if (duplicate) this.issue("duplicate-attribute");
+			const decoded = decodeHtmlEntities(value, true, this.issue);
+			if (!duplicate) setHtmlAttribute(attributes, attribute, decoded);
 		}
 		this.issue("unterminated-tag");
 		return undefined;

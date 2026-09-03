@@ -14,16 +14,18 @@ export function decodeHtmlEntities(
 	issue: (code: string) => void,
 ): string {
 	return value.replace(
-		/&(#(?:[xX][0-9a-fA-F]+|[0-9]+);?|[a-zA-Z0-9]+;?)/g,
+		/&(#(?:[xX][0-9a-fA-F]*|[0-9]*);?|[a-zA-Z0-9]+;?)/g,
 		(whole: string, body: string, offset: number) => {
 			const terminated = body.endsWith(";");
 			const name = terminated ? body.slice(0, -1) : body;
 			if (name.startsWith("#")) {
 				const hexadecimal = name[1]?.toLowerCase() === "x";
-				let point = Number.parseInt(
-					name.slice(hexadecimal ? 2 : 1),
-					hexadecimal ? 16 : 10,
-				);
+				const digits = name.slice(hexadecimal ? 2 : 1);
+				if (!digits) {
+					issue("missing-numeric-entity-digits");
+					return whole;
+				}
+				let point = Number.parseInt(digits, hexadecimal ? 16 : 10);
 				if (!terminated) issue("missing-entity-semicolon");
 				if (
 					point === 0 ||
@@ -35,6 +37,19 @@ export function decodeHtmlEntities(
 				} else if (point >= 0x80 && point <= 0x9f) {
 					issue("legacy-numeric-entity");
 					point = replacements[point - 0x80];
+				} else if (
+					(point >= 1 && point <= 8) ||
+					point === 0x0b ||
+					point === 0x0d ||
+					(point >= 0x0e && point <= 0x1f) ||
+					point === 0x7f
+				) {
+					issue("control-numeric-entity");
+				} else if (
+					(point >= 0xfdd0 && point <= 0xfdef) ||
+					(point & 0xffff) >= 0xfffe
+				) {
+					issue("noncharacter-numeric-entity");
 				}
 				return String.fromCodePoint(point);
 			}
