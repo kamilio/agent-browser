@@ -29,6 +29,126 @@ function fixture(limits?: Partial<TimerLimits>) {
 	return { timers, methods: timers.methods, runtime, window, fail };
 }
 
+function deferred() {
+	let resolve!: () => void;
+	let reject!: (error: unknown) => void;
+	const promise = new Promise<void>((accept, refuse) => {
+		resolve = accept;
+		reject = refuse;
+	});
+	return { promise, resolve, reject };
+}
+
+it("reserves pending ownership before entering a timer callback", async () => {
+	const test = fixture();
+	let observed = -1;
+	test.methods.setTimeout(() => {
+		observed = test.timers.metrics().pendingCallbacks;
+	}, 1);
+	await vi.advanceTimersByTimeAsync(1);
+	expect(observed).toBe(1);
+	expect(test.timers.metrics().pendingCallbacks).toBe(0);
+	test.timers.close();
+});
+
+it.each([false, true])(
+	"holds ownership until a delayed prefix settles after result rejection=%s",
+	async (rejectResult) => {
+		const test = fixture();
+		const prefix = deferred();
+		const result = deferred();
+		vi.mocked(test.runtime.startCallback).mockReturnValue({
+			synchronous: prefix.promise,
+			result: result.promise,
+		});
+		test.methods.setTimeout(() => undefined, 1);
+		await vi.advanceTimersByTimeAsync(1);
+		if (rejectResult) result.reject(new Error("callback failure"));
+		else result.resolve();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(test.timers.metrics()).toMatchObject({
+			pendingCallbacks: 1,
+			running: true,
+		});
+		prefix.resolve();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(test.timers.metrics()).toMatchObject({
+			pendingCallbacks: 0,
+			running: false,
+			active: 0,
+		});
+		test.timers.close();
+	},
+);
+
+it("revokes pending ownership and alarms when closed during callback startup", async () => {
+	const test = fixture();
+	const tail = deferred();
+	test.methods.setTimeout(() => {
+		test.timers.close();
+		return tail.promise;
+	}, 1);
+	test.methods.setTimeout(() => undefined, 50);
+	await vi.advanceTimersByTimeAsync(1);
+	expect(test.timers.metrics()).toMatchObject({
+		closed: true,
+		pendingCallbacks: 0,
+		running: false,
+		active: 0,
+		queued: 0,
+	});
+	expect(vi.getTimerCount()).toBe(0);
+	tail.resolve();
+	await vi.advanceTimersByTimeAsync(0);
+	expect(test.timers.metrics().pendingCallbacks).toBe(0);
+});
+
+it.each([false, true])(
+	"closes pending prefixes without waiting for tail rejection=%s",
+	async (rejectTail) => {
+		const test = fixture();
+		const prefix = deferred();
+		const tail = deferred();
+		vi.mocked(test.runtime.startCallback).mockReturnValue({
+			synchronous: prefix.promise,
+			result: tail.promise,
+		});
+		test.methods.setInterval(() => undefined, 1);
+		test.methods.setTimeout(() => undefined, 1);
+		await vi.advanceTimersByTimeAsync(1);
+		test.timers.close();
+		expect(test.timers.metrics()).toMatchObject({
+			closed: true,
+			pendingCallbacks: 0,
+			running: false,
+			active: 0,
+			queued: 0,
+		});
+		prefix.reject(new Error("prefix closed"));
+		if (rejectTail) tail.reject(new Error("tail closed"));
+		else tail.resolve();
+		await vi.advanceTimersByTimeAsync(100);
+		expect(test.runtime.startCallback).toHaveBeenCalledTimes(1);
+		expect(test.timers.metrics().pendingCallbacks).toBe(0);
+		expect(vi.getTimerCount()).toBe(0);
+	},
+);
+
+it("revokes remaining alarms when the runtime closes before a timer fires", async () => {
+	const test = fixture();
+	test.methods.setTimeout(() => undefined, 1);
+	test.methods.setInterval(() => undefined, 100);
+	test.runtime.isClosed = () => true;
+	await vi.advanceTimersByTimeAsync(1);
+	expect(test.timers.metrics()).toMatchObject({
+		closed: true,
+		active: 0,
+		pendingCallbacks: 0,
+	});
+	expect(test.runtime.startCallback).not.toHaveBeenCalled();
+	expect(vi.getTimerCount()).toBe(0);
+});
+
 it("runs timeouts asynchronously with positive IDs, Window this and ordered extra arguments", async () => {
 	const test = fixture();
 	const calls: unknown[] = [];
@@ -287,5 +407,105 @@ it("keeps argument references budgeted until a canceled async callback settles",
 	await vi.advanceTimersByTimeAsync(0);
 	expect(release).toHaveBeenCalledExactlyOnceWith(argument);
 	timers.close();
+	test.timers.close();
+});
+
+it.each([false, true])(
+	"retains canceled arguments until the prefix settles with rejection=%s",
+	async (rejectPrefix) => {
+		const test = fixture();
+		const release = vi.fn();
+		const prefix = deferred();
+		vi.mocked(test.runtime.startCallback).mockReturnValue({
+			synchronous: prefix.promise,
+			result: Promise.resolve(),
+		});
+		const timers = new PageTimers(
+			test.runtime,
+			() => test.window,
+			test.fail,
+			{},
+			release,
+		);
+		const argument = {};
+		const id = timers.methods.setInterval(() => undefined, 1, argument);
+		await vi.advanceTimersByTimeAsync(1);
+		timers.methods.clearInterval(id);
+		expect(timers.metrics()).toMatchObject({ active: 0, pendingCallbacks: 1 });
+		expect(release).not.toHaveBeenCalled();
+		if (rejectPrefix) prefix.reject(new Error("prefix failed"));
+		else prefix.resolve();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(timers.metrics().pendingCallbacks).toBe(0);
+		expect(release).toHaveBeenCalledExactlyOnceWith(argument);
+		timers.close();
+		test.timers.close();
+	},
+);
+
+it.each([false, true])(
+	"counts overlapping interval calls sharing one result until close=%s",
+	async (close) => {
+		const test = fixture();
+		const release = vi.fn();
+		const result = deferred();
+		vi.mocked(test.runtime.startCallback).mockReturnValue({
+			synchronous: Promise.resolve(),
+			result: result.promise,
+		});
+		const timers = new PageTimers(
+			test.runtime,
+			() => test.window,
+			test.fail,
+			{},
+			release,
+		);
+		const argument = {};
+		const id = timers.methods.setInterval(() => undefined, 1, argument);
+		await vi.advanceTimersByTimeAsync(3);
+		timers.methods.clearInterval(id);
+		expect(timers.metrics()).toMatchObject({ active: 0, pendingCallbacks: 3 });
+		expect(release).not.toHaveBeenCalled();
+		if (close) {
+			timers.close();
+			expect(timers.metrics().pendingCallbacks).toBe(0);
+			expect(release).toHaveBeenCalledExactlyOnceWith(argument);
+		}
+		result.resolve();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(timers.metrics().pendingCallbacks).toBe(0);
+		expect(release).toHaveBeenCalledExactlyOnceWith(argument);
+		timers.close();
+		test.timers.close();
+	},
+);
+
+it("releases the reserved callback and argument owners after startup failure", async () => {
+	const test = fixture();
+	const release = vi.fn();
+	const timers = new PageTimers(
+		test.runtime,
+		() => test.window,
+		test.fail,
+		{},
+		release,
+	);
+	const argument = {};
+	let pendingAtEntry = -1;
+	vi.mocked(test.runtime.startCallback).mockImplementation(() => {
+		pendingAtEntry = timers.metrics().pendingCallbacks;
+		throw new Error("startup failure");
+	});
+	timers.methods.setTimeout(() => undefined, 1, argument);
+	await vi.advanceTimersByTimeAsync(1);
+	expect(pendingAtEntry).toBe(1);
+	expect(timers.metrics()).toMatchObject({
+		closed: true,
+		active: 0,
+		pendingCallbacks: 0,
+		running: false,
+	});
+	expect(release).toHaveBeenCalledExactlyOnceWith(argument);
+	expect(test.fail).toHaveBeenCalledOnce();
 	test.timers.close();
 });

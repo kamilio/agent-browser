@@ -94,8 +94,10 @@ export class PageTimers {
 		if (this.current) this.release(this.current, true);
 		this.current = undefined;
 		this.records.clear();
+		this.inFlight.clear();
 		this.ready.length = 0;
 		this.nesting = 0;
+		this.running = false;
 	}
 
 	private schedule(
@@ -149,6 +151,10 @@ export class PageTimers {
 		const delay = record.nesting > 6 ? Math.max(4, record.delay) : record.delay;
 		record.handle = setTimeout(() => {
 			record.handle = undefined;
+			if (this.callbacks.isClosed()) {
+				this.close();
+				return;
+			}
 			if (!this.live(record)) return;
 			this.ready.push(record);
 			this.pump();
@@ -185,6 +191,7 @@ export class PageTimers {
 		this.running = true;
 		this.current = record;
 		this.nesting = record.nesting;
+		this.inFlight.set(record, (this.inFlight.get(record) ?? 0) + 1);
 		let invocation: ReturnType<ScriptCallbackRuntime["startCallback"]>;
 		try {
 			invocation = this.callbacks.startCallback(record.callback, record.args, {
@@ -196,8 +203,9 @@ export class PageTimers {
 			this.fail();
 			return;
 		}
-		this.inFlight.set(record, (this.inFlight.get(record) ?? 0) + 1);
+		let phases = 2;
 		const settled = () => {
+			if (--phases || this.closedValue) return;
 			const remaining = (this.inFlight.get(record) ?? 1) - 1;
 			if (remaining) this.inFlight.set(record, remaining);
 			else this.inFlight.delete(record);
@@ -205,6 +213,8 @@ export class PageTimers {
 		};
 		void invocation.result.then(settled, settled);
 		const finish = () => {
+			settled();
+			if (this.closedValue) return;
 			this.running = false;
 			this.current = undefined;
 			this.nesting = 0;

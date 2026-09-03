@@ -19,6 +19,18 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Timer-ownership checkpoint: `TIMER-OWNERSHIP.md` reserves pending callbacks before
+runtime entry, retains both completion phases and revokes records/alarms on close.
+Seven native reproductions failed before the correction. Twelve new timer cases
+pass alongside thirteen previously omitted cases; the reviewed fake-timer file is
+now explicitly allowlisted. Focused validation passes 112 tests / five files;
+the full native working tree passes 5,968 tests / 184 files with no unhandled errors.
+Build, strict timer-test checking and source lint/formatting pass. These are native
+ownership checks, not SafeJS, socket or website evidence. The state-transport probe
+still requires new explicit authorization and has not run.
+
+### Previous transport preparation
+
 State-transport preparation: `STATE-TRANSPORT.md` and its separately gated script
 cover real foreground-service/CLI state round trips, failure atomicity, isolation,
 restart and private-file cleanup. Build, source formatting/lint and refusal without

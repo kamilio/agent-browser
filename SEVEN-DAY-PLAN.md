@@ -67,6 +67,11 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 timer continuation: `TIMER-OWNERSHIP.md` fixes callback admission,
+two-phase retention and immediate closure cleanup. The previously omitted native
+fake-timer tests are explicitly allowlisted after review. This advances scheduler
+lifecycle work without treating native mocks as released-runtime or socket proof.
+
 September 3 transport preparation: `STATE-TRANSPORT.md` documents a bounded real
 foreground-service/CLI state probe. Static checks and the no-authorization guard
 pass. Its separate socket/process authorization was declined; no live evidence

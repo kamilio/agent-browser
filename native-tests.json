@@ -118,6 +118,7 @@
   "src/page-runtime.test.ts",
   "src/page-scripts.test.ts",
   "src/page-scroll.test.ts",
+  "src/page-timers.test.ts",
   "src/page-traversals.test.ts",
   "src/pdf-command.test.ts",
   "src/pdf.test.ts",
