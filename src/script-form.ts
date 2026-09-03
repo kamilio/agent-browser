@@ -1,8 +1,15 @@
 import { textareaDefaultValue } from "./control-defaults.js";
-import { formControls, formOwner, inputType } from "./controls.js";
+import {
+	controlValue,
+	formControls,
+	formOwner,
+	inputType,
+} from "./controls.js";
 import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { isValidationCandidate, validationMessage } from "./form-validation.js";
+import { inputNumberValue, inputValueAsNumber } from "./input-value-number.js";
+import { sanitizeInputValue } from "./input-values.js";
 import type { ScriptCollections } from "./script-collections.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
 import type { ScriptValidity } from "./script-validity.js";
@@ -88,6 +95,17 @@ export function scriptFormProperties(
 		properties.placeholder = attribute("placeholder");
 	}
 	if (tag === "input") {
+		properties.valueAsNumber = {
+			get: () => inputValueAsNumber(inputType(read()), controlValue(tree, id)),
+			set: (value) => {
+				const node = read();
+				const type = inputType(node);
+				const text = inputNumberValue(type, value);
+				tree.setControl(id, {
+					value: sanitizeInputValue(type, text, node.attributes),
+				});
+			},
+		};
 		properties.min = attribute("min");
 		properties.max = attribute("max");
 		properties.step = attribute("step");

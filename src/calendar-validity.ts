@@ -10,7 +10,7 @@ interface Coordinate {
 	units: bigint;
 }
 
-function daysBeforeYear(year: bigint): bigint {
+export function daysBeforeYear(year: bigint): bigint {
 	const previous = year - 1n;
 	return previous * 365n + previous / 4n - previous / 100n + previous / 400n;
 }
@@ -26,7 +26,7 @@ function timeMilliseconds(value: string): bigint {
 	);
 }
 
-function coordinate(
+export function calendarCoordinate(
 	type: string,
 	raw: string | undefined,
 ): Coordinate | undefined {
@@ -95,10 +95,10 @@ export function calendarValidity(
 		rangeOverflow: false,
 		stepMismatch: false,
 	};
-	const current = coordinate(type, value);
+	const current = calendarCoordinate(type, value);
 	if (!current) return flags;
-	const minimum = coordinate(type, attributes.min);
-	const maximum = coordinate(type, attributes.max);
+	const minimum = calendarCoordinate(type, attributes.min);
+	const maximum = calendarCoordinate(type, attributes.max);
 	flags.rangeUnderflow = minimum !== undefined && compare(current, minimum) < 0;
 	flags.rangeOverflow = maximum !== undefined && compare(current, maximum) > 0;
 	if (type === "time" && minimum && maximum && compare(minimum, maximum) > 0) {
@@ -124,7 +124,7 @@ export function calendarValidity(
 		step.coefficient * scale * 10n ** BigInt(Math.max(0, step.exponent));
 	const multiplier = 10n ** BigInt(Math.max(0, -step.exponent));
 	const base = minimum ??
-		coordinate(type, attributes.value) ?? {
+		calendarCoordinate(type, attributes.value) ?? {
 			year: type === "time" ? "0" : "1970",
 			units: type === "week" ? -3n * dayMilliseconds : 0n,
 		};

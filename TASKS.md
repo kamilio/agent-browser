@@ -19,6 +19,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Numeric-property checkpoint: `INPUT-VALUE-NUMBER.md` adds live `valueAsNumber`
+for all seven applicable input types. Native tests cover numeric/calendar
+conversion, range sanitization, primitive coercion, exception ordering, quotas,
+dirty/default ownership, cloning/reset, event silence and closure. Seven initial
+getter regressions fail before implementation; 98 new cases and 541 focused
+tests across eight files pass. Full native validation passes 7,399 / 214 files;
+isolated owned-patch validation passes 4,639 / 153 available files. Both production
+and new-test type checks, working build and four-source lint pass. The isolated
+snapshot excludes pre-existing pending work. The bounded UTC calendar profile is distinct from
+the broader string/constraint profile; object coercion and further numeric/date
+APIs remain open. No website/socket/TTY/SafeJS acceptance gate is closed.
+
+### Previous slider-key checkpoint
+
 Slider-key checkpoint: `RANGE-KEYBOARD.md` adds arrows, Home/End and page steps
 to native ranges with bounded decimal arithmetic, shared constraints and an
 explicit any-step/direction policy. The command capability and library export

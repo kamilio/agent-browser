@@ -244,9 +244,18 @@ transport, website authentication and released-runtime gates remain open.
 - Do not claim bot-detection immunity or desktop-browser equivalence without
   matching evidence. A larger time budget does not remove architectural limits.
 
+September 3 numeric-property continuation: `INPUT-VALUE-NUMBER.md` connects page
+`valueAsNumber` to all seven applicable native input types. UTC calendar conversion,
+range sanitization, error ordering and current/default ownership have focused
+native coverage. The bounded calendar numeric profile and primitive-only coercion
+are explicit limitations; released-runtime and real-site acceptance remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
 register this seven-day continuation was rejected because that goal is unfinished.
 It was not falsely marked complete. This document records the user's authorization
 and work plan, not a claim that a seven-day background run was successfully started.
+
+Later September 3 checkpoints report the continuation goal as active. This status
+does not establish seven elapsed days of work or close any acceptance gate.
