@@ -1,0 +1,56 @@
+{
+  "startedAt": "2026-09-02T23:50:35.408Z",
+  "finishedAt": "2026-09-02T23:50:35.804Z",
+  "runtime": "v22.22.0",
+  "cpu": "AMD EPYC 9R45",
+  "fixture": "native in-memory HTML; no network, SDK, forced GC or Worker acceptance",
+  "passed": true,
+  "checks": [
+    {
+      "label": "Layout-free color resolution",
+      "passed": true
+    },
+    {
+      "label": "Last row resolves used percentage width",
+      "passed": true
+    },
+    {
+      "label": "Twenty thousand resolved reads retain correct values",
+      "passed": true
+    },
+    {
+      "label": "One layout build for all reads",
+      "passed": true
+    },
+    {
+      "label": "Used style records are bounded by the owned element tree",
+      "passed": true
+    },
+    {
+      "label": "Close releases resolved style and rectangle caches",
+      "passed": true
+    }
+  ],
+  "measurement": {
+    "rows": 5000,
+    "nodes": 20007,
+    "layoutMs": 269.41834900000003,
+    "repeatedReadMs": 9.646881000000008,
+    "geometry": {
+      "revision": 20006,
+      "builds": 1,
+      "rectangles": 10003,
+      "usedStyles": 10003,
+      "work": 65016,
+      "closed": false
+    },
+    "memory": {
+      "rss": 166240256,
+      "heapTotal": 116416512,
+      "heapUsed": 74420960,
+      "external": 1449599,
+      "arrayBuffers": 18667
+    },
+    "peakRssKiB": 165988
+  }
+}

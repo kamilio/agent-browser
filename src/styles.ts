@@ -1,12 +1,40 @@
+import { imageDimensionHint } from "./replaced-box.js";
+import {
+	type BoxSpecifiedStyle,
+	type BoxStyle,
+	type CssBoxProperty,
+	computeBoxStyle,
+	cssBoxProperties,
+	initialBoxStyle,
+	isCssBoxProperty,
+} from "./css-box.js";
+import {
+	type CssPaintProperty,
+	type PaintSpecifiedStyle,
+	type PaintStyle,
+	computePaintStyle,
+	cssPaintProperties,
+	initialPaintStyle,
+	isCssPaintProperty,
+} from "./css-paint.js";
 import {
 	type CssDeclaration,
 	type CssParseBudget,
+	type CssProperty,
 	type StyleViewport,
-	type VisibilityProperty,
 	cssMediaMatches,
 	parseCssDeclarations,
 	parseCssRules,
 } from "./css-parser.js";
+import {
+	type CssTextProperty,
+	type TextSpecifiedStyle,
+	type TextStyle,
+	computeTextStyle,
+	cssTextProperties,
+	initialTextStyle,
+	isCssTextProperty,
+} from "./css-text.js";
 import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -120,11 +148,18 @@ export class DocumentStyles {
 		width: 1280,
 		height: 720,
 	});
+	private readonly viewportListeners = new Set<() => void>();
 	private readonly queries: DocumentQueries;
 	private readonly external = new Map<number, ExternalSheet>();
 	private readonly loadIssues: Record<string, number> = Object.create(null);
 	private readonly unregister: () => unknown;
 	private computed = new Map<number, Readonly<VisibilityStyle>>();
+	private boxSpecified = new Map<number, BoxSpecifiedStyle>();
+	private boxComputed = new Map<number, BoxStyle>();
+	private textSpecified = new Map<number, TextSpecifiedStyle>();
+	private textComputed = new Map<number, TextStyle>();
+	private paintSpecified = new Map<number, PaintSpecifiedStyle>();
+	private paintComputed = new Map<number, PaintStyle>();
 	private revision = -1;
 	private closed = false;
 	private info = {
@@ -161,6 +196,23 @@ export class DocumentStyles {
 	get viewport() {
 		return this.viewportValue;
 	}
+	onViewportChange(listener: () => void): () => void {
+		this.ensureOpen();
+		if (typeof listener !== "function")
+			throw new TypeError("Expected a viewport listener");
+		if (
+			!this.viewportListeners.has(listener) &&
+			this.viewportListeners.size >= 16
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Viewport listener limit exceeded",
+			);
+		this.viewportListeners.add(listener);
+		return () => {
+			this.viewportListeners.delete(listener);
+		};
+	}
 	setViewport(width: number, height: number) {
 		this.ensureOpen();
 		if (
@@ -173,6 +225,7 @@ export class DocumentStyles {
 			return;
 		this.viewportValue = Object.freeze({ width, height });
 		this.tree.invalidatePresentation();
+		for (const listener of [...this.viewportListeners]) listener();
 	}
 
 	setExternalSheet(id: number, url: string, text: string) {
@@ -229,11 +282,113 @@ export class DocumentStyles {
 		return value;
 	}
 
+	box(id: number): BoxStyle {
+		this.get(id);
+		const pending: number[] = [];
+		let current = id;
+		while (!this.boxComputed.has(current)) {
+			const specified = this.boxSpecified.get(current);
+			if (!specified) {
+				this.boxComputed.set(current, initialBoxStyle);
+				break;
+			}
+			pending.push(current);
+			const parent = this.tree.get(current).parent;
+			if (parent === null || !Object.values(specified).includes("inherit"))
+				break;
+			current = parent;
+		}
+		for (const target of pending.reverse()) {
+			const parent = this.tree.get(target).parent;
+			this.boxComputed.set(
+				target,
+				computeBoxStyle(
+					this.boxSpecified.get(target) ?? {},
+					parent === null
+						? initialBoxStyle
+						: (this.boxComputed.get(parent) ?? initialBoxStyle),
+					this.viewport,
+				),
+			);
+		}
+		return this.boxComputed.get(id) ?? initialBoxStyle;
+	}
+
+	text(id: number): TextStyle {
+		this.get(id);
+		if (this.textComputed.has(id))
+			return this.textComputed.get(id) as TextStyle;
+		const pending: number[] = [];
+		let current: number | null = id;
+		while (current !== null && !this.textComputed.has(current)) {
+			pending.push(current);
+			current = this.tree.get(current).parent;
+		}
+		const rootElement = this.tree
+			.get(this.tree.root)
+			.children.find((child) => this.tree.get(child).kind === "element");
+		for (const target of pending.reverse()) {
+			const node = this.tree.get(target);
+			const parent =
+				node.parent === null
+					? initialTextStyle
+					: (this.textComputed.get(node.parent) ?? initialTextStyle);
+			const rootFontSize = Number.parseFloat(
+				(rootElement === undefined
+					? initialTextStyle
+					: (this.textComputed.get(rootElement) ?? initialTextStyle))[
+					"font-size"
+				],
+			);
+			this.textComputed.set(
+				target,
+				computeTextStyle(
+					this.textSpecified.get(target) ?? {},
+					parent,
+					this.viewport,
+					rootFontSize,
+					node.kind === "element" && node.tagName === "pre",
+					target === rootElement,
+				),
+			);
+		}
+		return this.textComputed.get(id) as TextStyle;
+	}
+
+	paint(id: number): PaintStyle {
+		this.get(id);
+		const pending: number[] = [];
+		let current: number | null = id;
+		while (current !== null && !this.paintComputed.has(current)) {
+			pending.push(current);
+			current = this.tree.get(current).parent;
+		}
+		for (const target of pending.reverse()) {
+			const parent = this.tree.get(target).parent;
+			this.paintComputed.set(
+				target,
+				computePaintStyle(
+					this.paintSpecified.get(target) ?? {},
+					parent === null
+						? initialPaintStyle
+						: (this.paintComputed.get(parent) ?? initialPaintStyle),
+				),
+			);
+		}
+		return this.paintComputed.get(id) as PaintStyle;
+	}
+
 	metrics() {
 		this.refresh();
 		return Object.freeze({
 			partial: true,
 			properties: Object.freeze(["display", "visibility"]),
+			boxProperties: cssBoxProperties,
+			textProperties: cssTextProperties,
+			textFont: "Agent Mono",
+			paintProperties: cssPaintProperties,
+			paintColorSpace: "srgb-8bit",
+			boxValues: "computed-subset-not-used-geometry",
 			layout: false,
 			viewport: this.viewport,
 			externalSheets: this.external.size,
@@ -244,8 +399,15 @@ export class DocumentStyles {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		this.viewportListeners.clear();
 		this.external.clear();
 		this.computed.clear();
+		this.boxSpecified.clear();
+		this.boxComputed.clear();
+		this.textSpecified.clear();
+		this.textComputed.clear();
+		this.paintSpecified.clear();
+		this.paintComputed.clear();
 		this.queries.close();
 		this.unregister();
 	}
@@ -279,6 +441,12 @@ export class DocumentStyles {
 		}
 		this.revision = -1;
 		this.computed.clear();
+		this.boxSpecified.clear();
+		this.boxComputed.clear();
+		this.textSpecified.clear();
+		this.textComputed.clear();
+		this.paintSpecified.clear();
+		this.paintComputed.clear();
 		const issues: Record<string, number> = { ...this.loadIssues };
 		const issue = (code: string) => {
 			issues[code] = (issues[code] ?? 0) + 1;
@@ -309,7 +477,7 @@ export class DocumentStyles {
 				);
 			return text;
 		};
-		const winners = new Map<number, Map<VisibilityProperty, Winner>>();
+		const winners = new Map<number, Map<CssProperty, Winner>>();
 		const nodes = [...this.tree.walk()].map((entry) => entry.node);
 		const apply = (
 			id: number,
@@ -336,6 +504,22 @@ export class DocumentStyles {
 					properties.set(declaration.property, candidate);
 			}
 		};
+		for (const node of nodes) {
+			if (node.tagName !== "img") continue;
+			for (const property of ["width", "height"] as const) {
+				const raw = node.attributes[property];
+				if (raw !== undefined) charge(raw.length + 1);
+				const value = imageDimensionHint(raw);
+				if (value !== undefined)
+					apply(
+						node.id,
+						[{ property, value, important: false }],
+						[0, 0, 0],
+						false,
+						-2,
+					);
+			}
+		}
 		for (const node of nodes) {
 			let text: string | undefined;
 			if (
@@ -422,6 +606,29 @@ export class DocumentStyles {
 			apply(node.id, declarations, [0, 0, 0], true, order);
 			order += declarations.length;
 		}
+		const boxSpecified = new Map<number, BoxSpecifiedStyle>();
+		const textSpecified = new Map<number, TextSpecifiedStyle>();
+		const paintSpecified = new Map<number, PaintSpecifiedStyle>();
+		for (const [id, properties] of winners) {
+			const specified: Partial<Record<CssBoxProperty, string>> = {};
+			const textValues: Partial<Record<CssTextProperty, string>> = {};
+			const paintValues: Partial<Record<CssPaintProperty, string>> = {};
+			for (const [property, winner] of properties) {
+				charge(1);
+				if (isCssBoxProperty(property))
+					specified[property] = winner.declaration.value;
+				if (isCssTextProperty(property))
+					textValues[property] = winner.declaration.value;
+				if (isCssPaintProperty(property))
+					paintValues[property] = winner.declaration.value;
+			}
+			if (Object.keys(specified).length)
+				boxSpecified.set(id, Object.freeze(specified));
+			if (Object.keys(textValues).length)
+				textSpecified.set(id, Object.freeze(textValues));
+			if (Object.keys(paintValues).length)
+				paintSpecified.set(id, Object.freeze(paintValues));
+		}
 		const computed = new Map<number, Readonly<VisibilityStyle>>();
 		for (const node of nodes) {
 			charge(1);
@@ -450,6 +657,9 @@ export class DocumentStyles {
 			);
 		}
 		this.computed = computed;
+		this.boxSpecified = boxSpecified;
+		this.textSpecified = textSpecified;
+		this.paintSpecified = paintSpecified;
 		this.info = {
 			rules: budget.rules,
 			declarations: budget.declarations,

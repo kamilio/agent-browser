@@ -1,0 +1,101 @@
+{
+  "startedAt": "2026-09-02T21:14:53.088Z",
+  "finishedAt": "2026-09-02T21:14:53.358Z",
+  "scope": "native-formatting-and-horizontal-widths-no-js-network-or-paint",
+  "runtime": {
+    "version": "v22.22.0",
+    "platform": "linux",
+    "architecture": "x64",
+    "cpuModel": "AMD EPYC 9R45"
+  },
+  "profile": "large",
+  "rows": 5000,
+  "sourceBytes": 352890,
+  "ownedNodes": 25007,
+  "readyMs": 20.919658000000002,
+  "parseMs": 91.54426600000001,
+  "formattingAndWidthsMs": 142.52416899999997,
+  "elapsedMs": 293.516577,
+  "cpuMs": 529.173,
+  "peakProcessRssBytes": 153374720,
+  "samples": [
+    {
+      "stage": "ready",
+      "rss": 51834880,
+      "heapUsed": 4844296,
+      "heapTotal": 6656000
+    },
+    {
+      "stage": "parsed",
+      "rss": 105979904,
+      "heapUsed": 23381304,
+      "heapTotal": 52768768
+    },
+    {
+      "stage": "formatted",
+      "rss": 146612224,
+      "heapUsed": 58823976,
+      "heapTotal": 93376512
+    },
+    {
+      "stage": "closed-with-result-retained",
+      "rss": 152768512,
+      "heapUsed": 65165248,
+      "heapTotal": 98668544
+    }
+  ],
+  "formatting": {
+    "visitedDomNodes": 25004,
+    "boxes": 35005,
+    "textCodeUnits": 93890,
+    "work": 293914,
+    "deferredSubtrees": 0
+  },
+  "resolvedBlocks": 10004,
+  "completed": true,
+  "checks": [
+    {
+      "label": "Every source row has a real block width result",
+      "passed": true
+    },
+    {
+      "label": "Percentages and accumulated positions use the actual derived containing block",
+      "passed": true
+    },
+    {
+      "label": "Each source inline owner splits into two fragments",
+      "passed": true
+    },
+    {
+      "label": "Adjacent inline tails and heads share the expected anonymous runs",
+      "passed": true
+    },
+    {
+      "label": "All raw source text records survive without duplication",
+      "passed": true
+    },
+    {
+      "label": "All returned widths satisfy the normal-flow equation",
+      "passed": true
+    },
+    {
+      "label": "The formatting profile has no deferred or silently ignored CSS",
+      "passed": true
+    },
+    {
+      "label": "Closing the owner leaves only caller-retained immutable result data",
+      "passed": true
+    },
+    {
+      "label": "Closed owners reject fresh formatting operations",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "One synthetic fresh-process observation; no statistical comparison or real-site acceptance.",
+    "No interpreter, sockets, external browser, vertical layout, fonts, painting or client rectangles.",
+    "RSS includes Node, source, DOM, styles, intermediate/results and instrumentation; close does not force garbage collection.",
+    "The immutable formatting result remains retained by the caller after document close.",
+    "readyMs is in-process uptime after static imports, not parent-observed CLI startup."
+  ]
+}

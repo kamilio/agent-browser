@@ -1,0 +1,28 @@
+{
+	"checkedOnUtc": "2026-09-03",
+	"source": "read-only authenticated GitHub API and local package manifests",
+	"issue": {
+		"repository": "poe-platform/poe-code",
+		"number": 550,
+		"state": "closed",
+		"closedAt": "2026-09-02T19:43:35Z",
+		"finalCommentAt": "2026-09-02T19:43:34Z"
+	},
+	"maintainerReportedRelease": {
+		"package": "@poe-platform/safe-js",
+		"version": "0.1.40",
+		"commit": "7984fa903602e6561b342a140f472978827094b7",
+		"workflowRun": 33674102879,
+		"browserLocallyVerified": false
+	},
+	"localPackages": {
+		"workspacePoeCode": "4.0.48",
+		"globalPoeCode": "13.0.10",
+		"scopedSafeJsAtWorkspaceRoot": false,
+		"scopedSafeJsAtGlobalRoot": false,
+		"scopedSafeJsCoreResolvesFromRepository": false
+	},
+	"artifactAcquired": false,
+	"runtimeChanged": false,
+	"releasedBrowserAcceptanceRun": false
+}

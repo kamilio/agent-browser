@@ -1,0 +1,119 @@
+{
+  "startedAt": "2026-09-02T21:58:50.782Z",
+  "finishedAt": "2026-09-02T21:58:50.941Z",
+  "scope": "native-synthetic-normal-flow-document-layout-text-paint-and-png",
+  "javascriptRuntime": false,
+  "network": false,
+  "fullCssPainting": false,
+  "profile": "medium",
+  "rows": 1000,
+  "htmlCodeUnits": 98955,
+  "node": "v22.22.0",
+  "platform": "linux",
+  "arch": "x64",
+  "cpuModel": "AMD EPYC 9R45",
+  "completed": true,
+  "checks": [
+    {
+      "label": "Every paragraph retains one positioned text line",
+      "passed": true
+    },
+    {
+      "label": "Sibling margins collapse to the expected document height",
+      "passed": true
+    },
+    {
+      "label": "Absolute first and last paragraph positions follow the same flow",
+      "passed": true
+    },
+    {
+      "label": "Only viewport-intersecting glyphs are painted",
+      "passed": true
+    },
+    {
+      "label": "No supported source glyph needs replacement",
+      "passed": true
+    },
+    {
+      "label": "The image has bounded opaque RGBA viewport storage",
+      "passed": true
+    },
+    {
+      "label": "Closing the source revokes new rendering",
+      "passed": true
+    },
+    {
+      "label": "Retained geometry and pixels remain readable after close",
+      "passed": true
+    }
+  ],
+  "passed": 8,
+  "measurement": {
+    "parseMs": 31.784005,
+    "renderMs": 109.25137999999998,
+    "encodeMs": 8.837563000000017,
+    "nativeNodes": 5005,
+    "boxes": 1003,
+    "text": {
+      "tokens": 31890,
+      "lines": 1000,
+      "glyphs": 30890,
+      "unsupportedGlyphs": 0,
+      "work": 257123
+    },
+    "document": {
+      "work": 37907,
+      "boxes": 1003,
+      "glyphs": 30890,
+      "lines": 1000
+    },
+    "paint": {
+      "work": 421346,
+      "paintedGlyphs": 617,
+      "clippedGlyphs": 25273,
+      "hiddenGlyphs": 0,
+      "blankGlyphs": 5000
+    },
+    "flowHeight": 19002,
+    "pngBytes": 1229438,
+    "pngSha256": "e43a9381205d9bb4cdac8500dbd4c267f0433d562340c7c674c4731ef69d7973"
+  },
+  "samples": [
+    {
+      "stage": "start",
+      "rss": 56594432,
+      "heapUsed": 5709960,
+      "arrayBuffers": 60745
+    },
+    {
+      "stage": "parsed",
+      "rss": 70717440,
+      "heapUsed": 10893352,
+      "arrayBuffers": 25887
+    },
+    {
+      "stage": "retained-document-raster",
+      "rss": 108998656,
+      "heapUsed": 35526472,
+      "arrayBuffers": 1254651
+    },
+    {
+      "stage": "retained-png",
+      "rss": 120557568,
+      "heapUsed": 29025008,
+      "arrayBuffers": 6172193
+    },
+    {
+      "stage": "closed-source-retained-output",
+      "rss": 120557568,
+      "heapUsed": 29059232,
+      "arrayBuffers": 6172193
+    }
+  ],
+  "elapsedMs": 175.860821,
+  "cpuMicroseconds": {
+    "user": 346975,
+    "system": 22280
+  },
+  "peakRssBytes": 120696832
+}

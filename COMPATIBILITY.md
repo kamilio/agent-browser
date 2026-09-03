@@ -9,6 +9,52 @@ This ledger expands the goal: a useful text browser is an intermediate result,
 not fulfillment of the requested Kitesurf coverage and Playwright CLI superset.
 The 72-hour window is a work budget, not evidence that every feature is complete.
 
+`NODE-RELATIONS.md` extends K01/K03 with live containment, document-position masks,
+native identity and structural equality for HTML nodes and attributes. Actual
+experimental-SafeJS reconciliation changes native order and agent snapshots;
+the full Node/prototype/namespace, framework and real-site gates remain open.
+
+`JPEG-PERFORMANCE.md` verifies the previously rejected one-megapixel photo through
+the real page owner and experimental-SafeJS agent. Algorithmic work drops beneath
+the unchanged guard, while 252 fixture outputs plus the photo retain identical
+pixels. Broader resource/codec/host and live-site gates remain open.
+
+`JPEG-DECODING.md` adds independently checked 8-bit Huffman baseline/progressive JPEG
+and actual guest/agent PNG/PDF captures through the shared resource and layout path.
+Large-photo work budgets, other formats, CMYK/orientation/color management and
+live-site acceptance remain open; K08 is still partial.
+
+`IMAGE-LAYOUT.md` adds loaded PNG inline/block normal-flow boxes, ratio sizing,
+live geometry and shared PNG/PDF pixels, verified through actual experimental-SafeJS
+agent captures. `IMAGE-RESOURCES.md` supplies networking, source state, guest events
+and inspection. General image coverage and real-site gates remain open.
+
+`PNG-DECODING.md` supplies the K08 static PNG codec prerequisite, including native
+DEFLATE, all legal sample formats, filters, Adam7 and independent pixel validation.
+Other image formats, fonts, SVG and canvas remain unimplemented gates; bounded
+loaded-PNG layout/painting does not count as completed browser image acceptance.
+
+`MEDIA-RANGES.md` extends the K02/K03 responsive profile with compiled comparisons,
+chained bounds, grouped Boolean conditions, aspect ratios and native resolution.
+Actual agent/experimental-core captures respond to these conditions. General media
+conformance, unknown-feature semantics and the runtime alias-identity gate remain open.
+
+`VIEWPORT-CONTROLS.md` adds confirmed playground size inspection/editing, draft
+presets and an opaque per-session/tab guard for the existing resize operation.
+Mocked frontend/native-host tests verify actual resized PNG data and stale-target
+protection. Device emulation and new live visual/public-site acceptance remain open.
+
+`MEDIA-QUERIES.md` adds live matchMedia lists, resize/change events and Window
+dimensions to the partial K02/K03 surface. Actual responsive DOM/PNG behavior is
+verified, but the experimental-core global/Window function-identity assertion
+fails and remains in the nonzero-exit probe. Full media/event and released-SDK
+acceptance are not established.
+
+The September 3 `BACKGROUNDS.md` checkpoint adds solid-color/none background
+shorthand, eight-component resets and live inline/computed CSSOM. Native PNG/PDF
+changes are verified through actual experimental SafeJS. Images, layers and
+non-default non-color components remain gaps; K02 remains partial.
+
 ## Sources and direct inspection
 
 - https://developers.cloudflare.com/browser-run/kitesurf/
@@ -33,24 +79,52 @@ and implementation will be used; do not copy Cloudflare's logo or claim affiliat
 
 ## Kitesurf engine coverage
 
+`PDF.md` adds native paginated PDF export, safe CLI files and playground downloads
+to K11/G08/P10. Independent parsing, text extraction and exact rendered pixels
+pass. The implemented profile uses screen layout and raster visuals with text,
+not print CSS, full font coverage, tagged PDF or live-site/frontend acceptance.
+
+`CHARACTER-DATA.md` extends K01 with live data methods, UTF-16 text splitting,
+contiguous `wholeText` and quota-preflighted subtree normalization. Actual guest
+edits change snapshots/layout/captures. Full prototype graphs, Range adjustment,
+MutationObserver delivery and real framework acceptance are not implied.
+
+`ANIMATION-FRAMES.md` adds bounded software frame scheduling and a shared elapsed
+performance clock to K03. Actual synchronous guest callbacks update native layout
+and explicit captures. Automatic painting, full performance APIs, released-SDK
+async-tail scheduling and real framework/site compatibility are still open.
+
+`ELEMENT-SIZES.md` adds a bounded no-quirks client/offset size subset to page
+JavaScript and agent geometry inspection. It does not imply offset-parent/position,
+scroll-size, quirks-mode or complete CSSOM View coverage.
+
+`INLINE-BOXES.md` additionally connects signed/percentage inline margin/padding,
+edge-aware wrapping and shared native background/capture fragments to K02. It
+does not complete borders, bidi, atomic/replaced inline content or general CSS.
+
+The September 2 `COMPUTED-STYLES.md` checkpoint adds a partial live page-JavaScript
+computed-style API to K02: 24 longhands, readonly declarations and native used
+normal-flow sizes. It does not close the full CSS, pseudo-element, custom-property
+or public-site comparison requirements below.
+
 | ID | Required capability | Acceptance evidence | Status |
 | --- | --- | --- | --- |
 | K01 | HTML parsing, DOM identity and mutation | Malformed markup, entities, trees, selectors and mutation fixtures; relevant web-platform tests. | Partial parser, identity-preserving ParentNode/ChildNode insertion/replacement (`DOM-MUTATIONS.md`), contextual outerHTML/insertAdjacentHTML with bounded staging (`HTML-INSERTION.md`), bounded queries, fragments, cloning, live tag/class/children collections, Attr/NamedNodeMap, classList mutations/iteration, baseURI and URL attribute reflection (`HTML.md`, `DOM-FRAGMENTS.md`, `LIVE-COLLECTIONS.md`, `DOM-ATTRIBUTES.md`, `CLASS-LISTS.md`, `PAGE-URLS.md`). Session-owned Location navigation, finite-JSON History state/session-wide length and bounded guest traversal are implemented (`PAGE-HISTORY.md`); bare global Location assignment and complete navigation/task semantics remain unsupported or unverified. Namespace/prototype completeness, full collection/NodeList/DOMTokenList, parser/DOM conformance and web-platform coverage remain open |
-| K02 | CSS styles and layout | Cascade, inheritance, sizing, overflow and layout fixtures; compare public page structure and captures. | Partial: bounded display/visibility cascade, media viewport and live inline declarations with thirteen native-browser anchors; full CSSOM, computed styles and layout/captures pending (`CSS.md`, `INLINE-STYLES.md`) |
+| K02 | CSS styles and layout | Cascade, inheritance, sizing, overflow and layout fixtures; compare public page structure and captures. | Partial visibility/box/text/paint cascade, formatting and normal-flow document layout. `CSS-PAINT.md` adds inherited foreground, solid block/inline backgrounds and canvas propagation to actual native captures with interpreted mutations. `CLIENT-GEOMETRY.md` exposes bounded block/wrapped-inline rectangles and cached unions to guest scripts and the agent `geometry` command. Full UA/font coverage, other layout modes, general client geometry/coordinate actions, CSS painting and real-site comparisons remain open |
 | K03 | Page JavaScript and modules | Inline/external/module scripts, promises, events, timers and script errors in isolated sessions. | Partial opt-in classic loading, events, parser writes, bounded identity-preserving timers, guest constructor inheritance, ordinary Object intrinsics and owned Date values/journaled clocks (`SCRIPT-LOADING.md`, `DOCUMENT-WRITE.md`, `PAGE-TIMERS.md`, `SAFEJS-FUNCTION-OBJECTS.md`, `SAFEJS-OBJECT-PROTOTYPE.md`, `SAFEJS-DATE.md`); host-task checkpoints now preserve responsiveness and native navigation after script timeout (`SAFEJS-COOPERATION.md`). Date snapshots/locale formatting, complete intrinsic graphs/coercion and property descriptors, nested inline writes, modules, full task/microtask semantics, same-document script recovery and public dynamic-site acceptance remain open; both current public navigations return readable HTML but their scripts hit the unchanged source timeout |
 | K04 | Framework-driven pages | Real TodoMVC vanilla, React, Vue, Angular and Preact: add/edit/toggle/filter/delete demo todos. | Pending. A self-authored storage-backed vanilla fixture now supports actual interpreted agent add/toggle/remove and reload restoration (`PAGE-STORAGE.md`); it does not satisfy real TodoMVC/framework acceptance |
 | K05 | Browser network APIs | Fetch, XHR, URL/encoding, redirects and CORS with local multi-origin security fixtures. | Partial document-owned fetch (`PAGE-FETCH.md`) plus CORS/preflights/header filtering/redirect state (`PAGE-CORS.md`), tested with real SafeJS over mock origins. XHR, binary/streaming/signals, broader conformance and real multi-origin/wire acceptance remain open |
 | K06 | Cookies, storage and isolation | Per-session/per-origin jars and stores; no cross-session leakage; explicit cleanup. | Partial: native stores/jar plus owned page Storage methods and document.cookie, pre-parser access, origin/tab/session isolation, opener cloning, state imports, HttpOnly protection, quotas and revocation (`PAGE-STORAGE.md`). Bounded cross-document storage events update an interpreted second-tab UI (`STORAGE-EVENTS.md`). Named Storage properties, full scheduler/events conformance, durable/partitioned storage and broader wire/standards acceptance remain open |
 | K07 | Frames and page contexts | Same/cross-origin frames, scoped globals, resource budgets and parent access restrictions. | Pending |
-| K08 | Images, fonts, SVG and 2D canvas | Supported image resources, text shaping, SVG and canvas fixtures with actual exported results. | Pending |
+| K08 | Images, fonts, SVG and 2D canvas | Supported image resources, text shaping, SVG and canvas fixtures with actual exported results. | Partial PNG/JPEG resources, independently checked native decoding (`PNG-DECODING.md`, `JPEG-DECODING.md`), normal-flow layout/geometry and actual agent PNG/PDF pixels (`IMAGE-LAYOUT.md`). Large-photo budgets, general image/site acceptance, other formats, fonts, SVG and canvas remain pending |
 | K09 | Interactive input and selection | Mouse/keyboard events, focus, links, forms and document selection driven through the API. | Pending |
-| K10 | Screenshots | Real PNG page/element capture from our renderer with correct bounds and nonempty pixel assertions. | Pending |
-| K11 | PDF | Parseable PDF export of the rendered document, with text/pages and pagination assertions. | Pending |
+| K10 | Screenshots | Real PNG page/element capture from our renderer with correct bounds and nonempty pixel assertions. | Partial viewport, normal-flow block and wrapped-inline PNG captures, fractional bounds, real colored pixels, bounded transfer and CLI files (`CAPTURE-EXPORT.md`, `INLINE-CAPTURES.md`). General split/fragment bounds, full CSS/image/font coverage and public-site comparisons remain open |
+| K11 | PDF | Parseable PDF export of the rendered document, with text/pages and pagination assertions. | Partial native PDF encoder and line-aware screen-layout pagination with real raster visuals and compact searchable text (`PDF.md`). Independent Ghostscript parsing, three-page pixel equality and guest-modified text extraction pass. Print media/paged CSS, full fonts, tagged PDF and general real-site acceptance remain open |
 | K12 | HTML and structured extraction | Post-script HTML, links, selectors, semantic/accessibility output and Markdown/JSON extraction. | Partial live HTML/snapshots plus bounded Markdown and typed JSON extraction (`HTML-CONTENT.md`, `EXTRACTION.md`); actual SafeJS fixture changes pass, but public/CLI/download gates, full structure/style coverage and conformance remain open |
 | K13 | CDP interoperability | Required target/page/runtime/DOM/input/network/CSS/accessibility operations exercised by real clients. | Pending |
 | K14 | DevTools integration | DOM inspection, evaluation, console/network events and captures connected to our engine. | Pending |
 | K15 | Budgets and failure recovery | CPU/wall/memory limits, navigation stop reasons, runaway scripts and clean relaunch. | Pending |
-| K16 | Ephemeral scaling and resource use | Concurrent disposable sessions, repeated teardown, measured CPU/RSS/startup and bounded output. | Partial native-only fresh-process profiles for one page, eight retained sessions and twenty replacements (`SESSION-RESOURCES.md`): 201 functional/cleanup assertions, 31 document closures, measured peak RSS 63.4–226.4 MiB. No page JS, wire traffic, parallel CPU, service cold-start or full scaling acceptance; larger memory costs remain open |
+| K16 | Ephemeral scaling and resource use | Concurrent disposable sessions, repeated teardown, measured CPU/RSS/startup and bounded output. | Partial native-only fresh-process profiles for one page, eight retained sessions and twenty replacements (`SESSION-RESOURCES.md`). Later equivalent three-trial comparisons (`NODE-VIEW-CACHE.md`): 1,206 functional/cleanup assertions, 186 document closures; large workload median peak RSS 226.7 → 164.3 MiB, churn peak unchanged. No page JS, wire traffic, parallel CPU, service cold-start or full scaling acceptance; larger memory costs remain open |
 | K17 | WebAssembly page code | Page-owned Wasm execution constrained by the same resource and host-access rules. | Pending |
 | K18 | Published browser API surface | Inventory additional APIs observed in the reference and add conformance cases rather than guessing support. | Pending |
 
@@ -76,8 +150,8 @@ claim equivalent browser conformance from matching five example sites.
 | G04 | DOM and accessibility | Expand nodes, inspect attributes/styles, locate refs and highlight corresponding output. | Partial bounded native `dom` API and playground text/subtree pane with refs, attributes, hidden nodes and current controls (`DOM-INSPECTION.md`). Native/shared-host and actual experimental-core mutation checks pass; new visual UI, inline expansion/highlighting, style sidebar and complete accessibility inspection remain open |
 | G05 | Console | Real page logs, evaluation results and exceptions; no fabricated sample logs. | Partial page-owned logs/error codes, severity-filtered CLI and tested Console pane (`PAGE-CONSOLE.md`); full console/error/source semantics remain open |
 | G06 | Network | Real request timing/status/size, failures and policy blocks with sensitive data redacted. | Partial bounded document/script/stylesheet/fetch/preflight metadata and Network pane (`NETWORK-JOURNAL.md`), with per-hop CORS results separate from HTTP completion; validated with in-memory transports, real experimental-core SafeJS and formatter tests. New visual/public-site gates, complete fetch/CORS/XHR and detailed wire timing remain open |
-| G07 | Memory and execution | Actual runtime/host measurements labelled accurately, plus CPU/wall budgets and stop reasons. | Pending |
-| G08 | Export actions | Working screenshot/PDF/HTML plus semantic/Markdown downloads; validate the downloaded formats. | Live HTML inspection and download request implemented; actual HTML transfer unverified because test-browser downloads are unavailable. PNG/PDF/other file gates remain open (`PAGE-CONSOLE.md`) |
+| G07 | Memory and execution | Actual runtime/host measurements labelled accurately, plus CPU/wall budgets and stop reasons. | Partial native JPEG timing/work/working-buffer measurements and real page-budget acceptance (`JPEG-PERFORMANCE.md`); full runtime/host resource coverage remains pending |
+| G08 | Export actions | Working screenshot/PDF/HTML plus semantic/Markdown downloads; validate the downloaded formats. | Native PNG Render/download and PDF download handlers consume real session-owned artifacts (`CAPTURE-EXPORT.md`, `INLINE-CAPTURES.md`, `PDF.md`). Actual CLI files and mocked-UI transfers pass; PDF has independent text/pixel/parser validation. Live-UI/download, full print/layout and remaining export acceptance stay open |
 | G09 | Agent connection | Copyable CLI/API/CDP instructions that work against the displayed session. | Pending |
 | G10 | Responsive and accessible controls | Keyboard operation, focus, narrow viewport, readable text and sensible loading feedback. | Pending |
 | G11 | Session lifecycle | Reconnect/close/cleanup, isolation and human/agent input arbitration on one session. | Pending |
@@ -111,7 +185,7 @@ extensions must be additive, not require rewriting existing command workflows.
 | P07 | `dialog-accept`, `dialog-dismiss` | Alert/confirm/prompt lifecycle and response semantics. | Pending |
 | P08 | `resize`, `press`, `keydown`, `keyup` | Viewport and keyboard/modifier/focus semantics. | Partial: logical CSS viewport and bounded press/type/focus; physical layout and held keys pending |
 | P09 | `mousemove`, `mousedown`, `mouseup`, `mousewheel` | Correct coordinate space, buttons, scrolling and cleanup. | Pending |
-| P10 | `screenshot`, `pdf` | Optional element/filename/hires arguments and valid actual exports. | Pending |
+| P10 | `screenshot`, `pdf` | Optional element/filename/hires arguments and valid actual exports. | Partial native PNG and paginated PDF exports use bounded artifacts and safe local `--filename` writes (`CAPTURE-EXPORT.md`, `INLINE-CAPTURES.md`, `PDF.md`). Actual CLI entry is tested against an injected service. PDF uses whole-document screen layout; PNG supports documented element scopes and fixed-scale `--hires`. Full CSS/print, general bounds, high-density and live service/site acceptance remain open |
 | P11 | `tab-list`, `tab-new`, `tab-close`, `tab-select` | Indexed tab lifecycle, active tab, refs, storage and session isolation. | Pending |
 | P12 | `state-save`, `state-load` | Explicit private-file round trips, cookies/storage fidelity and safe path handling. | Pending |
 | P13 | `cookie-list/get/set/delete/clear` | Domain/path/secure/httpOnly/sameSite attributes and request/script access semantics. | Pending |
@@ -120,7 +194,7 @@ extensions must be additive, not require rewriting existing command workflows.
 | P16 | `console`, `requests`, `request` | Real diagnostic records, levels/details and sensitive-data handling. | Partial document-scoped console (`PAGE-CONSOLE.md`) and tab/latest-network-navigation request journal (`NETWORK-JOURNAL.md`); redacted bounded metadata and detail commands tested with in-memory transports. Full traffic/header/body and console parity remain open |
 | P17 | `tracing-start`, `tracing-stop` | Replayable action/network/document evidence and exported artifacts. | Pending |
 | P18 | `video-start/chapter/show-actions/hide-actions/stop` | Valid recording of our rendered output, lifecycle and visible annotations. | Pending |
-| P19 | `show`, `show --annotate`, `highlight`, `generate-locator` | Observable sessions, overlays, review feedback and valid locator generation. | Pending |
+| P19 | `show`, `show --annotate`, `highlight`, `generate-locator` | Observable sessions, overlays, review feedback and valid locator generation. | Partial native `generate-locator` with verified unique test-ID/role/attribute/CSS-path output, raw CLI formatting and literal CSS-expression round trips (`LOCATOR-GENERATION.md`). Shared-host and actual experimental-core action/mutation/navigation checks pass. Structural fallbacks can retarget after reordering; full generator/CLI-wire parity, overlays, annotation and review UI remain open |
 | P20 | `-s=name`, session env, `list`, `close-all`, `kill-all`, `delete-data` | Cross-invocation sessions, explicit persistence and cleanup restricted to our sessions. | Pending |
 | P21 | Configuration, output paths, mobile/device/profile options | Validated options and corresponding behavior rather than ignored flags. | Pending |
 | P22 | Browser-specific `--browser`, extension/CDP attach/detach | Compatibility decision required; never silently substitute or launch Chrome as our engine. | Decision pending |

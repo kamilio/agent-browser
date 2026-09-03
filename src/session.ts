@@ -1,4 +1,5 @@
 import { CookieJar, type CookieLimits } from "./cookies.js";
+import { imageMediaTypes } from "./image-decoder.js";
 import {
 	type ScriptLoadReport,
 	documentScriptState,
@@ -38,6 +39,7 @@ import {
 } from "./network.js";
 import { recordPageTraversalError } from "./page-console.js";
 import type { PageFetchTransport } from "./page-fetch.js";
+import type { ImageFetch } from "./document-images.js";
 import { type PageHistoryPort, bindPageHistory } from "./page-history.js";
 import { type PageStoragePort, bindPageStorage } from "./page-storage.js";
 import { PageTraversals } from "./page-traversals.js";
@@ -55,6 +57,7 @@ export interface DocumentLoaderContext {
 	readonly limits: Readonly<DocumentLimits>;
 	readonly fetchStylesheet?: (url: string) => Promise<NetworkResponse>;
 	readonly fetchScript?: (url: string) => Promise<NetworkResponse>;
+	readonly fetchImage?: ImageFetch;
 	readonly scripts?: HtmlScriptHooks;
 }
 
@@ -193,6 +196,7 @@ function withAbort<Result>(
 }
 
 export class BrowserSession {
+	private readonly viewportIdentity = crypto.randomUUID();
 	readonly limits: Readonly<SessionLimits>;
 	readonly documentLimits: Readonly<DocumentLimits>;
 	readonly cookies: CookieJar;
@@ -364,6 +368,19 @@ export class BrowserSession {
 		this.tabStates.set(id, tab);
 		if (options.select !== false || this.selected === null) this.selected = id;
 		return this.describe(tab);
+	}
+
+	viewport(id: string) {
+		const tab = this.tab(id);
+		return Object.freeze({
+			tabId: id,
+			key: `${this.viewportIdentity}:${id}`,
+			document: tab.page?.document.reference(tab.page.document.root) ?? null,
+			...(tab.page?.styles.viewport ?? tab.viewport),
+			deviceScaleFactor: 1,
+			partial: true,
+			profile: "logical-css-viewport",
+		});
 	}
 
 	resize(id: string, width: number, height: number) {
@@ -1308,6 +1325,106 @@ export class BrowserSession {
 				},
 				context?.cors ? context.observeCorsResult : undefined,
 			);
+		const fetchImage: ImageFetch = (resourceUrl, imageSignal) =>
+			journal.run("image", resourceUrl, "GET", async () => {
+				const assertOwner = () => {
+					if (fetchLifetime.signal.aborted) throw aborted(fetchLifetime.signal);
+					if (!committed) this.assertCurrent(job);
+					else if (
+						this.closed ||
+						!candidate ||
+						tab.page?.document !== candidate
+					)
+						throw new AgentBrowserError(
+							"closed",
+							"Image document is no longer active",
+						);
+				};
+				assertOwner();
+				if (fetchCspBlocked)
+					throw new AgentBrowserError(
+						"policy-denied",
+						"Image CSP enforcement is not implemented",
+					);
+				const controller = new AbortController();
+				const abortImage = () => controller.abort(imageSignal.reason);
+				const abortLifetime = () =>
+					controller.abort(fetchLifetime.signal.reason);
+				const abortNavigation = () => {
+					if (!committed) controller.abort(signal.reason);
+				};
+				imageSignal.addEventListener("abort", abortImage, { once: true });
+				fetchLifetime.signal.addEventListener("abort", abortLifetime, {
+					once: true,
+				});
+				signal.addEventListener("abort", abortNavigation, { once: true });
+				if (imageSignal.aborted) abortImage();
+				if (signal.aborted) abortNavigation();
+				let target = parseNetworkUrl(resourceUrl);
+				const redirects: { url: string; status: number; location: string }[] =
+					[];
+				let encodedBytes = 0;
+				let crossSiteRedirect = false;
+				try {
+					for (;;) {
+						assertOwner();
+						if (controller.signal.aborted) throw aborted(controller.signal);
+						if (
+							new URL(responseUrl).protocol === "https:" &&
+							target.protocol !== "https:"
+						)
+							throw new AgentBrowserError(
+								"policy-denied",
+								"Mixed-content image blocked",
+							);
+						const image = await withAbort(
+							this.fetchNetwork({
+								url: target.href,
+								method: "GET",
+								headers: { accept: imageMediaTypes.join(", ") },
+								redirect: "manual",
+								signal: controller.signal,
+								cookieContext: {
+									siteUrl: responseUrl,
+									credentials: "include",
+									topLevelNavigation: false,
+									crossSiteRedirect,
+								},
+							}),
+							controller.signal,
+						);
+						assertOwner();
+						encodedBytes += image.encodedBytes;
+						if (![301, 302, 303, 307, 308].includes(image.status))
+							return { ...image, encodedBytes, redirects };
+						const locations = image.headers.location;
+						if (locations?.length !== 1)
+							throw new AgentBrowserError(
+								"network-error",
+								"Image redirect requires one Location",
+							);
+						if (redirects.length >= 20)
+							throw new AgentBrowserError(
+								"resource-limit",
+								"Image redirect limit exceeded",
+							);
+						const next = parseNetworkUrl(
+							new URL(locations[0], target.href).href,
+						);
+						redirects.push({
+							url: target.href,
+							status: image.status,
+							location: next.href,
+						});
+						crossSiteRedirect ||= next.origin !== target.origin;
+						target = next;
+					}
+				} finally {
+					imageSignal.removeEventListener("abort", abortImage);
+					fetchLifetime.signal.removeEventListener("abort", abortLifetime);
+					signal.removeEventListener("abort", abortNavigation);
+				}
+			});
 		try {
 			const loaded = await this.loadDocument(
 				response,
@@ -1317,6 +1434,7 @@ export class BrowserSession {
 					tabId: tab.id,
 					limits: this.documentLimits,
 					fetch,
+					fetchImage,
 					fetchScript: (resourceUrl: string) =>
 						journal.run("script", resourceUrl, "GET", async () => {
 							this.assertCurrent(job);

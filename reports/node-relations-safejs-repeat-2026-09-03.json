@@ -1,0 +1,162 @@
+{
+  "startedAt": "2026-09-03T03:34:59.471Z",
+  "finishedAt": "2026-09-03T03:34:59.741Z",
+  "passed": true,
+  "checks": [
+    {
+      "label": "Document, element and text capabilities share live containment",
+      "passed": true
+    },
+    {
+      "label": "Position constants and ancestor/sibling masks survive the actual bridge",
+      "passed": true
+    },
+    {
+      "label": "Cloning preserves structure without sharing node identity",
+      "passed": true
+    },
+    {
+      "label": "Disconnected comparisons are stable and antisymmetric",
+      "passed": true
+    },
+    {
+      "label": "Attribute comparisons retain special order without child containment",
+      "passed": true
+    },
+    {
+      "label": "Attribute clones compare by name/value, not owner",
+      "passed": true
+    },
+    {
+      "label": "Removed attributes become disconnected and can be reattached",
+      "passed": true
+    },
+    {
+      "label": "Fragments have independent roots until their children move",
+      "passed": true
+    },
+    {
+      "label": "Comment and text equality observe kind and UTF-16 content",
+      "passed": true
+    },
+    {
+      "label": "Invalid operands fail rather than acting like detached nodes",
+      "passed": true
+    },
+    {
+      "label": "Guest keyed reconciliation uses containment, order and structural equality",
+      "passed": true
+    },
+    {
+      "label": "Native document records the guest reconciliation order and content",
+      "passed": true
+    },
+    {
+      "label": "Agent semantic snapshot sees the reconciled tree",
+      "passed": true
+    },
+    {
+      "label": "Actual runtime and document owners close",
+      "passed": true
+    }
+  ],
+  "runtime": "existing experimental SafeJS core, not released-SDK acceptance",
+  "fixture": "production PageScripts over in-memory HTML; no network or sockets",
+  "limitations": "HTML/null-namespace node profile only; no Node constructor/prototype graph, shadow trees, full WPT run, framework or real-site acceptance",
+  "page": {
+    "steps": 612,
+    "peakCallDepth": 1,
+    "peakDataSize": 14493,
+    "consoleCalls": 0,
+    "performance": {
+      "partial": true,
+      "precisionMs": 0.1,
+      "reads": 0,
+      "lastTimestamp": 0,
+      "closed": true
+    },
+    "timers": {
+      "partial": true,
+      "active": 0,
+      "queued": 0,
+      "pendingCallbacks": 0,
+      "scheduled": 0,
+      "fired": 0,
+      "running": false,
+      "closed": true,
+      "limits": {
+        "maxActive": 128,
+        "maxScheduled": 4096,
+        "maxCallbacks": 1024,
+        "maxArguments": 32
+      }
+    },
+    "animationFrames": {
+      "partial": true,
+      "profile": "software-frame-opportunities",
+      "intervalMs": 16.666666666666668,
+      "active": 0,
+      "pendingCallbacks": 0,
+      "scheduled": 0,
+      "fired": 0,
+      "frames": 0,
+      "running": false,
+      "armed": false,
+      "lastTimestamp": null,
+      "closed": true,
+      "limits": {
+        "maxActive": 128,
+        "maxScheduled": 4096,
+        "maxCallbacks": 1024,
+        "maxPendingCallbacks": 128
+      }
+    },
+    "media": {
+      "partial": true,
+      "lists": 0,
+      "retainedCodeUnits": 0,
+      "invalidOrUnsupportedQueries": 0,
+      "eventsDelivered": 0,
+      "turns": 0,
+      "queued": false,
+      "running": false,
+      "closed": true,
+      "limits": {
+        "maxLists": 256,
+        "maxQueryCodeUnits": 4096,
+        "maxRetainedCodeUnits": 65536,
+        "maxEvents": 4096,
+        "maxTurns": 4096
+      }
+    },
+    "initialized": true,
+    "evaluations": 11,
+    "pendingCallbacks": 0,
+    "active": false,
+    "closed": true,
+    "dom": {
+      "classLists": {
+        "lists": 0,
+        "cachedCodeUnits": 0,
+        "refreshes": 0,
+        "closed": true
+      },
+      "geometry": {
+        "created": 0,
+        "closed": true
+      },
+      "computedStyles": {
+        "objects": 0,
+        "maxObjects": 4096,
+        "closed": true
+      },
+      "elementSizes": {
+        "revision": -1,
+        "retained": 0,
+        "work": 0,
+        "measurements": 0,
+        "closed": true
+      }
+    }
+  }
+}

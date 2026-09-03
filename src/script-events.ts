@@ -18,6 +18,7 @@ import type {
 	ScriptHostObjectFactory,
 } from "./script-dom.js";
 import { BrowserStorageEvent } from "./storage-events.js";
+import { BrowserMediaQueryListEvent } from "./media-query-event.js";
 
 export interface ScriptCallbackRuntime {
 	startCallback(
@@ -39,6 +40,7 @@ export interface ScriptEventOptions {
 }
 
 interface ScriptListener {
+	handler?: boolean;
 	target: number;
 	type: string;
 	callback: unknown;
@@ -49,6 +51,7 @@ interface ScriptListener {
 
 export class ScriptEventBindings {
 	private records = new Set<ScriptListener>();
+	private readonly independentTargets = new Map<number, object>();
 	private capabilities = new WeakMap<BrowserEvent, object>();
 	private errors: BrowserListenerError[] = [];
 	private droppedErrors = 0;
@@ -90,7 +93,7 @@ export class ScriptEventBindings {
 			once: Boolean(options.once),
 			listener: controlledEventListener((current, event) => {
 				if (record.once) this.records.delete(record);
-				return this.invoke(callback, current, event);
+				return this.invoke(record.callback, current, event);
 			}),
 		};
 		this.options.events.addEventListener(
@@ -115,6 +118,73 @@ export class ScriptEventBindings {
 			record.capture,
 		);
 		this.records.delete(record);
+	}
+
+	bindIndependentTarget(target: number, object: object) {
+		this.ensureOpen();
+		if (
+			!this.options.events.isIndependentTarget(target) ||
+			this.independentTargets.has(target)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid independent event target binding",
+			);
+		this.independentTargets.set(target, object);
+	}
+
+	unbindIndependentTarget(target: number) {
+		for (const record of [...this.records])
+			if (record.target === target) this.records.delete(record);
+		this.independentTargets.delete(target);
+		if (!this.options.events.metrics().closed)
+			this.options.events.releaseIndependentTarget(target);
+	}
+
+	getHandler(target: number, type: string): unknown {
+		this.ensureOpen();
+		return (
+			[...this.records].find(
+				(record) =>
+					record.handler && record.target === target && record.type === type,
+			)?.callback ?? null
+		);
+	}
+
+	setHandler(target: number, type: string, callback: unknown) {
+		this.ensureOpen();
+		const previous = [...this.records].find(
+			(record) =>
+				record.handler && record.target === target && record.type === type,
+		);
+		if (typeof callback !== "function") {
+			if (previous) {
+				this.options.events.removeEventListener(
+					target,
+					type,
+					previous.listener,
+				);
+				this.records.delete(previous);
+			}
+			return;
+		}
+		if (previous) {
+			previous.callback = callback;
+			return;
+		}
+		const record: ScriptListener = {
+			target,
+			type,
+			callback,
+			capture: false,
+			once: false,
+			handler: true,
+			listener: controlledEventListener((current, event) =>
+				this.invoke(record.callback, current, event),
+			),
+		};
+		this.options.events.addEventListener(target, type, record.listener);
+		this.records.add(record);
 	}
 
 	drainErrors(): readonly BrowserListenerError[] {
@@ -150,6 +220,7 @@ export class ScriptEventBindings {
 					record.capture,
 				);
 		this.records.clear();
+		this.independentTargets.clear();
 		this.capabilities = new WeakMap();
 	}
 
@@ -246,6 +317,14 @@ export class ScriptEventBindings {
 					event[name] = Boolean(value);
 				},
 			};
+		if (event instanceof BrowserMediaQueryListEvent)
+			for (const name of ["media", "matches"] as const)
+				properties[name] = {
+					get: () => {
+						this.ensureOpen();
+						return event[name];
+					},
+				};
 		if (event instanceof BrowserPopStateEvent)
 			properties.state = {
 				get: () => {
@@ -339,6 +418,8 @@ export class ScriptEventBindings {
 	}
 
 	private target(target: number): object {
+		const independent = this.independentTargets.get(target);
+		if (independent) return independent;
 		if (target === this.options.events.windowTarget) {
 			if (!this.options.window)
 				throw new AgentBrowserError(
@@ -358,6 +439,7 @@ export class ScriptEventBindings {
 	) {
 		return [...this.records].find(
 			(record) =>
+				!record.handler &&
 				record.target === target &&
 				record.type === type &&
 				record.callback === callback &&

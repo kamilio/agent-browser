@@ -20,6 +20,7 @@ import {
 } from "./safejs.js";
 import type { ScriptCallbackRuntime } from "./script-events.js";
 import type { SessionPage } from "./session.js";
+import { PageClock } from "./page-performance.js";
 
 export type {
 	PageRealm,
@@ -37,6 +38,7 @@ const ownedDocuments = new WeakSet<DocumentTree>();
 export class PageScripts {
 	readonly limits: Readonly<ScriptLimits>;
 	private readonly lifetime = new AbortController();
+	private readonly clock = new PageClock();
 	private readonly pending = new Set<Promise<unknown>>();
 	private readonly prefixes = new Set<Promise<void>>();
 	private readonly maxPending: number;
@@ -134,6 +136,7 @@ export class PageScripts {
 							},
 						},
 						options,
+						this.clock,
 					);
 					return this.bindings.globals;
 				},
@@ -333,6 +336,7 @@ export class PageScripts {
 		this.active?.abort();
 		this.lifetime.abort();
 		this.bindings?.close();
+		this.clock.close();
 		this.unregisterClose();
 		return this.closing;
 	}
@@ -433,7 +437,14 @@ export class PageScripts {
 			peakCallDepth: this.runtime?.budget.peakCallDepth ?? 0,
 			peakDataSize: this.runtime?.budget.peakDataSize ?? 0,
 			consoleCalls: this.consoleCalls,
-			...(this.bindings ? { timers: this.bindings.timers.metrics() } : {}),
+			performance: this.clock.metrics(),
+			...(this.bindings
+				? {
+						timers: this.bindings.timers.metrics(),
+						animationFrames: this.bindings.animationFrames.metrics(),
+						media: this.bindings.media.metrics(),
+					}
+				: {}),
 		};
 	}
 

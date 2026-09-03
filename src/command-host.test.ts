@@ -74,6 +74,132 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
+it("advertises bounded node relations without claiming full Node or namespace support", async () => {
+	const { host } = fixture();
+	const result = await host.execute(["capabilities"]);
+	expect(result.data).toMatchObject({
+		nodeRelations: {
+			partial: true,
+			methods: [
+				"contains",
+				"compareDocumentPosition",
+				"isSameNode",
+				"isEqualNode",
+			],
+			attributeNodes: true,
+			constantExposure: "node-instances",
+			namespaces: false,
+			shadowTrees: false,
+			maxWork: 100_000,
+			maxDepth: 1024,
+			maxCodeUnits: 8_000_000,
+		},
+	});
+});
+
+it("inspects committed and empty-tab viewports without layout, mutations or cross-tab writes", async () => {
+	const { host, sessions } = fixture();
+	await host.execute(["open", url]);
+	const browser = [...sessions.values()][0];
+	const page = browser.page(browser.tabs()[0].id);
+	const revision = page.document.revision;
+	const first = (await host.execute(["viewport"])).data as {
+		tabId: string;
+		width: number;
+		height: number;
+	};
+	expect(first).toMatchObject({
+		tabId: browser.tabs()[0].id,
+		width: 1280,
+		height: 720,
+		deviceScaleFactor: 1,
+		profile: "logical-css-viewport",
+	});
+	expect(page.document.revision).toBe(revision);
+	await host.execute(["resize", "80", "40", `--expected-tab=${first.tabId}`]);
+	expect((await host.execute(["viewport"])).data).toMatchObject({
+		width: 80,
+		height: 40,
+	});
+	await host.execute(["tab-new"]);
+	await expect(
+		host.execute(["resize", "20", "20", `--expected-tab=${first.tabId}`]),
+	).rejects.toMatchObject({ code: "stale-reference" });
+	expect((await host.execute(["viewport"])).data).toMatchObject({
+		document: null,
+		width: 1280,
+		height: 720,
+	});
+	await host.execute(["resize", "300", "200"]);
+	await host.execute(["goto", url]);
+	expect((await host.execute(["viewport"])).data).toMatchObject({
+		width: 300,
+		height: 200,
+	});
+	await host.execute(["tab-select", "0"]);
+	expect((await host.execute(["viewport"])).data).toMatchObject({
+		width: 80,
+		height: 40,
+	});
+	await expect(host.execute(["resize", "0", "40"])).rejects.toMatchObject({
+		code: "invalid-input",
+	});
+	expect((await host.execute(["viewport"])).data).toMatchObject({
+		width: 80,
+		height: 40,
+	});
+});
+
+it("rejects stale viewport keys across sessions and reopened sessions with reused tab IDs", async () => {
+	const { host } = fixture();
+	await host.execute(["open"]);
+	const original = (await host.execute(["viewport"])).data as {
+		tabId: string;
+		key: string;
+	};
+	await host.execute(["-s=other", "open"]);
+	const other = (await host.execute(["-s=other", "viewport"])).data as {
+		tabId: string;
+		key: string;
+	};
+	expect(other.tabId).toBe(original.tabId);
+	expect(other.key).not.toBe(original.key);
+	await expect(
+		host.execute([
+			"-s=other",
+			"resize",
+			"20",
+			"20",
+			`--expected-viewport=${original.key}`,
+		]),
+	).rejects.toMatchObject({ code: "stale-reference" });
+	expect((await host.execute(["-s=other", "viewport"])).data).toMatchObject({
+		width: 1280,
+		height: 720,
+	});
+	await host.execute(["close"]);
+	await host.execute(["open"]);
+	const reopened = (await host.execute(["viewport"])).data as {
+		tabId: string;
+		key: string;
+	};
+	expect(reopened.tabId).toBe(original.tabId);
+	expect(reopened.key).not.toBe(original.key);
+	await expect(
+		host.execute(["resize", "20", "20", `--expected-viewport=${original.key}`]),
+	).rejects.toMatchObject({ code: "stale-reference" });
+	await host.execute([
+		"resize",
+		"20",
+		"20",
+		`--expected-viewport=${reopened.key}`,
+	]);
+	expect((await host.execute(["viewport"])).data).toMatchObject({
+		width: 20,
+		height: 20,
+	});
+});
+
 it("find searches live snapshots without consuming the snapshot diff baseline", async () => {
 	const { host } = fixture();
 	await host.execute(["open", url]);
@@ -237,6 +363,7 @@ it("routes role/test-ID targets through native actions and subtree inspection", 
 		locators: {
 			partial: true,
 			methods: [
+				"locator",
 				"getByRole",
 				"getByTestId",
 				"getByText",
@@ -579,6 +706,39 @@ it("provides honest help/capabilities without opening sessions or executing page
 	expect((await host.execute(["capabilities"])).data).toMatchObject({
 		websiteJavaScript: false,
 		fullPlaywrightCliSuperset: false,
+		characterData: {
+			partial: true,
+			properties: ["data", "length", "wholeText"],
+			methods: [
+				"substringData",
+				"appendData",
+				"insertData",
+				"deleteData",
+				"replaceData",
+				"splitText",
+				"normalize",
+			],
+			units: "utf-16-code-units",
+			liveRanges: false,
+			mutationObservers: false,
+		},
+		animationFrames: {
+			partial: true,
+			profile: "software-frame-opportunities",
+			methods: ["requestAnimationFrame", "cancelAnimationFrame"],
+			automaticPaint: false,
+			maxActive: 128,
+			maxScheduled: 4096,
+			maxCallbacks: 1024,
+			maxPendingCallbacks: 128,
+		},
+		performance: {
+			partial: true,
+			methods: ["now", "toJSON"],
+			properties: ["timeOrigin"],
+			precisionMs: 0.1,
+			timeline: false,
+		},
 		snapshotSearch: {
 			streaming: true,
 			maxDocumentNodes: 50_000,

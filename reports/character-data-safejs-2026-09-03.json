@@ -1,0 +1,86 @@
+{
+  "startedAt": "2026-09-03T00:42:04.078Z",
+  "finishedAt": "2026-09-03T00:42:04.127Z",
+  "fixture": "in-memory HTML through production PageScripts; no network or sockets",
+  "runtime": "explicit existing experimental SafeJS core, not released-SDK acceptance",
+  "passed": false,
+  "checks": [],
+  "page": {
+    "steps": 0,
+    "peakCallDepth": 0,
+    "peakDataSize": 402,
+    "consoleCalls": 0,
+    "performance": {
+      "partial": true,
+      "precisionMs": 0.1,
+      "reads": 0,
+      "lastTimestamp": 0,
+      "closed": true
+    },
+    "timers": {
+      "partial": true,
+      "active": 0,
+      "queued": 0,
+      "pendingCallbacks": 0,
+      "scheduled": 0,
+      "fired": 0,
+      "running": false,
+      "closed": true,
+      "limits": {
+        "maxActive": 128,
+        "maxScheduled": 4096,
+        "maxCallbacks": 1024,
+        "maxArguments": 32
+      }
+    },
+    "animationFrames": {
+      "partial": true,
+      "profile": "software-frame-opportunities",
+      "intervalMs": 16.666666666666668,
+      "active": 0,
+      "pendingCallbacks": 0,
+      "scheduled": 0,
+      "fired": 0,
+      "frames": 0,
+      "running": false,
+      "armed": false,
+      "lastTimestamp": null,
+      "closed": true,
+      "limits": {
+        "maxActive": 128,
+        "maxScheduled": 4096,
+        "maxCallbacks": 1024,
+        "maxPendingCallbacks": 128
+      }
+    },
+    "initialized": false,
+    "evaluations": 0,
+    "pendingCallbacks": 0,
+    "active": false,
+    "closed": true,
+    "dom": {
+      "classLists": {
+        "lists": 0,
+        "cachedCodeUnits": 0,
+        "refreshes": 0,
+        "closed": true
+      },
+      "geometry": {
+        "created": 0,
+        "closed": true
+      },
+      "computedStyles": {
+        "objects": 0,
+        "maxObjects": 4096,
+        "closed": true
+      },
+      "elementSizes": {
+        "revision": -1,
+        "retained": 0,
+        "work": 0,
+        "measurements": 0,
+        "closed": true
+      }
+    }
+  }
+}

@@ -192,6 +192,8 @@ export class DocumentEvents {
 	readonly limits: Readonly<EventLimits>;
 	readonly windowTarget: number | null;
 	private listeners = new Map<number, ListenerRecord[]>();
+	private independentTargets = new Set<number>();
+	private independentTargetCount = 0;
 	private errors: BrowserListenerError[] = [];
 	private listenerCount = 0;
 	private depth = 0;
@@ -236,6 +238,31 @@ export class DocumentEvents {
 
 	get documentRoot() {
 		return this.tree.root;
+	}
+
+	createIndependentTarget(): number {
+		this.ensureOpen();
+		if (this.independentTargetCount >= 512)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Independent event target limit exceeded",
+			);
+		const target = -this.tree.root - ++this.independentTargetCount;
+		this.independentTargets.add(target);
+		return target;
+	}
+
+	isIndependentTarget(target: number): boolean {
+		this.ensureOpen();
+		return this.independentTargets.has(target);
+	}
+
+	releaseIndependentTarget(target: number) {
+		this.ensureOpen();
+		if (!this.independentTargets.has(target)) return;
+		for (const record of [...(this.listeners.get(target) ?? [])])
+			this.remove(record);
+		this.independentTargets.delete(target);
 	}
 
 	addEventListener(
@@ -501,6 +528,7 @@ export class DocumentEvents {
 			for (const record of [...records]) this.remove(record);
 		this.errors = [];
 		this.unregisterClose();
+		this.independentTargets.clear();
 	}
 
 	private *invoke(
@@ -550,7 +578,7 @@ export class DocumentEvents {
 		while (current !== null) {
 			path.push(current);
 			current =
-				current === this.windowTarget
+				current === this.windowTarget || this.independentTargets.has(current)
 					? null
 					: current === this.tree.root && state.type !== "load"
 						? this.windowTarget
@@ -643,6 +671,7 @@ export class DocumentEvents {
 	}
 
 	private validateTarget(target: number) {
+		if (this.independentTargets.has(target)) return;
 		if (target !== this.windowTarget || target === null) this.tree.get(target);
 	}
 

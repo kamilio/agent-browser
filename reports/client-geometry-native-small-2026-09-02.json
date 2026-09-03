@@ -1,0 +1,63 @@
+{
+  "startedAt": "2026-09-02T23:00:48.535Z",
+  "finishedAt": "2026-09-02T23:00:48.550Z",
+  "profile": "small",
+  "rows": 100,
+  "runtime": "v22.22.0",
+  "cpu": "AMD EPYC 9R45",
+  "fixture": "in-memory native geometry; no network, guest SDK, forced GC, or Worker acceptance",
+  "checks": [
+    {
+      "label": "Every wrapped word has a line fragment",
+      "passed": true
+    },
+    {
+      "label": "Bounding geometry spans the complete wrapped inline",
+      "passed": true
+    },
+    {
+      "label": "Ten thousand bounds reads reuse the cached union",
+      "passed": true
+    },
+    {
+      "label": "Mutation rebuilds exactly one fresh snapshot",
+      "passed": true
+    },
+    {
+      "label": "Old snapshots remain independent values",
+      "passed": true
+    },
+    {
+      "label": "Close clears native retained rectangles",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "measurement": {
+    "buildMs": 6.149623999999999,
+    "readsMs": 3.527146000000002,
+    "reads": 10000,
+    "initial": {
+      "revision": 6,
+      "builds": 1,
+      "rectangles": 203,
+      "work": 620,
+      "closed": false
+    },
+    "retainedMemory": {
+      "rss": 56791040,
+      "heapTotal": 7966720,
+      "heapUsed": 6014688,
+      "external": 1449635,
+      "arrayBuffers": 18703
+    },
+    "final": {
+      "revision": 8,
+      "builds": 2,
+      "rectangles": 4,
+      "work": 23,
+      "closed": false
+    },
+    "peakRssKiB": 57828
+  }
+}

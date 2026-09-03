@@ -482,7 +482,7 @@ it("captures subresource responses and mixed-content blocks without exposing sec
 	expect(JSON.stringify(session.requests(tab))).not.toContain("secret");
 });
 
-it("captures the actual HTML loader's stylesheet traffic without inventing image or script fetches", async () => {
+it("captures actual stylesheet and image traffic without inventing disabled script execution", async () => {
 	const { session, requests } = fixture(
 		{ loadDocument: loadBrowserDocument },
 		async (input) => {
@@ -510,7 +510,10 @@ it("captures the actual HTML loader's stylesheet traffic without inventing image
 			.snapshot(tab)
 			.entries.some((entry) => entry.name === "Actual parsed fixture"),
 	).toBe(true);
-	expect(requests).toHaveLength(2);
+	expect(requests).toHaveLength(3);
+	expect(requests.some((request) => request.url.endsWith("/disabled.js"))).toBe(
+		false,
+	);
 	expect(session.requests(tab).entries).toMatchObject([
 		{ kind: "document", state: "complete" },
 		{
@@ -519,6 +522,11 @@ it("captures the actual HTML loader's stylesheet traffic without inventing image
 			url: "https://example.com/style.css?redacted",
 		},
 		{ kind: "stylesheet", state: "blocked" },
+		{
+			kind: "image",
+			state: "complete",
+			url: "https://example.com/unfetched.png",
+		},
 	]);
 });
 

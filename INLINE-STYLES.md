@@ -1,5 +1,14 @@
 # Inline style declarations
 
+Later checkpoint: `COMPUTED-STYLES.md` adds a separate readonly live
+`getComputedStyle()` API. Inline `element.style` retains the authored-declaration
+contract below; it is not changed into a computed-style object.
+
+Later checkpoint: `TEXT-LAYOUT.md` adds fontFamily, fontSize, lineHeight,
+whiteSpace and textAlign (and hyphenated equivalents) to this bridge. Matching
+computed typography participates in source-mapped native line measurement. This
+does not turn declaration reads into full computed style or client geometry.
+
 Checkpoint: September 2, 2026, approximately 02:27 UTC. The independent browser
 now supplies a live `element.style` capability backed by the actual `style`
 attribute. This is a bounded CSS declaration subset, not a layout engine or
@@ -26,12 +35,16 @@ complete CSSOM. No dependency or SafeJS interpreter change is added here.
   as compact shorthands; mixed priorities retain longhands. Serialization does
   not compact across an `all` declaration. Complete shorthand ordering and
   interaction semantics remain outside this subset.
+- `BACKGROUNDS.md` adds solid-color/none background expansion into eight indexed
+  longhands, shared reset/priority/removal handling and compatible serialization.
+  Non-color components accept only initial values and supported CSS-wide keywords.
 - Custom properties preserve case and quoted token content, with bounded balanced
   delimiters. Their values are stored only: URLs are not fetched, and var()
   substitution is not performed. Object/function/symbol coercion is rejected.
 - Mutations update the real attribute, revision, visibility cascade and semantic
-  snapshots. Of the retained declarations, only display/visibility and supported
-  `all` resets affect the current renderer. No positions or dimensions are faked.
+  snapshots. The later `CSS-BOX.md` layer also reports supported dimensions,
+  margin/padding and box-sizing through the native style API. Only visibility
+  affects the current semantic renderer; no positions or used sizes are faked.
 - Document or store close revokes saved capabilities and releases cached source
   and declaration arrays. Failed document/source/cache limits preserve attributes
   and committed cached values.

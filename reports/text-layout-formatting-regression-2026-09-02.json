@@ -1,0 +1,69 @@
+{
+  "startedAt": "2026-09-02T21:41:36.833Z",
+  "finishedAt": "2026-09-02T21:41:36.959Z",
+  "scope": "existing-experimental-core-in-memory-display-decomposition-and-restricted-document-widths-no-vertical-layout-or-paint",
+  "completed": true,
+  "checks": [
+    {
+      "label": "Unsupported native control layout is explicit instead of producing guessed document widths",
+      "passed": true
+    },
+    {
+      "label": "An interpreted action reveals a supported formatting profile with document-derived containing widths",
+      "passed": true
+    },
+    {
+      "label": "Block-in-inline decomposition creates retained-reference fragments and anonymous containers",
+      "passed": true
+    },
+    {
+      "label": "A formatting reference remains a real native action target with its interpreted handler",
+      "passed": true
+    },
+    {
+      "label": "Interpreted display:contents removes only formatting boxes, not DOM ownership",
+      "passed": true
+    },
+    {
+      "label": "Visibility changes retain horizontal geometry while marking paint visibility",
+      "passed": true
+    },
+    {
+      "label": "Native resize re-derives widths and accumulated horizontal offsets from the whole document",
+      "passed": true
+    },
+    {
+      "label": "Saved formatting results are immutable historical data",
+      "passed": true
+    },
+    {
+      "label": "Interpreted unsupported display mode cannot reuse stale normal-flow geometry",
+      "passed": true
+    },
+    {
+      "label": "Unresolved positioning declarations block geometry rather than being silently ignored",
+      "passed": true
+    },
+    {
+      "label": "Interpreted insertion produces a new formatting box with a real reference and containing width",
+      "passed": true
+    },
+    {
+      "label": "Interpreted removal disappears from the next formatting generation",
+      "passed": true
+    },
+    {
+      "label": "A formatting budget failure preserves the page and subsequent width generation",
+      "passed": true
+    },
+    {
+      "label": "Formatting and width reads preserve the shared snapshot diff baseline",
+      "passed": true
+    },
+    {
+      "label": "Closing the actual page revokes fresh formatting reads and its interpreter owner",
+      "passed": true
+    }
+  ],
+  "passed": 15
+}

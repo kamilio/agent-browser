@@ -1,4 +1,17 @@
+import {
+	cssBackgroundProperties,
+	isNeutralBackgroundProperty,
+	parseBackgroundComponent,
+	parseBackgroundShorthand,
+	serializeBackgroundValues,
+} from "./css-background.js";
+import { normalizeCssColor } from "./css-color.js";
 import { cssDeclarationStatements } from "./css-parser.js";
+import {
+	cssTextProperties,
+	isCssTextProperty,
+	parseTextValue,
+} from "./css-text.js";
 import { AgentBrowserError } from "./errors.js";
 
 export interface InlineDeclaration {
@@ -35,6 +48,7 @@ const lengths = new Set([
 	...sides.map((side) => `padding-${side}`),
 ]);
 export const inlineProperties = [
+	...cssTextProperties,
 	...Object.keys(keywords),
 	...lengths,
 	"all",
@@ -43,14 +57,10 @@ export const inlineProperties = [
 	"opacity",
 	"z-index",
 	"color",
-	"background-color",
+	"background",
+	...cssBackgroundProperties,
 ];
 const supported = new Set(inlineProperties);
-const colors = new Set(
-	"transparent currentcolor black silver gray white maroon red purple fuchsia green lime olive yellow navy blue teal aqua orange rebeccapurple".split(
-		" ",
-	),
-);
 const trim = (value: string) =>
 	value.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "");
 
@@ -121,6 +131,9 @@ function normalize(name: string, source: string): string | undefined {
 	if (!supported.has(name)) return undefined;
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;
+	if (isNeutralBackgroundProperty(name))
+		return parseBackgroundComponent(name, value);
+	if (isCssTextProperty(name)) return parseTextValue(name, value);
 	if (keywords[name]?.includes(value)) return value;
 	if (
 		name === "display" &&
@@ -160,21 +173,7 @@ function normalize(name: string, source: string): string | undefined {
 	)
 		return value === "auto" ? value : String(Number(value));
 	if (name === "color" || name === "background-color") {
-		if (colors.has(value)) return value;
-		const match = /^#([\da-f]{3}|[\da-f]{6})$/.exec(value);
-		if (match) {
-			const hex =
-				match[1].length === 3
-					? [...match[1]].map((character) => character.repeat(2)).join("")
-					: match[1];
-			return `rgb(${[0, 2, 4].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16)).join(", ")})`;
-		}
-		const rgb = /^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/.exec(value);
-		if (rgb)
-			return `rgb(${rgb
-				.slice(1)
-				.map((channel) => Math.min(255, Number(channel)))
-				.join(", ")})`;
+		return normalizeCssColor(value);
 	}
 	return undefined;
 }
@@ -184,6 +183,14 @@ export function expandDeclaration(
 	source: string,
 	important: boolean,
 ): InlineDeclaration[] {
+	if (name === "background")
+		return (
+			parseBackgroundShorthand(source)?.map(({ property, value }) => ({
+				name: property,
+				value,
+				important,
+			})) ?? []
+		);
 	if (name === "margin" || name === "padding") {
 		const parts = source.toLowerCase().split(/[\t\n\f\r ]+/);
 		if (
@@ -259,7 +266,9 @@ export function propertyDeclarations(
 	const names =
 		name === "margin" || name === "padding"
 			? sides.map((side) => `${name}-${side}`)
-			: [name];
+			: name === "background"
+				? cssBackgroundProperties
+				: [name];
 	return names.flatMap((wanted) =>
 		entries.filter((entry) => entry.name === wanted),
 	);
@@ -270,13 +279,16 @@ export function propertyValue(
 	name: string,
 ): string {
 	const found = propertyDeclarations(entries, name);
-	if (name !== "margin" && name !== "padding") return found[0]?.value ?? "";
+	if (name !== "margin" && name !== "padding" && name !== "background")
+		return found[0]?.value ?? "";
 	if (
-		found.length !== 4 ||
+		found.length !==
+			(name === "background" ? cssBackgroundProperties.length : 4) ||
 		found.some((entry) => entry.important !== found[0].important)
 	)
 		return "";
 	const values = found.map((entry) => entry.value);
+	if (name === "background") return serializeBackgroundValues(values);
 	if (values.some((value) => wide.has(value)))
 		return values.every((value) => value === values[0]) ? values[0] : "";
 	if (values[3] === values[1]) values.pop();
@@ -290,13 +302,14 @@ export function serializeDeclarations(entries: InlineDeclaration[]): string {
 	const output: string[] = [];
 	for (const entry of entries) {
 		if (emitted.has(entry.name)) continue;
-		const shorthand = /^(margin|padding)-/.exec(entry.name)?.[1];
+		const shorthand = /^(margin|padding|background)-/.exec(entry.name)?.[1];
 		const value =
 			shorthand && !entries.some((candidate) => candidate.name === "all")
 				? propertyValue(entries, shorthand)
 				: "";
 		if (shorthand && value) {
-			for (const side of sides) emitted.add(`${shorthand}-${side}`);
+			for (const component of propertyDeclarations(entries, shorthand))
+				emitted.add(component.name);
 			output.push(
 				`${shorthand}: ${value}${entry.important ? " !important" : ""};`,
 			);

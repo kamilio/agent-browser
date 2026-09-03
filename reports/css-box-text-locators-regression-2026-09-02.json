@@ -1,0 +1,53 @@
+{
+  "startedAt": "2026-09-02T20:53:03.583Z",
+  "finishedAt": "2026-09-02T20:53:03.766Z",
+  "scope": "existing-experimental-core-in-memory-command-host",
+  "completed": true,
+  "checks": [
+    {
+      "label": "Label-targeted password fill runs its interpreted handler without exposing its value",
+      "passed": true
+    },
+    {
+      "label": "Wrapping-label targeting changes native checked state and runs the interpreted change listener",
+      "passed": true
+    },
+    {
+      "label": "Placeholder targeting fills the shared control and exposes its interpreted DOM mutation",
+      "passed": true
+    },
+    {
+      "label": "Title targeting observes the same native control value",
+      "passed": true
+    },
+    {
+      "label": "Alt-text targeting resolves the actual image node",
+      "passed": true
+    },
+    {
+      "label": "Smallest text target bubbles a real click to its interpreted button listener",
+      "passed": true
+    },
+    {
+      "label": "Label resolution observes interpreted text changes while retaining node identity",
+      "passed": true
+    },
+    {
+      "label": "Text-targeted action waiting observes interpreted timer insertion and dispatches once",
+      "passed": true
+    },
+    {
+      "label": "A hidden interpreted duplicate prevents ambiguous activation without dispatching",
+      "passed": true
+    },
+    {
+      "label": "Executable locator arguments fail safely and leave the shared command queue usable",
+      "passed": true
+    },
+    {
+      "label": "Locator resolution and scoped DOM reads preserve the snapshot diff baseline",
+      "passed": true
+    }
+  ],
+  "passed": 11
+}

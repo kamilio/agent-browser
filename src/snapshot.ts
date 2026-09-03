@@ -260,6 +260,11 @@ export function scanSnapshotEntries(
 	};
 }
 
+export function snapshotElementRole(tree: DocumentTree, id: number) {
+	const node = tree.get(id);
+	return node.kind === "element" ? roleOf(node, true) : undefined;
+}
+
 export function snapshotRoleCandidates(
 	tree: DocumentTree,
 	role: string,

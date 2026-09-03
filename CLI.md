@@ -1,5 +1,16 @@
 # Executable CLI and shared command service
 
+September 3 JPEG integration: `images` identifies PNG/JPEG resources and ignored
+metadata. Baseline/progressive JPEG pixels participate in `screenshot` and `pdf`;
+`capabilities.imageResources.jpeg` describes the partial codec profile. Resource
+limits and unsupported metadata/color spaces are documented in `JPEG-DECODING.md`.
+
+September 3 image resources: `images` inspects the selected document's image states,
+intrinsic sizes, errors, redacted URLs and resource counters. `requests` includes
+image traffic. `IMAGE-RESOURCES.md` describes real page loading/guest integration,
+and budgets. `IMAGE-LAYOUT.md` connects loaded PNG normal-flow boxes to actual
+`screenshot` and `pdf` pixels; `images` inspection itself is not a capture.
+
 September 2 request diagnostics: `requests` and `request <index>` inspect bounded,
 redacted metadata for the selected tab's latest network navigation attempt.
 `NETWORK-JOURNAL.md` explains scope, failed-navigation ownership, retention and
@@ -90,11 +101,16 @@ not a saved browser profile on disk.
   fail explicitly. See `NAVIGATION-HISTORY.md` for bounds and missing lifecycle semantics.
 - `tab-list`, `tab-new [url]`, `tab-select index`, `tab-close [index]`.
   Tab indices are zero-based; omitted close index means the selected tab.
+- `viewport` reads the selected tab's actual logical dimensions, document reference,
+  scale 1 and opaque target key without forcing layout or mutating the document.
 - `resize width height` changes a per-tab logical CSS viewport, not a physical
-  browser window. `styles [ref-or-selector]` is an agent extension for bounded
-  visibility-cascade diagnostics or one target's display/visibility values.
-  Both disclose `partial: true`, `layout: false`; full layout remains pending.
-  See `CSS.md` for supported media rules, stylesheet loading and limits.
+  window or emulated device. Optional `--expected-viewport=KEY` rejects changed
+  tabs, sessions and recreated-session identities before mutation. The narrower
+  `--expected-tab=ID` checks only the tab ID in the addressed session. Both guards
+  are additive; unguarded baseline syntax still works. See `VIEWPORT-CONTROLS.md`.
+- `styles [ref-or-selector]` returns bounded CSS diagnostics or a target's current
+  visibility, box, typography and paint values. Native normal-flow layout exists;
+  general CSS remains partial. See `CSS.md` for supported rules and limits.
 - `snapshot [target]`, `--depth`, `--max-bytes`, `--diff`, and `text`.
 - `html [target] --max-code-units=N` returns current serialized HTML as JSON,
   including post-script mutations; it is not a source cache or sanitized UI.
@@ -124,9 +140,12 @@ not a saved browser profile on disk.
 connection through the private CLI credential. See `PLAYGROUND.md`.
 
 Manual `eval` is available only in the opt-in process mode (`PROCESS-CLI.md`).
-Commands such as run-code, screenshots/PDF, upload, route mocking, full native
-history bindings, dialogs and tracing/video are not implemented. Recognizing
-their syntax does not make them functional. Unsupported options (including
+Native `screenshot` and `pdf` exports now support safe local `--filename` writes;
+see `CAPTURE-EXPORT.md` and `PDF.md` for their supported layouts and limits. PDF
+uses the whole current document and viewport-sized screen-layout pagination.
+`run-code`, upload, dialogs and tracing/video remain unimplemented. Other APIs
+have documented partial profiles, not full browser parity. Recognizing syntax
+does not make a missing operation functional. Unsupported options (including
 `--browser`, `--persistent`, `--config` and snapshot filenames/boxes)
 fail before state-changing command execution, rather than being silently ignored.
 

@@ -1,0 +1,16 @@
+{
+  "stage": "native-font-raster-png",
+  "partial": true,
+  "pageRendering": false,
+  "javascriptRuntime": false,
+  "network": false,
+  "width": 720,
+  "height": 384,
+  "supportedGlyphs": 314,
+  "fallbackGlyphs": 3,
+  "pngBytes": 1106452,
+  "sha256": "795020744b4becbed4bd7ab921c445a54e7304542b14ee59ba066c012f39cf7b",
+  "output": "packages/browser-agent/reports/bitmap-renderer-atlas-2026-09-02.png",
+  "elapsedMs": 20.506024,
+  "peakRssBytes": 63131648
+}

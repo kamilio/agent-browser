@@ -5,10 +5,17 @@ import {
 	radioGroup,
 } from "./controls.js";
 import { documentScriptState } from "./document-script-state.js";
+import { documentImages } from "./document-images.js";
+import { NodeRelations } from "./node-relations.js";
 import { documentBaseUrl } from "./document-url.js";
 import { writeDocument } from "./document-write.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	type DocumentElementSizes,
+	documentElementSizes,
+	elementSizeProperties,
+} from "./element-sizes.js";
 import {
 	insertAdjacentHtml,
 	setInnerHtml,
@@ -16,14 +23,17 @@ import {
 } from "./html-content.js";
 import { serializeHtml } from "./html-serialization.js";
 import { InlineStyles } from "./inline-styles.js";
+import { ComputedStyles } from "./computed-styles.js";
 import { ScriptAttributes } from "./script-attributes.js";
 import { ScriptClassLists } from "./script-class-list.js";
+import { scriptCharacterData } from "./script-character-data.js";
 import { ScriptCollections } from "./script-collections.js";
 import {
 	ScriptEventBindings,
 	type ScriptEventOptions,
 } from "./script-events.js";
 import { scriptFormProperties } from "./script-form.js";
+import { ScriptGeometry } from "./script-geometry.js";
 import type { ScriptLocation } from "./script-location.js";
 import { scriptMutationMethods } from "./script-mutations.js";
 import { scriptSelectBindings } from "./script-select.js";
@@ -62,7 +72,11 @@ export class ScriptDom {
 	private readonly collections: ScriptCollections;
 	private readonly inlineStyles: InlineStyles;
 	private readonly attributes: ScriptAttributes;
+	private readonly relations: NodeRelations;
 	private readonly classLists: ScriptClassLists;
+	private readonly geometry: ScriptGeometry;
+	private readonly elementSizes: DocumentElementSizes;
+	private readonly computedStyles: ComputedStyles;
 	private readonly capabilities = new Map<number, object>();
 	private identities = new WeakMap<object, number>();
 	private closed = false;
@@ -83,8 +97,15 @@ export class ScriptDom {
 		this.queries = new DocumentQueries(tree);
 		this.inlineStyles = new InlineStyles(tree, factory);
 		this.classLists = new ScriptClassLists(tree, factory);
-		this.attributes = new ScriptAttributes(tree, factory, (id) =>
-			this.node(id),
+		this.geometry = new ScriptGeometry(tree, factory);
+		this.elementSizes = documentElementSizes(tree);
+		this.computedStyles = new ComputedStyles(tree, factory);
+		this.relations = new NodeRelations(tree);
+		this.attributes = new ScriptAttributes(
+			tree,
+			factory,
+			(id) => this.node(id),
+			this.relations,
 		);
 		this.collections = new ScriptCollections(tree, factory, (id) =>
 			this.node(id),
@@ -210,6 +231,16 @@ export class ScriptDom {
 				hasChildNodes: () => this.read(id).children.length > 0,
 			},
 		};
+		const relations = this.relations.definition(id);
+		Object.assign(definition.properties, relations.properties);
+		Object.assign(definition.methods, relations.methods);
+		const characterData = scriptCharacterData(this.tree, id, {
+			read: (target) => this.read(target),
+			node: (target) => this.node(target),
+			string: domString,
+		});
+		Object.assign(definition.properties, characterData.properties);
+		Object.assign(definition.methods, characterData.methods);
 		const eventBindings = this.eventBindings;
 		if (eventBindings)
 			Object.assign(definition.methods, {
@@ -285,6 +316,12 @@ export class ScriptDom {
 				get: () => {
 					this.read(id);
 					return this.collections.get(id, "tag", "form");
+				},
+			};
+			definition.properties.images = {
+				get: () => {
+					this.read(id);
+					return this.collections.get(id, "tag", "img");
 				},
 			};
 			if (this.storage)
@@ -385,6 +422,45 @@ export class ScriptDom {
 			});
 		}
 		if (initial.kind === "element") {
+			if (initial.tagName === "img") {
+				const images = documentImages(this.tree);
+				images.get(id);
+				for (const name of [
+					"complete",
+					"currentSrc",
+					"naturalWidth",
+					"naturalHeight",
+				] as const)
+					definition.properties[name] = {
+						get: () => {
+							this.read(id);
+							return images.get(id)[name];
+						},
+					};
+				definition.properties.alt = {
+					get: () => this.read(id).attributes.alt ?? "",
+					set: (value) => {
+						this.read(id);
+						this.tree.setAttribute(id, "alt", domString(value));
+					},
+				};
+				definition.methods.decode = () => {
+					this.read(id);
+					return images.decode(id);
+				};
+				if (this.eventBindings)
+					for (const type of ["load", "error"])
+						definition.properties[`on${type}`] = {
+							get: () => {
+								this.read(id);
+								return this.eventBindings?.getHandler(id, type);
+							},
+							set: (value) => {
+								this.read(id);
+								this.eventBindings?.setHandler(id, type, value);
+							},
+						};
+			}
 			Object.assign(
 				definition.properties,
 				scriptFormProperties(
@@ -408,6 +484,17 @@ export class ScriptDom {
 				definition.methods.toString = () =>
 					String(definition.properties.href.get());
 			definition.properties.attributes = { get: () => this.attributes.map(id) };
+			definition.methods.getClientRects = () =>
+				this.geometry.getClientRects(id);
+			definition.methods.getBoundingClientRect = () =>
+				this.geometry.getBoundingClientRect(id);
+			for (const name of elementSizeProperties)
+				definition.properties[name] = {
+					get: () => {
+						this.read(id);
+						return this.elementSizes.get(id)[name];
+					},
+				};
 			definition.properties.style = {
 				get: () => this.inlineStyles.get(id),
 				set: (value) =>
@@ -535,6 +622,7 @@ export class ScriptDom {
 			);
 		this.capabilities.set(id, capability);
 		this.identities.set(capability, id);
+		this.relations.register(capability, id);
 		return capability;
 	}
 
@@ -546,7 +634,10 @@ export class ScriptDom {
 		this.collections.close();
 		this.inlineStyles.close();
 		this.attributes.close();
+		this.relations.close();
 		this.classLists.close();
+		this.geometry.close();
+		this.computedStyles.close();
 		this.capabilities.clear();
 		this.identities = new WeakMap();
 		this.unregisterClose();
@@ -564,7 +655,16 @@ export class ScriptDom {
 	}
 
 	metrics() {
-		return Object.freeze({ classLists: this.classLists.metrics() });
+		return Object.freeze({
+			classLists: this.classLists.metrics(),
+			geometry: this.geometry.metrics(),
+			computedStyles: this.computedStyles.metrics(),
+			elementSizes: this.elementSizes.metrics(),
+		});
+	}
+
+	getComputedStyle(element: unknown, pseudo?: unknown): object {
+		return this.computedStyles.get(this.identify(element), pseudo);
 	}
 
 	private read(id: number): Readonly<DocumentNode> {

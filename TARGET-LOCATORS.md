@@ -6,6 +6,11 @@ syntax, **not its full locator engine, accessibility conformance or auto-waiting
 
 ## Supported forms
 
+`locator('CSS')` now wraps a single literal CSS selector using the existing
+bounded query engine; it does not enable evaluation, extra engines or chaining.
+`generate-locator` returns verified expressions reusable as targets, with
+explicit structural-fallback metadata (`LOCATOR-GENERATION.md`).
+
 ```bash
 agent-browser click "getByRole('button', { name: 'Submit', exact: true })"
 agent-browser fill "getByRole('textbox', { name: 'Full name' })" "Agent input"

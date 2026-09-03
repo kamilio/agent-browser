@@ -1,0 +1,63 @@
+{
+  "startedAt": "2026-09-02T22:14:47.231Z",
+  "finishedAt": "2026-09-02T22:14:47.412Z",
+  "scope": "existing-experimental-core-in-memory-normal-flow-document-layout-and-native-text-paint",
+  "realWebsite": false,
+  "fullCssPainting": false,
+  "manualPanelPlacement": false,
+  "completed": true,
+  "passed": 11,
+  "checks": [
+    {
+      "label": "Percentage widths and auto margins position the real document horizontally",
+      "passed": true
+    },
+    {
+      "label": "Adjacent authored margins collapse to one measured gap",
+      "passed": true
+    },
+    {
+      "label": "Native raster uses actual document-positioned glyphs without manual placement",
+      "passed": true
+    },
+    {
+      "label": "An actual interpreted click changes used height and shifts following blocks",
+      "passed": true
+    },
+    {
+      "label": "Document-coordinate changes alter the actual pixel output",
+      "passed": true
+    },
+    {
+      "label": "Geometry and painting are observational",
+      "passed": true
+    },
+    {
+      "label": "A document-coordinate crop matches the corresponding viewport pixels",
+      "passed": true
+    },
+    {
+      "label": "Resize recomputes wrapping, used heights and native pixel dimensions",
+      "passed": true
+    },
+    {
+      "label": "Unsupported positioning fails closed rather than producing a misleading capture",
+      "passed": true
+    },
+    {
+      "label": "A paint-budget failure leaves the document and subsequent output intact",
+      "passed": true
+    },
+    {
+      "label": "Closing the source revokes fresh layout/paint while retained output remains usable",
+      "passed": true
+    }
+  ],
+  "artifact": {
+    "output": "/tmp/css-paint-document-regression-2026-09-02.png",
+    "bytes": 1536783,
+    "sha256": "ebacf6bec45c24038bae4902019dd6cf1ed441909e8e09a283099ff24ef3c477",
+    "width": 640,
+    "height": 600
+  }
+}

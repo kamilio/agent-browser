@@ -9,9 +9,59 @@ import {
 	playgroundNetwork,
 	playgroundText,
 	playgroundUrl,
+	playgroundViewport,
+	playgroundViewportResponse,
 } from "./playground.js";
 import type { SessionRequests } from "./session.js";
 import type { SemanticSnapshot } from "./snapshot.js";
+
+it("validates bounded integer CSS viewport drafts without device emulation", () => {
+	expect(playgroundViewport(" 390 ", "844")).toEqual({
+		width: 390,
+		height: 844,
+	});
+	expect(playgroundViewport("1", "16384")).toEqual({ width: 1, height: 16384 });
+	for (const value of [
+		"",
+		"0",
+		"16385",
+		"12.5",
+		"2e3",
+		"-1",
+		"+1",
+		"Infinity",
+		"1px",
+		"9".repeat(100),
+	])
+		expect(() => playgroundViewport(value, "10")).toThrow("whole CSS pixels");
+	const source = {
+		tabId: "tab-a",
+		key: "owner:tab-a",
+		width: 80,
+		height: 40,
+		deviceScaleFactor: 1,
+		profile: "logical-css-viewport",
+	};
+	expect(playgroundViewportResponse(source, "tab-a")).toEqual({
+		tabId: "tab-a",
+		key: "owner:tab-a",
+		width: 80,
+		height: 40,
+	});
+	expect(() => playgroundViewportResponse(source, "tab-b")).toThrow("changed");
+	for (const data of [
+		null,
+		{},
+		{ ...source, key: "" },
+		{ ...source, key: "a".repeat(129) },
+		{ ...source, width: "80" },
+		{ ...source, height: 0 },
+		{ ...source, width: 1.5 },
+		{ ...source, deviceScaleFactor: 2 },
+		{ ...source, profile: "device" },
+	])
+		expect(() => playgroundViewportResponse(data, "tab-a")).toThrow();
+});
 
 it("formats actual DOM structure as inert text with refs, controls and truncation disclosures", () => {
 	const tree = new DocumentTree("https://example.com/");

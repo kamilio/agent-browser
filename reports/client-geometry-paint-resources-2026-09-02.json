@@ -1,0 +1,116 @@
+{
+  "startedAt": "2026-09-02T23:01:06.983Z",
+  "finishedAt": "2026-09-02T23:01:07.528Z",
+  "scope": "native-in-memory-css-paint-resource-profile",
+  "profile": "large",
+  "node": "v22.22.0",
+  "platform": "linux",
+  "architecture": "x64",
+  "cpuModel": "AMD EPYC 9R45",
+  "realWebsite": false,
+  "safeJs": false,
+  "fullCssPainting": false,
+  "retainedResults": true,
+  "garbageCollectionForced": false,
+  "completed": true,
+  "passed": 8,
+  "checks": [
+    {
+      "label": "All paragraph lines retain normal-flow positions",
+      "passed": true
+    },
+    {
+      "label": "Every colored inline has a fragment even when outside the clip",
+      "passed": true
+    },
+    {
+      "label": "Painting culls offscreen backgrounds and glyphs",
+      "passed": true
+    },
+    {
+      "label": "Solid body background reaches outside the main content box",
+      "passed": true
+    },
+    {
+      "label": "Caller owns bounded viewport pixels",
+      "passed": true
+    },
+    {
+      "label": "PNG has a native signature",
+      "passed": true
+    },
+    {
+      "label": "Closing the source prevents fresh rendering",
+      "passed": true
+    },
+    {
+      "label": "Existing pixel and PNG buffers remain caller-owned",
+      "passed": true
+    }
+  ],
+  "measurement": {
+    "rows": 5000,
+    "markupBytes": 259121,
+    "parseMs": 76.01346,
+    "renderMs": 444.77679299999994,
+    "encodeMs": 21.959797999999978,
+    "totalMs": 544.803043,
+    "cpu": {
+      "user": 969648,
+      "system": 54510
+    },
+    "peakRssBytes": 215470080,
+    "layout": {
+      "work": 198907,
+      "boxes": 5003,
+      "glyphs": 158890,
+      "lines": 5000
+    },
+    "paint": {
+      "work": 1248844,
+      "paintedGlyphs": 617,
+      "clippedGlyphs": 133273,
+      "hiddenGlyphs": 0,
+      "blankGlyphs": 25000,
+      "transparentGlyphs": 0,
+      "paintedBackgrounds": 53,
+      "inlineFragments": 5000
+    },
+    "png": {
+      "bytes": 31190,
+      "sha256": "d86d68b0065bb4397dc023c4b9f9998a1057407ee1c6ed6e4e6f136e702f189f"
+    }
+  },
+  "samples": [
+    {
+      "stage": "start",
+      "rss": 57733120,
+      "heapUsed": 6055688,
+      "arrayBuffers": 94809
+    },
+    {
+      "stage": "parsed",
+      "rss": 100315136,
+      "heapUsed": 29910824,
+      "arrayBuffers": 59743
+    },
+    {
+      "stage": "retained-document-raster",
+      "rss": 212250624,
+      "heapUsed": 123794072,
+      "arrayBuffers": 1288543
+    },
+    {
+      "stage": "retained-png",
+      "rss": 213643264,
+      "heapUsed": 124181552,
+      "arrayBuffers": 2922637
+    },
+    {
+      "stage": "closed-with-results-retained",
+      "rss": 213643264,
+      "heapUsed": 124213488,
+      "arrayBuffers": 2922637
+    }
+  ]
+}

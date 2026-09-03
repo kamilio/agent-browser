@@ -1,0 +1,183 @@
+{
+  "startedAt": "2026-09-03T03:24:00.792Z",
+  "finishedAt": "2026-09-03T03:24:01.274Z",
+  "passed": true,
+  "checks": [
+    {
+      "label": "Parser-created image completes through the real guest handler before Window load",
+      "passed": true
+    },
+    {
+      "label": "Agent image inspection reports actual decoded intrinsic dimensions",
+      "passed": true
+    },
+    {
+      "label": "Actual interpreted image geometry, used styles and client sizes agree with intrinsic-ratio layout",
+      "passed": true
+    },
+    {
+      "label": "Agent element PNG contains actual scaled red image pixels inside navy padding",
+      "passed": true
+    },
+    {
+      "label": "Actual page code receives the image decode promise and source replacement",
+      "passed": true
+    },
+    {
+      "label": "Post-navigation image decoding resolves the guest promise and updates DOM",
+      "passed": true
+    },
+    {
+      "label": "The loaded resource contains actual blue RGBA pixels, not dimensions-only metadata",
+      "passed": true
+    },
+    {
+      "label": "Guest geometry invalidates after source replacement changes intrinsic ratio",
+      "passed": true
+    },
+    {
+      "label": "The subsequent agent element PNG has the new dimensions and blue pixels",
+      "passed": true
+    },
+    {
+      "label": "Full agent PNG places the real image in normal document flow below guest-generated text",
+      "passed": true
+    },
+    {
+      "label": "Agent PDF visual pixels exactly equal the shared image-aware document raster",
+      "passed": true
+    },
+    {
+      "label": "A second interpreted image shares the existing decoded resource",
+      "passed": true
+    },
+    {
+      "label": "Image deduplication avoids a second request and second pixel buffer",
+      "passed": true
+    },
+    {
+      "label": "Guest code starts a baseline JPEG decode through the active session",
+      "passed": true
+    },
+    {
+      "label": "The baseline JPEG updates actual guest dimensions, events and geometry",
+      "passed": true
+    },
+    {
+      "label": "Agent PNG contains the actual baseline JPEG resource pixels",
+      "passed": true
+    },
+    {
+      "label": "Guest code starts a progressive JPEG decode through the active session",
+      "passed": true
+    },
+    {
+      "label": "The progressive JPEG updates actual guest dimensions, events and geometry",
+      "passed": true
+    },
+    {
+      "label": "Agent PNG contains the actual progressive JPEG resource pixels",
+      "passed": true
+    },
+    {
+      "label": "Guest code starts the independently encoded one-megapixel photo",
+      "passed": true
+    },
+    {
+      "label": "The large JPEG resolves through the real page owner and updates guest geometry",
+      "passed": true
+    },
+    {
+      "label": "The one-megapixel resource stays within the unchanged default page work guard",
+      "passed": true
+    },
+    {
+      "label": "The actual agent PNG contains exact downscaled pixels from the one-megapixel image",
+      "passed": true
+    },
+    {
+      "label": "Agent PDF contains the exact mixed JPEG and PNG document raster",
+      "passed": true
+    },
+    {
+      "label": "Agent image inspection distinguishes live JPEG and PNG resources",
+      "passed": true
+    },
+    {
+      "label": "Actual page code starts a failed image and retains its error handler",
+      "passed": true
+    },
+    {
+      "label": "Failed image delivery reports broken completion and zero intrinsic dimensions",
+      "passed": true
+    },
+    {
+      "label": "The real agent request journal includes image network activity",
+      "passed": true
+    },
+    {
+      "label": "Closing the agent tab releases all decoded image resources",
+      "passed": true
+    },
+    {
+      "label": "Image command frames stay within the existing JSON protocol bound",
+      "passed": true
+    }
+  ],
+  "maximumFrameBytes": 8543,
+  "pixelEvidence": {
+    "width": 5,
+    "height": 4,
+    "sha256": "7bf4284f7425d2bdb7e66be8838f6f9a0cd780f31311cb11e822a6ef5c363675"
+  },
+  "largeImageEvidence": {
+    "encodedBytes": 278459,
+    "decodedBytes": 4194304,
+    "work": 30444593,
+    "defaultPageDecodeWorkLimit": 33554432,
+    "resourceSha256": "97eba99798a981a361e55aef5f02689e70c4895a356f28abf1e04603ddd0eb39",
+    "screenshotBytes": 3876,
+    "screenshotWidth": 132,
+    "screenshotHeight": 132,
+    "screenshotSha256": "1211083c4e0b067a427258dd8e2c3f04452256e44f3ecd135945355c1a25b7f8"
+  },
+  "captures": [
+    {
+      "kind": "before-element",
+      "width": 19,
+      "height": 14,
+      "bytes": 115,
+      "sha256": "e6f574a5a0fcf44be85644a40dad2832e086d2ae730b03dd5235a9d85ad7ad99"
+    },
+    {
+      "kind": "after-element",
+      "width": 19,
+      "height": 16,
+      "bytes": 206,
+      "sha256": "30f2d7b00181ed55dc101ea5843a5f40e04175d5a0ad39b3221f2aaadd16589b"
+    },
+    {
+      "kind": "pdf",
+      "bytes": 1772,
+      "sha256": "d332e47e06524b41282eef4c596bb418b60f24187f9784da88b873c9c2aabddf"
+    },
+    {
+      "kind": "baseline-jpeg-element",
+      "width": 21,
+      "height": 17,
+      "bytes": 1099,
+      "sha256": "1df2a4de4b75a0ac1a8e79f58e52017fcbdcfc881c0435a2da9f0c83f6238e41"
+    },
+    {
+      "kind": "progressive-jpeg-element",
+      "width": 21,
+      "height": 17,
+      "bytes": 1099,
+      "sha256": "1df2a4de4b75a0ac1a8e79f58e52017fcbdcfc881c0435a2da9f0c83f6238e41"
+    }
+  ],
+  "requests": 7,
+  "runtime": "existing experimental SafeJS core, not released-SDK acceptance",
+  "fixture": "production document loader, image session transport and agent commands over in-memory mocked responses; no network or sockets",
+  "limitations": "Loaded PNG and 8-bit Huffman JPEG normal-flow layout; responsive sources, CORS attributes, color management, EXIF orientation, other formats, released SDK and real-site acceptance remain open"
+}

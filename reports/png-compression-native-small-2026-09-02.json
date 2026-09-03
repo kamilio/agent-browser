@@ -1,0 +1,89 @@
+{
+  "startedAt": "2026-09-02T22:41:22.976Z",
+  "finishedAt": "2026-09-02T22:41:23.084Z",
+  "scope": "native-in-memory-render-encode-store-framed-transfer-and-release",
+  "profile": "small",
+  "node": "v22.22.0",
+  "platform": "linux",
+  "architecture": "x64",
+  "cpuModel": "AMD EPYC 9R45",
+  "realWebsite": false,
+  "liveSocket": false,
+  "safeJs": false,
+  "retainedClientResult": true,
+  "garbageCollectionForced": false,
+  "completed": true,
+  "passed": 6,
+  "checks": [
+    {
+      "label": "Native dimensions match the requested logical viewport",
+      "passed": true
+    },
+    {
+      "label": "All native PNG bytes arrive",
+      "passed": true
+    },
+    {
+      "label": "No single protocol frame exceeds one hundred KiB",
+      "passed": true
+    },
+    {
+      "label": "Chunk count is exactly bounded by the artifact length",
+      "passed": true
+    },
+    {
+      "label": "The completed client download releases server artifact storage",
+      "passed": true
+    },
+    {
+      "label": "Source closure preserves caller-owned encoded output",
+      "passed": true
+    }
+  ],
+  "measurement": {
+    "width": 640,
+    "height": 480,
+    "captureMs": 94.315289,
+    "cpu": {
+      "user": 132733,
+      "system": 4609
+    },
+    "peakRssBytes": 74252288,
+    "frames": 3,
+    "maximumFrameBytes": 58605,
+    "pngBytes": 43785,
+    "sha256": "2849682305f76b38bf7dc08ff8ea2bd39a9656aef51677390732c0f0f0de46b6"
+  },
+  "samples": [
+    {
+      "stage": "start",
+      "rss": 59584512,
+      "heapUsed": 7110528,
+      "arrayBuffers": 76903
+    },
+    {
+      "stage": "parsed",
+      "rss": 61587456,
+      "heapUsed": 8573472,
+      "arrayBuffers": 59812
+    },
+    {
+      "stage": "retained-server-artifact",
+      "rss": 72216576,
+      "heapUsed": 9899904,
+      "arrayBuffers": 3069779
+    },
+    {
+      "stage": "retained-client-png",
+      "rss": 74252288,
+      "heapUsed": 12869928,
+      "arrayBuffers": 2714750
+    },
+    {
+      "stage": "closed-with-client-result-retained",
+      "rss": 74252288,
+      "heapUsed": 12909984,
+      "arrayBuffers": 2714750
+    }
+  ]
+}

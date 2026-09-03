@@ -1,0 +1,73 @@
+{
+  "startedAt": "2026-09-03T00:36:04.968Z",
+  "finishedAt": "2026-09-03T00:36:05.572Z",
+  "fixture": "in-memory HTML; no websites, sockets, or browser engines",
+  "runtime": "existing explicitly selected experimental SafeJS core, not released-SDK acceptance",
+  "checks": [
+    {
+      "label": "Interpreted DOM reads native wrapped fragments",
+      "passed": true
+    },
+    {
+      "label": "Indexed capabilities preserve item identity and out-of-bounds semantics",
+      "passed": true
+    },
+    {
+      "label": "Interpreted bounding rectangle unions real line fragments",
+      "passed": true
+    },
+    {
+      "label": "Guest rectangle writes change derived edges without changing native layout",
+      "passed": true
+    },
+    {
+      "label": "toJSON exposes all eight numeric fields",
+      "passed": true
+    },
+    {
+      "label": "Guest mutation reflows fresh geometry while saved lists stay snapshots",
+      "passed": true
+    },
+    {
+      "label": "Empty inline keeps a zero-width em-height rectangle",
+      "passed": true
+    },
+    {
+      "label": "Detached elements have no client rectangles",
+      "passed": true
+    },
+    {
+      "label": "Visibility hidden retains layout; display none removes own geometry",
+      "passed": true
+    },
+    {
+      "label": "Percentage block geometry follows the native viewport",
+      "passed": true
+    },
+    {
+      "label": "Native viewport changes invalidate guest geometry cache",
+      "passed": true
+    },
+    {
+      "label": "Repeated interpreted reads reuse one native layout snapshot",
+      "passed": true
+    },
+    {
+      "label": "One build per revision, not per rectangle read",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "geometry": {
+    "revision": 13,
+    "builds": 6,
+    "rectangles": 0,
+    "usedStyles": 0,
+    "work": 22,
+    "closed": true
+  },
+  "script": {
+    "created": 119,
+    "closed": true
+  }
+}

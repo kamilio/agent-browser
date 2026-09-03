@@ -1,0 +1,138 @@
+{
+  "startedAt": "2026-09-03T00:36:04.097Z",
+  "finishedAt": "2026-09-03T00:36:04.629Z",
+  "fixture": "in-memory HTML through production PageScripts/PageBindings; no network or sockets",
+  "runtime": "explicitly selected existing experimental SafeJS core; not released-SDK acceptance",
+  "passed": true,
+  "checks": [
+    {
+      "label": "Real page code reads rounded block padding sizes",
+      "passed": true
+    },
+    {
+      "label": "Inline client sizes differ from wrapped offset sizes",
+      "passed": true
+    },
+    {
+      "label": "Offset height includes zero-width fragments excluded by the bounding shortcut",
+      "passed": true
+    },
+    {
+      "label": "Root client size reports the actual viewport",
+      "passed": true
+    },
+    {
+      "label": "Repeated scalar getters remain stable",
+      "passed": true
+    },
+    {
+      "label": "Repeated getters do not allocate DOMRect capabilities or rescan fragments",
+      "passed": true
+    },
+    {
+      "label": "Readonly size writes cannot replace measured values",
+      "passed": true
+    },
+    {
+      "label": "Interpreted style mutation reflows the next size read",
+      "passed": true
+    },
+    {
+      "label": "Viewport revisions invalidate cached root sizes",
+      "passed": true
+    },
+    {
+      "label": "Detached and reattached elements do not return stale cached sizes",
+      "passed": true
+    },
+    {
+      "label": "Owner close releases both size and rectangle caches",
+      "passed": true
+    }
+  ],
+  "sizes": {
+    "revision": 21,
+    "retained": 0,
+    "work": 2,
+    "measurements": 8,
+    "closed": true
+  },
+  "page": {
+    "steps": 4351,
+    "peakCallDepth": 1,
+    "peakDataSize": 5667,
+    "consoleCalls": 0,
+    "performance": {
+      "partial": true,
+      "precisionMs": 0.1,
+      "reads": 0,
+      "lastTimestamp": 0,
+      "closed": true
+    },
+    "timers": {
+      "partial": true,
+      "active": 0,
+      "queued": 0,
+      "pendingCallbacks": 0,
+      "scheduled": 0,
+      "fired": 0,
+      "running": false,
+      "closed": true,
+      "limits": {
+        "maxActive": 128,
+        "maxScheduled": 4096,
+        "maxCallbacks": 1024,
+        "maxArguments": 32
+      }
+    },
+    "animationFrames": {
+      "partial": true,
+      "profile": "software-frame-opportunities",
+      "intervalMs": 16.666666666666668,
+      "active": 0,
+      "pendingCallbacks": 0,
+      "scheduled": 0,
+      "fired": 0,
+      "frames": 0,
+      "running": false,
+      "armed": false,
+      "lastTimestamp": null,
+      "closed": true,
+      "limits": {
+        "maxActive": 128,
+        "maxScheduled": 4096,
+        "maxCallbacks": 1024,
+        "maxPendingCallbacks": 128
+      }
+    },
+    "initialized": true,
+    "evaluations": 9,
+    "pendingCallbacks": 0,
+    "active": false,
+    "closed": true,
+    "dom": {
+      "classLists": {
+        "lists": 0,
+        "cachedCodeUnits": 0,
+        "refreshes": 0,
+        "closed": true
+      },
+      "geometry": {
+        "created": 1,
+        "closed": true
+      },
+      "computedStyles": {
+        "objects": 0,
+        "maxObjects": 4096,
+        "closed": true
+      },
+      "elementSizes": {
+        "revision": 21,
+        "retained": 0,
+        "work": 2,
+        "measurements": 8,
+        "closed": true
+      }
+    }
+  }
+}

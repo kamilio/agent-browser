@@ -3,6 +3,7 @@ import {
 	updateDocumentScriptState,
 } from "./document-script-state.js";
 import { documentBaseUrl } from "./document-url.js";
+import { documentImages } from "./document-images.js";
 import { withDocumentWrite } from "./document-write.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -291,6 +292,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 			for (const source of this.deferred) await this.enqueueSource(source);
 			await this.enqueue(() => this.event(tree.root, "DOMContentLoaded", true));
 			await Promise.all(this.asynchronous);
+			await documentImages(tree).settle(this.controller.signal);
 			await this.enqueue(async () => {
 				updateDocumentScriptState(tree, { readyState: "complete" });
 				await this.event(tree.root, "readystatechange");

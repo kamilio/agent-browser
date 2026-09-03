@@ -18,6 +18,12 @@ import { ScriptHistory } from "./script-history.js";
 import { ScriptLocation } from "./script-location.js";
 import { ScriptStorage } from "./script-storage.js";
 import type { SessionPage } from "./session.js";
+import {
+	PageAnimationFrames,
+	type AnimationFrameLimits,
+} from "./page-animation-frames.js";
+import { PageClock, createPagePerformance } from "./page-performance.js";
+import { PageMedia } from "./page-media.js";
 
 export interface PageBindingContext extends ScriptHostObjectFactory {
 	retainGuestArguments<
@@ -31,6 +37,7 @@ export interface PageBindingOptions {
 	fetchLimits?: Partial<PageFetchLimits>;
 	consoleLimits?: Partial<ConsoleLimits>;
 	timerLimits?: Partial<TimerLimits>;
+	animationFrameLimits?: Partial<AnimationFrameLimits>;
 }
 
 export interface PageBindingLifecycle extends ScriptCallbackRuntime {
@@ -51,6 +58,11 @@ export function pageBindingGlobalNames(
 		"setInterval",
 		"clearTimeout",
 		"clearInterval",
+		"getComputedStyle",
+		"matchMedia",
+		"requestAnimationFrame",
+		"cancelAnimationFrame",
+		"performance",
 		"console",
 		"document",
 		"window",
@@ -63,6 +75,9 @@ export class PageBindings {
 	readonly window: object;
 	readonly console: PageConsole;
 	readonly timers: PageTimers;
+	readonly animationFrames: PageAnimationFrames;
+	readonly performance: object;
+	readonly media: PageMedia;
 	readonly network?: PageFetch;
 	readonly location: ScriptLocation;
 	readonly history?: ScriptHistory;
@@ -76,6 +91,7 @@ export class PageBindings {
 		context: PageBindingContext,
 		private readonly lifecycle: PageBindingLifecycle,
 		options: PageBindingOptions = {},
+		private readonly clock = new PageClock(),
 	) {
 		if (
 			!context ||
@@ -121,6 +137,18 @@ export class PageBindings {
 		this.ensureOpen();
 		this.unregisterClose = page.document.onClose(() => this.close());
 		try {
+			this.performance = createPagePerformance(context, this.clock);
+			this.animationFrames = new PageAnimationFrames(
+				{
+					isClosed: () => this.closed,
+					startCallback: (callback, args, value) =>
+						lifecycle.startCallback(callback, args, value),
+				},
+				() => this.window,
+				(error) => lifecycle.fail(error),
+				this.clock,
+				options.animationFrameLimits,
+			);
 			const history = pageHistoryPort(page.document);
 			this.location = new ScriptLocation(page.document, context, history);
 			if (history)
@@ -160,8 +188,47 @@ export class PageBindings {
 					2,
 				),
 			};
+			const getComputedStyle = (element: unknown, pseudo?: unknown) => {
+				this.ensureOpen();
+				return this.dom.getComputedStyle(element, pseudo);
+			};
+			const matchMedia = (...args: unknown[]) => {
+				this.ensureOpen();
+				return this.media.matchMedia(...args);
+			};
 			this.window = context.createHostObject({
 				properties: {
+					innerWidth: {
+						get: () => {
+							this.ensureOpen();
+							return this.media.width;
+						},
+					},
+					innerHeight: {
+						get: () => {
+							this.ensureOpen();
+							return this.media.height;
+						},
+					},
+					onresize: {
+						get: () => {
+							this.ensureOpen();
+							return (
+								this.dom.eventBindings?.getHandler(windowTarget, "resize") ??
+								null
+							);
+						},
+						set: (value) => {
+							this.ensureOpen();
+							this.dom.eventBindings?.setHandler(windowTarget, "resize", value);
+						},
+					},
+					performance: {
+						get: () => {
+							this.ensureOpen();
+							return this.performance;
+						},
+					},
 					...(this.storage
 						? {
 								localStorage: {
@@ -203,6 +270,9 @@ export class PageBindings {
 					parent: { get: () => this.window },
 				},
 				methods: {
+					...this.animationFrames.methods,
+					getComputedStyle,
+					matchMedia,
 					...(this.network ? { fetch: this.network.fetch } : {}),
 					...timerMethods,
 					addEventListener: (type, callback, value) => {
@@ -250,6 +320,18 @@ export class PageBindings {
 				onCall: () => lifecycle.onConsoleCall(),
 				describe: (value) => this.dom.consoleLabel(value),
 			});
+			if (!this.dom.eventBindings)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Media queries require event bindings",
+				);
+			this.media = new PageMedia(
+				page.document,
+				context,
+				events,
+				this.dom.eventBindings,
+				(error) => lifecycle.fail(error),
+			);
 			this.globals = {
 				...(this.storage
 					? {
@@ -262,6 +344,10 @@ export class PageBindings {
 				...(this.network ? { fetch: this.network.fetch } : {}),
 				...timerMethods,
 				console: this.console.object,
+				...this.animationFrames.methods,
+				performance: this.performance,
+				getComputedStyle,
+				matchMedia,
 				document: this.dom.document,
 				window: this.window,
 				self: this.window,
@@ -280,6 +366,9 @@ export class PageBindings {
 		if (this.closedValue) return;
 		this.closedValue = true;
 		this.timers?.close();
+		this.animationFrames?.close();
+		this.media?.close();
+		this.clock.close();
 		this.network?.close();
 		this.location?.close();
 		this.history?.close();

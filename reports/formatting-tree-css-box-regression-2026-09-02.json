@@ -1,0 +1,61 @@
+{
+  "startedAt": "2026-09-02T21:16:25.666Z",
+  "finishedAt": "2026-09-02T21:16:25.782Z",
+  "scope": "existing-experimental-core-native-author-cascade-in-memory-transport-no-layout-or-public-network",
+  "completed": true,
+  "checks": [
+    {
+      "label": "The real document loader retrieves the linked sheet through the in-memory transport",
+      "passed": true
+    },
+    {
+      "label": "Host box values compute viewport units but retain percentages and no layout claim",
+      "passed": true
+    },
+    {
+      "label": "External author CSS participates in the shared native cascade",
+      "passed": true
+    },
+    {
+      "label": "A native click runs the actual interpreted handler and changes box declarations",
+      "passed": true
+    },
+    {
+      "label": "Logical resize recomputes viewport dimensions and matching media declarations",
+      "passed": true
+    },
+    {
+      "label": "An interpreted ordinary inline write does not defeat stylesheet importance",
+      "passed": true
+    },
+    {
+      "label": "An interpreted important write wins and computes absolute CSS units",
+      "passed": true
+    },
+    {
+      "label": "Explicit all inheritance reads the parent computed sizing values",
+      "passed": true
+    },
+    {
+      "label": "Interpreted parent mutation invalidates inherited values without resolving percentages prematurely",
+      "passed": true
+    },
+    {
+      "label": "Invalid padding is ignored and existing visibility semantics remain independent",
+      "passed": true
+    },
+    {
+      "label": "No fake getComputedStyle or client geometry API was installed",
+      "passed": true
+    },
+    {
+      "label": "Box inspection preserves the shared snapshot diff baseline",
+      "passed": true
+    },
+    {
+      "label": "All interpreted page owners and their native documents close",
+      "passed": true
+    }
+  ],
+  "passed": 13
+}

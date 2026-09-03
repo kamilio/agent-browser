@@ -1,4 +1,5 @@
 import type { DocumentTree } from "./document.js";
+import type { NodeRelations } from "./node-relations.js";
 import { AgentBrowserError } from "./errors.js";
 import {
 	type ScriptHostObjectDefinition,
@@ -18,6 +19,7 @@ export class ScriptAttributes {
 		private readonly tree: DocumentTree,
 		private readonly factory: ScriptHostObjectFactory,
 		private readonly node: (id: number) => object,
+		private readonly relations: NodeRelations,
 	) {}
 
 	map(id: number): object {
@@ -217,9 +219,11 @@ export class ScriptAttributes {
 					return null;
 				},
 			};
+		const relations = this.relations.definition(id, true);
 		const capability = this.factory.createHostObject({
-			properties,
+			properties: { ...properties, ...relations.properties },
 			methods: {
+				...relations.methods,
 				cloneNode: () => {
 					const attribute = read();
 					this.ensureCapacity();
@@ -235,14 +239,11 @@ export class ScriptAttributes {
 					read();
 					return false;
 				},
-				isSameNode: (other) => {
-					read();
-					return other === this.attributes.get(id);
-				},
 			},
 		});
 		this.attributes.set(id, capability);
 		this.identities.set(capability, id);
+		this.relations.register(capability, id, true);
 		return capability;
 	}
 

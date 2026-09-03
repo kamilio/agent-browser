@@ -1,0 +1,58 @@
+{
+  "startedAt": "2026-09-02T22:28:15.865Z",
+  "finishedAt": "2026-09-02T22:28:17.158Z",
+  "scope": "existing-experimental-core-in-memory-command-frame-capture-and-cli-writer",
+  "realWebsite": false,
+  "liveSocket": false,
+  "livePlayground": false,
+  "releasedSdk": false,
+  "completed": true,
+  "passed": 9,
+  "checks": [
+    {
+      "label": "A real native PNG larger than two MiB transfers through bounded protocol frames",
+      "passed": true
+    },
+    {
+      "label": "The actual experimental core installs the page click handler",
+      "passed": true
+    },
+    {
+      "label": "Interpreted mutation changes the transferred PNG pixels",
+      "passed": true
+    },
+    {
+      "label": "The same CLI client writer atomically exports the current native PNG",
+      "passed": true
+    },
+    {
+      "label": "Successful downloads release retained server artifacts",
+      "passed": true
+    },
+    {
+      "label": "A selector-targeted block capture reports a smaller real document clip",
+      "passed": true
+    },
+    {
+      "label": "Resize changes exported native PNG dimensions",
+      "passed": true
+    },
+    {
+      "label": "Built playground assets include every runtime import used by PNG preview",
+      "passed": true
+    },
+    {
+      "label": "Closing the host releases artifacts and interpreted realms",
+      "passed": true
+    }
+  ],
+  "artifact": {
+    "filename": "/home/kjopek/automations/packages/browser-agent/reports/capture-export-native-render-2026-09-02.png",
+    "bytes": 3146804,
+    "sha256": "c90236a2d8db076a60620e1d5dd0671683bf30cdcd8e1b693a94c98801f2bb1e",
+    "width": 1024,
+    "height": 768,
+    "maximumFrameBytes": 87618,
+    "frames": 178
+  }
+}

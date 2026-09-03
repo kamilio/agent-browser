@@ -1,5 +1,30 @@
 # CSS visibility and viewport subset
 
+Later checkpoint: `MEDIA-RANGES.md` adds bounded compiled media comparisons,
+chained bounds, grouped Boolean conditions, aspect ratios and native resolution.
+Page queries share this evaluator and reuse their compiled predicates.
+
+Later checkpoint: `MEDIA-QUERIES.md` connects the shared media evaluator to live
+page queries and responsive event delivery, and adds orientation and initial-font
+em/rem dimension tests. Full Media Queries Level 4 conformance remains unproven.
+
+Later checkpoint: `BACKGROUNDS.md` supports solid-color/none background shorthand
+with eight-component resets and shared inline/computed CSSOM. It remains a partial
+profile: image layers and non-default non-color components are not implemented.
+
+Later checkpoint: `COMPUTED-STYLES.md` connects the current cascade and supported
+normal-flow layout to readonly live page-JavaScript computed declarations. The
+historical visibility-only checkpoint below is not the current layout/API ceiling.
+
+Later checkpoint: `TEXT-LAYOUT.md` adds five inherited typography properties,
+matching inline writes and a separate bounded block-relative line stage. Global
+and target style inspection now report the implemented text subset separately.
+
+Later September 2 checkpoint: `CSS-BOX.md` adds a separately reported author
+cascade for dimensions, margin/padding and box-sizing, with supported unit
+computation. The visibility model below remains in use; complete page layout,
+client geometry and document painting remain unimplemented.
+
 Checkpoint: September 1, 2026. The independent TypeScript engine now uses a
 bounded author-style cascade for `display` and `visibility`. This improves what
 agents read and which elements they can act on; it is **not a CSS layout engine**,

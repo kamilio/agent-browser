@@ -1,5 +1,16 @@
 # Shared-session playground
 
+September 3 viewport addition: a confirmed CSS-size bar supports draft width/height,
+presets, swap, restore and explicit Apply. `VIEWPORT-CONTROLS.md` documents the
+read-only `viewport` command and opaque target guard used to prevent wrong-tab or
+recreated-session writes. Native UI-flow tests cover actual resized PNG data,
+draft preservation, revocation and late responses. No new live visual run is claimed.
+
+September 3 PDF addition: the footer downloads a native paginated PDF with real
+pixels and positioned searchable text through the shared artifact protocol.
+`PDF.md` records independent parser/pixel/text validation, limits and mocked-UI
+download tests. This does not add live visual/download or print-CSS acceptance.
+
 September 2 targeting addition: shared target fields and the CLI command box now
 accept the literal role/test-ID subset documented in `TARGET-LOCATORS.md`, in
 addition to refs and CSS. Resolution is native and strict about ambiguity; no
@@ -82,12 +93,13 @@ service explicitly with `stop-server`; the UI cannot stop the service.
 - Responsive layout, keyboard focus indicators, semantic labels, explicit busy/
   disconnected/error states, and reduced-motion support.
 
-This is a semantic text view, not pixel layout. Complete HTML semantics, site
-JavaScript, image/CSS rendering, PNG/PDF exports, full console semantics, memory
-graphs, streaming updates and full browser interaction remain missing. HTML
-download requests are implemented, but actual file transfer remains unverified
-because the observer test service prohibits downloads. PNG/PDF buttons remain
-disabled and capability limitations are visible. Command errors can occur after partial
+The default view is semantic text. Native PNG rendering/download and PDF download
+now exist in a partial normal-flow profile (`CAPTURE-EXPORT.md`, `PDF.md`). Complete
+HTML/site-JavaScript/CSS/image semantics, memory graphs, streaming views and full
+browser interaction remain missing. The historical observer service prohibited
+downloads; current file/handler tests use in-memory boundaries and do not establish
+live frontend transfer acceptance. Capability limitations remain visible.
+Command errors can occur after partial
 side effects: there is no automatic retry of commands.
 
 ## Security and bounds

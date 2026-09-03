@@ -9,6 +9,7 @@ import {
 
 export type TargetLocator =
 	| TextTargetLocator
+	| { kind: "css"; value: string }
 	| { kind: "test-id"; value: string }
 	| { kind: "role"; role: string; name?: string; exact: boolean };
 
@@ -28,6 +29,7 @@ class LocatorParser {
 		if (
 			method !== "getByRole" &&
 			method !== "getByTestId" &&
+			method !== "locator" &&
 			!Object.hasOwn(textMethods, method)
 		)
 			throw new AgentBrowserError(
@@ -38,7 +40,7 @@ class LocatorParser {
 		const value = this.string();
 		let name: string | undefined;
 		let exact = false;
-		if (method !== "getByTestId" && this.consume(",")) {
+		if (method !== "getByTestId" && method !== "locator" && this.consume(",")) {
 			this.expect("{");
 			const seen = new Set<string>();
 			if (!this.consume("}")) {
@@ -78,6 +80,7 @@ class LocatorParser {
 				"unsupported",
 				"Locator chaining and executable expressions are not implemented",
 			);
+		if (method === "locator") return { kind: "css", value };
 		if (method === "getByTestId") return { kind: "test-id", value };
 		if (Object.hasOwn(textMethods, method))
 			return { kind: textMethods[method], value, exact };
@@ -176,7 +179,7 @@ export function parseTargetLocator(source: string): TargetLocator | undefined {
 			"resource-limit",
 			"Locator source limit exceeded",
 		);
-	if (!/^\s*getBy[A-Za-z]+\s*\(/.test(source)) return undefined;
+	if (!/^\s*(?:getBy[A-Za-z]+|locator)\s*\(/.test(source)) return undefined;
 	return new LocatorParser(source).parse();
 }
 
@@ -198,9 +201,9 @@ export function resolveBrowserTarget(
 	}
 	const locator = parseTargetLocator(source);
 	let references: readonly string[];
-	if (!locator)
+	if (!locator || locator.kind === "css")
 		references = queries
-			.querySelectorAll(source)
+			.querySelectorAll(locator?.value ?? source)
 			.map((id) => tree.reference(id));
 	else if (locator.kind === "test-id") {
 		references = queries

@@ -16,6 +16,172 @@ names is not completion of that scope.
 
 ## Current status
 
+`NODE-RELATIONS.md` adds live containment, document ordering, identity and structural
+equality to node/attribute capabilities, with bounded iterative comparisons and
+actual experimental-SafeJS reconciliation reflected in agent snapshots. This is
+not a complete Node prototype graph, namespace model or framework acceptance.
+
+`JPEG-PERFORMANCE.md` brings the tested one-megapixel JPEG under the unchanged page
+work guard: fast inverse transforms and cached chroma rows retain identical pixels,
+with about a 2× local timing improvement. Actual experimental-SafeJS page loading,
+PNG and PDF export pass; this is not universal large-image or Worker acceptance.
+
+`JPEG-DECODING.md` adds native 8-bit Huffman baseline/progressive JPEG resources,
+verified against 252 independent fixtures and actual experimental-SafeJS agent
+PNG/PDF captures. Existing page resource budgets remain enforced; large photos,
+CMYK, orientation and color management still have explicit gaps.
+
+`IMAGE-LAYOUT.md` connects loaded PNGs to normal-flow inline/block sizing, live
+geometry and the shared PNG/PDF renderer. Actual experimental-SafeJS agent captures
+contain the resource pixels and update after source changes. The profile uses
+nearest-neighbor sampling; broken-image fallback and general image/CSS/site parity
+remain open.
+
+`IMAGE-RESOURCES.md` connects PNG resources to page-owned loading, shared requests,
+source changes, live image properties/decode/events and agent `images` inspection.
+Actual experimental-SafeJS loader checks pass; `IMAGE-LAYOUT.md` adds bounded
+normal-flow layout/compositing without changing the resource lifecycle limits.
+
+`PNG-DECODING.md` adds an independent PNG/zlib decoder with all static color/depth
+combinations, filters and Adam7 interlacing. Native and independent Pillow pixel
+checks pass. Color management, animation and general replaced-element coverage
+remain open. No dependency is added.
+
+`PDF.md` connects native paginated PDF export to the `pdf` command, private local
+CLI files and the playground PDF download. One layout feeds native page pixels
+and compact searchable text. Independent Ghostscript parsing, text extraction
+and exact pixel checks pass. This is screen-layout pagination, not print CSS,
+full fonts, tagged PDF or live-site/frontend acceptance.
+
+`CHARACTER-DATA.md` adds live text/comment data editing, `splitText`, `wholeText`
+and subtree normalization. Actual SafeJS edits change agent snapshots and native
+captures; splitting and merging preserve pixels and retained node identities.
+Text/node quota failures are preflighted. Mutation observers, ranges and broader
+framework/site acceptance remain open.
+
+`ANIMATION-FRAMES.md` adds bounded `requestAnimationFrame`/`cancelAnimationFrame`
+and a shared monotonic `performance` clock. Actual experimental-SafeJS callbacks
+update measured layout and explicit capture pixels; batching, cancellation,
+rejection isolation and cleanup are verified. This is software scheduling, not
+automatic painting or released-SDK event-loop acceptance.
+
+`ELEMENT-SIZES.md` adds live readonly client/offset size properties and a `sizes`
+field in agent geometry inspection. It distinguishes padding boxes, inline/degenerate
+fragments and root viewport sizes, with integer rounding and revision-cached reads.
+Actual experimental-SafeJS checks pass; quirks mode, borders, scrollbars and general
+layout remain open. Upstream #550 is closed, but local released-SDK acceptance is
+still pending and the runtime has not been switched.
+
+`INLINE-BOXES.md` adds actual horizontal inline margin/padding layout, including
+signed margins, percentages, empty padded elements and first/last wrapped edges.
+Client rectangles, computed styles and native PNG backgrounds now share those
+fragments. Actual experimental-SafeJS and pixel checks pass; general CSS and
+public-site/released-SDK acceptance remain open.
+
+`MEDIA-RANGES.md` adds bounded compiled responsive conditions, including chained
+width/height comparisons, nested Boolean groups, ratios and native resolution.
+Actual interpreted command/capture checks pass; general media conformance remains open.
+
+`VIEWPORT-CONTROLS.md` adds confirmed playground viewport inspection, presets and
+explicit size editing. Opaque per-session/tab guards prevent stale UI requests
+from resizing a different target. These are logical CSS sizes, not device emulation.
+
+`MEDIA-QUERIES.md` adds live media lists, resize/change callbacks and Window
+viewport dimensions using the shared CSS/event engines. Actual interpreted
+responsive DOM and PNG changes work; one global/Window function-identity assertion
+still fails with the selected experimental runtime, so its full probe stays red.
+
+`BACKGROUNDS.md` adds solid-color/none `background` shorthand with eight-component
+resets, live inline/computed CSSOM, and actual SafeJS-driven PNG/PDF checks.
+Images, layers and non-default background component values remain unsupported.
+
+`COMPUTED-STYLES.md` adds live, readonly `getComputedStyle` on the global and
+window objects. Thirty-one longhands use the existing cascade and actual
+normal-flow used sizes, sharing the client-geometry cache. Production page
+bindings have actual experimental-SafeJS evidence; pseudo-elements, custom
+properties, general CSS and released-SDK/public-site acceptance remain open.
+
+`LAYOUT-MEMORY.md` removes eager duplicate glyph records from painting and client
+geometry without removing inspection data. Complete frozen absolute vectors are
+materialized only when read. The large fixture drops from 199.4 to 175.4 MiB peak
+RSS in local samples, with identical output; smaller samples vary and full browser
+or low-memory Worker acceptance is not implied.
+
+`INLINE-CAPTURES.md` connects wrapped-inline bounds to actual PNG captures and an
+optional playground capture target. Agent inspection, guest geometry and capture
+share one extractor; element capture does not perform a second layout pass.
+Actual-core, pixel, file and mocked-UI checks pass. Large documents still retain
+substantial layout memory; full browser compatibility remains open.
+
+`CLIENT-GEOMETRY.md` exposes native block/wrapped-inline rectangles to page
+JavaScript and `geometry <target>`. Snapshot lists, writable returned rectangles,
+empty inline/BR geometry, and revision-cached unions have actual SafeJS evidence.
+This remains a restricted profile, not scrolling, hit testing or full DOMRect/CSS.
+
+`PNG-COMPRESSION.md` adds bounded, dependency-free fixed-Huffman/LZ77 compression
+with a stored-block fallback. The actual 1,024 × 768 exported fixture shrinks from
+3,146,804 to 52,889 bytes with independently verified identical decoded pixels.
+Measured capture-transfer costs also fall; full browser compatibility is unchanged.
+
+`CAPTURE-EXPORT.md` connects the native renderer to `screenshot`, safe local CLI
+PNG files, bounded session-owned artifact reads, and a playground Render/PNG action.
+Viewport and single-block targets work in the supported profile. CLI entry, UI
+handlers and byte transfers are tested with in-memory/mocked boundaries; live-site,
+live-playground, general CSS and full print/PDF compatibility remain open.
+
+`CSS-PAINT.md` connects shared RGB/HSL/hex/named colors and inherited foreground
+to native glyphs, solid block/inline backgrounds and HTML canvas propagation.
+The actual colored document fixture responds to interpreted style changes and is
+visually inspected. This remains a restricted normal-flow profile, not full CSS,
+public-site capture acceptance or full print/PDF compatibility. The export checkpoint adds a
+partial CLI screenshot path.
+
+`DOCUMENT-LAYOUT.md` connects normal-flow heights, margin collapse and source-mapped
+lines to document-positioned blocks/glyphs. A bounded painter produces actual native
+text captures, not manually placed panels. The paint extension adds solid colors
+and backgrounds with the built-in font. Restricted CLI PNG export and client
+rectangles are now connected; full CSS, coordinate actions and print layout remain pending.
+
+`TEXT-LAYOUT.md` connects inherited typography and interpreted style writes to
+source-mapped lines measured with the actual built-in font. Supported whitespace,
+wrapping, tabs, alignment and mixed-size baselines now have bounded block-relative
+geometry. The document stage now adds normal-flow block Y layout and restricted
+text paint; client rectangles and complete page painting/screenshots remain pending.
+
+`BITMAP-RENDERER.md` adds an original built-in ASCII pixel font, shared glyph
+metrics, bounded RGBA painting and a dependency-free PNG encoder. An actual
+generated atlas is recorded and visually inspected. The text stage now uses the
+same metrics; restricted CLI screenshots now use them too. General font coverage
+remains pending; PNG payloads now use the bounded compressor with stored fallback.
+
+`FORMATTING-TREE.md` adds bounded display decomposition: anonymous blocks,
+inline splitting, contents/root handling and deferred unsupported modes.
+An issue-free restricted profile can derive block widths and horizontal offsets
+from the document itself. The separate document stage adds restricted heights and
+text paint; unsupported styling is not silently treated as normal flow.
+
+`BLOCK-WIDTH.md` adds normal-flow horizontal sizing under an explicitly known
+containing block: percentages, auto margins, min/max constraints, sizing edges
+and LTR/RTL overflow. The later document stage connects normal-flow heights;
+general layout modes and client geometry remain pending.
+
+`CSS-BOX.md` adds author-cascade sizing inputs for future layout: dimensions,
+margin/padding, box-sizing and supported unit computation. Interpreted inline
+writes and logical resize affect the same native values. Percentages remain
+unresolved at this computed-style stage. The subsequent layout, paint and capture
+stages resolve supported sizing and produce restricted native PNGs.
+
+`LOCATOR-GENERATION.md` adds verified `generate-locator` output and a literal
+`locator('CSS')` target form. Generated expressions round-trip through native
+actions; positional fallbacks are explicitly marked and not promised stable
+after DOM reordering. Actual experimental-core fixture checks pass; CLI wire,
+public-site and upstream parity acceptance remain open.
+
+`NODE-VIEW-CACHE.md` documents immutable native-read reuse and equivalent
+three-trial resource comparisons: the 5,000-row native workload median drops
+from 745.2 to 451.5 ms and peak RSS from 226.7 to 164.3 MiB. Churn peak memory
+does not improve; these are not full-browser measurements.
+
 `SESSION-RESOURCES.md` measures native session workloads and documents remaining
 memory costs. It exposed a large-page search cutoff: `find` now streams semantic
 entries with bounded result/context storage rather than first materializing a

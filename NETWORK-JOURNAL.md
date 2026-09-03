@@ -105,7 +105,11 @@ locations resolve against their source URL before the same redaction.
 secret scrubber. Do not publish diagnostics blindly. This policy applies only to
 the journal, not every other command response or document URL in the package.
 
-Full fetch/CORS/XHR, images, WebSockets, service workers, cache events, detailed wire
+`IMAGE-RESOURCES.md` now adds actual `image` request records through the session
+transport, including validated redirect chains. HTTP success and image decode
+success are separate; inspect `images` for resource-format/state failures.
+
+Full fetch/CORS/XHR, WebSockets, service workers, cache events, detailed wire
 timings, headers/bodies, HAR export, filtering, routing and interception are not
 implemented by this feature. A parser-skipped script is not shown as a request.
 Playground inspection is inert text; its command field provides `request <index>`

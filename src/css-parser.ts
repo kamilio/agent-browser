@@ -1,8 +1,33 @@
+import { parseBackgroundShorthand } from "./css-background.js";
+import { compileCssMedia } from "./css-media.js";
+import {
+	type CssBoxProperty,
+	cssBoxProperties,
+	isCssBoxProperty,
+	parseBoxDeclarations,
+} from "./css-box.js";
+import {
+	type CssPaintProperty,
+	cssPaintProperties,
+	isCssPaintProperty,
+	parsePaintValue,
+} from "./css-paint.js";
+import {
+	type CssTextProperty,
+	cssTextProperties,
+	isCssTextProperty,
+	parseTextValue,
+} from "./css-text.js";
 import { AgentBrowserError } from "./errors.js";
 
 export type VisibilityProperty = "display" | "visibility";
+export type CssProperty =
+	| VisibilityProperty
+	| CssBoxProperty
+	| CssTextProperty
+	| CssPaintProperty;
 export interface CssDeclaration {
-	property: VisibilityProperty;
+	property: CssProperty;
 	value: string;
 	important: boolean;
 }
@@ -155,7 +180,19 @@ export function parseCssDeclarations(
 		const important = /!\s*important\s*$/.test(value);
 		if (important) value = value.replace(/!\s*important\s*$/, "").trim();
 		value = value.replace(/[\t\n\f\r ]+/g, " ");
-		if (!["display", "visibility", "all"].includes(property)) {
+		if (
+			![
+				"display",
+				"visibility",
+				"all",
+				"margin",
+				"padding",
+				"background",
+			].includes(property) &&
+			!isCssBoxProperty(property) &&
+			!isCssTextProperty(property) &&
+			!isCssPaintProperty(property)
+		) {
 			issue("unimplemented-css-property");
 			continue;
 		}
@@ -163,7 +200,54 @@ export function parseCssDeclarations(
 			declarations.push(
 				{ property: "display", value, important },
 				{ property: "visibility", value, important },
+				...cssBoxProperties.map((property) => ({ property, value, important })),
+				...cssPaintProperties.map((property) => ({
+					property,
+					value,
+					important,
+				})),
+				...cssTextProperties.map((property) => ({
+					property,
+					value,
+					important,
+				})),
 			);
+			continue;
+		}
+		if (isCssTextProperty(property)) {
+			const normalized = parseTextValue(property, value);
+			if (normalized !== undefined)
+				declarations.push({ property, value: normalized, important });
+			else issue("unimplemented-or-invalid-css-value");
+			continue;
+		}
+		if (property === "background") {
+			const expanded = parseBackgroundShorthand(value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((entry) => ({ ...entry, important })),
+				);
+			else issue("unimplemented-or-invalid-css-value");
+			continue;
+		}
+		if (isCssPaintProperty(property)) {
+			const normalized = parsePaintValue(value, property);
+			if (normalized !== undefined)
+				declarations.push({ property, value: normalized, important });
+			else issue("unimplemented-or-invalid-css-value");
+			continue;
+		}
+		if (
+			isCssBoxProperty(property) ||
+			property === "margin" ||
+			property === "padding"
+		) {
+			const expanded = parseBoxDeclarations(property, value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((declaration) => ({ ...declaration, important })),
+				);
+			else issue("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (
@@ -238,52 +322,7 @@ export function cssMediaMatches(
 	viewport: StyleViewport,
 	issue: CssIssue,
 ): boolean {
-	if (!source.trim()) return true;
-	const scanner = new CssScanner(withoutComments(source).toLowerCase(), issue);
-	let matches = false;
-	while (scanner.position < scanner.source.length) {
-		let query = scanner.read(",").text.trim();
-		const modifier = /^(not|only)\s+/.exec(query);
-		const negate = modifier?.[1] === "not";
-		const only = modifier?.[1] === "only";
-		if (modifier) query = query.slice(modifier[0].length);
-		const type = /^(all|screen|print)\b/.exec(query);
-		let result = type?.[1] !== "print";
-		if (type) query = query.slice(type[0].length).trim();
-		let first = !type;
-		let supported = !only || !!type;
-		while (query) {
-			if (!first) {
-				const conjunction = /^and\s+/.exec(query);
-				if (!conjunction) {
-					supported = false;
-					break;
-				}
-				query = query.slice(conjunction[0].length);
-			}
-			first = false;
-			const feature =
-				/^\(\s*((?:min-|max-)?(?:width|height))\s*:\s*(\d+(?:\.\d+)?)(px)?\s*\)/.exec(
-					query,
-				);
-			if (!feature || (!feature[3] && Number(feature[2]) !== 0)) {
-				supported = false;
-				break;
-			}
-			const value = viewport[feature[1].endsWith("width") ? "width" : "height"];
-			const expected = Number(feature[2]);
-			result =
-				result &&
-				(feature[1].startsWith("min-")
-					? value >= expected
-					: feature[1].startsWith("max-")
-						? value <= expected
-						: value === expected);
-			query = query.slice(feature[0].length).trim();
-		}
-		if (!supported || (!type && first))
-			issue("unimplemented-or-invalid-media-query");
-		else matches ||= negate ? !result : result;
-	}
-	return matches;
+	const compiled = compileCssMedia(source);
+	if (compiled.unsupported) issue("unimplemented-or-invalid-media-query");
+	return compiled.matches(viewport);
 }

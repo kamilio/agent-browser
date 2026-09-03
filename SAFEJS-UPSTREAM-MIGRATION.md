@@ -1,9 +1,24 @@
 # Upstream SafeJS migration
 
-Status: September 2, 2026. A public extension adapter is implemented and tested
+Status: September 3, 2026. A public extension adapter is implemented and tested
 against mock contracts; released-package verification and default activation are
 pending. Production still uses the experimental adapter. `EXTENSION-RUNTIME.md`
 describes the implementation, lifecycle and explicit unrun release gates.
+
+September 3 read-only recheck: #550 is closed, at September 2, 19:43:35 UTC.
+The maintainer's final 19:43:34 comment reports the console override released as
+`@poe-platform/safe-js@0.1.40`, with commit
+`7984fa903602e6561b342a140f472978827094b7`, successful workflow `33674102879`,
+fresh Node/Bun/TypeScript consumers and matching provenance. These are upstream
+reported release checks, not a browser-local installation or provenance audit.
+
+Local package manifests remain workspace poe-code 4.0.48 and global poe-code
+13.0.10. Neither workspace nor global scoped SafeJS roots exist, and neither
+scoped SafeJS core resolves from this repository. No denied archive acquisition
+was retried or substituted, and the runtime was not switched. The initial
+read-only GitHub permission review timed out; its explicitly allowed single retry
+succeeded, as did the final-comment read. The blocker is now local approved
+artifact acceptance, not an open #550 implementation request.
 
 September 2, 19:34 UTC upstream comment: #550's implementation is pushed as
 `7984fa903602e6561b342a140f472978827094b7`. Pinned source confirms the console-only

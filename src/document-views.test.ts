@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from "vitest";
-import { type DocumentNode, DocumentTree } from "./document.js";
+import type { DocumentNode, DocumentTree } from "./document.js";
 import { setInnerHtml, setOuterHtml } from "./html-content.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { DocumentQueries } from "./selectors.js";
@@ -9,7 +9,10 @@ afterEach(() => {
 	for (const tree of documents.splice(0)) tree.close();
 });
 function fixture() {
-	const tree = parseHtmlDocument('<main><section id="first"><button id="button">Old</button></section><section id="second"><input id="input" value="initial"></section></main>', "https://example.com/");
+	const tree = parseHtmlDocument(
+		'<main><section id="first"><button id="button">Old</button></section><section id="second"><input id="input" value="initial"></section></main>',
+		"https://example.com/",
+	);
 	documents.push(tree);
 	const queries = new DocumentQueries(tree);
 	const id = (selector: string) => {
@@ -17,15 +20,25 @@ function fixture() {
 		if (target === null) throw new Error("Missing node-view fixture target");
 		return target;
 	};
-	return { tree, queries, id, first: id("#first"), second: id("#second"), button: id("#button"), input: id("#input") };
+	return {
+		tree,
+		queries,
+		id,
+		first: id("#first"),
+		second: id("#second"),
+		button: id("#button"),
+		input: id("#input"),
+	};
 }
 
 it("reuses deeply immutable read views without changing revision or native state", () => {
 	const { tree, button } = fixture();
 	const first = tree.get(button);
 	const revision = tree.revision;
-	for (let count = 0; count < 100; count++) expect(tree.get(button)).toBe(first);
-	for (const value of [first, first.attributes, first.children, first.control]) expect(Object.isFrozen(value)).toBe(true);
+	for (let count = 0; count < 100; count++)
+		expect(tree.get(button)).toBe(first);
+	for (const value of [first, first.attributes, first.children, first.control])
+		expect(Object.isFrozen(value)).toBe(true);
 	expect(() => Object.assign(first.attributes, { title: "bad" })).toThrow();
 	expect(() => (first.children as number[]).push(tree.root)).toThrow();
 	expect(() => Object.assign(first.control, { value: "bad" })).toThrow();
@@ -105,7 +118,10 @@ it("presentation, focus, fragment target and URL revisions do not duplicate node
 	const inputView = tree.get(input);
 	const rootView = tree.get(tree.root);
 	const before = tree.revision;
-	tree.invalidatePresentation(); tree.setActiveElement(button); tree.setTargetElement(input); tree.setUrl("https://example.com/new#target");
+	tree.invalidatePresentation();
+	tree.setActiveElement(button);
+	tree.setTargetElement(input);
+	tree.setUrl("https://example.com/new#target");
 	expect(tree.revision).toBeGreaterThan(before);
 	expect(tree.get(button)).toBe(buttonView);
 	expect(tree.get(input)).toBe(inputView);
@@ -131,7 +147,8 @@ it("cross-parent moves invalidate both parents and the moved node, not its uncha
 
 it("same-parent reordering and removal refresh child lists without invalidating peers", () => {
 	const { tree, first, button } = fixture();
-	const peer = tree.createElement("i"); tree.append(first, peer);
+	const peer = tree.createElement("i");
+	tree.append(first, peer);
 	const peerView = tree.get(peer);
 	const parent = tree.get(first);
 	tree.insert(first, peer, button);
@@ -143,7 +160,8 @@ it("same-parent reordering and removal refresh child lists without invalidating 
 	tree.remove(button);
 	expect(tree.get(first).children).toEqual([peer]);
 	expect(tree.get(button).parent).toBeNull();
-	const removed = tree.get(button); tree.remove(button);
+	const removed = tree.get(button);
+	tree.remove(button);
 	expect(tree.get(button)).toBe(removed);
 	expect(peerView.parent).toBe(first);
 });
@@ -151,7 +169,8 @@ it("same-parent reordering and removal refresh child lists without invalidating 
 it("fragment transfer refreshes the consumed fragment, destination and each moved root", () => {
 	const { tree, first, second, button, input } = fixture();
 	const fragment = tree.createFragment();
-	tree.append(fragment, button); tree.append(fragment, input);
+	tree.append(fragment, button);
+	tree.append(fragment, input);
 	const fragmentView = tree.get(fragment);
 	const buttonView = tree.get(button);
 	const inputView = tree.get(input);
@@ -224,10 +243,16 @@ it("HTML imports and replacement update cached parents and detached nodes", () =
 
 it("indirect option selectedness repair invalidates every changed option", () => {
 	const { tree, first, second } = fixture();
-	const select = tree.createElement("select"); tree.append(first, select);
-	const other = tree.createElement("select"); tree.append(second, other);
-	const options = [0, 1, 2].map((index) => tree.createElement("option", { value: String(index) }));
-	tree.append(select, options[0]); tree.append(select, options[1]); tree.append(other, options[2]);
+	const select = tree.createElement("select");
+	tree.append(first, select);
+	const other = tree.createElement("select");
+	tree.append(second, other);
+	const options = [0, 1, 2].map((index) =>
+		tree.createElement("option", { value: String(index) }),
+	);
+	tree.append(select, options[0]);
+	tree.append(select, options[1]);
+	tree.append(other, options[2]);
 	const before = options.map((id) => tree.get(id));
 	tree.setSelectSelection(select, [options[1]]);
 	expect(tree.get(options[0]).control.selected).toBe(false);
@@ -248,7 +273,9 @@ it("failed mutations keep cached values valid without weakening hierarchy checks
 	const parent = tree.get(first);
 	const child = tree.get(button);
 	expect(() => tree.append(button, first)).toThrow("cycles");
-	expect(() => tree.setAttribute(button, "bad name", "value")).toThrow("Invalid");
+	expect(() => tree.setAttribute(button, "bad name", "value")).toThrow(
+		"Invalid",
+	);
 	expect(tree.get(first)).toBe(parent);
 	expect(tree.get(button)).toBe(child);
 });
@@ -258,7 +285,10 @@ it("checks ownership and closure before consulting the cache, and releases cache
 	const view = tree.get(button);
 	const other = fixture();
 	expect(() => other.tree.get(button)).toThrow("Unknown");
-	const views = Reflect.get(tree, "nodeViews") as Map<number, Readonly<DocumentNode>>;
+	const views = Reflect.get(tree, "nodeViews") as Map<
+		number,
+		Readonly<DocumentNode>
+	>;
 	expect(views.size).toBeGreaterThan(0);
 	expect(views.size).toBeLessThanOrEqual(tree.nodeCount);
 	tree.close();
@@ -272,7 +302,8 @@ it("matches the mutable model after a deterministic mixed mutation sequence", ()
 	const parents = [first, second, tree.createFragment()];
 	const children = Array.from({ length: 12 }, (_, index) => {
 		const id = tree.createElement("input", { id: `generated-${index}` });
-		tree.append(parents[index % parents.length], id); return id;
+		tree.append(parents[index % parents.length], id);
+		return id;
 	});
 	const records = Reflect.get(tree, "nodes") as Map<number, DocumentNode>;
 	let seed = 3917;
@@ -282,16 +313,39 @@ it("matches the mutable model after a deterministic mixed mutation sequence", ()
 		const child = children[seed % children.length];
 		const parent = parents[(seed >>> 8) % parents.length];
 		switch (iteration % 8) {
-			case 0: tree.setAttribute(child, "class", `step-${iteration}`); break;
-			case 1: tree.removeAttribute(child, "class"); break;
-			case 2: tree.setControl(child, { value: String(iteration), checked: iteration % 3 === 0 }); break;
-			case 3: tree.append(parent, child); break;
-			case 4: tree.remove(child); break;
-			case 5: tree.replaceChildren(parent, child); break;
+			case 0:
+				tree.setAttribute(child, "class", `step-${iteration}`);
+				break;
+			case 1:
+				tree.removeAttribute(child, "class");
+				break;
+			case 2:
+				tree.setControl(child, {
+					value: String(iteration),
+					checked: iteration % 3 === 0,
+				});
+				break;
+			case 3:
+				tree.append(parent, child);
+				break;
+			case 4:
+				tree.remove(child);
+				break;
+			case 5:
+				tree.replaceChildren(parent, child);
+				break;
 			case 6: {
-				const fragment = tree.createFragment(); tree.append(fragment, child); tree.append(parent, fragment); break;
+				const fragment = tree.createFragment();
+				tree.append(fragment, child);
+				tree.append(parent, fragment);
+				break;
 			}
-			case 7: tree.setAttributeNode(child, tree.createAttribute("title", String(iteration))); break;
+			case 7:
+				tree.setAttributeNode(
+					child,
+					tree.createAttribute("title", String(iteration)),
+				);
+				break;
 		}
 		for (const [id, record] of records)
 			expect(tree.get(id), `step ${iteration}, node ${id}`).toEqual(record);

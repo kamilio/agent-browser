@@ -1,4 +1,5 @@
 import { documentBaseUrl } from "./document-url.js";
+import { documentImages } from "./document-images.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlParseInfo, setHtmlParseInfo } from "./html-info.js";
 import { parseHtmlDocument, parseHtmlDocumentAsync } from "./html-parser.js";
@@ -67,17 +68,29 @@ export async function loadBrowserDocument(
 			"Encoded HTML document limit exceeded",
 		);
 	const decoded = decodeResponseText(response, prescanEncoding(response.body));
+	const parseContext = {
+		...context,
+		initializeDocument: (tree: import("./document.js").DocumentTree) => {
+			context.initializeDocument?.(tree);
+			documentImages(tree, {
+				fetch: context.fetchImage,
+				blockedByCsp: Object.keys(response.headers).some(
+					(name) => name.toLowerCase() === "content-security-policy",
+				),
+			});
+		},
+	};
 	const tree = context.scripts
 		? await parseHtmlDocumentAsync(
 				decoded.text,
 				parseNetworkUrl(response.url).href,
-				context,
+				parseContext,
 				context.scripts,
 			)
 		: parseHtmlDocument(
 				decoded.text,
 				parseNetworkUrl(response.url).href,
-				context,
+				parseContext,
 			);
 	const info = htmlParseInfo(tree);
 	if (info) setHtmlParseInfo(tree, { ...info, encoding: decoded.encoding });
@@ -159,6 +172,7 @@ export async function loadBrowserDocument(
 			}
 		}
 		await context.scripts?.finish(tree);
+		await documentImages(tree).settle(context.signal);
 		return tree;
 	} catch (error) {
 		tree.close();

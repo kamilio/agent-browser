@@ -6,6 +6,12 @@ diffs and cleanup. They are **not full browser or JavaScript-engine benchmarks**
 All document responses are supplied by an in-memory transport; no socket, DNS,
 public website, browser service or real terminal is involved.
 
+Later September 2 checkpoint: `NODE-VIEW-CACHE.md` compares three equivalent
+fresh-process trials per profile before/after immutable node-view reuse. Large
+workload medians improve from 745.2 to 451.5 ms and peak RSS from 226.7 to
+164.3 MiB; churn peak RSS does not improve. The single observations below are
+preserved historical results, not measurements of the optimized implementation.
+
 ## Reproduce
 
 Build the package, then run each profile in a fresh Node process:
@@ -32,7 +38,7 @@ held together; this is not parallel CPU throughput. Churn replaces one session's
 document twenty times. The event listener is native fixture code, not interpreted
 website JavaScript.
 
-## Observed run
+## Historical observed run
 
 Node v22.22.0, Linux x64, AMD EPYC 9R45. One observation per profile, with
 uncontrolled filesystem caches, JIT/GC scheduling and other machine activity:

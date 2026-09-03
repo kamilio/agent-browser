@@ -1,0 +1,481 @@
+import { afterEach, expect, it } from "vitest";
+import { initialBoxStyle } from "./css-box.js";
+import type { DocumentTree } from "./document.js";
+import {
+	type FormattingTree,
+	buildFormattingTree,
+	resolveDocumentBlockWidths,
+} from "./formatting-tree.js";
+import { parseHtmlDocument } from "./html-parser.js";
+import { DocumentQueries } from "./selectors.js";
+import { snapshotDocument } from "./snapshot.js";
+import { documentStyles } from "./styles.js";
+
+const documents: DocumentTree[] = [];
+function fixture(markup: string) {
+	const tree = parseHtmlDocument(markup, "https://example.com/");
+	documents.push(tree);
+	const queries = new DocumentQueries(tree);
+	const id = (selector: string) => {
+		const result = queries.querySelector(selector);
+		if (result === null) throw new Error(`Missing fixture ${selector}`);
+		return result;
+	};
+	return {
+		tree,
+		id,
+		ref: (selector: string) => tree.reference(id(selector)),
+		styles: documentStyles(tree),
+	};
+}
+afterEach(() => {
+	for (const tree of documents.splice(0)) tree.close();
+});
+
+function textOrder(formatting: FormattingTree) {
+	const result: string[] = [];
+	const pending = [formatting.root];
+	while (pending.length) {
+		const id = pending.pop();
+		if (id === undefined) break;
+		const node = formatting.nodes[id];
+		if (node.kind === "text") result.push(node.text ?? "");
+		for (let index = node.children.length - 1; index >= 0; index--)
+			pending.push(node.children[index]);
+	}
+	return result.join("");
+}
+
+function verifyTree(formatting: FormattingTree) {
+	const incoming = new Map<number, number>();
+	const seen = new Set<number>();
+	const pending = [formatting.root];
+	while (pending.length) {
+		const id = pending.pop();
+		if (id === undefined) break;
+		expect(seen.has(id)).toBe(false);
+		seen.add(id);
+		const node = formatting.nodes[id];
+		expect(node.id).toBe(id);
+		for (const child of node.children) {
+			incoming.set(child, (incoming.get(child) ?? 0) + 1);
+			expect(formatting.nodes[child].parent).toBe(id);
+			if (node.kind === "inline" || node.contentMode === "inline")
+				expect(formatting.nodes[child].level).toBe("inline");
+			if (node.contentMode === "blocks")
+				expect(formatting.nodes[child].level).toBe("block");
+			pending.push(child);
+		}
+	}
+	expect(seen.size).toBe(formatting.nodes.length);
+	for (const node of formatting.nodes)
+		expect(incoming.get(node.id) ?? 0).toBe(
+			node.id === formatting.root ? 0 : 1,
+		);
+	expect(formatting.nodes[formatting.root].parent).toBeNull();
+}
+
+it("builds immutable block/inline/text records without altering the native document", () => {
+	const { tree, ref } = fixture(
+		"<main><p>Hello <em>world</em>!<!-- ignored --></p></main>",
+	);
+	const before = snapshotDocument(tree);
+	const result = buildFormattingTree(tree);
+	verifyTree(result);
+	expect(textOrder(result)).toBe("Hello world!");
+	expect(result.nodes.find((node) => node.ref === ref("p"))).toMatchObject({
+		kind: "block",
+		contentMode: "inline",
+	});
+	expect(result.nodes.find((node) => node.ref === ref("em"))).toMatchObject({
+		kind: "inline",
+		fragmentIndex: 0,
+		fragmentCount: 1,
+	});
+	expect(result.issues).toEqual({});
+	expect(Object.isFrozen(result)).toBe(true);
+	expect(
+		result.nodes.every(
+			(node) => Object.isFrozen(node) && Object.isFrozen(node.children),
+		),
+	).toBe(true);
+	expect(snapshotDocument(tree)).toEqual(before);
+});
+
+it("wraps inline runs around block children in anonymous block containers", () => {
+	const { tree, ref } = fixture(
+		'<main>before<div id="middle">middle</div>after</main>',
+	);
+	const result = buildFormattingTree(tree);
+	const main = result.nodes.find((node) => node.ref === ref("main"));
+	expect(main?.contentMode).toBe("blocks");
+	expect(main?.children.map((id) => result.nodes[id].kind)).toEqual([
+		"anonymous-block",
+		"block",
+		"anonymous-block",
+	]);
+	for (const node of result.nodes.filter(
+		(node) => node.kind === "anonymous-block",
+	)) {
+		expect(node.ref).toBeUndefined();
+		expect(node.box).toBe(initialBoxStyle);
+	}
+	expect(textOrder(result)).toBe("beforemiddleafter");
+	verifyTree(result);
+});
+
+it("splits nested inline ancestors around a block without changing DOM parents or text order", () => {
+	const { tree, ref, id } = fixture(
+		'<main><span id="outer">A<span id="inner">B<div id="block">C</div>D</span>E</span></main>',
+	);
+	const parent = tree.get(id("#block")).parent;
+	const result = buildFormattingTree(tree);
+	verifyTree(result);
+	expect(textOrder(result)).toBe("ABCDE");
+	const main = result.nodes.find((node) => node.ref === ref("main"));
+	expect(main?.children.map((id) => result.nodes[id].kind)).toEqual([
+		"anonymous-block",
+		"block",
+		"anonymous-block",
+	]);
+	for (const target of ["#outer", "#inner"]) {
+		const fragments = result.nodes.filter((node) => node.ref === ref(target));
+		expect(fragments.map((node) => node.fragmentIndex)).toEqual([0, 1]);
+		expect(fragments.every((node) => node.fragmentCount === 2)).toBe(true);
+	}
+	expect(tree.get(id("#block")).parent).toBe(parent);
+});
+
+it("preserves empty inline fragments at block-in-inline boundaries", () => {
+	const { tree, ref } = fixture(
+		'<main><span id="outer"><div>inside</div></span></main>',
+	);
+	const result = buildFormattingTree(tree);
+	const fragments = result.nodes.filter((node) => node.ref === ref("#outer"));
+	expect(fragments).toHaveLength(2);
+	expect(fragments.every((node) => node.children.length === 0)).toBe(true);
+	verifyTree(result);
+});
+
+it("retains raw whitespace for the future inline layout stage rather than fabricating line metrics", () => {
+	const { tree } = fixture("<main> \n <div>body</div>\t</main>");
+	const result = buildFormattingTree(tree);
+	expect(textOrder(result)).toBe(" \n body\t");
+	expect(result.stage).toBe("display-decomposition");
+	expect(
+		result.nodes.every((node) => !("height" in node) && !("y" in node)),
+	).toBe(true);
+});
+
+it("flattens display:contents while using DOM ancestry for computed style inheritance", () => {
+	const { tree, ref, styles } = fixture(
+		'<main style="width:400px"><section id="contents" style="display:contents;width:40px;visibility:hidden"><div id="child" style="width:50%;visibility:visible">child</div></section></main>',
+	);
+	styles.setViewport(800, 600);
+	const result = resolveDocumentBlockWidths(tree);
+	expect(
+		result.formatting.nodes.some((node) => node.ref === ref("#contents")),
+	).toBe(false);
+	expect(
+		result.formatting.nodes.find((node) => node.ref === ref("#child"))?.visible,
+	).toBe(true);
+	expect(
+		result.widths.find((node) => node.ref === ref("#child"))?.contentWidth,
+	).toBe(200);
+});
+
+it("lets display:contents carry block children through inline splitting", () => {
+	const { tree, ref } = fixture(
+		'<main><span>A<section id="contents" style="display:contents"><div>B</div></section>C</span></main>',
+	);
+	const result = buildFormattingTree(tree);
+	expect(result.nodes.some((node) => node.ref === ref("#contents"))).toBe(
+		false,
+	);
+	expect(textOrder(result)).toBe("ABC");
+	verifyTree(result);
+});
+
+it.each(["inline", "contents", "inline-block", "inline flow-root"])(
+	"blockifies root display %s without rewriting the visibility API",
+	(display) => {
+		const { tree, ref, styles, id } = fixture(
+			`<style>html{display:${display};width:300px}</style><p>text</p>`,
+		);
+		const result = resolveDocumentBlockWidths(tree);
+		expect(
+			result.formatting.nodes.find((node) => node.ref === ref("html"))?.kind,
+		).toBe("block");
+		expect(
+			result.widths.find((node) => node.ref === ref("html"))?.contentWidth,
+		).toBe(300);
+		expect(styles.get(id("html")).display).toBe(display);
+	},
+);
+
+it("excludes display:none subtrees, including unsupported descendants", () => {
+	const { tree, ref } = fixture(
+		'<div id="hidden" style="display:none"><input><span style="display:block;visibility:visible">hidden</span></div><p>visible</p>',
+	);
+	const result = buildFormattingTree(tree);
+	expect(result.nodes.some((node) => node.ref === ref("#hidden"))).toBe(false);
+	expect(textOrder(result)).toBe("visible");
+	expect(result.issues).toEqual({});
+});
+
+it("keeps display:none on the root empty rather than blockifying it into visibility", () => {
+	const { tree } = fixture(
+		"<style>html{display:none}</style><main>hidden</main>",
+	);
+	const result = resolveDocumentBlockWidths(tree);
+	expect(result.formatting.nodes).toHaveLength(1);
+	expect(result.widths).toHaveLength(0);
+});
+
+it("reports missing or multiple native document elements instead of inferring a browser root", () => {
+	const { tree, id } = fixture("<main></main>");
+	tree.remove(id("html"));
+	expect(buildFormattingTree(tree).issues["missing-document-element"]).toBe(1);
+	expect(() => resolveDocumentBlockWidths(tree)).toThrow("issue-free");
+	tree.append(tree.root, tree.createElement("div"));
+	tree.append(tree.root, tree.createElement("div"));
+	expect(buildFormattingTree(tree).issues["multiple-document-elements"]).toBe(
+		1,
+	);
+	expect(() => resolveDocumentBlockWidths(tree)).toThrow("issue-free");
+});
+
+it("retains hidden visibility boxes and visually present aria-hidden/inert content", () => {
+	const { tree, ref } = fixture(
+		'<main style="visibility:hidden"><span id="hidden">hidden</span><span id="visible" style="visibility:visible">visible</span></main><div id="aria" aria-hidden="true" inert>kept</div>',
+	);
+	const result = buildFormattingTree(tree);
+	expect(
+		result.nodes.find((node) => node.ref === ref("#hidden"))?.visible,
+	).toBe(false);
+	expect(
+		result.nodes.find((node) => node.ref === ref("#visible"))?.visible,
+	).toBe(true);
+	expect(result.nodes.find((node) => node.ref === ref("#aria"))?.visible).toBe(
+		true,
+	);
+	expect(textOrder(result)).toBe("hiddenvisiblekept");
+});
+
+it("handles ordinary breaks and the explicit unusual-element contents profile", () => {
+	const { tree, ref } = fixture(
+		'before<br id="break">after<img id="image" style="display:contents"><object id="object" style="display:contents"><p>omitted</p></object><button id="button" style="display:contents">kept</button>',
+	);
+	const result = buildFormattingTree(tree);
+	expect(result.nodes.find((node) => node.ref === ref("#break"))?.kind).toBe(
+		"break",
+	);
+	for (const target of ["#image", "#object", "#button"])
+		expect(result.nodes.some((node) => node.ref === ref(target))).toBe(false);
+	expect(textOrder(result)).toBe("beforeafterkept");
+	expect(result.issues).toEqual({});
+});
+
+it.each(["flex", "grid", "table", "inline-block", "inline-flex", "list-item"])(
+	"defers %s rather than normalizing an unsupported layout into fake blocks",
+	(display) => {
+		const { tree, ref } = fixture(
+			`<div id="outer" style="display:${display}"><span id="inside">inside</span></div>`,
+		);
+		const result = buildFormattingTree(tree);
+		expect(
+			result.nodes.find((node) => node.ref === ref("#outer")),
+		).toMatchObject({
+			kind: "deferred",
+			deferredReason: "display-layout-not-supported",
+			children: [],
+		});
+		expect(result.nodes.some((node) => node.ref === ref("#inside"))).toBe(
+			false,
+		);
+		expect(() => resolveDocumentBlockWidths(tree)).toThrow("issue-free");
+	},
+);
+
+it.each(["input", "button", "img", "details", "fieldset", "svg", "math"])(
+	"defers special %s element layout without pretending to know intrinsic size",
+	(tag) => {
+		const { tree, id } = fixture("<main></main>");
+		tree.append(id("main"), tree.createElement(tag, { id: "special" }));
+		const result = buildFormattingTree(tree);
+		expect(result.metrics.deferredSubtrees).toBe(1);
+		expect(result.issues["element-layout-not-supported"]).toBe(1);
+		expect(() => resolveDocumentBlockWidths(tree)).toThrow("issue-free");
+	},
+);
+
+it.each([
+	'style="position:absolute"',
+	'style="float:left"',
+	'style="filter:blur(1px)"',
+	'dir="rtl"',
+	'dir="auto"',
+	'align="center"',
+])(
+	"refuses document width inference with unresolved styling or hints: %s",
+	(attributes) => {
+		const { tree } = fixture(`<main ${attributes}>text</main>`);
+		expect(
+			Object.keys(buildFormattingTree(tree).issues).length,
+		).toBeGreaterThan(0);
+		expect(() => resolveDocumentBlockWidths(tree)).toThrow("issue-free");
+	},
+);
+
+it("keeps global CSS diagnostics conservative even for unsupported declarations on hidden content", () => {
+	const { tree } = fixture(
+		'<style>#hidden{filter:blur(1px);display:none}</style><div id="hidden">hidden</div><main>text</main>',
+	);
+	expect(
+		buildFormattingTree(tree).issues["css:unimplemented-css-property"],
+	).toBe(1);
+	expect(() => resolveDocumentBlockWidths(tree)).toThrow("issue-free");
+});
+
+it("derives block containing widths through anonymous wrappers and inline ancestors", () => {
+	const { tree, ref, styles } = fixture(
+		'<main style="width:50%;padding:10px;margin:auto"><span style="width:1px">before<div id="child" style="width:50%;margin:auto">inside</div>after</span></main>',
+	);
+	styles.setViewport(800, 600);
+	const result = resolveDocumentBlockWidths(tree);
+	verifyTree(result.formatting);
+	const main = result.widths.find((node) => node.ref === ref("main"));
+	const child = result.widths.find((node) => node.ref === ref("#child"));
+	expect(main).toMatchObject({
+		contentWidth: 400,
+		borderBoxWidth: 420,
+		borderX: 190,
+		contentX: 200,
+	});
+	expect(child).toMatchObject({
+		containingWidth: 400,
+		contentWidth: 200,
+		borderX: 300,
+		contentX: 300,
+		containingBlock: main?.id,
+	});
+	expect(
+		result.widths.filter((node) => !node.ref).map((node) => node.contentWidth),
+	).toEqual([400, 400]);
+});
+
+it("rebuilds for resize and display mutation while saved results stay immutable", () => {
+	const { tree, ref, id, styles } = fixture(
+		'<main style="width:50%;margin:auto"><div id="child" style="width:50%"></div></main>',
+	);
+	styles.setViewport(800, 600);
+	const saved = resolveDocumentBlockWidths(tree);
+	styles.setViewport(400, 600);
+	const resized = resolveDocumentBlockWidths(tree);
+	expect(
+		saved.widths.find((node) => node.ref === ref("#child"))?.contentWidth,
+	).toBe(200);
+	expect(
+		resized.widths.find((node) => node.ref === ref("#child"))?.contentWidth,
+	).toBe(100);
+	tree.setAttribute(id("#child"), "style", "display:inline");
+	expect(
+		resolveDocumentBlockWidths(tree).widths.some(
+			(node) => node.ref === ref("#child"),
+		),
+	).toBe(false);
+});
+
+it("bounds accumulated positions independently of each local width calculation", () => {
+	const { tree, id } = fixture(
+		'<main style="width:200px;margin-left:100px"><div id="child" style="width:1px;margin-left:16777216px"></div></main>',
+	);
+	expect(() => resolveDocumentBlockWidths(tree)).toThrow("length limit");
+	tree.setAttribute(id("#child"), "style", "width:1px");
+	expect(() => resolveDocumentBlockWidths(tree)).not.toThrow();
+});
+
+it("enforces owned-node, box, depth, text and work limits without mutating the DOM", () => {
+	const { tree } = fixture("<main><div>four</div></main>");
+	const revision = tree.revision;
+	for (const options of [
+		{ maxOwnedNodes: 1 },
+		{ maxBoxes: 2 },
+		{ maxDepth: 1 },
+		{ maxTextCodeUnits: 3 },
+		{ maxWork: 1 },
+	])
+		expect(() => buildFormattingTree(tree, options)).toThrow("limit");
+	expect(tree.revision).toBe(revision);
+	const count = tree.nodeCount;
+	tree.createElement("aside");
+	expect(() => buildFormattingTree(tree, { maxOwnedNodes: count })).toThrow(
+		"owned-node",
+	);
+	expect(() => buildFormattingTree(tree, { maxBoxes: 50_001 })).toThrow(
+		"Invalid",
+	);
+	expect(() => buildFormattingTree(tree, { maxBoxes: 0 })).toThrow("Invalid");
+	expect(() => buildFormattingTree(tree, { unknown: 1 } as never)).toThrow(
+		"Invalid",
+	);
+});
+
+it("bounds multiplicative inline fragment expansion", () => {
+	const { tree, id } = fixture('<main id="target"></main>');
+	let parent = id("#target");
+	for (let depth = 0; depth < 12; depth++) {
+		const child = tree.createElement("span");
+		tree.append(parent, child);
+		parent = child;
+	}
+	for (let index = 0; index < 12; index++)
+		tree.append(parent, tree.createElement("div"));
+	const revision = tree.revision;
+	expect(() => buildFormattingTree(tree, { maxBoxes: 100 })).toThrow(
+		"box limit",
+	);
+	expect(tree.revision).toBe(revision);
+});
+
+it("rejects closed owners without revoking already returned immutable data", () => {
+	const { tree } = fixture("<main>saved</main>");
+	const saved = buildFormattingTree(tree);
+	tree.close();
+	expect(() => buildFormattingTree(tree)).toThrow("closed");
+	expect(() => resolveDocumentBlockWidths(tree)).toThrow("closed");
+	expect(textOrder(saved)).toBe("saved");
+});
+
+it("preserves ownership, ordering and normalization across 60 generated mixed-flow documents", () => {
+	let seed = 20260902;
+	const next = (maximum: number) => {
+		seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+		return seed % maximum;
+	};
+	for (let trial = 0; trial < 60; trial++) {
+		const { tree, id, styles } = fixture("<main></main>");
+		const parents = [id("main")];
+		for (let index = 0; index < 45; index++) {
+			const parent = parents[next(parents.length)];
+			const display = ["block", "inline", "contents", "none"][next(4)];
+			const child = tree.createElement("span", { style: `display:${display}` });
+			tree.append(parent, child);
+			tree.append(child, tree.createText(`t${index};`));
+			parents.push(child);
+		}
+		const expected = [...tree.walk()]
+			.filter(
+				({ node }) => node.kind === "text" && styles.get(node.id).displayed,
+			)
+			.map(({ node }) => node.data)
+			.join("");
+		const formatting = buildFormattingTree(tree);
+		verifyTree(formatting);
+		expect(textOrder(formatting)).toBe(expected);
+		for (const width of resolveDocumentBlockWidths(tree).widths)
+			expect(
+				width.marginLeft + width.borderBoxWidth + width.marginRight,
+			).toBeCloseTo(width.containingWidth, 8);
+	}
+});

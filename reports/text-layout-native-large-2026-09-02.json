@@ -1,0 +1,97 @@
+{
+  "startedAt": "2026-09-02T21:41:11.329Z",
+  "finishedAt": "2026-09-02T21:41:11.683Z",
+  "scope": "native-synthetic-formatting-and-block-relative-text-layout",
+  "javascriptRuntime": false,
+  "network": false,
+  "pageRendering": false,
+  "profile": "large",
+  "rows": 5000,
+  "htmlCodeUnits": 373937,
+  "node": "v22.22.0",
+  "platform": "linux",
+  "arch": "x64",
+  "cpuModel": "AMD EPYC 9R45",
+  "completed": true,
+  "checks": [
+    {
+      "label": "Every input paragraph produces one measured line",
+      "passed": true
+    },
+    {
+      "label": "Inline size changes affect glyph advances in every paragraph",
+      "passed": true
+    },
+    {
+      "label": "No source glyph is lost or replaced",
+      "passed": true
+    },
+    {
+      "label": "Line baselines and extents include the mixed-size inline font",
+      "passed": true
+    },
+    {
+      "label": "No context exceeds its containing width",
+      "passed": true
+    },
+    {
+      "label": "The last source reference resolves to the original text node",
+      "passed": true
+    },
+    {
+      "label": "Closing the source revokes fresh layout",
+      "passed": true
+    },
+    {
+      "label": "The immutable retained result remains readable after close",
+      "passed": true
+    }
+  ],
+  "passed": 8,
+  "measurement": {
+    "parseMs": 96.484336,
+    "layoutMs": 245.444119,
+    "nativeNodes": 25005,
+    "formattingRecords": 25004,
+    "contexts": 5000,
+    "metrics": {
+      "tokens": 163890,
+      "lines": 5000,
+      "glyphs": 158890,
+      "unsupportedGlyphs": 0,
+      "work": 1321123
+    }
+  },
+  "samples": [
+    {
+      "stage": "start",
+      "rss": 54792192,
+      "heapUsed": 5067128,
+      "arrayBuffers": 68558
+    },
+    {
+      "stage": "parsed",
+      "rss": 99233792,
+      "heapUsed": 30858472,
+      "arrayBuffers": 18683
+    },
+    {
+      "stage": "retained-layout",
+      "rss": 163266560,
+      "heapUsed": 71820560,
+      "arrayBuffers": 18683
+    },
+    {
+      "stage": "closed-source-retained-layout",
+      "rss": 163266560,
+      "heapUsed": 77092392,
+      "arrayBuffers": 18683
+    }
+  ],
+  "elapsedMs": 372.590335,
+  "cpuMicroseconds": {
+    "user": 582619,
+    "system": 38712
+  },
+  "peakRssBytes": 165761024
+}

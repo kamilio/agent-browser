@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-import { readFile } from "node:fs/promises";
 import { parseInvocation } from "./cli-parser.js";
 import { BrowserCommandHost } from "./command-host.js";
 import { loadBrowserDocument } from "./document-loader.js";
 import { AgentBrowserError } from "./errors.js";
 import type { DocumentExtraction } from "./extraction.js";
+import type { GeneratedLocator } from "./locator-generation.js";
+import { saveCapture } from "./node-capture.js";
 import { approvePlayground, requestCommand } from "./node-command-client.js";
 import { listenCommandServer } from "./node-command-server.js";
+import { loadPlaygroundAssets } from "./node-playground-assets.js";
 import {
 	readCommandConnection,
 	writeCommandConnection,
@@ -14,7 +16,6 @@ import {
 import { SessionProcessHost } from "./node-session-host.js";
 import { runTerminal } from "./node-terminal.js";
 import { NodeNetworkTransport } from "./node-transport.js";
-import { playgroundCss, playgroundHtml } from "./playground-assets.js";
 import { BrowserSession } from "./session.js";
 import {
 	type SnapshotSearch,
@@ -120,14 +121,7 @@ async function main() {
 			resolveStopped = resolve;
 		});
 		const server = await listenCommandServer(commands, {
-			playground: {
-				html: playgroundHtml,
-				styles: playgroundCss,
-				script: await readFile(
-					new URL("./playground.js", import.meta.url),
-					"utf8",
-				),
-			},
+			playground: await loadPlaygroundAssets(),
 			onShutdown: async () => {
 				try {
 					await remove?.();
@@ -239,6 +233,30 @@ async function main() {
 		);
 		return;
 	}
+	if (invocation.command === "screenshot" || invocation.command === "pdf") {
+		const connection = await readCommandConnection(directory);
+		const capture = await saveCapture(invocation, async (captureArgv) => {
+			const result = await requestCommand(
+				connection,
+				{ argv: captureArgv, session: invocation.session },
+				Number(invocation.options.timeout ?? 30_000) + 5000,
+			);
+			if (!("data" in result))
+				throw new AgentBrowserError("closed", "Local API closed");
+			return result;
+		});
+		console.log(
+			invocation.options.json
+				? safeJson({
+						schemaVersion: 1,
+						command: invocation.command,
+						session: invocation.session,
+						data: capture,
+					})
+				: `Saved partial native ${invocation.command === "pdf" ? "PDF" : "PNG"}: ${capture.filename}${capture.remoteCleanupConfirmed ? "" : ` (remote cleanup unconfirmed for ${capture.artifact.id})`}`,
+		);
+		return;
+	}
 	const result = await requestCommand(
 		await readCommandConnection(directory),
 		{ argv, session: invocation.session },
@@ -270,6 +288,12 @@ async function main() {
 		(result.data as DocumentExtraction).format === "markdown"
 	)
 		console.log((result.data as DocumentExtraction).content);
+	else if (
+		invocation.command === "generate-locator" &&
+		invocation.options.raw &&
+		"data" in result
+	)
+		console.log((result.data as GeneratedLocator).locator);
 	else console.log(safeJson(result));
 }
 

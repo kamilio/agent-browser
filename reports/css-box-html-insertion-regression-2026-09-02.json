@@ -1,0 +1,57 @@
+{
+  "startedAt": "2026-09-02T20:53:03.805Z",
+  "finishedAt": "2026-09-02T20:53:03.977Z",
+  "scope": "existing-experimental-core-in-memory",
+  "completed": true,
+  "checks": [
+    {
+      "label": "Actual page code installs adjacent HTML and outerHTML event handlers",
+      "passed": true
+    },
+    {
+      "label": "Native activation creates parsed actionable controls without reparsing an existing input",
+      "passed": true
+    },
+    {
+      "label": "An interpreted outerHTML action replaces the card with fresh native identities",
+      "passed": true
+    },
+    {
+      "label": "Removed references become stale while retained guest capabilities remain readable",
+      "passed": true
+    },
+    {
+      "label": "Scripts parsed by both insertion paths remain inert",
+      "passed": true
+    },
+    {
+      "label": "Native click on the replacement runs its explicitly registered interpreted listener",
+      "passed": true
+    },
+    {
+      "label": "Interpreted table insertion uses a table context rather than generic markup wrapping",
+      "passed": true
+    },
+    {
+      "label": "Rejected fragment parsing preserves committed DOM and native allocation",
+      "passed": true
+    },
+    {
+      "label": "Detached outerHTML is a no-op even for unsupported parser input",
+      "passed": true
+    },
+    {
+      "label": "Fragment-parent insertion and replacement use body context",
+      "passed": true
+    },
+    {
+      "label": "Live HTML export includes the committed replacement and retains native input state separately",
+      "passed": true
+    },
+    {
+      "label": "Owner cleanup preserves independently owned native document actions and references",
+      "passed": true
+    }
+  ],
+  "passed": 12
+}

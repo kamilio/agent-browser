@@ -1,0 +1,251 @@
+{
+  "startedAt": "2026-09-03T02:02:04.978Z",
+  "finishedAt": "2026-09-03T02:02:05.137Z",
+  "fixture": "in-memory HTML through production PageScripts; no network or sockets",
+  "runtime": "explicit existing experimental SafeJS core, not released-SDK acceptance",
+  "passed": false,
+  "checks": [
+    {
+      "label": "Global and Window matchMedia have identical interpreted function identity",
+      "passed": false
+    },
+    {
+      "label": "Global and Window entry points read the same live query and viewport state",
+      "passed": true
+    },
+    {
+      "label": "Register real interpreted resize, change, legacy and once listeners",
+      "passed": true
+    },
+    {
+      "label": "Coalesced resize precedes the real change callback and mutates DOM",
+      "passed": true
+    },
+    {
+      "label": "Agent snapshot sees responsive guest content",
+      "passed": true
+    },
+    {
+      "label": "The same media environment selects the actual native CSS background",
+      "passed": true
+    },
+    {
+      "label": "Responsive DOM and CSS change actual native PNG output",
+      "passed": true
+    },
+    {
+      "label": "Saved event has native post-dispatch state and immutable change data",
+      "passed": true
+    },
+    {
+      "label": "Same matching result produces resize but not duplicate change",
+      "passed": true
+    },
+    {
+      "label": "Legacy removal and onchange replacement use the same owned event engine",
+      "passed": true
+    },
+    {
+      "label": "Restored viewport triggers replacement once without removed or once listeners",
+      "passed": true
+    },
+    {
+      "label": "Restoring viewport and content restores the identical native PNG",
+      "passed": true
+    },
+    {
+      "label": "Invalid queries and readonly values are bounded capabilities",
+      "passed": true
+    },
+    {
+      "label": "Closing the page cancels queued media work and releases list records",
+      "passed": true
+    }
+  ],
+  "initialState": {
+    "engine": "poe-safe-js",
+    "partial": true,
+    "ok": true,
+    "value": [
+      false,
+      false,
+      false,
+      "(max-width: 3em)",
+      80,
+      40
+    ],
+    "metrics": {
+      "steps": 52,
+      "peakCallDepth": 1,
+      "peakDataSize": 1654,
+      "consoleCalls": 0,
+      "performance": {
+        "partial": true,
+        "precisionMs": 0.1,
+        "reads": 0,
+        "lastTimestamp": 0,
+        "closed": false
+      },
+      "timers": {
+        "partial": true,
+        "active": 0,
+        "queued": 0,
+        "pendingCallbacks": 0,
+        "scheduled": 0,
+        "fired": 0,
+        "running": false,
+        "closed": false,
+        "limits": {
+          "maxActive": 128,
+          "maxScheduled": 4096,
+          "maxCallbacks": 1024,
+          "maxArguments": 32
+        }
+      },
+      "animationFrames": {
+        "partial": true,
+        "profile": "software-frame-opportunities",
+        "intervalMs": 16.666666666666668,
+        "active": 0,
+        "pendingCallbacks": 0,
+        "scheduled": 0,
+        "fired": 0,
+        "frames": 0,
+        "running": false,
+        "armed": false,
+        "lastTimestamp": null,
+        "closed": false,
+        "limits": {
+          "maxActive": 128,
+          "maxScheduled": 4096,
+          "maxCallbacks": 1024,
+          "maxPendingCallbacks": 128
+        }
+      },
+      "media": {
+        "partial": true,
+        "lists": 2,
+        "retainedCodeUnits": 39,
+        "invalidOrUnsupportedQueries": 0,
+        "eventsDelivered": 0,
+        "turns": 0,
+        "queued": false,
+        "running": false,
+        "closed": false,
+        "limits": {
+          "maxLists": 256,
+          "maxQueryCodeUnits": 4096,
+          "maxRetainedCodeUnits": 65536,
+          "maxEvents": 4096,
+          "maxTurns": 4096
+        }
+      }
+    }
+  },
+  "artifacts": {
+    "wide": {
+      "bytes": 380,
+      "sha256": "2fd17cce4b70eb6fbae0f652dcdb9b8c8374bcb877c969dc83199c372f2130cd"
+    },
+    "narrow": {
+      "bytes": 416,
+      "sha256": "fb37d440cd98521baa75de00496d9d64139dd69aa8c7f31acaa29b447689d250"
+    }
+  },
+  "page": {
+    "steps": 462,
+    "peakCallDepth": 2,
+    "peakDataSize": 4817,
+    "consoleCalls": 0,
+    "performance": {
+      "partial": true,
+      "precisionMs": 0.1,
+      "reads": 0,
+      "lastTimestamp": 0,
+      "closed": true
+    },
+    "timers": {
+      "partial": true,
+      "active": 0,
+      "queued": 0,
+      "pendingCallbacks": 0,
+      "scheduled": 0,
+      "fired": 0,
+      "running": false,
+      "closed": true,
+      "limits": {
+        "maxActive": 128,
+        "maxScheduled": 4096,
+        "maxCallbacks": 1024,
+        "maxArguments": 32
+      }
+    },
+    "animationFrames": {
+      "partial": true,
+      "profile": "software-frame-opportunities",
+      "intervalMs": 16.666666666666668,
+      "active": 0,
+      "pendingCallbacks": 0,
+      "scheduled": 0,
+      "fired": 0,
+      "frames": 0,
+      "running": false,
+      "armed": false,
+      "lastTimestamp": null,
+      "closed": true,
+      "limits": {
+        "maxActive": 128,
+        "maxScheduled": 4096,
+        "maxCallbacks": 1024,
+        "maxPendingCallbacks": 128
+      }
+    },
+    "media": {
+      "partial": true,
+      "lists": 0,
+      "retainedCodeUnits": 0,
+      "invalidOrUnsupportedQueries": 1,
+      "eventsDelivered": 7,
+      "turns": 3,
+      "queued": false,
+      "running": false,
+      "closed": true,
+      "limits": {
+        "maxLists": 256,
+        "maxQueryCodeUnits": 4096,
+        "maxRetainedCodeUnits": 65536,
+        "maxEvents": 4096,
+        "maxTurns": 4096
+      }
+    },
+    "initialized": true,
+    "evaluations": 8,
+    "pendingCallbacks": 0,
+    "active": false,
+    "closed": true,
+    "dom": {
+      "classLists": {
+        "lists": 0,
+        "cachedCodeUnits": 0,
+        "refreshes": 0,
+        "closed": true
+      },
+      "geometry": {
+        "created": 0,
+        "closed": true
+      },
+      "computedStyles": {
+        "objects": 0,
+        "maxObjects": 4096,
+        "closed": true
+      },
+      "elementSizes": {
+        "revision": -1,
+        "retained": 0,
+        "work": 0,
+        "measurements": 0,
+        "closed": true
+      }
+    }
+  }
+}

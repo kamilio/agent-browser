@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DocumentTree } from "./document.js";
+import { PageClock } from "./page-performance.js";
 import { DocumentInteractions } from "./interactions.js";
 import {
 	type PageBindingContext,
 	type PageBindingLifecycle,
 	PageBindings,
+	pageBindingGlobalNames,
 } from "./page-bindings.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
 
@@ -78,6 +80,73 @@ afterEach(() => {
 });
 
 describe("runtime-independent page capability setup", () => {
+	it("shares the page clock and frame functions between globals and Window", async () => {
+		vi.useFakeTimers();
+		const test = fixture();
+		let reading = 10;
+		const clock = new PageClock({ timeOrigin: 1000, now: () => reading });
+		reading = 30;
+		const bindings = new PageBindings(
+			test.page,
+			test.context,
+			test.lifecycle,
+			{},
+			clock,
+		);
+		const window = bindings.window as {
+			performance: { now(): number; timeOrigin: number };
+			requestAnimationFrame(callback: unknown): number;
+			cancelAnimationFrame(handle: unknown): void;
+		};
+		expect(bindings.globals.performance).toBe(window.performance);
+		expect(window.performance).toBe(bindings.performance);
+		expect(window.performance.now()).toBe(20);
+		expect(window.performance.timeOrigin).toBe(1010);
+		for (const name of [
+			"requestAnimationFrame",
+			"cancelAnimationFrame",
+		] as const) {
+			expect(bindings.globals[name]).toBe(window[name]);
+			expect(pageBindingGlobalNames(test.page.document)).toContain(name);
+		}
+		expect(pageBindingGlobalNames(test.page.document)).toContain("performance");
+		const callback = vi.fn();
+		window.requestAnimationFrame(callback);
+		reading = 47;
+		await vi.advanceTimersByTimeAsync(17);
+		expect(callback).toHaveBeenCalledWith(37);
+		window.requestAnimationFrame(callback);
+		test.page.document.close();
+		expect(bindings.animationFrames.metrics()).toMatchObject({
+			closed: true,
+			active: 0,
+			armed: false,
+		});
+		expect(clock.metrics().closed).toBe(true);
+		expect(() => window.performance).toThrow(/closed/);
+		expect(() => window.requestAnimationFrame(callback)).toThrow(/closed/);
+		expect(() => window.cancelAnimationFrame(1)).toThrow(/closed/);
+	});
+	it("registers global and window computed styles with owned element branding", () => {
+		const test = fixture();
+		const bindings = new PageBindings(test.page, test.context, test.lifecycle);
+		const document = bindings.dom.document as {
+			createElement(name: string): object;
+		};
+		const element = document.createElement("div");
+		const window = bindings.window as {
+			getComputedStyle(element: unknown): { width: string };
+		};
+		expect(pageBindingGlobalNames(test.page.document)).toContain(
+			"getComputedStyle",
+		);
+		expect(bindings.globals.getComputedStyle).toBe(window.getComputedStyle);
+		expect(window.getComputedStyle(element).width).toBe("");
+		expect(() => window.getComputedStyle({})).toThrow();
+		bindings.close();
+		expect(() => window.getComputedStyle(element)).toThrow(/closed/);
+	});
+
 	it("constructs live aliases with no Budget, realm, evaluator or error constructor", () => {
 		const test = fixture();
 		expect(Object.keys(test.context).sort()).toEqual([
@@ -194,7 +263,9 @@ describe("runtime-independent page capability setup", () => {
 			() => new PageBindings(test.page, test.context, test.lifecycle),
 		).toThrow("registration failed");
 		expect(test.objects.length).toBeGreaterThan(0);
-		expect(() => (test.objects[0] as { href: string }).href).toThrow("closed");
+		expect(
+			() => (test.objects[0] as { timeOrigin: number }).timeOrigin,
+		).toThrow("closed");
 		expect(test.page.interactions.events.metrics().closed).toBe(false);
 	});
 
@@ -208,7 +279,9 @@ describe("runtime-independent page capability setup", () => {
 		expect(
 			() => new PageBindings(test.page, test.context, test.lifecycle),
 		).toThrow("host limit");
-		expect(() => (test.objects[0] as { href: string }).href).toThrow("closed");
+		expect(
+			() => (test.objects[0] as { timeOrigin: number }).timeOrigin,
+		).toThrow("closed");
 	});
 
 	it("rejects a closed lifecycle before constructing any capability", () => {

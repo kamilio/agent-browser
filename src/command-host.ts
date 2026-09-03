@@ -1,13 +1,47 @@
 import { type WaitingAction, runWhenActionable } from "./action-wait.js";
+import { imageMediaTypes } from "./image-decoder.js";
+import {
+	CaptureArtifacts,
+	captureArtifactLimits,
+} from "./capture-artifacts.js";
 import { type Invocation, parseInvocation } from "./cli-parser.js";
 import { commands } from "./commands.js";
+import { cssBoxProperties } from "./css-box.js";
+import {
+	computedStyleLimits,
+	computedStyleProperties,
+} from "./computed-styles.js";
+import { cssPaintProperties } from "./css-paint.js";
+import { cssTextProperties } from "./css-text.js";
+import { documentGeometry } from "./document-geometry.js";
+import { documentImages, documentImageLimits } from "./document-images.js";
+import { rasterizeDocument } from "./document-raster.js";
+import { renderDocumentPdf, documentPdfLimits } from "./document-pdf.js";
 import { inspectDom } from "./dom-inspection.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	documentElementSizes,
+	elementSizeLimits,
+	elementSizeProperties,
+} from "./element-sizes.js";
 import { type ExtractionOptions, extractDocument } from "./extraction.js";
 import { serializeHtml } from "./html-serialization.js";
+import {
+	generateLocator,
+	locatorGenerationLimits,
+} from "./locator-generation.js";
 import { readPageConsole } from "./page-console.js";
+import {
+	animationFrameLimits,
+	animationFrameIntervalMs,
+} from "./page-animation-frames.js";
+import { pageClockPrecisionMs } from "./page-performance.js";
+import { encodePng } from "./png.js";
 import type { ScriptEvaluation } from "./safejs.js";
 import { scriptMutationLimits } from "./script-mutations.js";
+import { characterDataCapabilities } from "./script-character-data.js";
+import { nodeRelationCapabilities } from "./node-relations.js";
+import { scriptGeometryLimits } from "./script-geometry.js";
 import { BrowserSession, type SessionPage } from "./session.js";
 import { findInDocument } from "./snapshot-search.js";
 import {
@@ -85,18 +119,27 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 	fill: ["submit"],
 	type: [],
 	press: [],
-	resize: [],
+	resize: ["expected-tab", "expected-viewport"],
+	viewport: [],
 	styles: [],
+	geometry: [],
+	screenshot: ["hires"],
+	pdf: [],
+	"artifact-list": [],
+	"artifact-read": ["offset", "length"],
+	"artifact-delete": [],
 	select: [],
 	check: [],
 	uncheck: [],
 	snapshot: ["depth", "diff", "max-bytes", "observe"],
 	find: ["regex", "max-results", "context", "max-bytes"],
+	"generate-locator": ["raw"],
 	text: [],
 	html: ["max-code-units"],
 	dom: ["depth", "max-nodes", "max-code-units"],
 	extract: ["format", "max-bytes", "max-nodes", "depth"],
 	requests: [],
+	images: [],
 	request: [],
 	route: ["status", "body", "content-type", "header", "headers"],
 	"route-list": [],
@@ -140,6 +183,7 @@ function abortable<Result>(
 }
 
 export class BrowserCommandHost {
+	private readonly artifacts = new CaptureArtifacts();
 	private sessions = new Map<string, SessionEntry>();
 	private snapshots = new Map<
 		string,
@@ -325,6 +369,7 @@ export class BrowserCommandHost {
 			locators: {
 				partial: true,
 				methods: [
+					"locator",
 					"getByRole",
 					"getByTestId",
 					"getByText",
@@ -368,6 +413,7 @@ export class BrowserCommandHost {
 					lookarounds: false,
 				},
 			},
+			locatorGeneration: { partial: true, ...locatorGenerationLimits },
 			pageEvaluation: !!this.evaluatePage,
 			pageFetch: {
 				enabled: this.pageFetch,
@@ -405,15 +451,155 @@ export class BrowserCommandHost {
 				properties: ["display", "visibility"],
 				layout: false,
 			},
+			cssBox: {
+				partial: true,
+				properties: cssBoxProperties,
+				usedGeometry: false,
+				fontRelativeLengths: false,
+			},
 			browserEngineDependency: false,
+			computedStyles: {
+				partial: true,
+				methods: ["getComputedStyle", "window.getComputedStyle"],
+				properties: computedStyleProperties,
+				live: true,
+				readonly: true,
+				usedValues: "normal-flow-block-and-inline",
+				pseudoElements: false,
+				customProperties: false,
+				...computedStyleLimits,
+			},
+			clientGeometry: {
+				partial: true,
+				profile: "normal-flow-client-rects",
+				methods: ["getClientRects", "getBoundingClientRect"],
+				command: "geometry",
+				scroll: false,
+				domRectConstructors: false,
+				blockInInline: false,
+				inlineEdges: "ltr-sliced-margin-padding",
+				...scriptGeometryLimits,
+			},
+			characterData: characterDataCapabilities,
+			nodeRelations: nodeRelationCapabilities,
+			elementSizes: {
+				partial: true,
+				properties: elementSizeProperties,
+				profile: "normal-flow-no-quirks-no-scrollbars",
+				readonly: true,
+				offsetPositions: false,
+				scrollSizes: false,
+				...elementSizeLimits,
+			},
+			animationFrames: {
+				partial: true,
+				profile: "software-frame-opportunities",
+				methods: ["requestAnimationFrame", "cancelAnimationFrame"],
+				intervalMs: animationFrameIntervalMs,
+				automaticPaint: false,
+				...animationFrameLimits,
+			},
+			performance: {
+				partial: true,
+				methods: ["now", "toJSON"],
+				properties: ["timeOrigin"],
+				precisionMs: pageClockPrecisionMs,
+				timeline: false,
+			},
+			screenshots: {
+				compression: "bounded-fixed-huffman-or-stored",
+				partial: true,
+				format: "image/png",
+				profile: "normal-flow-solid-colors",
+				deviceScaleFactor: 1,
+				viewport: true,
+				element: "normal-flow-block-or-wrapped-inline",
+				transport: "artifact-chunks",
+				filename: "node-cli-client-only",
+				...captureArtifactLimits,
+			},
+			pdf: {
+				partial: true,
+				profile: "normal-flow-paginated-raster-text",
+				mediaType: "application/pdf",
+				searchableText: true,
+				printMedia: false,
+				pagination: "viewport-height-with-uncut-text",
+				transport: "artifact-chunks",
+				...documentPdfLimits,
+			},
+			cssPaint: {
+				partial: true,
+				properties: cssPaintProperties,
+				backgroundShorthand: "solid-color-or-none",
+				nonColorBackgroundComponents:
+					"initial-values-and-css-wide-keywords-only",
+				colorSpace: "srgb-8bit",
+			},
+			cssText: {
+				partial: true,
+				properties: cssTextProperties,
+				font: "Agent Mono",
+				pageGeometry: false,
+			},
+			mediaQueries: {
+				partial: true,
+				matchMedia: true,
+				changeEvents: true,
+				resizeEvents: true,
+				windowDimensions: true,
+				profile: "bounded-viewport-ranges-and-conditions",
+				features: [
+					"width",
+					"height",
+					"orientation",
+					"aspect-ratio",
+					"resolution",
+				],
+				compiledPageQueries: true,
+				globalDimensionAccessors: false,
+				functionAliasIdentity: "not-guaranteed-by-selected-runtime",
+			},
+			imageResources: {
+				partial: true,
+				formats: imageMediaTypes,
+				jpeg: {
+					precision: 8,
+					frames: ["baseline", "extended-sequential", "progressive"],
+					entropy: "huffman",
+					colorSpaces: ["grayscale", "rgb", "ycbcr"],
+					chromaUpsampling: "centered-bilinear",
+					exifOrientation: false,
+				},
+				inspection: true,
+				pageState: true,
+				decode: true,
+				events: true,
+				sharedRequests: true,
+				limits: documentImageLimits,
+				layout: true,
+				painting: true,
+				layoutProfile: "loaded-images-normal-flow-inline-and-block",
+				scaling: "nearest-neighbor",
+				responsiveSources: false,
+				corsAttributes: false,
+				colorManagement: false,
+			},
+			viewport: {
+				partial: true,
+				inspection: true,
+				expectedTabGuard: true,
+				expectedViewportGuard: true,
+				deviceEmulation: false,
+			},
 			fullPlaywrightCliSuperset: false,
 			limitations: [
 				"HTML support depends on the loader; the built-in HTML parser is partial",
 				this.websiteScripts
-					? "Classic page scripts are partial; modules, many DOM APIs and CSS layout remain unimplemented"
-					: "Automatic website JavaScript and CSS layout are disabled",
+					? "Classic page scripts and normal-flow CSS are partial; modules, many DOM APIs and general layout remain unimplemented"
+					: "Automatic website JavaScript is disabled; CSS layout supports only a restricted normal-flow profile",
 				"Cross-document back/forward, submission and non-self navigation targets are incomplete",
-				"Disk profile persistence, artifact files and full locator/action semantics are incomplete",
+				"Disk profile persistence and full locator/action semantics are incomplete; artifact file writes currently cover native PNG only",
 			],
 			commands: Array.from(commands.keys(), (name) => ({
 				name,
@@ -434,6 +620,7 @@ export class BrowserCommandHost {
 			pendingCommands: this.pending,
 			executedCommands: this.executed,
 			cachedSnapshotBytes: this.cachedBytes,
+			captureArtifacts: this.artifacts.metrics(),
 			closed: this.closed,
 		});
 	}
@@ -602,6 +789,7 @@ export class BrowserCommandHost {
 
 	private closeEntry(entry: SessionEntry) {
 		this.sessions.delete(entry.name);
+		this.artifacts.clear(entry.name);
 		for (const controller of entry.controllers)
 			controller.abort(
 				new AgentBrowserError("closed", "Named session is closed"),
@@ -642,6 +830,11 @@ export class BrowserCommandHost {
 	}
 
 	validateInvocation(invocation: Invocation) {
+		if (invocation.options.raw && invocation.options.json)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Choose either raw or JSON output",
+			);
 		if (invocation.command === "eval" && invocation.arguments[1] !== undefined)
 			throw new AgentBrowserError(
 				"unsupported",
@@ -724,6 +917,61 @@ export class BrowserCommandHost {
 		const browser = entry.browser;
 		const args = invocation.arguments;
 		const options = invocation.options;
+		if (invocation.command === "artifact-list")
+			return this.artifacts.list(entry.name);
+		if (invocation.command === "artifact-read")
+			return this.artifacts.read(
+				entry.name,
+				args[0],
+				Number(options.offset ?? 0),
+				Number(options.length ?? captureArtifactLimits.maxChunkBytes),
+			);
+		if (invocation.command === "artifact-delete") {
+			this.artifacts.delete(entry.name, args[0]);
+			return { deleted: true };
+		}
+		if (invocation.command === "pdf") {
+			this.artifacts.assertCapacity();
+			const page = browser.page(this.activeTab(browser));
+			const pdf = renderDocumentPdf(page.document);
+			return this.artifacts.addPdf(entry.name, pdf.bytes, {
+				mediaType: "application/pdf",
+				partial: true,
+				profile: "normal-flow-paginated-raster-text",
+				document: page.document.reference(page.document.root),
+				revision: page.document.revision,
+				width: pdf.width,
+				height: pdf.height,
+				pages: pdf.metrics.pages,
+				clips: pdf.clips,
+				metrics: pdf.metrics,
+			});
+		}
+		if (invocation.command === "screenshot") {
+			this.artifacts.assertCapacity();
+			const tab = this.activeTab(browser);
+			const page = browser.page(tab);
+			const target = args.length ? this.target(browser, tab, args[0]) : null;
+			const capture = rasterizeDocument(
+				page.document,
+				target ? { element: target } : {},
+			);
+			const bytes = encodePng(capture.image);
+			return this.artifacts.add(entry.name, bytes, {
+				mediaType: "image/png",
+				partial: true,
+				profile: "normal-flow-solid-colors",
+				document: page.document.reference(page.document.root),
+				revision: page.document.revision,
+				target,
+				width: capture.image.width,
+				height: capture.image.height,
+				deviceScaleFactor: 1,
+				hires: options.hires === true,
+				clip: capture.clip,
+				paint: capture.metrics,
+			});
+		}
 		if (invocation.command === "route-list") return browser.routes.list();
 		if (invocation.command === "unroute")
 			return { removed: browser.routes.remove(args[0]) };
@@ -812,12 +1060,52 @@ export class BrowserCommandHost {
 		}
 		if (invocation.command === "metrics")
 			return { host: this.metrics(), session: browser.metrics() };
-		if (invocation.command === "resize")
-			return browser.resize(
-				this.activeTab(browser),
-				Number(args[0]),
-				Number(args[1]),
-			);
+		if (invocation.command === "viewport")
+			return browser.viewport(this.activeTab(browser));
+		if (invocation.command === "resize") {
+			const tab = this.activeTab(browser);
+			if (
+				options["expected-tab"] !== undefined &&
+				options["expected-tab"] !== tab
+			)
+				throw new AgentBrowserError(
+					"stale-reference",
+					"Selected tab changed before viewport resize",
+				);
+			if (
+				options["expected-viewport"] !== undefined &&
+				options["expected-viewport"] !== browser.viewport(tab).key
+			)
+				throw new AgentBrowserError(
+					"stale-reference",
+					"Selected tab or session changed before viewport resize",
+				);
+			return browser.resize(tab, Number(args[0]), Number(args[1]));
+		}
+		if (invocation.command === "geometry") {
+			const tab = this.activeTab(browser);
+			const page = browser.page(tab);
+			const reference = this.target(browser, tab, args[0]);
+			const id = page.document.resolve(reference).id;
+			const geometry = documentGeometry(page.document);
+			const rects = geometry.getClientRects(id);
+			if (rects.length > scriptGeometryLimits.maxListLength)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Geometry command rectangle limit exceeded",
+				);
+			return {
+				reference,
+				revision: page.document.revision,
+				partial: true,
+				profile: "normal-flow-client-rects",
+				viewport: page.styles.viewport,
+				scroll: { x: 0, y: 0 },
+				bounds: geometry.getBoundingClientRect(id),
+				sizes: documentElementSizes(page.document).get(id),
+				rects,
+			};
+		}
 		if (invocation.command === "styles") {
 			const tab = this.activeTab(browser);
 			const page = browser.page(tab);
@@ -826,6 +1114,9 @@ export class BrowserCommandHost {
 			return {
 				reference,
 				...page.styles.get(page.document.resolve(reference).id),
+				box: page.styles.box(page.document.resolve(reference).id),
+				text: page.styles.text(page.document.resolve(reference).id),
+				paint: page.styles.paint(page.document.resolve(reference).id),
 				partial: true,
 				layout: false,
 			};
@@ -862,7 +1153,13 @@ export class BrowserCommandHost {
 			return { cleared: true };
 		}
 		const tabId = this.activeTab(browser);
+		if (invocation.command === "generate-locator") {
+			const page = browser.page(tabId);
+			return generateLocator(page.document, page.queries, args[0]);
+		}
 		if (invocation.command === "requests") return browser.requests(tabId);
+		if (invocation.command === "images")
+			return documentImages(browser.page(tabId).document).inspect();
 		if (invocation.command === "request") {
 			if (!/^(0|[1-9]\d*)$/.test(args[0]))
 				throw new AgentBrowserError("invalid-input", "Invalid request index");

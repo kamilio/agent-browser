@@ -16,7 +16,14 @@ export interface CommandServerOptions {
 	maxResponseBytes?: number;
 	bodyTimeoutMs?: number;
 	onShutdown?: () => void | Promise<void>;
-	playground?: { html: string; script: string; styles: string };
+	playground?: {
+		html: string;
+		script: string;
+		styles: string;
+		captureClient?: string;
+		captureArtifacts?: string;
+		errors?: string;
+	};
 }
 
 function headerCount(request: IncomingMessage, name: string) {
@@ -128,6 +135,15 @@ export async function listenCommandServer(
 			content: options.playground.styles,
 			type: "text/css; charset=utf-8",
 		});
+		for (const [key, path] of [
+			["captureClient", "/capture-client.js"],
+			["captureArtifacts", "/capture-artifacts.js"],
+			["errors", "/errors.js"],
+		] as const) {
+			const content = options.playground[key];
+			if (content !== undefined)
+				assets.set(path, { content, type: "text/javascript; charset=utf-8" });
+		}
 	}
 	let origin = "";
 	let closing: Promise<void> | undefined;
@@ -227,7 +243,7 @@ export async function listenCommandServer(
 				"referrer-policy": "no-referrer",
 				"cross-origin-resource-policy": "same-origin",
 				"content-security-policy":
-					"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+					"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src blob:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
 				connection: "close",
 			});
 			response.end(request.method === "HEAD" ? undefined : asset.content);

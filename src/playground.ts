@@ -1,3 +1,4 @@
+import { capturePng, capturePdf } from "./capture-client.js";
 import type { CommandResult } from "./command-host.js";
 import type { DomInspection } from "./dom-inspection.js";
 import type { PageConsoleSnapshot } from "./page-console.js";
@@ -70,6 +71,54 @@ export function playgroundUrl(value: string) {
 			"Only HTTP(S) URLs without embedded credentials are supported",
 		);
 	return url.href;
+}
+
+export function playgroundViewport(width: string, height: string) {
+	const values = [width, height].map((value) => {
+		const normalized = value.trim();
+		if (!/^\d{1,5}$/.test(normalized))
+			throw new Error(
+				"Viewport dimensions must be whole CSS pixels from 1 to 16384",
+			);
+		const number = Number(normalized);
+		if (number < 1 || number > 16384)
+			throw new Error(
+				"Viewport dimensions must be whole CSS pixels from 1 to 16384",
+			);
+		return number;
+	});
+	return { width: values[0], height: values[1] };
+}
+
+export function playgroundViewportResponse(data: unknown, tabId: string) {
+	if (!data || typeof data !== "object")
+		throw new Error("Invalid viewport response");
+	const value = data as Record<string, unknown>;
+	if (value.tabId !== tabId)
+		throw new Error("Selected tab changed during viewport inspection");
+	if (
+		typeof value.key !== "string" ||
+		!/^[A-Za-z0-9:-]{1,128}$/.test(value.key)
+	)
+		throw new Error("Invalid viewport response");
+	if (
+		![value.width, value.height].every(
+			(size) =>
+				typeof size === "number" &&
+				Number.isSafeInteger(size) &&
+				size >= 1 &&
+				size <= 16384,
+		) ||
+		value.deviceScaleFactor !== 1 ||
+		value.profile !== "logical-css-viewport"
+	)
+		throw new Error("Invalid viewport response");
+	return {
+		tabId,
+		key: value.key,
+		width: value.width as number,
+		height: value.height as number,
+	};
 }
 
 export function playgroundText(snapshot: SemanticSnapshot) {
@@ -169,6 +218,16 @@ function startPlayground() {
 	let domTarget = "";
 	let consoleEnabled = false;
 	let inspectedDocument: string | null = null;
+	let captureUrl: string | null = null;
+	let captureController: AbortController | null = null;
+	let viewport: {
+		tabId: string;
+		key: string;
+		width: number;
+		height: number;
+	} | null = null;
+	let viewportSelection = "";
+	let viewportDraft = false;
 	const requests = new Set<AbortController>();
 	const activity: string[] = [];
 	const actionButtons = [
@@ -185,6 +244,9 @@ function startPlayground() {
 		"click",
 		"fill",
 		"download-html",
+		"download-png",
+		"download-pdf",
+		"capture-render",
 		"dom-inspect",
 		"dom-root",
 	];
@@ -193,6 +255,21 @@ function startPlayground() {
 		for (const id of actionButtons) button(id).disabled = !token || working;
 		for (const id of documentButtons)
 			button(id).disabled = !token || working || !hasDocument;
+		input("capture-target").disabled = !token || working || !hasDocument;
+		for (const id of [
+			"viewport-width",
+			"viewport-height",
+			"viewport-preset",
+			"viewport-apply",
+			"viewport-swap",
+			"viewport-restore",
+		])
+			(element(id) as HTMLInputElement).disabled =
+				!token ||
+				working ||
+				!exists ||
+				!viewport ||
+				viewportSelection !== `${selectedSession}:${viewport.tabId}`;
 		button("close-tab").disabled = !token || working || !exists;
 		(element("tabs") as HTMLSelectElement).disabled =
 			!token || working || !exists;
@@ -237,6 +314,7 @@ function startPlayground() {
 
 	function invalidateReads() {
 		generation++;
+		clearCapture();
 		for (const controller of requests) controller.abort();
 		refreshing = false;
 		text("console-output", "Waiting for the selected document…");
@@ -244,9 +322,39 @@ function startPlayground() {
 		text("network-output", "Waiting for the selected tab…");
 		text("dom-output", "Waiting for the selected document…");
 	}
+	function clearCapture() {
+		captureController?.abort();
+		captureController = null;
+		if (captureUrl) URL.revokeObjectURL(captureUrl);
+		captureUrl = null;
+		element("render-image").removeAttribute("src");
+		element("render-image").hidden = true;
+		text(
+			"render-state",
+			"No capture. Render explicitly; unsupported CSS fails closed.",
+		);
+	}
+
+	function resetViewport() {
+		viewport = null;
+		viewportSelection = "";
+		viewportDraft = false;
+		input("viewport-width").value = "";
+		input("viewport-height").value = "";
+		(element("viewport-preset") as HTMLSelectElement).value = "";
+		text("viewport-state", "No confirmed viewport.");
+	}
+	function showViewportDraft() {
+		if (!viewport) return;
+		input("viewport-width").value = String(viewport.width);
+		input("viewport-height").value = String(viewport.height);
+		(element("viewport-preset") as HTMLSelectElement).value = "";
+		viewportDraft = false;
+	}
 
 	function disconnect() {
 		invalidateReads();
+		resetViewport();
 		token = "";
 		pairing = false;
 		working = false;
@@ -257,6 +365,7 @@ function startPlayground() {
 		inspectedDocument = null;
 		domTarget = "";
 		input("dom-target").value = "";
+		input("capture-target").value = "";
 		element("pairing").hidden = true;
 		text(
 			"text-output",
@@ -368,10 +477,50 @@ function startPlayground() {
 			exists = !!current?.tabs.length;
 			const selected = current?.tabs.find((tab) => tab.selected);
 			hasDocument = !!selected?.documentRef;
+			const selection = selected ? `${selectedSession}:${selected.id}` : "";
+			if (selection !== viewportSelection) {
+				resetViewport();
+				viewportSelection = selection;
+			}
+			if (selected) {
+				try {
+					const response = await command(["viewport"]);
+					if (generation !== ownGeneration) return;
+					const confirmed = playgroundViewportResponse(
+						response.data,
+						selected.id,
+					);
+					if (
+						viewport &&
+						(viewport.width !== confirmed.width ||
+							viewport.height !== confirmed.height ||
+							viewport.key !== confirmed.key)
+					)
+						clearCapture();
+					if (viewport && viewport.key !== confirmed.key) viewportDraft = false;
+					viewport = confirmed;
+					if (!viewportDraft) showViewportDraft();
+					text(
+						"viewport-state",
+						`Confirmed: ${confirmed.width} × ${confirmed.height} CSS px · scale 1 · not device emulation`,
+					);
+				} catch (error) {
+					if (generation !== ownGeneration) return;
+					viewport = null;
+					text(
+						"viewport-state",
+						error instanceof Error
+							? error.message
+							: "Viewport inspection failed",
+					);
+				}
+			}
 			if (inspectedDocument !== (selected?.documentRef ?? null)) {
+				clearCapture();
 				inspectedDocument = selected?.documentRef ?? null;
 				domTarget = "";
 				input("dom-target").value = "";
+				input("capture-target").value = "";
 				text("dom-output", "Waiting for this document’s DOM…");
 				text("console-output", "Waiting for this document’s console…");
 				text("html-output", "Waiting for this document’s HTML…");
@@ -517,7 +666,7 @@ function startPlayground() {
 		}
 	}
 
-	async function run(argv: string[]) {
+	async function run(argv: string[], onSuccess?: () => void) {
 		if (!token || working) return;
 		invalidateReads();
 		working = true;
@@ -529,7 +678,9 @@ function startPlayground() {
 		try {
 			const result = await command(argv);
 			if (generation !== ownGeneration) return;
+			if (selectedSession !== result.session) resetViewport();
 			selectedSession = result.session;
+			onSuccess?.();
 			input("session-name").value = selectedSession;
 			displayJson("command-output", result);
 			element("command-output").hidden = false;
@@ -548,6 +699,143 @@ function startPlayground() {
 		}
 	}
 
+	async function renderCapture(download: boolean) {
+		if (!token || working || !hasDocument) return;
+		const target = input("capture-target").value.trim() || undefined;
+		invalidateReads();
+		working = true;
+		updateControls();
+		element("error").hidden = true;
+		const ownGeneration = generation;
+		const session = selectedSession;
+		const controller = new AbortController();
+		captureController = controller;
+		text(
+			"render-state",
+			"Rendering the native document and downloading bounded PNG chunks…",
+		);
+		try {
+			const result = await capturePng(
+				async (argv) => {
+					const response = await api("/api/command", { argv, session });
+					return response.result as CommandResult;
+				},
+				target,
+				controller.signal,
+			);
+			if (generation !== ownGeneration || controller.signal.aborted) return;
+			const blob = new Blob([result.bytes as Uint8Array<ArrayBuffer>], {
+				type: "image/png",
+			});
+			captureUrl = URL.createObjectURL(blob);
+			const image = element("render-image") as HTMLImageElement;
+			image.src = captureUrl;
+			image.hidden = false;
+			text(
+				"render-state",
+				`${result.artifact.width} × ${result.artifact.height} · ${result.artifact.target ? `element ${result.artifact.target}` : "viewport"} · partial normal-flow PNG · revision ${result.artifact.revision} · ${result.artifact.bytes} bytes. Captured once, not a live view.${result.released ? "" : ` Remote cleanup is unconfirmed for ${result.artifact.id}.`}`,
+			);
+			if (download) {
+				const url = URL.createObjectURL(blob);
+				const anchor = document.createElement("a");
+				anchor.href = url;
+				anchor.download = "agent-browser.png";
+				document.body.append(anchor);
+				try {
+					anchor.click();
+				} finally {
+					anchor.remove();
+					setTimeout(() => URL.revokeObjectURL(url), 1000);
+				}
+			}
+		} catch (error) {
+			if (generation === ownGeneration) {
+				failure(error);
+				text(
+					"render-state",
+					"Capture failed; no placeholder image was substituted.",
+				);
+			}
+		} finally {
+			if (generation === ownGeneration) {
+				captureController = null;
+				working = false;
+				updateControls();
+			}
+		}
+	}
+	button("capture-render").addEventListener("click", () => {
+		void renderCapture(false);
+	});
+	input("capture-target").addEventListener("input", () => {
+		if (!working) clearCapture();
+	});
+	input("capture-target").addEventListener("keydown", (event) => {
+		if (event.key === "Enter") {
+			event.preventDefault();
+			void renderCapture(false);
+		}
+	});
+	button("download-png").addEventListener("click", () => {
+		void renderCapture(true);
+	});
+	button("download-pdf").addEventListener("click", () => {
+		void (async () => {
+			if (!token || working || !hasDocument) return;
+			invalidateReads();
+			working = true;
+			updateControls();
+			element("error").hidden = true;
+			const ownGeneration = generation;
+			const session = selectedSession;
+			const controller = new AbortController();
+			captureController = controller;
+			text(
+				"render-state",
+				"Paginating the native document and downloading bounded PDF chunks…",
+			);
+			try {
+				const result = await capturePdf(async (argv) => {
+					const response = await api("/api/command", { argv, session });
+					return response.result as CommandResult;
+				}, controller.signal);
+				if (generation !== ownGeneration || controller.signal.aborted) return;
+				const url = URL.createObjectURL(
+					new Blob([result.bytes as Uint8Array<ArrayBuffer>], {
+						type: "application/pdf",
+					}),
+				);
+				const anchor = document.createElement("a");
+				anchor.href = url;
+				anchor.download = "agent-browser.pdf";
+				document.body.append(anchor);
+				try {
+					anchor.click();
+				} finally {
+					anchor.remove();
+					setTimeout(() => URL.revokeObjectURL(url), 1000);
+				}
+				text(
+					"render-state",
+					`PDF downloaded · ${result.artifact.pages} page(s) · native pixels with searchable text · ${result.artifact.bytes} bytes · partial screen layout, not print media.${result.released ? "" : ` Remote cleanup is unconfirmed for ${result.artifact.id}.`}`,
+				);
+			} catch (error) {
+				if (generation === ownGeneration) {
+					failure(error);
+					text(
+						"render-state",
+						"PDF export failed; no substitute document was downloaded.",
+					);
+				}
+			} finally {
+				if (generation === ownGeneration) {
+					captureController = null;
+					working = false;
+					updateControls();
+				}
+			}
+		})();
+	});
 	button("connect").addEventListener("click", () => {
 		void (async () => {
 			pairing = true;
@@ -645,6 +933,8 @@ function startPlayground() {
 		}
 		invalidateReads();
 		selectedSession = name;
+		resetViewport();
+		updateControls();
 		void refresh();
 	});
 	element("navigate-form").addEventListener("submit", (event) => {
@@ -672,6 +962,60 @@ function startPlayground() {
 	});
 	button("refresh").addEventListener("click", () => {
 		void refresh();
+	});
+	for (const id of ["viewport-width", "viewport-height"])
+		input(id).addEventListener("input", () => {
+			viewportDraft = true;
+			(element("viewport-preset") as HTMLSelectElement).value = "";
+		});
+	element("viewport-preset").addEventListener("change", () => {
+		if (!token || working || !viewport) return;
+		const value = (element("viewport-preset") as HTMLSelectElement).value;
+		if (!["1280x720", "768x1024", "390x844"].includes(value)) return;
+		const [width, height] = value.split("x");
+		input("viewport-width").value = width;
+		input("viewport-height").value = height;
+		viewportDraft = true;
+	});
+	button("viewport-swap").addEventListener("click", () => {
+		if (!token || working || !viewport) return;
+		const width = input("viewport-width").value;
+		input("viewport-width").value = input("viewport-height").value;
+		input("viewport-height").value = width;
+		viewportDraft = true;
+		(element("viewport-preset") as HTMLSelectElement).value = "";
+	});
+	button("viewport-restore").addEventListener("click", () => {
+		if (token && !working && viewport) showViewportDraft();
+	});
+	element("viewport-form").addEventListener("submit", (event) => {
+		event.preventDefault();
+		if (
+			!token ||
+			working ||
+			!viewport ||
+			viewportSelection !== `${selectedSession}:${viewport.tabId}`
+		)
+			return;
+		try {
+			const size = playgroundViewport(
+				input("viewport-width").value,
+				input("viewport-height").value,
+			);
+			void run(
+				[
+					"resize",
+					String(size.width),
+					String(size.height),
+					`--expected-viewport=${viewport.key}`,
+				],
+				() => {
+					viewportDraft = false;
+				},
+			);
+		} catch (error) {
+			failure(error);
+		}
 	});
 	element("console-level").addEventListener("change", () => {
 		void refresh();

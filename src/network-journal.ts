@@ -5,6 +5,7 @@ export type NetworkRequestKind =
 	| "document"
 	| "script"
 	| "stylesheet"
+	| "image"
 	| "fetch"
 	| "preflight";
 

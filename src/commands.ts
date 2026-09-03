@@ -25,6 +25,7 @@ const positiveInteger: OptionDefinition = {
 
 export const globalOptions: Readonly<Record<string, OptionDefinition>> = {
 	json: booleanOption,
+	raw: booleanOption,
 	help: booleanOption,
 	version: booleanOption,
 	config: stringOption,
@@ -87,7 +88,10 @@ const definitions: CommandDefinition[] = [
 	command("eval", 1, 2),
 	command("dialog-accept", 0, 1),
 	command("dialog-dismiss"),
-	command("resize", 2),
+	command("resize", 2, 2, {
+		"expected-tab": stringOption,
+		"expected-viewport": stringOption,
+	}),
 	command("press", 1),
 	command("keydown", 1),
 	command("keyup", 1),
@@ -100,6 +104,23 @@ const definitions: CommandDefinition[] = [
 		hires: booleanOption,
 	}),
 	command("pdf", 0, 0, { filename: stringOption }),
+	command("artifact-list", 0, 0, {}, "extension"),
+	command(
+		"artifact-read",
+		1,
+		1,
+		{
+			offset: {
+				kind: "number",
+				minimum: 0,
+				maximum: 33_554_432,
+				integer: true,
+			},
+			length: { kind: "number", minimum: 1, maximum: 65_536, integer: true },
+		},
+		"extension",
+	),
+	command("artifact-delete", 1, 1, {}, "extension"),
 	command("tab-new", 0, 1),
 	command("tab-close", 0, 1),
 	command("tab-select", 1),
@@ -172,7 +193,10 @@ const definitions: CommandDefinition[] = [
 	command("help", 0, 1, {}, "extension"),
 	command("capabilities", 0, 0, {}, "extension"),
 	command("metrics", 0, 0, {}, "extension"),
+	command("viewport", 0, 0, {}, "extension"),
+	command("images", 0, 0, {}, "extension"),
 	command("styles", 0, 1, {}, "extension"),
+	command("geometry", 1, 1, {}, "extension"),
 	command(
 		"extract",
 		0,

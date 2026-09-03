@@ -11,6 +11,492 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Node-relations checkpoint: `contains`, `compareDocumentPosition`, `isSameNode`
+and `isEqualNode` work on document/fragment/element/text/comment/attribute
+capabilities. Bounded iterative traversal, owner revocation and live ordering are
+tested, including actual experimental-SafeJS keyed reconciliation with native
+snapshot evidence. Initial and final broad validation pass 3,004 tests across 117
+explicit safe files; final/repeat actual-core probes pass 14 checks each. Build,
+strict test typing, lint, formatting and whitespace checks pass. See
+`NODE-RELATIONS.md`; this does not close framework, SDK, real-site or full DOM gates.
+
+## Previous JPEG-performance checkpoint
+
+JPEG performance checkpoint: scaled inverse transforms and cached chroma rows
+replace repeated arithmetic. The measured one-megapixel image now decodes in
+30,444,593 work units under the unchanged 33,554,432-unit page guard. Saved before
+pixels match all 252 fixtures and the photo exactly. The actual experimental-SafeJS
+agent loads the photo, sees its geometry, and exports verified PNG/PDF pixels.
+Final validation: 2,924 tests pass across 116 explicit safe files; independent
+252-fixture and actual-runtime 30-check probes pass twice. Paired five-run medians
+are 81.356/78.170 ms versus the saved 155.700 ms baseline, with unchanged pixels
+and resource limits. Build, strict test typing, lint and formatting pass.
+See `JPEG-PERFORMANCE.md`; remaining graphics/codec, host, SDK and real-site gates
+remain open. The full goal is still active.
+
+## Previous JPEG-codec checkpoint
+
+JPEG checkpoint: native TypeScript handles 8-bit Huffman baseline, extended-
+sequential and progressive JPEG, grayscale/RGB/YCbCr, restart markers and bounded
+coefficient reconstruction. PNG/JPEG share the page resource and renderer paths.
+Independent Pillow comparisons cover 252 fixtures; actual experimental-SafeJS
+loader/agent checks include both JPEG modes in PNG/PDF captures. See
+`JPEG-DECODING.md`. The one-megapixel standalone benchmark exceeds the stricter
+default page work budget; that large-photo gate remains open. So do remaining
+formats/graphics, released-SDK and live-site acceptance. The goal remains active.
+
+Validation: 2,831 tests pass across 114 explicit safe files, with 86 new JPEG cases.
+The 252-fixture independent matrix and 26-check actual experimental-SafeJS agent
+probe both pass twice. Eleven responsive/capture regression checks also pass.
+Build, strict changed tests, lint/format, Python syntax and whitespace checks pass.
+The measured large-photo page-budget failure remains explicit in both independent
+reports; no decoder budget or acceptance criterion was relaxed to hide it.
+
+## Previous loaded-image checkpoint
+
+Loaded-image checkpoint: decoded page-owned PNGs now become normal-flow inline or
+block replaced boxes, with intrinsic-ratio sizing, constraints, HTML dimension hints,
+baseline/atomic wrapping and live geometry. Actual resource pixels flow through
+shared document PNG/PDF painting, including alpha, padding and source replacement.
+Eighteen actual experimental-SafeJS loader/agent assertions pass. See `IMAGE-LAYOUT.md`.
+General image formats, responsive sources, fallback layout, full CSS/font/graphics
+coverage, released-SDK and live-site acceptance remain open; the goal stays active.
+
+Final validation: 2,745 tests pass across 112 explicit safe files, with 82 new
+image-sizing/raster/layout cases. Eighteen actual experimental-SafeJS checks pass
+twice, including real PNG transfers and exact PDF visual pixels. Eleven existing
+responsive/capture checks pass. Build, strict changed tests, fifteen-file lint and
+format checks, and whitespace checks pass. Initial failed fixture/capability tests
+remain recorded separately; no live-site or released-SDK claim is added.
+
+## Previous image-resource checkpoint
+
+Image-resource checkpoint: the HTML/session loader now owns decoded PNG resources,
+shared transfers, source replacement, cancellation and bounded retention. Live guest
+image properties, decode promises, load/error handlers and `document.images` connect
+to those resources. The new `images` command and image request journal expose actual
+state. Real experimental-SafeJS loader/agent checks pass; image layout and painting
+were still unsupported at this checkpoint. See `IMAGE-RESOURCES.md` for evidence.
+
+Final validation: 2,663 tests pass across 109 explicit safe files, with 35 new
+image-owner/session cases. Twelve actual experimental-SafeJS image checks pass
+twice; eleven existing responsive/capture checks also pass. Build, strict changed
+tests, lint, formatting and whitespace checks pass. The initial failed quota-cleanup
+report is retained alongside final evidence; no live-site or released-SDK claim is added.
+
+## Previous PNG-codec checkpoint
+
+PNG codec checkpoint: native TypeScript decodes all legal static PNG color/depth
+combinations, five filters, Adam7, palettes/transparency and stored/fixed/dynamic
+zlib data. Exact-length allocation, checksums, stream validation and bounded work
+protect the decoder. Independent Pillow checks validate actual pixels both ways.
+`PNG-DECODING.md` lists the still-open page resource, HTML image, layout/compositing
+and real-site integration tasks. Codec acceptance does not close K08 or the goal.
+
+Validation: 2,613 tests pass across 106 explicit safe files, including 208 new codec
+cases. Fifteen independent/native probe assertions pass, with exact pixel agreement
+for 110 generated PNG fixtures and six independently encoded Pillow image modes.
+The final suite and independent probe repeat successfully; thirteen existing
+experimental-SafeJS PNG/PDF background assertions also pass. Build, strict changed
+tests, lint, formatting and whitespace checks pass without adding a dependency.
+
+## Previous compiled-media checkpoint
+
+Compiled-media checkpoint: stylesheet and page media queries now share bounded
+numeric comparisons, chained ranges, grouped Boolean conditions, aspect ratios
+and native resolution. Page lists reuse compiled predicates instead of rescanning
+query text for each read/notification. Eighty-seven new native cases pass; eleven
+actual-core agent-command checks prove responsive callbacks, snapshots and native
+PNG changes/restoration. Five native resource assertions pass. The local API
+microbenchmark is not a browser-wide speedup or Worker acceptance claim.
+`MEDIA-RANGES.md` records limits and remaining conformance/runtime/site gates.
+
+Final validation: 2,405 tests pass across 104 explicit safe files. Quoted, escaped
+and nested commas cannot become accidental matching query alternatives. Build,
+strict changed-test checks, lint and formatting pass. The separate actual-core
+alias regression retains thirteen passing behavior checks and one failing function
+identity assertion; no released-SDK or live-site acceptance is claimed.
+
+## Previous viewport-controls checkpoint
+
+Playground viewport checkpoint: the UI now reads confirmed per-tab dimensions,
+maintains explicit drafts/presets, and applies sizes through the actual agent API.
+The new read-only viewport command returns an opaque owner/tab key. Guarded resize
+rejects changed targets even when session-local tab IDs repeat after switching or
+recreating a session. Mocked-UI/native-host tests cover resized PNG bytes, draft
+preservation, stale capture revocation, delayed replies and disconnect. Actual-core
+command evidence remains separate from the known media function-identity failure.
+See `VIEWPORT-CONTROLS.md`; no live-site, visual UI or Worker claim is added.
+
+Validation: 2,318 tests pass across 103 explicit safe files, with 14 new viewport
+cases. Ten actual-core guarded-command assertions pass twice; frames are at most
+1,347 bytes. Build, strict changed-test checks, lint and formatting pass. The
+existing experimental-core function-alias identity failure remains a separate gate.
+
+## Previous responsive-media checkpoint
+
+Responsive media checkpoint: global/Window matchMedia, live readonly query lists,
+Window dimensions, resize/change callbacks and legacy listeners now share native
+CSS/event owners. The existing agent resize path schedules coalesced notifications;
+orientation and initial-font em/rem dimensions also work in stylesheets.
+Twenty-eight new native cases cover ordering, limits and cleanup. The actual
+experimental-core probe records 13 successful behavioral checks and one retained
+function-alias identity failure, leaving its overall result false. Do not count it
+as full runtime acceptance or work around the SDK. See `MEDIA-QUERIES.md`.
+
+All 2,304 tests in 103 explicit safe files pass. A separate nine-assertion
+actual-core command probe proves resize-driven callbacks, snapshots, chunked PNG
+changes/restoration and session cleanup over mocked transport; frames are at most
+1,347 bytes. The full runtime probe retains its one identity failure.
+No dependency, released-runtime switch, live-site or Worker claim is added.
+
+## Previous solid-background checkpoint
+
+Solid-background checkpoint: shared stylesheet/inline `background` expansion now
+resets all eight components, preserves importance/order and exposes live owned
+CSSOM aliases, shorthand removal and readonly computed values. Native PNG/PDF
+outputs change with actual interpreted setters and return to identical bytes when
+the color is restored. Thirteen actual experimental-core assertions pass.
+`BACKGROUNDS.md` records the initial-only non-color profile: images, layers and
+general background geometry remain unsupported. This resolves the specific
+`background:red` fixture gap without rewriting its historical failed evidence.
+No new live-site, Worker or released-SDK acceptance is claimed. All 2,276 tests
+in 102 explicit safe files pass, including 30 new background cases. Both actual
+background runs and the updated computed-style regression pass 13 assertions each.
+
+## Previous PDF checkpoint
+
+PDF checkpoint: the engine now produces real paginated PDF files, exposed through
+the `pdf` command, private atomic CLI writes and playground downloads. Page images
+come from native painting; compact positioned text remains independently
+extractable. All pages reuse one layout, avoid cutting supported text intervals,
+and obey page/pixel/glyph/work/output quotas. PNG/PDF share artifact capacity.
+
+Eight real production-binding/experimental-SafeJS assertions pass with independent
+Ghostscript parsing, exact three-page pixel comparisons and actual guest-modified
+text extraction. They pass again after layout reuse and text compaction. Native
+and mocked-client/UI tests cover xrefs, streams, errors, resource limits, large
+chunked transfers, owner scope and private no-overwrite files.
+
+The 1,000-row/20-page native fixture exports 781,334 bytes after text compaction,
+versus 2,143,028 bytes before. Its current single-run time is 608.340 ms and peak
+RSS 126,792 KiB; this does not prove Worker fit or a speed/memory improvement.
+`PDF.md` records the evidence and limitations. Print CSS/full fonts, real-site/
+live-frontend, released-SDK and full reference-parity gates remain open. No runtime
+dependency or service was added; Ghostscript is an existing test validator only.
+
+Final validation passes 2,246 tests across 101 safe files, plus build, strict
+changed-test typechecking, focused lint/format and whitespace checks. Prior
+actual-core PNG export and CharacterData/pixel probes pass nine and fifteen
+checks after the final build. Recorded compact PDF/preview digests are verified.
+
+## Previous checkpoints
+
+Character-data checkpoint: text/comment capabilities now expose live data/length
+and substring/append/insert/delete/replace methods. Text adds identity-preserving
+splitting and contiguous wholeText; Node adds subtree normalization with retained
+detached identities and whole-operation text-quota preflight.
+
+Fifteen actual-core checks pass through production page bindings. Guest edits
+change snapshots, measured layout and real capture sizes; splitting/normalization
+preserve every pixel. Native tests cover UTF-16, argument conversion, exceptions,
+resource failures, cleanup and a 5,000-node normalization run. The first probe's
+unsupported fixture CSS shorthand rejection is retained; the corrected fixture
+uses the existing supported longhand. `CHARACTER-DATA.md` records the profile.
+No dependency, live service, mutation observer, Range or framework/site acceptance
+was added or claimed. Full reference, released-SDK and Worker gates remain open.
+
+2,209 tests pass across 98 safe files, including 22 new cases. Build, strict
+changed-test typechecking, focused lint/format and whitespace checks pass. The
+final-build actual-core repeat passes all 15 assertions; prior frame, size and
+computed-style probes pass 11, 11 and 13 checks.
+
+Animation-frame checkpoint: page-global and Window aliases now expose bounded
+`requestAnimationFrame`, `cancelAnimationFrame` and a shared `performance` clock.
+Ordered batch snapshots share one timestamp, observe cancellation, defer new
+registrations and advance on callback prefixes rather than async results. The
+clock anchors before lazy setup and is revoked with the page.
+
+2,187 tests pass across 97 safe files. Native tests cover quotas, controlled
+callback phases, invalid clock readings and a 512-callback batch using one alarm.
+Actual production-binding probes pass 10 then 11 assertions on the existing
+experimental SafeJS core, with all 11 repeated after the final build. Guest callbacks
+change measured layout and real capture pixels; cancellation, ordinary rejection
+isolation, readonly origin and cleanup pass. `ANIMATION-FRAMES.md` documents the
+partial software-frame profile. No automatic painting, released-SDK async-tail
+conformance, public-site or Worker acceptance is claimed.
+
+Build, strict changed-test typechecking, focused lint/format and whitespace checks
+pass. The post-format focused selection passes 125 tests across six files; prior
+actual-core sizes, computed-style and geometry probes pass 11, 13 and 13 checks.
+
+Element-size checkpoint: six client/offset size getters now read actual native
+layout and are included in agent `geometry` inspection. Padding/content sizing,
+integer rounding, root viewport handling, inline zeros and degenerate-fragment
+unions have dedicated coverage. Lazy revision caching avoids DOMRect allocations
+and repeated scans while preserving explicit unsupported-layout failures.
+
+2,151 tests pass across 95 safe files, including 23 new cases. Eleven checks pass
+through production page bindings and the existing experimental SafeJS core, with
+a repeat; existing computed-style and geometry probes pass 13 each. Fourteen
+native resource assertions validate shared layout, bounded lazy records and close
+cleanup. Build, strict changed tests, lint and formatting pass. `ELEMENT-SIZES.md`
+records the current profile and measurements; full browser/site/Worker gates remain.
+
+Read-only upstream verification also confirms #550 closed at September 2,
+19:43:35 UTC. Its final maintainer comment reports scoped SafeJS 0.1.40 released
+with consumers/provenance verified upstream. The checked workspace/global roots
+still lack that artifact, so no local release acceptance or default activation is
+claimed. No denied download was retried; see `SAFEJS-UPSTREAM-MIGRATION.md`.
+
+Inline-box checkpoint: horizontal inline margins and padding now participate in
+real text layout, wrapping, client rectangles, computed styles, background paint
+and element captures. Word grouping accounts for trailing padding before choosing
+line breaks, including whitespace before closing tags. Signed margins, percentages,
+empty boxes and nested background order have focused tests. `INLINE-BOXES.md`
+records behavior, bounds, limitations and UTC-stamped evidence.
+
+2,128 tests pass across 94 safe files, including 19 new cases. Nine actual-core
+checks pass with a repeat. Build, strict changed tests, focused lint/format and
+diff whitespace checks pass. Prior computed-style and client-geometry checks each
+pass 13 assertions. The native PNG is visually inspected and independently
+inflated. Allocation and large-resource probes pass six and seven checks with
+the old target PNG unchanged. Rendering is somewhat slower in this single sample;
+there is no speedup claim. Full reference coverage, real-site/frontend, released
+SDK and low-memory Worker gates remain open. No dependency or live service added.
+
+September 2, computed-style checkpoint: global/window `getComputedStyle` exposes
+fresh readonly live declarations for 24 implemented longhands. It uses actual
+cascade and normal-flow used dimensions, not inline values disguised as computed
+pixels. Saved declarations follow revisions, detach/reattach and owner closure.
+Object/argument quotas and unsupported pseudo/layout boundaries are explicit.
+
+2,109 tests pass across 93 safe files, including eighteen new native/capability
+cases and a production binding case. Build, strict changed tests and focused
+lint/format checks pass. Thirteen checks pass through real production page bindings and the
+existing experimental SafeJS core, with a repeat; prior geometry and structural
+capture checks remain green. Twelve native resource assertions verify one layout
+build for repeated reads and cache release on close. `COMPUTED-STYLES.md` records
+measurements and limits. Full reference, real-site/frontend, released-SDK and
+Worker gates remain open; no dependencies or live services were added.
+
+September 2, layout-memory checkpoint: native painting and rectangle extraction
+reuse relative glyph vectors instead of eagerly cloning every glyph into absolute
+coordinates. Absolute vectors remain complete, frozen, stable and JSON/spread
+visible when explicitly requested. Coordinate/work checks remain eager; no limits
+or supported content were reduced. Empty vectors avoid lazy-reader overhead.
+
+The 5,000-row capture now allocates 158,890 rather than 317,780 glyph records.
+Its observed peak RSS moves from 199.4 to 175.4 MiB, with identical PNG bytes;
+smaller samples are not universal RSS wins. `LAYOUT-MEMORY.md` records the limits
+of these measurements. Full inspection still materializes both coordinate views.
+
+2,090 tests pass across 92 safe files, including nine new ownership/materialization
+tests. Final structural and native resource probes pass six and 21 assertions;
+all 13/9/11 existing actual-core geometry/export/inline checks remain green.
+Build, strict changed tests and focused formatting/lint pass. Low-memory Worker,
+full reference coverage, released-SDK and real-site/frontend gates remain open.
+
+September 2, inline-capture checkpoint: `screenshot` now clips supported wrapped
+inline targets, sharing geometry extraction with page APIs and agent inspection
+without a second layout pass. The playground accepts a capture target for Render,
+Enter and PNG export, and clears stale scope/preview state across document changes.
+
+2,081 tests pass across 91 safe files, including 23 new cases. Eleven actual
+experimental-core checks validate interpreted geometry/event changes, independent
+decoded pixels and private CLI files; a repeat passes. All 13 prior guest geometry
+and nine capture-export checks remain green. Twenty-one native resource checks
+pass, but the 5,000-row offscreen crop still peaks at 199.4 MiB. Full-document memory
+is a next optimization target, not a completed low-memory/Worker gate.
+`INLINE-CAPTURES.md` records evidence, bounds and limitations. Build, strict changed
+tests, focused lint/formatting and diff checks pass. The full goal stays active.
+
+September 2, client-geometry checkpoint: native normal-flow block and wrapped
+inline rectangles now back page `getClientRects()`/`getBoundingClientRect()` and
+the agent `geometry` command. Empty inline/BR anchors, padding, mixed baselines,
+snapshot behavior, viewport/style invalidation, and bounded guest allocations
+are tested. Native rectangles and bounding unions are cached per revision.
+
+2,058 tests pass across 90 safe files, including 48 new cases. Thirteen actual
+experimental-core checks and 18 native resource checks pass. Ten thousand cached
+bounds reads take 3.53–4.27 ms in local single samples. `CLIENT-GEOMETRY.md` records
+contracts, limits and evidence. Block-in-inline client ownership, full DOMRect
+intrinsics, scrolling/hit testing, general CSS and live/released-SDK gates remain
+open; this is not full browser geometry or completion of the browser goal.
+The nine-check experimental-core capture regression keeps the prior PNG bytes
+unchanged; the eight-check 5,000-paragraph paint regression also passes. Build,
+strict changed-test checks, focused lint/formatting and diff checks pass.
+
+September 2, PNG-compression checkpoint: the native encoder now defaults to a
+bounded TypeScript fixed-Huffman/LZ77 compressor, retaining stored blocks when
+compression would grow the output. No compression library or native runtime
+dependency was added. Explicit stored mode remains available for callers/tests.
+
+2,010 tests pass across 87 files, including 89 new codec/PNG/large-transfer cases.
+Nine actual experimental-core export checks pass. Independent native inflate
+proves the old and new 1,024 × 768 capture has identical scanlines while its PNG
+shrinks from 3,146,804 to 52,889 bytes (98.3%). Three capture resource profiles pass
+18 assertions; the largest drops from 131 to five frames and from 955.8 to 418.7 ms
+in individual measurements. `PNG-COMPRESSION.md` records bounds, evidence and
+trade-offs. Build, strict changed-test checks and focused lint/formatting pass.
+Full CSS/JS/reference coverage and live-site/released-SDK gates remain open.
+
+September 2, capture-export checkpoint: actual native PNGs now flow through the
+`screenshot` command, session-owned bounded artifact chunks, atomic/private local
+CLI saves, and the playground Render/PNG actions. Viewport and single normal-flow
+block targets are supported. Frame limits stay unchanged; filenames never become
+server-side writes. General inline bounds, full CSS and PDF remain open.
+
+1,921 tests pass across 86 files, including 35 new artifact/client/CLI/UI/asset cases.
+Nine actual experimental-core export checks pass; the transferred 1,024 × 768 PNG
+is visually inspected. Three fresh-process transfer profiles pass 18 assertions;
+the largest 2,048 × 1,024 capture takes 955.8 ms and peaks at 129.5 MiB RSS in one
+run, without wire latency. `CAPTURE-EXPORT.md` records ownership, cleanup, resource
+costs and test boundaries. No dependencies, services or default runtime changed.
+New live-site/live-UI and released-SDK acceptance remain unproven. Goal active.
+
+September 2, CSS-paint checkpoint: the shared stylesheet/inline color parser and
+lazy paint cascade now drive actual document glyph colors, block/inline solid
+backgrounds and root/body canvas propagation. Alpha, currentcolor inheritance,
+normal-flow background ordering, line fragments and clipped paint work are covered.
+Unsupported styling still fails closed; this is not general CSS capture.
+
+1,886 tests pass across 80 files, including 86 new parser/cascade/pixel cases. Twelve
+new actual experimental-core checks and 23 document/text regressions pass. An
+interpreted click changes the real colored capture; its 640 × 600 PNG is visually
+inspected. Three native resource profiles pass 24 assertions; the 5,000-paragraph
+case retains 158,890 glyphs and peaks at 202.0 MiB RSS in one run. `CSS-PAINT.md`
+records costs and limits. Build, strict changed-test checks and focused formatting/
+lint pass. No dependencies, services or default runtime changed. Full CSS, client/
+coordinate APIs, CLI screenshot/PDF, new live-site and released-SDK acceptance
+remain open; the full goal remains active.
+
+September 2, document-layout checkpoint: normal-flow vertical sizing now connects
+measured lines and document-derived widths to actual block/glyph Y positions.
+The implementation includes signed/transitive margin struts, empty-through rules,
+padding/flow-root barriers, height constraints and definite percentage bases.
+A bounded native painter captures the supported black-on-white text profile at
+those coordinates; the new HTML fixture is not arranged in manual panels.
+
+1,800 tests pass across 77 files, including 61 new geometry/raster cases and a
+hundred generated margin-chain oracle fixtures. Eleven new actual experimental-
+core checks and 27 text/formatting regressions pass. A native click changes height,
+shifts following blocks and changes verified pixel output. The generated 640 × 600
+document capture is visually inspected. Three resource profiles pass 24 assertions;
+5,000 paragraphs retain 158,890 positioned glyphs and peak at 197.4 MiB RSS in one
+run. Build, strict changed-test checks and formatting pass. `DOCUMENT-LAYOUT.md`
+records the profile and costs. Full paint/styles, client/coordinate APIs, CLI
+screenshot/PDF, public-site and released-SDK gates remain open. No dependencies,
+services or default runtime changed; the full goal remains active.
+
+September 2, text-layout checkpoint: the shared cascade and inline style bridge
+now support five inherited typography properties. The native formatting/width
+pipeline connects them to source-mapped, block-relative lines using the actual
+built-in glyph metrics. Supported whitespace modes, soft wrapping, hard breaks,
+tabs, alignment, mixed-size baselines, empty inline struts and explicit fallback
+are covered without inventing page/client geometry.
+
+1,739 tests pass across 75 files, including 72 new cases and 120 generated
+source-split/width fixtures checked against a separate greedy-word oracle. Twelve
+new actual experimental-core checks and 28 formatting/CSS regressions pass. A
+native click changes interpreted fontSize and causes verified reflow; the measured
+contexts are painted and visually inspected in explicitly manually placed panels.
+Three native resource profiles pass 24 assertions; the 5,000-paragraph case emits
+158,890 glyphs and peaks at 158.1 MiB RSS in one run. `TEXT-LAYOUT.md` records the
+profile, evidence and remaining vertical/page-paint/public-site/released-SDK gates.
+No dependency, service or runtime switch was made. The full goal remains active.
+
+September 2, bitmap-renderer checkpoint: an original built-in printable-ASCII
+font now supplies shared immutable masks/ink bounds and matching metrics to a
+bounded RGBA painter. A local PNG encoder implements checksums and stored zlib
+blocks without another dependency. Missing glyphs return explicit fallback status.
+
+1,667 tests pass across 73 files, including 58 new font/raster/PNG cases. All
+printable ASCII glyphs are checked at three integer scales; fractional/clipped
+sampling and source-over alpha are tested. Independent CRC checks and Node zlib
+inflation validate PNG pixels and exact/crossed stored-block boundaries. Build,
+strict changed-test checks and formatting pass. A generated 720 × 384 atlas is
+visually inspected and recorded with its digest. These are native-only primitives,
+not document paint, line layout, a page screenshot or new real-site/SafeJS
+acceptance. PNG data at that checkpoint was uncompressed. `BITMAP-RENDERER.md` records the
+surface and limits. The full goal remains active.
+
+September 2, formatting-tree checkpoint: bounded display decomposition now
+builds anonymous blocks, splits inline ancestors around block children, handles
+contents/root transformations and retains real source references. Unsupported
+layout modes and unresolved CSS/HTML hints are explicit. An issue-free restricted
+profile derives containing widths and accumulated horizontal offsets directly
+from the document; no caller-supplied ancestry or fabricated rectangles are used.
+
+1,609 tests pass across 70 files, including 43 new cases and sixty generated
+mixed-flow forest/invariant fixtures. Fifteen new actual experimental-core checks
+and 39 width/CSS/locator regressions pass. Three fresh-process native resource
+profiles pass 27 assertions; the 5,000-row case creates 35,005 formatting records
+and resolves 10,004 block widths, peaking at 146.3 MiB process RSS in one run.
+Build, strict changed-test checks, formatting and diff checks pass. No dependency,
+runtime switch or service change was made. Line/vertical layout, fuller UA/styles,
+client rectangles, paint and public-site/released-SDK gates remain open in
+`FORMATTING-TREE.md`; the full goal remains active.
+
+September 2, horizontal width checkpoint: `resolveBlockWidth` now solves the
+normal-flow non-replaced block width equation given an explicit definite
+containing width. It resolves percentages, auto margins, sizing edges and min/max
+constraints, preserving signed overflow and LTR/RTL end-margin rules. Source,
+numeric and extent limits reject oversized calculations without clipping.
+
+1,566 tests pass across 69 files, including 59 width cases and a deterministic
+2,000-configuration conservation/constraint/mirror sweep. Thirteen new actual
+experimental-core checks use a known containing-block fixture whose styles are
+changed by interpreted handlers; another 26 CSS/locator regressions pass.
+Build, strict changed-test checks, formatting and diff checks pass. No dependency,
+runtime or service changed. This is not automatic document layout: formatting
+tree discovery, other formatting modes, heights, inline measurement, client
+rectangles and painting remain pending in `BLOCK-WIDTH.md`. The goal stays active.
+
+September 2, CSS box-input checkpoint: the existing author cascade now handles
+fifteen dimension/margin/padding/box-sizing longhands, physical-side shorthands
+and supported absolute/viewport units. Native style inspection reports these
+computed-subset values separately from visibility; percentages remain unresolved.
+Sparse specified records and lazy immutable results avoid eagerly allocating box
+records for every node. No geometry or getComputedStyle API is fabricated.
+
+1,507 tests pass across 68 files, including 32 new box cases. Seventy actual
+experimental-core checks pass, including thirteen new loader/stylesheet/style
+mutation/resize cases. Three native-only resource regression profiles pass 141
+assertions and close all 22 documents. Build, strict changed-test checks,
+formatting and diff checks pass. No dependency or service changed.
+`CSS-BOX.md` records the missing user-agent box sheet, formatting tree, used
+geometry, paint/export and real-site gates. These layout prerequisites and the
+full browser goal remain active, not satisfied by computed sizing inputs.
+
+September 2, locator-generation checkpoint: `generate-locator` now produces
+verified unique test-ID, exact role/name, attribute or CSS-path expressions.
+The native literal parser accepts `locator('CSS')`, so generated output can
+round-trip through existing actions and inspection. Raw CLI formatting is
+available; structured results retain reference, revision and strategy metadata.
+Structural paths are explicitly marked and can retarget after DOM reordering.
+
+1,475 tests pass across 67 files, including 27 generation cases. Thirteen actual
+experimental-core fixture checks and 37 locator/search/mock-terminal regressions
+pass. Build, strict changed-test checks, focused formatting and diff checks pass.
+No dependency, runtime switch or service changed. CLI-wire/public-site acceptance,
+full codegen parity and the larger browser goal remain open. See
+`LOCATOR-GENERATION.md` for escaping, bounds, stability and evidence.
+
+September 2, native allocation checkpoint: immutable node reads now reuse a
+per-owner cache with targeted invalidation for mutations, moves, fragment
+consumption, indirect selection changes and closure. Saved records stay frozen
+point-in-time views; detached nodes remain owned until close.
+
+1,448 tests pass across 66 files, including 17 dedicated cache cases and a
+300-step mixed-mutation model check. Another 120 actual experimental-core checks
+pass. Thirty equivalent fresh-process native runs pass 1,206 correctness/cleanup
+assertions and close all 186 documents. The large workload median falls from
+745.2 to 451.5 ms and median peak RSS from 226.7 to 164.3 MiB. Churn peak RSS
+does not improve. Build, strict changed-test checks and focused formatting pass.
+No new dependency, SDK switch, service or live-site acceptance was introduced.
+See `NODE-VIEW-CACHE.md`; larger memory costs and the full goal remain open.
+
 September 2, resource/streaming-search checkpoint: five fresh-process native
 session profiles now measure HTML loading, snapshots, search, actions, replacement,
 diffs and cleanup. Initial evidence exposed a large-page search cutoff and an
@@ -28,8 +514,6 @@ the larger memory cost is an open optimization target, not lightweight acceptanc
 Initial failed reports are retained. Build, strict changed-test checks, focused
 formatting and diff checks pass. No dependency, service or SDK switch was made.
 See `SESSION-RESOURCES.md` and `SNAPSHOT-SEARCH.md`; the full goal stays active.
-
-## Previous checkpoints
 
 September 2, contextual HTML insertion checkpoint: page code can assign outerHTML
 and call insertAdjacentHTML at all four positions. Native adjacent nodes retain
@@ -1046,6 +1530,13 @@ The time ranges are planning budgets, not a reason to delay working features.
 - [ ] Authenticated loopback HTTP API and a web observer of the same session.
 - [ ] Stream state/text deltas instead of shipping raster screenshots by default.
 - [ ] PNG/PDF exports rendered by our implementation, not outsourced to Chromium.
+- [x] Implement native paginated PDF with independent parser/text/pixel checks,
+      artifact transport, private CLI files and mocked playground downloads.
+      The supported screen-layout profile and remaining print/live-site gates
+      are recorded in `PDF.md`; this is not full browser print parity.
+- [x] Build bounded normal-flow document geometry and native text-raster/PNG
+      primitives, with actual interpreted-mutation and pixel fixtures. This is a
+      restricted building block; the broader PNG/PDF/CLI gate above stays open.
 - [ ] JS/CSS/SVG/canvas/iframe compatibility matrix and public TodoMVC variants.
 - [ ] Dry-run transport mocks every mutation and exposes mocked changes to reads;
       no mode disclosure or accidental real network mutation from simulation.

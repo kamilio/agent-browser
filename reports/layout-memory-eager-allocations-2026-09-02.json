@@ -1,0 +1,52 @@
+{
+  "startedAt": "2026-09-02T23:23:32.013Z",
+  "finishedAt": "2026-09-02T23:23:32.510Z",
+  "expectation": "eager",
+  "rows": 5000,
+  "moduleHashes": {
+    "layout": "fe452cabaab34e1881ffd919a0016b9e413ac066c50828297a585528dc601a8d",
+    "raster": "2a1ef53b8782e71a686f44e0338abc43b86d934441f4011c2a51399d98c94fe4"
+  },
+  "instrumentation": "Trusted native-only Object.freeze counter, restored in finally; not a timing/RSS benchmark, network run or SDK test",
+  "completed": true,
+  "checks": [
+    {
+      "label": "Capture allocates the explicitly expected number of frozen glyph records",
+      "passed": true
+    },
+    {
+      "label": "Capture allocates the explicitly expected number of glyph vectors",
+      "passed": true
+    },
+    {
+      "label": "Explicit absolute snapshots contain every glyph and remain frozen",
+      "passed": true
+    },
+    {
+      "label": "Full absolute inspection retains the same complete two-vector representation",
+      "passed": true
+    },
+    {
+      "label": "Repeated inspection reuses stable snapshot identities",
+      "passed": true
+    },
+    {
+      "label": "The inspected capture still has actual target dimensions",
+      "passed": true
+    }
+  ],
+  "measurement": {
+    "glyphs": 158890,
+    "contexts": 5000,
+    "before": {
+      "glyphRecords": 317780,
+      "glyphArrays": 10000
+    },
+    "after": {
+      "glyphRecords": 317780,
+      "glyphArrays": 10000
+    },
+    "pngBytes": 179,
+    "pngSha256": "34246fd92b9f8507552385f63016a58d013d235db1a13309ef9be8461bf033d7"
+  }
+}

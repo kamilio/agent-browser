@@ -1,0 +1,57 @@
+{
+  "startedAt": "2026-09-02T20:33:18.935Z",
+  "finishedAt": "2026-09-02T20:33:19.189Z",
+  "scope": "existing-experimental-core-in-memory",
+  "completed": true,
+  "checks": [
+    {
+      "label": "Actual interpreted application installs modern DOM mutation handlers",
+      "passed": true
+    },
+    {
+      "label": "Native fill and click create an interpreted actionable task in the semantic snapshot",
+      "passed": true
+    },
+    {
+      "label": "Prepending an existing interpreted row preserves stable native references",
+      "passed": true
+    },
+    {
+      "label": "A moved button retains its interpreted listener and replaces text without rebuilding the node",
+      "passed": true
+    },
+    {
+      "label": "Before and after handle self references and reused siblings in interpreted code",
+      "passed": true
+    },
+    {
+      "label": "Fragment-based replacement transfers identity and empties the source",
+      "passed": true
+    },
+    {
+      "label": "Interpreted replaceChild returns the old node while retaining the moved subtree",
+      "passed": true
+    },
+    {
+      "label": "Native delete activation runs a retained listener after both replacement paths",
+      "passed": true
+    },
+    {
+      "label": "Character-data ChildNode methods support native text replacement and removal",
+      "passed": true
+    },
+    {
+      "label": "Invalid cyclic replacement preserves the live parent and its content",
+      "passed": true
+    },
+    {
+      "label": "Detached nodes ignore sibling mutations without moving connected arguments",
+      "passed": true
+    },
+    {
+      "label": "Closing the script owner leaves the independently owned native document usable",
+      "passed": true
+    }
+  ],
+  "passed": 12
+}

@@ -4,6 +4,440 @@ These files record **foundation and partial-frontend probes**, not general brows
 Checking a marker in downloaded HTML does not prove parsing, page JavaScript,
 element actions, rendering, terminal browsing or playground operation.
 
+- `node-relations-focused-2026-09-03.json` and
+  `node-relations-focused-final-2026-09-03.json`: all 3,004 tests pass across 117 explicit
+  safe files, including 79 node-comparison cases and one capability-contract case.
+- `node-relations-safejs-2026-09-03.json`,
+  `node-relations-safejs-final-2026-09-03.json` and
+  `node-relations-safejs-repeat-2026-09-03.json`: 14 actual experimental-core checks
+  pass, including attribute semantics and guest keyed reconciliation verified in
+  native document order and semantic snapshots. No sockets or live-site acceptance.
+- `node-relations-character-regression-2026-09-03.json` and
+  `node-relations-image-regression-2026-09-03.json`: 15 CharacterData and 30
+  one-megapixel mixed-image checks pass through the existing experimental runtime.
+  These do not establish released-SDK, framework or general browser conformance.
+- `jpeg-performance-before-2026-09-03.json`: pre-optimization pixel hashes, work
+  and five-run timing baseline, captured before changing the decoder.
+- `jpeg-performance-focused-final-2026-09-03.json`: all 2,924 tests pass across
+  116 explicit safe files, including 92 new transform/sampling cases and one
+  decoder working-memory preflight case.
+- `jpeg-performance-comparison-2026-09-03.json`,
+  `jpeg-performance-comparison-final-2026-09-03.json` and
+  `jpeg-performance-comparison-repeat-2026-09-03.json`: 252 fixtures plus the
+  one-megapixel photo match saved pre-change pixels exactly. Final/repeat medians
+  are 81.356/78.170 ms versus 155.700 ms before; work drops from 69,854,692 to
+  30,444,593 under the unchanged 33,554,432 page limit. Accounted working storage
+  grows by 67,584 bytes for row caches, with the corresponding preflight verified.
+- `jpeg-performance-independent-2026-09-03.json`,
+  `jpeg-performance-independent-final-2026-09-03.json` and
+  `jpeg-performance-independent-repeat-2026-09-03.json`: 252 independent decoder
+  comparisons pass with unchanged tolerances; the photo now fits the page guard.
+- `jpeg-performance-safejs-2026-09-03.json`,
+  `jpeg-performance-safejs-final-2026-09-03.json` and
+  `jpeg-performance-safejs-repeat-2026-09-03.json`: 30 checks pass in the actual
+  experimental runtime with mocked transport, including guest decode/geometry,
+  all scaled photo pixels in the agent's element PNG, and mixed-image PDF pixels.
+  The screenshot is 3,876 bytes; maximum protocol frame is 8,543 bytes. No live
+  network, sockets, released SDK or Worker acceptance is asserted.
+- `jpeg-performance-small-regression-2026-09-03.json` and
+  `jpeg-performance-media-regression-2026-09-03.json`: 26 small-image and 11
+  media-command checks pass. The separate media function-identity gap stays open.
+- `jpeg-focused-2026-09-03.json` and `jpeg-focused-final-2026-09-03.json`: all
+  2,831 tests pass across 114 explicit safe files, including 86 JPEG codec/resource
+  cases. Initial targeted fixture mistakes are described in `../JPEG-DECODING.md`.
+- `jpeg-decoder-independent-2026-09-03.json`: initial successful 252-fixture
+  independent JPEG comparison, including a standalone one-megapixel sample.
+- `jpeg-decoder-independent-final-2026-09-03.json` and
+  `jpeg-decoder-independent-repeat-2026-09-03.json`: 252 independent comparisons
+  pass each time. Maximum observed channel error is three; grayscale/stored RGB
+  stay within one. The final standalone 1,024×1,024 sample takes 154.267 ms,
+  requires 69,854,692 work units and is explicitly rejected by the default page
+  work guard in that historical implementation. Repeat pixels/work agree. The
+  subsequent performance checkpoint above removes that measured rejection without
+  raising the guard. This is not live-site or Worker evidence.
+- `jpeg-safejs-2026-09-03.json`, `jpeg-safejs-final-2026-09-03.json` and
+  `jpeg-safejs-repeat-2026-09-03.json`: 26 checks pass through the actual experimental
+  core and production loader/session/agent code. Baseline/progressive JPEG element
+  PNGs have identical 1,099-byte exports; mixed JPEG/PNG PDF pixels match the shared
+  raster. Largest command frame 3,691 bytes; six mocked requests, no network/socket.
+- `jpeg-media-regression-2026-09-03.json`: eleven existing responsive agent/capture
+  assertions pass. The separate experimental media alias-identity failure remains
+  open; these probes are not released-SDK acceptance.
+
+- `image-layout-focused-2026-09-03.json`: retained initial broad run, 2,743 passes
+  and two failures from a missing test host factory and a stale no-paint capability
+  assertion. No production rendering failure was identified by those two cases.
+- `image-layout-focused-final-2026-09-03.json`: all 2,745 tests pass across 112
+  explicit safe files, including 82 new replaced-sizing, raster-image and layout cases.
+- `image-layout-safejs-2026-09-03.json`, `image-layout-safejs-final-2026-09-03.json`
+  and `image-layout-safejs-repeat-2026-09-03.json`: eighteen assertions pass in each
+  actual experimental-core loader/agent run. Guest geometry and used sizes agree
+  with actual 19×14 then 19×16 element PNGs; viewport PNG and 1,772-byte PDF carry
+  real resource pixels. Largest frame 2,587 bytes. Mocked in-memory responses,
+  not released-SDK or real-site acceptance; see `../IMAGE-LAYOUT.md` for limits.
+- `image-layout-media-regression-2026-09-03.json`: eleven existing responsive
+  agent/capture assertions pass, largest frame 1,348 bytes. The separate media
+  alias-identity failure is not superseded.
+
+- `image-resources-safejs-2026-09-03.json`: twelve passing actual-core loader/agent
+  checks for image completion, guest handlers/decode, source changes, shared real
+  RGBA data, errors and teardown. Mocked response transport; largest frame 1,517
+  bytes. Image layout/painting, released SDK and real-site acceptance remain open.
+- `image-resources-focused-2026-09-03.json`: retained initial broad run, 2,662
+  passes and one quota-cleanup failure. It exposed a real refresh/teardown defect;
+  the fixed implementation and final rerun are documented separately.
+- `image-resources-focused-final-2026-09-03.json`: all 2,663 tests pass across
+  109 explicit safe files, including 28 image-owner and seven image-session cases.
+- `image-resources-safejs-final-2026-09-03.json` and
+  `image-resources-safejs-repeat-2026-09-03.json`: twelve assertions pass in each
+  final actual-core run, including live image collections. Largest frame 1,517 bytes.
+- `image-resources-media-regression-2026-09-03.json`: eleven existing responsive
+  agent/capture assertions pass; largest frame 1,348 bytes. This does not test image
+  painting or supersede the separate experimental-core alias-identity failure.
+
+- `png-decoder-independent-2026-09-03.json`: fifteen native/independent assertions
+  pass. Installed Pillow verifies exact pixels for 110 <=8-bit format/filter/Adam7
+  fixtures; our decoder reads six Pillow-generated modes and re-encodes losslessly.
+  Includes one-megapixel timing/work/RSS and quota refusal. No page image loading,
+  network, color management or browser/Worker acceptance is implied; see
+  `PNG-DECODING.md` for remaining image integration tasks.
+- `png-decoder-focused-2026-09-03.json`: all 2,613 tests pass across 106 explicit
+  safe files, including 179 PNG decoder and 29 inflater cases. This preserves the
+  existing capture/layout/command tests without adding live services or network.
+- `png-decoder-focused-final-2026-09-03.json`: the final 106-file suite again
+  passes all 2,613 tests, including explicit null-budget rejection assertions.
+- `png-decoder-independent-final-2026-09-03.json`: all fifteen assertions pass
+  again; the one-megapixel sample takes 40.896 ms with maximum process RSS 84,504 KiB.
+- `png-decoder-background-regression-2026-09-03.json`: thirteen actual
+  experimental-core background/PNG/PDF regression checks pass; this preserves
+  the existing capture pipeline, not browser image loading or released-SDK acceptance.
+
+- `media-ranges-focused-final-2026-09-03.json`: 2,405 passing tests across 104
+  explicit safe files, including 87 compiled-media cases. The earlier
+  `media-ranges-focused-2026-09-03.json` records 2,404 before the quoted/escaped
+  delimiter regression was added.
+- `media-ranges-commands-safejs-final-2026-09-03.json`: eleven actual-core command
+  checks pass after the delimiter fix; maximum frame remains 1,348 bytes.
+- `media-query-resources-final-2026-09-03.json`: all five native checks pass;
+  reused/recompiled timings are 3.876/102.140 ms and maximum process RSS is
+  61,288 KiB. Same limited current-API comparison as the initial report below.
+- `media-ranges-alias-regression-2026-09-03.json`: thirteen behavior checks pass,
+  one experimental-core function-identity check fails; overall false, exit 1.
+- `media-ranges-commands-safejs-2026-09-03.json`: eleven actual-core command checks
+  pass with chained/grouped conditions in native CSS and interpreted media lists.
+  Real resize callbacks update snapshots/native PNGs; restoring viewport/content
+  restores original PNG bytes. Mock transport; maximum frame 1,348 bytes.
+- `media-query-resources-2026-09-03.json`: five native quota/equivalence assertions
+  pass. Reused versus recompiled current APIs process the same 20,000 viewports;
+  this is not an old/new browser or Worker-memory comparison. `MEDIA-RANGES.md`
+  records the local single-sample timings and scope.
+
+- `viewport-commands-safejs-2026-09-03.json`: ten actual-core agent assertions with
+  viewport inspection, guarded resize, responsive snapshots/PNG and close over mock
+  transport. This initial run uses the tab-ID guard; final opaque-key evidence is
+  recorded separately in `VIEWPORT-CONTROLS.md`.
+- `viewport-commands-safejs-final-2026-09-03.json` and
+  `viewport-commands-safejs-repeat-2026-09-03.json`: ten passing actual-core
+  assertions each using the stronger opaque viewport key. The largest command
+  frame is 1,347 bytes. Mocked transport, not live visual or site acceptance.
+- `viewport-controls-focused-2026-09-03.json`: 2,315 passing tests before the
+  additional cross-session guard cases. `viewport-controls-focused-final-2026-09-03.json`
+  passes all 2,318 tests across 103 explicit safe files, including 14 new cases.
+
+- `media-queries-safejs-2026-09-03.json`: failed initial combined assertion;
+  `media-queries-diagnostic-2026-09-03.json` isolates distinct interpreted
+  global/Window matchMedia function identity, with correct query/viewport values.
+- `media-queries-complete-probe-2026-09-03.json`: 13 passing actual-core behavior
+  checks and **one retained identity failure**; overall false, process exit 1.
+  Responsive callbacks update actual snapshots/CSS/PNG, but this is not full
+  runtime acceptance. `MEDIA-QUERIES.md` documents the explicit gap and scope.
+- `media-queries-final-probe-2026-09-03.json`: final repeat with explicit
+  interpreted callback receiver/target checks; 13 pass, one identity check fails.
+- `media-queries-focused-2026-09-03.json`: earlier 2,301 passes and one stale
+  expected-global-list failure. `media-queries-focused-final-2026-09-03.json`
+  passes all 2,304 tests across 103 explicit safe files after updating that
+  expectation and adding two quota/observer cases. No failing runtime assertion
+  was removed to obtain the native result.
+- `media-commands-safejs-2026-09-03.json`: nine passing actual-core agent-command
+  assertions for resize callbacks, snapshots, native chunked PNG changes and
+  restoration, bounded frames and close. Mock transport; no network/live socket.
+  `media-commands-safejs-repeat-2026-09-03.json` repeats all nine successfully
+  after final compilation, again with a 1,347-byte maximum frame.
+- `media-background-regression-2026-09-03.json` and
+  `media-animation-regression-2026-09-03.json`: 13/13 and 11/11 prior actual-core
+  regression assertions pass, respectively.
+
+- `background-focused-2026-09-03.json`: 2,276 passes across 102 explicit safe
+  files, including 30 new background cases. Existing native, DOM, client, CLI,
+  PNG/PDF and mocked frontend regressions pass.
+- `background-safejs-2026-09-03.json` and `background-safejs-repeat-2026-09-03.json`:
+  13 actual production-binding/experimental
+  SafeJS assertions for solid-background shorthand, resets, readonly/live CSSOM,
+  pixel changes, deterministic PNG/PDF restoration and owner cleanup. In-memory
+  fixture only; not released-SDK or live-site acceptance. `BACKGROUNDS.md` records
+  the restricted component profile and generated in-memory file digests.
+- `background-computed-regression-2026-09-03.json`: 13 existing actual-core
+  computed-style assertions pass with the expanded 31-longhand interface.
+
+- `pdf-focused-2026-09-03.json`: 2,246 passes across 101 explicit safe
+  native/client/frontend files, including pagination, chunking, ownership and
+  private file checks.
+- `pdf-safejs-2026-09-03.json`, `pdf-safejs-final-2026-09-03.json` and
+  `pdf-safejs-compact-2026-09-03.json`: eight assertions each through actual
+  production bindings/experimental SafeJS and installed Ghostscript 9.50. Every
+  pixel of three independently rendered pages matches the native source, and
+  independent text extraction sees actual guest edits. No network/live sockets.
+- `pdf-native-compact-2026-09-03.pdf` and `.png`: current 2,803-byte PDF and
+  first-page preview. Earlier native/final artifacts retain the per-glyph text
+  baseline. `PDF.md` records the current digest and visual inspection.
+- `pdf-resource-{medium,large}-2026-09-03.json` and the corresponding
+  `pdf-resource-{medium,large}-compact-2026-09-03.json`: six assertions per
+  native 500/1,000-row sample. One layout, complete page/text coverage, quotas
+  and cleanup pass. File sizes improve after run grouping; timing/RSS are local
+  single samples, not Worker or general performance acceptance.
+- `pdf-png-regression-2026-09-03.json` and its PNG: nine prior actual-core/native
+  CLI export checks pass after the final build. `pdf-character-data-regression-2026-09-03.json`
+  passes fifteen existing interpreted-mutation/layout/pixel assertions.
+- `character-data-focused-2026-09-03.json`: 2,209 passes across 98 safe files,
+  including 22 new CharacterData/normalization/quota/capability cases.
+- `character-data-safejs-2026-09-03.json`: failed before assertions because the
+  initial fixture used unsupported CSS background shorthand. It is not acceptance.
+- `character-data-safejs-final-2026-09-03.json`: 15 passing assertions with the
+  supported longhand fixture. Actual SafeJS edits change snapshots/layout/captures;
+  split and normalization preserve pixels and retained identities. No real sites
+  or released-SDK acceptance.
+- `character-data-safejs-repeat-2026-09-03.json`: all 15 checks pass after the
+  final build. `character-data-frames-regression-`, `character-data-sizes-regression-`
+  and `character-data-computed-regression-` reports for this date pass 11, 11 and
+  13 existing actual-core checks respectively.
+- `animation-frames-focused-2026-09-03.json`: 2,187 tests pass across 97 safe files,
+  with frame ordering, lifecycle, quota, shared-clock and capability checks.
+- `animation-frames-safejs-2026-09-03.json` and
+  `animation-frames-safejs-final-2026-09-03.json`: 10 then 11 actual-core checks
+  through production page bindings. Synchronous guest frame callbacks change
+  native layout and captured pixels; ordinary rejection isolation, cancellation
+  and cleanup pass. No public sites or released-SDK async-tail acceptance.
+- `animation-frames-safejs-repeat-2026-09-03.json`: all 11 expanded checks pass
+  again after formatting and final build. `animation-frames-sizes-regression-`,
+  `animation-frames-computed-regression-` and `animation-frames-geometry-regression-`
+  reports for the same date pass 11, 13 and 13 existing actual-core checks.
+- `element-sizes-focused-2026-09-03.json`: 2,151 passes across 95 safe files,
+  including 23 new size/cache/capability cases and extended agent geometry checks.
+- `element-sizes-safejs-2026-09-03.json` and
+  `element-sizes-safejs-final-2026-09-03.json`: 11 production-binding checks each
+  on the experimental core, not released-SDK acceptance.
+- `element-sizes-computed-regression-2026-09-03.json` and
+  `element-sizes-geometry-regression-2026-09-03.json`: 13 existing core checks each.
+- `element-sizes-resource-{medium,large}-2026-09-03.json`: 14 native assertions
+  for one shared layout, lazy bounded records, cached reads and cleanup. Local
+  1,000/5,000-row fixtures, not public pages, guest timings or Worker acceptance.
+- `safejs-upstream-status-2026-09-03.json`: read-only #550 closure/final-release
+  comment and local package observations. It distinguishes reported upstream
+  release verification from the still-unrun browser-local released-artifact gate.
+- `inline-box-focused-2026-09-03.json`: 2,128 passes across 94 safe files,
+  including 19 new inline edge/layout/geometry/paint/capture cases.
+- `inline-box-safejs-2026-09-03.json` and `inline-box-safejs-final-2026-09-03.json`:
+  nine checks each through real production page bindings and the experimental core.
+  `inline-box-native-2026-09-03.png` is the visually inspected 15 × 18 native image;
+  independent inflate and exact viewport-crop comparisons verify its pixels.
+- `inline-box-computed-regression-2026-09-03.json` and
+  `inline-box-geometry-regression-2026-09-03.json`: 13 existing core checks each.
+- `inline-box-allocation-regression-2026-09-03.json` and
+  `inline-box-resource-large-2026-09-03.json`: six allocation and seven resource
+  assertions. The 5,000-row capture retains the old PNG bytes and single glyph
+  vector. Its local render sample is slower; these are not Worker/website gates.
+- `computed-styles-focused-2026-09-02.json`: 2,109 passes across 93 safe files, with 18 new
+  computed-declaration cases and one new global/window binding case.
+- `computed-styles-core-2026-09-02.json` and
+  `computed-styles-core-final-2026-09-02.json`: 13 checks each using production
+  PageScripts/PageBindings and the existing experimental core, not released SDK.
+- `computed-styles-resource-{medium,large}-2026-09-02.json`: 12 native assertions;
+  repeated resolved reads share one layout and close releases all cached records.
+  In-memory 1,000/5,000-row samples, not websites, comparative RSS or Worker gates.
+- `computed-styles-geometry-regression-2026-09-02.json` and
+  `computed-styles-capture-allocations-2026-09-02.json`: 13 existing actual-core
+  geometry checks and six deterministic allocation/capture checks respectively.
+- `layout-memory-focused-2026-09-02.json`: 2,090 passes across 92 files, including
+  nine new complete/lazy/immutable glyph-snapshot and single-vector paint cases.
+- `layout-memory-eager-allocations-2026-09-02.json` and
+  `layout-memory-final-allocations-2026-09-02.json`: six checks each, with compiled
+  module hashes. The 5,000-row native capture moves from 317,780 to 158,890 frozen
+  glyph records; explicitly inspecting all absolute vectors still produces the
+  complete original representation. Instrumented allocation checks, not timings.
+- `layout-memory-final-{small,medium,large}-2026-09-02.json`: 21 resource checks
+  with unchanged target PNGs. Large-case peak RSS is 175.4 MiB versus the recorded
+  199.4 MiB baseline; smaller RSS samples do not all improve. No forced GC, SDK,
+  network or Worker acceptance. Intermediate `layout-memory-lazy-allocations`
+  and `layout-memory-native-*` reports are retained separately.
+- `layout-memory-geometry-regression-2026-09-02.json`,
+  `layout-memory-capture-regression-2026-09-02.json` and
+  `layout-memory-inline-regression-2026-09-02.json`: 13/9/11 existing experimental
+  core checks. Both exported PNG regression digests match their previous fixtures.
+- `inline-capture-focused-2026-09-02.json`: 2,081 passes across 91 files, including
+  23 new native/agent/playground target-capture cases.
+- `inline-capture-safejs-2026-09-02.json`: 11 actual experimental-core checks.
+  `inline-capture-native-2026-09-02.png` is its real, visually inspected 132 × 36
+  inline crop; independent native inflate matches every pixel of the viewport crop.
+  An interpreted event changes geometry/color and a later capture, not the old file.
+- `inline-capture-final-regression-2026-09-02.json`: 11-check repeat.
+  `inline-capture-geometry-regression-2026-09-02.json` preserves 13 guest checks;
+  `inline-capture-block-regression-2026-09-02.json` preserves nine export checks
+  and byte-identical large viewport output.
+- `inline-capture-native-{small,medium,large}-2026-09-02.json`: 21 native checks
+  capturing an offscreen inline after 100/1,000/5,000 paragraphs. Each PNG is 179
+  bytes, but full layout remains retained and peak RSS reaches 199.4 MiB. Single
+  local measurements, not low-memory Worker or live-site acceptance.
+- `client-geometry-focused-2026-09-02.json`: 2,058 passes across 90 files, including
+  48 new native fragment/guest snapshot/agent command cases.
+- `client-geometry-safejs-2026-09-02.json`: 13 actual experimental-core geometry
+  checks, including indexed identity, mutations, serialization and cached reads.
+  No external websites, live sockets or released-SDK acceptance.
+- `client-geometry-native-{small,medium,large}-2026-09-02.json`: 18 checks across
+  fresh-process fixtures with 200/2,000/10,000 inline fragments. Ten thousand
+  cached bounding reads take 3.53/3.64/4.27 ms; snapshots and union caches are
+  revision-owned. Single local samples, not Worker or full-browser benchmarks.
+- `client-geometry-capture-regression-2026-09-02.json`: nine actual experimental-core
+  export checks; its local PNG matches the prior compressed fixture byte for byte.
+- `client-geometry-paint-resources-2026-09-02.json`: eight native 5,000-paragraph
+  paint/resource regression checks with the new inline fragment extraction.
+- `png-compression-focused-2026-09-02.json`: 2,010 passes across 87 files, including
+  89 new codec/PNG/large-transfer cases and 100 seeded native-inflate oracle fixtures.
+- `png-compression-safejs-fixture-2026-09-02.json`: nine actual experimental-core
+  export checks. The compressed native PNG is recorded without replacing its old
+  stored-output baseline.
+- `png-compression-pixel-comparison-2026-09-02.json`: independent inflate proves
+  exact scanline equality between the actual old/new document captures; PNG bytes
+  decrease by 98.3%. `PNG-COMPRESSION.md` records digests and encoder boundaries.
+- `png-compression-native-{small,medium,large}-2026-09-02.json`: eighteen native
+  resource assertions, same capture workload with the new encoder; individual
+  measurements, not live-wire, statistical or Worker deployment claims.
+- `png-compression-{final,paint}-regression-2026-09-02.json`: final export rerun
+  and twelve existing actual-core paint checks. `png-compression-paint-resources-2026-09-02.json`
+  records the existing small paint profile using the new encoder.
+
+- `capture-export-focused-2026-09-02.json`: 1,921 passes across 86 files, including
+  35 new artifact/client/CLI/UI/asset cases. Socket and UI boundaries are mocked.
+- `capture-export-safejs-fixture-2026-09-02.json`: nine actual experimental-core
+  checks covering interpreted pixel changes, bounded frame transfer, the CLI file
+  writer, element clips, resize and cleanup. `capture-export-native-render-2026-09-02.png`
+  is a visually inspected native 1,024 × 768 document PNG, not a live-site capture.
+- `capture-export-{final,cleanup,css,document}-regression-2026-09-02.json`: final
+  export reruns and 23 existing paint/document checks, using the experimental core
+  with in-memory transports. Temporary PNGs are regression outputs only.
+- `capture-export-native-{small,medium,large}-2026-09-02.json`: eighteen assertions
+  across three fresh-process native render/encode/store/transfer/release profiles.
+  Maximum frames stay below 88 KiB; `CAPTURE-EXPORT.md` records costs and limitations.
+
+- `css-paint-focused-2026-09-02.json`: 1,886 passes across 80 files, including
+  86 new color/cascade/pixel cases and all alpha-byte round-trips.
+- `css-paint-safejs-fixture-2026-09-02.json`: twelve actual experimental-core
+  style/click/native-inspection/pixel/crop/resize/recovery/close checks. The recorded
+  `css-paint-native-render-2026-09-02.png` is visually inspected engine-positioned
+  colored HTML output, not manual panels or public-site capture acceptance.
+- `css-paint-{document,text}-regression-2026-09-02.json`: 23 further actual
+  experimental-core checks using in-memory transports.
+- `css-paint-native-{small,medium,large}-2026-09-02.json`: 24 native resource
+  assertions; 5,000 paragraphs peak at 202.0 MiB RSS in one run with results retained.
+  `CSS-PAINT.md` records the supported profile, stage costs and remaining gates.
+
+- `document-layout-focused-2026-09-02.json`: 1,800 passes across 77 files,
+  including 42 vertical and 19 raster cases plus a hundred generated margin-chain
+  oracle fixtures within those cases.
+- `document-layout-safejs-fixture-2026-09-02.json`: eleven actual experimental-core
+  mutation/layout/pixel/crop/resize/recovery/close checks. Its recorded
+  `document-layout-native-render-2026-09-02.png` is actual engine-positioned native
+  text output, visually inspected, with **no manual panel placement**. It is still
+  a restricted text profile, not full CSS or public-site screenshot acceptance.
+- `document-layout-{text,formatting}-regression-2026-09-02.json`: 27 further actual
+  experimental-core checks. The temporary text-panel artifact belongs to the old
+  text-stage regression and is not the new document-render artifact.
+- `document-layout-native-{small,medium,large}-2026-09-02.json`: three native
+  document/paint/PNG resource profiles, 24 passing assertions. The largest positions
+  158,890 glyphs and peaks at 197.4 MiB RSS in one run. `DOCUMENT-LAYOUT.md` records
+  stage costs, output retention, scope and limits.
+
+- `text-layout-focused-2026-09-02.json`: 1,739 passes across 75 files, including
+  72 typography/line cases and 120 generated source-split/width oracle fixtures.
+- `text-layout-safejs-fixture-2026-09-02.json`: twelve actual experimental-core
+  click/style/text/resize/layout/cleanup checks. The recorded
+  `text-layout-panels-2026-09-02.png` paints measured glyphs in **manually placed
+  panels** and was visually inspected; it is not a page screenshot.
+- `text-layout-{formatting,css-box}-regression-2026-09-02.json`: 28 further actual
+  experimental-core checks, with in-memory transports.
+- `text-layout-native-{small,medium,large}-2026-09-02.json`: three synthetic
+  native resource profiles, 24 passing assertions. The largest resolves 5,000
+  lines/158,890 glyphs; peak RSS is 158.1 MiB in one run. `TEXT-LAYOUT.md` records
+  timings, limits and why this does not imply full renderer/website/SDK acceptance.
+
+- `bitmap-renderer-focused-2026-09-02.json`: 1,667 passes across 73 files,
+  including 58 new font/raster/PNG cases. All ASCII masks, three integer scales,
+  fractional/clipped painting, alpha, invalid inputs and independent PNG
+  CRC/inflation/pixel checks are covered.
+- `bitmap-renderer-atlas-2026-09-02.png` and
+  `bitmap-renderer-native-2026-09-02.json`: actual native-generated, visually
+  inspected 720 × 384 font atlas and its size/digest/timing/RSS record. This is
+  not page rendering, a website screenshot or an interpreter compatibility
+  test. `BITMAP-RENDERER.md` explains the uncompressed encoder and font limits.
+
+- `formatting-tree-focused-2026-09-02.json`: 1,609 passes across 70 files,
+  including 43 formatting cases and sixty generated mixed-flow invariants.
+- `formatting-tree-formatting-tree-regression-2026-09-02.json`: fifteen actual
+  experimental-core action/style/mutation/resize/cleanup checks. The earlier
+  `formatting-tree-safejs-fixture-2026-09-02.json` covers the same cases and is
+  not counted as additional coverage.
+- `formatting-tree-{block-width,css-box,locator-generation}-regression-2026-09-02.json`:
+  39 further actual experimental-core checks, all with in-memory transports.
+- `formatting-tree-native-{small,medium,large}-2026-09-02.json`: three synthetic
+  fresh-process formatting resource profiles; 27 assertions pass. The large
+  run has 25,007 owned nodes, 35,005 formatting records and 10,004 resolved block
+  widths. `FORMATTING-TREE.md` records timings/RSS and distinguishes these from
+  real-site, full-renderer, released-SDK or controlled comparative benchmarks.
+
+- `block-width-focused-2026-09-02.json`: 1,566 passes across 69 files, including
+  59 width cases and a deterministic 2,000-configuration invariant sweep.
+- `block-width-block-width-regression-2026-09-02.json`: thirteen actual
+  experimental-core checks using known containing blocks and interpreted style
+  changes. `block-width-safejs-fixture-2026-09-02.json` is the earlier run of the
+  same cases, not additional coverage.
+- `block-width-{css-box,locator-generation}-regression-2026-09-02.json`: 26
+  further actual experimental-core checks. All transports are in-memory;
+  `BLOCK-WIDTH.md` distinguishes these from formatting-tree discovery,
+  reference-browser geometry, public-site or released-SDK acceptance.
+
+- `css-box-focused-2026-09-02.json`: 1,507 passes across 68 files, including
+  32 author-cascade box/unit/inheritance/cache/resource cases.
+- `css-box-css-box-regression-2026-09-02.json`: thirteen actual experimental-core
+  loader/stylesheet/style-mutation/resize checks. `css-box-safejs-fixture-2026-09-02.json`
+  is the earlier passing run of the same cases, not additional coverage.
+- `css-box-{locator-generation,text-locators,html-insertion,script-mutations,streaming-search}-regression-2026-09-02.json`:
+  57 further actual experimental-core checks; all transports remain in-memory.
+- `css-box-native-{small,large,churn}-2026-09-02.json`: native resource regression
+  observations, 141 functional/cleanup assertions, 22 document closures.
+  `CSS-BOX.md` distinguishes these from geometry, box-heavy workloads, real-site
+  or released-SDK acceptance and from controlled performance comparisons.
+
+- `locator-generation-focused-2026-09-02.json`: 1,475 passes across 67 files,
+  including 27 native/host generation cases and the updated capability contract.
+- `locator-generation-locator-generation-regression-2026-09-02.json`: 13 actual
+  experimental-core checks for generated actions, moves, ambiguity, escaping,
+  diff state, reload and cleanup. `locator-generation-safejs-fixture-2026-09-02.json`
+  is the earlier successful run of the same fixture, not 13 additional cases.
+- `locator-generation-{text-locators,snapshot-search,terminal-search,streaming-search}-regression-2026-09-02.json`:
+  37 further actual experimental-core checks. Transports and terminal streams
+  are mocked; these are not CLI-wire, released-SDK or real-site acceptance.
+
+- `node-view-cache-focused-2026-09-02.json`: 1,448 passes across 66 files,
+  including 17 immutable-view cache tests and a 300-step mutation model check.
+- `node-view-cache-{before,after}-{small,medium,large,retained,churn}-{1,2,3}-2026-09-02.json`:
+  thirty equivalent fresh-process native workloads, 1,206 functional/cleanup
+  assertions and 186 document closures. No page scripts or live transports.
+- `node-view-cache-{before,after}-source-2026-09-02.json`: seven selected compiled
+  module fingerprints; only document.js differs. Not whole-build fingerprints.
+- `node-view-cache-comparison-2026-09-02.json`: all trial paths, medians/ranges,
+  totals and nine experimental-core regression report references (120 checks).
+  `NODE-VIEW-CACHE.md` explains scope and limitations, including unchanged churn
+  peak RSS. Mock-terminal checks are not live PTY acceptance.
+
 - `streaming-search-focused-2026-09-02.json`: 1,431 passes across 65 files,
   including ten new streaming/context/large-source/work-bound cases.
 - `streaming-search-safejs-fixture-2026-09-02.json`: nine actual existing-core

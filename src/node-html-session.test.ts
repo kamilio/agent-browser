@@ -98,7 +98,9 @@ it("loads actual HTML, follows a parsed base-relative link by reference and trav
 	expect((await session.click(tab.id, next)).navigation?.url).toBe(
 		`${origin}/base/next`,
 	);
-	expect(requests[1].cookie).toContain("fixture=synthetic");
+	expect(
+		requests.find((request) => request.url === "/base/next")?.cookie,
+	).toContain("fixture=synthetic");
 	expect(page.document.nodeCount).toBe(0);
 	await session.back(tab.id);
 	expect(renderSnapshot(session.snapshot(tab.id))).toContain(
@@ -116,9 +118,13 @@ it("submits parsed native controls via focus/type/Enter and loads a real HTTP ec
 	const result = await session.press(tab.id, "Enter");
 	expect(result.navigation?.kind).toBe("document");
 	expect(result.form?.invalid).toEqual([]);
-	expect(requests).toHaveLength(2);
-	expect(requests[1]).toMatchObject({ method: "POST", url: "/echo", origin });
-	expect(Object.fromEntries(new URLSearchParams(requests[1].body))).toEqual({
+	expect(requests.map((request) => request.url)).toEqual([
+		"/",
+		"/never-image",
+		"/echo",
+	]);
+	expect(requests[2]).toMatchObject({ method: "POST", url: "/echo", origin });
+	expect(Object.fromEntries(new URLSearchParams(requests[2].body))).toEqual({
 		name: "synthetic 🙂",
 		email: "",
 		delivery: "",
@@ -134,11 +140,12 @@ it("submits parsed native controls via focus/type/Enter and loads a real HTTP ec
 
 it("blocks a parsed required form without network side effects", async () => {
 	const { session, tab, ref, requests } = await fixture();
+	const initialRequests = [...requests];
 	const result = await session.click(tab.id, ref("button"));
 	expect(result.form?.invalid).toEqual([
 		{ reference: ref("input[name=name]"), reason: "value-missing" },
 	]);
-	expect(requests).toHaveLength(1);
+	expect(requests).toEqual(initialRequests);
 });
 
 it("preserves the committed HTML page and refs when unsupported construction fails", async () => {
@@ -151,10 +158,10 @@ it("preserves the committed HTML page and refs when unsupported construction fai
 	expect(page.document.resolve(link).attributes.id).toBe("next");
 });
 
-it("never executes scripts or automatically fetches script/image/refresh resources", async () => {
+it("loads image resources without executing scripts or fetching script/refresh resources", async () => {
 	const { session, tab, requests } = await fixture();
 	await new Promise((resolve) => setTimeout(resolve, 20));
-	expect(requests.map((entry) => entry.url)).toEqual(["/"]);
+	expect(requests.map((entry) => entry.url)).toEqual(["/", "/never-image"]);
 	expect(renderSnapshot(session.snapshot(tab.id))).not.toContain(
 		"__htmlExecuted",
 	);

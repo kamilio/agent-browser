@@ -75,6 +75,9 @@ export class DocumentTree {
 	private textCodeUnits = 0;
 	private closed = false;
 	private closeHandlers = new Set<() => void>();
+	private changeHandlers = new Set<
+		(change: Readonly<DocumentChange>) => void
+	>();
 	private readonly selections = new DocumentSelection(
 		(id) => this.node(id),
 		(id) => this.changed("control", id),
@@ -677,6 +680,143 @@ export class DocumentTree {
 		this.changed("text", id);
 	}
 
+	substringData(id: number, offset: number, count: number) {
+		const node = this.characterData(id);
+		this.checkDataOffset(node, offset, count);
+		return node.data.slice(offset, offset + count);
+	}
+
+	replaceData(id: number, offset: number, count: number, data: string) {
+		this.validateString(data);
+		const node = this.characterData(id);
+		this.checkDataOffset(node, offset, count);
+		const end = Math.min(node.data.length, offset + count);
+		this.checkTextBudget(data.length - (end - offset));
+		this.setData(id, node.data.slice(0, offset) + data + node.data.slice(end));
+	}
+
+	splitText(id: number, offset: number) {
+		const node = this.characterData(id);
+		if (node.kind !== "text")
+			throw new AgentBrowserError("invalid-input", "Only text nodes can split");
+		this.checkDataOffset(node, offset, 0);
+		const suffix = node.data.slice(offset);
+		const following = this.allocate("text", "", "");
+		this.setData(id, node.data.slice(0, offset));
+		this.setData(following, suffix);
+		if (node.parent !== null) {
+			const parent = this.node(node.parent);
+			parent.children.splice(parent.children.indexOf(id) + 1, 0, following);
+			this.node(following).parent = parent.id;
+			this.changed("insert", following);
+		}
+		return following;
+	}
+
+	wholeText(id: number) {
+		const node = this.characterData(id);
+		if (node.kind !== "text")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Only text nodes have wholeText",
+			);
+		if (node.parent === null) return node.data;
+		const siblings = this.node(node.parent).children;
+		let start = siblings.indexOf(id);
+		while (start > 0 && this.node(siblings[start - 1]).kind === "text") start--;
+		const parts: string[] = [];
+		for (let index = start; index < siblings.length; index++) {
+			const sibling = this.node(siblings[index]);
+			if (sibling.kind !== "text") break;
+			parts.push(sibling.data);
+		}
+		return parts.join("");
+	}
+
+	normalize(id: number) {
+		const pending = [this.node(id)];
+		const plans: {
+			parent: MutableNode;
+			children: number[];
+			removed: MutableNode[];
+			runs: { survivor: MutableNode; members: MutableNode[] }[];
+		}[] = [];
+		let additional = 0;
+		while (pending.length) {
+			const parent = pending.pop();
+			if (!parent || !parent.children.length) continue;
+			const children: number[] = [];
+			const removed: MutableNode[] = [];
+			const runs: { survivor: MutableNode; members: MutableNode[] }[] = [];
+			let index = 0;
+			while (index < parent.children.length) {
+				const child = this.node(parent.children[index]);
+				if (child.kind !== "text") {
+					children.push(child.id);
+					if (child.children.length) pending.push(child);
+					index++;
+					continue;
+				}
+				const members: MutableNode[] = [];
+				let length = 0;
+				while (index < parent.children.length) {
+					const member = this.node(parent.children[index]);
+					if (member.kind !== "text") break;
+					members.push(member);
+					length += member.data.length;
+					index++;
+				}
+				const survivor = members.find((member) => member.data.length > 0);
+				if (survivor) {
+					children.push(survivor.id);
+					additional += length - survivor.data.length;
+					if (length > survivor.data.length) runs.push({ survivor, members });
+				}
+				for (const member of members)
+					if (member !== survivor) removed.push(member);
+			}
+			if (removed.length) plans.push({ parent, children, removed, runs });
+		}
+		this.checkTextBudget(additional);
+		for (const plan of plans) {
+			for (const run of plan.runs)
+				this.setData(
+					run.survivor.id,
+					run.members.map((member) => member.data).join(""),
+				);
+			plan.parent.children = plan.children;
+			this.nodeViews.delete(plan.parent.id);
+			for (const removed of plan.removed) {
+				removed.parent = null;
+				this.changed("remove", removed.id);
+			}
+		}
+	}
+
+	private characterData(id: number) {
+		const node = this.node(id);
+		if (node.kind !== "text" && node.kind !== "comment")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Only text/comment nodes have data",
+			);
+		return node;
+	}
+
+	private checkDataOffset(node: MutableNode, offset: number, count: number) {
+		for (const value of [offset, count])
+			if (!Number.isSafeInteger(value) || value < 0 || value > 4_294_967_295)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid character data offset or count",
+				);
+		if (offset > node.data.length)
+			throw new DOMException(
+				"Offset exceeds character data length",
+				"IndexSizeError",
+			);
+	}
+
 	setControl(id: number, state: ControlState) {
 		const node = this.element(id);
 		if (!state || typeof state !== "object" || Array.isArray(state))
@@ -848,6 +988,24 @@ export class DocumentTree {
 		};
 	}
 
+	onChange(handler: (change: Readonly<DocumentChange>) => void) {
+		this.ensureOpen();
+		if (typeof handler !== "function")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid document change handler",
+			);
+		if (!this.changeHandlers.has(handler) && this.changeHandlers.size >= 32)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Document change handler limit exceeded",
+			);
+		this.changeHandlers.add(handler);
+		return () => {
+			this.changeHandlers.delete(handler);
+		};
+	}
+
 	onClose(handler: () => void) {
 		this.ensureOpen();
 		if (typeof handler !== "function")
@@ -875,6 +1033,7 @@ export class DocumentTree {
 		this.currentTarget = null;
 		this.currentFocus = null;
 		this.changes = [];
+		this.changeHandlers.clear();
 		this.textCodeUnits = 0;
 		const failures: unknown[] = [];
 		const handlers = [...this.closeHandlers];
@@ -960,11 +1119,20 @@ export class DocumentTree {
 			this.nodeViews.delete(target);
 		if (kind === "insert") {
 			const parent = this.nodes.get(target)?.parent;
-			if (parent !== null && parent !== undefined) this.nodeViews.delete(parent);
+			if (parent !== null && parent !== undefined)
+				this.nodeViews.delete(parent);
 		}
 		this.currentRevision++;
 		this.changes.push({ revision: this.currentRevision, kind, target });
 		if (this.changes.length > this.limits.maxChanges) this.changes.shift();
+		if (this.changeHandlers.size) {
+			const change = Object.freeze({
+				revision: this.currentRevision,
+				kind,
+				target,
+			});
+			for (const handler of [...this.changeHandlers]) handler(change);
+		}
 	}
 
 	private ensureOpen() {

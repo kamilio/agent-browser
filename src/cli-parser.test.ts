@@ -2,6 +2,26 @@ import { expect, it } from "vitest";
 import { parseInvocation } from "./cli-parser.js";
 import { commands } from "./commands.js";
 
+it("adds read-only viewport inspection and an optional guarded resize without changing baseline syntax", () => {
+	expect(parseInvocation(["viewport"])).toMatchObject({
+		command: "viewport",
+		arguments: [],
+	});
+	expect(commands.get("viewport")?.category).toBe("extension");
+	expect(parseInvocation(["resize", "80", "40"])).toMatchObject({
+		command: "resize",
+		arguments: ["80", "40"],
+	});
+	expect(
+		parseInvocation(["resize", "80", "40", "--expected-tab=tab-a"]),
+	).toMatchObject({ options: { "expected-tab": "tab-a" } });
+	expect(
+		parseInvocation(["resize", "80", "40", "--expected-viewport=owner:tab-a"]),
+	).toMatchObject({ options: { "expected-viewport": "owner:tab-a" } });
+	expect(() => parseInvocation(["viewport", "80"])).toThrow();
+	expect(() => parseInvocation(["viewport", "--expected-tab=tab-a"])).toThrow();
+});
+
 it("accepts bounded DOM subtree inspection without changing baseline command syntax", () => {
 	expect(
 		parseInvocation([

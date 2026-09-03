@@ -1,0 +1,61 @@
+{
+  "startedAt": "2026-09-02T21:16:25.493Z",
+  "finishedAt": "2026-09-02T21:16:25.613Z",
+  "scope": "existing-experimental-core-in-memory-known-horizontal-normal-flow-fixture-no-formatting-tree-or-client-rectangles",
+  "completed": true,
+  "checks": [
+    {
+      "label": "Known fixture containing blocks resolve from the actual native author cascade",
+      "passed": true
+    },
+    {
+      "label": "Computed style percentages are not overwritten with the solver's used widths",
+      "passed": true
+    },
+    {
+      "label": "An interpreted event changes used width and re-solves auto margins after a maximum",
+      "passed": true
+    },
+    {
+      "label": "Interpreted minimum sizing wins when it conflicts with the maximum",
+      "passed": true
+    },
+    {
+      "label": "Interpreted box-sizing changes the constrained sizing edge without changing padding",
+      "passed": true
+    },
+    {
+      "label": "A too-small specified border box floors content at zero and preserves padding",
+      "passed": true
+    },
+    {
+      "label": "An explicit new definite container resolves nested percentages after resize",
+      "passed": true
+    },
+    {
+      "label": "The caller-supplied containing direction controls over-constrained auto-margin overflow",
+      "passed": true
+    },
+    {
+      "label": "Signed margins can enlarge automatic content width while preserving the equation",
+      "passed": true
+    },
+    {
+      "label": "Ancestor mutation supplies a new definite width for the same retained child",
+      "passed": true
+    },
+    {
+      "label": "Oversized used lengths fail without poisoning the actual interpreted owner",
+      "passed": true
+    },
+    {
+      "label": "Style reads and width resolution leave the snapshot diff baseline intact",
+      "passed": true
+    },
+    {
+      "label": "All actual interpreter owners close",
+      "passed": true
+    }
+  ],
+  "passed": 13
+}

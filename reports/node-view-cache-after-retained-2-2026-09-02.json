@@ -1,0 +1,1014 @@
+{
+  "schemaVersion": 1,
+  "scope": "native-browser-session-in-memory-no-page-javascript",
+  "startedAt": "2026-09-02T20:33:16.521Z",
+  "finishedAt": "2026-09-02T20:33:16.653Z",
+  "runtime": {
+    "version": "v22.22.0",
+    "platform": "linux",
+    "architecture": "x64",
+    "cpuModel": "AMD EPYC 9R45"
+  },
+  "profile": {
+    "name": "retained",
+    "rows": 100,
+    "sessions": 8,
+    "navigations": 1,
+    "sourceBytes": 5928
+  },
+  "readyMs": 31.146977,
+  "elapsedMs": 148.466666,
+  "cpuMs": 322.604,
+  "peakProcessRssBytes": 92344320,
+  "sampledPeakRssBytes": 91803648,
+  "createdDocuments": 8,
+  "closedDocuments": 8,
+  "closedTransports": 8,
+  "requestCount": 8,
+  "maxSampledLiveDocuments": 8,
+  "maxSampledLiveNodes": 2544,
+  "maxSnapshotJsonBytes": 16144,
+  "maxSnapshotTextBytes": 10921,
+  "truncatedSnapshots": 0,
+  "resetDiffs": 0,
+  "phases": [
+    {
+      "stage": "profile-0/0/open",
+      "elapsedMs": 14.738194,
+      "cpuMs": 16.219
+    },
+    {
+      "stage": "profile-0/0/snapshot",
+      "elapsedMs": 3.8868209999999976,
+      "cpuMs": 4.042
+    },
+    {
+      "stage": "profile-0/0/find-last",
+      "elapsedMs": 2.531786000000004,
+      "cpuMs": 2.681
+    },
+    {
+      "stage": "profile-0/0/actions",
+      "elapsedMs": 6.869341999999996,
+      "cpuMs": 10.835
+    },
+    {
+      "stage": "profile-0/0/outer-replacement",
+      "elapsedMs": 0.6403470000000056,
+      "cpuMs": 0.632
+    },
+    {
+      "stage": "profile-0/0/snapshot-diff",
+      "elapsedMs": 2.7895889999999994,
+      "cpuMs": 4.511
+    },
+    {
+      "stage": "profile-1/0/open",
+      "elapsedMs": 4.891061999999991,
+      "cpuMs": 5.481
+    },
+    {
+      "stage": "profile-1/0/snapshot",
+      "elapsedMs": 1.8598400000000055,
+      "cpuMs": 5.878
+    },
+    {
+      "stage": "profile-1/0/find-last",
+      "elapsedMs": 1.784448999999995,
+      "cpuMs": 3.22
+    },
+    {
+      "stage": "profile-1/0/actions",
+      "elapsedMs": 3.9987820000000056,
+      "cpuMs": 6.302
+    },
+    {
+      "stage": "profile-1/0/outer-replacement",
+      "elapsedMs": 0.15582200000000057,
+      "cpuMs": 0.151
+    },
+    {
+      "stage": "profile-1/0/snapshot-diff",
+      "elapsedMs": 2.4224049999999977,
+      "cpuMs": 3.235
+    },
+    {
+      "stage": "profile-2/0/open",
+      "elapsedMs": 4.200573999999989,
+      "cpuMs": 14.284
+    },
+    {
+      "stage": "profile-2/0/snapshot",
+      "elapsedMs": 1.539426000000006,
+      "cpuMs": 5.54
+    },
+    {
+      "stage": "profile-2/0/find-last",
+      "elapsedMs": 1.6215169999999972,
+      "cpuMs": 3.898
+    },
+    {
+      "stage": "profile-2/0/actions",
+      "elapsedMs": 3.3906360000000006,
+      "cpuMs": 6.492
+    },
+    {
+      "stage": "profile-2/0/outer-replacement",
+      "elapsedMs": 0.17086199999999963,
+      "cpuMs": 0.168
+    },
+    {
+      "stage": "profile-2/0/snapshot-diff",
+      "elapsedMs": 1.9715109999999925,
+      "cpuMs": 8.169
+    },
+    {
+      "stage": "profile-3/0/open",
+      "elapsedMs": 3.6337780000000066,
+      "cpuMs": 11.58
+    },
+    {
+      "stage": "profile-3/0/snapshot",
+      "elapsedMs": 2.1600819999999885,
+      "cpuMs": 4.906
+    },
+    {
+      "stage": "profile-3/0/find-last",
+      "elapsedMs": 1.4662660000000045,
+      "cpuMs": 7.76
+    },
+    {
+      "stage": "profile-3/0/actions",
+      "elapsedMs": 2.9216610000000003,
+      "cpuMs": 2.919
+    },
+    {
+      "stage": "profile-3/0/outer-replacement",
+      "elapsedMs": 0.299303000000009,
+      "cpuMs": 9.29
+    },
+    {
+      "stage": "profile-3/0/snapshot-diff",
+      "elapsedMs": 2.7177389999999946,
+      "cpuMs": 9.142
+    },
+    {
+      "stage": "profile-4/0/open",
+      "elapsedMs": 4.170884000000001,
+      "cpuMs": 12.613
+    },
+    {
+      "stage": "profile-4/0/snapshot",
+      "elapsedMs": 1.6905780000000021,
+      "cpuMs": 4.536
+    },
+    {
+      "stage": "profile-4/0/find-last",
+      "elapsedMs": 1.6755580000000094,
+      "cpuMs": 1.672
+    },
+    {
+      "stage": "profile-4/0/actions",
+      "elapsedMs": 2.6992879999999957,
+      "cpuMs": 3.29
+    },
+    {
+      "stage": "profile-4/0/outer-replacement",
+      "elapsedMs": 0.14242199999999627,
+      "cpuMs": 0.14
+    },
+    {
+      "stage": "profile-4/0/snapshot-diff",
+      "elapsedMs": 1.8684300000000036,
+      "cpuMs": 2.622
+    },
+    {
+      "stage": "profile-5/0/open",
+      "elapsedMs": 3.7675899999999984,
+      "cpuMs": 10.377
+    },
+    {
+      "stage": "profile-5/0/snapshot",
+      "elapsedMs": 1.5085859999999798,
+      "cpuMs": 4.632
+    },
+    {
+      "stage": "profile-5/0/find-last",
+      "elapsedMs": 1.4257949999999937,
+      "cpuMs": 11.172
+    },
+    {
+      "stage": "profile-5/0/actions",
+      "elapsedMs": 2.6119069999999738,
+      "cpuMs": 6.309
+    },
+    {
+      "stage": "profile-5/0/outer-replacement",
+      "elapsedMs": 0.11942099999998845,
+      "cpuMs": 0.117
+    },
+    {
+      "stage": "profile-5/0/snapshot-diff",
+      "elapsedMs": 1.7823290000000043,
+      "cpuMs": 4.277
+    },
+    {
+      "stage": "profile-6/0/open",
+      "elapsedMs": 2.769808999999981,
+      "cpuMs": 2.765
+    },
+    {
+      "stage": "profile-6/0/snapshot",
+      "elapsedMs": 1.3790250000000128,
+      "cpuMs": 7.395
+    },
+    {
+      "stage": "profile-6/0/find-last",
+      "elapsedMs": 1.3446240000000103,
+      "cpuMs": 1.341
+    },
+    {
+      "stage": "profile-6/0/actions",
+      "elapsedMs": 2.1406020000000012,
+      "cpuMs": 6.768
+    },
+    {
+      "stage": "profile-6/0/outer-replacement",
+      "elapsedMs": 0.13301100000001043,
+      "cpuMs": 0.13
+    },
+    {
+      "stage": "profile-6/0/snapshot-diff",
+      "elapsedMs": 2.388575000000003,
+      "cpuMs": 14.907
+    },
+    {
+      "stage": "profile-7/0/open",
+      "elapsedMs": 3.0376719999999864,
+      "cpuMs": 10.46
+    },
+    {
+      "stage": "profile-7/0/snapshot",
+      "elapsedMs": 1.4140540000000215,
+      "cpuMs": 9.236
+    },
+    {
+      "stage": "profile-7/0/find-last",
+      "elapsedMs": 1.4963459999999884,
+      "cpuMs": 6.044
+    },
+    {
+      "stage": "profile-7/0/actions",
+      "elapsedMs": 3.450975999999997,
+      "cpuMs": 15.172
+    },
+    {
+      "stage": "profile-7/0/outer-replacement",
+      "elapsedMs": 0.20860200000001328,
+      "cpuMs": 0.206
+    },
+    {
+      "stage": "profile-7/0/snapshot-diff",
+      "elapsedMs": 1.668486999999999,
+      "cpuMs": 11.621
+    },
+    {
+      "stage": "close",
+      "elapsedMs": 1.195442000000014,
+      "cpuMs": 1.835
+    }
+  ],
+  "samples": [
+    {
+      "stage": "ready",
+      "rss": 56868864,
+      "heapTotal": 10063872,
+      "heapUsed": 5997920,
+      "external": 1457843,
+      "arrayBuffers": 26911,
+      "liveDocuments": 0,
+      "liveNodes": 0
+    },
+    {
+      "stage": "profile-0/0/open",
+      "rss": 60489728,
+      "heapTotal": 11374592,
+      "heapUsed": 7678216,
+      "external": 1480218,
+      "arrayBuffers": 32873,
+      "liveDocuments": 1,
+      "liveNodes": 314
+    },
+    {
+      "stage": "profile-0/0/snapshot",
+      "rss": 60760064,
+      "heapTotal": 11898880,
+      "heapUsed": 7395016,
+      "external": 1510030,
+      "arrayBuffers": 62685,
+      "liveDocuments": 1,
+      "liveNodes": 314
+    },
+    {
+      "stage": "profile-0/0/find-last",
+      "rss": 60760064,
+      "heapTotal": 12161024,
+      "heapUsed": 7679280,
+      "external": 1481266,
+      "arrayBuffers": 33921,
+      "liveDocuments": 1,
+      "liveNodes": 314
+    },
+    {
+      "stage": "profile-0/0/actions",
+      "rss": 62517248,
+      "heapTotal": 16355328,
+      "heapUsed": 10402192,
+      "external": 1481266,
+      "arrayBuffers": 32839,
+      "liveDocuments": 1,
+      "liveNodes": 314
+    },
+    {
+      "stage": "profile-0/0/outer-replacement",
+      "rss": 63057920,
+      "heapTotal": 16355328,
+      "heapUsed": 10914216,
+      "external": 1481266,
+      "arrayBuffers": 32839,
+      "liveDocuments": 1,
+      "liveNodes": 318
+    },
+    {
+      "stage": "profile-0/0/snapshot-diff",
+      "rss": 63864832,
+      "heapTotal": 16617472,
+      "heapUsed": 9597024,
+      "external": 1511785,
+      "arrayBuffers": 64440,
+      "liveDocuments": 1,
+      "liveNodes": 318
+    },
+    {
+      "stage": "profile-1/0/open",
+      "rss": 66228224,
+      "heapTotal": 17403904,
+      "heapUsed": 9947920,
+      "external": 1480218,
+      "arrayBuffers": 32873,
+      "liveDocuments": 2,
+      "liveNodes": 632
+    },
+    {
+      "stage": "profile-1/0/snapshot",
+      "rss": 66768896,
+      "heapTotal": 17403904,
+      "heapUsed": 11104272,
+      "external": 1511891,
+      "arrayBuffers": 64546,
+      "liveDocuments": 2,
+      "liveNodes": 632
+    },
+    {
+      "stage": "profile-1/0/find-last",
+      "rss": 66670592,
+      "heapTotal": 17403904,
+      "heapUsed": 9676416,
+      "external": 1495798,
+      "arrayBuffers": 48453,
+      "liveDocuments": 2,
+      "liveNodes": 632
+    },
+    {
+      "stage": "profile-1/0/actions",
+      "rss": 68022272,
+      "heapTotal": 17403904,
+      "heapUsed": 10258224,
+      "external": 1495798,
+      "arrayBuffers": 32839,
+      "liveDocuments": 2,
+      "liveNodes": 632
+    },
+    {
+      "stage": "profile-1/0/outer-replacement",
+      "rss": 68558848,
+      "heapTotal": 17403904,
+      "heapUsed": 10750184,
+      "external": 1495798,
+      "arrayBuffers": 32839,
+      "liveDocuments": 2,
+      "liveNodes": 636
+    },
+    {
+      "stage": "profile-1/0/snapshot-diff",
+      "rss": 69677056,
+      "heapTotal": 17403904,
+      "heapUsed": 9220976,
+      "external": 1511915,
+      "arrayBuffers": 64570,
+      "liveDocuments": 2,
+      "liveNodes": 636
+    },
+    {
+      "stage": "profile-2/0/open",
+      "rss": 70377472,
+      "heapTotal": 17666048,
+      "heapUsed": 9639984,
+      "external": 1480218,
+      "arrayBuffers": 32873,
+      "liveDocuments": 3,
+      "liveNodes": 950
+    },
+    {
+      "stage": "profile-2/0/snapshot",
+      "rss": 70377472,
+      "heapTotal": 17666048,
+      "heapUsed": 10733336,
+      "external": 1511891,
+      "arrayBuffers": 64546,
+      "liveDocuments": 3,
+      "liveNodes": 950
+    },
+    {
+      "stage": "profile-2/0/find-last",
+      "rss": 67244032,
+      "heapTotal": 17666048,
+      "heapUsed": 12432464,
+      "external": 1555406,
+      "arrayBuffers": 108061,
+      "liveDocuments": 3,
+      "liveNodes": 950
+    },
+    {
+      "stage": "profile-2/0/actions",
+      "rss": 68923392,
+      "heapTotal": 18190336,
+      "heapUsed": 9275032,
+      "external": 1480184,
+      "arrayBuffers": 32839,
+      "liveDocuments": 3,
+      "liveNodes": 950
+    },
+    {
+      "stage": "profile-2/0/outer-replacement",
+      "rss": 69193728,
+      "heapTotal": 18190336,
+      "heapUsed": 9746688,
+      "external": 1480184,
+      "arrayBuffers": 32839,
+      "liveDocuments": 3,
+      "liveNodes": 954
+    },
+    {
+      "stage": "profile-2/0/snapshot-diff",
+      "rss": 71086080,
+      "heapTotal": 18190336,
+      "heapUsed": 12030552,
+      "external": 1511915,
+      "arrayBuffers": 64570,
+      "liveDocuments": 3,
+      "liveNodes": 954
+    },
+    {
+      "stage": "profile-3/0/open",
+      "rss": 71614464,
+      "heapTotal": 18190336,
+      "heapUsed": 12144824,
+      "external": 1480218,
+      "arrayBuffers": 32873,
+      "liveDocuments": 4,
+      "liveNodes": 1268
+    },
+    {
+      "stage": "profile-3/0/snapshot",
+      "rss": 72151040,
+      "heapTotal": 26578944,
+      "heapUsed": 9809432,
+      "external": 1499222,
+      "arrayBuffers": 51877,
+      "liveDocuments": 4,
+      "liveNodes": 1268
+    },
+    {
+      "stage": "profile-3/0/find-last",
+      "rss": 73773056,
+      "heapTotal": 26578944,
+      "heapUsed": 11475032,
+      "external": 1543324,
+      "arrayBuffers": 95979,
+      "liveDocuments": 4,
+      "liveNodes": 1268
+    },
+    {
+      "stage": "profile-3/0/actions",
+      "rss": 78340096,
+      "heapTotal": 26578944,
+      "heapUsed": 15449592,
+      "external": 1543324,
+      "arrayBuffers": 95979,
+      "liveDocuments": 4,
+      "liveNodes": 1268
+    },
+    {
+      "stage": "profile-3/0/outer-replacement",
+      "rss": 79683584,
+      "heapTotal": 26578944,
+      "heapUsed": 15938760,
+      "external": 1543324,
+      "arrayBuffers": 95979,
+      "liveDocuments": 4,
+      "liveNodes": 1272
+    },
+    {
+      "stage": "profile-3/0/snapshot-diff",
+      "rss": 81866752,
+      "heapTotal": 26841088,
+      "heapUsed": 10622872,
+      "external": 1512293,
+      "arrayBuffers": 64948,
+      "liveDocuments": 4,
+      "liveNodes": 1272
+    },
+    {
+      "stage": "profile-4/0/open",
+      "rss": 77156352,
+      "heapTotal": 27103232,
+      "heapUsed": 14543208,
+      "external": 1512719,
+      "arrayBuffers": 65374,
+      "liveDocuments": 5,
+      "liveNodes": 1586
+    },
+    {
+      "stage": "profile-4/0/snapshot",
+      "rss": 78774272,
+      "heapTotal": 27103232,
+      "heapUsed": 15596736,
+      "external": 1544804,
+      "arrayBuffers": 97459,
+      "liveDocuments": 5,
+      "liveNodes": 1586
+    },
+    {
+      "stage": "profile-4/0/find-last",
+      "rss": 79622144,
+      "heapTotal": 27103232,
+      "heapUsed": 17277200,
+      "external": 1588959,
+      "arrayBuffers": 141614,
+      "liveDocuments": 5,
+      "liveNodes": 1586
+    },
+    {
+      "stage": "profile-4/0/actions",
+      "rss": 80703488,
+      "heapTotal": 28413952,
+      "heapUsed": 13607232,
+      "external": 1588959,
+      "arrayBuffers": 32839,
+      "liveDocuments": 5,
+      "liveNodes": 1586
+    },
+    {
+      "stage": "profile-4/0/outer-replacement",
+      "rss": 80703488,
+      "heapTotal": 28413952,
+      "heapUsed": 14076536,
+      "external": 1588959,
+      "arrayBuffers": 32839,
+      "liveDocuments": 5,
+      "liveNodes": 1590
+    },
+    {
+      "stage": "profile-4/0/snapshot-diff",
+      "rss": 80973824,
+      "heapTotal": 28413952,
+      "heapUsed": 16274064,
+      "external": 1512327,
+      "arrayBuffers": 64982,
+      "liveDocuments": 5,
+      "liveNodes": 1590
+    },
+    {
+      "stage": "profile-5/0/open",
+      "rss": 81780736,
+      "heapTotal": 28413952,
+      "heapUsed": 12569896,
+      "external": 1480218,
+      "arrayBuffers": 32873,
+      "liveDocuments": 6,
+      "liveNodes": 1904
+    },
+    {
+      "stage": "profile-5/0/snapshot",
+      "rss": 82518016,
+      "heapTotal": 28413952,
+      "heapUsed": 13632696,
+      "external": 1512303,
+      "arrayBuffers": 64958,
+      "liveDocuments": 6,
+      "liveNodes": 1904
+    },
+    {
+      "stage": "profile-5/0/find-last",
+      "rss": 83865600,
+      "heapTotal": 28413952,
+      "heapUsed": 15291480,
+      "external": 1556458,
+      "arrayBuffers": 109113,
+      "liveDocuments": 6,
+      "liveNodes": 1904
+    },
+    {
+      "stage": "profile-5/0/actions",
+      "rss": 83910656,
+      "heapTotal": 28676096,
+      "heapUsed": 11717888,
+      "external": 1556458,
+      "arrayBuffers": 32839,
+      "liveDocuments": 6,
+      "liveNodes": 1904
+    },
+    {
+      "stage": "profile-5/0/outer-replacement",
+      "rss": 83910656,
+      "heapTotal": 28676096,
+      "heapUsed": 12184840,
+      "external": 1556458,
+      "arrayBuffers": 32839,
+      "liveDocuments": 6,
+      "liveNodes": 1908
+    },
+    {
+      "stage": "profile-5/0/snapshot-diff",
+      "rss": 84721664,
+      "heapTotal": 28676096,
+      "heapUsed": 14380480,
+      "external": 1512327,
+      "arrayBuffers": 64982,
+      "liveDocuments": 6,
+      "liveNodes": 1908
+    },
+    {
+      "stage": "profile-6/0/open",
+      "rss": 84250624,
+      "heapTotal": 28676096,
+      "heapUsed": 17997544,
+      "external": 1512753,
+      "arrayBuffers": 65408,
+      "liveDocuments": 7,
+      "liveNodes": 2222
+    },
+    {
+      "stage": "profile-6/0/snapshot",
+      "rss": 84791296,
+      "heapTotal": 28676096,
+      "heapUsed": 19042024,
+      "external": 1544838,
+      "arrayBuffers": 97493,
+      "liveDocuments": 7,
+      "liveNodes": 2222
+    },
+    {
+      "stage": "profile-6/0/find-last",
+      "rss": 85598208,
+      "heapTotal": 28676096,
+      "heapUsed": 13404976,
+      "external": 1507506,
+      "arrayBuffers": 60161,
+      "liveDocuments": 7,
+      "liveNodes": 2222
+    },
+    {
+      "stage": "profile-6/0/actions",
+      "rss": 89104384,
+      "heapTotal": 28676096,
+      "heapUsed": 17224248,
+      "external": 1507506,
+      "arrayBuffers": 60161,
+      "liveDocuments": 7,
+      "liveNodes": 2222
+    },
+    {
+      "stage": "profile-6/0/outer-replacement",
+      "rss": 90456064,
+      "heapTotal": 28676096,
+      "heapUsed": 17691584,
+      "external": 1507506,
+      "arrayBuffers": 60161,
+      "liveDocuments": 7,
+      "liveNodes": 2226
+    },
+    {
+      "stage": "profile-6/0/snapshot-diff",
+      "rss": 91803648,
+      "heapTotal": 28938240,
+      "heapUsed": 12429232,
+      "external": 1539649,
+      "arrayBuffers": 92304,
+      "liveDocuments": 7,
+      "liveNodes": 2226
+    },
+    {
+      "stage": "profile-7/0/open",
+      "rss": 88342528,
+      "heapTotal": 28938240,
+      "heapUsed": 16086296,
+      "external": 1512753,
+      "arrayBuffers": 65408,
+      "liveDocuments": 8,
+      "liveNodes": 2540
+    },
+    {
+      "stage": "profile-7/0/snapshot",
+      "rss": 88883200,
+      "heapTotal": 28938240,
+      "heapUsed": 17131648,
+      "external": 1544838,
+      "arrayBuffers": 97493,
+      "liveDocuments": 8,
+      "liveNodes": 2540
+    },
+    {
+      "stage": "profile-7/0/find-last",
+      "rss": 88666112,
+      "heapTotal": 28938240,
+      "heapUsed": 18797048,
+      "external": 1588993,
+      "arrayBuffers": 141648,
+      "liveDocuments": 8,
+      "liveNodes": 2540
+    },
+    {
+      "stage": "profile-7/0/actions",
+      "rss": 85725184,
+      "heapTotal": 29200384,
+      "heapUsed": 15242160,
+      "external": 1588993,
+      "arrayBuffers": 32839,
+      "liveDocuments": 8,
+      "liveNodes": 2540
+    },
+    {
+      "stage": "profile-7/0/outer-replacement",
+      "rss": 86532096,
+      "heapTotal": 29200384,
+      "heapUsed": 15711232,
+      "external": 1588993,
+      "arrayBuffers": 32839,
+      "liveDocuments": 8,
+      "liveNodes": 2544
+    },
+    {
+      "stage": "profile-7/0/snapshot-diff",
+      "rss": 85782528,
+      "heapTotal": 29200384,
+      "heapUsed": 17904528,
+      "external": 1512327,
+      "arrayBuffers": 64982,
+      "liveDocuments": 8,
+      "liveNodes": 2544
+    },
+    {
+      "stage": "retained-before-close",
+      "rss": 85782528,
+      "heapTotal": 29200384,
+      "heapUsed": 17905488,
+      "external": 1512327,
+      "arrayBuffers": 64982,
+      "liveDocuments": 8,
+      "liveNodes": 2544
+    },
+    {
+      "stage": "close",
+      "rss": 86052864,
+      "heapTotal": 29200384,
+      "heapUsed": 18048888,
+      "external": 1512327,
+      "arrayBuffers": 64982,
+      "liveDocuments": 0,
+      "liveNodes": 0
+    }
+  ],
+  "checks": [
+    {
+      "label": "profile-0/0: predecessor documents close after navigation",
+      "passed": true
+    },
+    {
+      "label": "profile-0/0: snapshot reports controls",
+      "passed": true
+    },
+    {
+      "label": "profile-0/0: bounded search reaches the final row",
+      "passed": true
+    },
+    {
+      "label": "profile-0/0: native fill and event dispatch mutate the same document",
+      "passed": true
+    },
+    {
+      "label": "profile-0/0: replacement creates a fresh reference",
+      "passed": true
+    },
+    {
+      "label": "profile-0/0: complete snapshots diff and truncated snapshots reset honestly",
+      "passed": true
+    },
+    {
+      "label": "profile-1/0: predecessor documents close after navigation",
+      "passed": true
+    },
+    {
+      "label": "profile-1/0: snapshot reports controls",
+      "passed": true
+    },
+    {
+      "label": "profile-1/0: bounded search reaches the final row",
+      "passed": true
+    },
+    {
+      "label": "profile-1/0: native fill and event dispatch mutate the same document",
+      "passed": true
+    },
+    {
+      "label": "profile-1/0: replacement creates a fresh reference",
+      "passed": true
+    },
+    {
+      "label": "profile-1/0: complete snapshots diff and truncated snapshots reset honestly",
+      "passed": true
+    },
+    {
+      "label": "profile-2/0: predecessor documents close after navigation",
+      "passed": true
+    },
+    {
+      "label": "profile-2/0: snapshot reports controls",
+      "passed": true
+    },
+    {
+      "label": "profile-2/0: bounded search reaches the final row",
+      "passed": true
+    },
+    {
+      "label": "profile-2/0: native fill and event dispatch mutate the same document",
+      "passed": true
+    },
+    {
+      "label": "profile-2/0: replacement creates a fresh reference",
+      "passed": true
+    },
+    {
+      "label": "profile-2/0: complete snapshots diff and truncated snapshots reset honestly",
+      "passed": true
+    },
+    {
+      "label": "profile-3/0: predecessor documents close after navigation",
+      "passed": true
+    },
+    {
+      "label": "profile-3/0: snapshot reports controls",
+      "passed": true
+    },
+    {
+      "label": "profile-3/0: bounded search reaches the final row",
+      "passed": true
+    },
+    {
+      "label": "profile-3/0: native fill and event dispatch mutate the same document",
+      "passed": true
+    },
+    {
+      "label": "profile-3/0: replacement creates a fresh reference",
+      "passed": true
+    },
+    {
+      "label": "profile-3/0: complete snapshots diff and truncated snapshots reset honestly",
+      "passed": true
+    },
+    {
+      "label": "profile-4/0: predecessor documents close after navigation",
+      "passed": true
+    },
+    {
+      "label": "profile-4/0: snapshot reports controls",
+      "passed": true
+    },
+    {
+      "label": "profile-4/0: bounded search reaches the final row",
+      "passed": true
+    },
+    {
+      "label": "profile-4/0: native fill and event dispatch mutate the same document",
+      "passed": true
+    },
+    {
+      "label": "profile-4/0: replacement creates a fresh reference",
+      "passed": true
+    },
+    {
+      "label": "profile-4/0: complete snapshots diff and truncated snapshots reset honestly",
+      "passed": true
+    },
+    {
+      "label": "profile-5/0: predecessor documents close after navigation",
+      "passed": true
+    },
+    {
+      "label": "profile-5/0: snapshot reports controls",
+      "passed": true
+    },
+    {
+      "label": "profile-5/0: bounded search reaches the final row",
+      "passed": true
+    },
+    {
+      "label": "profile-5/0: native fill and event dispatch mutate the same document",
+      "passed": true
+    },
+    {
+      "label": "profile-5/0: replacement creates a fresh reference",
+      "passed": true
+    },
+    {
+      "label": "profile-5/0: complete snapshots diff and truncated snapshots reset honestly",
+      "passed": true
+    },
+    {
+      "label": "profile-6/0: predecessor documents close after navigation",
+      "passed": true
+    },
+    {
+      "label": "profile-6/0: snapshot reports controls",
+      "passed": true
+    },
+    {
+      "label": "profile-6/0: bounded search reaches the final row",
+      "passed": true
+    },
+    {
+      "label": "profile-6/0: native fill and event dispatch mutate the same document",
+      "passed": true
+    },
+    {
+      "label": "profile-6/0: replacement creates a fresh reference",
+      "passed": true
+    },
+    {
+      "label": "profile-6/0: complete snapshots diff and truncated snapshots reset honestly",
+      "passed": true
+    },
+    {
+      "label": "profile-7/0: predecessor documents close after navigation",
+      "passed": true
+    },
+    {
+      "label": "profile-7/0: snapshot reports controls",
+      "passed": true
+    },
+    {
+      "label": "profile-7/0: bounded search reaches the final row",
+      "passed": true
+    },
+    {
+      "label": "profile-7/0: native fill and event dispatch mutate the same document",
+      "passed": true
+    },
+    {
+      "label": "profile-7/0: replacement creates a fresh reference",
+      "passed": true
+    },
+    {
+      "label": "profile-7/0: complete snapshots diff and truncated snapshots reset honestly",
+      "passed": true
+    },
+    {
+      "label": "all created documents close",
+      "passed": true
+    },
+    {
+      "label": "all transports close",
+      "passed": true
+    },
+    {
+      "label": "sessions drain jobs, tabs and cleanup without errors",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "provisionalObservations": {
+    "readyWithinOneSecond": true,
+    "sampledPeakUnder100MiB": true
+  },
+  "limitations": [
+    "Fixed synthetic markup over an in-memory transport: no DNS, sockets, TLS, website scripts, SDK, CLI daemon, real terminal, layout or raster rendering.",
+    "One profile per fresh Node process. readyMs includes Node and static module initialization, not parent-observed CLI or service startup; filesystem caches are uncontrolled.",
+    "Peak RSS is process.resourceUsage maxRSS, converted from KiB to bytes. All memory includes the process, fixture source/bytes, reports and closed session wrappers, not just the DOM.",
+    "Samples are not allocation attribution or retained-heap measurements. No forced GC: closing native owners does not guarantee immediate RSS reduction.",
+    "Document/node maxima are phase-boundary samples of active loaded pages, not peaks during parsing, staging or navigation replacement.",
+    "The retained profile holds independently isolated sessions simultaneously, but navigations execute sequentially; it is not parallel CPU throughput.",
+    "Snapshot JSON and rendered text have different overhead. Native snapshot truncation is recorded rather than hidden; find must still reach the last row.",
+    "Performance observations are not correctness gates, portable guarantees, released-SDK acceptance or full-browser benchmarks."
+  ]
+}

@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "scope": "native-browser-session-in-memory-no-page-javascript",
+  "startedAt": "2026-09-02T20:33:14.529Z",
+  "finishedAt": "2026-09-02T20:33:14.657Z",
+  "runtime": {
+    "version": "v22.22.0",
+    "platform": "linux",
+    "architecture": "x64",
+    "cpuModel": "AMD EPYC 9R45"
+  },
+  "profile": {
+    "name": "medium",
+    "rows": 1000,
+    "sessions": 1,
+    "navigations": 1,
+    "sourceBytes": 59928
+  },
+  "readyMs": 28.846662,
+  "elapsedMs": 148.879732,
+  "cpuMs": 373.522,
+  "peakProcessRssBytes": 109056000,
+  "sampledPeakRssBytes": 106160128,
+  "createdDocuments": 1,
+  "closedDocuments": 1,
+  "closedTransports": 1,
+  "requestCount": 1,
+  "maxSampledLiveDocuments": 1,
+  "maxSampledLiveNodes": 3018,
+  "maxSnapshotJsonBytes": 16347,
+  "maxSnapshotTextBytes": 11003,
+  "truncatedSnapshots": 1,
+  "resetDiffs": 1,
+  "phases": [
+    {
+      "stage": "profile-0/0/open",
+      "elapsedMs": 45.160204,
+      "cpuMs": 114.276
+    },
+    {
+      "stage": "profile-0/0/snapshot",
+      "elapsedMs": 10.125746000000007,
+      "cpuMs": 24.947
+    },
+    {
+      "stage": "profile-0/0/find-last",
+      "elapsedMs": 14.618763000000001,
+      "cpuMs": 19.903
+    },
+    {
+      "stage": "profile-0/0/actions",
+      "elapsedMs": 34.76335399999999,
+      "cpuMs": 120.742
+    },
+    {
+      "stage": "profile-0/0/outer-replacement",
+      "elapsedMs": 0.7929579999999987,
+      "cpuMs": 0.781
+    },
+    {
+      "stage": "profile-0/0/snapshot-diff",
+      "elapsedMs": 10.523500000000013,
+      "cpuMs": 50.012
+    },
+    {
+      "stage": "close",
+      "elapsedMs": 0.574986000000024,
+      "cpuMs": 0.57
+    }
+  ],
+  "samples": [
+    {
+      "stage": "ready",
+      "rss": 56328192,
+      "heapTotal": 10063872,
+      "heapUsed": 6048864,
+      "external": 1457843,
+      "arrayBuffers": 26911,
+      "liveDocuments": 0,
+      "liveNodes": 0
+    },
+    {
+      "stage": "profile-0/0/open",
+      "rss": 74174464,
+      "heapTotal": 27365376,
+      "heapUsed": 14664624,
+      "external": 1534218,
+      "arrayBuffers": 86873,
+      "liveDocuments": 1,
+      "liveNodes": 3014
+    },
+    {
+      "stage": "profile-0/0/snapshot",
+      "rss": 76275712,
+      "heapTotal": 27889664,
+      "heapUsed": 15231056,
+      "external": 1566722,
+      "arrayBuffers": 119377,
+      "liveDocuments": 1,
+      "liveNodes": 3014
+    },
+    {
+      "stage": "profile-0/0/find-last",
+      "rss": 80769024,
+      "heapTotal": 29462528,
+      "heapUsed": 13560248,
+      "external": 1535307,
+      "arrayBuffers": 87962,
+      "liveDocuments": 1,
+      "liveNodes": 3014
+    },
+    {
+      "stage": "profile-0/0/actions",
+      "rss": 91762688,
+      "heapTotal": 49123328,
+      "heapUsed": 24349712,
+      "external": 1534184,
+      "arrayBuffers": 78611,
+      "liveDocuments": 1,
+      "liveNodes": 3014
+    },
+    {
+      "stage": "profile-0/0/outer-replacement",
+      "rss": 97488896,
+      "heapTotal": 49123328,
+      "heapUsed": 28173584,
+      "external": 1534184,
+      "arrayBuffers": 78611,
+      "liveDocuments": 1,
+      "liveNodes": 3018
+    },
+    {
+      "stage": "profile-0/0/snapshot-diff",
+      "rss": 106160128,
+      "heapTotal": 49385472,
+      "heapUsed": 30770240,
+      "external": 1558550,
+      "arrayBuffers": 111205,
+      "liveDocuments": 1,
+      "liveNodes": 3018
+    },
+    {
+      "stage": "retained-before-close",
+      "rss": 106160128,
+      "heapTotal": 49385472,
+      "heapUsed": 30771096,
+      "external": 1558550,
+      "arrayBuffers": 111205,
+      "liveDocuments": 1,
+      "liveNodes": 3018
+    },
+    {
+      "stage": "close",
+      "rss": 106160128,
+      "heapTotal": 49385472,
+      "heapUsed": 30806520,
+      "external": 1558550,
+      "arrayBuffers": 111205,
+      "liveDocuments": 0,
+      "liveNodes": 0
+    }
+  ],
+  "checks": [
+    {
+      "label": "profile-0/0: predecessor documents close after navigation",
+      "passed": true
+    },
+    {
+      "label": "profile-0/0: snapshot reports controls",
+      "passed": true
+    },
+    {
+      "label": "profile-0/0: bounded search reaches the final row",
+      "passed": true
+    },
+    {
+      "label": "profile-0/0: native fill and event dispatch mutate the same document",
+      "passed": true
+    },
+    {
+      "label": "profile-0/0: replacement creates a fresh reference",
+      "passed": true
+    },
+    {
+      "label": "profile-0/0: complete snapshots diff and truncated snapshots reset honestly",
+      "passed": true
+    },
+    {
+      "label": "all created documents close",
+      "passed": true
+    },
+    {
+      "label": "all transports close",
+      "passed": true
+    },
+    {
+      "label": "sessions drain jobs, tabs and cleanup without errors",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "provisionalObservations": {
+    "readyWithinOneSecond": true,
+    "sampledPeakUnder100MiB": false
+  },
+  "limitations": [
+    "Fixed synthetic markup over an in-memory transport: no DNS, sockets, TLS, website scripts, SDK, CLI daemon, real terminal, layout or raster rendering.",
+    "One profile per fresh Node process. readyMs includes Node and static module initialization, not parent-observed CLI or service startup; filesystem caches are uncontrolled.",
+    "Peak RSS is process.resourceUsage maxRSS, converted from KiB to bytes. All memory includes the process, fixture source/bytes, reports and closed session wrappers, not just the DOM.",
+    "Samples are not allocation attribution or retained-heap measurements. No forced GC: closing native owners does not guarantee immediate RSS reduction.",
+    "Document/node maxima are phase-boundary samples of active loaded pages, not peaks during parsing, staging or navigation replacement.",
+    "The retained profile holds independently isolated sessions simultaneously, but navigations execute sequentially; it is not parallel CPU throughput.",
+    "Snapshot JSON and rendered text have different overhead. Native snapshot truncation is recorded rather than hidden; find must still reach the last row.",
+    "Performance observations are not correctness gates, portable guarantees, released-SDK acceptance or full-browser benchmarks."
+  ]
+}

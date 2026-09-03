@@ -1,13 +1,20 @@
 # Public SafeJS extension adapter
 
-Status: September 2, 2026. The adapter is implemented and covered by mock-contract
+Status: September 3, 2026. The adapter is implemented and covered by mock-contract
 tests. It has **not been run against an approved released SafeJS artifact**.
 The CLI/service still selects the existing experimental adapter; no dependency,
 installation, SDK patch or default runtime switch is part of this work.
 
+Read-only upstream reinspection confirms #550 closed at September 2, 19:43:35
+UTC. The final maintainer comment reports release 0.1.40 and verified consumers
+and provenance for the console-override implementation. Scoped SafeJS is absent
+from the checked workspace/global roots and does not resolve from this repository;
+see `SAFEJS-UPSTREAM-MIGRATION.md`. This resolves the
+upstream request, not this browser's still-unrun released-artifact gates.
+
 The public contract was inspected at poe-code commit
 `7984fa903602e6561b342a140f472978827094b7`: realm options, extension setup, callbacks,
-error results, budgets and cleanup. The maintainer's 19:34 UTC comment on #550
+error results, budgets and cleanup. The maintainer's earlier 19:34 UTC comment on #550
 reports implementation pushed and release jobs queued. That is upstream evidence,
 not local package acceptance or provenance verification.
 
