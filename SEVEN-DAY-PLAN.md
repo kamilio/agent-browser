@@ -55,6 +55,11 @@ file save/load with explicit atomic overwrite, bounded reads and guarded cleanup
 Library round trips pass; bounded command/process transfer and CLI wiring remain
 next. This does not close the CLI or real-account acceptance gates.
 
+September 3 CLI continuation: `STATE-TRANSFER.md` connects native `state-save` and
+`state-load` to private files through bounded session-scoped chunks. CLI entry,
+frame size and injected process-dispatch evidence are distinct from the still-open
+real socket/process/runtime, upstream parity and authentication gates.
+
 ## Acceptance and safety
 
 - Keep every requirement in `COMPATIBILITY.md`; do not turn missing behavior into

@@ -49,6 +49,7 @@ import {
 	diffSnapshots,
 	renderSnapshot,
 } from "./snapshot.js";
+import { StateTransfers } from "./state-transfer.js";
 import { resolveBrowserTarget } from "./target-locator.js";
 import { textLocatorLimits } from "./text-locator.js";
 
@@ -98,6 +99,8 @@ interface SessionEntry {
 
 const ownedSessions = new WeakSet<BrowserSession>();
 const frontendCommands = new Set([
+	"state-save",
+	"state-load",
 	"serve",
 	"stop-server",
 	"playground",
@@ -105,6 +108,12 @@ const frontendCommands = new Set([
 ]);
 
 const supportedOptions: Readonly<Record<string, readonly string[]>> = {
+	"state-export": [],
+	"state-import-begin": [],
+	"state-import-append": [],
+	"state-import-commit": [],
+	"state-transfer-read": [],
+	"state-transfer-delete": [],
 	open: [],
 	goto: [],
 	close: [],
@@ -184,6 +193,7 @@ function abortable<Result>(
 
 export class BrowserCommandHost {
 	private readonly artifacts = new CaptureArtifacts();
+	private readonly stateTransfers = new StateTransfers();
 	private sessions = new Map<string, SessionEntry>();
 	private snapshots = new Map<
 		string,
@@ -621,6 +631,7 @@ export class BrowserCommandHost {
 			executedCommands: this.executed,
 			cachedSnapshotBytes: this.cachedBytes,
 			captureArtifacts: this.artifacts.metrics(),
+			stateTransfers: this.stateTransfers.metrics(),
 			closed: this.closed,
 		});
 	}
@@ -788,6 +799,7 @@ export class BrowserCommandHost {
 	}
 
 	private closeEntry(entry: SessionEntry) {
+		this.stateTransfers.clear(entry.browser);
 		this.sessions.delete(entry.name);
 		this.artifacts.clear(entry.name);
 		for (const controller of entry.controllers)
@@ -915,6 +927,30 @@ export class BrowserCommandHost {
 		signal: AbortSignal,
 	): Promise<unknown> {
 		const browser = entry.browser;
+		if (invocation.command === "state-export")
+			return this.stateTransfers.export(browser);
+		if (invocation.command === "state-import-begin")
+			return this.stateTransfers.begin(
+				browser,
+				Number(invocation.arguments[0]),
+			);
+		if (invocation.command === "state-import-append")
+			return this.stateTransfers.append(
+				browser,
+				invocation.arguments[0],
+				Number(invocation.arguments[1]),
+				invocation.arguments[2],
+			);
+		if (invocation.command === "state-import-commit")
+			return this.stateTransfers.commit(browser, invocation.arguments[0]);
+		if (invocation.command === "state-transfer-read")
+			return this.stateTransfers.read(
+				browser,
+				invocation.arguments[0],
+				Number(invocation.arguments[1]),
+			);
+		if (invocation.command === "state-transfer-delete")
+			return this.stateTransfers.delete(browser, invocation.arguments[0]);
 		const args = invocation.arguments;
 		const options = invocation.options;
 		if (invocation.command === "artifact-list")

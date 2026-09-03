@@ -19,6 +19,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+State-transfer checkpoint: `STATE-TRANSFER.md` connects CLI `state-save`/`state-load`
+to the private-file and atomic-owner layers. Transfers reserve bounded memory,
+expire, are revoked on session recreation, and validate chunks/acknowledgements without
+automatic commit replay. Actual CLI-entry tests round-trip more than 2 MiB through
+an injected service and real private temporary files. HTTP and process frame limits
+are checked separately; P12 is partial, not complete.
+
+Forty-one new cases pass; focused regressions pass 225 tests / seven files. The
+full working tree passes 5,930 tests / 183 explicit native files. Production build,
+strict new-test checking, seven-source lint and eight-source formatting pass;
+unrelated command-host import-order warnings remain preserved.
+The isolated change passes typechecking and 3,170 tests / 122 available allowlisted
+files without pre-existing unfinished features. No live/runtime probe is claimed.
+
+Next: authorized real socket/process/runtime state round trips and authentication
+reuse, then the plan's SafeJS compatibility and execution-cost gates. Native
+injected-service/actor tests do not substitute for those acceptance gates.
+
+### Previous state-file checkpoint
+
 State-file checkpoint: `STATE-FILES.md` adds Node-only private JSON file save/load
 for cookie/local-storage owners, with a 128 MiB ceiling, Unix ownership checks,
 symlink/hard-link refusal, exclusive creation and explicit atomic overwrite.

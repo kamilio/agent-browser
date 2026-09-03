@@ -8,3 +8,5 @@ node_modules/
 .automations/
 .poe-code/
 tmp/
+agent-browser-state-*.json
+.agent-browser-state-*.part

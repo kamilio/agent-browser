@@ -1,5 +1,12 @@
 # Executable CLI and shared command service
 
+September 3 state persistence: `state-save [filename] [--overwrite]` and
+`state-load <filename>` now connect bounded session-scoped transfers to private
+local files. Normal command results contain metadata, not credentials. Native
+CLI-entry round trips pass with an injected service; real socket/process/runtime
+and authentication acceptance remain open. See `STATE-TRANSFER.md` for limits,
+private-directory requirements, cleanup and ambiguous-commit behavior.
+
 September 3 JPEG integration: `images` identifies PNG/JPEG resources and ignored
 metadata. Baseline/progressive JPEG pixels participate in `screenshot` and `pdf`;
 `capabilities.imageResources.jpeg` describes the partial codec profile. Resource

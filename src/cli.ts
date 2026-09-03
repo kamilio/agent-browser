@@ -14,6 +14,7 @@ import {
 	writeCommandConnection,
 } from "./node-runtime.js";
 import { SessionProcessHost } from "./node-session-host.js";
+import { runStateFileCommand } from "./node-state-client.js";
 import { runTerminal } from "./node-terminal.js";
 import { NodeNetworkTransport } from "./node-transport.js";
 import { BrowserSession } from "./session.js";
@@ -230,6 +231,37 @@ async function main() {
 							String(invocation.options.pair),
 						),
 			),
+		);
+		return;
+	}
+	if (["state-save", "state-load"].includes(invocation.command)) {
+		const connection = await readCommandConnection(directory);
+		const state = await runStateFileCommand(invocation, async (stateArgv) => {
+			const result = await requestCommand(
+				connection,
+				{
+					argv:
+						invocation.options.timeout === undefined
+							? stateArgv
+							: [
+									...stateArgv,
+									`--timeout=${String(invocation.options.timeout)}`,
+								],
+					session: invocation.session,
+				},
+				Number(invocation.options.timeout ?? 30_000) + 5000,
+			);
+			if (!("data" in result))
+				throw new AgentBrowserError("closed", "Local API closed");
+			return result;
+		});
+		console.log(
+			safeJson({
+				schemaVersion: 1,
+				command: invocation.command,
+				session: invocation.session,
+				data: state,
+			}),
 		);
 		return;
 	}
