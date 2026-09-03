@@ -1,3 +1,4 @@
+import { documentTitle } from "./document-title.js";
 import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -361,12 +362,7 @@ export function extractDocument(
 		node.attributes["aria-hidden"]?.toLowerCase() === "true" ||
 		(node.tagName === "noscript" && scripting) ||
 		!styles.get(node.id).displayed;
-	let title = "";
-	for (const { node } of tree.walk())
-		if (node.tagName === "title") {
-			title = clean(tree.textContent(node.id)).replace(/\s+/gu, " ").trim();
-			break;
-		}
+	const title = clean(documentTitle(tree));
 	const safeUrl = new URL(tree.url);
 	safeUrl.username = "";
 	safeUrl.password = "";

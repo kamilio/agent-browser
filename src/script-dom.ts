@@ -8,6 +8,11 @@ import { documentScriptState } from "./document-script-state.js";
 import { documentImages } from "./document-images.js";
 import { NodeRelations } from "./node-relations.js";
 import { documentBaseUrl } from "./document-url.js";
+import {
+	documentTitle,
+	setDocumentTitle,
+	titleElementText,
+} from "./document-title.js";
 import { writeDocument } from "./document-write.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -231,6 +236,17 @@ export class ScriptDom {
 				hasChildNodes: () => this.read(id).children.length > 0,
 			},
 		};
+		if (initial.kind === "element" && initial.tagName === "title")
+			definition.properties.text = {
+				get: () => {
+					this.read(id);
+					return titleElementText(this.tree, id);
+				},
+				set: (value) => {
+					this.read(id);
+					this.tree.setTextContent(id, domString(value));
+				},
+			};
 		const relations = this.relations.definition(id);
 		Object.assign(definition.properties, relations.properties);
 		Object.assign(definition.methods, relations.methods);
@@ -312,6 +328,16 @@ export class ScriptDom {
 			};
 		}
 		if (initial.kind === "document") {
+			definition.properties.title = {
+				get: () => {
+					this.read(id);
+					return documentTitle(this.tree);
+				},
+				set: (value) => {
+					this.read(id);
+					setDocumentTitle(this.tree, domString(value));
+				},
+			};
 			definition.properties.forms = {
 				get: () => {
 					this.read(id);

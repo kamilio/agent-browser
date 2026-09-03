@@ -67,6 +67,11 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 title continuation: `DOCUMENT-TITLE.md` adds live native document/title
+text bindings and shares their semantics with extraction metadata. Atomic creation,
+quota failures and isolated owners are checked without substituting native host
+fixtures for the still-open guest-runtime, website or UI acceptance gates.
+
 September 3 comment continuation: `HTML-COMMENTS.md` fixes malformed comments
 that hid following content, preserves parser-input boundaries and charges rescans
 to the existing work budget. Native parser-write and document/fragment checks do

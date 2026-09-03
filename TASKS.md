@@ -19,6 +19,18 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Document-title checkpoint: `DOCUMENT-TITLE.md` adds live `document.title` and
+`HTMLTitleElement.text`, with shared extraction semantics, literal mutation,
+native identity and bounded atomic creation. Twenty initial cases failed before
+implementation; thirty-two new cases now pass. Fourteen reviewed native extraction
+tests are restored to the explicit allowlist without revising historical counts.
+Focused validation passes 86 tests / four files; the full working tree passes
+6,141 tests / 188 native files with no unhandled errors. Build, strict test types
+and source lint/formatting pass. Guest-runtime, SVG/XML, real-site, socket and UI
+acceptance remain open; native parser hooks do not count as SafeJS execution.
+
+### Previous comment checkpoint
+
 HTML comment checkpoint: `HTML-COMMENTS.md` replaces the closing-marker shortcut
 with native comment states, preserving following markup, unfinished delimiters,
 bogus-comment recovery and split-input diagnostic ordering. Nineteen initial
