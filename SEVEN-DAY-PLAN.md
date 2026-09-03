@@ -67,6 +67,11 @@ or retained-graph throughput evidence; those approved-runtime gates remain open.
 
 ## Acceptance and safety
 
+September 3 comment continuation: `HTML-COMMENTS.md` fixes malformed comments
+that hid following content, preserves parser-input boundaries and charges rescans
+to the existing work budget. Native parser-write and document/fragment checks do
+not close the released-runtime, real-site or user-interface acceptance gates.
+
 September 3 parser continuation: `HTML-ENTITIES.md` replaces the common-name subset
 with the full reviewed WHATWG named-reference data and correct longest matching.
 Native corpus, split-input and shared HTML-content checks are separate from the

@@ -19,6 +19,19 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+HTML comment checkpoint: `HTML-COMMENTS.md` replaces the closing-marker shortcut
+with native comment states, preserving following markup, unfinished delimiters,
+bogus-comment recovery and split-input diagnostic ordering. Nineteen initial
+ordinary-comment and eight bogus-comment regressions failed before correction;
+two intermediate rescan-accounting failures were also corrected. Seventy-seven
+new native cases pass. Focused validation passes 205 tests / six files; the full
+working tree passes 6,095 tests / 186 explicit native files with no unhandled errors.
+Build, strict test types and two-source lint/formatting pass. Parser-write hooks
+are native fixtures, not SafeJS execution. Processing instructions, template and
+framework support, real-site, runtime, socket and UI acceptance remain open.
+
+### Previous named-reference checkpoint
+
 HTML named-reference checkpoint: `HTML-ENTITIES.md` adds the complete reviewed
 WHATWG mapping, longest matching and attribute ambiguity handling to the shared
 native parser. Twenty initial regressions failed; fifty new cases cover all 2,231

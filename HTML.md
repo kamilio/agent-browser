@@ -17,6 +17,10 @@ replacement and bounded live HTML extraction through the CLI/API.
 
 ## What works now
 
+September 3 comment update: `HTML-COMMENTS.md` adds state-based native comment
+recovery, including abrupt empty comments that previously swallowed following
+content. Historical measurements below are not new validation of this change.
+
 September 3 update: `HTML-ENTITIES.md` supersedes the small named-reference subset
 described in this historical checkpoint. The native parser now uses the complete
 reviewed WHATWG mapping and longest-match/attribute-ambiguity behavior. Other

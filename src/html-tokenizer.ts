@@ -16,6 +16,18 @@ const whitespace = (character: string | undefined) =>
 	character !== undefined && /[\t\n\f\r ]/.test(character);
 const needInput = Symbol("HTML input boundary");
 
+type CommentState =
+	| "start"
+	| "start-dash"
+	| "comment"
+	| "less-than"
+	| "bang"
+	| "bang-dash"
+	| "bang-dash-dash"
+	| "end-dash"
+	| "end"
+	| "end-bang";
+
 export class HtmlTokenizer {
 	private offset = 0;
 	private input: string;
@@ -133,13 +145,7 @@ export class HtmlTokenizer {
 			};
 		}
 		if (this.source.startsWith("<!--", this.offset)) {
-			const start = this.offset + 4;
-			const ending = /--!?>/g;
-			ending.lastIndex = start;
-			const match = ending.exec(this.source);
-			this.offset = match ? match.index + match[0].length : this.source.length;
-			if (!match) this.issue("unterminated-comment");
-			return { kind: "comment", data: this.source.slice(start, match?.index) };
+			return this.comment();
 		}
 		if (
 			/^<!doctype(?:[\t\n\f\r >]|$)/i.test(
@@ -150,10 +156,11 @@ export class HtmlTokenizer {
 			const data = this.declaration();
 			return { kind: "doctype", data: data.trim() };
 		}
-		if (
-			this.source[this.offset + 1] === "!" ||
-			this.source[this.offset + 1] === "?"
-		) {
+		if (this.source[this.offset + 1] === "!") {
+			this.issue("bogus-declaration");
+			return this.bogusComment(this.offset + 2);
+		}
+		if (this.source[this.offset + 1] === "?") {
 			this.issue("bogus-declaration");
 			this.offset += 2;
 			return { kind: "comment", data: this.declaration() };
@@ -163,6 +170,14 @@ export class HtmlTokenizer {
 		if (this.boundary !== undefined && nameStart >= this.source.length)
 			throw needInput;
 		if (!/[a-zA-Z]/.test(this.source[nameStart] ?? "")) {
+			if (
+				endTag &&
+				nameStart < this.source.length &&
+				this.source[nameStart] !== ">"
+			) {
+				this.issue("invalid-first-character-of-tag-name");
+				return this.bogusComment(nameStart);
+			}
 			this.offset++;
 			return { kind: "text", data: "<" };
 		}
@@ -257,6 +272,128 @@ export class HtmlTokenizer {
 		}
 		this.issue("unterminated-tag");
 		return undefined;
+	}
+
+	private bogusComment(start: number): HtmlToken {
+		const end = this.source.indexOf(">", start);
+		this.offset = end < 0 ? this.source.length : end + 1;
+		if (end < 0 && this.boundary !== undefined) throw needInput;
+		return {
+			kind: "comment",
+			data: this.source
+				.slice(start, end < 0 ? undefined : end)
+				.replace(/\0/g, () => {
+					this.issue("unexpected-null-character");
+					return "\ufffd";
+				}),
+		};
+	}
+
+	private comment(): HtmlToken {
+		this.offset += 4;
+		const start = this.offset;
+		let length = 0;
+		let state: CommentState = "start";
+		const token = (): HtmlToken => ({
+			kind: "comment",
+			data: this.source.slice(start, start + length).replace(/\0/g, "\ufffd"),
+		});
+		while (this.offset < this.source.length) {
+			const character = this.source[this.offset++];
+			switch (state) {
+				case "start":
+					if (character === "-") state = "start-dash";
+					else if (character === ">") {
+						this.issue("abrupt-closing-of-empty-comment");
+						return token();
+					} else {
+						state = "comment";
+						this.offset--;
+					}
+					break;
+				case "start-dash":
+					if (character === "-") state = "end";
+					else if (character === ">") {
+						this.issue("abrupt-closing-of-empty-comment");
+						return token();
+					} else {
+						length++;
+						state = "comment";
+						this.offset--;
+					}
+					break;
+				case "comment":
+					if (character === "-") state = "end-dash";
+					else {
+						length++;
+						if (character === "<") state = "less-than";
+						else if (character === "\0")
+							this.issue("unexpected-null-character");
+					}
+					break;
+				case "less-than":
+					if (character === "!") {
+						length++;
+						state = "bang";
+					} else if (character === "<") length++;
+					else {
+						state = "comment";
+						this.offset--;
+					}
+					break;
+				case "bang":
+					if (character === "-") state = "bang-dash";
+					else {
+						state = "comment";
+						this.offset--;
+					}
+					break;
+				case "bang-dash":
+					if (character === "-") state = "bang-dash-dash";
+					else {
+						state = "end-dash";
+						this.offset--;
+					}
+					break;
+				case "bang-dash-dash":
+					if (character !== ">") this.issue("nested-comment");
+					state = "end";
+					this.offset--;
+					break;
+				case "end-dash":
+					if (character === "-") state = "end";
+					else {
+						length++;
+						state = "comment";
+						this.offset--;
+					}
+					break;
+				case "end":
+					if (character === ">") return token();
+					if (character === "!") state = "end-bang";
+					else if (character === "-") length++;
+					else {
+						length += 2;
+						state = "comment";
+						this.offset--;
+					}
+					break;
+				case "end-bang":
+					if (character === ">") {
+						this.issue("incorrectly-closed-comment");
+						return token();
+					}
+					length += 3;
+					if (character === "-") state = "end-dash";
+					else {
+						state = "comment";
+						this.offset--;
+					}
+					break;
+			}
+		}
+		this.issue("unterminated-comment");
+		return token();
 	}
 
 	raw(name: string, entities = false): string | undefined {

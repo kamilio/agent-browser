@@ -69,6 +69,7 @@
   "src/hit-testing-command.test.ts",
   "src/hit-testing.test.ts",
   "src/hover.test.ts",
+  "src/html-comments.test.ts",
   "src/html-content.test.ts",
   "src/html-entities.test.ts",
   "src/html-fragment.test.ts",
