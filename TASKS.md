@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Template bindings checkpoint: `TEMPLATE-BINDINGS.md` exposes stable read-only
+`.content` capabilities and inert contents-owner bindings, with guarded initial
+publication, failure cleanup and parent teardown. Main, auxiliary and contents
+callers share HTML-document admission/resources while creations inherit the
+actual caller's origin. Three initial regressions fail before implementation;
+36 new tests and 274 focused checks across seven files pass. Full native
+validation passes 8,228 / 232 files; the isolated owned patch passes 5,468 / 171
+available files. Types, builds and three-file lint pass in both trees, preserving
+pre-existing pending work. Next implement real template parser insertion modes,
+owner-aware insertion and inert resource/policy behavior. Adoption, cross-owner
+observer/runtime integration and broader compatibility remain incomplete. No
+gated probe ran; the denied SafeJS probe remains unrun, independent acceptance
+gates remain open and the seven-day goal stays active.
+
+### Previous native-template checkpoint
+
 Native template ownership checkpoint: `TEMPLATE-OWNERSHIP.md` creates separate
 reused contents documents, stable fragment/host references, host-aware cycle and
 depth checks, bounded graph cloning/import and owner-aware HTML serialization.

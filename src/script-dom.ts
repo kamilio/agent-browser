@@ -1,7 +1,7 @@
 import { controlChecked, controlValue, inputType } from "./controls.js";
 import {
 	HtmlDocumentFamily,
-	htmlDocumentContext,
+	htmlDocumentFamily,
 } from "./html-document-family.js";
 import { DocumentEvents } from "./events.js";
 import { documentMode } from "./document-mode.js";
@@ -110,6 +110,8 @@ export class ScriptDom {
 	private readonly inert: boolean;
 	private readonly inheritedFamily?: HtmlDocumentFamily;
 	private ownedFamily?: HtmlDocumentFamily;
+	private templateBinding?: { dom: ScriptDom; events?: DocumentEvents };
+	private publishingTemplate = false;
 	private readonly callbacks?: ScriptCallbackRuntime;
 	private mutationRecordOwner?: ScriptMutationRecords;
 	private mutationObserverOwner?: {
@@ -127,9 +129,9 @@ export class ScriptDom {
 		private readonly location?: ScriptLocation,
 		private readonly storage?: ScriptStorage,
 	) {
-		const context = htmlDocumentContext(tree);
-		this.inert = context !== undefined;
-		this.inheritedFamily = context?.family;
+		this.inheritedFamily = htmlDocumentFamily(tree);
+		this.inert =
+			this.inheritedFamily !== undefined || tree.isTemplateContentsDocument;
 		this.callbacks = events?.callbacks;
 		if (typeof factory?.createHostObject !== "function")
 			throw new AgentBrowserError(
@@ -575,7 +577,9 @@ export class ScriptDom {
 					defaultView: null,
 					location: null,
 					referrer: "",
-					contentType: "text/html",
+					contentType: this.tree.isTemplateContentsDocument
+						? "application/xml"
+						: "text/html",
 					characterSet: "UTF-8",
 					charset: "UTF-8",
 					inputEncoding: "UTF-8",
@@ -621,6 +625,10 @@ export class ScriptDom {
 			}
 		}
 		if (initial.kind === "element") {
+			if (initial.tagName === "template")
+				definition.properties.content = {
+					get: () => this.templateContent(id),
+				};
 			Object.assign(definition.methods, this.attributes.elementMethods(id));
 			definition.properties.dataset = {
 				get: () => {
@@ -883,7 +891,17 @@ export class ScriptDom {
 			this.identities = new WeakMap();
 			this.unregisterClose();
 		} finally {
-			this.ownedFamily?.close();
+			const binding = this.templateBinding;
+			this.templateBinding = undefined;
+			try {
+				try {
+					binding?.dom.close();
+				} finally {
+					binding?.events?.close();
+				}
+			} finally {
+				this.ownedFamily?.close();
+			}
 		}
 	}
 
@@ -971,15 +989,10 @@ export class ScriptDom {
 					createHTMLDocument: (value) => {
 						const title = value === undefined ? undefined : domString(value);
 						this.read(this.tree.root);
-						let family = this.inheritedFamily ?? this.ownedFamily;
-						if (!family) {
-							family = new HtmlDocumentFamily(this.tree);
-							this.ownedFamily = family;
-						}
-						return family.create(
+						return this.documentFamily().create(
 							title,
-							(tree) =>
-								new ScriptDom(
+							(tree) => {
+								const child = new ScriptDom(
 									tree,
 									this.factory,
 									this.callbacks
@@ -988,7 +1001,11 @@ export class ScriptDom {
 												callbacks: this.callbacks,
 											}
 										: undefined,
-								).document,
+								);
+								this.ensureOpen();
+								return child.document;
+							},
+							this.tree,
 						);
 					},
 					createDocumentType: (...values) => {
@@ -1010,6 +1027,52 @@ export class ScriptDom {
 				this.implementation = capability;
 			},
 		);
+	}
+	private documentFamily(): HtmlDocumentFamily {
+		this.ensureOpen();
+		const inherited = this.inheritedFamily ?? htmlDocumentFamily(this.tree);
+		if (inherited) return inherited;
+		this.ownedFamily ??= new HtmlDocumentFamily(this.tree);
+		return this.ownedFamily;
+	}
+
+	private templateContent(id: number): object {
+		this.read(id);
+		const content = this.tree.templateContent(id);
+		if (content.tree === this.tree) return this.node(content.id);
+		if (this.templateBinding) return this.templateBinding.dom.node(content.id);
+		if (this.publishingTemplate)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Reentrant template contents publication",
+			);
+		this.publishingTemplate = true;
+		let candidate: ScriptDom | undefined;
+		let events: DocumentEvents | undefined;
+		try {
+			this.documentFamily().attachTemplate(this.tree, id);
+			if (this.callbacks) events = new DocumentEvents(content.tree);
+			candidate = new ScriptDom(
+				content.tree,
+				this.factory,
+				events && this.callbacks
+					? { events, callbacks: this.callbacks }
+					: undefined,
+			);
+			const capability = candidate.node(content.id);
+			this.ensureOpen();
+			this.templateBinding = { dom: candidate, events };
+			return capability;
+		} catch (error) {
+			try {
+				candidate?.close();
+			} finally {
+				events?.close();
+			}
+			throw error;
+		} finally {
+			this.publishingTemplate = false;
+		}
 	}
 	private importNode(values: readonly unknown[]): object {
 		this.read(this.tree.root);

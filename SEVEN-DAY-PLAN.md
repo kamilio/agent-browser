@@ -346,6 +346,14 @@ caller-correct origin and shared-family creation, then actual template insertion
 modes without resource side effects. Adoption and independent runtime, live-site,
 terminal and broader compatibility gates remain open.
 
+September 4 template-binding continuation: `TEMPLATE-BINDINGS.md` exposes stable
+contents/owner host objects, inert defaults, guarded publication and teardown.
+Auxiliary document creation shares the family admission/resource budget while
+retaining each actual caller's origin. Continue with real template parser modes
+and owner-aware inert insertion; adoption and cross-owner observer/runtime
+integration remain separate requirements. Native factory evidence does not close
+the SafeJS, live-site, terminal or broader compatibility gates.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

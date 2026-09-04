@@ -8,6 +8,7 @@ export interface DocumentOrigin {
 }
 
 const origins = new WeakMap<DocumentTree, DocumentOrigin>();
+const templateFamilies = new WeakMap<DocumentTree, HtmlDocumentFamily>();
 const contexts = new WeakMap<
 	DocumentTree,
 	Readonly<{
@@ -34,20 +35,23 @@ export function htmlDocumentContext(tree: DocumentTree) {
 	return contexts.get(tree);
 }
 
+export function htmlDocumentFamily(tree: DocumentTree) {
+	return contexts.get(tree)?.family ?? templateFamilies.get(tree);
+}
+
 export class HtmlDocumentFamily {
 	private readonly resources: DocumentResources;
-	private readonly origin: DocumentOrigin;
 	private readonly unregisterClose: () => void;
 	private attempts = 0;
 	private closed = false;
 
 	constructor(private readonly creator: DocumentTree) {
-		if (contexts.has(creator))
+		if (htmlDocumentFamily(creator))
 			throw new AgentBrowserError(
 				"invalid-input",
 				"Auxiliary documents must share their existing family",
 			);
-		this.origin = documentOrigin(creator);
+		documentOrigin(creator);
 		this.resources = new DocumentResources({
 			maxNodes: creator.limits.maxNodes,
 			maxTextCodeUnits: creator.limits.maxTextCodeUnits,
@@ -55,11 +59,28 @@ export class HtmlDocumentFamily {
 		this.unregisterClose = creator.onClose(() => this.close());
 	}
 
+	attachTemplate(creator: DocumentTree, template: number): DocumentTree {
+		this.ensureCaller(creator);
+		const owner = creator.templateContent(template).tree;
+		const existing = htmlDocumentFamily(owner);
+		if (existing && existing !== this)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Template contents already belong to another family",
+			);
+		if (!existing) {
+			templateFamilies.set(owner, this);
+			owner.onClose(() => templateFamilies.delete(owner));
+		}
+		return owner;
+	}
+
 	create(
 		title: string | undefined,
 		publish: (tree: DocumentTree) => object,
+		creator = this.creator,
 	): object {
-		this.ensureOpen();
+		this.ensureCaller(creator);
 		if (
 			(title !== undefined && typeof title !== "string") ||
 			typeof publish !== "function"
@@ -74,6 +95,7 @@ export class HtmlDocumentFamily {
 				"HTML document creation limit exceeded",
 			);
 		this.attempts++;
+		const origin = documentOrigin(creator);
 		const titled = title !== undefined;
 		if (this.creator.limits.maxDepth < (titled ? 4 : 2))
 			throw new AgentBrowserError(
@@ -98,12 +120,12 @@ export class HtmlDocumentFamily {
 				tree.append(element, tree.createText(title));
 			}
 			tree.append(html, tree.createElement("body"));
-			origins.set(tree, this.origin);
+			origins.set(tree, origin);
 			contexts.set(
 				tree,
 				Object.freeze({
 					family: this,
-					origin: this.origin,
+					origin,
 					contentType: "text/html",
 					encoding: "UTF-8",
 					compatMode: "CSS1Compat",
@@ -114,7 +136,7 @@ export class HtmlDocumentFamily {
 				origins.delete(tree);
 			});
 			const capability = publish(tree);
-			this.ensureOpen();
+			this.ensureCaller(creator);
 			tree.get(tree.root);
 			if (capability === null || typeof capability !== "object")
 				throw new AgentBrowserError(
@@ -153,5 +175,15 @@ export class HtmlDocumentFamily {
 		if (this.closed)
 			throw new AgentBrowserError("closed", "HTML document family is closed");
 		this.creator.get(this.creator.root);
+	}
+
+	private ensureCaller(creator: DocumentTree) {
+		this.ensureOpen();
+		creator.get(creator.root);
+		if (creator !== this.creator && htmlDocumentFamily(creator) !== this)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"HTML document caller is outside this family",
+			);
 	}
 }
