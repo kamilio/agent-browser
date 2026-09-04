@@ -1,6 +1,7 @@
 import { controlValue, fillTextControl, inputType } from "./controls.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { nextOffset, previousOffset } from "./keyboard-text.js";
 
 export interface NativeControlSelection {
 	readonly anchor: number;
@@ -166,6 +167,24 @@ class NativeControlCaret {
 		const position =
 			offset === undefined ? value.length : Math.min(value.length, offset);
 		return this.publish(id, value, position, position);
+	}
+
+	select(id: number, anchor: number, position: number): Readonly<ControlCaret> {
+		this.target(id);
+		const value = controlValue(this.tree, id);
+		for (const offset of [anchor, position])
+			if (
+				!Number.isSafeInteger(offset) ||
+				offset < 0 ||
+				offset > value.length ||
+				(offset > 0 &&
+					nextOffset(value, previousOffset(value, offset)) !== offset)
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid control caret boundary",
+				);
+		return this.publish(id, value, anchor, position);
 	}
 
 	move(

@@ -8,6 +8,13 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation now includes focused-control Shift-click selection
+with captured modifiers and atomic owner state. `CONTROL-SHIFT-SELECTION.md`
+records 80 new cases, passing 816 / twenty-six-file focused suites in both trees,
+static/build checks and twelve native capture phases. Existing value/geometry
+and canceled-event behavior remain intact. General pointer selection, persistent
+scrolling and all original external/runtime gates remain outstanding.
+
 Actual primary mouse points now place native control carets instead of always
 collapsing to the end. `CONTROL-POINTER-CARETS.md` records 108 new cases, passing
 736 / twenty-three-file focused suites in both trees and matching twelve-phase

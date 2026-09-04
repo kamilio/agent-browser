@@ -19,6 +19,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Focused native controls now extend from their owned anchor on captured Shift-click,
+including reverse selections and handler changes to live modifiers. Atomic owner
+publication avoids an intermediate caret. `CONTROL-SHIFT-SELECTION.md` records
+80 new cases, passing 816 / twenty-six-file focused suites in both trees, scoped
+static/build checks and twelve native capture phases matching both builds.
+Default coordinates/modifiers are snapshotted before handlers can override event
+properties. Both manifests retain 376 entries. General drag/word/contenteditable pointer
+selection, persistent widget scrolling and original browser/runtime/live gates stay open.
+
 Primary mouse points now place native text-control carets using the displayed
 texture and shared hit geometry, with focus-change safeguards and masked
 code-point boundaries. `CONTROL-POINTER-CARETS.md` records 108 new cases, passing

@@ -7,6 +7,13 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Focused control Shift-click now extends the native anchor using captured event
+modifiers and one atomic owner publication. `CONTROL-SHIFT-SELECTION.md` records
+80 new cases, passing 816 / twenty-six-file focused suites in both trees, passing
+types/builds/scoped checks and twelve native capture comparisons. Both manifests
+retain 376 entries. Drag/word/contenteditable pointer selection, persistent widget
+scrolling and the original browser/runtime/live gates remain open.
+
 Native control primary-pointer carets now share painted text geometry and owned
 keyboard state. `CONTROL-POINTER-CARETS.md` records 108 new cases, passing 736 /
 twenty-three-file focused suites in both trees, passing types/builds/scoped checks

@@ -72,12 +72,13 @@ function pointerState(tree: DocumentTree, id: number) {
 export function prepareControlPointer(
 	tree: DocumentTree,
 	id: number,
-	point: Readonly<{ x: number; y: number }>,
+	point: Readonly<{ x: number; y: number; shift?: boolean }>,
 ) {
 	if (
 		!point ||
 		typeof point !== "object" ||
 		Array.isArray(point) ||
+		(point.shift !== undefined && typeof point.shift !== "boolean") ||
 		!Number.isFinite(point.x) ||
 		!Number.isFinite(point.y)
 	)
@@ -123,6 +124,10 @@ export function prepareControlPointer(
 		allowedOffsets,
 	);
 	if (offset === undefined) return;
+	const anchor =
+		point.shift && state.control.focused
+			? (state.control.selection?.anchor ?? offset)
+			: offset;
 	const expectedFocusChanges =
 		tree.activeElement === id ? 0 : tree.activeElement === null ? 1 : 2;
 	let focusChanges = 0;
@@ -142,6 +147,7 @@ export function prepareControlPointer(
 				});
 	return Object.freeze({
 		offset,
+		anchor,
 		verify() {
 			if (
 				released ||

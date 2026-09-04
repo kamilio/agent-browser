@@ -115,7 +115,7 @@ export class DocumentInteractions {
 
 	private *mouseFocusAction(
 		reference: string,
-		point: Readonly<{ x: number; y: number }>,
+		point: Readonly<{ x: number; y: number; shift: boolean }>,
 	): EventAction<void> {
 		const { node, blocked } = this.actionability(reference);
 		if (blocked) return;
@@ -139,7 +139,11 @@ export class DocumentInteractions {
 			if (target !== null && this.focus.active() === target) {
 				if (prepared) {
 					prepared.verify();
-					this.keyboard.placeControlCaret(target, prepared.offset);
+					this.keyboard.placeControlCaret(
+						target,
+						prepared.offset,
+						prepared.anchor,
+					);
 				} else {
 					const candidate = this.tree.get(target);
 					if (

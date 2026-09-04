@@ -175,7 +175,7 @@ export class DocumentKeyboard {
 		this.controlCaret().collapse(id);
 	}
 
-	placeControlCaret(id: number, offset: number) {
+	placeControlCaret(id: number, offset: number, anchor = offset) {
 		this.ensureOpen();
 		if (this.editable(false) !== id)
 			throw new AgentBrowserError(
@@ -183,18 +183,19 @@ export class DocumentKeyboard {
 				"Control caret target changed",
 			);
 		const value = controlValue(this.tree, id);
-		if (
-			!Number.isSafeInteger(offset) ||
-			offset < 0 ||
-			offset > value.length ||
-			(offset > 0 &&
-				nextOffset(value, previousOffset(value, offset)) !== offset)
-		)
-			throw new AgentBrowserError(
-				"invalid-input",
-				"Invalid control caret boundary",
-			);
-		this.controlCaret().collapse(id, offset);
+		for (const position of [anchor, offset])
+			if (
+				!Number.isSafeInteger(position) ||
+				position < 0 ||
+				position > value.length ||
+				(position > 0 &&
+					nextOffset(value, previousOffset(value, position)) !== position)
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid control caret boundary",
+				);
+		this.controlCaret().select(id, anchor, offset);
 	}
 
 	collapseEditableEnd(id: number, target: number) {

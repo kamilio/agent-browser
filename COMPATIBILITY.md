@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 focused Shift-click continuation: `CONTROL-SHIFT-SELECTION.md` extends
+native control anchors from captured primary-event modifiers without provisional
+end-caret state. The 80 new cases and 816 / twenty-six-file focused suites pass
+in both trees; twelve native captures preserve value/geometry and match builds.
+General drag/word/contenteditable pointer selection, persistent scrolling and
+original browser/runtime/live gates remain open.
+
 September 4 pointer-caret continuation: `CONTROL-POINTER-CARETS.md` maps actual
 primary mouse points into the existing native control texture and keyboard owner.
 The 108 new cases and 736 / twenty-three-file focused suites pass in both trees;

@@ -1,5 +1,10 @@
 # Native control pointer carets
 
+Later September 4 continuation: `CONTROL-SHIFT-SELECTION.md` adds captured
+Shift-click extension in already focused native text controls using this same
+point geometry. Its new evidence is separate from the measurements below.
+General drag/word/contenteditable pointer selection remains outstanding.
+
 September 4, 2026 continuation from `c0a717c`. `CONTROL-TEXT-SELECTION.md` records
 the preceding native keyboard/selection rendering checkpoint. This continuation
 places collapsed input/textarea carets from actual primary mouse coordinates;
