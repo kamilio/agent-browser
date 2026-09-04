@@ -1030,6 +1030,22 @@ open. No gated probe ran; the denied SafeJS probe remains unrun. Historical
 evidence and unrelated pending work stay separate; the complete seven-day browser
 objective remains active.
 
+September 4 named-disclosure continuation: `DETAILS-GROUPS.md` implements native
+group exclusivity, name reflection and root-aware insertion/replacement handling.
+Automatic closures share the document's focus, attributes, layout and snapshots;
+paired notification preflight and ordered mutation collection keep related state
+consistent. The 50 new cases produce 44 failures and six passes on isolated prior
+HEAD. Two observer regressions reproduce before the opener-view invalidation fix.
+Focused runs pass 323 / seven files in both trees; types/builds, strict new-test
+checking and five-file lint pass in both. Authorized full native runs pass
+10,258 / 281 working files and 9,112 / 259 isolated files. Continue generated
+summary/marker and remaining event interfaces. Full UA/shadow/accessibility,
+trusted-event/task-source, released-SafeJS, real browser/site/socket/TTY and
+original acceptance gates remain
+open. No gated probe ran; the denied SafeJS probe remains unrun. Historical
+evidence and unrelated pending work stay separate; the complete seven-day browser
+objective remains active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

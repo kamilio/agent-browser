@@ -859,7 +859,8 @@ export class ScriptDom {
 				title: this.attribute(id, "title"),
 				...scriptElementFocusProperties(this.tree, id, () => this.read(id)),
 			});
-			if (initial.tagName === "details")
+			if (initial.tagName === "details") {
+				definition.properties.name = this.attribute(id, "name");
 				definition.properties.open = {
 					get: () => Object.hasOwn(this.read(id).attributes, "open"),
 					set: (value) => {
@@ -868,6 +869,7 @@ export class ScriptDom {
 						else this.tree.removeAttribute(id, "open");
 					},
 				};
+			}
 			Object.assign(definition.methods, {
 				insertAdjacentHTML: (...args: readonly unknown[]) => {
 					this.read(id);

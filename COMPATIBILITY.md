@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 named-disclosure continuation: `DETAILS-GROUPS.md` adds exact-name
+exclusivity for native opening, rename and insertion/replacement paths, with
+detached/template root separation and paired notification preflight. Native
+focus/layout/snapshot/observer evidence does not close generated disclosure UI,
+full UA/shadow/accessibility/event-interface or released-runtime/browser gates.
+
 September 4 toggle-notification continuation: `DETAILS-TOGGLE.md` adds coalesced
 asynchronous native details events, guarded script state fields, resource
 preflight and owned cancellation. Native evidence does not establish complete

@@ -83,17 +83,24 @@ export class DetailsToggleTasks {
 	}
 
 	check(target: number, previous: boolean, next: boolean) {
+		this.checkTransitions(previous === next ? [] : [target]);
+	}
+
+	checkTransitions(targets: readonly number[]) {
 		if (this.closed)
 			throw new AgentBrowserError(
 				"closed",
 				"Disclosure notifications are closed",
 			);
-		if (previous === next) return;
-		const tracked = this.trackers.get(target);
+		if (!targets.length) return;
+		let additional = 0;
+		for (const target of new Set(targets)) {
+			const tracked = this.trackers.get(target);
+			if (!tracked || !this.queue.has(tracked)) additional++;
+		}
 		if (
-			this.scheduled >= detailsToggleLimits.maxTasks ||
-			(this.queue.size >= detailsToggleLimits.maxPending &&
-				(!tracked || !this.queue.has(tracked)))
+			this.scheduled + targets.length > detailsToggleLimits.maxTasks ||
+			this.queue.size + additional > detailsToggleLimits.maxPending
 		)
 			throw new AgentBrowserError(
 				"resource-limit",

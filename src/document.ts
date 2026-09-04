@@ -1,6 +1,7 @@
 import { DocumentCheckedness } from "./document-checkedness.js";
 import { firstDetailsSummary } from "./details.js";
 import { DetailsToggleTasks, detailsToggleLimits } from "./details-toggle.js";
+import { DocumentDetailsGroups } from "./details-groups.js";
 import type { InlineDeclaration } from "./css-declarations.js";
 import {
 	DocumentInlineDeclarations,
@@ -146,6 +147,10 @@ export class DocumentTree {
 	private mutationHandlers = new Set<(record: DocumentMutation) => void>();
 	private mutationNotifications = 0;
 	private mutationCollectorFailures = 0;
+	private pendingMutations?: DocumentMutation[];
+	private readonly detailsGroups = new DocumentDetailsGroups((id) =>
+		this.node(id),
+	);
 	readonly detailsToggleTasks = new DetailsToggleTasks(this);
 	private readonly selectedContent = new DocumentSelectedContent(this, (id) =>
 		this.node(id),
@@ -494,6 +499,7 @@ export class DocumentTree {
 		this.checkedness.initialize(id);
 		if (templateOwner) this.attachTemplate(id, templateOwner);
 		if (initiallyOpen) this.detailsToggleTasks.record(id, false, true);
+		this.detailsGroups.sync(id);
 		return id;
 	}
 
@@ -590,6 +596,7 @@ export class DocumentTree {
 			const copyId = this.allocate(source.kind, source.tagName, source.data);
 			const copy = this.node(copyId);
 			copy.attributes = createHtmlAttributes(source.attributes);
+			this.detailsGroups.sync(copyId);
 			if (copy.tagName === "details" && Object.hasOwn(copy.attributes, "open"))
 				this.detailsToggleTasks.record(copyId, false, true);
 			copy.control = { ...source.control };
@@ -748,6 +755,7 @@ export class DocumentTree {
 			const copyId = target.allocate(source.kind, source.tagName, source.data);
 			const copy = target.node(copyId);
 			copy.attributes = createHtmlAttributes(source.attributes);
+			target.detailsGroups.sync(copyId);
 			if (copy.tagName === "details" && Object.hasOwn(copy.attributes, "open"))
 				target.detailsToggleTasks.record(copyId, false, true);
 			copy.control = { ...source.control };
@@ -1016,6 +1024,37 @@ export class DocumentTree {
 		suppress = false,
 	) {
 		const children = this.checkInsertion(parentId, childId, reference);
+		const closures = this.detailsGroups.insertionClosures(parentId, children);
+		this.detailsToggleTasks.checkTransitions(closures);
+		if (closures.length)
+			return this.collectMutations(() =>
+				this.insertPrepared(
+					parentId,
+					childId,
+					children,
+					closures,
+					reference,
+					suppress,
+				),
+			);
+		return this.insertPrepared(
+			parentId,
+			childId,
+			children,
+			closures,
+			reference,
+			suppress,
+		);
+	}
+
+	private insertPrepared(
+		parentId: number,
+		childId: number,
+		children: readonly number[],
+		closures: readonly number[],
+		reference?: number,
+		suppress = false,
+	) {
 		const parent = this.node(parentId);
 		const child = this.node(childId);
 		if (reference === childId) {
@@ -1057,6 +1096,11 @@ export class DocumentTree {
 				.concat(children, parent.children.slice(index));
 			child.children = [];
 			for (const moving of children) this.node(moving).parent = parentId;
+			if (closures.length) {
+				this.nodeViews.delete(parentId);
+				for (const moving of children) this.nodeViews.delete(moving);
+				for (const target of closures) this.removeAttribute(target, "open");
+			}
 			if (parent.tagName === "details")
 				this.clearCollapsedDetailsFocus(parentId);
 			this.childMutation(childId, [], children);
@@ -1109,6 +1153,11 @@ export class DocumentTree {
 			const nextSibling = parent.children[index] ?? null;
 			parent.children.splice(index, 0, moving);
 			node.parent = parentId;
+			if (closures.length) {
+				this.nodeViews.delete(parentId);
+				this.nodeViews.delete(moving);
+				for (const target of closures) this.removeAttribute(target, "open");
+			}
 			if (parent.tagName === "details")
 				this.clearCollapsedDetailsFocus(parentId);
 			if (!suppress)
@@ -1133,6 +1182,9 @@ export class DocumentTree {
 		const added = this.checkInsertion(parentId, childId, previousId, [
 			previousId,
 		]);
+		this.detailsToggleTasks.checkTransitions(
+			this.detailsGroups.insertionClosures(parentId, added, [previousId]),
+		);
 		const siblings = this.node(parentId).children;
 		let before = siblings[siblings.indexOf(previousId) + 1];
 		const previousSibling = siblings[siblings.indexOf(previousId) - 1] ?? null;
@@ -1163,6 +1215,9 @@ export class DocumentTree {
 				? []
 				: this.checkInsertion(parentId, childId, undefined, parent.children);
 		const previous = parent.children;
+		this.detailsToggleTasks.checkTransitions(
+			this.detailsGroups.insertionClosures(parentId, added, previous),
+		);
 		if (previous.length) this.nodeViews.delete(parentId);
 		parent.children = [];
 		for (const child of previous) {
@@ -1245,6 +1300,44 @@ export class DocumentTree {
 	) {
 		this.validateAttribute(name);
 		this.validateString(value);
+		const closure = this.prepareDetailsAttribute(
+			id,
+			htmlAttributeName(name),
+			value,
+		);
+		if (closure !== undefined)
+			return this.collectMutations(() =>
+				this.writeAttributeValue(id, name, value, state, closure),
+			);
+		return this.writeAttributeValue(id, name, value, state);
+	}
+
+	private prepareDetailsAttribute(id: number, key: string, value: string) {
+		const node = this.element(id);
+		if (node.tagName !== "details" || (key !== "open" && key !== "name"))
+			return;
+		const closure = this.detailsGroups.attributeClosure(id, key, value);
+		const transitions: number[] = [];
+		if (
+			node.tagName === "details" &&
+			key === "open" &&
+			!Object.hasOwn(node.attributes, "open")
+		)
+			transitions.push(id);
+		if (closure !== undefined) transitions.push(closure);
+		this.detailsToggleTasks.checkTransitions(transitions);
+		return closure;
+	}
+
+	private writeAttributeValue(
+		id: number,
+		name: string,
+		value: string,
+		state?: InlineDeclarationState,
+		closure?: number,
+	) {
+		this.validateAttribute(name);
+		this.validateString(value);
 		const node = this.element(id);
 		const key = htmlAttributeName(name);
 		const previous = node.attributes[key];
@@ -1264,6 +1357,7 @@ export class DocumentTree {
 				attributeName: key,
 				oldValue: previous,
 			});
+			if (closure !== undefined) this.removeAttribute(closure, "open");
 			if (clearedFocus) this.changed("focus", this.root);
 			return;
 		}
@@ -1279,6 +1373,8 @@ export class DocumentTree {
 			(attribute === undefined ? 0 : value.length - attribute.value.length);
 		this.checkTextBudget(change + this.inputValueDelta(id, inputChange));
 		setHtmlAttribute(node.attributes, key, value);
+		if (closure !== undefined) this.nodeViews.delete(id);
+		this.detailsGroups.sync(id);
 		if (node.tagName === "details" && key === "open")
 			this.detailsToggleTasks.record(id, previous !== undefined, true);
 		if (key === "form") this.resetParserForm(id);
@@ -1294,6 +1390,7 @@ export class DocumentTree {
 			attributeName: key,
 			oldValue: previous ?? null,
 		});
+		if (closure !== undefined) this.removeAttribute(closure, "open");
 		if (key !== "style") this.changed("attribute", id);
 		this.selections.attribute(id, key);
 		this.checkedness.attribute(id, key, previous);
@@ -1361,6 +1458,7 @@ export class DocumentTree {
 		);
 		this.textCodeUnits -= key.length + node.attributes[key].length;
 		removeHtmlAttribute(node.attributes, key);
+		this.detailsGroups.sync(id);
 		if (node.tagName === "details" && key === "open")
 			this.detailsToggleTasks.record(id, true, false);
 		if (key === "open" && node.tagName === "details")
@@ -1435,6 +1533,23 @@ export class DocumentTree {
 	}
 
 	setAttributeNode(id: number, attributeId: number): number | null {
+		const attribute = this.attributeRecord(attributeId);
+		if (attribute.ownerElement !== null)
+			return this.setAttributeNodeValue(id, attributeId);
+		const closure = this.prepareDetailsAttribute(
+			id,
+			attribute.name,
+			attribute.value,
+		);
+		const write = () => this.setAttributeNodeValue(id, attributeId, closure);
+		return closure === undefined ? write() : this.collectMutations(write);
+	}
+
+	private setAttributeNodeValue(
+		id: number,
+		attributeId: number,
+		closure?: number,
+	): number | null {
 		const node = this.element(id);
 		const attribute = this.attributeRecord(attributeId);
 		if (attribute.ownerElement === id) return attributeId;
@@ -1466,6 +1581,8 @@ export class DocumentTree {
 		const original = this.getAttributeNode(id, attribute.name);
 		if (original !== null) this.attributeRecord(original).ownerElement = null;
 		setHtmlAttribute(node.attributes, attribute.name, attribute.value);
+		if (closure !== undefined) this.nodeViews.delete(id);
+		this.detailsGroups.sync(id);
 		if (node.tagName === "details" && attribute.name === "open")
 			this.detailsToggleTasks.record(id, previous !== undefined, true);
 		if (attribute.name === "form") this.resetParserForm(id);
@@ -1482,6 +1599,7 @@ export class DocumentTree {
 			attributeName: attribute.name,
 			oldValue: previous ?? null,
 		});
+		if (closure !== undefined) this.removeAttribute(closure, "open");
 		if (attribute.name !== "style") this.changed("attribute", id);
 		this.selections.attribute(id, attribute.name);
 		this.checkedness.attribute(id, attribute.name, previous);
@@ -2052,6 +2170,7 @@ export class DocumentTree {
 		if (this.closed) return;
 		this.closed = true;
 		this.detailsToggleTasks.close();
+		this.detailsGroups.close();
 		this.unregisterResources?.();
 		this.unregisterResources = undefined;
 		this.selections.close();
@@ -2218,6 +2337,18 @@ export class DocumentTree {
 		});
 	}
 
+	private collectMutations<Result>(operation: () => Result): Result {
+		if (this.pendingMutations) return operation();
+		const pending: DocumentMutation[] = [];
+		this.pendingMutations = pending;
+		try {
+			return operation();
+		} finally {
+			this.pendingMutations = undefined;
+			for (const record of pending) this.notifyMutation(record);
+		}
+	}
+
 	private mutation(
 		type: DocumentMutation["type"],
 		target: number,
@@ -2252,6 +2383,11 @@ export class DocumentTree {
 			oldValue: values.oldValue ?? null,
 		});
 		this.mutationNotifications++;
+		if (this.pendingMutations) this.pendingMutations.push(record);
+		else this.notifyMutation(record);
+	}
+
+	private notifyMutation(record: DocumentMutation) {
 		for (const handler of [...this.mutationHandlers]) {
 			if (!this.mutationHandlers.has(handler)) continue;
 			try {

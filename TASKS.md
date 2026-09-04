@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Named-disclosure checkpoint: `DETAILS-GROUPS.md` implements exact nonempty-name
+exclusivity across opening, renaming, parser/subtree insertion, detached/template
+roots, replacement, clone/import and native property reflection. Automatic
+closure shares focus/layout/snapshot state and ordered toggle/mutation paths.
+Paired notification preflight preserves state on quota failure; two reproduced
+observer regressions establish the opener-view invalidation fix. The 50 new cases
+produce 44 failures and six passes on isolated prior HEAD. Focused runs pass
+323 / seven files in both trees; types/builds, strict new-test checking and
+five-file lint pass in both. Authorized full native runs pass 10,258 / 281
+working files and 9,112 / 259 isolated files. Continue generated summaries/
+markers and remaining event interfaces. Full UA/shadow/accessibility,
+task-source/trusted-event, released-runtime and original browser parity gates
+remain open. No gated probe
+ran; the denied SafeJS probe remains unrun. Historical evidence and unrelated
+pending work stay intact; the complete seven-day browser objective remains active.
+
+### Previous disclosure-toggle checkpoint
+
 Disclosure-toggle checkpoint: `DETAILS-TOGGLE.md` adds document-owned asynchronous
 toggle tasks with state coalescing, native script event data and bounded lifetime/
 pending work. Attribute, initial creation, clone/import and template-owner paths
