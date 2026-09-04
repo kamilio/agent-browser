@@ -8,6 +8,14 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+Live native response accounting now uses page-owned one-shot leases, records
+concurrent and failed traffic, and retains capacity through actual native drain.
+Both focused runs pass 561 / seventeen files; types/builds and scoped checks pass.
+`FETCH-BYTE-ACCOUNTING.md` records the 122 new cases, custom-provider limitations,
+separately approved callback-only tests and the unchanged full-suite denial.
+This improves the until-stopped continuation without treating the old deadline
+or native checks as completed browser/runtime acceptance.
+
 The next native editing delivery connects container-endpoint highlights and
 bounded outer-host-edge carets to actual select-all/arrow/cancel/type commands.
 Both focused suites pass 384 / thirteen files; types/builds and scoped checks

@@ -1,5 +1,14 @@
 # Document-owned page fetch
 
+Later September 4 native update: `FETCH-BYTE-ACCOUNTING.md` adds document-owned
+live encoded/decoded accounting across concurrent and failed native streams,
+completed-only custom-provider fallback metrics and bounded native-drain leases.
+The existing cumulative limit now applies independently to encoded traffic and
+decoded-plus-fallback traffic. This supersedes completed-only accounting for the
+built-in transport, not future-allocation reservations or arbitrary provider work.
+The focused native evidence is not a new interpreter, process or live-site run;
+historical evidence below retains its original context.
+
 September 4 native update: `FETCH-RESPONSE-BUDGETS.md` adds cumulative-budget
 admission and narrower per-request encoded/decoded ceilings forwarded through the
 session to the built-in transport. Mocked streams and the actual session port

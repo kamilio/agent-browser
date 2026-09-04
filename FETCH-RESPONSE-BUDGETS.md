@@ -1,5 +1,12 @@
 # Page and native response budgets
 
+Later September 4 update: `FETCH-BYTE-ACCOUNTING.md` adds shared live page byte
+accounting and bounded native-drain lease ownership. This supersedes the original
+completed-only page-accounting limitation below for the built-in native transport,
+including failed and concurrent streams. It does not supply future-allocation
+reservations, complete custom-provider coverage or RSS bounds. Original evidence,
+paths, counts and the full-suite denial below remain historical and unchanged.
+
 September 4, 2026 native continuation. This narrows existing fetch/transport
 resource boundaries; it does not implement XHR, guest streams or new globals.
 

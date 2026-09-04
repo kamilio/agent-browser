@@ -30,6 +30,11 @@ import {
 	addressFamily,
 	networkHostname,
 } from "./network.js";
+import {
+	type ResponseAccountingWriter,
+	claimResponseAccounting,
+	validateResponseAccountingLease,
+} from "./response-byte-accounting.js";
 
 export type AddressResolver = (
 	hostname: string,
@@ -41,6 +46,42 @@ export interface NodeTransportOptions extends NetworkPolicyOptions {
 	resolver?: AddressResolver;
 	certificateAuthorities?: readonly string[];
 	cookieJar?: CookieJar;
+}
+
+interface ResponseAccountingOperation {
+	readonly writer: ResponseAccountingWriter;
+	track(task: Promise<unknown>): void;
+	finish(): void;
+}
+
+function responseAccountingOperation(
+	writer: ResponseAccountingWriter,
+): ResponseAccountingOperation {
+	let pending = 0;
+	let finished = false;
+	const release = () => {
+		if (finished && pending === 0) writer.finish();
+	};
+	return {
+		writer,
+		track(task) {
+			if (finished)
+				throw new AgentBrowserError(
+					"closed",
+					"Response accounting is finished",
+				);
+			pending++;
+			const drained = () => {
+				pending--;
+				release();
+			};
+			void task.then(drained, drained);
+		},
+		finish() {
+			finished = true;
+			release();
+		},
+	};
 }
 
 const redirectStatuses = new Set([301, 302, 303, 307, 308]);
@@ -403,12 +444,14 @@ export class NodeNetworkTransport implements NetworkTransport {
 	): Promise<NetworkResponse> {
 		if (this.closed)
 			throw new AgentBrowserError("closed", "Transport is closed");
-		if (
-			!input ||
-			typeof input !== "object" ||
-			(input.signal !== undefined && !(input.signal instanceof AbortSignal))
-		)
+		if (!input || typeof input !== "object")
 			throw new AgentBrowserError("invalid-input", "Invalid network request");
+		const inputSignal = input.signal;
+		if (inputSignal !== undefined && !(inputSignal instanceof AbortSignal))
+			throw new AgentBrowserError("invalid-input", "Invalid network request");
+		const requestedAccounting = input.responseAccounting;
+		if (requestedAccounting !== undefined)
+			validateResponseAccountingLease(requestedAccounting);
 		const requestedMaxResponseBytes = input.maxResponseBytes;
 		if (
 			requestedMaxResponseBytes !== undefined &&
@@ -505,8 +548,8 @@ export class NodeNetworkTransport implements NetworkTransport {
 		const signal = controller.signal;
 		const abort = () =>
 			controller.abort(new AgentBrowserError("aborted", "Request aborted"));
-		if (input.signal?.aborted) abort();
-		else input.signal?.addEventListener("abort", abort, { once: true });
+		if (inputSignal?.aborted) abort();
+		else inputSignal?.addEventListener("abort", abort, { once: true });
 		const timer = setTimeout(
 			() =>
 				controller.abort(
@@ -524,10 +567,22 @@ export class NodeNetworkTransport implements NetworkTransport {
 		};
 		const redirects: { url: string; status: number; location: string }[] = [];
 		let encodedBytes = 0;
+		let accounting: ResponseAccountingOperation | undefined;
 		this.active.add(controller);
 		try {
+			if (requestedAccounting !== undefined) {
+				ensureActive();
+				accounting = responseAccountingOperation(
+					claimResponseAccounting(requestedAccounting),
+				);
+			}
 			while (true) {
 				ensureActive();
+				if (accounting && accounting.writer.remainingBytes() <= 0)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Fetch response body limit exceeded",
+					);
 				const useCookies =
 					this.cookieJar &&
 					cookieContext &&
@@ -571,6 +626,10 @@ export class NodeNetworkTransport implements NetworkTransport {
 					this.counts.mockedRequests++;
 					this.counts.mockedDecodedBytes += response.body.length;
 					this.counts.decodedBytes += response.body.length;
+					const accounted = accounting?.writer.debit(
+						"decodedBytes",
+						response.body.length,
+					);
 					if (
 						response.body.length > maxResponseBytes ||
 						this.counts.decodedBytes > this.limits.maxTotalBytes
@@ -578,6 +637,11 @@ export class NodeNetworkTransport implements NetworkTransport {
 						throw new AgentBrowserError(
 							"resource-limit",
 							"Routed response byte limit exceeded",
+						);
+					if (accounted === false)
+						throw new AgentBrowserError(
+							"resource-limit",
+							"Fetch response body limit exceeded",
 						);
 					response = { ...response, body: new Uint8Array(response.body) };
 					storeCookies?.(response.headers);
@@ -598,6 +662,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 						signal,
 						maxResponseBytes,
 						storeCookies,
+						accounting,
 					);
 				}
 				ensureActive();
@@ -689,8 +754,12 @@ export class NodeNetworkTransport implements NetworkTransport {
 			);
 		} finally {
 			clearTimeout(timer);
-			input.signal?.removeEventListener("abort", abort);
-			this.active.delete(controller);
+			try {
+				inputSignal?.removeEventListener("abort", abort);
+			} finally {
+				this.active.delete(controller);
+				accounting?.finish();
+			}
 		}
 	}
 
@@ -704,6 +773,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 		signal: AbortSignal,
 		maxResponseBytes: number,
 		onHeaders?: (headers: NetworkResponse["headers"]) => void,
+		accounting?: ResponseAccountingOperation,
 	): Promise<Omit<NetworkResponse, "url" | "redirects" | "elapsedMs">> {
 		return new Promise((resolve, reject) => {
 			let incoming: IncomingMessage | undefined;
@@ -798,12 +868,15 @@ export class NodeNetworkTransport implements NetworkTransport {
 						response.destroy();
 						return;
 					}
-					void this.consume(
+					const consumption = this.consume(
 						response,
 						response.headers["content-encoding"] ?? "identity",
 						signal,
 						maxResponseBytes,
-					).then(
+						accounting?.writer,
+					);
+					accounting?.track(consumption);
+					void consumption.then(
 						(result) =>
 							succeed({ status, headers: responseHeaderValues, ...result }),
 						fail,
@@ -843,6 +916,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 		contentEncoding: string,
 		signal: AbortSignal,
 		maxResponseBytes: number,
+		accounting?: ResponseAccountingWriter,
 	): Promise<{ body: Uint8Array; encodedBytes: number }> {
 		const chunks: Buffer[] = [];
 		let encodedBytes = 0;
@@ -874,10 +948,16 @@ export class NodeNetworkTransport implements NetworkTransport {
 			);
 		const count = (kind: "encodedBytes" | "decodedBytes", length: number) => {
 			this.counts[kind] += length;
+			const accounted = accounting?.debit(kind, length);
 			if (this.counts[kind] > this.limits.maxTotalBytes)
 				throw new AgentBrowserError(
 					"resource-limit",
 					"Session network byte limit exceeded",
+				);
+			if (accounted === false)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Fetch response body limit exceeded",
 				);
 		};
 		const encodedLimit = new Transform({

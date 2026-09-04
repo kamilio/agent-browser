@@ -1,5 +1,6 @@
 import type { CookieRequestContext } from "./cookies.js";
 import { AgentBrowserError } from "./errors.js";
+import type { ResponseAccountingLease } from "./response-byte-accounting.js";
 
 export interface NetworkLimits {
 	timeoutMs: number;
@@ -18,6 +19,7 @@ export interface NetworkRequest {
 	headers?: Readonly<Record<string, string>>;
 	body?: string | Uint8Array;
 	maxResponseBytes?: number;
+	responseAccounting?: ResponseAccountingLease;
 	redirect?: "follow" | "manual" | "error";
 	signal?: AbortSignal;
 	cookieContext?: CookieRequestContext;

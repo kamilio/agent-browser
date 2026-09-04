@@ -7,6 +7,15 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Document-owned live byte accounting now covers concurrent and rejected native
+streams, with bounded lease ownership through actual consumer drain. The 122 new
+cases and 561 / seventeen-file focused runs in both trees are recorded in
+`FETCH-BYTE-ACCOUNTING.md`; types/builds and scoped checks pass. The manifests
+retain 361 entries, but full-suite authorization remains outstanding. Completed
+fallback traffic, unknown provider failures, observed native bytes and future
+allocation reservations remain distinct; no full Fetch/XHR or external gate is
+closed by this continuation.
+
 Element-boundary selection/caret integration now passes 384 focused native cases
 across thirteen files in each tree, with passing types/builds and scoped checks.
 `EDITABLE-ELEMENT-ENDPOINTS.md` records exact profile limits and fresh inspected

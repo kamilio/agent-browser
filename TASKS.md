@@ -19,6 +19,17 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Live response-accounting checkpoint: `FETCH-BYTE-ACCOUNTING.md` integrates an
+opaque document-owned ledger through the actual session fetch port. Concurrent,
+failed and gzip-expanded native streams debit observed bytes before retention;
+cancelled native consumers retain bounded lease capacity until actual drain.
+Four new files add 122 cases; both focused suites pass 561 / seventeen files with
+passing types/builds, strict checks and scoped Biome. Both manifests retain 361
+entries. Newly guarded callback-only route tests have separate authorization;
+the denied full suite is not retried or replaced. Future-allocation reservations,
+unknown custom-provider traffic, RSS proofs, XHR and all external/runtime/browser
+gates remain open. Earlier accounting-gap reports below remain historical.
+
 Element-boundary painting checkpoint: `EDITABLE-ELEMENT-ENDPOINTS.md` connects
 native Control/Meta select-all to glyph highlights and supports exact outer-edge
 carets after ArrowLeft/Right without changing public Range endpoints. Ninety new

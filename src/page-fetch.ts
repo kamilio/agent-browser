@@ -20,6 +20,10 @@ import {
 	type NetworkResponse,
 	parseNetworkUrl,
 } from "./network.js";
+import {
+	type ResponseAccountingLease,
+	ResponseByteAccounting,
+} from "./response-byte-accounting.js";
 import type {
 	ScriptHostObjectDefinition,
 	ScriptHostObjectFactory,
@@ -158,6 +162,29 @@ interface BodyRecord {
 	revoked: boolean;
 }
 
+function settleProviderOutcome(
+	accounting: ResponseByteAccounting,
+	lease: ResponseAccountingLease,
+	pending: Promise<NetworkResponse>,
+) {
+	return pending.then(
+		(response) => {
+			let bodyBytes: number;
+			try {
+				bodyBytes = response.body.byteLength;
+			} catch (error) {
+				accounting.settle(lease);
+				throw error;
+			}
+			return { response, allowed: accounting.settle(lease, bodyBytes) };
+		},
+		(error) => {
+			accounting.settle(lease);
+			throw error;
+		},
+	);
+}
+
 export class PageFetch {
 	readonly limits: Readonly<PageFetchLimits>;
 	readonly fetch = async (input: unknown, init?: unknown): Promise<object> =>
@@ -171,6 +198,7 @@ export class PageFetch {
 	private redirects = 0;
 	private preflights = 0;
 	private readonly preflightCache: CorsPreflightCache;
+	private readonly responseAccounting: ResponseByteAccounting;
 	private retainedBytes = 0;
 	private totalBytes = 0;
 	private closed = false;
@@ -204,6 +232,10 @@ export class PageFetch {
 				);
 		}
 		this.limits = Object.freeze(limits);
+		this.responseAccounting = new ResponseByteAccounting(
+			limits.maxTotalBytes,
+			limits.maxPending,
+		);
 		this.origin = new URL(tree.url).origin;
 		this.preflightCache = new CorsPreflightCache(options.preflightClock);
 		this.unregisterClose = tree.onClose(() => this.close());
@@ -219,6 +251,7 @@ export class PageFetch {
 			active: this.active.size,
 			retainedBytes: this.retainedBytes,
 			totalBytes: this.totalBytes,
+			responseAccounting: this.responseAccounting.metrics(),
 			closed: this.closed,
 			partial: true as const,
 		};
@@ -227,6 +260,7 @@ export class PageFetch {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		this.responseAccounting.close();
 		this.preflightCache.close();
 		for (const controller of this.active)
 			controller.abort(new AgentBrowserError("closed", "Page fetch is closed"));
@@ -242,7 +276,10 @@ export class PageFetch {
 	}
 
 	private checkByteBudget() {
-		if (this.totalBytes >= this.limits.maxTotalBytes)
+		if (
+			this.totalBytes >= this.limits.maxTotalBytes ||
+			this.responseAccounting.remainingBytes() <= 0
+		)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"Fetch response body limit exceeded",
@@ -580,6 +617,8 @@ export class PageFetch {
 			headers: Readonly<Record<string, string>>,
 		) => void,
 	) {
+		const accounting = this.responseAccounting;
+		let lease: ResponseAccountingLease | undefined;
 		let report: ((result: NetworkCorsResult) => void) | undefined;
 		let outcome: NetworkCorsResult = "not-checked";
 		let observing = true;
@@ -595,23 +634,38 @@ export class PageFetch {
 		const work = Promise.resolve().then(() => {
 			if (signal.aborted) throw signal.reason;
 			this.checkByteBudget();
-			return this.request(
-				{
-					...input,
-					maxResponseBytes: Math.min(
-						this.limits.maxResponseBytes,
-						this.limits.maxTotalBytes - this.totalBytes,
-					),
-				},
-				{
-					...context,
-					...(context?.cors ? { observeCorsResult } : {}),
-				},
-			);
+			lease = accounting.createLease();
+			let pending: Promise<NetworkResponse>;
+			try {
+				pending = this.request(
+					{
+						...input,
+						responseAccounting: lease,
+						maxResponseBytes: Math.min(
+							this.limits.maxResponseBytes,
+							this.limits.maxTotalBytes - this.totalBytes,
+							accounting.remainingBytes(),
+						),
+					},
+					{
+						...context,
+						...(context?.cors ? { observeCorsResult } : {}),
+					},
+				);
+			} catch (error) {
+				accounting.settle(lease);
+				throw error;
+			}
+			return settleProviderOutcome(accounting, lease, Promise.resolve(pending));
 		});
 		try {
-			const response = await Promise.race([work, stopped]);
+			const { response, allowed } = await Promise.race([work, stopped]);
 			const headers = this.inspectResponse(response, input.url);
+			if (!allowed)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Fetch response body limit exceeded",
+				);
 			if (validateCors) {
 				try {
 					validateCors(response, headers);
@@ -623,6 +677,7 @@ export class PageFetch {
 			}
 			return { response, headers };
 		} finally {
+			if (lease) accounting.abandon(lease);
 			signal.removeEventListener("abort", abort);
 			observing = false;
 			try {

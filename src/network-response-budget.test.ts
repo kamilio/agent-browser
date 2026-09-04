@@ -929,7 +929,7 @@ it("forwards the page response ceiling before native body retention", async () =
 	});
 });
 
-it("rejects an oversized page stream before decoded retention without claiming page partial-byte accounting", async () => {
+it("rejects an oversized page stream while separating observed bytes from completed bodies", async () => {
 	fixture("/data", { chunks: [Buffer.from("large")] });
 	const active = pageTransport();
 	const page = pageFetch((input) => active.request(input));
@@ -943,6 +943,11 @@ it("rejects an oversized page stream before decoded retention without claiming p
 		totalBytes: 0,
 		retainedBytes: 0,
 		active: 0,
+		responseAccounting: {
+			observedEncodedBytes: 5,
+			observedDecodedBytes: 0,
+			completedOnlyBytes: 0,
+		},
 	});
 });
 
@@ -987,6 +992,13 @@ it("preserves the page ceiling through manually followed redirect hops", async (
 		["/redirect", 4],
 		["/final", 4],
 	]);
+	expect(page.owner.metrics().responseAccounting).toMatchObject({
+		nativeRequests: 2,
+		observedEncodedBytes: 4,
+		observedDecodedBytes: 4,
+		completedOnlyBytes: 0,
+		outstanding: 0,
+	});
 });
 
 it("applies the page ceiling to CORS preflight and the permitted final request", async () => {
@@ -1020,6 +1032,13 @@ it("applies the page ceiling to CORS preflight and the permitted final request",
 		["OPTIONS", 4],
 		["POST", 4],
 	]);
+	expect(page.owner.metrics().responseAccounting).toMatchObject({
+		nativeRequests: 2,
+		observedEncodedBytes: 4,
+		observedDecodedBytes: 4,
+		completedOnlyBytes: 0,
+		outstanding: 0,
+	});
 });
 
 it("propagates the page ceiling through the actual session fetch port", async () => {
@@ -1048,6 +1067,12 @@ it("propagates the page ceiling through the actual session fetch port", async ()
 	});
 	expect(active.metrics().decodedBytes).toBe(decodedBefore);
 	expect(page.owner.metrics()).toMatchObject({ totalBytes: 0, active: 0 });
+	expect(page.owner.metrics().responseAccounting).toMatchObject({
+		nativeRequests: 1,
+		observedEncodedBytes: 6,
+		observedDecodedBytes: 0,
+		completedOnlyBytes: 0,
+	});
 });
 
 it("keeps final page checks when a custom provider ignores the optional ceiling", async () => {
@@ -1060,6 +1085,14 @@ it("keeps final page checks when a custom provider ignores the optional ceiling"
 	expect(page.provider).toHaveBeenCalledTimes(1);
 	expect(page.provider.mock.calls[0][0].maxResponseBytes).toBe(4);
 	expect(page.owner.metrics().totalBytes).toBe(5);
+	expect(page.owner.metrics().responseAccounting).toMatchObject({
+		nativeRequests: 0,
+		observedEncodedBytes: 0,
+		observedDecodedBytes: 0,
+		completedOnlyBytes: 5,
+		completedOnlyRequests: 1,
+		unmeteredFailures: 0,
+	});
 });
 
 it("isolates different page ceilings sharing the same native transport", async () => {
