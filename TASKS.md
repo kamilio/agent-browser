@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Focus-visible checkpoint: `FOCUS-VISIBLE.md` adds indication-aware native selector
+and stylesheet matching, keyboard/pointer state, script-transfer inheritance and
+generated-header ring gating. Indication-only changes refresh query state without
+pretending focus moved or canceling armed Space activation. Reentrant blur-driven
+focus retains its scoped hint; stale hit/event targets are rechecked. All 70 new
+tests fail on isolated prior HEAD; two of these blur cases also reproduced a
+bug during implementation. Matching focused runs pass 442 / ten files; types/builds,
+strict checking of five tests and thirteen-file lint pass in both trees. Authorized
+final full native runs pass 9,584 / 274 isolated files; the working run reports
+10,729 passes and the unchanged pending Window-onload assertion failure / 296 files.
+Inspected 270 by 200 native command captures distinguish pointer focus, keyboard
+indication without movement, and subsequent pointer transfer. Next: page focus
+options/preferences and broader default focus behavior. Full editing, outline
+shapes/3D patterns, UA/shadow/accessibility and original browser/runtime gates stay
+open. No gated probe ran; the denied SafeJS probe remains unrun. Historical evidence
+and unrelated pending work stay separate; the seven-day goal is active.
+
+### Previous authored-outline checkpoint
+
 Authored-outline checkpoint: `OUTLINES.md` adds stylesheet/inline parsing,
 computed/command inspection and native block, inline-fragment and replaced-control
 painting. Solid, dashed, dotted, double and native auto outlines support offsets,

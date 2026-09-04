@@ -92,7 +92,7 @@ it.each([
 	[":has(:has(.nested))", false],
 	[":has(:scope)", false],
 	[":nth-of-type(2 of .item)", false],
-	[":focus-visible", false],
+	[":focus-visible", true],
 	["ns|div", false],
 	["[x|name]", false],
 	["*|div", false],

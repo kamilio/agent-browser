@@ -341,7 +341,6 @@ it.each([
 );
 
 it.each([
-	"a:focus-visible",
 	"input:valid",
 	"li::before",
 	"svg|rect",

@@ -669,9 +669,16 @@ export class DocumentMouse {
 				"invalid-input",
 				"Mouse button is already held",
 			);
-		const target = yield* this.refreshTarget();
+		let target = yield* this.refreshTarget();
 		if (expectedReference !== undefined)
 			this.requireClickTarget(expectedReference, target);
+		const revision = this.tree.revision;
+		this.tree.recordInputModality("pointer");
+		if (revision !== this.tree.revision) {
+			target = yield* this.refreshTarget();
+			if (expectedReference !== undefined)
+				this.requireClickTarget(expectedReference, target);
+		}
 		this.pressed.set(button, target);
 		const generated = this.generatedAt(target);
 		if (generated) this.pressedGenerated.set(button, generated);

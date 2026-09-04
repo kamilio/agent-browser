@@ -1214,6 +1214,21 @@ Richer outline shapes/3D patterns and original browser/runtime gates remain open
 no gated probe ran and the denied SafeJS probe remains unrun. Preserve historical
 evidence and unrelated pending work; the seven-day continuation remains active.
 
+September 4 focus-visible continuation: `FOCUS-VISIBLE.md` adds indicated-focus
+selectors, native input modality, script/blur inheritance and generated-header
+ring gating. Indication changes are distinct from focus transitions and preserve
+armed keyboard activation; query state and stale event/hit targets refresh safely.
+All 70 new cases fail on isolated prior HEAD; two blur cases also reproduced an
+implementation bug before its scoped-hint fix. Matching focused runs pass
+442 / ten files; types/builds, strict checking and thirteen-file lint pass in both
+trees. Authorized final full native runs pass 9,584 / 274 isolated files; working
+validation reports 10,729 passes and the unchanged pending Window-onload assertion
+failure / 296 files. Inspected native command screenshots distinguish pointer
+focus from keyboard indication with stable geometry. Next: page focus options/
+preferences and broader default focus behavior. Full browser/runtime gates remain
+open; no gated probe ran and the denied SafeJS probe remains unrun. Preserve
+historical evidence and unrelated work; the seven-day goal remains active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

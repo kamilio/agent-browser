@@ -353,6 +353,8 @@ export class DocumentKeyboard {
 		this.ensureOpen();
 		const key = this.keys.down(input, literal);
 		const shortcut = !literal && (key.control || key.meta || key.alt);
+		if (!key.control && !key.meta && !key.alt)
+			this.tree.recordInputModality("keyboard");
 		const id = this.focus.active();
 		const target = id ?? this.tree.root;
 		const focusReference = this.focus.activeReference();

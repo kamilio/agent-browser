@@ -113,7 +113,7 @@ export class DocumentInteractions {
 		if (blocked) return;
 		const generated = resolveVisualTarget(this.tree, reference).generated;
 		if (generated) {
-			yield* this.focus.focusAction(generated.ref);
+			yield* this.focus.focusAction(generated.ref, "pointer");
 			return;
 		}
 		let target: number | null = node.id;
@@ -121,6 +121,7 @@ export class DocumentInteractions {
 			target = this.tree.get(target).parent;
 		yield* this.focus.focusAction(
 			target === null ? null : this.tree.reference(target),
+			"pointer",
 		);
 		if (target !== null && this.focus.active() === target) {
 			const candidate = this.tree.get(target);
@@ -355,6 +356,7 @@ export class DocumentInteractions {
 		clicking.add(target.id);
 		let rollback: (() => void) | undefined;
 		try {
+			if (moveFocus && !programmatic) this.tree.recordInputModality("pointer");
 			const candidate = generated
 				? target
 				: (this.activationTarget(target.id) ?? target);
@@ -365,6 +367,7 @@ export class DocumentInteractions {
 			) {
 				yield* this.focus.focusAction(
 					generated?.ref ?? this.tree.reference(candidate.id),
+					"pointer",
 				);
 				if (
 					candidate.tagName === "textarea" ||

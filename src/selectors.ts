@@ -128,6 +128,7 @@ const simplePseudos = new Set([
 	"root",
 	"target",
 	"focus",
+	"focus-visible",
 	"focus-within",
 	"placeholder-shown",
 	"hover",
@@ -610,6 +611,7 @@ interface TreeIndex {
 	documentElement?: number;
 	targetElement?: number;
 	focusElement?: number;
+	focusVisibleElement?: number;
 	hoverElements: ReadonlySet<number>;
 	activeElements: ReadonlySet<number>;
 }
@@ -836,7 +838,13 @@ export class DocumentQueries {
 			if (
 				!journal.reset &&
 				journal.changes.every((change) =>
-					["focus", "pointer", "activation", "target"].includes(change.kind),
+					[
+						"focus",
+						"focus-indication",
+						"pointer",
+						"activation",
+						"target",
+					].includes(change.kind),
 				)
 			) {
 				const previous = this.index;
@@ -915,9 +923,11 @@ export class DocumentQueries {
 		return this.index;
 	}
 	private interactionState(nodes: ReadonlyMap<number, NodeInfo>) {
+		const focused = activeFocus(this.tree) ?? undefined;
 		return {
 			targetElement: this.tree.targetElement ?? undefined,
-			focusElement: activeFocus(this.tree) ?? undefined,
+			focusElement: focused,
+			focusVisibleElement: this.tree.focusIndicated ? focused : undefined,
 			hoverElements: this.pointerMatches(this.tree.pointerHoverElement, nodes),
 			activeElements: new Set([
 				...this.pointerMatches(this.tree.pointerActiveElement, nodes),
@@ -1034,6 +1044,8 @@ export class DocumentQueries {
 				return node.id === context.index.targetElement;
 			case "focus":
 				return node.id === context.index.focusElement;
+			case "focus-visible":
+				return node.id === context.index.focusVisibleElement;
 			case "placeholder-shown":
 				return controlShowsPlaceholder(this.tree, node.id);
 			case "hover":

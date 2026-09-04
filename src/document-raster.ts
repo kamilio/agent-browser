@@ -365,7 +365,8 @@ function paintDocumentLayout(
 		);
 		if (
 			node.generated?.ref === generatedFocus &&
-			node.generated?.owner === focused
+			node.generated?.owner === focused &&
+			tree.focusIndicated
 		) {
 			for (const [inset, color] of [
 				[0, [0, 0, 0, 255]],

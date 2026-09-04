@@ -1,4 +1,5 @@
 import { DocumentCheckedness } from "./document-checkedness.js";
+import { supportsFocusKeyboardInput } from "./focus-indication.js";
 import { firstDetailsSummary } from "./details.js";
 import { documentGeneratedControls } from "./generated-controls.js";
 import { DetailsToggleTasks, detailsToggleLimits } from "./details-toggle.js";
@@ -87,6 +88,7 @@ export interface DocumentChange {
 		| "control"
 		| "location"
 		| "focus"
+		| "focus-indication"
 		| "pointer"
 		| "activation"
 		| "style"
@@ -119,6 +121,8 @@ export class DocumentTree {
 	private currentTarget: number | null = null;
 	private currentFocus: number | null = null;
 	private currentGeneratedFocus: string | null = null;
+	private currentFocusIndication = false;
+	private inputModality: "keyboard" | "pointer" = "keyboard";
 	private currentPointerHover: number | null = null;
 	private currentPointerActive: number | null = null;
 	private currentKeyboardActive: number | null = null;
@@ -223,11 +227,35 @@ export class DocumentTree {
 		return this.activeElement === null ? null : this.currentGeneratedFocus;
 	}
 
+	get focusIndicated() {
+		const active = this.activeElement;
+		return (
+			active !== null &&
+			(this.currentFocusIndication ||
+				(this.currentGeneratedFocus === null &&
+					supportsFocusKeyboardInput(this, active)))
+		);
+	}
+
+	recordInputModality(modality: "keyboard" | "pointer") {
+		this.ensureOpen();
+		if (modality !== "keyboard" && modality !== "pointer")
+			throw new AgentBrowserError("invalid-input", "Invalid input modality");
+		const previous = this.focusIndicated;
+		this.inputModality = modality;
+		this.currentFocusIndication = modality === "keyboard";
+		if (previous !== this.focusIndicated)
+			this.changed("focus-indication", this.root);
+	}
+
 	setActiveElement(
 		id: number | null,
 		generatedReference: string | null = null,
+		indicate?: boolean,
 	) {
 		this.ensureOpen();
+		if (indicate !== undefined && typeof indicate !== "boolean")
+			throw new AgentBrowserError("invalid-input", "Invalid focus indication");
 		if (
 			generatedReference !== null &&
 			(id === null ||
@@ -249,10 +277,23 @@ export class DocumentTree {
 		if (
 			id === this.currentFocus &&
 			generatedReference === this.currentGeneratedFocus
-		)
+		) {
+			if (id !== null && indicate !== undefined) {
+				const previous = this.focusIndicated;
+				this.currentFocusIndication = indicate;
+				if (previous !== this.focusIndicated)
+					this.changed("focus-indication", this.root);
+			}
 			return;
+		}
+		const indication =
+			indicate ??
+			(this.activeElement === null
+				? this.inputModality === "keyboard"
+				: this.focusIndicated);
 		this.currentFocus = id;
 		this.currentGeneratedFocus = generatedReference;
+		this.currentFocusIndication = id !== null && indication;
 		this.currentKeyboardActive = null;
 		this.changed("focus", this.root);
 	}

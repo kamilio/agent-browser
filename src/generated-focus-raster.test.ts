@@ -75,7 +75,7 @@ it("removes the indicator on blur and distinguishes ordinary host focus", () => 
 });
 
 it.each(["Tab", "pointer", "direct"])(
-	"shows generated focus reached through %s",
+	"applies modality-aware indication to generated focus reached through %s",
 	(method) => {
 		const { target, actions, raster } = fixture();
 		if (method === "Tab") actions.keyboard.press("Tab");
@@ -85,7 +85,10 @@ it.each(["Tab", "pointer", "direct"])(
 			actions.mouse.down();
 			actions.mouse.up();
 		}
-		expect(pixel(raster().image, 119, 8)).toEqual([0, 0, 0, 255]);
+		expect(actions.focus.activeReference()).toBe(target.ref);
+		expect(pixel(raster().image, 119, 8)).toEqual(
+			method === "Tab" ? [0, 0, 0, 255] : [238, 238, 238, 255],
+		);
 	},
 );
 

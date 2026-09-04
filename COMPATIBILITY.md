@@ -1,5 +1,14 @@
 # Compatibility and playground acceptance ledger
 
+September 4 focus-visible continuation: `FOCUS-VISIBLE.md` adds native indicated-
+focus selectors, selector support checks, stylesheet matching and input modality.
+Keyboard and text-entry indication, pointer focus, script/blur inheritance, cached
+relational selectors and generated-header feedback have native tests and inspected
+command captures. Native indication hints are not page forced-focus options or
+platform preferences. Full editing, UA/shadow/accessibility, richer outlines and
+original browser/runtime gates remain open; no gated probe ran and the denied
+SafeJS probe remains unrun.
+
 September 4 authored-outline continuation: `OUTLINES.md` connects outline parsing,
 computed/command inspection and native block, wrapped-inline and replaced-control
 painting. Solid, dashed, dotted, double and native auto patterns, offsets, variables
