@@ -122,6 +122,7 @@ interface Token extends FontExtent {
 	visible: boolean;
 	collapsible: boolean;
 	breakable: boolean;
+	hangable?: boolean;
 }
 
 function extent(style: TextStyle): FontExtent {
@@ -274,17 +275,18 @@ function layoutTextContexts(
 		let lineWidth = 0;
 		let lineContent = 0;
 		let entries: { token: Token; offset: number; advance: number }[] = [];
-		let segments: { tokens: Token[]; closing: Token[]; gap?: Token }[] = [];
+		let segments: { tokens: Token[]; closing: Token[]; gap?: Token[] }[] = [];
 		let word: Token[] = [];
 		let closing: Token[] = [];
-		let gap: Token | undefined;
+		let gap: Token[] | undefined;
 		let collapsing = false;
 		let skipLf = false;
-		const advance = (token: Token, cursor: number) =>
-			token.kind === "tab" && token.advance > 0
-				? (Math.floor(cursor / (token.advance * 8)) + 1) * token.advance * 8 -
-					cursor
-				: token.advance;
+		const advance = (token: Token, cursor: number) => {
+			if (token.kind !== "tab" || token.advance <= 0) return token.advance;
+			const stop = token.advance * 8;
+			const distance = (Math.floor(cursor / stop) + 1) * stop - cursor;
+			return distance < token.advance / 2 ? distance + stop : distance;
+		};
 		const append = (token: Token) => {
 			charge();
 			const used = advance(token, lineWidth);
@@ -295,18 +297,42 @@ function layoutTextContexts(
 			token.kind === "glyph" ||
 			token.kind === "tab" ||
 			token.contributes === true;
-		const finish = (forced?: FontExtent) => {
+		const hangingAdvance = (
+			items: readonly { token: Token; advance: number }[],
+			collapsible = false,
+		) => {
+			let hanging = 0;
+			let blocked = false;
+			for (let index = items.length - 1; index >= 0; index--) {
+				charge();
+				const { token, advance: used } = items[index];
+				if (token.collapsible) {
+					if (collapsible) hanging += used;
+				} else if (token.hangable && !blocked) hanging += used;
+				else if (
+					token.kind === "close" ||
+					token.kind === "open" ||
+					token.kind === "strut"
+				) {
+					blocked ||= !!token.padding || !!token.border;
+				} else break;
+			}
+			return hanging;
+		};
+		const finish = (forced?: FontExtent, final = false) => {
 			entries = [];
 			lineWidth = 0;
 			let content = false;
-			for (const [index, segment] of segments.entries()) {
+			for (const segment of segments) {
 				charge();
 				for (const token of segment.tokens) {
 					append(token);
 					content ||= contributes(token);
 				}
-				if (index < segments.length - 1 && segment.gap && content)
-					append(segment.gap);
+				for (const token of segment.gap ?? []) {
+					if (!token.collapsible || content) append(token);
+					content ||= !token.collapsible && contributes(token);
+				}
 				for (const token of segment.closing) {
 					append(token);
 					content ||= contributes(token);
@@ -338,13 +364,23 @@ function layoutTextContexts(
 				hasContent ||= contributes(entry.token);
 			}
 			const collapsed = !hasContent && !forced;
+			const hanging = hangingAdvance(entries);
+			const measured = Math.max(
+				0,
+				lineWidth -
+					(constraint === "max-content"
+						? 0
+						: constraint === "min-content" || (!forced && !final)
+							? hanging
+							: Math.min(hanging, Math.max(0, lineWidth - block.contentWidth))),
+			);
 			if (!collapsed && ++metrics.lines > limits.maxLines)
 				throw new AgentBrowserError(
 					"resource-limit",
 					"Text layout line limit exceeded",
 				);
 			if (constraint !== "used") {
-				measuredWidth = Math.max(measuredWidth, lineWidth, 0);
+				measuredWidth = Math.max(measuredWidth, measured);
 				entries = [];
 				segments = [];
 				lineWidth = 0;
@@ -363,9 +399,9 @@ function layoutTextContexts(
 			const alignment = style["text-align"];
 			const offset =
 				alignment === "center"
-					? (block.contentWidth - lineWidth) / 2
+					? (block.contentWidth - measured) / 2
 					: ["right", "end"].includes(alignment)
-						? block.contentWidth - lineWidth
+						? block.contentWidth - measured
 						: 0;
 			const glyphStart = glyphs.length;
 			const fragmentStart = fragments.length;
@@ -542,8 +578,8 @@ function layoutTextContexts(
 					top: textHeight,
 					height,
 					baseline,
-					width: Math.max(0, lineWidth),
-					overflow: Math.max(0, lineWidth - block.contentWidth),
+					width: measured,
+					overflow: Math.max(0, measured - block.contentWidth),
 					forcedBreak: !!forced,
 					glyphStart,
 					glyphEnd: glyphs.length,
@@ -559,7 +595,14 @@ function layoutTextContexts(
 			lineContent = 0;
 		};
 		const flushWord = () => {
-			if (!word.length && !closing.length) {
+			if (
+				!word.length &&
+				!closing.length &&
+				!gap?.some((token) => {
+					charge();
+					return !token.collapsible;
+				})
+			) {
 				gap = undefined;
 				return;
 			}
@@ -576,31 +619,47 @@ function layoutTextContexts(
 				});
 			}
 			const previous = segments.at(-1);
-			let predicted =
-				lineWidth + (previous?.gap && lineContent ? previous.gap.advance : 0);
-			for (const token of [...word, ...closing]) {
-				charge();
-				predicted = layoutNumber(predicted + advance(token, predicted), true);
+			if (
+				!lineContent &&
+				!word.some((token) => {
+					charge();
+					return contributes(token);
+				})
+			) {
+				let content = false;
+				gap = gap?.filter((token) => {
+					charge();
+					content ||= !token.collapsible && contributes(token);
+					return !token.collapsible || content;
+				});
 			}
+			const tokens = [...word, ...(gap ?? []), ...closing];
+			const predict = (start: number) => {
+				let width = start;
+				const items = tokens.map((token) => {
+					charge();
+					const used = advance(token, width);
+					width = layoutNumber(width + used, true);
+					return { token, advance: used };
+				});
+				return { width, fit: width - hangingAdvance(items, true) };
+			};
+			let predicted = predict(lineWidth);
 			if (
 				previous?.gap &&
 				lineContent &&
 				(constraint === "min-content" ||
-					(constraint === "used" && predicted > block.contentWidth))
+					(constraint === "used" && predicted.fit > block.contentWidth))
 			) {
 				finish();
-				predicted = 0;
-				for (const token of [...word, ...closing]) {
-					charge();
-					predicted = layoutNumber(predicted + advance(token, predicted), true);
-				}
+				predicted = predict(0);
 			}
 			segments.push({ tokens: word, closing, gap });
-			for (const token of [...word, ...closing]) {
+			for (const token of tokens) {
 				charge();
-				if (contributes(token)) lineContent++;
+				if (!token.collapsible && contributes(token)) lineContent++;
 			}
-			lineWidth = predicted;
+			lineWidth = predicted.width;
 			word = [];
 			closing = [];
 			gap = undefined;
@@ -608,10 +667,25 @@ function layoutTextContexts(
 		const emit = (token: Token) => {
 			countToken();
 			if (token.breakable) {
-				gap = token;
-			} else if (gap && token.kind === "close") closing.push(token);
+				gap ??= [];
+				for (const boundary of closing) {
+					charge();
+					gap.push(boundary);
+				}
+				closing = [];
+				gap.push(token);
+			} else if (gap && (token.kind === "close" || token.kind === "open"))
+				closing.push(token);
 			else {
-				if (gap) flushWord();
+				if (gap) {
+					const opening = closing.findIndex((boundary) => {
+						charge();
+						return boundary.kind === "open";
+					});
+					const next = opening < 0 ? [] : closing.splice(opening);
+					flushWord();
+					word = next;
+				}
 				word.push(token);
 			}
 		};
@@ -620,8 +694,6 @@ function layoutTextContexts(
 			collapsing = false;
 			flushWord();
 			gap = undefined;
-			const previous = segments.at(-1);
-			if (previous) previous.gap = undefined;
 			segments.push({
 				closing: [],
 				tokens: [
@@ -724,7 +796,9 @@ function layoutTextContexts(
 						"Atomic inline baseline is not supported",
 					);
 				const wrap =
-					frame.whiteSpace === "normal" || frame.whiteSpace === "pre-line";
+					frame.whiteSpace === "normal" ||
+					frame.whiteSpace === "pre-line" ||
+					frame.whiteSpace === "pre-wrap";
 				const opportunity: Token = {
 					...font,
 					above: frame.above,
@@ -783,7 +857,8 @@ function layoutTextContexts(
 					);
 				const wrap =
 					typography["white-space"] === "normal" ||
-					typography["white-space"] === "pre-line";
+					typography["white-space"] === "pre-line" ||
+					typography["white-space"] === "pre-wrap";
 				const opportunity: Token = {
 					...font,
 					advance: 0,
@@ -860,10 +935,12 @@ function layoutTextContexts(
 				}
 				if (character === "\r" || character === "\f") character = "\n";
 				const mode = typography["white-space"];
-				if (character === "\n" && (mode === "pre" || mode === "pre-line"))
+				const preserved = mode === "pre" || mode === "pre-wrap";
+				if (character === "\n" && (preserved || mode === "pre-line"))
 					hardBreak(font, node);
 				else {
-					const collapsible = mode !== "pre" && /^[\t\n ]$/.test(character);
+					const whitespace = /^[\t\n ]$/.test(character);
+					const collapsible = !preserved && whitespace;
 					const token: Token = {
 						...font,
 						formattingId: node.id,
@@ -871,10 +948,11 @@ function layoutTextContexts(
 						offset,
 						codeUnits,
 						character: collapsible ? " " : character,
-						kind: character === "\t" && mode === "pre" ? "tab" : "glyph",
+						kind: character === "\t" && preserved ? "tab" : "glyph",
 						visible: node.visible,
 						collapsible,
-						breakable: collapsible && mode !== "nowrap",
+						breakable: whitespace && mode !== "nowrap" && mode !== "pre",
+						hangable: mode === "pre-wrap" && whitespace,
 					};
 					if (collapsible) {
 						if (!collapsing) emit(token);
@@ -888,7 +966,7 @@ function layoutTextContexts(
 			}
 		}
 		flushWord();
-		finish();
+		finish(undefined, true);
 		if (constraint !== "used") {
 			measurements.push(Object.freeze({ id: block.id, width: measuredWidth }));
 			continue;

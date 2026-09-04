@@ -51,6 +51,20 @@ it("shares inherited immutable defaults with text nodes", () => {
 	});
 });
 
+it("accepts, inherits and overrides pre-wrap through stylesheet and inline declarations", () => {
+	const { tree, styles, id, text } = fixture("#outer{white-space:pre-wrap}");
+	expect(parseTextValue("white-space", "pre-wrap")).toBe("pre-wrap");
+	expect(text()["white-space"]).toBe("pre-wrap");
+	expect(styles.text(tree.get(id()).children[0])["white-space"]).toBe(
+		"pre-wrap",
+	);
+	tree.setAttribute(id(), "style", "white-space:normal;white-space:pre-wrap");
+	expect(text()["white-space"]).toBe("pre-wrap");
+	tree.setAttribute(id(), "style", "white-space:initial");
+	expect(text()["white-space"]).toBe("normal");
+	expect(styles.metrics().issues).toEqual({});
+});
+
 it.each([
 	["12px", "12px"],
 	["150%", "30px"],
@@ -173,7 +187,7 @@ it.each(["-1px", "12", "calc(1px + 1px)", "1e999px", "10ch", "larger"])(
 
 it("reports unsupported whitespace/alignment, bounds computed sizes and expands all", () => {
 	const { styles } = fixture(
-		"#target{white-space:pre-wrap;text-align:justify;font-weight:bold}",
+		"#target{white-space:break-spaces;text-align:justify;font-weight:bold}",
 	);
 	expect(styles.metrics().issues).toMatchObject({
 		"unimplemented-or-invalid-css-value": 2,
@@ -209,7 +223,7 @@ it("accepts typography through the same inline declaration validation", () => {
 	]);
 	expect(
 		parseInlineDeclarations(
-			"font-size:20px;font-size:-2px;white-space:pre-wrap",
+			"font-size:20px;font-size:-2px;white-space:break-spaces",
 			20,
 		),
 	).toHaveLength(1);

@@ -19,6 +19,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native pre-wrap checkpoint: `PRE-WRAP.md` integrates preserved-whitespace soft
+wrapping, hanging, source ownership and intrinsic measurement. The previously
+failing editable-fill capture now uses real pre-wrap and visibly preserves
+indentation/newlines/literal text. Both focused runs pass 390 / ten files; types,
+builds, strict changed-test checks, formatting and scoped lint pass, with the
+preexisting text-layout import-order diagnostic retained explicitly. Authorized
+full native runs pass 9,854 / 284 isolated files; working validation reports
+10,999 passes and the unchanged pending onload failure / 306 files. Unicode/layout expansion, caret painting and original
+browser/runtime acceptance gates remain open; no gated probe ran.
+
 Native Range/Selection checkpoint: `DOM-RANGES.md` integrates live native ranges,
 partial content operations and a document-owned selection with shared document/
 Window/global identity. Parent adds five page-binding identity/lifetime tests;

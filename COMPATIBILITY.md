@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 pre-wrap continuation: `PRE-WRAP.md` adds actual preserved-whitespace
+wrapping, hanging/fit widths, source-preserving fragments and intrinsic sizing.
+Native command captures now retain literal editable text, multiple spaces and
+indentation under pre-wrap; prior pre-line captures retain their original scope.
+Full Unicode/CSS Text, caret painting and external browser/runtime gates remain
+open. No gated probe ran and no historical evidence was rewritten.
+
 September 4 Range/Selection continuation: `DOM-RANGES.md` adds native live ranges,
 partial clone/extract/delete operations, and one selection owner shared by
 document, Window and global getSelection. Native fixtures establish identity,

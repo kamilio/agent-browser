@@ -44,7 +44,7 @@ export function parseTextValue(
 ): string | undefined {
 	if (wide.has(value)) return value;
 	if (property === "white-space")
-		return ["normal", "nowrap", "pre", "pre-line"].includes(value)
+		return ["normal", "nowrap", "pre", "pre-line", "pre-wrap"].includes(value)
 			? value
 			: undefined;
 	if (property === "text-align")

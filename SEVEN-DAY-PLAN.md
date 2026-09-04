@@ -1292,6 +1292,14 @@ the unchanged pending working-tree onload assertion kept separate. Detailed
 mutation limitations, visual/keyboard selection and released-runtime gates
 remain open; this does not complete the DOM or the overall browser outcome.
 
+September 4 pre-wrap continuation: `PRE-WRAP.md` closes the concrete unsupported
+whitespace profile found during editable-fill capture. Both focused integrated
+runs pass 390 / ten files, including mixed modes, wrapping oracles and a native
+pixel reference. Four fresh command-path captures visibly preserve whitespace
+and literal text, with cancellation/clearing at stable geometry. The earlier
+pre-line evidence remains unchanged. General Unicode/layout, rich editing and
+all original live/runtime acceptance gates remain open; no gated probe ran.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
