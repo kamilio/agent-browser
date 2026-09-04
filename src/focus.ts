@@ -15,6 +15,7 @@ import {
 import { BrowserEvent, type DocumentEvents } from "./events.js";
 import { isInertRoot } from "./inertness.js";
 import { parsedTabIndex } from "./element-focus.js";
+import { closedDetailsChild, summaryDetails } from "./details.js";
 import { documentStyles } from "./styles.js";
 
 export class BrowserFocusEvent extends BrowserEvent {
@@ -48,6 +49,7 @@ export function focusTabIndex(tree: DocumentTree, id: number): number | null {
 		const current = tree.get(ancestor);
 		if (
 			Object.hasOwn(current.attributes, "hidden") ||
+			closedDetailsChild(tree, current) ||
 			isInertRoot(tree, current)
 		)
 			return null;
@@ -56,6 +58,7 @@ export function focusTabIndex(tree: DocumentTree, id: number): number | null {
 	const explicit = parsedTabIndex(node);
 	if (explicit !== null) return explicit;
 	return ["input", "button", "select", "textarea"].includes(node.tagName) ||
+		summaryDetails(tree, node) !== undefined ||
 		(node.tagName === "a" && Object.hasOwn(node.attributes, "href"))
 		? 0
 		: null;

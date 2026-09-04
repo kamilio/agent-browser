@@ -16,6 +16,7 @@ import {
 import { documentBaseTarget, documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { summaryDetails } from "./details.js";
 import {
 	type EventAction,
 	runEventAction,
@@ -413,7 +414,7 @@ export class DocumentInteractions {
 			const current = this.tree.get(activation.id);
 			if (
 				!this.tree.isConnected(current.id) &&
-				!(programmatic && ["a", "label"].includes(current.tagName))
+				!(programmatic && ["a", "label", "summary"].includes(current.tagName))
 			)
 				return this.result(reference, false);
 			if (current.tagName === "label")
@@ -559,12 +560,16 @@ export class DocumentInteractions {
 
 	private activationTarget(id: number): Readonly<DocumentNode> | undefined {
 		let node: Readonly<DocumentNode> | undefined = this.tree.get(id);
+		let interactiveDescendant = false;
 		while (node) {
 			if (
 				["button", "input", "label"].includes(node.tagName) ||
 				(node.tagName === "a" && Object.hasOwn(node.attributes, "href"))
 			)
 				return node;
+			if (node.tagName === "summary")
+				return interactiveDescendant ? undefined : node;
+			interactiveDescendant ||= isInteractiveElement(node);
 			node = node.parent === null ? undefined : this.tree.get(node.parent);
 		}
 		return undefined;
@@ -606,6 +611,11 @@ export class DocumentInteractions {
 		reset?: FormResetResult;
 	}> {
 		const reference = this.tree.reference(node.id);
+		if (node.tagName === "summary") {
+			const details = summaryDetails(this.tree, node);
+			if (details !== undefined) this.tree.toggleAttribute(details, "open");
+			return {};
+		}
 		if (node.tagName === "a" && Object.hasOwn(node.attributes, "href")) {
 			if (
 				Object.hasOwn(node.attributes, "download") ||

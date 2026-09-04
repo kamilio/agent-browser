@@ -107,7 +107,7 @@ it.each([
 	["button", { type: "button" }],
 	["select", {}],
 	["textarea", {}],
-	["details", {}],
+	["details", { open: "" }],
 	["video", { controls: "" }],
 	["img", { usemap: "#map" }],
 ] as [string, Record<string, string>][])(

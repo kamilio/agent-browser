@@ -11,6 +11,7 @@ import { AgentBrowserError } from "./errors.js";
 import { activeFocus } from "./focus.js";
 import { htmlParseInfo } from "./html-info.js";
 import { isInertRoot } from "./inertness.js";
+import { summaryDetails } from "./details.js";
 import { documentStyles } from "./styles.js";
 
 export interface SnapshotOptions {
@@ -32,6 +33,7 @@ export interface SnapshotEntry {
 	indeterminate?: boolean;
 	targeted?: boolean;
 	focused?: boolean;
+	expanded?: boolean;
 	selected?: boolean;
 	disabled?: boolean;
 	readonly?: boolean;
@@ -158,7 +160,11 @@ function hidden(tree: DocumentTree, node: DocumentNode) {
 	);
 }
 
-function roleOf(node: DocumentNode, locator = false): string | undefined {
+function roleOf(
+	tree: DocumentTree,
+	node: DocumentNode,
+	locator = false,
+): string | undefined {
 	if (node.kind === "text") return "text";
 	if (node.kind !== "element") return undefined;
 	const explicit = node.attributes.role
@@ -172,6 +178,7 @@ function roleOf(node: DocumentNode, locator = false): string | undefined {
 		return undefined;
 	if (node.tagName === "a" && !Object.hasOwn(node.attributes, "href"))
 		return undefined;
+	if (summaryDetails(tree, node) !== undefined) return "button";
 	if (node.tagName === "input") {
 		const type = node.attributes.type?.toLowerCase() ?? "text";
 		if (
@@ -263,7 +270,7 @@ export function scanSnapshotEntries(
 
 export function snapshotElementRole(tree: DocumentTree, id: number) {
 	const node = tree.get(id);
-	return node.kind === "element" ? roleOf(node, true) : undefined;
+	return node.kind === "element" ? roleOf(tree, node, true) : undefined;
 }
 
 export function snapshotRoleCandidates(
@@ -450,7 +457,7 @@ function collectSnapshot(
 		const node = nodes.get(current.id);
 		if (!node) continue;
 		const role = visible.has(current.id)
-			? roleOf(node, expandLeafRoles)
+			? roleOf(tree, node, expandLeafRoles)
 			: undefined;
 		let nextDepth = current.depth;
 		if (role && (role !== "text" || text.get(node.id)?.trim())) {
@@ -479,6 +486,9 @@ function collectSnapshot(
 			if (isControlDisabled(tree, node.id)) entry.disabled = true;
 			if (node.id === tree.targetElement) entry.targeted = true;
 			if (node.id === focused) entry.focused = true;
+			const details = summaryDetails(tree, node);
+			if (details !== undefined && role === "button")
+				entry.expanded = Object.hasOwn(tree.get(details).attributes, "open");
 			if (
 				node.tagName === "input" &&
 				node.attributes.type?.toLowerCase() === "checkbox" &&

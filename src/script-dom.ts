@@ -859,6 +859,15 @@ export class ScriptDom {
 				title: this.attribute(id, "title"),
 				...scriptElementFocusProperties(this.tree, id, () => this.read(id)),
 			});
+			if (initial.tagName === "details")
+				definition.properties.open = {
+					get: () => Object.hasOwn(this.read(id).attributes, "open"),
+					set: (value) => {
+						this.read(id);
+						if (value) this.tree.setAttribute(id, "open", "");
+						else this.tree.removeAttribute(id, "open");
+					},
+				};
 			Object.assign(definition.methods, {
 				insertAdjacentHTML: (...args: readonly unknown[]) => {
 					this.read(id);

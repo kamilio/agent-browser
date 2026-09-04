@@ -1,9 +1,9 @@
 import type { DocumentNode, DocumentTree } from "./document.js";
+import { summaryDetails } from "./details.js";
 import { AgentBrowserError } from "./errors.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
 
 const parsedValues = new WeakMap<Readonly<DocumentNode>, number | null>();
-const firstSummaries = new WeakMap<Readonly<DocumentNode>, number | null>();
 const defaultZero = new Set([
 	"a",
 	"area",
@@ -33,18 +33,7 @@ function elementTabIndex(tree: DocumentTree, node: Readonly<DocumentNode>) {
 	if (parsed !== null && parsed >= -2_147_483_648 && parsed <= 2_147_483_647)
 		return parsed;
 	if (defaultZero.has(node.tagName)) return 0;
-	if (node.tagName === "summary" && node.parent !== null) {
-		const parent = tree.get(node.parent);
-		if (parent.tagName !== "details") return -1;
-		let first = firstSummaries.get(parent);
-		if (first === undefined) {
-			first =
-				parent.children.find((id) => tree.get(id).tagName === "summary") ??
-				null;
-			firstSummaries.set(parent, first);
-		}
-		if (first === node.id) return 0;
-	}
+	if (summaryDetails(tree, node) !== undefined) return 0;
 	return -1;
 }
 

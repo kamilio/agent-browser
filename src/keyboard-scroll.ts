@@ -1,4 +1,5 @@
 import { documentScroll } from "./document-scroll.js";
+import { summaryDetails } from "./details.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import type { EventAction } from "./event-actions.js";
@@ -64,7 +65,11 @@ export function* keyboardScrollAction(
 				);
 			const node = tree.get(ancestor);
 			if (["input", "select", "textarea"].includes(node.tagName ?? "")) return;
-			if (key.key === " " && node.tagName === "button") return;
+			if (
+				key.key === " " &&
+				(node.tagName === "button" || summaryDetails(tree, node) !== undefined)
+			)
+				return;
 			if (
 				editable === undefined &&
 				Object.hasOwn(node.attributes, "contenteditable")

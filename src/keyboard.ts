@@ -24,6 +24,7 @@ import type { DefaultActionIntent, InteractionResult } from "./interactions.js";
 import { selectKeyboardAction } from "./select-keyboard.js";
 import { SelectTypeahead } from "./select-typeahead.js";
 import { keyboardScrollAction } from "./keyboard-scroll.js";
+import { summaryDetails } from "./details.js";
 import {
 	keyboardChord,
 	KeyboardState,
@@ -419,7 +420,11 @@ export class DocumentKeyboard {
 				} else if (key.key === "Enter") {
 					if (node.tagName === "textarea")
 						canceled = !(yield* this.edit(id, "\n", "insertLineBreak", null));
-					else if (node.tagName === "button" || node.tagName === "a")
+					else if (
+						node.tagName === "button" ||
+						node.tagName === "a" ||
+						summaryDetails(this.tree, node) !== undefined
+					)
 						interaction = yield* this.formalActivation(this.tree.reference(id));
 					else if (
 						node.tagName === "input" &&
@@ -485,6 +490,7 @@ export class DocumentKeyboard {
 					key.key === " " &&
 					!editable &&
 					(node.tagName === "button" ||
+						summaryDetails(this.tree, node) !== undefined ||
 						(node.tagName === "input" &&
 							[
 								"checkbox",

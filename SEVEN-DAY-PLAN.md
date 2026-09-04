@@ -1000,6 +1000,21 @@ released-SafeJS and real browser/site/socket/TTY gates remain open. No gated pro
 ran; the denied SafeJS probe remains unrun and the complete seven-day browser
 objective stays active.
 
+September 4 disclosure-core continuation: `DETAILS-CORE.md` connects details/
+summary collapse, native pointer/keyboard activation, `open` reflection and
+expanded snapshots to shared document state. Native DOM, layout, hit testing,
+focus and raster paths cover the extension. The 38 new cases produce 36 failures
+and two passes on isolated prior HEAD; focused runs pass 301 / eight files in
+both trees. Both pass types/builds, strict checking of the new and adjusted label
+test, and fourteen-file lint. Continue with bounded, document-owned coalesced
+toggle notifications and named disclosure groups. Authorized full native runs
+pass 10,172 / 279 working files and 9,026 / 257 isolated files after correcting
+the label fixture to keep its clicked details descendant visible. Generated
+summaries/markers, full UA/shadow/accessibility behavior, released-SafeJS and real browser/site/
+socket/TTY gates remain open. No gated probe ran; the denied SafeJS probe remains
+unrun. Historical evidence and unrelated pending work stay separate; the complete
+seven-day browser objective remains active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

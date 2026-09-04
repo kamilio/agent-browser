@@ -65,6 +65,7 @@ import {
 import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { closedDetailsChild } from "./details.js";
 import {
 	cssVariableLimits,
 	parseVariableValue,
@@ -905,7 +906,10 @@ export class DocumentStyles {
 			if (["inherit", "unset", "revert"].includes(visibility))
 				visibility = parent?.visibility ?? "visible";
 			else if (visibility === "initial") visibility = "visible";
-			const displayed = (parent?.displayed ?? true) && display !== "none";
+			const displayed =
+				(parent?.displayed ?? true) &&
+				display !== "none" &&
+				!closedDetailsChild(this.tree, node, charge);
 			charge(1);
 			if (
 				computePointerEvents(

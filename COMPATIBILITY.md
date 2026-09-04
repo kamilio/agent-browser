@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 disclosure continuation: `DETAILS-CORE.md` adds native details/summary
+collapse, pointer/keyboard defaults, `open` reflection and expanded snapshot state
+through shared document ownership. Native layout/hit/focus/raster coverage does
+not establish coalesced toggle events, named accordion exclusivity, generated
+fallback summaries/markers, full UA/shadow/accessibility or real-browser parity.
+
 September 4 focus-property continuation: `ELEMENT-FOCUS.md` adds native
 `tabIndex`/`inert` reflection and connects inert attribute mutations to focus-state
 clearing. Query, keyboard, geometry and snapshot tests cover shared state, not

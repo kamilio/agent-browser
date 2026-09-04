@@ -115,8 +115,6 @@ const deferredElements = new Set([
 	"button",
 	"fieldset",
 	"legend",
-	"details",
-	"summary",
 	"dialog",
 	"noscript",
 	"svg",

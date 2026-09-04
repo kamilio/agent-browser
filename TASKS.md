@@ -19,6 +19,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Disclosure-core checkpoint: `DETAILS-CORE.md` adds native details/summary body
+collapse, click/Enter/Space activation, `open` reflection and snapshot expanded
+state. Shared layout, hit testing and focus exclude collapsed content without
+removing DOM nodes. Closing details or replacing its primary summary clears
+newly hidden focus. The 38 new cases produce 36 failures and two passes on
+isolated prior HEAD; formatter, structural-focus and property-reflection
+regressions reproduce before their fixes. Focused native runs pass 301 tests /
+eight files in both working and isolated trees. Both pass types/builds, strict
+checking of the new and adjusted label test, and fourteen-file lint. The label
+fixture explicitly opens details to keep its interactive descendant visible.
+Authorized full native runs pass 10,172 / 279 working files and 9,026 / 257
+isolated files; preceding runs fail only the corrected label fixture.
+Continue with coalesced toggle-event scheduling and named disclosure groups;
+generated summary/marker, full UA/shadow/accessibility behavior and real browser
+parity remain open. Historical evidence and unrelated pending work remain intact.
+No gated probe ran; the denied SafeJS probe remains unrun, and the complete
+seven-day browser objective and original acceptance gates stay active.
+
+### Previous element-focus checkpoint
+
 Element-focus checkpoint: `ELEMENT-FOCUS.md` adds `tabIndex` and `inert`
 properties, with HTML integer-prefix parsing shared by native tab order and
 element-specific getter defaults kept distinct from actionability. Inert attribute

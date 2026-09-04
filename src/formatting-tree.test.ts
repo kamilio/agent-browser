@@ -303,7 +303,7 @@ it.each(["flex", "grid", "table", "inline-table", "inline-flex", "list-item"])(
 	},
 );
 
-it.each(["img", "details", "fieldset", "svg", "math"])(
+it.each(["img", "dialog", "fieldset", "svg", "math"])(
 	"defers special %s element layout without pretending to know intrinsic size",
 	(tag) => {
 		const { tree, id } = fixture("<main></main>");

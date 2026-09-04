@@ -1,4 +1,5 @@
 import { DocumentCheckedness } from "./document-checkedness.js";
+import { firstDetailsSummary } from "./details.js";
 import type { InlineDeclaration } from "./css-declarations.js";
 import {
 	DocumentInlineDeclarations,
@@ -1022,6 +1023,8 @@ export class DocumentTree {
 				.concat(children, parent.children.slice(index));
 			child.children = [];
 			for (const moving of children) this.node(moving).parent = parentId;
+			if (parent.tagName === "details")
+				this.clearCollapsedDetailsFocus(parentId);
 			this.childMutation(childId, [], children);
 			if (!suppress)
 				this.childMutation(
@@ -1072,6 +1075,8 @@ export class DocumentTree {
 			const nextSibling = parent.children[index] ?? null;
 			parent.children.splice(index, 0, moving);
 			node.parent = parentId;
+			if (parent.tagName === "details")
+				this.clearCollapsedDetailsFocus(parentId);
 			if (!suppress)
 				this.childMutation(
 					parentId,
@@ -1269,6 +1274,26 @@ export class DocumentTree {
 		return false;
 	}
 
+	private clearCollapsedDetailsFocus(id: number) {
+		const details = this.node(id);
+		if (
+			details.tagName !== "details" ||
+			Object.hasOwn(details.attributes, "open")
+		)
+			return;
+		let child = this.currentFocus;
+		while (child !== null) {
+			const parent = this.node(child).parent;
+			if (parent === id) {
+				this.nodeViews.delete(id);
+				if (firstDetailsSummary(this, this.get(id)) !== child)
+					this.clearFocusWithin(child);
+				return;
+			}
+			child = parent;
+		}
+	}
+
 	toggleAttribute(id: number, name: string, force?: boolean): boolean {
 		this.validateAttribute(name);
 		if (force !== undefined && typeof force !== "boolean")
@@ -1296,6 +1321,8 @@ export class DocumentTree {
 		);
 		this.textCodeUnits -= key.length + node.attributes[key].length;
 		removeHtmlAttribute(node.attributes, key);
+		if (key === "open" && node.tagName === "details")
+			this.clearCollapsedDetailsFocus(id);
 		if (key === "form") this.resetParserForm(id);
 		const attributeId = this.attachedAttributes.get(id)?.get(key);
 		if (attributeId !== undefined) {
