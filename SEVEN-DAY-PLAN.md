@@ -901,6 +901,21 @@ CSSOM serialization/property coverage/cloning, released-SafeJS and real browser/
 site/socket/TTY gates remain open. No gated probe ran, the denied SafeJS probe
 remains unrun, and the complete seven-day browser objective stays active.
 
+September 4 shorthand serialization continuation:
+`INLINE-SHORTHAND-SERIALIZATION.md` integrates preferred-order compaction for
+supported border/flex/gap families, overlapping-component exclusion and disjoint
+ordinary/pending handling. Parser-admission checks avoid lossy oversized shorthand
+output without raising quotas. Shared native state and existing serialized-
+attribute clone/import behavior have tests; private CSSOM state is not copied.
+Thirty new cases pass; twenty-six fail on isolated prior HEAD. Focused runs pass
+253 / eight files in both trees; full authorized native runs pass 9,739 / 272
+working files and 8,593 / 250 isolated files. Both trees pass types/builds, strict
+new-test checks and two-file lint. Historical reports and unrelated pending work
+remain separate. Continue JavaScript application/native style compatibility; full
+CSSOM/property coverage/cloning, released-SafeJS and real browser/site/socket/TTY
+gates remain open. No gated probe ran; the denied SafeJS probe remains unrun and
+the complete seven-day browser objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

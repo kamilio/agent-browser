@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Shorthand serialization checkpoint: `INLINE-SHORTHAND-SERIALIZATION.md` compacts
+supported border/flex/gap families with preferred candidate ordering, compatible
+priorities and no repeated overlapping components. Unrelated pending groups no
+longer suppress ordinary compaction. A parser-admission guard preserves longhands
+when combined shorthand output would be discarded, including existing margin/
+padding cases. Shared CSSOM/layout and serialized-attribute clone/import boundaries
+have native tests; no private style state is copied into clones. Thirty new cases
+pass; twenty-six fail on isolated prior HEAD. Focused runs pass 253 / eight files
+in both trees; authorized full native runs pass 9,739 / 272 working files and
+8,593 / 250 isolated files. Types/builds, strict new-test checking and two-file
+lint pass in both trees. Historical evidence and unrelated pending work remain
+intact. Continue JavaScript application and native style compatibility; full
+CSSOM/property coverage/cloning, released-SafeJS, real browser/site/socket/TTY and
+original acceptance gates remain open. No gated probe ran; the denied SafeJS probe
+remains unrun and the seven-day browser goal remains active.
+
+### Previous ordered inline/reset checkpoint
+
 Ordered inline/reset checkpoint: `INLINE-ORDER-ALL.md` preserves ordinary CSSOM
 enumeration across shorthand compaction and expands `all` over supported native
 longhands. Component replacement/removal affects shared geometry and paint;

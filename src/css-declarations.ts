@@ -548,67 +548,68 @@ export function propertyValue(
 	return values.join(" ");
 }
 
+interface SerializationShorthand {
+	name: string;
+	components: readonly string[];
+}
+let serializationShorthands:
+	| ReadonlyMap<string, readonly SerializationShorthand[]>
+	| undefined;
+
+function shorthandsFor(name: string): readonly SerializationShorthand[] {
+	if (!serializationShorthands) {
+		const shorthands = [...supported]
+			.map((name) => ({ name, components: inlineDeclarationComponents(name) }))
+			.filter((shorthand) => shorthand.components.length > 1)
+			.sort(
+				(left, right) =>
+					right.components.length - left.components.length ||
+					(left.name < right.name ? -1 : left.name > right.name ? 1 : 0),
+			);
+		const byComponent = new Map<string, SerializationShorthand[]>();
+		for (const shorthand of shorthands) {
+			for (const component of shorthand.components) {
+				const candidates = byComponent.get(component) ?? [];
+				candidates.push(shorthand);
+				byComponent.set(component, candidates);
+			}
+		}
+		serializationShorthands = byComponent;
+	}
+	return serializationShorthands.get(name) ?? [];
+}
+
 export function serializeDeclarations(
 	entries: readonly InlineDeclaration[],
 ): string {
+	const present = new Set(entries.map((entry) => entry.name));
 	const emitted = new Set<string>();
 	const output: string[] = [];
-	const resetComponents = inlineDeclarationComponents("all");
-	const resetValue =
-		entries.length >= resetComponents.length &&
-		resetComponents.every((name) =>
-			entries.some((entry) => entry.name === name),
-		)
-			? propertyValue(entries, "all")
-			: "";
 	for (const entry of entries) {
 		if (emitted.has(entry.name)) continue;
-		if (
-			resetValue &&
-			resetComponents.includes(entry.name) &&
-			resetComponents.every((name) => !emitted.has(name))
-		) {
-			for (const name of resetComponents) emitted.add(name);
-			output.push(`all: ${resetValue}${entry.important ? " !important" : ""};`);
-			continue;
-		}
-		if (entry.pending) {
-			const components = inlineDeclarationComponents(entry.pending);
-			const value = components.every((name) => !emitted.has(name))
-				? propertyValue(entries, entry.pending)
-				: "";
-			if (value) {
-				for (const name of components) emitted.add(name);
-				output.push(
-					`${entry.pending}: ${value}${entry.important ? " !important" : ""};`,
-				);
-				continue;
-			}
-			output.push(`${entry.name}: ${entry.important ? " !important" : ""};`);
-			emitted.add(entry.name);
-			continue;
-		}
-		const shorthand =
-			entry.name === "overflow-x" || entry.name === "overflow-y"
-				? "overflow"
-				: /^(margin|padding|background)-/.exec(entry.name)?.[1];
-		const value =
-			shorthand &&
-			!entries.some(
-				(candidate) => candidate.name === "all" || candidate.pending,
+		let name = entry.name;
+		let value = entry.pending ? "" : entry.value;
+		for (const shorthand of shorthandsFor(entry.name)) {
+			if (
+				!shorthand.components.every(
+					(component) => present.has(component) && !emitted.has(component),
+				)
 			)
-				? propertyValue(entries, shorthand)
-				: "";
-		if (shorthand && value) {
-			for (const component of propertyDeclarations(entries, shorthand))
-				emitted.add(component.name);
-			output.push(
-				`${shorthand}: ${value}${entry.important ? " !important" : ""};`,
-			);
-		} else
-			output.push(
-				`${entry.name}: ${entry.value}${entry.important ? " !important" : ""};`,
-			);
+				continue;
+			const serialized = propertyValue(entries, shorthand.name);
+			if (!serialized) continue;
+			if (
+				expandDeclaration(shorthand.name, serialized, entry.important)
+					.length !== shorthand.components.length
+			)
+				continue;
+			name = shorthand.name;
+			value = serialized;
+			for (const component of shorthand.components) emitted.add(component);
+			break;
+		}
+		emitted.add(entry.name);
+		output.push(`${name}: ${value}${entry.important ? " !important" : ""};`);
 	}
 	return output.join(" ");
 }

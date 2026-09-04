@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 shorthand continuation: `INLINE-SHORTHAND-SERIALIZATION.md` adds
+preferred-order compaction for the supported border/flex/gap families, prevents
+duplicate overlapping components and avoids emitting oversized shorthands that
+the native parser would discard. Tests cover shared state and the existing
+serialized-attribute clone/import boundary. Full CSSOM/browser parity remains open.
+
 September 4 ordering/reset continuation: `INLINE-ORDER-ALL.md` retains ordinary
 CSSOM slot order and supports component-level `all` resets over native longhands.
 Custom declarations survive resets; ordinary retained order shares the existing

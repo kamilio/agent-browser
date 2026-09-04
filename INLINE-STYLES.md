@@ -1,5 +1,12 @@
 # Inline style declarations
 
+September 4 shorthand continuation: `INLINE-SHORTHAND-SERIALIZATION.md` extends
+compaction to the supported border/flex/gap families, prevents overlapping output
+and preserves longhands when a combined shorthand exceeds native parser admission.
+Ordinary compaction no longer depends on unrelated pending groups. Clone/import
+tests pin the existing serialized-attribute boundary; full CSSOM/runtime gates
+and the historical evidence below remain unchanged.
+
 September 4 ordering/reset continuation: `INLINE-ORDER-ALL.md` preserves ordinary
 declaration order across shorthand compaction and expands `all` into supported
 native longhand slots. Explicit attribute/`cssText` replacement still resets hidden
