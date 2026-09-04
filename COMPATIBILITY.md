@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 terminal caret continuation: `EDITABLE-CARET-BREAKS.md` adds the exact
+same-source preserved-break endpoint subset without layout changes or guessed
+struts. Native captures verify terminal/consecutive Enter and later opaque coverage;
+empty/all-break editors, general affinity and original external/runtime gates
+remain open.
+
 September 4 upload lifecycle hardening: `UPLOAD-LIFECYCLE.md` rejects stale begin
 acknowledgements and prevents ownership publication after reentrant manager or
 retained-target closure. Four native regressions cover capacity, subscriptions

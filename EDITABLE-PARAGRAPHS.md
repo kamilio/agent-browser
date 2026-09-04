@@ -41,6 +41,10 @@ prefix in `node_modules/.cache/native-validation`. The original worker patch and
 
 ## Remaining gates
 
+`EDITABLE-CARET-BREAKS.md` supplies the bounded same-source terminal plaintext
+Enter caret. Empty rich paragraphs and broader affinity remain unsupported; this
+does not reclassify the original paragraph captures as painted-caret evidence.
+
 `EDITABLE-CARET.md` adds shared glyph-edge painting after fill/type and rich
 paragraph edits. Its new native evidence does not convert these older text-only
 captures into painted-caret validation. Empty paragraphs and terminal break-only

@@ -45,6 +45,10 @@ Unicode caret affinity, selection highlights and painted carets remain separate.
 
 ## Integrated native evidence
 
+Terminal caret continuation: `EDITABLE-CARET-BREAKS.md` now paints the bounded
+same-source terminal break chain using these existing coordinates. Earlier Range
+captures remain geometry-only evidence, not newly relabelled paint validation.
+
 Current continuation: `EDITABLE-CARET.md` consumes this geometry for bounded
 glyph-edge caret painting. Its fresh evidence does not relabel the geometry-only
 captures below. Terminal preserved-break Range geometry can be valid while that

@@ -19,6 +19,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Terminal caret checkpoint: `EDITABLE-CARET-BREAKS.md` paints exact same-source
+preserved-break endpoints through the existing prior-glyph paint position. Focused
+tests pass 177 / nine files; types/builds, strict checks and scoped Biome pass.
+Five inspected module captures and independent combined host comparisons show
+only the two new terminal caret columns changing. Explicit native suites pass
+10,975 / 325 isolated files and report 12,106 passes with the same fifteen pending
+failures / 347 working files. Empty/all-break editors, general affinity and original
+acceptance gates stay open.
+
 Upload lifecycle checkpoint: `UPLOAD-LIFECYCLE.md` guards begin acknowledgements
 against intervening target invalidation and prevents manager/retained-owner closure
 from resuming attachment. Four reproductions fail against the preceding archive

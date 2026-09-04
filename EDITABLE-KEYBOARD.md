@@ -66,6 +66,10 @@ retain their original narrower results and obsolete-Space integration caveat.
 
 ## Remaining gates
 
+`EDITABLE-CARET-BREAKS.md` adds the exact same-source terminal-break caret subset.
+Empty/all-break editors, mixed-source affinity and broader visual movement remain
+open; original keyboard measurements are not rewritten.
+
 `EDITABLE-CARET.md` now supplies bounded glyph-edge painting through the same
 selected Range. Its new captures are separate from the original text-only ones.
 Terminal/empty carets, highlights and full visual keyboard movement remain open.

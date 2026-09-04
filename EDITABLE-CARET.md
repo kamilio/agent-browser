@@ -1,5 +1,9 @@
 # Bounded native editable caret
 
+Current continuation: `EDITABLE-CARET-BREAKS.md` adds exact same-source terminal
+preserved-break carets. The initial glyph-edge measurements and skipped-terminal
+evidence below retain their original checkpoint scope.
+
 September 4, 2026. Native captures can paint a nonblinking caret at a determinate
 glyph edge of the focused contenteditable root. It consumes the existing shared
 Range/Selection; rendering does not initialize selection or register a new owner.
@@ -79,8 +83,8 @@ blocker, prerequisite patch and later 534-test focused result at that older base
 Empty editors/rich paragraphs, terminal break-only anchors without a paint glyph,
 element-gap selections, ambiguous soft-wrap affinity, split-surrogate positions,
 shaping/bidi, selection highlights, blinking, IME and CSS caret-color are not
-implemented by this checkpoint. A bounded terminal-break follow-up is active,
-not already proven. Skips are explicit, never guessed caret coordinates.
+implemented by this initial checkpoint. The narrow terminal-break continuation is
+now documented separately; other skips remain explicit, never guessed coordinates.
 Native commands/captures do not close original SafeJS, live-site, socket, real
 TTY/PTY, framework/playground or broader browser-compatibility gates. No dependency
 or gated probe was added. TASKS.md retains the browser outcome and open gates.

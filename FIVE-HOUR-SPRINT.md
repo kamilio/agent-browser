@@ -10,17 +10,17 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | Integrate terminal carets, then bounded selection highlighting | Lifecycle fixes pass 10,942 / 324 combined isolated native tests. |
+| Main | Integrate selection highlighting and finish native regression review | Terminal carets pass 10,975 / 325 isolated native tests and exact pixel comparisons. |
 | DOM worker | Paragraph merging delivered; worker closed | Native merging is integrated; original paragraphs and worker evidence are preserved. |
 | Focus-bridge worker | Native provisioning/resource/revocation stress | Both deliveries are integrated natively; public/runtime limits and URL constructor blockers remain explicit. |
 | Focus delivery | Native focus/blur options, indication and scrolling | Public-contract bridge is integrated natively; released guest execution remains unverified. |
 | Cookie delivery | Cookie list/get/set/delete services | Production wiring and actual CLI tests integrated; 9,765 isolated native tests pass. |
 | White-space delivery | Native pre-wrap formatting and hanging spaces | Integrated, with fresh editable captures and 9,854 passing isolated native tests. |
 | Double-click / upload-server worker | Upload host/session delivery complete; worker closed | Native dispatch is integrated; actual socket authentication remains gated. |
-| Positioning / range-geometry worker | Bounded same-text editable selection highlighting | Existing shared geometry/paint order only; mixed-node/CSS highlight conformance remains out of scope. |
+| Positioning / range-geometry worker | Bounded same-text selection highlighting delivered; worker closed | 31 new tests; parent must update one superseded no-highlight assertion. |
 | Runtime / upload-client worker | CLI and six cross-boundary cases complete; worker closed | Actual native client/host path passes with injected transport and real private files. |
 | Playground delivery | Extraction/snapshot downloads and honest example discovery | Integrated export guards/cards pass 9,882 isolated native tests; live UI/framework gates remain open. |
-| File-selection / rendering worker | Terminal preserved-break carets delivered; worker closed | Helper-only extension and 33 native tests await parent integration. |
+| File-selection / rendering worker | Terminal preserved-break carets delivered; worker closed | Helper-only extension and 33 native tests pass combined native validation. |
 | Independent upload reviewer | Reservation and manager/retained-owner closure defects reproduced; worker closed | Replacement v2 guards and four regressions pass combined native validation. |
 | Independent focus reviewer | Final-registration teardown defect reproduced; worker closed | Guard integrated with four first/final document/runtime teardown reproductions. |
 
@@ -30,7 +30,7 @@ and merges bounded deltas, validates combined behavior, and commits only new wor
 Additional workers are permitted up to the user's cap when their assignments are
 independent and advance the browser, not merely to maximize agent count. The
 environment accepted six concurrent agents and rejected a seventh with its thread
-limit; one slot is currently active after completed workers were closed. The initial source audit queued cookie
+limit; all workers are currently closed after delivery. The initial source audit queued cookie
 commands, double-click, file selection and policy-preserving XHR; fresh capture
 evidence also queued white-space:pre-wrap. Current delivery state is tracked above.
 XHR remains queued, and agent authorization alone proves no acceptance gate or

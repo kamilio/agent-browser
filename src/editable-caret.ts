@@ -28,6 +28,7 @@ export const editableCaretCapabilities = Object.freeze({
 	selectionHighlight: false,
 	emptyEditors: false,
 	softWrapAffinity: false,
+	terminalPreservedBreaks: "same-source-exact-chain-after-glyph",
 	controlCarets: false,
 	ime: false,
 	cssCaretColor: false,
@@ -63,6 +64,89 @@ export interface EditableCaret {
 	work: number;
 	readonly maxWork: number;
 	readonly anchor?: Readonly<CaretAnchor>;
+}
+
+function terminalBreakAnchor(
+	layout: DocumentLayout,
+	ref: string,
+	data: string,
+	offset: number,
+	x: number,
+	y: number,
+	height: number,
+	charge: (amount?: number) => void,
+): CaretAnchor | undefined {
+	if (offset !== data.length) return;
+	let firstBreak = offset;
+	while (firstBreak > 0) {
+		charge();
+		if (!/[\r\n\f]/.test(data[firstBreak - 1])) break;
+		firstBreak--;
+	}
+	if (firstBreak === 0 || firstBreak === offset) return;
+	let anchor: CaretAnchor | undefined;
+	for (const context of layout.contexts) {
+		charge();
+		const glyph = context.glyphs.at(-1);
+		if (
+			!glyph ||
+			glyph.ref !== ref ||
+			!glyph.visible ||
+			glyph.fontSize !== height ||
+			glyph.offset + glyph.codeUnits !== firstBreak
+		)
+			continue;
+		let cursor = firstBreak;
+		let previousLine = glyph.line - 1;
+		for (const line of context.lines) {
+			charge();
+			if (line.index < glyph.line) continue;
+			const boundary = line.sourceBreak;
+			if (!boundary) {
+				if (cursor !== offset) return;
+				continue;
+			}
+			const source = boundary.sources[0];
+			if (
+				boundary.sources.length !== 1 ||
+				!source ||
+				source.ref !== ref ||
+				source.formattingId !== glyph.formattingId ||
+				source.offset !== cursor ||
+				source.codeUnits < 1 ||
+				source.codeUnits > 2 ||
+				source.offset + source.codeUnits > offset ||
+				line.index !== previousLine + 1 ||
+				!line.forcedBreak ||
+				!boundary.followingLine ||
+				boundary.fontSize !== height
+			)
+				return;
+			charge(source.codeUnits);
+			if (
+				!/^(?:\r\n|[\r\n\f])$/.test(
+					data.slice(cursor, cursor + source.codeUnits),
+				)
+			)
+				return;
+			cursor += source.codeUnits;
+			previousLine = line.index;
+		}
+		if (cursor !== offset || anchor) return;
+		anchor = {
+			ref,
+			formattingId: glyph.formattingId,
+			offset: glyph.offset,
+			x,
+			y,
+			height,
+			color: (
+				layout.text.horizontal.formatting.nodes[glyph.formattingId].paint ??
+				initialPaintStyle
+			).color,
+		};
+	}
+	return anchor;
 }
 
 export function prepareEditableCaret(
@@ -184,6 +268,16 @@ export function prepareEditableCaret(
 				}
 			}
 		}
+		anchor ??= terminalBreakAnchor(
+			layout,
+			ref,
+			source.data,
+			point.offset,
+			x,
+			y,
+			rect.height,
+			charge,
+		);
 		return anchor ? result("ready", anchor) : result("unsupported");
 	} catch (error) {
 		if (!(error instanceof AgentBrowserError)) throw error;

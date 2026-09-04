@@ -55,6 +55,10 @@ relabelled as validation of subsequent cookie and Range integration.
 
 ## Remaining limits
 
+`EDITABLE-CARET-BREAKS.md` now paints exact same-source terminal preserved breaks
+after a real glyph. Empty/all-break and ambiguous caret mappings remain outside
+that subset; the original whitespace captures and measurements are unchanged.
+
 Current painting continuation: `EDITABLE-CARET.md` adds bounded glyph-edge carets.
 The original text-pixel oracle still compares exact pixels with both documents
 unfocused, while separately asserting focused caret painting. Its historical

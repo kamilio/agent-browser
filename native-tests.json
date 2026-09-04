@@ -38,6 +38,7 @@
   "src/range-break-mapping.test.ts",
   "src/range-editing-integration.test.ts",
   "src/editable-caret.test.ts",
+  "src/editable-caret-break.test.ts",
   "src/dom-selection.test.ts",
   "src/script-ranges.test.ts",
   "src/page-ranges.test.ts",

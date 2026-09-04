@@ -7,6 +7,10 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Terminal plaintext Enter now has a bounded exact-source caret continuation.
+`EDITABLE-CARET-BREAKS.md` records prior-glyph ordering, unchanged shared geometry
+and fresh native captures. Empty/all-break editors and general affinity remain open.
+
 Upload acknowledgement/activation lifetime guards now complement the focus setup
 fix. `UPLOAD-LIFECYCLE.md` records independent failing baselines and native
 ownership/capacity regressions. Combined explicit native suites pass 10,942 / 324

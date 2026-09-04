@@ -69,8 +69,8 @@ it("maps terminal plaintext Enter and later typing through the shared live Range
 		width: 0,
 	});
 	expect(rasterizeDocument(page.document).metrics).toMatchObject({
-		paintedCarets: 0,
-		caretStatus: "unsupported",
+		paintedCarets: 1,
+		caretStatus: "painted",
 	});
 	await host.execute(["type", "Beta"]);
 	expect(rasterizeDocument(page.document).metrics.paintedCarets).toBe(1);
@@ -101,8 +101,8 @@ it("keeps fixed editable geometry stable while flow geometry follows root scroll
 	const crop = { element: page.document.reference(editor) };
 	const beforeRaster = rasterizeDocument(page.document, crop);
 	expect(beforeRaster.metrics).toMatchObject({
-		paintedCarets: 0,
-		caretStatus: "unsupported",
+		paintedCarets: 1,
+		caretStatus: "painted",
 	});
 	documentScroll(page.document).to(0, 80);
 	expect(rasterizeDocument(page.document, crop).image.pixels).toEqual(
