@@ -17,6 +17,7 @@ import { SessionProcessHost } from "./node-session-host.js";
 import { runStateFileCommand } from "./node-state-client.js";
 import { runTerminal } from "./node-terminal.js";
 import { NodeNetworkTransport } from "./node-transport.js";
+import { pageRuntimeAdapter } from "./page-runtime-selection.js";
 import { BrowserSession } from "./session.js";
 import {
 	type SnapshotSearch,
@@ -24,8 +25,20 @@ import {
 } from "./snapshot-search.js";
 import { type SemanticSnapshot, renderSnapshot } from "./snapshot.js";
 
-function host() {
+function runtimeConfiguration() {
 	const packageRoot = process.env.AGENT_BROWSER_SAFEJS_ROOT;
+	const configuredAdapter = process.env.AGENT_BROWSER_PAGE_RUNTIME;
+	const runtimeAdapter = pageRuntimeAdapter(configuredAdapter);
+	if (configuredAdapter !== undefined && !packageRoot)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"AGENT_BROWSER_PAGE_RUNTIME requires an explicit SafeJS package root",
+		);
+	return { packageRoot, runtimeAdapter };
+}
+
+function host(configuration: ReturnType<typeof runtimeConfiguration>) {
+	const { packageRoot, runtimeAdapter } = configuration;
 	const websiteScripts = process.env.AGENT_BROWSER_PAGE_SCRIPTS;
 	if (websiteScripts !== undefined && websiteScripts !== "classic")
 		throw new AgentBrowserError(
@@ -38,7 +51,9 @@ function host() {
 			"Website scripts require an explicit SafeJS process runtime",
 		);
 	if (packageRoot !== undefined)
-		return new SessionProcessHost({ process: { packageRoot, websiteScripts } });
+		return new SessionProcessHost({
+			process: { packageRoot, websiteScripts, runtimeAdapter },
+		});
 	return new BrowserCommandHost({
 		documentFormats: [
 			"text/html",
@@ -71,6 +86,7 @@ async function main() {
 		PLAYWRIGHT_CLI_SESSION: process.env.PLAYWRIGHT_CLI_SESSION,
 	};
 	const invocation = parseInvocation(argv, environment);
+	const configuration = runtimeConfiguration();
 	const directory = process.env.AGENT_BROWSER_RUNTIME_DIR;
 	if (
 		invocation.command === "help" ||
@@ -98,7 +114,7 @@ async function main() {
 			);
 			return;
 		}
-		const local = host();
+		const local = host(configuration);
 		try {
 			console.log(
 				safeJson(await local.execute(argv, { session: invocation.session })),
@@ -115,7 +131,7 @@ async function main() {
 					"unsupported",
 					`Service option is not implemented: --${key}`,
 				);
-		const commands = host();
+		const commands = host(configuration);
 		let remove: (() => Promise<void>) | undefined;
 		let resolveStopped = () => {};
 		const stopped = new Promise<void>((resolve) => {

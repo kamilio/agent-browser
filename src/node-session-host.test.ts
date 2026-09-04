@@ -54,6 +54,56 @@ afterEach(async () => {
 	for (const host of hosts.splice(0)) await host.close();
 });
 
+it("reports the default adapter as configuration only without creating an actor", async () => {
+	const { host, createProcess } = fixture();
+	expect(host.capabilities()).toMatchObject({
+		runtimeAdapter: "legacy",
+		runtimeValidation: "configuration-only",
+	});
+	await host.execute(["capabilities"]);
+	expect(createProcess).not.toHaveBeenCalled();
+});
+
+it("copies explicit adapter selection and forwards it when a session starts", async () => {
+	const processOptions = {
+		packageRoot: "/tmp/unused-safejs-fixture",
+		runtimeAdapter: "extension" as "extension" | "legacy",
+		websiteScripts: "classic" as const,
+	};
+	const { host, createProcess } = fixture({ process: processOptions });
+	processOptions.runtimeAdapter = "legacy";
+	await host.execute(["open"], { session: "selected" });
+	expect(createProcess).toHaveBeenCalledWith(
+		expect.objectContaining({
+			runtimeAdapter: "extension",
+			websiteScripts: "classic",
+			session: "selected",
+		}),
+	);
+	expect(host.capabilities()).toMatchObject({
+		runtimeAdapter: "extension",
+		runtimeValidation: "configuration-only",
+	});
+});
+
+it.each([null, "auto", "", false])(
+	"rejects invalid host adapter %s without creating an actor",
+	(runtimeAdapter) => {
+		const createProcess = vi.fn();
+		expect(
+			() =>
+				new SessionProcessHost({
+					process: {
+						packageRoot: "/tmp/unused-safejs-fixture",
+						runtimeAdapter,
+					} as never,
+					createProcess,
+				}),
+		).toThrow("Invalid page runtime adapter");
+		expect(createProcess).not.toHaveBeenCalled();
+	},
+);
+
 it("forwards request journal commands to the selected actor without creating extra actors", async () => {
 	const { host, created, createProcess } = fixture();
 	await host.execute(["-s=first", "open"]);

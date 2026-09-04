@@ -19,6 +19,17 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Runtime-selection checkpoint: `RUNTIME-SELECTION.md` wires explicit legacy/
+extension configuration through actual CLI/host/process/child factory boundaries.
+Legacy remains default; readiness is labeled contract-shape-only, not execution.
+Parent connected-client cases confirm that client settings do not reconfigure
+the service. Focused runs pass 228 working / 226 isolated tests across twelve
+files; the difference is two preexisting CLI-parser tests. Types/builds, strict
+checks and scoped format/lint pass. Authorized full native runs pass 10,347 /
+303 isolated files; working validation reports 11,478 passes and the same fifteen
+pending assertion failures / 325 files. Public focus scheduling, URL constructors,
+released-runtime/process/live/socket/terminal gates remain open; no probe ran.
+
 Native double-click checkpoint: `DOUBLE-CLICK.md` connects actual CLI/host/session
 dispatch to two guarded click defaults and one dblclick event. Own document
 navigation reports interruption without replay; unsupported defaults remain

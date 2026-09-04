@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 runtime-selection continuation: `RUNTIME-SELECTION.md` carries explicit
+legacy/extension selection through production configuration and PageScripts
+factory wiring. It distinguishes configuration-only from contract-shape-only
+readiness; neither is page execution or released-artifact verification. Existing
+service configuration is not changed by client environment settings. Original
+runtime, focus, URL-constructor, live and transport gates remain open.
+
 September 4 double-click continuation: `DOUBLE-CLICK.md` implements queued primary-
 button CLI/host/session dispatch, both defaults and explicit navigation stop,
 without replay or a third activation. Native fixed-button captures show two

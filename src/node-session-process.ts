@@ -11,10 +11,15 @@ import {
 	processReadRoot,
 } from "./node-process-boundary.js";
 import { ScriptFrameDecoder, scriptFrame } from "./node-script-protocol.js";
+import {
+	type PageRuntimeAdapter,
+	pageRuntimeAdapter,
+} from "./page-runtime-selection.js";
 import type { PageScriptOptions } from "./page-scripts.js";
 
 export interface SessionProcessOptions {
 	packageRoot: string;
+	runtimeAdapter?: PageRuntimeAdapter;
 	session?: string;
 	commandTimeoutMs?: number;
 	startupTimeoutMs?: number;
@@ -31,6 +36,9 @@ export interface SessionProcessInfo {
 	session: string;
 	version: string;
 	packageName: string;
+	runtimeAdapter: PageRuntimeAdapter;
+	runtimeValidation: "contract-shape-only";
+	publicExport: "./safe-js" | "./core";
 	permissions: ReturnType<typeof processPermissions>;
 }
 
@@ -66,6 +74,7 @@ export class BrowserSessionProcess {
 	private readonly timeout: number;
 	private readonly heartbeatTimeout: number;
 	private readonly maxPending: number;
+	private readonly runtimeAdapter: PageRuntimeAdapter;
 	private resolveReady!: () => void;
 	private rejectReady!: (error: Error) => void;
 	private resolveExited!: () => void;
@@ -79,6 +88,7 @@ export class BrowserSessionProcess {
 	private information?: SessionProcessInfo;
 
 	private constructor(root: string, options: SessionProcessOptions) {
+		this.runtimeAdapter = pageRuntimeAdapter(options.runtimeAdapter);
 		if (
 			options.websiteScripts !== undefined &&
 			options.websiteScripts !== "classic"
@@ -115,6 +125,7 @@ export class BrowserSessionProcess {
 			schemaVersion: 1,
 			type: "initialize",
 			packageRoot: root,
+			runtimeAdapter: this.runtimeAdapter,
 			session: this.session,
 			heartbeatMs: Math.max(
 				25,
@@ -211,6 +222,7 @@ export class BrowserSessionProcess {
 	}
 
 	static async create(options: SessionProcessOptions) {
+		pageRuntimeAdapter(options?.runtimeAdapter);
 		const root = await processReadRoot(options?.packageRoot);
 		const actor = new BrowserSessionProcess(root, options);
 		try {
@@ -371,7 +383,13 @@ export class BrowserSessionProcess {
 				info.session !== this.session ||
 				typeof info.version !== "string" ||
 				!/^[0-9][0-9A-Za-z.+-]{0,63}$/.test(info.version) ||
-				!["@poe-code/safe-js", "poe-code"].includes(info.packageName) ||
+				!["@poe-code/safe-js", "@poe-platform/safe-js", "poe-code"].includes(
+					info.packageName,
+				) ||
+				info.runtimeAdapter !== this.runtimeAdapter ||
+				info.runtimeValidation !== "contract-shape-only" ||
+				info.publicExport !==
+					(info.packageName === "poe-code" ? "./safe-js" : "./core") ||
 				!hasRestrictedPermissions(info.permissions)
 			)
 				throw new Error("Invalid process information");
@@ -380,6 +398,9 @@ export class BrowserSessionProcess {
 				session: info.session,
 				version: info.version,
 				packageName: info.packageName,
+				runtimeAdapter: info.runtimeAdapter,
+				runtimeValidation: info.runtimeValidation,
+				publicExport: info.publicExport,
 				permissions: { ...info.permissions },
 			};
 			clearTimeout(this.startupTimer);

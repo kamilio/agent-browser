@@ -1,4 +1,9 @@
 [
+  "src/page-runtime-selection.test.ts",
+  "src/node-page-core-selection.test.ts",
+  "src/node-session-runtime.test.ts",
+  "src/node-session-child-runtime.test.ts",
+  "src/cli-runtime-selection.test.ts",
   "src/double-click.test.ts",
   "src/double-click-command.test.ts",
   "src/double-click-production.test.ts",

@@ -10,7 +10,7 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | Finalize double-click, then integrate the ready runtime selector patch | Double-click passes 10,216 isolated native tests; working pending failures remain explicit. |
+| Main | Finalize runtime selector, then focus/paragraph/positioning follow-ups | Runtime selection passes 10,347 isolated native tests; original runtime acceptance remains open. |
 | DOM worker | Owned Enter/Shift+Enter and paragraph insertion | Initial editing integration passes 9,951 isolated native tests; paragraph follow-up is active. |
 | Focus-bridge worker | Public nested-operation page focus/blur | URL constructor blockers remain explicit; do not publish internal factories as standard globals. |
 | Focus delivery | Native focus/blur options, indication and scrolling | Integrated with an additional parent reentrancy fix; synchronous guest methods remain open. |
@@ -28,10 +28,11 @@ and merges bounded deltas, validates combined behavior, and commits only new wor
 Additional workers are permitted up to the user's cap when their assignments are
 independent and advance the browser, not merely to maximize agent count. The
 environment accepted six concurrent agents and rejected a seventh with its thread
-limit; all six available slots are in use. A completed source audit queued cookie
-commands, double-click, file selection and policy-preserving XHR for freed slots.
-Fresh capture evidence also queued white-space:pre-wrap support. These are planned
-assignments, not completed features or proof that twenty agents are running.
+limit; all six available slots are in use. The initial source audit queued cookie
+commands, double-click, file selection and policy-preserving XHR; fresh capture
+evidence also queued white-space:pre-wrap. Current delivery state is tracked above.
+XHR remains queued, and agent authorization alone proves no acceptance gate or
+twenty-agent concurrency.
 
 ## Time allocation
 

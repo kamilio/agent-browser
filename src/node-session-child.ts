@@ -5,11 +5,12 @@ import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { documentInteractions } from "./interactions.js";
 import type { NetworkPolicyOptions } from "./network.js";
-import { loadPageScriptCore } from "./node-page-core.js";
+import { loadPageRuntime } from "./node-page-core.js";
 import { processPermissions } from "./node-process-boundary.js";
 import { ScriptFrameDecoder, scriptFrame } from "./node-script-protocol.js";
 import { NodeNetworkTransport } from "./node-transport.js";
 import type { PageFetchTransport } from "./page-fetch.js";
+import { pageRuntimeAdapter } from "./page-runtime-selection.js";
 import { type PageScriptOptions, PageScripts } from "./page-scripts.js";
 import { ScriptLoader } from "./script-loader.js";
 import { BrowserSession } from "./session.js";
@@ -75,7 +76,7 @@ async function receive(raw: unknown) {
 		session = parseInvocation(["capabilities"], {
 			AGENT_BROWSER_SESSION: message.session,
 		}).session;
-		const sdk = await loadPageScriptCore(message.packageRoot);
+		const runtimeAdapter = pageRuntimeAdapter(message.runtimeAdapter);
 		if (
 			message.websiteScripts !== undefined &&
 			message.websiteScripts !== "classic"
@@ -84,12 +85,15 @@ async function receive(raw: unknown) {
 				"invalid-input",
 				"Invalid website script mode",
 			);
+		const sdk = await loadPageRuntime(message.packageRoot, {
+			adapter: runtimeAdapter,
+		});
 		const ownerFor = (document: DocumentTree, fetch?: PageFetchTransport) => {
 			let owner = pageOwners.get(document);
 			if (!owner) {
 				owner = new PageScripts(
 					{ document, interactions: documentInteractions(document) },
-					sdk.core,
+					sdk.factory,
 					{ ...(message.scripts as PageScriptOptions | undefined), fetch },
 				);
 				pageOwners.set(document, owner);
@@ -144,6 +148,9 @@ async function receive(raw: unknown) {
 			session,
 			version: sdk.version,
 			packageName: sdk.packageName,
+			runtimeAdapter: sdk.adapter,
+			runtimeValidation: sdk.validation,
+			publicExport: sdk.publicExport,
 			permissions: processPermissions(),
 		});
 		let sending = false;

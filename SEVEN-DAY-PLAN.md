@@ -7,6 +7,11 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+The runtime selector now reaches CLI/host/process/child factory wiring while
+retaining legacy defaults and explicit shape-only validation labels. See
+`RUNTIME-SELECTION.md`; native mocks do not close released-runtime or focus/
+constructor compatibility gates.
+
 Double-click now reaches real native CLI/host/session dispatch; `DOUBLE-CLICK.md`
 records guarded defaults, no-replay navigation interruption, fixed geometry and
 the explicit lack of word-selection or released-runtime acceptance.

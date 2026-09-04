@@ -9,6 +9,7 @@ import {
 	BrowserSessionProcess,
 	type SessionProcessOptions,
 } from "./node-session-process.js";
+import { pageRuntimeAdapter } from "./page-runtime-selection.js";
 
 export interface SessionActor {
 	readonly session: string;
@@ -66,6 +67,7 @@ export class SessionProcessHost {
 				"invalid-input",
 				"Invalid process host options",
 			);
+		const runtimeAdapter = pageRuntimeAdapter(options.process.runtimeAdapter);
 		this.maxSessions = options.maxSessions ?? 8;
 		this.maxPending = options.maxPendingCommands ?? 64;
 		this.maxCommands = options.maxCommands ?? 10_000;
@@ -82,6 +84,7 @@ export class SessionProcessHost {
 		}
 		this.processOptions = {
 			...options.process,
+			runtimeAdapter,
 			...(options.process.scripts
 				? {
 						scripts: {
@@ -126,6 +129,8 @@ export class SessionProcessHost {
 			...this.metadata.capabilities(),
 			sessionExecution: "owned-node-process",
 			runtimeSelection: "explicit-safejs-package",
+			runtimeAdapter: this.processOptions.runtimeAdapter,
+			runtimeValidation: "configuration-only",
 			automaticActorRestart: false,
 		};
 	}
