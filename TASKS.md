@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Preflight-cache checkpoint: `FETCH-PREFLIGHT-CACHE.md` adds bounded per-owner
+method/header permission reuse to the connected page fetch path. Exact URL,
+serialized origin and credential matching preserve request isolation; actual
+response CORS checks still run on hits. Expiry, quotas, conservative failure
+invalidation and document teardown bound retention. Four initial regressions
+fail before implementation; 54 new tests cover cache and page-fetch integration,
+with 147 focused tests passing across six explicit files. Full native validation
+passes 7,823 / 222 files; the isolated owned patch passes 5,063 / 161 available
+files. Production/new-test types, builds and six-file lint pass in both trees.
+Pre-existing pending changes stay outside this checkpoint. The denied SafeJS
+fetch probe remains unrun and no report was produced. No runtime/dependency or
+historical evidence is replaced; wider runtime/site acceptance and the seven-day
+browser goal remain open.
+
+### Previous fetch-ownership checkpoint
+
 Fetch response ownership checkpoint: `FETCH-RESPONSE-OWNERSHIP.md` fixes retained
 unpublished bodies, stale publication after provider-triggered closure, Buffer
 byte aliasing and overridable slice calls. Response/clone capability creation now

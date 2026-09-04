@@ -108,7 +108,7 @@ export function checkPreflight(
 	credentials: FetchCredentials,
 	method: string,
 	names: readonly string[],
-): void {
+) {
 	if (status < 200 || status >= 300) failure();
 	checkCors(headers, origin, credentials);
 	const methods = list(header(headers, "access-control-allow-methods"));
@@ -128,6 +128,7 @@ export function checkPreflight(
 			!(name !== "authorization" && wildcard && allowed.includes("*"))
 		)
 			failure();
+	return { methods, headers: allowed };
 }
 
 export function corsResponseHeaders(

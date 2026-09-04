@@ -1,4 +1,5 @@
 import { cookieSameSite } from "./cookies.js";
+import { CorsPreflightCache } from "./cors-preflight-cache.js";
 import {
 	type FetchCredentials,
 	checkCors,
@@ -169,6 +170,7 @@ export class PageFetch {
 	private responses = 0;
 	private redirects = 0;
 	private preflights = 0;
+	private readonly preflightCache: CorsPreflightCache;
 	private retainedBytes = 0;
 	private totalBytes = 0;
 	private closed = false;
@@ -181,6 +183,7 @@ export class PageFetch {
 		private readonly options: {
 			limits?: Partial<PageFetchLimits>;
 			csp?: boolean;
+			preflightClock?: () => number;
 		} = {},
 	) {
 		if (
@@ -202,6 +205,7 @@ export class PageFetch {
 		}
 		this.limits = Object.freeze(limits);
 		this.origin = new URL(tree.url).origin;
+		this.preflightCache = new CorsPreflightCache(options.preflightClock);
 		this.unregisterClose = tree.onClose(() => this.close());
 	}
 
@@ -211,6 +215,7 @@ export class PageFetch {
 			responses: this.responses,
 			redirects: this.redirects,
 			preflights: this.preflights,
+			preflightCache: this.preflightCache.metrics(),
 			active: this.active.size,
 			retainedBytes: this.retainedBytes,
 			totalBytes: this.totalBytes,
@@ -222,6 +227,7 @@ export class PageFetch {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		this.preflightCache.close();
 		for (const controller of this.active)
 			controller.abort(new AgentBrowserError("closed", "Page fetch is closed"));
 		this.active.clear();
@@ -386,9 +392,20 @@ export class PageFetch {
 				corsTainted ||= url.origin !== this.origin;
 				const requestOrigin = originTainted ? "null" : this.origin;
 				const unsafeNames = unsafeCorsHeaders(headers);
-				if (corsTainted && needsPreflight(method, unsafeNames)) {
+				if (
+					corsTainted &&
+					needsPreflight(method, unsafeNames) &&
+					!this.preflightCache.matches(
+						requestOrigin,
+						url.href,
+						credentialMode,
+						method,
+						unsafeNames,
+					)
+				) {
 					this.preflights++;
-					await this.send(
+					let grants: ReturnType<typeof checkPreflight> | undefined;
+					const preflight = await this.send(
 						{
 							url: url.href,
 							method: "OPTIONS",
@@ -410,17 +427,26 @@ export class PageFetch {
 						},
 						controller.signal,
 						{ cors: true, preflight: true },
-						(response, headers) =>
-							checkPreflight(
+						(response, headers) => {
+							grants = checkPreflight(
 								response.status,
 								headers,
 								requestOrigin,
 								credentialMode,
 								method,
 								unsafeNames,
-							),
+							);
+						},
 					);
 					this.checkPolicy();
+					if (grants)
+						this.preflightCache.store(
+							requestOrigin,
+							url.href,
+							credentialMode,
+							grants,
+							preflight.headers["access-control-max-age"],
+						);
 				}
 				const wireHeaders = { ...headers };
 				if (corsTainted || !["GET", "HEAD"].includes(method))
@@ -505,6 +531,9 @@ export class PageFetch {
 						: response.body,
 				);
 			}
+		} catch (error) {
+			this.preflightCache.clear(originTainted ? "null" : this.origin, url.href);
+			throw error;
 		} finally {
 			clearTimeout(timeout);
 			this.active.delete(controller);

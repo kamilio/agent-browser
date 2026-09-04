@@ -562,7 +562,7 @@ it("checks redirect response permission even in manual mode and blocks mixed con
 	expect(request).toHaveBeenCalledTimes(1);
 });
 
-it("rechecks unsafe requests without a preflight cache and charges preflight body limits", async () => {
+it("reuses preflight grants and charges preflight body limits", async () => {
 	const allowed = fixture(async (input) =>
 		response(input.url, {
 			headers: {
@@ -576,7 +576,6 @@ it("rechecks unsafe requests without a preflight cache and charges preflight bod
 	expect(allowed.request.mock.calls.map(([input]) => input.method)).toEqual([
 		"OPTIONS",
 		"PUT",
-		"OPTIONS",
 		"PUT",
 	]);
 	const limited = fixture(async (input) => response(input.url), {

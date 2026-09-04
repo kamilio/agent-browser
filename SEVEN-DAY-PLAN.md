@@ -289,6 +289,13 @@ the independent observer scheduling contract remains unresolved. Native provider
 failure, clone retention and teardown fixtures improve the shared resource boundary
 without claiming released-SDK execution or closing any live acceptance gate.
 
+September 4 preflight-cache continuation: `FETCH-PREFLIGHT-CACHE.md` adds bounded
+per-owner CORS permission reuse, expiry, credential/origin/URL isolation and
+failure cleanup to native page fetch. Actual responses still require CORS checks.
+The previously denied SafeJS probe is not retried; native fixtures do not close
+the independent runtime or live-site gates. Continue native compatibility work
+while those gates await explicit authorization.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
