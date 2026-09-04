@@ -19,6 +19,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native text controls now show keyboard selection, collapsed carets and bounded
+focus-edge scrolling through one authoritative owned record, without fake
+document Ranges or raw password metadata. `CONTROL-TEXT-SELECTION.md` records
+143 new cases and passing 781 / twenty-one-file focused suites in both trees,
+plus passing types/builds/strict checks and scoped Biome. Twelve-phase native
+captures preserve state/boxes and match both builds byte-for-byte. Both manifests retain
+370 entries. Full public control selection, pointer placement, persistent widget
+scrolling, broader editing and the original runtime/live gates remain open.
+
 Empty editor/paragraph carets now use shared font struts at actual placed blocks,
 without placeholder DOM, fake glyphs, added layout lines or changed public Range
 geometry. `EDITABLE-EMPTY-CARETS.md` records 88 new cases, passing 833 / twenty-six

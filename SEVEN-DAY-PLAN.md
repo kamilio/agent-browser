@@ -7,6 +7,14 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native control selection/caret rendering now integrates single-record ownership,
+bounded text geometry and focus-derived scrolling. The 143 new cases and passing
+781 / twenty-one-file focused suites in both trees are recorded in
+`CONTROL-TEXT-SELECTION.md`; types/builds, scoped checks and twelve-phase native
+capture comparison pass. Both manifests
+retain 370 entries. Full control selection APIs, pointer placement, persistent
+widget scrolling and the original browser/runtime/live gates remain open.
+
 Empty block caret integration adds 88 cases and passes 833 / twenty-six focused
 files in both trees with passing types/builds and strict checks. Shared font
 arithmetic and all ten capture layouts remain unchanged; only expected empty-caret

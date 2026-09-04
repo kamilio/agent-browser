@@ -8,6 +8,13 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+Control input/textarea editing now has visible native selection, collapsed carets
+and focus-edge scrolling with masked password metadata. `CONTROL-TEXT-SELECTION.md`
+records 143 new cases, passing 781 / twenty-one-file focused suites in both trees,
+passing types/builds/scoped checks and twelve-phase native captures. Selection-only changes invalidate cached
+presentation without adding a document Range. Full control APIs, pointer placement
+and all external/runtime gates remain outstanding under the until-stopped instruction.
+
 Empty editors and direct empty paragraphs now paint native carets without
 manufacturing content or layout lines. `EDITABLE-EMPTY-CARETS.md` records 88 new
 cases, passing 833 / twenty-six-file focused suites in both trees, ten-phase native

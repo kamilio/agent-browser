@@ -1,5 +1,13 @@
 # Compatibility and playground acceptance ledger
 
+September 4 control-text continuation: `CONTROL-TEXT-SELECTION.md` connects native
+keyboard state to bounded input/textarea highlights, collapsed carets and focus-edge
+scrolling. Password metadata remains masked and placeholder text remains unselected.
+The 143 new cases and 781 / twenty-one-file focused suites pass in both trees;
+twelve native capture phases preserve state/boxes and match both builds exactly.
+Full public control selection APIs, pointer placement, persistent widget scrolling,
+platform rendering and original browser/runtime/live gates remain open.
+
 September 4 empty-caret continuation: `EDITABLE-EMPTY-CARETS.md` makes native empty
 fill, deletion and direct paragraph insertion visibly editable through shared
 font struts and existing box paint order. DOM, source glyphs, layout and public

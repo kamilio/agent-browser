@@ -1,4 +1,5 @@
 import { bitmapFont, bitmapGlyph } from "./bitmap-font.js";
+import { layoutControlText } from "./control-text-layout.js";
 import {
 	controlChecked,
 	controlShowsPlaceholder,
@@ -13,6 +14,8 @@ import { type PaintStyle, paintBackground } from "./css-paint.js";
 import { existingDocumentFiles } from "./document-files.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { isInertSubtree } from "./inertness.js";
+import { readNativeControlSelection } from "./native-control-caret.js";
 import {
 	type Rgba,
 	createRaster,
@@ -31,13 +34,18 @@ export const controlRenderingCapabilities = Object.freeze({
 	richButtonContent: false,
 	platformAppearance: false,
 	popup: false,
-	textScrolling: false,
+	textScrolling: "focused-native-selection-edge",
+	textSelection: "owned-native-keyboard-code-unit-selection",
+	textCaret: "collapsed-focused-native-selection",
 	placeholderState: "attribute-present-and-empty-api-value",
 	placeholderWhileFocused: true,
 	fileSelection: "owned-metadata-only",
 	fileChooser: false,
 	...controlRenderingLimits,
 });
+export const controlSelectionBackground: Rgba = Object.freeze([
+	181, 213, 255, 255,
+]);
 export interface SoftwareControl {
 	readonly kind:
 		| "button"
@@ -57,6 +65,9 @@ export interface SoftwareControl {
 	readonly checked: boolean;
 	readonly indeterminate: boolean;
 	readonly placeholder: boolean;
+	readonly selection?: NonNullable<
+		ReturnType<typeof readNativeControlSelection>
+	>;
 }
 
 export function describeControl(
@@ -67,6 +78,7 @@ export function describeControl(
 	const node = tree.get(id);
 	let kind: SoftwareControl["kind"];
 	let text = "";
+	let valueLength = 0;
 	let buttonText: string | undefined;
 	let widest = 0;
 	if (node.tagName === "button") {
@@ -83,6 +95,7 @@ export function describeControl(
 	} else if (node.tagName === "textarea") {
 		kind = "textarea";
 		text = controlValue(tree, id);
+		valueLength = text.length;
 	} else if (node.tagName === "select") {
 		if (
 			Object.hasOwn(node.attributes, "multiple") ||
@@ -139,6 +152,7 @@ export function describeControl(
 		) {
 			kind = "text";
 			const value = controlValue(tree, id);
+			valueLength = value.length;
 			if (value.length > controlRenderingLimits.maxTextCodeUnits)
 				throw new AgentBrowserError(
 					"resource-limit",
@@ -212,6 +226,25 @@ export function describeControl(
 			"resource-limit",
 			"Control intrinsic dimension limit exceeded",
 		);
+	const disabled = isControlDisabled(tree, id);
+	const focused = tree.activeElement === id;
+	const selection =
+		focused &&
+		!disabled &&
+		tree.isConnected(id) &&
+		!isInertSubtree(tree, id) &&
+		(kind === "textarea" ||
+			(kind === "text" &&
+				["text", "search", "url", "tel", "password"].includes(inputType(node))))
+			? (readNativeControlSelection(tree, id) ??
+				Object.freeze({
+					anchor: valueLength,
+					focus: valueLength,
+					start: valueLength,
+					end: valueLength,
+					valueLength,
+				}))
+			: undefined;
 	return Object.freeze({
 		kind,
 		text,
@@ -220,8 +253,9 @@ export function describeControl(
 		width,
 		height,
 		placeholder,
-		disabled: isControlDisabled(tree, id),
-		focused: tree.activeElement === id,
+		disabled,
+		focused,
+		...(selection === undefined ? {} : { selection }),
 		checked:
 			kind === "checkbox" || kind === "radio"
 				? controlChecked(tree, id)
@@ -256,6 +290,21 @@ export function rasterizeControl(
 		columns * rows * 8 +
 			(control.text.length + (control.buttonText?.length ?? 0)) * 64,
 	);
+	const textLayout =
+		control.kind === "text" || control.kind === "textarea"
+			? layoutControlText({
+					kind: control.kind,
+					text: control.text,
+					fontSize: control.fontSize,
+					columns,
+					rows,
+					placeholder: control.placeholder,
+					selection:
+						control.focused && !control.disabled
+							? control.selection
+							: undefined,
+				})
+			: undefined;
 	const background = paintBackground(paint);
 	const fill: Rgba = background[3]
 		? background
@@ -274,6 +323,56 @@ export function rasterizeControl(
 	paintRasterRect(image, 0, rows - 1, columns, 1, edge);
 	paintRasterRect(image, 0, 0, 1, rows, edge);
 	paintRasterRect(image, columns - 1, 0, 1, rows, edge);
+	if (textLayout) {
+		for (const rectangle of textLayout.selectionRectangles)
+			paintRasterRect(
+				image,
+				rectangle.x,
+				rectangle.y,
+				rectangle.width,
+				rectangle.height,
+				controlSelectionBackground,
+			);
+		for (const glyph of textLayout.glyphs) {
+			if (!bitmapGlyph(glyph.character).supported)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Control caption glyph is not supported",
+				);
+			paintBitmapGlyph(
+				image,
+				glyph.character,
+				glyph.x,
+				glyph.y,
+				control.fontSize,
+				foreground,
+			);
+		}
+		if (textLayout.caret)
+			paintRasterRect(
+				image,
+				textLayout.caret.x,
+				textLayout.caret.y,
+				textLayout.caret.width,
+				textLayout.caret.height,
+				paint.color,
+			);
+		const clip = textLayout.clip;
+		for (let row = 0; row < rows; row++)
+			for (let column = 0; column < columns; column++)
+				if (
+					column < clip.x ||
+					column >= clip.x + clip.width ||
+					row < clip.y ||
+					row >= clip.y + clip.height
+				)
+					image.pixels.set(fill, (row * columns + column) * 4);
+		paintRasterRect(image, 0, 0, columns, 1, edge);
+		paintRasterRect(image, 0, rows - 1, columns, 1, edge);
+		paintRasterRect(image, 0, 0, 1, rows, edge);
+		paintRasterRect(image, columns - 1, 0, 1, rows, edge);
+		return image;
+	}
 	if (control.kind === "checkbox" || control.kind === "radio") {
 		if (control.kind === "radio") {
 			const radius = Math.min(columns, rows) / 2;
@@ -369,25 +468,11 @@ export function rasterizeControl(
 			);
 	let horizontal =
 		control.kind === "button" ? Math.max(6, (columns - labelWidth) / 2) : 6;
-	let vertical =
-		control.kind === "textarea"
-			? 4
-			: Math.max(4, (rows - control.fontSize) / 2);
+	const vertical = Math.max(4, (rows - control.fontSize) / 2);
 	if (control.fontSize > 0)
 		for (const character of control.text) {
-			if (character === "\n" && control.kind === "textarea") {
-				horizontal = 6;
-				vertical += control.fontSize;
-				continue;
-			}
-			if (
-				horizontal + advance >
-				columns - (control.kind === "select" ? 18 : 6)
-			) {
-				if (control.kind !== "textarea") break;
-				horizontal = 6;
-				vertical += control.fontSize;
-			}
+			if (horizontal + advance > columns - (control.kind === "select" ? 18 : 6))
+				break;
 			if (vertical + control.fontSize > rows - 4) break;
 			if (!bitmapGlyph(character).supported)
 				throw new AgentBrowserError(

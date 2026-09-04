@@ -1,18 +1,16 @@
 import { isSubmitButton } from "./button-type.js";
 import { lengthApplies, parseLengthLimit } from "./control-length.js";
-import { rangeKeyboardAction } from "./range-keyboard.js";
-import { EditableKeyboard } from "./editable-keyboard.js";
-import { nextOffset, previousOffset } from "./keyboard-text.js";
 import {
 	controlValue,
-	fillTextControl,
 	formControls,
 	formOwner,
 	inputType,
 	isControlDisabled,
 	validateTextControl,
 } from "./controls.js";
+import { summaryDetails } from "./details.js";
 import type { DocumentTree } from "./document.js";
+import { EditableKeyboard } from "./editable-keyboard.js";
 import { AgentBrowserError } from "./errors.js";
 import {
 	type EventAction,
@@ -21,18 +19,20 @@ import {
 } from "./event-actions.js";
 import { BrowserEvent, type DocumentEvents } from "./events.js";
 import type { DocumentFocus } from "./focus.js";
+import { resolveVisualTarget } from "./generated-controls.js";
 import { BrowserInputEvent } from "./input-events.js";
 import type { DefaultActionIntent, InteractionResult } from "./interactions.js";
+import { keyboardScrollAction } from "./keyboard-scroll.js";
+import {
+	type KeyboardKey,
+	KeyboardState,
+	keyboardChord,
+} from "./keyboard-state.js";
+import { nextOffset, previousOffset } from "./keyboard-text.js";
+import { nativeControlCaret } from "./native-control-caret.js";
+import { rangeKeyboardAction } from "./range-keyboard.js";
 import { selectKeyboardAction } from "./select-keyboard.js";
 import { SelectTypeahead } from "./select-typeahead.js";
-import { keyboardScrollAction } from "./keyboard-scroll.js";
-import { summaryDetails } from "./details.js";
-import { resolveVisualTarget } from "./generated-controls.js";
-import {
-	keyboardChord,
-	KeyboardState,
-	type KeyboardKey,
-} from "./keyboard-state.js";
 
 type Key = KeyboardKey;
 
@@ -107,9 +107,7 @@ export class DocumentKeyboard {
 	private closed = false;
 	private readonly unregisterChange: () => void;
 	private readonly unregisterClose: () => void;
-	private caret:
-		| { id: number; value: string; anchor: number; position: number }
-		| undefined;
+	private caretOwner: ReturnType<typeof nativeControlCaret> | undefined;
 	constructor(
 		private readonly tree: DocumentTree,
 		private readonly events: DocumentEvents,
@@ -148,12 +146,17 @@ export class DocumentKeyboard {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
-		this.caret = undefined;
+		const caret = this.caretOwner;
+		this.caretOwner = undefined;
 		this.keys.clear();
 		this.typeahead.reset();
-		this.clearSpaceActivation();
 		this.unregisterChange();
 		this.unregisterClose();
+		try {
+			caret?.close();
+		} finally {
+			this.clearSpaceActivation();
+		}
 	}
 
 	private clearSpaceActivation() {
@@ -165,11 +168,11 @@ export class DocumentKeyboard {
 		if (this.closed || this.events.metrics().closed)
 			throw new AgentBrowserError("closed", "Document keyboard is closed");
 		this.tree.get(this.tree.root);
+		this.caretOwner?.ensureOpen();
 	}
 
 	collapseEnd(id: number) {
-		const value = controlValue(this.tree, id);
-		this.caret = { id, value, anchor: value.length, position: value.length };
+		this.controlCaret().collapse(id);
 	}
 
 	collapseEditableEnd(id: number, target: number) {
@@ -432,8 +435,7 @@ export class DocumentKeyboard {
 						key.key.toLowerCase() === "a"
 					) {
 						const caret = this.selection(id);
-						caret.anchor = 0;
-						caret.position = caret.value.length;
+						this.controlCaret().move(caret, 0, caret.value.length);
 					}
 				} else if (node.tagName === "select") {
 					yield* selectKeyboardAction(
@@ -631,11 +633,20 @@ export class DocumentKeyboard {
 		return id;
 	}
 
+	private controlCaret() {
+		this.ensureOpen();
+		if (this.caretOwner) return this.caretOwner;
+		const owner = nativeControlCaret(this.tree);
+		if (this.closed || this.events.metrics().closed) {
+			owner.close();
+			this.ensureOpen();
+		}
+		this.caretOwner = owner;
+		return owner;
+	}
+
 	private selection(id: number) {
-		const value = controlValue(this.tree, id);
-		if (!this.caret || this.caret.id !== id || this.caret.value !== value)
-			this.collapseEnd(id);
-		return this.caret as NonNullable<typeof this.caret>;
+		return this.controlCaret().selection(id);
 	}
 
 	private *edit(
@@ -670,19 +681,13 @@ export class DocumentKeyboard {
 			})
 		)
 			return false;
+		this.ensureOpen();
 		if (this.editable() !== id || controlValue(this.tree, id) !== caret.value)
 			throw new AgentBrowserError(
 				"not-actionable",
 				"Editing target changed during beforeinput",
 			);
-		fillTextControl(this.tree, this.tree.reference(id), next);
-		const applied = controlValue(this.tree, id);
-		this.caret = {
-			id,
-			value: applied,
-			anchor: Math.min(applied.length, start + text.length),
-			position: Math.min(applied.length, start + text.length),
-		};
+		this.controlCaret().replace(caret, next, start + text.length);
 		this.focus.markEdited(id);
 		yield {
 			target: id,
@@ -716,14 +721,18 @@ export class DocumentKeyboard {
 					? newline
 					: caret.value.length;
 		}
-		caret.position = position;
-		if (!key.shift) caret.anchor = position;
+		this.controlCaret().move(
+			caret,
+			key.shift ? caret.anchor : position,
+			position,
+		);
 	}
 
 	private result(canceled: boolean): KeyboardResult {
+		this.ensureOpen();
 		const id = this.focus.active();
 		const caret =
-			id !== null && this.caret?.id === id ? this.selection(id) : undefined;
+			id !== null && this.caretOwner?.has(id) ? this.selection(id) : undefined;
 		return {
 			reference:
 				this.focus.activeReference() ?? this.tree.reference(this.tree.root),
