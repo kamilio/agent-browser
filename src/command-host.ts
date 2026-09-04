@@ -81,6 +81,7 @@ import {
 import { StateTransfers } from "./state-transfer.js";
 import { resolveBrowserTarget } from "./target-locator.js";
 import { textLocatorLimits } from "./text-locator.js";
+import { resolveVisualTarget } from "./generated-controls.js";
 
 export interface CommandHostOptions {
 	websiteScripts?: boolean;
@@ -1339,9 +1340,12 @@ export class BrowserCommandHost {
 			const tab = this.activeTab(browser);
 			const page = browser.page(tab);
 			const reference = this.target(browser, tab, args[0]);
-			const id = page.document.resolve(reference).id;
+			const { node, generated } = resolveVisualTarget(page.document, reference);
+			const id = node.id;
 			const geometry = documentGeometry(page.document);
-			const rects = geometry.getClientRects(id);
+			const rects = generated
+				? geometry.getGeneratedClientRects(reference)
+				: geometry.getClientRects(id);
 			if (rects.length > scriptGeometryLimits.maxListLength)
 				throw new AgentBrowserError(
 					"resource-limit",
@@ -1351,11 +1355,23 @@ export class BrowserCommandHost {
 				reference,
 				revision: page.document.revision,
 				partial: true,
-				profile: "normal-flow-client-rects",
+				profile: generated
+					? "generated-control-client-rects"
+					: "normal-flow-client-rects",
 				viewport: page.styles.viewport,
 				scroll: documentScrollPosition(page.document),
-				bounds: geometry.getBoundingClientRect(id),
-				sizes: documentElementSizes(page.document).get(id),
+				bounds: generated
+					? geometry.getGeneratedBoundingClientRect(reference)
+					: geometry.getBoundingClientRect(id),
+				sizes: generated ? null : documentElementSizes(page.document).get(id),
+				...(generated
+					? {
+							generated: {
+								kind: generated.kind,
+								owner: page.document.reference(id),
+							},
+						}
+					: {}),
 				rects,
 			};
 		}

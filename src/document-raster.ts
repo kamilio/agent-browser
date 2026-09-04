@@ -27,6 +27,8 @@ import {
 import { documentStyles } from "./styles.js";
 import { documentScrollPosition } from "./document-scroll.js";
 import type { TextGlyph } from "./text-layout.js";
+import { activeFocus } from "./focus.js";
+import { resolveVisualTarget } from "./generated-controls.js";
 
 export interface DocumentClip {
 	x: number;
@@ -155,7 +157,7 @@ function paintDocumentLayout(
 				"invalid-input",
 				"Choose an element reference or an explicit clip",
 			);
-		const element = tree.resolve(options.element);
+		const element = resolveVisualTarget(tree, options.element).node;
 		if (element.kind !== "element")
 			throw new AgentBrowserError(
 				"invalid-input",
@@ -266,6 +268,8 @@ function paintDocumentLayout(
 		metrics.paintedBackgrounds++;
 	};
 	const styles = documentStyles(tree);
+	const focused = activeFocus(tree);
+	const generatedFocus = tree.generatedFocusReference;
 	const root = tree.get(tree.root).children.find((id) => {
 		charge();
 		return tree.get(id).kind === "element";
@@ -331,6 +335,38 @@ function paintDocumentLayout(
 			node.paint,
 			charge,
 		);
+		if (
+			node.generated?.ref === generatedFocus &&
+			node.generated?.owner === focused
+		) {
+			for (const [inset, color] of [
+				[0, [0, 0, 0, 255]],
+				[1, [255, 255, 255, 255]],
+			] as const) {
+				const width = box.borderBoxWidth - inset * 2;
+				const height = box.borderBoxHeight - inset * 2;
+				if (width <= 0 || height <= 0) continue;
+				const horizontal = box.borderX + inset;
+				const vertical = box.borderY + inset;
+				const thickness = Math.min(1, width, height);
+				drawBackground(horizontal, vertical, width, thickness, color);
+				drawBackground(
+					horizontal,
+					vertical + height - thickness,
+					width,
+					thickness,
+					color,
+				);
+				drawBackground(horizontal, vertical, thickness, height, color);
+				drawBackground(
+					horizontal + width - thickness,
+					vertical,
+					thickness,
+					height,
+					color,
+				);
+			}
+		}
 	};
 	const paintGlyph = (glyph: Readonly<TextGlyph>, contentY: number) => {
 		charge();

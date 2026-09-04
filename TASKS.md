@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Generated-inspection checkpoint: `GENERATED-INSPECTION.md` adds immutable native
+header document/client bounds, generated command geometry with null DOM sizes,
+and target-specific screenshot crops. Focused headers have bounded inset visual
+feedback without DOM/layout changes, with shared clipping, stacking and raster
+budgets. The 37 new cases produce 30 failures and seven passes on isolated prior
+HEAD. Matching focused runs pass 144 / eight files; types/builds, strict new-test
+checking and five-file lint pass in both trees. Authorized full native runs pass
+9,407 / 270 isolated files; the working run reports 10,552 passes and the unchanged
+pending Window-onload assertion failure / 292 files. Native Tab/Enter command
+sequences produced inspected full/cropped screenshots and matching generated
+geometry. Next: terminal/playground generated-target integration coverage and
+remaining focus/style behavior. CSS outline/focus-visible, authored focus rings,
+generated style inspection, localization, scoped ordering, platform accessibility,
+UA/shadow and original browser/runtime gates remain open. No gated probe ran;
+the denied SafeJS probe remains unrun. Preserve historical measurements and
+unrelated pending work; the seven-day continuation remains active.
+
+### Previous generated-agent checkpoint
+
 Generated-agent checkpoint: `GENERATED-AGENT.md` publishes separate fallback
 snapshot entries, bounded scanning/search, scoped snapshots, unique role locators
 and native command click/hover/targeted press/scroll support. Readiness and

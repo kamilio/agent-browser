@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 generated-inspection continuation: `GENERATED-INSPECTION.md` adds
+header-only native geometry and command screenshot crops, with explicit null DOM
+sizes and preserved owner identity. Generated focus has bounded inset visual
+feedback; inspected native Tab/Enter captures match geometry and snapshot state.
+This does not implement CSS outline/focus-visible, full authored focus feedback,
+generated style inspection or platform/UA/shadow/accessibility/browser parity.
+
 September 4 generated-agent continuation: `GENERATED-AGENT.md` publishes native
 fallback snapshot entries, unique role locators and command click/hover/targeted
 press/scroll paths with header-only readiness and execution. Ambiguous generated

@@ -283,11 +283,8 @@ export class DocumentGeometry {
 	}
 
 	getGeneratedClientRects(reference: string): readonly ClientRectangle[] {
-		if (this.closed)
-			throw new AgentBrowserError("closed", "Document geometry is closed");
-		documentGeneratedControls(this.tree).resolve(reference);
 		const scroll = documentScrollPosition(this.tree);
-		const rects = this.refresh().getClientRects(reference);
+		const rects = this.getGeneratedDocumentRects(reference);
 		if (scroll.x === 0 && scroll.y === 0) return rects;
 		return Object.freeze(
 			rects.map((rect) =>
@@ -299,6 +296,31 @@ export class DocumentGeometry {
 				),
 			),
 		);
+	}
+
+	getGeneratedDocumentRects(reference: string): readonly ClientRectangle[] {
+		return this.generatedSnapshot(reference).getClientRects(reference);
+	}
+
+	getGeneratedBoundingClientRect(reference: string): ClientRectangle {
+		const snapshot = this.generatedSnapshot(reference);
+		const rect = snapshot.getBoundingClientRect(reference);
+		const scroll = documentScrollPosition(this.tree);
+		if ((!scroll.x && !scroll.y) || !snapshot.getClientRects(reference).length)
+			return rect;
+		return rectangle(
+			rect.x - scroll.x,
+			rect.y - scroll.y,
+			rect.width,
+			rect.height,
+		);
+	}
+
+	private generatedSnapshot(reference: string) {
+		if (this.closed)
+			throw new AgentBrowserError("closed", "Document geometry is closed");
+		documentGeneratedControls(this.tree).resolve(reference);
+		return this.refresh();
 	}
 
 	getBoundingClientRect(id: number): ClientRectangle {

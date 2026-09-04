@@ -1157,6 +1157,21 @@ accessibility, localization, scoped ordering, UA/shadow, runtime and original
 browser gates remain open. No gated probe ran; the denied SafeJS probe remains
 unrun. Preserve historical evidence and unrelated pending work; the goal is active.
 
+September 4 generated-inspection continuation: `GENERATED-INSPECTION.md` adds
+header-only command geometry, cropped capture and bounded visible focus feedback.
+The 37 new cases produce 30 failures and seven passes on isolated prior HEAD;
+matching focused runs pass 144 / eight files. Types/builds, strict checking and
+five-file lint pass in both trees. Authorized full native runs pass 9,407 / 270
+isolated files; the working run reports 10,552 passes and the unchanged pending
+Window-onload assertion failure / 292 files. Actual native Tab/Enter commands,
+geometry and full/cropped artifact reads have inspected visual evidence. Next:
+terminal/playground generated-target integration coverage and remaining focus/
+style behavior. Full outline/focus-visible, authored focus rings, generated style
+inspection, localization, scoped ordering, platform accessibility, UA/shadow and
+original browser/runtime gates stay open. No gated probe ran; the denied SafeJS
+probe remains unrun. Historical evidence and unrelated changes stay separate;
+the seven-day continuation is active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
