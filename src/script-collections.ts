@@ -7,7 +7,10 @@ import {
 } from "./controls.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
-import type { ScriptHostObjectFactory } from "./script-dom.js";
+import type {
+	ScriptHostObjectDefinition,
+	ScriptHostObjectFactory,
+} from "./script-dom.js";
 
 export interface ScriptCollectionLimits {
 	maxCollections: number;
@@ -22,12 +25,14 @@ type CollectionKind =
 	| "links"
 	| "anchors"
 	| "class"
+	| "name"
 	| "children"
 	| "options"
 	| "selected-options"
 	| "form-controls"
 	| "form-named";
 interface CollectionState {
+	active: boolean;
 	capability: object;
 	ids: number[];
 	revision: number;
@@ -36,6 +41,7 @@ interface CollectionState {
 export class ScriptCollections {
 	readonly limits: Readonly<ScriptCollectionLimits>;
 	private readonly collections = new Map<string, CollectionState>();
+	private readonly pending = new Map<string, CollectionState>();
 	private cachedEntries = 0;
 	private refreshes = 0;
 	private closed = false;
@@ -97,14 +103,26 @@ export class ScriptCollections {
 		]);
 		const existing = this.collections.get(key);
 		if (existing) return existing.capability;
-		if (this.collections.size >= this.limits.maxCollections)
+		if (this.pending.has(key))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Reentrant script collection publication",
+			);
+		if (this.collections.size + this.pending.size >= this.limits.maxCollections)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"Script collection count limit exceeded",
 			);
-		const state: CollectionState = { capability: {}, ids: [], revision: -1 };
+		const state: CollectionState = {
+			active: true,
+			capability: {},
+			ids: [],
+			revision: -1,
+		};
 		const entries = (): number[] => {
 			this.ensureOpen(owner);
+			if (!state.active)
+				throw new AgentBrowserError("closed", "Script collection is closed");
 			if (state.revision === this.tree.revision) return state.ids;
 			let work = 0;
 			const charge = (amount = 1) => {
@@ -140,6 +158,11 @@ export class ScriptCollections {
 					const present = new Set(classes.split(/[\t\n\f\r ]+/));
 					matches = tokens.every((token) => present.has(token));
 				}
+				if (kind === "name") {
+					const name = node.attributes.name;
+					charge((name?.length ?? 0) + wanted.length);
+					matches = name !== undefined && name === wanted;
+				}
 				if (!matches) continue;
 				if (ids.length >= this.limits.maxItems)
 					throw new AgentBrowserError(
@@ -160,7 +183,7 @@ export class ScriptCollections {
 			this.refreshes++;
 			return ids;
 		};
-		state.capability = this.factory.createHostObject({
+		const definition: ScriptHostObjectDefinition = {
 			...(kind === "form-named"
 				? {
 						properties: {
@@ -219,7 +242,7 @@ export class ScriptCollections {
 					const id = entries()[index];
 					return id === undefined ? null : this.node(id);
 				},
-				...(kind === "form-named"
+				...(kind === "form-named" || kind === "name"
 					? {}
 					: {
 							namedItem: (...args: readonly unknown[]) => {
@@ -250,22 +273,39 @@ export class ScriptCollections {
 							},
 						}),
 			},
-		});
-		if (!state.capability || typeof state.capability !== "object")
-			throw new AgentBrowserError(
-				"unsupported",
-				"Invalid indexed host capability",
-			);
-		this.collections.set(key, state);
-		return state.capability;
+		};
+		this.pending.set(key, state);
+		try {
+			state.capability = this.factory.createHostObject(definition);
+			this.ensureOpen(owner);
+			if (!state.capability || typeof state.capability !== "object")
+				throw new AgentBrowserError(
+					"unsupported",
+					"Invalid indexed host capability",
+				);
+			this.collections.set(key, state);
+			return state.capability;
+		} catch (error) {
+			this.discard(state);
+			throw error;
+		} finally {
+			this.pending.delete(key);
+		}
 	}
 
 	close() {
 		if (this.closed) return;
 		this.closed = true;
-		for (const state of this.collections.values()) state.ids = [];
+		for (const state of this.collections.values()) this.discard(state);
+		for (const state of this.pending.values()) this.discard(state);
 		this.collections.clear();
+		this.pending.clear();
 		this.cachedEntries = 0;
+	}
+	private discard(state: CollectionState) {
+		this.cachedEntries -= state.ids.length;
+		state.ids = [];
+		state.active = false;
 	}
 
 	private ensureOpen(owner: number) {

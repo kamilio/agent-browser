@@ -1,5 +1,10 @@
 # Native document collections
 
+September 4 continuation: `NAME-COLLECTIONS.md` adds live document name queries
+with an indexed NodeList subset and hardens common collection publication against
+failure, reentry and closure. The original accessor checkpoint below retains its
+historical evidence and scope.
+
 September 3, 2026 continuation of the JavaScript-application work in the seven-day
 plan. This checkpoint adds missing document collection accessors to the existing
 bounded native collection owner; it does not add a second query engine or runtime

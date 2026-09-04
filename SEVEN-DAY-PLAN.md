@@ -973,6 +973,19 @@ released-SafeJS and real browser/site/socket/TTY gates remain open. No gated pro
 ran; the denied SafeJS probe remains unrun and the complete seven-day browser
 objective stays active.
 
+September 4 name-collection continuation: `NAME-COLLECTIONS.md` adds live document
+name queries with exact attribute matching, shared node identity and retained-list
+mutation behavior. Common collection publication now reserves identity/count and
+revokes failed capabilities while preserving independent nested publications.
+All 42 new cases fail on isolated prior HEAD and pass after implementation.
+Focused runs pass 147 / six files in both trees; full authorized native runs pass
+10,050 / 277 working files and 8,904 / 255 isolated files. Both pass types/builds,
+strict new-test checking and three-file lint. Historical evidence and unrelated
+pending work remain separate. Continue application compatibility; full NodeList/
+foreign-content semantics, released-SafeJS and real browser/site/socket/TTY gates
+remain open. No gated probe ran; the denied SafeJS probe remains unrun and the
+complete seven-day browser objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

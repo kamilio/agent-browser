@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Name-collection checkpoint: `NAME-COLLECTIONS.md` adds live
+`document.getElementsByName()` results with exact name matching, shared node
+identity and mutation-sensitive membership. The common collection owner now
+reserves pending publications, releases failed factory caches and revokes leaked
+access without invalidating separately published nested collections. All 42 new
+cases fail on isolated prior HEAD and pass after implementation. Focused runs
+pass 147 / six files in both trees; authorized full native runs pass 10,050 / 277
+working files and 8,904 / 255 isolated files. Both trees pass types/builds, strict
+new-test checking and three-file lint. Historical evidence and unrelated pending
+work remain intact. Continue application compatibility; full NodeList/foreign-
+content semantics, released-SafeJS, live browser/site/socket/TTY and original
+acceptance gates remain open. No gated probe ran; the denied SafeJS probe remains
+unrun and the complete seven-day browser goal stays active.
+
+### Previous nth-token checkpoint
+
 Nth-token checkpoint: `NTH-TOKENS.md` replaces raw An+B substring matching with
 token-aware parsing in the shared selector compiler. Comments, escaped units and
 keywords, signed offsets and filtered-child `of` boundaries work across queries,

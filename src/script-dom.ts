@@ -436,6 +436,12 @@ export class ScriptDom {
 			};
 		}
 		if (initial.kind === "document") {
+			definition.methods.getElementsByName = (...args) => {
+				this.read(id);
+				if (args.length === 0)
+					throw new TypeError("getElementsByName requires a name");
+				return this.collections.get(id, "name", domString(args[0]));
+			};
 			definition.properties.compatMode = {
 				get: () => {
 					this.read(id);

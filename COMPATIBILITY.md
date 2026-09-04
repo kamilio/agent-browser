@@ -1,5 +1,10 @@
 # Compatibility and playground acceptance ledger
 
+September 4 name-query continuation: `NAME-COLLECTIONS.md` adds live
+`document.getElementsByName()` results with shared node identity, mutation-sensitive
+membership and bounded publication. Full NodeList/foreign-content semantics,
+released-runtime execution and real-site/browser parity remain open.
+
 September 4 nth-selector continuation: `NTH-TOKENS.md` shares token-aware An+B
 comments, escapes and filtered-child keywords across DOM queries, stylesheet
 matching and feature queries. Native mutation/geometry/raster tests and retained

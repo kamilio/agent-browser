@@ -59,6 +59,7 @@
   "src/deflate.test.ts",
   "src/document-attributes.test.ts",
   "src/document-collections.test.ts",
+  "src/name-collections.test.ts",
   "src/document-elements.test.ts",
   "src/document-fragments.test.ts",
   "src/document-geometry.test.ts",
