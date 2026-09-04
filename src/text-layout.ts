@@ -1,4 +1,5 @@
 import { bitmapFont, bitmapGlyph } from "./bitmap-font.js";
+import { initialBoxStyle } from "./css-box.js";
 import { type TextStyle, initialTextStyle } from "./css-text.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -10,6 +11,7 @@ import {
 } from "./formatting-tree.js";
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 import { resolveInlineEdges } from "./inline-box.js";
+import { resolveBorders } from "./border-box.js";
 
 export interface TextLayoutLimits {
 	maxTokens: number;
@@ -56,6 +58,7 @@ export interface TextLine {
 }
 export interface TextInlineFragment {
 	formattingId: number;
+	borders?: Readonly<ReturnType<typeof resolveBorders>>;
 	ref: string;
 	line: number | null;
 	x: number;
@@ -103,6 +106,7 @@ interface Token extends FontExtent {
 	kind: "glyph" | "tab" | "strut" | "open" | "close" | "image";
 	margin?: number;
 	padding?: number;
+	border?: number;
 	contributes?: boolean;
 	visible: boolean;
 	collapsible: boolean;
@@ -279,7 +283,10 @@ export function layoutDocumentText(
 						: 0;
 			const glyphStart = glyphs.length;
 			const fragmentStart = fragments.length;
-			const ranges = new Map<number, { left: number; right: number }>();
+			const ranges = new Map<
+				number,
+				{ left: number; right: number; borderLeft: number; borderRight: number }
+			>();
 			for (const { token, offset: tokenOffset, advance: used } of entries) {
 				charge();
 				const start = tokenOffset;
@@ -308,9 +315,16 @@ export function layoutDocumentText(
 									? (token.padding ?? 0)
 									: used);
 						const range = ranges.get(current);
+						const borderLeft =
+							own && token.kind === "open" ? (token.border ?? 0) : 0;
+						const borderRight =
+							own && token.kind === "close" ? (token.border ?? 0) : 0;
 						if (range) {
 							range.right = right;
-						} else ranges.set(current, { left, right });
+							range.borderLeft += borderLeft;
+							range.borderRight += borderRight;
+						} else
+							ranges.set(current, { left, right, borderLeft, borderRight });
 					} else if (node.kind !== "text") break;
 					current = node.parent;
 				}
@@ -346,6 +360,14 @@ export function layoutDocumentText(
 				const node = horizontal.formatting.nodes[id];
 				const replaced = images.get(id);
 				const font = extent(node.typography ?? style);
+				const borders =
+					node.kind === "inline"
+						? {
+								...resolveBorders(node.box ?? initialBoxStyle),
+								borderLeft: range.borderLeft,
+								borderRight: range.borderRight,
+							}
+						: undefined;
 				const paddingTop = resolveLayoutLength(
 					node.box?.["padding-top"] ?? "0px",
 					block.contentWidth,
@@ -359,19 +381,26 @@ export function layoutDocumentText(
 					baseline -
 						(replaced
 							? replaced.borderBoxHeight + replaced.marginBottom
-							: font.ascent + paddingTop),
+							: font.ascent + paddingTop + (borders?.borderTop ?? 0)),
 					true,
 				);
 				const width = layoutNumber(Math.max(0, range.right - range.left));
 				const fragmentHeight = layoutNumber(
 					replaced?.borderBoxHeight ??
-						font.fontSize + paddingTop + paddingBottom,
+						font.fontSize +
+							paddingTop +
+							paddingBottom +
+							(borders?.borderTop ?? 0) +
+							(borders?.borderBottom ?? 0),
 				);
 				layoutNumber(x + width, true);
 				layoutNumber(y + fragmentHeight, true);
 				fragments.push(
 					Object.freeze({
 						formattingId: id,
+						...(borders && Object.values(borders).some((width) => width > 0)
+							? { borders: Object.freeze(borders) }
+							: {}),
 						ref: node.ref ?? "",
 						line: collapsed ? null : lines.length,
 						x,
@@ -515,12 +544,14 @@ export function layoutDocumentText(
 					? (node.fragmentIndex ?? 0) < (node.fragmentCount ?? 1) - 1
 					: (node.fragmentIndex ?? 0) > 0;
 				const margin = sliced ? 0 : edges[`margin-${side}`];
-				const padding = sliced ? 0 : edges[`padding-${side}`];
+				const border = sliced ? 0 : edges[`border-${side}-width`];
+				const padding = sliced ? 0 : edges[`padding-${side}`] + border;
 				emit({
 					...font,
 					advance: layoutNumber(margin + padding, true),
 					margin,
 					padding,
+					border,
 					contributes: Object.values(edges).some((value) => value !== 0),
 					formattingId: node.id,
 					ref: node.ref ?? "",

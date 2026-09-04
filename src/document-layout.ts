@@ -21,6 +21,8 @@ export interface MarginStrut {
 	readonly value: number;
 }
 export interface DocumentBox extends FormattingBlockWidth {
+	borderTop: number;
+	borderBottom: number;
 	containingHeight: number | null;
 	preferredHeight: number | null;
 	minimumHeight: number;
@@ -90,6 +92,8 @@ function positionedGlyphReader(state: {
 }
 
 interface State {
+	borderTop: number;
+	borderBottom: number;
 	width: Readonly<FormattingBlockWidth>;
 	node: Readonly<FormattingNode>;
 	children: State[];
@@ -211,10 +215,19 @@ export function layoutDocument(
 			width.containingWidth,
 			containingHeight,
 		);
-		const { paddingTop, paddingBottom, minimum, maximum } = constraints;
+		const {
+			paddingTop,
+			paddingBottom,
+			borderTop,
+			borderBottom,
+			minimum,
+			maximum,
+		} = constraints;
 		const preferred =
 			images.get(node.id)?.contentHeight ?? constraints.preferred;
 		const state: State = {
+			borderTop,
+			borderBottom,
 			width,
 			node,
 			children: [],
@@ -305,10 +318,14 @@ export function layoutDocument(
 		});
 		const independent = !!state.node.independentContext;
 		state.topEscape =
-			!independent && state.paddingTop === 0 && state.children.length > 0;
+			!independent &&
+			state.paddingTop === 0 &&
+			state.borderTop === 0 &&
+			state.children.length > 0;
 		state.bottomEscape =
 			!independent &&
 			state.paddingBottom === 0 &&
+			state.borderBottom === 0 &&
 			state.preferred === null &&
 			state.children.length > 0 &&
 			!(state.minimum > 0 && state.topEscape && allThrough);
@@ -316,6 +333,8 @@ export function layoutDocument(
 			state.node.kind !== "replaced" &&
 			!independent &&
 			state.paddingTop === 0 &&
+			state.borderTop === 0 &&
+			state.borderBottom === 0 &&
 			state.paddingBottom === 0 &&
 			state.minimum === 0 &&
 			(state.preferred === null || state.preferred === 0) &&
@@ -354,7 +373,11 @@ export function layoutDocument(
 		state.height = used.height;
 		state.clampedBy = used.clampedBy;
 		state.borderHeight = layoutNumber(
-			state.paddingTop + state.height + state.paddingBottom,
+			state.borderTop +
+				state.paddingTop +
+				state.height +
+				state.paddingBottom +
+				state.borderBottom,
 		);
 	}
 	const flowHeight = flow(roots, false, false);
@@ -366,7 +389,10 @@ export function layoutDocument(
 			(parent?.contentY ?? 0) + state.relativeY,
 			true,
 		);
-		state.contentY = layoutNumber(state.borderY + state.paddingTop, true);
+		state.contentY = layoutNumber(
+			state.borderY + state.borderTop + state.paddingTop,
+			true,
+		);
 		layoutNumber(state.borderY + state.borderHeight, true);
 		boxes.push(
 			Object.freeze({
@@ -379,6 +405,8 @@ export function layoutDocument(
 				marginTop: state.marginTop,
 				marginBottom: state.marginBottom,
 				paddingTop: state.paddingTop,
+				borderTop: state.borderTop,
+				borderBottom: state.borderBottom,
 				paddingBottom: state.paddingBottom,
 				naturalContentHeight: state.natural,
 				contentHeight: state.height,

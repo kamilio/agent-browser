@@ -1,4 +1,5 @@
 import { parseBackgroundShorthand } from "./css-background.js";
+import { isBorderShorthand, parseBorderShorthand } from "./css-border.js";
 import { compileCssMedia } from "./css-media.js";
 import {
 	type CssBoxProperty,
@@ -210,6 +211,7 @@ export function parseCssDeclarations(
 				"padding",
 				"background",
 			].includes(property) &&
+			!isBorderShorthand(property) &&
 			!isCssBoxProperty(property) &&
 			!isCssTextProperty(property) &&
 			!isCssPaintProperty(property)
@@ -255,6 +257,15 @@ export function parseCssDeclarations(
 					important,
 				})),
 			);
+			continue;
+		}
+		if (isBorderShorthand(property)) {
+			const expanded = parseBorderShorthand(property, value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((entry) => ({ ...entry, important })),
+				);
+			else issue("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssTextProperty(property)) {

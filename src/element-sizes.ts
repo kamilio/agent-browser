@@ -108,20 +108,22 @@ export class DocumentElementSizes {
 					clientWidth =
 						used.width +
 						(borderBox
-							? 0
+							? -(used["border-left-width"] ?? 0) -
+								(used["border-right-width"] ?? 0)
 							: (used["padding-left"] ?? 0) + (used["padding-right"] ?? 0));
 					clientHeight =
 						used.height +
 						(borderBox
-							? 0
+							? -(used["border-top-width"] ?? 0) -
+								(used["border-bottom-width"] ?? 0)
 							: (used["padding-top"] ?? 0) + (used["padding-bottom"] ?? 0));
 				}
 			}
 			result = Object.freeze({
 				clientWidth: Math.round(clientWidth),
 				clientHeight: Math.round(clientHeight),
-				clientTop: 0,
-				clientLeft: 0,
+				clientTop: Math.round(used?.["border-top-width"] ?? 0),
+				clientLeft: Math.round(used?.["border-left-width"] ?? 0),
 				offsetWidth: Math.round(right - left),
 				offsetHeight: Math.round(bottom - top),
 			});

@@ -150,7 +150,13 @@ it("all:inherit uses the parent's computed box values without making ordinary de
 	);
 	expect(box()).toEqual(initialBoxStyle);
 	tree.setAttribute(id(), "style", "all:inherit");
-	expect(box()).toEqual(box("#outer"));
+	expect(box()).toEqual({
+		...box("#outer"),
+		"border-top-width": "0px",
+		"border-right-width": "0px",
+		"border-bottom-width": "0px",
+		"border-left-width": "0px",
+	});
 });
 
 it.each([

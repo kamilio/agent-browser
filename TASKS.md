@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Solid-border core checkpoint: `BORDER-CORE.md` promotes focused physical border
+cascade/CSSOM, normal-flow and ordinary-inline geometry, client sizes and software
+painting. Width inheritance now uses zero for none/hidden parent borders without
+discarding retained own widths; nine regressions fail before the fix in both
+trees. All 43 new core cases pass. Full native validation passes 9,200 / 252
+working-tree files and 6,430 / 191 isolated-core files. Focused checks pass 258 /
+seven files; isolated regression checks pass 183 / seven. Types/builds, strict
+changed-test checks and 22-file lint pass in both trees. Unrelated pending source
+bytes and historical reports are preserved; the only new behavioral worktree
+change is the inheritance fix. The isolated adapters retain the existing painting
+schedule, not pending stacking/control/flex integrations. Next integrate remaining
+inline/flex layout, paint ordering and scrolling before corrected coordinate
+routing. Radius, border images, other line styles, broad writing modes, custom
+select presentation/pickers, multiple selection, pending CSSOM slots and independent
+runtime/site/UI gates remain open. No gated probe ran; the denied SafeJS probe
+remains unrun and the full seven-day goal stays active.
+
+### Previous CSS custom-property core checkpoint
+
 CSS custom-property core checkpoint: `CSS-VARIABLES-CORE.md` promotes the pending
 bounded helper and focused authored/cascade/computed/inline-CSSOM integration.
 Names remain case-sensitive; inheritance, fallbacks, evaluated cycles and invalid

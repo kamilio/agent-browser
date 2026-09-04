@@ -10,6 +10,7 @@ import {
 	resolveReplacedSize,
 } from "./replaced-box.js";
 import { AgentBrowserError } from "./errors.js";
+import { resolveBorders } from "./border-box.js";
 import { layoutNumber } from "./layout-values.js";
 import { documentStyles } from "./styles.js";
 
@@ -548,6 +549,7 @@ export function resolveDocumentBlockWidths(
 						}
 					: style,
 				containingWidth,
+				resolveBorders(style),
 			);
 			const borderX = layoutNumber(contentX + used.marginLeft, true);
 			contentX = layoutNumber(contentX + used.contentOffset, true);

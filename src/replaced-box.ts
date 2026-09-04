@@ -1,5 +1,6 @@
 import type { BoxStyle } from "./css-box.js";
 import { lengthHasPercentage } from "./css-math.js";
+import { resolveBorders } from "./border-box.js";
 import { AgentBrowserError } from "./errors.js";
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 
@@ -57,7 +58,10 @@ export function resolveHeightConstraints(
 		style["padding-bottom"],
 		containingWidth,
 	);
-	const edges = layoutNumber(paddingTop + paddingBottom);
+	const { borderTop, borderBottom } = resolveBorders(style);
+	const edges = layoutNumber(
+		paddingTop + paddingBottom + borderTop + borderBottom,
+	);
 	const adjustment = style["box-sizing"] === "border-box" ? edges : 0;
 	const preferred = dimension(style.height, containingHeight, adjustment, null);
 	const minimum =
@@ -69,6 +73,8 @@ export function resolveHeightConstraints(
 		null,
 	);
 	return {
+		borderTop,
+		borderBottom,
 		paddingTop,
 		paddingBottom,
 		preferred,
@@ -85,6 +91,10 @@ export function resolveHeightConstraints(
 }
 
 export interface ReplacedSize {
+	borderLeft: number;
+	borderRight: number;
+	borderTop: number;
+	borderBottom: number;
 	contentWidth: number;
 	contentHeight: number;
 	borderBoxWidth: number;
@@ -126,7 +136,10 @@ export function resolveReplacedSize(
 		style["padding-right"],
 		containingWidth,
 	);
-	const edges = layoutNumber(paddingLeft + paddingRight);
+	const borders = resolveBorders(style);
+	const edges = layoutNumber(
+		paddingLeft + paddingRight + borders.borderLeft + borders.borderRight,
+	);
 	const adjustment = style["box-sizing"] === "border-box" ? edges : 0;
 	const preferredWidth = dimension(
 		style.width,
@@ -188,11 +201,16 @@ export function resolveReplacedSize(
 			? 0
 			: resolveLayoutLength(style[`margin-${side}`], containingWidth, true);
 	return Object.freeze({
+		...borders,
 		contentWidth: layoutNumber(contentWidth),
 		contentHeight: layoutNumber(contentHeight),
 		borderBoxWidth: layoutNumber(contentWidth + edges),
 		borderBoxHeight: layoutNumber(
-			contentHeight + vertical.paddingTop + vertical.paddingBottom,
+			contentHeight +
+				vertical.paddingTop +
+				vertical.paddingBottom +
+				borders.borderTop +
+				borders.borderBottom,
 		),
 		paddingLeft,
 		paddingRight,

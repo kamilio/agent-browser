@@ -7,6 +7,16 @@ import {
 } from "./css-background.js";
 import { normalizeCssColor } from "./css-color.js";
 import {
+	borderWidthProperties,
+	borderStyleProperties,
+	borderColorProperties,
+	borderSides,
+	isBorderShorthand,
+	parseBorderShorthand,
+	normalizeBorderWidth,
+	normalizeBorderStyle,
+} from "./css-border.js";
+import {
 	isCssLengthMath,
 	normalizeLengthMath,
 	splitLengthComponents,
@@ -63,6 +73,14 @@ const lengths = new Set([
 	...sides.map((side) => `padding-${side}`),
 ]);
 export const inlineProperties = [
+	...borderWidthProperties,
+	...borderStyleProperties,
+	...borderColorProperties,
+	"border",
+	"border-width",
+	"border-style",
+	"border-color",
+	...borderSides.map((side) => `border-${side}`),
 	...cssTextProperties,
 	...Object.keys(keywords),
 	...lengths,
@@ -152,6 +170,11 @@ function normalize(name: string, source: string): string | undefined {
 	if (!supported.has(name)) return undefined;
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;
+	if (name.startsWith("border-")) {
+		if (name.endsWith("-width")) return normalizeBorderWidth(value);
+		if (name.endsWith("-style")) return normalizeBorderStyle(value);
+		if (name.endsWith("-color")) return normalizeCssColor(value);
+	}
 	if (isNeutralBackgroundProperty(name))
 		return parseBackgroundComponent(name, value);
 	if (isCssTextProperty(name)) return parseTextValue(name, value);
@@ -227,6 +250,14 @@ export function expandDeclaration(
 	const source = name.startsWith("--")
 		? input
 		: withoutCssComments(input).trim();
+	if (isBorderShorthand(name))
+		return (
+			parseBorderShorthand(
+				name,
+				source.toLowerCase().replace(/[\t\n\f\r ]+/g, " "),
+			)?.map(({ property, value }) => ({ name: property, value, important })) ??
+			[]
+		);
 	if (name === "background")
 		return (
 			parseBackgroundShorthand(source)?.map(({ property, value }) => ({
@@ -313,11 +344,14 @@ export function inlineDeclarationComponents(name: string): readonly string[] {
 			{ rules: 0, declarations: 0, maxRules: 1, maxDeclarations: 1 },
 			() => {},
 		).map((entry) => entry.property);
-	return name === "margin" || name === "padding"
-		? sides.map((side) => `${name}-${side}`)
-		: name === "background"
-			? cssBackgroundProperties
-			: [name];
+	return isBorderShorthand(name)
+		? (parseBorderShorthand(name, "initial")?.map((entry) => entry.property) ??
+				[])
+		: name === "margin" || name === "padding"
+			? sides.map((side) => `${name}-${side}`)
+			: name === "background"
+				? cssBackgroundProperties
+				: [name];
 }
 
 export function propertyDeclarations(
@@ -367,6 +401,29 @@ export function propertyValue(
 	const found = propertyDeclarations(entries, name).filter(
 		(entry) => !entry.pending,
 	);
+	if (isBorderShorthand(name)) {
+		const expected = parseBorderShorthand(name, "initial")?.length;
+		if (
+			found.length !== expected ||
+			found.some((entry) => entry.important !== found[0]?.important)
+		)
+			return "";
+		const values = found.map((entry) => entry.value);
+		if (values.some((value) => wide.has(value)))
+			return values.every((value) => value === values[0]) ? values[0] : "";
+		if (["border-width", "border-style", "border-color"].includes(name)) {
+			if (values[3] === values[1]) values.pop();
+			if (values.length === 3 && values[2] === values[0]) values.pop();
+			if (values.length === 2 && values[1] === values[0]) values.pop();
+			return values.join(" ");
+		}
+		if (
+			name === "border" &&
+			values.some((value, index) => value !== values[index % 3])
+		)
+			return "";
+		return values.slice(0, 3).join(" ");
+	}
 	if (name !== "margin" && name !== "padding" && name !== "background")
 		return found[0]?.value ?? "";
 	if (

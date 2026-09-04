@@ -1,4 +1,5 @@
 import { bitmapFont, bitmapGlyph } from "./bitmap-font.js";
+import { paintSolidBorders } from "./border-raster.js";
 import { transparentColor } from "./css-color.js";
 import { initialPaintStyle, paintBackground } from "./css-paint.js";
 import { LayoutGeometry } from "./document-geometry.js";
@@ -49,6 +50,7 @@ export interface DocumentRaster {
 		blankGlyphs: number;
 		transparentGlyphs: number;
 		paintedBackgrounds: number;
+		borderPixels: number;
 		inlineFragments: number;
 		paintedImages: number;
 		clippedImages: number;
@@ -190,6 +192,7 @@ function paintDocumentLayout(
 		blankGlyphs: 0,
 		transparentGlyphs: 0,
 		paintedBackgrounds: 0,
+		borderPixels: 0,
 		inlineFragments: 0,
 		paintedImages: 0,
 		clippedImages: 0,
@@ -296,19 +299,24 @@ function paintDocumentLayout(
 	for (const box of layout.boxes) {
 		charge();
 		const node = nodes[box.id];
-		if (
-			!node.visible ||
-			!node.paint ||
-			node.kind === "replaced" ||
-			(box.ref && suppressed.has(box.ref))
-		)
-			continue;
-		drawBackground(
-			box.borderX,
-			box.borderY,
+		if (!node.visible || !node.paint || node.kind === "replaced") continue;
+		if (!(box.ref && suppressed.has(box.ref)))
+			drawBackground(
+				box.borderX,
+				box.borderY,
+				box.borderBoxWidth,
+				box.borderBoxHeight,
+				paintBackground(node.paint),
+			);
+		metrics.borderPixels += paintSolidBorders(
+			image,
+			box.borderX - clip.x,
+			box.borderY - clip.y,
 			box.borderBoxWidth,
 			box.borderBoxHeight,
-			paintBackground(node.paint),
+			box,
+			node.paint,
+			charge,
 		);
 	}
 	const paintGlyph = (glyph: Readonly<TextGlyph>, contentY: number) => {
@@ -377,8 +385,18 @@ function paintDocumentLayout(
 			used.borderBoxHeight,
 			paintBackground(node.paint ?? initialPaintStyle),
 		);
-		const originX = borderX + used.paddingLeft - clip.x;
-		const originY = borderY + used.paddingTop - clip.y;
+		metrics.borderPixels += paintSolidBorders(
+			image,
+			borderX - clip.x,
+			borderY - clip.y,
+			used.borderBoxWidth,
+			used.borderBoxHeight,
+			used,
+			node.paint ?? initialPaintStyle,
+			charge,
+		);
+		const originX = borderX + used.borderLeft + used.paddingLeft - clip.x;
+		const originY = borderY + used.borderTop + used.paddingTop - clip.y;
 		const left = Math.max(0, originX);
 		const top = Math.max(0, originY);
 		const right = Math.min(image.width, originX + used.contentWidth);
@@ -452,7 +470,7 @@ function paintDocumentLayout(
 					node.kind !== "inline" ||
 					!node.visible ||
 					!node.paint ||
-					!paintBackground(node.paint)[3]
+					(!paintBackground(node.paint)[3] && !fragment.borders)
 				)
 					continue;
 				metrics.inlineFragments++;
@@ -463,6 +481,17 @@ function paintDocumentLayout(
 					fragment.height,
 					paintBackground(node.paint),
 				);
+				if (fragment.borders)
+					metrics.borderPixels += paintSolidBorders(
+						image,
+						fragment.x - clip.x,
+						fragment.y - clip.y,
+						fragment.width,
+						fragment.height,
+						fragment.borders,
+						node.paint,
+						charge,
+					);
 			}
 			for (let index = glyphIndex; index < line.glyphEnd; index++)
 				paintGlyph(glyphs[index], context.contentY);

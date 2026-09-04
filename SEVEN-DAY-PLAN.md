@@ -588,6 +588,20 @@ coordinate promotion. Native host factories/pixels do not close released-runtime
 live-rendering or physical input gates. Full browser scope and the seven-day
 window remain active.
 
+September 4 solid-border core checkpoint: `BORDER-CORE.md` promotes physical
+border cascade/CSSOM, normal-flow and sliced ordinary-inline layout, client sizes
+and software painting without bundling pending flex/control/scroll/pointer work.
+Nine inheritance regressions fail before the fix; all 43 new core cases pass.
+Full native validation passes 9,200 / 252 working-tree files and 6,430 / 191
+isolated-core files. Focused checks pass 258 / seven files; isolated regression
+checks pass 183 / seven. Types/builds, strict changed-test checks and 22-file lint
+pass in both trees. Existing reports and unrelated source bytes are preserved.
+Continue remaining inline/flex layout, paint ordering and scrolling prerequisites
+before coordinate promotion. The isolated core retains the original normal-flow
+painting schedule. Other border styles/radius/images, broader writing modes,
+custom select/pickers, pending CSSOM slots and independent runtime/site/UI gates
+remain open. No gated probe ran; the full seven-day browser goal stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

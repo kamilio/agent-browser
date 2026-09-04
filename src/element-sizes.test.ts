@@ -210,7 +210,7 @@ it("returns zero after detach, then remeasures after reattachment", () => {
 it("rejects unsupported layout and block-in-inline offsets instead of publishing guessed zeros", () => {
 	for (const css of [
 		"#target{display:flex}",
-		"#target{border-left:2px solid red}",
+		"#target{border-left:2px dashed red}",
 		"#target{transform:scale(2)}",
 	])
 		expect(() => fixture(undefined, css).read()).toThrow();

@@ -5,8 +5,16 @@ import {
 	normalizeLengthMath,
 	splitLengthComponents,
 } from "./css-math.js";
+import {
+	borderWidthProperties,
+	borderStyleProperties,
+	normalizeBorderWidth,
+	normalizeBorderStyle,
+} from "./css-border.js";
 
 export const cssBoxProperties = Object.freeze([
+	...borderWidthProperties,
+	...borderStyleProperties,
 	"width",
 	"height",
 	"min-width",
@@ -51,13 +59,17 @@ export const initialBoxStyle: BoxStyle = Object.freeze(
 	Object.fromEntries(
 		cssBoxProperties.map((property) => [
 			property,
-			property === "box-sizing"
-				? "content-box"
-				: property.startsWith("max-")
+			property.startsWith("border-")
+				? property.endsWith("-style")
 					? "none"
-					: property.startsWith("margin-") || property.startsWith("padding-")
-						? "0px"
-						: "auto",
+					: "3px"
+				: property === "box-sizing"
+					? "content-box"
+					: property.startsWith("max-")
+						? "none"
+						: property.startsWith("margin-") || property.startsWith("padding-")
+							? "0px"
+							: "auto",
 		]),
 	) as Record<CssBoxProperty, string>,
 );
@@ -71,6 +83,10 @@ function normalize(
 	value: string,
 ): string | undefined {
 	if (wide.has(value)) return value;
+	if (property.startsWith("border-"))
+		return property.endsWith("-width")
+			? normalizeBorderWidth(value)
+			: normalizeBorderStyle(value);
 	if (property === "box-sizing")
 		return ["content-box", "border-box"].includes(value) ? value : undefined;
 	if (
@@ -175,7 +191,14 @@ export function computeBoxStyle(
 		if (value === undefined || ["initial", "unset", "revert"].includes(value))
 			continue;
 		if (value === "inherit") {
-			result[property] = parent[property];
+			const parentLine =
+				property.startsWith("border-") && property.endsWith("-width")
+					? parent[property.replace(/width$/, "style") as CssBoxProperty]
+					: undefined;
+			result[property] =
+				parentLine === "none" || parentLine === "hidden"
+					? "0px"
+					: parent[property];
 			continue;
 		}
 		if (isCssLengthMath(value))
@@ -196,7 +219,8 @@ export function computeBoxStyle(
 				"resource-limit",
 				"CSS box computed length overflow",
 			);
-		result[property] = `${pixels}px`;
+		result[property] =
+			`${property.startsWith("border-") && pixels > 0 ? Math.max(1, Math.floor(pixels)) : pixels}px`;
 	}
 	return Object.freeze(result);
 }

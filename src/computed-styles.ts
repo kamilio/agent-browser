@@ -3,6 +3,10 @@ import {
 	isNeutralBackgroundProperty,
 } from "./css-background.js";
 import { cssBoxProperties, isCssBoxProperty } from "./css-box.js";
+import {
+	borderColorProperties,
+	type BorderColorProperty,
+} from "./css-border.js";
 import { cssPaintProperties, paintBackground } from "./css-paint.js";
 import { cssTextProperties, isCssTextProperty } from "./css-text.js";
 import { documentGeometry } from "./document-geometry.js";
@@ -77,6 +81,13 @@ export function resolvedStyleValue(
 	if (name === "display" || name === "visibility") return styles.get(id)[name];
 	if (isCssBoxProperty(name)) {
 		const computed = styles.box(id)[name];
+		if (name.startsWith("border-") && name.endsWith("-width")) {
+			const line =
+				styles.box(id)[
+					name.replace(/width$/, "style") as keyof ReturnType<typeof styles.box>
+				];
+			return line === "none" || line === "hidden" ? "0px" : computed;
+		}
 		const visibility = styles.get(id);
 		if (!visibility.displayed || visibility.display === "contents")
 			return computed;
@@ -98,9 +109,18 @@ export function resolvedStyleValue(
 			? `${Number(value) * Number.parseFloat(text["font-size"])}px`
 			: value;
 	}
-	if (name === "color" || name === "background-color") {
+	if (
+		name === "color" ||
+		name === "background-color" ||
+		borderColorProperties.includes(name as BorderColorProperty)
+	) {
 		const style = styles.paint(id);
-		const color = name === "color" ? style.color : paintBackground(style);
+		const color =
+			name === "color"
+				? style.color
+				: name === "background-color"
+					? paintBackground(style)
+					: (style[name as BorderColorProperty] ?? style.color);
 		return color[3] === 255
 			? `rgb(${color[0]}, ${color[1]}, ${color[2]})`
 			: `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${Number((color[3] / 255).toFixed(3))})`;

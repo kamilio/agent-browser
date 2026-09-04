@@ -125,6 +125,10 @@ export class LayoutGeometry {
 						"padding-right": box.paddingRight,
 						"padding-bottom": box.paddingBottom,
 						"padding-left": box.paddingLeft,
+						"border-top-width": box.borderTop,
+						"border-right-width": box.borderRight,
+						"border-bottom-width": box.borderBottom,
+						"border-left-width": box.borderLeft,
 					}),
 				);
 			}
@@ -172,6 +176,10 @@ export class LayoutGeometry {
 										"padding-right": image.paddingRight,
 										"padding-top": image.paddingTop,
 										"padding-bottom": image.paddingBottom,
+										"border-top-width": image.borderTop,
+										"border-right-width": image.borderRight,
+										"border-bottom-width": image.borderBottom,
+										"border-left-width": image.borderLeft,
 									}
 								: resolveInlineEdges(context.contentWidth, style),
 						),
