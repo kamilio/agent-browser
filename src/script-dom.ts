@@ -33,6 +33,7 @@ import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { ScriptDatasets } from "./script-dataset.js";
 import { ElementTraversal } from "./element-traversal.js";
+import { scriptElementFocusProperties } from "./element-focus.js";
 import {
 	type DocumentElementSizes,
 	documentElementSizes,
@@ -856,6 +857,7 @@ export class ScriptDom {
 				id: this.attribute(id, "id"),
 				className: this.attribute(id, "class"),
 				title: this.attribute(id, "title"),
+				...scriptElementFocusProperties(this.tree, id, () => this.read(id)),
 			});
 			Object.assign(definition.methods, {
 				insertAdjacentHTML: (...args: readonly unknown[]) => {

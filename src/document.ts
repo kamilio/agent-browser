@@ -1211,6 +1211,7 @@ export class DocumentTree {
 		const previous = node.attributes[key];
 		const inputChange = this.inputValues.prepare(id, key, value);
 		if (previous === value) {
+			const clearedFocus = key === "inert" && this.clearFocusWithin(id);
 			if (key === "style" && this.inlineDeclarationStore.replace(id, state))
 				this.changed("style", id);
 			if (inputChange && inputChange.value !== node.control.value) {
@@ -1222,6 +1223,7 @@ export class DocumentTree {
 				attributeName: key,
 				oldValue: previous,
 			});
+			if (clearedFocus) this.changed("focus", this.root);
 			return;
 		}
 		const attributeId = this.attachedAttributes.get(id)?.get(key);
@@ -1240,6 +1242,7 @@ export class DocumentTree {
 		if (attribute) attribute.value = value;
 		this.textCodeUnits += change;
 		this.applyInputValueChange(id, inputChange);
+		if (key === "inert") this.clearFocusWithin(id);
 		if (key === "style") {
 			this.inlineDeclarationStore.replace(id, state);
 			this.changed("attribute", id);
@@ -1251,6 +1254,19 @@ export class DocumentTree {
 		if (key !== "style") this.changed("attribute", id);
 		this.selections.attribute(id, key);
 		this.checkedness.attribute(id, key, previous);
+	}
+
+	private clearFocusWithin(id: number) {
+		let ancestor = this.currentFocus;
+		while (ancestor !== null) {
+			if (ancestor === id) {
+				this.currentFocus = null;
+				this.currentKeyboardActive = null;
+				return true;
+			}
+			ancestor = this.node(ancestor).parent;
+		}
+		return false;
 	}
 
 	toggleAttribute(id: number, name: string, force?: boolean): boolean {
@@ -1384,6 +1400,7 @@ export class DocumentTree {
 		this.attributeMap(id).set(attribute.name, attributeId);
 		this.textCodeUnits += change;
 		this.applyInputValueChange(id, inputChange);
+		if (attribute.name === "inert") this.clearFocusWithin(id);
 		if (attribute.name === "style") {
 			this.inlineDeclarationStore.replace(id);
 			this.changed("attribute", id);

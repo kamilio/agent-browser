@@ -986,6 +986,20 @@ foreign-content semantics, released-SafeJS and real browser/site/socket/TTY gate
 remain open. No gated probe ran; the denied SafeJS probe remains unrun and the
 complete seven-day browser objective stays active.
 
+September 4 element-focus continuation: `ELEMENT-FOCUS.md` adds `tabIndex`/`inert`
+properties and shares HTML integer-prefix parsing with native keyboard focus.
+Metadata defaults remain distinct from actionability. Inert attribute changes
+clear stale focus through the common document mutation paths. All 84 new cases
+fail on isolated prior HEAD and pass after implementation; an initial integration
+failure also reproduces before the inert-focus fix. Focused runs pass 217 / six
+files in both trees; full authorized native runs pass 10,134 / 278 working files
+and 8,988 / 256 isolated files. Both pass types/builds, strict new-test checking
+and five-file lint. Historical evidence and unrelated pending work remain separate.
+Continue application compatibility; full focus/event fixups, shadow/modal behavior,
+released-SafeJS and real browser/site/socket/TTY gates remain open. No gated probe
+ran; the denied SafeJS probe remains unrun and the complete seven-day browser
+objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

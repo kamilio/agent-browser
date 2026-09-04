@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Element-focus checkpoint: `ELEMENT-FOCUS.md` adds `tabIndex` and `inert`
+properties, with HTML integer-prefix parsing shared by native tab order and
+element-specific getter defaults kept distinct from actionability. Inert attribute
+mutations now clear focus before observers see state, across property, attribute,
+toggle and attribute-node paths. Shared selectors, keyboard, geometry and snapshots
+have native coverage. All 84 new cases fail on isolated prior HEAD and pass after
+implementation; an initial integration failure identifies the stale inert-focus
+state before its correction. Focused runs pass 217 / six files in both trees;
+authorized full native runs pass 10,134 / 278 working files and 8,988 / 256 isolated
+files. Both trees pass types/builds, strict new-test checking and five-file lint.
+Historical evidence and unrelated pending work remain intact. Continue application
+compatibility; full platform focus/event fixups, shadow/modal semantics,
+released-SafeJS, live browser/site/socket/TTY and original acceptance gates remain
+open. No gated probe ran; the denied SafeJS probe remains unrun and the complete
+seven-day browser goal stays active.
+
+### Previous name-collection checkpoint
+
 Name-collection checkpoint: `NAME-COLLECTIONS.md` adds live
 `document.getElementsByName()` results with exact name matching, shared node
 identity and mutation-sensitive membership. The common collection owner now

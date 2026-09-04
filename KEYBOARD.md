@@ -1,5 +1,10 @@
 # Focus and keyboard actions
 
+September 4 continuation: `ELEMENT-FOCUS.md` adds element `tabIndex`/`inert`
+reflection, shared integer-prefix parsing for tab order and inert-attribute focus
+clearing. Property values are not actionability predicates; full platform focus
+and event-fixup behavior remain open. Earlier measurements below stay historical.
+
 Checkpoint: September 1, 2026. This is a bounded native-control subset on our
 own document model, not a full keyboard implementation or website JS runtime.
 No dependency was added. Controls in the integration probes are constructed by

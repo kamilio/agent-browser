@@ -96,6 +96,7 @@
   "src/flex-nested.test.ts",
   "src/flex-reflow.test.ts",
   "src/focus.test.ts",
+  "src/element-focus.test.ts",
   "src/font-relative-box.test.ts",
   "src/form-actions.test.ts",
   "src/form-defaults.test.ts",
