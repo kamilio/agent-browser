@@ -916,6 +916,20 @@ CSSOM/property coverage/cloning, released-SafeJS and real browser/site/socket/TT
 gates remain open. No gated probe ran; the denied SafeJS probe remains unrun and
 the complete seven-day browser objective stays active.
 
+September 4 page CSS utility continuation: `PAGE-CSS.md` adds document-owned
+`CSS.escape()` to global and Window bindings. Native query/mutation/style/layout
+round trips complement serialization, primitive conversion, input/output quotas,
+closure and failed/reentrant publication coverage. `CSS.supports` and object
+coercion remain explicit gaps. Fifty-one new cases all fail on isolated prior HEAD,
+then pass. Focused runs pass 197 / four working files and 191 / four isolated files;
+full authorized native runs pass 9,790 / 273 and 8,644 / 251. Both trees pass types/
+builds, strict two-test checks and five-file lint. Approved cleanup removes only a
+completed reproducible scratch snapshot, preserving reports and logs. Unrelated
+pending work stays separate. Continue application-facing APIs; full CSS namespace/
+feature queries, released-SafeJS and real browser/site/socket/TTY gates remain open.
+No gated probe ran; the denied SafeJS probe remains unrun and the complete seven-day
+browser objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

@@ -177,6 +177,7 @@
   "src/page-animation-frames.test.ts",
   "src/page-base64.test.ts",
   "src/page-bindings.test.ts",
+  "src/page-css.test.ts",
   "src/page-console.test.ts",
   "src/page-fetch-journal.test.ts",
   "src/page-fetch-ownership.test.ts",

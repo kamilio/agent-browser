@@ -290,6 +290,7 @@ it("creates one persistent realm with live document/window aliases and explicit 
 	);
 	const bindings = options().bindings;
 	expect(Object.keys(bindings).sort()).toEqual([
+		"CSS",
 		"cancelAnimationFrame",
 		"clearInterval",
 		"clearTimeout",

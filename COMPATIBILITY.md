@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 page CSS continuation: `PAGE-CSS.md` exposes bounded, document-owned
+`CSS.escape()` through global and Window bindings. Native tests consume generated
+identifiers through queries, DOM mutation and shared stylesheet/layout matching,
+with explicit conversion, quota and revocation boundaries. `CSS.supports`, full
+namespace/prototype behavior and released-runtime/browser parity remain open.
+
 September 4 shorthand continuation: `INLINE-SHORTHAND-SERIALIZATION.md` adds
 preferred-order compaction for the supported border/flex/gap families, prevents
 duplicate overlapping components and avoids emitting oversized shorthands that

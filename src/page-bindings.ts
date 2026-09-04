@@ -1,4 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
+import { pageCssEscape } from "./page-css.js";
 import { documentScrollPosition } from "./document-scroll.js";
 import { PageScroll } from "./page-scroll.js";
 import { type ConsoleLimits, PageConsole } from "./page-console.js";
@@ -62,6 +63,7 @@ export function pageBindingGlobalNames(
 		"clearTimeout",
 		"clearInterval",
 		"getComputedStyle",
+		"CSS",
 		"matchMedia",
 		"scroll",
 		"scrollTo",
@@ -83,6 +85,7 @@ export class PageBindings {
 	readonly timers: PageTimers;
 	readonly animationFrames: PageAnimationFrames;
 	readonly performance: object;
+	readonly css: object;
 	readonly media: PageMedia;
 	readonly scrolling: PageScroll;
 	readonly network?: PageFetch;
@@ -145,6 +148,15 @@ export class PageBindings {
 		this.unregisterClose = page.document.onClose(() => this.close());
 		try {
 			this.performance = createPagePerformance(context, this.clock);
+			this.css = context.createHostObject({
+				methods: {
+					escape: (...args) => {
+						this.ensureOpen();
+						return pageCssEscape(...args);
+					},
+				},
+			});
+			this.ensureOpen();
 			this.animationFrames = new PageAnimationFrames(
 				{
 					isClosed: () => this.closed,
@@ -211,6 +223,12 @@ export class PageBindings {
 			);
 			this.window = context.createHostObject({
 				properties: {
+					CSS: {
+						get: () => {
+							this.ensureOpen();
+							return this.css;
+						},
+					},
 					...Object.fromEntries(
 						["scrollX", "scrollY", "pageXOffset", "pageYOffset"].map((name) => [
 							name,
@@ -377,6 +395,7 @@ export class PageBindings {
 				(error) => lifecycle.fail(error),
 			);
 			this.globals = {
+				CSS: this.css,
 				...(this.storage
 					? {
 							localStorage: this.storage.localStorage,

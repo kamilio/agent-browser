@@ -19,6 +19,7 @@ import { commands } from "./commands.js";
 import { cssBoxProperties } from "./css-box.js";
 import { cssVariableCapabilities } from "./css-variables.js";
 import { inlineDeclarationLimits } from "./document-inline-declarations.js";
+import { pageCssLimits } from "./page-css.js";
 import { interactionStyleCapabilities } from "./css-interaction.js";
 import { documentHitTesting, hitTestCapabilities } from "./hit-testing.js";
 import {
@@ -629,6 +630,12 @@ export class BrowserCommandHost {
 				pageGeometry: false,
 			},
 			cssVariables: cssVariableCapabilities,
+			cssUtilities: {
+				partial: true,
+				escape: true,
+				supports: false,
+				limits: pageCssLimits,
+			},
 			inlineDeclarations: {
 				partial: true,
 				profile: "document-owned-inline-declarations",

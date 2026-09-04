@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Page CSS utility checkpoint: `PAGE-CSS.md` exposes document-owned `CSS.escape()`
+on global and Window bindings. Identifier serialization, primitive conversion,
+independent input/output quotas and owner revocation have native coverage; object
+coercion and `CSS.supports()` remain explicitly unsupported. Escaped identifiers
+drive existing page queries, targeted DOM mutation and shared stylesheet/layout
+matching without broadening selectors. Failed/reentrant publication is covered.
+Fifty-one new native cases pass and all fail on isolated prior HEAD. Focused runs
+pass 197 / four working files and 191 / four isolated files. Full authorized native
+runs pass 9,790 / 273 and 8,644 / 251; both trees pass types/builds, strict two-test
+checks and five-file lint. Approved deletion of a completed reproducible scratch
+snapshot relieves disk pressure; reports, logs and unrelated work remain intact.
+Continue application-facing APIs and compatibility; full CSS namespace/feature
+queries, released-SafeJS, live browser/site/socket/TTY and original acceptance gates
+remain open. No gated probe ran; the denied SafeJS probe remains unrun and the
+complete seven-day browser goal stays active.
+
+### Previous shorthand serialization checkpoint
+
 Shorthand serialization checkpoint: `INLINE-SHORTHAND-SERIALIZATION.md` compacts
 supported border/flex/gap families with preferred candidate ordering, compatible
 priorities and no repeated overlapping components. Unrelated pending groups no
