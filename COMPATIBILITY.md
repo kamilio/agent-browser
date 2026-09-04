@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 generated-summary foundation: `GENERATED-SUMMARIES.md` adds native
+fallback header rendering, distinct generated-target identity, header-only
+geometry and hit metadata without fake DOM children. Activation/default actions,
+focus/tab order, keyboard and semantic/agent publication are not yet wired;
+do not claim end-to-end fallback interaction. Native evidence does not close
+localization, complete UA/shadow/accessibility or runtime/browser gates.
+
 September 4 object-handler correction: `HANDLER-OBJECTS.md` retains assigned
 objects in native handler slots, preserves listener position, skips noncallable
 invocation without property inspection, and keeps primitive clearing and quotas.

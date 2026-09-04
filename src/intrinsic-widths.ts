@@ -399,7 +399,8 @@ function measureScopes(
 			});
 		let height = frame.height;
 		const style = cyclicStyle(node.box ?? initialBoxStyle);
-		if (node.kind === "replaced" && node.intrinsic && node.ref) {
+		const contentReference = node.ref ?? node.generated?.ref;
+		if (node.kind === "replaced" && node.intrinsic && contentReference) {
 			charge();
 			const withCrossHeight = (source: BoxStyle): BoxStyle => {
 				if (frame.definiteHeight === undefined) return source;
@@ -499,7 +500,7 @@ function measureScopes(
 				Object.freeze({
 					...minimum,
 					id: node.id,
-					ref: node.ref,
+					ref: contentReference,
 					containingWidth: 0,
 					containingHeight: height,
 				}),
@@ -509,7 +510,7 @@ function measureScopes(
 				Object.freeze({
 					...maximum,
 					id: node.id,
-					ref: node.ref,
+					ref: contentReference,
 					containingWidth: 0,
 					containingHeight: height,
 				}),

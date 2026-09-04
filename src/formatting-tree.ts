@@ -16,6 +16,10 @@ import { describeControl, type SoftwareControl } from "./control-rendering.js";
 import { summaryDetails } from "./details.js";
 import type { DisclosureMarker } from "./disclosure-marker.js";
 import { bitmapFont } from "./bitmap-font.js";
+import {
+	documentGeneratedControls,
+	type GeneratedControlTarget,
+} from "./generated-controls.js";
 import { resolveBorders } from "./border-box.js";
 import { isFlexDisplay, initialFlexStyle, type FlexStyle } from "./css-flex.js";
 import type { AtomicInlineMetrics } from "./inline-atomic.js";
@@ -75,6 +79,7 @@ export interface FormattingNode {
 	intrinsic?: Readonly<{ width: number; height: number }>;
 	control?: SoftwareControl;
 	marker?: DisclosureMarker;
+	generated?: GeneratedControlTarget;
 }
 interface MutableFormattingNode extends Omit<FormattingNode, "children"> {
 	children: number[];
@@ -351,6 +356,86 @@ export function buildFormattingTree(
 		if (display === "contents" && unusualContents.has(node.tagName)) return [];
 		const children = (asItems = false) => {
 			const result: number[] = [];
+			const generated =
+				node.tagName === "details"
+					? documentGeneratedControls(tree).detailsSummary(id)
+					: undefined;
+			if (generated) {
+				if (depth + 2 > limits.maxDepth)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Generated summary formatting depth limit exceeded",
+					);
+				textCodeUnits += generated.label.length;
+				if (textCodeUnits > limits.maxTextCodeUnits)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Formatting text limit exceeded",
+					);
+				charge(generated.label.length);
+				const typography = styles.text(id);
+				const fontSize = Number.parseFloat(typography["font-size"]);
+				const paint = Object.freeze({
+					...initialPaintStyle,
+					color: styles.paint(id).color,
+				});
+				const content: number[] = [];
+				if (fontSize > 0)
+					content.push(
+						create({
+							kind: "replaced",
+							level: "inline",
+							generated,
+							visible: visibility.visible,
+							typography,
+							paint,
+							box: initialBoxStyle,
+							marker: Object.freeze({
+								type: Object.hasOwn(node.attributes, "open")
+									? "disclosure-open"
+									: "disclosure-closed",
+							}),
+							intrinsic: Object.freeze({
+								width: fontSize,
+								height: (fontSize * bitmapFont.ascent) / bitmapFont.unitsPerEm,
+							}),
+						}),
+					);
+				content.push(
+					create({
+						kind: "text",
+						level: "inline",
+						generated,
+						visible: visibility.visible,
+						text: generated.label,
+						typography,
+						paint,
+					}),
+				);
+				result.push(
+					create(
+						{
+							kind: "block",
+							level: "block",
+							generated,
+							display: "list-item",
+							visible: visibility.visible,
+							typography,
+							paint,
+							box: initialBoxStyle,
+							contentMode: "inline",
+							...(asItems
+								? {
+										flexItem: true,
+										flex: initialFlexStyle,
+										independentContext: true,
+									}
+								: {}),
+						},
+						content,
+					),
+				);
+			}
 			for (const child of node.children)
 				append(result, visit(child, depth + 1, asItems));
 			return result;
@@ -853,7 +938,8 @@ export function resolveFormattingBlockWidths(
 				Math.min(heightOverride, height.maximum ?? Number.POSITIVE_INFINITY),
 			);
 		}
-		if (node.kind === "replaced" && node.intrinsic && node.ref) {
+		const contentReference = node.ref ?? node.generated?.ref;
+		if (node.kind === "replaced" && node.intrinsic && contentReference) {
 			const usedStyle = { ...style };
 			if (frame.intrinsicHeight) {
 				usedStyle.height = "auto";
@@ -891,7 +977,7 @@ export function resolveFormattingBlockWidths(
 				Object.freeze({
 					...replaced,
 					id: node.id,
-					ref: node.ref,
+					ref: contentReference,
 					containingHeight,
 					containingWidth,
 				}),

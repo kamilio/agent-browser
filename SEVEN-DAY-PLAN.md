@@ -1094,6 +1094,23 @@ original browser gates remain open. No gated probe ran; the denied SafeJS probe
 remains unrun. Historical evidence and unrelated pending work stay separate;
 the complete seven-day objective is active.
 
+September 4 generated-summary foundation: `GENERATED-SUMMARIES.md` establishes
+bounded document-owned generated identity, fallback header rendering, separate
+geometry and hit metadata without fake DOM children or host/body aliasing.
+All 18 rendering cases fail on isolated prior HEAD; 20 registry cases additionally
+cover ownership, validity, quotas and close. All 38 new cases pass; matching
+focused runs pass 306 / eight files in both trees. Types/builds, strict checking
+of both new files and eight-file lint pass in both. A native PNG was inspected;
+it is not a reference-browser screenshot. Authorized full native runs pass
+9,233 / 264 isolated files; the working run reports 10,378 passes and the one
+unchanged pending Window-onload expectation failure / 286 files.
+Next: generated click/default actions, focus/tab order, keyboard and semantic/
+agent publication. Visible fallback rendering is not end-to-end interaction.
+Localization, full UA/shadow/accessibility and runtime/browser gates remain open.
+The pending Window-onload test conflict is unchanged. No gated probe ran; the
+denied SafeJS probe remains unrun. Historical evidence and unrelated work stay
+separate; the complete seven-day goal remains active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

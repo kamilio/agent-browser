@@ -3,6 +3,7 @@ import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { resolveInlineEdges } from "./inline-box.js";
 import { documentScrollPosition } from "./document-scroll.js";
+import { documentGeneratedControls } from "./generated-controls.js";
 
 export type UsedStyle = Readonly<Partial<Record<string, number>>>;
 
@@ -133,9 +134,12 @@ export class LayoutGeometry {
 					}),
 				);
 			}
-			if (box.ref)
+			const reference =
+				box.ref ??
+				layout.text.horizontal.formatting.nodes[box.id].generated?.ref;
+			if (reference)
 				append(
-					box.ref,
+					reference,
 					rectangle(
 						box.borderX,
 						box.borderY,
@@ -276,6 +280,25 @@ export class DocumentGeometry {
 	getDocumentRects(id: number): readonly ClientRectangle[] {
 		if (!this.connectedElement(id)) return empty;
 		return this.refresh().getClientRects(this.tree.reference(id));
+	}
+
+	getGeneratedClientRects(reference: string): readonly ClientRectangle[] {
+		if (this.closed)
+			throw new AgentBrowserError("closed", "Document geometry is closed");
+		documentGeneratedControls(this.tree).resolve(reference);
+		const scroll = documentScrollPosition(this.tree);
+		const rects = this.refresh().getClientRects(reference);
+		if (scroll.x === 0 && scroll.y === 0) return rects;
+		return Object.freeze(
+			rects.map((rect) =>
+				rectangle(
+					rect.x - scroll.x,
+					rect.y - scroll.y,
+					rect.width,
+					rect.height,
+				),
+			),
+		);
 	}
 
 	getBoundingClientRect(id: number): ClientRectangle {

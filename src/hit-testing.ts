@@ -37,8 +37,11 @@ export const hitTestCapabilities = Object.freeze({
 	transforms: false,
 	...hitTestLimits,
 });
-interface HitRegion {
+export interface HitTarget {
 	id: number;
+	generated?: string;
+}
+interface HitRegion extends HitTarget {
 	x: number;
 	y: number;
 	width: number;
@@ -74,10 +77,13 @@ export class DocumentHitTesting {
 	}
 
 	elementFromPoint(x: number, y: number): number | null {
-		return this.query(x, y, true)[0] ?? null;
+		return this.query(x, y, true)[0]?.id ?? null;
 	}
 	elementsFromPoint(x: number, y: number): readonly number[] {
-		return Object.freeze(this.query(x, y, false));
+		return Object.freeze(this.query(x, y, false).map((target) => target.id));
+	}
+	targetFromPoint(x: number, y: number): Readonly<HitTarget> | null {
+		return this.query(x, y, true)[0] ?? null;
 	}
 	metrics() {
 		return Object.freeze({
@@ -103,7 +109,7 @@ export class DocumentHitTesting {
 				"Hit-test work limit exceeded",
 			);
 	};
-	private query(x: number, y: number, first: boolean): number[] {
+	private query(x: number, y: number, first: boolean): Readonly<HitTarget>[] {
 		if (this.closed)
 			throw new AgentBrowserError("closed", "Hit testing is closed");
 		if (
@@ -138,15 +144,15 @@ export class DocumentHitTesting {
 		}
 		if (root === undefined) return [];
 		const regions = this.regions ?? this.build();
-		const result: number[] = [];
+		const result: Readonly<HitTarget>[] = [];
 		const seen = new Set<number>();
-		const append = (id: number) => {
+		const append = (id: number, generated?: string) => {
 			if (result.length >= this.limits.maxResults)
 				throw new AgentBrowserError(
 					"resource-limit",
 					"Hit-test result limit exceeded",
 				);
-			result.push(id);
+			result.push(Object.freeze({ id, ...(generated ? { generated } : {}) }));
 			seen.add(id);
 		};
 		for (let index = regions.length - 1; index >= 0; index--) {
@@ -160,10 +166,10 @@ export class DocumentHitTesting {
 				documentY >= region.y + region.height
 			)
 				continue;
-			append(region.id);
+			append(region.id, region.generated);
 			if (first) return result;
 		}
-		if (result.at(-1) !== root) append(root);
+		if (result.at(-1)?.id !== root) append(root);
 		return result;
 	}
 	private build(): readonly HitRegion[] {
@@ -186,6 +192,10 @@ export class DocumentHitTesting {
 			while (current !== null) {
 				this.charge();
 				const node: Readonly<FormattingNode> = nodes[current];
+				if (node.generated) {
+					target = node.generated.owner;
+					break;
+				}
 				if (node.kind === "text" && node.ref) {
 					const source = this.tree.resolve(node.ref);
 					if (source.kind === "text" && source.parent !== null) {
@@ -229,7 +239,17 @@ export class DocumentHitTesting {
 					"resource-limit",
 					"Hit-test region limit exceeded",
 				);
-			regions.push(Object.freeze({ id, x, y, width, height }));
+			const generated = nodes[formattingId].generated?.ref;
+			regions.push(
+				Object.freeze({
+					id,
+					x,
+					y,
+					width,
+					height,
+					...(generated ? { generated } : {}),
+				}),
+			);
 		};
 		for (const item of layoutContentItems(layout, this.charge)) {
 			if (item.kind === "image" || item.kind === "box") {

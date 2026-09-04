@@ -1,5 +1,7 @@
 [
   "src/action-wait.test.ts",
+  "src/generated-controls.test.ts",
+  "src/generated-summary.test.ts",
   "src/handler-object.test.ts",
   "src/toggle-handlers.test.ts",
   "src/fragment-mode.test.ts",

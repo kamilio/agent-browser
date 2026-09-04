@@ -19,6 +19,27 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Generated-summary foundation: `GENERATED-SUMMARIES.md` adds bounded, document-owned
+fallback targets with references distinct from DOM nodes, native labels/markers,
+header-only geometry and generated hit metadata. It preserves real host DOM
+queries, children, text, references and page-facing hit targets. Generated
+availability, identity, quotas, layout budgets, scrolling and overlap/inertness
+are covered by 38 new tests; all 18 rendering cases fail on isolated prior HEAD.
+Focused runs pass 306 / eight files in both trees; types/builds, strict checking
+of both new files and eight-file lint pass in both. A native PNG was inspected,
+not a reference browser. Authorized full native runs pass 9,233 / 264 isolated
+files; the working run reports 10,378 passes and the one unchanged pending
+Window-onload expectation failure / 286 files. Next: wire generated
+targets into click/default actions, focus/tab order, keyboard activation and
+semantic/agent publication. The visible fallback is not yet an actionable
+semantic control. Localization, full UA/shadow/accessibility and original
+runtime/browser gates remain open. The pending Window-onload expectation conflict
+stays unchanged; no gated probe ran and the denied SafeJS probe remains unrun.
+Historical evidence and unrelated work stay separate; the seven-day goal remains
+active.
+
+### Previous object-handler checkpoint
+
 Object-handler checkpoint: `HANDLER-OBJECTS.md` fixes shared handler conversion
 to retain object-valued slots and listener ordering without invoking noncallable
 objects or reading their properties. Reentrant replacements, primitive clearing,

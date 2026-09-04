@@ -834,7 +834,8 @@ function layoutTextContexts(
 				hardBreak(font, node);
 				continue;
 			}
-			if (node.kind !== "text" || !node.ref)
+			const textReference = node.ref ?? node.generated?.ref;
+			if (node.kind !== "text" || !textReference)
 				throw new AgentBrowserError(
 					"unsupported",
 					"Unsupported text formatting content",
@@ -866,7 +867,7 @@ function layoutTextContexts(
 					const token: Token = {
 						...font,
 						formattingId: node.id,
-						ref: node.ref,
+						ref: textReference,
 						offset,
 						codeUnits,
 						character: collapsible ? " " : character,
