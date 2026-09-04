@@ -845,6 +845,19 @@ browser/site/socket/TTY, released-SafeJS and full human/agent arbitration gates
 remain open. No gated probe ran, the denied SafeJS probe remains unrun, and the
 complete seven-day browser objective stays active.
 
+September 4 CSS variable token continuation: `CSS-VARIABLE-TOKENS.md` fixes false
+function detection in hash/at-keyword tokens while retaining legitimate nested
+substitution. Sixteen new cases include false-cycle, fallback, CSSOM and shared
+layout/pixel behavior; twelve reproduce failures before correction. Read-only CSS
+specification checks preserve the current lazy-cycle model. Focused runs pass
+117 / three files in both trees; full authorized native runs pass 9,627 / 268
+working files and 8,474 / 246 isolated files. Both pass types/builds, strict checks
+of the changed test and two-file lint. Historical evidence and unrelated pending
+work remain intact. Continue native style/layout compatibility; full CSSOM,
+released-SafeJS, real browser/site/socket/TTY and original compatibility gates
+remain open. No gated probe ran; the denied SafeJS probe stays unrun and the
+complete seven-day browser objective remains active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

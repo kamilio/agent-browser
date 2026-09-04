@@ -12,6 +12,7 @@ import {
 	substituteVariables,
 } from "./css-variables.js";
 import { rasterizeDocument } from "./document-raster.js";
+import { documentGeometry } from "./document-geometry.js";
 import type { DocumentTree } from "./document.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { InlineStyles } from "./inline-styles.js";
@@ -102,6 +103,70 @@ it.each([
 				() => {},
 			),
 		).toBe(expected);
+	},
+);
+
+it.each([
+	"#var(--self)",
+	"@var(--self)",
+	"#VAR(--self)",
+	"@VAR(--self)",
+	"#\\76 ar(--self)",
+	"@v\\61r(--self)",
+])(
+	"preserves hash and at-keyword tokens without false cycles: %s",
+	(source) => {
+		const parsed = parseVariableValue(source);
+		expect(parsed?.variables).toBe(false);
+		const values = resolve({ "--self": source, "--alias": "var(--self)" });
+		expect(values.get("--self")).toBe(source);
+		expect(values.get("--alias")).toBe(source);
+	},
+);
+
+it.each(["#var", "@var", "#url", "@url"])(
+	"still substitutes real functions inside the block following %s",
+	(prefix) => {
+		const values = resolve({
+			"--value": "20px",
+			"--result": `${prefix}(var(--value))`,
+		});
+		expect(values.get("--result")).toBe(`${prefix}(20px)`);
+	},
+);
+
+it.each(["#/**/", "# ", "@/**/", "@ "])(
+	"keeps a separated delimiter distinct from a real var function: %s",
+	(prefix) => {
+		const values = resolve({
+			"--value": "20px",
+			"--result": `${prefix}var(--value)`,
+		});
+		expect(values.get("--result")).toBe(`${prefix}20px`);
+	},
+);
+
+it.each(["#var", "@var"])(
+	"does not select a fallback for a valid custom value beginning with %s",
+	(prefix) => {
+		const { tree, id, read } = fixture(
+			`#parent{color:red}#target{display:block;--Shape:${prefix}(--Shape);width:var(--Shape,20px);height:20px;border:1px solid red;color:var(--Shape,blue);background:var(--Shape,blue)}`,
+		);
+		expect(read("--Shape")).toBe(`${prefix}(--Shape)`);
+		expect(read("color")).toBe("rgb(255, 0, 0)");
+		expect(documentStyles(tree).box(id()).width).toBe("auto");
+		expect(read("width")).toBe("198px");
+		expect(read("background-color")).toBe("rgba(0, 0, 0, 0)");
+		expect(documentGeometry(tree).getBoundingClientRect(id()).width).toBe(200);
+		const before = rasterizeDocument(tree).image.pixels.slice();
+		const style = new InlineStyles(tree, factory).get(id()) as Style;
+		style.setProperty("--Shape", "40px");
+		expect(read("width")).toBe("40px");
+		expect(documentGeometry(tree).getBoundingClientRect(id()).width).toBe(42);
+		expect(rasterizeDocument(tree).image.pixels).not.toEqual(before);
+		style.setProperty("--Shape", `${prefix}(--Shape)`);
+		expect(read("width")).toBe("198px");
+		expect(rasterizeDocument(tree).image.pixels).toEqual(before);
 	},
 );
 

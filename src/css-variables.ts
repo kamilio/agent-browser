@@ -224,6 +224,22 @@ export function parseVariableValue(
 			}
 			let prefix = "";
 			let functionName = "";
+			if (
+				(character === "#" &&
+					(nameCharacter.test(source[position + 1] ?? "") ||
+						source[position + 1] === "\\")) ||
+				(character === "@" &&
+					nameStart.test(source.slice(position + 1, position + 3)))
+			) {
+				const parsed = identifier(source, position + 1);
+				if (!parsed) {
+					failed = true;
+					break;
+				}
+				literal += source.slice(position, parsed.end);
+				position = parsed.end;
+				continue;
+			}
 			if (nameCharacter.test(character) || character === "\\") {
 				const parsed = identifier(source, position);
 				if (!parsed) {

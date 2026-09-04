@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+CSS variable token checkpoint: `CSS-VARIABLE-TOKENS.md` corrects hash and
+at-keyword consumption before function detection. Literal `#var(...)`/`@var(...)`
+no longer create false dependencies or select incorrect fallbacks; real nested
+functions and separated delimiters still substitute. Sixteen new native cases
+include escaped names, cycles, CSSOM mutation, geometry and raster restoration;
+twelve fail before correction. Current CSS syntax/substitution specifications
+were checked without replacing the existing lazy cycle semantics with an older
+static graph. Focused runs pass 117 / three files in both trees; full authorized
+native runs pass 9,627 / 268 working files and 8,474 / 246 isolated files. Both
+trees pass types/builds, strict checking of the changed test and two-file lint.
+Historical reports and pending unrelated changes remain untouched. Continue
+native style/layout compatibility; pending shorthand CSSOM, full tokenizer,
+released-SafeJS, real browser/site/socket/TTY and original compatibility gates
+remain open. No gated probe ran; the denied SafeJS probe remains unrun and the
+complete seven-day goal stays active.
+
+### Previous local trace review integration checkpoint
+
 Local trace review integration checkpoint: `TRACE-REVIEW-CORE.md` integrates the
 bounded, inert local JSON timeline, public review APIs and shared playground asset
 paths. Stream cleanup no longer waits indefinitely for underlying cancellation;
