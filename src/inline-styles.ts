@@ -3,6 +3,7 @@ import {
 	declarationName,
 	directDeclaration,
 	inlineProperties,
+	inlineDeclarationComponents,
 	parseInlineDeclarations,
 	propertyDeclarations,
 	propertyValue,
@@ -226,11 +227,50 @@ export class InlineStyles {
 		const additions = directDeclaration(name, value, priority !== "");
 		if (!additions.length) return;
 		const previous = this.read(id, state);
-		const entries = previous.map((entry) => ({ ...entry }));
+		const affected = new Set(inlineDeclarationComponents(name));
+		for (const entry of previous) {
+			if (!entry.pending || !entry.important || priority !== "") continue;
+			const components = inlineDeclarationComponents(entry.name);
+			if (
+				components.some((component) => affected.has(component)) &&
+				!components.every((component) => affected.has(component))
+			)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Lowering priority of an unresolved shorthand component is not implemented",
+				);
+		}
+		const pendingOverlap = previous.some(
+			(entry) =>
+				entry.pending &&
+				inlineDeclarationComponents(entry.name).some((component) =>
+					affected.has(component),
+				),
+		);
+		const entries = previous
+			.filter((entry) => {
+				if (
+					entry.pending &&
+					inlineDeclarationComponents(entry.name).every((component) =>
+						affected.has(component),
+					)
+				)
+					return false;
+				if (
+					additions.some((addition) => addition.pending) &&
+					affected.has(entry.name)
+				)
+					return false;
+				return true;
+			})
+			.map((entry) => ({ ...entry }));
 		for (const entry of additions) {
 			const index = entries.findIndex((current) => current.name === entry.name);
 			if (index < 0) entries.push(entry);
-			else entries[index] = entry;
+			else if (pendingOverlap) {
+				entries.splice(index, 1);
+				entries.push(entry);
+			} else entries[index] = entry;
 		}
 		if (
 			entries.length === previous.length &&
@@ -248,6 +288,19 @@ export class InlineStyles {
 	private remove(id: number, state: StyleState, name: string): string {
 		this.checkSize(name);
 		const previous = this.read(id, state);
+		const affected = new Set(inlineDeclarationComponents(name));
+		for (const entry of previous) {
+			if (!entry.pending) continue;
+			const components = inlineDeclarationComponents(entry.name);
+			if (
+				components.some((component) => affected.has(component)) &&
+				!components.every((component) => affected.has(component))
+			)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Removing part of an unresolved shorthand is not implemented",
+				);
+		}
 		const value = propertyValue(previous, name);
 		const names = new Set(
 			propertyDeclarations(previous, name).map((entry) => entry.name),

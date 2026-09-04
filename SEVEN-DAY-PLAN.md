@@ -575,6 +575,19 @@ Native pixel equivalence does not close live rendering or physical input gates;
 custom select/picker and independent runtime/site/socket/TTY acceptance remain
 unfinished. The full browser goal and seven-day window remain active.
 
+September 4 custom-property core checkpoint: `CSS-VARIABLES-CORE.md` promotes
+bounded substitution, inherited scopes, computed winners and native CSSOM reads
+and edits without importing pending border/flex/flow/pointer work. The 42 new
+core cases have 26 failures before integration and pass afterward. Native checks
+pass 9,157 / 251 working-tree files and 6,387 / 190 isolated-core files; focused
+checks pass 249 / six files and isolated 189 / five files. Types/builds, strict
+changed-test checks and nine-file lint pass in both trees while preserving
+original worktree bytes. Raw pending shorthand CSSOM limitations stay explicit.
+Continue border cascade/geometry, then remaining layout/paint/scrolling and
+coordinate promotion. Native host factories/pixels do not close released-runtime,
+live-rendering or physical input gates. Full browser scope and the seven-day
+window remain active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

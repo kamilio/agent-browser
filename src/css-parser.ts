@@ -19,17 +19,26 @@ import {
 	parseTextValue,
 } from "./css-text.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	cssDeclarationColon,
+	customPropertyName,
+	parseVariableValue,
+	splitCssValue,
+	withoutCssComments,
+} from "./css-variables.js";
 
 export type VisibilityProperty = "display" | "visibility";
 export type CssProperty =
 	| VisibilityProperty
 	| CssBoxProperty
 	| CssTextProperty
-	| CssPaintProperty;
+	| CssPaintProperty
+	| `--${string}`;
 export interface CssDeclaration {
 	property: CssProperty;
 	value: string;
 	important: boolean;
+	substitution?: string;
 }
 export interface CssRule {
 	selector: string;
@@ -161,7 +170,7 @@ export function parseCssDeclarations(
 ): CssDeclaration[] {
 	const declarations: CssDeclaration[] = [];
 	for (const statement of cssDeclarationStatements(source, issue)) {
-		const colon = statement.indexOf(":");
+		const colon = cssDeclarationColon(statement);
 		if (colon < 0) {
 			if (withoutComments(statement).trim()) issue("invalid-css-declaration");
 			continue;
@@ -171,14 +180,26 @@ export function parseCssDeclarations(
 				"resource-limit",
 				"CSS declaration limit exceeded",
 			);
-		const property = withoutComments(statement.slice(0, colon))
-			.trim()
-			.toLowerCase();
-		let value = withoutComments(statement.slice(colon + 1))
-			.trim()
-			.toLowerCase();
-		const important = /!\s*important\s*$/.test(value);
-		if (important) value = value.replace(/!\s*important\s*$/, "").trim();
+		const rawProperty = withoutComments(statement.slice(0, colon)).trim();
+		const custom = customPropertyName(rawProperty);
+		const property = custom ?? rawProperty.toLowerCase();
+		const raw = splitCssValue(statement.slice(colon + 1));
+		if (!raw) {
+			issue("unimplemented-or-invalid-css-value");
+			continue;
+		}
+		const { important } = raw;
+		if (custom) {
+			if (parseVariableValue(raw.value))
+				declarations.push({
+					property: custom as `--${string}`,
+					value: raw.value,
+					important,
+				});
+			else issue("unimplemented-or-invalid-css-value");
+			continue;
+		}
+		let value = withoutCssComments(raw.value).trim().toLowerCase();
 		value = value.replace(/[\t\n\f\r ]+/g, " ");
 		if (
 			![
@@ -195,6 +216,28 @@ export function parseCssDeclarations(
 		) {
 			issue("unimplemented-css-property");
 			continue;
+		}
+		if (/var\s*\(|\\/i.test(raw.value)) {
+			const parsed = parseVariableValue(raw.value);
+			if (!parsed) {
+				issue("unimplemented-or-invalid-css-value");
+				continue;
+			}
+			if (parsed.variables) {
+				const targets = parseCssDeclarations(
+					`${property}:initial`,
+					{ rules: 0, declarations: 0, maxRules: 1, maxDeclarations: 1 },
+					issue,
+				);
+				for (const target of targets)
+					declarations.push({
+						property: target.property,
+						value: raw.value,
+						important,
+						substitution: property,
+					});
+				continue;
+			}
 		}
 		if (property === "all" && globals.has(value)) {
 			declarations.push(

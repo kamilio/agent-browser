@@ -11,18 +11,28 @@ import {
 	normalizeLengthMath,
 	splitLengthComponents,
 } from "./css-math.js";
-import { cssDeclarationStatements } from "./css-parser.js";
+import {
+	cssDeclarationStatements,
+	parseCssDeclarations,
+} from "./css-parser.js";
 import {
 	cssTextProperties,
 	isCssTextProperty,
 	parseTextValue,
 } from "./css-text.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	cssDeclarationColon,
+	customPropertyName,
+	parseVariableValue,
+	withoutCssComments,
+} from "./css-variables.js";
 
 export interface InlineDeclaration {
 	name: string;
 	value: string;
 	important: boolean;
+	pending?: boolean;
 }
 
 const wide = new Set(["initial", "inherit", "unset", "revert"]);
@@ -71,7 +81,7 @@ const trim = (value: string) =>
 
 export function declarationName(name: string): string {
 	return name.startsWith("--")
-		? name
+		? (customPropertyName(name) ?? name)
 		: name.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
 }
 
@@ -98,8 +108,8 @@ function tokens(
 		if (source.startsWith("/*", index)) {
 			const end = source.indexOf("*/", index + 2);
 			if (end < 0) break;
+			output += source.slice(index, end + 2);
 			index = end + 1;
-			output += " ";
 			continue;
 		}
 		if (character === '"' || character === "'") quote = character;
@@ -122,7 +132,11 @@ function tokens(
 	if (quote || stack.length) return undefined;
 	let important = false;
 	if (bang >= 0) {
-		if (!/^![\t\n\f\r ]*important[\t\n\f\r ]*$/i.test(output.slice(bang)))
+		if (
+			!/^![\t\n\f\r ]*important[\t\n\f\r ]*$/i.test(
+				withoutCssComments(output.slice(bang)),
+			)
+		)
 			return undefined;
 		important = true;
 		output = output.slice(0, bang);
@@ -132,7 +146,9 @@ function tokens(
 
 function normalize(name: string, source: string): string | undefined {
 	if (name.startsWith("--"))
-		return /^--[\w-]+$/.test(name) && source ? source : undefined;
+		return customPropertyName(name) && parseVariableValue(source)
+			? source || " "
+			: undefined;
 	if (!supported.has(name)) return undefined;
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;
@@ -186,9 +202,31 @@ function normalize(name: string, source: string): string | undefined {
 
 export function expandDeclaration(
 	name: string,
-	source: string,
+	input: string,
 	important: boolean,
 ): InlineDeclaration[] {
+	if (
+		!name.startsWith("--") &&
+		supported.has(name) &&
+		/var\s*\(|\\/i.test(input)
+	) {
+		const parsed = parseVariableValue(input);
+		if (!parsed) return [];
+		if (parsed.variables)
+			return [
+				{
+					name,
+					value: input,
+					important,
+					...(inlineDeclarationComponents(name).length > 1
+						? { pending: true }
+						: {}),
+				},
+			];
+	}
+	const source = name.startsWith("--")
+		? input
+		: withoutCssComments(input).trim();
 	if (name === "background")
 		return (
 			parseBackgroundShorthand(source)?.map(({ property, value }) => ({
@@ -240,9 +278,11 @@ export function parseInlineDeclarations(
 			);
 		const parsed = tokens(statement);
 		if (!parsed) continue;
-		const colon = parsed.value.indexOf(":");
+		const colon = cssDeclarationColon(parsed.value);
 		if (colon < 0) continue;
-		const name = declarationName(trim(parsed.value.slice(0, colon)));
+		const name = declarationName(
+			trim(withoutCssComments(parsed.value.slice(0, colon))),
+		);
 		for (const entry of expandDeclaration(
 			name,
 			trim(parsed.value.slice(colon + 1)),
@@ -266,26 +306,67 @@ export function parseInlineDeclarations(
 	return result;
 }
 
+export function inlineDeclarationComponents(name: string): readonly string[] {
+	if (name === "all")
+		return parseCssDeclarations(
+			"all:initial",
+			{ rules: 0, declarations: 0, maxRules: 1, maxDeclarations: 1 },
+			() => {},
+		).map((entry) => entry.property);
+	return name === "margin" || name === "padding"
+		? sides.map((side) => `${name}-${side}`)
+		: name === "background"
+			? cssBackgroundProperties
+			: [name];
+}
+
 export function propertyDeclarations(
 	entries: InlineDeclaration[],
 	name: string,
 ): InlineDeclaration[] {
-	const names =
-		name === "margin" || name === "padding"
-			? sides.map((side) => `${name}-${side}`)
-			: name === "background"
-				? cssBackgroundProperties
-				: [name];
-	return names.flatMap((wanted) =>
-		entries.filter((entry) => entry.name === wanted),
-	);
+	const names = inlineDeclarationComponents(name);
+	return [
+		...names.flatMap((wanted) =>
+			entries.filter((entry) => entry.name === wanted),
+		),
+		...entries.filter((entry) => entry.name === name && !names.includes(name)),
+	];
+}
+
+function winningEntry(
+	entries: InlineDeclaration[],
+	name: string,
+): InlineDeclaration | undefined {
+	let winner: InlineDeclaration | undefined;
+	for (const entry of entries) {
+		if (
+			entry.name !== name &&
+			!(entry.pending && inlineDeclarationComponents(entry.name).includes(name))
+		)
+			continue;
+		if (!winner || entry.important || !winner.important) winner = entry;
+	}
+	return winner;
 }
 
 export function propertyValue(
 	entries: InlineDeclaration[],
 	name: string,
 ): string {
-	const found = propertyDeclarations(entries, name);
+	const components = inlineDeclarationComponents(name);
+	const pending = entries.find((entry) => entry.name === name && entry.pending);
+	if (
+		pending &&
+		components.every(
+			(component) => winningEntry(entries, component) === pending,
+		)
+	)
+		return pending.value;
+	if (components.some((component) => winningEntry(entries, component)?.pending))
+		return "";
+	const found = propertyDeclarations(entries, name).filter(
+		(entry) => !entry.pending,
+	);
 	if (name !== "margin" && name !== "padding" && name !== "background")
 		return found[0]?.value ?? "";
 	if (
@@ -309,9 +390,18 @@ export function serializeDeclarations(entries: InlineDeclaration[]): string {
 	const output: string[] = [];
 	for (const entry of entries) {
 		if (emitted.has(entry.name)) continue;
+		if (entry.pending) {
+			output.push(
+				`${entry.name}: ${entry.value}${entry.important ? " !important" : ""};`,
+			);
+			continue;
+		}
 		const shorthand = /^(margin|padding|background)-/.exec(entry.name)?.[1];
 		const value =
-			shorthand && !entries.some((candidate) => candidate.name === "all")
+			shorthand &&
+			!entries.some(
+				(candidate) => candidate.name === "all" || candidate.pending,
+			)
 				? propertyValue(entries, shorthand)
 				: "";
 		if (shorthand && value) {

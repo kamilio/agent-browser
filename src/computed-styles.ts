@@ -13,6 +13,7 @@ import type {
 	ScriptHostObjectFactory,
 } from "./script-dom.js";
 import { documentStyles } from "./styles.js";
+import { cssVariableLimits } from "./css-variables.js";
 
 export const computedStyleProperties = Object.freeze(
 	[
@@ -72,6 +73,7 @@ export function resolvedStyleValue(
 		return values.join(" ");
 	}
 	const styles = documentStyles(tree);
+	if (name.startsWith("--")) return styles.custom(id, name);
 	if (name === "display" || name === "visibility") return styles.get(id)[name];
 	if (isCssBoxProperty(name)) {
 		const computed = styles.box(id)[name];
@@ -154,15 +156,21 @@ export class ComputedStyles {
 		};
 		const names = () => {
 			this.ensureOpen(id);
-			return this.tree.isConnected(id) ? computedStyleProperties : [];
+			return this.tree.isConnected(id)
+				? [
+						...computedStyleProperties,
+						...documentStyles(this.tree).customNames(id),
+					]
+				: [];
 		};
 		const argument = (args: readonly unknown[], minimum = 1) => {
 			this.ensureOpen(id);
 			if (args.length < minimum)
 				throw new TypeError("Missing CSS declaration argument");
-			return scalar(args[0]).replace(/[A-Z]/g, (letter) =>
-				letter.toLowerCase(),
-			);
+			const name = scalar(args[0]);
+			return name.startsWith("--")
+				? name
+				: name.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
 		};
 		const properties: NonNullable<ScriptHostObjectDefinition["properties"]> = {
 			cssText: {
@@ -196,7 +204,8 @@ export class ComputedStyles {
 		const capability = this.factory.createHostObject({
 			properties,
 			indexed: {
-				maxLength: computedStyleProperties.length,
+				maxLength:
+					computedStyleProperties.length + cssVariableLimits.maxProperties,
 				length: () => names().length,
 				get: (index) => names()[index],
 			},

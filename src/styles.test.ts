@@ -226,13 +226,13 @@ it("reports unsupported selectors, values, imports and properties without execut
 		'@import url("/never.css"); #target{filter:blur(1px);display:var(--unknown)} #target:hover{display:none} @supports(display:grid){#target{display:none}}',
 	);
 	expect(styles.get(id("#target")).visible).toBe(true);
+	expect(styles.get(id("#target")).display).toBe("inline");
 	expect(styles.metrics()).toMatchObject({
 		partial: true,
 		layout: false,
 		issues: {
 			"css-import-not-loaded": 1,
 			"unimplemented-css-property": 1,
-			"unimplemented-or-invalid-css-value": 1,
 			"unimplemented-or-invalid-css-selector": 1,
 			"unimplemented-css-at-rule": 1,
 		},

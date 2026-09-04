@@ -19,6 +19,7 @@ export { rangeKeyboardCapabilities } from "./range-keyboard.js";
 export { selectKeyboardCapabilities } from "./select-keyboard.js";
 export { fontRelativeBoxUnits, type BoxFontMetrics } from "./css-box.js";
 export { cssMathCapabilities, cssMathLimits } from "./css-math.js";
+export { cssVariableCapabilities, cssVariableLimits } from "./css-variables.js";
 export {
 	capturePng,
 	capturePdf,

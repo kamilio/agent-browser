@@ -41,6 +41,12 @@ import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import {
+	cssVariableLimits,
+	parseVariableValue,
+	resolveCustomProperties,
+	substituteVariables,
+} from "./css-variables.js";
+import {
 	DocumentQueries,
 	type SelectorSpecificity,
 	compareSpecificity,
@@ -162,6 +168,10 @@ export class DocumentStyles {
 	private textComputed = new Map<number, TextStyle>();
 	private paintSpecified = new Map<number, PaintSpecifiedStyle>();
 	private paintComputed = new Map<number, PaintStyle>();
+	private customComputed = new Map<
+		number,
+		ReadonlyMap<string, string | null>
+	>();
 	private revision = -1;
 	private closed = false;
 	private info = {
@@ -397,6 +407,19 @@ export class DocumentStyles {
 		return this.paintComputed.get(id) as PaintStyle;
 	}
 
+	custom(id: number, name: string): string {
+		this.refresh();
+		const value = this.customComputed.get(id)?.get(name);
+		return value === "" ? " " : (value ?? "");
+	}
+	customNames(id: number): readonly string[] {
+		this.refresh();
+		return [...(this.customComputed.get(id)?.entries() ?? [])]
+			.filter(([, value]) => value !== null)
+			.map(([name]) => name)
+			.sort();
+	}
+
 	metrics() {
 		this.refresh();
 		return Object.freeze({
@@ -407,6 +430,7 @@ export class DocumentStyles {
 			textFont: "Agent Mono",
 			paintProperties: cssPaintProperties,
 			paintColorSpace: "srgb-8bit",
+			customProperties: "unregistered-bounded-substitution",
 			boxValues: "computed-subset-not-used-geometry",
 			layout: false,
 			viewport: this.viewport,
@@ -427,6 +451,7 @@ export class DocumentStyles {
 		this.textComputed.clear();
 		this.paintSpecified.clear();
 		this.paintComputed.clear();
+		this.customComputed.clear();
 		this.queries.close();
 		this.unregister();
 	}
@@ -466,6 +491,7 @@ export class DocumentStyles {
 		this.textComputed.clear();
 		this.paintSpecified.clear();
 		this.paintComputed.clear();
+		this.customComputed.clear();
 		const issues: Record<string, number> = { ...this.loadIssues };
 		const issue = (code: string) => {
 			issues[code] = (issues[code] ?? 0) + 1;
@@ -625,6 +651,69 @@ export class DocumentStyles {
 			apply(node.id, declarations, [0, 0, 0], true, order);
 			order += declarations.length;
 		}
+		const customComputed = new Map<
+			number,
+			ReadonlyMap<string, string | null>
+		>();
+		const emptyCustom = new Map<string, string | null>();
+		let retainedBindings = 0;
+		let retainedCodeUnits = 0;
+		for (const node of nodes) {
+			const properties = winners.get(node.id);
+			const specified = new Map<string, string>();
+			for (const [name, winner] of properties ?? []) {
+				charge(1);
+				if (name.startsWith("--"))
+					specified.set(name, winner.declaration.value);
+			}
+			const parent =
+				node.parent === null
+					? emptyCustom
+					: (customComputed.get(node.parent) ?? emptyCustom);
+			const values = resolveCustomProperties(specified, parent, charge);
+			if (values !== parent) {
+				retainedBindings += values.size;
+				for (const [name, value] of values)
+					retainedCodeUnits += name.length + (value?.length ?? 0);
+				if (
+					retainedBindings > cssVariableLimits.maxRetainedBindings ||
+					retainedCodeUnits > cssVariableLimits.maxRetainedCodeUnits
+				)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"CSS variable retention limit exceeded",
+					);
+			}
+			customComputed.set(node.id, values);
+			for (const [name, winner] of properties ?? []) {
+				const original = winner.declaration;
+				if (!original.substitution) continue;
+				const parsed = parseVariableValue(original.value, charge);
+				const substituted = parsed
+					? substituteVariables(
+							parsed,
+							(key) => values.get(key) ?? null,
+							charge,
+						)
+					: null;
+				const resolved =
+					substituted === null
+						? undefined
+						: parseCssDeclarations(
+								`${original.substitution}:${substituted}`,
+								{ rules: 0, declarations: 0, maxRules: 1, maxDeclarations: 1 },
+								() => {},
+							).find(
+								(declaration) =>
+									declaration.property === name && !declaration.substitution,
+							);
+				winner.declaration = {
+					property: name,
+					value: resolved?.value ?? "unset",
+					important: original.important,
+				};
+			}
+		}
 		const boxSpecified = new Map<number, BoxSpecifiedStyle>();
 		const textSpecified = new Map<number, TextSpecifiedStyle>();
 		const paintSpecified = new Map<number, PaintSpecifiedStyle>();
@@ -679,6 +768,7 @@ export class DocumentStyles {
 		this.boxSpecified = boxSpecified;
 		this.textSpecified = textSpecified;
 		this.paintSpecified = paintSpecified;
+		this.customComputed = customComputed;
 		this.info = {
 			rules: budget.rules,
 			declarations: budget.declarations,

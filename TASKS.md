@@ -19,6 +19,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+CSS custom-property core checkpoint: `CSS-VARIABLES-CORE.md` promotes the pending
+bounded helper and focused authored/cascade/computed/inline-CSSOM integration.
+Names remain case-sensitive; inheritance, fallbacks, evaluated cycles and invalid
+computed winners feed the existing geometry/paint/math owners. The 42 new core
+cases have 26 failures on HEAD with only the helper and all pass after promotion.
+Focused checks pass 249 / six files; isolated focused checks pass 189 / five files.
+Full native validation passes 9,157 / 251 files; the isolated core tree passes
+6,387 / 190 available files. Types/builds, strict changed-test checks and nine-file
+lint pass in both trees. Original source/test worktree bytes remain unchanged;
+unrelated border/flex/flow/pointer and selector changes stay outside this commit.
+Raw unresolved shorthand CSSOM slots retain their explicit serialization and
+partial-mutation limits; native factories/pixels are not runtime/browser parity.
+Next promote border cascade/geometry, then remaining layout/paint/scrolling and
+corrected coordinate adapters. Standard pending-substitution CSSOM slots, custom
+select presentation/pickers, complete multiple selection, modal/flat-tree inertness
+and broad site/runtime/UI compatibility remain open. No gated probe ran; the
+denied SafeJS probe remains unrun and the full seven-day goal stays active.
+
+### Previous CSS math core checkpoint
+
 CSS math core checkpoint: `CSS-MATH-CORE.md` promotes the pending finite
 length-math helper with focused box/inline declarations, font-basis ownership,
 used-length and indefinite-height integration. Existing source worktree bytes
