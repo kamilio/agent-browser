@@ -1,5 +1,4 @@
 import { bitmapFont, bitmapGlyph } from "./bitmap-font.js";
-import { paintSolidBorders } from "./border-raster.js";
 import { transparentColor } from "./css-color.js";
 import { initialPaintStyle, paintBackground } from "./css-paint.js";
 import { LayoutGeometry } from "./document-geometry.js";
@@ -7,11 +6,15 @@ import { documentImages } from "./document-images.js";
 import {
 	type DocumentLayout,
 	type DocumentLayoutOptions,
+	type DocumentBox,
 	layoutDocument,
 } from "./document-layout.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { layoutNumber } from "./layout-values.js";
+import { layoutContentItems } from "./layout-paint-order.js";
+import { rasterizeControl } from "./control-rendering.js";
+import { paintSolidBorders } from "./border-raster.js";
 import {
 	type RasterImage,
 	type Rgba,
@@ -50,9 +53,11 @@ export interface DocumentRaster {
 		blankGlyphs: number;
 		transparentGlyphs: number;
 		paintedBackgrounds: number;
-		borderPixels: number;
 		inlineFragments: number;
 		paintedImages: number;
+		paintedControls: number;
+		borderPixels: number;
+		clippedControls: number;
 		clippedImages: number;
 	}>;
 }
@@ -130,7 +135,12 @@ function paintDocumentLayout(
 	const viewport = layout.text.horizontal.formatting.viewport;
 	let clip =
 		options.clip === undefined
-			? { x: 0, y: 0, width: viewport.width, height: viewport.height }
+			? {
+					x: 0,
+					y: 0,
+					width: viewport.width,
+					height: viewport.height,
+				}
 			: options.clip;
 	if (options.element !== undefined) {
 		if (typeof options.element !== "string" || options.clip !== undefined)
@@ -192,9 +202,11 @@ function paintDocumentLayout(
 		blankGlyphs: 0,
 		transparentGlyphs: 0,
 		paintedBackgrounds: 0,
-		borderPixels: 0,
 		inlineFragments: 0,
 		paintedImages: 0,
+		paintedControls: 0,
+		borderPixels: 0,
+		clippedControls: 0,
 		clippedImages: 0,
 	};
 	const charge = (units = 1) => {
@@ -211,18 +223,6 @@ function paintDocumentLayout(
 	const images = new Map(
 		layout.text.horizontal.images.map((entry) => [entry.id, entry]),
 	);
-	const paintOrder = new Int32Array(nodes.length);
-	let order = 0;
-	const pending = [layout.text.horizontal.formatting.root];
-	while (pending.length) {
-		charge();
-		const id = pending.pop() as number;
-		paintOrder[id] = order++;
-		for (let index = nodes[id].children.length - 1; index >= 0; index--) {
-			charge();
-			pending.push(nodes[id].children[index]);
-		}
-	}
 	const drawBackground = (
 		originX: number,
 		originY: number,
@@ -284,7 +284,11 @@ function paintDocumentLayout(
 					suppressed.add(tree.reference(body));
 				}
 			}
-			if (canvasSource !== undefined && styles.get(canvasSource).displayed)
+			if (
+				canvasSource !== undefined &&
+				styles.get(canvasSource).displayed &&
+				styles.get(canvasSource).display !== "contents"
+			)
 				canvasColor =
 					sourcePaint["background-color"] === "currentcolor"
 						? rootPaint.color
@@ -296,11 +300,11 @@ function paintDocumentLayout(
 		color: canvasColor,
 	});
 	drawBackground(clip.x, clip.y, image.width, image.height, canvasColor);
-	for (const box of layout.boxes) {
+	const paintBox = (box: Readonly<DocumentBox>) => {
 		charge();
 		const node = nodes[box.id];
-		if (!node.visible || !node.paint || node.kind === "replaced") continue;
-		if (!(box.ref && suppressed.has(box.ref)))
+		if (!node.visible || !node.paint || node.kind === "replaced") return;
+		if (!box.ref || !suppressed.has(box.ref))
 			drawBackground(
 				box.borderX,
 				box.borderY,
@@ -318,7 +322,7 @@ function paintDocumentLayout(
 			node.paint,
 			charge,
 		);
-	}
+	};
 	const paintGlyph = (glyph: Readonly<TextGlyph>, contentY: number) => {
 		charge();
 		if (!glyph.visible) {
@@ -372,8 +376,10 @@ function paintDocumentLayout(
 		const used = images.get(id);
 		const node = nodes[id];
 		if (!used || !node.visible) return;
-		const source = documentImages(tree).decoded(tree.resolve(used.ref).id);
-		if (!source)
+		const source = node.control
+			? undefined
+			: documentImages(tree).decoded(tree.resolve(used.ref).id);
+		if (!source && !node.control)
 			throw new AgentBrowserError(
 				"unsupported",
 				"Image resource is no longer available for painting",
@@ -407,95 +413,75 @@ function paintDocumentLayout(
 			used.contentWidth === 0 ||
 			used.contentHeight === 0
 		) {
-			metrics.clippedImages++;
+			if (node.control) metrics.clippedControls++;
+			else metrics.clippedImages++;
 			return;
 		}
 		charge(Math.ceil(right - left + 1) * Math.ceil(bottom - top + 1) * 4);
 		paintRasterImage(
 			image,
-			source.image,
+			node.control
+				? rasterizeControl(
+						node.control,
+						used.contentWidth,
+						used.contentHeight,
+						node.paint ?? initialPaintStyle,
+						charge,
+					)
+				: (source as NonNullable<typeof source>).image,
 			originX,
 			originY,
 			used.contentWidth,
 			used.contentHeight,
 		);
-		metrics.paintedImages++;
+		if (node.control) metrics.paintedControls++;
+		else metrics.paintedImages++;
 	};
-	const groups = [
-		...layout.contexts.map((context, contextIndex) => ({
-			id: context.id,
-			contextIndex,
-		})),
-		...layout.boxes
-			.filter((box) => nodes[box.id].kind === "replaced")
-			.map((box) => ({ id: box.id, box })),
-	].sort((left, right) => {
-		charge();
-		return paintOrder[left.id] - paintOrder[right.id];
-	});
-	for (const group of groups) {
-		charge();
-		if ("box" in group) {
-			paintImage(group.id, group.box.borderX, group.box.borderY);
+	for (const item of layoutContentItems(layout, charge)) {
+		if (item.kind === "box") {
+			paintBox(item.box);
 			continue;
 		}
-		const contextIndex = group.contextIndex;
-		const context = layout.contexts[contextIndex];
-		const glyphs = layout.text.contexts[contextIndex].glyphs;
-		charge();
-		for (const line of context.lines) {
-			charge();
-			charge(line.fragmentEnd - line.fragmentStart);
-			const fragments = context.fragments
-				.slice(line.fragmentStart, line.fragmentEnd)
-				.sort((left, right) => {
-					charge();
-					return paintOrder[left.formattingId] - paintOrder[right.formattingId];
-				});
-			let glyphIndex = line.glyphStart;
-			for (const fragment of fragments) {
-				charge();
-				while (
-					glyphIndex < line.glyphEnd &&
-					paintOrder[glyphs[glyphIndex].formattingId] <
-						paintOrder[fragment.formattingId]
-				)
-					paintGlyph(glyphs[glyphIndex++], context.contentY);
-				const node = nodes[fragment.formattingId];
-				if (node.kind === "replaced") {
-					paintImage(node.id, fragment.x, fragment.y);
-					continue;
-				}
-				if (
-					node.kind !== "inline" ||
-					!node.visible ||
-					!node.paint ||
-					(!paintBackground(node.paint)[3] && !fragment.borders)
-				)
-					continue;
-				metrics.inlineFragments++;
-				drawBackground(
-					fragment.x,
-					fragment.y,
-					fragment.width,
-					fragment.height,
-					paintBackground(node.paint),
-				);
-				if (fragment.borders)
-					metrics.borderPixels += paintSolidBorders(
-						image,
-						fragment.x - clip.x,
-						fragment.y - clip.y,
-						fragment.width,
-						fragment.height,
-						fragment.borders,
-						node.paint,
-						charge,
-					);
-			}
-			for (let index = glyphIndex; index < line.glyphEnd; index++)
-				paintGlyph(glyphs[index], context.contentY);
+		if (item.kind === "image") {
+			paintImage(item.box.id, item.box.borderX, item.box.borderY);
+			continue;
 		}
+		if (item.kind === "glyph") {
+			paintGlyph(item.glyph, item.contentY);
+			continue;
+		}
+		const fragment = item.fragment;
+		const node = nodes[fragment.formattingId];
+		if (node.kind === "replaced") {
+			paintImage(node.id, fragment.x, fragment.y);
+			continue;
+		}
+		if (
+			node.kind !== "inline" ||
+			!node.visible ||
+			!node.paint ||
+			(!paintBackground(node.paint)[3] && !fragment.borders)
+		)
+			continue;
+		metrics.inlineFragments++;
+		drawBackground(
+			fragment.x,
+			fragment.y,
+			fragment.width,
+			fragment.height,
+			paintBackground(node.paint),
+		);
+		if (fragment.borders)
+			metrics.borderPixels += paintSolidBorders(
+				image,
+				fragment.x - clip.x,
+				fragment.y - clip.y,
+				fragment.width,
+				fragment.height,
+				fragment.borders,
+				node.paint,
+				charge,
+			);
 	}
 	return Object.freeze({
 		stage: "normal-flow-text-raster" as const,

@@ -629,6 +629,19 @@ flex reflow/placement and shared paint ordering, then relative positioning,
 scrolling and coordinate adapters. Full browser scope, custom select presentation
 and all independent runtime/site/UI acceptance gates remain open.
 
+September 4 shared page-layout checkpoint: `LAYOUT-CORE.md` integrates intrinsic
+measurement, nested/wrapped page flex, atomic-inline layout, relative translation,
+stacking-aware painting and software control boxes through the shared document
+pipeline. All 33 new cases fail on prior HEAD and pass after integration; six
+unchanged suites add 439 checks. Full native runs pass 9,314 / 255 working-tree
+files and 7,144 / 201 isolated-core files. Expanded checks pass 652 / 14 and
+isolated 651 / 14; types/builds, strict changed-test checks and 42-file lint pass.
+Original source/test bytes and historical reports remain intact. Coordinate and
+scroll-dependent suites are not presented as isolated acceptance; scrolling origins,
+offsets and corrected pointer integration are next. Rich/custom controls, pickers,
+full layout compatibility and independent runtime/site/UI gates remain open.
+No gated probe ran. The full browser scope and seven-day continuation remain active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

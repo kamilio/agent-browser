@@ -115,6 +115,7 @@ export function resolveReplacedSize(
 	style: BoxStyle,
 	containingWidth: number,
 	containingHeight: number | null,
+	preserveAspectRatio = true,
 ): Readonly<ReplacedSize> {
 	layoutNumber(intrinsicWidth);
 	layoutNumber(intrinsicHeight);
@@ -165,7 +166,10 @@ export function resolveReplacedSize(
 		Math.max(minimumHeight, Math.min(maximumHeight, value));
 	let contentWidth = intrinsicWidth;
 	let contentHeight = intrinsicHeight;
-	if (preferredWidth !== null) {
+	if (!preserveAspectRatio) {
+		contentWidth = clampWidth(preferredWidth ?? intrinsicWidth);
+		contentHeight = clampHeight(vertical.preferred ?? intrinsicHeight);
+	} else if (preferredWidth !== null) {
 		contentWidth = clampWidth(preferredWidth);
 		contentHeight = clampHeight(
 			vertical.preferred ?? (contentWidth * intrinsicHeight) / intrinsicWidth,

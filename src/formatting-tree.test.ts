@@ -276,7 +276,7 @@ it("handles ordinary breaks and the explicit unusual-element contents profile", 
 	expect(result.issues).toEqual({});
 });
 
-it.each(["flex", "grid", "table", "inline-block", "inline-flex", "list-item"])(
+it.each(["flex", "grid", "table", "inline-table", "inline-flex", "list-item"])(
 	"defers %s rather than normalizing an unsupported layout into fake blocks",
 	(display) => {
 		const { tree, ref } = fixture(
@@ -288,16 +288,22 @@ it.each(["flex", "grid", "table", "inline-block", "inline-flex", "list-item"])(
 		).toMatchObject({
 			kind: "deferred",
 			deferredReason: "display-layout-not-supported",
-			children: [],
 		});
-		expect(result.nodes.some((node) => node.ref === ref("#inside"))).toBe(
-			false,
-		);
+		const container = result.nodes.find((node) => node.ref === ref("#outer"));
+		const child = result.nodes.find((node) => node.ref === ref("#inside"));
+		if (display === "flex" || display === "inline-flex") {
+			expect(container?.contentMode).toBe("flex");
+			expect(container?.children).toEqual([child?.id]);
+			expect(child).toMatchObject({ kind: "block", flexItem: true });
+		} else {
+			expect(container?.children).toEqual([]);
+			expect(child).toBeUndefined();
+		}
 		expect(() => resolveDocumentBlockWidths(tree)).toThrow("issue-free");
 	},
 );
 
-it.each(["input", "button", "img", "details", "fieldset", "svg", "math"])(
+it.each(["img", "details", "fieldset", "svg", "math"])(
 	"defers special %s element layout without pretending to know intrinsic size",
 	(tag) => {
 		const { tree, id } = fixture("<main></main>");

@@ -306,6 +306,19 @@ export function controlChecked(tree: DocumentTree, id: number) {
 	return node.control.checked ?? Object.hasOwn(node.attributes, "checked");
 }
 
+export function controlShowsPlaceholder(
+	tree: DocumentTree,
+	id: number,
+): boolean {
+	const node = tree.get(id);
+	return (
+		Object.hasOwn(node.attributes, "placeholder") &&
+		(node.tagName === "textarea" ||
+			(node.tagName === "input" && textTypes.has(inputType(node)))) &&
+		controlValue(tree, id) === ""
+	);
+}
+
 export function controlValue(tree: DocumentTree, id: number): string {
 	const node = tree.get(id);
 	if (node.tagName === "select") {

@@ -13,6 +13,10 @@ import {
 } from "./css-border.js";
 
 export const cssBoxProperties = Object.freeze([
+	"top",
+	"right",
+	"bottom",
+	"left",
 	...borderWidthProperties,
 	...borderStyleProperties,
 	"width",
@@ -37,6 +41,7 @@ export type BoxSpecifiedStyle = Readonly<
 	Partial<Record<CssBoxProperty, string>>
 >;
 const properties = new Set<string>(cssBoxProperties);
+const insets = new Set<string>(["top", "right", "bottom", "left"]);
 const wide = new Set(["initial", "inherit", "unset", "revert"]);
 const length =
 	/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|em|rem|cm|mm|q|in|pt|pc|vw|vh|vmin|vmax|%)?$/;
@@ -103,7 +108,7 @@ function normalize(
 	if (
 		!Number.isFinite(number) ||
 		(!parsed[2] && number !== 0) ||
-		(number < 0 && !property.startsWith("margin-"))
+		(number < 0 && !property.startsWith("margin-") && !insets.has(property))
 	)
 		return;
 	return `${number}${parsed[2] ?? "px"}`;
@@ -205,7 +210,7 @@ export function computeBoxStyle(
 			value = computeLengthMath(
 				value,
 				unitFactor,
-				property.startsWith("margin-"),
+				property.startsWith("margin-") || insets.has(property),
 			);
 		const parsed = length.exec(value);
 		if (!parsed || parsed[2] === "%") {

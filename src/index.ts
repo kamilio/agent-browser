@@ -21,6 +21,39 @@ export { fontRelativeBoxUnits, type BoxFontMetrics } from "./css-box.js";
 export { cssMathCapabilities, cssMathLimits } from "./css-math.js";
 export { cssVariableCapabilities, cssVariableLimits } from "./css-variables.js";
 export { borderCapabilities } from "./border-box.js";
+export {
+	measureIntrinsicWidths,
+	intrinsicWidthLimits,
+	type IntrinsicWidth,
+	type IntrinsicWidthOptions,
+} from "./intrinsic-widths.js";
+export {
+	resolveFlexMainSizes,
+	flexMainLimits,
+	type FlexMainConstraints,
+	type FlexMainOptions,
+	type MeasuredFlexMainItem,
+} from "./flex-main.js";
+export {
+	reflowFlexItems,
+	flexReflowLimits,
+	type FlexReflowOptions,
+} from "./flex-reflow.js";
+export {
+	layoutFlexContainer,
+	flexLayoutLimits,
+	type FlexContainerConstraints,
+	type FlexContainerLayoutOptions,
+} from "./flex-layout.js";
+export {
+	controlRenderingCapabilities,
+	controlRenderingLimits,
+} from "./control-rendering.js";
+export {
+	atomicInlineCapabilities,
+	type AtomicInlineMetrics,
+} from "./inline-atomic.js";
+
 export { flowStyleCapabilities } from "./css-flow.js";
 export { flexStyleCapabilities } from "./css-flex.js";
 export {

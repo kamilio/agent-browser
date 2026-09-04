@@ -19,6 +19,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Shared page-layout core checkpoint: `LAYOUT-CORE.md` promotes intrinsic text/box
+measurement, coordinated page flex reflow/placement, atomic inline sizing, relative
+translation, stacking-aware paint ordering and software replaced controls. Page
+geometry/raster/PDF now consume the shared pipeline. All 33 new cases fail on
+pre-integration HEAD and pass after integration; six unchanged suites add 439
+checks. Full native validation passes 9,314 / 255 working-tree files and 7,144 /
+201 isolated-core files; expanded checks pass 652 / 14 and isolated 651 / 14.
+Types/builds, strict changed-test checks and 42-file lint pass in both trees.
+Original source/test bytes and historical reports are preserved. Matching obsolete
+layout rejection/enumeration assertions are updated rather than retaining false
+unsupported claims. Scrolling origins and corrected pointer adapters remain outside
+the commit; coordinate-dependent control tests stay pending, with native state
+presentation covered separately. Next integrate scrolling/offset ownership and
+coordinate routing against this pipeline. Full positioning/clipping/float/grid/table
+layout, broader fonts/writing modes, custom select/rich controls/pickers, pending
+CSSOM breadth and independent runtime/site/UI gates remain open. No gated probe
+ran; the denied SafeJS probe remains unrun and the full seven-day goal stays active.
+
+### Previous flex style/main-axis core checkpoint
+
 Flex style/main-axis core checkpoint: `FLEX-CORE.md` promotes twelve flex
 longhands, three shorthand owners, inherited/font-relative computation and the
 bounded measured main-axis solver. Its existing 161-case suite is preserved;

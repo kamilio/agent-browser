@@ -80,7 +80,7 @@ afterEach(() => {
 
 it("exposes live sorted longhand names, aliases and empty computed cssText", () => {
 	const { style } = fixture("#target{background-color: red}");
-	expect(style.length).toBe(61);
+	expect(style.length).toBe(65);
 	expect(
 		Array.from({ length: style.length }, (_value, index) => style[index]),
 	).toEqual(computedStyleProperties);
@@ -96,12 +96,14 @@ it("exposes live sorted longhand names, aliases and empty computed cssText", () 
 
 it("resolves cascade, inheritance, currentcolor and alpha without layout", () => {
 	const { tree, style } = fixture(
-		"main{color:rebeccapurple} #target{display:flex;background-color:currentcolor}",
+		"main{color:rebeccapurple} #target{display:flex;flex-direction:column;flex-wrap:wrap;position:absolute;background-color:currentcolor}",
 	);
 	expect(style.color).toBe("rgb(102, 51, 153)");
 	expect(style.backgroundColor).toBe(style.color);
 	expect(documentGeometry(tree).metrics().builds).toBe(0);
-	expect(() => style.width).toThrow(/supported formatting profile/i);
+	expect(() => style.width).toThrowError(
+		expect.objectContaining({ code: "unsupported" }),
+	);
 });
 
 it("returns used block widths, heights, margins and padding, not authored percentages", () => {
@@ -194,7 +196,7 @@ it("saved declarations empty on detach and repopulate on reattachment", () => {
 	expect(style.item(0)).toBe("");
 	tree.append(parent, id);
 	expect(style.width).toBe("200px");
-	expect(style.length).toBe(61);
+	expect(style.length).toBe(65);
 });
 
 it("returns fresh objects, not cached mutable style identity", () => {

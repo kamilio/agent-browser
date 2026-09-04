@@ -45,12 +45,12 @@ export const flexStyleCapabilities = Object.freeze({
 	omittedShorthandBasis: "0%",
 	numericFunctions: false,
 	canonicalShorthandSerialization: false,
-	layout: false,
-	layoutProfile: "measured-main-axis-kernel-only",
-	nestedFlex: false,
-	column: false,
-	columnWrap: false,
-	inlineFlex: false,
+	layout: true,
+	layoutProfile: "block-and-inline-flex-containers",
+	nestedFlex: true,
+	column: true,
+	columnWrap: true,
+	inlineFlex: true,
 });
 const properties = new Set<string>(cssFlexProperties);
 const wide = new Set(["initial", "inherit", "unset", "revert"]);

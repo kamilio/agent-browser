@@ -10,9 +10,18 @@ import {
 	resolveReplacedSize,
 } from "./replaced-box.js";
 import { AgentBrowserError } from "./errors.js";
-import { resolveBorders } from "./border-box.js";
 import { layoutNumber } from "./layout-values.js";
 import { documentStyles } from "./styles.js";
+import { describeControl, type SoftwareControl } from "./control-rendering.js";
+import { resolveBorders } from "./border-box.js";
+import { isFlexDisplay, initialFlexStyle, type FlexStyle } from "./css-flex.js";
+import type { AtomicInlineMetrics } from "./inline-atomic.js";
+import {
+	layoutFormattingAtomicInline,
+	type AtomicInlineLayout,
+	type AtomicInlineResolutionContext,
+} from "./inline-atomic-layout.js";
+import { isAtomicInline } from "./inline-atomic.js";
 
 export interface FormattingLimits {
 	maxOwnedNodes: number;
@@ -45,17 +54,23 @@ export interface FormattingNode {
 	children: readonly number[];
 	ref?: string;
 	display?: string;
+	position?: "relative";
+	zIndex?: number;
 	visible: boolean;
 	text?: string;
 	box?: BoxStyle;
 	typography?: TextStyle;
 	paint?: PaintStyle;
-	contentMode?: "blocks" | "inline";
+	contentMode?: "blocks" | "inline" | "flex";
+	flex?: FlexStyle;
+	flexItem?: boolean;
+	orderModifiedChildren?: readonly number[];
 	independentContext?: boolean;
 	fragmentIndex?: number;
 	fragmentCount?: number;
 	deferredReason?: string;
 	intrinsic?: Readonly<{ width: number; height: number }>;
+	control?: SoftwareControl;
 }
 interface MutableFormattingNode extends Omit<FormattingNode, "children"> {
 	children: number[];
@@ -248,7 +263,7 @@ export function buildFormattingTree(
 		nodes[parent].contentMode = "blocks";
 		for (const child of normalized) nodes[child].parent = parent;
 	};
-	const visit = (id: number, depth: number): number[] => {
+	const visit = (id: number, depth: number, flexItem = false): number[] => {
 		charge();
 		if (depth > limits.maxDepth)
 			throw new AgentBrowserError(
@@ -284,11 +299,27 @@ export function buildFormattingTree(
 		if (node.kind !== "element") return [];
 		const ref = tree.reference(id);
 		const flow = styles.flow(id);
-		if (flow.position !== "static") issue("position-layout-not-supported");
+		if (flow.position !== "static" && flow.position !== "relative")
+			issue("position-layout-not-supported");
 		if (flow.float !== "none") issue("float-layout-not-supported");
 		if (flow.clear !== "none") issue("clear-layout-not-supported");
 		if (flow["overflow-x"] !== "visible" || flow["overflow-y"] !== "visible")
 			issue("overflow-layout-not-supported");
+		const positionFields = {
+			...(flow.position === "relative"
+				? { position: "relative" as const }
+				: {}),
+			...(flow["z-index"] !== "auto" &&
+			(flow.position === "relative" || flexItem)
+				? { zIndex: Number(flow["z-index"]) }
+				: {}),
+		};
+		const itemFields = {
+			...positionFields,
+			...(flexItem
+				? { flexItem: true, flex: styles.flex(id), independentContext: true }
+				: {}),
+		};
 		if (
 			node.attributes.dir !== undefined &&
 			node.attributes.dir.toLowerCase() !== "ltr"
@@ -316,10 +347,10 @@ export function buildFormattingTree(
 				? (rootDisplays[visibility.display] ?? visibility.display)
 				: visibility.display;
 		if (display === "contents" && unusualContents.has(node.tagName)) return [];
-		const children = () => {
+		const children = (asItems = false) => {
 			const result: number[] = [];
 			for (const child of node.children)
-				append(result, visit(child, depth + 1));
+				append(result, visit(child, depth + 1, asItems));
 			return result;
 		};
 		if (
@@ -327,7 +358,79 @@ export function buildFormattingTree(
 			node.tagName !== "svg" &&
 			node.tagName !== "math"
 		)
-			return children();
+			return children(flexItem);
+		if (isFlexDisplay(display) && !deferredElements.has(node.tagName)) {
+			issue("display-layout-not-supported");
+			deferredSubtrees++;
+			const result = create({
+				kind: "deferred",
+				level: display.startsWith("inline") ? "inline" : "block",
+				ref,
+				display,
+				visible: visibility.visible,
+				box: styles.box(id),
+				typography: styles.text(id),
+				paint: styles.paint(id),
+				flex: styles.flex(id),
+				flexItem,
+				independentContext: true,
+				contentMode: "flex",
+				deferredReason: "display-layout-not-supported",
+				...positionFields,
+			});
+			const items: number[] = [];
+			let text: number[] = [];
+			const flush = () => {
+				if (!text.length) return;
+				let content = false;
+				for (const child of text) {
+					const value = nodes[child].text ?? "";
+					charge(value.length + 1);
+					content ||= !/^[\t\n\f\r ]*$/.test(value);
+				}
+				if (content)
+					items.push(
+						create(
+							{
+								kind: "anonymous-block",
+								level: "block",
+								visible: visibility.visible,
+								box: initialBoxStyle,
+								typography: styles.text(id),
+								paint: styles.paint(id),
+								contentMode: "inline",
+								flexItem: true,
+								flex: initialFlexStyle,
+								independentContext: true,
+							},
+							text,
+						),
+					);
+				text = [];
+			};
+			for (const child of children(true)) {
+				charge();
+				if (nodes[child].kind === "text") text.push(child);
+				else {
+					flush();
+					items.push(child);
+				}
+			}
+			flush();
+			nodes[result].children = items;
+			for (const child of items) {
+				charge();
+				nodes[child].parent = result;
+			}
+			nodes[result].orderModifiedChildren = [...items].sort((first, second) => {
+				charge();
+				return (
+					Number(nodes[first].flex?.order ?? 0) -
+					Number(nodes[second].flex?.order ?? 0)
+				);
+			});
+			return [result];
+		}
 		const block = [
 			"block",
 			"block flow",
@@ -335,10 +438,18 @@ export function buildFormattingTree(
 			"block flow-root",
 		].includes(display);
 		const inline = ["inline", "inline flow"].includes(display);
+		const atomicBlock = ["inline-block", "inline flow-root"].includes(display);
+		if (
+			(block || atomicBlock) &&
+			!deferredElements.has(node.tagName) &&
+			styles.flex(id)["align-content"] !== "normal"
+		)
+			issue("block-content-alignment-not-supported");
 		if (node.tagName === "br" && inline)
 			return [
 				create({
 					kind: "break",
+					...positionFields,
 					paint: styles.paint(id),
 					typography: styles.text(id),
 					level: "inline",
@@ -370,10 +481,54 @@ export function buildFormattingTree(
 							width: decoded.image.width,
 							height: decoded.image.height,
 						}),
+						...itemFields,
 					}),
 				];
 		}
-		if (deferredElements.has(node.tagName) || (!block && !inline)) {
+		if (
+			deferredElements.has(node.tagName) ||
+			(!block && !inline && !atomicBlock)
+		) {
+			if (
+				block ||
+				inline ||
+				display === "inline-block" ||
+				display === "inline flow-root"
+			) {
+				const typography = styles.text(id);
+				const control = describeControl(
+					tree,
+					id,
+					Number.parseFloat(typography["font-size"]),
+				);
+				if (control) {
+					charge(control.text.length);
+					textCodeUnits += control.text.length;
+					if (textCodeUnits > limits.maxTextCodeUnits)
+						throw new AgentBrowserError(
+							"resource-limit",
+							"Formatting text limit exceeded",
+						);
+					return [
+						create({
+							kind: "replaced",
+							level: block ? "block" : "inline",
+							ref,
+							display,
+							visible: visibility.visible,
+							box: styles.box(id),
+							paint: styles.paint(id),
+							typography,
+							control,
+							intrinsic: Object.freeze({
+								width: control.width,
+								height: control.height,
+							}),
+							...itemFields,
+						}),
+					];
+				}
+			}
 			const reason = deferredElements.has(node.tagName)
 				? "element-layout-not-supported"
 				: "display-layout-not-supported";
@@ -390,20 +545,24 @@ export function buildFormattingTree(
 					display,
 					visible: visibility.visible,
 					deferredReason: reason,
+					...itemFields,
+					...(flexItem ? { box: styles.box(id) } : {}),
 				}),
 			];
 		}
-		if (block) {
+		if (block || atomicBlock) {
 			const result = create({
 				kind: "block",
-				level: "block",
+				level: atomicBlock ? "inline" : "block",
 				ref,
 				display,
 				visible: visibility.visible,
 				box: styles.box(id),
 				paint: styles.paint(id),
 				typography: styles.text(id),
-				independentContext: id === rootElement || display.includes("flow-root"),
+				independentContext:
+					atomicBlock || id === rootElement || display.includes("flow-root"),
+				...itemFields,
 			});
 			normalizeChildren(result, children());
 			return [result];
@@ -415,6 +574,7 @@ export function buildFormattingTree(
 			const fragment = create(
 				{
 					kind: "inline",
+					...positionFields,
 					paint: styles.paint(id),
 					typography: styles.text(id),
 					box: styles.box(id),
@@ -440,6 +600,8 @@ export function buildFormattingTree(
 		flush();
 		for (const fragment of fragments)
 			nodes[fragment].fragmentCount = fragments.length;
+		if (flow.position === "relative" && fragments.length > 1)
+			issue("relative-block-in-inline-not-supported");
 		return result;
 	};
 	const children: number[] = [];
@@ -454,7 +616,17 @@ export function buildFormattingTree(
 		viewport: Object.freeze({ ...styles.viewport }),
 		nodes: Object.freeze(
 			nodes.map((node) =>
-				Object.freeze({ ...node, children: Object.freeze(node.children) }),
+				Object.freeze({
+					...node,
+					children: Object.freeze(node.children),
+					...(node.orderModifiedChildren
+						? {
+								orderModifiedChildren: Object.freeze(
+									node.orderModifiedChildren,
+								),
+							}
+						: {}),
+				}),
 			),
 		),
 		issues: Object.freeze(issues),
@@ -474,14 +646,21 @@ export interface FormattingBlockWidth extends BlockWidth {
 	containingBlock: number;
 	borderX: number;
 	contentX: number;
+	containingHeight: number | null;
+	contentHeightOverride?: number;
+	contentHeightDefinite?: boolean;
+	intrinsicHeight?: boolean;
 }
 
 export interface DocumentBlockWidths {
-	stage: "normal-flow-horizontal-only";
+	stage: "normal-flow-horizontal-only" | "isolated-block-horizontal-reflow";
 	partial: true;
 	formatting: FormattingTree;
 	widths: readonly Readonly<FormattingBlockWidth>[];
 	images: readonly Readonly<FormattingImageSize>[];
+	atomics?: readonly Readonly<AtomicInlineMetrics>[];
+	atomicLayouts?: readonly Readonly<AtomicInlineLayout>[];
+	metrics: Readonly<{ work: number }>;
 }
 
 export interface FormattingImageSize extends ReplacedSize {
@@ -496,40 +675,176 @@ export function resolveDocumentBlockWidths(
 	options: Partial<FormattingLimits> = {},
 ): Readonly<DocumentBlockWidths> {
 	const formatting = buildFormattingTree(tree, options);
-	if (Object.keys(formatting.issues).length)
+	return resolveFormattingPageWidths(formatting);
+}
+
+export function resolveFormattingPageWidths(
+	formatting: FormattingTree,
+	maxWork = formattingLimits.maxWork,
+	onFlex?: (width: Readonly<FormattingBlockWidth>) => void,
+	context: AtomicInlineResolutionContext = {},
+): Readonly<DocumentBlockWidths> {
+	const flexCount = onFlex
+		? formatting.nodes.filter((node) => node.contentMode === "flex").length
+		: 0;
+	if (
+		Object.entries(formatting.issues).some(
+			([issue, count]) =>
+				issue !== "display-layout-not-supported" ||
+				!onFlex ||
+				count !== flexCount,
+		)
+	)
 		throw new AgentBrowserError(
 			"unsupported",
 			"Document width resolution requires an issue-free supported formatting profile",
 		);
+	return resolveFormattingBlockWidths(
+		formatting,
+		[
+			{
+				id: formatting.root,
+				containingBlock: formatting.root,
+				containingWidth: formatting.viewport.width,
+				containingHeight: formatting.viewport.height,
+				contentX: 0,
+			},
+		],
+		maxWork,
+		false,
+		onFlex,
+		context,
+	);
+}
+
+export interface BlockReflowRoot {
+	id: number;
+	containingBlock: number;
+	containingWidth: number;
+	containingHeight: number | null;
+	contentX: number;
+	usedWidth?: Readonly<BlockWidth>;
+	contentHeightOverride?: number;
+	contentHeightDefinite?: boolean;
+	intrinsicHeight?: boolean;
+}
+
+export function resolveFormattingBlockWidths(
+	formatting: FormattingTree,
+	roots: readonly Readonly<BlockReflowRoot>[],
+	maxWork = formattingLimits.maxWork,
+	isolated = false,
+	onFlex?: (width: Readonly<FormattingBlockWidth>) => void,
+	context: AtomicInlineResolutionContext = {},
+): Readonly<DocumentBlockWidths> {
+	if (
+		!Number.isSafeInteger(maxWork) ||
+		maxWork < 1 ||
+		maxWork > formattingLimits.maxWork
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid block reflow work limit",
+		);
+	let work = 0;
+	const charge = (amount = 1) => {
+		work += amount;
+		if (work > maxWork)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Block reflow work limit exceeded",
+			);
+	};
 	const widths: Readonly<FormattingBlockWidth>[] = [];
 	const images: Readonly<FormattingImageSize>[] = [];
-	const pending = [
-		{
-			id: formatting.root,
-			containingBlock: formatting.root,
-			containingWidth: formatting.viewport.width,
-			containingHeight: formatting.viewport.height as number | null,
-			contentX: 0,
-		},
-	];
+	const atomicLayouts: Readonly<AtomicInlineLayout>[] = [];
+	const pending: Readonly<BlockReflowRoot>[] = [...roots].reverse();
 	while (pending.length) {
+		charge();
 		const frame = pending.pop();
 		if (!frame) break;
 		const node = formatting.nodes[frame.id];
+		if (isAtomicInline(node) && node.id !== context.atomicRoot) {
+			if (!onFlex)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Atomic inline content requires coordinated page layout",
+				);
+			if (work >= maxWork)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Atomic inline width work limit exceeded",
+				);
+			const layout = layoutFormattingAtomicInline(
+				formatting,
+				frame,
+				maxWork - work,
+				context,
+			);
+			charge(layout.metrics.work);
+			atomicLayouts.push(layout);
+			continue;
+		}
+		const flex =
+			!!onFlex && node?.contentMode === "flex" && node.level === "block";
+		if (!node || (node.kind === "deferred" && !flex))
+			throw new AgentBrowserError(
+				"unsupported",
+				"Block reflow requires supported item content",
+			);
 		let containingWidth = frame.containingWidth;
 		let containingHeight = frame.containingHeight;
 		let contentX = frame.contentX;
 		let containingBlock = frame.containingBlock;
 		let replaced: Readonly<ReplacedSize> | undefined;
 		const style = node.box ?? initialBoxStyle;
-		if (node.kind === "replaced" && node.intrinsic && node.ref) {
-			replaced = resolveReplacedSize(
-				node.intrinsic.width,
-				node.intrinsic.height,
+		let heightOverride = frame.contentHeightOverride;
+		if (heightOverride !== undefined) {
+			layoutNumber(heightOverride);
+			const height = resolveHeightConstraints(
 				style,
 				containingWidth,
 				containingHeight,
 			);
+			heightOverride = Math.max(
+				height.minimum,
+				Math.min(heightOverride, height.maximum ?? Number.POSITIVE_INFINITY),
+			);
+		}
+		if (node.kind === "replaced" && node.intrinsic && node.ref) {
+			const usedStyle = { ...style };
+			if (frame.intrinsicHeight) {
+				usedStyle.height = "auto";
+				usedStyle["min-height"] = "0px";
+				usedStyle["max-height"] = "none";
+			}
+			if (frame.usedWidth) {
+				usedStyle.width = `${style["box-sizing"] === "border-box" ? frame.usedWidth.borderBoxWidth : frame.usedWidth.contentWidth}px`;
+				usedStyle["min-width"] = "0px";
+				usedStyle["max-width"] = "none";
+			}
+			if (heightOverride !== undefined) {
+				const height = resolveHeightConstraints(
+					style,
+					containingWidth,
+					containingHeight,
+				);
+				usedStyle.height = `${heightOverride + (style["box-sizing"] === "border-box" ? height.borderTop + height.borderBottom + height.paddingTop + height.paddingBottom : 0)}px`;
+			}
+			replaced = resolveReplacedSize(
+				node.intrinsic.width,
+				node.intrinsic.height,
+				usedStyle,
+				containingWidth,
+				containingHeight,
+				!node.control,
+			);
+			if (frame.usedWidth)
+				replaced = Object.freeze({
+					...replaced,
+					marginLeft: frame.usedWidth.marginLeft,
+					marginRight: frame.usedWidth.marginRight,
+				});
 			images.push(
 				Object.freeze({
 					...replaced,
@@ -541,24 +856,33 @@ export function resolveDocumentBlockWidths(
 			);
 		}
 		if (
+			flex ||
 			node.kind === "block" ||
 			node.kind === "anonymous-block" ||
 			(replaced && node.level === "block")
 		) {
-			const used = resolveBlockWidth(
-				replaced
-					? {
-							...style,
-							width: `${style["box-sizing"] === "border-box" ? replaced.borderBoxWidth : replaced.contentWidth}px`,
-							"min-width": "0px",
-							"max-width": "none",
-						}
-					: style,
-				containingWidth,
-				resolveBorders(style),
+			const used =
+				frame.usedWidth ??
+				resolveBlockWidth(
+					replaced
+						? {
+								...style,
+								width: `${style["box-sizing"] === "border-box" ? replaced.borderBoxWidth : replaced.contentWidth}px`,
+								"min-width": "0px",
+								"max-width": "none",
+							}
+						: style,
+					containingWidth,
+					resolveBorders(style),
+				);
+			const borderX = layoutNumber(
+				contentX + (frame.usedWidth ? 0 : used.marginLeft),
+				true,
 			);
-			const borderX = layoutNumber(contentX + used.marginLeft, true);
-			contentX = layoutNumber(contentX + used.contentOffset, true);
+			contentX = layoutNumber(
+				borderX + used.borderLeft + used.paddingLeft,
+				true,
+			);
 			widths.push(
 				Object.freeze({
 					...used,
@@ -567,17 +891,33 @@ export function resolveDocumentBlockWidths(
 					containingBlock,
 					borderX,
 					contentX,
+					containingHeight,
+					...(frame.intrinsicHeight ? { intrinsicHeight: true } : {}),
+					...(frame.contentHeightDefinite === false
+						? { contentHeightDefinite: false }
+						: {}),
+					...(heightOverride === undefined
+						? {}
+						: { contentHeightOverride: heightOverride }),
 				}),
 			);
 			if (node.kind !== "anonymous-block")
 				containingHeight =
-					replaced?.contentHeight ??
-					resolveHeightConstraints(style, containingWidth, containingHeight)
-						.definite;
+					frame.intrinsicHeight || frame.contentHeightDefinite === false
+						? null
+						: (heightOverride ??
+							replaced?.contentHeight ??
+							resolveHeightConstraints(style, containingWidth, containingHeight)
+								.definite);
 			containingWidth = used.contentWidth;
 			containingBlock = node.id;
 		}
-		for (let index = node.children.length - 1; index >= 0; index--)
+		if (flex) {
+			onFlex?.(widths[widths.length - 1]);
+			continue;
+		}
+		for (let index = node.children.length - 1; index >= 0; index--) {
+			charge();
 			pending.push({
 				id: node.children[index],
 				containingBlock,
@@ -585,12 +925,22 @@ export function resolveDocumentBlockWidths(
 				containingHeight,
 				contentX,
 			});
+		}
 	}
 	return Object.freeze({
-		stage: "normal-flow-horizontal-only" as const,
+		stage: isolated
+			? ("isolated-block-horizontal-reflow" as const)
+			: ("normal-flow-horizontal-only" as const),
 		partial: true as const,
 		formatting,
 		widths: Object.freeze(widths),
 		images: Object.freeze(images),
+		...(atomicLayouts.length
+			? {
+					atomicLayouts: Object.freeze(atomicLayouts),
+					atomics: Object.freeze(atomicLayouts.map((layout) => layout.atomic)),
+				}
+			: {}),
+		metrics: Object.freeze({ work }),
 	});
 }

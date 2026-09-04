@@ -1,18 +1,19 @@
 import { initialBoxStyle } from "./css-box.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { layoutPageDocument } from "./flex-document.js";
+import { applyRelativePositioning } from "./relative-positioning.js";
 import type {
 	FormattingBlockWidth,
 	FormattingNode,
 } from "./formatting-tree.js";
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 import { resolveHeightConstraints } from "./replaced-box.js";
-import {
-	type DocumentTextLayout,
-	type TextContext,
-	type TextGlyph,
-	type TextLayoutOptions,
-	layoutDocumentText,
+import type {
+	DocumentTextLayout,
+	TextContext,
+	TextGlyph,
+	TextLayoutOptions,
 } from "./text-layout.js";
 
 export interface MarginStrut {
@@ -21,6 +22,11 @@ export interface MarginStrut {
 	readonly value: number;
 }
 export interface DocumentBox extends FormattingBlockWidth {
+	flexBaselines?: Readonly<{
+		first: number | null;
+		last: number | null;
+		unsupported: boolean;
+	}>;
 	borderTop: number;
 	borderBottom: number;
 	containingHeight: number | null;
@@ -50,12 +56,17 @@ export interface PositionedTextContext extends TextContext {
 	readonly contentY: number;
 }
 export interface DocumentLayout {
-	stage: "normal-flow-document-layout";
+	stage: "normal-flow-document-layout" | "isolated-block-layout";
 	partial: true;
 	text: DocumentTextLayout;
 	boxes: readonly Readonly<DocumentBox>[];
 	contexts: readonly Readonly<PositionedTextContext>[];
 	flowHeight: number;
+	relativePositions?: readonly Readonly<{
+		id: number;
+		left: number;
+		top: number;
+	}>[];
 	metrics: Readonly<{
 		work: number;
 		boxes: number;
@@ -180,6 +191,30 @@ export function layoutDocument(
 			"invalid-input",
 			"Invalid document layout work limit",
 		);
+	return applyRelativePositioning(
+		layoutPageDocument(tree, maxWork, options.text),
+		maxWork,
+	);
+}
+
+export function layoutFormattingDocument(
+	text: Readonly<DocumentTextLayout>,
+	maxWork: number = documentLayoutLimits.maxWork,
+	isolated = false,
+	flexSizes: ReadonlyMap<
+		number,
+		Readonly<{ naturalContentHeight: number }>
+	> = new Map(),
+): Readonly<DocumentLayout> {
+	if (
+		!Number.isSafeInteger(maxWork) ||
+		maxWork < 1 ||
+		maxWork > documentLayoutLimits.maxWork
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid block layout work limit",
+		);
 	let work = 0;
 	const charge = (units = 1) => {
 		work += units;
@@ -189,7 +224,6 @@ export function layoutDocument(
 				"Document layout work limit exceeded",
 			);
 	};
-	const text = layoutDocumentText(tree, options.text);
 	const formatting = text.horizontal.formatting;
 	const contextsById = new Map(
 		text.contexts.map((context) => {
@@ -206,15 +240,22 @@ export function layoutDocument(
 		charge();
 		const node = formatting.nodes[width.id];
 		const parent = states.get(width.containingBlock);
-		const containingHeight = parent
-			? parent.definite
-			: formatting.viewport.height;
+		const containingHeight = width.containingHeight;
 		const style = node.box ?? initialBoxStyle;
-		const constraints = resolveHeightConstraints(
+		const resolvedHeight = resolveHeightConstraints(
 			style,
 			width.containingWidth,
 			containingHeight,
 		);
+		const constraints = width.intrinsicHeight
+			? {
+					...resolvedHeight,
+					preferred: null,
+					minimum: 0,
+					maximum: null,
+					definite: null,
+				}
+			: resolvedHeight;
 		const {
 			paddingTop,
 			paddingBottom,
@@ -224,7 +265,9 @@ export function layoutDocument(
 			maximum,
 		} = constraints;
 		const preferred =
-			images.get(node.id)?.contentHeight ?? constraints.preferred;
+			width.contentHeightOverride ??
+			images.get(node.id)?.contentHeight ??
+			constraints.preferred;
 		const state: State = {
 			borderTop,
 			borderBottom,
@@ -236,7 +279,11 @@ export function layoutDocument(
 			minimum,
 			maximum,
 			definite:
-				preferred === null ? null : clamp(preferred, minimum, maximum).height,
+				width.intrinsicHeight ||
+				width.contentHeightDefinite === false ||
+				preferred === null
+					? null
+					: clamp(preferred, minimum, maximum).height,
 			marginTop:
 				style["margin-top"] === "auto"
 					? 0
@@ -361,6 +408,7 @@ export function layoutDocument(
 			state.bottom = state.top;
 		}
 		state.natural =
+			flexSizes.get(state.node.id)?.naturalContentHeight ??
 			images.get(state.node.id)?.contentHeight ??
 			(context
 				? context.textHeight
@@ -380,7 +428,14 @@ export function layoutDocument(
 				state.borderBottom,
 		);
 	}
-	const flowHeight = flow(roots, false, false);
+	let flowHeight = 0;
+	if (isolated) {
+		for (const root of roots) {
+			charge();
+			root.relativeY = 0;
+			flowHeight = Math.max(flowHeight, root.borderHeight);
+		}
+	} else flowHeight = flow(roots, false, false);
 	const boxes: Readonly<DocumentBox>[] = [];
 	for (const state of states.values()) {
 		charge();
@@ -475,7 +530,9 @@ export function layoutDocument(
 		return Object.freeze(positioned);
 	});
 	return Object.freeze({
-		stage: "normal-flow-document-layout" as const,
+		stage: isolated
+			? ("isolated-block-layout" as const)
+			: ("normal-flow-document-layout" as const),
 		partial: true as const,
 		text,
 		boxes: Object.freeze(boxes),

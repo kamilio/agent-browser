@@ -211,7 +211,7 @@ it("returns empty geometry for detached elements without laying out unrelated un
 
 it("rejects non-elements and unsupported layouts rather than inventing rectangles", () => {
 	const { tree, geometry, box } = fixture(
-		'<div id="target" style="display:flex">x</div>',
+		'<div id="target" style="display:flex;flex-direction:column;flex-wrap:wrap;position:absolute">x</div>',
 	);
 	expect(() => geometry.getClientRects(tree.root)).toThrow(
 		"requires an element",

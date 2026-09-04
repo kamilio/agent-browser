@@ -209,7 +209,7 @@ it("returns zero after detach, then remeasures after reattachment", () => {
 
 it("rejects unsupported layout and block-in-inline offsets instead of publishing guessed zeros", () => {
 	for (const css of [
-		"#target{display:flex}",
+		"#target{display:flex;flex-direction:column;flex-wrap:wrap;position:absolute}",
 		"#target{border-left:2px dashed red}",
 		"#target{transform:scale(2)}",
 	])
@@ -219,7 +219,7 @@ it("rejects unsupported layout and block-in-inline offsets instead of publishing
 });
 
 it("does not cache an unsupported measurement as zero and recovers on a supported revision", () => {
-	const { tree, id, sizes, read } = fixture(undefined, "#target{display:flex}");
+	const { tree, id, sizes, read } = fixture(undefined, "#target{display:grid}");
 	expect(read).toThrow();
 	expect(sizes.metrics()).toMatchObject({ retained: 0, measurements: 0 });
 	tree.setAttribute(id("#target"), "style", "display:block");

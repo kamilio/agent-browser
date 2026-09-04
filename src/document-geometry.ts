@@ -147,6 +147,7 @@ export class LayoutGeometry {
 			charge();
 			for (const fragment of context.fragments) {
 				charge();
+				if (fragment.atomic) continue;
 				if (
 					includeUsedStyles &&
 					fragment.ref &&
@@ -192,6 +193,22 @@ export class LayoutGeometry {
 					);
 			}
 		}
+		if (includeUsedStyles)
+			for (const position of layout.relativePositions ?? []) {
+				charge();
+				const ref = layout.text.horizontal.formatting.nodes[position.id].ref;
+				if (ref)
+					this.usedStyles.set(
+						ref,
+						Object.freeze({
+							...this.usedStyles.get(ref),
+							left: position.left,
+							right: -position.left || 0,
+							top: position.top,
+							bottom: -position.top || 0,
+						}),
+					);
+			}
 		const frozen = new Map<string, readonly ClientRectangle[]>();
 		const bounds = new Map<string, ClientRectangle>();
 		for (const [ref, list] of rectangles) {

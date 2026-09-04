@@ -11,6 +11,7 @@
   "src/border-core.test.ts",
   "src/flow-core.test.ts",
   "src/flex-core.test.ts",
+  "src/layout-core.test.ts",
   "src/browser-state.test.ts",
   "src/button-auto.test.ts",
   "src/calendar-fill.test.ts",

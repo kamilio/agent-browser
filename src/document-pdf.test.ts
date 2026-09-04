@@ -86,8 +86,12 @@ it("does not expose display-none, hidden or transparent text in the search layer
 
 it("rejects unsupported CSS instead of printing a fallback", () => {
 	expect(() =>
-		renderDocumentPdf(fixture('<main style="display:flex">unsupported</main>')),
-	).toThrow(/supported formatting/);
+		renderDocumentPdf(
+			fixture(
+				'<main style="display:flex;flex-direction:column;flex-wrap:wrap;position:absolute">unsupported</main>',
+			),
+		),
+	).toThrowError(expect.objectContaining({ code: "unsupported" }));
 });
 
 it("rejects an unbroken line taller than the page", () => {

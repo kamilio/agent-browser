@@ -29,6 +29,28 @@ function darkPixels(image: { width: number; pixels: Uint8Array }) {
 	return result;
 }
 
+it("does not propagate a boxless body's background to the canvas", () => {
+	const tree = fixture(
+		"<style>body{display:contents;background:red}</style><body></body>",
+	);
+	const result = rasterizeDocument(tree);
+	expect(result.image.pixels.every((value) => value === 255)).toBe(true);
+	expect(result.canvasBackground.color).toEqual([0, 0, 0, 0]);
+});
+
+it("keeps visible descendants when a boxless body cannot paint a canvas background", () => {
+	const tree = fixture(
+		"<style>body{display:contents;background:red}div{height:5px;width:6px;background:blue}</style><div></div>",
+	);
+	const result = rasterizeDocument(tree);
+	expect(result.image.pixels.slice(0, 4)).toEqual(
+		new Uint8Array([0, 0, 255, 255]),
+	);
+	expect(
+		result.image.pixels.slice((8 * 40 + 8) * 4, (8 * 40 + 8) * 4 + 4),
+	).toEqual(new Uint8Array([255, 255, 255, 255]));
+});
+
 it("paints actual document positions into an opaque viewport without manual text offsets", () => {
 	const tree = fixture(
 		'<main style="font-size:8px;padding:2px;margin-left:3px"><div>A</div><div>B</div></main>',

@@ -151,6 +151,8 @@ function userAgentDisplay(node: Readonly<DocumentNode>) {
 	)
 		return "none";
 	if (node.tagName === "li") return "list-item";
+	if (["input", "button", "textarea", "select"].includes(node.tagName))
+		return "inline-block";
 	if (node.tagName === "table") return "table";
 	if (node.tagName === "tr") return "table-row";
 	if (["td", "th"].includes(node.tagName)) return "table-cell";
@@ -848,6 +850,11 @@ export class DocumentStyles {
 			if (display === "inherit") display = parent?.display ?? "inline";
 			else if (display === "initial" || display === "unset") display = "inline";
 			else if (display === "revert") display = userAgentDisplay(node);
+			if (
+				node.tagName === "input" &&
+				node.attributes.type?.toLowerCase() === "hidden"
+			)
+				display = "none";
 			const parentDisplay =
 				node.parent === null ? "" : (boxParentDisplay.get(node.parent) ?? "");
 			if (node.kind === "element" && isFlexDisplay(parentDisplay))

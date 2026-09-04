@@ -482,7 +482,9 @@ it("enforces inherited compatibility and work/numeric limits instead of guessing
 		fixture('<div style="position:absolute">Text</div>').layout(),
 	).toThrow();
 	expect(() =>
-		fixture('<div style="display:flex">Text</div>').layout(),
+		fixture(
+			'<div style="display:flex;flex-direction:column;flex-wrap:wrap;position:absolute">Text</div>',
+		).layout(),
 	).toThrow();
 	expect(() =>
 		fixture(

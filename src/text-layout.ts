@@ -1,5 +1,4 @@
 import { bitmapFont, bitmapGlyph } from "./bitmap-font.js";
-import { initialBoxStyle } from "./css-box.js";
 import { type TextStyle, initialTextStyle } from "./css-text.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -7,11 +6,20 @@ import {
 	type DocumentBlockWidths,
 	type FormattingLimits,
 	type FormattingNode,
+	type FormattingTree,
+	type FormattingImageSize,
 	resolveDocumentBlockWidths,
 } from "./formatting-tree.js";
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 import { resolveInlineEdges } from "./inline-box.js";
 import { resolveBorders } from "./border-box.js";
+import { initialBoxStyle } from "./css-box.js";
+import {
+	atomicInlineBaseline,
+	atomicInlineMetrics,
+	isAtomicInline,
+	type AtomicInlineMetrics,
+} from "./inline-atomic.js";
 
 export interface TextLayoutLimits {
 	maxTokens: number;
@@ -57,8 +65,11 @@ export interface TextLine {
 	fragmentEnd: number;
 }
 export interface TextInlineFragment {
-	formattingId: number;
+	atomic?: true;
+	marginRight?: number;
+	marginBottom?: number;
 	borders?: Readonly<ReturnType<typeof resolveBorders>>;
+	formattingId: number;
 	ref: string;
 	line: number | null;
 	x: number;
@@ -103,7 +114,7 @@ interface Token extends FontExtent {
 	offset: number;
 	codeUnits: number;
 	character: string;
-	kind: "glyph" | "tab" | "strut" | "open" | "close" | "image";
+	kind: "glyph" | "tab" | "strut" | "open" | "close" | "image" | "atomic";
 	margin?: number;
 	padding?: number;
 	border?: number;
@@ -139,10 +150,7 @@ function extent(style: TextStyle): FontExtent {
 	};
 }
 
-export function layoutDocumentText(
-	tree: DocumentTree,
-	options: TextLayoutOptions = {},
-): Readonly<DocumentTextLayout> {
+function checkedLimits(options: TextLayoutOptions) {
 	if (!options || typeof options !== "object" || Array.isArray(options))
 		throw new AgentBrowserError("invalid-input", "Invalid text layout options");
 	for (const [key, value] of Object.entries(options)) {
@@ -155,10 +163,74 @@ export function layoutDocumentText(
 		)
 			throw new AgentBrowserError("invalid-input", "Invalid text layout limit");
 	}
-	const limits = { ...textLayoutLimits, ...options };
+	return { ...textLayoutLimits, ...options };
+}
+
+export function textLayoutWorkLimit(options: TextLayoutOptions = {}) {
+	return checkedLimits(options).maxWork;
+}
+
+export interface TextFormattingInput {
+	formatting: FormattingTree;
+	widths: readonly Readonly<{
+		id: number;
+		ref?: string;
+		contentX: number;
+		contentWidth: number;
+	}>[];
+	images: readonly Readonly<FormattingImageSize>[];
+	atomics?: readonly Readonly<AtomicInlineMetrics>[];
+}
+
+export function layoutDocumentText(
+	tree: DocumentTree,
+	options: TextLayoutOptions = {},
+): Readonly<DocumentTextLayout> {
+	const limits = checkedLimits(options);
 	const horizontal = resolveDocumentBlockWidths(tree, options.formatting);
+	return layoutFormattingText(horizontal, limits);
+}
+
+export function layoutFormattingText(
+	horizontal: DocumentBlockWidths,
+	options: TextLayoutOptions = {},
+): Readonly<DocumentTextLayout> {
+	const limits = checkedLimits(options);
+	const result = layoutTextContexts(horizontal, limits, "used");
+	return Object.freeze({
+		stage: "block-relative-text-lines",
+		partial: true,
+		horizontal,
+		contexts: result.contexts,
+		metrics: result.metrics,
+	});
+}
+
+export function measureFormattingText(
+	input: TextFormattingInput,
+	constraint: "min-content" | "max-content",
+	options: Partial<TextLayoutLimits> = {},
+) {
+	if (constraint !== "min-content" && constraint !== "max-content")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid intrinsic text constraint",
+		);
+	const result = layoutTextContexts(input, checkedLimits(options), constraint);
+	return Object.freeze({
+		widths: result.measurements,
+		metrics: result.metrics,
+	});
+}
+
+function layoutTextContexts(
+	horizontal: TextFormattingInput,
+	limits: TextLayoutLimits,
+	constraint: "used" | "min-content" | "max-content",
+) {
 	const images = new Map(horizontal.images.map((image) => [image.id, image]));
 	const contexts: Readonly<TextContext>[] = [];
+	const measurements: Readonly<{ id: number; width: number }>[] = [];
 	const metrics = {
 		tokens: 0,
 		lines: 0,
@@ -183,6 +255,11 @@ export function layoutDocumentText(
 				"Text layout token limit exceeded",
 			);
 	};
+	const atomics = atomicInlineMetrics(
+		horizontal.formatting,
+		horizontal.atomics ?? [],
+		charge,
+	);
 	for (const block of horizontal.widths) {
 		charge();
 		const container = horizontal.formatting.nodes[block.id];
@@ -193,6 +270,7 @@ export function layoutDocumentText(
 		const glyphs: Readonly<TextGlyph>[] = [];
 		const fragments: Readonly<TextInlineFragment>[] = [];
 		let textHeight = 0;
+		let measuredWidth = 0;
 		let lineWidth = 0;
 		let lineContent = 0;
 		let entries: { token: Token; offset: number; advance: number }[] = [];
@@ -265,6 +343,14 @@ export function layoutDocumentText(
 					"resource-limit",
 					"Text layout line limit exceeded",
 				);
+			if (constraint !== "used") {
+				measuredWidth = Math.max(measuredWidth, lineWidth, 0);
+				entries = [];
+				segments = [];
+				lineWidth = 0;
+				lineContent = 0;
+				return;
+			}
 			let above = Math.max(strut.above, forced?.above ?? strut.above);
 			let below = Math.max(strut.below, forced?.below ?? strut.below);
 			for (const { token } of entries) {
@@ -285,7 +371,13 @@ export function layoutDocumentText(
 			const fragmentStart = fragments.length;
 			const ranges = new Map<
 				number,
-				{ left: number; right: number; borderLeft: number; borderRight: number }
+				{
+					left: number;
+					right: number;
+					borderLeft: number;
+					borderRight: number;
+					marginRight: number;
+				}
 			>();
 			for (const { token, offset: tokenOffset, advance: used } of entries) {
 				charge();
@@ -298,11 +390,16 @@ export function layoutDocumentText(
 					if (
 						node.kind === "inline" ||
 						node.kind === "break" ||
-						node.kind === "replaced"
+						node.kind === "replaced" ||
+						atomics.has(current)
 					) {
 						const own = current === token.formattingId;
 						const replaced =
-							own && token.kind === "image" ? images.get(current) : undefined;
+							own && token.kind === "image"
+								? images.get(current)
+								: own && token.kind === "atomic"
+									? atomics.get(current)
+									: undefined;
 						const left =
 							start +
 							(replaced?.marginLeft ??
@@ -319,12 +416,23 @@ export function layoutDocumentText(
 							own && token.kind === "open" ? (token.border ?? 0) : 0;
 						const borderRight =
 							own && token.kind === "close" ? (token.border ?? 0) : 0;
+						const marginRight =
+							replaced?.marginRight ??
+							(own && token.kind === "close" ? (token.margin ?? 0) : 0);
 						if (range) {
 							range.right = right;
 							range.borderLeft += borderLeft;
 							range.borderRight += borderRight;
+							if (replaced || (own && token.kind === "close"))
+								range.marginRight = marginRight;
 						} else
-							ranges.set(current, { left, right, borderLeft, borderRight });
+							ranges.set(current, {
+								left,
+								right,
+								borderLeft,
+								borderRight,
+								marginRight,
+							});
 					} else if (node.kind !== "text") break;
 					current = node.parent;
 				}
@@ -359,6 +467,7 @@ export function layoutDocumentText(
 					);
 				const node = horizontal.formatting.nodes[id];
 				const replaced = images.get(id);
+				const atomic = atomics.get(id);
 				const font = extent(node.typography ?? style);
 				const borders =
 					node.kind === "inline"
@@ -379,14 +488,17 @@ export function layoutDocumentText(
 				const x = layoutNumber(block.contentX + offset + range.left, true);
 				const y = layoutNumber(
 					baseline -
-						(replaced
-							? replaced.borderBoxHeight + replaced.marginBottom
-							: font.ascent + paddingTop + (borders?.borderTop ?? 0)),
+						(atomic?.block
+							? atomicInlineBaseline(atomic.block)
+							: replaced
+								? replaced.borderBoxHeight + replaced.marginBottom
+								: font.ascent + paddingTop + (borders?.borderTop ?? 0)),
 					true,
 				);
 				const width = layoutNumber(Math.max(0, range.right - range.left));
 				const fragmentHeight = layoutNumber(
-					replaced?.borderBoxHeight ??
+					atomic?.block?.borderBoxHeight ??
+						replaced?.borderBoxHeight ??
 						font.fontSize +
 							paddingTop +
 							paddingBottom +
@@ -398,6 +510,13 @@ export function layoutDocumentText(
 				fragments.push(
 					Object.freeze({
 						formattingId: id,
+						...(atomic ? { atomic: true as const } : {}),
+						...(range.marginRight ? { marginRight: range.marginRight } : {}),
+						...(replaced?.marginBottom
+							? { marginBottom: replaced.marginBottom }
+							: atomic?.block?.marginBottom
+								? { marginBottom: atomic.block.marginBottom }
+								: {}),
 						...(borders && Object.values(borders).some((width) => width > 0)
 							? { borders: Object.freeze(borders) }
 							: {}),
@@ -448,7 +567,8 @@ export function layoutDocumentText(
 				let leading = true;
 				word = word.filter((token) => {
 					charge();
-					if (token.kind === "image") leading = false;
+					if (token.kind === "image" || token.kind === "atomic")
+						leading = false;
 					if (token.kind !== "glyph" && token.kind !== "tab") return true;
 					if (leading && token.collapsible) return false;
 					leading = false;
@@ -462,7 +582,12 @@ export function layoutDocumentText(
 				charge();
 				predicted = layoutNumber(predicted + advance(token, predicted), true);
 			}
-			if (previous?.gap && lineContent && predicted > block.contentWidth) {
+			if (
+				previous?.gap &&
+				lineContent &&
+				(constraint === "min-content" ||
+					(constraint === "used" && predicted > block.contentWidth))
+			) {
 				finish();
 				predicted = 0;
 				for (const token of [...word, ...closing]) {
@@ -521,9 +646,15 @@ export function layoutDocumentText(
 			id: number;
 			above: number;
 			below: number;
+			whiteSpace: TextStyle["white-space"];
 			closing?: boolean;
 		}[] = container.children
-			.map((id) => ({ id, above: strut.above, below: strut.below }))
+			.map((id) => ({
+				id,
+				above: strut.above,
+				below: strut.below,
+				whiteSpace: style["white-space"],
+			}))
 			.reverse();
 		while (pending.length) {
 			charge();
@@ -568,6 +699,7 @@ export function layoutDocumentText(
 					id: node.id,
 					above: font.above,
 					below: font.below,
+					whiteSpace: typography["white-space"],
 					closing: true,
 				});
 				for (let index = node.children.length - 1; index >= 0; index--)
@@ -575,7 +707,71 @@ export function layoutDocumentText(
 						id: node.children[index],
 						above: font.above,
 						below: font.below,
+						whiteSpace: typography["white-space"],
 					});
+				continue;
+			}
+			if (isAtomicInline(node)) {
+				const atomic = atomics.get(node.id);
+				if (!atomic || (constraint === "used" && !atomic.block))
+					throw new AgentBrowserError(
+						"unsupported",
+						"Missing used atomic inline layout metrics",
+					);
+				if (constraint === "used" && atomic.block?.unsupportedBaseline)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Atomic inline baseline is not supported",
+					);
+				const wrap =
+					frame.whiteSpace === "normal" || frame.whiteSpace === "pre-line";
+				const opportunity: Token = {
+					...font,
+					above: frame.above,
+					below: frame.below,
+					advance: 0,
+					formattingId: node.parent ?? container.id,
+					ref: "",
+					offset: 0,
+					codeUnits: 0,
+					character: "",
+					kind: "strut",
+					visible: false,
+					collapsible: true,
+					breakable: true,
+				};
+				const baseline = atomic.block ? atomicInlineBaseline(atomic.block) : 0;
+				if (wrap && !gap) emit(opportunity);
+				emit({
+					...font,
+					advance: layoutNumber(
+						atomic.marginLeft + atomic.borderBoxWidth + atomic.marginRight,
+						true,
+					),
+					above: Math.max(
+						frame.above,
+						(atomic.block?.marginTop ?? 0) + baseline,
+					),
+					below: Math.max(
+						frame.below,
+						(atomic.block?.borderBoxHeight ?? 0) -
+							baseline +
+							(atomic.block?.marginBottom ?? 0),
+					),
+					formattingId: node.id,
+					ref: node.ref ?? "",
+					offset: 0,
+					codeUnits: 0,
+					character: "",
+					kind: "atomic",
+					contributes: true,
+					visible: node.visible,
+					collapsible: false,
+					breakable: false,
+				});
+				if (wrap) emit(opportunity);
+				collapsing = false;
+				skipLf = false;
 				continue;
 			}
 			if (node.kind === "replaced") {
@@ -692,6 +888,10 @@ export function layoutDocumentText(
 		}
 		flushWord();
 		finish();
+		if (constraint !== "used") {
+			measurements.push(Object.freeze({ id: block.id, width: measuredWidth }));
+			continue;
+		}
 		contexts.push(
 			Object.freeze({
 				id: block.id,
@@ -706,10 +906,8 @@ export function layoutDocumentText(
 		);
 	}
 	return Object.freeze({
-		stage: "block-relative-text-lines" as const,
-		partial: true as const,
-		horizontal,
 		contexts: Object.freeze(contexts),
+		measurements: Object.freeze(measurements),
 		metrics: Object.freeze(metrics),
 	});
 }

@@ -119,6 +119,8 @@ export function resolvedStyleValue(
 		if (
 			name === "width" ||
 			name === "height" ||
+			(["top", "right", "bottom", "left"].includes(name) &&
+				styles.flow(id).position === "relative") ||
 			name.startsWith("margin-") ||
 			name.startsWith("padding-")
 		) {
