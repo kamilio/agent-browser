@@ -3,6 +3,7 @@ import { AgentBrowserError } from "./errors.js";
 import type { DocumentQueries } from "./selectors.js";
 import { snapshotElementRole, snapshotRoleCandidates } from "./snapshot.js";
 import { resolveBrowserTarget } from "./target-locator.js";
+import { resolveVisualTarget } from "./generated-controls.js";
 
 export const locatorGenerationLimits = Object.freeze({
 	maxDocumentNodes: 50_000,
@@ -52,7 +53,7 @@ export function generateLocator(
 	target: string,
 ): GeneratedLocator {
 	const ref = resolveBrowserTarget(tree, queries, target);
-	const node = tree.resolve(ref);
+	const { node, generated } = resolveVisualTarget(tree, ref);
 	if (node.kind !== "element")
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -88,6 +89,17 @@ export function generateLocator(
 		};
 	};
 
+	if (generated) {
+		const result = candidate(
+			`getByRole("button", {name: ${quote(generated.label)}, exact: true})`,
+			"role",
+		);
+		if (result) return result;
+		throw new AgentBrowserError(
+			"unsupported",
+			"No unique generated-control role locator is available; use its reference",
+		);
+	}
 	const testId = node.attributes["data-testid"];
 	if (testId !== undefined) {
 		const result = candidate(`getByTestId(${quote(testId)})`, "test-id");

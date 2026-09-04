@@ -9,7 +9,13 @@ import {
 	prepareSelectControlValues,
 } from "./controls.js";
 import type { DocumentTree } from "./document.js";
-import { findClickPoint, findHoverPoint } from "./click-target.js";
+import {
+	findClickPoint,
+	findHoverPoint,
+	findGeneratedClickPoint,
+	findGeneratedHoverPoint,
+} from "./click-target.js";
+import { resolveVisualTarget } from "./generated-controls.js";
 import { AgentBrowserError } from "./errors.js";
 import type { SessionPage } from "./session.js";
 import { resolveBrowserTarget } from "./target-locator.js";
@@ -107,10 +113,15 @@ function ready(page: ActionPage, reference: string, action: WaitingAction) {
 		}
 	} else {
 		if (status.blocked) return false;
+		const generated = resolveVisualTarget(page.document, reference).generated;
 		const target =
 			action.kind === "hover"
-				? findHoverPoint(page.document, node.id)
-				: findClickPoint(page.document, node.id);
+				? generated
+					? findGeneratedHoverPoint(page.document, generated.ref)
+					: findHoverPoint(page.document, node.id)
+				: generated
+					? findGeneratedClickPoint(page.document, generated.ref)
+					: findClickPoint(page.document, node.id);
 		if (!target.point && target.blocked !== "outside-viewport") return false;
 	}
 	return true;

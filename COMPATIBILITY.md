@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 generated-agent continuation: `GENERATED-AGENT.md` publishes native
+fallback snapshot entries, unique role locators and command click/hover/targeted
+press/scroll paths with header-only readiness and execution. Ambiguous generated
+locators fail explicitly rather than aliasing the host. Native command captures
+were inspected; full platform accessibility, generated inspection/cropped capture,
+focus rings, scoped ordering, localization and runtime/browser gates remain open.
+
 September 4 generated-focus continuation: `GENERATED-FOCUS.md` adds distinct
 native fallback focus identity, default Tab/Shift-Tab stops and Enter/Space
 activation, with real-host page retargeting and stale held-key invalidation.

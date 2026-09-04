@@ -1142,6 +1142,21 @@ rings, localization, UA/shadow/accessibility, runtime and original browser gates
 stay open. No gated probe ran; the denied SafeJS probe remains unrun. Historical
 evidence and unrelated pending work stay separate; the seven-day goal is active.
 
+September 4 generated-agent continuation: `GENERATED-AGENT.md` connects fallback
+snapshot entries and unique role locators to native click/hover/targeted press
+and header-only scrolling. Readiness shares generated hit geometry; focused and
+stale target identities are checked after event continuations. The 51 new cases
+produce 40 failures and 11 passes on isolated prior HEAD. Matching focused runs
+pass 334 / 12 files; types/builds, strict checking and ten-file lint pass in both.
+Authorized full native runs pass 9,370 / 268 isolated files; the working run
+reports 10,515 passes and the unchanged pending Window-onload assertion failure /
+290 files. Actual role-locator activation, screenshot artifact reads and matching
+snapshots have inspected native before/after PNG evidence. Next: generated
+geometry/cropped capture inspection and visible focus feedback. Full platform
+accessibility, localization, scoped ordering, UA/shadow, runtime and original
+browser gates remain open. No gated probe ran; the denied SafeJS probe remains
+unrun. Preserve historical evidence and unrelated pending work; the goal is active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

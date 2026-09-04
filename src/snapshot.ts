@@ -13,6 +13,12 @@ import { htmlParseInfo } from "./html-info.js";
 import { isInertRoot } from "./inertness.js";
 import { summaryDetails } from "./details.js";
 import { documentStyles } from "./styles.js";
+import { inheritedAriaDisabled } from "./aria-disabled.js";
+import {
+	documentGeneratedControls,
+	resolveVisualTarget,
+	type GeneratedControlTarget,
+} from "./generated-controls.js";
 
 export interface SnapshotOptions {
 	root?: string;
@@ -327,14 +333,17 @@ function collectSnapshot(
 				`Invalid snapshot limit: ${name}`,
 			);
 	}
-	const start =
-		options.root === undefined ? tree.root : tree.resolve(options.root).id;
+	const rootTarget =
+		options.root === undefined
+			? undefined
+			: resolveVisualTarget(tree, options.root);
+	const start = rootTarget?.node.id ?? tree.root;
 	const baseUrl = documentBaseUrl(tree);
 	const focused = activeFocus(tree);
 	const html = htmlParseInfo(tree);
 	const result: SemanticSnapshot = {
 		document: tree.reference(tree.root),
-		scope: tree.reference(start),
+		scope: rootTarget?.generated?.ref ?? tree.reference(start),
 		revision: tree.revision,
 		entries: [],
 		truncated: false,
@@ -450,12 +459,53 @@ function collectSnapshot(
 		return limit(node.attributes.title ?? node.attributes.placeholder ?? "");
 	};
 	let usedBytes = encoder.encode(JSON.stringify(result)).byteLength;
-	const pending = [{ id: start, depth: 0 }];
+	const append = (entry: SnapshotEntry) => {
+		if (entry.depth > maxDepth) {
+			result.truncated = true;
+			return true;
+		}
+		if (visit) visit(entry);
+		else {
+			const entryBytes =
+				encoder.encode(JSON.stringify(entry)).byteLength +
+				(result.entries.length ? 1 : 0);
+			if (
+				result.entries.length >= maxEntries ||
+				usedBytes + entryBytes > maxBytes
+			) {
+				result.truncated = true;
+				return false;
+			}
+			usedBytes += entryBytes;
+			result.entries.push(entry);
+		}
+		return true;
+	};
+	const pending: {
+		id: number;
+		depth: number;
+		generated?: GeneratedControlTarget;
+	}[] = [{ id: start, depth: 0, generated: rootTarget?.generated }];
 	while (pending.length) {
 		const current = pending.pop();
 		if (!current || !included.has(current.id)) continue;
 		const node = nodes.get(current.id);
 		if (!node) continue;
+		if (current.generated) {
+			if (!visible.has(current.id)) continue;
+			const entry: SnapshotEntry = {
+				ref: current.generated.ref,
+				role: "button",
+				name: limit(current.generated.label),
+				depth: current.depth,
+				expanded: Object.hasOwn(node.attributes, "open"),
+			};
+			if (focused === node.id && tree.generatedFocusReference === entry.ref)
+				entry.focused = true;
+			if (inheritedAriaDisabled(tree, node.id)) entry.disabled = true;
+			if (!append(entry)) break;
+			continue;
+		}
 		const role = visible.has(current.id)
 			? roleOf(tree, node, expandLeafRoles)
 			: undefined;
@@ -485,7 +535,8 @@ function collectSnapshot(
 					entry[state] = true;
 			if (isControlDisabled(tree, node.id)) entry.disabled = true;
 			if (node.id === tree.targetElement) entry.targeted = true;
-			if (node.id === focused) entry.focused = true;
+			if (node.id === focused && tree.generatedFocusReference === null)
+				entry.focused = true;
 			const details = summaryDetails(tree, node);
 			if (details !== undefined && role === "button")
 				entry.expanded = Object.hasOwn(tree.get(details).attributes, "open");
@@ -525,26 +576,16 @@ function collectSnapshot(
 					}
 				} catch {}
 			}
-			if (visit) visit(entry);
-			else {
-				const entryBytes =
-					encoder.encode(JSON.stringify(entry)).byteLength +
-					(result.entries.length ? 1 : 0);
-				if (
-					result.entries.length >= maxEntries ||
-					usedBytes + entryBytes > maxBytes
-				) {
-					result.truncated = true;
-					break;
-				}
-				usedBytes += entryBytes;
-				result.entries.push(entry);
-			}
+			if (!append(entry)) break;
 			nextDepth++;
 		}
 		if (!expandLeafRoles && role && leafRoles.has(role)) continue;
 		for (let index = node.children.length - 1; index >= 0; index--)
 			pending.push({ id: node.children[index], depth: nextDepth });
+		if (node.tagName === "details" && visible.has(node.id)) {
+			const generated = documentGeneratedControls(tree).detailsSummary(node.id);
+			if (generated) pending.push({ id: node.id, depth: nextDepth, generated });
+		}
 	}
 	return result;
 }

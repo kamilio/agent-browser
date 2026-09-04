@@ -19,6 +19,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Generated-agent checkpoint: `GENERATED-AGENT.md` publishes separate fallback
+snapshot entries, bounded scanning/search, scoped snapshots, unique role locators
+and native command click/hover/targeted press/scroll support. Readiness and
+execution both use the generated header rather than exposed host-body space.
+Generated/ordinary focus identity and stale scroll-event targets are rechecked;
+ambiguous locator generation never returns a host alias. The 51 new cases produce
+40 failures and 11 passes on isolated prior HEAD. Matching focused runs pass
+334 / 12 files; types/builds, strict checking of both new tests and ten-file lint
+pass in both trees. Authorized full native runs pass 9,370 / 268 isolated files;
+the working run reports 10,515 passes and the unchanged pending Window-onload
+assertion failure / 290 files. Actual role-locator command activation and
+full-page artifact reads produced inspected 280-by-160 native PNGs with matching
+snapshot state. Next: generated geometry/cropped capture inspection and visible
+focus feedback. Full platform accessibility, localization, scoped ordering,
+UA/shadow and original browser/runtime gates remain open. No gated probe ran;
+the denied SafeJS probe remains unrun. Historical evidence and unrelated pending
+work stay separate; the seven-day continuation remains active.
+
+### Previous generated-focus checkpoint
+
 Generated-focus checkpoint: `GENERATED-FOCUS.md` adds canonical fallback focus
 identity, default Tab/Shift-Tab traversal, native pointer focus and Enter/Space
 activation while page focus and key events retarget the real details host.

@@ -1,5 +1,7 @@
 [
   "src/action-wait.test.ts",
+  "src/generated-snapshot.test.ts",
+  "src/generated-agent.test.ts",
   "src/generated-focus.test.ts",
   "src/generated-activation.test.ts",
   "src/generated-controls.test.ts",

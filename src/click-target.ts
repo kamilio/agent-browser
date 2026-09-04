@@ -5,6 +5,7 @@ import { documentHitTesting } from "./hit-testing.js";
 import { documentStyles } from "./styles.js";
 import { snapshotElementRole } from "./snapshot.js";
 import { documentGeneratedControls } from "./generated-controls.js";
+import { inheritedAriaDisabled } from "./aria-disabled.js";
 
 const ariaDisabledRoles = new Set([
 	"application",
@@ -119,20 +120,11 @@ export function clickTargetAriaDisabled(
 		!ariaDisabledRoles.has(snapshotElementRole(tree, target) ?? "")
 	)
 		return false;
-	let current: number | null = target;
-	let depth = 0;
-	while (current !== null) {
-		if (++depth > clickActionabilityCapabilities.maxAncestorDepth)
-			throw new AgentBrowserError(
-				"resource-limit",
-				"Click target ancestry limit exceeded",
-			);
-		const node = tree.get(current);
-		const disabled = node.attributes["aria-disabled"]?.toLowerCase();
-		if (disabled === "true" || disabled === "false") return disabled === "true";
-		current = node.parent;
-	}
-	return false;
+	return inheritedAriaDisabled(
+		tree,
+		target,
+		clickActionabilityCapabilities.maxAncestorDepth,
+	);
 }
 
 export function findClickPoint(

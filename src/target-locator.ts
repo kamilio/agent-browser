@@ -2,6 +2,7 @@ import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import type { DocumentQueries } from "./selectors.js";
 import { snapshotRoleCandidates } from "./snapshot.js";
+import { documentGeneratedControls } from "./generated-controls.js";
 import {
 	type TextTargetLocator,
 	textLocatorCandidates,
@@ -195,6 +196,10 @@ export function resolveBrowserTarget(
 	queries: DocumentQueries,
 	source: string,
 ): string {
+	if (/^u[1-9][0-9]*-details-[1-9][0-9]*$/.test(source)) {
+		documentGeneratedControls(tree).resolve(source);
+		return source;
+	}
 	if (/^e[1-9][0-9]*$/.test(source)) {
 		tree.resolve(source);
 		return source;

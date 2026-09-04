@@ -5,6 +5,7 @@ import { AgentBrowserError } from "./errors.js";
 import type { EventAction } from "./event-actions.js";
 import { BrowserEvent } from "./events.js";
 import { documentStyles } from "./styles.js";
+import { resolveVisualTarget } from "./generated-controls.js";
 
 export type ScrollAlignment = "start" | "center" | "end" | "nearest";
 export interface ScrollIntoViewOptions {
@@ -120,7 +121,7 @@ export class DocumentScrollIntoView {
 		this.unregisterClose = tree.onClose(() => this.close());
 	}
 	plan(
-		id: number,
+		target: number | string,
 		argument?: unknown,
 	): Readonly<{ left: number; top: number }> | null {
 		if (this.closed)
@@ -130,6 +131,11 @@ export class DocumentScrollIntoView {
 				"resource-limit",
 				"Scroll-into-view request limit exceeded",
 			);
+		const resolved =
+			typeof target === "string"
+				? resolveVisualTarget(this.tree, target)
+				: undefined;
+		const id = resolved?.node.id ?? (target as number);
 		if (this.tree.get(id).kind !== "element")
 			throw new AgentBrowserError(
 				"invalid-input",
@@ -138,11 +144,29 @@ export class DocumentScrollIntoView {
 		const alignment = scrollIntoViewOptions(argument);
 		if (!this.tree.isConnected(id)) return null;
 		const geometry = documentGeometry(this.tree);
-		if (!geometry.getDocumentRects(id).length) return null;
+		const rectangles = resolved?.generated
+			? geometry.getGeneratedClientRects(resolved.generated.ref)
+			: geometry.getClientRects(id);
+		if (!rectangles.length) return null;
 		const owner = documentScroll(this.tree);
 		const current = owner.get();
 		const maximum = owner.bounds();
-		const rectangle = geometry.getBoundingClientRect(id);
+		const rectangle = resolved?.generated
+			? rectangles.reduce(
+					(bounds, rect) => ({
+						left: Math.min(bounds.left, rect.left),
+						right: Math.max(bounds.right, rect.right),
+						top: Math.min(bounds.top, rect.top),
+						bottom: Math.max(bounds.bottom, rect.bottom),
+					}),
+					{
+						left: Number.POSITIVE_INFINITY,
+						right: Number.NEGATIVE_INFINITY,
+						top: Number.POSITIVE_INFINITY,
+						bottom: Number.NEGATIVE_INFINITY,
+					},
+				)
+			: geometry.getBoundingClientRect(id);
 		const viewport = documentStyles(this.tree).viewport;
 		return Object.freeze({
 			left: Math.max(
@@ -173,9 +197,13 @@ export class DocumentScrollIntoView {
 			),
 		});
 	}
-	*action(id: number, argument?: unknown): EventAction<ScrollIntoViewResult> {
-		const plan = this.plan(id, argument);
-		const reference = this.tree.reference(id);
+	*action(
+		target: number | string,
+		argument?: unknown,
+	): EventAction<ScrollIntoViewResult> {
+		const plan = this.plan(target, argument);
+		const reference =
+			typeof target === "string" ? target : this.tree.reference(target);
 		if (!plan) {
 			const scroll = documentScrollPosition(this.tree);
 			return {
@@ -194,10 +222,17 @@ export class DocumentScrollIntoView {
 				event: new BrowserEvent("scroll", { bubbles: true }),
 			};
 		const scroll = owner.get();
+		const generated =
+			typeof target === "string"
+				? resolveVisualTarget(this.tree, target).generated
+				: undefined;
 		return {
 			reference,
 			revision: this.tree.revision,
-			hasBox: true,
+			hasBox: generated
+				? documentGeometry(this.tree).getGeneratedClientRects(generated.ref)
+						.length > 0
+				: true,
 			changed,
 			scroll,
 		};

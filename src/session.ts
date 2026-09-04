@@ -3,7 +3,10 @@ import {
 	clickTargetAriaDisabled,
 	findClickPoint,
 	findHoverPoint,
+	findGeneratedClickPoint,
+	findGeneratedHoverPoint,
 } from "./click-target.js";
+import { resolveVisualTarget } from "./generated-controls.js";
 import { imageMediaTypes } from "./image-decoder.js";
 import {
 	type ScriptLoadReport,
@@ -648,7 +651,7 @@ export class BrowserSession {
 		const page = this.page(id);
 		if (options.target !== undefined) {
 			keyboardChord(key);
-			const target = page.document.resolve(options.target).id;
+			const target = resolveVisualTarget(page.document, options.target);
 			await runEventActionAsync(
 				page.interactions.events,
 				page.interactions.focus.focusAction(options.target),
@@ -664,7 +667,10 @@ export class BrowserSession {
 					"stale-reference",
 					"Keyboard focus document was replaced",
 				);
-			if (page.interactions.focus.active() !== target)
+			if (
+				page.interactions.focus.activeReference() !==
+				(target.generated?.ref ?? page.document.reference(target.node.id))
+			)
 				throw new AgentBrowserError(
 					"not-actionable",
 					"Keyboard target lost focus before key dispatch",
@@ -808,10 +814,13 @@ export class BrowserSession {
 		const tab = this.tab(id);
 		const previousJob = tab.job;
 		const page = this.page(id);
-		const target = page.document.resolve(reference).id;
+		const target = resolveVisualTarget(page.document, reference);
 		const result = await runEventActionAsync(
 			page.interactions.events,
-			documentScrollIntoView(page.document).action(target, alignment),
+			documentScrollIntoView(page.document).action(
+				target.generated?.ref ?? target.node.id,
+				alignment,
+			),
 			options.signal,
 		);
 		if (options.signal?.aborted || tab.job !== previousJob)
@@ -860,7 +869,10 @@ export class BrowserSession {
 				"not-actionable",
 				"Hover target became hidden or inert during scrolling",
 			);
-		const target = findHoverPoint(page.document, status.node.id);
+		const generated = resolveVisualTarget(page.document, reference).generated;
+		const target = generated
+			? findGeneratedHoverPoint(page.document, generated.ref)
+			: findHoverPoint(page.document, status.node.id);
 		if (!target.point)
 			throw new AgentBrowserError(
 				"not-actionable",
@@ -893,9 +905,14 @@ export class BrowserSession {
 		const previousJob = tab.job;
 		const page = this.page(id);
 		const status = page.interactions.actionability(reference);
+		const generated = resolveVisualTarget(page.document, reference).generated;
 		if (
 			status.blocked ||
-			clickTargetAriaDisabled(page.document, status.node.id)
+			clickTargetAriaDisabled(
+				page.document,
+				status.node.id,
+				generated !== undefined,
+			)
 		)
 			throw new AgentBrowserError(
 				"not-actionable",
@@ -912,7 +929,9 @@ export class BrowserSession {
 				"not-actionable",
 				"Click target became hidden, inert or disabled during scrolling",
 			);
-		const target = findClickPoint(page.document, status.node.id);
+		const target = generated
+			? findGeneratedClickPoint(page.document, generated.ref)
+			: findClickPoint(page.document, status.node.id);
 		if (!target.point)
 			throw new AgentBrowserError(
 				"not-actionable",
