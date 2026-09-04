@@ -642,6 +642,18 @@ offsets and corrected pointer integration are next. Rich/custom controls, picker
 full layout compatibility and independent runtime/site/UI gates remain open.
 No gated probe ran. The full browser scope and seven-day continuation remain active.
 
+September 4 viewport/offset checkpoint: `SCROLL-CORE.md` integrates the native
+scroll origin with client geometry and viewport capture, retaining document-space
+offsets/crops and fixing relative targets' static-table ancestor selection. All
+28 new tests pass; 23 fail on HEAD plus original owners and three reproduce the
+pre-fix bug in the integrated tree. Full native runs pass 9,342 / 256 working-tree
+files and 7,172 / 202 isolated-commit files. Focused checks pass 209 / seven and
+130 / five; both trees pass types/builds, strict new-test checks and six-file lint.
+Guest/root scrolling, offset getters, pointer routing and scroll-into-view remain
+next, not implied by native owner exports. Existing broader suites, pending work
+and historical evidence remain intact. No gated probe ran; full layout/runtime/
+site/UI compatibility and the seven-day scope remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

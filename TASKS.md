@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Viewport scrolling/offset core checkpoint: `SCROLL-CORE.md` connects the bounded
+native origin to client geometry and viewport captures while preserving document
+boxes, offsets, explicit clips and element crops. It fixes relative targets
+incorrectly selecting static table ancestors. The new 28-case suite fails 23
+cases on HEAD plus original owners; the integrated pre-fix tree reproduces all
+three table-parent failures. Full native runs pass 9,342 / 256 working-tree files
+and 7,172 / 202 isolated-commit files; focused runs pass 209 / seven and 130 / five.
+Both trees pass types/builds, strict new-test checking and six-file lint. The
+committed capability record does not claim unpromoted command/guest/event adapters.
+Existing broader offset/viewport suites, unrelated pending work and historical
+reports are preserved. Next integrate guest/root scrolling and offset getters,
+then hit testing, pointer routing and scroll-into-view. Nested scrolling/clipping,
+RTL origins, full positioning and independent runtime/site/socket/TTY gates remain
+open. No gated probe ran; the denied SafeJS probe and full seven-day scope remain.
+
+### Previous shared page-layout core checkpoint
+
 Shared page-layout core checkpoint: `LAYOUT-CORE.md` promotes intrinsic text/box
 measurement, coordinated page flex reflow/placement, atomic inline sizing, relative
 translation, stacking-aware paint ordering and software replaced controls. Page

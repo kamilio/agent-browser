@@ -24,6 +24,7 @@ import {
 	paintRasterImage,
 } from "./raster.js";
 import { documentStyles } from "./styles.js";
+import { documentScrollPosition } from "./document-scroll.js";
 import type { TextGlyph } from "./text-layout.js";
 
 export interface DocumentClip {
@@ -68,6 +69,7 @@ export function rasterizeDocument(
 	options: DocumentRasterOptions = {},
 ): Readonly<DocumentRaster> {
 	const maxWork = validateRasterOptions(options);
+	documentScrollPosition(tree);
 	return paintDocumentLayout(
 		tree,
 		layoutDocument(tree, options.layout),
@@ -80,6 +82,7 @@ export function prepareDocumentRaster(
 	tree: DocumentTree,
 	options: DocumentLayoutOptions = {},
 ) {
+	documentScrollPosition(tree);
 	const layout = layoutDocument(tree, options);
 	const revision = tree.revision;
 	return Object.freeze({
@@ -133,11 +136,12 @@ function paintDocumentLayout(
 	maxWork: number,
 ): Readonly<DocumentRaster> {
 	const viewport = layout.text.horizontal.formatting.viewport;
+	const scroll = documentScrollPosition(tree);
 	let clip =
 		options.clip === undefined
 			? {
-					x: 0,
-					y: 0,
+					x: scroll.x,
+					y: scroll.y,
 					width: viewport.width,
 					height: viewport.height,
 				}

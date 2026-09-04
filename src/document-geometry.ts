@@ -2,6 +2,7 @@ import { type DocumentLayout, layoutDocument } from "./document-layout.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { resolveInlineEdges } from "./inline-box.js";
+import { documentScrollPosition } from "./document-scroll.js";
 
 export type UsedStyle = Readonly<Partial<Record<string, number>>>;
 
@@ -253,12 +254,43 @@ export class DocumentGeometry {
 
 	getClientRects(id: number): readonly ClientRectangle[] {
 		if (!this.connectedElement(id)) return empty;
+		const scroll = documentScrollPosition(this.tree);
+		const rects = this.getDocumentRects(id);
+		if (scroll.x === 0 && scroll.y === 0) return rects;
+		return Object.freeze(
+			rects.map((rect) =>
+				rectangle(
+					rect.x - scroll.x,
+					rect.y - scroll.y,
+					rect.width,
+					rect.height,
+				),
+			),
+		);
+	}
+
+	getDocumentRects(id: number): readonly ClientRectangle[] {
+		if (!this.connectedElement(id)) return empty;
 		return this.refresh().getClientRects(this.tree.reference(id));
 	}
 
 	getBoundingClientRect(id: number): ClientRectangle {
 		if (!this.connectedElement(id)) return rectangle(0, 0, 0, 0);
-		return this.refresh().getBoundingClientRect(this.tree.reference(id));
+		const scroll = documentScrollPosition(this.tree);
+		const snapshot = this.refresh();
+		const ref = this.tree.reference(id);
+		const rect = snapshot.getBoundingClientRect(ref);
+		if (
+			(scroll.x === 0 && scroll.y === 0) ||
+			snapshot.getClientRects(ref).length === 0
+		)
+			return rect;
+		return rectangle(
+			rect.x - scroll.x,
+			rect.y - scroll.y,
+			rect.width,
+			rect.height,
+		);
 	}
 
 	getUsedStyle(id: number): UsedStyle | undefined {

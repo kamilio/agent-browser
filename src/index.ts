@@ -67,6 +67,20 @@ export {
 	type FlexJustification,
 } from "./flex-line.js";
 export {
+	DocumentScroll,
+	documentScroll,
+	documentScrollPosition,
+	viewportScrollCapabilities,
+	viewportScrollLimits,
+} from "./document-scroll.js";
+export {
+	DocumentElementOffsets,
+	documentElementOffsets,
+	elementOffsetLimits,
+	elementOffsetCapabilities,
+	type ElementOffsets,
+} from "./element-offsets.js";
+export {
 	capturePng,
 	capturePdf,
 	readCapture,
