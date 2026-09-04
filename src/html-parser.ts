@@ -554,7 +554,14 @@ function* parseHtmlSteps(
 			);
 			lateHeadInsertion = false;
 			const id = target.tree.createElement(name, attributes);
-			target.tree.insert(target.parent, id, target.before);
+			if (
+				form !== undefined &&
+				form > 0 &&
+				!inTemplate() &&
+				target.tree === tree
+			)
+				tree.insertParserElement(target.parent, id, form, target.before);
+			else target.tree.insert(target.parent, id, target.before);
 			lastText = undefined;
 			return { tree: target.tree, id };
 		};

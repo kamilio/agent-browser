@@ -9,6 +9,7 @@ import { DocumentResources } from "./document-resources.js";
 import { canRewriteDocumentUrl } from "./document-url.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlAttributeName } from "./html-attribute-name.js";
+import { isFormAssociatedTag } from "./html-form-association.js";
 import {
 	createHtmlAttributes,
 	htmlAttributeEntries,
@@ -121,6 +122,8 @@ export class DocumentTree {
 	private readonly fragmentHosts = new Map<number, DocumentNodeReference>();
 	private readonly customValidity = new Map<number, string>();
 	private readonly userEditedValues = new Set<number>();
+	private readonly parserForms = new Map<number, number>();
+	private parserFormRevision = 0;
 	private closed = false;
 	private attachedDoctype: number | undefined;
 	private closeHandlers = new Set<() => void>();
@@ -137,6 +140,7 @@ export class DocumentTree {
 	private readonly checkedness = new DocumentCheckedness(
 		(id) => this.node(id),
 		(id) => this.changed("control", id),
+		(id) => this.parserForms.get(id),
 	);
 	private readonly inputValues = new DocumentInputValues((id) => this.node(id));
 
@@ -798,6 +802,70 @@ export class DocumentTree {
 		this.insertInternal(parentId, childId, before);
 	}
 
+	get formAssociationRevision(): number {
+		this.ensureOpen();
+		return this.parserFormRevision;
+	}
+
+	parserFormOwner(id: number): number | undefined {
+		this.node(id);
+		return this.parserForms.get(id);
+	}
+
+	insertParserElement(
+		parentId: number,
+		childId: number,
+		formId: number,
+		before?: number,
+	) {
+		const child = this.node(childId);
+		const form = this.node(formId);
+		if (
+			child.kind !== "element" ||
+			child.parent !== null ||
+			form.tagName !== "form"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid parser form insertion",
+			);
+		const associate =
+			isFormAssociatedTag(child.tagName) &&
+			!Object.hasOwn(child.attributes, "form") &&
+			this.rootOf(formId) === this.rootOf(parentId);
+		if (associate) {
+			this.parserForms.set(childId, formId);
+			this.parserFormRevision++;
+		}
+		try {
+			this.insertInternal(parentId, childId, before);
+		} catch (error) {
+			if (associate && this.parserForms.get(childId) === formId)
+				this.resetParserForm(childId);
+			throw error;
+		}
+	}
+
+	private resetParserForm(id: number) {
+		if (this.parserForms.delete(id)) this.parserFormRevision++;
+	}
+
+	private resetParserFormsForRemoval(root: number): boolean {
+		if (!this.parserForms.size) return false;
+		const descendants = new Set(
+			[...this.walk(root)].map(({ node }) => node.id),
+		);
+		let changed = false;
+		for (const id of descendants) {
+			const owner = this.parserForms.get(id);
+			if (owner !== undefined && !descendants.has(owner)) {
+				this.resetParserForm(id);
+				changed = true;
+			}
+		}
+		return changed;
+	}
+
 	private insertInternal(
 		parentId: number,
 		childId: number,
@@ -808,6 +876,8 @@ export class DocumentTree {
 		const parent = this.node(parentId);
 		const child = this.node(childId);
 		if (reference === childId) {
+			if (this.resetParserFormsForRemoval(childId))
+				this.checkedness.moved(childId);
 			const index = parent.children.indexOf(childId);
 			const siblings = {
 				previousSibling: parent.children[index - 1] ?? null,
@@ -830,6 +900,7 @@ export class DocumentTree {
 		}
 		const before = reference;
 		if (child.kind === "fragment") {
+			for (const moving of children) this.resetParserFormsForRemoval(moving);
 			if (children.length) this.nodeViews.delete(childId);
 			const index =
 				before === undefined
@@ -862,6 +933,7 @@ export class DocumentTree {
 		for (const moving of children) {
 			const node = this.node(moving);
 			if (node.parent !== null) {
+				this.resetParserFormsForRemoval(moving);
 				const previousParent = this.node(node.parent);
 				const previousIndex = previousParent.children.indexOf(moving);
 				const previousSibling =
@@ -942,6 +1014,7 @@ export class DocumentTree {
 		if (previous.length) this.nodeViews.delete(parentId);
 		parent.children = [];
 		for (const child of previous) {
+			this.resetParserFormsForRemoval(child);
 			this.node(child).parent = null;
 			this.selections.moved(child);
 			this.checkedness.moved(child);
@@ -961,6 +1034,7 @@ export class DocumentTree {
 	private removeInternal(id: number, suppress = false) {
 		const node = this.node(id);
 		if (node.parent === null) return;
+		this.resetParserFormsForRemoval(id);
 		const parent = this.node(node.parent);
 		const index = parent.children.indexOf(id);
 		const previousSibling = parent.children[index - 1] ?? null;
@@ -1012,6 +1086,7 @@ export class DocumentTree {
 			(attribute === undefined ? 0 : value.length - attribute.value.length);
 		this.checkTextBudget(change + this.inputValueDelta(id, inputChange));
 		setHtmlAttribute(node.attributes, key, value);
+		if (key === "form") this.resetParserForm(id);
 		if (attribute) attribute.value = value;
 		this.textCodeUnits += change;
 		this.applyInputValueChange(id, inputChange);
@@ -1051,6 +1126,7 @@ export class DocumentTree {
 		);
 		this.textCodeUnits -= key.length + node.attributes[key].length;
 		removeHtmlAttribute(node.attributes, key);
+		if (key === "form") this.resetParserForm(id);
 		const attributeId = this.attachedAttributes.get(id)?.get(key);
 		if (attributeId !== undefined) {
 			const attribute = this.attributeRecord(attributeId);
@@ -1145,6 +1221,7 @@ export class DocumentTree {
 		const original = this.getAttributeNode(id, attribute.name);
 		if (original !== null) this.attributeRecord(original).ownerElement = null;
 		setHtmlAttribute(node.attributes, attribute.name, attribute.value);
+		if (attribute.name === "form") this.resetParserForm(id);
 		attribute.ownerElement = id;
 		this.attributeMap(id).set(attribute.name, attributeId);
 		this.textCodeUnits += change;
@@ -1729,6 +1806,7 @@ export class DocumentTree {
 		this.inputValues.close();
 		this.customValidity.clear();
 		this.userEditedValues.clear();
+		this.parserForms.clear();
 		this.nodes.clear();
 		this.attachedDoctype = undefined;
 		this.nodeViews.clear();

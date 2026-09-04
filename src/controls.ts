@@ -3,18 +3,10 @@ import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { validNumberValue } from "./input-number.js";
 import { inputType, sanitizeInputValue } from "./input-values.js";
+import { isFormAssociatedTag } from "./html-form-association.js";
 
 export { inputType } from "./input-values.js";
 
-const associatedTags = new Set([
-	"button",
-	"fieldset",
-	"input",
-	"object",
-	"output",
-	"select",
-	"textarea",
-]);
 const fieldsetAffected = new Set([
 	"button",
 	"fieldset",
@@ -35,6 +27,7 @@ const textTypes = new Set([
 interface ControlIndex {
 	root: number;
 	revision: number;
+	formRevision: number;
 	nodes: Map<number, Readonly<DocumentNode>>;
 	owners: Map<number, number | undefined>;
 	controls: Map<number | undefined, Readonly<DocumentNode>[]>;
@@ -89,13 +82,19 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 	tree.reference(tree.root);
 	const root = tree.rootOf(target);
 	const cached = indexes.get(tree);
-	if (cached?.root === root && cached.revision === tree.revision) return cached;
+	if (
+		cached?.root === root &&
+		cached.revision === tree.revision &&
+		cached.formRevision === tree.formAssociationRevision
+	)
+		return cached;
 	const nodes = new Map(
 		Array.from(tree.walk(root), ({ node }) => [node.id, node] as const),
 	);
 	const index: ControlIndex = {
 		root,
 		revision: tree.revision,
+		formRevision: tree.formAssociationRevision,
 		nodes,
 		owners: new Map(),
 		controls: new Map(),
@@ -152,15 +151,16 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 				inheritedOptgroup.has(node.id))
 		)
 			index.disabled.add(node.id);
-		if (associatedTags.has(node.tagName)) {
-			let owner: number | undefined;
+		if (isFormAssociatedTag(node.tagName)) {
+			let owner = tree.parserFormOwner(node.id);
 			if (
+				owner === undefined &&
 				nodes.get(root)?.kind === "document" &&
 				Object.hasOwn(node.attributes, "form")
 			) {
 				const target = nodes.get(htmlIds.get(node.attributes.form) ?? -1);
 				if (target?.tagName === "form") owner = target.id;
-			} else {
+			} else if (owner === undefined) {
 				let ancestor = parent;
 				while (ancestor) {
 					if (ancestor.tagName === "form") {

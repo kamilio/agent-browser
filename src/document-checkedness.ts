@@ -25,6 +25,8 @@ export class DocumentCheckedness {
 	constructor(
 		private readonly node: (id: number) => CheckedNode,
 		private readonly changed: (id: number) => void,
+		private readonly parserOwner: (id: number) => number | undefined = () =>
+			undefined,
 	) {}
 
 	initialize(id: number, source?: { state: DocumentCheckedness; id: number }) {
@@ -194,6 +196,7 @@ export class DocumentCheckedness {
 			root = this.node(root.parent);
 			if (owner === null && root.tagName === "form") owner = root.id;
 		}
+		owner = this.parserOwner(id) ?? owner;
 		if (root.kind === "document" && Object.hasOwn(node.attributes, "form")) {
 			if (!this.formLookups.has(node.attributes.form)) {
 				const lookup = new Map<string, number>();

@@ -413,6 +413,19 @@ parser-created form-owner overrides, fragment mode inheritance and provisional
 scaffold publication timing. Independent runtime/live-site/terminal gates remain
 open; no gated probe ran and the denied SafeJS probe remains unrun.
 
+September 4 parser-form checkpoint: `PARSER-FORMS.md` records parser-created
+non-ancestor form associations with shared native collections, submission/reset,
+host bindings and radio grouping. Attribute mutations, control movement, fragment
+transfer and cloning have explicit reset behavior; template owners stay isolated.
+Three initial regressions fail before integration; 40 new tests and 293 focused
+checks across ten files pass. Full native validation passes 8,609 / 239 files;
+the isolated owned patch passes 5,849 / 178 available files. Types, builds and
+six-file lint pass in both trees, preserving pending work. Continue with fragment
+mode inheritance and provisional scaffold publication timing. Historical image/
+custom-element associations, EOF diagnostics, modern select and cross-owner
+observer/runtime breadth remain open. No gated probe ran; the denied SafeJS probe
+remains unrun and independent acceptance gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

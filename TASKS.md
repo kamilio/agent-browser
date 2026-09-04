@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Parser-form checkpoint: `PARSER-FORMS.md` records native parser-created form-owner
+overrides for controls separated from their forms by table recovery. Shared
+collections, submission preparation, reset, host bindings and radio grouping use
+the same owner. Explicit attributes, control movement, fragment transfer and
+clone/import retain distinct reset rules; template owners stay isolated. Three
+initial regressions fail before integration; 40 new tests and 293 focused checks
+across ten files pass. Full native validation passes 8,609 / 239 files; the
+isolated owned patch passes 5,849 / 178 available files. Types, builds and six-file
+lint pass in both trees, excluding pre-existing pending work. Next address
+fragment mode inheritance and provisional scaffold publication timing. Historical
+image/custom-element associations, EOF diagnostics, modern select and cross-owner
+observer/runtime breadth remain open. No gated probe ran; the denied SafeJS probe
+remains unrun, independent acceptance gates remain open and the seven-day goal
+stays active.
+
+### Previous head-mode checkpoint
+
 Head-mode checkpoint: `HTML-HEAD.md` separates before-head, head, head-noscript
 and after-head processing. Early end tags, comments and whitespace no longer
 prematurely start the body; late metadata uses the saved head pointer without
