@@ -218,6 +218,7 @@
   "src/search-pattern.test.ts",
   "src/select-keyboard.test.ts",
   "src/select-inert.test.ts",
+  "src/selectedcontent.test.ts",
   "src/select-typeahead.test.ts",
   "src/selectors.test.ts",
   "src/session-trace.test.ts",

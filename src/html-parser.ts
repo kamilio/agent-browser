@@ -454,6 +454,22 @@ function* parseHtmlSteps(
 		let tableFoster = false;
 		let lateHeadInsertion = false;
 		const current = () => stack[stack.length - 1];
+		const openOptions = new Map<
+			number,
+			{ node: HtmlParserNode; index: number }
+		>();
+		const finishOptions = (all = false) => {
+			if (!openOptions.size) return;
+			for (const entry of [...openOptions.values()].reverse()) {
+				if (!all) {
+					if (stack[entry.index] === entry.node) continue;
+					entry.index = stack.findIndex((node) => node.id === entry.node.id);
+					if (entry.index !== -1) continue;
+				}
+				openOptions.delete(entry.node.id);
+				entry.node.tree.finishParserOption(entry.node.id);
+			}
+		};
 		const insertionTarget = (entry = current()) => {
 			if (
 				entry.tag === "template" &&
@@ -555,6 +571,7 @@ function* parseHtmlSteps(
 			attributes: Record<string, string> = {},
 			foster = false,
 		) => {
+			finishOptions();
 			const target = location(
 				foster,
 				lateHeadInsertion
@@ -656,6 +673,7 @@ function* parseHtmlSteps(
 			stack: () => stack,
 			reset: () => {
 				activeFormatting.sync();
+				finishOptions();
 				lastText = undefined;
 			},
 			issue,
@@ -721,6 +739,7 @@ function* parseHtmlSteps(
 			checkInput();
 		}
 		while (true) {
+			finishOptions();
 			let token = nextToken();
 			while (!token && tokenizer.paused) {
 				yield { kind: "pause", tree };
@@ -1259,6 +1278,8 @@ function* parseHtmlSteps(
 				continue;
 			if (token.selfClosing) issue("nonvoid-self-close-ignored");
 			stack.push({ ...entry, tag: name });
+			if (name === "option")
+				openOptions.set(id, { node: current(), index: stack.length - 1 });
 			if (formatting.has(name)) activeFormatting.add(current(), attributes);
 			if (["applet", "marquee", "object", "caption", "td", "th"].includes(name))
 				activeFormatting.mark(current());
@@ -1301,6 +1322,7 @@ function* parseHtmlSteps(
 				}
 			} else if (name === "pre" || name === "listing") stripNewline = true;
 		}
+		finishOptions(true);
 		if (initial) missingDoctype();
 		if (!scaffold.hasBody) scaffold.startBody();
 		setHtmlParseInfo(tree, {

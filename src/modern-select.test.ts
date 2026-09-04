@@ -115,7 +115,7 @@ it("excludes options inside datalists from native select ownership", () => {
 it.each([
 	[
 		"<select><button><selectedcontent></selectedcontent></button><option>A</option></select>",
-		"<select><button><selectedcontent></selectedcontent></button><option>A</option></select>",
+		"<select><button><selectedcontent>A</selectedcontent></button><option>A</option></select>",
 	],
 	[
 		"<select><div><option><b>A</b></option></div></select>",

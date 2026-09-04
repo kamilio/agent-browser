@@ -16,6 +16,7 @@ export class DocumentSelection {
 	constructor(
 		private readonly node: (id: number) => SelectionNode,
 		private readonly changed: (id: number) => void,
+		private readonly updateContent: (id: number) => void = () => {},
 	) {}
 
 	initialize(id: number, source?: { state: DocumentSelection; id: number }) {
@@ -70,6 +71,7 @@ export class DocumentSelection {
 				dirtyAll || wanted.has(option.id),
 				false,
 			);
+		this.updateContent(id);
 	}
 
 	clearOption(id: number) {

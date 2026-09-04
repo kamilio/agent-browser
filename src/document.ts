@@ -5,6 +5,7 @@ import {
 	type InputValueChange,
 } from "./document-input-values.js";
 import { DocumentSelection } from "./document-selection.js";
+import { DocumentSelectedContent } from "./document-selectedcontent.js";
 import { DocumentResources } from "./document-resources.js";
 import { canRewriteDocumentUrl } from "./document-url.js";
 import { AgentBrowserError } from "./errors.js";
@@ -133,9 +134,13 @@ export class DocumentTree {
 	private mutationHandlers = new Set<(record: DocumentMutation) => void>();
 	private mutationNotifications = 0;
 	private mutationCollectorFailures = 0;
+	private readonly selectedContent = new DocumentSelectedContent(this, (id) =>
+		this.node(id),
+	);
 	private readonly selections = new DocumentSelection(
 		(id) => this.node(id),
 		(id) => this.changed("control", id),
+		(id) => this.selectedContent.update(id),
 	);
 	private readonly checkedness = new DocumentCheckedness(
 		(id) => this.node(id),
@@ -802,6 +807,11 @@ export class DocumentTree {
 		this.insertInternal(parentId, childId, before);
 	}
 
+	finishParserOption(id: number) {
+		this.node(id);
+		this.selectedContent.optionClosed(id);
+	}
+
 	get formAssociationRevision(): number {
 		this.ensureOpen();
 		return this.parserFormRevision;
@@ -896,6 +906,7 @@ export class DocumentTree {
 					{ ...siblings, addedNodes: [childId] },
 					false,
 				);
+			this.selectedContent.connected(childId);
 			return;
 		}
 		const before = reference;
@@ -928,6 +939,7 @@ export class DocumentTree {
 				this.checkedness.moved(moving);
 				this.changed("insert", moving);
 			}
+			for (const moving of children) this.selectedContent.connected(moving);
 			return;
 		}
 		for (const moving of children) {
@@ -952,6 +964,7 @@ export class DocumentTree {
 					previousSibling,
 					nextSibling,
 				);
+				this.selectedContent.removed(moving, previousParent.id);
 			}
 			const index =
 				before === undefined
@@ -972,6 +985,7 @@ export class DocumentTree {
 			this.selections.moved(moving);
 			this.checkedness.moved(moving);
 			this.changed("insert", moving);
+			this.selectedContent.connected(moving);
 		}
 		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
 			this.currentFocus = null;
@@ -1019,6 +1033,7 @@ export class DocumentTree {
 			this.selections.moved(child);
 			this.checkedness.moved(child);
 			this.changed("remove", child);
+			this.selectedContent.removed(child, parentId);
 		}
 		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
 			this.currentFocus = null;
@@ -1049,6 +1064,7 @@ export class DocumentTree {
 		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
 			this.currentFocus = null;
 		this.changed("remove", id);
+		this.selectedContent.removed(id, parent.id);
 	}
 
 	getAttributeNames(id: number): string[] {
@@ -1802,6 +1818,7 @@ export class DocumentTree {
 		this.unregisterResources?.();
 		this.unregisterResources = undefined;
 		this.selections.close();
+		this.selectedContent.close();
 		this.checkedness.close();
 		this.inputValues.close();
 		this.customValidity.clear();
@@ -1865,6 +1882,7 @@ export class DocumentTree {
 			control: {},
 		});
 		this.textCodeUnits += tagName.length + data.length;
+		this.selectedContent.created(tagName);
 		return id;
 	}
 

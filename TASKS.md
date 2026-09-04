@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Selectedcontent checkpoint: `SELECTEDCONTENT.md` adds native child cloning,
+first-candidate/internal-disabled state, connection/removal updates, primary
+promotion and parser option-pop/EOF timing. Explicit select value/index paths
+and native select actions refresh copies; generic selectedness reset, option
+attributes/setters and text changes do not gain an indiscriminate copy hook.
+Three initial regressions and three draft reset-boundary regressions fail before
+their fixes. All 44 new tests and 323 focused checks across eight files pass.
+Full native validation passes 8,970 / 247 files; the isolated owned patch passes
+6,210 / 186 available files. Types, builds and six-file lint pass in both trees,
+preserving pending work. Next integrate the pending select-keyboard notification
+path and coordinate inert targeting. Picker/rendering, fallback button text,
+broader lifecycle/task timing, foreign content, framesets, quirks layout and
+cross-owner runtime observation remain open. No gated probe ran; the denied
+SafeJS probe remains unrun, independent acceptance gates remain open and the
+seven-day goal stays active.
+
+### Previous option disabled-boundary checkpoint
+
 Option disabled-boundary checkpoint: `OPTION-DISABLED.md` replaces transitive
 optgroup disabling with a shared nearest-group/boundary predicate in the native
 control index and default-selection eligibility. Options retain own-attribute

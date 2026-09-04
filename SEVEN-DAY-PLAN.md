@@ -520,6 +520,20 @@ foreign content, framesets, quirks layout and cross-owner observer/runtime
 breadth remain unfinished. No gated probe ran; the denied SafeJS probe remains
 unrun and independent acceptance gates remain open.
 
+September 4 selectedcontent checkpoint: `SELECTEDCONTENT.md` records native
+child cloning with explicit select-selection, connection/removal and parser
+option-pop/EOF triggers. Internal disabled state, primary promotion, staged
+replacement and document-write boundaries remain distinct from generic mutation
+or selectedness reset. Three initial and three draft reset-boundary regressions
+fail before their fixes; 44 new tests and 323 focused checks across eight files
+pass. Full native validation passes 8,970 / 247 files; the isolated owned patch
+passes 6,210 / 186 available files. Types, builds and six-file lint pass in both
+trees while preserving pending work. Continue with the pending select-keyboard
+notification path, coordinate inert targeting and picker/rendering breadth.
+Fallback text, lifecycle/task timing, foreign content, framesets, quirks layout
+and cross-owner runtime observation remain unfinished. No gated probe ran; the
+denied SafeJS probe remains unrun and independent acceptance gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
