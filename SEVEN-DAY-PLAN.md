@@ -283,6 +283,12 @@ callback orchestration. A pinned public-API review confirms the guest notificati
 enqueue dependency remains unresolved; a local, unposted request records precise
 acceptance cases. No host scheduling approximation is exposed as page support.
 
+September 4 fetch-ownership continuation: `FETCH-RESPONSE-OWNERSHIP.md` fixes
+production response publication/cleanup and Buffer-backed byte ownership while
+the independent observer scheduling contract remains unresolved. Native provider
+failure, clone retention and teardown fixtures improve the shared resource boundary
+without claiming released-SDK execution or closing any live acceptance gate.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

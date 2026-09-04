@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Fetch response ownership checkpoint: `FETCH-RESPONSE-OWNERSHIP.md` fixes retained
+unpublished bodies, stale publication after provider-triggered closure, Buffer
+byte aliasing and overridable slice calls. Response/clone capability creation now
+has reserved admission, unpublished/revoked guards and idempotent failure cleanup;
+failed clones preserve their originals. Invalid providers reject before document
+cleanup registration. Eleven initial regressions and five provider-construction
+regressions fail before their fixes; 38 new tests cover the resulting ownership
+contract, and focused checks pass 93 / four files. Failed construction remains
+charged to cumulative admission, but no longer retains unreachable body bytes.
+Full native validation passes 7,769 / 220 files; the isolated owned patch passes
+5,009 / 159 available files. Production/new-test types, builds and two-source lint
+pass in both trees. Pre-existing pending changes remain outside this checkpoint.
+This improves the already-connected page fetch path while observer scheduling
+remains open. No runtime/dependency is replaced and no gated probe is run; wider
+fetch/runtime/site acceptance and the full seven-day browser goal remain active.
+
+### Previous observer-callback checkpoint
+
 Observer-callback checkpoint: `SCRIPT-MUTATION-OBSERVERS.md` connects ScriptDom
 observer capabilities, native queues and retained record views to ordered callback
 prefixes. Unique admission survives shared/early-settling Promises; async tails do

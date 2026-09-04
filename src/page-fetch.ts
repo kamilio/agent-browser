@@ -19,7 +19,10 @@ import {
 	type NetworkResponse,
 	parseNetworkUrl,
 } from "./network.js";
-import type { ScriptHostObjectFactory } from "./script-dom.js";
+import type {
+	ScriptHostObjectDefinition,
+	ScriptHostObjectFactory,
+} from "./script-dom.js";
 
 export interface PageFetchRequestContext {
 	cors?: boolean;
@@ -150,6 +153,8 @@ interface ResponseMetadata {
 interface BodyRecord {
 	bytes: Uint8Array | null;
 	used: boolean;
+	ready: boolean;
+	revoked: boolean;
 }
 
 export class PageFetch {
@@ -158,6 +163,7 @@ export class PageFetch {
 		this.perform(input, init);
 	private readonly active = new Set<AbortController>();
 	private readonly bodies = new Set<BodyRecord>();
+	private capabilities = new WeakSet<object>();
 	private readonly origin: string;
 	private requests = 0;
 	private responses = 0;
@@ -177,6 +183,14 @@ export class PageFetch {
 			csp?: boolean;
 		} = {},
 	) {
+		if (
+			typeof factory?.createHostObject !== "function" ||
+			typeof request !== "function"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid page fetch provider",
+			);
 		const limits = { ...defaults, ...options.limits };
 		for (const [name, maximum] of Object.entries(defaults)) {
 			const value = limits[name as keyof PageFetchLimits];
@@ -211,9 +225,8 @@ export class PageFetch {
 		for (const controller of this.active)
 			controller.abort(new AgentBrowserError("closed", "Page fetch is closed"));
 		this.active.clear();
-		for (const body of this.bodies) body.bytes = null;
-		this.bodies.clear();
-		this.retainedBytes = 0;
+		for (const body of this.bodies) this.revokeResponse(body);
+		this.capabilities = new WeakSet();
 		this.unregisterClose();
 	}
 
@@ -610,12 +623,27 @@ export class PageFetch {
 				"resource-limit",
 				"Fetch response retention limit exceeded",
 			);
-		const body: BodyRecord = { bytes: input?.slice() ?? null, used: false };
+		const body: BodyRecord = {
+			bytes: input === null ? null : new Uint8Array(input),
+			used: false,
+			ready: false,
+			revoked: false,
+		};
 		this.responses++;
 		this.bodies.add(body);
 		this.retainedBytes += body.bytes?.byteLength ?? 0;
-		const consume = () => {
+		const read = () => {
 			this.ensureOpen();
+			if (body.revoked)
+				throw new AgentBrowserError("closed", "Fetch response is revoked");
+			if (!body.ready)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Fetch response is not yet published",
+				);
+		};
+		const consume = () => {
+			read();
 			if (body.used) throw new TypeError("Fetch body is already consumed");
 			if (body.bytes === null) return "";
 			const bytes = body.bytes;
@@ -624,46 +652,81 @@ export class PageFetch {
 			this.retainedBytes -= bytes.byteLength;
 			return new TextDecoder().decode(bytes);
 		};
-		const headers = this.factory.createHostObject({
-			methods: {
-				get: (name) => {
-					this.ensureOpen();
-					const key = headerName(name);
-					return Object.hasOwn(metadata.headers, key)
-						? metadata.headers[key]
-						: null;
+		try {
+			const headers = this.capability({
+				methods: {
+					get: (name) => {
+						read();
+						const key = headerName(name);
+						return Object.hasOwn(metadata.headers, key)
+							? metadata.headers[key]
+							: null;
+					},
+					has: (name) => {
+						read();
+						return Object.hasOwn(metadata.headers, headerName(name));
+					},
 				},
-				has: (name) => {
-					this.ensureOpen();
-					return Object.hasOwn(metadata.headers, headerName(name));
+			});
+			const property = (get: () => unknown) => ({
+				get: () => {
+					read();
+					return get();
 				},
-			},
-		});
-		const property = (get: () => unknown) => ({
-			get: () => {
-				this.ensureOpen();
-				return get();
-			},
-		});
-		return this.factory.createHostObject({
-			properties: {
-				url: property(() => metadata.url),
-				status: property(() => metadata.status),
-				statusText: property(() => ""),
-				ok: property(() => metadata.status >= 200 && metadata.status < 300),
-				type: property(() => metadata.type),
-				redirected: property(() => metadata.redirected),
-				headers: property(() => headers),
-				bodyUsed: property(() => body.used),
-			},
-			methods: {
-				text: async () => consume(),
-				json: async () => JSON.parse(consume()),
-				clone: () => {
-					if (body.used) throw new TypeError("Fetch body is already consumed");
-					return this.response(metadata, body.bytes);
+			});
+			const response = this.capability({
+				properties: {
+					url: property(() => metadata.url),
+					status: property(() => metadata.status),
+					statusText: property(() => ""),
+					ok: property(() => metadata.status >= 200 && metadata.status < 300),
+					type: property(() => metadata.type),
+					redirected: property(() => metadata.redirected),
+					headers: property(() => headers),
+					bodyUsed: property(() => body.used),
 				},
-			},
-		});
+				methods: {
+					text: async () => consume(),
+					json: async () => JSON.parse(consume()),
+					clone: () => {
+						read();
+						if (body.used)
+							throw new TypeError("Fetch body is already consumed");
+						return this.response(metadata, body.bytes);
+					},
+				},
+			});
+			body.ready = true;
+			return response;
+		} catch (error) {
+			this.revokeResponse(body);
+			throw error;
+		}
+	}
+
+	private capability(definition: ScriptHostObjectDefinition) {
+		this.ensureOpen();
+		const capability = this.factory.createHostObject(definition);
+		this.ensureOpen();
+		if (
+			!capability ||
+			typeof capability !== "object" ||
+			this.capabilities.has(capability)
+		)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Invalid fetch response capability",
+			);
+		this.capabilities.add(capability);
+		return capability;
+	}
+
+	private revokeResponse(body: BodyRecord) {
+		if (body.revoked) return;
+		body.revoked = true;
+		body.ready = false;
+		this.retainedBytes -= body.bytes?.byteLength ?? 0;
+		body.bytes = null;
+		this.bodies.delete(body);
 	}
 }
