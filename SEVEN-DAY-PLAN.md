@@ -402,6 +402,17 @@ modes, fragment mode inheritance, parser form-owner association and remaining
 compatibility requirements. Independent runtime/live-site/terminal gates remain
 open; no gated probe ran and the denied SafeJS probe remains unrun.
 
+September 4 head-mode checkpoint: `HTML-HEAD.md` records bounded before-head,
+head-noscript and after-head dispatch, saved-head metadata insertion, body
+publication boundaries and whitespace adjacency. Ten initial regressions and one
+whitespace case fail before their fixes; 54 new tests and 445 focused checks
+across ten files pass. Full native validation passes 8,569 / 238 files; the
+isolated owned patch passes 5,809 / 177 available files. Types, builds and
+three-file lint pass in both trees while preserving pending work. Continue with
+parser-created form-owner overrides, fragment mode inheritance and provisional
+scaffold publication timing. Independent runtime/live-site/terminal gates remain
+open; no gated probe ran and the denied SafeJS probe remains unrun.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

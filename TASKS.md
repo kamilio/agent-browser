@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Head-mode checkpoint: `HTML-HEAD.md` separates before-head, head, head-noscript
+and after-head processing. Early end tags, comments and whitespace no longer
+prematurely start the body; late metadata uses the saved head pointer without
+leaving a temporary stack frame. Noscript respects the scripting mode, template
+policies remain inert and after-head whitespace checks actual adjacency. Ten
+initial cases and one whitespace case fail before their fixes; 54 new tests and
+445 focused checks across ten files pass. Full native validation passes
+8,569 / 238 files; the isolated owned patch passes 5,809 / 177 available files.
+Types, builds and three-file lint pass in both trees. A related quota fixture now
+explicitly enters the body; its assertion is unchanged. Pre-existing pending work
+is excluded. Next address parser-created form-owner overrides, fragment mode
+inheritance and provisional scaffold publication timing. EOF diagnostics, modern
+select and cross-owner observer/runtime breadth remain open. No gated probe ran;
+the denied SafeJS probe remains unrun, independent acceptance gates remain open
+and the seven-day goal stays active.
+
+### Previous document-closing checkpoint
+
 Document-closing checkpoint: `HTML-CLOSING.md` preserves open ancestors across
 body/html ends and separates after-body from after-after-body processing.
 Trailing comments, whitespace, repeated scaffold attributes and scoped rejection

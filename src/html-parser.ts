@@ -38,6 +38,7 @@ const headTags = new Set([
 	"meta",
 	"title",
 	"style",
+	"noframes",
 	"script",
 	"template",
 ]);
@@ -407,10 +408,22 @@ function* parseHtmlSteps(
 		let bodyStarted = !!fragment;
 		if (scripting && !fragment)
 			yield { kind: "start", tree, input: tokenizer, normalize };
-		let mode: "before" | "head" | "body" | "after" | "after-after" = fragment
+		let mode:
+			| "before"
+			| "before-head"
+			| "head"
+			| "head-noscript"
+			| "after-head"
+			| "body"
+			| "after"
+			| "after-after" = fragment
 			? "body"
-			: "before";
-		let stack = [{ tree, id: body, tag: fragment?.tagName ?? "body" }];
+			: fragmentDocument
+				? "before-head"
+				: "before";
+		let stack = [
+			{ tree, id: fragment ? body : html, tag: fragment?.tagName ?? "html" },
+		];
 		const templates: { index: number; mode: TemplateMode }[] =
 			fragment?.tagName === "template" ? [{ index: 0, mode: "template" }] : [];
 		const templateScope = () => templates[templates.length - 1];
@@ -435,6 +448,7 @@ function* parseHtmlSteps(
 			| { tree: DocumentTree; id: number; parent: number; before?: number }
 			| undefined;
 		let tableFoster = false;
+		let lateHeadInsertion = false;
 		const current = () => stack[stack.length - 1];
 		const insertionTarget = (entry = current()) => {
 			if (
@@ -474,6 +488,16 @@ function* parseHtmlSteps(
 			}
 			stack = [{ tree, id: body, tag: "body" }];
 			return "body" as const;
+		};
+		const inHead = () => {
+			stack = [{ tree, id: head, tag: "head" }];
+			lastText = undefined;
+			return "head" as const;
+		};
+		const afterHead = () => {
+			stack = [{ tree, id: html, tag: "html" }];
+			lastText = undefined;
+			return "after-head" as const;
 		};
 		const location = (foster: boolean, override?: HtmlParserNode) => {
 			if (
@@ -524,17 +548,22 @@ function* parseHtmlSteps(
 			attributes: Record<string, string> = {},
 			foster = false,
 		) => {
-			const target = location(foster);
+			const target = location(
+				foster,
+				lateHeadInsertion ? { tree, id: head, tag: "head" } : undefined,
+			);
+			lateHeadInsertion = false;
 			const id = target.tree.createElement(name, attributes);
 			target.tree.insert(target.parent, id, target.before);
 			lastText = undefined;
 			return { tree: target.tree, id };
 		};
-		const text = (data: string, foster = false) => {
+		const text = (data: string, foster = false, inspectAdjacent = false) => {
 			if (!data) return;
 			const target = location(foster);
 			let previousText: number | undefined;
 			if (
+				inspectAdjacent ||
 				target.fostered ||
 				(lastText?.tree === target.tree &&
 					lastText.parent === target.parent &&
@@ -683,11 +712,13 @@ function* parseHtmlSteps(
 			}
 			if (!token) {
 				tables.flush();
+				if (mode === "head-noscript") issue("unclosed-head-noscript");
 				for (const scope of templates)
 					if (scope.index > 0) issue("unclosed-template");
 				break;
 			}
 			tableFoster = false;
+			lateHeadInsertion = false;
 			if (token.kind !== "text") tables.flush();
 			activeFormatting.sync();
 			if (token.kind === "doctype") {
@@ -725,8 +756,7 @@ function* parseHtmlSteps(
 			if (token.kind === "comment") {
 				const target = location(false);
 				const comment = target.tree.createComment(token.data);
-				if (mode === "before" && fragmentDocument)
-					tree.insert(html, comment, head);
+				if (mode === "before-head") tree.insert(html, comment, head);
 				else if (mode === "before") tree.insert(tree.root, comment, html);
 				else
 					target.tree.append(
@@ -744,12 +774,30 @@ function* parseHtmlSteps(
 				let data = token.data;
 				if (stripNewline && data.startsWith("\n")) data = data.slice(1);
 				stripNewline = false;
-				if (mode === "before" && /^[\t\n\f\r ]*$/.test(data)) continue;
-				if (
-					mode === "before" ||
-					(mode === "head" && stack.length === 1 && /[^\t\n\f\r ]/.test(data))
-				)
-					mode = inBody();
+				if (!fragment && !inTemplate()) {
+					if (mode === "before" || mode === "before-head") {
+						data = data.replace(/^[\t\n\f\r ]+/, "");
+						if (!data) continue;
+						mode = inHead();
+					}
+					if (
+						mode === "head" ||
+						mode === "head-noscript" ||
+						mode === "after-head"
+					) {
+						const leading = /^[\t\n\f\r ]*/.exec(data)?.[0] ?? "";
+						text(leading, false, true);
+						data = data.slice(leading.length);
+						if (!data) continue;
+						if (mode === "head-noscript") {
+							issue("content-in-head-noscript");
+							pop("noscript");
+							mode = "head";
+						}
+						if (mode === "head") mode = afterHead();
+						mode = inBody();
+					}
+				}
 				if (
 					(mode === "after" || mode === "after-after") &&
 					/[^\t\n\f\r ]/.test(data)
@@ -769,6 +817,117 @@ function* parseHtmlSteps(
 				issue("ignored-fragment-document-tag");
 				continue;
 			}
+			if (!fragment && !inTemplate()) {
+				let ignored = false;
+				for (let pass = 0; ; pass++) {
+					checkInput();
+					if (pass >= 8)
+						throw new AgentBrowserError(
+							"resource-limit",
+							"HTML head reprocessing limit exceeded",
+						);
+					const start = token.kind === "start";
+					if (mode === "before") {
+						if (!start && !["head", "body", "html", "br"].includes(name)) {
+							issue("ignored-head-tag");
+							ignored = true;
+							break;
+						}
+						mode = "before-head";
+						if (start && name === "html") break;
+						continue;
+					}
+					if (start && name === "html") break;
+					if (mode === "before-head") {
+						if (!start && !["head", "body", "html", "br"].includes(name)) {
+							issue("ignored-head-tag");
+							ignored = true;
+							break;
+						}
+						mode = inHead();
+						if (start && name === "head") {
+							merge(head, attributes);
+							ignored = true;
+							break;
+						}
+						continue;
+					}
+					if (mode === "head-noscript") {
+						if (!start && name === "noscript") {
+							pop("noscript");
+							mode = "head";
+							ignored = true;
+							break;
+						}
+						if (
+							start &&
+							[
+								"basefont",
+								"bgsound",
+								"link",
+								"meta",
+								"noframes",
+								"style",
+							].includes(name)
+						)
+							break;
+						if (
+							(!start && name !== "br") ||
+							(start && ["head", "noscript"].includes(name))
+						) {
+							issue("ignored-head-tag");
+							ignored = true;
+							break;
+						}
+						issue("content-in-head-noscript");
+						pop("noscript");
+						mode = "head";
+						continue;
+					}
+					if (mode === "head") {
+						if (start && (headTags.has(name) || name === "noscript")) {
+							if (name === "noscript" && !scripting) mode = "head-noscript";
+							break;
+						}
+						if (!start && name === "head") {
+							mode = afterHead();
+							ignored = true;
+							break;
+						}
+						if (!start && name === "template") break;
+						if (
+							(start && name === "head") ||
+							(!start && !["body", "html", "br"].includes(name))
+						) {
+							issue("ignored-head-tag");
+							ignored = true;
+							break;
+						}
+						mode = afterHead();
+						continue;
+					}
+					if (mode === "after-head") {
+						if (start && headTags.has(name)) {
+							issue("late-head-element");
+							lateHeadInsertion = true;
+							break;
+						}
+						if (!start && name === "template") break;
+						if (
+							(start && name === "head") ||
+							(!start && !["body", "html", "br"].includes(name))
+						) {
+							issue("ignored-head-tag");
+							ignored = true;
+							break;
+						}
+						mode = inBody();
+						continue;
+					}
+					break;
+				}
+				if (ignored) continue;
+			}
 			if (mode === "after" || mode === "after-after") {
 				if (mode === "after" && token.kind === "end" && name === "html") {
 					if (fragmentDocument) issue("ignored-fragment-document-tag");
@@ -781,7 +940,6 @@ function* parseHtmlSteps(
 				}
 			}
 			if (token.kind === "end" && (name === "body" || name === "html")) {
-				if (mode === "before" || mode === "head") mode = inBody();
 				if (!bodyScope.canEndBody()) issue("body-not-in-scope");
 				else {
 					mode = name === "html" && !fragmentDocument ? "after-after" : "after";
@@ -803,27 +961,13 @@ function* parseHtmlSteps(
 				continue;
 			}
 			if (name === "head") {
-				if (token.kind === "start" && mode === "before") {
-					mode = "head";
-					stack = [{ tree, id: head, tag: "head" }];
-					merge(head, attributes);
-				} else if (token.kind === "end" && mode === "head") mode = inBody();
-				else issue("unexpected-head");
+				issue("unexpected-head");
 				continue;
 			}
 			if (name === "body") {
 				merge(body, attributes);
-				if (mode === "before" || mode === "head") mode = inBody();
 				continue;
 			}
-			if (mode === "before") {
-				if (token.kind === "start" && headTags.has(name)) {
-					mode = "head";
-					stack = [{ tree, id: head, tag: "head" }];
-				} else mode = inBody();
-			}
-			if (mode === "head" && stack.length === 1 && !headTags.has(name))
-				mode = inBody();
 			if (name === "template") {
 				if (token.kind === "start") {
 					if (

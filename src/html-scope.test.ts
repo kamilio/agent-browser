@@ -227,7 +227,7 @@ it.each([
 it("accounts for synthetic paragraphs and closes failed candidates", () => {
 	let owner: DocumentTree | undefined;
 	expect(() =>
-		parseHtmlDocument("</p>", "https://example.com/", {
+		parseHtmlDocument("<body></p>", "https://example.com/", {
 			limits: { maxNodes: 4 },
 			initializeDocument(tree) {
 				owner = tree;
