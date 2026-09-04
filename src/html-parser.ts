@@ -728,8 +728,14 @@ function* parseHtmlSteps(
 			if (!token) {
 				tables.flush();
 				if (mode === "head-noscript") issue("unclosed-head-noscript");
-				for (const scope of templates)
-					if (scope.index > 0) issue("unclosed-template");
+				while (templates.length && templateScope().index > 0) {
+					checkInput();
+					issue("unclosed-template");
+					stack.length = templateScope().index;
+					templates.pop();
+					activeFormatting.sync();
+				}
+				if (mode === "body" && !inTemplate()) bodyScope.endOfFile();
 				break;
 			}
 			tableFoster = false;
@@ -1264,6 +1270,7 @@ function* parseHtmlSteps(
 					yield { kind: "pause", tree };
 					closing = nextToken();
 				}
+				if (!closing) issue("eof-in-text");
 				pop(name);
 				if (name === "script") {
 					if (scripting && closing && !fragment && !inTemplate())

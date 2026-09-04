@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+EOF checkpoint: `HTML-EOF.md` records bounded open-element diagnostics, actual
+template-frame unwinding, text-mode EOF and literal tag-opener recovery. Optional
+ends, virtual fragment roots and after-body EOF paths avoid false positives;
+document-write boundaries still pause rather than finalize. Three initial
+regressions fail before their fixes; 66 new tests and 428 focused checks across
+ten files pass. Full native validation passes 8,752 / 242 files; the isolated
+owned patch passes 5,992 / 181 available files. Types, builds and four-file lint
+pass in both trees while preserving pending work. Next address modern select
+tree construction and remaining tokenizer/runtime compatibility, rather than
+treating diagnostic coverage as full conformance. Foreign content, framesets,
+quirks layout and cross-owner observer/runtime breadth remain open. No gated
+probe ran; the denied SafeJS probe remains unrun, independent acceptance gates
+remain open and the seven-day goal stays active.
+
+### Previous scaffold-publication checkpoint
+
 Scaffold-publication checkpoint: `HTML-SCAFFOLD.md` replaces eager html/head/body
 allocation with token-driven native identities. Startup has no parser-created
 elements; comments and doctypes precede later allocations, explicit attributes

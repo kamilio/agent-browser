@@ -168,8 +168,12 @@ export class HtmlTokenizer {
 		}
 		const endTag = this.source[this.offset + 1] === "/";
 		const nameStart = this.offset + (endTag ? 2 : 1);
-		if (this.boundary !== undefined && nameStart >= this.source.length)
-			throw needInput;
+		if (nameStart >= this.source.length) {
+			if (this.boundary !== undefined) throw needInput;
+			this.offset = this.source.length;
+			this.issue("eof-before-tag-name");
+			return { kind: "text", data: endTag ? "</" : "<" };
+		}
 		if (!/[a-zA-Z]/.test(this.source[nameStart] ?? "")) {
 			if (
 				endTag &&

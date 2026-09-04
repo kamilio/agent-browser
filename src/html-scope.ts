@@ -79,6 +79,17 @@ export class HtmlScope {
 		return false;
 	}
 
+	endOfFile(): void {
+		const stack = this.options.stack();
+		for (let index = 1; index < stack.length; index++) {
+			this.visit();
+			if (!bodyEndAllowed.has(stack[index].tag)) {
+				this.options.issue("unclosed-elements-at-eof");
+				return;
+			}
+		}
+	}
+
 	imply(except?: string): void {
 		const stack = this.options.stack();
 		while (stack.length > 1) {

@@ -452,6 +452,19 @@ Modern select, foreign content, quirks layout and cross-owner observer/runtime
 breadth remain unfinished. No gated probe ran; the denied SafeJS probe remains
 unrun and independent acceptance gates remain open.
 
+September 4 EOF checkpoint: `HTML-EOF.md` records bounded body-stack diagnostics,
+template-frame unwinding, text-mode EOF and literal tag-opener recovery without
+confusing document-write boundaries with final input. Optional ends, fragment
+contexts and after-body paths retain distinct behavior. Three initial regressions
+fail before their fixes; 66 new tests and 428 focused checks across ten files
+pass. Full native validation passes 8,752 / 242 files; the isolated owned patch
+passes 5,992 / 181 available files. Types, builds and four-file lint pass in both
+trees, preserving pending work. Continue with modern select tree construction
+and remaining tokenizer/runtime compatibility. Foreign content, framesets,
+quirks layout and cross-owner observer/runtime breadth remain unfinished. No
+gated probe ran; the denied SafeJS probe remains unrun and independent acceptance
+gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
