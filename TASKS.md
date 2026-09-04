@@ -19,6 +19,17 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native cookie-command checkpoint: `COOKIE-COMMANDS.md` integrates list/get/set/
+delete with the existing session jar and actual command queue. The CLI fixture
+now uses production dispatch and covers tabless sessions, cross-session isolation,
+navigation headers and trace secret omission. Host-only/security policy remains
+unchanged. Focused native runs pass 264 / eight working and 262 / eight isolated
+files; types, builds, strict new-test checking and scoped lint pass. Authorized
+full native runs pass 9,765 / 279 isolated files; working validation reports
+10,910 passes and the unchanged pending Window-onload assertion failure / 301
+files. Live login, sockets and runtime/browser acceptance
+remain open; the previously denied SafeJS probe remains unrun.
+
 Native focus-options checkpoint: `FOCUS-OPTIONS.md` integrates the parallel
 worker's element focus/blur actions, preventScroll, explicit focusVisible and
 shared root centering. Parent review added four failing indication-reentrancy

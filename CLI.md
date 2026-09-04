@@ -143,8 +143,11 @@ not a saved browser profile on disk.
   and supported Enter form/link defaults. See `KEYBOARD.md` for keys, cancellation,
   limits, result shapes and deliberately incomplete native event timing.
 - `localstorage-*` and `sessionstorage-*`: list/get/set/delete/clear at the selected
-  document's origin. `cookie-clear` clears the session jar. Other cookie CLI
-  operations still need implementation and must not bypass the jar's scope rules.
+  document's origin. Cookie list/get/set/delete/clear use the existing session jar;
+  list/get/delete also work after the last tab closes. Set needs an active HTTP(S)
+  page and supports path, Unix-second expiry, secure/httpOnly and sameSite flags.
+  Domain cookies remain unsupported. See `COOKIE-COMMANDS.md` for exact scope,
+  sensitive read output, result shapes and native-only validation boundaries.
 - `metrics`, `capabilities`, help and version. Capability output distinguishes
   partial command implementations, unsupported commands and frontend-only service
   commands. It explicitly reports no page JavaScript or full CLI-superset claim.

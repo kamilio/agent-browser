@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 cookie-command continuation: `COOKIE-COMMANDS.md` integrates native
+list/get/set/delete commands into the actual session queue and CLI dispatch.
+Session isolation, tabless reads/deletion, native navigation header effects and
+trace privacy have fixture coverage. Domain cookies remain explicitly unsupported;
+existing jar security is not weakened. This is not a live login, socket or guest
+runtime acceptance claim, and does not close overall CLI/browser parity gates.
+
 September 4 native focus-options continuation: `FOCUS-OPTIONS.md` adds native
 element focus/blur actions with preventScroll, explicit focusVisible overrides,
 same-target/reentrant ownership and shared root centering. Integrated tests and
@@ -379,7 +386,7 @@ extensions must be additive, not require rewriting existing command workflows.
 | P10 | `screenshot`, `pdf` | Optional element/filename/hires arguments and valid actual exports. | Partial native PNG and paginated PDF exports use bounded artifacts and safe local `--filename` writes (`CAPTURE-EXPORT.md`, `INLINE-CAPTURES.md`, `PDF.md`). Actual CLI entry is tested against an injected service. PDF uses whole-document screen layout; PNG supports documented element scopes and fixed-scale `--hires`. Full CSS/print, general bounds, high-density and live service/site acceptance remain open |
 | P11 | `tab-list`, `tab-new`, `tab-close`, `tab-select` | Indexed tab lifecycle, active tab, refs, storage and session isolation. | Pending |
 | P12 | `state-save`, `state-load` | Explicit private-file round trips, cookies/storage fidelity and safe path handling. | Partial: actual CLI-entry round trips through an injected service, private temporary files, bounded state chunks, atomic owner replacement, explicit overwrite and failure cleanup (`STATE-TRANSFER.md`). Real socket/process/runtime, upstream-format parity and authentication reuse remain open |
-| P13 | `cookie-list/get/set/delete/clear` | Domain/path/secure/httpOnly/sameSite attributes and request/script access semantics. | Pending |
+| P13 | `cookie-list/get/set/delete/clear` | Domain/path/secure/httpOnly/sameSite attributes and request/script access semantics. | Partial: production native dispatch and actual CLI-entry fixtures use the existing session jar (`COOKIE-COMMANDS.md`). Path/expiry/security, tabless reads/deletion, session isolation, native header effects and trace privacy are covered. Domain cookies, full upstream parity, live authentication and runtime acceptance remain open |
 | P14 | `localstorage-*`, `sessionstorage-*` | List/get/set/delete/clear, origin scoping and lifecycle. | Pending |
 | P15 | `route`, `route-list`, `unroute` | Requests actually mocked, intercepted bodies/status and retrieval showing those results. | Partial session-owned fulfillment, bounded URL globs, response bodies/status/headers, redirect responses, listing/removal and journal attribution (`ROUTING.md`). Node consults routes inside its existing redirect driver; adapters without the optional capability still fail closed on automatic navigation redirects. Mocked resolver/exchange tests cover native routing and session HTML loading; experimental SafeJS consumes fully mocked redirect chains with CORS and manual/error filtering. Header rewriting, binary/cookie rule configuration, handlers, full pattern parity and separate CLI/live acceptance remain open |
 | P16 | `console`, `requests`, `request` | Real diagnostic records, levels/details and sensitive-data handling. | Partial document-scoped console (`PAGE-CONSOLE.md`) and tab/latest-network-navigation request journal (`NETWORK-JOURNAL.md`); redacted bounded metadata and detail commands tested with in-memory transports. Full traffic/header/body and console parity remain open |

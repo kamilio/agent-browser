@@ -10,11 +10,12 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | Editable-region fill, cancellation, command path, integration and validation | Own the primary worktree and focused atomic commits. |
-| DOM worker | Native live Range/Selection and ScriptDom publishing | Own range/selection modules and ScriptDom; provide Window integration contract. |
+| Main | Cookie production wiring, Range/Window integration and validation | Own the primary worktree and focused atomic commits. |
+| DOM worker | Editable keyboard defaults using delivered live Range/Selection | Initial range delivery is in parent integration; keyboard follow-up uses a fresh snapshot. |
 | Web globals worker | URL/URLSearchParams and additional feasible web globals | New owned binding modules; main integrates PageBindings. |
 | Focus delivery | Native focus/blur options, indication and scrolling | Integrated with an additional parent reentrancy fix; synchronous guest methods remain open. |
-| Cookie worker | Cookie list/get/set/delete services | Reuses the released focus slot; main owns command/session wiring. |
+| Cookie delivery | Cookie list/get/set/delete services | Production wiring and actual CLI tests integrated; 9,765 isolated native tests pass. |
+| White-space worker | Native pre-wrap formatting and hanging spaces | Reuses the released cookie slot; own css-text/text-layout only. |
 | Positioning worker | Native absolute/fixed layout and shared geometry | CSS/style/layout write set; preserve existing flow/flex/replaced behavior. |
 | Runtime worker | Connect existing public runtime adapter selection | Loader/factory selection only; actual SafeJS execution is still gated. |
 | Playground worker | Extraction/snapshot downloads and honest example discovery | Existing UI, mounted in-memory tests, no live-site claims. |

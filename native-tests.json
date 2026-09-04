@@ -1,4 +1,6 @@
 [
+  "src/cookie-commands.test.ts",
+  "src/cli-cookie-commands.test.ts",
   "src/action-wait.test.ts",
   "src/page-focus.test.ts",
   "src/editable-fill.test.ts",

@@ -1277,6 +1277,13 @@ focus/blur remains an explicit runtime-adapter requirement, not a Promise stub.
 No gated probe ran; the denied SafeJS probe remains unrun and original scope stays
 open under the accelerated integration plan.
 
+September 4 parallel cookie continuation: `COOKIE-COMMANDS.md` integrates the
+existing jar's list/get/set/delete services into production command dispatch.
+The actual CLI-entry fixture no longer bypasses that dispatch. Focused checks
+cover tabless sessions, session isolation, header effects and trace secret
+omission. Domain-cookie and full CLI parity remain open; no gated probe ran.
+The accelerated schedule does not change native/runtime acceptance boundaries.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

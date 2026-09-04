@@ -16,6 +16,7 @@ import {
 } from "./capture-artifacts.js";
 import { type Invocation, parseInvocation } from "./cli-parser.js";
 import { commands } from "./commands.js";
+import { cookieCommandOptions, executeCookieCommand } from "./cookie-commands.js";
 import { cssBoxProperties } from "./css-box.js";
 import { cssVariableCapabilities } from "./css-variables.js";
 import { inlineDeclarationLimits } from "./document-inline-declarations.js";
@@ -140,6 +141,7 @@ const frontendCommands = new Set([
 ]);
 
 const supportedOptions: Readonly<Record<string, readonly string[]>> = {
+	...cookieCommandOptions,
 	"state-export": [],
 	"state-import-begin": [],
 	"state-import-append": [],
@@ -1438,6 +1440,13 @@ export class BrowserCommandHost {
 		if (invocation.command === "cookie-clear") {
 			browser.cookies.clear();
 			return { cleared: true };
+		}
+		if (Object.hasOwn(cookieCommandOptions, invocation.command)) {
+			const activeUrl =
+				invocation.command === "cookie-set"
+					? browser.page(this.activeTab(browser)).document.url
+					: null;
+			return executeCookieCommand(browser.cookies, invocation, activeUrl);
 		}
 		const tabId = this.activeTab(browser);
 		if (invocation.command === "generate-locator") {
