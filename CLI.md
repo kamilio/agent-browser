@@ -1,5 +1,11 @@
 # Executable CLI and shared command service
 
+September 4 tracing integration: `TRACE-CORE.md` documents bounded per-session
+semantic recording, owned JSON artifacts, private CLI export and failure recovery.
+Use `tracing-start`, `tracing-status` and `tracing-stop --filename=trace.json` in
+an existing session. This is not video, continuous recording or a Playwright ZIP;
+local review UI and real-browser/runtime acceptance remain separate.
+
 September 3 state persistence: `state-save [filename] [--overwrite]` and
 `state-load <filename>` now connect bounded session-scoped transfers to private
 local files. Normal command results contain metadata, not credentials. Native

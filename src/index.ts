@@ -140,14 +140,23 @@ export {
 	capturePdf,
 	readCapture,
 	readPdf,
+	readTrace,
 	type CaptureExecutor,
 } from "./capture-client.js";
 export {
 	captureArtifactLimits,
 	type CaptureArtifact,
 	type PdfArtifact,
+	type TraceArtifact,
+	type TraceDetails,
 	type ArtifactChunk,
 } from "./capture-artifacts.js";
+export {
+	SessionTrace,
+	sessionTraceLimits,
+	sessionTraceCapabilities,
+	type TraceOutcome,
+} from "./session-trace.js";
 export { encodePdf, pdfLimits, type PdfGlyph, type PdfPage } from "./pdf.js";
 export { renderDocumentPdf, documentPdfLimits } from "./document-pdf.js";
 export {

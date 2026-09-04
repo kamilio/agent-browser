@@ -816,6 +816,22 @@ site, real terminal or SafeJS probe ran; the denied probe remains unrun and the
 original runtime/site/device/portability/full compatibility gates and seven-day
 objective remain open.
 
+September 4 native tracing integration checkpoint: `TRACE-CORE.md` integrates
+bounded semantic recording, owned artifacts, public APIs and private CLI JSON
+exports. Serialization faults become counted omissions without masking action
+results/errors, and cancellation during consumer delivery prevents a successful
+reader completion. Ten new cases cover the fixes/public exports; nine fail before
+correction. Forty-five pending recorder/export cases and the CLI trace case are
+integrated. Focused native runs pass 147 / seven files in both trees; authorized
+full native runs pass 9,603 / 268 working-tree files and 8,409 / 244 isolated files.
+Types/builds, strict three-test checks and twelve-file lint pass. The PNG probe
+receives a type discriminator only; it is not run. Historical measurements and
+pending review/layout work remain intact. Next integrate local trace review and
+its inert display boundary. No live browser, site, socket, real terminal or SafeJS
+probe ran; video/continuous recording/ZIP parity, full human/agent arbitration and
+the original compatibility gates remain open. The denied SafeJS probe remains
+unrun and the complete seven-day browser objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

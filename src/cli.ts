@@ -265,7 +265,7 @@ async function main() {
 		);
 		return;
 	}
-	if (invocation.command === "screenshot" || invocation.command === "pdf") {
+	if (["screenshot", "pdf", "tracing-stop"].includes(invocation.command)) {
 		const connection = await readCommandConnection(directory);
 		const capture = await saveCapture(invocation, async (captureArgv) => {
 			const result = await requestCommand(
@@ -285,7 +285,7 @@ async function main() {
 						session: invocation.session,
 						data: capture,
 					})
-				: `Saved partial native ${invocation.command === "pdf" ? "PDF" : "PNG"}: ${capture.filename}${capture.remoteCleanupConfirmed ? "" : ` (remote cleanup unconfirmed for ${capture.artifact.id})`}${capture.temporaryCleanupConfirmed ? "" : " (temporary file cleanup unconfirmed)"}`,
+				: `Saved partial native ${invocation.command === "tracing-stop" ? "JSON trace" : invocation.command === "pdf" ? "PDF" : "PNG"}: ${capture.filename}${capture.remoteCleanupConfirmed ? "" : ` (remote cleanup unconfirmed for ${capture.artifact.id})`}${capture.temporaryCleanupConfirmed ? "" : " (temporary file cleanup unconfirmed)"}`,
 		);
 		return;
 	}

@@ -140,6 +140,8 @@ try {
 			assets.errors.includes("AgentBrowserError") &&
 			assets.html.includes('id="render-image"'),
 	);
+	if (saved.artifact.mediaType !== "image/png")
+		throw new Error("Expected a PNG export");
 	artifact = {
 		filename: saved.filename,
 		bytes: bytes.length,

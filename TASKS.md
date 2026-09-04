@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native tracing integration checkpoint: `TRACE-CORE.md` integrates bounded
+per-session semantic recording, owned JSON artifacts, public recorder/reader APIs
+and private CLI export/recovery. Serialization failures now count as omissions
+rather than replacing successful results or original action errors; reader aborts
+during consumer delivery no longer report success afterward. Ten new native cases
+cover these paths/public exports; nine fail before correction. Forty-five pending
+recorder/export cases and the injected-CLI trace case are integrated. Focused
+runs pass 147 / seven files in both trees; full authorized native runs pass
+9,603 / 268 working-tree files and 8,409 / 244 isolated files. Both trees pass
+types/builds, strict three-test checks and twelve-file lint. The capture probe
+receives only a PNG type discriminator and is compiled, not executed. Historical
+evidence, pending review UI and unrelated layout changes remain intact. Next
+integrate bounded local trace review with inert display and owner cleanup.
+Continuous events/video/Playwright ZIP, full human/agent arbitration and original
+runtime/site/device/socket/compatibility gates remain open. No gated probe ran;
+the denied SafeJS probe stays unrun and the complete seven-day goal remains active.
+
+### Previous private capture publication checkpoint
+
 Private capture publication checkpoint: `CAPTURE-PUBLICATION.md` applies the
 existing state-file ownership/directory policy to PNG/PDF saves through shared
 helpers. It verifies temporary descriptor/path identity, privacy, link count and

@@ -1,9 +1,11 @@
 import {
 	type CaptureArtifact,
 	type PdfArtifact,
+	type TraceArtifact,
 	decodeArtifactChunk,
 	validateCaptureArtifact,
 	validatePdfArtifact,
+	validateTraceArtifact,
 } from "./capture-artifacts.js";
 import type { CommandResult } from "./command-host.js";
 import { AgentBrowserError } from "./errors.js";
@@ -31,9 +33,79 @@ export async function readPdf(
 	return readExport(execute, validatePdfArtifact(value), consume, signal);
 }
 
+export async function readTrace(
+	execute: CaptureExecutor,
+	value: unknown,
+	consume: (chunk: Uint8Array) => void | Promise<void>,
+	signal?: AbortSignal,
+) {
+	const artifact = validateTraceArtifact(value);
+	const bytes = new Uint8Array(artifact.bytes);
+	let offset = 0;
+	await readExport(
+		execute,
+		artifact,
+		(chunk) => {
+			bytes.set(chunk, offset);
+			offset += chunk.length;
+		},
+		signal,
+	);
+	let trace: {
+		format?: unknown;
+		schemaVersion?: unknown;
+		partial?: unknown;
+		frames?: unknown;
+		droppedFrames?: unknown;
+		truncated?: unknown;
+	};
+	try {
+		trace = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+	} catch {
+		throw new AgentBrowserError("invalid-input", "Invalid trace JSON");
+	}
+	if (
+		!trace ||
+		trace.format !== "agent-browser-trace-v1" ||
+		trace.schemaVersion !== 1 ||
+		trace.partial !== true ||
+		!Array.isArray(trace.frames) ||
+		trace.frames.length !== artifact.frames ||
+		trace.droppedFrames !== artifact.droppedFrames ||
+		trace.truncated !== artifact.truncated
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Trace content does not match its metadata",
+		);
+	let previous = -1;
+	for (const frame of trace.frames) {
+		if (
+			!frame ||
+			!Number.isSafeInteger(frame.sequence) ||
+			frame.sequence <= previous ||
+			!Number.isFinite(frame.atMs) ||
+			frame.atMs < 0 ||
+			!frame.action ||
+			typeof frame.action.command !== "string" ||
+			!/^[a-z][a-z0-9-]{0,63}$/.test(frame.action.command) ||
+			!Number.isFinite(frame.action.durationMs) ||
+			frame.action.durationMs < 0 ||
+			!["returned", "threw", "interrupted"].includes(frame.action.outcome)
+		)
+			throw new AgentBrowserError("invalid-input", "Invalid trace frame");
+		previous = frame.sequence;
+	}
+	if (signal?.aborted)
+		throw new AgentBrowserError("aborted", "Trace download aborted");
+	await consume(bytes);
+	if (signal?.aborted)
+		throw new AgentBrowserError("aborted", "Trace download aborted");
+}
+
 async function readExport(
 	execute: CaptureExecutor,
-	artifact: Readonly<CaptureArtifact | PdfArtifact>,
+	artifact: Readonly<CaptureArtifact | PdfArtifact | TraceArtifact>,
 	consume: (chunk: Uint8Array) => void | Promise<void>,
 	signal?: AbortSignal,
 ) {

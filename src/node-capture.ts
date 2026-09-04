@@ -5,11 +5,13 @@ import { basename, dirname, resolve } from "node:path";
 import {
 	validateCaptureArtifact,
 	validatePdfArtifact,
+	validateTraceArtifact,
 } from "./capture-artifacts.js";
 import {
 	type CaptureExecutor,
 	readCapture,
 	readPdf,
+	readTrace,
 } from "./capture-client.js";
 import type { Invocation } from "./cli-parser.js";
 import { AgentBrowserError } from "./errors.js";
@@ -25,20 +27,24 @@ export async function saveCapture(
 	directory = process.cwd(),
 ) {
 	const pdf = invocation.command === "pdf";
-	const extension = pdf ? "pdf" : "png";
-	const format = pdf ? "PDF" : "PNG";
+	const trace = invocation.command === "tracing-stop";
+	const extension = trace ? "json" : pdf ? "pdf" : "png";
+	const format = trace ? "JSON trace" : pdf ? "PDF" : "PNG";
 	if (
-		(!pdf && invocation.command !== "screenshot") ||
+		(!pdf && !trace && invocation.command !== "screenshot") ||
 		Object.keys(invocation.options).some(
 			(key) =>
-				!["filename", ...(pdf ? [] : ["hires"]), "timeout", "json"].includes(
-					key,
-				),
+				![
+					"filename",
+					...(pdf || trace ? [] : ["hires"]),
+					"timeout",
+					"json",
+				].includes(key),
 		)
 	)
 		throw new AgentBrowserError(
 			"unsupported",
-			`Unsupported ${pdf ? "pdf" : "screenshot"} client option`,
+			`Unsupported ${invocation.command} client option`,
 		);
 	const requested = invocation.options.filename;
 	if (
@@ -71,12 +77,17 @@ export async function saveCapture(
 	if (invocation.options.timeout !== undefined)
 		argv.push(`--timeout=${String(invocation.options.timeout)}`);
 	if (invocation.arguments.length) argv.push("--", ...invocation.arguments);
-	const artifact = (pdf ? validatePdfArtifact : validateCaptureArtifact)(
-		(await execute(argv)).data,
-	);
+	const artifact = (
+		trace
+			? validateTraceArtifact
+			: pdf
+				? validatePdfArtifact
+				: validateCaptureArtifact
+	)((await execute(argv)).data);
 	let file: Awaited<ReturnType<typeof open>> | undefined;
 	let identity: BigIntStats | undefined;
 	let released = false;
+	let installed = false;
 	let temporaryCleanupConfirmed = true;
 	try {
 		const target = await privateFileLocation(filename, "Capture");
@@ -90,19 +101,24 @@ export async function saveCapture(
 		);
 		identity = await file.stat({ bigint: true });
 		assertPrivateFile(identity, target.uid, "Capture");
-		await (pdf ? readPdf : readCapture)(execute, artifact, async (bytes) => {
-			if (!file) throw new AgentBrowserError("closed", "Capture output closed");
-			let offset = 0;
-			while (offset < bytes.length) {
-				const result = await file.write(bytes, offset, bytes.length - offset);
-				if (result.bytesWritten === 0)
-					throw new AgentBrowserError(
-						"network-error",
-						"Capture file write made no progress",
-					);
-				offset += result.bytesWritten;
-			}
-		});
+		await (trace ? readTrace : pdf ? readPdf : readCapture)(
+			execute,
+			artifact,
+			async (bytes) => {
+				if (!file)
+					throw new AgentBrowserError("closed", "Capture output closed");
+				let offset = 0;
+				while (offset < bytes.length) {
+					const result = await file.write(bytes, offset, bytes.length - offset);
+					if (result.bytesWritten === 0)
+						throw new AgentBrowserError(
+							"network-error",
+							"Capture file write made no progress",
+						);
+					offset += result.bytesWritten;
+				}
+			},
+		);
 		await file.sync();
 		const ready = await file.stat({ bigint: true });
 		assertPrivateFile(ready, target.uid, "Capture");
@@ -128,14 +144,22 @@ export async function saveCapture(
 				"Capture temporary file was replaced",
 			);
 		await link(temporary, filename);
+		installed = true;
 	} catch (error) {
-		if (error instanceof AgentBrowserError) throw error;
+		if (error instanceof AgentBrowserError) {
+			if (trace)
+				throw new AgentBrowserError(
+					error.code,
+					`${error.message}; trace artifact retained as ${artifact.id}`,
+				);
+			throw error;
+		}
 		const code = (error as NodeJS.ErrnoException).code;
 		throw new AgentBrowserError(
 			code === "EEXIST" ? "policy-denied" : "network-error",
 			code === "EEXIST"
-				? "Capture destination already exists; refusing to replace it"
-				: `Cannot save ${format} capture${code ? ` (${code})` : ""}`,
+				? `Capture destination already exists; refusing to replace it${trace ? `; trace artifact retained as ${artifact.id}` : ""}`
+				: `Cannot save ${format} capture${code ? ` (${code})` : ""}${trace ? `; trace artifact retained as ${artifact.id}` : ""}`,
 		);
 	} finally {
 		await file?.close().catch(() => {});
@@ -150,10 +174,12 @@ export async function saveCapture(
 					(error as NodeJS.ErrnoException).code === "ENOENT";
 			}
 		}
-		try {
-			await execute(["artifact-delete", artifact.id]);
-			released = true;
-		} catch {}
+		if (!trace || installed) {
+			try {
+				await execute(["artifact-delete", artifact.id]);
+				released = true;
+			} catch {}
+		}
 	}
 	return {
 		filename,

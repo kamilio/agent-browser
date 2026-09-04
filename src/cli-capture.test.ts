@@ -20,13 +20,20 @@ vi.mock("./node-runtime.js", () => ({
 	writeCommandConnection: vi.fn(),
 }));
 
-it.each(["screenshot", "pdf"])(
+it.each(["screenshot", "pdf", "tracing-stop"])(
 	"runs the actual CLI entry point against an injected in-memory service: %s",
 	async (command) => {
 		const directory = await mkdtemp(
 			join(tmpdir(), "agent-browser-cli-capture-"),
 		);
-		const output = join(directory, command === "pdf" ? "cli.pdf" : "cli.png");
+		const output = join(
+			directory,
+			command === "tracing-stop"
+				? "cli.json"
+				: command === "pdf"
+					? "cli.pdf"
+					: "cli.png",
+		);
 		const host = new BrowserCommandHost({
 			createSession: () =>
 				new BrowserSession({
@@ -68,6 +75,8 @@ it.each(["screenshot", "pdf"])(
 				session: "capture-test",
 			});
 			await host.execute(["resize", "80", "40"], { session: "capture-test" });
+			if (command === "tracing-stop")
+				await host.execute(["tracing-start"], { session: "capture-test" });
 			connection.request.mockImplementation(async (_connection, body) =>
 				host.execute(body.argv, { session: body.session }),
 			);
@@ -92,17 +101,28 @@ it.each(["screenshot", "pdf"])(
 					filename: output,
 					remoteCleanupConfirmed: true,
 					temporaryCleanupConfirmed: true,
-					artifact: { width: 80, height: 40, partial: true },
+					artifact:
+						command === "tracing-stop"
+							? { mediaType: "application/json", frames: 2, partial: true }
+							: { width: 80, height: 40, partial: true },
 				},
 			});
 			if (command === "screenshot")
 				expect([...(await readFile(output)).subarray(0, 8)]).toEqual([
 					137, 80, 78, 71, 13, 10, 26, 10,
 				]);
-			else
+			else if (command === "pdf")
 				expect((await readFile(output)).subarray(0, 9).toString()).toBe(
 					"%PDF-1.4\n",
 				);
+			else
+				expect(JSON.parse(await readFile(output, "utf8"))).toMatchObject({
+					format: "agent-browser-trace-v1",
+					frames: [
+						{ action: { command: "tracing-start" } },
+						{ action: { command: "tracing-stop" } },
+					],
+				});
 			expect(host.metrics().captureArtifacts.bytes).toBe(0);
 			expect(connection.request.mock.calls[firstRequest][1].argv).toEqual([
 				command,

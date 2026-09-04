@@ -1,4 +1,5 @@
 import { rangeKeyboardCapabilities } from "./range-keyboard.js";
+import { SessionTrace, sessionTraceCapabilities } from "./session-trace.js";
 import { keyboardActivationCapabilities } from "./keyboard.js";
 import { keyboardScrollCapabilities } from "./keyboard-scroll.js";
 import { selectKeyboardCapabilities } from "./select-keyboard.js";
@@ -118,6 +119,7 @@ interface SessionEntry {
 	browser: BrowserSession;
 	tail: Promise<void>;
 	controllers: Set<AbortController>;
+	trace?: SessionTrace;
 }
 
 const ownedSessions = new WeakSet<BrowserSession>();
@@ -166,6 +168,9 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 	"hit-test": [],
 	screenshot: ["hires"],
 	pdf: [],
+	"tracing-start": [],
+	"tracing-stop": [],
+	"tracing-status": [],
 	"artifact-list": [],
 	"artifact-read": ["offset", "length"],
 	"artifact-delete": [],
@@ -468,6 +473,7 @@ export class BrowserCommandHost {
 			},
 			locatorGeneration: { partial: true, ...locatorGenerationLimits },
 			pageEvaluation: !!this.evaluatePage,
+			tracing: sessionTraceCapabilities,
 			pageFetch: {
 				enabled: this.pageFetch,
 				partial: true,
@@ -845,7 +851,28 @@ export class BrowserCommandHost {
 				if (signal.aborted) throw cancellation(signal);
 				if (this.closed || this.sessions.get(activeEntry.name) !== activeEntry)
 					throw new AgentBrowserError("closed", "Named session is closed");
-				return result(await this.run(activeEntry, invocation, signal));
+				const trace = /^(tracing-|artifact-)/.test(invocation.command)
+					? undefined
+					: activeEntry.trace;
+				const startedAt = performance.now();
+				try {
+					const value = await this.run(activeEntry, invocation, signal);
+					trace?.record(
+						invocation.command,
+						Math.max(0, performance.now() - startedAt),
+						signal.aborted ? "interrupted" : "returned",
+						signal.aborted ? cancellation(signal) : undefined,
+					);
+					return result(value);
+				} catch (error) {
+					trace?.record(
+						invocation.command,
+						Math.max(0, performance.now() - startedAt),
+						signal.aborted ? "interrupted" : "threw",
+						signal.aborted ? cancellation(signal) : error,
+					);
+					throw error;
+				}
 			})
 			.finally(() => {
 				cleanup();
@@ -869,6 +896,7 @@ export class BrowserCommandHost {
 	private closeEntry(entry: SessionEntry) {
 		this.stateTransfers.clear(entry.browser);
 		this.sessions.delete(entry.name);
+		entry.trace?.close();
 		this.artifacts.clear(entry.name);
 		for (const controller of entry.controllers)
 			controller.abort(
@@ -1040,6 +1068,38 @@ export class BrowserCommandHost {
 			return this.stateTransfers.delete(browser, invocation.arguments[0]);
 		const args = invocation.arguments;
 		const options = invocation.options;
+		if (invocation.command === "tracing-status")
+			return (
+				entry.trace?.status() ?? {
+					recording: false,
+					frames: 0,
+					droppedFrames: 0,
+					truncated: false,
+				}
+			);
+		if (invocation.command === "tracing-start") {
+			if (entry.trace)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"A trace is already recording or awaiting export",
+				);
+			entry.trace = new SessionTrace(browser);
+			return entry.trace.status();
+		}
+		if (invocation.command === "tracing-stop") {
+			if (!entry.trace)
+				throw new AgentBrowserError("invalid-input", "No trace is recording");
+			this.artifacts.assertCapacity();
+			const trace = entry.trace.finish();
+			const artifact = this.artifacts.addTrace(
+				entry.name,
+				trace.bytes,
+				trace.details,
+			);
+			entry.trace.close();
+			entry.trace = undefined;
+			return artifact;
+		}
 		if (invocation.command === "artifact-list")
 			return this.artifacts.list(entry.name);
 		if (invocation.command === "artifact-read")

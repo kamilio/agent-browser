@@ -111,6 +111,9 @@ const definitions: CommandDefinition[] = [
 		hires: booleanOption,
 	}),
 	command("pdf", 0, 0, { filename: stringOption }),
+	command("tracing-start"),
+	command("tracing-stop", 0, 0, { filename: stringOption }),
+	command("tracing-status", 0, 0, {}, "extension"),
 	command("artifact-list", 0, 0, {}, "extension"),
 	command(
 		"artifact-read",
@@ -186,8 +189,6 @@ const definitions: CommandDefinition[] = [
 		"cookie-clear",
 		"route-list",
 		"requests",
-		"tracing-start",
-		"tracing-stop",
 		"video-show-actions",
 		"video-hide-actions",
 		"video-stop",

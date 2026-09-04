@@ -2,6 +2,19 @@ import type { DocumentClip, DocumentRaster } from "./document-raster.js";
 import type { renderDocumentPdf } from "./document-pdf.js";
 import { AgentBrowserError } from "./errors.js";
 
+export const traceArtifactLimits = Object.freeze({
+	maxFrames: 128,
+	maxBytes: 2_097_152,
+});
+export interface TraceDetails {
+	mediaType: "application/json";
+	partial: true;
+	profile: "semantic-action-timeline";
+	frames: number;
+	droppedFrames: number;
+	truncated: boolean;
+}
+
 export const captureArtifactLimits = Object.freeze({
 	maxArtifacts: 8,
 	maxBytes: 33_554_432,
@@ -41,6 +54,10 @@ export interface PdfArtifact extends PdfDetails {
 	id: string;
 	bytes: number;
 }
+export interface TraceArtifact extends TraceDetails {
+	id: string;
+	bytes: number;
+}
 export interface ArtifactChunk {
 	id: string;
 	offset: number;
@@ -57,7 +74,7 @@ export class CaptureArtifacts {
 		string,
 		{
 			owner: string;
-			info: Readonly<CaptureArtifact | PdfArtifact>;
+			info: Readonly<CaptureArtifact | PdfArtifact | TraceArtifact>;
 			bytes: Uint8Array;
 		}
 	>();
@@ -89,7 +106,19 @@ export class CaptureArtifacts {
 	): Readonly<PdfArtifact> {
 		return this.store(owner, bytes, details);
 	}
-	private store<Details extends CaptureDetails | PdfDetails>(
+	addTrace(
+		owner: string,
+		bytes: Uint8Array,
+		details: TraceDetails,
+	): Readonly<TraceArtifact> {
+		if (bytes.length > traceArtifactLimits.maxBytes)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Trace artifact limit exceeded",
+			);
+		return this.store(owner, bytes, details);
+	}
+	private store<Details extends CaptureDetails | PdfDetails | TraceDetails>(
 		owner: string,
 		bytes: Uint8Array,
 		details: Details,
@@ -103,18 +132,20 @@ export class CaptureArtifacts {
 						clip: Object.freeze({ ...details.clip }),
 						paint: Object.freeze({ ...details.paint }),
 					}
-				: {
-						clips: Object.freeze(
-							details.clips.map((clip) => Object.freeze({ ...clip })),
-						),
-						metrics: Object.freeze({ ...details.metrics }),
-					}),
+				: details.mediaType === "application/pdf"
+					? {
+							clips: Object.freeze(
+								details.clips.map((clip) => Object.freeze({ ...clip })),
+							),
+							metrics: Object.freeze({ ...details.metrics }),
+						}
+					: {}),
 			id,
 			bytes: bytes.length,
 		});
 		this.entries.set(id, {
 			owner,
-			info: info as Readonly<CaptureArtifact | PdfArtifact>,
+			info: info as Readonly<CaptureArtifact | PdfArtifact | TraceArtifact>,
 			bytes: bytes.slice(),
 		});
 		this.retainedBytes += bytes.length;
@@ -184,6 +215,35 @@ export class CaptureArtifacts {
 			);
 		return entry;
 	}
+}
+
+export function validateTraceArtifact(value: unknown): Readonly<TraceArtifact> {
+	const artifact = value as TraceArtifact;
+	if (
+		!artifact ||
+		typeof artifact !== "object" ||
+		typeof artifact.id !== "string" ||
+		!/^capture-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-[1-9][0-9]{0,15}$/.test(
+			artifact.id,
+		) ||
+		artifact.mediaType !== "application/json" ||
+		artifact.partial !== true ||
+		artifact.profile !== "semantic-action-timeline" ||
+		!Number.isSafeInteger(artifact.bytes) ||
+		artifact.bytes < 2 ||
+		artifact.bytes > traceArtifactLimits.maxBytes ||
+		!Number.isSafeInteger(artifact.frames) ||
+		artifact.frames < 0 ||
+		artifact.frames > traceArtifactLimits.maxFrames ||
+		!Number.isSafeInteger(artifact.droppedFrames) ||
+		artifact.droppedFrames < 0 ||
+		artifact.truncated !== artifact.droppedFrames > 0
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid trace artifact metadata",
+		);
+	return artifact;
 }
 
 export function validateCaptureArtifact(
