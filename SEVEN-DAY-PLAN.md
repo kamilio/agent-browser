@@ -507,6 +507,19 @@ inertness, foreign content, framesets, quirks layout and cross-owner
 observer/runtime breadth remain unfinished. No gated probe ran; the denied
 SafeJS probe remains unrun and independent acceptance gates remain open.
 
+September 4 option disabled-boundary checkpoint: `OPTION-DISABLED.md` records
+shared nearest-group/boundary rules for the control index and native selection
+eligibility, fixing disabled-state leakage and lost successful entries. Three
+initial regressions fail before the fix; 36 new tests and 253 focused checks
+across seven files pass. Full native validation passes 8,926 / 246 files; the
+isolated owned patch passes 6,166 / 185 available files. Types, builds and
+four-file lint pass in both trees while preserving pending work. Continue with
+selectedcontent lifecycle/option-pop cloning and coordinate inert targeting;
+this control-state fix does not implement those features. Picker behavior,
+foreign content, framesets, quirks layout and cross-owner observer/runtime
+breadth remain unfinished. No gated probe ran; the denied SafeJS probe remains
+unrun and independent acceptance gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

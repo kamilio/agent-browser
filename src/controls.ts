@@ -5,6 +5,7 @@ import { validNumberValue } from "./input-number.js";
 import { inputType, sanitizeInputValue } from "./input-values.js";
 import { isFormAssociatedTag } from "./html-form-association.js";
 import { nearestSelect } from "./select-option-owner.js";
+import { optionDisabled } from "./option-disabled.js";
 
 export { inputType } from "./input-values.js";
 
@@ -120,7 +121,6 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 		}
 	}
 	const inheritedFieldset = new Set<number>();
-	const inheritedOptgroup = new Set<number>();
 	for (const node of nodes.values()) {
 		const parent = nodes.get(node.parent ?? -1);
 		if (parent) {
@@ -131,12 +131,6 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 					firstLegends.get(parent.id) !== node.id)
 			)
 				inheritedFieldset.add(node.id);
-			if (
-				inheritedOptgroup.has(parent.id) ||
-				(parent.tagName === "optgroup" &&
-					Object.hasOwn(parent.attributes, "disabled"))
-			)
-				inheritedOptgroup.add(node.id);
 			if (index.datalist.has(parent.id) || parent.tagName === "datalist")
 				index.datalist.add(node.id);
 		}
@@ -147,9 +141,10 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 		)
 			index.disabled.add(node.id);
 		if (
-			["option", "optgroup"].includes(node.tagName) &&
-			(Object.hasOwn(node.attributes, "disabled") ||
-				inheritedOptgroup.has(node.id))
+			(node.tagName === "option" &&
+				optionDisabled(node, (id) => nodes.get(id))) ||
+			(node.tagName === "optgroup" &&
+				Object.hasOwn(node.attributes, "disabled"))
 		)
 			index.disabled.add(node.id);
 		if (isFormAssociatedTag(node.tagName)) {

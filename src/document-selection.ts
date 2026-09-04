@@ -1,6 +1,7 @@
 import type { DocumentNode } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { nearestSelect } from "./select-option-owner.js";
+import { optionDisabled } from "./option-disabled.js";
 
 interface SelectionNode extends Omit<DocumentNode, "control"> {
 	control: { selected?: boolean };
@@ -169,18 +170,8 @@ export class DocumentSelection {
 	}
 
 	private updateEligibility(option: SelectionNode, owner: number) {
-		let disabled = Object.hasOwn(option.attributes, "disabled");
-		let parent = option.parent === null ? undefined : this.node(option.parent);
-		while (parent && parent.id !== owner) {
-			if (
-				parent.tagName === "optgroup" &&
-				Object.hasOwn(parent.attributes, "disabled")
-			)
-				disabled = true;
-			parent = parent.parent === null ? undefined : this.node(parent.parent);
-		}
 		const entries = this.eligible.get(owner) ?? new Set<number>();
-		if (disabled) entries.delete(option.id);
+		if (optionDisabled(option, this.node)) entries.delete(option.id);
 		else entries.add(option.id);
 		this.eligible.set(owner, entries);
 	}

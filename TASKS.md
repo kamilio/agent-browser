@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Option disabled-boundary checkpoint: `OPTION-DISABLED.md` replaces transitive
+optgroup disabling with a shared nearest-group/boundary predicate in the native
+control index and default-selection eligibility. Options retain own-attribute
+precedence, and select/hr/datalist/option ancestors stop outer-group inheritance;
+optgroups use only their own disabled flags. Three initial regressions fail
+before the fix, including a lost successful form value. All 36 new tests and
+253 focused checks across seven files pass. Full native validation passes
+8,926 / 246 files; the isolated owned patch passes 6,166 / 185 available files.
+Types, builds and four-file lint pass in both trees while preserving pending
+work. Selectedcontent cloning remains unimplemented; its lifecycle and parser
+option-pop requirements must not be replaced by indiscriminate mutation copying.
+Coordinate inert targeting, picker behavior, foreign content, framesets, quirks
+layout and cross-owner observer/runtime breadth remain open. No gated probe ran;
+the denied SafeJS probe remains unrun, independent acceptance gates remain open
+and the seven-day goal stays active.
+
+### Previous select inertness checkpoint
+
 Select inertness checkpoint: `SELECT-INERT.md` adds shared first-element-child
 button detection to native reference actionability, direct/sequential focus,
 label forwarding and semantic snapshots. Implicit inertness propagates through
