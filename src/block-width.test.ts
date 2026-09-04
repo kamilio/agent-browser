@@ -221,7 +221,7 @@ it.each([
 	"none",
 	"inherit",
 	"1em",
-	"calc(100% - 2px)",
+	"env(safe-area-inset-left)",
 	"3",
 	"1.px",
 	"0x20px",
@@ -229,6 +229,12 @@ it.each([
 	expect(() =>
 		resolveBlockWidth(style({ "padding-left": value }), 100),
 	).toThrow("computed pixel or percentage");
+});
+
+it("resolves computed percentage calculations before the auto-width equation", () => {
+	expect(
+		resolveBlockWidth(style({ "padding-left": "calc(100% - 2px)" }), 100),
+	).toMatchObject({ paddingLeft: 98, contentWidth: 2, borderBoxWidth: 100 });
 });
 
 it("rejects negative sizes but permits signed margins", () => {

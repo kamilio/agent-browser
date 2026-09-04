@@ -19,6 +19,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+CSS math core checkpoint: `CSS-MATH-CORE.md` promotes the pending finite
+length-math helper with focused box/inline declarations, font-basis ownership,
+used-length and indefinite-height integration. Existing source worktree bytes
+are unchanged; borders, insets, variables, flex and pointer work stay separate.
+The new 63-case native suite has 31 failures on pre-promotion HEAD plus the
+helper and passes after integration. Matching box/auto-width expectations are
+promoted rather than retaining obsolete calc rejection assertions. Expanded
+checks pass 391 / eight files; isolated focused checks pass 250 / six files.
+Full native validation passes 9,115 / 250 files; the isolated promotion tree
+passes 6,345 / 189 available files. Types/builds, strict changed-test checks and
+ten-file lint pass in both trees. Native geometry/pixel equivalence is not live
+reference-browser evidence. Next promote custom-property substitution and border
+cascade/geometry, then remaining layout/paint/scrolling dependencies and corrected
+coordinate adapters. Custom select presentation/pickers, complete multiple
+selection, modal/flat-tree inertness, general CSS Values conformance and wider
+browser/runtime compatibility remain open. No gated probe ran; the denied SafeJS
+probe remains unrun and the full seven-day goal stays active.
+
+### Previous coordinate-inertness checkpoint
+
 Coordinate-inertness checkpoint: `COORDINATE-INERTNESS.md` adds a shared native
 subtree predicate with charged ancestor/first-element scans. The pending hit-test
 and mouse adapters now use the shared implicit-select-button rule; eight injected

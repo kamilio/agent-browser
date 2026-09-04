@@ -6,6 +6,11 @@ import {
 	serializeBackgroundValues,
 } from "./css-background.js";
 import { normalizeCssColor } from "./css-color.js";
+import {
+	isCssLengthMath,
+	normalizeLengthMath,
+	splitLengthComponents,
+} from "./css-math.js";
 import { cssDeclarationStatements } from "./css-parser.js";
 import {
 	cssTextProperties,
@@ -141,6 +146,7 @@ function normalize(name: string, source: string): string | undefined {
 	)
 		return value;
 	if (lengths.has(name)) {
+		if (isCssLengthMath(value)) return normalizeLengthMath(value);
 		if (
 			value === "auto" &&
 			!name.startsWith("padding-") &&
@@ -192,8 +198,9 @@ export function expandDeclaration(
 			})) ?? []
 		);
 	if (name === "margin" || name === "padding") {
-		const parts = source.toLowerCase().split(/[\t\n\f\r ]+/);
+		const parts = splitLengthComponents(source.toLowerCase());
 		if (
+			!parts ||
 			parts.length < 1 ||
 			parts.length > 4 ||
 			(parts.length > 1 && parts.some((part) => wide.has(part)))

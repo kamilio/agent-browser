@@ -207,15 +207,13 @@ it("keeps percentages and auto/none unresolved instead of inventing used geometr
 	});
 });
 
-it("ignores unsupported font-relative/function values and invalid numeric syntax with diagnostics", () => {
+it("accepts em and calc while retaining diagnostics for invalid numeric syntax", () => {
 	const { styles, box } = fixture(
 		"#target {width:12px; width:1em; width:calc(100% - 1px); width:1.px; width:NaNpx; width:1e999px; width:2; width:-1px; padding:-2%; min-width:none; max-width:auto}",
 	);
-	expect(box().width).toBe("12px");
+	expect(box().width).toBe("calc(100% - 1px)");
 	expect(box()["padding-top"]).toBe("0px");
-	expect(styles.metrics().issues["unimplemented-or-invalid-css-value"]).toBe(
-		10,
-	);
+	expect(styles.metrics().issues["unimplemented-or-invalid-css-value"]).toBe(8);
 });
 
 it("applies linked stylesheet declarations through the existing sheet owner without fetching", () => {

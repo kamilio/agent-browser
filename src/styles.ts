@@ -1,5 +1,7 @@
 import { imageDimensionHint } from "./replaced-box.js";
+import { lengthUsesFont } from "./css-math.js";
 import {
+	type BoxFontMetrics,
 	type BoxSpecifiedStyle,
 	type BoxStyle,
 	type CssBoxProperty,
@@ -300,14 +302,31 @@ export class DocumentStyles {
 		}
 		for (const target of pending.reverse()) {
 			const parent = this.tree.get(target).parent;
+			const specified = this.boxSpecified.get(target) ?? {};
+			let fonts: BoxFontMetrics | undefined;
+			const values = Object.values(specified);
+			if (values.some((value) => lengthUsesFont(value, "em")))
+				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
+			if (values.some((value) => lengthUsesFont(value, "rem"))) {
+				const rootElement = this.tree
+					.get(this.tree.root)
+					.children.find((child) => this.tree.get(child).kind === "element");
+				fonts = {
+					...fonts,
+					rootFontSize: Number.parseFloat(
+						this.text(rootElement ?? this.tree.root)["font-size"],
+					),
+				};
+			}
 			this.boxComputed.set(
 				target,
 				computeBoxStyle(
-					this.boxSpecified.get(target) ?? {},
+					specified,
 					parent === null
 						? initialBoxStyle
 						: (this.boxComputed.get(parent) ?? initialBoxStyle),
 					this.viewport,
+					fonts,
 				),
 			);
 		}

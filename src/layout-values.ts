@@ -1,4 +1,9 @@
 import { AgentBrowserError } from "./errors.js";
+import {
+	cssMathLimits,
+	isCssLengthMath,
+	resolveLengthMath,
+} from "./css-math.js";
 
 export const layoutValueLimits = Object.freeze({
 	maxAbsoluteLength: 16_777_216,
@@ -31,10 +36,21 @@ export function resolveLayoutLength(
 			"invalid-input",
 			"A computed layout length is required",
 		);
-	if (value.length > layoutValueLimits.maxLengthCodeUnits)
+	const math = isCssLengthMath(value);
+	if (
+		value.length >
+		(math
+			? cssMathLimits.maxComputedCodeUnits
+			: layoutValueLimits.maxLengthCodeUnits)
+	)
 		throw new AgentBrowserError(
 			"resource-limit",
 			"Layout length source limit exceeded",
+		);
+	if (math)
+		return layoutNumber(
+			resolveLengthMath(value, containingWidth, signed),
+			signed,
 		);
 	const match = /^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|%)$/.exec(value);
 	if (!match)

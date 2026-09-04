@@ -561,6 +561,20 @@ slices, then complete coordinate integration and actual custom-select layout.
 Injected boxes/targets are not presentation or physical-input evidence. All
 independent live/runtime/TTY/socket gates and the full browser scope remain open.
 
+September 4 CSS math core checkpoint: `CSS-MATH-CORE.md` promotes finite box
+calculations, required font-relative units and the authored/computed/used-layout
+connections without importing pending borders, variables, flex or pointer work.
+Existing source worktree bytes are preserved. Thirty-one of the 63 new cases fail
+before promotion and pass afterward; matching existing box and auto-width tests
+are promoted with the feature. Full native checks pass 9,115 / 250 files; the
+isolated core tree passes 6,345 / 189 available files. Focused checks pass 391 /
+eight files and isolated 250 / six files; types/builds, strict changed-test checks
+and ten-file lint pass in both trees. Continue custom-property and border
+integration before remaining layout/paint/scrolling and coordinate promotion.
+Native pixel equivalence does not close live rendering or physical input gates;
+custom select/picker and independent runtime/site/socket/TTY acceptance remain
+unfinished. The full browser goal and seven-day window remain active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

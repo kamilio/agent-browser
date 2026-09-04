@@ -34,6 +34,7 @@
   "src/css-flex.test.ts",
   "src/css-flow.test.ts",
   "src/css-math.test.ts",
+  "src/css-math-core.test.ts",
   "src/css-media.test.ts",
   "src/css-paint.test.ts",
   "src/css-text.test.ts",

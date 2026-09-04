@@ -1,4 +1,5 @@
 import type { BoxStyle } from "./css-box.js";
+import { lengthHasPercentage } from "./css-math.js";
 import { AgentBrowserError } from "./errors.js";
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 
@@ -31,7 +32,7 @@ function dimension(
 	if (
 		value === "auto" ||
 		value === "none" ||
-		(value.endsWith("%") && basis === null)
+		(lengthHasPercentage(value) && basis === null)
 	)
 		return fallback;
 	return Math.max(0, resolveLayoutLength(value, basis ?? 0) - edges);

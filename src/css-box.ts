@@ -1,4 +1,10 @@
 import { AgentBrowserError } from "./errors.js";
+import {
+	computeLengthMath,
+	isCssLengthMath,
+	normalizeLengthMath,
+	splitLengthComponents,
+} from "./css-math.js";
 
 export const cssBoxProperties = Object.freeze([
 	"width",
@@ -25,7 +31,12 @@ export type BoxSpecifiedStyle = Readonly<
 const properties = new Set<string>(cssBoxProperties);
 const wide = new Set(["initial", "inherit", "unset", "revert"]);
 const length =
-	/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|cm|mm|q|in|pt|pc|vw|vh|vmin|vmax|%)?$/;
+	/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|em|rem|cm|mm|q|in|pt|pc|vw|vh|vmin|vmax|%)?$/;
+export const fontRelativeBoxUnits = Object.freeze(["em", "rem"] as const);
+export interface BoxFontMetrics {
+	fontSize?: number;
+	rootFontSize?: number;
+}
 const absoluteFactors: Readonly<Record<string, number>> = Object.freeze({
 	px: 1,
 	cm: 96 / 2.54,
@@ -69,6 +80,7 @@ function normalize(
 	)
 		return value;
 	if (value === "none" && property.startsWith("max-")) return value;
+	if (isCssLengthMath(value)) return normalizeLengthMath(value);
 	const parsed = length.exec(value);
 	if (!parsed) return;
 	const number = Number(parsed[1]);
@@ -86,8 +98,9 @@ export function parseBoxDeclarations(
 	value: string,
 ): { property: CssBoxProperty; value: string }[] | undefined {
 	if (property === "margin" || property === "padding") {
-		const parts = value.split(" ");
+		const parts = splitLengthComponents(value);
 		if (
+			!parts ||
 			parts.length < 1 ||
 			parts.length > 4 ||
 			(parts.length > 1 && parts.some((part) => wide.has(part)))
@@ -119,31 +132,65 @@ export function computeBoxStyle(
 	specified: BoxSpecifiedStyle,
 	parent: BoxStyle,
 	viewport: { width: number; height: number },
+	fonts?: Readonly<BoxFontMetrics>,
 ): BoxStyle {
+	if (fonts !== undefined) {
+		if (!fonts || typeof fonts !== "object")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid computed box font metrics",
+			);
+		for (const value of [fonts.fontSize, fonts.rootFontSize])
+			if (value !== undefined && (!Number.isFinite(value) || value < 0))
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid computed box font metrics",
+				);
+	}
 	const result = { ...initialBoxStyle };
+	const unitFactor = (unit: string): number => {
+		if (
+			(unit === "em" && fonts?.fontSize === undefined) ||
+			(unit === "rem" && fonts?.rootFontSize === undefined)
+		)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Font-relative box lengths require computed font metrics",
+			);
+		return (
+			absoluteFactors[unit] ??
+			{
+				em: fonts?.fontSize,
+				rem: fonts?.rootFontSize,
+				vw: viewport.width / 100,
+				vh: viewport.height / 100,
+				vmin: Math.min(viewport.width, viewport.height) / 100,
+				vmax: Math.max(viewport.width, viewport.height) / 100,
+			}[unit] ??
+			Number.NaN
+		);
+	};
 	for (const property of cssBoxProperties) {
-		const value = specified[property];
+		let value = specified[property];
 		if (value === undefined || ["initial", "unset", "revert"].includes(value))
 			continue;
 		if (value === "inherit") {
 			result[property] = parent[property];
 			continue;
 		}
+		if (isCssLengthMath(value))
+			value = computeLengthMath(
+				value,
+				unitFactor,
+				property.startsWith("margin-"),
+			);
 		const parsed = length.exec(value);
 		if (!parsed || parsed[2] === "%") {
 			result[property] = value;
 			continue;
 		}
 		const unit = parsed[2] ?? "px";
-		const factor =
-			absoluteFactors[unit] ??
-			{
-				vw: viewport.width / 100,
-				vh: viewport.height / 100,
-				vmin: Math.min(viewport.width, viewport.height) / 100,
-				vmax: Math.max(viewport.width, viewport.height) / 100,
-			}[unit];
-		const pixels = Number(parsed[1]) * factor;
+		const pixels = Number(parsed[1]) * unitFactor(unit);
 		if (!Number.isFinite(pixels))
 			throw new AgentBrowserError(
 				"resource-limit",
