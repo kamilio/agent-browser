@@ -25,6 +25,7 @@ import { selectKeyboardAction } from "./select-keyboard.js";
 import { SelectTypeahead } from "./select-typeahead.js";
 import { keyboardScrollAction } from "./keyboard-scroll.js";
 import { summaryDetails } from "./details.js";
+import { resolveVisualTarget } from "./generated-controls.js";
 import {
 	keyboardChord,
 	KeyboardState,
@@ -114,7 +115,7 @@ function nextOffset(value: string, offset: number) {
 export class DocumentKeyboard {
 	private readonly keys = new KeyboardState();
 	private readonly typeahead: SelectTypeahead;
-	private spaceTarget: number | undefined;
+	private spaceTarget: { id: number; reference: string } | undefined;
 	private focusGeneration = 0;
 	private closed = false;
 	private readonly unregisterChange: () => void;
@@ -144,7 +145,8 @@ export class DocumentKeyboard {
 				this.spaceTarget !== undefined &&
 				["remove", "insert", "attribute", "style"].includes(change.kind)
 			) {
-				if (this.focus.active() !== this.spaceTarget)
+				const reference = this.spaceTarget.reference;
+				if (this.focus.activeReference() !== reference)
 					this.clearSpaceActivation();
 			}
 		});
@@ -331,9 +333,9 @@ export class DocumentKeyboard {
 			permitted &&
 			spaceTarget !== undefined &&
 			focusGeneration === this.focusGeneration &&
-			this.focus.active() === spaceTarget
+			this.focus.activeReference() === spaceTarget.reference
 		)
-			interaction = yield* this.activation(this.tree.reference(spaceTarget));
+			interaction = yield* this.activation(spaceTarget.reference);
 		return {
 			...this.result(!permitted),
 			key: key.key,
@@ -353,6 +355,8 @@ export class DocumentKeyboard {
 		const shortcut = !literal && (key.control || key.meta || key.alt);
 		const id = this.focus.active();
 		const target = id ?? this.tree.root;
+		const focusReference = this.focus.activeReference();
+		const generatedFocus = this.tree.generatedFocusReference !== null;
 		if (key.code === "Space" && !key.repeat) this.clearSpaceActivation();
 		const focusGeneration = this.focusGeneration;
 		let keyEvent = new BrowserKeyboardEvent("keydown", key);
@@ -362,7 +366,7 @@ export class DocumentKeyboard {
 		};
 		if (
 			permitted &&
-			this.focus.active() === id &&
+			this.focus.activeReference() === focusReference &&
 			!shortcut &&
 			(Array.from(key.key).length === 1 || key.key === "Enter")
 		) {
@@ -376,7 +380,7 @@ export class DocumentKeyboard {
 		let interaction: InteractionResult | undefined;
 		let defaultAction: DefaultActionIntent | undefined;
 		let scroll: Readonly<{ x: number; y: number }> | undefined;
-		if (permitted && this.focus.active() === id) {
+		if (permitted && this.focus.activeReference() === focusReference) {
 			if (!literal) scroll = yield* keyboardScrollAction(this.tree, id, key);
 			if (key.key === "Tab" && !shortcut)
 				yield* this.focus.moveAction(key.shift);
@@ -423,9 +427,12 @@ export class DocumentKeyboard {
 					else if (
 						node.tagName === "button" ||
 						node.tagName === "a" ||
+						generatedFocus ||
 						summaryDetails(this.tree, node) !== undefined
 					)
-						interaction = yield* this.formalActivation(this.tree.reference(id));
+						interaction = yield* this.formalActivation(
+							focusReference ?? this.tree.reference(id),
+						);
 					else if (
 						node.tagName === "input" &&
 						["submit", "image", "reset", "button"].includes(inputType(node))
@@ -490,6 +497,7 @@ export class DocumentKeyboard {
 					key.key === " " &&
 					!editable &&
 					(node.tagName === "button" ||
+						generatedFocus ||
 						summaryDetails(this.tree, node) !== undefined ||
 						(node.tagName === "input" &&
 							[
@@ -502,7 +510,10 @@ export class DocumentKeyboard {
 							].includes(inputType(node))))
 				) {
 					if (focusGeneration === this.focusGeneration) {
-						this.spaceTarget = id;
+						this.spaceTarget = {
+							id,
+							reference: focusReference ?? this.tree.reference(id),
+						};
 						this.tree.setKeyboardActivation(id);
 					}
 				} else if (key.key === "Backspace" || key.key === "Delete") {
@@ -530,17 +541,21 @@ export class DocumentKeyboard {
 	}
 
 	private *formalActivation(reference: string): EventAction<InteractionResult> {
-		this.tree.setKeyboardActivation(this.tree.resolve(reference).id);
+		this.tree.setKeyboardActivation(
+			resolveVisualTarget(this.tree, reference).node.id,
+		);
 		try {
 			return yield* this.activation(reference);
 		} finally {
+			const spaceTarget = this.spaceTarget;
 			if (
 				!this.closed &&
 				!this.events.metrics().closed &&
-				this.spaceTarget !== undefined &&
-				this.focus.active() === this.spaceTarget
+				spaceTarget !== undefined &&
+				this.focus.activeReference() === spaceTarget.reference &&
+				this.spaceTarget === spaceTarget
 			)
-				this.tree.setKeyboardActivation(this.spaceTarget);
+				this.tree.setKeyboardActivation(spaceTarget.id);
 			else this.tree.clearKeyboardActivation();
 		}
 	}
@@ -678,7 +693,8 @@ export class DocumentKeyboard {
 		const caret =
 			id !== null && this.caret?.id === id ? this.selection(id) : undefined;
 		return {
-			reference: this.tree.reference(id ?? this.tree.root),
+			reference:
+				this.focus.activeReference() ?? this.tree.reference(this.tree.root),
 			canceled,
 			revision: this.tree.revision,
 			...(caret

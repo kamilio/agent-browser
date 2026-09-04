@@ -54,6 +54,12 @@ export function* keyboardScrollAction(
 	)
 		return;
 	if (id !== null) {
+		if (
+			key.key === " " &&
+			tree.activeElement === id &&
+			tree.generatedFocusReference !== null
+		)
+			return;
 		let ancestor: number | null = id;
 		let depth = 0;
 		let editable: boolean | undefined;

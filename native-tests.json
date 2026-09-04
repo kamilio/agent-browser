@@ -1,5 +1,6 @@
 [
   "src/action-wait.test.ts",
+  "src/generated-focus.test.ts",
   "src/generated-activation.test.ts",
   "src/generated-controls.test.ts",
   "src/generated-summary.test.ts",

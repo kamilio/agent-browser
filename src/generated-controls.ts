@@ -91,10 +91,16 @@ export class DocumentGeneratedControls {
 
 	close() {
 		if (this.closed) return;
+		const focused = this.tree.generatedFocusReference;
+		const clearFocus =
+			owners.get(this.tree) === this &&
+			focused !== null &&
+			this.references.has(focused);
 		this.closed = true;
 		this.targets.clear();
 		this.references.clear();
 		this.unregisterClose();
+		if (clearFocus) this.tree.setActiveElement(null);
 	}
 
 	private ensureOpen() {

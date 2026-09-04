@@ -1128,6 +1128,20 @@ unchanged. Complete runtime, UA/shadow/accessibility and original browser gates
 remain open; no gated probe ran and the denied SafeJS probe remains unrun.
 Historical evidence and unrelated work stay separate; the seven-day goal is active.
 
+September 4 generated-focus continuation: `GENERATED-FOCUS.md` adds canonical
+fallback focus identity, default Tab/Shift-Tab order, pointer focus and Enter/Space
+activation without promoting the ordinary host into a default focusable element.
+Page focus/key targets remain real hosts; stale focus and held-key identities are
+cleared. The 49 new cases all fail on isolated prior HEAD and pass with the change;
+matching focused runs pass 310 / eight files. Types/builds, strict test checking
+and eight-file lint pass in both trees. Authorized full native runs pass
+9,319 / 266 isolated files; the working run reports 10,464 passes and the unchanged
+pending Window-onload assertion failure / 288 files. Semantic snapshots and
+agent/locator/session target publication remain next. Full scoped ordering, focus
+rings, localization, UA/shadow/accessibility, runtime and original browser gates
+stay open. No gated probe ran; the denied SafeJS probe remains unrun. Historical
+evidence and unrelated pending work stay separate; the seven-day goal is active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

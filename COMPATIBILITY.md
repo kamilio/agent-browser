@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 generated-focus continuation: `GENERATED-FOCUS.md` adds distinct
+native fallback focus identity, default Tab/Shift-Tab stops and Enter/Space
+activation, with real-host page retargeting and stale held-key invalidation.
+Semantic snapshots and general agent/locator publication remain next. Full
+shadow-scoped ordering, generated focus rings, localization, accessibility and
+runtime/browser acceptance remain open; native focus is not full UA parity.
+
 September 4 generated-activation continuation: `GENERATED-ACTIVATION.md` adds
 native primary-pointer/direct activation and header-only click/hover points,
 with host-retargeted events and stale-default protection. Generated focus/tab

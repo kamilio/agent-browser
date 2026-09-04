@@ -111,6 +111,11 @@ export class DocumentInteractions {
 	private *mouseFocusAction(reference: string): EventAction<void> {
 		const { node, blocked } = this.actionability(reference);
 		if (blocked) return;
+		const generated = resolveVisualTarget(this.tree, reference).generated;
+		if (generated) {
+			yield* this.focus.focusAction(generated.ref);
+			return;
+		}
 		let target: number | null = node.id;
 		while (target !== null && focusTabIndex(this.tree, target) === null)
 			target = this.tree.get(target).parent;
@@ -355,10 +360,12 @@ export class DocumentInteractions {
 				: (this.activationTarget(target.id) ?? target);
 			if (
 				moveFocus &&
-				focusTabIndex(this.tree, candidate.id) !== null &&
+				(generated || focusTabIndex(this.tree, candidate.id) !== null) &&
 				documentStyles(this.tree).get(candidate.id).visible
 			) {
-				yield* this.focus.focusAction(this.tree.reference(candidate.id));
+				yield* this.focus.focusAction(
+					generated?.ref ?? this.tree.reference(candidate.id),
+				);
 				if (
 					candidate.tagName === "textarea" ||
 					(candidate.tagName === "input" &&

@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Generated-focus checkpoint: `GENERATED-FOCUS.md` adds canonical fallback focus
+identity, default Tab/Shift-Tab traversal, native pointer focus and Enter/Space
+activation while page focus and key events retarget the real details host.
+Replacement, disconnection, inertness, owner close and same-host identity changes
+invalidate held-key intent. Existing tests reproduced three intermediate
+reentrant cleanup crashes; they now pass with added generated hidden/style cases.
+All 49 new cases fail on isolated prior HEAD; matching focused runs pass
+310 / eight files in both trees. Both pass types/builds, strict new-test checking
+and eight-file lint. Authorized full native runs pass 9,319 / 266 isolated files;
+the working run reports 10,464 passes and the unchanged pending Window-onload
+assertion failure / 288 files. Next: generated semantic snapshot exposure and
+agent/locator publication, including session target validation. Full scoped tab
+ordering, focus rings, localization, UA/shadow/accessibility, runtime/browser
+gates and the original browser scope remain open. No gated probe ran and the
+denied SafeJS probe remains unrun. Preserve historical evidence and unrelated
+pending work; the seven-day continuation remains active.
+
+### Previous generated-activation checkpoint
+
 Generated-activation checkpoint: `GENERATED-ACTIVATION.md` connects generated
 fallback identity to native direct and primary-pointer activation, host-retargeted
 events, real attribute/group/toggle state and header-only receiving points.

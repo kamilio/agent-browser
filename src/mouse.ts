@@ -683,7 +683,11 @@ export class DocumentMouse {
 			event: this.event("mousedown", buttons[button].button, { detail: 1 }),
 		};
 		if (allowed && button === "left" && this.tree.isConnected(target))
-			yield* this.focus(this.tree.reference(target));
+			yield* this.focus(
+				generated && this.generatedAt(target) === generated
+					? generated
+					: this.tree.reference(target),
+			);
 		let contextAllowed = true;
 		if (button === "right" && this.tree.isConnected(target))
 			contextAllowed = yield {

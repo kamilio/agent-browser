@@ -1,5 +1,6 @@
 import { DocumentCheckedness } from "./document-checkedness.js";
 import { firstDetailsSummary } from "./details.js";
+import { documentGeneratedControls } from "./generated-controls.js";
 import { DetailsToggleTasks, detailsToggleLimits } from "./details-toggle.js";
 import { DocumentDetailsGroups } from "./details-groups.js";
 import type { InlineDeclaration } from "./css-declarations.js";
@@ -117,6 +118,7 @@ export class DocumentTree {
 	private currentUrl: string;
 	private currentTarget: number | null = null;
 	private currentFocus: number | null = null;
+	private currentGeneratedFocus: string | null = null;
 	private currentPointerHover: number | null = null;
 	private currentPointerActive: number | null = null;
 	private currentKeyboardActive: number | null = null;
@@ -217,8 +219,25 @@ export class DocumentTree {
 			: null;
 	}
 
-	setActiveElement(id: number | null) {
+	get generatedFocusReference() {
+		return this.activeElement === null ? null : this.currentGeneratedFocus;
+	}
+
+	setActiveElement(
+		id: number | null,
+		generatedReference: string | null = null,
+	) {
 		this.ensureOpen();
+		if (
+			generatedReference !== null &&
+			(id === null ||
+				documentGeneratedControls(this).resolve(generatedReference).owner !==
+					id)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Generated focus target belongs to another host",
+			);
 		if (id !== null) {
 			this.element(id);
 			if (!this.isConnected(id))
@@ -227,8 +246,13 @@ export class DocumentTree {
 					"Cannot focus a detached element",
 				);
 		}
-		if (id === this.currentFocus) return;
+		if (
+			id === this.currentFocus &&
+			generatedReference === this.currentGeneratedFocus
+		)
+			return;
 		this.currentFocus = id;
+		this.currentGeneratedFocus = generatedReference;
 		this.currentKeyboardActive = null;
 		this.changed("focus", this.root);
 	}
@@ -1174,8 +1198,10 @@ export class DocumentTree {
 			this.changed("insert", moving);
 			this.selectedContent.connected(moving);
 		}
-		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
+		if (this.currentFocus !== null && !this.isConnected(this.currentFocus)) {
 			this.currentFocus = null;
+			this.currentGeneratedFocus = null;
+		}
 	}
 
 	replace(parentId: number, childId: number, previousId: number) {
@@ -1229,8 +1255,10 @@ export class DocumentTree {
 			this.changed("remove", child);
 			this.selectedContent.removed(child, parentId);
 		}
-		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
+		if (this.currentFocus !== null && !this.isConnected(this.currentFocus)) {
 			this.currentFocus = null;
+			this.currentGeneratedFocus = null;
+		}
 		if (childId !== undefined)
 			this.insertInternal(parentId, childId, undefined, true);
 		this.childMutation(parentId, added, previous);
@@ -1256,8 +1284,10 @@ export class DocumentTree {
 		this.selections.moved(id);
 		this.checkedness.moved(id);
 		this.clearDisconnectedPointerState();
-		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
+		if (this.currentFocus !== null && !this.isConnected(this.currentFocus)) {
 			this.currentFocus = null;
+			this.currentGeneratedFocus = null;
+		}
 		this.changed("remove", id);
 		this.selectedContent.removed(id, parent.id);
 	}
@@ -1401,6 +1431,7 @@ export class DocumentTree {
 		while (ancestor !== null) {
 			if (ancestor === id) {
 				this.currentFocus = null;
+				this.currentGeneratedFocus = null;
 				this.currentKeyboardActive = null;
 				return true;
 			}
@@ -1411,6 +1442,15 @@ export class DocumentTree {
 
 	private clearCollapsedDetailsFocus(id: number) {
 		const details = this.node(id);
+		if (
+			details.tagName === "details" &&
+			this.currentFocus === id &&
+			this.currentGeneratedFocus !== null
+		) {
+			this.nodeViews.delete(id);
+			if (firstDetailsSummary(this, this.get(id)) !== null)
+				this.clearFocusWithin(id);
+		}
 		if (
 			details.tagName !== "details" ||
 			Object.hasOwn(details.attributes, "open")
@@ -2188,6 +2228,7 @@ export class DocumentTree {
 		this.attachedAttributes.clear();
 		this.currentTarget = null;
 		this.currentFocus = null;
+		this.currentGeneratedFocus = null;
 		this.changes = [];
 		this.currentPointerHover = null;
 		this.currentPointerActive = null;

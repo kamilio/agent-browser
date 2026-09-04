@@ -17,6 +17,11 @@ import { isInertRoot } from "./inertness.js";
 import { parsedTabIndex } from "./element-focus.js";
 import { closedDetailsChild, summaryDetails } from "./details.js";
 import { documentStyles } from "./styles.js";
+import {
+	documentGeneratedControls,
+	resolveVisualTarget,
+	type GeneratedControlTarget,
+} from "./generated-controls.js";
 
 export class BrowserFocusEvent extends BrowserEvent {
 	readonly #relatedTarget: number | null;
@@ -35,7 +40,7 @@ export class BrowserFocusEvent extends BrowserEvent {
 	}
 }
 
-export function focusTabIndex(tree: DocumentTree, id: number): number | null {
+function focusEligible(tree: DocumentTree, id: number): boolean {
 	const node = tree.get(id);
 	if (
 		node.kind !== "element" ||
@@ -43,7 +48,7 @@ export function focusTabIndex(tree: DocumentTree, id: number): number | null {
 		isControlDisabled(tree, id) ||
 		(node.tagName === "input" && inputType(node) === "hidden")
 	)
-		return null;
+		return false;
 	let ancestor: number | null = id;
 	while (ancestor !== null) {
 		const current = tree.get(ancestor);
@@ -52,9 +57,15 @@ export function focusTabIndex(tree: DocumentTree, id: number): number | null {
 			closedDetailsChild(tree, current) ||
 			isInertRoot(tree, current)
 		)
-			return null;
+			return false;
 		ancestor = current.parent;
 	}
+	return true;
+}
+
+export function focusTabIndex(tree: DocumentTree, id: number): number | null {
+	if (!focusEligible(tree, id)) return null;
+	const node = tree.get(id);
 	const explicit = parsedTabIndex(node);
 	if (explicit !== null) return explicit;
 	return ["input", "button", "select", "textarea"].includes(node.tagName) ||
@@ -66,7 +77,14 @@ export function focusTabIndex(tree: DocumentTree, id: number): number | null {
 
 export function activeFocus(tree: DocumentTree) {
 	const id = tree.activeElement;
-	return id !== null && focusTabIndex(tree, id) !== null ? id : null;
+	if (id === null) return null;
+	const generated = tree.generatedFocusReference;
+	if (generated !== null)
+		return focusEligible(tree, id) &&
+			documentGeneratedControls(tree).detailsSummary(id)?.ref === generated
+			? id
+			: null;
+	return focusTabIndex(tree, id) !== null ? id : null;
 }
 
 export class DocumentFocus {
@@ -106,6 +124,23 @@ export class DocumentFocus {
 			this.baseline.dirty = true;
 	}
 
+	activeReference(): string | null {
+		const id = this.active();
+		return id === null
+			? null
+			: (this.tree.generatedFocusReference ?? this.tree.reference(id));
+	}
+
+	private canFocus(id: number, generated?: GeneratedControlTarget) {
+		return (
+			(generated
+				? focusEligible(this.tree, id) &&
+					documentGeneratedControls(this.tree).detailsSummary(id) === generated
+				: focusTabIndex(this.tree, id) !== null) &&
+			documentStyles(this.tree).get(id).visible
+		);
+	}
+
 	markCommitted(id: number) {
 		if (this.baseline?.id === id && this.tree.activeElement === id) {
 			this.baseline.value = controlValue(this.tree, id);
@@ -123,21 +158,26 @@ export class DocumentFocus {
 
 	*focusAction(reference: string | null): EventAction<number | null> {
 		this.ensureOpen();
-		const target = reference === null ? null : this.tree.resolve(reference).id;
-		if (
-			target !== null &&
-			(focusTabIndex(this.tree, target) === null ||
-				!documentStyles(this.tree).get(target).visible)
-		)
+		const resolved =
+			reference === null ? null : resolveVisualTarget(this.tree, reference);
+		const target = resolved?.node.id ?? null;
+		const generated = resolved?.generated;
+		const nextReference =
+			target === null ? null : (generated?.ref ?? this.tree.reference(target));
+		if (target !== null && !this.canFocus(target, generated))
 			throw new AgentBrowserError(
 				"not-actionable",
 				"Element cannot receive focus",
 			);
 		const previous = this.active();
-		if (previous === target) return target;
+		if (this.activeReference() === nextReference) return target;
 		const turn = ++this.transition;
 		const baseline = this.baseline;
 		this.baseline = undefined;
+		if (previous === target) {
+			this.tree.setActiveElement(target, generated?.ref ?? null);
+			return this.active();
+		}
 		this.tree.setActiveElement(null);
 		if (previous !== null) {
 			if (
@@ -160,22 +200,19 @@ export class DocumentFocus {
 		if (turn !== this.transition) return this.active();
 		this.ensureOpen();
 		if (target === null) return null;
-		if (
-			focusTabIndex(this.tree, target) === null ||
-			!documentStyles(this.tree).get(target).visible
-		)
+		if (!this.canFocus(target, generated))
 			throw new AgentBrowserError(
 				"not-actionable",
 				"Focus target changed during events",
 			);
-		this.tree.setActiveElement(target);
+		this.tree.setActiveElement(target, generated?.ref ?? null);
 		this.baseline = {
 			id: target,
 			value: controlValue(this.tree, target),
 			dirty: false,
 		};
 		yield { target, event: new BrowserFocusEvent("focus", previous) };
-		if (turn === this.transition && this.active() === target)
+		if (turn === this.transition && this.activeReference() === nextReference)
 			yield { target, event: new BrowserFocusEvent("focusin", previous) };
 		return this.active();
 	}
@@ -190,11 +227,29 @@ export class DocumentFocus {
 
 	*moveAction(reverse = false): EventAction<number | null> {
 		this.ensureOpen();
-		const candidates: { id: number; order: number; tab: number }[] = [];
+		const candidates: {
+			id: number;
+			reference: string;
+			order: number;
+			tab: number;
+		}[] = [];
 		const radioStops = new Map<number, number>();
 		let order = 0;
 		for (const { node } of this.tree.walk()) {
+			const generated =
+				node.tagName === "details" &&
+				focusEligible(this.tree, node.id) &&
+				documentStyles(this.tree).get(node.id).visible
+					? documentGeneratedControls(this.tree).detailsSummary(node.id)
+					: undefined;
 			const tab = focusTabIndex(this.tree, node.id);
+			if (generated && tab === null)
+				candidates.push({
+					id: node.id,
+					reference: generated.ref,
+					order: order++,
+					tab: 0,
+				});
 			if (
 				tab === null ||
 				tab < 0 ||
@@ -216,7 +271,19 @@ export class DocumentFocus {
 				}
 				if (radioStops.get(node.id) !== node.id) continue;
 			}
-			candidates.push({ id: node.id, order: order++, tab });
+			candidates.push({
+				id: node.id,
+				reference: this.tree.reference(node.id),
+				order: order++,
+				tab,
+			});
+			if (generated)
+				candidates.push({
+					id: node.id,
+					reference: generated.ref,
+					order: order++,
+					tab: 0,
+				});
 		}
 		candidates.sort(
 			(left, right) =>
@@ -225,8 +292,8 @@ export class DocumentFocus {
 				left.order - right.order,
 		);
 		if (!candidates.length) return yield* this.focusAction(null);
-		const active = this.active();
-		const current = candidates.findIndex((entry) => entry.id === active);
+		const active = this.activeReference();
+		const current = candidates.findIndex((entry) => entry.reference === active);
 		const position =
 			current < 0
 				? reverse
@@ -234,9 +301,7 @@ export class DocumentFocus {
 					: 0
 				: (current + (reverse ? -1 : 1) + candidates.length) %
 					candidates.length;
-		return yield* this.focusAction(
-			this.tree.reference(candidates[position].id),
-		);
+		return yield* this.focusAction(candidates[position].reference);
 	}
 
 	private ensureOpen() {
