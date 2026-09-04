@@ -17,6 +17,7 @@ export interface NetworkRequest {
 	method?: string;
 	headers?: Readonly<Record<string, string>>;
 	body?: string | Uint8Array;
+	maxResponseBytes?: number;
 	redirect?: "follow" | "manual" | "error";
 	signal?: AbortSignal;
 	cookieContext?: CookieRequestContext;

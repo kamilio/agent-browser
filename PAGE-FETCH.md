@@ -1,5 +1,12 @@
 # Document-owned page fetch
 
+September 4 native update: `FETCH-RESPONSE-BUDGETS.md` adds cumulative-budget
+admission and narrower per-request encoded/decoded ceilings forwarded through the
+session to the built-in transport. Mocked streams and the actual session port
+cover this continuation, not a new interpreter/live validation. Concurrent page
+reservations, rejected partial-stream page accounting and full Fetch/XHR remain
+open; historical evidence and commands below retain their original context.
+
 Later September 2 update: `PAGE-CORS.md` adds checked cross-origin fetch,
 preflights, credential/header filtering and redirect state. The initial
 same-origin-only checkpoint below is historical where superseded by that update.

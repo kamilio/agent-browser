@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 fetch-budget continuation: `FETCH-RESPONSE-BUDGETS.md` connects page
+admission and narrowing response ceilings to native streams, routed responses and
+the actual session port. Native mocked transport fixtures cover receiving and
+shutdown boundaries; they do not establish real-wire/runtime acceptance. Page-wide
+concurrent reservations, partial-stream page accounting and standard XHR remain open.
+
 September 4 paint acceptance continuation: `POSITIONED-PAINT-ACCEPTANCE.md` adds
 nineteen native opaque-pixel, root-structure, paint-order and hit-target checks.
 The apparent overlap is an unfilled outline gap, not a corrected production

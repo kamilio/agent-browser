@@ -19,6 +19,18 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native fetch-budget continuation: `FETCH-RESPONSE-BUDGETS.md` adds exhausted-page
+admission checks and propagates narrowing response ceilings through the actual
+session port to encoded/decoded native stream collection and routed responses.
+Accessor/signal closure cannot admit work after owner shutdown. Both focused runs
+pass 408 / twelve files; project types and explicit builds pass. Full-manifest
+approval was denied before execution and is not retried or replaced with a broad
+filtered suite. Both manifests retain all 355 entries; prior full counts remain
+historical. Full-suite acceptance awaits explicit authorization. Page-level
+concurrent reservations and rejected partial-stream accounting remain open, as do
+XHR and all separately authorized runtime/live/transport/terminal acceptance gates.
+Element-endpoint editable highlighting continues as an independent native lane.
+
 Positioned-paint acceptance checkpoint: `POSITIONED-PAINT-ACCEPTANCE.md` integrates
 nineteen native pixel/order/hit regressions from the independent outline-gap review.
 Both focused runs pass 182 / five files; strict checks and scoped Biome pass. No

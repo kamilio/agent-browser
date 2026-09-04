@@ -241,6 +241,14 @@ export class PageFetch {
 			throw new AgentBrowserError("closed", "Page fetch is closed");
 	}
 
+	private checkByteBudget() {
+		if (this.totalBytes >= this.limits.maxTotalBytes)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Fetch response body limit exceeded",
+			);
+	}
+
 	private target(input: string, base: string) {
 		if (input.length > 16_384 || /\p{Cc}/u.test(input))
 			throw new TypeError("Invalid fetch URL");
@@ -371,6 +379,7 @@ export class PageFetch {
 				"resource-limit",
 				"Page fetch request limit exceeded",
 			);
+		this.checkByteBudget();
 		this.requests++;
 		const controller = new AbortController();
 		this.active.add(controller);
@@ -585,10 +594,20 @@ export class PageFetch {
 		});
 		const work = Promise.resolve().then(() => {
 			if (signal.aborted) throw signal.reason;
-			return this.request(input, {
-				...context,
-				...(context?.cors ? { observeCorsResult } : {}),
-			});
+			this.checkByteBudget();
+			return this.request(
+				{
+					...input,
+					maxResponseBytes: Math.min(
+						this.limits.maxResponseBytes,
+						this.limits.maxTotalBytes - this.totalBytes,
+					),
+				},
+				{
+					...context,
+					...(context?.cors ? { observeCorsResult } : {}),
+				},
+			);
 		});
 		try {
 			const response = await Promise.race([work, stopped]);

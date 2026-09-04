@@ -71,6 +71,15 @@ removed from the native allowlist. None of those pending failures is changed.
 
 ## Remaining runtime gates
 
+September 4 static XHR follow-up: the preserved native-validation cache report
+`parallel-xhr-feasibility-ffd9d15/REPORT.md` inspects four existing local SafeJS
+artifacts and the pinned upstream workspace without executing them. All four
+inspected core chunks share the recorded hash; this is not a registry-latest or
+release/provenance claim. Current nested-source permission exists, but trusted
+construction and live prototype/receiver facilities remain blockers. Fetch-budget
+hardening (`FETCH-RESPONSE-BUDGETS.md`) improves the existing backend without
+publishing an untruthful XHR factory alias or retrying a denied runtime probe.
+
 `FOCUS-BRIDGE.md` now integrates final registered nested-operation identity and
 controlled callback prefixes through native fixtures. Ordinary async host methods
 retain Promises. Selection of the extension adapter and native fixtures still

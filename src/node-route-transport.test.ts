@@ -15,6 +15,7 @@ interface WireHost {
 		response: Readable,
 		encoding: string,
 		signal: AbortSignal,
+		maxResponseBytes: number,
 	): Promise<{ body: Uint8Array; encodedBytes: number }>;
 	exchange(
 		url: URL,
@@ -24,6 +25,7 @@ interface WireHost {
 		body: Buffer | undefined,
 		redirect: string,
 		signal: AbortSignal,
+		maxResponseBytes: number,
 		onHeaders?: (headers: NetworkResponse["headers"]) => void,
 	): Promise<Omit<NetworkResponse, "url" | "redirects" | "elapsedMs">>;
 }
@@ -235,6 +237,7 @@ it("keeps cookie recomputation and cross-origin sensitive-header stripping befor
 			_body,
 			_redirect,
 			_signal,
+			_maxResponseBytes,
 			onHeaders,
 		) => {
 			if (url.pathname === "/start") {
@@ -413,13 +416,23 @@ it("charges real in-memory stream consumption and routed bodies to the same byte
 	});
 	routes.add("**/mocked", { body: "four" });
 	exchange.mockImplementation(
-		async (_url, _address, _method, _headers, _body, _redirect, signal) => ({
+		async (
+			_url,
+			_address,
+			_method,
+			_headers,
+			_body,
+			_redirect,
+			signal,
+			maxResponseBytes,
+		) => ({
 			status: 200,
 			headers: {},
 			...(await (transport as unknown as WireHost).consume(
 				Readable.from([Buffer.from("12")]),
 				"identity",
 				signal,
+				maxResponseBytes,
 			)),
 		}),
 	);

@@ -1,12 +1,21 @@
 # Five-hour browser integration sprint
 
 The user authorized up to twenty subagents on September 4, 2026 at approximately
-14:10 UTC and stated that five hours remain. The current execution deadline is
+14:10 UTC and stated that five hours remain. The original sprint target was
 therefore approximately **19:10 UTC on September 4, 2026**. This compresses the
 schedule; it does not redefine the browser outcome or prove any acceptance gate.
 `TASKS.md` retains the original scope and `SEVEN-DAY-PLAN.md` retains its history.
 
 ## Continued execution
+
+Fetch-budget integration now passes 408 focused native cases in both trees,
+including real session-port forwarding over mocked transport streams. Exhausted
+admission, receiving ceilings and signal/accessor shutdown boundaries are covered;
+types/builds pass, but full-manifest approval was denied before execution and is
+not retried. `FETCH-RESPONSE-BUDGETS.md` keeps concurrent page
+reservations, partial-stream page accounting, XHR and all external gates explicit.
+One original worker resumes the disjoint element-endpoint highlight lane while
+the parent validates network integration; the original deadline is superseded.
 
 Nineteen native paint/order/hit regressions now protect the independently verified
 outline-gap behavior without changing production rendering. Both focused suites

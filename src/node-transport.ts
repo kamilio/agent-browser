@@ -409,6 +409,20 @@ export class NodeNetworkTransport implements NetworkTransport {
 			(input.signal !== undefined && !(input.signal instanceof AbortSignal))
 		)
 			throw new AgentBrowserError("invalid-input", "Invalid network request");
+		const requestedMaxResponseBytes = input.maxResponseBytes;
+		if (
+			requestedMaxResponseBytes !== undefined &&
+			(!Number.isSafeInteger(requestedMaxResponseBytes) ||
+				requestedMaxResponseBytes < 0)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid request response byte limit",
+			);
+		const maxResponseBytes = Math.min(
+			requestedMaxResponseBytes ?? this.limits.maxResponseBytes,
+			this.limits.maxResponseBytes,
+		);
 		let url = this.policy.checkUrl(input.url);
 		let method = input.method ?? "GET";
 		if (typeof method !== "string" || !/^[A-Z]+$/i.test(method))
@@ -426,22 +440,24 @@ export class NodeNetworkTransport implements NetworkTransport {
 		const redirect = input.redirect ?? "follow";
 		if (!["follow", "manual", "error"].includes(redirect))
 			throw new AgentBrowserError("invalid-input", "Invalid redirect mode");
+		const requestedBody = input.body;
 		if (
-			input.body !== undefined &&
-			typeof input.body !== "string" &&
-			!(input.body instanceof Uint8Array)
+			requestedBody !== undefined &&
+			typeof requestedBody !== "string" &&
+			!(requestedBody instanceof Uint8Array)
 		)
 			throw new AgentBrowserError("invalid-input", "Invalid request body");
 		const bodyLength =
-			typeof input.body === "string"
-				? Buffer.byteLength(input.body)
-				: (input.body?.byteLength ?? 0);
+			typeof requestedBody === "string"
+				? Buffer.byteLength(requestedBody)
+				: (requestedBody?.byteLength ?? 0);
 		if (bodyLength > this.limits.maxRequestBytes)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"Request body limit exceeded",
 			);
-		let body = input.body === undefined ? undefined : Buffer.from(input.body);
+		let body =
+			requestedBody === undefined ? undefined : Buffer.from(requestedBody);
 		if (body && ["GET", "HEAD"].includes(method))
 			throw new AgentBrowserError(
 				"invalid-input",
@@ -476,8 +492,10 @@ export class NodeNetworkTransport implements NetworkTransport {
 			: null;
 		let originTainted = cookieOrigin !== url.origin;
 		let siteTainted = cookieContext?.crossSiteRedirect ?? false;
-		if (typeof input.body === "string")
+		if (typeof requestedBody === "string")
 			headers["content-type"] ??= "text/plain;charset=UTF-8";
+		if (this.closed)
+			throw new AgentBrowserError("closed", "Transport is closed");
 		if (this.active.size >= this.limits.maxConcurrent)
 			throw new AgentBrowserError(
 				"resource-limit",
@@ -499,6 +517,8 @@ export class NodeNetworkTransport implements NetworkTransport {
 		const start = performance.now();
 		const ensureActive = () => {
 			if (signal.aborted) throw abortReason(signal);
+			if (this.closed)
+				throw new AgentBrowserError("closed", "Transport is closed");
 			if (performance.now() - start >= this.limits.timeoutMs)
 				throw new AgentBrowserError("timeout", "Network deadline exceeded");
 		};
@@ -552,7 +572,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 					this.counts.mockedDecodedBytes += response.body.length;
 					this.counts.decodedBytes += response.body.length;
 					if (
-						response.body.length > this.limits.maxResponseBytes ||
+						response.body.length > maxResponseBytes ||
 						this.counts.decodedBytes > this.limits.maxTotalBytes
 					)
 						throw new AgentBrowserError(
@@ -576,6 +596,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 						body,
 						redirect,
 						signal,
+						maxResponseBytes,
 						storeCookies,
 					);
 				}
@@ -681,6 +702,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 		body: Buffer<ArrayBuffer> | undefined,
 		redirect: string,
 		signal: AbortSignal,
+		maxResponseBytes: number,
 		onHeaders?: (headers: NetworkResponse["headers"]) => void,
 	): Promise<Omit<NetworkResponse, "url" | "redirects" | "elapsedMs">> {
 		return new Promise((resolve, reject) => {
@@ -780,6 +802,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 						response,
 						response.headers["content-encoding"] ?? "identity",
 						signal,
+						maxResponseBytes,
 					).then(
 						(result) =>
 							succeed({ status, headers: responseHeaderValues, ...result }),
@@ -819,6 +842,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 		response: Readable,
 		contentEncoding: string,
 		signal: AbortSignal,
+		maxResponseBytes: number,
 	): Promise<{ body: Uint8Array; encodedBytes: number }> {
 		const chunks: Buffer[] = [];
 		let encodedBytes = 0;
@@ -861,7 +885,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 				try {
 					encodedBytes += chunk.byteLength;
 					count("encodedBytes", chunk.byteLength);
-					if (encodedBytes > this.limits.maxResponseBytes)
+					if (encodedBytes > maxResponseBytes)
 						throw new AgentBrowserError(
 							"resource-limit",
 							"Encoded response byte limit exceeded",
@@ -877,7 +901,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 				try {
 					decodedBytes += chunk.byteLength;
 					count("decodedBytes", chunk.byteLength);
-					if (decodedBytes > this.limits.maxResponseBytes)
+					if (decodedBytes > maxResponseBytes)
 						throw new AgentBrowserError(
 							"resource-limit",
 							"Decoded response byte limit exceeded",

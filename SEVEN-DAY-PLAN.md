@@ -7,6 +7,14 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native fetch admission, per-response receiving ceilings and shutdown boundaries
+are integrated; see `FETCH-RESPONSE-BUDGETS.md`. Both focused suites pass 408 /
+twelve files, and types/builds pass. Full-manifest approval was denied before
+execution; the unchanged full list awaits explicit authorization rather than a
+broad filtered substitute. This does not close page-wide concurrent
+allocation accounting, XHR or external gates. Element/container-endpoint selection
+highlighting is the next bounded lane under the until-stopped instruction.
+
 The resolved outline-gap review now has nineteen integrated native paint/order/hit
 regressions: `POSITIONED-PAINT-ACCEPTANCE.md`. Both focused runs pass 182 tests;
 production rendering is unchanged and the prior full counts are not relabeled.
