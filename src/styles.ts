@@ -743,12 +743,34 @@ export class DocumentStyles {
 			}
 		}
 		for (const node of nodes) {
-			if (!node.attributes.style) continue;
-			const declarations = parseCssDeclarations(
-				source(node.attributes.style),
-				budget,
-				issue,
-			);
+			if (node.kind !== "element") continue;
+			const owned = this.tree.getInlineDeclarations(node.id);
+			if (!node.attributes.style && !owned) continue;
+			const parsed = new Map<string, CssDeclaration[]>();
+			const declarations = owned
+				? owned.flatMap((entry) => {
+						const key = JSON.stringify([
+							entry.pending ?? entry.name,
+							entry.value,
+							entry.important,
+						]);
+						let values = parsed.get(key);
+						if (!values) {
+							values = parseCssDeclarations(
+								source(
+									`${entry.pending ?? entry.name}:${entry.value}${entry.important ? "!important" : ""}`,
+								),
+								budget,
+								issue,
+							);
+							parsed.set(key, values);
+						}
+						return values.filter(
+							(declaration) =>
+								!entry.pending || declaration.property === entry.name,
+						);
+					})
+				: parseCssDeclarations(source(node.attributes.style), budget, issue);
 			charge(declarations.length);
 			apply(node.id, declarations, [0, 0, 0], true, order);
 			order += declarations.length;

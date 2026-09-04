@@ -1,4 +1,9 @@
 import { DocumentCheckedness } from "./document-checkedness.js";
+import type { InlineDeclaration } from "./css-declarations.js";
+import {
+	DocumentInlineDeclarations,
+	type InlineDeclarationState,
+} from "./document-inline-declarations.js";
 import { validateDocumentInsertion } from "./document-hierarchy.js";
 import {
 	DocumentInputValues,
@@ -153,6 +158,7 @@ export class DocumentTree {
 		(id) => this.parserForms.get(id),
 	);
 	private readonly inputValues = new DocumentInputValues((id) => this.node(id));
+	private readonly inlineDeclarationStore = new DocumentInlineDeclarations();
 
 	constructor(
 		url: string,
@@ -1166,7 +1172,38 @@ export class DocumentTree {
 		return htmlAttributeNames(this.element(id).attributes);
 	}
 
+	getInlineDeclarations(id: number) {
+		this.element(id);
+		return this.inlineDeclarationStore.get(id);
+	}
+
+	inlineDeclarationMetrics() {
+		return Object.freeze({
+			...this.inlineDeclarationStore.stats,
+			closed: this.closed,
+		});
+	}
+
+	setInlineDeclarations(
+		id: number,
+		source: string,
+		entries: readonly InlineDeclaration[],
+	) {
+		this.element(id);
+		const state = this.inlineDeclarationStore.prepare(id, source, entries);
+		this.writeAttribute(id, "style", source, state);
+	}
+
 	setAttribute(id: number, name: string, value: string) {
+		this.writeAttribute(id, name, value);
+	}
+
+	private writeAttribute(
+		id: number,
+		name: string,
+		value: string,
+		state?: InlineDeclarationState,
+	) {
 		this.validateAttribute(name);
 		this.validateString(value);
 		const node = this.element(id);
@@ -1174,6 +1211,8 @@ export class DocumentTree {
 		const previous = node.attributes[key];
 		const inputChange = this.inputValues.prepare(id, key, value);
 		if (previous === value) {
+			if (key === "style" && this.inlineDeclarationStore.replace(id, state))
+				this.changed("style", id);
 			if (inputChange && inputChange.value !== node.control.value) {
 				this.checkTextBudget(this.inputValueDelta(id, inputChange));
 				this.applyInputValueChange(id, inputChange);
@@ -1201,11 +1240,15 @@ export class DocumentTree {
 		if (attribute) attribute.value = value;
 		this.textCodeUnits += change;
 		this.applyInputValueChange(id, inputChange);
+		if (key === "style") {
+			this.inlineDeclarationStore.replace(id, state);
+			this.changed("attribute", id);
+		}
 		this.mutation("attributes", id, {
 			attributeName: key,
 			oldValue: previous ?? null,
 		});
-		this.changed("attribute", id);
+		if (key !== "style") this.changed("attribute", id);
 		this.selections.attribute(id, key);
 		this.checkedness.attribute(id, key, previous);
 	}
@@ -1245,8 +1288,12 @@ export class DocumentTree {
 			this.attachedAttributes.get(id)?.delete(key);
 		}
 		this.applyInputValueChange(id, inputChange);
+		if (key === "style") {
+			this.inlineDeclarationStore.replace(id);
+			this.changed("attribute", id);
+		}
 		this.mutation("attributes", id, { attributeName: key, oldValue: previous });
-		this.changed("attribute", id);
+		if (key !== "style") this.changed("attribute", id);
 		this.selections.attribute(id, key);
 		this.checkedness.attribute(id, key, previous);
 	}
@@ -1337,11 +1384,15 @@ export class DocumentTree {
 		this.attributeMap(id).set(attribute.name, attributeId);
 		this.textCodeUnits += change;
 		this.applyInputValueChange(id, inputChange);
+		if (attribute.name === "style") {
+			this.inlineDeclarationStore.replace(id);
+			this.changed("attribute", id);
+		}
 		this.mutation("attributes", id, {
 			attributeName: attribute.name,
 			oldValue: previous ?? null,
 		});
-		this.changed("attribute", id);
+		if (attribute.name !== "style") this.changed("attribute", id);
 		this.selections.attribute(id, attribute.name);
 		this.checkedness.attribute(id, attribute.name, previous);
 		return original;
@@ -1916,6 +1967,7 @@ export class DocumentTree {
 		this.selectedContent.close();
 		this.checkedness.close();
 		this.inputValues.close();
+		this.inlineDeclarationStore.close();
 		this.customValidity.clear();
 		this.userEditedValues.clear();
 		this.parserForms.clear();

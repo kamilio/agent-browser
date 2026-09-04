@@ -19,6 +19,28 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Pending CSSOM state checkpoint: `INLINE-PENDING-STATE.md` implements document-owned
+expanded longhand slots, partial removal and lower-priority component replacement.
+CSSOM, native style resolution, geometry and pixels share retained declarations;
+same-text attribute replacement resets hidden slots, owner close preserves DOM
+styles, and document close releases state. Frozen validation/admission, reentrant
+publication and three retention quotas have native coverage. Shared shorthand
+parsing and linear whitespace trimming remove repeated and quadratic work exposed
+by the long-source regression. Thirty-five new cases pass; nineteen selected
+existing-API cases fail before implementation. Seven related pending CSSOM cases
+and custom-property capability metadata are integrated. Focused runs pass 253 /
+seven working files and 201 / six isolated files; authorized full native runs pass
+9,687 / 270 and 8,541 / 248. Both trees pass types/builds, strict three-test checks
+and eleven-file lint. Historical evidence and unrelated pending changes remain
+intact; approved scratch cleanup resolved disk exhaustion. Full serialization/
+`all`/cloning parity, released-SafeJS, real browser/site/socket/TTY and original
+compatibility gates remain open. Continue native CSSOM ordering and application
+compatibility without calling fixture evidence a runtime or browser-equivalence
+pass. No gated probe ran; the denied SafeJS probe is unrun and the seven-day goal
+remains active.
+
+### Previous inline CSSOM priority checkpoint
+
 Inline CSSOM priority checkpoint: `INLINE-STYLE-PRIORITY.md` makes priority reads
 independent of value serialization and removes empty/null-to-empty values before
 invalid-priority rejection. Twenty-six new cases include pending shorthand

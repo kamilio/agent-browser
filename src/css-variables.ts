@@ -16,9 +16,9 @@ export const cssVariableCapabilities = Object.freeze({
 	dynamicReferenceNames: true,
 	registeredProperties: false,
 	animationTaint: false,
-	inlinePendingShorthands: "raw-declaration-not-expanded-cssom-enumeration",
-	partialPendingShorthandRemoval: false,
-	lowerPriorityPendingComponentReplacement: false,
+	inlinePendingShorthands: "expanded-native-declaration-slots",
+	partialPendingShorthandRemoval: true,
+	lowerPriorityPendingComponentReplacement: true,
 	limits: cssVariableLimits,
 });
 type Part =

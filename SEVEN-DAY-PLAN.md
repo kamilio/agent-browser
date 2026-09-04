@@ -871,6 +871,22 @@ gates. Full CSSOM, released-SafeJS, real browser/site/socket/TTY and original
 compatibility gates remain open. No gated probe ran; the denied SafeJS probe
 remains unrun and the complete seven-day browser objective stays active.
 
+September 4 pending CSSOM state continuation: `INLINE-PENDING-STATE.md` integrates
+document-owned longhand slots, partial removal/reprioritization and shared native
+style/geometry/paint behavior. Native tests cover identity-aware caches, same-text
+attribute resets, reentrancy, lifetime, frozen admission and three retention
+quotas. Shared parsing and linear end trimming correct expensive repeated work.
+Thirty-five new cases pass; nineteen selected behavior cases reproduce on prior
+HEAD. Seven related pending CSSOM cases and variable capability metadata are
+integrated. Focused runs pass 253 / seven working files and 201 / six isolated
+files; full authorized native runs pass 9,687 / 270 and 8,541 / 248. Both trees
+pass types/builds, strict three-test checks and eleven-file lint. Approved cleanup
+of completed scratch snapshots resolves disk exhaustion without deleting reports
+or repository data. Continue native CSSOM ordering and application compatibility.
+Full serialization/all/cloning parity, released-SafeJS and real browser/site/
+socket/TTY gates remain open; no gated probe ran. The denied SafeJS probe is unrun
+and the complete seven-day browser objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

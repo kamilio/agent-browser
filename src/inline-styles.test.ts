@@ -68,6 +68,110 @@ function fixture(source?: string, limits = {}) {
 }
 
 describe("inline CSSOM declarations", () => {
+	it("keeps variable longhands and custom values live through native cascade mutations", () => {
+		const { tree, element, style } = fixture("--Width:20px;width:var(--Width)");
+		const computed = documentStyles(tree);
+		expect(style.width).toBe("var(--Width)");
+		expect(computed.box(element).width).toBe("20px");
+		style.setProperty("--Width", "50px");
+		expect(computed.box(element).width).toBe("50px");
+		expect(style.width).toBe("var(--Width)");
+		style.width = "var(--missing,30px)";
+		expect(computed.box(element).width).toBe("30px");
+		tree.close();
+	});
+
+	it("preserves unresolved shorthand source while editing custom properties", () => {
+		const { tree, element, style } = fixture(
+			"--space:2px 4px;margin:var(--space)",
+		);
+		const computed = documentStyles(tree);
+		expect(style.margin).toBe("var(--space)");
+		expect(style.getPropertyValue("margin-left")).toBe("");
+		style.setProperty("--space", "3px 7px");
+		expect(style.margin).toBe("var(--space)");
+		expect(computed.box(element)["margin-left"]).toBe("7px");
+		expect(style.removeProperty("margin")).toBe("var(--space)");
+		expect(style.margin).toBe("");
+		expect(computed.box(element)["margin-left"]).toBe("0px");
+		tree.close();
+	});
+
+	it("orders later longhand overrides after an unresolved shorthand", () => {
+		const { tree, element, style } = fixture(
+			"margin-left:1px;--space:2px 4px;margin:var(--space)",
+		);
+		style.setProperty("margin-left", "9px");
+		expect(documentStyles(tree).box(element)["margin-left"]).toBe("9px");
+		expect(documentStyles(tree).box(element)["margin-right"]).toBe("4px");
+		expect(style.getPropertyValue("margin-left")).toBe("9px");
+		expect(style.margin).toBe("");
+		style.margin = "var(--space)";
+		expect(documentStyles(tree).box(element)["margin-left"]).toBe("4px");
+		style.margin = "6px";
+		expect(style.margin).toBe("6px");
+		expect(documentStyles(tree).box(element)["margin-left"]).toBe("6px");
+		tree.close();
+	});
+
+	it("supports partial pending-shorthand removal and reprioritization", () => {
+		const { tree, style } = fixture(
+			"--space:2px 4px;margin:var(--space)!important",
+		);
+		expect(style.removeProperty("margin-left")).toBe("");
+		style.setProperty("margin-left", "10px");
+		expect(style.getPropertyPriority("margin-left")).toBe("");
+		expect(style.getPropertyPriority("margin-right")).toBe("important");
+		style.setProperty("margin-left", "10px", "important");
+		expect(style.getPropertyValue("margin-left")).toBe("10px");
+		tree.close();
+	});
+
+	it("retains custom-value comments, Unicode, case and an explicitly empty declaration", () => {
+		const { tree, style } = fixture(
+			"/* prefix:ignored */ --Theme:/*keep*/ blue;--色:red;--empty:;--invalid:initial",
+		);
+		expect(style.getPropertyValue("--Theme")).toBe("/*keep*/ blue");
+		expect(style.getPropertyValue("--theme")).toBe("");
+		expect(style.getPropertyValue("--色")).toBe("red");
+		expect(style.getPropertyValue("--empty")).toBe(" ");
+		style.width = "10px";
+		expect(style.getPropertyValue("--Theme")).toBe("/*keep*/ blue");
+		style.setProperty("--empty", "");
+		expect(style.getPropertyValue("--empty")).toBe("");
+		style.setProperty("--empty", " ", "important");
+		expect(style.getPropertyValue("--empty")).toBe(" ");
+		expect(style.getPropertyPriority("--empty")).toBe("important");
+		tree.close();
+	});
+
+	it("does not reinterpret adjoining variable tokens as a CSS dimension", () => {
+		const { tree, element, style } = fixture("--number:10;width:5px");
+		style.width = "var(--number)px";
+		expect(style.width).toBe("var(--number)px");
+		expect(documentStyles(tree).box(element).width).toBe("auto");
+		tree.close();
+	});
+
+	it("retains borders across other CSSOM edits and expands/removes their shorthands", () => {
+		const { tree, element, style } = fixture(
+			"border:2px solid red; border-left-width:4px",
+		);
+		style.width = "10px";
+		expect(style.getPropertyValue("border-left-width")).toBe("4px");
+		expect(style.getPropertyValue("border-top")).toBe("2px solid red");
+		expect(style.getPropertyValue("border")).toBe("");
+		style.setProperty("border-color", "blue green");
+		expect(style.getPropertyValue("border-color")).toBe("blue green");
+		expect(documentStyles(tree).box(element)["border-left-width"]).toBe("4px");
+		style.setProperty("border", "3px solid navy", "important");
+		expect(style.getPropertyValue("border")).toBe("3px solid navy");
+		expect(style.getPropertyPriority("border")).toBe("important");
+		expect(style.removeProperty("border")).toBe("3px solid navy");
+		expect(style.getPropertyValue("border-left-width")).toBe("");
+		expect(style.width).toBe("10px");
+		tree.close();
+	});
 	it.each(matchingReferenceCases)(
 		"matches the actual reference browser for $id",
 		(reference) => {

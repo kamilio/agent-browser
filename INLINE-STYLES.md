@@ -1,5 +1,11 @@
 # Inline style declarations
 
+September 4 pending-state continuation: `INLINE-PENDING-STATE.md` replaces raw
+pending shorthands with shared document-owned longhand slots. Partial removal and
+reprioritization now affect native geometry/paint, with explicit serialization,
+attribute-reset, retention and close behavior. Full CSSOM and runtime acceptance
+remain open; historical measurements below retain their original scope.
+
 September 4 continuation: `INLINE-STYLE-PRIORITY.md` corrects priority queries for
 unresolved/non-serializable declarations and specification-ordered empty writes.
 It explicitly records the difference from the historical `remove-invalid-priority`

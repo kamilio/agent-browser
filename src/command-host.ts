@@ -17,6 +17,8 @@ import {
 import { type Invocation, parseInvocation } from "./cli-parser.js";
 import { commands } from "./commands.js";
 import { cssBoxProperties } from "./css-box.js";
+import { cssVariableCapabilities } from "./css-variables.js";
+import { inlineDeclarationLimits } from "./document-inline-declarations.js";
 import { interactionStyleCapabilities } from "./css-interaction.js";
 import { documentHitTesting, hitTestCapabilities } from "./hit-testing.js";
 import {
@@ -625,6 +627,12 @@ export class BrowserCommandHost {
 				properties: cssTextProperties,
 				font: "Agent Mono",
 				pageGeometry: false,
+			},
+			cssVariables: cssVariableCapabilities,
+			inlineDeclarations: {
+				partial: true,
+				profile: "document-owned-pending-substitution",
+				limits: inlineDeclarationLimits,
 			},
 			mediaQueries: {
 				partial: true,

@@ -372,30 +372,31 @@ it("supports complete replacement and removal of pending shorthands", () => {
 	expect(read("margin-top")).toBe("0px");
 });
 
-it("rejects partial pending-shorthand removal without mutation", () => {
+it("removes a pending component while preserving the other native slots", () => {
 	const { tree, id, inline } = fixture(
 		"",
 		'<div id="target" style="margin:var(--space)">Text</div>',
 	);
 	const style = inline();
-	const before = tree.get(id()).attributes.style;
-	expect(() => style.removeProperty("margin-left")).toThrow(
-		"unresolved shorthand",
-	);
-	expect(tree.get(id()).attributes.style).toBe(before);
+	expect(style.removeProperty("margin-left")).toBe("");
+	expect(style.length).toBe(3);
+	expect(tree.getInlineDeclarations(id())).toHaveLength(3);
 });
 
-it("rejects lowering one unresolved important component without mutation", () => {
+it("lowers one unresolved important component without changing its peers", () => {
 	const { tree, id, inline } = fixture(
 		"",
 		'<div id="target" style="margin:var(--space)!important">Text</div>',
 	);
 	const style = inline();
-	const before = tree.get(id()).attributes.style;
-	expect(() => style.setProperty("margin-left", "3px")).toThrow(
-		"Lowering priority",
-	);
-	expect(tree.get(id()).attributes.style).toBe(before);
+	style.setProperty("margin-left", "3px");
+	expect(style.getPropertyValue("margin-left")).toBe("3px");
+	expect(tree.getInlineDeclarations(id())).toMatchObject([
+		{ name: "margin-top", important: true },
+		{ name: "margin-right", important: true },
+		{ name: "margin-bottom", important: true },
+		{ name: "margin-left", important: false },
+	]);
 });
 
 it("keeps case-sensitive computed values and enumeration live and read-only", () => {

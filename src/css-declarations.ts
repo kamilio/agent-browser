@@ -62,7 +62,7 @@ export interface InlineDeclaration {
 	name: string;
 	value: string;
 	important: boolean;
-	pending?: boolean;
+	pending?: string;
 }
 
 const wide = new Set(["initial", "inherit", "unset", "revert"]);
@@ -114,8 +114,13 @@ export const inlineProperties = [
 	...cssBackgroundProperties,
 ];
 const supported = new Set(inlineProperties);
-const trim = (value: string) =>
-	value.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "");
+function trim(value: string): string {
+	let start = 0;
+	let end = value.length;
+	while (start < end && /[\t\n\f\r ]/.test(value[start])) start++;
+	while (end > start && /[\t\n\f\r ]/.test(value[end - 1])) end--;
+	return value.slice(start, end);
+}
 
 export function declarationName(name: string): string {
 	return name.startsWith("--")
@@ -253,16 +258,14 @@ export function expandDeclaration(
 		const parsed = parseVariableValue(input);
 		if (!parsed) return [];
 		if (parsed.variables)
-			return [
-				{
-					name,
-					value: input,
-					important,
-					...(inlineDeclarationComponents(name).length > 1
-						? { pending: true }
-						: {}),
-				},
-			];
+			return inlineDeclarationComponents(name).map((component) => ({
+				name: component,
+				value: input,
+				important,
+				...(inlineDeclarationComponents(name).length > 1
+					? { pending: name }
+					: {}),
+			}));
 	}
 	const source = name.startsWith("--")
 		? input
@@ -389,7 +392,7 @@ export function inlineDeclarationComponents(name: string): readonly string[] {
 }
 
 export function propertyDeclarations(
-	entries: InlineDeclaration[],
+	entries: readonly InlineDeclaration[],
 	name: string,
 ): InlineDeclaration[] {
 	const names = inlineDeclarationComponents(name);
@@ -402,23 +405,19 @@ export function propertyDeclarations(
 }
 
 function winningEntry(
-	entries: InlineDeclaration[],
+	entries: readonly InlineDeclaration[],
 	name: string,
 ): InlineDeclaration | undefined {
 	let winner: InlineDeclaration | undefined;
 	for (const entry of entries) {
-		if (
-			entry.name !== name &&
-			!(entry.pending && inlineDeclarationComponents(entry.name).includes(name))
-		)
-			continue;
+		if (entry.name !== name) continue;
 		if (!winner || entry.important || !winner.important) winner = entry;
 	}
 	return winner;
 }
 
 export function propertyPriority(
-	entries: InlineDeclaration[],
+	entries: readonly InlineDeclaration[],
 	name: string,
 ): string {
 	const components = inlineDeclarationComponents(name);
@@ -434,16 +433,21 @@ export function propertyPriority(
 }
 
 export function propertyValue(
-	entries: InlineDeclaration[],
+	entries: readonly InlineDeclaration[],
 	name: string,
 ): string {
 	const components = inlineDeclarationComponents(name);
-	const pending = entries.find((entry) => entry.name === name && entry.pending);
+	const pending = entries.find((entry) => entry.pending === name);
 	if (
 		pending &&
-		components.every(
-			(component) => winningEntry(entries, component) === pending,
-		)
+		components.every((component) => {
+			const entry = winningEntry(entries, component);
+			return (
+				entry?.pending === name &&
+				entry.value === pending.value &&
+				entry.important === pending.important
+			);
+		})
 	)
 		return pending.value;
 	if (components.some((component) => winningEntry(entries, component)?.pending))
@@ -515,15 +519,27 @@ export function propertyValue(
 	return values.join(" ");
 }
 
-export function serializeDeclarations(entries: InlineDeclaration[]): string {
+export function serializeDeclarations(
+	entries: readonly InlineDeclaration[],
+): string {
 	const emitted = new Set<string>();
 	const output: string[] = [];
 	for (const entry of entries) {
 		if (emitted.has(entry.name)) continue;
 		if (entry.pending) {
-			output.push(
-				`${entry.name}: ${entry.value}${entry.important ? " !important" : ""};`,
-			);
+			const components = inlineDeclarationComponents(entry.pending);
+			const value = components.every((name) => !emitted.has(name))
+				? propertyValue(entries, entry.pending)
+				: "";
+			if (value) {
+				for (const name of components) emitted.add(name);
+				output.push(
+					`${entry.pending}: ${value}${entry.important ? " !important" : ""};`,
+				);
+				continue;
+			}
+			output.push(`${entry.name}: ${entry.important ? " !important" : ""};`);
+			emitted.add(entry.name);
 			continue;
 		}
 		const shorthand =

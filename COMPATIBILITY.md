@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 pending-state continuation: `INLINE-PENDING-STATE.md` implements
+document-owned pending longhand slots, expanded enumeration, partial removal and
+lower-priority component replacement through shared native style/layout state.
+This supersedes those specific open items in the earlier priority checkpoint.
+Serialization/reset boundaries, retention limits and remaining full CSSOM/runtime
+gates are explicit; no new live-browser or released-SafeJS result is claimed.
+
 September 4 CSSOM checkpoint: `INLINE-STYLE-PRIORITY.md` separates declaration
 priority from value serialization and makes empty `setProperty` writes remove
 properties before invalid-priority rejection. The latter deliberately follows
