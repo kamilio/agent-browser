@@ -19,6 +19,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Programmatic activation cancellation checkpoint: `PROGRAMMATIC-CANCELLATION.md`
+adds optional abort forwarding to the native asynchronous click owner. Pending
+click/forwarded-control/reset prefixes now unwind preactivation and per-element
+guards; committed input state remains intact, and a pre-aborted recursive call
+cannot disturb an existing activation. All 22 new native cases fail on both
+pre-fix working code and isolated HEAD, then pass with signal forwarding. Full
+native runs pass 9,477 / 262 working-tree files and 8,126 / 234 isolated files;
+focused checks pass 312 / eleven in both trees. Types/builds, strict new-test
+checks and two-file lint pass. Source changes do not alter activation algorithms.
+Guest click remains absent: the public context declares nested operations, but
+the browser adapter has not resolved setup-owned registration and lazy method/
+receiver identity. Pinned upstream-source review is not released-SDK execution
+evidence. Next resolve that public adapter boundary and retain an independent
+guest `element.click(); readState()` ordering gate; no async/fire-and-forget
+substitute is exposed. Historical reports and unrelated pending edits remain
+intact. No gated probe ran; runtime/site/socket/TTY/physical-input gates and the
+full seven-day browser goal remain open. The denied SafeJS probe stays unrun.
+
+### Previous typing cancellation checkpoint
+
 Typing cancellation checkpoint: `TYPING-CANCELLATION.md` forwards command and
 native typing signals through character/press generators, and checks the shared
 asynchronous action boundary before startup and after awaited event dispatch.

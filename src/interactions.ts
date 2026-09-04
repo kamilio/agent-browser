@@ -267,8 +267,15 @@ export class DocumentInteractions {
 		return runEventAction(this.events, this.programmaticClickAction(id));
 	}
 
-	programmaticClickAsync(id: number): Promise<InteractionResult> {
-		return runEventActionAsync(this.events, this.programmaticClickAction(id));
+	programmaticClickAsync(
+		id: number,
+		signal?: AbortSignal,
+	): Promise<InteractionResult> {
+		return runEventActionAsync(
+			this.events,
+			this.programmaticClickAction(id),
+			signal,
+		);
 	}
 
 	private *programmaticClickAction(id: number): EventAction<InteractionResult> {

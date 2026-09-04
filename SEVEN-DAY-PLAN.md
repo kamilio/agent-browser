@@ -710,6 +710,19 @@ evidence remain intact. Listener-code side effects are not forcibly canceled;
 full event-loop and independently authorized runtime/site/socket/TTY/physical-input
 gates remain open. No gated probe ran, and the full seven-day goal stays active.
 
+September 4 programmatic-activation cancellation checkpoint:
+`PROGRAMMATIC-CANCELLATION.md` forwards native click abort signals through
+preactivation, label/control forwarding and reset dispatch. Twenty-two new cases
+all fail before the adapter correction and pass afterward. Full native runs pass
+9,477 / 262 working-tree files and 8,126 / 234 isolated files; focused runs pass
+312 / eleven in both trees. Types/builds, strict new-test checks and two-file
+lint pass. Guest activation is not exposed as an incorrect async wrapper:
+setup-owned nested-operation registration and lazy method/receiver identity
+remain the next public runtime integration task. Actual guest statement-order
+and lifecycle acceptance stays independent of pinned-source review and native
+tests. Historical reports and pending edits remain intact; no gated probe ran.
+Full runtime/site/socket/TTY/physical-input gates and the seven-day goal stay open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
