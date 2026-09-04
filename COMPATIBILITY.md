@@ -1,5 +1,13 @@
 # Compatibility and playground acceptance ledger
 
+September 4 authored-outline continuation: `OUTLINES.md` connects outline parsing,
+computed/command inspection and native block, wrapped-inline and replaced-control
+painting. Solid, dashed, dotted, double and native auto patterns, offsets, variables
+and explicit inheritance have native tests and inspected command-capture evidence;
+outlines do not change layout or hit targets. Focus-visible/input modality, richer
+outline shapes/3D patterns, platform/UA/shadow accessibility and original browser/
+runtime gates remain open. No gated probe ran; the denied SafeJS probe remains unrun.
+
 September 4 generated-style continuation: `GENERATED-STYLES.md` adds native
 generated-header style inspection through a shared formatting/inspection factory.
 The partial profile separates inherited styles and initial header defaults from

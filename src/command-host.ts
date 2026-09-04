@@ -1400,6 +1400,7 @@ export class BrowserCommandHost {
 				box: page.styles.box(node.id),
 				text: page.styles.text(node.id),
 				paint: page.styles.paint(node.id),
+				outline: page.styles.outline(node.id),
 				partial: true,
 				layout: false,
 			};

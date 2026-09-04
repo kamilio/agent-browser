@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Authored-outline checkpoint: `OUTLINES.md` adds stylesheet/inline parsing,
+computed/command inspection and native block, inline-fragment and replaced-control
+painting. Solid, dashed, dotted, double and native auto outlines support offsets,
+variables, explicit inheritance and existing length math without expanding layout
+geometry or hit targets. All 62 new tests fail on isolated prior HEAD; focused
+runs pass 260 / eight isolated files and 261 / eight working files. Types/builds,
+strict checking of both affected tests and ten-file lint pass in both trees.
+Authorized full native runs pass 9,515 / 273 isolated files; the working run reports
+10,660 passes and the unchanged pending Window-onload assertion failure / 295 files.
+Inspected 260 by 270 native command captures show distinct patterns and Tab-driven
+focus feedback with unchanged geometry. Next: focus-visible matching and input
+modality. Richer outline shapes/3D patterns, full UA/shadow/accessibility, real
+TTY/PTY, socket, browser UI, live sites, released SafeJS and original browser gates
+remain open. No gated probe ran; the denied SafeJS probe remains unrun. Historical
+evidence and unrelated pending work stay separate; the seven-day goal is active.
+
+### Previous generated-style checkpoint
+
 Generated-style checkpoint: `GENERATED-STYLES.md` exposes native fallback header
 styles through the shared immutable factory used by formatting. The generated
 profile reports inherited typography/color/visibility, initial box/paint defaults,

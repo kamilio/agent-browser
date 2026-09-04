@@ -1200,6 +1200,20 @@ Full UA/shadow/accessibility, browser/runtime and original acceptance gates stay
 open; no gated probe ran and the denied SafeJS probe remains unrun. Preserve
 historical evidence and unrelated work; the seven-day goal remains active.
 
+September 4 authored-outline continuation: `OUTLINES.md` adds native CSS outline
+parsing, computed/command inspection and block, wrapped-inline and replaced-control
+painting. Supported solid, dashed, dotted, double and auto patterns respect offsets,
+inheritance, variables, clipping and raster budgets without expanding layout/hits.
+All 62 new tests fail on isolated prior HEAD. Focused runs pass 260 / eight isolated
+files and 261 / eight working files; types/builds, strict checking and ten-file lint
+pass in both. Authorized full native runs pass 9,515 / 273 isolated files; the
+working run reports 10,660 passes and the unchanged pending Window-onload assertion
+failure / 295 files. Inspected native command PNGs show patterns and Tab-driven
+feedback with stable geometry. Next: focus-visible matching and input modality.
+Richer outline shapes/3D patterns and original browser/runtime gates remain open;
+no gated probe ran and the denied SafeJS probe remains unrun. Preserve historical
+evidence and unrelated pending work; the seven-day continuation remains active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

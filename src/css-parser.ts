@@ -1,5 +1,11 @@
 import { parseBackgroundShorthand } from "./css-background.js";
 import {
+	cssOutlineProperties,
+	isCssOutlineProperty,
+	parseOutlineDeclarations,
+	type CssOutlineProperty,
+} from "./css-outline.js";
+import {
 	cssListProperties,
 	isCssListProperty,
 	parseListValue,
@@ -67,6 +73,7 @@ export type CssProperty =
 	| CssFlexProperty
 	| CssInteractionProperty
 	| CssListProperty
+	| CssOutlineProperty
 	| `--${string}`;
 export interface CssDeclaration {
 	property: CssProperty;
@@ -250,6 +257,8 @@ export function parseCssDeclarations(
 			!isCssPaintProperty(property) &&
 			!isCssInteractionProperty(property) &&
 			!isCssListProperty(property) &&
+			!isCssOutlineProperty(property) &&
+			property !== "outline" &&
 			!isCssFlowProperty(property) &&
 			property !== "overflow" &&
 			!isCssFlexProperty(property) &&
@@ -282,6 +291,11 @@ export function parseCssDeclarations(
 		}
 		if (property === "all" && globals.has(value)) {
 			declarations.push(
+				...cssOutlineProperties.map((property) => ({
+					property,
+					value,
+					important,
+				})),
 				...cssListProperties.map((property) => ({
 					property,
 					value,
@@ -316,6 +330,15 @@ export function parseCssDeclarations(
 					important,
 				})),
 			);
+			continue;
+		}
+		if (isCssOutlineProperty(property) || property === "outline") {
+			const expanded = parseOutlineDeclarations(property, value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((entry) => ({ ...entry, important })),
+				);
+			else issue("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssListProperty(property)) {

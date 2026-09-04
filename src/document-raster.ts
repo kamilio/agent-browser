@@ -16,6 +16,7 @@ import { layoutContentItems } from "./layout-paint-order.js";
 import { rasterizeControl } from "./control-rendering.js";
 import { rasterizeDisclosureMarker } from "./disclosure-marker.js";
 import { paintSolidBorders } from "./border-raster.js";
+import { paintOutline } from "./outline-raster.js";
 import {
 	type RasterImage,
 	type Rgba,
@@ -62,6 +63,7 @@ export interface DocumentRaster {
 		paintedControls: number;
 		paintedMarkers: number;
 		borderPixels: number;
+		outlinePixels: number;
 		clippedControls: number;
 		clippedMarkers: number;
 		clippedImages: number;
@@ -216,6 +218,7 @@ function paintDocumentLayout(
 		paintedControls: 0,
 		paintedMarkers: 0,
 		borderPixels: 0,
+		outlinePixels: 0,
 		clippedControls: 0,
 		clippedMarkers: 0,
 		clippedImages: 0,
@@ -268,6 +271,24 @@ function paintDocumentLayout(
 		metrics.paintedBackgrounds++;
 	};
 	const styles = documentStyles(tree);
+	const drawOutline = (
+		reference: string | undefined,
+		horizontal: number,
+		vertical: number,
+		width: number,
+		height: number,
+	) => {
+		if (!reference) return;
+		metrics.outlinePixels += paintOutline(
+			image,
+			horizontal - clip.x,
+			vertical - clip.y,
+			width,
+			height,
+			styles.outline(tree.resolve(reference).id),
+			charge,
+		);
+	};
 	const focused = activeFocus(tree);
 	const generatedFocus = tree.generatedFocusReference;
 	const root = tree.get(tree.root).children.find((id) => {
@@ -334,6 +355,13 @@ function paintDocumentLayout(
 			box,
 			node.paint,
 			charge,
+		);
+		drawOutline(
+			box.ref,
+			box.borderX,
+			box.borderY,
+			box.borderBoxWidth,
+			box.borderBoxHeight,
 		);
 		if (
 			node.generated?.ref === generatedFocus &&
@@ -462,6 +490,13 @@ function paintDocumentLayout(
 			if (node.marker) metrics.clippedMarkers++;
 			else if (node.control) metrics.clippedControls++;
 			else metrics.clippedImages++;
+			drawOutline(
+				node.ref,
+				borderX,
+				borderY,
+				used.borderBoxWidth,
+				used.borderBoxHeight,
+			);
 			return;
 		}
 		charge(Math.ceil(right - left + 1) * Math.ceil(bottom - top + 1) * 4);
@@ -489,6 +524,13 @@ function paintDocumentLayout(
 			used.contentWidth,
 			used.contentHeight,
 		);
+		drawOutline(
+			node.ref,
+			borderX,
+			borderY,
+			used.borderBoxWidth,
+			used.borderBoxHeight,
+		);
 		if (node.marker) metrics.paintedMarkers++;
 		else if (node.control) metrics.paintedControls++;
 		else metrics.paintedImages++;
@@ -512,13 +554,17 @@ function paintDocumentLayout(
 			paintImage(node.id, fragment.x, fragment.y);
 			continue;
 		}
-		if (
-			node.kind !== "inline" ||
-			!node.visible ||
-			!node.paint ||
-			(!paintBackground(node.paint)[3] && !fragment.borders)
-		)
+		if (node.kind !== "inline" || !node.visible || !node.paint) continue;
+		if (!paintBackground(node.paint)[3] && !fragment.borders) {
+			drawOutline(
+				node.ref,
+				fragment.x,
+				fragment.y,
+				fragment.width,
+				fragment.height,
+			);
 			continue;
+		}
 		metrics.inlineFragments++;
 		drawBackground(
 			fragment.x,
@@ -538,6 +584,13 @@ function paintDocumentLayout(
 				node.paint,
 				charge,
 			);
+		drawOutline(
+			node.ref,
+			fragment.x,
+			fragment.y,
+			fragment.width,
+			fragment.height,
+		);
 	}
 	return Object.freeze({
 		stage: "normal-flow-text-raster" as const,

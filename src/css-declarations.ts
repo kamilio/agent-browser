@@ -7,6 +7,12 @@ import {
 } from "./css-background.js";
 import { normalizeCssColor } from "./css-color.js";
 import {
+	cssOutlineProperties,
+	isCssOutlineProperty,
+	parseOutlineDeclarations,
+	parseOutlineValue,
+} from "./css-outline.js";
+import {
 	cssListProperties,
 	isCssListProperty,
 	parseListValue,
@@ -92,6 +98,8 @@ const lengths = new Set([
 	...sides.map((side) => `padding-${side}`),
 ]);
 export const inlineProperties = [
+	...cssOutlineProperties,
+	"outline",
 	...cssListProperties,
 	...cssInteractionProperties,
 	...cssFlexProperties,
@@ -202,6 +210,7 @@ function normalize(name: string, source: string): string | undefined {
 	if (!supported.has(name)) return undefined;
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;
+	if (isCssOutlineProperty(name)) return parseOutlineValue(name, value);
 	if (isCssFlowProperty(name)) return parseFlowValue(name, value);
 	if (isCssFlexProperty(name)) return parseFlexValue(name, value);
 	if (name.startsWith("border-")) {
@@ -288,6 +297,13 @@ export function expandDeclaration(
 				}))
 			: [];
 	}
+	if (name === "outline")
+		return (
+			parseOutlineDeclarations(
+				name,
+				source.toLowerCase().replace(/[\t\n\f\r ]+/g, " "),
+			) ?? []
+		).map((entry) => ({ name: entry.property, value: entry.value, important }));
 	if (name === "overflow")
 		return (parseFlowDeclarations(name, source) ?? []).map((entry) => ({
 			name: entry.property,
@@ -390,6 +406,7 @@ export function parseInlineDeclarations(
 }
 
 export function inlineDeclarationComponents(name: string): readonly string[] {
+	if (name === "outline") return cssOutlineProperties.slice(0, 3);
 	const flex = flexShorthandComponents(name);
 	if (flex) return flex;
 	if (name === "overflow") return ["overflow-x", "overflow-y"];
@@ -513,6 +530,19 @@ export function propertyValue(
 			found.find((entry) => entry.name === "overflow-x")?.value ?? "",
 			found.find((entry) => entry.name === "overflow-y")?.value ?? "",
 		);
+	}
+	if (name === "outline") {
+		if (
+			found.length !== 3 ||
+			found.some((entry) => entry.important !== found[0].important)
+		)
+			return "";
+		const values = components.map(
+			(property) => found.find((entry) => entry.name === property)?.value ?? "",
+		);
+		if (values.some((value) => wide.has(value)))
+			return values.every((value) => value === values[0]) ? values[0] : "";
+		return values.join(" ");
 	}
 	if (isBorderShorthand(name)) {
 		const expected = parseBorderShorthand(name, "initial")?.length;

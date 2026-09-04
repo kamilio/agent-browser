@@ -16,6 +16,15 @@ import {
 	type FlexSpecifiedStyle,
 } from "./css-flex.js";
 import {
+	cssOutlineProperties,
+	isCssOutlineProperty,
+	computeOutlineStyle,
+	initialOutlineStyle,
+	type OutlineStyle,
+	type OutlineSpecifiedStyle,
+	type CssOutlineProperty,
+} from "./css-outline.js";
+import {
 	cssFlowProperties,
 	computeFlowStyle,
 	initialFlowStyle,
@@ -208,6 +217,8 @@ export class DocumentStyles {
 	private flowComputed = new Map<number, FlowStyle>();
 	private pointerEventsNone = new Set<number>();
 	private listComputed = new Map<number, ListStyle>();
+	private outlineSpecified = new Map<number, OutlineSpecifiedStyle>();
+	private outlineComputed = new Map<number, OutlineStyle>();
 	private textSpecified = new Map<number, TextSpecifiedStyle>();
 	private textComputed = new Map<number, TextStyle>();
 	private paintSpecified = new Map<number, PaintSpecifiedStyle>();
@@ -351,6 +362,51 @@ export class DocumentStyles {
 	list(id: number): ListStyle {
 		this.get(id);
 		return this.listComputed.get(id) ?? initialListStyle;
+	}
+
+	outline(id: number): OutlineStyle {
+		this.get(id);
+		const pending: number[] = [];
+		let current: number | null = id;
+		while (current !== null && !this.outlineComputed.has(current)) {
+			pending.push(current);
+			const specified = this.outlineSpecified.get(current);
+			if (!specified || !Object.values(specified).includes("inherit")) break;
+			current = this.tree.get(current).parent;
+		}
+		for (const target of pending.reverse()) {
+			const parent = this.tree.get(target).parent;
+			const specified = this.outlineSpecified.get(target) ?? {};
+			const values = Object.values(specified);
+			let fonts: BoxFontMetrics | undefined;
+			if (values.some((value) => lengthUsesFont(value, "em")))
+				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
+			if (values.some((value) => lengthUsesFont(value, "rem"))) {
+				const root =
+					this.tree
+						.get(this.tree.root)
+						.children.find(
+							(child) => this.tree.get(child).kind === "element",
+						) ?? this.tree.root;
+				fonts = {
+					...fonts,
+					rootFontSize: Number.parseFloat(this.text(root)["font-size"]),
+				};
+			}
+			this.outlineComputed.set(
+				target,
+				computeOutlineStyle(
+					specified,
+					parent === null
+						? initialOutlineStyle
+						: (this.outlineComputed.get(parent) ?? initialOutlineStyle),
+					this.viewport,
+					fonts,
+					this.paint(target).color,
+				),
+			);
+		}
+		return this.outlineComputed.get(id) ?? initialOutlineStyle;
 	}
 
 	flex(id: number): FlexStyle {
@@ -539,6 +595,7 @@ export class DocumentStyles {
 			flowProperties: cssFlowProperties,
 			interactionProperties: cssInteractionProperties,
 			listProperties: cssListProperties,
+			outlineProperties: cssOutlineProperties,
 			textProperties: cssTextProperties,
 			textFont: "Agent Mono",
 			paintProperties: cssPaintProperties,
@@ -565,6 +622,8 @@ export class DocumentStyles {
 		this.flowComputed.clear();
 		this.pointerEventsNone.clear();
 		this.listComputed.clear();
+		this.outlineSpecified.clear();
+		this.outlineComputed.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
 		this.paintSpecified.clear();
@@ -610,6 +669,8 @@ export class DocumentStyles {
 		this.flowComputed.clear();
 		this.pointerEventsNone.clear();
 		this.listComputed.clear();
+		this.outlineSpecified.clear();
+		this.outlineComputed.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
 		this.paintSpecified.clear();
@@ -864,14 +925,18 @@ export class DocumentStyles {
 		const flowSpecified = new Map<number, FlowSpecifiedStyle>();
 		const textSpecified = new Map<number, TextSpecifiedStyle>();
 		const paintSpecified = new Map<number, PaintSpecifiedStyle>();
+		const outlineSpecified = new Map<number, OutlineSpecifiedStyle>();
 		for (const [id, properties] of winners) {
 			const specified: Partial<Record<CssBoxProperty, string>> = {};
 			const flexValues: Partial<Record<CssFlexProperty, string>> = {};
 			const flowValues: Partial<Record<CssFlowProperty, string>> = {};
 			const textValues: Partial<Record<CssTextProperty, string>> = {};
 			const paintValues: Partial<Record<CssPaintProperty, string>> = {};
+			const outlineValues: Partial<Record<CssOutlineProperty, string>> = {};
 			for (const [property, winner] of properties) {
 				charge(1);
+				if (isCssOutlineProperty(property))
+					outlineValues[property] = winner.declaration.value;
 				if (isCssBoxProperty(property))
 					specified[property] = winner.declaration.value;
 				if (isCssFlexProperty(property))
@@ -893,6 +958,8 @@ export class DocumentStyles {
 				textSpecified.set(id, Object.freeze(textValues));
 			if (Object.keys(paintValues).length)
 				paintSpecified.set(id, Object.freeze(paintValues));
+			if (Object.keys(outlineValues).length)
+				outlineSpecified.set(id, Object.freeze(outlineValues));
 		}
 		const computed = new Map<number, Readonly<VisibilityStyle>>();
 		const boxParentDisplay = new Map<number, string>();
@@ -1001,6 +1068,7 @@ export class DocumentStyles {
 		this.listComputed = listComputed;
 		this.textSpecified = textSpecified;
 		this.paintSpecified = paintSpecified;
+		this.outlineSpecified = outlineSpecified;
 		this.customComputed = customComputed;
 		this.info = {
 			rules: budget.rules,

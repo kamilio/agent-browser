@@ -5,6 +5,7 @@ import {
 import { cssBoxProperties, isCssBoxProperty } from "./css-box.js";
 import { cssInteractionProperties } from "./css-interaction.js";
 import { cssListProperties, isCssListProperty } from "./css-list.js";
+import { cssOutlineProperties, isCssOutlineProperty } from "./css-outline.js";
 import {
 	cssFlexProperties,
 	isCssFlexProperty,
@@ -39,6 +40,7 @@ export const computedStyleProperties = Object.freeze(
 		...cssFlowProperties,
 		...cssInteractionProperties,
 		...cssListProperties,
+		...cssOutlineProperties,
 		...cssPaintProperties,
 		...cssTextProperties,
 		"display",
@@ -94,6 +96,14 @@ export function resolvedStyleValue(
 		return values.join(" ");
 	}
 	const styles = documentStyles(tree);
+	if (isCssOutlineProperty(name)) return styles.outline(id)[name];
+	if (name === "outline") {
+		const outline = styles.outline(id);
+		return cssOutlineProperties
+			.slice(0, 3)
+			.map((property) => outline[property])
+			.join(" ");
+	}
 	if (name === "pointer-events") return styles.pointerEvents(id);
 	if (isCssListProperty(name)) return styles.list(id)[name];
 	if (isCssFlexProperty(name)) return styles.flex(id)[name];
