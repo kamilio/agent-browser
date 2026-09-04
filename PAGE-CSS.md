@@ -1,5 +1,9 @@
 # Page CSS utilities
 
+September 4 selector-query continuation: `SELECTOR-SUPPORTS.md` adds native
+`selector()` feature tests without DOM matching or retained query indexes. Full
+grammar, font queries and released-runtime/browser parity remain open.
+
 September 4 feature-query continuation: `CSS-SUPPORTS.md` adds bounded
 `CSS.supports()` overloads and shared stylesheet `@supports` decisions. It
 supersedes the initial missing-supports flag below; the escape checkpoint's

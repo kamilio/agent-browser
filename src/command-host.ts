@@ -21,6 +21,7 @@ import { cssVariableCapabilities } from "./css-variables.js";
 import { inlineDeclarationLimits } from "./document-inline-declarations.js";
 import { pageCssLimits } from "./page-css.js";
 import { cssSupportsLimits } from "./css-supports.js";
+import { selectorSyntaxLimits } from "./selectors.js";
 import { interactionStyleCapabilities } from "./css-interaction.js";
 import { documentHitTesting, hitTestCapabilities } from "./hit-testing.js";
 import {
@@ -636,7 +637,9 @@ export class BrowserCommandHost {
 				escape: true,
 				supports: true,
 				supportsProfile: "native-declaration-values-and-conditions",
-				selectorQueries: false,
+				selectorQueries: true,
+				selectorProfile: "single-complex-native-selector",
+				selectorLimits: selectorSyntaxLimits,
 				supportsLimits: cssSupportsLimits,
 				limits: pageCssLimits,
 			},

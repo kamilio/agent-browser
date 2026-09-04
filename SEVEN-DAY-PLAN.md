@@ -945,6 +945,20 @@ selector/font queries, released-SafeJS and real browser/site/socket/TTY gates re
 open. No gated probe ran; the denied SafeJS probe remains unrun and the complete
 seven-day browser objective stays active.
 
+September 4 selector feature-query continuation: `SELECTOR-SUPPORTS.md` connects
+`selector()` to the existing native compiler for both API and stylesheet queries.
+Recursive support checks preserve comment/token boundaries without matching nodes
+or constructing document indexes. Syntax limits are shared and resource failures
+cannot be hidden by Boolean composition. Sixty-five new cases pass; isolated prior
+HEAD fails 36 and passes 29. Three comment regressions reproduce before correction.
+Focused runs pass 395 / six files in both trees; full authorized native runs pass
+9,929 / 275 working files and 8,783 / 253 isolated files. Both pass types/builds,
+strict three-test checks and eight-file lint. Historical evidence and unrelated
+pending work remain separate. Continue application compatibility; font queries,
+full grammar, released-SafeJS and real browser/site/socket/TTY gates remain open.
+No gated probe ran; the denied SafeJS probe remains unrun and the complete
+seven-day browser objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

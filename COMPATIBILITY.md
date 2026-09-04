@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 selector-query continuation: `SELECTOR-SUPPORTS.md` connects
+`selector()` to the native compiler for both page and stylesheet feature queries.
+Recursive unsupported branches remain false; comments retain their syntax and
+resource failures propagate. Native DOM/layout/pixel evidence does not close full
+selector, font-query, released-runtime or browser-equivalence acceptance gates.
+
 September 4 feature-query continuation: `CSS-SUPPORTS.md` adds shared native
 `CSS.supports()` and stylesheet `@supports` handling, including nested conditions,
 escaped/quoted preludes, inactive-branch quotas and known rendering-gap rejection.

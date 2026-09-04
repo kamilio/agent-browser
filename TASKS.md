@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Selector feature-query checkpoint: `SELECTOR-SUPPORTS.md` adds native
+`selector()` conditions to both `CSS.supports()` and stylesheet `@supports`.
+The existing compiler checks one complex selector recursively without querying
+nodes or allocating document indexes. Comment boundaries survive both paths;
+invalid/unsupported syntax is false while resource-limit errors propagate even
+through Boolean operands. Sixty-five new cases pass; isolated prior HEAD fails
+36 and passes 29. Three comment regressions also fail before correction.
+Focused runs pass 395 / six files in both trees; authorized full native runs pass
+9,929 / 275 working files and 8,783 / 253 isolated files. Both trees pass types/
+builds, strict three-test checks and eight-file lint. Historical evidence and
+unrelated pending work remain intact. Continue application compatibility; font
+queries, full selector grammar, released-SafeJS, live browser/site/socket/TTY and
+original acceptance gates remain open. No gated probe ran; the denied SafeJS
+probe remains unrun and the complete seven-day browser goal stays active.
+
+### Previous CSS feature-query checkpoint
+
 CSS feature-query checkpoint: `CSS-SUPPORTS.md` adds shared `CSS.supports()`
 overloads and stylesheet `@supports` decisions, including Boolean conditions,
 escaped identifiers and quoted preludes. Known rendering gaps remain false rather

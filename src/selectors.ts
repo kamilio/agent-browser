@@ -22,6 +22,12 @@ export interface QueryLimits {
 	maxMemoEntries: number;
 }
 
+export const selectorSyntaxLimits = Object.freeze({
+	maxSelectorCodeUnits: 8192,
+	maxComponents: 256,
+	maxNesting: 16,
+});
+
 type Relation = " " | ">" | "+" | "~";
 type AttributeOperator = "=" | "~=" | "|=" | "^=" | "$=" | "*=";
 type SimpleSelector =
@@ -202,7 +208,9 @@ class SelectorParser {
 	private readonly source: string;
 	constructor(
 		source: string,
-		private readonly limits: Readonly<QueryLimits>,
+		private readonly limits: Readonly<
+			Pick<QueryLimits, keyof typeof selectorSyntaxLimits>
+		>,
 	) {
 		if (typeof source !== "string") syntax("expected a string");
 		if (source.length > limits.maxSelectorCodeUnits)
@@ -526,6 +534,22 @@ class SelectorParser {
 	}
 }
 
+export function supportsCssSelector(source: string): boolean {
+	try {
+		return (
+			new SelectorParser(source, selectorSyntaxLimits).parse().selectors
+				.length === 1
+		);
+	} catch (error) {
+		if (
+			error instanceof AgentBrowserError &&
+			(error.code === "invalid-input" || error.code === "unsupported")
+		)
+			return false;
+		throw error;
+	}
+}
+
 interface NodeInfo {
 	node: Readonly<DocumentNode>;
 	start: number;
@@ -576,9 +600,7 @@ export class DocumentQueries {
 		limits: Partial<QueryLimits> = {},
 	) {
 		this.limits = Object.freeze({
-			maxSelectorCodeUnits: 8192,
-			maxComponents: 256,
-			maxNesting: 16,
+			...selectorSyntaxLimits,
 			maxIndexedNodes: 50_000,
 			maxWork: 5_000_000,
 			maxResults: 10_000,

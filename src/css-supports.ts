@@ -1,5 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
-import { readCssIdentifier, withoutCssComments } from "./css-variables.js";
+import { readCssIdentifier, skipCssTrivia } from "./css-variables.js";
 
 export const cssSupportsLimits = Object.freeze({
 	maxSourceCodeUnits: 65_536,
@@ -7,7 +7,7 @@ export const cssSupportsLimits = Object.freeze({
 	maxConditions: 1024,
 });
 type DeclarationSupport = (property: string, value: string) => boolean;
-const whitespace = /[\t\n\f\r ]/;
+type SelectorSupport = (source: string) => boolean;
 const nameStart = /[a-zA-Z_\u0080-\uffff]/;
 
 function limit(): never {
@@ -30,6 +30,10 @@ function blockPairs(source: string): Map<number, number> | undefined {
 		} else if (quote) {
 			if (character === "\n") return;
 			if (character === quote) quote = "";
+		} else if (source.startsWith("/*", index)) {
+			const close = source.indexOf("*/", index + 2);
+			if (close < 0) break;
+			index = close + 1;
 		} else if (character === "'" || character === '"') quote = character;
 		else if ("([{".includes(character)) {
 			stack.push({
@@ -52,11 +56,10 @@ class SupportsParser {
 		private readonly source: string,
 		private readonly pairs: ReadonlyMap<number, number>,
 		private readonly supports: DeclarationSupport,
+		private readonly supportsSelector: SelectorSupport,
 	) {}
 	private space(start: number, end: number) {
-		let position = start;
-		while (position < end && whitespace.test(this.source[position])) position++;
-		return position;
+		return skipCssTrivia(this.source, start, end);
 	}
 	private name(start: number) {
 		const first = this.source[start] ?? "";
@@ -131,7 +134,12 @@ class SupportsParser {
 		if (!name || this.source[name.end] !== "(") return;
 		const close = this.pairs.get(name.end);
 		return close !== undefined && close < end
-			? { value: false, end: close + 1 }
+			? {
+					value:
+						name.value.toLowerCase() === "selector" &&
+						this.supportsSelector(this.source.slice(name.end + 1, close)),
+					end: close + 1,
+				}
 			: undefined;
 	}
 }
@@ -140,14 +148,18 @@ export function evaluateCssSupports(
 	source: string,
 	supports: DeclarationSupport,
 	allowBareDeclaration = false,
+	supportsSelector: SelectorSupport = () => false,
 ): boolean {
 	if (source.length > cssSupportsLimits.maxSourceCodeUnits) limit();
-	const normalized = withoutCssComments(source)
-		.replace(/\r\n?|\f/g, "\n")
-		.replace(/\0/g, "\ufffd");
+	const normalized = source.replace(/\r\n?|\f/g, "\n").replace(/\0/g, "\ufffd");
 	const pairs = blockPairs(normalized);
 	if (!pairs) return false;
-	const parser = new SupportsParser(normalized, pairs, supports);
+	const parser = new SupportsParser(
+		normalized,
+		pairs,
+		supports,
+		supportsSelector,
+	);
 	return (
 		parser.condition(0, normalized.length) ||
 		(allowBareDeclaration && parser.declaration(0, normalized.length)) ||

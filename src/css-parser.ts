@@ -21,6 +21,7 @@ import {
 import { isBorderShorthand, parseBorderShorthand } from "./css-border.js";
 import { compileCssMedia } from "./css-media.js";
 import { cssSupportsLimits, evaluateCssSupports } from "./css-supports.js";
+import { supportsCssSelector } from "./selectors.js";
 import {
 	type CssBoxProperty,
 	cssBoxProperties,
@@ -45,6 +46,7 @@ import {
 	customPropertyName,
 	parseVariableValue,
 	readCssIdentifier,
+	skipCssTrivia,
 	splitCssValue,
 	withoutCssComments,
 } from "./css-variables.js";
@@ -460,6 +462,7 @@ export function cssSupportsCondition(
 		source,
 		cssSupportsDeclaration,
 		allowBareDeclaration,
+		supportsCssSelector,
 	);
 }
 
@@ -503,10 +506,13 @@ export function parseCssRules(
 			);
 			continue;
 		}
+		const preludeStart = skipCssTrivia(prelude.text, 0, prelude.text.length);
 		const atName =
-			normalized[0] === "@" ? readCssIdentifier(normalized, 1) : undefined;
+			prelude.text[preludeStart] === "@"
+				? readCssIdentifier(prelude.text, preludeStart + 1)
+				: undefined;
 		if (atName?.value.toLowerCase() === "supports") {
-			const active = cssSupportsCondition(normalized.slice(atName.end).trim());
+			const active = cssSupportsCondition(prelude.text.slice(atName.end));
 			const nested = parseCssRules(
 				body.text,
 				budget,

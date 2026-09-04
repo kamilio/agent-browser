@@ -294,7 +294,13 @@ it("advertises only implemented CSS utilities and their native bounds", async ()
 				escape: true,
 				supports: true,
 				supportsProfile: "native-declaration-values-and-conditions",
-				selectorQueries: false,
+				selectorQueries: true,
+				selectorProfile: "single-complex-native-selector",
+				selectorLimits: {
+					maxSelectorCodeUnits: 8192,
+					maxComponents: 256,
+					maxNesting: 16,
+				},
 				supportsLimits: {
 					maxSourceCodeUnits: 65_536,
 					maxDepth: 32,

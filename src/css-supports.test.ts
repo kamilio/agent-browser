@@ -111,7 +111,7 @@ it.each([
 	["/*before*/ (display:flex) /**/and/**/ (width:2px)", true],
 	["future(foo)", false],
 	["not future(foo)", true],
-	["selector(.known)", false],
+	["selector(.known)", true],
 	["(unknown words)", false],
 	["(--string:'a)b')", true],
 	["(--string:') and (display:grid')", true],

@@ -87,6 +87,22 @@ export function customPropertyName(source: string): string | undefined {
 		: undefined;
 }
 
+export function skipCssTrivia(
+	source: string,
+	start: number,
+	end: number,
+): number {
+	let position = start;
+	while (position < end) {
+		if (whitespace.test(source[position])) position++;
+		else if (source.startsWith("/*", position)) {
+			const close = source.indexOf("*/", position + 2);
+			position = close < 0 ? end : Math.min(end, close + 2);
+		} else break;
+	}
+	return position;
+}
+
 export function withoutCssComments(source: string): string {
 	let output = "";
 	let quote = "";

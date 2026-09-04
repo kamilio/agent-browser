@@ -1,5 +1,10 @@
 # Native CSS feature queries
 
+September 4 selector continuation: `SELECTOR-SUPPORTS.md` adds `selector()` using
+the existing compiler, one-complex-selector validation and shared syntax limits.
+It preserves comments rather than introducing combinators, and supersedes the
+missing-selector flag below without rewriting this checkpoint's measurements.
+
 September 4, 2026. `CSS.supports()` and stylesheet `@supports` now share native
 declaration/value decisions. This continues `PAGE-CSS.md`; no page-runtime
 dependency or alternate browser engine is added.
