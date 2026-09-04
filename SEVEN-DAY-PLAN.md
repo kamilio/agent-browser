@@ -7,6 +7,11 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+The September 4, 17:48 UTC native delivery assessment is in FIVE-HOUR-SPRINT.md.
+The tested source checkpoint is `6a29502`; all worker/review lanes are integrated
+and closed. Native progress does not replace the remaining seven-day outcome or
+authorize gated runtime/live/transport/terminal probes.
+
 Native same-text editable selection backgrounds now compose with the shared Range,
 Shift+Arrow, replacement, caret painting and fixed/root scrolling.
 `EDITABLE-SELECTION.md` records bounds, ten inspected module captures and exact

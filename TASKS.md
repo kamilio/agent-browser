@@ -19,6 +19,12 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Sprint handoff: `FIVE-HOUR-SPRINT.md` records the September 4, 17:48 UTC native
+delivery assessment, eight-worker contributions, exact manifest/archive distinction
+and remaining work. Source checkpoint `6a29502` matches the tested isolated archive
+across 987 non-report committed files. This is not full browser completion or
+authorization to retry gated probes; outstanding gates below remain authoritative.
+
 Selection highlight checkpoint: `EDITABLE-SELECTION.md` paints bounded same-text
 focused editable selections through the existing glyph order. Native Shift+Arrow,
 replacement, canceled input, terminal carets and fixed/root scrolling compose in

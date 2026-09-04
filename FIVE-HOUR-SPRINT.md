@@ -6,7 +6,51 @@ therefore approximately **19:10 UTC on September 4, 2026**. This compresses the
 schedule; it does not redefine the browser outcome or prove any acceptance gate.
 `TASKS.md` retains the original scope and `SEVEN-DAY-PLAN.md` retains its history.
 
-## Active work
+## Delivery checkpoint — September 4, 17:48 UTC
+
+The integrated native checkpoint is committed through `6a29502`, before the
+19:10 UTC deadline. Eight distinct subagents contributed across delivery and
+independent review, with at most six concurrently; all are closed. Twenty was
+the user's ceiling, not a worker-count target. Twenty-four focused commits since
+the 14:10 UTC acceleration request contain only reviewed new deltas; no push.
+
+- Editing: shared live Range/Selection, editable fill/type/delete, paragraph
+  split/merge, focus options/scrolling, bounded Range geometry, glyph/terminal
+  carets and same-text selection backgrounds.
+- Layout: preserved pre-wrap text, bounded absolute/fixed positioning and reuse
+  of equivalent static-position anchors without raising layout budgets.
+- Commands: native cookies and double-click; owned file selection and visible
+  controls; private CLI upload through protocol/host/session with injected
+  transport, capacity cleanup and guarded acknowledgement lifetimes.
+- Integration: explicit runtime adapter selection and public-contract focus
+  registration, with native reentrant teardown regressions; playground extraction
+  downloads and example discovery. Real runtime and playground acceptance remain
+  separate, open gates.
+
+Final explicit native suites report **11,007 passes / 326 isolated files** and
+**12,138 passes with fifteen pending failures / 348 working files**. Both trees
+use the same 348-entry native-tests.json: 22 preexisting uncommitted test files
+exist only in the working tree. No test name is removed to obtain a green archive.
+The fifteen failures are thirteen old positioning expectations, one pending
+command-capability assertion and the unchanged Window-onload assertion. They are
+not represented as a green working run or bundled into unrelated commits.
+
+The final audit compares all 987 non-report committed files byte-for-byte with
+the tested archive, verifies the unchanged package/lockfiles, preserved onload
+test and empty index, and records the exact failure names. It excludes 620
+historical report paths from that archive comparison rather than rewriting them.
+Evidence is at node_modules/.cache/native-validation/browser-sprint-final-audit.json.
+The eleven-phase host comparison and ten new module images are described in
+EDITABLE-SELECTION.md; earlier capture paths and measurements remain intact.
+
+This is a tested native improvement checkpoint, **not a completed browser or
+seven-day acceptance pass**. Priorities after this checkpoint are policy-preserving
+XHR, broader rich/control/visual selection and the original runtime, real service,
+socket, live-site, real TTY/PTY and framework/playground gates. The gated probes
+need separate authorization; the previously denied SafeJS probe remains unrun.
+TASKS.md and COMPATIBILITY.md retain the full outstanding outcome.
+
+## Delivery lanes
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
