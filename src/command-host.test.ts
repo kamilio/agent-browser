@@ -868,6 +868,8 @@ it("provides honest help/capabilities without opening sessions or executing page
 			partial: true,
 			parentNode: ["append", "prepend", "replaceChildren"],
 			childNode: ["before", "after", "replaceWith", "remove"],
+			element: ["insertAdjacentElement", "insertAdjacentText"],
+			adjacentPositions: ["beforebegin", "afterbegin", "beforeend", "afterend"],
 			replaceChild: true,
 			maxArguments: 1024,
 			objectStringCoercion: false,

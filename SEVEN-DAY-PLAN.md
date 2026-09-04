@@ -723,6 +723,20 @@ and lifecycle acceptance stays independent of pinned-source review and native
 tests. Historical reports and pending edits remain intact; no gated probe ran.
 Full runtime/site/socket/TTY/physical-input gates and the seven-day goal stay open.
 
+September 4 adjacent DOM integration checkpoint: `ADJACENT-CORE.md` integrates
+adjacent element/text bindings and fixes host-inclusive template depth/cycle
+preflight. Rejected text calls no longer leak allocated nodes. All 25 new tests
+fail on isolated HEAD; twelve reproduce the pre-fix template bugs with bindings
+present. The existing 45-case suite is promoted unchanged. Full native runs pass
+9,502 / 263 working-tree files and 8,196 / 236 isolated files; focused checks pass
+327 / eight and 324 / eight. Types/builds, strict three-test checks and five-file
+lint pass. Read-only upstream source at e4e23699 confirms the unresolved lazy
+nested-method/receiver contract; no async guest-click substitute or private
+runtime workaround is introduced. Next record the precise public contract need
+and continue independent DOM coverage. Historical evidence and unrelated pending
+work remain intact. No gated probe ran; full runtime/site/socket/TTY/physical-input
+acceptance and the original seven-day goal remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

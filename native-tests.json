@@ -18,6 +18,7 @@
   "src/input-core.test.ts",
   "src/typing-cancellation.test.ts",
   "src/programmatic-cancellation.test.ts",
+  "src/adjacent-core.test.ts",
   "src/browser-state.test.ts",
   "src/button-auto.test.ts",
   "src/calendar-fill.test.ts",

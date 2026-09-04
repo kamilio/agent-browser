@@ -1,4 +1,8 @@
-import type { DocumentNode, DocumentTree } from "./document.js";
+import type {
+	DocumentNode,
+	DocumentNodeReference,
+	DocumentTree,
+} from "./document.js";
 import { validateDocumentInsertion as validateDocument } from "./document-hierarchy.js";
 import { AgentBrowserError } from "./errors.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
@@ -81,6 +85,96 @@ export function scriptMutationMethods(
 			return bindings.node(childId);
 		},
 	};
+	if (kind === "element") {
+		const insertionDepth = (parent: number, child?: number) => {
+			let ancestor: DocumentNodeReference | null = { tree, id: parent };
+			let depth = 0;
+			while (ancestor !== null) {
+				if (ancestor.tree === tree && ancestor.id === child)
+					throw new DOMException(
+						"Document tree cannot contain cycles",
+						"HierarchyRequestError",
+					);
+				depth++;
+				const node = ancestor.tree.get(ancestor.id);
+				ancestor =
+					node.parent !== null
+						? { tree: ancestor.tree, id: node.parent }
+						: node.kind === "fragment"
+							? ancestor.tree.templateHost(node.id)
+							: null;
+			}
+			return depth;
+		};
+		const position = (where: string) => {
+			const target = bindings.read(id);
+			const normalized = where.length <= 11 ? where.toLowerCase() : "";
+			if (normalized === "afterbegin")
+				return { parent: id, before: target.children[0] };
+			if (normalized === "beforeend") return { parent: id, before: undefined };
+			if (normalized === "beforebegin" || normalized === "afterend") {
+				if (target.parent === null) return null;
+				const siblings = bindings.read(target.parent).children;
+				return {
+					parent: target.parent,
+					before:
+						normalized === "beforebegin"
+							? id
+							: siblings[siblings.indexOf(id) + 1],
+				};
+			}
+			throw new DOMException(
+				"Invalid adjacent insertion position",
+				"SyntaxError",
+			);
+		};
+		methods.insertAdjacentElement = (...values) => {
+			bindings.read(id);
+			if (values.length < 2)
+				throw new TypeError(
+					"Adjacent element insertion requires two arguments",
+				);
+			const where = bindings.string(values[0]);
+			const child = bindings.identify(values[1]);
+			if (bindings.read(child).kind !== "element")
+				throw new TypeError("Adjacent element insertion requires an Element");
+			const destination = position(where);
+			if (destination === null) return null;
+			try {
+				validateDocument(tree, destination.parent, child);
+			} catch (error) {
+				if (
+					error instanceof AgentBrowserError &&
+					error.code === "invalid-input"
+				)
+					throw new DOMException(error.message, "HierarchyRequestError");
+				throw error;
+			}
+			insertionDepth(destination.parent, child);
+			tree.insert(destination.parent, child, destination.before);
+			return bindings.node(child);
+		};
+		methods.insertAdjacentText = (...values) => {
+			bindings.read(id);
+			if (values.length < 2)
+				throw new TypeError("Adjacent text insertion requires two arguments");
+			const where = bindings.string(values[0]);
+			const data = bindings.string(values[1]);
+			const destination = position(where);
+			if (destination === null) return;
+			if (bindings.read(destination.parent).kind === "document")
+				throw new DOMException(
+					"A document cannot contain a text child",
+					"HierarchyRequestError",
+				);
+			if (insertionDepth(destination.parent) > tree.limits.maxDepth)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Document depth limit exceeded",
+				);
+			insert(destination.parent, tree.createText(data), destination.before);
+		};
+	}
 	if (["document", "fragment", "element"].includes(kind)) {
 		methods.append = (...values) => {
 			const args = argumentsList(values);

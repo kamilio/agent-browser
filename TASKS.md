@@ -19,6 +19,27 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Adjacent DOM integration checkpoint: `ADJACENT-CORE.md` integrates
+insertAdjacentElement/Text with native mutation owners and precise capabilities.
+Host-inclusive template preflight now prevents rejected text insertions from
+leaking allocated nodes and reports template cycles as HierarchyRequestError
+before movement. All 25 new cases fail on isolated HEAD; the integrated pre-fix
+baseline reproduces twelve template failures. The unchanged 45-case pending
+suite is promoted. Full native runs pass 9,502 / 263 working-tree files and
+8,196 / 236 isolated files; focused runs pass 327 / eight and 324 / eight.
+Both trees pass types/builds, strict three-test checks and five-file lint.
+Original pending tests, unrelated source and historical measurements remain
+intact. Read-only upstream inspection at e4e23699e696d320363da662d1d74475bb098d28
+confirms setup-only nested registration and undefined host receivers; simply
+forwarding the declared hook cannot implement lazy guest click methods safely.
+Next record the precise owned lazy-method contract requirement and continue
+independent JavaScript DOM coverage. No SDK was installed or executed and no
+gated browser probe ran. Guest ordering, runtime/site/socket/TTY/physical-input
+gates remain open; the denied SafeJS probe stays unrun and the seven-day browser
+goal remains active.
+
+### Previous programmatic activation cancellation checkpoint
+
 Programmatic activation cancellation checkpoint: `PROGRAMMATIC-CANCELLATION.md`
 adds optional abort forwarding to the native asynchronous click owner. Pending
 click/forwarded-control/reset prefixes now unwind preactivation and per-element

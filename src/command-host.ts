@@ -322,6 +322,13 @@ export class BrowserCommandHost {
 				partial: true,
 				parentNode: ["append", "prepend", "replaceChildren"],
 				childNode: ["before", "after", "replaceWith", "remove"],
+				element: ["insertAdjacentElement", "insertAdjacentText"],
+				adjacentPositions: [
+					"beforebegin",
+					"afterbegin",
+					"beforeend",
+					"afterend",
+				],
 				replaceChild: true,
 				maxArguments: scriptMutationLimits.maxArguments,
 				objectStringCoercion: false,
