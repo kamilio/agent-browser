@@ -38,6 +38,11 @@ Cancellation does not roll back focus or scroll already applied.
 
 ## Page adapter gate
 
+Current continuation: `FOCUS-BRIDGE.md` implements the public-contract publication
+bridge with native identity/lifetime/listener tests. The following text records
+the original helper boundary; separately authorized released guest execution
+remains open rather than being inferred from the new native fixtures.
+
 Controlled page listeners require the async event runner. The helper deliberately
 does not advertise browser-synchronous page methods. Do not publish a Promise-
 returning focus stub as standards-compatible HTMLElement.focus. The public

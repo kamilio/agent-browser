@@ -7,6 +7,10 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+The public focus bridge now has native final-identity and controlled-listener
+coverage; `FOCUS-BRIDGE.md` records setup registration costs and limits. It is not
+a released-SafeJS scheduler pass and does not close the constructor/runtime gates.
+
 Bounded Enter/Shift+Enter now reaches native rich/plaintext editors, with shared
 selection and cancellation guards. `EDITABLE-PARAGRAPHS.md` records current
 native tests and four inspected fixed-editor captures; paragraph merging,

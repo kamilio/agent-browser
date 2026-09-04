@@ -188,16 +188,16 @@ function fixture(shared = fakeCore(), timeoutMs = 1000) {
 	};
 }
 
-it("declares an owned console replacement and only the required retention grant before lazy setup", async () => {
+it("declares owned console, retention, and focus await-result grants before lazy setup", async () => {
 	const test = fixture();
 	expect(test.defineExtension.mock.calls[0][0].manifest).toMatchObject({
 		name: "agent-browser-page",
 		globals: pageBindingGlobalNames(test.tree),
-		capabilities: ["guest:retain"],
+		capabilities: ["guest:retain", "source:nested"],
 	});
 	expect(test.state.options).toMatchObject({
 		builtinOverrides: { console: "agent-browser-page" },
-		grants: ["guest:retain"],
+		grants: ["guest:retain", "source:nested"],
 		limits: extensionPageRuntimeLimits,
 	});
 	expect(test.state.objectCount).toBe(0);

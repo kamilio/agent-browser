@@ -121,7 +121,7 @@ export function extensionPageRuntime(core: ReleasedCore): PageRuntimeFactory {
 					version: 1,
 					name: extensionName,
 					globals: options.globals,
-					capabilities: ["guest:retain"],
+					capabilities: ["guest:retain", "source:nested"],
 				},
 				setup(owner) {
 					ensureOpen();
@@ -141,6 +141,15 @@ export function extensionPageRuntime(core: ReleasedCore): PageRuntimeFactory {
 						ensureOpen();
 					}
 					const globals = options.setup({
+						nestedOperation: (operation) => {
+							ensureOpen();
+							if (setupComplete || typeof owner.nestedOperation !== "function")
+								throw new AgentBrowserError(
+									"unsupported",
+									"Focus operations require public setup-time nested registration",
+								);
+							return owner.nestedOperation(operation);
+						},
 						createHostObject: (definition) => {
 							ensureOpen();
 							return owner.createHostObject(definition);
@@ -161,7 +170,7 @@ export function extensionPageRuntime(core: ReleasedCore): PageRuntimeFactory {
 				realm = core.createRealm({
 					extensions: [extension],
 					builtinOverrides: { console: extensionName },
-					grants: ["guest:retain"],
+					grants: ["guest:retain", "source:nested"],
 					budget,
 					signal: controller.signal,
 					sink: options.sink,

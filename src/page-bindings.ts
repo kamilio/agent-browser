@@ -27,8 +27,10 @@ import {
 } from "./page-animation-frames.js";
 import { PageClock, createPagePerformance } from "./page-performance.js";
 import { PageMedia } from "./page-media.js";
+import { PageFocus, type PageFocusRegistration } from "./page-focus.js";
 
 export interface PageBindingContext extends ScriptHostObjectFactory {
+	nestedOperation?: PageFocusRegistration;
 	retainGuestArguments<
 		Operation extends (...args: readonly unknown[]) => unknown,
 	>(operation: Operation, from: number): Operation;
@@ -41,6 +43,7 @@ export interface PageBindingOptions {
 	consoleLimits?: Partial<ConsoleLimits>;
 	timerLimits?: Partial<TimerLimits>;
 	animationFrameLimits?: Partial<AnimationFrameLimits>;
+	focusLimits?: { maxBindings?: number };
 }
 
 export interface PageBindingLifecycle extends ScriptCallbackRuntime {
@@ -89,6 +92,7 @@ export class PageBindings {
 	readonly css: object;
 	readonly media: PageMedia;
 	readonly scrolling: PageScroll;
+	readonly focus: PageFocus;
 	readonly network?: PageFetch;
 	readonly location: ScriptLocation;
 	readonly history?: ScriptHistory;
@@ -110,7 +114,9 @@ export class PageBindings {
 				context.createHostObject,
 				context.retainGuestArguments,
 				context.releaseGuestReference,
-			].every((operation) => typeof operation === "function")
+			].every((operation) => typeof operation === "function") ||
+			(context.nestedOperation !== undefined &&
+				typeof context.nestedOperation !== "function")
 		)
 			throw new AgentBrowserError(
 				"unsupported",
@@ -377,6 +383,19 @@ export class PageBindings {
 					},
 				},
 			});
+			this.focus = new PageFocus(
+				page.interactions.focus,
+				(position) => {
+					void this.scrolling.methods.scrollTo(position);
+				},
+				context.nestedOperation
+					? {
+							document: page.document,
+							register: context.nestedOperation.bind(context),
+							maxBindings: options.focusLimits?.maxBindings,
+						}
+					: undefined,
+			);
 			this.dom = new ScriptDom(
 				page.document,
 				context,
@@ -398,6 +417,7 @@ export class PageBindings {
 				(position) => {
 					void this.scrolling.methods.scrollTo(position);
 				},
+				this.focus.synchronousPageMethods ? this.focus : undefined,
 			);
 			this.console = new PageConsole(page.document, context, {
 				limits: options.consoleLimits,
@@ -453,6 +473,7 @@ export class PageBindings {
 	close() {
 		if (this.closedValue) return;
 		this.closedValue = true;
+		this.focus?.close();
 		this.timers?.close();
 		this.animationFrames?.close();
 		this.media?.close();

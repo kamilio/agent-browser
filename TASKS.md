@@ -19,6 +19,18 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Public focus bridge checkpoint: `FOCUS-BRIDGE.md` binds final guarded focus/blur
+methods to setup-registered public await-result identities. Native fixtures cover
+listener prefixes, reentry, cancellation, revocation and fixed-root geometry;
+ordinary async APIs retain Promises. The default 8,192 registration calls per
+enabled page and nonrecycled publication slots are explicit. Provisioning stress
+covers four pool sizes through 4,096 slots without raising independent runtime
+quotas. Focused suites pass 227 / ten files; source types/builds, strict test checks
+and scoped format/Biome checks pass. Final explicit native runs pass 10,493 / 308
+isolated files and report 11,624 passes with the same fifteen pending failures /
+330 working files. Released-SafeJS execution, URL constructors and original
+browser/live/terminal gates remain open; configuration is not execution evidence.
+
 Paragraph checkpoint: `EDITABLE-PARAGRAPHS.md` integrates bounded rich Enter,
 Shift+Enter and plaintext LF insertion through actual native command routing.
 Four inspected fixed-editor captures retain geometry/root scroll; cancellation

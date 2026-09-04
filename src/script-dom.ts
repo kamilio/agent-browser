@@ -35,6 +35,7 @@ import { AgentBrowserError } from "./errors.js";
 import { ScriptDatasets } from "./script-dataset.js";
 import { ElementTraversal } from "./element-traversal.js";
 import { scriptElementFocusProperties } from "./element-focus.js";
+import type { PageFocus } from "./page-focus.js";
 import {
 	type DocumentElementSizes,
 	documentElementSizes,
@@ -146,7 +147,9 @@ export class ScriptDom {
 		private readonly location?: ScriptLocation,
 		private readonly storage?: ScriptStorage,
 		scrollRequest?: RootScrollRequest,
+		private readonly pageFocus?: PageFocus,
 	) {
+		pageFocus?.assertDocument(tree);
 		this.inheritedFamily = htmlDocumentFamily(tree);
 		this.inert =
 			this.inheritedFamily !== undefined || tree.isTemplateContentsDocument;
@@ -200,6 +203,7 @@ export class ScriptDom {
 
 	node(id: number): object {
 		const initial = this.read(id);
+		const pageFocus = this.pageFocus;
 		const existing = this.capabilities.get(id);
 		if (existing) return existing;
 		const definition: Required<
@@ -730,6 +734,16 @@ export class ScriptDom {
 			}
 		}
 		if (initial.kind === "element") {
+			if (pageFocus && !this.inert) {
+				definition.methods.focus = (options) => {
+					this.read(id);
+					return pageFocus.focusAsync(id, options);
+				};
+				definition.methods.blur = () => {
+					this.read(id);
+					return pageFocus.blurAsync(id);
+				};
+			}
 			if (initial.tagName === "template")
 				definition.properties.content = {
 					get: () => this.templateContent(id),
@@ -1008,11 +1022,19 @@ export class ScriptDom {
 				};
 			}
 		}
-		return this.publications.publish("node", id, definition, (capability) => {
-			this.relations.register(capability, id);
-			this.capabilities.set(id, capability);
-			this.identities.set(capability, id);
-		});
+		return this.publications.publish(
+			"node",
+			id,
+			definition,
+			(capability) => {
+				this.relations.register(capability, id);
+				this.capabilities.set(id, capability);
+				this.identities.set(capability, id);
+			},
+			pageFocus && !this.inert && initial.kind === "element"
+				? (methods) => pageFocus.bindMethods(methods)
+				: undefined,
+		);
 	}
 
 	close() {

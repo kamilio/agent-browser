@@ -258,7 +258,7 @@ it("returns the existing extension factory with lazy setup, ownership and callba
 	expect(test.core.createRealm).toHaveBeenCalledWith(
 		expect.objectContaining({
 			builtinOverrides: { console: "agent-browser-page" },
-			grants: ["guest:retain"],
+			grants: ["guest:retain", "source:nested"],
 		}),
 	);
 	await runtime.initialize();

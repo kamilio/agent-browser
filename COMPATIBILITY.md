@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 public focus bridge continuation: `FOCUS-BRIDGE.md` preserves exact
+setup-registered final method identities, awaits native controlled-listener
+prefixes and retains ordinary async Promise behavior. Native tests do not prove
+released-SafeJS scheduling. Registration cost, nonrecycled slots and all original
+runtime/live/terminal gates remain explicit; URL constructors are not published.
+
 September 4 paragraph continuation: `EDITABLE-PARAGRAPHS.md` adds bounded rich
 paragraph/line splitting and plaintext LF through native host editing. Shared
 Range ownership, canceled defaults and fixed editor geometry are tested with

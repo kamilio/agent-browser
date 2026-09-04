@@ -1,6 +1,26 @@
+import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import type { DocumentFocus, ElementFocusOptions } from "./focus.js";
 import type { RootScrollRequest } from "./root-scroll.js";
+
+export type PageFocusOperation = (...args: readonly unknown[]) => unknown;
+export type PageFocusMethods = Record<"focus" | "blur", PageFocusOperation>;
+export type PageFocusRegistration = <Operation extends PageFocusOperation>(
+	operation: Operation,
+) => Operation;
+
+export const pageFocusLimits = Object.freeze({ maxBindings: 4096 });
+
+export interface PageFocusBridgeOptions {
+	document: DocumentTree;
+	register: PageFocusRegistration;
+	maxBindings?: number;
+}
+
+interface FocusSlot {
+	operations?: PageFocusMethods;
+	methods: PageFocusMethods;
+}
 
 export const pageFocusCapabilities = Object.freeze({
 	partial: true,
@@ -42,11 +62,91 @@ export function pageFocusOptions(argument?: unknown): ElementFocusOptions {
 export class PageFocus {
 	private closed = false;
 	private readonly controller = new AbortController();
+	private readonly slots: FocusSlot[] = [];
+	private nextSlot = 0;
+	private readonly document?: DocumentTree;
 
 	constructor(
 		private readonly focus: DocumentFocus,
 		private readonly requestScroll?: RootScrollRequest,
-	) {}
+		bridge?: PageFocusBridgeOptions,
+	) {
+		if (!bridge) return;
+		const maximum = bridge.maxBindings ?? pageFocusLimits.maxBindings;
+		if (
+			typeof bridge.register !== "function" ||
+			!Number.isSafeInteger(maximum) ||
+			maximum < 1 ||
+			maximum > pageFocusLimits.maxBindings
+		)
+			throw new AgentBrowserError("invalid-input", "Invalid page focus bridge");
+		this.document = bridge.document;
+		try {
+			for (let index = 0; index < maximum; index++) {
+				const slot: FocusSlot = { methods: {} as PageFocusMethods };
+				this.slots.push(slot);
+				for (const name of ["focus", "blur"] as const) {
+					const operation: PageFocusOperation = (...args) => {
+						this.ensureOpen();
+						if (!slot.operations)
+							throw new AgentBrowserError(
+								"invalid-input",
+								"Page focus operation is not bound",
+							);
+						return slot.operations[name](...args);
+					};
+					if (bridge.register(operation) !== operation)
+						throw new AgentBrowserError(
+							"unsupported",
+							"Focus registration must preserve operation identity",
+						);
+					slot.methods[name] = operation;
+				}
+			}
+		} catch (error) {
+			this.close();
+			throw error;
+		}
+	}
+
+	get synchronousPageMethods() {
+		return this.document !== undefined;
+	}
+
+	assertDocument(document: DocumentTree) {
+		this.ensureOpen();
+		if (this.document !== document)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Page focus bridge belongs to another document",
+			);
+	}
+
+	bindMethods(operations: PageFocusMethods): PageFocusMethods {
+		this.ensureOpen();
+		if (!this.synchronousPageMethods)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Synchronous page focus requires public await-result registration",
+			);
+		const slot = this.slots[this.nextSlot];
+		if (!slot)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Page focus binding limit exceeded",
+			);
+		if (
+			typeof operations.focus !== "function" ||
+			typeof operations.blur !== "function"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid guarded focus methods",
+			);
+		this.nextSlot++;
+		slot.operations = operations;
+		return slot.methods;
+	}
 
 	async focusAsync(id: number, argument?: unknown): Promise<void> {
 		this.ensureOpen();
@@ -67,6 +167,8 @@ export class PageFocus {
 		if (this.closed) return;
 		this.closed = true;
 		this.controller.abort();
+		for (const slot of this.slots) slot.operations = undefined;
+		this.slots.length = 0;
 	}
 
 	private ensureOpen() {

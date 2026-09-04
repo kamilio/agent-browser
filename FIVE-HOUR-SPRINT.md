@@ -10,17 +10,17 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | Integrate ready public focus bridge, then upload lanes | Paragraph insertion passes 10,451 isolated native tests with four inspected native captures. |
+| Main | Integrate ready upload server/client and file rendering | Focus bridge/pressure passes 10,493 isolated native tests; released-runtime scheduling remains gated. |
 | DOM worker | Adjacent paragraph Backspace/Delete merging | Paragraph insertion is delivered; the new bounded merge follow-up preserves that patch. |
-| Focus-bridge worker | Native provisioning/resource/revocation stress | Focus bridge is delivered; public/runtime limits and URL constructor blockers remain explicit. |
-| Focus delivery | Native focus/blur options, indication and scrolling | Integrated with an additional parent reentrancy fix; synchronous guest methods remain open. |
+| Focus-bridge worker | Native provisioning/resource/revocation stress | Both deliveries are integrated natively; public/runtime limits and URL constructor blockers remain explicit. |
+| Focus delivery | Native focus/blur options, indication and scrolling | Public-contract bridge is integrated natively; released guest execution remains unverified. |
 | Cookie delivery | Cookie list/get/set/delete services | Production wiring and actual CLI tests integrated; 9,765 isolated native tests pass. |
 | White-space delivery | Native pre-wrap formatting and hanging spaces | Integrated, with fresh editable captures and 9,854 passing isolated native tests. |
 | Double-click / upload-server worker | Authenticated upload host/session dispatch | Double-click production is integrated; new server work preserves that delivery. |
-| Positioning / range-geometry worker | Bounded native Range client geometry | Static-position reuse is delivered; new geometry work must use existing glyph/layout ownership. |
-| Runtime / upload-client worker | Actual private-file CLI upload entry | Runtime production is integrated; new client work preserves legacy default and runtime gate labels. |
+| Positioning / range-geometry worker | Preserve hard-break source mappings for Range geometry | Initial geometry is delivered; mapping follow-up must preserve layout/pixels and explicit ambiguity limits. |
+| Runtime / upload-client worker | Genuine CLI-to-host upload regression cases | Client production is delivered; new cross-boundary tests must use actual native host routing. |
 | Playground delivery | Extraction/snapshot downloads and honest example discovery | Integrated export guards/cards pass 9,882 isolated native tests; live UI/framework gates remain open. |
-| File-selection / rendering worker | Bounded native file-control painting | Upload/owner primitives are delivered; new rendering work does not claim a chooser or guest File API. |
+| File-selection / rendering worker | Bounded native editable caret painting | File-control rendering is delivered; new caret work must respect ownership, crops and paint ordering. |
 
 Workers use isolated snapshots at their explicitly recorded bases, not the dirty primary tree.
 They return code, explicit tests, source paths and integration notes. Main reviews

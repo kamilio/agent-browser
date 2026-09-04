@@ -71,10 +71,10 @@ removed from the native allowlist. None of those pending failures is changed.
 
 ## Remaining runtime gates
 
-The separate focus bridge must preserve the final registered nested-operation
-identity and controlled callback prefixes; ordinary async host methods cannot be
-advertised as synchronous HTMLElement methods. Selection of the extension adapter
-alone supplies no proof of that behavior. Released artifact availability,
+`FOCUS-BRIDGE.md` now integrates final registered nested-operation identity and
+controlled callback prefixes through native fixtures. Ordinary async host methods
+retain Promises. Selection of the extension adapter and native fixtures still
+supply no proof of released guest execution. Released artifact availability,
 provenance, scheduler semantics, real restricted-process permissions, live sites,
 socket/TTY behavior and framework compatibility still need their authorized gates.
 

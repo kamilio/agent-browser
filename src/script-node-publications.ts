@@ -1,4 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
+import type { PageFocusMethods } from "./page-focus.js";
 import type {
 	ScriptHostObjectDefinition,
 	ScriptHostObjectFactory,
@@ -58,6 +59,7 @@ export class ScriptNodePublications {
 		id: number,
 		definition: ScriptHostObjectDefinition,
 		commit: (capability: object) => void,
+		focusMethods?: (operations: PageFocusMethods) => PageFocusMethods,
 	): object {
 		this.ensureOpen();
 		const active = this.active[kind];
@@ -91,6 +93,13 @@ export class ScriptNodePublications {
 				read();
 				return result;
 			};
+		const guardFocus =
+			(operation: (...args: readonly unknown[]) => unknown) =>
+			async (...args: readonly unknown[]) => {
+				read();
+				await operation(...args);
+				read();
+			};
 		try {
 			const guarded: ScriptHostObjectDefinition = {
 				...(definition.properties
@@ -113,7 +122,9 @@ export class ScriptNodePublications {
 							methods: Object.fromEntries(
 								Object.entries(definition.methods).map(([name, method]) => [
 									name,
-									guard(method),
+									focusMethods && (name === "focus" || name === "blur")
+										? guardFocus(method)
+										: guard(method),
 								]),
 							),
 						}
@@ -143,6 +154,20 @@ export class ScriptNodePublications {
 						}
 					: {}),
 			};
+			if (focusMethods) {
+				if (!guarded.methods?.focus || !guarded.methods.blur)
+					throw new AgentBrowserError(
+						"invalid-input",
+						"Focus publication requires both guarded methods",
+					);
+				Object.assign(
+					guarded.methods,
+					focusMethods({
+						focus: guarded.methods.focus,
+						blur: guarded.methods.blur,
+					}),
+				);
+			}
 			const capability = this.factory.createHostObject(guarded);
 			if (capability === null || typeof capability !== "object")
 				throw new AgentBrowserError(
