@@ -303,6 +303,13 @@ Native identity, control-state and teardown tests advance the application API
 surface without treating native results as interpreted-runtime evidence.
 Adoption, custom elements, templates and the existing independent gates stay open.
 
+September 4 publication-ownership continuation: `SCRIPT-NODE-PUBLICATION.md`
+hardens the connected node/attribute/map provider boundary and newly imported
+capabilities. Failed or stale publications cannot become active identities, and
+pending reservations count toward existing owner quotas. Native read-budget
+evidence is preserved rather than relaxed to hide added traversal overhead.
+Runtime execution and wider browser compatibility gates remain distinct and open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

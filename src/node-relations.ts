@@ -243,8 +243,24 @@ export class NodeRelations {
 	}
 	register(object: object, id: number, attribute = false) {
 		this.ensureOpen();
+		if (object === null || typeof object !== "object")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid node capability identity",
+			);
 		if (attribute) this.tree.getAttributeRecord(id);
 		else this.tree.get(id);
+		const previous = identities.get(object);
+		if (
+			previous &&
+			(previous.owner !== this ||
+				previous.id !== id ||
+				previous.attribute !== attribute)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Node capability identity is already registered",
+			);
 		identities.set(object, { owner: this, id, attribute });
 	}
 	close() {

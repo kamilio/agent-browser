@@ -2,6 +2,7 @@ import { controlChecked, controlValue, inputType } from "./controls.js";
 import type { ObservedDocumentMutation } from "./document-observers.js";
 import { ScriptMutationRecords } from "./script-mutation-records.js";
 import { ScriptMutationObservers } from "./script-mutation-observers.js";
+import { ScriptNodePublications } from "./script-node-publications.js";
 import { documentScriptState } from "./document-script-state.js";
 import {
 	documentBody,
@@ -98,6 +99,7 @@ export class ScriptDom {
 	private readonly elementSizes: DocumentElementSizes;
 	private readonly computedStyles: ComputedStyles;
 	private readonly capabilities = new Map<number, object>();
+	private readonly publications: ScriptNodePublications;
 	private mutationRecordOwner?: ScriptMutationRecords;
 	private mutationObserverOwner?: {
 		runtime: ScriptCallbackRuntime;
@@ -129,11 +131,15 @@ export class ScriptDom {
 		this.elementSizes = documentElementSizes(tree);
 		this.computedStyles = new ComputedStyles(tree, factory);
 		this.relations = new NodeRelations(tree);
+		this.publications = new ScriptNodePublications(factory, () =>
+			this.ensureOpen(),
+		);
 		this.attributes = new ScriptAttributes(
 			tree,
 			factory,
 			(id) => this.node(id),
 			this.relations,
+			this.publications,
 		);
 		this.collections = new ScriptCollections(tree, factory, (id) =>
 			this.node(id),
@@ -708,21 +714,17 @@ export class ScriptDom {
 			Object.assign(definition.properties, select.properties);
 			Object.assign(definition.methods, select.methods);
 		}
-		const capability = this.factory.createHostObject(definition);
-		if (!capability || typeof capability !== "object")
-			throw new AgentBrowserError(
-				"unsupported",
-				"Invalid host object capability",
-			);
-		this.capabilities.set(id, capability);
-		this.identities.set(capability, id);
-		this.relations.register(capability, id);
-		return capability;
+		return this.publications.publish("node", id, definition, (capability) => {
+			this.relations.register(capability, id);
+			this.capabilities.set(id, capability);
+			this.identities.set(capability, id);
+		});
 	}
 
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		this.publications.close();
 		this.mutationObserverOwner?.bindings.close();
 		this.mutationObserverOwner = undefined;
 		this.mutationRecordOwner?.close();
@@ -756,6 +758,7 @@ export class ScriptDom {
 
 	metrics() {
 		return Object.freeze({
+			publications: this.publications.metrics(),
 			classLists: this.classLists.metrics(),
 			geometry: this.geometry.metrics(),
 			computedStyles: this.computedStyles.metrics(),
@@ -802,9 +805,12 @@ export class ScriptDom {
 		return this.computedStyles.get(this.identify(element), pseudo);
 	}
 
-	private read(id: number): Readonly<DocumentNode> {
+	private ensureOpen() {
 		if (this.closed)
 			throw new AgentBrowserError("closed", "Script document is closed");
+	}
+	private read(id: number): Readonly<DocumentNode> {
+		this.ensureOpen();
 		return this.tree.get(id);
 	}
 	private optional(id: number | null | undefined) {

@@ -1,6 +1,7 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlAttributeName } from "./html-attribute-name.js";
+import { ScriptNodePublications } from "./script-node-publications.js";
 import type { NodeRelations } from "./node-relations.js";
 import {
 	type ScriptHostObjectDefinition,
@@ -15,13 +16,21 @@ export class ScriptAttributes {
 	private readonly attributes = new Map<number, object>();
 	private identities = new WeakMap<object, number>();
 	private closed = false;
+	private readonly publications: ScriptNodePublications;
+	private readonly ownsPublications: boolean;
 
 	constructor(
 		private readonly tree: DocumentTree,
 		private readonly factory: ScriptHostObjectFactory,
 		private readonly node: (id: number) => object,
 		private readonly relations: NodeRelations,
-	) {}
+		publications?: ScriptNodePublications,
+	) {
+		this.ownsPublications = publications === undefined;
+		this.publications =
+			publications ??
+			new ScriptNodePublications(factory, () => this.ensureOpen());
+	}
 
 	elementMethods(
 		id: number,
@@ -81,7 +90,7 @@ export class ScriptAttributes {
 			);
 		const previous = this.maps.get(id);
 		if (previous) return previous;
-		if (this.maps.size >= 256)
+		if (this.maps.size + this.publications.pending("attribute-map") >= 256)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"Script attribute map limit exceeded",
@@ -116,26 +125,32 @@ export class ScriptAttributes {
 				return this.remove(id, attribute);
 			},
 		};
-		const capability = this.factory.createHostObject({
-			indexed: {
-				maxLength: 4096,
-				length: () => names().length,
-				get: (index) => {
-					const name = names()[index];
-					return name === undefined ? undefined : this.get(id, name);
+		return this.publications.publish(
+			"attribute-map",
+			id,
+			{
+				indexed: {
+					maxLength: 4096,
+					length: () => names().length,
+					get: (index) => {
+						const name = names()[index];
+						return name === undefined ? undefined : this.get(id, name);
+					},
 				},
+				named: {
+					maxKeys: 4096,
+					maxKeyCodeUnits: 65_536,
+					enumerable: false,
+					keys: () => names().filter((name) => !reserved.has(name)),
+					get: (name) => this.get(id, name) ?? undefined,
+				},
+				methods,
 			},
-			named: {
-				maxKeys: 4096,
-				maxKeyCodeUnits: 65_536,
-				enumerable: false,
-				keys: () => names().filter((name) => !reserved.has(name)),
-				get: (name) => this.get(id, name) ?? undefined,
+			(capability) => {
+				this.ensureOpen();
+				this.maps.set(id, capability);
 			},
-			methods,
-		});
-		this.maps.set(id, capability);
-		return capability;
+		);
 	}
 
 	get(id: number, name: string): object | null {
@@ -173,6 +188,7 @@ export class ScriptAttributes {
 
 	close() {
 		this.closed = true;
+		if (this.ownsPublications) this.publications.close();
 		this.maps.clear();
 		this.attributes.clear();
 		this.identities = new WeakMap();
@@ -258,31 +274,37 @@ export class ScriptAttributes {
 				},
 			};
 		const relations = this.relations.definition(id, true);
-		const capability = this.factory.createHostObject({
-			properties: { ...properties, ...relations.properties },
-			methods: {
-				...relations.methods,
-				cloneNode: () => {
-					const attribute = read();
-					this.ensureCapacity();
-					return this.attribute(
-						this.tree.createAttribute(attribute.name, attribute.value),
-					);
-				},
-				getRootNode: () => {
-					read();
-					return this.attribute(id);
-				},
-				hasChildNodes: () => {
-					read();
-					return false;
+		return this.publications.publish(
+			"attribute",
+			id,
+			{
+				properties: { ...properties, ...relations.properties },
+				methods: {
+					...relations.methods,
+					cloneNode: () => {
+						const attribute = read();
+						this.ensureCapacity();
+						return this.attribute(
+							this.tree.createAttribute(attribute.name, attribute.value),
+						);
+					},
+					getRootNode: () => {
+						read();
+						return this.attribute(id);
+					},
+					hasChildNodes: () => {
+						read();
+						return false;
+					},
 				},
 			},
-		});
-		this.attributes.set(id, capability);
-		this.identities.set(capability, id);
-		this.relations.register(capability, id, true);
-		return capability;
+			(capability) => {
+				this.ensureOpen();
+				this.relations.register(capability, id, true);
+				this.attributes.set(id, capability);
+				this.identities.set(capability, id);
+			},
+		);
 	}
 
 	private identity(value: unknown): number {
@@ -350,7 +372,7 @@ export class ScriptAttributes {
 
 	private ensureCapacity() {
 		this.ensureOpen();
-		if (this.attributes.size >= 4096)
+		if (this.attributes.size + this.publications.pending("attribute") >= 4096)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"Script attribute object limit exceeded",

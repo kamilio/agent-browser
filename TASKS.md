@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Node-publication checkpoint: `SCRIPT-NODE-PUBLICATION.md` guards node, Attr and
+NamedNodeMap publication against reentry, reused identities, provider failure
+and owner closure. Captured callbacks stay unavailable until registration and
+remain revoked after failure; pending work counts toward map/attribute quotas.
+Native node identity registration no longer permits rebranding. Seven initial
+regressions and a later owner-check regression fail before their fixes; 56 new
+tests and 413 focused checks across eleven files pass. Full validation also caught
+extra DOM reads; the guard now preserves the existing four-read textarea budget
+without changing its test. Final full native validation passes 7,937 / 225 files;
+the isolated owned patch passes 5,177 / 164 available files. Production/new-test
+types, builds and six-file lint pass in both trees. Pre-existing pending work is
+preserved outside this checkpoint. Native allocation rollback, other capability families
+and independent runtime/site gates remain open. No gated probe ran; the denied
+SafeJS probe stays unrun and the seven-day browser goal remains active.
+
+### Previous document-import checkpoint
+
 Document-import checkpoint: `DOCUMENT-IMPORT.md` connects `document.importNode`
 to native subtree copying across authenticated script/attribute owners. Copies
 use destination identity, URL context and quotas without moving the source or
