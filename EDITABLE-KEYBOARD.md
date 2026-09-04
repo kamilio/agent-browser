@@ -66,6 +66,11 @@ retain their original narrower results and obsolete-Space integration caveat.
 
 ## Remaining gates
 
+`EDITABLE-SELECTION-MIXED.md` now highlights native Shift+Arrow ranges across
+editable text nodes and verifies cancellation/replacement through the actual
+host. Container-based select-all, control selection and full visual movement
+remain open; earlier text-only keyboard captures remain unchanged.
+
 `EDITABLE-RANGE-LIFETIME.md` now gives private replacement ranges a synchronous
 scope, including nested deletion and error cleanup. Public selected/observer Range
 identity and original keyboard semantics are unchanged; this is a resource fix,

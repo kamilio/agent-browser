@@ -1,5 +1,11 @@
 # Native editable selection highlighting
 
+Mixed-node continuation: EDITABLE-SELECTION-MIXED.md now supports bounded text
+endpoints across multiple editable source nodes, with intermediate protection
+checks and fresh native evidence. The original same-text checkpoint below retains
+its original captures/counts; element/control endpoints and full visual editing
+remain open.
+
 September 4, 2026. Noncollapsed shared selections can now paint a bounded native
 background inside one focused editable text node. This composes with native
 Shift+Arrow, replacement typing, paragraph editing and caret painting; it does not

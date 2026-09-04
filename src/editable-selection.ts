@@ -4,7 +4,7 @@ import {
 } from "./content-editability.js";
 import type { DocumentLayout } from "./document-layout.js";
 import { documentScrollPosition } from "./document-scroll.js";
-import type { DocumentTree } from "./document.js";
+import type { DocumentNode, DocumentTree } from "./document.js";
 import { existingDomRangeOwner } from "./dom-range.js";
 import { AgentBrowserError } from "./errors.js";
 import { activeFocus } from "./focus.js";
@@ -27,14 +27,16 @@ export const editableSelectionBackground: Rgba = Object.freeze([
 ]);
 export const editableSelectionCapabilities = Object.freeze({
 	partial: true,
-	profile: "focused-editable-same-text-range",
+	profile: "focused-editable-text-endpoint-range",
 	background: "native-pale-blue-rgb-179-215-255",
 	textColor: "unchanged-source-color",
 	paintOrder: "immediately-before-each-source-glyph",
 	paintedMetrics: "operations-not-final-visibility",
 	work: "reserved-geometry-cap-plus-local-mapping-and-lookup",
 	cssSelection: false,
-	mixedNodes: false,
+	mixedNodes: true,
+	elementEndpoints: false,
+	protectedIntermediateNodes: "skip-entire-highlight",
 	controls: false,
 	...editableSelectionLimits,
 });
@@ -58,6 +60,30 @@ interface SelectedGlyph {
 	readonly width: number;
 	readonly height: number;
 }
+const protectedSelectionTags = new Set([
+	"input",
+	"textarea",
+	"select",
+	"button",
+	"option",
+	"optgroup",
+	"img",
+	"hr",
+	"iframe",
+	"frame",
+	"object",
+	"embed",
+	"audio",
+	"video",
+	"canvas",
+	"svg",
+	"math",
+	"template",
+	"script",
+	"style",
+	"link",
+	"meta",
+]);
 export interface EditableSelection {
 	status: EditableSelectionStatus;
 	work: number;
@@ -119,35 +145,88 @@ export function prepareEditableSelection(
 		const range = owner.selection.getRangeAt(0);
 		const start = range.start;
 		const end = range.end;
-		if (start.node !== end.node) return finish("unsupported");
 		const source = tree.get(start.node);
-		if (source.kind !== "text") return finish("unsupported");
+		if (source.kind !== "text" || tree.get(end.node).kind !== "text")
+			return finish("unsupported");
 		const focused = tree.activeElement;
 		if (focused === null) return finish("unfocused");
 		const styles = documentStyles(tree);
-		let current = source.parent;
-		let depth = 0;
-		let inside = false;
-		let connected = false;
-		while (current !== null) {
-			charge();
-			if (++depth > editableSelectionLimits.maxDepth) return finish("limited");
-			const node = tree.get(current);
-			if (isInertRoot(tree, node, charge)) return finish("outside-editable");
+		const eligibility = (
+			node: Readonly<DocumentNode>,
+			checkEditable: boolean,
+		): EditableSelectionStatus | undefined => {
+			if (isInertRoot(tree, node, charge)) return "outside-editable";
 			if (
-				!inside &&
+				checkEditable &&
 				(contentEditableState(node) === "false" ||
-					["input", "textarea", "select", "button"].includes(node.tagName))
+					protectedSelectionTags.has(node.tagName))
 			)
-				return finish("outside-editable");
-			if (!styles.get(current).visible) return finish("hidden");
-			inside ||= current === focused;
-			connected ||= current === tree.root;
-			current = node.parent;
+				return "outside-editable";
+			if (!styles.get(node.id).visible) return "hidden";
+		};
+		const startAncestors = new Set<number>([start.node]);
+		for (const endpoint of start.node === end.node
+			? [start.node]
+			: [start.node, end.node]) {
+			let current = tree.get(endpoint).parent;
+			let depth = 0;
+			let inside = false;
+			let connected = false;
+			while (current !== null) {
+				charge();
+				if (++depth > editableSelectionLimits.maxDepth)
+					return finish("limited");
+				const node = tree.get(current);
+				const status = eligibility(node, !inside);
+				if (status) return finish(status);
+				if (endpoint === start.node) startAncestors.add(current);
+				inside ||= current === focused;
+				connected ||= current === tree.root;
+				current = node.parent;
+			}
+			if (!inside || !connected) return finish("outside-editable");
 		}
-		if (!inside || !connected) return finish("outside-editable");
 		if (activeFocus(tree) !== focused || !isRootEditableElement(tree, focused))
 			return finish("unfocused");
+		const spans = new Map<string, Readonly<{ lower: number; upper: number }>>();
+		if (start.node === end.node) {
+			spans.set(tree.reference(start.node), {
+				lower: start.offset,
+				upper: end.offset,
+			});
+		} else {
+			let collecting = false;
+			let complete = false;
+			const visit = (
+				id: number,
+				depth: number,
+			): EditableSelectionStatus | undefined => {
+				charge();
+				if (!collecting && !startAncestors.has(id)) return;
+				if (depth > editableSelectionLimits.maxDepth) return "limited";
+				const node = tree.get(id);
+				collecting ||= id === start.node;
+				if (collecting && node.kind === "text") {
+					spans.set(tree.reference(id), {
+						lower: id === start.node ? start.offset : 0,
+						upper: id === end.node ? end.offset : node.data.length,
+					});
+					complete = id === end.node;
+					return;
+				}
+				if (collecting && node.kind === "element") {
+					const status = eligibility(node, true);
+					if (status) return status;
+				}
+				for (const child of node.children) {
+					const status = visit(child, depth + 1);
+					if (status || complete) return status;
+				}
+			};
+			const status = visit(focused, 0);
+			if (status) return finish(status);
+			if (!complete) return finish("unsupported");
+		}
 		const geometryWork = Math.min(
 			editableSelectionLimits.maxGeometryWork,
 			Math.floor((maxWork - result.work) * 0.8),
@@ -161,15 +240,15 @@ export function prepareEditableSelection(
 		});
 		if (!rects.length) return finish("unsupported");
 		const scroll = documentScrollPosition(tree);
-		const ref = tree.reference(source.id);
 		for (const context of layout.contexts) {
 			charge();
 			for (const glyph of context.glyphs) {
 				charge();
+				const span = spans.get(glyph.ref);
 				if (
-					glyph.ref !== ref ||
-					glyph.offset >= end.offset ||
-					glyph.offset + glyph.codeUnits <= start.offset
+					!span ||
+					glyph.offset >= span.upper ||
+					glyph.offset + glyph.codeUnits <= span.lower
 				)
 					continue;
 				if (!glyph.visible) return finish("hidden");
@@ -191,7 +270,7 @@ export function prepareEditableSelection(
 				glyphs.set(
 					key,
 					Object.freeze({
-						ref,
+						ref: glyph.ref,
 						x: glyph.x,
 						y: glyph.y,
 						width: glyph.advance,

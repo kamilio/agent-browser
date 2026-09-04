@@ -201,3 +201,62 @@ it("paints keyboard selection, preserves canceled replacement and returns to a t
 	});
 	expect(documentScroll(page.document).get()).toEqual({ x: 0, y: 80 });
 });
+
+it("paints mixed inline keyboard selection and preserves canceled input across fixed scrolling", async () => {
+	const { host, page, editor, selection } = await fixture(false);
+	const tree = page.document;
+	const first = tree.get(editor).children[0];
+	tree.setData(first, "Hello");
+	const bold = tree.createElement("b");
+	const italic = tree.createElement("i");
+	const last = tree.createText("World");
+	tree.append(editor, bold);
+	tree.append(bold, first);
+	tree.append(editor, italic);
+	tree.append(italic, last);
+	await host.execute(["click", "#editor"]);
+	selection.collapse(first, 4);
+	await host.execute(["press", "Shift+ArrowRight"]);
+	await host.execute(["press", "Shift+ArrowRight"]);
+	const range = selection.getRangeAt(0);
+	expect(selection.toString()).toBe("oW");
+	expect(range.start.node).toBe(first);
+	expect(range.end.node).toBe(last);
+	const crop = { element: tree.reference(editor) };
+	const selected = rasterizeDocument(tree, crop);
+	expect(selected.metrics).toMatchObject({
+		selectionStatus: "painted",
+		paintedSelectionGlyphs: 2,
+		selectionPixels: 96,
+		paintedCarets: 0,
+	});
+	documentScroll(tree).to(0, 80);
+	expect(rasterizeDocument(tree, crop).image.pixels).toEqual(
+		selected.image.pixels,
+	);
+	page.interactions.events.addEventListener(
+		editor,
+		"beforeinput",
+		(event) => event.preventDefault(),
+		{ once: true },
+	);
+	expect((await host.execute(["press", "Q"])).data).toMatchObject({
+		keyboard: { canceled: true },
+	});
+	expect(selection.getRangeAt(0)).toBe(range);
+	expect(rasterizeDocument(tree, crop).image.pixels).toEqual(
+		selected.image.pixels,
+	);
+	await host.execute(["type", "Q"]);
+	expect(selection.getRangeAt(0)).toBe(range);
+	expect(tree.textContent(editor)).toBe("HellQorld");
+	expect(tree.get(editor).children).toEqual([bold, italic]);
+	expect(tree.get(bold).children).toEqual([first]);
+	expect(tree.get(italic).children).toEqual([last]);
+	expect(rasterizeDocument(tree, crop).metrics).toMatchObject({
+		selectionStatus: "collapsed",
+		paintedSelectionGlyphs: 0,
+		paintedCarets: 1,
+	});
+	expect(documentScroll(tree).get()).toEqual({ x: 0, y: 80 });
+});

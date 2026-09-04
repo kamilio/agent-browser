@@ -7,6 +7,16 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Mixed-node text-endpoint highlighting now composes with native keyboard replacement
+and scoped Range cleanup. `EDITABLE-SELECTION-MIXED.md` records native tests and
+fresh inspected images; explicit native validation passes 11,056 / 328 isolated
+files and reports 12,187 passes with fifteen unchanged pending failures / 350
+working files. Exhausted fetch-budget
+admission and lower transport response ceilings remain parallel work. Independent
+pixel/order inspection resolves the apparent fixed/flow overlap as an unfilled
+outline-offset gap, not overwritten opaque paint; no stacking fix is justified.
+No full gate is closed.
+
 September 4 continuation: the user now requests work until explicitly stopped.
 The five-hour checkpoint below remains historical; the full browser objective and
 open gates are unchanged. Scoped native editing Range cleanup, mixed-node selection

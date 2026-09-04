@@ -19,6 +19,21 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Mixed-node highlight continuation: `EDITABLE-SELECTION-MIXED.md` maps text-endpoint
+ranges across inline/block descendants while checking protected intermediate nodes.
+Thirty-nine worker tests plus one actual-host replacement/cancellation/scroll case
+are integrated; focused validation passes 271 / ten files in both trees. Twelve
+module images and fresh host comparisons are inspected; only expected selection
+pixels change. Full native validation passes 11,056 / 328 isolated files and
+reports 12,187 passes with the same fifteen pending failures / 350 working files.
+Both manifests contain the same 350 entries, with 22 preexisting uncommitted test
+files absent from the archive. Independent pixel/order inspection resolves the
+suspected root-scroll overlap as visible text in an unfilled outline-offset gap:
+all 850 opaque border/outline pixels remain intact in both PNGs. No production
+stacking change is justified; pixel equivalence alone is not CSS conformance.
+Element endpoints and original
+runtime/live/transport/terminal/browser gates remain open.
+
 Continuation authorization: on September 4 the user requested continued work until
 told to stop. The earlier five-hour checkpoint is not a new stop condition or a
 reduction of the seven-day browser objective. Native Range lifetime hardening is

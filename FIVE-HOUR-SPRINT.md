@@ -8,6 +8,16 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+Current integration: mixed-node highlighting adds 39 worker tests and one parent
+actual-host case; 271 focused tests pass in both trees with fresh inspected module
+images and eight-phase native host comparison. Explicit native suites pass 11,056
+/ 328 isolated files; working validation reports 12,187 passes and the same fifteen
+pending failures / 350 files. Fetch
+admission and backend response ceilings remain separate lanes, not completed XHR
+or browser acceptance claims. Pixel/order inspection resolves the apparent fixed
+edge overlap as the unfilled outline-offset gap; opaque paint is intact, so no
+production stacking or parser change is justified by this capture.
+
 On September 4, after the audited checkpoint, the user requested continued work
 until explicitly told to stop. The original 19:10 UTC deadline remains a historical
 sprint target, not the current stop condition. The overall seven-day browser scope

@@ -277,13 +277,17 @@ it("keeps a closed owner closed and does not create a replacement", () => {
 	expect(existingDomRangeOwner(tree)).toBe(owner);
 });
 
-it("skips detached text, mixed-node ranges and element-gap ranges", () => {
+it("paints mixed text ranges while skipping detached text and element gaps", () => {
 	const { tree, select, text, id } = fixture(
 		'<div id="editor" contenteditable>ABC<span id="second">DEF</span></div>',
 	);
 	const selection = select();
 	selection.setBaseAndExtent(text(), 1, tree.get(id("#second")).children[0], 2);
-	expect(rasterizeDocument(tree).metrics.selectionStatus).toBe("unsupported");
+	expect(rasterizeDocument(tree).metrics).toMatchObject({
+		selectionStatus: "painted",
+		paintedSelectionGlyphs: 4,
+		paintedCarets: 0,
+	});
 	selection.setBaseAndExtent(id(), 0, id(), 1);
 	expect(rasterizeDocument(tree).metrics.selectionStatus).toBe("unsupported");
 	const detached = tree.createText("ABC");

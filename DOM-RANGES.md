@@ -53,6 +53,11 @@ original narrower validation results intact.
 
 ## Explicit limitations
 
+Mixed-node painting continuation: `EDITABLE-SELECTION-MIXED.md` consumes existing
+shared Range geometry across text endpoints without allocating new ranges. Its
+new native captures do not change the original Range checkpoint measurements or
+establish element/control selection or runtime/browser acceptance.
+
 Current lifetime continuation: `EDITABLE-RANGE-LIFETIME.md` releases private
 synchronous collapse ranges used by native deletion/extraction and editing.
 Public ranges remain live and detach remains a no-op; the original quota is not
