@@ -19,6 +19,27 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Coordinate-inertness checkpoint: `COORDINATE-INERTNESS.md` adds a shared native
+subtree predicate with charged ancestor/first-element scans. The pending hit-test
+and mouse adapters now use the shared implicit-select-button rule; eight injected
+coordinate regressions fail before those corrections and pass afterward. The
+21 new core tests and 11 added adapter cases have distinct evidence scopes:
+custom select descendants are not yet rendered, so injected native boxes/targets
+do not prove custom-picker presentation or physical input. Expanded checks pass
+262 / nine files; full native validation passes 9,052 / 249 files. The isolated
+core patch passes 6,281 / 188 available files and 66 focused checks / two files.
+Types/builds and changed-file lint pass in both trees. Only the owned predicate,
+new core suite and checkpoint documents are committed; corrections in the four
+pre-existing pending coordinate files remain in the worktree. An import audit
+finds 29 pending modules in that closure. Next promote rendering/style prerequisites
+in independently validated slices, then coordinate routing with its dependencies;
+do not mistake this core commit for completed coordinate integration. Custom
+select layout/pickers, modal/flat-tree inertness, multiple selection and broader
+runtime/browser compatibility remain open. No gated probe ran, the denied SafeJS
+probe remains unrun, and the full seven-day goal stays active.
+
+### Previous select-keyboard core checkpoint
+
 Select-keyboard core checkpoint: `SELECT-KEYBOARD-CORE.md` promotes the pending
 navigation/typeahead helpers with a focused committed-keyboard adapter, label
 helper and capability export. User keyboard choices now refresh selectedcontent

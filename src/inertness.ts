@@ -5,6 +5,7 @@ const firstElements = new WeakMap<Readonly<DocumentNode>, number | null>();
 export function isInertRoot(
 	tree: DocumentTree,
 	node: Readonly<DocumentNode>,
+	charge?: () => void,
 ): boolean {
 	if (Object.hasOwn(node.attributes, "inert")) return true;
 	if (node.tagName !== "button" || node.parent === null) return false;
@@ -14,6 +15,7 @@ export function isInertRoot(
 	if (first === undefined) {
 		first = null;
 		for (const child of parent.children) {
+			charge?.();
 			if (tree.get(child).kind !== "element") continue;
 			first = child;
 			break;
@@ -21,4 +23,19 @@ export function isInertRoot(
 		firstElements.set(parent, first);
 	}
 	return first === node.id;
+}
+
+export function isInertSubtree(
+	tree: DocumentTree,
+	id: number,
+	charge?: () => void,
+): boolean {
+	let current: number | null = id;
+	while (current !== null) {
+		charge?.();
+		const node = tree.get(current);
+		if (isInertRoot(tree, node, charge)) return true;
+		current = node.parent;
+	}
+	return false;
 }

@@ -548,6 +548,19 @@ physical/held-key and task timing, foreign content, framesets, quirks layout and
 cross-owner runtime observation remain unfinished. No gated probe ran; the
 denied SafeJS probe remains unrun and independent acceptance gates remain open.
 
+September 4 coordinate-inertness checkpoint: `COORDINATE-INERTNESS.md` records
+the shared charged subtree predicate and focused fixes in the pending coordinate
+adapters. Eight injected native regressions fail before the fixes; 21 new core
+cases and 11 adapter cases pass. Full native checks pass 9,052 / 249 files;
+the isolated core commit tree passes 6,281 / 188 available files. Expanded checks
+pass 262 / nine files, isolated focused checks 66 / two files; types/builds and
+changed-file lint pass in both trees. Coordinate adapters remain pending, with
+29 untracked source modules in their import closure; they are not bundled into
+the core predicate commit. Next promote rendering/style prerequisites in bounded
+slices, then complete coordinate integration and actual custom-select layout.
+Injected boxes/targets are not presentation or physical-input evidence. All
+independent live/runtime/TTY/socket gates and the full browser scope remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
