@@ -1,5 +1,10 @@
 # Compatibility and playground acceptance ledger
 
+September 4 paint acceptance continuation: `POSITIONED-PAINT-ACCEPTANCE.md` adds
+nineteen native opaque-pixel, root-structure, paint-order and hit-target checks.
+The apparent overlap is an unfilled outline gap, not a corrected production
+stacking defect. No full CSS or external/runtime acceptance gate is inferred.
+
 September 4 mixed selection continuation: `EDITABLE-SELECTION-MIXED.md` maps
 bounded editable ranges with text endpoints across multiple source nodes, checking
 protected intermediate content and retaining source paint order. Native keyboard

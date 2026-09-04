@@ -8,6 +8,11 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+Nineteen native paint/order/hit regressions now protect the independently verified
+outline-gap behavior without changing production rendering. Both focused suites
+pass 182 / five files; POSITIONED-PAINT-ACCEPTANCE.md distinguishes this tests-only
+checkpoint from the earlier full native runs. Network budget integration continues.
+
 Current integration: mixed-node highlighting adds 39 worker tests and one parent
 actual-host case; 271 focused tests pass in both trees with fresh inspected module
 images and eight-phase native host comparison. Explicit native suites pass 11,056

@@ -1,5 +1,9 @@
 # Native mixed-node editable selection
 
+Acceptance continuation: POSITIONED-PAINT-ACCEPTANCE.md now integrates the nineteen
+independent pixel/order/hit tests as a separate tests-only checkpoint. Original
+mixed-selection counts and images below are unchanged; no renderer fix was needed.
+
 September 4, 2026. Native highlighting now follows a shared Range whose text
 endpoints are in different nodes inside one focused editable root. This extends
 EDITABLE-SELECTION.md without changing raster paint order, Range geometry, editing

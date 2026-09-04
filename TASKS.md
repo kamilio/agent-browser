@@ -19,6 +19,14 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Positioned-paint acceptance checkpoint: `POSITIONED-PAINT-ACCEPTANCE.md` integrates
+nineteen native pixel/order/hit regressions from the independent outline-gap review.
+Both focused runs pass 182 / five files; strict checks and scoped Biome pass. No
+production rendering/parser change is justified or made. The prior full native
+counts remain historical; this new explicit test joins the next combined run.
+Network budget admission and backend response ceilings remain ongoing work, not
+completed XHR or closed external/runtime gates.
+
 Mixed-node highlight continuation: `EDITABLE-SELECTION-MIXED.md` maps text-endpoint
 ranges across inline/block descendants while checking protected intermediate nodes.
 Thirty-nine worker tests plus one actual-host replacement/cancellation/scroll case

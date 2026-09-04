@@ -7,6 +7,11 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+The resolved outline-gap review now has nineteen integrated native paint/order/hit
+regressions: `POSITIONED-PAINT-ACCEPTANCE.md`. Both focused runs pass 182 tests;
+production rendering is unchanged and the prior full counts are not relabeled.
+Network budget integration continues under the user's until-stopped instruction.
+
 Mixed-node text-endpoint highlighting now composes with native keyboard replacement
 and scoped Range cleanup. `EDITABLE-SELECTION-MIXED.md` records native tests and
 fresh inspected images; explicit native validation passes 11,056 / 328 isolated
