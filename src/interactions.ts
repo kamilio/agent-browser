@@ -14,6 +14,7 @@ import {
 	setControlChecked,
 	setControlCheckedState,
 } from "./controls.js";
+import { documentFiles } from "./document-files.js";
 import { documentBaseTarget, documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -74,6 +75,7 @@ export function documentInteractions(tree: DocumentTree): DocumentInteractions {
 }
 
 export class DocumentInteractions {
+	readonly files;
 	readonly events: DocumentEvents;
 	readonly forms: DocumentForms;
 	readonly focus: DocumentFocus;
@@ -87,6 +89,7 @@ export class DocumentInteractions {
 		eventLimits: Partial<EventLimits> = {},
 	) {
 		this.events = new DocumentEvents(tree, eventLimits, { window: true });
+		this.files = documentFiles(tree);
 		this.forms = new DocumentForms(tree, this.events);
 		this.focus = new DocumentFocus(tree, this.events);
 		this.keyboard = new DocumentKeyboard(

@@ -1,4 +1,5 @@
 import { formControls, selectOptions } from "./controls.js";
+import { existingDocumentFiles } from "./document-files.js";
 import type { ControlState, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import {
@@ -237,6 +238,7 @@ export class DocumentForms {
 				}
 			}
 			for (const item of plan) this.tree.clearControl(item.id, item.fields);
+			existingDocumentFiles(this.tree)?.resetForm(reference);
 			return result(true, false, false, resetControls);
 		} finally {
 			this.resetting.delete(form.id);

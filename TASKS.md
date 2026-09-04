@@ -19,6 +19,18 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native file-selection checkpoint: `FILE-SELECTION.md` connects one document owner
+to required-file validation, safe fakepath getters, silent guest clearing,
+accepted reset and fresh post-submit serialization. Sixteen parent tests cover
+the integrated paths; focused runs pass 188 / eight files. Authorized full native
+validation passes 10,106 / 294 isolated files; working validation reports 11,237
+passes and the same fifteen pending positioning/capability/onload failures / 316
+files. Types/builds, strict test checks and scoped formatting/lint pass.
+The default submission
+limit remains 1 MiB, and File/FileList, chooser/painting and production upload
+CLI/host wiring remain open. Parallel workers now own authenticated upload-server
+and private CLI-client wiring; no gated probe ran.
+
 Native positioning checkpoint: `ABSOLUTE-FIXED-LAYOUT.md` integrates bounded
 absolute/fixed layout, static fallback, shared paint/hit geometry and offsets.
 Seven reproduced fixed-target root-scroll failures are fixed; nine parent tests

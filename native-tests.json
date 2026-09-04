@@ -1,4 +1,7 @@
 [
+  "src/control-files.test.ts",
+  "src/node-upload-client.test.ts",
+  "src/file-selection-integration.test.ts",
   "src/out-of-flow-positioning.test.ts",
   "src/static-positioning.test.ts",
   "src/positioning-integration.test.ts",

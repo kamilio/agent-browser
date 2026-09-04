@@ -10,6 +10,7 @@ import {
 	selectOptions,
 	selectedOptions,
 } from "./controls.js";
+import { existingDocumentFiles } from "./document-files.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import type { FormSubmissionOptions } from "./forms.js";
@@ -153,7 +154,9 @@ export function controlValidity(
 	} else if (required && node.tagName === "input" && type === "checkbox")
 		flags.valueMissing = !controlChecked(tree, id);
 	else if (required && node.tagName === "input" && type === "file")
-		flags.valueMissing = !options.files?.get(id)?.length;
+		flags.valueMissing = !(options.files === undefined
+			? existingDocumentFiles(tree)?.selectionMetadata(id).length
+			: options.files.get(id)?.length);
 	else if (required && node.tagName === "select") {
 		const selected = selectedOptions(tree, id);
 		const first = selectOptions(tree, id)[0];

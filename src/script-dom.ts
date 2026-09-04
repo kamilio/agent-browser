@@ -16,6 +16,7 @@ import {
 	documentHead,
 	setDocumentBody,
 } from "./document-elements.js";
+import { existingDocumentFiles } from "./document-files.js";
 import { documentImages } from "./document-images.js";
 import { NodeRelations } from "./node-relations.js";
 import {
@@ -1331,6 +1332,7 @@ export class ScriptDom {
 					"File input values can only be cleared",
 					"InvalidStateError",
 				);
+			existingDocumentFiles(this.tree)?.clear(id);
 			this.tree.clearControl(id, ["value"]);
 			return;
 		}

@@ -10,6 +10,7 @@ import {
 	optionValue,
 	selectedOptions,
 } from "./controls.js";
+import { existingDocumentFiles } from "./document-files.js";
 import { documentBaseTarget, documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -338,7 +339,9 @@ export function prepareFormSubmission(
 		tree,
 		form.id,
 		submitter?.id,
-		options,
+		options.files === undefined
+			? { ...options, files: existingDocumentFiles(tree)?.filesForSubmission() }
+			: options,
 		maxEntries,
 		maxBytes,
 		method === "POST" && enctype === "multipart/form-data",

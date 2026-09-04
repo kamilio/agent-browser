@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 file-selection continuation: `FILE-SELECTION.md` integrates document-
+owned files with live validity, safe value getters, accepted reset and post-submit
+serialization. Native metadata reads do not copy file bytes; detached getters
+and empty value setters retain correct ownership. Production upload CLI/host
+wiring, File/FileList, chooser/painting and external acceptance remain open.
+
 September 4 positioning continuation: `ABSOLUTE-FIXED-LAYOUT.md` adds bounded
 absolute/fixed block layout, physical insets and hypothetical static fallback,
 with shared geometry/raster/hit testing, offsets and fixed-target root-scroll

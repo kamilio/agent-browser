@@ -7,6 +7,11 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+File selection now shares native form/validity/reset state; `FILE-SELECTION.md`
+records the bounded owner and focused integration evidence. Separate workers
+handle upload server dispatch and private CLI-client wiring before any upload
+command acceptance claim.
+
 The native absolute/fixed integration now passes 10,036 isolated native tests;
 working validation retains fourteen newly obsolete pending expectations plus
 the known onload failure. `ABSOLUTE-FIXED-LAYOUT.md` records current captures,

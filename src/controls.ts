@@ -1,4 +1,5 @@
 import { textareaDefaultValue } from "./control-defaults.js";
+import { existingDocumentFiles } from "./document-files.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { validNumberValue } from "./input-number.js";
@@ -326,7 +327,10 @@ export function controlValue(tree: DocumentTree, id: number): string {
 			"\n",
 		);
 	const type = inputType(node);
-	if (node.tagName === "input" && type === "file") return "";
+	if (node.tagName === "input" && type === "file") {
+		const selected = existingDocumentFiles(tree)?.selectionMetadata(id)[0];
+		return selected ? `C:\\fakepath\\${selected.name}` : "";
+	}
 	const fallback =
 		type === "checkbox" || type === "radio"
 			? "on"
