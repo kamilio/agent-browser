@@ -19,6 +19,14 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native textarea Up/Down now follows shared visual rows, retains the preferred
+column through short lines and supports anchored Shift movement. Reentrant
+same-offset pointer resets survive caret notification. `TEXTAREA-VERTICAL-NAVIGATION.md`
+records 100 new cases, passing 1,027 / thirty-two-file focused suites in both trees,
+scoped static/build checks and sixteen native capture comparisons. Both manifests
+retain 379 entries. Following-row affinity, logical Home/End, stateless widget
+scrolling and all original browser/runtime/live gates remain explicit limitations.
+
 Focused native controls now extend from their owned anchor on captured Shift-click,
 including reverse selections and handler changes to live modifiers. Atomic owner
 publication avoids an intermediate caret. `CONTROL-SHIFT-SELECTION.md` records

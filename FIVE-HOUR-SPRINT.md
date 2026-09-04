@@ -8,6 +8,13 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation adds native textarea visual-row Up/Down, preferred
+column retention, Shift selection and reentrant pointer-reset protection.
+`TEXTAREA-VERTICAL-NAVIGATION.md` records 100 new cases, passing 1,027 /
+thirty-two-file focused suites in both trees, scoped checks and sixteen native
+capture comparisons. General affinity, visual Home/End, persistent scrolling
+and the original full-suite/browser/runtime/live gates remain outstanding.
+
 The until-stopped continuation now includes focused-control Shift-click selection
 with captured modifiers and atomic owner state. `CONTROL-SHIFT-SELECTION.md`
 records 80 new cases, passing 816 / twenty-six-file focused suites in both trees,

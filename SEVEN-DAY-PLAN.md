@@ -7,6 +7,13 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native textarea vertical keys now share painted visual-row geometry, retain a
+preferred column and preserve Shift anchors. `TEXTAREA-VERTICAL-NAVIGATION.md`
+records 100 new cases, passing 1,027 / thirty-two-file focused suites in both trees,
+types/builds/scoped checks and sixteen native capture comparisons. Both manifests
+retain 379 entries. General affinity, visual Home/End, persistent widget scrolling
+and the original full-suite/browser/runtime/live gates remain open.
+
 Focused control Shift-click now extends the native anchor using captured event
 modifiers and one atomic owner publication. `CONTROL-SHIFT-SELECTION.md` records
 80 new cases, passing 816 / twenty-six-file focused suites in both trees, passing

@@ -1,5 +1,7 @@
 import { isSubmitButton } from "./button-type.js";
 import { lengthApplies, parseLengthLimit } from "./control-length.js";
+import { moveControlText } from "./control-text-layout.js";
+import { controlTextState } from "./control-text-state.js";
 import {
 	controlValue,
 	formControls,
@@ -108,6 +110,14 @@ export class DocumentKeyboard {
 	private readonly unregisterChange: () => void;
 	private readonly unregisterClose: () => void;
 	private caretOwner: ReturnType<typeof nativeControlCaret> | undefined;
+	private verticalGeneration = 0;
+	private verticalCaret:
+		| {
+				record: ReturnType<ReturnType<typeof nativeControlCaret>["selection"]>;
+				fingerprint: string;
+				horizontal: number;
+		  }
+		| undefined;
 	constructor(
 		private readonly tree: DocumentTree,
 		private readonly events: DocumentEvents,
@@ -128,6 +138,13 @@ export class DocumentKeyboard {
 			() => this.focusGeneration,
 		);
 		this.unregisterChange = tree.onChange((change) => {
+			if (
+				change.kind === "focus" ||
+				change.kind === "remove" ||
+				(change.target === this.verticalCaret?.record.id &&
+					["attribute", "control", "text"].includes(change.kind))
+			)
+				this.clearVerticalCaret();
 			if (change.kind === "focus") {
 				this.focusGeneration++;
 				this.clearSpaceActivation();
@@ -148,6 +165,7 @@ export class DocumentKeyboard {
 		this.closed = true;
 		const caret = this.caretOwner;
 		this.caretOwner = undefined;
+		this.clearVerticalCaret();
 		this.keys.clear();
 		this.typeahead.reset();
 		this.unregisterChange();
@@ -164,6 +182,11 @@ export class DocumentKeyboard {
 		this.tree.clearKeyboardActivation();
 	}
 
+	private clearVerticalCaret() {
+		this.verticalCaret = undefined;
+		this.verticalGeneration++;
+	}
+
 	private ensureOpen() {
 		if (this.closed || this.events.metrics().closed)
 			throw new AgentBrowserError("closed", "Document keyboard is closed");
@@ -172,6 +195,7 @@ export class DocumentKeyboard {
 	}
 
 	collapseEnd(id: number) {
+		this.clearVerticalCaret();
 		this.controlCaret().collapse(id);
 	}
 
@@ -195,6 +219,7 @@ export class DocumentKeyboard {
 					"invalid-input",
 					"Invalid control caret boundary",
 				);
+		this.clearVerticalCaret();
 		this.controlCaret().select(id, anchor, offset);
 	}
 
@@ -458,6 +483,7 @@ export class DocumentKeyboard {
 						key.key.toLowerCase() === "a"
 					) {
 						const caret = this.selection(id);
+						this.clearVerticalCaret();
 						this.controlCaret().move(caret, 0, caret.value.length);
 					}
 				} else if (node.tagName === "select") {
@@ -474,6 +500,16 @@ export class DocumentKeyboard {
 				) {
 					this.editable(false);
 					this.moveCaret(id, key);
+				} else if (
+					node.tagName === "textarea" &&
+					["ArrowUp", "ArrowDown"].includes(key.key)
+				) {
+					if (focusGeneration !== this.focusGeneration)
+						throw new AgentBrowserError(
+							"not-actionable",
+							"Focus changed during textarea key dispatch",
+						);
+					this.moveVerticalCaret(id, key);
 				} else if (key.key === "Enter") {
 					if (node.tagName === "textarea")
 						canceled = !(yield* this.edit(id, "\n", "insertLineBreak", null));
@@ -678,6 +714,7 @@ export class DocumentKeyboard {
 		inputType: string,
 		data: string | null,
 	): EventAction<boolean> {
+		this.clearVerticalCaret();
 		if (this.editable() !== id)
 			throw new AgentBrowserError(
 				"not-actionable",
@@ -720,6 +757,7 @@ export class DocumentKeyboard {
 	}
 
 	private moveCaret(id: number, key: Key) {
+		this.clearVerticalCaret();
 		const caret = this.selection(id);
 		const start = Math.min(caret.anchor, caret.position);
 		const end = Math.max(caret.anchor, caret.position);
@@ -749,6 +787,46 @@ export class DocumentKeyboard {
 			key.shift ? caret.anchor : position,
 			position,
 		);
+	}
+
+	private moveVerticalCaret(id: number, key: Key) {
+		const previous = this.verticalCaret;
+		this.clearVerticalCaret();
+		const generation = this.verticalGeneration;
+		const state = controlTextState(this.tree, id);
+		if (!state || state.kind !== "textarea" || !state.control.focused) return;
+		const selection = state.control.selection;
+		if (!selection) return;
+		const caret = previous ? this.caretOwner?.selection(id) : undefined;
+		const destination = moveControlText(
+			{
+				kind: state.kind,
+				text: state.control.text,
+				fontSize: state.control.fontSize,
+				columns: state.columns,
+				rows: state.rows,
+				placeholder: state.control.placeholder,
+				selection,
+			},
+			key.key === "ArrowUp" ? "up" : "down",
+			previous &&
+				previous.record === caret &&
+				previous.fingerprint === state.fingerprint
+				? previous.horizontal
+				: undefined,
+		);
+		if (!destination) return;
+		const record = this.controlCaret().select(
+			id,
+			key.shift ? selection.anchor : destination.offset,
+			destination.offset,
+		);
+		if (generation === this.verticalGeneration)
+			this.verticalCaret = {
+				record,
+				fingerprint: state.fingerprint,
+				horizontal: destination.horizontal,
+			};
 	}
 
 	private result(canceled: boolean): KeyboardResult {

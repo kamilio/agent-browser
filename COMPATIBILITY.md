@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 textarea-arrow continuation: `TEXTAREA-VERTICAL-NAVIGATION.md` adds
+bounded shared visual-row movement, preferred-column retention and Shift anchors.
+The 100 new cases and 1,027 / thirty-two-file focused suites pass in both trees;
+sixteen native captures preserve value/geometry and match both builds. General
+affinity, visual Home/End, persistent widget scrolling and all original runtime,
+live-browser and full-suite gates remain open.
+
 September 4 focused Shift-click continuation: `CONTROL-SHIFT-SELECTION.md` extends
 native control anchors from captured primary-event modifiers without provisional
 end-caret state. The 80 new cases and 816 / twenty-six-file focused suites pass

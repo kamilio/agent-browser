@@ -397,3 +397,44 @@ export function hitControlText(
 	}
 	return bestOffset;
 }
+
+export function moveControlText(
+	input: ControlTextLayoutInput,
+	direction: "up" | "down",
+	preferredHorizontal?: number,
+): Readonly<{ offset: number; horizontal: number }> | undefined {
+	const checked = checkedInput(input);
+	if (direction !== "up" && direction !== "down")
+		invalid("Invalid control text navigation direction");
+	if (
+		preferredHorizontal !== undefined &&
+		(!Number.isFinite(preferredHorizontal) ||
+			preferredHorizontal < 0 ||
+			preferredHorizontal > 4096)
+	)
+		invalid("Invalid control text preferred horizontal");
+	if (checked.kind !== "textarea" || !checked.selection) return;
+	const { stops, eligible } = controlTextGeometry(checked, true);
+	if (!eligible) return;
+	if (checked.placeholder) return Object.freeze({ offset: 0, horizontal: 0 });
+	const canonical = new Map<number, HitStop>();
+	for (const stop of stops) canonical.set(stop.offset, stop);
+	const source = canonical.get(checked.selection.focus);
+	if (!source) return;
+	const horizontal = preferredHorizontal ?? source.horizontal;
+	const row = source.row + (direction === "up" ? -1 : 1);
+	let offset = direction === "up" ? 0 : checked.text.length;
+	let distance = Number.POSITIVE_INFINITY;
+	for (const stop of canonical.values()) {
+		if (stop.row !== row) continue;
+		const nextDistance = Math.abs(horizontal - stop.horizontal);
+		if (
+			nextDistance < distance ||
+			(nextDistance === distance && stop.offset > offset)
+		) {
+			offset = stop.offset;
+			distance = nextDistance;
+		}
+	}
+	return Object.freeze({ offset, horizontal });
+}
