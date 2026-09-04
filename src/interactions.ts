@@ -1,5 +1,6 @@
 import { buttonType } from "./button-type.js";
 import { prepareControlFill } from "./control-fill.js";
+import { editableFillHost } from "./editable-fill.js";
 import {
 	controlChecked,
 	fillTextControl,
@@ -140,8 +141,16 @@ export class DocumentInteractions {
 		return runEventAction(this.events, this.fillAction(reference, value));
 	}
 
-	fillAsync(reference: string, value: string): Promise<InteractionResult> {
-		return runEventActionAsync(this.events, this.fillAction(reference, value));
+	fillAsync(
+		reference: string,
+		value: string,
+		signal?: AbortSignal,
+	): Promise<InteractionResult> {
+		return runEventActionAsync(
+			this.events,
+			this.fillAction(reference, value),
+			signal,
+		);
 	}
 
 	private *fillAction(
@@ -150,6 +159,12 @@ export class DocumentInteractions {
 	): EventAction<InteractionResult> {
 		const node = this.actionable(reference);
 		const prepared = prepareControlFill(this.tree, reference, value);
+		if (prepared.editableHost !== undefined)
+			return yield* this.fillEditableAction(
+				reference,
+				value,
+				prepared.editableHost,
+			);
 		if ((yield* this.focus.focusAction(reference)) !== node.id)
 			throw new AgentBrowserError(
 				"not-actionable",
@@ -190,6 +205,54 @@ export class DocumentInteractions {
 		yield {
 			target: node.id,
 			event: new BrowserInputEvent("input", value, "insertReplacementText"),
+		};
+		return this.result(reference, false);
+	}
+
+	private *fillEditableAction(
+		reference: string,
+		value: string,
+		host: number,
+	): EventAction<InteractionResult> {
+		if ((yield* this.focus.focusAction(this.tree.reference(host))) !== host)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Focus changed before editable fill",
+			);
+		const target = this.actionable(reference);
+		if (
+			editableFillHost(this.tree, target.id) !== host ||
+			this.focus.active() !== host
+		)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Editable target changed during focus",
+			);
+		const contents = Array.from(
+			this.tree.walk(target.id),
+			(entry) => entry.node,
+		);
+		const inputType = value ? "insertText" : "deleteContentBackward";
+		const data = value || null;
+		const allowed = yield {
+			target: host,
+			event: new BrowserInputEvent("beforeinput", data, inputType, true),
+		};
+		if (!allowed) return this.result(reference, true);
+		this.actionable(reference);
+		if (
+			this.focus.active() !== host ||
+			editableFillHost(this.tree, target.id) !== host ||
+			contents.some((node) => this.tree.get(node.id) !== node)
+		)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Editable target changed during beforeinput",
+			);
+		this.tree.setTextContent(target.id, value);
+		yield {
+			target: host,
+			event: new BrowserInputEvent("input", data, inputType),
 		};
 		return this.result(reference, false);
 	}

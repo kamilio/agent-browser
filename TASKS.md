@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Editable-fill checkpoint: `EDITABLE-FILL.md` adds real native/command text
+replacement for editable containers and descendants, with root focus, cancelable
+input, guarded DOM replacement, mutation publication and async/command abort.
+All 49 final new tests fail on prior HEAD; three cases also reproduced incorrect
+event semantics during implementation. Focused runs pass 303 / eight files;
+types/builds, strict checking and six-file lint pass in both trees. Authorized
+full native runs pass 9,686 / 276 isolated files; working validation reports
+10,831 passes and the unchanged pending Window-onload assertion failure / 298
+files. Four isolated native command captures show literal replacement, cancellation
+and clearing with stable geometry. Selection/caret, rich keyboard editing and
+runtime/browser gates remain open. A pre-wrap capture exposed an existing formatting
+gap; successful captures use pre-line explicitly. The user's five-hour parallel
+sprint is tracked in `FIVE-HOUR-SPRINT.md`, ending approximately 19:10 UTC on
+September 4. The browser goal is unchanged; no gated probe ran and the denied
+SafeJS probe remains unrun.
+
+### Previous editable-region checkpoint
+
 Editable-region checkpoint: `EDITABLE-FOCUS.md` adds shared contenteditable state,
 root-editor native focusability and page-facing contentEditable/isContentEditable
 properties. Inheritance, false islands, explicit tabindex, focus indication,

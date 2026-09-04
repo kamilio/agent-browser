@@ -1647,7 +1647,7 @@ export class BrowserCommandHost {
 			async (page, target) => {
 				const actions = page.interactions;
 				if (invocation.command === "fill") {
-					const interaction = await actions.fillAsync(target, args[1]);
+					const interaction = await actions.fillAsync(target, args[1], signal);
 					if (!options.submit) return interaction;
 					if (interaction.defaultPrevented) return { interaction };
 					const result = await browser.press(tabId, "Enter", { signal });

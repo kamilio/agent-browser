@@ -1,5 +1,14 @@
 # Compatibility and playground acceptance ledger
 
+September 4 editable-fill continuation: `EDITABLE-FILL.md` enables native/command
+literal replacement of editable contents with editing-root input events, cancellation,
+mutation ownership, stale-target guards and forwarded abort signals. Inspected
+isolated command captures show actual text replacement and clearing, not just
+state properties. Range/Selection, caret, rich keyboard editing, target ranges,
+composition, clipboard, pre-wrap rendering and full browser/runtime acceptance
+remain open. The accelerated five-hour plan does not reduce those requirements.
+No gated probe ran; the denied SafeJS probe remains unrun.
+
 September 4 editable-region continuation: `EDITABLE-FOCUS.md` adds native root-
 editor focusability and shared contenteditable inheritance, indication, keyboard
 scroll protection and contentEditable/isContentEditable bindings. Attribute and

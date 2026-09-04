@@ -9,6 +9,7 @@ import { AgentBrowserError } from "./errors.js";
 import { sanitizeCalendarInput } from "./input-calendar.js";
 import { validNumberValue } from "./input-number.js";
 import { sanitizeRangeInput } from "./input-range.js";
+import { editableFillHost } from "./editable-fill.js";
 
 function calendarControl(node: Readonly<DocumentNode>): boolean {
 	return (
@@ -50,11 +51,27 @@ export function prepareControlFill(
 		validateTextControl(tree, reference, value);
 		return { node, type, value, direct: false };
 	}
-	if (!isFillableControl(node))
+	if (!isFillableControl(node)) {
+		const editableHost = editableFillHost(tree, node.id);
+		if (editableHost !== null) {
+			if (value.length > tree.limits.maxTextCodeUnits)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Editable fill text limit exceeded",
+				);
+			return {
+				node,
+				type: "contenteditable",
+				value,
+				direct: false,
+				editableHost,
+			};
+		}
 		throw new AgentBrowserError(
 			"not-actionable",
-			"Expected a text, number, calendar or range control",
+			"Expected a text, number, calendar or range control, or a contenteditable element",
 		);
+	}
 	if (isControlDisabled(tree, node.id))
 		throw new AgentBrowserError("not-actionable", "Control is disabled");
 	if (isFillReadOnly(node))

@@ -19,6 +19,7 @@ import { resolveVisualTarget } from "./generated-controls.js";
 import { AgentBrowserError } from "./errors.js";
 import type { SessionPage } from "./session.js";
 import { resolveBrowserTarget } from "./target-locator.js";
+import { editableFillHost } from "./editable-fill.js";
 
 export type WaitingAction =
 	| { kind: "click" }
@@ -67,10 +68,13 @@ function ready(page: ActionPage, reference: string, action: WaitingAction) {
 	);
 	const node = status.node;
 	if (action.kind === "fill") {
-		if (!isFillableControl(node))
+		if (
+			!isFillableControl(node) &&
+			editableFillHost(page.document, node.id) === null
+		)
 			throw new AgentBrowserError(
 				"not-actionable",
-				"Expected a text, number, calendar or range control",
+				"Expected a text, number, calendar or range control, or a contenteditable element",
 			);
 		if (status.blocked) return false;
 		if (isFillReadOnly(node)) return false;

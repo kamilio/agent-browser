@@ -5,6 +5,14 @@ approximately 17:42 UTC. Work in `~/project/agent-browser`; use focused atomic
 commits without pushes. The original 72-hour window is superseded as a schedule,
 not treated as proof of completion.
 
+## Accelerated execution window
+
+On September 4 at approximately 14:10 UTC the user authorized up to twenty
+subagents and stated that five hours remain. `FIVE-HOUR-SPRINT.md` records the
+parallel integration plan and an approximate 19:10 UTC September 4 deadline.
+This updates execution priority, not the required browser outcome or acceptance
+scope. Historical checkpoints below retain their original evidence and dates.
+
 ## Unchanged outcome
 
 Build the native TypeScript terminal/agent browser requested in `TASKS.md`: fast,
@@ -1242,6 +1250,20 @@ Window-onload assertion failure / 297 files. Actual content editing and active-p
 options, scrolling and synchronous guest callbacks remain next. No gated probe
 ran; the denied SafeJS probe remains unrun. Preserve historical evidence and
 unrelated pending work; the seven-day goal stays active.
+
+September 4 editable-fill continuation: `EDITABLE-FILL.md` adds actual native
+editable-container/descendant replacement, editing-root input events, cancellation,
+stale-write protection and async command abort. All 49 final new cases fail on
+isolated prior HEAD; focused runs pass 303 / eight files in both trees. Types/builds,
+strict checking and six-file lint pass. Authorized full native runs pass 9,686 /
+276 isolated files; working validation reports 10,831 passes and the unchanged
+pending Window-onload assertion failure / 298 files. Four inspected isolated
+captures show replacement, cancellation and clearing at unchanged geometry.
+An initial pre-wrap fixture exposed an existing formatting limitation; successful
+capture evidence uses pre-line, not a disguised pre-wrap pass. The new five-hour
+parallel sprint preserves the full browser goal, pending work and historical
+evidence. Selection, rich editing and all original runtime/browser gates stay open;
+no gated probe ran and the denied SafeJS probe remains unrun.
 
 ## Execution-control note
 
