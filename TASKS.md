@@ -19,6 +19,18 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Selection highlight checkpoint: `EDITABLE-SELECTION.md` paints bounded same-text
+focused editable selections through the existing glyph order. Native Shift+Arrow,
+replacement, canceled input, terminal carets and fixed/root scrolling compose in
+actual-host tests. Ten fresh module captures and combined before/after selection
+frames were inspected; only selected backgrounds change in the eleven-phase
+comparison. Focused validation passes 209 / ten files; types/builds, strict checks
+and scoped formatting pass. Explicit native suites pass 11,007 / 326 isolated
+files; working validation reports 12,138 passes with the same fifteen pending
+failures / 348 files. Mixed-node/control selection, complex editing and original
+runtime/live/transport/terminal acceptance gates remain open. All eight distinct
+workers/reviewers are closed after delivery; no twenty-agent concurrency claim.
+
 Terminal caret checkpoint: `EDITABLE-CARET-BREAKS.md` paints exact same-source
 preserved-break endpoints through the existing prior-glyph paint position. Focused
 tests pass 177 / nine files; types/builds, strict checks and scoped Biome pass.

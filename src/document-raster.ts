@@ -20,6 +20,12 @@ import {
 	paintEditableCaret,
 	prepareEditableCaret,
 } from "./editable-caret.js";
+import {
+	type EditableSelectionStatus,
+	editableSelectionLimits,
+	paintEditableSelection,
+	prepareEditableSelection,
+} from "./editable-selection.js";
 import { AgentBrowserError } from "./errors.js";
 import { activeFocus } from "./focus.js";
 import { resolveVisualTarget } from "./generated-controls.js";
@@ -79,6 +85,12 @@ export interface DocumentRaster {
 		skippedCarets: number;
 		caretStatus: EditableCaretStatus;
 		caretWork: number;
+		paintedSelectionGlyphs: number;
+		clippedSelectionGlyphs: number;
+		selectionPixels: number;
+		selectionStatus: EditableSelectionStatus;
+		selectionWork: number;
+		selectionGeometryWork: number;
 	}>;
 }
 export const documentRasterLimits = Object.freeze({ maxWork: 32_000_000 });
@@ -240,6 +252,12 @@ function paintDocumentLayout(
 		skippedCarets: 0,
 		caretStatus: "absent" as EditableCaretStatus,
 		caretWork: 0,
+		paintedSelectionGlyphs: 0,
+		clippedSelectionGlyphs: 0,
+		selectionPixels: 0,
+		selectionStatus: "absent" as EditableSelectionStatus,
+		selectionWork: 0,
+		selectionGeometryWork: 0,
 	};
 	const charge = (units = 1) => {
 		metrics.work += units;
@@ -259,6 +277,11 @@ function paintDocumentLayout(
 	);
 	const images = new Map(
 		layout.text.horizontal.images.map((entry) => [entry.id, entry]),
+	);
+	const selection = prepareEditableSelection(
+		tree,
+		layout,
+		Math.min(maxWork, editableSelectionLimits.maxWork),
 	);
 	const drawBackground = (
 		originX: number,
@@ -569,6 +592,7 @@ function paintDocumentLayout(
 			continue;
 		}
 		if (item.kind === "glyph") {
+			paintEditableSelection(selection, item.glyph, image, clip, charge);
 			paintGlyph(item.glyph, item.contentY);
 			paintEditableCaret(caret, item.glyph, image, clip, charge);
 			continue;
@@ -619,6 +643,13 @@ function paintDocumentLayout(
 	}
 	if (caret.status === "ready") caret.status = "unsupported";
 	metrics.caretStatus = caret.status;
+	metrics.selectionStatus =
+		selection.status === "ready" ? "unsupported" : selection.status;
+	metrics.selectionWork = selection.work;
+	metrics.selectionGeometryWork = selection.geometryWork;
+	metrics.paintedSelectionGlyphs = selection.paintedGlyphs;
+	metrics.clippedSelectionGlyphs = selection.clippedGlyphs;
+	metrics.selectionPixels = selection.pixels;
 	metrics.caretWork = caret.work;
 	metrics.paintedCarets = Number(caret.status === "painted");
 	metrics.clippedCarets = Number(caret.status === "clipped");

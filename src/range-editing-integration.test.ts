@@ -149,3 +149,55 @@ it("preserves Range identity and immutable geometry across rich paragraph split 
 	expect(split.y).toBe(original.y + 10);
 	expect(Object.isFrozen(original)).toBe(true);
 });
+
+it("paints keyboard selection, preserves canceled replacement and returns to a terminal caret", async () => {
+	const { host, page, editor, selection } = await fixture(true);
+	await host.execute(["fill", "#editor", "Alpha\nBeta"]);
+	for (let step = 0; step < 4; step++)
+		await host.execute(["press", "Shift+ArrowLeft"]);
+	const selectedRange = selection.getRangeAt(0);
+	expect(selection.toString()).toBe("Beta");
+	const crop = { element: page.document.reference(editor) };
+	const selected = rasterizeDocument(page.document, crop);
+	expect(selected.metrics).toMatchObject({
+		paintedCarets: 0,
+		paintedSelectionGlyphs: 4,
+		selectionPixels: 192,
+		selectionStatus: "painted",
+	});
+	documentScroll(page.document).to(0, 80);
+	expect(rasterizeDocument(page.document, crop).image.pixels).toEqual(
+		selected.image.pixels,
+	);
+	page.interactions.events.addEventListener(
+		editor,
+		"beforeinput",
+		(event) => event.preventDefault(),
+		{ once: true },
+	);
+	expect((await host.execute(["press", "x"])).data).toMatchObject({
+		keyboard: { canceled: true },
+	});
+	expect(selection.getRangeAt(0)).toBe(selectedRange);
+	expect(rasterizeDocument(page.document, crop).image.pixels).toEqual(
+		selected.image.pixels,
+	);
+	await host.execute(["type", "!"]);
+	expect(selection.getRangeAt(0)).toBe(selectedRange);
+	expect(page.document.textContent(editor)).toBe("Alpha\n!");
+	expect(rasterizeDocument(page.document, crop).metrics).toMatchObject({
+		paintedCarets: 1,
+		paintedSelectionGlyphs: 0,
+		selectionStatus: "collapsed",
+		selectionGeometryWork: 0,
+	});
+	const beforeEnter = rangeBoundingClientRect(selectedRange);
+	await host.execute(["press", "Enter"]);
+	expect(rangeBoundingClientRect(selectedRange).y).toBe(beforeEnter.y + 10);
+	expect(rasterizeDocument(page.document, crop).metrics).toMatchObject({
+		paintedCarets: 1,
+		paintedSelectionGlyphs: 0,
+		selectionGeometryWork: 0,
+	});
+	expect(documentScroll(page.document).get()).toEqual({ x: 0, y: 80 });
+});

@@ -154,7 +154,7 @@ it("reads live selection-only changes when reusing a prepared layout", () => {
 	expect(after.image.pixels).not.toEqual(before.image.pixels);
 });
 
-it("skips noncollapsed selection without changing baseline pixels", () => {
+it("skips the caret for expanded selection while painting bounded highlights", () => {
 	const { tree, focus, text } = fixture();
 	focus();
 	const before = rasterizeDocument(tree);
@@ -163,8 +163,13 @@ it("skips noncollapsed selection without changing baseline pixels", () => {
 	expect(after.metrics).toMatchObject({
 		caretStatus: "noncollapsed",
 		skippedCarets: 1,
+		paintedCarets: 0,
+		paintedSelectionGlyphs: 2,
+		selectionStatus: "painted",
 	});
-	expect(after.image.pixels).toEqual(before.image.pixels);
+	expect(after.image.pixels).not.toEqual(before.image.pixels);
+	documentInteractions(tree).focus.focus(null);
+	expect(rasterizeDocument(tree).image.pixels).toEqual(before.image.pixels);
 });
 
 it.each(["hidden", "inert", "contenteditable"])(

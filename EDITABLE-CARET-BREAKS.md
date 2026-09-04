@@ -62,6 +62,8 @@ result and original captures remain at /tmp/agent-browser-caret-terminal-break.Y
 Its two deliberately untouched parent expectation failures are not relabelled as
 a green combined run. Prior glyph-edge captures retain their original meaning.
 
-Selection highlighting is a separate delivered lane awaiting integration. Original
+Selection highlighting is now integrated separately in EDITABLE-SELECTION.md,
+with fresh native captures and regression evidence; this checkpoint's measurements
+are unchanged. Original
 SafeJS, live-site, socket, real TTY/PTY, framework/playground and full visual-editing
 gates remain open in TASKS.md. No such probe ran or dependency was added.

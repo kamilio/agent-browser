@@ -53,6 +53,11 @@ original narrower validation results intact.
 
 ## Explicit limitations
 
+Current highlight continuation: `EDITABLE-SELECTION.md` paints bounded same-text
+editable selection and composes with native editing and terminal caret painting.
+This does not change Range ownership or close mixed-node/control, general visual
+editing or external/runtime gates. Original checkpoint evidence remains unchanged.
+
 Current painting continuation: `EDITABLE-CARET.md` supports bounded focused
 glyph-edge carets without creating a new selection owner. Original Range evidence
 below is not rewritten as a painting run; highlights and full visual editing

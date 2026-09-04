@@ -1,5 +1,10 @@
 # Bounded native Range geometry
 
+Painting continuation: EDITABLE-CARET.md, EDITABLE-CARET-BREAKS.md and
+EDITABLE-SELECTION.md now consume the bounded shared geometry for native editable
+carets and same-text highlights. Their fresh evidence is separate; original
+geometry-only measurements and images below are not rewritten as painting runs.
+
 September 4, 2026. Native Range client rectangles now use the existing shared
 layout and source-indexed glyphs. Guarded page Range objects publish
 getClientRects/getBoundingClientRect with immutable snapshots. This is a bounded

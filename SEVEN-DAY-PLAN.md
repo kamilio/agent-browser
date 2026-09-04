@@ -7,6 +7,15 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native same-text editable selection backgrounds now compose with the shared Range,
+Shift+Arrow, replacement, caret painting and fixed/root scrolling.
+`EDITABLE-SELECTION.md` records bounds, ten inspected module captures and exact
+eleven-phase native-host comparisons. Combined explicit native validation passes
+11,007 tests / 326 isolated files; working validation retains fifteen pending
+failures with 12,138 passes / 348 files. All workers are closed. Full visual
+editing and original runtime/live/transport/terminal gates remain open; historical
+checkpoints below retain their original evidence and then-active follow-ups.
+
 Terminal plaintext Enter now has a bounded exact-source caret continuation.
 `EDITABLE-CARET-BREAKS.md` records prior-glyph ordering, unchanged shared geometry
 and fresh native captures. Empty/all-break editors and general affinity remain open.

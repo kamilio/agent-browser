@@ -80,6 +80,13 @@ blocker, prerequisite patch and later 534-test focused result at that older base
 
 ## Remaining gates
 
+Current highlighting continuation: `EDITABLE-SELECTION.md` supplies bounded
+same-text editable backgrounds through the existing source-glyph paint order.
+Its new evidence includes canceled replacement and collapse back to the caret;
+the original caret-only noncollapsed/blurred captures above retain their original
+bytes and meaning. Mixed-node/control highlighting and full visual editing remain
+open.
+
 Empty editors/rich paragraphs, terminal break-only anchors without a paint glyph,
 element-gap selections, ambiguous soft-wrap affinity, split-surrogate positions,
 shaping/bidi, selection highlights, blinking, IME and CSS caret-color are not

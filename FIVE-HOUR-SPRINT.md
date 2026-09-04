@@ -10,14 +10,14 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | Integrate selection highlighting and finish native regression review | Terminal carets pass 10,975 / 325 isolated native tests and exact pixel comparisons. |
+| Main | Selection integration and native regression review complete | Combined native tests pass 11,007 / 326 isolated files; working tree retains fifteen pending failures. |
 | DOM worker | Paragraph merging delivered; worker closed | Native merging is integrated; original paragraphs and worker evidence are preserved. |
 | Focus-bridge worker | Native provisioning/resource/revocation stress | Both deliveries are integrated natively; public/runtime limits and URL constructor blockers remain explicit. |
 | Focus delivery | Native focus/blur options, indication and scrolling | Public-contract bridge is integrated natively; released guest execution remains unverified. |
 | Cookie delivery | Cookie list/get/set/delete services | Production wiring and actual CLI tests integrated; 9,765 isolated native tests pass. |
 | White-space delivery | Native pre-wrap formatting and hanging spaces | Integrated, with fresh editable captures and 9,854 passing isolated native tests. |
 | Double-click / upload-server worker | Upload host/session delivery complete; worker closed | Native dispatch is integrated; actual socket authentication remains gated. |
-| Positioning / range-geometry worker | Bounded same-text selection highlighting delivered; worker closed | 31 new tests; parent must update one superseded no-highlight assertion. |
+| Positioning / range-geometry worker | Bounded same-text selection highlighting integrated; worker closed | 31 worker tests plus parent actual-host coverage; superseded caret assertion now checks highlights and exact blur restoration. |
 | Runtime / upload-client worker | CLI and six cross-boundary cases complete; worker closed | Actual native client/host path passes with injected transport and real private files. |
 | Playground delivery | Extraction/snapshot downloads and honest example discovery | Integrated export guards/cards pass 9,882 isolated native tests; live UI/framework gates remain open. |
 | File-selection / rendering worker | Terminal preserved-break carets delivered; worker closed | Helper-only extension and 33 native tests pass combined native validation. |

@@ -66,6 +66,11 @@ retain their original narrower results and obsolete-Space integration caveat.
 
 ## Remaining gates
 
+`EDITABLE-SELECTION.md` now paints the bounded same-text selection reached through
+native Shift+Arrow, verifies canceled input, and restores the caret on replacement.
+Fresh fixed/root-scroll captures are independent of the original keyboard-only
+measurements. Mixed-node/control selection and full visual editing remain open.
+
 `EDITABLE-CARET-BREAKS.md` adds the exact same-source terminal-break caret subset.
 Empty/all-break editors, mixed-source affinity and broader visual movement remain
 open; original keyboard measurements are not rewritten.
