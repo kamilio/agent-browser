@@ -14,8 +14,8 @@ export const viewportScrollCapabilities = Object.freeze({
 	elementScrolling: false,
 	smooth: false,
 	scrollbars: false,
-	programmaticGuestScrolling: false,
-	scrollEvents: false,
+	programmaticGuestScrolling: true,
+	scrollEvents: "coalesced-programmatic-host-task",
 	automaticClampEvents: false,
 	...viewportScrollLimits,
 });

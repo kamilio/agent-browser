@@ -1,4 +1,6 @@
 import { AgentBrowserError } from "./errors.js";
+import { documentScrollPosition } from "./document-scroll.js";
+import { PageScroll } from "./page-scroll.js";
 import { type ConsoleLimits, PageConsole } from "./page-console.js";
 import {
 	PageFetch,
@@ -41,6 +43,7 @@ export interface PageBindingOptions {
 }
 
 export interface PageBindingLifecycle extends ScriptCallbackRuntime {
+	isBusy?(): boolean;
 	fail(error?: unknown): void;
 	onConsoleCall(): void;
 }
@@ -60,6 +63,9 @@ export function pageBindingGlobalNames(
 		"clearInterval",
 		"getComputedStyle",
 		"matchMedia",
+		"scroll",
+		"scrollTo",
+		"scrollBy",
 		"requestAnimationFrame",
 		"cancelAnimationFrame",
 		"performance",
@@ -78,6 +84,7 @@ export class PageBindings {
 	readonly animationFrames: PageAnimationFrames;
 	readonly performance: object;
 	readonly media: PageMedia;
+	readonly scrolling: PageScroll;
 	readonly network?: PageFetch;
 	readonly location: ScriptLocation;
 	readonly history?: ScriptHistory;
@@ -196,8 +203,28 @@ export class PageBindings {
 				this.ensureOpen();
 				return this.media.matchMedia(...args);
 			};
+			this.scrolling = new PageScroll(
+				page.document,
+				events,
+				() => lifecycle.isBusy?.() ?? false,
+				(error) => lifecycle.fail(error),
+			);
 			this.window = context.createHostObject({
 				properties: {
+					...Object.fromEntries(
+						["scrollX", "scrollY", "pageXOffset", "pageYOffset"].map((name) => [
+							name,
+							{
+								get: () => {
+									this.ensureOpen();
+									const scroll = documentScrollPosition(page.document);
+									return name === "scrollX" || name === "pageXOffset"
+										? scroll.x
+										: scroll.y;
+								},
+							},
+						]),
+					),
 					innerWidth: {
 						get: () => {
 							this.ensureOpen();
@@ -221,6 +248,19 @@ export class PageBindings {
 						set: (value) => {
 							this.ensureOpen();
 							this.dom.eventBindings?.setHandler(windowTarget, "resize", value);
+						},
+					},
+					onscroll: {
+						get: () => {
+							this.ensureOpen();
+							return (
+								this.dom.eventBindings?.getHandler(windowTarget, "scroll") ??
+								null
+							);
+						},
+						set: (value) => {
+							this.ensureOpen();
+							this.dom.eventBindings?.setHandler(windowTarget, "scroll", value);
 						},
 					},
 					performance: {
@@ -271,6 +311,7 @@ export class PageBindings {
 				},
 				methods: {
 					...this.animationFrames.methods,
+					...this.scrolling.methods,
 					getComputedStyle,
 					matchMedia,
 					...(this.network ? { fetch: this.network.fetch } : {}),
@@ -313,6 +354,9 @@ export class PageBindings {
 				},
 				this.location,
 				this.storage,
+				(position) => {
+					void this.scrolling.methods.scrollTo(position);
+				},
 			);
 			this.console = new PageConsole(page.document, context, {
 				limits: options.consoleLimits,
@@ -349,6 +393,7 @@ export class PageBindings {
 				getComputedStyle,
 				matchMedia,
 				document: this.dom.document,
+				...this.scrolling.methods,
 				window: this.window,
 				self: this.window,
 			};
@@ -368,6 +413,7 @@ export class PageBindings {
 		this.timers?.close();
 		this.animationFrames?.close();
 		this.media?.close();
+		this.scrolling?.close();
 		this.clock.close();
 		this.network?.close();
 		this.location?.close();

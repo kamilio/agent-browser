@@ -654,6 +654,19 @@ next, not implied by native owner exports. Existing broader suites, pending work
 and historical evidence remain intact. No gated probe ran; full layout/runtime/
 site/UI compatibility and the seven-day scope remain open.
 
+September 4 page-scroll binding/lifecycle checkpoint: `PAGE-SCROLL-CORE.md`
+connects Window/root scrolling, offset getters and scroll-into-view through the
+shared native origin and coalesced document notification queue. Seventeen new
+injected-runtime tests all fail on HEAD; three lifecycle-only baseline failures
+prove active-source/callback-prefix coordination. Five unchanged suites add 173
+checks. Full native runs pass 9,359 / 257 working-tree files and 7,362 / 208 isolated
+files; focused runs pass 275 / ten and isolated 266 / ten. Both trees pass
+types/builds, strict seven-test checks and sixteen-file lint. Original bytes and
+historical reports remain intact. Coordinate hit testing, pointer/action routing
+and command capability reporting are next. Runtime/site/UI gates, nested scrolling
+and complete event-loop/layout compatibility remain open; no gated probe ran.
+The original browser scope and seven-day continuation remain active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

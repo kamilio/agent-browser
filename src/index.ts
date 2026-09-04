@@ -73,6 +73,30 @@ export {
 	viewportScrollCapabilities,
 	viewportScrollLimits,
 } from "./document-scroll.js";
+export { pageScrollCapabilities, pageScrollLimits } from "./page-scroll.js";
+export {
+	RootScroll,
+	rootScrollCapabilities,
+	rootScrollProperties,
+	type RootScrollRequest,
+	type RootScrollProperty,
+} from "./root-scroll.js";
+export {
+	DocumentElementScroll,
+	documentElementScroll,
+	elementScrollCapabilities,
+	elementScrollLimits,
+	type ElementScrollMetrics,
+	type ElementScrollLimits,
+} from "./element-scroll.js";
+export {
+	DocumentScrollIntoView,
+	documentScrollIntoView,
+	scrollIntoViewCapabilities,
+	type ScrollAlignment,
+	type ScrollIntoViewOptions,
+	type ScrollIntoViewResult,
+} from "./scroll-into-view.js";
 export {
 	DocumentElementOffsets,
 	documentElementOffsets,

@@ -18,6 +18,10 @@ import {
 } from "./document-elements.js";
 import { documentImages } from "./document-images.js";
 import { NodeRelations } from "./node-relations.js";
+import {
+	type DocumentElementOffsets,
+	documentElementOffsets,
+} from "./element-offsets.js";
 import { documentBaseUrl } from "./document-url.js";
 import {
 	documentTitle,
@@ -56,6 +60,11 @@ import { scriptFormMethods, scriptFormProperties } from "./script-form.js";
 import { ScriptValidity } from "./script-validity.js";
 import { supportsConstraintValidation } from "./form-validation.js";
 import { ScriptGeometry } from "./script-geometry.js";
+import {
+	RootScroll,
+	rootScrollProperties,
+	type RootScrollRequest,
+} from "./root-scroll.js";
 import type { ScriptLocation } from "./script-location.js";
 import { scriptMutationMethods } from "./script-mutations.js";
 import { scriptSelectBindings } from "./script-select.js";
@@ -102,7 +111,9 @@ export class ScriptDom {
 	private readonly classLists: ScriptClassLists;
 	private readonly validity: ScriptValidity;
 	private readonly geometry: ScriptGeometry;
+	private readonly rootScroll: RootScroll;
 	private readonly elementSizes: DocumentElementSizes;
+	private readonly elementOffsets: DocumentElementOffsets;
 	private readonly computedStyles: ComputedStyles;
 	private readonly capabilities = new Map<number, object>();
 	private readonly publications: ScriptNodePublications;
@@ -128,6 +139,7 @@ export class ScriptDom {
 		events?: ScriptEventOptions,
 		private readonly location?: ScriptLocation,
 		private readonly storage?: ScriptStorage,
+		scrollRequest?: RootScrollRequest,
 	) {
 		this.inheritedFamily = htmlDocumentFamily(tree);
 		this.inert =
@@ -145,7 +157,9 @@ export class ScriptDom {
 		this.datasets = new ScriptDatasets(tree, factory);
 		this.elementTraversal = new ElementTraversal(tree);
 		this.geometry = new ScriptGeometry(tree, factory, !this.inert);
+		this.rootScroll = new RootScroll(tree, scrollRequest);
 		this.elementSizes = documentElementSizes(tree);
+		this.elementOffsets = documentElementOffsets(tree);
 		this.computedStyles = new ComputedStyles(tree, factory);
 		this.relations = new NodeRelations(tree);
 		this.publications = new ScriptNodePublications(factory, () =>
@@ -448,6 +462,17 @@ export class ScriptDom {
 					setDocumentTitle(this.tree, domString(value));
 				},
 			};
+			if (this.eventBindings)
+				definition.properties.onscroll = {
+					get: () => {
+						this.read(id);
+						return this.eventBindings?.getHandler(id, "scroll") ?? null;
+					},
+					set: (value) => {
+						this.read(id);
+						this.eventBindings?.setHandler(id, "scroll", value);
+					},
+				};
 			definition.properties.forms = {
 				get: () => {
 					this.read(id);
@@ -539,6 +564,12 @@ export class ScriptDom {
 					get: () => {
 						this.read(id);
 						return this.optional(documentElement(this.tree));
+					},
+				},
+				scrollingElement: {
+					get: () => {
+						this.read(id);
+						return this.optional(this.rootScroll.element());
 					},
 				},
 			});
@@ -716,11 +747,38 @@ export class ScriptDom {
 				this.geometry.getClientRects(id);
 			definition.methods.getBoundingClientRect = () =>
 				this.geometry.getBoundingClientRect(id);
+			definition.methods.scrollIntoView = (argument) => {
+				this.read(id);
+				return this.rootScroll.intoView(id, argument);
+			};
+			for (const property of rootScrollProperties)
+				definition.properties[property] = {
+					get: () => {
+						this.read(id);
+						return this.rootScroll.get(id, property);
+					},
+					...(property === "scrollTop" || property === "scrollLeft"
+						? {
+								set: (value: unknown) => {
+									this.read(id);
+									this.rootScroll.set(id, property, value);
+								},
+							}
+						: {}),
+				};
 			for (const name of elementSizeProperties)
 				definition.properties[name] = {
 					get: () => {
 						this.read(id);
 						return this.elementSizes.get(id)[name];
+					},
+				};
+			for (const name of ["offsetTop", "offsetLeft", "offsetParent"] as const)
+				definition.properties[name] = {
+					get: () => {
+						this.read(id);
+						const value = this.elementOffsets.get(id)[name];
+						return name === "offsetParent" ? this.optional(value) : value;
 					},
 				};
 			definition.properties.style = {
@@ -924,6 +982,7 @@ export class ScriptDom {
 			geometry: this.geometry.metrics(),
 			computedStyles: this.computedStyles.metrics(),
 			elementSizes: this.elementSizes.metrics(),
+			elementOffsets: this.elementOffsets.metrics(),
 		});
 	}
 

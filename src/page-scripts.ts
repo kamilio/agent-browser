@@ -125,6 +125,8 @@ export class PageScripts {
 						context,
 						{
 							isClosed: () => this.closed,
+							isBusy: () =>
+								this.active !== undefined || this.prefixes.size !== 0,
 							startCallback: (callback, args, receiver) =>
 								this.startCallback(callback, args, receiver),
 							fail: (error) => {
@@ -304,6 +306,7 @@ export class PageScripts {
 			options.signal?.removeEventListener("abort", abort);
 			if (this.active === controller) this.active = undefined;
 			if (runtime.closed && !this.closedValue) await this.close();
+			this.bindings?.scrolling.wake();
 		}
 	}
 
@@ -371,6 +374,7 @@ export class PageScripts {
 			this.prefixes.delete(prefix);
 			releasePrefix();
 			if (resultFinished) this.pending.delete(slot);
+			this.bindings?.scrolling.wake();
 		};
 		const complete = () => {
 			resultFinished = true;
@@ -476,6 +480,7 @@ export class PageScripts {
 						timers: this.bindings.timers.metrics(),
 						animationFrames: this.bindings.animationFrames.metrics(),
 						media: this.bindings.media.metrics(),
+						scrolling: this.bindings.scrolling.metrics(),
 					}
 				: {}),
 		};

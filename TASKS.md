@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Page scrolling binding/lifecycle checkpoint: `PAGE-SCROLL-CORE.md` connects
+Window/root scrolling, readonly offset getters, visible-overflow extents and
+scroll-into-view to the shared origin. Document notifications coalesce and bubble
+to Window; source evaluation and callback prefixes defer delivery until explicit
+wake boundaries. All 17 new injected-runtime cases fail on prior HEAD; a baseline
+with bindings/metrics but without lifecycle hooks reproduces three ordering
+failures. Five unchanged suites add 173 checks. Full native runs pass 9,359 / 257
+working-tree files and 7,362 / 208 isolated files; focused checks pass 275 / ten
+and isolated 266 / ten. Types/builds, strict seven-test checks and sixteen-file
+lint pass in both trees. Original source/tests and historical reports remain
+intact; unrelated base64/onload/hit-testing changes stay pending. Next integrate
+coordinate hit testing, pointer/action routing and command capability reporting.
+Native host-object/runtime injection is not SafeJS or physical-input acceptance.
+Nested scrolling/clipping, scrollend/rendering-loop timing, quirks/RTL/full layout
+and all independent site/runtime/socket/TTY gates remain open. No gated probe ran;
+the denied SafeJS probe remains unrun and the full seven-day goal stays active.
+
+### Previous viewport scrolling/offset core checkpoint
+
 Viewport scrolling/offset core checkpoint: `SCROLL-CORE.md` connects the bounded
 native origin to client geometry and viewport captures while preserving document
 boxes, offsets, explicit clips and element crops. It fixes relative targets
