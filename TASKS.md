@@ -19,6 +19,17 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native double-click checkpoint: `DOUBLE-CLICK.md` connects actual CLI/host/session
+dispatch to two guarded click defaults and one dblclick event. Own document
+navigation reports interruption without replay; unsupported defaults remain
+explicit. Three parent cases cover fixed scrolling and hidden-file reset/submit
+integration. Focused runs pass 135 / six files; types/builds, strict test checks,
+scoped formatting/lint and two inspected native command captures pass. Authorized
+full native validation passes 10,216 / 298 isolated files; working validation
+reports 11,347 passes and the same fifteen pending assertion failures / 320 files.
+Visible
+file controls, word selection, runtime/live/socket/terminal gates remain open.
+
 Native file-selection checkpoint: `FILE-SELECTION.md` connects one document owner
 to required-file validation, safe fakepath getters, silent guest clearing,
 accepted reset and fresh post-submit serialization. Sixteen parent tests cover

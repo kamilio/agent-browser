@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 double-click continuation: `DOUBLE-CLICK.md` implements queued primary-
+button CLI/host/session dispatch, both defaults and explicit navigation stop,
+without replay or a third activation. Native fixed-button captures show two
+clicks and one dblclick at unchanged scrolled geometry. Word selection, drag,
+trusted input and original live/runtime/terminal acceptance remain open.
+
 September 4 file-selection continuation: `FILE-SELECTION.md` integrates document-
 owned files with live validity, safe value getters, accepted reset and post-submit
 serialization. Native metadata reads do not copy file bytes; detached getters

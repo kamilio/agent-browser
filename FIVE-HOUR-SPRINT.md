@@ -10,7 +10,7 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | File-selection integration, then ready double-click/runtime patches | File owner/forms integration passes 10,106 isolated native tests; pending failures remain explicit. |
+| Main | Finalize double-click, then integrate the ready runtime selector patch | Double-click passes 10,216 isolated native tests; working pending failures remain explicit. |
 | DOM worker | Owned Enter/Shift+Enter and paragraph insertion | Initial editing integration passes 9,951 isolated native tests; paragraph follow-up is active. |
 | Focus-bridge worker | Public nested-operation page focus/blur | URL constructor blockers remain explicit; do not publish internal factories as standard globals. |
 | Focus delivery | Native focus/blur options, indication and scrolling | Integrated with an additional parent reentrancy fix; synchronous guest methods remain open. |

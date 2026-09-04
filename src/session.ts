@@ -156,6 +156,16 @@ export interface SessionClickResult {
 	form?: Omit<FormRequestResult, "submission">;
 }
 
+export interface SessionDoubleClickResult {
+	reference: string;
+	clicks: readonly SessionClickResult[];
+	doubleClick?: MouseResult;
+	canceled: boolean;
+	completed: boolean;
+	interrupted?: "navigation";
+	navigation?: NavigationResult;
+}
+
 export interface SessionHoverResult {
 	reference: string;
 	mouse: MouseResult;
@@ -958,6 +968,139 @@ export class BrowserSession {
 				"stale-reference",
 				"Action document was replaced",
 			);
+		return this.clickDefault(id, interaction, mouse, options);
+	}
+
+	async dblclick(
+		id: string,
+		reference: string,
+		options: NavigationOptions = {},
+	): Promise<SessionDoubleClickResult> {
+		this.validateNavigationOptions(options);
+		const tab = this.tab(id);
+		const previousJob = tab.job;
+		const page = this.page(id);
+		const checkOwnership = () => {
+			if (options.signal?.aborted || tab.job !== previousJob)
+				throw new AgentBrowserError("aborted", "Double-click interrupted");
+			if (this.page(id) !== page)
+				throw new AgentBrowserError(
+					"stale-reference",
+					"Double-click document was replaced",
+				);
+		};
+		checkOwnership();
+		const status = page.interactions.actionability(reference);
+		const generated = resolveVisualTarget(page.document, reference).generated;
+		if (
+			status.blocked ||
+			clickTargetAriaDisabled(
+				page.document,
+				status.node.id,
+				generated !== undefined,
+			)
+		)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Double-click target is hidden, inert or disabled",
+			);
+		await this.scrollIntoView(
+			id,
+			reference,
+			{ block: "nearest", inline: "nearest" },
+			options,
+		);
+		checkOwnership();
+		if (page.interactions.actionability(reference).blocked)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Double-click target became hidden, inert or disabled during scrolling",
+			);
+		const target = generated
+			? findGeneratedClickPoint(page.document, generated.ref)
+			: findClickPoint(page.document, status.node.id);
+		if (!target.point)
+			throw new AgentBrowserError(
+				"not-actionable",
+				`Double-click target is not actionable: ${target.blocked}`,
+			);
+		const clicks: SessionClickResult[] = [];
+		const navigationStop = new Error(
+			"Double-click ended after document navigation",
+		);
+		let navigation: NavigationResult | undefined;
+		try {
+			const result = await page.interactions.mouse.doubleClickTargetAsync(
+				reference,
+				target.point,
+				{
+					signal: options.signal,
+					checkOwnership,
+					afterClick: async (mouse) => {
+						checkOwnership();
+						if (!mouse.interaction)
+							throw new AgentBrowserError(
+								"not-actionable",
+								"Target did not receive a click",
+							);
+						const click = await this.clickDefault(
+							id,
+							{ ...mouse.interaction, reference },
+							mouse,
+							options,
+						);
+						clicks.push(click);
+						if (
+							click.interaction.defaultAction &&
+							!click.navigation &&
+							!click.form
+						)
+							throw new AgentBrowserError(
+								"unsupported",
+								"Double-click stopped: pending click default action is not implemented",
+							);
+						if (click.navigation) {
+							navigation = click.navigation;
+							if (click.navigation.kind === "document") {
+								if (options.signal?.aborted)
+									throw new AgentBrowserError(
+										"aborted",
+										"Double-click interrupted",
+									);
+								throw navigationStop;
+							}
+						}
+					},
+				},
+			);
+			checkOwnership();
+			return {
+				reference,
+				clicks,
+				doubleClick: result.doubleClick,
+				canceled: result.canceled,
+				completed: result.doubleClick !== undefined,
+				...(navigation ? { navigation } : {}),
+			};
+		} catch (error) {
+			if (error !== navigationStop) throw error;
+			return {
+				reference,
+				clicks,
+				canceled: clicks.some((click) => click.mouse?.canceled),
+				completed: false,
+				interrupted: "navigation",
+				navigation,
+			};
+		}
+	}
+
+	private async clickDefault(
+		id: string,
+		interaction: InteractionResult,
+		mouse: MouseResult,
+		options: NavigationOptions,
+	): Promise<SessionClickResult> {
 		const action = interaction.defaultAction;
 		if (action?.kind === "submit")
 			return {

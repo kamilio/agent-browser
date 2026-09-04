@@ -159,6 +159,7 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 	"tab-select": ["expected-key"],
 	"tab-list": [],
 	click: [],
+	dblclick: [],
 	hover: [],
 	fill: ["submit"],
 	type: [],
@@ -452,15 +453,26 @@ export class BrowserCommandHost {
 			rangeKeyboard: rangeKeyboardCapabilities,
 			actionWaiting: {
 				partial: true,
-				commands: ["click", "hover", "fill", "select", "check", "uncheck"],
+				commands: [
+					"click",
+					"dblclick",
+					"hover",
+					"fill",
+					"select",
+					"check",
+					"uncheck",
+				],
 				intervalMs: 25,
 				maxPolls: 2048,
 				stableLayout: false,
 				hitTesting: true,
-				hitTestCommands: ["click", "hover"],
+				hitTestCommands: ["click", "dblclick", "hover"],
 				replayActions: false,
 			},
-			clickActionability: clickActionabilityCapabilities,
+			clickActionability: {
+				...clickActionabilityCapabilities,
+				commands: ["click", "dblclick"],
+			},
 			hoverActionability: hoverActionabilityCapabilities,
 			snapshotSearch: {
 				partial: true,
@@ -558,7 +570,7 @@ export class BrowserCommandHost {
 			elementScrolling: elementScrollCapabilities,
 			scrollIntoView: scrollIntoViewCapabilities,
 			hitTesting: hitTestCapabilities,
-			mouse: mouseCapabilities,
+			mouse: { ...mouseCapabilities, doubleClick: true },
 			keyboard: {
 				partial: true,
 				activation: keyboardActivationCapabilities,
@@ -1007,7 +1019,7 @@ export class BrowserCommandHost {
 				"Command timeout must be between 1 and 300000 milliseconds",
 			);
 		if (
-			invocation.command === "click" &&
+			(invocation.command === "click" || invocation.command === "dblclick") &&
 			invocation.arguments[1] !== undefined &&
 			invocation.arguments[1] !== "left"
 		)
@@ -1680,6 +1692,8 @@ export class BrowserCommandHost {
 					return actions.selectAsync(target, [args[1]]);
 				if (invocation.command === "hover")
 					return browser.hover(tabId, target, { signal });
+				if (invocation.command === "dblclick")
+					return browser.dblclick(tabId, target, { signal });
 				if (invocation.command === "click") {
 					const result = await browser.click(tabId, target, { signal });
 					if (

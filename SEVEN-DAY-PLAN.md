@@ -7,6 +7,10 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Double-click now reaches real native CLI/host/session dispatch; `DOUBLE-CLICK.md`
+records guarded defaults, no-replay navigation interruption, fixed geometry and
+the explicit lack of word-selection or released-runtime acceptance.
+
 File selection now shares native form/validity/reset state; `FILE-SELECTION.md`
 records the bounded owner and focused integration evidence. Separate workers
 handle upload server dispatch and private CLI-client wiring before any upload

@@ -125,7 +125,7 @@ it("advertises bounded hover without enabled, stable-layout or force claims", as
 			preservesHeldButtons: true,
 		},
 		actionWaiting: {
-			hitTestCommands: ["click", "hover"],
+			hitTestCommands: ["click", "dblclick", "hover"],
 			replayActions: false,
 		},
 	});

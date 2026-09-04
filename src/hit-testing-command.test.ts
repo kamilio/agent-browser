@@ -62,7 +62,7 @@ it("advertises honest hit-testing capabilities and returns reference stacks with
 			},
 			actionWaiting: {
 				hitTesting: true,
-				hitTestCommands: ["click", "hover"],
+				hitTestCommands: ["click", "dblclick", "hover"],
 				stableLayout: false,
 			},
 			clickActionability: {

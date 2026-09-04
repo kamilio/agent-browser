@@ -81,7 +81,8 @@ Parent evidence uses file-selection-integration-* in the native-validation cache
 
 The production CLI-to-authenticated-transfer-to-host command path is a separate
 active integration lane. Guest File/FileList/DataTransfer, a native file chooser,
-file-control painting and full upload UI semantics remain absent. Snapshots keep
+visible file-control layout/painting and full upload UI semantics remain absent.
+Snapshots keep
 file inputs protected rather than publishing their selected value. No live-site,
 socket, real TTY/PTY, SafeJS or released-runtime probe ran. Native private temporary
 files and injected transports do not establish those gates.

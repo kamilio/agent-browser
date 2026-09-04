@@ -1,4 +1,8 @@
 [
+  "src/double-click.test.ts",
+  "src/double-click-command.test.ts",
+  "src/double-click-production.test.ts",
+  "src/cli-double-click.test.ts",
   "src/control-files.test.ts",
   "src/node-upload-client.test.ts",
   "src/file-selection-integration.test.ts",

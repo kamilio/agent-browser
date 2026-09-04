@@ -1,9 +1,15 @@
-import type { DocumentTree } from "./document.js";
 import {
 	type ClickPoint,
 	clickTargetAriaDisabled,
 	clickTargetContains,
 } from "./click-target.js";
+import { documentScroll, documentScrollPosition } from "./document-scroll.js";
+import type { DocumentTree } from "./document.js";
+import {
+	type DoubleClickOptions,
+	type DoubleClickResult,
+	runDoubleClick,
+} from "./double-click.js";
 import { AgentBrowserError } from "./errors.js";
 import {
 	type EventAction,
@@ -11,11 +17,10 @@ import {
 	runEventActionAsync,
 } from "./event-actions.js";
 import { BrowserEvent, type DocumentEvents } from "./events.js";
-import { documentHitTesting } from "./hit-testing.js";
-import { documentScroll, documentScrollPosition } from "./document-scroll.js";
-import type { DefaultActionIntent, InteractionResult } from "./interactions.js";
-import { isInertRoot } from "./inertness.js";
 import { resolveVisualTarget } from "./generated-controls.js";
+import { documentHitTesting } from "./hit-testing.js";
+import { isInertRoot } from "./inertness.js";
+import type { DefaultActionIntent, InteractionResult } from "./interactions.js";
 
 export type MouseButton = "left" | "middle" | "right";
 export interface MouseModifiers {
@@ -288,6 +293,107 @@ export class DocumentMouse {
 			signal,
 		);
 	}
+	async doubleClickTargetAsync(
+		reference: string,
+		point: ClickPoint,
+		options: DoubleClickOptions = {},
+	): Promise<DoubleClickResult> {
+		const clickPoint = { x: point.x, y: point.y };
+		const checkOwnership = () => {
+			if (options.signal?.aborted)
+				throw new AgentBrowserError("aborted", "Double-click aborted");
+			this.ensureOpen();
+			options.checkOwnership?.();
+		};
+		checkOwnership();
+		this.beginAction();
+		let ownsGesture = false;
+		try {
+			if (this.pressed.size)
+				throw new AgentBrowserError(
+					"not-actionable",
+					"Double-click requires no held mouse buttons",
+				);
+			const target = this.hit(clickPoint.x, clickPoint.y);
+			this.requireClickTarget(reference, target, clickPoint);
+			const checkTarget = () => {
+				checkOwnership();
+				const hit = this.hit(clickPoint.x, clickPoint.y);
+				this.requireClickTarget(reference, hit, clickPoint);
+				if (hit !== target)
+					throw new AgentBrowserError(
+						"not-actionable",
+						"Double-click hit target changed",
+					);
+			};
+			ownsGesture = true;
+			const run = (action: EventAction<MouseResult>) =>
+				runEventActionAsync(
+					this.events,
+					this.checkActionOwnership(action, checkOwnership),
+					options.signal,
+				);
+			return await runDoubleClick(
+				{
+					check: checkTarget,
+					checkOwnership,
+					click: (detail) =>
+						run(
+							this.clickTargetAction(
+								reference,
+								clickPoint,
+								options.signal,
+								detail,
+								checkTarget,
+							),
+						),
+					finish: () => run(this.doubleClickAction(target)),
+				},
+				options,
+			);
+		} finally {
+			if (ownsGesture) {
+				this.pressed.delete("left");
+				this.pressedGenerated.delete("left");
+				this.publishPointerState();
+			}
+			this.busy = false;
+		}
+	}
+	private *checkActionOwnership(
+		action: EventAction<MouseResult>,
+		check: () => void,
+	): EventAction<MouseResult> {
+		try {
+			check();
+			let step = action.next();
+			while (!step.done) {
+				let allowed: boolean;
+				try {
+					check();
+					allowed = yield step.value;
+					check();
+				} catch (error) {
+					step = action.throw(error);
+					continue;
+				}
+				step = action.next(allowed);
+			}
+			check();
+			return step.value;
+		} finally {
+			action.return(undefined as never);
+		}
+	}
+	private *doubleClickAction(target: number | null): EventAction<MouseResult> {
+		if (target === null)
+			throw new AgentBrowserError("not-actionable", "No double-click target");
+		const allowed = yield {
+			target,
+			event: this.event("dblclick", 0, { detail: 2 }),
+		};
+		return this.result(target, !allowed);
+	}
 	hoverTargetAsync(reference: string, point: ClickPoint, signal?: AbortSignal) {
 		return runEventActionAsync(
 			this.events,
@@ -328,6 +434,8 @@ export class DocumentMouse {
 		reference: string,
 		point: ClickPoint,
 		signal?: AbortSignal,
+		detail = 1,
+		checkTarget?: () => void,
 	): EventAction<MouseResult> {
 		if (signal?.aborted)
 			throw new AgentBrowserError("aborted", "Targeted click aborted");
@@ -343,9 +451,17 @@ export class DocumentMouse {
 			point,
 		);
 		try {
-			yield* this.moveAction(point.x, point.y);
-			yield* this.downAction("left", reference);
-			return yield* this.upAction("left", reference);
+			if (detail === 1) yield* this.moveAction(point.x, point.y);
+			const down = yield* this.downAction(
+				"left",
+				reference,
+				detail,
+				checkTarget,
+			);
+			const up = yield* this.upAction("left", reference, detail, checkTarget);
+			return checkTarget
+				? { ...up, canceled: down.canceled || up.canceled }
+				: up;
 		} finally {
 			this.pressed.delete("left");
 			this.pressedGenerated.delete("left");
@@ -421,7 +537,7 @@ export class DocumentMouse {
 		if (this.closed || this.events.metrics().closed)
 			throw new AgentBrowserError("closed", "Document mouse is closed");
 	}
-	private *guard(action: EventAction<MouseResult>): EventAction<MouseResult> {
+	private beginAction() {
 		this.ensureOpen();
 		if (this.busy)
 			throw new AgentBrowserError(
@@ -434,6 +550,9 @@ export class DocumentMouse {
 				"Mouse action limit exceeded",
 			);
 		this.busy = true;
+	}
+	private *guard(action: EventAction<MouseResult>): EventAction<MouseResult> {
+		this.beginAction();
 		try {
 			return yield* action;
 		} finally {
@@ -662,6 +781,8 @@ export class DocumentMouse {
 	private *downAction(
 		button: MouseButton,
 		expectedReference?: string,
+		detail = 1,
+		checkTarget?: () => void,
 	): EventAction<MouseResult> {
 		this.validateButton(button);
 		if (this.pressed.has(button))
@@ -679,6 +800,7 @@ export class DocumentMouse {
 			if (expectedReference !== undefined)
 				this.requireClickTarget(expectedReference, target);
 		}
+		checkTarget?.();
 		this.pressed.set(button, target);
 		const generated = this.generatedAt(target);
 		if (generated) this.pressedGenerated.set(button, generated);
@@ -687,8 +809,9 @@ export class DocumentMouse {
 		if (target === null) return this.result(null);
 		const allowed = yield {
 			target,
-			event: this.event("mousedown", buttons[button].button, { detail: 1 }),
+			event: this.event("mousedown", buttons[button].button, { detail }),
 		};
+		checkTarget?.();
 		if (allowed && button === "left" && this.tree.isConnected(target))
 			yield* this.focus(
 				generated && this.generatedAt(target) === generated
@@ -706,6 +829,8 @@ export class DocumentMouse {
 	private *upAction(
 		button: MouseButton,
 		expectedReference?: string,
+		detail = 1,
+		checkTarget?: () => void,
 	): EventAction<MouseResult> {
 		this.validateButton(button);
 		const down = this.pressed.get(button);
@@ -716,12 +841,14 @@ export class DocumentMouse {
 		const target = yield* this.refreshTarget();
 		if (expectedReference !== undefined)
 			this.requireClickTarget(expectedReference, target);
+		checkTarget?.();
 		if (target === null) return this.result(null);
 		const upGenerated = this.generatedAt(target);
 		const allowed = yield {
 			target,
-			event: this.event("mouseup", buttons[button].button, { detail: 1 }),
+			event: this.event("mouseup", buttons[button].button, { detail }),
 		};
+		checkTarget?.();
 		if (
 			down === undefined ||
 			down === null ||
@@ -765,7 +892,7 @@ export class DocumentMouse {
 				: undefined;
 		if (generated && this.generatedAt(target) !== generated)
 			return this.result(target, !allowed);
-		const click = this.event("click", 0, { detail: 1 });
+		const click = this.event("click", 0, { detail });
 		const interaction = yield* this.activate(
 			generated ?? this.tree.reference(common),
 			click,
