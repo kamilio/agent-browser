@@ -615,6 +615,20 @@ then scrolling and coordinate adapters. Draft-profile CSSOM is not runtime or li
 browser parity. Clipping, full positioning, float/clear layout, custom select and
 all independent acceptance gates remain open. The seven-day goal stays active.
 
+September 4 flex style/main-axis core checkpoint: `FLEX-CORE.md` promotes flex
+cascade/CSSOM, inherited/font-relative values and the bounded measured main-axis
+solver with its unchanged 161-case suite. All 33 new integration cases pass;
+31 fail on pre-integration HEAD plus helpers. Final native checks pass 9,281 / 254
+working-tree files and 6,672 / 194 isolated-core files; focused checks pass 390 /
+six and isolated 282 / five. Types/builds, strict changed-test checks and ten-file
+lint pass in both trees. Source bytes and historical evidence are preserved.
+Current-draft safe/unsafe normal alignment remains accepted; the initial contrary
+assumption was corrected rather than shipped. The isolated capability profile
+does not claim page flexbox. Next integrate intrinsic/atomic-inline measurement,
+flex reflow/placement and shared paint ordering, then relative positioning,
+scrolling and coordinate adapters. Full browser scope, custom select presentation
+and all independent runtime/site/UI acceptance gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

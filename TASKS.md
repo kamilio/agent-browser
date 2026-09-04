@@ -19,6 +19,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Flex style/main-axis core checkpoint: `FLEX-CORE.md` promotes twelve flex
+longhands, three shorthand owners, inherited/font-relative computation and the
+bounded measured main-axis solver. Its existing 161-case suite is preserved;
+33 new integration cases pass, with 31 failing on pre-integration HEAD plus the
+helpers. Full native checks pass 9,281 / 254 working-tree files and 6,672 / 194
+isolated-core files; focused checks pass 390 / six files and isolated 282 / five.
+Types/builds, strict changed-test checks and ten-file lint pass in both trees.
+Original source worktree bytes remain intact. Current-draft safe/unsafe normal
+alignment is intentionally retained after withdrawing an outdated rejection
+assumption; no false parser fix or weakened existing test is committed. The
+isolated capability profile leaves page/nested/column/inline flex layout false:
+measured main-axis resolution is not page flexbox. Next integrate intrinsic
+measurement, atomic-inline sizing and flex reflow/placement with shared paint
+ordering, then relative positioning, scrolling and coordinate routing. Custom
+select/pickers, full layout compatibility, pending CSSOM slots and independent
+runtime/site/UI gates remain open. No gated probe ran; the denied SafeJS probe
+remains unrun and the full seven-day goal stays active.
+
+### Previous flow cascade/CSSOM core checkpoint
+
 Flow cascade/CSSOM core checkpoint: `FLOW-CORE.md` promotes six flow longhands,
 overflow shorthand ownership, live computed reads and formatting recovery.
 Explicit defaults render normally; unsupported winning values still reject

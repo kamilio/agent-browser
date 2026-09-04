@@ -7,6 +7,14 @@ import {
 } from "./css-background.js";
 import { normalizeCssColor } from "./css-color.js";
 import {
+	cssFlexProperties,
+	isCssFlexProperty,
+	parseFlexValue,
+	flexShorthandComponents,
+	parseFlexDeclarations,
+	serializeFlexShorthand,
+} from "./css-flex.js";
+import {
 	cssFlowProperties,
 	isCssFlowProperty,
 	parseFlowValue,
@@ -74,6 +82,10 @@ const lengths = new Set([
 	...sides.map((side) => `padding-${side}`),
 ]);
 export const inlineProperties = [
+	...cssFlexProperties,
+	"flex",
+	"flex-flow",
+	"gap",
 	...cssFlowProperties,
 	"overflow",
 	...borderWidthProperties,
@@ -173,6 +185,7 @@ function normalize(name: string, source: string): string | undefined {
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;
 	if (isCssFlowProperty(name)) return parseFlowValue(name, value);
+	if (isCssFlexProperty(name)) return parseFlexValue(name, value);
 	if (name.startsWith("border-")) {
 		if (name.endsWith("-width")) return normalizeBorderWidth(value);
 		if (name.endsWith("-style")) return normalizeBorderStyle(value);
@@ -253,6 +266,14 @@ export function expandDeclaration(
 			value: entry.value,
 			important,
 		}));
+	if (flexShorthandComponents(name))
+		return (
+			parseFlexDeclarations(
+				name,
+				source.toLowerCase().replace(/[\t\n\f\r ]+/g, " "),
+			)?.map(({ property, value }) => ({ name: property, value, important })) ??
+			[]
+		);
 	if (isBorderShorthand(name))
 		return (
 			parseBorderShorthand(
@@ -341,6 +362,8 @@ export function parseInlineDeclarations(
 }
 
 export function inlineDeclarationComponents(name: string): readonly string[] {
+	const flex = flexShorthandComponents(name);
+	if (flex) return flex;
 	if (name === "overflow") return ["overflow-x", "overflow-y"];
 	if (name === "all")
 		return parseCssDeclarations(
@@ -405,6 +428,21 @@ export function propertyValue(
 	const found = propertyDeclarations(entries, name).filter(
 		(entry) => !entry.pending,
 	);
+	const flex = flexShorthandComponents(name);
+	if (flex) {
+		if (
+			found.length !== flex.length ||
+			found.some((entry) => entry.important !== found[0]?.important)
+		)
+			return "";
+		return serializeFlexShorthand(
+			name,
+			flex.map(
+				(property) =>
+					found.find((entry) => entry.name === property)?.value ?? "",
+			),
+		);
+	}
 	if (name === "overflow") {
 		if (found.length !== 2 || found[0].important !== found[1].important)
 			return "";

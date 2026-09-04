@@ -1,5 +1,16 @@
 import { imageDimensionHint } from "./replaced-box.js";
 import {
+	cssFlexProperties,
+	isCssFlexProperty,
+	computeFlexStyle,
+	initialFlexStyle,
+	isFlexDisplay,
+	blockifyDisplay,
+	type CssFlexProperty,
+	type FlexStyle,
+	type FlexSpecifiedStyle,
+} from "./css-flex.js";
+import {
 	cssFlowProperties,
 	computeFlowStyle,
 	initialFlowStyle,
@@ -173,6 +184,8 @@ export class DocumentStyles {
 	private computed = new Map<number, Readonly<VisibilityStyle>>();
 	private boxSpecified = new Map<number, BoxSpecifiedStyle>();
 	private boxComputed = new Map<number, BoxStyle>();
+	private flexSpecified = new Map<number, FlexSpecifiedStyle>();
+	private flexComputed = new Map<number, FlexStyle>();
 	private flowComputed = new Map<number, FlowStyle>();
 	private textSpecified = new Map<number, TextSpecifiedStyle>();
 	private textComputed = new Map<number, TextStyle>();
@@ -309,6 +322,56 @@ export class DocumentStyles {
 		return this.flowComputed.get(id) ?? initialFlowStyle;
 	}
 
+	flex(id: number): FlexStyle {
+		this.get(id);
+		const pending: number[] = [];
+		let current = id;
+		while (!this.flexComputed.has(current)) {
+			const specified = this.flexSpecified.get(current);
+			if (!specified) {
+				this.flexComputed.set(current, initialFlexStyle);
+				break;
+			}
+			pending.push(current);
+			const parent = this.tree.get(current).parent;
+			if (parent === null || !Object.values(specified).includes("inherit"))
+				break;
+			current = parent;
+		}
+		for (const target of pending.reverse()) {
+			const specified = this.flexSpecified.get(target) ?? {};
+			const parent = this.tree.get(target).parent;
+			const values = Object.values(specified);
+			let fonts: BoxFontMetrics | undefined;
+			if (values.some((value) => lengthUsesFont(value, "em")))
+				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
+			if (values.some((value) => lengthUsesFont(value, "rem"))) {
+				const root =
+					this.tree
+						.get(this.tree.root)
+						.children.find(
+							(child) => this.tree.get(child).kind === "element",
+						) ?? this.tree.root;
+				fonts = {
+					...fonts,
+					rootFontSize: Number.parseFloat(this.text(root)["font-size"]),
+				};
+			}
+			this.flexComputed.set(
+				target,
+				computeFlexStyle(
+					specified,
+					parent === null
+						? initialFlexStyle
+						: (this.flexComputed.get(parent) ?? initialFlexStyle),
+					this.viewport,
+					fonts,
+				),
+			);
+		}
+		return this.flexComputed.get(id) ?? initialFlexStyle;
+	}
+
 	box(id: number): BoxStyle {
 		this.get(id);
 		const pending: number[] = [];
@@ -441,6 +504,7 @@ export class DocumentStyles {
 			partial: true,
 			properties: Object.freeze(["display", "visibility"]),
 			boxProperties: cssBoxProperties,
+			flexProperties: cssFlexProperties,
 			flowProperties: cssFlowProperties,
 			textProperties: cssTextProperties,
 			textFont: "Agent Mono",
@@ -463,6 +527,8 @@ export class DocumentStyles {
 		this.computed.clear();
 		this.boxSpecified.clear();
 		this.boxComputed.clear();
+		this.flexSpecified.clear();
+		this.flexComputed.clear();
 		this.flowComputed.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
@@ -504,6 +570,8 @@ export class DocumentStyles {
 		this.computed.clear();
 		this.boxSpecified.clear();
 		this.boxComputed.clear();
+		this.flexSpecified.clear();
+		this.flexComputed.clear();
 		this.flowComputed.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
@@ -733,11 +801,13 @@ export class DocumentStyles {
 			}
 		}
 		const boxSpecified = new Map<number, BoxSpecifiedStyle>();
+		const flexSpecified = new Map<number, FlexSpecifiedStyle>();
 		const flowSpecified = new Map<number, FlowSpecifiedStyle>();
 		const textSpecified = new Map<number, TextSpecifiedStyle>();
 		const paintSpecified = new Map<number, PaintSpecifiedStyle>();
 		for (const [id, properties] of winners) {
 			const specified: Partial<Record<CssBoxProperty, string>> = {};
+			const flexValues: Partial<Record<CssFlexProperty, string>> = {};
 			const flowValues: Partial<Record<CssFlowProperty, string>> = {};
 			const textValues: Partial<Record<CssTextProperty, string>> = {};
 			const paintValues: Partial<Record<CssPaintProperty, string>> = {};
@@ -745,6 +815,8 @@ export class DocumentStyles {
 				charge(1);
 				if (isCssBoxProperty(property))
 					specified[property] = winner.declaration.value;
+				if (isCssFlexProperty(property))
+					flexValues[property] = winner.declaration.value;
 				if (isCssFlowProperty(property))
 					flowValues[property] = winner.declaration.value;
 				if (isCssTextProperty(property))
@@ -754,6 +826,8 @@ export class DocumentStyles {
 			}
 			if (Object.keys(specified).length)
 				boxSpecified.set(id, Object.freeze(specified));
+			if (Object.keys(flexValues).length)
+				flexSpecified.set(id, Object.freeze(flexValues));
 			if (Object.keys(flowValues).length)
 				flowSpecified.set(id, Object.freeze(flowValues));
 			if (Object.keys(textValues).length)
@@ -762,6 +836,7 @@ export class DocumentStyles {
 				paintSpecified.set(id, Object.freeze(paintValues));
 		}
 		const computed = new Map<number, Readonly<VisibilityStyle>>();
+		const boxParentDisplay = new Map<number, string>();
 		const flowComputed = new Map<number, FlowStyle>();
 		for (const node of nodes) {
 			charge(1);
@@ -773,6 +848,14 @@ export class DocumentStyles {
 			if (display === "inherit") display = parent?.display ?? "inline";
 			else if (display === "initial" || display === "unset") display = "inline";
 			else if (display === "revert") display = userAgentDisplay(node);
+			const parentDisplay =
+				node.parent === null ? "" : (boxParentDisplay.get(node.parent) ?? "");
+			if (node.kind === "element" && isFlexDisplay(parentDisplay))
+				display = blockifyDisplay(display);
+			boxParentDisplay.set(
+				node.id,
+				display === "contents" ? parentDisplay : display,
+			);
 			let visibility =
 				properties?.get("visibility")?.declaration.value ?? "inherit";
 			if (["inherit", "unset", "revert"].includes(visibility))
@@ -804,6 +887,7 @@ export class DocumentStyles {
 		}
 		this.computed = computed;
 		this.boxSpecified = boxSpecified;
+		this.flexSpecified = flexSpecified;
 		this.flowComputed = flowComputed;
 		this.textSpecified = textSpecified;
 		this.paintSpecified = paintSpecified;

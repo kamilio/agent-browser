@@ -80,11 +80,11 @@ afterEach(() => {
 
 it("exposes live sorted longhand names, aliases and empty computed cssText", () => {
 	const { style } = fixture("#target{background-color: red}");
-	expect(style.length).toBe(49);
+	expect(style.length).toBe(61);
 	expect(
 		Array.from({ length: style.length }, (_value, index) => style[index]),
 	).toEqual(computedStyleProperties);
-	expect(style.item(0)).toBe("background-attachment");
+	expect(style.item(0)).toBe("align-content");
 	expect(style.backgroundColor).toBe("rgb(255, 0, 0)");
 	expect(style.getPropertyValue("BACKGROUND-COLOR")).toBe(
 		style.backgroundColor,
@@ -194,7 +194,7 @@ it("saved declarations empty on detach and repopulate on reattachment", () => {
 	expect(style.item(0)).toBe("");
 	tree.append(parent, id);
 	expect(style.width).toBe("200px");
-	expect(style.length).toBe(49);
+	expect(style.length).toBe(61);
 });
 
 it("returns fresh objects, not cached mutable style identity", () => {

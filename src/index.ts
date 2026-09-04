@@ -22,6 +22,17 @@ export { cssMathCapabilities, cssMathLimits } from "./css-math.js";
 export { cssVariableCapabilities, cssVariableLimits } from "./css-variables.js";
 export { borderCapabilities } from "./border-box.js";
 export { flowStyleCapabilities } from "./css-flow.js";
+export { flexStyleCapabilities } from "./css-flex.js";
+export {
+	resolveFlexLines,
+	flexLineLimits,
+	type FlexLineItemInput,
+	type FlexLineOptions,
+	type FlexLines,
+	type FlexLine,
+	type FlexLineItem,
+	type FlexJustification,
+} from "./flex-line.js";
 export {
 	capturePng,
 	capturePdf,

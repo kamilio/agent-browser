@@ -1,5 +1,12 @@
 import { parseBackgroundShorthand } from "./css-background.js";
 import {
+	cssFlexProperties,
+	isCssFlexProperty,
+	flexShorthandComponents,
+	parseFlexDeclarations,
+	type CssFlexProperty,
+} from "./css-flex.js";
+import {
 	cssFlowProperties,
 	isCssFlowProperty,
 	parseFlowDeclarations,
@@ -41,6 +48,7 @@ export type CssProperty =
 	| CssTextProperty
 	| CssPaintProperty
 	| CssFlowProperty
+	| CssFlexProperty
 	| `--${string}`;
 export interface CssDeclaration {
 	property: CssProperty;
@@ -223,7 +231,9 @@ export function parseCssDeclarations(
 			!isCssTextProperty(property) &&
 			!isCssPaintProperty(property) &&
 			!isCssFlowProperty(property) &&
-			property !== "overflow"
+			property !== "overflow" &&
+			!isCssFlexProperty(property) &&
+			!flexShorthandComponents(property)
 		) {
 			issue("unimplemented-css-property");
 			continue;
@@ -254,6 +264,11 @@ export function parseCssDeclarations(
 			declarations.push(
 				{ property: "display", value, important },
 				{ property: "visibility", value, important },
+				...cssFlexProperties.map((property) => ({
+					property,
+					value,
+					important,
+				})),
 				...cssFlowProperties.map((property) => ({
 					property,
 					value,
@@ -275,6 +290,15 @@ export function parseCssDeclarations(
 		}
 		if (isCssFlowProperty(property) || property === "overflow") {
 			const expanded = parseFlowDeclarations(property, value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((entry) => ({ ...entry, important })),
+				);
+			else issue("unimplemented-or-invalid-css-value");
+			continue;
+		}
+		if (isCssFlexProperty(property) || flexShorthandComponents(property)) {
+			const expanded = parseFlexDeclarations(property, value);
 			if (expanded)
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),

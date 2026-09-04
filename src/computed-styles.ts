@@ -4,6 +4,12 @@ import {
 } from "./css-background.js";
 import { cssBoxProperties, isCssBoxProperty } from "./css-box.js";
 import {
+	cssFlexProperties,
+	isCssFlexProperty,
+	flexShorthandComponents,
+	serializeFlexShorthand,
+} from "./css-flex.js";
+import {
 	cssFlowProperties,
 	isCssFlowProperty,
 	serializeOverflow,
@@ -27,6 +33,7 @@ import { cssVariableLimits } from "./css-variables.js";
 export const computedStyleProperties = Object.freeze(
 	[
 		...cssBoxProperties,
+		...cssFlexProperties,
 		...cssFlowProperties,
 		...cssPaintProperties,
 		...cssTextProperties,
@@ -83,6 +90,13 @@ export function resolvedStyleValue(
 		return values.join(" ");
 	}
 	const styles = documentStyles(tree);
+	if (isCssFlexProperty(name)) return styles.flex(id)[name];
+	const flex = flexShorthandComponents(name);
+	if (flex)
+		return serializeFlexShorthand(
+			name,
+			flex.map((property) => styles.flex(id)[property]),
+		);
 	if (isCssFlowProperty(name)) return styles.flow(id)[name];
 	if (name === "overflow") {
 		const flow = styles.flow(id);
@@ -223,6 +237,9 @@ export class ComputedStyles {
 			"margin",
 			"padding",
 			"background",
+			"flex",
+			"flex-flow",
+			"gap",
 			"overflow",
 		]) {
 			const property = { get: () => read(name), set: readonly };
