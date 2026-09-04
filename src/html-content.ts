@@ -1,4 +1,5 @@
 import type { DocumentTree } from "./document.js";
+import { documentMode } from "./document-mode.js";
 import { AgentBrowserError } from "./errors.js";
 import { type HtmlParseOptions, parseHtmlFragment } from "./html-parser.js";
 
@@ -123,6 +124,7 @@ function withFragment(
 			tagName: syntheticBody ? "body" : target.tagName,
 			hasFormAncestor,
 			scripting: true,
+			documentMode: documentMode(tree),
 		},
 		{ limits: tree.limits, signal: options.signal },
 	);

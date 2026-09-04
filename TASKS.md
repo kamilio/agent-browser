@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Fragment-mode checkpoint: `FRAGMENT-MODE.md` adds context document-mode inheritance
+to ordinary and html-element fragments. Native innerHTML, outerHTML and all
+adjacent insertion positions pass the context owner's mode, including detached,
+synthetic-body and template contexts. Fragment doctypes cannot override it;
+quirks table/paragraph recovery differs from no-quirks and limited-quirks. Two
+initial regressions fail before the fix; 44 new tests and 289 focused checks
+across seven files pass. Full native validation passes 8,653 / 240 files; the
+isolated owned patch passes 5,893 / 179 available files. Types, builds and
+three-file lint pass in both trees, excluding pre-existing pending work. Next
+address provisional scaffold publication timing and remaining parser/runtime
+compatibility. Full quirks layout, EOF diagnostics, modern select, foreign content
+and cross-owner observer/runtime breadth remain open. No gated probe ran; the
+denied SafeJS probe remains unrun, independent acceptance gates remain open and
+the seven-day goal stays active.
+
+### Previous parser-form checkpoint
+
 Parser-form checkpoint: `PARSER-FORMS.md` records native parser-created form-owner
 overrides for controls separated from their forms by table recovery. Shared
 collections, submission preparation, reset, host bindings and radio grouping use

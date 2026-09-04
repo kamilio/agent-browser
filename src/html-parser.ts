@@ -126,6 +126,7 @@ export interface HtmlFragmentContext {
 	tagName: string;
 	hasFormAncestor?: boolean;
 	scripting?: boolean;
+	documentMode?: DocumentMode;
 }
 
 interface FragmentContext extends HtmlFragmentContext {
@@ -160,7 +161,7 @@ export function parseHtmlFragment(
 		options,
 		context.scripting ?? true,
 		tagName === "html" ? undefined : fragmentContext,
-		tagName === "html",
+		tagName === "html" ? fragmentContext : undefined,
 	);
 	let step = steps.next();
 	while (!step.done) step = steps.next();
@@ -370,7 +371,7 @@ function* parseHtmlSteps(
 	options: HtmlParseOptions,
 	scripting: boolean,
 	fragment?: FragmentContext,
-	fragmentDocument = false,
+	fragmentDocument?: FragmentContext,
 ): Generator<ParserCheckpoint, DocumentTree, void> {
 	if (typeof source !== "string")
 		throw new AgentBrowserError("invalid-input", "Expected HTML text");
@@ -437,6 +438,8 @@ function* parseHtmlSteps(
 			setDocumentMode(tree, value);
 			if (value !== "no-quirks") issue(`${value}-layout-not-implemented`);
 		};
+		if (fragment || fragmentDocument)
+			setMode((fragment ?? fragmentDocument)?.documentMode ?? "no-quirks");
 		const missingDoctype = () => {
 			initial = false;
 			issue("missing-doctype");

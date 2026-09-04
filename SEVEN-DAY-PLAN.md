@@ -426,6 +426,19 @@ custom-element associations, EOF diagnostics, modern select and cross-owner
 observer/runtime breadth remain open. No gated probe ran; the denied SafeJS probe
 remains unrun and independent acceptance gates remain open.
 
+September 4 fragment-mode checkpoint: `FRAGMENT-MODE.md` records context-owner
+mode inheritance through standalone fragments and shared native HTML insertion.
+Ordinary and html-element fragments preserve quirks/limited-quirks modes despite
+fragment doctypes, including detached, synthetic-body and template ownership.
+Two initial regressions fail before the fix; 44 new tests and 289 focused checks
+across seven files pass. Full native validation passes 8,653 / 240 files; the
+isolated owned patch passes 5,893 / 179 available files. Types, builds and
+three-file lint pass in both trees while preserving pending work. Continue with
+provisional scaffold publication timing and remaining parser/runtime gaps. Full
+quirks layout, EOF diagnostics, modern select, foreign content and cross-owner
+observer/runtime breadth remain unfinished. No gated probe ran; the denied SafeJS
+probe remains unrun and independent acceptance gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
