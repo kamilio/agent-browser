@@ -19,6 +19,19 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native editable-keyboard checkpoint: `EDITABLE-KEYBOARD.md` integrates shared-DOM-
+selection typing, range replacement, directional deletion and logical movement.
+Fill places the caret before input. Three parent regressions cover indication
+overrides and post-edit focus round trips; the obsolete Space fixture now checks
+actual insertion and unchanged scrolling. Both focused runs pass 484 / fifteen
+files; types/builds, strict checks, formatting and scoped lint pass. Four inspected
+native command captures show replacement, canceled typing and deletion at stable
+geometry with retained text identity. Authorized full native runs pass 9,951 /
+288 isolated files; working validation reports 11,096 passes and the unchanged
+pending onload assertion failure / 310 files.
+Paragraph insertion, visual caret, composition and original browser/runtime gates
+remain open; no gated probe ran.
+
 Playground extraction checkpoint: `PLAYGROUND-EXTRACTION.md` integrates bounded
 Markdown/JSON/snapshot downloads through actual native commands, with strict
 session/document/root-scope matching, metadata and stale-read/URL cleanup. All ten

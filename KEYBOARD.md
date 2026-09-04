@@ -1,5 +1,12 @@
 # Focus and keyboard actions
 
+September 4 editable continuation: `EDITABLE-KEYBOARD.md` adds native contenteditable
+typing, directional deletion and logical movement/selection using the shared DOM
+Range owner. Fill positions that caret for subsequent typing. Cancellation,
+listener mutation, focus reentrancy, limits and command paths have native coverage;
+paragraph insertion, composition, visual caret and runtime/browser gates remain
+open. Existing form-control keyboard semantics and historical evidence remain.
+
 September 4 continuation: `ELEMENT-FOCUS.md` adds element `tabIndex`/`inert`
 reflection, shared integer-prefix parsing for tab order and inert-attribute focus
 clearing. Property values are not actionability predicates; full platform focus

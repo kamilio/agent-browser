@@ -250,6 +250,7 @@ export class DocumentInteractions {
 				"Editable target changed during beforeinput",
 			);
 		this.tree.setTextContent(target.id, value);
+		this.keyboard.collapseEditableEnd(host, target.id);
 		yield {
 			target: host,
 			event: new BrowserInputEvent("input", data, inputType),

@@ -1,4 +1,6 @@
 [
+  "src/editable-keyboard.test.ts",
+  "src/editable-keyboard-command.test.ts",
   "src/playground-extraction.test.ts",
   "src/playground-examples.test.ts",
   "src/pre-wrap.test.ts",

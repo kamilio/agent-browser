@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 editable-keyboard continuation: `EDITABLE-KEYBOARD.md` connects native
+type/press to the shared live DOM Selection, including range replacement,
+directional deletion, logical movement, cancellation and stale-write guards.
+Fill positions the caret inside its actual target. Native command captures show
+text changes, not a visual caret or full browser editing. Paragraph insertion,
+IME/clipboard, visual movement and released-runtime/live gates remain open.
+
 September 4 playground extraction continuation: `PLAYGROUND-EXTRACTION.md` adds
 bounded Markdown/JSON/snapshot UI downloads backed by native commands, metadata,
 scope/session matching, stale-read guards and cleanup. All ten example cards,

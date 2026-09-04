@@ -187,13 +187,12 @@ it.each([false, true])(
 );
 
 it("keeps editing navigation keys from scrolling the viewport", () => {
-	const { tree, actions, ref } = fixture();
+	const { tree, actions, ref, id } = fixture();
 	actions.focus.focus(ref("#editor"));
 	for (const key of ["ArrowDown", "PageDown", "End"])
 		actions.keyboard.press(key);
-	expect(() => actions.keyboard.press("Space")).toThrow(
-		/editing.*not implemented/,
-	);
+	expect(actions.keyboard.press("Space").canceled).toBe(false);
+	expect(tree.textContent(id("#editor"))).toBe("Editable ");
 	expect(documentScroll(tree).get()).toEqual({ x: 0, y: 0 });
 });
 

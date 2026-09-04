@@ -1307,6 +1307,13 @@ explicitly unverified source-established targets. Both focused runs pass 190 /
 seven files; mounted evidence is not a browser image, real download or live
 framework acceptance. Original gates remain open and no gated probe ran.
 
+September 4 editable-keyboard continuation: `EDITABLE-KEYBOARD.md` integrates
+live-selection typing/deletion/movement and fill-to-type caret placement. Both
+focused runs pass 484 / fifteen files, including parent focus/indication regressions.
+Four inspected native captures show selected-line replacement, cancellation and
+deletion with stable node identity. Paragraph insertion and full visual/browser
+editing remain separate open work; no gated runtime or live probe ran.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

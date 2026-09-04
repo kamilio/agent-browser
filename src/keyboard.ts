@@ -1,6 +1,8 @@
 import { isSubmitButton } from "./button-type.js";
 import { lengthApplies, parseLengthLimit } from "./control-length.js";
 import { rangeKeyboardAction } from "./range-keyboard.js";
+import { EditableKeyboard } from "./editable-keyboard.js";
+import { nextOffset, previousOffset } from "./keyboard-text.js";
 import {
 	controlValue,
 	fillTextControl,
@@ -96,23 +98,8 @@ export class BrowserKeyboardEvent extends BrowserEvent {
 	}
 }
 
-function previousOffset(value: string, offset: number) {
-	if (
-		offset > 1 &&
-		/[\uDC00-\uDFFF]/.test(value[offset - 1]) &&
-		/[\uD800-\uDBFF]/.test(value[offset - 2])
-	)
-		return offset - 2;
-	return Math.max(0, offset - 1);
-}
-function nextOffset(value: string, offset: number) {
-	return Math.min(
-		value.length,
-		offset + ((value.codePointAt(offset) ?? 0) > 0xffff ? 2 : 1),
-	);
-}
-
 export class DocumentKeyboard {
+	private readonly contentEditing: EditableKeyboard;
 	private readonly keys = new KeyboardState();
 	private readonly typeahead: SelectTypeahead;
 	private spaceTarget: { id: number; reference: string } | undefined;
@@ -137,6 +124,11 @@ export class DocumentKeyboard {
 		) => EventAction<InteractionResult>,
 	) {
 		this.typeahead = new SelectTypeahead(tree);
+		this.contentEditing = new EditableKeyboard(
+			tree,
+			focus,
+			() => this.focusGeneration,
+		);
 		this.unregisterChange = tree.onChange((change) => {
 			if (change.kind === "focus") {
 				this.focusGeneration++;
@@ -178,6 +170,11 @@ export class DocumentKeyboard {
 	collapseEnd(id: number) {
 		const value = controlValue(this.tree, id);
 		this.caret = { id, value, anchor: value.length, position: value.length };
+	}
+
+	collapseEditableEnd(id: number, target: number) {
+		this.ensureOpen();
+		this.contentEditing.collapseEnd(id, target);
 	}
 
 	modifiers() {
@@ -222,9 +219,14 @@ export class DocumentKeyboard {
 				"Typing character limit exceeded",
 			);
 		const id = this.editable();
+		const editableHost = this.contentEditing.host(id);
+		const generation = this.focusGeneration;
 		let canceled = false;
 		for (const character of characters) {
-			if (this.focus.active() !== id)
+			if (
+				this.focus.active() !== id ||
+				(editableHost !== null && generation !== this.focusGeneration)
+			)
 				throw new AgentBrowserError(
 					"not-actionable",
 					"Focus changed during typing",
@@ -359,6 +361,8 @@ export class DocumentKeyboard {
 		const target = id ?? this.tree.root;
 		const focusReference = this.focus.activeReference();
 		const generatedFocus = this.tree.generatedFocusReference !== null;
+		const editableHost =
+			id !== null && !generatedFocus ? this.contentEditing.host(id) : null;
 		if (key.code === "Space" && !key.repeat) this.clearSpaceActivation();
 		const focusGeneration = this.focusGeneration;
 		let keyEvent = new BrowserKeyboardEvent("keydown", key);
@@ -369,6 +373,7 @@ export class DocumentKeyboard {
 		if (
 			permitted &&
 			this.focus.activeReference() === focusReference &&
+			(editableHost === null || focusGeneration === this.focusGeneration) &&
 			!shortcut &&
 			(Array.from(key.key).length === 1 || key.key === "Enter")
 		) {
@@ -382,19 +387,40 @@ export class DocumentKeyboard {
 		let interaction: InteractionResult | undefined;
 		let defaultAction: DefaultActionIntent | undefined;
 		let scroll: Readonly<{ x: number; y: number }> | undefined;
+		if (
+			permitted &&
+			editableHost !== null &&
+			focusGeneration !== this.focusGeneration
+		)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Focus changed during editable key dispatch",
+			);
 		if (permitted && this.focus.activeReference() === focusReference) {
-			if (!literal) scroll = yield* keyboardScrollAction(this.tree, id, key);
+			if (!literal && editableHost === null)
+				scroll = yield* keyboardScrollAction(this.tree, id, key);
 			if (key.key === "Tab" && !shortcut)
 				yield* this.focus.moveAction(key.shift);
 			else if (scroll === undefined && key.key !== "Escape" && id !== null) {
 				const node = this.tree.get(id);
+				const currentEditableHost = this.contentEditing.host(id);
 				const editable =
 					node.tagName === "textarea" ||
 					(node.tagName === "input" &&
 						["text", "search", "url", "tel", "password"].includes(
 							inputType(node),
 						));
-				if (node.tagName === "input" && inputType(node) === "range") {
+				if (editableHost !== null || currentEditableHost !== null) {
+					if (
+						this.contentEditing.validate(id) !==
+						(editableHost ?? currentEditableHost)
+					)
+						throw new AgentBrowserError(
+							"not-actionable",
+							"Editing host changed during key dispatch",
+						);
+					canceled = !(yield* this.contentEditing.key(id, key, shortcut));
+				} else if (node.tagName === "input" && inputType(node) === "range") {
 					if (!key.control && !key.meta && !key.alt)
 						yield* rangeKeyboardAction(this.tree, this.focus, id, key.key);
 				} else if (shortcut) {
@@ -579,6 +605,10 @@ export class DocumentKeyboard {
 				"No editable element is focused",
 			);
 		const node = this.tree.get(id);
+		if (this.contentEditing.host(id) !== null) {
+			this.contentEditing.validate(id);
+			return id;
+		}
 		if (
 			!(
 				node.tagName === "textarea" ||
