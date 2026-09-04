@@ -19,6 +19,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Paragraph merge checkpoint: `EDITABLE-BLOCK-MERGE.md` joins bounded adjacent rich
+p/div siblings through Backspace/Delete, preserving left-block/inline identities
+and typing at the shared Range join. Beforeinput, focus/selection, mutation and
+abort guards remain authoritative. Focused tests pass 246 / seven files; types,
+builds, strict tests and scoped Biome pass. Four inspected native command captures
+retain fixed geometry/root scroll and identical canceled pixels. Final explicit
+native suites pass 10,838 / 317 isolated files and report 11,969 passes with the
+same fifteen pending failures / 339 working files. Complex editing
+and original runtime/live/terminal acceptance remain open.
+
 Upload checkpoint: `UPLOAD-COMMANDS.md` joins real CLI/private-file handling,
 canonical chunk protocol, host/session queue and shared file selection. Genuine
 CLI-to-host native fixtures cover visible multipart submission, stale capture,

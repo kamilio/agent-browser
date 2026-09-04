@@ -7,6 +7,10 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Bounded paragraph merging now complements Enter/Shift+Enter. See
+`EDITABLE-BLOCK-MERGE.md` for shared Range identity, guarded native commands and
+fresh inspected fixed-editor captures. Full editing and external gates remain open.
+
 The native upload path now spans CLI, private files, protocol, host queue and
 document-owned selection. `UPLOAD-COMMANDS.md` records cross-boundary tests,
 conservative reservations, explicit commit uncertainty and fresh native captures.

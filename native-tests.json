@@ -1,4 +1,6 @@
 [
+  "src/editable-block-merge.test.ts",
+  "src/editable-block-merge-command.test.ts",
   "src/upload-protocol.test.ts",
   "src/upload-commands.test.ts",
   "src/upload-transfers.test.ts",

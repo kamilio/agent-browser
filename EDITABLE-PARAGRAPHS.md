@@ -41,7 +41,8 @@ prefix in `node_modules/.cache/native-validation`. The original worker patch and
 
 ## Remaining gates
 
-Adjacent paragraph merging is a separate active task. Lists, tables, arbitrary
+`EDITABLE-BLOCK-MERGE.md` now supplies bounded adjacent paragraph merging and fresh
+integration evidence. Lists, tables, arbitrary
 nested block splitting, multi-block replacements, IME/composition, clipboard,
 undo, grapheme/bidi movement and complete browser editing heuristics remain open.
 Empty paragraphs do not receive synthetic placeholder br elements; terminal

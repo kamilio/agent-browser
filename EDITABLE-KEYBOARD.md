@@ -68,7 +68,8 @@ retain their original narrower results and obsolete-Space integration caveat.
 
 Enter/Shift+Enter now supports the bounded subset in `EDITABLE-PARAGRAPHS.md`;
 that document records fresh integration evidence without replacing these results.
-Paragraph merging, composition/IME, clipboard, undo, full editing heuristics,
+Bounded paragraph merging is now covered by `EDITABLE-BLOCK-MERGE.md`.
+Composition/IME, clipboard, undo, full editing heuristics,
 grapheme/bidi/visual movement, selection events, target ranges, caret/highlight
 painting and native control/DOM selection unification remain incomplete.
 Native host-object and command fixtures are not real SafeJS, live-site, socket or

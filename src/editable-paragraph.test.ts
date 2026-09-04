@@ -713,12 +713,12 @@ it("deletes an inserted line break using the existing shared selection", () => {
 	expect(html()).toBe("abcd!");
 });
 
-it("does not claim implicit paragraph merging after Enter", () => {
+it("merges an adjacent simple paragraph after Enter", () => {
 	const { keyboard, selection, text, html } = fixture();
 	selection.collapse(text(), 2);
 	keyboard.press("Enter");
-	expect(() => keyboard.press("Backspace")).toThrow("paragraph merging");
-	expect(html()).toBe("<div>ab</div><div>cd</div>");
+	expect(keyboard.press("Backspace").canceled).toBe(false);
+	expect(html()).toBe("<div>abcd</div>");
 });
 
 it("retains textarea Enter and native control selection behavior", () => {

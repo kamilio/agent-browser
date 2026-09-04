@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 paragraph merge continuation: `EDITABLE-BLOCK-MERGE.md` adds bounded
+adjacent rich p/div Backspace/Delete joining with left-node/Range identity and
+guarded cancellation/abort behavior. Fixed native captures show splitting,
+canceled merging, joining and typing. Complex editing, caret/highlight painting
+and original external/runtime gates remain unverified.
+
 September 4 upload continuation: `UPLOAD-COMMANDS.md` wires actual native CLI,
 private-file policy, protocol, host queue and document ownership. Cross-boundary
 tests use visible file controls and real multipart generation; interruption and

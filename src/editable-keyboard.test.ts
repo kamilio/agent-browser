@@ -211,7 +211,7 @@ it("uses hard newlines and HTML block boundaries for Home/End without geometry",
 	expect(selection.focus).toEqual({ node: text("#last"), offset: 0 });
 });
 
-it("removes an explicit line break but rejects implicit paragraph merging", () => {
+it("removes an explicit line break and merges adjacent simple paragraphs", () => {
 	const line = fixture(
 		'<div id="editor" contenteditable><span id="left">a</span><br><span id="right">b</span></div>',
 	);
@@ -223,7 +223,10 @@ it("removes an explicit line break but rejects implicit paragraph merging", () =
 		'<div id="editor" contenteditable><p id="left">a</p><p id="right">b</p></div>',
 	);
 	blocks.selection.collapse(blocks.text("#right"), 0);
-	expect(() => blocks.keyboard.press("Backspace")).toThrow("paragraph merging");
+	expect(blocks.keyboard.press("Backspace").canceled).toBe(false);
+	expect(blocks.tree.get(blocks.id("#editor")).children).toEqual([
+		blocks.id("#left"),
+	]);
 	expect(blocks.value()).toBe("ab");
 });
 

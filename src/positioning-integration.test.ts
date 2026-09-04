@@ -118,7 +118,7 @@ it("keeps pre-wrap editing and shared selection inside a fixed editor across roo
 	expect(scroll.get()).toEqual({ x: 80, y: 300 });
 });
 
-it("splits and types into a fixed rich editor without moving its viewport anchor", () => {
+it("splits, merges and types into a fixed rich editor without moving its viewport anchor", () => {
 	const { tree, target, actions, scroll } = fixture(
 		'<div id="target" contenteditable style="position:fixed;left:10px;top:10px;width:90px;height:70px;white-space:pre-wrap;font-size:8px"></div>',
 	);
@@ -139,6 +139,13 @@ it("splits and types into a fixed rich editor without moving its viewport anchor
 	expect(domRangeOwner(tree).selection.focusNode).toBe(
 		tree.get(paragraphs[1]).children[0],
 	);
+	actions.keyboard.press("Home");
+	expect(actions.keyboard.press("Backspace").canceled).toBe(false);
+	expect(tree.get(target).children).toEqual([paragraphs[0]]);
+	expect(tree.get(paragraphs[0]).children[0]).toBe(original);
+	actions.keyboard.type("!");
+	expect(tree.textContent(target)).toBe("First!Second");
+	expect(domRangeOwner(tree).selection.focusNode).toBe(original);
 	expect(documentGeometry(tree).getBoundingClientRect(target)).toEqual(before);
 	expect(scroll.get()).toEqual({ x: 80, y: 300 });
 });

@@ -5,6 +5,10 @@ import {
 	type DomRange,
 	domRangeOwner,
 } from "./dom-range.js";
+import {
+	type EditableBlockMergePlan,
+	planEditableBlockMerge,
+} from "./editable-block-merge.js";
 import { editableFillHost } from "./editable-fill.js";
 import { planEditableParagraph } from "./editable-paragraph.js";
 import { AgentBrowserError } from "./errors.js";
@@ -85,7 +89,7 @@ export const editableKeyboardCapabilities = Object.freeze({
 	stepping: "unicode-code-point",
 	homeEnd: "hard-newlines-and-html-block-boundaries",
 	paragraphInsertion: "bounded-simple-structures",
-	paragraphMerging: false,
+	paragraphMerging: "bounded-adjacent-p-div",
 	composition: false,
 	geometry: false,
 });
@@ -417,7 +421,23 @@ export class EditableKeyboard {
 		const selection = owner.selection;
 		let start = range.start;
 		let end = range.end;
+		let merge: EditableBlockMergePlan | undefined;
 		if (
+			range.collapsed &&
+			(inputType === "deleteContentBackward" ||
+				inputType === "deleteContentForward")
+		) {
+			merge = planEditableBlockMerge(
+				this.tree,
+				host,
+				range,
+				inputType === "deleteContentBackward",
+				id,
+			);
+			if (merge?.kind === "edge") return true;
+		}
+		if (
+			!merge &&
 			range.collapsed &&
 			(inputType === "deleteContentBackward" ||
 				inputType === "deleteContentForward")
@@ -428,11 +448,16 @@ export class EditableKeyboard {
 				? previousOffset(model.text, offset)
 				: nextOffset(model.text, offset);
 			if (next === offset) return true;
-			const point = model.point(next, !backward);
+			let point = model.point(next, !backward);
+			if (model.block(point) !== model.block(start)) {
+				const alternative = model.point(next, backward);
+				if (model.block(alternative) === model.block(start))
+					point = alternative;
+			}
 			if (model.block(point) !== model.block(start))
 				throw new AgentBrowserError(
 					"unsupported",
-					"Automatic paragraph merging is not implemented",
+					"Automatic paragraph merging is unsupported at this boundary",
 				);
 			if (backward) start = point;
 			else end = point;
@@ -448,7 +473,7 @@ export class EditableKeyboard {
 			: undefined;
 		const eventType = insertion?.inputType ?? inputType;
 		const insertedText = insertion?.plaintext ? "\n" : text;
-		if (samePoint(start, end) && !text && !insertion) return true;
+		if (samePoint(start, end) && !text && !insertion && !merge) return true;
 		const anchor = selection.anchor;
 		const focus = selection.focus;
 		const generation = this.focusGeneration();
@@ -470,7 +495,8 @@ export class EditableKeyboard {
 		)
 			fail("Editable subtree or selection changed during beforeinput");
 		new EditableText(this.tree, host).check(start, end);
-		if (insertion && !insertion.plaintext) insertion.apply(range);
+		if (merge?.kind === "merge") merge.apply(range);
+		else if (insertion && !insertion.plaintext) insertion.apply(range);
 		else this.apply(range, start, end, insertedText);
 		yield {
 			target: host,
