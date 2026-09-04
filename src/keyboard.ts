@@ -175,6 +175,28 @@ export class DocumentKeyboard {
 		this.controlCaret().collapse(id);
 	}
 
+	placeControlCaret(id: number, offset: number) {
+		this.ensureOpen();
+		if (this.editable(false) !== id)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Control caret target changed",
+			);
+		const value = controlValue(this.tree, id);
+		if (
+			!Number.isSafeInteger(offset) ||
+			offset < 0 ||
+			offset > value.length ||
+			(offset > 0 &&
+				nextOffset(value, previousOffset(value, offset)) !== offset)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid control caret boundary",
+			);
+		this.controlCaret().collapse(id, offset);
+	}
+
 	collapseEditableEnd(id: number, target: number) {
 		this.ensureOpen();
 		this.contentEditing.collapseEnd(id, target);

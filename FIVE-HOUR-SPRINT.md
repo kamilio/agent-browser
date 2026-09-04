@@ -8,6 +8,13 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+Actual primary mouse points now place native control carets instead of always
+collapsing to the end. `CONTROL-POINTER-CARETS.md` records 108 new cases, passing
+736 / twenty-three-file focused suites in both trees and matching twelve-phase
+native captures. Focus mutation/redirect handling, scaled hit geometry and masked
+boundaries are covered. Drag/Shift selection, persistent scrolling and all external
+gates remain outstanding; the until-stopped instruction remains active.
+
 Control input/textarea editing now has visible native selection, collapsed carets
 and focus-edge scrolling with masked password metadata. `CONTROL-TEXT-SELECTION.md`
 records 143 new cases, passing 781 / twenty-one-file focused suites in both trees,

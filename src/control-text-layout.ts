@@ -114,9 +114,7 @@ function finish(
 	});
 }
 
-export function layoutControlText(
-	input: ControlTextLayoutInput,
-): ControlTextLayout {
+function checkedInput(input: ControlTextLayoutInput): ControlTextLayoutInput {
 	if (!input || typeof input !== "object" || Array.isArray(input))
 		invalid("Invalid control text layout input");
 	const { kind, text, fontSize, columns, rows, placeholder } = input;
@@ -150,25 +148,61 @@ export function layoutControlText(
 			"Control text must use normalized line endings",
 		);
 	const selection = checkedSelection(input.selection, text, placeholder);
+	return { kind, text, fontSize, columns, rows, placeholder, selection };
+}
+
+interface HitStop {
+	offset: number;
+	horizontal: number;
+	row: number;
+}
+
+function controlTextGeometry(
+	input: ControlTextLayoutInput,
+	collectStops: boolean,
+) {
+	const { kind, text, fontSize, columns, rows, placeholder, selection } = input;
 	const clip = {
 		x: 6,
 		y: 4,
 		width: Math.max(0, columns - 12),
 		height: Math.max(0, rows - 8),
 	};
-	const glyphs: ControlTextGlyph[] = [];
-	const selectionRectangles: ControlTextRectangle[] = [];
 	const scroll = { x: 0, y: 0 };
 	const advance = (bitmapFont.advance * fontSize) / bitmapFont.unitsPerEm;
-	if (fontSize === 0 || clip.width < advance || clip.height < fontSize)
-		return finish(clip, glyphs, selectionRectangles, scroll);
 	const top = kind === "textarea" ? 4 : Math.max(4, (rows - fontSize) / 2);
 	const cells: ControlTextGlyph[] = [];
+	const stops: HitStop[] = [];
+	const eligible =
+		fontSize > 0 && clip.width >= advance && clip.height >= fontSize;
+	const geometry = {
+		clip,
+		scroll,
+		top,
+		cells,
+		stops,
+		eligible,
+		focusHorizontal: 0,
+		focusRow: 0,
+	};
+	if (!eligible) return geometry;
 	let horizontal = 0;
 	let row = 0;
 	let offset = 0;
 	let focusHorizontal = 0;
 	let focusRow = 0;
+	const stop = () => {
+		if (!collectStops || (placeholder && offset !== 0)) return;
+		const previous = stops[stops.length - 1];
+		if (
+			previous?.offset === offset &&
+			previous.horizontal === horizontal &&
+			previous.row === row
+		)
+			return;
+		stops.push({ offset, horizontal, row });
+	};
+	stop();
 	for (const character of text) {
 		if (
 			kind === "textarea" &&
@@ -178,6 +212,7 @@ export function layoutControlText(
 			horizontal = 0;
 			row++;
 		}
+		stop();
 		if (!placeholder && selection?.focus === offset) {
 			focusHorizontal = horizontal;
 			focusRow = row;
@@ -196,12 +231,14 @@ export function layoutControlText(
 			horizontal = 0;
 			row++;
 		} else horizontal += advance;
+		stop();
+	}
+	if (kind === "textarea" && horizontal + 1 > clip.width) {
+		horizontal = 0;
+		row++;
+		stop();
 	}
 	if (!placeholder && selection?.focus === text.length) {
-		if (kind === "textarea" && horizontal + 1 > clip.width) {
-			horizontal = 0;
-			row++;
-		}
 		focusHorizontal = horizontal;
 		focusRow = row;
 	}
@@ -213,6 +250,21 @@ export function layoutControlText(
 				Math.max(0, focusRow - Math.floor(clip.height / fontSize) + 1) *
 				fontSize;
 	}
+	geometry.focusHorizontal = focusHorizontal;
+	geometry.focusRow = focusRow;
+	return geometry;
+}
+
+export function layoutControlText(
+	input: ControlTextLayoutInput,
+): ControlTextLayout {
+	const checked = checkedInput(input);
+	const { kind, fontSize, placeholder, selection } = checked;
+	const { clip, scroll, top, cells, focusHorizontal, focusRow, eligible } =
+		controlTextGeometry(checked, false);
+	const glyphs: ControlTextGlyph[] = [];
+	const selectionRectangles: ControlTextRectangle[] = [];
+	if (!eligible) return finish(clip, glyphs, selectionRectangles, scroll);
 	for (const cell of cells) {
 		const rectangle = {
 			x: cell.x - scroll.x,
@@ -254,4 +306,94 @@ export function layoutControlText(
 		if (intersects(rectangle, clip)) caret = rectangle;
 	}
 	return finish(clip, glyphs, selectionRectangles, scroll, caret);
+}
+
+function checkedOffsets(
+	allowedOffsets: readonly number[] | undefined,
+	input: ControlTextLayoutInput,
+): ReadonlySet<number> | undefined {
+	if (allowedOffsets === undefined) return;
+	if (!Array.isArray(allowedOffsets))
+		invalid("Invalid control text hit offsets");
+	const count = allowedOffsets.length;
+	if (!Number.isSafeInteger(count) || count < 1)
+		invalid("Invalid control text hit offsets");
+	if (count > 4097)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Control text hit offset limit exceeded",
+		);
+	const length = input.placeholder ? 0 : input.text.length;
+	const allowed = new Set<number>();
+	let previous = -1;
+	for (let index = 0; index < count; index++) {
+		const offset = allowedOffsets[index];
+		if (
+			!Number.isSafeInteger(offset) ||
+			offset <= previous ||
+			offset > length ||
+			(index === 0 && offset !== 0) ||
+			!boundary(input.text, offset)
+		)
+			invalid("Invalid control text hit offsets");
+		allowed.add(offset);
+		previous = offset;
+	}
+	if (previous !== length) invalid("Invalid control text hit offsets");
+	return allowed;
+}
+
+export function hitControlText(
+	input: ControlTextLayoutInput,
+	point: Readonly<{ x: number; y: number }>,
+	allowedOffsets?: readonly number[],
+): number | undefined {
+	const checked = checkedInput(input);
+	const allowed = checkedOffsets(allowedOffsets, checked);
+	if (!point || typeof point !== "object" || Array.isArray(point))
+		invalid("Invalid control text hit point");
+	const { x, y } = point;
+	if (!Number.isFinite(x) || !Number.isFinite(y))
+		invalid("Invalid control text hit point");
+	if (x < 0 || x >= checked.columns || y < 0 || y >= checked.rows) return;
+	const { clip, scroll, top, stops, eligible } = controlTextGeometry(
+		checked,
+		true,
+	);
+	if (!eligible) return;
+	if (checked.placeholder) return 0;
+	const horizontal =
+		Math.max(clip.x, Math.min(x, clip.x + clip.width)) - clip.x + scroll.x;
+	const vertical = Math.max(clip.y, Math.min(y, clip.y + clip.height));
+	let bestRowDistance = Number.POSITIVE_INFINITY;
+	let bestHorizontalDistance = Number.POSITIVE_INFINITY;
+	let bestRow = -1;
+	let bestOffset: number | undefined;
+	for (const stop of stops) {
+		if (allowed && !allowed.has(stop.offset)) continue;
+		const rowTop = top + stop.row * checked.fontSize - scroll.y;
+		const relativeTop = rowTop - clip.y;
+		if (relativeTop >= clip.height || relativeTop <= -checked.fontSize)
+			continue;
+		const rowDistance = Math.abs(vertical - (rowTop + checked.fontSize / 2));
+		if (
+			rowDistance < bestRowDistance ||
+			(rowDistance === bestRowDistance && stop.row > bestRow)
+		) {
+			bestRowDistance = rowDistance;
+			bestRow = stop.row;
+			bestHorizontalDistance = Number.POSITIVE_INFINITY;
+			bestOffset = undefined;
+		}
+		if (stop.row !== bestRow) continue;
+		const distance = Math.abs(horizontal - stop.horizontal);
+		if (
+			distance < bestHorizontalDistance ||
+			(distance === bestHorizontalDistance && stop.offset > (bestOffset ?? -1))
+		) {
+			bestHorizontalDistance = distance;
+			bestOffset = stop.offset;
+		}
+	}
+	return bestOffset;
 }

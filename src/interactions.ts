@@ -1,6 +1,6 @@
 import { buttonType } from "./button-type.js";
 import { prepareControlFill } from "./control-fill.js";
-import { editableFillHost } from "./editable-fill.js";
+import { prepareControlPointer } from "./control-pointer.js";
 import {
 	controlChecked,
 	fillTextControl,
@@ -14,15 +14,12 @@ import {
 	setControlChecked,
 	setControlCheckedState,
 } from "./controls.js";
+import { summaryDetails } from "./details.js";
 import { documentFiles } from "./document-files.js";
 import { documentBaseTarget, documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
+import { editableFillHost } from "./editable-fill.js";
 import { AgentBrowserError } from "./errors.js";
-import { summaryDetails } from "./details.js";
-import {
-	documentGeneratedControls,
-	resolveVisualTarget,
-} from "./generated-controls.js";
 import {
 	type EventAction,
 	runEventAction,
@@ -31,13 +28,17 @@ import {
 import { BrowserEvent, DocumentEvents, type EventLimits } from "./events.js";
 import { DocumentFocus, focusTabIndex } from "./focus.js";
 import { DocumentForms, type FormResetResult } from "./form-actions.js";
-import { BrowserInputEvent } from "./input-events.js";
+import {
+	documentGeneratedControls,
+	resolveVisualTarget,
+} from "./generated-controls.js";
 import { isInertRoot } from "./inertness.js";
+import { BrowserInputEvent } from "./input-events.js";
 import { DocumentKeyboard } from "./keyboard.js";
 import {
-	DocumentMouse,
-	BrowserPointerActivationEvent,
 	type BrowserMouseEvent,
+	BrowserPointerActivationEvent,
+	DocumentMouse,
 } from "./mouse.js";
 import { parseNetworkUrl } from "./network.js";
 
@@ -105,14 +106,17 @@ export class DocumentInteractions {
 			tree,
 			this.events,
 			() => this.keyboard.modifiers(),
-			(reference) => this.mouseFocusAction(reference),
+			(reference, point) => this.mouseFocusAction(reference, point),
 			(reference) => !this.actionability(reference).blocked,
 			(reference, event) => this.activateAction(reference, false, false, event),
 		);
 		this.tree.detailsToggleTasks.connect(this.events);
 	}
 
-	private *mouseFocusAction(reference: string): EventAction<void> {
+	private *mouseFocusAction(
+		reference: string,
+		point: Readonly<{ x: number; y: number }>,
+	): EventAction<void> {
 		const { node, blocked } = this.actionability(reference);
 		if (blocked) return;
 		const generated = resolveVisualTarget(this.tree, reference).generated;
@@ -123,20 +127,33 @@ export class DocumentInteractions {
 		let target: number | null = node.id;
 		while (target !== null && focusTabIndex(this.tree, target) === null)
 			target = this.tree.get(target).parent;
-		yield* this.focus.focusAction(
-			target === null ? null : this.tree.reference(target),
-			"pointer",
-		);
-		if (target !== null && this.focus.active() === target) {
-			const candidate = this.tree.get(target);
-			if (
-				candidate.tagName === "textarea" ||
-				(candidate.tagName === "input" &&
-					["text", "search", "url", "tel", "password"].includes(
-						inputType(candidate),
-					))
-			)
-				this.keyboard.collapseEnd(target);
+		const prepared =
+			target === null
+				? undefined
+				: prepareControlPointer(this.tree, target, point);
+		try {
+			yield* this.focus.focusAction(
+				target === null ? null : this.tree.reference(target),
+				"pointer",
+			);
+			if (target !== null && this.focus.active() === target) {
+				if (prepared) {
+					prepared.verify();
+					this.keyboard.placeControlCaret(target, prepared.offset);
+				} else {
+					const candidate = this.tree.get(target);
+					if (
+						candidate.tagName === "textarea" ||
+						(candidate.tagName === "input" &&
+							["text", "search", "url", "tel", "password"].includes(
+								inputType(candidate),
+							))
+					)
+						this.keyboard.collapseEnd(target);
+				}
+			}
+		} finally {
+			prepared?.release();
 		}
 	}
 

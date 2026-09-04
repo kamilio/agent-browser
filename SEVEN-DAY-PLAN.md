@@ -7,6 +7,13 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native control primary-pointer carets now share painted text geometry and owned
+keyboard state. `CONTROL-POINTER-CARETS.md` records 108 new cases, passing 736 /
+twenty-three-file focused suites in both trees, passing types/builds/scoped checks
+and twelve-phase native captures. The integer-scale midpoint regression is fixed;
+old layout output remains identical. Both manifests retain 373 entries. Drag/Shift
+selection, persistent widget scrolling and original runtime/live gates stay open.
+
 Native control selection/caret rendering now integrates single-record ownership,
 bounded text geometry and focus-derived scrolling. The 143 new cases and passing
 781 / twenty-one-file focused suites in both trees are recorded in

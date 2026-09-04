@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 pointer-caret continuation: `CONTROL-POINTER-CARETS.md` maps actual
+primary mouse points into the existing native control texture and keyboard owner.
+The 108 new cases and 736 / twenty-three-file focused suites pass in both trees;
+twelve native captures preserve state/boxes and match both builds. Focus mutation,
+masked boundaries and the integer-scale midpoint fix are explicit. Drag/Shift
+selection, persistent widget scrolling and all original runtime/live gates remain open.
+
 September 4 control-text continuation: `CONTROL-TEXT-SELECTION.md` connects native
 keyboard state to bounded input/textarea highlights, collapsed carets and focus-edge
 scrolling. Password metadata remains masked and placeholder text remains unselected.

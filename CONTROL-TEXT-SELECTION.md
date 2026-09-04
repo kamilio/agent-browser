@@ -1,5 +1,10 @@
 # Native control text selection and scrolling
 
+Later September 4 continuation: `CONTROL-POINTER-CARETS.md` adds bounded collapsed
+placement from actual primary mouse points using this same geometry and owner.
+Its new tests/captures are separate from the measurements retained below. Drag,
+Shift-extension, persistent widget scrolling and full selection APIs remain open.
+
 September 4, 2026 continuation from `2690e14`. This is native software-control
 rendering, not a new page runtime or a standards-complete text selection API.
 Existing historical control-rendering reports remain unchanged.

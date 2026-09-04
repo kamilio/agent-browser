@@ -83,6 +83,7 @@ export const mouseCapabilities = Object.freeze({
 	auxiliaryDefaults: false,
 	dragAndDrop: false,
 	textSelection: false,
+	textCaretPlacement: "primary-press-native-software-control",
 	doubleClick: false,
 	scrolling: "root-viewport-pixel-wheel",
 	wheelDeltaMode: "pixel",
@@ -253,7 +254,10 @@ export class DocumentMouse {
 		private readonly tree: DocumentTree,
 		private readonly events: DocumentEvents,
 		private readonly modifiers: () => MouseModifiers,
-		private readonly focus: (reference: string) => EventAction<unknown>,
+		private readonly focus: (
+			reference: string,
+			point: Readonly<ClickPoint>,
+		) => EventAction<unknown>,
 		private readonly canActivate: (reference: string) => boolean,
 		private readonly activate: (
 			reference: string,
@@ -807,16 +811,15 @@ export class DocumentMouse {
 		else this.pressedGenerated.delete(button);
 		this.publishPointerState();
 		if (target === null) return this.result(null);
-		const allowed = yield {
-			target,
-			event: this.event("mousedown", buttons[button].button, { detail }),
-		};
+		const event = this.event("mousedown", buttons[button].button, { detail });
+		const allowed = yield { target, event };
 		checkTarget?.();
 		if (allowed && button === "left" && this.tree.isConnected(target))
 			yield* this.focus(
 				generated && this.generatedAt(target) === generated
 					? generated
 					: this.tree.reference(target),
+				Object.freeze({ x: event.clientX, y: event.clientY }),
 			);
 		let contextAllowed = true;
 		if (button === "right" && this.tree.isConnected(target))

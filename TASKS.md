@@ -19,6 +19,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Primary mouse points now place native text-control carets using the displayed
+texture and shared hit geometry, with focus-change safeguards and masked
+code-point boundaries. `CONTROL-POINTER-CARETS.md` records 108 new cases, passing
+736 / twenty-three-file focused suites in both trees, static/build checks and
+twelve-phase native capture comparison. Both manifests retain 373 entries.
+Pointer dragging/Shift-extension, persistent widget scrolling, full selection
+APIs and the original browser/runtime/live gates remain open. Root disk pressure
+was mitigated by verified snapshot relocation, not unrelated evidence deletion.
+
 Native text controls now show keyboard selection, collapsed carets and bounded
 focus-edge scrolling through one authoritative owned record, without fake
 document Ranges or raw password metadata. `CONTROL-TEXT-SELECTION.md` records
