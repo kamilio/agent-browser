@@ -270,6 +270,13 @@ does not invoke callbacks or substitute host microtasks for guest scheduling.
 The next dependency is the runtime/page bridge with explicit callback and retained
 record ownership; framework, SafeJS and real-site acceptance remain open.
 
+Mutation-record capability continuation: `SCRIPT-MUTATION-RECORDS.md` connects
+native observer records to ScriptDom identity and bounded static record/list
+capabilities. Lifetime delivered-record retention is separate from native queue
+admission. Native tests cover provider reentrancy, whole-batch snapshots and
+revocation. Actual guest scheduling and observer callbacks remain unimplemented;
+the helper does not turn those open runtime/framework gates into passing claims.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

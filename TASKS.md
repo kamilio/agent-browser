@@ -19,6 +19,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Mutation-record capability checkpoint: `SCRIPT-MUTATION-RECORDS.md` connects native
+records to ScriptDom node identity, read-only record properties and static indexed
+added/removed lists. Lifetime record/string/node budgets cover delivered output,
+not just queued native records. Batch admission and snapshots precede capability
+provider entry; tests reproduce and fix a reentrant later-record budget bypass
+and three node-provider closure/result defects. Fifty new tests include identity,
+quota atomicity, snapshots, primitive item indices, foreign-node rejection and
+revocation; focused validation passes 193 / four explicit files.
+Full native validation passes 7,672 / 218 files; the isolated owned patch passes
+4,912 / 157 available files. Production/new-test types, builds and four-source lint
+pass in both trees. Pending ScriptDom/index/task-ledger work remains excluded from
+the isolated checkpoint and commit, without changing historical measurements.
+This is a record capability layer, not page MutationObserver construction or
+delivery. The local adapter contract lacks a guest-microtask hook; no host-task
+approximation, SDK workaround or newly authorized probe was substituted. Actual
+runtime scheduling, callbacks, guest conversions/iteration and retained-object
+reclamation remain next, with all wider acceptance gates open.
+
+### Previous observer-ownership checkpoint
+
 Observer-ownership checkpoint: `DOCUMENT-OBSERVERS.md` adds native observer handles,
 atomic option validation/replacement, ancestor/type/attribute filtering and
 per-observer old-value selection. Detached-subtree transients preserve source

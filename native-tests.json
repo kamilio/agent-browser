@@ -184,6 +184,7 @@
   "src/script-geometry.test.ts",
   "src/script-history.test.ts",
   "src/script-loader.test.ts",
+  "src/script-mutation-records.test.ts",
   "src/script-mutations.test.ts",
   "src/script-select.test.ts",
   "src/script-storage.test.ts",

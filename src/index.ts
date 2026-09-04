@@ -1,4 +1,8 @@
 export {
+	ScriptMutationRecords,
+	type ScriptMutationRecordLimits,
+} from "./script-mutation-records.js";
+export {
 	DocumentObservers,
 	type DocumentObserverOptions,
 	type DocumentObserverLimits,
