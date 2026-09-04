@@ -3,6 +3,7 @@ import {
 	isNeutralBackgroundProperty,
 } from "./css-background.js";
 import { cssBoxProperties, isCssBoxProperty } from "./css-box.js";
+import { cssInteractionProperties } from "./css-interaction.js";
 import {
 	cssFlexProperties,
 	isCssFlexProperty,
@@ -35,6 +36,7 @@ export const computedStyleProperties = Object.freeze(
 		...cssBoxProperties,
 		...cssFlexProperties,
 		...cssFlowProperties,
+		...cssInteractionProperties,
 		...cssPaintProperties,
 		...cssTextProperties,
 		"display",
@@ -90,6 +92,7 @@ export function resolvedStyleValue(
 		return values.join(" ");
 	}
 	const styles = documentStyles(tree);
+	if (name === "pointer-events") return styles.pointerEvents(id);
 	if (isCssFlexProperty(name)) return styles.flex(id)[name];
 	const flex = flexShorthandComponents(name);
 	if (flex)

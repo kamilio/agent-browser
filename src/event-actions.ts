@@ -28,6 +28,7 @@ export function runEventAction<Result>(
 export async function runEventActionAsync<Result>(
 	events: DocumentEvents,
 	action: EventAction<Result>,
+	signal?: AbortSignal,
 ): Promise<Result> {
 	let step = action.next();
 	while (!step.done) {
@@ -36,6 +37,7 @@ export async function runEventActionAsync<Result>(
 			allowed = await events.dispatchEventAsync(
 				step.value.target,
 				step.value.event,
+				signal,
 			);
 		} catch (error) {
 			step = action.throw(error);

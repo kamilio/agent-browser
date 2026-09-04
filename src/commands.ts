@@ -204,6 +204,19 @@ const definitions: CommandDefinition[] = [
 	command("styles", 0, 1, {}, "extension"),
 	command("geometry", 1, 1, {}, "extension"),
 	command(
+		"scroll-into-view",
+		1,
+		1,
+		{
+			block: stringOption,
+			inline: stringOption,
+			behavior: stringOption,
+			container: stringOption,
+		},
+		"extension",
+	),
+	command("hit-test", 2, 2, {}, "extension"),
+	command(
 		"extract",
 		0,
 		1,

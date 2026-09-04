@@ -71,6 +71,7 @@ import { scriptSelectBindings } from "./script-select.js";
 import type { ScriptStorage } from "./script-storage.js";
 import { scriptUrlProperties } from "./script-urls.js";
 import { DocumentQueries } from "./selectors.js";
+import { documentHitTesting, type DocumentHitTesting } from "./hit-testing.js";
 
 export interface ScriptHostObjectDefinition {
 	named?: {
@@ -114,6 +115,7 @@ export class ScriptDom {
 	private readonly rootScroll: RootScroll;
 	private readonly elementSizes: DocumentElementSizes;
 	private readonly elementOffsets: DocumentElementOffsets;
+	private readonly hitTesting: DocumentHitTesting;
 	private readonly computedStyles: ComputedStyles;
 	private readonly capabilities = new Map<number, object>();
 	private readonly publications: ScriptNodePublications;
@@ -160,6 +162,7 @@ export class ScriptDom {
 		this.rootScroll = new RootScroll(tree, scrollRequest);
 		this.elementSizes = documentElementSizes(tree);
 		this.elementOffsets = documentElementOffsets(tree);
+		this.hitTesting = documentHitTesting(tree);
 		this.computedStyles = new ComputedStyles(tree, factory);
 		this.relations = new NodeRelations(tree);
 		this.publications = new ScriptNodePublications(factory, () =>
@@ -472,6 +475,30 @@ export class ScriptDom {
 						this.read(id);
 						this.eventBindings?.setHandler(id, "scroll", value);
 					},
+				};
+			for (const method of ["elementFromPoint", "elementsFromPoint"] as const)
+				definition.methods[method] = (...args: readonly unknown[]) => {
+					this.read(id);
+					if (args.length < 2)
+						throw new TypeError(`${method} requires two coordinates`);
+					for (const value of args.slice(0, 2))
+						if (
+							value !== null &&
+							(typeof value === "object" || typeof value === "function")
+						)
+							throw new AgentBrowserError(
+								"unsupported",
+								"Object-to-coordinate conversion is not implemented",
+							);
+					const x = +(args[0] as number);
+					const y = +(args[1] as number);
+					if (method === "elementsFromPoint")
+						return this.hitTesting
+							.elementsFromPoint(x, y)
+							.map((target) => this.node(target));
+					return this.optional(
+						this.hitTesting.elementFromPoint(x, y) ?? undefined,
+					);
 				};
 			definition.properties.forms = {
 				get: () => {
@@ -983,6 +1010,7 @@ export class ScriptDom {
 			computedStyles: this.computedStyles.metrics(),
 			elementSizes: this.elementSizes.metrics(),
 			elementOffsets: this.elementOffsets.metrics(),
+			hitTesting: this.hitTesting.metrics(),
 		});
 	}
 

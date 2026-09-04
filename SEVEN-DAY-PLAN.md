@@ -667,6 +667,19 @@ and command capability reporting are next. Runtime/site/UI gates, nested scrolli
 and complete event-loop/layout compatibility remain open; no gated probe ran.
 The original browser scope and seven-day continuation remain active.
 
+September 4 hit/pointer-policy command checkpoint: `HIT-CORE.md` integrates
+paint-ordered viewport hit testing, pointer-events CSS/CSSOM, guest node targets
+and the `hit-test`/`scroll-into-view` commands. Event-action cancellation now reaches
+pending listener prefixes. Twenty-seven new checks pass, with 19 failing on HEAD
+plus helpers; the abort-only baseline fails exactly the pending-prefix case.
+The unchanged hit suite adds 46 checks. Full native runs pass 9,386 / 258
+working-tree files and 7,435 / 210 isolated files; focused runs pass 348 / eleven
+and 284 / ten. Types/builds, strict four-test checks and seventeen-file lint pass.
+Existing pending mouse/selector/tracing/keyboard/tab work and historical evidence
+remain separate. Next integrate mouse activation and click/hover command routing.
+No gated probe ran; full layout, physical input, live sites, sockets and approved
+runtime acceptance remain open. The original seven-day browser scope stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

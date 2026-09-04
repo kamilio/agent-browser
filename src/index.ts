@@ -16,6 +16,18 @@ export {
 } from "./document-observers.js";
 export { AgentBrowserError, type ErrorCode } from "./errors.js";
 export { rangeKeyboardCapabilities } from "./range-keyboard.js";
+export {
+	interactionStyleCapabilities,
+	cssInteractionProperties,
+	type PointerEventsStyle,
+} from "./css-interaction.js";
+export {
+	DocumentHitTesting,
+	documentHitTesting,
+	hitTestLimits,
+	hitTestCapabilities,
+	type HitTestLimits,
+} from "./hit-testing.js";
 export { selectKeyboardCapabilities } from "./select-keyboard.js";
 export { fontRelativeBoxUnits, type BoxFontMetrics } from "./css-box.js";
 export { cssMathCapabilities, cssMathLimits } from "./css-math.js";

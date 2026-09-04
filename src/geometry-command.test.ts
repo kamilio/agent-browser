@@ -140,7 +140,7 @@ it("advertises partial geometry rather than desktop-browser equivalence", async 
 		clientGeometry: {
 			partial: true,
 			command: "geometry",
-			scroll: false,
+			scroll: "root-viewport",
 			domRectConstructors: false,
 			blockInInline: false,
 		},

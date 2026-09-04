@@ -1,5 +1,10 @@
 import { imageDimensionHint } from "./replaced-box.js";
 import {
+	cssInteractionProperties,
+	computePointerEvents,
+	type PointerEventsStyle,
+} from "./css-interaction.js";
+import {
 	cssFlexProperties,
 	isCssFlexProperty,
 	computeFlexStyle,
@@ -189,6 +194,7 @@ export class DocumentStyles {
 	private flexSpecified = new Map<number, FlexSpecifiedStyle>();
 	private flexComputed = new Map<number, FlexStyle>();
 	private flowComputed = new Map<number, FlowStyle>();
+	private pointerEventsNone = new Set<number>();
 	private textSpecified = new Map<number, TextSpecifiedStyle>();
 	private textComputed = new Map<number, TextStyle>();
 	private paintSpecified = new Map<number, PaintSpecifiedStyle>();
@@ -322,6 +328,11 @@ export class DocumentStyles {
 	flow(id: number): FlowStyle {
 		this.get(id);
 		return this.flowComputed.get(id) ?? initialFlowStyle;
+	}
+
+	pointerEvents(id: number): PointerEventsStyle {
+		this.get(id);
+		return this.pointerEventsNone.has(id) ? "none" : "auto";
 	}
 
 	flex(id: number): FlexStyle {
@@ -508,6 +519,7 @@ export class DocumentStyles {
 			boxProperties: cssBoxProperties,
 			flexProperties: cssFlexProperties,
 			flowProperties: cssFlowProperties,
+			interactionProperties: cssInteractionProperties,
 			textProperties: cssTextProperties,
 			textFont: "Agent Mono",
 			paintProperties: cssPaintProperties,
@@ -532,6 +544,7 @@ export class DocumentStyles {
 		this.flexSpecified.clear();
 		this.flexComputed.clear();
 		this.flowComputed.clear();
+		this.pointerEventsNone.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
 		this.paintSpecified.clear();
@@ -575,6 +588,7 @@ export class DocumentStyles {
 		this.flexSpecified.clear();
 		this.flexComputed.clear();
 		this.flowComputed.clear();
+		this.pointerEventsNone.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
 		this.paintSpecified.clear();
@@ -840,6 +854,7 @@ export class DocumentStyles {
 		const computed = new Map<number, Readonly<VisibilityStyle>>();
 		const boxParentDisplay = new Map<number, string>();
 		const flowComputed = new Map<number, FlowStyle>();
+		const pointerEventsNone = new Set<number>();
 		for (const node of nodes) {
 			charge(1);
 			const parent =
@@ -869,6 +884,16 @@ export class DocumentStyles {
 				visibility = parent?.visibility ?? "visible";
 			else if (visibility === "initial") visibility = "visible";
 			const displayed = (parent?.displayed ?? true) && display !== "none";
+			charge(1);
+			if (
+				computePointerEvents(
+					properties?.get("pointer-events")?.declaration.value,
+					node.parent !== null && pointerEventsNone.has(node.parent)
+						? "none"
+						: "auto",
+				) === "none"
+			)
+				pointerEventsNone.add(node.id);
 			const flowValues = flowSpecified.get(node.id);
 			if (flowValues) {
 				charge(cssFlowProperties.length);
@@ -896,6 +921,7 @@ export class DocumentStyles {
 		this.boxSpecified = boxSpecified;
 		this.flexSpecified = flexSpecified;
 		this.flowComputed = flowComputed;
+		this.pointerEventsNone = pointerEventsNone;
 		this.textSpecified = textSpecified;
 		this.paintSpecified = paintSpecified;
 		this.customComputed = customComputed;

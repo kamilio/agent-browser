@@ -7,6 +7,12 @@ import {
 import { selectDocumentFragmentTarget, urlFragment } from "./document-url.js";
 import { type DocumentLimits, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { runEventActionAsync } from "./event-actions.js";
+import {
+	documentScrollIntoView,
+	type ScrollIntoViewOptions,
+	type ScrollIntoViewResult,
+} from "./scroll-into-view.js";
 import type { FormRequestResult } from "./form-actions.js";
 import type { FormSubmissionOptions } from "./forms.js";
 import {
@@ -572,6 +578,42 @@ export class BrowserSession {
 				submission.request,
 			),
 		};
+	}
+
+	async scrollIntoView(
+		id: string,
+		reference: string,
+		alignment: ScrollIntoViewOptions = {},
+		options: NavigationOptions = {},
+	): Promise<ScrollIntoViewResult> {
+		this.validateNavigationOptions(options);
+		if (options.signal?.aborted)
+			throw new AgentBrowserError("aborted", "Scroll into view aborted");
+		const tab = this.tab(id);
+		const previousJob = tab.job;
+		const page = this.page(id);
+		const target = page.document.resolve(reference).id;
+		const result = await runEventActionAsync(
+			page.interactions.events,
+			documentScrollIntoView(page.document).action(target, alignment),
+			options.signal,
+		);
+		if (options.signal?.aborted || tab.job !== previousJob)
+			throw new AgentBrowserError(
+				"aborted",
+				"Scroll into view interrupted during events",
+			);
+		if (this.page(id) !== page)
+			throw new AgentBrowserError(
+				"stale-reference",
+				"Scroll-into-view document was replaced",
+			);
+		if (!result.hasBox)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Scroll-into-view target has no layout box",
+			);
+		return result;
 	}
 
 	async press(

@@ -8,6 +8,20 @@ import {
 import { type Invocation, parseInvocation } from "./cli-parser.js";
 import { commands } from "./commands.js";
 import { cssBoxProperties } from "./css-box.js";
+import { interactionStyleCapabilities } from "./css-interaction.js";
+import { documentHitTesting, hitTestCapabilities } from "./hit-testing.js";
+import {
+	scrollIntoViewCapabilities,
+	scrollIntoViewOptions,
+} from "./scroll-into-view.js";
+import {
+	documentScrollPosition,
+	viewportScrollCapabilities,
+} from "./document-scroll.js";
+import { pageScrollCapabilities } from "./page-scroll.js";
+import { rootScrollCapabilities } from "./root-scroll.js";
+import { elementScrollCapabilities } from "./element-scroll.js";
+import { elementOffsetCapabilities } from "./element-offsets.js";
 import {
 	computedStyleLimits,
 	computedStyleProperties,
@@ -133,6 +147,8 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 	viewport: [],
 	styles: [],
 	geometry: [],
+	"scroll-into-view": ["block", "inline", "behavior", "container"],
+	"hit-test": [],
 	screenshot: ["hires"],
 	pdf: [],
 	"artifact-list": [],
@@ -470,6 +486,9 @@ export class BrowserCommandHost {
 				fontRelativeLengths: false,
 			},
 			browserEngineDependency: false,
+			interactionStyles: interactionStyleCapabilities,
+			viewportScrolling: viewportScrollCapabilities,
+			pageScrolling: pageScrollCapabilities,
 			computedStyles: {
 				partial: true,
 				methods: ["getComputedStyle", "window.getComputedStyle"],
@@ -486,7 +505,7 @@ export class BrowserCommandHost {
 				profile: "normal-flow-client-rects",
 				methods: ["getClientRects", "getBoundingClientRect"],
 				command: "geometry",
-				scroll: false,
+				scroll: "root-viewport",
 				domRectConstructors: false,
 				blockInInline: false,
 				inlineEdges: "ltr-sliced-margin-padding",
@@ -494,6 +513,11 @@ export class BrowserCommandHost {
 			},
 			characterData: characterDataCapabilities,
 			nodeRelations: nodeRelationCapabilities,
+			elementOffsets: elementOffsetCapabilities,
+			rootElementScrolling: rootScrollCapabilities,
+			elementScrolling: elementScrollCapabilities,
+			scrollIntoView: scrollIntoViewCapabilities,
+			hitTesting: hitTestCapabilities,
 			elementSizes: {
 				partial: true,
 				properties: elementSizeProperties,
@@ -1120,6 +1144,52 @@ export class BrowserCommandHost {
 				);
 			return browser.resize(tab, Number(args[0]), Number(args[1]));
 		}
+		if (invocation.command === "hit-test") {
+			const page = browser.page(this.activeTab(browser));
+			const horizontal = Number(args[0]);
+			const vertical = Number(args[1]);
+			if (
+				!args[0].trim() ||
+				!args[1].trim() ||
+				!Number.isFinite(horizontal) ||
+				!Number.isFinite(vertical)
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Hit testing requires finite coordinates",
+				);
+			const hits = documentHitTesting(page.document).elementsFromPoint(
+				horizontal,
+				vertical,
+			);
+			return {
+				x: horizontal,
+				y: vertical,
+				reference: hits.length ? page.document.reference(hits[0]) : null,
+				references: hits.map((id) => page.document.reference(id)),
+				revision: page.document.revision,
+				viewport: page.styles.viewport,
+				partial: true,
+				profile: hitTestCapabilities.profile,
+			};
+		}
+		if (invocation.command === "scroll-into-view") {
+			const tab = this.activeTab(browser);
+			let alignment: ReturnType<typeof scrollIntoViewOptions>;
+			try {
+				alignment = scrollIntoViewOptions(options);
+			} catch (error) {
+				if (error instanceof TypeError)
+					throw new AgentBrowserError("invalid-input", error.message);
+				throw error;
+			}
+			return browser.scrollIntoView(
+				tab,
+				this.target(browser, tab, args[0]),
+				alignment,
+				{ signal },
+			);
+		}
 		if (invocation.command === "geometry") {
 			const tab = this.activeTab(browser);
 			const page = browser.page(tab);
@@ -1138,7 +1208,7 @@ export class BrowserCommandHost {
 				partial: true,
 				profile: "normal-flow-client-rects",
 				viewport: page.styles.viewport,
-				scroll: { x: 0, y: 0 },
+				scroll: documentScrollPosition(page.document),
 				bounds: geometry.getBoundingClientRect(id),
 				sizes: documentElementSizes(page.document).get(id),
 				rects,

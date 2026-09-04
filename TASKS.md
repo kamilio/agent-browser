@@ -19,6 +19,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Hit/pointer-policy command checkpoint: `HIT-CORE.md` connects shared hit regions,
+inherited pointer-events CSS/CSSOM and guest node results to `hit-test`, plus
+session/command `scroll-into-view`. Geometry reports its real scroll origin.
+Optional event-action signal forwarding cancels a pending scroll listener prefix
+without rolling back observed movement. The new 27-case suite fails 19 cases on
+HEAD plus original helpers; a signal-omission baseline reproduces exactly one
+pending-prefix cancellation failure. The unchanged 46-case hit suite is promoted.
+Full native validation passes 9,386 / 258 working-tree files and 7,435 / 210 isolated
+files; focused checks pass 348 / eleven and isolated 284 / ten. Types/builds,
+strict four-test checks and seventeen-file lint pass in both trees. Obsolete
+geometry/enumeration assertions are scoped to the integrated feature; pending
+mouse/selector/tracing/keyboard/tab changes and historical reports remain intact.
+Next integrate mouse boundary/focus/default activation and click/hover command
+actionability. Injected CLI dispatch is not a real socket or physical-input gate.
+Modal/shadow hit rules, transforms, nested scrolling/clipping, full positioning
+and independent site/runtime/socket/TTY gates remain open. No gated probe ran;
+the denied SafeJS probe remains unrun and the full seven-day goal stays active.
+
+### Previous page scrolling binding/lifecycle checkpoint
+
 Page scrolling binding/lifecycle checkpoint: `PAGE-SCROLL-CORE.md` connects
 Window/root scrolling, readonly offset getters, visible-overflow extents and
 scroll-into-view to the shared origin. Document notifications coalesce and bubble

@@ -1,5 +1,11 @@
 import { parseBackgroundShorthand } from "./css-background.js";
 import {
+	cssInteractionProperties,
+	isCssInteractionProperty,
+	parseInteractionValue,
+	type CssInteractionProperty,
+} from "./css-interaction.js";
+import {
 	cssFlexProperties,
 	isCssFlexProperty,
 	flexShorthandComponents,
@@ -49,6 +55,7 @@ export type CssProperty =
 	| CssPaintProperty
 	| CssFlowProperty
 	| CssFlexProperty
+	| CssInteractionProperty
 	| `--${string}`;
 export interface CssDeclaration {
 	property: CssProperty;
@@ -230,6 +237,7 @@ export function parseCssDeclarations(
 			!isCssBoxProperty(property) &&
 			!isCssTextProperty(property) &&
 			!isCssPaintProperty(property) &&
+			!isCssInteractionProperty(property) &&
 			!isCssFlowProperty(property) &&
 			property !== "overflow" &&
 			!isCssFlexProperty(property) &&
@@ -264,6 +272,11 @@ export function parseCssDeclarations(
 			declarations.push(
 				{ property: "display", value, important },
 				{ property: "visibility", value, important },
+				...cssInteractionProperties.map((property) => ({
+					property,
+					value,
+					important,
+				})),
 				...cssFlexProperties.map((property) => ({
 					property,
 					value,
@@ -286,6 +299,13 @@ export function parseCssDeclarations(
 					important,
 				})),
 			);
+			continue;
+		}
+		if (isCssInteractionProperty(property)) {
+			const normalized = parseInteractionValue(value);
+			if (normalized !== undefined)
+				declarations.push({ property, value: normalized, important });
+			else issue("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssFlowProperty(property) || property === "overflow") {

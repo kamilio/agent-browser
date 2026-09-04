@@ -16,7 +16,7 @@ export interface ScrollIntoViewOptions {
 export const scrollIntoViewCapabilities = Object.freeze({
 	partial: true,
 	profile: "instant-normal-flow-ltr-root",
-	command: null,
+	command: "scroll-into-view",
 	method: "scrollIntoView",
 	alignments: ["start", "center", "end", "nearest"],
 	defaults: { block: "start", inline: "nearest" },
