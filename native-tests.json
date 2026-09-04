@@ -54,6 +54,7 @@
   "src/document-views.test.ts",
   "src/document.test.ts",
   "src/document-mutations.test.ts",
+  "src/document-observers.test.ts",
   "src/dom-inspection.test.ts",
   "src/element-offsets.test.ts",
   "src/element-scroll.test.ts",

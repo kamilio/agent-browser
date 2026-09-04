@@ -263,6 +263,13 @@ range sanitization, error ordering and current/default ownership have focused
 native coverage. The bounded calendar numeric profile and primitive-only coercion
 are explicit limitations; released-runtime and real-site acceptance remain open.
 
+Observer-ownership continuation: `DOCUMENT-OBSERVERS.md` adds native registration
+validation, filtering, old-value selection, detached-subtree transient tracking,
+bounded queues and a per-observer delivery checkpoint protocol. It deliberately
+does not invoke callbacks or substitute host microtasks for guest scheduling.
+The next dependency is the runtime/page bridge with explicit callback and retained
+record ownership; framework, SafeJS and real-site acceptance remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

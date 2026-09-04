@@ -1,3 +1,10 @@
+export {
+	DocumentObservers,
+	type DocumentObserverOptions,
+	type DocumentObserverLimits,
+	type DocumentObserverDelivery,
+	type ObservedDocumentMutation,
+} from "./document-observers.js";
 export { AgentBrowserError, type ErrorCode } from "./errors.js";
 export { rangeKeyboardCapabilities } from "./range-keyboard.js";
 export {

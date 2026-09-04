@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Observer-ownership checkpoint: `DOCUMENT-OBSERVERS.md` adds native observer handles,
+atomic option validation/replacement, ancestor/type/attribute filtering and
+per-observer old-value selection. Detached-subtree transients preserve source
+identity; bounded queues support takeRecords, disconnect and explicit release.
+Capture overflow poisons and clears the owner without interrupting DOM writes,
+with generic resource-limit errors at checked consumer boundaries. Delivery is
+an explicit native checkpoint protocol, not page callbacks or a host-microtask
+substitute. Seventy-three new tests cover ordering, retention, options, teardown
+and admission; focused checks pass 172 / four files.
+Final full native validation passes 7,622 / 217 explicit files; the isolated
+owned patch passes 4,862 / 156 available files. Production/new-test types and
+builds pass in both trees, with three-source lint clean. Existing pending work
+remains outside the isolated snapshot and commit; no gated probes were run.
+Next: runtime-correct scheduling and callback ownership, authenticated page
+capabilities, option conversion and guest record retention. This does not expose
+page MutationObserver or close framework, SafeJS or real-site acceptance gates.
+
+### Previous mutation-capture checkpoint
+
 Mutation-capture checkpoint: `MUTATION-RECORDS.md` adds immutable native records
 for attributes, character data and child lists, including old strings, ancestry,
 logical siblings and grouped fragment/replacement operations. Three baseline
