@@ -15,6 +15,7 @@ import { documentHitTesting } from "./hit-testing.js";
 import { documentScroll, documentScrollPosition } from "./document-scroll.js";
 import type { DefaultActionIntent, InteractionResult } from "./interactions.js";
 import { isInertRoot } from "./inertness.js";
+import { resolveVisualTarget } from "./generated-controls.js";
 
 export type MouseButton = "left" | "middle" | "right";
 export interface MouseModifiers {
@@ -238,6 +239,7 @@ export class DocumentMouse {
 	private y = 0;
 	private hover: number | null = null;
 	private readonly pressed = new Map<MouseButton, number | null>();
+	private readonly pressedGenerated = new Map<MouseButton, string>();
 	private actions = 0;
 	private busy = false;
 	private closed = false;
@@ -300,12 +302,23 @@ export class DocumentMouse {
 	): EventAction<MouseResult> {
 		if (signal?.aborted)
 			throw new AgentBrowserError("aborted", "Targeted hover aborted");
-		this.requireHoverTarget(reference, this.hit(point.x, point.y));
+		this.requireHoverTarget(reference, this.hit(point.x, point.y), point);
 		return yield* this.moveAction(point.x, point.y, reference);
 	}
-	private requireHoverTarget(reference: string, hit: number | null) {
-		const target = this.tree.resolve(reference);
-		if (!clickTargetContains(this.tree, target.id, hit))
+	private requireHoverTarget(
+		reference: string,
+		hit: number | null,
+		point?: ClickPoint,
+	) {
+		const { node: target, generated } = resolveVisualTarget(
+			this.tree,
+			reference,
+		);
+		if (
+			generated
+				? this.generatedAt(hit, point) !== generated.ref
+				: !clickTargetContains(this.tree, target.id, hit)
+		)
 			throw new AgentBrowserError(
 				"not-actionable",
 				"Target no longer receives the hover",
@@ -323,10 +336,11 @@ export class DocumentMouse {
 				"not-actionable",
 				"Targeted click requires no held mouse buttons",
 			);
-		this.tree.resolve(reference);
+		resolveVisualTarget(this.tree, reference);
 		this.requireClickTarget(
 			reference,
 			documentHitTesting(this.tree).elementFromPoint(point.x, point.y),
+			point,
 		);
 		try {
 			yield* this.moveAction(point.x, point.y);
@@ -334,20 +348,32 @@ export class DocumentMouse {
 			return yield* this.upAction("left", reference);
 		} finally {
 			this.pressed.delete("left");
+			this.pressedGenerated.delete("left");
 			this.publishPointerState();
 		}
 	}
-	private requireClickTarget(reference: string, hit: number | null) {
-		const target = this.tree.resolve(reference);
+	private requireClickTarget(
+		reference: string,
+		hit: number | null,
+		point?: ClickPoint,
+	) {
+		const { node: target, generated } = resolveVisualTarget(
+			this.tree,
+			reference,
+		);
 		if (
 			!this.canActivate(reference) ||
-			clickTargetAriaDisabled(this.tree, target.id)
+			clickTargetAriaDisabled(this.tree, target.id, generated !== undefined)
 		)
 			throw new AgentBrowserError(
 				"not-actionable",
 				"Click target became disabled or hidden during pointer events",
 			);
-		if (!clickTargetContains(this.tree, target.id, hit))
+		if (
+			generated
+				? this.generatedAt(hit, point) !== generated.ref
+				: !clickTargetContains(this.tree, target.id, hit)
+		)
 			throw new AgentBrowserError(
 				"not-actionable",
 				"Another element intercepts the targeted click",
@@ -384,6 +410,7 @@ export class DocumentMouse {
 		if (this.closed) return;
 		this.closed = true;
 		this.pressed.clear();
+		this.pressedGenerated.clear();
 		this.hover = null;
 		this.tree.clearPointerState();
 		this.x = 0;
@@ -501,6 +528,17 @@ export class DocumentMouse {
 			hover !== null && this.tree.isConnected(hover) ? hover : null,
 			active !== null && this.tree.isConnected(active) ? active : null,
 		);
+	}
+	private generatedAt(
+		target: number | null,
+		point?: ClickPoint,
+	): string | undefined {
+		if (target === null || this.tree.get(target).tagName !== "details") return;
+		const hit = documentHitTesting(this.tree).targetFromPoint(
+			point?.x ?? this.x,
+			point?.y ?? this.y,
+		);
+		return hit?.id === target ? hit.generated : undefined;
 	}
 	private *refreshTarget(): EventAction<number | null> {
 		for (let turn = 0; turn < mouseLimits.maxBoundaryTransitions; turn++) {
@@ -635,6 +673,9 @@ export class DocumentMouse {
 		if (expectedReference !== undefined)
 			this.requireClickTarget(expectedReference, target);
 		this.pressed.set(button, target);
+		const generated = this.generatedAt(target);
+		if (generated) this.pressedGenerated.set(button, generated);
+		else this.pressedGenerated.delete(button);
 		this.publishPointerState();
 		if (target === null) return this.result(null);
 		const allowed = yield {
@@ -657,12 +698,15 @@ export class DocumentMouse {
 	): EventAction<MouseResult> {
 		this.validateButton(button);
 		const down = this.pressed.get(button);
+		const downGenerated = this.pressedGenerated.get(button);
 		this.pressed.delete(button);
+		this.pressedGenerated.delete(button);
 		this.publishPointerState();
 		const target = yield* this.refreshTarget();
 		if (expectedReference !== undefined)
 			this.requireClickTarget(expectedReference, target);
 		if (target === null) return this.result(null);
+		const upGenerated = this.generatedAt(target);
 		const allowed = yield {
 			target,
 			event: this.event("mouseup", buttons[button].button, { detail: 1 }),
@@ -704,9 +748,15 @@ export class DocumentMouse {
 				);
 			return this.result(target, !allowed || !auxiliary);
 		}
+		const generated =
+			downGenerated && downGenerated === upGenerated && common === target
+				? downGenerated
+				: undefined;
+		if (generated && this.generatedAt(target) !== generated)
+			return this.result(target, !allowed);
 		const click = this.event("click", 0, { detail: 1 });
 		const interaction = yield* this.activate(
-			this.tree.reference(common),
+			generated ?? this.tree.reference(common),
 			click,
 		);
 		if (

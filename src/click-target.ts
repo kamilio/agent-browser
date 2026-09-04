@@ -4,6 +4,7 @@ import { AgentBrowserError } from "./errors.js";
 import { documentHitTesting } from "./hit-testing.js";
 import { documentStyles } from "./styles.js";
 import { snapshotElementRole } from "./snapshot.js";
+import { documentGeneratedControls } from "./generated-controls.js";
 
 const ariaDisabledRoles = new Set([
 	"application",
@@ -108,8 +109,15 @@ export function clickTargetContains(
 	return false;
 }
 
-export function clickTargetAriaDisabled(tree: DocumentTree, target: number) {
-	if (!ariaDisabledRoles.has(snapshotElementRole(tree, target) ?? ""))
+export function clickTargetAriaDisabled(
+	tree: DocumentTree,
+	target: number,
+	generated = false,
+) {
+	if (
+		!generated &&
+		!ariaDisabledRoles.has(snapshotElementRole(tree, target) ?? "")
+	)
 		return false;
 	let current: number | null = target;
 	let depth = 0;
@@ -141,10 +149,27 @@ export function findHoverPoint(
 	return findReceivingPoint(tree, target, false);
 }
 
+export function findGeneratedClickPoint(
+	tree: DocumentTree,
+	reference: string,
+): ClickTargetResult {
+	const target = documentGeneratedControls(tree).resolve(reference);
+	return findReceivingPoint(tree, target.owner, true, reference);
+}
+
+export function findGeneratedHoverPoint(
+	tree: DocumentTree,
+	reference: string,
+): ClickTargetResult {
+	const target = documentGeneratedControls(tree).resolve(reference);
+	return findReceivingPoint(tree, target.owner, false, reference);
+}
+
 function findReceivingPoint(
 	tree: DocumentTree,
 	target: number,
 	requiresEnabled: boolean,
+	generated?: string,
 ): ClickTargetResult {
 	if (tree.get(target).kind !== "element")
 		throw new AgentBrowserError(
@@ -156,14 +181,19 @@ function findReceivingPoint(
 			"stale-reference",
 			"Click target is no longer in this document",
 		);
-	if (requiresEnabled && clickTargetAriaDisabled(tree, target))
+	if (
+		requiresEnabled &&
+		clickTargetAriaDisabled(tree, target, generated !== undefined)
+	)
 		return Object.freeze({
 			revision: tree.revision,
 			blocked: "aria-disabled",
 			points: 0,
 			rectangles: 0,
 		});
-	const rectangles = documentGeometry(tree).getClientRects(target);
+	const rectangles = generated
+		? documentGeometry(tree).getGeneratedClientRects(generated)
+		: documentGeometry(tree).getClientRects(target);
 	const viewport = documentStyles(tree).viewport;
 	const hits = documentHitTesting(tree);
 	let points = 0;
@@ -202,8 +232,17 @@ function findReceivingPoint(
 						"resource-limit",
 						"Click point limit exceeded",
 					);
-				const hit = hits.elementFromPoint(pointerX, pointerY);
-				if (clickTargetContains(tree, target, hit))
+				const generatedHit = generated
+					? hits.targetFromPoint(pointerX, pointerY)
+					: undefined;
+				const hit = generated
+					? (generatedHit?.id ?? null)
+					: hits.elementFromPoint(pointerX, pointerY);
+				if (
+					generated
+						? generatedHit?.generated === generated
+						: clickTargetContains(tree, target, hit)
+				)
 					return Object.freeze({
 						revision: tree.revision,
 						point: Object.freeze({ x: pointerX, y: pointerY }),

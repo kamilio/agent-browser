@@ -1111,6 +1111,23 @@ The pending Window-onload test conflict is unchanged. No gated probe ran; the
 denied SafeJS probe remains unrun. Historical evidence and unrelated work stay
 separate; the complete seven-day goal remains active.
 
+September 4 generated-activation continuation: `GENERATED-ACTIVATION.md` wires
+native primary-pointer/direct fallback activation, host-retargeted events,
+header-only receiving points and shared attribute/group/toggle ownership. Two
+stale-mouseup regressions reproduce ancestor navigation and pass after the
+fail-closed guard. The 37 new cases produce 27 failures and ten passes on isolated
+prior HEAD; matching focused runs pass 277 / eight files in both trees.
+Types/builds, strict new-test checking and five-file lint pass in both. Actual
+native pointer before/after captures were inspected. Authorized full native runs
+pass 9,270 / 265 isolated files; the working run reports 10,415 passes and the one
+unchanged pending Window-onload assertion failure / 287 files.
+Next: generated focus/tab order, keyboard, semantic snapshots and
+agent/locator publication. Do not claim complete accessible fallback or general
+CLI generated-reference support. The pending Window-onload assertion conflict is
+unchanged. Complete runtime, UA/shadow/accessibility and original browser gates
+remain open; no gated probe ran and the denied SafeJS probe remains unrun.
+Historical evidence and unrelated work stay separate; the seven-day goal is active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

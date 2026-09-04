@@ -19,6 +19,27 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Generated-activation checkpoint: `GENERATED-ACTIVATION.md` connects generated
+fallback identity to native direct and primary-pointer activation, host-retargeted
+events, real attribute/group/toggle state and header-only receiving points.
+Cancellation, reentrant mutation, stale targets, body/header drags, quotas and
+aborted pointer cleanup are covered. Two reproduced stale-mouseup regressions
+no longer fall through to ancestor navigation. The 37 new cases produce 27
+failures and ten passes on isolated prior HEAD; matching focused runs pass
+277 / eight files in both trees. Types/builds, strict new-test checking and
+five-file lint pass in both; actual native pointer before/after captures were
+inspected. Authorized full native runs pass 9,270 / 265 isolated files; the working
+run reports 10,415 passes and the one unchanged pending Window-onload assertion
+failure / 287 files. Next: generated focus/tab order,
+keyboard, semantic snapshots and agent/locator publication. Do not claim complete
+accessible fallback or general CLI generated-reference support. The unchanged
+pending Window-onload expectation conflict, runtime/browser gates and original
+scope remain open. No gated probe ran; the denied SafeJS probe remains unrun.
+Historical evidence and unrelated work remain separate; the seven-day goal stays
+active.
+
+### Previous generated-summary foundation
+
 Generated-summary foundation: `GENERATED-SUMMARIES.md` adds bounded, document-owned
 fallback targets with references distinct from DOM nodes, native labels/markers,
 header-only geometry and generated hit metadata. It preserves real host DOM

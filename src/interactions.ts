@@ -18,6 +18,10 @@ import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { summaryDetails } from "./details.js";
 import {
+	documentGeneratedControls,
+	resolveVisualTarget,
+} from "./generated-controls.js";
+import {
 	type EventAction,
 	runEventAction,
 	runEventActionAsync,
@@ -330,10 +334,13 @@ export class DocumentInteractions {
 		mouseEvent?: BrowserMouseEvent,
 	): EventAction<InteractionResult> {
 		const programmatic = typeof targetReference === "number";
+		const generated = programmatic
+			? undefined
+			: resolveVisualTarget(this.tree, targetReference).generated;
 		const target = programmatic
 			? this.programmaticTarget(targetReference)
 			: this.actionable(targetReference, allowHidden);
-		const reference = this.tree.reference(target.id);
+		const reference = generated?.ref ?? this.tree.reference(target.id);
 		const clicking = programmatic ? this.programmaticClicking : this.clicking;
 		if (
 			(programmatic && isControlDisabled(this.tree, target.id)) ||
@@ -343,7 +350,9 @@ export class DocumentInteractions {
 		clicking.add(target.id);
 		let rollback: (() => void) | undefined;
 		try {
-			const candidate = this.activationTarget(target.id) ?? target;
+			const candidate = generated
+				? target
+				: (this.activationTarget(target.id) ?? target);
 			if (
 				moveFocus &&
 				focusTabIndex(this.tree, candidate.id) !== null &&
@@ -360,7 +369,9 @@ export class DocumentInteractions {
 					this.keyboard.collapseEnd(candidate.id);
 			}
 			if (!programmatic) this.actionable(reference, allowHidden);
-			const activation = this.activationTarget(target.id);
+			const activation = generated
+				? undefined
+				: this.activationTarget(target.id);
 			const type =
 				activation?.tagName === "input" ? inputType(activation) : undefined;
 			const wasChecked =
@@ -411,6 +422,15 @@ export class DocumentInteractions {
 				return this.result(reference, true);
 			}
 			rollback = undefined;
+			if (generated) {
+				if (
+					documentGeneratedControls(this.tree).detailsSummary(target.id) ===
+						generated &&
+					!this.actionability(reference).blocked
+				)
+					this.tree.toggleAttribute(target.id, "open");
+				return this.result(reference, false);
+			}
 			if (!activation) return this.result(reference, false);
 			const current = this.tree.get(activation.id);
 			if (
@@ -464,7 +484,7 @@ export class DocumentInteractions {
 	} {
 		if (this.events.metrics().closed)
 			throw new AgentBrowserError("closed", "Document interactions are closed");
-		const node = this.tree.resolve(reference);
+		const { node } = resolveVisualTarget(this.tree, reference);
 		if (node.kind !== "element")
 			throw new AgentBrowserError(
 				"not-actionable",

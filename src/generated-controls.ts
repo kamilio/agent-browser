@@ -113,3 +113,18 @@ export function documentGeneratedControls(tree: DocumentTree) {
 	}
 	return owner;
 }
+
+export function resolveVisualTarget(tree: DocumentTree, reference: string) {
+	if (typeof reference !== "string")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid visual target reference",
+		);
+	const generated = reference.startsWith("u")
+		? documentGeneratedControls(tree).resolve(reference)
+		: undefined;
+	return {
+		node: generated ? tree.get(generated.owner) : tree.resolve(reference),
+		generated,
+	};
+}

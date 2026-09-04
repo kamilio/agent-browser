@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 generated-activation continuation: `GENERATED-ACTIVATION.md` adds
+native primary-pointer/direct activation and header-only click/hover points,
+with host-retargeted events and stale-default protection. Generated focus/tab
+order, keyboard, semantic snapshots and general agent/locator publication remain
+open, as do complete UA/shadow/accessibility and runtime/browser acceptance.
+
 September 4 generated-summary foundation: `GENERATED-SUMMARIES.md` adds native
 fallback header rendering, distinct generated-target identity, header-only
 geometry and hit metadata without fake DOM children. Activation/default actions,
