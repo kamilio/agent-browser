@@ -6,17 +6,18 @@ import {
 	inputType,
 	isControlDisabled,
 	optionLabel,
-	selectedOptions,
 	selectOptions,
+	selectedOptions,
 } from "./controls.js";
-import { paintBackground, type PaintStyle } from "./css-paint.js";
+import { type PaintStyle, paintBackground } from "./css-paint.js";
+import { existingDocumentFiles } from "./document-files.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import {
+	type Rgba,
 	createRaster,
 	paintBitmapGlyph,
 	paintRasterRect,
-	type Rgba,
 } from "./raster.js";
 
 export const controlRenderingLimits = Object.freeze({
@@ -33,6 +34,8 @@ export const controlRenderingCapabilities = Object.freeze({
 	textScrolling: false,
 	placeholderState: "attribute-present-and-empty-api-value",
 	placeholderWhileFocused: true,
+	fileSelection: "owned-metadata-only",
+	fileChooser: false,
 	...controlRenderingLimits,
 });
 export interface SoftwareControl {
@@ -41,9 +44,11 @@ export interface SoftwareControl {
 		| "text"
 		| "textarea"
 		| "select"
+		| "file"
 		| "checkbox"
 		| "radio";
 	readonly text: string;
+	readonly buttonText?: string;
 	readonly fontSize: number;
 	readonly width: number;
 	readonly height: number;
@@ -62,6 +67,7 @@ export function describeControl(
 	const node = tree.get(id);
 	let kind: SoftwareControl["kind"];
 	let text = "";
+	let buttonText: string | undefined;
 	let widest = 0;
 	if (node.tagName === "button") {
 		if (node.children.some((child) => tree.get(child).kind === "element"))
@@ -111,7 +117,17 @@ export function describeControl(
 		}
 	} else if (node.tagName === "input") {
 		const type = inputType(node);
-		if (["checkbox", "radio"].includes(type))
+		if (type === "file") {
+			kind = "file";
+			const multiple = Object.hasOwn(node.attributes, "multiple");
+			buttonText = multiple ? "Choose Files" : "Choose File";
+			const files = existingDocumentFiles(tree)?.selectionMetadata(id) ?? [];
+			text =
+				files.length > 1
+					? `${files.length} files selected`
+					: (files[0]?.name ??
+						(multiple ? "No files selected" : "No file selected"));
+		} else if (["checkbox", "radio"].includes(type))
 			kind = type as "checkbox" | "radio";
 		else if (["submit", "reset", "button"].includes(type)) {
 			kind = "button";
@@ -177,10 +193,12 @@ export function describeControl(
 	const width =
 		kind === "checkbox" || kind === "radio"
 			? square
-			: kind === "text" || kind === "textarea"
-				? count(kind === "textarea" ? "cols" : "size", 20) * advance + 12
-				: Math.max(1, widest, Array.from(text).length) * advance +
-					(kind === "select" ? 24 : 12);
+			: kind === "file"
+				? 34 * advance + 24
+				: kind === "text" || kind === "textarea"
+					? count(kind === "textarea" ? "cols" : "size", 20) * advance + 12
+					: Math.max(1, widest, Array.from(text).length) * advance +
+						(kind === "select" ? 24 : 12);
 	const height =
 		kind === "checkbox" || kind === "radio"
 			? square
@@ -197,6 +215,7 @@ export function describeControl(
 	return Object.freeze({
 		kind,
 		text,
+		...(buttonText === undefined ? {} : { buttonText }),
 		fontSize,
 		width,
 		height,
@@ -233,7 +252,10 @@ export function rasterizeControl(
 			"resource-limit",
 			"Control raster limit exceeded",
 		);
-	charge(columns * rows * 8 + control.text.length * 64);
+	charge(
+		columns * rows * 8 +
+			(control.text.length + (control.buttonText?.length ?? 0)) * 64,
+	);
 	const background = paintBackground(paint);
 	const fill: Rgba = background[3]
 		? background
@@ -291,6 +313,49 @@ export function rasterizeControl(
 	}
 	const advance =
 		(bitmapFont.advance * control.fontSize) / bitmapFont.unitsPerEm;
+	if (control.kind === "file") {
+		const buttonText = control.buttonText ?? "Choose File";
+		const buttonWidth = Math.min(
+			columns - 1,
+			Math.ceil(buttonText.length * advance + 12),
+		);
+		paintRasterRect(
+			image,
+			1,
+			1,
+			Math.max(0, buttonWidth - 1),
+			Math.max(0, rows - 2),
+			control.disabled ? [224, 224, 224, 255] : [240, 240, 240, 255],
+		);
+		if (buttonWidth > 0 && buttonWidth < columns - 1)
+			paintRasterRect(image, buttonWidth, 1, 1, Math.max(0, rows - 2), edge);
+		const vertical = Math.max(4, (rows - control.fontSize) / 2);
+		if (control.fontSize > 0 && vertical + control.fontSize <= rows - 4)
+			for (const [caption, start, end] of [
+				[buttonText, 6, buttonWidth - 6],
+				[control.text, buttonWidth + 6, columns - 6],
+			] as const) {
+				let horizontal = start;
+				for (const character of caption) {
+					if (horizontal + advance > end) break;
+					if (!bitmapGlyph(character).supported)
+						throw new AgentBrowserError(
+							"unsupported",
+							"Control caption glyph is not supported",
+						);
+					paintBitmapGlyph(
+						image,
+						character,
+						horizontal,
+						vertical,
+						control.fontSize,
+						foreground,
+					);
+					horizontal += advance;
+				}
+			}
+		return image;
+	}
 	const labelWidth = Array.from(control.text).length * advance;
 	if (control.kind === "select" && columns >= 18 && rows >= 8)
 		for (let row = 0; row < 4; row++)

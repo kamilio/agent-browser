@@ -42,6 +42,11 @@ and one multipart submission before own-default navigation stops the gesture.
 The file inputs in those two fixtures are explicitly display:none: visible file
 input layout remains an active rendering follow-up, not an accepted gate here.
 
+Current continuation: `FILE-CONTROL-RENDERING.md` promotes those two fixtures to
+visible file controls and validates them again through actual native host routing.
+The earlier measurements and captures below retain their original hidden-input
+baseline; they are not relabeled as the new rendering validation.
+
 Both focused runs pass 135 tests / six files. Source types/builds, strict new-test
 checking, nine-file formatting, five-new-file Biome checks and three-source-file
 lint pass. Existing import-order/command-host formatting diagnostics are not

@@ -273,10 +273,18 @@ describe("double-click session integration contract (not command-host wiring)", 
 		expect(result.doubleClick).toBeUndefined();
 	});
 
-	it("retains the existing unsupported direct file-control layout boundary", async () => {
-		await expect(
-			fixture('<input id="target" type="file">'),
-		).rejects.toMatchObject({ code: "unsupported" });
+	it("lays out direct file controls but returns unhandled picker intent", async () => {
+		const { doubleClick, reference, events } = await fixture(
+			'<input id="target" type="file">',
+		);
+		const result = await doubleClick();
+		expect(result.pendingDefaultAction).toEqual({
+			kind: "picker",
+			reference,
+		});
+		expect(result.clicks).toHaveLength(1);
+		expect(result.doubleClick).toBeUndefined();
+		expect(events).toEqual(["mousedown:1", "mouseup:1", "click:1"]);
 	});
 
 	it("cleans up when the parent's default handler rejects", async () => {

@@ -1,15 +1,15 @@
 import { afterEach, expect, it } from "vitest";
 import { describeControl, rasterizeControl } from "./control-rendering.js";
-import { initialPaintStyle } from "./css-paint.js";
 import { controlChecked } from "./controls.js";
+import { initialPaintStyle } from "./css-paint.js";
 import { documentGeometry } from "./document-geometry.js";
 import { rasterizeDocument } from "./document-raster.js";
+import type { DocumentTree } from "./document.js";
 import { buildFormattingTree } from "./formatting-tree.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { documentInteractions } from "./interactions.js";
 import { DocumentQueries } from "./selectors.js";
 import { documentStyles } from "./styles.js";
-import type { DocumentTree } from "./document.js";
 
 const trees: DocumentTree[] = [];
 function fixture(html = '<button id="target">Go</button>', css = "") {
@@ -71,6 +71,7 @@ it.each([
 	"button",
 	"checkbox",
 	"radio",
+	"file",
 ])("renders input type %s without an image resource", (type) => {
 	const { tree } = fixture(`<input id="target" type="${type}" value="12">`);
 	expect(rasterizeDocument(tree).metrics).toMatchObject({
@@ -192,7 +193,6 @@ it("normalizes ordinary indented option labels before measuring and painting", (
 
 it.each([
 	'<input id="target" type="range">',
-	'<input id="target" type="file">',
 	'<select id="target" multiple><option>A</option></select>',
 	'<button id="target"><span>Rich</span></button>',
 ])("keeps unsupported control profile explicit: %s", (html) => {

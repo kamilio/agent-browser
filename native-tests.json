@@ -1,4 +1,5 @@
 [
+  "src/file-control-rendering.test.ts",
   "src/editable-paragraph.test.ts",
   "src/editable-paragraph-command.test.ts",
   "src/positioning-performance.test.ts",

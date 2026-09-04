@@ -19,6 +19,17 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+File-control rendering checkpoint: `FILE-CONTROL-RENDERING.md` adds visible native
+file inputs using existing owned metadata without payload reads or owner creation.
+Parent actual-host double-click tests now use visible file inputs for reset and
+multipart submission; a fixed-control test preserves scrolled geometry/pixels.
+Direct-file picker intent is explicitly unimplemented by the host. Focused suites
+pass 166 / seven files, types/builds/strict checks and scoped Biome
+pass, and three fresh native captures are inspected. Final explicit native suites
+pass 10,517 / 309 isolated files and report 11,648 passes with the same fifteen
+pending failures / 331 working files. Production upload wiring,
+chooser/guest file APIs and original external acceptance gates remain open.
+
 Public focus bridge checkpoint: `FOCUS-BRIDGE.md` binds final guarded focus/blur
 methods to setup-registered public await-result identities. Native fixtures cover
 listener prefixes, reentry, cancellation, revocation and fixed-root geometry;

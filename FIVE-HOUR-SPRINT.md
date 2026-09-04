@@ -10,7 +10,7 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | Integrate ready upload server/client and file rendering | Focus bridge/pressure passes 10,493 isolated native tests; released-runtime scheduling remains gated. |
+| Main | Integrate ready upload server/client and genuine CLI-to-host tests | Visible file controls pass 10,517 isolated native tests with three inspected PNGs. |
 | DOM worker | Adjacent paragraph Backspace/Delete merging | Paragraph insertion is delivered; the new bounded merge follow-up preserves that patch. |
 | Focus-bridge worker | Native provisioning/resource/revocation stress | Both deliveries are integrated natively; public/runtime limits and URL constructor blockers remain explicit. |
 | Focus delivery | Native focus/blur options, indication and scrolling | Public-contract bridge is integrated natively; released guest execution remains unverified. |

@@ -118,9 +118,9 @@ it("keeps viewport-fixed double-click coordinates and root scroll across both cl
 	).toBe(true);
 });
 
-it("runs both reset defaults against the shared file-selection owner", async () => {
+it("runs both reset defaults with a visible shared file-selection control", async () => {
 	const { page, id, doubleClick } = await fixture(
-		'<form><input id="file" type="file" style="display:none"><button id="target" type="reset">Reset</button></form>',
+		'<form><input id="file" type="file"><button id="target" type="reset">Reset</button></form>',
 	);
 	const files = page.interactions.files;
 	const reference = page.document.reference(id("#file"));
@@ -141,9 +141,9 @@ it("runs both reset defaults against the shared file-selection owner", async () 
 	expect(files.metrics()).toMatchObject({ files: 0, bytes: 0 });
 });
 
-it("submits owned file bytes once before stopping the double-click at document navigation", async () => {
+it("submits a visible file control once before stopping the double-click at document navigation", async () => {
 	const { page, id, requests, doubleClick } = await fixture(
-		'<form action="/upload" method="post" enctype="multipart/form-data"><input id="file" type="file" name="upload" required style="display:none"><button id="target">Send</button></form>',
+		'<form action="/upload" method="post" enctype="multipart/form-data"><input id="file" type="file" name="upload" required><button id="target">Send</button></form>',
 	);
 	const files = page.interactions.files;
 	const reference = page.document.reference(id("#file"));
@@ -520,6 +520,7 @@ it("rejects modified link defaults after one click while preserving keyboard sta
 it.each([
 	'<a id="target" href="/next" target="_blank">Next</a>',
 	'<input id="file" type="file" style="display:none"><label id="target" for="file">Choose</label>',
+	'<input id="target" type="file">',
 ])(
 	"rejects an unsupported default after the first real click: %s",
 	async (content) => {

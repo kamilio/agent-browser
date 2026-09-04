@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 file-control rendering continuation: `FILE-CONTROL-RENDERING.md` adds
+metadata-only native labels, bounded dimensions/clipping and existing focus/disabled
+styles. Visible native host submit/reset and fixed-root geometry are tested; three
+new module captures are inspected. Chooser, guest file APIs, production upload
+wiring and original external/runtime acceptance are not implied by this paint pass.
+
 September 4 public focus bridge continuation: `FOCUS-BRIDGE.md` preserves exact
 setup-registered final method identities, awaits native controlled-listener
 prefixes and retains ordinary async Promise behavior. Native tests do not prove

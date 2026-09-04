@@ -7,6 +7,10 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native file inputs now render owned metadata; `FILE-CONTROL-RENDERING.md` records
+visible actual-host submit/reset coverage, fixed geometry and fresh inspected PNGs.
+Upload transport integration and chooser/guest File APIs remain separate gates.
+
 The public focus bridge now has native final-identity and controlled-listener
 coverage; `FOCUS-BRIDGE.md` records setup registration costs and limits. It is not
 a released-SafeJS scheduler pass and does not close the constructor/runtime gates.
