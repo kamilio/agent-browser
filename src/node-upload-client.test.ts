@@ -8,7 +8,7 @@ import {
 	type FileSelectionTarget,
 } from "./control-files.js";
 import { DocumentTree } from "./document.js";
-import { runEventAction } from "./event-actions.js";
+import { runEventAction, runEventActionAsync } from "./event-actions.js";
 import { DocumentEvents } from "./events.js";
 import { type FormUpload, prepareFormSubmission } from "./forms.js";
 import {
@@ -16,7 +16,11 @@ import {
 	readPrivateUploadFiles,
 	uploadClientLimits,
 	uploadPrivateFiles,
+	uploadPrivateFilesForReference,
 } from "./node-upload-client.js";
+import { executeUploadCommand } from "./upload-commands.js";
+import type { UploadExecutor } from "./upload-protocol.js";
+import { UploadTransfers } from "./upload-transfers.js";
 
 vi.mock("node:fs/promises", async (importOriginal) => ({
 	...(await importOriginal<typeof import("node:fs/promises")>()),
@@ -24,6 +28,7 @@ vi.mock("node:fs/promises", async (importOriginal) => ({
 
 const directories: string[] = [];
 const trees: DocumentTree[] = [];
+const managers: UploadTransfers[] = [];
 const target: FileSelectionTarget = {
 	documentId: "synthetic-document",
 	reference: "e1",
@@ -58,9 +63,195 @@ function transport() {
 
 afterEach(async () => {
 	vi.restoreAllMocks();
+	for (const manager of managers.splice(0)) manager.close();
 	for (const tree of trees.splice(0)) tree.close();
 	for (const directory of directories.splice(0))
 		await fs.rm(directory, { recursive: true, force: true });
+});
+
+function stagedFixture() {
+	const tree = new DocumentTree("https://example.com/upload");
+	trees.push(tree);
+	const form = tree.createElement("form", {
+		method: "post",
+		enctype: "multipart/form-data",
+	});
+	const input = tree.createElement("input", {
+		type: "file",
+		name: "attachment",
+	});
+	tree.append(tree.root, form);
+	tree.append(form, input);
+	const owner = new DocumentFileSelections(tree);
+	const events = new DocumentEvents(tree);
+	const transfers = new UploadTransfers();
+	managers.push(transfers);
+	transfers.attach("private-client", owner, (action, signal) =>
+		runEventActionAsync(events, action, signal),
+	);
+	const execute = vi.fn((argv: readonly string[]) =>
+		executeUploadCommand(transfers, "private-client", argv),
+	);
+	return {
+		tree,
+		form,
+		owner,
+		events,
+		transfers,
+		execute,
+		reference: tree.reference(input),
+	};
+}
+
+it("captures its authenticated target before private path reads, then uses real staging and command adapters", async () => {
+	const bytes = Uint8Array.of(0, 255, 65);
+	const { path } = await fixture(bytes);
+	const { execute, reference, owner, transfers, tree, form } = stagedFixture();
+	const originalOpen = fs.open;
+	vi.spyOn(fs, "open").mockImplementation(async (filename, flags, mode) => {
+		expect(execute.mock.calls.map(([argv]) => argv[0])).toEqual([
+			"upload-target",
+		]);
+		return originalOpen(filename, flags, mode);
+	});
+	const result = await uploadPrivateFilesForReference(
+		"private-client",
+		reference,
+		[{ path }],
+		execute,
+	);
+	expect(result).toMatchObject({
+		files: 1,
+		bytes: 3,
+		result: { committed: true, stagingReleased: true },
+	});
+	expect(owner.files(reference)[0].data).toEqual(bytes);
+	expect(execute.mock.calls.map(([argv]) => argv[0])).toEqual([
+		"upload-target",
+		"upload-begin",
+		"upload-write",
+		"upload-commit",
+	]);
+	expect(JSON.stringify(execute.mock.calls)).not.toContain(path);
+	expect(transfers.metrics().stagedBytes).toBe(0);
+	const prepared = prepareFormSubmission(tree, tree.reference(form), {
+		files: owner.filesForSubmission(),
+		boundary: "private-staging",
+	});
+	const prefix = new TextEncoder().encode(
+		'--private-staging\r\nContent-Disposition: form-data; name="attachment"; filename="sample.bin"\r\nContent-Type: application/octet-stream\r\n\r\n',
+	);
+	expect(
+		(prepared.request.body as Uint8Array).slice(
+			prefix.length,
+			prefix.length + 3,
+		),
+	).toEqual(bytes);
+});
+
+it("does not inspect any upload paths when capture authentication fails", async () => {
+	const { path } = await fixture();
+	const { execute, reference } = stagedFixture();
+	const inspect = vi.spyOn(fs, "lstat");
+	const bad: UploadExecutor = async (argv) => ({
+		...(await execute(argv)),
+		session: "other",
+	});
+	await expect(
+		uploadPrivateFilesForReference(
+			"private-client",
+			reference,
+			[{ path }],
+			bad,
+		),
+	).rejects.toMatchObject({ code: "invalid-input" });
+	expect(inspect).not.toHaveBeenCalled();
+});
+
+it("does not begin staging after a private path fails, despite having captured a target", async () => {
+	const { directory } = await fixture();
+	const { execute, reference, transfers } = stagedFixture();
+	await expect(
+		uploadPrivateFilesForReference(
+			"private-client",
+			reference,
+			[{ path: join(directory, "missing") }],
+			execute,
+		),
+	).rejects.toMatchObject({ code: "not-found" });
+	expect(execute.mock.calls.map(([argv]) => argv[0])).toEqual([
+		"upload-target",
+	]);
+	expect(transfers.metrics().transfers).toBe(0);
+});
+
+it("rejects document closure between capture and begin rather than uploading into another document", async () => {
+	const { path } = await fixture();
+	const { execute, reference, tree, transfers } = stagedFixture();
+	const closeAfterCapture: UploadExecutor = async (argv) => {
+		const result = await execute(argv);
+		if (argv[0] === "upload-target") tree.close();
+		return result;
+	};
+	await expect(
+		uploadPrivateFilesForReference(
+			"private-client",
+			reference,
+			[{ path }],
+			closeAfterCapture,
+		),
+	).rejects.toMatchObject({ code: "not-found", remoteCleanupConfirmed: false });
+	expect(transfers.metrics().transfers).toBe(0);
+});
+
+it("automatically cancels real staging on a corrupted write response without changing selection", async () => {
+	const { path } = await fixture();
+	const { execute, reference, transfers, owner } = stagedFixture();
+	const corrupted: UploadExecutor = async (argv) => {
+		const result = await execute(argv);
+		return argv[0] === "upload-write"
+			? {
+					...result,
+					data: {
+						...(result.data as object),
+						id: `upload-${crypto.randomUUID()}`,
+					},
+				}
+			: result;
+	};
+	await expect(
+		uploadPrivateFilesForReference(
+			"private-client",
+			reference,
+			[{ path }],
+			corrupted,
+		),
+	).rejects.toMatchObject({
+		code: "invalid-input",
+		remoteCleanupConfirmed: true,
+	});
+	expect(execute.mock.calls.at(-1)?.[0][0]).toBe("upload-cancel");
+	expect(owner.files(reference)).toHaveLength(0);
+	expect(transfers.metrics().transfers).toBe(0);
+});
+
+it("redacts transport failures during target capture before opening a file", async () => {
+	const { reference } = stagedFixture();
+	const inspect = vi.spyOn(fs, "lstat");
+	await expect(
+		uploadPrivateFilesForReference(
+			"private-client",
+			reference,
+			[{ path: "/private/secret" }],
+			async () => {
+				throw new Error("/private/secret raw body");
+			},
+		),
+	).rejects.toMatchObject({
+		code: "network-error",
+		message: "Upload command request failed",
+	});
+	expect(inspect).not.toHaveBeenCalled();
 });
 
 it("reads private binary bytes and transfers only basenames, metadata and bounded chunks", async () => {

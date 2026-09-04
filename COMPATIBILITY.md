@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 upload continuation: `UPLOAD-COMMANDS.md` wires actual native CLI,
+private-file policy, protocol, host queue and document ownership. Cross-boundary
+tests use visible file controls and real multipart generation; interruption and
+lost replies retain explicit no-rollback semantics. Four fresh v2 host captures
+are inspected. Socket/service authentication, chooser, guest file APIs and original
+external/runtime acceptance remain unverified rather than inferred from mocks.
+
 September 4 file-control rendering continuation: `FILE-CONTROL-RENDERING.md` adds
 metadata-only native labels, bounded dimensions/clipping and existing focus/disabled
 styles. Visible native host submit/reset and fixed-root geometry are tested; three

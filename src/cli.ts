@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { parseInvocation } from "./cli-parser.js";
+import { UploadClientError, runCliUpload } from "./cli-upload.js";
 import { BrowserCommandHost } from "./command-host.js";
 import { loadBrowserDocument } from "./document-loader.js";
 import { AgentBrowserError } from "./errors.js";
@@ -85,7 +86,19 @@ async function main() {
 		AGENT_BROWSER_SESSION: process.env.AGENT_BROWSER_SESSION,
 		PLAYWRIGHT_CLI_SESSION: process.env.PLAYWRIGHT_CLI_SESSION,
 	};
-	const invocation = parseInvocation(argv, environment);
+	let invocation: ReturnType<typeof parseInvocation>;
+	try {
+		invocation = parseInvocation(argv, environment);
+	} catch (error) {
+		if (!argv.includes("upload")) throw error;
+		throw new UploadClientError(
+			new AgentBrowserError(
+				error instanceof AgentBrowserError ? error.code : "invalid-input",
+				"Invalid upload invocation",
+			),
+			true,
+		);
+	}
 	const configuration = runtimeConfiguration();
 	const directory = process.env.AGENT_BROWSER_RUNTIME_DIR;
 	if (
@@ -94,6 +107,15 @@ async function main() {
 		invocation.options.version ||
 		invocation.command === "capabilities"
 	) {
+		const discoveryArgv =
+			invocation.command === "upload"
+				? [
+						"upload",
+						...["help", "version", "json"]
+							.filter((key) => invocation.options[key])
+							.map((key) => `--${key}`),
+					]
+				: argv;
 		let connection:
 			| Awaited<ReturnType<typeof readCommandConnection>>
 			| undefined;
@@ -107,7 +129,7 @@ async function main() {
 			console.log(
 				safeJson(
 					await requestCommand(connection, {
-						argv,
+						argv: discoveryArgv,
 						session: invocation.session,
 					}),
 				),
@@ -117,7 +139,9 @@ async function main() {
 		const local = host(configuration);
 		try {
 			console.log(
-				safeJson(await local.execute(argv, { session: invocation.session })),
+				safeJson(
+					await local.execute(discoveryArgv, { session: invocation.session }),
+				),
 			);
 		} finally {
 			await local.close();
@@ -250,6 +274,51 @@ async function main() {
 		);
 		return;
 	}
+	if (invocation.command === "upload") {
+		const controller = new AbortController();
+		const abort = () => controller.abort();
+		process.once("SIGINT", abort);
+		process.once("SIGTERM", abort);
+		try {
+			const connection = await readCommandConnection(directory);
+			const uploaded = await runCliUpload(
+				invocation,
+				async (uploadArgv, signal) => {
+					const result = await requestCommand(
+						connection,
+						{ argv: uploadArgv, session: invocation.session },
+						Number(invocation.options.timeout ?? 30_000) + 5000,
+						signal,
+					);
+					if (!("data" in result))
+						throw new AgentBrowserError("closed", "Local API closed");
+					return result;
+				},
+				{ signal: controller.signal },
+			);
+			console.log(
+				safeJson({
+					schemaVersion: 1,
+					command: "upload",
+					session: invocation.session,
+					data: uploaded,
+				}),
+			);
+		} catch (error) {
+			if (error instanceof UploadClientError) throw error;
+			throw new UploadClientError(
+				new AgentBrowserError(
+					error instanceof AgentBrowserError ? error.code : "network-error",
+					"File upload failed; inspect document state before retrying",
+				),
+				true,
+			);
+		} finally {
+			process.off("SIGINT", abort);
+			process.off("SIGTERM", abort);
+		}
+		return;
+	}
 	if (["state-save", "state-load"].includes(invocation.command)) {
 		const connection = await readCommandConnection(directory);
 		const state = await runStateFileCommand(invocation, async (stateArgv) => {
@@ -353,7 +422,13 @@ void main().catch((error) => {
 	console.error(
 		safeJson({
 			ok: false,
-			error: { code: known.code, message: known.message },
+			error: {
+				code: known.code,
+				message: known.message,
+				...(known instanceof UploadClientError
+					? { remoteCleanupConfirmed: known.remoteCleanupConfirmed }
+					: {}),
+			},
 		}),
 	);
 	process.exitCode = 1;

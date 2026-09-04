@@ -1,5 +1,11 @@
 # Executable CLI and shared command service
 
+September 4 upload integration: `UPLOAD-COMMANDS.md` connects `upload <target> <file...>`
+to an existing service, capturing a stable target before private-file
+reads and sending canonical bounded chunks without local paths. Native actual
+CLI-to-host tests cover visible multipart submission, stale targets and uncertain
+commit/cleanup outcomes. Socket/process/authentication and runtime gates remain open.
+
 September 4 tracing integration: `TRACE-CORE.md` documents bounded per-session
 semantic recording, owned JSON artifacts, private CLI export and failure recovery.
 Use `tracing-start`, `tracing-status` and `tracing-stop --filename=trace.json` in

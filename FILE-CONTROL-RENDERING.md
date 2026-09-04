@@ -68,7 +68,8 @@ than relabeling that initial failure as a pass.
 
 ## Open gates
 
-Production upload client/server integration is separate work. Native chooser,
+`UPLOAD-COMMANDS.md` now supplies native production client/server integration and
+cross-boundary evidence. Actual transport acceptance remains separate. Native chooser,
 guest File/FileList/DataTransfer, drag/drop, complete filename typography and
 full upload UI semantics remain absent. Live websites, socket/TTY/PTY, actual
 subprocesses and released-SafeJS execution remain separately authorized gates.

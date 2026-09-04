@@ -79,8 +79,9 @@ Parent evidence uses file-selection-integration-* in the native-validation cache
 
 ## Outstanding gates
 
-The production CLI-to-authenticated-transfer-to-host command path is a separate
-active integration lane. `FILE-CONTROL-RENDERING.md` now supplies bounded visible
+`UPLOAD-COMMANDS.md` now connects the production CLI/protocol/host code with native
+cross-boundary tests; actual socket authentication remains unverified.
+`FILE-CONTROL-RENDERING.md` now supplies bounded visible
 layout/painting and fresh evidence. Guest File/FileList/DataTransfer, a native file
 chooser and full upload UI semantics remain absent.
 Snapshots keep

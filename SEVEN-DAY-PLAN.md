@@ -7,6 +7,11 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+The native upload path now spans CLI, private files, protocol, host queue and
+document-owned selection. `UPLOAD-COMMANDS.md` records cross-boundary tests,
+conservative reservations, explicit commit uncertainty and fresh native captures.
+Actual transport/service/runtime acceptance is not inferred from injected fixtures.
+
 Native file inputs now render owned metadata; `FILE-CONTROL-RENDERING.md` records
 visible actual-host submit/reset coverage, fixed geometry and fresh inspected PNGs.
 Upload transport integration and chooser/guest File APIs remain separate gates.

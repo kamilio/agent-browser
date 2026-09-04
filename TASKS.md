@@ -19,6 +19,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Upload checkpoint: `UPLOAD-COMMANDS.md` joins real CLI/private-file handling,
+canonical chunk protocol, host/session queue and shared file selection. Genuine
+CLI-to-host native fixtures cover visible multipart submission, stale capture,
+queued/event interruption and lost commit replies without claiming rollback.
+Four fresh v2 command captures retain fixed geometry/root scroll. Final focused
+tests pass 348 / ten files; types/builds, strict checks and scoped Biome pass.
+Explicit native suites pass 10,748 / 315 isolated files and report 11,879 passes
+with the same fifteen pending failures / 337 working files. Chooser/guest File APIs,
+actual socket/service authentication and original runtime/live gates remain open.
+
 File-control rendering checkpoint: `FILE-CONTROL-RENDERING.md` adds visible native
 file inputs using existing owned metadata without payload reads or owner creation.
 Parent actual-host double-click tests now use visible file inputs for reset and

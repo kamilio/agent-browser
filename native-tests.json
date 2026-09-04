@@ -1,4 +1,10 @@
 [
+  "src/upload-protocol.test.ts",
+  "src/upload-commands.test.ts",
+  "src/upload-transfers.test.ts",
+  "src/upload-host.test.ts",
+  "src/cli-upload.test.ts",
+  "src/cli-upload-host.test.ts",
   "src/file-control-rendering.test.ts",
   "src/editable-paragraph.test.ts",
   "src/editable-paragraph-command.test.ts",

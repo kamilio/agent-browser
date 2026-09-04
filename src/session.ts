@@ -1,4 +1,6 @@
 import { CookieJar, type CookieLimits } from "./cookies.js";
+import { documentFiles, existingDocumentFiles } from "./document-files.js";
+import type { UploadActionRunner } from "./upload-transfers.js";
 import {
 	clickTargetAriaDisabled,
 	findClickPoint,
@@ -15,7 +17,7 @@ import {
 import { selectDocumentFragmentTarget, urlFragment } from "./document-url.js";
 import { type DocumentLimits, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
-import { runEventActionAsync } from "./event-actions.js";
+import { type EventAction, runEventActionAsync } from "./event-actions.js";
 import {
 	documentScrollIntoView,
 	type ScrollIntoViewOptions,
@@ -407,7 +409,7 @@ export class BrowserSession {
 			),
 		};
 		this.tabStates.set(id, tab);
-		if (options.select !== false || this.selected === null) this.selected = id;
+		if (options.select !== false || this.selected === null) this.selectTab(id);
 		return this.describe(tab);
 	}
 
@@ -446,8 +448,69 @@ export class BrowserSession {
 
 	selectTab(id: string): SessionTab {
 		const tab = this.tab(id);
+		if (this.selected !== id && this.selected !== null) {
+			const previous = this.tabStates.get(this.selected)?.page;
+			if (previous)
+				existingDocumentFiles(previous.document)?.invalidateTargets();
+		}
 		this.selected = id;
 		return this.describe(tab);
+	}
+
+	uploadContext(id: string) {
+		const tab = this.tab(id);
+		const page = this.page(id);
+		const check = () => {
+			this.ensureOpen();
+			if (
+				this.selected !== id ||
+				this.tabStates.get(id) !== tab ||
+				tab.page !== page ||
+				tab.job
+			)
+				throw new AgentBrowserError(
+					"stale-reference",
+					"Upload document is not current",
+				);
+		};
+		check();
+		const run: UploadActionRunner = (action, signal) =>
+			runEventActionAsync(
+				page.interactions.events,
+				this.uploadOwnedAction(action, () => {
+					if (signal.aborted)
+						throw new AgentBrowserError("aborted", "Upload action aborted");
+					check();
+				}),
+				signal,
+			);
+		return { owner: documentFiles(page.document), run };
+	}
+
+	private *uploadOwnedAction<Result>(
+		action: EventAction<Result>,
+		check: () => void,
+	): EventAction<Result> {
+		try {
+			check();
+			let step = action.next();
+			while (!step.done) {
+				let allowed: boolean;
+				try {
+					check();
+					allowed = yield step.value;
+					check();
+				} catch (error) {
+					step = action.throw(error);
+					continue;
+				}
+				step = action.next(allowed);
+			}
+			check();
+			return step.value;
+		} finally {
+			action.return(undefined as never);
+		}
 	}
 
 	page(id: string): Readonly<SessionPage> {
@@ -1347,6 +1410,7 @@ export class BrowserSession {
 		};
 		const previousJob = tab.job;
 		tab.job = job;
+		if (tab.page) existingDocumentFiles(tab.page.document)?.invalidateTargets();
 		this.jobs.add(job);
 		this.navigations++;
 		const stop = () => {

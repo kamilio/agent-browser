@@ -1,3 +1,5 @@
+import { uploadCommandSchemas } from "./upload-protocol.js";
+
 export interface OptionDefinition {
 	kind: "boolean" | "string" | "number";
 	minimum?: number;
@@ -43,6 +45,15 @@ function command(
 }
 
 const definitions: CommandDefinition[] = [
+	...uploadCommandSchemas.map((schema) =>
+		command(
+			schema.name,
+			schema.arguments.length,
+			schema.arguments.length,
+			{},
+			"extension",
+		),
+	),
 	command("open", 0, 1, {
 		browser: stringOption,
 		headed: booleanOption,

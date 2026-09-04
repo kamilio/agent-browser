@@ -7,6 +7,15 @@ import {
 	resolveFileSelectionLimits,
 	validateUploadMetadata,
 } from "./control-files.js";
+import {
+	captureUploadTarget,
+	createUploadTransport,
+} from "./upload-commands.js";
+import type { UploadExecutor, UploadTransport } from "./upload-protocol.js";
+export type {
+	UploadTransferRequest,
+	UploadTransport,
+} from "./upload-protocol.js";
 import { AgentBrowserError } from "./errors.js";
 import type { FormUpload } from "./forms.js";
 import {
@@ -29,27 +38,6 @@ export interface PrivateUploadPath {
 export interface UploadClientOptions {
 	readonly limits?: FileSelectionOptions;
 	readonly signal?: AbortSignal;
-}
-
-export interface UploadTransferRequest {
-	readonly target: FileSelectionTarget;
-	readonly files: readonly {
-		readonly name: string;
-		readonly type?: string;
-		readonly bytes: number;
-	}[];
-}
-
-export interface UploadTransport<Result> {
-	begin(request: UploadTransferRequest): Promise<string>;
-	write(
-		id: string,
-		file: number,
-		offset: number,
-		base64: string,
-	): Promise<void>;
-	commit(id: string): Promise<Result>;
-	cancel(id: string): Promise<void>;
 }
 
 export class UploadClientError extends AgentBrowserError {
@@ -290,4 +278,17 @@ export async function uploadPrivateFiles<Result>(
 		}
 		throw new UploadClientError(safeError(error), cleanup);
 	}
+}
+
+export async function uploadPrivateFilesForReference(
+	session: string,
+	reference: string,
+	paths: readonly PrivateUploadPath[],
+	execute: UploadExecutor,
+	options: UploadClientOptions = {},
+) {
+	aborted(options.signal);
+	const target = await captureUploadTarget(execute, session, reference);
+	const transport = createUploadTransport(execute, session, target);
+	return uploadPrivateFiles(target, paths, transport, options);
 }

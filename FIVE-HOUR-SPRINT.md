@@ -10,15 +10,15 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | Integrate ready upload server/client and genuine CLI-to-host tests | Visible file controls pass 10,517 isolated native tests with three inspected PNGs. |
+| Main | Finalize upload integration, then adjacent editing and Range geometry | Uploads pass 10,748 isolated native tests and genuine CLI-to-host fixtures. |
 | DOM worker | Adjacent paragraph Backspace/Delete merging | Paragraph insertion is delivered; the new bounded merge follow-up preserves that patch. |
 | Focus-bridge worker | Native provisioning/resource/revocation stress | Both deliveries are integrated natively; public/runtime limits and URL constructor blockers remain explicit. |
 | Focus delivery | Native focus/blur options, indication and scrolling | Public-contract bridge is integrated natively; released guest execution remains unverified. |
 | Cookie delivery | Cookie list/get/set/delete services | Production wiring and actual CLI tests integrated; 9,765 isolated native tests pass. |
 | White-space delivery | Native pre-wrap formatting and hanging spaces | Integrated, with fresh editable captures and 9,854 passing isolated native tests. |
-| Double-click / upload-server worker | Authenticated upload host/session dispatch | Double-click production is integrated; new server work preserves that delivery. |
+| Double-click / upload-server worker | Upload host/session delivery complete; worker closed | Native dispatch is integrated; actual socket authentication remains gated. |
 | Positioning / range-geometry worker | Preserve hard-break source mappings for Range geometry | Initial geometry is delivered; mapping follow-up must preserve layout/pixels and explicit ambiguity limits. |
-| Runtime / upload-client worker | Genuine CLI-to-host upload regression cases | Client production is delivered; new cross-boundary tests must use actual native host routing. |
+| Runtime / upload-client worker | CLI and six cross-boundary cases complete; worker closed | Actual native client/host path passes with injected transport and real private files. |
 | Playground delivery | Extraction/snapshot downloads and honest example discovery | Integrated export guards/cards pass 9,882 isolated native tests; live UI/framework gates remain open. |
 | File-selection / rendering worker | Bounded native editable caret painting | File-control rendering is delivered; new caret work must respect ownership, crops and paint ordering. |
 

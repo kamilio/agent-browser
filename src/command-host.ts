@@ -16,7 +16,10 @@ import {
 } from "./capture-artifacts.js";
 import { type Invocation, parseInvocation } from "./cli-parser.js";
 import { commands } from "./commands.js";
-import { cookieCommandOptions, executeCookieCommand } from "./cookie-commands.js";
+import {
+	cookieCommandOptions,
+	executeCookieCommand,
+} from "./cookie-commands.js";
 import { cssBoxProperties } from "./css-box.js";
 import { cssVariableCapabilities } from "./css-variables.js";
 import { inlineDeclarationLimits } from "./document-inline-declarations.js";
@@ -84,8 +87,49 @@ import { resolveBrowserTarget } from "./target-locator.js";
 import { textLocatorLimits } from "./text-locator.js";
 import { resolveVisualTarget } from "./generated-controls.js";
 import { generatedControlStyle } from "./generated-style.js";
+import type { DocumentFileSelections } from "./control-files.js";
+import { executeUploadCommand } from "./upload-commands.js";
+import {
+	uploadCommandSchemas,
+	uploadProtocolLimits,
+	uploadRequest,
+	type UploadTransferInfo,
+} from "./upload-protocol.js";
+import { UploadTransfers } from "./upload-transfers.js";
+
+export const uploadSessionLimits = Object.freeze({
+	maxSelectedBytes: 67_108_864,
+	maxStagedBytes: 33_554_432,
+	maxTransfers: 8,
+});
+
+interface UploadSessionState {
+	owners: Map<
+		string,
+		{ owner: DocumentFileSelections; unsubscribe: () => void }
+	>;
+	transfers: Map<
+		string,
+		{ documentId: string; bytes: number; expiresAt: number }
+	>;
+}
+
+const uploadNames = new Set<string>(
+	uploadCommandSchemas.map((schema) => schema.name),
+);
+
+function uploadFailure(error: unknown) {
+	return new AgentBrowserError(
+		error instanceof AgentBrowserError ? error.code : "invalid-input",
+		"Upload command failed",
+	);
+}
 
 export interface CommandHostOptions {
+	uploadLimits?: ConstructorParameters<typeof UploadTransfers>[0];
+	uploadSessionLimits?: Partial<
+		Record<keyof typeof uploadSessionLimits, number>
+	>;
 	websiteScripts?: boolean;
 	pageFetch?: boolean;
 	createSession: (name: string) => BrowserSession;
@@ -141,6 +185,9 @@ const frontendCommands = new Set([
 ]);
 
 const supportedOptions: Readonly<Record<string, readonly string[]>> = {
+	...Object.fromEntries(
+		uploadCommandSchemas.map((schema) => [schema.name, []]),
+	),
 	...cookieCommandOptions,
 	"state-export": [],
 	"state-import-begin": [],
@@ -239,6 +286,9 @@ function abortable<Result>(
 }
 
 export class BrowserCommandHost {
+	private readonly uploadTransfers: UploadTransfers;
+	private readonly uploadSessions = new Map<string, UploadSessionState>();
+	private readonly uploadSessionLimits;
 	private readonly artifacts = new CaptureArtifacts();
 	private readonly stateTransfers = new StateTransfers();
 	private sessions = new Map<string, SessionEntry>();
@@ -263,6 +313,23 @@ export class BrowserCommandHost {
 				"invalid-input",
 				"A command host requires a session factory",
 			);
+		this.uploadSessionLimits = Object.freeze({
+			...uploadSessionLimits,
+			...options.uploadSessionLimits,
+		});
+		for (const key of Object.keys(
+			uploadSessionLimits,
+		) as (keyof typeof uploadSessionLimits)[])
+			if (
+				!Number.isSafeInteger(this.uploadSessionLimits[key]) ||
+				this.uploadSessionLimits[key] < 1 ||
+				this.uploadSessionLimits[key] > uploadSessionLimits[key]
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid upload session limits",
+				);
+		this.uploadTransfers = new UploadTransfers(options.uploadLimits);
 		this.limits = Object.freeze({
 			maxSessions: options.maxSessions ?? 8,
 			maxPendingCommands: options.maxPendingCommands ?? 64,
@@ -571,6 +638,19 @@ export class BrowserCommandHost {
 			scrollIntoView: scrollIntoViewCapabilities,
 			hitTesting: hitTestCapabilities,
 			mouse: { ...mouseCapabilities, doubleClick: true },
+			uploads: {
+				partial: true,
+				commands: uploadCommandSchemas.map((schema) => schema.name),
+				captureBeforeRead: true,
+				documentOwned: true,
+				chunkBytes: uploadProtocolLimits.maxChunkBytes,
+				limits: this.uploadTransfers.limits,
+				sessionLimits: this.uploadSessionLimits,
+				events: ["input", "change"],
+				serverFilesystem: false,
+				guestFileFileList: false,
+				liveUploadAcceptance: false,
+			},
 			keyboard: {
 				partial: true,
 				activation: keyboardActivationCapabilities,
@@ -746,6 +826,7 @@ export class BrowserCommandHost {
 			cachedSnapshotBytes: this.cachedBytes,
 			captureArtifacts: this.artifacts.metrics(),
 			stateTransfers: this.stateTransfers.metrics(),
+			uploads: this.uploadTransfers.metrics(),
 			closed: this.closed,
 		});
 	}
@@ -773,9 +854,23 @@ export class BrowserCommandHost {
 				"invalid-input",
 				"Invalid command request options",
 			);
-		const invocation = parseInvocation([...argv], {
-			AGENT_BROWSER_SESSION: options.session,
-		});
+		let invocation: Invocation;
+		try {
+			invocation = parseInvocation([...argv], {
+				AGENT_BROWSER_SESSION: options.session,
+			});
+		} catch (error) {
+			if (argv.some((argument) => uploadNames.has(argument)))
+				throw uploadFailure(error);
+			throw error;
+		}
+		const upload = uploadNames.has(invocation.command);
+		if (
+			upload &&
+			options.session !== undefined &&
+			invocation.session !== options.session
+		)
+			throw new AgentBrowserError("policy-denied", "Upload session mismatch");
 		const result = (data: unknown): CommandResult => ({
 			schemaVersion: 1,
 			command: invocation.command,
@@ -897,6 +992,7 @@ export class BrowserCommandHost {
 				const startedAt = performance.now();
 				try {
 					const value = await this.run(activeEntry, invocation, signal);
+					if (upload) invocation.arguments.fill("[redacted]");
 					trace?.record(
 						invocation.command,
 						Math.max(0, performance.now() - startedAt),
@@ -905,13 +1001,15 @@ export class BrowserCommandHost {
 					);
 					return result(value);
 				} catch (error) {
+					if (upload) invocation.arguments.fill("[redacted]");
+					const failure = upload ? uploadFailure(error) : error;
 					trace?.record(
 						invocation.command,
 						Math.max(0, performance.now() - startedAt),
 						signal.aborted ? "interrupted" : "threw",
-						signal.aborted ? cancellation(signal) : error,
+						signal.aborted ? cancellation(signal) : failure,
 					);
-					throw error;
+					throw failure;
 				}
 			})
 			.finally(() => {
@@ -930,10 +1028,18 @@ export class BrowserCommandHost {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
-		for (const entry of [...this.sessions.values()]) this.closeEntry(entry);
+		try {
+			for (const entry of [...this.sessions.values()]) this.closeEntry(entry);
+		} finally {
+			this.uploadTransfers.close();
+		}
 	}
 
 	private closeEntry(entry: SessionEntry) {
+		const uploads = this.uploadSessions.get(entry.name);
+		for (const binding of uploads?.owners.values() ?? []) binding.unsubscribe();
+		this.uploadSessions.delete(entry.name);
+		this.uploadTransfers.detach(entry.name);
 		this.stateTransfers.clear(entry.browser);
 		this.sessions.delete(entry.name);
 		entry.trace?.close();
@@ -1076,12 +1182,129 @@ export class BrowserCommandHost {
 		return resolveBrowserTarget(page.document, page.queries, value);
 	}
 
+	private async uploadCommand(
+		entry: SessionEntry,
+		invocation: Invocation,
+		signal: AbortSignal,
+	) {
+		const args = invocation.arguments;
+		let state = this.uploadSessions.get(entry.name);
+		if (invocation.command === "upload-cancel") {
+			entry.browser.tabs();
+			const result = await executeUploadCommand(
+				this.uploadTransfers,
+				entry.name,
+				[invocation.command, ...args],
+				signal,
+			);
+			if (state?.transfers.get(args[1])?.documentId === args[0])
+				state.transfers.delete(args[1]);
+			return result.data;
+		}
+		const tab = this.activeTab(entry.browser);
+		const context = entry.browser.uploadContext(tab);
+		const owner = context.owner;
+		if (!state) {
+			state = { owners: new Map(), transfers: new Map() };
+			this.uploadSessions.set(entry.name, state);
+		}
+		if (!state.owners.has(owner.documentId)) {
+			const selected = [...state.owners.values()].reduce(
+				(bytes, binding) => bytes + binding.owner.limits.maxTotalBytes,
+				0,
+			);
+			if (
+				selected + owner.limits.maxTotalBytes >
+				this.uploadSessionLimits.maxSelectedBytes
+			)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Upload session selection reservation exceeded",
+				);
+		}
+		if (!state.owners.has(owner.documentId)) {
+			const current = state;
+			const unsubscribe = owner.onInvalidate((reason) => {
+				for (const [id, transfer] of current.transfers)
+					if (transfer.documentId === owner.documentId)
+						current.transfers.delete(id);
+				if (reason === "close") current.owners.delete(owner.documentId);
+			});
+			try {
+				this.uploadTransfers.attach(entry.name, owner, context.run);
+				state.owners.set(owner.documentId, { owner, unsubscribe });
+			} catch (error) {
+				unsubscribe();
+				throw error;
+			}
+		} else this.uploadTransfers.attach(entry.name, owner, context.run);
+		for (const [id, transfer] of state.transfers)
+			if (transfer.expiresAt <= performance.now()) state.transfers.delete(id);
+		if (invocation.command === "upload-begin") {
+			if (args[0].length > uploadProtocolLimits.maxMetadataCodeUnits)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Upload metadata exceeds its limit",
+				);
+			const request = uploadRequest(JSON.parse(args[0]), owner.limits);
+			const bytes = request.files.reduce(
+				(total, file) => total + file.bytes,
+				0,
+			);
+			const staged = [...state.transfers.values()].reduce(
+				(total, transfer) => total + transfer.bytes,
+				0,
+			);
+			if (
+				state.transfers.size >= this.uploadSessionLimits.maxTransfers ||
+				staged + bytes > this.uploadSessionLimits.maxStagedBytes
+			)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Upload session staging reservation exceeded",
+				);
+		}
+		const parameters =
+			invocation.command === "upload-target"
+				? [this.target(entry.browser, tab, args[0])]
+				: args;
+		try {
+			const result = await executeUploadCommand(
+				this.uploadTransfers,
+				entry.name,
+				[invocation.command, ...parameters],
+				signal,
+			);
+			if (invocation.command === "upload-begin") {
+				const info = result.data as UploadTransferInfo;
+				state.transfers.set(info.id, {
+					documentId: info.documentId,
+					bytes: info.bytes,
+					expiresAt: info.expiresAt,
+				});
+			}
+			return result.data;
+		} catch (error) {
+			if (
+				(invocation.command === "upload-write" ||
+					invocation.command === "upload-commit") &&
+				state.transfers.get(args[1])?.documentId === args[0]
+			) {
+				this.uploadTransfers.cancel(entry.name, args[0], args[1]);
+				state.transfers.delete(args[1]);
+			}
+			throw error;
+		}
+	}
+
 	private async run(
 		entry: SessionEntry,
 		invocation: Invocation,
 		signal: AbortSignal,
 	): Promise<unknown> {
 		const browser = entry.browser;
+		if (uploadNames.has(invocation.command))
+			return this.uploadCommand(entry, invocation, signal);
 		if (invocation.command === "state-export")
 			return this.stateTransfers.export(browser);
 		if (invocation.command === "state-import-begin")
