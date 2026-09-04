@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Scaffold-publication checkpoint: `HTML-SCAFFOLD.md` replaces eager html/head/body
+allocation with token-driven native identities. Startup has no parser-created
+elements; comments and doctypes precede later allocations, explicit attributes
+are present during insertion, and EOF supplies missing elements after mode
+selection. Detachment preserves saved identities without reattachment; initial
+attributes removed by insertion hooks are not merged back. Three initial and
+two reentrancy regressions fail before their fixes; 33 new tests and 374 focused
+checks across nine files pass. Full native validation passes 8,686 / 241 files;
+the isolated owned patch passes 5,926 / 180 available files. Types, builds and
+three-file lint pass in both trees, preserving pending work. Next address EOF
+diagnostics and remaining parser/runtime compatibility. Modern select, foreign
+content, full quirks layout and cross-owner observer/runtime breadth remain open.
+No gated probe ran; the denied SafeJS probe remains unrun, independent acceptance
+gates remain open and the seven-day goal stays active.
+
+### Previous fragment-mode checkpoint
+
 Fragment-mode checkpoint: `FRAGMENT-MODE.md` adds context document-mode inheritance
 to ordinary and html-element fragments. Native innerHTML, outerHTML and all
 adjacent insertion positions pass the context owner's mode, including detached,

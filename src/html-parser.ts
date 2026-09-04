@@ -7,6 +7,7 @@ import { HtmlTokenizer } from "./html-tokenizer.js";
 import { HtmlFormatting, type HtmlParserNode } from "./html-formatting.js";
 import { HtmlTables } from "./html-tables.js";
 import { HtmlScope } from "./html-scope.js";
+import { HtmlScaffold } from "./html-scaffold.js";
 import {
 	doctypeMode,
 	documentMode,
@@ -398,15 +399,10 @@ function* parseHtmlSteps(
 			fragment || fragmentDocument ? source : source.replace(/^\ufeff/, ""),
 		);
 		const tokenizer = new HtmlTokenizer(normalized, issue);
-		const html = fragment ? tree.createFragment() : tree.createElement("html");
-		const head = fragment ? html : tree.createElement("head");
-		const body = fragment ? html : tree.createElement("body");
-		if (fragment) fragment.root = html;
-		else {
-			tree.append(tree.root, html);
-			tree.append(html, head);
-		}
-		let bodyStarted = !!fragment;
+		const root = fragment ? tree.createFragment() : tree.root;
+		const scaffold = new HtmlScaffold(tree, fragment ? root : undefined);
+		if (fragment) fragment.root = root;
+		if (fragmentDocument) scaffold.startHtml();
 		if (scripting && !fragment)
 			yield { kind: "start", tree, input: tokenizer, normalize };
 		let mode:
@@ -423,7 +419,11 @@ function* parseHtmlSteps(
 				? "before-head"
 				: "before";
 		let stack = [
-			{ tree, id: fragment ? body : html, tag: fragment?.tagName ?? "html" },
+			{
+				tree,
+				id: fragmentDocument ? scaffold.html : root,
+				tag: fragment?.tagName ?? "html",
+			},
 		];
 		const templates: { index: number; mode: TemplateMode }[] =
 			fragment?.tagName === "template" ? [{ index: 0, mode: "template" }] : [];
@@ -484,21 +484,24 @@ function* parseHtmlSteps(
 			}
 			return false;
 		};
-		const inBody = () => {
-			if (!bodyStarted) {
-				tree.append(html, body);
-				bodyStarted = true;
-			}
+		const inHtml = (attributes?: Record<string, string>) => {
+			const html = scaffold.startHtml(attributes);
+			stack = [{ tree, id: html, tag: "html" }];
+			return "before-head" as const;
+		};
+		const inBody = (attributes?: Record<string, string>) => {
+			const body = scaffold.startBody(attributes);
 			stack = [{ tree, id: body, tag: "body" }];
 			return "body" as const;
 		};
-		const inHead = () => {
+		const inHead = (attributes?: Record<string, string>) => {
+			const head = scaffold.startHead(attributes);
 			stack = [{ tree, id: head, tag: "head" }];
 			lastText = undefined;
 			return "head" as const;
 		};
 		const afterHead = () => {
-			stack = [{ tree, id: html, tag: "html" }];
+			stack = [{ tree, id: scaffold.html, tag: "html" }];
 			lastText = undefined;
 			return "after-head" as const;
 		};
@@ -553,7 +556,9 @@ function* parseHtmlSteps(
 		) => {
 			const target = location(
 				foster,
-				lateHeadInsertion ? { tree, id: head, tag: "head" } : undefined,
+				lateHeadInsertion
+					? { tree, id: scaffold.head, tag: "head" }
+					: undefined,
 			);
 			lateHeadInsertion = false;
 			const id = target.tree.createElement(name, attributes);
@@ -753,7 +758,7 @@ function* parseHtmlSteps(
 						.get(tree.root)
 						.children.some((child) => tree.get(child).kind === "doctype")
 				)
-					tree.insert(tree.root, doctype, html);
+					tree.append(tree.root, doctype);
 				setMode(doctypeMode(token));
 				continue;
 			}
@@ -766,12 +771,12 @@ function* parseHtmlSteps(
 			if (token.kind === "comment") {
 				const target = location(false);
 				const comment = target.tree.createComment(token.data);
-				if (mode === "before-head") tree.insert(html, comment, head);
-				else if (mode === "before") tree.insert(tree.root, comment, html);
+				if (mode === "before-head") tree.append(scaffold.html, comment);
+				else if (mode === "before") tree.append(tree.root, comment);
 				else
 					target.tree.append(
 						mode === "after"
-							? html
+							? scaffold.html
 							: mode === "after-after"
 								? tree.root
 								: target.parent,
@@ -843,8 +848,11 @@ function* parseHtmlSteps(
 							ignored = true;
 							break;
 						}
-						mode = "before-head";
-						if (start && name === "html") break;
+						mode = inHtml(start && name === "html" ? attributes : undefined);
+						if (start && name === "html") {
+							ignored = true;
+							break;
+						}
 						continue;
 					}
 					if (start && name === "html") break;
@@ -854,9 +862,8 @@ function* parseHtmlSteps(
 							ignored = true;
 							break;
 						}
-						mode = inHead();
+						mode = inHead(start && name === "head" ? attributes : undefined);
 						if (start && name === "head") {
-							merge(head, attributes);
 							ignored = true;
 							break;
 						}
@@ -931,7 +938,11 @@ function* parseHtmlSteps(
 							ignored = true;
 							break;
 						}
-						mode = inBody();
+						mode = inBody(start && name === "body" ? attributes : undefined);
+						if (start && name === "body") {
+							ignored = true;
+							break;
+						}
 						continue;
 					}
 					break;
@@ -967,7 +978,7 @@ function* parseHtmlSteps(
 					`HTML ${name} tree construction is not implemented`,
 				);
 			if (name === "html") {
-				if (token.kind === "start") merge(html, attributes);
+				if (token.kind === "start") merge(scaffold.html, attributes);
 				continue;
 			}
 			if (name === "head") {
@@ -975,7 +986,7 @@ function* parseHtmlSteps(
 				continue;
 			}
 			if (name === "body") {
-				merge(body, attributes);
+				merge(scaffold.body, attributes);
 				continue;
 			}
 			if (name === "template") {
@@ -1271,8 +1282,8 @@ function* parseHtmlSteps(
 				}
 			} else if (name === "pre" || name === "listing") stripNewline = true;
 		}
-		if (!bodyStarted) tree.append(html, body);
 		if (initial) missingDoctype();
+		if (!scaffold.hasBody) scaffold.startBody();
 		setHtmlParseInfo(tree, {
 			parser: "independent-html-subset",
 			partial: true,

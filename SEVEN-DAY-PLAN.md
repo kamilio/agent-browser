@@ -439,6 +439,19 @@ quirks layout, EOF diagnostics, modern select, foreign content and cross-owner
 observer/runtime breadth remain unfinished. No gated probe ran; the denied SafeJS
 probe remains unrun and independent acceptance gates remain open.
 
+September 4 scaffold-publication checkpoint: `HTML-SCAFFOLD.md` records token-
+driven native html/head/body creation, initial attributes before publication,
+empty parser startup and EOF completion after mode selection. Saved identities
+survive detachment and insertion-hook attribute removals are not undone. Three
+initial and two reentrancy regressions fail before their fixes; 33 new tests and
+374 focused checks across nine files pass. Full native validation passes
+8,686 / 241 files; the isolated owned patch passes 5,926 / 180 available files.
+Types, builds and three-file lint pass in both trees while preserving pending
+work. Continue with EOF diagnostics and remaining parser/runtime compatibility.
+Modern select, foreign content, quirks layout and cross-owner observer/runtime
+breadth remain unfinished. No gated probe ran; the denied SafeJS probe remains
+unrun and independent acceptance gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
