@@ -1,5 +1,10 @@
 # Direct paragraph container carets
 
+Later September 4 update: `EDITABLE-EMPTY-CARETS.md` adds caret painting for empty
+eligible paragraphs and hosts using shared font struts and existing box ordering.
+No placeholder DOM, new layout line or public Range geometry is introduced.
+The earlier nonempty-only cases, captures and measurements below remain historical.
+
 September 4, 2026 native continuation of `EDITABLE-ELEMENT-ENDPOINTS.md`.
 Actual select-all, ArrowLeft and Enter can leave a collapsed container endpoint
 at the start of a newly split, nonempty paragraph. That text edge now paints a

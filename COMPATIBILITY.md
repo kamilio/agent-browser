@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 empty-caret continuation: `EDITABLE-EMPTY-CARETS.md` makes native empty
+fill, deletion and direct paragraph insertion visibly editable through shared
+font struts and existing box paint order. DOM, source glyphs, layout and public
+Range geometry are unchanged. Natural empty-block size/pointer targeting, general
+caret positions, full editing and the original browser/runtime/live gates remain
+open; focused native evidence does not close them.
+
 September 4 paragraph-caret continuation: `EDITABLE-PARAGRAPH-CARETS.md` maps exact
 direct p/div outer text edges after native paragraph split and host select-all
 collapse. Public Range state and existing glyph paint order remain unchanged.

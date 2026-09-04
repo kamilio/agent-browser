@@ -18,6 +18,7 @@ import {
 	type EditableCaretStatus,
 	editableCaretLimits,
 	paintEditableCaret,
+	paintEmptyEditableCaret,
 	prepareEditableCaret,
 } from "./editable-caret.js";
 import {
@@ -585,6 +586,7 @@ function paintDocumentLayout(
 	for (const item of layoutContentItems(layout, charge)) {
 		if (item.kind === "box") {
 			paintBox(item.box);
+			paintEmptyEditableCaret(caret, item.box, image, clip, charge);
 			continue;
 		}
 		if (item.kind === "image") {

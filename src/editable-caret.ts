@@ -3,7 +3,8 @@ import {
 	isRootEditableElement,
 } from "./content-editability.js";
 import { initialPaintStyle } from "./css-paint.js";
-import type { DocumentLayout } from "./document-layout.js";
+import { initialTextStyle } from "./css-text.js";
+import type { DocumentBox, DocumentLayout } from "./document-layout.js";
 import { documentScrollPosition } from "./document-scroll.js";
 import type { DocumentTree } from "./document.js";
 import { type DomBoundaryPoint, existingDomRangeOwner } from "./dom-range.js";
@@ -13,6 +14,7 @@ import { isInertSubtree } from "./inertness.js";
 import { rangeClientRects } from "./range-geometry.js";
 import { type RasterImage, type Rgba, paintRasterRect } from "./raster.js";
 import { documentStyles } from "./styles.js";
+import { textFontExtent } from "./text-font.js";
 import type { TextGlyph } from "./text-layout.js";
 
 export const editableCaretLimits = Object.freeze({
@@ -23,10 +25,11 @@ export const editableCaretLimits = Object.freeze({
 });
 export const editableCaretCapabilities = Object.freeze({
 	partial: true,
-	profile: "focused-editable-collapsed-glyph-edge",
+	profile: "focused-editable-collapsed-glyph-edge-or-empty-block-strut",
 	blinking: false,
 	selectionHighlight: false,
-	emptyEditors: false,
+	emptyEditors: true,
+	emptyBlocks: "focused-block-host-or-direct-paragraph-shared-font-strut",
 	elementBoundaries:
 		"focused-block-host-or-direct-paragraph-outer-plain-inline-text-chain",
 	softWrapAffinity: false,
@@ -53,6 +56,7 @@ export type EditableCaretStatus =
 	| "clipped"
 	| "transparent";
 interface CaretAnchor {
+	readonly emptyBlock?: true;
 	readonly ref: string;
 	readonly formattingId: number;
 	readonly offset: number;
@@ -141,6 +145,137 @@ function elementCaretPoint(
 		}
 		id = node.children[end ? node.children.length - 1 : 0];
 	}
+}
+
+function emptyBlockAnchor(
+	tree: DocumentTree,
+	layout: DocumentLayout,
+	point: DomBoundaryPoint,
+	focused: number,
+	charge: (amount?: number) => void,
+): CaretAnchor | undefined {
+	const boundary = tree.get(point.node);
+	if (boundary.kind === "text" && boundary.data.length) return;
+	charge();
+	let container = boundary;
+	if (boundary.kind === "text") {
+		if (boundary.parent === null || point.offset !== 0) return;
+		container = tree.get(boundary.parent);
+	} else if (
+		boundary.kind !== "element" ||
+		(point.offset !== 0 && point.offset !== boundary.children.length)
+	)
+		return;
+	const empty = (id: number) => {
+		charge();
+		const node = tree.get(id);
+		if (!node.children.length) return true;
+		if (node.children.length !== 1) return false;
+		const child = tree.get(node.children[0]);
+		return child.kind === "text" && !child.data.length;
+	};
+	if (
+		boundary.kind === "element" &&
+		container.id === focused &&
+		container.children.length &&
+		!empty(container.id)
+	) {
+		container = tree.get(
+			container.children[point.offset ? container.children.length - 1 : 0],
+		);
+	}
+	if (container.kind !== "element" || !empty(container.id)) return;
+	const styles = documentStyles(tree);
+	if (
+		styles.get(focused).display !== "block" ||
+		styles.get(container.id).display !== "block" ||
+		styles.flow(container.id).float !== "none"
+	)
+		return;
+	if (
+		container.id !== focused &&
+		(container.parent !== focused ||
+			!["p", "div"].includes(container.tagName) ||
+			contentEditableState(container) !== "inherit" ||
+			styles.flow(container.id).position !== "static")
+	)
+		return;
+	if (isInertSubtree(tree, container.id, charge)) return;
+	let ancestor: number | null = container.id;
+	let depth = 0;
+	while (ancestor !== null) {
+		charge();
+		if (++depth > editableCaretLimits.maxDepth)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Editable caret depth limit exceeded",
+			);
+		const node = tree.get(ancestor);
+		if (
+			contentEditableState(node) === "false" ||
+			["input", "textarea", "select", "button"].includes(node.tagName) ||
+			!styles.get(ancestor).visible
+		)
+			return;
+		if (ancestor === focused) break;
+		ancestor = node.parent;
+	}
+	if (ancestor !== focused) return;
+	const formatting = layout.text.horizontal.formatting;
+	if (formatting.revision !== tree.revision) return;
+	const ref = tree.reference(container.id);
+	let chosen: Readonly<DocumentBox> | undefined;
+	for (const box of layout.boxes) {
+		charge();
+		if (box.ref !== ref) continue;
+		if (chosen) return;
+		chosen = box;
+	}
+	if (!chosen) return;
+	const node = formatting.nodes[chosen.id];
+	if (
+		node.kind !== "block" ||
+		!node.visible ||
+		node.contentMode !== "inline" ||
+		node.control ||
+		node.marker ||
+		node.generated
+	)
+		return;
+	let contextFound = false;
+	for (const context of layout.contexts) {
+		charge();
+		if (context.id !== chosen.id) continue;
+		if (
+			contextFound ||
+			context.lines.length ||
+			context.glyphs.length ||
+			context.fragments.length
+		)
+			return;
+		contextFound = true;
+	}
+	if (!contextFound) return;
+	const typography = node.typography ?? initialTextStyle;
+	const font = textFontExtent(typography);
+	if (!font.fontSize) return;
+	const alignment = typography["text-align"];
+	const advance =
+		alignment === "center"
+			? chosen.contentWidth / 2
+			: alignment === "right" || alignment === "end"
+				? chosen.contentWidth
+				: 0;
+	return {
+		emptyBlock: true,
+		ref,
+		formattingId: chosen.id,
+		offset: 0,
+		x: chosen.contentX + advance,
+		y: chosen.contentY + font.above - font.ascent,
+		height: font.fontSize,
+		color: (node.paint ?? initialPaintStyle).color,
+	};
 }
 
 function terminalBreakAnchor(
@@ -273,6 +408,8 @@ export function prepareEditableCaret(
 		if (!selection.isCollapsed) return result("noncollapsed");
 		const range = selection.getRangeAt(0);
 		let point = range.start;
+		const emptyAnchor = emptyBlockAnchor(tree, layout, point, focused, charge);
+		if (emptyAnchor) return result("ready", emptyAnchor);
 		const elementBoundary = tree.get(point.node).kind === "element";
 		if (elementBoundary) {
 			const mapped = elementCaretPoint(tree, point, focused, charge);
@@ -393,11 +530,40 @@ export function paintEditableCaret(
 	if (
 		caret.status !== "ready" ||
 		!anchor ||
+		anchor.emptyBlock ||
 		glyph.ref !== anchor.ref ||
 		glyph.formattingId !== anchor.formattingId ||
 		glyph.offset !== anchor.offset
 	)
 		return;
+	paintCaretRect(caret, anchor, image, clip, chargeRaster);
+}
+
+export function paintEmptyEditableCaret(
+	caret: EditableCaret,
+	box: Readonly<DocumentBox>,
+	image: RasterImage,
+	clip: Readonly<{ x: number; y: number }>,
+	chargeRaster: (amount: number) => void,
+): void {
+	const anchor = caret.anchor;
+	if (
+		caret.status !== "ready" ||
+		!anchor?.emptyBlock ||
+		box.ref !== anchor.ref ||
+		box.id !== anchor.formattingId
+	)
+		return;
+	paintCaretRect(caret, anchor, image, clip, chargeRaster);
+}
+
+function paintCaretRect(
+	caret: EditableCaret,
+	anchor: Readonly<CaretAnchor>,
+	image: RasterImage,
+	clip: Readonly<{ x: number; y: number }>,
+	chargeRaster: (amount: number) => void,
+): void {
 	if (!anchor.color[3]) {
 		caret.status = "transparent";
 		return;

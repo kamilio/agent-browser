@@ -172,16 +172,17 @@ it("keeps repeated native start splits aligned without changing the surviving te
 	expect(html()).toBe("<div></div><div></div><div></div><div>Hello</div>");
 });
 
-it("does not invent empty paragraph caret geometry before native typing adds source text", async () => {
+it("paints an empty paragraph strut before native typing creates source glyphs", async () => {
 	const test = await fixture();
 	const { host, page, html } = test;
 	await host.execute(["fill", "#editor", "Hello"]);
 	await host.execute(["press", "Enter"]);
 	expect(html()).toBe("<div>Hello</div><div></div>");
 	expect(rasterizeDocument(page.document).metrics).toMatchObject({
-		caretStatus: "unsupported",
-		paintedCarets: 0,
+		caretStatus: "painted",
+		paintedCarets: 1,
 	});
+	expect(rangeClientRects(test.owner.selection.getRangeAt(0))).toEqual([]);
 	await host.execute(["type", "World"]);
 	expect(html()).toBe("<div>Hello</div><div>World</div>");
 	expect(rasterizeDocument(page.document).metrics.paintedCarets).toBe(1);

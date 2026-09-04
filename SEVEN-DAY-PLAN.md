@@ -7,6 +7,13 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Empty block caret integration adds 88 cases and passes 833 / twenty-six focused
+files in both trees with passing types/builds and strict checks. Shared font
+arithmetic and all ten capture layouts remain unchanged; only expected empty-caret
+pixels appear. `EDITABLE-EMPTY-CARETS.md` keeps the existing raster lint failure,
+natural empty-block height, broader editing and full-suite/runtime gates explicit.
+Both native manifests retain 366 entries; this remains progress, not completion.
+
 Native paragraph-split caret integration now passes 609 focused cases / nineteen
 files in both trees, with passing types/builds and scoped checks. The sixty new
 cases and fresh nine-phase comparison are in `EDITABLE-PARAGRAPH-CARETS.md`.

@@ -8,6 +8,13 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+Empty editors and direct empty paragraphs now paint native carets without
+manufacturing content or layout lines. `EDITABLE-EMPTY-CARETS.md` records 88 new
+cases, passing 833 / twenty-six-file focused suites in both trees, ten-phase native
+captures and the unchanged pre-existing raster lint failure. Shared font extraction
+preserves complete text-layout output. Empty-block sizing, broader editing and all
+external/runtime gates remain outstanding under the until-stopped instruction.
+
 The until-stopped native continuation now includes exact direct-paragraph carets
 after split and select-all collapse. `EDITABLE-PARAGRAPH-CARETS.md` records sixty
 new cases, passing 609 / nineteen-file focused suites in both trees, static checks

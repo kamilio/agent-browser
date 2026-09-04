@@ -227,7 +227,7 @@ it.each([
 	['<div id="editor" contenteditable></div>', 0],
 	['<div id="editor" contenteditable>AB CD</div>', 3],
 ])(
-	"does not invent empty-editor or ambiguous soft-wrap affinity",
+	"distinguishes an empty-editor strut from ambiguous soft-wrap affinity",
 	(content, offset) => {
 		const { tree, id, text, collapse } = fixture(
 			content,
@@ -236,9 +236,9 @@ it.each([
 		collapse(offset, offset === 0 ? id() : text());
 		const result = rasterizeDocument(tree);
 		expect(result.metrics).toMatchObject({
-			paintedCarets: 0,
-			skippedCarets: 1,
-			caretStatus: "unsupported",
+			paintedCarets: offset === 0 ? 1 : 0,
+			skippedCarets: offset === 0 ? 0 : 1,
+			caretStatus: offset === 0 ? "painted" : "unsupported",
 		});
 	},
 );

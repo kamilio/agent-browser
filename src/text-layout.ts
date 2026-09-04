@@ -1,4 +1,4 @@
-import { bitmapFont, bitmapGlyph } from "./bitmap-font.js";
+import { bitmapGlyph } from "./bitmap-font.js";
 import { resolveBorders } from "./border-box.js";
 import { initialBoxStyle } from "./css-box.js";
 import { type TextStyle, initialTextStyle } from "./css-text.js";
@@ -20,6 +20,10 @@ import {
 } from "./inline-atomic.js";
 import { resolveInlineEdges } from "./inline-box.js";
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
+import {
+	type TextFontExtent as FontExtent,
+	textFontExtent as extent,
+} from "./text-font.js";
 
 export interface TextLayoutLimits {
 	maxTokens: number;
@@ -118,13 +122,6 @@ export interface DocumentTextLayout {
 		work: number;
 	}>;
 }
-interface FontExtent {
-	fontSize: number;
-	advance: number;
-	ascent: number;
-	above: number;
-	below: number;
-}
 interface Token extends FontExtent {
 	sourceBreak?: Readonly<TextBreakSource>;
 	formattingId: number;
@@ -141,32 +138,6 @@ interface Token extends FontExtent {
 	collapsible: boolean;
 	breakable: boolean;
 	hangable?: boolean;
-}
-
-function extent(style: TextStyle): FontExtent {
-	const fontSize = Number.parseFloat(style["font-size"]);
-	layoutNumber(fontSize);
-	if (fontSize > bitmapFont.maxFontSize)
-		throw new AgentBrowserError(
-			"resource-limit",
-			"Text font size limit exceeded",
-		);
-	const lineHeight = layoutNumber(
-		style["line-height"] === "normal"
-			? fontSize * 1.25
-			: style["line-height"].endsWith("px")
-				? Number.parseFloat(style["line-height"])
-				: Number(style["line-height"]) * fontSize,
-	);
-	const scale = fontSize / bitmapFont.unitsPerEm;
-	const ascent = bitmapFont.ascent * scale;
-	return {
-		fontSize,
-		advance: bitmapFont.advance * scale,
-		ascent,
-		above: ascent + (lineHeight - fontSize) / 2,
-		below: bitmapFont.descent * scale + (lineHeight - fontSize) / 2,
-	};
 }
 
 function checkedLimits(options: TextLayoutOptions) {

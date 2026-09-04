@@ -176,8 +176,27 @@ it.each(["static", "fixed"])(
 	},
 );
 
+it.each(["first", "last"])(
+	"paints an empty %s paragraph itself instead of searching into its neighbor",
+	(edge) => {
+		const selector = `#${edge}`;
+		const { tree, id, collapse } = fixture(
+			edge === "first"
+				? '<p id="first"></p><p>Later</p>'
+				: '<p>Before</p><div id="last"></div>',
+		);
+		for (const container of ["#editor", selector]) {
+			collapse(container, edge === "last");
+			expect(prepareEditableCaret(tree, layoutDocument(tree))).toMatchObject({
+				status: "ready",
+				anchor: { ref: tree.reference(id(selector)), emptyBlock: true },
+			});
+			expect(rasterizeDocument(tree).metrics.paintedCarets).toBe(1);
+		}
+	},
+);
+
 it.each([
-	'<p id="first"></p><p>Later</p>',
 	'<p id="first"><br>Later</p>',
 	'<p id="first"><span></span>Later</p>',
 	'<p id="first"><!--edge-->Later</p>',
@@ -204,7 +223,6 @@ it.each([
 );
 
 it.each([
-	'<p>Before</p><div id="last"></div>',
 	'<div id="last">Before<br></div>',
 	'<div id="last">Before<span></span></div>',
 	'<div id="last">Before<!--edge--></div>',

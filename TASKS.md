@@ -19,6 +19,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Empty editor/paragraph carets now use shared font struts at actual placed blocks,
+without placeholder DOM, fake glyphs, added layout lines or changed public Range
+geometry. `EDITABLE-EMPTY-CARETS.md` records 88 new cases, passing 833 / twenty-six
+file focused suites in both trees, types/builds/strict checks and ten-phase native
+captures. Raster formatting passes; its one pre-existing parameter-assignment
+lint failure remains explicit. Both manifests retain 366 entries. Natural empty
+block height/pointer targeting, general caret affinity, full visual editing and
+the original browser/runtime/live gates remain open. No denied full suite is run.
+
 Direct paragraph caret checkpoint: `EDITABLE-PARAGRAPH-CARETS.md` keeps native
 nonempty paragraph splits and host outer-edge select-all collapse visibly aligned
 through direct p/div paragraphs. Public endpoints and Range geometry remain

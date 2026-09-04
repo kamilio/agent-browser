@@ -1,5 +1,10 @@
 # Editable element-boundary painting
 
+Later empty-block continuation: `EDITABLE-EMPTY-CARETS.md` adds shared-font-strut
+carets for empty focused block hosts and eligible empty direct p/div paragraphs,
+without changing DOM, layout or public Range rectangles. This supersedes the
+historical empty-editor painting limitation, not general container caret geometry.
+
 Later September 4 update: `EDITABLE-PARAGRAPH-CARETS.md` extends the exact caret
 profile to host outer slots through one direct p/div paragraph and that paragraph's
 own outer slots. Shared source geometry still supplies the private text edge,

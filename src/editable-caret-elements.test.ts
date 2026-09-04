@@ -146,8 +146,24 @@ it("leaves subsequent keyboard movement and source mutations native", () => {
 	expect(rasterizeDocument(tree).metrics.paintedCarets).toBe(1);
 });
 
+it("paints a truly empty host without searching for a source glyph", () => {
+	const { tree, owner, collapse } = fixture(
+		'<div id="editor" contenteditable></div>',
+	);
+	owner.selection.removeAllRanges();
+	const before = rasterizeDocument(tree);
+	collapse();
+	const after = rasterizeDocument(tree);
+	expect(after.metrics).toMatchObject({
+		caretStatus: "painted",
+		paintedCarets: 1,
+		paintedGlyphs: before.metrics.paintedGlyphs,
+	});
+	expect(after.image.pixels).not.toEqual(before.image.pixels);
+	expect(rangeClientRects(owner.selection.getRangeAt(0))).toEqual([]);
+});
+
 it.each([
-	"",
 	"<br>Hello",
 	"<span></span>Hello",
 	"<!--edge-->Hello",
