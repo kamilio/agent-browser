@@ -737,6 +737,21 @@ and continue independent DOM coverage. Historical evidence and unrelated pending
 work remain intact. No gated probe ran; full runtime/site/socket/TTY/physical-input
 acceptance and the original seven-day goal remain open.
 
+September 4 guarded tab command checkpoint: `TAB-IDENTITY.md` integrates
+session-unique keys and serialized expected-key checks for tab selection/closure.
+Twenty-eight new native/injected-CLI tests reproduce nineteen failures on isolated
+HEAD; three existing guard cases are promoted unchanged. Full native runs pass
+9,530 / 265 working-tree files and 8,227 / 238 isolated files; focused checks pass
+182 / seven and 180 / seven. Types/builds, strict three-test checks and five-file
+lint pass. Rejected stale actions preserve loaded documents and snapshot caches;
+matching actions retain cleanup and unguarded compatibility. Next integrate
+guarded terminal/playground clients, retaining independent real-device/socket
+acceptance. The precise SafeJS lazy-method request is recorded locally in
+`contributions/safejs-lazy-nested-methods-request.md` (2c06897), not posted or
+implemented. Pending tracing/UI work and historical evidence remain intact.
+No gated probe ran; runtime/site/socket/TTY/physical-input requirements and the
+full seven-day browser goal stay open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

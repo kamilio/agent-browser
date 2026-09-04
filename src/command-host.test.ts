@@ -979,6 +979,76 @@ it("maintains indexed tabs and isolated storage across named sessions", async ()
 	).toHaveLength(1);
 });
 
+it("guards indexed tab actions against shifted indices without changing unrelated tabs", async () => {
+	const { host } = fixture();
+	await host.execute(["open", url]);
+	await host.execute(["tab-new", url]);
+	await host.execute(["tab-new", url]);
+	const before = (await host.execute(["tab-list"])).data as {
+		key: string;
+		id: string;
+	}[];
+	expect(new Set(before.map((tab) => tab.key)).size).toBe(3);
+	await host.execute(["tab-close", "0"]);
+	for (const command of ["tab-select", "tab-close"])
+		await expect(
+			host.execute([command, "1", `--expected-key=${before[1].key}`]),
+		).rejects.toMatchObject({ code: "stale-reference" });
+	const remaining = (await host.execute(["tab-list"])).data as {
+		key: string;
+		selected: boolean;
+	}[];
+	expect(remaining.map((tab) => tab.key)).toEqual([
+		before[1].key,
+		before[2].key,
+	]);
+	expect(remaining[1].selected).toBe(true);
+	await host.execute(["tab-select", "0", `--expected-key=${before[1].key}`]);
+	await host.execute(["tab-close", `--expected-key=${before[1].key}`]);
+	expect((await host.execute(["tab-list"])).data).toEqual([
+		expect.objectContaining({
+			id: before[2].id,
+			key: before[2].key,
+			selected: true,
+		}),
+	]);
+});
+
+it("does not reuse tab keys when a named session is recreated", async () => {
+	const { host } = fixture();
+	await host.execute(["open", url]);
+	const old = (
+		(await host.execute(["tab-list"])).data as { key: string; id: string }[]
+	)[0];
+	await host.execute(["close"]);
+	await host.execute(["open", url]);
+	const current = (
+		(await host.execute(["tab-list"])).data as { key: string; id: string }[]
+	)[0];
+	expect(current.id).toBe(old.id);
+	expect(current.key).not.toBe(old.key);
+	await expect(
+		host.execute(["tab-close", "0", `--expected-key=${old.key}`]),
+	).rejects.toMatchObject({ code: "stale-reference" });
+	expect((await host.execute(["tab-list"])).data).toHaveLength(1);
+});
+
+it("keeps tab identity across navigation and rejects invalid guards", async () => {
+	const { host } = fixture();
+	await host.execute(["open", url]);
+	const key = ((await host.execute(["tab-list"])).data as { key: string }[])[0]
+		.key;
+	await host.execute(["goto", "https://example.com/next"]);
+	await host.execute(["resize", "400", "300"]);
+	expect(
+		((await host.execute(["tab-list"])).data as { key: string }[])[0].key,
+	).toBe(key);
+	await expect(
+		host.execute(["tab-close", "0", `--expected-key=${"x".repeat(257)}`]),
+	).rejects.toMatchObject({ code: "invalid-input" });
+	expect((await host.execute(["tab-list"])).data).toHaveLength(1);
+});
+
 it("observer snapshots do not consume CLI diff baselines", async () => {
 	const { host } = fixture();
 	await host.execute(["open", url]);

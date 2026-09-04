@@ -19,6 +19,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Guarded tab command checkpoint: `TAB-IDENTITY.md` integrates session-unique row
+keys and optional expected-key checks for indexed selection and indexed/implicit
+closure. Checks run inside the serialized command after preceding actions, so
+stale indices/selections cannot target a replacement tab. Rejection preserves
+document owners and snapshot caches; matching closure retains normal cleanup.
+The 28 new native/injected-CLI tests fail nineteen cases on isolated HEAD and
+pass after integration; three existing guard tests are promoted unchanged.
+Full native runs pass 9,530 / 265 working-tree files and 8,227 / 238 isolated
+files; focused runs pass 182 / seven and 180 / seven. Both trees pass types/builds,
+strict three-test checks and five-file lint. Original working bytes and unrelated
+tracing/UI changes remain intact. Next integrate guarded terminal/playground tab
+clients without treating native mocks as real TTY/socket acceptance.
+`contributions/safejs-lazy-nested-methods-request.md` records the runtime contract
+need in local draft commit 2c06897; no issue was posted or SDK modified. Guest
+ordering, full compatibility and independent runtime/site/socket/TTY/physical-input
+gates remain open. No gated probe ran; the denied SafeJS probe stays unrun and
+the full seven-day browser goal remains active.
+
+### Previous adjacent DOM integration checkpoint
+
 Adjacent DOM integration checkpoint: `ADJACENT-CORE.md` integrates
 insertAdjacentElement/Text with native mutation owners and precise capabilities.
 Host-inclusive template preflight now prevents rejected text insertions from

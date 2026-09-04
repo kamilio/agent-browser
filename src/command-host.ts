@@ -144,8 +144,8 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 	"go-back": [],
 	"go-forward": [],
 	"tab-new": [],
-	"tab-close": [],
-	"tab-select": [],
+	"tab-close": ["expected-key"],
+	"tab-select": ["expected-key"],
 	"tab-list": [],
 	click: [],
 	hover: [],
@@ -962,7 +962,11 @@ export class BrowserCommandHost {
 	}
 
 	private tabList(browser: BrowserSession) {
-		return browser.tabs().map((tab, index) => ({ index, ...tab }));
+		return browser.tabs().map((tab, index) => ({
+			index,
+			...tab,
+			key: browser.viewport(tab.id).key,
+		}));
 	}
 
 	private activeTab(browser: BrowserSession) {
@@ -970,6 +974,21 @@ export class BrowserCommandHost {
 		if (!tab)
 			throw new AgentBrowserError("not-found", "Session has no selected tab");
 		return tab.id;
+	}
+
+	private checkTabKey(browser: BrowserSession, tab: string, expected: unknown) {
+		if (expected === undefined) return;
+		if (
+			typeof expected !== "string" ||
+			expected.length === 0 ||
+			expected.length > 256
+		)
+			throw new AgentBrowserError("invalid-input", "Invalid expected tab key");
+		if (expected !== browser.viewport(tab).key)
+			throw new AgentBrowserError(
+				"stale-reference",
+				"Tab or session changed before the operation",
+			);
 	}
 
 	private indexedTab(browser: BrowserSession, value: string) {
@@ -1281,7 +1300,9 @@ export class BrowserCommandHost {
 			return { navigation, tabs: this.tabList(browser) };
 		}
 		if (invocation.command === "tab-select") {
-			browser.selectTab(this.indexedTab(browser, args[0]));
+			const tab = this.indexedTab(browser, args[0]);
+			this.checkTabKey(browser, tab, options["expected-key"]);
+			browser.selectTab(tab);
 			return this.tabList(browser);
 		}
 		if (invocation.command === "tab-close") {
@@ -1289,6 +1310,7 @@ export class BrowserCommandHost {
 				args[0] === undefined
 					? this.activeTab(browser)
 					: this.indexedTab(browser, args[0]);
+			this.checkTabKey(browser, tab, options["expected-key"]);
 			browser.closeTab(tab);
 			const key = `${entry.name}/${tab}`;
 			const cached = this.snapshots.get(key);
