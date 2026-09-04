@@ -1,5 +1,12 @@
 # Shared-session playground
 
+September 4 extraction integration: `PLAYGROUND-EXTRACTION.md` adds Markdown,
+structured JSON and semantic snapshot downloads with root/session validation,
+native bounds, retained metadata, stale-read cancellation and object-URL cleanup.
+Ten source-established example cards now navigate the selected session with
+explicit UNVERIFIED labels, including the five requested TodoMVC variants.
+Mounted native fixtures are not live-site, real download or framework acceptance.
+
 September 4 local review integration: `TRACE-REVIEW-CORE.md` documents the Trace
 pane, bounded local JSON validation and inert frame display without a session or
 upload. Clear/pagehide abort reads and remove retained private text; pagehide also

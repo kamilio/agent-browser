@@ -1,4 +1,6 @@
 [
+  "src/playground-extraction.test.ts",
+  "src/playground-examples.test.ts",
   "src/pre-wrap.test.ts",
   "src/dom-range.test.ts",
   "src/dom-selection.test.ts",

@@ -1300,6 +1300,13 @@ and literal text, with cancellation/clearing at stable geometry. The earlier
 pre-line evidence remains unchanged. General Unicode/layout, rich editing and
 all original live/runtime acceptance gates remain open; no gated probe ran.
 
+September 4 playground extraction continuation: `PLAYGROUND-EXTRACTION.md`
+integrates Markdown/JSON/snapshot downloads, root/session checks, metadata and
+stale-response cleanup. Ten cards use real selected-session command paths with
+explicitly unverified source-established targets. Both focused runs pass 190 /
+seven files; mounted evidence is not a browser image, real download or live
+framework acceptance. Original gates remain open and no gated probe ran.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

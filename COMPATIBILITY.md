@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 playground extraction continuation: `PLAYGROUND-EXTRACTION.md` adds
+bounded Markdown/JSON/snapshot UI downloads backed by native commands, metadata,
+scope/session matching, stale-read guards and cleanup. All ten example cards,
+including five upstream-linked TodoMVC variants, use the selected native session
+and say UNVERIFIED. Mounted fixtures do not establish real downloads, visual/
+keyboard UI acceptance, website availability or framework execution.
+
 September 4 pre-wrap continuation: `PRE-WRAP.md` adds actual preserved-whitespace
 wrapping, hanging/fit widths, source-preserving fragments and intrinsic sizing.
 Native command captures now retain literal editable text, multiple spaces and
@@ -357,13 +364,13 @@ claim equivalent browser conformance from matching five example sites.
 | ID | Feature | Acceptance evidence | Status |
 | --- | --- | --- | --- |
 | G01 | URL entry and navigation | Hosts/URLs normalized; invalid schemes rejected; loading/error/stop states visible. | Pending |
-| G02 | Curated example cards | General/docs/news and all five TodoMVC variants; every card uses our backend. | Pending |
+| G02 | Curated example cards | General/docs/news and all five TodoMVC variants; every card uses our backend. | Partial: ten cards, including five upstream-source TodoMVC routes, use selected-session backend navigation (`PLAYGROUND-EXTRACTION.md`). Mounted fixtures prove routing and honest labels, not deployed availability or live framework behavior |
 | G03 | Inspect workspace | Live page and terminal/semantic view with URL/back/forward/reload controls. | Partial keyboard terminal frontend with shared-session actions/history, backend search and fresh scoped inspection (`TERMINAL.md`); mock-stream and actual-core in-memory checks only; real PTY/public-site gate denied and unverified, combined inspect workspace remains open |
 | G04 | DOM and accessibility | Expand nodes, inspect attributes/styles, locate refs and highlight corresponding output. | Partial bounded native `dom` API and playground text/subtree pane with refs, attributes, hidden nodes and current controls (`DOM-INSPECTION.md`). Native/shared-host and actual experimental-core mutation checks pass; new visual UI, inline expansion/highlighting, style sidebar and complete accessibility inspection remain open |
 | G05 | Console | Real page logs, evaluation results and exceptions; no fabricated sample logs. | Partial page-owned logs/error codes, severity-filtered CLI and tested Console pane (`PAGE-CONSOLE.md`); full console/error/source semantics remain open |
 | G06 | Network | Real request timing/status/size, failures and policy blocks with sensitive data redacted. | Partial bounded document/script/stylesheet/fetch/preflight metadata and Network pane (`NETWORK-JOURNAL.md`), with per-hop CORS results separate from HTTP completion; validated with in-memory transports, real experimental-core SafeJS and formatter tests. New visual/public-site gates, complete fetch/CORS/XHR and detailed wire timing remain open |
 | G07 | Memory and execution | Actual runtime/host measurements labelled accurately, plus CPU/wall budgets and stop reasons. | Partial native JPEG timing/work/working-buffer measurements and real page-budget acceptance (`JPEG-PERFORMANCE.md`); full runtime/host resource coverage remains pending |
-| G08 | Export actions | Working screenshot/PDF/HTML plus semantic/Markdown downloads; validate the downloaded formats. | Native PNG Render/download and PDF download handlers consume real session-owned artifacts (`CAPTURE-EXPORT.md`, `INLINE-CAPTURES.md`, `PDF.md`). Actual CLI files and mocked-UI transfers pass; PDF has independent text/pixel/parser validation. Live-UI/download, full print/layout and remaining export acceptance stay open |
+| G08 | Export actions | Working screenshot/PDF/HTML plus semantic/Markdown downloads; validate the downloaded formats. | Native PNG/PDF artifacts and bounded Markdown/JSON/snapshot UI exports use real native commands (`CAPTURE-EXPORT.md`, `PDF.md`, `PLAYGROUND-EXTRACTION.md`). Command-backed mounted fixtures validate formats, metadata, truncation, root/session guards and cleanup; PDF retains independent text/pixel/parser evidence. Live UI/download, complete print/layout and remaining export acceptance stay open |
 | G09 | Agent connection | Copyable CLI/API/CDP instructions that work against the displayed session. | Pending |
 | G10 | Responsive and accessible controls | Keyboard operation, focus, narrow viewport, readable text and sensible loading feedback. | Pending |
 | G11 | Session lifecycle | Reconnect/close/cleanup, isolation and human/agent input arbitration on one session. | Pending |

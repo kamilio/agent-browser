@@ -19,6 +19,18 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Playground extraction checkpoint: `PLAYGROUND-EXTRACTION.md` integrates bounded
+Markdown/JSON/snapshot downloads through actual native commands, with strict
+session/document/root-scope matching, metadata and stale-read/URL cleanup. All ten
+example cards use selected-session navigation and explicitly unverified labels;
+TodoMVC routes come from upstream source, not executed examples. Both focused
+runs pass 190 / seven files; types, builds, strict new-test checks and scoped
+format/lint checks pass with an existing import-order diagnostic kept separate.
+Authorized full native runs pass 9,882 / 286 isolated files; working validation
+reports 11,027 passes and the unchanged pending onload failure / 308 files.
+Real UI/download, framework, socket and
+released-runtime gates remain open; no gated probe ran.
+
 Native pre-wrap checkpoint: `PRE-WRAP.md` integrates preserved-whitespace soft
 wrapping, hanging, source ownership and intrinsic measurement. The previously
 failing editable-fill capture now uses real pre-wrap and visibly preserves

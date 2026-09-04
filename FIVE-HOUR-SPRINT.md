@@ -10,7 +10,7 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | Pre-wrap integration, playground review and combined validation | Cookie commands and Range/Window are committed; preserve focused atomic commits. |
+| Main | Playground integration and combined validation; runtime/layout next | Cookie commands, Range/Window and pre-wrap are committed; preserve focused atomic commits. |
 | DOM worker | Editable keyboard defaults using delivered live Range/Selection | Base Range/Window integration passes 9,809 isolated native tests; keyboard follow-up remains active. |
 | Web globals worker | URL/URLSearchParams and additional feasible web globals | New owned binding modules; main integrates PageBindings. |
 | Focus delivery | Native focus/blur options, indication and scrolling | Integrated with an additional parent reentrancy fix; synchronous guest methods remain open. |
@@ -19,7 +19,8 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 | Double-click worker | Owned two-click sequencing and dblclick defaults | Reuses the white-space slot; main owns command integration. |
 | Positioning worker | Native absolute/fixed layout and shared geometry | CSS/style/layout write set; preserve existing flow/flex/replaced behavior. |
 | Runtime worker | Connect existing public runtime adapter selection | Loader/factory selection only; actual SafeJS execution is still gated. |
-| Playground worker | Extraction/snapshot downloads and honest example discovery | Existing UI, mounted in-memory tests, no live-site claims. |
+| Playground delivery | Extraction/snapshot downloads and honest example discovery | Integrated export guards/cards pass 9,882 isolated native tests; live UI/framework gates remain open. |
+| File-selection worker | Document-owned file selection and bounded private client reads | Reuses the playground slot; main owns actual upload/form/CLI integration. |
 
 Workers use isolated snapshots based on `c4cf3d9`, not the dirty primary tree.
 They return code, explicit tests, source paths and integration notes. Main reviews

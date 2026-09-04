@@ -7,6 +7,74 @@ import type { PageConsoleSnapshot } from "./page-console.js";
 import type { SessionRequests } from "./session.js";
 import type { SemanticSnapshot } from "./snapshot.js";
 
+const exportLimits = { maxBytes: 65_536, maxNodes: 2000, maxDepth: 64 };
+const exportKinds = ["markdown", "json", "snapshot"] as const;
+type ExportKind = (typeof exportKinds)[number];
+
+function exportCommand(kind: ExportKind, root: string | null): string[] {
+	return [
+		...(kind === "snapshot"
+			? ["snapshot", "--observe"]
+			: [
+					"extract",
+					`--format=${kind}`,
+					`--max-nodes=${exportLimits.maxNodes}`,
+				]),
+		`--max-bytes=${exportLimits.maxBytes}`,
+		`--depth=${exportLimits.maxDepth}`,
+		...(root ? ["--", root] : []),
+	];
+}
+
+function exportBlob(kind: ExportKind, session: string, value: unknown) {
+	if (!value || typeof value !== "object")
+		throw new Error("Invalid native export response");
+	const data = value as Record<string, unknown>;
+	if (
+		typeof data.document !== "string" ||
+		typeof data.scope !== "string" ||
+		!Number.isSafeInteger(data.revision) ||
+		(data.truncated !== undefined && typeof data.truncated !== "boolean") ||
+		(kind === "snapshot"
+			? !Array.isArray(data.entries) || typeof data.truncated !== "boolean"
+			: data.format !== kind ||
+				data.partial !== true ||
+				typeof data.url !== "string" ||
+				typeof data.title !== "string" ||
+				(kind === "markdown"
+					? typeof data.content !== "string"
+					: !data.content || typeof data.content !== "object"))
+	)
+		throw new Error("Invalid native export response");
+	const metadata = {
+		schemaVersion: 1,
+		session,
+		kind,
+		limits:
+			kind === "snapshot"
+				? { maxBytes: exportLimits.maxBytes, maxDepth: exportLimits.maxDepth }
+				: exportLimits,
+	};
+	let body: string;
+	if (kind === "markdown") {
+		const { content, ...details } = data;
+		const header = JSON.stringify({ ...metadata, data: details }).replace(
+			/[<>]/g,
+			(character) => (character === "<" ? "\\u003c" : "\\u003e"),
+		);
+		body = `<!-- agent-browser ${header} -->\n\n${content}`;
+	} else body = JSON.stringify({ ...metadata, data }, null, 2);
+	const blob = new Blob([body], {
+		type:
+			kind === "markdown"
+				? "text/markdown;charset=utf-8"
+				: "application/json;charset=utf-8",
+	});
+	if (blob.size > 262_144)
+		throw new Error("Native export exceeds the 262144-byte download limit");
+	return { blob, truncated: data.truncated === true };
+}
+
 export function parsePlaygroundCommand(input: string): string[] {
 	if (input.length > 16_384) throw new Error("Command is too long");
 	const words: string[] = [];
@@ -218,6 +286,8 @@ function startPlayground() {
 	let hasDocument = false;
 	let selectedSession = "default";
 	let generation = 0;
+	let exporting = false;
+	const exportUrls = new Map<string, ReturnType<typeof setTimeout>>();
 	let activeView = "text";
 	let domTarget = "";
 	let consoleEnabled = false;
@@ -251,6 +321,9 @@ function startPlayground() {
 		"download-html",
 		"download-png",
 		"download-pdf",
+		"download-markdown",
+		"download-json",
+		"download-snapshot",
 		"capture-render",
 		"dom-inspect",
 		"dom-root",
@@ -260,6 +333,18 @@ function startPlayground() {
 		for (const id of actionButtons) button(id).disabled = !token || working;
 		for (const id of documentButtons)
 			button(id).disabled = !token || working || !hasDocument;
+		for (const kind of exportKinds)
+			button(`download-${kind}`).disabled ||=
+				exporting || refreshing || !inspectedDocument;
+		text(
+			"export-commands",
+			exportKinds
+				.map(
+					(kind) =>
+						`agent-browser -s=${selectedSession} ${exportCommand(kind, inspectedDocument).join(" ")}`,
+				)
+				.join("\n"),
+		);
 		button("press-target").disabled ||=
 			!inspectedDocument || !displayedTabs.length;
 		for (const id of ["wheel-x", "wheel-y", "wheel-apply"])
@@ -329,6 +414,7 @@ function startPlayground() {
 
 	function invalidateReads() {
 		generation++;
+		clearExports();
 		clearCapture();
 		for (const controller of requests) controller.abort();
 		refreshing = false;
@@ -336,6 +422,15 @@ function startPlayground() {
 		text("html-output", "Waiting for the selected document…");
 		text("network-output", "Waiting for the selected tab…");
 		text("dom-output", "Waiting for the selected document…");
+	}
+	function clearExports() {
+		exporting = false;
+		for (const [url, timer] of exportUrls) {
+			clearTimeout(timer);
+			URL.revokeObjectURL(url);
+		}
+		exportUrls.clear();
+		text("export-state", "No extraction downloaded for this selection.");
 	}
 	function clearCapture() {
 		captureController?.abort();
@@ -470,8 +565,9 @@ function startPlayground() {
 	}
 
 	async function refresh() {
-		if (!token || refreshing || working) return;
+		if (!token || refreshing || working || exporting) return;
 		refreshing = true;
+		updateControls();
 		const ownGeneration = generation;
 		try {
 			const listed = (await command(["list"])).data as {
@@ -531,6 +627,7 @@ function startPlayground() {
 					);
 			}
 			if (inspectedDocument !== (selected?.documentRef ?? null)) {
+				clearExports();
 				clearCapture();
 				inspectedDocument = selected?.documentRef ?? null;
 				domTarget = "";
@@ -684,6 +781,7 @@ function startPlayground() {
 				hasDocument = false;
 				inspectedDocument = null;
 				domTarget = "";
+				clearExports();
 				clearCapture();
 				resetViewport();
 				for (const id of ["target", "value", "dom-target", "capture-target"])
@@ -1146,6 +1244,87 @@ function startPlayground() {
 			}
 		})();
 	});
+	async function downloadExtraction(kind: ExportKind) {
+		if (
+			!token ||
+			working ||
+			exporting ||
+			refreshing ||
+			!hasDocument ||
+			!inspectedDocument
+		)
+			return;
+		const ownGeneration = generation;
+		const session = selectedSession;
+		const root = inspectedDocument;
+		const current = () =>
+			generation === ownGeneration &&
+			selectedSession === session &&
+			inspectedDocument === root &&
+			!!token;
+		exporting = true;
+		updateControls();
+		element("error").hidden = true;
+		text(
+			"export-state",
+			`Downloading bounded ${kind} from session ${session}…`,
+		);
+		try {
+			const response = await api("/api/command", {
+				argv: exportCommand(kind, root),
+				session,
+			});
+			if (!current()) return;
+			const result = response.result as CommandResult | undefined;
+			if (
+				result?.schemaVersion !== 1 ||
+				result.session !== session ||
+				result.command !== (kind === "snapshot" ? "snapshot" : "extract") ||
+				(result.data as { document?: string } | null)?.document !== root ||
+				(result.data as { scope?: string } | null)?.scope !== root
+			)
+				throw new Error(
+					"Export session, document or scope changed; refresh and retry",
+				);
+			const { blob, truncated } = exportBlob(kind, session, result.data);
+			const url = URL.createObjectURL(blob);
+			const timer = setTimeout(() => {
+				exportUrls.delete(url);
+				URL.revokeObjectURL(url);
+			}, 1000);
+			exportUrls.set(url, timer);
+			const anchor = document.createElement("a");
+			try {
+				anchor.href = url;
+				anchor.download = `agent-browser-${session.replace(/[^a-z0-9._-]/gi, "_").slice(0, 64)}-${kind}.${kind === "markdown" ? "md" : "json"}`;
+				document.body.append(anchor);
+				anchor.click();
+			} finally {
+				anchor.remove();
+			}
+			text(
+				"export-state",
+				`${kind} downloaded · session ${session} · ${blob.size} bytes · partial native interpretation${truncated ? " · TRUNCATED" : ""} · metadata retained.`,
+			);
+		} catch (error) {
+			if (current()) {
+				failure(error);
+				text(
+					"export-state",
+					`${kind} export failed; no substitute downloaded.`,
+				);
+			}
+		} finally {
+			if (generation === ownGeneration) {
+				exporting = false;
+				updateControls();
+			}
+		}
+	}
+	for (const kind of exportKinds)
+		button(`download-${kind}`).addEventListener("click", () => {
+			void downloadExtraction(kind);
+		});
 	element("tabs").addEventListener("change", () => {
 		runTabAction("tab-select", (element("tabs") as HTMLSelectElement).value);
 	});
