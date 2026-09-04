@@ -19,6 +19,13 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Focus setup lifetime checkpoint: `FOCUS-LIFECYCLE.md` prevents an in-progress
+registration pool escaping reentrant document/runtime teardown. Four first/final
+registration cases fail on the preceding archive and pass with the guarded
+delegation; both focused runs pass 214 / ten files. Types/builds, strict checking
+and scoped formatting pass. Combined full-suite validation follows the upload
+lifecycle integration; no new runtime/live/terminal acceptance is inferred.
+
 Editable caret checkpoint: `EDITABLE-CARET.md` paints existing collapsed shared
 selection at determinate focused editable glyph edges, respecting native paint
 order, crops, source color and fixed/root scroll. Focused tests pass 144 / eight

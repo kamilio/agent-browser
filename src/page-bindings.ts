@@ -383,15 +383,21 @@ export class PageBindings {
 					},
 				},
 			});
+			const registerFocus = context.nestedOperation?.bind(context);
 			this.focus = new PageFocus(
 				page.interactions.focus,
 				(position) => {
 					void this.scrolling.methods.scrollTo(position);
 				},
-				context.nestedOperation
+				registerFocus
 					? {
 							document: page.document,
-							register: context.nestedOperation.bind(context),
+							register: (operation) => {
+								this.ensureOpen();
+								const registered = registerFocus(operation);
+								this.ensureOpen();
+								return registered;
+							},
 							maxBindings: options.focusLimits?.maxBindings,
 						}
 					: undefined,

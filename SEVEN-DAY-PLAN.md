@@ -7,6 +7,10 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Independent review's focus setup guard is integrated with four before/after
+teardown reproductions. `FOCUS-LIFECYCLE.md` records 214 passing focused native
+tests and explicit limits; combined full suites follow upload lifecycle hardening.
+
 Native editable glyph-edge carets now paint through the existing content order.
 `EDITABLE-CARET.md` records ownership/budget/crop limits, fresh native captures and
 a combined host showcase whose only before/after pixel changes are the carets.

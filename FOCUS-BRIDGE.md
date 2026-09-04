@@ -7,6 +7,11 @@ released-SafeJS execution evidence**.
 
 ## Publication and completion
 
+Current setup-hardening continuation: `FOCUS-LIFECYCLE.md` guards registration
+before/after delegated setup, including first/final document or runtime closure.
+Its focused native reproductions do not replace this checkpoint's original
+provisioning counts or prove released-runtime execution.
+
 The extension adapter requests `guest:retain` and `source:nested`, and exposes a
 setup-only registration hook to PageBindings. It does not expose registration,
 nested source evaluation or any runtime-private API to page scripts.

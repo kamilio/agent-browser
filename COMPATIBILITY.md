@@ -1,5 +1,10 @@
 # Compatibility and playground acceptance ledger
 
+September 4 focus setup hardening: `FOCUS-LIFECYCLE.md` revokes partial registration
+pools across reentrant first/final document or runtime teardown, preserving exact
+registered identities. Four baseline reproductions and 214 focused native tests
+validate the guard, not actual released-SafeJS execution or measured retention.
+
 September 4 editable caret continuation: `EDITABLE-CARET.md` adds noncreating shared
 selection lookup and bounded source-colored caret painting at determinate glyph
 edges. Ordered occlusion, crops and fixed/root scroll are tested with fresh native

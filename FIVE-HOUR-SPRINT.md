@@ -10,19 +10,19 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | Integrate focus and upload lifecycle review fixes | Caret painting passes 10,934 / 322 isolated native tests and combined host pixel comparisons. |
+| Main | Integrate upload lifecycle review fixes and terminal carets | Focus setup guard passes 214 focused native tests; combined full validation follows upload fixes. |
 | DOM worker | Paragraph merging delivered; worker closed | Native merging is integrated; original paragraphs and worker evidence are preserved. |
 | Focus-bridge worker | Native provisioning/resource/revocation stress | Both deliveries are integrated natively; public/runtime limits and URL constructor blockers remain explicit. |
 | Focus delivery | Native focus/blur options, indication and scrolling | Public-contract bridge is integrated natively; released guest execution remains unverified. |
 | Cookie delivery | Cookie list/get/set/delete services | Production wiring and actual CLI tests integrated; 9,765 isolated native tests pass. |
 | White-space delivery | Native pre-wrap formatting and hanging spaces | Integrated, with fresh editable captures and 9,854 passing isolated native tests. |
 | Double-click / upload-server worker | Upload host/session delivery complete; worker closed | Native dispatch is integrated; actual socket authentication remains gated. |
-| Positioning / range-geometry worker | Geometry/break mappings delivered; worker closed | Parent normalized only cross-tree refs in the flex regression; native command interactions pass. |
+| Positioning / range-geometry worker | Bounded same-text editable selection highlighting | Existing shared geometry/paint order only; mixed-node/CSS highlight conformance remains out of scope. |
 | Runtime / upload-client worker | CLI and six cross-boundary cases complete; worker closed | Actual native client/host path passes with injected transport and real private files. |
 | Playground delivery | Extraction/snapshot downloads and honest example discovery | Integrated export guards/cards pass 9,882 isolated native tests; live UI/framework gates remain open. |
-| File-selection / rendering worker | Terminal preserved-break caret follow-up | Initial glyph-edge integration validated; exact source metadata/paint-order proof required for expansion. |
+| File-selection / rendering worker | Terminal preserved-break carets delivered; worker closed | Helper-only extension and 33 native tests await parent integration. |
 | Independent upload reviewer | Reservation and manager/retained-owner closure defects reproduced; worker closed | Replacement v2 guards and four regressions remain pending parent integration. |
-| Independent focus reviewer | Final-registration teardown defect reproduced; worker closed | Narrow guard and native reproducer delivered; parent integration pending. |
+| Independent focus reviewer | Final-registration teardown defect reproduced; worker closed | Guard integrated with four first/final document/runtime teardown reproductions. |
 
 Workers use isolated snapshots at their explicitly recorded bases, not the dirty primary tree.
 They return code, explicit tests, source paths and integration notes. Main reviews
