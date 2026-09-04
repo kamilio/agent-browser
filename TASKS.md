@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Observer-callback checkpoint: `SCRIPT-MUTATION-OBSERVERS.md` connects ScriptDom
+observer capabilities, native queues and retained record views to ordered callback
+prefixes. Unique admission survives shared/early-settling Promises; async tails do
+not block later observers, and close interrupts pending prefixes without revival.
+Native resource-startup errors and sparse materialized arrays have regressions and
+fixes. Fifty-nine new native tests include a 250-callback admission sequence; focused
+checks pass 229 / five files. The API remains native-only, not a page global.
+Full native validation passes 7,731 / 219 files; isolated owned-patch validation
+passes 4,971 / 158 available files. Production/new-test types, builds and four-source
+lint pass in both trees, with existing pending work preserved outside this commit.
+Read-only pinned upstream source lacks a public notification-enqueue hook and can
+run callback prefixes directly in an active host phase. The local draft
+`contributions/safejs-observer-checkpoint-request.md` specifies the missing public
+contract; no issue was posted, and duplicate search remains incomplete after HTTP
+422. Runtime job ordering, actual guest construction/conversion, error reporting,
+reclamation and all broader acceptance gates remain open.
+
+### Previous record-capability checkpoint
+
 Mutation-record capability checkpoint: `SCRIPT-MUTATION-RECORDS.md` connects native
 records to ScriptDom node identity, read-only record properties and static indexed
 added/removed lists. Lifetime record/string/node budgets cover delivered output,

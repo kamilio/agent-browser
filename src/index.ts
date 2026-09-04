@@ -1,4 +1,9 @@
 export {
+	ScriptMutationObservers,
+	type ScriptMutationObserverLimits,
+	type ScriptMutationObserverPort,
+} from "./script-mutation-observers.js";
+export {
 	ScriptMutationRecords,
 	type ScriptMutationRecordLimits,
 } from "./script-mutation-records.js";

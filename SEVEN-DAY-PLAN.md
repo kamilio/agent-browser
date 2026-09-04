@@ -277,6 +277,12 @@ admission. Native tests cover provider reentrancy, whole-batch snapshots and
 revocation. Actual guest scheduling and observer callbacks remain unimplemented;
 the helper does not turn those open runtime/framework gates into passing claims.
 
+September 4 observer-callback continuation: `SCRIPT-MUTATION-OBSERVERS.md` joins
+native observer capabilities and record ownership with synchronous-prefix-aware
+callback orchestration. A pinned public-API review confirms the guest notification
+enqueue dependency remains unresolved; a local, unposted request records precise
+acceptance cases. No host scheduling approximation is exposed as page support.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

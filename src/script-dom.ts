@@ -1,6 +1,7 @@
 import { controlChecked, controlValue, inputType } from "./controls.js";
 import type { ObservedDocumentMutation } from "./document-observers.js";
 import { ScriptMutationRecords } from "./script-mutation-records.js";
+import { ScriptMutationObservers } from "./script-mutation-observers.js";
 import { documentScriptState } from "./document-script-state.js";
 import {
 	documentBody,
@@ -41,6 +42,7 @@ import { scriptCharacterData } from "./script-character-data.js";
 import { ScriptCollections } from "./script-collections.js";
 import {
 	ScriptEventBindings,
+	type ScriptCallbackRuntime,
 	type ScriptEventOptions,
 } from "./script-events.js";
 import { scriptFormMethods, scriptFormProperties } from "./script-form.js";
@@ -97,6 +99,10 @@ export class ScriptDom {
 	private readonly computedStyles: ComputedStyles;
 	private readonly capabilities = new Map<number, object>();
 	private mutationRecordOwner?: ScriptMutationRecords;
+	private mutationObserverOwner?: {
+		runtime: ScriptCallbackRuntime;
+		bindings: ScriptMutationObservers;
+	};
 	private identities = new WeakMap<object, number>();
 	private closed = false;
 	private unregisterClose: () => unknown;
@@ -716,6 +722,8 @@ export class ScriptDom {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		this.mutationObserverOwner?.bindings.close();
+		this.mutationObserverOwner = undefined;
 		this.mutationRecordOwner?.close();
 		this.eventBindings?.close();
 		this.queries.close();
@@ -752,6 +760,29 @@ export class ScriptDom {
 			computedStyles: this.computedStyles.metrics(),
 			elementSizes: this.elementSizes.metrics(),
 		});
+	}
+
+	mutationObservers(runtime: ScriptCallbackRuntime): ScriptMutationObservers {
+		this.read(this.tree.root);
+		if (this.mutationObserverOwner) {
+			if (this.mutationObserverOwner.runtime !== runtime)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Script observer runtime cannot be replaced",
+				);
+			return this.mutationObserverOwner.bindings;
+		}
+		const bindings = new ScriptMutationObservers(
+			this.tree,
+			this.factory,
+			{
+				identify: (value) => this.identify(value),
+				records: (records) => this.mutationRecords(records),
+			},
+			runtime,
+		);
+		this.mutationObserverOwner = { runtime, bindings };
+		return bindings;
 	}
 
 	mutationRecords(
