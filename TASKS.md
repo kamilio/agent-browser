@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Nth-token checkpoint: `NTH-TOKENS.md` replaces raw An+B substring matching with
+token-aware parsing in the shared selector compiler. Comments, escaped units and
+keywords, signed offsets and filtered-child `of` boundaries work across queries,
+styles and feature queries. Non-CSS whitespace and invalid token fusion remain
+false/invalid rather than accidentally accepted. Native sibling mutation,
+specificity, geometry and raster checks retain existing resource bounds.
+Seventy-nine new cases pass; isolated prior HEAD fails 63 and passes 16. Focused
+runs pass 416 / six files in both trees; authorized full native runs pass
+10,008 / 276 working files and 8,862 / 254 isolated files. Both trees pass types/
+builds, strict two-test checks and three-file lint. Historical evidence and
+unrelated pending work remain intact. Continue application compatibility; full
+selectors, released-SafeJS, live browser/site/socket/TTY and original acceptance
+gates remain open. No gated probe ran; the denied SafeJS probe remains unrun and
+the complete seven-day browser goal stays active.
+
+### Previous selector feature-query checkpoint
+
 Selector feature-query checkpoint: `SELECTOR-SUPPORTS.md` adds native
 `selector()` conditions to both `CSS.supports()` and stylesheet `@supports`.
 The existing compiler checks one complex selector recursively without querying

@@ -959,6 +959,20 @@ full grammar, released-SafeJS and real browser/site/socket/TTY gates remain open
 No gated probe ran; the denied SafeJS probe remains unrun and the complete
 seven-day browser objective stays active.
 
+September 4 nth-token continuation: `NTH-TOKENS.md` replaces raw An+B parsing with
+token-aware comments, escapes, signs and filtered-child keywords. DOM queries,
+mutation-sensitive sibling filters, specificity, feature queries and native
+geometry/raster checks share the compiler. Invalid token fusion and non-CSS
+whitespace are rejected; numeric/source/component/match budgets remain enforced.
+Seventy-nine new cases pass; isolated prior HEAD fails 63 and passes 16. Focused
+runs pass 416 / six files in both trees; full authorized native runs pass
+10,008 / 276 working files and 8,862 / 254 isolated files. Both pass types/builds,
+strict two-test checks and three-file lint. Historical evidence and unrelated
+pending work remain separate. Continue application compatibility; full selectors,
+released-SafeJS and real browser/site/socket/TTY gates remain open. No gated probe
+ran; the denied SafeJS probe remains unrun and the complete seven-day browser
+objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

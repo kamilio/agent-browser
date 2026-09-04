@@ -60,8 +60,10 @@ No namespaces, XML/SVG case rules, quirks mode, pseudo-elements, shadow roots,
 layout/hover/focus-visible state, validity pseudos, language/direction pseudos or complete
 Custom Elements state. Unknown/unsupported pseudos fail even inside `:is` or
 `:where`: forgiving selector-list recovery is not implemented. Explicit `:scope`
-inside `:has`, nested `:has`, comments inside An+B formulas and full tokenizer
-error recovery are not supported. This is not a WPT conformance claim.
+inside `:has`, nested `:has` and full tokenizer error recovery are not supported.
+`NTH-TOKENS.md` adds token-aware An+B comments/escapes and filtered-child `of`
+identifiers with shared query/style/feature-query behavior. This is not a WPT
+conformance claim.
 
 These SDK methods are not yet exposed as page DOM methods or CLI handlers.
 Constructed-tree queries do not prove that website scripts or real-site selectors

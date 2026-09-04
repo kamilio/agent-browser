@@ -246,6 +246,7 @@
   "src/selectedcontent.test.ts",
   "src/select-typeahead.test.ts",
   "src/selectors.test.ts",
+  "src/nth-tokens.test.ts",
   "src/selector-supports.test.ts",
   "src/session-trace.test.ts",
   "src/session.test.ts",

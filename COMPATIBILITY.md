@@ -1,5 +1,10 @@
 # Compatibility and playground acceptance ledger
 
+September 4 nth-selector continuation: `NTH-TOKENS.md` shares token-aware An+B
+comments, escapes and filtered-child keywords across DOM queries, stylesheet
+matching and feature queries. Native mutation/geometry/raster tests and retained
+resource bounds cover this extension, not full selector or real-browser parity.
+
 September 4 selector-query continuation: `SELECTOR-SUPPORTS.md` connects
 `selector()` to the native compiler for both page and stylesheet feature queries.
 Recursive unsupported branches remain false; comments retain their syntax and

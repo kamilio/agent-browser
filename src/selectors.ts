@@ -64,6 +64,12 @@ interface CompiledSelector {
 	controlValue: boolean;
 }
 
+type FormulaToken =
+	| { kind: "integer"; value: number; signed: boolean }
+	| { kind: "dimension"; value: number; unit: string }
+	| { kind: "identifier"; value: string }
+	| { kind: "sign"; value: "+" | "-" };
+
 export type SelectorSpecificity = readonly [number, number, number];
 
 export function compareSpecificity(
@@ -368,28 +374,14 @@ class SelectorParser {
 				"nth-last-of-type",
 			].includes(name)
 		) {
-			const start = this.position;
-			while (
-				this.position < this.source.length &&
-				this.source[this.position] !== ")"
-			) {
-				if (
-					this.source.slice(this.position, this.position + 2).toLowerCase() ===
-						"of" &&
-					whitespace.test(this.source[this.position - 1] ?? "") &&
-					whitespace.test(this.source[this.position + 2] ?? "")
-				)
-					break;
-				if (this.source.slice(this.position, this.position + 2) === "/*")
-					unsupported("comments within An+B expressions");
-				this.position++;
-			}
-			const formula = this.formula(this.source.slice(start, this.position));
+			const formula = this.formula();
+			this.space();
 			let of: Selector[] | undefined;
 			if (this.source[this.position] !== ")") {
 				if (name.includes("of-type"))
 					syntax("of-list on a typed child selector");
-				this.position += 2;
+				if (asciiLower(this.identifier()) !== "of")
+					syntax("expected an of-list");
 				of = this.list(depth + 1, false, insideHas);
 			}
 			this.expect(")");
@@ -403,24 +395,73 @@ class SelectorParser {
 		}
 		unsupported(`:${name}()`);
 	}
-	private formula(input: string) {
-		const value = asciiLower(input.trim());
-		if (value === "odd") return { step: 2, offset: 1 };
-		if (value === "even") return { step: 2, offset: 0 };
-		let step = 0;
-		let offset: number;
-		if (/^[+-]?\d+$/.test(value)) offset = Number(value);
-		else {
-			const match = /^([+-]?\d*)n(?:\s*([+-])\s*(\d+))?$/.exec(value);
-			if (!match) syntax("invalid An+B expression");
-			step =
-				match[1] === "" || match[1] === "+"
-					? 1
-					: match[1] === "-"
-						? -1
-						: Number(match[1]);
-			offset = match[3] ? Number(`${match[2]}${match[3]}`) : 0;
+	private formulaToken(): FormulaToken | undefined {
+		const numeric = /^[+-]?\d+/.exec(this.source.slice(this.position));
+		if (numeric) {
+			this.position += numeric[0].length;
+			const value = Number(numeric[0]);
+			if (this.startsIdentifier())
+				return {
+					kind: "dimension",
+					value,
+					unit: asciiLower(this.identifier()),
+				};
+			return { kind: "integer", value, signed: /^[+-]/.test(numeric[0]) };
 		}
+		if (this.startsIdentifier())
+			return { kind: "identifier", value: asciiLower(this.identifier()) };
+		const value = this.source[this.position];
+		if (value === "+" || value === "-") {
+			this.position++;
+			return { kind: "sign", value };
+		}
+	}
+	private formula() {
+		this.space();
+		let token = this.formulaToken();
+		if (token?.kind === "sign" && token.value === "+") {
+			if (this.space()) syntax("whitespace after An+B leading plus");
+			token = this.formulaToken();
+			if (token?.kind !== "identifier" || !/^n(?:-|$)/.test(token.value))
+				syntax("invalid An+B expression");
+		}
+		if (token?.kind === "integer") return this.formulaNumbers(0, token.value);
+		if (token?.kind === "identifier" && ["odd", "even"].includes(token.value))
+			return { step: 2, offset: token.value === "odd" ? 1 : 0 };
+		const unit =
+			token?.kind === "dimension"
+				? token.unit
+				: token?.kind === "identifier"
+					? token.value
+					: "";
+		const parts = /^(-?)n(?:-(\d*))?$/.exec(unit);
+		if (!parts || (token?.kind === "dimension" && parts[1]))
+			syntax("invalid An+B expression");
+		const step = token?.kind === "dimension" ? token.value : parts[1] ? -1 : 1;
+		let offset = 0;
+		if (parts[2]) offset = -Number(parts[2]);
+		else if (parts[2] === "") {
+			this.space();
+			const value = this.formulaToken();
+			if (value?.kind !== "integer" || value.signed)
+				syntax("expected an unsigned An+B offset");
+			offset = -value.value;
+		} else {
+			const end = this.position;
+			this.space();
+			const next = this.formulaToken();
+			if (next?.kind === "integer" && next.signed) offset = next.value;
+			else if (next?.kind === "sign") {
+				this.space();
+				const value = this.formulaToken();
+				if (value?.kind !== "integer" || value.signed)
+					syntax("expected an unsigned An+B offset");
+				offset = next.value === "-" ? -value.value : value.value;
+			} else this.position = end;
+		}
+		return this.formulaNumbers(step, offset);
+	}
+	private formulaNumbers(step: number, offset: number) {
 		if (
 			!Number.isSafeInteger(step) ||
 			!Number.isSafeInteger(offset) ||

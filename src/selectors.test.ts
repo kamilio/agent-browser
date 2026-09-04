@@ -322,6 +322,7 @@ it.each([
 	":nth-child(2 n)",
 	":nth-child(n 1)",
 	":nth-child(2.5n)",
+	":nth-child(1/**/2)",
 	":nth-child(2 of)",
 	":nth-of-type(2 of li)",
 	":has(:has(a))",
@@ -348,7 +349,6 @@ it.each([
 	"[svg|href]",
 	":is(:unknown, li)",
 	":has(:scope > a)",
-	":nth-child(1/**/2)",
 ])(
 	"reports unsupported features rather than silently ignoring %s",
 	(selector) => {
