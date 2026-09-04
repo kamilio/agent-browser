@@ -336,6 +336,7 @@ interface WireHost {
 		body: Buffer | undefined,
 		redirect: string,
 		signal: AbortSignal,
+		maxResponseBytes: number,
 		onHeaders?: (headers: NetworkResponse["headers"]) => void,
 	): Promise<Omit<NetworkResponse, "url" | "redirects" | "elapsedMs">>;
 }
