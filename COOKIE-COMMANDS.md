@@ -41,7 +41,7 @@ secret omission. CLI module loading and stdout/stderr are real; the command
 connection and transport are in-memory fixtures, not a socket acceptance run.
 
 Focused tests pass 264 / eight working files and 262 / eight isolated files.
-The difference is preexisting pending command-host tests, not excluded cases.
+The difference is two preexisting pending CLI-parser tests, not excluded cases.
 Typecheck, build, strict checking of new tests and scoped three-file Biome pass.
 The first added tabless fixture incorrectly omitted initial session creation;
 it was corrected to open then close its tab, without weakening session policy.
