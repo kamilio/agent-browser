@@ -1,4 +1,5 @@
 import type { DocumentNode, DocumentTree } from "./document.js";
+import { validateDocumentInsertion as validateDocument } from "./document-hierarchy.js";
 import { AgentBrowserError } from "./errors.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
 
@@ -11,31 +12,6 @@ interface MutationBindings {
 	string(value: unknown): string;
 }
 
-function validateDocument(
-	tree: DocumentTree,
-	parentId: number,
-	childId: number,
-	excluded: readonly number[] = [],
-) {
-	const parent = tree.get(parentId);
-	if (parent.kind !== "document") return;
-	const child = tree.get(childId);
-	const incoming = child.kind === "fragment" ? child.children : [childId];
-	const omitted = new Set([...excluded, ...incoming]);
-	let elements = parent.children.filter(
-		(current) => !omitted.has(current) && tree.get(current).kind === "element",
-	).length;
-	for (const current of incoming) {
-		const node = tree.get(current);
-		if (node.kind === "element") elements++;
-		if (node.kind === "text" || elements > 1)
-			throw new AgentBrowserError(
-				"invalid-input",
-				"Invalid document child hierarchy",
-			);
-	}
-}
-
 export function scriptMutationMethods(
 	tree: DocumentTree,
 	id: number,
@@ -43,11 +19,11 @@ export function scriptMutationMethods(
 ): NonNullable<ScriptHostObjectDefinition["methods"]> {
 	const kind = bindings.read(id).kind;
 	const insert = (parent: number, child: number, before?: number) => {
-		validateDocument(tree, parent, child);
+		validateDocument(tree, parent, child, [], before);
 		tree.insert(parent, child, before);
 	};
 	const replace = (parent: number, child: number, previous: number) => {
-		validateDocument(tree, parent, child, [previous]);
+		validateDocument(tree, parent, child, [previous], previous);
 		tree.replace(parent, child, previous);
 	};
 	const argumentsList = (values: readonly unknown[]) => {
@@ -124,7 +100,7 @@ export function scriptMutationMethods(
 			tree.replaceChildren(id, child);
 		};
 	}
-	if (["element", "text", "comment"].includes(kind)) {
+	if (["element", "text", "comment", "doctype"].includes(kind)) {
 		for (const operation of ["before", "after", "replaceWith"] as const)
 			methods[operation] = (...values) => {
 				const args = argumentsList(values);

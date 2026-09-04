@@ -1,4 +1,5 @@
 import { DocumentCheckedness } from "./document-checkedness.js";
+import { validateDocumentInsertion } from "./document-hierarchy.js";
 import {
 	DocumentInputValues,
 	type InputValueChange,
@@ -16,7 +17,13 @@ import {
 	snapshotHtmlAttributes,
 } from "./html-attributes.js";
 
-export type NodeKind = "document" | "fragment" | "element" | "text" | "comment";
+export type NodeKind =
+	| "document"
+	| "fragment"
+	| "element"
+	| "text"
+	| "comment"
+	| "doctype";
 
 export interface ControlState {
 	value?: string;
@@ -41,6 +48,7 @@ export interface DocumentNode {
 	parent: number | null;
 	children: readonly number[];
 	control: Readonly<ControlState>;
+	doctype?: Readonly<{ name: string; publicId: string; systemId: string }>;
 }
 
 interface MutableNode
@@ -103,6 +111,7 @@ export class DocumentTree {
 	private readonly customValidity = new Map<number, string>();
 	private readonly userEditedValues = new Set<number>();
 	private closed = false;
+	private attachedDoctype: number | undefined;
 	private closeHandlers = new Set<() => void>();
 	private changeHandlers = new Set<
 		(change: Readonly<DocumentChange>) => void
@@ -259,6 +268,21 @@ export class DocumentTree {
 		return this.allocate("fragment", "", "");
 	}
 
+	createDocumentType(name: string, publicId = "", systemId = "") {
+		this.ensureOpen();
+		for (const value of [name, publicId, systemId]) this.validateString(value);
+		if (/[\0\t\n\f\r >]/.test(name))
+			throw new DOMException(
+				"Invalid document type name",
+				"InvalidCharacterError",
+			);
+		this.checkTextBudget(name.length + publicId.length + systemId.length);
+		const id = this.allocate("doctype", "", "");
+		this.node(id).doctype = Object.freeze({ name, publicId, systemId });
+		this.textCodeUnits += name.length + publicId.length + systemId.length;
+		return id;
+	}
+
 	clone(id: number, deep = false): number {
 		return this.copyFrom(this, id, deep);
 	}
@@ -291,7 +315,10 @@ export class DocumentTree {
 		const extraText = (node: Readonly<DocumentNode>) =>
 			Object.entries(node.attributes).reduce(
 				(total, [name, value]) => total + name.length + value.length,
-				node.control.value?.length ?? 0,
+				(node.control.value?.length ?? 0) +
+					(node.doctype?.name.length ?? 0) +
+					(node.doctype?.publicId.length ?? 0) +
+					(node.doctype?.systemId.length ?? 0),
 			);
 		this.checkTextBudget(
 			sources.reduce(
@@ -306,6 +333,7 @@ export class DocumentTree {
 			const copy = this.node(copyId);
 			copy.attributes = createHtmlAttributes(source.attributes);
 			copy.control = { ...source.control };
+			if (source.doctype) copy.doctype = source.doctype;
 			if (sourceTree.userEditedValues.has(source.id))
 				this.userEditedValues.add(copyId);
 			this.selections.initialize(copyId, {
@@ -431,12 +459,18 @@ export class DocumentTree {
 		this.insert(parent, child);
 	}
 
-	private checkInsertion(parentId: number, childId: number, before?: number) {
+	private checkInsertion(
+		parentId: number,
+		childId: number,
+		before?: number,
+		excluded: readonly number[] = [],
+	) {
 		const parent = this.node(parentId);
 		const child = this.node(childId);
 		if (
 			!["document", "fragment", "element"].includes(parent.kind) ||
-			child.kind === "document"
+			child.kind === "document" ||
+			(child.kind === "doctype" && parent.kind !== "document")
 		)
 			throw new AgentBrowserError(
 				"invalid-input",
@@ -461,6 +495,11 @@ export class DocumentTree {
 		}
 		const children =
 			child.kind === "fragment" ? [...child.children] : [childId];
+		if (
+			parent.kind === "document" &&
+			(this.attachedDoctype !== undefined || child.kind === "doctype")
+		)
+			validateDocumentInsertion(this, parentId, childId, excluded, before);
 		for (const moving of children)
 			for (const entry of this.walk(moving))
 				if (parentDepth + entry.depth > this.limits.maxDepth)
@@ -583,7 +622,9 @@ export class DocumentTree {
 	}
 
 	replace(parentId: number, childId: number, previousId: number) {
-		const added = this.checkInsertion(parentId, childId, previousId);
+		const added = this.checkInsertion(parentId, childId, previousId, [
+			previousId,
+		]);
 		const siblings = this.node(parentId).children;
 		let before = siblings[siblings.indexOf(previousId) + 1];
 		const previousSibling = siblings[siblings.indexOf(previousId) - 1] ?? null;
@@ -610,7 +651,9 @@ export class DocumentTree {
 				"Invalid replacement parent",
 			);
 		const added =
-			childId === undefined ? [] : this.checkInsertion(parentId, childId);
+			childId === undefined
+				? []
+				: this.checkInsertion(parentId, childId, undefined, parent.children);
 		const previous = parent.children;
 		if (previous.length) this.nodeViews.delete(parentId);
 		parent.children = [];
@@ -1208,7 +1251,7 @@ export class DocumentTree {
 	setTextContent(id: number, data: string) {
 		this.validateString(data);
 		const node = this.node(id);
-		if (node.kind === "document") return;
+		if (node.kind === "document" || node.kind === "doctype") return;
 		if (node.kind === "text" || node.kind === "comment") {
 			this.setData(id, data);
 			return;
@@ -1370,6 +1413,7 @@ export class DocumentTree {
 		this.customValidity.clear();
 		this.userEditedValues.clear();
 		this.nodes.clear();
+		this.attachedDoctype = undefined;
 		this.nodeViews.clear();
 		this.attributeRecords.clear();
 		this.attachedAttributes.clear();
@@ -1555,6 +1599,10 @@ export class DocumentTree {
 	}
 
 	private changed(kind: DocumentChange["kind"], target: number) {
+		if (kind === "insert" && this.nodes.get(target)?.kind === "doctype")
+			this.attachedDoctype = target;
+		else if (kind === "remove" && this.attachedDoctype === target)
+			this.attachedDoctype = undefined;
 		if (["insert", "remove", "attribute", "text", "control"].includes(kind))
 			this.nodeViews.delete(target);
 		if (kind === "insert") {

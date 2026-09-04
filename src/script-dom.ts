@@ -100,6 +100,7 @@ export class ScriptDom {
 	private readonly computedStyles: ComputedStyles;
 	private readonly capabilities = new Map<number, object>();
 	private readonly publications: ScriptNodePublications;
+	private implementation?: object;
 	private mutationRecordOwner?: ScriptMutationRecords;
 	private mutationObserverOwner?: {
 		runtime: ScriptCallbackRuntime;
@@ -176,17 +177,24 @@ export class ScriptDom {
 				},
 				nodeType: {
 					get: () =>
-						({ document: 9, fragment: 11, element: 1, text: 3, comment: 8 })[
-							this.read(id).kind
-						],
+						({
+							document: 9,
+							fragment: 11,
+							element: 1,
+							text: 3,
+							comment: 8,
+							doctype: 10,
+						})[this.read(id).kind],
 				},
 				nodeName: {
 					get: () =>
 						this.read(id).kind === "element"
 							? this.read(id).tagName.toUpperCase()
-							: this.read(id).kind === "fragment"
-								? "#document-fragment"
-								: `#${this.read(id).kind}`,
+							: this.read(id).kind === "doctype"
+								? (this.read(id).doctype?.name ?? "")
+								: this.read(id).kind === "fragment"
+									? "#document-fragment"
+									: `#${this.read(id).kind}`,
 				},
 				ownerDocument: {
 					get: () =>
@@ -219,7 +227,7 @@ export class ScriptDom {
 				textContent: {
 					get: () => {
 						const node = this.read(id);
-						return node.kind === "document"
+						return node.kind === "document" || node.kind === "doctype"
 							? null
 							: node.kind === "element" || node.kind === "fragment"
 								? this.tree.textContent(id)
@@ -265,6 +273,17 @@ export class ScriptDom {
 				hasChildNodes: () => this.read(id).children.length > 0,
 			},
 		};
+		if (initial.kind === "doctype") {
+			definition.properties.name = {
+				get: () => this.read(id).doctype?.name ?? "",
+			};
+			definition.properties.publicId = {
+				get: () => this.read(id).doctype?.publicId ?? "",
+			};
+			definition.properties.systemId = {
+				get: () => this.read(id).doctype?.systemId ?? "",
+			};
+		}
 		if (initial.kind === "element" && initial.tagName === "title")
 			definition.properties.text = {
 				get: () => {
@@ -384,6 +403,17 @@ export class ScriptDom {
 			};
 		}
 		if (initial.kind === "document") {
+			definition.properties.implementation = {
+				get: () => this.documentImplementation(),
+			};
+			definition.properties.doctype = {
+				get: () =>
+					this.optional(
+						this.read(id).children.find(
+							(child) => this.read(child).kind === "doctype",
+						),
+					),
+			};
 			definition.properties.title = {
 				get: () => {
 					this.read(id);
@@ -725,6 +755,7 @@ export class ScriptDom {
 		if (this.closed) return;
 		this.closed = true;
 		this.publications.close();
+		this.implementation = undefined;
 		this.mutationObserverOwner?.bindings.close();
 		this.mutationObserverOwner = undefined;
 		this.mutationRecordOwner?.close();
@@ -815,6 +846,35 @@ export class ScriptDom {
 	}
 	private optional(id: number | null | undefined) {
 		return id == null ? null : this.node(id);
+	}
+	private documentImplementation(): object {
+		this.ensureOpen();
+		if (this.implementation) return this.implementation;
+		return this.publications.publish(
+			"implementation",
+			this.tree.root,
+			{
+				methods: {
+					hasFeature: () => true,
+					createDocumentType: (...values) => {
+						if (values.length < 3)
+							throw new TypeError(
+								"createDocumentType requires three arguments",
+							);
+						return this.node(
+							this.tree.createDocumentType(
+								domString(values[0]),
+								domString(values[1]),
+								domString(values[2]),
+							),
+						);
+					},
+				},
+			},
+			(capability) => {
+				this.implementation = capability;
+			},
+		);
 	}
 	private importNode(values: readonly unknown[]): object {
 		this.read(this.tree.root);

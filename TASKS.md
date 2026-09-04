@@ -19,6 +19,21 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Document-type checkpoint: `DOCUMENT-TYPES.md` adds programmatic DocumentType
+creation, owner-bound `document.implementation`, live `document.doctype`, native
+metadata retention, cloning/import/equality and HTML serialization. Shared
+hierarchy checks reject invalid doctype order before mutation. Four initial
+regressions fail before implementation; 40 new tests and 334 focused checks across
+nine files pass. Full native validation passes 7,977 / 226 files; the isolated
+owned patch passes 5,217 / 165 available files. Types, builds and eight-file lint
+pass in both trees, with existing pending work preserved outside the checkpoint.
+This is document-creation groundwork, not completed template support: bounded
+inert HTML document creation, parser DOCTYPE materialization and proper template
+content ownership remain next. No gated probe ran and the seven-day goal stays
+active; the denied SafeJS probe remains unrun.
+
+### Previous node-publication checkpoint
+
 Node-publication checkpoint: `SCRIPT-NODE-PUBLICATION.md` guards node, Attr and
 NamedNodeMap publication against reentry, reused identities, provider failure
 and owner closure. Captured callbacks stay unavailable until registration and

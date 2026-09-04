@@ -197,6 +197,22 @@ function equal(first: Identity, second: Identity, budget: Budget): boolean {
 					if (Object.hasOwn(secondNode.attributes, name)) secondCount++;
 				}
 				if (firstCount !== secondCount) return false;
+			} else if (firstNode.kind === "doctype") {
+				if (
+					!budget.text(
+						firstNode.doctype?.name ?? "",
+						secondNode.doctype?.name ?? "",
+					) ||
+					!budget.text(
+						firstNode.doctype?.publicId ?? "",
+						secondNode.doctype?.publicId ?? "",
+					) ||
+					!budget.text(
+						firstNode.doctype?.systemId ?? "",
+						secondNode.doctype?.systemId ?? "",
+					)
+				)
+					return false;
 			} else if (
 				(firstNode.kind === "text" || firstNode.kind === "comment") &&
 				!budget.text(firstNode.data, secondNode.data)

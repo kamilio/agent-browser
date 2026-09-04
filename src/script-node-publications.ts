@@ -4,7 +4,11 @@ import type {
 	ScriptHostObjectFactory,
 } from "./script-dom.js";
 
-type PublicationKind = "node" | "attribute" | "attribute-map";
+type PublicationKind =
+	| "node"
+	| "attribute"
+	| "attribute-map"
+	| "implementation";
 const usedCapabilities = new WeakSet<object>();
 
 export class ScriptNodePublications {
@@ -12,6 +16,7 @@ export class ScriptNodePublications {
 		node: new Set<number>(),
 		attribute: new Set<number>(),
 		"attribute-map": new Set<number>(),
+		implementation: new Set<number>(),
 	};
 	private closed = false;
 	private published = 0;
@@ -40,7 +45,8 @@ export class ScriptNodePublications {
 			pending:
 				this.active.node.size +
 				this.active.attribute.size +
-				this.active["attribute-map"].size,
+				this.active["attribute-map"].size +
+				this.active.implementation.size,
 			published: this.published,
 			failed: this.failed,
 			closed: this.closed,

@@ -98,6 +98,10 @@ export function serializeHtml(
 			continue;
 		}
 		const node = tree.get(entry.id);
+		if (node.kind === "doctype") {
+			if (entry.include) append(`<!DOCTYPE ${node.doctype?.name ?? ""}>`);
+			continue;
+		}
 		if (node.kind === "element" && node.tagName === "template")
 			throw new AgentBrowserError(
 				"unsupported",

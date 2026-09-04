@@ -310,6 +310,13 @@ pending reservations count toward existing owner quotas. Native read-budget
 evidence is preserved rather than relaxed to hide added traversal overhead.
 Runtime execution and wider browser compatibility gates remain distinct and open.
 
+September 4 document-type continuation: `DOCUMENT-TYPES.md` adds the bounded
+programmatic doctype/implementation foundation needed by HTML document creation.
+Template inspection confirmed that removing the parser rejection without inert
+content ownership would be incorrect. Continue with bounded inert document
+creation, parsed doctype preservation and the real template ownership/parser path;
+the new primitive does not redefine template or browser completion.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
