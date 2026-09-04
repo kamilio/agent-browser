@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Select inertness checkpoint: `SELECT-INERT.md` adds shared first-element-child
+button detection to native reference actionability, direct/sequential focus,
+label forwarding and semantic snapshots. Implicit inertness propagates through
+the existing ancestor/inclusion paths without changing attributes, disabled
+state or submit-button classification. A weak immutable-parent-view cache shares
+prefix scans and refreshes through native mutation. Three initial regressions
+fail before the fix; 45 new tests and 209 focused checks across eight files pass.
+Full native validation passes 8,890 / 245 files; the isolated owned patch passes
+6,130 / 184 available files. Types, builds and five-file lint pass in both trees,
+preserving pending work. Coordinate hit-testing/mouse paths still need the same
+implicit inert rule; this is not full input parity. Selectedcontent, picker
+behavior, flat-tree/modal inertness, foreign content, framesets, quirks layout
+and cross-owner observer/runtime breadth remain open. No gated probe ran; the
+denied SafeJS probe remains unrun, independent acceptance gates remain open and
+the seven-day goal stays active.
+
+### Previous button Auto checkpoint
+
 Button Auto checkpoint: `BUTTON-AUTO.md` unifies current computed button types
 and submit-button classification across activation, form entries, submitter
 resolution, implicit submission, constraint validation and native host getters.

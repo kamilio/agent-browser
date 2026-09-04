@@ -10,6 +10,7 @@ import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { activeFocus } from "./focus.js";
 import { htmlParseInfo } from "./html-info.js";
+import { isInertRoot } from "./inertness.js";
 import { documentStyles } from "./styles.js";
 
 export interface SnapshotOptions {
@@ -146,11 +147,11 @@ function clean(text: string, trim = true) {
 	return trim ? result.trim() : result;
 }
 
-function hidden(node: DocumentNode) {
+function hidden(tree: DocumentTree, node: DocumentNode) {
 	return (
 		ignoredTags.has(node.tagName) ||
 		Object.hasOwn(node.attributes, "hidden") ||
-		Object.hasOwn(node.attributes, "inert") ||
+		isInertRoot(tree, node) ||
 		node.attributes["aria-hidden"]?.toLowerCase() === "true" ||
 		(node.tagName === "input" &&
 			node.attributes.type?.toLowerCase() === "hidden")
@@ -356,7 +357,7 @@ function collectSnapshot(
 		nodes.set(node.id, node);
 		if (
 			(node.parent === null || included.has(node.parent)) &&
-			!hidden(node) &&
+			!hidden(tree, node) &&
 			styles.get(node.id).displayed
 		) {
 			included.add(node.id);

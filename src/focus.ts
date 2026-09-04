@@ -13,6 +13,7 @@ import {
 	runEventActionAsync,
 } from "./event-actions.js";
 import { BrowserEvent, type DocumentEvents } from "./events.js";
+import { isInertRoot } from "./inertness.js";
 import { documentStyles } from "./styles.js";
 
 export class BrowserFocusEvent extends BrowserEvent {
@@ -46,7 +47,7 @@ export function focusTabIndex(tree: DocumentTree, id: number): number | null {
 		const current = tree.get(ancestor);
 		if (
 			Object.hasOwn(current.attributes, "hidden") ||
-			Object.hasOwn(current.attributes, "inert")
+			isInertRoot(tree, current)
 		)
 			return null;
 		ancestor = current.parent;

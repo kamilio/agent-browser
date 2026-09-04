@@ -24,6 +24,7 @@ import { BrowserEvent, DocumentEvents, type EventLimits } from "./events.js";
 import { DocumentFocus, focusTabIndex } from "./focus.js";
 import { DocumentForms, type FormResetResult } from "./form-actions.js";
 import { BrowserInputEvent } from "./input-events.js";
+import { isInertRoot } from "./inertness.js";
 import { DocumentKeyboard } from "./keyboard.js";
 import { parseNetworkUrl } from "./network.js";
 
@@ -349,7 +350,7 @@ export class DocumentInteractions {
 		while (ancestor) {
 			if (
 				(!allowHidden && Object.hasOwn(ancestor.attributes, "hidden")) ||
-				Object.hasOwn(ancestor.attributes, "inert") ||
+				isInertRoot(this.tree, ancestor) ||
 				([
 					"button",
 					"input",
@@ -413,7 +414,7 @@ export class DocumentInteractions {
 		let parent: number | null = control;
 		while (parent !== null) {
 			const node = this.tree.get(parent);
-			if (Object.hasOwn(node.attributes, "inert")) return idle();
+			if (isInertRoot(this.tree, node)) return idle();
 			parent = node.parent;
 		}
 		const forwarded = yield* this.activateAction(

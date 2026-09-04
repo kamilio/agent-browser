@@ -493,6 +493,20 @@ quirks layout and cross-owner observer/runtime breadth remain unfinished. No
 gated probe ran; the denied SafeJS probe remains unrun and independent acceptance
 gates remain open.
 
+September 4 select inertness checkpoint: `SELECT-INERT.md` records shared
+first-element-child button detection for reference targeting, focus, user label
+forwarding and semantic output. Descendant exclusion and immutable-parent-view
+scan sharing respect mutation without changing disabled or submit states.
+Three initial regressions fail before the fix; 45 new tests and 209 focused
+checks across eight files pass. Full native validation passes 8,890 / 245 files;
+the isolated owned patch passes 6,130 / 184 available files. Types, builds and
+five-file lint pass in both trees while preserving pending work. Coordinate
+hit-testing/mouse integration, selectedcontent and picker behavior remain open;
+reference targeting does not prove pointer or runtime parity. Flat-tree/modal
+inertness, foreign content, framesets, quirks layout and cross-owner
+observer/runtime breadth remain unfinished. No gated probe ran; the denied
+SafeJS probe remains unrun and independent acceptance gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
