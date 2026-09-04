@@ -48,6 +48,7 @@
   "src/document-paint.test.ts",
   "src/document-pdf.test.ts",
   "src/document-raster.test.ts",
+  "src/document-resources.test.ts",
   "src/document-selection.test.ts",
   "src/document-title.test.ts",
   "src/document-url.test.ts",

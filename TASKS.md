@@ -19,6 +19,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Shared document-resource checkpoint: `DOCUMENT-RESOURCES.md` adds opt-in aggregate
+document-count, node and retained-text limits, complete-copy preflight, per-payload
+reentrant checks, content-free counters and family teardown. Four initial
+regressions fail before integration; 45 new tests and 297 focused checks across
+nine files pass. Full native validation passes 8,022 / 227 files; the isolated
+owned patch passes 5,262 / 166 available files. Types, builds and three-file lint
+pass in both trees. Existing pending changes remain outside the atomic checkpoint.
+Next connect this owner to bounded inert HTML document creation, including nested
+admission, defaults and inherited origin metadata. No `createHTMLDocument`, parsed
+doctype or template completion is claimed. No gated probe ran; the denied SafeJS
+probe remains unrun and the seven-day goal stays active.
+
+### Previous document-type checkpoint
+
 Document-type checkpoint: `DOCUMENT-TYPES.md` adds programmatic DocumentType
 creation, owner-bound `document.implementation`, live `document.doctype`, native
 metadata retention, cloning/import/equality and HTML serialization. Shared

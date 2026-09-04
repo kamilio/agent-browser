@@ -317,6 +317,13 @@ content ownership would be incorrect. Continue with bounded inert document
 creation, parsed doctype preservation and the real template ownership/parser path;
 the new primitive does not redefine template or browser completion.
 
+September 4 shared-resource continuation: `DOCUMENT-RESOURCES.md` adds the native
+aggregate node/text/document-count owner needed before auxiliary documents are
+published. Native and ScriptDom regressions cover retained detached allocations,
+copy preflight, reentrancy and teardown. Next wire bounded inert HTML document
+families through one pool; creation metadata/defaults, nested admission, parser
+doctype/template behavior and independent runtime/live gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

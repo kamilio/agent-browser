@@ -5,6 +5,7 @@ import {
 	type InputValueChange,
 } from "./document-input-values.js";
 import { DocumentSelection } from "./document-selection.js";
+import type { DocumentResources } from "./document-resources.js";
 import { canRewriteDocumentUrl } from "./document-url.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlAttributeName } from "./html-attribute-name.js";
@@ -108,6 +109,7 @@ export class DocumentTree {
 	private changes: DocumentChange[] = [];
 	private currentRevision = 0;
 	private textCodeUnits = 0;
+	private unregisterResources?: () => void;
 	private readonly customValidity = new Map<number, string>();
 	private readonly userEditedValues = new Set<number>();
 	private closed = false;
@@ -129,7 +131,11 @@ export class DocumentTree {
 	);
 	private readonly inputValues = new DocumentInputValues((id) => this.node(id));
 
-	constructor(url: string, limits: Partial<DocumentLimits> = {}) {
+	constructor(
+		url: string,
+		limits: Partial<DocumentLimits> = {},
+		private readonly resources?: DocumentResources,
+	) {
 		this.currentUrl = new URL(url).href;
 		this.limits = Object.freeze({
 			maxNodes: limits.maxNodes ?? 50_000,
@@ -140,7 +146,13 @@ export class DocumentTree {
 		for (const value of Object.values(this.limits))
 			if (!Number.isSafeInteger(value) || value < 1)
 				throw new AgentBrowserError("invalid-input", "Invalid document limit");
-		this.root = this.allocate("document", "", "");
+		this.unregisterResources = resources?.register(this);
+		try {
+			this.root = this.allocate("document", "", "");
+		} catch (error) {
+			this.unregisterResources?.();
+			throw error;
+		}
 	}
 
 	get revision() {
@@ -218,6 +230,13 @@ export class DocumentTree {
 
 	get nodeCount() {
 		return this.nodes.size + this.attributeRecords.size;
+	}
+
+	resourceUsage() {
+		return Object.freeze({
+			nodes: this.nodeCount,
+			textCodeUnits: this.textCodeUnits,
+		});
 	}
 
 	createElement(tagName: string, attributes: Record<string, string> = {}) {
@@ -304,6 +323,7 @@ export class DocumentTree {
 				"Document depth limit exceeded",
 			);
 		const sources = entries.map(({ node }) => node);
+		this.resources?.check(sources.length);
 		if (
 			this.nodeCount + sources.length > this.limits.maxNodes ||
 			!Number.isSafeInteger(nextNodeId + sources.length - 1)
@@ -329,6 +349,10 @@ export class DocumentTree {
 		);
 		const copies = new Map<number, number>();
 		for (const source of sources) {
+			this.resources?.check(
+				0,
+				source.tagName.length + source.data.length + extraText(source),
+			);
 			const copyId = this.allocate(source.kind, source.tagName, source.data);
 			const copy = this.node(copyId);
 			copy.attributes = createHtmlAttributes(source.attributes);
@@ -784,6 +808,7 @@ export class DocumentTree {
 		this.ensureOpen();
 		this.validateAttribute(name);
 		this.validateString(value);
+		this.resources?.check(1);
 		if (
 			this.nodeCount >= this.limits.maxNodes ||
 			!Number.isSafeInteger(nextNodeId)
@@ -1407,6 +1432,8 @@ export class DocumentTree {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		this.unregisterResources?.();
+		this.unregisterResources = undefined;
 		this.selections.close();
 		this.checkedness.close();
 		this.inputValues.close();
@@ -1440,6 +1467,7 @@ export class DocumentTree {
 	private allocate(kind: NodeKind, tagName: string, data: string) {
 		this.ensureOpen();
 		this.validateString(data);
+		this.resources?.check(1);
 		if (
 			this.nodeCount >= this.limits.maxNodes ||
 			!Number.isSafeInteger(nextNodeId)
@@ -1531,6 +1559,7 @@ export class DocumentTree {
 	}
 
 	private checkTextBudget(change: number) {
+		this.resources?.check(0, change);
 		if (this.textCodeUnits + change > this.limits.maxTextCodeUnits)
 			throw new AgentBrowserError(
 				"resource-limit",
