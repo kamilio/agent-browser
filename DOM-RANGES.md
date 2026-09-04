@@ -53,6 +53,11 @@ original narrower validation results intact.
 
 ## Explicit limitations
 
+Current painting continuation: `EDITABLE-CARET.md` supports bounded focused
+glyph-edge carets without creating a new selection owner. Original Range evidence
+below is not rewritten as a painting run; highlights and full visual editing
+remain open.
+
 Current continuation: `RANGE-GEOMETRY.md` supplies bounded shared-layout Range
 rectangles, including preserved source breaks, with guarded immutable publication.
 The geometry item in the original checkpoint below is superseded only for that

@@ -55,6 +55,11 @@ relabelled as validation of subsequent cookie and Range integration.
 
 ## Remaining limits
 
+Current painting continuation: `EDITABLE-CARET.md` adds bounded glyph-edge carets.
+The original text-pixel oracle still compares exact pixels with both documents
+unfocused, while separately asserting focused caret painting. Its historical
+captures/counts remain unchanged; terminal/empty caret mapping remains separate.
+
 Current continuation: `RANGE-GEOMETRY.md` retains exact LF/CR/CRLF/FF source-break
 metadata and following-line anchors without changing existing lines or pixels.
 Terminal and consecutive preserved breaks now support bounded Range queries;

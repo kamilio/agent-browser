@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 editable caret continuation: `EDITABLE-CARET.md` adds noncreating shared
+selection lookup and bounded source-colored caret painting at determinate glyph
+edges. Ordered occlusion, crops and fixed/root scroll are tested with fresh native
+captures and a combined command showcase. Empty/terminal-break anchors, highlights,
+IME, control carets and original external/runtime acceptance remain unverified.
+
 September 4 Range geometry continuation: `RANGE-GEOMETRY.md` connects guarded
 immutable client/bounding rectangles to shared glyph layout and live Range owners.
 Preserved source breaks retain exact UTF-16 mappings without changing existing
@@ -414,7 +420,7 @@ or public-site comparison requirements below.
 | K06 | Cookies, storage and isolation | Per-session/per-origin jars and stores; no cross-session leakage; explicit cleanup. | Partial: native stores/jar plus owned page Storage methods and document.cookie, pre-parser access, origin/tab/session isolation, opener cloning, state imports, HttpOnly protection, quotas and revocation (`PAGE-STORAGE.md`). Bounded cross-document storage events update an interpreted second-tab UI (`STORAGE-EVENTS.md`). Named Storage properties, full scheduler/events conformance, durable/partitioned storage and broader wire/standards acceptance remain open |
 | K07 | Frames and page contexts | Same/cross-origin frames, scoped globals, resource budgets and parent access restrictions. | Pending |
 | K08 | Images, fonts, SVG and 2D canvas | Supported image resources, text shaping, SVG and canvas fixtures with actual exported results. | Partial PNG/JPEG resources, independently checked native decoding (`PNG-DECODING.md`, `JPEG-DECODING.md`), normal-flow layout/geometry and actual agent PNG/PDF pixels (`IMAGE-LAYOUT.md`). Large-photo budgets, general image/site acceptance, other formats, fonts, SVG and canvas remain pending |
-| K09 | Interactive input and selection | Mouse/keyboard events, focus, links, forms and document selection driven through the API. | Pending |
+| K09 | Interactive input and selection | Mouse/keyboard events, focus, links, forms and document selection driven through the API. | Partial native double-click/default actions, guarded focus, shared live Range/Selection, editable fill/type/paragraph split/merge and glyph-edge caret painting (`DOUBLE-CLICK.md`, `FOCUS-BRIDGE.md`, `DOM-RANGES.md`, `RANGE-GEOMETRY.md`, `EDITABLE-CARET.md`, `EDITABLE-BLOCK-MERGE.md`). Native host/capture fixtures cover cancellation, ownership and fixed/root scroll. Full visual selection, IME/control selection, complex editing and released-runtime/live acceptance remain open |
 | K10 | Screenshots | Real PNG page/element capture from our renderer with correct bounds and nonempty pixel assertions. | Partial viewport, normal-flow block and wrapped-inline PNG captures, fractional bounds, real colored pixels, bounded transfer and CLI files (`CAPTURE-EXPORT.md`, `INLINE-CAPTURES.md`). General split/fragment bounds, full CSS/image/font coverage and public-site comparisons remain open |
 | K11 | PDF | Parseable PDF export of the rendered document, with text/pages and pagination assertions. | Partial native PDF encoder and line-aware screen-layout pagination with real raster visuals and compact searchable text (`PDF.md`). Independent Ghostscript parsing, three-page pixel equality and guest-modified text extraction pass. Print media/paged CSS, full fonts, tagged PDF and general real-site acceptance remain open |
 | K12 | HTML and structured extraction | Post-script HTML, links, selectors, semantic/accessibility output and Markdown/JSON extraction. | Partial live HTML/snapshots plus bounded Markdown and typed JSON extraction (`HTML-CONTENT.md`, `EXTRACTION.md`); actual SafeJS fixture changes pass, but public/CLI/download gates, full structure/style coverage and conformance remain open |

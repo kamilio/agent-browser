@@ -9,6 +9,12 @@ export interface DomBoundaryPoint {
 
 const owners = new WeakMap<DocumentTree, DomRangeOwner>();
 
+export function existingDomRangeOwner(
+	tree: DocumentTree,
+): DomRangeOwner | undefined {
+	return owners.get(tree);
+}
+
 export function domRangeOwner(tree: DocumentTree): DomRangeOwner {
 	tree.get(tree.root);
 	let owner = owners.get(tree);

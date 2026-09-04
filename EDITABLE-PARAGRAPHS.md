@@ -41,6 +41,11 @@ prefix in `node_modules/.cache/native-validation`. The original worker patch and
 
 ## Remaining gates
 
+`EDITABLE-CARET.md` adds shared glyph-edge painting after fill/type and rich
+paragraph edits. Its new native evidence does not convert these older text-only
+captures into painted-caret validation. Empty paragraphs and terminal break-only
+caret mapping remain separate gates.
+
 `EDITABLE-BLOCK-MERGE.md` now supplies bounded adjacent paragraph merging and fresh
 integration evidence. Lists, tables, arbitrary
 nested block splitting, multi-block replacements, IME/composition, clipboard,

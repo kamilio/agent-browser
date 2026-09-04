@@ -441,7 +441,11 @@ it("rasterizes literal editable fill with preserved newlines and actual soft wra
 	const expected = rasterizeDocument(reference.tree, {
 		element: reference.ref,
 	});
-	expect(result.image.pixels).toEqual(expected.image.pixels);
+	expect(result.metrics.paintedCarets).toBe(1);
+	documentInteractions(tree).focus.blurElement(id);
+	const unfocused = rasterizeDocument(tree, { element: ref });
+	expect(unfocused.metrics.paintedCarets).toBe(0);
+	expect(unfocused.image.pixels).toEqual(expected.image.pixels);
 	expect(result.image.pixels.some((value) => value === 0)).toBe(true);
 });
 

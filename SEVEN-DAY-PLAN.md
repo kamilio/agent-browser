@@ -7,6 +7,12 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native editable glyph-edge carets now paint through the existing content order.
+`EDITABLE-CARET.md` records ownership/budget/crop limits, fresh native captures and
+a combined host showcase whose only before/after pixel changes are the carets.
+Terminal-break follow-up and independent lifecycle fixes remain active work;
+full visual editing and external/runtime gates are not declared complete.
+
 Bounded Range geometry now composes with preserved breaks and native editing.
 `RANGE-GEOMETRY.md` records exact source mappings, immutable guarded publication,
 fixed/root-scroll tests and unchanged prior geometry/pixels in 27 fresh fixtures.

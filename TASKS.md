@@ -19,6 +19,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Editable caret checkpoint: `EDITABLE-CARET.md` paints existing collapsed shared
+selection at determinate focused editable glyph edges, respecting native paint
+order, crops, source color and fixed/root scroll. Focused tests pass 144 / eight
+files; types/builds, strict checks and scoped formatting pass. Six native captures
+and the combined host showcase are inspected; only caret pixels differ from its
+before snapshot. Explicit native suites pass 10,934 / 322 isolated files and report
+12,065 passes with the same fifteen pending failures / 344 working files. Empty/
+terminal-break carets, highlights, IME and original runtime/live/terminal acceptance
+remain open.
+
 Range geometry checkpoint: `RANGE-GEOMETRY.md` adds guarded immutable client/bounding
 rectangles from shared layout, with exact preserved-break source mappings. Actual
 native commands test plaintext/rich editing, shared Range identity and fixed/root

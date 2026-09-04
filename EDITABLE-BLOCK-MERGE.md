@@ -57,6 +57,10 @@ as the new integrated run.
 
 ## Open gates
 
+`EDITABLE-CARET.md` now verifies glyph-edge painting at the preserved merge join
+through native host commands. Its new combined captures are separate from this
+checkpoint's original text-only images. Full visual editing remains incomplete.
+
 Complex/list/table blocks, multi-block selected replacements, cross-scope editing,
 block-style transfer, formatting normalization, undo, clipboard, composition/IME,
 grapheme/bidi behavior and full visual editing remain incomplete. Native host

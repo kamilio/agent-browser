@@ -45,6 +45,11 @@ Unicode caret affinity, selection highlights and painted carets remain separate.
 
 ## Integrated native evidence
 
+Current continuation: `EDITABLE-CARET.md` consumes this geometry for bounded
+glyph-edge caret painting. Its fresh evidence does not relabel the geometry-only
+captures below. Terminal preserved-break Range geometry can be valid while that
+initial caret profile still skips painting; highlights/full affinity remain open.
+
 The two worker deliveries add 59 tests. Parent adds three actual native-host
 editing/geometry cases for plaintext Enter/typing, fixed-versus-flow root scroll,
 and rich paragraph split/merge with Range identity and immutable old rectangles.

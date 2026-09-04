@@ -66,6 +66,10 @@ retain their original narrower results and obsolete-Space integration caveat.
 
 ## Remaining gates
 
+`EDITABLE-CARET.md` now supplies bounded glyph-edge painting through the same
+selected Range. Its new captures are separate from the original text-only ones.
+Terminal/empty carets, highlights and full visual keyboard movement remain open.
+
 Enter/Shift+Enter now supports the bounded subset in `EDITABLE-PARAGRAPHS.md`;
 that document records fresh integration evidence without replacing these results.
 Bounded paragraph merging is now covered by `EDITABLE-BLOCK-MERGE.md`.

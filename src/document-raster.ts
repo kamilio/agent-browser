@@ -1,36 +1,42 @@
 import { bitmapFont, bitmapGlyph } from "./bitmap-font.js";
+import { paintSolidBorders } from "./border-raster.js";
+import { rasterizeControl } from "./control-rendering.js";
 import { transparentColor } from "./css-color.js";
 import { initialPaintStyle, paintBackground } from "./css-paint.js";
+import { rasterizeDisclosureMarker } from "./disclosure-marker.js";
 import { LayoutGeometry } from "./document-geometry.js";
 import { documentImages } from "./document-images.js";
 import {
+	type DocumentBox,
 	type DocumentLayout,
 	type DocumentLayoutOptions,
-	type DocumentBox,
 	layoutDocument,
 } from "./document-layout.js";
+import { documentScrollPosition } from "./document-scroll.js";
 import type { DocumentTree } from "./document.js";
+import {
+	type EditableCaretStatus,
+	editableCaretLimits,
+	paintEditableCaret,
+	prepareEditableCaret,
+} from "./editable-caret.js";
 import { AgentBrowserError } from "./errors.js";
-import { layoutNumber } from "./layout-values.js";
+import { activeFocus } from "./focus.js";
+import { resolveVisualTarget } from "./generated-controls.js";
 import { layoutContentItems } from "./layout-paint-order.js";
-import { rasterizeControl } from "./control-rendering.js";
-import { rasterizeDisclosureMarker } from "./disclosure-marker.js";
-import { paintSolidBorders } from "./border-raster.js";
+import { layoutNumber } from "./layout-values.js";
+import { projectFixedLayout } from "./out-of-flow-positioning.js";
 import { paintOutline } from "./outline-raster.js";
 import {
 	type RasterImage,
 	type Rgba,
 	createRaster,
 	paintBitmapGlyph,
-	paintRasterRect,
 	paintRasterImage,
+	paintRasterRect,
 } from "./raster.js";
 import { documentStyles } from "./styles.js";
-import { documentScrollPosition } from "./document-scroll.js";
-import { projectFixedLayout } from "./out-of-flow-positioning.js";
 import type { TextGlyph } from "./text-layout.js";
-import { activeFocus } from "./focus.js";
-import { resolveVisualTarget } from "./generated-controls.js";
 
 export interface DocumentClip {
 	x: number;
@@ -68,6 +74,11 @@ export interface DocumentRaster {
 		clippedControls: number;
 		clippedMarkers: number;
 		clippedImages: number;
+		paintedCarets: number;
+		clippedCarets: number;
+		skippedCarets: number;
+		caretStatus: EditableCaretStatus;
+		caretWork: number;
 	}>;
 }
 export const documentRasterLimits = Object.freeze({ maxWork: 32_000_000 });
@@ -224,6 +235,11 @@ function paintDocumentLayout(
 		clippedControls: 0,
 		clippedMarkers: 0,
 		clippedImages: 0,
+		paintedCarets: 0,
+		clippedCarets: 0,
+		skippedCarets: 0,
+		caretStatus: "absent" as EditableCaretStatus,
+		caretWork: 0,
 	};
 	const charge = (units = 1) => {
 		metrics.work += units;
@@ -236,6 +252,11 @@ function paintDocumentLayout(
 	charge(clip.width * clip.height);
 	const image = createRaster(clip.width, clip.height, [255, 255, 255, 255]);
 	const nodes = layout.text.horizontal.formatting.nodes;
+	const caret = prepareEditableCaret(
+		tree,
+		layout,
+		Math.min(maxWork, editableCaretLimits.maxWork),
+	);
 	const images = new Map(
 		layout.text.horizontal.images.map((entry) => [entry.id, entry]),
 	);
@@ -549,6 +570,7 @@ function paintDocumentLayout(
 		}
 		if (item.kind === "glyph") {
 			paintGlyph(item.glyph, item.contentY);
+			paintEditableCaret(caret, item.glyph, image, clip, charge);
 			continue;
 		}
 		const fragment = item.fragment;
@@ -595,6 +617,14 @@ function paintDocumentLayout(
 			fragment.height,
 		);
 	}
+	if (caret.status === "ready") caret.status = "unsupported";
+	metrics.caretStatus = caret.status;
+	metrics.caretWork = caret.work;
+	metrics.paintedCarets = Number(caret.status === "painted");
+	metrics.clippedCarets = Number(caret.status === "clipped");
+	metrics.skippedCarets = Number(
+		!["painted", "clipped", "absent", "unfocused"].includes(caret.status),
+	);
 	return Object.freeze({
 		stage: "normal-flow-text-raster" as const,
 		partial: true as const,

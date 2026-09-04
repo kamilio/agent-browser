@@ -10,7 +10,7 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | Integrate bounded editable caret painting | Range geometry passes 10,900 / 321 isolated native tests and 27 geometry/pixel comparisons. |
+| Main | Integrate focus and upload lifecycle review fixes | Caret painting passes 10,934 / 322 isolated native tests and combined host pixel comparisons. |
 | DOM worker | Paragraph merging delivered; worker closed | Native merging is integrated; original paragraphs and worker evidence are preserved. |
 | Focus-bridge worker | Native provisioning/resource/revocation stress | Both deliveries are integrated natively; public/runtime limits and URL constructor blockers remain explicit. |
 | Focus delivery | Native focus/blur options, indication and scrolling | Public-contract bridge is integrated natively; released guest execution remains unverified. |
@@ -20,9 +20,9 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 | Positioning / range-geometry worker | Geometry/break mappings delivered; worker closed | Parent normalized only cross-tree refs in the flex regression; native command interactions pass. |
 | Runtime / upload-client worker | CLI and six cross-boundary cases complete; worker closed | Actual native client/host path passes with injected transport and real private files. |
 | Playground delivery | Extraction/snapshot downloads and honest example discovery | Integrated export guards/cards pass 9,882 isolated native tests; live UI/framework gates remain open. |
-| File-selection / rendering worker | Bounded native editable caret delivered | Parent integration must retain ownership, crop, paint ordering and explicit unsupported positions. |
-| Independent upload reviewer | Native upload cleanup/stale-target audit | Review uncovered sequences only; concrete defects require deterministic reproducers. |
-| Independent focus reviewer | Native publication/revocation audit | Injected public-contract models only; released execution remains unauthorized. |
+| File-selection / rendering worker | Terminal preserved-break caret follow-up | Initial glyph-edge integration validated; exact source metadata/paint-order proof required for expansion. |
+| Independent upload reviewer | Reservation and manager/retained-owner closure defects reproduced; worker closed | Replacement v2 guards and four regressions remain pending parent integration. |
+| Independent focus reviewer | Final-registration teardown defect reproduced; worker closed | Narrow guard and native reproducer delivered; parent integration pending. |
 
 Workers use isolated snapshots at their explicitly recorded bases, not the dirty primary tree.
 They return code, explicit tests, source paths and integration notes. Main reviews
@@ -30,7 +30,7 @@ and merges bounded deltas, validates combined behavior, and commits only new wor
 Additional workers are permitted up to the user's cap when their assignments are
 independent and advance the browser, not merely to maximize agent count. The
 environment accepted six concurrent agents and rejected a seventh with its thread
-limit; three slots are currently active after completed workers were closed. The initial source audit queued cookie
+limit; one slot is currently active after completed workers were closed. The initial source audit queued cookie
 commands, double-click, file selection and policy-preserving XHR; fresh capture
 evidence also queued white-space:pre-wrap. Current delivery state is tracked above.
 XHR remains queued, and agent authorization alone proves no acceptance gate or

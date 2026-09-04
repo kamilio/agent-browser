@@ -1,5 +1,6 @@
 import { afterEach, expect, it } from "vitest";
 import { BrowserCommandHost } from "./command-host.js";
+import { rasterizeDocument } from "./document-raster.js";
 import { documentScroll } from "./document-scroll.js";
 import { domRangeOwner } from "./dom-range.js";
 import { parseHtmlDocument } from "./html-parser.js";
@@ -59,6 +60,7 @@ it("maps terminal plaintext Enter and later typing through the shared live Range
 	await host.execute(["fill", "#editor", "Alpha"]);
 	const range = selection.getRangeAt(0);
 	const before = rangeBoundingClientRect(range);
+	expect(rasterizeDocument(page.document).metrics.paintedCarets).toBe(1);
 	await host.execute(["press", "Enter"]);
 	expect(selection.getRangeAt(0)).toBe(range);
 	expect(rangeBoundingClientRect(range)).toMatchObject({
@@ -66,7 +68,12 @@ it("maps terminal plaintext Enter and later typing through the shared live Range
 		y: before.y + 10,
 		width: 0,
 	});
+	expect(rasterizeDocument(page.document).metrics).toMatchObject({
+		paintedCarets: 0,
+		caretStatus: "unsupported",
+	});
 	await host.execute(["type", "Beta"]);
+	expect(rasterizeDocument(page.document).metrics.paintedCarets).toBe(1);
 	expect(selection.getRangeAt(0)).toBe(range);
 	expect(rangeBoundingClientRect(range)).toMatchObject({
 		x: 48,
@@ -84,14 +91,23 @@ it("maps terminal plaintext Enter and later typing through the shared live Range
 });
 
 it("keeps fixed editable geometry stable while flow geometry follows root scrolling", async () => {
-	const { host, page, flow, owner, selection } = await fixture(true);
+	const { host, page, editor, flow, owner, selection } = await fixture(true);
 	await host.execute(["fill", "#editor", "A\nB\n"]);
 	const fixedRange = selection.getRangeAt(0);
 	const flowRange = owner.createRange();
 	flowRange.selectNodeContents(page.document.get(flow).children[0]);
 	const fixedBefore = rangeBoundingClientRect(fixedRange);
 	const flowBefore = rangeBoundingClientRect(flowRange);
+	const crop = { element: page.document.reference(editor) };
+	const beforeRaster = rasterizeDocument(page.document, crop);
+	expect(beforeRaster.metrics).toMatchObject({
+		paintedCarets: 0,
+		caretStatus: "unsupported",
+	});
 	documentScroll(page.document).to(0, 80);
+	expect(rasterizeDocument(page.document, crop).image.pixels).toEqual(
+		beforeRaster.image.pixels,
+	);
 	expect(rangeBoundingClientRect(fixedRange)).toEqual(fixedBefore);
 	expect(rangeBoundingClientRect(flowRange).y).toBe(flowBefore.y - 80);
 	await host.execute(["type", "C"]);
@@ -100,6 +116,12 @@ it("keeps fixed editable geometry stable while flow geometry follows root scroll
 		x: fixedBefore.x + 6,
 		y: fixedBefore.y,
 	});
+	const afterRaster = rasterizeDocument(page.document, crop);
+	expect(afterRaster.metrics.paintedCarets).toBe(1);
+	documentScroll(page.document).to(0, 120);
+	expect(rasterizeDocument(page.document, crop).image.pixels).toEqual(
+		afterRaster.image.pixels,
+	);
 });
 
 it("preserves Range identity and immutable geometry across rich paragraph split and merge", async () => {
@@ -108,6 +130,7 @@ it("preserves Range identity and immutable geometry across rich paragraph split 
 	const originalText = page.document.get(editor).children[0];
 	const range = selection.getRangeAt(0);
 	const original = rangeBoundingClientRect(range);
+	expect(rasterizeDocument(page.document).metrics.paintedCarets).toBe(1);
 	await host.execute(["press", "Enter"]);
 	await host.execute(["type", "Right"]);
 	const split = rangeBoundingClientRect(range);
@@ -117,6 +140,7 @@ it("preserves Range identity and immutable geometry across rich paragraph split 
 	expect(selection.getRangeAt(0)).toBe(range);
 	expect(selection.focusNode).toBe(originalText);
 	expect(rangeBoundingClientRect(range)).toEqual(original);
+	expect(rasterizeDocument(page.document).metrics.paintedCarets).toBe(1);
 	await host.execute(["type", "!"]);
 	expect(rangeBoundingClientRect(range)).toMatchObject({
 		x: original.x + 6,
