@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Guarded terminal integration checkpoint: `TERMINAL-TAB-CORE.md` promotes the
+bounded tab menu and native controller with guarded selection/closure, explicit
+close confirmation, new-tab prompts and blank/empty-session handling. Failed
+page refreshes now clear old page references even for non-stale errors; subsequent
+successful refresh restores actions. Fifteen new stream-backed checks reproduce
+eleven pre-fix failures and then pass; the existing 29-case tab suite and four
+native-session scenarios are promoted unchanged. Focused checks pass 117 / six
+working files and 113 / six isolated files; unrelated targeted-key work stays
+pending. Authorized full native runs pass 9,545 / 266 and 8,275 / 240, respectively.
+Both trees pass types/builds, strict three-test checks and six-file lint. Initial
+sandboxed full runs fail 28 private-file ownership checks because `/` appears
+owned by UID 65534; the policy is retained and authorized reruns pass. No real
+TTY/PTY, socket, live-site or SafeJS probe ran. Guarded playground integration
+remains next; human/agent arbitration and the original runtime/site/device/
+compatibility gates stay open. Historical evidence and unrelated pending work
+remain intact, the denied SafeJS probe stays unrun and the seven-day goal is active.
+
+### Previous guarded tab command checkpoint
+
 Guarded tab command checkpoint: `TAB-IDENTITY.md` integrates session-unique row
 keys and optional expected-key checks for indexed selection and indexed/implicit
 closure. Checks run inside the serialized command after preceding actions, so

@@ -752,6 +752,22 @@ implemented. Pending tracing/UI work and historical evidence remain intact.
 No gated probe ran; runtime/site/socket/TTY/physical-input requirements and the
 full seven-day browser goal stay open.
 
+September 4 guarded terminal integration checkpoint: `TERMINAL-TAB-CORE.md`
+integrates bounded tab menus, identity-guarded selection/closure, explicit close
+confirmation and blank/new-tab handling. Page-refresh failures now clear stale
+page actions for every error category, with recovery on successful refresh.
+Fifteen new native checks reproduce eleven pre-fix failures; 29 existing menu
+cases and four native-session scenarios are promoted unchanged. Focused checks
+pass 117 / six working files and 113 / six isolated files. Authorized full native
+runs pass 9,545 / 266 and 8,275 / 240; types/builds, strict three-test checks and
+six-file lint pass in both trees. Initial sandbox full runs fail 28 private-file
+checks under remapped root ownership; the policy stays unchanged and authorized
+reruns pass. Pending targeted-key/tracing/playground work and historical evidence
+remain intact. Next integrate guarded playground tab clients. No real TTY/PTY,
+socket, live-site or SafeJS probe ran; human/agent arbitration, runtime/site/device
+and full compatibility gates remain open. The denied SafeJS probe remains unrun
+and the complete seven-day objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

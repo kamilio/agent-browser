@@ -1,9 +1,11 @@
 import { PassThrough } from "node:stream";
 import type { ReadStream, WriteStream } from "node:tty";
 import { expect, it, vi } from "vitest";
-import type { CommandResult } from "./command-host.js";
+import { BrowserCommandHost, type CommandResult } from "./command-host.js";
 import { AgentBrowserError } from "./errors.js";
 import { runTerminal } from "./node-terminal.js";
+import { BrowserSession } from "./session.js";
+import { parseHtmlDocument } from "./html-parser.js";
 
 function fixture() {
 	const input = Object.assign(new PassThrough(), {
@@ -32,6 +34,10 @@ function fixture() {
 				argv[0] === "tab-list"
 					? [
 							{
+								index: 0,
+								id: "tab-1",
+								key: "session:tab-1",
+								loading: false,
 								selected: true,
 								url: "https://example.com/",
 								documentRef: "doc1",
@@ -69,6 +75,217 @@ function fixture() {
 	};
 }
 
+function nativeTabFixture() {
+	const test = fixture();
+	let requests = 0;
+	const host = new BrowserCommandHost({
+		createSession: () =>
+			new BrowserSession({
+				createTransport: () => ({
+					async request(input) {
+						requests++;
+						if (input.url.endsWith("/fail"))
+							throw new AgentBrowserError(
+								"network-error",
+								"Synthetic navigation failure",
+							);
+						return {
+							url: input.url,
+							status: 200,
+							headers: {},
+							body: new Uint8Array(),
+							redirects: [],
+							encodedBytes: 0,
+							elapsedMs: 0,
+						};
+					},
+					metrics: () => ({
+						requests,
+						active: 0,
+						redirects: 0,
+						encodedBytes: 0,
+						decodedBytes: 0,
+						closed: false,
+					}),
+					close() {},
+				}),
+				loadDocument: (response) =>
+					parseHtmlDocument(
+						`<h1>Page ${new URL(response.url).pathname}</h1><input value="private draft">`,
+						response.url,
+					),
+			}),
+	});
+	const execute = vi.fn((argv: readonly string[], signal?: AbortSignal) =>
+		host.execute(argv, { session: "shared", signal }),
+	);
+	return {
+		...test,
+		execute,
+		host,
+		requests: () => requests,
+		frame: () => test.screen().split("\x1b[1;1H").at(-1) ?? "",
+		tabs: async () =>
+			(await host.execute(["tab-list"], { session: "shared" })).data as {
+				id: string;
+				key: string;
+				index: number;
+				selected: boolean;
+				documentRef: string | null;
+			}[],
+		options: { ...test.options, execute },
+	};
+}
+
+it("manages real native session tabs through mocked terminal streams", async () => {
+	const test = nativeTabFixture();
+	await test.execute(["open", "https://fixture.invalid/first"]);
+	await test.execute(["tab-new", "https://fixture.invalid/second"]);
+	const initial = await test.tabs();
+	const running = runTerminal(test.options);
+	try {
+		await vi.waitFor(() => expect(test.frame()).toContain("Page /second"));
+		test.input.write("T");
+		await vi.waitFor(() => expect(test.frame()).toContain("| Tabs"));
+		const calls = test.execute.mock.calls.length;
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(test.execute.mock.calls).toHaveLength(calls);
+		test.input.emit("keypress", "", { name: "home" });
+		test.input.write("\r");
+		await vi.waitFor(() => expect(test.frame()).toContain("Page /first"));
+		expect(
+			test.execute.mock.calls.some(
+				([args]) =>
+					args[0] === "tab-select" &&
+					args[1] === "0" &&
+					args[2] === `--expected-key=${initial[0].key}`,
+			),
+		).toBe(true);
+		test.input.write("thttps://fixture.invalid/third\r");
+		await vi.waitFor(() => expect(test.frame()).toContain("Page /third"));
+		const beforeBlank = test.execute.mock.calls.length;
+		test.input.write("t\r");
+		await vi.waitFor(() => expect(test.frame()).toContain("Blank tab"));
+		expect(test.frame()).not.toContain("Page /third");
+		expect(
+			test.execute.mock.calls
+				.slice(beforeBlank)
+				.some(([args]) => args[0] === "snapshot"),
+		).toBe(false);
+		test.input.write("T");
+		await vi.waitFor(() => expect(test.frame()).toContain("4 tabs"));
+		test.input.write("x");
+		await vi.waitFor(() => expect(test.frame()).toContain("y confirms"));
+		test.input.write("n");
+		expect(
+			test.execute.mock.calls.some(([args]) => args[0] === "tab-close"),
+		).toBe(false);
+		test.input.write("xy");
+		await vi.waitFor(() => expect(test.frame()).toContain("3 tabs"));
+		test.input.emit("keypress", "", { name: "escape" });
+		await vi.waitFor(() => expect(test.frame()).toContain("Page /first"));
+		expect(test.requests()).toBe(3);
+	} finally {
+		test.input.emit("keypress", "", { name: "c", ctrl: true });
+		try {
+			await running;
+			expect(await test.tabs()).toHaveLength(3);
+		} finally {
+			await test.host.close();
+		}
+	}
+});
+
+it("refuses stale menu indices and refreshes by tab identity before closing", async () => {
+	const test = nativeTabFixture();
+	await test.execute(["open", "https://fixture.invalid/first"]);
+	await test.execute(["tab-new", "https://fixture.invalid/middle"]);
+	await test.execute(["tab-new", "https://fixture.invalid/last"]);
+	const initial = await test.tabs();
+	const running = runTerminal(test.options);
+	try {
+		await vi.waitFor(() => expect(test.frame()).toContain("Page /last"));
+		test.input.write("T");
+		await vi.waitFor(() => expect(test.frame()).toContain("3 tabs"));
+		test.input.emit("keypress", "", { name: "home" });
+		test.input.write("j");
+		await test.host.execute(["tab-close", "0"], { session: "shared" });
+		test.input.write("xy");
+		await vi.waitFor(() => expect(test.frame()).toContain("stale-reference"));
+		expect((await test.tabs()).map((tab) => tab.key)).toEqual([
+			initial[1].key,
+			initial[2].key,
+		]);
+		test.input.write("u");
+		await vi.waitFor(() => expect(test.frame()).toContain("2 tabs"));
+		test.input.write("xy");
+		await vi.waitFor(() => expect(test.frame()).toContain("1 tabs"));
+		expect((await test.tabs())[0].key).toBe(initial[2].key);
+	} finally {
+		test.input.emit("keypress", "", { name: "c", ctrl: true });
+		try {
+			await running;
+		} finally {
+			await test.host.close();
+		}
+	}
+});
+
+it("clears stale page data when a new tab's navigation fails without retrying it", async () => {
+	const test = nativeTabFixture();
+	await test.execute(["open", "https://fixture.invalid/private"]);
+	const running = runTerminal(test.options);
+	try {
+		await vi.waitFor(() => expect(test.frame()).toContain("Page /private"));
+		test.input.write("thttps://fixture.invalid/fail\r");
+		await vi.waitFor(() => expect(test.frame()).toContain("network-error"));
+		expect(test.frame()).not.toContain("Page /private");
+		expect(test.frame()).not.toContain("private draft");
+		expect(await test.tabs()).toHaveLength(2);
+		test.input.write("u");
+		await vi.waitFor(() => expect(test.frame()).toContain("Blank tab"));
+		expect(test.requests()).toBe(2);
+	} finally {
+		test.input.emit("keypress", "", { name: "c", ctrl: true });
+		try {
+			await running;
+		} finally {
+			await test.host.close();
+		}
+	}
+});
+
+it("closes the last tab and creates a blank replacement without asking for nonexistent snapshots", async () => {
+	const test = nativeTabFixture();
+	await test.execute(["open", "https://fixture.invalid/last"]);
+	const running = runTerminal(test.options);
+	try {
+		await vi.waitFor(() => expect(test.frame()).toContain("Page /last"));
+		test.input.write("T");
+		await vi.waitFor(() => expect(test.frame()).toContain("1 tabs"));
+		test.input.write("xy");
+		await vi.waitFor(() => expect(test.frame()).toContain("0 tabs"));
+		const calls = test.execute.mock.calls.length;
+		test.input.emit("keypress", "", { name: "escape" });
+		await vi.waitFor(() => expect(test.frame()).toContain("No tabs"));
+		test.input.write("t\r");
+		await vi.waitFor(() => expect(test.frame()).toContain("Blank tab"));
+		expect(
+			test.execute.mock.calls
+				.slice(calls)
+				.some(([args]) => args[0] === "snapshot"),
+		).toBe(false);
+		expect(test.requests()).toBe(1);
+	} finally {
+		test.input.emit("keypress", "", { name: "c", ctrl: true });
+		try {
+			await running;
+		} finally {
+			await test.host.close();
+		}
+	}
+});
+
 function searchFixture() {
 	const test = fixture();
 	const original = test.execute.getMockImplementation();
@@ -82,6 +299,10 @@ function searchFixture() {
 			if (argv[0] === "tab-list")
 				result.data = [
 					{
+						index: 0,
+						id: "tab-1",
+						key: "session:tab-1",
+						loading: false,
 						selected: true,
 						url: "https://example.com/",
 						documentRef: document,
@@ -392,7 +613,15 @@ it("does not display a snapshot beneath a different document's URL during concur
 		if (!result) throw new Error("Missing fixture result");
 		if (argv[0] === "tab-list")
 			result.data = [
-				{ selected: true, documentRef: "other", url: "https://other.example/" },
+				{
+					index: 0,
+					id: "tab-1",
+					key: "session:tab-1",
+					loading: false,
+					selected: true,
+					documentRef: "other",
+					url: "https://other.example/",
+				},
 			];
 		return result;
 	});

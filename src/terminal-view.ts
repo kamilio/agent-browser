@@ -1,6 +1,7 @@
 import { AgentBrowserError } from "./errors.js";
 import type { SnapshotSearch } from "./snapshot-search.js";
 import type { SemanticSnapshot, SnapshotEntry } from "./snapshot.js";
+import { TerminalTabMenu } from "./terminal-tabs.js";
 
 export interface TerminalKey {
 	name?: string;
@@ -12,11 +13,12 @@ export interface TerminalKey {
 export type TerminalRequest =
 	| string[]
 	| { kind: "inspect"; ref: string; document: string }
+	| { kind: "tabs" }
 	| "root";
 export type TerminalAction = TerminalRequest | "refresh" | "quit" | undefined;
 
 interface Prompt {
-	kind: "open" | "fill" | "select" | "find" | "search" | "regex";
+	kind: "open" | "tab-new" | "fill" | "select" | "find" | "search" | "regex";
 	value: string;
 	ref?: string;
 	protected?: boolean;
@@ -91,6 +93,7 @@ export class TerminalView {
 	private resultIndex = 0;
 	private resultQuery = "";
 	private resultRegex = false;
+	private tabs?: TerminalTabMenu;
 
 	constructor(private readonly session: string) {}
 
@@ -100,6 +103,38 @@ export class TerminalView {
 
 	get searching() {
 		return this.results !== undefined;
+	}
+
+	get browsingTabs() {
+		return this.tabs !== undefined;
+	}
+
+	showTabs(value: unknown) {
+		const menu = this.tabs ?? new TerminalTabMenu();
+		menu.update(value);
+		this.tabs = menu;
+		this.prompt = undefined;
+		this.dismissSearch();
+		this.status =
+			"Tab indices can change; actions validate the displayed tab key";
+	}
+
+	dismissTabs() {
+		this.tabs = undefined;
+	}
+
+	clearDocument(url = "No document") {
+		this.snapshot = undefined;
+		this.url = url;
+		this.projection = [];
+		this.selected = 0;
+		this.selectedOffset = 0;
+		this.offset = 0;
+		this.totalRows = 0;
+		this.match = undefined;
+		this.search = "";
+		this.prompt = undefined;
+		this.dismissSearch();
 	}
 
 	showSearch(results: SnapshotSearch, query: string, regex = false) {
@@ -244,6 +279,34 @@ export class TerminalView {
 			return;
 		}
 		if (key.ctrl || key.meta) return;
+		if (this.tabs?.confirming) {
+			if (text === "y") return this.tabs.confirmClose();
+			if (text === "n" || key.name === "escape") this.tabs.cancelClose();
+			return;
+		}
+		if (text === "t") {
+			this.prompt = { kind: "tab-new", value: "" };
+			return;
+		}
+		if (text === "T") return { kind: "tabs" };
+		if (this.tabs) {
+			if (key.name === "escape") {
+				this.dismissTabs();
+				return "refresh";
+			}
+			if (text === "u") return { kind: "tabs" };
+			if (text === "x") this.tabs.beginClose();
+			else if (key.name === "return" || key.name === "enter")
+				return this.tabs.select();
+			else if (text === "j" || key.name === "down") this.tabs.move(1);
+			else if (text === "k" || key.name === "up") this.tabs.move(-1);
+			else if (text === " " || key.name === "pagedown")
+				this.tabs.move(this.pageSize);
+			else if (key.name === "pageup") this.tabs.move(-this.pageSize);
+			else if (key.name === "home") this.tabs.move(-this.tabs.items.length);
+			else if (key.name === "end") this.tabs.move(this.tabs.items.length);
+			return;
+		}
 		if (text === "g") {
 			this.prompt = { kind: "open", value: "" };
 			return;
@@ -328,6 +391,7 @@ export class TerminalView {
 				index ? "" : "Resize terminal to at least 6 rows".slice(0, width),
 			);
 		this.pageSize = height - 5;
+		if (this.tabs) return this.renderTabs(width, height);
 		if (this.results) return this.renderSearch(width, height);
 		const prefix = width > 2 ? 2 : 0;
 		if (this.contentWidth !== width - prefix) {
@@ -370,7 +434,7 @@ export class TerminalView {
 			this.status,
 			prompt
 				? `${prompt.kind}${prompt.ref ? ` ${prompt.ref}` : ""}> ${prompt.protected ? "*".repeat(Math.min(80, prompt.value.length)) : prompt.value}`
-				: "g URL | s/S search/regex | U root | b/f history | r reload | u refresh | q detach",
+				: "g URL | t new tab | T tabs | s/S search | U root | b/f history | u refresh | q detach",
 		].map((line) => terminalText(line).slice(0, width));
 	}
 
@@ -393,6 +457,26 @@ export class TerminalView {
 			this.prompt
 				? `${this.prompt.kind}> ${this.prompt.value}`
 				: "j/k choose | Enter inspect | u rerun | s/S query | Esc back | U root | q detach",
+		]
+			.slice(0, height)
+			.map((line) => terminalText(line).slice(0, width));
+	}
+
+	private renderTabs(width: number, height: number) {
+		const tabs = this.tabs as TerminalTabMenu;
+		const content = tabs.lines(this.pageSize);
+		while (content.length < this.pageSize) content.push("");
+		return [
+			`Agent browser | session ${this.session} | Tabs`,
+			`${tabs.items.length} tabs | * active | selection ${tabs.items.length ? tabs.selection + 1 : 0}`,
+			"j/k choose | Enter select | x close | t new | u refresh | Esc back",
+			...content,
+			this.status,
+			this.prompt
+				? `tab-new> ${this.prompt.value}`
+				: tabs.confirming
+					? `y confirms; n/Esc cancels | close tab ${tabs.current?.index} ${tabs.current?.url ?? "[blank tab]"}`
+					: "Closing a tab is permanent; q detaches without closing tabs",
 		]
 			.slice(0, height)
 			.map((line) => terminalText(line).slice(0, width));
@@ -537,9 +621,13 @@ export class TerminalView {
 			this.find(1, true);
 			return;
 		}
-		if (prompt.kind === "open") {
+		if (prompt.kind === "open" || prompt.kind === "tab-new") {
 			try {
 				const value = prompt.value.trim();
+				if (!value && prompt.kind === "tab-new") {
+					this.prompt = undefined;
+					return ["tab-new"];
+				}
 				if (!value) throw new Error();
 				const url = new URL(
 					/^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `https://${value}`,
@@ -551,7 +639,7 @@ export class TerminalView {
 				)
 					throw new Error();
 				this.prompt = undefined;
-				return ["open", url.href];
+				return [prompt.kind, url.href];
 			} catch {
 				this.status = "Enter an HTTP(S) URL without credentials";
 				return;

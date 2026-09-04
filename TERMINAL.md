@@ -21,8 +21,9 @@ In another terminal:
 node dist/src/cli.js -s=research terminal https://example.com/
 ```
 
-Omit the URL to attach without navigating an existing session. A new session
-without a document shows an error until you open a URL with `g`. The runtime
+Omit the URL to attach without navigating an existing session. An empty session
+shows "No tabs"; a selected tab without a document shows "Blank tab". Use `g` to
+open a URL or `t` to create a tab. The runtime
 directory and private connection file follow `CLI.md`; `AGENT_BROWSER_RUNTIME_DIR`
 selects the directory. Session selection follows the existing `-s`,
 `AGENT_BROWSER_SESSION` and `PLAYWRIGHT_CLI_SESSION` conventions.
@@ -42,6 +43,8 @@ not select an alternate evaluator or bypass the service's network policy.
 | Enter | Follow a link, click a button, toggle a checkbox, select a radio, or edit a field. |
 | `e` | Edit a text control or enter a select option's actual value. |
 | `g` | Open a URL; bare hostnames use HTTPS. |
+| `t` | Create a new tab; an empty URL creates a blank tab. |
+| `T` | Open the tab menu; Enter selects, `x` then `y` closes, `u` refreshes. |
 | `/`, then Enter | Find literal text in the retained snapshot; an empty prompt repeats the last query. |
 | `n` / `N` | Next/previous occurrence, wrapping across the retained snapshot. |
 | `s` / `S`, then Enter | Search the backend snapshot projection with a case-sensitive literal / bounded regex. |
@@ -51,6 +54,13 @@ not select an alternate evaluator or bypass the service's network policy.
 | Escape | Cancel a prompt without submitting. |
 | Ctrl-U / Backspace | Clear a prompt / remove its last code point. |
 | `q` outside prompts / Ctrl-C | Detach; cancel this frontend's pending request, not the session. |
+
+## Tab management
+
+`TERMINAL-TAB-CORE.md` documents the tab menu, identity-guarded commands, close
+confirmation, blank/empty sessions and native fixture evidence. Escape leaves the
+menu or cancels its close confirmation; polling pauses while the menu is open.
+The new controls do not change the existing real-TTY/public-site acceptance gap.
 
 ## Backend search and scoped inspection
 
@@ -139,7 +149,7 @@ navigation. `script` is a Linux test prerequisite, not a package runtime depende
 
 This is a semantic text browser, not a CSS layout or pixel renderer. It wraps
 entry text at character boundaries, escapes non-ASCII text, and offers no mouse,
-inline images, Unicode grapheme/word layout, interactive tab picker, terminal
+inline images, Unicode grapheme/word layout, terminal
 scrollback export or screen-reader-specific line mode. Full Browsh/Kitesurf and
 Playwright-superset scope remains open. Public HTML readability must not be counted
 as successful automatic page JavaScript.

@@ -4,6 +4,7 @@ import type { CommandResult } from "./command-host.js";
 import { AgentBrowserError } from "./errors.js";
 import type { SnapshotSearch } from "./snapshot-search.js";
 import type { SemanticSnapshot } from "./snapshot.js";
+import { terminalTabs } from "./terminal-tabs.js";
 import {
 	type TerminalKey,
 	type TerminalRequest,
@@ -78,18 +79,24 @@ export async function runTerminal(options: TerminalOptions): Promise<void> {
 		if (dirty) draw();
 	}
 
-	async function selectedTab() {
+	async function readTabs() {
 		const tabs = await options.execute(["tab-list"], controller.signal);
-		return (
-			tabs.data as {
-				selected: boolean;
-				url: string | null;
-				documentRef: string | null;
-			}[]
-		).find((tab) => tab.selected);
+		return terminalTabs(tabs.data);
+	}
+
+	async function selectedTab() {
+		return (await readTabs()).find((tab) => tab.selected);
 	}
 
 	async function refresh() {
+		const before = await selectedTab();
+		if (closed) return;
+		if (!before || before.documentRef === null) {
+			scope = undefined;
+			view.clearDocument(before ? "Blank tab" : "No tabs");
+			return;
+		}
+		if (scope && scope.document !== before.documentRef) scope = undefined;
 		let snapshot: CommandResult;
 		try {
 			snapshot = await options.execute(
@@ -117,7 +124,7 @@ export async function runTerminal(options: TerminalOptions): Promise<void> {
 		const selected = await selectedTab();
 		if (closed) return;
 		const page = snapshot.data as SemanticSnapshot;
-		if (selected?.documentRef !== page.document)
+		if (selected?.documentRef !== page.document || selected.key !== before.key)
 			throw new AgentBrowserError(
 				"stale-reference",
 				"Document changed during terminal refresh",
@@ -128,6 +135,7 @@ export async function runTerminal(options: TerminalOptions): Promise<void> {
 	async function perform(request?: TerminalRequest) {
 		if (closed || busy) return;
 		busy = true;
+		let refreshing = false;
 		const command = Array.isArray(request)
 			? request[0]
 			: request === "root"
@@ -137,9 +145,20 @@ export async function runTerminal(options: TerminalOptions): Promise<void> {
 			view.status = `Running ${command}... (Ctrl-C detaches and cancels this request)`;
 		draw();
 		try {
+			if (
+				request &&
+				!Array.isArray(request) &&
+				request !== "root" &&
+				request.kind === "tabs"
+			) {
+				const tabs = await readTabs();
+				if (!closed) view.showTabs(tabs);
+				return;
+			}
 			if (request === "root") {
 				scope = undefined;
 				view.dismissSearch();
+				view.dismissTabs();
 				view.status = "Document root";
 			} else if (request && !Array.isArray(request)) {
 				const before = await selectedTab();
@@ -173,8 +192,22 @@ export async function runTerminal(options: TerminalOptions): Promise<void> {
 					"Scoped inspection; Enter acts on fresh selection, U returns to root";
 				return;
 			} else if (request) {
+				const changesTabs = ["tab-new", "tab-select", "tab-close"].includes(
+					request[0],
+				);
+				if (changesTabs) {
+					scope = undefined;
+					view.clearDocument();
+				}
 				const result = await options.execute(request, controller.signal);
 				if (closed) return;
+				if (request[0] === "tab-close") {
+					view.showTabs(result.data);
+					view.status =
+						"Tab closed; Enter selects a tab, Esc returns to the active page";
+					return;
+				}
+				if (changesTabs) view.dismissTabs();
 				if (request[0] === "find") {
 					const selected = await selectedTab();
 					if (closed) return;
@@ -194,10 +227,20 @@ export async function runTerminal(options: TerminalOptions): Promise<void> {
 				view.dismissSearch();
 				view.status = `${request[0]} completed`;
 			}
+			refreshing = true;
 			await refresh();
 		} catch (error) {
-			if (!closed)
+			if (!closed) {
+				if (
+					refreshing ||
+					(error instanceof AgentBrowserError &&
+						error.code === "stale-reference")
+				) {
+					scope = undefined;
+					view.clearDocument();
+				}
 				view.status = `${error instanceof AgentBrowserError ? error.code : "network-error"}: operation failed; u refreshes, g opens a URL`;
+			}
 		} finally {
 			busy = false;
 			draw();
@@ -262,7 +305,8 @@ export async function runTerminal(options: TerminalOptions): Promise<void> {
 		input.resume();
 		output.write("\x1b[?1049h\x1b[?25l\x1b[?2004h\x1b[2J");
 		interval = setInterval(() => {
-			if (!view.editing && !view.searching) void perform();
+			if (!view.editing && !view.searching && !view.browsingTabs)
+				void perform();
 		}, pollMs);
 		void perform(options.url ? ["open", options.url] : undefined);
 	} catch (error) {
