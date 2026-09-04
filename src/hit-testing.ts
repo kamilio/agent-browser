@@ -21,7 +21,7 @@ export const hitTestLimits: Readonly<HitTestLimits> = Object.freeze({
 });
 export const hitTestCapabilities = Object.freeze({
 	partial: true,
-	profile: "normal-relative-and-flex-stacking-paint-order",
+	profile: "normal-relative-absolute-fixed-and-flex-stacking-paint-order",
 	methods: ["elementFromPoint", "elementsFromPoint"],
 	command: "hit-test",
 	coordinateSpace: "viewport-css-pixels",
@@ -29,7 +29,7 @@ export const hitTestCapabilities = Object.freeze({
 	attributeInertness: true,
 	selectButtonInertness: true,
 	modalInertness: false,
-	positionedLayout: false,
+	positionedLayout: "partial-ltr-physical-and-static-insets",
 	relativePositioning: true,
 	stackingContexts: true,
 	pointerEventsCss: true,
@@ -42,6 +42,7 @@ export interface HitTarget {
 	generated?: string;
 }
 interface HitRegion extends HitTarget {
+	fixed: boolean;
 	x: number;
 	y: number;
 	width: number;
@@ -158,12 +159,14 @@ export class DocumentHitTesting {
 		for (let index = regions.length - 1; index >= 0; index--) {
 			this.charge();
 			const region = regions[index];
+			const targetX = region.fixed ? x : documentX;
+			const targetY = region.fixed ? y : documentY;
 			if (
 				seen.has(region.id) ||
-				documentX < region.x ||
-				documentY < region.y ||
-				documentX >= region.x + region.width ||
-				documentY >= region.y + region.height
+				targetX < region.x ||
+				targetY < region.y ||
+				targetX >= region.x + region.width ||
+				targetY >= region.y + region.height
 			)
 				continue;
 			append(region.id, region.generated);
@@ -175,6 +178,7 @@ export class DocumentHitTesting {
 	private build(): readonly HitRegion[] {
 		const layout = layoutDocument(this.tree);
 		const nodes = layout.text.horizontal.formatting.nodes;
+		const fixed = new Set(layout.fixedIds);
 		const regions: HitRegion[] = [];
 		const owners = new Map<number, number | null>();
 		const inert = new Map<number, boolean>();
@@ -243,6 +247,7 @@ export class DocumentHitTesting {
 			regions.push(
 				Object.freeze({
 					id,
+					fixed: fixed.has(formattingId),
 					x,
 					y,
 					width,

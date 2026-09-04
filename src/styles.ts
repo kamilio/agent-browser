@@ -103,6 +103,7 @@ export interface StyleLimits {
 }
 export interface VisibilityStyle {
 	display: string;
+	unpositionedDisplay?: string;
 	visibility: "visible" | "hidden" | "collapse";
 	displayed: boolean;
 	visible: boolean;
@@ -1012,7 +1013,29 @@ export class DocumentStyles {
 				display = "none";
 			const parentDisplay =
 				node.parent === null ? "" : (boxParentDisplay.get(node.parent) ?? "");
-			if (node.kind === "element" && isFlexDisplay(parentDisplay))
+			const flowValues = flowSpecified.get(node.id);
+			if (flowValues) {
+				charge(cssFlowProperties.length);
+				flowComputed.set(
+					node.id,
+					computeFlowStyle(
+						flowValues,
+						node.parent === null
+							? initialFlowStyle
+							: (flowComputed.get(node.parent) ?? initialFlowStyle),
+					),
+				);
+			}
+			const position = flowComputed.get(node.id)?.position;
+			const unpositionedDisplay = isFlexDisplay(parentDisplay)
+				? blockifyDisplay(display)
+				: display;
+			if (
+				node.kind === "element" &&
+				(isFlexDisplay(parentDisplay) ||
+					position === "absolute" ||
+					position === "fixed")
+			)
 				display = blockifyDisplay(display);
 			boxParentDisplay.set(
 				node.id,
@@ -1037,23 +1060,13 @@ export class DocumentStyles {
 				) === "none"
 			)
 				pointerEventsNone.add(node.id);
-			const flowValues = flowSpecified.get(node.id);
-			if (flowValues) {
-				charge(cssFlowProperties.length);
-				flowComputed.set(
-					node.id,
-					computeFlowStyle(
-						flowValues,
-						node.parent === null
-							? initialFlowStyle
-							: (flowComputed.get(node.parent) ?? initialFlowStyle),
-					),
-				);
-			}
 			computed.set(
 				node.id,
 				Object.freeze({
 					display,
+					...(position === "absolute" || position === "fixed"
+						? { unpositionedDisplay }
+						: {}),
 					visibility: visibility as VisibilityStyle["visibility"],
 					displayed,
 					visible: displayed && visibility === "visible",

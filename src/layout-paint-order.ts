@@ -18,7 +18,11 @@ export function* layoutContentItems(
 		!layout.relativePositions?.length &&
 		!nodes.some((node) => {
 			charge();
-			return node.zIndex !== undefined;
+			return (
+				node.zIndex !== undefined ||
+				node.position === "absolute" ||
+				node.position === "fixed"
+			);
 		})
 	) {
 		yield* flowContentItems(layout, charge);

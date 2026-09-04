@@ -16,8 +16,9 @@ export const elementOffsetLimits = Object.freeze({
 export const elementOffsetCapabilities = Object.freeze({
 	partial: true,
 	properties: ["offsetParent", "offsetTop", "offsetLeft"],
-	profile: "static-and-relative-first-box-padding-edge",
-	positionedContainingBlocks: "relative",
+	profile: "static-relative-absolute-fixed-first-box-padding-edge",
+	positionedContainingBlocks: "relative-absolute-fixed",
+	viewportFixedOffsetParent: null,
 	transforms: false,
 	zoom: false,
 	boxlessOffsetParents: false,
@@ -81,13 +82,19 @@ export class DocumentElementOffsets {
 			);
 		this.charge();
 		const geometry = documentGeometry(this.tree);
-		const first = geometry.getDocumentRects(id)[0];
+		const styles = documentStyles(this.tree);
+		const fixedPosition =
+			this.tree.isConnected(id) && styles.flow(id).position === "fixed";
+		const first = (
+			fixedPosition
+				? geometry.getClientRects(id)
+				: geometry.getDocumentRects(id)
+		)[0];
 		let result = empty;
 		if (first && node.tagName !== "body") {
-			const styles = documentStyles(this.tree);
 			const staticPosition = styles.flow(id).position === "static";
 			let offsetParent: number | null = null;
-			let ancestor = node.parent;
+			let ancestor = fixedPosition ? null : node.parent;
 			while (ancestor !== null && ancestor !== this.tree.root) {
 				this.charge();
 				const parent = this.tree.get(ancestor);
@@ -96,7 +103,10 @@ export class DocumentElementOffsets {
 					(parent.tagName === "body" ||
 						(staticPosition &&
 							["table", "td", "th"].includes(parent.tagName)) ||
-						styles.flow(ancestor).position === "relative")
+						(styles.get(ancestor).display !== "contents" &&
+							["relative", "absolute", "fixed"].includes(
+								styles.flow(ancestor).position,
+							)))
 				) {
 					offsetParent = ancestor;
 					break;

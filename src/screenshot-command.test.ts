@@ -183,7 +183,7 @@ it.each([
 	'<main style="display:none">X</main>',
 	'<main style="height:0"></main>',
 	'<span id="target"></span>',
-	'<main style="position:absolute">X</main>',
+	'<main style="position:sticky">X</main>',
 ])("rejects unsupported or invisible element captures: %s", async (markup) => {
 	const { host } = fixture(markup);
 	await host.execute(["open", "https://fixture.invalid/"]);

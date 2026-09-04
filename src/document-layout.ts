@@ -2,7 +2,6 @@ import { initialBoxStyle } from "./css-box.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { layoutPageDocument } from "./flex-document.js";
-import { applyRelativePositioning } from "./relative-positioning.js";
 import type {
 	FormattingBlockWidth,
 	FormattingNode,
@@ -62,6 +61,14 @@ export interface DocumentLayout {
 	boxes: readonly Readonly<DocumentBox>[];
 	contexts: readonly Readonly<PositionedTextContext>[];
 	flowHeight: number;
+	fixedIds?: readonly number[];
+	positionedInsets?: readonly Readonly<{
+		id: number;
+		left: number;
+		right: number;
+		top: number;
+		bottom: number;
+	}>[];
 	relativePositions?: readonly Readonly<{
 		id: number;
 		left: number;
@@ -191,10 +198,7 @@ export function layoutDocument(
 			"invalid-input",
 			"Invalid document layout work limit",
 		);
-	return applyRelativePositioning(
-		layoutPageDocument(tree, maxWork, options.text),
-		maxWork,
-	);
+	return layoutPageDocument(tree, maxWork, options.text);
 }
 
 export function layoutFormattingDocument(

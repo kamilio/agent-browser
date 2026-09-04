@@ -484,7 +484,9 @@ export function cssSupportsDeclaration(
 					"inline flex",
 				].includes(declaration.value);
 			if (declaration.property === "position")
-				return ["static", "relative"].includes(declaration.value);
+				return ["static", "relative", "absolute", "fixed"].includes(
+					declaration.value,
+				);
 			if (declaration.property === "float" || declaration.property === "clear")
 				return declaration.value === "none";
 			if (

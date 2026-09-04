@@ -88,7 +88,7 @@ it("rejects unsupported CSS instead of printing a fallback", () => {
 	expect(() =>
 		renderDocumentPdf(
 			fixture(
-				'<main style="display:flex;flex-direction:column;flex-wrap:wrap;position:absolute">unsupported</main>',
+				'<main style="display:flex;flex-direction:column;flex-wrap:wrap;position:sticky">unsupported</main>',
 			),
 		),
 	).toThrowError(expect.objectContaining({ code: "unsupported" }));

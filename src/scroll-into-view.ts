@@ -16,7 +16,8 @@ export interface ScrollIntoViewOptions {
 }
 export const scrollIntoViewCapabilities = Object.freeze({
 	partial: true,
-	profile: "instant-normal-flow-ltr-root",
+	profile: "instant-ltr-root",
+	fixedTargets: "root-stationary",
 	command: "scroll-into-view",
 	method: "scrollIntoView",
 	alignments: ["start", "center", "end", "nearest"],
@@ -150,6 +151,18 @@ export class DocumentScrollIntoView {
 		if (!rectangles.length) return null;
 		const owner = documentScroll(this.tree);
 		const current = owner.get();
+		const styles = documentStyles(this.tree);
+		let ancestor: number | null = id;
+		while (ancestor !== null) {
+			const node = this.tree.get(ancestor);
+			if (
+				node.kind === "element" &&
+				styles.get(ancestor).display !== "contents" &&
+				styles.flow(ancestor).position === "fixed"
+			)
+				return Object.freeze({ left: current.x, top: current.y });
+			ancestor = node.parent;
+		}
 		const maximum = owner.bounds();
 		const rectangle = resolved?.generated
 			? rectangles.reduce(
@@ -167,7 +180,7 @@ export class DocumentScrollIntoView {
 					},
 				)
 			: geometry.getBoundingClientRect(id);
-		const viewport = documentStyles(this.tree).viewport;
+		const viewport = styles.viewport;
 		return Object.freeze({
 			left: Math.max(
 				0,

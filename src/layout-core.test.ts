@@ -276,7 +276,7 @@ it("bounds page flex and relative layout work", () => {
 	expect(() => layoutDocument(tree)).not.toThrow();
 });
 
-it.each(["position:absolute", "overflow:hidden", "float:left", "display:grid"])(
+it.each(["position:sticky", "overflow:hidden", "float:left", "display:grid"])(
 	"keeps unsupported %s layout explicit and recoverable",
 	(value) => {
 		const { tree, id, rect } = fixture(

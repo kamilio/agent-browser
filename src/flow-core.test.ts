@@ -116,7 +116,7 @@ it.each(
 );
 
 it.each([
-	["position", "absolute", "static", "position-layout-not-supported"],
+	["position", "sticky", "static", "position-layout-not-supported"],
 	["float", "left", "none", "float-layout-not-supported"],
 	["clear", "both", "none", "clear-layout-not-supported"],
 	["overflow", "hidden", "visible", "overflow-layout-not-supported"],

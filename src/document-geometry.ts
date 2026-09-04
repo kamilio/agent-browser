@@ -4,6 +4,7 @@ import { AgentBrowserError } from "./errors.js";
 import { resolveInlineEdges } from "./inline-box.js";
 import { documentScrollPosition } from "./document-scroll.js";
 import { documentGeneratedControls } from "./generated-controls.js";
+import { projectFixedLayout } from "./out-of-flow-positioning.js";
 
 export type UsedStyle = Readonly<Partial<Record<string, number>>>;
 
@@ -218,6 +219,22 @@ export class LayoutGeometry {
 						}),
 					);
 			}
+		if (includeUsedStyles)
+			for (const position of layout.positionedInsets ?? []) {
+				charge();
+				const ref = layout.text.horizontal.formatting.nodes[position.id].ref;
+				if (ref)
+					this.usedStyles.set(
+						ref,
+						Object.freeze({
+							...this.usedStyles.get(ref),
+							left: position.left,
+							right: position.right,
+							top: position.top,
+							bottom: position.bottom,
+						}),
+					);
+			}
 		const frozen = new Map<string, readonly ClientRectangle[]>();
 		const bounds = new Map<string, ClientRectangle>();
 		for (const [ref, list] of rectangles) {
@@ -377,11 +394,20 @@ export class DocumentGeometry {
 	}
 
 	private refresh() {
+		const scroll = documentScrollPosition(this.tree);
 		if (this.snapshot && this.revision === this.tree.revision)
 			return this.snapshot;
 		this.snapshot = undefined;
 		this.work = 0;
-		const snapshot = new LayoutGeometry(layoutDocument(this.tree), true);
+		const layout = layoutDocument(this.tree);
+		const snapshot = new LayoutGeometry(
+			projectFixedLayout(
+				layout,
+				scroll,
+				layout.metrics.work + geometryLimits.maxWork,
+			),
+			true,
+		);
 		this.snapshot = snapshot;
 		this.work = snapshot.metrics().work;
 		this.revision = this.tree.revision;

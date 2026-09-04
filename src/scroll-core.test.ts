@@ -282,7 +282,7 @@ it("bounds offset traversal and scroll update admission", () => {
 	expect(scroll.get()).toEqual({ x: 0, y: 0 });
 });
 
-it.each(["position:absolute", "display:grid", "overflow:hidden"])(
+it.each(["position:sticky", "display:grid", "overflow:hidden"])(
 	"rejects unsupported layout and recovers after reset: %s",
 	(style) => {
 		const { tree, id, offsets, scroll } = fixture();

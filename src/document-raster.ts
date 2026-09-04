@@ -27,6 +27,7 @@ import {
 } from "./raster.js";
 import { documentStyles } from "./styles.js";
 import { documentScrollPosition } from "./document-scroll.js";
+import { projectFixedLayout } from "./out-of-flow-positioning.js";
 import type { TextGlyph } from "./text-layout.js";
 import { activeFocus } from "./focus.js";
 import { resolveVisualTarget } from "./generated-controls.js";
@@ -144,6 +145,7 @@ function paintDocumentLayout(
 ): Readonly<DocumentRaster> {
 	const viewport = layout.text.horizontal.formatting.viewport;
 	const scroll = documentScrollPosition(tree);
+	layout = projectFixedLayout(layout, scroll, maxWork);
 	let clip =
 		options.clip === undefined
 			? {

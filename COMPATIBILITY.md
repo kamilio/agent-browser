@@ -1,5 +1,13 @@
 # Compatibility and playground acceptance ledger
 
+September 4 positioning continuation: `ABSOLUTE-FIXED-LAYOUT.md` adds bounded
+absolute/fixed block layout, physical insets and hypothetical static fallback,
+with shared geometry/raster/hit testing, offsets and fixed-target root-scroll
+suppression. Native pre-wrap/editing/focus captures cover the integrated path.
+Fourteen newly obsolete pending expectations remain untouched and separately
+reported alongside the known onload failure. Static-position scaling, broader
+CSS and original released-runtime/live/terminal gates remain open.
+
 September 4 editable-keyboard continuation: `EDITABLE-KEYBOARD.md` connects native
 type/press to the shared live DOM Selection, including range replacement,
 directional deletion, logical movement, cancellation and stale-write guards.

@@ -62,7 +62,9 @@ export interface FormattingNode {
 	children: readonly number[];
 	ref?: string;
 	display?: string;
-	position?: "relative";
+	position?: "relative" | "absolute" | "fixed";
+	staticDisplay?: string;
+	staticFlex?: FlexStyle;
 	zIndex?: number;
 	visible: boolean;
 	text?: string;
@@ -234,7 +236,9 @@ export function buildFormattingTree(
 	};
 	const normalizeChildren = (parent: number, children: number[]) => {
 		charge(children.length);
-		if (!children.some((id) => nodes[id].level === "block")) {
+		const inFlow = (id: number) =>
+			nodes[id].position !== "absolute" && nodes[id].position !== "fixed";
+		if (!children.some((id) => inFlow(id) && nodes[id].level === "block")) {
 			nodes[parent].children = children;
 			nodes[parent].contentMode = "inline";
 			for (const child of children) nodes[child].parent = parent;
@@ -261,7 +265,7 @@ export function buildFormattingTree(
 		};
 		for (const child of children) {
 			charge();
-			if (nodes[child].level === "block") {
+			if (inFlow(child) && nodes[child].level === "block") {
 				flush();
 				normalized.push(child);
 			} else run.push(child);
@@ -307,18 +311,29 @@ export function buildFormattingTree(
 		if (node.kind !== "element") return [];
 		const ref = tree.reference(id);
 		const flow = styles.flow(id);
-		if (flow.position !== "static" && flow.position !== "relative")
-			issue("position-layout-not-supported");
+		if (flow.position === "sticky") issue("position-layout-not-supported");
+		const outOfFlow =
+			visibility.display !== "contents" &&
+			(flow.position === "absolute" || flow.position === "fixed");
+		if (outOfFlow) issue("positioned-layout-requires-coordination");
+		if (outOfFlow) flexItem = false;
 		if (flow.float !== "none") issue("float-layout-not-supported");
 		if (flow.clear !== "none") issue("clear-layout-not-supported");
 		if (flow["overflow-x"] !== "visible" || flow["overflow-y"] !== "visible")
 			issue("overflow-layout-not-supported");
 		const positionFields = {
-			...(flow.position === "relative"
-				? { position: "relative" as const }
+			...(flow.position === "relative" || outOfFlow
+				? { position: flow.position as "relative" | "absolute" | "fixed" }
+				: {}),
+			...(outOfFlow
+				? {
+						independentContext: true,
+						staticDisplay: visibility.unpositionedDisplay,
+						staticFlex: styles.flex(id),
+					}
 				: {}),
 			...(flow["z-index"] !== "auto" &&
-			(flow.position === "relative" || flexItem)
+			(flow.position === "relative" || outOfFlow || flexItem)
 				? { zIndex: Number(flow["z-index"]) }
 				: {}),
 		};
@@ -716,7 +731,11 @@ export function buildFormattingTree(
 		};
 		for (const child of children()) {
 			charge();
-			if (nodes[child].level === "block") {
+			if (
+				nodes[child].level === "block" &&
+				nodes[child].position !== "absolute" &&
+				nodes[child].position !== "fixed"
+			) {
 				flush();
 				result.push(child);
 			} else run.push(child);

@@ -7,6 +7,11 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+The native absolute/fixed integration now passes 10,036 isolated native tests;
+working validation retains fourteen newly obsolete pending expectations plus
+the known onload failure. `ABSOLUTE-FIXED-LAYOUT.md` records current captures,
+fixed-target scrolling and the active static-position performance follow-up.
+
 On September 4 at approximately 14:10 UTC the user authorized up to twenty
 subagents and stated that five hours remain. `FIVE-HOUR-SPRINT.md` records the
 parallel integration plan and an approximate 19:10 UTC September 4 deadline.

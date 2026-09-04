@@ -212,7 +212,7 @@ it.each(["all", "nearest"])(
 	},
 );
 
-it.each(["position:absolute", "overflow:auto"])(
+it.each(["position:sticky", "overflow:auto"])(
 	"does not guess geometry for unsupported %s",
 	(css) => {
 		const { run } = fixture(`#target{${css}}`);

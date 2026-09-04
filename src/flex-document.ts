@@ -11,7 +11,10 @@ import {
 	formattingLimits,
 	resolveFormattingPageWidths,
 	type FormattingBlockWidth,
+	type FormattingTree,
 } from "./formatting-tree.js";
+import { layoutPositionedDocument } from "./out-of-flow-positioning.js";
+import { applyRelativePositioning } from "./relative-positioning.js";
 import { layoutFormattingFlexContainer } from "./flex-layout.js";
 import { layoutNumber } from "./layout-values.js";
 import { mergeAtomicInlineLayouts } from "./inline-atomic-placement.js";
@@ -32,6 +35,23 @@ export function layoutPageDocument(
 ): Readonly<DocumentLayout> {
 	textLayoutWorkLimit(options);
 	const formatting = buildFormattingTree(tree, options.formatting);
+	if (
+		formatting.nodes.some(
+			(node) => node.position === "absolute" || node.position === "fixed",
+		)
+	)
+		return layoutPositionedDocument(formatting, maxWork, options);
+	return applyRelativePositioning(
+		layoutFormattingPageDocument(formatting, maxWork, options),
+		maxWork,
+	);
+}
+
+export function layoutFormattingPageDocument(
+	formatting: FormattingTree,
+	maxWork: number,
+	options: TextLayoutOptions = {},
+): Readonly<DocumentLayout> {
 	const shells: Readonly<FormattingBlockWidth>[] = [];
 	const needsCoordinatedLayout = formatting.nodes.some(
 		(node) => node.contentMode === "flex" || isAtomicInline(node),

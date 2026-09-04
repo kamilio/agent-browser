@@ -1,4 +1,7 @@
 [
+  "src/out-of-flow-positioning.test.ts",
+  "src/static-positioning.test.ts",
+  "src/positioning-integration.test.ts",
   "src/editable-keyboard.test.ts",
   "src/editable-keyboard-command.test.ts",
   "src/playground-extraction.test.ts",

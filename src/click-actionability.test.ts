@@ -564,6 +564,6 @@ it("submits a form only after the targeted pointer gesture activates its button"
 });
 
 it("rejects unsupported formatting instead of silently bypassing the renderer", async () => {
-	const { click } = await sessionFixture("#target{position:absolute}");
+	const { click } = await sessionFixture("#target{position:sticky}");
 	await expect(click()).rejects.toMatchObject({ code: "unsupported" });
 });

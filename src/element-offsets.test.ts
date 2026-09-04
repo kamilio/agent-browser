@@ -12,6 +12,7 @@ import { DocumentQueries } from "./selectors.js";
 import { documentStyles } from "./styles.js";
 import { encodePng } from "./png.js";
 import { createRaster } from "./raster.js";
+import { documentScroll } from "./document-scroll.js";
 
 const documents: DocumentTree[] = [];
 function fixture(content = '<main><div id="target">a</div></main>', css = "") {
@@ -70,6 +71,124 @@ it("gives body zero offsets and root/body no offset parent", () => {
 		offsetTop: 0,
 		offsetLeft: 0,
 	});
+});
+
+it("uses absolute ancestor padding edges across static wrappers", () => {
+	const { read, id } = fixture(
+		'<main><section><div id="target">a</div></section></main>',
+		"main{position:absolute;left:30px;top:40px;width:100px;height:60px;border:3px solid red;padding:5px}section{padding:7px}#target{position:absolute;left:10px;top:12px;width:10px;height:10px;margin-left:2px;margin-top:4px}",
+	);
+	expect(read()).toEqual({
+		offsetParent: id("main"),
+		offsetLeft: 12,
+		offsetTop: 16,
+	});
+	expect(read("section")).toEqual({
+		offsetParent: id("main"),
+		offsetLeft: 5,
+		offsetTop: 5,
+	});
+});
+
+it("uses nearest nested relative, absolute and fixed ancestors for normal descendants", () => {
+	const { read, id } = fixture(
+		'<main><section><div id="target">a</div></section></main>',
+		"main{position:fixed;left:10px;top:20px;width:100px;height:60px;padding:5px}section{position:absolute;left:7px;top:9px;padding:3px;border:2px solid blue;width:40px;height:20px}#target{position:relative;left:-2px;top:4px}",
+	);
+	expect(read()).toEqual({
+		offsetParent: id("section"),
+		offsetLeft: 1,
+		offsetTop: 7,
+	});
+	expect(read("section")).toEqual({
+		offsetParent: id("main"),
+		offsetLeft: 7,
+		offsetTop: 9,
+	});
+	expect(read("main")).toEqual({
+		offsetParent: null,
+		offsetLeft: 10,
+		offsetTop: 20,
+	});
+});
+
+it("keeps viewport-fixed offsets and descendants stable across both scroll axes", () => {
+	const { tree, read, id } = fixture(
+		'<main><section><div id="target">a</div></section></main>',
+		"main{position:relative;width:400px;height:300px;padding:10px}section{position:fixed;left:5.5px;top:7.5px;width:80px;height:40px;border:2px solid black;padding:3px}#target{position:absolute;left:4px;top:6px;width:10px;height:10px}",
+	);
+	const before = read();
+	expect(before).toEqual({
+		offsetParent: id("section"),
+		offsetLeft: 4,
+		offsetTop: 6,
+	});
+	expect(read("section")).toEqual({
+		offsetParent: null,
+		offsetLeft: 6,
+		offsetTop: 8,
+	});
+	documentScroll(tree).to(50, 60);
+	expect(read()).toEqual(before);
+	expect(read("section")).toEqual({
+		offsetParent: null,
+		offsetLeft: 6,
+		offsetTop: 8,
+	});
+});
+
+it("does not treat display-contents positioned ancestors as containing blocks", () => {
+	const { read, id } = fixture(
+		'<main><section><div id="target">a</div></section></main>',
+		"main{position:relative;padding:5px}section{display:contents;position:absolute}#target{position:absolute;left:7px;top:9px;width:10px;height:10px}",
+	);
+	expect(read()).toEqual({
+		offsetParent: id("main"),
+		offsetLeft: 7,
+		offsetTop: 9,
+	});
+});
+
+it("uses body as offset parent without mistaking it for an absolute containing block", () => {
+	const { read, id } = fixture(
+		undefined,
+		"body{margin:10px;border:2px solid black;padding:3px}main{padding:7px}#target{position:absolute;left:5px;top:6px;width:10px;height:10px}",
+	);
+	expect(read()).toEqual({
+		offsetParent: id("body"),
+		offsetLeft: -7,
+		offsetTop: -6,
+	});
+});
+
+it("updates offsetParent after positioning changes and reparenting", () => {
+	const { tree, read, id } = fixture(
+		'<main><div id="target">a</div></main><section style="position:absolute;left:30px;top:20px;width:80px;height:40px"></section>',
+		"main{position:relative;padding:5px}#target{position:absolute;left:7px;top:9px;width:10px;height:10px}",
+	);
+	expect(read().offsetParent).toBe(id("main"));
+	tree.append(id("section"), id("#target"));
+	expect(read()).toEqual({
+		offsetParent: id("section"),
+		offsetLeft: 7,
+		offsetTop: 9,
+	});
+	tree.setAttribute(id("#target"), "style", "position:fixed");
+	expect(read()).toEqual({ offsetParent: null, offsetLeft: 7, offsetTop: 9 });
+});
+
+it("returns offsets for bare absolute and fixed elements instead of rejecting their layout", () => {
+	for (const position of ["absolute", "fixed"]) {
+		const { read, id } = fixture(
+			undefined,
+			`main{padding:5px}#target{position:${position}}`,
+		);
+		expect(read()).toEqual({
+			offsetParent: position === "fixed" ? null : id("body"),
+			offsetLeft: 5,
+			offsetTop: 5,
+		});
+	}
 });
 
 it("uses initial-containing-block coordinates when no body/offset ancestor exists", () => {
@@ -237,13 +356,13 @@ it("recomputes downstream offsets after loaded image dimensions change", async (
 
 it.each([
 	"position:sticky",
-	"position:absolute",
-	"position:fixed",
+	"position:absolute;inset:0",
+	"position:fixed;overflow:hidden",
 	"transform:translateX(2px)",
 	"border:1px dashed red",
 	"zoom:2",
 	"display:grid",
-	"display:flex;flex-direction:column;flex-wrap:wrap;position:absolute",
+	"display:flex;flex-direction:column;flex-wrap:wrap;position:sticky",
 ])(
 	"refuses unsupported geometry rather than returning plausible offsets for %s",
 	(declaration) => {

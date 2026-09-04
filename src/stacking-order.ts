@@ -47,9 +47,10 @@ export function* stackingContentItems(
 			node.parent === formatting.root && node.ref !== undefined;
 		if (
 			node.id !== root.id &&
-			(rootElement || node.position === "relative" || node.zIndex !== undefined)
+			(rootElement || node.position !== undefined || node.zIndex !== undefined)
 		) {
-			const actualContext = rootElement || node.zIndex !== undefined;
+			const actualContext =
+				rootElement || node.position === "fixed" || node.zIndex !== undefined;
 			group = scope(
 				node.id,
 				rootElement ? 0 : (node.zIndex ?? 0),

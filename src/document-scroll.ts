@@ -10,6 +10,7 @@ export const viewportScrollLimits = Object.freeze({
 export const viewportScrollCapabilities = Object.freeze({
 	partial: true,
 	profile: "normal-flow-ltr-root-viewport",
+	positionedOverflow: "absolute-included-fixed-excluded",
 	command: "mousewheel",
 	elementScrolling: false,
 	smooth: false,
@@ -93,6 +94,7 @@ export class DocumentScroll {
 		if (this.revision === this.tree.revision) return;
 		const layout = layoutDocument(this.tree);
 		const viewport = layout.text.horizontal.formatting.viewport;
+		const fixed = new Set(layout.fixedIds);
 		let right = viewport.width;
 		let bottom = Math.max(viewport.height, layout.flowHeight);
 		this.work = 0;
@@ -105,23 +107,29 @@ export class DocumentScroll {
 			right = Math.max(right, layoutNumber(x + width, true));
 			bottom = Math.max(bottom, layoutNumber(y + height, true));
 		};
-		for (const box of layout.boxes)
+		for (const box of layout.boxes) {
+			if (fixed.has(box.id)) continue;
 			include(
 				box.borderX,
 				box.borderY,
 				box.borderBoxWidth + Math.max(0, box.marginRight),
 				box.borderBoxHeight + Math.max(0, box.marginBottom),
 			);
+		}
 		for (const context of layout.contexts) {
-			for (const fragment of context.fragments)
+			for (const fragment of context.fragments) {
+				if (fixed.has(fragment.formattingId)) continue;
 				include(
 					fragment.x,
 					fragment.y,
 					fragment.width + Math.max(0, fragment.marginRight ?? 0),
 					fragment.height + Math.max(0, fragment.marginBottom ?? 0),
 				);
-			for (const glyph of context.glyphs)
+			}
+			for (const glyph of context.glyphs) {
+				if (fixed.has(glyph.formattingId)) continue;
 				include(glyph.x, glyph.y, glyph.advance, glyph.fontSize);
+			}
 		}
 		this.maximum = Object.freeze({
 			x: Math.max(0, right - viewport.width),

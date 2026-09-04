@@ -136,7 +136,7 @@ export function resolvedStyleValue(
 			name === "width" ||
 			name === "height" ||
 			(["top", "right", "bottom", "left"].includes(name) &&
-				styles.flow(id).position === "relative") ||
+				["relative", "absolute", "fixed"].includes(styles.flow(id).position)) ||
 			name.startsWith("margin-") ||
 			name.startsWith("padding-")
 		) {

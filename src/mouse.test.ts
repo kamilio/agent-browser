@@ -366,7 +366,7 @@ it("clears a released button even if fresh hit testing fails", () => {
 	const { tree, mouse, id } = fixture();
 	mouse.move(5, 5);
 	mouse.down();
-	tree.setAttribute(id("#first"), "style", "position:fixed");
+	tree.setAttribute(id("#first"), "style", "position:sticky");
 	expect(() => mouse.up()).toThrow();
 	expect(mouse.metrics()).toMatchObject({ buttons: 0, busy: false });
 });

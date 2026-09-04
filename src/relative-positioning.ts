@@ -28,9 +28,15 @@ export function resolveRelativeInsets(
 export function applyRelativePositioning(
 	layout: Readonly<DocumentLayout>,
 	maxWork: number,
+	hasRelativePositioning?: boolean,
 ): Readonly<DocumentLayout> {
 	const formatting = layout.text.horizontal.formatting;
-	if (!formatting.nodes.some((node) => node.position === "relative"))
+	if (
+		!(
+			hasRelativePositioning ??
+			formatting.nodes.some((node) => node.position === "relative")
+		)
+	)
 		return layout;
 	let work = layout.metrics.work;
 	const charge = () => {
@@ -64,7 +70,7 @@ export function applyRelativePositioning(
 			const own = resolveRelativeInsets(
 				node.box,
 				containing?.contentWidth ?? formatting.viewport.width,
-				containingId === formatting.root
+				formatting.nodes[containingId].kind === "viewport"
 					? formatting.viewport.height
 					: (containing?.definiteHeight ?? null),
 			);
@@ -83,15 +89,41 @@ export function applyRelativePositioning(
 			});
 		}
 	}
+	const shifted = positionDocumentLayout(
+		{ ...layout, metrics: { ...layout.metrics, work } },
+		(id) => {
+			const value = offsets.get(id);
+			if (!value)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Missing relative positioning owner",
+				);
+			return value;
+		},
+		maxWork,
+	);
+	return Object.freeze({
+		...shifted,
+		relativePositions: Object.freeze(positions),
+	});
+}
+
+export function positionDocumentLayout(
+	layout: Readonly<DocumentLayout>,
+	resolve: (id: number) => Readonly<{ left: number; top: number }>,
+	maxWork: number,
+): Readonly<DocumentLayout> {
+	let work = layout.metrics.work;
+	const charge = () => {
+		if (++work > maxWork)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Positioning geometry work limit exceeded",
+			);
+	};
 	const offset = (id: number) => {
 		charge();
-		const value = offsets.get(id);
-		if (!value)
-			throw new AgentBrowserError(
-				"invalid-input",
-				"Missing relative positioning owner",
-			);
-		return value;
+		return resolve(id);
 	};
 	const rectangle = (x: number, y: number, width: number, height: number) => {
 		layoutNumber(x + width, true);
@@ -199,9 +231,12 @@ export function applyRelativePositioning(
 		contexts: Object.freeze(contexts),
 		text: Object.freeze({
 			...layout.text,
+			horizontal: Object.freeze({
+				...layout.text.horizontal,
+				widths: Object.freeze(positionedBoxes),
+			}),
 			contexts: Object.freeze(relativeContexts),
 		}),
-		relativePositions: Object.freeze(positions),
 		metrics: Object.freeze({ ...layout.metrics, work }),
 	});
 }

@@ -171,7 +171,7 @@ async function fixture(unsupported = false, content = "Hello") {
 				}),
 				loadDocument: (response) =>
 					parseHtmlDocument(
-						`<main style="height:20px;background-color:navy;color:aquamarine${unsupported ? ";position:absolute" : ""}">${content}</main>`,
+						`<main style="height:20px;background-color:navy;color:aquamarine${unsupported ? ";position:sticky" : ""}">${content}</main>`,
 						response.url,
 					),
 			}),

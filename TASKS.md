@@ -19,6 +19,17 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native positioning checkpoint: `ABSOLUTE-FIXED-LAYOUT.md` integrates bounded
+absolute/fixed layout, static fallback, shared paint/hit geometry and offsets.
+Seven reproduced fixed-target root-scroll failures are fixed; nine parent tests
+also cover display:contents and pre-wrap/editing. Focused runs pass 385 / nine
+files; isolated full native validation passes 10,036 / 291 files. Working native
+validation reports 11,167 passes and 15 failures: fourteen obsolete expectations
+in preserved pending layout/capability tests plus the known onload assertion.
+Two inspected command captures retain viewport-fixed geometry and focus scroll.
+Static-position scaling is an active follow-up; unsupported CSS, runtime, live,
+socket and terminal gates remain open. No gated probe ran.
+
 Native editable-keyboard checkpoint: `EDITABLE-KEYBOARD.md` integrates shared-DOM-
 selection typing, range replacement, directional deletion and logical movement.
 Fill places the caret before input. Three parent regressions cover indication

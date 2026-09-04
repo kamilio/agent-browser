@@ -10,14 +10,14 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | Editable keyboard integration, then absolute/fixed layout | Cookie commands, Range/Window, pre-wrap and playground exports are committed. |
+| Main | Absolute/fixed integration, then production command/runtime lanes | Cookie commands, Range/Window, pre-wrap, playground exports and editable keyboard are committed. |
 | DOM worker | Owned Enter/Shift+Enter and paragraph insertion | Initial editing integration passes 9,951 isolated native tests; paragraph follow-up is active. |
 | Focus-bridge worker | Public nested-operation page focus/blur | URL constructor blockers remain explicit; do not publish internal factories as standard globals. |
 | Focus delivery | Native focus/blur options, indication and scrolling | Integrated with an additional parent reentrancy fix; synchronous guest methods remain open. |
 | Cookie delivery | Cookie list/get/set/delete services | Production wiring and actual CLI tests integrated; 9,765 isolated native tests pass. |
 | White-space delivery | Native pre-wrap formatting and hanging spaces | Integrated, with fresh editable captures and 9,854 passing isolated native tests. |
 | Double-click worker | Production command/default integration | Initial gesture delivery is preserved; worker now owns command-host/session wiring. |
-| Positioning worker | Static-position fallback performance | Main integrates v2 correctness; fresh follow-up targets repeated hypothetical reflow. |
+| Positioning worker | Static-position fallback performance | V2 correctness plus fixed-target scrolling passes 10,036 isolated native tests; scaling follow-up remains active. |
 | Runtime worker | Production process/CLI adapter selection | Legacy remains default; explicit extension opt-in and truthful metadata, no actual SDK probe. |
 | Playground delivery | Extraction/snapshot downloads and honest example discovery | Integrated export guards/cards pass 9,882 isolated native tests; live UI/framework gates remain open. |
 | File-selection worker | Bounded server upload staging and client protocol adapter | Initial selection/private-read delivery is preserved; main integrates shared command/form/CLI hooks later. |
