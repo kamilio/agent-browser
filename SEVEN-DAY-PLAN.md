@@ -370,6 +370,14 @@ with malformed-table recovery and complete scope/implied-end/mode interactions.
 DOM adoption, runtime/observer breadth and independent live/runtime/terminal gates
 remain separate requirements, not inferred from native formatting fixtures.
 
+September 4 table-recovery continuation: `HTML-TABLES.md` adds bounded table-mode
+reprocessing, scoped container closure and pending-character batches across
+parser writes. Foster insertion uses actual adjacent nodes and survives native
+hook-driven movement; raw-text exits restore template/table processing correctly.
+Continue with in-body scope/implied-end handling, parser form-owner association
+and remaining mode interactions. Modern select, DOM adoption and independent
+runtime/live-site/terminal acceptance remain separate unfinished requirements.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Table recovery checkpoint: `HTML-TABLES.md` replaces table container heuristics
+with bounded mode dispatch, scoped close/reprocessing and pending character
+batches across parser writes. Inputs/forms and legacy select transitions retain
+distinct handling; template owners remain isolated. Raw-text closing transitions
+and actual-sibling foster coalescing fix additional reproduced regressions.
+Three initial cases, two raw-text cases and two foster-text cases fail before
+their fixes; 54 new tests and 260 focused checks across eight files pass. Full
+native validation passes 8,384 / 235 files; the isolated owned patch passes
+5,624 / 174 available files. Types, builds and three-file lint pass in both trees,
+preserving pre-existing pending work. Next complete in-body scope/implied-end
+handling, parser form-owner association and remaining mode interactions. Modern
+select behavior, DOM adoption and cross-owner observer/runtime breadth remain
+open. No gated probe ran; the denied SafeJS probe remains unrun, independent
+acceptance gates remain open and the seven-day goal stays active.
+
+### Previous formatting checkpoint
+
 Formatting reconstruction checkpoint: `HTML-FORMATTING.md` adds bounded active
 formatting entries, original-token attribute retention, three-equivalent-entry
 pruning, marker isolation and adoption-agency repair. Cloning and foster moves

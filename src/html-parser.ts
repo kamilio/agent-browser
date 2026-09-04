@@ -5,6 +5,7 @@ import { decodeHtmlEntities } from "./html-entities.js";
 import { setHtmlParseInfo } from "./html-info.js";
 import { HtmlTokenizer } from "./html-tokenizer.js";
 import { HtmlFormatting, type HtmlParserNode } from "./html-formatting.js";
+import { HtmlTables } from "./html-tables.js";
 import {
 	doctypeMode,
 	documentMode,
@@ -100,7 +101,6 @@ const formatting = new Set([
 	"u",
 ]);
 const tableContainers = new Set(["table", "tbody", "thead", "tfoot", "tr"]);
-const sections = new Set(["tbody", "thead", "tfoot"]);
 const templateHeadTags = new Set([
 	"base",
 	"basefont",
@@ -431,7 +431,7 @@ function* parseHtmlSteps(
 		let tokens = 0;
 		let stripNewline = false;
 		let lastText: { id: number; parent: number; before?: number } | undefined;
-		const fosterTexts = new Map<number, number>();
+		let tableFoster = false;
 		const current = () => stack[stack.length - 1];
 		const insertionTarget = (entry = current()) => {
 			if (
@@ -473,21 +473,48 @@ function* parseHtmlSteps(
 			return "body" as const;
 		};
 		const location = (foster: boolean, override?: HtmlParserNode) => {
-			if (foster && tableContainers.has(override?.tag ?? contextTag())) {
-				const table = stack[position("table")];
+			if (
+				(foster || tableFoster) &&
+				tableContainers.has(override?.tag ?? contextTag())
+			) {
+				const tableIndex = position("table");
+				const table = stack[tableIndex];
 				if (table) {
 					const parent = table.tree.get(table.id).parent;
 					if (parent !== null) {
 						issue("table-foster-parenting");
-						return { tree: table.tree, parent, before: table.id };
+						return {
+							tree: table.tree,
+							parent,
+							before: table.id,
+							fostered: true,
+						};
 					}
-				} else if (templateScope()) {
+					const target = insertionTarget(stack[Math.max(0, tableIndex - 1)]);
+					return {
+						tree: target.tree,
+						parent: target.id,
+						before: undefined,
+						fostered: true,
+					};
+				}
+				if (templateScope()) {
 					const target = insertionTarget(stack[templateScope().index]);
-					return { tree: target.tree, parent: target.id, before: undefined };
+					return {
+						tree: target.tree,
+						parent: target.id,
+						before: undefined,
+						fostered: true,
+					};
 				}
 			}
 			const target = insertionTarget(override);
-			return { tree: target.tree, parent: target.id, before: undefined };
+			return {
+				tree: target.tree,
+				parent: target.id,
+				before: undefined,
+				fostered: false,
+			};
 		};
 		const insert = (
 			name: string,
@@ -497,23 +524,31 @@ function* parseHtmlSteps(
 			const target = location(foster);
 			const id = target.tree.createElement(name, attributes);
 			target.tree.insert(target.parent, id, target.before);
-			if (target.before !== undefined) fosterTexts.delete(target.before);
 			lastText = undefined;
 			return { tree: target.tree, id };
 		};
 		const text = (data: string, foster = false) => {
 			if (!data) return;
 			const target = location(foster);
-			const fosterText =
-				target.before === undefined
-					? undefined
-					: fosterTexts.get(target.before);
+			let fosterText: number | undefined;
+			if (target.fostered) {
+				const siblings = target.tree.get(target.parent).children;
+				tables.scan(siblings.length * 3);
+				const index =
+					target.before === undefined
+						? siblings.length
+						: siblings.indexOf(target.before);
+				const previous = siblings[index - 1];
+				if (previous !== undefined && target.tree.get(previous).kind === "text")
+					fosterText = previous;
+			}
 			if (fosterText !== undefined)
 				target.tree.setData(
 					fosterText,
 					target.tree.get(fosterText).data + data,
 				);
 			else if (
+				!target.fostered &&
 				lastText?.parent === target.parent &&
 				lastText.before === target.before
 			)
@@ -525,7 +560,6 @@ function* parseHtmlSteps(
 				const id = target.tree.createText(data);
 				target.tree.insert(target.parent, id, target.before);
 				lastText = { id, ...target };
-				if (target.before !== undefined) fosterTexts.set(target.before, id);
 			}
 		};
 		const merge = (id: number, attributes: Record<string, string>) => {
@@ -566,7 +600,6 @@ function* parseHtmlSteps(
 					);
 				target.tree.insert(target.parent, node.id, target.before);
 				lastText = undefined;
-				fosterTexts.clear();
 			},
 			issue,
 			check: checkInput,
@@ -574,6 +607,38 @@ function* parseHtmlSteps(
 			maxText: Math.min(16_000_000, tree.limits.maxTextCodeUnits * 8),
 		});
 		if (fragment?.tagName === "template") activeFormatting.mark(current());
+		const tables = new HtmlTables({
+			stack: () => stack,
+			template: templateScope,
+			push: (tag, attributes) => {
+				push(tag, attributes);
+				if (["caption", "td", "th"].includes(tag))
+					activeFormatting.mark(current());
+			},
+			insert: (tag, attributes) => {
+				insert(tag, attributes);
+			},
+			form: (attributes) => {
+				if (form !== undefined || inTemplate()) {
+					issue("table-form-ignored");
+					return;
+				}
+				form = insert("form", attributes).id;
+			},
+			emit: (data, foster, reconstruct) => {
+				if (!data) return;
+				if (reconstruct) activeFormatting.reconstruct(foster);
+				text(data, foster);
+			},
+			reset: () => {
+				activeFormatting.sync();
+				lastText = undefined;
+			},
+			issue,
+			check: checkInput,
+			maxWork: Math.min(1_600_000, tree.limits.maxNodes * 64),
+			maxText: tree.limits.maxTextCodeUnits,
+		});
 		const nextToken = () => {
 			const token = tokenizer.next();
 			checkInput();
@@ -605,10 +670,13 @@ function* parseHtmlSteps(
 				token = nextToken();
 			}
 			if (!token) {
+				tables.flush();
 				for (const scope of templates)
 					if (scope.index > 0) issue("unclosed-template");
 				break;
 			}
+			tableFoster = false;
+			if (token.kind !== "text") tables.flush();
 			activeFormatting.sync();
 			if (token.kind === "doctype") {
 				if (!initial) {
@@ -655,15 +723,6 @@ function* parseHtmlSteps(
 			}
 			if (token.kind === "text") {
 				let data = token.data;
-				if (
-					((fragment?.tagName === "colgroup" && stack.length === 1) ||
-						(templateScope()?.mode === "colgroup" &&
-							stack.length === templateScope().index + 1)) &&
-					/[^\t\n\f\r ]/.test(data)
-				) {
-					issue("ignored-text-in-colgroup");
-					data = data.replace(/[^\t\n\f\r ]/g, "");
-				}
 				if (stripNewline && data.startsWith("\n")) data = data.slice(1);
 				stripNewline = false;
 				if (mode === "before" && /^[\t\n\f\r ]*$/.test(data)) continue;
@@ -673,15 +732,7 @@ function* parseHtmlSteps(
 					(mode === "head" && stack.length === 1 && /[^\t\n\f\r ]/.test(data))
 				)
 					mode = inBody();
-				if (
-					data &&
-					(/[^\t\n\f\r ]/.test(data) ||
-						(!tableContainers.has(contextTag()) &&
-							contextTag() !== "colgroup")) &&
-					position("select") < 0
-				)
-					activeFormatting.reconstruct(/[^\t\n\f\r ]/.test(data));
-				text(data, /[^\t\n\f\r ]/.test(data));
+				tables.characters(data);
 				continue;
 			}
 			stripNewline = false;
@@ -694,13 +745,11 @@ function* parseHtmlSteps(
 				continue;
 			}
 			if (
-				((fragment?.tagName === "colgroup" && stack.length === 1) ||
-					(templateScope()?.mode === "colgroup" &&
-						stack.length === templateScope().index + 1)) &&
-				name !== "col" &&
-				name !== "template"
+				token.kind === "end" &&
+				["body", "html"].includes(name) &&
+				tables.context().mode !== "body"
 			) {
-				issue("ignored-tag-in-colgroup");
+				issue("ignored-table-end");
 				continue;
 			}
 			if (
@@ -794,11 +843,13 @@ function* parseHtmlSteps(
 								? "tr"
 								: "body";
 			}
+			const tableAction = tables.tag(token);
+			if (tableAction.handled) continue;
+			tableFoster = tableAction.foster;
 			if (token.kind === "end") {
 				if (formatting.has(name)) {
 					activeFormatting.end(name);
 					lastText = undefined;
-					fosterTexts.clear();
 					continue;
 				}
 				if (name === "form") {
@@ -876,87 +927,6 @@ function* parseHtmlSteps(
 			if (name === "optgroup") {
 				if (current().tag === "option" && stack.length > 1) stack.pop();
 				if (current().tag === "optgroup" && stack.length > 1) stack.pop();
-			}
-			if (
-				[
-					"caption",
-					"colgroup",
-					"col",
-					"tbody",
-					"thead",
-					"tfoot",
-					"tr",
-					"td",
-					"th",
-				].includes(name)
-			) {
-				const actualTable = position("table");
-				if (
-					actualTable < 0 &&
-					scope &&
-					((scope.mode === "tbody" && !["tr", "td", "th"].includes(name)) ||
-						(scope.mode === "tr" && !["td", "th"].includes(name)))
-				) {
-					stack.length = scope.index + 1;
-					issue("ignored-template-table-container");
-					continue;
-				}
-				const virtualTemplate =
-					scope && scope.mode !== "body" ? scope.index : -1;
-				const tableIndex =
-					actualTable >= 0
-						? actualTable
-						: virtualTemplate >= 0
-							? virtualTemplate
-							: fragment &&
-									(sections.has(fragment.tagName) ||
-										["tr", "colgroup"].includes(fragment.tagName))
-								? 0
-								: -1;
-				if (tableIndex < 0 || (tableIndex === 0 && !fragment && !scope)) {
-					issue("table-tag-outside-table");
-					continue;
-				}
-				if (
-					fragment &&
-					stack.length === 1 &&
-					((sections.has(fragment.tagName) && sections.has(name)) ||
-						(fragment.tagName === "tr" &&
-							["tr", "tbody", "thead", "tfoot"].includes(name)))
-				) {
-					issue("ignored-table-fragment-container");
-					continue;
-				}
-				if (sections.has(name) || name === "caption" || name === "colgroup")
-					stack.length = tableIndex + 1;
-				if (name === "tr") {
-					const sectionIndex = Math.max(
-						position("tbody"),
-						position("thead"),
-						position("tfoot"),
-					);
-					stack.length = Math.max(tableIndex, sectionIndex) + 1;
-					if (!sections.has(contextTag())) push("tbody");
-				}
-				if (name === "td" || name === "th") {
-					const actualRow = position("tr");
-					const row =
-						actualRow >= 0
-							? actualRow
-							: actualTable < 0 && scope?.mode === "tr"
-								? scope.index
-								: -1;
-					if (row >= tableIndex && row >= 0) stack.length = row + 1;
-					else if (contextTag() !== "tr") {
-						if (contextTag() === "table") push("tbody");
-						push("tr");
-						issue("implicit-table-row");
-					}
-				}
-				if (name === "col" && contextTag() !== "colgroup") {
-					stack.length = tableIndex + 1;
-					push("colgroup");
-				}
 			}
 			activeFormatting.sync();
 			if (name === "a") {
@@ -1051,13 +1021,13 @@ function* parseHtmlSteps(
 				}
 				if (name === "textarea" && data.startsWith("\n")) data = data.slice(1);
 				text(data);
+				let closing = nextToken();
+				while (!closing && tokenizer.paused) {
+					yield { kind: "pause", tree };
+					closing = nextToken();
+				}
+				pop(name);
 				if (name === "script") {
-					let closing = nextToken();
-					while (!closing && tokenizer.paused) {
-						yield { kind: "pause", tree };
-						closing = nextToken();
-					}
-					pop("script");
 					if (scripting && closing && !fragment && !inTemplate())
 						yield { kind: "script", tree, id };
 					else if (scripting && !fragment && !inTemplate())
