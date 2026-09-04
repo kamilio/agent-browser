@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 emergency-wrap continuation: `OVERFLOW-WRAP.md` adds inherited
+normal/anywhere/break-word behavior, grapheme-safe grouping and intrinsic sizing.
+All 138 new cases pass. The twenty-four-file runs retain one reproduced baseline
+styles-cache failure with 939 isolated / 940 working passes; static checks and
+ten native capture comparisons pass. Full CSS text/shaping, word-wrap alias,
+host-ICU parity and original browser/runtime/live gates remain open.
+
 September 4 textarea-arrow continuation: `TEXTAREA-VERTICAL-NAVIGATION.md` adds
 bounded shared visual-row movement, preferred-column retention and Shift anchors.
 The 100 new cases and 1,027 / thirty-two-file focused suites pass in both trees;

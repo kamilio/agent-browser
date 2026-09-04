@@ -5,6 +5,7 @@ export const cssTextProperties = Object.freeze([
 	"font-size",
 	"line-height",
 	"white-space",
+	"overflow-wrap",
 	"text-align",
 ] as const);
 export type CssTextProperty = (typeof cssTextProperties)[number];
@@ -17,6 +18,7 @@ export const initialTextStyle: TextStyle = Object.freeze({
 	"font-size": "16px",
 	"line-height": "normal",
 	"white-space": "normal",
+	"overflow-wrap": "normal",
 	"text-align": "start",
 });
 const wide = new Set(["initial", "inherit", "unset", "revert"]);
@@ -43,6 +45,10 @@ export function parseTextValue(
 	value: string,
 ): string | undefined {
 	if (wide.has(value)) return value;
+	if (property === "overflow-wrap")
+		return ["normal", "break-word", "anywhere"].includes(value)
+			? value
+			: undefined;
 	if (property === "white-space")
 		return ["normal", "nowrap", "pre", "pre-line", "pre-wrap"].includes(value)
 			? value

@@ -19,6 +19,14 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Ordinary inline text now supports bounded overflow-wrap emergency breaking with
+grapheme preservation and correct anywhere/break-word intrinsic differences.
+`OVERFLOW-WRAP.md` records 138 new passing cases, 939 isolated / 940 working passes
+across twenty-four focused files with the same independently reproduced baseline
+styles-cache failure. Types/builds/scoped checks pass; 180 default layouts remain
+identical and ten native capture comparisons pass. Both manifests retain 382
+entries. Full CSS/shaping/runtime/live gates and the overall browser goal remain open.
+
 Native textarea Up/Down now follows shared visual rows, retains the preferred
 column through short lines and supports anchored Shift movement. Reentrant
 same-offset pointer resets survive caret notification. `TEXTAREA-VERTICAL-NAVIGATION.md`

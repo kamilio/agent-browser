@@ -7,6 +7,13 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native overflow-wrap now shares document lines, source mapping, hit targets and
+Range geometry. `OVERFLOW-WRAP.md` records 138 new passing cases; the focused
+twenty-four-file runs have 939 isolated / 940 working passes and one reproduced
+baseline styles-cache failure. Types/builds/scoped checks, 180 unchanged default
+layouts and ten native capture comparisons pass. Both manifests retain 382
+entries; full CSS/shaping/ICU, native-suite and original external gates stay open.
+
 Native textarea vertical keys now share painted visual-row geometry, retain a
 preferred column and preserve Shift anchors. `TEXTAREA-VERTICAL-NAVIGATION.md`
 records 100 new cases, passing 1,027 / thirty-two-file focused suites in both trees,

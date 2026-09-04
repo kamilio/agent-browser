@@ -8,6 +8,13 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation adds grapheme-safe native overflow wrapping and
+anywhere/break-word intrinsic sizing. `OVERFLOW-WRAP.md` records 138 new passing
+cases, 939 isolated / 940 working focused passes with one reproduced baseline
+styles-cache failure, passing static/build checks, 180 unchanged default layouts
+and ten native capture comparisons. Full CSS/shaping, native-suite and original
+runtime/live acceptance gates remain outstanding.
+
 The until-stopped continuation adds native textarea visual-row Up/Down, preferred
 column retention, Shift selection and reentrant pointer-reset protection.
 `TEXTAREA-VERTICAL-NAVIGATION.md` records 100 new cases, passing 1,027 /
