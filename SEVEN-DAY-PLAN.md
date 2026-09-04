@@ -534,6 +534,20 @@ Fallback text, lifecycle/task timing, foreign content, framesets, quirks layout
 and cross-owner runtime observation remain unfinished. No gated probe ran; the
 denied SafeJS probe remains unrun and independent acceptance gates remain open.
 
+September 4 select-keyboard core checkpoint: `SELECT-KEYBOARD-CORE.md` records
+promotion of the pending navigation/typeahead helpers with only the required
+committed-core adapter, label helper and capability export. Keyboard choices
+refresh selectedcontent before notifications; empty labels fall back to text.
+Three initial regressions fail before the fixes; 50 new tests and 223 focused
+checks across seven files pass, with 149 / five files in the isolated focused
+run. Full native validation passes 9,020 / 248 files; the isolated promotion tree
+passes 6,260 / 187 available files. Types, builds and six-file lint pass in both
+trees while preserving unrelated pending work. Continue with coordinate inert
+targeting, picker/rendering and multiple-selection breadth. Fallback text,
+physical/held-key and task timing, foreign content, framesets, quirks layout and
+cross-owner runtime observation remain unfinished. No gated probe ran; the
+denied SafeJS probe remains unrun and independent acceptance gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

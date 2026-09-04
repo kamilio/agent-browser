@@ -21,6 +21,8 @@ import { BrowserEvent, type DocumentEvents } from "./events.js";
 import type { DocumentFocus } from "./focus.js";
 import { BrowserInputEvent } from "./input-events.js";
 import type { DefaultActionIntent, InteractionResult } from "./interactions.js";
+import { selectKeyboardAction } from "./select-keyboard.js";
+import { SelectTypeahead } from "./select-typeahead.js";
 
 interface Key {
 	key: string;
@@ -166,6 +168,7 @@ function nextOffset(value: string, offset: number) {
 }
 
 export class DocumentKeyboard {
+	private readonly typeahead: SelectTypeahead;
 	private caret:
 		| { id: number; value: string; anchor: number; position: number }
 		| undefined;
@@ -182,6 +185,7 @@ export class DocumentKeyboard {
 			allowHidden?: boolean,
 		) => EventAction<InteractionResult>,
 	) {
+		this.typeahead = new SelectTypeahead(tree);
 		tree.onClose(() => {
 			this.caret = undefined;
 		});
@@ -242,7 +246,8 @@ export class DocumentKeyboard {
 		const node = id === null ? undefined : this.tree.get(id);
 		const key = parseKey(
 			input,
-			node?.tagName === "input" && inputType(node) === "range",
+			node?.tagName === "select" ||
+				(node?.tagName === "input" && inputType(node) === "range"),
 		);
 		const target = id ?? this.tree.root;
 		let keyUpSent = false;
@@ -256,9 +261,10 @@ export class DocumentKeyboard {
 			};
 		}
 		try {
+			let keyEvent = new BrowserKeyboardEvent("keydown", key);
 			let permitted = yield {
 				target,
-				event: new BrowserKeyboardEvent("keydown", key),
+				event: keyEvent,
 			};
 			if (
 				permitted &&
@@ -267,11 +273,13 @@ export class DocumentKeyboard {
 				!key.meta &&
 				!key.alt &&
 				(Array.from(key.key).length === 1 || key.key === "Enter")
-			)
+			) {
+				keyEvent = new BrowserKeyboardEvent("keypress", key);
 				permitted = yield {
 					target,
-					event: new BrowserKeyboardEvent("keypress", key),
+					event: keyEvent,
 				};
+			}
 			let canceled = !permitted;
 			let interaction: InteractionResult | undefined;
 			let defaultAction: DefaultActionIntent | undefined;
@@ -290,6 +298,7 @@ export class DocumentKeyboard {
 							yield* rangeKeyboardAction(this.tree, this.focus, id, key.key);
 					} else if (key.control || key.meta || key.alt) {
 						if (
+							node.tagName !== "select" &&
 							!key.alt &&
 							!key.shift &&
 							key.control !== key.meta &&
@@ -300,6 +309,14 @@ export class DocumentKeyboard {
 							caret.anchor = 0;
 							caret.position = caret.value.length;
 						}
+					} else if (node.tagName === "select") {
+						yield* selectKeyboardAction(
+							this.tree,
+							id,
+							key.key,
+							this.typeahead,
+							keyEvent.timeStamp,
+						);
 					} else if (
 						["ArrowLeft", "ArrowRight", "Home", "End"].includes(key.key)
 					) {

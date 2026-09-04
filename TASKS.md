@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Select-keyboard core checkpoint: `SELECT-KEYBOARD-CORE.md` promotes the pending
+navigation/typeahead helpers with a focused committed-keyboard adapter, label
+helper and capability export. User keyboard choices now refresh selectedcontent
+before native input/change notifications without broadening option-setter
+triggers. Empty displayed-label attributes fall back to option text. Three
+initial regressions fail before the fixes; 50 new tests and 223 focused checks
+across seven files pass. The isolated focused run passes 149 / five files. Full
+native validation passes 9,020 / 248 files; the isolated promotion tree passes
+6,260 / 187 available files. Types, builds and six-file lint pass in both trees,
+preserving unrelated pending work and original keyboard/index worktree bytes.
+Next address coordinate implicit-inert targeting and picker/rendering breadth.
+Complete multiple selection, fallback text, physical/held-key and task timing,
+foreign content, framesets, quirks layout and cross-owner runtime observation
+remain open. No gated probe ran; the denied SafeJS probe remains unrun,
+independent acceptance gates remain open and the seven-day goal stays active.
+
+### Previous selectedcontent checkpoint
+
 Selectedcontent checkpoint: `SELECTEDCONTENT.md` adds native child cloning,
 first-candidate/internal-disabled state, connection/removal updates, primary
 promotion and parser option-pop/EOF timing. Explicit select value/index paths

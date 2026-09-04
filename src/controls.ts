@@ -297,6 +297,10 @@ export function optionValue(tree: DocumentTree, id: number) {
 	return option.attributes.value ?? optionText(tree, id);
 }
 
+export function optionLabel(tree: DocumentTree, id: number) {
+	return tree.get(id).attributes.label || optionText(tree, id);
+}
+
 export function controlChecked(tree: DocumentTree, id: number) {
 	const node = tree.get(id);
 	return node.control.checked ?? Object.hasOwn(node.attributes, "checked");
