@@ -1467,7 +1467,7 @@ export class BrowserCommandHost {
 			return result;
 		}
 		if (invocation.command === "type")
-			return actions.keyboard.typeAsync(args[0]);
+			return actions.keyboard.typeAsync(args[0], signal);
 		if (
 			invocation.command === "press" ||
 			invocation.command === "keydown" ||

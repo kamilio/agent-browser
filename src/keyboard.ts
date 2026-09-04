@@ -186,11 +186,22 @@ export class DocumentKeyboard {
 		return runEventAction(this.events, this.typeAction(text));
 	}
 
-	typeAsync(text: string): Promise<KeyboardResult> {
-		return runEventActionAsync(this.events, this.typeAction(text));
+	typeAsync(text: string, signal?: AbortSignal): Promise<KeyboardResult> {
+		if (signal?.aborted)
+			return Promise.reject(
+				new AgentBrowserError("aborted", "Keyboard action aborted"),
+			);
+		return runEventActionAsync(
+			this.events,
+			this.typeAction(text, signal),
+			signal,
+		);
 	}
 
-	private *typeAction(text: string): EventAction<KeyboardResult> {
+	private *typeAction(
+		text: string,
+		signal?: AbortSignal,
+	): EventAction<KeyboardResult> {
 		this.ensureOpen();
 		if (
 			typeof text !== "string" ||
@@ -216,7 +227,7 @@ export class DocumentKeyboard {
 					"Focus changed during typing",
 				);
 			canceled =
-				(yield* this.pressAction(character, true)).canceled || canceled;
+				(yield* this.pressAction(character, true, signal)).canceled || canceled;
 		}
 		return { ...this.result(canceled), characters: characters.length };
 	}

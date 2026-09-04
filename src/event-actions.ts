@@ -1,4 +1,5 @@
 import type { BrowserEvent, DocumentEvents } from "./events.js";
+import { AgentBrowserError } from "./errors.js";
 
 export interface EventDispatch {
 	target: number;
@@ -30,6 +31,8 @@ export async function runEventActionAsync<Result>(
 	action: EventAction<Result>,
 	signal?: AbortSignal,
 ): Promise<Result> {
+	if (signal?.aborted)
+		throw new AgentBrowserError("aborted", "Event action aborted");
 	let step = action.next();
 	while (!step.done) {
 		let allowed: boolean;
@@ -39,6 +42,8 @@ export async function runEventActionAsync<Result>(
 				step.value.event,
 				signal,
 			);
+			if (signal?.aborted)
+				throw new AgentBrowserError("aborted", "Event action aborted");
 		} catch (error) {
 			step = action.throw(error);
 			continue;

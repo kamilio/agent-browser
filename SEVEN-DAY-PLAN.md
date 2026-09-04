@@ -696,6 +696,20 @@ Historical reports and unrelated pending work remain intact. Full pointer/OS
 input, layout and independently authorized runtime/site/socket/TTY gates remain
 open; no gated probe ran. The full browser goal and seven-day scope stay active.
 
+September 4 typing-cancellation checkpoint: `TYPING-CANCELLATION.md` forwards
+typing signals and guards generator startup/resumption against queued aborts.
+Pending typing now releases the named-session queue before its listener prefix
+settles, preserves observed edits/held modifiers and suppresses late defaults.
+The 31-case suite fails 29 cases on isolated HEAD; the intermediate signal-only
+version reproduces four action-boundary failures. Full native runs pass 9,455 /
+261 working-tree files and 8,104 / 233 isolated files; focused runs pass 443 /
+sixteen and 440 / sixteen. Types/builds, strict new-test checks and four-file lint
+pass in both trees. Existing held-key cancellation remains unchanged. Next audit
+guest programmatic activation exposure. Unrelated pending source and historical
+evidence remain intact. Listener-code side effects are not forcibly canceled;
+full event-loop and independently authorized runtime/site/socket/TTY/physical-input
+gates remain open. No gated probe ran, and the full seven-day goal stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

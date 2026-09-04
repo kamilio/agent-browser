@@ -19,6 +19,26 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Typing cancellation checkpoint: `TYPING-CANCELLATION.md` forwards command and
+native typing signals through character/press generators, and checks the shared
+asynchronous action boundary before startup and after awaited event dispatch.
+This stops late edits and false success when an abort microtask runs between
+dispatch and the next generator step. Pending typing no longer holds the command
+queue after abort/deadline; committed characters and independently held modifiers
+remain, while owned key cleanup runs without later input replay. The 31-case
+native suite fails 29 cases on isolated HEAD; a signal-only intermediate baseline
+reproduces four boundary failures. Raw held-key cancellation already passes.
+Full native runs pass 9,455 / 261 working-tree files and 8,104 / 233 isolated files;
+focused runs pass 443 / sixteen and 440 / sixteen. Both trees pass types/builds,
+strict new-test checks and four-file lint. The command-host patch contains only
+signal forwarding, preserving unrelated pending work and historical reports.
+Next audit guest programmatic activation exposure. Cancellation does not forcibly
+stop listener code or roll back its independent side effects. Complete event-loop,
+physical-input and independent runtime/site/socket/TTY gates remain open. No gated
+probe ran; the denied SafeJS probe remains unrun and the seven-day goal is active.
+
+### Previous native input checkpoint
+
 Native input checkpoint: `INPUT-CORE.md` connects coordinate click/hover,
 boundary events, focus/default activation, wheel input, held keyboard modifiers,
 targeted press and state-dependent selectors through shared document owners.

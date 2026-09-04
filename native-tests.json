@@ -16,6 +16,7 @@
   "src/guest-scroll-core.test.ts",
   "src/hit-core.test.ts",
   "src/input-core.test.ts",
+  "src/typing-cancellation.test.ts",
   "src/browser-state.test.ts",
   "src/button-auto.test.ts",
   "src/calendar-fill.test.ts",
