@@ -378,6 +378,18 @@ Continue with in-body scope/implied-end handling, parser form-owner association
 and remaining mode interactions. Modern select, DOM adoption and independent
 runtime/live-site/terminal acceptance remain separate unfinished requirements.
 
+September 4 body-scope checkpoint: `HTML-SCOPE.md` records bounded normal,
+button and list-item scope recovery with implied ends, special-boundary ordinary
+ends and paragraph/list/heading/form/ruby integration. Twelve initial regressions
+fail before their fixes; 70 new tests and 307 focused checks across eight files
+pass. Full native validation passes 8,454 / 236 files; the isolated owned patch
+passes 5,694 / 175 available files. Types, builds and four-file lint pass in both
+trees while preserving pending work. Continue with body/html and after-body
+scaffold transitions, quirks-dependent table/paragraph behavior, parser form-owner
+association and remaining modes. The seven-day goal stays active; independent
+runtime/live-site/terminal gates remain unvalidated and the denied SafeJS probe
+remains unrun.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

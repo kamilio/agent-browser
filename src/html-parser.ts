@@ -6,6 +6,7 @@ import { setHtmlParseInfo } from "./html-info.js";
 import { HtmlTokenizer } from "./html-tokenizer.js";
 import { HtmlFormatting, type HtmlParserNode } from "./html-formatting.js";
 import { HtmlTables } from "./html-tables.js";
+import { HtmlScope } from "./html-scope.js";
 import {
 	doctypeMode,
 	documentMode,
@@ -607,6 +608,18 @@ function* parseHtmlSteps(
 			maxText: Math.min(16_000_000, tree.limits.maxTextCodeUnits * 8),
 		});
 		if (fragment?.tagName === "template") activeFormatting.mark(current());
+		const bodyScope = new HtmlScope({
+			stack: () => stack,
+			reset: () => {
+				activeFormatting.sync();
+				lastText = undefined;
+			},
+			issue,
+			check: checkInput,
+			maxWork: Math.min(1_600_000, tree.limits.maxNodes * 64),
+		});
+		const closeParagraph = () =>
+			bodyScope.close(bodyScope.find("p", "button"), "p");
 		const tables = new HtmlTables({
 			stack: () => stack,
 			template: templateScope,
@@ -854,11 +867,19 @@ function* parseHtmlSteps(
 				}
 				if (name === "form") {
 					if (inTemplate()) {
-						if (!pop("form")) issue("unmatched-end-tag");
-					} else if (form !== undefined) {
-						stack = stack.filter((entry) => entry.id !== form);
+						if (!bodyScope.close(bodyScope.find("form")))
+							issue("unmatched-end-tag");
+					} else {
+						const index = bodyScope.find("form");
+						const node = index > 0 ? stack[index] : undefined;
+						const matches = node?.tree === tree && node.id === form;
 						form = undefined;
-					} else issue("unmatched-end-tag");
+						if (matches) {
+							bodyScope.imply();
+							if (current() !== node) issue("misnested-body-end");
+							stack.splice(index, 1);
+						} else issue("unmatched-end-tag");
+					}
 					continue;
 				}
 				if (name === "br") {
@@ -867,12 +888,38 @@ function* parseHtmlSteps(
 					issue("end-br-as-start");
 					continue;
 				}
-				const index = position(name);
-				if (index < 1) {
-					issue("unmatched-end-tag");
+				if (name === "p") {
+					if (bodyScope.find("p", "button") < 0) {
+						issue("unmatched-end-tag");
+						push("p", {}, true);
+					}
+					closeParagraph();
 					continue;
 				}
-				stack.length = index;
+				const heading = /^h[1-6]$/.test(name);
+				const scoped =
+					blocks.has(name) ||
+					[
+						"li",
+						"dd",
+						"dt",
+						"button",
+						"listing",
+						"summary",
+						"applet",
+						"marquee",
+						"object",
+					].includes(name);
+				const closed = scoped
+					? bodyScope.close(
+							heading
+								? bodyScope.findHeading()
+								: bodyScope.find(name, name === "li" ? "list" : "normal"),
+							["li", "dd", "dt"].includes(name) ? name : undefined,
+							name,
+						)
+					: bodyScope.ordinaryEnd(name);
+				if (!closed) issue("unmatched-end-tag");
 				continue;
 			}
 			if (position("select") >= 0) {
@@ -897,22 +944,14 @@ function* parseHtmlSteps(
 				issue("nested-form-ignored");
 				continue;
 			}
-			if (blocks.has(name)) pop("p");
-			if (name === "li") {
-				for (let index = stack.length - 1; index > 0; index--) {
-					if (["ul", "ol", "menu", "template"].includes(stack[index].tag))
-						break;
-					if (stack[index].tag === "li") {
-						stack.length = index;
-						break;
-					}
-				}
-				pop("p");
-			}
-			if (name === "dd" || name === "dt") {
-				const index = Math.max(position("dd"), position("dt"));
-				if (index > 0) stack.length = index;
-				pop("p");
+			if (
+				blocks.has(name) ||
+				["listing", "summary", "xmp", "plaintext"].includes(name)
+			)
+				closeParagraph();
+			if (name === "li" || name === "dd" || name === "dt") {
+				bodyScope.startList(name);
+				closeParagraph();
 			}
 			if (
 				stack.length > 1 &&
@@ -920,8 +959,20 @@ function* parseHtmlSteps(
 				/^h[1-6]$/.test(current().tag)
 			)
 				stack.pop();
-			if (name === "button" && pop(name))
+			if (name === "button" && bodyScope.close(bodyScope.find(name)))
 				issue("nested-interactive-or-formatting");
+			if (
+				["rb", "rtc", "rp", "rt"].includes(name) &&
+				bodyScope.find("ruby") > 0
+			) {
+				const annotation = name === "rp" || name === "rt";
+				bodyScope.imply(annotation ? "rtc" : undefined);
+				if (
+					current().tag !== "ruby" &&
+					!(annotation && current().tag === "rtc")
+				)
+					issue("misnested-ruby-start");
+			}
 			if (name === "option" && current().tag === "option" && stack.length > 1)
 				stack.pop();
 			if (name === "optgroup") {
@@ -959,6 +1010,12 @@ function* parseHtmlSteps(
 					"noembed",
 					"noframes",
 					"plaintext",
+					"listing",
+					"summary",
+					"rb",
+					"rtc",
+					"rp",
+					"rt",
 				].includes(name) &&
 				!(name === "noscript" && scripting) &&
 				position("select") < 0

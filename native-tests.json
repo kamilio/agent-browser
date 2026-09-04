@@ -95,6 +95,7 @@
   "src/html-fragment.test.ts",
   "src/html-formatting.test.ts",
   "src/html-tables.test.ts",
+  "src/html-scope.test.ts",
   "src/html-insertion.test.ts",
   "src/html-numeric-references.test.ts",
   "src/html-parser.test.ts",

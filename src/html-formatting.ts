@@ -104,6 +104,14 @@ const scopeBoundaries = new Set([
 	"select",
 	"template",
 ]);
+export function isHtmlSpecial(tag: string): boolean {
+	return special.has(tag);
+}
+
+export function isHtmlScopeBoundary(tag: string): boolean {
+	return scopeBoundaries.has(tag);
+}
+
 interface FormattingEntry {
 	node: HtmlParserNode;
 	attributes: Readonly<Record<string, string>>;

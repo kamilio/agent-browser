@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Body-scope recovery checkpoint: `HTML-SCOPE.md` adds bounded normal, button and
+list-item scope searches, implied ends and special-boundary ordinary end handling.
+Paragraphs, headings, lists, buttons, form pointers and ruby recover without
+unscoped ancestor popping; virtual fragment roots and template owners remain
+isolated. Twelve initial regressions fail before the fix; 70 new tests and 307
+focused checks across eight files pass. Full native validation passes 8,454 / 236
+files; the isolated owned patch passes 5,694 / 175 available files. Types, builds
+and four-file lint pass in both trees, excluding pre-existing pending work.
+Next complete body/html and after-body scaffold transitions, quirks-dependent
+table/paragraph handling, parser form-owner association and remaining modes.
+Modern select, DOM adoption and cross-owner observer/runtime breadth remain open.
+No gated probe ran; the denied SafeJS probe remains unrun. Independent acceptance
+gates remain open and the seven-day goal stays active.
+
+### Previous table checkpoint
+
 Table recovery checkpoint: `HTML-TABLES.md` replaces table container heuristics
 with bounded mode dispatch, scoped close/reprocessing and pending character
 batches across parser writes. Inputs/forms and legacy select transitions retain
