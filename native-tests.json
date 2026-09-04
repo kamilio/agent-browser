@@ -9,6 +9,7 @@
   "src/block-width.test.ts",
   "src/borders.test.ts",
   "src/browser-state.test.ts",
+  "src/button-auto.test.ts",
   "src/calendar-fill.test.ts",
   "src/calendar-validity.test.ts",
   "src/capture-artifacts.test.ts",

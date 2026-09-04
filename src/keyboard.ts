@@ -1,3 +1,4 @@
+import { isSubmitButton } from "./button-type.js";
 import { lengthApplies, parseLengthLimit } from "./control-length.js";
 import { rangeKeyboardAction } from "./range-keyboard.js";
 import {
@@ -335,12 +336,7 @@ export class DocumentKeyboard {
 							if (owner !== undefined) {
 								const controls = formControls(this.tree, owner);
 								const submitter = controls.find((control) =>
-									control.tagName === "button"
-										? !["button", "reset"].includes(
-												control.attributes.type?.toLowerCase() ?? "",
-											)
-										: control.tagName === "input" &&
-											["submit", "image"].includes(inputType(control)),
+									isSubmitButton(this.tree, control),
 								);
 								if (submitter && !isControlDisabled(this.tree, submitter.id))
 									interaction = yield* this.activation(

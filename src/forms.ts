@@ -1,3 +1,4 @@
+import { isSubmitButton } from "./button-type.js";
 import {
 	controlChecked,
 	controlValue,
@@ -46,12 +47,6 @@ function crlf(value: string) {
 function quoted(value: string) {
 	return value.replace(/\r/g, "%0D").replace(/\n/g, "%0A").replace(/"/g, "%22");
 }
-function submitButton(node: Readonly<DocumentNode>) {
-	return node.tagName === "button"
-		? !["button", "reset"].includes(node.attributes.type?.toLowerCase() ?? "")
-		: node.tagName === "input" && ["submit", "image"].includes(inputType(node));
-}
-
 export function resolveFormSubmitter(
 	tree: DocumentTree,
 	formReference: string,
@@ -64,7 +59,7 @@ export function resolveFormSubmitter(
 		reference === undefined ? undefined : tree.resolve(reference);
 	if (
 		submitter &&
-		(!submitButton(submitter) ||
+		(!isSubmitButton(tree, submitter) ||
 			formOwner(tree, submitter.id) !== form.id ||
 			isControlDisabled(tree, submitter.id))
 	)
@@ -133,7 +128,7 @@ function entriesFor(
 			(node.tagName === "input" &&
 				["submit", "image", "reset", "button"].includes(type))
 		) {
-			if (!submitButton(node) || node.id !== submitter) continue;
+			if (!isSubmitButton(tree, node) || node.id !== submitter) continue;
 		}
 		if (
 			node.tagName === "input" &&

@@ -1,3 +1,4 @@
+import { buttonType } from "./button-type.js";
 import { textareaDefaultValue } from "./control-defaults.js";
 import {
 	controlValue,
@@ -160,11 +161,10 @@ export function scriptFormProperties(
 			},
 		};
 	if (tag === "button") {
-		properties.type = attribute(
-			"type",
-			["submit", "reset", "button"],
-			"submit",
-		);
+		properties.type = {
+			get: () => buttonType(tree, read()),
+			set: attribute("type").set,
+		};
 		properties.value = attribute("value");
 	}
 	if (tag === "form") {

@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Button Auto checkpoint: `BUTTON-AUTO.md` unifies current computed button types
+and submit-button classification across activation, form entries, submitter
+resolution, implicit submission, constraint validation and native host getters.
+Command-attribute presence and direct select parentage suppress Auto submission;
+explicit submit/reset remain distinct. Current attributes and parentage are read
+after mutations without new caches. Three initial regressions fail before the
+fix; 48 new tests and 277 focused checks across nine files pass. Full native
+validation passes 8,845 / 244 files; the isolated owned patch passes 6,085 / 183
+available files. Types, builds and seven-file lint pass in both trees, preserving
+pending work. Next address select-button implicit inertness and selectedcontent;
+computed button types are not picker, command dispatch or actionability parity.
+Foreign content, framesets, quirks layout and cross-owner observer/runtime
+breadth remain open. No gated probe ran; the denied SafeJS probe remains unrun,
+independent acceptance gates remain open and the seven-day goal stays active.
+
+### Previous modern-select checkpoint
+
 Modern-select checkpoint: `MODERN-SELECT.md` removes legacy select-only filtering
 and select-in-table dispatch, preserving supported rich descendants through the
 shared parser. Scope, implied ends, formatting and the input exception retain

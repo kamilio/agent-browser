@@ -1,3 +1,4 @@
+import { isSubmitButton } from "./button-type.js";
 import { controlValidity } from "./control-validity.js";
 import {
 	formControls,
@@ -40,19 +41,7 @@ export function isValidationCandidate(tree: DocumentTree, id: number): boolean {
 		isInsideDatalist(tree, id)
 	)
 		return false;
-	if (control.tagName === "button") {
-		const type = control.attributes.type?.replace(/[A-Z]/g, (letter) =>
-			letter.toLowerCase(),
-		);
-		if (type === "submit") return true;
-		return (
-			type !== "button" &&
-			type !== "reset" &&
-			!Object.hasOwn(control.attributes, "command") &&
-			!Object.hasOwn(control.attributes, "commandfor") &&
-			(control.parent === null || tree.get(control.parent).tagName !== "select")
-		);
-	}
+	if (control.tagName === "button") return isSubmitButton(tree, control);
 	const type = inputType(control);
 	if (
 		control.tagName === "input" &&

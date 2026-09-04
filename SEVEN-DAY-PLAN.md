@@ -479,6 +479,20 @@ quirks layout and cross-owner observer/runtime breadth remain unfinished. No
 gated probe ran; the denied SafeJS probe remains unrun and independent acceptance
 gates remain open.
 
+September 4 button Auto checkpoint: `BUTTON-AUTO.md` records one current-state
+predicate for button type reflection, activation, explicit/implicit submitter
+selection, successful entries and validation. Auto buttons with command attrs
+or direct select parents no longer masquerade as submit buttons; explicit
+submit/reset retain their behavior. Three initial regressions fail before the
+fix; 48 new tests and 277 focused checks across nine files pass. Full native
+validation passes 8,845 / 244 files; the isolated owned patch passes 6,085 / 183
+available files. Types, builds and seven-file lint pass in both trees while
+preserving pending work. Continue with select-button implicit inertness and
+selectedcontent. Picker behavior, command dispatch, foreign content, framesets,
+quirks layout and cross-owner observer/runtime breadth remain unfinished. No
+gated probe ran; the denied SafeJS probe remains unrun and independent acceptance
+gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

@@ -1,3 +1,4 @@
+import { buttonType } from "./button-type.js";
 import { prepareControlFill } from "./control-fill.js";
 import {
 	controlChecked,
@@ -509,13 +510,7 @@ export class DocumentInteractions {
 		}
 		if (isControlDisabled(this.tree, node.id)) return {};
 		const type =
-			node.tagName === "input"
-				? inputType(node)
-				: ["reset", "button"].includes(
-							node.attributes.type?.toLowerCase() ?? "",
-						)
-					? node.attributes.type.toLowerCase()
-					: "submit";
+			node.tagName === "input" ? inputType(node) : buttonType(this.tree, node);
 		if (type === "file")
 			return { defaultAction: { kind: "picker", reference } };
 		const owner = formOwner(this.tree, node.id);
