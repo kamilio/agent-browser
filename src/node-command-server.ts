@@ -8,6 +8,7 @@ import type { Socket } from "node:net";
 import type { CommandExecutor } from "./command-host.js";
 import { AgentBrowserError } from "./errors.js";
 import { PlaygroundAuth } from "./playground-auth.js";
+import { playgroundDependencyPaths } from "./node-playground-assets.js";
 
 export interface CommandServerOptions {
 	port?: number;
@@ -23,6 +24,7 @@ export interface CommandServerOptions {
 		captureClient?: string;
 		captureArtifacts?: string;
 		errors?: string;
+		terminalTabs?: string;
 	};
 }
 
@@ -135,11 +137,7 @@ export async function listenCommandServer(
 			content: options.playground.styles,
 			type: "text/css; charset=utf-8",
 		});
-		for (const [key, path] of [
-			["captureClient", "/capture-client.js"],
-			["captureArtifacts", "/capture-artifacts.js"],
-			["errors", "/errors.js"],
-		] as const) {
+		for (const [key, path] of playgroundDependencyPaths) {
 			const content = options.playground[key];
 			if (content !== undefined)
 				assets.set(path, { content, type: "text/javascript; charset=utf-8" });

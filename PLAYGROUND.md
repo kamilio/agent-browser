@@ -1,5 +1,11 @@
 # Shared-session playground
 
+September 4 integration: `PLAYGROUND-TAB-CORE.md` records identity-guarded tab
+controls, rejection of mismatched tab/document inspection replies and cleanup of
+unverified page actions after failed refreshes. Module delivery and native UI
+fixtures pass; real-browser, socket and full human/agent arbitration gates remain
+open. Historical checkpoint measurements below are unchanged.
+
 September 3 viewport addition: a confirmed CSS-size bar supports draft width/height,
 presets, swap, restore and explicit Apply. `VIEWPORT-CONTROLS.md` documents the
 read-only `viewport` command and opaque target guard used to prevent wrong-tab or

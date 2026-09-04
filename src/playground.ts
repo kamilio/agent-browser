@@ -1,4 +1,5 @@
 import { capturePng, capturePdf } from "./capture-client.js";
+import { terminalTabs, type TerminalTab } from "./terminal-tabs.js";
 import type { CommandResult } from "./command-host.js";
 import type { DomInspection } from "./dom-inspection.js";
 import type { PageConsoleSnapshot } from "./page-console.js";
@@ -211,6 +212,7 @@ function startPlayground() {
 	let working = false;
 	let refreshing = false;
 	let exists = false;
+	let displayedTabs: readonly TerminalTab[] = [];
 	let hasDocument = false;
 	let selectedSession = "default";
 	let generation = 0;
@@ -270,9 +272,9 @@ function startPlayground() {
 				!exists ||
 				!viewport ||
 				viewportSelection !== `${selectedSession}:${viewport.tabId}`;
-		button("close-tab").disabled = !token || working || !exists;
+		button("close-tab").disabled = !token || working || !displayedTabs.length;
 		(element("tabs") as HTMLSelectElement).disabled =
-			!token || working || !exists;
+			!token || working || !displayedTabs.length;
 		for (const example of document.querySelectorAll<HTMLButtonElement>(
 			"[data-url]",
 		))
@@ -360,6 +362,7 @@ function startPlayground() {
 		working = false;
 		refreshing = false;
 		exists = false;
+		displayedTabs = [];
 		hasDocument = false;
 		consoleEnabled = false;
 		inspectedDocument = null;
@@ -460,13 +463,7 @@ function startPlayground() {
 		try {
 			const listed = (await command(["list"])).data as {
 				name: string;
-				tabs: {
-					index: number;
-					id: string;
-					url: string | null;
-					documentRef: string | null;
-					selected: boolean;
-				}[];
+				tabs: unknown;
 				metrics: unknown;
 			}[];
 			if (generation !== ownGeneration) return;
@@ -474,8 +471,9 @@ function startPlayground() {
 				...listed.map((entry) => new Option(entry.name, entry.name)),
 			);
 			const current = listed.find((entry) => entry.name === selectedSession);
-			exists = !!current?.tabs.length;
-			const selected = current?.tabs.find((tab) => tab.selected);
+			const currentTabs = terminalTabs(current ? current.tabs : []);
+			exists = !!currentTabs.length;
+			const selected = currentTabs.find((tab) => tab.selected);
 			hasDocument = !!selected?.documentRef;
 			const selection = selected ? `${selectedSession}:${selected.id}` : "";
 			if (selection !== viewportSelection) {
@@ -514,6 +512,10 @@ function startPlayground() {
 							: "Viewport inspection failed",
 					);
 				}
+				if (viewport && viewport.key !== selected.key)
+					throw new Error(
+						"Tab changed during inspection; refresh the tab list",
+					);
 			}
 			if (inspectedDocument !== (selected?.documentRef ?? null)) {
 				clearCapture();
@@ -528,8 +530,8 @@ function startPlayground() {
 			}
 			const tabs = element("tabs") as HTMLSelectElement;
 			tabs.replaceChildren(
-				...(current?.tabs.length
-					? current.tabs.map(
+				...(currentTabs.length
+					? currentTabs.map(
 							(tab) =>
 								new Option(
 									`${tab.index} · ${tab.url ?? "Empty tab"}`,
@@ -540,6 +542,7 @@ function startPlayground() {
 						)
 					: [new Option("No open tabs", "")]),
 			);
+			displayedTabs = currentTabs;
 			if (document.activeElement !== input("url"))
 				input("url").value = selected?.url ?? "";
 			displayJson(
@@ -550,6 +553,10 @@ function startPlayground() {
 				const snapshot = (await command(["snapshot", "--observe"]))
 					.data as SemanticSnapshot;
 				if (generation !== ownGeneration) return;
+				if (snapshot.document !== selected?.documentRef)
+					throw new Error(
+						"Document changed during inspection; refresh the tab list",
+					);
 				text("text-output", playgroundText(snapshot));
 				displayJson("snapshot-output", snapshot);
 				text(
@@ -657,7 +664,28 @@ function startPlayground() {
 				`Following ${selectedSession} · ${hasDocument ? "document ready" : "no document"}`,
 			);
 		} catch (error) {
-			if (generation === ownGeneration) failure(error);
+			if (generation === ownGeneration) {
+				displayedTabs = [];
+				hasDocument = false;
+				inspectedDocument = null;
+				domTarget = "";
+				clearCapture();
+				resetViewport();
+				for (const id of ["target", "value", "dom-target", "capture-target"])
+					input(id).value = "";
+				if (document.activeElement !== input("url")) input("url").value = "";
+				for (const id of [
+					"text-output",
+					"snapshot-output",
+					"dom-output",
+					"console-output",
+					"html-output",
+					"network-output",
+				])
+					text(id, "Inspection unavailable; refresh to read the selected tab.");
+				text("document-state", "No verified document");
+				failure(error);
+			}
 		} finally {
 			if (generation === ownGeneration) {
 				refreshing = false;
@@ -669,6 +697,7 @@ function startPlayground() {
 	async function run(argv: string[], onSuccess?: () => void) {
 		if (!token || working) return;
 		invalidateReads();
+		displayedTabs = [];
 		working = true;
 		updateControls();
 		element("error").hidden = true;
@@ -697,6 +726,18 @@ function startPlayground() {
 				await refresh();
 			}
 		}
+	}
+
+	function runTabAction(action: "tab-select" | "tab-close", index?: string) {
+		if (!token || working || !displayedTabs.length) return;
+		const tab = displayedTabs.find((entry) =>
+			action === "tab-close" ? entry.selected : String(entry.index) === index,
+		);
+		if (!tab) {
+			failure(new Error("Refresh the tab list before choosing a tab"));
+			return;
+		}
+		void run([action, String(tab.index), `--expected-key=${tab.key}`]);
 	}
 
 	async function renderCapture(download: boolean) {
@@ -933,6 +974,7 @@ function startPlayground() {
 		}
 		invalidateReads();
 		selectedSession = name;
+		displayedTabs = [];
 		resetViewport();
 		updateControls();
 		void refresh();
@@ -958,7 +1000,7 @@ function startPlayground() {
 		void run([exists ? "tab-new" : "open"]);
 	});
 	button("close-tab").addEventListener("click", () => {
-		void run(["tab-close"]);
+		runTabAction("tab-close");
 	});
 	button("refresh").addEventListener("click", () => {
 		void refresh();
@@ -1054,13 +1096,15 @@ function startPlayground() {
 		})();
 	});
 	element("tabs").addEventListener("change", () => {
-		void run(["tab-select", (element("tabs") as HTMLSelectElement).value]);
+		runTabAction("tab-select", (element("tabs") as HTMLSelectElement).value);
 	});
 	element("action-form").addEventListener("submit", (event) => {
 		event.preventDefault();
+		if (!hasDocument) return;
 		void run(["click", input("target").value]);
 	});
 	button("fill").addEventListener("click", () => {
+		if (!hasDocument) return;
 		void run(["fill", input("target").value, input("value").value]);
 	});
 	element("command-form").addEventListener("submit", (event) => {

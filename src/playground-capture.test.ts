@@ -1,9 +1,10 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrowserCommandHost } from "./command-host.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { playgroundHtml } from "./playground-assets.js";
 import { DocumentQueries } from "./selectors.js";
 import { BrowserSession } from "./session.js";
+import type { TerminalTab } from "./terminal-tabs.js";
 
 class ElementFixture {
 	textContent = "";
@@ -217,6 +218,412 @@ async function fixture(unsupported = false, content = "Hello") {
 async function settle() {
 	for (let index = 0; index < 120; index++) await Promise.resolve();
 }
+
+it("guards displayed tab selection and closes the displayed tab rather than another client's active tab", async () => {
+	const { get, host, calls } = await fixture();
+	await host.execute(["tab-new"]);
+	get("refresh").click();
+	await settle();
+	const tabs = (await host.execute(["tab-list"])).data as TerminalTab[];
+	get("tabs").value = "0";
+	get("tabs").dispatch("change");
+	get("close-tab").click();
+	await settle();
+	expect(calls.filter((argv) => argv[0] === "tab-select")).toEqual([
+		["tab-select", "0", `--expected-key=${tabs[0].key}`],
+	]);
+	expect(calls.some((argv) => argv[0] === "tab-close")).toBe(false);
+	await host.execute(["tab-select", "1"]);
+	get("close-tab").click();
+	await settle();
+	expect(calls.filter((argv) => argv[0] === "tab-close")).toEqual([
+		["tab-close", "0", `--expected-key=${tabs[0].key}`],
+	]);
+	expect((await host.execute(["tab-list"])).data).toMatchObject([
+		{ index: 0, key: tabs[1].key, selected: true, documentRef: null },
+	]);
+	expect(get("tabs").children.map((option) => option.textContent)).toEqual([
+		"0 · Empty tab",
+	]);
+	get("close-tab").click();
+	await settle();
+	expect((await host.execute(["tab-list"])).data).toEqual([]);
+	expect(get("tabs").disabled).toBe(true);
+	expect(get("close-tab").disabled).toBe(true);
+	const count = calls.length;
+	get("tabs").dispatch("change");
+	get("close-tab").click();
+	await settle();
+	expect(calls).toHaveLength(count);
+});
+
+it.each(["tab-select", "tab-close"] as const)(
+	"rejects %s when another client shifts displayed indices, without retrying on a different tab",
+	async (action) => {
+		const { get, host, calls } = await fixture();
+		await host.execute(["tab-new"]);
+		await host.execute(["tab-new"]);
+		await host.execute(["tab-select", "1"]);
+		get("refresh").click();
+		await settle();
+		const tabs = (await host.execute(["tab-list"])).data as TerminalTab[];
+		await host.execute(["tab-close", "0"]);
+		get("tabs").value = "1";
+		if (action === "tab-select") get("tabs").dispatch("change");
+		else get("close-tab").click();
+		await settle();
+		expect(get("error").textContent).toContain(
+			"Tab or session changed before the operation",
+		);
+		expect(calls.filter((argv) => argv[0] === action)).toEqual([
+			[action, "1", `--expected-key=${tabs[1].key}`],
+		]);
+		expect((await host.execute(["tab-list"])).data).toMatchObject([
+			{ index: 0, key: tabs[1].key, selected: true },
+			{ index: 1, key: tabs[2].key, selected: false },
+		]);
+		get("tabs").value = "0";
+		get("tabs").dispatch("change");
+		await settle();
+		expect(calls.filter((argv) => argv[0] === "tab-select").at(-1)).toEqual([
+			"tab-select",
+			"0",
+			`--expected-key=${tabs[1].key}`,
+		]);
+	},
+);
+
+it.each(["tab-select", "tab-close"] as const)(
+	"rejects %s after a named session is recreated with the same tab ID",
+	async (action) => {
+		const { get, host, calls } = await fixture();
+		const original = (
+			(await host.execute(["tab-list"])).data as TerminalTab[]
+		)[0];
+		await host.execute(["close"]);
+		await host.execute(["open", "https://fixture.invalid/recreated"]);
+		get("tabs").value = "0";
+		if (action === "tab-select") get("tabs").dispatch("change");
+		else get("close-tab").click();
+		await settle();
+		expect(calls.filter((argv) => argv[0] === action)).toEqual([
+			[action, "0", `--expected-key=${original.key}`],
+		]);
+		expect(get("error").textContent).toContain("Tab or session changed");
+		const remaining = (await host.execute(["tab-list"])).data as TerminalTab[];
+		expect(remaining).toHaveLength(1);
+		expect(remaining[0].id).toBe(original.id);
+		expect(remaining[0].key).not.toBe(original.key);
+		expect(remaining[0].url).toBe("https://fixture.invalid/recreated");
+	},
+);
+
+it("keeps tab guards attached to displayed options while a newer refresh waits on viewport data", async () => {
+	const { get, host, calls } = await fixture();
+	const originalTab = (
+		(await host.execute(["tab-list"])).data as TerminalTab[]
+	)[0];
+	await host.execute(["close"]);
+	await host.execute(["open", "https://fixture.invalid/recreated"]);
+	const originalFetch = globalThis.fetch;
+	let release: (() => void) | undefined;
+	let held = false;
+	vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+		const response = await originalFetch(input, options);
+		if (!held && JSON.parse(String(options?.body)).argv?.[0] === "viewport") {
+			held = true;
+			await new Promise<void>((resolve) => {
+				release = resolve;
+			});
+		}
+		return response;
+	});
+	get("refresh").click();
+	await settle();
+	expect(release).toBeTypeOf("function");
+	expect(get("tabs").children[0].textContent).toBe(
+		"0 · https://fixture.invalid/",
+	);
+	get("close-tab").click();
+	await settle();
+	expect(calls.filter((argv) => argv[0] === "tab-close")).toEqual([
+		["tab-close", "0", `--expected-key=${originalTab.key}`],
+	]);
+	expect(get("error").textContent).toContain("Tab or session changed");
+	release?.();
+	await settle();
+	expect(get("tabs").children[0].textContent).toBe(
+		"0 · https://fixture.invalid/recreated",
+	);
+	expect((await host.execute(["tab-list"])).data).toHaveLength(1);
+});
+
+it("disables old tab actions immediately during a session switch", async () => {
+	const { get, host, calls } = await fixture();
+	await host.execute(["-s=other", "open", "https://fixture.invalid/other"]);
+	get("session-name").value = "other";
+	get("session-form").dispatch("submit");
+	expect(get("tabs").disabled).toBe(true);
+	expect(get("close-tab").disabled).toBe(true);
+	get("tabs").value = "0";
+	get("tabs").dispatch("change");
+	get("close-tab").click();
+	await settle();
+	expect(
+		calls.some((argv) => argv[0] === "tab-select" || argv[0] === "tab-close"),
+	).toBe(false);
+	const other = (
+		(await host.execute(["-s=other", "tab-list"])).data as TerminalTab[]
+	)[0];
+	get("close-tab").click();
+	await settle();
+	expect(calls.filter((argv) => argv[0] === "tab-close")).toEqual([
+		["tab-close", "0", `--expected-key=${other.key}`],
+	]);
+	expect((await host.execute(["-s=other", "tab-list"])).data).toEqual([]);
+	expect((await host.execute(["tab-list"])).data).toHaveLength(1);
+});
+
+it("does not restore displayed tab guards from a delayed list after disconnect", async () => {
+	const { get, calls } = await fixture();
+	const originalFetch = globalThis.fetch;
+	let release: (() => void) | undefined;
+	vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+		const response = await originalFetch(input, options);
+		if (JSON.parse(String(options?.body)).argv?.[0] === "list") {
+			await new Promise<void>((resolve) => {
+				release = resolve;
+			});
+		}
+		return response;
+	});
+	get("refresh").click();
+	await settle();
+	expect(release).toBeTypeOf("function");
+	get("disconnect").click();
+	await settle();
+	release?.();
+	await settle();
+	expect(get("tabs").disabled).toBe(true);
+	expect(get("close-tab").disabled).toBe(true);
+	expect(get("tabs").children[0].textContent).toBe("No open tabs");
+	get("tabs").value = "0";
+	get("tabs").dispatch("change");
+	get("close-tab").click();
+	await settle();
+	expect(
+		calls.some((argv) => argv[0] === "tab-select" || argv[0] === "tab-close"),
+	).toBe(false);
+});
+
+it.each([undefined, null, "", "x".repeat(257)])(
+	"fails closed on malformed tab key %j and recovers only from a validated refresh",
+	async (key) => {
+		const { get, calls } = await fixture();
+		const originalFetch = globalThis.fetch;
+		const intercepted = vi
+			.spyOn(globalThis, "fetch")
+			.mockImplementation(async (input, options) => {
+				const response = await originalFetch(input, options);
+				if (JSON.parse(String(options?.body)).argv?.[0] !== "list")
+					return response;
+				const payload = await response.json();
+				payload.result.data[0].tabs[0].key = key;
+				return new Response(JSON.stringify(payload), { status: 200 });
+			});
+		get("refresh").click();
+		await settle();
+		expect(get("tabs").disabled).toBe(true);
+		expect(get("close-tab").disabled).toBe(true);
+		get("tabs").value = "0";
+		get("tabs").dispatch("change");
+		get("close-tab").click();
+		await settle();
+		expect(
+			calls.some((argv) => argv[0] === "tab-select" || argv[0] === "tab-close"),
+		).toBe(false);
+		intercepted.mockRestore();
+		get("refresh").click();
+		await settle();
+		expect(get("tabs").disabled).toBe(false);
+		expect(get("close-tab").disabled).toBe(false);
+	},
+);
+
+it("rejects noncanonical or absent option indices without sending a tab mutation", async () => {
+	const { get, calls } = await fixture();
+	for (const value of ["", "00", "-1", "1", "0 --expected-key=fake"]) {
+		get("tabs").value = value;
+		get("tabs").dispatch("change");
+		await settle();
+		expect(get("error").textContent).toContain("Refresh the tab list");
+	}
+	expect(calls.some((argv) => argv[0] === "tab-select")).toBe(false);
+});
+
+describe("playground tab refresh consistency", () => {
+	it.each(["other-tab", "navigation", "closed"])(
+		"discards projections when %s changes the selected document during snapshot retrieval",
+		async (change) => {
+			const { get, host, revoked } = await fixture();
+			get("capture-render").click();
+			await settle();
+			expect(get("render-image").hidden).toBe(false);
+			const originalFetch = globalThis.fetch;
+			let changed = false;
+			const intercepted = vi
+				.spyOn(globalThis, "fetch")
+				.mockImplementation(async (input, options) => {
+					if (
+						!changed &&
+						JSON.parse(String(options?.body)).argv?.[0] === "snapshot"
+					) {
+						changed = true;
+						await host.execute(
+							change === "other-tab"
+								? ["tab-new", "https://fixture.invalid/replacement"]
+								: change === "navigation"
+									? ["open", "https://fixture.invalid/replacement"]
+									: ["tab-close"],
+						);
+					}
+					return originalFetch(input, options);
+				});
+			get("refresh").click();
+			await settle();
+			expect(changed).toBe(true);
+			expect(get("error").hidden).toBe(false);
+			expect(get("tabs").disabled).toBe(true);
+			expect(get("close-tab").disabled).toBe(true);
+			expect(get("capture-render").disabled).toBe(true);
+			expect(get("viewport-apply").disabled).toBe(true);
+			expect(get("text-output").textContent).not.toContain("Hello");
+			expect(get("snapshot-output").textContent).not.toContain('"entries"');
+			expect(get("document-state").textContent).toBe("No verified document");
+			expect(get("render-image").hidden).toBe(true);
+			expect(revoked).toHaveBeenCalledWith("blob:fixture/1");
+			intercepted.mockRestore();
+			get("refresh").click();
+			await settle();
+			expect(get("tabs").disabled).toBe(change === "closed");
+			expect(get("capture-render").disabled).toBe(change === "closed");
+		},
+	);
+
+	it.each(["list", "snapshot"])(
+		"clears old inspection data when %s transport fails",
+		async (command) => {
+			const { get, calls } = await fixture();
+			get("target").value = "old:1";
+			get("value").value = "private draft";
+			const originalFetch = globalThis.fetch;
+			vi.spyOn(globalThis, "fetch").mockImplementation(
+				async (input, options) => {
+					if (JSON.parse(String(options?.body)).argv?.[0] === command)
+						throw new Error("Synthetic inspection failure");
+					return originalFetch(input, options);
+				},
+			);
+			get("refresh").click();
+			await settle();
+			expect(get("error").textContent).toContain(
+				"Synthetic inspection failure",
+			);
+			expect(get("capture-render").disabled).toBe(true);
+			expect(get("text-output").textContent).not.toContain("Hello");
+			expect(get("target").value).toBe("");
+			expect(get("value").value).toBe("");
+			const count = calls.length;
+			get("action-form").dispatch("submit");
+			get("fill").click();
+			get("close-tab").click();
+			await settle();
+			expect(calls).toHaveLength(count);
+		},
+	);
+
+	it.each(["missing-key", "duplicate-key", "no-selection"])(
+		"clears document controls after %s metadata",
+		async (invalid) => {
+			const { get } = await fixture();
+			const originalFetch = globalThis.fetch;
+			vi.spyOn(globalThis, "fetch").mockImplementation(
+				async (input, options) => {
+					const response = await originalFetch(input, options);
+					if (JSON.parse(String(options?.body)).argv?.[0] !== "list")
+						return response;
+					const payload = await response.json();
+					const tabs = payload.result.data[0].tabs;
+					if (invalid === "missing-key") tabs[0].key = undefined;
+					else if (invalid === "no-selection") tabs[0].selected = false;
+					else
+						tabs.push({ ...tabs[0], index: 1, id: "other", selected: false });
+					return new Response(JSON.stringify(payload), { status: 200 });
+				},
+			);
+			get("refresh").click();
+			await settle();
+			expect(get("tabs").disabled).toBe(true);
+			expect(get("capture-render").disabled).toBe(true);
+			expect(get("viewport-apply").disabled).toBe(true);
+			expect(get("document-state").textContent).toBe("No verified document");
+		},
+	);
+
+	it("rejects a recreated blank session before reading its snapshot under old metadata", async () => {
+		const { get, host, calls } = await fixture();
+		const originalFetch = globalThis.fetch;
+		let changed = false;
+		vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+			if (
+				!changed &&
+				JSON.parse(String(options?.body)).argv?.[0] === "viewport"
+			) {
+				changed = true;
+				await host.execute(["close"]);
+				await host.execute(["open"]);
+			}
+			return originalFetch(input, options);
+		});
+		const count = calls.length;
+		get("refresh").click();
+		await settle();
+		expect(get("error").textContent).toContain("Tab changed during inspection");
+		expect(calls.slice(count).some((argv) => argv[0] === "snapshot")).toBe(
+			false,
+		);
+		expect(get("tabs").disabled).toBe(true);
+		expect(get("capture-render").disabled).toBe(true);
+	});
+
+	it("does not clear a newer session when an old snapshot request rejects late", async () => {
+		const { get, host } = await fixture();
+		await host.execute(["-s=other", "open", "https://fixture.invalid/other"]);
+		const originalFetch = globalThis.fetch;
+		let rejectOld: ((error: Error) => void) | undefined;
+		vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+			const request = JSON.parse(String(options?.body));
+			if (request.session === "default" && request.argv?.[0] === "snapshot")
+				await new Promise<void>((_resolve, reject) => {
+					rejectOld = reject;
+				});
+			return originalFetch(input, options);
+		});
+		get("refresh").click();
+		await settle();
+		expect(rejectOld).toBeTypeOf("function");
+		get("session-name").value = "other";
+		get("session-form").dispatch("submit");
+		await settle();
+		expect(get("capture-render").disabled).toBe(false);
+		const snapshot = get("snapshot-output").textContent;
+		rejectOld?.(new Error("Old session request failed"));
+		await settle();
+		expect(get("snapshot-output").textContent).toBe(snapshot);
+		expect(get("capture-render").disabled).toBe(false);
+		expect(get("close-tab").disabled).toBe(false);
+	});
+});
 
 it("loads confirmed viewport dimensions and applies a guarded draft through the real command host", async () => {
 	const { get, host, calls, blobs, revoked } = await fixture();

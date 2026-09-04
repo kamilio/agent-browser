@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Guarded playground integration checkpoint: `PLAYGROUND-TAB-CORE.md` integrates
+displayed-index/key tab actions and the served local metadata module. Refresh now
+rejects mismatched valid viewport keys or snapshot documents and clears stale
+inspectors, drafts, captures and controls on current-generation failures. Late
+errors cannot clear a newer session. Thirteen existing tab UI cases are promoted
+unchanged; ten new consistency cases reproduce nine failures before correction.
+Two new asset cases and expanded delivery coverage verify static module closure
+and mocked HTTP policies without opening sockets. Focused native runs pass
+130 / five working files and 117 / five isolated files; full authorized native
+runs pass 9,557 / 266 and 8,300 / 240. Both trees pass types/builds, strict two-test
+checks and five-file lint. Pending tracing, capture, wheel and targeted-key work
+and historical evidence remain intact. Next integrate remaining keyboard/wheel
+UI controls and their stale-owner/cancellation behavior. Full human/agent
+arbitration, real-browser/socket/site/runtime compatibility and other original
+gates remain open. No gated probe ran; the denied SafeJS probe remains unrun and
+the complete seven-day browser objective remains active.
+
+### Previous guarded terminal integration checkpoint
+
 Guarded terminal integration checkpoint: `TERMINAL-TAB-CORE.md` promotes the
 bounded tab menu and native controller with guarded selection/closure, explicit
 close confirmation, new-tab prompts and blank/empty-session handling. Failed

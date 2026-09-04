@@ -768,6 +768,22 @@ socket, live-site or SafeJS probe ran; human/agent arbitration, runtime/site/dev
 and full compatibility gates remain open. The denied SafeJS probe remains unrun
 and the complete seven-day objective stays active.
 
+September 4 guarded playground integration checkpoint: `PLAYGROUND-TAB-CORE.md`
+integrates displayed tab guards and their served local metadata dependency.
+Refresh rejects inconsistent tab/document replies and clears invalidated page
+inspectors, captures, drafts and controls without letting late failures erase a
+newer session. Thirteen existing UI cases are promoted unchanged; ten new
+consistency cases reproduce nine pre-fix failures, and two new asset cases plus
+expanded delivery checks cover static module closure and mocked HTTP policy.
+Focused native runs pass 130 / five working files and 117 / five isolated files.
+Full authorized native runs pass 9,557 / 266 and 8,300 / 240; types/builds, strict
+two-test checks and five-file lint pass. Pending tracing/capture/input work and
+historical measurements remain intact. Next integrate remaining keyboard/wheel
+UI controls with stale-owner and cancellation evidence. No real browser, socket,
+public site or SafeJS probe ran; full human/agent arbitration, runtime/site/device
+and compatibility gates remain open. The denied SafeJS probe stays unrun and the
+original seven-day browser objective remains active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
