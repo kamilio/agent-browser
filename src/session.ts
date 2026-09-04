@@ -1,4 +1,9 @@
 import { CookieJar, type CookieLimits } from "./cookies.js";
+import {
+	clickTargetAriaDisabled,
+	findClickPoint,
+	findHoverPoint,
+} from "./click-target.js";
 import { imageMediaTypes } from "./image-decoder.js";
 import {
 	type ScriptLoadReport,
@@ -28,6 +33,8 @@ import {
 	documentInteractions,
 } from "./interactions.js";
 import type { KeyboardResult } from "./keyboard.js";
+import { keyboardChord } from "./keyboard-state.js";
+import type { DocumentMouse, MouseButton, MouseResult } from "./mouse.js";
 import {
 	NavigationHistory,
 	type TraversalTarget,
@@ -119,6 +126,10 @@ export interface NavigationOptions {
 	signal?: AbortSignal;
 }
 
+export interface KeyPressOptions extends NavigationOptions {
+	target?: string;
+}
+
 export interface NavigationResult {
 	kind: "document" | "same-document" | "no-content";
 	tabId: string;
@@ -137,8 +148,14 @@ export interface NavigationResult {
 
 export interface SessionClickResult {
 	interaction: InteractionResult;
+	mouse?: MouseResult;
 	navigation?: NavigationResult;
 	form?: Omit<FormRequestResult, "submission">;
+}
+
+export interface SessionHoverResult {
+	reference: string;
+	mouse: MouseResult;
 }
 
 export interface SessionSubmitResult {
@@ -147,6 +164,11 @@ export interface SessionSubmitResult {
 }
 export interface SessionKeyResult {
 	keyboard: KeyboardResult;
+	navigation?: NavigationResult;
+	form?: Omit<FormRequestResult, "submission">;
+}
+export interface SessionMouseResult {
+	mouse: MouseResult;
 	navigation?: NavigationResult;
 	form?: Omit<FormRequestResult, "submission">;
 }
@@ -580,6 +602,200 @@ export class BrowserSession {
 		};
 	}
 
+	async press(
+		id: string,
+		key: string,
+		options: KeyPressOptions = {},
+	): Promise<SessionKeyResult> {
+		return this.keyboardAction(id, "pressAsync", key, options);
+	}
+
+	async keydown(
+		id: string,
+		key: string,
+		options: NavigationOptions = {},
+	): Promise<SessionKeyResult> {
+		return this.keyboardAction(id, "downAsync", key, options);
+	}
+
+	async keyup(
+		id: string,
+		key: string,
+		options: NavigationOptions = {},
+	): Promise<SessionKeyResult> {
+		return this.keyboardAction(id, "upAsync", key, options);
+	}
+
+	private async keyboardAction(
+		id: string,
+		method: "pressAsync" | "downAsync" | "upAsync",
+		key: string,
+		options: KeyPressOptions,
+	): Promise<SessionKeyResult> {
+		this.validateNavigationOptions(options);
+		if (
+			options.target !== undefined &&
+			(method !== "pressAsync" || typeof options.target !== "string")
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Only press accepts a target reference",
+			);
+		if (options.signal?.aborted)
+			throw new AgentBrowserError("aborted", "Keyboard action aborted");
+		const tab = this.tab(id);
+		const previousJob = tab.job;
+		const page = this.page(id);
+		if (options.target !== undefined) {
+			keyboardChord(key);
+			const target = page.document.resolve(options.target).id;
+			await runEventActionAsync(
+				page.interactions.events,
+				page.interactions.focus.focusAction(options.target),
+				options.signal,
+			);
+			if (options.signal?.aborted || tab.job !== previousJob)
+				throw new AgentBrowserError(
+					"aborted",
+					"Keyboard action interrupted during focus",
+				);
+			if (this.page(id) !== page)
+				throw new AgentBrowserError(
+					"stale-reference",
+					"Keyboard focus document was replaced",
+				);
+			if (page.interactions.focus.active() !== target)
+				throw new AgentBrowserError(
+					"not-actionable",
+					"Keyboard target lost focus before key dispatch",
+				);
+		}
+		const keyboard = await page.interactions.keyboard[method](
+			key,
+			options.signal,
+		);
+		if (options.signal?.aborted || tab.job !== previousJob)
+			throw new AgentBrowserError(
+				"aborted",
+				"Keyboard action interrupted during events",
+			);
+		if (this.page(id) !== page)
+			throw new AgentBrowserError(
+				"stale-reference",
+				"Keyboard action document was replaced",
+			);
+		const action = keyboard.defaultAction;
+		if (action?.kind === "submit")
+			return {
+				keyboard,
+				...(await this.requestSubmit(
+					id,
+					action.formRef,
+					{ submitter: action.submitterRef },
+					options,
+				)),
+			};
+		if (
+			action?.kind === "navigate" &&
+			["", "_self", "_top", "_parent"].includes(action.target.toLowerCase())
+		)
+			return {
+				keyboard,
+				navigation: await this.navigate(id, action.url, options),
+			};
+		return { keyboard };
+	}
+
+	async mousemove(
+		id: string,
+		x: number,
+		y: number,
+		options: NavigationOptions = {},
+	): Promise<SessionMouseResult> {
+		return this.mouseAction(
+			id,
+			(mouse) => mouse.moveAsync(x, y, options.signal),
+			options,
+		);
+	}
+	async mousewheel(
+		id: string,
+		deltaX: number,
+		deltaY: number,
+		options: NavigationOptions = {},
+	): Promise<SessionMouseResult> {
+		return this.mouseAction(
+			id,
+			(mouse) => mouse.wheelAsync(deltaX, deltaY, options.signal),
+			options,
+		);
+	}
+	async mousedown(
+		id: string,
+		button: MouseButton = "left",
+		options: NavigationOptions = {},
+	): Promise<SessionMouseResult> {
+		return this.mouseAction(
+			id,
+			(mouse) => mouse.downAsync(button, options.signal),
+			options,
+		);
+	}
+	async mouseup(
+		id: string,
+		button: MouseButton = "left",
+		options: NavigationOptions = {},
+	): Promise<SessionMouseResult> {
+		return this.mouseAction(
+			id,
+			(mouse) => mouse.upAsync(button, options.signal),
+			options,
+		);
+	}
+	private async mouseAction(
+		id: string,
+		invoke: (mouse: DocumentMouse) => Promise<MouseResult>,
+		options: NavigationOptions,
+	): Promise<SessionMouseResult> {
+		this.validateNavigationOptions(options);
+		if (options.signal?.aborted)
+			throw new AgentBrowserError("aborted", "Mouse action aborted");
+		const tab = this.tab(id);
+		const previousJob = tab.job;
+		const page = this.page(id);
+		const mouse = await invoke(page.interactions.mouse);
+		if (options.signal?.aborted || tab.job !== previousJob)
+			throw new AgentBrowserError(
+				"aborted",
+				"Mouse action interrupted during events",
+			);
+		if (this.page(id) !== page)
+			throw new AgentBrowserError(
+				"stale-reference",
+				"Mouse action document was replaced",
+			);
+		const action = mouse.defaultAction;
+		if (action?.kind === "submit")
+			return {
+				mouse,
+				...(await this.requestSubmit(
+					id,
+					action.formRef,
+					{ submitter: action.submitterRef },
+					options,
+				)),
+			};
+		if (
+			action?.kind === "navigate" &&
+			["", "_self", "_top", "_parent"].includes(action.target.toLowerCase())
+		)
+			return {
+				mouse,
+				navigation: await this.navigate(id, action.url, options),
+			};
+		return { mouse };
+	}
+
 	async scrollIntoView(
 		id: string,
 		reference: string,
@@ -616,48 +832,53 @@ export class BrowserSession {
 		return result;
 	}
 
-	async press(
+	async hover(
 		id: string,
-		key: string,
+		reference: string,
 		options: NavigationOptions = {},
-	): Promise<SessionKeyResult> {
+	): Promise<SessionHoverResult> {
 		this.validateNavigationOptions(options);
 		if (options.signal?.aborted)
-			throw new AgentBrowserError("aborted", "Keyboard action aborted");
+			throw new AgentBrowserError("aborted", "Hover aborted");
 		const tab = this.tab(id);
 		const previousJob = tab.job;
 		const page = this.page(id);
-		const keyboard = await page.interactions.keyboard.pressAsync(key);
-		if (options.signal?.aborted || tab.job !== previousJob)
+		if (page.interactions.actionability(reference, false, true).blocked)
 			throw new AgentBrowserError(
-				"aborted",
-				"Keyboard action interrupted during events",
+				"not-actionable",
+				"Hover target is hidden or inert",
 			);
+		await this.scrollIntoView(
+			id,
+			reference,
+			{ block: "nearest", inline: "nearest" },
+			options,
+		);
+		const status = page.interactions.actionability(reference, false, true);
+		if (status.blocked)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Hover target became hidden or inert during scrolling",
+			);
+		const target = findHoverPoint(page.document, status.node.id);
+		if (!target.point)
+			throw new AgentBrowserError(
+				"not-actionable",
+				`Hover target is not actionable: ${target.blocked}`,
+			);
+		const mouse = await page.interactions.mouse.hoverTargetAsync(
+			reference,
+			target.point,
+			options.signal,
+		);
+		if (options.signal?.aborted || tab.job !== previousJob)
+			throw new AgentBrowserError("aborted", "Hover interrupted during events");
 		if (this.page(id) !== page)
 			throw new AgentBrowserError(
 				"stale-reference",
-				"Keyboard action document was replaced",
+				"Hover document was replaced",
 			);
-		const action = keyboard.defaultAction;
-		if (action?.kind === "submit")
-			return {
-				keyboard,
-				...(await this.requestSubmit(
-					id,
-					action.formRef,
-					{ submitter: action.submitterRef },
-					options,
-				)),
-			};
-		if (
-			action?.kind === "navigate" &&
-			["", "_self", "_top", "_parent"].includes(action.target.toLowerCase())
-		)
-			return {
-				keyboard,
-				navigation: await this.navigate(id, action.url, options),
-			};
-		return { keyboard };
+		return { reference, mouse };
 	}
 
 	async click(
@@ -671,7 +892,43 @@ export class BrowserSession {
 		const tab = this.tab(id);
 		const previousJob = tab.job;
 		const page = this.page(id);
-		const interaction = await page.interactions.clickAsync(reference);
+		const status = page.interactions.actionability(reference);
+		if (
+			status.blocked ||
+			clickTargetAriaDisabled(page.document, status.node.id)
+		)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Click target is hidden, inert or disabled",
+			);
+		await this.scrollIntoView(
+			id,
+			reference,
+			{ block: "nearest", inline: "nearest" },
+			options,
+		);
+		if (page.interactions.actionability(reference).blocked)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Click target became hidden, inert or disabled during scrolling",
+			);
+		const target = findClickPoint(page.document, status.node.id);
+		if (!target.point)
+			throw new AgentBrowserError(
+				"not-actionable",
+				`Click target is not actionable: ${target.blocked}${target.interceptingRef ? ` (${target.interceptingRef} intercepts)` : ""}`,
+			);
+		const mouse = await page.interactions.mouse.clickTargetAsync(
+			reference,
+			target.point,
+			options.signal,
+		);
+		if (!mouse.interaction)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Target did not receive a click after pointer events",
+			);
+		const interaction = { ...mouse.interaction, reference };
 		if (options.signal?.aborted || tab.job !== previousJob)
 			throw new AgentBrowserError(
 				"aborted",
@@ -686,6 +943,7 @@ export class BrowserSession {
 		if (action?.kind === "submit")
 			return {
 				interaction,
+				mouse,
 				...(await this.requestSubmit(
 					id,
 					action.formRef,
@@ -699,9 +957,10 @@ export class BrowserSession {
 		)
 			return {
 				interaction,
+				mouse,
 				navigation: await this.navigate(id, action.url, options),
 			};
-		return { interaction };
+		return { interaction, mouse };
 	}
 
 	stop(id: string) {

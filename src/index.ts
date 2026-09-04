@@ -17,6 +17,25 @@ export {
 export { AgentBrowserError, type ErrorCode } from "./errors.js";
 export { rangeKeyboardCapabilities } from "./range-keyboard.js";
 export {
+	findClickPoint,
+	findHoverPoint,
+	hoverActionabilityCapabilities,
+	clickActionabilityCapabilities,
+	type ClickPoint,
+	type ClickTargetResult,
+} from "./click-target.js";
+export { keyboardScrollCapabilities } from "./keyboard-scroll.js";
+export {
+	DocumentMouse,
+	BrowserMouseEvent,
+	BrowserPointerActivationEvent,
+	BrowserWheelEvent,
+	mouseLimits,
+	mouseCapabilities,
+	type MouseButton,
+	type MouseResult,
+} from "./mouse.js";
+export {
 	interactionStyleCapabilities,
 	cssInteractionProperties,
 	type PointerEventsStyle,
@@ -177,6 +196,7 @@ export {
 export { DocumentFocus, BrowserFocusEvent } from "./focus.js";
 export {
 	DocumentKeyboard,
+	keyboardActivationCapabilities,
 	BrowserKeyboardEvent,
 	type KeyboardResult,
 } from "./keyboard.js";
@@ -201,6 +221,9 @@ export {
 	type NavigationOptions,
 	type NavigationResult,
 	type SessionClickResult,
+	type SessionHoverResult,
+	type SessionMouseResult,
+	type KeyPressOptions,
 	type SessionSubmitResult,
 	type SessionKeyResult,
 } from "./session.js";

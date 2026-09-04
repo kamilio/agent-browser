@@ -10,12 +10,12 @@ export const viewportScrollLimits = Object.freeze({
 export const viewportScrollCapabilities = Object.freeze({
 	partial: true,
 	profile: "normal-flow-ltr-root-viewport",
-	command: null,
+	command: "mousewheel",
 	elementScrolling: false,
 	smooth: false,
 	scrollbars: false,
 	programmaticGuestScrolling: true,
-	scrollEvents: "coalesced-programmatic-host-task",
+	scrollEvents: "command-step-and-coalesced-programmatic-host-task",
 	automaticClampEvents: false,
 	...viewportScrollLimits,
 });

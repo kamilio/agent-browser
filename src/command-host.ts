@@ -1,4 +1,12 @@
 import { rangeKeyboardCapabilities } from "./range-keyboard.js";
+import { keyboardActivationCapabilities } from "./keyboard.js";
+import { keyboardScrollCapabilities } from "./keyboard-scroll.js";
+import { selectKeyboardCapabilities } from "./select-keyboard.js";
+import { mouseCapabilities, type MouseButton } from "./mouse.js";
+import {
+	clickActionabilityCapabilities,
+	hoverActionabilityCapabilities,
+} from "./click-target.js";
 import { type WaitingAction, runWhenActionable } from "./action-wait.js";
 import { imageMediaTypes } from "./image-decoder.js";
 import {
@@ -140,9 +148,16 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 	"tab-select": [],
 	"tab-list": [],
 	click: [],
+	hover: [],
 	fill: ["submit"],
 	type: [],
-	press: [],
+	press: ["target"],
+	keydown: [],
+	keyup: [],
+	mousemove: [],
+	mousedown: [],
+	mouseup: [],
+	mousewheel: ["expected-viewport", "expected-document"],
 	resize: ["expected-tab", "expected-viewport"],
 	viewport: [],
 	styles: [],
@@ -416,13 +431,16 @@ export class BrowserCommandHost {
 			rangeKeyboard: rangeKeyboardCapabilities,
 			actionWaiting: {
 				partial: true,
-				commands: ["click", "fill", "select", "check", "uncheck"],
+				commands: ["click", "hover", "fill", "select", "check", "uncheck"],
 				intervalMs: 25,
 				maxPolls: 2048,
 				stableLayout: false,
-				hitTesting: false,
+				hitTesting: true,
+				hitTestCommands: ["click", "hover"],
 				replayActions: false,
 			},
+			clickActionability: clickActionabilityCapabilities,
+			hoverActionability: hoverActionabilityCapabilities,
 			snapshotSearch: {
 				partial: true,
 				streaming: true,
@@ -518,6 +536,23 @@ export class BrowserCommandHost {
 			elementScrolling: elementScrollCapabilities,
 			scrollIntoView: scrollIntoViewCapabilities,
 			hitTesting: hitTestCapabilities,
+			mouse: mouseCapabilities,
+			keyboard: {
+				partial: true,
+				activation: keyboardActivationCapabilities,
+				commands: ["type", "press", "keydown", "keyup"],
+				targetedPress: true,
+				select: selectKeyboardCapabilities,
+				scrolling: keyboardScrollCapabilities,
+				heldKeys: true,
+				repeat: true,
+				maxHeldKeys: 64,
+				stateScope: "document",
+				modifiers: ["Shift", "Control", "Alt", "Meta"],
+				platformShortcuts: false,
+				clipboard: false,
+				ime: false,
+			},
 			elementSizes: {
 				partial: true,
 				properties: elementSizeProperties,
@@ -1376,10 +1411,74 @@ export class BrowserCommandHost {
 			return { changed: true };
 		}
 		const actions = browser.page(tabId).interactions;
+		if (invocation.command === "mousewheel") {
+			if (
+				options["expected-viewport"] !== undefined &&
+				options["expected-viewport"] !== browser.viewport(tabId).key
+			)
+				throw new AgentBrowserError(
+					"stale-reference",
+					"Selected tab or session changed before wheel input",
+				);
+			const document = browser.page(tabId).document;
+			if (
+				options["expected-document"] !== undefined &&
+				options["expected-document"] !== document.reference(document.root)
+			)
+				throw new AgentBrowserError(
+					"stale-reference",
+					"Selected document changed before wheel input",
+				);
+		}
+		if (
+			invocation.command === "mousemove" ||
+			invocation.command === "mousewheel" ||
+			invocation.command === "mousedown" ||
+			invocation.command === "mouseup"
+		) {
+			if (
+				(invocation.command === "mousemove" ||
+					invocation.command === "mousewheel") &&
+				(!args[0].trim() || !args[1].trim())
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Mouse requires finite coordinates",
+				);
+			const result =
+				invocation.command === "mousemove" ||
+				invocation.command === "mousewheel"
+					? await browser[invocation.command](
+							tabId,
+							Number(args[0]),
+							Number(args[1]),
+							{ signal },
+						)
+					: await browser[invocation.command](
+							tabId,
+							(args[0] ?? "left") as MouseButton,
+							{ signal },
+						);
+			if (result.mouse.defaultAction && !result.navigation && !result.form)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Mouse default action is not implemented",
+				);
+			return result;
+		}
 		if (invocation.command === "type")
 			return actions.keyboard.typeAsync(args[0]);
-		if (invocation.command === "press") {
-			const result = await browser.press(tabId, args[0], { signal });
+		if (
+			invocation.command === "press" ||
+			invocation.command === "keydown" ||
+			invocation.command === "keyup"
+		) {
+			const result = await browser[invocation.command](tabId, args[0], {
+				signal,
+				...(options.target === undefined
+					? {}
+					: { target: this.target(browser, tabId, options.target as string) }),
+			});
 			if (result.keyboard.defaultAction && !result.navigation && !result.form)
 				throw new AgentBrowserError(
 					"unsupported",
@@ -1394,7 +1493,7 @@ export class BrowserCommandHost {
 					? { kind: "select", values: [args[1]] }
 					: invocation.command === "check" || invocation.command === "uncheck"
 						? { kind: "checked", checked: invocation.command === "check" }
-						: { kind: "click" };
+						: { kind: invocation.command === "hover" ? "hover" : "click" };
 		return runWhenActionable(
 			() => browser.page(tabId),
 			args[0],
@@ -1425,6 +1524,8 @@ export class BrowserCommandHost {
 					);
 				if (invocation.command === "select")
 					return actions.selectAsync(target, [args[1]]);
+				if (invocation.command === "hover")
+					return browser.hover(tabId, target, { signal });
 				if (invocation.command === "click") {
 					const result = await browser.click(tabId, target, { signal });
 					if (

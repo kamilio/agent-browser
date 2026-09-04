@@ -1,6 +1,8 @@
 import {
 	controlChecked,
+	controlShowsPlaceholder,
 	inputType,
+	labelControl,
 	isControlDisabled,
 	optionSelected,
 	radioGroup,
@@ -53,6 +55,7 @@ type Selector = SelectorPart[];
 interface CompiledSelector {
 	selectors: Selector[];
 	nativeState: boolean;
+	controlValue: boolean;
 }
 
 export type SelectorSpecificity = readonly [number, number, number];
@@ -114,6 +117,9 @@ const simplePseudos = new Set([
 	"target",
 	"focus",
 	"focus-within",
+	"placeholder-shown",
+	"hover",
+	"active",
 	"empty",
 	"first-child",
 	"last-child",
@@ -192,6 +198,7 @@ class SelectorParser {
 	private position = 0;
 	private components = 0;
 	private nativeState = false;
+	private controlValue = false;
 	private readonly source: string;
 	constructor(
 		source: string,
@@ -211,7 +218,11 @@ class SelectorParser {
 	parse(): CompiledSelector {
 		const selectors = this.list(0, false, false);
 		if (this.position !== this.source.length) syntax("unexpected token");
-		return { selectors, nativeState: this.nativeState };
+		return {
+			selectors,
+			nativeState: this.nativeState,
+			controlValue: this.controlValue,
+		};
 	}
 	private list(
 		depth: number,
@@ -323,6 +334,7 @@ class SelectorParser {
 			if (!simplePseudos.has(name)) unsupported(`:${name}`);
 			if (insideHas && name === "scope") unsupported(":scope inside :has");
 			if (statePseudos.has(name)) this.nativeState = true;
+			if (name === "placeholder-shown") this.controlValue = true;
 			return { kind: "pseudo", name };
 		}
 		this.position++;
@@ -533,6 +545,8 @@ interface TreeIndex {
 	documentElement?: number;
 	targetElement?: number;
 	focusElement?: number;
+	hoverElements: ReadonlySet<number>;
+	activeElements: ReadonlySet<number>;
 }
 interface MatchContext {
 	index: TreeIndex;
@@ -551,6 +565,10 @@ export class DocumentQueries {
 	private index: TreeIndex | undefined;
 	private closed = false;
 	private lastWork = 0;
+	private structuralBuilds = 0;
+	private structuralNodesBuilt = 0;
+	private stateRefreshes = 0;
+	private controlValueDependent = false;
 	private unregisterClose: () => unknown;
 
 	constructor(
@@ -656,6 +674,10 @@ export class DocumentQueries {
 			cachedSelectors: this.cache.size,
 			indexedNodes: this.index?.nodes.size ?? 0,
 			lastWork: this.lastWork,
+			structuralBuilds: this.structuralBuilds,
+			structuralNodesBuilt: this.structuralNodesBuilt,
+			stateRefreshes: this.stateRefreshes,
+			controlValueDependent: this.controlValueDependent,
 			closed: this.closed,
 		});
 	}
@@ -663,6 +685,7 @@ export class DocumentQueries {
 		if (this.closed) return;
 		this.closed = true;
 		this.cache.clear();
+		this.controlValueDependent = false;
 		this.index = undefined;
 		this.unregisterClose();
 	}
@@ -706,6 +729,7 @@ export class DocumentQueries {
 		let compiled = this.cache.get(selector);
 		if (!compiled) {
 			compiled = new SelectorParser(selector, this.limits).parse();
+			this.controlValueDependent ||= compiled.controlValue;
 			if (this.cache.size >= this.limits.maxCachedSelectors) {
 				const oldest = this.cache.keys().next().value;
 				if (oldest !== undefined) this.cache.delete(oldest);
@@ -744,6 +768,25 @@ export class DocumentQueries {
 			this.index.revision === this.tree.revision
 		)
 			return this.index;
+		if (this.index?.root === root.id) {
+			const journal = this.tree.changesSince(this.index.revision);
+			if (
+				!journal.reset &&
+				journal.changes.every((change) =>
+					["focus", "pointer", "activation", "target"].includes(change.kind),
+				)
+			) {
+				const previous = this.index;
+				this.index = undefined;
+				this.index = {
+					...previous,
+					revision: this.tree.revision,
+					...this.interactionState(previous.nodes),
+				};
+				this.stateRefreshes++;
+				return this.index;
+			}
+		}
 		this.index = undefined;
 		const nodes = new Map<number, NodeInfo>();
 		const elements: NodeInfo[] = [];
@@ -800,12 +843,45 @@ export class DocumentQueries {
 			revision: this.tree.revision,
 			nodes,
 			elements,
-			targetElement: this.tree.targetElement ?? undefined,
-			focusElement: activeFocus(this.tree) ?? undefined,
+			...this.interactionState(nodes),
 			documentElement:
 				root.kind === "document" ? nodes.get(root.id)?.children[0] : undefined,
 		};
+		this.structuralBuilds++;
+		this.structuralNodesBuilt += nodes.size;
 		return this.index;
+	}
+	private interactionState(nodes: ReadonlyMap<number, NodeInfo>) {
+		return {
+			targetElement: this.tree.targetElement ?? undefined,
+			focusElement: activeFocus(this.tree) ?? undefined,
+			hoverElements: this.pointerMatches(this.tree.pointerHoverElement, nodes),
+			activeElements: new Set([
+				...this.pointerMatches(this.tree.pointerActiveElement, nodes),
+				...this.pointerMatches(this.tree.keyboardActiveElement, nodes),
+			]),
+		};
+	}
+	private pointerMatches(
+		target: number | null,
+		nodes: ReadonlyMap<number, NodeInfo>,
+	) {
+		const matches = new Set<number>();
+		const controls: number[] = [];
+		let current = target === null ? undefined : nodes.get(target)?.node;
+		while (current) {
+			if (current.kind === "element") {
+				matches.add(current.id);
+				if (current.tagName === "label") {
+					const control = labelControl(this.tree, current.id);
+					if (control !== undefined) controls.push(control);
+				}
+			}
+			current =
+				current.parent === null ? undefined : nodes.get(current.parent)?.node;
+		}
+		for (const control of controls) matches.add(control);
+		return matches;
 	}
 	private matchList(
 		id: number,
@@ -895,6 +971,12 @@ export class DocumentQueries {
 				return node.id === context.index.targetElement;
 			case "focus":
 				return node.id === context.index.focusElement;
+			case "placeholder-shown":
+				return controlShowsPlaceholder(this.tree, node.id);
+			case "hover":
+				return context.index.hoverElements.has(node.id);
+			case "active":
+				return context.index.activeElements.has(node.id);
 			case "focus-within": {
 				const focused =
 					context.index.focusElement === undefined

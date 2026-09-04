@@ -23,15 +23,26 @@ import { BrowserInputEvent } from "./input-events.js";
 import type { DefaultActionIntent, InteractionResult } from "./interactions.js";
 import { selectKeyboardAction } from "./select-keyboard.js";
 import { SelectTypeahead } from "./select-typeahead.js";
+import { keyboardScrollAction } from "./keyboard-scroll.js";
+import {
+	keyboardChord,
+	KeyboardState,
+	type KeyboardKey,
+} from "./keyboard-state.js";
 
-interface Key {
-	key: string;
-	code: string;
-	shift: boolean;
-	control: boolean;
-	meta: boolean;
-	alt?: boolean;
-}
+type Key = KeyboardKey;
+
+export const keyboardActivationCapabilities = Object.freeze({
+	partial: true,
+	space: "held-until-release",
+	enter: "during-direct-activation",
+	canceledDownDoesNotArm: true,
+	focusChangeCancels: true,
+	mouseStateIndependent: true,
+	abortableDispatch: true,
+	implicitSubmitterActive: false,
+	customRoleDefaults: false,
+});
 export interface KeyboardResult {
 	reference: string;
 	canceled: boolean;
@@ -41,13 +52,18 @@ export interface KeyboardResult {
 	selection?: { start: number; end: number };
 	interaction?: InteractionResult;
 	defaultAction?: DefaultActionIntent;
+	scroll?: Readonly<{ x: number; y: number }>;
 }
 
 export class BrowserKeyboardEvent extends BrowserEvent {
 	readonly #key: Key;
-	constructor(type: "keydown" | "keypress" | "keyup", key: Key) {
+	constructor(
+		type: "keydown" | "keypress" | "keyup",
+		key: Omit<Key, "alt" | "repeat" | "location"> &
+			Partial<Pick<Key, "alt" | "repeat" | "location">>,
+	) {
 		super(type, { bubbles: true, cancelable: true, composed: true });
-		this.#key = { ...key };
+		this.#key = { alt: false, repeat: false, location: 0, ...key };
 	}
 	get key() {
 		return this.#key.key;
@@ -65,90 +81,17 @@ export class BrowserKeyboardEvent extends BrowserEvent {
 		return this.#key.meta;
 	}
 	get altKey() {
-		return this.#key.alt ?? false;
+		return this.#key.alt;
 	}
 	get repeat() {
-		return false;
+		return this.#key.repeat;
 	}
 	get isComposing() {
 		return false;
 	}
 	get location() {
-		return 0;
+		return this.#key.location;
 	}
-}
-
-function parseKey(input: string, range = false): Key {
-	if (typeof input !== "string" || !input || input.length > 128)
-		throw new AgentBrowserError("invalid-input", "Invalid keyboard key");
-	const parts = input === "+" ? [input] : input.split("+");
-	const name = parts.pop() as string;
-	const modifiers = new Set(parts.map((part) => part.toLowerCase()));
-	if (
-		modifiers.size !== parts.length ||
-		[...modifiers].some(
-			(part) =>
-				!["shift", "control", "meta", ...(range ? ["alt"] : [])].includes(part),
-		)
-	)
-		throw new AgentBrowserError(
-			"unsupported",
-			"Keyboard modifier combination is not implemented",
-		);
-	const names: Record<string, string> = {
-		enter: "Enter",
-		tab: "Tab",
-		backspace: "Backspace",
-		delete: "Delete",
-		arrowleft: "ArrowLeft",
-		arrowright: "ArrowRight",
-		...(range
-			? {
-					arrowup: "ArrowUp",
-					arrowdown: "ArrowDown",
-					pageup: "PageUp",
-					pagedown: "PageDown",
-				}
-			: {}),
-		home: "Home",
-		end: "End",
-		escape: "Escape",
-		space: " ",
-	};
-	let key = Object.hasOwn(names, name.toLowerCase())
-		? names[name.toLowerCase()]
-		: name;
-	if (
-		!Object.values(names).includes(key) &&
-		(Array.from(key).length !== 1 || /\p{Cc}|\p{Cs}/u.test(key))
-	)
-		throw new AgentBrowserError(
-			"unsupported",
-			"Keyboard key is not implemented",
-		);
-	const control = modifiers.has("control");
-	const meta = modifiers.has("meta");
-	const shift = modifiers.has("shift");
-	if (
-		!range &&
-		(control || meta) &&
-		(control === meta || shift || key.toLowerCase() !== "a")
-	)
-		throw new AgentBrowserError(
-			"unsupported",
-			"Only Control+A or Meta+A editing shortcuts are implemented",
-		);
-	if (shift && /^[a-z]$/.test(key)) key = key.toUpperCase();
-	const code = /^[a-z]$/i.test(key)
-		? `Key${key.toUpperCase()}`
-		: /^\d$/.test(key)
-			? `Digit${key}`
-			: key === " "
-				? "Space"
-				: Object.values(names).includes(key)
-					? key
-					: "";
-	return { key, code, shift, control, meta, alt: modifiers.has("alt") };
 }
 
 function previousOffset(value: string, offset: number) {
@@ -168,7 +111,13 @@ function nextOffset(value: string, offset: number) {
 }
 
 export class DocumentKeyboard {
+	private readonly keys = new KeyboardState();
 	private readonly typeahead: SelectTypeahead;
+	private spaceTarget: number | undefined;
+	private focusGeneration = 0;
+	private closed = false;
+	private readonly unregisterChange: () => void;
+	private readonly unregisterClose: () => void;
 	private caret:
 		| { id: number; value: string; anchor: number; position: number }
 		| undefined;
@@ -186,14 +135,51 @@ export class DocumentKeyboard {
 		) => EventAction<InteractionResult>,
 	) {
 		this.typeahead = new SelectTypeahead(tree);
-		tree.onClose(() => {
-			this.caret = undefined;
+		this.unregisterChange = tree.onChange((change) => {
+			if (change.kind === "focus") {
+				this.focusGeneration++;
+				this.clearSpaceActivation();
+			} else if (
+				this.spaceTarget !== undefined &&
+				["remove", "insert", "attribute", "style"].includes(change.kind)
+			) {
+				if (this.focus.active() !== this.spaceTarget)
+					this.clearSpaceActivation();
+			}
 		});
+		this.unregisterClose = tree.onClose(() => this.close());
+	}
+
+	close() {
+		if (this.closed) return;
+		this.closed = true;
+		this.caret = undefined;
+		this.keys.clear();
+		this.typeahead.reset();
+		this.clearSpaceActivation();
+		this.unregisterChange();
+		this.unregisterClose();
+	}
+
+	private clearSpaceActivation() {
+		this.spaceTarget = undefined;
+		this.tree.clearKeyboardActivation();
+	}
+
+	private ensureOpen() {
+		if (this.closed || this.events.metrics().closed)
+			throw new AgentBrowserError("closed", "Document keyboard is closed");
+		this.tree.get(this.tree.root);
 	}
 
 	collapseEnd(id: number) {
 		const value = controlValue(this.tree, id);
 		this.caret = { id, value, anchor: value.length, position: value.length };
+	}
+
+	modifiers() {
+		this.tree.get(this.tree.root);
+		return this.keys.modifiers();
 	}
 
 	type(text: string): KeyboardResult {
@@ -205,6 +191,7 @@ export class DocumentKeyboard {
 	}
 
 	private *typeAction(text: string): EventAction<KeyboardResult> {
+		this.ensureOpen();
 		if (
 			typeof text !== "string" ||
 			text.length > 16_384 ||
@@ -228,7 +215,8 @@ export class DocumentKeyboard {
 					"not-actionable",
 					"Focus changed during typing",
 				);
-			canceled = (yield* this.pressAction(character)).canceled || canceled;
+			canceled =
+				(yield* this.pressAction(character, true)).canceled || canceled;
 		}
 		return { ...this.result(canceled), characters: characters.length };
 	}
@@ -237,198 +225,306 @@ export class DocumentKeyboard {
 		return runEventAction(this.events, this.pressAction(input));
 	}
 
-	pressAsync(input: string): Promise<KeyboardResult> {
-		return runEventActionAsync(this.events, this.pressAction(input));
+	pressAsync(input: string, signal?: AbortSignal): Promise<KeyboardResult> {
+		if (signal?.aborted)
+			return Promise.reject(
+				new AgentBrowserError("aborted", "Keyboard action aborted"),
+			);
+		return runEventActionAsync(
+			this.events,
+			this.pressAction(input, false, signal),
+			signal,
+		);
 	}
 
-	private *pressAction(input: string): EventAction<KeyboardResult> {
-		const id = this.focus.active();
-		const node = id === null ? undefined : this.tree.get(id);
-		const key = parseKey(
-			input,
-			node?.tagName === "select" ||
-				(node?.tagName === "input" && inputType(node) === "range"),
-		);
-		const target = id ?? this.tree.root;
-		let keyUpSent = false;
-		const keyboard = this;
-		function* keyUp(): EventAction<boolean> {
-			if (keyUpSent || keyboard.events.metrics().closed) return true;
-			keyUpSent = true;
-			return yield {
-				target: keyboard.focus.active() ?? keyboard.tree.root,
-				event: new BrowserKeyboardEvent("keyup", key),
-			};
-		}
+	down(input: string): KeyboardResult {
+		return runEventAction(this.events, this.downAction(input));
+	}
+
+	downAsync(input: string, signal?: AbortSignal): Promise<KeyboardResult> {
+		if (signal?.aborted)
+			return Promise.reject(
+				new AgentBrowserError("aborted", "Keyboard action aborted"),
+			);
+		return runEventActionAsync(this.events, this.downAction(input), signal);
+	}
+
+	up(input: string): KeyboardResult {
+		return runEventAction(this.events, this.upAction(input));
+	}
+
+	upAsync(input: string, signal?: AbortSignal): Promise<KeyboardResult> {
+		if (signal?.aborted)
+			return Promise.reject(
+				new AgentBrowserError("aborted", "Keyboard action aborted"),
+			);
+		return runEventActionAsync(this.events, this.upAction(input), signal);
+	}
+
+	private *pressAction(
+		input: string,
+		literal = false,
+		signal?: AbortSignal,
+	): EventAction<KeyboardResult> {
+		this.ensureOpen();
+		const parts = keyboardChord(input);
+		const released: string[] = [];
 		try {
-			let keyEvent = new BrowserKeyboardEvent("keydown", key);
-			let permitted = yield {
+			for (const modifier of parts.slice(0, -1)) {
+				if (this.keys.has(modifier)) continue;
+				released.unshift(modifier);
+				yield* this.downAction(modifier);
+			}
+			const inputKey = parts[parts.length - 1];
+			released.unshift(inputKey);
+			const down = yield* this.downAction(inputKey, literal);
+			released.shift();
+			const up = yield* this.upAction(inputKey, literal);
+			return {
+				...down,
+				...this.result(down.canceled || up.canceled),
+				...(up.interaction ? { interaction: up.interaction } : {}),
+				...(up.defaultAction ? { defaultAction: up.defaultAction } : {}),
+			};
+		} finally {
+			try {
+				for (const key of released) {
+					if (this.events.metrics().closed || signal?.aborted) break;
+					yield* this.upAction(key, literal);
+				}
+			} finally {
+				for (const inputKey of released) {
+					const key = this.keys.up(inputKey, literal);
+					if (key.code === "Space") this.clearSpaceActivation();
+				}
+			}
+		}
+	}
+
+	private *upAction(
+		input: string,
+		literal = false,
+	): EventAction<KeyboardResult> {
+		this.ensureOpen();
+		const key = this.keys.up(input, literal);
+		const spaceTarget = key.code === "Space" ? this.spaceTarget : undefined;
+		if (key.code === "Space") this.clearSpaceActivation();
+		const focusGeneration = this.focusGeneration;
+		const permitted = yield {
+			target: this.focus.active() ?? this.tree.root,
+			event: new BrowserKeyboardEvent("keyup", key),
+		};
+		let interaction: InteractionResult | undefined;
+		if (
+			permitted &&
+			spaceTarget !== undefined &&
+			focusGeneration === this.focusGeneration &&
+			this.focus.active() === spaceTarget
+		)
+			interaction = yield* this.activation(this.tree.reference(spaceTarget));
+		return {
+			...this.result(!permitted),
+			key: key.key,
+			...(interaction ? { interaction } : {}),
+			...(interaction?.defaultAction
+				? { defaultAction: interaction.defaultAction }
+				: {}),
+		};
+	}
+
+	private *downAction(
+		input: string,
+		literal = false,
+	): EventAction<KeyboardResult> {
+		this.ensureOpen();
+		const key = this.keys.down(input, literal);
+		const shortcut = !literal && (key.control || key.meta || key.alt);
+		const id = this.focus.active();
+		const target = id ?? this.tree.root;
+		if (key.code === "Space" && !key.repeat) this.clearSpaceActivation();
+		const focusGeneration = this.focusGeneration;
+		let keyEvent = new BrowserKeyboardEvent("keydown", key);
+		let permitted = yield {
+			target,
+			event: keyEvent,
+		};
+		if (
+			permitted &&
+			this.focus.active() === id &&
+			!shortcut &&
+			(Array.from(key.key).length === 1 || key.key === "Enter")
+		) {
+			keyEvent = new BrowserKeyboardEvent("keypress", key);
+			permitted = yield {
 				target,
 				event: keyEvent,
 			};
-			if (
-				permitted &&
-				this.focus.active() === id &&
-				!key.control &&
-				!key.meta &&
-				!key.alt &&
-				(Array.from(key.key).length === 1 || key.key === "Enter")
-			) {
-				keyEvent = new BrowserKeyboardEvent("keypress", key);
-				permitted = yield {
-					target,
-					event: keyEvent,
-				};
-			}
-			let canceled = !permitted;
-			let interaction: InteractionResult | undefined;
-			let defaultAction: DefaultActionIntent | undefined;
-			if (permitted && this.focus.active() === id) {
-				if (key.key === "Tab") yield* this.focus.moveAction(key.shift);
-				else if (key.key !== "Escape" && id !== null) {
-					const node = this.tree.get(id);
-					const editable =
-						node.tagName === "textarea" ||
-						(node.tagName === "input" &&
-							["text", "search", "url", "tel", "password"].includes(
-								inputType(node),
-							));
-					if (node.tagName === "input" && inputType(node) === "range") {
-						if (!key.control && !key.meta && !key.alt)
-							yield* rangeKeyboardAction(this.tree, this.focus, id, key.key);
-					} else if (key.control || key.meta || key.alt) {
-						if (
-							node.tagName !== "select" &&
-							!key.alt &&
-							!key.shift &&
-							key.control !== key.meta &&
-							key.key.toLowerCase() === "a"
-						) {
-							this.editable(false);
-							const caret = this.selection(id);
-							caret.anchor = 0;
-							caret.position = caret.value.length;
-						}
-					} else if (node.tagName === "select") {
-						yield* selectKeyboardAction(
-							this.tree,
-							id,
-							key.key,
-							this.typeahead,
-							keyEvent.timeStamp,
-						);
-					} else if (
-						["ArrowLeft", "ArrowRight", "Home", "End"].includes(key.key)
-					) {
-						this.editable(false);
-						this.moveCaret(id, key);
-					} else if (key.key === "Enter") {
-						if (node.tagName === "textarea")
-							canceled = !(yield* this.edit(id, "\n", "insertLineBreak", null));
-						else if (node.tagName === "button" || node.tagName === "a")
-							interaction = yield* this.activation(this.tree.reference(id));
-						else if (
-							node.tagName === "input" &&
-							["submit", "image", "reset", "button"].includes(inputType(node))
-						)
-							interaction = yield* this.activation(this.tree.reference(id));
-						else if (
-							node.tagName === "input" &&
-							[
-								"text",
-								"search",
-								"url",
-								"tel",
-								"email",
-								"password",
-								"number",
-								"date",
-								"month",
-								"week",
-								"time",
-								"datetime-local",
-							].includes(inputType(node))
-						) {
-							const owner = formOwner(this.tree, id);
-							if (owner !== undefined) {
-								const controls = formControls(this.tree, owner);
-								const submitter = controls.find((control) =>
-									isSubmitButton(this.tree, control),
-								);
-								if (submitter && !isControlDisabled(this.tree, submitter.id))
-									interaction = yield* this.activation(
-										this.tree.reference(submitter.id),
-										true,
-									);
-								else if (
-									!submitter &&
-									controls.filter(
-										(control) =>
-											control.tagName === "input" &&
-											[
-												"text",
-												"search",
-												"url",
-												"tel",
-												"email",
-												"password",
-												"number",
-												"date",
-												"month",
-												"week",
-												"time",
-												"datetime-local",
-											].includes(inputType(control)),
-									).length <= 1
-								)
-									defaultAction = {
-										kind: "submit",
-										formRef: this.tree.reference(owner),
-									};
-							}
-						}
-					} else if (
-						key.key === " " &&
-						!editable &&
-						(node.tagName === "button" ||
-							(node.tagName === "input" &&
-								["checkbox", "radio", "button", "submit", "reset"].includes(
-									inputType(node),
-								)))
-					) {
-						const permittedUp = yield* keyUp();
-						if (permittedUp && this.focus.active() === id)
-							interaction = yield* this.activation(this.tree.reference(id));
-						return {
-							...this.result(!permittedUp),
-							key: key.key,
-							interaction,
-							defaultAction: interaction?.defaultAction,
-						};
-					} else if (key.key === "Backspace" || key.key === "Delete") {
-						canceled = !(yield* this.edit(
-							id,
-							"",
-							key.key === "Backspace"
-								? "deleteContentBackward"
-								: "deleteContentForward",
-							null,
+		}
+		let canceled = !permitted;
+		let interaction: InteractionResult | undefined;
+		let defaultAction: DefaultActionIntent | undefined;
+		let scroll: Readonly<{ x: number; y: number }> | undefined;
+		if (permitted && this.focus.active() === id) {
+			if (!literal) scroll = yield* keyboardScrollAction(this.tree, id, key);
+			if (key.key === "Tab" && !shortcut)
+				yield* this.focus.moveAction(key.shift);
+			else if (scroll === undefined && key.key !== "Escape" && id !== null) {
+				const node = this.tree.get(id);
+				const editable =
+					node.tagName === "textarea" ||
+					(node.tagName === "input" &&
+						["text", "search", "url", "tel", "password"].includes(
+							inputType(node),
 						));
-					} else if (Array.from(key.key).length === 1)
-						canceled = !(yield* this.edit(id, key.key, "insertText", key.key));
-				}
+				if (node.tagName === "input" && inputType(node) === "range") {
+					if (!key.control && !key.meta && !key.alt)
+						yield* rangeKeyboardAction(this.tree, this.focus, id, key.key);
+				} else if (shortcut) {
+					if (
+						editable &&
+						!key.alt &&
+						!key.shift &&
+						key.control !== key.meta &&
+						key.key.toLowerCase() === "a"
+					) {
+						const caret = this.selection(id);
+						caret.anchor = 0;
+						caret.position = caret.value.length;
+					}
+				} else if (node.tagName === "select") {
+					yield* selectKeyboardAction(
+						this.tree,
+						id,
+						key.key,
+						this.typeahead,
+						keyEvent.timeStamp,
+					);
+				} else if (
+					editable &&
+					["ArrowLeft", "ArrowRight", "Home", "End"].includes(key.key)
+				) {
+					this.editable(false);
+					this.moveCaret(id, key);
+				} else if (key.key === "Enter") {
+					if (node.tagName === "textarea")
+						canceled = !(yield* this.edit(id, "\n", "insertLineBreak", null));
+					else if (node.tagName === "button" || node.tagName === "a")
+						interaction = yield* this.formalActivation(this.tree.reference(id));
+					else if (
+						node.tagName === "input" &&
+						["submit", "image", "reset", "button"].includes(inputType(node))
+					)
+						interaction = yield* this.formalActivation(this.tree.reference(id));
+					else if (
+						node.tagName === "input" &&
+						[
+							"text",
+							"search",
+							"url",
+							"tel",
+							"email",
+							"password",
+							"number",
+							"date",
+							"month",
+							"week",
+							"time",
+							"datetime-local",
+						].includes(inputType(node))
+					) {
+						const owner = formOwner(this.tree, id);
+						if (owner !== undefined) {
+							const controls = formControls(this.tree, owner);
+							const submitter = controls.find((control) =>
+								isSubmitButton(this.tree, control),
+							);
+							if (submitter && !isControlDisabled(this.tree, submitter.id))
+								interaction = yield* this.activation(
+									this.tree.reference(submitter.id),
+									true,
+								);
+							else if (
+								!submitter &&
+								controls.filter(
+									(control) =>
+										control.tagName === "input" &&
+										[
+											"text",
+											"search",
+											"url",
+											"tel",
+											"email",
+											"password",
+											"number",
+											"date",
+											"month",
+											"week",
+											"time",
+											"datetime-local",
+										].includes(inputType(control)),
+								).length <= 1
+							)
+								defaultAction = {
+									kind: "submit",
+									formRef: this.tree.reference(owner),
+								};
+						}
+					}
+				} else if (
+					key.key === " " &&
+					!editable &&
+					(node.tagName === "button" ||
+						(node.tagName === "input" &&
+							[
+								"checkbox",
+								"radio",
+								"button",
+								"submit",
+								"reset",
+								"image",
+							].includes(inputType(node))))
+				) {
+					if (focusGeneration === this.focusGeneration) {
+						this.spaceTarget = id;
+						this.tree.setKeyboardActivation(id);
+					}
+				} else if (key.key === "Backspace" || key.key === "Delete") {
+					canceled = !(yield* this.edit(
+						id,
+						"",
+						key.key === "Backspace"
+							? "deleteContentBackward"
+							: "deleteContentForward",
+						null,
+					));
+				} else if (Array.from(key.key).length === 1)
+					canceled = !(yield* this.edit(id, key.key, "insertText", key.key));
 			}
-			yield* keyUp();
-			return {
-				...this.result(canceled),
-				key: key.key,
-				...(interaction ? { interaction } : {}),
-				...(interaction?.defaultAction || defaultAction
-					? { defaultAction: interaction?.defaultAction ?? defaultAction }
-					: {}),
-			};
+		}
+		return {
+			...this.result(canceled),
+			key: key.key,
+			...(scroll ? { scroll } : {}),
+			...(interaction ? { interaction } : {}),
+			...(interaction?.defaultAction || defaultAction
+				? { defaultAction: interaction?.defaultAction ?? defaultAction }
+				: {}),
+		};
+	}
+
+	private *formalActivation(reference: string): EventAction<InteractionResult> {
+		this.tree.setKeyboardActivation(this.tree.resolve(reference).id);
+		try {
+			return yield* this.activation(reference);
 		} finally {
-			yield* keyUp();
+			if (
+				!this.closed &&
+				!this.events.metrics().closed &&
+				this.spaceTarget !== undefined &&
+				this.focus.active() === this.spaceTarget
+			)
+				this.tree.setKeyboardActivation(this.spaceTarget);
+			else this.tree.clearKeyboardActivation();
 		}
 	}
 

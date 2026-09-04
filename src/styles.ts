@@ -561,7 +561,7 @@ export class DocumentStyles {
 	private refresh() {
 		this.ensureOpen();
 		if (this.revision === this.tree.revision) return;
-		if (this.revision >= 0) {
+		if (this.revision >= 0 && !this.queries.metrics().controlValueDependent) {
 			const journal = this.tree.changesSince(this.revision);
 			if (
 				!journal.reset &&

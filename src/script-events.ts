@@ -13,6 +13,11 @@ import { BrowserSubmitEvent } from "./form-actions.js";
 import { BrowserHashChangeEvent, BrowserPopStateEvent } from "./history.js";
 import { BrowserInputEvent } from "./input-events.js";
 import { BrowserKeyboardEvent } from "./keyboard.js";
+import {
+	BrowserMouseEvent,
+	BrowserPointerActivationEvent,
+	BrowserWheelEvent,
+} from "./mouse.js";
 import type {
 	ScriptHostObjectDefinition,
 	ScriptHostObjectFactory,
@@ -381,7 +386,71 @@ export class ScriptEventBindings {
 						return event[name];
 					},
 				};
-		if (event instanceof BrowserFocusEvent)
+		if (event instanceof BrowserWheelEvent)
+			for (const name of ["deltaX", "deltaY", "deltaZ", "deltaMode"] as const)
+				properties[name] = {
+					get: () => {
+						this.ensureOpen();
+						return event[name];
+					},
+				};
+		if (event instanceof BrowserMouseEvent) {
+			for (const name of [
+				"clientX",
+				"clientY",
+				"x",
+				"y",
+				"pageX",
+				"pageY",
+				"button",
+				"buttons",
+				"detail",
+				"movementX",
+				"movementY",
+				"shiftKey",
+				"ctrlKey",
+				"altKey",
+				"metaKey",
+			] as const)
+				properties[name] = {
+					get: () => {
+						this.ensureOpen();
+						return event[name];
+					},
+				};
+			properties.view = {
+				get: () => {
+					this.ensureOpen();
+					return this.options.window ?? null;
+				},
+			};
+		}
+		if (event instanceof BrowserPointerActivationEvent)
+			for (const name of [
+				"pointerId",
+				"pointerType",
+				"width",
+				"height",
+				"pressure",
+				"tangentialPressure",
+				"tiltX",
+				"tiltY",
+				"twist",
+				"altitudeAngle",
+				"azimuthAngle",
+				"isPrimary",
+				"persistentDeviceId",
+			] as const)
+				properties[name] = {
+					get: () => {
+						this.ensureOpen();
+						return event[name];
+					},
+				};
+		if (
+			event instanceof BrowserFocusEvent ||
+			event instanceof BrowserMouseEvent
+		)
 			properties.relatedTarget = {
 				get: () => {
 					this.ensureOpen();
@@ -403,6 +472,11 @@ export class ScriptEventBindings {
 				return event.composedPath().map((target) => this.target(target));
 			},
 		};
+		if (event instanceof BrowserMouseEvent)
+			methods.getModifierState = (key) => {
+				this.ensureOpen();
+				return event.getModifierState(String(key));
+			};
 		for (const name of [
 			"preventDefault",
 			"stopPropagation",

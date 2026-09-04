@@ -129,12 +129,11 @@ it("allows readonly focus and selection but never editing", () => {
 });
 
 it.each([
-	"Alt+A",
-	"Control+C",
-	"Control+Meta+A",
-	"Shift+Control+A",
-	"ArrowDown",
-	"F12",
+	"Control+",
+	"Control+Control+A",
+	"a+b",
+	"ControlOrMeta+A",
+	"F13",
 	"__proto__",
 ])("rejects unsupported %s before events", (key) => {
 	const { keyboard, events, field } = fixture();

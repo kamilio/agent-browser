@@ -222,12 +222,7 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 export function labelControl(tree: DocumentTree, id: number) {
 	if (tree.get(id).tagName !== "label")
 		throw new AgentBrowserError("invalid-input", "Expected a label element");
-	if (!tree.isConnected(id))
-		throw new AgentBrowserError(
-			"unsupported",
-			"Detached label associations are not implemented",
-		);
-	return indexFor(tree).labels.get(id);
+	return indexFor(tree, id).labels.get(id);
 }
 
 export function formOwner(tree: DocumentTree, id: number) {
@@ -435,6 +430,20 @@ export function setControlChecked(
 			"Checked state must be boolean",
 		);
 	const node = editable(tree, reference);
+	setControlCheckedState(tree, node.id, checked);
+}
+
+export function setControlCheckedState(
+	tree: DocumentTree,
+	id: number,
+	checked: boolean,
+) {
+	if (typeof checked !== "boolean")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Checked state must be boolean",
+		);
+	const node = tree.get(id);
 	if (
 		node.tagName !== "input" ||
 		!["checkbox", "radio"].includes(inputType(node))

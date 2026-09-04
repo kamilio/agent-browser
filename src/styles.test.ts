@@ -223,7 +223,7 @@ it("honors document order, disabled sheets and changed links without stale CSS",
 
 it("reports unsupported selectors, values, imports and properties without executing them", () => {
 	const { styles, id } = fixture(
-		'@import url("/never.css"); #target{filter:blur(1px);display:var(--unknown)} #target:hover{display:none} @supports(display:grid){#target{display:none}}',
+		'@import url("/never.css"); #target{filter:blur(1px);display:var(--unknown)} #target:focus-visible{display:none} @supports(display:grid){#target{display:none}}',
 	);
 	expect(styles.get(id("#target")).visible).toBe(true);
 	expect(styles.get(id("#target")).display).toBe("inline");

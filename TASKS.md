@@ -19,6 +19,28 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native input checkpoint: `INPUT-CORE.md` connects coordinate click/hover,
+boundary events, focus/default activation, wheel input, held keyboard modifiers,
+targeted press and state-dependent selectors through shared document owners.
+Raw mouse methods and session adapters now interrupt pending event prefixes;
+pre-aborted calls do not mutate input, while observed button state is not rolled
+back. All 23 new tests fail on HEAD plus original helpers; the integrated
+signal-omission baseline reproduces 12 failures. Twenty unchanged suites and
+eight input-specific tracked test updates are integrated, including native label
+coverage explicitly added to the test list. Full native runs pass 9,424 / 260
+working-tree files and 8,073 / 232 isolated files; focused runs pass 940 / 29 and
+937 / 29. Both trees pass types/builds, strict 29-test checks and 47-file lint.
+The first isolated full run exposed two obsolete unpainted command fixtures;
+their existing input updates fix them without weakening actionability. Pending
+tracing/tab/adjacent-DOM work and historical evidence remain separate. Next audit
+held-key/type cancellation and guest programmatic activation exposure; native
+programmatic activation is not a guest HTMLElement.click claim. Full pointer
+dispatch/capture, physical input, nested scrolling and independent runtime/site/
+socket/TTY gates remain open. No gated probe ran, the denied SafeJS probe remains
+unrun, and the full seven-day browser goal stays active.
+
+### Previous hit/pointer-policy command checkpoint
+
 Hit/pointer-policy command checkpoint: `HIT-CORE.md` connects shared hit regions,
 inherited pointer-events CSS/CSSOM and guest node results to `hit-test`, plus
 session/command `scroll-into-view`. Geometry reports its real scroll origin.

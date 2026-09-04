@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { withDocumentWrite } from "./document-write.js";
 import { DocumentTree } from "./document.js";
 import { parseHtmlDocument } from "./html-parser.js";
+import { DocumentQueries } from "./selectors.js";
 import { ScriptDom, type ScriptHostObjectDefinition } from "./script-dom.js";
 import { renderSnapshot, snapshotDocument } from "./snapshot.js";
 
@@ -9,6 +10,8 @@ interface TestNode {
 	write(...values: readonly unknown[]): void;
 	writeln(...values: readonly unknown[]): void;
 	body: TestNode;
+	activeElement: TestNode | null;
+	documentElement: TestNode | null;
 	ownerDocument: TestNode | null;
 	parentNode: TestNode | null;
 	firstChild: TestNode | null;
@@ -61,6 +64,55 @@ function required(node: TestNode | null): TestNode {
 	if (!node) throw new Error("Missing fixture node");
 	return node;
 }
+
+it("exposes live native focus identity through readonly document.activeElement", () => {
+	const { tree, document } = fixture();
+	try {
+		const input = required(document.getElementById("input"));
+		expect(document.activeElement).toBe(document.body);
+		const target = new DocumentQueries(tree).querySelector("#input");
+		if (target === null) throw Error("Missing input");
+		tree.setActiveElement(target);
+		expect(document.activeElement).toBe(input);
+		expect(() => {
+			document.activeElement = document.body;
+		}).toThrow();
+		expect("activeElement" in input).toBe(false);
+		tree.setActiveElement(null);
+		expect(document.activeElement).toBe(document.body);
+	} finally {
+		tree.close();
+	}
+});
+
+it("falls back to body and document element after focused nodes are removed", () => {
+	const { tree, document } = fixture();
+	try {
+		const target = new DocumentQueries(tree).querySelector("#input");
+		if (target === null) throw Error("Missing input");
+		tree.setActiveElement(target);
+		tree.remove(target);
+		expect(document.activeElement).toBe(document.body);
+		const body = new DocumentQueries(tree).querySelector("body");
+		if (body === null) throw Error("Missing body");
+		tree.remove(body);
+		expect(document.activeElement).toBe(document.documentElement);
+	} finally {
+		tree.close();
+	}
+});
+
+it("returns null without a document element and revokes activeElement on closure", () => {
+	const tree = new DocumentTree("https://fixture.invalid/focus");
+	const dom = new ScriptDom(tree, factory);
+	const document = dom.document as TestNode;
+	expect(document.activeElement).toBeNull();
+	dom.close();
+	expect(() => document.activeElement).toThrow(
+		expect.objectContaining({ code: "closed" }),
+	);
+	tree.close();
+});
 
 it("binds innerHTML parsing and live HTML serialization to the owned document", () => {
 	const { tree, document } = fixture();

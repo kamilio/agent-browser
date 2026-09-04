@@ -1,6 +1,8 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { BrowserCommandHost, type CommandHostOptions } from "./command-host.js";
 import { DocumentTree } from "./document.js";
+import { controlValue } from "./controls.js";
+import { BrowserKeyboardEvent } from "./keyboard.js";
 import type { DomInspection } from "./dom-inspection.js";
 import { controlledEventListener } from "./events.js";
 import type { DocumentExtraction } from "./extraction.js";
@@ -48,6 +50,8 @@ function fixture(
 				}),
 				loadDocument: (response, context) => {
 					const tree = new DocumentTree(response.url, context.limits);
+					const body = tree.createElement("body");
+					tree.append(tree.root, body);
 					for (const [tag, attributes] of [
 						["input", { id: "name", "aria-label": "Name" }],
 						[
@@ -55,8 +59,11 @@ function fixture(
 							{ id: "enabled", type: "checkbox", "aria-label": "Enabled" },
 						],
 						["a", { id: "next", href: "/next" }],
-					] as [string, Record<string, string>][])
-						tree.append(tree.root, tree.createElement(tag, attributes));
+					] as [string, Record<string, string>][]) {
+						const element = tree.createElement(tag, attributes);
+						tree.append(body, element);
+						if (tag === "a") tree.append(element, tree.createText("Next"));
+					}
 					return tree;
 				},
 			});
@@ -72,6 +79,117 @@ function fixture(
 afterEach(() => {
 	for (const host of hosts.splice(0)) host.close();
 	vi.useRealTimers();
+});
+
+it("runs held-key commands through controlled event phases and reports partial capabilities", async () => {
+	const { host, sessions } = fixture();
+	expect((await host.execute(["capabilities"])).data).toMatchObject({
+		keyboard: {
+			commands: ["type", "press", "keydown", "keyup"],
+			heldKeys: true,
+			stateScope: "document",
+			maxHeldKeys: 64,
+			partial: true,
+		},
+	});
+	await host.execute(["open", url]);
+	await host.execute(["fill", "#name", "abcd"]);
+	const browser = [...sessions.values()][0];
+	const page = browser.page(browser.tabs()[0].id);
+	const input = page.interactions.focus.active() as number;
+	const events: string[] = [];
+	page.interactions.events.addEventListener(
+		input,
+		"keydown",
+		controlledEventListener(async (_target, event) => {
+			await Promise.resolve();
+			if (!(event instanceof BrowserKeyboardEvent))
+				throw new Error("Expected keyboard event");
+			events.push(event.key);
+			if (event.key === "x") event.preventDefault();
+		}),
+	);
+	await host.execute(["keydown", "Shift"]);
+	await host.execute(["press", "ArrowLeft"]);
+	await host.execute(["press", "ArrowLeft"]);
+	await host.execute(["keyup", "Shift"]);
+	await host.execute(["press", "Backspace"]);
+	expect(controlValue(page.document, input)).toBe("ab");
+	expect((await host.execute(["keydown", "x"])).data).toMatchObject({
+		keyboard: { key: "x", canceled: true },
+	});
+	await host.execute(["keyup", "x"]);
+	expect(controlValue(page.document, input)).toBe("ab");
+	expect(events).toEqual(["Shift", "ArrowLeft", "ArrowLeft", "Backspace", "x"]);
+});
+
+it("routes Enter down navigation through the session and clears held keys on replacement", async () => {
+	const { host, sessions, requests } = fixture();
+	await host.execute(["open", url]);
+	const browser = [...sessions.values()][0];
+	const tab = browser.tabs()[0].id;
+	const oldPage = browser.page(tab);
+	const link = [...oldPage.document.walk()].find(
+		({ node }) => node.attributes.id === "next",
+	)?.node;
+	if (!link) throw new Error("Missing link");
+	oldPage.interactions.focus.focus(oldPage.document.reference(link.id));
+	await host.execute(["keydown", "Shift"]);
+	const result = await host.execute(["keydown", "Enter"]);
+	expect(result.data).toHaveProperty("navigation");
+	expect(requests.at(-1)?.url).toBe(`${url}next`);
+	expect(() => oldPage.interactions.keyboard.up("Shift")).toThrow("closed");
+	await host.execute(["fill", "#name", ""]);
+	await host.execute(["press", "a"]);
+	const page = browser.page(tab);
+	expect(
+		controlValue(page.document, page.interactions.focus.active() as number),
+	).toBe("a");
+});
+
+it("keeps held state isolated across tabs and rejects pre-aborted key actions", async () => {
+	const { host, sessions } = fixture();
+	await host.execute(["open", url]);
+	const browser = [...sessions.values()][0];
+	const first = browser.tabs()[0].id;
+	await browser.keydown(first, "Shift");
+	const second = browser.createTab().id;
+	await browser.navigate(second, url);
+	const page = browser.page(second);
+	const input = [...page.document.walk()].find(
+		({ node }) => node.attributes.id === "name",
+	)?.node;
+	if (!input) throw new Error("Missing input");
+	page.interactions.focus.focus(page.document.reference(input.id));
+	await expect(
+		browser.keydown(second, "Shift", { signal: AbortSignal.abort() }),
+	).rejects.toMatchObject({ code: "aborted" });
+	await browser.press(second, "a");
+	expect(controlValue(page.document, input.id)).toBe("a");
+	await browser.keyup(first, "Shift");
+});
+
+it("submits a focused button through the session only when Space is released", async () => {
+	const { host, sessions, requests } = fixture();
+	await host.execute(["open", url]);
+	const browser = [...sessions.values()][0];
+	const page = browser.page(browser.tabs()[0].id);
+	const form = page.document.createElement("form", { action: "/submit" });
+	const button = page.document.createElement("button", {
+		name: "go",
+		value: "yes",
+	});
+	page.document.append(page.document.root, form);
+	page.document.append(form, button);
+	page.interactions.focus.focus(page.document.reference(button));
+	expect((await host.execute(["keydown", "Space"])).data).not.toHaveProperty(
+		"navigation",
+	);
+	expect(requests).toHaveLength(1);
+	const result = await host.execute(["keyup", "Space"]);
+	expect(result.data).toHaveProperty("form");
+	expect(result.data).toHaveProperty("navigation");
+	expect(requests.at(-1)?.url).toBe(`${url}submit?go=yes`);
 });
 
 it("advertises bounded node relations without claiming full Node or namespace support", async () => {
@@ -246,7 +364,7 @@ it("waits for a native target to become enabled and dispatches only once", async
 		id: "late",
 		disabled: "",
 	});
-	page.document.append(page.document.root, node);
+	page.document.append(page.document.get(page.document.root).children[0], node);
 	const listener = vi.fn();
 	page.interactions.events.addEventListener(node, "click", listener);
 	const waiting = host.execute(["click", "#late", "--timeout=100"]);
@@ -267,7 +385,8 @@ it("times out pre-action waiting without blocking the queue or dispatching later
 	const browser = sessions.get("default");
 	if (!browser) throw new Error("Missing fixture session");
 	const page = browser.page(browser.tabs()[0].id);
-	const node = page.document.get(page.document.root).children[0];
+	const node = page.queries.querySelector("#name");
+	if (node === null) throw new Error("Missing fixture input");
 	page.document.setAttribute(node, "readonly", "");
 	const listener = vi.fn();
 	page.interactions.events.addEventListener(node, "input", listener);

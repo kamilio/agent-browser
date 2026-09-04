@@ -40,11 +40,13 @@ function documentFixture(
 	context: DocumentLoaderContext,
 ) {
 	const tree = new DocumentTree(result.url, context.limits);
+	const body = tree.createElement("body");
+	tree.append(tree.root, body);
 	const heading = tree.createElement("h1", { id: "target" });
-	tree.append(tree.root, heading);
+	tree.append(body, heading);
 	tree.append(heading, tree.createText("Constructed fixture"));
 	const link = tree.createElement("a", { href: "/next" });
-	tree.append(tree.root, link);
+	tree.append(body, link);
 	tree.append(link, tree.createText("Next"));
 	return tree;
 }
@@ -1028,7 +1030,7 @@ it("sanitizes unexpected loader failures and executes native form submit navigat
 	const tree = working.page(active.id).document;
 	const form = tree.createElement("form");
 	const submitter = tree.createElement("button");
-	tree.append(tree.root, form);
+	tree.append(tree.get(tree.root).children[0], form);
 	tree.append(form, submitter);
 	const result = await working.click(active.id, tree.reference(submitter));
 	expect(result.interaction.defaultAction?.kind).toBe("submit");
@@ -1041,7 +1043,8 @@ it("keeps new-window/named-target links pending without silently navigating the 
 	await session.navigate(tab.id, initialUrl);
 	const tree = session.page(tab.id).document;
 	const link = tree.createElement("a", { href: "/new", target: "_blank" });
-	tree.append(tree.root, link);
+	tree.append(tree.get(tree.root).children[0], link);
+	tree.append(link, tree.createText("New window"));
 	expect(
 		(await session.click(tab.id, tree.reference(link))).navigation,
 	).toBeUndefined();

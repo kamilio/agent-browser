@@ -6,6 +6,7 @@ import { BrowserHashChangeEvent, BrowserPopStateEvent } from "./history.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { BrowserInputEvent } from "./input-events.js";
 import { BrowserKeyboardEvent } from "./keyboard.js";
+import { BrowserPointerActivationEvent } from "./mouse.js";
 import { ScriptDom, type ScriptHostObjectDefinition } from "./script-dom.js";
 import type { ScriptCallbackRuntime } from "./script-events.js";
 
@@ -70,6 +71,63 @@ interface GuestEvent {
 	preventDefault(): void;
 	stopImmediatePropagation(): void;
 }
+
+it("exposes readonly pointer activation fields with event identity and owner revocation", async () => {
+	const { tree, events, target, button, dom } = fixture();
+	const observed: Record<string, unknown>[] = [];
+	button.addEventListener("click", (event: Record<string, unknown>) =>
+		observed.push(event),
+	);
+	button.addEventListener("click", (event: Record<string, unknown>) =>
+		observed.push(event),
+	);
+	await events.dispatchEventAsync(
+		target,
+		new BrowserPointerActivationEvent(
+			"click",
+			{
+				x: 0,
+				y: 0,
+				button: 0,
+				buttons: 0,
+				shift: false,
+				control: false,
+				alt: false,
+				meta: false,
+			},
+			"non-pointer",
+		),
+	);
+	expect(observed).toHaveLength(2);
+	expect(observed[0]).toBe(observed[1]);
+	expect(observed[0]).toMatchObject({
+		pointerId: -1,
+		pointerType: "",
+		width: 1,
+		height: 1,
+		pressure: 0,
+		tangentialPressure: 0,
+		tiltX: 0,
+		tiltY: 0,
+		twist: 0,
+		altitudeAngle: Math.PI / 2,
+		azimuthAngle: 0,
+		isPrimary: false,
+		persistentDeviceId: 0,
+		view: null,
+	});
+	for (const property of [
+		"pointerId",
+		"pointerType",
+		"width",
+		"pressure",
+		"isPrimary",
+	])
+		expect(Reflect.set(observed[0], property, 99)).toBe(false);
+	expect(dom.eventBindings?.drainErrors()).toEqual([]);
+	tree.close();
+	expect(() => observed[0].pointerId).toThrow("closed");
+});
 
 function fixture() {
 	const tree = parseHtmlDocument(

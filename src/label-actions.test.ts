@@ -178,12 +178,12 @@ it("can forward to a reset button and propagate its completed reset result", () 
 	expect(controlValue(tree, control)).toBe("default");
 });
 
-it("rejects detached label queries and does not forward after a click listener removes the label", () => {
+it("scopes detached label queries to their root and does not forward removed agent targets", () => {
 	const { tree, actions, events, add } = fixture();
 	const label = add("label", { for: "control" });
 	const control = add("input", { id: "control", type: "checkbox" });
 	events.addEventListener(label, "click", () => tree.remove(label));
 	expect(actions.click(tree.reference(label)).defaultAction).toBeUndefined();
 	expect(controlChecked(tree, control)).toBe(false);
-	expect(() => labelControl(tree, label)).toThrow("Detached");
+	expect(labelControl(tree, label)).toBeUndefined();
 });

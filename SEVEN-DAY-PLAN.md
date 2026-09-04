@@ -680,6 +680,22 @@ remain separate. Next integrate mouse activation and click/hover command routing
 No gated probe ran; full layout, physical input, live sites, sockets and approved
 runtime acceptance remain open. The original seven-day browser scope stays active.
 
+September 4 native input checkpoint: `INPUT-CORE.md` connects mouse targeting,
+click/hover actionability, held modifiers, keyboard activation/scrolling and live
+state selectors to session commands. Raw mouse cancellation now reaches pending
+event prefixes and rejects pre-aborted input before mutation. All 23 new tests
+fail on HEAD plus helpers; 12 reproduce the signal-only bug. Twenty unchanged
+suites and eight input-specific tracked updates are integrated. Full native
+validation passes 9,424 / 260 working-tree files and 8,073 / 232 isolated files;
+focused runs pass 940 / 29 and 937 / 29. Types/builds, strict 29-test checks and
+47-file lint pass in both trees. The explicit native list now includes the
+previously omitted native label suite. Painted-target command fixtures resolve
+the first isolated run's two failures without bypassing hit actionability.
+Next audit held-key/type cancellation and guest programmatic activation exposure.
+Historical reports and unrelated pending work remain intact. Full pointer/OS
+input, layout and independently authorized runtime/site/socket/TTY gates remain
+open; no gated probe ran. The full browser goal and seven-day scope stay active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

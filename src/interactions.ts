@@ -11,6 +11,7 @@ import {
 	radioGroup,
 	selectControlValues,
 	setControlChecked,
+	setControlCheckedState,
 } from "./controls.js";
 import { documentBaseTarget, documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
@@ -26,6 +27,11 @@ import { DocumentForms, type FormResetResult } from "./form-actions.js";
 import { BrowserInputEvent } from "./input-events.js";
 import { isInertRoot } from "./inertness.js";
 import { DocumentKeyboard } from "./keyboard.js";
+import {
+	DocumentMouse,
+	BrowserPointerActivationEvent,
+	type BrowserMouseEvent,
+} from "./mouse.js";
 import { parseNetworkUrl } from "./network.js";
 
 export { BrowserInputEvent } from "./input-events.js";
@@ -66,7 +72,9 @@ export class DocumentInteractions {
 	readonly forms: DocumentForms;
 	readonly focus: DocumentFocus;
 	readonly keyboard: DocumentKeyboard;
+	readonly mouse: DocumentMouse;
 	private clicking = new Set<number>();
+	private programmaticClicking = new Set<number>();
 
 	constructor(
 		private readonly tree: DocumentTree,
@@ -84,6 +92,36 @@ export class DocumentInteractions {
 			(reference, allowHidden) =>
 				this.activateAction(reference, !!allowHidden, false),
 		);
+		this.mouse = new DocumentMouse(
+			tree,
+			this.events,
+			() => this.keyboard.modifiers(),
+			(reference) => this.mouseFocusAction(reference),
+			(reference) => !this.actionability(reference).blocked,
+			(reference, event) => this.activateAction(reference, false, false, event),
+		);
+	}
+
+	private *mouseFocusAction(reference: string): EventAction<void> {
+		const { node, blocked } = this.actionability(reference);
+		if (blocked) return;
+		let target: number | null = node.id;
+		while (target !== null && focusTabIndex(this.tree, target) === null)
+			target = this.tree.get(target).parent;
+		yield* this.focus.focusAction(
+			target === null ? null : this.tree.reference(target),
+		);
+		if (target !== null && this.focus.active() === target) {
+			const candidate = this.tree.get(target);
+			if (
+				candidate.tagName === "textarea" ||
+				(candidate.tagName === "input" &&
+					["text", "search", "url", "tel", "password"].includes(
+						inputType(candidate),
+					))
+			)
+				this.keyboard.collapseEnd(target);
+		}
 	}
 
 	fill(reference: string, value: string): InteractionResult {
@@ -225,6 +263,46 @@ export class DocumentInteractions {
 		);
 	}
 
+	programmaticClick(id: number): InteractionResult {
+		return runEventAction(this.events, this.programmaticClickAction(id));
+	}
+
+	programmaticClickAsync(id: number): Promise<InteractionResult> {
+		return runEventActionAsync(this.events, this.programmaticClickAction(id));
+	}
+
+	private *programmaticClickAction(id: number): EventAction<InteractionResult> {
+		return yield* this.activateAction(
+			id,
+			true,
+			false,
+			new BrowserPointerActivationEvent(
+				"click",
+				{
+					x: 0,
+					y: 0,
+					button: 0,
+					buttons: 0,
+					detail: 0,
+					...this.keyboard.modifiers(),
+				},
+				"non-pointer",
+			),
+		);
+	}
+
+	private programmaticTarget(id: number) {
+		if (this.events.metrics().closed)
+			throw new AgentBrowserError("closed", "Document interactions are closed");
+		const target = this.tree.get(id);
+		if (target.kind !== "element")
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Expected an element target",
+			);
+		return target;
+	}
+
 	private activate(
 		reference: string,
 		allowHidden: boolean,
@@ -237,13 +315,23 @@ export class DocumentInteractions {
 	}
 
 	private *activateAction(
-		reference: string,
+		targetReference: string | number,
 		allowHidden: boolean,
 		moveFocus = true,
+		mouseEvent?: BrowserMouseEvent,
 	): EventAction<InteractionResult> {
-		const target = this.actionable(reference, allowHidden);
-		if (this.clicking.has(target.id)) return this.result(reference, false);
-		this.clicking.add(target.id);
+		const programmatic = typeof targetReference === "number";
+		const target = programmatic
+			? this.programmaticTarget(targetReference)
+			: this.actionable(targetReference, allowHidden);
+		const reference = this.tree.reference(target.id);
+		const clicking = programmatic ? this.programmaticClicking : this.clicking;
+		if (
+			(programmatic && isControlDisabled(this.tree, target.id)) ||
+			clicking.has(target.id)
+		)
+			return this.result(reference, false);
+		clicking.add(target.id);
 		let rollback: (() => void) | undefined;
 		try {
 			const candidate = this.activationTarget(target.id) ?? target;
@@ -262,7 +350,7 @@ export class DocumentInteractions {
 				)
 					this.keyboard.collapseEnd(candidate.id);
 			}
-			this.actionable(reference, allowHidden);
+			if (!programmatic) this.actionable(reference, allowHidden);
 			const activation = this.activationTarget(target.id);
 			const type =
 				activation?.tagName === "input" ? inputType(activation) : undefined;
@@ -278,32 +366,56 @@ export class DocumentInteractions {
 							)?.id
 						: undefined;
 				rollback = () => this.restoreCheck(activation, wasChecked, previous);
-				setControlChecked(
-					this.tree,
-					this.tree.reference(activation.id),
-					type === "radio" || !wasChecked,
-				);
+				if (programmatic)
+					setControlCheckedState(
+						this.tree,
+						activation.id,
+						type === "radio" || !wasChecked,
+					);
+				else
+					setControlChecked(
+						this.tree,
+						this.tree.reference(activation.id),
+						type === "radio" || !wasChecked,
+					);
 				if (type === "checkbox")
 					this.tree.setControl(activation.id, { indeterminate: false });
 			}
 			const allowed = yield {
 				target: target.id,
-				event: new BrowserEvent("click", {
-					bubbles: true,
-					cancelable: true,
-					composed: true,
-				}),
+				event:
+					mouseEvent ??
+					new BrowserPointerActivationEvent(
+						"click",
+						{
+							x: 0,
+							y: 0,
+							button: 0,
+							buttons: 0,
+							...this.keyboard.modifiers(),
+						},
+						"non-pointer",
+					),
 			};
 			if (!allowed) {
 				rollback?.();
 				return this.result(reference, true);
 			}
 			rollback = undefined;
-			if (!activation || !this.tree.isConnected(activation.id))
-				return this.result(reference, false);
+			if (!activation) return this.result(reference, false);
 			const current = this.tree.get(activation.id);
+			if (
+				!this.tree.isConnected(current.id) &&
+				!(programmatic && ["a", "label"].includes(current.tagName))
+			)
+				return this.result(reference, false);
 			if (current.tagName === "label")
-				return yield* this.activateLabel(reference, target.id, current.id);
+				return yield* this.activateLabel(
+					reference,
+					target.id,
+					current.id,
+					programmatic,
+				);
 			const currentType =
 				current.tagName === "input" ? inputType(current) : undefined;
 			if (currentType === "checkbox" || currentType === "radio") {
@@ -323,17 +435,20 @@ export class DocumentInteractions {
 			} catch {}
 			throw error;
 		} finally {
-			this.clicking.delete(target.id);
+			clicking.delete(target.id);
 		}
 	}
 
 	close() {
+		this.keyboard.close();
+		this.mouse.close();
 		this.events.close();
 	}
 
 	actionability(
 		reference: string,
 		allowHidden = false,
+		allowDisabled = false,
 	): {
 		node: Readonly<DocumentNode>;
 		blocked?: "hidden-inert-disabled" | "css-hidden";
@@ -351,14 +466,15 @@ export class DocumentInteractions {
 			if (
 				(!allowHidden && Object.hasOwn(ancestor.attributes, "hidden")) ||
 				isInertRoot(this.tree, ancestor) ||
-				([
-					"button",
-					"input",
-					"select",
-					"textarea",
-					"option",
-					"optgroup",
-				].includes(ancestor.tagName) &&
+				(!allowDisabled &&
+					[
+						"button",
+						"input",
+						"select",
+						"textarea",
+						"option",
+						"optgroup",
+					].includes(ancestor.tagName) &&
 					isControlDisabled(this.tree, ancestor.id)) ||
 				(ancestor.tagName === "input" && inputType(ancestor) === "hidden")
 			)
@@ -387,6 +503,7 @@ export class DocumentInteractions {
 		reference: string,
 		target: number,
 		label: number,
+		programmatic = false,
 	): EventAction<InteractionResult> {
 		const labelRef = this.tree.reference(label);
 		let ancestor = this.tree.get(target);
@@ -412,15 +529,14 @@ export class DocumentInteractions {
 		if (control === undefined || isControlDisabled(this.tree, control))
 			return idle();
 		let parent: number | null = control;
-		while (parent !== null) {
+		while (!programmatic && parent !== null) {
 			const node = this.tree.get(parent);
 			if (isInertRoot(this.tree, node)) return idle();
 			parent = node.parent;
 		}
-		const forwarded = yield* this.activateAction(
-			this.tree.reference(control),
-			true,
-		);
+		const forwarded = programmatic
+			? yield* this.programmaticClickAction(control)
+			: yield* this.activateAction(this.tree.reference(control), true);
 		return {
 			...forwarded,
 			reference,

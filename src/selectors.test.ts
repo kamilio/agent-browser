@@ -340,7 +340,6 @@ it.each([
 );
 
 it.each([
-	"a:hover",
 	"a:focus-visible",
 	"input:valid",
 	"li::before",

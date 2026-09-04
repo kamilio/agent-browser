@@ -9,12 +9,14 @@ import {
 	prepareSelectControlValues,
 } from "./controls.js";
 import type { DocumentTree } from "./document.js";
+import { findClickPoint, findHoverPoint } from "./click-target.js";
 import { AgentBrowserError } from "./errors.js";
 import type { SessionPage } from "./session.js";
 import { resolveBrowserTarget } from "./target-locator.js";
 
 export type WaitingAction =
 	| { kind: "click" }
+	| { kind: "hover" }
 	| { kind: "fill"; value: string }
 	| { kind: "select"; values: readonly string[] }
 	| { kind: "checked"; checked: boolean };
@@ -52,7 +54,11 @@ function pause(signal: AbortSignal, milliseconds: number): Promise<void> {
 }
 
 function ready(page: ActionPage, reference: string, action: WaitingAction) {
-	const status = page.interactions.actionability(reference);
+	const status = page.interactions.actionability(
+		reference,
+		false,
+		action.kind === "hover",
+	);
 	const node = status.node;
 	if (action.kind === "fill") {
 		if (!isFillableControl(node))
@@ -99,7 +105,14 @@ function ready(page: ActionPage, reference: string, action: WaitingAction) {
 				return false;
 			throw error;
 		}
-	} else if (status.blocked) return false;
+	} else {
+		if (status.blocked) return false;
+		const target =
+			action.kind === "hover"
+				? findHoverPoint(page.document, node.id)
+				: findClickPoint(page.document, node.id);
+		if (!target.point && target.blocked !== "outside-viewport") return false;
+	}
 	return true;
 }
 

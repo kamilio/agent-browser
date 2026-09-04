@@ -78,6 +78,8 @@ export interface DocumentChange {
 		| "control"
 		| "location"
 		| "focus"
+		| "pointer"
+		| "activation"
 		| "style"
 		| "target";
 	target: number;
@@ -107,6 +109,9 @@ export class DocumentTree {
 	private currentUrl: string;
 	private currentTarget: number | null = null;
 	private currentFocus: number | null = null;
+	private currentPointerHover: number | null = null;
+	private currentPointerActive: number | null = null;
+	private currentKeyboardActive: number | null = null;
 	readonly root: number;
 	readonly limits: Readonly<DocumentLimits>;
 	private nodes = new Map<number, MutableNode>();
@@ -210,7 +215,94 @@ export class DocumentTree {
 		}
 		if (id === this.currentFocus) return;
 		this.currentFocus = id;
+		this.currentKeyboardActive = null;
 		this.changed("focus", this.root);
+	}
+
+	get keyboardActiveElement() {
+		return this.currentKeyboardActive !== null &&
+			!this.closed &&
+			this.isConnected(this.currentKeyboardActive)
+			? this.currentKeyboardActive
+			: null;
+	}
+
+	setKeyboardActivation(id: number | null) {
+		this.ensureOpen();
+		if (id !== null) {
+			this.element(id);
+			if (!this.isConnected(id))
+				throw new AgentBrowserError(
+					"not-actionable",
+					"Keyboard activation requires a connected element",
+				);
+		}
+		if (id === this.currentKeyboardActive) return;
+		this.currentKeyboardActive = id;
+		this.changed("activation", this.root);
+	}
+
+	clearKeyboardActivation() {
+		if (!this.closed) this.setKeyboardActivation(null);
+	}
+
+	get pointerHoverElement() {
+		return this.currentPointerHover !== null &&
+			!this.closed &&
+			this.isConnected(this.currentPointerHover)
+			? this.currentPointerHover
+			: null;
+	}
+
+	get pointerActiveElement() {
+		return this.currentPointerActive !== null &&
+			!this.closed &&
+			this.isConnected(this.currentPointerActive)
+			? this.currentPointerActive
+			: null;
+	}
+
+	setPointerState(hover: number | null, active: number | null) {
+		this.ensureOpen();
+		for (const target of [hover, active]) {
+			if (target === null) continue;
+			this.element(target);
+			if (!this.isConnected(target))
+				throw new AgentBrowserError(
+					"not-actionable",
+					"Pointer state requires a connected element",
+				);
+		}
+		if (
+			hover === this.currentPointerHover &&
+			active === this.currentPointerActive
+		)
+			return;
+		this.currentPointerHover = hover;
+		this.currentPointerActive = active;
+		this.changed("pointer", this.root);
+	}
+
+	clearPointerState() {
+		if (!this.closed) this.setPointerState(null, null);
+	}
+
+	private clearDisconnectedPointerState() {
+		if (
+			this.currentKeyboardActive !== null &&
+			!this.isConnected(this.currentKeyboardActive)
+		)
+			this.currentKeyboardActive = null;
+		if (
+			this.currentPointerHover !== null &&
+			!this.isConnected(this.currentPointerHover)
+		)
+			this.currentPointerHover = null;
+		if (
+			this.currentPointerActive !== null &&
+			!this.isConnected(this.currentPointerActive)
+		)
+			this.currentPointerActive = null;
 	}
 
 	setTargetElement(id: number | null) {
@@ -984,6 +1076,7 @@ export class DocumentTree {
 				);
 			this.selections.moved(moving);
 			this.checkedness.moved(moving);
+			this.clearDisconnectedPointerState();
 			this.changed("insert", moving);
 			this.selectedContent.connected(moving);
 		}
@@ -1032,6 +1125,7 @@ export class DocumentTree {
 			this.node(child).parent = null;
 			this.selections.moved(child);
 			this.checkedness.moved(child);
+			this.clearDisconnectedPointerState();
 			this.changed("remove", child);
 			this.selectedContent.removed(child, parentId);
 		}
@@ -1061,6 +1155,7 @@ export class DocumentTree {
 			this.childMutation(parent.id, [], [id], previousSibling, nextSibling);
 		this.selections.moved(id);
 		this.checkedness.moved(id);
+		this.clearDisconnectedPointerState();
 		if (this.currentFocus !== null && !this.isConnected(this.currentFocus))
 			this.currentFocus = null;
 		this.changed("remove", id);
@@ -1832,6 +1927,9 @@ export class DocumentTree {
 		this.currentTarget = null;
 		this.currentFocus = null;
 		this.changes = [];
+		this.currentPointerHover = null;
+		this.currentPointerActive = null;
+		this.currentKeyboardActive = null;
 		this.changeHandlers.clear();
 		this.mutationHandlers.clear();
 		this.textCodeUnits = 0;

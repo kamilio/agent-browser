@@ -92,13 +92,16 @@ const definitions: CommandDefinition[] = [
 		"expected-tab": stringOption,
 		"expected-viewport": stringOption,
 	}),
-	command("press", 1),
+	command("press", 1, 1, { target: stringOption }),
 	command("keydown", 1),
 	command("keyup", 1),
 	command("mousemove", 2),
 	command("mousedown", 0, 1),
 	command("mouseup", 0, 1),
-	command("mousewheel", 2),
+	command("mousewheel", 2, 2, {
+		"expected-viewport": stringOption,
+		"expected-document": stringOption,
+	}),
 	command("screenshot", 0, 1, {
 		filename: stringOption,
 		hires: booleanOption,

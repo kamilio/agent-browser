@@ -545,6 +545,18 @@ export class ScriptDom {
 					set: (value) => this.location?.navigate(value),
 				};
 			Object.assign(definition.properties, {
+				activeElement: {
+					get: () => {
+						this.read(id);
+						return this.optional(
+							this.tree.activeElement ??
+								this.queries.querySelector("body") ??
+								this.read(id).children.find(
+									(child) => this.read(child).kind === "element",
+								),
+						);
+					},
+				},
 				readyState: {
 					get: () => {
 						this.read(id);
@@ -1005,6 +1017,7 @@ export class ScriptDom {
 		return Object.freeze({
 			documents: (this.ownedFamily ?? this.inheritedFamily)?.metrics() ?? null,
 			publications: this.publications.metrics(),
+			queries: this.queries.metrics(),
 			classLists: this.classLists.metrics(),
 			geometry: this.geometry.metrics(),
 			computedStyles: this.computedStyles.metrics(),
