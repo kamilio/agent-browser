@@ -8,6 +8,13 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The next native editing delivery connects container-endpoint highlights and
+bounded outer-host-edge carets to actual select-all/arrow/cancel/type commands.
+Both focused suites pass 384 / thirteen files; types/builds and scoped checks
+pass. `EDITABLE-ELEMENT-ENDPOINTS.md` records fresh nine-phase selection and
+six-phase caret evidence, remaining unsupported cases and the still-pending
+full-suite authorization. No full browser completion or new probe gate is claimed.
+
 Fetch-budget integration now passes 408 focused native cases in both trees,
 including real session-port forwarding over mocked transport streams. Exhausted
 admission, receiving ceilings and signal/accessor shutdown boundaries are covered;

@@ -277,7 +277,7 @@ it("keeps a closed owner closed and does not create a replacement", () => {
 	expect(existingDomRangeOwner(tree)).toBe(owner);
 });
 
-it("paints mixed text ranges while skipping detached text and element gaps", () => {
+it("paints mixed and element-slot text while ignoring detached selection requests", () => {
 	const { tree, select, text, id } = fixture(
 		'<div id="editor" contenteditable>ABC<span id="second">DEF</span></div>',
 	);
@@ -289,8 +289,17 @@ it("paints mixed text ranges while skipping detached text and element gaps", () 
 		paintedCarets: 0,
 	});
 	selection.setBaseAndExtent(id(), 0, id(), 1);
-	expect(rasterizeDocument(tree).metrics.selectionStatus).toBe("unsupported");
+	const range = selection.getRangeAt(0);
+	expect(rasterizeDocument(tree).metrics).toMatchObject({
+		selectionStatus: "painted",
+		paintedSelectionGlyphs: 3,
+	});
 	const detached = tree.createText("ABC");
+	selection.setBaseAndExtent(detached, 0, detached, 2);
+	expect(selection.getRangeAt(0)).toBe(range);
+	expect(selection.toString()).toBe("ABC");
+	expect(rasterizeDocument(tree).metrics.paintedSelectionGlyphs).toBe(3);
+	selection.removeAllRanges();
 	selection.setBaseAndExtent(detached, 0, detached, 2);
 	expect(rasterizeDocument(tree).metrics.paintedSelectionGlyphs).toBe(0);
 });

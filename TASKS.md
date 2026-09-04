@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Element-boundary painting checkpoint: `EDITABLE-ELEMENT-ENDPOINTS.md` connects
+native Control/Meta select-all to glyph highlights and supports exact outer-edge
+carets after ArrowLeft/Right without changing public Range endpoints. Ninety new
+module cases and four native-host cases pass; final focused suites pass 384 /
+thirteen files in both trees. Types/builds, strict changed-test checks and scoped
+Biome pass. Fresh nine-phase selection and six-phase caret comparisons preserve
+DOM/geometry/state and change only expected pixels. General element caret geometry,
+controls/IME/full visual editing and all original browser gates remain open.
+Both manifests retain 357 entries; full-suite authorization remains pending after
+the recorded denial, with no broad filtered substitute or gated probe attempted.
+
+Next native networking work: the preserved cache report
+`parallel-fetch-accounting-9e5578a/REPORT.md` reproduces concurrent and failed-stream
+page-accounting gaps with five matched in-memory stream fixtures. Its shared byte
+ledger and bounded native-drain ownership design is not implemented; completed
+page bodies, observed transport bytes, reservations and custom-provider coverage
+must remain distinct. Existing response ceilings are not a total-allocation claim.
+
 Native fetch-budget continuation: `FETCH-RESPONSE-BUDGETS.md` adds exhausted-page
 admission checks and propagates narrowing response ceilings through the actual
 session port to encoded/decoded native stream collection and routed responses.

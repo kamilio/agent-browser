@@ -7,6 +7,14 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Element-boundary selection/caret integration now passes 384 focused native cases
+across thirteen files in each tree, with passing types/builds and scoped checks.
+`EDITABLE-ELEMENT-ENDPOINTS.md` records exact profile limits and fresh inspected
+host captures. Native select-all and outer-edge caret painting improve without
+changing public Range endpoints or closing full visual/runtime/browser gates.
+Full-suite approval remains pending; the 357-entry manifests are unchanged by
+that denial and no broad filtered replacement is run.
+
 Native fetch admission, per-response receiving ceilings and shutdown boundaries
 are integrated; see `FETCH-RESPONSE-BUDGETS.md`. Both focused suites pass 408 /
 twelve files, and types/builds pass. Full-manifest approval was denied before

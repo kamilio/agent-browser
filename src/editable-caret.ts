@@ -6,7 +6,7 @@ import { initialPaintStyle } from "./css-paint.js";
 import type { DocumentLayout } from "./document-layout.js";
 import { documentScrollPosition } from "./document-scroll.js";
 import type { DocumentTree } from "./document.js";
-import { existingDomRangeOwner } from "./dom-range.js";
+import { type DomBoundaryPoint, existingDomRangeOwner } from "./dom-range.js";
 import { AgentBrowserError } from "./errors.js";
 import { activeFocus } from "./focus.js";
 import { isInertSubtree } from "./inertness.js";
@@ -27,6 +27,7 @@ export const editableCaretCapabilities = Object.freeze({
 	blinking: false,
 	selectionHighlight: false,
 	emptyEditors: false,
+	elementBoundaries: "focused-block-host-outer-plain-inline-text-chain",
 	softWrapAffinity: false,
 	terminalPreservedBreaks: "same-source-exact-chain-after-glyph",
 	controlCarets: false,
@@ -64,6 +65,59 @@ export interface EditableCaret {
 	work: number;
 	readonly maxWork: number;
 	readonly anchor?: Readonly<CaretAnchor>;
+}
+
+function elementCaretPoint(
+	tree: DocumentTree,
+	point: DomBoundaryPoint,
+	focused: number,
+	charge: (amount?: number) => void,
+): DomBoundaryPoint | undefined {
+	const host = tree.get(point.node);
+	if (
+		host.id !== focused ||
+		host.kind !== "element" ||
+		!host.children.length ||
+		(point.offset !== 0 && point.offset !== host.children.length)
+	)
+		return;
+	const styles = documentStyles(tree);
+	if (styles.get(host.id).display !== "block") return;
+	const end = point.offset !== 0;
+	let id = host.children[end ? host.children.length - 1 : 0];
+	let depth = 0;
+	while (true) {
+		charge();
+		if (++depth > editableCaretLimits.maxDepth)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Editable caret depth limit exceeded",
+			);
+		const node = tree.get(id);
+		if (node.kind === "text")
+			return node.data.length
+				? { node: id, offset: end ? node.data.length : 0 }
+				: undefined;
+		if (
+			node.kind !== "element" ||
+			!node.children.length ||
+			styles.get(id).display !== "inline" ||
+			styles.flow(id).position !== "static" ||
+			styles.flow(id).float !== "none"
+		)
+			return;
+		const box = styles.box(id);
+		for (const side of ["top", "right", "bottom", "left"] as const) {
+			charge();
+			if (
+				box[`margin-${side}`] !== "0px" ||
+				box[`padding-${side}`] !== "0px" ||
+				box[`border-${side}-style`] !== "none"
+			)
+				return;
+		}
+		id = node.children[end ? node.children.length - 1 : 0];
+	}
 }
 
 function terminalBreakAnchor(
@@ -195,7 +249,13 @@ export function prepareEditableCaret(
 		if (!selection.rangeCount) return result("absent");
 		if (!selection.isCollapsed) return result("noncollapsed");
 		const range = selection.getRangeAt(0);
-		const point = range.start;
+		let point = range.start;
+		const elementBoundary = tree.get(point.node).kind === "element";
+		if (elementBoundary) {
+			const mapped = elementCaretPoint(tree, point, focused, charge);
+			if (!mapped) return result("unsupported");
+			point = mapped;
+		}
 		const source = tree.get(point.node);
 		if (source.kind !== "text") return result("unsupported");
 		if (isInertSubtree(tree, source.id, charge))
@@ -223,10 +283,16 @@ export function prepareEditableCaret(
 		);
 		if (geometryWork < 1) return result("limited");
 		charge(geometryWork);
-		const rects = rangeClientRects(range, {
+		const geometryOptions = {
 			maxWork: geometryWork,
 			maxRectangles: 2,
-		});
+		};
+		const rects = elementBoundary
+			? owner.withTemporaryRange(range, (temporary) => {
+					temporary.update(point, point);
+					return rangeClientRects(temporary, geometryOptions);
+				})
+			: rangeClientRects(range, geometryOptions);
 		if (rects.length !== 1 || rects[0].width !== 0 || rects[0].height <= 0)
 			return result("unsupported");
 		const rect = rects[0];

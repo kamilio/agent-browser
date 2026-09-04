@@ -260,3 +260,120 @@ it("paints mixed inline keyboard selection and preserves canceled input across f
 	});
 	expect(documentScroll(tree).get()).toEqual({ x: 0, y: 80 });
 });
+
+it.each(["Control+a", "Meta+a"])(
+	"paints %s container selection through cancellation, fixed scrolling and replacement",
+	async (shortcut) => {
+		const { host, page, editor, selection } = await fixture(false);
+		const tree = page.document;
+		const first = tree.get(editor).children[0];
+		tree.setData(first, "Alpha");
+		const bold = tree.createElement("b");
+		const italic = tree.createElement("i");
+		const last = tree.createText("Beta");
+		tree.append(editor, bold);
+		tree.append(bold, first);
+		tree.append(editor, italic);
+		tree.append(italic, last);
+		await host.execute(["click", "#editor"]);
+		await host.execute(["press", shortcut]);
+		const range = selection.getRangeAt(0);
+		expect(range.start).toEqual({ node: editor, offset: 0 });
+		expect(range.end).toEqual({ node: editor, offset: 2 });
+		expect(selection.toString()).toBe("AlphaBeta");
+		const crop = { element: tree.reference(editor) };
+		const selected = rasterizeDocument(tree, crop);
+		expect(selected.metrics).toMatchObject({
+			selectionStatus: "painted",
+			paintedSelectionGlyphs: 9,
+			selectionPixels: 432,
+			paintedCarets: 0,
+		});
+		documentScroll(tree).to(0, 80);
+		expect(rasterizeDocument(tree, crop).image.pixels).toEqual(
+			selected.image.pixels,
+		);
+		page.interactions.events.addEventListener(
+			editor,
+			"beforeinput",
+			(event) => event.preventDefault(),
+			{ once: true },
+		);
+		expect((await host.execute(["press", "Q"])).data).toMatchObject({
+			keyboard: { canceled: true },
+		});
+		expect(selection.getRangeAt(0)).toBe(range);
+		expect(rasterizeDocument(tree, crop).image.pixels).toEqual(
+			selected.image.pixels,
+		);
+		await host.execute(["type", "Q"]);
+		expect(selection.getRangeAt(0)).toBe(range);
+		expect(tree.textContent(editor)).toBe("Q");
+		expect(range.collapsed).toBe(true);
+		expect(rasterizeDocument(tree, crop).metrics).toMatchObject({
+			selectionStatus: "collapsed",
+			paintedSelectionGlyphs: 0,
+			paintedCarets: 1,
+		});
+		expect(documentScroll(tree).get()).toEqual({ x: 0, y: 80 });
+	},
+);
+
+it.each(["ArrowLeft", "ArrowRight"])(
+	"keeps the select-all %s caret on its public container boundary through native edits",
+	async (key) => {
+		const { host, page, editor, selection } = await fixture(false);
+		const tree = page.document;
+		const first = tree.get(editor).children[0];
+		tree.setData(first, "Alpha");
+		const bold = tree.createElement("b");
+		const italic = tree.createElement("i");
+		tree.append(editor, bold);
+		tree.append(bold, first);
+		tree.append(editor, italic);
+		tree.append(italic, tree.createText("Beta"));
+		await host.execute(["click", "#editor"]);
+		await host.execute(["press", "Control+a"]);
+		const range = selection.getRangeAt(0);
+		await host.execute(["press", key]);
+		const atEnd = key === "ArrowRight";
+		const point = { node: editor, offset: atEnd ? 2 : 0 };
+		expect(selection.getRangeAt(0)).toBe(range);
+		expect(range.start).toEqual(point);
+		expect(range.end).toEqual(point);
+		expect(rangeClientRects(range)).toEqual([]);
+		const crop = { element: tree.reference(editor) };
+		const before = rasterizeDocument(tree, crop);
+		expect(before.metrics).toMatchObject({
+			selectionStatus: "collapsed",
+			paintedSelectionGlyphs: 0,
+			caretStatus: "painted",
+			paintedCarets: 1,
+		});
+		expect(range.start).toEqual(point);
+		documentScroll(tree).to(0, 80);
+		expect(rasterizeDocument(tree, crop).image.pixels).toEqual(
+			before.image.pixels,
+		);
+		page.interactions.events.addEventListener(
+			editor,
+			"beforeinput",
+			(event) => event.preventDefault(),
+			{ once: true },
+		);
+		expect((await host.execute(["press", "Q"])).data).toMatchObject({
+			keyboard: { canceled: true },
+		});
+		expect(range.start).toEqual(point);
+		expect(rasterizeDocument(tree, crop).image.pixels).toEqual(
+			before.image.pixels,
+		);
+		await host.execute(["type", "Q"]);
+		expect(selection.getRangeAt(0)).toBe(range);
+		expect(tree.textContent(editor)).toBe(atEnd ? "AlphaBetaQ" : "QAlphaBeta");
+		expect(rasterizeDocument(tree, crop).metrics).toMatchObject({
+			selectionStatus: "collapsed",
+			paintedCarets: 1,
+		});
+	},
+);

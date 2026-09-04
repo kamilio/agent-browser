@@ -27,7 +27,7 @@ export const editableSelectionBackground: Rgba = Object.freeze([
 ]);
 export const editableSelectionCapabilities = Object.freeze({
 	partial: true,
-	profile: "focused-editable-text-endpoint-range",
+	profile: "focused-editable-text-and-element-endpoint-range",
 	background: "native-pale-blue-rgb-179-215-255",
 	textColor: "unchanged-source-color",
 	paintOrder: "immediately-before-each-source-glyph",
@@ -35,7 +35,7 @@ export const editableSelectionCapabilities = Object.freeze({
 	work: "reserved-geometry-cap-plus-local-mapping-and-lookup",
 	cssSelection: false,
 	mixedNodes: true,
-	elementEndpoints: false,
+	elementEndpoints: true,
 	protectedIntermediateNodes: "skip-entire-highlight",
 	controls: false,
 	...editableSelectionLimits,
@@ -146,7 +146,10 @@ export function prepareEditableSelection(
 		const start = range.start;
 		const end = range.end;
 		const source = tree.get(start.node);
-		if (source.kind !== "text" || tree.get(end.node).kind !== "text")
+		if (
+			!["text", "element"].includes(source.kind) ||
+			!["text", "element"].includes(tree.get(end.node).kind)
+		)
 			return finish("unsupported");
 		const focused = tree.activeElement;
 		if (focused === null) return finish("unfocused");
@@ -168,7 +171,9 @@ export function prepareEditableSelection(
 		for (const endpoint of start.node === end.node
 			? [start.node]
 			: [start.node, end.node]) {
-			let current = tree.get(endpoint).parent;
+			const boundary = tree.get(endpoint);
+			let current: number | null =
+				boundary.kind === "element" ? endpoint : boundary.parent;
 			let depth = 0;
 			let inside = false;
 			let connected = false;
@@ -189,7 +194,7 @@ export function prepareEditableSelection(
 		if (activeFocus(tree) !== focused || !isRootEditableElement(tree, focused))
 			return finish("unfocused");
 		const spans = new Map<string, Readonly<{ lower: number; upper: number }>>();
-		if (start.node === end.node) {
+		if (start.node === end.node && source.kind === "text") {
 			spans.set(tree.reference(start.node), {
 				lower: start.offset,
 				upper: end.offset,
@@ -205,7 +210,7 @@ export function prepareEditableSelection(
 				if (!collecting && !startAncestors.has(id)) return;
 				if (depth > editableSelectionLimits.maxDepth) return "limited";
 				const node = tree.get(id);
-				collecting ||= id === start.node;
+				collecting ||= id === start.node && node.kind === "text";
 				if (collecting && node.kind === "text") {
 					spans.set(tree.reference(id), {
 						lower: id === start.node ? start.offset : 0,
@@ -218,8 +223,15 @@ export function prepareEditableSelection(
 					const status = eligibility(node, true);
 					if (status) return status;
 				}
-				for (const child of node.children) {
-					const status = visit(child, depth + 1);
+				for (let offset = 0; offset <= node.children.length; offset++) {
+					charge();
+					if (id === start.node && offset === start.offset) collecting = true;
+					if (id === end.node && offset === end.offset) {
+						complete = true;
+						return;
+					}
+					if (offset === node.children.length) break;
+					const status = visit(node.children[offset], depth + 1);
 					if (status || complete) return status;
 				}
 			};

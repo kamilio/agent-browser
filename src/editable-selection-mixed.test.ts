@@ -103,7 +103,7 @@ it("maps exact source intersections across two partially selected text nodes", (
 	expect(backgroundCount(result.image)).toBeGreaterThan(0);
 	expect(editableSelectionCapabilities).toMatchObject({
 		mixedNodes: true,
-		elementEndpoints: false,
+		elementEndpoints: true,
 	});
 });
 
@@ -311,17 +311,17 @@ it("ignores protected and hidden siblings outside the selected DOM interval", ()
 	});
 });
 
-it("honestly retains element-gap endpoint rejection", () => {
+it("maps element-slot and text endpoints without selecting element backgrounds", () => {
 	const { tree, select, id, text } = fixture();
 	const selection = select();
-	for (const [start, end] of [
-		[id(), text("#last")],
-		[text("#first"), id()],
+	for (const [start, end, glyphs] of [
+		[id(), text("#last"), 4],
+		[text("#first"), id(), 3],
 	]) {
 		selection.setBaseAndExtent(start, 0, end, 1);
 		expect(rasterizeDocument(tree).metrics).toMatchObject({
-			selectionStatus: "unsupported",
-			paintedSelectionGlyphs: 0,
+			selectionStatus: "painted",
+			paintedSelectionGlyphs: glyphs,
 		});
 	}
 });
@@ -472,12 +472,16 @@ it("never allocates an owner or geometry for an absent/collapsed selection", () 
 	expect(geometry).not.toHaveBeenCalled();
 });
 
-it("retains closed ownership and drops a detached mixed endpoint without cached highlights", () => {
+it("paints the remaining live repaired range after removal without retaining detached glyphs", () => {
 	const { tree, select, id } = fixture();
-	select();
+	const selection = select();
+	const range = selection.getRangeAt(0);
 	expect(rasterizeDocument(tree).metrics.paintedSelectionGlyphs).toBe(4);
 	tree.remove(id("#last"));
-	expect(rasterizeDocument(tree).metrics.paintedSelectionGlyphs).toBe(0);
+	expect(selection.getRangeAt(0)).toBe(range);
+	expect(range.end).toEqual({ node: id(), offset: 1 });
+	expect(selection.toString()).toBe("BC");
+	expect(rasterizeDocument(tree).metrics.paintedSelectionGlyphs).toBe(2);
 	const owner = domRangeOwner(tree);
 	owner.close();
 	expect(rasterizeDocument(tree).metrics.selectionStatus).toBe("closed");
