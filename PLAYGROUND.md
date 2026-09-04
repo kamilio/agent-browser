@@ -1,5 +1,11 @@
 # Shared-session playground
 
+September 4 local review integration: `TRACE-REVIEW-CORE.md` documents the Trace
+pane, bounded local JSON validation and inert frame display without a session or
+upload. Clear/pagehide abort reads and remove retained private text; pagehide also
+detaches review listeners. Stream cleanup no longer waits for unbounded source
+cancellation. Native fixtures pass; real-browser and socket acceptance remain open.
+
 September 4 input integration: `INPUT-UI.md` documents the targeted-key button,
 native wheel form and tab/document ownership guards. It also records cancellation
 of stale action drafts, native fixture evidence and remaining human-input gates.

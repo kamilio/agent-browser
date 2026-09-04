@@ -832,6 +832,19 @@ probe ran; video/continuous recording/ZIP parity, full human/agent arbitration a
 the original compatibility gates remain open. The denied SafeJS probe remains
 unrun and the complete seven-day browser objective stays active.
 
+September 4 local review continuation: `TRACE-REVIEW-CORE.md` integrates the
+bounded JSON timeline, inert display, standalone review exports and shared module
+delivery. Cleanup releases readers without waiting for source cancellation and
+removes viewer listeners on close. Eight new native cases accompany 41 integrated
+parser/viewer cases; two regressions reproduce before correction. Focused runs
+pass 128 / four files in both trees. Full authorized native runs pass 9,611 / 268
+working files and 8,458 / 246 isolated files; both pass types/builds, strict checks
+of three tests and ten-file lint. Pending unrelated changes and historical reports
+remain separate. Continue native compatibility/layout integration while real
+browser/site/socket/TTY, released-SafeJS and full human/agent arbitration gates
+remain open. No gated probe ran, the denied SafeJS probe remains unrun, and the
+complete seven-day browser objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

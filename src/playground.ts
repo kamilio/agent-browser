@@ -1,4 +1,5 @@
 import { capturePng, capturePdf } from "./capture-client.js";
+import { mountTraceReview } from "./trace-view.js";
 import { terminalTabs, type TerminalTab } from "./terminal-tabs.js";
 import type { CommandResult } from "./command-host.js";
 import type { DomInspection } from "./dom-inspection.js";
@@ -197,6 +198,7 @@ export function playgroundNetwork(snapshot: SessionRequests) {
 }
 
 function startPlayground() {
+	const traceReview = mountTraceReview(document);
 	const element = (id: string) => {
 		const found = document.getElementById(id);
 		if (!found) throw new Error(`Missing playground element: ${id}`);
@@ -1218,6 +1220,7 @@ function startPlayground() {
 		"pagehide",
 		() => {
 			clearInterval(interval);
+			traceReview.close();
 			disconnect();
 		},
 		{ once: true },

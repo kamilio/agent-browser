@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrowserCommandHost } from "./command-host.js";
+import { readTrace } from "./capture-client.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { playgroundHtml } from "./playground-assets.js";
 import { DocumentQueries } from "./selectors.js";
@@ -16,6 +17,7 @@ class ElementFixture {
 	href = "";
 	download = "";
 	selected = false;
+	files?: Pick<File, "size" | "stream">[];
 	children: ElementFixture[] = [];
 	readonly listeners = new Map<
 		string,
@@ -38,6 +40,15 @@ class ElementFixture {
 		callback: (event: { preventDefault(): void; key?: string }) => void,
 	) {
 		this.listeners.set(name, [...(this.listeners.get(name) ?? []), callback]);
+	}
+	removeEventListener(
+		name: string,
+		callback: (event: { preventDefault(): void; key?: string }) => void,
+	) {
+		this.listeners.set(
+			name,
+			(this.listeners.get(name) ?? []).filter((value) => value !== callback),
+		);
 	}
 	setAttribute(name: string, value: string) {
 		this.attributes[name] = value;
@@ -213,11 +224,62 @@ async function fixture(unsupported = false, content = "Hello") {
 	await vi.advanceTimersByTimeAsync(1001);
 	await settle();
 	expect(get("capture-render").disabled).toBe(false);
-	return { get, host, calls, blobs, revoked, body };
+	return {
+		get,
+		host,
+		calls,
+		blobs,
+		revoked,
+		body,
+		closePage: () => windowEvents.get("pagehide")?.(),
+	};
 }
 async function settle() {
 	for (let index = 0; index < 120; index++) await Promise.resolve();
 }
+
+it("reviews an exported trace while disconnected and clears private data on pagehide", async () => {
+	const { get, host, closePage } = await fixture();
+	await host.execute(["tracing-start"]);
+	const artifact = (await host.execute(["tracing-stop"])).data;
+	const chunks: BlobPart[] = [];
+	await readTrace(
+		(argv) => host.execute(argv),
+		artifact,
+		(chunk) => {
+			chunks.push(new Uint8Array(chunk));
+		},
+	);
+	get("disconnect").click();
+	await settle();
+	const network = vi.spyOn(globalThis, "fetch");
+	get("trace-file").files = [new Blob(chunks)];
+	get("trace-file").dispatch("change");
+	await settle();
+	expect(get("trace-snapshot").textContent).toContain("Hello");
+	expect(get("trace-frame").children.length).toBeGreaterThan(0);
+	expect(network).not.toHaveBeenCalled();
+	closePage();
+	expect(get("trace-snapshot").textContent).toBe("No frame selected.");
+	expect(get("trace-frame").children).toEqual([]);
+	expect(get("trace-file").listeners.get("change")).toEqual([]);
+});
+
+it("cancels pending local trace reads on playground pagehide", async () => {
+	const { get, closePage } = await fixture();
+	const canceled = vi.fn();
+	const stream = new ReadableStream<Uint8Array<ArrayBuffer>>({
+		cancel: canceled,
+	});
+	get("trace-file").files = [{ size: 12, stream: () => stream }];
+	get("trace-file").dispatch("change");
+	closePage();
+	await settle();
+	expect(canceled).toHaveBeenCalledOnce();
+	expect(stream.locked).toBe(false);
+	expect(get("trace-snapshot").textContent).toBe("No frame selected.");
+	expect(get("trace-clear").listeners.get("click")).toEqual([]);
+});
 
 it("guards displayed tab selection and closes the displayed tab rather than another client's active tab", async () => {
 	const { get, host, calls } = await fixture();

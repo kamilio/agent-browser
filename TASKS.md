@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Local trace review integration checkpoint: `TRACE-REVIEW-CORE.md` integrates the
+bounded, inert local JSON timeline, public review APIs and shared playground asset
+paths. Stream cleanup no longer waits indefinitely for underlying cancellation;
+viewer teardown removes control listeners, cancels reads and clears private text.
+Eight new cases cover cleanup, remounts, exports and actual host-backed playground
+flows; two regressions fail before correction. Forty-one pending parser/viewer
+cases are integrated. Focused runs pass 128 / four files in both trees; full
+authorized native runs pass 9,611 / 268 working files and 8,458 / 246 isolated
+files. Both trees pass types/builds, strict three-test checks and ten-file lint.
+Source cleanup completion, peak heap and actual browser/socket deployment are not
+claimed. Historical reports and unrelated pending changes remain intact. Continue
+native compatibility/layout integration; live sites, released-SafeJS, real TTY/PTY,
+full human/agent arbitration and original compatibility gates remain open. No
+gated probe ran; the denied SafeJS probe stays unrun and the complete seven-day
+goal remains active.
+
+### Previous native tracing integration checkpoint
+
 Native tracing integration checkpoint: `TRACE-CORE.md` integrates bounded
 per-session semantic recording, owned JSON artifacts, public recorder/reader APIs
 and private CLI export/recovery. Serialization failures now count as omissions

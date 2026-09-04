@@ -157,6 +157,13 @@ export {
 	sessionTraceCapabilities,
 	type TraceOutcome,
 } from "./session-trace.js";
+export {
+	parseTraceForReview,
+	readTraceFile,
+	describeTraceFrame,
+	type ReviewTrace,
+	type ReviewFrame,
+} from "./trace-review.js";
 export { encodePdf, pdfLimits, type PdfGlyph, type PdfPage } from "./pdf.js";
 export { renderDocumentPdf, documentPdfLimits } from "./document-pdf.js";
 export {

@@ -24,6 +24,8 @@ export interface CommandServerOptions {
 		captureClient?: string;
 		captureArtifacts?: string;
 		errors?: string;
+		traceView?: string;
+		traceReview?: string;
 		terminalTabs?: string;
 	};
 }
