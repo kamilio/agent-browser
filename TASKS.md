@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Disclosure-toggle checkpoint: `DETAILS-TOGGLE.md` adds document-owned asynchronous
+toggle tasks with state coalescing, native script event data and bounded lifetime/
+pending work. Attribute, initial creation, clone/import and template-owner paths
+share the queue; preflight guards preserve state on quota failures. Primary
+dispatcher/document close cancels pending and controlled in-flight work. The 36
+new cases produce 33 failures and three passes on isolated prior HEAD. Focused
+runs pass 219 / seven files in both trees; types/builds, strict new-test checking
+and six-file lint pass in both. Authorized full native runs pass 10,208 / 280
+working files and 9,062 / 258 isolated files. Next: named disclosure group
+exclusivity across parser/insertion/name changes. Global ToggleEvent/prototype/
+handler, generated summary/marker, full task-source/trusted-event/UA/accessibility and browser parity
+remain open. No gated probe ran; the denied SafeJS probe remains unrun. Historical
+evidence and unrelated pending work remain intact; the complete seven-day browser
+objective and original acceptance gates stay active.
+
+### Previous disclosure-core checkpoint
+
 Disclosure-core checkpoint: `DETAILS-CORE.md` adds native details/summary body
 collapse, click/Enter/Space activation, `open` reflection and snapshot expanded
 state. Shared layout, hit testing and focus exclude collapsed content without

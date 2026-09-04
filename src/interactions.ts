@@ -101,6 +101,7 @@ export class DocumentInteractions {
 			(reference) => !this.actionability(reference).blocked,
 			(reference, event) => this.activateAction(reference, false, false, event),
 		);
+		this.tree.detailsToggleTasks.connect(this.events);
 	}
 
 	private *mouseFocusAction(reference: string): EventAction<void> {

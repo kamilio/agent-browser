@@ -1015,6 +1015,21 @@ socket/TTY gates remain open. No gated probe ran; the denied SafeJS probe remain
 unrun. Historical evidence and unrelated pending work stay separate; the complete
 seven-day browser objective remains active.
 
+September 4 disclosure-toggle continuation: `DETAILS-TOGGLE.md` adds native
+document-owned asynchronous toggle notifications and script state fields.
+Coalescing preserves old state and task order; native lifecycle and quota tests
+cover pending/in-flight cancellation and preflighted attribute/clone/template
+allocation. The 36 new cases produce 33 failures and three passes on isolated
+prior HEAD. Focused runs pass 219 / seven files in both trees; types/builds,
+strict new-test checking and six-file lint pass in both. Authorized full native
+runs pass 10,208 / 280 working files and 9,062 / 258 isolated files. Continue with
+named disclosure groups across parser/insertion/name changes, then remaining
+generated UA controls and event/interface gaps. Full task-source/trusted-event behavior,
+released-SafeJS, real browser/site/socket/TTY and original acceptance gates remain
+open. No gated probe ran; the denied SafeJS probe remains unrun. Historical
+evidence and unrelated pending work stay separate; the complete seven-day browser
+objective remains active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

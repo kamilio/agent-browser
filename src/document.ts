@@ -1,5 +1,6 @@
 import { DocumentCheckedness } from "./document-checkedness.js";
 import { firstDetailsSummary } from "./details.js";
+import { DetailsToggleTasks, detailsToggleLimits } from "./details-toggle.js";
 import type { InlineDeclaration } from "./css-declarations.js";
 import {
 	DocumentInlineDeclarations,
@@ -145,6 +146,7 @@ export class DocumentTree {
 	private mutationHandlers = new Set<(record: DocumentMutation) => void>();
 	private mutationNotifications = 0;
 	private mutationCollectorFailures = 0;
+	readonly detailsToggleTasks = new DetailsToggleTasks(this);
 	private readonly selectedContent = new DocumentSelectedContent(this, (id) =>
 		this.node(id),
 	);
@@ -471,6 +473,10 @@ export class DocumentTree {
 			(total, [name, value]) => total + name.length + value.length,
 			tagName.length,
 		);
+		const initiallyOpen =
+			tagName.toLowerCase() === "details" &&
+			entries.some(([name]) => htmlAttributeName(name) === "open");
+		if (initiallyOpen) this.detailsToggleTasks.checkAdditional(1);
 		this.checkTextBudget(length);
 		const templateOwner =
 			tagName.toLowerCase() === "template"
@@ -487,6 +493,7 @@ export class DocumentTree {
 		this.selections.initialize(id);
 		this.checkedness.initialize(id);
 		if (templateOwner) this.attachTemplate(id, templateOwner);
+		if (initiallyOpen) this.detailsToggleTasks.record(id, false, true);
 		return id;
 	}
 
@@ -544,6 +551,12 @@ export class DocumentTree {
 				"Document depth limit exceeded",
 			);
 		const sources = entries.map(({ node }) => node);
+		this.detailsToggleTasks.checkAdditional(
+			sources.filter(
+				(node) =>
+					node.tagName === "details" && Object.hasOwn(node.attributes, "open"),
+			).length,
+		);
 		this.resources?.check(sources.length);
 		if (
 			this.nodeCount + sources.length > this.limits.maxNodes ||
@@ -577,6 +590,8 @@ export class DocumentTree {
 			const copyId = this.allocate(source.kind, source.tagName, source.data);
 			const copy = this.node(copyId);
 			copy.attributes = createHtmlAttributes(source.attributes);
+			if (copy.tagName === "details" && Object.hasOwn(copy.attributes, "open"))
+				this.detailsToggleTasks.record(copyId, false, true);
 			copy.control = { ...source.control };
 			if (source.doctype) copy.doctype = source.doctype;
 			if (sourceTree.userEditedValues.has(source.id))
@@ -650,10 +665,15 @@ export class DocumentTree {
 					(node.doctype?.publicId.length ?? 0) +
 					(node.doctype?.systemId.length ?? 0),
 			);
-		const primary = { nodes: !deep && this.templateOwner ? 1 : 0, text: 0 };
+		const primary = {
+			nodes: !deep && this.templateOwner ? 1 : 0,
+			text: 0,
+			toggles: 0,
+		};
 		const contents = {
 			nodes: extraDocument + (!deep && !this.templateOwner ? 1 : 0),
 			text: 0,
+			toggles: 0,
 		};
 		const ownership = new Map<number, boolean>();
 		for (const { node, host } of entries) {
@@ -664,9 +684,21 @@ export class DocumentTree {
 			ownership.set(node.id, inContents);
 			const usage = inContents ? contents : primary;
 			usage.nodes++;
+			if (node.tagName === "details" && Object.hasOwn(node.attributes, "open"))
+				usage.toggles++;
 			usage.text += node.tagName.length + node.data.length + extraText(node);
 		}
 		const count = primary.nodes + contents.nodes;
+		this.detailsToggleTasks.checkAdditional(primary.toggles);
+		if (this.templateDocument)
+			this.templateDocument.detailsToggleTasks.checkAdditional(
+				contents.toggles,
+			);
+		else if (contents.toggles > detailsToggleLimits.maxPending)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Disclosure notification limit exceeded",
+			);
 		resources.check(count, primary.text + contents.text);
 		if (
 			this.nodeCount + primary.nodes > this.limits.maxNodes ||
@@ -716,6 +748,8 @@ export class DocumentTree {
 			const copyId = target.allocate(source.kind, source.tagName, source.data);
 			const copy = target.node(copyId);
 			copy.attributes = createHtmlAttributes(source.attributes);
+			if (copy.tagName === "details" && Object.hasOwn(copy.attributes, "open"))
+				target.detailsToggleTasks.record(copyId, false, true);
 			copy.control = { ...source.control };
 			if (source.doctype) copy.doctype = source.doctype;
 			target.textCodeUnits += extraText(source);
@@ -1215,6 +1249,8 @@ export class DocumentTree {
 		const key = htmlAttributeName(name);
 		const previous = node.attributes[key];
 		const inputChange = this.inputValues.prepare(id, key, value);
+		if (node.tagName === "details" && key === "open")
+			this.detailsToggleTasks.check(id, previous !== undefined, true);
 		if (previous === value) {
 			const clearedFocus = key === "inert" && this.clearFocusWithin(id);
 			if (key === "style" && this.inlineDeclarationStore.replace(id, state))
@@ -1243,6 +1279,8 @@ export class DocumentTree {
 			(attribute === undefined ? 0 : value.length - attribute.value.length);
 		this.checkTextBudget(change + this.inputValueDelta(id, inputChange));
 		setHtmlAttribute(node.attributes, key, value);
+		if (node.tagName === "details" && key === "open")
+			this.detailsToggleTasks.record(id, previous !== undefined, true);
 		if (key === "form") this.resetParserForm(id);
 		if (attribute) attribute.value = value;
 		this.textCodeUnits += change;
@@ -1316,11 +1354,15 @@ export class DocumentTree {
 		if (!Object.hasOwn(node.attributes, key)) return;
 		const previous = node.attributes[key];
 		const inputChange = this.inputValues.prepare(id, key, undefined);
+		if (node.tagName === "details" && key === "open")
+			this.detailsToggleTasks.check(id, true, false);
 		this.checkTextBudget(
 			-key.length - previous.length + this.inputValueDelta(id, inputChange),
 		);
 		this.textCodeUnits -= key.length + node.attributes[key].length;
 		removeHtmlAttribute(node.attributes, key);
+		if (node.tagName === "details" && key === "open")
+			this.detailsToggleTasks.record(id, true, false);
 		if (key === "open" && node.tagName === "details")
 			this.clearCollapsedDetailsFocus(id);
 		if (key === "form") this.resetParserForm(id);
@@ -1402,6 +1444,8 @@ export class DocumentTree {
 				"Attribute is already in use by another element",
 			);
 		const previous = node.attributes[attribute.name];
+		if (node.tagName === "details" && attribute.name === "open")
+			this.detailsToggleTasks.check(id, previous !== undefined, true);
 		const inputChange = this.inputValues.prepare(
 			id,
 			attribute.name,
@@ -1422,6 +1466,8 @@ export class DocumentTree {
 		const original = this.getAttributeNode(id, attribute.name);
 		if (original !== null) this.attributeRecord(original).ownerElement = null;
 		setHtmlAttribute(node.attributes, attribute.name, attribute.value);
+		if (node.tagName === "details" && attribute.name === "open")
+			this.detailsToggleTasks.record(id, previous !== undefined, true);
 		if (attribute.name === "form") this.resetParserForm(id);
 		attribute.ownerElement = id;
 		this.attributeMap(id).set(attribute.name, attributeId);
@@ -2005,6 +2051,7 @@ export class DocumentTree {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		this.detailsToggleTasks.close();
 		this.unregisterResources?.();
 		this.unregisterResources = undefined;
 		this.selections.close();

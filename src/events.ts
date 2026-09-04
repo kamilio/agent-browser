@@ -519,6 +519,7 @@ export class DocumentEvents {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		this.tree.detailsToggleTasks.disconnect(this);
 		for (const finish of this.idleWaiters)
 			finish(new AgentBrowserError("closed", "Document events are closed"));
 		for (const reject of this.interrupted)

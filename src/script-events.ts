@@ -24,6 +24,7 @@ import type {
 } from "./script-dom.js";
 import { BrowserStorageEvent } from "./storage-events.js";
 import { BrowserMediaQueryListEvent } from "./media-query-event.js";
+import { BrowserDetailsToggleEvent } from "./details-toggle.js";
 
 export interface ScriptCallbackRuntime {
 	startCallback(
@@ -324,6 +325,14 @@ export class ScriptEventBindings {
 			};
 		if (event instanceof BrowserMediaQueryListEvent)
 			for (const name of ["media", "matches"] as const)
+				properties[name] = {
+					get: () => {
+						this.ensureOpen();
+						return event[name];
+					},
+				};
+		if (event instanceof BrowserDetailsToggleEvent)
+			for (const name of ["oldState", "newState", "source"] as const)
 				properties[name] = {
 					get: () => {
 						this.ensureOpen();

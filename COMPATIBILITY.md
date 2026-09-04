@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 toggle-notification continuation: `DETAILS-TOGGLE.md` adds coalesced
+asynchronous native details events, guarded script state fields, resource
+preflight and owned cancellation. Native evidence does not establish complete
+ToggleEvent/prototype/handler/trust, event-loop task-source ordering, named
+accordion exclusivity, generated UA controls or released-runtime/browser parity.
+
 September 4 disclosure continuation: `DETAILS-CORE.md` adds native details/summary
 collapse, pointer/keyboard defaults, `open` reflection and expanded snapshot state
 through shared document ownership. Native layout/hit/focus/raster coverage does
