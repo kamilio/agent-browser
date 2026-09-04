@@ -390,6 +390,18 @@ association and remaining modes. The seven-day goal stays active; independent
 runtime/live-site/terminal gates remain unvalidated and the denied SafeJS probe
 remains unrun.
 
+September 4 document-closing checkpoint: `HTML-CLOSING.md` records scoped body
+ends, retained insertion points, distinct trailing-comment modes and quirks table
+recovery. Cached text checks actual adjacency after native mutation. Eleven
+initial regressions, three coalescing cases and three mutation cases fail before
+their fixes; 61 new tests and 391 focused checks across nine files pass. Full
+native validation passes 8,515 / 237 files; the isolated owned patch passes
+5,755 / 176 available files. Types, builds and three-file lint pass in both trees,
+preserving existing pending work. Continue with before/after-head and head-noscript
+modes, fragment mode inheritance, parser form-owner association and remaining
+compatibility requirements. Independent runtime/live-site/terminal gates remain
+open; no gated probe ran and the denied SafeJS probe remains unrun.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

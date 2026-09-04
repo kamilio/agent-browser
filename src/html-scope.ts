@@ -18,6 +18,17 @@ const implied = new Set([
 	"rtc",
 ]);
 const headings = new Set(["h1", "h2", "h3", "h4", "h5", "h6"]);
+const bodyEndAllowed = new Set([
+	...implied,
+	"tbody",
+	"td",
+	"tfoot",
+	"th",
+	"thead",
+	"tr",
+	"body",
+	"html",
+]);
 type ScopeKind = "normal" | "button" | "list";
 interface ScopeOptions {
 	stack(): HtmlParserNode[];
@@ -50,6 +61,22 @@ export class HtmlScope {
 
 	findHeading(): number {
 		return this.search((node) => headings.has(node.tag), "normal");
+	}
+
+	canEndBody(): boolean {
+		const stack = this.options.stack();
+		let unclosed = false;
+		for (let index = stack.length - 1; index >= 0; index--) {
+			this.visit();
+			const tag = stack[index].tag;
+			if (tag === "body") {
+				if (unclosed) this.options.issue("unclosed-elements-at-body-end");
+				return true;
+			}
+			if (isHtmlScopeBoundary(tag)) return false;
+			if (!bodyEndAllowed.has(tag)) unclosed = true;
+		}
+		return false;
 	}
 
 	imply(except?: string): void {

@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Document-closing checkpoint: `HTML-CLOSING.md` preserves open ancestors across
+body/html ends and separates after-body from after-after-body processing.
+Trailing comments, whitespace, repeated scaffold attributes and scoped rejection
+retain their distinct paths; quirks-mode table starts preserve open paragraphs.
+Cached text coalescing checks actual adjacency and owner after native mutation.
+Eleven initial cases, three coalescing cases and three mutation cases fail before
+their fixes; 61 new tests and 391 focused checks across nine files pass. Full
+native validation passes 8,515 / 237 files; the isolated owned patch passes
+5,755 / 176 available files. Types, builds and three-file lint pass in both trees,
+excluding pre-existing pending work. Next broaden before/after-head and head-
+noscript modes, fragment mode inheritance and parser form-owner association.
+Modern select, EOF diagnostics and cross-owner observer/runtime breadth remain
+open. No gated probe ran; the denied SafeJS probe remains unrun, independent
+acceptance gates remain open and the seven-day goal stays active.
+
+### Previous body-scope checkpoint
+
 Body-scope recovery checkpoint: `HTML-SCOPE.md` adds bounded normal, button and
 list-item scope searches, implied ends and special-boundary ordinary end handling.
 Paragraphs, headings, lists, buttons, form pointers and ruby recover without

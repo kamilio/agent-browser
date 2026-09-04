@@ -407,7 +407,7 @@ function* parseHtmlSteps(
 		let bodyStarted = !!fragment;
 		if (scripting && !fragment)
 			yield { kind: "start", tree, input: tokenizer, normalize };
-		let mode: "before" | "head" | "body" | "after" = fragment
+		let mode: "before" | "head" | "body" | "after" | "after-after" = fragment
 			? "body"
 			: "before";
 		let stack = [{ tree, id: body, tag: fragment?.tagName ?? "body" }];
@@ -431,7 +431,9 @@ function* parseHtmlSteps(
 		};
 		let tokens = 0;
 		let stripNewline = false;
-		let lastText: { id: number; parent: number; before?: number } | undefined;
+		let lastText:
+			| { tree: DocumentTree; id: number; parent: number; before?: number }
+			| undefined;
 		let tableFoster = false;
 		const current = () => stack[stack.length - 1];
 		const insertionTarget = (entry = current()) => {
@@ -531,8 +533,13 @@ function* parseHtmlSteps(
 		const text = (data: string, foster = false) => {
 			if (!data) return;
 			const target = location(foster);
-			let fosterText: number | undefined;
-			if (target.fostered) {
+			let previousText: number | undefined;
+			if (
+				target.fostered ||
+				(lastText?.tree === target.tree &&
+					lastText.parent === target.parent &&
+					lastText.before === target.before)
+			) {
 				const siblings = target.tree.get(target.parent).children;
 				tables.scan(siblings.length * 3);
 				const index =
@@ -541,23 +548,15 @@ function* parseHtmlSteps(
 						: siblings.indexOf(target.before);
 				const previous = siblings[index - 1];
 				if (previous !== undefined && target.tree.get(previous).kind === "text")
-					fosterText = previous;
+					previousText = previous;
 			}
-			if (fosterText !== undefined)
+			if (previousText !== undefined) {
 				target.tree.setData(
-					fosterText,
-					target.tree.get(fosterText).data + data,
+					previousText,
+					target.tree.get(previousText).data + data,
 				);
-			else if (
-				!target.fostered &&
-				lastText?.parent === target.parent &&
-				lastText.before === target.before
-			)
-				target.tree.setData(
-					lastText.id,
-					target.tree.get(lastText.id).data + data,
-				);
-			else {
+				lastText = { id: previousText, ...target };
+			} else {
 				const id = target.tree.createText(data);
 				target.tree.insert(target.parent, id, target.before);
 				lastText = { id, ...target };
@@ -730,8 +729,15 @@ function* parseHtmlSteps(
 					tree.insert(html, comment, head);
 				else if (mode === "before") tree.insert(tree.root, comment, html);
 				else
-					target.tree.append(mode === "after" ? html : target.parent, comment);
-				lastText = undefined;
+					target.tree.append(
+						mode === "after"
+							? html
+							: mode === "after-after"
+								? tree.root
+								: target.parent,
+						comment,
+					);
+				if (mode !== "after" && mode !== "after-after") lastText = undefined;
 				continue;
 			}
 			if (token.kind === "text") {
@@ -741,10 +747,16 @@ function* parseHtmlSteps(
 				if (mode === "before" && /^[\t\n\f\r ]*$/.test(data)) continue;
 				if (
 					mode === "before" ||
-					mode === "after" ||
 					(mode === "head" && stack.length === 1 && /[^\t\n\f\r ]/.test(data))
 				)
 					mode = inBody();
+				if (
+					(mode === "after" || mode === "after-after") &&
+					/[^\t\n\f\r ]/.test(data)
+				) {
+					issue("content-after-body");
+					mode = "body";
+				}
 				tables.characters(data);
 				continue;
 			}
@@ -757,12 +769,25 @@ function* parseHtmlSteps(
 				issue("ignored-fragment-document-tag");
 				continue;
 			}
-			if (
-				token.kind === "end" &&
-				["body", "html"].includes(name) &&
-				tables.context().mode !== "body"
-			) {
-				issue("ignored-table-end");
+			if (mode === "after" || mode === "after-after") {
+				if (mode === "after" && token.kind === "end" && name === "html") {
+					if (fragmentDocument) issue("ignored-fragment-document-tag");
+					else mode = "after-after";
+					continue;
+				}
+				if (!(token.kind === "start" && name === "html")) {
+					issue("content-after-body");
+					mode = "body";
+				}
+			}
+			if (token.kind === "end" && (name === "body" || name === "html")) {
+				if (mode === "before" || mode === "head") mode = inBody();
+				if (!bodyScope.canEndBody()) issue("body-not-in-scope");
+				else {
+					mode = name === "html" && !fragmentDocument ? "after-after" : "after";
+					if (name === "html" && fragmentDocument)
+						issue("ignored-fragment-document-tag");
+				}
 				continue;
 			}
 			if (
@@ -775,7 +800,6 @@ function* parseHtmlSteps(
 				);
 			if (name === "html") {
 				if (token.kind === "start") merge(html, attributes);
-				else if (mode === "body") mode = "after";
 				continue;
 			}
 			if (name === "head") {
@@ -788,13 +812,8 @@ function* parseHtmlSteps(
 				continue;
 			}
 			if (name === "body") {
-				if (token.kind === "start") {
-					merge(body, attributes);
-					if (mode !== "body") mode = inBody();
-				} else {
-					mode = "after";
-					stack = [{ tree, id: body, tag: "body" }];
-				}
+				merge(body, attributes);
+				if (mode === "before" || mode === "head") mode = inBody();
 				continue;
 			}
 			if (mode === "before") {
@@ -805,10 +824,6 @@ function* parseHtmlSteps(
 			}
 			if (mode === "head" && stack.length === 1 && !headTags.has(name))
 				mode = inBody();
-			if (mode === "after") {
-				issue("content-after-body");
-				mode = inBody();
-			}
 			if (name === "template") {
 				if (token.kind === "start") {
 					if (
@@ -945,8 +960,9 @@ function* parseHtmlSteps(
 				continue;
 			}
 			if (
-				blocks.has(name) ||
-				["listing", "summary", "xmp", "plaintext"].includes(name)
+				(blocks.has(name) ||
+					["listing", "summary", "xmp", "plaintext"].includes(name)) &&
+				(name !== "table" || documentMode(tree) !== "quirks")
 			)
 				closeParagraph();
 			if (name === "li" || name === "dd" || name === "dt") {
