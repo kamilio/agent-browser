@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 paragraph-caret continuation: `EDITABLE-PARAGRAPH-CARETS.md` maps exact
+direct p/div outer text edges after native paragraph split and host select-all
+collapse. Public Range state and existing glyph paint order remain unchanged.
+Focused native command/geometry tests and inspected software PNGs do not close
+empty/general element carets, full visual editing, runtime/live or browser gates.
+
 September 4 live response-accounting continuation: `FETCH-BYTE-ACCOUNTING.md`
 charges concurrent and failed native traffic through document-owned leases and
 bounds retained native-drain ownership. Native stream/callback fixtures and the

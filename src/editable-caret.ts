@@ -27,7 +27,8 @@ export const editableCaretCapabilities = Object.freeze({
 	blinking: false,
 	selectionHighlight: false,
 	emptyEditors: false,
-	elementBoundaries: "focused-block-host-outer-plain-inline-text-chain",
+	elementBoundaries:
+		"focused-block-host-or-direct-paragraph-outer-plain-inline-text-chain",
 	softWrapAffinity: false,
 	terminalPreservedBreaks: "same-source-exact-chain-after-glyph",
 	controlCarets: false,
@@ -73,18 +74,31 @@ function elementCaretPoint(
 	focused: number,
 	charge: (amount?: number) => void,
 ): DomBoundaryPoint | undefined {
-	const host = tree.get(point.node);
+	const container = tree.get(point.node);
 	if (
-		host.id !== focused ||
-		host.kind !== "element" ||
-		!host.children.length ||
-		(point.offset !== 0 && point.offset !== host.children.length)
+		container.kind !== "element" ||
+		!container.children.length ||
+		(point.offset !== 0 && point.offset !== container.children.length)
 	)
 		return;
 	const styles = documentStyles(tree);
-	if (styles.get(host.id).display !== "block") return;
+	if (styles.get(focused).display !== "block") return;
+	const paragraph = (id: number) => {
+		charge();
+		const node = tree.get(id);
+		return (
+			node.kind === "element" &&
+			node.parent === focused &&
+			["p", "div"].includes(node.tagName) &&
+			contentEditableState(node) === "inherit" &&
+			styles.get(id).display === "block" &&
+			styles.flow(id).position === "static" &&
+			styles.flow(id).float === "none"
+		);
+	};
+	if (container.id !== focused && !paragraph(container.id)) return;
 	const end = point.offset !== 0;
-	let id = host.children[end ? host.children.length - 1 : 0];
+	let id = container.children[end ? container.children.length - 1 : 0];
 	let depth = 0;
 	while (true) {
 		charge();
@@ -98,6 +112,15 @@ function elementCaretPoint(
 			return node.data.length
 				? { node: id, offset: end ? node.data.length : 0 }
 				: undefined;
+		if (
+			container.id === focused &&
+			depth === 1 &&
+			node.children.length &&
+			paragraph(id)
+		) {
+			id = node.children[end ? node.children.length - 1 : 0];
+			continue;
+		}
 		if (
 			node.kind !== "element" ||
 			!node.children.length ||

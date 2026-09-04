@@ -19,6 +19,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Direct paragraph caret checkpoint: `EDITABLE-PARAGRAPH-CARETS.md` keeps native
+nonempty paragraph splits and host outer-edge select-all collapse visibly aligned
+through direct p/div paragraphs. Public endpoints and Range geometry remain
+unchanged. Sixty new cases and 609 / nineteen-file focused suites pass in both
+trees with passing types/builds and scoped checks. Nine-phase captures change only
+expected caret pixels; the working replay matches the isolated build exactly.
+Both manifests retain 363 entries. Empty/general element carets, full visual
+editing, full-suite authorization and all original external/browser gates remain
+open; the existing denial is not retried or replaced with a broad filtered suite.
+
 Live response-accounting checkpoint: `FETCH-BYTE-ACCOUNTING.md` integrates an
 opaque document-owned ledger through the actual session fetch port. Concurrent,
 failed and gzip-expanded native streams debit observed bytes before retention;

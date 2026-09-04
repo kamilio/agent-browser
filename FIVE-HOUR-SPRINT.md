@@ -8,6 +8,13 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped native continuation now includes exact direct-paragraph carets
+after split and select-all collapse. `EDITABLE-PARAGRAPH-CARETS.md` records sixty
+new cases, passing 609 / nineteen-file focused suites in both trees, static checks
+and a nine-phase pixel comparison with an identical working-build replay. Empty
+carets and full browser/runtime gates remain open; the original sprint deadline
+does not imply completion or authorize a denied full-suite rerun.
+
 Live native response accounting now uses page-owned one-shot leases, records
 concurrent and failed traffic, and retains capacity through actual native drain.
 Both focused runs pass 561 / seventeen files; types/builds and scoped checks pass.

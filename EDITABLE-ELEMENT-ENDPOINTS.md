@@ -1,5 +1,11 @@
 # Editable element-boundary painting
 
+Later September 4 update: `EDITABLE-PARAGRAPH-CARETS.md` extends the exact caret
+profile to host outer slots through one direct p/div paragraph and that paragraph's
+own outer slots. Shared source geometry still supplies the private text edge,
+without changing public collapsed element Range geometry. The original captures,
+counts and narrower profile below remain historical where superseded.
+
 September 4, 2026 native continuation. This connects native select-all to visible
 glyph highlights and a narrowly supported collapsed host-edge caret. It changes
 neither public Range endpoints nor keyboard editing semantics, and does not

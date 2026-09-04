@@ -7,6 +7,13 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native paragraph-split caret integration now passes 609 focused cases / nineteen
+files in both trees, with passing types/builds and scoped checks. The sixty new
+cases and fresh nine-phase comparison are in `EDITABLE-PARAGRAPH-CARETS.md`.
+Direct p/div edges gain visible carets without changing public Range state;
+empty/general element caret geometry and full editing remain open. Both manifests
+retain 363 entries, with no full-suite or externally gated acceptance inferred.
+
 Document-owned live byte accounting now covers concurrent and rejected native
 streams, with bounded lease ownership through actual consumer drain. The 122 new
 cases and 561 / seventeen-file focused runs in both trees are recorded in
