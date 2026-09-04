@@ -1,5 +1,6 @@
 [
   "src/action-wait.test.ts",
+  "src/generated-style.test.ts",
   "src/generated-interfaces.test.ts",
   "src/generated-inspection.test.ts",
   "src/generated-focus-raster.test.ts",

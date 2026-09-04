@@ -1,5 +1,14 @@
 # Compatibility and playground acceptance ledger
 
+September 4 generated-style continuation: `GENERATED-STYLES.md` adds native
+generated-header style inspection through a shared formatting/inspection factory.
+The partial profile separates inherited styles and initial header defaults from
+host decoration and used geometry, preserves generated/owner identity, and
+revalidates stale references and style lifetime. Native command evidence covers
+focus inheritance and marker changes. Full UA/shadow CSS, outline/focus-visible,
+platform accessibility, runtime and original browser gates remain open; no gated
+probe ran and the denied SafeJS probe remains unrun.
+
 September 4 generated-interface continuation: `GENERATED-INTERFACES.md` makes
 terminal disclosure expansion and document focus state visible, independently
 of row selection. Native terminal-loop tests with mocked streams and mounted

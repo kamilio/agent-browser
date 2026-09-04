@@ -12,6 +12,7 @@ import {
 import { AgentBrowserError } from "./errors.js";
 import { layoutNumber } from "./layout-values.js";
 import { documentStyles } from "./styles.js";
+import { generatedControlStyle } from "./generated-style.js";
 import { describeControl, type SoftwareControl } from "./control-rendering.js";
 import { summaryDetails } from "./details.js";
 import type { DisclosureMarker } from "./disclosure-marker.js";
@@ -373,12 +374,10 @@ export function buildFormattingTree(
 						"Formatting text limit exceeded",
 					);
 				charge(generated.label.length);
-				const typography = styles.text(id);
+				const generatedStyle = generatedControlStyle(tree, generated.ref);
+				const typography = generatedStyle.text;
 				const fontSize = Number.parseFloat(typography["font-size"]);
-				const paint = Object.freeze({
-					...initialPaintStyle,
-					color: styles.paint(id).color,
-				});
+				const paint = generatedStyle.paint;
 				const content: number[] = [];
 				if (fontSize > 0)
 					content.push(
@@ -386,14 +385,12 @@ export function buildFormattingTree(
 							kind: "replaced",
 							level: "inline",
 							generated,
-							visible: visibility.visible,
+							visible: generatedStyle.visible,
 							typography,
 							paint,
-							box: initialBoxStyle,
+							box: generatedStyle.box,
 							marker: Object.freeze({
-								type: Object.hasOwn(node.attributes, "open")
-									? "disclosure-open"
-									: "disclosure-closed",
+								type: generatedStyle.list["list-style-type"],
 							}),
 							intrinsic: Object.freeze({
 								width: fontSize,
@@ -406,7 +403,7 @@ export function buildFormattingTree(
 						kind: "text",
 						level: "inline",
 						generated,
-						visible: visibility.visible,
+						visible: generatedStyle.visible,
 						text: generated.label,
 						typography,
 						paint,
@@ -418,11 +415,11 @@ export function buildFormattingTree(
 							kind: "block",
 							level: "block",
 							generated,
-							display: "list-item",
-							visible: visibility.visible,
+							display: generatedStyle.display,
+							visible: generatedStyle.visible,
 							typography,
 							paint,
-							box: initialBoxStyle,
+							box: generatedStyle.box,
 							contentMode: "inline",
 							...(asItems
 								? {

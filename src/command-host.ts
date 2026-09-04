@@ -82,6 +82,7 @@ import { StateTransfers } from "./state-transfer.js";
 import { resolveBrowserTarget } from "./target-locator.js";
 import { textLocatorLimits } from "./text-locator.js";
 import { resolveVisualTarget } from "./generated-controls.js";
+import { generatedControlStyle } from "./generated-style.js";
 
 export interface CommandHostOptions {
 	websiteScripts?: boolean;
@@ -1380,12 +1381,25 @@ export class BrowserCommandHost {
 			const page = browser.page(tab);
 			if (!args.length) return page.styles.metrics();
 			const reference = this.target(browser, tab, args[0]);
+			const { node, generated } = resolveVisualTarget(page.document, reference);
+			if (generated)
+				return {
+					reference,
+					...generatedControlStyle(page.document, reference),
+					generated: {
+						kind: generated.kind,
+						owner: page.document.reference(node.id),
+					},
+					profile: "generated-details-summary-style",
+					partial: true,
+					layout: false,
+				};
 			return {
 				reference,
-				...page.styles.get(page.document.resolve(reference).id),
-				box: page.styles.box(page.document.resolve(reference).id),
-				text: page.styles.text(page.document.resolve(reference).id),
-				paint: page.styles.paint(page.document.resolve(reference).id),
+				...page.styles.get(node.id),
+				box: page.styles.box(node.id),
+				text: page.styles.text(node.id),
+				paint: page.styles.paint(node.id),
 				partial: true,
 				layout: false,
 			};

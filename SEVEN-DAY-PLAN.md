@@ -1186,6 +1186,20 @@ Next: generated style inspection and broader focus-style behavior. All original
 browser/runtime gates remain open; no gated probe ran and the denied SafeJS probe
 remains unrun. Preserve historical evidence and unrelated changes; the goal is active.
 
+September 4 generated-style continuation: `GENERATED-STYLES.md` adds generated
+style inspection with a shared immutable formatting factory, separate native
+header defaults, inherited typography/color/visibility, disclosure markers and
+pointer eligibility. All 31 new tests fail on prior HEAD; matching focused runs
+pass 165 / six files. Types/builds, strict checking and four-file lint pass in both
+trees. Authorized full native runs pass 9,453 / 272 isolated files; the working
+run reports 10,598 passes and the unchanged pending Window-onload assertion failure
+/ 294 files. Inspected in-memory Tab/Enter/styles/geometry commands confirm
+stable identity, inherited focus styles and computed-versus-used separation.
+Next: broader authored focus feedback and CSS outline/focus-visible behavior.
+Full UA/shadow/accessibility, browser/runtime and original acceptance gates stay
+open; no gated probe ran and the denied SafeJS probe remains unrun. Preserve
+historical evidence and unrelated work; the seven-day goal remains active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

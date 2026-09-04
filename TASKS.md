@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Generated-style checkpoint: `GENERATED-STYLES.md` exposes native fallback header
+styles through the shared immutable factory used by formatting. The generated
+profile reports inherited typography/color/visibility, initial box/paint defaults,
+inside disclosure markers and pointer eligibility without aliasing host styles or
+inventing DOM nodes or used geometry. All 31 new tests fail on isolated prior HEAD;
+matching focused runs pass 165 / six files. Types/builds, strict new-test checking
+and four-file lint pass in both trees. Authorized full native runs pass
+9,453 / 272 isolated files; the working run reports 10,598 passes and the unchanged
+pending Window-onload assertion failure / 294 files. Inspected in-memory native
+Tab/Enter/style/geometry output confirms inherited focus changes, stable references,
+auto-versus-used width and open markers. Next: broader authored focus feedback and
+CSS outline/focus-visible behavior. Full UA/shadow/accessibility, live website,
+real TTY/PTY, socket, browser UI, released SafeJS and original browser gates remain
+open. No gated probe ran; the denied SafeJS probe remains unrun. Historical
+evidence and unrelated pending work stay separate; the seven-day goal is active.
+
+### Previous generated-interface checkpoint
+
 Generated-interface checkpoint: `GENERATED-INTERFACES.md` shows actual expanded/
 collapsed and document-focus state in terminal rows, separately from selection.
 Ten new terminal cases reproduce the missing state on prior HEAD; five new
