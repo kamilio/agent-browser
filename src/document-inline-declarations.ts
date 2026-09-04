@@ -1,6 +1,7 @@
 import {
 	type InlineDeclaration,
 	directDeclaration,
+	parseInlineDeclarations,
 	serializeDeclarations,
 } from "./css-declarations.js";
 import { AgentBrowserError } from "./errors.js";
@@ -100,7 +101,25 @@ export class DocumentInlineDeclarations {
 				"invalid-input",
 				"Inline declaration source does not match",
 			);
-		if (!projected.some((entry) => entry.pending)) return undefined;
+		if (!projected.some((entry) => entry.pending)) {
+			const reparsed = parseInlineDeclarations(
+				source,
+				inlineDeclarationLimits.maxDeclarations,
+			);
+			if (
+				reparsed.length === projected.length &&
+				reparsed.every((entry, index) => {
+					const original = projected[index];
+					return (
+						entry.name === original.name &&
+						entry.value === original.value &&
+						entry.important === original.important &&
+						entry.pending === original.pending
+					);
+				})
+			)
+				return undefined;
+		}
 		codeUnits = source.length;
 		for (const entry of projected)
 			codeUnits +=

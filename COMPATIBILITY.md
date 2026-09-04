@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 ordering/reset continuation: `INLINE-ORDER-ALL.md` retains ordinary
+CSSOM slot order and supports component-level `all` resets over native longhands.
+Custom declarations survive resets; ordinary retained order shares the existing
+document quotas and explicit replacement boundaries. This narrows the earlier
+ordering/reset gaps without claiming full CSSOM, cloning or browser parity.
+
 September 4 pending-state continuation: `INLINE-PENDING-STATE.md` implements
 document-owned pending longhand slots, expanded enumeration, partial removal and
 lower-priority component replacement through shared native style/layout state.

@@ -887,6 +887,20 @@ Full serialization/all/cloning parity, released-SafeJS and real browser/site/
 socket/TTY gates remain open; no gated probe ran. The denied SafeJS probe is unrun
 and the complete seven-day browser objective stays active.
 
+September 4 ordered inline/reset continuation: `INLINE-ORDER-ALL.md` preserves
+ordinary declaration order across shorthand compaction and expands `all` into
+supported native longhands. Component mutation/removal, custom-property scope,
+shared geometry/paint, explicit resets and retained-order quotas have native
+coverage. Twenty-two new cases pass; sixteen fail on isolated prior HEAD. The
+existing background fixture's quota now covers expanded reset components. Focused
+runs pass 147 / five files in both trees; full authorized native runs pass
+9,709 / 271 working files and 8,563 / 249 isolated files. Both trees pass types/
+builds, strict two-test checks and five-file lint. Historical reports and unrelated
+pending changes remain intact. Continue native application compatibility; full
+CSSOM serialization/property coverage/cloning, released-SafeJS and real browser/
+site/socket/TTY gates remain open. No gated probe ran, the denied SafeJS probe
+remains unrun, and the complete seven-day browser objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Ordered inline/reset checkpoint: `INLINE-ORDER-ALL.md` preserves ordinary CSSOM
+enumeration across shorthand compaction and expands `all` over supported native
+longhands. Component replacement/removal affects shared geometry and paint;
+custom properties survive resets. Order-sensitive ordinary projections use the
+existing document quotas, while explicit attribute/`cssText` replacement adopts
+serialized order. Twenty-two new cases pass; sixteen fail on isolated prior HEAD.
+An existing background fixture now budgets expanded reset components, rather than
+relaxing resource limits. Focused runs pass 147 / five files in both trees;
+authorized full native runs pass 9,709 / 271 working files and 8,563 / 249 isolated
+files. Both trees pass types/builds, strict two-test checks and five-file lint.
+Historical reports and unrelated pending changes remain separate. Continue native
+application compatibility; full CSSOM serialization/property coverage/cloning,
+released-SafeJS, real browser/site/socket/TTY and original acceptance gates remain
+open. No gated probe ran; the denied SafeJS probe remains unrun and the seven-day
+browser goal remains active.
+
+### Previous pending CSSOM state checkpoint
+
 Pending CSSOM state checkpoint: `INLINE-PENDING-STATE.md` implements document-owned
 expanded longhand slots, partial removal and lower-priority component replacement.
 CSSOM, native style resolution, geometry and pixels share retained declarations;

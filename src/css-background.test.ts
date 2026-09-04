@@ -5,6 +5,7 @@ import {
 	parseBackgroundShorthand,
 } from "./css-background.js";
 import {
+	inlineDeclarationComponents,
 	parseInlineDeclarations,
 	propertyValue,
 	serializeDeclarations,
@@ -212,7 +213,10 @@ it("does not serialize partial or mixed-priority components as a shorthand", () 
 
 it("keeps all resets in order and declines mixed CSS-wide shorthand serialization", () => {
 	const source = "background:red;all:initial;background-color:blue";
-	const entries = parseInlineDeclarations(source, 10);
+	const entries = parseInlineDeclarations(
+		source,
+		inlineDeclarationComponents("all").length,
+	);
 	const serialized = serializeDeclarations(entries);
 	expect(serialized).not.toContain("background:");
 	expect(fixture("", serialized).paint()).toEqual(fixture("", source).paint());

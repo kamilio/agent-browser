@@ -114,6 +114,7 @@ export const inlineProperties = [
 	...cssBackgroundProperties,
 ];
 const supported = new Set(inlineProperties);
+let allComponents: readonly string[] | undefined;
 function trim(value: string): string {
 	let start = 0;
 	let end = value.length;
@@ -270,6 +271,16 @@ export function expandDeclaration(
 	const source = name.startsWith("--")
 		? input
 		: withoutCssComments(input).trim();
+	if (name === "all") {
+		const value = source.toLowerCase();
+		return wide.has(value)
+			? inlineDeclarationComponents(name).map((component) => ({
+					name: component,
+					value,
+					important,
+				}))
+			: [];
+	}
 	if (name === "overflow")
 		return (parseFlowDeclarations(name, source) ?? []).map((entry) => ({
 			name: entry.property,
@@ -375,12 +386,18 @@ export function inlineDeclarationComponents(name: string): readonly string[] {
 	const flex = flexShorthandComponents(name);
 	if (flex) return flex;
 	if (name === "overflow") return ["overflow-x", "overflow-y"];
-	if (name === "all")
-		return parseCssDeclarations(
-			"all:initial",
-			{ rules: 0, declarations: 0, maxRules: 1, maxDeclarations: 1 },
-			() => {},
-		).map((entry) => entry.property);
+	if (name === "all") {
+		allComponents ??= Object.freeze([
+			...new Set(
+				parseCssDeclarations(
+					"all:initial",
+					{ rules: 0, declarations: 0, maxRules: 1, maxDeclarations: 1 },
+					() => {},
+				).map((entry) => entry.property),
+			),
+		]);
+		return allComponents;
+	}
 	return isBorderShorthand(name)
 		? (parseBorderShorthand(name, "initial")?.map((entry) => entry.property) ??
 				[])
@@ -455,6 +472,18 @@ export function propertyValue(
 	const found = propertyDeclarations(entries, name).filter(
 		(entry) => !entry.pending,
 	);
+	if (name === "all") {
+		const first = found[0];
+		return first &&
+			wide.has(first.value) &&
+			found.length === components.length &&
+			found.every(
+				(entry) =>
+					entry.value === first.value && entry.important === first.important,
+			)
+			? first.value
+			: "";
+	}
 	const flex = flexShorthandComponents(name);
 	if (flex) {
 		if (
@@ -524,8 +553,25 @@ export function serializeDeclarations(
 ): string {
 	const emitted = new Set<string>();
 	const output: string[] = [];
+	const resetComponents = inlineDeclarationComponents("all");
+	const resetValue =
+		entries.length >= resetComponents.length &&
+		resetComponents.every((name) =>
+			entries.some((entry) => entry.name === name),
+		)
+			? propertyValue(entries, "all")
+			: "";
 	for (const entry of entries) {
 		if (emitted.has(entry.name)) continue;
+		if (
+			resetValue &&
+			resetComponents.includes(entry.name) &&
+			resetComponents.every((name) => !emitted.has(name))
+		) {
+			for (const name of resetComponents) emitted.add(name);
+			output.push(`all: ${resetValue}${entry.important ? " !important" : ""};`);
+			continue;
+		}
 		if (entry.pending) {
 			const components = inlineDeclarationComponents(entry.pending);
 			const value = components.every((name) => !emitted.has(name))

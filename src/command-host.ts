@@ -631,7 +631,9 @@ export class BrowserCommandHost {
 			cssVariables: cssVariableCapabilities,
 			inlineDeclarations: {
 				partial: true,
-				profile: "document-owned-pending-substitution",
+				profile: "document-owned-inline-declarations",
+				preservesDeclarationOrder: true,
+				allReset: "supported-native-longhands",
 				limits: inlineDeclarationLimits,
 			},
 			mediaQueries: {

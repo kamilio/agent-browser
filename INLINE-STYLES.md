@@ -1,5 +1,11 @@
 # Inline style declarations
 
+September 4 ordering/reset continuation: `INLINE-ORDER-ALL.md` preserves ordinary
+declaration order across shorthand compaction and expands `all` into supported
+native longhand slots. Explicit attribute/`cssText` replacement still resets hidden
+state. Retention now includes order-sensitive ordinary blocks under the existing
+quotas; full serialization, property coverage and runtime gates remain open.
+
 September 4 pending-state continuation: `INLINE-PENDING-STATE.md` replaces raw
 pending shorthands with shared document-owned longhand slots. Partial removal and
 reprioritization now affect native geometry/paint, with explicit serialization,
