@@ -122,6 +122,7 @@ export class DocumentTree {
 	private currentFocus: number | null = null;
 	private currentGeneratedFocus: string | null = null;
 	private currentFocusIndication = false;
+	private currentFocusVisibleOverride: boolean | undefined;
 	private inputModality: "keyboard" | "pointer" = "keyboard";
 	private currentPointerHover: number | null = null;
 	private currentPointerActive: number | null = null;
@@ -231,10 +232,22 @@ export class DocumentTree {
 		const active = this.activeElement;
 		return (
 			active !== null &&
-			(this.currentFocusIndication ||
-				(this.currentGeneratedFocus === null &&
-					supportsFocusKeyboardInput(this, active)))
+			(this.currentFocusVisibleOverride ??
+				(this.currentFocusIndication ||
+					(this.currentGeneratedFocus === null &&
+						supportsFocusKeyboardInput(this, active))))
 		);
+	}
+
+	setFocusVisible(value: boolean) {
+		this.ensureOpen();
+		if (typeof value !== "boolean")
+			throw new AgentBrowserError("invalid-input", "Invalid focus indication");
+		if (this.activeElement === null) return;
+		const previous = this.focusIndicated;
+		this.currentFocusVisibleOverride = value;
+		if (previous !== this.focusIndicated)
+			this.changed("focus-indication", this.root);
 	}
 
 	recordInputModality(modality: "keyboard" | "pointer") {
@@ -242,6 +255,7 @@ export class DocumentTree {
 		if (modality !== "keyboard" && modality !== "pointer")
 			throw new AgentBrowserError("invalid-input", "Invalid input modality");
 		const previous = this.focusIndicated;
+		this.currentFocusVisibleOverride = undefined;
 		this.inputModality = modality;
 		this.currentFocusIndication = modality === "keyboard";
 		if (previous !== this.focusIndicated)
@@ -280,6 +294,7 @@ export class DocumentTree {
 		) {
 			if (id !== null && indicate !== undefined) {
 				const previous = this.focusIndicated;
+				this.currentFocusVisibleOverride = undefined;
 				this.currentFocusIndication = indicate;
 				if (previous !== this.focusIndicated)
 					this.changed("focus-indication", this.root);
@@ -292,6 +307,7 @@ export class DocumentTree {
 				? this.inputModality === "keyboard"
 				: this.focusIndicated);
 		this.currentFocus = id;
+		this.currentFocusVisibleOverride = undefined;
 		this.currentGeneratedFocus = generatedReference;
 		this.currentFocusIndication = id !== null && indication;
 		this.currentKeyboardActive = null;
@@ -2269,6 +2285,7 @@ export class DocumentTree {
 		this.attachedAttributes.clear();
 		this.currentTarget = null;
 		this.currentFocus = null;
+		this.currentFocusVisibleOverride = undefined;
 		this.currentGeneratedFocus = null;
 		this.changes = [];
 		this.currentPointerHover = null;

@@ -1,5 +1,13 @@
 # Compatibility and playground acceptance ledger
 
+September 4 native focus-options continuation: `FOCUS-OPTIONS.md` adds native
+element focus/blur actions with preventScroll, explicit focusVisible overrides,
+same-target/reentrant ownership and shared root centering. Integrated tests and
+native captures do not establish browser-synchronous HTMLElement methods. The
+async helper is explicitly host-only until the public guest-call adapter is
+correctly integrated and validated. Nested scrolling, full focus/dictionary
+semantics and original browser/runtime gates remain open; no gated probe ran.
+
 September 4 editable-fill continuation: `EDITABLE-FILL.md` enables native/command
 literal replacement of editable contents with editing-root input events, cancellation,
 mutation ownership, stale-target guards and forwarded abort signals. Inspected

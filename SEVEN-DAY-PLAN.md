@@ -1265,6 +1265,18 @@ parallel sprint preserves the full browser goal, pending work and historical
 evidence. Selection, rich editing and all original runtime/browser gates stay open;
 no gated probe ran and the denied SafeJS probe remains unrun.
 
+September 4 parallel focus-options continuation: `FOCUS-OPTIONS.md` integrates
+native element focus/blur, indication overrides and scrolling. Four parent-added
+regressions reproduced stale scrolling after indication-triggered reentrancy and
+now pass. Final focused runs pass 315 / seven files; types/builds, strict checking
+and four-file lint pass in both trees. Authorized full native runs pass 9,733 /
+277 isolated files; working validation reports 10,878 passes and the unchanged
+pending Window-onload failure / 299 files. Three inspected native captures show
+prevented scroll, centering and keyboard indication. Active-page synchronous
+focus/blur remains an explicit runtime-adapter requirement, not a Promise stub.
+No gated probe ran; the denied SafeJS probe remains unrun and original scope stays
+open under the accelerated integration plan.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

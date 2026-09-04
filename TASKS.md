@@ -19,6 +19,21 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native focus-options checkpoint: `FOCUS-OPTIONS.md` integrates the parallel
+worker's element focus/blur actions, preventScroll, explicit focusVisible and
+shared root centering. Parent review added four failing indication-reentrancy
+cases and fixed stale scrolling before validation. Final focused runs pass 315 /
+seven files; types/builds, strict checking and four-file lint pass in both trees.
+Authorized full native runs pass 9,733 / 277 isolated files; working validation
+reports 10,878 passes and the unchanged pending Window-onload assertion failure /
+299 files. Three inspected native captures show prevented scroll, centering with
+forced-hidden indication, and subsequent keyboard indication. Browser-synchronous
+page focus methods remain gated on the actual guest-call contract, not replaced
+by a falsely compatible Promise-returning stub. Original browser/runtime gates
+stay open; no gated probe ran and the denied SafeJS probe remains unrun.
+
+### Previous editable-fill checkpoint
+
 Editable-fill checkpoint: `EDITABLE-FILL.md` adds real native/command text
 replacement for editable containers and descendants, with root focus, cancelable
 input, guarded DOM replacement, mutation publication and async/command abort.

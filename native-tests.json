@@ -1,5 +1,6 @@
 [
   "src/action-wait.test.ts",
+  "src/page-focus.test.ts",
   "src/editable-fill.test.ts",
   "src/editable-focus.test.ts",
   "src/focus-visible.test.ts",

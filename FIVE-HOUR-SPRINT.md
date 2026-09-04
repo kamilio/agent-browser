@@ -13,7 +13,8 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 | Main | Editable-region fill, cancellation, command path, integration and validation | Own the primary worktree and focused atomic commits. |
 | DOM worker | Native live Range/Selection and ScriptDom publishing | Own range/selection modules and ScriptDom; provide Window integration contract. |
 | Web globals worker | URL/URLSearchParams and additional feasible web globals | New owned binding modules; main integrates PageBindings. |
-| Focus worker | Element focus/blur options, indication and scrolling | Focus/document core plus adapter; do not mislabel asynchronous guest semantics. |
+| Focus delivery | Native focus/blur options, indication and scrolling | Integrated with an additional parent reentrancy fix; synchronous guest methods remain open. |
+| Cookie worker | Cookie list/get/set/delete services | Reuses the released focus slot; main owns command/session wiring. |
 | Positioning worker | Native absolute/fixed layout and shared geometry | CSS/style/layout write set; preserve existing flow/flex/replaced behavior. |
 | Runtime worker | Connect existing public runtime adapter selection | Loader/factory selection only; actual SafeJS execution is still gated. |
 | Playground worker | Extraction/snapshot downloads and honest example discovery | Existing UI, mounted in-memory tests, no live-site claims. |

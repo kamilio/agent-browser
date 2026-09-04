@@ -18,11 +18,18 @@ import { isRootEditableElement } from "./content-editability.js";
 import { parsedTabIndex } from "./element-focus.js";
 import { closedDetailsChild, summaryDetails } from "./details.js";
 import { documentStyles } from "./styles.js";
+import { documentScrollIntoView } from "./scroll-into-view.js";
+import type { RootScrollRequest } from "./root-scroll.js";
 import {
 	documentGeneratedControls,
 	resolveVisualTarget,
 	type GeneratedControlTarget,
 } from "./generated-controls.js";
+
+export interface ElementFocusOptions {
+	preventScroll?: boolean;
+	focusVisible?: boolean;
+}
 
 export class BrowserFocusEvent extends BrowserEvent {
 	readonly #relatedTarget: number | null;
@@ -91,6 +98,7 @@ export function activeFocus(tree: DocumentTree) {
 
 export class DocumentFocus {
 	private transition = 0;
+	private elementRequest = 0;
 	private pendingIndication:
 		| { turn: number; value: boolean | undefined }
 		| undefined;
@@ -162,9 +170,96 @@ export class DocumentFocus {
 		return runEventActionAsync(this.events, this.focusAction(reference));
 	}
 
+	focusElement(id: number, options: ElementFocusOptions = {}) {
+		return runEventAction(this.events, this.focusElementAction(id, options));
+	}
+
+	focusElementAsync(
+		id: number,
+		options: ElementFocusOptions = {},
+		requestScroll?: RootScrollRequest,
+		signal?: AbortSignal,
+	) {
+		return runEventActionAsync(
+			this.events,
+			this.focusElementAction(id, options, requestScroll),
+			signal,
+		);
+	}
+
+	*focusElementAction(
+		id: number,
+		options: ElementFocusOptions = {},
+		requestScroll?: RootScrollRequest,
+	): EventAction<void> {
+		this.ensureOpen();
+		const { preventScroll = false, focusVisible } = options;
+		if (
+			typeof preventScroll !== "boolean" ||
+			(focusVisible !== undefined && typeof focusVisible !== "boolean")
+		)
+			throw new AgentBrowserError("invalid-input", "Invalid focus options");
+		this.ensureElement(id);
+		if (!this.canFocus(id)) return;
+		const reference = this.tree.reference(id);
+		const sameTarget = this.activeReference() === reference;
+		const request = ++this.elementRequest;
+		const turn = this.transition + (sameTarget ? 0 : 1);
+		yield* this.changeFocusAction(reference, "script", true);
+		this.ensureOpen();
+		if (
+			this.elementRequest !== request ||
+			this.transition !== turn ||
+			this.activeReference() !== reference
+		)
+			return;
+		if (focusVisible !== undefined) this.tree.setFocusVisible(focusVisible);
+		if (
+			this.elementRequest !== request ||
+			this.transition !== turn ||
+			this.activeReference() !== reference ||
+			preventScroll
+		)
+			return;
+		const scrolling = documentScrollIntoView(this.tree);
+		const alignment = { block: "center", inline: "center" } as const;
+		if (requestScroll) {
+			const position = scrolling.plan(id, alignment);
+			if (position) requestScroll(position);
+		} else yield* scrolling.action(id, alignment);
+	}
+
+	blurElement(id: number) {
+		return runEventAction(this.events, this.blurElementAction(id));
+	}
+
+	blurElementAsync(id: number, signal?: AbortSignal) {
+		return runEventActionAsync(this.events, this.blurElementAction(id), signal);
+	}
+
+	*blurElementAction(id: number): EventAction<void> {
+		this.ensureOpen();
+		this.ensureElement(id);
+		if (this.activeReference() !== this.tree.reference(id)) return;
+		yield* this.changeFocusAction(null, "script", true);
+	}
+
+	private ensureElement(id: number) {
+		if (this.tree.get(id).kind !== "element")
+			throw new AgentBrowserError("invalid-input", "Focus requires an element");
+	}
+
 	*focusAction(
 		reference: string | null,
 		origin: "script" | "keyboard" | "pointer" = "script",
+	): EventAction<number | null> {
+		return yield* this.changeFocusAction(reference, origin);
+	}
+
+	private *changeFocusAction(
+		reference: string | null,
+		origin: "script" | "keyboard" | "pointer",
+		noOpOnInvalid = false,
 	): EventAction<number | null> {
 		this.ensureOpen();
 		if (!["script", "keyboard", "pointer"].includes(origin))
@@ -175,11 +270,13 @@ export class DocumentFocus {
 		const generated = resolved?.generated;
 		const nextReference =
 			target === null ? null : (generated?.ref ?? this.tree.reference(target));
-		if (target !== null && !this.canFocus(target, generated))
+		if (target !== null && !this.canFocus(target, generated)) {
+			if (noOpOnInvalid) return this.active();
 			throw new AgentBrowserError(
 				"not-actionable",
 				"Element cannot receive focus",
 			);
+		}
 		const previous = this.active();
 		const indicate =
 			origin === "keyboard"
@@ -224,11 +321,13 @@ export class DocumentFocus {
 			if (turn !== this.transition) return this.active();
 			this.ensureOpen();
 			if (target === null) return null;
-			if (!this.canFocus(target, generated))
+			if (!this.canFocus(target, generated)) {
+				if (noOpOnInvalid) return this.active();
 				throw new AgentBrowserError(
 					"not-actionable",
 					"Focus target changed during events",
 				);
+			}
 			this.tree.setActiveElement(target, generated?.ref ?? null, indicate);
 			this.baseline = {
 				id: target,
@@ -334,6 +433,7 @@ export class DocumentFocus {
 	}
 
 	private ensureOpen() {
+		this.tree.get(this.tree.root);
 		if (this.events.metrics().closed)
 			throw new AgentBrowserError("closed", "Document focus is closed");
 	}
