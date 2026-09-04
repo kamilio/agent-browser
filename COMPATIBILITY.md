@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 CSSOM checkpoint: `INLINE-STYLE-PRIORITY.md` separates declaration
+priority from value serialization and makes empty `setProperty` writes remove
+properties before invalid-priority rejection. The latter deliberately follows
+the CSSOM specification rather than one preserved September 2 browser fixture;
+it is an explicit compatibility divergence, not a new browser-equivalence pass.
+Pending shorthand enumeration/partial mutation and the broader CSSOM gates remain.
+
 Baseline researched September 1, 2026. All rows start as **pending** unless
 there is a linked implementation and passing behavioral test. A CLI parser that
 recognizes a command is not a browser implementation. An `unsupported` error

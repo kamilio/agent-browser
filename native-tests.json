@@ -137,6 +137,7 @@
   "src/inline-capture.test.ts",
   "src/inline-flex-intrinsic.test.ts",
   "src/inline-flex.test.ts",
+  "src/inline-style-priority.test.ts",
   "src/inline-styles.test.ts",
   "src/input-calendar-values.test.ts",
   "src/input-email.test.ts",

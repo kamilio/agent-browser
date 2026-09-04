@@ -6,6 +6,7 @@ import {
 	inlineDeclarationComponents,
 	parseInlineDeclarations,
 	propertyDeclarations,
+	propertyPriority,
 	propertyValue,
 	serializeDeclarations,
 } from "./css-declarations.js";
@@ -141,13 +142,7 @@ export class InlineStyles {
 				getPropertyValue: (...args) => propertyValue(read(), argument(args, 1)),
 				getPropertyPriority: (...args) => {
 					const name = argument(args, 1);
-					const entries = read();
-					return propertyValue(entries, name) &&
-						propertyDeclarations(entries, name).every(
-							(entry) => entry.important,
-						)
-						? "important"
-						: "";
+					return propertyPriority(read(), name);
 				},
 				setProperty: (...args) =>
 					this.set(
@@ -219,11 +214,11 @@ export class InlineStyles {
 		this.checkSize(name);
 		this.checkSize(value);
 		this.checkSize(priority);
-		if (priority !== "" && priority.toLowerCase() !== "important") return;
 		if (value === "") {
 			this.remove(id, state, name);
 			return;
 		}
+		if (priority !== "" && priority.toLowerCase() !== "important") return;
 		const additions = directDeclaration(name, value, priority !== "");
 		if (!additions.length) return;
 		const previous = this.read(id, state);

@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Inline CSSOM priority checkpoint: `INLINE-STYLE-PRIORITY.md` makes priority reads
+independent of value serialization and removes empty/null-to-empty values before
+invalid-priority rejection. Twenty-six new cases include pending shorthand
+families, component precedence, cache revocation and shared geometry/raster
+invalidation; twenty-four fail on isolated prior HEAD. One historical browser
+comparison becomes an explicit specification-based divergence check; its original
+record is unchanged and no new browser-equivalence result is claimed. Focused
+runs pass 118 / three working files and 111 / three isolated files. Full authorized
+native runs pass 9,652 / 269 and 8,499 / 247; both trees pass types/builds, strict
+two-test checks and four-file lint. Pending shorthand storage/enumeration, partial
+removal/reprioritization, broader CSSOM, released-SafeJS and real browser/site/
+socket/TTY gates remain open. Continue the shared native shorthand representation
+rather than hiding unsupported mutations in string rewrites. Historical evidence
+and unrelated pending changes remain intact. No gated probe ran; the denied SafeJS
+probe stays unrun and the complete seven-day goal remains active.
+
+### Previous CSS variable token checkpoint
+
 CSS variable token checkpoint: `CSS-VARIABLE-TOKENS.md` corrects hash and
 at-keyword consumption before function detection. Literal `#var(...)`/`@var(...)`
 no longer create false dependencies or select incorrect fallbacks; real nested

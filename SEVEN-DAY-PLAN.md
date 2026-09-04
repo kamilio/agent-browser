@@ -858,6 +858,19 @@ released-SafeJS, real browser/site/socket/TTY and original compatibility gates
 remain open. No gated probe ran; the denied SafeJS probe stays unrun and the
 complete seven-day browser objective remains active.
 
+September 4 inline CSSOM priority continuation: `INLINE-STYLE-PRIORITY.md` fixes
+priority reads for pending/non-serializable components and specification-ordered
+empty removals. Twenty-six new cases fail twenty-four expectations on isolated
+prior HEAD, then pass. One preserved browser fixture differs from the chosen
+specification behavior; its parity assertion moves to an explicit divergence test,
+without rewriting evidence. Focused runs pass 118 / three working files and
+111 / three isolated files; full authorized native runs pass 9,652 / 269 and
+8,499 / 247. Both trees pass types/builds, strict two-test checks and four-file
+lint. Continue shared native shorthand storage and its remaining partial-mutation
+gates. Full CSSOM, released-SafeJS, real browser/site/socket/TTY and original
+compatibility gates remain open. No gated probe ran; the denied SafeJS probe
+remains unrun and the complete seven-day browser objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

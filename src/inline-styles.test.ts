@@ -9,6 +9,10 @@ import { ScriptDom, type ScriptHostObjectDefinition } from "./script-dom.js";
 import { renderSnapshot, snapshotDocument } from "./snapshot.js";
 import { documentStyles } from "./styles.js";
 
+const matchingReferenceCases = nativeCases.filter(
+	(reference) => reference.id !== "remove-invalid-priority",
+);
+
 interface Style {
 	cssText: string;
 	length: number;
@@ -64,7 +68,7 @@ function fixture(source?: string, limits = {}) {
 }
 
 describe("inline CSSOM declarations", () => {
-	it.each(nativeCases)(
+	it.each(matchingReferenceCases)(
 		"matches the actual reference browser for $id",
 		(reference) => {
 			const { tree, element, style } = fixture(reference.input);

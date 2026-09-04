@@ -1,5 +1,11 @@
 # Inline style declarations
 
+September 4 continuation: `INLINE-STYLE-PRIORITY.md` corrects priority queries for
+unresolved/non-serializable declarations and specification-ordered empty writes.
+It explicitly records the difference from the historical `remove-invalid-priority`
+browser case without changing that evidence. The measurements below remain the
+September 2 checkpoint, not a new reference-browser run.
+
 Later checkpoint: `COMPUTED-STYLES.md` adds a separate readonly live
 `getComputedStyle()` API. Inline `element.style` retains the authored-declaration
 contract below; it is not changed into a computed-style object.

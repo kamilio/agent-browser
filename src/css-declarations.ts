@@ -417,6 +417,22 @@ function winningEntry(
 	return winner;
 }
 
+export function propertyPriority(
+	entries: InlineDeclaration[],
+	name: string,
+): string {
+	const components = inlineDeclarationComponents(name);
+	if (
+		components.length &&
+		components.every((component) => winningEntry(entries, component)?.important)
+	)
+		return "important";
+	return entries.find((entry) => entry.name === name && !entry.pending)
+		?.important
+		? "important"
+		: "";
+}
+
 export function propertyValue(
 	entries: InlineDeclaration[],
 	name: string,
