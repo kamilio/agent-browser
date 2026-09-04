@@ -144,9 +144,9 @@ export class ScriptAttributes {
 		return attributeId === null ? null : this.attribute(attributeId);
 	}
 
-	create(name: string): object {
+	create(name: string, value = ""): object {
 		this.ensureCapacity();
-		return this.attribute(this.tree.createAttribute(name));
+		return this.attribute(this.tree.createAttribute(name, value));
 	}
 
 	set(id: number, value: unknown): object | null {

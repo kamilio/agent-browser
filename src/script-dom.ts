@@ -484,6 +484,7 @@ export class ScriptDom {
 			});
 			Object.assign(definition.methods, {
 				write: (...values: readonly unknown[]) => this.write(values, false),
+				importNode: (...values: readonly unknown[]) => this.importNode(values),
 				createAttribute: (...args: readonly unknown[]) => {
 					this.read(id);
 					if (!args.length)
@@ -808,6 +809,38 @@ export class ScriptDom {
 	}
 	private optional(id: number | null | undefined) {
 		return id == null ? null : this.node(id);
+	}
+	private importNode(values: readonly unknown[]): object {
+		this.read(this.tree.root);
+		if (!values.length) throw new TypeError("importNode requires a node");
+		this.relations.source(values[0]);
+		const options = values[1];
+		let deep = false;
+		if (options === null) deep = true;
+		else if (typeof options === "object" || typeof options === "function") {
+			const dictionary = options as {
+				customElementRegistry?: unknown;
+				selfOnly?: unknown;
+			};
+			if (dictionary.customElementRegistry !== undefined)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Importing with a custom element registry is not implemented",
+				);
+			deep = !dictionary.selfOnly;
+		} else deep = Boolean(options);
+		this.read(this.tree.root);
+		const source = this.relations.source(values[0]);
+		if (source.attribute) {
+			const attribute = source.tree.getAttributeRecord(source.id);
+			return this.attributes.create(attribute.name, attribute.value);
+		}
+		if (source.tree.get(source.id).kind === "document")
+			throw new DOMException(
+				"Documents cannot be imported",
+				"NotSupportedError",
+			);
+		return this.node(this.tree.copyFrom(source.tree, source.id, deep));
 	}
 	private identify(value: unknown) {
 		const id =

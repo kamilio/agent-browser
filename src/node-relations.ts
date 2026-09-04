@@ -250,6 +250,24 @@ export class NodeRelations {
 	close() {
 		this.closed = true;
 	}
+	source(value: unknown): {
+		tree: DocumentTree;
+		id: number;
+		attribute: boolean;
+	} {
+		this.ensureOpen();
+		const identity =
+			value !== null && typeof value === "object"
+				? identities.get(value)
+				: undefined;
+		if (!identity) throw new TypeError("Expected a node capability");
+		identity.owner.ensureOpen();
+		return {
+			tree: identity.owner.tree,
+			id: identity.id,
+			attribute: identity.attribute,
+		};
+	}
 	private ensureOpen() {
 		if (this.closed)
 			throw new AgentBrowserError("closed", "Node comparisons are closed");

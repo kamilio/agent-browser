@@ -19,6 +19,21 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Document-import checkpoint: `DOCUMENT-IMPORT.md` connects `document.importNode`
+to native subtree copying across authenticated script/attribute owners. Copies
+use destination identity, URL context and quotas without moving the source or
+copying registered listeners. Current boolean/dictionary options and teardown
+revalidation have coverage; custom-element registries remain explicitly unsupported.
+Five initial regressions fail before implementation; 58 new native cases and
+270 focused tests across eight explicit files pass. Final full native validation
+passes 7,881 / 223 files; the isolated owned patch passes 5,121 / 162 available
+files. Types, builds and four-file lint pass in both trees, with pre-existing
+pending changes preserved outside this checkpoint. This does not implement
+cross-document adoption or close the runtime/framework/site acceptance gates.
+The prior denied SafeJS probe remains unrun; the full seven-day goal stays active.
+
+### Previous preflight-cache checkpoint
+
 Preflight-cache checkpoint: `FETCH-PREFLIGHT-CACHE.md` adds bounded per-owner
 method/header permission reuse to the connected page fetch path. Exact URL,
 serialized origin and credential matching preserve request isolation; actual

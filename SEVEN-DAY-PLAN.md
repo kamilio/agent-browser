@@ -296,6 +296,13 @@ The previously denied SafeJS probe is not retried; native fixtures do not close
 the independent runtime or live-site gates. Continue native compatibility work
 while those gates await explicit authorization.
 
+September 4 document-import continuation: `DOCUMENT-IMPORT.md` connects native
+cross-owner subtree and attribute copying to `document.importNode`, with current
+dictionary options, destination ownership/URL context and resource preflight.
+Native identity, control-state and teardown tests advance the application API
+surface without treating native results as interpreted-runtime evidence.
+Adoption, custom elements, templates and the existing independent gates stay open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

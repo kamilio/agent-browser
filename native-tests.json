@@ -182,6 +182,7 @@
   "src/script-collections.test.ts",
   "src/script-dataset.test.ts",
   "src/script-dom.test.ts",
+  "src/script-import-node.test.ts",
   "src/script-events.test.ts",
   "src/script-form.test.ts",
   "src/script-geometry.test.ts",
