@@ -1,4 +1,5 @@
 import { parseBackgroundShorthand } from "./css-background.js";
+import { canonicalCssProperty } from "./css-property-aliases.js";
 import {
 	cssOutlineProperties,
 	isCssOutlineProperty,
@@ -223,7 +224,7 @@ export function parseCssDeclarations(
 			);
 		const rawProperty = withoutComments(statement.slice(0, colon)).trim();
 		const custom = customPropertyName(rawProperty);
-		const property = custom ?? rawProperty.toLowerCase();
+		const property = custom ?? canonicalCssProperty(rawProperty.toLowerCase());
 		const raw = splitCssValue(statement.slice(colon + 1));
 		if (!raw) {
 			issue("unimplemented-or-invalid-css-value");

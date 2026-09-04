@@ -8,6 +8,13 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation adds the legacy word-wrap name as canonical
+overflow-wrap state, including native CSSOM accessors and methods.
+`WORD-WRAP-ALIAS.md` records 57 new passing cases, 582 isolated / 583 working focused
+passes with the same baseline cache failure, and passing types/builds/scoped
+checks. Ten alias captures match canonical output exactly; existing import-order
+diagnostics and original acceptance gates stay open.
+
 The until-stopped continuation adds grapheme-safe native overflow wrapping and
 anywhere/break-word intrinsic sizing. `OVERFLOW-WRAP.md` records 138 new passing
 cases, 939 isolated / 940 working focused passes with one reproduced baseline

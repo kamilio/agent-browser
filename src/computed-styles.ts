@@ -22,6 +22,10 @@ import {
 	type BorderColorProperty,
 } from "./css-border.js";
 import { cssPaintProperties, paintBackground } from "./css-paint.js";
+import {
+	canonicalCssProperty,
+	cssPropertyAliases,
+} from "./css-property-aliases.js";
 import { cssTextProperties, isCssTextProperty } from "./css-text.js";
 import { documentGeometry } from "./document-geometry.js";
 import type { DocumentTree } from "./document.js";
@@ -74,11 +78,12 @@ function scalar(value: unknown): string {
 export function resolvedStyleValue(
 	tree: DocumentTree,
 	id: number,
-	name: string,
+	property: string,
 ): string {
 	if (tree.get(id).kind !== "element")
 		throw new TypeError("Computed style requires an element");
 	if (!tree.isConnected(id)) return "";
+	const name = canonicalCssProperty(property);
 	if (isNeutralBackgroundProperty(name)) return initialBackgroundValues[name];
 	if (name === "background")
 		return `${resolvedStyleValue(tree, id, "background-color")} none repeat scroll 0% 0% / auto padding-box border-box`;
@@ -252,6 +257,7 @@ export class ComputedStyles {
 		};
 		for (const name of [
 			...computedStyleProperties,
+			...Object.keys(cssPropertyAliases),
 			"margin",
 			"padding",
 			"background",
@@ -260,7 +266,10 @@ export class ComputedStyles {
 			"gap",
 			"overflow",
 		]) {
-			const property = { get: () => read(name), set: readonly };
+			const property = {
+				get: () => read(canonicalCssProperty(name)),
+				set: readonly,
+			};
 			properties[name] = property;
 			properties[
 				name.replace(/-([a-z])/g, (_match, letter: string) =>

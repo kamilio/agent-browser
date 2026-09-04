@@ -6,6 +6,7 @@ import {
 	serializeBackgroundValues,
 } from "./css-background.js";
 import { normalizeCssColor } from "./css-color.js";
+import { canonicalCssProperty } from "./css-property-aliases.js";
 import {
 	cssOutlineProperties,
 	isCssOutlineProperty,
@@ -140,7 +141,9 @@ function trim(value: string): string {
 export function declarationName(name: string): string {
 	return name.startsWith("--")
 		? (customPropertyName(name) ?? name)
-		: name.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
+		: canonicalCssProperty(
+				name.replace(/[A-Z]/g, (letter) => letter.toLowerCase()),
+			);
 }
 
 function tokens(
@@ -267,6 +270,8 @@ export function expandDeclaration(
 	input: string,
 	important: boolean,
 ): InlineDeclaration[] {
+	const canonical = canonicalCssProperty(name);
+	if (canonical !== name) return expandDeclaration(canonical, input, important);
 	if (
 		!name.startsWith("--") &&
 		supported.has(name) &&
@@ -406,6 +411,8 @@ export function parseInlineDeclarations(
 }
 
 export function inlineDeclarationComponents(name: string): readonly string[] {
+	const canonical = canonicalCssProperty(name);
+	if (canonical !== name) return inlineDeclarationComponents(canonical);
 	if (name === "outline") return cssOutlineProperties.slice(0, 3);
 	const flex = flexShorthandComponents(name);
 	if (flex) return flex;
@@ -477,6 +484,8 @@ export function propertyValue(
 	entries: readonly InlineDeclaration[],
 	name: string,
 ): string {
+	const canonical = canonicalCssProperty(name);
+	if (canonical !== name) return propertyValue(entries, canonical);
 	const components = inlineDeclarationComponents(name);
 	const pending = entries.find((entry) => entry.pending === name);
 	if (

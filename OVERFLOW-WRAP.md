@@ -1,5 +1,9 @@
 # Native overflow wrapping
 
+Later September 4 continuation: `WORD-WRAP-ALIAS.md` adds the legacy word-wrap name
+over the same canonical state. The measurements and outstanding alias status
+below describe this earlier checkpoint and are retained without rewriting evidence.
+
 September 4, 2026 continuation from `1e23e7f`. Ordinary document inline text now
 supports inherited `overflow-wrap: normal | anywhere | break-word`. This is
 bounded native layout progress, not full CSS text, font, runtime or browser parity.

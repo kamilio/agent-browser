@@ -129,6 +129,8 @@
   "src/overflow-wrap-layout.test.ts",
   "src/css-overflow-wrap.test.ts",
   "src/text-grapheme-boundaries.test.ts",
+  "src/word-wrap.test.ts",
+  "src/word-wrap-cssom.test.ts",
   "src/coordinate-inert.test.ts",
   "src/controls.test.ts",
   "src/cookie-state.test.ts",

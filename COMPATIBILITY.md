@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 legacy-name continuation: `WORD-WRAP-ALIAS.md` canonicalizes word-wrap
+through declarations and live CSSOM while retaining one indexed longhand. All 57
+new cases pass; fifteen-file runs retain 582 isolated / 583 working passes and the
+same baseline styles-cache failure. Types/builds/scoped checks pass. Existing
+import-order diagnostics remain explicit; ten alias captures match canonical
+output exactly. Original full-suite/browser/runtime/live gates remain open.
+
 September 4 emergency-wrap continuation: `OVERFLOW-WRAP.md` adds inherited
 normal/anywhere/break-word behavior, grapheme-safe grouping and intrinsic sizing.
 All 138 new cases pass. The twenty-four-file runs retain one reproduced baseline

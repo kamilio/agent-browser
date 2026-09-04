@@ -19,6 +19,14 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+The legacy word-wrap name now shares canonical overflow-wrap cascade and CSSOM
+state without duplicate longhands or declaration entries. `WORD-WRAP-ALIAS.md`
+records 57 new passing cases; fifteen-file runs retain 582 isolated / 583 working
+passes and the same reproduced baseline styles-cache failure. Types/builds and
+scoped checks pass; ten alias captures match canonical output byte-for-byte.
+Existing import-order diagnostics remain explicit. Both manifests retain 384
+entries. Original browser/runtime/live gates remain open.
+
 Ordinary inline text now supports bounded overflow-wrap emergency breaking with
 grapheme preservation and correct anywhere/break-word intrinsic differences.
 `OVERFLOW-WRAP.md` records 138 new passing cases, 939 isolated / 940 working passes

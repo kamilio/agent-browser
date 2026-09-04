@@ -7,6 +7,13 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Legacy word-wrap now shares overflow-wrap state through parser, cascade, native
+CSSOM and layout. `WORD-WRAP-ALIAS.md` records 57 new passing cases and fifteen-file
+runs with 582 isolated / 583 working passes plus the same baseline styles-cache
+failure. Types/builds/scoped checks pass; prior import-order diagnostics remain
+explicit. Ten alias captures match canonical output exactly. Both manifests
+retain 384 entries and original acceptance gates stay open.
+
 Native overflow-wrap now shares document lines, source mapping, hit targets and
 Range geometry. `OVERFLOW-WRAP.md` records 138 new passing cases; the focused
 twenty-four-file runs have 939 isolated / 940 working passes and one reproduced

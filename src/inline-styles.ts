@@ -9,6 +9,10 @@ import {
 	propertyValue,
 	serializeDeclarations,
 } from "./css-declarations.js";
+import {
+	canonicalCssProperty,
+	cssPropertyAliases,
+} from "./css-property-aliases.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import type {
@@ -111,13 +115,17 @@ export class InlineStyles {
 				},
 			},
 		};
-		for (const name of inlineProperties) {
-			properties[name] = property(name);
+		for (const name of [
+			...inlineProperties,
+			...Object.keys(cssPropertyAliases),
+		]) {
+			const canonical = canonicalCssProperty(name);
+			properties[name] = property(canonical);
 			properties[
 				name.replace(/-([a-z])/g, (_match, letter: string) =>
 					letter.toUpperCase(),
 				)
-			] = property(name);
+			] = property(canonical);
 		}
 		properties.cssFloat = property("float");
 		const argument = (args: readonly unknown[], minimum: number) => {

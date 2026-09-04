@@ -297,9 +297,9 @@ it("preserves the explicit unsupported pseudo-element computed-style boundary", 
 	);
 });
 
-it("does not advertise unimplemented aliases or neighboring text features", () => {
+it("supports the legacy alias without advertising neighboring text features", () => {
+	expect(pageCssSupports("word-wrap", "anywhere")).toBe(true);
 	for (const [name, value] of [
-		["word-wrap", "anywhere"],
 		["word-break", "break-all"],
 		["line-break", "anywhere"],
 		["hyphens", "auto"],
