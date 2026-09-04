@@ -19,6 +19,17 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native Range/Selection checkpoint: `DOM-RANGES.md` integrates live native ranges,
+partial content operations and a document-owned selection with shared document/
+Window/global identity. Parent adds five page-binding identity/lifetime tests;
+focused isolated checks pass 448 / sixteen files, while working checks report
+453 passes and the unchanged pending Window-onload failure / sixteen files.
+Types, builds, strict new-test checking and scoped lint pass. Authorized full
+native runs pass 9,809 / 283 isolated files; working validation reports 10,954
+passes and the unchanged pending onload failure / 305 files. Raw-mutation gaps, constructors,
+selection events, geometry, caret/highlight painting and rich keyboard editing
+remain open. No gated probe ran and no live/runtime acceptance is claimed.
+
 Native cookie-command checkpoint: `COOKIE-COMMANDS.md` integrates list/get/set/
 delete with the existing session jar and actual command queue. The CLI fixture
 now uses production dispatch and covers tabless sessions, cross-session isolation,

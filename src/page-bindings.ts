@@ -63,6 +63,7 @@ export function pageBindingGlobalNames(
 		"clearTimeout",
 		"clearInterval",
 		"getComputedStyle",
+		"getSelection",
 		"CSS",
 		"matchMedia",
 		"scroll",
@@ -215,6 +216,10 @@ export class PageBindings {
 				this.ensureOpen();
 				return this.dom.getComputedStyle(element, pseudo);
 			};
+			const getSelection = () => {
+				this.ensureOpen();
+				return this.dom.getSelection();
+			};
 			const matchMedia = (...args: unknown[]) => {
 				this.ensureOpen();
 				return this.media.matchMedia(...args);
@@ -348,6 +353,7 @@ export class PageBindings {
 					...this.animationFrames.methods,
 					...this.scrolling.methods,
 					getComputedStyle,
+					getSelection,
 					matchMedia,
 					...(this.network ? { fetch: this.network.fetch } : {}),
 					...timerMethods,
@@ -427,6 +433,7 @@ export class PageBindings {
 				...this.animationFrames.methods,
 				performance: this.performance,
 				getComputedStyle,
+				getSelection,
 				matchMedia,
 				document: this.dom.document,
 				...this.scrolling.methods,

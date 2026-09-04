@@ -1,4 +1,8 @@
 [
+  "src/dom-range.test.ts",
+  "src/dom-selection.test.ts",
+  "src/script-ranges.test.ts",
+  "src/page-ranges.test.ts",
   "src/cookie-commands.test.ts",
   "src/cli-cookie-commands.test.ts",
   "src/action-wait.test.ts",

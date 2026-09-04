@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 Range/Selection continuation: `DOM-RANGES.md` adds native live ranges,
+partial clone/extract/delete operations, and one selection owner shared by
+document, Window and global getSelection. Native fixtures establish identity,
+supported mutation adjustment and lifetime, not released-runtime compatibility.
+Raw normalization/split metadata gaps, full DOM interfaces, geometry, selection
+events, caret painting and general keyboard editing remain explicit open work.
+
 September 4 cookie-command continuation: `COOKIE-COMMANDS.md` integrates native
 list/get/set/delete commands into the actual session queue and CLI dispatch.
 Session isolation, tabless reads/deletion, native navigation header effects and

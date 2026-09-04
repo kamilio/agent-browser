@@ -52,6 +52,7 @@ import { ScriptAttributes } from "./script-attributes.js";
 import { ScriptClassLists } from "./script-class-list.js";
 import { scriptCharacterData } from "./script-character-data.js";
 import { ScriptCollections } from "./script-collections.js";
+import { ScriptRanges, scriptRangeCharacterMethods } from "./script-ranges.js";
 import {
 	ScriptEventBindings,
 	type ScriptCallbackRuntime,
@@ -128,6 +129,7 @@ export class ScriptDom {
 	private publishingTemplate = false;
 	private readonly callbacks?: ScriptCallbackRuntime;
 	private mutationRecordOwner?: ScriptMutationRecords;
+	private rangeBindings?: ScriptRanges;
 	private mutationObserverOwner?: {
 		runtime: ScriptCallbackRuntime;
 		bindings: ScriptMutationObservers;
@@ -339,6 +341,15 @@ export class ScriptDom {
 		});
 		Object.assign(definition.properties, characterData.properties);
 		Object.assign(definition.methods, characterData.methods);
+		if (initial.kind === "text" || initial.kind === "comment")
+			Object.assign(
+				definition.methods,
+				scriptRangeCharacterMethods(this.tree, id, {
+					ensureOpen: () => this.read(id),
+					node: (target) => this.node(target),
+					string: domString,
+				}),
+			);
 		const eventBindings = this.eventBindings;
 		if (
 			eventBindings &&
@@ -635,6 +646,8 @@ export class ScriptDom {
 			});
 			Object.assign(definition.methods, {
 				write: (...values: readonly unknown[]) => this.write(values, false),
+				createRange: () => this.ranges().createRange(),
+				getSelection: () => this.getSelection(),
 				importNode: (...values: readonly unknown[]) => this.importNode(values),
 				createAttribute: (...args: readonly unknown[]) => {
 					this.read(id);
@@ -1010,6 +1023,8 @@ export class ScriptDom {
 			this.mutationObserverOwner?.bindings.close();
 			this.mutationObserverOwner = undefined;
 			this.mutationRecordOwner?.close();
+			this.rangeBindings?.close();
+			this.rangeBindings = undefined;
 			this.eventBindings?.close();
 			this.queries.close();
 			this.collections.close();
@@ -1038,6 +1053,20 @@ export class ScriptDom {
 				this.ownedFamily?.close();
 			}
 		}
+	}
+
+	getSelection(): object | null {
+		this.ensureOpen();
+		return this.inert ? null : this.ranges().getSelection();
+	}
+
+	private ranges(): ScriptRanges {
+		this.ensureOpen();
+		return (this.rangeBindings ??= new ScriptRanges(this.tree, this.factory, {
+			ensureOpen: () => this.ensureOpen(),
+			node: (id) => this.node(id),
+			identify: (value) => this.identify(value),
+		}));
 	}
 
 	consoleLabel(value: object): string | undefined {

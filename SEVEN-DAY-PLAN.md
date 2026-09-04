@@ -1284,6 +1284,14 @@ cover tabless sessions, session isolation, header effects and trace secret
 omission. Domain-cookie and full CLI parity remain open; no gated probe ran.
 The accelerated schedule does not change native/runtime acceptance boundaries.
 
+September 4 parallel Range continuation: `DOM-RANGES.md` integrates the native
+Range/Selection worker delivery and shared active-page getSelection bindings.
+Five additional parent fixtures cover Window/global identity, native selection
+reflection, auxiliary documents and closure. Focused native checks pass with
+the unchanged pending working-tree onload assertion kept separate. Detailed
+mutation limitations, visual/keyboard selection and released-runtime gates
+remain open; this does not complete the DOM or the overall browser outcome.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
