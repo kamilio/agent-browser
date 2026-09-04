@@ -7,6 +7,14 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Caret-only CSS reuse now fixes the reproduced native styles-cache regression
+without hiding selector-value dependencies or relevant mutations.
+`STYLE-PRESENTATION-CACHE.md` records 42 new cases, passing 585 / nineteen-file
+focused suites in both trees, static/build checks and 54 byte-identical native
+captures. Bounded counter/identity evidence is not a timing or RSS gate. Both
+manifests retain 386 entries. Historical failure counts remain unchanged; original
+full-suite, runtime and external acceptance gates stay open.
+
 Legacy word-wrap now shares overflow-wrap state through parser, cascade, native
 CSSOM and layout. `WORD-WRAP-ALIAS.md` records 57 new passing cases and fifteen-file
 runs with 582 isolated / 583 working passes plus the same baseline styles-cache

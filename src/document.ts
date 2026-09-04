@@ -80,6 +80,7 @@ export interface DocumentLimits {
 
 export interface DocumentChange {
 	revision: number;
+	presentationOnly?: true;
 	kind:
 		| "insert"
 		| "remove"
@@ -203,9 +204,11 @@ export class DocumentTree {
 		return this.currentRevision;
 	}
 
-	invalidatePresentation() {
+	invalidatePresentation(mode: "style" | "paint" = "style") {
 		this.ensureOpen();
-		this.changed("style", this.root);
+		if (mode !== "style" && mode !== "paint")
+			throw new AgentBrowserError("invalid-input", "Invalid presentation mode");
+		this.changed("style", this.root, mode === "paint");
 	}
 
 	get url() {
@@ -2497,7 +2500,11 @@ export class DocumentTree {
 		}
 	}
 
-	private changed(kind: DocumentChange["kind"], target: number) {
+	private changed(
+		kind: DocumentChange["kind"],
+		target: number,
+		presentationOnly = false,
+	) {
 		if (kind === "insert" && this.nodes.get(target)?.kind === "doctype")
 			this.attachedDoctype = target;
 		else if (kind === "remove" && this.attachedDoctype === target)
@@ -2510,14 +2517,16 @@ export class DocumentTree {
 				this.nodeViews.delete(parent);
 		}
 		this.currentRevision++;
-		this.changes.push({ revision: this.currentRevision, kind, target });
+		const notification: DocumentChange = {
+			revision: this.currentRevision,
+			kind,
+			target,
+			...(presentationOnly ? { presentationOnly: true as const } : {}),
+		};
+		this.changes.push(notification);
 		if (this.changes.length > this.limits.maxChanges) this.changes.shift();
 		if (this.changeHandlers.size) {
-			const change = Object.freeze({
-				revision: this.currentRevision,
-				kind,
-				target,
-			});
+			const change = Object.freeze(notification);
 			for (const handler of [...this.changeHandlers]) handler(change);
 		}
 	}

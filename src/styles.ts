@@ -229,6 +229,7 @@ export class DocumentStyles {
 		ReadonlyMap<string, string | null>
 	>();
 	private revision = -1;
+	private cascadeBuilds = 0;
 	private closed = false;
 	private info = {
 		rules: 0,
@@ -590,6 +591,7 @@ export class DocumentStyles {
 		this.refresh();
 		return Object.freeze({
 			partial: true,
+			cascadeBuilds: this.cascadeBuilds,
 			properties: Object.freeze(["display", "visibility"]),
 			boxProperties: cssBoxProperties,
 			flexProperties: cssFlexProperties,
@@ -641,12 +643,16 @@ export class DocumentStyles {
 	private refresh() {
 		this.ensureOpen();
 		if (this.revision === this.tree.revision) return;
-		if (this.revision >= 0 && !this.queries.metrics().controlValueDependent) {
+		if (this.revision >= 0) {
 			const journal = this.tree.changesSince(this.revision);
+			const controlValueDependent =
+				this.queries.metrics().controlValueDependent;
 			if (
 				!journal.reset &&
 				journal.changes.every((change) => {
-					if (change.kind !== "control") return false;
+					if (change.kind === "style" && change.presentationOnly === true)
+						return true;
+					if (change.kind !== "control" || controlValueDependent) return false;
 					const node = this.tree.get(change.target);
 					return (
 						node.tagName === "textarea" ||
@@ -1090,6 +1096,7 @@ export class DocumentStyles {
 			work,
 			issues: Object.freeze(issues),
 		};
+		this.cascadeBuilds++;
 		this.revision = this.tree.revision;
 	}
 }

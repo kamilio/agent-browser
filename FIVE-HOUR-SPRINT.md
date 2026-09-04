@@ -8,6 +8,14 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation repairs native caret-triggered CSS rebuilding with
+explicit paint-only journal metadata and conservative cache reuse.
+`STYLE-PRESENTATION-CACHE.md` records 42 new cases, passing 585 / nineteen-file
+focused suites in both trees, static/build checks and 54 identical native
+captures. The old cache regression now passes unchanged; historical evidence is
+retained. Counter samples establish reuse, not timing/RSS performance. Both
+manifests retain 386 entries and original acceptance gates remain outstanding.
+
 The until-stopped continuation adds the legacy word-wrap name as canonical
 overflow-wrap state, including native CSSOM accessors and methods.
 `WORD-WRAP-ALIAS.md` records 57 new passing cases, 582 isolated / 583 working focused

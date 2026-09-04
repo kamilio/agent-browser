@@ -1,5 +1,13 @@
 # Compatibility and playground acceptance ledger
 
+September 4 caret-cache continuation: `STYLE-PRESENTATION-CACHE.md` separates
+paint-only native control notifications from CSS-input changes while preserving
+document revisions, reentrancy and bounded journal fallback. All 42 new cases and
+585 / nineteen-file focused suites pass in both trees; the old styles-cache
+regression passes unchanged. Types/builds/scoped checks and 54 identical native
+captures pass. Identity/cascade samples are not timing/RSS evidence. Full native,
+runtime/live and original browser gates stay open; historical counts are retained.
+
 September 4 legacy-name continuation: `WORD-WRAP-ALIAS.md` canonicalizes word-wrap
 through declarations and live CSSOM while retaining one indexed longhand. All 57
 new cases pass; fifteen-file runs retain 582 isolated / 583 working passes and the

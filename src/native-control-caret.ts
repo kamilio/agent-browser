@@ -143,7 +143,7 @@ class NativeControlCaret {
 		const record = Object.freeze({ id, value, anchor, position });
 		this.#record = record;
 		const generation = this.#generation;
-		this.tree.invalidatePresentation();
+		this.tree.invalidatePresentation("paint");
 		this.assertCurrent(record);
 		if (generation !== this.#generation)
 			throw new AgentBrowserError(
@@ -240,7 +240,7 @@ class NativeControlCaret {
 		this.#unregisterChange?.();
 		this.#unregisterClose?.();
 		if (visible && !this.tree.mutationMetrics().closed)
-			this.tree.invalidatePresentation();
+			this.tree.invalidatePresentation("paint");
 	}
 }
 

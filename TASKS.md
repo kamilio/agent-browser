@@ -19,6 +19,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native caret-only notifications now preserve computed CSS caches while keeping
+document revisions and fresh values/selection pixels. `STYLE-PRESENTATION-CACHE.md`
+records 42 new cases and passing 585 / nineteen-file focused suites in both trees.
+The original styles-cache regression passes unchanged; older reports retain their
+historical failure counts. Types/builds/scoped checks pass, 54 native captures
+match exactly, and bounded identity/cascade samples confirm conservative reuse.
+Both manifests retain 386 entries. Existing import-order diagnostics, denied full
+native execution and all original browser/runtime/live acceptance gates remain open.
+
 The legacy word-wrap name now shares canonical overflow-wrap cascade and CSSOM
 state without duplicate longhands or declaration entries. `WORD-WRAP-ALIAS.md`
 records 57 new passing cases; fifteen-file runs retain 582 isolated / 583 working
