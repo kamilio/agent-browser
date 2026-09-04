@@ -8,17 +8,23 @@ import {
 	rename,
 	unlink,
 } from "node:fs/promises";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { join } from "node:path";
 import {
 	type BrowserStateOwner,
 	exportBrowserState,
 	replaceBrowserState,
 } from "./browser-state.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	assertPrivateFile as privateFile,
+	privateFileLocation as location,
+	privateFilePathLimit,
+	samePrivateFile as identity,
+} from "./node-private-files.js";
 
 export const stateFileLimits = Object.freeze({
 	maxBytes: 134_217_728,
-	maxPathLength: 4096,
+	maxPathLength: privateFilePathLimit,
 	chunkBytes: 65_536,
 });
 
@@ -46,23 +52,6 @@ function byteLimit(options: StateFileOptions) {
 	return limit;
 }
 
-function identity(first: BigIntStats, second: BigIntStats) {
-	return first.dev === second.dev && first.ino === second.ino;
-}
-
-function privateFile(info: BigIntStats, uid: bigint) {
-	if (
-		!info.isFile() ||
-		info.uid !== uid ||
-		info.nlink !== 1n ||
-		(info.mode & 0o077n) !== 0n
-	)
-		throw new AgentBrowserError(
-			"policy-denied",
-			"State file must be a private owned regular file with one link",
-		);
-}
-
 function safeError(error: unknown, operation: string): AgentBrowserError {
 	if (error instanceof AgentBrowserError) return error;
 	const code = (error as NodeJS.ErrnoException | null)?.code;
@@ -80,76 +69,6 @@ function safeError(error: unknown, operation: string): AgentBrowserError {
 		"network-error",
 		`State file ${operation} failed`,
 	);
-}
-
-async function location(filename: string) {
-	if (
-		typeof process.getuid !== "function" ||
-		typeof process.geteuid !== "function" ||
-		process.getuid() !== process.geteuid() ||
-		!constants.O_NOFOLLOW ||
-		!constants.O_NONBLOCK
-	)
-		throw new AgentBrowserError(
-			"unsupported",
-			"Private state files require Unix ownership and no-follow checks",
-		);
-	if (
-		typeof filename !== "string" ||
-		!filename ||
-		filename.length > stateFileLimits.maxPathLength ||
-		!isAbsolute(filename) ||
-		resolve(filename) !== filename ||
-		/[\p{Cc}\p{Cf}]/u.test(filename) ||
-		dirname(filename) === filename
-	)
-		throw new AgentBrowserError(
-			"invalid-input",
-			"State filename must be a bounded canonical absolute path",
-		);
-	const uid = BigInt(process.getuid());
-	const parent = dirname(filename);
-	const ancestors: { path: string; info: BigIntStats }[] = [];
-	let path = parent;
-	while (true) {
-		const info = await lstat(path, { bigint: true });
-		const writable = (info.mode & 0o022n) !== 0n;
-		const trustedSticky = path !== parent && (info.mode & 0o1000n) !== 0n;
-		if (
-			!info.isDirectory() ||
-			info.isSymbolicLink() ||
-			(info.uid !== 0n && info.uid !== uid) ||
-			(writable && !trustedSticky) ||
-			(path === parent && info.uid !== uid)
-		)
-			throw new AgentBrowserError(
-				"policy-denied",
-				"State file directory chain is not safely owned and protected",
-			);
-		ancestors.push({ path, info });
-		const next = dirname(path);
-		if (next === path) break;
-		path = next;
-	}
-	return {
-		uid,
-		parent,
-		assertCurrent: async () => {
-			for (const ancestor of ancestors) {
-				const current = await lstat(ancestor.path, { bigint: true });
-				if (
-					!identity(ancestor.info, current) ||
-					ancestor.info.mode !== current.mode ||
-					ancestor.info.uid !== current.uid ||
-					!current.isDirectory()
-				)
-					throw new AgentBrowserError(
-						"policy-denied",
-						"State file directory changed during access",
-					);
-			}
-		},
-	};
 }
 
 function parseStateJson(json: string): unknown {

@@ -29,6 +29,7 @@
   "src/capture-assets.test.ts",
   "src/character-data.test.ts",
   "src/cli-capture.test.ts",
+  "src/cli-capture-cleanup.test.ts",
   "src/cli-keyboard.test.ts",
   "src/cli-parser.test.ts",
   "src/cli-state.test.ts",

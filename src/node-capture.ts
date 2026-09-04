@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { constants, type BigIntStats } from "node:fs";
 import { link, lstat, open, unlink } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import {
@@ -12,6 +13,11 @@ import {
 } from "./capture-client.js";
 import type { Invocation } from "./cli-parser.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	assertPrivateFile,
+	privateFileLocation,
+	samePrivateFile,
+} from "./node-private-files.js";
 
 export async function saveCapture(
 	invocation: Invocation,
@@ -69,11 +75,21 @@ export async function saveCapture(
 		(await execute(argv)).data,
 	);
 	let file: Awaited<ReturnType<typeof open>> | undefined;
-	let identity: { dev: number; ino: number } | undefined;
+	let identity: BigIntStats | undefined;
 	let released = false;
+	let temporaryCleanupConfirmed = true;
 	try {
-		file = await open(temporary, "wx", 0o600);
-		identity = await file.stat();
+		const target = await privateFileLocation(filename, "Capture");
+		file = await open(
+			temporary,
+			constants.O_WRONLY |
+				constants.O_CREAT |
+				constants.O_EXCL |
+				constants.O_NOFOLLOW,
+			0o600,
+		);
+		identity = await file.stat({ bigint: true });
+		assertPrivateFile(identity, target.uid, "Capture");
 		await (pdf ? readPdf : readCapture)(execute, artifact, async (bytes) => {
 			if (!file) throw new AgentBrowserError("closed", "Capture output closed");
 			let offset = 0;
@@ -88,8 +104,29 @@ export async function saveCapture(
 			}
 		});
 		await file.sync();
+		const ready = await file.stat({ bigint: true });
+		assertPrivateFile(ready, target.uid, "Capture");
+		if (
+			!samePrivateFile(identity, ready) ||
+			ready.size !== BigInt(artifact.bytes)
+		)
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Capture temporary file changed during write",
+			);
 		await file.close();
 		file = undefined;
+		await target.assertCurrent();
+		const currentTemporary = await lstat(temporary, { bigint: true });
+		assertPrivateFile(currentTemporary, target.uid, "Capture");
+		if (
+			!samePrivateFile(identity, currentTemporary) ||
+			currentTemporary.size !== ready.size
+		)
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Capture temporary file was replaced",
+			);
 		await link(temporary, filename);
 	} catch (error) {
 		if (error instanceof AgentBrowserError) throw error;
@@ -104,15 +141,24 @@ export async function saveCapture(
 		await file?.close().catch(() => {});
 		if (identity) {
 			try {
-				const current = await lstat(temporary);
-				if (current.dev === identity.dev && current.ino === identity.ino)
+				const current = await lstat(temporary, { bigint: true });
+				if (samePrivateFile(identity, current) && current.isFile())
 					await unlink(temporary);
-			} catch {}
+				else temporaryCleanupConfirmed = false;
+			} catch (error) {
+				temporaryCleanupConfirmed =
+					(error as NodeJS.ErrnoException).code === "ENOENT";
+			}
 		}
 		try {
 			await execute(["artifact-delete", artifact.id]);
 			released = true;
 		} catch {}
 	}
-	return { filename, artifact, remoteCleanupConfirmed: released };
+	return {
+		filename,
+		artifact,
+		remoteCleanupConfirmed: released,
+		temporaryCleanupConfirmed,
+	};
 }

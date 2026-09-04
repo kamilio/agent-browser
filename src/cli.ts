@@ -285,7 +285,7 @@ async function main() {
 						session: invocation.session,
 						data: capture,
 					})
-				: `Saved partial native ${invocation.command === "pdf" ? "PDF" : "PNG"}: ${capture.filename}${capture.remoteCleanupConfirmed ? "" : ` (remote cleanup unconfirmed for ${capture.artifact.id})`}`,
+				: `Saved partial native ${invocation.command === "pdf" ? "PDF" : "PNG"}: ${capture.filename}${capture.remoteCleanupConfirmed ? "" : ` (remote cleanup unconfirmed for ${capture.artifact.id})`}${capture.temporaryCleanupConfirmed ? "" : " (temporary file cleanup unconfirmed)"}`,
 		);
 		return;
 	}

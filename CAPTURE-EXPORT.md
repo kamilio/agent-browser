@@ -1,5 +1,11 @@
 # Native PNG captures through the agent interface
 
+September 4 file-publication hardening: `CAPTURE-PUBLICATION.md` adds trusted
+directory and pre-installation temporary-file checks shared with state files.
+Capture results report local temporary cleanup separately from remote cleanup;
+plain CLI output warns when either is unconfirmed. These are native filesystem
+regressions, not new live capture or portability acceptance measurements.
+
 September 3 `PDF.md` adds a separate native paginated PDF path using the same
 artifact store, safe file writer and playground download flow. Statements below
 about PDF absence describe this earlier PNG-only checkpoint.

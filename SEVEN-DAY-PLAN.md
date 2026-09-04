@@ -800,6 +800,22 @@ probe ran; native OS/IME/clipboard input, continuous rendering, human/agent
 arbitration and original compatibility gates remain open. The denied SafeJS probe
 remains unrun and the complete seven-day objective stays active.
 
+September 4 private capture publication checkpoint: `CAPTURE-PUBLICATION.md`
+shares the existing state-file ownership/directory policy with capture saves,
+checks temporary identity/privacy/link count/size before publication and reports
+local cleanup separately from remote cleanup. Thirteen filesystem and five CLI
+cases reproduce fifteen new failures on isolated prior HEAD, then pass. Focused
+checks pass 125 / seven working files and 101 / six isolated files; full authorized
+native runs pass 9,593 / 268 and 8,353 / 242. Types/builds, strict four-test checks
+and seven-file lint pass. The unchanged state suites cover the shared policy.
+This is not a race-free primitive against same-UID/privileged processes, a
+same-size tampering detector or cross-platform/power-loss durability proof.
+Pending trace integration and historical evidence remain intact. Next integrate
+tracing/observability with the bounded artifact owners. No live browser, socket,
+site, real terminal or SafeJS probe ran; the denied probe remains unrun and the
+original runtime/site/device/portability/full compatibility gates and seven-day
+objective remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

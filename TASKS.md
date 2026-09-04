@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Private capture publication checkpoint: `CAPTURE-PUBLICATION.md` applies the
+existing state-file ownership/directory policy to PNG/PDF saves through shared
+helpers. It verifies temporary descriptor/path identity, privacy, link count and
+length before publication, rechecks directories, and reports local temporary
+cleanup independently of remote cleanup in JSON/plain CLI output. Thirteen new
+filesystem and five injected-CLI cases fail fifteen new expectations on isolated
+prior HEAD, then pass. Focused runs pass 125 / seven working files and 101 / six
+isolated files; the difference is pending trace coverage. Authorized full native
+runs pass 9,593 / 268 and 8,353 / 242. Both trees pass types/builds, strict four-test
+checks and seven-file lint. State behavior and tests remain unchanged. Same-UID/
+privileged path races, same-size in-place tampering, power-loss directory durability
+and non-Unix equivalence are not claimed. Pending trace/export work and historical
+evidence remain separate. Next integrate tracing/observability against the bounded
+artifact and ownership contracts. No gated probe ran; the denied SafeJS probe
+remains unrun, and full runtime/site/device/socket/portability compatibility and
+the complete seven-day browser objective remain open.
+
+### Previous native input UI checkpoint
+
 Native input UI checkpoint: `INPUT-UI.md` integrates terminal targeted-key drafts
 and playground keyboard/wheel controls. Optional press ownership guards now run
 inside the command queue before target resolution/focus, preventing selectors

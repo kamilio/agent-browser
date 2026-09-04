@@ -7,9 +7,10 @@ import {
 	symlink,
 	writeFile,
 } from "node:fs/promises";
+import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { CaptureArtifacts, type CaptureDetails } from "./capture-artifacts.js";
 import {
 	type CaptureExecutor,
@@ -22,6 +23,10 @@ import { scriptFrame, scriptFrameLimit } from "./node-script-protocol.js";
 import { encodePng } from "./png.js";
 import { createRaster } from "./raster.js";
 
+vi.mock("node:fs/promises", async (importOriginal) => ({
+	...(await importOriginal<typeof import("node:fs/promises")>()),
+}));
+
 const directories: string[] = [];
 async function directory() {
 	const path = await mkdtemp(join(tmpdir(), "agent-browser-capture-"));
@@ -29,8 +34,174 @@ async function directory() {
 	return path;
 }
 afterEach(async () => {
+	vi.restoreAllMocks();
 	for (const path of directories.splice(0))
 		await rm(path, { recursive: true, force: true });
+});
+
+describe("private capture publication", () => {
+	it.each([
+		"replace",
+		"symlink",
+		"truncate",
+		"grow",
+		"permissions",
+		"hardlink",
+	])(
+		"rejects %s of its temporary output before publication",
+		async (change) => {
+			const root = await directory();
+			const { execute, store } = fixture();
+			const originalOpen = fs.open;
+			let temporary = "";
+			vi.spyOn(fs, "open").mockImplementation(async (path, flags, mode) => {
+				const handle = await originalOpen(path, flags, mode);
+				temporary = String(path);
+				const sync = handle.sync.bind(handle);
+				handle.sync = async () => {
+					await sync();
+					if (change === "replace" || change === "symlink") {
+						await fs.rename(temporary, `${temporary}.original`);
+						if (change === "replace")
+							await fs.writeFile(temporary, "substitute", { mode: 0o600 });
+						else await fs.symlink(`${temporary}.original`, temporary);
+					} else if (change === "truncate") await fs.truncate(temporary, 1);
+					else if (change === "grow") await fs.appendFile(temporary, "extra");
+					else if (change === "permissions") await fs.chmod(temporary, 0o644);
+					else await fs.link(temporary, join(root, "extra-link"));
+				};
+				return handle;
+			});
+			await expect(
+				saveCapture(
+					parseInvocation(["screenshot", "--filename=page.png"]),
+					execute,
+					root,
+				),
+			).rejects.toMatchObject({ code: "policy-denied" });
+			await expect(fs.lstat(join(root, "page.png"))).rejects.toMatchObject({
+				code: "ENOENT",
+			});
+			expect(store.metrics().bytes).toBe(0);
+			if (change === "replace")
+				expect(await fs.readFile(temporary, "utf8")).toBe("substitute");
+			if (change === "symlink")
+				expect((await fs.lstat(temporary)).isSymbolicLink()).toBe(true);
+		},
+	);
+
+	it.each([0o770, 0o777])(
+		"rejects a writable-by-others parent (%s)",
+		async (mode) => {
+			const root = await directory();
+			await fs.chmod(root, mode);
+			const { execute, store } = fixture();
+			await expect(
+				saveCapture(
+					parseInvocation(["screenshot", "--filename=page.png"]),
+					execute,
+					root,
+				),
+			).rejects.toMatchObject({ code: "policy-denied" });
+			expect(await fs.readdir(root)).toEqual([]);
+			expect(store.metrics().bytes).toBe(0);
+		},
+	);
+
+	it("rejects symlinked directory ancestors", async () => {
+		const root = await directory();
+		await fs.mkdir(join(root, "actual"), { mode: 0o700 });
+		await fs.symlink(join(root, "actual"), join(root, "alias"));
+		const { execute } = fixture();
+		await expect(
+			saveCapture(
+				parseInvocation(["screenshot", "--filename=page.png"]),
+				execute,
+				join(root, "alias"),
+			),
+		).rejects.toMatchObject({ code: "policy-denied" });
+		expect(await fs.readdir(join(root, "actual"))).toEqual([]);
+	});
+
+	it("rechecks directory permissions after writing", async () => {
+		const root = await directory();
+		const { execute } = fixture();
+		const originalOpen = fs.open;
+		vi.spyOn(fs, "open").mockImplementation(async (path, flags, mode) => {
+			const handle = await originalOpen(path, flags, mode);
+			const sync = handle.sync.bind(handle);
+			handle.sync = async () => {
+				await sync();
+				await fs.chmod(root, 0o777);
+			};
+			return handle;
+		});
+		await expect(
+			saveCapture(
+				parseInvocation(["screenshot", "--filename=page.png"]),
+				execute,
+				root,
+			),
+		).rejects.toMatchObject({ code: "policy-denied" });
+		expect(await fs.readdir(root)).toEqual([]);
+	});
+
+	it("reports temporary cleanup failure without losing a published capture", async () => {
+		const root = await directory();
+		const { execute, bytes, store } = fixture();
+		vi.spyOn(fs, "unlink").mockRejectedValue(
+			new Error("Synthetic cleanup failure"),
+		);
+		const result = await saveCapture(
+			parseInvocation(["screenshot", "--filename=page.png"]),
+			execute,
+			root,
+		);
+		expect(result).toMatchObject({
+			temporaryCleanupConfirmed: false,
+			remoteCleanupConfirmed: true,
+		});
+		expect(new Uint8Array(await fs.readFile(result.filename))).toEqual(bytes);
+		expect((await fs.lstat(result.filename)).mode & 0o777).toBe(0o600);
+		expect(store.metrics().bytes).toBe(0);
+	});
+
+	it("does not remove a substituted temporary path after publication", async () => {
+		const root = await directory();
+		const { execute, bytes } = fixture();
+		const originalLink = fs.link;
+		let temporary = "";
+		vi.spyOn(fs, "link").mockImplementation(async (source, destination) => {
+			await originalLink(source, destination);
+			temporary = String(source);
+			await fs.unlink(source);
+			await fs.writeFile(source, "replacement", { mode: 0o600 });
+		});
+		const result = await saveCapture(
+			parseInvocation(["screenshot", "--filename=page.png"]),
+			execute,
+			root,
+		);
+		expect(result).toMatchObject({ temporaryCleanupConfirmed: false });
+		expect(await fs.readFile(temporary, "utf8")).toBe("replacement");
+		expect(new Uint8Array(await fs.readFile(result.filename))).toEqual(bytes);
+	});
+
+	it("confirms normal cleanup and keeps non-writable-by-others parents usable", async () => {
+		const root = await directory();
+		await fs.chmod(root, 0o755);
+		const { execute } = fixture();
+		const result = await saveCapture(
+			parseInvocation(["screenshot", "--filename=page.png"]),
+			execute,
+			root,
+		);
+		expect(result).toMatchObject({
+			temporaryCleanupConfirmed: true,
+			remoteCleanupConfirmed: true,
+		});
+		expect(await fs.readdir(root)).toEqual(["page.png"]);
+	});
 });
 function fixture() {
 	const store = new CaptureArtifacts();
@@ -58,6 +229,11 @@ function fixture() {
 			transparentGlyphs: 0,
 			paintedBackgrounds: 0,
 			inlineFragments: 0,
+			paintedImages: 0,
+			paintedControls: 0,
+			borderPixels: 0,
+			clippedControls: 0,
+			clippedImages: 0,
 		},
 	};
 	const calls: readonly string[][] = [];

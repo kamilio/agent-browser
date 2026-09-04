@@ -91,6 +91,7 @@ it.each(["screenshot", "pdf"])(
 				data: {
 					filename: output,
 					remoteCleanupConfirmed: true,
+					temporaryCleanupConfirmed: true,
 					artifact: { width: 80, height: 40, partial: true },
 				},
 			});
