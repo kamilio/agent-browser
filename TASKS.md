@@ -19,6 +19,27 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Object-handler checkpoint: `HANDLER-OBJECTS.md` fixes shared handler conversion
+to retain object-valued slots and listener ordering without invoking noncallable
+objects or reading their properties. Reentrant replacements, primitive clearing,
+proxy safety, quotas and revocation are covered. The 31 new cases produce 30
+failures and one pass on isolated prior HEAD; all now pass. Types/builds, strict
+new-test checking and two-file lint pass in both trees. Matching focused tests
+pass 145 / six isolated files; working tests report 150 passes and one failure
+in a pre-existing, uncommitted Window-onload expectation that objects clear the
+slot. That pending work stays unchanged and outside this commit; the working
+tree is not all green. Authorized full native runs pass 9,195 / 262 isolated
+files; the working run reports 10,340 passes and that one failure / 284 files.
+Continue generated
+fallback-control identity/geometry/activation and remaining event interfaces,
+without aliasing a fallback button to the entire details body or adding fake
+light-DOM nodes. Complete runtime, UA/shadow/accessibility and original gates
+remain open. No gated probe ran; the denied SafeJS probe remains unrun.
+Historical evidence and unrelated work remain separate; the seven-day goal stays
+active.
+
+### Previous toggle-handler checkpoint
+
 Toggle-handler checkpoint: `TOGGLE-HANDLERS.md` wires owned `ontoggle` properties
 on event-enabled script elements/documents and the page window to the existing
 handler registry and disclosure task queue. Tests cover listener ordering,

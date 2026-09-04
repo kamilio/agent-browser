@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 object-handler correction: `HANDLER-OBJECTS.md` retains assigned
+objects in native handler slots, preserves listener position, skips noncallable
+invocation without property inspection, and keeps primitive clearing and quotas.
+The pending Window-onload test's object-to-null expectation conflicts and remains
+unchanged; do not claim an all-green working tree. Native evidence does not close
+realm/runtime, full handler-source/global/prototype or browser acceptance gates.
+
 September 4 handler continuation: `TOGGLE-HANDLERS.md` adds owned `ontoggle`
 properties on native script elements/documents and the page window, sharing
 existing event ordering, quotas and callback lifetime. Native tests do not close

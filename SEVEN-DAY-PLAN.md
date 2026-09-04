@@ -1077,6 +1077,23 @@ released-runtime and original browser gates remain open. No gated probe ran;
 the denied SafeJS probe remains unrun. Historical evidence and unrelated pending
 work stay separate; the complete seven-day objective remains active.
 
+September 4 object-handler continuation: `HANDLER-OBJECTS.md` fixes shared
+object-valued handler retention, no-op invocation and stable listener ordering,
+including reentrant replacement, primitive clearing, proxy checks, quotas and
+revocation. The 31 new cases produce 30 failures and one pass on isolated prior
+HEAD; all now pass. Types/builds, strict checking and two-file lint pass in both
+trees. Matching focused tests pass 145 / six isolated files; working tests report
+150 passes and one failure in an unchanged, pre-existing pending Window-onload
+expectation. Authorized full native runs pass 9,195 / 262 isolated files;
+the working run reports 10,340 passes and that one failure / 284 files.
+The working tree is not all green.
+Continue distinct generated fallback-control targets, geometry, focus and
+activation, plus remaining event interfaces. Do not substitute fake light-DOM
+summaries or whole-body click behavior. Full runtime, UA/shadow/accessibility and
+original browser gates remain open. No gated probe ran; the denied SafeJS probe
+remains unrun. Historical evidence and unrelated pending work stay separate;
+the complete seven-day objective is active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

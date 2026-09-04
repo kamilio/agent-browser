@@ -163,7 +163,10 @@ export class ScriptEventBindings {
 			(record) =>
 				record.handler && record.target === target && record.type === type,
 		);
-		if (typeof callback !== "function") {
+		if (
+			callback === null ||
+			(typeof callback !== "function" && typeof callback !== "object")
+		) {
 			if (previous) {
 				this.options.events.removeEventListener(
 					target,
@@ -186,7 +189,9 @@ export class ScriptEventBindings {
 			once: false,
 			handler: true,
 			listener: controlledEventListener((current, event) =>
-				this.invoke(record.callback, current, event),
+				typeof record.callback === "function"
+					? this.invoke(record.callback, current, event)
+					: Promise.resolve(),
 			),
 		};
 		this.options.events.addEventListener(target, type, record.listener);
