@@ -1,4 +1,6 @@
 [
+  "src/scroll-presentation-notifications.test.ts",
+  "src/scroll-presentation-cache.test.ts",
   "src/document-presentation.test.ts",
   "src/style-presentation-cache.test.ts",
   "src/editable-block-merge.test.ts",

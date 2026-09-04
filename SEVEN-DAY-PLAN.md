@@ -7,6 +7,13 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Root-scroll notifications now share conservative CSS presentation-only reuse.
+`ROOT-SCROLL-CSS-CACHE.md` records 35 new cases, passing 471 / seventeen-file
+focused suites in both trees, static/build checks and 54 identical native
+captures. Completed cascades fall from eleven to two in a bounded fixture while
+real style/viewport changes still rebuild. Layout and extent caching are not
+included. Both manifests retain 388 entries; original acceptance gates stay open.
+
 Caret-only CSS reuse now fixes the reproduced native styles-cache regression
 without hiding selector-value dependencies or relevant mutations.
 `STYLE-PRESENTATION-CACHE.md` records 42 new cases, passing 585 / nineteen-file

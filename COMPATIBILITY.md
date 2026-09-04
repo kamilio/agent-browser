@@ -1,5 +1,13 @@
 # Compatibility and playground acceptance ledger
 
+September 4 root-scroll cache continuation: `ROOT-SCROLL-CSS-CACHE.md` reuses CSS
+through explicit movement and automatic-clamp notifications while preserving real
+source invalidation and fresh geometry/hits/pixels. All 35 new cases and 471 /
+seventeen-file focused suites pass in both trees, as do static/build checks and
+54 byte-identical native captures. The bounded cascade count falls from eleven
+to two; no timing/RSS, extent-cache or whole-browser acceptance is inferred.
+Original full-native, runtime/live and external gates remain open.
+
 September 4 caret-cache continuation: `STYLE-PRESENTATION-CACHE.md` separates
 paint-only native control notifications from CSS-input changes while preserving
 document revisions, reentrancy and bounded journal fallback. All 42 new cases and

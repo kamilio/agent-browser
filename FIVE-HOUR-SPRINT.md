@@ -8,6 +8,14 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation removes root-scroll-only CSS recascades without
+changing geometry, hits, rendering or conservative source invalidation.
+`ROOT-SCROLL-CSS-CACHE.md` records 35 new cases, passing 471 / seventeen-file
+focused suites in both trees, static/build checks and 54 matching native captures.
+The measured eleven-to-two cascade reduction retains both real-input rebuilds;
+it is not a timing/RSS or layout-cache claim. Both manifests retain 388 entries
+and all original acceptance gates remain outstanding.
+
 The until-stopped continuation repairs native caret-triggered CSS rebuilding with
 explicit paint-only journal metadata and conservative cache reuse.
 `STYLE-PRESENTATION-CACHE.md` records 42 new cases, passing 585 / nineteen-file

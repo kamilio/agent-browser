@@ -3,6 +3,10 @@
 September 4, 2026 continuation. This is a native in-memory cache repair, not a
 completed browser, an external runtime validation or a CPU/RSS performance gate.
 
+Later September 4 continuation: `ROOT-SCROLL-CSS-CACHE.md` separately applies this
+boundary to the two root-scroll notifications. The original caret-only scope and
+measurements below retain their historical meaning.
+
 ## Reproduced defect
 
 The unchanged `src/styles.test.ts` regression, “keeps CSS computed values cached

@@ -66,7 +66,7 @@ export class DocumentScroll {
 		});
 		if (next.x === this.position.x && next.y === this.position.y) return false;
 		this.position = next;
-		this.tree.invalidatePresentation();
+		this.tree.invalidatePresentation("paint");
 		return true;
 	}
 	metrics() {
@@ -143,7 +143,7 @@ export class DocumentScroll {
 		});
 		if (next.x !== this.position.x || next.y !== this.position.y) {
 			this.position = next;
-			this.tree.invalidatePresentation();
+			this.tree.invalidatePresentation("paint");
 		}
 	}
 }

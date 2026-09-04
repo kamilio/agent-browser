@@ -19,6 +19,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native root scrolling now reuses computed CSS without suppressing revision,
+geometry, hit or pixel updates. `ROOT-SCROLL-CSS-CACHE.md` records 35 new cases,
+passing 471 / seventeen-file focused suites in both trees, source/build/scoped
+checks and 54 identical native captures. A bounded ten-action fixture reduces
+completed cascades from eleven to two, retaining both genuine CSS-input rebuilds.
+This does not cache layout or establish timing/RSS performance. Both manifests
+retain 388 entries; denied full-native and original browser/runtime/live gates
+remain open, with historical evidence and pending work preserved.
+
 Native caret-only notifications now preserve computed CSS caches while keeping
 document revisions and fresh values/selection pixels. `STYLE-PRESENTATION-CACHE.md`
 records 42 new cases and passing 585 / nineteen-file focused suites in both trees.
