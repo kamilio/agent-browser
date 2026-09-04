@@ -7,6 +7,10 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Bounded static-position sibling reuse now completes the measured 1,000-target
+matching runs while retaining geometry and pixels. `POSITIONING-PERFORMANCE.md`
+keeps the distinct-slot fallback and original acceptance limitations explicit.
+
 The runtime selector now reaches CLI/host/process/child factory wiring while
 retaining legacy defaults and explicit shape-only validation labels. See
 `RUNTIME-SELECTION.md`; native mocks do not close released-runtime or focus/

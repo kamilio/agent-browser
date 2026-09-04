@@ -1,4 +1,5 @@
 [
+  "src/positioning-performance.test.ts",
   "src/page-runtime-selection.test.ts",
   "src/node-page-core-selection.test.ts",
   "src/node-session-runtime.test.ts",

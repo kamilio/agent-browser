@@ -23,8 +23,8 @@ import {
 	resolveReplacedSize,
 } from "./replaced-box.js";
 import {
+	createFlowStaticPositionResolver,
 	flexStaticPosition,
-	flowStaticPosition,
 } from "./static-positioning.js";
 import {
 	type TextLayoutOptions,
@@ -38,6 +38,7 @@ export const positioningCapabilities = Object.freeze({
 	absolute: "positioned-block-padding-box-or-initial-containing-block",
 	fixed: "viewport-with-root-scroll-projection",
 	staticPosition: "hypothetical-flow-and-sole-flex-item",
+	staticPositionReuse: "equivalent-simple-targets-in-out-of-flow-sibling-runs",
 	staticBlockInInline: false,
 	staticFlexBaselines: false,
 	inlineContainingBlocks: false,
@@ -164,6 +165,11 @@ export function layoutPositionedDocument(
 	);
 	const boxes = [...normal.boxes];
 	const boxMap = new Map(boxes.map((box) => [box.id, box]));
+	const staticPosition = createFlowStaticPositionResolver(
+		formatting,
+		boxMap,
+		options,
+	);
 	const contexts = [...normal.contexts];
 	const textContexts = [...normal.text.contexts];
 	const images = [...normal.text.horizontal.images];
@@ -238,13 +244,7 @@ export function layoutPositionedDocument(
 				if (staticX) left = 0;
 				if (staticY) top = 0;
 			} else {
-				const anchor = flowStaticPosition(
-					formatting,
-					node.id,
-					boxMap,
-					remaining(),
-					options,
-				);
+				const anchor = staticPosition(node.id, remaining());
 				charge(anchor.work);
 				if (staticX) left = anchor.left - originX;
 				if (staticY) top = anchor.top - originY;

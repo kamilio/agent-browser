@@ -19,6 +19,18 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Static-position performance checkpoint: `POSITIONING-PERFORMANCE.md` integrates
+per-pass anchor reuse for equivalent adjacent out-of-flow siblings without
+raising budgets. Fresh compiled-before/after measurements complete 1,000 matching
+targets; all seven jointly completed cases retain full geometry hashes, and two
+inspected native-module captures retain byte-identical pixels. Distinct flow slots
+still reach the original resource limit. Focused runs pass 277 / eight files;
+types/builds, strict test checks and full scoped Biome pass. Authorized full
+native validation passes 10,374 / 304 isolated files; working validation reports
+11,505 passes and the same fifteen pending assertion failures / 326 files.
+General layout scaling
+and the original browser/runtime/live gates remain open.
+
 Runtime-selection checkpoint: `RUNTIME-SELECTION.md` wires explicit legacy/
 extension configuration through actual CLI/host/process/child factory boundaries.
 Legacy remains default; readiness is labeled contract-shape-only, not execution.

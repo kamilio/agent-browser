@@ -58,9 +58,11 @@ their assertions. Standalone width/intrinsic coordination negatives remain.
 
 Hypothetical static-position reflow can be quadratic across many bare positioned
 siblings. Worker v2 measured 1,658 work units for ten and 52,148 for one hundred;
-one thousand exceeds the default budget. An active follow-up targets this cost
-without increasing budgets or omitting accounting. These are native work counts,
-not elapsed-time claims.
+one thousand exceeds the default budget. `POSITIONING-PERFORMANCE.md` records
+the later integrated reuse optimization for equivalent sibling runs, without
+increasing budgets or omitting accounting. Distinct flow slots retain the bounded
+fallback. The v2 numbers above remain historical native work counts, not
+elapsed-time claims or the follow-up's different-fixture measurements.
 
 Block-in-inline static splits, flex baseline static alignment, positioned inline
 containing blocks, transformed containing blocks, RTL/logical insets, sticky,

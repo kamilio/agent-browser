@@ -16,6 +16,138 @@ import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 import { applyRelativePositioning } from "./relative-positioning.js";
 import { type TextLayoutOptions, layoutFormattingText } from "./text-layout.js";
 
+export function createFlowStaticPositionResolver(
+	formatting: FormattingTree,
+	boxes: ReadonlyMap<number, Readonly<DocumentBox>>,
+	options: TextLayoutOptions,
+) {
+	const scanned = new Set<number>();
+	const runs = new Map<number, number>();
+	const anchors = new Map<
+		number,
+		Readonly<{ id: number; left: number; top: number }>
+	>();
+	return (id: number, maxWork: number) => {
+		let work = 0;
+		const charge = (amount = 1) => {
+			work += amount;
+			if (work >= maxWork)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Static-position reuse work limit exceeded",
+				);
+		};
+		const target = formatting.nodes[id];
+		charge();
+		const reusable = (node: Readonly<FormattingNode>) => {
+			charge();
+			if (
+				node.kind !== "block" ||
+				node.contentMode === "flex" ||
+				node.intrinsic ||
+				node.control ||
+				node.marker ||
+				node.generated ||
+				node.orderModifiedChildren ||
+				node.fragmentIndex !== undefined
+			)
+				return false;
+			return node.children.every((child) => {
+				charge();
+				return formatting.nodes[child].kind === "text";
+			});
+		};
+		const sameStyle = (first: object, second: object) => {
+			const entries = Object.entries(first);
+			charge(entries.length + Object.keys(second).length);
+			return (
+				entries.length === Object.keys(second).length &&
+				entries.every(([key, value]) => {
+					charge(typeof value === "string" ? value.length + 1 : 1);
+					return value === (second as Record<string, unknown>)[key];
+				})
+			);
+		};
+		const sameNode = (
+			first: Readonly<FormattingNode>,
+			second: Readonly<FormattingNode>,
+		) => {
+			const ignored = new Set([
+				"id",
+				"parent",
+				"ref",
+				"children",
+				"position",
+				"paint",
+				"zIndex",
+			]);
+			const keys = new Set([...Object.keys(first), ...Object.keys(second)]);
+			charge(keys.size);
+			for (const key of keys) {
+				charge();
+				if (ignored.has(key)) continue;
+				const before = first[key as keyof FormattingNode];
+				const after = second[key as keyof FormattingNode];
+				if (typeof before === "string") charge(before.length);
+				if (before === after) continue;
+				if (
+					!["box", "typography", "flex", "staticFlex"].includes(key) ||
+					!before ||
+					!after ||
+					typeof before !== "object" ||
+					typeof after !== "object" ||
+					!sameStyle(before, after)
+				)
+					return false;
+			}
+			return true;
+		};
+		let run: number | undefined;
+		if (target.parent !== null && reusable(target)) {
+			if (!scanned.has(target.parent)) {
+				let start: number | undefined;
+				for (const child of formatting.nodes[target.parent].children) {
+					charge();
+					const position = formatting.nodes[child].position;
+					if (position === "absolute" || position === "fixed") {
+						start ??= child;
+						runs.set(child, start);
+					} else start = undefined;
+				}
+				scanned.add(target.parent);
+			}
+			run = runs.get(id);
+			const cached = run === undefined ? undefined : anchors.get(run);
+			if (cached) {
+				const previous = formatting.nodes[cached.id];
+				if (
+					target.children.length === previous.children.length &&
+					sameNode(previous, target) &&
+					target.children.every((child, index) => {
+						charge();
+						return sameNode(
+							formatting.nodes[previous.children[index]],
+							formatting.nodes[child],
+						);
+					})
+				)
+					return Object.freeze({ left: cached.left, top: cached.top, work });
+			}
+		}
+		const anchor = flowStaticPosition(
+			formatting,
+			id,
+			boxes,
+			maxWork - work,
+			options,
+		);
+		charge(anchor.work);
+		if (run !== undefined)
+			anchors.set(run, { id, left: anchor.left, top: anchor.top });
+		return Object.freeze({ left: anchor.left, top: anchor.top, work });
+	};
+}
+
 export function flowStaticPosition(
 	formatting: FormattingTree,
 	id: number,

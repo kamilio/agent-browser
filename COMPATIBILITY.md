@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 static-position performance continuation: `POSITIONING-PERFORMANCE.md`
+reuses measured anchors only for equivalent same-slot siblings within one pass.
+Fresh geometry/pixel comparisons and bounded work counts establish that subset;
+distinct flow slots retain the old resource-limit fallback. No budget increase,
+general linear-layout or released-browser performance claim is made.
+
 September 4 runtime-selection continuation: `RUNTIME-SELECTION.md` carries explicit
 legacy/extension selection through production configuration and PageScripts
 factory wiring. It distinguishes configuration-only from contract-shape-only
