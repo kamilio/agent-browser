@@ -98,7 +98,7 @@ it("does not replace live script DOM children when fragment parsing fails", () =
 	const { tree, document } = fixture();
 	const original = required(document.body.firstChild);
 	expect(() => {
-		document.body.innerHTML = "<b>parsed</b><template>unsupported";
+		document.body.innerHTML = "<b>parsed</b><svg>unsupported";
 	}).toThrow("not implemented");
 	expect(document.body.firstChild).toBe(original);
 	expect(original.parentNode).toBe(document.body);

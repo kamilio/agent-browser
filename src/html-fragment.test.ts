@@ -191,7 +191,7 @@ it("keeps inserted script source inert and rejects unsupported contexts", () => 
 	expect(queries.querySelector("script", root)).not.toBeNull();
 	expect(tree.textContent(root)).toContain("after");
 	tree.close();
-	for (const tagName of ["template", "svg", "math", "frameset"]) {
+	for (const tagName of ["svg", "math", "frameset"]) {
 		expect(() => fragment("<b>no</b>", tagName)).toThrow("not implemented");
 	}
 });

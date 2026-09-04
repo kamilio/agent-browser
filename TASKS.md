@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Template parser checkpoint: `TEMPLATE-PARSING.md` enables owner-aware template
+tree construction, nested template insertion modes, scoped recovery, inert
+script/policy handling and template-context fragment parsing. Template innerHTML
+replaces real contents; adjacent/outer HTML retain their distinct DOM semantics.
+Three initial regressions fail before implementation; 46 new tests and 343
+focused checks across eleven files pass. Existing rejection fixtures now use
+still-unsupported SVG without weakening state/allocation assertions. Full native
+validation passes 8,273 / 233 files; the isolated owned patch passes 5,513 / 172
+available files. Types, builds and ten-file lint pass in both trees, preserving
+pre-existing pending work. Next address bounded active-formatting reconstruction,
+adoption-agency and malformed-table recovery; this remains an HTML parser subset.
+DOM adoption, cross-owner observer/runtime integration and template extensions
+also remain incomplete. No gated probe ran; the denied SafeJS probe remains
+unrun, independent acceptance gates remain open and the seven-day goal stays active.
+
+### Previous template-binding checkpoint
+
 Template bindings checkpoint: `TEMPLATE-BINDINGS.md` exposes stable read-only
 `.content` capabilities and inert contents-owner bindings, with guarded initial
 publication, failure cleanup and parent teardown. Main, auxiliary and contents

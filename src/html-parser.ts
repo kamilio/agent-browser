@@ -36,6 +36,7 @@ const headTags = new Set([
 	"title",
 	"style",
 	"script",
+	"template",
 ]);
 const rawTags = new Set([
 	"script",
@@ -99,6 +100,18 @@ const formatting = new Set([
 ]);
 const tableContainers = new Set(["table", "tbody", "thead", "tfoot", "tr"]);
 const sections = new Set(["tbody", "thead", "tfoot"]);
+const templateHeadTags = new Set([
+	"base",
+	"basefont",
+	"bgsound",
+	"link",
+	"meta",
+	"noframes",
+	"script",
+	"style",
+]);
+
+type TemplateMode = "template" | "table" | "colgroup" | "tbody" | "tr" | "body";
 
 export interface HtmlParseOptions {
 	limits?: Partial<DocumentLimits>;
@@ -132,7 +145,7 @@ export function parseHtmlFragment(
 			"Invalid HTML fragment context",
 		);
 	const tagName = context.tagName.toLowerCase();
-	if (["template", "svg", "math", "frameset", "frame"].includes(tagName))
+	if (["svg", "math", "frameset", "frame"].includes(tagName))
 		throw new AgentBrowserError(
 			"unsupported",
 			`HTML ${tagName} fragment context is not implemented`,
@@ -395,7 +408,11 @@ function* parseHtmlSteps(
 		let mode: "before" | "head" | "body" | "after" = fragment
 			? "body"
 			: "before";
-		let stack = [{ id: body, tag: fragment?.tagName ?? "body" }];
+		let stack = [{ tree, id: body, tag: fragment?.tagName ?? "body" }];
+		const templates: { index: number; mode: TemplateMode }[] =
+			fragment?.tagName === "template" ? [{ index: 0, mode: "template" }] : [];
+		const templateScope = () => templates[templates.length - 1];
+		const inTemplate = () => templates.length > 0;
 		let form: number | undefined =
 			fragment?.hasFormAncestor || fragment?.tagName === "form"
 				? -1
@@ -415,8 +432,26 @@ function* parseHtmlSteps(
 		let lastText: { id: number; parent: number; before?: number } | undefined;
 		const fosterTexts = new Map<number, number>();
 		const current = () => stack[stack.length - 1];
+		const insertionTarget = (entry = current()) => {
+			if (
+				entry.tag === "template" &&
+				entry.tree.get(entry.id).kind === "element"
+			)
+				return entry.tree.templateContent(entry.id);
+			return entry;
+		};
+		const contextTag = () => {
+			const scope = templateScope();
+			return scope && stack.length === scope.index + 1
+				? scope.mode
+				: current().tag;
+		};
 		const position = (tag: string) => {
-			for (let index = stack.length - 1; index >= 0; index--)
+			for (
+				let index = stack.length - 1;
+				index >= (templateScope()?.index ?? 0);
+				index--
+			)
 				if (stack[index].tag === tag) return index;
 			return -1;
 		};
@@ -433,21 +468,25 @@ function* parseHtmlSteps(
 				tree.append(html, body);
 				bodyStarted = true;
 			}
-			stack = [{ id: body, tag: "body" }];
+			stack = [{ tree, id: body, tag: "body" }];
 			return "body" as const;
 		};
 		const location = (foster: boolean) => {
-			if (foster && tableContainers.has(current().tag)) {
+			if (foster && tableContainers.has(contextTag())) {
 				const table = stack[position("table")];
 				if (table) {
-					const parent = tree.get(table.id).parent;
+					const parent = table.tree.get(table.id).parent;
 					if (parent !== null) {
 						issue("table-foster-parenting");
-						return { parent, before: table.id };
+						return { tree: table.tree, parent, before: table.id };
 					}
+				} else if (templateScope()) {
+					const target = insertionTarget(stack[templateScope().index]);
+					return { tree: target.tree, parent: target.id, before: undefined };
 				}
 			}
-			return { parent: current().id, before: undefined };
+			const target = insertionTarget();
+			return { tree: target.tree, parent: target.id, before: undefined };
 		};
 		const insert = (
 			name: string,
@@ -455,11 +494,11 @@ function* parseHtmlSteps(
 			foster = false,
 		) => {
 			const target = location(foster);
-			const id = tree.createElement(name, attributes);
-			tree.insert(target.parent, id, target.before);
+			const id = target.tree.createElement(name, attributes);
+			target.tree.insert(target.parent, id, target.before);
 			if (target.before !== undefined) fosterTexts.delete(target.before);
 			lastText = undefined;
-			return id;
+			return { tree: target.tree, id };
 		};
 		const text = (data: string, foster = false) => {
 			if (!data) return;
@@ -469,15 +508,21 @@ function* parseHtmlSteps(
 					? undefined
 					: fosterTexts.get(target.before);
 			if (fosterText !== undefined)
-				tree.setData(fosterText, tree.get(fosterText).data + data);
+				target.tree.setData(
+					fosterText,
+					target.tree.get(fosterText).data + data,
+				);
 			else if (
 				lastText?.parent === target.parent &&
 				lastText.before === target.before
 			)
-				tree.setData(lastText.id, tree.get(lastText.id).data + data);
+				target.tree.setData(
+					lastText.id,
+					target.tree.get(lastText.id).data + data,
+				);
 			else {
-				const id = tree.createText(data);
-				tree.insert(target.parent, id, target.before);
+				const id = target.tree.createText(data);
+				target.tree.insert(target.parent, id, target.before);
 				lastText = { id, ...target };
 				if (target.before !== undefined) fosterTexts.set(target.before, id);
 			}
@@ -492,9 +537,9 @@ function* parseHtmlSteps(
 			attributes: Record<string, string> = {},
 			foster = false,
 		) => {
-			const id = insert(tag, attributes, foster);
-			stack.push({ id, tag });
-			return id;
+			const entry = insert(tag, attributes, foster);
+			stack.push({ ...entry, tag });
+			return entry;
 		};
 		const checkInput = () => {
 			if (options.signal?.aborted)
@@ -535,7 +580,11 @@ function* parseHtmlSteps(
 				yield { kind: "pause", tree };
 				token = nextToken();
 			}
-			if (!token) break;
+			if (!token) {
+				for (const scope of templates)
+					if (scope.index > 0) issue("unclosed-template");
+				break;
+			}
 			if (token.kind === "doctype") {
 				if (!initial) {
 					issue("misplaced-doctype");
@@ -569,19 +618,22 @@ function* parseHtmlSteps(
 			)
 				missingDoctype();
 			if (token.kind === "comment") {
-				const comment = tree.createComment(token.data);
+				const target = location(false);
+				const comment = target.tree.createComment(token.data);
 				if (mode === "before" && fragmentDocument)
 					tree.insert(html, comment, head);
 				else if (mode === "before") tree.insert(tree.root, comment, html);
-				else tree.append(mode === "after" ? html : current().id, comment);
+				else
+					target.tree.append(mode === "after" ? html : target.parent, comment);
 				lastText = undefined;
 				continue;
 			}
 			if (token.kind === "text") {
 				let data = token.data;
 				if (
-					fragment?.tagName === "colgroup" &&
-					stack.length === 1 &&
+					((fragment?.tagName === "colgroup" && stack.length === 1) ||
+						(templateScope()?.mode === "colgroup" &&
+							stack.length === templateScope().index + 1)) &&
 					/[^\t\n\f\r ]/.test(data)
 				) {
 					issue("ignored-text-in-colgroup");
@@ -601,21 +653,26 @@ function* parseHtmlSteps(
 			}
 			stripNewline = false;
 			const { name, attributes } = token;
-			if (fragment && ["html", "head", "body"].includes(name)) {
+			if (
+				(fragment || inTemplate()) &&
+				["html", "head", "body"].includes(name)
+			) {
 				issue("ignored-fragment-document-tag");
 				continue;
 			}
 			if (
-				fragment?.tagName === "colgroup" &&
-				stack.length === 1 &&
-				name !== "col"
+				((fragment?.tagName === "colgroup" && stack.length === 1) ||
+					(templateScope()?.mode === "colgroup" &&
+						stack.length === templateScope().index + 1)) &&
+				name !== "col" &&
+				name !== "template"
 			) {
 				issue("ignored-tag-in-colgroup");
 				continue;
 			}
 			if (
 				token.kind === "start" &&
-				["svg", "math", "template", "frameset", "frame"].includes(name)
+				["svg", "math", "frameset", "frame"].includes(name)
 			)
 				throw new AgentBrowserError(
 					"unsupported",
@@ -629,7 +686,7 @@ function* parseHtmlSteps(
 			if (name === "head") {
 				if (token.kind === "start" && mode === "before") {
 					mode = "head";
-					stack = [{ id: head, tag: "head" }];
+					stack = [{ tree, id: head, tag: "head" }];
 					merge(head, attributes);
 				} else if (token.kind === "end" && mode === "head") mode = inBody();
 				else issue("unexpected-head");
@@ -641,14 +698,14 @@ function* parseHtmlSteps(
 					if (mode !== "body") mode = inBody();
 				} else {
 					mode = "after";
-					stack = [{ id: body, tag: "body" }];
+					stack = [{ tree, id: body, tag: "body" }];
 				}
 				continue;
 			}
 			if (mode === "before") {
 				if (token.kind === "start" && headTags.has(name)) {
 					mode = "head";
-					stack = [{ id: head, tag: "head" }];
+					stack = [{ tree, id: head, tag: "head" }];
 				} else mode = inBody();
 			}
 			if (mode === "head" && stack.length === 1 && !headTags.has(name))
@@ -657,9 +714,57 @@ function* parseHtmlSteps(
 				issue("content-after-body");
 				mode = inBody();
 			}
+			if (name === "template") {
+				if (token.kind === "start") {
+					if (
+						Object.hasOwn(attributes, "shadowrootmode") ||
+						Object.hasOwn(attributes, "for")
+					)
+						issue("template-extensions-not-implemented");
+					push("template", attributes);
+					templates.push({ index: stack.length - 1, mode: "template" });
+					if (token.selfClosing) issue("nonvoid-self-close-ignored");
+				} else {
+					const scope = templateScope();
+					if (!scope || scope.index === 0) issue("unmatched-template-end");
+					else {
+						stack.length = scope.index;
+						templates.pop();
+						lastText = undefined;
+					}
+				}
+				continue;
+			}
+			const scope = templateScope();
+			if (
+				scope?.mode === "template" &&
+				(token.kind === "end" || !templateHeadTags.has(name))
+			) {
+				if (token.kind === "end") {
+					issue("ignored-end-in-template");
+					continue;
+				}
+				scope.mode = [
+					"caption",
+					"colgroup",
+					"tbody",
+					"tfoot",
+					"thead",
+				].includes(name)
+					? "table"
+					: name === "col"
+						? "colgroup"
+						: name === "tr"
+							? "tbody"
+							: name === "td" || name === "th"
+								? "tr"
+								: "body";
+			}
 			if (token.kind === "end") {
 				if (name === "form") {
-					if (form !== undefined) {
+					if (inTemplate()) {
+						if (!pop("form")) issue("unmatched-end-tag");
+					} else if (form !== undefined) {
 						stack = stack.filter((entry) => entry.id !== form);
 						form = undefined;
 					} else issue("unmatched-end-tag");
@@ -698,14 +803,15 @@ function* parseHtmlSteps(
 					continue;
 				}
 			}
-			if (name === "form" && form !== undefined) {
+			if (name === "form" && form !== undefined && !inTemplate()) {
 				issue("nested-form-ignored");
 				continue;
 			}
 			if (blocks.has(name)) pop("p");
 			if (name === "li") {
 				for (let index = stack.length - 1; index > 0; index--) {
-					if (["ul", "ol", "menu"].includes(stack[index].tag)) break;
+					if (["ul", "ol", "menu", "template"].includes(stack[index].tag))
+						break;
 					if (stack[index].tag === "li") {
 						stack.length = index;
 						break;
@@ -746,15 +852,29 @@ function* parseHtmlSteps(
 				].includes(name)
 			) {
 				const actualTable = position("table");
+				if (
+					actualTable < 0 &&
+					scope &&
+					((scope.mode === "tbody" && !["tr", "td", "th"].includes(name)) ||
+						(scope.mode === "tr" && !["td", "th"].includes(name)))
+				) {
+					stack.length = scope.index + 1;
+					issue("ignored-template-table-container");
+					continue;
+				}
+				const virtualTemplate =
+					scope && scope.mode !== "body" ? scope.index : -1;
 				const tableIndex =
 					actualTable >= 0
 						? actualTable
-						: fragment &&
-								(sections.has(fragment.tagName) ||
-									["tr", "colgroup"].includes(fragment.tagName))
-							? 0
-							: -1;
-				if (tableIndex < 0 || (tableIndex === 0 && !fragment)) {
+						: virtualTemplate >= 0
+							? virtualTemplate
+							: fragment &&
+									(sections.has(fragment.tagName) ||
+										["tr", "colgroup"].includes(fragment.tagName))
+								? 0
+								: -1;
+				if (tableIndex < 0 || (tableIndex === 0 && !fragment && !scope)) {
 					issue("table-tag-outside-table");
 					continue;
 				}
@@ -777,18 +897,24 @@ function* parseHtmlSteps(
 						position("tfoot"),
 					);
 					stack.length = Math.max(tableIndex, sectionIndex) + 1;
-					if (!sections.has(current().tag)) push("tbody");
+					if (!sections.has(contextTag())) push("tbody");
 				}
 				if (name === "td" || name === "th") {
-					const row = position("tr");
+					const actualRow = position("tr");
+					const row =
+						actualRow >= 0
+							? actualRow
+							: actualTable < 0 && scope?.mode === "tr"
+								? scope.index
+								: -1;
 					if (row >= tableIndex && row >= 0) stack.length = row + 1;
-					else {
-						if (current().tag === "table") push("tbody");
+					else if (contextTag() !== "tr") {
+						if (contextTag() === "table") push("tbody");
 						push("tr");
 						issue("implicit-table-row");
 					}
 				}
-				if (name === "col" && current().tag !== "colgroup") {
+				if (name === "col" && contextTag() !== "colgroup") {
 					stack.length = tableIndex + 1;
 					push("colgroup");
 				}
@@ -808,20 +934,22 @@ function* parseHtmlSteps(
 				"input",
 				"form",
 			].includes(name);
-			const id = insert(name, attributes, foster);
+			const entry = insert(name, attributes, foster);
+			const { id } = entry;
 			if (
 				scripting &&
 				!fragment &&
+				!inTemplate() &&
 				name === "meta" &&
 				attributes["http-equiv"]?.trim().toLowerCase() ===
 					"content-security-policy"
 			)
 				yield { kind: "policy", tree, id };
-			if (name === "form") form = id;
+			if (name === "form" && !inTemplate()) form = id;
 			if (voidTags.has(name) || ["basefont", "bgsound"].includes(name))
 				continue;
 			if (token.selfClosing) issue("nonvoid-self-close-ignored");
-			stack.push({ id, tag: name });
+			stack.push({ ...entry, tag: name });
 			if (
 				rawTags.has(name) ||
 				name === "title" ||
@@ -844,9 +972,9 @@ function* parseHtmlSteps(
 						closing = nextToken();
 					}
 					pop("script");
-					if (scripting && closing && !fragment)
+					if (scripting && closing && !fragment && !inTemplate())
 						yield { kind: "script", tree, id };
-					else if (scripting && !fragment)
+					else if (scripting && !fragment && !inTemplate())
 						issue("unterminated-script-not-executed");
 					else issue("script-not-executed");
 				}

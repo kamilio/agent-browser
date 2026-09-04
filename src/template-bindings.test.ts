@@ -468,16 +468,17 @@ it("rechecks an auxiliary native caller after publication closes it", () => {
 	family.close();
 });
 
-it("retains explicit template parsing rejection rather than using a body context", () => {
+it("parses template innerHTML using template modes and actual contents owners", () => {
 	const { document } = fixture();
 	const template = document.createElement("template");
-	expect(() => {
-		template.innerHTML = "<p>not yet</p>";
-	}).toThrow("template");
-	expect(template.content.childNodes.length).toBe(0);
-	expect(() => {
-		document.createElement("div").innerHTML = "<template>text</template>";
-	}).toThrow("template");
+	template.innerHTML = "<tr><td>cell</td></tr>";
+	expect(template.childNodes.length).toBe(0);
+	expect(template.content.childNodes.length).toBe(1);
+	expect(template.content.firstChild?.nodeName).toBe("TR");
+	expect(template.innerHTML).toBe("<tr><td>cell</td></tr>");
+	const element = document.createElement("div");
+	element.innerHTML = "<template>text</template>";
+	expect(element.firstChild?.content.textContent).toBe("text");
 });
 
 function intercepted() {

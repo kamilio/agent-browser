@@ -354,6 +354,14 @@ and owner-aware inert insertion; adoption and cross-owner observer/runtime
 integration remain separate requirements. Native factory evidence does not close
 the SafeJS, live-site, terminal or broader compatibility gates.
 
+September 4 template-parser continuation: `TEMPLATE-PARSING.md` replaces blanket
+template rejection with owner-aware construction and real template-mode/context
+selection. Template script/policy hooks remain inert, and bounded HTML replacement
+targets the actual contents owner. Continue with active-formatting/adoption-agency
+and malformed-table recovery, retaining the broader DOM adoption, observer/runtime
+and template-extension requirements. Native parsing and injected resource evidence
+do not establish live framework, SafeJS or terminal acceptance.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

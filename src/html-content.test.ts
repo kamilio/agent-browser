@@ -32,7 +32,7 @@ it("preserves the old document, node count and revision on parse failure", () =>
 	const count = tree.nodeCount;
 	const revision = tree.revision;
 	expect(() =>
-		setInnerHtml(tree, mount, "<b>staged</b><template>unsupported"),
+		setInnerHtml(tree, mount, "<b>staged</b><svg>unsupported"),
 	).toThrow("not implemented");
 	expect(tree.textContent(mount)).toBe("original");
 	expect(tree.nodeCount).toBe(count);

@@ -425,13 +425,19 @@ it("does not replace an explicitly closed contents owner with fresh identities",
 	expect(tree.resourceUsage()).toEqual(before);
 });
 
-it("keeps parser exposure gated until template insertion modes are implemented", () => {
-	expect(() =>
-		parseHtmlDocument(
-			"<template><p>not ordinary children</template>",
-			"https://example.com",
-		),
-	).toThrow("template tree construction is not implemented");
+it("keeps parsed contents separate from ordinary template children", () => {
+	const tree = parseHtmlDocument(
+		"<template><p>not ordinary children</template>",
+		"https://example.com",
+	);
+	trees.push(tree);
+	const template = [...tree.walk()].find(
+		({ node }) => node.tagName === "template",
+	);
+	if (!template) throw new Error("Missing template");
+	expect(template.node.children).toEqual([]);
+	const content = tree.templateContent(template.node.id);
+	expect(content.tree.textContent(content.id)).toBe("not ordinary children");
 });
 
 it("preserves copied option and checkedness state in detached contents", () => {

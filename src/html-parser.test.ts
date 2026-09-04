@@ -166,7 +166,7 @@ it("uses scripting-disabled noscript content and does not expose iframe fallback
 	expect(renderSnapshot(snapshotDocument(tree))).not.toContain("not-real");
 });
 
-it.each(["svg", "math", "template", "frameset", "frame"])(
+it.each(["svg", "math", "frameset", "frame"])(
 	"fails explicitly for unsupported %s construction and cleans the candidate",
 	(tag) => {
 		const closed = vi.spyOn(DocumentTree.prototype, "close");

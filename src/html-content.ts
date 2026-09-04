@@ -15,7 +15,9 @@ export function setInnerHtml(
 			"HTML replacement requires an element",
 		);
 	withFragment(tree, id, source, options, (sourceTree, fragment) => {
-		tree.replaceChildrenFrom(id, sourceTree, fragment);
+		const destination =
+			target.tagName === "template" ? tree.templateContent(id) : { tree, id };
+		destination.tree.replaceChildrenFrom(destination.id, sourceTree, fragment);
 	});
 }
 

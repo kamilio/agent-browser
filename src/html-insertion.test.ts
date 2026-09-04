@@ -133,7 +133,7 @@ it("outerHTML on a detached element performs no parse or allocation", () => {
 	const node = dom.node(detached) as Node;
 	const count = tree.nodeCount;
 	const revision = tree.revision;
-	node.outerHTML = "<template>unsupported parser input";
+	node.outerHTML = "<svg>unsupported parser input";
 	expect(tree.nodeCount).toBe(count);
 	expect(tree.revision).toBe(revision);
 	expect(node.textContent).toBe("old");
@@ -257,11 +257,11 @@ it.each(["outer", "adjacent"])(
 		};
 		expect(() => {
 			if (operation === "outer")
-				target.outerHTML = "<b>staged</b><template>unsupported";
+				target.outerHTML = "<b>staged</b><svg>unsupported";
 			else
 				target.insertAdjacentHTML(
 					"beforebegin",
-					"<b>staged</b><template>unsupported",
+					"<b>staged</b><svg>unsupported",
 				);
 		}).toThrow("not implemented");
 		expect({
