@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+CSS feature-query checkpoint: `CSS-SUPPORTS.md` adds shared `CSS.supports()`
+overloads and stylesheet `@supports` decisions, including Boolean conditions,
+escaped identifiers and quoted preludes. Known rendering gaps remain false rather
+than being advertised from syntax acceptance alone. Nested media/source order,
+inactive-branch diagnostics and existing stylesheet quotas have native coverage.
+Seventy-four new cases all fail on isolated prior HEAD, then pass; two prelude
+regressions also fail before correction within this checkpoint. Focused runs pass
+308 / five files in both trees; authorized full native runs pass 9,864 / 274
+working files and 8,718 / 252 isolated files. Both trees pass types/builds, strict
+three-test checks and nine-file lint. Approved relocation of 70 old browser
+snapshots preserves their contents and paths through symlinks while resolving
+scratch exhaustion; historical reports and unrelated work remain intact. Continue
+application-facing APIs and compatibility. Full grammar, selector/font feature
+queries, released-SafeJS, live browser/site/socket/TTY and original acceptance
+gates remain open. No gated probe ran; the denied SafeJS probe remains unrun and
+the complete seven-day browser goal stays active.
+
+### Previous page CSS utility checkpoint
+
 Page CSS utility checkpoint: `PAGE-CSS.md` exposes document-owned `CSS.escape()`
 on global and Window bindings. Identifier serialization, primitive conversion,
 independent input/output quotas and owner revocation have native coverage; object

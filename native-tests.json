@@ -50,6 +50,7 @@
   "src/css-math.test.ts",
   "src/css-math-core.test.ts",
   "src/css-media.test.ts",
+  "src/css-supports.test.ts",
   "src/css-paint.test.ts",
   "src/css-text.test.ts",
   "src/css-variables.test.ts",

@@ -1,5 +1,10 @@
 # Page CSS utilities
 
+September 4 feature-query continuation: `CSS-SUPPORTS.md` adds bounded
+`CSS.supports()` overloads and shared stylesheet `@supports` decisions. It
+supersedes the initial missing-supports flag below; the escape checkpoint's
+measurements remain historical, not new runtime or browser-equivalence evidence.
+
 September 4, 2026. Page bindings now expose a document-owned `CSS` namespace with
 `CSS.escape()`. This addresses application-generated selectors without adding a
 runtime dependency, evaluating host code on behalf of pages, or outsourcing queries

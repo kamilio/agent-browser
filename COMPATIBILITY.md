@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 feature-query continuation: `CSS-SUPPORTS.md` adds shared native
+`CSS.supports()` and stylesheet `@supports` handling, including nested conditions,
+escaped/quoted preludes, inactive-branch quotas and known rendering-gap rejection.
+The profile remains partial: selector/font queries, full grammar and released-
+runtime/browser parity are not established by native fixtures.
+
 September 4 page CSS continuation: `PAGE-CSS.md` exposes bounded, document-owned
 `CSS.escape()` through global and Window bindings. Native tests consume generated
 identifiers through queries, DOM mutation and shared stylesheet/layout matching,

@@ -15,6 +15,7 @@ import { documentStyles } from "./styles.js";
 
 interface CssNamespace {
 	escape(...args: unknown[]): string;
+	supports(...args: unknown[]): boolean;
 }
 interface Element {
 	textContent: string;
@@ -93,7 +94,7 @@ it("publishes one document-owned CSS namespace on Window and global bindings", (
 	expect(bindings.globals.CSS).toBe(css);
 	expect(pageBindingGlobalNames(tree)).toContain("CSS");
 	expect(typeof css).toBe("object");
-	expect("supports" in css).toBe(false);
+	expect(typeof css.supports).toBe("function");
 });
 
 it.each([
@@ -239,6 +240,7 @@ it.each(["bindings", "document", "lifecycle"])(
 		expect(() => window.CSS).toThrow("closed");
 		expect(() => escapeIdentifier("id")).toThrow("closed");
 		expect(() => css.escape(Symbol())).toThrow("closed");
+		expect(() => css.supports("width", "1px")).toThrow("closed");
 	},
 );
 
@@ -290,7 +292,14 @@ it("advertises only implemented CSS utilities and their native bounds", async ()
 			cssUtilities: {
 				partial: true,
 				escape: true,
-				supports: false,
+				supports: true,
+				supportsProfile: "native-declaration-values-and-conditions",
+				selectorQueries: false,
+				supportsLimits: {
+					maxSourceCodeUnits: 65_536,
+					maxDepth: 32,
+					maxConditions: 1024,
+				},
 				limits: { maxInputCodeUnits: 65_536, maxOutputCodeUnits: 65_536 },
 			},
 		});

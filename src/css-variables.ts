@@ -43,7 +43,7 @@ function limit(): never {
 	);
 }
 
-function identifier(source: string, start: number) {
+export function readCssIdentifier(source: string, start: number) {
 	let position = start;
 	let value = "";
 	while (position < source.length) {
@@ -79,7 +79,7 @@ function identifier(source: string, start: number) {
 
 export function customPropertyName(source: string): string | undefined {
 	if (source.length > 1024) return;
-	const parsed = identifier(source, 0);
+	const parsed = readCssIdentifier(source, 0);
 	return parsed?.end === source.length &&
 		parsed.value.startsWith("--") &&
 		parsed.value.length > 2
@@ -231,7 +231,7 @@ export function parseVariableValue(
 				(character === "@" &&
 					nameStart.test(source.slice(position + 1, position + 3)))
 			) {
-				const parsed = identifier(source, position + 1);
+				const parsed = readCssIdentifier(source, position + 1);
 				if (!parsed) {
 					failed = true;
 					break;
@@ -241,7 +241,7 @@ export function parseVariableValue(
 				continue;
 			}
 			if (nameCharacter.test(character) || character === "\\") {
-				const parsed = identifier(source, position);
+				const parsed = readCssIdentifier(source, position);
 				if (!parsed) {
 					failed = true;
 					break;
@@ -438,7 +438,7 @@ export function resolveCustomProperties(
 		active.push(name);
 		const source = specified.get(name) as string;
 		const plain = withoutCssComments(source).trim();
-		const token = identifier(plain, 0);
+		const token = readCssIdentifier(plain, 0);
 		const keyword =
 			token?.end === plain.length
 				? token.value.toLowerCase()

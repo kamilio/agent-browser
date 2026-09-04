@@ -930,6 +930,21 @@ feature queries, released-SafeJS and real browser/site/socket/TTY gates remain o
 No gated probe ran; the denied SafeJS probe remains unrun and the complete seven-day
 browser objective stays active.
 
+September 4 CSS feature-query continuation: `CSS-SUPPORTS.md` shares native
+`CSS.supports()` and stylesheet `@supports` decisions, with Boolean conditions,
+known rendering-gap rejection, quote/escape handling and bounded inactive branches.
+Seventy-four new cases fail on isolated prior HEAD and pass after implementation;
+two prelude regressions also reproduce before their correction. Focused runs pass
+308 / five files in both trees; full authorized native runs pass 9,864 / 274
+working files and 8,718 / 252 isolated files. Both pass types/builds, strict
+three-test checks and nine-file lint. Approved relocation of 70 old standalone
+browser snapshots preserves contents/original paths and resolves scratch storage
+exhaustion; new snapshots use ignored repository cache storage. Historical reports
+and unrelated work remain intact. Continue application compatibility; full grammar,
+selector/font queries, released-SafeJS and real browser/site/socket/TTY gates remain
+open. No gated probe ran; the denied SafeJS probe remains unrun and the complete
+seven-day browser objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

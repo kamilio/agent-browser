@@ -1,5 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
-import { pageCssEscape } from "./page-css.js";
+import { pageCssEscape, pageCssSupports } from "./page-css.js";
 import { documentScrollPosition } from "./document-scroll.js";
 import { PageScroll } from "./page-scroll.js";
 import { type ConsoleLimits, PageConsole } from "./page-console.js";
@@ -153,6 +153,10 @@ export class PageBindings {
 					escape: (...args) => {
 						this.ensureOpen();
 						return pageCssEscape(...args);
+					},
+					supports: (...args) => {
+						this.ensureOpen();
+						return pageCssSupports(...args);
 					},
 				},
 			});

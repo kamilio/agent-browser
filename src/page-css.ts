@@ -1,5 +1,6 @@
 import { AgentBrowserError } from "./errors.js";
 import { domString } from "./script-dom.js";
+import { cssSupportsCondition, cssSupportsDeclaration } from "./css-parser.js";
 
 export const pageCssLimits = Object.freeze({
 	maxInputCodeUnits: 65_536,
@@ -53,4 +54,17 @@ export function pageCssEscape(...args: readonly unknown[]): string {
 	for (let index = 0; index < source.length; index++)
 		output += escapedUnit(source, index);
 	return output;
+}
+
+export function pageCssSupports(...args: readonly unknown[]): boolean {
+	if (!args.length) throw new TypeError("CSS.supports requires an argument");
+	const string = (value: unknown) => {
+		if (typeof value === "symbol")
+			throw new TypeError("Cannot convert a Symbol to a string");
+		return domString(value);
+	};
+	const first = string(args[0]);
+	return args.length === 1
+		? cssSupportsCondition(first, true)
+		: cssSupportsDeclaration(first, string(args[1]));
 }

@@ -20,6 +20,7 @@ import {
 } from "./css-flow.js";
 import { isBorderShorthand, parseBorderShorthand } from "./css-border.js";
 import { compileCssMedia } from "./css-media.js";
+import { cssSupportsLimits, evaluateCssSupports } from "./css-supports.js";
 import {
 	type CssBoxProperty,
 	cssBoxProperties,
@@ -43,6 +44,7 @@ import {
 	cssDeclarationColon,
 	customPropertyName,
 	parseVariableValue,
+	readCssIdentifier,
 	splitCssValue,
 	withoutCssComments,
 } from "./css-variables.js";
@@ -387,6 +389,80 @@ export function parseCssDeclarations(
 	return declarations;
 }
 
+export function cssSupportsDeclaration(
+	property: string,
+	value: string,
+): boolean {
+	if (property.length + value.length + 1 > cssSupportsLimits.maxSourceCodeUnits)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"CSS support query limit exceeded",
+		);
+	const name = readCssIdentifier(property, 0);
+	if (
+		!name ||
+		name.end !== property.length ||
+		name.value !== property ||
+		!property
+	)
+		return false;
+	if (!splitCssValue(value)) return false;
+	let invalid = false;
+	const declarations = parseCssDeclarations(
+		`${property}:${value}`,
+		{ rules: 0, declarations: 0, maxRules: 1, maxDeclarations: 1 },
+		() => {
+			invalid = true;
+		},
+	);
+	return (
+		!invalid &&
+		declarations.length > 0 &&
+		declarations.every((declaration) => {
+			if (declaration.substitution || globals.has(declaration.value))
+				return true;
+			if (declaration.property === "display")
+				return [
+					"none",
+					"contents",
+					"block",
+					"inline",
+					"inline-block",
+					"flow-root",
+					"flex",
+					"inline-flex",
+					"block flow",
+					"inline flow",
+					"block flow-root",
+					"inline flow-root",
+					"block flex",
+					"inline flex",
+				].includes(declaration.value);
+			if (declaration.property === "position")
+				return ["static", "relative"].includes(declaration.value);
+			if (declaration.property === "float" || declaration.property === "clear")
+				return declaration.value === "none";
+			if (
+				declaration.property === "overflow-x" ||
+				declaration.property === "overflow-y"
+			)
+				return declaration.value === "visible";
+			return true;
+		})
+	);
+}
+
+export function cssSupportsCondition(
+	source: string,
+	allowBareDeclaration = false,
+): boolean {
+	return evaluateCssSupports(
+		source,
+		cssSupportsDeclaration,
+		allowBareDeclaration,
+	);
+}
+
 export function parseCssRules(
 	source: string,
 	budget: CssParseBudget,
@@ -403,7 +479,7 @@ export function parseCssRules(
 	const result: CssRule[] = [];
 	while (scanner.position < source.length) {
 		const prelude = scanner.read(";{}");
-		const normalized = withoutComments(prelude.text).trim();
+		const normalized = withoutCssComments(prelude.text).trim();
 		if (!normalized && !prelude.stop) break;
 		if (prelude.stop !== "{") {
 			if (/^@import\b/i.test(normalized)) issue("css-import-not-loaded");
@@ -425,6 +501,20 @@ export function parseCssRules(
 					depth + 1,
 				),
 			);
+			continue;
+		}
+		const atName =
+			normalized[0] === "@" ? readCssIdentifier(normalized, 1) : undefined;
+		if (atName?.value.toLowerCase() === "supports") {
+			const active = cssSupportsCondition(normalized.slice(atName.end).trim());
+			const nested = parseCssRules(
+				body.text,
+				budget,
+				active ? issue : () => {},
+				media,
+				depth + 1,
+			);
+			if (active) result.push(...nested);
 			continue;
 		}
 		if (normalized.startsWith("@")) {

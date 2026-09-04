@@ -20,6 +20,7 @@ import { cssBoxProperties } from "./css-box.js";
 import { cssVariableCapabilities } from "./css-variables.js";
 import { inlineDeclarationLimits } from "./document-inline-declarations.js";
 import { pageCssLimits } from "./page-css.js";
+import { cssSupportsLimits } from "./css-supports.js";
 import { interactionStyleCapabilities } from "./css-interaction.js";
 import { documentHitTesting, hitTestCapabilities } from "./hit-testing.js";
 import {
@@ -633,7 +634,10 @@ export class BrowserCommandHost {
 			cssUtilities: {
 				partial: true,
 				escape: true,
-				supports: false,
+				supports: true,
+				supportsProfile: "native-declaration-values-and-conditions",
+				selectorQueries: false,
+				supportsLimits: cssSupportsLimits,
 				limits: pageCssLimits,
 			},
 			inlineDeclarations: {
