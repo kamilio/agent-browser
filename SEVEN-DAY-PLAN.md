@@ -324,6 +324,13 @@ copy preflight, reentrancy and teardown. Next wire bounded inert HTML document
 families through one pool; creation metadata/defaults, nested admission, parser
 doctype/template behavior and independent runtime/live gates remain open.
 
+September 4 inert-document continuation: `HTML-DOCUMENTS.md` connects guarded
+`createHTMLDocument` publication to shared auxiliary-family quotas and a lifetime
+admission bound. It preserves origin identity separately from about:blank, exposes
+inert defaults and keeps page storage/navigation/event dispatchers isolated.
+Continue with parsed doctype/compatibility-mode and actual template ownership
+work; native creation tests do not close the runtime, site or terminal gates.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

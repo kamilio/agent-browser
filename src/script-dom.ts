@@ -1,4 +1,9 @@
 import { controlChecked, controlValue, inputType } from "./controls.js";
+import {
+	HtmlDocumentFamily,
+	htmlDocumentContext,
+} from "./html-document-family.js";
+import { DocumentEvents } from "./events.js";
 import type { ObservedDocumentMutation } from "./document-observers.js";
 import { ScriptMutationRecords } from "./script-mutation-records.js";
 import { ScriptMutationObservers } from "./script-mutation-observers.js";
@@ -101,6 +106,10 @@ export class ScriptDom {
 	private readonly capabilities = new Map<number, object>();
 	private readonly publications: ScriptNodePublications;
 	private implementation?: object;
+	private readonly inert: boolean;
+	private readonly inheritedFamily?: HtmlDocumentFamily;
+	private ownedFamily?: HtmlDocumentFamily;
+	private readonly callbacks?: ScriptCallbackRuntime;
 	private mutationRecordOwner?: ScriptMutationRecords;
 	private mutationObserverOwner?: {
 		runtime: ScriptCallbackRuntime;
@@ -117,6 +126,10 @@ export class ScriptDom {
 		private readonly location?: ScriptLocation,
 		private readonly storage?: ScriptStorage,
 	) {
+		const context = htmlDocumentContext(tree);
+		this.inert = context !== undefined;
+		this.inheritedFamily = context?.family;
+		this.callbacks = events?.callbacks;
 		if (typeof factory?.createHostObject !== "function")
 			throw new AgentBrowserError(
 				"unsupported",
@@ -128,7 +141,7 @@ export class ScriptDom {
 		this.validity = new ScriptValidity(tree, factory);
 		this.datasets = new ScriptDatasets(tree, factory);
 		this.elementTraversal = new ElementTraversal(tree);
-		this.geometry = new ScriptGeometry(tree, factory);
+		this.geometry = new ScriptGeometry(tree, factory, !this.inert);
 		this.elementSizes = documentElementSizes(tree);
 		this.computedStyles = new ComputedStyles(tree, factory);
 		this.relations = new NodeRelations(tree);
@@ -548,6 +561,55 @@ export class ScriptDom {
 					return this.node(this.tree.createComment(domString(data)));
 				},
 			});
+			if (this.inert) {
+				for (const [name, value] of Object.entries({
+					defaultView: null,
+					location: null,
+					referrer: "",
+					contentType: "text/html",
+					characterSet: "UTF-8",
+					charset: "UTF-8",
+					inputEncoding: "UTF-8",
+					compatMode: "CSS1Compat",
+				}))
+					definition.properties[name] = {
+						get: () => {
+							this.read(id);
+							return value;
+						},
+					};
+				definition.properties.cookie = {
+					get: () => {
+						this.read(id);
+						return "";
+					},
+					set: (value) => {
+						this.read(id);
+						domString(value);
+					},
+				};
+				definition.methods.hasFocus = () => {
+					this.read(id);
+					return false;
+				};
+				definition.properties.activeElement = {
+					get: () => {
+						this.read(id);
+						return this.optional(
+							documentBody(this.tree) ?? documentElement(this.tree),
+						);
+					},
+				};
+				for (const method of ["elementFromPoint", "elementsFromPoint"])
+					definition.methods[method] = (...args) => {
+						this.read(id);
+						if (args.length < 2)
+							throw new TypeError(`${method} requires two coordinates`);
+						inertCoordinate(args[0]);
+						inertCoordinate(args[1]);
+						return method === "elementsFromPoint" ? [] : null;
+					};
+			}
 		}
 		if (initial.kind === "element") {
 			Object.assign(definition.methods, this.attributes.elementMethods(id));
@@ -743,6 +805,42 @@ export class ScriptDom {
 			);
 			Object.assign(definition.properties, select.properties);
 			Object.assign(definition.methods, select.methods);
+			if (this.inert) {
+				for (const method of ["focus", "blur", "scrollIntoView"])
+					definition.methods[method] = () => {
+						this.read(id);
+					};
+				for (const name of [
+					...elementSizeProperties,
+					"offsetTop",
+					"offsetLeft",
+					"scrollWidth",
+					"scrollHeight",
+				])
+					definition.properties[name] = {
+						get: () => {
+							this.read(id);
+							return 0;
+						},
+					};
+				for (const name of ["scrollTop", "scrollLeft"])
+					definition.properties[name] = {
+						get: () => {
+							this.read(id);
+							return 0;
+						},
+						set: (value) => {
+							this.read(id);
+							inertCoordinate(value);
+						},
+					};
+				definition.properties.offsetParent = {
+					get: () => {
+						this.read(id);
+						return null;
+					},
+				};
+			}
 		}
 		return this.publications.publish("node", id, definition, (capability) => {
 			this.relations.register(capability, id);
@@ -754,26 +852,30 @@ export class ScriptDom {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
-		this.publications.close();
-		this.implementation = undefined;
-		this.mutationObserverOwner?.bindings.close();
-		this.mutationObserverOwner = undefined;
-		this.mutationRecordOwner?.close();
-		this.eventBindings?.close();
-		this.queries.close();
-		this.collections.close();
-		this.inlineStyles.close();
-		this.attributes.close();
-		this.datasets.close();
-		this.elementTraversal.close();
-		this.relations.close();
-		this.classLists.close();
-		this.validity.close();
-		this.geometry.close();
-		this.computedStyles.close();
-		this.capabilities.clear();
-		this.identities = new WeakMap();
-		this.unregisterClose();
+		try {
+			this.publications.close();
+			this.implementation = undefined;
+			this.mutationObserverOwner?.bindings.close();
+			this.mutationObserverOwner = undefined;
+			this.mutationRecordOwner?.close();
+			this.eventBindings?.close();
+			this.queries.close();
+			this.collections.close();
+			this.inlineStyles.close();
+			this.attributes.close();
+			this.datasets.close();
+			this.elementTraversal.close();
+			this.relations.close();
+			this.classLists.close();
+			this.validity.close();
+			this.geometry.close();
+			this.computedStyles.close();
+			this.capabilities.clear();
+			this.identities = new WeakMap();
+			this.unregisterClose();
+		} finally {
+			this.ownedFamily?.close();
+		}
 	}
 
 	consoleLabel(value: object): string | undefined {
@@ -789,6 +891,7 @@ export class ScriptDom {
 
 	metrics() {
 		return Object.freeze({
+			documents: (this.ownedFamily ?? this.inheritedFamily)?.metrics() ?? null,
 			publications: this.publications.metrics(),
 			classLists: this.classLists.metrics(),
 			geometry: this.geometry.metrics(),
@@ -856,6 +959,29 @@ export class ScriptDom {
 			{
 				methods: {
 					hasFeature: () => true,
+					createHTMLDocument: (value) => {
+						const title = value === undefined ? undefined : domString(value);
+						this.read(this.tree.root);
+						let family = this.inheritedFamily ?? this.ownedFamily;
+						if (!family) {
+							family = new HtmlDocumentFamily(this.tree);
+							this.ownedFamily = family;
+						}
+						return family.create(
+							title,
+							(tree) =>
+								new ScriptDom(
+									tree,
+									this.factory,
+									this.callbacks
+										? {
+												events: new DocumentEvents(tree),
+												callbacks: this.callbacks,
+											}
+										: undefined,
+								).document,
+						);
+					},
 					createDocumentType: (...values) => {
 						if (values.length < 3)
 							throw new TypeError(
@@ -1008,6 +1134,18 @@ export class ScriptDom {
 			value: sanitizeInputValue(type, text, node.attributes),
 		});
 	}
+}
+
+function inertCoordinate(value: unknown): number {
+	if (
+		value !== null &&
+		(typeof value === "object" || typeof value === "function")
+	)
+		throw new AgentBrowserError(
+			"unsupported",
+			"Object-to-coordinate conversion is not implemented",
+		);
+	return +(value as number);
 }
 
 export function domString(value: unknown): string {

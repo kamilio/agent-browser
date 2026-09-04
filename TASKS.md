@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Inert HTML document checkpoint: `HTML-DOCUMENTS.md` adds owned
+`document.implementation.createHTMLDocument`, exact optional-title skeletons,
+inherited origin identity, unrendered defaults, isolated page bindings and shared
+auxiliary-family budgets. Nested calls share 16 lifetime creation admissions;
+publication failures and initiating-owner teardown revoke and release candidates.
+Three initial regressions fail before integration; 40 new tests and 357 focused
+checks across ten files pass. Full native validation passes 8,062 / 228 files;
+the isolated owned patch passes 5,302 / 167 available files. Types, builds and
+four-file lint pass in both trees, with pre-existing pending work preserved.
+Next preserve parsed doctype/compatibility metadata and implement the actual
+template content-document/parser model. XML/adoption/prototype/runtime breadth
+and existing independent gates remain open. No gated probe ran; the denied
+SafeJS probe remains unrun and the seven-day goal stays active.
+
+### Previous shared-resource checkpoint
+
 Shared document-resource checkpoint: `DOCUMENT-RESOURCES.md` adds opt-in aggregate
 document-count, node and retained-text limits, complete-copy preflight, per-payload
 reentrant checks, content-free counters and family teardown. Four initial

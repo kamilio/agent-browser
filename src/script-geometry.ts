@@ -18,18 +18,34 @@ export class ScriptGeometry {
 	constructor(
 		private readonly tree: DocumentTree,
 		private readonly factory: ScriptHostObjectFactory,
+		private readonly rendered = true,
 	) {}
 
 	getBoundingClientRect(id: number) {
 		this.ensureOpen();
-		const rect = documentGeometry(this.tree).getBoundingClientRect(id);
+		if (!this.rendered) this.tree.get(id);
+		const rect = this.rendered
+			? documentGeometry(this.tree).getBoundingClientRect(id)
+			: {
+					x: 0,
+					y: 0,
+					width: 0,
+					height: 0,
+					top: 0,
+					right: 0,
+					bottom: 0,
+					left: 0,
+				};
 		this.reserve(1);
 		return this.rect(rect);
 	}
 
 	getClientRects(id: number) {
 		this.ensureOpen();
-		const source = documentGeometry(this.tree).getClientRects(id);
+		if (!this.rendered) this.tree.get(id);
+		const source = this.rendered
+			? documentGeometry(this.tree).getClientRects(id)
+			: [];
 		if (source.length > scriptGeometryLimits.maxListLength)
 			throw new AgentBrowserError(
 				"resource-limit",
