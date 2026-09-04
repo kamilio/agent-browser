@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 handler continuation: `TOGGLE-HANDLERS.md` adds owned `ontoggle`
+properties on native script elements/documents and the page window, sharing
+existing event ordering, quotas and callback lifetime. Native tests do not close
+inline handler compilation/attribute synchronization, full callback conversion,
+bare globals, ToggleEvent constructors/prototypes/trust or runtime/browser gates.
+
 September 4 marker continuation: `DISCLOSURE-MARKERS.md` adds generated native
 primary-summary markers, six list-style types and inside/outside-inline
 placement, sharing authored summary hit targets without extra DOM nodes or

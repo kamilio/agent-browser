@@ -1063,6 +1063,20 @@ probe ran; the denied SafeJS probe remains unrun. Historical evidence and
 unrelated pending work remain separate; the complete seven-day objective stays
 active.
 
+September 4 toggle-handler continuation: `TOGGLE-HANDLERS.md` wires owned
+`ontoggle` properties to the existing native handler registry and disclosure
+queue, preserving ordering, state coalescing, reentrancy, identity, error
+reporting, resource limits and revocation. The 24 new cases produce 21 failures
+and three passes on isolated prior HEAD. Focused runs pass 178 / six working
+files and 172 / six isolated files; types/builds, strict new-test checking and
+three-file lint pass in both. Authorized full native runs pass 10,310 / 283
+working files and 9,164 / 261 isolated files. Continue
+missing-summary fallback and remaining event interfaces. Inline source/attribute
+synchronization, full callback/global/prototype/trust, UA/shadow/accessibility,
+released-runtime and original browser gates remain open. No gated probe ran;
+the denied SafeJS probe remains unrun. Historical evidence and unrelated pending
+work stay separate; the complete seven-day objective remains active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

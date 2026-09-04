@@ -1,5 +1,6 @@
 [
   "src/action-wait.test.ts",
+  "src/toggle-handlers.test.ts",
   "src/fragment-mode.test.ts",
   "src/adjacent-insertion.test.ts",
   "src/async-actions.test.ts",

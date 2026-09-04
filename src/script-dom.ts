@@ -340,6 +340,20 @@ export class ScriptDom {
 		Object.assign(definition.properties, characterData.properties);
 		Object.assign(definition.methods, characterData.methods);
 		const eventBindings = this.eventBindings;
+		if (
+			eventBindings &&
+			(initial.kind === "element" || initial.kind === "document")
+		)
+			definition.properties.ontoggle = {
+				get: () => {
+					this.read(id);
+					return eventBindings.getHandler(id, "toggle");
+				},
+				set: (value) => {
+					this.read(id);
+					eventBindings.setHandler(id, "toggle", value);
+				},
+			};
 		if (eventBindings)
 			Object.assign(definition.methods, {
 				addEventListener: (

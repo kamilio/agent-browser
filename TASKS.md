@@ -19,6 +19,23 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Toggle-handler checkpoint: `TOGGLE-HANDLERS.md` wires owned `ontoggle` properties
+on event-enabled script elements/documents and the page window to the existing
+handler registry and disclosure task queue. Tests cover listener ordering,
+replacement/removal, coalescing, reentrancy, target identity, propagation, error
+reporting, quotas and close revocation. The 24 new cases produce 21 failures and
+three passes on isolated prior HEAD. Focused runs pass 178 / six working files
+and 172 / six isolated files; types/builds, strict new-test checking and
+three-file lint pass in both. Authorized full native runs pass 10,310 / 283
+working files and 9,164 / 261 isolated files.
+Continue missing-summary fallback and remaining event interfaces. Inline source/
+attribute synchronization, full callback/prototype/global/trust semantics,
+UA/shadow/accessibility, released-runtime and original gates remain open. No
+gated probe ran; the denied SafeJS probe remains unrun. Historical evidence and
+unrelated pending work stay separate; the complete seven-day objective is active.
+
+### Previous disclosure-marker checkpoint
+
 Disclosure-marker checkpoint: `DISCLOSURE-MARKERS.md` adds generated primary
 summary markers through native formatting, hit testing and raster paths, without
 fake DOM children or extra client rectangles. Two list-style longhands support

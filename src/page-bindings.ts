@@ -272,6 +272,19 @@ export class PageBindings {
 							this.dom.eventBindings?.setHandler(windowTarget, "resize", value);
 						},
 					},
+					ontoggle: {
+						get: () => {
+							this.ensureOpen();
+							return (
+								this.dom.eventBindings?.getHandler(windowTarget, "toggle") ??
+								null
+							);
+						},
+						set: (value) => {
+							this.ensureOpen();
+							this.dom.eventBindings?.setHandler(windowTarget, "toggle", value);
+						},
+					},
 					onscroll: {
 						get: () => {
 							this.ensureOpen();
