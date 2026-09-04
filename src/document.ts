@@ -5,7 +5,7 @@ import {
 	type InputValueChange,
 } from "./document-input-values.js";
 import { DocumentSelection } from "./document-selection.js";
-import type { DocumentResources } from "./document-resources.js";
+import { DocumentResources } from "./document-resources.js";
 import { canRewriteDocumentUrl } from "./document-url.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlAttributeName } from "./html-attribute-name.js";
@@ -96,6 +96,11 @@ export interface DocumentMutation {
 
 let nextNodeId = 1;
 
+export interface DocumentNodeReference {
+	readonly tree: DocumentTree;
+	readonly id: number;
+}
+
 export class DocumentTree {
 	private currentUrl: string;
 	private currentTarget: number | null = null;
@@ -110,6 +115,10 @@ export class DocumentTree {
 	private currentRevision = 0;
 	private textCodeUnits = 0;
 	private unregisterResources?: () => void;
+	private templateDocument?: DocumentTree;
+	private templateOwner = false;
+	private readonly templateContents = new Map<number, DocumentNodeReference>();
+	private readonly fragmentHosts = new Map<number, DocumentNodeReference>();
 	private readonly customValidity = new Map<number, string>();
 	private readonly userEditedValues = new Set<number>();
 	private closed = false;
@@ -134,7 +143,7 @@ export class DocumentTree {
 	constructor(
 		url: string,
 		limits: Partial<DocumentLimits> = {},
-		private readonly resources?: DocumentResources,
+		private resources?: DocumentResources,
 	) {
 		this.currentUrl = new URL(url).href;
 		this.limits = Object.freeze({
@@ -239,6 +248,99 @@ export class DocumentTree {
 		});
 	}
 
+	get isTemplateContentsDocument() {
+		this.ensureOpen();
+		return this.templateOwner;
+	}
+
+	templateContent(id: number): DocumentNodeReference {
+		if (this.element(id).tagName !== "template")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Expected a template element",
+			);
+		const content = this.templateContents.get(id);
+		if (!content)
+			throw new AgentBrowserError(
+				"not-found",
+				"Template contents are unavailable",
+			);
+		content.tree.node(content.id);
+		return content;
+	}
+
+	templateHost(id: number): DocumentNodeReference | null {
+		if (this.node(id).kind !== "fragment")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Expected a document fragment",
+			);
+		return this.fragmentHosts.get(id) ?? null;
+	}
+
+	private templateResources() {
+		this.ensureOpen();
+		if (!this.resources) {
+			const resources = new DocumentResources({
+				maxNodes: this.limits.maxNodes,
+				maxTextCodeUnits: this.limits.maxTextCodeUnits,
+			});
+			this.unregisterResources = resources.register(this);
+			this.resources = resources;
+		}
+		return this.resources;
+	}
+
+	private prepareTemplate(text: number): DocumentTree {
+		const resources = this.templateResources();
+		const count = this.templateOwner || this.templateDocument ? 2 : 3;
+		this.templateDocument?.node(this.templateDocument.root);
+		if (
+			this.nodeCount + (this.templateOwner ? 2 : 1) > this.limits.maxNodes ||
+			(!this.templateOwner &&
+				(this.templateDocument?.nodeCount ?? 1) + 1 > this.limits.maxNodes) ||
+			!Number.isSafeInteger(nextNodeId + count - 1)
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Document node limit exceeded",
+			);
+		resources.check(count, text);
+		if (this.templateOwner) return this;
+		if (!this.templateDocument) {
+			const document = new DocumentTree("about:blank", this.limits, resources);
+			document.templateOwner = true;
+			this.templateDocument = document;
+		}
+		this.templateDocument.node(this.templateDocument.root);
+		return this.templateDocument;
+	}
+
+	private attachTemplate(id: number, owner: DocumentTree) {
+		const fragment = owner.createFragment();
+		this.templateContents.set(id, Object.freeze({ tree: owner, id: fragment }));
+		owner.fragmentHosts.set(fragment, Object.freeze({ tree: this, id }));
+	}
+
+	private hostDepth(id: number, forbidden?: number): number {
+		let current: DocumentNodeReference | undefined = { tree: this, id };
+		let depth = 0;
+		while (current) {
+			if (current.tree === this && current.id === forbidden)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Template host graph cannot contain cycles",
+				);
+			depth++;
+			const node = current.tree.node(current.id);
+			current =
+				node.parent === null
+					? current.tree.fragmentHosts.get(node.id)
+					: { tree: current.tree, id: node.parent };
+		}
+		return depth;
+	}
+
 	createElement(tagName: string, attributes: Record<string, string> = {}) {
 		if (typeof tagName !== "string" || !/^[a-z][a-z0-9:_-]*$/i.test(tagName))
 			throw new AgentBrowserError("invalid-input", "Invalid element name");
@@ -262,6 +364,10 @@ export class DocumentTree {
 			tagName.length,
 		);
 		this.checkTextBudget(length);
+		const templateOwner =
+			tagName.toLowerCase() === "template"
+				? this.prepareTemplate(length)
+				: undefined;
 		const id = this.allocate("element", tagName.toLowerCase(), "");
 		const node = this.node(id);
 		for (const [name, value] of entries) {
@@ -272,6 +378,7 @@ export class DocumentTree {
 		}
 		this.selections.initialize(id);
 		this.checkedness.initialize(id);
+		if (templateOwner) this.attachTemplate(id, templateOwner);
 		return id;
 	}
 
@@ -317,6 +424,12 @@ export class DocumentTree {
 		const entries = deep
 			? [...sourceTree.walk(id)]
 			: [{ node: original, depth: 0 }];
+		if (
+			entries.some(
+				({ node }) => node.kind === "element" && node.tagName === "template",
+			)
+		)
+			return this.copyTemplateGraph(sourceTree, id, deep);
 		if (entries.some(({ depth }) => depth > this.limits.maxDepth))
 			throw new AgentBrowserError(
 				"resource-limit",
@@ -390,6 +503,150 @@ export class DocumentTree {
 		return copy;
 	}
 
+	private copyTemplateGraph(
+		sourceTree: DocumentTree,
+		id: number,
+		deep: boolean,
+	): number {
+		const entries = deep
+			? [...sourceTree.walkIncludingTemplateContents(id)]
+			: [
+					{
+						tree: sourceTree,
+						node: sourceTree.get(id),
+						depth: 0,
+						host: undefined,
+					},
+				];
+		if (entries.some(({ depth }) => depth > this.limits.maxDepth))
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Template graph depth limit exceeded",
+			);
+		const resources = this.templateResources();
+		const extraDocument = !this.templateOwner && !this.templateDocument ? 1 : 0;
+		this.templateDocument?.node(this.templateDocument.root);
+		if (
+			extraDocument &&
+			resources.metrics().documents >= resources.limits.maxDocuments
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Shared document count limit exceeded",
+			);
+		const extraText = (node: Readonly<DocumentNode>) =>
+			Object.entries(node.attributes).reduce(
+				(total, [name, value]) => total + name.length + value.length,
+				(node.control.value?.length ?? 0) +
+					(node.doctype?.name.length ?? 0) +
+					(node.doctype?.publicId.length ?? 0) +
+					(node.doctype?.systemId.length ?? 0),
+			);
+		const primary = { nodes: !deep && this.templateOwner ? 1 : 0, text: 0 };
+		const contents = {
+			nodes: extraDocument + (!deep && !this.templateOwner ? 1 : 0),
+			text: 0,
+		};
+		const ownership = new Map<number, boolean>();
+		for (const { node, host } of entries) {
+			const inContents =
+				!this.templateOwner &&
+				(host !== undefined ||
+					(node.parent !== null && ownership.get(node.parent) === true));
+			ownership.set(node.id, inContents);
+			const usage = inContents ? contents : primary;
+			usage.nodes++;
+			usage.text += node.tagName.length + node.data.length + extraText(node);
+		}
+		const count = primary.nodes + contents.nodes;
+		resources.check(count, primary.text + contents.text);
+		if (
+			this.nodeCount + primary.nodes > this.limits.maxNodes ||
+			(this.templateDocument?.nodeCount ?? 0) + contents.nodes >
+				this.limits.maxNodes ||
+			!Number.isSafeInteger(nextNodeId + count - 1)
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Document node limit exceeded",
+			);
+		if (
+			this.textCodeUnits + primary.text > this.limits.maxTextCodeUnits ||
+			(this.templateDocument?.textCodeUnits ?? 0) + contents.text >
+				this.limits.maxTextCodeUnits
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Document text limit exceeded",
+			);
+		const copies = new Map<number, DocumentNodeReference>();
+		const roots: DocumentNodeReference[] = [];
+		for (const entry of entries) {
+			const source = entry.node;
+			if (entry.host !== undefined) {
+				const host = copies.get(entry.host);
+				if (!host)
+					throw new AgentBrowserError(
+						"not-found",
+						"Template clone host is missing",
+					);
+				const content = host.tree.templateContent(host.id);
+				copies.set(source.id, content);
+				roots.push(content);
+				continue;
+			}
+			const parent =
+				source.parent === null ? undefined : copies.get(source.parent);
+			const target = parent?.tree ?? this;
+			const text =
+				source.tagName.length + source.data.length + extraText(source);
+			target.checkTextBudget(text);
+			const templateOwner =
+				source.kind === "element" && source.tagName === "template"
+					? target.prepareTemplate(text)
+					: undefined;
+			const copyId = target.allocate(source.kind, source.tagName, source.data);
+			const copy = target.node(copyId);
+			copy.attributes = createHtmlAttributes(source.attributes);
+			copy.control = { ...source.control };
+			if (source.doctype) copy.doctype = source.doctype;
+			target.textCodeUnits += extraText(source);
+			if (templateOwner) target.attachTemplate(copyId, templateOwner);
+			if (entry.tree.userEditedValues.has(source.id))
+				target.userEditedValues.add(copyId);
+			target.selections.initialize(copyId, {
+				state: entry.tree.selections,
+				id: source.id,
+			});
+			target.checkedness.initialize(copyId, {
+				state: entry.tree.checkedness,
+				id: source.id,
+			});
+			target.inputValues.initialize(copyId, {
+				state: entry.tree.inputValues,
+				id: source.id,
+			});
+			const reference = { tree: target, id: copyId };
+			copies.set(source.id, reference);
+			if (parent) {
+				copy.parent = parent.id;
+				target.node(parent.id).children.push(copyId);
+				target.changed("insert", copyId);
+			} else roots.push(reference);
+		}
+		for (const root of roots) {
+			root.tree.selections.moved(root.id);
+			root.tree.checkedness.moved(root.id);
+		}
+		const copy = copies.get(id);
+		if (!copy)
+			throw new AgentBrowserError(
+				"not-found",
+				"Template clone root is missing",
+			);
+		return copy.id;
+	}
+
 	replaceChildrenFrom(
 		parentId: number,
 		sourceTree: DocumentTree,
@@ -454,7 +711,8 @@ export class DocumentTree {
 			ancestor =
 				ancestor.parent === null ? undefined : this.node(ancestor.parent);
 		}
-		for (const entry of sourceTree.walk(fragmentId))
+		if (this.fragmentHosts.size) depth = this.hostDepth(parentId);
+		for (const entry of sourceTree.walkIncludingTemplateContents(fragmentId))
 			if (entry.depth > 0 && depth + entry.depth - 1 > this.limits.maxDepth)
 				throw new AgentBrowserError(
 					"resource-limit",
@@ -517,6 +775,8 @@ export class DocumentTree {
 			ancestor =
 				ancestor.parent === null ? undefined : this.node(ancestor.parent);
 		}
+		if (this.fragmentHosts.size)
+			parentDepth = this.hostDepth(parentId, childId);
 		const children =
 			child.kind === "fragment" ? [...child.children] : [childId];
 		if (
@@ -525,7 +785,7 @@ export class DocumentTree {
 		)
 			validateDocumentInsertion(this, parentId, childId, excluded, before);
 		for (const moving of children)
-			for (const entry of this.walk(moving))
+			for (const entry of this.walkIncludingTemplateContents(moving))
 				if (parentDepth + entry.depth > this.limits.maxDepth)
 					throw new AgentBrowserError(
 						"resource-limit",
@@ -1322,6 +1582,36 @@ export class DocumentTree {
 		}
 	}
 
+	*walkIncludingTemplateContents(start = this.root): Generator<{
+		tree: DocumentTree;
+		node: Readonly<DocumentNode>;
+		depth: number;
+		host?: number;
+	}> {
+		const pending: {
+			tree: DocumentTree;
+			id: number;
+			depth: number;
+			host?: number;
+		}[] = [{ tree: this, id: start, depth: 0 }];
+		while (pending.length) {
+			const entry = pending.pop();
+			if (!entry) break;
+			const node = entry.tree.get(entry.id);
+			yield { tree: entry.tree, node, depth: entry.depth, host: entry.host };
+			if (node.kind === "element" && node.tagName === "template") {
+				const content = entry.tree.templateContent(node.id);
+				pending.push({ ...content, depth: entry.depth + 1, host: node.id });
+			}
+			for (let index = node.children.length - 1; index >= 0; index--)
+				pending.push({
+					tree: entry.tree,
+					id: node.children[index],
+					depth: entry.depth + 1,
+				});
+		}
+	}
+
 	isConnected(id: number) {
 		return this.rootOf(id) === this.root;
 	}
@@ -1451,6 +1741,14 @@ export class DocumentTree {
 		this.mutationHandlers.clear();
 		this.textCodeUnits = 0;
 		const failures: unknown[] = [];
+		this.templateContents.clear();
+		this.fragmentHosts.clear();
+		try {
+			this.templateDocument?.close();
+		} catch (error) {
+			failures.push(error);
+		}
+		this.templateDocument = undefined;
 		const handlers = [...this.closeHandlers];
 		this.closeHandlers.clear();
 		for (const handler of handlers) {

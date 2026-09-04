@@ -87,9 +87,10 @@ export function serializeHtml(
 			),
 		);
 	};
-	const pending: ({ id: number; include: boolean } | { close: string })[] = [
-		{ id, include: options.includeSelf ?? false },
-	];
+	const pending: (
+		| { tree: DocumentTree; id: number; include: boolean }
+		| { close: string }
+	)[] = [{ tree, id, include: options.includeSelf ?? false }];
 	while (pending.length) {
 		const entry = pending.pop();
 		if (!entry) break;
@@ -97,18 +98,14 @@ export function serializeHtml(
 			append(entry.close);
 			continue;
 		}
-		const node = tree.get(entry.id);
+		const owner = entry.tree;
+		const node = owner.get(entry.id);
 		if (node.kind === "doctype") {
 			if (entry.include) append(`<!DOCTYPE ${node.doctype?.name ?? ""}>`);
 			continue;
 		}
-		if (node.kind === "element" && node.tagName === "template")
-			throw new AgentBrowserError(
-				"unsupported",
-				"Template serialization is not implemented",
-			);
 		if (entry.include && node.kind === "text") {
-			const parent = node.parent === null ? undefined : tree.get(node.parent);
+			const parent = node.parent === null ? undefined : owner.get(node.parent);
 			if (
 				parent &&
 				(rawTags.has(parent.tagName) ||
@@ -136,8 +133,13 @@ export function serializeHtml(
 				pending.push({ close: `</${node.tagName}>` });
 		}
 		if (node.kind === "element" && voidTags.has(node.tagName)) continue;
+		if (node.kind === "element" && node.tagName === "template") {
+			const content = owner.templateContent(node.id);
+			pending.push({ ...content, include: false });
+			continue;
+		}
 		for (let index = node.children.length - 1; index >= 0; index--)
-			pending.push({ id: node.children[index], include: true });
+			pending.push({ tree: owner, id: node.children[index], include: true });
 	}
 	return parts.join("");
 }

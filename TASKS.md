@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native template ownership checkpoint: `TEMPLATE-OWNERSHIP.md` creates separate
+reused contents documents, stable fragment/host references, host-aware cycle and
+depth checks, bounded graph cloning/import and owner-aware HTML serialization.
+Shared quotas and per-document preflight cover both ordinary and contents nodes,
+including larger supplied pools. Three initial regressions and three later
+local-quota regressions fail before their fixes; 40 new tests and 262 focused
+checks across seven files pass. Full native validation passes 8,192 / 231 files;
+the isolated owned patch passes 5,432 / 170 available files. Types, builds and
+three-file lint pass in both trees, preserving pre-existing pending work.
+Next bind inert template contents safely and implement real parser insertion
+modes; `.content`, template parsing and adoption are not completed by this core.
+No gated probe ran; the denied SafeJS probe remains unrun, independent acceptance
+gates remain open and the seven-day goal stays active.
+
+### Previous parsed-doctype checkpoint
+
 Parsed-doctype checkpoint: `PARSED-DOCTYPES.md` replaces raw declaration tokens
 with structured name/identifier/force-quirks data, preserves the accepted initial
 DocumentType and records no-quirks/quirks/limited-quirks mode decisions. ScriptDom

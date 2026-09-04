@@ -221,6 +221,7 @@
   "src/terminal-search.test.ts",
   "src/terminal-tabs.test.ts",
   "src/terminal-view.test.ts",
+  "src/template-core.test.ts",
   "src/text-layout.test.ts",
   "src/text-locator.test.ts",
   "src/trace-export.test.ts",

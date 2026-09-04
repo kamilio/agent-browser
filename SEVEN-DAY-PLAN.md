@@ -338,6 +338,14 @@ quirks/limited-quirks rendering remains explicitly unsupported. Continue with
 template content ownership and real insertion modes, retaining the independent
 runtime, site, terminal and broader compatibility gates.
 
+September 4 native-template continuation: `TEMPLATE-OWNERSHIP.md` adds real
+contents owners, host-inclusive cycle/depth checks, aggregate/local allocation
+preflight and graph-aware cloning/serialization. This is the native foundation,
+not page/parser template completion. Continue with guarded inert owner bindings,
+caller-correct origin and shared-family creation, then actual template insertion
+modes without resource side effects. Adoption and independent runtime, live-site,
+terminal and broader compatibility gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
