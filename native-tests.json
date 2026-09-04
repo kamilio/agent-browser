@@ -93,6 +93,7 @@
   "src/html-doctype.test.ts",
   "src/html-entities.test.ts",
   "src/html-fragment.test.ts",
+  "src/html-formatting.test.ts",
   "src/html-insertion.test.ts",
   "src/html-numeric-references.test.ts",
   "src/html-parser.test.ts",

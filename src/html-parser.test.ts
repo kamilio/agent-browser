@@ -202,7 +202,7 @@ it("decodes standard names while recording unknown names and parser limitations 
 		"unresolved-named-reference": 1,
 		"missing-doctype": 1,
 		"quirks-layout-not-implemented": 1,
-		"formatting-reconstruction-not-implemented": 1,
+		"misnested-formatting-repaired": 1,
 	});
 	expect(renderSnapshot(snapshotDocument(tree))).toContain(
 		"∳&BrowserUnknownEntity;",

@@ -529,11 +529,9 @@ it("uses template contexts for outerHTML replacement of ordinary template childr
 	).toEqual([]);
 });
 
-it("records inherited malformed-formatting limitations inside a template", () => {
+it("repairs misnested formatting inside a template owner", () => {
 	const tree = parse("<template><b><i>text</b>tail</i></template>");
-	expect(
-		htmlParseInfo(tree)?.issues["formatting-reconstruction-not-implemented"],
-	).toBe(1);
+	expect(htmlParseInfo(tree)?.issues["misnested-formatting-repaired"]).toBe(1);
 });
 
 it.each([

@@ -362,6 +362,14 @@ and malformed-table recovery, retaining the broader DOM adoption, observer/runti
 and template-extension requirements. Native parsing and injected resource evidence
 do not establish live framework, SafeJS or terminal acceptance.
 
+September 4 formatting continuation: `HTML-FORMATTING.md` adds bounded active
+formatting reconstruction, marker isolation and adoption-agency repair with
+owner-correct template/foster moves. Original start-token attributes survive
+independent DOM changes; native and explicit work budgets bound repair. Continue
+with malformed-table recovery and complete scope/implied-end/mode interactions.
+DOM adoption, runtime/observer breadth and independent live/runtime/terminal gates
+remain separate requirements, not inferred from native formatting fixtures.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

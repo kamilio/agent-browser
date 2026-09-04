@@ -4,6 +4,7 @@ import { htmlAttributeEntries } from "./html-attributes.js";
 import { decodeHtmlEntities } from "./html-entities.js";
 import { setHtmlParseInfo } from "./html-info.js";
 import { HtmlTokenizer } from "./html-tokenizer.js";
+import { HtmlFormatting, type HtmlParserNode } from "./html-formatting.js";
 import {
 	doctypeMode,
 	documentMode,
@@ -471,8 +472,8 @@ function* parseHtmlSteps(
 			stack = [{ tree, id: body, tag: "body" }];
 			return "body" as const;
 		};
-		const location = (foster: boolean) => {
-			if (foster && tableContainers.has(contextTag())) {
+		const location = (foster: boolean, override?: HtmlParserNode) => {
+			if (foster && tableContainers.has(override?.tag ?? contextTag())) {
 				const table = stack[position("table")];
 				if (table) {
 					const parent = table.tree.get(table.id).parent;
@@ -485,7 +486,7 @@ function* parseHtmlSteps(
 					return { tree: target.tree, parent: target.id, before: undefined };
 				}
 			}
-			const target = insertionTarget();
+			const target = insertionTarget(override);
 			return { tree: target.tree, parent: target.id, before: undefined };
 		};
 		const insert = (
@@ -550,6 +551,29 @@ function* parseHtmlSteps(
 					"HTML input work limit exceeded",
 				);
 		};
+		const activeFormatting = new HtmlFormatting({
+			stack: () => stack,
+			insert: (tag, attributes, foster) => ({
+				...insert(tag, attributes, foster),
+				tag,
+			}),
+			place: (node, ancestor) => {
+				const target = location(true, ancestor);
+				if (target.tree !== node.tree)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Formatting repair cannot cross document owners",
+					);
+				target.tree.insert(target.parent, node.id, target.before);
+				lastText = undefined;
+				fosterTexts.clear();
+			},
+			issue,
+			check: checkInput,
+			maxWork: Math.min(1_600_000, tree.limits.maxNodes * 64),
+			maxText: Math.min(16_000_000, tree.limits.maxTextCodeUnits * 8),
+		});
+		if (fragment?.tagName === "template") activeFormatting.mark(current());
 		const nextToken = () => {
 			const token = tokenizer.next();
 			checkInput();
@@ -585,6 +609,7 @@ function* parseHtmlSteps(
 					if (scope.index > 0) issue("unclosed-template");
 				break;
 			}
+			activeFormatting.sync();
 			if (token.kind === "doctype") {
 				if (!initial) {
 					issue("misplaced-doctype");
@@ -648,6 +673,14 @@ function* parseHtmlSteps(
 					(mode === "head" && stack.length === 1 && /[^\t\n\f\r ]/.test(data))
 				)
 					mode = inBody();
+				if (
+					data &&
+					(/[^\t\n\f\r ]/.test(data) ||
+						(!tableContainers.has(contextTag()) &&
+							contextTag() !== "colgroup")) &&
+					position("select") < 0
+				)
+					activeFormatting.reconstruct(/[^\t\n\f\r ]/.test(data));
 				text(data, /[^\t\n\f\r ]/.test(data));
 				continue;
 			}
@@ -722,6 +755,7 @@ function* parseHtmlSteps(
 					)
 						issue("template-extensions-not-implemented");
 					push("template", attributes);
+					activeFormatting.mark(current());
 					templates.push({ index: stack.length - 1, mode: "template" });
 					if (token.selfClosing) issue("nonvoid-self-close-ignored");
 				} else {
@@ -761,6 +795,12 @@ function* parseHtmlSteps(
 								: "body";
 			}
 			if (token.kind === "end") {
+				if (formatting.has(name)) {
+					activeFormatting.end(name);
+					lastText = undefined;
+					fosterTexts.clear();
+					continue;
+				}
 				if (name === "form") {
 					if (inTemplate()) {
 						if (!pop("form")) issue("unmatched-end-tag");
@@ -771,6 +811,7 @@ function* parseHtmlSteps(
 					continue;
 				}
 				if (name === "br") {
+					activeFormatting.reconstruct(true);
 					insert("br", {}, true);
 					issue("end-br-as-start");
 					continue;
@@ -780,8 +821,6 @@ function* parseHtmlSteps(
 					issue("unmatched-end-tag");
 					continue;
 				}
-				if (index !== stack.length - 1 && formatting.has(name))
-					issue("formatting-reconstruction-not-implemented");
 				stack.length = index;
 				continue;
 			}
@@ -830,7 +869,7 @@ function* parseHtmlSteps(
 				/^h[1-6]$/.test(current().tag)
 			)
 				stack.pop();
-			if (["a", "button", "nobr"].includes(name) && pop(name))
+			if (name === "button" && pop(name))
 				issue("nested-interactive-or-formatting");
 			if (name === "option" && current().tag === "option" && stack.length > 1)
 				stack.pop();
@@ -919,6 +958,50 @@ function* parseHtmlSteps(
 					push("colgroup");
 				}
 			}
+			activeFormatting.sync();
+			if (name === "a") {
+				const previous = activeFormatting.find("a");
+				if (previous) {
+					issue("nested-interactive-or-formatting");
+					activeFormatting.end("a");
+					activeFormatting.remove(previous);
+					stack = stack.filter((entry) => entry !== previous);
+				}
+			}
+			if (
+				!blocks.has(name) &&
+				!headTags.has(name) &&
+				![
+					"li",
+					"dd",
+					"dt",
+					"caption",
+					"colgroup",
+					"col",
+					"tbody",
+					"thead",
+					"tfoot",
+					"tr",
+					"td",
+					"th",
+					"textarea",
+					"iframe",
+					"noembed",
+					"noframes",
+					"plaintext",
+				].includes(name) &&
+				!(name === "noscript" && scripting) &&
+				position("select") < 0
+			)
+				activeFormatting.reconstruct(true);
+			if (name === "nobr") {
+				const previous = activeFormatting.find("nobr");
+				if (previous && activeFormatting.inScope(previous)) {
+					issue("nested-interactive-or-formatting");
+					activeFormatting.end("nobr");
+					activeFormatting.reconstruct(true);
+				}
+			}
 			const foster = ![
 				"caption",
 				"colgroup",
@@ -950,6 +1033,9 @@ function* parseHtmlSteps(
 				continue;
 			if (token.selfClosing) issue("nonvoid-self-close-ignored");
 			stack.push({ ...entry, tag: name });
+			if (formatting.has(name)) activeFormatting.add(current(), attributes);
+			if (["applet", "marquee", "object", "caption", "td", "th"].includes(name))
+				activeFormatting.mark(current());
 			if (
 				rawTags.has(name) ||
 				name === "title" ||

@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Formatting reconstruction checkpoint: `HTML-FORMATTING.md` adds bounded active
+formatting entries, original-token attribute retention, three-equivalent-entry
+pruning, marker isolation and adoption-agency repair. Cloning and foster moves
+respect actual template owners; work/text/native quotas and repair-time
+cancellation remain enforced. Three initial regressions fail before integration;
+57 new tests and 242 focused checks across eight files pass. Full native validation
+passes 8,330 / 234 files; the isolated owned patch passes 5,570 / 173 available
+files. Types, builds and five-file lint pass in both trees, preserving pre-existing
+pending work. Next address malformed-table recovery and complete insertion-mode,
+scope and implied-end interactions. This is not DOM cross-document adoption or
+full parser conformance. Cross-owner observer/runtime and template-extension
+requirements remain open. No gated probe ran; the denied SafeJS probe remains
+unrun, independent acceptance gates remain open and the seven-day goal stays active.
+
+### Previous template-parser checkpoint
+
 Template parser checkpoint: `TEMPLATE-PARSING.md` enables owner-aware template
 tree construction, nested template insertion modes, scoped recovery, inert
 script/policy handling and template-context fragment parsing. Template innerHTML
