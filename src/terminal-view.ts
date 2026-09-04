@@ -42,6 +42,12 @@ interface ProjectedEntry {
 function entryText(entry: SnapshotEntry) {
 	const states = [
 		entry.disabled ? "disabled" : "",
+		entry.expanded === undefined
+			? ""
+			: entry.expanded
+				? "expanded"
+				: "collapsed",
+		entry.focused ? "focused" : "",
 		entry.checked !== undefined
 			? entry.checked
 				? "checked"

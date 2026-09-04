@@ -1172,6 +1172,20 @@ original browser/runtime gates stay open. No gated probe ran; the denied SafeJS
 probe remains unrun. Historical evidence and unrelated changes stay separate;
 the seven-day continuation is active.
 
+September 4 generated-interface continuation: `GENERATED-INTERFACES.md` exposes
+disclosure expansion and actual document focus in terminal rows. Ten new native
+terminal cases fail on prior HEAD; five mounted-playground cases already pass,
+adding coverage of generated actions, guarded keys, scoped search and captures.
+Mocked terminal streams and in-memory playground transport are not real TTY,
+socket or browser UI validation. Matching focused runs pass 145 / six files;
+types/builds, strict checking and three-file lint pass in both trees. Authorized
+full native runs pass 9,422 / 271 isolated files; the working run reports 10,567
+passes and the unchanged pending Window-onload assertion failure / 293 files.
+Inspected native view projections confirm stable references and state feedback.
+Next: generated style inspection and broader focus-style behavior. All original
+browser/runtime gates remain open; no gated probe ran and the denied SafeJS probe
+remains unrun. Preserve historical evidence and unrelated changes; the goal is active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

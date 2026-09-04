@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Generated-interface checkpoint: `GENERATED-INTERFACES.md` shows actual expanded/
+collapsed and document-focus state in terminal rows, separately from selection.
+Ten new terminal cases reproduce the missing state on prior HEAD; five new
+mounted-playground cases already pass and add integration coverage rather than
+claiming a playground fix. Actual terminal-loop tests use mocked streams; mounted
+playground tests use DOM fixtures and in-memory transport. They cover generated
+activation, guarded keys, scoped search invalidation, crops and stale cleanup.
+Matching focused runs pass 145 / six files. Types/builds, strict test checking and
+three-file lint pass in both trees. Authorized full native runs pass
+9,422 / 271 isolated files; the working run reports 10,567 passes and the unchanged
+pending Window-onload assertion failure / 293 files. Inspected native projection
+frames show stable references and correct state. Next: generated style inspection
+and broader focus-style behavior. Real TTY/PTY, socket, browser UI, live websites,
+released SafeJS, full UA/shadow/accessibility and original browser gates remain
+open. No gated probe ran; the denied SafeJS probe remains unrun. Historical
+evidence and unrelated pending work stay separate; the seven-day goal is active.
+
+### Previous generated-inspection checkpoint
+
 Generated-inspection checkpoint: `GENERATED-INSPECTION.md` adds immutable native
 header document/client bounds, generated command geometry with null DOM sizes,
 and target-specific screenshot crops. Focused headers have bounded inset visual

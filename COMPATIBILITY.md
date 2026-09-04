@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 generated-interface continuation: `GENERATED-INTERFACES.md` makes
+terminal disclosure expansion and document focus state visible, independently
+of row selection. Native terminal-loop tests with mocked streams and mounted
+playground tests with in-memory transport cover generated activation, guarded
+keys, scoped search, crops and stale cleanup. Real TTY/PTY, socket, browser UI,
+runtime and original browser acceptance remain open; no gated probe ran.
+
 September 4 generated-inspection continuation: `GENERATED-INSPECTION.md` adds
 header-only native geometry and command screenshot crops, with explicit null DOM
 sizes and preserved owner identity. Generated focus has bounded inset visual

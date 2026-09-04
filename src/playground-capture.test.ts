@@ -6,6 +6,8 @@ import { playgroundHtml } from "./playground-assets.js";
 import { DocumentQueries } from "./selectors.js";
 import { BrowserSession } from "./session.js";
 import type { TerminalTab } from "./terminal-tabs.js";
+import type { SemanticSnapshot } from "./snapshot.js";
+import { decodePng } from "./png-decoder.js";
 
 class ElementFixture {
 	textContent = "";
@@ -237,6 +239,104 @@ async function fixture(unsupported = false, content = "Hello") {
 async function settle() {
 	for (let index = 0; index < 120; index++) await Promise.resolve();
 }
+
+async function generatedFixture() {
+	const test = await fixture(
+		false,
+		'<details id="disclosure" style="width:120px;font-size:16px;line-height:16px"><div style="height:32px">Generated body</div></details>',
+	);
+	await test.host.execute(["resize", "160", "120"]);
+	test.get("refresh").click();
+	await settle();
+	const snapshot = (await test.host.execute(["snapshot"]))
+		.data as SemanticSnapshot;
+	const entry = snapshot.entries.find(
+		(entry) => entry.role === "button" && entry.name === "Details",
+	);
+	if (!entry) throw new Error("Missing generated header");
+	return { ...test, reference: entry.ref };
+}
+
+it("activates a generated disclosure through the mounted playground action form", async () => {
+	const { get, reference, calls } = await generatedFixture();
+	expect(get("text-output").textContent).toContain("[expanded=false]");
+	get("target").value = reference;
+	get("action-form").dispatch("submit");
+	await settle();
+	expect(calls).toContainEqual(["click", reference]);
+	expect(get("error").hidden).toBe(true);
+	expect(get("text-output").textContent).toContain("[expanded=true]");
+	expect(get("text-output").textContent).toContain("[focused=true]");
+	expect(get("text-output").textContent).toContain("Generated body");
+});
+
+it("targets generated keyboard focus through the mounted playground with ownership guards", async () => {
+	const { get, reference, calls } = await generatedFixture();
+	get("target").value = reference;
+	get("value").value = "Space";
+	get("press-target").click();
+	await settle();
+	const press = calls.find((args) => args[0] === "press");
+	expect(press).toContain(`--target=${reference}`);
+	expect(press?.some((arg) => arg.startsWith("--expected-document="))).toBe(
+		true,
+	);
+	expect(press?.some((arg) => arg.startsWith("--expected-viewport="))).toBe(
+		true,
+	);
+	expect(get("text-output").textContent).toContain("[expanded=true]");
+	expect(get("error").hidden).toBe(true);
+});
+
+it("renders a generated header crop through the mounted playground without including its body", async () => {
+	const { get, reference, blobs, calls } = await generatedFixture();
+	get("target").value = reference;
+	get("action-form").dispatch("submit");
+	await settle();
+	get("capture-target").value = reference;
+	get("capture-render").click();
+	await settle();
+	expect(calls).toContainEqual(["screenshot", "--", reference]);
+	expect(get("render-image").hidden).toBe(false);
+	const blob = blobs.at(-1);
+	if (!blob) throw new Error("Missing generated crop");
+	const image = decodePng(new Uint8Array(await blob.arrayBuffer())).image;
+	expect(image.width).toBe(120);
+	expect(image.height).toBe(16);
+	expect(get("render-state").textContent).toContain("partial");
+});
+
+it("reports a stale generated playground crop instead of reusing old pixels", async () => {
+	const { get, host, reference, blobs } = await generatedFixture();
+	get("capture-target").value = reference;
+	get("capture-render").click();
+	await settle();
+	expect(get("render-image").hidden).toBe(false);
+	const count = blobs.length;
+	await host.execute(["open", "https://fixture.invalid/replaced"]);
+	get("refresh").click();
+	await settle();
+	get("capture-target").value = reference;
+	get("capture-render").click();
+	await settle();
+	expect(blobs).toHaveLength(count);
+	expect(get("error").hidden).toBe(false);
+	expect(get("render-image").hidden).toBe(true);
+});
+
+it("keeps generated playground state distinct from ordinary DOM inspection", async () => {
+	const { get, host, reference } = await generatedFixture();
+	(document.querySelectorAll('[data-view="dom"]')[0] as HTMLElement).click();
+	await settle();
+	get("dom-target").value = reference;
+	get("dom-form").dispatch("submit");
+	await settle();
+	expect(get("dom-output").textContent).toMatch(/failed|reference|Invalid/);
+	const snapshot = (await host.execute(["snapshot", reference]))
+		.data as SemanticSnapshot;
+	expect(snapshot.entries).toHaveLength(1);
+	expect(snapshot.entries[0].ref).toBe(reference);
+});
 
 it("reviews an exported trace while disconnected and clears private data on pagehide", async () => {
 	const { get, host, closePage } = await fixture();
