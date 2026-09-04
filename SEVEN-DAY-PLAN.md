@@ -7,6 +7,12 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Bounded Range geometry now composes with preserved breaks and native editing.
+`RANGE-GEOMETRY.md` records exact source mappings, immutable guarded publication,
+fixed/root-scroll tests and unchanged prior geometry/pixels in 27 fresh fixtures.
+Caret painting is a separate active lane; native evidence does not close original
+external/runtime acceptance gates.
+
 Bounded paragraph merging now complements Enter/Shift+Enter. See
 `EDITABLE-BLOCK-MERGE.md` for shared Range identity, guarded native commands and
 fresh inspected fixed-editor captures. Full editing and external gates remain open.

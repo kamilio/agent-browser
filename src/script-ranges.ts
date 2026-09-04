@@ -1,3 +1,4 @@
+import type { ClientRectangle } from "./document-geometry.js";
 import type { DocumentTree } from "./document.js";
 import {
 	type DomRange,
@@ -5,10 +6,12 @@ import {
 	domRangeOwner,
 } from "./dom-range.js";
 import { AgentBrowserError } from "./errors.js";
+import { rangeBoundingClientRect, rangeClientRects } from "./range-geometry.js";
 import type {
 	ScriptHostObjectDefinition,
 	ScriptHostObjectFactory,
 } from "./script-dom.js";
+import { scriptGeometryLimits } from "./script-geometry.js";
 import { ScriptNodePublications } from "./script-node-publications.js";
 
 function unsigned(value: unknown, bits = 32): number {
@@ -39,6 +42,7 @@ export class ScriptRanges {
 	private readonly rangeIds = new WeakMap<DomRange, number>();
 	private identities = new WeakMap<object, DomRange>();
 	private nextId = 1;
+	private geometryObjects = 0;
 	private selectionObject?: object;
 
 	constructor(
@@ -194,6 +198,8 @@ export class ScriptRanges {
 		}))
 			properties[name] = { get: () => value };
 		const methods: NonNullable<ScriptHostObjectDefinition["methods"]> = {
+			getClientRects: () => this.rectList(rangeClientRects(range)),
+			getBoundingClientRect: () => this.rect(rangeBoundingClientRect(range)),
 			collapse: (value) => range.collapse(Boolean(value)),
 			cloneRange: () => this.range(range.cloneRange()),
 			compareBoundaryPoints: (...args) => {
@@ -241,6 +247,57 @@ export class ScriptRanges {
 				this.identities.set(capability, range);
 			},
 		);
+	}
+
+	private geometry(definition: ScriptHostObjectDefinition): object {
+		if (this.geometryObjects >= scriptGeometryLimits.maxObjects)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Script Range geometry object limit exceeded",
+			);
+		return this.publications.publish(
+			"implementation",
+			++this.geometryObjects,
+			definition,
+			() => {},
+		);
+	}
+
+	private rect(source: ClientRectangle): object {
+		return this.geometry({
+			properties: Object.fromEntries(
+				Object.entries(source).map(([key, value]) => [
+					key,
+					{ get: () => value },
+				]),
+			),
+			methods: { toJSON: () => Object.freeze({ ...source }) },
+		});
+	}
+
+	private rectList(source: readonly ClientRectangle[]): object {
+		if (
+			source.length > scriptGeometryLimits.maxListLength ||
+			this.geometryObjects + source.length + 1 > scriptGeometryLimits.maxObjects
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Script Range geometry list limit exceeded",
+			);
+		const rects = source.map((rect) => this.rect(rect));
+		return this.geometry({
+			indexed: {
+				maxLength: scriptGeometryLimits.maxListLength,
+				length: () => rects.length,
+				get: (index) => rects[index],
+			},
+			methods: {
+				item: (...args) => {
+					required(args, 1);
+					return rects[unsigned(args[0])] ?? null;
+				},
+			},
+		});
 	}
 }
 

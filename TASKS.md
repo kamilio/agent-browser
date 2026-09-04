@@ -19,6 +19,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Range geometry checkpoint: `RANGE-GEOMETRY.md` adds guarded immutable client/bounding
+rectangles from shared layout, with exact preserved-break source mappings. Actual
+native commands test plaintext/rich editing, shared Range identity and fixed/root
+scroll behavior. Focused tests pass 158 / seven files; types/builds, strict checks
+and scoped Biome pass. A fresh 27-fixture comparison preserves prior geometry and
+pixels, with work recorded separately. Explicit native suites pass 10,900 / 321
+isolated files and report 12,031 passes with the same fifteen pending failures
+/ 343 working files. Broader geometry, caret/highlight painting and original
+acceptance gates remain open.
+
 Paragraph merge checkpoint: `EDITABLE-BLOCK-MERGE.md` joins bounded adjacent rich
 p/div siblings through Backspace/Delete, preserving left-block/inline identities
 and typing at the shared Range join. Beforeinput, focus/selection, mutation and

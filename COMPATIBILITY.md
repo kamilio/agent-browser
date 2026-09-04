@@ -1,5 +1,12 @@
 # Compatibility and playground acceptance ledger
 
+September 4 Range geometry continuation: `RANGE-GEOMETRY.md` connects guarded
+immutable client/bounding rectangles to shared glyph layout and live Range owners.
+Preserved source breaks retain exact UTF-16 mappings without changing existing
+geometry/pixels in 27 fresh fixtures. Native editing/root-scroll integration is
+tested; ambiguous affinity, shaping, highlights, painted carets and original
+external/runtime acceptance remain open.
+
 September 4 paragraph merge continuation: `EDITABLE-BLOCK-MERGE.md` adds bounded
 adjacent rich p/div Backspace/Delete joining with left-node/Range identity and
 guarded cancellation/abort behavior. Fixed native captures show splitting,

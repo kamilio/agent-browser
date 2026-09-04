@@ -1,25 +1,25 @@
 import { bitmapFont, bitmapGlyph } from "./bitmap-font.js";
+import { resolveBorders } from "./border-box.js";
+import { initialBoxStyle } from "./css-box.js";
 import { type TextStyle, initialTextStyle } from "./css-text.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import {
 	type DocumentBlockWidths,
+	type FormattingImageSize,
 	type FormattingLimits,
 	type FormattingNode,
 	type FormattingTree,
-	type FormattingImageSize,
 	resolveDocumentBlockWidths,
 } from "./formatting-tree.js";
-import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
-import { resolveInlineEdges } from "./inline-box.js";
-import { resolveBorders } from "./border-box.js";
-import { initialBoxStyle } from "./css-box.js";
 import {
+	type AtomicInlineMetrics,
 	atomicInlineBaseline,
 	atomicInlineMetrics,
 	isAtomicInline,
-	type AtomicInlineMetrics,
 } from "./inline-atomic.js";
+import { resolveInlineEdges } from "./inline-box.js";
+import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 
 export interface TextLayoutLimits {
 	maxTokens: number;
@@ -51,7 +51,24 @@ export interface TextGlyph {
 	y: number;
 	advance: number;
 }
+export interface TextBreakSource {
+	readonly formattingId: number;
+	readonly ref: string;
+	readonly offset: number;
+	readonly codeUnits: number;
+}
+export interface TextSourceBreak {
+	readonly sources: readonly TextBreakSource[];
+	readonly inlineOffset: number;
+	readonly fontSize: number;
+	readonly ascent: number;
+	readonly followingLine?: Readonly<{
+		inlineOffset: number;
+		baselineOffset: number;
+	}>;
+}
 export interface TextLine {
+	sourceBreak?: Readonly<TextSourceBreak>;
 	index: number;
 	top: number;
 	height: number;
@@ -109,6 +126,7 @@ interface FontExtent {
 	below: number;
 }
 interface Token extends FontExtent {
+	sourceBreak?: Readonly<TextBreakSource>;
 	formattingId: number;
 	ref: string;
 	offset: number;
@@ -281,6 +299,8 @@ function layoutTextContexts(
 		let gap: Token[] | undefined;
 		let collapsing = false;
 		let skipLf = false;
+		let pendingBreakLine: number | undefined;
+		let pendingCrLine: number | undefined;
 		const advance = (token: Token, cursor: number) => {
 			if (token.kind !== "tab" || token.advance <= 0) return token.advance;
 			const stop = token.advance * 8;
@@ -403,6 +423,23 @@ function layoutTextContexts(
 					: ["right", "end"].includes(alignment)
 						? block.contentWidth - measured
 						: 0;
+			if (pendingBreakLine !== undefined && (!collapsed || final)) {
+				charge();
+				const previous = lines[pendingBreakLine];
+				if (previous.sourceBreak)
+					lines[pendingBreakLine] = Object.freeze({
+						...previous,
+						sourceBreak: Object.freeze({
+							...previous.sourceBreak,
+							followingLine: Object.freeze({
+								inlineOffset: offset,
+								baselineOffset: baseline - previous.baseline,
+							}),
+						}),
+					});
+				pendingBreakLine = undefined;
+			}
+			let sourceBreak: Readonly<TextSourceBreak> | undefined;
 			const glyphStart = glyphs.length;
 			const fragmentStart = fragments.length;
 			const ranges = new Map<
@@ -417,6 +454,15 @@ function layoutTextContexts(
 			>();
 			for (const { token, offset: tokenOffset, advance: used } of entries) {
 				charge();
+				if (token.sourceBreak) {
+					charge();
+					sourceBreak = Object.freeze({
+						sources: Object.freeze([token.sourceBreak]),
+						inlineOffset: layoutNumber(offset + tokenOffset, true),
+						fontSize: token.fontSize,
+						ascent: token.ascent,
+					});
+				}
 				const start = tokenOffset;
 				let current: number | null = token.formattingId;
 				while (current !== null) {
@@ -574,6 +620,7 @@ function layoutTextContexts(
 			}
 			lines.push(
 				Object.freeze({
+					...(sourceBreak ? { sourceBreak } : {}),
 					index: lines.length,
 					top: textHeight,
 					height,
@@ -587,6 +634,7 @@ function layoutTextContexts(
 					fragmentEnd: fragments.length,
 				}),
 			);
+			if (sourceBreak) pendingBreakLine = lines.length - 1;
 			metrics.glyphs += glyphs.length - glyphStart;
 			textHeight = layoutNumber(textHeight + height);
 			entries = [];
@@ -689,7 +737,11 @@ function layoutTextContexts(
 				word.push(token);
 			}
 		};
-		const hardBreak = (font: FontExtent, node: FormattingNode) => {
+		const hardBreak = (
+			font: FontExtent,
+			node: FormattingNode,
+			source?: Readonly<TextBreakSource>,
+		) => {
 			countToken();
 			collapsing = false;
 			flushWord();
@@ -699,6 +751,7 @@ function layoutTextContexts(
 				tokens: [
 					{
 						...font,
+						...(source ? { sourceBreak: source } : {}),
 						advance: 0,
 						formattingId: node.id,
 						ref: node.ref ?? "",
@@ -923,10 +976,32 @@ function layoutTextContexts(
 				let codeUnits = character.length;
 				charge(codeUnits);
 				if (skipLf && character === "\n") {
+					if (pendingCrLine !== undefined && constraint === "used") {
+						charge();
+						const previous = lines[pendingCrLine];
+						if (previous.sourceBreak)
+							lines[pendingCrLine] = Object.freeze({
+								...previous,
+								sourceBreak: Object.freeze({
+									...previous.sourceBreak,
+									sources: Object.freeze([
+										...previous.sourceBreak.sources,
+										Object.freeze({
+											formattingId: node.id,
+											ref: textReference,
+											offset,
+											codeUnits,
+										}),
+									]),
+								}),
+							});
+					}
+					pendingCrLine = undefined;
 					skipLf = false;
 					offset += codeUnits;
 					continue;
 				}
+				pendingCrLine = undefined;
 				skipLf = character === "\r";
 				if (character === "\r" && source[offset + 1] === "\n") {
 					codeUnits++;
@@ -936,9 +1011,19 @@ function layoutTextContexts(
 				if (character === "\r" || character === "\f") character = "\n";
 				const mode = typography["white-space"];
 				const preserved = mode === "pre" || mode === "pre-wrap";
-				if (character === "\n" && (preserved || mode === "pre-line"))
-					hardBreak(font, node);
-				else {
+				if (character === "\n" && (preserved || mode === "pre-line")) {
+					hardBreak(
+						font,
+						node,
+						Object.freeze({
+							formattingId: node.id,
+							ref: textReference,
+							offset,
+							codeUnits,
+						}),
+					);
+					if (skipLf && constraint === "used") pendingCrLine = lines.length - 1;
+				} else {
 					const whitespace = /^[\t\n ]$/.test(character);
 					const collapsible = !preserved && whitespace;
 					const token: Token = {

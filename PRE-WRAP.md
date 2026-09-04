@@ -55,6 +55,11 @@ relabelled as validation of subsequent cookie and Range integration.
 
 ## Remaining limits
 
+Current continuation: `RANGE-GEOMETRY.md` retains exact LF/CR/CRLF/FF source-break
+metadata and following-line anchors without changing existing lines or pixels.
+Terminal and consecutive preserved breaks now support bounded Range queries;
+ambiguous soft-wrap affinity and caret/highlight painting remain separate gates.
+
 This remains the partial horizontal bitmap-font profile: no general Unicode
 line breaking, bidi/vertical text, shaping, hyphenation or justification. `tab-size`
 and `break-spaces` remain unsupported. Hanging physical fragments can extend past

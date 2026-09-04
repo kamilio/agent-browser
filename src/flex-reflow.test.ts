@@ -4,10 +4,10 @@ import { layoutDocument } from "./document-layout.js";
 import { rasterizeDocument } from "./document-raster.js";
 import type { DocumentTree } from "./document.js";
 import {
+	type FlexReflowOptions,
 	flexReflowLimits,
 	reflowFlexItems,
 	reflowFormattingFlexItems,
-	type FlexReflowOptions,
 } from "./flex-reflow.js";
 import {
 	buildFormattingTree,
@@ -18,6 +18,7 @@ import { encodePng } from "./png.js";
 import { createRaster } from "./raster.js";
 import { DocumentQueries } from "./selectors.js";
 import { documentStyles } from "./styles.js";
+import type { TextLine } from "./text-layout.js";
 
 const trees: DocumentTree[] = [];
 afterEach(() => {
@@ -82,6 +83,26 @@ function sourcePath(tree: DocumentTree, reference: string) {
 		node = parent;
 	}
 	return path.join("/");
+}
+
+function sourceLines(
+	tree: DocumentTree,
+	lines: readonly TextLine[] | undefined,
+) {
+	return lines?.map((line) => ({
+		...line,
+		...(line.sourceBreak
+			? {
+					sourceBreak: {
+						...line.sourceBreak,
+						sources: line.sourceBreak.sources.map((source) => ({
+							...source,
+							ref: sourcePath(tree, source.ref),
+						})),
+					},
+				}
+			: {}),
+	}));
 }
 
 it.each([
@@ -385,7 +406,9 @@ it.each(["normal", "nowrap", "pre", "pre-line"])(
 		const expected = layoutDocument(normal.tree).contexts.find(
 			(context) => context.ref === normal.ref("#item"),
 		);
-		expect(flex.layout.contexts[0].lines).toEqual(expected?.lines);
+		expect(sourceLines(source.tree, flex.layout.contexts[0].lines)).toEqual(
+			sourceLines(normal.tree, expected?.lines),
+		);
 		expect(
 			flex.layout.contexts[0].glyphs.map((glyph) => ({
 				...glyph,

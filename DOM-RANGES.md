@@ -53,6 +53,12 @@ original narrower validation results intact.
 
 ## Explicit limitations
 
+Current continuation: `RANGE-GEOMETRY.md` supplies bounded shared-layout Range
+rectangles, including preserved source breaks, with guarded immutable publication.
+The geometry item in the original checkpoint below is superseded only for that
+documented subset. Later keyboard/paragraph/merge documents cover native editing;
+full geometry, caret/highlight painting and external/runtime gates remain open.
+
 Raw native replaceData/splitText/normalize lack the detailed interval metadata
 used by the owner helpers; generic character-data notifications use whole-value
 adjustment, and normalize does not transfer merged endpoints to the survivor.
