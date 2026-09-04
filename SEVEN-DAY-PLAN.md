@@ -602,6 +602,19 @@ painting schedule. Other border styles/radius/images, broader writing modes,
 custom select/pickers, pending CSSOM slots and independent runtime/site/UI gates
 remain open. No gated probe ran; the full seven-day browser goal stays active.
 
+September 4 flow cascade/CSSOM core checkpoint: `FLOW-CORE.md` promotes flow
+winners, overflow shorthand ownership, computed aliases and shared formatting
+recovery without importing pending relative/flex/scroll/control implementations.
+All 48 new cases fail before integration and pass afterward. Full native checks
+pass 9,248 / 253 working-tree files and 6,478 / 192 isolated-core files; focused
+checks pass 277 / six and isolated 179 / five. Types/builds, strict changed-test
+checks and nine-file lint pass in both trees. Original source bytes are preserved;
+isolated capability flags accurately leave relative positioning/stacking pending.
+Next integrate inline/flex/intrinsic sizing and shared paint-order/relative paths,
+then scrolling and coordinate adapters. Draft-profile CSSOM is not runtime or live
+browser parity. Clipping, full positioning, float/clear layout, custom select and
+all independent acceptance gates remain open. The seven-day goal stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

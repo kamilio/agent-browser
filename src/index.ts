@@ -21,6 +21,7 @@ export { fontRelativeBoxUnits, type BoxFontMetrics } from "./css-box.js";
 export { cssMathCapabilities, cssMathLimits } from "./css-math.js";
 export { cssVariableCapabilities, cssVariableLimits } from "./css-variables.js";
 export { borderCapabilities } from "./border-box.js";
+export { flowStyleCapabilities } from "./css-flow.js";
 export {
 	capturePng,
 	capturePdf,

@@ -4,6 +4,11 @@ import {
 } from "./css-background.js";
 import { cssBoxProperties, isCssBoxProperty } from "./css-box.js";
 import {
+	cssFlowProperties,
+	isCssFlowProperty,
+	serializeOverflow,
+} from "./css-flow.js";
+import {
 	borderColorProperties,
 	type BorderColorProperty,
 } from "./css-border.js";
@@ -22,6 +27,7 @@ import { cssVariableLimits } from "./css-variables.js";
 export const computedStyleProperties = Object.freeze(
 	[
 		...cssBoxProperties,
+		...cssFlowProperties,
 		...cssPaintProperties,
 		...cssTextProperties,
 		"display",
@@ -77,6 +83,11 @@ export function resolvedStyleValue(
 		return values.join(" ");
 	}
 	const styles = documentStyles(tree);
+	if (isCssFlowProperty(name)) return styles.flow(id)[name];
+	if (name === "overflow") {
+		const flow = styles.flow(id);
+		return serializeOverflow(flow["overflow-x"], flow["overflow-y"]);
+	}
 	if (name.startsWith("--")) return styles.custom(id, name);
 	if (name === "display" || name === "visibility") return styles.get(id)[name];
 	if (isCssBoxProperty(name)) {
@@ -212,6 +223,7 @@ export class ComputedStyles {
 			"margin",
 			"padding",
 			"background",
+			"overflow",
 		]) {
 			const property = { get: () => read(name), set: readonly };
 			properties[name] = property;
@@ -221,6 +233,7 @@ export class ComputedStyles {
 				)
 			] = property;
 		}
+		properties.cssFloat = { get: () => read("float"), set: readonly };
 		const capability = this.factory.createHostObject({
 			properties,
 			indexed: {

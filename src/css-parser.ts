@@ -1,4 +1,10 @@
 import { parseBackgroundShorthand } from "./css-background.js";
+import {
+	cssFlowProperties,
+	isCssFlowProperty,
+	parseFlowDeclarations,
+	type CssFlowProperty,
+} from "./css-flow.js";
 import { isBorderShorthand, parseBorderShorthand } from "./css-border.js";
 import { compileCssMedia } from "./css-media.js";
 import {
@@ -34,6 +40,7 @@ export type CssProperty =
 	| CssBoxProperty
 	| CssTextProperty
 	| CssPaintProperty
+	| CssFlowProperty
 	| `--${string}`;
 export interface CssDeclaration {
 	property: CssProperty;
@@ -214,7 +221,9 @@ export function parseCssDeclarations(
 			!isBorderShorthand(property) &&
 			!isCssBoxProperty(property) &&
 			!isCssTextProperty(property) &&
-			!isCssPaintProperty(property)
+			!isCssPaintProperty(property) &&
+			!isCssFlowProperty(property) &&
+			property !== "overflow"
 		) {
 			issue("unimplemented-css-property");
 			continue;
@@ -245,6 +254,11 @@ export function parseCssDeclarations(
 			declarations.push(
 				{ property: "display", value, important },
 				{ property: "visibility", value, important },
+				...cssFlowProperties.map((property) => ({
+					property,
+					value,
+					important,
+				})),
 				...cssBoxProperties.map((property) => ({ property, value, important })),
 				...cssPaintProperties.map((property) => ({
 					property,
@@ -257,6 +271,15 @@ export function parseCssDeclarations(
 					important,
 				})),
 			);
+			continue;
+		}
+		if (isCssFlowProperty(property) || property === "overflow") {
+			const expanded = parseFlowDeclarations(property, value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((entry) => ({ ...entry, important })),
+				);
+			else issue("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isBorderShorthand(property)) {

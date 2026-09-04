@@ -7,6 +7,13 @@ import {
 } from "./css-background.js";
 import { normalizeCssColor } from "./css-color.js";
 import {
+	cssFlowProperties,
+	isCssFlowProperty,
+	parseFlowValue,
+	parseFlowDeclarations,
+	serializeOverflow,
+} from "./css-flow.js";
+import {
 	borderWidthProperties,
 	borderStyleProperties,
 	borderColorProperties,
@@ -53,13 +60,7 @@ const keywords: Record<string, string[]> = {
 			" ",
 		),
 	visibility: ["visible", "hidden", "collapse"],
-	position: ["static", "relative", "absolute", "fixed", "sticky"],
-	float: ["none", "left", "right", "inline-start", "inline-end"],
-	clear: ["none", "left", "right", "both", "inline-start", "inline-end"],
 	"box-sizing": ["content-box", "border-box"],
-	overflow: ["visible", "hidden", "clip", "scroll", "auto"],
-	"overflow-x": ["visible", "hidden", "clip", "scroll", "auto"],
-	"overflow-y": ["visible", "hidden", "clip", "scroll", "auto"],
 };
 const lengths = new Set([
 	...sides,
@@ -73,6 +74,8 @@ const lengths = new Set([
 	...sides.map((side) => `padding-${side}`),
 ]);
 export const inlineProperties = [
+	...cssFlowProperties,
+	"overflow",
 	...borderWidthProperties,
 	...borderStyleProperties,
 	...borderColorProperties,
@@ -88,7 +91,6 @@ export const inlineProperties = [
 	"margin",
 	"padding",
 	"opacity",
-	"z-index",
 	"color",
 	"background",
 	...cssBackgroundProperties,
@@ -170,6 +172,7 @@ function normalize(name: string, source: string): string | undefined {
 	if (!supported.has(name)) return undefined;
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;
+	if (isCssFlowProperty(name)) return parseFlowValue(name, value);
 	if (name.startsWith("border-")) {
 		if (name.endsWith("-width")) return normalizeBorderWidth(value);
 		if (name.endsWith("-style")) return normalizeBorderStyle(value);
@@ -211,12 +214,6 @@ function normalize(name: string, source: string): string | undefined {
 		Number.isFinite(Number(value))
 	)
 		return String(Number(value));
-	if (
-		name === "z-index" &&
-		(value === "auto" ||
-			(/^[+-]?\d+$/.test(value) && Number.isSafeInteger(Number(value))))
-	)
-		return value === "auto" ? value : String(Number(value));
 	if (name === "color" || name === "background-color") {
 		return normalizeCssColor(value);
 	}
@@ -250,6 +247,12 @@ export function expandDeclaration(
 	const source = name.startsWith("--")
 		? input
 		: withoutCssComments(input).trim();
+	if (name === "overflow")
+		return (parseFlowDeclarations(name, source) ?? []).map((entry) => ({
+			name: entry.property,
+			value: entry.value,
+			important,
+		}));
 	if (isBorderShorthand(name))
 		return (
 			parseBorderShorthand(
@@ -338,6 +341,7 @@ export function parseInlineDeclarations(
 }
 
 export function inlineDeclarationComponents(name: string): readonly string[] {
+	if (name === "overflow") return ["overflow-x", "overflow-y"];
 	if (name === "all")
 		return parseCssDeclarations(
 			"all:initial",
@@ -401,6 +405,14 @@ export function propertyValue(
 	const found = propertyDeclarations(entries, name).filter(
 		(entry) => !entry.pending,
 	);
+	if (name === "overflow") {
+		if (found.length !== 2 || found[0].important !== found[1].important)
+			return "";
+		return serializeOverflow(
+			found.find((entry) => entry.name === "overflow-x")?.value ?? "",
+			found.find((entry) => entry.name === "overflow-y")?.value ?? "",
+		);
+	}
 	if (isBorderShorthand(name)) {
 		const expected = parseBorderShorthand(name, "initial")?.length;
 		if (
@@ -453,7 +465,10 @@ export function serializeDeclarations(entries: InlineDeclaration[]): string {
 			);
 			continue;
 		}
-		const shorthand = /^(margin|padding|background)-/.exec(entry.name)?.[1];
+		const shorthand =
+			entry.name === "overflow-x" || entry.name === "overflow-y"
+				? "overflow"
+				: /^(margin|padding|background)-/.exec(entry.name)?.[1];
 		const value =
 			shorthand &&
 			!entries.some(

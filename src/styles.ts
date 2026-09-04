@@ -1,4 +1,13 @@
 import { imageDimensionHint } from "./replaced-box.js";
+import {
+	cssFlowProperties,
+	computeFlowStyle,
+	initialFlowStyle,
+	isCssFlowProperty,
+	type FlowStyle,
+	type FlowSpecifiedStyle,
+	type CssFlowProperty,
+} from "./css-flow.js";
 import { lengthUsesFont } from "./css-math.js";
 import {
 	type BoxFontMetrics,
@@ -164,6 +173,7 @@ export class DocumentStyles {
 	private computed = new Map<number, Readonly<VisibilityStyle>>();
 	private boxSpecified = new Map<number, BoxSpecifiedStyle>();
 	private boxComputed = new Map<number, BoxStyle>();
+	private flowComputed = new Map<number, FlowStyle>();
 	private textSpecified = new Map<number, TextSpecifiedStyle>();
 	private textComputed = new Map<number, TextStyle>();
 	private paintSpecified = new Map<number, PaintSpecifiedStyle>();
@@ -292,6 +302,11 @@ export class DocumentStyles {
 		if (!value)
 			throw new AgentBrowserError("not-found", "Style target is not connected");
 		return value;
+	}
+
+	flow(id: number): FlowStyle {
+		this.get(id);
+		return this.flowComputed.get(id) ?? initialFlowStyle;
 	}
 
 	box(id: number): BoxStyle {
@@ -426,6 +441,7 @@ export class DocumentStyles {
 			partial: true,
 			properties: Object.freeze(["display", "visibility"]),
 			boxProperties: cssBoxProperties,
+			flowProperties: cssFlowProperties,
 			textProperties: cssTextProperties,
 			textFont: "Agent Mono",
 			paintProperties: cssPaintProperties,
@@ -447,6 +463,7 @@ export class DocumentStyles {
 		this.computed.clear();
 		this.boxSpecified.clear();
 		this.boxComputed.clear();
+		this.flowComputed.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
 		this.paintSpecified.clear();
@@ -487,6 +504,7 @@ export class DocumentStyles {
 		this.computed.clear();
 		this.boxSpecified.clear();
 		this.boxComputed.clear();
+		this.flowComputed.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
 		this.paintSpecified.clear();
@@ -715,16 +733,20 @@ export class DocumentStyles {
 			}
 		}
 		const boxSpecified = new Map<number, BoxSpecifiedStyle>();
+		const flowSpecified = new Map<number, FlowSpecifiedStyle>();
 		const textSpecified = new Map<number, TextSpecifiedStyle>();
 		const paintSpecified = new Map<number, PaintSpecifiedStyle>();
 		for (const [id, properties] of winners) {
 			const specified: Partial<Record<CssBoxProperty, string>> = {};
+			const flowValues: Partial<Record<CssFlowProperty, string>> = {};
 			const textValues: Partial<Record<CssTextProperty, string>> = {};
 			const paintValues: Partial<Record<CssPaintProperty, string>> = {};
 			for (const [property, winner] of properties) {
 				charge(1);
 				if (isCssBoxProperty(property))
 					specified[property] = winner.declaration.value;
+				if (isCssFlowProperty(property))
+					flowValues[property] = winner.declaration.value;
 				if (isCssTextProperty(property))
 					textValues[property] = winner.declaration.value;
 				if (isCssPaintProperty(property))
@@ -732,12 +754,15 @@ export class DocumentStyles {
 			}
 			if (Object.keys(specified).length)
 				boxSpecified.set(id, Object.freeze(specified));
+			if (Object.keys(flowValues).length)
+				flowSpecified.set(id, Object.freeze(flowValues));
 			if (Object.keys(textValues).length)
 				textSpecified.set(id, Object.freeze(textValues));
 			if (Object.keys(paintValues).length)
 				paintSpecified.set(id, Object.freeze(paintValues));
 		}
 		const computed = new Map<number, Readonly<VisibilityStyle>>();
+		const flowComputed = new Map<number, FlowStyle>();
 		for (const node of nodes) {
 			charge(1);
 			const parent =
@@ -754,6 +779,19 @@ export class DocumentStyles {
 				visibility = parent?.visibility ?? "visible";
 			else if (visibility === "initial") visibility = "visible";
 			const displayed = (parent?.displayed ?? true) && display !== "none";
+			const flowValues = flowSpecified.get(node.id);
+			if (flowValues) {
+				charge(cssFlowProperties.length);
+				flowComputed.set(
+					node.id,
+					computeFlowStyle(
+						flowValues,
+						node.parent === null
+							? initialFlowStyle
+							: (flowComputed.get(node.parent) ?? initialFlowStyle),
+					),
+				);
+			}
 			computed.set(
 				node.id,
 				Object.freeze({
@@ -766,6 +804,7 @@ export class DocumentStyles {
 		}
 		this.computed = computed;
 		this.boxSpecified = boxSpecified;
+		this.flowComputed = flowComputed;
 		this.textSpecified = textSpecified;
 		this.paintSpecified = paintSpecified;
 		this.customComputed = customComputed;

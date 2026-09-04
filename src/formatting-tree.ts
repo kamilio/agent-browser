@@ -283,6 +283,12 @@ export function buildFormattingTree(
 		}
 		if (node.kind !== "element") return [];
 		const ref = tree.reference(id);
+		const flow = styles.flow(id);
+		if (flow.position !== "static") issue("position-layout-not-supported");
+		if (flow.float !== "none") issue("float-layout-not-supported");
+		if (flow.clear !== "none") issue("clear-layout-not-supported");
+		if (flow["overflow-x"] !== "visible" || flow["overflow-y"] !== "visible")
+			issue("overflow-layout-not-supported");
 		if (
 			node.attributes.dir !== undefined &&
 			node.attributes.dir.toLowerCase() !== "ltr"

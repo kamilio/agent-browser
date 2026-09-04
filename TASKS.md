@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Flow cascade/CSSOM core checkpoint: `FLOW-CORE.md` promotes six flow longhands,
+overflow shorthand ownership, live computed reads and formatting recovery.
+Explicit defaults render normally; unsupported winning values still reject
+geometry/capture and recover after reset. All 48 new cases fail on HEAD plus
+the helper and pass after integration. Full native checks pass 9,248 / 253
+working-tree files and 6,478 / 192 isolated-core files; focused checks pass 277 /
+six files and isolated 179 / five. Types/builds, strict changed-test checks and
+nine-file lint pass in both trees. Original source worktree bytes remain intact.
+The isolated capability profile deliberately leaves relative positioning and
+stacking false; existing pending work retains its broader implementation. Draft
+overflow computation remains explicitly distinct from the older published draft
+and unproven live-browser behavior. Next integrate inline/flex/intrinsic sizing
+and shared paint-order/relative paths, then scrolling and coordinate routing.
+Clipping, full positioning, float/clear layout, custom select/pickers, pending
+CSSOM slots and independent runtime/site/UI gates remain open. No gated probe
+ran; the denied SafeJS probe remains unrun and the seven-day goal stays active.
+
+### Previous solid-border core checkpoint
+
 Solid-border core checkpoint: `BORDER-CORE.md` promotes focused physical border
 cascade/CSSOM, normal-flow and ordinary-inline geometry, client sizes and software
 painting. Width inheritance now uses zero for none/hidden parent borders without
