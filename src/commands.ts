@@ -92,7 +92,11 @@ const definitions: CommandDefinition[] = [
 		"expected-tab": stringOption,
 		"expected-viewport": stringOption,
 	}),
-	command("press", 1, 1, { target: stringOption }),
+	command("press", 1, 1, {
+		target: stringOption,
+		"expected-viewport": stringOption,
+		"expected-document": stringOption,
+	}),
 	command("keydown", 1),
 	command("keyup", 1),
 	command("mousemove", 2),

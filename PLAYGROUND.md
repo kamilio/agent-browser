@@ -1,5 +1,10 @@
 # Shared-session playground
 
+September 4 input integration: `INPUT-UI.md` documents the targeted-key button,
+native wheel form and tab/document ownership guards. It also records cancellation
+of stale action drafts, native fixture evidence and remaining human-input gates.
+The capture preview is still an explicit snapshot, not a live input surface.
+
 September 4 integration: `PLAYGROUND-TAB-CORE.md` records identity-guarded tab
 controls, rejection of mismatched tab/document inspection replies and cleanup of
 unverified page actions after failed refreshes. Module delivery and native UI

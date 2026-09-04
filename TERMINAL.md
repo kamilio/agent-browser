@@ -42,6 +42,7 @@ not select an alternate evaluator or bypass the service's network policy.
 | Home / End | First/last displayed row in the retained snapshot. |
 | Enter | Follow a link, click a button, toggle a checkbox, select a radio, or edit a field. |
 | `e` | Edit a text control or enter a select option's actual value. |
+| `p` | Enter a key/chord for the selected control or link; confirm with Enter (`INPUT-UI.md`). |
 | `g` | Open a URL; bare hostnames use HTTPS. |
 | `t` | Create a new tab; an empty URL creates a blank tab. |
 | `T` | Open the tab menu; Enter selects, `x` then `y` closes, `u` refreshes. |

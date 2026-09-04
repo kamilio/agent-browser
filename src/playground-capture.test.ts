@@ -625,6 +625,243 @@ describe("playground tab refresh consistency", () => {
 	});
 });
 
+it("sends guarded wheel input, moves native geometry and replaces stale captures", async () => {
+	const { get, host, calls, blobs, revoked } = await fixture(
+		false,
+		'<div style="height:100px;width:100px;background:red"></div><div id="below" style="height:100px;width:100px;background:blue"></div>',
+	);
+	expect(get("wheel-apply").disabled).toBe(false);
+	get("capture-render").click();
+	await settle();
+	const before = (await host.execute(["geometry", "#below"])).data as {
+		bounds: { x: number; y: number };
+	};
+	get("wheel-x").value = "10.5";
+	get("wheel-y").value = "100";
+	get("wheel-form").dispatch("submit");
+	expect(get("wheel-apply").disabled).toBe(true);
+	get("wheel-form").dispatch("submit");
+	await settle();
+	expect(calls.filter((argv) => argv[0] === "mousewheel")).toEqual([
+		[
+			"mousewheel",
+			"10.5",
+			"100",
+			expect.stringMatching(/^--expected-viewport=/),
+			expect.stringMatching(/^--expected-document=/),
+		],
+	]);
+	expect((await host.execute(["geometry", "#below"])).data).toMatchObject({
+		bounds: { x: before.bounds.x - 10.5, y: before.bounds.y - 100 },
+		scroll: { x: 10.5, y: 100 },
+	});
+	expect(get("render-image").hidden).toBe(true);
+	expect(revoked).toHaveBeenCalledWith("blob:fixture/1");
+	get("capture-render").click();
+	await settle();
+	expect(blobs).toHaveLength(2);
+	expect(new Uint8Array(await blobs[1].arrayBuffer())).not.toEqual(
+		new Uint8Array(await blobs[0].arrayBuffer()),
+	);
+	expect(host.metrics().captureArtifacts.bytes).toBe(0);
+	get("disconnect").click();
+	await settle();
+	expect(get("wheel-apply").disabled).toBe(true);
+	get("wheel-form").dispatch("submit");
+	await settle();
+	expect(calls.filter((argv) => argv[0] === "mousewheel")).toHaveLength(1);
+});
+
+it.each(["", "NaN", "Infinity", "1000001", "-1000001"])(
+	"rejects wheel delta %s locally and retains a valid capture",
+	async (delta) => {
+		const { get, calls } = await fixture();
+		get("capture-render").click();
+		await settle();
+		get("wheel-y").value = delta;
+		get("wheel-form").dispatch("submit");
+		await settle();
+		expect(get("error").hidden).toBe(false);
+		expect(get("render-image").hidden).toBe(false);
+		expect(calls.some((argv) => argv[0] === "mousewheel")).toBe(false);
+	},
+);
+
+it.each(["tab", "navigation", "session"])(
+	"refuses stale playground wheel input after external %s change",
+	async (replacement) => {
+		const { get, host } = await fixture(
+			false,
+			'<div id="tall" style="height:200px"></div>',
+		);
+		if (replacement === "tab")
+			await host.execute(["tab-new", "https://fixture.invalid/new"]);
+		else if (replacement === "navigation")
+			await host.execute(["goto", "https://fixture.invalid/new"]);
+		else {
+			await host.execute(["close"]);
+			await host.execute(["open", "https://fixture.invalid/new"]);
+			await host.execute(["resize", "40", "40"]);
+		}
+		get("wheel-form").dispatch("submit");
+		await settle();
+		expect(get("error").textContent).toContain("changed before wheel input");
+		expect((await host.execute(["geometry", "#tall"])).data).toMatchObject({
+			scroll: { x: 0, y: 0 },
+		});
+	},
+);
+
+it("retains shared-pointer semantics rather than synthesizing a mouse move", async () => {
+	const { get, host, calls } = await fixture(
+		false,
+		'<div id="tall" style="height:200px"></div>',
+	);
+	await host.execute(["mousemove", "-1", "-1"]);
+	get("wheel-form").dispatch("submit");
+	await settle();
+	expect(get("error").hidden).toBe(true);
+	expect(calls.some((argv) => argv[0] === "mousemove")).toBe(false);
+	expect((await host.execute(["geometry", "#tall"])).data).toMatchObject({
+		scroll: { x: 0, y: 0 },
+	});
+});
+
+describe("playground targeted key ownership", () => {
+	it.each(["tab", "navigation", "session"])(
+		"does not send keys to a replacement %s with the same selector",
+		async (change) => {
+			const { get, host, calls } = await fixture(
+				false,
+				'<select id="pick"><option>Alpha</option><option>Beta</option></select>',
+			);
+			get("target").value = "#pick";
+			get("value").value = "ArrowDown";
+			if (change === "session") await host.execute(["close"]);
+			await host.execute([
+				change === "tab" ? "tab-new" : "open",
+				"https://fixture.invalid/replacement",
+			]);
+			get("press-target").click();
+			await settle();
+			expect(get("error").textContent).toContain(
+				"changed before keyboard input",
+			);
+			const snapshot = (await host.execute(["snapshot"])).data as {
+				entries: { role: string; value?: string }[];
+			};
+			expect(
+				snapshot.entries.find((entry) => entry.role === "combobox")?.value,
+			).toBe("Alpha");
+			expect(calls.filter((argv) => argv[0] === "press")).toHaveLength(1);
+		},
+	);
+
+	it("ignores key activation after a failed inspection clears its owner", async () => {
+		const { get, calls } = await fixture(false, '<input id="field">');
+		const originalFetch = globalThis.fetch;
+		vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+			if (JSON.parse(String(options?.body)).argv?.[0] === "list")
+				throw new Error("Synthetic failure");
+			return originalFetch(input, options);
+		});
+		get("refresh").click();
+		await settle();
+		const count = calls.length;
+		get("press-target").click();
+		await settle();
+		expect(calls).toHaveLength(count);
+	});
+
+	it("disables key submission immediately while switching sessions", async () => {
+		const { get, host, calls } = await fixture(false, '<input id="field">');
+		await host.execute(["-s=other", "open", "https://fixture.invalid/other"]);
+		get("target").value = "#field";
+		get("value").value = "Enter";
+		get("session-name").value = "other";
+		get("session-form").dispatch("submit");
+		expect(get("press-target").disabled).toBe(true);
+		get("press-target").click();
+		await settle();
+		expect(calls.some((argv) => argv[0] === "press")).toBe(false);
+	});
+
+	it("drops selector and key drafts when a refresh observes a different document", async () => {
+		const { get, host } = await fixture(false, '<input id="field">');
+		get("target").value = "#field";
+		get("value").value = "private draft";
+		await host.execute(["open", "https://fixture.invalid/new"]);
+		get("refresh").click();
+		await settle();
+		expect(get("target").value).toBe("");
+		expect(get("value").value).toBe("");
+	});
+});
+
+it("presses a key on the chosen control through the real host and invalidates old pixels", async () => {
+	const { get, host, calls, revoked } = await fixture(
+		false,
+		'<select id="pick"><option>Alpha</option><option>Beta</option></select>',
+	);
+	expect(get("press-target").disabled).toBe(false);
+	const owner = ((await host.execute(["tab-list"])).data as TerminalTab[])[0];
+	get("capture-render").click();
+	await settle();
+	get("target").value = "#pick";
+	get("value").value = "ArrowDown";
+	get("press-target").click();
+	await settle();
+	expect(calls).toContainEqual([
+		"press",
+		"--target=#pick",
+		`--expected-viewport=${owner.key}`,
+		`--expected-document=${owner.documentRef}`,
+		"--",
+		"ArrowDown",
+	]);
+	expect(get("render-image").hidden).toBe(true);
+	expect(revoked).toHaveBeenCalledWith("blob:fixture/1");
+	const snapshot = (await host.execute(["snapshot"])).data as {
+		entries: { role: string; value?: string }[];
+	};
+	expect(
+		snapshot.entries.find((entry) => entry.role === "combobox")?.value,
+	).toBe("Beta");
+	get("disconnect").click();
+	await settle();
+	expect(get("press-target").disabled).toBe(true);
+});
+
+it("surfaces targeted-key failure without substituting a click or fill", async () => {
+	const { get, calls } = await fixture();
+	get("target").value = "#missing";
+	get("value").value = "Enter";
+	get("press-target").click();
+	await settle();
+	expect(get("error").hidden).toBe(false);
+	expect(calls.filter((argv) => ["click", "fill"].includes(argv[0]))).toEqual(
+		[],
+	);
+});
+
+it("does not interpret an option-looking key as a frontend command flag", async () => {
+	const { get, host, calls } = await fixture(false, '<input id="field">');
+	const owner = ((await host.execute(["tab-list"])).data as TerminalTab[])[0];
+	get("target").value = "#field";
+	get("value").value = "--help";
+	get("press-target").click();
+	await settle();
+	expect(calls).toContainEqual([
+		"press",
+		"--target=#field",
+		`--expected-viewport=${owner.key}`,
+		`--expected-document=${owner.documentRef}`,
+		"--",
+		"--help",
+	]);
+	expect(get("error").hidden).toBe(false);
+});
+
 it("loads confirmed viewport dimensions and applies a guarded draft through the real command host", async () => {
 	const { get, host, calls, blobs, revoked } = await fixture();
 	expect(get("viewport-width").value).toBe("40");
@@ -840,10 +1077,13 @@ it("disables viewport mutations on malformed server state while keeping other in
 	await settle();
 	expect(get("viewport-apply").disabled).toBe(true);
 	expect(get("viewport-state").textContent).toBe("Invalid viewport response");
+	expect(get("wheel-apply").disabled).toBe(true);
 	expect(get("capture-render").disabled).toBe(false);
 	get("viewport-form").dispatch("submit");
+	get("wheel-form").dispatch("submit");
 	await settle();
 	expect(calls.some((argv) => argv[0] === "resize")).toBe(false);
+	expect(calls.some((argv) => argv[0] === "mousewheel")).toBe(false);
 });
 
 it("renders actual PNG bytes through the UI command flow and revokes the preview on disconnect", async () => {

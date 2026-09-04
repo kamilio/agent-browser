@@ -253,6 +253,7 @@
   "src/terminal-search.test.ts",
   "src/terminal-tabs.test.ts",
   "src/terminal-tab-refresh.test.ts",
+  "src/key-input-ownership.test.ts",
   "src/terminal-view.test.ts",
   "src/template-core.test.ts",
   "src/template-bindings.test.ts",

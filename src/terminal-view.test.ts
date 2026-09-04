@@ -75,6 +75,44 @@ it("moves through refs and maps native actions without rewriting targets", () =>
 	expect(view.status).toContain("disabled");
 });
 
+it("prompts for a targeted key without turning navigation keys into page input", () => {
+	const view = new TerminalView("research");
+	view.update(snapshot(), "https://example.com/");
+	view.key("", { name: "tab" });
+	view.key("p");
+	expect(view.render(100, 12).join("\n")).toContain("press doc1:2>");
+	view.key("Enter");
+	expect(view.key("", { name: "return" })).toEqual([
+		"press",
+		"--target=doc1:2",
+		"--",
+		"Enter",
+	]);
+});
+
+it("bounds and cancels key drafts and rejects empty submission", () => {
+	const view = new TerminalView("research");
+	view.update(snapshot(), "https://example.com/");
+	view.key("", { name: "tab" });
+	view.key("p");
+	expect(view.key("", { name: "return" })).toBeUndefined();
+	view.key("a".repeat(129));
+	expect(view.status).toContain("maximum 128");
+	view.key("", { name: "escape" });
+	expect(view.key("", { name: "return" })).toEqual(["click", "doc1:2"]);
+});
+
+it("cancels targeted key drafts on document replacement", () => {
+	const view = new TerminalView("research");
+	view.update(snapshot(), "https://example.com/");
+	view.key("", { name: "tab" });
+	view.key("p");
+	view.key("Enter");
+	view.update(snapshot("doc2"), "https://example.com/new");
+	expect(view.status).toContain("cancelled");
+	expect(view.key("", { name: "return" })).toBeUndefined();
+});
+
 it("preserves selection on same-document updates and resets after navigation", () => {
 	const view = new TerminalView("research");
 	view.update(snapshot(), "https://example.com/");

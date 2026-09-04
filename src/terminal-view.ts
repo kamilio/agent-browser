@@ -18,7 +18,15 @@ export type TerminalRequest =
 export type TerminalAction = TerminalRequest | "refresh" | "quit" | undefined;
 
 interface Prompt {
-	kind: "open" | "tab-new" | "fill" | "select" | "find" | "search" | "regex";
+	kind:
+		| "open"
+		| "tab-new"
+		| "fill"
+		| "select"
+		| "press"
+		| "find"
+		| "search"
+		| "regex";
 	value: string;
 	ref?: string;
 	protected?: boolean;
@@ -358,6 +366,21 @@ export class TerminalView {
 		if (text === "r") return ["reload"];
 		if (text === "u") return "refresh";
 		const entries = this.snapshot?.entries ?? [];
+		if (text === "p") {
+			const entry = entries[this.selected];
+			if (!entry || !actionable(entry)) {
+				this.status = "Select an enabled control or link for key input";
+				return;
+			}
+			this.prompt = {
+				kind: "press",
+				value: "",
+				ref: entry.ref,
+				protected: entry.protected,
+			};
+			this.status = "Enter a key or chord, e.g. ArrowDown, Enter or Control+A";
+			return;
+		}
 		if (key.name === "tab") {
 			const direction = key.shift ? -1 : 1;
 			for (let distance = 1; distance <= entries.length; distance++) {
@@ -429,7 +452,7 @@ export class TerminalView {
 		return [
 			`Agent browser | session ${this.session} | ${mode}${page?.truncated ? " | truncated" : ""}${page && page.scope !== "root" && page.scope !== page.document ? ` | scope ${page.scope}` : ""}`,
 			this.url,
-			`j/k scroll | Tab control | Enter act | e edit | / find | n/N next/prev (${entries.length ? this.selected + 1 : 0}/${entries.length})`,
+			`j/k scroll | Tab control | Enter act | e edit | p key | / find | n/N next/prev (${entries.length ? this.selected + 1 : 0}/${entries.length})`,
 			...content,
 			this.status,
 			prompt
@@ -591,9 +614,12 @@ export class TerminalView {
 
 	private append(text: string) {
 		if (!this.prompt) return;
-		const maximum = ["search", "regex"].includes(this.prompt.kind)
-			? 1024
-			: 16_384;
+		const maximum =
+			this.prompt.kind === "press"
+				? 128
+				: ["search", "regex"].includes(this.prompt.kind)
+					? 1024
+					: 16_384;
 		if (this.prompt.value.length + text.length > maximum) {
 			this.status = `Input too long (maximum ${maximum} code units)`;
 			return;
@@ -604,6 +630,14 @@ export class TerminalView {
 	private submit(): TerminalAction {
 		const prompt = this.prompt;
 		if (!prompt) return;
+		if (prompt.kind === "press") {
+			if (!prompt.value) {
+				this.status = "Enter a key or chord; Escape cancels";
+				return;
+			}
+			this.prompt = undefined;
+			return ["press", `--target=${prompt.ref}`, "--", prompt.value];
+		}
 		if (prompt.kind === "search" || prompt.kind === "regex") {
 			if (!prompt.value) {
 				this.status = "Enter a nonempty backend search query";

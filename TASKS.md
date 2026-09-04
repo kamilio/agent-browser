@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native input UI checkpoint: `INPUT-UI.md` integrates terminal targeted-key drafts
+and playground keyboard/wheel controls. Optional press ownership guards now run
+inside the command queue before target resolution/focus, preventing selectors
+from retargeting a replacement document/session. Playground key actions use the
+displayed owner, reject ownerless submissions and clear drafts on document change.
+Twelve new native command cases fail ten on isolated prior HEAD; all six new UI
+cases fail before correction. All eighteen pass after integration. Thirteen
+pending playground cases and four terminal cases are integrated, with two key
+command expectations updated for guards. Focused checks pass 139 / six files in
+both trees. Authorized full native runs pass 9,575 / 267 working-tree files and
+8,335 / 241 isolated files; both pass types/builds, strict four-test checks and
+nine-file lint. Unrelated tracing/capture changes and historical evidence remain
+intact. Next continue capture/export and observability integration; full human/
+agent arbitration, OS/IME/clipboard behavior, continuous rendering and original
+runtime/site/device/socket compatibility gates remain open. No gated probe ran;
+the denied SafeJS probe remains unrun and the complete seven-day goal is active.
+
+### Previous guarded playground integration checkpoint
+
 Guarded playground integration checkpoint: `PLAYGROUND-TAB-CORE.md` integrates
 displayed-index/key tab actions and the served local metadata module. Refresh now
 rejects mismatched valid viewport keys or snapshot documents and clears stale

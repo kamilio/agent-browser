@@ -151,7 +151,7 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 	hover: [],
 	fill: ["submit"],
 	type: [],
-	press: ["target"],
+	press: ["target", "expected-viewport", "expected-document"],
 	keydown: [],
 	keyup: [],
 	mousemove: [],
@@ -1440,14 +1440,15 @@ export class BrowserCommandHost {
 			return { changed: true };
 		}
 		const actions = browser.page(tabId).interactions;
-		if (invocation.command === "mousewheel") {
+		if (invocation.command === "mousewheel" || invocation.command === "press") {
+			const inputKind = invocation.command === "press" ? "keyboard" : "wheel";
 			if (
 				options["expected-viewport"] !== undefined &&
 				options["expected-viewport"] !== browser.viewport(tabId).key
 			)
 				throw new AgentBrowserError(
 					"stale-reference",
-					"Selected tab or session changed before wheel input",
+					`Selected tab or session changed before ${inputKind} input`,
 				);
 			const document = browser.page(tabId).document;
 			if (
@@ -1456,7 +1457,7 @@ export class BrowserCommandHost {
 			)
 				throw new AgentBrowserError(
 					"stale-reference",
-					"Selected document changed before wheel input",
+					`Selected document changed before ${inputKind} input`,
 				);
 		}
 		if (

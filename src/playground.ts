@@ -245,6 +245,7 @@ function startPlayground() {
 		"forward",
 		"click",
 		"fill",
+		"press-target",
 		"download-html",
 		"download-png",
 		"download-pdf",
@@ -257,6 +258,16 @@ function startPlayground() {
 		for (const id of actionButtons) button(id).disabled = !token || working;
 		for (const id of documentButtons)
 			button(id).disabled = !token || working || !hasDocument;
+		button("press-target").disabled ||=
+			!inspectedDocument || !displayedTabs.length;
+		for (const id of ["wheel-x", "wheel-y", "wheel-apply"])
+			(element(id) as HTMLInputElement).disabled =
+				!token ||
+				working ||
+				!hasDocument ||
+				!inspectedDocument ||
+				!viewport ||
+				viewportSelection !== `${selectedSession}:${viewport.tabId}`;
 		input("capture-target").disabled = !token || working || !hasDocument;
 		for (const id of [
 			"viewport-width",
@@ -523,6 +534,8 @@ function startPlayground() {
 				domTarget = "";
 				input("dom-target").value = "";
 				input("capture-target").value = "";
+				input("target").value = "";
+				input("value").value = "";
 				text("dom-output", "Waiting for this document’s DOM…");
 				text("console-output", "Waiting for this document’s console…");
 				text("html-output", "Waiting for this document’s HTML…");
@@ -1059,6 +1072,42 @@ function startPlayground() {
 			failure(error);
 		}
 	});
+	element("wheel-form").addEventListener("submit", (event) => {
+		event.preventDefault();
+		if (
+			!token ||
+			working ||
+			!hasDocument ||
+			!inspectedDocument ||
+			!viewport ||
+			viewportSelection !== `${selectedSession}:${viewport.tabId}`
+		)
+			return;
+		try {
+			const deltas = [input("wheel-x").value, input("wheel-y").value].map(
+				(value) => {
+					const delta = Number(value);
+					if (
+						!value.trim() ||
+						!Number.isFinite(delta) ||
+						Math.abs(delta) > 1_000_000
+					)
+						throw new Error(
+							"Wheel deltas must be finite CSS pixels between -1000000 and 1000000",
+						);
+					return String(delta);
+				},
+			);
+			void run([
+				"mousewheel",
+				...deltas,
+				`--expected-viewport=${viewport.key}`,
+				`--expected-document=${inspectedDocument}`,
+			]);
+		} catch (error) {
+			failure(error);
+		}
+	});
 	element("console-level").addEventListener("change", () => {
 		void refresh();
 	});
@@ -1106,6 +1155,19 @@ function startPlayground() {
 	button("fill").addEventListener("click", () => {
 		if (!hasDocument) return;
 		void run(["fill", input("target").value, input("value").value]);
+	});
+	button("press-target").addEventListener("click", () => {
+		if (!hasDocument || !inspectedDocument) return;
+		const tab = displayedTabs.find((entry) => entry.selected);
+		if (!tab) return;
+		void run([
+			"press",
+			`--target=${input("target").value}`,
+			`--expected-viewport=${tab.key}`,
+			`--expected-document=${inspectedDocument}`,
+			"--",
+			input("value").value,
+		]);
 	});
 	element("command-form").addEventListener("submit", (event) => {
 		event.preventDefault();

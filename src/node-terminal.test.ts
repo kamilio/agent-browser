@@ -369,6 +369,26 @@ async function searchRemote(test: ReturnType<typeof searchFixture>) {
 	await vi.waitFor(() => expect(test.screen()).toContain("1 matches in 300"));
 }
 
+it("sends targeted key requests from a stream-backed terminal without a PTY", async () => {
+	const test = fixture();
+	const running = runTerminal(test.options);
+	try {
+		await vi.waitFor(() => expect(test.screen()).toContain("Real page"));
+		test.input.write("pEnter\r");
+		await vi.waitFor(() =>
+			expect(test.execute.mock.calls.map(([argv]) => argv)).toContainEqual([
+				"press",
+				"--target=doc1:2",
+				"--",
+				"Enter",
+			]),
+		);
+	} finally {
+		test.input.write("\u0003");
+		await running;
+	}
+});
+
 it("searches beyond the root projection, inspects before acting, refreshes scope and returns to root", async () => {
 	const test = searchFixture();
 	const running = runTerminal(test.options);

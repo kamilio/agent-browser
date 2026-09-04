@@ -784,6 +784,22 @@ public site or SafeJS probe ran; full human/agent arbitration, runtime/site/devi
 and compatibility gates remain open. The denied SafeJS probe stays unrun and the
 original seven-day browser objective remains active.
 
+September 4 native input UI checkpoint: `INPUT-UI.md` integrates terminal targeted
+keys and playground keyboard/wheel forms. Press now supports tab/document guards
+checked inside its serialized operation before target resolution. The key button
+uses its displayed owner, refuses ownerless activation and drops drafts when the
+observed document changes. Twelve new command tests fail ten on isolated prior
+HEAD; six new UI cases all fail before correction. All eighteen pass with the
+integration, alongside thirteen pending playground and four terminal cases.
+Focused runs pass 139 / six files in both trees. Authorized full native runs pass
+9,575 / 267 working-tree files and 8,335 / 241 isolated files; types/builds, strict
+four-test checks and nine-file lint pass. Unrelated tracing/capture work and
+historical measurements remain intact. Next continue capture/export and
+observability integration. No live browser, TTY/PTY, socket, public site or SafeJS
+probe ran; native OS/IME/clipboard input, continuous rendering, human/agent
+arbitration and original compatibility gates remain open. The denied SafeJS probe
+remains unrun and the complete seven-day objective stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to
