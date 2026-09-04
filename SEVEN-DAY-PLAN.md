@@ -1229,6 +1229,20 @@ preferences and broader default focus behavior. Full browser/runtime gates remai
 open; no gated probe ran and the denied SafeJS probe remains unrun. Preserve
 historical evidence and unrelated work; the seven-day goal remains active.
 
+September 4 editable-region continuation: `EDITABLE-FOCUS.md` shares inherited
+editability between root focus eligibility, indication, keyboard scroll guards
+and page-facing state properties. False islands, nested roots, tabindex, mutation
+revalidation and lifetime have native coverage. All 53 new tests fail on isolated
+prior HEAD; matching focused runs pass 308 / seven files. Types/builds, strict
+new-test checking and seven-file lint pass in both trees. Four inspected isolated
+native captures show stable geometry and keyboard/pointer focus feedback removed
+after contentEditable becomes false. Authorized full native runs pass 9,637 / 275
+isolated files; working validation reports 10,782 passes and the unchanged pending
+Window-onload assertion failure / 297 files. Actual content editing and active-page focus/blur publishing,
+options, scrolling and synchronous guest callbacks remain next. No gated probe
+ran; the denied SafeJS probe remains unrun. Preserve historical evidence and
+unrelated pending work; the seven-day goal stays active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

@@ -14,6 +14,7 @@ import {
 } from "./event-actions.js";
 import { BrowserEvent, type DocumentEvents } from "./events.js";
 import { isInertRoot } from "./inertness.js";
+import { isRootEditableElement } from "./content-editability.js";
 import { parsedTabIndex } from "./element-focus.js";
 import { closedDetailsChild, summaryDetails } from "./details.js";
 import { documentStyles } from "./styles.js";
@@ -69,6 +70,7 @@ export function focusTabIndex(tree: DocumentTree, id: number): number | null {
 	const explicit = parsedTabIndex(node);
 	if (explicit !== null) return explicit;
 	return ["input", "button", "select", "textarea"].includes(node.tagName) ||
+		isRootEditableElement(tree, id) ||
 		summaryDetails(tree, node) !== undefined ||
 		(node.tagName === "a" && Object.hasOwn(node.attributes, "href"))
 		? 0

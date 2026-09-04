@@ -2,6 +2,10 @@ import type { DocumentNode, DocumentTree } from "./document.js";
 import { summaryDetails } from "./details.js";
 import { AgentBrowserError } from "./errors.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
+import {
+	contentEditableState,
+	isContentEditable,
+} from "./content-editability.js";
 
 const parsedValues = new WeakMap<Readonly<DocumentNode>, number | null>();
 const defaultZero = new Set([
@@ -53,8 +57,30 @@ export function scriptElementFocusProperties(
 	tree: DocumentTree,
 	id: number,
 	read: () => Readonly<DocumentNode>,
+	string: (value: unknown) => string,
 ): NonNullable<ScriptHostObjectDefinition["properties"]> {
 	return {
+		contentEditable: {
+			get: () => contentEditableState(read()),
+			set: (value) => {
+				read();
+				const state = string(value).toLowerCase();
+				if (state === "inherit") tree.removeAttribute(id, "contenteditable");
+				else if (["true", "false", "plaintext-only"].includes(state))
+					tree.setAttribute(id, "contenteditable", state);
+				else
+					throw new DOMException(
+						"Invalid contentEditable value",
+						"SyntaxError",
+					);
+			},
+		},
+		isContentEditable: {
+			get: () => {
+				read();
+				return isContentEditable(tree, id);
+			},
+		},
 		tabIndex: {
 			get: () => elementTabIndex(tree, read()),
 			set: (value) => {

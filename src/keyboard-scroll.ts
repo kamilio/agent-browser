@@ -1,4 +1,5 @@
 import { documentScroll } from "./document-scroll.js";
+import { contentEditableState } from "./content-editability.js";
 import { summaryDetails } from "./details.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -76,13 +77,9 @@ export function* keyboardScrollAction(
 				(node.tagName === "button" || summaryDetails(tree, node) !== undefined)
 			)
 				return;
-			if (
-				editable === undefined &&
-				Object.hasOwn(node.attributes, "contenteditable")
-			) {
-				const value = node.attributes.contenteditable.toLowerCase();
-				if (["", "true", "plaintext-only"].includes(value)) editable = true;
-				else if (value === "false") editable = false;
+			if (editable === undefined) {
+				const state = contentEditableState(node);
+				if (state !== "inherit") editable = state !== "false";
 			}
 			ancestor = node.parent;
 		}

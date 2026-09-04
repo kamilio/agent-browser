@@ -19,6 +19,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Editable-region checkpoint: `EDITABLE-FOCUS.md` adds shared contenteditable state,
+root-editor native focusability and page-facing contentEditable/isContentEditable
+properties. Inheritance, false islands, explicit tabindex, focus indication,
+keyboard scroll protection, lifetime and mutation revalidation have native tests.
+All 53 new tests fail on isolated prior HEAD; matching focused runs pass 308 /
+seven files. Types/builds, strict new-test checking and seven-file lint pass in
+both trees. Inspected isolated native captures show keyboard and pointer outlines
+without geometry changes, and their removal after an editability property write.
+Authorized full native runs pass 9,637 / 275 isolated files; working validation
+reports 10,782 passes and the unchanged pending Window-onload assertion failure /
+297 files. Actual content editing and active-page focus/blur methods/options/callback integration
+remain open, as do all original browser/runtime gates. No gated probe ran; the
+denied SafeJS probe remains unrun. The seven-day goal remains active.
+
+### Previous focus-visible checkpoint
+
 Focus-visible checkpoint: `FOCUS-VISIBLE.md` adds indication-aware native selector
 and stylesheet matching, keyboard/pointer state, script-transfer inheritance and
 generated-header ring gating. Indication-only changes refresh query state without

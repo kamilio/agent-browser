@@ -1,5 +1,14 @@
 # Compatibility and playground acceptance ledger
 
+September 4 editable-region continuation: `EDITABLE-FOCUS.md` adds native root-
+editor focusability and shared contenteditable inheritance, indication, keyboard
+scroll protection and contentEditable/isContentEditable bindings. Attribute and
+tree changes refresh eligibility; reflected div tabIndex still defaults to -1.
+Native tests and inspected isolated command captures establish focus/state only,
+not content editing, guest focus methods/options, synchronous callback behavior,
+selection/caret, platform accessibility or runtime/browser acceptance. No gated
+probe ran; the denied SafeJS probe remains unrun.
+
 September 4 focus-visible continuation: `FOCUS-VISIBLE.md` adds native indicated-
 focus selectors, selector support checks, stylesheet matching and input modality.
 Keyboard and text-entry indication, pointer focus, script/blur inheritance, cached

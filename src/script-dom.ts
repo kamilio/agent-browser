@@ -871,7 +871,12 @@ export class ScriptDom {
 				id: this.attribute(id, "id"),
 				className: this.attribute(id, "class"),
 				title: this.attribute(id, "title"),
-				...scriptElementFocusProperties(this.tree, id, () => this.read(id)),
+				...scriptElementFocusProperties(
+					this.tree,
+					id,
+					() => this.read(id),
+					domString,
+				),
 			});
 			if (initial.tagName === "details") {
 				definition.properties.name = this.attribute(id, "name");
