@@ -5,6 +5,7 @@
   "src/upload-commands.test.ts",
   "src/upload-transfers.test.ts",
   "src/upload-host.test.ts",
+  "src/upload-lifecycle-review.test.ts",
   "src/cli-upload.test.ts",
   "src/cli-upload-host.test.ts",
   "src/file-control-rendering.test.ts",

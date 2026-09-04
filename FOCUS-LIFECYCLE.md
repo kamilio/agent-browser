@@ -1,5 +1,9 @@
 # Focus setup lifetime guards
 
+Combined validation continuation: `UPLOAD-LIFECYCLE.md` includes this guard's
+four-case setup matrix in the subsequent native suite. The focused measurements
+below retain their original source base and scope.
+
 September 4, 2026. Independent native review found a reentrant teardown gap while
 PageBindings constructs its PageFocus registration pool. The completed owner is
 assigned only after registration returns; closing the document during registration

@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 upload lifecycle hardening: `UPLOAD-LIFECYCLE.md` rejects stale begin
+acknowledgements and prevents ownership publication after reentrant manager or
+retained-target closure. Four native regressions cover capacity, subscriptions
+and binding cleanup; this is not an assertion of a remotely exploitable issue or
+new socket/service/runtime acceptance.
+
 September 4 focus setup hardening: `FOCUS-LIFECYCLE.md` revokes partial registration
 pools across reentrant first/final document or runtime teardown, preserving exact
 registered identities. Four baseline reproductions and 214 focused native tests

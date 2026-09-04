@@ -1,5 +1,10 @@
 # Native upload client and command service
 
+Current lifecycle hardening: `UPLOAD-LIFECYCLE.md` adds post-begin acknowledgement
+target validation and reentrant manager/retained-owner activation guards. Its
+fresh regressions and combined validation are separate from the original upload
+captures and measurements below; external transport/runtime gates remain open.
+
 September 4, 2026 integration on `e9616a2`. This connects the existing owned file
 selection and visible file controls to the real CLI, canonical transfer protocol,
 BrowserCommandHost queue and BrowserSession. Native injected-transport validation

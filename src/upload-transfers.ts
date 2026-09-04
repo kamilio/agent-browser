@@ -119,6 +119,12 @@ export class UploadTransfers {
 			);
 		if (existing) {
 			previous?.owner.invalidateTargets();
+			this.ensureOpen();
+			if (owner.metrics().closed)
+				throw new AgentBrowserError(
+					"closed",
+					"Upload document closed during activation",
+				);
 			this.bindings.set(session, existing.binding);
 			return;
 		}
@@ -150,13 +156,17 @@ export class UploadTransfers {
 				)
 					this.remove(entry);
 		});
-		previous?.owner.invalidateTargets();
-		if (owner.metrics().closed) {
+		try {
+			previous?.owner.invalidateTargets();
+			this.ensureOpen();
+			if (owner.metrics().closed)
+				throw new AgentBrowserError(
+					"closed",
+					"Upload document closed during activation",
+				);
+		} catch (error) {
 			binding.unsubscribe();
-			throw new AgentBrowserError(
-				"closed",
-				"Upload document closed during activation",
-			);
+			throw error;
 		}
 		this.documents.set(owner.documentId, { session, binding });
 		this.bindings.set(session, binding);

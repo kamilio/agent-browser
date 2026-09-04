@@ -19,6 +19,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Upload lifecycle checkpoint: `UPLOAD-LIFECYCLE.md` guards begin acknowledgements
+against intervening target invalidation and prevents manager/retained-owner closure
+from resuming attachment. Four reproductions fail against the preceding archive
+and pass after the fixes. Core focused tests pass 197 / six files and extended
+CLI checks pass 267 / nine files. Combined explicit native suites pass 10,942 / 324
+isolated files and report 12,073 passes with the same fifteen pending failures
+/ 346 working files. Types/builds, strict tests and scoped formatting pass.
+Original socket/service/runtime/live/terminal gates remain open.
+
 Focus setup lifetime checkpoint: `FOCUS-LIFECYCLE.md` prevents an in-progress
 registration pool escaping reentrant document/runtime teardown. Four first/final
 registration cases fail on the preceding archive and pass with the guarded

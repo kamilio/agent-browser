@@ -7,6 +7,11 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Upload acknowledgement/activation lifetime guards now complement the focus setup
+fix. `UPLOAD-LIFECYCLE.md` records independent failing baselines and native
+ownership/capacity regressions. Combined explicit native suites pass 10,942 / 324
+isolated files; working validation retains the same fifteen pending failures.
+
 Independent review's focus setup guard is integrated with four before/after
 teardown reproductions. `FOCUS-LIFECYCLE.md` records 214 passing focused native
 tests and explicit limits; combined full suites follow upload lifecycle hardening.

@@ -1277,6 +1277,12 @@ export class BrowserCommandHost {
 			);
 			if (invocation.command === "upload-begin") {
 				const info = result.data as UploadTransferInfo;
+				try {
+					owner.validateTarget(info, info.files);
+				} catch (error) {
+					this.uploadTransfers.cancel(entry.name, info.documentId, info.id);
+					throw error;
+				}
 				state.transfers.set(info.id, {
 					documentId: info.documentId,
 					bytes: info.bytes,

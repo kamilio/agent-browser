@@ -10,7 +10,7 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 | Lane | Assignment | Integration boundary |
 | --- | --- | --- |
-| Main | Integrate upload lifecycle review fixes and terminal carets | Focus setup guard passes 214 focused native tests; combined full validation follows upload fixes. |
+| Main | Integrate terminal carets, then bounded selection highlighting | Lifecycle fixes pass 10,942 / 324 combined isolated native tests. |
 | DOM worker | Paragraph merging delivered; worker closed | Native merging is integrated; original paragraphs and worker evidence are preserved. |
 | Focus-bridge worker | Native provisioning/resource/revocation stress | Both deliveries are integrated natively; public/runtime limits and URL constructor blockers remain explicit. |
 | Focus delivery | Native focus/blur options, indication and scrolling | Public-contract bridge is integrated natively; released guest execution remains unverified. |
@@ -21,7 +21,7 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 | Runtime / upload-client worker | CLI and six cross-boundary cases complete; worker closed | Actual native client/host path passes with injected transport and real private files. |
 | Playground delivery | Extraction/snapshot downloads and honest example discovery | Integrated export guards/cards pass 9,882 isolated native tests; live UI/framework gates remain open. |
 | File-selection / rendering worker | Terminal preserved-break carets delivered; worker closed | Helper-only extension and 33 native tests await parent integration. |
-| Independent upload reviewer | Reservation and manager/retained-owner closure defects reproduced; worker closed | Replacement v2 guards and four regressions remain pending parent integration. |
+| Independent upload reviewer | Reservation and manager/retained-owner closure defects reproduced; worker closed | Replacement v2 guards and four regressions pass combined native validation. |
 | Independent focus reviewer | Final-registration teardown defect reproduced; worker closed | Guard integrated with four first/final document/runtime teardown reproductions. |
 
 Workers use isolated snapshots at their explicitly recorded bases, not the dirty primary tree.
