@@ -1,4 +1,6 @@
 [
+  "src/editable-paragraph.test.ts",
+  "src/editable-paragraph-command.test.ts",
   "src/positioning-performance.test.ts",
   "src/page-runtime-selection.test.ts",
   "src/node-page-core-selection.test.ts",

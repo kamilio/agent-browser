@@ -530,14 +530,16 @@ it("retains native input and textarea caret, validity and change semantics", () 
 	}
 });
 
-it("supports select-all shortcuts but explicitly rejects paragraph insertion", () => {
+it("supports select-all shortcuts and simple paragraph insertion", () => {
 	const { keyboard, selection, value } = fixture();
 	keyboard.press("Control+a");
 	expect(selection.toString()).toBe("helloworld");
 	keyboard.type("replacement");
 	expect(value()).toBe("replacement");
-	expect(() => keyboard.press("Enter")).toThrow("paragraph insertion");
+	expect(keyboard.press("Enter").canceled).toBe(false);
 	expect(value()).toBe("replacement");
+	keyboard.type("!");
+	expect(value()).toBe("replacement!");
 });
 
 it("types the maximum character batch without allocating a range per character", () => {

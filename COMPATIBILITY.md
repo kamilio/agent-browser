@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 paragraph continuation: `EDITABLE-PARAGRAPHS.md` adds bounded rich
+paragraph/line splitting and plaintext LF through native host editing. Shared
+Range ownership, canceled defaults and fixed editor geometry are tested with
+fresh inspected captures. Merging, complex editing and original external/runtime
+acceptance gates remain open; no placeholder or painted-caret claim is made.
+
 September 4 static-position performance continuation: `POSITIONING-PERFORMANCE.md`
 reuses measured anchors only for equivalent same-slot siblings within one pass.
 Fresh geometry/pixel comparisons and bounded work counts establish that subset;

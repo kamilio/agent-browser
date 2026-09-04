@@ -19,6 +19,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Paragraph checkpoint: `EDITABLE-PARAGRAPHS.md` integrates bounded rich Enter,
+Shift+Enter and plaintext LF insertion through actual native command routing.
+Four inspected fixed-editor captures retain geometry/root scroll; cancellation
+retains identical pixels and shared selection. Focused tests pass 204 / seven
+files; types/builds, strict checks and scoped Biome pass. Explicit native suites
+pass 10,451 / 306 isolated files and report 11,582 passes with the same fifteen
+pending failures / 328 working files. Paragraph merging and original browser,
+released-runtime, live and terminal gates remain open.
+
 Static-position performance checkpoint: `POSITIONING-PERFORMANCE.md` integrates
 per-pass anchor reuse for equivalent adjacent out-of-flow siblings without
 raising budgets. Fresh compiled-before/after measurements complete 1,000 matching

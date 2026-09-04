@@ -66,7 +66,8 @@ retain their original narrower results and obsolete-Space integration caveat.
 
 ## Remaining gates
 
-Enter/Shift+Enter paragraph/line insertion is a separate active worker task.
+Enter/Shift+Enter now supports the bounded subset in `EDITABLE-PARAGRAPHS.md`;
+that document records fresh integration evidence without replacing these results.
 Paragraph merging, composition/IME, clipboard, undo, full editing heuristics,
 grapheme/bidi/visual movement, selection events, target ranges, caret/highlight
 painting and native control/DOM selection unification remain incomplete.

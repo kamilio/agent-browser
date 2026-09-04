@@ -7,6 +7,11 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Bounded Enter/Shift+Enter now reaches native rich/plaintext editors, with shared
+selection and cancellation guards. `EDITABLE-PARAGRAPHS.md` records current
+native tests and four inspected fixed-editor captures; paragraph merging,
+full editing heuristics and external acceptance remain separate work.
+
 Bounded static-position sibling reuse now completes the measured 1,000-target
 matching runs while retaining geometry and pixels. `POSITIONING-PERFORMANCE.md`
 keeps the distinct-slot fallback and original acceptance limitations explicit.

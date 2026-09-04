@@ -6,6 +6,7 @@ import {
 	domRangeOwner,
 } from "./dom-range.js";
 import { editableFillHost } from "./editable-fill.js";
+import { planEditableParagraph } from "./editable-paragraph.js";
 import { AgentBrowserError } from "./errors.js";
 import type { EventAction } from "./event-actions.js";
 import { type DocumentFocus, focusTabIndex } from "./focus.js";
@@ -83,6 +84,7 @@ export const editableKeyboardCapabilities = Object.freeze({
 	maxTextCodeUnits: 65_536,
 	stepping: "unicode-code-point",
 	homeEnd: "hard-newlines-and-html-block-boundaries",
+	paragraphInsertion: "bounded-simple-structures",
 	paragraphMerging: false,
 	composition: false,
 	geometry: false,
@@ -338,9 +340,12 @@ export class EditableKeyboard {
 		} else if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(key.key))
 			this.move(id, key);
 		else if (key.key === "Enter")
-			throw new AgentBrowserError(
-				"unsupported",
-				"Contenteditable paragraph insertion is not implemented",
+			return yield* this.edit(
+				id,
+				"",
+				key.shift ? "insertLineBreak" : "insertParagraph",
+				null,
+				true,
 			);
 		else if (key.key === "Backspace" || key.key === "Delete")
 			return yield* this.edit(
@@ -405,6 +410,7 @@ export class EditableKeyboard {
 		text: string,
 		inputType: string,
 		data: string | null,
+		paragraph = false,
 	): EventAction<boolean> {
 		const { host, model, range } = this.current(id);
 		const owner = domRangeOwner(this.tree);
@@ -432,14 +438,24 @@ export class EditableKeyboard {
 			else end = point;
 		}
 		model.check(start, end);
-		if (samePoint(start, end) && !text) return true;
+		const insertion = paragraph
+			? planEditableParagraph(
+					this.tree,
+					host,
+					range,
+					inputType === "insertLineBreak",
+				)
+			: undefined;
+		const eventType = insertion?.inputType ?? inputType;
+		const insertedText = insertion?.plaintext ? "\n" : text;
+		if (samePoint(start, end) && !text && !insertion) return true;
 		const anchor = selection.anchor;
 		const focus = selection.focus;
 		const generation = this.focusGeneration();
 		if (
 			!(yield {
 				target: host,
-				event: new BrowserInputEvent("beforeinput", data, inputType, true),
+				event: new BrowserInputEvent("beforeinput", data, eventType, true),
 			})
 		)
 			return false;
@@ -454,10 +470,11 @@ export class EditableKeyboard {
 		)
 			fail("Editable subtree or selection changed during beforeinput");
 		new EditableText(this.tree, host).check(start, end);
-		this.apply(range, start, end, text);
+		if (insertion && !insertion.plaintext) insertion.apply(range);
+		else this.apply(range, start, end, insertedText);
 		yield {
 			target: host,
-			event: new BrowserInputEvent("input", data, inputType),
+			event: new BrowserInputEvent("input", data, eventType),
 		};
 		return true;
 	}
