@@ -559,51 +559,56 @@ export class EditableKeyboard {
 				"resource-limit",
 				"Editable insertion text limit exceeded",
 			);
-		let insertion = range;
-		let deletion: DomRange | undefined;
-		if (!samePoint(start, end)) {
-			insertion = range.cloneRange();
-			this.collapse(insertion, start);
-			deletion = range.cloneRange();
-			deletion.setStart(start.node, start.offset);
-			deletion.setEnd(end.node, end.offset);
-		}
-		let allocated: number | undefined;
-		if (text && startNode.kind !== "text") {
-			let depth = 1;
-			let ancestor = startNode.parent;
-			while (ancestor !== null) {
-				depth++;
-				ancestor = this.tree.get(ancestor).parent;
+		const apply = (insertion: DomRange, deletion?: DomRange) => {
+			let allocated: number | undefined;
+			if (text && startNode.kind !== "text") {
+				let depth = 1;
+				let ancestor = startNode.parent;
+				while (ancestor !== null) {
+					depth++;
+					ancestor = this.tree.get(ancestor).parent;
+				}
+				if (depth > this.tree.limits.maxDepth)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Editable insertion depth limit exceeded",
+					);
+				allocated = this.tree.createText("");
 			}
-			if (depth > this.tree.limits.maxDepth)
-				throw new AgentBrowserError(
-					"resource-limit",
-					"Editable insertion depth limit exceeded",
+			deletion?.deleteContents();
+			const point = insertion.start;
+			if (!text) {
+				this.collapse(range, point);
+				return;
+			}
+			if (this.tree.get(point.node).kind === "text") {
+				owner.replaceText(point.node, point.offset, 0, text);
+				this.collapse(range, {
+					node: point.node,
+					offset: point.offset + text.length,
+				});
+			} else {
+				const node = allocated as number;
+				this.tree.setData(node, text);
+				this.tree.insert(
+					point.node,
+					node,
+					this.tree.get(point.node).children[point.offset],
 				);
-			allocated = this.tree.createText("");
-		}
-		deletion?.deleteContents();
-		const point = insertion.start;
-		if (!text) {
-			this.collapse(range, point);
-			return;
-		}
-		if (this.tree.get(point.node).kind === "text") {
-			owner.replaceText(point.node, point.offset, 0, text);
-			this.collapse(range, {
-				node: point.node,
-				offset: point.offset + text.length,
+				this.collapse(range, { node, offset: text.length });
+			}
+		};
+		if (!samePoint(start, end)) {
+			owner.withTemporaryRange(range, (insertion) => {
+				this.collapse(insertion, start);
+				owner.withTemporaryRange(range, (deletion) => {
+					deletion.setStart(start.node, start.offset);
+					deletion.setEnd(end.node, end.offset);
+					apply(insertion, deletion);
+				});
 			});
 		} else {
-			const node = allocated as number;
-			this.tree.setData(node, text);
-			this.tree.insert(
-				point.node,
-				node,
-				this.tree.get(point.node).children[point.offset],
-			);
-			this.collapse(range, { node, offset: text.length });
+			apply(range);
 		}
 	}
 }

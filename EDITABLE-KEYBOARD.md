@@ -66,6 +66,11 @@ retain their original narrower results and obsolete-Space integration caveat.
 
 ## Remaining gates
 
+`EDITABLE-RANGE-LIFETIME.md` now gives private replacement ranges a synchronous
+scope, including nested deletion and error cleanup. Public selected/observer Range
+identity and original keyboard semantics are unchanged; this is a resource fix,
+not a broader visual-editing or guest-runtime acceptance claim.
+
 `EDITABLE-SELECTION.md` now paints the bounded same-text selection reached through
 native Shift+Arrow, verifies canceled input, and restores the caret on replacement.
 Fresh fixed/root-scroll captures are independent of the original keyboard-only

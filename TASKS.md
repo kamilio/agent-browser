@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Continuation authorization: on September 4 the user requested continued work until
+told to stop. The earlier five-hour checkpoint is not a new stop condition or a
+reduction of the seven-day browser objective. Native Range lifetime hardening is
+integrated; resumed workers are extending mixed-node highlighting and fixing
+the independently reproduced exhausted-fetch-budget admission defect. Standard
+XHR publication remains blocked by the inspected public runtime constructor and
+live-property contract, not replaced with a spoofable factory alias.
+
+Range lifetime checkpoint: `EDITABLE-RANGE-LIFETIME.md` releases private synchronous
+Range registrations after replacement, paragraph insertion and content operations,
+including exceptions and nested allocation failure. Public detach, selected Range
+identity and the 4,096-live-Range cap are unchanged. Nine new tests include seven
+reproduced old quota-cleanup failures. Verified focused tests pass 287 / eleven
+files; types/builds, strict checks and four-file Biome pass. Full native validation
+passes 11,016 / 327 isolated files and reports 12,147 passes with the same fifteen
+pending failures / 349 working files. Eleven fresh before/after host PNGs and all
+geometry/paint/state measurements are identical. No gated probe or dependency.
+
 Sprint handoff: `FIVE-HOUR-SPRINT.md` records the September 4, 17:48 UTC native
 delivery assessment, eight-worker contributions, exact manifest/archive distinction
 and remaining work. Source checkpoint `6a29502` matches the tested isolated archive

@@ -6,6 +6,24 @@ therefore approximately **19:10 UTC on September 4, 2026**. This compresses the
 schedule; it does not redefine the browser outcome or prove any acceptance gate.
 `TASKS.md` retains the original scope and `SEVEN-DAY-PLAN.md` retains its history.
 
+## Continued execution
+
+On September 4, after the audited checkpoint, the user requested continued work
+until explicitly told to stop. The original 19:10 UTC deadline remains a historical
+sprint target, not the current stop condition. The overall seven-day browser scope
+and separate probe authorizations are unchanged. Two original workers resumed for
+mixed-node highlighting and a reproduced exhausted-fetch-budget admission defect;
+main has integrated scoped native editing Range cleanup. Standard XHR still needs
+the missing public runtime construction/live-property capabilities, not a renamed
+internal factory. Original checkpoint measurements and then-closed lane states
+below remain historical.
+
+The scoped Range checkpoint passes 11,016 native tests / 327 isolated files and
+reports 12,147 passes with the same fifteen pending failures / 349 working files.
+The two manifests are identical; 22 preexisting uncommitted files exist only in the
+working tree. EDITABLE-RANGE-LIFETIME.md records nine new tests, verified compiler
+and focused-suite runs, failure cleanup and byte-identical eleven-phase captures.
+
 ## Delivery checkpoint — September 4, 17:48 UTC
 
 The integrated native checkpoint is committed through `6a29502`, before the

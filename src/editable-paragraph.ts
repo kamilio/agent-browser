@@ -212,79 +212,83 @@ export function planEditableParagraph(
 			checkBudget();
 			const start = selected.start;
 			const end = selected.end;
-			const caret = selected.cloneRange();
-			caret.collapse(true);
-			const right = tree.createElement(
-				lineBreak ? "br" : rootTag,
-				lineBreak ? {} : rootAttributes,
-			);
-			const left =
-				!lineBreak && convert ? tree.createElement("div") : undefined;
-			const cloned = new Map<number, number>([[root.id, right]]);
-			for (const node of copies)
-				cloned.set(node.id, tree.createElement(node.tagName, attributes(node)));
-			const suffix = splitText
-				? owner.splitText(start.node, end.offset)
-				: undefined;
-			if (start.node === end.node && startNode.kind === "text")
-				owner.replaceText(
-					start.node,
-					start.offset,
-					end.offset - start.offset,
-					"",
+			owner.withTemporaryRange(selected, (caret) => {
+				caret.collapse(true);
+				const right = tree.createElement(
+					lineBreak ? "br" : rootTag,
+					lineBreak ? {} : rootAttributes,
 				);
-			else selected.deleteContents();
-			const point = caret.start;
-			const node = tree.get(point.node);
-			let parent = node.id;
-			let offset = point.offset;
-			let following: number | undefined;
-			if (node.kind === "text") {
-				parent = node.parent as number;
-				const index = tree.get(parent).children.indexOf(node.id);
-				if (point.offset === 0) {
-					offset = index;
-					following = node.id;
+				const left =
+					!lineBreak && convert ? tree.createElement("div") : undefined;
+				const cloned = new Map<number, number>([[root.id, right]]);
+				for (const node of copies)
+					cloned.set(
+						node.id,
+						tree.createElement(node.tagName, attributes(node)),
+					);
+				const suffix = splitText
+					? owner.splitText(start.node, end.offset)
+					: undefined;
+				if (start.node === end.node && startNode.kind === "text")
+					owner.replaceText(
+						start.node,
+						start.offset,
+						end.offset - start.offset,
+						"",
+					);
+				else selected.deleteContents();
+				const point = caret.start;
+				const node = tree.get(point.node);
+				let parent = node.id;
+				let offset = point.offset;
+				let following: number | undefined;
+				if (node.kind === "text") {
+					parent = node.parent as number;
+					const index = tree.get(parent).children.indexOf(node.id);
+					if (point.offset === 0) {
+						offset = index;
+						following = node.id;
+					} else {
+						following = suffix;
+						offset = index + 1;
+					}
+				}
+				let destination: DomBoundaryPoint;
+				if (lineBreak) {
+					tree.insert(parent, right, tree.get(parent).children[offset]);
+					destination =
+						following === undefined
+							? { node: parent, offset: offset + 1 }
+							: { node: following, offset: 0 };
 				} else {
-					following = suffix;
-					offset = index + 1;
+					destination = {
+						node: following ?? (cloned.get(parent) as number),
+						offset: 0,
+					};
+					while (true) {
+						const target = cloned.get(parent) as number;
+						for (const child of tree.get(parent).children.slice(offset))
+							tree.append(target, child);
+						if (parent === root.id) break;
+						const outer = tree.get(parent).parent as number;
+						offset = tree.get(outer).children.indexOf(parent) + 1;
+						tree.append(cloned.get(outer) as number, target);
+						parent = outer;
+					}
+					if (left !== undefined) {
+						for (const child of tree.get(root.id).children)
+							tree.append(left, child);
+						tree.append(root.id, left);
+						tree.append(root.id, right);
+					} else {
+						const outer = root.parent as number;
+						const siblings = tree.get(outer).children;
+						tree.insert(outer, right, siblings[siblings.indexOf(root.id) + 1]);
+					}
 				}
-			}
-			let destination: DomBoundaryPoint;
-			if (lineBreak) {
-				tree.insert(parent, right, tree.get(parent).children[offset]);
-				destination =
-					following === undefined
-						? { node: parent, offset: offset + 1 }
-						: { node: following, offset: 0 };
-			} else {
-				destination = {
-					node: following ?? (cloned.get(parent) as number),
-					offset: 0,
-				};
-				while (true) {
-					const target = cloned.get(parent) as number;
-					for (const child of tree.get(parent).children.slice(offset))
-						tree.append(target, child);
-					if (parent === root.id) break;
-					const outer = tree.get(parent).parent as number;
-					offset = tree.get(outer).children.indexOf(parent) + 1;
-					tree.append(cloned.get(outer) as number, target);
-					parent = outer;
-				}
-				if (left !== undefined) {
-					for (const child of tree.get(root.id).children)
-						tree.append(left, child);
-					tree.append(root.id, left);
-					tree.append(root.id, right);
-				} else {
-					const outer = root.parent as number;
-					const siblings = tree.get(outer).children;
-					tree.insert(outer, right, siblings[siblings.indexOf(root.id) + 1]);
-				}
-			}
-			selected.setStart(destination.node, destination.offset);
-			selected.collapse(true);
+				selected.setStart(destination.node, destination.offset);
+				selected.collapse(true);
+			});
 		},
 	};
 }

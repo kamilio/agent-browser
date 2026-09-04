@@ -32,6 +32,7 @@ export function rangeError(name: string, message: string): never {
 export class DomRangeOwner {
 	readonly selection: DomSelection;
 	private readonly ranges = new Set<WeakRef<DomRange>>();
+	private rangeReferences = new WeakMap<DomRange, WeakRef<DomRange>>();
 	private readonly parents = new Map<number, number | null>();
 	private readonly children = new Map<number, number[]>();
 	private readonly unregisterMutation: () => void;
@@ -68,6 +69,24 @@ export class DomRangeOwner {
 		return new DomRange(this);
 	}
 
+	withTemporaryRange<Result>(
+		source: DomRange,
+		operation: (range: DomRange) => Result,
+	): Result {
+		this.ensureOpen();
+		if (!(source instanceof DomRange) || source.owner !== this)
+			rangeError("WrongDocumentError", "Range belongs to another owner");
+		const range = this.createRange();
+		try {
+			range.update(source.start, source.end);
+			return operation(range);
+		} finally {
+			const reference = this.rangeReferences.get(range);
+			if (reference) this.ranges.delete(reference);
+			this.rangeReferences.delete(range);
+		}
+	}
+
 	register(range: DomRange) {
 		this.ensureOpen();
 		if (this.ranges.size >= 4096) {
@@ -78,7 +97,9 @@ export class DomRangeOwner {
 					"DOM live range limit exceeded",
 				);
 		}
-		this.ranges.add(new WeakRef(range));
+		const reference = new WeakRef(range);
+		this.ranges.add(reference);
+		this.rangeReferences.set(range, reference);
 		this.track(this.tree.root);
 	}
 
@@ -204,6 +225,7 @@ export class DomRangeOwner {
 		this.unregisterClose();
 		this.selection.release();
 		this.ranges.clear();
+		this.rangeReferences = new WeakMap();
 		this.parents.clear();
 		this.children.clear();
 	}
@@ -555,7 +577,7 @@ export class DomRange {
 			);
 		const fragment = mode === "delete" ? undefined : tree.createFragment();
 		if (this.collapsed) return fragment;
-		let caret: DomRange | undefined;
+		let caretPoint: DomBoundaryPoint | undefined;
 		if (mode !== "clone") {
 			let point = this.start;
 			if (!this.owner.contains(this.start.node, this.end.node)) {
@@ -569,8 +591,7 @@ export class DomRange {
 					reference = tree.get(reference).parent as number;
 				point = this.adjacent(reference, true);
 			}
-			caret = this.owner.createRange();
-			caret.update(point, point);
+			caretPoint = point;
 		}
 		const apply = (plan: ContentPlan, parent?: number) => {
 			if (plan.whole) {
@@ -609,8 +630,16 @@ export class DomRange {
 			}
 			for (const child of plan.children ?? []) apply(child, container);
 		};
-		for (const plan of plans) apply(plan, fragment);
-		if (caret) this.update(caret.start, caret.start);
+		if (caretPoint) {
+			const point = caretPoint;
+			this.owner.withTemporaryRange(this, (caret) => {
+				caret.update(point, point);
+				for (const plan of plans) apply(plan, fragment);
+				this.update(caret.start, caret.start);
+			});
+		} else {
+			for (const plan of plans) apply(plan, fragment);
+		}
 		return fragment;
 	}
 }

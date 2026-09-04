@@ -1,5 +1,11 @@
 # Compatibility and playground acceptance ledger
 
+September 4 editing lifetime continuation: `EDITABLE-RANGE-LIFETIME.md` scopes
+private native Range registrations across replacement, paragraph insertion and
+content deletion/extraction, including failure paths. Public Range identity,
+detach semantics and the 4,096-live-Range limit remain unchanged. This improves
+native repeated-edit robustness without claiming GC/RSS or external/runtime gates.
+
 September 4 selection highlight continuation: `EDITABLE-SELECTION.md` adds bounded
 same-text focused editable backgrounds before source glyph paint. Native selection,
 canceled replacement, caret continuation, crops and fixed/root scroll have fresh

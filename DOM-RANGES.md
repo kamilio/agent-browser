@@ -53,6 +53,11 @@ original narrower validation results intact.
 
 ## Explicit limitations
 
+Current lifetime continuation: `EDITABLE-RANGE-LIFETIME.md` releases private
+synchronous collapse ranges used by native deletion/extraction and editing.
+Public ranges remain live and detach remains a no-op; the original quota is not
+raised and original checkpoint evidence is not rewritten.
+
 Current highlight continuation: `EDITABLE-SELECTION.md` paints bounded same-text
 editable selection and composes with native editing and terminal caret painting.
 This does not change Range ownership or close mixed-node/control, general visual

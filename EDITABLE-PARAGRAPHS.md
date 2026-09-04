@@ -1,5 +1,10 @@
 # Bounded native paragraph editing
 
+Lifetime continuation: EDITABLE-RANGE-LIFETIME.md now scopes the private native
+caret Range used during paragraph splitting, including exceptional cleanup.
+Original paragraph behavior, selected Range identity and checkpoint measurements
+below remain unchanged; full editing and external/runtime gates stay open.
+
 September 4, 2026 integration on `9376ba5`. This extends `EDITABLE-KEYBOARD.md`
 without changing the native engine or adding a page-runtime dependency.
 

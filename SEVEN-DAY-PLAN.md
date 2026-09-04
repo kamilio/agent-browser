@@ -7,6 +7,17 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+September 4 continuation: the user now requests work until explicitly stopped.
+The five-hour checkpoint below remains historical; the full browser objective and
+open gates are unchanged. Scoped native editing Range cleanup, mixed-node selection
+highlighting and exhausted-fetch-budget admission are the current work lanes.
+
+Scoped native Range cleanup now passes 11,016 explicit native tests / 327 isolated
+files; working validation retains fifteen pending failures with 12,147 passes
+/ 349 files. `EDITABLE-RANGE-LIFETIME.md` records deterministic baseline quota
+failures, exception cleanup and identical fresh native host captures. Full browser
+and external/runtime acceptance remain open.
+
 The September 4, 17:48 UTC native delivery assessment is in FIVE-HOUR-SPRINT.md.
 The tested source checkpoint is `6a29502`; all worker/review lanes are integrated
 and closed. Native progress does not replace the remaining seven-day outcome or
