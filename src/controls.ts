@@ -4,6 +4,7 @@ import { AgentBrowserError } from "./errors.js";
 import { validNumberValue } from "./input-number.js";
 import { inputType, sanitizeInputValue } from "./input-values.js";
 import { isFormAssociatedTag } from "./html-form-association.js";
+import { nearestSelect } from "./select-option-owner.js";
 
 export { inputType } from "./input-values.js";
 
@@ -176,16 +177,12 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 			index.controls.set(owner, controls);
 		}
 		if (node.tagName === "option") {
-			let ancestor = parent;
-			while (ancestor) {
-				if (ancestor.tagName === "select") {
-					const options = index.options.get(ancestor.id) ?? [];
-					options.push(node);
-					index.options.set(ancestor.id, options);
-					index.optionOwners.set(node.id, ancestor.id);
-					break;
-				}
-				ancestor = nodes.get(ancestor.parent ?? -1);
+			const owner = nearestSelect(node.parent, (id) => nodes.get(id));
+			if (owner !== undefined) {
+				const options = index.options.get(owner) ?? [];
+				options.push(node);
+				index.options.set(owner, options);
+				index.optionOwners.set(node.id, owner);
 			}
 		}
 		if (

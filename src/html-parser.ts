@@ -24,6 +24,7 @@ const voidTags = new Set([
 	"hr",
 	"img",
 	"input",
+	"keygen",
 	"link",
 	"meta",
 	"param",
@@ -1095,6 +1096,7 @@ function* parseHtmlSteps(
 						"applet",
 						"marquee",
 						"object",
+						"select",
 					].includes(name);
 				const closed = scoped
 					? bodyScope.close(
@@ -1108,22 +1110,24 @@ function* parseHtmlSteps(
 				if (!closed) issue("unmatched-end-tag");
 				continue;
 			}
-			if (position("select") >= 0) {
-				if (name === "select") {
-					pop("select");
-					issue("nested-select");
+			if (name === "select" || name === "input") {
+				const index = bodyScope.find("select");
+				if (fragment?.tagName === "select") {
+					issue(
+						name === "select"
+							? "nested-select"
+							: "ignored-control-in-select-fragment",
+					);
 					continue;
 				}
-				if (["input", "textarea", "keygen"].includes(name)) {
-					if (fragment && position("select") === 0) {
-						issue("ignored-control-in-select-fragment");
-						continue;
-					}
-					pop("select");
-					issue("select-closed-by-control");
-				} else if (!["option", "optgroup", "script"].includes(name)) {
-					issue("ignored-tag-in-select");
-					continue;
+				if (index > 0) {
+					stack.length = index;
+					lastText = undefined;
+					activeFormatting.sync();
+					issue(
+						name === "select" ? "nested-select" : "select-closed-by-control",
+					);
+					if (name === "select") continue;
 				}
 			}
 			if (name === "form" && form !== undefined && !inTemplate()) {
@@ -1160,11 +1164,20 @@ function* parseHtmlSteps(
 				)
 					issue("misnested-ruby-start");
 			}
-			if (name === "option" && current().tag === "option" && stack.length > 1)
-				stack.pop();
-			if (name === "optgroup") {
-				if (current().tag === "option" && stack.length > 1) stack.pop();
-				if (current().tag === "optgroup" && stack.length > 1) stack.pop();
+			if (["option", "optgroup", "hr"].includes(name)) {
+				if (bodyScope.find("select") > 0) {
+					bodyScope.imply(name === "option" ? "optgroup" : undefined);
+					if (
+						bodyScope.find("option") > 0 ||
+						(name !== "option" && bodyScope.find("optgroup") > 0)
+					)
+						issue(`misnested-${name}-in-select`);
+				} else if (
+					name !== "hr" &&
+					current().tag === "option" &&
+					stack.length > 1
+				)
+					stack.pop();
 			}
 			activeFormatting.sync();
 			if (name === "a") {
@@ -1204,8 +1217,7 @@ function* parseHtmlSteps(
 					"rp",
 					"rt",
 				].includes(name) &&
-				!(name === "noscript" && scripting) &&
-				position("select") < 0
+				!(name === "noscript" && scripting)
 			)
 				activeFormatting.reconstruct(true);
 			if (name === "nobr") {

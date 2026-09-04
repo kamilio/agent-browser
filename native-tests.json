@@ -101,6 +101,7 @@
   "src/html-head.test.ts",
   "src/html-scaffold.test.ts",
   "src/html-eof.test.ts",
+  "src/modern-select.test.ts",
   "src/parser-forms.test.ts",
   "src/html-insertion.test.ts",
   "src/html-numeric-references.test.ts",

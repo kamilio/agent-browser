@@ -19,6 +19,24 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Modern-select checkpoint: `MODERN-SELECT.md` removes legacy select-only filtering
+and select-in-table dispatch, preserving supported rich descendants through the
+shared parser. Scope, implied ends, formatting and the input exception retain
+distinct handling; keygen uses void insertion. Shared nearest-select ownership
+excludes invalid datalist/hr/option and repeated-optgroup ancestor chains from
+collections and native selection, including moves and cloning. Three initial
+regressions fail before integration; 45 new tests and 324 focused checks across
+nine files pass. Full native validation passes 8,797 / 243 files; the isolated
+owned patch passes 6,037 / 182 available files. Types, builds and six-file lint
+pass in both trees, preserving pending work. Next address select-button inertness
+and selectedcontent behavior; keeping their nodes is not customizable picker,
+rendering or interaction support. Foreign content, framesets, quirks layout and
+cross-owner observer/runtime breadth remain open. No gated probe ran; the denied
+SafeJS probe remains unrun, independent acceptance gates remain open and the
+seven-day goal stays active.
+
+### Previous EOF checkpoint
+
 EOF checkpoint: `HTML-EOF.md` records bounded open-element diagnostics, actual
 template-frame unwinding, text-mode EOF and literal tag-opener recovery. Optional
 ends, virtual fragment roots and after-body EOF paths avoid false positives;

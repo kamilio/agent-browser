@@ -465,6 +465,20 @@ quirks layout and cross-owner observer/runtime breadth remain unfinished. No
 gated probe ran; the denied SafeJS probe remains unrun and independent acceptance
 gates remain open.
 
+September 4 modern-select checkpoint: `MODERN-SELECT.md` records shared body/table
+parsing for supported rich select descendants, scoped closure, implied ends and
+the retained input exception. Native collections and selectedness share bounded
+nearest-select ownership, excluding invalid ancestor chains through moves and
+clones. Three initial regressions fail before integration; 45 new tests and 324
+focused checks across nine files pass. Full native validation passes
+8,797 / 243 files; the isolated owned patch passes 6,037 / 182 available files.
+Types, builds and six-file lint pass in both trees, preserving pending work.
+Continue with select-button inertness and selectedcontent behavior; node retention
+is not picker, rendering or interaction parity. Foreign content, framesets,
+quirks layout and cross-owner observer/runtime breadth remain unfinished. No
+gated probe ran; the denied SafeJS probe remains unrun and independent acceptance
+gates remain open.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

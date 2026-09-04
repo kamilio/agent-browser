@@ -10,8 +10,7 @@ type Mode =
 	| "row"
 	| "cell"
 	| "caption"
-	| "colgroup"
-	| "select";
+	| "colgroup";
 interface Context {
 	mode: Mode;
 	index: number;
@@ -98,11 +97,9 @@ export class HtmlTables {
 									? "caption"
 									: tag === "colgroup"
 										? "colgroup"
-										: tag === "select"
-											? "select"
-											: virtual
-												? "body"
-												: undefined;
+										: virtual
+											? "body"
+											: undefined;
 			if (mode) return { mode, index, virtual };
 		}
 		return { mode: "body", index: 0, virtual: true };
@@ -139,7 +136,7 @@ export class HtmlTables {
 				this.nonWhitespace ||= /[^\t\n\f\r ]/.test(data);
 				return;
 			}
-			this.options.emit(data, table, context.mode !== "select");
+			this.options.emit(data, table, true);
 			return;
 		}
 	}
@@ -171,20 +168,6 @@ export class HtmlTables {
 		for (let attempt = 0; attempt < 32; attempt++) {
 			this.visit();
 			const context = this.context();
-			if (context.mode === "select") {
-				if (
-					(name === "table" || structure.has(name)) &&
-					this.tableBefore(context.index)
-				) {
-					if (!start && this.find(name) < 0)
-						return this.ignore("ignored-table-end-in-select");
-					if (!this.close(context))
-						return this.ignore("ignored-table-tag-in-select-context");
-					this.options.issue("select-closed-by-table-token");
-					continue;
-				}
-				return { handled: false, foster: false };
-			}
 			if (context.mode === "body") {
 				if (start && structure.has(name))
 					return this.ignore("table-tag-outside-table");
@@ -339,18 +322,6 @@ export class HtmlTables {
 		);
 	}
 
-	private tableBefore(index: number) {
-		const stack = this.options.stack();
-		for (let cursor = index - 1; cursor >= 0; cursor--) {
-			this.visit();
-			if (stack[cursor].tag === "table") return true;
-			if (stack[cursor].tag === "template")
-				return ["table", "tbody", "tr", "colgroup"].includes(
-					this.options.template()?.mode ?? "",
-				);
-		}
-		return false;
-	}
 	private tableContext(fallback: Context): Context {
 		const index = this.find("table");
 		return index >= 0

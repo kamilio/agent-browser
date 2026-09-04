@@ -1,5 +1,6 @@
 import type { DocumentNode } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { nearestSelect } from "./select-option-owner.js";
 
 interface SelectionNode extends Omit<DocumentNode, "control"> {
 	control: { selected?: boolean };
@@ -118,20 +119,17 @@ export class DocumentSelection {
 				if (!internal.has(previous)) affected.add(previous);
 			}
 			this.owners.delete(option.id);
-			let parent =
-				option.parent === null ? undefined : this.node(option.parent);
-			while (parent && parent.tagName !== "select")
-				parent = parent.parent === null ? undefined : this.node(parent.parent);
-			if (!parent) continue;
-			this.owners.set(option.id, parent.id);
-			this.updateEligibility(option, parent.id);
-			const selected = this.selected.get(parent.id) ?? new Set<number>();
+			const owner = nearestSelect(option.parent, this.node);
+			if (owner === undefined) continue;
+			this.owners.set(option.id, owner);
+			this.updateEligibility(option, owner);
+			const selected = this.selected.get(owner) ?? new Set<number>();
 			if (option.control.selected) {
 				selected.add(option.id);
-				preferred.set(parent.id, option.id);
+				preferred.set(owner, option.id);
 			}
-			this.selected.set(parent.id, selected);
-			if (!internal.has(parent.id)) affected.add(parent.id);
+			this.selected.set(owner, selected);
+			if (!internal.has(owner)) affected.add(owner);
 		}
 		for (const owner of affected) this.reset(owner, preferred.get(owner));
 	}
