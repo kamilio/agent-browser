@@ -1,10 +1,12 @@
 import type { DocumentTree } from "./document.js";
+import type { DocumentMode } from "./document-mode.js";
 
 export interface HtmlParseInfo {
 	parser: "independent-html-subset";
 	partial: true;
 	scripting: boolean;
 	encoding?: string;
+	mode?: DocumentMode;
 	issues: Readonly<Record<string, number>>;
 }
 

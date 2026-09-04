@@ -4,6 +4,12 @@ import { htmlAttributeEntries } from "./html-attributes.js";
 import { decodeHtmlEntities } from "./html-entities.js";
 import { setHtmlParseInfo } from "./html-info.js";
 import { HtmlTokenizer } from "./html-tokenizer.js";
+import {
+	doctypeMode,
+	documentMode,
+	setDocumentMode,
+	type DocumentMode,
+} from "./document-mode.js";
 
 const voidTags = new Set([
 	"area",
@@ -394,7 +400,16 @@ function* parseHtmlSteps(
 			fragment?.hasFormAncestor || fragment?.tagName === "form"
 				? -1
 				: undefined;
-		let doctype = !!fragment;
+		let initial = !fragment && !fragmentDocument;
+		const setMode = (value: DocumentMode) => {
+			setDocumentMode(tree, value);
+			if (value !== "no-quirks") issue(`${value}-layout-not-implemented`);
+		};
+		const missingDoctype = () => {
+			initial = false;
+			issue("missing-doctype");
+			setMode("quirks");
+		};
 		let tokens = 0;
 		let stripNewline = false;
 		let lastText: { id: number; parent: number; before?: number } | undefined;
@@ -522,11 +537,37 @@ function* parseHtmlSteps(
 			}
 			if (!token) break;
 			if (token.kind === "doctype") {
-				if (doctype || mode !== "before") issue("misplaced-doctype");
-				doctype = true;
-				if (!/^html$/i.test(token.data)) issue("doctype-mode-not-implemented");
+				if (!initial) {
+					issue("misplaced-doctype");
+					continue;
+				}
+				initial = false;
+				if (
+					token.name !== "html" ||
+					token.publicId !== null ||
+					(token.systemId !== null && token.systemId !== "about:legacy-compat")
+				)
+					issue("nonconforming-doctype");
+				const doctype = tree.createDocumentType(
+					token.name ?? "",
+					token.publicId ?? "",
+					token.systemId ?? "",
+				);
+				if (
+					!tree
+						.get(tree.root)
+						.children.some((child) => tree.get(child).kind === "doctype")
+				)
+					tree.insert(tree.root, doctype, html);
+				setMode(doctypeMode(token));
 				continue;
 			}
+			if (
+				initial &&
+				token.kind !== "comment" &&
+				(token.kind !== "text" || /[^\t\n\f\r ]/.test(token.data))
+			)
+				missingDoctype();
 			if (token.kind === "comment") {
 				const comment = tree.createComment(token.data);
 				if (mode === "before" && fragmentDocument)
@@ -820,11 +861,12 @@ function* parseHtmlSteps(
 			} else if (name === "pre" || name === "listing") stripNewline = true;
 		}
 		if (!bodyStarted) tree.append(html, body);
-		if (!doctype) issue("missing-doctype-quirks-not-implemented");
+		if (initial) missingDoctype();
 		setHtmlParseInfo(tree, {
 			parser: "independent-html-subset",
 			partial: true,
 			scripting,
+			mode: documentMode(tree),
 			issues,
 		});
 		return tree;

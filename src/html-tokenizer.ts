@@ -2,11 +2,12 @@ import { AgentBrowserError } from "./errors.js";
 import { htmlAttributeName } from "./html-attribute-name.js";
 import { createHtmlAttributes, setHtmlAttribute } from "./html-attributes.js";
 import { decodeHtmlEntities } from "./html-entities.js";
+import { readHtmlDoctype, type HtmlDoctypeToken } from "./html-doctype.js";
 
 export type HtmlToken =
 	| { kind: "text"; data: string }
 	| { kind: "comment"; data: string }
-	| { kind: "doctype"; data: string }
+	| HtmlDoctypeToken
 	| {
 			kind: "start" | "end";
 			name: string;
@@ -149,14 +150,12 @@ export class HtmlTokenizer {
 		if (this.source.startsWith("<!--", this.offset)) {
 			return this.comment();
 		}
-		if (
-			/^<!doctype(?:[\t\n\f\r >]|$)/i.test(
-				this.source.slice(this.offset, this.offset + 11),
-			)
-		) {
+		if (/^<!doctype/i.test(this.source.slice(this.offset, this.offset + 9))) {
 			this.offset += 9;
-			const data = this.declaration();
-			return { kind: "doctype", data: data.trim() };
+			const result = readHtmlDoctype(this.source, this.offset, this.issue);
+			this.offset = result.position;
+			if (!result.terminated && this.boundary !== undefined) throw needInput;
+			return result.token;
 		}
 		if (this.source[this.offset + 1] === "!") {
 			this.issue("bogus-declaration");

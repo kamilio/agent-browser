@@ -19,6 +19,21 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Parsed-doctype checkpoint: `PARSED-DOCTYPES.md` replaces raw declaration tokens
+with structured name/identifier/force-quirks data, preserves the accepted initial
+DocumentType and records no-quirks/quirks/limited-quirks mode decisions. ScriptDom
+exposes compatMode; this is not quirks rendering or selector conformance, and
+unsupported-layout diagnostics remain explicit. Three initial regressions fail
+before integration; 90 new tests and 391 focused checks across eleven files pass.
+Full native validation passes 8,152 / 230 files; the isolated owned patch passes
+5,392 / 169 available files. Types, builds and nine-file lint pass in both trees,
+with pre-existing pending work preserved. Next implement the actual template
+content-document/parser model and track broader quirks behavior separately. No
+gated probe ran; the denied SafeJS probe remains unrun, existing independent
+acceptance gates remain open and the seven-day goal stays active.
+
+### Previous inert-document checkpoint
+
 Inert HTML document checkpoint: `HTML-DOCUMENTS.md` adds owned
 `document.implementation.createHTMLDocument`, exact optional-title skeletons,
 inherited origin identity, unrendered defaults, isolated page bindings and shared

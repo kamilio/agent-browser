@@ -200,7 +200,8 @@ it("decodes standard names while recording unknown names and parser limitations 
 	);
 	expect(htmlParseInfo(tree)?.issues).toMatchObject({
 		"unresolved-named-reference": 1,
-		"missing-doctype-quirks-not-implemented": 1,
+		"missing-doctype": 1,
+		"quirks-layout-not-implemented": 1,
 		"formatting-reconstruction-not-implemented": 1,
 	});
 	expect(renderSnapshot(snapshotDocument(tree))).toContain(

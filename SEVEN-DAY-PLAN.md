@@ -331,6 +331,13 @@ inert defaults and keeps page storage/navigation/event dispatchers isolated.
 Continue with parsed doctype/compatibility-mode and actual template ownership
 work; native creation tests do not close the runtime, site or terminal gates.
 
+September 4 parsed-doctype continuation: `PARSED-DOCTYPES.md` adds structured
+doctype recovery, initial-document retention and explicit compatibility-mode
+classification. Stream boundaries preserve atomic tokens/diagnostics, while
+quirks/limited-quirks rendering remains explicitly unsupported. Continue with
+template content ownership and real insertion modes, retaining the independent
+runtime, site, terminal and broader compatibility gates.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

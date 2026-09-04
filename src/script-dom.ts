@@ -4,6 +4,7 @@ import {
 	htmlDocumentContext,
 } from "./html-document-family.js";
 import { DocumentEvents } from "./events.js";
+import { documentMode } from "./document-mode.js";
 import type { ObservedDocumentMutation } from "./document-observers.js";
 import { ScriptMutationRecords } from "./script-mutation-records.js";
 import { ScriptMutationObservers } from "./script-mutation-observers.js";
@@ -416,6 +417,14 @@ export class ScriptDom {
 			};
 		}
 		if (initial.kind === "document") {
+			definition.properties.compatMode = {
+				get: () => {
+					this.read(id);
+					return documentMode(this.tree) === "quirks"
+						? "BackCompat"
+						: "CSS1Compat";
+				},
+			};
 			definition.properties.implementation = {
 				get: () => this.documentImplementation(),
 			};
