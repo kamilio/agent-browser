@@ -7,6 +7,11 @@ import {
 } from "./css-background.js";
 import { normalizeCssColor } from "./css-color.js";
 import {
+	cssListProperties,
+	isCssListProperty,
+	parseListValue,
+} from "./css-list.js";
+import {
 	cssInteractionProperties,
 	isCssInteractionProperty,
 	parseInteractionValue,
@@ -87,6 +92,7 @@ const lengths = new Set([
 	...sides.map((side) => `padding-${side}`),
 ]);
 export const inlineProperties = [
+	...cssListProperties,
 	...cssInteractionProperties,
 	...cssFlexProperties,
 	"flex",
@@ -206,6 +212,7 @@ function normalize(name: string, source: string): string | undefined {
 	if (isNeutralBackgroundProperty(name))
 		return parseBackgroundComponent(name, value);
 	if (isCssInteractionProperty(name)) return parseInteractionValue(value);
+	if (isCssListProperty(name)) return parseListValue(name, value);
 	if (isCssTextProperty(name)) return parseTextValue(name, value);
 	if (keywords[name]?.includes(value)) return value;
 	if (

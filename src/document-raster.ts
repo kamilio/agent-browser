@@ -14,6 +14,7 @@ import { AgentBrowserError } from "./errors.js";
 import { layoutNumber } from "./layout-values.js";
 import { layoutContentItems } from "./layout-paint-order.js";
 import { rasterizeControl } from "./control-rendering.js";
+import { rasterizeDisclosureMarker } from "./disclosure-marker.js";
 import { paintSolidBorders } from "./border-raster.js";
 import {
 	type RasterImage,
@@ -57,8 +58,10 @@ export interface DocumentRaster {
 		inlineFragments: number;
 		paintedImages: number;
 		paintedControls: number;
+		paintedMarkers: number;
 		borderPixels: number;
 		clippedControls: number;
+		clippedMarkers: number;
 		clippedImages: number;
 	}>;
 }
@@ -209,8 +212,10 @@ function paintDocumentLayout(
 		inlineFragments: 0,
 		paintedImages: 0,
 		paintedControls: 0,
+		paintedMarkers: 0,
 		borderPixels: 0,
 		clippedControls: 0,
+		clippedMarkers: 0,
 		clippedImages: 0,
 	};
 	const charge = (units = 1) => {
@@ -380,10 +385,11 @@ function paintDocumentLayout(
 		const used = images.get(id);
 		const node = nodes[id];
 		if (!used || !node.visible) return;
-		const source = node.control
-			? undefined
-			: documentImages(tree).decoded(tree.resolve(used.ref).id);
-		if (!source && !node.control)
+		const source =
+			node.control || node.marker
+				? undefined
+				: documentImages(tree).decoded(tree.resolve(used.ref).id);
+		if (!source && !node.control && !node.marker)
 			throw new AgentBrowserError(
 				"unsupported",
 				"Image resource is no longer available for painting",
@@ -417,28 +423,38 @@ function paintDocumentLayout(
 			used.contentWidth === 0 ||
 			used.contentHeight === 0
 		) {
-			if (node.control) metrics.clippedControls++;
+			if (node.marker) metrics.clippedMarkers++;
+			else if (node.control) metrics.clippedControls++;
 			else metrics.clippedImages++;
 			return;
 		}
 		charge(Math.ceil(right - left + 1) * Math.ceil(bottom - top + 1) * 4);
 		paintRasterImage(
 			image,
-			node.control
-				? rasterizeControl(
-						node.control,
+			node.marker
+				? rasterizeDisclosureMarker(
+						node.marker,
 						used.contentWidth,
 						used.contentHeight,
-						node.paint ?? initialPaintStyle,
+						(node.paint ?? initialPaintStyle).color,
 						charge,
 					)
-				: (source as NonNullable<typeof source>).image,
+				: node.control
+					? rasterizeControl(
+							node.control,
+							used.contentWidth,
+							used.contentHeight,
+							node.paint ?? initialPaintStyle,
+							charge,
+						)
+					: (source as NonNullable<typeof source>).image,
 			originX,
 			originY,
 			used.contentWidth,
 			used.contentHeight,
 		);
-		if (node.control) metrics.paintedControls++;
+		if (node.marker) metrics.paintedMarkers++;
+		else if (node.control) metrics.paintedControls++;
 		else metrics.paintedImages++;
 	};
 	for (const item of layoutContentItems(layout, charge)) {

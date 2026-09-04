@@ -1,5 +1,11 @@
 import { parseBackgroundShorthand } from "./css-background.js";
 import {
+	cssListProperties,
+	isCssListProperty,
+	parseListValue,
+	type CssListProperty,
+} from "./css-list.js";
+import {
 	cssInteractionProperties,
 	isCssInteractionProperty,
 	parseInteractionValue,
@@ -60,6 +66,7 @@ export type CssProperty =
 	| CssFlowProperty
 	| CssFlexProperty
 	| CssInteractionProperty
+	| CssListProperty
 	| `--${string}`;
 export interface CssDeclaration {
 	property: CssProperty;
@@ -242,6 +249,7 @@ export function parseCssDeclarations(
 			!isCssTextProperty(property) &&
 			!isCssPaintProperty(property) &&
 			!isCssInteractionProperty(property) &&
+			!isCssListProperty(property) &&
 			!isCssFlowProperty(property) &&
 			property !== "overflow" &&
 			!isCssFlexProperty(property) &&
@@ -274,6 +282,11 @@ export function parseCssDeclarations(
 		}
 		if (property === "all" && globals.has(value)) {
 			declarations.push(
+				...cssListProperties.map((property) => ({
+					property,
+					value,
+					important,
+				})),
 				{ property: "display", value, important },
 				{ property: "visibility", value, important },
 				...cssInteractionProperties.map((property) => ({
@@ -303,6 +316,13 @@ export function parseCssDeclarations(
 					important,
 				})),
 			);
+			continue;
+		}
+		if (isCssListProperty(property)) {
+			const normalized = parseListValue(property, value);
+			if (normalized !== undefined)
+				declarations.push({ property, value: normalized, important });
+			else issue("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssInteractionProperty(property)) {

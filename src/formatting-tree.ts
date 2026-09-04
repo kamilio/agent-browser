@@ -1,6 +1,6 @@
 import { type BlockWidth, resolveBlockWidth } from "./block-width.js";
 import { type BoxStyle, initialBoxStyle } from "./css-box.js";
-import type { PaintStyle } from "./css-paint.js";
+import { initialPaintStyle, type PaintStyle } from "./css-paint.js";
 import type { TextStyle } from "./css-text.js";
 import type { DocumentTree } from "./document.js";
 import { documentImages } from "./document-images.js";
@@ -13,6 +13,9 @@ import { AgentBrowserError } from "./errors.js";
 import { layoutNumber } from "./layout-values.js";
 import { documentStyles } from "./styles.js";
 import { describeControl, type SoftwareControl } from "./control-rendering.js";
+import { summaryDetails } from "./details.js";
+import type { DisclosureMarker } from "./disclosure-marker.js";
+import { bitmapFont } from "./bitmap-font.js";
 import { resolveBorders } from "./border-box.js";
 import { isFlexDisplay, initialFlexStyle, type FlexStyle } from "./css-flex.js";
 import type { AtomicInlineMetrics } from "./inline-atomic.js";
@@ -71,6 +74,7 @@ export interface FormattingNode {
 	deferredReason?: string;
 	intrinsic?: Readonly<{ width: number; height: number }>;
 	control?: SoftwareControl;
+	marker?: DisclosureMarker;
 }
 interface MutableFormattingNode extends Omit<FormattingNode, "children"> {
 	children: number[];
@@ -429,12 +433,11 @@ export function buildFormattingTree(
 			});
 			return [result];
 		}
-		const block = [
-			"block",
-			"block flow",
-			"flow-root",
-			"block flow-root",
-		].includes(display);
+		const markedSummary =
+			display === "list-item" && summaryDetails(tree, node) !== undefined;
+		const block =
+			markedSummary ||
+			["block", "block flow", "flow-root", "block flow-root"].includes(display);
 		const inline = ["inline", "inline flow"].includes(display);
 		const atomicBlock = ["inline-block", "inline flow-root"].includes(display);
 		if (
@@ -562,7 +565,48 @@ export function buildFormattingTree(
 					atomicBlock || id === rootElement || display.includes("flow-root"),
 				...itemFields,
 			});
-			normalizeChildren(result, children());
+			const contents = children();
+			if (markedSummary) {
+				const list = styles.list(id);
+				const typography = styles.text(id);
+				const fontSize = Number.parseFloat(typography["font-size"]);
+				if (list["list-style-type"] !== "none" && fontSize > 0) {
+					if (
+						list["list-style-position"] === "outside" &&
+						contents.some((child) => nodes[child].level === "block")
+					)
+						throw new AgentBrowserError(
+							"unsupported",
+							"Outside disclosure markers with block content are not implemented",
+						);
+					contents.unshift(
+						create({
+							kind: "replaced",
+							level: "inline",
+							ref,
+							visible: visibility.visible,
+							typography,
+							marker: Object.freeze({ type: list["list-style-type"] }),
+							box: Object.freeze({
+								...initialBoxStyle,
+								"margin-left":
+									list["list-style-position"] === "outside"
+										? `${-fontSize}px`
+										: "0px",
+							}),
+							paint: Object.freeze({
+								...initialPaintStyle,
+								color: styles.paint(id).color,
+							}),
+							intrinsic: Object.freeze({
+								width: fontSize,
+								height: (fontSize * bitmapFont.ascent) / bitmapFont.unitsPerEm,
+							}),
+						}),
+					);
+				}
+			}
+			normalizeChildren(result, contents);
 			return [result];
 		}
 		const result: number[] = [];

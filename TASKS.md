@@ -19,6 +19,25 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Disclosure-marker checkpoint: `DISCLOSURE-MARKERS.md` adds generated primary
+summary markers through native formatting, hit testing and raster paths, without
+fake DOM children or extra client rectangles. Two list-style longhands support
+six marker types, inheritance/cascade and live CSSOM. Outside inline placement
+is supported; outside block content fails explicitly. The 28 new cases produce
+27 failures and one pass on isolated prior HEAD. Matching focused runs pass
+258 / eight working files and 257 / eight isolated files; types/builds, strict
+new-test checking and eleven-file lint pass in both. A native PNG contact sheet
+was visually inspected, not a reference-browser screenshot. Authorized full
+native runs pass 10,286 / 282 working files and 9,140 / 260 isolated files.
+Continue missing-summary fallback and remaining
+event interfaces. General lists/counters, full marker styling/placement,
+UA/shadow/accessibility, released-runtime and original acceptance gates remain
+open. No gated probe ran; the denied SafeJS probe remains unrun. Historical
+evidence and unrelated pending work remain separate; the seven-day objective
+stays active.
+
+### Previous named-disclosure checkpoint
+
 Named-disclosure checkpoint: `DETAILS-GROUPS.md` implements exact nonempty-name
 exclusivity across opening, renaming, parser/subtree insertion, detached/template
 roots, replacement, clone/import and native property reflection. Automatic

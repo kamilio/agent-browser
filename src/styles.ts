@@ -66,6 +66,13 @@ import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { closedDetailsChild } from "./details.js";
+import { summaryDetails } from "./details.js";
+import {
+	cssListProperties,
+	computeListStyle,
+	initialListStyle,
+	type ListStyle,
+} from "./css-list.js";
 import {
 	cssVariableLimits,
 	parseVariableValue,
@@ -148,7 +155,10 @@ const hiddenTags = new Set([
 ]);
 const instances = new WeakMap<DocumentTree, DocumentStyles>();
 
-function userAgentDisplay(node: Readonly<DocumentNode>) {
+function userAgentDisplay(
+	node: Readonly<DocumentNode>,
+	primarySummary = false,
+) {
 	if (
 		hiddenTags.has(node.tagName) ||
 		Object.hasOwn(node.attributes, "hidden") ||
@@ -157,6 +167,7 @@ function userAgentDisplay(node: Readonly<DocumentNode>) {
 	)
 		return "none";
 	if (node.tagName === "li") return "list-item";
+	if (primarySummary) return "list-item";
 	if (["input", "button", "textarea", "select"].includes(node.tagName))
 		return "inline-block";
 	if (node.tagName === "table") return "table";
@@ -196,6 +207,7 @@ export class DocumentStyles {
 	private flexComputed = new Map<number, FlexStyle>();
 	private flowComputed = new Map<number, FlowStyle>();
 	private pointerEventsNone = new Set<number>();
+	private listComputed = new Map<number, ListStyle>();
 	private textSpecified = new Map<number, TextSpecifiedStyle>();
 	private textComputed = new Map<number, TextStyle>();
 	private paintSpecified = new Map<number, PaintSpecifiedStyle>();
@@ -334,6 +346,11 @@ export class DocumentStyles {
 	pointerEvents(id: number): PointerEventsStyle {
 		this.get(id);
 		return this.pointerEventsNone.has(id) ? "none" : "auto";
+	}
+
+	list(id: number): ListStyle {
+		this.get(id);
+		return this.listComputed.get(id) ?? initialListStyle;
 	}
 
 	flex(id: number): FlexStyle {
@@ -521,6 +538,7 @@ export class DocumentStyles {
 			flexProperties: cssFlexProperties,
 			flowProperties: cssFlowProperties,
 			interactionProperties: cssInteractionProperties,
+			listProperties: cssListProperties,
 			textProperties: cssTextProperties,
 			textFont: "Agent Mono",
 			paintProperties: cssPaintProperties,
@@ -546,6 +564,7 @@ export class DocumentStyles {
 		this.flexComputed.clear();
 		this.flowComputed.clear();
 		this.pointerEventsNone.clear();
+		this.listComputed.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
 		this.paintSpecified.clear();
@@ -590,6 +609,7 @@ export class DocumentStyles {
 		this.flexComputed.clear();
 		this.flowComputed.clear();
 		this.pointerEventsNone.clear();
+		this.listComputed.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
 		this.paintSpecified.clear();
@@ -878,16 +898,46 @@ export class DocumentStyles {
 		const boxParentDisplay = new Map<number, string>();
 		const flowComputed = new Map<number, FlowStyle>();
 		const pointerEventsNone = new Set<number>();
+		const listComputed = new Map<number, ListStyle>();
 		for (const node of nodes) {
 			charge(1);
 			const parent =
 				node.parent === null ? undefined : computed.get(node.parent);
 			const properties = winners.get(node.id);
+			const details = summaryDetails(this.tree, node);
+			charge(cssListProperties.length);
+			listComputed.set(
+				node.id,
+				computeListStyle(
+					{
+						"list-style-type":
+							properties?.get("list-style-type")?.declaration.value,
+						"list-style-position": properties?.get("list-style-position")
+							?.declaration.value,
+					},
+					node.parent === null
+						? initialListStyle
+						: (listComputed.get(node.parent) ?? initialListStyle),
+					details === undefined
+						? {}
+						: {
+								"list-style-type": Object.hasOwn(
+									this.tree.get(details).attributes,
+									"open",
+								)
+									? "disclosure-open"
+									: "disclosure-closed",
+								"list-style-position": "inside",
+							},
+				),
+			);
 			let display =
-				properties?.get("display")?.declaration.value ?? userAgentDisplay(node);
+				properties?.get("display")?.declaration.value ??
+				userAgentDisplay(node, details !== undefined);
 			if (display === "inherit") display = parent?.display ?? "inline";
 			else if (display === "initial" || display === "unset") display = "inline";
-			else if (display === "revert") display = userAgentDisplay(node);
+			else if (display === "revert")
+				display = userAgentDisplay(node, details !== undefined);
 			if (
 				node.tagName === "input" &&
 				node.attributes.type?.toLowerCase() === "hidden"
@@ -948,6 +998,7 @@ export class DocumentStyles {
 		this.flexSpecified = flexSpecified;
 		this.flowComputed = flowComputed;
 		this.pointerEventsNone = pointerEventsNone;
+		this.listComputed = listComputed;
 		this.textSpecified = textSpecified;
 		this.paintSpecified = paintSpecified;
 		this.customComputed = customComputed;

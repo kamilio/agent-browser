@@ -150,6 +150,10 @@ export class LayoutGeometry {
 				charge();
 				if (fragment.atomic) continue;
 				if (
+					layout.text.horizontal.formatting.nodes[fragment.formattingId].marker
+				)
+					continue;
+				if (
 					includeUsedStyles &&
 					fragment.ref &&
 					!this.usedStyles.has(fragment.ref)

@@ -1046,6 +1046,23 @@ open. No gated probe ran; the denied SafeJS probe remains unrun. Historical
 evidence and unrelated pending work stay separate; the complete seven-day browser
 objective remains active.
 
+September 4 generated-marker continuation: `DISCLOSURE-MARKERS.md` adds native
+primary-summary markers, list-style longhands and shared formatting/raster/hit
+ownership without fake DOM children or extra client rectangles. Inside content
+and outside inline placement are covered; outside block placement explicitly
+remains unsupported. The 28 new cases produce 27 failures and one pass on
+isolated prior HEAD. Matching focused runs pass 258 / eight working files and
+257 / eight isolated files; types/builds, strict new-test checking and eleven-file
+lint pass in both. A native PNG contact sheet was visually inspected; this is
+not reference-browser evidence. Authorized full native runs pass 10,286 / 282
+working files and 9,140 / 260 isolated files.
+Continue missing-summary fallback and remaining event interfaces. General
+lists/counters, full marker styling/placement, UA/shadow/accessibility,
+released-runtime and original browser acceptance gates remain open. No gated
+probe ran; the denied SafeJS probe remains unrun. Historical evidence and
+unrelated pending work remain separate; the complete seven-day objective stays
+active.
+
 ## Execution-control note
 
 On September 3 the existing goal tracker still reported `blocked`; attempting to

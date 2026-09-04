@@ -100,6 +100,7 @@
   "src/details-core.test.ts",
   "src/details-toggle.test.ts",
   "src/details-groups.test.ts",
+  "src/disclosure-markers.test.ts",
   "src/font-relative-box.test.ts",
   "src/form-actions.test.ts",
   "src/form-defaults.test.ts",

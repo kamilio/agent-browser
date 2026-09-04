@@ -1,5 +1,13 @@
 # Compatibility and playground acceptance ledger
 
+September 4 marker continuation: `DISCLOSURE-MARKERS.md` adds generated native
+primary-summary markers, six list-style types and inside/outside-inline
+placement, sharing authored summary hit targets without extra DOM nodes or
+geometry. Outside block placement explicitly remains unsupported. Native tests
+and an inspected native PNG do not close missing-summary fallback, general
+lists/counters, full marker styling/UA/shadow/accessibility or browser/runtime
+acceptance gates.
+
 September 4 named-disclosure continuation: `DETAILS-GROUPS.md` adds exact-name
 exclusivity for native opening, rename and insertion/replacement paths, with
 detached/template root separation and paired notification preflight. Native
