@@ -21,6 +21,10 @@ import {
 	parseNetworkUrl,
 } from "./network.js";
 import {
+	type PageAbortSignal,
+	PageAbortSignals,
+} from "./page-abort-signals.js";
+import {
 	type ResponseAccountingLease,
 	ResponseByteAccounting,
 } from "./response-byte-accounting.js";
@@ -157,9 +161,20 @@ interface ResponseMetadata {
 }
 interface BodyRecord {
 	bytes: Uint8Array | null;
+	hasBody: boolean;
+	aborted: boolean;
+	abortReason?: unknown;
+	group: FetchCancellation;
 	used: boolean;
 	ready: boolean;
 	revoked: boolean;
+}
+
+interface FetchCancellation {
+	controller?: AbortController;
+	pending: boolean;
+	bodies: Set<BodyRecord>;
+	unsubscribe: () => void;
 }
 
 function settleProviderOutcome(
@@ -212,6 +227,7 @@ export class PageFetch {
 			limits?: Partial<PageFetchLimits>;
 			csp?: boolean;
 			preflightClock?: () => number;
+			signals?: PageAbortSignals;
 		} = {},
 	) {
 		if (
@@ -221,6 +237,15 @@ export class PageFetch {
 			throw new AgentBrowserError(
 				"invalid-input",
 				"Invalid page fetch provider",
+			);
+		if (
+			options.signals !== undefined &&
+			(!(options.signals instanceof PageAbortSignals) ||
+				!options.signals.isFor(tree))
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Fetch signals belong to another document",
 			);
 		const limits = { ...defaults, ...options.limits };
 		for (const [name, maximum] of Object.entries(defaults)) {
@@ -343,11 +368,15 @@ export class PageFetch {
 					"unsupported",
 					`Fetch option ${name.slice(0, 64)} is not implemented`,
 				);
-		if (values.signal != null)
-			throw new AgentBrowserError(
-				"unsupported",
-				"Guest fetch AbortSignal is not implemented",
-			);
+		let signal: PageAbortSignal | undefined;
+		if (values.signal != null) {
+			if (!this.options.signals)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Guest fetch AbortSignal is not implemented",
+				);
+			signal = this.options.signals.resolve(values.signal);
+		}
 		if (
 			(values.mode !== undefined &&
 				!["same-origin", "cors"].includes(values.mode as string)) ||
@@ -403,6 +432,7 @@ export class PageFetch {
 		if (typeof body === "string" && !Object.hasOwn(headers, "content-type"))
 			headers["content-type"] = "text/plain;charset=UTF-8";
 		let url = this.target(input, documentBaseUrl(this.tree));
+		if (signal?.aborted) throw signal.reason;
 		const credentialMode = credentials as FetchCredentials;
 		const mode = values.mode ?? "cors";
 		let corsTainted = false;
@@ -419,6 +449,12 @@ export class PageFetch {
 		this.checkByteBudget();
 		this.requests++;
 		const controller = new AbortController();
+		const group: FetchCancellation = {
+			controller,
+			pending: true,
+			bodies: new Set(),
+			unsubscribe: () => {},
+		};
 		this.active.add(controller);
 		const timeout = setTimeout(
 			() =>
@@ -428,6 +464,11 @@ export class PageFetch {
 			this.limits.timeoutMs,
 		);
 		try {
+			if (signal)
+				group.unsubscribe = signal.subscribe((reason) => {
+					controller.abort(reason);
+					for (const body of [...group.bodies]) this.abortBody(body, reason);
+				});
 			for (let hops = 0; ; hops++) {
 				this.checkPolicy();
 				if (mode === "same-origin" && url.origin !== this.origin)
@@ -535,6 +576,7 @@ export class PageFetch {
 								headers: {},
 							},
 							null,
+							group,
 						);
 					const location = responseHeaders.location;
 					if (location !== undefined) {
@@ -575,6 +617,7 @@ export class PageFetch {
 					method === "HEAD" || [204, 205, 304].includes(response.status)
 						? null
 						: response.body,
+					group,
 				);
 			}
 		} catch (error) {
@@ -583,6 +626,9 @@ export class PageFetch {
 		} finally {
 			clearTimeout(timeout);
 			this.active.delete(controller);
+			group.pending = false;
+			group.controller = undefined;
+			this.releaseCancellation(group);
 		}
 	}
 
@@ -715,6 +761,8 @@ export class PageFetch {
 	private response(
 		metadata: ResponseMetadata,
 		input: Uint8Array | null,
+		group: FetchCancellation,
+		previous?: BodyRecord,
 	): object {
 		this.ensureOpen();
 		if (
@@ -728,6 +776,10 @@ export class PageFetch {
 			);
 		const body: BodyRecord = {
 			bytes: input === null ? null : new Uint8Array(input),
+			hasBody: previous?.hasBody ?? input !== null,
+			aborted: previous?.aborted ?? false,
+			abortReason: previous?.abortReason,
+			group,
 			used: false,
 			ready: false,
 			revoked: false,
@@ -735,6 +787,7 @@ export class PageFetch {
 		this.responses++;
 		this.bodies.add(body);
 		this.retainedBytes += body.bytes?.byteLength ?? 0;
+		if (body.hasBody && !body.aborted) group.bodies.add(body);
 		const read = () => {
 			this.ensureOpen();
 			if (body.revoked)
@@ -748,12 +801,19 @@ export class PageFetch {
 		const consume = () => {
 			read();
 			if (body.used) throw new TypeError("Fetch body is already consumed");
-			if (body.bytes === null) return "";
-			const bytes = body.bytes;
+			if (!body.hasBody) return "";
 			body.used = true;
+			group.bodies.delete(body);
+			this.releaseCancellation(group);
+			if (body.aborted) {
+				const reason = body.abortReason;
+				body.abortReason = undefined;
+				throw reason;
+			}
+			const bytes = body.bytes;
 			body.bytes = null;
-			this.retainedBytes -= bytes.byteLength;
-			return new TextDecoder().decode(bytes);
+			this.retainedBytes -= bytes?.byteLength ?? 0;
+			return new TextDecoder().decode(bytes ?? undefined);
 		};
 		try {
 			const headers = this.capability({
@@ -795,11 +855,13 @@ export class PageFetch {
 						read();
 						if (body.used)
 							throw new TypeError("Fetch body is already consumed");
-						return this.response(metadata, body.bytes);
+						return this.response(metadata, body.bytes, group, body);
 					},
 				},
 			});
 			body.ready = true;
+			if (group.pending && group.controller?.signal.aborted)
+				throw group.controller.signal.reason;
 			return response;
 		} catch (error) {
 			this.revokeResponse(body);
@@ -830,6 +892,27 @@ export class PageFetch {
 		body.ready = false;
 		this.retainedBytes -= body.bytes?.byteLength ?? 0;
 		body.bytes = null;
+		body.abortReason = undefined;
+		body.group.bodies.delete(body);
+		this.releaseCancellation(body.group);
 		this.bodies.delete(body);
+	}
+
+	private abortBody(body: BodyRecord, reason: unknown) {
+		if (body.revoked || body.used || !body.hasBody || body.aborted) return;
+		body.aborted = true;
+		body.abortReason = reason;
+		this.retainedBytes -= body.bytes?.byteLength ?? 0;
+		body.bytes = null;
+		body.group.bodies.delete(body);
+		this.releaseCancellation(body.group);
+	}
+
+	private releaseCancellation(group: FetchCancellation) {
+		if (group.pending || group.bodies.size > 0) return;
+		const unsubscribe = group.unsubscribe;
+		group.unsubscribe = () => {};
+		group.controller = undefined;
+		unsubscribe();
 	}
 }

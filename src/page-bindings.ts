@@ -1,4 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
+import type { PageAbortSignals } from "./page-abort-signals.js";
 import { documentIdentity } from "./document-identity.js";
 import { PagePasskeys, type PagePasskeyContext } from "./page-passkeys.js";
 import type { PasskeyAuthenticator } from "./passkeys.js";
@@ -54,6 +55,7 @@ export interface PageBindingOptions {
 	};
 	fetch?: PageFetchTransport;
 	fetchLimits?: Partial<PageFetchLimits>;
+	fetchSignals?: PageAbortSignals;
 	consoleLimits?: Partial<ConsoleLimits>;
 	timerLimits?: Partial<TimerLimits>;
 	animationFrameLimits?: Partial<AnimationFrameLimits>;
@@ -261,6 +263,7 @@ export class PageBindings {
 					);
 				this.network = new PageFetch(page.document, context, options.fetch, {
 					limits: options.fetchLimits,
+					signals: options.fetchSignals,
 				});
 			}
 			this.timers = new PageTimers(

@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+Native fetch now follows explicitly published, document-owned signal capabilities
+through request/preflight/redirect cancellation and unread buffered response clones.
+Registry quotas, private native followers, state-shadowing rejection, factory
+ownership, source/binding closure and late accounting are covered by 80 new cases;
+the nine-file clean native matrix passes 232 tests with no failures or skips.
+Isolated build, strict tests and four-file Biome pass. `PAGE-FETCH-SIGNALS.md`
+records host embedding via fetchSignals, buffered-body choices, retained failures
+and the undeployed guest constructor/EventTarget/reason-identity/Streams work.
+One native Fetch-standard read captured verified bytes but failed its loader limit;
+bounded raw-source analysis is separate, not a rewritten extraction success.
+No SafeJS/socket/device/credential probe or previously denied gate was reopened.
+The complete browser goal and all outstanding acceptance requirements remain open.
+
 An isolated public SafeJS host-constructor contribution now enables explicit
 construct-only live capabilities, stable per-realm identity, retained arguments,
 owner-context checks and direct/bound/adapter copy/replay rejection. Candidate and

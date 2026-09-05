@@ -216,6 +216,11 @@ export {
 	type PageFetchTransport,
 } from "./page-fetch.js";
 export {
+	PageAbortSignals,
+	type PageAbortSignal,
+	type PageAbortSignalLimits,
+} from "./page-abort-signals.js";
+export {
 	NetworkJournal,
 	type NetworkCorsResult,
 	type ObserveCorsResult,
