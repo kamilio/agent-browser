@@ -2,6 +2,10 @@ import { documentTitle } from "./document-title.js";
 import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	type HeadingSectionMetadata,
+	selectHeadingSection,
+} from "./extraction-section.js";
 import { htmlParseInfo } from "./html-info.js";
 import {
 	type ResearchReaderReport,
@@ -47,6 +51,7 @@ export interface ExtractionOptions {
 	format?: "markdown" | "json";
 	root?: string;
 	lines?: { start: number; end: number };
+	section?: string;
 	maxBytes?: number;
 	maxNodes?: number;
 	maxDepth?: number;
@@ -60,6 +65,7 @@ interface ExtractionMetadata {
 	revision: number;
 	partial: true;
 	reader?: Readonly<ResearchReaderReport>;
+	sectionSelection?: Readonly<HeadingSectionMetadata>;
 	textSelection?: {
 		method: "text-lines";
 		start: number;
@@ -129,6 +135,7 @@ const inlineTypes = new Set<ExtractionType>([
 	"image",
 	"break",
 ]);
+const leafElements = new Set(["img", "br", "hr"]);
 const encoder = new TextEncoder();
 
 function selectTextLines(
@@ -425,6 +432,14 @@ export function extractDocument(
 			"invalid-input",
 			"Text line extraction cannot be combined with root",
 		);
+	if (
+		options.section !== undefined &&
+		(options.lines !== undefined || options.root !== undefined)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Section extraction cannot be combined with root or lines",
+		);
 	const format = options.format ?? "markdown";
 	if (format !== "markdown" && format !== "json")
 		throw new AgentBrowserError(
@@ -461,6 +476,19 @@ export function extractDocument(
 		node.attributes["aria-hidden"]?.toLowerCase() === "true" ||
 		(node.tagName === "noscript" && scripting) ||
 		!styles.get(node.id).displayed;
+	const section =
+		options.section === undefined
+			? undefined
+			: selectHeadingSection(tree, options.section, {
+					maxNodes,
+					maxDepth,
+					skip,
+					visible: (id) => styles.get(id).visible,
+					descend: (node) =>
+						node.kind !== "element" ||
+						!leafElements.has(node.tagName) ||
+						!styles.get(node.id).visible,
+				});
 	const title = clean(documentTitle(tree));
 	const safeUrl = new URL(tree.url);
 	safeUrl.username = "";
@@ -475,6 +503,7 @@ export function extractDocument(
 		partial: true,
 		...(reader ? { reader } : {}),
 		...(selection ? { textSelection: selection.metadata } : {}),
+		...(section ? { sectionSelection: section.metadata } : {}),
 	};
 	if (encoder.encode(JSON.stringify(metadata)).byteLength > maxBytes)
 		throw new AgentBrowserError(
@@ -503,6 +532,7 @@ export function extractDocument(
 	while (pending.length) {
 		const current = pending.pop();
 		if (!current) break;
+		if (section && !section.included.has(current.id)) continue;
 		const source = tree.get(current.id);
 		if (skip(source)) continue;
 		const visible = styles.get(source.id).visible;
@@ -519,8 +549,9 @@ export function extractDocument(
 				: "container";
 		const node: ExtractedNode = {
 			ref: tree.reference(source.id),
-			type:
-				source.kind === "text"
+			type: section?.context.has(source.id)
+				? "container"
+				: source.kind === "text"
 					? "text"
 					: visible && Object.hasOwn(kinds, source.tagName)
 						? kinds[source.tagName]
@@ -553,13 +584,18 @@ export function extractDocument(
 				"Extraction intermediate limit exceeded",
 			);
 		current.parent.children?.push(node);
-		if (node.children)
-			for (let index = source.children.length - 1; index >= 0; index--)
+		if (node.children) {
+			const children = section
+				? (section.children.get(source.id) ?? [])
+				: source.children;
+			for (let index = children.length - 1; index >= 0; index--) {
 				pending.push({
-					id: source.children[index],
+					id: children[index],
 					parent: node,
 					depth: current.depth + 1,
 				});
+			}
+		}
 	}
 	const root = holder.children?.[0] ?? {
 		ref: metadata.scope,

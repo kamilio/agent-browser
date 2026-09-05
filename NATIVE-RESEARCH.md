@@ -1,5 +1,22 @@
 # Opt-in native research reader
 
+## Bounded heading sections
+
+Use `--section CSS` to extract one visible native heading and following content
+up to the next visible equal/higher-rank heading. It cannot combine with
+`--selector` or `--lines`; exactly one matching native h1–h6 is required.
+Existing document admission, pre-selection barrier checks, traversal and output
+bounds remain. Ancestors supply neutral structure, not earlier text or link
+semantics. Reports expose bounded section counts and remain partial/unverified.
+
+`HEADING-SECTION-EXTRACTION.md` records the reference API, visibility/leaf behavior,
+172 new passing cases, three reproduced baseline failures in the 752-pass matrix,
+bounded child-edge materialization and separate offline/fresh-live CTAP2 section
+observations. The final corrected build has a separate saved-receipt replay.
+This is not full
+document/source mapping, a limit increase, or device/SDK acceptance. Historical
+failed extractions remain unchanged.
+
 ## Bounded plaintext line selection
 
 Use `--lines START:END` for an inclusive one-based range in a loaded plain-text

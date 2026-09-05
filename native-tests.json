@@ -1,4 +1,6 @@
 [
+  "src/extraction-section.test.ts",
+  "src/research-section.test.ts",
   "src/fido-hid-packets.test.ts",
   "src/fido-hid-message.test.ts",
   "src/text-line-extraction.test.ts",

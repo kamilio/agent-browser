@@ -1,5 +1,19 @@
 # Agent browser implementation tasks
 
+Bounded native heading-section extraction now supports `--section CSS` and a
+native-reference core option, preserving source/document/output ceilings and
+pre-selection barrier checks. All 172 new cases pass; the ten-file matrix has
+752 passes and three unchanged selector failures reproduced on untouched HEAD.
+Build, strict new-test typing and five-file Biome pass. A separate offline native
+probe retains full extraction failure while reading the USB HID section; a fresh
+native GET at September 5, 2026 18:55:21.811 UTC extracts 24,455 bytes, still
+partial/extracted-unverified. `HEADING-SECTION-EXTRACTION.md` preserves the older
+failed receipt, distinct response digests and exact limits. Review identified and
+fixed excluded sibling enumeration; final-code offline replay matches the earlier
+live extraction without a new request or relabeling that receipt. CTAP2 transaction,
+device/report-ID/channel/cancellation and human credential/passkey gates remain
+open; denied/stopped lanes remain unchanged. The complete browser goal stays active.
+
 Native external-authenticator work now has builtin-only FIDO HID packet framing
 and a bounded owned-message assembler, with 78 new synthetic native cases passing
 across two named suites. Build/strict types and four-file Biome pass. A fresh

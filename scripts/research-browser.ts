@@ -155,10 +155,15 @@ export function parseResearchArguments(args: readonly string[]) {
 	let captureBody = false;
 	let selector: string | undefined;
 	let lines: ResearchLineRange | undefined;
+	let section: string | undefined;
 	const urls: string[] = [];
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (argument === "--section" && section === undefined) {
+			section = researchSelector(args[++index]);
+			continue;
+		}
 		if (argument === "--lines" && lines === undefined) {
 			lines = researchLines(args[++index]);
 			continue;
@@ -197,6 +202,11 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Research lines and selector are mutually exclusive",
 		);
+	if (section !== undefined && (selector !== undefined || lines !== undefined))
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research section cannot be combined with lines or selector",
+		);
 	if (!urls.length)
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -207,6 +217,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		urls,
 		...(selector === undefined ? {} : { selector }),
 		...(lines === undefined ? {} : { lines }),
+		...(section === undefined ? {} : { section }),
 		...(captureBody ? { captureBody: true as const } : {}),
 	};
 }
@@ -298,6 +309,7 @@ export interface ResearchNavigationReport {
 	bodyCapture?: ResearchBodyCapture;
 	selection?:
 		| { method: "css-selector"; matches: number | null }
+		| { method: "heading-section"; matches: number | null }
 		| { method: "text-lines"; start: number; end: number };
 	outcome: ResearchOutcome;
 	failure?: {
@@ -318,6 +330,7 @@ export async function researchNavigation(
 	selector?: string,
 	captureBody = false,
 	lines?: ResearchLineRange,
+	section?: string,
 ): Promise<ResearchNavigationReport> {
 	if (typeof captureBody !== "boolean")
 		throw new AgentBrowserError("invalid-input", "Invalid research arguments");
@@ -327,6 +340,7 @@ export async function researchNavigation(
 		...(reader ? ["--reader"] : []),
 		...(captureBody ? ["--capture-body"] : []),
 		...(selector === undefined ? [] : ["--selector", selector]),
+		...(section === undefined ? [] : ["--section", section]),
 		...(lineRange === undefined
 			? []
 			: ["--lines", `${lineRange.start}:${lineRange.end}`]),
@@ -354,6 +368,9 @@ export async function researchNavigation(
 		...(validated.lines === undefined
 			? {}
 			: { selection: { method: "text-lines" as const, ...validated.lines } }),
+		...(validated.section === undefined
+			? {}
+			: { selection: { method: "heading-section" as const, matches: null } }),
 		outcome: "failure",
 	};
 	let stage = "setup";
@@ -477,7 +494,12 @@ export async function researchNavigation(
 		report.reader = researchReaderInfo(tree);
 		const status = report.primaryResponse?.status ?? 0;
 		let root: string | undefined;
-		if (validated.selector !== undefined || validated.lines !== undefined) {
+		let sectionRoot: string | undefined;
+		if (
+			validated.selector !== undefined ||
+			validated.lines !== undefined ||
+			validated.section !== undefined
+		) {
 			stage = "document-classification";
 			const diagnostic = classifyBrowserChallenge({
 				status,
@@ -497,22 +519,28 @@ export async function researchNavigation(
 				);
 			}
 		}
-		if (validated.selector !== undefined) {
+		const selectedSelector = validated.section ?? validated.selector;
+		if (selectedSelector !== undefined) {
 			stage = "selection";
-			const matches = page.queries.querySelectorAll(validated.selector);
-			report.selection = { method: "css-selector", matches: matches.length };
+			const matches = page.queries.querySelectorAll(selectedSelector);
+			report.selection =
+				validated.section === undefined
+					? { method: "css-selector", matches: matches.length }
+					: { method: "heading-section", matches: matches.length };
 			if (matches.length !== 1)
 				throw new AgentBrowserError(
 					matches.length ? "invalid-input" : "not-found",
 					"Research selector requires one element",
 				);
-			root = tree.reference(matches[0]);
+			if (validated.section === undefined) root = tree.reference(matches[0]);
+			else sectionRoot = tree.reference(matches[0]);
 		}
 		stage = "extraction";
 		const extraction = extractDocument(tree, {
 			format: "markdown",
 			...(root === undefined ? {} : { root }),
 			...(validated.lines === undefined ? {} : { lines: validated.lines }),
+			...(sectionRoot === undefined ? {} : { section: sectionRoot }),
 			maxBytes: researchRunLimits.extractionBytes,
 			maxNodes: 50_000,
 			maxDepth: 128,
@@ -570,9 +598,8 @@ export function researchExitCode(reports: readonly ResearchNavigationReport[]) {
 }
 
 async function main() {
-	const { urls, reader, selector, captureBody, lines } = parseResearchArguments(
-		process.argv.slice(2),
-	);
+	const { urls, reader, selector, captureBody, lines, section } =
+		parseResearchArguments(process.argv.slice(2));
 	const controller = new AbortController();
 	const timer = setTimeout(
 		() => controller.abort(),
@@ -588,6 +615,7 @@ async function main() {
 				selector,
 				captureBody,
 				lines,
+				section,
 			);
 			reports.push(report);
 			process.stdout.write(`${JSON.stringify(report)}\n`);
@@ -604,7 +632,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--reader] [--capture-body] [--selector CSS | --lines START:END] PUBLIC_HTTP_URL... (1–8 URLs)\n",
+			"Usage: research-browser [--reader] [--capture-body] [--selector CSS | --lines START:END | --section CSS] PUBLIC_HTTP_URL... (1–8 URLs)\n",
 		);
 		process.exitCode = 64;
 	});
