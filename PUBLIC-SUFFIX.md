@@ -7,6 +7,42 @@ policy and is not a complete browser public-suffix implementation on its own.
 
 ## Contract
 
+### Trusted snapshot admission
+
+`src/pinned-public-suffix.ts` adds a runtime-neutral
+`createPinnedPublicSuffixSnapshot(bytes)` factory. It accepts only explicit
+Uint8Array bytes for the pinned 335,592-byte revision, copies the selected view
+before its first await, verifies the fixed SHA-256 before strict UTF-8 decoding,
+and requires full matcher admission with 10,321 rules. It performs no file or
+network access, imports no Node module, and has no caller-selected expected hash,
+default dataset loading, update or fallback mode.
+
+The frozen result exposes `revision`, `sha256`, `ruleCount` and `match`.
+`isPinnedPublicSuffixSnapshot` checks module-private identity without inspecting
+properties: lookalikes, inherited objects, clones and proxies do not carry trust.
+Consumers must use that check, not a TypeScript assertion. The brand is local to
+the issuing module instance; serialization or duplicate module copies cannot
+transport it. Caller buffers and matcher sets do not escape. Shared/detached
+buffers and non-byte inputs reject; trusted host intrinsics/WebCrypto remain
+part of the boundary.
+
+September 5 admission checkpoint: **72 new cases** and three named PSL suites
+yield **421 passes in each tree**, with types/builds, strict new-test types and
+scoped Biome passing. The manifest has 437 entries; no full suite, SDK, socket or
+live acceptance is included. Logs use `pinned-suffix-integrated-final-` in
+`node_modules/.cache/native-validation/`; the clean candidate path is recorded
+in `/tmp/pinned-suffix-integrated-path`. All 23 worker artifact checksums passed
+parent verification from their required directory; the earlier wrong-directory
+audit remains preserved separately.
+
+This factory alone enables no RP/cookie permission. Its digest establishes the
+approved byte identity, not an upstream signature, Git-object authentication,
+freshness or a complete census of real-world suffixes. Explicit host adoption,
+trusted distribution/loading, update/freshness policy and consumer acceptance
+remain separate responsibilities.
+
+### Matcher primitive
+
 `createPublicSuffixMatcher(trustedSource)` returns frozen `ruleCount` and `match`
 members. Results contain canonical ASCII `domain`, `publicSuffix`, nullable
 `registrableDomain`, prevailing `rule` and `ruleType`. All supplied rules apply,

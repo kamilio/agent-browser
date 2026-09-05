@@ -30,6 +30,14 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Explicit pinned-snapshot admission now verifies exact copied PSL bytes before
+creating an immutable, module-branded matcher. Seventy-two new cases plus the
+existing PSL suites yield 421 passes across three named files in each tree;
+types/builds, strict new-test types and scoped Biome pass. The manifest has 437
+entries. `PUBLIC-SUFFIX.md` separates approved-byte identity from freshness,
+distribution and caller eligibility. This factory alone enables no permissions;
+the parent-RP implementation and its origin-aware approval review remain in work.
+
 A captured MDN page exposed a concrete reader bug: four inert `<?>` markers
 were rejected as malformed declarations. The reader now recovers only that exact
 token span, preserving issue accounting, malformed-input rejection and every
