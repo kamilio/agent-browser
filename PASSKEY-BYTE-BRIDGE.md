@@ -4,6 +4,14 @@ September 5, 2026. **The selected actual SafeJS passkey gate still fails.**
 Host hardening below is separate from SDK byte support, not guest registration,
 assertion, hardware or synchronized-passkey acceptance. No denied gate reopens.
 
+A later, separately authorized in-memory SDK increment is recorded in
+`contributions/safejs-binary-storage-foundation.md`: a dormant two-file storage
+contribution, with 64 passing cases in both candidate and pristine patch replay.
+It does not register guest bytes or alter the selected runtime. Whole-backing
+copy authority, graph accounting, interpreter/marshalling and persistence gates
+remain explicit. Those new SDK unit runs are separate from the historical
+host-only hardening and static inspection described below.
+
 ## Historical runtime failure
 
 The authorized legacy prerequisite run found Promise and shared global/Window

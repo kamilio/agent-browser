@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+A dormant SDK binary-storage contribution now provides intrinsic-slot validation
+and budgeted full-backing copies for native ArrayBuffer/Uint8Array/DataView.
+The two additive upstream files are not selected by the browser or installed as
+guest values. Separately authorized candidate and pristine patch-replay runs
+each pass 64 cases across exactly two SDK unit files; focused types/build and
+Biome pass. The 27-case baseline, 25-fail/11-pass explicit stub and intermediate
+63-case run remain distinct. `contributions/safejs-binary-storage-foundation.md`
+records whole-backing authority, private memo lifetime, retained-accounting gaps
+and remaining interpreter/marshalling/digest/snapshot integration. Original SDK
+and failed passkey evidence remain unchanged; no denied identity, wire or parent-RP
+gate is reopened. The overall browser goal remains active.
+
 Passkey byte investigation identifies a missing SDK-owned guest byte model,
 not a browser setting: selected @poe-code/safe-js 0.0.1 has limited Float32 support
 but lacks the required ArrayBuffer/Uint8Array/DataView contract. The actual

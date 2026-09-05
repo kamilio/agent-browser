@@ -1,0 +1,653 @@
+diff --git a/packages/safe-js/src/interp/binary-storage.ts b/packages/safe-js/src/interp/binary-storage.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/interp/binary-storage.ts
+@@ -0,0 +1,112 @@
++import type { Budget } from "./budget.js";
++
++const NativeArrayBuffer = ArrayBuffer;
++const NativeUint8Array = Uint8Array;
++const NativeDataView = DataView;
++const nativeIsView = ArrayBuffer.isView;
++const getPrototypeOf = Object.getPrototypeOf;
++const apply = Reflect.apply;
++const typedArrayPrototype = getPrototypeOf(Uint8Array.prototype);
++const readArrayBufferLength = intrinsicGetter(ArrayBuffer.prototype, "byteLength");
++const readResizable = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, "resizable")?.get;
++const readTypedBuffer = intrinsicGetter(typedArrayPrototype, "buffer");
++const readTypedOffset = intrinsicGetter(typedArrayPrototype, "byteOffset");
++const readTypedLength = intrinsicGetter(typedArrayPrototype, "byteLength");
++const readTypedTag = intrinsicGetter(typedArrayPrototype, Symbol.toStringTag);
++const readViewBuffer = intrinsicGetter(DataView.prototype, "buffer");
++const readViewOffset = intrinsicGetter(DataView.prototype, "byteOffset");
++const readViewLength = intrinsicGetter(DataView.prototype, "byteLength");
++const setBytes = Uint8Array.prototype.set;
++
++function intrinsicGetter(target: object, property: PropertyKey): (this: unknown) => unknown {
++  const getter = Object.getOwnPropertyDescriptor(target, property)?.get;
++  if (typeof getter !== "function") throw new TypeError("Missing native binary storage getter.");
++  return getter;
++}
++
++export type BinaryStorage = {
++  kind: "arraybuffer" | "uint8array" | "dataview";
++  buffer: ArrayBuffer;
++  byteOffset: number;
++  byteLength: number;
++  bufferByteLength: number;
++};
++
++export type BinaryCopyState = {
++  buffers: WeakMap<ArrayBuffer, ArrayBuffer>;
++};
++
++export function binaryStorage(value: unknown): BinaryStorage {
++  try {
++    let kind: BinaryStorage["kind"];
++    let buffer: ArrayBuffer;
++    let byteOffset: number;
++    let byteLength: number;
++    if (nativeIsView(value)) {
++      const prototype = getPrototypeOf(value);
++      if (
++        prototype === NativeUint8Array.prototype &&
++        apply(readTypedTag, value, []) === "Uint8Array"
++      ) {
++        kind = "uint8array";
++        buffer = apply(readTypedBuffer, value, []) as ArrayBuffer;
++        byteOffset = apply(readTypedOffset, value, []) as number;
++        byteLength = apply(readTypedLength, value, []) as number;
++      } else if (prototype === NativeDataView.prototype) {
++        kind = "dataview";
++        buffer = apply(readViewBuffer, value, []) as ArrayBuffer;
++        byteOffset = apply(readViewOffset, value, []) as number;
++        byteLength = apply(readViewLength, value, []) as number;
++      } else {
++        throw new TypeError();
++      }
++    } else {
++      byteLength = apply(readArrayBufferLength, value, []) as number;
++      kind = "arraybuffer";
++      buffer = value as ArrayBuffer;
++      byteOffset = 0;
++    }
++    const bufferByteLength = apply(readArrayBufferLength, buffer, []) as number;
++    if (
++      getPrototypeOf(buffer) !== NativeArrayBuffer.prototype ||
++      (readResizable !== undefined && apply(readResizable, buffer, []))
++    ) {
++      throw new TypeError();
++    }
++    new NativeUint8Array(buffer, 0, 0);
++    return { kind, buffer, byteOffset, byteLength, bufferByteLength };
++  } catch {
++    throw new TypeError(
++      "Binary storage requires a native fixed, non-shared, non-detached ArrayBuffer, Uint8Array or DataView."
++    );
++  }
++}
++
++export function copyBinaryStorage(
++  value: unknown,
++  state: BinaryCopyState,
++  budget: Budget
++): ArrayBuffer | Uint8Array | DataView {
++  const storage = binaryStorage(value);
++  budget.allocateArrayLength(storage.bufferByteLength);
++  const existing = state.buffers.get(storage.buffer);
++  const release = budget.provisionDataUsage(
++    (existing === undefined ? storage.bufferByteLength : 0) + 1
++  );
++  try {
++    const buffer = existing ?? new NativeArrayBuffer(storage.bufferByteLength);
++    if (existing === undefined) {
++      apply(setBytes, new NativeUint8Array(buffer), [new NativeUint8Array(storage.buffer)]);
++    }
++    const copy =
++      storage.kind === "arraybuffer"
++        ? buffer
++        : storage.kind === "uint8array"
++          ? new NativeUint8Array(buffer, storage.byteOffset, storage.byteLength)
++          : new NativeDataView(buffer, storage.byteOffset, storage.byteLength);
++    if (existing === undefined) state.buffers.set(storage.buffer, buffer);
++    return copy;
++  } finally {
++    release();
++  }
++}
+diff --git a/packages/safe-js/src/interp/binary-storage.test.ts b/packages/safe-js/src/interp/binary-storage.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/interp/binary-storage.test.ts
+@@ -0,0 +1,531 @@
++import { describe, expect, it } from "vitest";
++
++import { binaryStorage, copyBinaryStorage } from "./binary-storage.js";
++import { Budget, SandboxError } from "./budget.js";
++
++type NativeBinary = ArrayBuffer | Uint8Array | DataView;
++
++const fixtures = [
++  {
++    kind: "arraybuffer",
++    prototype: ArrayBuffer.prototype,
++    create: (buffer: ArrayBuffer): NativeBinary => buffer,
++    byteOffset: 0,
++    byteLength: 8
++  },
++  {
++    kind: "uint8array",
++    prototype: Uint8Array.prototype,
++    create: (buffer: ArrayBuffer): NativeBinary => new Uint8Array(buffer, 2, 3),
++    byteOffset: 2,
++    byteLength: 3
++  },
++  {
++    kind: "dataview",
++    prototype: DataView.prototype,
++    create: (buffer: ArrayBuffer): NativeBinary => new DataView(buffer, 3, 2),
++    byteOffset: 3,
++    byteLength: 2
++  }
++];
++
++function copyState() {
++  return { buffers: new WeakMap<ArrayBuffer, ArrayBuffer>() };
++}
++
++function copiedBuffer(state: ReturnType<typeof copyState>, original: ArrayBuffer): ArrayBuffer {
++  const buffer = state.buffers.get(original);
++  if (buffer === undefined) throw new Error("Expected memoized backing storage.");
++  return buffer;
++}
++
++function failureFrom(operation: () => unknown): unknown {
++  try {
++    operation();
++  } catch (error) {
++    return error;
++  }
++  throw new Error("Expected operation to fail.");
++}
++
++function expectFixedFailure(failure: unknown): void {
++  const reference = failureFrom(() => binaryStorage(null));
++  expect(Object.getPrototypeOf(reference)).toBe(TypeError.prototype);
++  expect(Object.getPrototypeOf(failure)).toBe(TypeError.prototype);
++  expect((reference as TypeError).message.length).toBeGreaterThan(0);
++  expect((failure as TypeError).message).toBe((reference as TypeError).message);
++}
++
++function expectRejected(value: unknown): void {
++  expectFixedFailure(failureFrom(() => binaryStorage(value)));
++  const state = copyState();
++  const budget = new Budget();
++  expectFixedFailure(failureFrom(() => copyBinaryStorage(value, state, budget)));
++  expect(budget.currentDataSize).toBe(0);
++  expect(budget.peakDataSize).toBe(0);
++}
++
++function expectBudgetFailure(
++  operation: () => unknown,
++  budget: "arrayLength" | "dataSize",
++  current: number,
++  limit: number
++): void {
++  const failure = failureFrom(operation);
++  expect(failure).toBeInstanceOf(SandboxError);
++  expect(failure).toMatchObject({ code: "budgetExceeded", budget, current, limit });
++}
++
++describe("binaryStorage native slot validation", () => {
++  it.each(fixtures)("reads exact $kind storage", (fixture) => {
++    const buffer = new ArrayBuffer(8);
++    const storage = binaryStorage(fixture.create(buffer));
++    expect(storage).toEqual({
++      kind: fixture.kind,
++      buffer,
++      byteOffset: fixture.byteOffset,
++      byteLength: fixture.byteLength,
++      bufferByteLength: 8
++    });
++    expect(storage.buffer).toBe(buffer);
++  });
++
++  it.each(fixtures)("ignores hostile shadow properties on $kind and backing", (fixture) => {
++    const buffer = new ArrayBuffer(8);
++    new Uint8Array(buffer).set([10, 20, 30, 40, 50, 60, 70, 80]);
++    const value = fixture.create(buffer);
++    let hookCalls = 0;
++    const hostile = () => {
++      hookCalls += 1;
++      throw new Error("Shadow property must not be read.");
++    };
++    for (const target of new Set([buffer, value])) {
++      for (const key of [
++        "buffer",
++        "byteOffset",
++        "byteLength",
++        "length",
++        "constructor",
++        "resizable",
++        "maxByteLength",
++        "detached",
++        "slice",
++        "extra",
++        Symbol.toStringTag,
++        Symbol.iterator,
++        Symbol.species
++      ]) {
++        Object.defineProperty(target, key, { get: hostile, configurable: true });
++      }
++    }
++    const storage = binaryStorage(value);
++    const state = copyState();
++    const copy = copyBinaryStorage(value, state, new Budget());
++    expect(hookCalls).toBe(0);
++    expect(storage.buffer).toBe(buffer);
++    expect(storage.kind).toBe(fixture.kind);
++    expect(storage.byteOffset).toBe(fixture.byteOffset);
++    expect(storage.byteLength).toBe(fixture.byteLength);
++    expect(storage.bufferByteLength).toBe(8);
++    expect(Object.getPrototypeOf(copy)).toBe(fixture.prototype);
++    expect(Array.from(new Uint8Array(copiedBuffer(state, buffer)))).toEqual([
++      10, 20, 30, 40, 50, 60, 70, 80
++    ]);
++    expect(Object.hasOwn(copy, "extra")).toBe(false);
++    expect(Object.hasOwn(copy, "constructor")).toBe(false);
++    expect(Object.getOwnPropertySymbols(copy)).toEqual([]);
++    expect(Reflect.ownKeys(copiedBuffer(state, buffer))).toEqual([]);
++  });
++
++  it("accepts empty buffers, empty views and empty views at the backing end", () => {
++    for (const length of [0, 8]) {
++      const buffer = new ArrayBuffer(length);
++      const values = [buffer, new Uint8Array(buffer, length, 0), new DataView(buffer, length, 0)];
++      const state = copyState();
++      for (const value of values) {
++        const storage = binaryStorage(value);
++        expect(storage.buffer).toBe(buffer);
++        expect(storage.bufferByteLength).toBe(length);
++        expect(storage.byteOffset).toBe(value === buffer ? 0 : length);
++        expect(storage.byteLength).toBe(value === buffer ? length : 0);
++        const copy = copyBinaryStorage(value, state, new Budget());
++        const copiedStorage = binaryStorage(copy);
++        expect(copiedStorage.buffer).toBe(state.buffers.get(buffer));
++        expect(copiedStorage.buffer).not.toBe(buffer);
++        expect(copiedStorage.kind).toBe(storage.kind);
++        expect(copiedStorage.byteOffset).toBe(storage.byteOffset);
++        expect(copiedStorage.byteLength).toBe(storage.byteLength);
++      }
++    }
++  });
++
++  it("rejects primitives, unsupported brands, subclasses and prototype impostors", () => {
++    class BufferSubclass extends ArrayBuffer {}
++    class BytesSubclass extends Uint8Array {}
++    class ViewSubclass extends DataView<ArrayBuffer> {}
++    const buffer = new ArrayBuffer(8);
++    const subclassBuffer = new BufferSubclass(8);
++    for (const value of [
++      undefined,
++      null,
++      false,
++      0,
++      "bytes",
++      1n,
++      Symbol("bytes"),
++      () => undefined,
++      {},
++      [],
++      new Uint8ClampedArray(8),
++      new Int8Array(8),
++      new Uint16Array(4),
++      new Float32Array(2),
++      subclassBuffer,
++      new BytesSubclass(buffer),
++      new ViewSubclass(buffer),
++      new Uint8Array(subclassBuffer),
++      new DataView(subclassBuffer),
++      Object.create(ArrayBuffer.prototype),
++      Object.create(Uint8Array.prototype),
++      Object.create(DataView.prototype),
++      Object.setPrototypeOf(new Uint16Array(4), Uint8Array.prototype)
++    ]) {
++      expectRejected(value);
++    }
++  });
++
++  it("rejects native views whose prototypes impersonate another supported brand", () => {
++    for (const value of [
++      Object.setPrototypeOf(new Uint8Array(8), DataView.prototype),
++      Object.setPrototypeOf(new DataView(new ArrayBuffer(8)), Uint8Array.prototype),
++      Object.setPrototypeOf(new Uint8Array(8), ArrayBuffer.prototype),
++      Object.setPrototypeOf(new DataView(new ArrayBuffer(8)), ArrayBuffer.prototype)
++    ]) {
++      expectRejected(value);
++    }
++  });
++
++  it.each(fixtures)("rejects hostile and revoked $kind proxies without traps", (fixture) => {
++    let trapCalls = 0;
++    let thrownInspections = 0;
++    const thrown = new Proxy(
++      {},
++      {
++        get() {
++          thrownInspections += 1;
++          throw new Error("Do not inspect thrown proxy.");
++        },
++        getPrototypeOf() {
++          thrownInspections += 1;
++          throw new Error("Do not inspect thrown proxy.");
++        }
++      }
++    );
++    const hostile = () => {
++      trapCalls += 1;
++      throw thrown;
++    };
++    const target = fixture.create(new ArrayBuffer(8));
++    const proxy = new Proxy(target, {
++      get: hostile,
++      getPrototypeOf: hostile,
++      ownKeys: hostile,
++      getOwnPropertyDescriptor: hostile,
++      has: hostile
++    });
++    const revoked = Proxy.revocable(target, {});
++    revoked.revoke();
++    for (const value of [proxy, revoked.proxy]) {
++      const storageFailure = failureFrom(() => binaryStorage(value));
++      const copyFailure = failureFrom(() => copyBinaryStorage(value, copyState(), new Budget()));
++      expect(trapCalls).toBe(0);
++      expect(thrownInspections).toBe(0);
++      expectFixedFailure(storageFailure);
++      expectFixedFailure(copyFailure);
++    }
++  });
++
++  it("rejects a hostile prototype on real backing storage without inspecting it", () => {
++    let trapCalls = 0;
++    const hostile = () => {
++      trapCalls += 1;
++      throw new Error("Prototype must not be inspected.");
++    };
++    const buffer = new ArrayBuffer(8);
++    const values = [buffer, new Uint8Array(buffer), new DataView(buffer)];
++    Object.setPrototypeOf(buffer, new Proxy({}, { get: hostile, getPrototypeOf: hostile }));
++    for (const value of values) expectRejected(value);
++    expect(trapCalls).toBe(0);
++  });
++
++  it.skipIf(typeof SharedArrayBuffer === "undefined")(
++    "rejects shared buffers and their views",
++    () => {
++      const buffer = new SharedArrayBuffer(8);
++      for (const value of [buffer, new Uint8Array(buffer), new DataView(buffer)]) {
++        expectRejected(value);
++      }
++      Object.setPrototypeOf(buffer, ArrayBuffer.prototype);
++      for (const value of [buffer, new Uint8Array(buffer), new DataView(buffer)]) {
++        expectRejected(value);
++      }
++    }
++  );
++
++  it.skipIf(!Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, "resizable"))(
++    "rejects resizable storage, including zero-length and fixed-length views",
++    () => {
++      for (const length of [0, 8]) {
++        const buffer = Reflect.construct(ArrayBuffer, [
++          length,
++          { maxByteLength: 16 }
++        ]) as ArrayBuffer;
++        for (const value of [
++          buffer,
++          new Uint8Array(buffer),
++          new DataView(buffer),
++          new Uint8Array(buffer, length, 0),
++          new DataView(buffer, length, 0)
++        ]) {
++          expectRejected(value);
++        }
++      }
++    }
++  );
++
++  it.skipIf(typeof structuredClone !== "function")(
++    "rejects detached buffers and existing views",
++    () => {
++      for (const length of [0, 8]) {
++        const buffer = new ArrayBuffer(length);
++        const values = [buffer, new Uint8Array(buffer), new DataView(buffer)];
++        structuredClone(buffer, { transfer: [buffer] });
++        for (const value of values) expectRejected(value);
++      }
++    }
++  );
++});
++
++describe("copyBinaryStorage ownership and aliases", () => {
++  it.each(fixtures)("copies all backing bytes when $kind is encountered first", (fixture) => {
++    const original = new Uint8Array([10, 20, 30, 40, 50, 60, 70, 80]);
++    const state = copyState();
++    const budget = new Budget();
++    const value = fixture.create(original.buffer);
++    const copy = copyBinaryStorage(value, state, budget);
++    expect(Object.getPrototypeOf(copy)).toBe(fixture.prototype);
++    const copiedStorage = binaryStorage(copy);
++    const copiedBuffer = copiedStorage.buffer;
++    expect(copiedStorage.kind).toBe(fixture.kind);
++    expect(copiedStorage.byteOffset).toBe(fixture.byteOffset);
++    expect(copiedStorage.byteLength).toBe(fixture.byteLength);
++    expect(copiedStorage.bufferByteLength).toBe(8);
++    expect(copiedBuffer).not.toBe(original.buffer);
++    expect(state.buffers.get(original.buffer)).toBe(copiedBuffer);
++    expect(Array.from(new Uint8Array(copiedBuffer))).toEqual(Array.from(original));
++    expect(copyBinaryStorage(original.buffer, state, budget)).toBe(copiedBuffer);
++    expect(copyBinaryStorage(original.buffer, state, budget)).toBe(copiedBuffer);
++    const bytes = copyBinaryStorage(
++      new Uint8Array(original.buffer, 2, 3),
++      state,
++      budget
++    ) as Uint8Array;
++    const view = copyBinaryStorage(new DataView(original.buffer, 3, 2), state, budget) as DataView;
++    expect(bytes.buffer).toBe(copiedBuffer);
++    expect(view.buffer).toBe(copiedBuffer);
++    bytes[1] = 99;
++    expect(view.getUint8(0)).toBe(99);
++    expect(original[3]).toBe(40);
++    view.setUint8(1, 88);
++    expect(bytes[2]).toBe(88);
++    expect(original[4]).toBe(50);
++    original[2] = 77;
++    expect(bytes[0]).toBe(30);
++    const repeated = copyBinaryStorage(value, state, budget);
++    expect(binaryStorage(repeated).buffer).toBe(copiedBuffer);
++    expect(binaryStorage(repeated).byteOffset).toBe(fixture.byteOffset);
++    expect(binaryStorage(repeated).byteLength).toBe(fixture.byteLength);
++    expect(budget.currentDataSize).toBe(0);
++    expect(budget.peakDataSize).toBe(9);
++  });
++
++  it("keeps equal distinct backing stores and separate copy states independent", () => {
++    const first = new Uint8Array([1, 2]);
++    const second = new Uint8Array([1, 2]);
++    const state = copyState();
++    const firstCopy = copyBinaryStorage(first, state, new Budget()) as Uint8Array;
++    const secondCopy = copyBinaryStorage(second, state, new Budget()) as Uint8Array;
++    const isolated = copyBinaryStorage(first, copyState(), new Budget()) as Uint8Array;
++    expect(firstCopy.buffer).not.toBe(secondCopy.buffer);
++    expect(firstCopy.buffer).not.toBe(isolated.buffer);
++    firstCopy[0] = 9;
++    expect([first[0], second[0], secondCopy[0], isolated[0]]).toEqual([1, 1, 1, 1]);
++  });
++
++  it.each(fixtures)("revalidates memoized $kind after prototype changes", (fixture) => {
++    const buffer = new ArrayBuffer(8);
++    const value = fixture.create(buffer);
++    const state = copyState();
++    const budget = new Budget();
++    copyBinaryStorage(value, state, budget);
++    const previous = copiedBuffer(state, buffer);
++    Object.setPrototypeOf(value, {});
++    expectFixedFailure(failureFrom(() => copyBinaryStorage(value, state, budget)));
++    expect(state.buffers.get(buffer)).toBe(previous);
++    expect(Array.from(new Uint8Array(previous))).toEqual(Array(8).fill(0));
++    expect(budget.currentDataSize).toBe(0);
++    expect(budget.peakDataSize).toBe(9);
++  });
++
++  it.skipIf(typeof structuredClone !== "function")(
++    "revalidates detached memoized backing on every call",
++    () => {
++      const buffer = new ArrayBuffer(8);
++      const values = [buffer, new Uint8Array(buffer, 2, 3), new DataView(buffer, 3, 2)];
++      const state = copyState();
++      const budget = new Budget();
++      for (const value of values) copyBinaryStorage(value, state, budget);
++      const previous = copiedBuffer(state, buffer);
++      structuredClone(buffer, { transfer: [buffer] });
++      for (const value of values) {
++        expectFixedFailure(failureFrom(() => copyBinaryStorage(value, state, budget)));
++        expect(state.buffers.get(buffer)).toBe(previous);
++      }
++      expect(previous.byteLength).toBe(8);
++      expect(budget.currentDataSize).toBe(0);
++      expect(budget.peakDataSize).toBe(9);
++    }
++  );
++
++  it("revalidates memoized backing even when view prototypes remain native", () => {
++    const buffer = new ArrayBuffer(8);
++    const values = [new Uint8Array(buffer, 2, 3), new DataView(buffer, 3, 2)];
++    const state = copyState();
++    const budget = new Budget();
++    for (const value of values) copyBinaryStorage(value, state, budget);
++    const previous = copiedBuffer(state, buffer);
++    Object.setPrototypeOf(buffer, {});
++    for (const value of values) {
++      expectFixedFailure(failureFrom(() => copyBinaryStorage(value, state, budget)));
++      expect(state.buffers.get(buffer)).toBe(previous);
++    }
++    expect(Array.from(new Uint8Array(previous))).toEqual(Array(8).fill(0));
++    expect(budget.currentDataSize).toBe(0);
++    expect(budget.peakDataSize).toBe(9);
++  });
++});
++
++describe("copyBinaryStorage real Budget accounting", () => {
++  it.each(fixtures)("requires a Budget before copying $kind", (fixture) => {
++    const buffer = new ArrayBuffer(8);
++    const state = copyState();
++    const failure = failureFrom(() =>
++      Reflect.apply(copyBinaryStorage, undefined, [fixture.create(buffer), state])
++    );
++    expect(failure).toBeInstanceOf(TypeError);
++    expect(state.buffers.has(buffer)).toBe(false);
++  });
++
++  it.each(fixtures)(
++    "charges whole backing plus wrapper and releases $kind provision",
++    (fixture) => {
++      const state = copyState();
++      const buffer = new ArrayBuffer(8);
++      const budget = new Budget({ arrayLength: 8, dataSize: 12 });
++      budget.reconcileDataUsage(3);
++      copyBinaryStorage(fixture.create(buffer), state, budget);
++      expect(budget.currentDataSize).toBe(3);
++      expect(budget.peakDataSize).toBe(12);
++      const memoBudget = new Budget({ arrayLength: 8, dataSize: 4 });
++      memoBudget.reconcileDataUsage(3);
++      copyBinaryStorage(fixture.create(buffer), state, memoBudget);
++      expect(memoBudget.currentDataSize).toBe(3);
++      expect(memoBudget.peakDataSize).toBe(4);
++    }
++  );
++
++  it("charges a wrapper even for zero-byte new backing", () => {
++    for (const create of [
++      (buffer: ArrayBuffer) => buffer,
++      (buffer: ArrayBuffer) => new Uint8Array(buffer),
++      (buffer: ArrayBuffer) => new DataView(buffer)
++    ]) {
++      const buffer = new ArrayBuffer(0);
++      const state = copyState();
++      const denied = new Budget({ arrayLength: 0, dataSize: 0 });
++      expectBudgetFailure(() => copyBinaryStorage(create(buffer), state, denied), "dataSize", 1, 0);
++      expect(state.buffers.has(buffer)).toBe(false);
++      expect(denied.currentDataSize).toBe(0);
++      expect(denied.peakDataSize).toBe(0);
++      const allowed = new Budget({ arrayLength: 0, dataSize: 1 });
++      copyBinaryStorage(create(buffer), state, allowed);
++      expect(allowed.currentDataSize).toBe(0);
++      expect(allowed.peakDataSize).toBe(1);
++    }
++  });
++
++  it.each(["arrayLength", "dataSize"] as const)(
++    "rejects tiny and empty views over oversized backing via %s without state changes",
++    (limit) => {
++      const prior = new Uint8Array([7, 8]);
++      const state = copyState();
++      copyBinaryStorage(prior, state, new Budget());
++      const previous = copiedBuffer(state, prior.buffer);
++      const buffer = new ArrayBuffer(32);
++      for (const value of [
++        buffer,
++        new Uint8Array(buffer, 15, 1),
++        new DataView(buffer, 15, 1),
++        new Uint8Array(buffer, 32, 0),
++        new DataView(buffer, 32, 0)
++      ]) {
++        const budget = new Budget(
++          limit === "arrayLength"
++            ? { arrayLength: 31, dataSize: 100 }
++            : { arrayLength: 32, dataSize: 35 }
++        );
++        budget.reconcileDataUsage(3);
++        expectBudgetFailure(
++          () => copyBinaryStorage(value, state, budget),
++          limit,
++          limit === "arrayLength" ? 32 : 36,
++          limit === "arrayLength" ? 31 : 35
++        );
++        expect(state.buffers.has(buffer)).toBe(false);
++        expect(state.buffers.get(prior.buffer)).toBe(previous);
++        expect(Array.from(new Uint8Array(previous))).toEqual([7, 8]);
++        expect(budget.currentDataSize).toBe(3);
++        expect(budget.peakDataSize).toBe(3);
++      }
++      const recovered = new Budget({ arrayLength: 32, dataSize: 33 });
++      copyBinaryStorage(new Uint8Array(buffer, 15, 1), state, recovered);
++      expect(state.buffers.has(buffer)).toBe(true);
++      expect(recovered.currentDataSize).toBe(0);
++      expect(recovered.peakDataSize).toBe(33);
++    }
++  );
++
++  it.each(fixtures)("enforces both bounds again for memoized $kind", (fixture) => {
++    const original = new Uint8Array([10, 20, 30, 40, 50, 60, 70, 80]);
++    const value = fixture.create(original.buffer);
++    const state = copyState();
++    copyBinaryStorage(value, state, new Budget());
++    const previous = copiedBuffer(state, original.buffer);
++    new Uint8Array(previous)[0] = 99;
++    const lengthBudget = new Budget({ arrayLength: 7, dataSize: 100 });
++    expectBudgetFailure(() => copyBinaryStorage(value, state, lengthBudget), "arrayLength", 8, 7);
++    const dataBudget = new Budget({ arrayLength: 8, dataSize: 3 });
++    dataBudget.reconcileDataUsage(3);
++    expectBudgetFailure(() => copyBinaryStorage(value, state, dataBudget), "dataSize", 4, 3);
++    expect(state.buffers.get(original.buffer)).toBe(previous);
++    expect(Array.from(new Uint8Array(previous))).toEqual([99, 20, 30, 40, 50, 60, 70, 80]);
++    expect(lengthBudget.currentDataSize).toBe(0);
++    expect(lengthBudget.peakDataSize).toBe(0);
++    expect(dataBudget.currentDataSize).toBe(3);
++    expect(dataBudget.peakDataSize).toBe(3);
++    const retryBudget = new Budget({ arrayLength: 8, dataSize: 1 });
++    expect(binaryStorage(copyBinaryStorage(value, state, retryBudget)).buffer).toBe(previous);
++    expect(retryBudget.currentDataSize).toBe(0);
++    expect(retryBudget.peakDataSize).toBe(1);
++  });
++});
