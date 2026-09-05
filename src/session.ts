@@ -6,6 +6,7 @@ import {
 	createBrowserIdentity,
 } from "./browser-identity.js";
 import { bindDocumentIdentity } from "./document-identity.js";
+import { nativeHeadlessDisplay } from "./native-headless-display.js";
 import { documentFiles, existingDocumentFiles } from "./document-files.js";
 import type { UploadActionRunner } from "./upload-transfers.js";
 import {
@@ -434,7 +435,7 @@ export class BrowserSession {
 			key: `${this.viewportIdentity}:${id}`,
 			document: tab.page?.document.reference(tab.page.document.root) ?? null,
 			...(tab.page?.styles.viewport ?? tab.viewport),
-			deviceScaleFactor: 1,
+			deviceScaleFactor: nativeHeadlessDisplay.devicePixelRatio,
 			partial: true,
 			profile: "logical-css-viewport",
 		});

@@ -1,4 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
+import { nativeHeadlessDisplay } from "./native-headless-display.js";
 
 export interface MediaViewport {
 	width: number;
@@ -37,7 +38,7 @@ function isFeature(value: string): value is Feature {
 }
 function actual(feature: Feature, viewport: MediaViewport): number {
 	return feature === "resolution"
-		? 1
+		? nativeHeadlessDisplay.devicePixelRatio
 		: feature === "aspect-ratio"
 			? viewport.width / viewport.height
 			: viewport[feature];

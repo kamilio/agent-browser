@@ -30,6 +30,18 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native headless display defaults now expose DPR 1 and outer width/height 0,
+sharing the DPR with CSS resolution and session viewport scale metadata while
+keeping the logical layout viewport independent. Forty-four new cases pass in
+each tree. The seven-file matrix retains independently reproduced failures:
+253 passes/three baseline failures isolated, 258 passes/four baseline failures
+working. Types/builds, strict touched-test types and scoped checks pass; this is
+not a full green suite. `BROWSER-IDENTITY.md` records the exact stale assertions,
+copied-scalar versus Window lifecycle limits and remaining Screen/zoom/guest
+gates. The candidate manifest has 439 entries, with two extra pending parent-RP
+entries only in the working tree. No physical display, challenge success or
+denied-probe acceptance is claimed; the parent-RP commit still awaits approval.
+
 Native-only CSSOM followup now provides the previously missing DPR/Screen/window
 contracts. `CSSOM-IDENTITY-2026-09-05.md` records one successful request using the
 already committed reader, 138 bounded live/offline scopes and preserved body

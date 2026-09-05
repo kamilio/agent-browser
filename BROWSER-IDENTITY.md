@@ -1,5 +1,67 @@
 # Truthful native identity defaults
 
+## Headless display values
+
+The native page now exposes `devicePixelRatio`, `outerWidth` and `outerHeight`
+on its Window host capability and in its declared scalar globals. The internal
+frozen `nativeHeadlessDisplay` model contains exactly three values:
+
+| Value | Native default | Meaning |
+| --- | ---: | --- |
+| `devicePixelRatio` | 1 | No attached output device; CSSOM's headless fallback, not a measured monitor ratio |
+| `outerWidth` | 0 | No native client window; not the configured layout viewport width |
+| `outerHeight` | 0 | No native client window; not the configured layout viewport height |
+
+The source contracts are preserved in `CSSOM-IDENTITY-2026-09-05.md`. An external
+terminal or web frontend is not a native page client-window object, and these
+values make no claim about that frontend's window or the user's display. There
+is no hardware/environment probe, device-emulation option, new runtime dependency
+or configurable output device. Screen, VisualViewport, page zoom and full
+display-device modeling remain separate work.
+
+CSS resolution matching and `BrowserSession.viewport().deviceScaleFactor` now
+use the same frozen DPR rather than independent literal ones. Their existing
+values do not change. Window inner dimensions remain driven by the independent
+logical CSS viewport; resizing it updates width/height/orientation without
+inventing a client window or changing fixed DPR. Existing screenshot/PNG scale
+metadata remains its own explicitly bounded artifact contract, not a physical
+display measurement or an output-device attachment.
+
+Window getters use the existing binding/document/lifecycle checks and reject
+after closure. Global primitives are copied public values, not revocable object
+capabilities: retained numbers survive closure, and replacing an entry in the
+host globals dictionary does not mutate the frozen model or Window getters.
+Getter-only native host descriptors do **not** establish full WebIDL replaceable
+property semantics, globalThis/Window identity or actual guest mutation behavior.
+The separately denied SafeJS identity probe remains unexecuted; no actual guest
+or device acceptance is claimed by these synthetic bindings.
+
+September 5, 2026 validation: **44 new cases pass in each tree**. Seven named
+suites produce **253 passes plus three baseline failures** in the isolated tree
+and **258 passes plus four baseline failures** in the working tree. Project
+types/builds, strict touched-test types, scoped Biome and touched production/test
+formatting pass. The candidate manifest has 439 entries; the working manifest has
+441 because two pending parent-RP tests remain excluded from this commit and
+matrix. No full manifest, auth, SDK, live, socket, TTY or real-device probe ran.
+
+The unchanged failures were reproduced before applying this feature: clean HEAD
+has two cleanup assertions assuming the first host object is performance, plus
+an exact-global-list expectation missing the pre-existing navigator. A separate
+HEAD snapshot with preserved base64/onload test/source overlays reproduces those
+three plus the working-only non-callable onload-object failure. The global-list
+test adds only the three newly introduced names; unrelated missing-navigator
+and cleanup/onload expectations remain unfixed and visible. These are not green
+full-suite results or evidence that the failed assertions are validated.
+
+Evidence is retained under `node_modules/.cache/native-validation/` with prefixes
+`headless-display-clean-baseline-tests`, `headless-display-pending-baseline-tests`
+and `headless-display-final-`. `headless-display-final-validation.json` records
+`allTestsPassed: false`, actual test exit codes and exact unchanged failure names.
+The clean candidate path is in `/tmp/headless-display-integrated-path` and the
+pending-overlay baseline in `/tmp/headless-display-pending-baseline-path`.
+Worker initial/final checks remain in `headless-display-tests/`; independent
+source review and its limits remain in `headless-display-review/REPORT.md`.
+
 ## Geometry source followup
 
 `CSSOM-IDENTITY-2026-09-05.md` records a new native-only successful CSSOM View

@@ -30,6 +30,7 @@ import {
 } from "./page-animation-frames.js";
 import { PageClock, createPagePerformance } from "./page-performance.js";
 import { PageMedia } from "./page-media.js";
+import { nativeHeadlessDisplay } from "./native-headless-display.js";
 import { PageFocus, type PageFocusRegistration } from "./page-focus.js";
 import {
 	PageIdleCallbacks,
@@ -70,6 +71,7 @@ export function pageBindingGlobalNames(
 ): readonly string[] {
 	return Object.freeze([
 		"navigator",
+		...Object.keys(nativeHeadlessDisplay),
 		...(pageStoragePort(document) ? ["localStorage", "sessionStorage"] : []),
 		...(pageHistoryPort(document) ? ["history"] : []),
 		"location",
@@ -299,6 +301,17 @@ export class PageBindings {
 			);
 			this.window = context.createHostObject({
 				properties: {
+					...Object.fromEntries(
+						Object.entries(nativeHeadlessDisplay).map(([name, value]) => [
+							name,
+							{
+								get: () => {
+									this.ensureOpen();
+									return value;
+								},
+							},
+						]),
+					),
 					CSS: {
 						get: () => {
 							this.ensureOpen();
@@ -512,6 +525,7 @@ export class PageBindings {
 				(error) => lifecycle.fail(error),
 			);
 			this.globals = {
+				...nativeHeadlessDisplay,
 				navigator: this.navigator,
 				CSS: this.css,
 				...(this.storage

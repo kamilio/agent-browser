@@ -1,4 +1,5 @@
 [
+  "src/page-headless-display.test.ts",
   "src/research-definition-depth.test.ts",
   "src/pinned-public-suffix.test.ts",
   "src/public-suffix-snapshot.test.ts",
