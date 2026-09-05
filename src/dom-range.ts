@@ -1,4 +1,8 @@
-import type { DocumentMutation, DocumentTree } from "./document.js";
+import {
+	type DocumentMutation,
+	type DocumentTree,
+	documentCharacterDataEdit,
+} from "./document.js";
 import { DomSelection } from "./dom-selection.js";
 import { AgentBrowserError } from "./errors.js";
 
@@ -254,8 +258,10 @@ export class DomRangeOwner {
 		if (record.type === "attributes") return;
 		const ranges = this.liveRanges();
 		if (record.type === "characterData") {
-			const edit =
-				this.edit?.node === record.target
+			const recordedEdit = documentCharacterDataEdit(record);
+			const edit = recordedEdit
+				? { node: record.target, ...recordedEdit }
+				: this.edit?.node === record.target
 					? this.edit
 					: {
 							node: record.target,

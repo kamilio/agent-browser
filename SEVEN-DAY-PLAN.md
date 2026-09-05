@@ -7,6 +7,14 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Direct native CharacterData edits now align live boundaries with existing
+owner-mediated edits. `CHARACTER-DATA-RANGES.md` records 93 new passing cases,
+480 passes across sixteen named files in each tree, types/builds/scoped checks
+and exact native capture/reference equality. Sixty-four PNGs preserve baseline
+defects and 48 acceptance images. Prepared-layout reuse remains correct without
+extra paint invalidation. Both manifests retain 399 entries. Direct split and
+normalize transfer plus original full-native/runtime/live gates remain open.
+
 Native idle callbacks advance the JavaScript API checkpoint without bypassing
 the existing callback runtime. `IDLE-CALLBACKS.md` records 89 new passing cases,
 263 isolated passes and 268 working passes plus the same independently reproduced

@@ -19,6 +19,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Direct native CharacterData edits now preserve live ranges using private exact
+operation metadata, matching existing owner/script wrapper behavior.
+`CHARACTER-DATA-RANGES.md` records 93 new passing cases, 480 passes across sixteen
+named files in each tree, types/builds/scoped checks, and 48 matching reference/
+new-build captures; 64 PNGs retain broken-baseline evidence. Prepared layout
+correctly repaints current selection without unnecessary revision or CSS work.
+Both manifests retain 399 entries. Direct native split and normalize range
+transfer, existing import diagnostics and original full-native/runtime/live
+gates remain open. Public mutation payloads and pending work stay unchanged.
+
 Native requestIdleCallback/cancelIdleCallback now use bounded software
 opportunities, timeout fallback and two-phase callback ownership. `IDLE-CALLBACKS.md`
 records 89 new passing cases, 263 isolated passes and 268 working passes plus one

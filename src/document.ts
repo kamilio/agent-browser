@@ -110,6 +110,18 @@ export interface DocumentMutation {
 	readonly oldValue: string | null;
 }
 
+interface CharacterDataEdit {
+	readonly offset: number;
+	readonly count: number;
+	readonly length: number;
+}
+
+const characterDataEdits = new WeakMap<DocumentMutation, CharacterDataEdit>();
+
+export function documentCharacterDataEdit(record: DocumentMutation) {
+	return characterDataEdits.get(record);
+}
+
 let nextNodeId = 1;
 
 export interface DocumentNodeReference {
@@ -1739,7 +1751,12 @@ export class DocumentTree {
 		this.setDataInternal(id, data);
 	}
 
-	private setDataInternal(id: number, data: string, notify = true) {
+	private setDataInternal(
+		id: number,
+		data: string,
+		notify = true,
+		edit?: CharacterDataEdit,
+	) {
 		this.validateString(data);
 		const node = this.node(id);
 		if (node.kind !== "text" && node.kind !== "comment")
@@ -1748,7 +1765,15 @@ export class DocumentTree {
 				"Only text/comment nodes have data",
 			);
 		if (node.data === data) {
-			if (notify) this.mutation("characterData", id, { oldValue: data });
+			if (notify)
+				this.mutation("characterData", id, {
+					oldValue: data,
+					characterDataEdit: edit ?? {
+						offset: 0,
+						count: data.length,
+						length: data.length,
+					},
+				});
 			return;
 		}
 		const previous = node.data;
@@ -1756,7 +1781,15 @@ export class DocumentTree {
 		this.checkTextBudget(change);
 		node.data = data;
 		this.textCodeUnits += change;
-		if (notify) this.mutation("characterData", id, { oldValue: previous });
+		if (notify)
+			this.mutation("characterData", id, {
+				oldValue: previous,
+				characterDataEdit: edit ?? {
+					offset: 0,
+					count: previous.length,
+					length: data.length,
+				},
+			});
 		this.changed("text", id);
 	}
 
@@ -1772,7 +1805,12 @@ export class DocumentTree {
 		this.checkDataOffset(node, offset, count);
 		const end = Math.min(node.data.length, offset + count);
 		this.checkTextBudget(data.length - (end - offset));
-		this.setData(id, node.data.slice(0, offset) + data + node.data.slice(end));
+		this.setDataInternal(
+			id,
+			node.data.slice(0, offset) + data + node.data.slice(end),
+			true,
+			{ offset, count: end - offset, length: data.length },
+		);
 	}
 
 	splitText(id: number, offset: number) {
@@ -2454,7 +2492,9 @@ export class DocumentTree {
 	private mutation(
 		type: DocumentMutation["type"],
 		target: number,
-		values: Partial<DocumentMutation>,
+		values: Partial<DocumentMutation> & {
+			characterDataEdit?: CharacterDataEdit;
+		},
 		invalidate = true,
 	) {
 		if (!this.mutationHandlers.size) return;
@@ -2484,6 +2524,11 @@ export class DocumentTree {
 			attributeNamespace: null,
 			oldValue: values.oldValue ?? null,
 		});
+		if (values.characterDataEdit)
+			characterDataEdits.set(
+				record,
+				Object.freeze({ ...values.characterDataEdit }),
+			);
 		this.mutationNotifications++;
 		if (this.pendingMutations) this.pendingMutations.push(record);
 		else this.notifyMutation(record);

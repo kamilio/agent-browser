@@ -1,5 +1,14 @@
 # Compatibility and playground acceptance ledger
 
+CharacterData range continuation: `CHARACTER-DATA-RANGES.md` repairs direct
+native partial edits using immutable private metadata without changing public
+observer records or claiming already-correct script methods as new fixes.
+All 93 new cases and 480 tests across sixteen files pass in each tree; types,
+builds and scoped checks pass. Native capture pixels/counters match canonical
+references, including equal-value edits with valid prepared-layout reuse.
+Direct native split and normalize transfer, prior imports and original
+full-native/runtime/live acceptance gates remain outstanding.
+
 Idle-callback continuation: `IDLE-CALLBACKS.md` adds declared/installed native
 request/cancel methods, bounded deadlines, FIFO/timeout delivery, cancellation
 and two-phase lifetime accounting. All 89 new cases pass; ten-file checks yield
