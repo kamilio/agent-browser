@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Linux hidraw report-byte normalization now distinguishes numbered/unnumbered reads
+from always-ID-prefixed writes, with explicit 7–64-byte metadata, strict IDs and
+owned bounded buffers. The exact four-file synthetic native scope passes 225 cases,
+including 83 new cases; build, strict types and two-file Biome pass. The separately
+authorized native Linux-guide read at September 5, 2026 19:17:55.877 UTC remains
+partial/extracted-unverified. `LINUX-HIDRAW-REPORTS.md` preserves that evidence and
+the unresolved Node/ioctl/readiness, descriptor, permissions and ownership gates.
+This is not a device driver or passkey completion. Browser heading discovery is
+also still cumbersome for large pages despite bounded section extraction; improve
+that agent-facing workflow without raw-source fallback or raised limits. The full
+goal and all previously denied/stopped gates remain unchanged.
+
 Pure FIDO HID INIT allocation now constructs broadcast nonce requests and parses
 bounded nonce-correlated responses, rejecting reserved assigned channels and
 preserving opaque CIDs, versions/capabilities and extension bytes. The exact
