@@ -2,6 +2,7 @@ import {
 	type DocumentMutation,
 	type DocumentTree,
 	documentCharacterDataEdit,
+	documentTextSplit,
 } from "./document.js";
 import { DomSelection } from "./dom-selection.js";
 import { AgentBrowserError } from "./errors.js";
@@ -193,33 +194,12 @@ export class DomRangeOwner {
 		this.validate(node, offset);
 		if (this.edit)
 			throw new AgentBrowserError("invalid-input", "Reentrant range text edit");
-		const before = this.liveRanges().map((range) => ({
-			range,
-			start: range.start,
-			end: range.end,
-		}));
-		const parent = this.tree.get(node).parent;
-		const index =
-			parent === null ? -1 : this.tree.get(parent).children.indexOf(node);
 		this.edit = { node, offset: this.length(node), count: 0, length: 0 };
-		let following: number;
 		try {
-			following = this.tree.splitText(node, offset);
+			return this.tree.splitText(node, offset);
 		} finally {
 			this.edit = undefined;
 		}
-		const adjust = (old: DomBoundaryPoint, current: DomBoundaryPoint) => {
-			if (old.node === node && old.offset > offset)
-				return parent === null
-					? { node, offset }
-					: { node: following, offset: old.offset - offset };
-			if (parent !== null && old.node === parent && old.offset === index + 1)
-				return { node: parent, offset: old.offset + 1 };
-			return current;
-		};
-		for (const { range, start, end } of before)
-			range.update(adjust(start, range.start), adjust(end, range.end));
-		return following;
 	}
 
 	close() {
@@ -257,7 +237,9 @@ export class DomRangeOwner {
 	private mutation(record: DocumentMutation) {
 		if (record.type === "attributes") return;
 		const ranges = this.liveRanges();
+		const split = documentTextSplit(record);
 		if (record.type === "characterData") {
+			if (split) return;
 			const recordedEdit = documentCharacterDataEdit(record);
 			const edit = recordedEdit
 				? { node: record.target, ...recordedEdit }
@@ -284,8 +266,19 @@ export class DomRangeOwner {
 				range.update(adjust(range.start), adjust(range.end), false);
 			return;
 		}
+		const transfer = (point: DomBoundaryPoint): DomBoundaryPoint =>
+			split && point.node === split.node && point.offset > split.offset
+				? { node: split.following, offset: point.offset - split.offset }
+				: point;
 		const siblings = this.children.get(record.target);
-		if (!siblings) return;
+		if (!siblings) {
+			if (split) {
+				for (const range of ranges)
+					range.update(transfer(range.start), transfer(range.end), false);
+				this.track(split.following);
+			}
+			return;
+		}
 		let index = record.removedNodes.length
 			? siblings.indexOf(record.removedNodes[0])
 			: -1;
@@ -296,6 +289,8 @@ export class DomRangeOwner {
 					: siblings.indexOf(record.previousSibling) + 1;
 		const removed = new Set(record.removedNodes);
 		const adjust = (point: DomBoundaryPoint): DomBoundaryPoint => {
+			const transferred = transfer(point);
+			if (transferred !== point) return transferred;
 			let ancestor: number | null | undefined = point.node;
 			while (ancestor !== null && ancestor !== undefined) {
 				if (removed.has(ancestor))
@@ -306,7 +301,8 @@ export class DomRangeOwner {
 			let offset = point.offset;
 			if (offset > index)
 				offset -= Math.min(record.removedNodes.length, offset - index);
-			if (offset > index) offset += record.addedNodes.length;
+			if (offset > index || (split && offset === index))
+				offset += record.addedNodes.length;
 			return { node: point.node, offset };
 		};
 		for (const range of ranges)
@@ -316,6 +312,10 @@ export class DomRangeOwner {
 			if (this.parents.has(node)) this.parents.set(node, null);
 		for (const node of record.addedNodes)
 			if (this.parents.has(node)) this.parents.set(node, record.target);
+		if (split) {
+			this.parents.set(split.following, record.target);
+			this.children.set(split.following, []);
+		}
 	}
 }
 

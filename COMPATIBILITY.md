@@ -1,5 +1,14 @@
 # Compatibility and playground acceptance ledger
 
+Split-text range continuation: `SPLIT-TEXT-RANGES.md` unifies native and existing
+owner/script endpoint transfer, including parent boundaries and detached clamps.
+Removing post-call snapshot restoration preserves newer native listener edits.
+All 113 new cases and 741 tests across 24 named files pass in each tree, with
+types/builds/scoped checks and exact native capture/reference pixels and counters.
+Public mutation shape remains unchanged. Normalize range transfer, general early
+native-listener ordering, prior imports and original full-native/runtime/live
+acceptance gates remain outstanding.
+
 CharacterData range continuation: `CHARACTER-DATA-RANGES.md` repairs direct
 native partial edits using immutable private metadata without changing public
 observer records or claiming already-correct script methods as new fixes.

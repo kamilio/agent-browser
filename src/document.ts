@@ -122,6 +122,18 @@ export function documentCharacterDataEdit(record: DocumentMutation) {
 	return characterDataEdits.get(record);
 }
 
+interface TextSplit {
+	readonly node: number;
+	readonly following: number;
+	readonly offset: number;
+}
+
+const textSplits = new WeakMap<DocumentMutation, TextSplit>();
+
+export function documentTextSplit(record: DocumentMutation) {
+	return textSplits.get(record);
+}
+
 let nextNodeId = 1;
 
 export interface DocumentNodeReference {
@@ -1821,6 +1833,8 @@ export class DocumentTree {
 		const suffix = node.data.slice(offset);
 		const previous = node.data;
 		const following = this.allocate("text", "", "");
+		const split = { node: id, following, offset };
+		const attached = node.parent !== null;
 		this.setDataInternal(id, node.data.slice(0, offset), false);
 		this.setDataInternal(following, suffix, false);
 		if (node.parent !== null) {
@@ -1829,10 +1843,19 @@ export class DocumentTree {
 				parent.children[parent.children.indexOf(id) + 1] ?? null;
 			parent.children.splice(parent.children.indexOf(id) + 1, 0, following);
 			this.node(following).parent = parent.id;
-			this.childMutation(parent.id, [following], [], id, nextSibling);
+			this.mutation("childList", parent.id, {
+				addedNodes: [following],
+				previousSibling: id,
+				nextSibling,
+				textSplit: split,
+			});
 			this.changed("insert", following);
 		}
-		this.mutation("characterData", id, { oldValue: previous });
+		this.mutation("characterData", id, {
+			oldValue: previous,
+			characterDataEdit: { offset, count: previous.length - offset, length: 0 },
+			...(attached ? { textSplit: split } : {}),
+		});
 		return following;
 	}
 
@@ -2494,6 +2517,7 @@ export class DocumentTree {
 		target: number,
 		values: Partial<DocumentMutation> & {
 			characterDataEdit?: CharacterDataEdit;
+			textSplit?: TextSplit;
 		},
 		invalidate = true,
 	) {
@@ -2529,6 +2553,8 @@ export class DocumentTree {
 				record,
 				Object.freeze({ ...values.characterDataEdit }),
 			);
+		if (values.textSplit)
+			textSplits.set(record, Object.freeze({ ...values.textSplit }));
 		this.mutationNotifications++;
 		if (this.pendingMutations) this.pendingMutations.push(record);
 		else this.notifyMutation(record);

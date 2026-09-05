@@ -1,4 +1,7 @@
 [
+  "src/split-text-range-bindings.test.ts",
+  "src/split-text-range-rendering.test.ts",
+  "src/split-text-range.test.ts",
   "src/character-data-range-bindings.test.ts",
   "src/character-data-range-rendering.test.ts",
   "src/character-data-range.test.ts",

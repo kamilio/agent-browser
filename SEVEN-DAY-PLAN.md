@@ -7,6 +7,14 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native splitText now shares exact live-range transfer with existing script/owner
+paths, without stale post-call snapshot restoration. `SPLIT-TEXT-RANGES.md`
+records 113 new passing cases and 741 passes across 24 files in each tree,
+types/builds/scoped checks and 48 matching canonical/new-build captures; 64 PNGs
+preserve baseline defects. Both manifests retain 402 entries. Normalize transfer,
+general native-listener ordering and original full-native/runtime/live gates stay
+open; existing pending work and historical evidence remain untouched.
+
 Direct native CharacterData edits now align live boundaries with existing
 owner-mediated edits. `CHARACTER-DATA-RANGES.md` records 93 new passing cases,
 480 passes across sixteen named files in each tree, types/builds/scoped checks

@@ -19,6 +19,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Direct native splitText now transfers live text/parent endpoints through shared
+private mutation metadata; the canonical wrapper no longer restores stale
+snapshots over native listener edits. `SPLIT-TEXT-RANGES.md` records 113 new passing
+cases, 741 passes across 24 named files in each tree, types/builds/scoped checks
+and 48 exact canonical/new-build PNGs; 64 images retain broken-baseline evidence.
+Detached clamping, late attachment, following edits/removal and unchanged public
+payloads are checked. Both manifests retain 402 entries. Normalize transfer,
+general early native-listener ordering, prior imports and original full-native/
+runtime/live gates remain open. No unrelated pending work is bundled.
+
 Direct native CharacterData edits now preserve live ranges using private exact
 operation metadata, matching existing owner/script wrapper behavior.
 `CHARACTER-DATA-RANGES.md` records 93 new passing cases, 480 passes across sixteen

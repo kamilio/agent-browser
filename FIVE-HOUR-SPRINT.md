@@ -8,6 +8,14 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation repairs native splitText live-range transfer and
+removes the wrapper's stale snapshot restoration. `SPLIT-TEXT-RANGES.md` records
+113 new passing cases, 741 passes across 24 named files in each tree, project
+types/builds/scoped checks and exact native reference/capture equality. Sixty-four
+PNGs preserve baseline defects; 48 form the acceptance comparison. Both manifests
+retain 402 entries. Normalize transfer, prior imports and original full-native/
+runtime/live gates remain outstanding; unrelated pending work stays excluded.
+
 The until-stopped continuation repairs direct native CharacterData live-range
 updates without changing already-correct script wrappers or public records.
 `CHARACTER-DATA-RANGES.md` records 93 new passing cases, 480 passes across sixteen
