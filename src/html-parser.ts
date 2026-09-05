@@ -1,5 +1,6 @@
 import { type DocumentLimits, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { resourceLimitError } from "./resource-limit.js";
 import { htmlAttributeEntries } from "./html-attributes.js";
 import { decodeHtmlEntities } from "./html-entities.js";
 import { setHtmlParseInfo } from "./html-info.js";
@@ -296,8 +297,10 @@ export async function parseHtmlDocumentAsync(
 								++writes > 256 ||
 								sourceUnits + text.length > document.limits.maxTextCodeUnits
 							)
-								throw new AgentBrowserError(
-									"resource-limit",
+								throw resourceLimitError(
+									writes > 256 ? "html.writes" : "html.write-source",
+									writes > 256 ? 256 : document.limits.maxTextCodeUnits,
+									writes > 256 ? writes : sourceUnits + text.length,
 									"Document write input limit exceeded",
 								);
 							sourceUnits += text.length;
@@ -386,8 +389,10 @@ function* parseHtmlSteps(
 	};
 	try {
 		if (source.length > tree.limits.maxTextCodeUnits)
-			throw new AgentBrowserError(
-				"resource-limit",
+			throw resourceLimitError(
+				"html.source",
+				tree.limits.maxTextCodeUnits,
+				source.length,
 				"HTML source text limit exceeded",
 			);
 		if (!fragment && !fragmentDocument) options.initializeDocument?.(tree);
@@ -642,8 +647,10 @@ function* parseHtmlSteps(
 			if (options.signal?.aborted)
 				throw new AgentBrowserError("aborted", "HTML parsing aborted");
 			if (tokenizer.workUnits > tree.limits.maxTextCodeUnits * 8)
-				throw new AgentBrowserError(
-					"resource-limit",
+				throw resourceLimitError(
+					"html.work",
+					tree.limits.maxTextCodeUnits * 8,
+					tokenizer.workUnits,
 					"HTML input work limit exceeded",
 				);
 		};
@@ -718,8 +725,10 @@ function* parseHtmlSteps(
 			const token = tokenizer.next();
 			checkInput();
 			if (token && ++tokens > tree.limits.maxNodes * 8)
-				throw new AgentBrowserError(
-					"resource-limit",
+				throw resourceLimitError(
+					"html.tokens",
+					tree.limits.maxNodes * 8,
+					tokens,
 					"HTML token limit exceeded",
 				);
 			return token;

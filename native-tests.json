@@ -1,4 +1,8 @@
 [
+  "src/resource-limit.test.ts",
+  "src/research-loader-limits.test.ts",
+  "src/html-parser-limits.test.ts",
+  "src/research-failure-limits.test.ts",
   "src/passkey-probe-verifier.test.ts",
   "src/passkey-buffer-slots.test.ts",
   "src/page-passkey-publication.test.ts",

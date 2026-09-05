@@ -22,6 +22,10 @@ import {
 	researchReaderInfo,
 	researchReaderProfile,
 } from "../src/research-loader.js";
+import {
+	type ResourceLimitDiagnostic,
+	resourceLimitDiagnostic,
+} from "../src/resource-limit.js";
 import { validateSelectorSyntax } from "../src/selectors.js";
 import {
 	BrowserSession,
@@ -251,7 +255,11 @@ export interface ResearchNavigationReport {
 	bodyCapture?: ResearchBodyCapture;
 	selection?: { method: "css-selector"; matches: number | null };
 	outcome: ResearchOutcome;
-	failure?: { category: string; stage: string };
+	failure?: {
+		category: string;
+		stage: string;
+		resourceLimit?: Readonly<ResourceLimitDiagnostic>;
+	};
 	navigation?: NavigationResult;
 	extraction?: DocumentExtraction;
 	reader?: Readonly<ResearchReaderReport>;
@@ -473,10 +481,15 @@ export async function researchNavigation(
 			report.contentSuccess = false;
 		report.extraction = { ...extraction, url: reportUrl(extraction.url) };
 	} catch (error) {
+		const resourceLimit =
+			error instanceof AgentBrowserError && error.code === "resource-limit"
+				? resourceLimitDiagnostic(error)
+				: undefined;
 		report.failure = {
 			category:
 				error instanceof AgentBrowserError ? error.code : "internal-error",
 			stage,
+			...(resourceLimit ? { resourceLimit } : {}),
 		};
 		report.contentSuccess = false;
 	} finally {

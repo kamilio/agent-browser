@@ -19,6 +19,7 @@ import { DocumentSelectedContent } from "./document-selectedcontent.js";
 import { DocumentResources } from "./document-resources.js";
 import { canRewriteDocumentUrl } from "./document-url.js";
 import { AgentBrowserError } from "./errors.js";
+import { resourceLimitError } from "./resource-limit.js";
 import { htmlAttributeName } from "./html-attribute-name.js";
 import { isFormAssociatedTag } from "./html-form-association.js";
 import {
@@ -978,8 +979,10 @@ export class DocumentTree {
 		if (this.fragmentHosts.size) depth = this.hostDepth(parentId);
 		for (const entry of sourceTree.walkIncludingTemplateContents(fragmentId))
 			if (entry.depth > 0 && depth + entry.depth - 1 > this.limits.maxDepth)
-				throw new AgentBrowserError(
-					"resource-limit",
+				throw resourceLimitError(
+					"document.depth",
+					this.limits.maxDepth,
+					depth + entry.depth - 1,
 					"Document depth limit exceeded",
 				);
 		return fragment.children.length
@@ -1051,8 +1054,10 @@ export class DocumentTree {
 		for (const moving of children)
 			for (const entry of this.walkIncludingTemplateContents(moving))
 				if (parentDepth + entry.depth > this.limits.maxDepth)
-					throw new AgentBrowserError(
-						"resource-limit",
+					throw resourceLimitError(
+						"document.depth",
+						this.limits.maxDepth,
+						parentDepth + entry.depth,
 						"Document depth limit exceeded",
 					);
 		return children;
@@ -1620,8 +1625,10 @@ export class DocumentTree {
 			this.nodeCount >= this.limits.maxNodes ||
 			!Number.isSafeInteger(nextNodeId)
 		)
-			throw new AgentBrowserError(
-				"resource-limit",
+			throw resourceLimitError(
+				"document.nodes",
+				this.limits.maxNodes,
+				this.nodeCount + 1,
 				"Document node limit exceeded",
 			);
 		const key = htmlAttributeName(name);
@@ -2197,8 +2204,10 @@ export class DocumentTree {
 					ancestor.parent === null ? undefined : this.node(ancestor.parent);
 			}
 			if (depth > this.limits.maxDepth)
-				throw new AgentBrowserError(
-					"resource-limit",
+				throw resourceLimitError(
+					"document.depth",
+					this.limits.maxDepth,
+					depth,
 					"Document depth limit exceeded",
 				);
 			replacement = this.createText(data);
@@ -2426,8 +2435,10 @@ export class DocumentTree {
 			this.nodeCount >= this.limits.maxNodes ||
 			!Number.isSafeInteger(nextNodeId)
 		)
-			throw new AgentBrowserError(
-				"resource-limit",
+			throw resourceLimitError(
+				"document.nodes",
+				this.limits.maxNodes,
+				this.nodeCount + 1,
 				"Document node limit exceeded",
 			);
 		this.checkTextBudget(tagName.length + data.length);
@@ -2516,8 +2527,10 @@ export class DocumentTree {
 	private checkTextBudget(change: number) {
 		this.resources?.check(0, change);
 		if (this.textCodeUnits + change > this.limits.maxTextCodeUnits)
-			throw new AgentBrowserError(
-				"resource-limit",
+			throw resourceLimitError(
+				"document.text",
+				this.limits.maxTextCodeUnits,
+				this.textCodeUnits + change,
 				"Document text limit exceeded",
 			);
 	}

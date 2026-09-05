@@ -1,4 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
+import { resourceLimitError } from "./resource-limit.js";
 import { htmlAttributeName } from "./html-attribute-name.js";
 import { createHtmlAttributes, setHtmlAttribute } from "./html-attributes.js";
 import { decodeHtmlEntities } from "./html-entities.js";
@@ -242,8 +243,10 @@ export class HtmlTokenizer {
 					"Malformed HTML attribute name is not implemented",
 				);
 			if (++count > 1024)
-				throw new AgentBrowserError(
-					"resource-limit",
+				throw resourceLimitError(
+					"html.attributes",
+					1024,
+					count,
 					"HTML attributes per token limit exceeded",
 				);
 			this.skipWhitespace();

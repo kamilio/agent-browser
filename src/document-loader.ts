@@ -9,6 +9,7 @@ import {
 	decodeResponseText,
 	parseNetworkUrl,
 } from "./network.js";
+import { resourceLimitError } from "./resource-limit.js";
 import type { DocumentLoaderContext } from "./session.js";
 import { documentStyles } from "./styles.js";
 import { loadTextDocument } from "./text-loader.js";
@@ -63,8 +64,10 @@ export async function loadBrowserDocument(
 	if (types[0].split(";", 1)[0].trim().toLowerCase() !== "text/html")
 		return loadTextDocument(response, context);
 	if (response.body.byteLength > context.limits.maxTextCodeUnits * 4 + 3)
-		throw new AgentBrowserError(
-			"resource-limit",
+		throw resourceLimitError(
+			"html.encoded",
+			context.limits.maxTextCodeUnits * 4 + 3,
+			response.body.byteLength,
 			"Encoded HTML document limit exceeded",
 		);
 	const decoded = decodeResponseText(response, prescanEncoding(response.body));

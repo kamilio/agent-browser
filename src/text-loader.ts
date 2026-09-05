@@ -5,6 +5,7 @@ import {
 	decodeResponseText,
 	parseNetworkUrl,
 } from "./network.js";
+import { resourceLimitError } from "./resource-limit.js";
 import type { DocumentLoaderContext } from "./session.js";
 
 export function loadTextDocument(
@@ -30,14 +31,18 @@ export function loadTextDocument(
 			"This loader supports plain text and JSON, not HTML or executable documents",
 		);
 	if (response.body.byteLength > context.limits.maxTextCodeUnits * 4 + 3)
-		throw new AgentBrowserError(
-			"resource-limit",
+		throw resourceLimitError(
+			"text.encoded",
+			context.limits.maxTextCodeUnits * 4 + 3,
+			response.body.byteLength,
 			"Encoded text document limit exceeded",
 		);
 	const text = decodeResponseText(response).text;
 	if (text.length > context.limits.maxTextCodeUnits)
-		throw new AgentBrowserError(
-			"resource-limit",
+		throw resourceLimitError(
+			"text.decoded",
+			context.limits.maxTextCodeUnits,
+			text.length,
 			"Decoded text document limit exceeded",
 		);
 	const tree = new DocumentTree(

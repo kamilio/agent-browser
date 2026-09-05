@@ -14,6 +14,10 @@ import {
 	researchReaderProfile,
 	setResearchReaderInfo,
 } from "./research-reader-info.js";
+import {
+	type ResourceLimitKind,
+	resourceLimitError,
+} from "./resource-limit.js";
 import type { DocumentLoaderContext } from "./session.js";
 import { loadTextDocument } from "./text-loader.js";
 
@@ -101,13 +105,13 @@ export function sanitizeResearchHtml(
 		)
 			throw new AgentBrowserError("invalid-input", "Invalid reader limit");
 	}
-	const check = (condition: boolean) => {
+	const check = (kind?: ResourceLimitKind, limit = 0, observed = 0) => {
 		if (signal?.aborted)
 			throw new AgentBrowserError("aborted", "Reader aborted");
-		if (condition)
-			throw new AgentBrowserError("resource-limit", "Reader budget exceeded");
+		if (kind !== undefined && observed > limit)
+			throw resourceLimitError(kind, limit, observed, "Reader budget exceeded");
 	};
-	check(source.length > limits.maxSourceCodeUnits);
+	check("reader.source", limits.maxSourceCodeUnits, source.length);
 	const omittedSubtrees: Record<string, number> = Object.create(null);
 	const report: ResearchReaderReport = {
 		profile: researchReaderProfile,
@@ -148,16 +152,16 @@ export function sanitizeResearchHtml(
 	const open: string[] = [];
 	const emit = (value: string) => {
 		report.outputCodeUnits += value.length;
-		check(report.outputCodeUnits > limits.maxOutputCodeUnits);
+		check("reader.output", limits.maxOutputCodeUnits, report.outputCodeUnits);
 		output.push(value);
 	};
 	const text = (value: string, omit: boolean) => {
 		report.textCodeUnits += value.length;
-		check(report.textCodeUnits > limits.maxTextCodeUnits);
+		check("reader.text", limits.maxTextCodeUnits, report.textCodeUnits);
 		if (!omit) emit(escapeHtml(value));
 	};
 	for (let token = nextToken(); token; token = nextToken()) {
-		check(++report.tokens > limits.maxTokens);
+		check("reader.tokens", limits.maxTokens, ++report.tokens);
 		const omitting = skipped.length > 0;
 		if (omitting) report.omittedTokens++;
 		if (token.kind === "text") {
@@ -179,7 +183,7 @@ export function sanitizeResearchHtml(
 				skipped.pop();
 			} else if (!token.selfClosing && !voidTags.has(name)) {
 				skipped.push(name);
-				check(skipped.length > limits.maxDepth);
+				check("reader.depth", limits.maxDepth, skipped.length);
 				if (rawTags.has(name)) text(tokenizer.raw(name) ?? "", true);
 			}
 			continue;
@@ -231,7 +235,7 @@ export function sanitizeResearchHtml(
 			if ((name === "p" || name === "li") && open.at(-1) === "p") open.pop();
 			if (name === "li" && open.at(-1) === "li") open.pop();
 			open.push(name);
-			check(open.length > limits.maxDepth);
+			check("reader.depth", limits.maxDepth, open.length);
 		}
 		if (!outputName) report.unwrappedElements++;
 		let attributes = "";
@@ -256,7 +260,7 @@ export function sanitizeResearchHtml(
 			text(tokenizer.raw(name, name === "title") ?? "", false);
 		else if (name === "plaintext") text(tokenizer.remainder(), false);
 	}
-	check(false);
+	check();
 	if (skipped.length)
 		throw new AgentBrowserError(
 			"unsupported",
@@ -307,8 +311,10 @@ export function loadResearchDocument(
 		researchReaderLimits.maxSourceCodeUnits,
 	);
 	if (response.body.byteLength > maxSourceCodeUnits * 4 + 3)
-		throw new AgentBrowserError(
-			"resource-limit",
+		throw resourceLimitError(
+			"reader.encoded",
+			maxSourceCodeUnits * 4 + 3,
+			response.body.byteLength,
 			"Encoded reader limit exceeded",
 		);
 	const types = response.headers["content-type"];
@@ -323,8 +329,12 @@ export function loadResearchDocument(
 		decoded.text.length > maxSourceCodeUnits ||
 		(!html && decoded.text.length > researchReaderLimits.maxTextCodeUnits)
 	)
-		throw new AgentBrowserError(
-			"resource-limit",
+		throw resourceLimitError(
+			"reader.decoded",
+			html
+				? maxSourceCodeUnits
+				: Math.min(maxSourceCodeUnits, researchReaderLimits.maxTextCodeUnits),
+			decoded.text.length,
 			"Decoded reader limit exceeded",
 		);
 	const sanitized = sanitizeResearchHtml(

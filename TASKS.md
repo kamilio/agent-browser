@@ -1,5 +1,19 @@
 # Agent browser implementation tasks
 
+Native loader failures now carry optional, private-identity resource diagnostics
+with an enumerated kind, unit, configured limit and observed count. Reader, text,
+HTML parser/tokenizer and selected central document checks retain their budgets,
+messages, cancellation precedence and cleanup. The clean 13-file native matrix
+passes 529 cases (110 new), with no failures or skips; builds and strict new-suite
+types pass. `LOADER-RESOURCE-DIAGNOSTICS.md` records partial instrumentation,
+measurement semantics and validation evidence. A separately authorized offline
+replay of the previously captured Fetch Standard hits reader.text at 1,057,108
+UTF-16 units against 1,000,000; it makes no new request and does not rewrite the
+original failed extraction. One authorized native NVIDIA known-issues follow-up
+adds captured, partial hardware research, not measured performance or a purchase
+recommendation. Existing denied/stopped runtime, credential, device, Reddit,
+Astra and X gates remain unchanged. The overall browser goal remains open.
+
 Native fetch now follows explicitly published, document-owned signal capabilities
 through request/preflight/redirect cancellation and unread buffered response clones.
 Registry quotas, private native followers, state-shadowing rejection, factory
