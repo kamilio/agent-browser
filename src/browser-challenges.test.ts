@@ -7,6 +7,202 @@ import {
 const html = { "content-type": ["text/html; charset=utf-8"] };
 const challenge = { "cf-mitigated": ["challenge"] };
 
+const savedPoeLoginText = String.raw`# [PoePoe](<https://poe.com/login>)
+
+## Chat with the best AI, privately or in a group chat\. Explore GPT\-5\.6\-Sol, Claude\-Opus\-5, Claude\-Fable\-5\.1, Grok\-4\.6, Kimi\-K3, and thousands of others, all on Poe\.
+
+Continue with GoogleContinue with Apple
+
+---
+
+or
+
+---
+
+GoUse phone
+
+By continuing, you are agreeing to Poe's [Terms of Service](<https://poe.com/tos>) and [Privacy Policy](<https://poe.com/privacy>)\.
+
+---
+
+[Leaderboard](<https://poe.com/leaderboard>)[Get Poe](<https://poe.com/pages/get-poe>)
+`;
+
+describe("synthetic login diagnostics", () => {
+	const login = {
+		status: 200,
+		headers: html,
+		url: "https://poe.com/login?redacted",
+		title: "Poe - Fast, Helpful AI Chat",
+		text: savedPoeLoginText,
+	};
+	const expected = {
+		kind: "login",
+		provider: "unspecified",
+		confidence: "possible",
+		evidence: ["login-url-and-html-markers"],
+		action: "stop-and-request-user-handoff",
+	};
+	it.each(["R5 About", "R6 blog"])(
+		"recognizes the saved Poe %s extraction at its final login destination",
+		() => {
+			expect(classify(login)).toEqual(expected);
+		},
+	);
+	it("keeps a saved X post excerpt readable despite co-present login options", () => {
+		expect(
+			classify({
+				...login,
+				url: "https://x.com/DylanMaster44/status/2096025060133794200",
+				title:
+					'Dylan on X: "@OpenAI what about regular gpt-6 astra in chat for plus users?" / X',
+				text: String.raw`what about regular gpt\-6 astra in chat for plus users?
+
+[11:58 PM · Sep 4, 2026](<https://x.com/DylanMaster44/status/2096025060133794200>)[1KViews](<https://x.com/DylanMaster44/status/2096025060133794200>)
+
+[](<https://x.com/i/status/2096025060133794200>)
+
+9
+
+## Log in or sign up for X
+
+See what’s happening and join the conversation
+
+[Continue with phone](<https://x.com/i/jf/onboarding/web?mode=signup&amp;redirect_after_login=%2FDylanMaster44%2Fstatus%2F2096025060133794200>)Continue with AppleContinue with Google`,
+			}),
+		).toBeNull();
+	});
+	it.each([
+		"https://example.com/article",
+		"https://example.com/article?next=/login",
+		"https://example.com/article#/login",
+		"https://example.com/docs/login",
+		"https://example.com/login-help",
+	])("ignores footer sign-in options at non-login destination %s", (url) => {
+		expect(
+			classify({
+				...login,
+				url,
+				title: "An ordinary article",
+				text: "The public article body. Footer: Continue with GoogleContinue with Apple",
+			}),
+		).toBeNull();
+	});
+	it.each([
+		undefined,
+		null,
+		42,
+		{},
+		new URL("https://poe.com/login"),
+		"/login",
+		"not a URL",
+		"https://",
+		"https://[invalid]/login",
+		"ftp://poe.com/login",
+		"file:///login",
+		"javascript:login",
+		"https:poe.com/login",
+		"https:///poe.com/login",
+		"https://user:secret@poe.com/login",
+		"https://poe.com/lo\ngin",
+		"https://poe.com/login?token=\u0000",
+		"https://poe.com/login?token=\u007f",
+		" https://poe.com/login",
+		"https://poe.com\\login",
+		`https://poe.com/login?${"x".repeat(4096)}`,
+	])("ignores unsupported or malformed URL %#", (url) => {
+		expect(classify({ ...login, url })).toBeNull();
+	});
+	it("does not invoke a URL getter or inherit a URL", () => {
+		let reads = 0;
+		const input = { ...login };
+		Object.defineProperty(input, "url", {
+			get() {
+				reads++;
+				throw new Error("must not read URL");
+			},
+		});
+		expect(classify(input)).toBeNull();
+		expect(reads).toBe(0);
+		expect(classify(Object.create(login))).toBeNull();
+	});
+	it.each(["", "Welcome", "Continue with Google", "Continue with Apple"])(
+		"requires paired provider entry text, not a URL alone: %j",
+		(text) => {
+			expect(classify({ ...login, text })).toBeNull();
+		},
+	);
+	it("bounds text and URL input and returns only static evidence", () => {
+		expect(
+			classify({ ...login, text: " ".repeat(8192) + login.text }),
+		).toBeNull();
+		const prefix = "https://poe.com/login?secret=";
+		const url = prefix + "x".repeat(4096 - prefix.length);
+		expect(classify({ ...login, url })).toEqual(expected);
+		expect(classify({ ...login, url: `${url}x` })).toBeNull();
+		expect(
+			classify({
+				...login,
+				url: "https://private.example/login?token=SECRET#SECRET",
+			}),
+		).toEqual(expected);
+	});
+	it.each([403, 429])(
+		"does not turn ordinary HTTP %i into a login barrier",
+		(status) => {
+			expect(classify({ ...login, status, text: "Request failed" })).toBeNull();
+		},
+	);
+	it.each([204, 205, 301, 304])(
+		"preserves non-document status %i",
+		(status) => {
+			expect(classify({ ...login, status })).toBeNull();
+		},
+	);
+	it("requires HTML and preserves header-confirmed challenge precedence", () => {
+		expect(
+			classify({ ...login, headers: { "content-type": "text/plain" } }),
+		).toBeNull();
+		const input = { ...login, headers: { ...html, ...challenge } };
+		Object.defineProperty(input, "url", {
+			get() {
+				throw new Error("header classification must not inspect URL");
+			},
+		});
+		expect(classify(input)).toEqual({
+			...expected,
+			kind: "challenge",
+			provider: "cloudflare",
+			confidence: "confirmed",
+			evidence: ["cf-mitigated-challenge"],
+		});
+	});
+	it("preserves existing HTML challenge, denial and title-login evidence", () => {
+		expect(
+			classify({
+				...login,
+				title: "Just a moment...",
+				text: `${login.text} Verify you are human.`,
+			})?.evidence,
+		).toEqual(["html-challenge-markers"]);
+		expect(
+			classify({
+				...login,
+				status: 403,
+				text: `You've been blocked by network security. ${login.text}`,
+			})?.evidence,
+		).toEqual(["html-network-security-block"]);
+		expect(
+			classify({
+				...login,
+				url: undefined,
+				title: "Sign in",
+				text: "Email address and password.",
+			})?.evidence,
+		).toEqual(["html-login-markers"]);
+	});
+});
+
 function classify(response: unknown) {
 	return classifyBrowserChallenge(response as BrowserChallengeResponse);
 }

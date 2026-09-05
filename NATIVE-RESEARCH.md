@@ -261,3 +261,35 @@ This correction changes only `scripts/research-browser.ts`,
 transport/session code, rebuild shared `dist`, or perform a live/socket/auth
 probe. The corrected source is prepared for the parent's integration build and
 authorized round-two live research; the synthetic result is not live success.
+
+## Bounded login-redirect followup — September 5, 2026
+
+The runner now supplies the actual primary-response URL privately to the
+post-extraction classifier. A possible-login result requires an exact `/login`
+or `/login/` path and adjacent Google/Apple continuation text. The URL must be a
+bounded absolute HTTP(S) value without credentials, controls or backslashes.
+Diagnostics contain fixed labels, never the supplied URL or query. Existing
+confirmed challenge precedence remains unchanged. This narrow English-language
+heuristic is not a general login detector; null remains inconclusive, and
+extracted content remains available for review.
+
+Forty-six new synthetic cases bring seven named files to **333 passing tests in
+each of the working and isolated trees**. Types/builds, strict changed-test types
+and scoped Biome checks pass; the native manifest remains 422 entries, not an
+executed full-suite result. Saved-response replay recognizes the two earlier Poe
+login pages without marking six readable X-post fixtures as login barriers.
+Evidence is retained under `node_modules/.cache/native-validation/` in
+`login-diagnostics-final-*`, `login-diagnostics-report.md` and
+`login-diagnostics-saved-replay.json`.
+
+A separate authorized native-reader request to `https://poe.com/about` at
+**2026-09-05 03:16:54 UTC** followed two redirects to a status-200 login page and
+reported `semantic-barrier` / possible login. No login, credentials, scripts or
+challenge solver ran. The earlier sandbox attempt remains a network failure.
+Both new records are preserved as `browser-research/login-followup-sandbox.jsonl`
+and `browser-research/login-followup-live.jsonl` beneath that evidence directory.
+The decoded response-body SHA-256 is
+`8ad4f6cdb9cdb9f05c218c35c042cc886efd228a155115b6d6abf84cd78f6520`;
+the built runner SHA-256 for this followup is
+`4d27758700bb337ca3dbfec4bdd76674673757cbd5804247cd1f2ef6a9991280`.
+Historical round-two outcomes, measurements and runner hashes remain unchanged.

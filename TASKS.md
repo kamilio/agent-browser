@@ -29,6 +29,14 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native research now conservatively recognizes the observed Poe login redirect
+using the actual response URL and paired continuation markers. All 46 new cases
+pass; seven named files yield 333 passes in each tree, with types/builds and scoped
+checks passing. A separate authorized September 5, 03:16:54 UTC native-reader
+request confirms a possible-login barrier, not authenticated content access.
+`NATIVE-RESEARCH.md` preserves the new evidence separately from historical rounds;
+the 422-entry manifest, actual SafeJS and real-provider gates are unchanged.
+
 Native passkey ceremonies now connect an explicit trusted provider to
 `navigator.credentials` through PageBindings/PageScripts options. `PASSKEYS.md`
 documents exact-host HTTPS/RP binding, challenge handling, lifecycle cancellation,

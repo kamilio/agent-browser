@@ -1,6 +1,7 @@
 export interface BrowserChallengeResponse {
 	readonly status: number;
 	readonly headers: Readonly<Record<string, string | readonly string[]>>;
+	readonly url?: string;
 	readonly title?: string;
 	readonly text?: string;
 }
@@ -13,6 +14,7 @@ export interface BrowserChallengeDiagnostic {
 		| "cf-mitigated-challenge"
 		| "html-challenge-markers"
 		| "html-login-markers"
+		| "login-url-and-html-markers"
 		| "html-network-security-block"
 	)[];
 	readonly action: "stop-and-request-user-handoff";
@@ -92,6 +94,27 @@ function boundedText(response: object, name: string, limit: number): string {
 	return typeof value === "string"
 		? value.slice(0, limit).toLowerCase().replace(/\s+/g, " ").trim()
 		: "";
+}
+
+function loginDestination(response: object): boolean {
+	const value = ownValue(response, "url");
+	if (
+		typeof value !== "string" ||
+		value.length > 4096 ||
+		!/^https?:\/\/[^/?#]/i.test(value) ||
+		/[\s\\]/.test(value)
+	)
+		return false;
+	for (let index = 0; index < value.length; index++) {
+		const code = value.charCodeAt(index);
+		if (code < 32 || code === 127) return false;
+	}
+	try {
+		const url = new URL(value);
+		return !url.username && !url.password && /^\/login\/?$/.test(url.pathname);
+	} catch {
+		return false;
+	}
 }
 
 function retryAfter(headers: Map<string, string[]>): number | undefined {
@@ -201,6 +224,19 @@ export function classifyBrowserChallenge(
 				"unspecified",
 				"possible",
 				"html-login-markers",
+			);
+		if (
+			loginDestination(response) &&
+			/\bcontinue with (?:google\s*continue with apple|apple\s*continue with google)\b/.test(
+				text,
+			)
+		)
+			return diagnostic(
+				headers,
+				"login",
+				"unspecified",
+				"possible",
+				"login-url-and-html-markers",
 			);
 		return null;
 	} catch {

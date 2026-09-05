@@ -51,6 +51,58 @@ function response(
 
 afterEach(() => vi.restoreAllMocks());
 
+it.each(["about", "blog"])(
+	"synthetic login diagnostics classify the final Poe-style response after extraction from %s",
+	async (path) => {
+		const input = response(
+			"<title>Poe - Fast, Helpful AI Chat</title><p>Continue with GoogleContinue with Apple</p><p>GoUse phone</p>",
+		);
+		input.url = "https://poe.com/login?return=PRIVATE";
+		const request = vi
+			.spyOn(NodeNetworkTransport.prototype, "request")
+			.mockResolvedValue(input);
+		const report = await researchNavigation(`https://poe.com/${path}`, true);
+		expect(report.outcome).toBe("semantic-barrier");
+		expect(report.contentSuccess).toBe(false);
+		expect(report.classification.diagnostic).toEqual({
+			kind: "login",
+			provider: "unspecified",
+			confidence: "possible",
+			evidence: ["login-url-and-html-markers"],
+			action: "stop-and-request-user-handoff",
+		});
+		expect(report.extraction?.content).toContain(
+			"Continue with GoogleContinue with Apple",
+		);
+		expect(report.extraction?.url).toBe("https://poe.com/login?redacted");
+		expect(report.failure).toBeUndefined();
+		expect(JSON.stringify(report)).not.toContain("PRIVATE");
+		expect(researchExitCode([report])).toBe(1);
+		expect(request).toHaveBeenCalledOnce();
+	},
+);
+
+it("synthetic login diagnostics do not use a requested login URL or HTML base in place of the final response", async () => {
+	const input = response(
+		'<title>Public post</title><base href="https://research.example/login"><p>Public post body and publication date.</p><footer>Continue with GoogleContinue with Apple</footer>',
+	);
+	input.url = "https://research.example/author/status/123";
+	const request = vi
+		.spyOn(NodeNetworkTransport.prototype, "request")
+		.mockResolvedValue(input);
+	const report = await researchNavigation(
+		"https://research.example/login",
+		true,
+	);
+	expect(report.classification.diagnostic).toBeNull();
+	expect(report.outcome).toBe("extracted-unverified");
+	expect(report.contentSuccess).toBeNull();
+	expect(report.extraction?.content).toContain(
+		"Public post body and publication date",
+	);
+	expect(request).toHaveBeenCalledOnce();
+});
+
 it("reads synthetic vendor content around SVG, MathML, CSS and script omissions", () => {
 	const tree = loadResearchDocument(
 		response(`<!doctype html>

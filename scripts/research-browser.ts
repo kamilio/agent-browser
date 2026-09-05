@@ -177,6 +177,7 @@ export async function researchNavigation(
 	let transport: NodeNetworkTransport | undefined;
 	let primaryStarted = false;
 	let primaryHeaders: NetworkResponse["headers"] = {};
+	let primaryUrl: string | undefined;
 	try {
 		session = new BrowserSession({
 			createTransport: (cookieJar) => {
@@ -221,6 +222,7 @@ export async function researchNavigation(
 							report.primaryResponse = summarizePrimaryResponse(response);
 							report.finalUrl = report.primaryResponse.url;
 							primaryHeaders = response.headers;
+							primaryUrl = response.url;
 							const diagnostic = classifyBrowserChallenge({
 								status: response.status,
 								headers: primaryHeaders,
@@ -294,6 +296,7 @@ export async function researchNavigation(
 		report.classification.diagnostic = classifyBrowserChallenge({
 			status,
 			headers: primaryHeaders,
+			url: primaryUrl,
 			title: extraction.title,
 			text: typeof extraction.content === "string" ? extraction.content : "",
 		});
