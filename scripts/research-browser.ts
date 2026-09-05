@@ -4,9 +4,12 @@ import {
 	type BrowserChallengeDiagnostic,
 	classifyBrowserChallenge,
 } from "../src/browser-challenges.js";
+import { documentBody } from "../src/document-elements.js";
 import { loadBrowserDocument } from "../src/document-loader.js";
+import { documentTitle } from "../src/document-title.js";
 import { AgentBrowserError } from "../src/errors.js";
 import { type DocumentExtraction, extractDocument } from "../src/extraction.js";
+import { htmlParseInfo } from "../src/html-info.js";
 import {
 	type NetworkMetrics,
 	NetworkPolicy,
@@ -19,11 +22,18 @@ import {
 	researchReaderInfo,
 	researchReaderProfile,
 } from "../src/research-loader.js";
-import { BrowserSession, type NavigationResult } from "../src/session.js";
+import { validateSelectorSyntax } from "../src/selectors.js";
+import {
+	BrowserSession,
+	type NavigationResult,
+	type SessionPage,
+} from "../src/session.js";
 
 export const researchRunLimits = Object.freeze({
 	maxUrls: 8,
 	maxUrlCodeUnits: 4096,
+	selectorCodeUnits: 4096,
+	diagnosticTextCodeUnits: 8192,
 	deadlineMs: 120_000,
 	navigationTimeoutMs: 20_000,
 	extractionBytes: 256_000,
@@ -84,11 +94,33 @@ export function summarizePrimaryResponse(
 	};
 }
 
+function researchSelector(value: unknown): string {
+	if (
+		typeof value !== "string" ||
+		value.length > researchRunLimits.selectorCodeUnits ||
+		!value.trim() ||
+		value.startsWith("--")
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid research selector");
+	try {
+		validateSelectorSyntax(value);
+	} catch {
+		throw new AgentBrowserError("invalid-input", "Invalid research selector");
+	}
+	return value;
+}
+
 export function parseResearchArguments(args: readonly string[]) {
 	let reader = false;
+	let selector: string | undefined;
 	const urls: string[] = [];
 	const policy = new NetworkPolicy();
-	for (const argument of args) {
+	for (let index = 0; index < args.length; index++) {
+		const argument = args[index];
+		if (argument === "--selector" && selector === undefined) {
+			selector = researchSelector(args[++index]);
+			continue;
+		}
 		if (argument === "--reader" && !reader) {
 			reader = true;
 			continue;
@@ -115,7 +147,69 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Explicit public URLs required",
 		);
-	return { reader, urls };
+	return { reader, urls, ...(selector === undefined ? {} : { selector }) };
+}
+
+const diagnosticOmissions = new Set(
+	"head script style template iframe noembed noframes object embed canvas input textarea select datalist".split(
+		" ",
+	),
+);
+
+function diagnosticText(page: SessionPage): string {
+	const tree = page.document;
+	const pending: (number | null)[] = [documentBody(tree) ?? tree.root];
+	const scripting = htmlParseInfo(tree)?.scripting ?? false;
+	let text = "";
+	while (
+		pending.length &&
+		text.length < researchRunLimits.diagnosticTextCodeUnits
+	) {
+		const id = pending.pop();
+		if (id === null) {
+			text += " ";
+			continue;
+		}
+		if (id === undefined) break;
+		const node = tree.get(id);
+		if (
+			node.kind === "comment" ||
+			node.kind === "doctype" ||
+			diagnosticOmissions.has(node.tagName) ||
+			Object.hasOwn(node.attributes, "hidden") ||
+			Object.hasOwn(node.attributes, "inert") ||
+			node.attributes["aria-hidden"]?.toLowerCase() === "true" ||
+			(node.tagName === "noscript" && scripting)
+		)
+			continue;
+		const style = page.styles.get(id);
+		if (!style.displayed) continue;
+		if (node.tagName === "br") {
+			if (style.visible) text += " ";
+			continue;
+		}
+		const content =
+			node.kind === "text"
+				? node.data
+				: node.tagName === "img"
+					? ` ${node.attributes.alt ?? ""} `
+					: undefined;
+		if (content !== undefined) {
+			if (style.visible)
+				text += content.slice(
+					0,
+					researchRunLimits.diagnosticTextCodeUnits - text.length,
+				);
+			continue;
+		}
+		if (!style.display.startsWith("inline")) {
+			text += " ";
+			pending.push(null);
+		}
+		for (let index = node.children.length - 1; index >= 0; index--)
+			pending.push(node.children[index]);
+	}
+	return text;
 }
 
 export type ResearchOutcome =
@@ -140,6 +234,7 @@ export interface ResearchNavigationReport {
 		diagnostic: BrowserChallengeDiagnostic | null;
 	};
 	primaryResponse: PrimaryResponseSummary | null;
+	selection?: { method: "css-selector"; matches: number | null };
 	outcome: ResearchOutcome;
 	failure?: { category: string; stage: string };
 	navigation?: NavigationResult;
@@ -152,8 +247,13 @@ export async function researchNavigation(
 	url: string,
 	reader = false,
 	signal?: AbortSignal,
+	selector?: string,
 ): Promise<ResearchNavigationReport> {
-	const validated = parseResearchArguments(reader ? ["--reader", url] : [url]);
+	const validated = parseResearchArguments([
+		...(reader ? ["--reader"] : []),
+		...(selector === undefined ? [] : ["--selector", selector]),
+		url,
+	]);
 	const started = Date.now();
 	const report: ResearchNavigationReport = {
 		requestedUrl: reportUrl(validated.urls[0]),
@@ -170,6 +270,9 @@ export async function researchNavigation(
 			diagnostic: null,
 		},
 		primaryResponse: null,
+		...(validated.selector === undefined
+			? {}
+			: { selection: { method: "css-selector" as const, matches: null } }),
 		outcome: "failure",
 	};
 	let stage = "setup";
@@ -284,15 +387,48 @@ export async function researchNavigation(
 				"unsupported",
 				"Research requires a document",
 			);
-		const tree = session.page(tab.id).document;
+		const page = session.page(tab.id);
+		const tree = page.document;
 		report.reader = researchReaderInfo(tree);
+		const status = report.primaryResponse?.status ?? 0;
+		let root: string | undefined;
+		if (validated.selector !== undefined) {
+			stage = "document-classification";
+			const diagnostic = classifyBrowserChallenge({
+				status,
+				headers: primaryHeaders,
+				url: primaryUrl,
+				title: documentTitle(tree),
+				text: diagnosticText(page),
+			});
+			if (diagnostic) {
+				report.classification.diagnostic = diagnostic;
+				report.classification.barrier = diagnostic.kind;
+				report.outcome = "semantic-barrier";
+				stage = "semantic-barrier";
+				throw new AgentBrowserError(
+					"policy-denied",
+					"Research barrier requires user handoff",
+				);
+			}
+			stage = "selection";
+			const matches = page.queries.querySelectorAll(validated.selector);
+			report.selection = { method: "css-selector", matches: matches.length };
+			if (matches.length !== 1)
+				throw new AgentBrowserError(
+					matches.length ? "invalid-input" : "not-found",
+					"Research selector requires one element",
+				);
+			root = tree.reference(matches[0]);
+		}
+		stage = "extraction";
 		const extraction = extractDocument(tree, {
 			format: "markdown",
+			...(root === undefined ? {} : { root }),
 			maxBytes: researchRunLimits.extractionBytes,
 			maxNodes: 50_000,
 			maxDepth: 128,
 		});
-		const status = report.primaryResponse?.status ?? 0;
 		report.classification.diagnostic = classifyBrowserChallenge({
 			status,
 			headers: primaryHeaders,
@@ -341,7 +477,9 @@ export function researchExitCode(reports: readonly ResearchNavigationReport[]) {
 }
 
 async function main() {
-	const { urls, reader } = parseResearchArguments(process.argv.slice(2));
+	const { urls, reader, selector } = parseResearchArguments(
+		process.argv.slice(2),
+	);
 	const controller = new AbortController();
 	const timer = setTimeout(
 		() => controller.abort(),
@@ -350,7 +488,12 @@ async function main() {
 	const reports: ResearchNavigationReport[] = [];
 	try {
 		for (const url of urls) {
-			const report = await researchNavigation(url, reader, controller.signal);
+			const report = await researchNavigation(
+				url,
+				reader,
+				controller.signal,
+				selector,
+			);
 			reports.push(report);
 			process.stdout.write(`${JSON.stringify(report)}\n`);
 		}
@@ -366,7 +509,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--reader] PUBLIC_HTTP_URL... (1–8 URLs)\n",
+			"Usage: research-browser [--reader] [--selector CSS] PUBLIC_HTTP_URL... (1–8 URLs)\n",
 		);
 		process.exitCode = 64;
 	});

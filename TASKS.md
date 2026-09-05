@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+Scoped research CLI extraction now accepts one bounded native `--selector CSS`,
+requires exactly one root and preserves original response/source provenance.
+Header barriers precede loading; title and bounded visible-prefix diagnostics
+precede selection, with selected-text classification afterward. This prevents
+the tested benign-root masking cases without claiming exhaustive barrier
+detection or confirmed access. `NATIVE-RESEARCH.md` records the contract and
+limitations. The selector, reader, output, query, challenge, extraction, depth
+and document-profile suites pass **605 cases across eight files in each tree**,
+including 118 new regressions. Types/builds/strict/scoped checks pass; an offline
+captured-body replay extracts a unique heading without raising the output limit.
+The original live receipt remains distinct from replay. Full-native,
+live scoped CLI, SafeJS, credentials and denied RP/identity gates remain open.
+
 Standalone location: `~/project/agent-browser` as of September 3, 2026.
 `MIGRATION.md` records the preserved history, independent tooling and native
 validation boundary. Keep making atomic commits for completed new work; do not

@@ -1,5 +1,58 @@
 # Opt-in native research reader
 
+## Scoped command-line extraction
+
+The research command accepts one optional `--selector CSS` in either native or
+reader mode. It validates the bounded native selector grammar before creating
+a session or transport and requires exactly one matching native root. Empty,
+duplicate, malformed and over-4096-UTF-16-unit selectors fail preflight. Zero or
+multiple matches are explicit failures, never first-match or whole-page fallbacks.
+The selector string is not copied into reports or error messages; the optional
+`selection` field records only the method and match count (null before querying).
+
+```sh
+node dist/scripts/research-browser.js --reader --selector 'main > article' https://research.example/paper
+```
+
+Reader mode still strips source IDs/classes and other unsupported attributes;
+use structural selectors or retained attributes rather than expecting original
+page selector fidelity. Scope limits output, not acquisition: original source,
+DOM, network and extraction ceilings are unchanged. Original response status,
+headers, body hashes and omission provenance remain bound to the report.
+
+Before scoped querying, confirmed response-header barriers still stop loading.
+After loading, the actual document title and a bounded 8192-code-unit native
+visible-text prefix are classified before selecting a potentially benign root.
+The diagnostic walk omits the same non-content tags, skips undisplayed subtrees,
+preserves visible breaks and permits descendants to restore visibility. It does
+not serialize or report the prefix. Selected text is classified again afterward.
+This bounded diagnostic is not exhaustive page inspection or proof of access:
+barriers beyond the prefix can be missed, reader visibility remains approximate,
+and successful extraction remains `extracted-unverified` with `partial: true`.
+Unscoped invocation retains its existing extraction path and report shape.
+
+September 5, 2026 checkpoint: **118 new cases and 605 passes across eight named
+files in each tree**. Project types/builds, strict new-test types, scoped Biome
+and selector-module formatting pass. The pre-existing selector import-order
+lint issue is not changed; that module receives a format-only check. Candidate
+and working manifests contain 440 and 442 entries respectively; the two pending
+parent-RP tests are neither included in the commit nor run in this matrix.
+No full manifest, live CLI, SDK, socket, TTY or credential gate ran. Logs use
+`research-selector-authorized-final-` under the native-validation cache; the
+clean candidate path is in `/tmp/research-selector-integrated-path`. Independent
+review found visible-break and closed-details prefix gaps; 13 added regressions
+verify both fixes plus descendant visibility restoration and hidden breaks.
+Initial worker fixture/config/format failures remain in `research-selector-tests/`.
+
+At **06:47:16.178 UTC**, an offline synthetic-transport replay of the previously
+captured 1,196,447-byte CSSOM body compared unscoped output with `--selector h1`.
+Unscoped output still correctly exceeds the unchanged extraction ceiling;
+the unique heading extracts as `extracted-unverified`, with matching original
+body hash and closed transport. Evidence is `research-selector-captured-replay.json`
+and its script/log under the same cache. The original live receipt remains
+**06:10:29.253 UTC**, not the replay time. Both replay calls were mocked;
+**zero new requests** occurred. This is not live scoped-CLI acceptance.
+
 ## Definition-list depth accounting
 
 The reader now accounts for optional `dt`/`dd` sibling endings instead of treating

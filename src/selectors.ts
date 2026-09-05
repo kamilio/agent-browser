@@ -576,6 +576,10 @@ class SelectorParser {
 	}
 }
 
+export function validateSelectorSyntax(source: string): void {
+	new SelectorParser(source, selectorSyntaxLimits).parse();
+}
+
 export function supportsCssSelector(source: string): boolean {
 	try {
 		return (
