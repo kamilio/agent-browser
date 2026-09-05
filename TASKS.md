@@ -1,5 +1,15 @@
 # Agent browser implementation tasks
 
+Pure FIDO HID INIT allocation now constructs broadcast nonce requests and parses
+bounded nonce-correlated responses, rejecting reserved assigned channels and
+preserving opaque CIDs, versions/capabilities and extension bytes. The exact
+three-file synthetic native scope passes 142 cases, including 64 new allocation cases;
+build, strict types and two-file Biome pass. `FIDO-HID-ALLOCATION.md` retains the
+historical native-browser source and separates correlation from device trust.
+No provider/device was activated. Descriptor/report-ID discovery, entropy,
+channel ownership, deadlines, resync/CANCEL/CBOR and trusted human PIN/UV/consent
+remain required. All denied/stopped gates stay unchanged; overall goal is active.
+
 Bounded native heading-section extraction now supports `--section CSS` and a
 native-reference core option, preserving source/document/output ceilings and
 pre-selection barrier checks. All 172 new cases pass; the ten-file matrix has

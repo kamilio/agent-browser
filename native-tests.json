@@ -1,4 +1,5 @@
 [
+  "src/fido-hid-allocation.test.ts",
   "src/extraction-section.test.ts",
   "src/research-section.test.ts",
   "src/fido-hid-packets.test.ts",
