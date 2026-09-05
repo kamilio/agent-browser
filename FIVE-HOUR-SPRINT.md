@@ -8,6 +8,14 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation adds native idle request/cancel methods, bounded
+deadlines and callback lifetime/cancellation safety. `IDLE-CALLBACKS.md` records
+89 new passing tests, 263 isolated passes and 268 working passes plus one unchanged
+pending onload failure across ten files, with types/builds/scoped checks passing.
+Both manifests retain 396 entries. Busy-evaluation awaiting, measured idle time,
+actual SafeJS, full-native/browser/live gates and prior import diagnostics remain
+outstanding; no unrelated pending work is included in the completed change.
+
 The until-stopped continuation adds inherited CSS accent-color and contrasting
 opaque light-profile palettes for existing enabled active checkbox/radio controls.
 `ACCENT-COLOR.md` records 115 new cases and passing 743 isolated / 744 working

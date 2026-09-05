@@ -19,6 +19,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native requestIdleCallback/cancelIdleCallback now use bounded software
+opportunities, timeout fallback and two-phase callback ownership. `IDLE-CALLBACKS.md`
+records 89 new passing cases, 263 isolated passes and 268 working passes plus one
+independently reproduced pending onload failure across ten focused files.
+Types/builds/scoped checks pass; factory-selected cancellation is repaired before
+runtime startup. Both manifests retain 396 entries. Active evaluations remain
+conservatively busy, so awaiting idle without positive timeout is a documented
+limitation. Actual SafeJS, real idle scheduling, full-native/browser/live gates
+and prior import diagnostics remain open. No unrelated pending work is bundled.
+
 Native checkbox/radio accent-color now shares inherited declaration/CSSOM state
 and an opaque, contrast-aware light-profile palette. `ACCENT-COLOR.md` records
 115 new cases, passing 743 isolated / 744 working tests across twenty-one focused

@@ -7,6 +7,14 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native idle callbacks advance the JavaScript API checkpoint without bypassing
+the existing callback runtime. `IDLE-CALLBACKS.md` records 89 new passing cases,
+263 isolated passes and 268 working passes plus the same independently reproduced
+pending onload failure across ten files. Types/builds/scoped checks pass; the
+factory-cancellation boundary is verified before startup. Both manifests retain
+396 entries. Conservative evaluation-busy behavior and actual SafeJS/idle/browser/
+full-native/live acceptance stay open; unrelated pending work remains untouched.
+
 Native accent-color now connects inherited CSS/CSSOM state to existing checkbox
 and radio interiors without changing default appearance, geometry or actions.
 `ACCENT-COLOR.md` records 115 new cases, 743 isolated / 744 working passes across

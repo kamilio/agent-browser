@@ -307,6 +307,7 @@ export class PageScripts {
 			if (this.active === controller) this.active = undefined;
 			if (runtime.closed && !this.closedValue) await this.close();
 			this.bindings?.scrolling.wake();
+			this.bindings?.idleCallbacks.wake();
 		}
 	}
 
@@ -375,6 +376,7 @@ export class PageScripts {
 			releasePrefix();
 			if (resultFinished) this.pending.delete(slot);
 			this.bindings?.scrolling.wake();
+			this.bindings?.idleCallbacks.wake();
 		};
 		const complete = () => {
 			resultFinished = true;
@@ -479,6 +481,7 @@ export class PageScripts {
 				? {
 						timers: this.bindings.timers.metrics(),
 						animationFrames: this.bindings.animationFrames.metrics(),
+						idleCallbacks: this.bindings.idleCallbacks.metrics(),
 						media: this.bindings.media.metrics(),
 						scrolling: this.bindings.scrolling.metrics(),
 					}

@@ -423,6 +423,13 @@ export {
 export type { TimerLimits } from "./page-timers.js";
 export { characterDataCapabilities } from "./script-character-data.js";
 export { PageClock, pageClockPrecisionMs } from "./page-performance.js";
+export {
+	PageIdleCallbacks,
+	idleCallbackLimits,
+	idleCallbackIntervalMs,
+	idleCallbackBudgetMs,
+} from "./page-idle-callbacks.js";
+export type { IdleCallbackLimits } from "./page-idle-callbacks.js";
 export type { PageClockSource } from "./page-performance.js";
 export {
 	PageAnimationFrames,

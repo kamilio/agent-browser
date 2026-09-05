@@ -1,5 +1,14 @@
 # Compatibility and playground acceptance ledger
 
+Idle-callback continuation: `IDLE-CALLBACKS.md` adds declared/installed native
+request/cancel methods, bounded deadlines, FIFO/timeout delivery, cancellation
+and two-phase lifetime accounting. All 89 new cases pass; ten-file checks yield
+263 isolated passes and 268 working passes plus one reproduced pre-existing
+onload failure. Types/builds/scoped checks pass. This one-millisecond software
+profile is not measured event-loop idleness, actual SafeJS or full browser parity;
+active-evaluation awaiting, public IdleDeadline branding and original gates remain
+explicit limitations. Pending base64/onload work and prior import diagnostics stay.
+
 Accent-color continuation: `ACCENT-COLOR.md` adds inherited native CSS/CSSOM state
 and explicit enabled checkbox/radio palettes with opaque Canvas precomposition
 and contrasting marks. All 115 new cases pass; twenty-one-file suites pass

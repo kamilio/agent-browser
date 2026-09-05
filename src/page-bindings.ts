@@ -28,6 +28,10 @@ import {
 import { PageClock, createPagePerformance } from "./page-performance.js";
 import { PageMedia } from "./page-media.js";
 import { PageFocus, type PageFocusRegistration } from "./page-focus.js";
+import {
+	PageIdleCallbacks,
+	type IdleCallbackLimits,
+} from "./page-idle-callbacks.js";
 
 export interface PageBindingContext extends ScriptHostObjectFactory {
 	nestedOperation?: PageFocusRegistration;
@@ -43,6 +47,7 @@ export interface PageBindingOptions {
 	consoleLimits?: Partial<ConsoleLimits>;
 	timerLimits?: Partial<TimerLimits>;
 	animationFrameLimits?: Partial<AnimationFrameLimits>;
+	idleCallbackLimits?: Partial<IdleCallbackLimits>;
 	focusLimits?: { maxBindings?: number };
 }
 
@@ -74,6 +79,8 @@ export function pageBindingGlobalNames(
 		"scrollBy",
 		"requestAnimationFrame",
 		"cancelAnimationFrame",
+		"requestIdleCallback",
+		"cancelIdleCallback",
 		"performance",
 		"console",
 		"document",
@@ -88,6 +95,7 @@ export class PageBindings {
 	readonly console: PageConsole;
 	readonly timers: PageTimers;
 	readonly animationFrames: PageAnimationFrames;
+	readonly idleCallbacks: PageIdleCallbacks;
 	readonly performance: object;
 	readonly css: object;
 	readonly media: PageMedia;
@@ -178,6 +186,18 @@ export class PageBindings {
 				(error) => lifecycle.fail(error),
 				this.clock,
 				options.animationFrameLimits,
+			);
+			this.idleCallbacks = new PageIdleCallbacks(
+				{
+					isClosed: () => this.closed,
+					isBusy: () => lifecycle.isBusy?.() ?? false,
+					startCallback: (callback, args, value) =>
+						lifecycle.startCallback(callback, args, value),
+				},
+				context,
+				(error) => lifecycle.fail(error),
+				this.clock,
+				options.idleCallbackLimits,
 			);
 			const history = pageHistoryPort(page.document);
 			this.location = new ScriptLocation(page.document, context, history);
@@ -357,6 +377,7 @@ export class PageBindings {
 				},
 				methods: {
 					...this.animationFrames.methods,
+					...this.idleCallbacks.methods,
 					...this.scrolling.methods,
 					getComputedStyle,
 					getSelection,
@@ -457,6 +478,7 @@ export class PageBindings {
 				...timerMethods,
 				console: this.console.object,
 				...this.animationFrames.methods,
+				...this.idleCallbacks.methods,
 				performance: this.performance,
 				getComputedStyle,
 				getSelection,
@@ -482,6 +504,7 @@ export class PageBindings {
 		this.focus?.close();
 		this.timers?.close();
 		this.animationFrames?.close();
+		this.idleCallbacks?.close();
 		this.media?.close();
 		this.scrolling?.close();
 		this.clock.close();

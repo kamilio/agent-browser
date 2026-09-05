@@ -1,4 +1,6 @@
 [
+  "src/page-idle-callbacks.test.ts",
+  "src/page-idle-bindings.test.ts",
   "src/css-accent-color.test.ts",
   "src/accent-color-rendering.test.ts",
   "src/css-caret-color.test.ts",

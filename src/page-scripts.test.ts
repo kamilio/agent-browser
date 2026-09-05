@@ -292,6 +292,7 @@ it("creates one persistent realm with live document/window aliases and explicit 
 	expect(Object.keys(bindings).sort()).toEqual([
 		"CSS",
 		"cancelAnimationFrame",
+		"cancelIdleCallback",
 		"clearInterval",
 		"clearTimeout",
 		"console",
@@ -302,6 +303,7 @@ it("creates one persistent realm with live document/window aliases and explicit 
 		"matchMedia",
 		"performance",
 		"requestAnimationFrame",
+		"requestIdleCallback",
 		"scroll",
 		"scrollBy",
 		"scrollTo",
