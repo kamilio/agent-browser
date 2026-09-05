@@ -1,5 +1,13 @@
 # Agent browser implementation tasks
 
+The native-browser BFCL web-search follow-up now distinguishes a curated 100-question
+category, shared search/fetch tools, simulated failures and answer matching from
+general production-agent reliability. `BENCHMARK-WEB-SEARCH.md` retains the page's
+July 2025 version dates and fresh September 5, 2026 22:08:48.453 UTC receipt without
+claiming latest-version status, benchmark execution or a model ranking. One
+authorized native GET remains partial/extracted-unverified. Historical V3 evidence
+and stopped Reddit/Astra/X lanes stay unchanged; browser and passkey gates remain open.
+
 Linux hidraw report-byte normalization now distinguishes numbered/unnumbered reads
 from always-ID-prefixed writes, with explicit 7–64-byte metadata, strict IDs and
 owned bounded buffers. The exact four-file synthetic native scope passes 225 cases,
