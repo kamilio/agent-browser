@@ -14,7 +14,8 @@ callback phases and native host timers; it adds no dependency or service.
   bigint conversion is explicitly unsupported. A missing argument throws.
 - Global, `window` and `self` expose the same frame functions and `performance`
   object. The performance object provides readonly `timeOrigin`, `now()` and fresh
-  `toJSON()` records containing the origin.
+  `toJSON()` records containing the origin. `USER-TIMING.md` adds the bounded
+  mark/measure timeline without changing frame scheduling or the clock origin.
 - `PageBindingOptions.animationFrameLimits` configures request and callback quotas.
   Agent `capabilities` reports the partial profiles and defaults. Page evaluation
   metrics expose clock reads and frame state without recording epoch timestamps.
@@ -57,7 +58,7 @@ host epoch-aligned origin plus that initial reading and remains fixed.
 
 This is not exact network navigation-start timing. There is no `Performance`
 constructor/prototype hierarchy, EventTarget, replaceable Window attribute,
-performance entries, `mark`, `measure`, resource/navigation timing, observers,
+resource/navigation timing, observers,
 cross-context time translation or cross-origin-isolation policy. Coarsening alone
 is not a complete timing-side-channel defense. Page close revokes the clock and
 the owned performance methods/getter.

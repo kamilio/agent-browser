@@ -11,6 +11,7 @@
   "src/page-screen.test.ts",
   "src/research-selector.test.ts",
   "src/research-body-capture.test.ts",
+  "src/page-user-timing.test.ts",
   "src/page-headless-display.test.ts",
   "src/research-definition-depth.test.ts",
   "src/pinned-public-suffix.test.ts",

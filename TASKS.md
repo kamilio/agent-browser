@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+Native page User Timing now supplies mark/measure, ordered entry queries and
+type/name clearing on the shared performance object, with bounded JSON-detail
+snapshots, retained-handle accounting and close revocation. All 177 new cases pass;
+the six-file clean matrix is 341 passed/two pre-existing binding-fixture failures,
+independently reproduced unchanged. Build/strict types/scoped Biome pass. The final
+actual original-SDK probe passes 85 checks including persistent guest/native DOM
+state and cleanup; 680 SDK file hashes remain unchanged. `USER-TIMING.md` preserves
+initial results, the earlier 85-check source/build checkpoint, primary spec reads
+and explicit partial-profile limits. One native BFCL V4 article followup remains
+benchmark research, not browser acceptance. Constructors, observers, general
+structured clone, live application, credentials/device and other gates remain
+open; no denied gate is reopened and the overall browser goal stays active.
+
 Native research now has opt-in `--capture-body`: bounded exact primary decoded
 bytes, independent canonical-base64/count/SHA256 validation, and retention through
 barriers and loader/extraction failures without weakening navigation policy.

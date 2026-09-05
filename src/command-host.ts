@@ -75,6 +75,7 @@ import {
 	animationFrameIntervalMs,
 } from "./page-animation-frames.js";
 import { pageClockPrecisionMs } from "./page-performance.js";
+import { userTimingLimits } from "./page-user-timing.js";
 import { encodePng } from "./png.js";
 import type { ScriptEvaluation } from "./safejs.js";
 import { scriptMutationLimits } from "./script-mutations.js";
@@ -710,10 +711,26 @@ export class BrowserCommandHost {
 			},
 			performance: {
 				partial: true,
-				methods: ["now", "toJSON"],
+				methods: [
+					"now",
+					"toJSON",
+					"mark",
+					"measure",
+					"getEntries",
+					"getEntriesByType",
+					"getEntriesByName",
+					"clearMarks",
+					"clearMeasures",
+				],
 				properties: ["timeOrigin"],
 				precisionMs: pageClockPrecisionMs,
-				timeline: false,
+				timeline: true,
+				entryTypes: ["mark", "measure"],
+				detail: "finite-json-snapshots",
+				observers: false,
+				navigationTiming: false,
+				resourceTiming: false,
+				...userTimingLimits,
 			},
 			screenshots: {
 				compression: "bounded-fixed-huffman-or-stored",

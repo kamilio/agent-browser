@@ -1,4 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
+import { PageUserTiming } from "./page-user-timing.js";
 import type { ScriptHostObjectFactory } from "./script-dom.js";
 
 export const pageClockPrecisionMs = 0.1;
@@ -21,6 +22,8 @@ export class PageClock {
 	private last = 0;
 	private reads = 0;
 	private closed = false;
+	private timeline?: PageUserTiming;
+	private readonly closeListeners = new Set<() => void>();
 
 	constructor(
 		private readonly source: PageClockSource = globalThis.performance,
@@ -67,10 +70,46 @@ export class PageClock {
 			reads: this.reads,
 			lastTimestamp: this.last,
 			closed: this.closed,
+			...(this.timeline ? { timeline: this.timeline.metrics() } : {}),
 		});
 	}
+	userTiming(factory: ScriptHostObjectFactory): PageUserTiming {
+		this.ensureOpen();
+		this.timeline ??= new PageUserTiming(this, factory);
+		return this.timeline;
+	}
+	onClose(listener: () => void): () => void {
+		if (typeof listener !== "function")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid clock close listener",
+			);
+		if (this.closed) {
+			try {
+				listener();
+			} catch {
+				throw new AgentBrowserError("unsupported", "Page clock cleanup failed");
+			}
+			return () => {};
+		}
+		this.closeListeners.add(listener);
+		return () => this.closeListeners.delete(listener);
+	}
 	close() {
+		if (this.closed) return;
 		this.closed = true;
+		const listeners = [...this.closeListeners];
+		this.closeListeners.clear();
+		let failed = false;
+		for (const listener of [() => this.timeline?.close(), ...listeners]) {
+			try {
+				listener();
+			} catch {
+				failed = true;
+			}
+		}
+		if (failed)
+			throw new AgentBrowserError("unsupported", "Page clock cleanup failed");
 	}
 	private ensureOpen() {
 		if (this.closed)
@@ -82,9 +121,11 @@ export function createPagePerformance(
 	factory: ScriptHostObjectFactory,
 	clock: PageClock,
 ): object {
+	const timeline = clock.userTiming(factory);
 	return factory.createHostObject({
 		properties: { timeOrigin: { get: () => clock.timeOrigin } },
 		methods: {
+			...timeline.methods,
 			now: () => clock.now(),
 			toJSON: () => ({ timeOrigin: clock.timeOrigin }),
 		},
