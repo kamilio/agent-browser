@@ -1,5 +1,19 @@
 # Agent browser implementation tasks
 
+Native research now has opt-in `--capture-body`: bounded exact primary decoded
+bytes, independent canonical-base64/count/SHA256 validation, and retention through
+barriers and loader/extraction failures without weakening navigation policy.
+The clean scoped matrix passes 355 cases (138 new), with build/project/strict
+types and scoped Biome passing. `NATIVE-RESEARCH.md` documents unsanitized-body
+privacy, payload limits and incomplete replay/provenance semantics. Five fresh,
+separately authorized native captures verify byte counts/digests with closed
+transports. `RESEARCH-CAPTURE-2026-09-05.md` records hardware, benchmark and
+public-post findings without treating partial extraction as verified source truth.
+The X lane stopped conservatively at login chrome; no second post was requested.
+Reddit denial and the official announcement barrier are not retried or bypassed.
+Full/native runtime, live interoperability, device/vault and release acceptance
+gates remain open; the overall browser goal stays active.
+
 Independent verification now covers the actual guest-observed synthetic passkey
 ceremony: separately parsed CBOR/COSE, RP/client-data/ID/flags/counters and ES256
 signatures, with observed-signature and signed-client-data tamper rejection.

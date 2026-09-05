@@ -28,6 +28,10 @@ import {
 	type NavigationResult,
 	type SessionPage,
 } from "../src/session.js";
+import {
+	type ResearchBodyCapture,
+	captureResearchBody,
+} from "./research-body-capture.js";
 
 export const researchRunLimits = Object.freeze({
 	maxUrls: 8,
@@ -112,11 +116,16 @@ function researchSelector(value: unknown): string {
 
 export function parseResearchArguments(args: readonly string[]) {
 	let reader = false;
+	let captureBody = false;
 	let selector: string | undefined;
 	const urls: string[] = [];
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (argument === "--capture-body" && !captureBody) {
+			captureBody = true;
+			continue;
+		}
 		if (argument === "--selector" && selector === undefined) {
 			selector = researchSelector(args[++index]);
 			continue;
@@ -147,7 +156,12 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Explicit public URLs required",
 		);
-	return { reader, urls, ...(selector === undefined ? {} : { selector }) };
+	return {
+		reader,
+		urls,
+		...(selector === undefined ? {} : { selector }),
+		...(captureBody ? { captureBody: true as const } : {}),
+	};
 }
 
 const diagnosticOmissions = new Set(
@@ -234,6 +248,7 @@ export interface ResearchNavigationReport {
 		diagnostic: BrowserChallengeDiagnostic | null;
 	};
 	primaryResponse: PrimaryResponseSummary | null;
+	bodyCapture?: ResearchBodyCapture;
 	selection?: { method: "css-selector"; matches: number | null };
 	outcome: ResearchOutcome;
 	failure?: { category: string; stage: string };
@@ -248,9 +263,13 @@ export async function researchNavigation(
 	reader = false,
 	signal?: AbortSignal,
 	selector?: string,
+	captureBody = false,
 ): Promise<ResearchNavigationReport> {
+	if (typeof captureBody !== "boolean")
+		throw new AgentBrowserError("invalid-input", "Invalid research arguments");
 	const validated = parseResearchArguments([
 		...(reader ? ["--reader"] : []),
+		...(captureBody ? ["--capture-body"] : []),
 		...(selector === undefined ? [] : ["--selector", selector]),
 		url,
 	]);
@@ -324,6 +343,10 @@ export async function researchNavigation(
 						if (primary) {
 							report.primaryResponse = summarizePrimaryResponse(response);
 							report.finalUrl = report.primaryResponse.url;
+							if (captureBody) {
+								stage = "body-capture";
+								report.bodyCapture = captureResearchBody(response.body);
+							}
 							primaryHeaders = response.headers;
 							primaryUrl = response.url;
 							const diagnostic = classifyBrowserChallenge({
@@ -477,7 +500,7 @@ export function researchExitCode(reports: readonly ResearchNavigationReport[]) {
 }
 
 async function main() {
-	const { urls, reader, selector } = parseResearchArguments(
+	const { urls, reader, selector, captureBody } = parseResearchArguments(
 		process.argv.slice(2),
 	);
 	const controller = new AbortController();
@@ -493,6 +516,7 @@ async function main() {
 				reader,
 				controller.signal,
 				selector,
+				captureBody,
 			);
 			reports.push(report);
 			process.stdout.write(`${JSON.stringify(report)}\n`);
@@ -509,7 +533,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--reader] [--selector CSS] PUBLIC_HTTP_URL... (1–8 URLs)\n",
+			"Usage: research-browser [--reader] [--capture-body] [--selector CSS] PUBLIC_HTTP_URL... (1–8 URLs)\n",
 		);
 		process.exitCode = 64;
 	});

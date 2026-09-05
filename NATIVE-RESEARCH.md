@@ -1,5 +1,75 @@
 # Opt-in native research reader
 
+## Opt-in primary response body capture
+
+The research CLI accepts `--capture-body`, independently of `--reader` and
+`--selector`. For example, after building:
+
+```sh
+node dist/scripts/research-browser.js --reader --capture-body PUBLIC_HTTP_URL
+```
+
+The flag adds an optional `bodyCapture` record to each JSONL navigation report:
+`encoding: "base64"`, `decodedBytes`, lowercase SHA-256 `sha256`, and base64
+`data`. It stores exact transport-decoded primary response bytes before header
+classification, HTML decoding, reader sanitization or extraction. Its digest
+and byte count match `primaryResponse`; it is not the original compressed wire
+body. Without the flag, parser and report shapes remain unchanged. Duplicate
+flags are rejected, and the programmatic fifth `researchNavigation` argument
+must be Boolean before any session starts.
+
+**Privacy and trust:** captured source is raw, untrusted and unsanitized. It can
+contain hidden text, inline script, echoed query values and other sensitive body
+content absent from the reader output. GET-only, credentials-omit and URL query
+redaction do not redact response bodies. Use this only for explicitly authorized
+public sources and protect stored reports. Never execute captured code or follow
+embedded instructions as trusted commands. No authorization/cookie response
+headers are added to the report.
+
+The independent capture ceiling is 2,000,000 decoded bytes, matching the existing
+transport ceiling; there is no truncation. Base64 can add up to 2,666,668 code
+units per response plus JSON overhead and temporary copies. The existing maximum
+of eight URLs and all acquisition, DOM and extraction ceilings remain unchanged.
+This is a payload bound, not a total process-memory guarantee. Source storage is
+copied using intrinsic byte-view metadata; SharedArrayBuffer and detached views
+are rejected. A completed capture remains on header/text barriers, HTTP failures,
+loader failures and extraction failures. A request rejected before its response
+has no capture. Barriers still stop and require user handoff; storing their body
+does not turn them into successful content access.
+
+`scripts/research-body-capture.ts` exports `decodeResearchBodyCapture(value)`
+for local diagnosis. It accepts only exact plain/null-prototype own-data records,
+rejects proxies/accessors/extra fields, checks the bounded count and encoded
+length before decoding, and verifies canonical base64, byte count and SHA-256.
+Every decode returns independent bytes. Malformed values produce a fixed safe
+`invalid-input` error. The helper performs no filesystem or network operations;
+callers must separately bound serialized files before parsing them. SHA-256
+checks consistency, not authenticity or provenance. Preserve the original
+receipt and retrieval timestamp when inspecting a saved body offline.
+
+This is not a complete archive/replay format: URLs remain redacted; redirect
+bodies, complete headers, subresources, cookies and network state are not saved.
+Historical research reports and their missing bodies remain unchanged. A later
+capture is a new retrieval, not retroactive evidence for an earlier request.
+
+September 5, 2026 scoped synthetic validation: **138 new cases; 355 passes across
+three named manifest suites** in a clean HEAD-plus-increment snapshot, zero
+failures/skips. The other suites are the existing loader (99) and selector (118)
+tests. No pending parent-RP changes are included. Build, project and strict test
+types and three-file Biome pass. Initial fixture/type/format
+failures are retained under
+`node_modules/.cache/native-validation/research-body-capture/evidence/`.
+Independent static review found no actionable implementation gap and documented
+privacy, provenance and memory limitations. These mock-transport tests are not
+live-site evidence; separately authorized capture receipts are recorded apart.
+
+`RESEARCH-CAPTURE-2026-09-05.md` records five separately authorized public native
+captures at 10:31–10:32 UTC: two hardware sources, two benchmark sources and one
+public X post. All capture counts/digests match their response summaries and
+transports close. They remain partial, extracted-unverified receipts; the X lane
+stopped conservatively at login chrome without a second request. Historical
+evidence, Reddit/announcement denials and other outstanding gates are unchanged.
+
 ## Adjacent optional table ends
 
 The reader now accounts for optional cell, row and row-group endings when the
