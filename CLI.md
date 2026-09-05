@@ -64,6 +64,38 @@ loader when starting a process-backed service. `SCRIPT-LOADING.md` documents its
 limits and current real-site failures. Without that variable the behavior above
 is unchanged; a capability flag is not evidence that a page's scripts succeeded.
 
+## Reader profile
+
+The default `native` document profile is unchanged. For partial static research
+pages that exceed the normal loader's supported HTML/CSS surface, start a host
+with `AGENT_BROWSER_DOCUMENT_PROFILE=reader`:
+
+```bash
+AGENT_BROWSER_DOCUMENT_PROFILE=reader node dist/src/cli.js serve
+```
+
+From another terminal, normal `open`, `extract`, `snapshot`, `find` and `text`
+commands use that host's reader. Setting the variable only on a client does not
+reconfigure a running service. JSON extraction/snapshot/search results carry
+reader provenance, and plaintext output displays a partial-reader notice.
+Scripts, styles, SVG/MathML and selected subtrees are omitted, forms are inert,
+and hidden-content semantics are ignored; this is not normal rendering or a
+login workflow. See `NATIVE-RESEARCH.md` for exact limits and omissions.
+
+Only unset, `native` or `reader` are accepted. Reader configuration rejects any
+explicit `AGENT_BROWSER_SAFEJS_ROOT`, `AGENT_BROWSER_PAGE_RUNTIME`,
+`AGENT_BROWSER_PAGE_SCRIPTS` or `AGENT_BROWSER_SECRET_CONFIG`, including empty
+values, before resources or credential configuration load. Mode and configuration
+filenames are captured before asynchronous connection lookup rather than reread
+afterward. Language preferences remain supported. No alternative engine is used.
+
+September 5, 2026: a separately authorized real loopback CLI service successfully
+opened Example Domain and completed eight CLI commands, with reader notices and
+JSON provenance preserved even from native-profile clients. Its private runtime
+directory was removed and the owned service exited cleanly. This narrow
+service/HTTP check is separate from synthetic tests, actual SafeJS, real vaults,
+platform authenticators and broader website compatibility.
+
 ## Run it now
 
 Set `AGENT_BROWSER_LANGUAGES='["pl-PL","en-US"]'` when starting a host to

@@ -1,5 +1,57 @@
 # Opt-in native research reader
 
+## Regular CLI profile
+
+`AGENT_BROWSER_DOCUMENT_PROFILE=reader` selects this loader when creating a native
+CLI host; unset or `native` retains the normal loader. Existing services retain
+their configured loader regardless of a client's environment. Reader mode rejects
+explicit runtime, website-script and credential configuration settings before
+resources are created. Mode options and configuration filenames are captured
+before asynchronous connection lookup. This does not cache resolved passwords or
+replace the providers' private-file checks. See `CLI.md` for launch instructions.
+
+Plaintext extraction adds the fixed notice from returned reader provenance, not
+from the client's requested profile. JSON serialization remains unchanged apart
+from the actual reader metadata. Snapshot/search/text rendering uses the output
+provenance behavior below; confidential acknowledgments are not annotated.
+
+All **47 new profile cases pass**; seven named suites produce **360 passes in
+each tree**, with project types/builds, strict changed-test types and scoped Biome
+passing. The manifest has 433 entries; no full manifest ran. Results remain under
+`node_modules/.cache/native-validation/cli-profile-final-*`. The parent retained
+two failing candidate regressions in `cli-profile-race-before.json` / `.log`:
+changing the host environment during connection lookup could substitute a later
+secret-config filename. Capturing the validated settings fixes both cases. Only
+mock boundaries were reached in that reproduction; no actual secret was read.
+Worker baselines and its original 45-case run remain under `cli-reader/`.
+
+### Separately authorized actual service/HTTP evidence
+
+September 5, 2026, **04:40:32.747–04:40:34.082 UTC**: the clean candidate CLI ran
+a fresh private loopback service in reader mode. Eight real CLI invocations
+completed successfully: capabilities, open, JSON extraction/snapshot/search,
+and plaintext extraction/snapshot/text. The single public navigation to
+`https://example.com` returned HTTP 200, 559 bytes and the Example Domain document.
+Its reader report records omitted link/meta/style roots and ignored hidden-content
+semantics; this is static reading, not visual parity or website script execution.
+Clients deliberately used the native profile, proving that output followed the
+existing reader host rather than silently reconfiguring it.
+
+The owned service exited with code 0 and no signal or forced kill. The parent
+independently confirmed the new private runtime directory no longer existed and
+all six recorded compiled artifacts matched both validated trees. The generated
+local control token stayed in its private runtime file/internal CLI requests and
+was not included in the report. No SafeJS, real account, credential provider,
+route fulfillment, challenge solving or TTY/PTY was used.
+
+Exact commands, stdout/stderr, timestamps, compiled hashes and cleanup evidence:
+`node_modules/.cache/native-validation/cli-reader-service/attempt-1.json`;
+independent checks: `parent-audit.json`; bounded authorized harness: `probe.mjs`;
+scope: `PROBE.md`; integrity inventory: `SHA256SUMS`, all in that directory.
+These are CLI outputs, not archived original HTTP bodies or pre-loader body
+hashes. This separate narrow gate does not supersede earlier failures or prove
+other services, pages, runtimes, platform passkeys or real-vault acceptance.
+
 ## Reader provenance in native outputs
 
 September 5, 2026: snapshots, entry scans, structured/Markdown extraction and

@@ -30,12 +30,22 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+The regular CLI now supports an explicit partial reader profile with provenance
+notices and fail-closed runtime/credential incompatibility checks. Forty-seven
+new cases pass; seven named suites produce 360 passes in each tree, with scoped
+checks and types/builds passing. A separately authorized fresh real loopback
+service also completed eight CLI commands and one HTTP-200 Example Domain read,
+then exited cleanly with its private runtime removed. `CLI.md` and
+`NATIVE-RESEARCH.md` separate this narrow service/HTTP evidence from actual SafeJS,
+real-vault, platform-authenticator and broad website gates. The manifest has 433
+entries; original evidence and failures remain intact.
+
 Reader provenance now survives snapshots, extraction, search and native command
 dispatch, with plaintext warnings and metadata included in byte limits.
 `NATIVE-RESEARCH.md` records 34 new cases and 190 passes across seven named suites
 in each tree; types/builds and scoped checks pass. The manifest has 432 entries.
-This is synthetic native-output validation; CLI reader-profile integration is
-next, and actual rendering/runtime/live-site acceptance remains separate.
+This is synthetic native-output validation; subsequent CLI reader-profile
+service evidence is recorded separately, not retroactively included here.
 
 A new native-only benchmark round retrieves six relevant extractions across five
 works in eight attempts. `BENCHMARK-METHODOLOGY-2026-09-05.md` records contamination

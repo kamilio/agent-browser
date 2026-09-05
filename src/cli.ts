@@ -9,6 +9,7 @@ import type { GeneratedLocator } from "./locator-generation.js";
 import { saveCapture } from "./node-capture.js";
 import { approvePlayground, requestCommand } from "./node-command-client.js";
 import { listenCommandServer } from "./node-command-server.js";
+import { documentProfileFromEnvironment } from "./node-document-profile.js";
 import { identityFromEnvironment } from "./node-identity-config.js";
 import { loadPlaygroundAssets } from "./node-playground-assets.js";
 import {
@@ -21,6 +22,8 @@ import { runStateFileCommand } from "./node-state-client.js";
 import { runTerminal } from "./node-terminal.js";
 import { NodeNetworkTransport } from "./node-transport.js";
 import { pageRuntimeAdapter } from "./page-runtime-selection.js";
+import { loadResearchDocument } from "./research-loader.js";
+import { researchReaderNotice } from "./research-reader-info.js";
 import { BrowserSession } from "./session.js";
 import {
 	type SnapshotSearch,
@@ -29,27 +32,46 @@ import {
 import { type SemanticSnapshot, renderSnapshot } from "./snapshot.js";
 
 function runtimeConfiguration() {
-	const identity = identityFromEnvironment(process.env.AGENT_BROWSER_LANGUAGES);
 	const packageRoot = process.env.AGENT_BROWSER_SAFEJS_ROOT;
 	const configuredAdapter = process.env.AGENT_BROWSER_PAGE_RUNTIME;
+	const secretConfig = process.env.AGENT_BROWSER_SECRET_CONFIG;
+	const websiteScripts = process.env.AGENT_BROWSER_PAGE_SCRIPTS;
+	const documentProfile = documentProfileFromEnvironment({
+		AGENT_BROWSER_DOCUMENT_PROFILE: process.env.AGENT_BROWSER_DOCUMENT_PROFILE,
+		AGENT_BROWSER_SAFEJS_ROOT: packageRoot,
+		AGENT_BROWSER_PAGE_RUNTIME: configuredAdapter,
+		AGENT_BROWSER_SECRET_CONFIG: secretConfig,
+		AGENT_BROWSER_PAGE_SCRIPTS: websiteScripts,
+	});
+	const identity = identityFromEnvironment(process.env.AGENT_BROWSER_LANGUAGES);
 	const runtimeAdapter = pageRuntimeAdapter(configuredAdapter);
 	if (configuredAdapter !== undefined && !packageRoot)
 		throw new AgentBrowserError(
 			"invalid-input",
 			"AGENT_BROWSER_PAGE_RUNTIME requires an explicit SafeJS package root",
 		);
-	return { packageRoot, runtimeAdapter, identity };
+	return {
+		packageRoot,
+		runtimeAdapter,
+		identity,
+		documentProfile,
+		secretConfig,
+		websiteScripts,
+	};
 }
 
 async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
-	const { packageRoot, runtimeAdapter, identity } = configuration;
-	const secrets = await loadSecretConfig(
-		process.env.AGENT_BROWSER_SECRET_CONFIG,
-		{
-			processRuntime: packageRoot !== undefined,
-		},
-	);
-	const websiteScripts = process.env.AGENT_BROWSER_PAGE_SCRIPTS;
+	const {
+		packageRoot,
+		runtimeAdapter,
+		identity,
+		documentProfile,
+		secretConfig,
+		websiteScripts,
+	} = configuration;
+	const secrets = await loadSecretConfig(secretConfig, {
+		processRuntime: packageRoot !== undefined,
+	});
 	if (websiteScripts !== undefined && websiteScripts !== "classic")
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -64,6 +86,8 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 		return new SessionProcessHost({
 			process: { packageRoot, websiteScripts, runtimeAdapter, identity },
 		});
+	const loadDocument =
+		documentProfile === "reader" ? loadResearchDocument : loadBrowserDocument;
 	return new BrowserCommandHost({
 		secrets,
 		documentFormats: [
@@ -76,7 +100,7 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 			new BrowserSession({
 				identity,
 				createTransport: (cookieJar) => new NodeNetworkTransport({ cookieJar }),
-				loadDocument: loadBrowserDocument,
+				loadDocument,
 			}),
 	});
 }
@@ -414,9 +438,12 @@ async function main() {
 		"data" in result &&
 		invocation.command === "extract" &&
 		(result.data as DocumentExtraction).format === "markdown"
-	)
-		console.log((result.data as DocumentExtraction).content);
-	else if (
+	) {
+		const extraction = result.data as DocumentExtraction;
+		console.log(
+			`${extraction.reader ? `${researchReaderNotice}\n` : ""}${extraction.content}`,
+		);
+	} else if (
 		invocation.command === "generate-locator" &&
 		invocation.options.raw &&
 		"data" in result

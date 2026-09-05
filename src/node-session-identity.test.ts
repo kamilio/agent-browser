@@ -114,6 +114,7 @@ beforeEach(() => {
 	childInput = undefined;
 	for (const key of [
 		"AGENT_BROWSER_LANGUAGES",
+		"AGENT_BROWSER_DOCUMENT_PROFILE",
 		"AGENT_BROWSER_SAFEJS_ROOT",
 		"AGENT_BROWSER_PAGE_RUNTIME",
 		"AGENT_BROWSER_PAGE_SCRIPTS",
