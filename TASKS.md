@@ -1,5 +1,12 @@
 # Agent browser implementation tasks
 
+The browser-only MLCommons power follow-up is recorded in
+`BENCHMARK-POWER-BOUNDARIES.md`. Its separately captured guide distinguishes
+system-supply measurement and range discovery from testing; it does not measure
+hardware efficiency or settle complete official power boundaries. The fresh
+September 5, 2026 13:18:07.541 UTC receipt remains partial/extracted-unverified.
+This durable note adds no request, benchmark run or acceptance claim.
+
 The native research browser now supports bounded `--lines START:END` selection
 from unchanged loaded plain-text/JSON documents, with exact line/span metadata,
 existing output caps and pre-selection barrier checks. All 174 new native cases
