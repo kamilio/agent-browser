@@ -40,9 +40,11 @@ credentials to claim a real-device result.
   prove a cancelled creation had no device side effect. Require explicit device
   ownership, bounded private I/O, no blind retries and qualified cleanup behavior.
 - Windows Hello needs exact unhashed client data rather than only its hash.
-  A separate broker-context extension is needed; reconstructing bytes from page
-  options or treating an RP hostname as the complete origin is incorrect,
-  especially for nondefault ports. This report does not implement that extension.
+  The subsequent broker-context extension now supplies detached exact
+  `clientDataJSON` bytes alongside the hash; see `PASSKEYS.md`. Reconstructing
+  bytes from page options or treating an RP hostname as the complete origin is
+  incorrect, especially for nondefault ports. This prerequisite does not
+  implement a Windows Hello bridge or qualify an actual platform provider.
 
 The earliest defensible device milestone is one genuinely hardware-backed,
 non-discoverable ES256 registration and assertion with required touch, no PIN,

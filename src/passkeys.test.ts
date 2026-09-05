@@ -122,7 +122,7 @@ it("requires an explicit provider and snapshots honest capabilities", () => {
 	expect(Object.isFrozen(broker.capabilities.algorithms)).toBe(true);
 });
 
-it("builds create client data and gives only its SHA-256 hash to the synthetic provider", async () => {
+it("builds create client data and gives detached bytes and their SHA-256 hash to the synthetic provider", async () => {
 	const { broker, create } = fixture();
 	const result = await broker.create(creation(), context());
 	expect(result).toMatchObject({ id: "Bwg", type: "public-key" });
@@ -145,6 +145,7 @@ it("builds create client data and gives only its SHA-256 hash to the synthetic p
 	);
 	expect(Object.keys(supplied).sort()).toEqual([
 		"clientDataHash",
+		"clientDataJSON",
 		"options",
 		"rpId",
 		"signal",

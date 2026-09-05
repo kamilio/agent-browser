@@ -56,6 +56,7 @@ export interface PasskeyCapabilities {
 export interface PasskeyProviderContext {
 	rpId: string;
 	clientDataHash: Uint8Array;
+	clientDataJSON?: Uint8Array;
 	signal: AbortSignal;
 }
 export interface PasskeyConsent {
@@ -551,6 +552,7 @@ export class PasskeyBroker {
 					const providerContext = {
 						rpId: host,
 						clientDataHash: hash,
+						clientDataJSON: new Uint8Array(clientData),
 						signal: controller.signal,
 					};
 					const requiredUV =

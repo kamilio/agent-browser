@@ -30,6 +30,14 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Passkey provider contexts now receive detached exact client-data bytes alongside
+their SHA-256 hash. Twenty-four new cases plus four existing named suites yield
+219 passes in each tree; types/builds, strict touched-test types and scoped Biome
+pass. The explicit manifest has 434 entries. `PASSKEYS.md` records copy isolation,
+nondefault-port origin preservation and backward compatibility. This addresses
+one hardware-bridge prerequisite, not Windows Hello, actual SafeJS byte support,
+device access or broader RP-domain permission. The goal remains active.
+
 Native-only hardware-passkey research identifies a real external-key milestone
 and concrete resident-ID, client-data, PIN/TTY and cancellation blockers.
 `PASSKEY-HARDWARE.md` records nine attempts and five upstream manuals, with 17

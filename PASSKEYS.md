@@ -13,6 +13,15 @@ The explicit native manifest contains 422 entries; the full manifest was not run
 
 ## Host configuration
 
+Broker-generated create/get provider contexts also include `clientDataJSON`: a
+detached copy of the exact UTF-8 bytes hashed into `clientDataHash`. Providers may
+mutate or retain their copy without changing the response. The JSON preserves the
+canonical origin, including nondefault ports, but not page paths, queries or
+fragments; `rpId` remains host-only. The field is optional in the host interface
+for compatibility with existing direct hash-only provider callers. This enables
+future bridges requiring unhashed client data; it does not implement Windows
+Hello, hardware access or guest-runtime byte support.
+
 `PasskeyBroker` accepts a trusted `PasskeyAuthenticator`. It builds challenge-bound
 client data and mediates creation/assertion requests. `PagePasskeys` owns a broker
 for one native document and exposes public credential host capabilities.
@@ -187,6 +196,20 @@ proxies are rejected. This is not a guest AbortController implementation or
 evidence that actual SafeJS supports this signal/BufferSource bridge.
 
 ## Validation and outstanding gates
+
+September 5 detached-client-data checkpoint: 24 new cases plus the existing
+broker, page adapter, page binding and Node software-authenticator suites yield
+**219 passes across five named files in each tree**. Types/builds in both trees,
+strict changed-test types and scoped Biome pass. The manifest has 434 entries;
+neither the full manifest nor actual SDK/device probes ran. The old broker's
+missing-field regression result (17 failures, seven passes) remains preserved
+under `node_modules/.cache/native-validation/passkey-client-data/`.
+Integrated logs use the `passkey-client-integrated-final-` prefix in
+`node_modules/.cache/native-validation/`; the clean candidate path is recorded
+in `/tmp/passkey-client-integrated-path`. Challenge views, port-bearing origins,
+provider mutation/transfer, later retention, cancellation and direct hash-only
+caller compatibility are covered. These are synthetic host-boundary tests,
+not a Windows Hello implementation or an actual guest-runtime result.
 
 `PASSKEY-HARDWARE.md` records native-only primary-source research into a genuine
 external-key/provider milestone, including CLI information loss, PIN/TTY and
