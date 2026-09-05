@@ -334,9 +334,9 @@ it.each(["(color-gamut: srgb)", "(device-width: 4px)", "(device-height: 2px)"])(
 		expect(
 			styles.metrics().issues["unimplemented-or-invalid-media-query"],
 		).toBe(1);
-		expect(() => rasterizeDocument(document)).toThrow(
-			expect.objectContaining({ code: "unsupported" }),
-		);
+		expect(
+			Array.from(rasterizeDocument(document).image.pixels.subarray(0, 4)),
+		).toEqual([255, 0, 0, 255]);
 	},
 );
 

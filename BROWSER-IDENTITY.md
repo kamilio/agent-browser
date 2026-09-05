@@ -1,5 +1,49 @@
 # Truthful native identity defaults
 
+## Unsupported Media Fallback
+
+The partial native media compiler already selects a conservative fallback for
+unsupported or invalid queries. Layout now treats only the resulting
+`css:unimplemented-or-invalid-media-query` diagnostic as advisory. The issue
+and its count remain visible in style metrics and the formatting tree; supported
+base styling or a matching supported comma-list branch can reach geometry,
+intrinsic measurement and rasterization instead of failing solely for that
+diagnostic. This does not claim that the unknown feature is supported.
+
+The same exact diagnostic classification is used at both page-width and
+intrinsic-width admission. All other diagnostics remain blocking, including
+unimplemented properties, stylesheet errors, unsupported elements/displays and
+unresolved flex/positioned coordination. Existing flex count checks and
+positioned formatting transforms are unchanged. No parser, predicate, resource
+limit, lifecycle, runtime dependency or device capability is changed.
+
+This is fallback rendering, not full Media Queries conformance. The current
+compiler conservatively rejects an entire balanced query branch when any
+condition cannot be compiled; it does not implement three-valued unknown
+conditions inside logical expressions. Unbalanced source can reject the whole
+list, and arbitrary unknown media-type negation is not implemented. Those
+limitations are retained rather than masked by claiming normative
+unknown-feature, negation or per-query error recovery. Gamut and device features
+remain unsupported; raster output still proves only the native software target.
+
+This supersedes the raster-blocking behavior measured at the numeric-color
+checkpoint below, not its historical results or artifacts. Dedicated regression
+and integration evidence is recorded separately; no live, socket, TTY, SDK,
+credential or physical-device acceptance is inferred.
+
+`MEDIA-FALLBACK-2026-09-05.md` records the separately bounded native source read,
+its original receipt and preserved failures, the advisory policy and remaining
+compiler limits. That source-based rationale is not implementation acceptance.
+
+September 5, 2026 implementation validation: **30 new regressions**, with
+**388 passes across eight named files in each tree**. Types, explicit dist
+builds, strict touched tests, formatting and test Biome checks pass. Existing
+import-order diagnostics in the two production modules are reproduced in their
+unchanged before copies and left untouched. The old admission independently
+fails 21 of the same 30 cases and passes nine; it has no missing-export failure.
+Final logs use `media-fallback-final-02-`. Initial harness failures and the
+numeric-color checkpoint's original raster-rejection evidence remain separate.
+
 ## Logical Numeric Color Media
 
 The native CSS media engine now recognizes `color`, `color-index` and
@@ -58,9 +102,11 @@ logs use `numeric-color-final-01-`; the separate fixed candidate path is in
 `color-policy-review/`; worker histories remain in `numeric-color-unit/` and
 `numeric-color-page/`. No unrelated baseline failure was repaired or suppressed.
 
-Page integration explicitly preserves two existing limits found by its initial
-24-pass/four-failure run. Unsupported media still makes native rasterization
-fail closed even when base computed styles remain usable. A synthetic binding
+At the numeric-color checkpoint, page integration explicitly preserved two
+existing limits found by its initial 24-pass/four-failure run. Unsupported media
+made native rasterization fail closed even when base computed styles remained
+usable; the separate fallback change above supersedes only that behavior.
+A synthetic binding
 lifecycle flag revokes Window/Screen operations, but a retained MediaQueryList
 follows its PageMedia/document owner and revokes when that owner closes. Tests
 assert its interim readability and subsequent revocation rather than pretending

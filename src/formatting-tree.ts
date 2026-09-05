@@ -821,6 +821,10 @@ export function resolveDocumentBlockWidths(
 	return resolveFormattingPageWidths(formatting);
 }
 
+export function isAdvisoryFormattingIssue(code: string): boolean {
+	return code === "css:unimplemented-or-invalid-media-query";
+}
+
 export function resolveFormattingPageWidths(
 	formatting: FormattingTree,
 	maxWork = formattingLimits.maxWork,
@@ -833,9 +837,10 @@ export function resolveFormattingPageWidths(
 	if (
 		Object.entries(formatting.issues).some(
 			([issue, count]) =>
-				issue !== "display-layout-not-supported" ||
-				!onFlex ||
-				count !== flexCount,
+				!isAdvisoryFormattingIssue(issue) &&
+				(issue !== "display-layout-not-supported" ||
+					!onFlex ||
+					count !== flexCount),
 		)
 	)
 		throw new AgentBrowserError(

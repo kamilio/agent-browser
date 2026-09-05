@@ -12,6 +12,7 @@ import { isAtomicInline, type AtomicInlineMetrics } from "./inline-atomic.js";
 import {
 	buildFormattingTree,
 	formattingLimits,
+	isAdvisoryFormattingIssue,
 	type FormattingImageSize,
 	type FormattingLimits,
 	type FormattingNode,
@@ -330,8 +331,9 @@ function measureScopes(
 		if (
 			Object.entries(formatting.issues).some(
 				([code, count]) =>
-					code !== "display-layout-not-supported" ||
-					count !== deferredFlexContainers,
+					!isAdvisoryFormattingIssue(code) &&
+					(code !== "display-layout-not-supported" ||
+						count !== deferredFlexContainers),
 			)
 		)
 			throw new AgentBrowserError(

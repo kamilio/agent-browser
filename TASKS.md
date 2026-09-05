@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Unsupported-media fallback now retains its exact diagnostic without letting
+that warning alone block supported native page/intrinsic layout and painting.
+All other CSS/formatting admission and coordination checks remain. Thirty new
+cases pass; eight named suites total 388 passes in each tree, with types/builds,
+strict tests, formatting and test Biome passing. The unchanged old admission
+fails 21 of the same 30 cases and passes nine. Existing source import-order
+diagnostics remain separate and unchanged. `MEDIA-FALLBACK-2026-09-05.md`
+preserves that evidence, initial harness failures, and thirteen bounded native
+offline Error Handling scopes. Conservative media evaluation is not full MQ
+conformance: unknown truth tables, media-type negation and recovery remain open.
+Historical checkpoints and denied auth/runtime/wire gates are unchanged.
+
 Numeric color media now implements an explicit partial logical RGB policy:
 color8, color-index0 and monochrome0, sharing unchanged exposed Screen depth24.
 Signed decimal literal, negative/large-value and existing range behavior pass
