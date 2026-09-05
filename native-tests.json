@@ -3,6 +3,7 @@
   "src/page-passkeys.test.ts",
   "src/page-passkey-bindings.test.ts",
   "src/node-passkey-authenticator.test.ts",
+  "src/node-passkey-checkpoint.test.ts",
   "src/research-loader.test.ts",
   "src/browser-challenges.test.ts",
   "src/secret-command-form.test.ts",

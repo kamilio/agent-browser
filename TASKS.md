@@ -29,6 +29,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+An internal encrypted passkey checkpoint codec now preserves bounded P256 records
+behind an explicit host-only encryption key. `PASSKEY-CHECKPOINTS.md` distinguishes
+authenticated encryption and owned-buffer cleanup from still-unimplemented durable
+counter updates, rollback protection, recovery, real approval and page-runtime
+acceptance. All 65 new cases pass; five named suites produce 260 passes in each
+tree, with types/builds, strict test typing and scoped checks passing. The native
+manifest now has 423 entries. No agent-facing private-key export or ambient vault
+discovery is added.
+
 A separately authorized actual legacy SafeJS passkey gate now fails explicitly:
 the selected experimental SDK lacks guest Uint8Array and ArrayBuffer constructors.
 Shared credentials identity and Promise availability pass the diagnostic, and
