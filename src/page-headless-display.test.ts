@@ -328,12 +328,11 @@ it.each(["bindings", "document"] as const)(
 	},
 );
 
-it("does not fabricate Screen, platform, monitor or configurable device metadata", () => {
+it("does not fabricate display constructors, platform, monitor or configurable device metadata", () => {
 	const { window, bindings, document } = fixture();
 	const names = pageBindingGlobalNames(document);
 	for (const name of [
 		"Screen",
-		"screen",
 		"ScreenOrientation",
 		"visualViewport",
 		"VisualViewport",

@@ -1,5 +1,72 @@
 # Truthful native identity defaults
 
+## Viewport-backed Screen capability
+
+The native Window and global `screen` now share one stable host object per
+binding. Its six getter-only members expose an explicit privacy policy:
+`width`/`availWidth` equal the current logical CSS viewport width,
+`height`/`availHeight` equal its height, and `colorDepth`/`pixelDepth` equal 24.
+Resizing the existing viewport updates retained Screen objects without creating
+a new object or a separate geometry cache. Available and total areas are equal
+because this native policy reserves no simulated taskbar or desktop chrome.
+
+These are **privacy-exposed logical areas, not physical monitor measurements**.
+The captured CSSOM draft allows that exposed-area choice and uses 24 for unknown
+or privacy-withheld color depth, excluding alpha. It does not imply 32 from RGBA
+storage or prove any hardware capability. `CSSOM-IDENTITY-2026-09-05.md` preserves
+the original source contract and receipt; this implementation makes no new
+request. DPR remains 1 and outer dimensions remain 0: an exposed Screen area
+does not create an output device or client window.
+
+Every getter checks the existing binding lifecycle, including retained object
+references after binding/document/lifecycle closure. Host construction checks
+before and after factory execution; Screen adds no timers, event subscriptions,
+hardware reads or runtime dependencies. Each binding has its own capability,
+and navigation does not grant a new document access to an old closed binding.
+Already copied numeric values are public primitives and cannot be revoked.
+
+This is not the full Screen interface: no `Screen` constructor/prototype,
+hardware orientation, screen placement, coordinates, permission model or display
+events are added. Native host descriptors do not prove actual guest WebIDL or
+WindowProxy behavior. CSS color, monochrome, gamut and device-dimension media
+features remain unsupported rather than measured zero; full Screen/color-media
+consistency remains an explicit gap. Supported viewport width/height/orientation
+and fixed resolution keep their existing source of values. Actual SafeJS,
+real-device, identity-wire and live compatibility acceptance remain separate
+gates; the previously denied probes have not been retried.
+
+September 5, 2026 validation: **34 new cases pass in each tree**. Eight named
+suites produce **287 passes plus three reproduced baseline failures** in the
+isolated tree and **292 passes plus four reproduced baseline failures** in the
+working tree. Project types/builds, strict touched-test checks, scoped Biome and
+binding/script-test formatting pass. Candidate and working manifests have 441
+and 443 entries; the two pending parent-RP suites remain excluded from this
+commit and matrix. No full manifest, actual guest, live, device, socket or
+credential probe ran. The added parent case verifies old Screen revocation and
+new object ownership across mock-transport navigation, not real WindowProxy
+semantics. Worker cases also cover construction reentry and failure cleanup.
+
+The original cleanup assertions still assume the first host object is
+performance, the original script-global list still omits navigator, and the
+working-only non-callable onload-object assertion still fails. Fresh clean HEAD
+and preserved base64/onload overlays reproduce those failures before this
+feature. The isolated first integration also found an older test expecting
+global `screen` to be absent; this directly superseded assertion is updated,
+while physical-device, constructor and other unsupported-member checks remain.
+This is not a green full-suite result or a repair of those unrelated failures.
+
+Evidence under `node_modules/.cache/native-validation/` uses
+`native-screen-authorized-final-03-`, including a validation JSON explicitly
+recording `allTestsPassed: false`. Fresh baseline files use
+`native-screen-{clean,pending}-baseline-authorized-04`. The first pending-overlay
+attempt omitted its pre-existing base64 helper and failed imports; the corrected
+overlay includes that unchanged dependency. Original failures, worker fixture/
+strict/format corrections and parent navigation-test formatting are preserved.
+Candidate and pending-baseline paths are recorded in `/tmp/native-screen-integrated-path`
+and `/tmp/native-screen-pending-baseline-path`; static contract/implementation
+reviews are under `screen-contract-review/`. None of these artifacts is actual
+guest, device, confidentiality-re-audit or live-browser acceptance evidence.
+
 ## Camoufox architecture evidence
 
 `CAMOUFOX-ARCHITECTURE-2026-09-05.md` preserves three separately authorized
@@ -29,8 +96,9 @@ The source contracts are preserved in `CSSOM-IDENTITY-2026-09-05.md`. An externa
 terminal or web frontend is not a native page client-window object, and these
 values make no claim about that frontend's window or the user's display. There
 is no hardware/environment probe, device-emulation option, new runtime dependency
-or configurable output device. Screen, VisualViewport, page zoom and full
-display-device modeling remain separate work.
+or configurable output device. Beyond the partial Screen capability documented
+here, full Screen, VisualViewport, page zoom and display-device modeling remain
+separate work.
 
 CSS resolution matching and `BrowserSession.viewport().deviceScaleFactor` now
 use the same frozen DPR rather than independent literal ones. Their existing

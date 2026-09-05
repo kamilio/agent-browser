@@ -307,6 +307,7 @@ it("creates one persistent realm with live document/window aliases and explicit 
 		"performance",
 		"requestAnimationFrame",
 		"requestIdleCallback",
+		"screen",
 		"scroll",
 		"scrollBy",
 		"scrollTo",

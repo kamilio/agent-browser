@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Native Screen work exposes a stable, lifecycle-checked viewport-backed capability
+with six readonly values and unknown/private 24-bit depth. The logical exposed
+area is not a physical display; DPR 1 and absent client-window outer dimensions
+remain unchanged. `BROWSER-IDENTITY.md` records the explicit policy, unsupported
+color/device media and deferred full Screen/WebIDL/guest/device acceptance.
+All 34 new synthetic cases pass in both trees. Eight named suites produce
+287 passes plus three reproduced baseline failures in the isolated tree and
+292 passes plus four in the working tree; types/builds/strict/scoped checks pass.
+The directly superseded screen-absence assertion is updated, not the unrelated
+cleanup/global-list/onload failures. No full manifest or denied RP, identity
+runtime, wire, device or actual guest gate ran; those approvals remain open.
+
 Native Camoufox architecture research is preserved in
 `CAMOUFOX-ARCHITECTURE-2026-09-05.md`: three actual native-browser requests,
 217 partial scopes and original-body/build/source integrity checks. Adopt only

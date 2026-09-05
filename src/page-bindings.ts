@@ -31,6 +31,8 @@ import {
 import { PageClock, createPagePerformance } from "./page-performance.js";
 import { PageMedia } from "./page-media.js";
 import { nativeHeadlessDisplay } from "./native-headless-display.js";
+import { createPageScreen } from "./page-screen.js";
+import { documentStyles } from "./styles.js";
 import { PageFocus, type PageFocusRegistration } from "./page-focus.js";
 import {
 	PageIdleCallbacks,
@@ -71,6 +73,7 @@ export function pageBindingGlobalNames(
 ): readonly string[] {
 	return Object.freeze([
 		"navigator",
+		"screen",
 		...Object.keys(nativeHeadlessDisplay),
 		...(pageStoragePort(document) ? ["localStorage", "sessionStorage"] : []),
 		...(pageHistoryPort(document) ? ["history"] : []),
@@ -114,6 +117,7 @@ export class PageBindings {
 	readonly network?: PageFetch;
 	readonly passkeys?: PagePasskeys;
 	readonly navigator: object;
+	readonly screen: object;
 	readonly location: ScriptLocation;
 	readonly history?: ScriptHistory;
 	readonly storage?: ScriptStorage;
@@ -299,8 +303,19 @@ export class PageBindings {
 				() => lifecycle.isBusy?.() ?? false,
 				(error) => lifecycle.fail(error),
 			);
+			this.screen = createPageScreen(
+				context,
+				() => documentStyles(page.document).viewport,
+				() => this.ensureOpen(),
+			);
 			this.window = context.createHostObject({
 				properties: {
+					screen: {
+						get: () => {
+							this.ensureOpen();
+							return this.screen;
+						},
+					},
 					...Object.fromEntries(
 						Object.entries(nativeHeadlessDisplay).map(([name, value]) => [
 							name,
@@ -527,6 +542,7 @@ export class PageBindings {
 			this.globals = {
 				...nativeHeadlessDisplay,
 				navigator: this.navigator,
+				screen: this.screen,
 				CSS: this.css,
 				...(this.storage
 					? {
