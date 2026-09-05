@@ -68,7 +68,8 @@ The callback receives cancellation and must cooperate with it.
 
 Keys live only in this object's bounded memory. `close()` clears the registry
 and cancels pending work; it does not establish deterministic native-key erasure.
-There is no disk persistence, backup, key export or synchronized account recovery.
+This constructor has no disk persistence, backup, key export or synchronized
+account recovery. The separate persistent factory below requires explicit setup.
 `residentKey: true` means discoverable within this live object, not durable storage.
 User verification is always false; required UV/platform requests fail rather
 than pretending a biometric/PIN ceremony occurred. The cross-platform port does
@@ -80,6 +81,64 @@ data plus client-data hash and increment a non-wrapping counter. Default limits
 are 64 credentials and 4,294,967,295 successful assertions per credential; callers
 may lower those limits. Independently parsed CBOR/COSE and real signature checks
 are covered by synthetic tests, not a production relying-party acceptance run.
+
+## Explicit persistent authenticator
+
+`NodePasskeyAuthenticator.open(options)` returns a promise for a host-owned
+authenticator backed by the encrypted checkpoint file. Its exported
+`NodePasskeyPersistentAuthenticatorOptions` adds required `path` and `key` fields
+to the constructor options. There is no automatic discovery, agent configuration,
+default approval or fallback to ephemeral state.
+
+```ts
+const authenticator = await NodePasskeyAuthenticator.open({
+  path: protectedCheckpointPath,
+  key: hostOwnedEncryptionKey,
+  approve: requestTrustedHumanApproval,
+  maxCredentials: 64,
+});
+try {
+  await useTrustedPasskeyProvider(authenticator);
+} finally {
+  await authenticator.close();
+}
+```
+
+These application functions and values are illustrative host responsibilities,
+not browser commands. The key must contain 32 high-entropy bytes; it is copied
+before the factory's first await. The host owns key provisioning, caller-copy
+cleanup and recovery. The canonical absolute path must meet the protected Unix
+file/ancestor checks in `PASSKEY-STORAGE.md`. Opening locks the checkpoint for
+this owner's lifetime; corruption, a wrong key or an existing lock rejects,
+never silently starts over. Reopened credentials still require explicit approval
+for every ceremony, and user verification remains false.
+
+Registration and assertion counters are saved before their results can publish.
+The final cancellation/lifecycle check and in-memory commit follow successful
+storage acknowledgment. A save failure or cancellation after a save begins
+poisons the authenticator, preventing further ceremonies or counter reuse from
+that instance. A rejected operation may nevertheless have changed the file.
+`close()` immediately revokes operations and clears the registry, but its promise
+must be awaited to finish admitted storage work and release the owned lock.
+Filesystem completion is not bounded, and reopening/recovery is a host decision.
+
+This is encrypted local software persistence, not rollback resistance or a
+platform authenticator. An old valid same-key backup is accepted and may roll
+back counters. Secure key storage/rotation, recovery policy, trusted human UI,
+hardware-backed UV, synchronized accounts and production RP/runtime acceptance
+remain outstanding. Private KeyObjects and strings are not claimed erasable.
+
+September 5, 2026 persistent-factory validation: **41 new cases pass**, and seven
+named passkey suites produce **359 passes in each tree**. Working and clean HEAD
+integration types/builds, strict new-test types and scoped Biome pass. The explicit
+native manifest has 428 entries and was not run in full. Evidence is retained
+under `node_modules/.cache/native-validation/passkey-persistent-final-*`;
+worker baselines and intermediate runs remain under `persistent-passkeys/` in
+that cache. Tests use real crypto and fresh private synthetic filesystem fixtures,
+including save/fsync/publication barriers, close/reopen, cancellation and counter
+checks. Injected failures are deliberate tests, not real-vault or runtime evidence.
+An independent offline source/test review found no additional concrete defect;
+that review did not itself execute tests or establish production security.
 
 ## Supported security boundary
 
@@ -154,11 +213,12 @@ that failure in the retained before-tree. Matrix logs/results are
 is `passkey-page-onload-before.json` / `.log` in that directory. No unrelated
 onload implementation or expectation was changed.
 
-Still required: actual SafeJS
-byte/promise/capability checks, a separately authorized real provider, secure
-persistence and recovery, platform/USB/hybrid/synchronized passkey support, and
-real relying-party registration/assertion acceptance. The implemented ephemeral
-software port does not satisfy persistent, platform or synchronized passkey gates.
+Still required: actual SafeJS byte/promise/capability checks, a separately
+authorized real provider, production key provisioning and recovery,
+platform/USB/hybrid/synchronized passkey support, and real relying-party
+registration/assertion acceptance. The later explicit persistent factory provides
+local encrypted storage only; neither software mode satisfies platform or
+synchronized passkey gates.
 
 Design reference consulted by the parent on September 5, 2026:
 `https://www.w3.org/TR/webauthn-3/` (Level 3, August 25, 2026 Recommendation).

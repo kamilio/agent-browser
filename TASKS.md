@@ -18,9 +18,10 @@ consistency and Cloudflare challenge investigation. `FOUR-DAY-AUTH-RESEARCH.md`
 records the September 5–9 focus without shortening the existing September 10
 overall window. Four browser-only research rounds have now run; blocked pages,
 unverified social snippets and native SVG/CSS failures remain explicit, not
-successful content-access claims. Credential implementation is tested in memory;
-passkey integration remains in progress;
-real vaults, platform authenticators and actual SafeJS have not been exercised.
+successful content-access claims. Credentials have synthetic validation and
+passkeys now have encrypted local persistence. Real vaults and platform
+authenticators remain unexercised; the actual SafeJS passkey probe failed and
+the separate identity runtime probe awaits explicit approval.
 
 Scope additions confirmed by the user: cover all Kitesurf features, provide a
 playground comparable to `https://kitesurf.cloudflare.app/`, and make the agent
@@ -28,6 +29,16 @@ interface a Playwright-CLI-like superset. `COMPATIBILITY.md` is the explicit
 feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
+
+An explicit host-only persistent passkey factory now connects encrypted storage
+to registration/assertion publication, saves counters before returning results,
+and rejects further ceremonies after uncertain writes. Reopening still requires
+per-ceremony approval; UV stays false. `PASSKEYS.md` and `PASSKEY-STORAGE.md` retain
+the rollback, key provisioning, recovery, trusted UI and actual runtime gates.
+All 41 new persistence cases pass; seven named suites produce 359 passes in each
+tree, with types/builds, strict new-test types and scoped Biome passing. The native
+manifest has 428 entries, not a full-manifest pass. No real vault or live RP is
+involved; the actual runtime and platform gates remain outstanding.
 
 The native reader now counts adjacent optionally closed paragraphs/list items
 without false nesting, while retaining actual nesting limits and identical
@@ -47,8 +58,9 @@ protected-file checks, verified atomic/fsynced publication and poisoned-instance
 failure handling. `PASSKEY-STORAGE.md` records 58 new passing cases and 318 passes
 across six named suites in each tree, with types/builds and scoped checks passing;
 the native manifest has 427 entries. Actual private synthetic `/tmp` fixtures are
-distinguished from earlier modeled ancestry. Authenticator save-before-result
-integration, real vaults, rollback/recovery and human approval remain open.
+distinguished from earlier modeled ancestry. The later factory connects
+save-before-result publication; real vaults, rollback/recovery and human approval
+remain open.
 
 Managed native sessions now coordinate truthful User-Agent/language defaults with
 document-owned navigator identity while preserving explicit request overrides.

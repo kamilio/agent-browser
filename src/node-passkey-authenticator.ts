@@ -5,6 +5,8 @@ import {
 	randomBytes,
 	sign,
 } from "node:crypto";
+import { types } from "node:util";
+import { NodePasskeyCheckpointFile } from "./node-passkey-checkpoint-file.js";
 import {
 	type PasskeyAssertion,
 	type PasskeyAuthenticator,
@@ -43,6 +45,12 @@ export interface NodePasskeyAuthenticatorOptions {
 	maxAssertionsPerCredential?: number;
 }
 
+export interface NodePasskeyPersistentAuthenticatorOptions
+	extends NodePasskeyAuthenticatorOptions {
+	path: string;
+	key: Uint8Array;
+}
+
 type StoredCredential = {
 	id: Buffer;
 	rpId: string;
@@ -74,7 +82,7 @@ function dictionary(value: unknown, keys: readonly string[]) {
 		fail("TypeError");
 	if (Object.getOwnPropertySymbols(value).length) fail("TypeError");
 	const fields = Object.getOwnPropertyDescriptors(value);
-	const result: Record<string, unknown> = {};
+	const result: Record<string, unknown> = Object.create(null);
 	for (const [key, field] of Object.entries(fields)) {
 		if (!Object.hasOwn(field, "value")) fail("TypeError");
 		if (!keys.includes(key)) fail("NotSupportedError");
@@ -330,6 +338,10 @@ export class NodePasskeyAuthenticator implements PasskeyAuthenticator {
 	readonly #maxAssertions: number;
 	#active: AbortController | undefined;
 	#closed = false;
+	#store: NodePasskeyCheckpointFile | undefined;
+	#pendingCheckpoint = false;
+	#poisoned = false;
+	#closePromise: Promise<void> | undefined;
 
 	constructor(options: NodePasskeyAuthenticatorOptions = {}) {
 		this.#approve = options.approve;
@@ -342,14 +354,76 @@ export class NodePasskeyAuthenticator implements PasskeyAuthenticator {
 		);
 	}
 
+	static async open(
+		options: NodePasskeyPersistentAuthenticatorOptions,
+	): Promise<NodePasskeyAuthenticator> {
+		let authenticator: NodePasskeyAuthenticator | undefined;
+		try {
+			if (
+				!options ||
+				types.isProxy(options) ||
+				![Object.prototype, null].includes(Object.getPrototypeOf(options))
+			)
+				fail("TypeError");
+			const fields = dictionary(options, [
+				"path",
+				"key",
+				"approve",
+				"maxCredentials",
+				"maxAssertionsPerCredential",
+			]);
+			authenticator = new NodePasskeyAuthenticator({
+				approve: fields.approve as NodePasskeyAuthenticatorOptions["approve"],
+				maxCredentials: fields.maxCredentials as number | undefined,
+				maxAssertionsPerCredential: fields.maxAssertionsPerCredential as
+					| number
+					| undefined,
+			});
+			authenticator.#store = await NodePasskeyCheckpointFile.open({
+				path: fields.path as string,
+				key: fields.key as Uint8Array,
+			});
+			const records = await authenticator.#store.load();
+			try {
+				if ((records?.length ?? 0) > authenticator.#maxCredentials)
+					fail("NotAllowedError");
+				for (const record of records ?? []) {
+					authenticator.#credentials.set(
+						Buffer.from(record.id).toString("hex"),
+						{
+							...record,
+							id: Buffer.from(record.id),
+							user: { ...record.user, id: new Uint8Array(record.user.id) },
+						},
+					);
+				}
+			} finally {
+				for (const record of records ?? []) {
+					record.id.fill(0);
+					record.user.id.fill(0);
+				}
+			}
+			return authenticator;
+		} catch {
+			await authenticator?.close().catch(() => {});
+			return fail("UnknownError");
+		}
+	}
+
 	get capabilities(): PasskeyCapabilities {
 		return this.#capabilities;
 	}
 
-	close(): void {
+	close(): Promise<void> {
+		if (this.#closePromise) return this.#closePromise;
 		this.#closed = true;
 		this.#credentials.clear();
 		this.#active?.abort();
+		this.#closePromise = (this.#store?.close() ?? Promise.resolve()).catch(() =>
+			fail("UnknownError"),
+		);
+		void this.#closePromise.catch(() => {});
+		return this.#closePromise;
 	}
 
 	create(
@@ -416,15 +490,22 @@ export class NodePasskeyAuthenticator implements PasskeyAuthenticator {
 						],
 					]),
 				);
+				const credential: StoredCredential = {
+					id: credentialId,
+					rpId: input.rpId,
+					user: input.user,
+					privateKey,
+					counter: 0,
+				};
+				if (this.#store)
+					await this.#checkpoint(
+						[...this.#credentials.values(), credential],
+						check,
+					);
 				return () => {
 					check();
-					this.#credentials.set(credentialId.toString("hex"), {
-						id: credentialId,
-						rpId: input.rpId,
-						user: input.user,
-						privateKey,
-						counter: 0,
-					});
+					this.#credentials.set(credentialId.toString("hex"), credential);
+					this.#pendingCheckpoint = false;
 					return {
 						credentialId: new Uint8Array(credentialId),
 						attestationObject: new Uint8Array(attestationObject),
@@ -499,9 +580,17 @@ export class NodePasskeyAuthenticator implements PasskeyAuthenticator {
 						dsaEncoding: "der",
 					},
 				);
+				if (this.#store)
+					await this.#checkpoint(
+						[...this.#credentials.values()].map((stored) =>
+							stored === credential ? { ...stored, counter } : stored,
+						),
+						check,
+					);
 				return () => {
 					check();
 					credential.counter = counter;
+					this.#pendingCheckpoint = false;
 					return {
 						credentialId: new Uint8Array(credential.id),
 						authenticatorData: new Uint8Array(authData),
@@ -514,6 +603,24 @@ export class NodePasskeyAuthenticator implements PasskeyAuthenticator {
 				};
 			},
 		);
+	}
+
+	async #checkpoint(records: StoredCredential[], check: () => void) {
+		check();
+		const store = this.#store;
+		if (!store) fail("InvalidStateError");
+		this.#pendingCheckpoint = true;
+		try {
+			await store.save(
+				records.map((record) => ({
+					...record,
+					id: Buffer.from(record.id),
+					user: { ...record.user, id: new Uint8Array(record.user.id) },
+				})),
+			);
+		} catch {
+			fail("UnknownError");
+		}
 	}
 
 	async #consent(
@@ -547,7 +654,13 @@ export class NodePasskeyAuthenticator implements PasskeyAuthenticator {
 			check: () => void,
 		) => Promise<() => Result>,
 	): Promise<Result> {
-		if (this.#closed || this.#active) fail("InvalidStateError");
+		if (
+			this.#closed ||
+			this.#active ||
+			this.#poisoned ||
+			this.#pendingCheckpoint
+		)
+			fail("InvalidStateError");
 		if (!this.#approve) fail("NotAllowedError");
 		const controller = new AbortController();
 		this.#active = controller;
@@ -587,6 +700,7 @@ export class NodePasskeyAuthenticator implements PasskeyAuthenticator {
 			return result();
 		} finally {
 			cleanup();
+			if (this.#pendingCheckpoint) this.#poisoned = true;
 			if (this.#active === controller) this.#active = undefined;
 		}
 	}

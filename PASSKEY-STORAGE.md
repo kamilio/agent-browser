@@ -2,9 +2,10 @@
 
 September 5, 2026. `src/node-passkey-checkpoint-file.ts` adds an internal trusted
 host file backend around the codec described in `PASSKEY-CHECKPOINTS.md`.
-It is not yet connected to authenticator result publication, public package
-configuration or an agent/page API. Do not treat this storage primitive alone
-as a durable, synchronized or rollback-resistant passkey authenticator.
+The explicit host-only `NodePasskeyAuthenticator.open` factory now connects it
+to save-before-result publication; see `PASSKEYS.md`. The storage primitive itself
+remains internal, with no agent/page API or ambient configuration. Do not treat
+encrypted local persistence as synchronized or rollback-resistant storage.
 
 ## Ownership and API
 
@@ -51,7 +52,8 @@ load/save poisons the instance; there is no reset/retry method. Close/reopen and
 any recovery decision must be explicit. Overlapping operation admissions reject
 without poisoning the already-admitted operation. An authenticator must await
 successful save before returning a registration or incremented assertion, then
-recheck its own cancellation/publication boundary. That integration is still open.
+recheck its own cancellation/publication boundary. The persistent authenticator
+now does this and poisons itself on uncertain writes or post-save cancellation.
 
 No bounded filesystem completion or cancellation is promised: a stalled call can
 delay close. Timeout/abort does not prove that rename did not happen. Inode/path
