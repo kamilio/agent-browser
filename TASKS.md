@@ -1,5 +1,13 @@
 # Agent browser implementation tasks
 
+Native Camoufox architecture research is preserved in
+`CAMOUFOX-ARCHITECTURE-2026-09-05.md`: three actual native-browser requests,
+217 partial scopes and original-body/build/source integrity checks. Adopt only
+truthful consistency and host/page separation lessons; retain our independent
+engine and SafeJS-only runtime. Upstream maintenance/detectability caveats are
+explicit. No detector, challenge solver, Firefox/Xvfb, SDK or device acceptance
+was attempted, and missing property-schema/version evidence remains open.
+
 Scoped research CLI extraction now accepts one bounded native `--selector CSS`,
 requires exactly one root and preserves original response/source provenance.
 Header barriers precede loading; title and bounded visible-prefix diagnostics

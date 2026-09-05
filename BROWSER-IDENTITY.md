@@ -1,5 +1,18 @@
 # Truthful native identity defaults
 
+## Camoufox architecture evidence
+
+`CAMOUFOX-ARCHITECTURE-2026-09-05.md` preserves three separately authorized
+native-only source reads: the upstream repository, linked fingerprint guide
+and linked virtual-display guide. The useful transfer is consistent observable
+values and deliberate host/page separation, not a Firefox dependency, generated
+device identity or claims of undetectability. Its captured maintenance warning
+and headless-detectability caveat remain beside the authors' marketing claims.
+Original bodies, receipt times, partial scopes and checksums are retained.
+No Camoufox/Xvfb/runtime, detector or Cloudflare challenge was executed. Missing
+property schemas and unverified implementation/version behavior remain gaps;
+the denied identity runtime and wire gates remain closed pending approval.
+
 ## Headless display values
 
 The native page now exposes `devicePixelRatio`, `outerWidth` and `outerHeight`
