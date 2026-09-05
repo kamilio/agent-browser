@@ -208,43 +208,78 @@ export class EnvFileSecretProvider implements SecretProvider {
 const runPass: PassRunner = (executable, args, options) =>
 	new Promise((resolveExit, reject) => {
 		checkAbort(options.signal);
+		if (process.platform === "win32") throw failure();
 		const child = spawn(executable, [...args], {
 			shell: false,
+			detached: true,
 			stdio: ["ignore", "pipe", "pipe"],
 			env: { ...process.env, PASSWORD_STORE_ENABLE_EXTENSIONS: "false" },
 		});
+		const pid = child.pid;
+		let closed = false;
+		let stopped = false;
+		const killChild = () => {
+			if (closed) return;
+			try {
+				child.kill("SIGKILL");
+			} catch {}
+		};
 		const abort = () => {
-			child.kill("SIGKILL");
-			child.stdout.destroy();
-			child.stderr.destroy();
+			if (closed || stopped) return;
+			stopped = true;
+			if (
+				typeof pid === "number" &&
+				Number.isSafeInteger(pid) &&
+				pid > 1 &&
+				pid <= 0x7fff_ffff &&
+				pid !== process.pid
+			) {
+				try {
+					process.kill(-pid, "SIGKILL");
+				} catch {
+					killChild();
+				}
+			} else killChild();
+			for (const stream of [child.stdout, child.stderr]) {
+				try {
+					stream.destroy();
+				} catch {}
+			}
 			reject(failure());
 		};
 		child.stdout.on("error", abort);
 		child.stderr.on("error", abort);
-		options.signal.addEventListener("abort", abort, { once: true });
-		if (options.signal.aborted) abort();
 		child.stdout.on("data", (chunk: Buffer) => {
 			try {
-				options.stdout(chunk);
+				if (!closed && !stopped) options.stdout(chunk);
+			} catch {
+				abort();
 			} finally {
 				chunk.fill(0);
 			}
 		});
 		child.stderr.on("data", (chunk: Buffer) => {
 			try {
-				options.stderr(chunk);
+				if (!closed && !stopped) options.stderr(chunk);
+			} catch {
+				abort();
 			} finally {
 				chunk.fill(0);
 			}
 		});
 		child.on("error", () => {
+			abort();
 			options.signal.removeEventListener("abort", abort);
 			reject(failure());
 		});
 		child.on("close", (code) => {
+			closed = true;
 			options.signal.removeEventListener("abort", abort);
-			resolveExit(code ?? -1);
+			if (stopped) reject(failure());
+			else resolveExit(code ?? -1);
 		});
+		options.signal.addEventListener("abort", abort, { once: true });
+		if (options.signal.aborted) abort();
 	});
 
 export class PassSecretProvider implements SecretProvider {

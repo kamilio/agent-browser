@@ -1,4 +1,5 @@
 [
+  "src/node-pass-runner.test.ts",
   "src/resource-limit.test.ts",
   "src/research-loader-limits.test.ts",
   "src/html-parser-limits.test.ts",

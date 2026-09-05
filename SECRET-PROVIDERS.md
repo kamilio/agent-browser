@@ -59,6 +59,23 @@ extensions are disabled; JSON cannot supply a runner. Its timeout defaults to
 10,000 ms and must be an integer from 1 to 30,000 ms. Executable selection is a
 trusted host decision, not authorization for arbitrary agent execution.
 
+The default `pass` runner now requires POSIX-style process groups; it fails closed
+on Windows before spawning. It starts the selected executable in a new group and
+session without a shell, retaining piped output and its event-loop reference.
+Cancellation, timeout, output overflow or pipe/child errors request `SIGKILL` for
+that captured child group, then destroy the output streams. Invalid group IDs or
+a failed group signal fall back to the owned child handle. Repeated/late errors
+cannot repeatedly signal a retired runner, and cleanup errors remain generic.
+Trusted custom runners retain their existing interface and responsibilities.
+
+This is best-effort cancellation, not process-tree containment. Descendants can
+leave their group, unrelated `gpg-agent` instances are not owned by the runner,
+and signal delivery does not prove termination. No cleanup signal is sent on a
+normal close, and no general normal-exit descendant-cleanup guarantee is made.
+See `PASS-RUNNER-CANCELLATION.md` for scoped native tests and a separately
+authorized, real-OS **synthetic executable** probe. Neither authorizes nor
+establishes actual `pass`, vault, GPG, pinentry, Windows or credential acceptance.
+
 ## Native CLI usage
 
 These are illustrative commands, not a record of live validation. With a built

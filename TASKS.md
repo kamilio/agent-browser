@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+The default host pass runner now requests cancellation of its owned POSIX process
+group, with captured-PID admission, direct-child fallback, idempotent cleanup and
+late-event guards. Agent constant references, origin checks and sealed-session
+output isolation are unchanged. The clean native scope passes 296 cases across
+four files, including 43 new default-runner cases; two targeted baseline failures
+confirm the previous gap. A separately authorized synthetic Linux executable and
+helper were both observed absent after cancellation, with generic rejection;
+this is not real pass/GPG/vault or universal descendant-cleanup acceptance.
+`PASS-RUNNER-CANCELLATION.md` records the Windows fail-closed default, best-effort
+limits, source research and exact evidence. Build/types/Biome pass. All existing
+passkey, credential, runtime and stopped research gates remain open or unchanged;
+the overall browser goal remains active.
+
 Native loader failures now carry optional, private-identity resource diagnostics
 with an enumerated kind, unit, configured limit and observed count. Reader, text,
 HTML parser/tokenizer and selected central document checks retain their budgets,
