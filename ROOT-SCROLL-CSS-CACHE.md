@@ -4,6 +4,10 @@ September 4, 2026 continuation of `STYLE-PRESENTATION-CACHE.md`. This extends th
 explicit presentation-only boundary to native root scrolling. It does not add
 element scrolling, incremental layout, smooth scrolling or a new rendering engine.
 
+Later continuation: `ROOT-SCROLL-EXTENT-CACHE.md` separately reuses unchanged
+extent bounds across these notifications. The CSS-only scope and original
+measurements below retain their historical meaning.
+
 ## Measured cause
 
 The preceding `fd85e20` code reports a completed CSS cascade counter. On a plain

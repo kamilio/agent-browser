@@ -1,5 +1,13 @@
 # Compatibility and playground acceptance ledger
 
+Root-extent continuation: `ROOT-SCROLL-EXTENT-CACHE.md` caches unchanged bounds only
+across intact presentation-only journals. All 34 new cases and 505 / nineteen-file
+focused suites pass in both trees, with static/build checks and 54 matching native
+captures. Root/control extent scans fall eleven-to-two and six-to-one in bounded
+samples, while CSS and geometry behavior stay independently verified. Real-input,
+mixed-history and resource/lifecycle fallback remain conservative. No timing/RSS
+or original full-native/browser/runtime/live gate is closed by this evidence.
+
 September 4 root-scroll cache continuation: `ROOT-SCROLL-CSS-CACHE.md` reuses CSS
 through explicit movement and automatic-clamp notifications while preserving real
 source invalidation and fresh geometry/hits/pixels. All 35 new cases and 471 /

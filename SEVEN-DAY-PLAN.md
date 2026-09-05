@@ -7,6 +7,13 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Root extent caching now advances only across intact presentation-only journals.
+`ROOT-SCROLL-EXTENT-CACHE.md` records 34 new cases, passing 505 / nineteen-file
+focused suites in both trees, static/build checks and 54 matching native captures.
+Root/control extent samples fall eleven-to-two and six-to-one, without changing
+CSS counters or bypassing geometry revisions. Both manifests retain 390 entries;
+timing/RSS, full-native and original runtime/external acceptance gates remain open.
+
 Root-scroll notifications now share conservative CSS presentation-only reuse.
 `ROOT-SCROLL-CSS-CACHE.md` records 35 new cases, passing 471 / seventeen-file
 focused suites in both trees, static/build checks and 54 identical native

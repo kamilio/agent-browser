@@ -19,6 +19,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native root-scroll extent bounds now reuse intact presentation-only journals;
+real dimensions, control values and lost/mixed history still rescan.
+`ROOT-SCROLL-EXTENT-CACHE.md` records 34 new cases, passing 505 / nineteen-file
+focused suites in both trees, static/build checks and 54 identical native
+captures. Root/control sample scans fall eleven-to-two and six-to-one while CSS
+counters stay unchanged and geometry remains current. Both manifests retain 390
+entries. This is not layout caching or timing/RSS acceptance; original full-native,
+browser/runtime/live gates remain open and historical evidence stays preserved.
+
 Native root scrolling now reuses computed CSS without suppressing revision,
 geometry, hit or pixel updates. `ROOT-SCROLL-CSS-CACHE.md` records 35 new cases,
 passing 471 / seventeen-file focused suites in both trees, source/build/scoped

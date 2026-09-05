@@ -1,4 +1,6 @@
 [
+  "src/scroll-extent-lifecycle.test.ts",
+  "src/scroll-extent-cache.test.ts",
   "src/scroll-presentation-notifications.test.ts",
   "src/scroll-presentation-cache.test.ts",
   "src/document-presentation.test.ts",

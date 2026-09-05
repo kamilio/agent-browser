@@ -8,6 +8,13 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation now reuses unchanged root extent bounds while
+retaining conservative real-input scans and current geometry, hits and pixels.
+`ROOT-SCROLL-EXTENT-CACHE.md` records 34 new cases, passing 505 / nineteen-file
+focused suites in both trees, static/build checks and 54 identical native captures.
+Measured scan reductions do not reattribute the prior CSS improvement or establish
+timing/RSS acceptance. Both manifests retain 390 entries; original gates stay open.
+
 The until-stopped continuation removes root-scroll-only CSS recascades without
 changing geometry, hits, rendering or conservative source invalidation.
 `ROOT-SCROLL-CSS-CACHE.md` records 35 new cases, passing 471 / seventeen-file

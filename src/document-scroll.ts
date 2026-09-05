@@ -92,6 +92,19 @@ export class DocumentScroll {
 			throw new AgentBrowserError("closed", "Viewport scrolling is closed");
 		this.tree.get(this.tree.root);
 		if (this.revision === this.tree.revision) return;
+		if (this.revision >= 0) {
+			const journal = this.tree.changesSince(this.revision);
+			if (
+				!journal.reset &&
+				journal.changes.every(
+					(change) =>
+						change.kind === "style" && change.presentationOnly === true,
+				)
+			) {
+				this.revision = this.tree.revision;
+				return;
+			}
+		}
 		const layout = layoutDocument(this.tree);
 		const viewport = layout.text.horizontal.formatting.viewport;
 		const fixed = new Set(layout.fixedIds);
