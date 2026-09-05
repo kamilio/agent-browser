@@ -30,6 +30,13 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native-only CSSOM followup now provides the previously missing DPR/Screen/window
+contracts. `CSSOM-IDENTITY-2026-09-05.md` records one successful request using the
+already committed reader, 138 bounded live/offline scopes and preserved body
+identity against the older failed receipt. It separates physical-device facts
+from viewport-based exposed geometry and defines future native/runtime gates.
+This documentation enables no geometry API, parent-RP scope or denied probe.
+
 Native reader definition lists now account for optional dt/dd siblings without
 false cumulative depth. Formatting reconstruction, genuine nesting, scope
 barriers and unchanged resource ceilings remain guarded. Sixty-two new cases

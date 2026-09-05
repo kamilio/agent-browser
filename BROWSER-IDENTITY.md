@@ -1,5 +1,23 @@
 # Truthful native identity defaults
 
+## Geometry source followup
+
+`CSSOM-IDENTITY-2026-09-05.md` records a new native-only successful CSSOM View
+read at September 5, 2026, **06:10:29.253 UTC**. The already committed reader
+loaded the same 1,196,447-byte body previously rejected by an older loader;
+the old failure and its measurements remain unchanged. One request and bounded
+live/offline native scopes yielded the actual DPR, Screen, viewport and window
+dimension definitions, not measured device identity or challenge acceptance.
+
+Those contracts distinguish no-output-device DPR 1, absent-client-window outer
+dimensions 0, layout/visual viewports and privacy-exposed Screen areas. They do
+not justify presenting the layout viewport as a physical monitor measurement.
+The document defines future implementation and validation requirements; no new
+geometry API is enabled here. Both denied identity probes remain unexecuted
+pending explicit approval. The parent independently verified 23 evidence
+artifacts and the 1,584-entry fixed-build inventory; repeated inventory checks
+are neither unique artifacts nor native/guest test counts.
+
 September 5, 2026. Managed native sessions now share one immutable identity
 profile across request defaults and page bindings. This improves consistency;
 it is not a Chrome/Firefox fingerprint, a physical-device profile, a measured
