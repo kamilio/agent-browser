@@ -194,6 +194,8 @@ export function sanitizeResearchHtml(
 			continue;
 		}
 		if (!voidTags.has(name)) {
+			if ((name === "p" || name === "li") && open.at(-1) === "p") open.pop();
+			if (name === "li" && open.at(-1) === "li") open.pop();
 			open.push(name);
 			check(open.length > limits.maxDepth);
 		}

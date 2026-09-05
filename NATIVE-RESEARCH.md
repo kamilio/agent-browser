@@ -1,5 +1,26 @@
 # Opt-in native research reader
 
+## Optional paragraph/list depth correction
+
+September 5, 2026: the reader's depth accounting now closes an immediately open
+paragraph before a new paragraph or list item, and an immediately open list item
+before its sibling. Long flat lists and paragraphs no longer consume false
+nesting depth. Serialized output, omission accounting and all resource ceilings
+remain unchanged; the native parser still determines the resulting tree.
+Intervening wrappers and other optional end tags remain conservative limitations,
+not a claim of complete HTML tree-builder parity.
+
+All 32 new regression cases pass. Nine explicitly named suites produce **496
+passes in each of the working and isolated trees**, with project types/builds,
+strict reader-test types and scoped Biome passing. The manifest remains at 427
+entries; it was not run in full. Evidence is retained under
+`node_modules/.cache/native-validation/reader-optional-final-*`, with the worker's
+before/final fixtures and failures under `reader-optional-closing/` in that cache.
+The before-loader run has 12 failures among the final 74 reader cases; genuine
+nested-depth and other budget failures remain rejected after the correction.
+This is synthetic validation: no completed follow-up live-reader result is
+available, and the previously recorded CSSOM resource-limit failures remain.
+
 ## Integrated checkpoint
 
 September 5, 2026: **119 new cases** (39 reader, 80 challenge diagnostics) and

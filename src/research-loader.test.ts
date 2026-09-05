@@ -255,6 +255,240 @@ it.each([
 	);
 });
 
+it.each([
+	["p", "body", "paragraph"],
+	["li", "ul", "item"],
+	["li", "ol", "item"],
+] as const)(
+	"accounts for 140 optional %s siblings in %s",
+	(tag, parent, text) => {
+		const source = `<${parent}>${`<${tag}>${text}`.repeat(140)}</${parent}>`;
+		const sanitized = sanitizeResearchHtml(source, { maxDepth: 2 });
+		expect(sanitized.html).toBe(source);
+		expect(sanitized.report).toMatchObject({
+			sourceCodeUnits: source.length,
+			outputCodeUnits: source.length,
+			textCodeUnits: text.length * 140,
+			tokens: 282,
+			omittedTokens: 0,
+			omittedSubtrees: {},
+			ignoredAttributes: 0,
+			unwrappedElements: 0,
+			tokenizerIssues: 0,
+		});
+		const tree = loadResearchDocument(response(source), {
+			...context,
+			limits: { ...context.limits, maxDepth: 128 },
+		});
+		try {
+			const queries = new DocumentQueries(tree);
+			const siblings = queries.querySelectorAll(`${parent} > ${tag}`);
+			expect(siblings).toHaveLength(140);
+			expect(queries.querySelector(`${tag} ${tag}`)).toBeNull();
+			expect(siblings.map((id) => tree.textContent(id))).toEqual(
+				Array(140).fill(text),
+			);
+			expect(extractDocument(tree).content).toBe(
+				tag === "p"
+					? `${Array(140).fill(text).join("\n\n")}\n`
+					: `${Array.from({ length: 140 }, (_, index) =>
+							parent === "ol" ? `${index + 1}. ${text}` : `- ${text}`,
+						).join("\n\n")}\n`,
+			);
+			expect(researchReaderInfo(tree)).toMatchObject(sanitized.report);
+		} finally {
+			tree.close();
+		}
+	},
+);
+
+it("accounts for adjacent paragraph ends within optional list items", () => {
+	const source = `<ul>${"<li><p>first<p>second".repeat(140)}</ul>`;
+	expect(sanitizeResearchHtml(source, { maxDepth: 3 }).html).toBe(source);
+	const tree = loadResearchDocument(response(source), context);
+	try {
+		const queries = new DocumentQueries(tree);
+		expect(queries.querySelectorAll("ul > li")).toHaveLength(140);
+		expect(queries.querySelectorAll("ul > li > p")).toHaveLength(280);
+		expect(queries.querySelector("li li, p p")).toBeNull();
+		expect(extractDocument(tree).content).toContain("first\n\n  second");
+	} finally {
+		tree.close();
+	}
+});
+
+it("keeps nested optional lists and their paragraphs nested", () => {
+	const source =
+		"<ul><li><p>outer<ul><li>inner one<li>inner two</ul><li>outer two</ul>";
+	expect(sanitizeResearchHtml(source, { maxDepth: 5 }).html).toBe(source);
+	expect(() => sanitizeResearchHtml(source, { maxDepth: 4 })).toThrow(
+		expect.objectContaining({ code: "resource-limit" }),
+	);
+	const tree = loadResearchDocument(response(source), context);
+	try {
+		const queries = new DocumentQueries(tree);
+		expect(queries.querySelectorAll("body > ul > li")).toHaveLength(2);
+		expect(queries.querySelectorAll("body > ul > li > ul > li")).toHaveLength(
+			2,
+		);
+		expect(extractDocument(tree).content).toContain("  - inner one");
+	} finally {
+		tree.close();
+	}
+});
+
+it.each([
+	"<div>",
+	"<unknown>",
+	"<ul><li>",
+	"<ol><li>",
+	"<table><tr><td>",
+	"<p><span>",
+	"<p><b>",
+	"<li><strong>",
+])("retains default depth bounds for nested %s", (start) => {
+	const source = start.repeat(129);
+	expect(() => sanitizeResearchHtml(source)).toThrow(
+		expect.objectContaining({ code: "resource-limit" }),
+	);
+	expect(() => loadResearchDocument(response(source), context)).toThrow(
+		expect.objectContaining({ code: "resource-limit" }),
+	);
+});
+
+it.each(["p", "li"])(
+	"does not close a distant %s across intervening tags",
+	(tag) => {
+		for (const barrier of [
+			"ul",
+			"ol",
+			"table",
+			"td",
+			"th",
+			"caption",
+			"button",
+			"select",
+			"applet",
+			"div",
+			"span",
+			"unknown",
+			"b",
+			"strong",
+			"a",
+		]) {
+			const source = `<${tag}><${barrier}><${tag}>text`;
+			expect(
+				sanitizeResearchHtml(source, { maxDepth: 3 }).report.sourceCodeUnits,
+			).toBe(source.length);
+			expect(() => sanitizeResearchHtml(source, { maxDepth: 2 })).toThrow(
+				expect.objectContaining({ code: "resource-limit" }),
+			);
+		}
+	},
+);
+
+it.each([
+	["<body><p>one<p>two</body>", 1],
+	["<ul><li>one<li>two</ul>", 1],
+	["<ul><li><p>one<li><p>two</ul>", 2],
+] as const)(
+	"enforces reduced depth for optional siblings: %s",
+	(source, maxDepth) => {
+		expect(() => sanitizeResearchHtml(source, { maxDepth })).toThrow(
+			expect.objectContaining({ code: "resource-limit" }),
+		);
+		expect(() =>
+			loadResearchDocument(response(source), {
+				...context,
+				limits: { ...context.limits, maxDepth },
+			}),
+		).toThrow(expect.objectContaining({ code: "resource-limit" }));
+	},
+);
+
+it.each([
+	"maxSourceCodeUnits",
+	"maxTextCodeUnits",
+	"maxOutputCodeUnits",
+	"maxTokens",
+] as const)("retains %s bounds with optional siblings", (limit) => {
+	expect(() =>
+		sanitizeResearchHtml("<p>text".repeat(140), { [limit]: 128 }),
+	).toThrow(expect.objectContaining({ code: "resource-limit" }));
+});
+
+it.each([
+	"<svg><p>one<p>two</svg>",
+	"<template><p>one<p>two</template>",
+	"<template><li>one<li>two</template>",
+	"<svg><g></svg>",
+	"<script>unterminated",
+	"<template><script>unterminated",
+])(
+	"retains omitted-subtree rejection after optional siblings: %s",
+	(omitted) => {
+		expect(() => sanitizeResearchHtml(omitted)).toThrow(
+			expect.objectContaining({ code: "unsupported" }),
+		);
+		expect(() =>
+			sanitizeResearchHtml(`<body>${"<p>paragraph".repeat(140)}${omitted}`),
+		).toThrow(expect.objectContaining({ code: "unsupported" }));
+	},
+);
+
+it("preserves sanitized bytes and omission provenance around optional siblings", () => {
+	const source =
+		"<body><p hidden>one<svg/><template><p>hidden</p></template><script>bad()</script><p>two</body>";
+	const sanitized = sanitizeResearchHtml(source);
+	expect(sanitized).toEqual({
+		html: "<body><p>one<p>two</body>",
+		report: {
+			profile: researchReaderProfile,
+			partial: true,
+			scripting: false,
+			styling: false,
+			hiddenContentSemantics: false,
+			sourceCodeUnits: source.length,
+			textCodeUnits: 17,
+			outputCodeUnits: 25,
+			tokens: 14,
+			omittedTokens: 8,
+			omittedSubtrees: { svg: 1, template: 1, script: 1 },
+			ignoredAttributes: 1,
+			unwrappedElements: 0,
+			tokenizerIssues: 0,
+		},
+	});
+});
+
+it("retains formatting ancestors but allows explicitly closed inline children", () => {
+	const source = `<b>${"<p><em>paragraph</em>".repeat(140)}</p></b>`;
+	expect(sanitizeResearchHtml(source, { maxDepth: 3 }).html).toBe(source);
+	expect(() => sanitizeResearchHtml(source, { maxDepth: 2 })).toThrow(
+		expect.objectContaining({ code: "resource-limit" }),
+	);
+	const tree = loadResearchDocument(response(source), context);
+	try {
+		expect(
+			new DocumentQueries(tree).querySelectorAll("body > b > p > em"),
+		).toHaveLength(140);
+	} finally {
+		tree.close();
+	}
+});
+
+it.each([
+	`<dl>${"<dt>term<dd>definition".repeat(140)}</dl>`,
+	`<table>${"<tr><td>value".repeat(140)}</table>`,
+])(
+	"keeps unsupported optional table/definition accounting conservative",
+	(source) => {
+		expect(() => sanitizeResearchHtml(source)).toThrow(
+			expect.objectContaining({ code: "resource-limit" }),
+		);
+	},
+);
+
 it("rejects invalid limits and pre-aborted loading", () => {
 	expect(() => sanitizeResearchHtml("text", { maxTokens: 100_001 })).toThrow();
 	expect(() => sanitizeResearchHtml("text", { maxDepth: 0 })).toThrow();

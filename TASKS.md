@@ -29,6 +29,13 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+The native reader now counts adjacent optionally closed paragraphs/list items
+without false nesting, while retaining actual nesting limits and identical
+serialized output. `NATIVE-RESEARCH.md` records 32 new cases and 496 passes across
+nine named suites in each tree, with types/builds and scoped checks passing.
+The manifest remains at 427 entries. This is synthetic evidence only; earlier
+live CSSOM loader failures have not yet been superseded by a completed follow-up.
+
 Another browser-only hardware round retrieves seven readable measurement sources
 in eight attempts. `HARDWARE-MEASUREMENTS-2026-09-05.md` preserves submitted rates,
 missing/null metadata, workload mismatches and failed concurrency streams rather
