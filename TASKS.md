@@ -30,6 +30,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native reader definition lists now account for optional dt/dd siblings without
+false cumulative depth. Formatting reconstruction, genuine nesting, scope
+barriers and unchanged resource ceilings remain guarded. Sixty-two new cases
+yield 482 passes across eight named files in each tree; types/builds, strict
+touched-test types and scoped Biome pass. The candidate manifest has 438 entries;
+the working manifest has two additional pending parent-RP entries, excluded
+from this validation and commit. `NATIVE-RESEARCH.md` records the regression-first
+failures and byte-identical offline replay of a separately captured CSSOM page.
+The parent-RP commit and both identity probes still require explicit approval.
+
 Native-browser-only followups resolved the actual linked WHATWG RP predicate,
 including its caller-public-suffix guard and ordinary same-origin redirect.
 `PASSKEY-RP-BOUNDARY-2026-09-05.md` preserves the original failures, later scoped

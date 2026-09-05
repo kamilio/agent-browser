@@ -1,5 +1,6 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { isHtmlSpecial } from "./html-formatting.js";
 import { htmlParseInfo, setHtmlParseInfo } from "./html-info.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { HtmlTokenizer } from "./html-tokenizer.js";
@@ -54,6 +55,9 @@ const preservedTags = new Set(
 );
 const blockReplacements = new Set(
 	"form details summary dialog fieldset legend center search".split(" "),
+);
+const reconstructableFormatting = new Set(
+	"a b big code em font i nobr s small strike strong tt u".split(" "),
 );
 
 function escapeHtml(value: string) {
@@ -188,6 +192,22 @@ export function sanitizeResearchHtml(
 			continue;
 		}
 		if (!voidTags.has(name)) {
+			if (name === "dt" || name === "dd") {
+				for (let index = open.length - 1; index >= 0; index--) {
+					const current = open[index];
+					if (current === "dt" || current === "dd") {
+						open.length = index;
+						break;
+					}
+					if (
+						reconstructableFormatting.has(current) ||
+						(isHtmlSpecial(current) &&
+							!["address", "div", "p"].includes(current))
+					)
+						break;
+				}
+				if (open.at(-1) === "p") open.pop();
+			}
 			if ((name === "p" || name === "li") && open.at(-1) === "p") open.pop();
 			if (name === "li" && open.at(-1) === "li") open.pop();
 			open.push(name);

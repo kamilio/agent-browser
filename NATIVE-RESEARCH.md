@@ -1,5 +1,51 @@
 # Opt-in native research reader
 
+## Definition-list depth accounting
+
+The reader now accounts for optional `dt`/`dd` sibling endings instead of treating
+long flat definition lists as progressively deeper nesting. The bounded backward
+scan follows the native parser's definition-list special-element barriers;
+ordinary non-reconstructing wrappers and explicitly closed inline children do
+not accumulate false depth. A genuinely nested `dl` and block/list/table barriers
+still retain their depth. Serialized sanitized bytes, omission reports and every
+source/text/output/token/depth ceiling remain unchanged.
+
+The scan stops conservatively at the native formatter's 14 formatting tags.
+Discarding an open formatting ancestor would undercount a level the native parser
+can reconstruct after a definition boundary. An independent static review found
+that issue in the first candidate; the final change retains the prior accounting
+for open formatting and tests both immediate and later explicit definition ends.
+This is not a duplicate active-formatting engine or complete HTML depth model.
+The final native parser/document depth guard remains necessary, and future changes
+to the parser's formatting membership must update this conservative set too.
+
+September 5, 2026 checkpoint: **62 new regression cases** and **482 passes across
+eight named files in each tree**, with project types/builds, strict touched-test
+types and scoped Biome passing. One formerly expected definition-list rejection
+in the original loader suite is replaced by positive/negative coverage in the
+new suite; optional-table rejection remains. The committed candidate manifest
+has 438 entries; the working manifest has 440 because two separately pending
+parent-RP tests remain uncommitted. Neither those tests nor the full manifest ran
+in this matrix. No auth, SDK, socket, TTY or real-credential gate was exercised.
+
+The corrected 32-case regression-first subset produced 11 failures under the
+original reader; its exact baseline and intermediate test/formatting failures
+remain preserved. The final set adds 30 formatting cases. Evidence uses
+`reader-definition-final-` and `reader-definition-corrected-baseline-tests.*`
+under `node_modules/.cache/native-validation/`; the clean candidate path is in
+`/tmp/reader-definition-integrated-path`. The review and addendum are in
+`reader-definition-review/REPORT.md` under the same cache.
+
+Separate compatibility replay on September 5 at **06:15:56.410 UTC** used the
+unchanged captured CSSOM body of 1,196,447 bytes, SHA-256
+`0c344170f5e5ecc7ed4e69b82e07e73b7f96d88cd0c544577c26fb42bcf0fd8d`.
+The already committed capture build and candidate produce identical sanitized
+bytes, reports and native serialization, with 32,355 nodes each. The captured
+receipt at **06:10:29.253 UTC** was already successful without this change; this
+offline replay is not new live-candidate acceptance or evidence that the dt/dd
+fix caused that prior success. `reader-definition-captured-replay.json` records
+the comparison and both compiled loader hashes. No request was made by replay.
+
 ## Exact empty processing marker recovery
 
 The reader now accepts only the complete three-character `<?>` marker already
