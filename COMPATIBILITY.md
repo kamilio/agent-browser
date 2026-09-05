@@ -1,5 +1,13 @@
 # Compatibility and playground acceptance ledger
 
+Late-attached range continuation: `LATE-RANGE-ATTACHMENT.md` establishes missing
+ancestry when tracked detached nodes enter new parents, preserving existing
+logical sibling caches. All 54 new cases and 778 tests across 26 named files pass
+in each tree, with types/builds/scoped checks and independent raster comparisons.
+Fragment moves retain removal semantics; details batching uses unadvanced fake
+timers. Normalize member/parent transfer, interior element carets, arbitrary early
+native-listener ordering and original full-native/runtime/live gates remain open.
+
 Normalize survivor continuation: `NORMALIZE-SURVIVOR-RANGES.md` changes survivor
 growth to an exact append, preserving existing offsets and selection extent
 through merges, singleton calls and repetition. All 61 new cases and 642 tests

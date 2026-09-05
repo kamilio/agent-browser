@@ -8,6 +8,14 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation fixes missing range ancestry for late-attached
+tracked nodes. `LATE-RANGE-ATTACHMENT.md` records 54 new passing cases and 778
+passes across 26 named files in each tree, types/builds/scoped checks and complete
+native raster comparisons. Both manifests retain 408 entries. Normalize member/
+parent transfer, interior element carets and original full-native/runtime/live
+gates stay outstanding. No endpoint-refresh masking or command-capture claim is
+used, and unrelated pending work remains outside the completed change.
+
 The until-stopped continuation preserves normalize survivor ranges with exact
 append metadata rather than whole replacement. `NORMALIZE-SURVIVOR-RANGES.md`
 records 61 new passing cases, 642 passes across 21 named files in each tree,

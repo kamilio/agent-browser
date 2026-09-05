@@ -19,6 +19,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Live ranges now acquire missing ancestor links when previously detached tracked
+nodes enter new parents. `LATE-RANGE-ATTACHMENT.md` records 54 new passing cases
+and 778 passes across 26 named files in each tree, types/builds/scoped checks and
+independent complete raster comparisons. Script/container/fragment and fake-timer
+details batching preserve correct logical indices without endpoint-reset masking.
+Both manifests retain 408 entries. Normalize removed-member/parent-boundary
+transfer, interior element-boundary carets, arbitrary early native-listener
+ordering and original full-native/runtime/live gates remain open. No unrelated
+pending work or command-capture acceptance is included.
+
 Normalization now appends following text instead of whole-replacing the surviving
 node, preserving its existing range offsets even on repeated no-op calls.
 `NORMALIZE-SURVIVOR-RANGES.md` records 61 new passing cases and 642 passes across

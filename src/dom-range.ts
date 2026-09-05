@@ -224,12 +224,13 @@ export class DomRangeOwner {
 		return result;
 	}
 
-	private track(node: number) {
+	private track(node: number, preserveChildren = false) {
 		let current: number | null = node;
 		while (current !== null) {
 			const value = this.tree.get(current);
 			this.parents.set(current, value.parent);
-			this.children.set(current, [...value.children]);
+			if (!preserveChildren || !this.children.has(current))
+				this.children.set(current, [...value.children]);
 			current = value.parent;
 		}
 	}
@@ -276,6 +277,9 @@ export class DomRangeOwner {
 				for (const range of ranges)
 					range.update(transfer(range.start), transfer(range.end), false);
 				this.track(split.following);
+			} else {
+				for (const node of record.addedNodes)
+					if (this.parents.has(node)) this.track(node, true);
 			}
 			return;
 		}

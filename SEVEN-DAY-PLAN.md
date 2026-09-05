@@ -7,6 +7,13 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Late-attached tracked nodes now establish their new range ancestry while keeping
+existing logical child sequences intact. `LATE-RANGE-ATTACHMENT.md` records
+54 new passing cases, 778 passes across 26 named files in each tree, project
+types/builds/scoped checks and independent raster comparisons. Both manifests
+retain 408 entries. Normalize member/parent transfer, interior element carets and
+original full-native/runtime/live gates remain open; pending work stays excluded.
+
 Normalize survivor growth now uses exact append semantics, retaining existing
 survivor ranges through merges and singleton/repeated calls.
 `NORMALIZE-SURVIVOR-RANGES.md` records 61 new passing cases, 642 passes across

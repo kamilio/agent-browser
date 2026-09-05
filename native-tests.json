@@ -1,4 +1,7 @@
 [
+  "src/range-late-attachment-bindings.test.ts",
+  "src/range-late-attachment-rendering.test.ts",
+  "src/range-late-attachment.test.ts",
   "src/normalize-survivor-bindings.test.ts",
   "src/normalize-survivor-rendering.test.ts",
   "src/normalize-survivor.test.ts",
