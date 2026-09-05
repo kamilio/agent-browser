@@ -1,4 +1,9 @@
 [
+  "src/secret-command-form.test.ts",
+  "src/secret-command-security.test.ts",
+  "src/secret-providers.test.ts",
+  "src/node-secret-providers.test.ts",
+  "src/node-secret-config.test.ts",
   "src/normalize-range-bindings.test.ts",
   "src/normalize-range-rendering.test.ts",
   "src/normalize-range.test.ts",

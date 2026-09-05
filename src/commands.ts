@@ -67,6 +67,7 @@ const definitions: CommandDefinition[] = [
 	command("click", 1, 2),
 	command("dblclick", 1, 2),
 	command("fill", 2, 2, { submit: booleanOption }),
+	command("fill-secret", 2),
 	command("drag", 2),
 	command("drop", 1, 1, {
 		path: { kind: "string", repeated: true },

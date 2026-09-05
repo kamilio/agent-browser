@@ -14,6 +14,7 @@ import {
 	readCommandConnection,
 	writeCommandConnection,
 } from "./node-runtime.js";
+import { loadSecretConfig } from "./node-secret-config.js";
 import { SessionProcessHost } from "./node-session-host.js";
 import { runStateFileCommand } from "./node-state-client.js";
 import { runTerminal } from "./node-terminal.js";
@@ -38,8 +39,14 @@ function runtimeConfiguration() {
 	return { packageRoot, runtimeAdapter };
 }
 
-function host(configuration: ReturnType<typeof runtimeConfiguration>) {
+async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 	const { packageRoot, runtimeAdapter } = configuration;
+	const secrets = await loadSecretConfig(
+		process.env.AGENT_BROWSER_SECRET_CONFIG,
+		{
+			processRuntime: packageRoot !== undefined,
+		},
+	);
 	const websiteScripts = process.env.AGENT_BROWSER_PAGE_SCRIPTS;
 	if (websiteScripts !== undefined && websiteScripts !== "classic")
 		throw new AgentBrowserError(
@@ -56,6 +63,7 @@ function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 			process: { packageRoot, websiteScripts, runtimeAdapter },
 		});
 	return new BrowserCommandHost({
+		secrets,
 		documentFormats: [
 			"text/html",
 			"text/plain",
@@ -136,7 +144,7 @@ async function main() {
 			);
 			return;
 		}
-		const local = host(configuration);
+		const local = await host(configuration);
 		try {
 			console.log(
 				safeJson(
@@ -155,7 +163,7 @@ async function main() {
 					"unsupported",
 					`Service option is not implemented: --${key}`,
 				);
-		const commands = host(configuration);
+		const commands = await host(configuration);
 		let remove: (() => Promise<void>) | undefined;
 		let resolveStopped = () => {};
 		const stopped = new Promise<void>((resolve) => {

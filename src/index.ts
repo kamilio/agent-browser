@@ -1,4 +1,11 @@
 export {
+	SecretBroker,
+	secretProviderLimits,
+	type SecretBinding,
+	type SecretBrokerOptions,
+	type SecretProvider,
+} from "./secret-providers.js";
+export {
 	ScriptMutationObservers,
 	type ScriptMutationObserverLimits,
 	type ScriptMutationObserverPort,

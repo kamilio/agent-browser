@@ -12,12 +12,37 @@ approximately 17:42 UTC. `SEVEN-DAY-PLAN.md` defines the current priorities and
 acceptance gates without reducing the requested browser scope.
 Status: active; foundation work, not a completed browser.
 
+September 5 continuation: the user requested four days of native-browser research,
+constant-reference password providers (`.env`, `pass`), passkeys, fingerprint
+consistency and Cloudflare challenge investigation. `FOUR-DAY-AUTH-RESEARCH.md`
+records the September 5–9 focus without shortening the existing September 10
+overall window. Four browser-only research rounds have now run; blocked pages,
+unverified social snippets and native SVG/CSS failures remain explicit, not
+successful content-access claims. Credential implementation is tested in memory;
+passkey integration remains in progress;
+real vaults, platform authenticators and actual SafeJS have not been exercised.
+
 Scope additions confirmed by the user: cover all Kitesurf features, provide a
 playground comparable to `https://kitesurf.cloudflare.app/`, and make the agent
 interface a Playwright-CLI-like superset. `COMPATIBILITY.md` is the explicit
 feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
+
+Reference-only credentials now support explicit `.env` and `pass` providers,
+private CLI configuration and exact HTTPS origin binding. `SECRET-PROVIDERS.md`
+documents the deliberately confidential session boundary: `fill-secret` seals
+agent inspection before resolving a password, clears trace/export caches, and
+allows only fixed action acknowledgments until close. Focus/beforeinput retyping
+regressions are fixed at the native password-fill commit boundary. All 293 new
+credential cases pass. The 14 named suites yield 509 isolated passes and 510
+working passes plus one independently reproduced pre-existing element-offset
+capability assertion; it is not hidden or fixed here. Types/builds and focused
+checks pass. Both manifests contain 416 entries. Real vault/process/SafeJS and
+post-login declassification gates remain open. Passkey core/page-adapter and
+research-reader work is separate pending integration.
+
+### Prior normalization checkpoint
 
 Ordinary Text normalization now transfers removed-member and parent-before-member
 range endpoints into the surviving Text node using private frozen metadata.

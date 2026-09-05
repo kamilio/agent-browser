@@ -177,11 +177,34 @@ export class DocumentInteractions {
 		);
 	}
 
+	fillPasswordAsync(
+		reference: string,
+		value: string,
+		signal?: AbortSignal,
+	): Promise<InteractionResult> {
+		return runEventActionAsync(
+			this.events,
+			this.fillAction(reference, value, true),
+			signal,
+		);
+	}
+
+	private requirePasswordTarget(reference: string) {
+		const node = this.tree.resolve(reference);
+		if (node.tagName !== "input" || inputType(node) !== "password")
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Password input target changed before fill",
+			);
+	}
+
 	private *fillAction(
 		reference: string,
 		value: string,
+		passwordOnly = false,
 	): EventAction<InteractionResult> {
 		const node = this.actionable(reference);
+		if (passwordOnly) this.requirePasswordTarget(reference);
 		const prepared = prepareControlFill(this.tree, reference, value);
 		if (prepared.editableHost !== undefined)
 			return yield* this.fillEditableAction(
@@ -194,6 +217,7 @@ export class DocumentInteractions {
 				"not-actionable",
 				"Focus changed before fill",
 			);
+		if (passwordOnly) this.requirePasswordTarget(reference);
 		if (prepared.direct) {
 			this.actionable(reference);
 			const current = prepareControlFill(this.tree, reference, value);
@@ -223,6 +247,7 @@ export class DocumentInteractions {
 				"not-actionable",
 				"Focus changed during beforeinput",
 			);
+		if (passwordOnly) this.requirePasswordTarget(reference);
 		fillTextControl(this.tree, reference, value);
 		this.keyboard.collapseEnd(node.id);
 		this.focus.markEdited(node.id);

@@ -1,3 +1,9 @@
+import {
+	allowsConfidentialAction,
+	confidentialFailure,
+	fillSecretCommand,
+} from "./secret-commands.js";
+import { SecretBroker } from "./secret-providers.js";
 import { rangeKeyboardCapabilities } from "./range-keyboard.js";
 import { SessionTrace, sessionTraceCapabilities } from "./session-trace.js";
 import { keyboardActivationCapabilities } from "./keyboard.js";
@@ -126,6 +132,7 @@ function uploadFailure(error: unknown) {
 }
 
 export interface CommandHostOptions {
+	secrets?: SecretBroker;
 	uploadLimits?: ConstructorParameters<typeof UploadTransfers>[0];
 	uploadSessionLimits?: Partial<
 		Record<keyof typeof uploadSessionLimits, number>
@@ -172,6 +179,7 @@ interface SessionEntry {
 	tail: Promise<void>;
 	controllers: Set<AbortController>;
 	trace?: SessionTrace;
+	confidential?: true;
 }
 
 const ownedSessions = new WeakSet<BrowserSession>();
@@ -209,6 +217,7 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 	dblclick: [],
 	hover: [],
 	fill: ["submit"],
+	"fill-secret": [],
 	type: [],
 	press: ["target", "expected-viewport", "expected-document"],
 	keydown: [],
@@ -303,6 +312,7 @@ export class BrowserCommandHost {
 	private readonly limits;
 	private readonly formats: readonly string[];
 	private readonly createSession: CommandHostOptions["createSession"];
+	private readonly secrets: SecretBroker | undefined;
 	private readonly evaluatePage: CommandHostOptions["evaluatePage"];
 	private readonly websiteScripts: boolean;
 	private readonly pageFetch: boolean;
@@ -367,6 +377,12 @@ export class BrowserCommandHost {
 		this.formats = Object.freeze([...formats]);
 		this.createSession = options.createSession;
 		if (
+			options.secrets !== undefined &&
+			!(options.secrets instanceof SecretBroker)
+		)
+			throw new AgentBrowserError("invalid-input", "Invalid secret broker");
+		this.secrets = options.secrets;
+		if (
 			options.evaluatePage !== undefined &&
 			typeof options.evaluatePage !== "function"
 		)
@@ -398,6 +414,14 @@ export class BrowserCommandHost {
 		return {
 			apiVersion: 1,
 			engine: "independent-typescript",
+			secretReferences: {
+				enabled: !!this.secrets,
+				command: "fill-secret",
+				passwordInputsOnly: true,
+				exactHttpsOrigins: true,
+				confidentialUntilSessionClose: true,
+				postFillInspection: false,
+			},
 			documentFormats: this.formats,
 			websiteJavaScript: this.websiteScripts,
 			domMutations: {
@@ -896,8 +920,12 @@ export class BrowserCommandHost {
 			return result(
 				Array.from(this.sessions.values(), (entry) => ({
 					name: entry.name,
-					tabs: this.tabList(entry.browser),
-					metrics: entry.browser.metrics(),
+					...(entry.confidential
+						? { confidential: true }
+						: {
+								tabs: this.tabList(entry.browser),
+								metrics: entry.browser.metrics(),
+							}),
 				})),
 			);
 		if (invocation.command === "close-all") {
@@ -991,6 +1019,11 @@ export class BrowserCommandHost {
 					: activeEntry.trace;
 				const startedAt = performance.now();
 				try {
+					if (
+						activeEntry.confidential &&
+						!allowsConfidentialAction(invocation.command)
+					)
+						throw confidentialFailure();
 					const value = await this.run(activeEntry, invocation, signal);
 					if (upload) invocation.arguments.fill("[redacted]");
 					trace?.record(
@@ -999,10 +1032,19 @@ export class BrowserCommandHost {
 						signal.aborted ? "interrupted" : "returned",
 						signal.aborted ? cancellation(signal) : undefined,
 					);
-					return result(value);
+					return result(
+						activeEntry.confidential
+							? { completed: true, confidential: true }
+							: value,
+					);
 				} catch (error) {
 					if (upload) invocation.arguments.fill("[redacted]");
-					const failure = upload ? uploadFailure(error) : error;
+					const failure =
+						activeEntry.confidential || invocation.command === "fill-secret"
+							? confidentialFailure()
+							: upload
+								? uploadFailure(error)
+								: error;
 					trace?.record(
 						invocation.command,
 						Math.max(0, performance.now() - startedAt),
@@ -1049,6 +1091,19 @@ export class BrowserCommandHost {
 				new AgentBrowserError("closed", "Named session is closed"),
 			);
 		entry.browser.close();
+		for (const [key, cached] of this.snapshots)
+			if (key.startsWith(`${entry.name}/`)) {
+				this.snapshots.delete(key);
+				this.cachedBytes -= cached.bytes;
+			}
+	}
+
+	private sealEntry(entry: SessionEntry) {
+		entry.confidential = true;
+		entry.trace?.close();
+		entry.trace = undefined;
+		this.artifacts.clear(entry.name);
+		this.stateTransfers.clear(entry.browser);
 		for (const [key, cached] of this.snapshots)
 			if (key.startsWith(`${entry.name}/`)) {
 				this.snapshots.delete(key);
@@ -1309,6 +1364,17 @@ export class BrowserCommandHost {
 		signal: AbortSignal,
 	): Promise<unknown> {
 		const browser = entry.browser;
+		if (invocation.command === "fill-secret") {
+			await fillSecretCommand(
+				browser,
+				invocation.arguments[0],
+				invocation.arguments[1],
+				signal,
+				this.secrets,
+				() => this.sealEntry(entry),
+			);
+			return { completed: true, confidential: true };
+		}
 		if (uploadNames.has(invocation.command))
 			return this.uploadCommand(entry, invocation, signal);
 		if (invocation.command === "state-export")
