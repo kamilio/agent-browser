@@ -1,5 +1,30 @@
 # Opt-in native research reader
 
+## Bounded heading discovery
+
+Use `--headings` to list native h1–h6 titles and anchored structural selectors
+before choosing a `--section`. It combines with `--reader` and `--capture-body`,
+but not `--selector`, `--lines` or `--section`. Discovery makes no follow-up request.
+
+```sh
+node dist/scripts/research-browser.js --reader --headings PUBLIC_HTTP_URL
+```
+
+Reports contain `selection: { method: "heading-outline" }` and `headings` instead
+of full extraction. Entries carry a native reference, level, bounded sanitized
+title, title-truncation flag and selector or explicit unavailable reason. The
+outline is always partial; a nonempty successful HTTP outline remains
+`extracted-unverified`, never confirmed content success. Empty outlines, HTTP
+failures and detected barriers keep distinct outcomes and exit behavior.
+
+Default caps are 256 entries, 256 raw UTF-16 title units and 4,096 selector units,
+with existing source/document/serialized-output ceilings unchanged. Paths obey
+the native selector syntax budget, avoid page-controlled IDs/classes and are
+anchored even for multiple native document elements. They identify this observed
+tree, not stable identities across later requests. Choose a nonnull selector and
+separately authorize the next section retrieval. `HEADING-DISCOVERY.md` records
+the detailed contract, limitations and validation evidence.
+
 ## Bounded heading sections
 
 Use `--section CSS` to extract one visible native heading and following content

@@ -1,4 +1,7 @@
 [
+  "src/heading-discovery.test.ts",
+  "src/document-headings.test.ts",
+  "src/research-headings.test.ts",
   "src/linux-hidraw-reports.test.ts",
   "src/fido-hid-allocation.test.ts",
   "src/extraction-section.test.ts",

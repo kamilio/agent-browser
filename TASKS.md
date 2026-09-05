@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+Bounded native heading discovery now supports `--headings`, returning sanitized
+h1–h6 titles and uniquely root-anchored selectors for a later `--section`, with
+explicit path/syntax limits and no automatic follow-up. Independent review caught
+and corrected selector collisions, parser-component overflow and non-2xx outcome
+handling. All 250 new cases pass; the exact twelve-file matrix has 939 passes and
+three unchanged selector failures reproduced on untouched base4f6a1e0. Build,
+strict new-test typing and six-file Biome pass. `HEADING-DISCOVERY.md` preserves
+initial failures and review provenance. Separate native GETs at September 5, 2026
+22:59:53.320 and 23:00:34.562 UTC demonstrate 116 discovered headings followed by
+24,455 USB HID section bytes using the exact returned selector, both still partial
+and unverified. No raw-source locator fallback was needed. This does not clear
+SDK, credential, socket/TTY or device gates; the complete browser goal remains active.
+
 The native-browser BFCL web-search follow-up now distinguishes a curated 100-question
 category, shared search/fetch tools, simulated failures and answer matching from
 general production-agent reliability. `BENCHMARK-WEB-SEARCH.md` retains the page's

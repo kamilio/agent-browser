@@ -6,6 +6,10 @@ import {
 	type HeadingSectionMetadata,
 	selectHeadingSection,
 } from "./extraction-section.js";
+import {
+	type HeadingTarget,
+	collectHeadingTargets,
+} from "./heading-discovery.js";
 import { htmlParseInfo } from "./html-info.js";
 import {
 	type ResearchReaderReport,
@@ -55,6 +59,25 @@ export interface ExtractionOptions {
 	maxBytes?: number;
 	maxNodes?: number;
 	maxDepth?: number;
+}
+
+export interface HeadingDiscoveryOptions {
+	maxBytes?: number;
+	maxNodes?: number;
+	maxDepth?: number;
+	maxEntries?: number;
+	maxTitleCodeUnits?: number;
+	maxSelectorCodeUnits?: number;
+}
+
+export interface DocumentHeadingOutline {
+	method: "heading-outline";
+	document: string;
+	revision: number;
+	partial: true;
+	entries: HeadingTarget[];
+	scannedNodes: number;
+	truncated: boolean;
 }
 
 interface ExtractionMetadata {
@@ -423,6 +446,82 @@ function markdown(root: ExtractedNode, maxBytes: number) {
 	return output.length ? output.join("").slice(0, -1) : "";
 }
 
+function extractionAdmission(tree: DocumentTree) {
+	const styles = documentStyles(tree);
+	const scripting = htmlParseInfo(tree)?.scripting ?? false;
+	const skip = (node: Readonly<DocumentNode>) =>
+		omitted.has(node.tagName) ||
+		node.kind === "comment" ||
+		Object.hasOwn(node.attributes, "hidden") ||
+		Object.hasOwn(node.attributes, "inert") ||
+		node.attributes["aria-hidden"]?.toLowerCase() === "true" ||
+		(node.tagName === "noscript" && scripting) ||
+		!styles.get(node.id).displayed;
+	return {
+		styles,
+		skip,
+		visible: (id: number) => styles.get(id).visible,
+		descend: (node: Readonly<DocumentNode>) =>
+			node.kind !== "element" ||
+			!leafElements.has(node.tagName) ||
+			!styles.get(node.id).visible,
+	};
+}
+
+export function discoverDocumentHeadings(
+	tree: DocumentTree,
+	options: HeadingDiscoveryOptions = {},
+): DocumentHeadingOutline {
+	const maxBytes = options.maxBytes ?? 262_144;
+	const maxNodes = options.maxNodes ?? 50_000;
+	const maxDepth = options.maxDepth ?? 128;
+	const maxEntries = options.maxEntries ?? 256;
+	const maxTitleCodeUnits = options.maxTitleCodeUnits ?? 256;
+	const maxSelectorCodeUnits = options.maxSelectorCodeUnits ?? 4096;
+	for (const [name, value, minimum, maximum] of [
+		["maxBytes", maxBytes, 256, 1_048_576],
+		["maxNodes", maxNodes, 1, 50_000],
+		["maxDepth", maxDepth, 0, 1024],
+		["maxEntries", maxEntries, 1, 256],
+		["maxTitleCodeUnits", maxTitleCodeUnits, 1, 1024],
+		["maxSelectorCodeUnits", maxSelectorCodeUnits, 1, 4096],
+	] as const) {
+		if (!Number.isSafeInteger(value) || value < minimum || value > maximum)
+			throw new AgentBrowserError(
+				"invalid-input",
+				`Invalid heading limit: ${name}`,
+			);
+	}
+	const { skip, visible, descend } = extractionAdmission(tree);
+	const targets = collectHeadingTargets(tree, {
+		maxNodes,
+		maxDepth,
+		maxEntries,
+		maxTitleCodeUnits,
+		maxSelectorCodeUnits,
+		skip,
+		visible,
+		descend,
+	});
+	const outline: DocumentHeadingOutline = {
+		method: "heading-outline",
+		document: tree.reference(tree.root),
+		revision: tree.revision,
+		partial: true,
+		...targets,
+		entries: targets.entries.map((entry) => ({
+			...entry,
+			title: clean(entry.title).replace(/\s+/g, " ").trim(),
+		})),
+	};
+	if (encoder.encode(JSON.stringify(outline)).byteLength > maxBytes)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Heading outline byte limit exceeded",
+		);
+	return outline;
+}
+
 export function extractDocument(
 	tree: DocumentTree,
 	options: ExtractionOptions = {},
@@ -466,16 +565,7 @@ export function extractDocument(
 			: selectTextLines(tree, options.lines);
 	const start =
 		options.root === undefined ? tree.root : tree.resolve(options.root).id;
-	const styles = documentStyles(tree);
-	const scripting = htmlParseInfo(tree)?.scripting ?? false;
-	const skip = (node: Readonly<DocumentNode>) =>
-		omitted.has(node.tagName) ||
-		node.kind === "comment" ||
-		Object.hasOwn(node.attributes, "hidden") ||
-		Object.hasOwn(node.attributes, "inert") ||
-		node.attributes["aria-hidden"]?.toLowerCase() === "true" ||
-		(node.tagName === "noscript" && scripting) ||
-		!styles.get(node.id).displayed;
+	const { styles, skip, visible, descend } = extractionAdmission(tree);
 	const section =
 		options.section === undefined
 			? undefined
@@ -483,11 +573,8 @@ export function extractDocument(
 					maxNodes,
 					maxDepth,
 					skip,
-					visible: (id) => styles.get(id).visible,
-					descend: (node) =>
-						node.kind !== "element" ||
-						!leafElements.has(node.tagName) ||
-						!styles.get(node.id).visible,
+					visible,
+					descend,
 				});
 	const title = clean(documentTitle(tree));
 	const safeUrl = new URL(tree.url);

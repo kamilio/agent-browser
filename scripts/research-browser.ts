@@ -8,7 +8,12 @@ import { documentBody } from "../src/document-elements.js";
 import { loadBrowserDocument } from "../src/document-loader.js";
 import { documentTitle } from "../src/document-title.js";
 import { AgentBrowserError } from "../src/errors.js";
-import { type DocumentExtraction, extractDocument } from "../src/extraction.js";
+import {
+	type DocumentExtraction,
+	type DocumentHeadingOutline,
+	discoverDocumentHeadings,
+	extractDocument,
+} from "../src/extraction.js";
 import { htmlParseInfo } from "../src/html-info.js";
 import {
 	type NetworkMetrics,
@@ -156,10 +161,15 @@ export function parseResearchArguments(args: readonly string[]) {
 	let selector: string | undefined;
 	let lines: ResearchLineRange | undefined;
 	let section: string | undefined;
+	let headings = false;
 	const urls: string[] = [];
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (argument === "--headings" && !headings) {
+			headings = true;
+			continue;
+		}
 		if (argument === "--section" && section === undefined) {
 			section = researchSelector(args[++index]);
 			continue;
@@ -212,12 +222,21 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Explicit public URLs required",
 		);
+	if (
+		headings &&
+		(selector !== undefined || lines !== undefined || section !== undefined)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research headings cannot be combined with selection",
+		);
 	return {
 		reader,
 		urls,
 		...(selector === undefined ? {} : { selector }),
 		...(lines === undefined ? {} : { lines }),
 		...(section === undefined ? {} : { section }),
+		...(headings ? { headings: true as const } : {}),
 		...(captureBody ? { captureBody: true as const } : {}),
 	};
 }
@@ -310,6 +329,7 @@ export interface ResearchNavigationReport {
 	selection?:
 		| { method: "css-selector"; matches: number | null }
 		| { method: "heading-section"; matches: number | null }
+		| { method: "heading-outline" }
 		| { method: "text-lines"; start: number; end: number };
 	outcome: ResearchOutcome;
 	failure?: {
@@ -319,6 +339,7 @@ export interface ResearchNavigationReport {
 	};
 	navigation?: NavigationResult;
 	extraction?: DocumentExtraction;
+	headings?: DocumentHeadingOutline;
 	reader?: Readonly<ResearchReaderReport>;
 	metrics?: Readonly<NetworkMetrics>;
 }
@@ -331,14 +352,16 @@ export async function researchNavigation(
 	captureBody = false,
 	lines?: ResearchLineRange,
 	section?: string,
+	headings = false,
 ): Promise<ResearchNavigationReport> {
-	if (typeof captureBody !== "boolean")
+	if (typeof captureBody !== "boolean" || typeof headings !== "boolean")
 		throw new AgentBrowserError("invalid-input", "Invalid research arguments");
 	const lineRange =
 		lines === undefined ? undefined : validateResearchLines(lines);
 	const validated = parseResearchArguments([
 		...(reader ? ["--reader"] : []),
 		...(captureBody ? ["--capture-body"] : []),
+		...(headings ? ["--headings"] : []),
 		...(selector === undefined ? [] : ["--selector", selector]),
 		...(section === undefined ? [] : ["--section", section]),
 		...(lineRange === undefined
@@ -371,6 +394,9 @@ export async function researchNavigation(
 		...(validated.section === undefined
 			? {}
 			: { selection: { method: "heading-section" as const, matches: null } }),
+		...(validated.headings
+			? { selection: { method: "heading-outline" as const } }
+			: {}),
 		outcome: "failure",
 	};
 	let stage = "setup";
@@ -498,7 +524,8 @@ export async function researchNavigation(
 		if (
 			validated.selector !== undefined ||
 			validated.lines !== undefined ||
-			validated.section !== undefined
+			validated.section !== undefined ||
+			validated.headings
 		) {
 			stage = "document-classification";
 			const diagnostic = classifyBrowserChallenge({
@@ -518,6 +545,37 @@ export async function researchNavigation(
 					"Research barrier requires user handoff",
 				);
 			}
+		}
+		if (validated.headings) {
+			stage = "extraction";
+			const outline = discoverDocumentHeadings(tree, {
+				maxBytes: researchRunLimits.extractionBytes,
+				maxNodes: 50_000,
+				maxDepth: 128,
+			});
+			report.classification.diagnostic = classifyBrowserChallenge({
+				status,
+				headers: primaryHeaders,
+				url: primaryUrl,
+				title: documentTitle(tree),
+				text: outline.entries
+					.map((entry) => entry.title)
+					.join("\n")
+					.slice(0, researchRunLimits.diagnosticTextCodeUnits),
+			});
+			report.classification.barrier =
+				report.classification.diagnostic?.kind ?? null;
+			report.outcome = report.classification.barrier
+				? "semantic-barrier"
+				: status < 200 || status >= 300
+					? "http-failure"
+					: outline.entries.length
+						? "extracted-unverified"
+						: "empty-extraction";
+			if (report.outcome !== "extracted-unverified")
+				report.contentSuccess = false;
+			report.headings = outline;
+			return report;
 		}
 		const selectedSelector = validated.section ?? validated.selector;
 		if (selectedSelector !== undefined) {
@@ -598,7 +656,7 @@ export function researchExitCode(reports: readonly ResearchNavigationReport[]) {
 }
 
 async function main() {
-	const { urls, reader, selector, captureBody, lines, section } =
+	const { urls, reader, selector, captureBody, lines, section, headings } =
 		parseResearchArguments(process.argv.slice(2));
 	const controller = new AbortController();
 	const timer = setTimeout(
@@ -616,6 +674,7 @@ async function main() {
 				captureBody,
 				lines,
 				section,
+				headings,
 			);
 			reports.push(report);
 			process.stdout.write(`${JSON.stringify(report)}\n`);
@@ -632,7 +691,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--reader] [--capture-body] [--selector CSS | --lines START:END | --section CSS] PUBLIC_HTTP_URL... (1–8 URLs)\n",
+			"Usage: research-browser [--reader] [--capture-body] [--selector CSS | --lines START:END | --section CSS | --headings] PUBLIC_HTTP_URL... (1–8 URLs)\n",
 		);
 		process.exitCode = 64;
 	});
