@@ -30,6 +30,13 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native hardware research now preserves a source-backed comparison procedure
+separating prefill, depth-specific decode, serving concurrency, prompt-cache
+effects and actual memory fit. `HARDWARE-BENCHMARK-PROTOCOL-2026-09-05.md` records
+five attempts, four official documentation reads and 31 verified artifact
+checksums. No benchmark, model download, installed-tool qualification or hardware
+ranking is claimed; earlier measurement evidence remains unchanged.
+
 Eighteen page-passkey regressions now verify actual native-document origins,
 foreign-base/page-option spoofing resistance, pending URL invalidation and
 provider-buffer isolation for create/get. Five named suites yield 237 passes
