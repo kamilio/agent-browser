@@ -1,4 +1,5 @@
 [
+  "src/public-suffix-snapshot.test.ts",
   "src/public-suffix.test.ts",
   "src/browser-identity.test.ts",
   "src/node-identity-config.test.ts",

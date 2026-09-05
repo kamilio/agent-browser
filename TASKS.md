@@ -30,6 +30,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+The complete pinned PSL source, preserved upstream license and same-revision
+official vectors now have offline admission coverage. All 10,321 ICANN/PRIVATE
+rules are admitted; 103 new cases include all 78 official vectors. Four named
+suites yield 481 passes in each tree, with types/builds, strict new-test types and
+scoped Biome passing. `PUBLIC-SUFFIX.md` and `vendor/public-suffix/README.md` record
+exact provenance and limits; the manifest has 436 entries. This source-only
+fixture enables no runtime permission: trusted distribution, update policy and
+separate RP-ID/cookie/hardware acceptance remain outstanding.
+
 Native hardware research now preserves a source-backed comparison procedure
 separating prefill, depth-specific decode, serving concurrency, prompt-cache
 effects and actual memory fit. `HARDWARE-BENCHMARK-PROTOCOL-2026-09-05.md` records

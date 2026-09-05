@@ -31,6 +31,42 @@ non-default match as permission to share credentials or cookies across tenants.
 
 ## Provenance and pending gates
 
+### Subsequent pinned offline snapshot
+
+`vendor/public-suffix/` now preserves the complete observed upstream list at
+revision `b952f046c27f9b2a7c3e5d2060f9e3acbc4cf1e8`, its MPL-2.0 license and
+same-revision official vectors with their separate public-domain/CC0 dedication.
+The 335,592-byte source retains all notices and both sections. Exact acquisition
+hashes, times and the unsupported-VCS-download warning are recorded in the
+directory's `README.md`. This is source-only test data: no runtime consumer loads
+it and no credential/cookie permission changes.
+
+All **10,321 rules** are admitted without filtering: 6,949 ICANN, 3,372 PRIVATE,
+287 wildcards and eight exceptions. The new explicit-manifest file has **103
+passing cases**, including all 78 same-revision official vectors, fixed boundary
+examples, source/license/vector byte pins and complete section inventory. Invalid
+official inputs use this API's throwing contract; expected Unicode domains use
+explicit fixture punycode labels rather than reusing the implementation's URL
+normalizer. One test traverses a child query for every rule, checking bounded
+canonical outputs and isolation; that traversal is not an independent proof of
+every possible domain result or a heap profile.
+
+Four named files yield **481 passes in each tree**; types/builds, strict new-test
+types and scoped Biome pass. The manifest has 436 entries; no full-manifest,
+network, SDK or device run is included in these offline checks. Logs use
+`public-suffix-snapshot-final-` in `node_modules/.cache/native-validation/`; the
+clean candidate path is recorded in `/tmp/public-suffix-snapshot-path`.
+The parent separately verified 38 acquisition and 19 pinned-vector artifact
+checksums. Original failed setup and all research receipts remain intact.
+
+Runtime distribution/loading, update/freshness/rollback and saved-state policies,
+normalization compatibility and separate RP-ID/cookie acceptance are still open.
+Full observed source-file identity is not independent Git-signature verification
+or a guarantee that every real-world suffix exists in the list. Do not activate
+permission widening merely because this offline fixture passes.
+
+### Original matcher checkpoint
+
 Integrated September 5 checkpoint: **246 matcher cases pass**, including 78
 adapted official vectors and two parent-added PRIVATE-completeness diagnostics.
 Together with the existing broker and cookie suites, three explicitly listed
