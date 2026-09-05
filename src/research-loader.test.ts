@@ -242,6 +242,85 @@ it.each([
 });
 
 it.each([
+	["<p>Before<?>After</p>", "<p>BeforeAfter</p>"],
+	["<?><p>Kept</p>", "<p>Kept</p>"],
+	["<p>Kept</p><?>", "<p>Kept</p>"],
+	["<p><?><?>Kept</p>", "<p>Kept</p>"],
+	["<script>omitted</script><?><p>Kept</p>", "<p>Kept</p>"],
+	["<svg><g><?></g></svg><p>Kept</p>", "<p>Kept</p>"],
+	["<template><?><p>Omitted</p></template><p>Kept</p>", "<p>Kept</p>"],
+])("omits a complete empty processing marker: %s", (source, expected) => {
+	expect(sanitizeResearchHtml(source).html).toBe(expected);
+});
+
+it("accounts for empty processing markers without hiding tokenizer diagnostics", () => {
+	const source = "<p>Before<?>After</p>";
+	const sanitized = sanitizeResearchHtml(source);
+	expect(sanitized.report).toMatchObject({
+		partial: true,
+		sourceCodeUnits: source.length,
+		textCodeUnits: 11,
+		outputCodeUnits: 18,
+		tokens: 5,
+		omittedTokens: 1,
+		tokenizerIssues: 1,
+	});
+	const tree = loadResearchDocument(response(source), context);
+	try {
+		expect(tree.textContent(tree.root)).toBe("BeforeAfter");
+		expect(extractDocument(tree).content).toContain("BeforeAfter");
+		expect(researchReaderInfo(tree)).toMatchObject(sanitized.report);
+	} finally {
+		tree.close();
+	}
+});
+
+it.each([
+	"<?",
+	"<? >",
+	"<?name?>",
+	"<?xml version='1.0'?>",
+	"<!>",
+	"<!name <?>",
+	"<?name <?>",
+	"<svg><![CDATA[> </svg><p>escape</p>]]></svg>",
+	"<svg><?><g></svg><p>escape</p>",
+	"<svg><?>",
+	"<?><!--unterminated",
+	"<?><script>unterminated",
+])("keeps malformed and nonempty declarations rejected: %s", (source) => {
+	expect(() => sanitizeResearchHtml(source)).toThrow(
+		expect.objectContaining({ code: "unsupported" }),
+	);
+});
+
+it.each([
+	["<?>", { maxSourceCodeUnits: 2 }],
+	["<?><?>", { maxTokens: 1 }],
+	["<?><p>large</p>", { maxTextCodeUnits: 4 }],
+	["<?><p>text</p>", { maxOutputCodeUnits: 4 }],
+	["<?><div><div>deep</div></div>", { maxDepth: 1 }],
+])(
+	"retains reader budgets around empty processing markers",
+	(source, limits) => {
+		expect(() => sanitizeResearchHtml(source, limits)).toThrow(
+			expect.objectContaining({ code: "resource-limit" }),
+		);
+	},
+);
+
+it("does not reinterpret empty processing markers inside raw or decoded text", () => {
+	const sanitized = sanitizeResearchHtml(
+		"<script>const marker = '<?>';</script><title>Before<?>After</title><p>&lt;?&gt;</p>",
+	);
+	expect(sanitized.html).toBe(
+		"<title>Before&lt;?&gt;After</title><p>&lt;?&gt;</p>",
+	);
+	expect(sanitized.report.tokenizerIssues).toBe(0);
+	expect(sanitized.report.omittedSubtrees).toEqual({ script: 1 });
+});
+
+it.each([
 	["<svg><g><g/></g></svg>", { maxDepth: 1 }],
 	["<div><div>deep</div></div>", { maxDepth: 1 }],
 	["<p>text</p>", { maxTokens: 2 }],

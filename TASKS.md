@@ -30,6 +30,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+A captured MDN page exposed a concrete reader bug: four inert `<?>` markers
+were rejected as malformed declarations. The reader now recovers only that exact
+token span, preserving issue accounting, malformed-input rejection and every
+resource limit. Twenty-six new regressions yield 330 passes across six named
+suites in each tree; types/builds, strict touched-test types and scoped Biome
+pass. `NATIVE-RESEARCH.md` separates the original failed live capture from the
+successful fixed offline replay. No new live fixed-browser or denied-probe
+acceptance is claimed, and the manifest remains 436 entries.
+
 Two acceptance boundaries remain explicitly closed: the newly prepared native
 HTTP identity wire probe was denied pending specific user approval for its
 loopback socket/listener, and the earlier actual SafeJS identity probe remains

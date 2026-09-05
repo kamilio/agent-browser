@@ -102,15 +102,24 @@ export function sanitizeResearchHtml(
 		unwrappedElements: 0,
 		tokenizerIssues: 0,
 	};
+	let tokenStart = 0;
 	const tokenizer = new HtmlTokenizer(source, (issue) => {
 		report.tokenizerIssues++;
+		const emptyProcessingMarker =
+			issue === "bogus-declaration" &&
+			tokenizer.position === tokenStart + 3 &&
+			source.startsWith("<?>", tokenStart);
 		if (
 			issue.startsWith("unterminated-") ||
 			issue === "eof-before-tag-name" ||
-			issue === "bogus-declaration"
+			(issue === "bogus-declaration" && !emptyProcessingMarker)
 		)
 			throw new AgentBrowserError("unsupported", "Malformed reader input");
 	});
+	const nextToken = () => {
+		tokenStart = tokenizer.position;
+		return tokenizer.next();
+	};
 	const output: string[] = [];
 	const skipped: string[] = [];
 	const open: string[] = [];
@@ -124,7 +133,7 @@ export function sanitizeResearchHtml(
 		check(report.textCodeUnits > limits.maxTextCodeUnits);
 		if (!omit) emit(escapeHtml(value));
 	};
-	for (let token = tokenizer.next(); token; token = tokenizer.next()) {
+	for (let token = nextToken(); token; token = nextToken()) {
 		check(++report.tokens > limits.maxTokens);
 		const omitting = skipped.length > 0;
 		if (omitting) report.omittedTokens++;

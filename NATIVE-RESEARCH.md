@@ -1,5 +1,38 @@
 # Opt-in native research reader
 
+## Exact empty processing marker recovery
+
+The reader now accepts only the complete three-character `<?>` marker already
+classified by its tokenizer as an inert comment. It checks both token start and
+end, omits the marker through the existing comment path and still records the
+tokenizer issue. Nonempty instructions, larger bogus declarations ending in that
+sequence, foreign CDATA ambiguity, unclosed/mismatched omissions and all source,
+text, output, token and depth limits remain enforced. Raw/title text and decoded
+literal markers are not reinterpreted. The ordinary native HTML parser is unchanged.
+
+Twenty-six new regressions bring the loader suite to 100 cases. Six named suites
+yield **330 passes in each tree**; types/builds, strict touched-test types and
+scoped Biome pass. The manifest remains 436 entries; no full suite or denied
+probe ran. Final integration logs use `reader-marker-final-` under
+`node_modules/.cache/native-validation/`, with clean candidate path recorded in
+`/tmp/reader-marker-path`.
+
+One separately authorized native capture of the MDN creation-options page on
+September 5, 2026, at **05:25:23.513 UTC** returned 169,283 decoded bytes. Its
+SHA-256 `84d9aa7e6eef1cdf6c10a5d0dcc9f77055ba693370045b7e9c05e4affd5ad96d`
+exactly matches the earlier failed research response. The original reader failed
+again; four `<?>` markers caused that failure. Replaying the same preserved bytes
+**offline** with the candidate reader produces the expected MDN title and 38,728
+extracted code units while retaining four tokenizer issues and partial-reader
+limitations. There was no second live request after the fix: this is not live
+fixed-browser, WebAuthn-policy, SDK or rendering-parity acceptance.
+
+Original failed capture, regression-first result (88 passed, 12 failed), raw
+body, before/after source identities and offline replay remain under
+`node_modules/.cache/native-validation/mdn-reader-diagnostic/`. The parent verified
+all 33 saved artifact checksums. `PASSKEY-RP-POLICY-2026-09-05.md` retains the
+earlier source-access failures unchanged.
+
 ## Regular CLI profile
 
 `AGENT_BROWSER_DOCUMENT_PROFILE=reader` selects this loader when creating a native
@@ -202,7 +235,9 @@ network and SSRF limits are not relaxed.
 Omitted subtrees use a bounded, matched tag stack; malformed nesting or an
 unclosed omitted root is rejected, never repaired by releasing its contents into
 the retained document. Unterminated tokens/raw elements and unsupported bogus
-declarations, including foreign CDATA, are rejected. Optional-end-tag repair
+declarations, including foreign CDATA, are rejected. The only declaration
+recovery is the exact complete `<?>` marker described above; it remains an
+omitted comment with a counted tokenizer issue. Optional-end-tag repair
 inside omitted subtrees is not implemented. The retained-input depth budget is
 conservative syntactic nesting, so repeated implicit closes can also hit its
 limit even when a full browser would recover. Source/output expansion limits can
