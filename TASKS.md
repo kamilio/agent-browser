@@ -29,6 +29,12 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Another browser-only hardware round retrieves seven readable measurement sources
+in eight attempts. `HARDWARE-MEASUREMENTS-2026-09-05.md` preserves submitted rates,
+missing/null metadata, workload mismatches and failed concurrency streams rather
+than claiming a controlled ranking or purchase recommendation. Saved checksums
+were independently verified; previous research counts and evidence remain intact.
+
 The encrypted checkpoint file backend now has exclusive lifetime locks,
 protected-file checks, verified atomic/fsynced publication and poisoned-instance
 failure handling. `PASSKEY-STORAGE.md` records 58 new passing cases and 318 passes
