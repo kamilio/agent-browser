@@ -19,6 +19,17 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native checkbox/radio accent-color now shares inherited declaration/CSSOM state
+and an opaque, contrast-aware light-profile palette. `ACCENT-COLOR.md` records
+115 new cases, passing 743 isolated / 744 working tests across twenty-one focused
+files, types/builds/scoped checks and 48 native captures. All sixteen new-build
+image pairs match; 3,916 changed pixels stay inside actual widget interiors.
+Defaults, disabled/unchecked states, geometry and actions remain unchanged.
+Both manifests retain 394 entries. Draft-derived currentcolor CSSOM serialization
+has a documented historical WPT discrepancy; interoperability remains open.
+Original full-native/browser/runtime/live gates and prior import diagnostics
+remain outstanding. Historical reports and unrelated pending work are preserved.
+
 Native controls and existing editable caret anchors now honor bounded CSS
 caret-color, including inherited/current/auto colors, alpha and transparency.
 `CARET-COLOR.md` records 116 new cases, passing 999 isolated / 1,000 working tests

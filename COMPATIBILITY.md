@@ -1,5 +1,14 @@
 # Compatibility and playground acceptance ledger
 
+Accent-color continuation: `ACCENT-COLOR.md` adds inherited native CSS/CSSOM state
+and explicit enabled checkbox/radio palettes with opaque Canvas precomposition
+and contrasting marks. All 115 new cases pass; twenty-one-file suites pass
+743 isolated / 744 working tests, with types/builds/scoped checks. Forty-eight
+native captures verify defaults and exact interior-only changes; all sixteen
+new-build pairs match. The keyword currentcolor CSSOM choice has a documented
+historical WPT discrepancy, not a browser-interoperability pass. Themes, other
+widget types, full-native/runtime/live gates and prior import diagnostics stay open.
+
 Caret-color continuation: `CARET-COLOR.md` connects bounded inherited color/auto
 declarations and used CSSOM values to existing native control/editable carets.
 All 116 new cases pass; twenty-nine-file suites pass 999 isolated / 1,000 working

@@ -344,11 +344,11 @@ it("shares literal, camel and method CSSOM state with one indexed declaration", 
 	expect(test.tree.revision).toBe(revision);
 });
 
-it("enumerates exactly 74 unique computed longhands including caret-color once", () => {
+it("enumerates exactly 75 unique computed longhands including caret-color once", () => {
 	const test = fixture();
-	expect(test.computed.length).toBe(74);
-	expect(computedStyleProperties).toHaveLength(74);
-	expect(new Set(names(test.computed)).size).toBe(74);
+	expect(test.computed.length).toBe(75);
+	expect(computedStyleProperties).toHaveLength(75);
+	expect(new Set(names(test.computed)).size).toBe(75);
 	expect(names(test.computed)).toEqual(computedStyleProperties);
 	expect(
 		Array.from(
@@ -362,8 +362,8 @@ it("enumerates exactly 74 unique computed longhands including caret-color once",
 	expect(
 		inlineProperties.filter((name) => name === "caret-color"),
 	).toHaveLength(1);
-	expect(test.computed.item(74)).toBe("");
-	expect(test.computed[74]).toBeUndefined();
+	expect(test.computed.item(75)).toBe("");
+	expect(test.computed[75]).toBeUndefined();
 });
 
 it("keeps method names distinct from camel accessors and custom-property case", () => {
@@ -563,7 +563,7 @@ it("keeps detached inline style live but returns empty computed values until rea
 	test.style.caretColor = "currentcolor";
 	test.tree.append(parent, test.target);
 	expect(test.computed.caretColor).toBe("rgb(0, 0, 255)");
-	expect(test.computed.length).toBe(74);
+	expect(test.computed.length).toBe(75);
 });
 
 it.each(["document", "dom"])(

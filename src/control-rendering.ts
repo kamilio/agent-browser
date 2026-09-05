@@ -264,6 +264,38 @@ export function describeControl(
 	});
 }
 
+function controlAccent(
+	paint: PaintStyle,
+): { readonly fill: Rgba; readonly mark: Rgba } | undefined {
+	const specified = paint["accent-color"];
+	if (specified === undefined || specified === "auto") return undefined;
+	const color = specified === "currentcolor" ? paint.color : specified;
+	const alpha = color[3] / 255;
+	const fill: Rgba = [
+		Math.round(color[0] * alpha + 255 * (1 - alpha)),
+		Math.round(color[1] * alpha + 255 * (1 - alpha)),
+		Math.round(color[2] * alpha + 255 * (1 - alpha)),
+		255,
+	];
+	const linear = (channel: number) => {
+		const normalized = channel / 255;
+		return normalized <= 0.04045
+			? normalized / 12.92
+			: ((normalized + 0.055) / 1.055) ** 2.4;
+	};
+	const luminance =
+		0.2126 * linear(fill[0]) +
+		0.7152 * linear(fill[1]) +
+		0.0722 * linear(fill[2]);
+	return {
+		fill,
+		mark:
+			(luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05)
+				? [0, 0, 0, 255]
+				: [255, 255, 255, 255],
+	};
+}
+
 export function rasterizeControl(
 	control: SoftwareControl,
 	width: number,
@@ -374,6 +406,12 @@ export function rasterizeControl(
 		return image;
 	}
 	if (control.kind === "checkbox" || control.kind === "radio") {
+		const accent =
+			!control.disabled &&
+			(control.checked ||
+				(control.kind === "checkbox" && control.indeterminate))
+				? controlAccent(paint)
+				: undefined;
 		if (control.kind === "radio") {
 			const radius = Math.min(columns, rows) / 2;
 			for (let row = 0; row < rows; row++)
@@ -388,12 +426,21 @@ export function rasterizeControl(
 							: distance > radius - 1
 								? edge
 								: control.checked && distance < radius / 2
-									? foreground
-									: fill;
+									? (accent?.mark ?? foreground)
+									: (accent?.fill ?? fill);
 					image.pixels.set(color, (row * columns + column) * 4);
 				}
 			return image;
 		}
+		if (accent)
+			paintRasterRect(
+				image,
+				1,
+				1,
+				Math.max(0, columns - 2),
+				Math.max(0, rows - 2),
+				accent.fill,
+			);
 		if (control.checked || control.indeterminate) {
 			const inset = Math.max(2, Math.floor(Math.min(columns, rows) / 4));
 			const markHeight = control.indeterminate
@@ -405,7 +452,7 @@ export function rasterizeControl(
 				control.indeterminate ? Math.floor(rows / 2) : inset,
 				Math.max(0, columns - 2 * inset),
 				markHeight,
-				foreground,
+				accent?.mark ?? foreground,
 			);
 		}
 		return image;

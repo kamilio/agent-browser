@@ -8,6 +8,14 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation adds inherited CSS accent-color and contrasting
+opaque light-profile palettes for existing enabled active checkbox/radio controls.
+`ACCENT-COLOR.md` records 115 new cases and passing 743 isolated / 744 working
+tests across twenty-one files, types/builds/scoped checks and 48 native captures.
+New-build pairs match exactly; changed pixels stay inside widget interiors.
+Both manifests retain 394 entries. The documented currentcolor CSSOM discrepancy,
+themes and original full-native/browser/runtime/live gates remain outstanding.
+
 The until-stopped continuation adds native CSS caret-color for existing control
 and editable anchors, with live CSSOM, inheritance, alpha and transparency.
 `CARET-COLOR.md` records 116 new cases and passing 999 isolated / 1,000 working

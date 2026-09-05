@@ -20,6 +20,7 @@ export const cssPaintProperties = Object.freeze([
 	...borderColorProperties,
 	"color",
 	"caret-color",
+	"accent-color",
 	...cssBackgroundProperties,
 ] as const);
 export type CssPaintProperty = (typeof cssPaintProperties)[number];
@@ -30,6 +31,7 @@ export interface PaintStyle
 	extends Readonly<Partial<Record<BorderColorProperty, Rgba>>> {
 	readonly color: Rgba;
 	readonly "caret-color"?: CssColor | "auto";
+	readonly "accent-color"?: CssColor | "auto";
 	readonly "background-color": CssColor;
 }
 export const initialPaintStyle: PaintStyle = Object.freeze({
@@ -43,6 +45,7 @@ export function isCssPaintProperty(
 		borderColorProperties.includes(property as BorderColorProperty) ||
 		property === "color" ||
 		property === "caret-color" ||
+		property === "accent-color" ||
 		property === "background-color" ||
 		isNeutralBackgroundProperty(property)
 	);
@@ -51,7 +54,10 @@ export function parsePaintValue(
 	value: string,
 	property: CssPaintProperty = "color",
 ): string | undefined {
-	if (property === "caret-color" && value.trim().toLowerCase() === "auto")
+	if (
+		(property === "caret-color" || property === "accent-color") &&
+		value.trim().toLowerCase() === "auto"
+	)
 		return "auto";
 	if (isNeutralBackgroundProperty(property))
 		return parseBackgroundComponent(property, value);
@@ -83,20 +89,24 @@ export function computePaintStyle(
 		color: Rgba;
 		"background-color": CssColor;
 		"caret-color"?: CssColor | "auto";
+		"accent-color"?: CssColor | "auto";
 	} & Partial<Record<BorderColorProperty, Rgba>> = {
 		color:
 			foreground && foreground !== "currentcolor" ? foreground : parent.color,
 		"background-color": fill ?? transparentColor,
 	};
-	const caret = specified["caret-color"];
-	let caretColor = parent["caret-color"];
-	if (caret === "initial" || caret === "auto") caretColor = undefined;
-	else if (
-		caret !== undefined &&
-		!["inherit", "unset", "revert"].includes(caret)
-	)
-		caretColor = parseCssColor(caret) ?? parent["caret-color"];
-	if (caretColor !== undefined) result["caret-color"] = caretColor;
+	for (const property of ["caret-color", "accent-color"] as const) {
+		const specifiedColor = specified[property];
+		let inheritedColor = parent[property];
+		if (specifiedColor === "initial" || specifiedColor === "auto")
+			inheritedColor = undefined;
+		else if (
+			specifiedColor !== undefined &&
+			!["inherit", "unset", "revert"].includes(specifiedColor)
+		)
+			inheritedColor = parseCssColor(specifiedColor) ?? parent[property];
+		if (inheritedColor !== undefined) result[property] = inheritedColor;
+	}
 	for (const property of borderColorProperties) {
 		const value = specified[property];
 		if (value === "inherit") {
@@ -111,6 +121,7 @@ export function computePaintStyle(
 	}
 	return result.color === parent.color &&
 		result["caret-color"] === parent["caret-color"] &&
+		result["accent-color"] === parent["accent-color"] &&
 		borderColorProperties.every(
 			(property) => result[property] === parent[property],
 		) &&

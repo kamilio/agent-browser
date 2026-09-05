@@ -1,4 +1,6 @@
 [
+  "src/css-accent-color.test.ts",
+  "src/accent-color-rendering.test.ts",
   "src/css-caret-color.test.ts",
   "src/caret-color-rendering.test.ts",
   "src/scroll-extent-lifecycle.test.ts",

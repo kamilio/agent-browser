@@ -7,6 +7,14 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native accent-color now connects inherited CSS/CSSOM state to existing checkbox
+and radio interiors without changing default appearance, geometry or actions.
+`ACCENT-COLOR.md` records 115 new cases, 743 isolated / 744 working passes across
+twenty-one focused files, types/builds/scoped checks and 48 native captures.
+All sixteen new-build pairs match; only 3,916 intended interior pixels change.
+Both manifests retain 394 entries. Currentcolor CSSOM interoperability and the
+original full-native/browser/runtime/live acceptance gates remain open.
+
 Native CSS caret-color now shares declaration/CSSOM state and control/editable
 caret paint without changing default geometry or selection highlights.
 `CARET-COLOR.md` records 116 new cases, 999 isolated / 1,000 working passes across

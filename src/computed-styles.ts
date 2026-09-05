@@ -164,18 +164,29 @@ export function resolvedStyleValue(
 	if (
 		name === "color" ||
 		name === "caret-color" ||
+		name === "accent-color" ||
 		name === "background-color" ||
 		borderColorProperties.includes(name as BorderColorProperty)
 	) {
 		const style = styles.paint(id);
+		const accent = style["accent-color"];
+		if (
+			name === "accent-color" &&
+			(accent === undefined || typeof accent === "string")
+		)
+			return accent ?? "auto";
 		const color =
-			name === "color"
-				? style.color
-				: name === "background-color"
-					? paintBackground(style)
-					: name === "caret-color"
-						? paintCaret(style)
-						: (style[name as BorderColorProperty] ?? style.color);
+			name === "accent-color" &&
+			accent !== undefined &&
+			typeof accent !== "string"
+				? accent
+				: name === "color"
+					? style.color
+					: name === "background-color"
+						? paintBackground(style)
+						: name === "caret-color"
+							? paintCaret(style)
+							: (style[name as BorderColorProperty] ?? style.color);
 		return color[3] === 255
 			? `rgb(${color[0]}, ${color[1]}, ${color[2]})`
 			: `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${Number((color[3] / 255).toFixed(3))})`;
