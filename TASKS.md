@@ -30,6 +30,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+A dependency-free public-suffix matcher now supports bounded trusted PSL text,
+PRIVATE rules, wildcard/exception handling and canonical IDNA results. Its 246
+cases plus existing broker/cookie suites produce 378 passes across three named
+files in each tree; types/builds, strict test types and scoped Biome pass. The
+manifest has 435 entries. `PUBLIC-SUFFIX.md` explains why incomplete data can
+still produce unsafe exact matches: neither parent-RP nor Domain-cookie policy
+is widened. Complete pinned data, notices/provenance, update handling and separate
+consumer acceptance remain outstanding. Static review and 43 artifact checksum
+checks support this isolated foundation, not full browser or hardware acceptance.
+
 Passkey provider contexts now receive detached exact client-data bytes alongside
 their SHA-256 hash. Twenty-four new cases plus four existing named suites yield
 219 passes in each tree; types/builds, strict touched-test types and scoped Biome
