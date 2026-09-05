@@ -556,8 +556,8 @@ it("retains formatting ancestors but allows explicitly closed inline children", 
 	}
 });
 
-it.each([`<table>${"<tr><td>value".repeat(140)}</table>`])(
-	"keeps unsupported optional table accounting conservative",
+it.each([`<table>${"<tr><td><div>value".repeat(140)}</table>`])(
+	"keeps nonadjacent optional table accounting conservative",
 	(source) => {
 		expect(() => sanitizeResearchHtml(source)).toThrow(
 			expect.objectContaining({ code: "resource-limit" }),

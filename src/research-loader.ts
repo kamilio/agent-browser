@@ -59,6 +59,25 @@ const blockReplacements = new Set(
 const reconstructableFormatting = new Set(
 	"a b big code em font i nobr s small strike strong tt u".split(" "),
 );
+const tableCells = new Set(["td", "th"]);
+const tableSections = new Set(["tbody", "thead", "tfoot"]);
+
+function closeAdjacentTableEnds(open: string[], name: string) {
+	if (!tableCells.has(name) && name !== "tr" && !tableSections.has(name))
+		return;
+	let index = open.length;
+	const cell = tableCells.has(open[index - 1]) ? --index : undefined;
+	const row = open[index - 1] === "tr" ? --index : undefined;
+	const section = tableSections.has(open[index - 1]) ? --index : undefined;
+	if (open[index - 1] !== "table") return;
+	if (tableCells.has(name)) {
+		if (cell !== undefined) open.length = cell;
+	} else if (name === "tr") {
+		open.length = row ?? cell ?? open.length;
+	} else {
+		open.length = section ?? row ?? cell ?? open.length;
+	}
+}
 
 function escapeHtml(value: string) {
 	return value
@@ -192,6 +211,7 @@ export function sanitizeResearchHtml(
 			continue;
 		}
 		if (!voidTags.has(name)) {
+			closeAdjacentTableEnds(open, name);
 			if (name === "dt" || name === "dd") {
 				for (let index = open.length - 1; index >= 0; index--) {
 					const current = open[index];

@@ -1,5 +1,62 @@
 # Opt-in native research reader
 
+## Adjacent optional table ends
+
+The reader now accounts for optional cell, row and row-group endings when the
+source-open stack has a contiguous `table [section] [tr] [cell]` suffix. Sections
+are `thead`/`tbody`/`tfoot`, cells are `th`/`td`, and omitted source rows/groups
+are allowed. A new cell closes the previous adjacent cell; a new row closes its
+previous row/cell; a new group closes its previous group/row/cell. The table
+anchor is never removed by this accounting. The fixed suffix check performs
+constant work per eligible token rather than scanning or reconstructing tables.
+
+This does not cross open wrappers, formatting, captions, colgroups, invalid
+source chains or nested table anchors. Such cases remain conservative. Tags
+outside a source table do not trigger truncation: native parsing may ignore
+them, so dropping ordinary wrapper depth would be unsafe. Omitted subtrees keep
+their separate existing path. No synthetic closing tags are emitted and all
+sanitized bytes, source/text/output/token/depth ceilings and omission reporting
+remain unchanged.
+
+The source counter is not the native DOM-depth model. Native parsing can insert
+implicit `tbody`, `tr` and document wrappers absent from source; the final native
+parser/document guard remains necessary and enforced. This is not general HTML
+table or formatting conformance. Independent static review found no new unsafe
+truncation in the bounded suffix change and explicitly retained that limitation.
+
+The motivating original Media Queries request and separate failed offline
+diagnosis remain in `COLOR-MEDIA-RESEARCH-2026-09-05.md`. Any later candidate
+replay is separate evidence, not a replacement live receipt or permission to
+increase the reader limits. CSS color-media contract work remains independent.
+
+September 5, 2026 validation: **148 new cases and 632 passes across nine named
+files in each tree**, with project types/builds, strict touched-test checks and
+scoped Biome passing. Candidate and working manifests contain 442 and 444
+entries; the two pending parent-RP suites are excluded from this commit and
+matrix. No full manifest, live request, socket, TTY, SDK or credential probe ran.
+The original flat-table expected rejection is replaced by positive cases in the
+new suite; the existing loader test now retains the nonadjacent-wrapper rejection.
+
+The finalized suite against the old reader produced **111 failures and 37
+passes**. That snapshot remains unchanged at the path recorded in
+`/tmp/reader-table-old-baseline-path`, with its inputs and results under
+`reader-table-old-baseline-*` in the native-validation cache. The separate fixed
+candidate path is in `/tmp/reader-table-integrated-path`; final logs use
+`reader-table-final-01-`. Worker strict/tests passed initially and finally;
+initial formatting diagnostics remain in `reader-table-tests/`. Source review
+and its explicit depth-model limits are in `reader-table-review/REPORT.md`.
+
+At **07:11:46.518 UTC**, separate offline replay compared both compiled readers
+against the unchanged archived **709,021-byte** Media Queries body, SHA-256
+`13710d9352b367231363ef2445541cbf17a443f7e7af2f0707949f95a523546c`.
+The original build still rejects its reader budget; the candidate loads
+**14,240 nodes** and extracts one **596-byte serialized heading scope** titled
+“Media Queries Level 5”. Document revision stays **14,239** during extraction.
+The original receipt remains **06:57:25.980 UTC** and remains a live loader
+failure. Replay makes **zero new requests** and proves neither live-candidate
+acceptance nor any normative color definition. The script and before/after
+loader hashes are retained in `reader-table-captured-replay*` in the cache.
+
 ## Scoped command-line extraction
 
 The research command accepts one optional `--selector CSS` in either native or

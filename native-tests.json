@@ -1,4 +1,5 @@
 [
+  "src/research-table-depth.test.ts",
   "src/page-screen.test.ts",
   "src/research-selector.test.ts",
   "src/page-headless-display.test.ts",

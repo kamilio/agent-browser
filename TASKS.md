@@ -1,13 +1,17 @@
 # Agent browser implementation tasks
 
-Next reader investigation: `COLOR-MEDIA-RESEARCH-2026-09-05.md` preserves one
-official linked Media Queries capture that returned HTTP 200 but failed native
-reader depth admission. A separate zero-request diagnostic records accumulated
-table cells/rows at depth 129 against 128. Investigate conservative optional
-table-end accounting with native regressions before replaying archived bytes;
-do not raise limits, infer normative text or relabel the failed live attempt.
-Color-media consistency and separately authorized live/guest/device gates remain
-open. The overall development goal remains active.
+Adjacent table-end accounting now retains one bounded source table suffix
+instead of treating optional cells/rows/groups as ever-deeper nesting. It does
+not discard wrappers/formatting or cross nested tables, and the final native
+DOM guard remains essential for implicit containers. `NATIVE-RESEARCH.md`
+records the scope: 148 new cases and 632 passes across nine named suites in
+each tree, plus types/builds/strict/scoped checks. The old reader independently
+fails 111 of the same cases and passes 37; its snapshot is retained. An offline
+replay now loads the unchanged Media Queries body and extracts only its heading,
+with zero new requests and no normative color-contract claim. The live receipt in
+`COLOR-MEDIA-RESEARCH-2026-09-05.md` remains unchanged. Color-media consistency,
+general table recovery and separately authorized live/guest/device gates remain
+open; the overall browser goal remains active.
 
 Native Screen work exposes a stable, lifecycle-checked viewport-backed capability
 with six readonly values and unknown/private 24-bit depth. The logical exposed
