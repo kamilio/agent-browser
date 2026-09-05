@@ -1,10 +1,12 @@
 # Truthful native identity defaults
 
-`COLOR-MEDIA-RESEARCH-2026-09-05.md` records a later native-only attempt to
-resolve the color-media gap: HTTP 200 followed by reader depth rejection, with
-zero admitted scopes. Separate offline diagnosis identifies accumulating table
-source entries but makes no new normative or conformance claim. The original
-failed receipt is preserved, and color/media support remains outstanding.
+`COLOR-MEDIA-CONTRACT-2026-09-05.md` records thirty directly targeted native
+definition scopes admitted offline after the table-reader repair. Original
+live and broad-discovery failures remain preserved separately. Numeric color
+semantics and the linked literal integer grammar are now sourced. A static
+review supports an explicitly partial logical RGB policy, not physical display
+or normative headless conformance. Implementation, complete computed-integer
+support and gamut/device evidence remain outstanding.
 
 ## Viewport-backed Screen capability
 

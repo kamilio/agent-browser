@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Color-media definitions are now admitted by a separate direct native offline
+extraction: thirty scopes, with all prior failures preserved.
+`COLOR-MEDIA-CONTRACT-2026-09-05.md` records integer range/negative semantics,
+component versus palette/monochrome depth and separate gamut behavior. A separate
+authorized native CSS Values read admits the signed-decimal literal grammar;
+static review supports only an explicit partial logical RGB policy, not a
+physical or normative headless claim. Implement and test that bounded policy
+without inferring device/gamut capability from RGBA storage. Computed-integer,
+runtime/device and full conformance gates remain open; no production behavior
+changes belong to this research checkpoint.
+
 Adjacent table-end accounting now retains one bounded source table suffix
 instead of treating optional cells/rows/groups as ever-deeper nesting. It does
 not discard wrappers/formatting or cross nested tables, and the final native
