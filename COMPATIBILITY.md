@@ -1,5 +1,14 @@
 # Compatibility and playground acceptance ledger
 
+Normalize survivor continuation: `NORMALIZE-SURVIVOR-RANGES.md` changes survivor
+growth to an exact append, preserving existing offsets and selection extent
+through merges, singleton calls and repetition. All 61 new cases and 642 tests
+across 21 named files pass in each tree, with types/builds/scoped checks and
+independent full-raster comparisons. Removed-member and parent-before-merge
+endpoint transfer remain open: this is not complete normalize range support.
+General late-attachment tracking, prior imports and original full-native/runtime/
+live acceptance gates stay outstanding; no command-capture run is inferred.
+
 Split-text range continuation: `SPLIT-TEXT-RANGES.md` unifies native and existing
 owner/script endpoint transfer, including parent boundaries and detached clamps.
 Removing post-call snapshot restoration preserves newer native listener edits.

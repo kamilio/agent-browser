@@ -1,4 +1,7 @@
 [
+  "src/normalize-survivor-bindings.test.ts",
+  "src/normalize-survivor-rendering.test.ts",
+  "src/normalize-survivor.test.ts",
   "src/split-text-range-bindings.test.ts",
   "src/split-text-range-rendering.test.ts",
   "src/split-text-range.test.ts",

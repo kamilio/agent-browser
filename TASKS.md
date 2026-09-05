@@ -19,6 +19,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Normalization now appends following text instead of whole-replacing the surviving
+node, preserving its existing range offsets even on repeated no-op calls.
+`NORMALIZE-SURVIVOR-RANGES.md` records 61 new passing cases and 642 passes across
+21 named files in each tree, types/builds/scoped checks and independent complete
+raster-buffer comparisons. Both manifests retain 405 entries. This is explicitly
+only the survivor prerequisite: ranges in removed members and parent-before-merge
+boundaries still require transfer. General late-attachment tracking, early native
+listener ordering, prior imports and original full-native/runtime/live gates
+remain open. No command capture or external acceptance is implied.
+
 Direct native splitText now transfers live text/parent endpoints through shared
 private mutation metadata; the canonical wrapper no longer restores stale
 snapshots over native listener edits. `SPLIT-TEXT-RANGES.md` records 113 new passing

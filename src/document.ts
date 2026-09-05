@@ -1951,9 +1951,14 @@ export class DocumentTree {
 			for (let index = 0; index < plan.members.length; index++) {
 				const member = plan.members[index];
 				if (member === plan.survivor) {
-					this.setData(
+					this.replaceData(
 						member.id,
-						plan.members.map((entry) => entry.data).join(""),
+						member.data.length,
+						0,
+						plan.members
+							.slice(index + 1)
+							.map((entry) => entry.data)
+							.join(""),
 					);
 					previousSibling = member.id;
 				} else {

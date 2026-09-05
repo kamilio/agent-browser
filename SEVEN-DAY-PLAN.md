@@ -7,6 +7,14 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Normalize survivor growth now uses exact append semantics, retaining existing
+survivor ranges through merges and singleton/repeated calls.
+`NORMALIZE-SURVIVOR-RANGES.md` records 61 new passing cases, 642 passes across
+21 named files in each tree, types/builds/scoped checks and independent raster
+comparisons. Both manifests retain 405 entries. Removed-member and parent-boundary
+transfer, general late-attachment tracking and original full-native/runtime/live
+gates remain outstanding; this is not complete normalize range support.
+
 Native splitText now shares exact live-range transfer with existing script/owner
 paths, without stale post-call snapshot restoration. `SPLIT-TEXT-RANGES.md`
 records 113 new passing cases and 741 passes across 24 files in each tree,

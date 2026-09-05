@@ -8,6 +8,14 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation preserves normalize survivor ranges with exact
+append metadata rather than whole replacement. `NORMALIZE-SURVIVOR-RANGES.md`
+records 61 new passing cases, 642 passes across 21 named files in each tree,
+types/builds/scoped checks and independent full-raster comparisons. Both manifests
+retain 405 entries. Removed-member/parent-boundary transfer, general late
+attachment, prior imports and original full-native/runtime/live gates remain
+outstanding. No command-capture or complete-normalize acceptance is claimed.
+
 The until-stopped continuation repairs native splitText live-range transfer and
 removes the wrapper's stale snapshot restoration. `SPLIT-TEXT-RANGES.md` records
 113 new passing cases, 741 passes across 24 named files in each tree, project
