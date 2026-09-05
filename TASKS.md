@@ -29,6 +29,14 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+The encrypted checkpoint file backend now has exclusive lifetime locks,
+protected-file checks, verified atomic/fsynced publication and poisoned-instance
+failure handling. `PASSKEY-STORAGE.md` records 58 new passing cases and 318 passes
+across six named suites in each tree, with types/builds and scoped checks passing;
+the native manifest has 427 entries. Actual private synthetic `/tmp` fixtures are
+distinguished from earlier modeled ancestry. Authenticator save-before-result
+integration, real vaults, rollback/recovery and human approval remain open.
+
 Managed native sessions now coordinate truthful User-Agent/language defaults with
 document-owned navigator identity while preserving explicit request overrides.
 `BROWSER-IDENTITY.md` records 111 new passing cases and 328 passes across ten named
