@@ -1,5 +1,14 @@
 # Agent browser implementation tasks
 
+Next reader investigation: `COLOR-MEDIA-RESEARCH-2026-09-05.md` preserves one
+official linked Media Queries capture that returned HTTP 200 but failed native
+reader depth admission. A separate zero-request diagnostic records accumulated
+table cells/rows at depth 129 against 128. Investigate conservative optional
+table-end accounting with native regressions before replaying archived bytes;
+do not raise limits, infer normative text or relabel the failed live attempt.
+Color-media consistency and separately authorized live/guest/device gates remain
+open. The overall development goal remains active.
+
 Native Screen work exposes a stable, lifecycle-checked viewport-backed capability
 with six readonly values and unknown/private 24-bit depth. The logical exposed
 area is not a physical display; DPR 1 and absent client-window outer dimensions

@@ -1,5 +1,11 @@
 # Truthful native identity defaults
 
+`COLOR-MEDIA-RESEARCH-2026-09-05.md` records a later native-only attempt to
+resolve the color-media gap: HTTP 200 followed by reader depth rejection, with
+zero admitted scopes. Separate offline diagnosis identifies accumulating table
+source entries but makes no new normative or conformance claim. The original
+failed receipt is preserved, and color/media support remains outstanding.
+
 ## Viewport-backed Screen capability
 
 The native Window and global `screen` now share one stable host object per
