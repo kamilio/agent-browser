@@ -1,12 +1,20 @@
 import { AgentBrowserError } from "./errors.js";
 import { nativeHeadlessDisplay } from "./native-headless-display.js";
+import { nativeRasterColor } from "./native-raster-color.js";
 
 export interface MediaViewport {
 	width: number;
 	height: number;
 }
 type Match = (viewport: MediaViewport) => boolean;
-type Feature = "width" | "height" | "aspect-ratio" | "resolution";
+type Feature =
+	| "width"
+	| "height"
+	| "aspect-ratio"
+	| "resolution"
+	| "color"
+	| "color-index"
+	| "monochrome";
 export const cssMediaLimits = Object.freeze({
 	maxCodeUnits: 65536,
 	maxDepth: 32,
@@ -18,7 +26,14 @@ export interface CompiledCssMedia {
 	readonly conditions: number;
 	matches(viewport: MediaViewport): boolean;
 }
-const featureNames = new Set(["width", "height", "aspect-ratio", "resolution"]);
+const colorFeatures = new Set(["color", "color-index", "monochrome"]);
+const featureNames = new Set([
+	"width",
+	"height",
+	"aspect-ratio",
+	"resolution",
+	...colorFeatures,
+]);
 const numberSource = "[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:e[+-]?\\d+)?";
 const dimension = new RegExp(`^(${numberSource})([a-z]+)?$`);
 const ratio = new RegExp(`^(${numberSource})(?:\\s*/\\s*(${numberSource}))?$`);
@@ -37,6 +52,9 @@ function isFeature(value: string): value is Feature {
 	return featureNames.has(value);
 }
 function actual(feature: Feature, viewport: MediaViewport): number {
+	if (feature === "color") return nativeRasterColor.componentBits;
+	if (feature === "color-index") return nativeRasterColor.paletteEntries;
+	if (feature === "monochrome") return nativeRasterColor.monochromeBits;
 	return feature === "resolution"
 		? nativeHeadlessDisplay.devicePixelRatio
 		: feature === "aspect-ratio"
@@ -44,6 +62,8 @@ function actual(feature: Feature, viewport: MediaViewport): number {
 			: viewport[feature];
 }
 function value(feature: Feature, source: string): number | undefined {
+	if (colorFeatures.has(feature))
+		return /^[+-]?\d+$/.test(source) ? Number(source) : undefined;
 	if (feature === "resolution" && source === "infinite")
 		return Number.POSITIVE_INFINITY;
 	if (feature === "aspect-ratio") {

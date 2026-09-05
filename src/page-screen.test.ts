@@ -340,9 +340,6 @@ it.each(["binding", "document", "lifecycle"] as const)(
 );
 
 it.each([
-	"(color)",
-	"(color: 8)",
-	"(monochrome)",
 	"(color-gamut: srgb)",
 	"(device-width: 1280px)",
 	"(device-height: 720px)",

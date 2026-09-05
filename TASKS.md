@@ -1,13 +1,24 @@
 # Agent browser implementation tasks
 
+Numeric color media now implements an explicit partial logical RGB policy:
+color8, color-index0 and monochrome0, sharing unchanged exposed Screen depth24.
+Signed decimal literal, negative/large-value and existing range behavior pass
+243 parser cases and 28 page/raster cases; nine named suites total 533 passes in
+each tree, with types/builds/strict/Biome passing. The old parser independently
+fails 103 of the 243 unit cases and passes 140; that snapshot is preserved.
+Gamut, computed CSS integer math and physical or
+normative headless-device conformance are not inferred. `BROWSER-IDENTITY.md`
+records that boundary; all denied auth/runtime/wire gates remain untouched.
+
 Color-media definitions are now admitted by a separate direct native offline
 extraction: thirty scopes, with all prior failures preserved.
 `COLOR-MEDIA-CONTRACT-2026-09-05.md` records integer range/negative semantics,
 component versus palette/monochrome depth and separate gamut behavior. A separate
 authorized native CSS Values read admits the signed-decimal literal grammar;
 static review supports only an explicit partial logical RGB policy, not a
-physical or normative headless claim. Implement and test that bounded policy
-without inferring device/gamut capability from RGBA storage. Computed-integer,
+physical or normative headless claim. The bounded policy is implemented and
+tested above without inferring device/gamut capability from RGBA storage.
+Computed-integer,
 runtime/device and full conformance gates remain open; no production behavior
 changes belong to this research checkpoint.
 

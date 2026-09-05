@@ -1,4 +1,6 @@
 [
+  "src/css-color-media.test.ts",
+  "src/page-color-media.test.ts",
   "src/research-table-depth.test.ts",
   "src/page-screen.test.ts",
   "src/research-selector.test.ts",

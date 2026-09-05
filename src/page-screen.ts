@@ -1,4 +1,5 @@
 import type { StyleViewport } from "./css-parser.js";
+import { nativeExposedColorDepth } from "./native-raster-color.js";
 import type { ScriptHostObjectFactory } from "./script-dom.js";
 
 export function createPageScreen(
@@ -21,7 +22,8 @@ export function createPageScreen(
 				{
 					get: () => {
 						ensureOpen();
-						if (name === "colorDepth" || name === "pixelDepth") return 24;
+						if (name === "colorDepth" || name === "pixelDepth")
+							return nativeExposedColorDepth;
 						const viewport = readViewport();
 						return name === "width" || name === "availWidth"
 							? viewport.width

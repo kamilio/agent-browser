@@ -1,12 +1,80 @@
 # Truthful native identity defaults
 
+## Logical Numeric Color Media
+
+The native CSS media engine now recognizes `color`, `color-index` and
+`monochrome` against an explicitly chosen **logical RGB rendering policy**:
+8 bits per color component, no palette entries and no monochrome framebuffer.
+These fixed values describe the native software target, not a discovered
+physical display, every frontend's capabilities or a normative headless-device
+fallback. No hardware/environment probe or configurable pretend device is added.
+
+`nativeRasterColor` is a separate frozen internal model. It does not add fields
+to the three scalar headless globals or expose a new page profile object.
+The shared exposed Screen depth is three times the fixed component precision:
+still 24, excluding alpha. Screen's unknown/private fallback meaning remains
+unchanged, as do DPR 1 and absent client-window outer dimensions 0. Any future
+color-profile change requires reviewing both that fallback contract and its
+arithmetic; this is not permission to turn artifact bits into device facts.
+
+Boolean, equality, min/max and existing forward/reversed/chained numeric range
+forms share the existing media parser. Unitless literal integers use ASCII
+decimal digits with one optional immediately preceding sign. Leading zeros and
+negative zero are valid. Negative values remain supported, known comparisons,
+not unknown syntax. Fractional/exponent/hex/unit/function spellings remain
+unsupported; computed CSS math and general integer rounding are not implemented.
+
+Very large digit strings remain bounded by the existing source ceiling. Internal
+Number conversion may round or overflow, but it preserves every comparison
+against the fixed actual values 0 and 8: large magnitudes cannot round across
+those small values. This avoids incorrectly treating a valid huge negative as
+unknown. It is not a general exact arbitrary-integer evaluator or a claim about
+all CSS implementation ranges. Existing serialization rules and all input/
+condition/nesting limits remain unchanged; newly supported branches retain their
+query text instead of becoming `not all`.
+
+Supported viewport/media behavior and lifecycle remain on existing paths.
+Changing viewport or pixel contents does not change the logical color profile.
+Gamut, device-dimension and other unsupported features remain distinct from
+supported false `color-index`/`monochrome` predicates. RGBA storage alone does
+not establish sRGB/P3/Rec.2020 rendering or output fidelity. Actual guest,
+physical/no-output-device conformance and denied identity/RP gates remain open.
+
+September 5, 2026 validation: **243 parser cases and 28 page/raster integration
+cases**, with **533 passes across nine named files in each tree**. Project
+types/builds, strict touched-test checks and scoped Biome pass. Three directly
+superseded unknown-color assertions move out of the older Screen suite; its
+remaining 31 cases retain unknown gamut/device checks. Candidate and working
+manifests contain 444 and 446 entries respectively, excluding the two pending
+parent-RP suites from this commit and matrix. No full manifest or live, socket,
+TTY, SDK, credential or physical-device probe ran for implementation validation.
+
+The unchanged old CSS parser independently produces **103 failures and 140
+passes** on the same 243-case unit suite. Its snapshot is retained at the path
+in `/tmp/numeric-color-old-baseline-path`, with input hashes/results under
+`numeric-color-old-baseline-*` in the native-validation cache. Final integration
+logs use `numeric-color-final-01-`; the separate fixed candidate path is in
+`/tmp/numeric-color-integrated-path`. Policy and implementation reviews are in
+`color-policy-review/`; worker histories remain in `numeric-color-unit/` and
+`numeric-color-page/`. No unrelated baseline failure was repaired or suppressed.
+
+Page integration explicitly preserves two existing limits found by its initial
+24-pass/four-failure run. Unsupported media still makes native rasterization
+fail closed even when base computed styles remain usable. A synthetic binding
+lifecycle flag revokes Window/Screen operations, but a retained MediaQueryList
+follows its PageMedia/document owner and revokes when that owner closes. Tests
+assert its interim readability and subsequent revocation rather than pretending
+every saved capability observes that flag. Both initial failures and corrected
+final tests are retained. Tiny in-memory RGBA/PNG and stylesheet painting checks
+prove software behavior, not monitor, actual guest or broad browser acceptance.
+
 `COLOR-MEDIA-CONTRACT-2026-09-05.md` records thirty directly targeted native
 definition scopes admitted offline after the table-reader repair. Original
 live and broad-discovery failures remain preserved separately. Numeric color
 semantics and the linked literal integer grammar are now sourced. A static
-review supports an explicitly partial logical RGB policy, not physical display
-or normative headless conformance. Implementation, complete computed-integer
-support and gamut/device evidence remain outstanding.
+review supports the explicitly partial logical RGB policy, not physical display
+or normative headless conformance. Complete computed-integer support and gamut/
+device evidence remain outstanding; focused implementation validation is separate.
 
 ## Viewport-backed Screen capability
 
@@ -36,9 +104,10 @@ Already copied numeric values are public primitives and cannot be revoked.
 This is not the full Screen interface: no `Screen` constructor/prototype,
 hardware orientation, screen placement, coordinates, permission model or display
 events are added. Native host descriptors do not prove actual guest WebIDL or
-WindowProxy behavior. CSS color, monochrome, gamut and device-dimension media
-features remain unsupported rather than measured zero; full Screen/color-media
-consistency remains an explicit gap. Supported viewport width/height/orientation
+WindowProxy behavior. Gamut and device-dimension media features remain
+unsupported rather than measured zero; the numeric
+features now use the separate partial logical policy above, not physical
+Screen/color-media conformance. Supported viewport width/height/orientation
 and fixed resolution keep their existing source of values. Actual SafeJS,
 real-device, identity-wire and live compatibility acceptance remain separate
 gates; the previously denied probes have not been retried.
