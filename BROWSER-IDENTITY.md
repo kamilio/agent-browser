@@ -128,6 +128,30 @@ integration neither resolves nor reclassifies those failures.
 
 ## Validation and research
 
+### Separate native HTTP wire gate: not executed
+
+On September 5, 2026, a six-request loopback-only identity probe was prepared and
+statically reviewed. It would inspect actual receiver-observed UA/language
+headers for navigation, a same-origin redirect and a supported host-fetch
+language override, then verify owned-handle cleanup. No guest navigator, SDK or
+external site belongs to that scope. Syntax and 300 pinned compiled-input hashes
+are preparation evidence only; they do not establish any on-wire behavior.
+
+The execution permission review **denied this new real socket/listener gate
+pending explicit user authorization**. The command did not run and no attempt
+directory was created. The parent asked the user about that exact bounded scope;
+do not retry, change runners/attempt numbers or infer consent from the broader
+fingerprinting request. The separately accepted reader CLI service probe does
+not authorize this probe, and the earlier actual SafeJS identity denial remains
+independently in force.
+
+The prepared plan/harness remain under
+`node_modules/.cache/native-validation/native-identity-wire/`; the denial is
+recorded in `node_modules/.cache/native-validation/native-identity-wire-EXECUTION-DENIED.md`.
+Explicit UA equals the truthful default in the proposed fixture, so even a future
+pass could not distinguish default injection from preservation of that identical
+UA. A differing language value would test language override preservation only.
+
 The three new suites add **111 passing cases**: 79 pure profile/header, 12 native
 document/page-binding and 20 managed-session tests. Ten named manifest-listed
 files produce **328 passes in each working/isolated tree**. Types/builds, strict

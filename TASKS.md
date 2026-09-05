@@ -30,6 +30,16 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Two acceptance boundaries remain explicitly closed: the newly prepared native
+HTTP identity wire probe was denied pending specific user approval for its
+loopback socket/listener, and the earlier actual SafeJS identity probe remains
+separately denied. `BROWSER-IDENTITY.md` records that no new wire attempt ran.
+Native-only WebAuthn RP research also produced no readable normative source:
+`PASSKEY-RP-POLICY-2026-09-05.md` preserves resource/loader failures and the local
+selected-RP/hash integration hazard. Offline PSL success grants no parent-RP
+permission. The goal remains active; safe source work and named native tests
+continue without retrying denied probes.
+
 The complete pinned PSL source, preserved upstream license and same-revision
 official vectors now have offline admission coverage. All 10,321 ICANN/PRIVATE
 rules are admitted; 103 new cases include all 78 official vectors. Four named
