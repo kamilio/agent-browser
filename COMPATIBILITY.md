@@ -1,5 +1,13 @@
 # Compatibility and playground acceptance ledger
 
+Caret-color continuation: `CARET-COLOR.md` connects bounded inherited color/auto
+declarations and used CSSOM values to existing native control/editable carets.
+All 116 new cases pass; twenty-nine-file suites pass 999 isolated / 1,000 working
+tests, with static/build/scoped checks. Fifty-four native captures verify default
+invariance and exact color/transparency changes confined to actual caret pixels.
+Three prior import-order diagnostics remain. No new caret geometry, animation,
+full color-space or original browser/runtime/live acceptance is claimed.
+
 Root-extent continuation: `ROOT-SCROLL-EXTENT-CACHE.md` caches unchanged bounds only
 across intact presentation-only journals. All 34 new cases and 505 / nineteen-file
 focused suites pass in both trees, with static/build checks and 54 matching native

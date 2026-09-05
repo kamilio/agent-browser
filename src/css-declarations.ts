@@ -6,6 +6,7 @@ import {
 	serializeBackgroundValues,
 } from "./css-background.js";
 import { normalizeCssColor } from "./css-color.js";
+import { parsePaintValue } from "./css-paint.js";
 import { canonicalCssProperty } from "./css-property-aliases.js";
 import {
 	cssOutlineProperties,
@@ -125,6 +126,7 @@ export const inlineProperties = [
 	"padding",
 	"opacity",
 	"color",
+	"caret-color",
 	"background",
 	...cssBackgroundProperties,
 ];
@@ -262,6 +264,7 @@ function normalize(name: string, source: string): string | undefined {
 	if (name === "color" || name === "background-color") {
 		return normalizeCssColor(value);
 	}
+	if (name === "caret-color") return parsePaintValue(value, name);
 	return undefined;
 }
 

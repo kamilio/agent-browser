@@ -19,6 +19,7 @@ import {
 export const cssPaintProperties = Object.freeze([
 	...borderColorProperties,
 	"color",
+	"caret-color",
 	...cssBackgroundProperties,
 ] as const);
 export type CssPaintProperty = (typeof cssPaintProperties)[number];
@@ -28,6 +29,7 @@ export type PaintSpecifiedStyle = Readonly<
 export interface PaintStyle
 	extends Readonly<Partial<Record<BorderColorProperty, Rgba>>> {
 	readonly color: Rgba;
+	readonly "caret-color"?: CssColor | "auto";
 	readonly "background-color": CssColor;
 }
 export const initialPaintStyle: PaintStyle = Object.freeze({
@@ -40,6 +42,7 @@ export function isCssPaintProperty(
 	return (
 		borderColorProperties.includes(property as BorderColorProperty) ||
 		property === "color" ||
+		property === "caret-color" ||
 		property === "background-color" ||
 		isNeutralBackgroundProperty(property)
 	);
@@ -48,6 +51,8 @@ export function parsePaintValue(
 	value: string,
 	property: CssPaintProperty = "color",
 ): string | undefined {
+	if (property === "caret-color" && value.trim().toLowerCase() === "auto")
+		return "auto";
 	if (isNeutralBackgroundProperty(property))
 		return parseBackgroundComponent(property, value);
 	return ["initial", "inherit", "unset", "revert"].includes(value)
@@ -74,13 +79,24 @@ export function computePaintStyle(
 					["initial", "unset", "revert"].includes(background)
 				? transparentColor
 				: parseCssColor(background);
-	const result: { color: Rgba; "background-color": CssColor } & Partial<
-		Record<BorderColorProperty, Rgba>
-	> = {
+	const result: {
+		color: Rgba;
+		"background-color": CssColor;
+		"caret-color"?: CssColor | "auto";
+	} & Partial<Record<BorderColorProperty, Rgba>> = {
 		color:
 			foreground && foreground !== "currentcolor" ? foreground : parent.color,
 		"background-color": fill ?? transparentColor,
 	};
+	const caret = specified["caret-color"];
+	let caretColor = parent["caret-color"];
+	if (caret === "initial" || caret === "auto") caretColor = undefined;
+	else if (
+		caret !== undefined &&
+		!["inherit", "unset", "revert"].includes(caret)
+	)
+		caretColor = parseCssColor(caret) ?? parent["caret-color"];
+	if (caretColor !== undefined) result["caret-color"] = caretColor;
 	for (const property of borderColorProperties) {
 		const value = specified[property];
 		if (value === "inherit") {
@@ -94,6 +110,7 @@ export function computePaintStyle(
 		}
 	}
 	return result.color === parent.color &&
+		result["caret-color"] === parent["caret-color"] &&
 		borderColorProperties.every(
 			(property) => result[property] === parent[property],
 		) &&
@@ -105,4 +122,11 @@ export function paintBackground(style: PaintStyle): Rgba {
 	return style["background-color"] === "currentcolor"
 		? style.color
 		: style["background-color"];
+}
+
+export function paintCaret(style: PaintStyle): Rgba {
+	const color = style["caret-color"];
+	return color === undefined || color === "auto" || color === "currentcolor"
+		? style.color
+		: color;
 }

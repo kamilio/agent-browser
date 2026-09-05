@@ -19,6 +19,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native controls and existing editable caret anchors now honor bounded CSS
+caret-color, including inherited/current/auto colors, alpha and transparency.
+`CARET-COLOR.md` records 116 new cases, passing 999 isolated / 1,000 working tests
+across twenty-nine focused files, static/build/scoped checks and 54 native
+captures. All eighteen new-build pairs match; only 176 intended caret pixels
+change against explicitly documented default-CSS baselines. Both manifests
+retain 392 entries. Existing import-order diagnostics and original full-native,
+browser/runtime/live gates remain open; caret geometry/animation is not expanded.
+
 Native root-scroll extent bounds now reuse intact presentation-only journals;
 real dimensions, control values and lost/mixed history still rescan.
 `ROOT-SCROLL-EXTENT-CACHE.md` records 34 new cases, passing 505 / nineteen-file

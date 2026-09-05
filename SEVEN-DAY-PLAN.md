@@ -7,6 +7,14 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Native CSS caret-color now shares declaration/CSSOM state and control/editable
+caret paint without changing default geometry or selection highlights.
+`CARET-COLOR.md` records 116 new cases, 999 isolated / 1,000 working passes across
+twenty-nine focused files, static/build/scoped checks and 54 native captures.
+Explicit colors change only 176 caret pixels; new-build images match exactly.
+Both manifests retain 392 entries. Existing import-order and original full-native,
+runtime/live/UI acceptance gates remain explicit.
+
 Root extent caching now advances only across intact presentation-only journals.
 `ROOT-SCROLL-EXTENT-CACHE.md` records 34 new cases, passing 505 / nineteen-file
 focused suites in both trees, static/build checks and 54 matching native captures.

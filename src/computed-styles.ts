@@ -21,7 +21,11 @@ import {
 	borderColorProperties,
 	type BorderColorProperty,
 } from "./css-border.js";
-import { cssPaintProperties, paintBackground } from "./css-paint.js";
+import {
+	cssPaintProperties,
+	paintBackground,
+	paintCaret,
+} from "./css-paint.js";
 import {
 	canonicalCssProperty,
 	cssPropertyAliases,
@@ -159,6 +163,7 @@ export function resolvedStyleValue(
 	}
 	if (
 		name === "color" ||
+		name === "caret-color" ||
 		name === "background-color" ||
 		borderColorProperties.includes(name as BorderColorProperty)
 	) {
@@ -168,7 +173,9 @@ export function resolvedStyleValue(
 				? style.color
 				: name === "background-color"
 					? paintBackground(style)
-					: (style[name as BorderColorProperty] ?? style.color);
+					: name === "caret-color"
+						? paintCaret(style)
+						: (style[name as BorderColorProperty] ?? style.color);
 		return color[3] === 255
 			? `rgb(${color[0]}, ${color[1]}, ${color[2]})`
 			: `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${Number((color[3] / 255).toFixed(3))})`;

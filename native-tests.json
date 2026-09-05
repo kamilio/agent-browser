@@ -1,4 +1,6 @@
 [
+  "src/css-caret-color.test.ts",
+  "src/caret-color-rendering.test.ts",
   "src/scroll-extent-lifecycle.test.ts",
   "src/scroll-extent-cache.test.ts",
   "src/scroll-presentation-notifications.test.ts",

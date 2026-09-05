@@ -8,6 +8,14 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation adds native CSS caret-color for existing control
+and editable anchors, with live CSSOM, inheritance, alpha and transparency.
+`CARET-COLOR.md` records 116 new cases and passing 999 isolated / 1,000 working
+tests across twenty-nine files, static/build/scoped checks and 54 native captures.
+New-build image pairs match; default-CSS comparisons change only actual caret
+pixels. Both manifests retain 392 entries. Geometry/animation and original
+full-native, browser/runtime/live acceptance gates remain outstanding.
+
 The until-stopped continuation now reuses unchanged root extent bounds while
 retaining conservative real-input scans and current geometry, hits and pixels.
 `ROOT-SCROLL-EXTENT-CACHE.md` records 34 new cases, passing 505 / nineteen-file

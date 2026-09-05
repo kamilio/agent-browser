@@ -10,7 +10,7 @@ import {
 	selectOptions,
 	selectedOptions,
 } from "./controls.js";
-import { type PaintStyle, paintBackground } from "./css-paint.js";
+import { type PaintStyle, paintBackground, paintCaret } from "./css-paint.js";
 import { existingDocumentFiles } from "./document-files.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -355,7 +355,7 @@ export function rasterizeControl(
 				textLayout.caret.y,
 				textLayout.caret.width,
 				textLayout.caret.height,
-				paint.color,
+				paintCaret(paint),
 			);
 		const clip = textLayout.clip;
 		for (let row = 0; row < rows; row++)

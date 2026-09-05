@@ -2,7 +2,7 @@ import {
 	contentEditableState,
 	isRootEditableElement,
 } from "./content-editability.js";
-import { initialPaintStyle } from "./css-paint.js";
+import { initialPaintStyle, paintCaret } from "./css-paint.js";
 import { initialTextStyle } from "./css-text.js";
 import type { DocumentBox, DocumentLayout } from "./document-layout.js";
 import { documentScrollPosition } from "./document-scroll.js";
@@ -36,8 +36,8 @@ export const editableCaretCapabilities = Object.freeze({
 	terminalPreservedBreaks: "same-source-exact-chain-after-glyph",
 	controlCarets: false,
 	ime: false,
-	cssCaretColor: false,
-	color: "source-text-color",
+	cssCaretColor: true,
+	color: "source-caret-color-auto-currentcolor",
 	workBudget: "bounded-mapping-and-existing-raster-pixel-budget",
 	...editableCaretLimits,
 });
@@ -274,7 +274,7 @@ function emptyBlockAnchor(
 		x: chosen.contentX + advance,
 		y: chosen.contentY + font.above - font.ascent,
 		height: font.fontSize,
-		color: (node.paint ?? initialPaintStyle).color,
+		color: paintCaret(node.paint ?? initialPaintStyle),
 	};
 }
 
@@ -352,10 +352,10 @@ function terminalBreakAnchor(
 			x,
 			y,
 			height,
-			color: (
+			color: paintCaret(
 				layout.text.horizontal.formatting.nodes[glyph.formattingId].paint ??
-				initialPaintStyle
-			).color,
+					initialPaintStyle,
+			),
 		};
 	}
 	return anchor;
@@ -486,10 +486,10 @@ export function prepareEditableCaret(
 						x,
 						y,
 						height: rect.height,
-						color: (
+						color: paintCaret(
 							layout.text.horizontal.formatting.nodes[glyph.formattingId]
-								.paint ?? initialPaintStyle
-						).color,
+								.paint ?? initialPaintStyle,
+						),
 					};
 				}
 			}
