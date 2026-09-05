@@ -272,7 +272,7 @@ try {
 		var createClientData = new Uint8Array(registration.response.clientDataJSON);
 		var originalByte = registeredId[0];
 		registeredId[0] = originalByte ^ 255;
-		registration.type === "public-key" && typeof registration.id === "string" &&
+		return registration.type === "public-key" && typeof registration.id === "string" &&
 		registration.id.length > 0 && registration.id.length <= 1364 &&
 		registeredId.length === 32 && new Uint8Array(registration.rawId)[0] === originalByte &&
 		publicAttestation.length > 100 && publicAttestation.length <= 4096 &&
@@ -294,7 +294,7 @@ try {
 		var signatureBytes = new Uint8Array(assertion.response.signature);
 		var getClientData = new Uint8Array(assertion.response.clientDataJSON);
 		var userBytes = new Uint8Array(assertion.response.userHandle);
-		assertion.type === "public-key" && assertion.id === registration.id &&
+		return assertion.type === "public-key" && assertion.id === registration.id &&
 		new Uint8Array(assertion.rawId).length === 32 && authenticationBytes.length === 37 &&
 		(authenticationBytes[32] & 1) === 1 && (authenticationBytes[32] & 4) === 0 &&
 		signatureBytes.length >= 64 && signatureBytes.length <= 80 &&
@@ -311,7 +311,7 @@ try {
 		try { await navigator.credentials.get({ publicKey: {
 			challenge: new Uint8Array([1,2,3,4]), rpId: "other.fixture.invalid", timeout: 2000
 		} }); } catch (error) { wrongRpDenied = error.name === "SecurityError"; }
-		wrongRpDenied;
+		return wrongRpDenied;
 	`,
 	);
 	check("wrong-rp:no-approval", approvals === 2);
@@ -323,7 +323,7 @@ try {
 			challenge: new Uint8Array([1,2,3,4]), rpId: "passkeys.fixture.invalid",
 			userVerification: "required", timeout: 2000
 		} }); } catch (error) { requiredUvDenied = error.name === "NotSupportedError"; }
-		requiredUvDenied;
+		return requiredUvDenied;
 	`,
 	);
 	check("required-uv:no-approval", approvals === 2);

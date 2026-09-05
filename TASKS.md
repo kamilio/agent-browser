@@ -1,5 +1,23 @@
 # Agent browser implementation tasks
 
+An isolated SafeJS persistent-byte contribution now registers real guest
+ArrayBuffer/Uint8Array/DataView, integrates graph copying/reflection/quotas and
+rejects unsupported binary persistence explicitly. Candidate and pristine
+two-patch replay each pass 682 cases across 22 named SDK files, with scoped
+types/builds/Biome passing. Six independent review findings have targeted fixes
+and regression coverage. `contributions/safejs-persistent-guest-bytes.md` records
+the implementation, full-backing authority, initial failures and limitations.
+Both isolated runtimes also pass the separately authorized actual synthetic
+passkey bridge: 24 checks covering create/get, typed rejection and cancellation
+cleanup. The browser probe now uses four required explicit returns; no SDK
+semantics or authentication policy was changed to manufacture acceptance.
+Independent cryptographic ceremony verification, physical/synchronized keys,
+real user verification, persistence and live-site interoperability remain open.
+The original selected SDK, historical failed probes and denied identity/wire/
+parent-RP gates remain unchanged. This is an unselected, unpublished SDK
+contribution, not deployed full passkey support. The overall browser goal stays
+active; release integration and the other seven-day gates remain outstanding.
+
 A dormant SDK binary-storage contribution now provides intrinsic-slot validation
 and budgeted full-backing copies for native ArrayBuffer/Uint8Array/DataView.
 The two additive upstream files are not selected by the browser or installed as

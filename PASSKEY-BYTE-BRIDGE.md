@@ -1,8 +1,18 @@
 # Passkey byte bridge and host boundaries
 
-September 5, 2026. **The selected actual SafeJS passkey gate still fails.**
-Host hardening below is separate from SDK byte support, not guest registration,
-assertion, hardware or synchronized-passkey acceptance. No denied gate reopens.
+September 5, 2026. **The original selected SDK gate still fails; an isolated
+patched SDK now passes the synthetic passkey bridge gate.** Neither result is
+hardware, synchronized-passkey or full WebAuthn acceptance. No denied gate reopens.
+
+`contributions/safejs-persistent-guest-bytes.md` records the later persistent-byte
+integration: 682 named SDK cases pass in both candidate and pristine patch replay.
+Both separately built runtimes pass 24 actual synthetic browser checks for
+create/get, rejection and cancellation, with cleanup complete. The browser
+fixture excludes pending parent-RP changes; its probe only gains four explicit
+result returns required by the existing SDK. Initial loader/build and completion
+value failures remain preserved. Independent ceremony cryptographic verification,
+real devices/user verification, persistence and live sites remain open. The
+candidate is not installed, published or selected as the browser default.
 
 A later, separately authorized in-memory SDK increment is recorded in
 `contributions/safejs-binary-storage-foundation.md`: a dormant two-file storage
@@ -23,9 +33,12 @@ typed rejection, cancellation or independent crypto acceptance was demonstrated.
 Original records under `node_modules/.cache/native-validation/` remain in
 `passkey-runtime-probe/actual-isolated-first.jsonl`, `actual-prerequisites.jsonl`
 and `PARENT-RESULTS.md`. Historical JSON lacks later timestamp/package fields;
-none are retroactively inserted or inferred. No actual probe was rerun.
+none are retroactively inserted or inferred. No probe against that original SDK
+was rerun; the later isolated candidate/replay runs above use distinct records.
 
 ## Selected SDK finding
+
+This section describes the unchanged original package, not the patched candidate.
 
 The explicit root is `/tmp/agent-browser-safejs-13.0.10/packages/safe-js`.
 Its manifest identifies **@poe-code/safe-js 0.0.1**, exporting `./core` through
