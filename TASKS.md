@@ -41,6 +41,15 @@ Types/builds, strict new-test types and scoped checks pass. Both manifests conta
 422 entries. Real human-approval UI, secure persistence/recovery, actual SafeJS and
 live relying-party acceptance remain priority gates, not completed features.
 
+`BROWSER-RESEARCH-2026-09-05.md` now provides a durable four-topic synthesis of
+133 native-browser topic attempts across two rounds, with four parent probes
+kept separate. Its 32 source entries, 89 support checks and 164 stored checksums
+were audited against saved extractions. Round two reached vendor specifications,
+benchmark papers/methodology, nine dated X posts and five official Poe pages.
+No dated Reddit thread body was verified, no comparative hardware speed/value
+ranking was measured, and no production account entitlement or challenge bypass
+was established. These research gaps and reader fidelity limits remain explicit.
+
 ### Prior research checkpoint
 
 Opt-in native semantic research reading and challenge diagnostics now have
