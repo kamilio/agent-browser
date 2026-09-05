@@ -1,5 +1,14 @@
 # Agent browser implementation tasks
 
+Native-browser HID descriptor research now records a documented per-device sysfs
+route and report-accounting examples, plus an independently retrieved manual
+header-parsing guide. The September 5, 2026 23:11:33.782 and 23:16:37.720 UTC
+receipts remain partial/unverified; no actual device/sysfs or source command ran.
+`HID-DESCRIPTOR-DISCOVERY.md` preserves source inconsistencies and missing size,
+long/reserved, scope and malformed-input rules instead of inventing a full parser.
+Fixed-version implementation research is the next lexical prerequisite; Node
+transport feasibility and physical passkey/human-consent gates remain open.
+
 Pure allocated-channel FIDO HID response decoding now handles exact one-byte
 KEEPALIVE and ERROR messages, preserving unknown values and owned channel bytes.
 Its strict API rejects malformed/broadcast inputs without inferring transaction
