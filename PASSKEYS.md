@@ -163,3 +163,52 @@ software port does not satisfy persistent, platform or synchronized passkey gate
 Design reference consulted by the parent on September 5, 2026:
 `https://www.w3.org/TR/webauthn-3/` (Level 3, August 25, 2026 Recommendation).
 This documentation research is not native runtime acceptance evidence.
+
+## Actual legacy-runtime gate — September 5, 2026
+
+Separately authorized probes now load the explicit existing local SDK at
+`/tmp/agent-browser-safejs-13.0.10/packages/safe-js` using the legacy adapter.
+Its manifest identifies `@poe-code/safe-js` version `0.0.1`, not version 13.0.10;
+the directory name is not release provenance. This is not a test of a newly
+released extension SDK, and no denied package acquisition was retried.
+
+The actual gate **fails**. The first isolated run reaches creation but its guest
+evaluation fails. A subsequent prerequisite diagnostic verifies shared global/
+Window credentials identity and a Promise constructor, but finds **neither a
+Uint8Array nor an ArrayBuffer constructor**. Cleanup succeeds. Registration,
+assertion, typed rejection and cancellation acceptance are not demonstrated.
+No byte shim, guest-source rewrite, alternate adapter or fake factory substitutes
+for the missing runtime capability. Existing synthetic test results still stand,
+but do not establish a usable WebAuthn page bridge on this selected SDK.
+
+`scripts/check-passkeys-runtime.ts` preserves a bounded manual gate with explicit
+root, adapter and synthetic-authorization flag. It checks prerequisites before
+ceremonies, requires real guest byte operations, bounds work and closes owners.
+Synthetic approval is confined to this fixture; no production autoapproval hook
+or real account/keyring access is added. It is deliberately outside the native
+test manifest. After separate authorization, a standalone invocation is:
+
+```bash
+timeout --signal=TERM --kill-after=2s 25s node dist/scripts/check-passkeys-runtime.js --runtime-root /absolute/approved/sdk --adapter legacy --authorize-synthetic-passkey-runtime
+```
+
+The flag is an accidental-execution guard, not permission. A compatible byte
+bridge must still be tested through all later checks and independently against a
+relying party. The probe does not independently verify guest-visible signatures.
+
+Evidence remains in
+`node_modules/.cache/native-validation/passkey-runtime-probe/`:
+`actual-first.stderr` records a cache-only build-path failure **before SDK load**;
+`actual-isolated-first.jsonl` records failed creation;
+`actual-prerequisites.jsonl` records the constructor diagnostics and cleanup.
+The initial worker patch/static logs remain unchanged. The parent adds the
+prerequisite checks and timestamp/package metadata to the maintained script;
+older JSON records are not rewritten to include fields they never recorded.
+
+Parent validation of the manual-probe addition passes types/builds in both trees
+and **297 synthetic tests across seven named manifest-listed files in each**.
+The first scoped check found import ordering/formatting only; those are corrected,
+with final one-file Biome and project noEmit passing. These regression checks are
+separate from the failed actual-runtime gate. Results are retained as
+`node_modules/.cache/native-validation/passkey-runtime-verified-*` and
+`passkey-runtime-final-working-*`; the manifest remains 422 entries.

@@ -29,6 +29,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+A separately authorized actual legacy SafeJS passkey gate now fails explicitly:
+the selected experimental SDK lacks guest Uint8Array and ArrayBuffer constructors.
+Shared credentials identity and Promise availability pass the diagnostic, and
+owners close cleanly; registration/assertion/cancellation remain unverified.
+`scripts/check-passkeys-runtime.ts` and `PASSKEYS.md` preserve the bounded manual
+gate and original failure evidence without importing another engine, patching the
+SDK or retrying a denied release download. Secure persistence, human approval and
+released-runtime acceptance remain active work, not completed browser features.
+
 Native research now conservatively recognizes the observed Poe login redirect
 using the actual response URL and paired continuation markers. All 46 new cases
 pass; seven named files yield 333 passes in each tree, with types/builds and scoped
