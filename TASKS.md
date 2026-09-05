@@ -1,5 +1,15 @@
 # Agent browser implementation tasks
 
+Bounded HID short-item tokenization now supplies owned raw tokens with explicit
+4096-byte/item policy caps, zero-byte progress, 0/1/2/4 framing and immediate
+long/reserved refusal. All 124 cases in its exact three-file native scope pass,
+including 24 new cases and resizable empty/out-of-bounds regressions; build,
+strict corrected-fixture types and Biome pass. `HID-SHORT-ITEMS.md` retains the
+fixed Linux v6.12 native-source receipts and separates implementation evidence
+from normative/current-spec claims. This is lexical framing only: collection/
+scope/usage/report-ID semantics, FIDO report metadata and Node physical I/O remain
+open. No provider/device activation or denied/stopped gate was reopened.
+
 Native-browser HID descriptor research now records a documented per-device sysfs
 route and report-accounting examples, plus an independently retrieved manual
 header-parsing guide. The September 5, 2026 23:11:33.782 and 23:16:37.720 UTC
