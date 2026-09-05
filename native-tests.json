@@ -1,4 +1,6 @@
 [
+  "src/research-loader.test.ts",
+  "src/browser-challenges.test.ts",
   "src/secret-command-form.test.ts",
   "src/secret-command-security.test.ts",
   "src/secret-providers.test.ts",

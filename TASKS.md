@@ -29,6 +29,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Opt-in native semantic research reading and challenge diagnostics now have
+119 new passing cases and 287 passes across seven named files in both trees,
+with project types/builds and scoped checks. `NATIVE-RESEARCH.md` preserves the
+normal loader, reader omissions and new live evidence: Apple specifications
+were read; the OpenAI announcement returned a confirmed Cloudflare challenge
+and was not bypassed. Failure response metadata now survives parser errors.
+Both manifests contain 418 entries. Four second research rounds used this
+native reader; report paths remain separate from earlier measurements.
+`BROWSER-FINGERPRINTING.md` records native capability gaps and reference-tool
+architectural differences, not a production challenge-solving claim. Passkey
+page integration and a durable native-only research synthesis remain in progress.
+
+### Prior credential checkpoint
+
 Reference-only credentials now support explicit `.env` and `pass` providers,
 private CLI configuration and exact HTTPS origin binding. `SECRET-PROVIDERS.md`
 documents the deliberately confidential session boundary: `fill-secret` seals

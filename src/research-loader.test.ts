@@ -1,0 +1,547 @@
+import { createHash } from "node:crypto";
+import { afterEach, expect, it, vi } from "vitest";
+import {
+	parseResearchArguments,
+	researchExitCode,
+	researchNavigation,
+	summarizePrimaryResponse,
+} from "../scripts/research-browser.js";
+import { CookieJar } from "./cookies.js";
+import { loadBrowserDocument } from "./document-loader.js";
+import { AgentBrowserError } from "./errors.js";
+import { extractDocument } from "./extraction.js";
+import { htmlParseInfo } from "./html-info.js";
+import type { NetworkResponse } from "./network.js";
+import { NodeNetworkTransport } from "./node-transport.js";
+import {
+	loadResearchDocument,
+	researchReaderInfo,
+	researchReaderProfile,
+	sanitizeResearchHtml,
+} from "./research-loader.js";
+import { DocumentQueries } from "./selectors.js";
+import type { DocumentLoaderContext } from "./session.js";
+
+const context: DocumentLoaderContext = {
+	tabId: "synthetic-reader",
+	signal: new AbortController().signal,
+	limits: {
+		maxNodes: 50_000,
+		maxDepth: 256,
+		maxTextCodeUnits: 2_000_000,
+		maxChanges: 1024,
+	},
+};
+
+function response(
+	text: string,
+	type = "text/html; charset=utf-8",
+): NetworkResponse {
+	const body = new TextEncoder().encode(text);
+	return {
+		url: "https://research.example/paper",
+		status: 200,
+		headers: { "content-type": [type] },
+		body,
+		encodedBytes: body.length,
+		redirects: [],
+		elapsedMs: 1,
+	};
+}
+
+afterEach(() => vi.restoreAllMocks());
+
+it("reads synthetic vendor content around SVG, MathML, CSS and script omissions", () => {
+	const tree = loadResearchDocument(
+		response(`<!doctype html>
+		<title>Research &amp; hardware</title><base href="https://research.example/docs/">
+		<link rel=stylesheet href=/large.css><style>${".x{color:red}".repeat(12_000)}</style>
+		<main><h1>Model &amp; memory</h1><svg><g><path d="M 0 0"/></g><text>Omitted graphic</text></svg>
+		<p>Measured memory <math><mi>x</mi></math> and throughput.</p>
+		<script>throw new Error('never execute');</script>
+		<ul><li><a href="table?size=4&amp;mode=fast">Results</a></li></ul>
+		<table><tr><th>Device</th><td>128 GB</td></tr></table></main>`),
+		context,
+	);
+	try {
+		const extracted = extractDocument(tree);
+		expect(extracted.title).toBe("Research & hardware");
+		expect(tree.textContent(tree.root)).toContain("Model & memory");
+		expect(extracted.content).toContain("Model &amp; memory");
+		expect(extracted.content).toContain(
+			"https://research.example/docs/table?size=4&amp;mode=fast",
+		);
+		expect(extracted.content).toContain("128 GB");
+		expect(extracted.content).not.toContain("Omitted graphic");
+		expect(extracted.content).not.toContain("never execute");
+		expect(researchReaderInfo(tree)).toMatchObject({
+			profile: researchReaderProfile,
+			partial: true,
+			scripting: false,
+			styling: false,
+			hiddenContentSemantics: false,
+			omittedSubtrees: { svg: 1, math: 1, link: 1, style: 1, script: 1 },
+		});
+		expect(htmlParseInfo(tree)?.scripting).toBe(false);
+	} finally {
+		tree.close();
+	}
+	expect(researchReaderInfo(tree)).toBeUndefined();
+});
+
+it("leaves native SVG rejection unchanged", async () => {
+	await expect(
+		loadBrowserDocument(response("<svg/><p>Paper</p>"), context),
+	).rejects.toMatchObject({ code: "unsupported" });
+});
+
+it("strips active attributes, resources and hiding without invoking supplied hooks", () => {
+	const fetch = vi.fn();
+	const script = vi.fn();
+	const initializeDocument = vi.fn();
+	const tree = loadResearchDocument(
+		response(`<style>p{display:none}</style>
+		<link rel=stylesheet href=/sheet.css><script src=/app.js></script>
+		<meta http-equiv=refresh content="0;url=/next"><iframe src=/frame><p>Frame</p></iframe>
+		<template><script>bad()</script></template><object data=/object>Object</object>
+		<p hidden inert aria-hidden=true style="display:none" onclick="bad()">Still readable</p>
+		<details><summary>More</summary>Collapsed content</details>
+		<form action=/submit><input type=password value=secret><button>Never submit</button></form>
+		<img src=/image srcset=/other alt=Diagram><a href="javascript:bad()">Unsafe</a>`),
+		{
+			...context,
+			initializeDocument,
+			fetchStylesheet: fetch,
+			fetchScript: fetch,
+			fetchImage: fetch,
+			scripts: { start: script } as unknown as DocumentLoaderContext["scripts"],
+		},
+	);
+	try {
+		const queries = new DocumentQueries(tree);
+		for (const selector of [
+			"script",
+			"style",
+			"link",
+			"iframe",
+			"object",
+			"template",
+			"form",
+			"input",
+			"[onclick]",
+			"[src]",
+			"[srcset]",
+			"[hidden]",
+			"[style]",
+			"a[href]",
+		])
+			expect(queries.querySelector(selector)).toBeNull();
+		const extracted = extractDocument(tree).content;
+		expect(extracted).toContain("Still readable");
+		expect(extracted).toContain("Collapsed content");
+		expect(extracted).not.toContain("secret");
+		expect(fetch).not.toHaveBeenCalled();
+		expect(script).not.toHaveBeenCalled();
+		expect(initializeDocument).toHaveBeenCalledOnce();
+		expect(researchReaderInfo(tree)?.ignoredAttributes).toBeGreaterThan(5);
+	} finally {
+		tree.close();
+	}
+});
+
+it.each([
+	'<svg><foreignObject><script>"</svg><p>escape</p>"</script></foreignObject></svg><p>Kept</p>',
+	"<math><annotation-xml><svg><path/></svg></annotation-xml></math><p>Kept</p>",
+	'<script/>"<p>escape</p>"</script><p>Kept</p>',
+	'<svg data-markup="</svg><p>escape</p>"><!-- </svg> --><g/></svg><p>Kept</p>',
+])("keeps omitted markup contained: %s", (source) => {
+	const sanitized = sanitizeResearchHtml(source);
+	expect(sanitized.html).toBe("<p>Kept</p>");
+});
+
+it("escapes decoded text and raw text instead of reinterpreting markup", () => {
+	const tree = loadResearchDocument(
+		response(`<title>&lt;script&gt;Title&lt;/script&gt;</title>
+		<p>&lt;svg&gt;literal&lt;/svg&gt; &amp; &lt;script&gt;</p>
+		<xmp><img src=/never>&amp;</xmp><p>After</p>`),
+		context,
+	);
+	try {
+		expect(
+			new DocumentQueries(tree).querySelector("script, svg, img"),
+		).toBeNull();
+		expect(tree.textContent(tree.root)).toContain("<svg>literal</svg>");
+		expect(tree.textContent(tree.root)).toContain("<img src=/never>&amp;");
+	} finally {
+		tree.close();
+	}
+});
+
+it.each([
+	"<svg><g></svg><p>escape</p>",
+	"<svg><g/>",
+	"<script>unterminated",
+	"<style>unterminated",
+	'<p title="unterminated>',
+	"<svg><g><path/></g>",
+	"<svg><![CDATA[> </svg><p>escape</p>]]></svg>",
+])("rejects malformed omitted or incomplete markup: %s", (source) => {
+	expect(() => sanitizeResearchHtml(source)).toThrow(AgentBrowserError);
+});
+
+it.each([
+	["<svg><g><g/></g></svg>", { maxDepth: 1 }],
+	["<div><div>deep</div></div>", { maxDepth: 1 }],
+	["<p>text</p>", { maxTokens: 2 }],
+	["<style>large</style>", { maxTextCodeUnits: 4 }],
+	["<p>large</p>", { maxTextCodeUnits: 4 }],
+	["<p>text</p>", { maxSourceCodeUnits: 4 }],
+	["&lt;&lt;", { maxOutputCodeUnits: 4 }],
+] as const)("enforces isolated reader budgets", (source, limits) => {
+	expect(() => sanitizeResearchHtml(source, limits)).toThrow(
+		expect.objectContaining({ code: "resource-limit" }),
+	);
+});
+
+it("rejects invalid limits and pre-aborted loading", () => {
+	expect(() => sanitizeResearchHtml("text", { maxTokens: 100_001 })).toThrow();
+	expect(() => sanitizeResearchHtml("text", { maxDepth: 0 })).toThrow();
+	const controller = new AbortController();
+	controller.abort();
+	expect(() =>
+		loadResearchDocument(response("<p>Text</p>"), {
+			...context,
+			signal: controller.signal,
+		}),
+	).toThrow(expect.objectContaining({ code: "aborted" }));
+});
+
+it("uses native entity/encoding handling and initializes literal non-HTML documents", () => {
+	for (const [source, type, expected] of [
+		["<meta charset=utf-8><p>日本語 £</p>", "text/html", "日本語 £"],
+		["<svg>literal</svg>", "text/plain", "<svg>literal</svg>"],
+		['{"svg":"literal"}', "application/json", '{"svg":"literal"}'],
+	]) {
+		const tree = loadResearchDocument(response(source, type), context);
+		try {
+			expect(tree.textContent(tree.root)).toContain(expected);
+			expect(researchReaderInfo(tree)?.partial).toBe(true);
+		} finally {
+			tree.close();
+		}
+	}
+	expect(() =>
+		loadResearchDocument(response("<svg/>", "image/svg+xml"), context),
+	).toThrow();
+	expect(() =>
+		loadResearchDocument({ ...response("text"), headers: {} }, context),
+	).toThrow();
+});
+
+it("requires explicit public URLs and an explicit reader switch", () => {
+	expect(
+		parseResearchArguments(["https://research.example/paper"]).reader,
+	).toBe(false);
+	expect(
+		parseResearchArguments(["--reader", "https://research.example/paper"])
+			.reader,
+	).toBe(true);
+	for (const args of [
+		[],
+		["--reader"],
+		["--other"],
+		["--reader", "--reader"],
+		["file:///tmp/page"],
+		["http://localhost/"],
+		["http://127.0.0.1/"],
+		["http://10.0.0.1/"],
+		["https://user:secret@research.example/"],
+		["https://research.example/#fragment"],
+		Array(9).fill("https://research.example/"),
+	])
+		expect(() => parseResearchArguments(args)).toThrow();
+});
+
+it("captures bounded response evidence without cookies, raw body or query credentials", () => {
+	const input = response("Synthetic response body");
+	input.url += "?token=sensitive#fragment";
+	input.headers = {
+		"content-type": ["text/html"],
+		"set-cookie": ["session=sensitive"],
+		authorization: ["Bearer sensitive"],
+		"x-extra": ["sensitive"],
+	};
+	const summary = summarizePrimaryResponse(input);
+	expect(summary.bodySha256).toBe(
+		createHash("sha256").update(input.body).digest("hex"),
+	);
+	expect(summary.url).toBe("https://research.example/paper?redacted");
+	expect(JSON.stringify(summary)).not.toMatch(
+		/sensitive|Synthetic response body|set-cookie/,
+	);
+});
+
+it("retains PRIMARY evidence when the native parser rejects graphics", async () => {
+	const input = response("<svg/><p>Paper</p>");
+	const request = vi
+		.spyOn(NodeNetworkTransport.prototype, "request")
+		.mockResolvedValue(input);
+	const result = await researchNavigation(input.url);
+	expect(result.profile).toBe("native");
+	expect(result.outcome).toBe("failure");
+	expect(result.failure).toEqual({ category: "unsupported", stage: "loader" });
+	expect(result.primaryResponse?.bodySha256).toBe(
+		summarizePrimaryResponse(input).bodySha256,
+	);
+	expect(result.primaryResponse?.status).toBe(200);
+	expect(result.metrics?.closed).toBe(true);
+	expect(request).toHaveBeenCalledOnce();
+});
+
+it("uses one synthetic primary request in reader mode without loading resources", async () => {
+	const input = response(
+		"<title>Paper</title><link rel=stylesheet href=/style><svg/><p>Research result</p><img src=/image>",
+	);
+	const request = vi
+		.spyOn(NodeNetworkTransport.prototype, "request")
+		.mockResolvedValue(input);
+	const result = await researchNavigation(input.url, true);
+	expect(result.failure).toBeUndefined();
+	expect(result.outcome).toBe("extracted-unverified");
+	expect(result.contentSuccess).toBeNull();
+	expect(result.reader?.omittedSubtrees).toMatchObject({ svg: 1, link: 1 });
+	expect(result.extraction?.content).toContain("Research result");
+	expect(request).toHaveBeenCalledOnce();
+	expect(result.startedAt).toMatch(/Z$/);
+	expect(result.finishedAt).toMatch(/Z$/);
+});
+
+it("never replaces primary evidence with stylesheet responses", async () => {
+	const input = response(
+		"<link rel=stylesheet href=/sheet.css><p>Research result</p>",
+	);
+	const sheet = response("p{color:red}", "text/css");
+	sheet.url = "https://research.example/sheet.css";
+	const request = vi
+		.spyOn(NodeNetworkTransport.prototype, "request")
+		.mockResolvedValueOnce(input)
+		.mockResolvedValueOnce(sheet);
+	const result = await researchNavigation(input.url);
+	expect(result.failure).toBeUndefined();
+	expect(request).toHaveBeenCalledTimes(2);
+	expect(result.primaryResponse?.url).toBe(input.url);
+	expect(result.primaryResponse?.bodySha256).toBe(
+		summarizePrimaryResponse(input).bodySha256,
+	);
+});
+
+it.each([
+	["<title>Just a moment...</title><p>Verify you are human</p>", "challenge"],
+	[
+		"<title>Sign in</title><p>Sign in to continue</p><form><input type=password></form>",
+		"login",
+	],
+] as const)(
+	"keeps HTTP 200 barriers distinct without retrying",
+	async (source, barrier) => {
+		const input = response(source);
+		const request = vi
+			.spyOn(NodeNetworkTransport.prototype, "request")
+			.mockResolvedValue(input);
+		const result = await researchNavigation(input.url, true);
+		expect(result.outcome).toBe("semantic-barrier");
+		expect(result.contentSuccess).toBe(false);
+		expect(result.classification.barrier).toBe(barrier);
+		expect(researchExitCode([result])).toBe(1);
+		expect(request).toHaveBeenCalledOnce();
+	},
+);
+
+it("distinguishes HTTP errors, empty pages and network failures", async () => {
+	const input = { ...response("<p>Unavailable</p>"), status: 503 };
+	const request = vi
+		.spyOn(NodeNetworkTransport.prototype, "request")
+		.mockResolvedValueOnce(input)
+		.mockResolvedValueOnce(response("<svg/>"))
+		.mockRejectedValueOnce(
+			new AgentBrowserError("network-error", "Do not report secret details"),
+		);
+	const http = await researchNavigation(input.url, true);
+	const empty = await researchNavigation(input.url, true);
+	const failed = await researchNavigation(input.url, true);
+	expect(http.outcome).toBe("http-failure");
+	expect(empty.outcome).toBe("empty-extraction");
+	expect(failed.primaryResponse).toBeNull();
+	expect(failed.failure).toEqual({
+		category: "network-error",
+		stage: "network",
+	});
+	expect(JSON.stringify(failed)).not.toContain("secret details");
+	expect(request).toHaveBeenCalledTimes(3);
+	expect(researchExitCode([http, empty, failed])).toBe(1);
+	const success = { ...empty, outcome: "extracted-unverified" as const };
+	expect(researchExitCode([success])).toBe(0);
+	expect(researchExitCode([success, failed])).toBe(2);
+});
+
+it("classifies response headers before a failing parser and retains only static evidence", async () => {
+	const input = response("<svg/>");
+	input.headers = {
+		...input.headers,
+		"cf-mitigated": ["challenge"],
+		"retry-after": ["30"],
+		"set-cookie": ["session=not-for-report"],
+	};
+	const request = vi
+		.spyOn(NodeNetworkTransport.prototype, "request")
+		.mockResolvedValue(input);
+	const report = await researchNavigation(input.url);
+	expect(report.outcome).toBe("semantic-barrier");
+	expect(report.failure?.stage).toBe("semantic-barrier");
+	expect(report.classification.diagnostic).toMatchObject({
+		kind: "challenge",
+		provider: "cloudflare",
+		confidence: "confirmed",
+		action: "stop-and-request-user-handoff",
+		retryAfterSeconds: 30,
+	});
+	expect(report.primaryResponse?.bodySha256).toBe(
+		summarizePrimaryResponse(input).bodySha256,
+	);
+	expect(JSON.stringify(report)).not.toMatch(/set-cookie|not-for-report/);
+	expect(request).toHaveBeenCalledOnce();
+});
+
+it("treats a null classifier as inconclusive, not confirmed content success", async () => {
+	const input = response(
+		"<title>Research article</title><p>A login challenge is discussed in this paper.</p>",
+	);
+	vi.spyOn(NodeNetworkTransport.prototype, "request").mockResolvedValue(input);
+	const report = await researchNavigation(input.url, true);
+	expect(report.classification).toEqual({
+		classifier: "browser-challenges",
+		barrier: null,
+		diagnostic: null,
+	});
+	expect(report.outcome).toBe("extracted-unverified");
+	expect(report.contentSuccess).toBeNull();
+});
+
+it("keeps response and omission metadata when bounded extraction fails", async () => {
+	const input = response(`<svg/><p>${"x".repeat(260_000)}</p>`);
+	vi.spyOn(NodeNetworkTransport.prototype, "request").mockResolvedValue(input);
+	const report = await researchNavigation(input.url, true);
+	expect(report.failure).toEqual({
+		category: "resource-limit",
+		stage: "extraction",
+	});
+	expect(report.primaryResponse?.bodySha256).toBe(
+		summarizePrimaryResponse(input).bodySha256,
+	);
+	expect(report.reader?.omittedSubtrees.svg).toBe(1);
+	expect(report.metrics?.closed).toBe(true);
+});
+
+it("uses the classifier's access-denied diagnostic on synthetic HTTP 403 content", async () => {
+	const input = {
+		...response("<p>You've been blocked by network security</p>"),
+		status: 403,
+	};
+	vi.spyOn(NodeNetworkTransport.prototype, "request").mockResolvedValue(input);
+	const report = await researchNavigation(input.url, true);
+	expect(report.outcome).toBe("semantic-barrier");
+	expect(report.classification.barrier).toBe("access-denied");
+});
+
+it.each([false, true])(
+	"validates real transport cookie context without sockets (reader=%s)",
+	async (reader) => {
+		const initialUrl = "https://research.example/paper";
+		const finalUrl = "https://research.example/final";
+		const sheetUrl = "https://research.example/sheet.css";
+		const cookieHeader = vi.spyOn(CookieJar.prototype, "cookieHeader");
+		const setCookie = vi.spyOn(CookieJar.prototype, "setCookie");
+		const resolveRoute = vi.fn(({ url }: { url: string }): NetworkResponse => {
+			if (url === initialUrl)
+				return {
+					...response(""),
+					url,
+					status: 302,
+					headers: {
+						location: [finalUrl],
+						"set-cookie": ["redirect=synthetic; Secure"],
+					},
+				};
+			if (url !== finalUrl && url !== sheetUrl)
+				throw new Error("Unexpected synthetic research request");
+			const fixture =
+				url === sheetUrl
+					? response("p{color:red}", "text/css")
+					: response(
+							"<title>Research</title><link rel=stylesheet href=/sheet.css><p>Result</p>",
+						);
+			return {
+				...fixture,
+				url,
+				encodedBytes: 0,
+				headers: {
+					...fixture.headers,
+					"set-cookie": ["session=synthetic; Secure"],
+				},
+			};
+		});
+		const request = vi
+			.spyOn(NodeNetworkTransport.prototype, "request")
+			.mockImplementation(function (this: NodeNetworkTransport, input) {
+				return this.requestWithRoutes(input, resolveRoute);
+			});
+		const report = await researchNavigation(initialUrl, reader);
+		expect(report.failure).toBeUndefined();
+		expect(report.outcome).toBe("extracted-unverified");
+		expect(report.finalUrl).toBe(finalUrl);
+		expect(report.primaryResponse?.redirects).toBe(1);
+		expect(report.extraction?.content).toContain("Result");
+		expect(request.mock.calls[0][0].cookieContext).toEqual({
+			siteUrl: null,
+			credentials: "omit",
+			topLevelNavigation: true,
+		});
+		for (const [input] of request.mock.calls)
+			expect(input.cookieContext?.credentials).toBe("omit");
+		if (!reader)
+			expect(request.mock.calls[1][0].cookieContext).toMatchObject({
+				siteUrl: finalUrl,
+				topLevelNavigation: false,
+			});
+		expect(resolveRoute).toHaveBeenCalledTimes(reader ? 2 : 3);
+		expect(report.metrics).toMatchObject({
+			requests: reader ? 2 : 3,
+			mockedRequests: reader ? 2 : 3,
+			closed: true,
+		});
+		expect(cookieHeader).not.toHaveBeenCalled();
+		expect(setCookie).not.toHaveBeenCalled();
+	},
+);
+
+it("requires a real transport jar even when credentials are omitted", async () => {
+	const transport = new NodeNetworkTransport();
+	const input = response("<p>Never reached</p>");
+	const resolveRoute = vi.fn(() => ({ ...input, encodedBytes: 0 }));
+	try {
+		await expect(
+			transport.requestWithRoutes(
+				{
+					url: input.url,
+					cookieContext: { siteUrl: null, credentials: "omit" },
+				},
+				resolveRoute,
+			),
+		).rejects.toThrow(
+			"Cookie context requires a jar and valid credentials mode",
+		);
+		expect(resolveRoute).not.toHaveBeenCalled();
+	} finally {
+		transport.close();
+	}
+});
