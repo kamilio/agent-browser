@@ -99,7 +99,7 @@ it.each([
 	{ query: `not ${unknown}`, matches: false },
 	{ query: `${unknown}, (min-width: 1px)`, matches: true },
 	{ query: `${unknown}, (min-width: 64px)`, matches: false },
-	{ query: `(${unknown} or (width: 32px))`, matches: false },
+	{ query: `(${unknown} or (width: 32px))`, matches: true },
 	{
 		query: "(color-gamut: srgb), ((width >= 32px) and (height: 24px))",
 		matches: true,

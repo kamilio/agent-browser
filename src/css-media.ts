@@ -6,7 +6,8 @@ export interface MediaViewport {
 	width: number;
 	height: number;
 }
-type Match = (viewport: MediaViewport) => boolean;
+type MediaValue = boolean | null;
+type Match = (viewport: MediaViewport) => MediaValue;
 type Feature =
 	| "width"
 	| "height"
@@ -168,20 +169,59 @@ function feature(source: string): Match | undefined {
 	return undefined;
 }
 
+const unknownMatch: Match = () => null;
+const mediaIdentifier =
+	/^(?:--|-?[a-z_\u0080-\uffff])[a-z0-9_\-\u0080-\uffff]*/;
+const reservedMediaTypes = new Set(["not", "only", "and", "or", "layer"]);
+
+function negateMatch(match: Match): Match {
+	if (match === unknownMatch) return unknownMatch;
+	return (viewport) => {
+		const value = match(viewport);
+		return value === null ? null : !value;
+	};
+}
+
+function combineMatches(
+	terms: readonly Match[],
+	operator: "and" | "or",
+): Match {
+	if (terms.length === 1) return terms[0];
+	if (terms.every((term) => term === unknownMatch)) return unknownMatch;
+	const decisive = operator === "or";
+	return (viewport) => {
+		let unknown = false;
+		for (const term of terms) {
+			const value = term(viewport);
+			if (value === decisive) return decisive;
+			if (value === null) unknown = true;
+		}
+		return unknown ? null : !decisive;
+	};
+}
+
 class MediaParser {
 	conditions = 0;
+	unsupported = false;
 	constructor(
 		private readonly source: string,
 		private readonly pairs: ReadonlyMap<number, number>,
 	) {}
 	query(start: number, end: number): Match | undefined {
 		const source = this.source.slice(start, end);
-		const typed = /^(?:(not|only)\s+)?(all|screen|print)\b/.exec(source);
-		if (!typed) return this.condition(start, end, true);
+		const modifier = /^(not|only) /.exec(source);
+		const typeStart = modifier?.[0].length ?? 0;
+		const identifier = mediaIdentifier.exec(source.slice(typeStart));
+		if (
+			!identifier ||
+			reservedMediaTypes.has(identifier[0]) ||
+			source[typeStart + identifier[0].length] === "("
+		)
+			return this.condition(start, end, true);
 		this.charge();
-		const tail = source.slice(typed[0].length).trimStart();
-		const type = typed[2] !== "print";
-		const negate = typed[1] === "not";
+		const tail = source.slice(typeStart + identifier[0].length).trimStart();
+		const type = identifier[0] === "all" || identifier[0] === "screen";
+		const negate = modifier?.[1] === "not";
 		if (!tail) return () => (negate ? !type : type);
 		const and = /^and\s+/.exec(tail);
 		if (!and) return undefined;
@@ -190,9 +230,9 @@ class MediaParser {
 			end,
 			false,
 		);
-		return condition
-			? (viewport) => negate !== (type && condition(viewport))
-			: undefined;
+		if (!condition) return undefined;
+		const match = combineMatches([() => type, condition], "and");
+		return negate ? negateMatch(match) : match;
 	}
 	private condition(
 		startOffset: number,
@@ -207,7 +247,7 @@ class MediaParser {
 		if (this.source.startsWith("not ", start)) {
 			const parsed = this.term(start + 4, end);
 			return parsed && parsed.end === end
-				? (viewport) => !parsed.match(viewport)
+				? negateMatch(parsed.match)
 				: undefined;
 		}
 		const terms: Match[] = [];
@@ -235,9 +275,7 @@ class MediaParser {
 			if (position >= end) return undefined;
 		}
 		if (!terms.length) return undefined;
-		return operator === "or"
-			? (viewport) => terms.some((match) => match(viewport))
-			: (viewport) => terms.every((match) => match(viewport));
+		return combineMatches(terms, operator === "or" ? "or" : "and");
 	}
 	private term(
 		startOffset: number,
@@ -245,18 +283,25 @@ class MediaParser {
 	): { match: Match; end: number } | undefined {
 		let start = startOffset;
 		while (start < end && this.source[start] === " ") start++;
-		if (this.source[start] !== "(") return undefined;
-		const close = this.pairs.get(start);
-		if (close === undefined || close >= end) return undefined;
-		const inner = this.source.slice(start + 1, close).trim();
-		let match: Match | undefined;
-		if (inner.startsWith("(") || inner.startsWith("not "))
-			match = this.condition(start + 1, close, true);
-		else {
-			this.charge();
-			match = feature(inner);
+		let opening = start;
+		if (this.source[opening] !== "(") {
+			const identifier = mediaIdentifier.exec(this.source.slice(start, end));
+			if (!identifier) return undefined;
+			opening += identifier[0].length;
+			if (this.source[opening] !== "(") return undefined;
 		}
-		if (!match) return undefined;
+		const close = this.pairs.get(opening);
+		if (close === undefined || close >= end) return undefined;
+		this.charge();
+		let match: Match | undefined;
+		if (opening === start) {
+			const inner = this.source.slice(opening + 1, close).trim();
+			match = feature(inner) ?? this.condition(opening + 1, close, true);
+		}
+		if (!match) {
+			this.unsupported = true;
+			match = unknownMatch;
+		}
 		let position = close + 1;
 		while (position < end && this.source[position] === " ") position++;
 		return { match, end: position };
@@ -374,10 +419,12 @@ export function compileCssMedia(source: string): CompiledCssMedia {
 		if (match) {
 			matches.push(match);
 			serialized.push(
-				text
-					.replace(/\s*:\s*/g, ": ")
-					.replace(/\(\s+/g, "(")
-					.replace(/\s+\)/g, ")"),
+				match === unknownMatch
+					? "not all"
+					: text
+							.replace(/\s*:\s*/g, ": ")
+							.replace(/\(\s+/g, "(")
+							.replace(/\s+\)/g, ")"),
 			);
 		} else {
 			unsupported = true;
@@ -386,9 +433,9 @@ export function compileCssMedia(source: string): CompiledCssMedia {
 	}
 	return Object.freeze({
 		media: serialized.join(", "),
-		unsupported,
+		unsupported: unsupported || parser.unsupported,
 		conditions: parser.conditions,
 		matches: (viewport: MediaViewport) =>
-			matches.some((match) => match(viewport)),
+			matches.some((match) => match(viewport) === true),
 	});
 }

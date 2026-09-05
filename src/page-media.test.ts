@@ -155,10 +155,10 @@ it("shares the global function and live Window dimensions without creating docum
 it("keeps media and matches readonly and handles malformed/unsupported list branches explicitly", () => {
 	const { query, window, bindings } = fixture();
 	const list = query(" SCREEN and ( min-width : 60px ) , invalid, print ");
-	expect(list.media).toBe("screen and (min-width: 60px), not all, print");
+	expect(list.media).toBe("screen and (min-width: 60px), invalid, print");
 	expect(list.matches).toBe(true);
 	expect(query("(prefers-color-scheme: dark)").matches).toBe(false);
-	expect(query("invalid").media).toBe("not all");
+	expect(query("invalid").media).toBe("invalid");
 	expect(query(",").matches).toBe(false);
 	expect(() => {
 		list.media = "print";
@@ -175,7 +175,7 @@ it("keeps media and matches readonly and handles malformed/unsupported list bran
 			},
 		}),
 	).toThrow();
-	expect(bindings.media.metrics().invalidOrUnsupportedQueries).toBe(5);
+	expect(bindings.media.metrics().invalidOrUnsupportedQueries).toBe(2);
 });
 
 it("queues resize before change, coalesces same-task updates and uses real event target identity", async () => {
@@ -364,7 +364,7 @@ it("bounds list allocations and query text without growing the DOM", () => {
 
 it("charges expanded serialized query text rather than only short invalid input", () => {
 	const { query, bindings } = fixture();
-	const source = Array.from({ length: 1000 }, () => "x").join(",");
+	const source = Array.from({ length: 1000 }, () => "?").join(",");
 	for (let index = 0; index < 7; index++) query(source);
 	expect(() => query(source)).toThrow("text limit");
 	expect(bindings.media.metrics().retainedCodeUnits).toBe(7 * 8998);

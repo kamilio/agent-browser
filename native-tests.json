@@ -1,4 +1,6 @@
 [
+  "src/css-media-logic.test.ts",
+  "src/page-media-logic.test.ts",
   "src/media-fallback-layout.test.ts",
   "src/css-color-media.test.ts",
   "src/page-color-media.test.ts",

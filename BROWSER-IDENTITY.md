@@ -1,5 +1,28 @@
 # Truthful native identity defaults
 
+## Three-valued Media Logic
+
+Unknown features now participate in native three-valued condition logic: not
+preserves unknown, false dominates AND, true dominates OR, and only the public
+matches boundary converts remaining unknown to false. Decisive supported terms
+therefore survive, while the unknown-term diagnostic remains visible. Valid
+unknown media-type identifiers instead evaluate as false and can be negated;
+reserved keywords remain invalid. No physical feature or new device is implied.
+
+Mixed known/unknown queries retain stable normalized native text; canonical
+all-unknown branches retain `not all`. This is not full CSSOM serialization.
+Quoted/escaped/bracketed branches and global malformed recovery remain limited.
+`MEDIA-LOGIC-2026-09-05.md` records separately admitted native evaluation/grammar
+sources, the prior failures, implementation boundaries and outstanding gates.
+
+September 5, 2026 validation: **129 parser cases and 61 page cases**, with
+**675 passes across nine named files in each tree**. Types, explicit dist builds,
+strict touched tests, formatting and scoped Biome pass. Pre-existing import
+ordering in the older page-media test remains unchanged and is reproduced in
+its before copy. The old compiler independently fails 100 of the same 190 new
+cases and passes 90; the seven existing baseline suites pass 485 cases. Logs use
+`media-logic-final-01-`; no full manifest or live/runtime/device probe ran.
+
 ## Unsupported Media Fallback
 
 The partial native media compiler already selects a conservative fallback for
@@ -17,14 +40,14 @@ unresolved flex/positioned coordination. Existing flex count checks and
 positioned formatting transforms are unchanged. No parser, predicate, resource
 limit, lifecycle, runtime dependency or device capability is changed.
 
-This is fallback rendering, not full Media Queries conformance. The current
-compiler conservatively rejects an entire balanced query branch when any
-condition cannot be compiled; it does not implement three-valued unknown
-conditions inside logical expressions. Unbalanced source can reject the whole
-list, and arbitrary unknown media-type negation is not implemented. Those
-limitations are retained rather than masked by claiming normative
-unknown-feature, negation or per-query error recovery. Gamut and device features
-remain unsupported; raster output still proves only the native software target.
+At the fallback checkpoint, the compiler conservatively rejected an entire
+balanced query branch when a condition could not be compiled. It lacked both
+three-valued unknown composition and arbitrary unknown media-type negation.
+The separate media-logic change above supersedes those limitations, not the
+historical fallback measurements. Unbalanced source can still reject a whole
+list; complete token/serialization/recovery conformance is not implied. Gamut
+and device features remain unsupported, and raster output proves only the
+native software target.
 
 This supersedes the raster-blocking behavior measured at the numeric-color
 checkpoint below, not its historical results or artifacts. Dedicated regression

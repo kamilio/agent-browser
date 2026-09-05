@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Native media now preserves unknown through Boolean composition, converts it
+only at the public matches boundary, and distinguishes false unknown media
+types from unknown feature conditions. All 129 new parser and 61 page cases
+pass; nine named suites total 675 passes in each tree, with types/builds, strict
+tests, formatting and scoped Biome passing. The unchanged old compiler fails
+100 of those 190 cases and passes 90; its seven existing suites pass 485 cases.
+`MEDIA-LOGIC-2026-09-05.md` records separate native evaluation/grammar evidence,
+source review and preserved initial fixture/harness failures. Full lexical,
+recovery and serialization conformance remains open. Existing page-test import
+ordering is unchanged; no guest/device or denied-gate acceptance is inferred.
+
 Unsupported-media fallback now retains its exact diagnostic without letting
 that warning alone block supported native page/intrinsic layout and painting.
 All other CSS/formatting admission and coordination checks remain. Thirty new
@@ -8,9 +19,10 @@ strict tests, formatting and test Biome passing. The unchanged old admission
 fails 21 of the same 30 cases and passes nine. Existing source import-order
 diagnostics remain separate and unchanged. `MEDIA-FALLBACK-2026-09-05.md`
 preserves that evidence, initial harness failures, and thirteen bounded native
-offline Error Handling scopes. Conservative media evaluation is not full MQ
-conformance: unknown truth tables, media-type negation and recovery remain open.
-Historical checkpoints and denied auth/runtime/wire gates are unchanged.
+offline Error Handling scopes. At that checkpoint, unknown truth tables,
+media-type negation and recovery remained open. The separate change above
+addresses the first two; full MQ conformance/recovery remains outstanding.
+Historical measurements and denied auth/runtime/wire gates are unchanged.
 
 Numeric color media now implements an explicit partial logical RGB policy:
 color8, color-index0 and monochrome0, sharing unchanged exposed Screen depth24.
