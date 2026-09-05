@@ -38,6 +38,12 @@ gate and original failure evidence without importing another engine, patching th
 SDK or retrying a denied release download. Secure persistence, human approval and
 released-runtime acceptance remain active work, not completed browser features.
 
+Confidential-command review adds 13 regressions without a production change:
+five named credential suites pass 306 cases in each tree, including 51 security
+cases. Types/builds and strict test typing pass. `SECRET-PROVIDERS.md` records
+the deliberately hostile-thenable lint exception and the unchanged live/runtime
+security gates; no universal noninterference or timing guarantee is claimed.
+
 Native research now conservatively recognizes the observed Poe login redirect
 using the actual response URL and paired continuation markers. All 46 new cases
 pass; seven named files yield 333 passes in each tree, with types/builds and scoped

@@ -191,3 +191,29 @@ pre-change regression JSON is `secret-command-preexisting-capability.json` in
 that directory. An intermediate validation helper rejected the known failure
 because Vitest JSON omits the formatted assertion diff; the actual matrix still
 contains that failure rather than presenting a false all-green result.
+
+## Confidential-action regression review — September 5, 2026
+
+Thirteen additional synthetic cases exercise allowed-action listener failures,
+secret-derived link navigation/reload, aggregate lists, throwing/rejecting
+provider thenables, pending URL changes and close/reopen session aliases with
+queued commands. The named security file now passes **51 cases**; no production
+confidentiality bypass was observed, and no production code or seal policy changed.
+Rejected cross-origin URL rewrites are not claimed as actual cross-origin
+delivery tests. The full review records that distinction and remaining timing,
+host-trust, runtime and interleaving limitations.
+
+Five named credential suites pass **306 cases in each working/isolated tree**.
+Both project types/builds and strict changed-test types pass. Format/import checks
+pass. The full scoped lint reports one intentional `noThenProperty` finding:
+the test must construct a hostile thenable. All other lint rules pass with that
+single rule explicitly skipped for this one-file review command; no global lint
+configuration or inline suppression was added. The unsuppressed failure remains
+in the evidence rather than being represented as a complete lint pass.
+
+Evidence: `node_modules/.cache/native-validation/secret-action-review/REVIEW.md`,
+its immutable baseline and final 51-case results, and parent
+`node_modules/.cache/native-validation/secret-action-final-*` /
+`secret-action-fixture-*` logs. Initial fixture-assumption failures remain
+documented. The 422-entry native manifest is unchanged; no full manifest, real
+provider, actual SafeJS or live credential login was exercised by this review.

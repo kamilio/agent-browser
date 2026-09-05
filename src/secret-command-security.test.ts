@@ -3,6 +3,7 @@ import { parseInvocation } from "./cli-parser.js";
 import { BrowserCommandHost } from "./command-host.js";
 import { commands } from "./commands.js";
 import { controlValue } from "./controls.js";
+import { AgentBrowserError } from "./errors.js";
 import { controlledEventListener } from "./events.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { PageConsole } from "./page-console.js";
@@ -15,7 +16,7 @@ const origin = "https://fixture.invalid";
 const hosts: BrowserCommandHost[] = [];
 const fixed = { completed: true, confidential: true };
 const markup =
-	'<title>Public</title><main><input id="password" type="password"><input id="text"><input id="readonly" type="password" readonly><input id="disabled" type="password" disabled><input id="check" type="checkbox"><select id="select"><option value="one">One</option></select><button id="button">Continue</button><p id="copy">Public</p></main>';
+	'<title>Public</title><main><input id="password" type="password"><input id="text"><input id="readonly" type="password" readonly><input id="disabled" type="password" disabled><input id="check" type="checkbox"><select id="select"><option value="one">One</option></select><button id="button">Continue</button><a id="link" href="/public">Navigate</a><p id="copy">Public</p></main>';
 
 function deferred<Value>() {
 	let resolve!: (value: Value) => void;
@@ -489,3 +490,194 @@ it("revokes pre-fill artifact and transfer handles even after reopening the name
 	expect((await host.execute(["artifact-list"])).data).toEqual([]);
 	noSecret(await host.execute(["tracing-status"]));
 });
+
+it.each([
+	{ argv: ["fill", "#text", "public"], target: "#text", event: "input" },
+	{ argv: ["type", "public"], target: "#password", event: "input" },
+	{ argv: ["click", "#button"], target: "#button", event: "click" },
+	{ argv: ["press", "Tab"], target: "#password", event: "keydown" },
+	{ argv: ["hover", "#button"], target: "#button", event: "mouseover" },
+])(
+	"withholds secret-bearing listener failures during $argv",
+	async ({ argv, target, event }) => {
+		for (const propagated of [false, true]) {
+			const { host, page } = await fixture();
+			await host.execute(["open", `${origin}/public`], { session: "public" });
+			const before = await host.execute(["list"]);
+			await host.execute(["fill-secret", "#password", "secret:PASSWORD"]);
+			const node = page.queries.querySelector(target);
+			if (node === null) throw new Error("Missing synthetic action target");
+			const listener = vi.fn(async () => {
+				page.document.setUrl(`${origin}/${sentinel}?copy=${transformed}`);
+				if (propagated)
+					throw new AgentBrowserError("closed", `${sentinel}:${transformed}`);
+				throw new Error(`${sentinel}:${transformed}`);
+			});
+			page.interactions.events.addEventListener(
+				node,
+				event,
+				controlledEventListener(listener),
+			);
+			const result = await host.execute(argv).catch((error: unknown) => error);
+			expect(listener).toHaveBeenCalled();
+			expect(page.document.url).toContain(sentinel);
+			if (propagated)
+				expect(result).toMatchObject({
+					code: "policy-denied",
+					message: "Confidential command did not complete; details withheld",
+				});
+			else expect(result).toMatchObject({ data: fixed });
+			noSecret(result);
+			noSecret(before);
+			const aggregate = await host.execute(["list"], { session: "public" });
+			noSecret(aggregate);
+			expect(aggregate.data).toEqual([
+				{ name: "default", confidential: true },
+				expect.objectContaining({ name: "public", tabs: expect.any(Array) }),
+			]);
+			await expect(host.execute(["html"])).rejects.toMatchObject({
+				code: "policy-denied",
+			});
+		}
+	},
+);
+
+it("withholds secret-derived link destinations across click and reload", async () => {
+	const { host, page, password, requests } = await fixture();
+	const link = page.queries.querySelector("#link");
+	if (link === null) throw new Error("Missing synthetic navigation link");
+	page.interactions.events.addEventListener(password, "input", () => {
+		const value = controlValue(page.document, password);
+		page.document.setAttribute(link, "href", `${origin}/${value}`);
+	});
+	await host.execute(["fill-secret", "#password", "secret:PASSWORD"]);
+	for (const argv of [["click", "#link"], ["reload"]]) {
+		const result = await host.execute(argv);
+		expect(result.data).toEqual(fixed);
+		noSecret(result);
+		expect(requests.at(-1)).toBe(`${origin}/${sentinel}`);
+		noSecret(await host.execute(["list"]));
+	}
+});
+
+it.each(["getter", "reject"])(
+	"sanitizes a provider thenable's secret-bearing %s failure",
+	async (failure) => {
+		const then = vi.fn(
+			(_resolve: unknown, reject: (reason: unknown) => void) => {
+				reject(new Error(`${sentinel}:${transformed}`));
+			},
+		);
+		const getter = vi.fn(() => {
+			if (failure === "getter") throw new Error(`${sentinel}:${transformed}`);
+			return then;
+		});
+		const { host, page, password, resolve } = await fixture({
+			resolve: () =>
+				Object.defineProperty({}, "then", { get: getter }) as Promise<string>,
+		});
+		const result = await host
+			.execute(["fill-secret", "#password", "secret:PASSWORD"])
+			.catch((error: unknown) => error);
+		expect(resolve).toHaveBeenCalledOnce();
+		expect(getter).toHaveBeenCalledOnce();
+		expect(then).toHaveBeenCalledTimes(failure === "getter" ? 0 : 1);
+		expect(result).toMatchObject({ code: "policy-denied" });
+		noSecret(result);
+		expect(controlValue(page.document, password)).toBe("");
+		expect((await host.execute(["list"])).data).toEqual([
+			{ name: "default", confidential: true },
+		]);
+		await expect(host.execute(["html"])).rejects.toMatchObject({
+			code: "policy-denied",
+		});
+	},
+);
+
+it.each([origin, "https://other.invalid", "http://fixture.invalid"])(
+	"preserves the authorized origin during a pending provider and URL rewrite to %s",
+	async (nextOrigin) => {
+		const started = deferred<void>();
+		const secret = deferred<string>();
+		const { host, browser, page, password } = await fixture({
+			resolve: async () => {
+				started.resolve();
+				return secret.promise;
+			},
+		});
+		const fill = host
+			.execute(["fill-secret", "#password", "secret:PASSWORD"])
+			.catch((error: unknown) => error);
+		await started.promise;
+		if (nextOrigin === origin) page.document.setUrl(`${nextOrigin}/changed`);
+		else
+			expect(() => page.document.setUrl(`${nextOrigin}/changed`)).toThrow(
+				"Document URL rewrite is not permitted",
+			);
+		expect(browser.page(browser.tabs()[0].id).document).toBe(page.document);
+		expect(new URL(page.document.url).origin).toBe(origin);
+		secret.resolve(sentinel);
+		const result = await fill;
+		expect(result).toMatchObject({ data: fixed });
+		expect(controlValue(page.document, password)).toBe(sentinel);
+		noSecret(result);
+		expect((await host.execute(["list"])).data).toEqual([
+			{ name: "default", confidential: true },
+		]);
+	},
+);
+
+it.each(["resolve", "reject"])(
+	"isolates queued commands across alias close/reopen and late provider %s",
+	async (settlement) => {
+		const started = deferred<void>();
+		const secret = deferred<string>();
+		const { host, page, password, sessions } = await fixture({
+			resolve: async () => {
+				started.resolve();
+				return secret.promise;
+			},
+		});
+		const delivered = vi.fn();
+		page.interactions.events.addEventListener(password, "input", delivered);
+		const fill = host
+			.execute(["-s=default", "fill-secret", "#password", "secret:PASSWORD"])
+			.catch((error: unknown) => error);
+		await started.promise;
+		const queued = [
+			["--session=default", "html"],
+			["-s", "default", "fill", "#text", "old-queued-write"],
+		].map((argv) => host.execute(argv).catch((error: unknown) => error));
+		expect((await host.execute(["list"])).data).toEqual([
+			{ name: "default", confidential: true },
+		]);
+		expect(
+			(await host.execute(["--session", "default", "close"])).data,
+		).toEqual({
+			closed: true,
+		});
+		await host.execute(["open", `${origin}/fresh`], { session: "default" });
+		if (settlement === "resolve") secret.resolve(sentinel);
+		else secret.reject(new Error(`${sentinel}:${transformed}`));
+		for (const result of await Promise.all([fill, ...queued])) {
+			expect(result).toBeInstanceOf(Error);
+			noSecret(result);
+		}
+		const fresh = sessions.get("default");
+		if (!fresh) throw new Error("Missing reopened synthetic session");
+		const freshPage = fresh.page(fresh.tabs()[0].id);
+		expect(freshPage.document).not.toBe(page.document);
+		const text = freshPage.queries.querySelector("#text");
+		if (text === null) throw new Error("Missing reopened synthetic input");
+		expect(controlValue(freshPage.document, text)).toBe("");
+		const html = await host.execute(["html"]);
+		noSecret(html);
+		expect(JSON.stringify(html)).not.toContain("old-queued-write");
+		expect(delivered).not.toHaveBeenCalled();
+		const aggregate = await host.execute(["list"]);
+		noSecret(aggregate);
+		expect(aggregate.data).toEqual([
+			expect.objectContaining({ name: "default", tabs: expect.any(Array) }),
+		]);
+	},
+);
