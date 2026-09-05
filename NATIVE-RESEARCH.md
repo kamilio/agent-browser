@@ -1,5 +1,37 @@
 # Opt-in native research reader
 
+## Reader provenance in native outputs
+
+September 5, 2026: snapshots, entry scans, structured/Markdown extraction and
+snapshot searches now carry an optional immutable `reader` report. It identifies
+the partial reader, disabled scripting/styling, ignored hidden-content semantics,
+encoding, omission counts and original load-time budgets. It is whole-load
+provenance, not a count recalculated for a scoped query or later DOM mutation.
+Ordinary native documents retain their previous output shape without this field.
+
+Plaintext snapshot/search renderers display a fixed partial-reader notice rather
+than silently presenting hidden source text or omitted formulas as normal browser
+semantics. Snapshot diffs reset if provenance changes; unchanged reports survive
+JSON round trips without unnecessary resets. Metadata counts toward output byte
+ceilings. Insufficient budgets reject instead of dropping the notice or returning
+oversized metadata. This is not MathML/SVG support or rendering parity.
+
+The report registry now lives in `src/research-reader-info.ts` to avoid importing
+the HTML loader into output consumers. Existing loader exports of the report
+type, profile and lookup function remain compatible. Publication detaches and
+freezes omission counts, registers one cleanup owner and removes document lookup
+on close. Retained historical output remains unchanged after close.
+
+All **34 new cases pass**, including four in-memory command-host flows. Seven
+named suites produce **190 passes in each working/isolated tree**, with project
+types/builds, strict new-test types, scoped Biome and touched-output formatting
+passing. The native manifest has 432 entries; it was not run in full. Results are
+retained under `node_modules/.cache/native-validation/reader-output-final-*`.
+The initial 25-case/four-suite run remains in `reader-output-initial-tests.*`.
+A preflight rejected an unlisted text-loader suite before any tests ran; the
+corrected list uses the already-listed document-loader suite, recorded in
+`reader-output-preflight.md`. No live, SDK, credentials, socket or TTY gate ran.
+
 ## Optional paragraph/list depth correction
 
 September 5, 2026: the reader's depth accounting now closes an immediately open

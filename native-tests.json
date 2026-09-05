@@ -12,6 +12,7 @@
   "src/node-passkey-checkpoint.test.ts",
   "src/node-passkey-checkpoint-file.test.ts",
   "src/research-loader.test.ts",
+  "src/research-output.test.ts",
   "src/browser-challenges.test.ts",
   "src/secret-command-form.test.ts",
   "src/secret-file-flow.test.ts",

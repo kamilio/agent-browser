@@ -8,10 +8,19 @@ import {
 	decodeResponseText,
 	parseNetworkUrl,
 } from "./network.js";
+import {
+	type ResearchReaderReport,
+	researchReaderProfile,
+	setResearchReaderInfo,
+} from "./research-reader-info.js";
 import type { DocumentLoaderContext } from "./session.js";
 import { loadTextDocument } from "./text-loader.js";
 
-export const researchReaderProfile = "native-semantic-reader-v1";
+export {
+	type ResearchReaderReport,
+	researchReaderInfo,
+	researchReaderProfile,
+} from "./research-reader-info.js";
 
 export const researchReaderLimits = Object.freeze({
 	maxSourceCodeUnits: 2_000_000,
@@ -24,30 +33,6 @@ export const researchReaderLimits = Object.freeze({
 export type ResearchReaderLimits = {
 	[Name in keyof typeof researchReaderLimits]: number;
 };
-
-export interface ResearchReaderReport {
-	profile: typeof researchReaderProfile;
-	partial: true;
-	scripting: false;
-	styling: false;
-	hiddenContentSemantics: false;
-	encoding?: string;
-	sourceCodeUnits: number;
-	textCodeUnits: number;
-	outputCodeUnits: number;
-	tokens: number;
-	omittedTokens: number;
-	omittedSubtrees: Readonly<Record<string, number>>;
-	ignoredAttributes: number;
-	unwrappedElements: number;
-	tokenizerIssues: number;
-}
-
-const information = new WeakMap<DocumentTree, Readonly<ResearchReaderReport>>();
-
-export function researchReaderInfo(tree: DocumentTree) {
-	return information.get(tree);
-}
 
 const voidTags = new Set(
 	"area base br col embed frame hr img input keygen link meta param source track wbr".split(
@@ -335,8 +320,7 @@ export function loadResearchDocument(
 				}
 			: {}),
 	});
-	information.set(tree, report);
-	tree.onClose(() => information.delete(tree));
+	setResearchReaderInfo(tree, report);
 	const info = htmlParseInfo(tree);
 	if (info) setHtmlParseInfo(tree, { ...info, encoding: decoded.encoding });
 	return tree;

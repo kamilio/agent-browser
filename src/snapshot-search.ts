@@ -1,5 +1,10 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	type ResearchReaderReport,
+	researchReaderInfo,
+	researchReaderNotice,
+} from "./research-reader-info.js";
 import { compileSearchPattern } from "./search-pattern.js";
 import { renderSnapshotEntry, scanSnapshotEntries } from "./snapshot.js";
 
@@ -17,6 +22,7 @@ export interface SnapshotSearchMatch {
 }
 export interface SnapshotSearch {
 	partial: true;
+	reader?: Readonly<ResearchReaderReport>;
 	document: string;
 	revision: number;
 	matched: number;
@@ -67,8 +73,10 @@ export function findInDocument(
 			);
 	const pattern = options.regex ? compileSearchPattern(query) : undefined;
 	const work = { remaining: 4_000_000 };
+	const reader = researchReaderInfo(tree);
 	const result: SnapshotSearch = {
 		partial: true,
+		...(reader ? { reader } : {}),
 		document: tree.reference(tree.root),
 		revision: tree.revision,
 		matched: 0,
@@ -82,6 +90,11 @@ export function findInDocument(
 	};
 	const encoder = new TextEncoder();
 	let bytes = encoder.encode(JSON.stringify(result)).byteLength + 64;
+	if (bytes > limits.maxBytes)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Search metadata limit exceeded",
+		);
 	let outputStopped = false;
 	const recent: SnapshotSearchMatch["context"] = [];
 	const ancestors: { ref: string; depth: number }[] = [];
@@ -160,6 +173,7 @@ export function renderSnapshotSearch(search: SnapshotSearch): string {
 	const lines = [
 		`${search.matched} matching snapshot nodes${search.snapshotTruncated ? " (in a partial snapshot)" : ""}; ${search.matches.length} returned`,
 	];
+	if (search.reader) lines.unshift(researchReaderNotice);
 	for (const match of search.matches) {
 		lines.push(`\nPath: ${[...match.path, match.ref].join(" > ")}`);
 		for (const line of match.context)

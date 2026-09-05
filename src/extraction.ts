@@ -3,6 +3,10 @@ import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlParseInfo } from "./html-info.js";
+import {
+	type ResearchReaderReport,
+	researchReaderInfo,
+} from "./research-reader-info.js";
 import { documentStyles } from "./styles.js";
 
 export type ExtractionType =
@@ -53,6 +57,7 @@ interface ExtractionMetadata {
 	title: string;
 	revision: number;
 	partial: true;
+	reader?: Readonly<ResearchReaderReport>;
 }
 
 export type DocumentExtraction = ExtractionMetadata &
@@ -366,6 +371,7 @@ export function extractDocument(
 	const safeUrl = new URL(tree.url);
 	safeUrl.username = "";
 	safeUrl.password = "";
+	const reader = researchReaderInfo(tree);
 	const metadata: ExtractionMetadata = {
 		document: tree.reference(tree.root),
 		scope: tree.reference(start),
@@ -373,6 +379,7 @@ export function extractDocument(
 		title,
 		revision: tree.revision,
 		partial: true,
+		...(reader ? { reader } : {}),
 	};
 	if (encoder.encode(JSON.stringify(metadata)).byteLength > maxBytes)
 		throw new AgentBrowserError(

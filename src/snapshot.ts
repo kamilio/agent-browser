@@ -10,6 +10,11 @@ import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { activeFocus } from "./focus.js";
 import { htmlParseInfo } from "./html-info.js";
+import {
+	type ResearchReaderReport,
+	researchReaderInfo,
+	researchReaderNotice,
+} from "./research-reader-info.js";
 import { isInertRoot } from "./inertness.js";
 import { summaryDetails } from "./details.js";
 import { documentStyles } from "./styles.js";
@@ -55,6 +60,7 @@ export interface SemanticSnapshot {
 	entries: SnapshotEntry[];
 	truncated: boolean;
 	html?: { partial: true; scripting: boolean; issues: number };
+	reader?: Readonly<ResearchReaderReport>;
 }
 
 export type SnapshotDiff =
@@ -270,6 +276,7 @@ export function scanSnapshotEntries(
 		revision: snapshot.revision,
 		truncated: snapshot.truncated,
 		...(snapshot.html ? { html: snapshot.html } : {}),
+		...(snapshot.reader ? { reader: snapshot.reader } : {}),
 		scannedEntries,
 	};
 }
@@ -341,12 +348,14 @@ function collectSnapshot(
 	const baseUrl = documentBaseUrl(tree);
 	const focused = activeFocus(tree);
 	const html = htmlParseInfo(tree);
+	const reader = researchReaderInfo(tree);
 	const result: SemanticSnapshot = {
 		document: tree.reference(tree.root),
 		scope: rootTarget?.generated?.ref ?? tree.reference(start),
 		revision: tree.revision,
 		entries: [],
 		truncated: false,
+		...(reader ? { reader } : {}),
 		...(html
 			? {
 					html: {
@@ -360,6 +369,12 @@ function collectSnapshot(
 				}
 			: {}),
 	};
+	let usedBytes = encoder.encode(JSON.stringify(result)).byteLength;
+	if (usedBytes > maxBytes)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Snapshot metadata limit exceeded",
+		);
 	const nodes = new Map<number, Readonly<DocumentNode>>();
 	const included = new Set<number>();
 	const visible = new Set<number>();
@@ -458,7 +473,6 @@ function collectSnapshot(
 			return limit(nameText(node.id));
 		return limit(node.attributes.title ?? node.attributes.placeholder ?? "");
 	};
-	let usedBytes = encoder.encode(JSON.stringify(result)).byteLength;
 	const append = (entry: SnapshotEntry) => {
 		if (entry.depth > maxDepth) {
 			result.truncated = true;
@@ -598,6 +612,7 @@ export function diffSnapshots(
 		!previous ||
 		previous.document !== current.document ||
 		previous.scope !== current.scope ||
+		JSON.stringify(previous.reader) !== JSON.stringify(current.reader) ||
 		previous.truncated ||
 		current.truncated ||
 		previous.revision > current.revision
@@ -644,12 +659,22 @@ export function renderSnapshot(
 					: "# HTML partial; JS off\n",
 			]
 		: [];
-	let bytes = lines.length ? encoder.encode(lines[0]).byteLength : 0;
+	if (snapshot.reader) lines.unshift(`${researchReaderNotice}\n`);
+	let bytes = encoder.encode(lines.join("")).byteLength;
+	const markerBytes = encoder.encode(marker).byteLength;
+	if (
+		bytes + (snapshot.truncated || snapshot.entries.length ? markerBytes : 0) >
+		maxBytes
+	)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Text snapshot metadata limit exceeded",
+		);
 	let truncated = snapshot.truncated;
 	for (const entry of snapshot.entries) {
 		const line = `${renderSnapshotEntry(entry)}\n`;
 		const size = encoder.encode(line).byteLength;
-		if (bytes + size + encoder.encode(marker).byteLength > maxBytes) {
+		if (bytes + size + markerBytes > maxBytes) {
 			truncated = true;
 			break;
 		}

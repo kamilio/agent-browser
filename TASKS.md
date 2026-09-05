@@ -30,6 +30,13 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Reader provenance now survives snapshots, extraction, search and native command
+dispatch, with plaintext warnings and metadata included in byte limits.
+`NATIVE-RESEARCH.md` records 34 new cases and 190 passes across seven named suites
+in each tree; types/builds and scoped checks pass. The manifest has 432 entries.
+This is synthetic native-output validation; CLI reader-profile integration is
+next, and actual rendering/runtime/live-site acceptance remains separate.
+
 A new native-only benchmark round retrieves six relevant extractions across five
 works in eight attempts. `BENCHMARK-METHODOLOGY-2026-09-05.md` records contamination
 test assumptions, explicitly excluded difficulty-estimation costs and uncertainty
