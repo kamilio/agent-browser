@@ -30,6 +30,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native-browser-only followups resolved the actual linked WHATWG RP predicate,
+including its caller-public-suffix guard and ordinary same-origin redirect.
+`PASSKEY-RP-BOUNDARY-2026-09-05.md` preserves the original failures, later scoped
+source reads, timestamps and hashes rather than relabeling historical results.
+This is research evidence only. The tested parent-RP expansion remains
+uncommitted after its focused commit was denied; explicit informed user approval
+is required before committing or activating that broader credential scope.
+Neither identity probe is reopened by these source reads.
+
 Explicit pinned-snapshot admission now verifies exact copied PSL bytes before
 creating an immutable, module-branded matcher. Seventy-two new cases plus the
 existing PSL suites yield 421 passes across three named files in each tree;
