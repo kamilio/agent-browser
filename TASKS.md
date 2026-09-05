@@ -19,6 +19,19 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Ordinary Text normalization now transfers removed-member and parent-before-member
+range endpoints into the surviving Text node using private frozen metadata.
+`NORMALIZE-RANGE-TRANSFER.md` records 83 new passing cases and 861 passes across
+29 named files in each tree, project types/builds/scoped checks and native command
+captures. All eight literal endpoint cases pass in both actual roots; 48 retained
+PNGs preserve six baseline failures and two controls, with 1,600 changed pixels
+only inside caret/highlight regions. Public records, scene geometry and CSS/
+geometry counters retain baseline behavior; legitimate selection paint changes
+are explicit. Both manifests contain 411 entries. Interior element carets,
+arbitrary early native-listener ordering, unrestricted normalize reentry and
+original full-native/runtime/live gates remain open. Historical checkpoints
+below retain their original scope and measurements; pending work stays excluded.
+
 Live ranges now acquire missing ancestor links when previously detached tracked
 nodes enter new parents. `LATE-RANGE-ATTACHMENT.md` records 54 new passing cases
 and 778 passes across 26 named files in each tree, types/builds/scoped checks and

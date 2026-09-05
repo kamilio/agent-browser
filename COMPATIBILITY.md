@@ -1,5 +1,17 @@
 # Compatibility and playground acceptance ledger
 
+Normalize member/parent continuation: `NORMALIZE-RANGE-TRANSFER.md` transfers
+following Text and parent-before-member endpoints into their original survivor,
+with immutable private metadata and unchanged public mutation records. All 83
+new cases and 861 tests across 29 named files pass in each tree, alongside project
+types/builds/scoped checks. Eight literal native capture cases pass in both roots;
+48 retained PNGs preserve baseline defects, and all 1,600 changed pixels remain
+within caret/highlight regions. Actual-root metadata/pixels match exactly;
+legitimate paint-counter changes versus baseline are explicit. Both manifests
+contain 411 entries. Interior element carets, arbitrary early native-listener
+ordering, unrestricted normalize reentry and original full-native/runtime/live
+gates remain outstanding. Earlier checkpoints retain their historical scope.
+
 Late-attached range continuation: `LATE-RANGE-ATTACHMENT.md` establishes missing
 ancestry when tracked detached nodes enter new parents, preserving existing
 logical sibling caches. All 54 new cases and 778 tests across 26 named files pass

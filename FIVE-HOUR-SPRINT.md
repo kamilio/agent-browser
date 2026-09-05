@@ -8,6 +8,16 @@ schedule; it does not redefine the browser outcome or prove any acceptance gate.
 
 ## Continued execution
 
+The until-stopped continuation completes ordinary normalize member/parent range
+transfer through frozen private mutation metadata. `NORMALIZE-RANGE-TRANSFER.md`
+records 83 new passing cases, 861 passes across 29 named files in each tree,
+types/builds/scoped checks and eight literal native capture cases per actual
+root. Forty-eight retained PNGs preserve baseline defects; all 1,600 changed
+pixels stay inside caret/highlight regions. Both manifests contain 411 entries.
+Interior element carets, arbitrary early native-listener ordering, unrestricted
+normalize reentry and original full-native/runtime/live gates remain outstanding.
+Earlier checkpoints retain their original scope; pending work is not bundled.
+
 The until-stopped continuation fixes missing range ancestry for late-attached
 tracked nodes. `LATE-RANGE-ATTACHMENT.md` records 54 new passing cases and 778
 passes across 26 named files in each tree, types/builds/scoped checks and complete

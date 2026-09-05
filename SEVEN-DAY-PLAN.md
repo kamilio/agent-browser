@@ -7,6 +7,17 @@ not treated as proof of completion.
 
 ## Accelerated execution window
 
+Ordinary normalize member/parent range transfer now completes the survivor and
+late-attachment prerequisites. `NORMALIZE-RANGE-TRANSFER.md` records 83 new passing
+cases, 861 passes across 29 named files in each tree, types/builds/scoped checks
+and exact actual-root native capture comparison. Forty-eight PNGs preserve six
+baseline failures and two controls; 1,600 changed pixels stay inside native
+caret/highlight regions, with legitimate paint-metric changes explicitly retained.
+Both manifests contain 411 entries. Interior element carets, arbitrary early
+native-listener ordering, unrestricted normalize reentry and original full-native/
+runtime/live gates remain open. Older checkpoint measurements remain historical;
+the browser goal is not complete and unrelated pending work stays excluded.
+
 Late-attached tracked nodes now establish their new range ancestry while keeping
 existing logical child sequences intact. `LATE-RANGE-ATTACHMENT.md` records
 54 new passing cases, 778 passes across 26 named files in each tree, project

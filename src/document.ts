@@ -110,10 +110,16 @@ export interface DocumentMutation {
 	readonly oldValue: string | null;
 }
 
+interface TextNormalization {
+	readonly parent: number;
+	readonly members: readonly Readonly<{ node: number; offset: number }>[];
+}
+
 interface CharacterDataEdit {
 	readonly offset: number;
 	readonly count: number;
 	readonly length: number;
+	readonly normalization?: TextNormalization;
 }
 
 const characterDataEdits = new WeakMap<DocumentMutation, CharacterDataEdit>();
@@ -1812,6 +1818,16 @@ export class DocumentTree {
 	}
 
 	replaceData(id: number, offset: number, count: number, data: string) {
+		this.replaceDataInternal(id, offset, count, data);
+	}
+
+	private replaceDataInternal(
+		id: number,
+		offset: number,
+		count: number,
+		data: string,
+		normalization?: TextNormalization,
+	) {
 		this.validateString(data);
 		const node = this.characterData(id);
 		this.checkDataOffset(node, offset, count);
@@ -1821,7 +1837,12 @@ export class DocumentTree {
 			id,
 			node.data.slice(0, offset) + data + node.data.slice(end),
 			true,
-			{ offset, count: end - offset, length: data.length },
+			{
+				offset,
+				count: end - offset,
+				length: data.length,
+				...(normalization ? { normalization } : {}),
+			},
 		);
 	}
 
@@ -1951,14 +1972,26 @@ export class DocumentTree {
 			for (let index = 0; index < plan.members.length; index++) {
 				const member = plan.members[index];
 				if (member === plan.survivor) {
-					this.replaceData(
+					const parts: string[] = [];
+					let offset = member.data.length;
+					const members = plan.members.slice(index + 1).map((entry) => {
+						const data = entry.data;
+						parts.push(data);
+						const boundary = Object.freeze({ node: entry.id, offset });
+						offset += data.length;
+						return boundary;
+					});
+					this.replaceDataInternal(
 						member.id,
 						member.data.length,
 						0,
-						plan.members
-							.slice(index + 1)
-							.map((entry) => entry.data)
-							.join(""),
+						parts.join(""),
+						members.length
+							? Object.freeze({
+									parent: plan.parent.id,
+									members: Object.freeze(members),
+								})
+							: undefined,
 					);
 					previousSibling = member.id;
 				} else {

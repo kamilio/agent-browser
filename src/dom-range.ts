@@ -252,7 +252,36 @@ export class DomRangeOwner {
 							count: record.oldValue?.length ?? 0,
 							length: 0,
 						};
+			const normalization = recordedEdit?.normalization;
+			let memberOffsets: Map<number, number> | undefined;
+			let parentOffsets: Map<number, number> | undefined;
+			if (normalization?.members.length) {
+				memberOffsets = new Map(
+					normalization.members.map((member) => [member.node, member.offset]),
+				);
+				const index =
+					this.children
+						.get(normalization.parent)
+						?.indexOf(normalization.members[0].node) ?? -1;
+				if (index >= 0)
+					parentOffsets = new Map(
+						normalization.members.map((member, position) => [
+							index + position,
+							member.offset,
+						]),
+					);
+				this.parents.set(record.target, normalization.parent);
+				this.children.set(record.target, []);
+			}
 			const adjust = (point: DomBoundaryPoint) => {
+				const memberOffset = memberOffsets?.get(point.node);
+				if (memberOffset !== undefined)
+					return { node: record.target, offset: memberOffset + point.offset };
+				if (normalization && point.node === normalization.parent) {
+					const parentOffset = parentOffsets?.get(point.offset);
+					if (parentOffset !== undefined)
+						return { node: record.target, offset: parentOffset };
+				}
 				if (point.node !== edit.node || point.offset <= edit.offset)
 					return point;
 				return {

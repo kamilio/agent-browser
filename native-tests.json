@@ -1,4 +1,7 @@
 [
+  "src/normalize-range-bindings.test.ts",
+  "src/normalize-range-rendering.test.ts",
+  "src/normalize-range.test.ts",
   "src/range-late-attachment-bindings.test.ts",
   "src/range-late-attachment-rendering.test.ts",
   "src/range-late-attachment.test.ts",
