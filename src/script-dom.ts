@@ -32,6 +32,7 @@ import {
 import { writeDocument } from "./document-write.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { htmlNamespace } from "./dom-namespaces.js";
 import { ScriptDatasets } from "./script-dataset.js";
 import { ElementTraversal } from "./element-traversal.js";
 import { scriptElementFocusProperties } from "./element-focus.js";
@@ -454,6 +455,18 @@ export class ScriptDom {
 						);
 					return this.collections.get(id, kind, domString(args[0]));
 				};
+			definition.methods.getElementsByTagNameNS = (...args) => {
+				this.read(id);
+				if (args.length < 2)
+					throw new AgentBrowserError(
+						"invalid-input",
+						"Namespace collection query requires two arguments",
+					);
+				const namespace =
+					args[0] === null || args[0] === undefined ? null : domString(args[0]);
+				const localName = domString(args[1]);
+				return this.collections.getByNamespace(id, namespace, localName);
+			};
 		}
 		if (initial.kind === "document" || initial.kind === "fragment") {
 			definition.methods.getElementById = (value: unknown) => {
@@ -896,6 +909,19 @@ export class ScriptDom {
 					},
 				},
 				tagName: { get: () => this.read(id).tagName.toUpperCase() },
+				localName: { get: () => this.read(id).tagName },
+				namespaceURI: {
+					get: () => {
+						this.read(id);
+						return htmlNamespace;
+					},
+				},
+				prefix: {
+					get: () => {
+						this.read(id);
+						return null;
+					},
+				},
 				id: this.attribute(id, "id"),
 				className: this.attribute(id, "class"),
 				title: this.attribute(id, "title"),

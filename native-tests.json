@@ -1,4 +1,6 @@
 [
+  "src/script-dom-namespaces.test.ts",
+  "src/script-namespace-collections.test.ts",
   "src/node-pass-runner.test.ts",
   "src/resource-limit.test.ts",
   "src/research-loader-limits.test.ts",

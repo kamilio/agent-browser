@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+HTML elements now reflect namespaceURI/localName/prefix, and Document/Element
+provide bounded live namespace/local-name queries with case-sensitive matching,
+wildcards, normalized nullable namespaces and shared collection accounting.
+The clean seven-file native scope passes 178 cases (63 new); build/types and
+four-file Biome pass. A separately authorized original-SafeJS namespace probe
+passes 28 checks with full cleanup. `HTML-NAMESPACE-QUERIES.md` records the
+HTML-only boundary: foreign construction, namespace-aware node modeling,
+serialization, selectors, controls and rendering remain required before SVG or
+MathML parsing can be enabled. An offline ordinary-loader replay also confirms
+the saved Fetch Standard exceeds 50,000 nodes; no limit or historical result
+was changed. DOM source capture succeeded but extraction failed, so normative
+inspection is explicitly local raw-source analysis. The overall goal stays open.
+
 The native-browser BFCL prompt-format follow-up now has a durable research note
 in `BENCHMARK-FORMAT-ROBUSTNESS.md`. It separates representation robustness from
 executed task success and records a prose/caption ordering conflict rather than

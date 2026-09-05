@@ -6,6 +6,7 @@ import {
 	selectedOptions,
 } from "./controls.js";
 import type { DocumentTree } from "./document.js";
+import { htmlNamespace } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import type {
 	ScriptHostObjectDefinition,
@@ -95,11 +96,45 @@ export class ScriptCollections {
 				: kind === "class"
 					? tokens.join(" ")
 					: query;
+		return this.publish(owner, kind, wanted, tokens);
+	}
+
+	getByNamespace(
+		owner: number,
+		namespace: string | null,
+		localName: string,
+	): object {
+		if (
+			typeof owner !== "number" ||
+			!Number.isSafeInteger(owner) ||
+			(namespace !== null && typeof namespace !== "string") ||
+			typeof localName !== "string"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid namespace collection arguments",
+			);
+		this.ensureOpen(owner);
+		this.checkQuery(localName, namespace?.length ?? 0);
+		return this.publish(owner, "namespace", localName, [], namespace || null);
+	}
+
+	private publish(
+		owner: number,
+		kind: CollectionKind | "namespace",
+		wanted: string,
+		tokens: string[],
+		namespace: string | null = null,
+	): object {
 		const key = JSON.stringify([
 			owner,
 			kind,
 			wanted,
-			kind === "form-named" ? this.nextGroup++ : null,
+			kind === "form-named"
+				? this.nextGroup++
+				: kind === "namespace"
+					? namespace
+					: null,
 		]);
 		const existing = this.collections.get(key);
 		if (existing) return existing.capability;
@@ -151,7 +186,10 @@ export class ScriptCollections {
 					(kind === "anchors" &&
 						node.tagName === "a" &&
 						Object.hasOwn(node.attributes, "name")) ||
-					(kind === "tag" && (wanted === "*" || node.tagName === wanted));
+					(kind === "tag" && (wanted === "*" || node.tagName === wanted)) ||
+					(kind === "namespace" &&
+						(namespace === "*" || namespace === htmlNamespace) &&
+						(wanted === "*" || node.tagName === wanted));
 				if (kind === "class" && tokens.length > 0) {
 					const classes = node.attributes.class ?? "";
 					charge(classes.length + tokens.length);
@@ -313,7 +351,7 @@ export class ScriptCollections {
 			throw new AgentBrowserError("closed", "Script collections are closed");
 		this.tree.get(owner);
 	}
-	private *candidates(owner: number, kind: CollectionKind) {
+	private *candidates(owner: number, kind: CollectionKind | "namespace") {
 		if (kind === "form-controls" || kind === "form-named") {
 			for (const node of formControls(this.tree, owner))
 				if (!(node.tagName === "input" && inputType(node) === "image"))
@@ -333,8 +371,8 @@ export class ScriptCollections {
 			for (const { node } of this.tree.walk(owner)) yield node;
 		}
 	}
-	private checkQuery(query: string) {
-		if (query.length > this.limits.maxQueryCodeUnits)
+	private checkQuery(query: string, extraCodeUnits = 0) {
+		if (query.length + extraCodeUnits > this.limits.maxQueryCodeUnits)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"Script collection query limit exceeded",
