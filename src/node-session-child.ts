@@ -5,6 +5,7 @@ import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { documentInteractions } from "./interactions.js";
 import type { NetworkPolicyOptions } from "./network.js";
+import { sessionIdentityOptions } from "./node-identity-config.js";
 import { loadPageRuntime } from "./node-page-core.js";
 import { processPermissions } from "./node-process-boundary.js";
 import { ScriptFrameDecoder, scriptFrame } from "./node-script-protocol.js";
@@ -85,6 +86,7 @@ async function receive(raw: unknown) {
 				"invalid-input",
 				"Invalid website script mode",
 			);
+		const identity = sessionIdentityOptions(message.identity);
 		const sdk = await loadPageRuntime(message.packageRoot, {
 			adapter: runtimeAdapter,
 		});
@@ -118,6 +120,7 @@ async function receive(raw: unknown) {
 			],
 			createSession: () =>
 				new BrowserSession({
+					identity,
 					createTransport: (cookieJar) =>
 						new NodeNetworkTransport({
 							...(message.network as NetworkPolicyOptions | undefined),

@@ -1,5 +1,7 @@
 [
   "src/browser-identity.test.ts",
+  "src/node-identity-config.test.ts",
+  "src/node-session-identity.test.ts",
   "src/page-identity.test.ts",
   "src/session-identity.test.ts",
   "src/passkeys.test.ts",

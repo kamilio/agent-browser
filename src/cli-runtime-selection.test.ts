@@ -51,6 +51,7 @@ beforeEach(() => {
 	vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", undefined);
 	vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", undefined);
 	vi.stubEnv("AGENT_BROWSER_PAGE_SCRIPTS", undefined);
+	vi.stubEnv("AGENT_BROWSER_LANGUAGES", undefined);
 	vi.stubEnv("AGENT_BROWSER_SESSION", undefined);
 	vi.stubEnv("PLAYWRIGHT_CLI_SESSION", undefined);
 	process.exitCode = 0;
@@ -94,6 +95,7 @@ it("forwards legacy by default without enabling website scripts", async () => {
 			packageRoot: "/trusted/fixture",
 			runtimeAdapter: "legacy",
 			websiteScripts: undefined,
+			identity: { languages: ["en-US"] },
 		},
 	});
 	expect(runtime.closed).toHaveBeenCalledOnce();
@@ -112,6 +114,7 @@ it.each([undefined, "classic"])(
 				packageRoot: "/trusted/fixture",
 				runtimeAdapter: "extension",
 				websiteScripts,
+				identity: { languages: ["en-US"] },
 			},
 		});
 	},

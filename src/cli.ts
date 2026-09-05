@@ -9,6 +9,7 @@ import type { GeneratedLocator } from "./locator-generation.js";
 import { saveCapture } from "./node-capture.js";
 import { approvePlayground, requestCommand } from "./node-command-client.js";
 import { listenCommandServer } from "./node-command-server.js";
+import { identityFromEnvironment } from "./node-identity-config.js";
 import { loadPlaygroundAssets } from "./node-playground-assets.js";
 import {
 	readCommandConnection,
@@ -28,6 +29,7 @@ import {
 import { type SemanticSnapshot, renderSnapshot } from "./snapshot.js";
 
 function runtimeConfiguration() {
+	const identity = identityFromEnvironment(process.env.AGENT_BROWSER_LANGUAGES);
 	const packageRoot = process.env.AGENT_BROWSER_SAFEJS_ROOT;
 	const configuredAdapter = process.env.AGENT_BROWSER_PAGE_RUNTIME;
 	const runtimeAdapter = pageRuntimeAdapter(configuredAdapter);
@@ -36,11 +38,11 @@ function runtimeConfiguration() {
 			"invalid-input",
 			"AGENT_BROWSER_PAGE_RUNTIME requires an explicit SafeJS package root",
 		);
-	return { packageRoot, runtimeAdapter };
+	return { packageRoot, runtimeAdapter, identity };
 }
 
 async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
-	const { packageRoot, runtimeAdapter } = configuration;
+	const { packageRoot, runtimeAdapter, identity } = configuration;
 	const secrets = await loadSecretConfig(
 		process.env.AGENT_BROWSER_SECRET_CONFIG,
 		{
@@ -60,7 +62,7 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 		);
 	if (packageRoot !== undefined)
 		return new SessionProcessHost({
-			process: { packageRoot, websiteScripts, runtimeAdapter },
+			process: { packageRoot, websiteScripts, runtimeAdapter, identity },
 		});
 	return new BrowserCommandHost({
 		secrets,
@@ -72,6 +74,7 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 		],
 		createSession: () =>
 			new BrowserSession({
+				identity,
 				createTransport: (cookieJar) => new NodeNetworkTransport({ cookieJar }),
 				loadDocument: loadBrowserDocument,
 			}),

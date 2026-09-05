@@ -30,6 +30,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Explicit `AGENT_BROWSER_LANGUAGES` preferences now flow through native CLI hosts
+and validated child-session initialization, with frozen canonical snapshots before
+resource creation. `BROWSER-IDENTITY.md` documents defaults and existing-service
+semantics. All 45 new cases pass; seven named suites produce 203 passes in each
+tree, with types/builds, strict changed-test types and scoped Biome passing.
+The manifest has 431 entries. Mocked configuration tests are not actual SafeJS,
+process-isolation or guest navigator acceptance. The denied identity-runtime
+gate still requires explicit user approval.
+
 A separate native Reddit followup remains blocked: one previously unvisited,
 source-linked thread returned HTTP 403 after an infrastructure-only retry.
 `BROWSER-RESEARCH-2026-09-05.md` records two new invocations separately from the

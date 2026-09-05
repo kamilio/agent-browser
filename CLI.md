@@ -66,6 +66,14 @@ is unchanged; a capability flag is not evidence that a page's scripts succeeded.
 
 ## Run it now
 
+Set `AGENT_BROWSER_LANGUAGES='["pl-PL","en-US"]'` when starting a host to
+configure its ordered language preferences. Unset means the explicit `en-US`
+default, not the machine locale. The value is a bounded strict JSON array;
+invalid/duplicate tags reject. Native and process-backed sessions receive the
+same canonical options. Client invocations do not reconfigure an already-running
+service. This configures truthful native identity, not another browser's brand;
+actual guest-runtime behavior remains a separate gate. See `BROWSER-IDENTITY.md`.
+
 From the repository root, build and start the package-owned foreground service:
 
 ```bash

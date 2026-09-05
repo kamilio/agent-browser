@@ -1,9 +1,11 @@
 import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import type { BrowserIdentityOptions } from "./browser-identity.js";
 import { parseInvocation } from "./cli-parser.js";
 import type { CommandRequestOptions, CommandResult } from "./command-host.js";
 import { AgentBrowserError, type ErrorCode } from "./errors.js";
 import type { NetworkPolicyOptions } from "./network.js";
+import { sessionIdentityOptions } from "./node-identity-config.js";
 import {
 	hasRestrictedPermissions,
 	processArguments,
@@ -19,6 +21,7 @@ import type { PageScriptOptions } from "./page-scripts.js";
 
 export interface SessionProcessOptions {
 	packageRoot: string;
+	identity?: BrowserIdentityOptions;
 	runtimeAdapter?: PageRuntimeAdapter;
 	session?: string;
 	commandTimeoutMs?: number;
@@ -87,7 +90,11 @@ export class BrowserSessionProcess {
 	private failure?: AgentBrowserError;
 	private information?: SessionProcessInfo;
 
-	private constructor(root: string, options: SessionProcessOptions) {
+	private constructor(
+		root: string,
+		options: SessionProcessOptions,
+		identity: Readonly<BrowserIdentityOptions>,
+	) {
 		this.runtimeAdapter = pageRuntimeAdapter(options.runtimeAdapter);
 		if (
 			options.websiteScripts !== undefined &&
@@ -125,6 +132,7 @@ export class BrowserSessionProcess {
 			schemaVersion: 1,
 			type: "initialize",
 			packageRoot: root,
+			identity,
 			runtimeAdapter: this.runtimeAdapter,
 			session: this.session,
 			heartbeatMs: Math.max(
@@ -223,8 +231,9 @@ export class BrowserSessionProcess {
 
 	static async create(options: SessionProcessOptions) {
 		pageRuntimeAdapter(options?.runtimeAdapter);
+		const identity = sessionIdentityOptions(options?.identity);
 		const root = await processReadRoot(options?.packageRoot);
-		const actor = new BrowserSessionProcess(root, options);
+		const actor = new BrowserSessionProcess(root, options, identity);
 		try {
 			await actor.ready;
 			return actor;

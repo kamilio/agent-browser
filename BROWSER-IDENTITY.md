@@ -32,8 +32,41 @@ their public types and bounds are exported from the core entrypoint. Constructed
 profiles are privately branded: reconstructed or serialized lookalikes are not
 accepted by the header helper. An embedding process can reconstruct a profile
 from validated language options, not trust a mutable serialized profile object.
-Custom-language CLI/child-process configuration plumbing is not implemented;
-independently created child sessions still use their own default configuration.
+CLI and session-process configuration now carry these language options explicitly;
+the child reconstructs and validates a profile rather than trusting a serialized
+identity object. The actual runtime gate remains separate and unaccepted.
+
+## Explicit CLI and child configuration
+
+`AGENT_BROWSER_LANGUAGES` is an optional strict JSON array, for example
+`["pl-PL","en-US"]`. Its raw value is bounded to 4096 UTF-16 code units before
+parsing, and the existing profile rules apply afterward. An unset value explicitly
+uses `en-US`; ambient `LANG`, `LC_ALL` and `LANGUAGE` do not select the profile.
+Malformed, empty, duplicate or oversized preferences fail before host creation
+or credential configuration loading. There is no new User-Agent override.
+
+The CLI passes the same canonical frozen language options to native sessions and
+process-backed hosts. `SessionProcessOptions.identity` exposes the same optional
+host API. Parent-side validation snapshots options before asynchronous root
+resolution and before spawn; only language options cross the initialize frame.
+The child revalidates those options before runtime loading or session/resource
+creation. Existing requests to a separately running service do not reconfigure
+that service: configure the environment when starting its host.
+
+Synthetic configuration tests mock spawn, SDK loading, stdin/stdout, process exit
+and resource constructors. They verify data flow and rejection order only, not
+actual guest language-array behavior, process permissions or runtime isolation.
+The denied identity-runtime probe remains denied pending explicit user approval.
+
+September 5, 2026 configuration checkpoint: **45 new cases pass** (24 pure
+configuration and 21 mocked CLI/child-flow cases). Seven named suites produce
+**203 passes in each tree**, with working/isolated project types/builds, strict
+changed-test types and scoped Biome passing. The native manifest has 431 entries;
+it was not run in full. Evidence is retained under
+`node_modules/.cache/native-validation/identity-plumbing-final-*`, with worker
+baselines and intermediate mock-cleanup failures under `identity-config/` in
+that cache. Existing CLI selection assertions now include the explicit default
+language options. No actual SDK or browser child process is exercised.
 
 ## Requests and documents
 
