@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
+import { documentBaseUrl } from "./document-url.js";
 import { DocumentTree } from "./document.js";
 import { type PagePasskeyContext, PagePasskeys } from "./page-passkeys.js";
 import {
@@ -911,3 +912,195 @@ it("retains core error semantics for an unsupported empty discovery request", as
 	});
 	expect(authenticator.get).not.toHaveBeenCalled();
 });
+
+it.each(
+	(["create", "get"] as const).flatMap((method) =>
+		[false, true].map((spoofBase) => ({ method, spoofBase })),
+	),
+)(
+	"delivers detached $method client data from the canonical document origin with spoofBase=$spoofBase",
+	async ({ method, spoofBase }) => {
+		const { tree, credentials, authenticator } = fixture(
+			undefined,
+			undefined,
+			"https://LOGIN.FIXTURE.INVALID:8443/private-path?private-query=1#private-fragment",
+		);
+		if (spoofBase) {
+			const html = tree.createElement("html");
+			const head = tree.createElement("head");
+			const base = tree.createElement("base", {
+				href: "https://spoof.fixture.invalid:9443/base/",
+			});
+			tree.append(tree.root, html);
+			tree.append(html, head);
+			tree.append(head, base);
+			expect(documentBaseUrl(tree)).toBe(
+				"https://spoof.fixture.invalid:9443/base/",
+			);
+		}
+		const result = await credentials[method]({
+			publicKey: method === "create" ? creation() : request(),
+		});
+		const delivered = authenticator[method].mock.calls[0][0];
+		const raw = delivered.clientDataJSON;
+		expect(raw).toBeInstanceOf(Uint8Array);
+		if (!raw) throw new Error("Expected provider client data");
+		const expected = new TextEncoder().encode(
+			JSON.stringify({
+				type: `webauthn.${method}`,
+				challenge: "-_8A",
+				origin: "https://login.fixture.invalid:8443",
+				crossOrigin: false,
+			}),
+		);
+		expect(delivered.rpId).toBe("login.fixture.invalid");
+		expect(raw).toEqual(expected);
+		expect(new Uint8Array(result.response.clientDataJSON)).toEqual(expected);
+		expect(raw.buffer).not.toBe(result.response.clientDataJSON);
+		expect(delivered.clientDataHash).toEqual(
+			new Uint8Array(await crypto.subtle.digest("SHA-256", expected)),
+		);
+		expect(new TextDecoder().decode(raw)).not.toMatch(
+			/private-path|private-query|private-fragment|spoof\.fixture/,
+		);
+	},
+);
+
+it.each(
+	(["create", "get"] as const).flatMap((method) =>
+		["outer", "publicKey"].map((location) => ({ method, location })),
+	),
+)(
+	"rejects $method origin spoofing in $location and retains the trusted origin on recovery",
+	async ({ method, location }) => {
+		const { credentials, authenticator } = fixture(
+			undefined,
+			undefined,
+			"https://login.fixture.invalid:8443/private",
+		);
+		const publicKey = method === "create" ? creation() : request();
+		const origin = "https://spoof.fixture.invalid:9443";
+		await expect(
+			credentials[method](
+				location === "outer"
+					? { publicKey, origin }
+					: { publicKey: { ...publicKey, origin } },
+			),
+		).rejects.toMatchObject({ name: "NotSupportedError" });
+		expect(authenticator.create).not.toHaveBeenCalled();
+		expect(authenticator.get).not.toHaveBeenCalled();
+		const result = await credentials[method]({ publicKey });
+		const delivered = authenticator[method].mock.calls[0][0];
+		expect(delivered.rpId).toBe("login.fixture.invalid");
+		expect(delivered.clientDataJSON).toEqual(
+			new Uint8Array(result.response.clientDataJSON),
+		);
+		expect(
+			JSON.parse(new TextDecoder().decode(delivered.clientDataJSON)).origin,
+		).toBe("https://login.fixture.invalid:8443");
+		expect(authenticator[method]).toHaveBeenCalledOnce();
+	},
+);
+
+it.each(
+	(["create", "get"] as const).flatMap((method) =>
+		["path", "query", "fragment"].map((change) => ({ method, change })),
+	),
+)(
+	"invalidates pending $method on a same-origin $change navigation before publishing client data",
+	async ({ method, change }) => {
+		const hostFactory = factory();
+		const { tree, credentials, authenticator } = fixture(
+			undefined,
+			undefined,
+			"https://login.fixture.invalid:8443/path?query=1#fragment",
+			hostFactory,
+		);
+		const pendingRegistration = deferred<PasskeyRegistration>();
+		const pendingAssertion = deferred<PasskeyAssertion>();
+		authenticator.create.mockReturnValueOnce(pendingRegistration.promise);
+		authenticator.get.mockReturnValueOnce(pendingAssertion.promise);
+		const result = credentials[method]({
+			publicKey: method === "create" ? creation() : request(),
+		});
+		const rejection = expect(result).rejects.toMatchObject({
+			name: "AbortError",
+			message: "Passkey ceremony was aborted",
+		});
+		await called(authenticator[method]);
+		const delivered = authenticator[method].mock.calls[0][0];
+		expect(
+			JSON.parse(new TextDecoder().decode(delivered.clientDataJSON)).origin,
+		).toBe("https://login.fixture.invalid:8443");
+		const target = new URL(tree.url);
+		if (change === "path") target.pathname = "/changed";
+		if (change === "query") target.search = "?changed=1";
+		if (change === "fragment") target.hash = "#changed";
+		tree.setUrl(target.href);
+		await rejection;
+		expect(delivered.signal.aborted).toBe(true);
+		pendingRegistration.resolve(registration());
+		pendingAssertion.resolve(await assertion());
+		await Promise.resolve();
+		expect(hostFactory.definitions).toHaveLength(1);
+		await expect(
+			credentials[method]({
+				publicKey: method === "create" ? creation() : request(),
+			}),
+		).rejects.toMatchObject({ name: "InvalidStateError" });
+		expect(authenticator[method]).toHaveBeenCalledOnce();
+	},
+);
+
+it.each(
+	(["create", "get"] as const).flatMap((method) =>
+		["overwrite", "transfer"].map((mutation) => ({ method, mutation })),
+	),
+)(
+	"isolates returned $method page client data from provider-buffer $mutation before and after publication",
+	async ({ method, mutation }) => {
+		const { credentials, authenticator } = fixture(
+			undefined,
+			undefined,
+			"https://login.fixture.invalid:8443/private",
+		);
+		const pendingRegistration = deferred<PasskeyRegistration>();
+		const pendingAssertion = deferred<PasskeyAssertion>();
+		authenticator.create.mockReturnValueOnce(pendingRegistration.promise);
+		authenticator.get.mockReturnValueOnce(pendingAssertion.promise);
+		const operation = credentials[method]({
+			publicKey: method === "create" ? creation() : request(),
+		});
+		await called(authenticator[method]);
+		const delivered = authenticator[method].mock.calls[0][0];
+		const raw = delivered.clientDataJSON;
+		if (!raw) throw new Error("Expected provider client data");
+		const expected = raw.slice();
+		const retained =
+			mutation === "transfer"
+				? structuredClone(raw, { transfer: [raw.buffer] })
+				: raw;
+		if (mutation === "transfer") expect(raw.byteLength).toBe(0);
+		retained.fill(65);
+		pendingRegistration.resolve(registration());
+		pendingAssertion.resolve(await assertion());
+		const result = await operation;
+		expect(new Uint8Array(result.response.clientDataJSON)).toEqual(expected);
+		expect(
+			JSON.parse(new TextDecoder().decode(result.response.clientDataJSON)),
+		).toEqual({
+			type: `webauthn.${method}`,
+			challenge: "-_8A",
+			origin: "https://login.fixture.invalid:8443",
+			crossOrigin: false,
+		});
+		retained.fill(66);
+		delivered.clientDataHash.fill(67);
+		const pageCopy = result.response.clientDataJSON;
+		new Uint8Array(pageCopy).fill(68);
+		expect(new Uint8Array(result.response.clientDataJSON)).toEqual(expected);
+		expect(new Uint8Array(result.response.clientDataJSON)).not.toEqual(
+			retained,
+		);
+	},
+);

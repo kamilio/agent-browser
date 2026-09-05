@@ -30,6 +30,14 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Eighteen page-passkey regressions now verify actual native-document origins,
+foreign-base/page-option spoofing resistance, pending URL invalidation and
+provider-buffer isolation for create/get. Five named suites yield 237 passes
+in each tree; types/builds, strict touched-test types and scoped Biome pass.
+`PASSKEYS.md` preserves the separate synthetic page-adapter evidence. No
+production change or runtime/device acceptance is inferred; the manifest remains
+435 entries and outstanding browser/authenticator gates remain open.
+
 A dependency-free public-suffix matcher now supports bounded trusted PSL text,
 PRIVATE rules, wildcard/exception handling and canonical IDNA results. Its 246
 cases plus existing broker/cookie suites produce 378 passes across three named

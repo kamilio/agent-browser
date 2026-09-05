@@ -197,6 +197,19 @@ evidence that actual SafeJS supports this signal/BufferSource bridge.
 
 ## Validation and outstanding gates
 
+September 5 page-origin followup: 18 additional page-adapter regressions cover
+both create/get with canonical port-bearing document origins, an effective
+foreign `base` element, rejected page-origin injection, pending same-origin URL
+changes, and provider-buffer overwrite/transfer isolation before and after
+publication. The page suite has 77 passing cases. Five named passkey suites yield
+**237 passes in each tree**, with types/builds, strict touched-test types and
+scoped Biome passing. No production change was needed; the manifest remains 435
+entries. Original attempts and source hashes are preserved under
+`node_modules/.cache/native-validation/passkey-page-origin/`; integrated logs
+use `passkey-page-integrated-final-` in the parent cache. These tests use the
+native document adapter and a mock host-object factory, not real navigation,
+SafeJS guest execution, hardware or a live relying party.
+
 September 5 detached-client-data checkpoint: 24 new cases plus the existing
 broker, page adapter, page binding and Node software-authenticator suites yield
 **219 passes across five named files in each tree**. Types/builds in both trees,
