@@ -1,4 +1,7 @@
 [
+  "src/browser-identity.test.ts",
+  "src/page-identity.test.ts",
+  "src/session-identity.test.ts",
   "src/passkeys.test.ts",
   "src/page-passkeys.test.ts",
   "src/page-passkey-bindings.test.ts",

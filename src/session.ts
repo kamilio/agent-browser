@@ -1,4 +1,11 @@
 import { CookieJar, type CookieLimits } from "./cookies.js";
+import {
+	type BrowserIdentity,
+	type BrowserIdentityOptions,
+	browserIdentityHeaders,
+	createBrowserIdentity,
+} from "./browser-identity.js";
+import { bindDocumentIdentity } from "./document-identity.js";
 import { documentFiles, existingDocumentFiles } from "./document-files.js";
 import type { UploadActionRunner } from "./upload-transfers.js";
 import {
@@ -96,6 +103,7 @@ export interface SessionLimits {
 export interface BrowserSessionOptions {
 	createTransport: (cookies: CookieJar) => NetworkTransport;
 	loadDocument: DocumentLoader;
+	identity?: BrowserIdentityOptions;
 	limits?: Partial<SessionLimits>;
 	documentLimits?: Partial<DocumentLimits>;
 	storageLimits?: Partial<StorageLimits>;
@@ -240,6 +248,7 @@ function withAbort<Result>(
 
 export class BrowserSession {
 	private readonly viewportIdentity = crypto.randomUUID();
+	readonly identity: Readonly<BrowserIdentity>;
 	readonly limits: Readonly<SessionLimits>;
 	readonly documentLimits: Readonly<DocumentLimits>;
 	readonly cookies: CookieJar;
@@ -268,6 +277,11 @@ export class BrowserSession {
 				"invalid-input",
 				"A session requires explicit transport and document loader adapters",
 			);
+		try {
+			this.identity = createBrowserIdentity(options.identity);
+		} catch {
+			throw new AgentBrowserError("invalid-input", "Invalid browser identity");
+		}
 		this.limits = Object.freeze({
 			maxHistoryDocuments: 32,
 			maxHistoryBytes: 8_388_608,
@@ -1266,20 +1280,24 @@ export class BrowserSession {
 
 	private async fetchNetwork(input: NetworkRequest): Promise<NetworkResponse> {
 		this.ensureOpen();
+		const request: NetworkRequest = {
+			...input,
+			headers: browserIdentityHeaders(this.identity, input.headers),
+		};
 		if (typeof this.transport.requestWithRoutes === "function")
-			return this.transport.requestWithRoutes(input, (request) =>
-				this.routes.fulfill(request),
+			return this.transport.requestWithRoutes(request, (routeRequest) =>
+				this.routes.fulfill(routeRequest),
 			);
-		const mocked = this.routes.fulfill(input);
+		const mocked = this.routes.fulfill(request);
 		if (mocked) {
 			if ([301, 302, 303, 307, 308].includes(mocked.status)) {
-				if (input.redirect === "error")
+				if (request.redirect === "error")
 					throw new AgentBrowserError(
 						"policy-denied",
 						"Redirects are disabled",
 					);
 				if (
-					(input.redirect ?? "follow") === "follow" &&
+					(request.redirect ?? "follow") === "follow" &&
 					mocked.headers.location
 				)
 					throw new AgentBrowserError(
@@ -1291,11 +1309,11 @@ export class BrowserSession {
 		}
 		if (
 			!this.routes.metrics().routes ||
-			(input.redirect ?? "follow") !== "follow"
+			(request.redirect ?? "follow") !== "follow"
 		)
-			return this.transport.request(input);
+			return this.transport.request(request);
 		const response = await this.transport.request({
-			...input,
+			...request,
 			redirect: "manual",
 		});
 		if (response.redirects.length)
@@ -1606,6 +1624,7 @@ export class BrowserSession {
 						"invalid-input",
 						"Loaded document URL must match the final response URL",
 					);
+				bindDocumentIdentity(document, this.identity);
 				for (const [name, limit] of Object.entries(this.documentLimits))
 					if (document.limits[name as keyof DocumentLimits] > limit)
 						throw new AgentBrowserError(

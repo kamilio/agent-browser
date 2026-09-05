@@ -150,9 +150,12 @@ function creation() {
 
 it("does not invent navigator credentials without an explicit authenticator", () => {
 	const { owner, document, options } = fixture(false);
-	expect(pageBindingGlobalNames(document, options)).not.toContain("navigator");
-	expect(owner.globals).not.toHaveProperty("navigator");
-	expect(owner.window).not.toHaveProperty("navigator");
+	expect(pageBindingGlobalNames(document, options)).toContain("navigator");
+	expect(owner.globals.navigator).toBe(owner.navigator);
+	expect((owner.window as { navigator: object }).navigator).toBe(
+		owner.navigator,
+	);
+	expect(owner.navigator).not.toHaveProperty("credentials");
 });
 
 it("shares the configured credentials capability between navigator and Window", () => {
@@ -165,7 +168,7 @@ it("shares the configured credentials capability between navigator and Window", 
 	expect((owner.navigator as { credentials: object }).credentials).toBe(
 		credentials,
 	);
-	expect(owner.navigator).not.toHaveProperty("userAgent");
+	expect(owner.navigator).toHaveProperty("userAgent", "AgentBrowser/0.1");
 	expect(owner.navigator).not.toHaveProperty(
 		"isUserVerifyingPlatformAuthenticatorAvailable",
 	);

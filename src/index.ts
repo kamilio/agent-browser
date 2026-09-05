@@ -646,3 +646,11 @@ export {
 	elementSizeLimits,
 	type ElementSizes,
 } from "./element-sizes.js";
+export {
+	type BrowserIdentity,
+	type BrowserIdentityOptions,
+	browserIdentityLimits,
+	browserIdentityHeaders,
+	createBrowserIdentity,
+	defaultBrowserIdentity,
+} from "./browser-identity.js";

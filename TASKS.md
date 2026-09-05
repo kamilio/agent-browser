@@ -29,6 +29,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Managed native sessions now coordinate truthful User-Agent/language defaults with
+document-owned navigator identity while preserving explicit request overrides.
+`BROWSER-IDENTITY.md` records 111 new passing cases and 328 passes across ten named
+files in each tree; types/builds and scoped checks pass, with 426 manifest entries.
+The actual SafeJS identity probe was denied pending explicit user approval and
+must not be retried or worked around. Guest language-array stability/immutability,
+custom-language child-process plumbing and production fingerprint/challenge
+acceptance remain open. Non-runtime development continues.
+
 An internal encrypted passkey checkpoint codec now preserves bounded P256 records
 behind an explicit host-only encryption key. `PASSKEY-CHECKPOINTS.md` distinguishes
 authenticated encryption and owned-buffer cleanup from still-unimplemented durable

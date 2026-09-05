@@ -1,4 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
+import { documentIdentity } from "./document-identity.js";
 import { PagePasskeys, type PagePasskeyContext } from "./page-passkeys.js";
 import type { PasskeyAuthenticator } from "./passkeys.js";
 import { pageCssEscape, pageCssSupports } from "./page-css.js";
@@ -68,7 +69,7 @@ export function pageBindingGlobalNames(
 	options: PageBindingOptions = {},
 ): readonly string[] {
 	return Object.freeze([
-		...(options.passkeys !== undefined ? ["navigator"] : []),
+		"navigator",
 		...(pageStoragePort(document) ? ["localStorage", "sessionStorage"] : []),
 		...(pageHistoryPort(document) ? ["history"] : []),
 		"location",
@@ -110,7 +111,7 @@ export class PageBindings {
 	readonly focus: PageFocus;
 	readonly network?: PageFetch;
 	readonly passkeys?: PagePasskeys;
-	readonly navigator?: object;
+	readonly navigator: object;
 	readonly location: ScriptLocation;
 	readonly history?: ScriptHistory;
 	readonly storage?: ScriptStorage;
@@ -178,17 +179,30 @@ export class PageBindings {
 					options.passkeys.authenticator,
 					options.passkeys.context,
 				);
-				this.navigator = context.createHostObject({
-					properties: {
-						credentials: {
-							get: () => {
-								this.ensureOpen();
-								return this.passkeys?.credentials;
-							},
-						},
-					},
-				});
 			}
+			const identity = documentIdentity(page.document);
+			const readIdentity =
+				(name: "userAgent" | "language" | "languages") => () => {
+					this.ensureOpen();
+					return identity[name];
+				};
+			this.navigator = context.createHostObject({
+				properties: {
+					userAgent: { get: readIdentity("userAgent") },
+					language: { get: readIdentity("language") },
+					languages: { get: readIdentity("languages") },
+					...(this.passkeys
+						? {
+								credentials: {
+									get: () => {
+										this.ensureOpen();
+										return this.passkeys?.credentials;
+									},
+								},
+							}
+						: {}),
+				},
+			});
 			this.performance = createPagePerformance(context, this.clock);
 			this.css = context.createHostObject({
 				methods: {
@@ -388,16 +402,12 @@ export class PageBindings {
 								},
 							}
 						: {}),
-					...(this.navigator
-						? {
-								navigator: {
-									get: () => {
-										this.ensureOpen();
-										return this.navigator;
-									},
-								},
-							}
-						: {}),
+					navigator: {
+						get: () => {
+							this.ensureOpen();
+							return this.navigator;
+						},
+					},
 					location: {
 						get: () => {
 							this.ensureOpen();
@@ -502,7 +512,7 @@ export class PageBindings {
 				(error) => lifecycle.fail(error),
 			);
 			this.globals = {
-				...(this.navigator ? { navigator: this.navigator } : {}),
+				navigator: this.navigator,
 				CSS: this.css,
 				...(this.storage
 					? {
