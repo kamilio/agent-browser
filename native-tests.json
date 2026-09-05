@@ -1,4 +1,5 @@
 [
+  "src/fido-hid-response-control.test.ts",
   "src/heading-discovery.test.ts",
   "src/document-headings.test.ts",
   "src/research-headings.test.ts",

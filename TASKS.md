@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Pure allocated-channel FIDO HID response decoding now handles exact one-byte
+KEEPALIVE and ERROR messages, preserving unknown values and owned channel bytes.
+Its strict API rejects malformed/broadcast inputs without inferring transaction
+completion, cancellation, ownership or human presence from status labels. The
+exact five-file native scope passes 260 cases, including 35 new cases; build,
+strict types and two-file Biome pass. `FIDO-HID-RESPONSE-CONTROL.md` separates the
+historical native-browser source from chosen unknown-value/channel policies.
+No new request or device/provider activation occurred. Physical transport,
+descriptor/report metadata, transaction ownership/deadlines, CBOR and trusted
+PIN/UV/consent remain open; all stopped/denied gates and the full goal remain active.
+
 Bounded native heading discovery now supports `--headings`, returning sanitized
 h1–h6 titles and uniquely root-anchored selectors for a later `--section`, with
 explicit path/syntax limits and no automatic follow-up. Independent review caught
