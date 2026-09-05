@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Independent verification now covers the actual guest-observed synthetic passkey
+ceremony: separately parsed CBOR/COSE, RP/client-data/ID/flags/counters and ES256
+signatures, with observed-signature and signed-client-data tamper rejection.
+Both unchanged isolated SDK roots pass 32 actual probe checks with cleanup and
+independentCryptoVerification=passed. The new native verifier suite passes 143
+cases in both working and clean snapshots; scoped strict/types/build/Biome pass.
+`PASSKEY-CRYPTO-VERIFICATION.md` records fixture restrictions, conservative
+result-export accounting, review fixes, separate authorizations and preserved
+historical evidence. No private key or provider-side public key supplies the
+verification. Device/synchronized keys, real UV/consent, persistence, live sites
+and default SDK integration remain open; the overall seven-day goal stays active.
+
 An isolated SafeJS persistent-byte contribution now registers real guest
 ArrayBuffer/Uint8Array/DataView, integrates graph copying/reflection/quotas and
 rejects unsupported binary persistence explicitly. Candidate and pristine
@@ -11,8 +23,9 @@ Both isolated runtimes also pass the separately authorized actual synthetic
 passkey bridge: 24 checks covering create/get, typed rejection and cancellation
 cleanup. The browser probe now uses four required explicit returns; no SDK
 semantics or authentication policy was changed to manufacture acceptance.
-Independent cryptographic ceremony verification, physical/synchronized keys,
-real user verification, persistence and live-site interoperability remain open.
+That byte-integration checkpoint did not independently verify cryptography; the
+later verifier above now covers its synthetic ceremony. Physical/synchronized
+keys, real user verification, persistence and live-site interoperability remain open.
 The original selected SDK, historical failed probes and denied identity/wire/
 parent-RP gates remain unchanged. This is an unselected, unpublished SDK
 contribution, not deployed full passkey support. The overall browser goal stays

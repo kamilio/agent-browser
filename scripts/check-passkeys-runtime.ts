@@ -1,4 +1,5 @@
 import { isAbsolute } from "node:path";
+import { types as nodeTypes } from "node:util";
 import { DocumentTree } from "../src/document.js";
 import { AgentBrowserError } from "../src/errors.js";
 import { DocumentInteractions } from "../src/interactions.js";
@@ -9,6 +10,11 @@ import {
 } from "../src/node-passkey-authenticator.js";
 import type { PageRuntime } from "../src/page-runtime.js";
 import { PageScripts } from "../src/page-scripts.js";
+import {
+	type VerifiedProbeRegistration,
+	verifyPasskeyProbeAssertion,
+	verifyPasskeyProbeRegistration,
+} from "./passkey-probe-verifier.js";
 
 const origin = "https://passkeys.fixture.invalid";
 const rpId = "passkeys.fixture.invalid";
@@ -30,6 +36,9 @@ let document: DocumentTree | undefined;
 let interactions: DocumentInteractions | undefined;
 let authenticator: NodePasskeyAuthenticator | undefined;
 let approvals = 0;
+let independentCryptoVerification: "not-performed" | "failed" | "passed" =
+	"not-performed";
+let verifiedRegistration: VerifiedProbeRegistration | undefined;
 let cancellationReached = false;
 let cancellationObserved = false;
 let releaseCancellation: (() => void) | undefined;
@@ -77,14 +86,47 @@ async function bounded<Value>(
 	}
 }
 
-async function evaluate(label: string, source: string): Promise<void> {
+async function evaluate(
+	label: string,
+	source: string,
+	inspect?: (value: unknown) => void,
+): Promise<void> {
 	stage = label;
 	if (!owner) throw new AgentBrowserError("closed", "Missing page owner");
 	const result = await bounded(
 		owner.evaluate(source, { filename: `${label}.js` }),
 	);
 	check(`${label}:evaluation`, result.ok);
-	check(`${label}:guest-assertions`, result.value === true);
+	if (inspect) inspect(result.value);
+	else check(`${label}:guest-assertions`, result.value === true);
+}
+
+function credentialPacket(label: string, value: unknown): unknown {
+	check(
+		`${label}:result-record`,
+		value !== null &&
+			typeof value === "object" &&
+			!Array.isArray(value) &&
+			!nodeTypes.isProxy(value),
+	);
+	const descriptors = Object.getOwnPropertyDescriptors(value as object);
+	check(
+		`${label}:result-fields`,
+		Object.keys(descriptors).sort().join(",") === "credential,passed" &&
+			"value" in descriptors.passed &&
+			"value" in descriptors.credential,
+	);
+	check(`${label}:guest-assertions`, descriptors.passed.value === true);
+	return descriptors.credential.value;
+}
+
+function rejected(operation: () => unknown): boolean {
+	try {
+		operation();
+		return false;
+	} catch {
+		return true;
+	}
 }
 
 function summary(status: string): void {
@@ -102,7 +144,7 @@ function summary(status: string): void {
 			cleanupComplete,
 			cancellationReached,
 			cancellationObserved,
-			independentCryptoVerification: "not-performed",
+			independentCryptoVerification,
 			checks,
 			...(errorClassification ? { errorClassification } : {}),
 		})}\n`,
@@ -216,7 +258,7 @@ try {
 				maxDataSize: 524_288,
 				timeoutMs: 3000,
 				maxRuns: 6,
-				maxResultBytes: 1024,
+				maxResultBytes: 327_680,
 			},
 			maxPendingCallbacks: 4,
 			passkeys: {
@@ -272,13 +314,32 @@ try {
 		var createClientData = new Uint8Array(registration.response.clientDataJSON);
 		var originalByte = registeredId[0];
 		registeredId[0] = originalByte ^ 255;
-		return registration.type === "public-key" && typeof registration.id === "string" &&
+		var creationPassed = registration.type === "public-key" && typeof registration.id === "string" &&
 		registration.id.length > 0 && registration.id.length <= 1364 &&
 		registeredId.length === 32 && new Uint8Array(registration.rawId)[0] === originalByte &&
 		publicAttestation.length > 100 && publicAttestation.length <= 4096 &&
 		createClientData.length > 32 && createClientData.length <= 1024 &&
 		typeof registration.getClientExtensionResults() === "object";
+		return { passed: creationPassed, credential: {
+			id: registration.id, type: registration.type,
+			rawId: Array.from(new Uint8Array(registration.rawId)),
+			clientDataJSON: Array.from(new Uint8Array(registration.response.clientDataJSON)),
+			attestationObject: Array.from(new Uint8Array(registration.response.attestationObject))
+		} };
 	`,
+		(value) => {
+			const credential = credentialPacket("create", value);
+			stage = "verify-registration";
+			independentCryptoVerification = "failed";
+			verifiedRegistration = verifyPasskeyProbeRegistration(credential, {
+				origin,
+				rpId,
+				challenge: new Uint8Array([
+					1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+				]),
+			});
+			check("create:independent-registration-verification", true);
+		},
 	);
 	check("create:synthetic-approval", approvals === 1);
 
@@ -294,13 +355,72 @@ try {
 		var signatureBytes = new Uint8Array(assertion.response.signature);
 		var getClientData = new Uint8Array(assertion.response.clientDataJSON);
 		var userBytes = new Uint8Array(assertion.response.userHandle);
-		return assertion.type === "public-key" && assertion.id === registration.id &&
+		var assertionPassed = assertion.type === "public-key" && assertion.id === registration.id &&
 		new Uint8Array(assertion.rawId).length === 32 && authenticationBytes.length === 37 &&
 		(authenticationBytes[32] & 1) === 1 && (authenticationBytes[32] & 4) === 0 &&
 		signatureBytes.length >= 64 && signatureBytes.length <= 80 &&
 		getClientData.length > 32 && getClientData.length <= 1024 &&
 		userBytes.length === 4 && userBytes[0] === 1 && userBytes[3] === 4;
+		return { passed: assertionPassed, credential: {
+			id: assertion.id, type: assertion.type,
+			rawId: Array.from(new Uint8Array(assertion.rawId)),
+			clientDataJSON: Array.from(new Uint8Array(assertion.response.clientDataJSON)),
+			authenticatorData: Array.from(new Uint8Array(assertion.response.authenticatorData)),
+			signature: Array.from(new Uint8Array(assertion.response.signature)),
+			userHandle: Array.from(new Uint8Array(assertion.response.userHandle))
+		} };
 	`,
+		(value) => {
+			const credential = credentialPacket("get", value);
+			stage = "verify-assertion";
+			if (!verifiedRegistration)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Missing verified registration",
+				);
+			const expected = {
+				origin,
+				rpId,
+				challenge: new Uint8Array([
+					16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1,
+				]),
+				userHandle: new Uint8Array([1, 2, 3, 4]),
+				registration: verifiedRegistration,
+			};
+			const verified = verifyPasskeyProbeAssertion(credential, expected);
+			check("get:independent-signature-verification", verified.signCount === 1);
+			const observed = credential as Record<string, unknown>;
+			const signature = [...(observed.signature as number[])];
+			signature[signature.length - 1] ^= 1;
+			check(
+				"get:tampered-signature-rejected",
+				rejected(() =>
+					verifyPasskeyProbeAssertion({ ...observed, signature }, expected),
+				),
+			);
+			const alternateChallenge = new Uint8Array(expected.challenge);
+			alternateChallenge[0] ^= 1;
+			const clientData = JSON.parse(
+				new TextDecoder().decode(
+					new Uint8Array(observed.clientDataJSON as number[]),
+				),
+			) as Record<string, unknown>;
+			clientData.challenge =
+				Buffer.from(alternateChallenge).toString("base64url");
+			const alteredClientData = Array.from(
+				new TextEncoder().encode(JSON.stringify(clientData)),
+			);
+			check(
+				"get:altered-signed-client-data-rejected",
+				rejected(() =>
+					verifyPasskeyProbeAssertion(
+						{ ...observed, clientDataJSON: alteredClientData },
+						{ ...expected, challenge: alternateChallenge },
+					),
+				),
+			);
+			independentCryptoVerification = "passed";
+		},
 	);
 	check("get:synthetic-approval", approvals === 2);
 

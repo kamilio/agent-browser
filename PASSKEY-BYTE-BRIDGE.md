@@ -4,14 +4,22 @@ September 5, 2026. **The original selected SDK gate still fails; an isolated
 patched SDK now passes the synthetic passkey bridge gate.** Neither result is
 hardware, synchronized-passkey or full WebAuthn acceptance. No denied gate reopens.
 
+The later `PASSKEY-CRYPTO-VERIFICATION.md` increment independently verifies
+guest-exported registration, public key, client data and assertion signatures.
+Both frozen SDK roots pass 32 separately authorized actual checks, including
+tamper rejection and cleanup; 143 native verifier cases pass in each tree.
+Earlier 24-check runs remain recorded as crypto not-performed. Default runtime
+selection and the original SDK's failures are unchanged.
+
 `contributions/safejs-persistent-guest-bytes.md` records the later persistent-byte
 integration: 682 named SDK cases pass in both candidate and pristine patch replay.
 Both separately built runtimes pass 24 actual synthetic browser checks for
 create/get, rejection and cancellation, with cleanup complete. The browser
 fixture excludes pending parent-RP changes; its probe only gains four explicit
 result returns required by the existing SDK. Initial loader/build and completion
-value failures remain preserved. Independent ceremony cryptographic verification,
-real devices/user verification, persistence and live sites remain open. The
+value failures remain preserved. Those initial runs did not independently verify
+cryptography; the later increment above does. Real devices/user verification,
+persistence and live sites remain open. The
 candidate is not installed, published or selected as the browser default.
 
 A later, separately authorized in-memory SDK increment is recorded in
