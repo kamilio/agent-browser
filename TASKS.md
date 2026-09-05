@@ -1,5 +1,12 @@
 # Agent browser implementation tasks
 
+The native-browser BFCL prompt-format follow-up now has a durable research note
+in `BENCHMARK-FORMAT-ROBUSTNESS.md`. It separates representation robustness from
+executed task success and records a prose/caption ordering conflict rather than
+inventing a winner. One captured, hash-verified HTTP 200 read remains partial and
+unverified; historical source dates are not current rankings or reproduced scores.
+This documentation adds no benchmark execution or new acceptance claim.
+
 The default host pass runner now requests cancellation of its owned POSIX process
 group, with captured-PID admission, direct-child fallback, idempotent cleanup and
 late-event guards. Agent constant references, origin checks and sealed-session
