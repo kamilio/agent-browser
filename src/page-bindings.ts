@@ -1,4 +1,6 @@
 import { AgentBrowserError } from "./errors.js";
+import { PagePasskeys, type PagePasskeyContext } from "./page-passkeys.js";
+import type { PasskeyAuthenticator } from "./passkeys.js";
 import { pageCssEscape, pageCssSupports } from "./page-css.js";
 import { documentScrollPosition } from "./document-scroll.js";
 import { PageScroll } from "./page-scroll.js";
@@ -42,6 +44,10 @@ export interface PageBindingContext extends ScriptHostObjectFactory {
 }
 
 export interface PageBindingOptions {
+	passkeys?: {
+		authenticator: PasskeyAuthenticator;
+		context: PagePasskeyContext;
+	};
 	fetch?: PageFetchTransport;
 	fetchLimits?: Partial<PageFetchLimits>;
 	consoleLimits?: Partial<ConsoleLimits>;
@@ -62,6 +68,7 @@ export function pageBindingGlobalNames(
 	options: PageBindingOptions = {},
 ): readonly string[] {
 	return Object.freeze([
+		...(options.passkeys !== undefined ? ["navigator"] : []),
 		...(pageStoragePort(document) ? ["localStorage", "sessionStorage"] : []),
 		...(pageHistoryPort(document) ? ["history"] : []),
 		"location",
@@ -102,6 +109,8 @@ export class PageBindings {
 	readonly scrolling: PageScroll;
 	readonly focus: PageFocus;
 	readonly network?: PageFetch;
+	readonly passkeys?: PagePasskeys;
+	readonly navigator?: object;
 	readonly location: ScriptLocation;
 	readonly history?: ScriptHistory;
 	readonly storage?: ScriptStorage;
@@ -162,6 +171,24 @@ export class PageBindings {
 		this.ensureOpen();
 		this.unregisterClose = page.document.onClose(() => this.close());
 		try {
+			if (options.passkeys !== undefined) {
+				this.passkeys = new PagePasskeys(
+					page.document,
+					context,
+					options.passkeys.authenticator,
+					options.passkeys.context,
+				);
+				this.navigator = context.createHostObject({
+					properties: {
+						credentials: {
+							get: () => {
+								this.ensureOpen();
+								return this.passkeys?.credentials;
+							},
+						},
+					},
+				});
+			}
 			this.performance = createPagePerformance(context, this.clock);
 			this.css = context.createHostObject({
 				methods: {
@@ -361,6 +388,16 @@ export class PageBindings {
 								},
 							}
 						: {}),
+					...(this.navigator
+						? {
+								navigator: {
+									get: () => {
+										this.ensureOpen();
+										return this.navigator;
+									},
+								},
+							}
+						: {}),
 					location: {
 						get: () => {
 							this.ensureOpen();
@@ -465,6 +502,7 @@ export class PageBindings {
 				(error) => lifecycle.fail(error),
 			);
 			this.globals = {
+				...(this.navigator ? { navigator: this.navigator } : {}),
 				CSS: this.css,
 				...(this.storage
 					? {
@@ -501,6 +539,7 @@ export class PageBindings {
 	close() {
 		if (this.closedValue) return;
 		this.closedValue = true;
+		this.passkeys?.close();
 		this.focus?.close();
 		this.timers?.close();
 		this.animationFrames?.close();

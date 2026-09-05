@@ -1,4 +1,18 @@
 export {
+	PasskeyBroker,
+	passkeyLimits,
+	type PasskeyAuthenticator,
+	type PasskeyContext,
+	type PasskeyCapabilities,
+	type PasskeyCreationOptions,
+	type PasskeyRequestOptions,
+	type PasskeyCreationCredential,
+	type PasskeyAssertionCredential,
+	type PasskeyRegistration,
+	type PasskeyAssertion,
+} from "./passkeys.js";
+export { PagePasskeys, type PagePasskeyContext } from "./page-passkeys.js";
+export {
 	SecretBroker,
 	secretProviderLimits,
 	type SecretBinding,

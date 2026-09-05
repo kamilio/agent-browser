@@ -29,6 +29,20 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native passkey ceremonies now connect an explicit trusted provider to
+`navigator.credentials` through PageBindings/PageScripts options. `PASSKEYS.md`
+documents exact-host HTTPS/RP binding, challenge handling, lifecycle cancellation,
+public byte ownership and the registration-provider trust boundary. The optional
+Node provider performs real ephemeral ES256 signing behind mandatory host approval;
+it does not claim user verification, platform hardware or durable/synced keys.
+All 195 new cases pass; ten named files yield 293 isolated passes and 298 working
+passes plus the independently reproduced old non-callable-onload failure.
+Types/builds, strict new-test types and scoped checks pass. Both manifests contain
+422 entries. Real human-approval UI, secure persistence/recovery, actual SafeJS and
+live relying-party acceptance remain priority gates, not completed features.
+
+### Prior research checkpoint
+
 Opt-in native semantic research reading and challenge diagnostics now have
 119 new passing cases and 287 passes across seven named files in both trees,
 with project types/builds and scoped checks. `NATIVE-RESEARCH.md` preserves the
