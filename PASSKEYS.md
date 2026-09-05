@@ -1,5 +1,12 @@
 # Native passkey broker and page capability
 
+`PASSKEY-BYTE-BRIDGE.md` records the selected SDK's missing genuine guest byte
+implementation and the unchanged failed runtime gate. Separate native-slot and
+factory-publication hardening passes 168 new regressions and 356 tests across
+six named files in each tree, with types/builds/strict/Biome passing. The old
+code fails 138 of those same new cases and passes 30. Pending parent-RP policy
+remains excluded; none of this establishes actual guest/device support.
+
 This is a bounded WebAuthn implementation layer with an explicit trusted
 authenticator port, not a built-in operating-system authenticator. It has no
 default key provider, automatic user approval, private-key export, synchronized

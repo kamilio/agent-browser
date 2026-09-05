@@ -1,4 +1,6 @@
 [
+  "src/passkey-buffer-slots.test.ts",
+  "src/page-passkey-publication.test.ts",
   "src/css-media-logic.test.ts",
   "src/page-media-logic.test.ts",
   "src/media-fallback-layout.test.ts",

@@ -192,7 +192,13 @@ export class PagePasskeys {
 
 	private capability(definition: ScriptHostObjectDefinition): object {
 		this.ensureCurrent();
-		const capability = this.factory.createHostObject(definition);
+		let capability: object;
+		try {
+			capability = this.factory.createHostObject(definition);
+		} catch {
+			this.ensureCurrent();
+			throw new PagePasskeyError("NotSupportedError");
+		}
 		this.ensureCurrent();
 		if (
 			!capability ||

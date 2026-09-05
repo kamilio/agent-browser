@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Passkey byte investigation identifies a missing SDK-owned guest byte model,
+not a browser setting: selected @poe-code/safe-js 0.0.1 has limited Float32 support
+but lacks the required ArrayBuffer/Uint8Array/DataView contract. The actual
+runtime failure remains unchanged. Two pre-existing host defects—overridable
+view metadata and raw factory-publication errors—now have focused hardening:
+99 buffer and 69 publication cases pass; six named suites total 356 passes in
+each tree, with types/builds/strict/Biome passing. The unchanged old code fails
+138 of the same 168 cases and passes 30; four existing suites pass 188 cases.
+`PASSKEY-BYTE-BRIDGE.md` preserves the findings, initial fixture failures and
+separate actual-runtime/device requirements. Exact isolated patch checks exclude
+pending parent-RP work and preserve all prior deltas; no denied gate is reopened.
+
 Native media now preserves unknown through Boolean composition, converts it
 only at the public matches boundary, and distinguishes false unknown media
 types from unknown feature conditions. All 129 new parser and 61 page cases

@@ -155,23 +155,52 @@ function text(value: unknown): string {
 	}
 	return value;
 }
+const arrayBufferLength = Object.getOwnPropertyDescriptor(
+	ArrayBuffer.prototype,
+	"byteLength",
+)?.get;
+const nativeViewSlots = [
+	Object.getPrototypeOf(Uint8Array.prototype),
+	DataView.prototype,
+].map((prototype) => ({
+	buffer: Object.getOwnPropertyDescriptor(prototype, "buffer")?.get,
+	offset: Object.getOwnPropertyDescriptor(prototype, "byteOffset")?.get,
+	length: Object.getOwnPropertyDescriptor(prototype, "byteLength")?.get,
+}));
+
 function bytes(
 	value: unknown,
 	maximum: number,
 	minimum = 1,
 ): Uint8Array<ArrayBuffer> {
 	try {
-		const view = ArrayBuffer.isView(value) ? value : undefined;
-		const buffer = view ? view.buffer : value;
-		const length = Object.getOwnPropertyDescriptor(
-			ArrayBuffer.prototype,
-			"byteLength",
-		)?.get?.call(buffer) as number;
-		const size = view ? view.byteLength : length;
-		if (size < minimum || size > maximum) fail("TypeError");
-		return new Uint8Array(
-			new Uint8Array(buffer as ArrayBuffer, view ? view.byteOffset : 0, size),
-		);
+		const view = ArrayBuffer.isView(value);
+		let buffer = value;
+		let offset = 0;
+		let size: number;
+		if (view) {
+			let slots = nativeViewSlots[0];
+			try {
+				buffer = slots.buffer?.call(value);
+			} catch {
+				slots = nativeViewSlots[1];
+				buffer = slots.buffer?.call(value);
+			}
+			offset = slots.offset?.call(value) as number;
+			size = slots.length?.call(value) as number;
+		} else size = arrayBufferLength?.call(buffer) as number;
+		const length = arrayBufferLength?.call(buffer) as number;
+		if (
+			!Number.isSafeInteger(length) ||
+			!Number.isSafeInteger(offset) ||
+			!Number.isSafeInteger(size) ||
+			offset < 0 ||
+			size < minimum ||
+			size > maximum ||
+			offset > length - size
+		)
+			fail("TypeError");
+		return new Uint8Array(new Uint8Array(buffer as ArrayBuffer, offset, size));
 	} catch {
 		return fail("TypeError");
 	}
