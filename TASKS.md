@@ -30,6 +30,13 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Three further native-read Astra/X post bodies clarify the retrieved rollout,
+benchmark and alignment claims without verifying product authenticity, access or
+performance. `ASTRA-PROVENANCE-2026-09-05.md` preserves four new invocations,
+September 3 displayed dates with unknown timezone, and the September 5 retrieval
+window. All 37 saved checksum entries passed independent verification. Earlier
+blocked routes and original research counts remain unchanged.
+
 The regular CLI now supports an explicit partial reader profile with provenance
 notices and fail-closed runtime/credential incompatibility checks. Forty-seven
 new cases pass; seven named suites produce 360 passes in each tree, with scoped
