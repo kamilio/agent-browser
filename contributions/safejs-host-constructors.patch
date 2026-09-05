@@ -1,0 +1,1346 @@
+diff --git a/packages/safe-js/src/core.ts b/packages/safe-js/src/core.ts
+--- a/packages/safe-js/src/core.ts
++++ b/packages/safe-js/src/core.ts
+@@ -3,6 +3,7 @@
+ export { retainGuestArguments, releaseGuestReference } from "./guest-reference.js";
+ export { startCallback, type CallbackInvocation, type CallbackOptions } from "./callback.js";
+ export { createRealm, type Realm, type RealmOptions, type RealmResult } from "./realm.js";
++export { createHostConstructor, type HostConstructor } from "./host-constructor.js";
+ export {
+   createHostObject,
+   type HostObject,
+diff --git a/packages/safe-js/src/host-constructor-boundaries.test.ts b/packages/safe-js/src/host-constructor-boundaries.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/host-constructor-boundaries.test.ts
+@@ -0,0 +1,668 @@
++import { describe, expect, it, vi } from "vitest";
++
++import {
++  Budget,
++  type HostObject,
++  createHostConstructor,
++  createHostObject,
++  createRealm,
++  deepCopyFromSandbox as publicCopyFromSandbox,
++  releaseGuestReference,
++  retainGuestArguments
++} from "./core.js";
++import { deepCopyFromSandbox, deepCopyToSandbox, isSandboxClosure } from "./interp/values.js";
++import { run } from "./run.js";
++import { decodeReplayData, encodeReplayData } from "./snapshot/replay-data.js";
++import { serialize } from "./snapshot/serialize.js";
++
++type ConstructorCallback = Parameters<typeof createHostConstructor>[1];
++type SnapshotBinding = Parameters<typeof serialize>[0]["scopeChain"][number]["bindings"][string];
++
++describe.each([
++  { label: "direct", source: "Boundary" },
++  { label: "bound", source: "Boundary.bind(null, 7)" },
++  { label: "extracted call adapter", source: "Boundary.call" },
++  { label: "extracted apply adapter", source: "Boundary.apply" },
++  { label: "extracted bind adapter", source: "Boundary.bind" },
++  { label: "multiply bound", source: "Boundary.bind(null, 7).bind(null, 11)" }
++])("escaped $label host constructor wrappers", ({ source }) => {
++  it("rejects explicit copy in both directions without invoking a supplied closure wrapper", async () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const wrapClosure = vi.fn(() => ({ escaped: true }));
++    const realm = createRealm({
++      bindings: { Boundary: createHostConstructor("Boundary", callback) }
++    });
++    try {
++      const escaped = (await realm.evaluate(source)).returnValue;
++      expect(isSandboxClosure(escaped)).toBe(true);
++      expect(() => publicCopyFromSandbox(escaped)).toThrow(/host constructor/i);
++      expect(() => publicCopyFromSandbox(escaped, { wrapClosure })).toThrow(/host constructor/i);
++      expect(() => deepCopyToSandbox(escaped)).toThrow(/host constructor/i);
++      expect(wrapClosure).not.toHaveBeenCalled();
++      expect(callback).not.toHaveBeenCalled();
++      expect(realm.closed).toBe(false);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("rejects an escaped wrapper in snapshot bindings rather than serializing its callable state", async () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const realm = createRealm({
++      bindings: { Boundary: createHostConstructor("Boundary", callback) }
++    });
++    try {
++      const escaped = (await realm.evaluate(source)).returnValue;
++      expect(isSandboxClosure(escaped)).toBe(true);
++      expect(() =>
++        serialize({
++          source,
++          currentAstNodeId: 1,
++          scopeChain: [{ id: 1, bindings: { escaped: escaped as SnapshotBinding } }],
++          callStack: [],
++          pendingPromises: [],
++          moduleBindings: {}
++        })
++      ).toThrow(/host constructor/i);
++      expect(callback).not.toHaveBeenCalled();
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("rejects replay encoding before requesting an identifier, including property capture", async () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const identifyCapability = vi.fn(() => "constructor:escaped");
++    const realm = createRealm({
++      bindings: { Boundary: createHostConstructor("Boundary", callback) }
++    });
++    try {
++      const escaped = (await realm.evaluate(source)).returnValue;
++      expect(isSandboxClosure(escaped)).toBe(true);
++      expect(() => encodeReplayData(escaped)).toThrow(/host constructor/i);
++      for (const captureCapabilityProperties of [false, true])
++        expect(() =>
++          encodeReplayData(escaped, { identifyCapability, captureCapabilityProperties })
++        ).toThrow(/host constructor/i);
++      expect(identifyCapability).not.toHaveBeenCalled();
++      expect(callback).not.toHaveBeenCalled();
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it.each([
++    {
++      label: "capability atom",
++      replay: { root: { tag: "capability", id: "constructor:escaped" }, nodes: [] }
++    },
++    {
++      label: "capability node",
++      replay: {
++        root: { tag: "ref", id: 0 },
++        nodes: [
++          {
++            kind: "capability",
++            id: "constructor:escaped",
++            properties: { tag: "undefined" }
++          }
++        ]
++      }
++    }
++  ])("rejects resolver substitution through a $label", async ({ replay }) => {
++    const callback = vi.fn(() => createHostObject({}));
++    const onCapabilityRestored = vi.fn();
++    const realm = createRealm({
++      bindings: { Boundary: createHostConstructor("Boundary", callback) }
++    });
++    try {
++      const escaped = (await realm.evaluate(source)).returnValue;
++      if (!isSandboxClosure(escaped)) throw new Error("Expected an escaped sandbox closure");
++      const resolveCapability = vi.fn(() => escaped);
++      expect(() => decodeReplayData(replay, { resolveCapability, onCapabilityRestored })).toThrow(
++        /host constructor/i
++      );
++      expect(resolveCapability).toHaveBeenCalledExactlyOnceWith("constructor:escaped");
++      expect(onCapabilityRestored).not.toHaveBeenCalled();
++      expect(callback).not.toHaveBeenCalled();
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it.each(["live", "closed"])(
++    "rejects cross-realm re-injection while the originating realm is %s",
++    async (state) => {
++      const callback = vi.fn(() => createHostObject({}));
++      const origin = createRealm({
++        bindings: { Boundary: createHostConstructor("Boundary", callback) }
++      });
++      let recipient: ReturnType<typeof createRealm> | undefined;
++      try {
++        const escaped = (await origin.evaluate(source)).returnValue;
++        expect(isSandboxClosure(escaped)).toBe(true);
++        if (state === "closed") await origin.close();
++        expect(() => {
++          recipient = createRealm({ bindings: { escaped } });
++        }).toThrow(/host constructor/i);
++        expect(callback).not.toHaveBeenCalled();
++        expect(origin.closed).toBe(state === "closed");
++      } finally {
++        await recipient?.close();
++        await origin.close();
++      }
++    }
++  );
++});
++
++describe("host constructor adversarial boundaries", () => {
++  it("keeps the core constructor token frozen and host-noncallable", () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const Constructor = createHostConstructor("Boundary", callback);
++    expect(typeof Constructor).toBe("function");
++    expect(Object.isFrozen(Constructor)).toBe(true);
++    expect(Constructor.name).toBe("Boundary");
++    expect(() => Constructor()).toThrow(TypeError);
++    expect(() => Reflect.construct(Constructor, [])).toThrow(TypeError);
++    expect(callback).not.toHaveBeenCalled();
++  });
++
++  it.each([
++    { label: "undefined", result: () => undefined },
++    { label: "null", result: () => null },
++    { label: "boolean", result: () => false },
++    { label: "number", result: () => 1 },
++    { label: "string", result: () => "ordinary" },
++    { label: "bigint", result: () => 1n },
++    { label: "symbol", result: () => Symbol("ordinary") },
++    { label: "ordinary object", result: () => ({}) },
++    { label: "array", result: () => [] },
++    { label: "fulfilled promise", result: () => Promise.resolve(createHostObject({})) },
++    { label: "rejected promise", result: () => Promise.reject(new Error("not synchronous")) }
++  ])("rejects a $label result rather than substituting a guest instance", async ({ result }) => {
++    const callback = vi.fn(result as unknown as ConstructorCallback);
++    const realm = createRealm({
++      bindings: { Boundary: createHostConstructor("Boundary", callback) }
++    });
++    try {
++      expect(
++        (
++          await realm.evaluate(
++            'try { new Boundary(); return "accepted"; } catch (error) { return error.name; }'
++          )
++        ).returnValue
++      ).toBe("TypeError");
++      expect(callback).toHaveBeenCalledTimes(1);
++      expect(realm.closed).toBe(false);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("rejects a thenable result without reading or calling its then member", async () => {
++    const getter = vi.fn(() => vi.fn());
++    const result = Object.defineProperty({}, "then", { get: getter });
++    const callback = vi.fn(() => result as HostObject);
++    const realm = createRealm({
++      bindings: { Boundary: createHostConstructor("Boundary", callback) }
++    });
++    try {
++      expect(
++        (await realm.evaluate("try { new Boundary(); } catch (error) { return error.name; }"))
++          .returnValue
++      ).toBe("TypeError");
++      expect(callback).toHaveBeenCalledTimes(1);
++      expect(getter).not.toHaveBeenCalled();
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("rejects a proxy around a live result without consulting traps", async () => {
++    const trap = vi.fn(() => {
++      throw new Error("result trap must not run");
++    });
++    const result = new Proxy(createHostObject({}), {
++      get: trap,
++      getPrototypeOf: trap,
++      getOwnPropertyDescriptor: trap,
++      ownKeys: trap
++    });
++    let calls = 0;
++    const callback = () => {
++      calls++;
++      return result;
++    };
++    const realm = createRealm({
++      bindings: { Boundary: createHostConstructor("Boundary", callback) }
++    });
++    try {
++      expect(
++        (await realm.evaluate("try { new Boundary(); } catch (error) { return error.name; }"))
++          .returnValue
++      ).toBe("TypeError");
++      expect(calls).toBe(1);
++      expect(trap).not.toHaveBeenCalled();
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it.each([undefined, null, 1, Symbol("name"), "", "x".repeat(1025)])(
++    "rejects invalid name %# before invoking the callback",
++    (name) => {
++      const callback = vi.fn(() => createHostObject({}));
++      expect(() => createHostConstructor(name as string, callback)).toThrow(TypeError);
++      expect(callback).not.toHaveBeenCalled();
++    }
++  );
++
++  it("rejects object names without coercion or proxy traps", () => {
++    const trap = vi.fn(() => {
++      throw new Error("name coercion must not run");
++    });
++    const callback = vi.fn(() => createHostObject({}));
++    const names = [
++      { toString: trap, valueOf: trap, [Symbol.toPrimitive]: trap },
++      new Proxy({}, { get: trap, getPrototypeOf: trap, ownKeys: trap })
++    ];
++    for (const name of names)
++      expect(() => createHostConstructor(name as unknown as string, callback)).toThrow(TypeError);
++    expect(trap).not.toHaveBeenCalled();
++    expect(callback).not.toHaveBeenCalled();
++  });
++
++  it("rejects nonfunctions and async or generator callbacks without running their bodies", () => {
++    const body = vi.fn(() => createHostObject({}));
++    const callbacks = [
++      undefined,
++      {},
++      async () => body(),
++      function* () {
++        yield body();
++      },
++      async function* () {
++        yield body();
++      }
++    ];
++    for (const callback of callbacks)
++      expect(() => createHostConstructor("Boundary", callback as ConstructorCallback)).toThrow(
++        TypeError
++      );
++    expect(body).not.toHaveBeenCalled();
++  });
++
++  it("rejects callable proxies without inspecting or invoking them", () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const trap = vi.fn(() => {
++      throw new Error("callback trap must not run");
++    });
++    const proxy = new Proxy(callback, {
++      get: trap,
++      getPrototypeOf: trap,
++      getOwnPropertyDescriptor: trap,
++      ownKeys: trap,
++      apply: trap,
++      construct: trap
++    });
++    expect(() => createHostConstructor("Boundary", proxy)).toThrow(TypeError);
++    expect(trap).not.toHaveBeenCalled();
++    expect(callback).not.toHaveBeenCalled();
++  });
++
++  it("rejects revoked callable proxies without invoking their targets", () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const revocable = Proxy.revocable(callback, {});
++    revocable.revoke();
++    expect(() => createHostConstructor("Boundary", revocable.proxy)).toThrow(TypeError);
++    expect(callback).not.toHaveBeenCalled();
++  });
++
++  it.each([
++    "Boundary()",
++    "Boundary.call(null)",
++    "Boundary.apply(null, [])",
++    "const alias = Boundary; alias()"
++  ])("rejects guest call misuse without invoking the callback: %s", async (source) => {
++    const callback = vi.fn(() => createHostObject({}));
++    const realm = createRealm({
++      bindings: { Boundary: createHostConstructor("Boundary", callback) }
++    });
++    try {
++      expect(
++        (await realm.evaluate(`try { ${source}; } catch (error) { return error.name; }`))
++          .returnValue
++      ).toBe("TypeError");
++      expect(callback).not.toHaveBeenCalled();
++      expect(realm.closed).toBe(false);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("does not make an ordinary native function constructible", async () => {
++    const effect = vi.fn();
++    function Ordinary() {
++      effect();
++      return createHostObject({});
++    }
++    const realm = createRealm({ bindings: { Ordinary } });
++    try {
++      expect(
++        (await realm.evaluate("try { new Ordinary(); } catch (error) { return error.name; }"))
++          .returnValue
++      ).toBe("TypeError");
++      expect(effect).not.toHaveBeenCalled();
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("does not authorize construction through copied properties or lookalike markers", async () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const Constructor = createHostConstructor("Boundary", callback);
++    const ordinary = vi.fn(() => createHostObject({}));
++    for (const key of Reflect.ownKeys(Constructor)) {
++      if (key === "length" || key === "name") continue;
++      const descriptor = Object.getOwnPropertyDescriptor(Constructor, key);
++      if (descriptor === undefined) throw new Error("Missing constructor descriptor");
++      Object.defineProperty(ordinary, key, descriptor);
++    }
++    Object.assign(ordinary, { hostConstructor: true, construct: callback });
++    const lookalike = { name: "Boundary", hostConstructor: true, construct: callback };
++    const realm = createRealm({ bindings: { ordinary, lookalike } });
++    try {
++      for (const source of ["new ordinary()", "new lookalike()"])
++        expect(
++          (await realm.evaluate(`try { ${source}; } catch (error) { return error.name; }`))
++            .returnValue
++        ).toBe("TypeError");
++      expect(ordinary).not.toHaveBeenCalled();
++      expect(callback).not.toHaveBeenCalled();
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("does not grant construction to opaque function results or live host methods", async () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const acquire = vi.fn(() => callback);
++    const node = createHostObject({ methods: { acquire, ordinary: callback } });
++    const realm = createRealm({ bindings: { node } });
++    try {
++      await realm.evaluate("const ordinary = node.acquire(); const method = node.ordinary;");
++      expect(acquire).toHaveBeenCalledTimes(1);
++      for (const source of ["new ordinary()", "new method()"])
++        expect(
++          (await realm.evaluate(`try { ${source}; } catch (error) { return error.name; }`))
++            .returnValue
++        ).toBe("TypeError");
++      expect(callback).not.toHaveBeenCalled();
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("does not expose callback properties or private callback accessors", async () => {
++    const getter = vi.fn(() => "private");
++    const callback = vi.fn(() => createHostObject({}));
++    Object.defineProperty(callback, "privateAccessor", { enumerable: true, get: getter });
++    Object.assign(callback, { privateData: "private", construct: callback });
++    const Constructor = createHostConstructor("Boundary", callback);
++    expect(Object.hasOwn(Constructor, "privateAccessor")).toBe(false);
++    expect(Object.hasOwn(Constructor, "privateData")).toBe(false);
++    const realm = createRealm({ bindings: { Boundary: Constructor } });
++    try {
++      expect(
++        deepCopyFromSandbox(
++          (
++            await realm.evaluate(
++              "[Boundary.privateAccessor, Boundary.privateData, Boundary.construct, Boundary.callback]"
++            )
++          ).returnValue
++        )
++      ).toEqual([undefined, undefined, undefined, undefined]);
++      expect(callback).not.toHaveBeenCalled();
++      expect(getter).not.toHaveBeenCalled();
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("preserves callback errors and releases retained arguments after each caught failure", async () => {
++    const held: unknown[] = [];
++    const callback = vi.fn((value: unknown): HostObject => {
++      held.push(value);
++      throw new Error("constructor refused");
++    });
++    const Boundary = retainGuestArguments(createHostConstructor("Boundary", callback), 0);
++    const realm = createRealm({
++      budget: new Budget({ maxSteps: 2000, arrayLength: 1 }),
++      bindings: { Boundary }
++    });
++    try {
++      expect(
++        (
++          await realm.evaluate(
++            'let failures = 0; for (let index = 0; index < 5; index++) { try { new Boundary({}); } catch (error) { if (error.message === "constructor refused") failures++; } } return failures;'
++          )
++        ).returnValue
++      ).toBe(5);
++      expect(callback).toHaveBeenCalledTimes(5);
++      expect(held).toHaveLength(5);
++      for (const reference of held) expect(releaseGuestReference(reference)).toBe(false);
++      expect(realm.closed).toBe(false);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("releases retained arguments when result validation fails", async () => {
++    const held: unknown[] = [];
++    const callback = vi.fn((value: unknown) => {
++      held.push(value);
++      return {} as HostObject;
++    });
++    const Boundary = retainGuestArguments(createHostConstructor("Boundary", callback), 0);
++    const realm = createRealm({
++      budget: new Budget({ maxSteps: 2000, arrayLength: 1 }),
++      bindings: { Boundary }
++    });
++    try {
++      expect(
++        (
++          await realm.evaluate(
++            'let failures = 0; for (let index = 0; index < 5; index++) { try { new Boundary({}); } catch (error) { if (error.name === "TypeError") failures++; } } return failures;'
++          )
++        ).returnValue
++      ).toBe(5);
++      expect(callback).toHaveBeenCalledTimes(5);
++      expect(held).toHaveLength(5);
++      for (const reference of held) expect(releaseGuestReference(reference)).toBe(false);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("revokes retained constructor arguments and disallows new work after close", async () => {
++    let saved: unknown;
++    const callback = vi.fn((value: unknown) => {
++      saved = value;
++      return createHostObject({ methods: { read: () => saved } });
++    });
++    const realm = createRealm({
++      bindings: {
++        Boundary: retainGuestArguments(createHostConstructor("Boundary", callback), 0)
++      }
++    });
++    try {
++      expect(
++        (
++          await realm.evaluate(
++            "const argument = {}; const instance = new Boundary(argument); return instance.read() === argument;"
++          )
++        ).returnValue
++      ).toBe(true);
++      await realm.close();
++      expect(releaseGuestReference(saved)).toBe(false);
++      await expect(realm.evaluate("new Boundary({})")).rejects.toMatchObject({ code: "aborted" });
++      expect(callback).toHaveBeenCalledTimes(1);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("does not invoke constructors under an already-canceled evaluation", async () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const controller = new AbortController();
++    const realm = createRealm({
++      bindings: { Boundary: createHostConstructor("Boundary", callback) }
++    });
++    controller.abort();
++    try {
++      await expect(
++        realm.evaluate("new Boundary()", { signal: controller.signal })
++      ).rejects.toMatchObject({ code: "aborted" });
++      expect(callback).not.toHaveBeenCalled();
++      expect(realm.closed).toBe(true);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("cleans retained arguments when a constructor synchronously cancels its realm", async () => {
++    const controller = new AbortController();
++    let saved: unknown;
++    const callback = vi.fn((value: unknown) => {
++      saved = value;
++      controller.abort();
++      return createHostObject({});
++    });
++    const realm = createRealm({
++      signal: controller.signal,
++      bindings: {
++        Boundary: retainGuestArguments(createHostConstructor("Boundary", callback), 0)
++      }
++    });
++    try {
++      await expect(realm.evaluate("new Boundary({}); new Boundary({});")).rejects.toMatchObject({
++        code: "aborted"
++      });
++      expect(callback).toHaveBeenCalledTimes(1);
++      expect(releaseGuestReference(saved)).toBe(false);
++      expect(realm.closed).toBe(true);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("keeps constructor loops step-bounded even when the guest catches errors", async () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const realm = createRealm({
++      budget: new Budget({ maxSteps: 200 }),
++      bindings: { Boundary: createHostConstructor("Boundary", callback) }
++    });
++    try {
++      await expect(
++        realm.evaluate(
++          "for (let index = 0; index < 1000; index++) { try { new Boundary(); } catch (error) {} }"
++        )
++      ).rejects.toMatchObject({ code: "budgetExceeded", budget: "steps" });
++      expect(callback.mock.calls.length).toBeGreaterThan(0);
++      expect(callback.mock.calls.length).toBeLessThan(1000);
++      const calls = callback.mock.calls.length;
++      await expect(realm.evaluate("new Boundary()")).rejects.toMatchObject({ code: "aborted" });
++      expect(callback).toHaveBeenCalledTimes(calls);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("cleans existing retained arguments when the reference budget is exhausted", async () => {
++    const held: unknown[] = [];
++    const callback = vi.fn((value: unknown) => {
++      held.push(value);
++      return createHostObject({});
++    });
++    const realm = createRealm({
++      budget: new Budget({ maxSteps: 2000, arrayLength: 1 }),
++      bindings: {
++        Boundary: retainGuestArguments(createHostConstructor("Boundary", callback), 0)
++      }
++    });
++    try {
++      await realm.evaluate("new Boundary({})");
++      await expect(realm.evaluate("new Boundary({})")).rejects.toMatchObject({
++        code: "budgetExceeded",
++        budget: "arrayLength"
++      });
++      expect(callback).toHaveBeenCalledTimes(1);
++      expect(held).toHaveLength(1);
++      expect(releaseGuestReference(held[0])).toBe(false);
++      expect(realm.closed).toBe(true);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("rejects ordinary run mode before invoking the constructor", async () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const Boundary = createHostConstructor("Boundary", callback);
++    await expect(run("new Boundary()", { bindings: { Boundary } })).rejects.toThrow(
++      /persistent realm/i
++    );
++    expect(callback).not.toHaveBeenCalled();
++  });
++
++  it("rejects constructor bindings when resuming an otherwise valid run snapshot", async () => {
++    const source = "return 1;";
++    const original = await run(source);
++    const callback = vi.fn(() => createHostObject({}));
++    const Boundary = createHostConstructor("Boundary", callback);
++    await expect(
++      run(source, { snapshot: original.snapshot, bindings: { Boundary } })
++    ).rejects.toThrow();
++    expect(callback).not.toHaveBeenCalled();
++  });
++
++  it("fails closed on raw constructor export and snapshot serialization", async () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const realm = createRealm({
++      bindings: { Boundary: createHostConstructor("Boundary", callback) }
++    });
++    try {
++      const value = (await realm.evaluate("Boundary")).returnValue;
++      expect(() => deepCopyFromSandbox(value)).toThrow();
++      expect(() =>
++        serialize({
++          source: "Boundary",
++          currentAstNodeId: 1,
++          scopeChain: [{ id: 1, bindings: { Boundary: value as SnapshotBinding } }],
++          callStack: [],
++          pendingPromises: [],
++          moduleBindings: {}
++        })
++      ).toThrow();
++      expect(callback).not.toHaveBeenCalled();
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("rejects constructor replay encoding even with a supplied capability identifier", async () => {
++    const callback = vi.fn(() => createHostObject({}));
++    const realm = createRealm({
++      bindings: { Boundary: createHostConstructor("Boundary", callback) }
++    });
++    try {
++      const value = (await realm.evaluate("Boundary")).returnValue;
++      expect(() => encodeReplayData(value)).toThrow();
++      expect(() =>
++        encodeReplayData(value, { identifyCapability: () => "constructor:Boundary" })
++      ).toThrow();
++      expect(callback).not.toHaveBeenCalled();
++    } finally {
++      await realm.close();
++    }
++  });
++});
+diff --git a/packages/safe-js/src/host-constructor.test.ts b/packages/safe-js/src/host-constructor.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/host-constructor.test.ts
+@@ -0,0 +1,308 @@
++import { describe, expect, it, vi } from "vitest";
++
++import {
++  createHostConstructor,
++  createHostObject,
++  createRealm,
++  deepCopyFromSandbox,
++  releaseGuestReference,
++  retainGuestArguments,
++  startCallback
++} from "./core.js";
++
++describe("explicit persistent host constructors", () => {
++  it("creates live instances through genuine guest new expressions", async () => {
++    const create = vi.fn((initial: unknown) => {
++      let value = initial;
++      return createHostObject({
++        properties: { value: { get: () => value } },
++        methods: {
++          update: (next) => {
++            value = next;
++          }
++        }
++      });
++    });
++    const Counter = createHostConstructor("Counter", create);
++    const realm = createRealm({ bindings: { Counter } });
++    try {
++      await realm.evaluate("const first = new Counter(3); const second = new Counter(7);");
++      expect(
++        deepCopyFromSandbox(
++          (
++            await realm.evaluate(
++              "[first.value, second.value, first !== second, typeof Counter, Counter.name]"
++            )
++          ).returnValue
++        )
++      ).toEqual([3, 7, true, "function", "Counter"]);
++      await realm.evaluate("first.update(9);");
++      expect(
++        deepCopyFromSandbox((await realm.evaluate("[first.value, second.value]")).returnValue)
++      ).toEqual([9, 7]);
++      expect(create).toHaveBeenCalledTimes(2);
++      expect(create).toHaveBeenNthCalledWith(1, 3);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("preserves constructor identity through bindings, getters and host results", async () => {
++    const Factory = createHostConstructor("Factory", () => createHostObject({}));
++    const root = createHostObject({
++      properties: { Factory: { get: () => Factory } },
++      methods: { factory: () => Factory }
++    });
++    const realm = createRealm({
++      bindings: { Factory, alias: Factory, root, getFactory: () => Factory }
++    });
++    try {
++      expect(
++        deepCopyFromSandbox(
++          (
++            await realm.evaluate(
++              "[Factory === alias, root.Factory === Factory, root.factory() === Factory, getFactory() === Factory, root.Factory === root.Factory]"
++            )
++          ).returnValue
++        )
++      ).toEqual([true, true, true, true, true]);
++      await realm.evaluate("const saved = root.Factory; const instance = new saved();");
++      expect((await realm.evaluate("saved === getFactory()")).returnValue).toBe(true);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("preserves returned host object identity and unwraps existing capabilities", async () => {
++    const target = createHostObject({});
++    const receive = vi.fn((value) => value);
++    const Select = createHostConstructor("Select", receive);
++    const realm = createRealm({ bindings: { Select, target } });
++    try {
++      expect((await realm.evaluate("new Select(target) === target")).returnValue).toBe(true);
++      expect(receive).toHaveBeenCalledExactlyOnceWith(target);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("copies argument graphs without sharing mutable guest data", async () => {
++    let copied: { nested: { value: number }; alias: object } | undefined;
++    const Capture = createHostConstructor("Capture", (value) => {
++      copied = value as typeof copied;
++      return createHostObject({});
++    });
++    const realm = createRealm({ bindings: { Capture } });
++    try {
++      await realm.evaluate(
++        "const nested = {value: 2}; const source = {nested, alias: nested}; new Capture(source); nested.value = 5;"
++      );
++      expect(copied?.nested.value).toBe(2);
++      expect(copied?.alias).toBe(copied?.nested);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("retains exact guest arguments only with the existing explicit API", async () => {
++    let reference: unknown;
++    const Capture = retainGuestArguments(
++      createHostConstructor("Capture", (value) => {
++        reference = value;
++        return createHostObject({ properties: { value: { get: () => reference } } });
++      }),
++      0
++    );
++    const realm = createRealm({ bindings: { Capture } });
++    try {
++      expect(
++        (
++          await realm.evaluate(
++            "const source = {value: 7}; const captured = new Capture(source); return captured.value === source;"
++          )
++        ).returnValue
++      ).toBe(true);
++      expect(releaseGuestReference(reference)).toBe(true);
++      expect(releaseGuestReference(reference)).toBe(false);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("wraps callbacks with the ordinary persistent callback machinery", async () => {
++    let callback: unknown;
++    const Observe = createHostConstructor("Observe", (value) => {
++      callback = value;
++      return createHostObject({});
++    });
++    const realm = createRealm({ bindings: { Observe } });
++    try {
++      await realm.evaluate(
++        "let count = 0; new Observe((value) => { count += value; return count; });"
++      );
++      const invocation = startCallback(callback as (...args: unknown[]) => unknown, [4]);
++      await invocation.synchronous;
++      expect(await invocation.result).toBe(4);
++      expect((await realm.evaluate("count")).returnValue).toBe(4);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("isolates guest wrappers across independent realms", async () => {
++    const Factory = createHostConstructor("Factory", () => createHostObject({}));
++    const first = createRealm({ bindings: { Factory } });
++    const second = createRealm({ bindings: { Factory } });
++    try {
++      const firstValue = (await first.evaluate("Factory")).returnValue;
++      const secondValue = (await second.evaluate("Factory")).returnValue;
++      expect(firstValue).not.toBe(secondValue);
++      await first.close();
++      expect((await second.evaluate("typeof new Factory()")).returnValue).toBe("object");
++    } finally {
++      await first.close();
++      await second.close();
++    }
++  });
++
++  it.each(["new Holder.Factory(4)", "new Holder['Factory'](4)", "new (choose())(4)"])(
++    "accepts constructor expressions: %s",
++    async (expression) => {
++      const Factory = createHostConstructor("Factory", (value) =>
++        createHostObject({ properties: { value: { get: () => value } } })
++      );
++      const realm = createRealm({ bindings: { Holder: { Factory }, choose: () => Factory } });
++      try {
++        expect((await realm.evaluate(`(${expression}).value`)).returnValue).toBe(4);
++      } finally {
++        await realm.close();
++      }
++    }
++  );
++
++  it("keeps bound construction inside its owning realm", async () => {
++    const receive = vi.fn((value) =>
++      createHostObject({ properties: { value: { get: () => value } } })
++    );
++    const Factory = createHostConstructor("Factory", receive);
++    const realm = createRealm({ bindings: { Factory } });
++    try {
++      expect(
++        (
++          await realm.evaluate(
++            "const Bound = Factory.bind(null, 9).bind(null); return new Bound().value;"
++          )
++        ).returnValue
++      ).toBe(9);
++      expect(receive).toHaveBeenCalledExactlyOnceWith(9);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it.each([
++    { label: "captured guest closure", source: "() => new Factory()", execute: "escaped()" },
++    {
++      label: "object containing captured closure",
++      source: "({make: () => new Factory()})",
++      execute: "escaped.make()"
++    },
++    {
++      label: "promise containing constructor",
++      source: "Promise.resolve(Factory)",
++      execute: "new (await escaped)()"
++    },
++    {
++      label: "promise containing bound constructor",
++      source: "Promise.resolve(Factory.bind(null))",
++      execute: "new (await escaped)()"
++    },
++    {
++      label: "captured guest closure creating bound constructor",
++      source: "() => new (Factory.bind(null))()",
++      execute: "escaped()"
++    }
++  ])("does not construct through an escaped $label", async ({ source, execute }) => {
++    const receive = vi.fn(() => createHostObject({}));
++    const Factory = createHostConstructor("Factory", receive);
++    const owner = createRealm({ bindings: { Factory } });
++    let foreign: ReturnType<typeof createRealm> | undefined;
++    try {
++      const escaped = (await owner.evaluate(source)).returnValue;
++      try {
++        foreign = createRealm({ bindings: { escaped } });
++      } catch {
++        expect(receive).not.toHaveBeenCalled();
++        return;
++      }
++      let rejection: unknown;
++      try {
++        rejection = (
++          await foreign.evaluate(
++            `try { ${execute}; return "accepted"; } catch (error) { return error.name; }`
++          )
++        ).returnValue;
++      } catch (error) {
++        expect(error).toMatchObject({ code: "reentry" });
++        rejection = "compile-owner-reentry";
++      }
++      expect(["TypeError", "compile-owner-reentry"]).toContain(rejection);
++      expect(receive).not.toHaveBeenCalled();
++      expect((await owner.evaluate("typeof new Factory()")).returnValue).toBe("object");
++      expect(receive).toHaveBeenCalledTimes(1);
++    } finally {
++      await foreign?.close();
++      await owner.close();
++    }
++  });
++
++  it("allows construction during a registered owner callback", async () => {
++    let callback: unknown;
++    const Factory = createHostConstructor("Factory", () =>
++      createHostObject({ properties: { value: { get: () => 12 } } })
++    );
++    const realm = createRealm({
++      bindings: {
++        Factory,
++        register: (value: unknown) => {
++          callback = value;
++        }
++      }
++    });
++    try {
++      await realm.evaluate(
++        "register(async () => { await Promise.resolve(); return new Factory().value; });"
++      );
++      const invocation = startCallback(callback);
++      await invocation.synchronous;
++      expect(await invocation.result).toBe(12);
++    } finally {
++      await realm.close();
++    }
++  });
++
++  it("does not replace result validation with an exotic promise drain error", async () => {
++    const getter = vi.fn(() => {
++      throw new RangeError("host species hook");
++    });
++    const promise = Promise.resolve(createHostObject({}));
++    Object.defineProperty(promise, "constructor", { get: getter });
++    const Factory = createHostConstructor(
++      "Factory",
++      (() => promise) as unknown as Parameters<typeof createHostConstructor>[1]
++    );
++    const realm = createRealm({ bindings: { Factory } });
++    try {
++      expect(
++        (
++          await realm.evaluate(
++            "try { new Factory(); return 'accepted'; } catch (error) { return error.name; }"
++          )
++        ).returnValue
++      ).toBe("TypeError");
++      expect(getter).toHaveBeenCalledTimes(1);
++    } finally {
++      await realm.close();
++    }
++  });
++});
+diff --git a/packages/safe-js/src/host-constructor.ts b/packages/safe-js/src/host-constructor.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/host-constructor.ts
+@@ -0,0 +1,71 @@
++import { types as nodeTypes } from "node:util";
++
++import { type HostObject, hostObjectDefinition } from "./host-object.js";
++
++declare const hostConstructorType: unique symbol;
++
++export type HostConstructor = ((...args: readonly unknown[]) => never) & {
++  readonly [hostConstructorType]: true;
++};
++
++type Definition = {
++  readonly name: string;
++  readonly construct: (...args: readonly unknown[]) => HostObject;
++};
++
++const definitions = new WeakMap<object, Definition>();
++const guestConstructors = new WeakSet<object>();
++const promiseThen = Promise.prototype.then;
++
++export function createHostConstructor(
++  name: string,
++  construct: (...args: readonly unknown[]) => HostObject
++): HostConstructor {
++  if (typeof name !== "string" || name.length === 0 || name.length > 1024)
++    throw new TypeError("Host constructor names require 1 to 1024 code units.");
++  if (
++    typeof construct !== "function" ||
++    nodeTypes.isProxy(construct) ||
++    nodeTypes.isAsyncFunction(construct) ||
++    nodeTypes.isGeneratorFunction(construct)
++  )
++    throw new TypeError("Host constructors require a synchronous non-proxy callback.");
++  const capability = ((..._args: readonly unknown[]): never => {
++    throw new TypeError("Host constructors require guest construction in a persistent realm.");
++  }) as HostConstructor;
++  Object.defineProperty(capability, "name", { value: name, configurable: false });
++  definitions.set(
++    capability,
++    Object.freeze({
++      name,
++      construct: (...args: readonly unknown[]) => {
++        const result = Reflect.apply(construct, undefined, args);
++        if (hostObjectDefinition(result) === undefined) {
++          if (nodeTypes.isPromise(result)) {
++            try {
++              Reflect.apply(promiseThen, result, [undefined, () => undefined]);
++            } catch {}
++          }
++          throw new TypeError("Host constructors must synchronously return a live host object.");
++        }
++        return result;
++      }
++    })
++  );
++  return Object.freeze(capability);
++}
++
++export function hostConstructorDefinition(value: unknown): Definition | undefined {
++  return typeof value === "function" ? definitions.get(value) : undefined;
++}
++
++export function registerHostConstructorClosure(value: object): void {
++  guestConstructors.add(value);
++}
++
++export function isHostConstructorCapability(value: unknown): boolean {
++  return (
++    ((typeof value === "object" && value !== null) || typeof value === "function") &&
++    (definitions.has(value) || guestConstructors.has(value))
++  );
++}
+diff --git a/packages/safe-js/src/host-object.ts b/packages/safe-js/src/host-object.ts
+--- a/packages/safe-js/src/host-object.ts
++++ b/packages/safe-js/src/host-object.ts
+@@ -1,6 +1,6 @@
+ import { types as nodeTypes } from "node:util";
+ 
+-import type { SandboxObject, SandboxValue } from "./interp/values.js";
++import type { SandboxClosure, SandboxObject, SandboxValue } from "./interp/values.js";
+ 
+ declare const hostObjectType: unique symbol;
+ 
+@@ -34,6 +34,7 @@
+ 
+ export type HostObjectRegistry = {
+   objects: WeakMap<HostObject, SandboxObject>;
++  constructors?: WeakMap<object, SandboxClosure>;
+   retained: Set<SandboxValue>;
+   references: Map<object, SandboxValue>;
+ };
+diff --git a/packages/safe-js/src/index.ts b/packages/safe-js/src/index.ts
+--- a/packages/safe-js/src/index.ts
++++ b/packages/safe-js/src/index.ts
+@@ -12,6 +12,7 @@
+ export { run } from "./run.js";
+ export { retainGuestArguments, releaseGuestReference } from "./guest-reference.js";
+ export { startCallback, type CallbackInvocation, type CallbackOptions } from "./callback.js";
++export { createHostConstructor, type HostConstructor } from "./host-constructor.js";
+ export { createRealm, type Realm, type RealmOptions, type RealmResult } from "./realm.js";
+ export {
+   createHostObject,
+diff --git a/packages/safe-js/src/interp/cancel.ts b/packages/safe-js/src/interp/cancel.ts
+--- a/packages/safe-js/src/interp/cancel.ts
++++ b/packages/safe-js/src/interp/cancel.ts
+@@ -1,4 +1,5 @@
+ import { AsyncLocalStorage } from "node:async_hooks";
++import { isHostConstructorCapability } from "../host-constructor.js";
+ import {
+   createSandboxPromise,
+   isSandboxClosure,
+@@ -41,6 +42,9 @@
+ ): SandboxValue | Promise<SandboxValue> {
+   assertPromiseExecutionAllowed();
+   const active = activeCancellation.getStore();
++  if (isHostConstructorCapability(closure) &&
++    (active?.signal === undefined || active.signal !== closure.cancellationSignal))
++    throw new TypeError("Host constructor capabilities require their owning realm.");
+   if (active === undefined) return operation(args, context);
+   if (closure.sandbox === true) {
+     return activeCancellation.run({ signal: active.signal, host: false }, () =>
+diff --git a/packages/safe-js/src/interp/host-bridge.ts b/packages/safe-js/src/interp/host-bridge.ts
+--- a/packages/safe-js/src/interp/host-bridge.ts
++++ b/packages/safe-js/src/interp/host-bridge.ts
+@@ -1,4 +1,5 @@
+ import { normalizeClosureResult } from "./async.js";
++import { hostConstructorDefinition, isHostConstructorCapability, registerHostConstructorClosure } from "../host-constructor.js";
+ import { captureGuestReference, guestArgumentsFrom, isGuestReference, releaseGuestReference, restoreGuestReference, retainGuestArguments } from "../guest-reference.js";
+ import { registerHostCallback, type CallbackRuntime, type CallbackControl } from "../callback.js";
+ import { types as nodeTypes } from "node:util";
+@@ -165,15 +166,16 @@
+   options: HostBridgeOptions,
+   state: { seen: WeakMap<object, SandboxValue> }
+ ): SandboxValue {
+-  const existing = state.seen.get(value) ?? options.hostCalls?.nativeClosures.get(value);
++  const constructor = hostConstructorDefinition(value);
++  if (constructor !== undefined && (options.hostObjects === undefined || options.hostCalls !== undefined))
++    throw new TypeError("Host constructors require a persistent realm without replay.");
++  const existing = state.seen.get(value) ?? options.hostCalls?.nativeClosures.get(value) ??
++    (constructor === undefined ? undefined : options.hostObjects!.constructors?.get(value));
+   if (existing !== undefined) return existing;
+-  const bindingName = name === "default" && value.name.length > 0 ? value.name : name;
+-  const callable = value as (...args: readonly unknown[]) => unknown;
++  const bindingName = constructor?.name ?? (name === "default" && value.name.length > 0 ? value.name : name);
++  const callable = constructor?.construct ?? value as (...args: readonly unknown[]) => unknown;
+ 
+-  return createSandboxClosure({
+-    ...(isAsyncFunction(callable) ? { async: true as const } : {}),
+-    cancellationSignal: options.signal,
+-    call: (args, context) => {
++  const invoke: SandboxClosure["call"] = (args, context) => {
+       const operationLease = options.budget.acquireCompileOwner(false, options.compileOwner);
+       const compilation = new CompileScope(operationLease.owner);
+       const retainedArguments: object[] = [];
+@@ -337,10 +339,23 @@
+         compilation.dispose();
+         operationLease.release();
+       }
++    };
++  return createSandboxClosure({
++    ...(isAsyncFunction(callable) ? { async: true as const } : {}),
++    cancellationSignal: options.signal,
++    call: constructor === undefined ? invoke : (_args, context) => {
++      throw createHostErrorValue(new TypeError("Host constructor requires new."), context?.stack ?? [], options.budget, context?.span);
+     },
++    ...(constructor === undefined ? {} : { construct: invoke }),
+     name: bindingName,
+     properties: (closure) => {
+       state.seen.set(value, closure);
++      if (constructor !== undefined) {
++        registerHostConstructorClosure(closure);
++        const registry = options.hostObjects!;
++        (registry.constructors ??= new WeakMap()).set(value, closure);
++        registry.retained.add(closure);
++      }
+       if (options.registerCapabilities) {
+         options.hostCalls?.registerHostCapability(
+           JSON.stringify([
+@@ -352,7 +367,7 @@
+         );
+       }
+       return (
+-        copyFunctionProperties(callable, [], options, state, options.operation ?? bindingName) ?? {}
++        copyFunctionProperties(value, [], options, state, options.operation ?? bindingName) ?? {}
+       );
+     }
+   });
+@@ -895,6 +910,8 @@
+   }
+ 
+   if (isSandboxClosure(value) || isSandboxPromise(value)) {
++    if (isHostConstructorCapability(value))
++      throw new TypeError("Guest host constructors cannot cross a host copy boundary.");
+     return true;
+   }
+ 
+diff --git a/packages/safe-js/src/interp/methods/function.ts b/packages/safe-js/src/interp/methods/function.ts
+--- a/packages/safe-js/src/interp/methods/function.ts
++++ b/packages/safe-js/src/interp/methods/function.ts
+@@ -1,5 +1,6 @@
+ import { createSandboxClosure, type SandboxClosure, type SandboxValue } from "../values.js";
+ import { guestFunctionProperties, registerGuestFunction } from "../guest-objects.js";
++import { isHostConstructorCapability, registerHostConstructorClosure } from "../../host-constructor.js";
+ 
+ export type FunctionMethodOptions = {
+   callClosure: (
+@@ -36,12 +37,15 @@
+     return undefined;
+   }
+ 
+-  return createSandboxClosure({
++  const adapter = createSandboxClosure({
+     sandbox: true,
+     name: `Function#${property}`,
++    ...(isHostConstructorCapability(target) ? { cancellationSignal: target.cancellationSignal, retainedValues: () => [target] } : {}),
+     call: (args, context) =>
+       callFunctionMethod(target, property, args, options, context?.stack ?? [])
+   });
++  if (isHostConstructorCapability(target)) registerHostConstructorClosure(adapter);
++  return adapter;
+ }
+ 
+ function isFunctionMethodName(property: string | number): property is FunctionMethodName {
+diff --git a/packages/safe-js/src/interp/values.ts b/packages/safe-js/src/interp/values.ts
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -1,6 +1,7 @@
+ import { bindOtelSpan, getBoundOtelSpan } from "../observability/otel.js";
+ import { guestFunctionProperties, guestPrototype, isGuestDefaultPrototype } from "./guest-objects.js";
+ import { isSandboxDate } from "./date-value.js";
++import { isHostConstructorCapability, registerHostConstructorClosure } from "../host-constructor.js";
+ import type { Budget, CompileTicket } from "./budget.js";
+ import { types as nodeTypes } from "node:util";
+ import { CompileScope, RegexCompileGuard, regexCompiledData } from "./regex/compile-guard.js";
+@@ -205,11 +206,14 @@
+ 
+   if (input.boundTarget !== undefined) {
+     Object.defineProperty(closure, "boundTarget", { value: input.boundTarget });
++    if (isHostConstructorCapability(input.boundTarget)) registerHostConstructorClosure(closure);
+   }
+ 
+-  if (input.cancellationSignal !== undefined) {
++  const cancellationSignal = input.cancellationSignal ??
++    (isHostConstructorCapability(input.boundTarget) ? input.boundTarget?.cancellationSignal : undefined);
++  if (cancellationSignal !== undefined) {
+     Object.defineProperty(closure, "cancellationSignal", {
+-      value: input.cancellationSignal
++      value: cancellationSignal
+     });
+   }
+ 
+@@ -700,6 +704,7 @@
+   depth = 0
+ ): SandboxValue {
+   assertSandboxDataDepth(depth);
++  if (isHostConstructorCapability(value)) throw new TypeError("Host constructor capabilities cannot be deep-copied.");
+   if (isSandboxDate(value)) throw new TypeError("Date values require an explicit timestamp conversion before copying.");
+   if (liveHostObject(value) !== undefined || hostObjectDefinition(value) !== undefined) {
+     throw new TypeError("A live host object cannot be deep-copied.");
+@@ -893,6 +898,7 @@
+   depth = 0
+ ): unknown {
+   assertSandboxDataDepth(depth);
++  if (isHostConstructorCapability(value)) throw new TypeError("Host constructor capabilities cannot be deep-copied.");
+   if (isSandboxDate(value)) throw new TypeError("Date values require an explicit timestamp conversion before copying.");
+   if (liveHostObject(value) !== undefined) {
+     if (options.unwrapHostObject === undefined)
+diff --git a/packages/safe-js/src/realm.ts b/packages/safe-js/src/realm.ts
+--- a/packages/safe-js/src/realm.ts
++++ b/packages/safe-js/src/realm.ts
+@@ -132,6 +132,7 @@
+       cleanups.clear();
+       tracker.clear();
+       hostObjects.retained.clear();
++      hostObjects.constructors = undefined;
+       hostObjects.references.clear();
+       hostObjects.objects = new WeakMap();
+       budget.setRetainedValues(hostObjects, undefined);
+@@ -190,6 +191,7 @@
+     budget.setRetainedValues(callbackRuntime, undefined);
+     callbackRuntime.retained.clear();
+     hostObjects.retained.clear();
++    hostObjects.constructors = undefined;
+     hostObjects.references.clear();
+     releaseObjectPrototype(budget);
+     releaseDateGlobals(budget);
+diff --git a/packages/safe-js/src/snapshot/replay-data.ts b/packages/safe-js/src/snapshot/replay-data.ts
+--- a/packages/safe-js/src/snapshot/replay-data.ts
++++ b/packages/safe-js/src/snapshot/replay-data.ts
+@@ -1,4 +1,5 @@
+ import { MAX_DATA_DEPTH } from "../graph-depth.js";
++import { isHostConstructorCapability } from "../host-constructor.js";
+ import { CompileScope } from "../interp/regex/compile-guard.js";
+ import { float32DataProperties, isFloat32Array } from "../interp/float32.js";
+ import { decodeFloat32Storage, encodeFloat32Storage, type Float32Data } from "./float32array.js";
+@@ -69,6 +70,7 @@
+   const seen = new WeakMap<object, number>();
+   const float32Buffers = new WeakMap<ArrayBuffer, number>();
+   const encode = (entry: SandboxValue, depth: number, path: readonly string[]): Atom => {
++    if (isHostConstructorCapability(entry)) throw new TypeError("Host constructor capabilities cannot be replayed.");
+     if (hasDateState(entry)) throw new TypeError("Date state cannot be replayed without losing its semantics.");
+     if (hasExtendedGuestState(entry)) throw new TypeError("Guest function/prototype state cannot be replayed.");
+     if (depth > MAX_DATA_DEPTH) throw new TypeError("Replay data exceeds the nesting limit.");
+@@ -214,6 +216,7 @@
+         if (typeof id !== "string" || id.length === 0)
+           throw new TypeError("Invalid replay capability reference.");
+         const capability = options.resolveCapability?.(id);
++        if (isHostConstructorCapability(capability)) throw new TypeError("Host constructor capabilities cannot be restored.");
+         if (!isSandboxClosure(capability))
+           throw new TypeError(`Missing replay capability '${id}'.`);
+         return capability;
+@@ -257,6 +260,7 @@
+         if (typeof capabilityId !== "string" || capabilityId.length === 0)
+           throw new TypeError("Invalid replay capability reference.");
+         const capability = options.resolveCapability?.(capabilityId);
++        if (isHostConstructorCapability(capability)) throw new TypeError("Host constructor capabilities cannot be restored.");
+         if (!isSandboxClosure(capability))
+           throw new TypeError(`Missing replay capability '${capabilityId}'.`);
+         if (record(own(node, "properties")).tag === "undefined") {
+diff --git a/packages/safe-js/src/snapshot/serialize.ts b/packages/safe-js/src/snapshot/serialize.ts
+--- a/packages/safe-js/src/snapshot/serialize.ts
++++ b/packages/safe-js/src/snapshot/serialize.ts
+@@ -1,5 +1,6 @@
+ import { hashSource } from "../parse/hash.js";
+ import { liveHostObject } from "../host-object.js";
++import { isHostConstructorCapability } from "../host-constructor.js";
+ import { hasExtendedGuestState } from "../interp/guest-objects.js";
+ import { sandboxErrorTypes, type SandboxErrorName } from "../error/shape.js";
+ import { assertSnapshotGraphDepth } from "../graph-depth.js";
+@@ -294,6 +295,7 @@
+   path: string,
+   state: SerializationState
+ ): SerializedSnapshotValue {
++  if (isHostConstructorCapability(value)) throw new TypeError("Host constructor capabilities cannot be snapshotted.");
+   if (hasExtendedGuestState(value)) throw new TypeError(`Guest function/prototype state cannot be snapshotted at ${path}.`);
+   if (liveHostObject(value) !== undefined)
+     throw new TypeError(`Cannot snapshot a live host object at ${path}.`);
+@@ -598,6 +600,7 @@
+   ancestors: WeakSet<object>
+ ): void {
+   if (hasExtendedGuestState(value)) throw new TypeError("Guest function/prototype state cannot be snapshotted.");
++  if (isHostConstructorCapability(value)) throw new TypeError("Host constructor capabilities cannot be snapshotted.");
+   if (liveHostObject(value) !== undefined)
+     throw new TypeError("Cannot snapshot a live host object.");
+   if (

@@ -1,5 +1,19 @@
 # Agent browser implementation tasks
 
+An isolated public SafeJS host-constructor contribution now enables explicit
+construct-only live capabilities, stable per-realm identity, retained arguments,
+owner-context checks and direct/bound/adapter copy/replay rejection. Candidate and
+pristine replay each pass 234 cases across eight named SDK files, including 103
+new cases; scoped builds/types and new-file format/import checks pass. The
+adversarial thenable fixture retains its intentional lint diagnostic, and all earlier
+fixture failures remain recorded. `contributions/safejs-host-constructors.md`
+states the narrower ownership guarantee and graph/continuation limitations.
+The separate built-runtime probe was denied and not executed or retried; explicit
+user approval is required. This is not selected SDK integration or deployed
+AbortController/MutationObserver support, and it is not yet combined with guest
+bytes. One native BFCL memory followup supplies historical research only. Existing
+denied gates and the complete browser goal remain open; work continues elsewhere.
+
 Native page User Timing now supplies mark/measure, ordered entry queries and
 type/name clearing on the shared performance object, with bounded JSON-detail
 snapshots, retained-handle accounting and close revocation. All 177 new cases pass;
