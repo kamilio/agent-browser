@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Native external-authenticator work now has builtin-only FIDO HID packet framing
+and a bounded owned-message assembler, with 78 new synthetic native cases passing
+across two named suites. Build/strict types and four-file Biome pass. A fresh
+historical U2F HID source read supports the framing; a separate CTAP2 retrieval
+failed native extraction and is not treated as equivalence evidence.
+`FIDO-HID-FRAMING.md` keeps actual device access, descriptors/report IDs, nonce
+allocation, transaction ownership/deadlines/cancellation, CTAP2 commands and trusted
+human PIN/UV/consent as open prerequisites. No hardware provider was activated,
+software substitute presented as hardware, dependency installed or denied gate
+reopened. The complete browser/passkey goal remains active.
+
 The browser-only MLCommons power follow-up is recorded in
 `BENCHMARK-POWER-BOUNDARIES.md`. Its separately captured guide distinguishes
 system-supply measurement and range discovery from testing; it does not measure

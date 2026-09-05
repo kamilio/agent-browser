@@ -81,3 +81,15 @@ policy, human UI, hardware and real relying-party/account acceptance remain
 separate gates. Raw CTAPHID through Node builtins is only a future research
 question: these manuals do not establish its framing, descriptor, transport,
 ownership, cancellation or PIN-security contract.
+
+## Later native framing increment
+
+A separate native-browser read of the explicitly versioned U2F HID 1.2 source on
+September 5, 2026 at 13:32:34.610 UTC now supports a bounded packet codec and owned
+message assembler. `FIDO-HID-FRAMING.md` records the new source, 78 synthetic native
+tests and remaining transport/device boundaries. This does not revise the earlier
+manual research or authorize libfido2, hardware, PIN/UV or a real account ceremony.
+A separate CTAP2 source retrieval failed native extraction; protocol equivalence
+is not claimed from its raw capture. Descriptor discovery, OS report-ID handling,
+nonce/channel ownership, deadlines, cancellation and actual CTAP2 semantics remain
+required before any hardware provider can be considered implemented or accepted.
