@@ -30,6 +30,13 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+A new native-only benchmark round retrieves six relevant extractions across five
+works in eight attempts. `BENCHMARK-METHODOLOGY-2026-09-05.md` records contamination
+test assumptions, explicitly excluded difficulty-estimation costs and uncertainty
+limits, with primary-source/version attribution. All 31 saved checksums passed
+independent verification. An unrelated seed and infrastructure failure remain
+recorded; no new model evaluation, missing equation or ranking is inferred.
+
 Explicit `AGENT_BROWSER_LANGUAGES` preferences now flow through native CLI hosts
 and validated child-session initialization, with frozen canonical snapshots before
 resource creation. `BROWSER-IDENTITY.md` documents defaults and existing-service
