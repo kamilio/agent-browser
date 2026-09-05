@@ -8,6 +8,7 @@ import {
 	researchReaderInfo,
 } from "./research-reader-info.js";
 import { documentStyles } from "./styles.js";
+import { textDocumentInfo } from "./text-document-info.js";
 
 export type ExtractionType =
 	| "container"
@@ -45,6 +46,7 @@ export interface ExtractedNode {
 export interface ExtractionOptions {
 	format?: "markdown" | "json";
 	root?: string;
+	lines?: { start: number; end: number };
 	maxBytes?: number;
 	maxNodes?: number;
 	maxDepth?: number;
@@ -58,6 +60,14 @@ interface ExtractionMetadata {
 	revision: number;
 	partial: true;
 	reader?: Readonly<ResearchReaderReport>;
+	textSelection?: {
+		method: "text-lines";
+		start: number;
+		end: number;
+		totalLines: number;
+		sourceCodeUnits: number;
+		selectedCodeUnits: number;
+	};
 }
 
 export type DocumentExtraction = ExtractionMetadata &
@@ -120,6 +130,81 @@ const inlineTypes = new Set<ExtractionType>([
 	"break",
 ]);
 const encoder = new TextEncoder();
+
+function selectTextLines(
+	tree: DocumentTree,
+	lines: NonNullable<ExtractionOptions["lines"]>,
+) {
+	if (
+		lines === null ||
+		typeof lines !== "object" ||
+		Array.isArray(lines) ||
+		!Number.isSafeInteger(lines.start) ||
+		!Number.isSafeInteger(lines.end) ||
+		lines.start < 1 ||
+		lines.start > lines.end ||
+		lines.end > 2_000_001
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid text line range");
+	const root = tree.get(tree.root);
+	const info = textDocumentInfo(tree);
+	if (!info || info.revision !== tree.revision)
+		throw new AgentBrowserError(
+			"unsupported",
+			"Text line extraction requires an unchanged text-loader document",
+		);
+	const source = tree.get(info.textNode);
+	const pre = source.parent === null ? undefined : tree.get(source.parent);
+	if (
+		root.kind !== "document" ||
+		root.children.length !== 1 ||
+		pre?.kind !== "element" ||
+		pre.tagName !== "pre" ||
+		pre.parent !== root.id ||
+		root.children[0] !== pre.id ||
+		pre.children.length !== 1 ||
+		pre.children[0] !== source.id ||
+		source.kind !== "text"
+	)
+		throw new AgentBrowserError(
+			"unsupported",
+			"Text line extraction requires only the native pre and registered text node",
+		);
+	const text = source.data;
+	if (text.length > 2_000_000)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Text line extraction scan limit exceeded",
+		);
+	let totalLines = 1;
+	let startOffset = 0;
+	let endOffset = text.length;
+	for (let index = 0; index < text.length; index++) {
+		const code = text.charCodeAt(index);
+		if (code !== 13 && code !== 10) continue;
+		if (code === 13 && text.charCodeAt(index + 1) === 10) index++;
+		if (totalLines === lines.end) endOffset = index + 1;
+		totalLines++;
+		if (totalLines === lines.start) startOffset = index + 1;
+	}
+	if (lines.end > totalLines)
+		throw new AgentBrowserError(
+			"not-found",
+			"Text line range exceeds document",
+		);
+	return {
+		textNode: info.textNode,
+		text: text.slice(startOffset, endOffset),
+		metadata: {
+			method: "text-lines" as const,
+			start: lines.start,
+			end: lines.end,
+			totalLines,
+			sourceCodeUnits: text.length,
+			selectedCodeUnits: endOffset - startOffset,
+		},
+	};
+}
 
 function clean(value: string) {
 	return value
@@ -335,6 +420,11 @@ export function extractDocument(
 	tree: DocumentTree,
 	options: ExtractionOptions = {},
 ): DocumentExtraction {
+	if (options.lines !== undefined && options.root !== undefined)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Text line extraction cannot be combined with root",
+		);
 	const format = options.format ?? "markdown";
 	if (format !== "markdown" && format !== "json")
 		throw new AgentBrowserError(
@@ -355,6 +445,10 @@ export function extractDocument(
 				`Invalid extraction limit: ${name}`,
 			);
 	}
+	const selection =
+		options.lines === undefined
+			? undefined
+			: selectTextLines(tree, options.lines);
 	const start =
 		options.root === undefined ? tree.root : tree.resolve(options.root).id;
 	const styles = documentStyles(tree);
@@ -380,6 +474,7 @@ export function extractDocument(
 		revision: tree.revision,
 		partial: true,
 		...(reader ? { reader } : {}),
+		...(selection ? { textSelection: selection.metadata } : {}),
 	};
 	if (encoder.encode(JSON.stringify(metadata)).byteLength > maxBytes)
 		throw new AgentBrowserError(
@@ -431,7 +526,10 @@ export function extractDocument(
 						? kinds[source.tagName]
 						: fallback,
 		};
-		if (node.type === "text") node.text = clean(source.data);
+		if (node.type === "text")
+			node.text = clean(
+				selection?.textNode === source.id ? selection.text : source.data,
+			);
 		else if (node.type === "image")
 			node.text = clean(source.attributes.alt ?? "");
 		else if (node.type !== "break" && node.type !== "separator")

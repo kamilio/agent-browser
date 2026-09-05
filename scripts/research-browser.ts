@@ -118,14 +118,51 @@ function researchSelector(value: unknown): string {
 	return value;
 }
 
+export interface ResearchLineRange {
+	start: number;
+	end: number;
+}
+
+function validateResearchLines(value: ResearchLineRange): ResearchLineRange {
+	if (
+		typeof value !== "object" ||
+		value === null ||
+		Array.isArray(value) ||
+		!Number.isSafeInteger(value.start) ||
+		!Number.isSafeInteger(value.end) ||
+		value.start < 1 ||
+		value.end < value.start ||
+		value.end > 2_000_001
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid research lines");
+	return { start: value.start, end: value.end };
+}
+
+function researchLines(value: unknown): ResearchLineRange {
+	if (
+		typeof value !== "string" ||
+		value.length > 15 ||
+		value.trim() !== value ||
+		!/^[1-9][0-9]{0,6}:[1-9][0-9]{0,6}$/.test(value)
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid research lines");
+	const [start, end] = value.split(":").map(Number);
+	return validateResearchLines({ start, end });
+}
+
 export function parseResearchArguments(args: readonly string[]) {
 	let reader = false;
 	let captureBody = false;
 	let selector: string | undefined;
+	let lines: ResearchLineRange | undefined;
 	const urls: string[] = [];
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (argument === "--lines" && lines === undefined) {
+			lines = researchLines(args[++index]);
+			continue;
+		}
 		if (argument === "--capture-body" && !captureBody) {
 			captureBody = true;
 			continue;
@@ -155,6 +192,11 @@ export function parseResearchArguments(args: readonly string[]) {
 			);
 		urls.push(url.href);
 	}
+	if (selector !== undefined && lines !== undefined)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research lines and selector are mutually exclusive",
+		);
 	if (!urls.length)
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -164,6 +206,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		reader,
 		urls,
 		...(selector === undefined ? {} : { selector }),
+		...(lines === undefined ? {} : { lines }),
 		...(captureBody ? { captureBody: true as const } : {}),
 	};
 }
@@ -253,7 +296,9 @@ export interface ResearchNavigationReport {
 	};
 	primaryResponse: PrimaryResponseSummary | null;
 	bodyCapture?: ResearchBodyCapture;
-	selection?: { method: "css-selector"; matches: number | null };
+	selection?:
+		| { method: "css-selector"; matches: number | null }
+		| { method: "text-lines"; start: number; end: number };
 	outcome: ResearchOutcome;
 	failure?: {
 		category: string;
@@ -272,13 +317,19 @@ export async function researchNavigation(
 	signal?: AbortSignal,
 	selector?: string,
 	captureBody = false,
+	lines?: ResearchLineRange,
 ): Promise<ResearchNavigationReport> {
 	if (typeof captureBody !== "boolean")
 		throw new AgentBrowserError("invalid-input", "Invalid research arguments");
+	const lineRange =
+		lines === undefined ? undefined : validateResearchLines(lines);
 	const validated = parseResearchArguments([
 		...(reader ? ["--reader"] : []),
 		...(captureBody ? ["--capture-body"] : []),
 		...(selector === undefined ? [] : ["--selector", selector]),
+		...(lineRange === undefined
+			? []
+			: ["--lines", `${lineRange.start}:${lineRange.end}`]),
 		url,
 	]);
 	const started = Date.now();
@@ -300,6 +351,9 @@ export async function researchNavigation(
 		...(validated.selector === undefined
 			? {}
 			: { selection: { method: "css-selector" as const, matches: null } }),
+		...(validated.lines === undefined
+			? {}
+			: { selection: { method: "text-lines" as const, ...validated.lines } }),
 		outcome: "failure",
 	};
 	let stage = "setup";
@@ -423,7 +477,7 @@ export async function researchNavigation(
 		report.reader = researchReaderInfo(tree);
 		const status = report.primaryResponse?.status ?? 0;
 		let root: string | undefined;
-		if (validated.selector !== undefined) {
+		if (validated.selector !== undefined || validated.lines !== undefined) {
 			stage = "document-classification";
 			const diagnostic = classifyBrowserChallenge({
 				status,
@@ -442,6 +496,8 @@ export async function researchNavigation(
 					"Research barrier requires user handoff",
 				);
 			}
+		}
+		if (validated.selector !== undefined) {
 			stage = "selection";
 			const matches = page.queries.querySelectorAll(validated.selector);
 			report.selection = { method: "css-selector", matches: matches.length };
@@ -456,6 +512,7 @@ export async function researchNavigation(
 		const extraction = extractDocument(tree, {
 			format: "markdown",
 			...(root === undefined ? {} : { root }),
+			...(validated.lines === undefined ? {} : { lines: validated.lines }),
 			maxBytes: researchRunLimits.extractionBytes,
 			maxNodes: 50_000,
 			maxDepth: 128,
@@ -513,7 +570,7 @@ export function researchExitCode(reports: readonly ResearchNavigationReport[]) {
 }
 
 async function main() {
-	const { urls, reader, selector, captureBody } = parseResearchArguments(
+	const { urls, reader, selector, captureBody, lines } = parseResearchArguments(
 		process.argv.slice(2),
 	);
 	const controller = new AbortController();
@@ -530,6 +587,7 @@ async function main() {
 				controller.signal,
 				selector,
 				captureBody,
+				lines,
 			);
 			reports.push(report);
 			process.stdout.write(`${JSON.stringify(report)}\n`);
@@ -546,7 +604,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--reader] [--capture-body] [--selector CSS] PUBLIC_HTTP_URL... (1–8 URLs)\n",
+			"Usage: research-browser [--reader] [--capture-body] [--selector CSS | --lines START:END] PUBLIC_HTTP_URL... (1–8 URLs)\n",
 		);
 		process.exitCode = 64;
 	});

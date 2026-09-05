@@ -7,6 +7,7 @@ import {
 } from "./network.js";
 import { resourceLimitError } from "./resource-limit.js";
 import type { DocumentLoaderContext } from "./session.js";
+import { registerTextDocument } from "./text-document-info.js";
 
 export function loadTextDocument(
 	response: NetworkResponse,
@@ -53,7 +54,9 @@ export function loadTextDocument(
 		context.initializeDocument?.(tree);
 		const pre = tree.createElement("pre");
 		tree.append(tree.root, pre);
-		tree.append(pre, tree.createText(text));
+		const textNode = tree.createText(text);
+		tree.append(pre, textNode);
+		registerTextDocument(tree, textNode);
 		return tree;
 	} catch (error) {
 		tree.close();

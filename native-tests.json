@@ -1,4 +1,6 @@
 [
+  "src/text-line-extraction.test.ts",
+  "src/research-lines.test.ts",
   "src/script-dom-namespaces.test.ts",
   "src/script-namespace-collections.test.ts",
   "src/node-pass-runner.test.ts",

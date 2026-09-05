@@ -1,5 +1,19 @@
 # Agent browser implementation tasks
 
+The native research browser now supports bounded `--lines START:END` selection
+from unchanged loaded plain-text/JSON documents, with exact line/span metadata,
+existing output caps and pre-selection barrier checks. All 174 new native cases
+pass; the eight-file matrix has 580 passes and three unchanged selector assertion
+failures independently reproduced on HEAD. Build/types and six-file Biome pass.
+`TEXT-LINE-EXTRACTION.md` records the new source eligibility/shape boundary and
+remaining HTML/source-mapping limits. An authorized offline saved-DOM probe keeps
+full extraction failing at the original cap while extracting five selected lines.
+A separate fresh native GET at September 5, 2026 13:25:32.086 UTC extracts lines
+5494–5520 from that large source, still partial/extracted-unverified. The original
+12:52:51.535 UTC failed extraction is not rewritten. The complete browser goal,
+foreign namespaces, real credential/passkey/device gates and denied/stopped lanes
+remain open or stopped as previously recorded; this is not whole-browser parity.
+
 HTML elements now reflect namespaceURI/localName/prefix, and Document/Element
 provide bounded live namespace/local-name queries with case-sensitive matching,
 wildcards, normalized nullable namespaces and shared collection accounting.

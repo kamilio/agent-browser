@@ -1,5 +1,21 @@
 # Opt-in native research reader
 
+## Bounded plaintext line selection
+
+Use `--lines START:END` for an inclusive one-based range in a loaded plain-text
+or JSON document, independently of `--reader` and `--capture-body`:
+
+```sh
+node dist/scripts/research-browser.js --reader --lines 100:120 PUBLIC_HTTP_URL
+```
+
+This is mutually exclusive with `--selector`. It does not select HTML source,
+rendered HTML lines, raw captured bytes or JSON object paths. Full loading and
+pre-selection barrier checks still run; all existing source/network/extraction
+limits remain unchanged. Reports stay partial and unverified. See
+`TEXT-LINE-EXTRACTION.md` for line endings, range validation, document eligibility,
+metadata and separately recorded validation limits.
+
 ## Opt-in primary response body capture
 
 The research CLI accepts `--capture-body`, independently of `--reader` and
