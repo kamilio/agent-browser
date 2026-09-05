@@ -188,6 +188,11 @@ evidence that actual SafeJS supports this signal/BufferSource bridge.
 
 ## Validation and outstanding gates
 
+`PASSKEY-HARDWARE.md` records native-only primary-source research into a genuine
+external-key/provider milestone, including CLI information loss, PIN/TTY and
+cancellation risks. No external tooling or device was used or approved as a new
+dependency; this research does not make the software provider hardware-backed.
+
 Core and adapter workers report 77 and 59 passing synthetic cases, respectively.
 The ephemeral provider adds 49, and parent integration adds ten: 195 total.
 The integration includes native global/Window credentials, real ephemeral

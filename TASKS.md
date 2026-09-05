@@ -30,6 +30,15 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+Native-only hardware-passkey research identifies a real external-key milestone
+and concrete resident-ID, client-data, PIN/TTY and cancellation blockers.
+`PASSKEY-HARDWARE.md` records nine attempts and five upstream manuals, with 17
+verified artifact checksums. Neither checked FIDO command resolved in PATH;
+nothing was installed or executed and no device/account was accessed. libfido2
+is not an approved new dependency. Exact client-data transport and reviewed
+public-suffix/RP handling are separate implementation followups, not hardware
+acceptance claims.
+
 Three further native-read Astra/X post bodies clarify the retrieved rollout,
 benchmark and alignment claims without verifying product authenticity, access or
 performance. `ASTRA-PROVENANCE-2026-09-05.md` preserves four new invocations,
