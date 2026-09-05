@@ -30,6 +30,12 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+A separate native Reddit followup remains blocked: one previously unvisited,
+source-linked thread returned HTTP 403 after an infrastructure-only retry.
+`BROWSER-RESEARCH-2026-09-05.md` records two new invocations separately from the
+original research, with 23 independently verified saved checksums. There are
+still zero verified Reddit opinions/posting dates; browsing stopped at denial.
+
 The configuration-to-form credential path now has 18 additional actual-file
 synthetic checks: protected `.env`/JSON files, symlink/hardlink and permission
 rejection, explicit rotation, and confidential native submission. Six named

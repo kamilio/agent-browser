@@ -140,6 +140,32 @@ Paths are relative to **E/poe-reddit/round-two/**. P1 was requested as `https://
 | P4 | `https://poe.com/subscription_plans` | 02:46:41.627Z | `05-purchases-social-leads.jsonl:2`; date unknown |
 | P5 | `https://poe.com/pages/privacy-center` | 02:47:08.480Z | `06-privacy-center.jsonl:1`; April 30, 2026 |
 
+## Separate Reddit followup — 04:15 UTC
+
+A later bounded native-only attempt selected one previously unvisited thread
+from an ordinary link in the saved round-two research:
+`https://www.reddit.com/r/PoeAI/comments/157caef/so_i_liked_poe_but_now/`.
+This discovery title is not verified opinion content. A sandbox network failure
+at 04:15:11 UTC was followed by one authorized navigation at 04:15:23 UTC, which
+returned HTTP 403 and network-security denial text. Browsing stopped; no alternate
+host, endpoint, login or challenge bypass was attempted.
+
+The result remains **zero verified Reddit opinions or posting dates**. The
+response arrived September 5, 2026 at 04:15:23.744 UTC, with 190,240 decoded bytes,
+zero redirects and pre-loader body SHA-256
+`dc131f91303300301ab1b23a7e3b0a084b9e325b318b2722d00fc637247b8b7a`.
+The classifier reports possible access denial by an unspecified provider; this
+is not evidence of a particular anti-bot vendor or a native parser defect.
+
+These two invocations are separate from the 133 original topic attempts. Exact
+commands, timestamps, artifact fingerprints, immutable JSONL/stderr and discovery
+provenance remain in **E/reddit-poe-followup/REPORT.md** and its ledgers. The parent
+independently verified all 23 saved checksum entries without rewriting evidence;
+the log is `node_modules/.cache/native-validation/reddit-poe-followup-parent-integrity.log`.
+No source content, posting date, representative sentiment or successful access
+is inferred from a denial. Further Reddit attempts need materially changed,
+explicitly authorized access conditions rather than repeated blocked requests.
+
 ## Remaining research and acceptance gates
 
 - **Hardware:** exact artifact/working-set sizes, backend/OEM compatibility, matched-context repeated benchmarks, and complete-system US prices/availability. No universal best or price/performance ranking yet.
