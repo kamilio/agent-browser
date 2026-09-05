@@ -30,6 +30,13 @@ feature ledger. "Better than curl" is the first milestone, not the final gate.
 
 ## Latest checkpoint
 
+The configuration-to-form credential path now has 18 additional actual-file
+synthetic checks: protected `.env`/JSON files, symlink/hardlink and permission
+rejection, explicit rotation, and confidential native submission. Six named
+suites produce 324 passes in each tree; types/builds and scoped checks pass.
+`SECRET-PROVIDERS.md` distinguishes this real-filesystem synthetic evidence from
+real vault, `pass`, live-site and runtime acceptance. The manifest has 429 entries.
+
 An explicit host-only persistent passkey factory now connects encrypted storage
 to registration/assertion publication, saves counters before returning results,
 and rejects further ceremonies after uncertain writes. Reopening still requires

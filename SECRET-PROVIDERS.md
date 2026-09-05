@@ -162,6 +162,33 @@ separate broker work and are not implemented by this configuration module.
 
 ## Integrated synthetic evidence
 
+### Protected-file end-to-end followup
+
+September 5, 2026: 18 additional cases exercise actual filesystem permissions,
+symlinks and hardlinks using only newly created private synthetic `/tmp` fixtures.
+The real configuration loader and `.env` provider feed the native command host,
+form submission and output-confinement boundary; the transport is entirely
+in-memory and cannot access a website. Both click and Enter submission deliver
+the synthetic password to the test relying party without returning the password
+or provider/configuration paths to the agent.
+
+These checks cover restrictive readable modes, rejected group/world-readable
+files, an unsafe direct parent, no early resolution, explicit file rotation and
+permission revocation after configuration loads. A failed fill still seals the
+session. No ownership or file metadata is mocked in this suite; only its own
+fresh fixtures are cleaned. They are not the user's files or a real vault.
+
+Six explicitly named credential suites produce **324 passes in each of the
+working and clean integration trees**, with project types/builds, strict new-test
+types and scoped Biome passing. The native manifest has 429 entries; no full
+manifest or real `pass`, process-runtime, socket, TTY or live-login gate ran.
+Evidence remains under
+`node_modules/.cache/native-validation/secret-file-flow-final-*`; the initial
+18-case run is retained as `secret-file-flow-initial-tests.json` / `.log`.
+The original mocked-file measurements below remain historical evidence.
+
+### Original integration
+
 September 5, 2026: all **293 new cases** pass: 55 broker, 78 node-provider,
 120 configuration, 38 adversarial command, and two native form-submission cases.
 The form tests prove that the synthetic relying party receives the resolved
