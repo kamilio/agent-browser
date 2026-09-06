@@ -1,4 +1,4 @@
-import { AgentBrowserError } from "./errors.js";
+import { AgentBrowserError, type ErrorCode } from "./errors.js";
 import { FidoHidMessageAssembler } from "./fido-hid-message.js";
 import {
 	copyFidoHidChannel,
@@ -33,8 +33,14 @@ export type FidoHidCborResult =
 	| { kind: "response"; payload: Uint8Array }
 	| { kind: "error"; code: number; error: FidoHidResponseError };
 
+export type FidoHidCborExchange = (
+	payload: Uint8Array,
+	options?: FidoHidExchangeOptions,
+) => Promise<FidoHidCborResult>;
+
 export type FidoHidConnectionState =
 	| "idle"
+	| "reserved"
 	| "active"
 	| "closing"
 	| "closed"
@@ -81,6 +87,30 @@ function closed(): AgentBrowserError {
 	return new AgentBrowserError("closed", "FIDO HID connection closed.");
 }
 
+function exclusiveFailure(error: unknown): AgentBrowserError {
+	let code: ErrorCode = "unsupported";
+	const codes: readonly ErrorCode[] = [
+		"invalid-input",
+		"stale-reference",
+		"not-found",
+		"not-actionable",
+		"policy-denied",
+		"resource-limit",
+		"unsupported",
+		"network-error",
+		"timeout",
+		"aborted",
+		"closed",
+	];
+	try {
+		if (error instanceof AgentBrowserError) {
+			const candidate = error.code;
+			if (codes.includes(candidate)) code = candidate;
+		}
+	} catch {}
+	return new AgentBrowserError(code, "FIDO HID exclusive exchange failed.");
+}
+
 function exchangeOptions(options: FidoHidExchangeOptions) {
 	try {
 		if (
@@ -122,6 +152,7 @@ export class FidoHidCborConnection {
 	readonly #pending = new Set<Promise<unknown>>();
 	#state: FidoHidConnectionState = "idle";
 	#job: Transaction | undefined;
+	#exclusiveOwner: symbol | undefined;
 	#closePromise: Promise<void> | undefined;
 	#keepalive: { code: number; status: FidoHidKeepaliveStatus } | undefined;
 
@@ -172,6 +203,8 @@ export class FidoHidCborConnection {
 	}
 
 	get state(): FidoHidConnectionState {
+		if (this.#state === "idle" && this.#exclusiveOwner !== undefined)
+			return "reserved";
 		return this.#state;
 	}
 
@@ -187,7 +220,49 @@ export class FidoHidCborConnection {
 		payload: Uint8Array,
 		options: FidoHidExchangeOptions = {},
 	): Promise<FidoHidCborResult> {
+		return this.#exchange(payload, options);
+	}
+
+	async withExclusiveExchange<Result>(
+		action: (exchange: FidoHidCborExchange) => Promise<Result> | Result,
+	): Promise<Result> {
 		this.#assertIdle();
+		if (typeof action !== "function") throw invalidInput();
+		const owner = Symbol("exclusive HID exchange");
+		this.#exclusiveOwner = owner;
+		const pending = new Set<Promise<FidoHidCborResult>>();
+		const exchange: FidoHidCborExchange = (payload, options) => {
+			const operation = this.#exchange(payload, options, owner);
+			pending.add(operation);
+			void operation.then(
+				() => pending.delete(operation),
+				() => pending.delete(operation),
+			);
+			return operation;
+		};
+		try {
+			const result = await action(exchange);
+			this.#assertIdle(owner);
+			if (pending.size !== 0)
+				throw new AgentBrowserError(
+					"not-actionable",
+					"FIDO HID exclusive exchanges are still pending.",
+				);
+			return result;
+		} catch (error) {
+			void this.#close().catch(() => undefined);
+			throw exclusiveFailure(error);
+		} finally {
+			if (this.#exclusiveOwner === owner) this.#exclusiveOwner = undefined;
+		}
+	}
+
+	async #exchange(
+		payload: Uint8Array,
+		options: FidoHidExchangeOptions = {},
+		owner?: symbol,
+	): Promise<FidoHidCborResult> {
+		this.#assertIdle(owner);
 		const configured = exchangeOptions(options);
 		if (configured.alreadyAborted) throw aborted();
 		const request = encodeFidoHidMessage(
@@ -206,7 +281,7 @@ export class FidoHidCborConnection {
 			throw invalidInput();
 		}
 		try {
-			this.#assertIdle();
+			this.#assertIdle(owner);
 		} catch (error) {
 			for (const report of request) report.fill(0);
 			throw error;
@@ -264,17 +339,27 @@ export class FidoHidCborConnection {
 	}
 
 	close(): Promise<void> {
+		return this.#close();
+	}
+
+	#close(): Promise<void> {
 		if (this.#job) this.#fail(this.#job, closed());
 		return this.#beginClose();
 	}
 
-	#assertIdle(): void {
+	#assertIdle(owner?: symbol): void {
+		if (owner !== undefined && owner !== this.#exclusiveOwner) throw closed();
 		if (this.#state === "active")
 			throw new AgentBrowserError(
 				"not-actionable",
 				"FIDO HID exchange already active.",
 			);
 		if (this.#state !== "idle") throw closed();
+		if (owner === undefined && this.#exclusiveOwner !== undefined)
+			throw new AgentBrowserError(
+				"not-actionable",
+				"FIDO HID connection is reserved.",
+			);
 	}
 
 	#operation<Result>(

@@ -101,6 +101,11 @@ Continuation must preserve RP/clientData association, prevent interleaving, boun
 account counts/time/bytes and quarantine uncertain state without retrying a
 possibly state-advancing request. This serializer does not establish those rules.
 
+The later internal decoder and collector in `CTAP-ASSERTION-TRANSACTION.md` add
+structural reply checks and scoped collection/selection. Their evidence is separate
+from this encoder's historical 525-case matrix; they do not make signatures or real
+authenticator consent verified.
+
 Actual device acquisition, authenticator I/O, human verification/consent,
 registration, account authentication and page/SafeJS acceptance remain unverified
 gates. The pending parent-RP feature is neither included nor authorized here.

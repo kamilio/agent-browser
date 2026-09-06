@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+Internal CTAP assertion collection now owns one exclusive HID scope across the
+initial request, bounded continuations and explicit account selection. Replies
+are structurally decoded, bound to the snapshotted RP/allow-list/UP/UV policy,
+and cleaned up without letting an old abort close a subsequent connection owner.
+The existing broker also rejects BS without BE. The isolated ten-file synthetic
+matrix passes 781 cases (347 new), with build, strict types and Biome passing;
+unchanged broker and reviewed collector baselines reproduce 16 and six finite
+regressions respectively. `CTAP-ASSERTION-TRANSACTION.md` preserves the earlier
+fixture failure and protocol/ownership limits. No parent-RP widening or device
+provider is enabled. Signature verification, PIN/UV token flows, trusted device
+allocation, genuine consent and full page/account acceptance remain separate
+gates; the full browser goal and all stopped/denied boundaries remain unchanged.
+
 Internal GetAssertion request encoding now maps broker-supplied RP/clientDataHash
 and explicit credential/UV choices to canonical CTAP bytes, with command-inclusive
 default/negotiated/HID size caps and owned temporary-buffer cleanup. The isolated

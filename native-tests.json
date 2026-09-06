@@ -1,4 +1,8 @@
 [
+  "src/ctap-get-assertion-response.test.ts",
+  "src/fido-hid-exclusive.test.ts",
+  "src/ctap-assertion-transaction.test.ts",
+  "src/passkey-backup-flags.test.ts",
   "src/ctap-get-assertion-request.test.ts",
   "src/ctap-get-assertion-request-integration.test.ts",
   "src/passkey-assertion-layout.test.ts",

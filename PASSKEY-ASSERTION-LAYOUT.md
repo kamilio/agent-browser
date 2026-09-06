@@ -65,9 +65,11 @@ track signature-counter history. CTAP's canonical decoder is not silently impose
 on generic WebAuthn extension data.
 
 The historical reserved-bit allocation is not used as a rejection mask: modern
-passkeys use backup flags in that space. This change neither interprets those
-flags as trust evidence nor implements their state-consistency policy. Tests
-preserve valid backup combinations and leave reserved bits uninterpreted.
+passkeys use backup flags in that space. The original layout-only change did not
+implement their state-consistency policy. The later guard documented in
+`CTAP-ASSERTION-TRANSACTION.md` rejects BS without BE, while leaving reserved bits
+uninterpreted. Neither guard treats backup flags as trust or consent evidence.
+The original 104-case matrix and seven-regression baseline above remain historical.
 
 Actual authenticator I/O, PIN/UV workflows, passkey creation/registration,
 attestation parsing and end-to-end account authentication remain separate gates.

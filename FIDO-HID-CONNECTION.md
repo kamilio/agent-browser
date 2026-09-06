@@ -1,5 +1,9 @@
 # Owned FIDO HID CBOR exchange lifecycle
 
+The later `withExclusiveExchange` API adds a `reserved` state between messages;
+see `CTAP-ASSERTION-TRANSACTION.md` for scoped ownership and its separate evidence.
+The original single-exchange measurements below remain historical.
+
 `src/fido-hid-connection.ts` adds an internal `FidoHidCborConnection` over an
 explicit normalized-report transport. It joins the existing packet, message and
 response-control primitives into one asynchronous exchange lifecycle. It does

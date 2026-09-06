@@ -691,6 +691,7 @@ export class PasskeyBroker {
 						if (
 							!same(authenticatorData.subarray(0, 32), rpHash) ||
 							(authenticatorData[32] & 64) !== 0 ||
+							(authenticatorData[32] & 24) === 16 ||
 							((authenticatorData[32] & 128) !== 0) !==
 								authenticatorData.length > 37 ||
 							(authenticatorData[32] & 1) === 0 ||
