@@ -15,6 +15,11 @@ export type CtapCborValue =
 	| { kind: "simple"; value: number }
 	| { kind: "float"; value: number; encoding: Uint8Array };
 
+export interface CtapCborPrefix {
+	value: CtapCborValue;
+	bytesRead: number;
+}
+
 const typedArrayPrototype = Object.getPrototypeOf(Uint8Array.prototype);
 const typedArrayBuffer = Object.getOwnPropertyDescriptor(
 	typedArrayPrototype,
@@ -110,10 +115,10 @@ class CtapCborDecoder {
 		this.#bytes = bytes;
 	}
 
-	decode(): CtapCborValue {
+	decode(complete: boolean): CtapCborPrefix {
 		const value = this.read(0);
-		if (this.#offset !== this.#bytes.length) invalidInput();
-		return value;
+		if (complete && this.#offset !== this.#bytes.length) invalidInput();
+		return { value, bytesRead: this.#offset };
 	}
 
 	private take(length: number): Uint8Array {
@@ -254,14 +259,22 @@ class CtapCborDecoder {
 	}
 }
 
-export function decodeCtapCbor(input: Uint8Array): CtapCborValue {
+function decodeItem(input: Uint8Array, complete: boolean): CtapCborPrefix {
 	const bytes = copyCtapBytes(input);
 	try {
-		return new CtapCborDecoder(bytes).decode();
+		return new CtapCborDecoder(bytes).decode(complete);
 	} catch (error) {
 		if (error instanceof AgentBrowserError) throw error;
 		return invalidInput();
 	} finally {
 		bytes.fill(0);
 	}
+}
+
+export function decodeCtapCbor(input: Uint8Array): CtapCborValue {
+	return decodeItem(input, true).value;
+}
+
+export function decodeCtapCborPrefix(input: Uint8Array): CtapCborPrefix {
+	return decodeItem(input, false);
 }

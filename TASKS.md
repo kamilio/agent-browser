@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Native browsing now resolves the registration response-table discrepancy against
+an officially linked CTAP 2.1 edition: fmt=1, authData=2 and map-valued attStmt=3.
+Archived WebAuthn extraction separately establishes embedded credential-data
+layout without claiming a complete COSE schema. The shared canonical decoder now
+offers bounded prefix consumption while keeping whole-input decoding strict;
+the exact six-file native matrix passes 733 cases (68 new), with build, strict
+types and Biome passing. `CTAP-REGISTRATION-STRUCTURE.md` preserves two new GETs,
+two offline replays and all historical identities; `CTAP-CBOR-PREFIX.md` records
+the parser boundary. Full registration-response/COSE validation, attestation
+trust, genuine consent and device/page acceptance remain open, as do the overall
+browser goal and all existing stopped/denied gates.
+
 Internal registration request encoding now maps trusted broker creation context
 to bounded canonical CTAP MakeCredential bytes, preserving algorithm preference,
 privacy-optional entity metadata and explicit resident/UV choices without carrying
