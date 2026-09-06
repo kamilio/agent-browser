@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+Bounded FIDO HID descriptor semantics now derive independent candidate input/output
+report metadata without opening or trusting a device. Whole-report ownership,
+balanced state, bounded ranges and conservative ambiguity refusals prevent partial
+report lengths or partial candidate success. All 123 cases in the exact three-file
+native scope pass (99 new), with focused dependency-closure build, strict types and
+Biome passing. Source review corrected range completion ordering and exposed mixed
+short/extended endpoint normalization; the latter now fails closed with eight new
+regressions. `FIDO-HID-DESCRIPTOR.md` preserves the initial 115-pass evidence and
+distinguishes candidate policy from full HID/FIDO conformity. Physical descriptor
+acquisition and Node I/O, transaction deadlines, CBOR and trusted human PIN/UV/consent
+remain open. No actual device/provider activation or denied/stopped gate occurred;
+the overall browser goal remains active.
+
 Bounded HID short-item tokenization now supplies owned raw tokens with explicit
 4096-byte/item policy caps, zero-byte progress, 0/1/2/4 framing and immediate
 long/reserved refusal. All 124 cases in its exact three-file native scope pass,

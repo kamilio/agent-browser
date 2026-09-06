@@ -1,4 +1,6 @@
 [
+  "src/fido-hid-descriptor.test.ts",
+  "src/fido-hid-descriptor-integration.test.ts",
   "src/hid-short-items.test.ts",
   "src/fido-hid-response-control.test.ts",
   "src/heading-discovery.test.ts",
