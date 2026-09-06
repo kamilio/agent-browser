@@ -10,6 +10,8 @@
   "src/ctap-cbor-encoder-integration.test.ts",
   "src/ctap-cbor.test.ts",
   "src/ctap-get-info.test.ts",
+  "src/ctap-make-credential-request-integration.test.ts",
+  "src/ctap-make-credential-request.test.ts",
   "src/ctap-get-info-integration.test.ts",
   "src/secret-provider-snapshot.test.ts",
   "src/node-hidraw-transport.test.ts",

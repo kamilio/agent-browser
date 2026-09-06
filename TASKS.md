@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Internal registration request encoding now maps trusted broker creation context
+to bounded canonical CTAP MakeCredential bytes, preserving algorithm preference,
+privacy-optional entity metadata and explicit resident/UV choices without carrying
+GetAssertion's presence option. The exact seven-file native matrix passes 646
+cases (132 new); build, strict test types and Biome pass. Native-only historical
+source replay preserves its original receipt and leaves ambiguous response-table
+details unimplemented. `CTAP-MAKE-CREDENTIAL-REQUEST.md` distinguishes serialization
+from registration: no device/provider activation, PIN flow, attestation trust or
+genuine consent is claimed. All stopped gates, pending parent-RP work and the
+full browser goal remain unchanged and open.
+
 Internal CTAP assertion collection now owns one exclusive HID scope across the
 initial request, bounded continuations and explicit account selection. Replies
 are structurally decoded, bound to the snapshotted RP/allow-list/UP/UV policy,
