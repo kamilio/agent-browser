@@ -141,6 +141,131 @@ it("snapshots maps, bindings, origin arrays, and provider methods", async () => 
 	expect(broker.allows("secret:LOGIN", "https://evil.example")).toBe(false);
 });
 
+it("captures the validated provider method without rereading its getter", async () => {
+	const originalResolve = vi.fn(async () => "synthetic-original");
+	const replacementResolve = vi.fn(async () => "synthetic-replacement");
+	const readResolve = vi
+		.fn()
+		.mockReturnValueOnce(originalResolve)
+		.mockReturnValue(replacementResolve);
+	const provider = {
+		get resolve() {
+			return readResolve();
+		},
+	};
+	const broker = new SecretBroker({
+		providers: { fixture: provider },
+		bindings: {
+			LOGIN: { provider: "fixture", key: "accounts/login", origins: [origin] },
+		},
+	});
+	const consume = vi.fn();
+	await broker.use("secret:LOGIN", origin, signal(), consume);
+	expect(readResolve).toHaveBeenCalledOnce();
+	expect(originalResolve.mock.contexts[0]).toBe(provider);
+	expect(replacementResolve).not.toHaveBeenCalled();
+	expect(consume).toHaveBeenCalledWith("synthetic-original");
+});
+
+it("uses intrinsic binding instead of a resolver's overridden bind", async () => {
+	const resolve = vi.fn(async () => "synthetic-original");
+	const replacementResolve = vi.fn(async () => "synthetic-replacement");
+	const bind = vi.fn(() => replacementResolve);
+	Object.defineProperty(resolve, "bind", { value: bind });
+	const provider = { resolve };
+	const broker = new SecretBroker({
+		providers: { fixture: provider },
+		bindings: {
+			LOGIN: { provider: "fixture", key: "accounts/login", origins: [origin] },
+		},
+	});
+	const inputSignal = signal();
+	const consume = vi.fn();
+	await broker.use("secret:LOGIN", origin, inputSignal, consume);
+	expect(bind).not.toHaveBeenCalled();
+	expect(replacementResolve).not.toHaveBeenCalled();
+	expect(resolve).toHaveBeenCalledOnce();
+	expect(resolve).toHaveBeenCalledWith("accounts/login", inputSignal);
+	expect(resolve.mock.contexts[0]).toBe(provider);
+	expect(consume).toHaveBeenCalledWith("synthetic-original");
+});
+
+it("keeps captured provider and key when an origins getter mutates the binding", async () => {
+	const resolve = vi.fn(async () => "synthetic-original");
+	const otherResolve = vi.fn(async () => "synthetic-other");
+	const readOrigins = vi.fn(() => {
+		binding.provider = "other";
+		binding.key = "accounts/other";
+		return [origin];
+	});
+	const binding = {
+		provider: "fixture",
+		key: "accounts/login",
+		get origins() {
+			return readOrigins();
+		},
+	};
+	const broker = new SecretBroker({
+		providers: { fixture: { resolve }, other: { resolve: otherResolve } },
+		bindings: { LOGIN: binding },
+	});
+	const inputSignal = signal();
+	const consume = vi.fn();
+	await broker.use("secret:LOGIN", origin, inputSignal, consume);
+	expect(readOrigins).toHaveBeenCalledOnce();
+	expect(resolve).toHaveBeenCalledWith("accounts/login", inputSignal);
+	expect(otherResolve).not.toHaveBeenCalled();
+	expect(consume).toHaveBeenCalledWith("synthetic-original");
+});
+
+it.each([0, secretProviderLimits.maxOrigins + 1])(
+	"validates the copied origin count when an array iterator yields %i origins",
+	(count) => {
+		const origins = [origin];
+		origins[Symbol.iterator] = () =>
+			Array.from({ length: count }, () => origin).values();
+		expect(
+			() =>
+				new SecretBroker({
+					providers: { fixture: { resolve: async () => "synthetic" } },
+					bindings: { LOGIN: { provider: "fixture", key: "KEY", origins } },
+				}),
+		).toThrow("Invalid secret configuration");
+	},
+);
+
+it.each([false, true])(
+	"bounds an endless origin iterator and closes it with throwing cleanup: %s",
+	(throwOnClose) => {
+		const next = vi.fn(() => ({ done: false, value: origin }));
+		const close = vi.fn(() => {
+			if (throwOnClose)
+				throw new Error("synthetic-private-cleanup-error", {
+					cause: "synthetic-private-cleanup-cause",
+				});
+			return { done: true, value: undefined };
+		});
+		const origins = [origin];
+		Object.defineProperty(origins, Symbol.iterator, {
+			value: () => ({ next, return: close }),
+		});
+		let error: unknown;
+		try {
+			new SecretBroker({
+				providers: { fixture: { resolve: async () => "synthetic" } },
+				bindings: { LOGIN: { provider: "fixture", key: "KEY", origins } },
+			});
+		} catch (caught) {
+			error = caught;
+		}
+		expect(error).toBeInstanceOf(Error);
+		expect((error as Error).message).toBe("Invalid secret configuration");
+		expect((error as Error).cause).toBeUndefined();
+		expect(next).toHaveBeenCalledTimes(secretProviderLimits.maxOrigins + 1);
+		expect(close).toHaveBeenCalledOnce();
+	},
+);
+
 it.each([
 	"",
 	"\0",

@@ -59,31 +59,40 @@ export class SecretBroker {
 			)
 				throw failure();
 			for (const [name, provider] of providerEntries) {
-				if (!namePattern.test(name) || typeof provider.resolve !== "function")
-					throw failure();
+				if (!namePattern.test(name)) throw failure();
+				const resolve = provider.resolve;
+				if (typeof resolve !== "function") throw failure();
 				providers[name] = Object.freeze({
-					resolve: provider.resolve.bind(provider),
+					resolve: Function.prototype.bind.call(resolve, provider),
 				});
 			}
 			for (const [name, binding] of bindingEntries) {
+				if (!namePattern.test(name)) throw failure();
+				const provider = binding.provider;
+				const key = binding.key;
+				const configuredOrigins = binding.origins;
 				if (
-					!namePattern.test(name) ||
-					typeof binding.provider !== "string" ||
-					!Object.hasOwn(providers, binding.provider) ||
-					typeof binding.key !== "string" ||
-					!binding.key.length ||
-					binding.key.length > secretProviderLimits.maxKeyLength ||
-					/\p{Cc}/u.test(binding.key) ||
-					!Array.isArray(binding.origins) ||
-					!binding.origins.length ||
-					binding.origins.length > secretProviderLimits.maxOrigins
+					typeof provider !== "string" ||
+					!Object.hasOwn(providers, provider) ||
+					typeof key !== "string" ||
+					!key.length ||
+					key.length > secretProviderLimits.maxKeyLength ||
+					/\p{Cc}/u.test(key) ||
+					!Array.isArray(configuredOrigins) ||
+					!configuredOrigins.length ||
+					configuredOrigins.length > secretProviderLimits.maxOrigins
 				)
 					throw failure();
-				const origins = [...binding.origins];
-				if (!origins.every(literalOrigin)) throw failure();
+				const origins: string[] = [];
+				for (const origin of configuredOrigins) {
+					if (origins.length >= secretProviderLimits.maxOrigins)
+						throw failure();
+					origins.push(origin);
+				}
+				if (!origins.length || !origins.every(literalOrigin)) throw failure();
 				bindings[name] = Object.freeze({
-					provider: binding.provider,
-					key: binding.key,
+					provider,
+					key,
 					origins: Object.freeze(origins),
 				});
 			}

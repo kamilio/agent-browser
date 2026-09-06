@@ -9,6 +9,25 @@ providers but never resolve credentials.
 
 ## Trusted configuration
 
+Direct host-created broker configuration may contain executable getters and
+iterators; JSON configuration does not. The broker captures each resolver and
+binding provider/key once, validates those captured values, and stores exactly
+that selection. Intrinsic binding preserves the selected function and receiver
+without consulting a function's own `bind` override. Origin copying stops before
+storing more than 64 entries, rejects empty copied output and validates the
+actual copied literal origins. Overflow closes a returning iterator and exposes
+only the generic configuration error, including when that cleanup throws.
+This bounds returning iterator steps and the broker-owned array, not arbitrary
+work inside host callbacks; it is not a sandbox or an atomic snapshot of all
+executable configuration/provider state.
+
+The September 6, 2026 focused matrix passes 142 synthetic cases, including actual
+env/pass provider classes backed by mocked filesystem/injected runner interfaces.
+Five finite new regressions fail on the unchanged original broker and pass with
+the correction. Endless-iterator cases run only against the bounded fix. These
+results do not prove real-vault, live-page, SafeJS or complete password-redaction
+acceptance. Evidence: `node_modules/.cache/native-validation/secret-broker-boundary-review/`.
+
 Create the configuration outside the repository, owned by the host user, with
 mode `0600` in a `0700` directory. Use protected, owned parent directories. The
 loader rejects symlinks, hard-linked files, group/other file permissions, unsafe

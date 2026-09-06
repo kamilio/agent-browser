@@ -1,4 +1,5 @@
 [
+  "src/secret-provider-snapshot.test.ts",
   "src/node-hidraw-transport.test.ts",
   "src/node-hidraw-transport-integration.test.ts",
   "src/fido-hid-connection.test.ts",

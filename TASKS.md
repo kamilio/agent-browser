@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+The constant-reference secret broker now stores the same resolver/provider/key
+values that it validated, bypasses overridden function binding, and bounds copied
+origin iteration before allocation can grow past 64 entries. Five finite new
+regressions fail on unchanged bbdb048 and pass with the fix; endless-iterator
+cases run only against the bounded implementation. The exact three-file matrix
+passes 142 cases, including nine new unit/integration cases and mocked env/pass
+provider selection. Focused build, strict types, Biome and independent static
+review pass. `SECRET-PROVIDERS.md` records the trusted-host scope and limits:
+this is not a demonstrated remote exploit or real-vault/full-browser acceptance.
+Pre-existing credential, SafeJS, passkey and stopped/denied gates remain unchanged;
+the full browser goal stays active.
+
 Native-only benchmark research now records HELM's advertised standardization,
 multi-metric and prompt-inspection facilities without treating them as validated
 fairness, score significance or contamination controls. The September 6, 2026
