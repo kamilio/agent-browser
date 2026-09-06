@@ -1,5 +1,15 @@
 # Agent browser implementation tasks
 
+An internal bounded CTAP CBOR decoder and GetInfo query now preserve exact integer
+and option semantics, reject malformed/canonicality violations, and quarantine
+malformed replies through the owned FIDO connection. The exact six-file synthetic
+matrix passes 464 tests (228 new), with focused build, strict types and Biome
+passing. `CTAP-GET-INFO.md` records the historical/RFC8949 NaN policy, immutable
+native source evidence and fake-handle limits. No device was opened and no page
+passkey provider was enabled: trusted allocation, real GetInfo, MakeCredential/
+GetAssertion, RP binding, PIN/UV and human consent remain outstanding. Existing
+stopped/denied gates and the overall browser goal remain active.
+
 Native-only GetInfo/message-encoding research and the historical RFC7049 simple-
 value reference now establish the next CTAP parser requirements, including
 tri-state capability options, status/map framing, canonical encoding, unknown-key

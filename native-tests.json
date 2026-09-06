@@ -1,4 +1,7 @@
 [
+  "src/ctap-cbor.test.ts",
+  "src/ctap-get-info.test.ts",
+  "src/ctap-get-info-integration.test.ts",
   "src/secret-provider-snapshot.test.ts",
   "src/node-hidraw-transport.test.ts",
   "src/node-hidraw-transport-integration.test.ts",
