@@ -47,6 +47,7 @@
   "src/script-namespace-collections.test.ts",
   "src/node-pass-runner.test.ts",
   "src/resource-limit.test.ts",
+  "src/network-byte-diagnostics.test.ts",
   "src/research-loader-limits.test.ts",
   "src/html-parser-limits.test.ts",
   "src/research-failure-limits.test.ts",

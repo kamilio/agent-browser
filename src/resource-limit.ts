@@ -1,6 +1,10 @@
 import { AgentBrowserError } from "./errors.js";
 
 const units = Object.freeze({
+	"network.response-encoded": "bytes",
+	"network.response-decoded": "bytes",
+	"network.session-encoded": "bytes",
+	"network.session-decoded": "bytes",
 	"reader.source": "code-units",
 	"reader.text": "code-units",
 	"reader.output": "code-units",

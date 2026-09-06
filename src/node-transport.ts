@@ -30,6 +30,7 @@ import {
 	addressFamily,
 	networkHostname,
 } from "./network.js";
+import { resourceLimitError } from "./resource-limit.js";
 import {
 	type ResponseAccountingWriter,
 	claimResponseAccounting,
@@ -950,8 +951,12 @@ export class NodeNetworkTransport implements NetworkTransport {
 			this.counts[kind] += length;
 			const accounted = accounting?.debit(kind, length);
 			if (this.counts[kind] > this.limits.maxTotalBytes)
-				throw new AgentBrowserError(
-					"resource-limit",
+				throw resourceLimitError(
+					kind === "encodedBytes"
+						? "network.session-encoded"
+						: "network.session-decoded",
+					this.limits.maxTotalBytes,
+					this.counts[kind],
 					"Session network byte limit exceeded",
 				);
 			if (accounted === false)
@@ -966,8 +971,10 @@ export class NodeNetworkTransport implements NetworkTransport {
 					encodedBytes += chunk.byteLength;
 					count("encodedBytes", chunk.byteLength);
 					if (encodedBytes > maxResponseBytes)
-						throw new AgentBrowserError(
-							"resource-limit",
+						throw resourceLimitError(
+							"network.response-encoded",
+							maxResponseBytes,
+							encodedBytes,
 							"Encoded response byte limit exceeded",
 						);
 					callback(null, chunk);
@@ -982,8 +989,10 @@ export class NodeNetworkTransport implements NetworkTransport {
 					decodedBytes += chunk.byteLength;
 					count("decodedBytes", chunk.byteLength);
 					if (decodedBytes > maxResponseBytes)
-						throw new AgentBrowserError(
-							"resource-limit",
+						throw resourceLimitError(
+							"network.response-decoded",
+							maxResponseBytes,
+							decodedBytes,
 							"Decoded response byte limit exceeded",
 						);
 					chunks.push(Buffer.from(chunk));

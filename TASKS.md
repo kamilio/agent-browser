@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Native network byte failures now carry trusted, immutable encoded/decoded
+response/session counters through existing research diagnostics without raising
+any limit or exposing error payloads. The exact four-file native matrix passes
+148 cases (31 new); unchanged code yields 13 passes and 18 specifically missing
+diagnostic failures. Build, strict types and Biome pass. See
+`NETWORK-BYTE-DIAGNOSTICS.md` for preserved setup failure, synthetic-only scope
+and the failed published-Level3/no-match draft source lanes. Neither source lane
+establishes privacy wording. Long-document admission, published attestation
+privacy rules, actual HTTP/device/page acceptance and all stopped/denied gates
+remain open; no failed source request is retried and the full browser goal stands.
+
 Assertion exceptional exits now enforce the existing absolute deadline even
 when synchronous processing or a rejected promise crosses it before timer
 dispatch. Five new finite regressions fail specifically against the actual
