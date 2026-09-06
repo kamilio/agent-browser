@@ -17,6 +17,11 @@ import {
 } from "./research-reader-info.js";
 import { documentStyles } from "./styles.js";
 import { textDocumentInfo } from "./text-document-info.js";
+import {
+	type TextLineDiscovery,
+	type TextLineDiscoveryOptions,
+	discoverTextLines,
+} from "./text-line-discovery.js";
 
 export type ExtractionType =
 	| "container"
@@ -78,6 +83,18 @@ export interface DocumentHeadingOutline {
 	entries: HeadingTarget[];
 	scannedNodes: number;
 	truncated: boolean;
+}
+
+export interface DocumentTextLineDiscoveryOptions
+	extends TextLineDiscoveryOptions {
+	maxBytes?: number;
+}
+
+export interface DocumentTextLineDiscovery extends TextLineDiscovery {
+	method: "text-line-discovery";
+	document: string;
+	revision: number;
+	partial: true;
 }
 
 interface ExtractionMetadata {
@@ -161,21 +178,7 @@ const inlineTypes = new Set<ExtractionType>([
 const leafElements = new Set(["img", "br", "hr"]);
 const encoder = new TextEncoder();
 
-function selectTextLines(
-	tree: DocumentTree,
-	lines: NonNullable<ExtractionOptions["lines"]>,
-) {
-	if (
-		lines === null ||
-		typeof lines !== "object" ||
-		Array.isArray(lines) ||
-		!Number.isSafeInteger(lines.start) ||
-		!Number.isSafeInteger(lines.end) ||
-		lines.start < 1 ||
-		lines.start > lines.end ||
-		lines.end > 2_000_001
-	)
-		throw new AgentBrowserError("invalid-input", "Invalid text line range");
+function textLineSource(tree: DocumentTree) {
 	const root = tree.get(tree.root);
 	const info = textDocumentInfo(tree);
 	if (!info || info.revision !== tree.revision)
@@ -206,6 +209,25 @@ function selectTextLines(
 			"resource-limit",
 			"Text line extraction scan limit exceeded",
 		);
+	return { textNode: info.textNode, text };
+}
+
+function selectTextLines(
+	tree: DocumentTree,
+	lines: NonNullable<ExtractionOptions["lines"]>,
+) {
+	if (
+		lines === null ||
+		typeof lines !== "object" ||
+		Array.isArray(lines) ||
+		!Number.isSafeInteger(lines.start) ||
+		!Number.isSafeInteger(lines.end) ||
+		lines.start < 1 ||
+		lines.start > lines.end ||
+		lines.end > 2_000_001
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid text line range");
+	const { textNode, text } = textLineSource(tree);
 	let totalLines = 1;
 	let startOffset = 0;
 	let endOffset = text.length;
@@ -223,7 +245,7 @@ function selectTextLines(
 			"Text line range exceeds document",
 		);
 	return {
-		textNode: info.textNode,
+		textNode,
 		text: text.slice(startOffset, endOffset),
 		metadata: {
 			method: "text-lines" as const,
@@ -520,6 +542,50 @@ export function discoverDocumentHeadings(
 			"Heading outline byte limit exceeded",
 		);
 	return outline;
+}
+
+export function discoverDocumentTextLines(
+	tree: DocumentTree,
+	query: string,
+	options: DocumentTextLineDiscoveryOptions = {},
+): DocumentTextLineDiscovery {
+	let maxBytes: number;
+	let maxEntries: number | undefined;
+	try {
+		if (
+			options === null ||
+			typeof options !== "object" ||
+			Array.isArray(options)
+		)
+			throw new Error();
+		const byteLimit = options.maxBytes;
+		maxBytes = byteLimit === undefined ? 262_144 : byteLimit;
+		maxEntries = options.maxEntries;
+	} catch {
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid text discovery options",
+		);
+	}
+	if (!Number.isSafeInteger(maxBytes) || maxBytes < 256 || maxBytes > 1_048_576)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid text discovery byte limit",
+		);
+	const { text } = textLineSource(tree);
+	const result: DocumentTextLineDiscovery = {
+		method: "text-line-discovery",
+		document: tree.reference(tree.root),
+		revision: tree.revision,
+		partial: true,
+		...discoverTextLines(text, query, { maxEntries }),
+	};
+	if (encoder.encode(JSON.stringify(result)).byteLength > maxBytes)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Text discovery byte limit exceeded",
+		);
+	return result;
 }
 
 export function extractDocument(

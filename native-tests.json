@@ -1,4 +1,7 @@
 [
+  "src/text-line-discovery.test.ts",
+  "src/document-text-lines.test.ts",
+  "src/research-find.test.ts",
   "src/fido-hid-descriptor.test.ts",
   "src/fido-hid-descriptor-integration.test.ts",
   "src/hid-short-items.test.ts",

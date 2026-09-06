@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Native research now supports bounded literal `--find` line discovery before a
+separately chosen `--lines` read, sharing unchanged text-loader admission and
+preserving barrier/status handling without source previews or raw-body fallback.
+All326 new cases pass; the exact twelve-file matrix is1045pass/3unchanged failures,
+with those three selector expectations reproduced on untouched98c4572. Focused
+build, strict typing, Biome and final bounded static review pass. Initial fixture
+failures remain preserved. Separate September6,2026 native receipts at00:46:51.223
+and00:47:39.369UTC demonstrate nine matching lines followed by a selected99-line
+read; both remain partial/unverified with matching body hashes. See
+`TEXT-LINE-DISCOVERY.md`. No actual credential/device/SDK or denied/stopped gate
+was reopened; the overall browser and passkey goal remains active.
+
 `NATIVE-HIDRAW-IO.md` records the historical September 5, 2026 pinned Node
 v22.22.0/Linux v6.12 source boundaries and verified local receipt integrity;
 retrievals remain partial/extracted-unverified, closed and not retried. This is
