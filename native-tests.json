@@ -1,4 +1,6 @@
 [
+  "src/fido-hid-connection.test.ts",
+  "src/fido-hid-connection-integration.test.ts",
   "src/text-line-discovery.test.ts",
   "src/document-text-lines.test.ts",
   "src/research-find.test.ts",

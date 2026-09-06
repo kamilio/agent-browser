@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+Owned allocated-channel FIDO HID CBOR exchanges now serialize normalized reports,
+bound all-report/deadline work, drain CANCEL without inventing its own reply, and
+quarantine uncertain I/O until pending operations and physical-close promises settle.
+Independent review found and corrected options-getter ownership reentrancy and
+discarded-response retention behind hung CANCEL writes. All337 cases in the exact
+seven-file native scope pass, including64new cases; focused build, strict types and
+Biome pass. `FIDO-HID-CONNECTION.md` separates local lifecycle ownership from actual
+device/CID trust, CBOR interpretation and human consent. Two separate native Node
+flag reads remain partial/unverified and do not prove nonblocking interruption.
+Physical adapter/readiness/cleanup, trusted allocation, CBOR, PIN/UV and live-RP
+acceptance remain open; no real provider or denied/stopped gate was activated.
+The full browser/passkey goal remains active.
+
 Native-only MLX-LM research now records quantization, rotating KV-cache size,
 prefill steps and prefix reuse as explicit comparison variables rather than
 hardware performance evidence. `MLX-MEMORY-CONTROLS.md` preserves the separate
