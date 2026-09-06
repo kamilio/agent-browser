@@ -165,16 +165,31 @@ it("pins deeply immutable finite long-profile ceilings and derived bounds", () =
 	).toBeLessThan(profile.evidence.maxReceiptBytes);
 });
 
-it("does not activate the future long-profile CLI flag in this first slice", () => {
-	expect(() =>
+it("makes named CLI profiles explicit while preserving omitted defaults", () => {
+	const url = "https://admission.fixture.invalid/";
+	expect(parseResearchArguments([url])).toEqual({ reader: false, urls: [url] });
+	expect(
+		parseResearchArguments(["--document-profile", "default", url]),
+	).toEqual({
+		reader: false,
+		urls: [url],
+		documentProfile: "default",
+	});
+	expect(
 		parseResearchArguments([
 			"--reader",
 			"--capture-body",
 			"--headings",
 			"--document-profile",
 			"long-v1",
-			"https://admission.fixture.invalid/",
+			url,
 		]),
-	).toThrowError(expect.objectContaining({ code: "invalid-input" }));
+	).toEqual({
+		reader: true,
+		urls: [url],
+		captureBody: true,
+		headings: true,
+		documentProfile: "long-v1",
+	});
 	expect(researchRunLimits.network.maxResponseBytes).toBe(2_000_000);
 });

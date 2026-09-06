@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+Explicit long-v1 CLI admission now wires bounded native network/reader/capture/
+heading operations, canonical effective-limit provenance, bounded JSONL with
+truthful overflow outcomes, callback-aware one-write output and independently
+pinned replay byte admission. All 239 new cases pass. The exact ten-file native
+run records 1,121 passes and three unchanged selector assertion failures, which
+reproduce against actual aa80b77; it is not a fully green matrix. Production
+build, scoped Biome and nine-file strict checks pass; thirteen unchanged selector
+type errors also reproduce exactly on the baseline. `RESEARCH-LONG-CLI.md`
+preserves both review fixes, initial failures, the real MIME negative control and
+all evidence boundaries. Publication/fresh source admission, real network/TTY,
+attestation privacy and device/page gates remain open. No historical source is
+retried, no stopped/denied gate is reopened, and the full browser goal continues.
+
 Explicit trusted host capture/decode and inert HTML loading now support a
 bounded long-v1 profile while omitted/default behavior stays unchanged. Actual
 synthetic 2,000,001-byte and 4,000,000-byte capture→reader→heading chains pass;

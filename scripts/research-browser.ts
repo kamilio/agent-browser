@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type { Writable } from "node:stream";
 import { pathToFileURL } from "node:url";
 import {
 	type BrowserChallengeDiagnostic,
@@ -24,6 +25,11 @@ import {
 } from "../src/network.js";
 import { NodeNetworkTransport } from "../src/node-transport.js";
 import {
+	type ResearchDocumentProfileId,
+	researchLongDocumentAdmission,
+	validateResearchDocumentProfile,
+} from "../src/research-admission.js";
+import {
 	type ResearchReaderReport,
 	loadResearchDocument,
 	researchReaderInfo,
@@ -39,6 +45,12 @@ import {
 	type NavigationResult,
 	type SessionPage,
 } from "../src/session.js";
+import {
+	type ResearchAdmissionProvenance,
+	type ResearchExitReport,
+	researchLongAdmissionProvenance,
+	serializeResearchReport,
+} from "./research-admission-evidence.js";
 import {
 	type ResearchBodyCapture,
 	captureResearchBody,
@@ -160,6 +172,7 @@ function researchLines(value: unknown): ResearchLineRange {
 export function parseResearchArguments(args: readonly string[]) {
 	let reader = false;
 	let captureBody = false;
+	let documentProfile: ResearchDocumentProfileId | undefined;
 	let selector: string | undefined;
 	let lines: ResearchLineRange | undefined;
 	let section: string | undefined;
@@ -169,6 +182,16 @@ export function parseResearchArguments(args: readonly string[]) {
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (argument === "--document-profile" && documentProfile === undefined) {
+			const profile = args[++index];
+			if (profile === undefined)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Missing research document profile",
+				);
+			documentProfile = validateResearchDocumentProfile(profile);
+			continue;
+		}
 		if (argument === "--find" && find === undefined) {
 			const query = args[++index];
 			if (
@@ -259,9 +282,25 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Research find cannot be combined with selection",
 		);
+	if (
+		documentProfile === "long-v1" &&
+		(urls.length !== researchLongDocumentAdmission.maxUrls ||
+			!reader ||
+			!captureBody ||
+			!headings ||
+			selector !== undefined ||
+			lines !== undefined ||
+			section !== undefined ||
+			find !== undefined)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Long research requires one reader capture with headings",
+		);
 	return {
 		reader,
 		urls,
+		...(documentProfile === undefined ? {} : { documentProfile }),
 		...(selector === undefined ? {} : { selector }),
 		...(lines === undefined ? {} : { lines }),
 		...(section === undefined ? {} : { section }),
@@ -341,6 +380,7 @@ export type ResearchOutcome =
 	| "failure";
 
 export interface ResearchNavigationReport {
+	admission?: ResearchAdmissionProvenance;
 	requestedUrl: string;
 	finalUrl: string | null;
 	startedAt: string;
@@ -386,12 +426,23 @@ export async function researchNavigation(
 	section?: string,
 	headings = false,
 	find?: string,
+	documentProfile?: ResearchDocumentProfileId,
 ): Promise<ResearchNavigationReport> {
+	const selectedDocumentProfile =
+		validateResearchDocumentProfile(documentProfile);
+	if (selectedDocumentProfile === "long-v1" && reader !== true)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Long research requires the reader",
+		);
 	if (typeof captureBody !== "boolean" || typeof headings !== "boolean")
 		throw new AgentBrowserError("invalid-input", "Invalid research arguments");
 	const lineRange =
 		lines === undefined ? undefined : validateResearchLines(lines);
 	const validated = parseResearchArguments([
+		...(documentProfile === undefined
+			? []
+			: ["--document-profile", selectedDocumentProfile]),
 		...(reader ? ["--reader"] : []),
 		...(captureBody ? ["--capture-body"] : []),
 		...(headings ? ["--headings"] : []),
@@ -403,8 +454,13 @@ export async function researchNavigation(
 			: ["--lines", `${lineRange.start}:${lineRange.end}`]),
 		url,
 	]);
+	const admissionLimits =
+		validated.documentProfile === "long-v1"
+			? researchLongDocumentAdmission
+			: undefined;
 	const started = Date.now();
 	const report: ResearchNavigationReport = {
+		...(admissionLimits ? { admission: researchLongAdmissionProvenance } : {}),
 		requestedUrl: reportUrl(validated.urls[0]),
 		finalUrl: null,
 		startedAt: new Date(started).toISOString(),
@@ -447,7 +503,7 @@ export async function researchNavigation(
 			createTransport: (cookieJar) => {
 				const native = new NodeNetworkTransport({
 					cookieJar,
-					limits: researchRunLimits.network,
+					limits: admissionLimits?.network ?? researchRunLimits.network,
 				});
 				transport = native;
 				return {
@@ -487,7 +543,9 @@ export async function researchNavigation(
 							report.finalUrl = report.primaryResponse.url;
 							if (captureBody) {
 								stage = "body-capture";
-								report.bodyCapture = captureResearchBody(response.body);
+								report.bodyCapture = admissionLimits
+									? captureResearchBody(response.body, "long-v1")
+									: captureResearchBody(response.body);
 							}
 							primaryHeaders = response.headers;
 							primaryUrl = response.url;
@@ -515,16 +573,19 @@ export async function researchNavigation(
 			},
 			loadDocument: (response, context) => {
 				stage = "loader";
-				return reader
-					? loadResearchDocument(response, context)
-					: loadBrowserDocument(response, context);
+				if (!reader) return loadBrowserDocument(response, context);
+				return admissionLimits
+					? loadResearchDocument(response, context, "long-v1")
+					: loadResearchDocument(response, context);
 			},
 			limits: {
 				maxTabs: 1,
 				maxNavigations: 1,
-				navigationTimeoutMs: researchRunLimits.navigationTimeoutMs,
+				navigationTimeoutMs:
+					admissionLimits?.navigationTimeoutMs ??
+					researchRunLimits.navigationTimeoutMs,
 			},
-			documentLimits: {
+			documentLimits: admissionLimits?.document ?? {
 				maxNodes: 50_000,
 				maxDepth: 128,
 				maxTextCodeUnits: 2_000_000,
@@ -602,11 +663,14 @@ export async function researchNavigation(
 		}
 		if (validated.headings) {
 			stage = "extraction";
-			const outline = discoverDocumentHeadings(tree, {
-				maxBytes: researchRunLimits.extractionBytes,
-				maxNodes: 50_000,
-				maxDepth: 128,
-			});
+			const outline = discoverDocumentHeadings(
+				tree,
+				admissionLimits?.headings ?? {
+					maxBytes: researchRunLimits.extractionBytes,
+					maxNodes: 50_000,
+					maxDepth: 128,
+				},
+			);
 			report.classification.diagnostic = classifyBrowserChallenge({
 				status,
 				headers: primaryHeaders,
@@ -698,7 +762,7 @@ export async function researchNavigation(
 	return report;
 }
 
-export function researchExitCode(reports: readonly ResearchNavigationReport[]) {
+export function researchExitCode(reports: readonly ResearchExitReport[]) {
 	const successes = reports.filter(
 		(report) => report.outcome === "extracted-unverified",
 	).length;
@@ -707,6 +771,61 @@ export function researchExitCode(reports: readonly ResearchNavigationReport[]) {
 		: successes > 0
 			? 2
 			: 1;
+}
+
+function outputFailure() {
+	return new AgentBrowserError(
+		"closed",
+		"Research output could not be written",
+	);
+}
+
+export async function emitResearchReport(
+	output: Writable,
+	report: ResearchNavigationReport,
+	documentProfile?: ResearchDocumentProfileId,
+): Promise<ResearchExitReport> {
+	const emission = serializeResearchReport(report, documentProfile);
+	if (output.destroyed || output.writableEnded || output.errored)
+		throw outputFailure();
+	await new Promise<void>((resolve, reject) => {
+		let settled = false;
+		const cleanup = () => {
+			output.off("error", onError);
+			output.off("close", onClose);
+		};
+		const fail = () => {
+			if (settled) return;
+			settled = true;
+			reject(outputFailure());
+		};
+		const onError = () => {
+			cleanup();
+			fail();
+		};
+		const onClose = () => {
+			cleanup();
+			fail();
+		};
+		output.once("error", onError);
+		output.once("close", onClose);
+		try {
+			output.write(emission.jsonl, (error) => {
+				if (error) {
+					fail();
+					return;
+				}
+				cleanup();
+				if (settled) return;
+				settled = true;
+				resolve();
+			});
+		} catch {
+			cleanup();
+			fail();
+		}
+	});
+	return emission.exitReport;
 }
 
 async function main() {
@@ -719,13 +838,22 @@ async function main() {
 		section,
 		headings,
 		find,
+		documentProfile,
 	} = parseResearchArguments(process.argv.slice(2));
 	const controller = new AbortController();
 	const timer = setTimeout(
 		() => controller.abort(),
-		researchRunLimits.deadlineMs,
+		documentProfile === "long-v1"
+			? researchLongDocumentAdmission.deadlineMs
+			: researchRunLimits.deadlineMs,
 	);
-	const reports: ResearchNavigationReport[] = [];
+	const reports: ResearchExitReport[] = [];
+	let outputFailed = false;
+	const onOutputError = () => {
+		outputFailed = true;
+		controller.abort();
+	};
+	process.stdout.on("error", onOutputError);
 	try {
 		for (const url of urls) {
 			const report = await researchNavigation(
@@ -738,13 +866,22 @@ async function main() {
 				section,
 				headings,
 				find,
+				documentProfile,
 			);
-			reports.push(report);
-			process.stdout.write(`${JSON.stringify(report)}\n`);
+			if (outputFailed) throw outputFailure();
+			reports.push(
+				await emitResearchReport(process.stdout, report, documentProfile),
+			);
 		}
-		process.exitCode = researchExitCode(reports);
+		process.exitCode = outputFailed ? 1 : researchExitCode(reports);
+	} catch {
+		outputFailed = true;
+		controller.abort();
+		process.stderr.write("Research execution or output failed.\n");
+		process.exitCode = 1;
 	} finally {
 		clearTimeout(timer);
+		if (!outputFailed) process.stdout.off("error", onOutputError);
 	}
 }
 
@@ -754,7 +891,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--reader] [--capture-body] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--capture-body] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings)\n",
 		);
 		process.exitCode = 64;
 	});
