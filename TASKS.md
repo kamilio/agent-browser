@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Passkey assertions now reject AT data and inconsistent ED/tail layouts without
+changing RP scope or enabling a provider. The isolated exact-host native matrix
+passes 104 cases across two files; unchanged broker code reproduces all seven
+new malformed-layout regressions (20 other new cases pass). Focused build,
+strict types and Biome pass. `PASSKEY-ASSERTION-LAYOUT.md` records native-only
+historical and modern-development source evidence, including preserved valid
+backup flags. Extension CBOR parsing, backup-state policy, signature validation,
+PIN/UV/consent, actual authenticators and complete account authentication remain
+open gates; a synthetic provider is not real passkey acceptance. The full browser
+goal and existing authorization boundaries are unchanged.
+
 Internal canonical CBOR request encoding now complements the CTAP decoder with
 bounded UTF8/length/container handling, exact numeric/float representations and
 owned sorted map output. The exact six-file synthetic matrix passes 493 cases

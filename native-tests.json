@@ -1,4 +1,5 @@
 [
+  "src/passkey-assertion-layout.test.ts",
   "src/ctap-cbor-encoder.test.ts",
   "src/ctap-cbor-encoder-integration.test.ts",
   "src/ctap-cbor.test.ts",
