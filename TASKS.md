@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+`NATIVE-HIDRAW-IO.md` records the historical September 5, 2026 pinned Node
+v22.22.0/Linux v6.12 source boundaries and verified local receipt integrity;
+retrievals remain partial/extracted-unverified, closed and not retried. This is
+documentation, not a driver or real passkey success. Expected-size-plus-one and
+one pending read/write remain untested design ideas. Node flags/readiness,
+ioctl/sysfs association, permissions, exact report sizing, short I/O/disconnect,
+actual abort and bounded shutdown remain open, followed by separately authorized
+device access, trusted user consent/PIN/UV and real relying-party acceptance.
+No new runtime/test/device/network probe ran for this note, and no existing
+stopped or denied gate is cleared. The overall browser goal remains active.
+
 Bounded FIDO HID descriptor semantics now derive independent candidate input/output
 report metadata without opening or trusting a device. Whole-report ownership,
 balanced state, bounded ranges and conservative ambiguity refusals prevent partial
