@@ -1,5 +1,15 @@
 # Agent browser implementation tasks
 
+Internal canonical CBOR request encoding now complements the CTAP decoder with
+bounded UTF8/length/container handling, exact numeric/float representations and
+owned sorted map output. The exact six-file synthetic matrix passes 493 cases
+(204 new); four finite regressions fail on the reviewed pre-fix sparse-slot path
+and pass after own-index checks. Focused build, strict types and Biome pass.
+`CTAP-CBOR-ENCODING.md` separates generic encoding from command/schema/transport
+budgets and real passkey success. Newly saved historical GetAssertion research
+still leaves PIN/UV/consent, RP/clientData, signatures and continuation unresolved.
+No new provider or actual device is enabled; all outstanding browser gates remain.
+
 Native-only llama-bench research now records throughput scope, repetition/sample
 output and scheduling/cache controls without presenting documentation examples
 as new measurements. `LLAMA-BENCH-CONTROLS.md` distinguishes internal rates from

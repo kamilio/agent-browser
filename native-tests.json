@@ -1,4 +1,6 @@
 [
+  "src/ctap-cbor-encoder.test.ts",
+  "src/ctap-cbor-encoder-integration.test.ts",
   "src/ctap-cbor.test.ts",
   "src/ctap-get-info.test.ts",
   "src/ctap-get-info-integration.test.ts",
