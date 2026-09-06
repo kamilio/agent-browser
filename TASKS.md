@@ -1,5 +1,14 @@
 # Agent browser implementation tasks
 
+Native-only benchmark research now records HELM's advertised standardization,
+multi-metric and prompt-inspection facilities without treating them as validated
+fairness, score significance or contamination controls. The September 6, 2026
+05:48:20.441 UTC receipt is partial/unverified and its mutable source states
+maintenance mode began June 1, 2026; policy details were not retrieved. See
+`HELM-BENCHMARK-METHOD.md` for explicit comparison-evidence controls and preserved
+hashes. No benchmark, linked source, credential/device or SDK probe ran. The
+browser goal and existing stopped/denied acceptance gates remain unchanged.
+
 An internal Node hidraw handle adapter now bridges explicitly granted nonblocking
 handles to the owned FIDO connection. It enforces independent report IDs/sizes,
 exact complete-report I/O, delayed empty-queue reads, no write retries, scratch
