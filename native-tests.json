@@ -1,4 +1,6 @@
 [
+  "src/ctap-credential-public-key.test.ts",
+  "src/ctap-registration-authenticator-data.test.ts",
   "src/ctap-get-assertion-response.test.ts",
   "src/fido-hid-exclusive.test.ts",
   "src/ctap-assertion-transaction.test.ts",

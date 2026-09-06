@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Bounded public credential-key and registration authenticator-data parsing now
+checks public-only COSE profiles, algorithm/key-type matching, key-prefix and
+extension boundaries, attested-data layout and backup-flag consistency. The exact
+seven-file native matrix passes 788 cases (132 new), with build, strict types and
+Biome passing; the prior 787-pass/one-fixture-failure run remains preserved.
+`CTAP-CREDENTIAL-STRUCTURE.md` records native-only RFC source provenance, supported
+profiles, local limits and ownership guarantees without claiming cryptographic
+key validity or attestation trust. Outer CTAP/WebAuthn response integration, RP
+and ceremony binding, extension policy, genuine consent and device/page gates
+remain open. No provider is activated, no denied gate is reopened, and the full
+browser goal remains active.
+
 Native browsing now resolves the registration response-table discrepancy against
 an officially linked CTAP 2.1 edition: fmt=1, authData=2 and map-valued attStmt=3.
 Archived WebAuthn extraction separately establishes embedded credential-data
