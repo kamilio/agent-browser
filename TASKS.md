@@ -1,5 +1,22 @@
 # Agent browser implementation tasks
 
+An internal Node hidraw handle adapter now bridges explicitly granted nonblocking
+handles to the owned FIDO connection. It enforces independent report IDs/sizes,
+exact complete-report I/O, delayed empty-queue reads, no write retries, scratch
+ownership and honest pending-operation closure. The exact six-file native matrix
+passes 320 cases, including 92 new unit and six new integration cases; focused
+build, strict typing and Biome pass. Initial 317-pass/3-fail evidence is preserved:
+two cases exposed delayed close-failed state, and one exposed a parent test's
+packet-count error. Initial review also corrected own-code accessors and a queued
+close/public-settlement race. See `NODE-HIDRAW-TRANSPORT.md` and its cache evidence.
+Four separately authorized native-only requests on September 6, 2026 narrow the
+pinned Node open/flag-helper source questions, without proving installed behavior.
+A separately authorized read-only class-directory listing found no visible
+`/sys/class/hidraw`; no device was opened. Trusted device/descriptor association,
+actual driver behavior, allocation/CBOR, human PIN/UV/consent and real relying-party
+acceptance remain open. No provider, credential, SDK or denied/stopped gate was
+activated, and the full browser goal remains active.
+
 Owned allocated-channel FIDO HID CBOR exchanges now serialize normalized reports,
 bound all-report/deadline work, drain CANCEL without inventing its own reply, and
 quarantine uncertain I/O until pending operations and physical-close promises settle.

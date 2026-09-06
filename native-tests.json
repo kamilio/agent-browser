@@ -1,4 +1,6 @@
 [
+  "src/node-hidraw-transport.test.ts",
+  "src/node-hidraw-transport-integration.test.ts",
   "src/fido-hid-connection.test.ts",
   "src/fido-hid-connection-integration.test.ts",
   "src/text-line-discovery.test.ts",
