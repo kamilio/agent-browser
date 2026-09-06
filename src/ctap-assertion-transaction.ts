@@ -449,6 +449,8 @@ export async function getCtapAssertion(
 		transferred = true;
 		return { kind: "assertion", assertion: selected };
 	} catch (error) {
+		if (!committed && !stopReason && performance.now() >= deadline)
+			stop("timeout");
 		if (stopReason) throw stopReason;
 		if (terminal) return terminal;
 		throw sanitized(error);

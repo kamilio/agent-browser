@@ -1,5 +1,15 @@
 # Agent browser implementation tasks
 
+Assertion exceptional exits now enforce the existing absolute deadline even
+when synchronous processing or a rejected promise crosses it before timer
+dispatch. Five new finite regressions fail specifically against the actual
+committed collector and pass with the two-line fix; the exact eight-file native
+matrix passes 546 cases, with build, strict types and Biome passing. See
+`CTAP-ASSERTION-DEADLINE.md` for preserved setup failure, negative control and
+ownership/cleanup evidence. This is not the WebAuthn privacy-delay algorithm and
+does not activate a provider or widen RP policy. The full browser goal and all
+device, consent, page, privacy, cryptographic and stopped/denied gates remain open.
+
 Internal registration now composes the actual MakeCredential encoder, modern
 response parser and exclusive HID exchange with RP/UP/UV/algorithm/exclusion
 binding, unsolicited-extension rejection and sensitive optional-field policy.

@@ -1,4 +1,5 @@
 [
+  "src/ctap-assertion-deadline.test.ts",
   "src/ctap-make-credential-response.test.ts",
   "src/ctap-registration-transaction.test.ts",
   "src/ctap-registration-lifecycle.test.ts",
