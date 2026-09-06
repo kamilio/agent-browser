@@ -1,4 +1,7 @@
 [
+  "src/ctap-make-credential-response.test.ts",
+  "src/ctap-registration-transaction.test.ts",
+  "src/ctap-registration-lifecycle.test.ts",
   "src/ctap-credential-public-key.test.ts",
   "src/ctap-registration-authenticator-data.test.ts",
   "src/ctap-get-assertion-response.test.ts",

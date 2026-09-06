@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Internal registration now composes the actual MakeCredential encoder, modern
+response parser and exclusive HID exchange with RP/UP/UV/algorithm/exclusion
+binding, unsolicited-extension rejection and sensitive optional-field policy.
+The exact ten-file native matrix passes 774 cases (151 new); build, strict types
+and Biome pass. Four exceptional-deadline regressions also fail specifically
+against preserved pre-fix code, proving the reviewed race is covered. See
+`CTAP-REGISTRATION-TRANSACTION.md` for ownership, cleanup and source provenance.
+The existing assertion exception path needs analogous targeted review/coverage.
+Cryptographic trust, attestation privacy projection, provider/page integration,
+genuine consent, real device/residency and all stopped/denied gates remain open.
+No provider is activated or RP policy widened; the complete browser goal is active.
+
 Bounded public credential-key and registration authenticator-data parsing now
 checks public-only COSE profiles, algorithm/key-type matching, key-prefix and
 extension boundaries, attested-data layout and backup-flag consistency. The exact
