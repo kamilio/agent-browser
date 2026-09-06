@@ -1,5 +1,14 @@
 # Agent browser implementation tasks
 
+Native-only MLX-LM research now records quantization, rotating KV-cache size,
+prefill steps and prefix reuse as explicit comparison variables rather than
+hardware performance evidence. `MLX-MEMORY-CONTROLS.md` preserves the separate
+September6,2026 00:21:17.729UTC receipt and its partial/unverified status; mutable
+upstream documentation supplies no numerical generation benchmark or matched
+hardware ranking. No model, benchmark, installation or system tuning ran, and
+historical hardware measurements were not rewritten. Stopped Reddit/Astra/X and
+all real credential/device/runtime gates remain unchanged; full browser goal active.
+
 Native research now supports bounded literal `--find` line discovery before a
 separately chosen `--lines` read, sharing unchanged text-loader admission and
 preserving barrier/status handling without source previews or raw-body fallback.
