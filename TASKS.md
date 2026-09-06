@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Explicit host source-heading discovery now binds owned HTML bytes and exact
+decoder identity to bounded native lexical candidates, without building a DOM
+or fabricating selectors/visibility. All767 cases in the exact ten-file matrix
+pass, including271 new cases; build/strict/scoped Biome pass. Real event-loop
+yields, deadline checks, bounded escaped JSONL and original-view validation are
+covered; the actual pre-fix OOB-view control fails as expected. Encoding sniff
+factoring preserves its exact prior body/raw policy. `NATIVE-SOURCE-HEADINGS.md`
+records the restricted lexical semantics and evidence, not a read of the failed
+W3C source. Next are CLI/evidence activation, pinned anchor reuse/selection and
+separately authorized source admission. The full browser goal, password/passkey/
+privacy/device/page, research and stopped/denied gates remain open.
+
 A bounded host-only native HTML token cursor now shares small input windows,
 charges native work/issue attempts before publication and preserves terminal
 quota/deadline/close behavior. All503 cases in the exact ten-file matrix pass,

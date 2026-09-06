@@ -1,4 +1,6 @@
 [
+  "src/research-source-headings.test.ts",
+  "src/research-source-input.test.ts",
   "src/html-token-cursor.test.ts",
   "src/html-tokenizer-issues.test.ts",
   "src/ctap-assertion-deadline.test.ts",
