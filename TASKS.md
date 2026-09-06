@@ -1,5 +1,14 @@
 # Agent browser implementation tasks
 
+Native-only GetInfo/message-encoding research and the historical RFC7049 simple-
+value reference now establish the next CTAP parser requirements, including
+tri-state capability options, status/map framing, canonical encoding, unknown-key
+handling and nesting/message bounds. Four separately authorized September 6, 2026
+requests retain partial/unverified status and distinct body identities. See
+`CTAP-GET-INFO-BOUNDARIES.md`: no parser, device query or passkey acceptance is
+claimed; unusual key equality, malformed forms/UTF-8, trusted allocation and
+human PIN/UV/consent still need work. The full browser goal remains active.
+
 The constant-reference secret broker now stores the same resolver/provider/key
 values that it validated, bypasses overridden function binding, and bounds copied
 origin iteration before allocation can grow past 64 entries. Five finite new
