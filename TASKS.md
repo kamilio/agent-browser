@@ -1,5 +1,14 @@
 # Agent browser implementation tasks
 
+Native-only llama-bench research now records throughput scope, repetition/sample
+output and scheduling/cache controls without presenting documentation examples
+as new measurements. `LLAMA-BENCH-CONTROLS.md` distinguishes internal rates from
+end-to-end latency and identifies missing matched MLX/cache/quality conditions.
+The September 6, 2026 06:47:34.855 UTC observation remains partial/unverified on a
+mutable source; 28 frozen artifacts preserve its original receipt and identities.
+No benchmark, hardware ranking, model download or credential/device probe ran.
+Historical hardware measurements and all outstanding browser gates stay unchanged.
+
 An internal bounded CTAP CBOR decoder and GetInfo query now preserve exact integer
 and option semantics, reject malformed/canonicality violations, and quarantine
 malformed replies through the owned FIDO connection. The exact six-file synthetic
