@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+A separately authorized native long-profile source request reaches HTTP200 and
+records a 2,739,242-byte decoded response, but parsing stops at document.nodes
+50,001/50,000. No heading or source-text extraction succeeds. The zero-GET
+verifier accepts receipt/input integrity while correctly retaining evidence-only/
+native-failure and no replay readiness; no body decoding or retry follows.
+`RESEARCH-LONG-SOURCE.md` preserves the actual failure, five passing synthetic
+supervisor controls, corrected status/manifest handling and all prior evidence.
+Next is a bounded native parsing/discovery design, not an automatic profile-limit
+increase. Published privacy wording, device/page/consent integration, blocked
+research sources and all stopped/denied gates remain open; the full goal stands.
+
 Explicit long-v1 CLI admission now wires bounded native network/reader/capture/
 heading operations, canonical effective-limit provenance, bounded JSONL with
 truthful overflow outcomes, callback-aware one-write output and independently
