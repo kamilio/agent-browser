@@ -1,9 +1,9 @@
 import { AgentBrowserError } from "./errors.js";
-import { resourceLimitError } from "./resource-limit.js";
 import { htmlAttributeName } from "./html-attribute-name.js";
 import { createHtmlAttributes, setHtmlAttribute } from "./html-attributes.js";
+import { type HtmlDoctypeToken, readHtmlDoctype } from "./html-doctype.js";
 import { decodeHtmlEntities } from "./html-entities.js";
-import { readHtmlDoctype, type HtmlDoctypeToken } from "./html-doctype.js";
+import { resourceLimitError } from "./resource-limit.js";
 
 export type HtmlToken =
 	| { kind: "text"; data: string }
@@ -39,10 +39,20 @@ export class HtmlTokenizer {
 	private pending = false;
 	private bufferedIssues?: string[];
 	private work = 0;
+	private issues = 0;
 	constructor(
 		private source: string,
 		private readonly onIssue: (code: string) => void,
+		private readonly maxIssues?: number,
 	) {
+		if (
+			maxIssues !== undefined &&
+			(!Number.isSafeInteger(maxIssues) || maxIssues < 0)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid HTML tokenizer issue limit",
+			);
 		this.input = source;
 	}
 
@@ -54,6 +64,9 @@ export class HtmlTokenizer {
 	}
 	get workUnits() {
 		return this.work;
+	}
+	get issueCount() {
+		return this.issues;
 	}
 	get bounded() {
 		return this.boundary !== undefined;
@@ -97,18 +110,35 @@ export class HtmlTokenizer {
 	private readonly issue = (code: string) => {
 		if (this.boundary !== undefined && code.startsWith("unterminated-"))
 			throw needInput;
+		this.issues++;
+		this.checkIssueLimit();
 		if (this.bufferedIssues) this.bufferedIssues.push(code);
 		else this.onIssue(code);
 	};
 
+	private checkIssueLimit() {
+		if (this.maxIssues !== undefined && this.issues > this.maxIssues)
+			throw resourceLimitError(
+				"html.issues",
+				this.maxIssues,
+				this.issues,
+				"HTML tokenizer issue limit exceeded",
+			);
+	}
+
 	private read<Result>(operation: () => Result): Result | undefined {
+		this.checkIssueLimit();
 		const start = this.offset;
 		this.pending = false;
 		this.bufferedIssues = [];
 		try {
 			const result = operation();
 			this.work += Math.max(0, this.offset - start);
-			for (const issue of this.bufferedIssues) this.onIssue(issue);
+			for (const issue of this.bufferedIssues) {
+				this.checkIssueLimit();
+				this.onIssue(issue);
+			}
+			this.checkIssueLimit();
 			return result;
 		} catch (error) {
 			this.work += Math.max(0, this.offset - start);
@@ -122,6 +152,7 @@ export class HtmlTokenizer {
 	}
 
 	next(): HtmlToken | undefined {
+		this.checkIssueLimit();
 		if (this.offset >= this.source.length) {
 			this.pending = this.boundary !== undefined;
 			return undefined;
@@ -463,6 +494,7 @@ export class HtmlTokenizer {
 	}
 
 	remainder() {
+		this.checkIssueLimit();
 		const value = this.source.slice(this.offset);
 		this.work += value.length;
 		this.offset = this.source.length;

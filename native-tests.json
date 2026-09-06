@@ -1,4 +1,6 @@
 [
+  "src/html-token-cursor.test.ts",
+  "src/html-tokenizer-issues.test.ts",
   "src/ctap-assertion-deadline.test.ts",
   "src/ctap-make-credential-response.test.ts",
   "src/ctap-registration-transaction.test.ts",

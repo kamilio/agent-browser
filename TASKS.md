@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+A bounded host-only native HTML token cursor now shares small input windows,
+charges native work/issue attempts before publication and preserves terminal
+quota/deadline/close behavior. All503 cases in the exact ten-file matrix pass,
+including188 new cases; build, strict and scoped Biome pass. Independent review
+fixed readonly construction and replaceable budget authority; two actual
+pre-correction runtime controls fail as expected. `HTML-TOKEN-CURSOR.md` retains
+initial failures, immutable evidence and the real synthetic parser-versus-token
+differential. This is not source-heading discovery or a read of the failed W3C
+source. Next are lexical discovery/identity/scheduling and separately authorized
+source admission, not raised tree limits or automatic capture replay. All full
+browser, privacy/device/page, research and stopped/denied gates remain open.
+
 A separately authorized native long-profile source request reaches HTTP200 and
 records a 2,739,242-byte decoded response, but parsing stops at document.nodes
 50,001/50,000. No heading or source-text extraction succeeds. The zero-GET
