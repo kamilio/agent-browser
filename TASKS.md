@@ -1,5 +1,15 @@
 # Agent browser implementation tasks
 
+Internal GetAssertion request encoding now maps broker-supplied RP/clientDataHash
+and explicit credential/UV choices to canonical CTAP bytes, with command-inclusive
+default/negotiated/HID size caps and owned temporary-buffer cleanup. The isolated
+six-file native matrix passes 525 cases (121 new), with build, strict test types
+and Biome passing. `CTAP-ASSERTION-REQUEST.md` records exact-wire, broker-context,
+GetInfo-limit and in-memory framing evidence without claiming a new authenticator
+provider. PIN/UV token flows, extensions, response/signature validation, owned
+continuation, backup-state consistency and real-device/account/page gates remain
+open. Full browser scope and all existing authorization boundaries are unchanged.
+
 Passkey assertions now reject AT data and inconsistent ED/tail layouts without
 changing RP scope or enabling a provider. The isolated exact-host native matrix
 passes 104 cases across two files; unchanged broker code reproduces all seven
