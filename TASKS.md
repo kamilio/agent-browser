@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Explicit trusted host capture/decode and inert HTML loading now support a
+bounded long-v1 profile while omitted/default behavior stays unchanged. Actual
+synthetic 2,000,001-byte and 4,000,000-byte capture→reader→heading chains pass;
+the exact eight-file native matrix passes 590 cases (131 new), with build,
+strict types and Biome passing. `RESEARCH-LONG-ADMISSION.md` preserves initial
+type/lint and Markdown-fixture failures and the fixed tree/context ceilings.
+CLI/network activation, profile-bearing bounded receipts/replay, live-source
+admission and memory measurements remain separate next gates. No failed source
+request is retried or privacy wording established; the full browser goal and
+all existing stopped/denied, credential/device/page/privacy gates remain open.
+
 Native network byte failures now carry trusted, immutable encoded/decoded
 response/session counters through existing research diagnostics without raising
 any limit or exposing error payloads. The exact four-file native matrix passes

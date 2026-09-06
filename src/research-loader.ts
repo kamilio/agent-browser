@@ -1,4 +1,4 @@
-import type { DocumentTree } from "./document.js";
+import type { DocumentLimits, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { isHtmlSpecial } from "./html-formatting.js";
 import { htmlParseInfo, setHtmlParseInfo } from "./html-info.js";
@@ -9,6 +9,11 @@ import {
 	decodeResponseText,
 	parseNetworkUrl,
 } from "./network.js";
+import {
+	type ResearchDocumentProfileId,
+	researchLongDocumentAdmission,
+	validateResearchDocumentProfile,
+} from "./research-admission.js";
 import {
 	type ResearchReaderReport,
 	researchReaderProfile,
@@ -95,13 +100,18 @@ export function sanitizeResearchHtml(
 	source: string,
 	options: Partial<ResearchReaderLimits> = {},
 	signal?: AbortSignal,
+	profile?: ResearchDocumentProfileId,
 ) {
-	const limits = { ...researchReaderLimits, ...options };
+	const readerLimits =
+		validateResearchDocumentProfile(profile) === "long-v1"
+			? researchLongDocumentAdmission.reader
+			: researchReaderLimits;
+	const limits = { ...readerLimits, ...options };
 	for (const name of Object.keys(limits) as (keyof typeof limits)[]) {
 		if (
 			!Number.isSafeInteger(limits[name]) ||
 			limits[name] < 1 ||
-			limits[name] > researchReaderLimits[name]
+			limits[name] > readerLimits[name]
 		)
 			throw new AgentBrowserError("invalid-input", "Invalid reader limit");
 	}
@@ -300,15 +310,45 @@ function htmlEncoding(bytes: Uint8Array) {
 	return "windows-1252";
 }
 
+function longDocumentLimits(limits: Readonly<DocumentLimits>): DocumentLimits {
+	if (limits === null || typeof limits !== "object")
+		throw new AgentBrowserError("invalid-input", "Invalid document limit");
+	const selected = {
+		maxNodes: limits.maxNodes,
+		maxDepth: limits.maxDepth,
+		maxTextCodeUnits: limits.maxTextCodeUnits,
+		maxChanges: limits.maxChanges,
+	};
+	for (const name of Object.keys(selected) as (keyof DocumentLimits)[]) {
+		if (!Number.isSafeInteger(selected[name]) || selected[name] < 1)
+			throw new AgentBrowserError("invalid-input", "Invalid document limit");
+		selected[name] = Math.min(
+			selected[name],
+			researchLongDocumentAdmission.document[name],
+		);
+	}
+	return selected;
+}
+
 export function loadResearchDocument(
 	response: NetworkResponse,
 	context: DocumentLoaderContext,
+	profile?: ResearchDocumentProfileId,
 ): DocumentTree {
+	const selectedProfile = validateResearchDocumentProfile(profile);
+	const readerLimits =
+		selectedProfile === "long-v1"
+			? researchLongDocumentAdmission.reader
+			: researchReaderLimits;
 	if (context.signal.aborted)
 		throw new AgentBrowserError("aborted", "Reader aborted");
+	const selectedLimits =
+		selectedProfile === "long-v1"
+			? longDocumentLimits(context.limits)
+			: undefined;
 	const maxSourceCodeUnits = Math.min(
-		context.limits.maxTextCodeUnits,
-		researchReaderLimits.maxSourceCodeUnits,
+		(selectedLimits ?? context.limits).maxTextCodeUnits,
+		readerLimits.maxSourceCodeUnits,
 	);
 	if (response.body.byteLength > maxSourceCodeUnits * 4 + 3)
 		throw resourceLimitError(
@@ -321,19 +361,24 @@ export function loadResearchDocument(
 	if (types?.length !== 1)
 		throw new AgentBrowserError("unsupported", "Reader requires Content-Type");
 	const html = types[0].split(";", 1)[0].trim().toLowerCase() === "text/html";
+	if (selectedProfile === "long-v1" && !html)
+		throw new AgentBrowserError(
+			"unsupported",
+			"Long reader requires text/html",
+		);
 	const decoded = decodeResponseText(
 		response,
 		html ? htmlEncoding(response.body) : "utf-8",
 	);
 	if (
 		decoded.text.length > maxSourceCodeUnits ||
-		(!html && decoded.text.length > researchReaderLimits.maxTextCodeUnits)
+		(!html && decoded.text.length > readerLimits.maxTextCodeUnits)
 	)
 		throw resourceLimitError(
 			"reader.decoded",
 			html
 				? maxSourceCodeUnits
-				: Math.min(maxSourceCodeUnits, researchReaderLimits.maxTextCodeUnits),
+				: Math.min(maxSourceCodeUnits, readerLimits.maxTextCodeUnits),
 			decoded.text.length,
 			"Decoded reader limit exceeded",
 		);
@@ -342,23 +387,27 @@ export function loadResearchDocument(
 		{
 			maxSourceCodeUnits,
 			maxTextCodeUnits: Math.min(
-				context.limits.maxTextCodeUnits,
-				researchReaderLimits.maxTextCodeUnits,
+				(selectedLimits ?? context.limits).maxTextCodeUnits,
+				readerLimits.maxTextCodeUnits,
 			),
-			maxOutputCodeUnits: maxSourceCodeUnits,
+			maxOutputCodeUnits: Math.min(
+				(selectedLimits ?? context.limits).maxTextCodeUnits,
+				readerLimits.maxOutputCodeUnits,
+			),
 			maxTokens: Math.min(
-				context.limits.maxNodes * 8,
-				researchReaderLimits.maxTokens,
+				(selectedLimits ?? context.limits).maxNodes * 8,
+				readerLimits.maxTokens,
 			),
 			maxDepth: Math.min(
-				context.limits.maxDepth,
-				researchReaderLimits.maxDepth,
+				(selectedLimits ?? context.limits).maxDepth,
+				readerLimits.maxDepth,
 			),
 		},
 		context.signal,
+		selectedProfile,
 	);
 	const inertContext = {
-		limits: context.limits,
+		limits: selectedLimits ?? context.limits,
 		signal: context.signal,
 		initializeDocument: context.initializeDocument,
 	};

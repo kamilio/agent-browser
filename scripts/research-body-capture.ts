@@ -1,6 +1,11 @@
 import { createHash } from "node:crypto";
 import { types } from "node:util";
 import { AgentBrowserError } from "../src/errors.js";
+import {
+	type ResearchDocumentProfileId,
+	researchLongDocumentAdmission,
+	validateResearchDocumentProfile,
+} from "../src/research-admission.js";
 
 export const researchBodyCaptureLimit = 2_000_000;
 
@@ -30,10 +35,18 @@ function invalidCapture(): never {
 	throw new AgentBrowserError("invalid-input", "Invalid research body capture");
 }
 
-export function captureResearchBody(body: Uint8Array): ResearchBodyCapture {
+export function captureResearchBody(
+	body: Uint8Array,
+	profile?: ResearchDocumentProfileId,
+): ResearchBodyCapture {
+	const selectedProfile = validateResearchDocumentProfile(profile);
+	const maxCaptureBytes =
+		selectedProfile === "long-v1"
+			? researchLongDocumentAdmission.maxCaptureBytes
+			: researchBodyCaptureLimit;
 	if (!types.isUint8Array(body) || types.isProxy(body)) invalidCapture();
 	const decodedBytes = byteLengthGetter?.call(body) as number;
-	if (decodedBytes > researchBodyCaptureLimit)
+	if (decodedBytes > maxCaptureBytes)
 		throw new AgentBrowserError(
 			"resource-limit",
 			"Research body capture limit exceeded",
@@ -54,7 +67,15 @@ export function captureResearchBody(body: Uint8Array): ResearchBodyCapture {
 	}
 }
 
-export function decodeResearchBodyCapture(value: unknown): Uint8Array {
+export function decodeResearchBodyCapture(
+	value: unknown,
+	profile?: ResearchDocumentProfileId,
+): Uint8Array {
+	const selectedProfile = validateResearchDocumentProfile(profile);
+	const maxCaptureBytes =
+		selectedProfile === "long-v1"
+			? researchLongDocumentAdmission.maxCaptureBytes
+			: researchBodyCaptureLimit;
 	if (typeof value !== "object" || value === null || types.isProxy(value))
 		invalidCapture();
 	const prototype = Object.getPrototypeOf(value);
@@ -77,7 +98,7 @@ export function decodeResearchBodyCapture(value: unknown): Uint8Array {
 		typeof decodedBytes !== "number" ||
 		!Number.isInteger(decodedBytes) ||
 		decodedBytes < 0 ||
-		decodedBytes > researchBodyCaptureLimit ||
+		decodedBytes > maxCaptureBytes ||
 		typeof sha256 !== "string" ||
 		!/^[a-f0-9]{64}$/.test(sha256) ||
 		typeof data !== "string" ||
