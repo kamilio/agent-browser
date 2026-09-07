@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+The explicit native table-policy source trial reaches committed sourceUTF16
+872144, later than834905, but still rejects expected td/observed table/depth31
+without candidates, text or capture. `SOURCE-TABLE-TRIAL.md` preserves328 evidence
+files, fresh five shell/20 native integration/4817 status controls and passing
+1748-file/37-artifact failure integrity. Neither coordinate identifies complete
+markup or proves an omitted-group pattern. Next is trusted bounded finite scope
+context with unchanged grammar, followed by separate tests/review/authorization;
+no blind recovery, raised limits or source/capture replay. Modern privacy,
+provider/vault/device/page/consent, blocked research and all stopped/denied gates
+remain open. The original browser improvement goal continues.
+
 Explicit host-only tableScopePolicy optional-end-tags-v1 now handles a conservative
 lexical cell/row/tbody omission subset using at most four tracked stack slots.
 Strict/default grammar, reports and bounds remain unchanged; outer scopes stay
