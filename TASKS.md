@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+Explicit host-only tableScopePolicy optional-end-tags-v1 now handles a conservative
+lexical cell/row/tbody omission subset using at most four tracked stack slots.
+Strict/default grammar, reports and bounds remain unchanged; outer scopes stay
+suppressed, rejected plans preserve original diagnostics, and no containers or
+EOF closures are invented. All695 tests in five explicit native files pass,
+including12 option and49 transition cases; build/strict/scoped Biome, independent
+runtime review and2716-input/304-source-artifact reconciliation pass.
+`SOURCE-TABLE-SCOPES.md` records the contract and evidence. This is not CLI/page/
+source-wrapper activation or proof that actual W3C markup is recoverable; next
+source use needs explicit policy integration and separate authorization. Modern
+privacy/provider/device/page/consent, blocked research and all stopped/denied gates
+remain open. The original browser improvement goal continues.
+
 The latest separately authorized native WebAuthn source request now identifies
 an actual scope mismatch: expected td, observed table, tracked depth27, at
 last-committed sourceUTF16 position834905. It still fails without source text,

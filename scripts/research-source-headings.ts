@@ -32,6 +32,7 @@ export type ResearchSourceHeadingLimits = {
 export type ResearchSourceHeadingOptions =
 	Partial<ResearchSourceHeadingLimits> & {
 		method: "native-source-headings-v1";
+		tableScopePolicy?: "optional-end-tags-v1";
 	};
 
 export interface SourceHeadingRange {
@@ -57,6 +58,7 @@ export interface ResearchSourceHeadingReport {
 	readonly semantics: "lexical-not-dom";
 	readonly partial: true;
 	readonly contentSuccess: null;
+	readonly tableScopePolicy?: "optional-end-tags-v1";
 	readonly source: ResearchHtmlSourceIdentity;
 	readonly completion: "eof" | "entry-limit";
 	readonly scannedTo: number;
@@ -205,9 +207,10 @@ function invalid(): never {
 	);
 }
 
-function optionsSnapshot(
-	value: unknown,
-): Readonly<ResearchSourceHeadingLimits> {
+function optionsSnapshot(value: unknown): {
+	readonly limits: Readonly<ResearchSourceHeadingLimits>;
+	readonly tableScopePolicy?: "optional-end-tags-v1";
+} {
 	if (value === null || typeof value !== "object" || types.isProxy(value))
 		invalid();
 	const prototype = Object.getPrototypeOf(value);
@@ -222,11 +225,21 @@ function optionsSnapshot(
 	const limits: ResearchSourceHeadingLimits = {
 		...researchSourceHeadingLimits,
 	};
+	let tableScopePolicy: "optional-end-tags-v1" | undefined;
 	for (const key of Reflect.ownKeys(value)) {
 		if (key === "method") continue;
-		if (typeof key !== "string" || !Object.hasOwn(limits, key)) invalid();
+		if (
+			typeof key !== "string" ||
+			(key !== "tableScopePolicy" && !Object.hasOwn(limits, key))
+		)
+			invalid();
 		const descriptor = Object.getOwnPropertyDescriptor(value, key);
 		if (!descriptor || !Object.hasOwn(descriptor, "value")) invalid();
+		if (key === "tableScopePolicy") {
+			if (descriptor.value !== "optional-end-tags-v1") invalid();
+			tableScopePolicy = descriptor.value;
+			continue;
+		}
 		const name = key as keyof ResearchSourceHeadingLimits;
 		const selected: unknown = descriptor.value;
 		if (
@@ -238,7 +251,7 @@ function optionsSnapshot(
 			invalid();
 		limits[name] = selected;
 	}
-	return Object.freeze(limits);
+	return Object.freeze({ limits: Object.freeze(limits), tableScopePolicy });
 }
 
 function freezeOwned<Value>(value: Value): Value {
@@ -362,7 +375,7 @@ export async function discoverResearchSourceHeadings(
 	signal?: AbortSignal,
 ): Promise<ResearchSourceHeadingDiscovery> {
 	const started = performance.now();
-	const limits = optionsSnapshot(options);
+	const { limits, tableScopePolicy } = optionsSnapshot(options);
 	const deadline = started + limits.timeoutMs;
 	let cursor: HtmlTokenCursor | undefined;
 	let scannerWork = 0;
@@ -433,6 +446,75 @@ export async function discoverResearchSourceHeadings(
 				"Source-heading tracked depth exceeded",
 			);
 		maxTrackedDepth = Math.max(maxTrackedDepth, depth);
+	};
+	const tableSuffix = () => {
+		let index = scopes.length - 1;
+		const inspect = () => {
+			charge(1);
+			return scopes[index];
+		};
+		let current = inspect();
+		let cell: number | undefined;
+		let row: number | undefined;
+		let groupIndex: number | undefined;
+		if (current === "td" || current === "th") {
+			cell = index--;
+			current = inspect();
+		}
+		if (current === "tr") {
+			row = index--;
+			current = inspect();
+		}
+		if (cell !== undefined && row === undefined) return undefined;
+		const group =
+			current === "tbody" || current === "thead" || current === "tfoot"
+				? current
+				: undefined;
+		if (group !== undefined) {
+			groupIndex = index--;
+			current = inspect();
+		}
+		if (current !== "table") return undefined;
+		return { root: index, cell, row, group, groupIndex };
+	};
+	const tableStartPlan = (name: SourceHeadingScope) => {
+		if (
+			name !== "td" &&
+			name !== "th" &&
+			name !== "tr" &&
+			name !== "tbody" &&
+			name !== "tfoot"
+		)
+			return undefined;
+		charge(1);
+		const suffix = tableSuffix();
+		if (!suffix) return undefined;
+		if (name === "td" || name === "th") return suffix.cell;
+		if (name === "tr") return suffix.row;
+		return suffix.group === "tbody" ? suffix.groupIndex : undefined;
+	};
+	const tableEndPlan = (token: HtmlToken, name: SourceHeadingScope) => {
+		if (
+			scopes.at(-1) === name ||
+			(name !== "tr" &&
+				name !== "tbody" &&
+				name !== "thead" &&
+				name !== "tfoot" &&
+				name !== "table")
+		)
+			return undefined;
+		charge(1);
+		const suffix = tableSuffix();
+		if (!suffix) return undefined;
+		let remaining: number | undefined;
+		if (name === "tr") remaining = suffix.row;
+		else if (name === "table") {
+			if (suffix.group === undefined || suffix.group === "tbody")
+				remaining = suffix.root;
+		} else if (name === suffix.group) remaining = suffix.groupIndex;
+		if (remaining === undefined) return undefined;
+		charge(1);
+		return plainEnd(token, name) ? remaining : undefined;
 	};
 	const extent = () => {
 		if (!heading || !cursor) return;
@@ -614,11 +696,30 @@ export async function discoverResearchSourceHeadings(
 						unsupported("scope-self-closing");
 					continue;
 				}
+				const remaining = tableScopePolicy ? tableStartPlan(name) : undefined;
+				if (remaining !== undefined) {
+					charge(scopes.length - remaining + 1);
+					track(remaining + 1);
+					scopes.length = remaining;
+					scopes.push(name);
+					await yieldBatch();
+					continue;
+				}
 				track(scopes.length + 1);
 				scopes.push(name);
+				if (tableScopePolicy) await yieldBatch();
 				continue;
 			}
 			if (token.kind === "end" && tracked) {
+				const remaining = tableScopePolicy
+					? tableEndPlan(token, name)
+					: undefined;
+				if (remaining !== undefined) {
+					charge(scopes.length - remaining);
+					scopes.length = remaining;
+					await yieldBatch();
+					continue;
+				}
 				const expectedScope = scopes.at(-1) ?? null;
 				let condition: SourceHeadingScopeDiagnostic["condition"] | undefined;
 				if (expectedScope !== name) condition = "scope-mismatch";
@@ -632,6 +733,7 @@ export async function discoverResearchSourceHeadings(
 						depth: scopes.length,
 					});
 				scopes.pop();
+				if (tableScopePolicy) await yieldBatch();
 				continue;
 			}
 			if (scopes.length) {
@@ -667,6 +769,7 @@ export async function discoverResearchSourceHeadings(
 			semantics: "lexical-not-dom",
 			partial: true,
 			contentSuccess: null,
+			...(tableScopePolicy ? { tableScopePolicy } : {}),
 			source: admitted.identity,
 			completion,
 			scannedTo: cursor.position,

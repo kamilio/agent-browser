@@ -1746,3 +1746,886 @@ it("synthetic span-heavy source exceeds the native tree guard but yields real sc
 		admitted?.close();
 	}
 });
+
+describe("explicit optional-table policy admission", () => {
+	const tableScopePolicy = "optional-end-tags-v1";
+	const explicitTable = `<table><tr><td><h2>${privateMarker}</h2></td></tr></table><h1>After</h1>`;
+	const strictReportKeys = [
+		"completion",
+		"contentSuccess",
+		"counters",
+		"entries",
+		"kind",
+		"limits",
+		"method",
+		"partial",
+		"scannedTo",
+		"semantics",
+		"source",
+	];
+
+	async function expectInvalidOptions(options: unknown) {
+		const input = ownedSource("<h1>Unreached</h1>");
+		const descriptors = vi.spyOn(Object, "getOwnPropertyDescriptor");
+		const prototypes = vi.spyOn(Object, "getPrototypeOf");
+		const keys = vi.spyOn(Reflect, "ownKeys");
+		let error: unknown;
+		let sourceInspections = 0;
+		try {
+			error = await captureFailure(() =>
+				discoverResearchSourceHeadings(input, options),
+			);
+			sourceInspections =
+				descriptors.mock.calls.filter(([value]) => value === input).length +
+				prototypes.mock.calls.filter(([value]) => value === input).length +
+				keys.mock.calls.filter(([value]) => value === input).length;
+		} finally {
+			keys.mockRestore();
+			prototypes.mockRestore();
+			descriptors.mockRestore();
+		}
+		expectCode(error, "invalid-input");
+		expect((error as Error).message).not.toContain(privateMarker);
+		expect(sourceInspections).toBe(0);
+	}
+
+	it("rejects every present nonliteral policy before inspecting valid source", async () => {
+		for (const value of [
+			undefined,
+			null,
+			"",
+			"strict",
+			"optional-end-tags-v2",
+			"OPTIONAL-END-TAGS-V1",
+			" optional-end-tags-v1",
+			"optional-end-tags-v1 ",
+			0,
+			1,
+			Number.NaN,
+			Number.POSITIVE_INFINITY,
+			true,
+			false,
+			1n,
+			Symbol(tableScopePolicy),
+			{},
+			[],
+			[tableScopePolicy],
+			Object(tableScopePolicy),
+			() => tableScopePolicy,
+		])
+			await expectInvalidOptions({ method, tableScopePolicy: value });
+	});
+
+	it("does not inspect or coerce hostile policy values or proxy options", async () => {
+		const trap = vi.fn((): never => {
+			throw new Error(privateMarker);
+		});
+		const traps = {
+			get: trap,
+			getPrototypeOf: trap,
+			getOwnPropertyDescriptor: trap,
+			ownKeys: trap,
+			has: trap,
+			apply: trap,
+		};
+		const coercible = {
+			[Symbol.toPrimitive]: trap,
+			toString: trap,
+			valueOf: trap,
+		};
+		const accessor = Object.defineProperty({}, "tableScopePolicy", {
+			get: trap,
+		});
+		const revokedValue = Proxy.revocable(coercible, traps);
+		const revokedFunction = Proxy.revocable(() => tableScopePolicy, traps);
+		const revokedOptions = Proxy.revocable({ method, tableScopePolicy }, traps);
+		revokedValue.revoke();
+		revokedFunction.revoke();
+		revokedOptions.revoke();
+		for (const value of [
+			coercible,
+			accessor,
+			new Proxy(coercible, traps),
+			new Proxy(() => tableScopePolicy, traps),
+			revokedValue.proxy,
+			revokedFunction.proxy,
+		])
+			await expectInvalidOptions({ method, tableScopePolicy: value });
+		for (const options of [
+			new Proxy({ method, tableScopePolicy }, traps),
+			revokedOptions.proxy,
+			new Proxy(() => ({ method, tableScopePolicy }), traps),
+		])
+			await expectInvalidOptions(options);
+		expect(trap).not.toHaveBeenCalled();
+	});
+
+	it("rejects policy accessors without invoking either getter or setter", async () => {
+		const getter = vi.fn(() => tableScopePolicy);
+		const setter = vi.fn();
+		for (const enumerable of [false, true]) {
+			for (const descriptor of [
+				{ get: getter },
+				{ set: setter },
+				{ get: getter, set: setter },
+			])
+				await expectInvalidOptions(
+					Object.defineProperty({ method }, "tableScopePolicy", {
+						...descriptor,
+						enumerable,
+					}),
+				);
+		}
+		expect(getter).not.toHaveBeenCalled();
+		expect(setter).not.toHaveBeenCalled();
+	});
+
+	it("retains explicit method, prototype, exact-key and numeric admission rules", async () => {
+		for (const options of [
+			{ tableScopePolicy },
+			{ method: undefined, tableScopePolicy },
+			{ method: "reader", tableScopePolicy },
+			Object.assign(Object.create({ tableScopePolicy }), { method }),
+			Object.assign(Object.create({}), { method, tableScopePolicy }),
+			Object.assign([], { method, tableScopePolicy }),
+			{ method, tableScopePolicy, unknown: 1 },
+			{ method, tableScopePolicy, [Symbol("extra")]: 1 },
+			Object.defineProperty({ method, tableScopePolicy }, "unknown", {
+				value: 1,
+			}),
+			Object.defineProperty({ method, tableScopePolicy }, Symbol("extra"), {
+				value: 1,
+			}),
+			{ method, tableScopePolicy, maxOutputBytes: 0 },
+			{ method, tableScopePolicy, maxWorkUnits: "1" },
+			{ method, tableScopePolicy, maxTrackedDepth: Number.NaN },
+		])
+			await expectInvalidOptions(options);
+	});
+
+	it.each([false, true])(
+		"admits nonenumerable own data policy with null-prototype=%s",
+		async (nullPrototype) => {
+			const options = Object.assign(
+				Object.create(nullPrototype ? null : Object.prototype),
+				{ method },
+			);
+			Object.defineProperty(options, "tableScopePolicy", {
+				value: tableScopePolicy,
+				enumerable: false,
+			});
+			const result = await discoverResearchSourceHeadings(
+				ownedSource("<h1>One</h1>"),
+				options,
+			);
+			expect(result.report.tableScopePolicy).toBe(tableScopePolicy);
+			expect(Object.hasOwn(result.report, "tableScopePolicy")).toBe(true);
+			expect(result.report.entries.map((entry) => entry.title)).toEqual([
+				"One",
+			]);
+			expect(result.report.limits).toEqual(canonicalLimits);
+			expectDeepFrozen(result);
+		},
+	);
+
+	it("preserves the default strict schema and marks only explicit opted-in output", async () => {
+		const strict = await scan(explicitTable);
+		const selected = await scan(explicitTable, { tableScopePolicy });
+		expect(Object.keys(strict.report).sort()).toEqual(strictReportKeys);
+		expect(Object.hasOwn(strict.report, "tableScopePolicy")).toBe(false);
+		expect(Object.hasOwn(JSON.parse(strict.jsonl), "tableScopePolicy")).toBe(
+			false,
+		);
+		expect(Object.keys(selected.report).sort()).toEqual(
+			[...strictReportKeys, "tableScopePolicy"].sort(),
+		);
+		expect(
+			Object.getOwnPropertyDescriptor(selected.report, "tableScopePolicy"),
+		).toEqual({
+			value: tableScopePolicy,
+			enumerable: true,
+			writable: false,
+			configurable: false,
+		});
+		expect(Reflect.set(selected.report, "tableScopePolicy", "changed")).toBe(
+			false,
+		);
+		expect(Reflect.deleteProperty(selected.report, "tableScopePolicy")).toBe(
+			false,
+		);
+		for (const result of [strict, selected]) {
+			expect(result.report.entries.map((entry) => entry.title)).toEqual([
+				"After",
+			]);
+			expect(result.report.limits).toEqual(canonicalLimits);
+			expect(Object.keys(result.report.limits).sort()).toEqual(
+				Object.keys(canonicalLimits).sort(),
+			);
+			expect(
+				Object.values(result.report.limits).every(
+					(value) => typeof value === "number",
+				),
+			).toBe(true);
+			expect(result.jsonl).toBe(`${JSON.stringify(result.report)}\n`);
+			expect(result.jsonl.split("\n")).toHaveLength(2);
+			expect(result.jsonl).not.toContain(privateMarker);
+			expect(result.outputBytes).toBe(encoder.encode(result.jsonl).byteLength);
+			expect(result.outputBytes).toBeLessThanOrEqual(
+				result.report.limits.maxOutputBytes,
+			);
+			expect(JSON.parse(result.jsonl)).toEqual(result.report);
+			expectDeepFrozen(result);
+		}
+		expect(JSON.parse(selected.jsonl).tableScopePolicy).toBe(tableScopePolicy);
+		expect(researchSourceHeadingLimits).toEqual(canonicalLimits);
+		expect(Object.hasOwn(researchSourceHeadingLimits, "tableScopePolicy")).toBe(
+			false,
+		);
+	});
+
+	it.each([false, true])(
+		"snapshots opt-in=%s before an actual scanner yield and later option mutation",
+		async (selected) => {
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+			const options: Record<string, unknown> = {
+				method,
+				yieldEveryOperations: 1,
+			};
+			if (selected) options.tableScopePolicy = tableScopePolicy;
+			const controller = controllerFor();
+			const pending = observe(
+				discoverResearchSourceHeadings(
+					ownedSource(explicitTable),
+					options,
+					controller.signal,
+				),
+			);
+			const changedPolicy = vi.fn(() =>
+				selected ? undefined : tableScopePolicy,
+			);
+			try {
+				await microtasks();
+				expect(pending.settled).toBe(false);
+				expect(vi.getTimerCount()).toBeGreaterThan(0);
+				Object.defineProperty(options, "tableScopePolicy", {
+					get: changedPolicy,
+					enumerable: true,
+					configurable: true,
+				});
+				await vi.runAllTimersAsync();
+				const outcome = await pending.outcome;
+				expect(outcome.error).toBeUndefined();
+				expect(outcome.value).toBeDefined();
+				expect(
+					outcome.value?.report.entries.map((entry) => entry.title),
+				).toEqual(["After"]);
+				expect(outcome.value?.report.tableScopePolicy).toBe(
+					selected ? tableScopePolicy : undefined,
+				);
+				expect(
+					Object.hasOwn(outcome.value?.report ?? {}, "tableScopePolicy"),
+				).toBe(selected);
+				expect(outcome.value?.report.counters.yields).toBeGreaterThan(0);
+				expect(changedPolicy).not.toHaveBeenCalled();
+			} finally {
+				controller.abort();
+				vi.clearAllTimers();
+				vi.useRealTimers();
+			}
+		},
+	);
+
+	it("counts the policy field in exact self-describing JSONL output bounds", async () => {
+		const source = '<h1>Quote" \\ 😀</h1>';
+		const baseline = await scan(source, { tableScopePolicy });
+		let cap = baseline.outputBytes;
+		for (let attempt = 0; attempt < 8; attempt++) {
+			cap = encoder.encode(
+				`${JSON.stringify({
+					...baseline.report,
+					limits: { ...baseline.report.limits, maxOutputBytes: cap },
+				})}\n`,
+			).byteLength;
+		}
+		expect(String(cap - 1).length).toBe(String(cap).length);
+		const exact = await scan(source, { tableScopePolicy, maxOutputBytes: cap });
+		expect(exact.report.tableScopePolicy).toBe(tableScopePolicy);
+		expect(exact.outputBytes).toBe(cap);
+		expect(exact.outputBytes).toBe(encoder.encode(exact.jsonl).byteLength);
+		expect(exact.jsonl).toBe(`${JSON.stringify(exact.report)}\n`);
+		const error = await captureFailure(() =>
+			scan(source, { tableScopePolicy, maxOutputBytes: cap - 1 }),
+		);
+		expectCode(error, "resource-limit");
+		const diagnostic = resourceLimitDiagnostic(error);
+		expect(diagnostic).toMatchObject({
+			kind: "source.headings-output",
+			unit: "bytes",
+			limit: cap - 1,
+		});
+		expect(diagnostic?.observed).toBeGreaterThan(cap - 1);
+	});
+
+	it("retains the work cap while the policy is selected", async () => {
+		const error = await captureFailure(() =>
+			scan(explicitTable, { tableScopePolicy, maxWorkUnits: 1 }),
+		);
+		expectCode(error, "resource-limit");
+		const diagnostic = resourceLimitDiagnostic(error);
+		expect(["html.cursor-work", "source.headings-work"]).toContain(
+			diagnostic?.kind,
+		);
+		expect(diagnostic?.limit).toBe(1);
+		expect(diagnostic?.observed).toBeGreaterThan(1);
+	});
+
+	it("retains the depth cap for explicit well-nested table scopes", async () => {
+		const error = await captureFailure(() =>
+			scan(explicitTable, { tableScopePolicy, maxTrackedDepth: 2 }),
+		);
+		expectCode(error, "resource-limit");
+		const diagnostic = resourceLimitDiagnostic(error);
+		expect(diagnostic).toMatchObject({
+			kind: "source.headings-depth",
+			unit: "levels",
+			limit: 2,
+		});
+		expect(diagnostic?.observed).toBeGreaterThan(2);
+	});
+});
+
+describe("conservative optional-table scope transitions", () => {
+	const tableScopePolicy = "optional-end-tags-v1";
+	const hiddenHeading = `<h2>${privateMarker}</h2>`;
+	const outsideHeading = "<h1>After 😀</h1>";
+
+	function selectedScan(source: string, limits: Record<string, unknown> = {}) {
+		return scan(source, { tableScopePolicy, ...limits });
+	}
+
+	async function expectOutsideHeading(
+		prefix: string,
+		limits: Record<string, unknown> = {},
+	) {
+		const source = prefix + outsideHeading;
+		const result = await selectedScan(source, limits);
+		expect(result.report.entries).toEqual([
+			{
+				ordinal: 1,
+				level: 1,
+				title: "After 😀",
+				titleTruncated: false,
+				anchor: {
+					kind: "source-utf16-range-v1",
+					startTag: { start: prefix.length, end: prefix.length + 4 },
+					endTag: { start: source.length - 5, end: source.length },
+				},
+			},
+		]);
+		expect(result.report.tableScopePolicy).toBe(tableScopePolicy);
+		expect(result.report.completion).toBe("eof");
+		expect(result.report.scannedTo).toBe(source.length);
+		expect(result.report.source.bytes).toEqual({
+			length: encoder.encode(source).byteLength,
+			sha256: sha256(encoder.encode(source)),
+		});
+		expect(result.report.source.text.codeUnits).toBe(source.length);
+		expect(result.report.source.text.sha256).toBe(sha256(source));
+		expect(result.jsonl).not.toContain(privateMarker);
+		expect(result.jsonl).toBe(`${JSON.stringify(result.report)}\n`);
+		expect(result.outputBytes).toBe(encoder.encode(result.jsonl).byteLength);
+		expectDeepFrozen(result);
+		return result;
+	}
+
+	async function expectSelectedScopeFailure(
+		prefix: string,
+		expected: Omit<SourceHeadingScopeDiagnostic, "kind">,
+	) {
+		const error = await captureFailure(() =>
+			selectedScan(prefix + outsideHeading),
+		);
+		expectCode(error, "unsupported");
+		const structure = sourceHeadingStructureDiagnostic(error);
+		const diagnostic = sourceHeadingScopeDiagnostic(error);
+		expect(structure).toEqual({
+			kind: "source-heading-structure",
+			reason: "scope-close-structure",
+			position: prefix.length,
+			positionSemantics: "last-committed-source-utf16",
+		});
+		expect(diagnostic).toEqual({
+			kind: "source-heading-scope-close",
+			...expected,
+		});
+		expect(Object.isFrozen(structure)).toBe(true);
+		expect(Object.isFrozen(diagnostic)).toBe(true);
+		expect(sourceHeadingStructureDiagnostic(error)).toBe(structure);
+		expect(sourceHeadingScopeDiagnostic(error)).toBe(diagnostic);
+		expect(resourceLimitDiagnostic(error)).toBeUndefined();
+		expect(JSON.stringify({ error, structure, diagnostic })).not.toContain(
+			privateMarker,
+		);
+		return { error, structure, diagnostic };
+	}
+
+	function observeNativeCursors() {
+		const cursors = new Set<HtmlTokenCursor>();
+		const next = HtmlTokenCursor.prototype.next;
+		vi.spyOn(HtmlTokenCursor.prototype, "next").mockImplementation(function (
+			this: HtmlTokenCursor,
+		) {
+			cursors.add(this);
+			return next.call(this);
+		});
+		return cursors;
+	}
+
+	it.each([
+		{
+			name: "direct rows and td/th sibling switches",
+			source: `<table><tr><td>${hiddenHeading}<th>${hiddenHeading}<tr><td>${hiddenHeading}</table>`,
+			hidden: 3,
+		},
+		{
+			name: "cell, row and tbody omitted at table end",
+			source: `<table><tbody><tr><td>${hiddenHeading}</table>`,
+			hidden: 1,
+		},
+		{
+			name: "explicit row and matching group closes",
+			source: `<table><tbody><tr><td>${hiddenHeading}</tr></tbody></table>`,
+			hidden: 1,
+		},
+		{
+			name: "sibling tbody after an unfinished row",
+			source: `<table><tbody><tr><td>${hiddenHeading}<tbody><tr><th>${hiddenHeading}</table>`,
+			hidden: 2,
+		},
+		{
+			name: "tfoot replaces tbody but closes explicitly",
+			source: `<table><tbody><tr><td>${hiddenHeading}<tfoot><tr><th>${hiddenHeading}</tfoot></table>`,
+			hidden: 2,
+		},
+		{
+			name: "thead closes explicitly before tbody",
+			source: `<table><thead><tr><th>${hiddenHeading}</thead><tbody><tr><td>${hiddenHeading}</table>`,
+			hidden: 2,
+		},
+		{
+			name: "sibling row without a preceding cell",
+			source: `<table><tbody><tr><tr><td>${hiddenHeading}</table>`,
+			hidden: 1,
+		},
+		{
+			name: "sibling empty tbody",
+			source: `<table><tbody><tbody><tr><td>${hiddenHeading}</table>`,
+			hidden: 1,
+		},
+	])("recovers $name without promoting table headings", async (fixture) => {
+		const prefix = `😀\r\n${fixture.source}`;
+		const result = await expectOutsideHeading(prefix);
+		expect(result.report.counters.suppressedHeadingStarts).toBe(fixture.hidden);
+		await expectUnsupported(prefix + outsideHeading);
+	});
+
+	it("replaces repeated sibling cells within the constant canonical depth cap", async () => {
+		const cells = Array.from(
+			{ length: 24 },
+			(_value, index) => `<${index % 2 === 0 ? "td" : "th"}>${hiddenHeading}`,
+		).join("");
+		const prefix = `<table><tr>${cells}</table>`;
+		const result = await expectOutsideHeading(prefix, { maxTrackedDepth: 3 });
+		expect(result.report.counters.maxTrackedDepth).toBe(3);
+		expect(result.report.counters.suppressedStarts).toEqual({
+			table: 1,
+			tr: 1,
+			td: 12,
+			th: 12,
+		});
+		expect(result.report.counters.suppressedHeadingStarts).toBe(24);
+		await expectUnsupported(prefix + outsideHeading);
+		expectLimit(
+			await captureFailure(() =>
+				scan(prefix + outsideHeading, { maxTrackedDepth: 3 }),
+			),
+			{
+				kind: "source.headings-depth",
+				unit: "levels",
+				limit: 3,
+				observed: 4,
+			},
+		);
+	});
+
+	it.each([
+		["inside a cell", "<table><tr><td>", 6],
+		["outside a cell", "<table><tr>", 5],
+	] as const)(
+		"keeps a nested table start %s as a strict push",
+		async (_name, outer, depth) => {
+			const prefix = `${outer}<table><tr><td>${hiddenHeading}</table>${hiddenHeading}</table>`;
+			const result = await expectOutsideHeading(prefix);
+			expect(result.report.counters.suppressedStarts.table).toBe(2);
+			expect(result.report.counters.suppressedHeadingStarts).toBe(2);
+			expect(result.report.counters.maxTrackedDepth).toBe(depth);
+		},
+	);
+
+	it.each(["template", "svg", "select"] as const)(
+		"retains outer %s suppression after local table recovery",
+		async (scope) => {
+			const prefix = `<${scope}><table><tr><td>${hiddenHeading}</table>${hiddenHeading}</${scope}>`;
+			const result = await expectOutsideHeading(prefix);
+			expect(result.report.counters.suppressedHeadingStarts).toBe(2);
+			expect(result.report.counters.maxTrackedDepth).toBe(4);
+		},
+	);
+
+	it("retains balanced strict fallback without inventing missing rows or groups", async () => {
+		const prefix = `<table><td>${hiddenHeading}</td></table>`;
+		const selected = await expectOutsideHeading(prefix);
+		const strict = await scan(prefix + outsideHeading);
+		expect(selected.report.entries).toEqual(strict.report.entries);
+		expect(selected.report.counters.suppressedStarts).toEqual({
+			table: 1,
+			td: 1,
+		});
+		expect(selected.report.counters.maxTrackedDepth).toBe(2);
+	});
+
+	it.each(["script", "textarea"] as const)(
+		"leaves %s raw table-like bytes to the native cursor",
+		async (name) => {
+			const raw = `<${name}></table><td>${hiddenHeading}</${name}>`;
+			const prefix = `<table><tr><td>${raw}${hiddenHeading}</table>`;
+			const result = await expectOutsideHeading(prefix);
+			expect(result.report.counters.rawStarts).toEqual({ [name]: 1 });
+			expect(result.report.counters.suppressedStarts.td).toBe(1);
+			expect(result.report.counters.suppressedHeadingStarts).toBe(1);
+			const malformed = `<table><tr><td><${name}>${privateMarker}</${name} extra=x>`;
+			const error = await captureFailure(() => selectedScan(malformed));
+			expectCode(error, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(error)).toMatchObject({
+				reason: "raw-close-structure",
+				position: malformed.length,
+			});
+		},
+	);
+
+	it.each([
+		{
+			name: "absent table",
+			source: `<tr><td>${hiddenHeading}</tr>`,
+			expectedScope: "td",
+			observedScope: "tr",
+			depth: 2,
+		},
+		{
+			name: "absent row",
+			source: `<table><td>${hiddenHeading}</table>`,
+			expectedScope: "td",
+			observedScope: "table",
+			depth: 2,
+		},
+		{
+			name: "absent row inside tbody",
+			source: `<table><tbody><td>${hiddenHeading}</table>`,
+			expectedScope: "td",
+			observedScope: "table",
+			depth: 3,
+		},
+		{
+			name: "implicit thead close",
+			source: `<table><thead><tr><th>${hiddenHeading}</table>`,
+			expectedScope: "th",
+			observedScope: "table",
+			depth: 4,
+		},
+		{
+			name: "implicit tfoot close",
+			source: `<table><tfoot><tr><td>${hiddenHeading}</table>`,
+			expectedScope: "td",
+			observedScope: "table",
+			depth: 4,
+		},
+		{
+			name: "wrong cell close",
+			source: `<table><tr><td>${hiddenHeading}</th>`,
+			expectedScope: "td",
+			observedScope: "th",
+			depth: 3,
+		},
+		{
+			name: "wrong group close",
+			source: `<table><tbody><tr><td>${hiddenHeading}</tfoot>`,
+			expectedScope: "td",
+			observedScope: "tfoot",
+			depth: 4,
+		},
+		{
+			name: "outer group behind an inner table",
+			source: `<table><tbody><tr><td><table><tr><td>${hiddenHeading}</tbody>`,
+			expectedScope: "td",
+			observedScope: "tbody",
+			depth: 7,
+		},
+		{
+			name: "outer template behind a table",
+			source: `<template><table><tr><td>${hiddenHeading}</template>`,
+			expectedScope: "td",
+			observedScope: "template",
+			depth: 4,
+		},
+		{
+			name: "caption barrier",
+			source: `<table><caption>${hiddenHeading}</table>`,
+			expectedScope: "caption",
+			observedScope: "table",
+			depth: 2,
+		},
+		{
+			name: "colgroup barrier",
+			source: `<table><colgroup>${hiddenHeading}</table>`,
+			expectedScope: "colgroup",
+			observedScope: "table",
+			depth: 2,
+		},
+		{
+			name: "redundant cell close after replacement",
+			source: `<table><tr><td>${hiddenHeading}<th>${hiddenHeading}</th></th>`,
+			expectedScope: "tr",
+			observedScope: "th",
+			depth: 2,
+		},
+		{
+			name: "stray table end",
+			source: "</table>",
+			expectedScope: null,
+			observedScope: "table",
+			depth: 0,
+		},
+	] as const)(
+		"refuses $name without publishing later headings",
+		async (fixture) => {
+			await expectSelectedScopeFailure(fixture.source, {
+				condition: "scope-mismatch",
+				expectedScope: fixture.expectedScope,
+				observedScope: fixture.observedScope,
+				depth: fixture.depth,
+			});
+		},
+	);
+
+	it.each(["template", "svg", "math", "select", "object"] as const)(
+		"does not search past an open %s frame above the table suffix",
+		async (scope) => {
+			await expectSelectedScopeFailure(
+				`<table><tr><td><${scope}>${hiddenHeading}</table>`,
+				{
+					condition: "scope-mismatch",
+					expectedScope: scope,
+					observedScope: "table",
+					depth: 4,
+				},
+			);
+		},
+	);
+
+	it.each([`</table extra="${privateMarker}">`, "</table/>"])(
+		"keeps original stack diagnostics when a proposed close is nonplain: %s",
+		async (closing) => {
+			const prefix = `😀<table><tbody><tr><td>${hiddenHeading}${closing}`;
+			const first = await expectSelectedScopeFailure(prefix, {
+				condition: "scope-mismatch",
+				expectedScope: "td",
+				observedScope: "table",
+				depth: 4,
+			});
+			const strict = await captureFailure(() => scan(prefix + outsideHeading));
+			expect(sourceHeadingScopeDiagnostic(strict)).toEqual(first.diagnostic);
+			expect(sourceHeadingStructureDiagnostic(strict)).toEqual(first.structure);
+			const repeated = await captureFailure(() =>
+				selectedScan(prefix + outsideHeading),
+			);
+			expect(repeated).not.toBe(first.error);
+			expect(sourceHeadingScopeDiagnostic(repeated)).toEqual(first.diagnostic);
+			expect(sourceHeadingScopeDiagnostic(repeated)).not.toBe(first.diagnostic);
+			expect(
+				sourceHeadingScopeDiagnostic({ ...first.diagnostic }),
+			).toBeUndefined();
+			await expectOutsideHeading(`<table><tr><td>${hiddenHeading}</table>`);
+			expect(sourceHeadingScopeDiagnostic(first.error)).toBe(first.diagnostic);
+			expect(sourceHeadingStructureDiagnostic(first.error)).toBe(
+				first.structure,
+			);
+		},
+	);
+
+	it("keeps matching nonplain cell closes on the unchanged strict predicate", async () => {
+		await expectSelectedScopeFailure(
+			`<table><tr><td>${hiddenHeading}</td extra=x>`,
+			{
+				condition: "non-plain-close",
+				expectedScope: "td",
+				observedScope: "td",
+				depth: 3,
+			},
+		);
+	});
+
+	it.each([
+		["<td/>", "scope-self-closing", true],
+		["<td duplicate duplicate>", "tokenizer-issue", false],
+	] as const)(
+		"keeps malformed sibling start %s ahead of transition mutation",
+		async (token, reason, committed) => {
+			const prefix = "<table><tr><td>A";
+			const error = await captureFailure(() =>
+				selectedScan(`${prefix}${token}${outsideHeading}`),
+			);
+			expectCode(error, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(error)).toEqual({
+				kind: "source-heading-structure",
+				reason,
+				position: prefix.length + (committed ? token.length : 0),
+				positionSemantics: "last-committed-source-utf16",
+			});
+			expect(sourceHeadingScopeDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it.each([1, 2])(
+		"does not drain unresolved tables at EOF with maxEntries=%i",
+		async (maxEntries) => {
+			const source = `<h1>Before</h1><table><tr><td>${hiddenHeading}<td>${hiddenHeading}`;
+			const error = await captureFailure(() =>
+				selectedScan(source, { maxEntries }),
+			);
+			expectCode(error, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(error)).toEqual({
+				kind: "source-heading-structure",
+				reason: "unclosed-context",
+				position: source.length,
+				positionSemantics: "last-committed-source-utf16",
+			});
+			expect(sourceHeadingScopeDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it("preserves source UTF16 anchors through reduced native windows and recovery", async () => {
+		const prefix = `😀\r\n<table><tbody><tr><td>${hiddenHeading}<th>${hiddenHeading}</table>`;
+		const ordinary = await expectOutsideHeading(prefix);
+		const windowed = await expectOutsideHeading(prefix, {
+			maxWindowCodeUnits: 64,
+		});
+		expect(windowed.report.entries).toEqual(ordinary.report.entries);
+		expect(windowed.report.source).toEqual(ordinary.report.source);
+		expect(windowed.report.counters.suppressedHeadingStarts).toBe(2);
+	});
+
+	it.each(["success", "scope-rejection", "depth-limit"] as const)(
+		"closes the actual native cursor after %s on the opt-in path",
+		async (scenario) => {
+			const cursors = observeNativeCursors();
+			const prefix = `<table><tr><td>${hiddenHeading}`;
+			if (scenario === "success") {
+				await expectOutsideHeading(`${prefix}</table>`);
+			} else {
+				const source =
+					scenario === "scope-rejection"
+						? `${prefix}</table extra=x>${outsideHeading}`
+						: `${prefix}</table>${outsideHeading}`;
+				const error = await captureFailure(() =>
+					selectedScan(
+						source,
+						scenario === "depth-limit" ? { maxTrackedDepth: 2 } : {},
+					),
+				);
+				expectCode(
+					error,
+					scenario === "depth-limit" ? "resource-limit" : "unsupported",
+				);
+			}
+			expect(cursors.size).toBe(1);
+			for (const cursor of cursors) expect(cursor.closed).toBe(true);
+		},
+	);
+
+	it("bounds repeated transition work and enforces a reduced real work cap", async () => {
+		const sourceFor = (count: number) =>
+			`<table><tr>${`<td>${hiddenHeading}`.repeat(count)}</table>${outsideHeading}`;
+		const small = await selectedScan(sourceFor(12));
+		const large = await selectedScan(sourceFor(24));
+		expect(large.report.counters.workUnits).toBeGreaterThan(
+			small.report.counters.workUnits,
+		);
+		expect(large.report.counters.workUnits).toBeLessThanOrEqual(
+			small.report.counters.workUnits * 3,
+		);
+		const limit = large.report.counters.workUnits - 1;
+		const error = await captureFailure(() =>
+			selectedScan(sourceFor(24), { maxWorkUnits: limit }),
+		);
+		expectCode(error, "resource-limit");
+		const diagnostic = resourceLimitDiagnostic(error);
+		expect(["source.headings-work", "html.cursor-work"]).toContain(
+			diagnostic?.kind,
+		);
+		expect(diagnostic?.limit).toBe(limit);
+		expect(diagnostic?.observed).toBeGreaterThan(limit);
+	});
+
+	it.each(["aborted", "timeout"] as const)(
+		"cooperates with %s after a real sibling-cell transition",
+		async (code) => {
+			let now = 1_000;
+			vi.spyOn(performance, "now").mockImplementation(() => now);
+			const controller = controllerFor();
+			const cursors = new Set<HtmlTokenCursor>();
+			const next = HtmlTokenCursor.prototype.next;
+			const repairedPrefix = "<table><tr><td>A<td>";
+			let scheduled = false;
+			let dispatched = false;
+			let timer: ReturnType<typeof setTimeout> | undefined;
+			vi.spyOn(HtmlTokenCursor.prototype, "next").mockImplementation(function (
+				this: HtmlTokenCursor,
+			) {
+				cursors.add(this);
+				if (!scheduled && this.position >= repairedPrefix.length) {
+					scheduled = true;
+					timer = setTimeout(() => {
+						dispatched = true;
+						now = 1_010;
+						if (code === "aborted") controller.abort(new Error(privateMarker));
+					}, 0);
+				}
+				return next.call(this);
+			});
+			try {
+				const error = await captureFailure(() =>
+					discoverResearchSourceHeadings(
+						ownedSource(
+							`${repairedPrefix}B${"<td>C".repeat(24)}</table>${outsideHeading}`,
+						),
+						{
+							method,
+							tableScopePolicy,
+							timeoutMs: 10,
+							yieldEveryOperations: 1,
+						},
+						controller.signal,
+					),
+				);
+				expect(scheduled).toBe(true);
+				expect(dispatched).toBe(true);
+				expectCode(error, code);
+				expect((error as Error).message).not.toContain(privateMarker);
+				expect(cursors.size).toBe(1);
+				for (const cursor of cursors) expect(cursor.closed).toBe(true);
+			} finally {
+				clearTimeout(timer);
+			}
+		},
+	);
+});
