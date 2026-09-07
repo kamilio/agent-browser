@@ -1,5 +1,21 @@
 # Agent browser implementation tasks
 
+A fresh native-only W3C source-heading request returns HTTP200 but rejects
+unsupported structure; no candidates or capture are retained. Separate zero-GET
+verification checks1748 compiled files and38 RUN artifacts while preserving
+native-failure/exit1 and no replay readiness. Five supervisor controls and the
+actual wrapper network-error projection control pass; historical failures remain
+unchanged. `RESEARCH-SOURCE-HEADING-FAILURE.md` records the failed attempt, stale
+verifier-pin refusal, evidence and limited challenge coverage. New trusted native
+structure diagnostics expose only fixed reasons and last-committed UTF16 position:
+all541 tests in five explicit files pass, including48 new cases; build, strict
+types, scoped Biome and independent review pass. `SOURCE-HEADING-DIAGNOSTICS.md`
+does not identify the actual rejected W3C construct or authorize a retry. Next:
+fail-closed classifier-header admission, explicitly activated diagnostics and
+separately authorized source operations. Hardware research remains unexecuted
+pending its header fix; privacy/provider/device/page, blocked research and all
+stopped/denied gates remain open. The full original browser goal continues.
+
 Explicit host source-heading discovery now binds owned HTML bytes and exact
 decoder identity to bounded native lexical candidates, without building a DOM
 or fabricating selectors/visibility. All767 cases in the exact ten-file matrix

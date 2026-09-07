@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+	type SourceHeadingStructureReason,
 	discoverResearchSourceHeadings,
 	researchSourceHeadingLimits,
+	sourceHeadingStructureDiagnostic,
 } from "../scripts/research-source-headings.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError, type ErrorCode } from "./errors.js";
@@ -146,6 +148,8 @@ async function captureFailure(operation: () => unknown): Promise<unknown> {
 function expectCode(error: unknown, code: ErrorCode) {
 	expect(error).toBeInstanceOf(AgentBrowserError);
 	expect(error).toMatchObject({ code });
+	if (code !== "unsupported")
+		expect(sourceHeadingStructureDiagnostic(error)).toBeUndefined();
 }
 
 function expectLimit(error: unknown, diagnostic: ResourceLimitDiagnostic) {
@@ -162,6 +166,9 @@ async function expectUnsupported(text: string) {
 	expectCode(error, "unsupported");
 	expect((error as Error).message).not.toContain(privateMarker);
 	expect(resourceLimitDiagnostic(error)).toBeUndefined();
+	expect(sourceHeadingStructureDiagnostic(error)?.kind).toBe(
+		"source-heading-structure",
+	);
 }
 
 function expectDeepFrozen(value: unknown, depth = 0) {
@@ -788,6 +795,270 @@ describe("balanced inline titles, native entities and bounded clipping", () => {
 	])("rejects non-allowlisted native tokenizer issues: %s", async (source) => {
 		await expectUnsupported(`${source}${privateMarker}`);
 	});
+});
+
+describe("trusted source-heading structure diagnostics", () => {
+	const completedTokenFailures: Array<[SourceHeadingStructureReason, string]> =
+		[
+			["unclosed-context", "<h1>unfinished"],
+			["unclosed-context", "<template>"],
+			["ambiguous-text-mode", "<plaintext>"],
+			["ambiguous-text-mode", "<template><noscript>"],
+			["ambiguous-text-mode", "</noscript>"],
+			["heading-inline-structure", "<h1><div>"],
+			["heading-inline-structure", "<h1><span/>"],
+			["heading-inline-structure", "<h1><h2>"],
+			["heading-close-structure", "<h1>x</h2>"],
+			["heading-close-structure", "<h1><b><i>x</b>"],
+			["heading-close-structure", "<h1><b>x</b extra=x>"],
+			["heading-close-structure", "<h1>x</h1/>"],
+			["raw-self-closing", "<script/>"],
+			["raw-close-structure", "<script>body</script extra=x>"],
+			["raw-close-structure", "<textarea>body</textarea/>"],
+			["scope-self-closing", "<template/>"],
+			["scope-close-structure", "</template>"],
+			["scope-close-structure", "<template></head>"],
+			["scope-close-structure", "<template></template extra=x>"],
+			["scope-close-structure", "<template></template/>"],
+			["heading-start-structure", "<h1/>"],
+			["heading-start-structure", "</h6>"],
+		];
+
+	it.each(completedTokenFailures)(
+		"reports %s at the committed cursor after %s",
+		async (reason, source) => {
+			const error = await captureFailure(() => scan(source));
+			expectCode(error, "unsupported");
+			expect((error as Error).message).toBe(
+				"Unsupported native source-heading structure",
+			);
+			expect(sourceHeadingStructureDiagnostic(error)).toEqual({
+				kind: "source-heading-structure",
+				reason,
+				position: source.length,
+				positionSemantics: "last-committed-source-utf16",
+			});
+			expect(resourceLimitDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it.each(["<h1 a a>", "<?bogus>", "<!--unfinished"])(
+		"reports tokenizer issues before committing the failing read: %s",
+		async (suffix) => {
+			const prefix = "<div>😀</div>";
+			const error = await captureFailure(() => scan(prefix + suffix));
+			expectCode(error, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(error)).toEqual({
+				kind: "source-heading-structure",
+				reason: "tokenizer-issue",
+				position: prefix.length,
+				positionSemantics: "last-committed-source-utf16",
+			});
+		},
+	);
+
+	it.each([8, canonicalLimits.maxWindowCodeUnits])(
+		"keeps UTF16 positions across surrogate pairs with window size %i",
+		async (maxWindowCodeUnits) => {
+			const prefix = `${"x".repeat(7)}😀${"y".repeat(22)}`;
+			const fixtures: Array<[SourceHeadingStructureReason, string, number]> = [
+				["tokenizer-issue", "<h1 a a>", prefix.length],
+				["heading-start-structure", "<h1/>", prefix.length + "<h1/>".length],
+			];
+			for (const [reason, suffix, position] of fixtures) {
+				const source = prefix + suffix;
+				const error = await captureFailure(() =>
+					scan(source, { maxWindowCodeUnits }),
+				);
+				expectCode(error, "unsupported");
+				expect(sourceHeadingStructureDiagnostic(error)).toEqual({
+					kind: "source-heading-structure",
+					reason,
+					position,
+					positionSemantics: "last-committed-source-utf16",
+				});
+				expect(position).toBeGreaterThan(0);
+				expect(position).not.toBe(
+					encoder.encode(source.slice(0, position)).byteLength,
+				);
+			}
+		},
+	);
+
+	it.each(rawNames)(
+		"missing or mismatched %s raw closes hit tokenizer issues before the unreachable absent/mismatched closing-token guard",
+		async (name) => {
+			const start = `<${name}>`;
+			for (const closing of ["", "</different>"]) {
+				const error = await captureFailure(() =>
+					scan(`${start}${privateMarker}${closing}`),
+				);
+				expectCode(error, "unsupported");
+				expect(sourceHeadingStructureDiagnostic(error)).toEqual({
+					kind: "source-heading-structure",
+					reason: "tokenizer-issue",
+					position: start.length,
+					positionSemantics: "last-committed-source-utf16",
+				});
+			}
+		},
+	);
+
+	it.each(rawNames)(
+		"keeps %s closing-token issues ahead of structural-close diagnostics",
+		async (name) => {
+			const prefix = `<${name}>${privateMarker}`;
+			const error = await captureFailure(() =>
+				scan(`${prefix}</${name} duplicate duplicate>`),
+			);
+			expectCode(error, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(error)).toEqual({
+				kind: "source-heading-structure",
+				reason: "tokenizer-issue",
+				position: prefix.length,
+				positionSemantics: "last-committed-source-utf16",
+			});
+		},
+	);
+
+	it("returns one frozen scalar record per failure without exposing source strings", async () => {
+		const source = `<h1 data-secret="${privateMarker}">${privateMarker}_TITLE</h1><plaintext>`;
+		const input = {
+			...ownedSource(source),
+			finalUrl: `https://example.com/${privateMarker}`,
+		};
+		const error = await captureFailure(() =>
+			discoverResearchSourceHeadings(input, { method }),
+		);
+		const diagnostic = sourceHeadingStructureDiagnostic(error);
+		expectCode(error, "unsupported");
+		expect(diagnostic).toEqual({
+			kind: "source-heading-structure",
+			reason: "ambiguous-text-mode",
+			position: source.length,
+			positionSemantics: "last-committed-source-utf16",
+		});
+		expect(sourceHeadingStructureDiagnostic(error)).toBe(diagnostic);
+		expect(Object.isFrozen(diagnostic)).toBe(true);
+		expect(Reflect.ownKeys(diagnostic ?? {})).toEqual([
+			"kind",
+			"reason",
+			"position",
+			"positionSemantics",
+		]);
+		for (const descriptor of Object.values(
+			Object.getOwnPropertyDescriptors(diagnostic ?? {}),
+		)) {
+			expect(descriptor).toMatchObject({
+				configurable: false,
+				enumerable: true,
+				writable: false,
+			});
+			expect(["string", "number"]).toContain(typeof descriptor.value);
+			expect(Object.hasOwn(descriptor, "get")).toBe(false);
+		}
+		expect(JSON.stringify(diagnostic)).not.toContain(privateMarker);
+		expect(JSON.stringify(diagnostic)).not.toContain(input.finalUrl);
+		expect(JSON.stringify(error)).not.toContain(privateMarker);
+		expect((error as Error).message).toBe(
+			"Unsupported native source-heading structure",
+		);
+		const repeatedError = await captureFailure(() =>
+			discoverResearchSourceHeadings(input, { method }),
+		);
+		const repeatedDiagnostic = sourceHeadingStructureDiagnostic(repeatedError);
+		expect(repeatedError).not.toBe(error);
+		expect(repeatedDiagnostic).toEqual(diagnostic);
+		expect(repeatedDiagnostic).not.toBe(diagnostic);
+		expect(Object.isFrozen(repeatedDiagnostic)).toBe(true);
+		expect(sourceHeadingStructureDiagnostic(error)).toBe(diagnostic);
+	});
+
+	it("rejects nonobjects, unbranded functions, forged errors and copied records", async () => {
+		const error = (await captureFailure(() => scan("<h1/>"))) as Error;
+		const diagnostic = sourceHeadingStructureDiagnostic(error);
+		expect(diagnostic).toBeDefined();
+		for (const value of [
+			undefined,
+			null,
+			true,
+			false,
+			0,
+			Number.NaN,
+			Number.POSITIVE_INFINITY,
+			1n,
+			Symbol(privateMarker),
+			privateMarker,
+			{},
+			[],
+			Object.create(null),
+			() => error,
+			Object.assign(() => undefined, diagnostic),
+			new Error(error.message),
+			new AgentBrowserError("unsupported", error.message),
+			{ ...error },
+			Object.create(error),
+			Object.create(
+				Object.getPrototypeOf(error),
+				Object.getOwnPropertyDescriptors(error),
+			),
+			diagnostic,
+			{ ...diagnostic },
+			{ code: "unsupported", diagnostic },
+		])
+			expect(sourceHeadingStructureDiagnostic(value)).toBeUndefined();
+	});
+
+	it("never inspects getters or traps on hostile and revoked proxies", async () => {
+		const error = (await captureFailure(() => scan("<h1/>"))) as Error;
+		const trap = vi.fn((): never => {
+			throw new Error(privateMarker);
+		});
+		const traps = {
+			get: trap,
+			getOwnPropertyDescriptor: trap,
+			getPrototypeOf: trap,
+			ownKeys: trap,
+			has: trap,
+			apply: trap,
+		};
+		const accessor = {};
+		for (const name of [
+			"code",
+			"message",
+			"kind",
+			"reason",
+			"position",
+			"positionSemantics",
+			"diagnostic",
+		])
+			Object.defineProperty(accessor, name, { get: trap });
+		const revokedObject = Proxy.revocable(error, traps);
+		const revokedFunction = Proxy.revocable(() => undefined, traps);
+		revokedObject.revoke();
+		revokedFunction.revoke();
+		for (const value of [
+			accessor,
+			Object.create(accessor),
+			new Proxy({}, traps),
+			new Proxy(error, traps),
+			new Proxy(() => undefined, traps),
+			revokedObject.proxy,
+			revokedFunction.proxy,
+		])
+			expect(sourceHeadingStructureDiagnostic(value)).toBeUndefined();
+		expect(trap).not.toHaveBeenCalled();
+		expect(sourceHeadingStructureDiagnostic(error)).toBeDefined();
+	});
+
+	it.each(["<h@>", "<h1 '=x>"])(
+		"does not rebrand unrelated native tokenizer errors: %s",
+		async (source) => {
+			const error = await captureFailure(() => scan(source));
+			expectCode(error, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(error)).toBeUndefined();
+		},
+	);
 });
 
 describe("EOF completion, actual counters and trusted numeric guards", () => {

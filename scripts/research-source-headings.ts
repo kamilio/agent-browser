@@ -83,6 +83,41 @@ export interface ResearchSourceHeadingDiscovery {
 	readonly outputBytes: number;
 }
 
+export type SourceHeadingStructureReason =
+	| "tokenizer-issue"
+	| "unclosed-context"
+	| "ambiguous-text-mode"
+	| "heading-inline-structure"
+	| "heading-close-structure"
+	| "raw-self-closing"
+	| "raw-close-structure"
+	| "scope-self-closing"
+	| "scope-close-structure"
+	| "heading-start-structure";
+
+export interface SourceHeadingStructureDiagnostic {
+	readonly kind: "source-heading-structure";
+	readonly reason: SourceHeadingStructureReason;
+	readonly position: number;
+	readonly positionSemantics: "last-committed-source-utf16";
+}
+
+const structureDiagnostics = new WeakMap<
+	object,
+	SourceHeadingStructureDiagnostic
+>();
+
+export function sourceHeadingStructureDiagnostic(
+	error: unknown,
+): SourceHeadingStructureDiagnostic | undefined {
+	if (
+		error === null ||
+		(typeof error !== "object" && typeof error !== "function")
+	)
+		return undefined;
+	return structureDiagnostics.get(error);
+}
+
 const voidTags = new Set(
 	"area base br col embed frame hr img input keygen link meta param source track wbr".split(
 		" ",
@@ -114,13 +149,6 @@ function invalid(): never {
 	throw new AgentBrowserError(
 		"invalid-input",
 		"Invalid source-heading discovery options",
-	);
-}
-
-function unsupported(): never {
-	throw new AgentBrowserError(
-		"unsupported",
-		"Unsupported native source-heading structure",
 	);
 }
 
@@ -294,6 +322,22 @@ export async function discoverResearchSourceHeadings(
 	const entries: SourceHeadingCandidate[] = [];
 	const scopes: string[] = [];
 	let heading: HeadingState | undefined;
+	const unsupported = (reason: SourceHeadingStructureReason): never => {
+		const error = new AgentBrowserError(
+			"unsupported",
+			"Unsupported native source-heading structure",
+		);
+		structureDiagnostics.set(
+			error,
+			Object.freeze({
+				kind: "source-heading-structure",
+				reason,
+				position: cursor?.position ?? 0,
+				positionSemantics: "last-committed-source-utf16",
+			}),
+		);
+		throw error;
+	};
 	const work = () => (cursor?.workUnits ?? 0) + scannerWork;
 	const checkpoint = () => {
 		if (signal?.aborted)
@@ -416,7 +460,7 @@ export async function discoverResearchSourceHeadings(
 			admitted.text,
 			(code) => {
 				checkpoint();
-				if (!entityIssues.has(code)) unsupported();
+				if (!entityIssues.has(code)) unsupported("tokenizer-issue");
 				charge(1);
 				issueCounts[code] = (issueCounts[code] ?? 0) + 1;
 			},
@@ -435,7 +479,7 @@ export async function discoverResearchSourceHeadings(
 			const current = await read();
 			const token = current.token;
 			if (!token) {
-				if (heading || scopes.length) unsupported();
+				if (heading || scopes.length) unsupported("unclosed-context");
 				break;
 			}
 			if (token.kind === "text") {
@@ -445,14 +489,16 @@ export async function discoverResearchSourceHeadings(
 			}
 			if (token.kind === "comment" || token.kind === "doctype") continue;
 			const name = token.name;
-			if (name === "plaintext" || name === "noscript") unsupported();
+			if (name === "plaintext" || name === "noscript")
+				unsupported("ambiguous-text-mode");
 			const level = headingLevel(name);
 			if (heading) {
 				if (token.kind === "start") {
 					if (name === "br" || name === "wbr") {
 						if (name === "br") titleText(heading, " ");
 					} else {
-						if (!inlineTags.has(name) || token.selfClosing) unsupported();
+						if (!inlineTags.has(name) || token.selfClosing)
+							unsupported("heading-inline-structure");
 						track(heading.inline.length + 2);
 						heading.inline.push(name);
 					}
@@ -477,20 +523,21 @@ export async function discoverResearchSourceHeadings(
 					heading = undefined;
 				} else {
 					if (heading.inline.at(-1) !== name || !plainEnd(token, name))
-						unsupported();
+						unsupported("heading-close-structure");
 					heading.inline.pop();
 				}
 				continue;
 			}
 			if (token.kind === "start" && rawTags.has(name)) {
-				if (token.selfClosing) unsupported();
+				if (token.selfClosing) unsupported("raw-self-closing");
 				rawStarts[name] = (rawStarts[name] ?? 0) + 1;
 				checkpoint();
 				cursor.raw(name, name === "title" || name === "textarea");
 				checkpoint();
 				await yieldBatch();
 				const closing = await read();
-				if (!closing.token || !plainEnd(closing.token, name)) unsupported();
+				if (!closing.token || !plainEnd(closing.token, name))
+					unsupported("raw-close-structure");
 				continue;
 			}
 			const tracked = suppressedTags.has(name) || omittedTags.has(name);
@@ -501,7 +548,8 @@ export async function discoverResearchSourceHeadings(
 				counts[name] = (counts[name] ?? 0) + 1;
 				if (voidTags.has(name)) continue;
 				if (token.selfClosing) {
-					if (name !== "svg" && name !== "math") unsupported();
+					if (name !== "svg" && name !== "math")
+						unsupported("scope-self-closing");
 					continue;
 				}
 				track(scopes.length + 1);
@@ -509,7 +557,8 @@ export async function discoverResearchSourceHeadings(
 				continue;
 			}
 			if (token.kind === "end" && tracked) {
-				if (scopes.at(-1) !== name || !plainEnd(token, name)) unsupported();
+				if (scopes.at(-1) !== name || !plainEnd(token, name))
+					unsupported("scope-close-structure");
 				scopes.pop();
 				continue;
 			}
@@ -519,7 +568,8 @@ export async function discoverResearchSourceHeadings(
 				continue;
 			}
 			if (level !== undefined) {
-				if (token.kind !== "start" || token.selfClosing) unsupported();
+				if (token.kind !== "start" || token.selfClosing)
+					unsupported("heading-start-structure");
 				if (entries.length === limits.maxEntries) {
 					completion = "entry-limit";
 					break;
