@@ -1,5 +1,19 @@
 # Agent browser implementation tasks
 
+Trusted sourceHeadingScopeDiagnostic now separates scope mismatch from nonplain
+close using a private frozen five-field snapshot of finite expected/observed
+scope constants and depth. Existing four-field diagnostics, short-circuit
+precedence, strict parser behavior and bounds remain unchanged. All634 tests in
+five explicit native files pass, including93 new cases; build/strict/scoped Biome,
+independent review and2716-input/292-source-artifact reconciliation pass.
+`SOURCE-SCOPE-DIAGNOSTICS.md` records44 immutable evidence files and limitations.
+This does not identify the actual W3C closing tag/predicate: the new getter has
+no CLI/page/source-wrapper activation, and old receipts remain unchanged. Next is
+explicit bounded integration and separately authorized source diagnosis, not
+guessed grammar recovery or capture replay. Password/provider/passkey/privacy,
+device/page/consent, blocked research and all stopped/denied gates remain open;
+the full original browser goal continues.
+
 A fresh native W3C source attempt now identifies scope-close-structure at
 last-committed sourceUTF16 position834905, but still rejects without candidates,
 source extraction or capture. This is the guard, not an offending tag/byte offset

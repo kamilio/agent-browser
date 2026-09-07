@@ -102,10 +102,23 @@ export interface SourceHeadingStructureDiagnostic {
 	readonly positionSemantics: "last-committed-source-utf16";
 }
 
+export type SourceHeadingScope =
+	| (typeof omittedScopeNames)[number]
+	| (typeof suppressedScopeNames)[number];
+
+export interface SourceHeadingScopeDiagnostic {
+	readonly kind: "source-heading-scope-close";
+	readonly condition: "scope-mismatch" | "non-plain-close";
+	readonly expectedScope: SourceHeadingScope | null;
+	readonly observedScope: SourceHeadingScope;
+	readonly depth: number;
+}
+
 const structureDiagnostics = new WeakMap<
 	object,
 	SourceHeadingStructureDiagnostic
 >();
+const scopeDiagnostics = new WeakMap<object, SourceHeadingScopeDiagnostic>();
 
 export function sourceHeadingStructureDiagnostic(
 	error: unknown,
@@ -118,21 +131,61 @@ export function sourceHeadingStructureDiagnostic(
 	return structureDiagnostics.get(error);
 }
 
+export function sourceHeadingScopeDiagnostic(
+	error: unknown,
+): SourceHeadingScopeDiagnostic | undefined {
+	if (
+		error === null ||
+		(typeof error !== "object" && typeof error !== "function")
+	)
+		return undefined;
+	return scopeDiagnostics.get(error);
+}
+
 const voidTags = new Set(
 	"area base br col embed frame hr img input keygen link meta param source track wbr".split(
 		" ",
 	),
 );
-const omittedTags = new Set(
-	"svg math script style template iframe object embed canvas noembed noframes frameset frame link meta input textarea audio video source track".split(
-		" ",
-	),
-);
-const suppressedTags = new Set(
-	"head template select table caption colgroup tbody thead tfoot tr td th".split(
-		" ",
-	),
-);
+const omittedScopeNames = [
+	"svg",
+	"math",
+	"script",
+	"style",
+	"template",
+	"iframe",
+	"object",
+	"embed",
+	"canvas",
+	"noembed",
+	"noframes",
+	"frameset",
+	"frame",
+	"link",
+	"meta",
+	"input",
+	"textarea",
+	"audio",
+	"video",
+	"source",
+	"track",
+] as const;
+const suppressedScopeNames = [
+	"head",
+	"template",
+	"select",
+	"table",
+	"caption",
+	"colgroup",
+	"tbody",
+	"thead",
+	"tfoot",
+	"tr",
+	"td",
+	"th",
+] as const;
+const omittedTags = new Set<string>(omittedScopeNames);
+const suppressedTags = new Set<string>(suppressedScopeNames);
 const rawTags = new Set(
 	"script style xmp iframe noembed noframes title textarea".split(" "),
 );
@@ -299,6 +352,10 @@ function plainEnd(token: HtmlToken, name: string): boolean {
 	);
 }
 
+function isTrackedScope(name: string): name is SourceHeadingScope {
+	return suppressedTags.has(name) || omittedTags.has(name);
+}
+
 export async function discoverResearchSourceHeadings(
 	input: unknown,
 	options: unknown,
@@ -320,9 +377,12 @@ export async function discoverResearchSourceHeadings(
 	const suppressedStarts: Record<string, number> = Object.create(null);
 	const rawStarts: Record<string, number> = Object.create(null);
 	const entries: SourceHeadingCandidate[] = [];
-	const scopes: string[] = [];
+	const scopes: SourceHeadingScope[] = [];
 	let heading: HeadingState | undefined;
-	const unsupported = (reason: SourceHeadingStructureReason): never => {
+	const unsupported = (
+		reason: SourceHeadingStructureReason,
+		scopeDiagnostic?: SourceHeadingScopeDiagnostic,
+	): never => {
 		const error = new AgentBrowserError(
 			"unsupported",
 			"Unsupported native source-heading structure",
@@ -336,6 +396,8 @@ export async function discoverResearchSourceHeadings(
 				positionSemantics: "last-committed-source-utf16",
 			}),
 		);
+		if (scopeDiagnostic)
+			scopeDiagnostics.set(error, Object.freeze(scopeDiagnostic));
 		throw error;
 	};
 	const work = () => (cursor?.workUnits ?? 0) + scannerWork;
@@ -540,7 +602,7 @@ export async function discoverResearchSourceHeadings(
 					unsupported("raw-close-structure");
 				continue;
 			}
-			const tracked = suppressedTags.has(name) || omittedTags.has(name);
+			const tracked = isTrackedScope(name);
 			if (token.kind === "start" && tracked) {
 				const counts = suppressedTags.has(name)
 					? suppressedStarts
@@ -557,8 +619,18 @@ export async function discoverResearchSourceHeadings(
 				continue;
 			}
 			if (token.kind === "end" && tracked) {
-				if (scopes.at(-1) !== name || !plainEnd(token, name))
-					unsupported("scope-close-structure");
+				const expectedScope = scopes.at(-1) ?? null;
+				let condition: SourceHeadingScopeDiagnostic["condition"] | undefined;
+				if (expectedScope !== name) condition = "scope-mismatch";
+				else if (!plainEnd(token, name)) condition = "non-plain-close";
+				if (condition)
+					unsupported("scope-close-structure", {
+						kind: "source-heading-scope-close",
+						condition,
+						expectedScope,
+						observedScope: name,
+						depth: scopes.length,
+					});
 				scopes.pop();
 				continue;
 			}
