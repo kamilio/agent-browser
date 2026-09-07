@@ -1,5 +1,20 @@
 # Agent browser implementation tasks
 
+The corrected hardware-guide operation now succeeds through the actual native
+transport, reader and extractor: one200 request,4281 encoded/10148 decoded bytes,
+zero redirects/mocks and closed transport. Separate zero-request verification
+checks1732 compiled files/36 RUN artifacts and exports10158 exact native bytes;
+the guide remains mutable-master, partial/extracted-unverified, not a ranking.
+`HARDWARE-MULTI-GPU-GUIDE.md` preserves293 evidence files, five shell controls,
+ten actual-native admission cases including prior cookie failure controls, and
+4817 passing narrow verifier-status rows. Native guide findings separate capacity
+from mode/interconnect performance, tensor compatibility and KV/topology controls;
+no current hardware ranking, body replay or benchmark is enabled.
+The earlier failed request/evidence remains unchanged. Fresh diagnostic-source
+preparation does not yet identify W3C's rejected construct or validate privacy.
+Providers/passkeys/device/page/consent, blocked research and all prior stopped/
+denied gates remain outstanding. The full original browser goal continues.
+
 The hardware-guide operation now preserves an actual invalid-input/network
 failure before any counted request: no response, bytes or source extraction.
 Five supervisor and10 synthetic header checks pass, but their request replacement
