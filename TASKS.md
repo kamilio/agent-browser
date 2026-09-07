@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+The latest separately authorized native WebAuthn source request now identifies
+an actual scope mismatch: expected td, observed table, tracked depth27, at
+last-committed sourceUTF16 position834905. It still fails without source text,
+candidates or capture; this is not complete markup or proof of optional tags.
+`SOURCE-SCOPE-DETAIL.md` preserves304 immutable artifacts, five shell controls,
+14 native synthetic cases,4817 status rows and actual zero-GET integrity across
+1748 compiled files/37 RUN artifacts. Next is conservative lexical table-scope
+design and synthetic validation, not blind stack popping, raised limits or old
+capture replay. Modern privacy/provider/device/page/consent, blocked research and
+all stopped/denied gates remain open. The original browser goal continues.
+
 Trusted sourceHeadingScopeDiagnostic now separates scope mismatch from nonplain
 close using a private frozen five-field snapshot of finite expected/observed
 scope constants and depth. Existing four-field diagnostics, short-circuit
