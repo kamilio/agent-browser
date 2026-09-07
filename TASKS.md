@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+A fresh native W3C source attempt now identifies scope-close-structure at
+last-committed sourceUTF16 position834905, but still rejects without candidates,
+source extraction or capture. This is the guard, not an offending tag/byte offset
+or proof of an optional-table-close issue. `SOURCE-SCOPE-FAILURE.md` preserves
+the actual one200 request,292 evidence files and separate1748-file/36-artifact
+integrity verification retaining failure/exit1. Five shell controls, ten actual-
+native synthetic integration cases and4817 narrow verifier-status rows pass;
+complete-header admission and independent static review are included. Next is
+fixed predicate/scope metadata with unchanged grammar, not a guessed parser fix,
+raised limits or capture replay. Modern privacy/provider/device/page/consent,
+blocked research and all prior stopped/denied gates remain open. The full original
+browser goal continues.
+
 The corrected hardware-guide operation now succeeds through the actual native
 transport, reader and extractor: one200 request,4281 encoded/10148 decoded bytes,
 zero redirects/mocks and closed transport. Separate zero-request verification
