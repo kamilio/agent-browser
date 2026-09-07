@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+The hardware-guide operation now preserves an actual invalid-input/network
+failure before any counted request: no response, bytes or source extraction.
+Five supervisor and10 synthetic header checks pass, but their request replacement
+did not exercise native request admission. The wrapper incorrectly supplied
+cookieContext without a jar; a fresh unexecuted lane removes only that property
+and prepares actual-native routed admission checks before any source retry.
+`HARDWARE-SOURCE-ADMISSION.md` records the header-admission correction, fixture
+limitations, all-1/zero-request failure and separate1732-file/40-artifact integrity
+check. A generic nonzero-status verifier limitation remains explicitly open;
+the frozen actual all-1 evidence is unchanged. Hardware findings, source admission,
+privacy/providers/passkeys/device/page/consent, blocked research and all prior
+stopped/denied gates remain outstanding. The full original browser goal continues.
+
 A fresh native-only W3C source-heading request returns HTTP200 but rejects
 unsupported structure; no candidates or capture are retained. Separate zero-GET
 verification checks1748 compiled files and38 RUN artifacts while preserving
