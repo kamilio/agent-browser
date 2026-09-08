@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Packed-attestation source section119 now has a separately verified native export:
+59blocks/15017bytes with no newGET. SOURCE-SECTION-PACKED-TRIAL.md records native
+and verifier success,10syntax/94checker/23native controls, and the corrected
+18actual-plus-declared-receipt outer checks without changing historical trial02.
+Admitted prose resolves packed attStmt.x5c placement and self algorithm/signature
+requirements; the staged privacy primitive remains provisional and unintegrated.
+Generating/none source sections and actual crypto/device/vault/guest gates remain
+outstanding; prior denials stay in force. Reviewed evidence is sealed with1058
+readable-file pins, two explicitly unhashed mode000fixtures and three recorded
+symlinks. No protected modes or old reports change; the browser goal continues.
+
 Native Markdown now preserves selected table/row/cell boundaries explicitly,
 including ordinary generic-inline thead/tfoot wrappers, without claiming grids,
 headers, spans or source-layout associations. NATIVE-MARKDOWN-TABLE-BOUNDARIES.md
