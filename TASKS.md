@@ -1,5 +1,13 @@
 # Agent browser implementation tasks
 
+Historical section-trial isolation is qualified in `SOURCE-RECEIPT-HASH-SCOPE.md`:
+trial02's outer pre/post checksum calls also included the source receipt, while
+native decode/section extraction was namespace-bound. Retained checksum logs
+support the distinction, not a new syscall trace, replay or receipt revalidation.
+Old reports, exports, timings and verifier results remain untouched. Trial03's
+declared-only correction and separate synthetic checker gate are still unvalidated;
+no source/device/credential gate closes and the browser goal continues.
+
 A fresh two-fixture native Markdown diagnostic now passes explicit representation
 and safety checks with zero source GETs; independent artifact verification passes.
 `NATIVE-MARKDOWN-TABLE-DIAGNOSTIC.md` preserves both false legacy raw-token verdicts,
