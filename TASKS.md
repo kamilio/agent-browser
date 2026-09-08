@@ -1,5 +1,14 @@
 # Agent browser implementation tasks
 
+On September 8, 2026, explicit user reauthorization allowed trial04's isolated
+23-case native-control check only. All23 cases pass with unchanged31-input
+authority and1748-file engine inventories. NATIVE-SECTION-TRIAL-04-CONTROLS.md
+records the actual run and post-run audit. The earlier withdrawal remains
+historical; this approval does not authorize further source extraction or
+independent source verification. No website browsing or credential access was
+included. Generating/none prose, passkey integration and separate live/device/
+vault/SafeJS/TTY gates remain outstanding; the overall browser goal is incomplete.
+
 BROWSER-RESEARCH-FOLLOWUP-SEPTEMBER-08.md consolidates the four requested topics
 from existing admitted root reports, without a new source visit or benchmark run.
 It separates hardware capacity claims from measured suitability and explains
