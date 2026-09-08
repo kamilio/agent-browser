@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Native network-policy errors now carry private fixed reasons at twelve existing
+guards, without changing policy or public/research schemas. `NETWORK-POLICY-DIAGNOSTICS.md`
+records128passing cases in two isolated files,48new and80unchanged,2731matching
+input pins, build/types/scoped lint success, and all earlier helper/lint failures.
+The getter authenticates error identity without fields/prototypes; unknown is not
+permission. Existing outer error boundaries and request-ownership limits remain.
+Historical NVIDIA refusal is not retrospectively diagnosed. Future bounded report
+integration and all real-network/vault/device/TTY/SafeJS gates remain open; the
+browser improvement goal continues. Integration review is clear;328frozen artifacts
+are bound by64a992ee25bda7d2311a81042e4c13b72656d1c620be04ee11da403a9827fe43.
+
 MMLU-Pro methodology research now has one native HTTP200 export and an independent
 zero-GET verifier: `MMLU-PRO-BENCHMARK-METHOD.md`. Eight native and four status
 controls pass;90frozen artifact hashes and source claims pass static review.

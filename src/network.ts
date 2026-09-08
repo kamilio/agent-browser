@@ -1,5 +1,6 @@
 import type { CookieRequestContext } from "./cookies.js";
 import { AgentBrowserError } from "./errors.js";
+import { networkPolicyError } from "./network-policy-diagnostic.js";
 import type { ResponseAccountingLease } from "./response-byte-accounting.js";
 
 export interface NetworkLimits {
@@ -169,15 +170,8 @@ export function parseNetworkUrl(value: string): URL {
 		throw new AgentBrowserError("invalid-input", "Invalid network URL");
 	}
 	if (!["http:", "https:"].includes(url.protocol))
-		throw new AgentBrowserError(
-			"policy-denied",
-			"Only HTTP and HTTPS network URLs are allowed",
-		);
-	if (url.username || url.password)
-		throw new AgentBrowserError(
-			"policy-denied",
-			"Credentials in URLs are not allowed",
-		);
+		throw networkPolicyError("url-scheme");
+	if (url.username || url.password) throw networkPolicyError("url-credentials");
 	return url;
 }
 
@@ -221,27 +215,15 @@ export class NetworkPolicy {
 	checkUrl(value: string): URL {
 		const url = parseNetworkUrl(value);
 		if (url.port && blockedPorts.has(Number(url.port)))
-			throw new AgentBrowserError(
-				"policy-denied",
-				"Network port is not allowed",
-			);
+			throw networkPolicyError("blocked-port");
 		if (this.origins && !this.origins.has(url.origin))
-			throw new AgentBrowserError(
-				"policy-denied",
-				"Network origin is not allowed",
-			);
+			throw networkPolicyError("origin-not-allowed");
 		if (!this.privateOrigins.has(url.origin)) {
 			const hostname = networkHostname(url).replace(/\.$/, "");
 			if (/^(localhost|.*\.(localhost|local|internal))$/i.test(hostname))
-				throw new AgentBrowserError(
-					"policy-denied",
-					"Local network names are not allowed",
-				);
+				throw networkPolicyError("local-name");
 			if (addressFamily(hostname) && !isPublicAddress(hostname))
-				throw new AgentBrowserError(
-					"policy-denied",
-					"Private or reserved network addresses are not allowed",
-				);
+				throw networkPolicyError("literal-address-policy");
 		}
 		return url;
 	}
@@ -261,10 +243,7 @@ export class NetworkPolicy {
 					(!privateAllowed && !isPublicAddress(address)),
 			)
 		)
-			throw new AgentBrowserError(
-				"policy-denied",
-				"DNS returned a private, reserved or invalid address",
-			);
+			throw networkPolicyError("resolved-address-policy");
 	}
 }
 

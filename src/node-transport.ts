@@ -18,6 +18,7 @@ import {
 	normalizeCookieContext,
 } from "./cookies.js";
 import { AgentBrowserError } from "./errors.js";
+import { networkPolicyError } from "./network-policy-diagnostic.js";
 import {
 	type NetworkLimits,
 	type NetworkMetrics,
@@ -179,10 +180,7 @@ function normalizeHeaders(input: NetworkRequest["headers"], maxBytes: number) {
 			throw new AgentBrowserError("invalid-input", "Invalid request header");
 		}
 		if (forbiddenHeaders.has(key) || key.startsWith("proxy-"))
-			throw new AgentBrowserError(
-				"policy-denied",
-				"Transport-controlled request header",
-			);
+			throw networkPolicyError("transport-controlled-header");
 		bytes += Buffer.byteLength(key) + Buffer.byteLength(value) + 4;
 		if (bytes > maxBytes)
 			throw new AgentBrowserError(
@@ -477,10 +475,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 				method,
 			)
 		)
-			throw new AgentBrowserError(
-				"policy-denied",
-				"HTTP method is not allowed",
-			);
+			throw networkPolicyError("method-not-allowed");
 		const redirect = input.redirect ?? "follow";
 		if (!["follow", "manual", "error"].includes(redirect))
 			throw new AgentBrowserError("invalid-input", "Invalid redirect mode");
@@ -510,10 +505,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 		const headers = normalizeHeaders(input.headers, this.limits.maxHeaderBytes);
 		let cookieContext: CookieRequestContext | undefined;
 		if (this.cookieJar && Object.hasOwn(headers, "cookie"))
-			throw new AgentBrowserError(
-				"policy-denied",
-				"Cookie header is controlled by the session jar",
-			);
+			throw networkPolicyError("cookie-header-controlled");
 		if (input.cookieContext !== undefined) {
 			const context = normalizeCookieContext(input.cookieContext);
 			if (
@@ -678,10 +670,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 						elapsedMs: performance.now() - start,
 					};
 				if (redirect === "error")
-					throw new AgentBrowserError(
-						"policy-denied",
-						"Redirects are not allowed",
-					);
+					throw networkPolicyError("redirect-mode-error");
 				if (!location)
 					return {
 						...response,
@@ -709,10 +698,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 				if (!location[0].includes("#")) next.hash = url.hash;
 				next = this.policy.checkUrl(next.href);
 				if (url.protocol === "https:" && next.protocol !== "https:")
-					throw new AgentBrowserError(
-						"policy-denied",
-						"HTTPS downgrade redirects are not allowed",
-					);
+					throw networkPolicyError("https-downgrade");
 				redirects.push({
 					url: url.href,
 					status: response.status,
