@@ -29,10 +29,16 @@ const policyDiagnostics = new WeakMap<
 	Readonly<NetworkPolicyDiagnostic>
 >();
 
+export function isNetworkPolicyReason(
+	value: unknown,
+): value is NetworkPolicyReason {
+	return typeof value === "string" && Object.hasOwn(policyMessages, value);
+}
+
 export function networkPolicyError(
 	reason: NetworkPolicyReason,
 ): AgentBrowserError {
-	if (typeof reason !== "string" || !Object.hasOwn(policyMessages, reason))
+	if (!isNetworkPolicyReason(reason))
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Invalid network policy reason",

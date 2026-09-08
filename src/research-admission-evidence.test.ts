@@ -16,6 +16,11 @@ import {
 import type { ResearchNavigationReport } from "../scripts/research-browser.js";
 import { AgentBrowserError } from "./errors.js";
 import {
+	type NetworkPolicyReason,
+	networkPolicyDiagnostic,
+	networkPolicyError,
+} from "./network-policy-diagnostic.js";
+import {
 	type ResearchDocumentProfileId,
 	researchLongDocumentAdmission,
 } from "./research-admission.js";
@@ -1323,4 +1328,674 @@ it("preserves own metadata names without prototype pollution", () => {
 		syntheticPollution: true,
 	});
 	expect({}).not.toHaveProperty("syntheticPollution");
+});
+
+const policyReasons = [
+	"url-scheme",
+	"url-credentials",
+	"blocked-port",
+	"origin-not-allowed",
+	"local-name",
+	"literal-address-policy",
+	"resolved-address-policy",
+	"transport-controlled-header",
+	"method-not-allowed",
+	"cookie-header-controlled",
+	"redirect-mode-error",
+	"https-downgrade",
+] as const satisfies readonly NetworkPolicyReason[];
+const policyPaths = ["failure", "prior"] as const;
+type PolicyPath = (typeof policyPaths)[number];
+const policyProfiles = ["long-v1", "default"] as const;
+
+function policyFailure(
+	reason: NetworkPolicyReason = "resolved-address-policy",
+): Fixture {
+	return {
+		category: "policy-denied",
+		stage: "network",
+		networkPolicy: { kind: "network-policy-v1", reason },
+	};
+}
+
+function policyReport(
+	failure = policyFailure(),
+	path: PolicyPath = "failure",
+	profile: ResearchDocumentProfileId = "long-v1",
+): Fixture {
+	const report = profile === "long-v1" ? fixture() : legacy();
+	report.outcome = "failure";
+	report.contentSuccess = false;
+	report.primaryResponse = null;
+	report.finalUrl = null;
+	for (const field of ["bodyCapture", "headings", "reader"])
+		Reflect.deleteProperty(report, field);
+	report.metrics = {
+		requests: 1,
+		redirects: 0,
+		encodedBytes: 0,
+		decodedBytes: 0,
+		active: 0,
+		closed: true,
+	};
+	report.failure =
+		path === "failure"
+			? failure
+			: { category: "resource-limit", stage: "evidence-output" };
+	if (path === "prior") {
+		report.outputLimit = {
+			cause: "metadata-bytes",
+			limitBytes: maxMetadataBytes,
+			observedBytes: maxMetadataBytes + 1,
+			observation: "complete",
+			prior: {
+				outcome: "failure",
+				partial: true,
+				contentSuccess: false,
+				failurePresent: true,
+				failureRetention: "retained",
+				failure,
+			},
+			omittedPayloads: [],
+			metadataRetention: "bounded-projection",
+		};
+	}
+	return report;
+}
+
+function policyFailureAt(report: unknown, path: PolicyPath): Fixture {
+	const record = object(report);
+	return path === "failure"
+		? object(record.failure)
+		: object(object(object(record.outputLimit).prior).failure);
+}
+
+function rejectPolicyEvidence(action: () => unknown) {
+	const error = rejects(action);
+	expect(error.message).toBe("Invalid research evidence");
+	expect(networkPolicyDiagnostic(error)).toBeUndefined();
+	return error;
+}
+
+function replayPolicyJson(report: Fixture, profile: ResearchDocumentProfileId) {
+	const raw = jsonl(report);
+	return validateResearchReplayAdmission(raw, {
+		expectedProfile: profile,
+		expectedReceiptSha256: hash(raw),
+	});
+}
+
+it.each(policyReasons)(
+	"round-trips %s as long failure metadata, not native identity",
+	(reason) => {
+		const genuine = networkPolicyError(reason);
+		const diagnostic = networkPolicyDiagnostic(genuine);
+		const failure: Fixture = {
+			...policyFailure(reason),
+			networkPolicy: diagnostic,
+		};
+		const report = policyReport(failure);
+		const emission = serialize(report);
+		expect(emission.disposition).toBe("complete");
+		measured(emission);
+		expect(emission.metadataBytes).toBe(emission.receiptBytes);
+		const result = validateResearchReplayAdmission(emission.jsonl, {
+			expectedProfile: "long-v1",
+			expectedReceiptSha256: hash(emission.jsonl),
+		});
+		expect(result).toMatchObject({
+			kind: "evidence-only",
+			reason: "native-failure",
+			body: null,
+			bodyIdentity: null,
+		});
+		expect(result.originalMetadata.failure).toEqual(failure);
+		const parsed = JSON.parse(
+			new TextDecoder().decode(emission.jsonl),
+		) as Fixture;
+		for (const value of [
+			object(parsed.failure),
+			object(parsed.failure).networkPolicy,
+			result.originalMetadata.failure,
+			{ cause: genuine },
+		])
+			expect(networkPolicyDiagnostic(value)).toBeUndefined();
+		expect(networkPolicyDiagnostic(genuine)).toBe(diagnostic);
+		const originalBytes = emission.jsonl.slice();
+		failure.stage = "changed-after-emission";
+		expect(emission.record.failure?.stage).toBe("network");
+		expect(emission.jsonl).toEqual(originalBytes);
+	},
+);
+
+it("round-trips a valid default policy fragment without retroactive identity", () => {
+	const report = policyReport(policyFailure(), "failure", "default");
+	const emission = serialize(report, "default");
+	expect(emission.record).toBe(report);
+	expect(emission.jsonl).toEqual(jsonl(report));
+	expect(emission.metadataBytes).toBeNull();
+	const result = validateResearchReplayAdmission(emission.jsonl, {
+		expectedProfile: "default",
+		expectedReceiptSha256: hash(emission.jsonl),
+	});
+	expect(result).toMatchObject({
+		kind: "evidence-only",
+		reason: "native-failure",
+		body: null,
+		bodyIdentity: null,
+	});
+	expect(result.originalMetadata.failure).toEqual(report.failure);
+	expect(
+		networkPolicyDiagnostic(
+			object(result.originalMetadata.failure).networkPolicy,
+		),
+	).toBeUndefined();
+});
+
+const malformedPolicyFailures: readonly {
+	label: string;
+	make: () => Fixture;
+}[] = [
+	{
+		label: "null fragment",
+		make: () => ({ ...policyFailure(), networkPolicy: null }),
+	},
+	{
+		label: "string fragment",
+		make: () => ({ ...policyFailure(), networkPolicy: "reason" }),
+	},
+	{
+		label: "number fragment",
+		make: () => ({ ...policyFailure(), networkPolicy: 1 }),
+	},
+	{
+		label: "boolean fragment",
+		make: () => ({ ...policyFailure(), networkPolicy: true }),
+	},
+	{
+		label: "array fragment",
+		make: () => ({ ...policyFailure(), networkPolicy: [] }),
+	},
+	{
+		label: "empty fragment",
+		make: () => ({ ...policyFailure(), networkPolicy: {} }),
+	},
+	{
+		label: "missing kind",
+		make: () => ({
+			...policyFailure(),
+			networkPolicy: { reason: "local-name" },
+		}),
+	},
+	{
+		label: "missing reason",
+		make: () => ({
+			...policyFailure(),
+			networkPolicy: { kind: "network-policy-v1" },
+		}),
+	},
+	{
+		label: "wrong kind",
+		make: () => ({
+			...policyFailure(),
+			networkPolicy: { kind: "network-policy-v2", reason: "local-name" },
+		}),
+	},
+	{
+		label: "unknown reason",
+		make: () => ({
+			...policyFailure(),
+			networkPolicy: { kind: "network-policy-v1", reason: "unknown" },
+		}),
+	},
+	{
+		label: "prototype-name reason",
+		make: () => ({
+			...policyFailure(),
+			networkPolicy: { kind: "network-policy-v1", reason: "__proto__" },
+		}),
+	},
+	{
+		label: "numeric reason",
+		make: () => ({
+			...policyFailure(),
+			networkPolicy: { kind: "network-policy-v1", reason: 1 },
+		}),
+	},
+	{
+		label: "extra address",
+		make: () => ({
+			...policyFailure(),
+			networkPolicy: {
+				kind: "network-policy-v1",
+				reason: "local-name",
+				address: privateSentinel,
+			},
+		}),
+	},
+	{
+		label: "extra cause",
+		make: () => ({
+			...policyFailure(),
+			networkPolicy: {
+				kind: "network-policy-v1",
+				reason: "local-name",
+				cause: privateSentinel,
+			},
+		}),
+	},
+	{
+		label: "wrong category",
+		make: () => ({ ...policyFailure(), category: "network-error" }),
+	},
+	{
+		label: "missing category",
+		make: () => {
+			const failure = policyFailure();
+			return {
+				stage: failure.stage,
+				networkPolicy: failure.networkPolicy,
+			};
+		},
+	},
+	{
+		label: "missing stage",
+		make: () => {
+			const failure = policyFailure();
+			return {
+				category: failure.category,
+				networkPolicy: failure.networkPolicy,
+			};
+		},
+	},
+	{ label: "numeric stage", make: () => ({ ...policyFailure(), stage: 1 }) },
+	{
+		label: "null resource co-presence",
+		make: () => ({ ...policyFailure(), resourceLimit: null }),
+	},
+	{
+		label: "record resource co-presence",
+		make: () => ({
+			...policyFailure(),
+			resourceLimit: {
+				kind: "reader.depth",
+				unit: "levels",
+				limit: 1,
+				observed: 2,
+			},
+		}),
+	},
+	{
+		label: "numeric kind",
+		make: () => ({
+			...policyFailure(),
+			networkPolicy: { kind: 1, reason: "local-name" },
+		}),
+	},
+	{
+		label: "object reason",
+		make: () => ({
+			...policyFailure(),
+			networkPolicy: {
+				kind: "network-policy-v1",
+				reason: { value: "local-name" },
+			},
+		}),
+	},
+];
+
+it.each(malformedPolicyFailures)(
+	"rejects reserved $label at both paths and every strict boundary",
+	({ make }) => {
+		for (const path of policyPaths) {
+			const report = policyReport(make(), path);
+			rejectPolicyEvidence(() => serialize(report));
+			for (const profile of policyProfiles) {
+				const received = policyReport(make(), path, profile);
+				rejectPolicyEvidence(() => replayPolicyJson(received, profile));
+			}
+			report.syntheticPadding = "x".repeat(maxMetadataBytes + 1);
+			rejectPolicyEvidence(() => serialize(report));
+		}
+	},
+);
+
+it("rejects malformed reserved policy metadata before either replay profile's metadata cap", () => {
+	for (const profile of policyProfiles) {
+		for (const path of policyPaths) {
+			const failure = {
+				...policyFailure(),
+				networkPolicy: {
+					kind: "network-policy-v1",
+					reason: "local-name",
+					address: privateSentinel,
+				},
+			};
+			const report = policyReport(failure, path, profile);
+			report.syntheticPadding = "x".repeat(maxMetadataBytes + 1);
+			rejectPolicyEvidence(() => replayPolicyJson(report, profile));
+		}
+	}
+});
+
+const undefinedPolicyFailures = [
+	{
+		label: "fragment",
+		make: () => ({ ...policyFailure(), networkPolicy: undefined }),
+		retained: false,
+	},
+	{
+		label: "resource co-presence",
+		make: () => ({ ...policyFailure(), resourceLimit: undefined }),
+		retained: true,
+	},
+	{
+		label: "extra fragment key",
+		make: () => ({
+			...policyFailure(),
+			networkPolicy: {
+				kind: "network-policy-v1",
+				reason: "local-name",
+				extra: undefined,
+			},
+		}),
+		retained: true,
+	},
+];
+
+it.each(undefinedPolicyFailures)(
+	"checks live undefined $label before long pruning, not after default erasure",
+	({ make, retained }) => {
+		for (const path of policyPaths) {
+			rejectPolicyEvidence(() => serialize(policyReport(make(), path)));
+			const report = policyReport(make(), path, "default");
+			const emission = serialize(report, "default");
+			expect(emission.jsonl).toEqual(jsonl(report));
+			const result = validateResearchReplayAdmission(emission.jsonl, {
+				expectedProfile: "default",
+				expectedReceiptSha256: hash(emission.jsonl),
+			});
+			expect(result).toMatchObject({
+				kind: "evidence-only",
+				reason: path === "prior" ? "payload-omitted" : "native-failure",
+				body: null,
+				bodyIdentity: null,
+			});
+			expect(
+				Object.hasOwn(
+					policyFailureAt(result.originalMetadata, path),
+					"networkPolicy",
+				),
+			).toBe(retained);
+		}
+	},
+);
+
+it.each(["getter", "proxy", "nonplain", "symbol", "cycle", "toJSON"])(
+	"retains safe long snapshot rejection for a reserved %s fragment without hooks",
+	(kind) => {
+		let reads = 0;
+		const inspect = () => {
+			reads++;
+			throw new Error(privateSentinel);
+		};
+		const fragment = { kind: "network-policy-v1", reason: "local-name" };
+		let value: unknown = fragment;
+		if (kind === "getter")
+			Object.defineProperty(fragment, "reason", { get: inspect });
+		else if (kind === "proxy")
+			value = new Proxy(fragment, {
+				get: inspect,
+				getPrototypeOf: inspect,
+				ownKeys: inspect,
+			});
+		else if (kind === "nonplain")
+			value = Object.assign(Object.create({ inherited: true }), fragment);
+		else if (kind === "symbol")
+			Object.defineProperty(fragment, Symbol("extra"), {
+				value: privateSentinel,
+			});
+		else if (kind === "cycle") Object.assign(fragment, { self: fragment });
+		else Object.assign(fragment, { toJSON: inspect });
+		for (const path of policyPaths) {
+			const failure = { ...policyFailure(), networkPolicy: value };
+			rejectPolicyEvidence(() => serialize(policyReport(failure, path)));
+		}
+		expect(reads).toBe(0);
+	},
+);
+
+it.each([maxMetadataBytes, maxMetadataBytes + 1])(
+	"counts the policy fragment and escaped UTF8/LF at metadata boundary %s",
+	(target) => {
+		const report = policyReport({
+			...policyFailure(),
+			stage: 'network-é\n\0"',
+		});
+		report.syntheticPadding = "";
+		report.syntheticPadding = "x".repeat(
+			target - jsonl(metadata(report)).byteLength,
+		);
+		expect(jsonl(metadata(report)).byteLength).toBe(target);
+		const emission = serialize(report);
+		measured(emission);
+		if (target === maxMetadataBytes) {
+			expect(emission.disposition).toBe("complete");
+			expect(emission.metadataBytes).toBe(target);
+		} else {
+			const limit = outputLimit(emission);
+			expect(limit.cause).toBe("metadata-bytes");
+			expect(limit.observedBytes).toBeGreaterThan(maxMetadataBytes);
+			expect(limit.observedBytes).toBeLessThanOrEqual(target);
+			if (limit.observation === "complete")
+				expect(limit.observedBytes).toBe(target);
+			expect(object(limit.prior).failure).toEqual(report.failure);
+		}
+		expect(emission.jsonl[emission.jsonl.length - 1]).toBe(10);
+	},
+);
+
+it("projects a valid policy failure only into bounded prior metadata on overflow", () => {
+	const failure: Fixture = {
+		...policyFailure("https-downgrade"),
+		stage: 'network-é\n\0"',
+		extra: "ordinary enclosing metadata",
+	};
+	const report = policyReport(failure);
+	report.syntheticPadding = "x".repeat(maxMetadataBytes);
+	const before = structuredClone(report);
+	const originalBytes = jsonl(metadata(report)).byteLength;
+	const emission = serialize(report);
+	const limit = outputLimit(emission);
+	const retained = object(object(limit.prior).failure);
+	expect(limit.cause).toBe("metadata-bytes");
+	expect(limit.observedBytes).toBeGreaterThan(maxMetadataBytes);
+	expect(limit.observedBytes).toBeLessThanOrEqual(originalBytes);
+	expect(retained).toEqual({
+		category: failure.category,
+		stage: failure.stage,
+		networkPolicy: failure.networkPolicy,
+	});
+	expect(Buffer.byteLength(JSON.stringify(retained))).toBeLessThanOrEqual(1024);
+	expect(object(limit.prior).failureRetention).toBe("retained");
+	expect(emission.record.failure).not.toHaveProperty("networkPolicy");
+	expect(emission.record.failure).not.toHaveProperty("resourceLimit");
+	for (const value of [
+		emission.record.failure,
+		retained,
+		retained.networkPolicy,
+	]) {
+		expect(networkPolicyDiagnostic(value)).toBeUndefined();
+		expect(resourceLimitDiagnostic(value)).toBeUndefined();
+	}
+	const result = validateResearchReplayAdmission(emission.jsonl, {
+		expectedProfile: "long-v1",
+		expectedReceiptSha256: hash(emission.jsonl),
+	});
+	expect(result).toMatchObject({
+		kind: "evidence-only",
+		reason: "payload-omitted",
+		body: null,
+		bodyIdentity: null,
+	});
+	expect(policyFailureAt(result.originalMetadata, "prior")).toEqual(retained);
+	expect(result.originalMetadata).toEqual(metadata(emission.record));
+	expect(report).toEqual(before);
+	const bytes = emission.jsonl.slice();
+	failure.stage = "mutated after emission";
+	expect(emission.jsonl).toEqual(bytes);
+	expect(retained.stage).toBe(object(before.failure).stage);
+});
+
+it.each([128, 129])(
+	"retains the entire policy prior only through stage length %s",
+	(length) => {
+		const report = policyReport({
+			...policyFailure(),
+			stage: "é".repeat(length),
+		});
+		report.syntheticPadding = "x".repeat(maxMetadataBytes);
+		const prior = object(outputLimit(serialize(report)).prior);
+		expect(prior.failurePresent).toBe(true);
+		expect(prior.failureRetention).toBe(
+			length === 128 ? "retained" : "omitted-over-bound",
+		);
+		if (length === 128) expect(prior.failure).toEqual(report.failure);
+		else expect(prior).not.toHaveProperty("failure");
+		expect(prior).not.toHaveProperty("networkPolicy");
+	},
+);
+
+it.each(policyProfiles)(
+	"admits valid nested policy metadata under %s without reprojecting received outputLimit",
+	(profile) => {
+		const report = policyReport(policyFailure(), "prior", profile);
+		const emission = serialize(report, profile);
+		expect(emission.disposition).toBe("complete");
+		const result = replayPolicyJson(report, profile);
+		expect(result).toMatchObject({
+			kind: "evidence-only",
+			reason: "payload-omitted",
+			body: null,
+			bodyIdentity: null,
+		});
+		expect(result.originalMetadata.outputLimit).toEqual(report.outputLimit);
+		expect(policyFailureAt(result.originalMetadata, "prior")).toEqual(
+			policyFailure(),
+		);
+		expect(
+			networkPolicyDiagnostic(
+				policyFailureAt(result.originalMetadata, "prior").networkPolicy,
+			),
+		).toBeUndefined();
+	},
+);
+
+it.each([
+	{
+		label: "known",
+		diagnostic: {
+			kind: "reader.source",
+			unit: "code-units",
+			limit: 8,
+			observed: 9,
+		},
+		retained: true,
+	},
+	{
+		label: "unknown kind and unit with observed below limit",
+		diagnostic: {
+			kind: "legacy-kind",
+			unit: "legacy-unit",
+			limit: 9,
+			observed: 0,
+		},
+		retained: true,
+	},
+	{
+		label: "malformed resource-only",
+		diagnostic: {
+			kind: "legacy-kind",
+			unit: "",
+			limit: "invalid",
+			observed: 0,
+		},
+		retained: false,
+	},
+])(
+	"preserves legacy $label resource-only behavior without a policy fragment",
+	({ diagnostic, retained }) => {
+		const failure = {
+			category: "resource-limit",
+			stage: "loader",
+			resourceLimit: diagnostic,
+		};
+		const report = policyReport(failure);
+		expect(serialize(report).disposition).toBe("complete");
+		for (const profile of policyProfiles) {
+			const result = replayPolicyJson(
+				policyReport(failure, "failure", profile),
+				profile,
+			);
+			expect(result).toMatchObject({
+				kind: "evidence-only",
+				reason: "native-failure",
+				body: null,
+			});
+			expect(result.originalMetadata.failure).toEqual(failure);
+		}
+		report.syntheticPadding = "x".repeat(maxMetadataBytes);
+		const prior = object(outputLimit(serialize(report)).prior);
+		expect(prior.failureRetention).toBe(
+			retained ? "retained" : "omitted-over-bound",
+		);
+		if (retained) expect(prior.failure).toEqual(failure);
+		else expect(prior).not.toHaveProperty("failure");
+	},
+);
+
+it("does not traverse ordinary extensions or tighten enclosing failures without the reserved fragment", () => {
+	const failure = {
+		category: "legacy-category",
+		stage: "network",
+		extra: "ordinary",
+	};
+	for (const profile of policyProfiles) {
+		const report = policyReport(failure, "failure", profile);
+		report.extension = { networkPolicy: { address: privateSentinel } };
+		const emission = serialize(report, profile);
+		measured(emission);
+		expect(emission.disposition).toBe("complete");
+		const result = replayPolicyJson(report, profile);
+		expect(result).toMatchObject({
+			kind: "evidence-only",
+			reason: "native-failure",
+			body: null,
+		});
+		expect(result.originalMetadata.failure).toEqual(failure);
+		expect(result.originalMetadata.extension).toEqual(report.extension);
+	}
+});
+
+it("keeps trusted default stringify permissive while replay rejects the new reserved malformed extension", () => {
+	const failure = {
+		...policyFailure(),
+		networkPolicy: {
+			kind: "network-policy-v1",
+			reason: "local-name",
+			address: privateSentinel,
+		},
+	};
+	const report = policyReport(failure, "failure", "default");
+	const emission = serialize(report, "default");
+	expect(emission.record).toBe(report);
+	expect(emission.jsonl).toEqual(jsonl(report));
+	expect(emission.metadataBytes).toBeNull();
+	expect(emission.disposition).toBe("complete");
+	rejectPolicyEvidence(() =>
+		validateResearchReplayAdmission(emission.jsonl, {
+			expectedProfile: "default",
+			expectedReceiptSha256: hash(emission.jsonl),
+		}),
+	);
 });

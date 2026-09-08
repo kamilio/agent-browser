@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Research failures now retain genuine fixed network-policy reasons and validate
+their two reserved serialized paths without minting native identity or changing
+policy. `RESEARCH-POLICY-REASONS.md` records198passing cases across three files,
+77new with121old cases retained, build/types/scoped lint success and4408matching
+input pins. Original lint failure and bootstrap-review findings remain preserved;
+fresh round02 fixes only missing-field fixture construction. Legacy default
+serialization and resource-only behavior remain; invalid new reserved fragments
+reject. Historical NVIDIA cause, all live/device/vault/guest gates and the ongoing
+browser goal remain unchanged. Both evidence lanes are independently reviewed,
+sealed with2941/2867-entry final inventories, and retained without rerunning them.
+
 Historical section-trial isolation is qualified in `SOURCE-RECEIPT-HASH-SCOPE.md`:
 trial02's outer pre/post checksum calls also included the source receipt, while
 native decode/section extraction was namespace-bound. Retained checksum logs

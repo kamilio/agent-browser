@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { types } from "node:util";
 import { AgentBrowserError } from "../src/errors.js";
+import { isNetworkPolicyReason } from "../src/network-policy-diagnostic.js";
 import {
 	type ResearchDocumentProfileId,
 	researchLongDocumentAdmission,
@@ -506,6 +507,29 @@ function validateLong(report: DataRecord): void {
 	}
 }
 
+function validatePolicyFragments(report: DataRecord): void {
+	const prior =
+		isRecord(report.outputLimit) && isRecord(report.outputLimit.prior)
+			? report.outputLimit.prior
+			: undefined;
+	for (const failure of [report.failure, prior?.failure]) {
+		if (!isRecord(failure) || !Object.hasOwn(failure, "networkPolicy"))
+			continue;
+		const diagnostic = record(failure.networkPolicy);
+		if (
+			failure.category !== "policy-denied" ||
+			typeof failure.stage !== "string" ||
+			Object.hasOwn(failure, "resourceLimit") ||
+			Object.keys(diagnostic).length !== 2 ||
+			!Object.hasOwn(diagnostic, "kind") ||
+			!Object.hasOwn(diagnostic, "reason") ||
+			diagnostic.kind !== "network-policy-v1" ||
+			!isNetworkPolicyReason(diagnostic.reason)
+		)
+			invalidEvidence();
+	}
+}
+
 function validatePayloadShape(report: DataRecord): void {
 	if (report.bodyCapture !== undefined) {
 		const capture = record(report.bodyCapture);
@@ -583,6 +607,13 @@ function priorOutcome(report: DataRecord): ResearchPriorOutcome {
 			observed: diagnostic.observed,
 		};
 	}
+	if (Object.hasOwn(failure, "networkPolicy")) {
+		const diagnostic = record(failure.networkPolicy);
+		retained.networkPolicy = {
+			kind: diagnostic.kind,
+			reason: diagnostic.reason,
+		};
+	}
 	if (!measure(retained, 1024, false).complete) return prior;
 	return {
 		...prior,
@@ -652,6 +683,7 @@ export function serializeResearchReport(
 	let detached = record(snapshot(report));
 	validateLong(detached);
 	validatePayloadShape(detached);
+	validatePolicyFragments(detached);
 	let metadata = measure(metadataProjection(detached), maxMetadataBytes);
 	let receipt = metadata.complete
 		? measure(detached, maxReceiptBytes)
@@ -834,6 +866,7 @@ export function validateResearchReplayAdmission(
 		validateLong(report);
 		if (`${JSON.stringify(report)}\n` !== text) invalidEvidence();
 	} else if (Object.hasOwn(report, "admission")) invalidEvidence();
+	validatePolicyFragments(report);
 	const originalMetadata = metadataProjection(report);
 	const originalFieldPresence = fieldPresence(report);
 	if (

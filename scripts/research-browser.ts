@@ -19,6 +19,10 @@ import {
 } from "../src/extraction.js";
 import { htmlParseInfo } from "../src/html-info.js";
 import {
+	type NetworkPolicyDiagnostic,
+	networkPolicyDiagnostic,
+} from "../src/network-policy-diagnostic.js";
+import {
 	type NetworkMetrics,
 	NetworkPolicy,
 	type NetworkResponse,
@@ -407,6 +411,7 @@ export interface ResearchNavigationReport {
 		category: string;
 		stage: string;
 		resourceLimit?: Readonly<ResourceLimitDiagnostic>;
+		networkPolicy?: Readonly<NetworkPolicyDiagnostic>;
 	};
 	navigation?: NavigationResult;
 	extraction?: DocumentExtraction;
@@ -746,11 +751,16 @@ export async function researchNavigation(
 			error instanceof AgentBrowserError && error.code === "resource-limit"
 				? resourceLimitDiagnostic(error)
 				: undefined;
+		const networkPolicy =
+			error instanceof AgentBrowserError && error.code === "policy-denied"
+				? networkPolicyDiagnostic(error)
+				: undefined;
 		report.failure = {
 			category:
 				error instanceof AgentBrowserError ? error.code : "internal-error",
 			stage,
 			...(resourceLimit ? { resourceLimit } : {}),
+			...(networkPolicy ? { networkPolicy } : {}),
 		};
 		report.contentSuccess = false;
 	} finally {

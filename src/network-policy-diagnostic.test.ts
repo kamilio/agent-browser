@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { CookieJar } from "./cookies.js";
 import { AgentBrowserError, type ErrorCode } from "./errors.js";
 import {
+	isNetworkPolicyReason,
 	networkPolicyDiagnostic,
 	networkPolicyError,
 } from "./network-policy-diagnostic.js";
@@ -57,6 +58,91 @@ const messages = {
 } satisfies Record<Reason, string>;
 
 const reasons = Object.keys(messages) as Reason[];
+
+it.each(reasons)(
+	"admits the shared policy-reason vocabulary entry %s",
+	(reason) => {
+		expect(isNetworkPolicyReason(reason)).toBe(true);
+		const error = networkPolicyError(reason);
+		const diagnostic = expectPolicy(error, reason);
+		expect(diagnostic.reason).toBe(reason);
+		expect(networkPolicyDiagnostic(error)).toBe(diagnostic);
+	},
+);
+
+it("rejects non-vocabulary inputs without coercion and preserves the fixed factory error", () => {
+	let inspections = 0;
+	const inspect = () => {
+		inspections++;
+		throw new Error("synthetic-policy-vocabulary-private");
+	};
+	const hostile = {
+		toString: inspect,
+		valueOf: inspect,
+		[Symbol.toPrimitive]: inspect,
+	};
+	const proxy = new Proxy(
+		{},
+		{
+			get: inspect,
+			getPrototypeOf: inspect,
+			ownKeys: inspect,
+			getOwnPropertyDescriptor: inspect,
+		},
+	);
+	const revoked = Proxy.revocable({}, {});
+	revoked.revoke();
+	const values: unknown[] = [
+		"",
+		"unknown",
+		"__proto__",
+		"constructor",
+		"toString",
+		"hasOwnProperty",
+		"url-scheme ",
+		"URL-SCHEME",
+		undefined,
+		null,
+		0,
+		false,
+		Symbol("reason"),
+		new String("url-scheme"),
+		["url-scheme"],
+		{ reason: "url-scheme" },
+		hostile,
+		proxy,
+		revoked.proxy,
+	];
+	expect(values).toHaveLength(19);
+	for (const value of values) {
+		expect(isNetworkPolicyReason(value)).toBe(false);
+		const error = capture(() => networkPolicyError(value as Reason));
+		expect(error).toBeInstanceOf(AgentBrowserError);
+		expect(error).toMatchObject({
+			code: "invalid-input",
+			message: "Invalid network policy reason",
+		});
+		expect(networkPolicyDiagnostic(error)).toBeUndefined();
+	}
+	expect(inspections).toBe(0);
+});
+
+it("validates serialized reason vocabulary without minting error identity", () => {
+	const error = networkPolicyError("resolved-address-policy");
+	const diagnostic = expectPolicy(error, "resolved-address-policy");
+	const parsed = JSON.parse(
+		JSON.stringify({
+			category: "policy-denied",
+			stage: "network",
+			networkPolicy: diagnostic,
+		}),
+	) as { networkPolicy: { reason: unknown } };
+	expect(isNetworkPolicyReason(parsed.networkPolicy.reason)).toBe(true);
+	for (const value of [parsed, parsed.networkPolicy, { cause: error }])
+		expect(networkPolicyDiagnostic(value)).toBeUndefined();
+	expect(networkPolicyDiagnostic(error)).toBe(diagnostic);
+});
+
 const privateMarker = "synthetic-private-network-detail";
 const requestUrl = `https://policy.fixture.invalid/start?token=${privateMarker}`;
 const localUrl = `https://localhost/start?token=${privateMarker}`;
