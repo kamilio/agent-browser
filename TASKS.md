@@ -1,5 +1,13 @@
 # Agent browser implementation tasks
 
+The ROCm compatibility investigation stops before a live GET: one synthetic HTML
+control passes, table control fails,11remain unrun. `ROCM-TABLE-CONTROL-TRIAL.md`
+preserves the missing exact assertion/export and25verified frozen artifact hashes.
+Static review finds raw-label versus escaped-Markdown checking and late failure
+publication problems, not the historical failing predicate or hardware facts.
+A fresh zero-GET diagnostic is being prepared separately; no old source/control
+is rerun or relabeled, and no compatibility/access gate closes. Work continues.
+
 Native network-policy errors now carry private fixed reasons at twelve existing
 guards, without changing policy or public/research schemas. `NETWORK-POLICY-DIAGNOSTICS.md`
 records128passing cases in two isolated files,48new and80unchanged,2731matching
