@@ -119,14 +119,24 @@ const messages: Record<ErrorName, string> = {
 	AbortError: "Passkey ceremony was aborted",
 	UnknownError: "Passkey authenticator failed",
 };
+const issuedPasskeyErrors = new WeakMap<object, ErrorName>();
 class PasskeyError extends Error {
 	constructor(name: ErrorName) {
 		super(messages[name]);
 		this.name = name;
 	}
 }
+function createPasskeyError(name: ErrorName): PasskeyError {
+	const error = new PasskeyError(name);
+	issuedPasskeyErrors.set(error, name);
+	return error;
+}
+function passkeyErrorName(error: unknown): ErrorName | undefined {
+	if (typeof error !== "object" || error === null) return undefined;
+	return issuedPasskeyErrors.get(error);
+}
 function fail(name: ErrorName): never {
-	throw new PasskeyError(name);
+	throw createPasskeyError(name);
 }
 function object(value: unknown, keys: readonly string[]) {
 	if (!value || typeof value !== "object" || Array.isArray(value))
@@ -508,9 +518,7 @@ export class PasskeyBroker {
 					? this.creation(input, host)
 					: this.request(input, host);
 		} catch (error) {
-			throw error instanceof PasskeyError
-				? error
-				: new PasskeyError("TypeError");
+			throw createPasskeyError(passkeyErrorName(error) ?? "TypeError");
 		} finally {
 			this.starting = false;
 		}
@@ -548,7 +556,7 @@ export class PasskeyBroker {
 						);
 				};
 				const operation = {
-					cancel: (name: ErrorName) => finish(new PasskeyError(name)),
+					cancel: (name: ErrorName) => finish(createPasskeyError(name)),
 				};
 				const aborted = () => operation.cancel("AbortError");
 				const valid = () => {
@@ -715,17 +723,16 @@ export class PasskeyBroker {
 				void perform().catch((error: unknown) => {
 					if (valid())
 						finish(
-							error instanceof PasskeyError
-								? error
-								: new PasskeyError(
-										type === "webauthn.create" &&
-											consumeConsentedPasskeyExclusionError(
-												error,
-												controller.signal,
-											)
-											? "InvalidStateError"
-											: "UnknownError",
-									),
+							createPasskeyError(
+								passkeyErrorName(error) ??
+									(type === "webauthn.create" &&
+									consumeConsentedPasskeyExclusionError(
+										error,
+										controller.signal,
+									)
+										? "InvalidStateError"
+										: "UnknownError"),
+							),
 						);
 				});
 			},

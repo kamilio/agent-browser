@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Passkey exception classification now uses private issuance identity and fresh fixed
+errors, not instanceof/forwarding. `PASSKEY-ERROR-IDENTITY.md` records137passing
+cases in three isolated files,20new and117unchanged, with2734matching input pins.
+Initial fixture lint and actual134-pass/3-fail mock-interference run remain intact;
+plain throwing handlers correct coverage without changing runtime or assertions.
+Captured constructor/prototype forgeries do not authenticate, but replayed genuine
+errors may retain canonical codes: issuance is not current-ceremony or human-consent
+proof. Pending origin/RP source and tests remain separate; real-device/privacy/
+vault/guest acceptance and the ongoing browser goal remain outstanding. Integration
+review is clear;226frozen artifacts are bound by4685bd64ff528ff810d3eb027fdca4875ea7837636d2eefc7b97c54da760ade3.
+
 The ROCm compatibility investigation stops before a live GET: one synthetic HTML
 control passes, table control fails,11remain unrun. `ROCM-TABLE-CONTROL-TRIAL.md`
 preserves the missing exact assertion/export and25verified frozen artifact hashes.
