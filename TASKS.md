@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+The separately authorized native scope-context trial still rejects at sourceUTF16
+872144/td/table/depth31, now with an actual bounded outer-to-inner stack containing
+head and accumulated table/thead/row/cell scopes. `SOURCE-SCOPE-CONTEXT-TRIAL.md`
+preserves334 artifacts, fresh five shell/21 native integration/4817 status controls,
+and passing1748-file/37-artifact failure integrity. No candidate/text/capture or
+raw markup was read; the stack is not an intermediate history or DOM ancestry.
+Next is bounded canonical-transition design, independent synthetic tests and review,
+not arbitrary ancestor repair, bundled head recovery or a presumed live success.
+Modern privacy, provider/vault/device/page/consent, blocked research and all stopped/
+denied gates remain open. The original browser improvement goal continues.
+
 Trusted sourceHeadingScopeContextDiagnostic now adds a private frozen four-field
 error snapshot with actual policy and outer-to-inner finite scope names, bounded
 by128 frames. Existing diagnostics, error shape, strict/selected grammar, reports
