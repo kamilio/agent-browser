@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Fresh browser-only research now adds native Apple specification, SWE-bench README
+and lm-evaluation-harness README exports, each with separate controls, oneGET and
+independent zero-GET verification. `BROWSER-RESEARCH-SEPTEMBER-08.md` distinguishes
+vendor capacity from LLM performance, source-documented caching/scoring/backend
+caveats from measured benchmark validity, and unpinned upstreammain from revisions.
+A separate proposed NVIDIA endpoint returns404; its admitted failure supplies no
+GPU facts and receives no retry/fallback. Static artifact/claim reviews retain
+their independence limits and all original failures. No hardware winner, price,
+ranking or contamination claim is made. X/Astra/Reddit and denied acceptance gates
+remain closed; the original browser improvement goal continues.
+
 The second identity-bound native prose trial extracts the credential-creation
 method and its deeper exception summary:226blocks/20841UTF16 units,40636bytes,
 23fresh passing controls and independent18input+1declaredreceipt/1748compiled/
