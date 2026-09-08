@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+The native head/table source trial now reaches an active heading-inline-structure
+guard at sourceUTF16 250858, with no rejected tag/predicate detail, candidates,
+text or capture. `SOURCE-HEAD-TABLE-TRIAL.md` preserves362 artifacts, fresh five
+shell/28 native integration/4817 status controls and passing1748-file/37-artifact
+failure integrity. An earlier coordinate is a different guard path, not numeric
+progress/regression or proof of which implicit transition occurred. Next is a
+trusted finite inline-diagnostic design preserving grammar and short-circuit order,
+not blind tag acceptance or raw-source replay. Modern privacy, provider/vault/
+device/page/consent, blocked research and all stopped/denied gates remain open.
+The original browser improvement goal continues.
+
 Explicit host-only headScopePolicy explicit-body-boundary-v1 now permits one
 eligible leading head to end only at an actual body start, with bounded prefix/
 ASCII-whitespace checks and permanently terminal disqualification. Defaults,
