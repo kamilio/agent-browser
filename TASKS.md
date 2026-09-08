@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+The fresh cursor-window trial now identifies raw at last committed source UTF16
+1824525, retaining the65536/65537 window refusal with no tag/entity-mode/full-size
+or payload claim. `SOURCE-CURSOR-WINDOW-TRIAL.md` preserves551artifacts, fresh
+5shell/66native/4817completion/3711inline/120pair/89window/135caller controls and
+passing1748-file/40RUN failure integrity. No historical error is enriched. Next is
+an explicit bounded native non-entity raw-discard step design with finite state,
+native script semantics and unchanged per-window/total budgets, not a cap increase
+or assumed source recovery. Section prose/current privacy reading and provider/
+vault/device/page/consent acceptance remain pending; blocked research is unresolved
+and stopped/denied probes stay closed. The original browser goal continues.
+
 Trusted native cursor-window diagnostics now identify next/raw/remainder and the
 last committed input UTF16 coordinate on the same origin error, without source/name
 disclosure or cap/grammar/accounting changes. `CURSOR-WINDOW-DIAGNOSTICS.md` records
