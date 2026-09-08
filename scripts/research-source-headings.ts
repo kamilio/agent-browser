@@ -35,6 +35,7 @@ export type ResearchSourceHeadingOptions =
 		tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
 		headScopePolicy?: "explicit-body-boundary-v1";
 		headingInlinePolicy?: "balanced-source-elements-v1";
+		rawDiscardPolicy?: "bounded-non-entity-v1";
 	};
 
 export interface SourceHeadingRange {
@@ -68,6 +69,13 @@ export interface ResearchSourceHeadingReport {
 		"attributes-ignored",
 		"not-dom-or-visibility",
 	];
+	readonly rawDiscardPolicy?: "bounded-non-entity-v1";
+	readonly rawDiscardLimitations?: readonly [
+		"six-non-entity-names-only",
+		"title-textarea-legacy-raw",
+		"closing-token-still-window-bounded",
+		"lexical-not-dom-or-visibility",
+	];
 	readonly source: ResearchHtmlSourceIdentity;
 	readonly completion: "eof" | "entry-limit";
 	readonly scannedTo: number;
@@ -83,6 +91,12 @@ export interface ResearchSourceHeadingReport {
 		readonly suppressedStarts: Readonly<Record<string, number>>;
 		readonly suppressedHeadingStarts: number;
 		readonly rawStarts: Readonly<Record<string, number>>;
+		readonly rawDiscard?: {
+			readonly steps: number;
+			readonly elements: number;
+			readonly codeUnits: number;
+			readonly legacyRawCalls: number;
+		};
 		readonly maxTrackedDepth: number;
 		readonly yields: number;
 	};
@@ -381,6 +395,7 @@ function optionsSnapshot(value: unknown): {
 	readonly tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
 	readonly headScopePolicy?: "explicit-body-boundary-v1";
 	readonly headingInlinePolicy?: "balanced-source-elements-v1";
+	readonly rawDiscardPolicy?: "bounded-non-entity-v1";
 } {
 	if (value === null || typeof value !== "object" || types.isProxy(value))
 		invalid();
@@ -402,6 +417,7 @@ function optionsSnapshot(value: unknown): {
 		| undefined;
 	let headScopePolicy: "explicit-body-boundary-v1" | undefined;
 	let headingInlinePolicy: "balanced-source-elements-v1" | undefined;
+	let rawDiscardPolicy: "bounded-non-entity-v1" | undefined;
 	for (const key of Reflect.ownKeys(value)) {
 		if (key === "method") continue;
 		if (
@@ -409,6 +425,7 @@ function optionsSnapshot(value: unknown): {
 			(key !== "tableScopePolicy" &&
 				key !== "headScopePolicy" &&
 				key !== "headingInlinePolicy" &&
+				key !== "rawDiscardPolicy" &&
 				!Object.hasOwn(limits, key))
 		)
 			invalid();
@@ -433,6 +450,11 @@ function optionsSnapshot(value: unknown): {
 			headingInlinePolicy = descriptor.value;
 			continue;
 		}
+		if (key === "rawDiscardPolicy") {
+			if (descriptor.value !== "bounded-non-entity-v1") invalid();
+			rawDiscardPolicy = descriptor.value;
+			continue;
+		}
 		const name = key as keyof ResearchSourceHeadingLimits;
 		const selected: unknown = descriptor.value;
 		if (
@@ -444,11 +466,13 @@ function optionsSnapshot(value: unknown): {
 			invalid();
 		limits[name] = selected;
 	}
+	if (rawDiscardPolicy && limits.maxWindowCodeUnits < 16) invalid();
 	return Object.freeze({
 		limits: Object.freeze(limits),
 		tableScopePolicy,
 		headScopePolicy,
 		headingInlinePolicy,
+		rawDiscardPolicy,
 	});
 }
 
@@ -573,8 +597,13 @@ export async function discoverResearchSourceHeadings(
 	signal?: AbortSignal,
 ): Promise<ResearchSourceHeadingDiscovery> {
 	const started = performance.now();
-	const { limits, tableScopePolicy, headScopePolicy, headingInlinePolicy } =
-		optionsSnapshot(options);
+	const {
+		limits,
+		tableScopePolicy,
+		headScopePolicy,
+		headingInlinePolicy,
+		rawDiscardPolicy,
+	} = optionsSnapshot(options);
 	const deadline = started + limits.timeoutMs;
 	let cursor: HtmlTokenCursor | undefined;
 	let scannerWork = 0;
@@ -588,6 +617,9 @@ export async function discoverResearchSourceHeadings(
 	const omittedStarts: Record<string, number> = Object.create(null);
 	const suppressedStarts: Record<string, number> = Object.create(null);
 	const rawStarts: Record<string, number> = Object.create(null);
+	const rawDiscard = rawDiscardPolicy
+		? { steps: 0, elements: 0, codeUnits: 0, legacyRawCalls: 0 }
+		: undefined;
 	const entries: SourceHeadingCandidate[] = [];
 	const scopes: SourceHeadingScope[] = [];
 	let heading: HeadingState | undefined;
@@ -1056,10 +1088,34 @@ export async function discoverResearchSourceHeadings(
 			if (token.kind === "start" && rawTags.has(name)) {
 				if (token.selfClosing) unsupported("raw-self-closing");
 				rawStarts[name] = (rawStarts[name] ?? 0) + 1;
-				checkpoint();
-				cursor.raw(name, name === "title" || name === "textarea");
-				checkpoint();
-				await yieldBatch();
+				if (
+					rawDiscard &&
+					(name === "script" ||
+						name === "style" ||
+						name === "xmp" ||
+						name === "iframe" ||
+						name === "noembed" ||
+						name === "noframes")
+				) {
+					while (true) {
+						checkpoint();
+						const step = cursor.discardRawStep(name);
+						checkpoint();
+						rawDiscard.steps++;
+						rawDiscard.codeUnits += step.discardedCodeUnits;
+						if (step.status === "end-tag") rawDiscard.elements++;
+						await yieldBatch();
+						if (step.status === "more") continue;
+						if (step.status !== "end-tag") unsupported("raw-close-structure");
+						break;
+					}
+				} else {
+					checkpoint();
+					cursor.raw(name, name === "title" || name === "textarea");
+					checkpoint();
+					if (rawDiscard) rawDiscard.legacyRawCalls++;
+					await yieldBatch();
+				}
 				const closing = await read();
 				if (!closing.token || !plainEnd(closing.token, name))
 					unsupported("raw-close-structure");
@@ -1184,6 +1240,17 @@ export async function discoverResearchSourceHeadings(
 						] as const,
 					}
 				: {}),
+			...(rawDiscardPolicy
+				? {
+						rawDiscardPolicy,
+						rawDiscardLimitations: [
+							"six-non-entity-names-only",
+							"title-textarea-legacy-raw",
+							"closing-token-still-window-bounded",
+							"lexical-not-dom-or-visibility",
+						] as const,
+					}
+				: {}),
 			source: admitted.identity,
 			completion,
 			scannedTo: cursor.position,
@@ -1199,6 +1266,7 @@ export async function discoverResearchSourceHeadings(
 				suppressedStarts,
 				suppressedHeadingStarts,
 				rawStarts,
+				...(rawDiscard ? { rawDiscard } : {}),
 				maxTrackedDepth,
 				yields,
 			},

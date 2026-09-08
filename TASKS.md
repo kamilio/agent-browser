@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Explicit source-heading raw discard now selects six non-entity names with one
+bounded native step per iteration, shared budgets/yields and frozen policy/counter
+disclosures. `SOURCE-RAW-DISCARD.md` records1515passing cases in six files,72new
+heading cases, all1443prior names preserved and2716current/92core/551source09
+audited artifacts. Initial test-only lint failure is retained in79frozen artifacts.
+Default grammar/report shape and legacy title/textarea remain unchanged. Next is
+exact engine freeze, source10 operation/verifier integration, fresh controls and
+authorization; no live recovery, prose, CLI or operation activation is claimed.
+Modern privacy/provider/vault/device/page/consent and blocked research remain open;
+stopped/denied probes stay closed and the original browser goal continues.
+
 Bounded native raw-discard core now provides an explicit six-name, one-window
 metadata-only step with private script-state continuation and unchanged ceilings.
 `RAW-DISCARD-STEPS.md` records 1443 passing native cases in six files, 136 new

@@ -18,7 +18,12 @@ import {
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError, type ErrorCode } from "./errors.js";
 import { parseHtmlDocument } from "./html-parser.js";
-import { HtmlTokenCursor } from "./html-token-cursor.js";
+import {
+	type HtmlDiscardRawName,
+	type HtmlRawDiscardStep,
+	HtmlTokenCursor,
+	htmlTokenCursorWindowDiagnostic,
+} from "./html-token-cursor.js";
 import {
 	type ResourceLimitDiagnostic,
 	resourceLimitDiagnostic,
@@ -6478,4 +6483,831 @@ describe("explicit balanced source-element heading policy", () => {
 			}
 		},
 	);
+});
+
+describe("explicit bounded non-entity raw discard", () => {
+	const rawDiscardPolicy = "bounded-non-entity-v1";
+	const limitations = [
+		"six-non-entity-names-only",
+		"title-textarea-legacy-raw",
+		"closing-token-still-window-bounded",
+		"lexical-not-dom-or-visibility",
+	];
+	const discardNames = [
+		"script",
+		"style",
+		"xmp",
+		"iframe",
+		"noembed",
+		"noframes",
+	] as const;
+	const selected = (text: string, options: Record<string, unknown> = {}) =>
+		scan(text, { rawDiscardPolicy, ...options });
+
+	function trackSteps() {
+		const native = HtmlTokenCursor.prototype.discardRawStep;
+		const cursors = new Set<HtmlTokenCursor>();
+		const steps: Readonly<HtmlRawDiscardStep>[] = [];
+		const spy = vi
+			.spyOn(HtmlTokenCursor.prototype, "discardRawStep")
+			.mockImplementation(function (
+				this: HtmlTokenCursor,
+				name: HtmlDiscardRawName,
+			) {
+				cursors.add(this);
+				const result = native.call(this, name);
+				steps.push(result);
+				return result;
+			});
+		return { cursors, steps, spy };
+	}
+
+	function expectSelected(result: Awaited<ReturnType<typeof scan>>) {
+		const report = result.report;
+		const counters = report.counters;
+		const discard = counters.rawDiscard;
+		expect(report.rawDiscardPolicy).toBe(rawDiscardPolicy);
+		expect(report.rawDiscardLimitations).toEqual(limitations);
+		expect(discard).toBeDefined();
+		if (!discard) throw new Error("Missing selected raw-discard counters");
+		expect(Object.keys(discard).sort()).toEqual([
+			"codeUnits",
+			"elements",
+			"legacyRawCalls",
+			"steps",
+		]);
+		expect(counters.operations).toBe(
+			counters.tokens +
+				discard.steps +
+				discard.legacyRawCalls +
+				(report.completion === "eof" ? 1 : 0),
+		);
+		expect(
+			Object.values(counters.rawStarts).reduce(
+				(total, count) => total + count,
+				0,
+			),
+		).toBe(discard.elements + discard.legacyRawCalls);
+		expect(discard.legacyRawCalls).toBe(
+			(counters.rawStarts.title ?? 0) + (counters.rawStarts.textarea ?? 0),
+		);
+		expect(report.method).toBe(method);
+		expect(report.semantics).toBe("lexical-not-dom");
+		expect(report.partial).toBe(true);
+		expect(report.contentSuccess).toBeNull();
+		expect(JSON.parse(result.jsonl)).toEqual(report);
+		expect(result.outputBytes).toBe(encoder.encode(result.jsonl).byteLength);
+		expect(result.outputBytes).toBeLessThanOrEqual(
+			report.limits.maxOutputBytes,
+		);
+		expectDeepFrozen(result);
+		return discard;
+	}
+
+	async function rejectBeforeSource(options: unknown) {
+		const input = ownedSource("<h1>Unreached</h1>");
+		const descriptors = vi.spyOn(Object, "getOwnPropertyDescriptor");
+		const prototypes = vi.spyOn(Object, "getPrototypeOf");
+		const keys = vi.spyOn(Reflect, "ownKeys");
+		let error: unknown;
+		let inspections = 0;
+		try {
+			error = await captureFailure(() =>
+				discoverResearchSourceHeadings(input, options),
+			);
+			inspections =
+				descriptors.mock.calls.filter(([value]) => value === input).length +
+				prototypes.mock.calls.filter(([value]) => value === input).length +
+				keys.mock.calls.filter(([value]) => value === input).length;
+		} finally {
+			keys.mockRestore();
+			prototypes.mockRestore();
+			descriptors.mockRestore();
+		}
+		expectCode(error, "invalid-input");
+		expect(inspections).toBe(0);
+		expect((error as Error).message).not.toContain(privateMarker);
+	}
+
+	it("leaves default calls and exact report keys unchanged", async () => {
+		const steps = trackSteps();
+		const raw = vi.spyOn(HtmlTokenCursor.prototype, "raw");
+		const result = await scan(
+			"<script>x</script><title>y</title><h1>Outside</h1>",
+		);
+		expect(raw.mock.calls).toEqual([
+			["script", false],
+			["title", true],
+		]);
+		expect(steps.spy).not.toHaveBeenCalled();
+		expect(Object.keys(result.report).sort()).toEqual([
+			"completion",
+			"contentSuccess",
+			"counters",
+			"entries",
+			"kind",
+			"limits",
+			"method",
+			"partial",
+			"scannedTo",
+			"semantics",
+			"source",
+		]);
+		expect(Object.keys(result.report.counters).sort()).toEqual([
+			"entityIssues",
+			"issueAttempts",
+			"maxTrackedDepth",
+			"omittedStarts",
+			"operations",
+			"rawStarts",
+			"suppressedHeadingStarts",
+			"suppressedStarts",
+			"tokens",
+			"workUnits",
+			"yields",
+		]);
+		expect(result.report.counters.operations).toBe(
+			result.report.counters.tokens + 3,
+		);
+		expect(result.jsonl).not.toContain("rawDiscard");
+	});
+
+	it("adds only selected disclosure and zero counters when no raw element occurs", async () => {
+		const text = "<h1>One</h1>";
+		const baseline = await scan(text);
+		const result = await selected(text);
+		const {
+			rawDiscardPolicy: policy,
+			rawDiscardLimitations,
+			counters,
+			...rest
+		} = result.report;
+		const { rawDiscard, ...ordinaryCounters } = counters;
+		expect({ ...rest, counters: ordinaryCounters }).toEqual(baseline.report);
+		expect(policy).toBe(rawDiscardPolicy);
+		expect(rawDiscardLimitations).toEqual(limitations);
+		expect(rawDiscard).toEqual({
+			steps: 0,
+			elements: 0,
+			codeUnits: 0,
+			legacyRawCalls: 0,
+		});
+		expectSelected(result);
+		if (!rawDiscard || !rawDiscardLimitations)
+			throw new Error("Missing selected metadata");
+		expect(Reflect.set(result.report, "rawDiscardPolicy", "changed")).toBe(
+			false,
+		);
+		expect(Reflect.set(rawDiscardLimitations, "0", "changed")).toBe(false);
+		expect(Reflect.set(rawDiscard, "steps", 1)).toBe(false);
+	});
+
+	it("accounts separately for all six discarded and two entity-aware raw names", async () => {
+		const trace = trackSteps();
+		const raw = vi.spyOn(HtmlTokenCursor.prototype, "raw");
+		const text = `${rawNames.map((name) => `<${name}>text</${name}>`).join("")}<h1>Outside</h1>`;
+		const result = await selected(text);
+		expect(expectSelected(result)).toEqual({
+			steps: 6,
+			elements: 6,
+			codeUnits: 24,
+			legacyRawCalls: 2,
+		});
+		expect(trace.spy.mock.calls).toEqual(discardNames.map((name) => [name]));
+		expect(raw.mock.calls).toEqual([
+			["title", true],
+			["textarea", true],
+		]);
+		expect(result.report.counters.rawStarts).toEqual(
+			Object.fromEntries(rawNames.map((name) => [name, 1])),
+		);
+		expect(result.report.entries.map((entry) => entry.title)).toEqual([
+			"Outside",
+		]);
+		for (const cursor of trace.cursors) expect(cursor.closed).toBe(true);
+	});
+
+	it("keeps the selected entry-limit operation identity without a synthetic EOF", async () => {
+		const result = await selected(
+			"<style>x</style><h1>One</h1><h2>Unread</h2>",
+			{ maxEntries: 1 },
+		);
+		expect(result.report.completion).toBe("entry-limit");
+		expect(result.report.entries.map((entry) => entry.title)).toEqual(["One"]);
+		expect(expectSelected(result)).toEqual({
+			steps: 1,
+			elements: 1,
+			codeUnits: 1,
+			legacyRawCalls: 0,
+		});
+	});
+
+	it.each(["plain", "null"])(
+		"admits own nonenumerable selection on a %s prototype",
+		async (prototype) => {
+			const options = Object.assign(
+				Object.create(prototype === "null" ? null : Object.prototype),
+				{ method },
+			);
+			Object.defineProperty(options, "rawDiscardPolicy", {
+				value: rawDiscardPolicy,
+			});
+			expectSelected(
+				await discoverResearchSourceHeadings(ownedSource(""), options),
+			);
+		},
+	);
+
+	it("rejects explicit undefined and nonliteral selections before source admission", async () => {
+		for (const value of [
+			undefined,
+			null,
+			false,
+			true,
+			0,
+			"",
+			"bounded-non-entity-v0",
+			"BOUNDED-NON-ENTITY-V1",
+			`${rawDiscardPolicy} `,
+			{},
+			[],
+			new String(rawDiscardPolicy),
+		]) {
+			await rejectBeforeSource({ method, rawDiscardPolicy: value });
+		}
+		for (const options of [
+			{ rawDiscardPolicy },
+			{ method, rawDiscardPolicy, entities: false },
+			{ method, rawDiscardPolicy, [Symbol("unknown")]: true },
+			Object.assign(Object.create({ rawDiscardPolicy }), { method }),
+		])
+			await rejectBeforeSource(options);
+	});
+
+	it("rejects policy accessors, coercible values and revoked proxies without traps", async () => {
+		const trap = vi.fn((): never => {
+			throw new Error(privateMarker);
+		});
+		const traps = {
+			get: trap,
+			getPrototypeOf: trap,
+			ownKeys: trap,
+			getOwnPropertyDescriptor: trap,
+		};
+		const revoked = Proxy.revocable({ method, rawDiscardPolicy }, traps);
+		revoked.revoke();
+		const accessor = Object.defineProperty({ method }, "rawDiscardPolicy", {
+			get: trap,
+		});
+		for (const options of [
+			accessor,
+			new Proxy({ method, rawDiscardPolicy }, traps),
+			revoked.proxy,
+		]) {
+			await rejectBeforeSource(options);
+		}
+		for (const value of [
+			new Proxy({}, traps),
+			revoked.proxy,
+			{ toString: trap, valueOf: trap, [Symbol.toPrimitive]: trap },
+		]) {
+			await rejectBeforeSource({ method, rawDiscardPolicy: value });
+		}
+		expect(trap).not.toHaveBeenCalled();
+	});
+
+	it("rejects every selected window below16 before source admission, not on raw encounter", async () => {
+		for (
+			let maxWindowCodeUnits = 1;
+			maxWindowCodeUnits < 16;
+			maxWindowCodeUnits++
+		) {
+			await rejectBeforeSource({
+				method,
+				rawDiscardPolicy,
+				maxWindowCodeUnits,
+			});
+		}
+		expectSelected(await selected("", { maxWindowCodeUnits: 16 }));
+		expect((await scan("", { maxWindowCodeUnits: 1 })).report.completion).toBe(
+			"eof",
+		);
+	});
+
+	it("snapshots policy and owned bytes before a suspended scan resumes", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		const text = `<style>${"x".repeat(80)}</style><h1>Original</h1>`;
+		const input = ownedSource(text);
+		const options = {
+			method,
+			rawDiscardPolicy,
+			maxWindowCodeUnits: 16,
+			yieldEveryOperations: 1,
+		};
+		const pending = observe(discoverResearchSourceHeadings(input, options));
+		await microtasks();
+		expect(pending.settled).toBe(false);
+		expect(vi.getTimerCount()).toBeGreaterThan(0);
+		options.rawDiscardPolicy = "changed";
+		options.maxWindowCodeUnits = 1;
+		input.body.fill(0);
+		await vi.runAllTimersAsync();
+		const outcome = await pending.outcome;
+		expect(outcome.error).toBeUndefined();
+		if (!outcome.value) throw new Error("Missing completed snapshot result");
+		expectSelected(outcome.value);
+		expect(outcome.value.report.entries.map((entry) => entry.title)).toEqual([
+			"Original",
+		]);
+		expect(outcome.value.report.limits.maxWindowCodeUnits).toBe(16);
+		expect(outcome.value.report.source.bytes.sha256).toBe(
+			sha256(encoder.encode(text)),
+		);
+	});
+
+	it.each(discardNames)(
+		"uses actual multi-window %s discard where default raw refuses",
+		async (name) => {
+			const body = `${privateMarker}<h3>Hidden</h3>${"x".repeat(65_537)}`;
+			const text = `<h1>Before</h1><${name}>${body}</${name}><h2>After</h2>`;
+			const error = await captureFailure(() => scan(text));
+			expectLimit(error, {
+				kind: "html.cursor-window",
+				unit: "code-units",
+				limit: 65_536,
+				observed: 65_537,
+			});
+			expect(htmlTokenCursorWindowDiagnostic(error)).toMatchObject({
+				operation: "raw",
+				position: text.indexOf(body),
+			});
+			const trace = trackSteps();
+			const raw = vi.spyOn(HtmlTokenCursor.prototype, "raw");
+			const result = await selected(text);
+			const counters = expectSelected(result);
+			expect(counters.steps).toBeGreaterThan(1);
+			expect(counters.elements).toBe(1);
+			expect(counters.codeUnits).toBe(body.length);
+			expect(counters.legacyRawCalls).toBe(0);
+			expect(counters.steps).toBe(trace.steps.length);
+			expect(trace.steps.at(-1)?.status).toBe("end-tag");
+			expect(trace.steps.at(-1)?.position).toBe(text.indexOf(`</${name}>`));
+			expect(raw).not.toHaveBeenCalled();
+			expect(result.report.entries.map((entry) => entry.title)).toEqual([
+				"Before",
+				"After",
+			]);
+			expect(result.report.scannedTo).toBe(text.length);
+			expect(result.jsonl).not.toContain(privateMarker);
+			for (const cursor of trace.cursors) expect(cursor.closed).toBe(true);
+		},
+	);
+
+	it("counts a zero-advance immediate close as one completed discard step", async () => {
+		const trace = trackSteps();
+		const result = await selected("<style></style><h1>X</h1>", {
+			maxWindowCodeUnits: 16,
+		});
+		expect(expectSelected(result)).toEqual({
+			steps: 1,
+			elements: 1,
+			codeUnits: 0,
+			legacyRawCalls: 0,
+		});
+		expect(trace.steps).toEqual([
+			{ status: "end-tag", position: 7, discardedCodeUnits: 0 },
+		]);
+		expect(result.report.entries[0].title).toBe("X");
+	});
+
+	it.each(discardNames)(
+		"recognizes slash as a %s delimiter but still refuses a self-closing end token",
+		async (name) => {
+			const trace = trackSteps();
+			const text = `<${name}>x</${name}/><h1>Unreached</h1>`;
+			const outcome = await observe(selected(text, { maxWindowCodeUnits: 16 }))
+				.outcome;
+			expect(outcome.value).toBeUndefined();
+			expectCode(outcome.error, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(outcome.error)?.reason).toBe(
+				"raw-close-structure",
+			);
+			expect(trace.steps.at(-1)).toEqual({
+				status: "end-tag",
+				position: name.length + 3,
+				discardedCodeUnits: 1,
+			});
+			expect(htmlTokenCursorWindowDiagnostic(outcome.error)).toBeUndefined();
+		},
+	);
+
+	it.each([
+		"<!----><script>",
+		"<!--x--><script>",
+		"<!--<script>inner</script>escaped-->",
+		"<!--<script>--><script>",
+		"<!--<script>inner</script>",
+		"abc</scriptx>still",
+		"<!--<ScRiPt >inside</sCrIpT >-->",
+	])(
+		"preserves native script state across small-window splits: %s",
+		async (body) => {
+			const text = `<script>${body}</script><h1>Outside</h1>`;
+			const baseline = await scan(text);
+			const result = await selected(text, { maxWindowCodeUnits: 16 });
+			expect(expectSelected(result).codeUnits).toBe(body.length);
+			expect(result.report.entries).toEqual(baseline.report.entries);
+			expect(result.report.counters.issueAttempts).toBe(
+				baseline.report.counters.issueAttempts,
+			);
+		},
+	);
+
+	it.each(["\t", "\n", "\f", "\r", " ", ">"])(
+		"uses native case-insensitive name boundaries and delimiter %j",
+		async (delimiter) => {
+			for (const name of discardNames) {
+				const body = `z</${name}x>q`;
+				const close = `</${name.toUpperCase()}${delimiter}${delimiter === ">" ? "" : ">"}`;
+				const result = await selected(`<${name}>${body}${close}<h1>X</h1>`, {
+					maxWindowCodeUnits: 16,
+				});
+				expect(expectSelected(result).codeUnits).toBe(body.length);
+				expect(result.report.entries[0].title).toBe("X");
+			}
+		},
+	);
+
+	it("sums committed UTF16 advances, not bytes or overlapped window lengths", async () => {
+		const body = `aaaaa😀${"😀".repeat(18)}${privateMarker}`;
+		const trace = trackSteps();
+		const result = await selected(`<style>${body}</style><h1>😀 Outside</h1>`, {
+			maxWindowCodeUnits: 16,
+		});
+		expect(expectSelected(result).codeUnits).toBe(body.length);
+		expect(body.length).not.toBe(encoder.encode(body).byteLength);
+		expect(trace.steps[0].discardedCodeUnits).toBe(6);
+		expect(
+			trace.steps.reduce((total, step) => total + step.discardedCodeUnits, 0),
+		).toBe(body.length);
+		expect(result.report.entries[0].title).toBe("😀 Outside");
+		expect(result.jsonl).not.toContain(privateMarker);
+	});
+
+	it.each(discardNames)(
+		"does not add entity or NUL validation to non-entity %s",
+		async (name) => {
+			const body = `\0&#0;&not-a-reference;${privateMarker}`;
+			const result = await selected(`<${name}>${body}</${name}><h1>X</h1>`, {
+				maxIssues: 0,
+				maxWindowCodeUnits: 16,
+			});
+			expect(expectSelected(result).codeUnits).toBe(body.length);
+			expect(result.report.counters.issueAttempts).toBe(0);
+			expect(result.report.counters.entityIssues).toEqual({});
+			expect(result.jsonl).not.toContain(privateMarker);
+		},
+	);
+
+	it.each(["title", "textarea"])(
+		"keeps %s on actual legacy entity decoding and issue limits",
+		async (name) => {
+			const raw = vi.spyOn(HtmlTokenCursor.prototype, "raw");
+			const steps = trackSteps();
+			const text = `<${name}>&#0;</${name}><h1>X</h1>`;
+			const result = await selected(text);
+			expect(expectSelected(result)).toEqual({
+				steps: 0,
+				elements: 0,
+				codeUnits: 0,
+				legacyRawCalls: 1,
+			});
+			expect(raw.mock.calls).toEqual([[name, true]]);
+			expect(steps.spy).not.toHaveBeenCalled();
+			expect(result.report.counters.entityIssues).toEqual({
+				"invalid-numeric-entity": 1,
+			});
+			expect(result.report.counters.issueAttempts).toBe(1);
+			const error = await captureFailure(() =>
+				selected(text, { maxIssues: 0 }),
+			);
+			expectLimit(error, {
+				kind: "html.issues",
+				unit: "issues",
+				limit: 0,
+				observed: 1,
+			});
+			expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it.each(["title", "textarea"])(
+		"does not recover long or unterminated legacy %s",
+		async (name) => {
+			const steps = trackSteps();
+			const text = `<h1>Provisional</h1><${name}>${"x".repeat(65_537)}</${name}>`;
+			const outcome = await observe(selected(text)).outcome;
+			expect(outcome.value).toBeUndefined();
+			expectLimit(outcome.error, {
+				kind: "html.cursor-window",
+				unit: "code-units",
+				limit: 65_536,
+				observed: 65_537,
+			});
+			expect(htmlTokenCursorWindowDiagnostic(outcome.error)?.operation).toBe(
+				"raw",
+			);
+			expectCode(
+				await captureFailure(() => selected(`<${name}>missing`)),
+				"unsupported",
+			);
+			expect(steps.spy).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(discardNames)(
+		"does not select %s inside headings even with balanced inline enabled",
+		async (name) => {
+			const trace = trackSteps();
+			for (const options of [
+				{},
+				{ headingInlinePolicy: "balanced-source-elements-v1" },
+			]) {
+				const text = `<h1>Provisional</h1><h2><${name}>${privateMarker}</${name}></h2>`;
+				const baseline = await captureFailure(() => scan(text, options));
+				const outcome = await observe(selected(text, options)).outcome;
+				expect(outcome.value).toBeUndefined();
+				expectCode(outcome.error, "unsupported");
+				expect(sourceHeadingStructureDiagnostic(outcome.error)).toEqual(
+					sourceHeadingStructureDiagnostic(baseline),
+				);
+			}
+			expect(trace.spy).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each([
+		"<style/>",
+		"<style>x</style extra=x>",
+		"<style>x</style/>",
+		"<style>x</style",
+		"<style>missing",
+		"<style>x</style><template></head>",
+	])(
+		"rejects malformed raw or later scope input without provisional output: %s",
+		async (suffix) => {
+			const outcome = await observe(selected(`<h1>Provisional</h1>${suffix}`))
+				.outcome;
+			expect(outcome.value).toBeUndefined();
+			expectCode(outcome.error, "unsupported");
+			expect(resourceLimitDiagnostic(outcome.error)).toBeUndefined();
+			expect(htmlTokenCursorWindowDiagnostic(outcome.error)).toBeUndefined();
+			expect((outcome.error as Error).message).not.toContain("Provisional");
+		},
+	);
+
+	it("does not publish an EOF raw result and enforces its actual issue attempt", async () => {
+		const trace = trackSteps();
+		const outcome = await observe(selected("<style>", { maxIssues: 0 }))
+			.outcome;
+		expect(outcome.value).toBeUndefined();
+		expectLimit(outcome.error, {
+			kind: "html.issues",
+			unit: "issues",
+			limit: 0,
+			observed: 1,
+		});
+		expect(trace.steps).toHaveLength(0);
+		for (const cursor of trace.cursors) {
+			expect(cursor.position).toBe(7);
+			expect(cursor.issueCount).toBe(1);
+			expect(cursor.closed).toBe(true);
+		}
+	});
+
+	it("still parses an oversized closing token with next and retains its trusted diagnostic", async () => {
+		const trace = trackSteps();
+		const text = `<style>x</style${" ".repeat(24)}><h1>Unreached</h1>`;
+		const outcome = await observe(selected(text, { maxWindowCodeUnits: 16 }))
+			.outcome;
+		expect(outcome.value).toBeUndefined();
+		expectLimit(outcome.error, {
+			kind: "html.cursor-window",
+			unit: "code-units",
+			limit: 16,
+			observed: 17,
+		});
+		expect(trace.steps).toEqual([
+			{ status: "end-tag", position: 8, discardedCodeUnits: 1 },
+		]);
+		expect(htmlTokenCursorWindowDiagnostic(outcome.error)).toEqual({
+			kind: "html-cursor-window",
+			operation: "next",
+			position: 8,
+			positionSemantics: "last-committed-source-utf16",
+		});
+	});
+
+	it("composes with explicit head, table and balanced-inline policies without exposing omitted headings", async () => {
+		const text = `<head><style>${"x".repeat(80)}</style><title>Hidden</title><body><h1><span>A</span></h1><table><tbody><tr><td><h2>Hidden</h2></td></tr></tbody></table><h2>B</h2>`;
+		const options = {
+			headScopePolicy: "explicit-body-boundary-v1",
+			tableScopePolicy: "optional-end-tags-v2",
+			headingInlinePolicy: "balanced-source-elements-v1",
+		};
+		const baseline = await scan(text, options);
+		const result = await selected(text, { ...options, maxWindowCodeUnits: 16 });
+		expectSelected(result);
+		expect(result.report.entries).toEqual(baseline.report.entries);
+		expect(result.report.entries.map((entry) => entry.title)).toEqual([
+			"A",
+			"B",
+		]);
+		expect(result.report.counters.suppressedHeadingStarts).toBe(1);
+		expect(result.report.headScopePolicy).toBe(options.headScopePolicy);
+		expect(result.report.tableScopePolicy).toBe(options.tableScopePolicy);
+		expect(result.report.headingInlinePolicy).toBe(options.headingInlinePolicy);
+	});
+
+	it("includes selected metadata in the exact self-describing output cap", async () => {
+		const text = "<style>discard</style><h1>One</h1>";
+		const baseline = await selected(text);
+		let cap = baseline.outputBytes;
+		for (let attempt = 0; attempt < 8; attempt++) {
+			cap = encoder.encode(
+				`${JSON.stringify({ ...baseline.report, limits: { ...baseline.report.limits, maxOutputBytes: cap } })}\n`,
+			).byteLength;
+		}
+		expect(String(cap - 1).length).toBe(String(cap).length);
+		const exact = await selected(text, { maxOutputBytes: cap });
+		expectSelected(exact);
+		expect(exact.outputBytes).toBe(cap);
+		const outcome = await observe(selected(text, { maxOutputBytes: cap - 1 }))
+			.outcome;
+		expect(outcome.value).toBeUndefined();
+		expectLimit(outcome.error, {
+			kind: "source.headings-output",
+			unit: "bytes",
+			limit: cap - 1,
+			observed: cap,
+		});
+	});
+
+	it("charges each discard call against the same operation cap and closes on exhaustion", async () => {
+		const trace = trackSteps();
+		const outcome = await observe(
+			selected(`<style>${"x".repeat(80)}</style>`, {
+				maxWindowCodeUnits: 16,
+				maxOperations: 2,
+			}),
+		).outcome;
+		expect(outcome.value).toBeUndefined();
+		expectLimit(outcome.error, {
+			kind: "html.cursor-operations",
+			unit: "operations",
+			limit: 2,
+			observed: 3,
+		});
+		expect(trace.steps).toHaveLength(1);
+		expect(htmlTokenCursorWindowDiagnostic(outcome.error)).toBeUndefined();
+		for (const cursor of trace.cursors) {
+			expect(cursor.position).toBe(13);
+			expect(cursor.closed).toBe(true);
+		}
+	});
+
+	it.each([
+		{ cap: 46, kind: "html.cursor-work", observed: 47, committed: 7, steps: 0 },
+		{
+			cap: 47,
+			kind: "source.headings-work",
+			observed: 48,
+			committed: 13,
+			steps: 1,
+		},
+	] as const)(
+		"enforces shared $kind before any scanner result",
+		async ({ cap, kind, observed, committed, steps }) => {
+			const trace = trackSteps();
+			const outcome = await observe(
+				selected(`<style>${"x".repeat(80)}</style>`, {
+					maxWindowCodeUnits: 16,
+					maxWorkUnits: cap,
+				}),
+			).outcome;
+			expect(outcome.value).toBeUndefined();
+			expectLimit(outcome.error, {
+				kind,
+				unit: "code-units",
+				limit: cap,
+				observed,
+			});
+			expect(trace.steps).toHaveLength(steps);
+			expect(htmlTokenCursorWindowDiagnostic(outcome.error)).toBeUndefined();
+			for (const cursor of trace.cursors) {
+				expect(cursor.position).toBe(committed);
+				expect(cursor.closed).toBe(true);
+			}
+		},
+	);
+
+	it.each([
+		{
+			name: "operations",
+			yieldEveryOperations: 2,
+			yieldEveryWorkUnits: 32_768,
+		},
+		{ name: "work", yieldEveryOperations: 256, yieldEveryWorkUnits: 48 },
+	])(
+		"yields after the first bounded step on the $name threshold",
+		async (threshold) => {
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+			const trace = trackSteps();
+			const pending = observe(
+				selected(`<style>${"x".repeat(80)}</style><h1>X</h1>`, {
+					maxWindowCodeUnits: 16,
+					yieldEveryOperations: threshold.yieldEveryOperations,
+					yieldEveryWorkUnits: threshold.yieldEveryWorkUnits,
+				}),
+			);
+			await microtasks();
+			expect(pending.settled).toBe(false);
+			expect(trace.steps).toHaveLength(1);
+			expect(trace.steps[0]).toEqual({
+				status: "more",
+				position: 13,
+				discardedCodeUnits: 6,
+			});
+			expect(vi.getTimerCount()).toBeGreaterThan(0);
+			await vi.runAllTimersAsync();
+			const outcome = await pending.outcome;
+			expect(outcome.error).toBeUndefined();
+			if (!outcome.value) throw new Error("Missing yielded result");
+			expectSelected(outcome.value);
+			expect(outcome.value.report.counters.yields).toBeGreaterThan(0);
+			for (const cursor of trace.cursors) expect(cursor.closed).toBe(true);
+		},
+	);
+
+	it.each(["abort", "timeout", "abort-before-timeout"])(
+		"refuses publication after a raw-step yield on %s",
+		async (failure) => {
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+			let now = 1_000;
+			vi.spyOn(performance, "now").mockImplementation(() => now);
+			const controller = controllerFor();
+			const trace = trackSteps();
+			const pending = observe(
+				discoverResearchSourceHeadings(
+					ownedSource(`<style>${"x".repeat(80)}</style><h1>Unreached</h1>`),
+					{
+						method,
+						rawDiscardPolicy,
+						maxWindowCodeUnits: 16,
+						timeoutMs: 10,
+						yieldEveryOperations: 2,
+					},
+					controller.signal,
+				),
+			);
+			await microtasks();
+			expect(pending.settled).toBe(false);
+			expect(trace.steps).toHaveLength(1);
+			if (failure !== "abort") now = 1_010;
+			if (failure !== "timeout") controller.abort(new Error(privateMarker));
+			await vi.runOnlyPendingTimersAsync();
+			const outcome = await pending.outcome;
+			expect(outcome.value).toBeUndefined();
+			expectCode(outcome.error, failure === "timeout" ? "timeout" : "aborted");
+			expect((outcome.error as Error).message).not.toContain(privateMarker);
+			expect(trace.steps).toHaveLength(1);
+			for (const cursor of trace.cursors) expect(cursor.closed).toBe(true);
+		},
+	);
+
+	it("does not renew the original deadline across successful discard batches", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		let now = 1_000;
+		vi.spyOn(performance, "now").mockImplementation(() => now);
+		const trace = trackSteps();
+		const pending = observe(
+			selected(`<style>${"x".repeat(120)}</style>`, {
+				maxWindowCodeUnits: 16,
+				timeoutMs: 10,
+				yieldEveryOperations: 2,
+			}),
+		);
+		await microtasks();
+		expect(trace.steps).toHaveLength(1);
+		now = 1_005;
+		await vi.runOnlyPendingTimersAsync();
+		expect(pending.settled).toBe(false);
+		expect(trace.steps.length).toBeGreaterThan(1);
+		now = 1_010;
+		await vi.runOnlyPendingTimersAsync();
+		const outcome = await pending.outcome;
+		expect(outcome.value).toBeUndefined();
+		expectCode(outcome.error, "timeout");
+		for (const cursor of trace.cursors) expect(cursor.closed).toBe(true);
+	});
 });
