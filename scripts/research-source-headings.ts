@@ -2,6 +2,7 @@ import { types } from "node:util";
 import { AgentBrowserError } from "../src/errors.js";
 import { HtmlTokenCursor } from "../src/html-token-cursor.js";
 import type { HtmlToken } from "../src/html-tokenizer.js";
+import { parseNetworkUrl } from "../src/network.js";
 import { resourceLimitError } from "../src/resource-limit.js";
 import {
 	type ResearchHtmlSourceIdentity,
@@ -104,6 +105,123 @@ export interface ResearchSourceHeadingReport {
 
 export interface ResearchSourceHeadingDiscovery {
 	readonly report: ResearchSourceHeadingReport;
+	readonly jsonl: string;
+	readonly outputBytes: number;
+}
+
+export const researchSourceSectionLimits = Object.freeze({
+	maxInputBytes: 4_000_000,
+	maxSourceCodeUnits: 4_000_000,
+	maxWindowCodeUnits: 65_536,
+	maxWorkUnits: 32_000_000,
+	maxOperations: 200_000,
+	maxIssues: 1_024,
+	timeoutMs: 120_000,
+	maxTrackedDepth: 128,
+	maxHeadingCodeUnits: 16_384,
+	maxTitleCodeUnits: 256,
+	maxHeadingStarts: 256,
+	maxSectionCodeUnits: 262_144,
+	maxBlocks: 256,
+	maxBlockCodeUnits: 4_096,
+	maxTextCodeUnits: 32_768,
+	maxOutputBytes: 65_536,
+	yieldEveryOperations: 256,
+	yieldEveryWorkUnits: 32_768,
+});
+
+export type ResearchSourceSectionLimits = {
+	-readonly [Name in keyof typeof researchSourceSectionLimits]: number;
+};
+
+export interface ResearchSourceSectionSelection {
+	readonly source: ResearchHtmlSourceIdentity;
+	readonly headingPolicies: {
+		readonly tableScopePolicy: "optional-end-tags-v2";
+		readonly headScopePolicy: "explicit-body-boundary-v1";
+		readonly headingInlinePolicy: "balanced-source-elements-v1";
+		readonly rawDiscardPolicy: "bounded-non-entity-v1";
+	};
+	readonly heading: {
+		readonly ordinal: number;
+		readonly level: number;
+		readonly anchor: SourceHeadingCandidate["anchor"];
+	};
+}
+
+export type ResearchSourceSectionOptions =
+	Partial<ResearchSourceSectionLimits> & {
+		method: "native-source-section-v1";
+		projection: "normalized-source-prose-v1";
+	};
+
+export type SourceSectionBlock =
+	| {
+			readonly kind: "text";
+			readonly text: string;
+			readonly sourceEnvelope: SourceHeadingRange;
+	  }
+	| {
+			readonly kind: "heading";
+			readonly text: string;
+			readonly heading: ResearchSourceSectionSelection["heading"];
+	  };
+
+export interface ResearchSourceSectionReport {
+	readonly kind: "source-section-prose";
+	readonly method: "native-source-section-v1";
+	readonly projection: "normalized-source-prose-v1";
+	readonly semantics: "lexical-not-dom";
+	readonly partial: true;
+	readonly contentSuccess: null;
+	readonly source: ResearchHtmlSourceIdentity;
+	readonly headingPolicies: ResearchSourceSectionSelection["headingPolicies"];
+	readonly headingInlineLimitations: NonNullable<
+		ResearchSourceHeadingReport["headingInlineLimitations"]
+	>;
+	readonly rawDiscardLimitations: NonNullable<
+		ResearchSourceHeadingReport["rawDiscardLimitations"]
+	>;
+	readonly selection: SourceHeadingCandidate;
+	readonly bodyRange: SourceHeadingRange;
+	readonly boundary:
+		| {
+				readonly kind: "next-heading";
+				readonly heading: SourceHeadingCandidate;
+		  }
+		| { readonly kind: "eof" };
+	readonly validatedThrough: number;
+	readonly blocks: readonly SourceSectionBlock[];
+	readonly textTruncated: false;
+	readonly limits: Readonly<ResearchSourceSectionLimits>;
+	readonly counters: ResearchSourceHeadingReport["counters"] & {
+		readonly rawDiscard: NonNullable<
+			ResearchSourceHeadingReport["counters"]["rawDiscard"]
+		>;
+		readonly projectionWorkUnits: number;
+		readonly headingStarts: number;
+		readonly retainedTextCodeUnits: number;
+	};
+	readonly bodyOmissions: {
+		readonly rawStarts: Readonly<Record<string, number>>;
+		readonly omittedStarts: Readonly<Record<string, number>>;
+		readonly suppressedStarts: Readonly<Record<string, number>>;
+		readonly suppressedHeadingStarts: number;
+	};
+	readonly limitations: readonly [
+		"lexical-source-projection",
+		"not-dom-or-visibility",
+		"attributes-ignored",
+		"ordinary-container-balance-not-validated",
+		"special-context-text-omitted",
+		"normalized-not-verbatim",
+		"link-labels-only-destinations-omitted",
+		"ranges-are-covering-not-character-maps",
+	];
+}
+
+export interface ResearchSourceSectionExtraction {
+	readonly report: ResearchSourceSectionReport;
 	readonly jsonl: string;
 	readonly outputBytes: number;
 }
@@ -476,6 +594,592 @@ function optionsSnapshot(value: unknown): {
 	});
 }
 
+function invalidSection(): never {
+	throw new AgentBrowserError("invalid-input", "Invalid source-section input");
+}
+
+function missingSection(): never {
+	throw new AgentBrowserError("not-found", "Source-section heading not found");
+}
+
+function sectionRecord(
+	value: unknown,
+	required: readonly string[],
+	optional: readonly string[] = [],
+): Record<string, unknown> {
+	if (
+		value === null ||
+		typeof value !== "object" ||
+		types.isProxy(value) ||
+		Array.isArray(value)
+	)
+		invalidSection();
+	const prototype = Object.getPrototypeOf(value);
+	if (prototype !== Object.prototype && prototype !== null) invalidSection();
+	const fields: Record<string, unknown> = Object.create(null);
+	for (const key of Reflect.ownKeys(value)) {
+		if (
+			typeof key !== "string" ||
+			(!required.includes(key) && !optional.includes(key))
+		)
+			invalidSection();
+		const descriptor = Object.getOwnPropertyDescriptor(value, key);
+		if (!descriptor || !Object.hasOwn(descriptor, "value")) invalidSection();
+		fields[key] = descriptor.value;
+	}
+	if (!required.every((key) => Object.hasOwn(fields, key))) invalidSection();
+	return fields;
+}
+
+function sectionInteger(value: unknown, minimum: number, maximum: number) {
+	if (
+		typeof value !== "number" ||
+		!Number.isSafeInteger(value) ||
+		value < minimum ||
+		value > maximum
+	)
+		invalidSection();
+	return value;
+}
+
+function sectionString(value: unknown, maximum: number) {
+	if (typeof value !== "string" || !value.length || value.length > maximum)
+		invalidSection();
+	return value;
+}
+
+function sectionDigest(value: unknown) {
+	const digest = sectionString(value, 64);
+	if (digest.length !== 64 || !/^[a-f0-9]{64}$/.test(digest)) invalidSection();
+	return digest;
+}
+
+function sectionIdentity(value: unknown): ResearchHtmlSourceIdentity {
+	const fields = sectionRecord(value, [
+		"kind",
+		"reportedFinalUrl",
+		"contentType",
+		"bytes",
+		"decoder",
+		"text",
+	]);
+	const bytes = sectionRecord(fields.bytes, ["length", "sha256"]);
+	const decoder = sectionRecord(fields.decoder, [
+		"policy",
+		"encoding",
+		"bomConsumed",
+	]);
+	const text = sectionRecord(fields.text, [
+		"codeUnits",
+		"sha256",
+		"digestEncoding",
+		"coordinates",
+	]);
+	if (
+		fields.kind !== "decoded-html-source-v1" ||
+		decoder.policy !== "native-research-html-v1" ||
+		typeof decoder.bomConsumed !== "boolean" ||
+		text.digestEncoding !== "utf-8" ||
+		text.coordinates !== "decoder-output-utf16-before-parser-normalization"
+	)
+		invalidSection();
+	const reportedFinalUrl = sectionString(fields.reportedFinalUrl, 8192);
+	try {
+		if (
+			reportedFinalUrl.includes("#") ||
+			parseNetworkUrl(reportedFinalUrl).href !== reportedFinalUrl
+		)
+			invalidSection();
+	} catch {
+		invalidSection();
+	}
+	const contentType = sectionString(fields.contentType, 1024);
+	if (
+		contentType.includes(",") ||
+		/\p{Cc}/u.test(contentType) ||
+		contentType.split(";", 1)[0].trim().toLowerCase() !== "text/html"
+	)
+		invalidSection();
+	return {
+		kind: "decoded-html-source-v1",
+		reportedFinalUrl,
+		contentType,
+		bytes: {
+			length: sectionInteger(bytes.length, 0, 4_000_000),
+			sha256: sectionDigest(bytes.sha256),
+		},
+		decoder: {
+			policy: "native-research-html-v1",
+			encoding: sectionString(decoder.encoding, 64),
+			bomConsumed: decoder.bomConsumed,
+		},
+		text: {
+			codeUnits: sectionInteger(text.codeUnits, 0, 4_000_000),
+			sha256: sectionDigest(text.sha256),
+			digestEncoding: "utf-8",
+			coordinates: "decoder-output-utf16-before-parser-normalization",
+		},
+	};
+}
+
+function sectionRange(value: unknown, maximum: number): SourceHeadingRange {
+	const fields = sectionRecord(value, ["start", "end"]);
+	const start = sectionInteger(fields.start, 0, maximum);
+	const end = sectionInteger(fields.end, 0, maximum);
+	if (start >= end) invalidSection();
+	return { start, end };
+}
+
+interface SectionRequest {
+	readonly started: number;
+	readonly limits: Readonly<ResearchSourceSectionLimits>;
+	readonly selection: ResearchSourceSectionSelection;
+}
+
+function sectionSnapshot(
+	selection: unknown,
+	options: unknown,
+	started: number,
+): SectionRequest {
+	const fields = sectionRecord(
+		options,
+		["method", "projection"],
+		Object.keys(researchSourceSectionLimits),
+	);
+	if (
+		fields.method !== "native-source-section-v1" ||
+		fields.projection !== "normalized-source-prose-v1"
+	)
+		invalidSection();
+	const limits: ResearchSourceSectionLimits = {
+		...researchSourceSectionLimits,
+	};
+	for (const key of Object.keys(researchSourceSectionLimits)) {
+		if (!Object.hasOwn(fields, key)) continue;
+		const name = key as keyof ResearchSourceSectionLimits;
+		limits[name] = sectionInteger(
+			fields[name],
+			name === "maxIssues" ? 0 : name === "maxWindowCodeUnits" ? 16 : 1,
+			researchSourceSectionLimits[name],
+		);
+	}
+	const selected = sectionRecord(selection, [
+		"source",
+		"headingPolicies",
+		"heading",
+	]);
+	const policies = sectionRecord(selected.headingPolicies, [
+		"tableScopePolicy",
+		"headScopePolicy",
+		"headingInlinePolicy",
+		"rawDiscardPolicy",
+	]);
+	if (
+		policies.tableScopePolicy !== "optional-end-tags-v2" ||
+		policies.headScopePolicy !== "explicit-body-boundary-v1" ||
+		policies.headingInlinePolicy !== "balanced-source-elements-v1" ||
+		policies.rawDiscardPolicy !== "bounded-non-entity-v1"
+	)
+		invalidSection();
+	const source = sectionIdentity(selected.source);
+	const heading = sectionRecord(selected.heading, [
+		"ordinal",
+		"level",
+		"anchor",
+	]);
+	const anchor = sectionRecord(heading.anchor, ["kind", "startTag", "endTag"]);
+	if (anchor.kind !== "source-utf16-range-v1") invalidSection();
+	const startTag = sectionRange(anchor.startTag, source.text.codeUnits);
+	const endTag = sectionRange(anchor.endTag, source.text.codeUnits);
+	if (
+		startTag.end > endTag.start ||
+		startTag.end - startTag.start < 4 ||
+		endTag.end - endTag.start < 5 ||
+		endTag.end - startTag.start > limits.maxHeadingCodeUnits
+	)
+		invalidSection();
+	return freezeOwned({
+		started,
+		limits,
+		selection: {
+			source,
+			headingPolicies: {
+				tableScopePolicy: "optional-end-tags-v2",
+				headScopePolicy: "explicit-body-boundary-v1",
+				headingInlinePolicy: "balanced-source-elements-v1",
+				rawDiscardPolicy: "bounded-non-entity-v1",
+			},
+			heading: {
+				ordinal: sectionInteger(heading.ordinal, 1, limits.maxHeadingStarts),
+				level: sectionInteger(heading.level, 1, 6),
+				anchor: { kind: "source-utf16-range-v1", startTag, endTag },
+			},
+		},
+	} satisfies SectionRequest);
+}
+
+function sectionIdentityMatches(
+	expected: ResearchHtmlSourceIdentity,
+	actual: ResearchHtmlSourceIdentity,
+) {
+	return (
+		expected.kind === actual.kind &&
+		expected.reportedFinalUrl === actual.reportedFinalUrl &&
+		expected.contentType === actual.contentType &&
+		expected.bytes.length === actual.bytes.length &&
+		expected.bytes.sha256 === actual.bytes.sha256 &&
+		expected.decoder.policy === actual.decoder.policy &&
+		expected.decoder.encoding === actual.decoder.encoding &&
+		expected.decoder.bomConsumed === actual.decoder.bomConsumed &&
+		expected.text.codeUnits === actual.text.codeUnits &&
+		expected.text.sha256 === actual.text.sha256 &&
+		expected.text.digestEncoding === actual.text.digestEncoding &&
+		expected.text.coordinates === actual.text.coordinates
+	);
+}
+
+const sectionSeparators = new Set(
+	"address article aside blockquote dd div dl dt figcaption figure footer header hr li main nav ol p pre section ul".split(
+		" ",
+	),
+);
+
+interface SectionTextBuffer {
+	parts: string[];
+	length: number;
+	pendingSpace: boolean;
+	pendingHigh: string;
+	start: number;
+	end: number;
+}
+
+class SourceSectionCollector {
+	workUnits = 0;
+	headingStarts = 0;
+	retainedTextCodeUnits = 0;
+	private phase:
+		| "waiting"
+		| "target"
+		| "body"
+		| "deeper"
+		| "boundary"
+		| "done" = "waiting";
+	private targetStart: number | undefined;
+	private selected: SourceHeadingCandidate | undefined;
+	private bodyStart = 0;
+	private bodyEnd = 0;
+	private boundary: ResearchSourceSectionReport["boundary"] | undefined;
+	private blocks: SourceSectionBlock[] = [];
+	private pending: SectionTextBuffer | undefined;
+	private readonly bodyOmissions = {
+		rawStarts: Object.create(null) as Record<string, number>,
+		omittedStarts: Object.create(null) as Record<string, number>,
+		suppressedStarts: Object.create(null) as Record<string, number>,
+		suppressedHeadingStarts: 0,
+	};
+
+	constructor(
+		private readonly request: SectionRequest,
+		private readonly checkpoint: () => void,
+		private readonly yieldBatch: () => Promise<void>,
+	) {}
+
+	private charge(units: number) {
+		this.workUnits += units;
+		this.checkpoint();
+	}
+
+	checkExtent(position: number) {
+		if (this.targetStart === undefined) return;
+		const observed = position - this.targetStart;
+		if (observed > this.request.limits.maxSectionCodeUnits)
+			throw resourceLimitError(
+				"source.section-extent",
+				this.request.limits.maxSectionCodeUnits,
+				observed,
+				"Source-section extent exceeded",
+			);
+	}
+
+	async beginHeading(level: number, startTag: SourceHeadingRange) {
+		this.charge(1);
+		this.headingStarts++;
+		if (this.headingStarts > this.request.limits.maxHeadingStarts)
+			throw resourceLimitError(
+				"source.section-headings",
+				this.request.limits.maxHeadingStarts,
+				this.headingStarts,
+				"Source-section heading limit exceeded",
+			);
+		if (this.phase === "waiting") {
+			if (this.headingStarts === this.request.selection.heading.ordinal) {
+				this.targetStart = startTag.start;
+				this.phase = "target";
+			}
+		} else if (this.phase === "body") {
+			await this.flush();
+			if (level <= this.request.selection.heading.level) {
+				this.bodyEnd = startTag.start;
+				this.phase = "boundary";
+			} else {
+				this.phase = "deeper";
+				this.pending = this.buffer(startTag);
+			}
+		}
+		this.checkExtent(startTag.end);
+	}
+
+	async completeHeading(candidate: SourceHeadingCandidate): Promise<boolean> {
+		this.charge(1);
+		if (this.phase === "target") {
+			const expected = this.request.selection.heading;
+			if (
+				candidate.ordinal !== expected.ordinal ||
+				candidate.level !== expected.level ||
+				candidate.anchor.startTag.start !== expected.anchor.startTag.start ||
+				candidate.anchor.startTag.end !== expected.anchor.startTag.end ||
+				candidate.anchor.endTag.start !== expected.anchor.endTag.start ||
+				candidate.anchor.endTag.end !== expected.anchor.endTag.end
+			)
+				missingSection();
+			this.selected = candidate;
+			this.bodyStart = candidate.anchor.endTag.end;
+			this.phase = "body";
+		} else if (this.phase === "deeper") {
+			await this.flush(candidate);
+			this.phase = "body";
+		} else if (this.phase === "boundary") {
+			this.boundary = { kind: "next-heading", heading: candidate };
+			this.phase = "done";
+			return true;
+		}
+		return false;
+	}
+
+	private buffer(range: SourceHeadingRange): SectionTextBuffer {
+		return {
+			parts: [],
+			length: 0,
+			pendingSpace: false,
+			pendingHigh: "",
+			start: range.start,
+			end: range.end,
+		};
+	}
+
+	private checkAppend(length: number) {
+		const pending = this.pending;
+		if (!pending) invalidSection();
+		const limits = this.request.limits;
+		if (this.blocks.length + 1 > limits.maxBlocks)
+			throw resourceLimitError(
+				"source.section-blocks",
+				limits.maxBlocks,
+				this.blocks.length + 1,
+				"Source-section block limit exceeded",
+			);
+		if (this.retainedTextCodeUnits + length > limits.maxTextCodeUnits)
+			throw resourceLimitError(
+				"source.section-text",
+				limits.maxTextCodeUnits,
+				this.retainedTextCodeUnits + length,
+				"Source-section text limit exceeded",
+			);
+		if (pending.length + length > limits.maxBlockCodeUnits)
+			throw resourceLimitError(
+				"source.section-block-text",
+				limits.maxBlockCodeUnits,
+				pending.length + length,
+				"Source-section block text limit exceeded",
+			);
+	}
+
+	private append(character: string) {
+		const pending = this.pending;
+		if (!pending) invalidSection();
+		if (/\s/u.test(character)) {
+			if (pending.length) pending.pendingSpace = true;
+			return;
+		}
+		const part = (pending.pendingSpace ? " " : "") + character;
+		this.checkAppend(part.length);
+		pending.parts.push(part);
+		pending.length += part.length;
+		this.retainedTextCodeUnits += part.length;
+		pending.pendingSpace = false;
+	}
+
+	async text(value: string, range: SourceHeadingRange) {
+		this.charge(1);
+		if (this.phase !== "body" && this.phase !== "deeper") return;
+		this.pending ??= this.buffer(range);
+		const pending = this.pending;
+		pending.end = range.end;
+		for (let offset = 0; offset < value.length; offset += 256) {
+			const end = Math.min(value.length, offset + 256);
+			this.charge(2 * (end - offset) + 1);
+			for (let index = offset; index < end; index++) {
+				const character = value[index];
+				const code = value.charCodeAt(index);
+				if (pending.pendingHigh) {
+					const high = pending.pendingHigh;
+					pending.pendingHigh = "";
+					if (code >= 0xdc00 && code <= 0xdfff) {
+						this.append(high + character);
+						continue;
+					}
+					this.append(high);
+				}
+				if (code >= 0xd800 && code <= 0xdbff) {
+					this.checkAppend((pending.pendingSpace ? 1 : 0) + 1);
+					pending.pendingHigh = character;
+				} else this.append(character);
+			}
+			this.checkpoint();
+			await this.yieldBatch();
+		}
+	}
+
+	async ordinaryTag(token: Extract<HtmlToken, { kind: "start" | "end" }>) {
+		this.charge(1);
+		if (this.phase !== "body") return;
+		this.charge(1);
+		if (token.name.length > 10) return;
+		this.charge(token.name.length + 1);
+		if (
+			sectionSeparators.has(token.name) ||
+			(token.kind === "start" && token.name === "br")
+		)
+			await this.flush();
+	}
+
+	async omittedStart(
+		kind: "rawStarts" | "omittedStarts" | "suppressedStarts",
+		name: string,
+	) {
+		this.charge(1);
+		if (this.phase !== "body") return;
+		await this.flush();
+		const counts = this.bodyOmissions[kind];
+		counts[name] = (counts[name] ?? 0) + 1;
+	}
+
+	suppressedHeading() {
+		this.charge(1);
+		if (this.phase === "body") this.bodyOmissions.suppressedHeadingStarts++;
+	}
+
+	private async flush(candidate?: SourceHeadingCandidate) {
+		const pending = this.pending;
+		if (!pending) return;
+		if (pending.pendingHigh) {
+			const high = pending.pendingHigh;
+			pending.pendingHigh = "";
+			this.append(high);
+		}
+		if (pending.length || candidate) {
+			this.checkAppend(0);
+			this.charge(1 + pending.length);
+			const text = pending.parts.join("");
+			this.blocks.push(
+				candidate
+					? {
+							kind: "heading",
+							text,
+							heading: {
+								ordinal: candidate.ordinal,
+								level: candidate.level,
+								anchor: candidate.anchor,
+							},
+						}
+					: {
+							kind: "text",
+							text,
+							sourceEnvelope: { start: pending.start, end: pending.end },
+						},
+			);
+			this.pending = undefined;
+			await this.yieldBatch();
+		} else this.pending = undefined;
+	}
+
+	async eof(position: number) {
+		this.charge(1);
+		if (!this.selected || this.phase !== "body") missingSection();
+		await this.flush();
+		this.bodyEnd = position;
+		this.boundary = { kind: "eof" };
+		this.phase = "done";
+	}
+
+	report(
+		source: ResearchHtmlSourceIdentity,
+		position: number,
+		counters: ResearchSourceHeadingReport["counters"],
+	): ResearchSourceSectionReport {
+		if (
+			this.phase !== "done" ||
+			!this.selected ||
+			!this.boundary ||
+			!counters.rawDiscard
+		)
+			invalidSection();
+		return {
+			kind: "source-section-prose",
+			method: "native-source-section-v1",
+			projection: "normalized-source-prose-v1",
+			semantics: "lexical-not-dom",
+			partial: true,
+			contentSuccess: null,
+			source,
+			headingPolicies: this.request.selection.headingPolicies,
+			headingInlineLimitations: [
+				"source-balance-only",
+				"attributes-ignored",
+				"not-dom-or-visibility",
+			],
+			rawDiscardLimitations: [
+				"six-non-entity-names-only",
+				"title-textarea-legacy-raw",
+				"closing-token-still-window-bounded",
+				"lexical-not-dom-or-visibility",
+			],
+			selection: this.selected,
+			bodyRange: { start: this.bodyStart, end: this.bodyEnd },
+			boundary: this.boundary,
+			validatedThrough: position,
+			blocks: this.blocks,
+			textTruncated: false,
+			limits: this.request.limits,
+			counters: {
+				...counters,
+				rawDiscard: counters.rawDiscard,
+				projectionWorkUnits: this.workUnits,
+				headingStarts: this.headingStarts,
+				retainedTextCodeUnits: this.retainedTextCodeUnits,
+			},
+			bodyOmissions: this.bodyOmissions,
+			limitations: [
+				"lexical-source-projection",
+				"not-dom-or-visibility",
+				"attributes-ignored",
+				"ordinary-container-balance-not-validated",
+				"special-context-text-omitted",
+				"normalized-not-verbatim",
+				"link-labels-only-destinations-omitted",
+				"ranges-are-covering-not-character-maps",
+			],
+		};
+	}
+
+	close() {
+		this.pending = undefined;
+		this.blocks = [];
+		this.selected = undefined;
+		this.boundary = undefined;
+	}
+}
+
 function freezeOwned<Value>(value: Value): Value {
 	if (value !== null && typeof value === "object") {
 		for (const child of Object.values(value)) freezeOwned(child);
@@ -506,9 +1210,10 @@ function stringBytes(value: string): number {
 }
 
 function encodeOwnedReport(
-	report: ResearchSourceHeadingReport,
+	report: ResearchSourceHeadingReport | ResearchSourceSectionReport,
 	limit: number,
 	checkpoint: () => void,
+	sectionReport = false,
 ) {
 	const chunks: string[] = [];
 	let bytes = 0;
@@ -516,10 +1221,12 @@ function encodeOwnedReport(
 		checkpoint();
 		if (bytes + additional > limit)
 			throw resourceLimitError(
-				"source.headings-output",
+				sectionReport ? "source.section-output" : "source.headings-output",
 				limit,
 				bytes + additional,
-				"Source-heading output limit exceeded",
+				sectionReport
+					? "Source-section output limit exceeded"
+					: "Source-heading output limit exceeded",
 			);
 		bytes += additional;
 	};
@@ -591,21 +1298,62 @@ function isTrackedScope(name: string): name is SourceHeadingScope {
 	return suppressedTags.has(name) || omittedTags.has(name);
 }
 
-export async function discoverResearchSourceHeadings(
+export function discoverResearchSourceHeadings(
 	input: unknown,
 	options: unknown,
 	signal?: AbortSignal,
 ): Promise<ResearchSourceHeadingDiscovery> {
+	return walkSource(input, options, signal);
+}
+
+export async function extractResearchSourceSection(
+	input: unknown,
+	selection: unknown,
+	options: unknown,
+	signal?: AbortSignal,
+): Promise<ResearchSourceSectionExtraction> {
 	const started = performance.now();
+	const request = sectionSnapshot(selection, options, started);
+	return walkSource(input, undefined, signal, request);
+}
+
+function walkSource(
+	input: unknown,
+	options: unknown,
+	signal?: AbortSignal,
+	sectionRequest?: undefined,
+): Promise<ResearchSourceHeadingDiscovery>;
+function walkSource(
+	input: unknown,
+	options: unknown,
+	signal: AbortSignal | undefined,
+	sectionRequest: SectionRequest,
+): Promise<ResearchSourceSectionExtraction>;
+async function walkSource(
+	input: unknown,
+	options: unknown,
+	signal?: AbortSignal,
+	sectionRequest?: SectionRequest,
+): Promise<ResearchSourceHeadingDiscovery | ResearchSourceSectionExtraction> {
+	const started = sectionRequest ? sectionRequest.started : performance.now();
 	const {
 		limits,
 		tableScopePolicy,
 		headScopePolicy,
 		headingInlinePolicy,
 		rawDiscardPolicy,
-	} = optionsSnapshot(options);
+	} = sectionRequest
+		? {
+				limits: {
+					...sectionRequest.limits,
+					maxEntries: researchSourceHeadingLimits.maxEntries,
+				},
+				...sectionRequest.selection.headingPolicies,
+			}
+		: optionsSnapshot(options);
 	const deadline = started + limits.timeoutMs;
 	let cursor: HtmlTokenCursor | undefined;
+	let section: SourceSectionCollector | undefined;
 	let scannerWork = 0;
 	let tokens = 0;
 	let yields = 0;
@@ -662,7 +1410,8 @@ export async function discoverResearchSourceHeadings(
 			inlineDiagnostics.set(error, Object.freeze(inlineDiagnostic));
 		throw error;
 	};
-	const work = () => (cursor?.workUnits ?? 0) + scannerWork;
+	const work = () =>
+		(cursor?.workUnits ?? 0) + scannerWork + (section?.workUnits ?? 0);
 	const checkpoint = () => {
 		if (signal?.aborted)
 			throw new AgentBrowserError(
@@ -676,10 +1425,12 @@ export async function discoverResearchSourceHeadings(
 			);
 		if (work() > limits.maxWorkUnits)
 			throw resourceLimitError(
-				"source.headings-work",
+				sectionRequest ? "source.section-work" : "source.headings-work",
 				limits.maxWorkUnits,
 				work(),
-				"Source-heading work limit exceeded",
+				sectionRequest
+					? "Source-section work limit exceeded"
+					: "Source-heading work limit exceeded",
 			);
 	};
 	const charge = (units: number) => {
@@ -821,6 +1572,12 @@ export async function discoverResearchSourceHeadings(
 		batchOperations = cursor.operations;
 		batchWork = work();
 	};
+	if (sectionRequest)
+		section = new SourceSectionCollector(
+			sectionRequest,
+			checkpoint,
+			yieldBatch,
+		);
 	const headBoundaryActive = () =>
 		headPhase === "prefix" || headPhase === "eligible";
 	const observeHeadBoundary = async (
@@ -929,6 +1686,7 @@ export async function discoverResearchSourceHeadings(
 		const token = cursor.next();
 		checkpoint();
 		extent();
+		if (section) section.checkExtent(cursor.position);
 		if (token) {
 			tokens++;
 			charge(1);
@@ -981,6 +1739,14 @@ export async function discoverResearchSourceHeadings(
 			checkpoint,
 		);
 		checkpoint();
+		if (
+			sectionRequest &&
+			!sectionIdentityMatches(
+				sectionRequest.selection.source,
+				admitted.identity,
+			)
+		)
+			invalidSection();
 		cursor = new HtmlTokenCursor(
 			admitted.text,
 			(code) => {
@@ -1005,12 +1771,18 @@ export async function discoverResearchSourceHeadings(
 			const token = current.token;
 			if (!token) {
 				if (heading || scopes.length) unsupported("unclosed-context");
+				if (section) await section.eof(cursor.position);
 				break;
 			}
 			if (token.kind === "text") {
 				if (heading) titleText(heading, token.data);
 				if (headScopePolicy && headBoundaryActive())
 					await observeHeadBoundary(token);
+				if (section && !scopes.length)
+					await section.text(token.data, {
+						start: current.start,
+						end: current.end,
+					});
 				await yieldBatch();
 				continue;
 			}
@@ -1027,6 +1799,11 @@ export async function discoverResearchSourceHeadings(
 				if (token.kind === "start") {
 					if (name === "br" || name === "wbr") {
 						if (name === "br") titleText(heading, " ");
+						if (section)
+							await section.text(name === "br" ? " " : "", {
+								start: current.start,
+								end: current.end,
+							});
 					} else {
 						if (!inlineTags.has(name)) {
 							if (!headingInlinePolicy || !additionalInline(name, level, token))
@@ -1059,8 +1836,8 @@ export async function discoverResearchSourceHeadings(
 				) {
 					if (heading.pendingHigh)
 						appendCharacter(heading, heading.pendingHigh);
-					entries.push({
-						ordinal: entries.length + 1,
+					const candidate: SourceHeadingCandidate = {
+						ordinal: section ? section.headingStarts : entries.length + 1,
 						level: heading.level,
 						title: heading.title,
 						titleTruncated: heading.titleTruncated,
@@ -1069,8 +1846,14 @@ export async function discoverResearchSourceHeadings(
 							startTag: heading.startTag,
 							endTag: { start: current.start, end: current.end },
 						},
-					});
-					heading = undefined;
+					};
+					if (section) {
+						heading = undefined;
+						if (await section.completeHeading(candidate)) break;
+					} else {
+						entries.push(candidate);
+						heading = undefined;
+					}
 				} else {
 					if (
 						(headingInlinePolicy
@@ -1088,6 +1871,7 @@ export async function discoverResearchSourceHeadings(
 			if (token.kind === "start" && rawTags.has(name)) {
 				if (token.selfClosing) unsupported("raw-self-closing");
 				rawStarts[name] = (rawStarts[name] ?? 0) + 1;
+				if (section) await section.omittedStart("rawStarts", name);
 				if (
 					rawDiscard &&
 					(name === "script" ||
@@ -1101,6 +1885,7 @@ export async function discoverResearchSourceHeadings(
 						checkpoint();
 						const step = cursor.discardRawStep(name);
 						checkpoint();
+						if (section) section.checkExtent(cursor.position);
 						rawDiscard.steps++;
 						rawDiscard.codeUnits += step.discardedCodeUnits;
 						if (step.status === "end-tag") rawDiscard.elements++;
@@ -1113,6 +1898,7 @@ export async function discoverResearchSourceHeadings(
 					checkpoint();
 					cursor.raw(name, name === "title" || name === "textarea");
 					checkpoint();
+					if (section) section.checkExtent(cursor.position);
 					if (rawDiscard) rawDiscard.legacyRawCalls++;
 					await yieldBatch();
 				}
@@ -1130,6 +1916,13 @@ export async function discoverResearchSourceHeadings(
 					: omittedStarts;
 				counts[name] = (counts[name] ?? 0) + 1;
 				if (voidTags.has(name)) {
+					if (section)
+						await section.omittedStart(
+							counts === suppressedStarts
+								? "suppressedStarts"
+								: "omittedStarts",
+							name,
+						);
 					if (headScopePolicy && headBoundaryActive())
 						await observeHeadBoundary(token);
 					continue;
@@ -1137,6 +1930,13 @@ export async function discoverResearchSourceHeadings(
 				if (token.selfClosing) {
 					if (name !== "svg" && name !== "math")
 						unsupported("scope-self-closing");
+					if (section)
+						await section.omittedStart(
+							counts === suppressedStarts
+								? "suppressedStarts"
+								: "omittedStarts",
+							name,
+						);
 					if (headScopePolicy && headBoundaryActive())
 						await observeHeadBoundary(token);
 					continue;
@@ -1147,6 +1947,13 @@ export async function discoverResearchSourceHeadings(
 					track(remaining + 1);
 					scopes.length = remaining;
 					scopes.push(name);
+					if (section)
+						await section.omittedStart(
+							counts === suppressedStarts
+								? "suppressedStarts"
+								: "omittedStarts",
+							name,
+						);
 					if (headScopePolicy && headBoundaryActive())
 						await observeHeadBoundary(token);
 					await yieldBatch();
@@ -1154,6 +1961,11 @@ export async function discoverResearchSourceHeadings(
 				}
 				track(scopes.length + 1);
 				scopes.push(name);
+				if (section)
+					await section.omittedStart(
+						counts === suppressedStarts ? "suppressedStarts" : "omittedStarts",
+						name,
+					);
 				if (headScopePolicy && headBoundaryActive())
 					await observeHeadBoundary(token);
 				if (tableScopePolicy) await yieldBatch();
@@ -1192,16 +2004,19 @@ export async function discoverResearchSourceHeadings(
 			if (level === undefined && headScopePolicy && headBoundaryActive())
 				await observeHeadBoundary(token);
 			if (scopes.length) {
-				if (token.kind === "start" && level !== undefined)
+				if (token.kind === "start" && level !== undefined) {
 					suppressedHeadingStarts++;
+					if (section) section.suppressedHeading();
+				}
 				if (level !== undefined && headScopePolicy && headBoundaryActive())
 					await observeHeadBoundary(token);
 				continue;
 			}
+			if (section && level === undefined) await section.ordinaryTag(token);
 			if (level !== undefined) {
 				if (token.kind !== "start" || token.selfClosing)
 					unsupported("heading-start-structure");
-				if (entries.length === limits.maxEntries) {
+				if (!section && entries.length === limits.maxEntries) {
 					completion = "entry-limit";
 					break;
 				}
@@ -1217,11 +2032,38 @@ export async function discoverResearchSourceHeadings(
 					pendingHigh: "",
 				};
 				extent();
+				if (section) await section.beginHeading(level, heading.startTag);
 				if (headScopePolicy && headBoundaryActive())
 					await observeHeadBoundary(token);
 			}
 		}
 		checkpoint();
+		if (section) {
+			const report = freezeOwned(
+				section.report(admitted.identity, cursor.position, {
+					tokens,
+					operations: cursor.operations,
+					workUnits: work(),
+					issueAttempts: cursor.issueCount,
+					entityIssues: issueCounts,
+					omittedStarts,
+					suppressedStarts,
+					suppressedHeadingStarts,
+					rawStarts,
+					rawDiscard,
+					maxTrackedDepth,
+					yields,
+				}),
+			);
+			const encoded = encodeOwnedReport(
+				report,
+				limits.maxOutputBytes,
+				checkpoint,
+				true,
+			);
+			checkpoint();
+			return Object.freeze({ report, ...encoded });
+		}
 		const report = freezeOwned<ResearchSourceHeadingReport>({
 			kind: "source-heading-candidates",
 			method: "native-source-headings-v1",
@@ -1280,5 +2122,6 @@ export async function discoverResearchSourceHeadings(
 		return Object.freeze({ report, ...encoded });
 	} finally {
 		cursor?.close();
+		if (section) section.close();
 	}
 }

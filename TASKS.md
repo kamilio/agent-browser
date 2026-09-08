@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+Identity-bound native section projection now shares one bounded traversal with
+heading discovery, verifies exact source/anchors and publishes normalized blocks
+only after a complete boundary. `SOURCE-SECTIONS.md` records1732passing cases in
+seven files,217new section cases, all1515prior assertion names/test bytes preserved
+and2717current/79scanner/92core/640source10/3design audited artifacts. Initial
+test-only lint failure and harness review corrections are retained in200frozen
+artifacts. No live prose,
+capture replay, CLI or provider activation is claimed. Next is the exact engine
+freeze, one-target native byte-validation/section wrapper, controls and fresh
+authorization; source10's old replay-readiness flag stays false. Modern privacy,
+provider/vault/device/page/consent and blocked research remain pending, denied gates
+stay closed and the original browser improvement goal continues.
+
 The fresh bounded raw-discard trial discovers230native heading candidates through
 actualEOF without raising limits. `SOURCE-RAW-DISCARD-TRIAL.md` records one HTTP200
 request,30raw steps/17elements, fresh5shell/81native/4817completion/3711inline/
