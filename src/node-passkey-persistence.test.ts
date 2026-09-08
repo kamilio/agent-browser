@@ -309,7 +309,7 @@ describe("persistent passkey authenticator", () => {
 				rpId: "other.fixture.invalid",
 			}),
 		).rejects.toMatchObject({ name: "NotAllowedError" });
-		expect(approve).not.toHaveBeenCalled();
+		expect(approve).toHaveBeenCalledTimes(1);
 		await expect(authenticator.get(assertion())).rejects.toMatchObject({
 			name: "NotAllowedError",
 		});

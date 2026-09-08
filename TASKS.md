@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Software passkey creation now defers exclusion membership checking until the
+existing trusted host approval succeeds, retaining liveness and exclusion checks
+before key generation or persistence. `PASSKEY-EXCLUSION-APPROVAL.md` records
+187passing isolated native cases in four files,20new cases, two intentionally
+updated old expectations, passing build/types/scoped lint and2718matching input
+pins. All127frozen feature artifacts pass audit; static and integration reviews
+find no actionable discrepancy. No guessed privacy timer, API/RP change or provider activation is added.
+Full page consent/lifetime/attestation and other-provider privacy remain open;
+pre-existing pending working changes are preserved, not execution-validated by
+the isolated pass. Denied gates stay closed and the original browser goal continues.
+
 The first identity-bound native prose trial now validates the captured bytes and
 extracts Registration Ceremony Privacy without a new request. See
 `SOURCE-SECTION-PRIVACY-TRIAL.md`:5blocks/1407UTF16 units,4836-byte native export,

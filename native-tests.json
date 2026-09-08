@@ -1,4 +1,5 @@
 [
+  "src/node-passkey-exclusion-approval.test.ts",
   "src/research-source-section.test.ts",
   "src/research-source-headings.test.ts",
   "src/research-source-input.test.ts",

@@ -441,7 +441,6 @@ export class NodePasskeyAuthenticator implements PasskeyAuthenticator {
 							fail("InvalidStateError");
 					}
 				};
-				checkExcluded();
 				if (this.#credentials.size >= this.#maxCredentials)
 					fail("NotAllowedError");
 				await this.#consent(

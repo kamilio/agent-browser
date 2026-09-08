@@ -521,7 +521,7 @@ it("requires host selection for multiple matches and never accepts a nonmatching
 	expect(buffer(result.authenticatorData).readUInt32BE(33)).toBe(1);
 });
 
-it("checks excludes before consent and does not apply another RP's exclusion", async () => {
+it("checks excludes after consent and does not apply another RP's exclusion", async () => {
 	const { authenticator, approve } = fixture();
 	const registration = await authenticator.create(creation());
 	const request = creation();
@@ -531,12 +531,12 @@ it("checks excludes before consent and does not apply another RP's exclusion", a
 	await expect(authenticator.create(request)).rejects.toMatchObject({
 		name: "InvalidStateError",
 	});
-	expect(approve).toHaveBeenCalledTimes(1);
+	expect(approve).toHaveBeenCalledTimes(2);
 	request.rpId = "other.fixture.invalid";
 	await expect(authenticator.create(request)).resolves.toMatchObject({
 		algorithm: -7,
 	});
-	expect(approve).toHaveBeenCalledTimes(2);
+	expect(approve).toHaveBeenCalledTimes(3);
 });
 
 it("snapshots caller buffers and approval metadata before awaits", async () => {
