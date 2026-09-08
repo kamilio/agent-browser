@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Native challenge heuristics now preserve cutoff context: over-budget titles are
+not complete anchored titles, and one bounded lookahead only qualifies existing
+body boundaries without completing outside-budget markers. Confirmed headers
+and public diagnostics remain unchanged. `CHALLENGE-TEXT-BOUNDARIES.md` records
+171passing cases in two isolated files,48new regressions,123old cases with unchanged
+test bytes and2725matching input pins. Build/types/scoped lint pass; the initial
+test-only lint failure and pre-execution manifest correction remain intact. Null
+stays inconclusive, not access clearance; historical blocks, denied gates and the
+overall browser goal remain unchanged. Independent integration review is clear;
+the137-file frozen ledger is cd2668c17ba3f5da0792b25485fddc574864dc164bfb5716912d9b9f72c6560b.
+
 A fresh NVIDIA workstation-directory attempt stops with native network-stage
 policy-denied and no admitted HTTP status, body or export. `NVIDIA-DIRECTORY-TRIAL.md`
 records12passing controls, separately verified failure and28audited artifacts.

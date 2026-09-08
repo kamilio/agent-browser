@@ -89,11 +89,38 @@ function readHeaders(value: unknown): Map<string, string[]> | null {
 	return headers;
 }
 
-function boundedText(response: object, name: string, limit: number): string {
+interface BoundedText {
+	readonly value: string;
+	readonly truncated: boolean;
+	readonly wordContinues: boolean;
+}
+
+function boundedText(
+	response: object,
+	name: string,
+	limit: number,
+): BoundedText {
 	const value = ownValue(response, name);
-	return typeof value === "string"
-		? value.slice(0, limit).toLowerCase().replace(/\s+/g, " ").trim()
-		: "";
+	if (typeof value !== "string")
+		return { value: "", truncated: false, wordContinues: false };
+	const prefix = value.slice(0, limit).toLowerCase().replace(/\s+/g, " ");
+	const truncated = value.length > limit;
+	return {
+		value: prefix.trim(),
+		truncated,
+		wordContinues:
+			truncated &&
+			/\w$/.test(prefix) &&
+			/^\w/.test(value.charAt(limit).toLowerCase()),
+	};
+}
+
+function hasTextMarker(text: BoundedText, pattern: RegExp): boolean {
+	const match = pattern.exec(text.value);
+	return (
+		match !== null &&
+		(!text.wordContinues || match.index + match[0].length < text.value.length)
+	);
 }
 
 function loginDestination(response: object): boolean {
@@ -184,18 +211,20 @@ export function classifyBrowserChallenge(
 		const title = boundedText(response, "title", 256);
 		const text = boundedText(response, "text", 8192);
 		const challengeTitle =
+			!title.truncated &&
 			/^(?:just a moment[.!…]*|attention required!?\s*\|\s*cloudflare|security check|verify (?:that )?you are human|are you (?:a )?human\??|captcha|robot check|duckduckgo)$/.test(
-				title,
+				title.value,
 			);
-		const challengeText =
-			/\b(?:verify (?:that )?you are (?:a )?human|verifying you are human|checking your browser|complete the following challenge|confirm you are (?:a )?human|prove you are (?:a )?human|not a robot)\b/.test(
-				text,
-			);
+		const challengeText = hasTextMarker(
+			text,
+			/\b(?:verify (?:that )?you are (?:a )?human|verifying you are human|checking your browser|complete the following challenge|confirm you are (?:a )?human|prove you are (?:a )?human|not a robot)\b/,
+		);
 		if (challengeTitle && challengeText)
 			return diagnostic(
 				headers,
 				"challenge",
-				/\bcloudflare\b/.test(`${title} ${text}`)
+				hasTextMarker(title, /\bcloudflare\b/) ||
+					hasTextMarker(text, /\bcloudflare\b/)
 					? "cloudflare"
 					: "unspecified",
 				"possible",
@@ -203,7 +232,10 @@ export function classifyBrowserChallenge(
 			);
 		if (
 			status === 403 &&
-			/^(?:you've|you have) been blocked by network security\b/.test(text)
+			hasTextMarker(
+				text,
+				/^(?:you've|you have) been blocked by network security\b/,
+			)
 		)
 			return diagnostic(
 				headers,
@@ -213,9 +245,13 @@ export function classifyBrowserChallenge(
 				"html-network-security-block",
 			);
 		if (
-			/^(?:log in|login|sign in)(?: to [a-z0-9 ._-]{1,80})?$/.test(title) &&
-			/\b(?:password|email address|sign in to continue|log in to continue|continue with (?:google|apple))\b/.test(
+			!title.truncated &&
+			/^(?:log in|login|sign in)(?: to [a-z0-9 ._-]{1,80})?$/.test(
+				title.value,
+			) &&
+			hasTextMarker(
 				text,
+				/\b(?:password|email address|sign in to continue|log in to continue|continue with (?:google|apple))\b/,
 			)
 		)
 			return diagnostic(
@@ -227,8 +263,9 @@ export function classifyBrowserChallenge(
 			);
 		if (
 			loginDestination(response) &&
-			/\bcontinue with (?:google\s*continue with apple|apple\s*continue with google)\b/.test(
+			hasTextMarker(
 				text,
+				/\bcontinue with (?:google\s*continue with apple|apple\s*continue with google)\b/,
 			)
 		)
 			return diagnostic(

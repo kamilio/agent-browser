@@ -1,4 +1,5 @@
 [
+  "src/browser-challenge-truncation.test.ts",
   "src/passkey-exclusion-error.test.ts",
   "src/node-passkey-exclusion-approval.test.ts",
   "src/research-source-section.test.ts",
