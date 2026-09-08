@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Trusted native cursor-window diagnostics now identify next/raw/remainder and the
+last committed input UTF16 coordinate on the same origin error, without source/name
+disclosure or cap/grammar/accounting changes. `CURSOR-WINDOW-DIAGNOSTICS.md` records
+1302passing native tests in five files,42new cases,1260unchanged prior assertion
+names, build/strict/scoped Biome and independent review/audit of2716inputs,
+527source08/48prior-feature artifacts. The record is origin attribution, not receiver
+or source-byte identity; next/raw limit+1 remains a refusal sentinel. Source08 is
+not retroactively identified. Next is source09 same-engine integration, fresh
+controls/reviews and exact authorization. Modern privacy/provider/vault/device/page/
+consent, blocked research and all stopped/denied gates remain open. Goal continues.
+
 The balanced-heading source trial returns an actual cursor-window resource failure:
 65537code units observed against65536, with no operation/position/token attribution,
 candidates or capture. `SOURCE-BALANCED-TRIAL.md` preserves527artifacts, fresh

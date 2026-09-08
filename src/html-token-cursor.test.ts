@@ -5,7 +5,9 @@ import { parseHtmlDocument } from "./html-parser.js";
 import {
 	HtmlTokenCursor,
 	type HtmlTokenCursorOptions,
+	type HtmlTokenCursorWindowDiagnostic,
 	htmlTokenCursorLimits,
+	htmlTokenCursorWindowDiagnostic,
 } from "./html-token-cursor.js";
 import { type HtmlToken, HtmlTokenizer } from "./html-tokenizer.js";
 import {
@@ -1033,4 +1035,746 @@ it("synthetic span-heavy differential: native 50,000-node guard fails while boun
 		returned?.close();
 		admitted?.close();
 	}
+});
+
+describe("trusted native cursor-window operation diagnostics", () => {
+	const privateMarker = "SYNTHETIC_PRIVATE_CURSOR_DATA";
+	const privateRawName = "x-private-cursor-data".padEnd(32, "x");
+	const windowMessage = "HTML cursor input window limit exceeded";
+
+	function expectWindow(
+		error: unknown,
+		operation: HtmlTokenCursorWindowDiagnostic["operation"],
+		position: number,
+		limit: number,
+		observed = limit + 1,
+	) {
+		expectLimit(error, {
+			kind: "html.cursor-window",
+			unit: "code-units",
+			limit,
+			observed,
+		});
+		const diagnostic = htmlTokenCursorWindowDiagnostic(error);
+		expect(diagnostic).toEqual({
+			kind: "html-cursor-window",
+			operation,
+			position,
+			positionSemantics: "last-committed-source-utf16",
+		});
+		expect(Reflect.ownKeys(diagnostic ?? {})).toEqual([
+			"kind",
+			"operation",
+			"position",
+			"positionSemantics",
+		]);
+		expect(Object.isFrozen(diagnostic)).toBe(true);
+		for (const key of [
+			"kind",
+			"operation",
+			"position",
+			"positionSemantics",
+		] as const) {
+			expect(Object.getOwnPropertyDescriptor(diagnostic, key)).toEqual({
+				value: diagnostic?.[key],
+				enumerable: true,
+				writable: false,
+				configurable: false,
+			});
+		}
+		expect(htmlTokenCursorWindowDiagnostic(error)).toBe(diagnostic);
+		expect(Reflect.set(diagnostic ?? {}, "position", -1)).toBe(false);
+		expect(
+			Reflect.defineProperty(diagnostic ?? {}, "extra", { value: true }),
+		).toBe(false);
+		expect(Reflect.deleteProperty(diagnostic ?? {}, "operation")).toBe(false);
+		const ordinary = resourceLimitError(
+			"html.cursor-window",
+			limit,
+			observed,
+			windowMessage,
+		);
+		expect(htmlTokenCursorWindowDiagnostic(ordinary)).toBeUndefined();
+		expect(Object.getPrototypeOf(error)).toBe(Object.getPrototypeOf(ordinary));
+		expect(Reflect.ownKeys(error as object)).toEqual(Reflect.ownKeys(ordinary));
+		for (const key of Reflect.ownKeys(ordinary)) {
+			const actual = Object.getOwnPropertyDescriptor(error, key);
+			const expected = Object.getOwnPropertyDescriptor(ordinary, key);
+			if (key === "stack") {
+				expect(actual?.enumerable).toBe(expected?.enumerable);
+				expect(actual?.configurable).toBe(expected?.configurable);
+				expect(actual?.writable).toBe(expected?.writable);
+			} else expect(actual).toEqual(expected);
+		}
+		expect((error as Error).message).toBe(windowMessage);
+		expect(Object.hasOwn(error as object, "cause")).toBe(false);
+		expect((error as Error).cause).toBeUndefined();
+		expect(JSON.stringify(error)).toBe(JSON.stringify(ordinary));
+		for (const value of [
+			JSON.stringify(diagnostic),
+			JSON.stringify(error),
+			(error as Error).message,
+		]) {
+			expect(value).not.toContain(privateMarker);
+			expect(value).not.toContain(privateRawName);
+		}
+		return diagnostic;
+	}
+
+	function expectStopped(
+		cursor: HtmlTokenCursor,
+		expected: {
+			position: number;
+			operations: number;
+			workUnits: number;
+			issueCount: number;
+		},
+	) {
+		expect(cursor).toMatchObject({ ...expected, closed: true });
+		for (const operation of ["next", "raw", "remainder"] as const) {
+			const error = captureError(() =>
+				operation === "raw" ? cursor.raw("script") : cursor[operation](),
+			);
+			expectCode(error, "closed");
+			expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+		}
+		cursor.close();
+		expect(cursor).toMatchObject({ ...expected, closed: true });
+	}
+
+	it.each([
+		`<p title='${privateMarker}'>tail`,
+		`<!--${privateMarker}-->tail`,
+		"&NotEqualTilde;tail",
+	])("brands an initial next pause without committing source: %s", (source) => {
+		const window = 8;
+		const delivered = vi.fn();
+		const native = new HtmlTokenizer(source.slice(0, window), delivered);
+		native.setBoundary(window);
+		expect(native.next()).toBeUndefined();
+		expect(native.paused).toBe(true);
+		expect(native.position).toBe(0);
+		const cursor = cursorFor(source, { maxWindowCodeUnits: window }, delivered);
+		const error = captureError(() => cursor.next());
+		expectWindow(error, "next", 0, window);
+		expectStopped(cursor, {
+			position: 0,
+			operations: 1,
+			workUnits: window + native.workUnits,
+			issueCount: native.issueCount,
+		});
+		expect(delivered).not.toHaveBeenCalled();
+	});
+
+	it.each(["x", "😀x"])(
+		"brands a restarted next pause at committed UTF16 prefix %s",
+		(prefix) => {
+			const source = `${prefix}<p title='${privateMarker}'>tail`;
+			const window = 12;
+			const delivered = vi.fn();
+			const initial = new HtmlTokenizer(source.slice(0, window), delivered);
+			initial.setBoundary(window);
+			expect(initial.next()).toEqual({ kind: "text", data: prefix });
+			expect(initial.next()).toBeUndefined();
+			expect(initial.paused).toBe(true);
+			expect(initial.position).toBe(prefix.length);
+			const retry = new HtmlTokenizer(
+				source.slice(prefix.length, prefix.length + window),
+				delivered,
+			);
+			retry.setBoundary(window);
+			expect(retry.next()).toBeUndefined();
+			expect(retry.paused).toBe(true);
+			expect(retry.position).toBe(0);
+			const cursor = cursorFor(
+				source,
+				{ maxWindowCodeUnits: window },
+				delivered,
+			);
+			expect(cursor.next()).toEqual({ kind: "text", data: prefix });
+			const error = captureError(() => cursor.next());
+			expectWindow(error, "next", prefix.length, window);
+			expectStopped(cursor, {
+				position: prefix.length,
+				operations: 2,
+				workUnits: 2 * window + initial.workUnits + retry.workUnits,
+				issueCount: initial.issueCount + retry.issueCount,
+			});
+			expect(delivered).not.toHaveBeenCalled();
+		},
+	);
+
+	it("brands an initial next failure after an exactly committed prior window", () => {
+		const source = `<p><b title='${privateMarker}'>`;
+		const initial = new HtmlTokenizer(source.slice(0, 3), () => {});
+		initial.setBoundary(3);
+		const start = initial.next();
+		const nextWindow = new HtmlTokenizer(source.slice(3, 6), () => {});
+		nextWindow.setBoundary(3);
+		expect(nextWindow.next()).toBeUndefined();
+		expect(nextWindow.paused).toBe(true);
+		const cursor = cursorFor(source, { maxWindowCodeUnits: 3 });
+		expect(cursor.next()).toEqual(start);
+		expectWindow(
+			captureError(() => cursor.next()),
+			"next",
+			3,
+			3,
+		);
+		expectStopped(cursor, {
+			position: 3,
+			operations: 2,
+			workUnits: 6 + initial.workUnits + nextWindow.workUnits,
+			issueCount: initial.issueCount + nextWindow.issueCount,
+		});
+	});
+
+	it("allows an actual paused-and-rebased next attempt to succeed without attribution", () => {
+		const source = "x<p>tail";
+		const initial = new HtmlTokenizer(source.slice(0, 3), () => {});
+		initial.setBoundary(3);
+		expect(initial.next()).toEqual({ kind: "text", data: "x" });
+		expect(initial.next()).toBeUndefined();
+		expect(initial.paused).toBe(true);
+		const retry = new HtmlTokenizer(source.slice(1, 4), () => {});
+		retry.setBoundary(3);
+		const expected = retry.next();
+		expect(expected).toMatchObject({ kind: "start", name: "p" });
+		expect(retry.paused).toBe(false);
+		const cursor = cursorFor(source, { maxWindowCodeUnits: 3 });
+		expect(cursor.next()).toEqual({ kind: "text", data: "x" });
+		const token = cursor.next();
+		expect(token).toEqual(expected);
+		expect(cursor).toMatchObject({
+			position: 4,
+			operations: 2,
+			workUnits: 6 + initial.workUnits + retry.workUnits,
+			issueCount: initial.issueCount + retry.issueCount,
+			closed: false,
+		});
+		expect(htmlTokenCursorWindowDiagnostic(token)).toBeUndefined();
+		expect(htmlTokenCursorWindowDiagnostic(cursor)).toBeUndefined();
+	});
+
+	it.each([
+		["script", false],
+		["title", true],
+		["textarea", true],
+		[privateRawName, false],
+	] as const)(
+		"attributes bounded raw %s without publishing the name",
+		(name, entities) => {
+			const prefix = `<${name}>`;
+			const window = prefix.length + 8;
+			const source = `${prefix}${"x".repeat(window + 1)}${privateMarker}</${name}>`;
+			const delivered = vi.fn();
+			const initial = new HtmlTokenizer(source.slice(0, window), delivered);
+			initial.setBoundary(window);
+			const start = initial.next();
+			expect(start).toMatchObject({ kind: "start", name });
+			const raw = new HtmlTokenizer(
+				source.slice(prefix.length, prefix.length + window),
+				delivered,
+			);
+			raw.setBoundary(window);
+			expect(raw.raw(name, entities)).toBeUndefined();
+			expect(raw.paused).toBe(true);
+			expect(raw.position).toBe(0);
+			const cursor = cursorFor(
+				source,
+				{ maxWindowCodeUnits: window },
+				delivered,
+			);
+			expect(cursor.next()).toEqual(start);
+			const error = captureError(() => cursor.raw(name, entities));
+			expectWindow(error, "raw", prefix.length, window);
+			expectStopped(cursor, {
+				position: prefix.length,
+				operations: 2,
+				workUnits: 2 * window + initial.workUnits + raw.workUnits,
+				issueCount: initial.issueCount + raw.issueCount,
+			});
+			expect(delivered).not.toHaveBeenCalled();
+		},
+	);
+
+	it("attributes raw closing-prefix lookahead refusal at zero", () => {
+		const source = "abc</script>tail";
+		const native = new HtmlTokenizer(source.slice(0, 11), () => {});
+		native.setBoundary(11);
+		expect(native.raw("script")).toBeUndefined();
+		expect(native.paused).toBe(true);
+		const cursor = cursorFor(source, { maxWindowCodeUnits: 11 });
+		expectWindow(
+			captureError(() => cursor.raw("script")),
+			"raw",
+			0,
+			11,
+		);
+		expectStopped(cursor, {
+			position: 0,
+			operations: 1,
+			workUnits: 11 + native.workUnits,
+			issueCount: native.issueCount,
+		});
+		const exact = cursorFor(source, { maxWindowCodeUnits: 12 });
+		expect(exact.raw("script")).toBe("abc");
+		expect(exact).toMatchObject({
+			position: 3,
+			operations: 1,
+			workUnits: 15,
+			issueCount: 0,
+			closed: false,
+		});
+		expect(htmlTokenCursorWindowDiagnostic(exact)).toBeUndefined();
+	});
+
+	it.each([false, true])(
+		"retains remainder's actual remaining count after prefix=%s",
+		(withPrefix) => {
+			const prefix = withPrefix ? "<p>😀" : "";
+			const remaining = `<b>${privateMarker}`;
+			const source = prefix + remaining;
+			const window = 8;
+			const cursor = cursorFor(source, { maxWindowCodeUnits: window });
+			let workUnits = 0;
+			if (withPrefix) {
+				const native = new HtmlTokenizer(source.slice(0, window), () => {});
+				native.setBoundary(window);
+				for (let index = 0; index < 2; index++)
+					expect(cursor.next()).toEqual(native.next());
+				expect(cursor.position).toBe(5);
+				expect(Buffer.byteLength(prefix)).toBe(7);
+				workUnits = window + native.workUnits;
+			}
+			const before = cursor.workUnits;
+			expectWindow(
+				captureError(() => cursor.remainder()),
+				"remainder",
+				prefix.length,
+				window,
+				remaining.length,
+			);
+			expect(cursor.workUnits).toBe(before);
+			expectStopped(cursor, {
+				position: prefix.length,
+				operations: withPrefix ? 3 : 1,
+				workUnits,
+				issueCount: 0,
+			});
+		},
+	);
+
+	it("keeps the default 65536-unit window and 65537 observation", () => {
+		const window = 65_536;
+		const source = `<p title='${"x".repeat(window)}'>`;
+		const native = new HtmlTokenizer(source.slice(0, window), () => {});
+		native.setBoundary(window);
+		expect(native.next()).toBeUndefined();
+		expect(native.paused).toBe(true);
+		const cursor = cursorFor(source);
+		expectWindow(
+			captureError(() => cursor.next()),
+			"next",
+			0,
+			window,
+			65_537,
+		);
+		expectStopped(cursor, {
+			position: 0,
+			operations: 1,
+			workUnits: window + native.workUnits,
+			issueCount: 0,
+		});
+	});
+
+	it.each(["next", "raw", "remainder"] as const)(
+		"keeps exact-boundary %s success and EOF unbranded",
+		(operation) => {
+			const source =
+				operation === "next"
+					? "<p>"
+					: operation === "raw"
+						? "abc</script>"
+						: "😀x";
+			const cursor = cursorFor(source, { maxWindowCodeUnits: source.length });
+			const native = new HtmlTokenizer(source, () => {});
+			const first =
+				operation === "raw" ? cursor.raw("script") : cursor[operation]();
+			const expected =
+				operation === "raw" ? native.raw("script") : native[operation]();
+			expect(first).toEqual(expected);
+			expect(htmlTokenCursorWindowDiagnostic(first)).toBeUndefined();
+			if (operation === "raw") expect(cursor.next()).toEqual(native.next());
+			expect(cursor.position).toBe(source.length);
+			expect(cursor.next()).toBeUndefined();
+			expect(native.next()).toBeUndefined();
+			expect(cursor.workUnits).toBe(source.length + native.workUnits);
+			expect(cursor.operations).toBe(operation === "raw" ? 3 : 2);
+			expect(cursor.issueCount).toBe(0);
+			expect(cursor.closed).toBe(false);
+			const committedWork = cursor.workUnits;
+			expect(cursor.remainder()).toBe("");
+			expect(cursor.workUnits).toBe(committedWork);
+			expect(cursor.position).toBe(source.length);
+			expect(cursor.operations).toBe(operation === "raw" ? 4 : 3);
+			expect(htmlTokenCursorWindowDiagnostic(cursor)).toBeUndefined();
+			expect(Object.hasOwn(cursor, "windowDiagnostic")).toBe(false);
+			const reducedWindow = source.length - 1;
+			const rejected = cursorFor(source, { maxWindowCodeUnits: reducedWindow });
+			let rejectedWork = 0;
+			if (operation !== "remainder") {
+				const bounded = new HtmlTokenizer(
+					source.slice(0, reducedWindow),
+					() => {},
+				);
+				bounded.setBoundary(reducedWindow);
+				expect(
+					operation === "raw" ? bounded.raw("script") : bounded.next(),
+				).toBeUndefined();
+				expect(bounded.paused).toBe(true);
+				rejectedWork = reducedWindow + bounded.workUnits;
+			}
+			const error = captureError(() =>
+				operation === "raw" ? rejected.raw("script") : rejected[operation](),
+			);
+			expectWindow(error, operation, 0, reducedWindow, source.length);
+			expectStopped(rejected, {
+				position: 0,
+				operations: 1,
+				workUnits: rejectedWork,
+				issueCount: 0,
+			});
+		},
+	);
+
+	it("does not turn genuine unterminated raw EOF into a window failure", () => {
+		const delivered: string[] = [];
+		const cursor = cursorFor("abc", { maxWindowCodeUnits: 3 }, (code) =>
+			delivered.push(code),
+		);
+		expect(cursor.raw("title", true)).toBe("abc");
+		expect(cursor.next()).toBeUndefined();
+		expect(delivered).toEqual(["unterminated-raw-element"]);
+		expect(cursor).toMatchObject({
+			position: 3,
+			operations: 2,
+			workUnits: 6,
+			issueCount: 1,
+			closed: false,
+		});
+		expect(htmlTokenCursorWindowDiagnostic(cursor)).toBeUndefined();
+	});
+
+	it.each(["source", "work", "operations", "issues"] as const)(
+		"leaves genuine %s resource failures unbranded",
+		(kind) => {
+			let error: unknown;
+			if (kind === "source") {
+				error = captureError(() =>
+					cursorFor("abcd", { maxSourceCodeUnits: 3 }),
+				);
+				expectLimit(error, {
+					kind: "html.cursor-source",
+					unit: "code-units",
+					limit: 3,
+					observed: 4,
+				});
+			} else {
+				const cursor =
+					kind === "work"
+						? cursorFor("abcd", { maxWorkUnits: 3 })
+						: kind === "operations"
+							? cursorFor("", { maxOperations: 1 })
+							: cursorFor("<p a a>", { maxIssues: 0 });
+				if (kind === "operations") expect(cursor.next()).toBeUndefined();
+				error = captureError(() => cursor.next());
+				expectLimit(
+					error,
+					kind === "work"
+						? {
+								kind: "html.cursor-work",
+								unit: "code-units",
+								limit: 3,
+								observed: 4,
+							}
+						: kind === "operations"
+							? {
+									kind: "html.cursor-operations",
+									unit: "operations",
+									limit: 1,
+									observed: 2,
+								}
+							: { kind: "html.issues", unit: "issues", limit: 0, observed: 1 },
+				);
+				expect(cursor.position).toBe(0);
+				expectClosed(cursor);
+			}
+			expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it.each(["invalid-input", "unsupported"] as const)(
+		"does not relabel genuine %s errors",
+		(code) => {
+			const cursor = cursorFor(code === "unsupported" ? "<a@>" : "text");
+			const error = captureError(() =>
+				code === "unsupported" ? cursor.next() : cursor.raw("Script"),
+			);
+			expectCode(error, code);
+			expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+			expect(cursor.position).toBe(0);
+			expectClosed(cursor);
+		},
+	);
+
+	for (const code of ["timeout", "aborted", "closed"] as const) {
+		it.each(["next", "raw", "remainder"] as const)(
+			`keeps earlier ${code} admission unbranded for %s`,
+			(operation) => {
+				let now = 1_000;
+				vi.spyOn(performance, "now").mockImplementation(() => now);
+				const controller = new AbortController();
+				cleanup.push(() => controller.abort());
+				const cursor = cursorFor(
+					`<p title='${privateMarker}'>`,
+					{ maxWindowCodeUnits: 8, timeoutMs: 10 },
+					() => {},
+					controller.signal,
+				);
+				if (code === "closed") cursor.close();
+				else if (code === "aborted") controller.abort(new Error(privateMarker));
+				if (code !== "closed") now += 10;
+				const error = captureError(() =>
+					operation === "raw" ? cursor.raw("script") : cursor[operation](),
+				);
+				expectCode(error, code);
+				expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+				expect(resourceLimitDiagnostic(error)).toBeUndefined();
+				expect((error as Error).message).not.toContain(privateMarker);
+				expectStopped(cursor, {
+					position: 0,
+					operations: 0,
+					workUnits: 0,
+					issueCount: 0,
+				});
+			},
+		);
+	}
+
+	it("does not brand externally created same-kind resource errors", () => {
+		const error = resourceLimitError("html.cursor-window", 8, 9, windowMessage);
+		expectLimit(error, {
+			kind: "html.cursor-window",
+			unit: "code-units",
+			limit: 8,
+			observed: 9,
+		});
+		expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+		const cursor = cursorFor("<p title='long-value'>", {
+			maxWindowCodeUnits: 8,
+		});
+		const actual = captureError(() => cursor.next());
+		expectWindow(actual, "next", 0, 8);
+		expect(actual).not.toBe(error);
+		expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+	});
+
+	it.each(["next", "raw", "remainder"] as const)(
+		"propagates injected tokenizer %s same-kind errors without branding",
+		(operation) => {
+			const failure = resourceLimitError(
+				"html.cursor-window",
+				3,
+				4,
+				privateMarker,
+			);
+			vi.spyOn(HtmlTokenizer.prototype, operation).mockImplementation(() => {
+				throw failure;
+			});
+			const cursor = cursorFor("abc", { maxWindowCodeUnits: 3 });
+			const error = captureError(() =>
+				operation === "raw" ? cursor.raw("script") : cursor[operation](),
+			);
+			expect(error).toBe(failure);
+			expectLimit(error, {
+				kind: "html.cursor-window",
+				unit: "code-units",
+				limit: 3,
+				observed: 4,
+			});
+			expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+			expect(cursor.position).toBe(0);
+			expectClosed(cursor);
+		},
+	);
+
+	it("propagates an actual onIssue callback's same-kind error without branding", () => {
+		const failure = resourceLimitError(
+			"html.cursor-window",
+			7,
+			8,
+			privateMarker,
+		);
+		const delivered = vi.fn(() => {
+			throw failure;
+		});
+		const cursor = cursorFor("<p a a>", { maxIssues: 2 }, delivered);
+		const error = captureError(() => cursor.next());
+		expect(error).toBe(failure);
+		expect(delivered).toHaveBeenCalledTimes(1);
+		expect(delivered).toHaveBeenCalledWith("duplicate-attribute");
+		expectLimit(error, {
+			kind: "html.cursor-window",
+			unit: "code-units",
+			limit: 7,
+			observed: 8,
+		});
+		expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+		expect(cursor).toMatchObject({
+			position: 0,
+			operations: 1,
+			issueCount: 1,
+			closed: true,
+		});
+		expectClosed(cursor);
+	});
+
+	it("preserves a different cursor's genuine raw-window origin through issue propagation", () => {
+		const origin = cursorFor(`<title>${"x".repeat(12)}</title>`, {
+			maxWindowCodeUnits: 8,
+		});
+		expect(origin.next()).toMatchObject({ kind: "start", name: "title" });
+		const failure = captureError(() => origin.raw("title", true));
+		const diagnostic = expectWindow(failure, "raw", 7, 8);
+		expect(origin).toMatchObject({ position: 7, operations: 2, closed: true });
+		const source = "😀<p a a>";
+		const native = new HtmlTokenizer(source, () => {
+			throw failure;
+		});
+		expect(native.next()).toEqual({ kind: "text", data: "😀" });
+		expect(captureError(() => native.next())).toBe(failure);
+		const delivered = vi.fn(() => {
+			throw failure;
+		});
+		const receiving = cursorFor(
+			source,
+			{ maxWindowCodeUnits: source.length },
+			delivered,
+		);
+		expect(receiving.next()).toEqual({ kind: "text", data: "😀" });
+		const propagated = captureError(() => receiving.next());
+		expect(propagated).toBe(failure);
+		expect(htmlTokenCursorWindowDiagnostic(propagated)).toBe(diagnostic);
+		expectWindow(propagated, "raw", 7, 8);
+		expect(receiving.limits.maxWindowCodeUnits).toBe(9);
+		expectStopped(receiving, {
+			position: 2,
+			operations: 2,
+			workUnits: source.length + native.workUnits,
+			issueCount: native.issueCount,
+		});
+		expect(delivered).toHaveBeenCalledTimes(1);
+		expect(delivered).toHaveBeenCalledWith("duplicate-attribute");
+		expect(htmlTokenCursorWindowDiagnostic(failure)).toBe(diagnostic);
+	});
+
+	it("owns separate stable immutable records for separate native window errors", () => {
+		const first = cursorFor("<p title='long-value'>", {
+			maxWindowCodeUnits: 8,
+		});
+		const firstError = captureError(() => first.next());
+		const firstDiagnostic = expectWindow(firstError, "next", 0, 8);
+		const second = cursorFor(`${privateMarker}<p>`, { maxWindowCodeUnits: 8 });
+		const secondError = captureError(() => second.remainder());
+		const secondDiagnostic = expectWindow(
+			secondError,
+			"remainder",
+			0,
+			8,
+			privateMarker.length + 3,
+		);
+		expect(firstError).not.toBe(secondError);
+		expect(firstDiagnostic).not.toBe(secondDiagnostic);
+		first.close();
+		second.close();
+		expect(htmlTokenCursorWindowDiagnostic(firstError)).toBe(firstDiagnostic);
+		expect(htmlTokenCursorWindowDiagnostic(secondError)).toBe(secondDiagnostic);
+		expect(htmlTokenCursorWindowDiagnostic(firstDiagnostic)).toBeUndefined();
+		expect(
+			htmlTokenCursorWindowDiagnostic(resourceLimitDiagnostic(firstError)),
+		).toBeUndefined();
+		expect(resourceLimitDiagnostic(firstDiagnostic)).toBeUndefined();
+	});
+
+	it("rejects forged and hostile getter inputs without inspection or coercion", () => {
+		const cursor = cursorFor("<p title='long-value'>", {
+			maxWindowCodeUnits: 8,
+		});
+		const error = captureError(() => cursor.next());
+		const diagnostic = expectWindow(error, "next", 0, 8);
+		const before = Object.getOwnPropertyDescriptors(error);
+		const trap = vi.fn((): never => {
+			throw new Error(privateMarker);
+		});
+		const callable = vi.fn(trap);
+		const accessors = Object.defineProperties(
+			{},
+			{
+				code: { get: trap },
+				message: { get: trap },
+				cause: { get: trap },
+				toJSON: { get: trap },
+				[Symbol.toPrimitive]: { get: trap },
+			},
+		);
+		const traps = {
+			get: trap,
+			has: trap,
+			ownKeys: trap,
+			getPrototypeOf: trap,
+			getOwnPropertyDescriptor: trap,
+			isExtensible: trap,
+		};
+		const revoked = Proxy.revocable(error as object, traps);
+		revoked.revoke();
+		for (const value of [
+			undefined,
+			null,
+			false,
+			true,
+			0,
+			-0,
+			Number.NaN,
+			Number.POSITIVE_INFINITY,
+			1n,
+			Symbol("untrusted"),
+			privateMarker,
+			{},
+			Object.create(null),
+			callable,
+			accessors,
+			diagnostic,
+			{ ...diagnostic },
+			{ ...(error as object) },
+			JSON.parse(JSON.stringify(error)),
+			new AgentBrowserError("resource-limit", windowMessage),
+			Object.create(error as object),
+			Object.assign(new Error("wrapped"), { cause: error }),
+			{
+				code: "resource-limit",
+				windowDiagnostic: diagnostic,
+				resourceLimit: resourceLimitDiagnostic(error),
+			},
+			new Proxy({}, traps),
+			new Proxy(error as object, traps),
+			new Proxy(callable, { ...traps, apply: trap }),
+			revoked.proxy,
+		])
+			expect(htmlTokenCursorWindowDiagnostic(value)).toBeUndefined();
+		expect(trap).not.toHaveBeenCalled();
+		expect(callable).not.toHaveBeenCalled();
+		expect(Object.getOwnPropertyDescriptors(error)).toEqual(before);
+		expect(htmlTokenCursorWindowDiagnostic(error)).toBe(diagnostic);
+	});
 });

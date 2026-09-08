@@ -20,6 +20,29 @@ export type HtmlTokenCursorLimits = {
 
 export type HtmlTokenCursorOptions = Partial<HtmlTokenCursorLimits>;
 
+export interface HtmlTokenCursorWindowDiagnostic {
+	readonly kind: "html-cursor-window";
+	readonly operation: "next" | "raw" | "remainder";
+	readonly position: number;
+	readonly positionSemantics: "last-committed-source-utf16";
+}
+
+const windowDiagnostics = new WeakMap<
+	object,
+	Readonly<HtmlTokenCursorWindowDiagnostic>
+>();
+
+export function htmlTokenCursorWindowDiagnostic(
+	error: unknown,
+): Readonly<HtmlTokenCursorWindowDiagnostic> | undefined {
+	if (
+		error === null ||
+		(typeof error !== "object" && typeof error !== "function")
+	)
+		return undefined;
+	return windowDiagnostics.get(error);
+}
+
 function invalidCursor() {
 	return new AgentBrowserError(
 		"invalid-input",
@@ -155,10 +178,10 @@ export class HtmlTokenCursor {
 				native = this.createWindow();
 			let value = this.invoke(native, (tokenizer) => tokenizer.next());
 			if (native.paused) {
-				if (this.windowStart === this.cursorPosition) this.windowLimit();
+				if (this.windowStart === this.cursorPosition) this.windowLimit("next");
 				native = this.createWindow();
 				value = this.invoke(native, (tokenizer) => tokenizer.next());
-				if (native.paused) this.windowLimit();
+				if (native.paused) this.windowLimit("next");
 			}
 			return { value, position: this.windowStart + native.position };
 		});
@@ -176,7 +199,7 @@ export class HtmlTokenCursor {
 			const value = this.invoke(native, (tokenizer) =>
 				tokenizer.raw(name, entities),
 			);
-			if (native.paused) this.windowLimit();
+			if (native.paused) this.windowLimit("raw");
 			if (value === undefined) throw invalidCursor();
 			return { value, position: this.windowStart + native.position };
 		});
@@ -186,7 +209,7 @@ export class HtmlTokenCursor {
 		return this.perform(() => {
 			const remaining = this.sourceLength - this.cursorPosition;
 			if (remaining > this.limits.maxWindowCodeUnits)
-				this.windowLimit(remaining);
+				this.windowLimit("remainder", remaining);
 			const native = this.createWindow();
 			const value = this.invoke(native, (tokenizer) => tokenizer.remainder());
 			return { value, position: this.windowStart + native.position };
@@ -215,13 +238,36 @@ export class HtmlTokenCursor {
 			);
 	}
 
-	private windowLimit(requested = this.limits.maxWindowCodeUnits + 1): never {
-		throw resourceLimitError(
+	private windowLimit(
+		operation: HtmlTokenCursorWindowDiagnostic["operation"],
+		requested = this.limits.maxWindowCodeUnits + 1,
+	): never {
+		const error = resourceLimitError(
 			"html.cursor-window",
 			this.limits.maxWindowCodeUnits,
 			requested,
 			"HTML cursor input window limit exceeded",
 		);
+		const position = this.cursorPosition;
+		if (
+			resourceLimitDiagnostic(error)?.kind === "html.cursor-window" &&
+			(operation === "next" ||
+				operation === "raw" ||
+				operation === "remainder") &&
+			Number.isSafeInteger(position) &&
+			position >= 0 &&
+			position <= htmlTokenCursorLimits.maxSourceCodeUnits
+		)
+			windowDiagnostics.set(
+				error,
+				Object.freeze({
+					kind: "html-cursor-window",
+					operation,
+					position,
+					positionSemantics: "last-committed-source-utf16",
+				}),
+			);
+		throw error;
 	}
 
 	private createWindow() {
