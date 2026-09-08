@@ -9,7 +9,7 @@ import {
 import { CookieJar } from "./cookies.js";
 import { loadBrowserDocument } from "./document-loader.js";
 import { AgentBrowserError } from "./errors.js";
-import { extractDocument } from "./extraction.js";
+import { type ExtractedNode, extractDocument } from "./extraction.js";
 import { htmlParseInfo } from "./html-info.js";
 import type { NetworkResponse } from "./network.js";
 import { NodeNetworkTransport } from "./node-transport.js";
@@ -905,5 +905,308 @@ it("requires a real transport jar even when credentials are omitted", async () =
 		expect(resolveRoute).not.toHaveBeenCalled();
 	} finally {
 		transport.close();
+	}
+});
+
+const readerTableMarkers = {
+	tableBegin:
+		"**Native table begin (selected structure only; associations unspecified)**",
+	tableEnd: "**Native table end**",
+	rowBegin: "**Native row begin (selected structure only)**",
+	rowEnd: "**Native row end**",
+	cellBegin: "**Native cell begin (selected structure only)**",
+	cellEnd: "**Native cell end**",
+};
+
+function readerTableBlocks(...blocks: string[]): string {
+	return `${blocks.join("\n\n")}\n`;
+}
+
+function readerTableCells(root: ExtractedNode): ExtractedNode[] {
+	const cells: ExtractedNode[] = [];
+	const pending = [root];
+	while (pending.length) {
+		const current = pending.pop();
+		if (!current) break;
+		if (current.type === "cell") cells.push(current);
+		pending.push(...[...(current.children ?? [])].reverse());
+	}
+	return cells;
+}
+
+it("traverses unstyled reader thead, tbody and tfoot while preserving native wrapper JSON", () => {
+	const tree = loadResearchDocument(
+		response(
+			"<table><thead><tr><th>Header</th></tr></thead>" +
+				"<tbody><tr><td>Body</td></tr></tbody>" +
+				"<tfoot><tr><td>Footer</td></tr></tfoot></table>",
+		),
+		context,
+	);
+	const queries = new DocumentQueries(tree);
+	try {
+		const table = queries.querySelector("table");
+		if (table === null) throw new Error("Missing reader fixture table");
+		const root = tree.reference(table);
+		const wrapperRecord = (
+			tagName: string,
+			type: "inline" | "container",
+			cellTag: string,
+			text: string,
+		): ExtractedNode => {
+			const wrapper = queries.querySelector(tagName);
+			if (wrapper === null) throw new Error("Missing reader fixture wrapper");
+			const row = tree.get(wrapper).children[0];
+			if (row === undefined) throw new Error("Missing reader fixture row");
+			const cell = tree.get(row).children[0];
+			if (cell === undefined) throw new Error("Missing reader fixture cell");
+			const textId = tree.get(cell).children[0];
+			if (textId === undefined) throw new Error("Missing reader fixture text");
+			expect(tree.get(row).tagName).toBe("tr");
+			expect(tree.get(cell).tagName).toBe(cellTag);
+			return {
+				ref: tree.reference(wrapper),
+				type,
+				children: [
+					{
+						ref: tree.reference(row),
+						type: "row",
+						children: [
+							{
+								ref: tree.reference(cell),
+								type: "cell",
+								children: [{ ref: tree.reference(textId), type: "text", text }],
+							},
+						],
+					},
+				],
+			};
+		};
+		const structured = extractDocument(tree, { root, format: "json" });
+		expect(structured.content).toEqual({
+			ref: root,
+			type: "table",
+			children: [
+				wrapperRecord("thead", "inline", "th", "Header"),
+				wrapperRecord("tbody", "container", "td", "Body"),
+				wrapperRecord("tfoot", "inline", "td", "Footer"),
+			],
+		});
+		const wholeStructured = extractDocument(tree, { format: "json" });
+		const markdown = extractDocument(tree);
+		const scopedMarkdown = extractDocument(tree, { root });
+		const expected = readerTableBlocks(
+			readerTableMarkers.tableBegin,
+			readerTableMarkers.rowBegin,
+			readerTableMarkers.cellBegin,
+			"Header",
+			readerTableMarkers.cellEnd,
+			readerTableMarkers.rowEnd,
+			readerTableMarkers.rowBegin,
+			readerTableMarkers.cellBegin,
+			"Body",
+			readerTableMarkers.cellEnd,
+			readerTableMarkers.rowEnd,
+			readerTableMarkers.rowBegin,
+			readerTableMarkers.cellBegin,
+			"Footer",
+			readerTableMarkers.cellEnd,
+			readerTableMarkers.rowEnd,
+			readerTableMarkers.tableEnd,
+		);
+		expect(markdown.content).toBe(expected);
+		expect(scopedMarkdown.content).toBe(expected);
+		const info = researchReaderInfo(tree);
+		expect(info).toMatchObject({
+			profile: researchReaderProfile,
+			partial: true,
+			scripting: false,
+			styling: false,
+			hiddenContentSemantics: false,
+			ignoredAttributes: 0,
+		});
+		for (const result of [
+			structured,
+			wholeStructured,
+			markdown,
+			scopedMarkdown,
+		]) {
+			expect(result.partial).toBe(true);
+			expect(result.reader).toEqual(info);
+		}
+		expect(extractDocument(tree, { root, format: "json" })).toEqual(structured);
+		expect(extractDocument(tree, { format: "json" })).toEqual(wholeStructured);
+	} finally {
+		queries.close();
+		tree.close();
+	}
+});
+
+it("retains reader provenance for discarded table attributes without reconstructing spans", () => {
+	const tree = loadResearchDocument(
+		response(
+			'<table style="color:red"><caption>Owned sample</caption>' +
+				'<tr><th id="device" scope="col">Device</th><th scope="col">Memory</th></tr>' +
+				'<tr><td rowspan="2" colspan="2" headers="device">GPU-A</td><td>雪</td></tr>' +
+				'<tr><td headers="device">Only</td></tr></table>',
+		),
+		context,
+	);
+	try {
+		const info = researchReaderInfo(tree);
+		expect(info).toMatchObject({
+			profile: researchReaderProfile,
+			partial: true,
+			scripting: false,
+			styling: false,
+			hiddenContentSemantics: false,
+			ignoredAttributes: 8,
+		});
+		const structured = extractDocument(tree, { format: "json" });
+		if (structured.format !== "json") throw new Error("Unexpected format");
+		expect(structured.reader).toEqual(info);
+		const cells = readerTableCells(structured.content);
+		const labels = ["Device", "Memory", "GPU-A", "雪", "Only"];
+		expect(cells).toHaveLength(labels.length);
+		for (const [index, cell] of cells.entries()) {
+			expect(cell).toEqual({
+				ref: cell.ref,
+				type: "cell",
+				children: [
+					{
+						ref: expect.any(String),
+						type: "text",
+						text: labels[index],
+					},
+				],
+			});
+		}
+		const markdown = extractDocument(tree);
+		expect(markdown.partial).toBe(true);
+		expect(markdown.reader).toEqual(info);
+		expect(markdown.content).toBe(
+			readerTableBlocks(
+				readerTableMarkers.tableBegin,
+				"Owned sample",
+				readerTableMarkers.rowBegin,
+				readerTableMarkers.cellBegin,
+				"Device",
+				readerTableMarkers.cellEnd,
+				readerTableMarkers.cellBegin,
+				"Memory",
+				readerTableMarkers.cellEnd,
+				readerTableMarkers.rowEnd,
+				readerTableMarkers.rowBegin,
+				readerTableMarkers.cellBegin,
+				"GPU\\-A",
+				readerTableMarkers.cellEnd,
+				readerTableMarkers.cellBegin,
+				"雪",
+				readerTableMarkers.cellEnd,
+				readerTableMarkers.rowEnd,
+				readerTableMarkers.rowBegin,
+				readerTableMarkers.cellBegin,
+				"Only",
+				readerTableMarkers.cellEnd,
+				readerTableMarkers.rowEnd,
+				readerTableMarkers.tableEnd,
+			),
+		);
+		expect(extractDocument(tree, { format: "json" })).toEqual(structured);
+	} finally {
+		tree.close();
+	}
+});
+
+it("uses linear reader boundaries even for equal cell counts and zero ignored attributes", () => {
+	const tree = loadResearchDocument(
+		response(
+			"<p>GPU-A / Release-7</p><table>" +
+				"<tr><th>Device</th><th>Mode</th></tr>" +
+				"<tr><td>GPU-A</td><td>Release-7</td></tr></table>",
+		),
+		context,
+	);
+	try {
+		const result = extractDocument(tree);
+		expect(result.reader).toEqual(researchReaderInfo(tree));
+		expect(result.reader).toMatchObject({
+			profile: researchReaderProfile,
+			partial: true,
+			ignoredAttributes: 0,
+			hiddenContentSemantics: false,
+		});
+		expect(result.content).toBe(
+			readerTableBlocks(
+				"GPU\\-A / Release\\-7",
+				readerTableMarkers.tableBegin,
+				readerTableMarkers.rowBegin,
+				readerTableMarkers.cellBegin,
+				"Device",
+				readerTableMarkers.cellEnd,
+				readerTableMarkers.cellBegin,
+				"Mode",
+				readerTableMarkers.cellEnd,
+				readerTableMarkers.rowEnd,
+				readerTableMarkers.rowBegin,
+				readerTableMarkers.cellBegin,
+				"GPU\\-A",
+				readerTableMarkers.cellEnd,
+				readerTableMarkers.cellBegin,
+				"Release\\-7",
+				readerTableMarkers.cellEnd,
+				readerTableMarkers.rowEnd,
+				readerTableMarkers.tableEnd,
+			),
+		);
+	} finally {
+		tree.close();
+	}
+});
+
+it("keeps source-hidden table styling limitations explicit in reader extraction", () => {
+	const tree = loadResearchDocument(
+		response(
+			'<table hidden style="display:none"><tr>' +
+				'<td aria-hidden="true" style="display:none">Reader retained</td>' +
+				"<td></td></tr><tr></tr></table>",
+		),
+		context,
+	);
+	try {
+		const result = extractDocument(tree);
+		expect(result.partial).toBe(true);
+		expect(result.reader).toEqual(researchReaderInfo(tree));
+		expect(result.reader).toMatchObject({
+			profile: researchReaderProfile,
+			partial: true,
+			scripting: false,
+			styling: false,
+			hiddenContentSemantics: false,
+			ignoredAttributes: 4,
+		});
+		expect(result.content).toBe(
+			readerTableBlocks(
+				readerTableMarkers.tableBegin,
+				readerTableMarkers.rowBegin,
+				readerTableMarkers.cellBegin,
+				"Reader retained",
+				readerTableMarkers.cellEnd,
+				readerTableMarkers.cellBegin,
+				readerTableMarkers.cellEnd,
+				readerTableMarkers.rowEnd,
+				readerTableMarkers.rowBegin,
+				readerTableMarkers.rowEnd,
+				readerTableMarkers.tableEnd,
+			),
+		);
+		const structured = extractDocument(tree, { format: "json" });
+		if (structured.format !== "json") throw new Error("Unexpected format");
+		expect(structured.reader).toEqual(result.reader);
+		expect(
+			readerTableCells(structured.content).map((cell) => cell.children?.length),
+		).toEqual([1, 0]);
+	} finally {
+		tree.close();
 	}
 });

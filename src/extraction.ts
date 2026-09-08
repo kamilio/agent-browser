@@ -175,6 +175,23 @@ const inlineTypes = new Set<ExtractionType>([
 	"image",
 	"break",
 ]);
+const tableBoundaryMarkers: Partial<
+	Record<ExtractionType, { begin: string; end: string }>
+> = {
+	table: {
+		begin:
+			"**Native table begin (selected structure only; associations unspecified)**",
+		end: "**Native table end**",
+	},
+	row: {
+		begin: "**Native row begin (selected structure only)**",
+		end: "**Native row end**",
+	},
+	cell: {
+		begin: "**Native cell begin (selected structure only)**",
+		end: "**Native cell end**",
+	},
+};
 const leafElements = new Set(["img", "br", "hr"]);
 const encoder = new TextEncoder();
 
@@ -362,12 +379,70 @@ interface Prefix {
 	used?: boolean;
 }
 
+function validateTableStructure(
+	root: ExtractedNode,
+): ReadonlySet<ExtractedNode> {
+	const transparentWrappers = new Set<ExtractedNode>();
+	type Frame = {
+		node: ExtractedNode;
+		nextChild: number;
+		inTrueSink: boolean;
+		containsStructure: boolean;
+	};
+	const pending: Frame[] = [
+		{
+			node: root,
+			nextChild: 0,
+			inTrueSink: false,
+			containsStructure: tableBoundaryMarkers[root.type] !== undefined,
+		},
+	];
+	while (pending.length) {
+		const current = pending[pending.length - 1];
+		if (!current) break;
+		const { node } = current;
+		if (
+			current.nextChild === 0 &&
+			current.inTrueSink &&
+			tableBoundaryMarkers[node.type]
+		)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Unsupported table extraction structure",
+			);
+		const children = node.children ?? [];
+		if (current.nextChild < children.length) {
+			const child = children[current.nextChild++];
+			pending.push({
+				node: child,
+				nextChild: 0,
+				inTrueSink:
+					current.inTrueSink ||
+					node.type === "heading" ||
+					node.type === "paragraph" ||
+					node.type === "pre" ||
+					(node.type !== "inline" && inlineTypes.has(node.type)),
+				containsStructure: tableBoundaryMarkers[child.type] !== undefined,
+			});
+			continue;
+		}
+		if (node.type === "inline" && current.containsStructure)
+			transparentWrappers.add(node);
+		pending.pop();
+		const parent = pending[pending.length - 1];
+		if (parent && current.containsStructure) parent.containsStructure = true;
+	}
+	return transparentWrappers;
+}
+
 function markdown(root: ExtractedNode, maxBytes: number) {
+	const transparentWrappers = validateTableStructure(root);
 	const output: string[] = [];
 	let bytes = 0;
 	type Task =
 		| { node: ExtractedNode; prefixes: Prefix[]; ordinal?: number }
 		| { nodes: ExtractedNode[]; prefixes: Prefix[] }
+		| { closingMarker: string; prefixes: Prefix[] }
 		| { emptyItem: Prefix; prefixes: Prefix[] };
 	const pending: Task[] = [{ node: root, prefixes: [] }];
 	const emit = (text: string, prefixes: Prefix[]) => {
@@ -403,7 +478,8 @@ function markdown(root: ExtractedNode, maxBytes: number) {
 		const tasks: Task[] = [];
 		let group: ExtractedNode[] = [];
 		for (const node of children) {
-			if (inlineTypes.has(node.type)) group.push(node);
+			if (inlineTypes.has(node.type) && !transparentWrappers.has(node))
+				group.push(node);
 			else {
 				if (group.length) tasks.push({ nodes: group, prefixes });
 				group = [];
@@ -417,6 +493,10 @@ function markdown(root: ExtractedNode, maxBytes: number) {
 	while (pending.length) {
 		const task = pending.pop();
 		if (!task) break;
+		if ("closingMarker" in task) {
+			emit(task.closingMarker, task.prefixes);
+			continue;
+		}
 		if ("emptyItem" in task) {
 			if (!task.emptyItem.used) emit(" ", task.prefixes);
 			continue;
@@ -427,7 +507,12 @@ function markdown(root: ExtractedNode, maxBytes: number) {
 		}
 		const { node, prefixes } = task;
 		const children = node.children ?? [];
-		if (node.type === "heading")
+		const boundary = tableBoundaryMarkers[node.type];
+		if (boundary) {
+			emit(boundary.begin, prefixes);
+			pending.push({ closingMarker: boundary.end, prefixes });
+			schedule(children, prefixes);
+		} else if (node.type === "heading")
 			emit(`${"#".repeat(node.level ?? 1)} ${inline(children)}`, prefixes);
 		else if (node.type === "paragraph") emit(inline(children), prefixes);
 		else if (node.type === "pre") {
@@ -462,7 +547,8 @@ function markdown(root: ExtractedNode, maxBytes: number) {
 			const nested = [...prefixes, item];
 			pending.push({ emptyItem: item, prefixes: nested });
 			schedule(children, nested);
-		} else if (inlineTypes.has(node.type)) emit(inline([node]), prefixes);
+		} else if (transparentWrappers.has(node)) schedule(children, prefixes);
+		else if (inlineTypes.has(node.type)) emit(inline([node]), prefixes);
 		else schedule(children, prefixes);
 	}
 	return output.length ? output.join("").slice(0, -1) : "";

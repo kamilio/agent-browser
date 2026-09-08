@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+Native Markdown now preserves selected table/row/cell boundaries explicitly,
+including ordinary generic-inline thead/tfoot wrappers, without claiming grids,
+headers, spans or source-layout associations. NATIVE-MARKDOWN-TABLE-BOUNDARIES.md
+records239passing cases across three files:63new and176old retained, plus build,
+strict types and scoped lint. The first native preflight naming failure remains
+preserved; fresh native-only round02 uses unchanged code and4406matching inputs.
+JSON/styles/reader selection and limits stay unchanged; markers count toward
+existing budgets. Historical ROCm/source gates remain closed and the ongoing
+browser goal continues. Independent integration review is clear;2947/2785-entry
+final evidence inventories are audited and sealed without rerunning actions.
+
 Research failures now retain genuine fixed network-policy reasons and validate
 their two reserved serialized paths without minting native identity or changing
 policy. `RESEARCH-POLICY-REASONS.md` records198passing cases across three files,

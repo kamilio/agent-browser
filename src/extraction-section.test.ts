@@ -823,3 +823,269 @@ it.each([
 		).toThrow(expect.objectContaining({ code: "invalid-input" }));
 	},
 );
+
+const sectionTableMarkers = {
+	tableBegin:
+		"**Native table begin (selected structure only; associations unspecified)**",
+	tableEnd: "**Native table end**",
+	rowBegin: "**Native row begin (selected structure only)**",
+	rowEnd: "**Native row end**",
+	cellBegin: "**Native cell begin (selected structure only)**",
+	cellEnd: "**Native cell end**",
+};
+
+function sectionTableBlocks(...blocks: string[]): string {
+	return `${blocks.join("\n\n")}\n`;
+}
+
+it.each(["row", "cell"] as const)(
+	"renders a scoped native %s fragment without enclosing table or sibling boundaries",
+	(kind) => {
+		const tree = document();
+		const table = append(tree, tree.root, "table");
+		const earlier = append(tree, table, "tr");
+		append(tree, earlier, "th", "Outside header");
+		const row = append(tree, table, "tr");
+		const cell = append(tree, row, "td", "Selected");
+		append(tree, row, "th");
+		const later = append(tree, table, "tr");
+		append(tree, later, "td", "Outside later");
+		const root = tree.reference(kind === "row" ? row : cell);
+		const structured = extractDocument(tree, { root, format: "json" });
+		if (structured.format !== "json") throw new Error("Unexpected format");
+		expect(structured.content.ref).toBe(root);
+		expect(structured.content.type).toBe(kind);
+		expect(
+			flattened(structured.content)
+				.filter((node) => ["table", "row", "cell"].includes(node.type))
+				.map((node) => node.type),
+		).toEqual(kind === "row" ? ["row", "cell", "cell"] : ["cell"]);
+		const result = extractDocument(tree, { root });
+		expect(result.scope).toBe(root);
+		expect(result.partial).toBe(true);
+		expect(result).not.toHaveProperty("sectionSelection");
+		expect(result.content).toBe(
+			kind === "row"
+				? sectionTableBlocks(
+						sectionTableMarkers.rowBegin,
+						sectionTableMarkers.cellBegin,
+						"Selected",
+						sectionTableMarkers.cellEnd,
+						sectionTableMarkers.cellBegin,
+						sectionTableMarkers.cellEnd,
+						sectionTableMarkers.rowEnd,
+					)
+				: sectionTableBlocks(
+						sectionTableMarkers.cellBegin,
+						"Selected",
+						sectionTableMarkers.cellEnd,
+					),
+		);
+		expect(extractDocument(tree, { root, format: "json" })).toEqual(structured);
+	},
+);
+
+it("keeps table, row and cell heading-section ancestors as context containers", () => {
+	const tree = document();
+	const table = append(tree, tree.root, "table");
+	const row = append(tree, table, "tr");
+	const cell = append(tree, row, "td");
+	const excluded = append(tree, cell, "p", "Before selection");
+	const heading = append(tree, cell, "h2", "Start");
+	append(tree, cell, "p", "Body");
+	append(tree, row, "td", "Neighbor");
+	const laterRow = append(tree, table, "tr");
+	append(tree, laterRow, "td", "Later");
+	const boundary = append(tree, tree.root, "h2", "Stop");
+	append(tree, tree.root, "p", "Excluded tail");
+	const section = tree.reference(heading);
+	const plan = selectHeadingSection(tree, section, plannerOptions);
+	expect(plan.context).toEqual(new Set([tree.root, table, row, cell]));
+	expect(plan.included.has(excluded)).toBe(false);
+	expect(plan.included.has(boundary)).toBe(false);
+	const structured = extractDocument(tree, { section, format: "json" });
+	if (structured.format !== "json") throw new Error("Unexpected format");
+	const nodes = flattened(structured.content);
+	for (const contextId of [tree.root, table, row, cell]) {
+		expect(
+			nodes.find((node) => node.ref === tree.reference(contextId))?.type,
+		).toBe("container");
+	}
+	expect(nodes.filter((node) => node.type === "table")).toEqual([]);
+	expect(
+		nodes.filter((node) => node.type === "row").map((node) => node.ref),
+	).toEqual([tree.reference(laterRow)]);
+	expect(nodes.some((node) => node.ref === tree.reference(excluded))).toBe(
+		false,
+	);
+	const markdown = extractDocument(tree, { section });
+	for (const result of [markdown, structured]) {
+		expect(result.sectionSelection).toEqual(plan.metadata);
+		expect(result.sectionSelection?.end).toBe(tree.reference(boundary));
+		expect(result.scope).toBe(tree.reference(tree.root));
+		expect(result.partial).toBe(true);
+	}
+	expect(markdown.content).toBe(
+		sectionTableBlocks(
+			"## Start",
+			"Body",
+			sectionTableMarkers.cellBegin,
+			"Neighbor",
+			sectionTableMarkers.cellEnd,
+			sectionTableMarkers.rowBegin,
+			sectionTableMarkers.cellBegin,
+			"Later",
+			sectionTableMarkers.cellEnd,
+			sectionTableMarkers.rowEnd,
+		),
+	);
+	expect(extractDocument(tree, { section, format: "json" })).toEqual(
+		structured,
+	);
+});
+
+it("closes a heading-clipped table cell without inventing excluded cells and retains budgets", () => {
+	const tree = document();
+	const heading = append(tree, tree.root, "h2", "Start");
+	const table = append(tree, tree.root, "table");
+	const firstRow = append(tree, table, "tr");
+	append(tree, firstRow, "td", "Included");
+	const clippedRow = append(tree, table, "tr");
+	const clippedCell = append(tree, clippedRow, "td");
+	append(tree, clippedCell, "p", "Cell prefix 雪");
+	const boundary = append(tree, clippedCell, "h2", "Stop");
+	const excludedBody = append(tree, clippedCell, "p", "Excluded cell suffix");
+	const excludedCell = append(tree, clippedRow, "td", "Excluded neighbor");
+	const excludedRow = append(tree, table, "tr");
+	append(tree, excludedRow, "td", "Excluded row");
+	append(tree, tree.root, "p", "Excluded tail");
+	const section = tree.reference(heading);
+	const plan = selectHeadingSection(tree, section, plannerOptions);
+	expect(plan.context).toEqual(new Set([tree.root]));
+	for (const excludedId of [
+		boundary,
+		excludedBody,
+		excludedCell,
+		excludedRow,
+	]) {
+		expect(plan.included.has(excludedId)).toBe(false);
+	}
+	for (const format of ["markdown", "json"] as const) {
+		const result = extractDocument(tree, { section, format });
+		expect(result.sectionSelection).toEqual(plan.metadata);
+		expect(result.sectionSelection?.end).toBe(tree.reference(boundary));
+		if (result.format === "markdown") {
+			expect(result.content).toBe(
+				sectionTableBlocks(
+					"## Start",
+					sectionTableMarkers.tableBegin,
+					sectionTableMarkers.rowBegin,
+					sectionTableMarkers.cellBegin,
+					"Included",
+					sectionTableMarkers.cellEnd,
+					sectionTableMarkers.rowEnd,
+					sectionTableMarkers.rowBegin,
+					sectionTableMarkers.cellBegin,
+					"Cell prefix 雪",
+					sectionTableMarkers.cellEnd,
+					sectionTableMarkers.rowEnd,
+					sectionTableMarkers.tableEnd,
+				),
+			);
+		} else {
+			const nodes = flattened(result.content);
+			expect(nodes.filter((node) => node.type === "cell")).toHaveLength(2);
+			for (const excludedId of [
+				boundary,
+				excludedBody,
+				excludedCell,
+				excludedRow,
+			]) {
+				expect(
+					nodes.some((node) => node.ref === tree.reference(excludedId)),
+				).toBe(false);
+			}
+		}
+		const bytes = new TextEncoder().encode(JSON.stringify(result)).length;
+		expect(bytes).toBeGreaterThan(256);
+		expect(extractDocument(tree, { section, format, maxBytes: bytes })).toEqual(
+			result,
+		);
+		expect(() =>
+			extractDocument(tree, { section, format, maxBytes: bytes - 1 }),
+		).toThrow(expect.objectContaining({ code: "resource-limit" }));
+		expect(
+			extractDocument(tree, {
+				section,
+				format,
+				maxNodes: plan.metadata.scannedNodes,
+				maxDepth: 5,
+			}),
+		).toEqual(result);
+		expect(() =>
+			extractDocument(tree, {
+				section,
+				format,
+				maxNodes: plan.metadata.scannedNodes - 1,
+			}),
+		).toThrow(expect.objectContaining({ code: "resource-limit" }));
+		expect(() =>
+			extractDocument(tree, { section, format, maxDepth: 4 }),
+		).toThrow(expect.objectContaining({ code: "resource-limit" }));
+	}
+});
+
+it("preflights only selected table structure rather than excluded malformed siblings", () => {
+	const tree = document();
+	const prefix = append(tree, tree.root, "p");
+	const excludedTable = append(tree, prefix, "table");
+	const excludedRow = append(tree, excludedTable, "tr");
+	append(tree, excludedRow, "td", "Excluded malformed prefix");
+	const heading = append(tree, tree.root, "h2", "Start");
+	const table = append(tree, tree.root, "table");
+	const row = append(tree, table, "tr");
+	append(tree, row, "td", "Selected");
+	const boundary = append(tree, tree.root, "h2", "Stop");
+	const suffix = append(tree, tree.root, "pre");
+	append(tree, suffix, "tr", "Excluded malformed suffix");
+	const section = tree.reference(heading);
+	expect(() => extractDocument(tree)).toThrow(
+		expect.objectContaining({
+			code: "unsupported",
+			message: "Unsupported table extraction structure",
+		}),
+	);
+	const plan = selectHeadingSection(tree, section, plannerOptions);
+	const structured = extractDocument(tree, { section, format: "json" });
+	if (structured.format !== "json") throw new Error("Unexpected format");
+	const nodes = flattened(structured.content);
+	for (const excludedId of [
+		prefix,
+		excludedTable,
+		excludedRow,
+		boundary,
+		suffix,
+	]) {
+		expect(nodes.some((node) => node.ref === tree.reference(excludedId))).toBe(
+			false,
+		);
+	}
+	const markdown = extractDocument(tree, { section });
+	expect(markdown.content).toBe(
+		sectionTableBlocks(
+			"## Start",
+			sectionTableMarkers.tableBegin,
+			sectionTableMarkers.rowBegin,
+			sectionTableMarkers.cellBegin,
+			"Selected",
+			sectionTableMarkers.cellEnd,
+			sectionTableMarkers.rowEnd,
+			sectionTableMarkers.tableEnd,
+		),
+	);
+	expect(markdown.sectionSelection).toEqual(plan.metadata);
+	expect(structured.sectionSelection).toEqual(plan.metadata);
+	expect(extractDocument(tree, { section, format: "json" })).toEqual(
+		structured,
+	);
+});
