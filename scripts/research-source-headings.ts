@@ -34,6 +34,7 @@ export type ResearchSourceHeadingOptions =
 		method: "native-source-headings-v1";
 		tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
 		headScopePolicy?: "explicit-body-boundary-v1";
+		headingInlinePolicy?: "balanced-source-elements-v1";
 	};
 
 export interface SourceHeadingRange {
@@ -61,6 +62,12 @@ export interface ResearchSourceHeadingReport {
 	readonly contentSuccess: null;
 	readonly tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
 	readonly headScopePolicy?: "explicit-body-boundary-v1";
+	readonly headingInlinePolicy?: "balanced-source-elements-v1";
+	readonly headingInlineLimitations?: readonly [
+		"source-balance-only",
+		"attributes-ignored",
+		"not-dom-or-visibility",
+	];
 	readonly source: ResearchHtmlSourceIdentity;
 	readonly completion: "eof" | "entry-limit";
 	readonly scannedTo: number;
@@ -373,6 +380,7 @@ function optionsSnapshot(value: unknown): {
 	readonly limits: Readonly<ResearchSourceHeadingLimits>;
 	readonly tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
 	readonly headScopePolicy?: "explicit-body-boundary-v1";
+	readonly headingInlinePolicy?: "balanced-source-elements-v1";
 } {
 	if (value === null || typeof value !== "object" || types.isProxy(value))
 		invalid();
@@ -393,12 +401,14 @@ function optionsSnapshot(value: unknown): {
 		| "optional-end-tags-v2"
 		| undefined;
 	let headScopePolicy: "explicit-body-boundary-v1" | undefined;
+	let headingInlinePolicy: "balanced-source-elements-v1" | undefined;
 	for (const key of Reflect.ownKeys(value)) {
 		if (key === "method") continue;
 		if (
 			typeof key !== "string" ||
 			(key !== "tableScopePolicy" &&
 				key !== "headScopePolicy" &&
+				key !== "headingInlinePolicy" &&
 				!Object.hasOwn(limits, key))
 		)
 			invalid();
@@ -418,6 +428,11 @@ function optionsSnapshot(value: unknown): {
 			headScopePolicy = descriptor.value;
 			continue;
 		}
+		if (key === "headingInlinePolicy") {
+			if (descriptor.value !== "balanced-source-elements-v1") invalid();
+			headingInlinePolicy = descriptor.value;
+			continue;
+		}
 		const name = key as keyof ResearchSourceHeadingLimits;
 		const selected: unknown = descriptor.value;
 		if (
@@ -433,6 +448,7 @@ function optionsSnapshot(value: unknown): {
 		limits: Object.freeze(limits),
 		tableScopePolicy,
 		headScopePolicy,
+		headingInlinePolicy,
 	});
 }
 
@@ -557,7 +573,7 @@ export async function discoverResearchSourceHeadings(
 	signal?: AbortSignal,
 ): Promise<ResearchSourceHeadingDiscovery> {
 	const started = performance.now();
-	const { limits, tableScopePolicy, headScopePolicy } =
+	const { limits, tableScopePolicy, headScopePolicy, headingInlinePolicy } =
 		optionsSnapshot(options);
 	const deadline = started + limits.timeoutMs;
 	let cursor: HtmlTokenCursor | undefined;
@@ -637,6 +653,31 @@ export async function discoverResearchSourceHeadings(
 	const charge = (units: number) => {
 		scannerWork += units;
 		checkpoint();
+	};
+	const additionalInline = (
+		name: string,
+		level: number | undefined,
+		token: { readonly selfClosing: boolean },
+	) => {
+		charge(1);
+		if (name.length > 64) return false;
+		charge(6 * name.length + 4);
+		return (
+			!rawTags.has(name) &&
+			!omittedTags.has(name) &&
+			!suppressedTags.has(name) &&
+			!voidTags.has(name) &&
+			name !== "html" &&
+			name !== "body" &&
+			level === undefined &&
+			!token.selfClosing
+		);
+	};
+	const inlineCloseMatches = (expected: string | undefined, name: string) => {
+		charge(1);
+		if (expected === undefined || name.length !== expected.length) return false;
+		charge(2 * expected.length + 1);
+		return name === expected;
 	};
 	const track = (depth: number) => {
 		if (depth > limits.maxTrackedDepth)
@@ -955,15 +996,16 @@ export async function discoverResearchSourceHeadings(
 					if (name === "br" || name === "wbr") {
 						if (name === "br") titleText(heading, " ");
 					} else {
-						if (!inlineTags.has(name))
-							unsupported("heading-inline-structure", undefined, {
-								kind: "source-heading-inline-start",
-								condition: "non-inline-start",
-								headingLevel: heading.level as 1 | 2 | 3 | 4 | 5 | 6,
-								observedTag: inlineDiagnosticTag(name),
-								inlineDepth: heading.inline.length,
-							});
-						if (token.selfClosing)
+						if (!inlineTags.has(name)) {
+							if (!headingInlinePolicy || !additionalInline(name, level, token))
+								unsupported("heading-inline-structure", undefined, {
+									kind: "source-heading-inline-start",
+									condition: "non-inline-start",
+									headingLevel: heading.level as 1 | 2 | 3 | 4 | 5 | 6,
+									observedTag: inlineDiagnosticTag(name),
+									inlineDepth: heading.inline.length,
+								});
+						} else if (token.selfClosing)
 							unsupported("heading-inline-structure", undefined, {
 								kind: "source-heading-inline-start",
 								condition: "self-closing-inline",
@@ -971,11 +1013,15 @@ export async function discoverResearchSourceHeadings(
 								observedTag: inlineDiagnosticTag(name),
 								inlineDepth: heading.inline.length,
 							});
+						if (headingInlinePolicy) charge(1);
 						track(heading.inline.length + 2);
 						heading.inline.push(name);
+						if (headingInlinePolicy) await yieldBatch();
 					}
 				} else if (
-					name === heading.name &&
+					(headingInlinePolicy
+						? inlineCloseMatches(heading.name, name)
+						: name === heading.name) &&
 					heading.inline.length === 0 &&
 					plainEnd(token, name)
 				) {
@@ -994,9 +1040,16 @@ export async function discoverResearchSourceHeadings(
 					});
 					heading = undefined;
 				} else {
-					if (heading.inline.at(-1) !== name || !plainEnd(token, name))
+					if (
+						(headingInlinePolicy
+							? !inlineCloseMatches(heading.inline.at(-1), name)
+							: heading.inline.at(-1) !== name) ||
+						!plainEnd(token, name)
+					)
 						unsupported("heading-close-structure");
+					if (headingInlinePolicy) charge(1);
 					heading.inline.pop();
+					if (headingInlinePolicy) await yieldBatch();
 				}
 				continue;
 			}
@@ -1121,6 +1174,16 @@ export async function discoverResearchSourceHeadings(
 			contentSuccess: null,
 			...(tableScopePolicy ? { tableScopePolicy } : {}),
 			...(headScopePolicy ? { headScopePolicy } : {}),
+			...(headingInlinePolicy
+				? {
+						headingInlinePolicy,
+						headingInlineLimitations: [
+							"source-balance-only",
+							"attributes-ignored",
+							"not-dom-or-visibility",
+						] as const,
+					}
+				: {}),
 			source: admitted.identity,
 			completion,
 			scannedTo: cursor.position,

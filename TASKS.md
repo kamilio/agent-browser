@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Explicit headingInlinePolicy balanced-source-elements-v1 now supports bounded
+balanced lexical source elements inside admitted headings, with64-unit names,
+unchanged special-context exclusions/defaults, strict closes and exact selected
+policy/limitations disclosure. It is not DOM/visibility/phrasing/private-content
+truth. `SOURCE-BALANCED-INLINE.md` records1260passing tests in five native files,
+167new cases, unchanged1093prior definitions, build/strict/scoped Biome, independent
+review and reconciliation of2716inputs/424source07/48prior-feature artifacts. Source07's
+unknown name/recovery remains unproven. Next is separately reviewed source08 policy
+integration, intentional finite fixture migrations, controls and exact authorization.
+Modern privacy, provider/vault/device/page/consent, blocked research and all stopped/
+denied gates remain open. The original browser improvement goal continues.
+
 The native inline-diagnostic trial now identifies non-inline-start under active
 heading level2 at depth1, still at committed sourceUTF16 250858. The finite tag
 label is other: no actual spelling or block/phrasing/custom semantics is known.

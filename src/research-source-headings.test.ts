@@ -5259,3 +5259,1223 @@ describe("trusted heading-inline predicate diagnostics", () => {
 		expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
 	});
 });
+
+describe("explicit balanced source-element heading policy", () => {
+	const headingInlinePolicy = "balanced-source-elements-v1";
+	const limitations = [
+		"source-balance-only",
+		"attributes-ignored",
+		"not-dom-or-visibility",
+	] as const;
+	const longName = "x".repeat(64);
+	const excludedNames = [
+		...new Set([
+			...rawNames,
+			...suppressedNames,
+			...omittedFrames,
+			...voidNames,
+			"html",
+			"body",
+			"h1",
+			"h2",
+			"h3",
+			"h4",
+			"h5",
+			"h6",
+		] as const),
+	].filter((name) => name !== "br" && name !== "wbr");
+	const combinations = (
+		["strict", "optional-end-tags-v1", "optional-end-tags-v2"] as const
+	).flatMap((tablePolicy) =>
+		[false, true].flatMap((selectedHead) =>
+			[false, true].map((selectedInline) => ({
+				tablePolicy,
+				selectedHead,
+				selectedInline,
+			})),
+		),
+	);
+
+	function selectedScan(source: string, options: Record<string, unknown> = {}) {
+		return scan(source, { headingInlinePolicy, ...options });
+	}
+
+	async function expectCandidate(
+		source: string,
+		title: string,
+		options: Record<string, unknown> = {},
+		level = 1,
+		titleTruncated = false,
+	) {
+		const result = await selectedScan(source, options);
+		expect(result.report.entries).toEqual([
+			{
+				ordinal: 1,
+				level,
+				title,
+				titleTruncated,
+				anchor: {
+					kind: "source-utf16-range-v1",
+					startTag: { start: 0, end: source.indexOf(">") + 1 },
+					endTag: { start: source.length - 5, end: source.length },
+				},
+			},
+		]);
+		expect(result.report.headingInlinePolicy).toBe(headingInlinePolicy);
+		expect(result.report.headingInlineLimitations).toEqual(limitations);
+		expect(result.report.completion).toBe("eof");
+		expect(result.report.scannedTo).toBe(source.length);
+		expect(result.report.source.bytes).toEqual({
+			length: encoder.encode(source).byteLength,
+			sha256: sha256(encoder.encode(source)),
+		});
+		expect(result.report.source.text.codeUnits).toBe(source.length);
+		expect(result.report.source.text.sha256).toBe(sha256(source));
+		expect(result.jsonl).toBe(`${JSON.stringify(result.report)}\n`);
+		expect(result.outputBytes).toBe(encoder.encode(result.jsonl).byteLength);
+		expect(sourceHeadingInlineDiagnostic(result)).toBeUndefined();
+		expectDeepFrozen(result);
+		return result;
+	}
+
+	async function expectInlineFailure(
+		source: string,
+		expected: Pick<SourceHeadingInlineDiagnostic, "observedTag"> &
+			Partial<Omit<SourceHeadingInlineDiagnostic, "kind" | "observedTag">>,
+		options: Record<string, unknown> = {},
+		position = source.length,
+	) {
+		const error = await captureFailure(() => selectedScan(source, options));
+		expectCode(error, "unsupported");
+		expect((error as Error).message).toBe(
+			"Unsupported native source-heading structure",
+		);
+		expect(sourceHeadingStructureDiagnostic(error)).toEqual({
+			kind: "source-heading-structure",
+			reason: "heading-inline-structure",
+			position,
+			positionSemantics: "last-committed-source-utf16",
+		});
+		const diagnostic = sourceHeadingInlineDiagnostic(error);
+		expect(diagnostic).toEqual({
+			kind: "source-heading-inline-start",
+			condition: "non-inline-start",
+			headingLevel: 1,
+			inlineDepth: 0,
+			...expected,
+		});
+		expectDeepFrozen(diagnostic);
+		expect(sourceHeadingInlineDiagnostic(error)).toBe(diagnostic);
+		expect(sourceHeadingScopeDiagnostic(error)).toBeUndefined();
+		expect(sourceHeadingScopeContextDiagnostic(error)).toBeUndefined();
+		expect(resourceLimitDiagnostic(error)).toBeUndefined();
+		return { error, diagnostic };
+	}
+
+	function nativePrefixWork(source: string, tokenCount: number) {
+		const native = new HtmlTokenCursor(source, () => {
+			throw new Error("Unexpected synthetic tokenizer issue");
+		});
+		let titleUnits = 0;
+		try {
+			for (let index = 0; index < tokenCount; index++) {
+				const token = native.next();
+				expect(token).toBeDefined();
+				if (token?.kind === "text") titleUnits += token.data.length;
+			}
+			expect(native.position).toBe(source.length);
+			return {
+				workUnits: native.workUnits + tokenCount + titleUnits,
+				operations: native.operations,
+			};
+		} finally {
+			native.close();
+		}
+	}
+
+	it.each([
+		undefined,
+		null,
+		true,
+		false,
+		0,
+		"strict",
+		"balanced-source-elements-v2",
+		{},
+	])(
+		"rejects nonliteral inline selection %j before source access",
+		async (value) => {
+			const trap = vi.fn((): never => {
+				throw new Error(privateMarker);
+			});
+			const input = new Proxy(
+				{},
+				{
+					get: trap,
+					ownKeys: trap,
+					getPrototypeOf: trap,
+					getOwnPropertyDescriptor: trap,
+				},
+			);
+			const error = await captureFailure(() =>
+				discoverResearchSourceHeadings(input, {
+					method,
+					headingInlinePolicy: value,
+				}),
+			);
+			expectCode(error, "invalid-input");
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+			expect(trap).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(["accessor", "proxy", "inherited"] as const)(
+		"does not invoke hostile %s admission",
+		async (kind) => {
+			const trap = vi.fn((): never => {
+				throw new Error(privateMarker);
+			});
+			const traps = {
+				get: trap,
+				ownKeys: trap,
+				getPrototypeOf: trap,
+				getOwnPropertyDescriptor: trap,
+			};
+			const options =
+				kind === "accessor"
+					? Object.defineProperty({ method }, "headingInlinePolicy", {
+							get: trap,
+						})
+					: kind === "proxy"
+						? new Proxy({ method, headingInlinePolicy }, traps)
+						: Object.assign(Object.create({ headingInlinePolicy }), { method });
+			const error = await captureFailure(() =>
+				discoverResearchSourceHeadings(new Proxy({}, traps), options),
+			);
+			expectCode(error, "invalid-input");
+			expect(trap).not.toHaveBeenCalled();
+		},
+	);
+
+	it("admits an exact own-data selection on null-prototype options", async () => {
+		const options = Object.assign(Object.create(null), {
+			method,
+			headingInlinePolicy,
+		});
+		const result = await discoverResearchSourceHeadings(
+			ownedSource("<h1><x>A</x></h1>"),
+			options,
+		);
+		expect(result.report.entries[0].title).toBe("A");
+		expect(result.report.headingInlinePolicy).toBe(headingInlinePolicy);
+		expect(result.report.headingInlineLimitations).toEqual(limitations);
+		expectDeepFrozen(result);
+	});
+
+	it("snapshots selection before yields without rereading a replaced accessor", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		const controller = controllerFor();
+		const options = { method, headingInlinePolicy, yieldEveryOperations: 1 };
+		const changed = vi.fn((): never => {
+			throw new Error(privateMarker);
+		});
+		const pending = observe(
+			discoverResearchSourceHeadings(
+				ownedSource("<h1><x-local>A</x-local></h1>"),
+				options,
+				controller.signal,
+			),
+		);
+		try {
+			await microtasks();
+			expect(pending.settled).toBe(false);
+			expect(vi.getTimerCount()).toBeGreaterThan(0);
+			Object.defineProperty(options, "headingInlinePolicy", {
+				get: changed,
+				enumerable: true,
+				configurable: true,
+			});
+			await vi.runAllTimersAsync();
+			const outcome = await pending.outcome;
+			expect(outcome.error).toBeUndefined();
+			expect(outcome.value?.report.entries[0].title).toBe("A");
+			expect(outcome.value?.report.headingInlinePolicy).toBe(
+				headingInlinePolicy,
+			);
+			expect(outcome.value?.report.headingInlineLimitations).toEqual(
+				limitations,
+			);
+			expect(changed).not.toHaveBeenCalled();
+		} finally {
+			controller.abort();
+			vi.clearAllTimers();
+			vi.useRealTimers();
+		}
+	});
+
+	it("discloses exact frozen limitations only when selected and preserves default counters", async () => {
+		const source = "<h1>A</h1>";
+		const strict = await scan(source);
+		expect(strict.report.counters).toEqual({
+			tokens: 3,
+			operations: 4,
+			workUnits: 24,
+			issueAttempts: 0,
+			entityIssues: {},
+			omittedStarts: {},
+			suppressedStarts: {},
+			suppressedHeadingStarts: 0,
+			rawStarts: {},
+			maxTrackedDepth: 1,
+			yields: 0,
+		});
+		expect(strict.report.limits).toEqual(canonicalLimits);
+		for (const key of ["headingInlinePolicy", "headingInlineLimitations"]) {
+			expect(Object.hasOwn(strict.report, key)).toBe(false);
+			expect(Object.hasOwn(JSON.parse(strict.jsonl), key)).toBe(false);
+		}
+		const selected = await expectCandidate(source, "A");
+		expect(selected.report.counters.workUnits).toBe(30);
+		expect(Object.keys(selected.report).sort()).toEqual(
+			[
+				...Object.keys(strict.report),
+				"headingInlinePolicy",
+				"headingInlineLimitations",
+			].sort(),
+		);
+		for (const key of ["headingInlinePolicy", "headingInlineLimitations"]) {
+			expect(
+				Object.getOwnPropertyDescriptor(selected.report, key),
+			).toMatchObject({
+				writable: false,
+				configurable: false,
+				enumerable: true,
+			});
+		}
+		expect(
+			Reflect.set(
+				selected.report.headingInlineLimitations ?? {},
+				"0",
+				"changed",
+			),
+		).toBe(false);
+		const {
+			headingInlinePolicy: policy,
+			headingInlineLimitations: disclosure,
+			counters: selectedCounters,
+			...selectedRest
+		} = selected.report;
+		const { counters: strictCounters, ...strictRest } = strict.report;
+		expect(policy).toBe(headingInlinePolicy);
+		expect(disclosure).toEqual(limitations);
+		expect(selectedRest).toEqual(strictRest);
+		expect(selectedCounters.operations).toBe(strictCounters.operations);
+		expect(selectedCounters.tokens).toBe(strictCounters.tokens);
+		expect(await scan(source)).toEqual(strict);
+		const error = await captureFailure(() =>
+			selectedScan(source, { headingInlineLimitations: limitations }),
+		);
+		expectCode(error, "invalid-input");
+	});
+
+	it.each([1, 2, 3, 4, 5, 6] as const)(
+		"balances new and old elements at heading level %i",
+		async (level) => {
+			const source = `<h${level}><div>A<x-local>B</x-local><span>C</span></div>D</h${level}>`;
+			await expectCandidate(source, "ABCD", {}, level);
+			const error = await captureFailure(() => scan(source));
+			expectCode(error, "unsupported");
+			expect(sourceHeadingInlineDiagnostic(error)).toEqual({
+				kind: "source-heading-inline-start",
+				condition: "non-inline-start",
+				headingLevel: level,
+				observedTag: "div",
+				inlineDepth: 0,
+			});
+		},
+	);
+
+	it.each([
+		"div",
+		"p",
+		"dfn",
+		"form",
+		"summary",
+		"button",
+		"label",
+		"custom-element",
+		"ns:local",
+		"x_y",
+		"z",
+		longName,
+	])(
+		"admits balanced lexical name %s without treating it as DOM phrasing",
+		async (name) => {
+			await expectCandidate(`<h1>A<${name}>B</${name}>C</h1>`, "ABC");
+		},
+	);
+
+	it("uses native normalized case for balanced names", async () => {
+		await expectCandidate(
+			"<H2><DiV>A<X-LOCAL>B</x-local></DIV></H2>",
+			"AB",
+			{},
+			2,
+		);
+	});
+
+	it("keeps entity/comment/br semantics and ignores hidden/style/ARIA attributes", async () => {
+		const source = `<h1>A<div hidden style="display:none" aria-label="${privateMarker}" data-look="<img>">B&amp;C<!--<script>${privateMarker}-->&lt;img&gt;</div><br/>D<wbr/>E</h1>`;
+		const result = await expectCandidate(source, "AB&C<img> DE");
+		expect(result.jsonl).not.toContain(privateMarker);
+	});
+
+	it.each(excludedNames)(
+		"still rejects special %s starts, even with a balancing tail",
+		async (name) => {
+			expect(excludedNames).toHaveLength(49);
+			const prefix = `<h1><${name}>`;
+			for (const tail of ["", `${privateMarker}</${name}></h1>`])
+				await expectInlineFailure(
+					prefix + tail,
+					{ observedTag: name },
+					{},
+					prefix.length,
+				);
+		},
+	);
+
+	it.each([
+		{ name: "div", observedTag: "div" },
+		{ name: "x-local", observedTag: "other" },
+	] as const)(
+		"keeps new slash $name rejection attributed to the base non-inline predicate",
+		async ({ name, observedTag }) => {
+			await expectInlineFailure(`<h1><${name}/>`, { observedTag });
+		},
+	);
+
+	it.each(inlineNames)(
+		"keeps original slash %s attributed to self-closing-inline",
+		async (name) => {
+			await expectInlineFailure(`<h1><${name}/>`, {
+				observedTag: name,
+				condition: "self-closing-inline",
+			});
+		},
+	);
+
+	it("refuses a 65-unit private name without leaking tag, attributes, title or URL", async () => {
+		const name = `x-${privateMarker.toLowerCase()}`.padEnd(65, "x");
+		expect(name.length).toBe(65);
+		const prefix = `<h1>${privateMarker} 😀<x-local><div>`;
+		const source = `${prefix}<${name} href="https://example.com/${privateMarker}">`;
+		const { error, diagnostic } = await expectInlineFailure(source, {
+			observedTag: "other",
+			inlineDepth: 2,
+		});
+		for (const value of [
+			JSON.stringify(diagnostic),
+			JSON.stringify(error),
+			(error as Error).message,
+			(error as Error).stack ?? "",
+		]) {
+			expect(value).not.toContain(privateMarker);
+			expect(value).not.toContain(name);
+			expect(value).not.toContain("x-local");
+		}
+	});
+
+	it.each([
+		["<h1><div></h1>", "heading-close-structure"],
+		["<h1><div><x></div>", "heading-close-structure"],
+		["<h1><div></p>", "heading-close-structure"],
+		["<h1><x></x extra=y>", "heading-close-structure"],
+		["<h1><x></x/>", "heading-close-structure"],
+		["<h1><x>", "unclosed-context"],
+		["<h1><div></div>", "unclosed-context"],
+		[`<h1><x></${"x".repeat(65)}>`, "heading-close-structure"],
+	] as const)(
+		"retains strict close/EOF rejection for %s",
+		async (source, reason) => {
+			const error = await captureFailure(() => selectedScan(source));
+			expectCode(error, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(error)).toEqual({
+				kind: "source-heading-structure",
+				reason,
+				position: source.length,
+				positionSemantics: "last-committed-source-utf16",
+			});
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+			expect(sourceHeadingScopeDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it.each([false, true])(
+		"continues validation after title clipping, malformed=%s",
+		async (malformed) => {
+			if (malformed) {
+				const error = await captureFailure(() =>
+					selectedScan("<h1>A<x-local>BC</wrong>", { maxTitleCodeUnits: 1 }),
+				);
+				expectCode(error, "unsupported");
+				expect(sourceHeadingStructureDiagnostic(error)?.reason).toBe(
+					"heading-close-structure",
+				);
+				expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+			} else
+				await expectCandidate(
+					"<h1>A<x-local>BC</x-local>D</h1>",
+					"A",
+					{ maxTitleCodeUnits: 1 },
+					1,
+					true,
+				);
+		},
+	);
+
+	it.each([0, 2, 127])(
+		"retains actual admitted depth %i and rejects the next frame",
+		async (depth) => {
+			const prefix = `<h1>${"<x>".repeat(depth)}`;
+			const options = { maxTrackedDepth: depth + 1 };
+			await expectCandidate(
+				`${prefix}A${"</x>".repeat(depth)}</h1>`,
+				"A",
+				options,
+			);
+			await expectInlineFailure(
+				`${prefix}<img>`,
+				{ observedTag: "img", inlineDepth: depth },
+				options,
+			);
+			const error = await captureFailure(() =>
+				selectedScan(`${prefix}<x>`, options),
+			);
+			expectLimit(error, {
+				kind: "source.headings-depth",
+				unit: "levels",
+				limit: depth + 1,
+				observed: depth + 2,
+			});
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it.each([
+		{ name: "x", selectedUnits: 24 },
+		{ name: "xy", selectedUnits: 37 },
+		{ name: "div", selectedUnits: 40 },
+		{ name: "x-local", selectedUnits: 72 },
+		{ name: longName, selectedUnits: 528 },
+		{ name: "span", selectedUnits: 19 },
+	])(
+		"pins exact conservative success units for $name",
+		async ({ name, selectedUnits }) => {
+			const source = `<h1><${name}>A</${name}></h1>`;
+			const native = nativePrefixWork(source, 5);
+			const workLimit = native.workUnits + selectedUnits;
+			const result = await expectCandidate(source, "A", {
+				maxWorkUnits: workLimit,
+			});
+			expect(result.report.counters.workUnits).toBe(workLimit);
+			expect(result.report.counters.operations).toBe(native.operations + 1);
+			expect(result.report.counters.tokens).toBe(5);
+			if (name === "span") {
+				const strict = await scan(source);
+				expect(
+					result.report.counters.workUnits - strict.report.counters.workUnits,
+				).toBe(19);
+			}
+			const error = await captureFailure(() =>
+				selectedScan(source, { maxWorkUnits: workLimit - 1 }),
+			);
+			expectLimit(error, {
+				kind: "source.headings-work",
+				unit: "code-units",
+				limit: workLimit - 1,
+				observed: workLimit,
+			});
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it.each([
+		{
+			tag: `<${"x".repeat(65)}>`,
+			units: 1,
+			observedTag: "other",
+			condition: "non-inline-start",
+		},
+		{
+			tag: "<img/>",
+			units: 23,
+			observedTag: "img",
+			condition: "non-inline-start",
+		},
+		{
+			tag: "<div/>",
+			units: 23,
+			observedTag: "div",
+			condition: "non-inline-start",
+		},
+		{
+			tag: "<span/>",
+			units: 0,
+			observedTag: "span",
+			condition: "self-closing-inline",
+		},
+	] as const)(
+		"pins classification work before $condition for $tag",
+		async (fixture) => {
+			const source = `<h1>${fixture.tag}`;
+			const workLimit = nativePrefixWork(source, 2).workUnits + fixture.units;
+			await expectInlineFailure(
+				source,
+				{ observedTag: fixture.observedTag, condition: fixture.condition },
+				{ maxWorkUnits: workLimit },
+			);
+			const error = await captureFailure(() =>
+				selectedScan(source, { maxWorkUnits: workLimit - 1 }),
+			);
+			expectLimit(error, {
+				kind: "source.headings-work",
+				unit: "code-units",
+				limit: workLimit - 1,
+				observed: workLimit,
+			});
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it("charges the selected push before depth admission", async () => {
+		const source = "<h1><x>";
+		const beforePush = nativePrefixWork(source, 2).workUnits + 11;
+		const error = await captureFailure(() =>
+			selectedScan(source, { maxTrackedDepth: 1, maxWorkUnits: beforePush }),
+		);
+		expectLimit(error, {
+			kind: "source.headings-work",
+			unit: "code-units",
+			limit: beforePush,
+			observed: beforePush + 1,
+		});
+		const depthError = await captureFailure(() =>
+			selectedScan(source, {
+				maxTrackedDepth: 1,
+				maxWorkUnits: beforePush + 1,
+			}),
+		);
+		expectLimit(depthError, {
+			kind: "source.headings-depth",
+			unit: "levels",
+			limit: 1,
+			observed: 2,
+		});
+		expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+		expect(sourceHeadingInlineDiagnostic(depthError)).toBeUndefined();
+	});
+
+	it.each([
+		{ name: "x", unitsBeforePop: 17 },
+		{ name: longName, unitsBeforePop: 521 },
+	])(
+		"charges the selected $name pop after admitted name comparisons",
+		async ({ name, unitsBeforePop }) => {
+			const source = `<h1><${name}></${name}>`;
+			const beforePop = nativePrefixWork(source, 3).workUnits + unitsBeforePop;
+			const error = await captureFailure(() =>
+				selectedScan(source, { maxWorkUnits: beforePop }),
+			);
+			expectLimit(error, {
+				kind: "source.headings-work",
+				unit: "code-units",
+				limit: beforePop,
+				observed: beforePop + 1,
+			});
+			const exact = await captureFailure(() =>
+				selectedScan(source, { maxWorkUnits: beforePop + 1 }),
+			);
+			expectCode(exact, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(exact)?.reason).toBe(
+				"unclosed-context",
+			);
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+			expect(sourceHeadingInlineDiagnostic(exact)).toBeUndefined();
+		},
+	);
+
+	it.each([
+		{ source: "<h1></wrong>", tokens: 2, units: 2 },
+		{ source: "<h1><xy></zz>", tokens: 3, units: 30 },
+		{ source: `<h1><${longName}></${"x".repeat(65)}>`, tokens: 3, units: 392 },
+		{ source: "<h1><x></x extra=y>", tokens: 3, units: 17 },
+		{ source: "<h1></h1 extra=y>", tokens: 2, units: 7 },
+	])(
+		"bounds selected closing-name comparisons for $source",
+		async ({ source, tokens, units }) => {
+			const workLimit = nativePrefixWork(source, tokens).workUnits + units;
+			const exact = await captureFailure(() =>
+				selectedScan(source, { maxWorkUnits: workLimit }),
+			);
+			expectCode(exact, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(exact)?.reason).toBe(
+				"heading-close-structure",
+			);
+			expect(sourceHeadingInlineDiagnostic(exact)).toBeUndefined();
+			const error = await captureFailure(() =>
+				selectedScan(source, { maxWorkUnits: workLimit - 1 }),
+			);
+			expectLimit(error, {
+				kind: "source.headings-work",
+				unit: "code-units",
+				limit: workLimit - 1,
+				observed: workLimit,
+			});
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it.each([
+		{
+			source: "<h1><x>",
+			options: { maxOperations: 1 },
+			diagnostic: {
+				kind: "html.cursor-operations",
+				unit: "operations",
+				limit: 1,
+				observed: 2,
+			},
+		},
+		{
+			source: "<h1><x-local>",
+			options: { maxWindowCodeUnits: 4 },
+			diagnostic: {
+				kind: "html.cursor-window",
+				unit: "code-units",
+				limit: 4,
+				observed: 5,
+			},
+		},
+		{
+			source: "<h1><x duplicate duplicate>",
+			options: { maxIssues: 0 },
+			diagnostic: {
+				kind: "html.issues",
+				unit: "issues",
+				limit: 0,
+				observed: 1,
+			},
+		},
+		{
+			source: "<h1><x>",
+			options: { maxHeadingCodeUnits: 6 },
+			diagnostic: {
+				kind: "source.heading-extent",
+				unit: "code-units",
+				limit: 6,
+				observed: 7,
+			},
+		},
+	] as const)(
+		"retains earlier $diagnostic.kind admission and cursor cleanup",
+		async ({ source, options, diagnostic }) => {
+			const next = HtmlTokenCursor.prototype.next;
+			const cursors = new Set<HtmlTokenCursor>();
+			vi.spyOn(HtmlTokenCursor.prototype, "next").mockImplementation(function (
+				this: HtmlTokenCursor,
+			) {
+				cursors.add(this);
+				return next.call(this);
+			});
+			const error = await captureFailure(() => selectedScan(source, options));
+			expectLimit(error, diagnostic);
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+			expect(cursors.size).toBe(1);
+			for (const cursor of cursors) expect(cursor.closed).toBe(true);
+		},
+	);
+
+	it("counts both disclosures in the exact output cap and rejects one byte under", async () => {
+		const source = "<h1><x>A</x></h1>";
+		const baseline = await selectedScan(source);
+		let cap = baseline.outputBytes;
+		for (let attempt = 0; attempt < 4; attempt++) {
+			cap = encoder.encode(
+				`${JSON.stringify({ ...baseline.report, limits: { ...baseline.report.limits, maxOutputBytes: cap } })}\n`,
+			).byteLength;
+		}
+		expect(String(cap - 1).length).toBe(String(cap).length);
+		const exact = await expectCandidate(source, "A", { maxOutputBytes: cap });
+		expect(exact.outputBytes).toBe(cap);
+		const error = await captureFailure(() =>
+			selectedScan(source, { maxOutputBytes: cap - 1 }),
+		);
+		expectLimit(error, {
+			kind: "source.headings-output",
+			unit: "bytes",
+			limit: cap - 1,
+			observed: cap,
+		});
+		expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+	});
+
+	it.each(["aborted", "timeout"] as const)(
+		"cooperates with real %s after additional-name admission",
+		async (code) => {
+			let now = 1_000;
+			vi.spyOn(performance, "now").mockImplementation(() => now);
+			const controller = controllerFor();
+			const prefix = "<h1><x-local>";
+			const source = `${prefix}${"<x>A</x>".repeat(24)}</x-local></h1>`;
+			const next = HtmlTokenCursor.prototype.next;
+			const cursors = new Set<HtmlTokenCursor>();
+			let scheduled = false;
+			let dispatched = false;
+			let timer: ReturnType<typeof setTimeout> | undefined;
+			vi.spyOn(HtmlTokenCursor.prototype, "next").mockImplementation(function (
+				this: HtmlTokenCursor,
+			) {
+				cursors.add(this);
+				if (!scheduled && this.position >= prefix.length) {
+					scheduled = true;
+					timer = setTimeout(() => {
+						dispatched = true;
+						now = 1_010;
+						if (code === "aborted") controller.abort(new Error(privateMarker));
+					}, 0);
+				}
+				return next.call(this);
+			});
+			try {
+				const error = await captureFailure(() =>
+					discoverResearchSourceHeadings(
+						ownedSource(source),
+						{
+							method,
+							headingInlinePolicy,
+							timeoutMs: 10,
+							yieldEveryOperations: 1,
+						},
+						controller.signal,
+					),
+				);
+				expect(scheduled).toBe(true);
+				expect(dispatched).toBe(true);
+				expectCode(error, code);
+				expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+				expect(sourceHeadingScopeContextDiagnostic(error)).toBeUndefined();
+				expect(cursors.size).toBe(1);
+				for (const cursor of cursors) expect(cursor.closed).toBe(true);
+			} finally {
+				clearTimeout(timer);
+			}
+		},
+	);
+
+	it.each([
+		{ name: "img", selfClosing: true, reads: 0 },
+		{ name: "script", selfClosing: false, reads: 0 },
+		{ name: "x".repeat(65), selfClosing: false, reads: 0 },
+		{ name: "div", selfClosing: true, reads: 1 },
+		{ name: "div", selfClosing: false, reads: 1 },
+	])(
+		"reads selected selfClosing $reads times for $name/$selfClosing",
+		async (fixture) => {
+			const prefix = `<h1><${fixture.name}${fixture.selfClosing ? "/" : ""}>`;
+			const source =
+				fixture.name === "div" && !fixture.selfClosing
+					? `${prefix}A</div></h1>`
+					: prefix;
+			const reads = vi.fn(() => fixture.selfClosing);
+			const next = HtmlTokenCursor.prototype.next;
+			let instrumented = 0;
+			vi.spyOn(HtmlTokenCursor.prototype, "next").mockImplementation(function (
+				this: HtmlTokenCursor,
+			) {
+				const token = next.call(this);
+				if (token?.kind === "start" && token.name === fixture.name) {
+					expect(token.selfClosing).toBe(fixture.selfClosing);
+					instrumented++;
+					Object.defineProperty(token, "selfClosing", {
+						get: reads,
+						enumerable: true,
+						configurable: true,
+					});
+				}
+				return token;
+			});
+			if (source !== prefix) await expectCandidate(source, "A");
+			else {
+				const error = await captureFailure(() => selectedScan(source));
+				expectCode(error, "unsupported");
+				expect(sourceHeadingInlineDiagnostic(error)?.condition).toBe(
+					"non-inline-start",
+				);
+			}
+			expect(instrumented).toBe(1);
+			expect(reads).toHaveBeenCalledTimes(fixture.reads);
+		},
+	);
+
+	it("retains diagnostic identity and forgery resistance after additional frames", async () => {
+		const { error, diagnostic } = await expectInlineFailure(
+			"<h1><x-local><div><img>",
+			{ observedTag: "img", inlineDepth: 2 },
+		);
+		expect(Reflect.ownKeys(diagnostic ?? {})).toEqual([
+			"kind",
+			"condition",
+			"headingLevel",
+			"observedTag",
+			"inlineDepth",
+		]);
+		const trap = vi.fn((): never => {
+			throw new Error(privateMarker);
+		});
+		const proxy = new Proxy(error as object, {
+			get: trap,
+			ownKeys: trap,
+			getPrototypeOf: trap,
+		});
+		const revoked = Proxy.revocable(error as object, {});
+		revoked.revoke();
+		for (const value of [
+			diagnostic,
+			{ ...diagnostic },
+			{ ...(error as object) },
+			Object.create(error as object),
+			proxy,
+			revoked.proxy,
+		])
+			expect(sourceHeadingInlineDiagnostic(value)).toBeUndefined();
+		expect(trap).not.toHaveBeenCalled();
+		await expectCandidate("<h1><x-local>A</x-local></h1>", "A");
+		expect(sourceHeadingInlineDiagnostic(error)).toBe(diagnostic);
+	});
+
+	it.each(combinations)(
+		"composes $tablePolicy/head=$selectedHead/inline=$selectedInline without promoting suppression",
+		async ({ tablePolicy, selectedHead, selectedInline }) => {
+			const close = vi.spyOn(HtmlTokenCursor.prototype, "close");
+			const options = {
+				...(tablePolicy === "strict" ? {} : { tableScopePolicy: tablePolicy }),
+				...(selectedHead
+					? { headScopePolicy: "explicit-body-boundary-v1" }
+					: {}),
+				...(selectedInline ? { headingInlinePolicy } : {}),
+				yieldEveryOperations: 1,
+			};
+			const hidden = `<h2>${privateMarker}</h2>`;
+			const table =
+				tablePolicy === "strict"
+					? `<table><tr><td>${hidden}</td></tr></table>`
+					: tablePolicy === "optional-end-tags-v1"
+						? `<table><tr><td>${hidden}<td>${hidden}</table>`
+						: `<table><thead><tr><th>${hidden}<tbody><tr><td>${hidden}</table>`;
+			const prefix =
+				(selectedHead ? "<head><body>" : "<head></head><body>") + table;
+			const name = selectedInline ? "x-local" : "span";
+			const source = `${prefix}<h1>A<${name}>B</${name}></h1>`;
+			const result = await scan(source, options);
+			expect(result.report.entries).toEqual([
+				{
+					ordinal: 1,
+					level: 1,
+					title: "AB",
+					titleTruncated: false,
+					anchor: {
+						kind: "source-utf16-range-v1",
+						startTag: { start: prefix.length, end: prefix.length + 4 },
+						endTag: { start: source.length - 5, end: source.length },
+					},
+				},
+			]);
+			expect(Object.keys(result.report).sort()).toEqual(
+				[
+					"kind",
+					"method",
+					"semantics",
+					"partial",
+					"contentSuccess",
+					"source",
+					"completion",
+					"scannedTo",
+					"entries",
+					"limits",
+					"counters",
+					...(tablePolicy === "strict" ? [] : ["tableScopePolicy"]),
+					...(selectedHead ? ["headScopePolicy"] : []),
+					...(selectedInline
+						? ["headingInlinePolicy", "headingInlineLimitations"]
+						: []),
+				].sort(),
+			);
+			expect(result.report.headingInlinePolicy).toBe(
+				selectedInline ? headingInlinePolicy : undefined,
+			);
+			expect(result.report.headingInlineLimitations).toEqual(
+				selectedInline ? limitations : undefined,
+			);
+			expect(result.report.counters.suppressedHeadingStarts).toBe(
+				tablePolicy === "strict" ? 1 : 2,
+			);
+			expect(result.report.counters.yields).toBeGreaterThan(0);
+			expect(result.jsonl).not.toContain(privateMarker);
+			const error = await captureFailure(() =>
+				scan(`${prefix}<h1><span><img/>`, options),
+			);
+			expectCode(error, "unsupported");
+			expect(sourceHeadingInlineDiagnostic(error)).toEqual({
+				kind: "source-heading-inline-start",
+				condition: "non-inline-start",
+				headingLevel: 1,
+				observedTag: "img",
+				inlineDepth: 1,
+			});
+			expect(await scan(source, options)).toEqual(result);
+			expect(close).toHaveBeenCalledTimes(3);
+			for (const cursor of close.mock.contexts)
+				expect((cursor as HtmlTokenCursor).closed).toBe(true);
+			expectDeepFrozen(result);
+		},
+	);
+
+	it("does not apply the additional-name ceiling outside an active heading", async () => {
+		const name = "x".repeat(65);
+		const prefix = `<${name}>`;
+		const result = await selectedScan(`${prefix}<h1>A</h1></${name}>`, {
+			maxTrackedDepth: 1,
+		});
+		expect(result.report.entries[0].title).toBe("A");
+		expect(result.report.entries[0].anchor.startTag).toEqual({
+			start: prefix.length,
+			end: prefix.length + 4,
+		});
+		expect(result.report.counters.maxTrackedDepth).toBe(1);
+	});
+
+	it("does not rearm a head boundary after an ordinary pre-heading barrier", async () => {
+		const prefix = `<head><div></div><body><h2>${privateMarker}</h2>`;
+		const options = { headScopePolicy: "explicit-body-boundary-v1" };
+		const error = await captureFailure(() =>
+			selectedScan(`${prefix}<h1><x>A</x></h1>`, options),
+		);
+		expectCode(error, "unsupported");
+		expect(sourceHeadingStructureDiagnostic(error)?.reason).toBe(
+			"unclosed-context",
+		);
+		expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+		const result = await selectedScan(
+			`${prefix}</head><h1>A<x>B</x></h1>`,
+			options,
+		);
+		expect(result.report.entries.map((entry) => entry.title)).toEqual(["AB"]);
+		expect(result.jsonl).not.toContain(privateMarker);
+	});
+
+	it.each([
+		{ token: "<plaintext>", reason: "ambiguous-text-mode", committed: true },
+		{ token: "<noscript>", reason: "ambiguous-text-mode", committed: true },
+		{
+			token: "<x duplicate duplicate>",
+			reason: "tokenizer-issue",
+			committed: false,
+		},
+	] as const)(
+		"retains earlier $reason before additional-name admission",
+		async ({ token, reason, committed }) => {
+			const source = `<h1>${token}`;
+			const error = await captureFailure(() => selectedScan(source));
+			expectCode(error, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(error)).toEqual({
+				kind: "source-heading-structure",
+				reason,
+				position: committed ? source.length : 4,
+				positionSemantics: "last-committed-source-utf16",
+			});
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it.each([
+		{ source: "<h1><x></h1 data-close-check=x>", flags: 0, attributes: 0 },
+		{ source: "<h1></h1 data-close-check=x>", flags: 1, attributes: 1 },
+		{ source: "<h1><x></x data-close-check=x>", flags: 1, attributes: 1 },
+		{ source: "<h1><x></x/>", flags: 1, attributes: 0 },
+	])("preserves plainEnd ordering for $source", async (fixture) => {
+		const flags = vi.fn();
+		const attributes = vi.fn();
+		const next = HtmlTokenCursor.prototype.next;
+		let instrumented = 0;
+		vi.spyOn(HtmlTokenCursor.prototype, "next").mockImplementation(function (
+			this: HtmlTokenCursor,
+		) {
+			const token = next.call(this);
+			if (token?.kind === "end") {
+				const actualFlag = token.selfClosing;
+				const actualAttributes = token.attributes;
+				flags.mockImplementation(() => actualFlag);
+				attributes.mockImplementation(() => actualAttributes);
+				Object.defineProperties(token, {
+					selfClosing: { get: flags, configurable: true, enumerable: true },
+					attributes: { get: attributes, configurable: true, enumerable: true },
+				});
+				instrumented++;
+			}
+			return token;
+		});
+		const error = await captureFailure(() => selectedScan(fixture.source));
+		expectCode(error, "unsupported");
+		expect(sourceHeadingStructureDiagnostic(error)?.reason).toBe(
+			"heading-close-structure",
+		);
+		expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+		expect(instrumented).toBe(1);
+		expect(flags).toHaveBeenCalledTimes(fixture.flags);
+		expect(attributes).toHaveBeenCalledTimes(fixture.attributes);
+	});
+
+	it.each(["x", longName])(
+		"separately admits length and eligibility precharges for %s",
+		async (name) => {
+			const source = `<h1><${name}/>`;
+			const base = nativePrefixWork(source, 2).workUnits;
+			const classified = base + 6 * name.length + 5;
+			for (const boundary of [
+				{ limit: base, observed: base + 1 },
+				{ limit: base + 1, observed: classified },
+				{ limit: classified - 1, observed: classified },
+			]) {
+				const error = await captureFailure(() =>
+					selectedScan(source, { maxWorkUnits: boundary.limit }),
+				);
+				expectLimit(error, {
+					kind: "source.headings-work",
+					unit: "code-units",
+					...boundary,
+				});
+				expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+			}
+			await expectInlineFailure(
+				source,
+				{ observedTag: "other" },
+				{ maxWorkUnits: classified },
+			);
+		},
+	);
+
+	it("precharges both length admissions before an unequal 64-unit comparison", async () => {
+		const source = `<h1><${longName}></${"y".repeat(64)}>`;
+		const base = nativePrefixWork(source, 3).workUnits;
+		for (const boundary of [
+			{ limit: base + 390, observed: base + 391 },
+			{ limit: base + 391, observed: base + 392 },
+			{ limit: base + 392, observed: base + 521 },
+			{ limit: base + 520, observed: base + 521 },
+		]) {
+			const error = await captureFailure(() =>
+				selectedScan(source, { maxWorkUnits: boundary.limit }),
+			);
+			expectLimit(error, {
+				kind: "source.headings-work",
+				unit: "code-units",
+				...boundary,
+			});
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+		}
+		const exact = await captureFailure(() =>
+			selectedScan(source, { maxWorkUnits: base + 521 }),
+		);
+		expectCode(exact, "unsupported");
+		expect(sourceHeadingStructureDiagnostic(exact)?.reason).toBe(
+			"heading-close-structure",
+		);
+		expect(sourceHeadingInlineDiagnostic(exact)).toBeUndefined();
+	});
+
+	it("does not add a completion yield before the ordinary EOF read", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		const controller = controllerFor();
+		const cursors = new Set<HtmlTokenCursor>();
+		const next = HtmlTokenCursor.prototype.next;
+		vi.spyOn(HtmlTokenCursor.prototype, "next").mockImplementation(function (
+			this: HtmlTokenCursor,
+		) {
+			cursors.add(this);
+			return next.call(this);
+		});
+		const pending = observe(
+			discoverResearchSourceHeadings(
+				ownedSource("<h1>A</h1>"),
+				{ method, headingInlinePolicy, yieldEveryWorkUnits: 30 },
+				controller.signal,
+			),
+		);
+		try {
+			await microtasks();
+			expect(pending.settled).toBe(false);
+			expect(vi.getTimerCount()).toBeGreaterThan(0);
+			expect(cursors.size).toBe(1);
+			for (const cursor of cursors) expect(cursor.operations).toBe(4);
+			await vi.runAllTimersAsync();
+			const outcome = await pending.outcome;
+			expect(outcome.error).toBeUndefined();
+			expect(outcome.value?.report.counters.workUnits).toBe(30);
+			expect(outcome.value?.report.counters.yields).toBe(1);
+			for (const cursor of cursors) expect(cursor.closed).toBe(true);
+		} finally {
+			controller.abort();
+			vi.clearAllTimers();
+			vi.useRealTimers();
+		}
+	});
+
+	it.each([
+		{ name: "push", source: "<h1><x>", tokens: 2, units: 12 },
+		{ name: "pop", source: "<h1><x></x>", tokens: 3, units: 18 },
+	])(
+		"yields after the selected $name and checks cancellation on resumption",
+		async ({ source, tokens, units }) => {
+			const threshold = nativePrefixWork(source, tokens).workUnits + units;
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+			const controller = controllerFor();
+			const cursors = new Set<HtmlTokenCursor>();
+			const next = HtmlTokenCursor.prototype.next;
+			vi.spyOn(HtmlTokenCursor.prototype, "next").mockImplementation(function (
+				this: HtmlTokenCursor,
+			) {
+				cursors.add(this);
+				return next.call(this);
+			});
+			const pending = observe(
+				discoverResearchSourceHeadings(
+					ownedSource(source),
+					{ method, headingInlinePolicy, yieldEveryWorkUnits: threshold },
+					controller.signal,
+				),
+			);
+			try {
+				await microtasks();
+				expect(pending.settled).toBe(false);
+				expect(vi.getTimerCount()).toBeGreaterThan(0);
+				expect(cursors.size).toBe(1);
+				for (const cursor of cursors) {
+					expect(cursor.operations).toBe(tokens);
+					expect(cursor.position).toBe(source.length);
+				}
+				controller.abort(new Error(privateMarker));
+				await vi.runAllTimersAsync();
+				const outcome = await pending.outcome;
+				expectCode(outcome.error, "aborted");
+				expect(outcome.value).toBeUndefined();
+				expect(sourceHeadingInlineDiagnostic(outcome.error)).toBeUndefined();
+				for (const cursor of cursors) expect(cursor.closed).toBe(true);
+			} finally {
+				controller.abort();
+				vi.clearAllTimers();
+				vi.useRealTimers();
+			}
+		},
+	);
+});
