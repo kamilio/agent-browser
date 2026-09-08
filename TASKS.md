@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Explicit host-only optional-end-tags-v2 now adds only canonical thead-to-tbody
+start replacement, preserving strict/default and v1 semantics, end/EOF rules,
+opaque boundaries and every resource limit. `SOURCE-TABLE-SECTIONS.md` records
+790passing tests in five native files,50new cases, build/strict/scoped Biome,
+independent runtime review and reconciliation of2716 inputs/334source artifacts.
+One prior unknown-policy fixture changes invalid v2 to invalid v3; no old test
+definition is removed. Full-context byte-verified snapshots exclude pending work.
+No source activation/recovery is claimed. A separately designed conservative
+explicit-body head-boundary policy remains unimplemented; modern privacy,
+provider/vault/device/page/consent, blocked research and all stopped/denied gates
+remain open. The original browser improvement goal continues.
+
 The separately authorized native scope-context trial still rejects at sourceUTF16
 872144/td/table/depth31, now with an actual bounded outer-to-inner stack containing
 head and accumulated table/thead/row/cell scopes. `SOURCE-SCOPE-CONTEXT-TRIAL.md`

@@ -32,7 +32,7 @@ export type ResearchSourceHeadingLimits = {
 export type ResearchSourceHeadingOptions =
 	Partial<ResearchSourceHeadingLimits> & {
 		method: "native-source-headings-v1";
-		tableScopePolicy?: "optional-end-tags-v1";
+		tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
 	};
 
 export interface SourceHeadingRange {
@@ -58,7 +58,7 @@ export interface ResearchSourceHeadingReport {
 	readonly semantics: "lexical-not-dom";
 	readonly partial: true;
 	readonly contentSuccess: null;
-	readonly tableScopePolicy?: "optional-end-tags-v1";
+	readonly tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
 	readonly source: ResearchHtmlSourceIdentity;
 	readonly completion: "eof" | "entry-limit";
 	readonly scannedTo: number;
@@ -118,7 +118,10 @@ export interface SourceHeadingScopeDiagnostic {
 
 export interface SourceHeadingScopeContextDiagnostic {
 	readonly kind: "source-heading-scope-context";
-	readonly tableScopePolicy: "strict" | "optional-end-tags-v1";
+	readonly tableScopePolicy:
+		| "strict"
+		| "optional-end-tags-v1"
+		| "optional-end-tags-v2";
 	readonly order: "outer-to-inner";
 	readonly scopes: readonly SourceHeadingScope[];
 }
@@ -231,7 +234,7 @@ function invalid(): never {
 
 function optionsSnapshot(value: unknown): {
 	readonly limits: Readonly<ResearchSourceHeadingLimits>;
-	readonly tableScopePolicy?: "optional-end-tags-v1";
+	readonly tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
 } {
 	if (value === null || typeof value !== "object" || types.isProxy(value))
 		invalid();
@@ -247,7 +250,10 @@ function optionsSnapshot(value: unknown): {
 	const limits: ResearchSourceHeadingLimits = {
 		...researchSourceHeadingLimits,
 	};
-	let tableScopePolicy: "optional-end-tags-v1" | undefined;
+	let tableScopePolicy:
+		| "optional-end-tags-v1"
+		| "optional-end-tags-v2"
+		| undefined;
 	for (const key of Reflect.ownKeys(value)) {
 		if (key === "method") continue;
 		if (
@@ -258,7 +264,11 @@ function optionsSnapshot(value: unknown): {
 		const descriptor = Object.getOwnPropertyDescriptor(value, key);
 		if (!descriptor || !Object.hasOwn(descriptor, "value")) invalid();
 		if (key === "tableScopePolicy") {
-			if (descriptor.value !== "optional-end-tags-v1") invalid();
+			if (
+				descriptor.value !== "optional-end-tags-v1" &&
+				descriptor.value !== "optional-end-tags-v2"
+			)
+				invalid();
 			tableScopePolicy = descriptor.value;
 			continue;
 		}
@@ -523,6 +533,12 @@ export async function discoverResearchSourceHeadings(
 		if (!suffix) return undefined;
 		if (name === "td" || name === "th") return suffix.cell;
 		if (name === "tr") return suffix.row;
+		if (
+			tableScopePolicy === "optional-end-tags-v2" &&
+			name === "tbody" &&
+			suffix.group === "thead"
+		)
+			return suffix.groupIndex;
 		return suffix.group === "tbody" ? suffix.groupIndex : undefined;
 	};
 	const tableEndPlan = (token: HtmlToken, name: SourceHeadingScope) => {
