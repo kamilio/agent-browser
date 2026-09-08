@@ -1,4 +1,5 @@
 [
+  "src/passkey-none-attestation.test.ts",
   "src/passkey-provider-throw.test.ts",
   "src/network-policy-diagnostic.test.ts",
   "src/browser-challenge-truncation.test.ts",

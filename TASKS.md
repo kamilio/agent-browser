@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+The provisional private none-attestation projection now passes363 focused native
+cases across three files:114new and249unchanged support cases. It supports a
+strict canonical CTAP profile, conditionally retains structurally eligible packed
+self statements, and otherwise emits none/empty while preserving authData bytes.
+PASSKEY-NONE-ATTESTATION.md records build/types/lint, original no-test preflight
+failure and fresh reviewed round02 with4413matching input pins. No broker/page/
+provider integration, signature verification or full privacy guarantee is claimed.
+Generating/none source qualifications, compatibility decisions and actual device/
+vault/guest/live gates remain outstanding; denied RP work stays excluded. Reviewed
+evidence is sealed with2900/2792 pins; the ongoing browser goal continues.
+
 Packed-attestation source section119 now has a separately verified native export:
 59blocks/15017bytes with no newGET. SOURCE-SECTION-PACKED-TRIAL.md records native
 and verifier success,10syntax/94checker/23native controls, and the corrected
