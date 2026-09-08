@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Software post-consent exclusion now carries a private one-use error identity bound
+to the original request signal. Only the live matching create broker promotes it
+to fixed InvalidStateError; ordinary errors reaching the new mapping stay redacted.
+`PASSKEY-CONSENTED-EXCLUSION.md` records227passing cases in five isolated files,
+40new cases, all187old assertion names preserved and2724matching input pins.
+All212frozen artifacts pass audit; integration review finds no actionable issue.
+Build/types/scoped lint pass; the initial import-order lint failure and a locale-
+ordering preflight refusal before tests remain intact. Trusted-provider provenance
+is not human-consent proof; existing private-error/proxy handling, full lifetime/
+attestation/page/device/vault/SafeJS gates remain open. No pending RP change or
+other denied gate is reopened; the original browser goal continues.
+
 Fresh browser-only research now adds native Apple specification, SWE-bench README
 and lm-evaluation-harness README exports, each with separate controls, oneGET and
 independent zero-GET verification. `BROWSER-RESEARCH-SEPTEMBER-08.md` distinguishes

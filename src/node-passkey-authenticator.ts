@@ -7,6 +7,7 @@ import {
 } from "node:crypto";
 import { types } from "node:util";
 import { NodePasskeyCheckpointFile } from "./node-passkey-checkpoint-file.js";
+import { createConsentedPasskeyExclusionError } from "./passkey-exclusion-error.js";
 import {
 	type PasskeyAssertion,
 	type PasskeyAuthenticator,
@@ -438,7 +439,7 @@ export class NodePasskeyAuthenticator implements PasskeyAuthenticator {
 							this.#credentials.get(excluded.toString("hex"))?.rpId ===
 							input.rpId
 						)
-							fail("InvalidStateError");
+							throw createConsentedPasskeyExclusionError(input.signal);
 					}
 				};
 				if (this.#credentials.size >= this.#maxCredentials)

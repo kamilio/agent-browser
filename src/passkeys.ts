@@ -1,3 +1,5 @@
+import { consumeConsentedPasskeyExclusionError } from "./passkey-exclusion-error.js";
+
 export const passkeyLimits = Object.freeze({
 	challengeBytes: 1024,
 	credentialIdBytes: 1023,
@@ -715,7 +717,15 @@ export class PasskeyBroker {
 						finish(
 							error instanceof PasskeyError
 								? error
-								: new PasskeyError("UnknownError"),
+								: new PasskeyError(
+										type === "webauthn.create" &&
+											consumeConsentedPasskeyExclusionError(
+												error,
+												controller.signal,
+											)
+											? "InvalidStateError"
+											: "UnknownError",
+									),
 						);
 				});
 			},

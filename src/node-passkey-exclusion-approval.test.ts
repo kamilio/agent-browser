@@ -455,8 +455,8 @@ describe("software creation approval precedes credential exclusion", () => {
 			effects.events.push("decision");
 			gate.decision.resolve({ approved: true });
 			if (matching) {
-				const error = await rejection(gate.pending, "UnknownError");
-				expect(error.message).toBe("Passkey authenticator failed");
+				const error = await rejection(gate.pending, "InvalidStateError");
+				expect(error.message).toBe("Passkey broker is unavailable");
 				expect(generateKeyPairSync).not.toHaveBeenCalled();
 				expect(effects.events).toEqual(["approval", "decision", "settled"]);
 			} else {
