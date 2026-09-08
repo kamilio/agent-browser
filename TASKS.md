@@ -1,5 +1,14 @@
 # Agent browser implementation tasks
 
+MMLU-Pro methodology research now has one native HTTP200 export and an independent
+zero-GET verifier: `MMLU-PRO-BENCHMARK-METHOD.md`. Eight native and four status
+controls pass;90frozen artifact hashes and source claims pass static review.
+Author-described expanded choices, prompt sensitivity and extraction/retry limits
+are separated from new measurements. Dataset quality, filtering/human-review
+details, contamination and current model ranking remain unestablished. Evidence
+stays partial; no linked dataset/paper/discussion, blocked endpoint or denied gate
+is opened. The browser goal and all unrelated acceptance work continue.
+
 Native challenge heuristics now preserve cutoff context: over-budget titles are
 not complete anchored titles, and one bounded lookahead only qualifies existing
 body boundaries without completing outside-budget markers. Confirmed headers
