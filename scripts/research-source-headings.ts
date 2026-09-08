@@ -33,6 +33,7 @@ export type ResearchSourceHeadingOptions =
 	Partial<ResearchSourceHeadingLimits> & {
 		method: "native-source-headings-v1";
 		tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
+		headScopePolicy?: "explicit-body-boundary-v1";
 	};
 
 export interface SourceHeadingRange {
@@ -59,6 +60,7 @@ export interface ResearchSourceHeadingReport {
 	readonly partial: true;
 	readonly contentSuccess: null;
 	readonly tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
+	readonly headScopePolicy?: "explicit-body-boundary-v1";
 	readonly source: ResearchHtmlSourceIdentity;
 	readonly completion: "eof" | "entry-limit";
 	readonly scannedTo: number;
@@ -235,6 +237,7 @@ function invalid(): never {
 function optionsSnapshot(value: unknown): {
 	readonly limits: Readonly<ResearchSourceHeadingLimits>;
 	readonly tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
+	readonly headScopePolicy?: "explicit-body-boundary-v1";
 } {
 	if (value === null || typeof value !== "object" || types.isProxy(value))
 		invalid();
@@ -254,11 +257,14 @@ function optionsSnapshot(value: unknown): {
 		| "optional-end-tags-v1"
 		| "optional-end-tags-v2"
 		| undefined;
+	let headScopePolicy: "explicit-body-boundary-v1" | undefined;
 	for (const key of Reflect.ownKeys(value)) {
 		if (key === "method") continue;
 		if (
 			typeof key !== "string" ||
-			(key !== "tableScopePolicy" && !Object.hasOwn(limits, key))
+			(key !== "tableScopePolicy" &&
+				key !== "headScopePolicy" &&
+				!Object.hasOwn(limits, key))
 		)
 			invalid();
 		const descriptor = Object.getOwnPropertyDescriptor(value, key);
@@ -272,6 +278,11 @@ function optionsSnapshot(value: unknown): {
 			tableScopePolicy = descriptor.value;
 			continue;
 		}
+		if (key === "headScopePolicy") {
+			if (descriptor.value !== "explicit-body-boundary-v1") invalid();
+			headScopePolicy = descriptor.value;
+			continue;
+		}
 		const name = key as keyof ResearchSourceHeadingLimits;
 		const selected: unknown = descriptor.value;
 		if (
@@ -283,7 +294,11 @@ function optionsSnapshot(value: unknown): {
 			invalid();
 		limits[name] = selected;
 	}
-	return Object.freeze({ limits: Object.freeze(limits), tableScopePolicy });
+	return Object.freeze({
+		limits: Object.freeze(limits),
+		tableScopePolicy,
+		headScopePolicy,
+	});
 }
 
 function freezeOwned<Value>(value: Value): Value {
@@ -407,7 +422,8 @@ export async function discoverResearchSourceHeadings(
 	signal?: AbortSignal,
 ): Promise<ResearchSourceHeadingDiscovery> {
 	const started = performance.now();
-	const { limits, tableScopePolicy } = optionsSnapshot(options);
+	const { limits, tableScopePolicy, headScopePolicy } =
+		optionsSnapshot(options);
 	const deadline = started + limits.timeoutMs;
 	let cursor: HtmlTokenCursor | undefined;
 	let scannerWork = 0;
@@ -424,6 +440,11 @@ export async function discoverResearchSourceHeadings(
 	const entries: SourceHeadingCandidate[] = [];
 	const scopes: SourceHeadingScope[] = [];
 	let heading: HeadingState | undefined;
+	let headPhase: "prefix" | "eligible" | "disabled" | "done" = headScopePolicy
+		? "prefix"
+		: "disabled";
+	let headDoctypeSeen = false;
+	let headHtmlSeen = false;
 	const unsupported = (
 		reason: SourceHeadingStructureReason,
 		scopeDiagnostic?: SourceHeadingScopeDiagnostic,
@@ -589,6 +610,107 @@ export async function discoverResearchSourceHeadings(
 		batchOperations = cursor.operations;
 		batchWork = work();
 	};
+	const headBoundaryActive = () =>
+		headPhase === "prefix" || headPhase === "eligible";
+	const observeHeadBoundary = async (
+		token: HtmlToken,
+		completedRaw = false,
+	) => {
+		if (!headBoundaryActive()) return;
+		charge(1);
+		if (token.kind === "text") {
+			for (let offset = 0; offset < token.data.length; offset += 256) {
+				const end = Math.min(offset + 256, token.data.length);
+				charge(end - offset);
+				let whitespaceOnly = true;
+				for (let index = offset; index < end; index++) {
+					const code = token.data.charCodeAt(index);
+					if (
+						code !== 9 &&
+						code !== 10 &&
+						code !== 12 &&
+						code !== 13 &&
+						code !== 32
+					)
+						whitespaceOnly = false;
+				}
+				checkpoint();
+				if (!whitespaceOnly) headPhase = "disabled";
+				await yieldBatch();
+				if (!whitespaceOnly) return;
+			}
+			if (!token.data.length) await yieldBatch();
+			return;
+		}
+		if (token.kind === "comment") {
+			await yieldBatch();
+			return;
+		}
+		let nextPhase = headPhase;
+		let nextDoctypeSeen = headDoctypeSeen;
+		let nextHtmlSeen = headHtmlSeen;
+		let closeHead = false;
+		if (headPhase === "prefix") {
+			if (token.kind === "doctype" && !headDoctypeSeen && !headHtmlSeen)
+				nextDoctypeSeen = true;
+			else if (
+				token.kind === "start" &&
+				token.name === "html" &&
+				!token.selfClosing &&
+				!headHtmlSeen
+			)
+				nextHtmlSeen = true;
+			else if (
+				token.kind === "start" &&
+				token.name === "head" &&
+				!token.selfClosing &&
+				scopes.length === 1 &&
+				scopes[0] === "head" &&
+				!heading
+			)
+				nextPhase = "eligible";
+			else nextPhase = "disabled";
+		} else if (headPhase === "eligible") {
+			if (
+				token.kind === "start" &&
+				(token.name === "base" ||
+					token.name === "link" ||
+					token.name === "meta" ||
+					(completedRaw &&
+						(token.name === "title" ||
+							token.name === "style" ||
+							token.name === "script")))
+			) {
+				await yieldBatch();
+				return;
+			}
+			if (
+				token.kind === "end" &&
+				token.name === "head" &&
+				scopes.length === 0 &&
+				!heading
+			)
+				nextPhase = "done";
+			else if (
+				token.kind === "start" &&
+				token.name === "body" &&
+				!token.selfClosing
+			) {
+				charge(1);
+				if (scopes.length === 1 && scopes[0] === "head" && !heading) {
+					charge(1);
+					closeHead = true;
+					nextPhase = "done";
+				} else nextPhase = "disabled";
+			} else nextPhase = "disabled";
+		}
+		checkpoint();
+		if (closeHead) scopes.pop();
+		headPhase = nextPhase;
+		headDoctypeSeen = nextDoctypeSeen;
+		headHtmlSeen = nextHtmlSeen;
+		await yieldBatch();
+	};
 	const read = async () => {
 		checkpoint();
 		if (!cursor) invalid();
@@ -676,10 +798,16 @@ export async function discoverResearchSourceHeadings(
 			}
 			if (token.kind === "text") {
 				if (heading) titleText(heading, token.data);
+				if (headScopePolicy && headBoundaryActive())
+					await observeHeadBoundary(token);
 				await yieldBatch();
 				continue;
 			}
-			if (token.kind === "comment" || token.kind === "doctype") continue;
+			if (token.kind === "comment" || token.kind === "doctype") {
+				if (headScopePolicy && headBoundaryActive())
+					await observeHeadBoundary(token);
+				continue;
+			}
 			const name = token.name;
 			if (name === "plaintext" || name === "noscript")
 				unsupported("ambiguous-text-mode");
@@ -730,6 +858,8 @@ export async function discoverResearchSourceHeadings(
 				const closing = await read();
 				if (!closing.token || !plainEnd(closing.token, name))
 					unsupported("raw-close-structure");
+				if (headScopePolicy && headBoundaryActive())
+					await observeHeadBoundary(token, true);
 				continue;
 			}
 			const tracked = isTrackedScope(name);
@@ -738,10 +868,16 @@ export async function discoverResearchSourceHeadings(
 					? suppressedStarts
 					: omittedStarts;
 				counts[name] = (counts[name] ?? 0) + 1;
-				if (voidTags.has(name)) continue;
+				if (voidTags.has(name)) {
+					if (headScopePolicy && headBoundaryActive())
+						await observeHeadBoundary(token);
+					continue;
+				}
 				if (token.selfClosing) {
 					if (name !== "svg" && name !== "math")
 						unsupported("scope-self-closing");
+					if (headScopePolicy && headBoundaryActive())
+						await observeHeadBoundary(token);
 					continue;
 				}
 				const remaining = tableScopePolicy ? tableStartPlan(name) : undefined;
@@ -750,11 +886,15 @@ export async function discoverResearchSourceHeadings(
 					track(remaining + 1);
 					scopes.length = remaining;
 					scopes.push(name);
+					if (headScopePolicy && headBoundaryActive())
+						await observeHeadBoundary(token);
 					await yieldBatch();
 					continue;
 				}
 				track(scopes.length + 1);
 				scopes.push(name);
+				if (headScopePolicy && headBoundaryActive())
+					await observeHeadBoundary(token);
 				if (tableScopePolicy) await yieldBatch();
 				continue;
 			}
@@ -765,6 +905,8 @@ export async function discoverResearchSourceHeadings(
 				if (remaining !== undefined) {
 					charge(scopes.length - remaining);
 					scopes.length = remaining;
+					if (headScopePolicy && headBoundaryActive())
+						await observeHeadBoundary(token);
 					await yieldBatch();
 					continue;
 				}
@@ -781,12 +923,18 @@ export async function discoverResearchSourceHeadings(
 						depth: scopes.length,
 					});
 				scopes.pop();
+				if (headScopePolicy && headBoundaryActive())
+					await observeHeadBoundary(token);
 				if (tableScopePolicy) await yieldBatch();
 				continue;
 			}
+			if (level === undefined && headScopePolicy && headBoundaryActive())
+				await observeHeadBoundary(token);
 			if (scopes.length) {
 				if (token.kind === "start" && level !== undefined)
 					suppressedHeadingStarts++;
+				if (level !== undefined && headScopePolicy && headBoundaryActive())
+					await observeHeadBoundary(token);
 				continue;
 			}
 			if (level !== undefined) {
@@ -808,6 +956,8 @@ export async function discoverResearchSourceHeadings(
 					pendingHigh: "",
 				};
 				extent();
+				if (headScopePolicy && headBoundaryActive())
+					await observeHeadBoundary(token);
 			}
 		}
 		checkpoint();
@@ -818,6 +968,7 @@ export async function discoverResearchSourceHeadings(
 			partial: true,
 			contentSuccess: null,
 			...(tableScopePolicy ? { tableScopePolicy } : {}),
+			...(headScopePolicy ? { headScopePolicy } : {}),
 			source: admitted.identity,
 			completion,
 			scannedTo: cursor.position,

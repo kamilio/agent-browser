@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Explicit host-only headScopePolicy explicit-body-boundary-v1 now permits one
+eligible leading head to end only at an actual body start, with bounded prefix/
+ASCII-whitespace checks and permanently terminal disqualification. Defaults,
+table policies, diagnostic schemas, limits and opaque suppression stay unchanged.
+`SOURCE-HEAD-BOUNDARY.md` records856passing tests in five native files,66new cases,
+unchanged790prior assertion names, build/strict/scoped Biome, independent review
+and reconciliation of2716 inputs/334source/48prior-feature artifacts. No actual
+source eligibility or recovery is inferred. Next is separately reviewed wrapper/
+verifier provenance and fresh integration before one exact source authorization.
+Modern privacy, provider/vault/device/page/consent, blocked research and all stopped/
+denied gates remain open. The original browser improvement goal continues.
+
 Explicit host-only optional-end-tags-v2 now adds only canonical thead-to-tbody
 start replacement, preserving strict/default and v1 semantics, end/EOF rules,
 opaque boundaries and every resource limit. `SOURCE-TABLE-SECTIONS.md` records
