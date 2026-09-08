@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+A fresh two-fixture native Markdown diagnostic now passes explicit representation
+and safety checks with zero source GETs; independent artifact verification passes.
+`NATIVE-MARKDOWN-TABLE-DIAGNOSTIC.md` preserves both false legacy raw-token verdicts,
+actual escaped labels and concatenated table headers. The old failed ROCm control
+and its unknown missing assertion remain unchanged; no table associations or GPU
+facts are established. Initial harness review findings were fixed before execution,
+not by changing fixtures/renderer/oracles. Bounded table extraction remains future
+work, as do all live/device/vault/guest gates and the ongoing browser goal. All48
+artifact entries pass final audit; the49-file frozen lane is bound by
+dfc321fe2df4da51ca55d712b23c076240ca8a2f5a7aededa1c2f1db5be03eb6.
+
 Passkey exception classification now uses private issuance identity and fresh fixed
 errors, not instanceof/forwarding. `PASSKEY-ERROR-IDENTITY.md` records137passing
 cases in three isolated files,20new and117unchanged, with2734matching input pins.
