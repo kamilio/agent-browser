@@ -1,5 +1,18 @@
 # Agent browser implementation tasks
 
+The first identity-bound native prose trial now validates the captured bytes and
+extracts Registration Ceremony Privacy without a new request. See
+`SOURCE-SECTION-PRIVACY-TRIAL.md`:5blocks/1407UTF16 units,4836-byte native export,
+23passing synthetic controls after a preserved22pass/1expectation failure, and
+independent18input+1declaredreceipt/1748compiled/57RUN integrity. All405frozen
+regular-file artifacts pass audit and independent evidence review finds no issue. The section
+supports a pre-consent exclusion-disclosure boundary, not a complete create/consent
+algorithm. Static review finds software exclusion checking before host approval;
+the next bounded fix defers it to the existing post-approval/pre-key check, with
+deterministic native regression tests. Old capture-readiness flags, denied parent-RP changes,
+vault/device/page/SafeJS and blocked research gates remain unchanged; the original
+browser improvement goal continues.
+
 Identity-bound native section projection now shares one bounded traversal with
 heading discovery, verifies exact source/anchors and publishes normalized blocks
 only after a complete boundary. `SOURCE-SECTIONS.md` records1732passing cases in
