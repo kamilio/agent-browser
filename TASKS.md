@@ -1,5 +1,15 @@
 # Agent browser implementation tasks
 
+The second identity-bound native prose trial extracts the credential-creation
+method and its deeper exception summary:226blocks/20841UTF16 units,40636bytes,
+23fresh passing controls and independent18input+1declaredreceipt/1748compiled/
+51RUN admission. All253frozen artifacts and1748engine files pass final audit;
+static evidence review finds no actionable issue. `SOURCE-SECTION-CREATE-TRIAL.md`
+records the zero-GET native operation and its limits. Consent-conditioned exclusion errors corroborate the
+bounded software fix; full page error/lifetime and conditional attestation
+handling are not yet implemented by this evidence. The original browser goal
+continues, historical readiness flags stay unchanged and denied gates stay closed.
+
 Software passkey creation now defers exclusion membership checking until the
 existing trusted host approval succeeds, retaining liveness and exclusion checks
 before key generation or persistence. `PASSKEY-EXCLUSION-APPROVAL.md` records
