@@ -1778,3 +1778,841 @@ describe("trusted native cursor-window operation diagnostics", () => {
 		expect(htmlTokenCursorWindowDiagnostic(error)).toBe(diagnostic);
 	});
 });
+
+describe("bounded native raw discard steps", () => {
+	type RawName = Parameters<HtmlTokenCursor["discardRawStep"]>[0];
+	const names = [
+		"script",
+		"style",
+		"xmp",
+		"iframe",
+		"noembed",
+		"noframes",
+	] as const;
+	const windows = [16, 17, 32, 65_536] as const;
+
+	function compareDiscard(
+		source: string,
+		name: RawName,
+		window: number,
+		end: number,
+		status: "end-tag" | "eof" = "end-tag",
+	) {
+		const nativeIssues: string[] = [];
+		const cursorIssues: string[] = [];
+		const native = new HtmlTokenizer(source, (code) => nativeIssues.push(code));
+		expect(native.raw(name, false)).toBe(source.slice(0, end));
+		expect(native.position).toBe(end);
+		const cursor = cursorFor(source, { maxWindowCodeUnits: window }, (code) =>
+			cursorIssues.push(code),
+		);
+		let discarded = 0;
+		for (let attempt = 0; attempt <= Math.ceil(source.length / 6); attempt++) {
+			const before = cursor.position;
+			const work = cursor.workUnits;
+			const length = Math.min(window, source.length - before);
+			const result = cursor.discardRawStep(name);
+			expect(Reflect.ownKeys(result).sort()).toEqual([
+				"discardedCodeUnits",
+				"position",
+				"status",
+			]);
+			expect(Object.isFrozen(result)).toBe(true);
+			expect(result.position).toBe(cursor.position);
+			expect(result.discardedCodeUnits).toBe(cursor.position - before);
+			expect(result.discardedCodeUnits).toBeGreaterThanOrEqual(0);
+			expect(result.discardedCodeUnits).toBeLessThanOrEqual(length);
+			expect(cursor.operations).toBe(attempt + 1);
+			expect(cursor.workUnits - work).toBeGreaterThanOrEqual(length);
+			expect(cursor.workUnits - work).toBeLessThanOrEqual(25 * length + 2);
+			expect(cursor.closed).toBe(false);
+			discarded += result.discardedCodeUnits;
+			if (result.status === "more") {
+				expect(source.length - before).toBeGreaterThan(window);
+				expect(result.discardedCodeUnits).toBeGreaterThanOrEqual(window - 10);
+				expect(cursorIssues).toEqual([]);
+				expect(cursor.issueCount).toBe(0);
+				continue;
+			}
+			expect(result.status).toBe(status);
+			expect(discarded).toBe(end);
+			expect(cursor.position).toBe(native.position);
+			expect(cursorIssues).toEqual(nativeIssues);
+			expect(cursorIssues).toEqual(
+				status === "eof" ? ["unterminated-raw-element"] : [],
+			);
+			expect(cursor.issueCount).toBe(native.issueCount);
+			expect(cursor.next()).toEqual(native.next());
+			expect(cursor.position).toBe(native.position);
+			expect(cursorIssues).toEqual(nativeIssues);
+			return;
+		}
+		throw new Error("Synthetic raw discard did not terminate");
+	}
+
+	for (const name of names) {
+		for (const window of windows) {
+			it(`matches native ${name} across window ${window} prefix shifts`, () => {
+				for (const shift of [-1, 0, 1]) {
+					const body = "a".repeat(window - 10 + shift);
+					compareDiscard(
+						`${body}</${name.toUpperCase()}>tail`,
+						name,
+						window,
+						body.length,
+					);
+				}
+				const body = `</${name}x></${name}\u000b>\0&amp;😀\ud800<!--quoted '"'>`;
+				compareDiscard(`${body}</${name}>tail`, name, window, body.length);
+			});
+		}
+
+		it(`recognizes every native closing delimiter for ${name}`, () => {
+			for (const delimiter of ["\t", "\n", "\f", "\r", " ", "/", ">"])
+				compareDiscard(
+					`abc</${name}${delimiter}${delimiter === ">" ? "" : ">"}tail`,
+					name,
+					16,
+					3,
+				);
+		});
+	}
+
+	for (const window of windows) {
+		it(`preserves script phases and dash carry with window ${window}`, () => {
+			const bodies = [
+				"<!--escaped",
+				"<!--<ScRiPt>double</sCrIpT>escaped",
+				"<!--<script>double-->data",
+				"<!--<script/>double</script/>escaped",
+				"<!--<scriptx>not-double",
+				"<!--<script>--!>still-double</script>escaped",
+				"<!--<script>inner</scriptx>still-double</script>escaped",
+			];
+			for (let shift = 0; shift <= (window === 65_536 ? 0 : 12); shift++) {
+				for (const body of bodies) {
+					const prefix = "a".repeat(window - 10 + shift);
+					const payload = prefix + body;
+					compareDiscard(
+						`${payload}</script>tail`,
+						"script",
+						window,
+						payload.length,
+					);
+				}
+			}
+		});
+
+		it(`distinguishes genuine EOF from window ${window} boundaries`, () => {
+			for (const name of names) {
+				for (const source of [
+					"",
+					"a".repeat(window),
+					"a".repeat(window + 1),
+					`</${name}`,
+				])
+					compareDiscard(source, name, window, source.length, "eof");
+				compareDiscard(`</${name}>`, name, window, 0);
+			}
+		});
+	}
+
+	it("retains local-zero and local-one dash carry and the legacy double reset", () => {
+		for (const body of [
+			"<!----><script>",
+			"<!--x--><script>",
+			"<!--<script></script>",
+			"<!--<script>--><script>",
+		])
+			compareDiscard(`${body}</script>`, "script", 16, body.length);
+		for (const fixture of [
+			{ source: "<!----><script></script>", secondWork: 54 },
+			{ source: "<!--x--><script></script>", secondWork: 51 },
+		]) {
+			const cursor = cursorFor(fixture.source, { maxWindowCodeUnits: 16 });
+			expect(cursor.discardRawStep("script")).toEqual({
+				status: "more",
+				position: 6,
+				discardedCodeUnits: 6,
+			});
+			expect(cursor.workUnits).toBe(25);
+			expect(cursor.discardRawStep("script")).toEqual({
+				status: "more",
+				position: 12,
+				discardedCodeUnits: 6,
+			});
+			expect(cursor.workUnits).toBe(25 + fixture.secondWork);
+		}
+	});
+
+	it("counts UTF16 units even when a surrogate pair straddles the committed boundary", () => {
+		const cursor = cursorFor(`aaaaa😀${"b".repeat(20)}</style>`, {
+			maxWindowCodeUnits: 16,
+		});
+		expect(cursor.discardRawStep("style")).toEqual({
+			status: "more",
+			position: 6,
+			discardedCodeUnits: 6,
+		});
+		const body = `aaaaa😀${"b".repeat(20)}`;
+		compareDiscard(`${body}</style>`, "style", 16, 27);
+	});
+
+	it("returns only immutable metadata and does not accept caller state", () => {
+		const cursor = cursorFor(`${"a".repeat(30)}</style>`, {
+			maxWindowCodeUnits: 16,
+		});
+		const first = cursor.discardRawStep("style");
+		expect(first).toEqual({
+			status: "more",
+			position: 6,
+			discardedCodeUnits: 6,
+		});
+		expect(Object.getPrototypeOf(first)).toBe(Object.prototype);
+		for (const key of Reflect.ownKeys(first)) {
+			expect(Object.getOwnPropertyDescriptor(first, key)).toMatchObject({
+				writable: false,
+				configurable: false,
+				enumerable: true,
+			});
+			expect(Reflect.set(first, key, "payload")).toBe(false);
+		}
+		expect(Reflect.set(first, "state", "double")).toBe(false);
+		const second = cursor.discardRawStep("style");
+		expect(second).not.toBe(first);
+		expect(second).toEqual({
+			status: "more",
+			position: 12,
+			discardedCodeUnits: 6,
+		});
+		expect(first).toEqual({
+			status: "more",
+			position: 6,
+			discardedCodeUnits: 6,
+		});
+	});
+
+	it("discards a cached ordinary window and reports absolute positions after next", () => {
+		const source = `<style>${"a".repeat(20)}</style>tail`;
+		const native = new HtmlTokenizer(source, () => {});
+		const cursor = cursorFor(source, { maxWindowCodeUnits: 16 });
+		expect(cursor.next()).toEqual(native.next());
+		expect(native.raw("style")).toBe("a".repeat(20));
+		expect(cursor.discardRawStep("style")).toEqual({
+			status: "more",
+			position: 13,
+			discardedCodeUnits: 6,
+		});
+		expect(cursor.discardRawStep("style")).toEqual({
+			status: "more",
+			position: 19,
+			discardedCodeUnits: 6,
+		});
+		expect(cursor.discardRawStep("style")).toEqual({
+			status: "more",
+			position: 25,
+			discardedCodeUnits: 6,
+		});
+		expect(cursor.discardRawStep("style")).toEqual({
+			status: "end-tag",
+			position: 27,
+			discardedCodeUnits: 2,
+		});
+		expect(cursor.operations).toBe(5);
+		expect(cursor.next()).toEqual(native.next());
+		expect(cursor.position).toBe(native.position);
+	});
+
+	it("clears terminal state and treats later discards as fresh operations", () => {
+		const issues: string[] = [];
+		const cursor = cursorFor("</style>tail</xmp>", {}, (code) =>
+			issues.push(code),
+		);
+		expect(cursor.discardRawStep("style").position).toBe(0);
+		expect(cursor.discardRawStep("style").position).toBe(0);
+		expect(cursor.next()).toMatchObject({ kind: "end", name: "style" });
+		expect(cursor.discardRawStep("xmp")).toEqual({
+			status: "end-tag",
+			position: 12,
+			discardedCodeUnits: 4,
+		});
+		expect(cursor.next()).toMatchObject({ kind: "end", name: "xmp" });
+		for (const name of ["script", "style"] as const)
+			expect(cursor.discardRawStep(name)).toEqual({
+				status: "eof",
+				position: 18,
+				discardedCodeUnits: 0,
+			});
+		expect(cursor.operations).toBe(7);
+		expect(cursor.issueCount).toBe(2);
+		expect(issues).toEqual([
+			"unterminated-raw-element",
+			"unterminated-raw-element",
+		]);
+		expect(cursor.remainder()).toBe("");
+	});
+
+	it("leaves malformed closing tokens for next rather than validating them", () => {
+		const issues: string[] = [];
+		const cursor = cursorFor("abc</style a", {}, (code) => issues.push(code));
+		expect(cursor.discardRawStep("style")).toEqual({
+			status: "end-tag",
+			position: 3,
+			discardedCodeUnits: 3,
+		});
+		expect(issues).toEqual([]);
+		const nativeIssues: string[] = [];
+		const native = new HtmlTokenizer("abc</style a", (code) =>
+			nativeIssues.push(code),
+		);
+		native.raw("style");
+		expect(cursor.next()).toEqual(native.next());
+		expect(issues).toEqual(nativeIssues);
+		expect(issues.length).toBeGreaterThan(0);
+	});
+
+	it("allows a later genuine next window refusal with its unchanged attribution", () => {
+		const cursor = cursorFor(`abc</style ${"a".repeat(30)}>`, {
+			maxWindowCodeUnits: 16,
+		});
+		expect(cursor.discardRawStep("style").status).toBe("end-tag");
+		const error = captureError(() => cursor.next());
+		expectLimit(error, {
+			kind: "html.cursor-window",
+			unit: "code-units",
+			limit: 16,
+			observed: 17,
+		});
+		expect(htmlTokenCursorWindowDiagnostic(error)).toEqual({
+			kind: "html-cursor-window",
+			operation: "next",
+			position: 3,
+			positionSemantics: "last-committed-source-utf16",
+		});
+		expect(cursor.position).toBe(3);
+		expectClosed(cursor);
+	});
+
+	it.each(["title", "textarea"] as const)(
+		"preserves legacy %s entity mode and window refusal",
+		(name) => {
+			const issues: string[] = [];
+			const source = `&amp;&#0;</${name}>`;
+			const nativeIssues: string[] = [];
+			const native = new HtmlTokenizer(source, (code) =>
+				nativeIssues.push(code),
+			);
+			const short = cursorFor(source, {}, (code) => issues.push(code));
+			expect(short.raw(name, true)).toBe(native.raw(name, true));
+			expect(issues).toEqual(nativeIssues);
+			expect(issues.length).toBeGreaterThan(0);
+			const long = cursorFor(`${"a".repeat(20)}</${name}>`, {
+				maxWindowCodeUnits: 16,
+			});
+			const error = captureError(() => long.raw(name, true));
+			expectLimit(error, {
+				kind: "html.cursor-window",
+				unit: "code-units",
+				limit: 16,
+				observed: 17,
+			});
+			expect(htmlTokenCursorWindowDiagnostic(error)?.operation).toBe("raw");
+			expect(long.position).toBe(0);
+			expectClosed(long);
+		},
+	);
+
+	it("rejects wrong names, types and arity without coercion or work", () => {
+		const trap = vi.fn((): never => {
+			throw new Error("Unexpected coercion");
+		});
+		const accessor = Object.defineProperty({}, Symbol.toPrimitive, {
+			get: trap,
+		});
+		const proxy = new Proxy(
+			{},
+			{ get: trap, getPrototypeOf: trap, ownKeys: trap },
+		);
+		const revoked = Proxy.revocable({}, {});
+		revoked.revoke();
+		const invalid: unknown[][] = [
+			[],
+			[undefined],
+			[null],
+			[0],
+			[true],
+			[Symbol("script")],
+			[""],
+			["SCRIPT"],
+			["Style"],
+			["script "],
+			["title"],
+			["textarea"],
+			["plaintext"],
+			["noscript"],
+			[new String("script")],
+			[accessor],
+			[proxy],
+			[revoked.proxy],
+			["script", undefined],
+			["script", false],
+			["script", {}],
+		];
+		for (const args of invalid) {
+			const cursor = cursorFor("</script>");
+			const error = captureError(() =>
+				Reflect.apply(cursor.discardRawStep, cursor, args),
+			);
+			expectCode(error, "invalid-input");
+			expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+			expect(resourceLimitDiagnostic(error)).toBeUndefined();
+			expect(cursor.position).toBe(0);
+			expect(cursor.operations).toBe(1);
+			expect(cursor.workUnits).toBe(0);
+			expectClosed(cursor);
+		}
+		expect(trap).not.toHaveBeenCalled();
+	});
+
+	it("rejects every window below sixteen even for empty input without window branding", () => {
+		for (let window = 1; window < 16; window++) {
+			const cursor = cursorFor("", { maxWindowCodeUnits: window });
+			const error = captureError(() => cursor.discardRawStep("style"));
+			expectCode(error, "invalid-input");
+			expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+			expect(cursor.operations).toBe(1);
+			expect(cursor.issueCount).toBe(0);
+			expect(cursor.workUnits).toBe(0);
+			expect(cursor.position).toBe(0);
+			expectClosed(cursor);
+		}
+	});
+
+	it("uses immutable option snapshots and the unchanged default limits", () => {
+		const options = { maxWindowCodeUnits: 16 };
+		const cursor = cursorFor(`${"a".repeat(30)}</style>`, options);
+		options.maxWindowCodeUnits = 1;
+		expect(cursor.discardRawStep("style").position).toBe(6);
+		expect(cursor.limits.maxWindowCodeUnits).toBe(16);
+		expect(Object.isFrozen(cursor.limits)).toBe(true);
+		const defaults = cursorFor("</style>");
+		expect(defaults.limits).toEqual(canonicalLimits);
+		expect(defaults.discardRawStep("style")).toEqual({
+			status: "end-tag",
+			position: 0,
+			discardedCodeUnits: 0,
+		});
+		const getter = vi.fn(() => 16);
+		const hostile = Object.defineProperty({}, "maxWindowCodeUnits", {
+			get: getter,
+		});
+		expectCode(
+			captureError(() => cursorFor("", hostile)),
+			"invalid-input",
+		);
+		expect(getter).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"next",
+		"raw",
+		"remainder",
+		"changed-name",
+		"extra-argument",
+	] as const)(
+		"fails closed without committing when an active session receives %s",
+		(method) => {
+			const cursor = cursorFor(`${"a".repeat(30)}</style>`, {
+				maxWindowCodeUnits: 16,
+			});
+			cursor.discardRawStep("style");
+			const work = cursor.workUnits;
+			const error = captureError(() => {
+				if (method === "raw") return cursor.raw("style");
+				if (method === "changed-name") return cursor.discardRawStep("script");
+				if (method === "extra-argument")
+					return Reflect.apply(cursor.discardRawStep, cursor, [
+						"style",
+						undefined,
+					]);
+				return cursor[method]();
+			});
+			expectCode(error, "invalid-input");
+			expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+			expect(cursor.position).toBe(6);
+			expect(cursor.operations).toBe(2);
+			expect(cursor.workUnits).toBe(work);
+			expectClosed(cursor);
+		},
+	);
+
+	it("closes an active session idempotently and rejects further steps before charging", () => {
+		const cursor = cursorFor("a".repeat(30), { maxWindowCodeUnits: 16 });
+		cursor.discardRawStep("style");
+		const work = cursor.workUnits;
+		cursor.close();
+		cursor.close();
+		expectCode(
+			captureError(() => cursor.discardRawStep("style")),
+			"closed",
+		);
+		expect(cursor.operations).toBe(1);
+		expect(cursor.position).toBe(6);
+		expect(cursor.workUnits).toBe(work);
+		expectClosed(cursor);
+	});
+
+	it("shares the original operation budget across successful steps and terminal calls", () => {
+		const cursor = cursorFor("a".repeat(30), {
+			maxWindowCodeUnits: 16,
+			maxOperations: 2,
+		});
+		cursor.discardRawStep("style");
+		cursor.discardRawStep("style");
+		const work = cursor.workUnits;
+		const error = captureError(() => cursor.discardRawStep("style"));
+		expectLimit(error, {
+			kind: "html.cursor-operations",
+			unit: "operations",
+			limit: 2,
+			observed: 3,
+		});
+		expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+		expect(cursor.operations).toBe(3);
+		expect(cursor.workUnits).toBe(work);
+		expect(cursor.position).toBe(12);
+		expectClosed(cursor);
+		const empty = cursorFor("", { maxOperations: 1 });
+		empty.discardRawStep("style");
+		expectLimit(
+			captureError(() => empty.discardRawStep("style")),
+			{
+				kind: "html.cursor-operations",
+				unit: "operations",
+				limit: 1,
+				observed: 2,
+			},
+		);
+		expect(empty.issueCount).toBe(1);
+	});
+
+	it.each([
+		{
+			label: "style overlap",
+			name: "style",
+			source: "a".repeat(30),
+			work: 24,
+			position: 6,
+			status: "more",
+		},
+		{
+			label: "script overlap",
+			name: "script",
+			source: "a".repeat(30),
+			work: 48,
+			position: 6,
+			status: "more",
+		},
+		{
+			label: "immediate style",
+			name: "style",
+			source: "</style>",
+			work: 17,
+			position: 0,
+			status: "end-tag",
+		},
+		{
+			label: "immediate script",
+			name: "script",
+			source: "</script>",
+			work: 23,
+			position: 0,
+			status: "end-tag",
+		},
+		{
+			label: "empty EOF",
+			name: "style",
+			source: "",
+			work: 0,
+			position: 0,
+			status: "eof",
+		},
+		{
+			label: "short style prefix",
+			name: "style",
+			source: "<",
+			work: 10,
+			position: 1,
+			status: "eof",
+		},
+		{
+			label: "short script prefix",
+			name: "script",
+			source: "<",
+			work: 15,
+			position: 1,
+			status: "eof",
+		},
+		{
+			label: "script comment jump",
+			name: "script",
+			source: "<!--",
+			work: 9,
+			position: 4,
+			status: "eof",
+		},
+		{
+			label: "script double-open and lookbehind",
+			name: "script",
+			source: "<!--<script>",
+			work: 38,
+			position: 12,
+			status: "eof",
+		},
+	] as const)(
+		"charges exact copy, dispatch, prefix and carry work for $label",
+		({ name, source, work, position, status }) => {
+			const cursor = cursorFor(source, {
+				maxWindowCodeUnits: 16,
+				maxWorkUnits: Math.max(1, work),
+			});
+			expect(cursor.discardRawStep(name)).toEqual({
+				status,
+				position,
+				discardedCodeUnits: position,
+			});
+			expect(cursor.workUnits).toBe(work);
+			expect(cursor.operations).toBe(1);
+			expect(cursor.issueCount).toBe(status === "eof" ? 1 : 0);
+			expect(cursor.closed).toBe(false);
+		},
+	);
+
+	it.each([
+		{
+			label: "copy",
+			name: "style",
+			source: "a".repeat(30),
+			limit: 15,
+			observed: 16,
+		},
+		{
+			label: "dispatch",
+			name: "style",
+			source: "a".repeat(30),
+			limit: 16,
+			observed: 17,
+		},
+		{
+			label: "carry",
+			name: "style",
+			source: "a".repeat(30),
+			limit: 23,
+			observed: 24,
+		},
+		{
+			label: "comment probe",
+			name: "script",
+			source: "a".repeat(30),
+			limit: 20,
+			observed: 21,
+		},
+		{
+			label: "full failed short-prefix width",
+			name: "style",
+			source: "<",
+			limit: 9,
+			observed: 10,
+		},
+		{
+			label: "successful close probe",
+			name: "script",
+			source: "</script>",
+			limit: 22,
+			observed: 23,
+		},
+	] as const)(
+		"retains the failed $label debit without publishing tentative progress",
+		({ name, source, limit, observed }) => {
+			const onIssue = vi.fn();
+			const cursor = cursorFor(
+				source,
+				{ maxWindowCodeUnits: 16, maxWorkUnits: limit },
+				onIssue,
+			);
+			const error = captureError(() => cursor.discardRawStep(name));
+			expectLimit(error, {
+				kind: "html.cursor-work",
+				unit: "code-units",
+				limit,
+				observed,
+			});
+			expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+			expect(cursor.workUnits).toBe(observed);
+			expect(cursor.position).toBe(0);
+			expect(cursor.operations).toBe(1);
+			expect(cursor.issueCount).toBe(0);
+			expect(onIssue).not.toHaveBeenCalled();
+			expectClosed(cursor);
+		},
+	);
+
+	it("charges overlap again and retains failed recopy work after a committed step", () => {
+		const source = `${"a".repeat(30)}</style>`;
+		const accepted = cursorFor(source, {
+			maxWindowCodeUnits: 16,
+			maxWorkUnits: 48,
+		});
+		accepted.discardRawStep("style");
+		expect(accepted.workUnits).toBe(24);
+		accepted.discardRawStep("style");
+		expect(accepted.workUnits).toBe(48);
+		expect(accepted.position).toBe(12);
+		const cursor = cursorFor(source, {
+			maxWindowCodeUnits: 16,
+			maxWorkUnits: 24,
+		});
+		cursor.discardRawStep("style");
+		const error = captureError(() => cursor.discardRawStep("style"));
+		expectLimit(error, {
+			kind: "html.cursor-work",
+			unit: "code-units",
+			limit: 24,
+			observed: 40,
+		});
+		expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+		expect(cursor.position).toBe(6);
+		expect(cursor.workUnits).toBe(40);
+		expect(cursor.operations).toBe(2);
+		expectClosed(cursor);
+	});
+
+	it("enforces issue quota before delivery and shares accepted EOF issues", () => {
+		const denied = vi.fn();
+		const cursor = cursorFor(
+			"a".repeat(17),
+			{ maxWindowCodeUnits: 16, maxIssues: 0 },
+			denied,
+		);
+		cursor.discardRawStep("style");
+		const error = captureError(() => cursor.discardRawStep("style"));
+		expectLimit(error, {
+			kind: "html.issues",
+			unit: "issues",
+			limit: 0,
+			observed: 1,
+		});
+		expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+		expect(cursor.position).toBe(6);
+		expect(cursor.issueCount).toBe(1);
+		expect(cursor.workUnits).toBe(46);
+		expect(denied).not.toHaveBeenCalled();
+		expectClosed(cursor);
+		const accepted = vi.fn();
+		const empty = cursorFor("", { maxIssues: 1 }, accepted);
+		empty.discardRawStep("style");
+		expectLimit(
+			captureError(() => empty.discardRawStep("script")),
+			{ kind: "html.issues", unit: "issues", limit: 1, observed: 2 },
+		);
+		expect(empty.issueCount).toBe(2);
+		expect(accepted).toHaveBeenCalledTimes(1);
+		expect(accepted).toHaveBeenCalledWith("unterminated-raw-element");
+	});
+
+	it.each(["throw", "reenter", "close", "abort", "expire"] as const)(
+		"does not commit tentative EOF when its issue callback performs %s",
+		(effect) => {
+			let now = 100;
+			vi.spyOn(performance, "now").mockImplementation(() => now);
+			const controller = new AbortController();
+			const failure = new Error("Synthetic issue callback failure");
+			const onIssue = vi.fn(() => {
+				if (effect === "throw") throw failure;
+				if (effect === "reenter")
+					expectCode(
+						captureError(() => cursor.discardRawStep("style")),
+						"invalid-input",
+					);
+				if (effect === "close") cursor.close();
+				if (effect === "abort") controller.abort();
+				if (effect === "expire") now = 110;
+			});
+			const cursor = cursorFor(
+				"a".repeat(17),
+				{ maxWindowCodeUnits: 16, timeoutMs: 10 },
+				onIssue,
+				controller.signal,
+			);
+			cursor.discardRawStep("style");
+			const error = captureError(() => cursor.discardRawStep("style"));
+			if (effect === "throw") expect(error).toBe(failure);
+			else
+				expectCode(
+					error,
+					effect === "abort"
+						? "aborted"
+						: effect === "expire"
+							? "timeout"
+							: "closed",
+				);
+			expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+			expect(cursor.position).toBe(6);
+			expect(cursor.operations).toBe(2);
+			expect(cursor.workUnits).toBe(46);
+			expect(cursor.issueCount).toBe(1);
+			expect(onIssue).toHaveBeenCalledTimes(1);
+			expect(onIssue).toHaveBeenCalledWith("unterminated-raw-element");
+			expectClosed(cursor);
+		},
+	);
+
+	it("preserves a genuine foreign window error without relabeling its origin", () => {
+		const origin = cursorFor("<p>abcdef", { maxWindowCodeUnits: 3 });
+		origin.next();
+		const failure = captureError(() => origin.remainder());
+		const diagnostic = htmlTokenCursorWindowDiagnostic(failure);
+		expect(diagnostic).toEqual({
+			kind: "html-cursor-window",
+			operation: "remainder",
+			position: 3,
+			positionSemantics: "last-committed-source-utf16",
+		});
+		const cursor = cursorFor("a".repeat(17), { maxWindowCodeUnits: 16 }, () => {
+			throw failure;
+		});
+		cursor.discardRawStep("style");
+		expect(captureError(() => cursor.discardRawStep("style"))).toBe(failure);
+		expect(htmlTokenCursorWindowDiagnostic(failure)).toBe(diagnostic);
+		expect(cursor.position).toBe(6);
+		expect(cursor.issueCount).toBe(1);
+		expectClosed(cursor);
+	});
+
+	it.each(["abort", "deadline"] as const)(
+		"preserves the original %s across steps",
+		(effect) => {
+			let now = 100;
+			vi.spyOn(performance, "now").mockImplementation(() => now);
+			const controller = new AbortController();
+			const cursor = cursorFor(
+				"a".repeat(30),
+				{ maxWindowCodeUnits: 16, timeoutMs: 10 },
+				() => {},
+				controller.signal,
+			);
+			now = 109;
+			cursor.discardRawStep("style");
+			const work = cursor.workUnits;
+			if (effect === "abort") controller.abort();
+			else now = 110;
+			const error = captureError(() => cursor.discardRawStep("style"));
+			expectCode(error, effect === "abort" ? "aborted" : "timeout");
+			expect(htmlTokenCursorWindowDiagnostic(error)).toBeUndefined();
+			expect(cursor.position).toBe(6);
+			expect(cursor.operations).toBe(1);
+			expect(cursor.workUnits).toBe(work);
+			expectClosed(cursor);
+		},
+	);
+});

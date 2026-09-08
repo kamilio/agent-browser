@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AgentBrowserError } from "./errors.js";
 import { HtmlTokenizer } from "./html-tokenizer.js";
 import { resourceLimitDiagnostic } from "./resource-limit.js";
@@ -651,4 +651,202 @@ it("uses the same fixed quota message across native paths, limits and private so
 	const repeatedError = quotaError(() => repeated.next(), 1, 2);
 	expect(rawError.message).toBe(textError.message);
 	expect(repeatedError.message).toBe(textError.message);
+});
+
+describe("legacy raw issue neutrality under shared script transitions", () => {
+	const rawCases = [
+		{ name: "script", source: "<!--<script>nested", read: script },
+		{ name: "style", source: "body\0&#0;", read: style },
+	];
+
+	it.each(rawCases)(
+		"buffers $name EOF only after bounded retries and preserves their work",
+		({ source, read }) => {
+			const observations: unknown[] = [];
+			const tokenizer = new HtmlTokenizer(
+				source,
+				(code) => {
+					observations.push({
+						code,
+						position: tokenizer.position,
+						work: tokenizer.workUnits,
+						issues: tokenizer.issueCount,
+					});
+				},
+				1,
+			);
+			const buffers = observeNativeBuffers(tokenizer);
+			tokenizer.setBoundary(source.length);
+			for (let attempt = 1; attempt <= 2; attempt++) {
+				expect(read(tokenizer)).toBeUndefined();
+				expect(tokenizer.position).toBe(0);
+				expect(tokenizer.paused).toBe(true);
+				expect(tokenizer.workUnits).toBe(attempt * source.length);
+				expect(tokenizer.issueCount).toBe(0);
+				expect(observations).toEqual([]);
+			}
+			expect(buffers).toEqual([[], []]);
+			tokenizer.setBoundary(undefined);
+			expect(read(tokenizer)).toBe(source);
+			expect(tokenizer.position).toBe(source.length);
+			expect(tokenizer.workUnits).toBe(3 * source.length);
+			expect(tokenizer.issueCount).toBe(1);
+			expect(tokenizer.paused).toBe(false);
+			expect(observations).toEqual([
+				{
+					code: "unterminated-raw-element",
+					position: source.length,
+					work: 3 * source.length,
+					issues: 1,
+				},
+			]);
+			expect(buffers).toEqual([[], [], ["unterminated-raw-element"]]);
+			expect(Reflect.get(tokenizer, "bufferedIssues")).toBeUndefined();
+		},
+	);
+
+	it.each(rawCases)(
+		"preserves $name callback identity, double work and quota precedence",
+		({ source, read }) => {
+			const sentinel = new Error(privateSentinel);
+			const callback = vi.fn(() => {
+				expect(tokenizer.position).toBe(source.length);
+				expect(tokenizer.workUnits).toBe(source.length);
+				expect(tokenizer.issueCount).toBe(1);
+				throw sentinel;
+			});
+			const tokenizer = new HtmlTokenizer(source, callback, 1);
+			const buffers = observeNativeBuffers(tokenizer);
+			expect(caught(() => read(tokenizer))).toBe(sentinel);
+			expect(callback).toHaveBeenCalledTimes(1);
+			expect(callback).toHaveBeenCalledWith("unterminated-raw-element");
+			expect(tokenizer.position).toBe(source.length);
+			expect(tokenizer.workUnits).toBe(2 * source.length);
+			expect(tokenizer.issueCount).toBe(1);
+			expect(tokenizer.paused).toBe(false);
+			expect(buffers).toEqual([["unterminated-raw-element"]]);
+			expect(Reflect.get(tokenizer, "bufferedIssues")).toBeUndefined();
+			expect(resourceLimitDiagnostic(sentinel)).toBeUndefined();
+			const blockedCallback = vi.fn(() => {
+				throw sentinel;
+			});
+			const limited = new HtmlTokenizer(source, blockedCallback, 0);
+			const limitedBuffers = observeNativeBuffers(limited);
+			quotaError(() => read(limited), 0, 1);
+			expect(limited.position).toBe(source.length);
+			expect(limited.workUnits).toBe(source.length);
+			expect(limited.issueCount).toBe(1);
+			expect(limited.paused).toBe(false);
+			expect(limitedBuffers).toEqual([[]]);
+			expect(Reflect.get(limited, "bufferedIssues")).toBeUndefined();
+			expect(blockedCallback).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(["title", "textarea"])(
+		"keeps %s entity issue buffering and pre-delivery accounting",
+		(name) => {
+			const body = "&#0;&bogus;";
+			const codes = ["invalid-numeric-entity", "unresolved-named-reference"];
+			const observations: unknown[] = [];
+			const tokenizer = new HtmlTokenizer(
+				`${body}</${name}>`,
+				(code) => {
+					observations.push({
+						code,
+						position: tokenizer.position,
+						work: tokenizer.workUnits,
+						issues: tokenizer.issueCount,
+					});
+				},
+				2,
+			);
+			const buffers = observeNativeBuffers(tokenizer);
+			expect(tokenizer.raw(name, true)).toBe("\ufffd&bogus;");
+			expect(observations).toEqual(
+				codes.map((code) => ({
+					code,
+					position: body.length,
+					work: body.length,
+					issues: 2,
+				})),
+			);
+			expect(buffers).toEqual([codes]);
+			expect(tokenizer.position).toBe(body.length);
+			expect(tokenizer.workUnits).toBe(body.length);
+			expect(tokenizer.issueCount).toBe(2);
+			expect(Reflect.get(tokenizer, "bufferedIssues")).toBeUndefined();
+		},
+	);
+
+	it.each(["title", "textarea"])(
+		"preserves %s buffered callback failure versus pre-delivery quota failure",
+		(name) => {
+			const body = "&#0;&bogus;";
+			const source = `${body}</${name}>`;
+			const sentinel = new Error(privateSentinel);
+			const callback = vi.fn(() => {
+				throw sentinel;
+			});
+			const tokenizer = new HtmlTokenizer(source, callback, 2);
+			const buffers = observeNativeBuffers(tokenizer);
+			expect(caught(() => tokenizer.raw(name, true))).toBe(sentinel);
+			expect(callback).toHaveBeenCalledTimes(1);
+			expect(callback).toHaveBeenCalledWith("invalid-numeric-entity");
+			expect(tokenizer.position).toBe(body.length);
+			expect(tokenizer.workUnits).toBe(2 * body.length);
+			expect(tokenizer.issueCount).toBe(2);
+			expect(buffers).toEqual([
+				["invalid-numeric-entity", "unresolved-named-reference"],
+			]);
+			expect(Reflect.get(tokenizer, "bufferedIssues")).toBeUndefined();
+			expect(resourceLimitDiagnostic(sentinel)).toBeUndefined();
+			expect(tokenizer.next()).toMatchObject({ kind: "end", name });
+			const limited = new HtmlTokenizer(source, callback, 1);
+			const limitedBuffers = observeNativeBuffers(limited);
+			quotaError(() => limited.raw(name, true), 1, 2);
+			expect(limited.position).toBe(body.length);
+			expect(limited.workUnits).toBe(body.length);
+			expect(limited.issueCount).toBe(2);
+			expect(limitedBuffers).toEqual([["invalid-numeric-entity"]]);
+			expect(Reflect.get(limited, "bufferedIssues")).toBeUndefined();
+			expect(callback).toHaveBeenCalledTimes(1);
+		},
+	);
+
+	it.each([
+		{
+			name: "title",
+			result: "\ufffd",
+			codes: ["unterminated-raw-element", "invalid-numeric-entity"],
+		},
+		{
+			name: "textarea",
+			result: "\ufffd",
+			codes: ["unterminated-raw-element", "invalid-numeric-entity"],
+		},
+		{
+			name: "script",
+			result: "&#0;",
+			codes: ["unterminated-raw-element"],
+		},
+	])(
+		"keeps EOF-before-entity ordering for $name",
+		({ name, result, codes }) => {
+			const source = "&#0;";
+			const delivered: string[] = [];
+			const tokenizer = new HtmlTokenizer(source, (code) =>
+				delivered.push(code),
+			);
+			const buffers = observeNativeBuffers(tokenizer);
+			expect(tokenizer.raw(name, true)).toBe(result);
+			expect(delivered).toEqual(codes);
+			expect(buffers).toEqual([codes]);
+			expect(tokenizer.position).toBe(source.length);
+			expect(tokenizer.workUnits).toBe(source.length);
+			expect(tokenizer.issueCount).toBe(codes.length);
+			expect(tokenizer.paused).toBe(false);
+			expect(Reflect.get(tokenizer, "bufferedIssues")).toBeUndefined();
+		},
+	);
 });

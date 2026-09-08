@@ -1,5 +1,10 @@
 import { AgentBrowserError } from "./errors.js";
-import { type HtmlToken, HtmlTokenizer } from "./html-tokenizer.js";
+import {
+	type HtmlDiscardRawName,
+	HtmlRawDiscardSession,
+	type HtmlToken,
+	HtmlTokenizer,
+} from "./html-tokenizer.js";
 import {
 	resourceLimitDiagnostic,
 	resourceLimitError,
@@ -19,6 +24,14 @@ export type HtmlTokenCursorLimits = {
 };
 
 export type HtmlTokenCursorOptions = Partial<HtmlTokenCursorLimits>;
+
+export type { HtmlDiscardRawName } from "./html-tokenizer.js";
+
+export interface HtmlRawDiscardStep {
+	readonly status: "more" | "end-tag" | "eof";
+	readonly position: number;
+	readonly discardedCodeUnits: number;
+}
 
 export interface HtmlTokenCursorWindowDiagnostic {
 	readonly kind: "html-cursor-window";
@@ -104,6 +117,7 @@ export class HtmlTokenCursor {
 	private window?: HtmlTokenizer;
 	private windowStart = 0;
 	private windowEnd = 0;
+	#rawDiscardSession?: HtmlRawDiscardSession;
 
 	constructor(
 		source: string,
@@ -163,10 +177,12 @@ export class HtmlTokenCursor {
 		this.stopped = true;
 		this.source = "";
 		this.window = undefined;
+		this.#rawDiscardSession = undefined;
 	}
 
 	next(): HtmlToken | undefined {
 		return this.perform(() => {
+			if (this.#rawDiscardSession) throw invalidCursor();
 			if (this.cursorPosition === this.sourceLength)
 				return { value: undefined, position: this.cursorPosition };
 			let native = this.window;
@@ -189,6 +205,7 @@ export class HtmlTokenCursor {
 
 	raw(name: string, entities = false): string {
 		return this.perform(() => {
+			if (this.#rawDiscardSession) throw invalidCursor();
 			if (
 				typeof name !== "string" ||
 				!/^[a-z][a-z0-9-]{0,31}$/.test(name) ||
@@ -207,12 +224,79 @@ export class HtmlTokenCursor {
 
 	remainder(): string {
 		return this.perform(() => {
+			if (this.#rawDiscardSession) throw invalidCursor();
 			const remaining = this.sourceLength - this.cursorPosition;
 			if (remaining > this.limits.maxWindowCodeUnits)
 				this.windowLimit("remainder", remaining);
 			const native = this.createWindow();
 			const value = this.invoke(native, (tokenizer) => tokenizer.remainder());
 			return { value, position: this.windowStart + native.position };
+		});
+	}
+
+	discardRawStep(
+		...args: [name: HtmlDiscardRawName]
+	): Readonly<HtmlRawDiscardStep> {
+		const [name] = args;
+		return this.perform(() => {
+			if (
+				args.length !== 1 ||
+				(name !== "script" &&
+					name !== "style" &&
+					name !== "xmp" &&
+					name !== "iframe" &&
+					name !== "noembed" &&
+					name !== "noframes") ||
+				this.limits.maxWindowCodeUnits < 16 ||
+				(this.#rawDiscardSession && !this.#rawDiscardSession.matchesName(name))
+			)
+				throw invalidCursor();
+			this.window = undefined;
+			const length = Math.min(
+				this.sourceLength - this.cursorPosition,
+				this.limits.maxWindowCodeUnits,
+			);
+			const debit = (units: number) => {
+				this.checkpoint();
+				this.chargedWork += units;
+				this.checkWork();
+			};
+			debit(length);
+			const input = this.source.slice(
+				this.cursorPosition,
+				this.cursorPosition + length,
+			);
+			const session =
+				this.#rawDiscardSession ?? new HtmlRawDiscardSession(name);
+			this.#rawDiscardSession = session;
+			const result = session.step(
+				input,
+				this.cursorPosition + length === this.sourceLength,
+				debit,
+				(code) => {
+					this.checkpoint();
+					this.chargedIssues++;
+					if (this.chargedIssues > this.limits.maxIssues)
+						throw resourceLimitError(
+							"html.issues",
+							this.limits.maxIssues,
+							this.chargedIssues,
+							"HTML cursor issue limit exceeded",
+						);
+					this.onIssue(code);
+					this.checkpoint();
+				},
+			);
+			if (result.status !== "more") this.#rawDiscardSession = undefined;
+			const position = this.cursorPosition + result.consumed;
+			return {
+				value: Object.freeze({
+					status: result.status,
+					position,
+					discardedCodeUnits: result.consumed,
+				}),
+				position,
+			};
 		});
 	}
 

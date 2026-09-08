@@ -32,6 +32,180 @@ type CommentState =
 	| "end"
 	| "end-bang";
 
+export type HtmlDiscardRawName =
+	| "script"
+	| "style"
+	| "xmp"
+	| "iframe"
+	| "noembed"
+	| "noframes";
+
+type ScriptState = "data" | "escaped" | "double";
+type RawWorkDebit = (units: number) => void;
+
+const rawEndings = Object.freeze({
+	script: "</script",
+	style: "</style",
+	xmp: "</xmp",
+	iframe: "</iframe",
+	noembed: "</noembed",
+	noframes: "</noframes",
+});
+
+const scriptTransitions = Object.freeze({
+	data: Object.freeze({ state: "data", advance: 1 }),
+	escaped: Object.freeze({ state: "escaped", advance: 1 }),
+	double: Object.freeze({ state: "double", advance: 1 }),
+	comment: Object.freeze({ state: "escaped", advance: 4 }),
+	open: Object.freeze({ state: "double", advance: 7 }),
+	close: Object.freeze({ state: "escaped", advance: 8 }),
+	end: Object.freeze({ state: "data", advance: 0 }),
+} as const);
+
+function rawPrefix(
+	input: string,
+	position: number,
+	prefix: string,
+	insensitive: boolean,
+) {
+	for (let index = 0; index < prefix.length; index++) {
+		let code = input.charCodeAt(position + index);
+		if (insensitive && code >= 65 && code <= 90) code += 32;
+		if (code !== prefix.charCodeAt(index)) return false;
+	}
+	return true;
+}
+
+function rawDelimiter(character: string | undefined) {
+	return (
+		character === "\t" ||
+		character === "\n" ||
+		character === "\f" ||
+		character === "\r" ||
+		character === " " ||
+		character === "/" ||
+		character === ">"
+	);
+}
+
+function rawTrailingDashes(
+	input: string,
+	position: number,
+	carry: number,
+	debit?: RawWorkDebit,
+) {
+	debit?.(position === 0 ? 1 : 2);
+	if (position === 0) return carry;
+	if (input[position - 1] !== "-") return 0;
+	return (position === 1 ? carry >= 1 : input[position - 2] === "-") ? 2 : 1;
+}
+
+function scriptTransition(
+	input: string,
+	position: number,
+	initialState: ScriptState,
+	carry: number,
+	debit?: RawWorkDebit,
+) {
+	let state = initialState;
+	if (state === "data") {
+		debit?.(4);
+		if (rawPrefix(input, position, "<!--", false))
+			return scriptTransitions.comment;
+	}
+	if (
+		state !== "data" &&
+		input[position] === ">" &&
+		rawTrailingDashes(input, position, carry, debit) === 2
+	)
+		state = "data";
+	if (input[position] === "<") {
+		debit?.(9);
+		if (
+			rawPrefix(input, position, "</script", true) &&
+			rawDelimiter(input[position + 8])
+		)
+			return state === "double"
+				? scriptTransitions.close
+				: scriptTransitions.end;
+		if (state === "escaped") {
+			debit?.(8);
+			if (
+				rawPrefix(input, position, "<script", true) &&
+				rawDelimiter(input[position + 7])
+			)
+				return scriptTransitions.open;
+		}
+	}
+	return scriptTransitions[state];
+}
+
+export class HtmlRawDiscardSession {
+	readonly #name: HtmlDiscardRawName;
+	#state: ScriptState = "data";
+	#trailingDashes = 0;
+
+	constructor(name: HtmlDiscardRawName) {
+		this.#name = name;
+	}
+
+	matchesName(name: HtmlDiscardRawName) {
+		return this.#name === name;
+	}
+
+	step(
+		input: string,
+		final: boolean,
+		debit: RawWorkDebit,
+		emitIssue: (code: string) => void,
+	): { consumed: number; status: "more" | "end-tag" | "eof" } {
+		const boundary = final ? input.length : input.length - 10;
+		let consumed = 0;
+		while (consumed < boundary) {
+			debit(1);
+			if (this.#name === "script") {
+				const transition = scriptTransition(
+					input,
+					consumed,
+					this.#state,
+					this.#trailingDashes,
+					debit,
+				);
+				if (transition.advance === 0) return { consumed, status: "end-tag" };
+				this.#state = transition.state;
+				consumed += transition.advance;
+			} else {
+				if (input[consumed] === "<") {
+					const ending = rawEndings[this.#name];
+					debit(ending.length + 1);
+					if (
+						rawPrefix(input, consumed, ending, true) &&
+						rawDelimiter(input[consumed + ending.length])
+					)
+						return { consumed, status: "end-tag" };
+				}
+				consumed++;
+			}
+		}
+		if (final) {
+			emitIssue("unterminated-raw-element");
+			return { consumed, status: "eof" };
+		}
+		if (consumed === 0)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid raw discard progress",
+			);
+		this.#trailingDashes = rawTrailingDashes(
+			input,
+			consumed,
+			this.#trailingDashes,
+			debit,
+		);
+		return { consumed, status: "more" };
+	}
+}
+
 export class HtmlTokenizer {
 	private offset = 0;
 	private input: string;
@@ -453,41 +627,13 @@ export class HtmlTokenizer {
 
 	private script() {
 		const start = this.offset;
-		let state: "data" | "escaped" | "double" = "data";
+		let state: ScriptState = "data";
 		while (this.offset < this.source.length) {
-			if (state === "data" && this.source.startsWith("<!--", this.offset)) {
-				state = "escaped";
-				this.offset += 4;
-				continue;
-			}
-			if (
-				state !== "data" &&
-				this.source[this.offset] === ">" &&
-				this.source.slice(this.offset - 2, this.offset) === "--"
-			)
-				state = "data";
-			if (this.source[this.offset] === "<") {
-				const closing = /^<\/script(?=[\t\n\f\r />])/i.test(
-					this.source.slice(this.offset, this.offset + 10),
-				);
-				if (closing) {
-					if (state !== "double") return this.source.slice(start, this.offset);
-					state = "escaped";
-					this.offset += 8;
-					continue;
-				}
-				if (
-					state === "escaped" &&
-					/^<script(?=[\t\n\f\r />])/i.test(
-						this.source.slice(this.offset, this.offset + 9),
-					)
-				) {
-					state = "double";
-					this.offset += 7;
-					continue;
-				}
-			}
-			this.offset++;
+			const transition = scriptTransition(this.source, this.offset, state, 0);
+			if (transition.advance === 0)
+				return this.source.slice(start, this.offset);
+			state = transition.state;
+			this.offset += transition.advance;
 		}
 		this.issue("unterminated-raw-element");
 		return this.source.slice(start);

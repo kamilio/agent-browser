@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Bounded native raw-discard core now provides an explicit six-name, one-window
+metadata-only step with private script-state continuation and unchanged ceilings.
+`RAW-DISCARD-STEPS.md` records 1443 passing native cases in six files, 136 new
+cases, all 1302 prior names preserved, build/strict/Biome and a passing audit of
+2716 inputs plus 551 source09/48 prior-feature artifacts. Initial lint failure
+and a static test correction are preserved in 92 frozen artifacts. Title/textarea
+remain legacy entity-aware/window-bounded; no scanner/CLI/index activation or
+source09 recovery is claimed. Next is separately reviewed explicit scanner opt-in,
+truthful selected counters/disclosures, controls and any freshly authorized trial.
+Modern privacy/section prose, provider/vault/device/page/consent and blocked
+research gates remain unresolved; stopped/denied probes stay closed. Goal continues.
+
 The fresh cursor-window trial now identifies raw at last committed source UTF16
 1824525, retaining the65536/65537 window refusal with no tag/entity-mode/full-size
 or payload claim. `SOURCE-CURSOR-WINDOW-TRIAL.md` preserves551artifacts, fresh
