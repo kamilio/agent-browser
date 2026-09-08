@@ -1,5 +1,14 @@
 # Agent browser implementation tasks
 
+BROWSER-RESEARCH-FOLLOWUP-SEPTEMBER-08.md consolidates the four requested topics
+from existing admitted root reports, without a new source visit or benchmark run.
+It separates hardware capacity claims from measured suitability and explains
+MMLU-Pro, SWE-bench and LM-eval methods. Blocked X/Astra/Reddit access is not
+actual chatter or opinion evidence. New table/policy tests do not promote
+historical ROCm/NVIDIA gates. Current prices/rankings, matched performance,
+source identity/opinion samples and all separate acceptance gates remain open;
+historical reports and the ongoing browser goal are preserved.
+
 The provisional private none-attestation projection now passes363 focused native
 cases across three files:114new and249unchanged support cases. It supports a
 strict canonical CTAP profile, conditionally retains structurally eligible packed
