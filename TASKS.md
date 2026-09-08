@@ -1,5 +1,16 @@
 # Agent browser implementation tasks
 
+The balanced-heading source trial returns an actual cursor-window resource failure:
+65537code units observed against65536, with no operation/position/token attribution,
+candidates or capture. `SOURCE-BALANCED-TRIAL.md` preserves527artifacts, fresh
+5shell/62native/4817completion/3711inline/120pair/109whole-receipt controls, and
+passing1748-file/44RUN failure integrity. The caller seam preserves all checks and
+now exercises policy-tuple comparison/metadata integration with explicitly synthetic
+receipts. No source recovery or raw-token cause is inferred. Next is trusted finite
+native cursor-window attribution without increasing limits; section-prose extraction
+is designed but deferred. Modern privacy/provider/vault/device/page/consent, blocked
+research and all stopped/denied gates remain open. The original browser goal continues.
+
 Explicit headingInlinePolicy balanced-source-elements-v1 now supports bounded
 balanced lexical source elements inside admitted headings, with64-unit names,
 unchanged special-context exclusions/defaults, strict closes and exact selected
