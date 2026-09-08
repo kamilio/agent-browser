@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+The fresh bounded raw-discard trial discovers230native heading candidates through
+actualEOF without raising limits. `SOURCE-RAW-DISCARD-TRIAL.md` records one HTTP200
+request,30raw steps/17elements, fresh5shell/81native/4817completion/3711inline/
+120balanced/89cursor/383raw/256caller controls and passing1748compiled/49RUN
+candidate integrity;640frozen artifacts and independent evidence review pass.
+This is partial lexical discovery, not prose or current
+privacy acceptance; base64 remains opaque and replay readiness false. Next is
+identity-bound native section projection with synthetic tests and separately
+authorized capture-byte validation/scoped replay or one fresh request. Historical
+failures remain unchanged. Provider/vault/device/page/consent and blocked research
+stay unresolved; denied gates stay closed and the original browser goal continues.
+
 Explicit source-heading raw discard now selects six non-entity names with one
 bounded native step per iteration, shared budgets/yields and frozen policy/counter
 disclosures. `SOURCE-RAW-DISCARD.md` records1515passing cases in six files,72new
