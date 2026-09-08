@@ -1,5 +1,12 @@
 # Agent browser implementation tasks
 
+A fresh NVIDIA workstation-directory attempt stops with native network-stage
+policy-denied and no admitted HTTP status, body or export. `NVIDIA-DIRECTORY-TRIAL.md`
+records12passing controls, separately verified failure and28audited artifacts.
+It is not the older product404, a confirmed redirect/challenge, or GPU evidence.
+No retry/alternate endpoint occurs. More specific future native diagnostics cannot
+retroactively identify this failure or reopen a denied gate; the goal continues.
+
 Software post-consent exclusion now carries a private one-use error identity bound
 to the original request signal. Only the live matching create broker promotes it
 to fixed InvalidStateError; ordinary errors reaching the new mapping stay redacted.
