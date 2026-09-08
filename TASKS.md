@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+The native inline-diagnostic trial now identifies non-inline-start under active
+heading level2 at depth1, still at committed sourceUTF16 250858. The finite tag
+label is other: no actual spelling or block/phrasing/custom semantics is known.
+`SOURCE-INLINE-TRIAL.md` preserves424artifacts, the parent environment refusal then
+fresh5shell/4817completion/3711inline/42native controls, and passing1748-file/39RUN
+failure integrity. No candidate/text/capture or prior-transition proof exists.
+Missing separate verifier capture files are disclosed, not reconstructed. Next
+is a defensible explicit bounded lexical continuation design, not guessing tags,
+loosening default grammar or replaying raw source. Modern privacy, provider/vault/
+device/page/consent, blocked research and all stopped/denied gates remain open.
+The original browser improvement goal continues.
+
 Trusted sourceHeadingInlineDiagnostic now records the active heading's actual
 rejection predicate, level, finite canonical tag and inline depth on the same
 private-map-branded error. Grammar, earlier guard order, success/counters/limits,
