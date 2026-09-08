@@ -116,11 +116,22 @@ export interface SourceHeadingScopeDiagnostic {
 	readonly depth: number;
 }
 
+export interface SourceHeadingScopeContextDiagnostic {
+	readonly kind: "source-heading-scope-context";
+	readonly tableScopePolicy: "strict" | "optional-end-tags-v1";
+	readonly order: "outer-to-inner";
+	readonly scopes: readonly SourceHeadingScope[];
+}
+
 const structureDiagnostics = new WeakMap<
 	object,
 	SourceHeadingStructureDiagnostic
 >();
 const scopeDiagnostics = new WeakMap<object, SourceHeadingScopeDiagnostic>();
+const scopeContextDiagnostics = new WeakMap<
+	object,
+	SourceHeadingScopeContextDiagnostic
+>();
 
 export function sourceHeadingStructureDiagnostic(
 	error: unknown,
@@ -142,6 +153,17 @@ export function sourceHeadingScopeDiagnostic(
 	)
 		return undefined;
 	return scopeDiagnostics.get(error);
+}
+
+export function sourceHeadingScopeContextDiagnostic(
+	error: unknown,
+): SourceHeadingScopeContextDiagnostic | undefined {
+	if (
+		error === null ||
+		(typeof error !== "object" && typeof error !== "function")
+	)
+		return undefined;
+	return scopeContextDiagnostics.get(error);
 }
 
 const voidTags = new Set(
@@ -409,8 +431,18 @@ export async function discoverResearchSourceHeadings(
 				positionSemantics: "last-committed-source-utf16",
 			}),
 		);
-		if (scopeDiagnostic)
+		if (scopeDiagnostic) {
 			scopeDiagnostics.set(error, Object.freeze(scopeDiagnostic));
+			scopeContextDiagnostics.set(
+				error,
+				Object.freeze({
+					kind: "source-heading-scope-context",
+					tableScopePolicy: tableScopePolicy ?? "strict",
+					order: "outer-to-inner",
+					scopes: Object.freeze([...scopes]),
+				}),
+			);
+		}
 		throw error;
 	};
 	const work = () => (cursor?.workUnits ?? 0) + scannerWork;

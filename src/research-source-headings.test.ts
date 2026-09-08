@@ -3,10 +3,12 @@ import { runInNewContext } from "node:vm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	type SourceHeadingScope,
+	type SourceHeadingScopeContextDiagnostic,
 	type SourceHeadingScopeDiagnostic,
 	type SourceHeadingStructureReason,
 	discoverResearchSourceHeadings,
 	researchSourceHeadingLimits,
+	sourceHeadingScopeContextDiagnostic,
 	sourceHeadingScopeDiagnostic,
 	sourceHeadingStructureDiagnostic,
 } from "../scripts/research-source-headings.js";
@@ -2626,6 +2628,532 @@ describe("conservative optional-table scope transitions", () => {
 			} finally {
 				clearTimeout(timer);
 			}
+		},
+	);
+});
+
+describe("trusted bounded scope-context diagnostics", () => {
+	const policies = ["strict", "optional-end-tags-v1"] as const;
+	const admittedNames: readonly SourceHeadingScope[] = [
+		...suppressedNames,
+		...omittedFrames,
+	];
+
+	function policyOptions(
+		policy: SourceHeadingScopeContextDiagnostic["tableScopePolicy"],
+	) {
+		return policy === "strict" ? {} : { tableScopePolicy: policy };
+	}
+
+	async function expectContextFailure(
+		source: string,
+		expectedScopes: readonly SourceHeadingScope[],
+		policy: SourceHeadingScopeContextDiagnostic["tableScopePolicy"] = "strict",
+		limits: Record<string, unknown> = {},
+	) {
+		const error = await captureFailure(() =>
+			scan(source, { ...limits, ...policyOptions(policy) }),
+		);
+		expectCode(error, "unsupported");
+		const context = sourceHeadingScopeContextDiagnostic(error);
+		expect(context).toBeDefined();
+		if (!context)
+			throw new Error("Expected trusted source-heading scope context");
+		const expected: SourceHeadingScopeContextDiagnostic = {
+			kind: "source-heading-scope-context",
+			tableScopePolicy: policy,
+			order: "outer-to-inner",
+			scopes: expectedScopes,
+		};
+		expect(context).toEqual(expected);
+		expect(Reflect.ownKeys(context)).toEqual([
+			"kind",
+			"tableScopePolicy",
+			"order",
+			"scopes",
+		]);
+		expect(Object.isFrozen(context)).toBe(true);
+		expect(Object.isFrozen(context.scopes)).toBe(true);
+		expect(context.scopes).not.toBe(expectedScopes);
+		expect(context.scopes.length).toBeLessThanOrEqual(
+			canonicalLimits.maxTrackedDepth,
+		);
+		expect(context.scopes.every((name) => admittedNames.includes(name))).toBe(
+			true,
+		);
+		expect(sourceHeadingScopeContextDiagnostic(error)).toBe(context);
+		expect(sourceHeadingStructureDiagnostic(error)).toEqual({
+			kind: "source-heading-structure",
+			reason: "scope-close-structure",
+			position: source.length,
+			positionSemantics: "last-committed-source-utf16",
+		});
+		expect(sourceHeadingScopeDiagnostic(error)?.depth).toBe(
+			expectedScopes.length,
+		);
+		expect(resourceLimitDiagnostic(error)).toBeUndefined();
+		expect(JSON.stringify(context)).not.toContain(privateMarker);
+		return { error, context };
+	}
+
+	it.each(policies)(
+		"snapshots an empty actual stack under %s without an invented frame",
+		async (policy) => {
+			const { error, context } = await expectContextFailure(
+				"</table>",
+				[],
+				policy,
+			);
+			expect(context.scopes).toHaveLength(0);
+			expect(sourceHeadingScopeDiagnostic(error)).toEqual({
+				kind: "source-heading-scope-close",
+				condition: "scope-mismatch",
+				expectedScope: null,
+				observedScope: "table",
+				depth: 0,
+			});
+		},
+	);
+
+	it.each(policies)(
+		"retains actual outer-to-inner tracked order under %s",
+		async (policy) => {
+			const source = `<template><table><tbody><tr><td><svg><foreignObject>${privateMarker}</foreignObject></head>`;
+			const { error, context } = await expectContextFailure(
+				source,
+				["template", "table", "tbody", "tr", "td", "svg"],
+				policy,
+			);
+			expect(sourceHeadingScopeDiagnostic(error)).toEqual({
+				kind: "source-heading-scope-close",
+				condition: "scope-mismatch",
+				expectedScope: "svg",
+				observedScope: "head",
+				depth: 6,
+			});
+			expect(JSON.stringify(context)).not.toContain("foreignObject");
+		},
+	);
+
+	it.each(admittedNames)(
+		"retains the actual admitted %s frame without source attributes or text",
+		async (name) => {
+			const observed = name === "template" ? "head" : "template";
+			const source = `<${name} data-secret="${privateMarker}">${privateMarker}</${observed}>`;
+			const { context } = await expectContextFailure(source, [name]);
+			expect(JSON.stringify(context)).not.toContain("data-secret");
+		},
+	);
+
+	it("does not invent tracked frames for consumed raw, void or foreign self-closes", async () => {
+		const source = `<template><svg/><math/><input><script>${privateMarker}</script><table><tbody><tr><td></head>`;
+		await expectContextFailure(
+			source,
+			["template", "table", "tbody", "tr", "td"],
+			"optional-end-tags-v1",
+		);
+	});
+
+	it("snapshots the actual remaining prefix after successful opt-in transitions", async () => {
+		const source =
+			"<template><table><tbody><tr><td>A<th>B<tr><td>C</table></head>";
+		const { error } = await expectContextFailure(
+			source,
+			["template"],
+			"optional-end-tags-v1",
+		);
+		expect(sourceHeadingScopeDiagnostic(error)).toEqual({
+			kind: "source-heading-scope-close",
+			condition: "scope-mismatch",
+			expectedScope: "template",
+			observedScope: "head",
+			depth: 1,
+		});
+	});
+
+	it.each([
+		{
+			name: "rejected ancestor plan",
+			source: "<template><table><tbody><tr><td>x</table extra=x>",
+			scopes: ["template", "table", "tbody", "tr", "td"],
+			condition: "scope-mismatch",
+			observedScope: "table",
+		},
+		{
+			name: "matching nonplain close",
+			source: "<table><tr><td>x</td extra=x>",
+			scopes: ["table", "tr", "td"],
+			condition: "non-plain-close",
+			observedScope: "td",
+		},
+	] as const)("keeps the original stack for $name", async (fixture) => {
+		const { error } = await expectContextFailure(
+			fixture.source,
+			fixture.scopes,
+			"optional-end-tags-v1",
+		);
+		expect(sourceHeadingScopeDiagnostic(error)).toEqual({
+			kind: "source-heading-scope-close",
+			condition: fixture.condition,
+			expectedScope: "td",
+			observedScope: fixture.observedScope,
+			depth: fixture.scopes.length,
+		});
+	});
+
+	it.each(policies)(
+		"uses the snapshotted %s selection after host options mutate during a yield",
+		async (policy) => {
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+			const options: Record<string, unknown> = {
+				method,
+				yieldEveryOperations: 1,
+				...policyOptions(policy),
+			};
+			const controller = controllerFor();
+			const pending = observe(
+				discoverResearchSourceHeadings(
+					ownedSource("<template></head>"),
+					options,
+					controller.signal,
+				),
+			);
+			const changed = vi.fn(() => {
+				throw new Error(privateMarker);
+			});
+			try {
+				await microtasks();
+				expect(pending.settled).toBe(false);
+				expect(vi.getTimerCount()).toBeGreaterThan(0);
+				Object.defineProperty(options, "tableScopePolicy", {
+					get: changed,
+					enumerable: true,
+					configurable: true,
+				});
+				await vi.runAllTimersAsync();
+				const outcome = await pending.outcome;
+				expect(outcome.value).toBeUndefined();
+				expectCode(outcome.error, "unsupported");
+				expect(sourceHeadingScopeContextDiagnostic(outcome.error)).toEqual({
+					kind: "source-heading-scope-context",
+					tableScopePolicy: policy,
+					order: "outer-to-inner",
+					scopes: ["template"],
+				});
+				expect(changed).not.toHaveBeenCalled();
+			} finally {
+				controller.abort();
+				vi.clearAllTimers();
+				vi.useRealTimers();
+			}
+		},
+	);
+
+	it("owns deeply frozen independent snapshots after cleanup without changing error shape", async () => {
+		const closed = vi.spyOn(HtmlTokenCursor.prototype, "close");
+		const source = `<h1 data-secret="${privateMarker}">${privateMarker}_CANDIDATE</h1><template><table><tr><td>${privateMarker}</head>`;
+		const input = {
+			...ownedSource(source),
+			finalUrl: `https://example.com/${privateMarker}`,
+		};
+		const error = await captureFailure(() =>
+			discoverResearchSourceHeadings(input, { method }),
+		);
+		expectCode(error, "unsupported");
+		const context = sourceHeadingScopeContextDiagnostic(error);
+		expect(context).toBeDefined();
+		if (!context)
+			throw new Error("Expected trusted source-heading scope context");
+		expect(context.scopes).toEqual(["template", "table", "tr", "td"]);
+		expectDeepFrozen(context);
+		expect(Reflect.set(context, "kind", "forged")).toBe(false);
+		expect(Reflect.deleteProperty(context, "order")).toBe(false);
+		expect(Reflect.set(context.scopes, "0", "head")).toBe(false);
+		expect(Reflect.set(context.scopes, "length", 0)).toBe(false);
+		expect(Reflect.deleteProperty(context.scopes, "0")).toBe(false);
+		expect(Reflect.ownKeys(context)).toEqual([
+			"kind",
+			"tableScopePolicy",
+			"order",
+			"scopes",
+		]);
+		const reference = new AgentBrowserError(
+			"unsupported",
+			"Unsupported native source-heading structure",
+		);
+		expect(Reflect.ownKeys(error as object)).toEqual(
+			Reflect.ownKeys(reference),
+		);
+		expect((error as Error).message).toBe(reference.message);
+		expect(JSON.stringify({ error, context })).not.toContain(privateMarker);
+		expect(JSON.stringify(context)).not.toContain(input.finalUrl);
+		expect(sourceHeadingScopeContextDiagnostic(error)).toBe(context);
+		const scope = sourceHeadingScopeDiagnostic(error);
+		const structure = sourceHeadingStructureDiagnostic(error);
+		const repeated = await expectContextFailure(source, [
+			"template",
+			"table",
+			"tr",
+			"td",
+		]);
+		expect(repeated.error).not.toBe(error);
+		expect(repeated.context).toEqual(context);
+		expect(repeated.context).not.toBe(context);
+		expect(repeated.context.scopes).not.toBe(context.scopes);
+		await scan("<template></template><h1>After</h1>");
+		expect(sourceHeadingScopeContextDiagnostic(error)).toBe(context);
+		expect(sourceHeadingScopeDiagnostic(error)).toBe(scope);
+		expect(sourceHeadingStructureDiagnostic(error)).toBe(structure);
+		expect(closed).toHaveBeenCalled();
+		for (const cursor of closed.mock.contexts)
+			expect((cursor as HtmlTokenCursor).closed).toBe(true);
+	});
+
+	it.each([canonicalLimits.maxTrackedDepth, 3])(
+		"copies exactly %i admitted frames and never brands the next depth-limit failure",
+		async (limit) => {
+			const prefix = "<template>".repeat(limit);
+			const expectedScopes = Array.from(
+				{ length: limit },
+				() => "template" as const,
+			);
+			for (const policy of policies) {
+				const { context } = await expectContextFailure(
+					`${prefix}</head>`,
+					expectedScopes,
+					policy,
+					{ maxTrackedDepth: limit },
+				);
+				expect(context.scopes).toHaveLength(limit);
+				const error = await captureFailure(() =>
+					scan(`${prefix}<template></head>`, {
+						maxTrackedDepth: limit,
+						...policyOptions(policy),
+					}),
+				);
+				expectLimit(error, {
+					kind: "source.headings-depth",
+					unit: "levels",
+					limit,
+					observed: limit + 1,
+				});
+				expect(sourceHeadingScopeContextDiagnostic(error)).toBeUndefined();
+			}
+		},
+	);
+
+	it.each([
+		{
+			name: "tokenizer",
+			source: "<template></head duplicate duplicate>",
+			limits: {},
+			code: "unsupported",
+		},
+		{
+			name: "unclosed scope",
+			source: "<template>",
+			limits: {},
+			code: "unsupported",
+		},
+		{
+			name: "raw close",
+			source: "<template><script>x</script extra=x>",
+			limits: {},
+			code: "unsupported",
+		},
+		{
+			name: "heading close",
+			source: "<h1></table>",
+			limits: {},
+			code: "unsupported",
+		},
+		{
+			name: "native operations",
+			source: "<template></head>",
+			limits: { maxOperations: 1 },
+			code: "resource-limit",
+		},
+		{
+			name: "native work",
+			source: "<template></head>",
+			limits: { maxWorkUnits: 1 },
+			code: "resource-limit",
+		},
+		{
+			name: "native issues",
+			source: "<template></head duplicate duplicate>",
+			limits: { maxIssues: 0 },
+			code: "resource-limit",
+		},
+		{
+			name: "invalid option",
+			source: "",
+			limits: { tableScopePolicy: "wrong-policy" },
+			code: "invalid-input",
+		},
+	] as const)("does not brand the earlier $name rejection", async (fixture) => {
+		const error = await captureFailure(() =>
+			scan(fixture.source, fixture.limits),
+		);
+		expectCode(error, fixture.code);
+		expect(sourceHeadingScopeContextDiagnostic(error)).toBeUndefined();
+		expect(sourceHeadingScopeDiagnostic(error)).toBeUndefined();
+	});
+
+	it.each(["aborted", "timeout"] as const)(
+		"leaves actual native %s failures unbranded",
+		async (code) => {
+			const controller = controllerFor();
+			if (code === "aborted") controller.abort(new Error(privateMarker));
+			else {
+				let now = 1_000;
+				vi.spyOn(performance, "now").mockImplementation(() => {
+					now += 10;
+					return now;
+				});
+			}
+			const error = await captureFailure(() =>
+				discoverResearchSourceHeadings(
+					ownedSource("<template></head>"),
+					{ method, tableScopePolicy: "optional-end-tags-v1", timeoutMs: 1 },
+					controller.signal,
+				),
+			);
+			expectCode(error, code);
+			expect(sourceHeadingScopeContextDiagnostic(error)).toBeUndefined();
+			expect(sourceHeadingScopeDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it("ignores forged, copied, wrapped, foreign and revoked values without traps", async () => {
+		const { error, context } = await expectContextFailure("<template></head>", [
+			"template",
+		]);
+		const trap = vi.fn((): never => {
+			throw new Error(privateMarker);
+		});
+		const traps = {
+			get: trap,
+			getPrototypeOf: trap,
+			getOwnPropertyDescriptor: trap,
+			ownKeys: trap,
+			has: trap,
+			apply: trap,
+		};
+		const accessor = {};
+		for (const name of [
+			"code",
+			"message",
+			"stack",
+			"kind",
+			"tableScopePolicy",
+			"order",
+			"scopes",
+			"diagnostic",
+		])
+			Object.defineProperty(accessor, name, { get: trap });
+		Object.defineProperty(accessor, Symbol.toPrimitive, { get: trap });
+		const callable = vi.fn(() => error);
+		const revokedObject = Proxy.revocable(error as object, traps);
+		const revokedFunction = Proxy.revocable(callable, traps);
+		revokedObject.revoke();
+		revokedFunction.revoke();
+		for (const value of [
+			undefined,
+			null,
+			true,
+			false,
+			0,
+			Number.NaN,
+			Number.POSITIVE_INFINITY,
+			1n,
+			Symbol(privateMarker),
+			privateMarker,
+			{},
+			[],
+			Object.create(null),
+			callable,
+			Object.assign(() => undefined, context),
+			new Error("Unsupported native source-heading structure"),
+			new AgentBrowserError(
+				"unsupported",
+				"Unsupported native source-heading structure",
+			),
+			new AgentBrowserError("network-error", privateMarker),
+			new Error(privateMarker, { cause: error }),
+			runInNewContext(
+				"new Error('Unsupported native source-heading structure')",
+			),
+			{ ...(error as object) },
+			Object.create(error as object),
+			Object.create(
+				Object.getPrototypeOf(error),
+				Object.getOwnPropertyDescriptors(error),
+			),
+			context,
+			{ ...context },
+			context.scopes,
+			sourceHeadingScopeDiagnostic(error),
+			sourceHeadingStructureDiagnostic(error),
+			{ code: "unsupported", diagnostic: context },
+			accessor,
+			Object.create(accessor),
+			new Proxy(error as object, {}),
+			new Proxy(error as object, traps),
+			new Proxy(callable, traps),
+			revokedObject.proxy,
+			revokedFunction.proxy,
+		])
+			expect(sourceHeadingScopeContextDiagnostic(value)).toBeUndefined();
+		expect(trap).not.toHaveBeenCalled();
+		expect(callable).not.toHaveBeenCalled();
+		expect(sourceHeadingScopeContextDiagnostic(error)).toBe(context);
+	});
+
+	it.each(policies)(
+		"does not add diagnostic fields to successful %s report keys",
+		async (policy) => {
+			const result = await scan(
+				`<table><tr><td>${privateMarker}</td></tr></table><h1>After</h1>`,
+				policyOptions(policy),
+			);
+			expect(Object.keys(result.report)).toEqual([
+				"kind",
+				"method",
+				"semantics",
+				"partial",
+				"contentSuccess",
+				...(policy === "strict" ? [] : ["tableScopePolicy"]),
+				"source",
+				"completion",
+				"scannedTo",
+				"entries",
+				"limits",
+				"counters",
+			]);
+			expect(Object.keys(result.report.counters)).toEqual([
+				"tokens",
+				"operations",
+				"workUnits",
+				"issueAttempts",
+				"entityIssues",
+				"omittedStarts",
+				"suppressedStarts",
+				"suppressedHeadingStarts",
+				"rawStarts",
+				"maxTrackedDepth",
+				"yields",
+			]);
+			expect(result.report.entries.map((entry) => entry.title)).toEqual([
+				"After",
+			]);
+			expect(result.jsonl).toBe(`${JSON.stringify(result.report)}\n`);
+			expect(result.jsonl).not.toContain("source-heading-scope-context");
+			expect(result.jsonl).not.toContain(privateMarker);
+			expect(sourceHeadingScopeContextDiagnostic(result)).toBeUndefined();
+			expect(
+				sourceHeadingScopeContextDiagnostic(result.report),
+			).toBeUndefined();
 		},
 	);
 });

@@ -1,5 +1,19 @@
 # Agent browser implementation tasks
 
+Trusted sourceHeadingScopeContextDiagnostic now adds a private frozen four-field
+error snapshot with actual policy and outer-to-inner finite scope names, bounded
+by128 frames. Existing diagnostics, error shape, strict/selected grammar, reports
+and limits remain unchanged. All740 tests in five explicit native files pass,
+including45 new cases, with build/strict/scoped Biome and independent review.
+An identity guard refused a reordered round01 test snapshot before execution;
+the corrected whole-file mirror produces the exact tested round02 bytes. Audit
+reconciles2716 inputs and328 preserved source artifacts. `SOURCE-SCOPE-CONTEXT.md`
+records this and the unrun source-wrapper activation: the old872144/td/table/
+depth31 receipt is not retroactively enriched. Next is explicit bounded context
+integration and separate source authorization. Modern privacy/provider/device/
+page/consent, blocked research and all stopped/denied gates remain open; the
+original browser improvement goal continues.
+
 The explicit native table-policy source trial reaches committed sourceUTF16
 872144, later than834905, but still rejects expected td/observed table/depth31
 without candidates, text or capture. `SOURCE-TABLE-TRIAL.md` preserves328 evidence
