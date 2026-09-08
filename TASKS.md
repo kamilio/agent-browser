@@ -1,5 +1,17 @@
 # Agent browser implementation tasks
 
+Trusted sourceHeadingInlineDiagnostic now records the active heading's actual
+rejection predicate, level, finite canonical tag and inline depth on the same
+private-map-branded error. Grammar, earlier guard order, success/counters/limits,
+error own shape and prior diagnostic schemas stay unchanged. `SOURCE-INLINE-DIAGNOSTICS.md`
+records1093passing tests in five native files,237new cases, unchanged856prior
+assertion names, build/strict/scoped Biome, independent static review and audit
+of2716inputs/362source06/50prior-feature artifacts. No prior receipt is enriched
+and no actual rejected live tag or source recovery is inferred. Next is separately
+reviewed source07 wrapper/verifier/probe integration and exact source authorization.
+Modern privacy, provider/vault/device/page/consent, blocked research and all stopped/
+denied gates remain open. The original browser improvement goal continues.
+
 The native head/table source trial now reaches an active heading-inline-structure
 guard at sourceUTF16 250858, with no rejected tag/predicate detail, candidates,
 text or capture. `SOURCE-HEAD-TABLE-TRIAL.md` preserves362 artifacts, fresh five

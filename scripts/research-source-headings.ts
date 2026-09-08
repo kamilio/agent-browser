@@ -128,6 +128,18 @@ export interface SourceHeadingScopeContextDiagnostic {
 	readonly scopes: readonly SourceHeadingScope[];
 }
 
+export type SourceHeadingInlineObservedTag =
+	| (typeof inlineDiagnosticTagNames)[number]
+	| "other";
+
+export interface SourceHeadingInlineDiagnostic {
+	readonly kind: "source-heading-inline-start";
+	readonly condition: "non-inline-start" | "self-closing-inline";
+	readonly headingLevel: 1 | 2 | 3 | 4 | 5 | 6;
+	readonly observedTag: SourceHeadingInlineObservedTag;
+	readonly inlineDepth: number;
+}
+
 const structureDiagnostics = new WeakMap<
 	object,
 	SourceHeadingStructureDiagnostic
@@ -137,6 +149,7 @@ const scopeContextDiagnostics = new WeakMap<
 	object,
 	SourceHeadingScopeContextDiagnostic
 >();
+const inlineDiagnostics = new WeakMap<object, SourceHeadingInlineDiagnostic>();
 
 export function sourceHeadingStructureDiagnostic(
 	error: unknown,
@@ -169,6 +182,17 @@ export function sourceHeadingScopeContextDiagnostic(
 	)
 		return undefined;
 	return scopeContextDiagnostics.get(error);
+}
+
+export function sourceHeadingInlineDiagnostic(
+	error: unknown,
+): SourceHeadingInlineDiagnostic | undefined {
+	if (
+		error === null ||
+		(typeof error !== "object" && typeof error !== "function")
+	)
+		return undefined;
+	return inlineDiagnostics.get(error);
 }
 
 const voidTags = new Set(
@@ -221,6 +245,117 @@ const rawTags = new Set(
 const inlineTags = new Set(
 	"span a b strong i em code small sub sup".split(" "),
 );
+const inlineDiagnosticTagNames = [
+	"span",
+	"a",
+	"b",
+	"strong",
+	"i",
+	"em",
+	"code",
+	"small",
+	"sub",
+	"sup",
+	"area",
+	"base",
+	"br",
+	"col",
+	"embed",
+	"frame",
+	"hr",
+	"img",
+	"input",
+	"keygen",
+	"link",
+	"meta",
+	"param",
+	"source",
+	"track",
+	"wbr",
+	"svg",
+	"math",
+	"script",
+	"style",
+	"template",
+	"iframe",
+	"object",
+	"canvas",
+	"noembed",
+	"noframes",
+	"frameset",
+	"textarea",
+	"audio",
+	"video",
+	"head",
+	"select",
+	"table",
+	"caption",
+	"colgroup",
+	"tbody",
+	"thead",
+	"tfoot",
+	"tr",
+	"td",
+	"th",
+	"h1",
+	"h2",
+	"h3",
+	"h4",
+	"h5",
+	"h6",
+	"xmp",
+	"title",
+	"html",
+	"body",
+	"abbr",
+	"address",
+	"article",
+	"aside",
+	"bdi",
+	"bdo",
+	"blockquote",
+	"cite",
+	"dd",
+	"del",
+	"div",
+	"dl",
+	"dt",
+	"figcaption",
+	"figure",
+	"footer",
+	"header",
+	"hgroup",
+	"ins",
+	"kbd",
+	"li",
+	"main",
+	"mark",
+	"nav",
+	"ol",
+	"p",
+	"pre",
+	"q",
+	"rp",
+	"rt",
+	"ruby",
+	"s",
+	"samp",
+	"section",
+	"time",
+	"u",
+	"ul",
+	"var",
+] as const;
+const inlineDiagnosticTags = new Map<string, SourceHeadingInlineObservedTag>(
+	inlineDiagnosticTagNames.map((name) => [name, name]),
+);
+
+function inlineDiagnosticTag(name: string): SourceHeadingInlineObservedTag {
+	return name.length > 10
+		? "other"
+		: (inlineDiagnosticTags.get(name) ?? "other");
+}
+
 const entityIssues = new Set(
 	"missing-numeric-entity-digits missing-entity-semicolon invalid-numeric-entity legacy-numeric-entity control-numeric-entity noncharacter-numeric-entity unresolved-named-reference".split(
 		" ",
@@ -448,6 +583,7 @@ export async function discoverResearchSourceHeadings(
 	const unsupported = (
 		reason: SourceHeadingStructureReason,
 		scopeDiagnostic?: SourceHeadingScopeDiagnostic,
+		inlineDiagnostic?: SourceHeadingInlineDiagnostic,
 	): never => {
 		const error = new AgentBrowserError(
 			"unsupported",
@@ -474,6 +610,8 @@ export async function discoverResearchSourceHeadings(
 				}),
 			);
 		}
+		if (inlineDiagnostic)
+			inlineDiagnostics.set(error, Object.freeze(inlineDiagnostic));
 		throw error;
 	};
 	const work = () => (cursor?.workUnits ?? 0) + scannerWork;
@@ -817,8 +955,22 @@ export async function discoverResearchSourceHeadings(
 					if (name === "br" || name === "wbr") {
 						if (name === "br") titleText(heading, " ");
 					} else {
-						if (!inlineTags.has(name) || token.selfClosing)
-							unsupported("heading-inline-structure");
+						if (!inlineTags.has(name))
+							unsupported("heading-inline-structure", undefined, {
+								kind: "source-heading-inline-start",
+								condition: "non-inline-start",
+								headingLevel: heading.level as 1 | 2 | 3 | 4 | 5 | 6,
+								observedTag: inlineDiagnosticTag(name),
+								inlineDepth: heading.inline.length,
+							});
+						if (token.selfClosing)
+							unsupported("heading-inline-structure", undefined, {
+								kind: "source-heading-inline-start",
+								condition: "self-closing-inline",
+								headingLevel: heading.level as 1 | 2 | 3 | 4 | 5 | 6,
+								observedTag: inlineDiagnosticTag(name),
+								inlineDepth: heading.inline.length,
+							});
 						track(heading.inline.length + 2);
 						heading.inline.push(name);
 					}

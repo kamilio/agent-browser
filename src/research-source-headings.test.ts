@@ -2,12 +2,15 @@ import { createHash } from "node:crypto";
 import { runInNewContext } from "node:vm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+	type SourceHeadingInlineDiagnostic,
+	type SourceHeadingInlineObservedTag,
 	type SourceHeadingScope,
 	type SourceHeadingScopeContextDiagnostic,
 	type SourceHeadingScopeDiagnostic,
 	type SourceHeadingStructureReason,
 	discoverResearchSourceHeadings,
 	researchSourceHeadingLimits,
+	sourceHeadingInlineDiagnostic,
 	sourceHeadingScopeContextDiagnostic,
 	sourceHeadingScopeDiagnostic,
 	sourceHeadingStructureDiagnostic,
@@ -4443,4 +4446,816 @@ describe("trusted bounded scope-context diagnostics", () => {
 			).toBeUndefined();
 		},
 	);
+});
+
+describe("trusted heading-inline predicate diagnostics", () => {
+	const knownTags = [
+		"span",
+		"a",
+		"b",
+		"strong",
+		"i",
+		"em",
+		"code",
+		"small",
+		"sub",
+		"sup",
+		"area",
+		"base",
+		"br",
+		"col",
+		"embed",
+		"frame",
+		"hr",
+		"img",
+		"input",
+		"keygen",
+		"link",
+		"meta",
+		"param",
+		"source",
+		"track",
+		"wbr",
+		"svg",
+		"math",
+		"script",
+		"style",
+		"template",
+		"iframe",
+		"object",
+		"canvas",
+		"noembed",
+		"noframes",
+		"frameset",
+		"textarea",
+		"audio",
+		"video",
+		"head",
+		"select",
+		"table",
+		"caption",
+		"colgroup",
+		"tbody",
+		"thead",
+		"tfoot",
+		"tr",
+		"td",
+		"th",
+		"h1",
+		"h2",
+		"h3",
+		"h4",
+		"h5",
+		"h6",
+		"xmp",
+		"title",
+		"html",
+		"body",
+		"abbr",
+		"address",
+		"article",
+		"aside",
+		"bdi",
+		"bdo",
+		"blockquote",
+		"cite",
+		"dd",
+		"del",
+		"div",
+		"dl",
+		"dt",
+		"figcaption",
+		"figure",
+		"footer",
+		"header",
+		"hgroup",
+		"ins",
+		"kbd",
+		"li",
+		"main",
+		"mark",
+		"nav",
+		"ol",
+		"p",
+		"pre",
+		"q",
+		"rp",
+		"rt",
+		"ruby",
+		"s",
+		"samp",
+		"section",
+		"time",
+		"u",
+		"ul",
+		"var",
+	] as const satisfies readonly SourceHeadingInlineObservedTag[];
+	const admittedInlineNames = new Set<string>(inlineNames);
+	const nonInlineTags = knownTags.filter(
+		(name) => !admittedInlineNames.has(name) && name !== "br" && name !== "wbr",
+	);
+	const policies = (
+		["strict", "optional-end-tags-v1", "optional-end-tags-v2"] as const
+	).flatMap((tablePolicy) =>
+		[false, true].map((selectedHead) => ({ tablePolicy, selectedHead })),
+	);
+
+	async function expectInlineFailure(
+		source: string,
+		expected: Omit<SourceHeadingInlineDiagnostic, "kind">,
+		limits: Record<string, unknown> = {},
+	) {
+		const error = await captureFailure(() => scan(source, limits));
+		expectCode(error, "unsupported");
+		expect((error as Error).message).toBe(
+			"Unsupported native source-heading structure",
+		);
+		const structure = sourceHeadingStructureDiagnostic(error);
+		expect(structure).toEqual({
+			kind: "source-heading-structure",
+			reason: "heading-inline-structure",
+			position: source.length,
+			positionSemantics: "last-committed-source-utf16",
+		});
+		expect(Reflect.ownKeys(structure ?? {})).toEqual([
+			"kind",
+			"reason",
+			"position",
+			"positionSemantics",
+		]);
+		const diagnostic = sourceHeadingInlineDiagnostic(error);
+		expect(diagnostic).toEqual({
+			kind: "source-heading-inline-start",
+			...expected,
+		});
+		expectDeepFrozen(diagnostic);
+		expect(sourceHeadingInlineDiagnostic(error)).toBe(diagnostic);
+		expect(sourceHeadingStructureDiagnostic(error)).toBe(structure);
+		expect(sourceHeadingScopeDiagnostic(error)).toBeUndefined();
+		expect(sourceHeadingScopeContextDiagnostic(error)).toBeUndefined();
+		expect(resourceLimitDiagnostic(error)).toBeUndefined();
+		return { error, diagnostic };
+	}
+
+	it("declares exactly the closed 99-tag vocabulary plus other", () => {
+		const completeUnion: Exclude<
+			SourceHeadingInlineObservedTag,
+			(typeof knownTags)[number] | "other"
+		> extends never
+			? true
+			: false = true;
+		expect(completeUnion).toBe(true);
+		expect(knownTags).toHaveLength(99);
+		expect(new Set(knownTags).size).toBe(99);
+		expect(
+			new Set<SourceHeadingInlineObservedTag>([...knownTags, "other"]).size,
+		).toBe(100);
+		expect(Math.max(...knownTags.map((name) => name.length))).toBe(10);
+		expect(knownTags.filter((name) => name.length === 10)).toEqual([
+			"blockquote",
+			"figcaption",
+		]);
+		expect(nonInlineTags).toHaveLength(87);
+	});
+
+	it.each(
+		nonInlineTags.flatMap((name) =>
+			[false, true].map((selfClosing) => ({ name, selfClosing })),
+		),
+	)(
+		"labels non-inline $name with selfClosing=$selfClosing without accepting it",
+		async ({ name, selfClosing }) => {
+			await expectInlineFailure(`<h3><${name}${selfClosing ? "/" : ""}>`, {
+				condition: "non-inline-start",
+				headingLevel: 3,
+				observedTag: name,
+				inlineDepth: 0,
+			});
+		},
+	);
+
+	it.each(inlineNames)(
+		"labels self-closing inline %s without changing grammar",
+		async (name) => {
+			await expectInlineFailure(`<h4><${name}/>`, {
+				condition: "self-closing-inline",
+				headingLevel: 4,
+				observedTag: name,
+				inlineDepth: 0,
+			});
+		},
+	);
+
+	it.each([1, 2, 3, 4, 5, 6] as const)(
+		"uses active heading level %i, not the rejected h2 level",
+		async (headingLevel) => {
+			await expectInlineFailure(`<h${headingLevel}><h2>`, {
+				condition: "non-inline-start",
+				headingLevel,
+				observedTag: "h2",
+				inlineDepth: 0,
+			});
+		},
+	);
+
+	it.each([
+		"z",
+		"abcdefghij",
+		"abcdefghijk",
+		"form",
+		"summary",
+		"button",
+		`x-${privateMarker.toLowerCase()}-${"x".repeat(1024)}`,
+	])("maps unknown diagnostic name %s to other", async (name) => {
+		const { error, diagnostic } = await expectInlineFailure(`<h1><${name}>`, {
+			condition: "non-inline-start",
+			headingLevel: 1,
+			observedTag: "other",
+			inlineDepth: 0,
+		});
+		expect(JSON.stringify(diagnostic)).not.toContain(name);
+		expect((error as Error).message).not.toContain(name);
+	});
+
+	it("never includes source tag, title, attribute or URL text in the record or error", async () => {
+		const tag = `x-${privateMarker.toLowerCase()}`;
+		const url = `https://example.com/${privateMarker}`;
+		const source = `<h2 data-secret="${privateMarker}">${privateMarker} 😀<${tag} href="${url}">`;
+		const error = await captureFailure(() =>
+			discoverResearchSourceHeadings(
+				{ ...ownedSource(source), finalUrl: url },
+				{ method },
+			),
+		);
+		expectCode(error, "unsupported");
+		const diagnostic = sourceHeadingInlineDiagnostic(error);
+		expect(diagnostic).toEqual({
+			kind: "source-heading-inline-start",
+			condition: "non-inline-start",
+			headingLevel: 2,
+			observedTag: "other",
+			inlineDepth: 0,
+		});
+		expect(sourceHeadingStructureDiagnostic(error)?.position).toBe(
+			source.length,
+		);
+		for (const value of [
+			JSON.stringify(diagnostic),
+			JSON.stringify(error),
+			(error as Error).message,
+			(error as Error).stack ?? "",
+		]) {
+			for (const secret of [
+				privateMarker,
+				privateMarker.toLowerCase(),
+				tag,
+				url,
+			])
+				expect(value).not.toContain(secret);
+		}
+	});
+
+	it.each([0, 2, 127])(
+		"records pre-push inline depth %i, excluding the heading",
+		async (inlineDepth) => {
+			const prefix = `<h1>${"<span>".repeat(inlineDepth)}`;
+			for (const fixture of [
+				{ tag: "<img>", observedTag: "img", condition: "non-inline-start" },
+				{
+					tag: "<span/>",
+					observedTag: "span",
+					condition: "self-closing-inline",
+				},
+			] as const) {
+				await expectInlineFailure(
+					prefix + fixture.tag,
+					{
+						condition: fixture.condition,
+						headingLevel: 1,
+						observedTag: fixture.observedTag,
+						inlineDepth,
+					},
+					{ maxTrackedDepth: inlineDepth + 1 },
+				);
+			}
+		},
+	);
+
+	it.each([
+		{
+			name: "img",
+			selfClosing: false,
+			reads: 0,
+			condition: "non-inline-start",
+		},
+		{ name: "img", selfClosing: true, reads: 0, condition: "non-inline-start" },
+		{ name: "span", selfClosing: false, reads: 1, condition: null },
+		{
+			name: "span",
+			selfClosing: true,
+			reads: 1,
+			condition: "self-closing-inline",
+		},
+		{ name: "br", selfClosing: false, reads: 0, condition: null },
+		{ name: "br", selfClosing: true, reads: 0, condition: null },
+		{ name: "wbr", selfClosing: false, reads: 0, condition: null },
+		{ name: "wbr", selfClosing: true, reads: 0, condition: null },
+	] as const)(
+		"reads selfClosing $reads times for actual $name/$selfClosing",
+		async (fixture) => {
+			const prefix = `<h1>A<${fixture.name}${fixture.selfClosing ? "/" : ""}>`;
+			const source = fixture.condition
+				? prefix
+				: `${prefix}B${fixture.name === "span" ? "</span>" : ""}</h1>`;
+			const reads = vi.fn(() => fixture.selfClosing);
+			const next = HtmlTokenCursor.prototype.next;
+			const cursors = new Set<HtmlTokenCursor>();
+			let instrumented = 0;
+			vi.spyOn(HtmlTokenCursor.prototype, "next").mockImplementation(function (
+				this: HtmlTokenCursor,
+			) {
+				cursors.add(this);
+				const token = next.call(this);
+				if (token?.kind === "start" && token.name === fixture.name) {
+					expect(token.selfClosing).toBe(fixture.selfClosing);
+					instrumented++;
+					Object.defineProperty(token, "selfClosing", {
+						get: reads,
+						enumerable: true,
+						configurable: true,
+					});
+				}
+				return token;
+			});
+			if (fixture.condition) {
+				await expectInlineFailure(source, {
+					condition: fixture.condition,
+					headingLevel: 1,
+					observedTag: fixture.name,
+					inlineDepth: 0,
+				});
+			} else {
+				const result = await scan(source);
+				expect(result.report.entries.map((entry) => entry.title)).toEqual([
+					fixture.name === "br" ? "A B" : "AB",
+				]);
+				expect(sourceHeadingInlineDiagnostic(result)).toBeUndefined();
+			}
+			expect(instrumented).toBe(1);
+			expect(reads).toHaveBeenCalledTimes(fixture.reads);
+			expect(cursors.size).toBe(1);
+			for (const cursor of cursors) {
+				expect(cursor.closed).toBe(true);
+				expect(cursor.position).toBe(source.length);
+			}
+		},
+	);
+
+	it.each([
+		["<h1><img duplicate duplicate>", "tokenizer-issue"],
+		["<h1><plaintext>", "ambiguous-text-mode"],
+		["<h1><noscript>", "ambiguous-text-mode"],
+		["<h1><span></h1>", "heading-close-structure"],
+		["<script/>", "raw-self-closing"],
+		["<script>x</script extra=x>", "raw-close-structure"],
+		["<template></head>", "scope-close-structure"],
+		["<h1>", "unclosed-context"],
+		["<h1/>", "heading-start-structure"],
+	] as const)(
+		"does not brand the earlier rejection of %s",
+		async (source, reason) => {
+			const error = await captureFailure(() => scan(source));
+			expectCode(error, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(error)?.reason).toBe(reason);
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it.each([
+		{
+			source: "<h1><span>",
+			limits: { maxTrackedDepth: 1 },
+			diagnostic: {
+				kind: "source.headings-depth",
+				unit: "levels",
+				limit: 1,
+				observed: 2,
+			},
+		},
+		{
+			source: "<h1><img>",
+			limits: { maxHeadingCodeUnits: 8 },
+			diagnostic: {
+				kind: "source.heading-extent",
+				unit: "code-units",
+				limit: 8,
+				observed: 9,
+			},
+		},
+		{
+			source: "<h1><img>",
+			limits: { maxOperations: 1 },
+			diagnostic: {
+				kind: "html.cursor-operations",
+				unit: "operations",
+				limit: 1,
+				observed: 2,
+			},
+		},
+		{
+			source: "<h1><img>",
+			limits: { maxWindowCodeUnits: 4 },
+			diagnostic: {
+				kind: "html.cursor-window",
+				unit: "code-units",
+				limit: 4,
+				observed: 5,
+			},
+		},
+		{
+			source: "<h1><img duplicate duplicate>",
+			limits: { maxIssues: 0 },
+			diagnostic: {
+				kind: "html.issues",
+				unit: "issues",
+				limit: 0,
+				observed: 1,
+			},
+		},
+	] as const)(
+		"keeps earlier $diagnostic.kind failure unbranded",
+		async ({ source, limits, diagnostic }) => {
+			const error = await captureFailure(() => scan(source, limits));
+			expectLimit(error, diagnostic);
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it.each([
+		{ tag: "<img>", observedTag: "img", condition: "non-inline-start" },
+		{ tag: "<span/>", observedTag: "span", condition: "self-closing-inline" },
+	] as const)(
+		"adds no scanner work or operation for $condition bookkeeping",
+		async (fixture) => {
+			const source = `<h1>${fixture.tag}`;
+			const native = new HtmlTokenCursor(source, () => {
+				throw new Error("Unexpected synthetic tokenizer issue");
+			});
+			try {
+				expect(native.next()).toBeDefined();
+				expect(native.next()).toBeDefined();
+				expect(native.position).toBe(source.length);
+				const workLimit = native.workUnits + 2;
+				const options = {
+					maxWorkUnits: workLimit,
+					maxOperations: native.operations,
+				};
+				await expectInlineFailure(
+					source,
+					{
+						condition: fixture.condition,
+						headingLevel: 1,
+						observedTag: fixture.observedTag,
+						inlineDepth: 0,
+					},
+					options,
+				);
+				const error = await captureFailure(() =>
+					scan(source, { ...options, maxWorkUnits: workLimit - 1 }),
+				);
+				expectLimit(error, {
+					kind: "source.headings-work",
+					unit: "code-units",
+					limit: workLimit - 1,
+					observed: workLimit,
+				});
+				expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+			} finally {
+				native.close();
+			}
+		},
+	);
+
+	it.each(["aborted", "timeout"] as const)(
+		"leaves a real post-read yielded %s unbranded",
+		async (code) => {
+			let now = 1_000;
+			vi.spyOn(performance, "now").mockImplementation(() => now);
+			const controller = controllerFor();
+			const source = "<h1><img>";
+			const next = HtmlTokenCursor.prototype.next;
+			const cursors = new Set<HtmlTokenCursor>();
+			let scheduled = false;
+			let dispatched = false;
+			let timer: ReturnType<typeof setTimeout> | undefined;
+			vi.spyOn(HtmlTokenCursor.prototype, "next").mockImplementation(function (
+				this: HtmlTokenCursor,
+			) {
+				cursors.add(this);
+				const token = next.call(this);
+				if (token?.kind === "start" && token.name === "img") {
+					scheduled = true;
+					timer = setTimeout(() => {
+						dispatched = true;
+						now = 1_010;
+						if (code === "aborted") controller.abort(new Error(privateMarker));
+					}, 0);
+				}
+				return token;
+			});
+			try {
+				const error = await captureFailure(() =>
+					discoverResearchSourceHeadings(
+						ownedSource(source),
+						{ method, timeoutMs: 10, yieldEveryOperations: 2 },
+						controller.signal,
+					),
+				);
+				expect(scheduled).toBe(true);
+				expect(dispatched).toBe(true);
+				expectCode(error, code);
+				expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+				expect(sourceHeadingScopeContextDiagnostic(error)).toBeUndefined();
+				expect((error as Error).message).not.toContain(privateMarker);
+				expect(cursors.size).toBe(1);
+				for (const cursor of cursors) {
+					expect(cursor.closed).toBe(true);
+					expect(cursor.position).toBe(source.length);
+				}
+			} finally {
+				clearTimeout(timer);
+			}
+		},
+	);
+
+	it("owns one frozen five-field scalar snapshot without changing error descriptors", async () => {
+		const close = vi.spyOn(HtmlTokenCursor.prototype, "close");
+		const source = "<h1><span><em><img>";
+		const expected = {
+			condition: "non-inline-start",
+			headingLevel: 1,
+			observedTag: "img",
+			inlineDepth: 2,
+		} as const;
+		const { error, diagnostic } = await expectInlineFailure(source, expected);
+		expect(close).toHaveBeenCalledTimes(1);
+		const cursor = close.mock.contexts[0] as HtmlTokenCursor;
+		expect(cursor.closed).toBe(true);
+		expect(cursor.position).toBe(source.length);
+		expect(Reflect.ownKeys(diagnostic ?? {})).toEqual([
+			"kind",
+			"condition",
+			"headingLevel",
+			"observedTag",
+			"inlineDepth",
+		]);
+		for (const descriptor of Object.values(
+			Object.getOwnPropertyDescriptors(diagnostic ?? {}),
+		)) {
+			expect(descriptor).toMatchObject({
+				configurable: false,
+				enumerable: true,
+				writable: false,
+			});
+			expect(["string", "number"]).toContain(typeof descriptor.value);
+			expect(Object.hasOwn(descriptor, "get")).toBe(false);
+			expect(Object.hasOwn(descriptor, "set")).toBe(false);
+		}
+		expect(Reflect.set(diagnostic ?? {}, "observedTag", "other")).toBe(false);
+		expect(Reflect.deleteProperty(diagnostic ?? {}, "inlineDepth")).toBe(false);
+		const reference = new AgentBrowserError(
+			"unsupported",
+			"Unsupported native source-heading structure",
+		);
+		expect(Reflect.ownKeys(error as object)).toEqual(
+			Reflect.ownKeys(reference),
+		);
+		for (const name of Reflect.ownKeys(reference)) {
+			const actual = Object.getOwnPropertyDescriptor(error, name);
+			const original = Object.getOwnPropertyDescriptor(reference, name);
+			if (name === "stack") {
+				expect(actual?.configurable).toBe(original?.configurable);
+				expect(actual?.enumerable).toBe(original?.enumerable);
+				expect(typeof (error as Error).stack).toBe("string");
+			} else expect(actual).toEqual(original);
+		}
+		expect(Object.hasOwn(error as object, "cause")).toBe(false);
+		await scan("<h1>After</h1>");
+		const repeated = await expectInlineFailure(source, expected);
+		expect(repeated.error).not.toBe(error);
+		expect(repeated.diagnostic).not.toBe(diagnostic);
+		expect(repeated.diagnostic).toEqual(diagnostic);
+		expect(sourceHeadingInlineDiagnostic(error)).toBe(diagnostic);
+	});
+
+	it("rejects forged, foreign, accessor, callable and revoked values without inspection", async () => {
+		const { error, diagnostic } = await expectInlineFailure("<h1><img>", {
+			condition: "non-inline-start",
+			headingLevel: 1,
+			observedTag: "img",
+			inlineDepth: 0,
+		});
+		const trap = vi.fn((): never => {
+			throw new Error(privateMarker);
+		});
+		const traps = {
+			get: trap,
+			getPrototypeOf: trap,
+			getOwnPropertyDescriptor: trap,
+			ownKeys: trap,
+			has: trap,
+			apply: trap,
+		};
+		const accessor = {};
+		for (const name of [
+			"kind",
+			"condition",
+			"headingLevel",
+			"observedTag",
+			"inlineDepth",
+			"code",
+			"message",
+			"stack",
+			"cause",
+			"toString",
+			"valueOf",
+		])
+			Object.defineProperty(accessor, name, { get: trap });
+		Object.defineProperty(accessor, Symbol.toPrimitive, { get: trap });
+		const callable = vi.fn(() => error);
+		const revokedObject = Proxy.revocable(error as object, traps);
+		const revokedFunction = Proxy.revocable(callable, traps);
+		revokedObject.revoke();
+		revokedFunction.revoke();
+		for (const value of [
+			undefined,
+			null,
+			true,
+			false,
+			0,
+			Number.NaN,
+			Number.POSITIVE_INFINITY,
+			1n,
+			Symbol(privateMarker),
+			privateMarker,
+			{},
+			[],
+			Object.create(null),
+			callable,
+			Object.assign(() => undefined, diagnostic),
+			new Error((error as Error).message),
+			new AgentBrowserError("unsupported", (error as Error).message),
+			new Error((error as Error).message, { cause: error }),
+			runInNewContext(
+				"new Error('Unsupported native source-heading structure')",
+			),
+			{ ...(error as object) },
+			Object.create(error as object),
+			Object.create(
+				Object.getPrototypeOf(error),
+				Object.getOwnPropertyDescriptors(error),
+			),
+			diagnostic,
+			{ ...diagnostic },
+			sourceHeadingStructureDiagnostic(error),
+			{ code: "unsupported", diagnostic },
+			accessor,
+			Object.create(accessor),
+			new Proxy(error as object, {}),
+			new Proxy(error as object, traps),
+			new Proxy(callable, traps),
+			revokedObject.proxy,
+			revokedFunction.proxy,
+		])
+			expect(sourceHeadingInlineDiagnostic(value)).toBeUndefined();
+		expect(trap).not.toHaveBeenCalled();
+		expect(callable).not.toHaveBeenCalled();
+		expect(sourceHeadingInlineDiagnostic(error)).toBe(diagnostic);
+	});
+
+	it.each(policies)(
+		"composes without changing success under $tablePolicy / selectedHead=$selectedHead",
+		async ({ tablePolicy, selectedHead }) => {
+			const close = vi.spyOn(HtmlTokenCursor.prototype, "close");
+			const options = {
+				...(tablePolicy === "strict" ? {} : { tableScopePolicy: tablePolicy }),
+				...(selectedHead
+					? { headScopePolicy: "explicit-body-boundary-v1" }
+					: {}),
+				yieldEveryOperations: 1,
+			};
+			const hidden = `<h2>${privateMarker}</h2>`;
+			const table =
+				tablePolicy === "strict"
+					? `<table><tr><td>${hidden}</td></tr></table>`
+					: tablePolicy === "optional-end-tags-v1"
+						? `<table><tr><td>${hidden}<td>${hidden}</table>`
+						: `<table><thead><tr><th>${hidden}<tbody><tr><td>${hidden}</table>`;
+			const prefix =
+				(selectedHead ? "<head><body>" : "<head></head><body>") + table;
+			const heading = `<h1>${inlineNames.map((name) => `<${name}>A</${name}>`).join("")}<br>B<wbr>C</h1>`;
+			const source = prefix + heading;
+			const baseline = await scan(source, options);
+			await expectInlineFailure(
+				`${prefix}<h1><span><img/>`,
+				{
+					condition: "non-inline-start",
+					headingLevel: 1,
+					observedTag: "img",
+					inlineDepth: 1,
+				},
+				options,
+			);
+			const result = await scan(source, options);
+			expect(result).toEqual(baseline);
+			expect(close).toHaveBeenCalledTimes(3);
+			for (const cursor of close.mock.contexts)
+				expect((cursor as HtmlTokenCursor).closed).toBe(true);
+			expect(result.report.entries).toEqual([
+				{
+					ordinal: 1,
+					level: 1,
+					title: `${"A".repeat(inlineNames.length)} BC`,
+					titleTruncated: false,
+					anchor: {
+						kind: "source-utf16-range-v1",
+						startTag: { start: prefix.length, end: prefix.length + 4 },
+						endTag: { start: source.length - 5, end: source.length },
+					},
+				},
+			]);
+			expect(Object.keys(result.report)).toEqual([
+				"kind",
+				"method",
+				"semantics",
+				"partial",
+				"contentSuccess",
+				...(tablePolicy === "strict" ? [] : ["tableScopePolicy"]),
+				...(selectedHead ? ["headScopePolicy"] : []),
+				"source",
+				"completion",
+				"scannedTo",
+				"entries",
+				"limits",
+				"counters",
+			]);
+			expect(result.report.counters).toEqual(baseline.report.counters);
+			expect(result.report.counters.yields).toBeGreaterThan(0);
+			expect(result.report.counters.suppressedHeadingStarts).toBe(
+				tablePolicy === "strict" ? 1 : 2,
+			);
+			expect(result.report.limits).toEqual({
+				...canonicalLimits,
+				yieldEveryOperations: 1,
+			});
+			expect(result.jsonl).toBe(`${JSON.stringify(result.report)}\n`);
+			expect(result.outputBytes).toBe(encoder.encode(result.jsonl).byteLength);
+			expect(result.jsonl).not.toContain(privateMarker);
+			for (const value of [
+				result,
+				result.report,
+				result.report.entries[0],
+				result.report.counters,
+			])
+				expect(sourceHeadingInlineDiagnostic(value)).toBeUndefined();
+			expectDeepFrozen(result);
+		},
+	);
+
+	it("keeps fixed default counters/schema and admits no diagnostic option", async () => {
+		const result = await scan("<h1>A</h1>");
+		expect(result.report.counters).toEqual({
+			tokens: 3,
+			operations: 4,
+			workUnits: 24,
+			issueAttempts: 0,
+			entityIssues: {},
+			omittedStarts: {},
+			suppressedStarts: {},
+			suppressedHeadingStarts: 0,
+			rawStarts: {},
+			maxTrackedDepth: 1,
+			yields: 0,
+		});
+		expect(Object.keys(result.report)).toEqual([
+			"kind",
+			"method",
+			"semantics",
+			"partial",
+			"contentSuccess",
+			"source",
+			"completion",
+			"scannedTo",
+			"entries",
+			"limits",
+			"counters",
+		]);
+		expect(result.report.limits).toEqual(canonicalLimits);
+		expect(sourceHeadingInlineDiagnostic(result)).toBeUndefined();
+		const error = await captureFailure(() =>
+			scan("<h1><img>", { inlineDiagnosticPolicy: "enabled" }),
+		);
+		expectCode(error, "invalid-input");
+		expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+	});
 });
