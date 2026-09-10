@@ -1,5 +1,15 @@
 # Agent browser implementation tasks
 
+On September 10, 2026, the native browser reaches AMD's ROCm compatibility page
+with one HTTP200 request, zero mocks/redirects, and an independently admitted
+export after13 passing synthetic controls. ROCM-COMPATIBILITY-SOURCE.md records
+the new evidence and keeps source01's historical failure unchanged. Selected
+table boundaries work live, but header/span relationships are discarded and
+marker labels occupy47.16% of this export. Next: bounded reader/extraction
+relationship support and compact structured output, with separate tests.
+Hardware/benchmark research remains partial; X/Astra and Reddit/Poe evidence,
+real acceptance gates and the overall browser goal remain incomplete.
+
 On September 10, 2026, the resumed cached-source workflow completes both pending
 WebAuthn section extractions and separate independent verifier admissions, with
 no newGET, credential or device access. PASSKEY-ATTESTATION-SOURCE-QUALIFICATION.md
