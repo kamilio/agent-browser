@@ -1,5 +1,14 @@
 # Agent browser implementation tasks
 
+On September 10, 2026, the resumed cached-source workflow completes both pending
+WebAuthn section extractions and separate independent verifier admissions, with
+no newGET, credential or device access. PASSKEY-ATTESTATION-SOURCE-QUALIFICATION.md
+records the actual four successful actions and retained procedural history.
+The generating template allows map or array statements, while our helper is
+map-only; this compatibility restriction must be resolved or explicitly retained
+before integration. Byte/depth/profile decisions and real acceptance gates remain
+open. Earlier unread-source notes are historical; the overall goal is incomplete.
+
 On September 8, 2026, explicit user reauthorization allowed trial04's isolated
 23-case native-control check only. All23 cases pass with unchanged31-input
 authority and1748-file engine inventories. NATIVE-SECTION-TRIAL-04-CONTROLS.md
