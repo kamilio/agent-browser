@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 a Grid font-dependency regression is fixed at the tokenizer
+boundary: line/area names resembling em/rem dimensions no longer cause font
+resolution. GRID-CSS.md preserves four failing baseline cases and the subsequent
+clean gate: 7208 passes across 117 selected native files, with the same existing
+exceptions. True font-relative dimensions still require metrics. This is a
+follow-up to the Grid CSS foundation, not Grid geometry or live-site acceptance.
+
 September 11, 2026 GRID-CSS.md records production Grid grammar integration:
 ten longhands and placement shorthands reach stylesheet/inline parsing, variables,
 cascade, computed values, CSSOM and item blockification through display:contents.

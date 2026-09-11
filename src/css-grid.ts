@@ -5,6 +5,7 @@ import {
 	type BoxFontMetrics,
 } from "./css-box.js";
 import { readCssIdentifier, skipCssTrivia } from "./css-variables.js";
+import { lengthUsesFont } from "./css-math.js";
 
 export const cssGridProperties = Object.freeze([
 	"grid-template-columns",
@@ -172,6 +173,15 @@ function tokenize(value: string): Token[] | undefined {
 	}
 	return tokens;
 }
+export function gridValueUsesFont(value: string, unit: "em" | "rem"): boolean {
+	return (
+		tokenize(value)?.some(
+			(token) =>
+				token.type === "dimension" && lengthUsesFont(token.value, unit),
+		) ?? false
+	);
+}
+
 function customIdent(token: Token | undefined): string | undefined {
 	return token?.type === "ident" && !reserved.has(token.value.toLowerCase())
 		? token.value

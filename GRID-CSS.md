@@ -70,3 +70,23 @@ Next: implement true two-dimensional placement and track sizing, connect item
 reflow to final layout/paint/hit testing, address the independent CSS blockers,
 and repeat the genuine native MDN click flow. Native CSS tests alone do not pass
 those gates or complete the four original research topics.
+
+## Name-safe font dependencies
+
+Follow-up review reproduced four false font dependencies: named lines, area
+strings and placement identifiers containing `1em` or `1rem` triggered font
+resolution even though they were names rather than dimensions. A deliberately
+oversized font exposed each as an unwanted resource-limit failure. The failed
+native baseline is preserved in `native-grid-font-baseline-september11`.
+
+Grid font dependency checks now inspect dimension tokens from the same bounded
+Grid tokenizer. Identifiers and strings do not request font metrics; actual
+font-relative tracks still do. Four regression cases and one real-dimension
+control extend the integration suite. The separate clean follow-up gate is
+`native-grid-css-september11-round02`: **7,208 passed, zero failed, one existing
+exclusion**, 117 selected files and 116 strict roots. Build, strict typing and
+formatting pass; the 1,009 source inputs remain stable. It runs September 11,
+2026, 12:41:49.450–12:43:28.587 UTC. The integration file now has 34 passing
+cases, alongside the unchanged 210 grammar cases. The earlier
+7,203-pass foundation measurements and any replay against that build remain
+historical evidence, not validation of this later fix.

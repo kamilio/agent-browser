@@ -97,6 +97,30 @@ it("computes local and root font units but retains percentage and flexible track
 	expect(grid()["grid-auto-rows"]).toBe("36px");
 });
 
+it.each([
+	["font-size:1e20px", "grid-template-columns:[Name1em] 10px"],
+	["font-size:1e20px", 'grid-template-areas:"Name1em"'],
+	["font-size:1e20px", "grid-area:Name1em"],
+	["font-size:1e20px", "grid-template-columns:[Name1rem] 10px"],
+])(
+	"does not treat Grid names as font-relative dimensions: %s; %s",
+	(font, declaration) => {
+		const { grid } = fixture(`html{${font}}#target{${font};${declaration}}`);
+		expect(() => grid()).not.toThrow();
+	},
+);
+
+it("still resolves font metrics for real Grid dimensions", () => {
+	expect(() =>
+		fixture("#target{font-size:1e20px;grid-template-columns:2em}").grid(),
+	).toThrowError(expect.objectContaining({ code: "resource-limit" }));
+	expect(
+		fixture("#target{font-size:1e20px;grid-template-columns:2px}").grid()[
+			"grid-template-columns"
+		],
+	).toBe("2px");
+});
+
 it("inherits computed tracks without resolving the parent's em again", () => {
 	const { grid } = fixture(
 		"#outer{grid-template-columns:[Start] 2em [End];grid-area:Panel}#target{grid-template-columns:inherit;grid-area:inherit}",

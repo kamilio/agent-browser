@@ -5,6 +5,7 @@ import {
 	computeGridStyle,
 	initialGridStyle,
 	isGridDisplay,
+	gridValueUsesFont,
 	type CssGridProperty,
 	type GridStyle,
 	type GridSpecifiedStyle,
@@ -505,9 +506,9 @@ export class DocumentStyles {
 			const parent = this.tree.get(target).parent;
 			const values = Object.values(specified);
 			let fonts: BoxFontMetrics | undefined;
-			if (values.some((value) => lengthUsesFont(value, "em")))
+			if (values.some((value) => gridValueUsesFont(value, "em")))
 				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
-			if (values.some((value) => lengthUsesFont(value, "rem"))) {
+			if (values.some((value) => gridValueUsesFont(value, "rem"))) {
 				const root =
 					this.tree
 						.get(this.tree.root)
