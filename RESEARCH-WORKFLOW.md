@@ -56,6 +56,15 @@ interrupts a pending batch grant. Consumers of the async generator should pass
 a signal to cancel an outstanding next call; returning after a yielded report
 closes the batch pacer.
 
+The batch ends after yielding a challenge/access-barrier report or any HTTP 429
+response, including a 429 without challenge markers. Remaining URLs, even on
+other origins, are not requested; no skipped reports are fabricated. The stop
+decision is captured before yielding, so mutating a returned report cannot
+restart the batch. Earlier reports remain available. Ordinary unclassified HTTP
+500 responses do not stop subsequent explicitly requested URLs. This prevents
+continued batch traffic after a detected restriction; it does not solve a
+challenge, implement Retry-After, or prove fewer blocks in live use.
+
 ## Programmatic entry points
 
 `researchNavigation` retains its first ten positional parameters and accepts an
@@ -92,3 +101,12 @@ test files match the working tree. Evidence and earlier failures are retained in
 and its preceding lanes. The native run interval is 04:00:42.188–04:01:28.349 UTC.
 No website, real socket, page runtime, credential or device probe is part of
 these tests; no performance or reduced-block result follows from them.
+
+The subsequent batch-stop check on September 11, 2026 at
+04:54:21.840–04:54:32.562 UTC passes production build, strict types for six test
+roots, two-file lint and all 561 cases in six explicitly selected native test
+files. The batch/pacing file now has 80 passing cases, including 11 new terminal
+response regressions. All 984 isolated source inputs remain unchanged. Evidence:
+`node_modules/.cache/native-validation/native-research-batch-stop-september11/`.
+This focused check excludes the existing selector failures described above and
+is not a full-repository or live-website pass.

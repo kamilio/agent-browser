@@ -521,3 +521,148 @@ it.each([
 		expect(starts).toHaveLength(1);
 	},
 );
+
+function ownedBatchResponse(
+	status: number,
+	html = tableMarkup,
+	headers: NetworkResponse["headers"] = {},
+	url = firstUrl,
+): NetworkResponse {
+	const body = new TextEncoder().encode(html);
+	return {
+		url,
+		status,
+		headers: { "content-type": ["text/html; charset=utf-8"], ...headers },
+		body,
+		encodedBytes: body.byteLength,
+		redirects: [],
+		elapsedMs: 0,
+	};
+}
+
+const terminalCases: {
+	name: string;
+	response: NetworkResponse;
+	outcome: ResearchNavigationReport["outcome"];
+}[] = [
+	{
+		name: "header challenge on 200",
+		response: ownedBatchResponse(200, tableMarkup, {
+			"cf-mitigated": ["challenge"],
+		}),
+		outcome: "semantic-barrier",
+	},
+	{
+		name: "header challenge on 429",
+		response: ownedBatchResponse(429, tableMarkup, {
+			"cf-mitigated": ["challenge"],
+		}),
+		outcome: "semantic-barrier",
+	},
+	{
+		name: "body challenge",
+		response: ownedBatchResponse(
+			200,
+			"<title>Just a moment...</title><main>Checking your browser</main>",
+		),
+		outcome: "semantic-barrier",
+	},
+	{
+		name: "429 without challenge markers",
+		response: ownedBatchResponse(429),
+		outcome: "http-failure",
+	},
+];
+
+it.each(
+	terminalCases.flatMap((testCase) =>
+		[0, 100].map((interval) => ({ ...testCase, interval })),
+	),
+)(
+	"stops all remaining batch URLs after $name with interval=$interval",
+	async ({ response, outcome, interval }) => {
+		const request = vi.mocked(NodeNetworkTransport.prototype.request);
+		request.mockResolvedValueOnce(response);
+		const test = paced(
+			[firstUrl, secondUrl, "https://other.fixture.invalid/unused"],
+			interval,
+		);
+		const first = await test.next();
+		expect(first.done).toBe(false);
+		if (first.done) throw new Error("Expected terminal research report");
+		expect(first.value).toMatchObject({
+			outcome,
+			contentSuccess: false,
+			metrics: { closed: true },
+		});
+		const next = test.next();
+		await vi.advanceTimersByTimeAsync(100);
+		await expect(next).resolves.toEqual({ done: true, value: undefined });
+		expect(request).toHaveBeenCalledOnce();
+		expect(vi.getTimerCount()).toBe(0);
+	},
+);
+
+it("captures the stop decision before yielding a mutable report", async () => {
+	const request = vi.mocked(NodeNetworkTransport.prototype.request);
+	request.mockResolvedValueOnce(ownedBatchResponse(429));
+	const test = paced();
+	const first = await test.next();
+	if (first.done) throw new Error("Expected terminal research report");
+	first.value.outcome = "extracted-unverified";
+	first.value.contentSuccess = null;
+	first.value.classification.barrier = null;
+	first.value.classification.diagnostic = null;
+	if (first.value.primaryResponse) first.value.primaryResponse.status = 200;
+	const next = test.next();
+	await vi.advanceTimersByTimeAsync(100);
+	await expect(next).resolves.toEqual({ done: true, value: undefined });
+	expect(request).toHaveBeenCalledOnce();
+	expect(vi.getTimerCount()).toBe(0);
+});
+
+it("stops after a later rate limit without retrying or visiting the third URL", async () => {
+	const request = vi.mocked(NodeNetworkTransport.prototype.request);
+	request.mockResolvedValueOnce(ownedBatchResponse(200));
+	request.mockResolvedValueOnce(
+		ownedBatchResponse(429, tableMarkup, {}, secondUrl),
+	);
+	const test = paced([firstUrl, secondUrl, `${origin}/third`]);
+	await report(test);
+	const second = test.next();
+	await vi.advanceTimersByTimeAsync(100);
+	await expect(second).resolves.toMatchObject({
+		done: false,
+		value: { outcome: "http-failure" },
+	});
+	const next = test.next();
+	await vi.advanceTimersByTimeAsync(100);
+	await expect(next).resolves.toEqual({ done: true, value: undefined });
+	expect(request.mock.calls.map(([input]) => input.url)).toEqual([
+		firstUrl,
+		secondUrl,
+	]);
+	expect(vi.getTimerCount()).toBe(0);
+});
+
+it("continues explicit batch URLs after an ordinary unclassified 500", async () => {
+	const request = vi.mocked(NodeNetworkTransport.prototype.request);
+	request.mockResolvedValueOnce(ownedBatchResponse(500));
+	const test = paced();
+	await expect(test.next()).resolves.toMatchObject({
+		done: false,
+		value: { outcome: "http-failure" },
+	});
+	const second = test.next();
+	await vi.advanceTimersByTimeAsync(100);
+	await expect(second).resolves.toMatchObject({
+		done: false,
+		value: { outcome: "extracted-unverified" },
+	});
+	await expect(test.next()).resolves.toEqual({ done: true, value: undefined });
+	expect(request.mock.calls.map(([input]) => input.url)).toEqual([
+		firstUrl,
+		secondUrl,
+	]);
+	expect(vi.getTimerCount()).toBe(0);
+});

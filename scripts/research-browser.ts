@@ -808,7 +808,7 @@ export async function* researchBatch(
 	try {
 		for (const url of options.urls) {
 			await pacer?.wait(new URL(url).origin, batchSignal);
-			yield await researchNavigation(
+			const report = await researchNavigation(
 				url,
 				options.reader,
 				signal,
@@ -825,6 +825,12 @@ export async function* researchBatch(
 					minRequestIntervalMs: options.minRequestIntervalMs,
 				},
 			);
+			const stop =
+				report.outcome === "semantic-barrier" ||
+				report.classification.barrier !== null ||
+				report.primaryResponse?.status === 429;
+			yield report;
+			if (stop) return;
 		}
 	} finally {
 		pacer?.close();

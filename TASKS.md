@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+On September 11, 2026 at 04:54 UTC, research batches stop after a detected access
+barrier or HTTP429, retaining the terminal report and making no further batch
+requests. Production build, strict six roots, scoped lint and 561/561 isolated
+native cases pass, including 11 new regressions. RESEARCH-WORKFLOW.md records
+the exact scope; this is not a CAPTCHA solution or evidence of fewer live blocks.
+The fresh AMD Cloudflare429 motivates this change; website compatibility and
+the incomplete research remain active, not blocked on another general approval.
+
 On September11,2026 at04:45 UTC, bounded capture-to-JSON replay passes all84 new
 synthetic cases, production build, strict19 roots and seven-file lint. The20-file
 native run has1733 passes and3 unchanged baseline selector failures; full-suite
