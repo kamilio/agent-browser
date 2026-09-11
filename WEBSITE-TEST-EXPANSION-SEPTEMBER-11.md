@@ -2,8 +2,8 @@
 
 This is an additive record after `WEBSITE-TEST-INVENTORY.md`'s 54-host audit.
 Do not reinterpret that audit or these attempts as successful website coverage.
-The three new exact hostnames bring the combined attempted-host inventory to
-**57**, including pre-wire admission failures. Original reports and measurements
+The four new exact hostnames bring the combined attempted-host inventory to
+**58**, including pre-wire admission failures. Original reports and measurements
 retain their paths and outcomes.
 
 | New hostname | Recorded scope | Evidence |
@@ -11,11 +11,20 @@ retain their paths and outcomes.
 | `www.selenium.dev` | Public form-page GET returns 200; initial navigation stops before native form discovery because the harness denies the original cross-origin Bootstrap stylesheet. No form actions or style acceptance. | `SELENIUM-NATIVE-FORM.md` |
 | `cdn.jsdelivr.net` | Original Selenium markup causes a native CSS GET attempt. The initial same-origin-only harness rejects it before transport/wire admission. This first attempt does not establish CDN reachability. | `SELENIUM-NATIVE-FORM.md` |
 | `docs.python.org` | Documentation-index GET returns 200; original stylesheet/image loading then exceeds the unchanged transport concurrency cap of one. No tutorial discovery or click. | `PYTHON-DOCS-NATIVE-FLOW.md` |
+| `unpkg.com` | A separate Selenium run loads the exact previously observed Bootstrap CSS (HTTP200), then the original native loader requests datepicker CSS from unpkg. That second stylesheet is denied by the test's exact-URL policy before wire admission. | `SELENIUM-STYLESHEET-FLOW.md` |
 
 Both live flows retain original HTML and stylesheet behavior. Neither uses page
 scripts, credentials, account changes, uploads, an alternative browser or a
 fallback direct destination request. Failed original attempts are not retried or
 rewritten as successful validations.
+
+The separate Selenium stylesheet test records three native attempts and two
+wire responses; both the page and Bootstrap CSS return200. The unpkg request is
+an additional harness boundary, not a browser bug. Its32 verification checks pass
+with settled zero-resource cleanup; the initial Selenium report and its original
+failed temporal-cleanup verifier remain unchanged. A further separately scoped
+test permits original-loader public HTTPS CSS by resource type rather than adding
+one stylesheet exception at a time; it is not accepted until its results exist.
 
 ## Existing host replay
 

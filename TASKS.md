@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 SELENIUM-STYLESHEET-FLOW.md verifies the observed Bootstrap CSS
+returns200, then records another harness-only admission boundary for original
+datepicker CSS on unpkg.com. The additive attempted-host count is now58, not58
+working sites; no native form action was reached. Old failed runs remain intact.
+A separate original-loader public-HTTPS-CSS resource policy test is running.
+LIST-MARKER-SOURCE.md records one native CSSLists GET and two bounded sections:
+outside marker ownership/side/attachment are defined, but exact placement and
+baseline/height effects are explicitly underdefined. Genuine native outside-block
+marker implementation must document its policy rather than claiming conformance.
+
 September 11, 2026 WEBSITE-TEST-EXPANSION-SEPTEMBER-11.md adds three exact attempted
 hostnames after the54-host inventory: Selenium, its pre-wire-denied jsDelivr CSS,
 and Python documentation, for57 combined attempted hosts, not passing sites.
