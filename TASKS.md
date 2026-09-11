@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 GRID-ALIGNMENT-NATIVE.md closes the specific track-distribution
+source gap with one native public W3C GET (HTTP200), 76 observed headings and two
+successful bounded offline section extractions. Safe distributed fallbacks and
+their overflow behavior now have primary source evidence; all49 receipts verify.
+This is partial reader/source coverage, not rendered-page or general alignment
+conformance, and does not complete the original four research topics.
+
 September 11, 2026 MDN-GRID-LAYOUT.md records one unchanged offline native click
 against all nineteen captured MDN responses using the frozen 8095-pass build.
 Formatting now retains 1753 boxes, ten Grid shells and 47 Grid-item-marked nodes,
