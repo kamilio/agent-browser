@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 malformed-attribute recovery now preserves quote/apostrophe/<,
+leading equals and normalized NULL names through native tokenization and parser
+document construction without weakening normal setters. MALFORMED-ATTRIBUTES.md
+records 4601/4601 selected native tests across 64 files, the preserved initial
+four failures, and a separate fresh Bing HTTP200 load with nine headings. The
+fresh response differs from the old failing body; successful loading does not
+prove Reddit opinion relevance, CAPTCHA effectiveness or broad site support.
+Keep researching the observed query/results mismatch and the remaining SVG,
+performance, research, fingerprint and real credential/passkey requirements.
+
 September 11, 2026 at 06:48 UTC, the recovered WHATWG capture yields its unique
 foreign-content section through one zero-network native replay: 801 selected
 nodes, 47631 JSONL bytes, unchanged pins/build and exit 0. READER-TABLE-SCOPE.md

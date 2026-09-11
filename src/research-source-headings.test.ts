@@ -1069,7 +1069,7 @@ describe("trusted source-heading structure diagnostics", () => {
 		expect(sourceHeadingStructureDiagnostic(error)).toBeDefined();
 	});
 
-	it.each(["<h@>", "<h1 '=x>"])(
+	it.each(["<h@>", "<h1!>"])(
 		"does not rebrand unrelated native tokenizer errors: %s",
 		async (source) => {
 			const error = await captureFailure(() => scan(source));

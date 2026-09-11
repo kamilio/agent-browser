@@ -21,6 +21,12 @@ const issuePaths = [
 		source: '<p title="&#0;" title="duplicate">',
 		read: next,
 	},
+	{
+		name: "attribute-name recovery",
+		source: '<p a"\0<=value>',
+		read: next,
+	},
+	{ name: "leading-equals attribute names", source: "<p =a ==b>", read: next },
 	{ name: "comment nulls", source: "<!--a\0b\0c-->", read: next },
 	{ name: "abrupt comment", source: "<!-->", read: next },
 	{ name: "nested comment", source: "<!--a<!--b-->", read: next },

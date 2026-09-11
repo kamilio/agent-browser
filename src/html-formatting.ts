@@ -337,7 +337,7 @@ export class HtmlFormatting {
 		this.visit();
 		return {
 			tree,
-			id: tree.createElement(entry.node.tag, { ...entry.attributes }),
+			id: tree.createParserElement(entry.node.tag, { ...entry.attributes }),
 			tag: entry.node.tag,
 		};
 	}

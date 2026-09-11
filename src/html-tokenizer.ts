@@ -435,20 +435,22 @@ export class HtmlTokenizer {
 			}
 			if (this.offset >= this.source.length) break;
 			const attributeStart = this.offset;
-			if (this.source[this.offset] === "=") this.offset++;
+			if (this.source[this.offset] === "=") {
+				this.offset++;
+				this.issue("unexpected-equals-sign-before-attribute-name");
+			}
 			while (
 				this.offset < this.source.length &&
 				!/[\t\n\f\r />=]/.test(this.source[this.offset])
-			)
-				this.offset++;
+			) {
+				const character = this.source[this.offset++];
+				if (character === "\0") this.issue("unexpected-null-character");
+				else if (character === '"' || character === "'" || character === "<")
+					this.issue("unexpected-character-in-attribute-name");
+			}
 			const attribute = htmlAttributeName(
-				this.source.slice(attributeStart, this.offset),
+				this.source.slice(attributeStart, this.offset).replace(/\0/g, "\ufffd"),
 			);
-			if (!attribute || /[\t\n\f\r "'/>=]/.test(attribute))
-				throw new AgentBrowserError(
-					"unsupported",
-					"Malformed HTML attribute name is not implemented",
-				);
 			if (++count > 1024)
 				throw resourceLimitError(
 					"html.attributes",
@@ -456,6 +458,8 @@ export class HtmlTokenizer {
 					count,
 					"HTML attributes per token limit exceeded",
 				);
+			const duplicate = Object.hasOwn(attributes, attribute);
+			if (duplicate) this.issue("duplicate-attribute");
 			this.skipWhitespace();
 			let value = "";
 			if (this.source[this.offset] === "=") {
@@ -481,8 +485,6 @@ export class HtmlTokenizer {
 					value = this.source.slice(start, this.offset);
 				}
 			}
-			const duplicate = Object.hasOwn(attributes, attribute);
-			if (duplicate) this.issue("duplicate-attribute");
 			const decoded = decodeHtmlEntities(value, true, this.issue);
 			if (!duplicate) setHtmlAttribute(attributes, attribute, decoded);
 		}

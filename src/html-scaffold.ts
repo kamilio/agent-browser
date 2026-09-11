@@ -33,7 +33,7 @@ export class HtmlScaffold {
 
 	startHtml(attributes: Record<string, string> = {}): number {
 		if (this.htmlId === undefined) {
-			this.htmlId = this.tree.createElement("html", attributes);
+			this.htmlId = this.tree.createParserElement("html", attributes);
 			this.tree.append(this.tree.root, this.htmlId);
 		}
 		return this.htmlId;
@@ -42,7 +42,7 @@ export class HtmlScaffold {
 	startHead(attributes: Record<string, string> = {}): number {
 		if (this.headId === undefined) {
 			const parent = this.startHtml();
-			this.headId = this.tree.createElement("head", attributes);
+			this.headId = this.tree.createParserElement("head", attributes);
 			this.tree.append(parent, this.headId);
 		}
 		return this.headId;
@@ -51,7 +51,7 @@ export class HtmlScaffold {
 	startBody(attributes: Record<string, string> = {}): number {
 		if (this.bodyId === undefined) {
 			this.startHead();
-			this.bodyId = this.tree.createElement("body", attributes);
+			this.bodyId = this.tree.createParserElement("body", attributes);
 			this.tree.append(this.html, this.bodyId);
 		}
 		return this.bodyId;

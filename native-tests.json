@@ -1,4 +1,5 @@
 [
+  "src/html-malformed-attributes.test.ts",
   "src/research-table-scope.test.ts",
   "src/link-discovery.test.ts",
   "src/document-links.test.ts",

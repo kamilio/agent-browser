@@ -584,7 +584,7 @@ function* parseHtmlSteps(
 					: undefined,
 			);
 			lateHeadInsertion = false;
-			const id = target.tree.createElement(name, attributes);
+			const id = target.tree.createParserElement(name, attributes);
 			if (
 				form !== undefined &&
 				form > 0 &&
@@ -632,7 +632,7 @@ function* parseHtmlSteps(
 		const merge = (id: number, attributes: Record<string, string>) => {
 			for (const [name, value] of htmlAttributeEntries(attributes))
 				if (!Object.hasOwn(tree.get(id).attributes, name))
-					tree.setAttribute(id, name, value);
+					tree.setParserAttribute(id, name, value);
 		};
 		const push = (
 			tag: string,

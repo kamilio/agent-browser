@@ -572,6 +572,21 @@ export class DocumentTree {
 	}
 
 	createElement(tagName: string, attributes: Record<string, string> = {}) {
+		return this.createElementWithAttributes(tagName, attributes, false);
+	}
+
+	createParserElement(
+		tagName: string,
+		attributes: Record<string, string> = {},
+	) {
+		return this.createElementWithAttributes(tagName, attributes, true);
+	}
+
+	private createElementWithAttributes(
+		tagName: string,
+		attributes: Record<string, string>,
+		parsed: boolean,
+	) {
 		if (typeof tagName !== "string" || !/^[a-z][a-z0-9:_-]*$/i.test(tagName))
 			throw new AgentBrowserError("invalid-input", "Invalid element name");
 		if (
@@ -582,7 +597,7 @@ export class DocumentTree {
 			throw new AgentBrowserError("invalid-input", "Invalid attributes");
 		const entries = htmlAttributeEntries(attributes);
 		for (const [name, value] of entries) {
-			this.validateAttribute(name);
+			this.validateAttribute(name, parsed);
 			if (typeof value !== "string")
 				throw new AgentBrowserError(
 					"invalid-input",
@@ -1417,13 +1432,18 @@ export class DocumentTree {
 		this.writeAttribute(id, name, value);
 	}
 
+	setParserAttribute(id: number, name: string, value: string) {
+		this.writeAttribute(id, name, value, undefined, true);
+	}
+
 	private writeAttribute(
 		id: number,
 		name: string,
 		value: string,
 		state?: InlineDeclarationState,
+		parsed = false,
 	) {
-		this.validateAttribute(name);
+		this.validateAttribute(name, parsed);
 		this.validateString(value);
 		const closure = this.prepareDetailsAttribute(
 			id,
@@ -1432,9 +1452,9 @@ export class DocumentTree {
 		);
 		if (closure !== undefined)
 			return this.collectMutations(() =>
-				this.writeAttributeValue(id, name, value, state, closure),
+				this.writeAttributeValue(id, name, value, state, closure, parsed),
 			);
-		return this.writeAttributeValue(id, name, value, state);
+		return this.writeAttributeValue(id, name, value, state, undefined, parsed);
 	}
 
 	private prepareDetailsAttribute(id: number, key: string, value: string) {
@@ -1460,8 +1480,9 @@ export class DocumentTree {
 		value: string,
 		state?: InlineDeclarationState,
 		closure?: number,
+		parsed = false,
 	) {
-		this.validateAttribute(name);
+		this.validateAttribute(name, parsed);
 		this.validateString(value);
 		const node = this.element(id);
 		const key = htmlAttributeName(name);
@@ -1580,7 +1601,7 @@ export class DocumentTree {
 	}
 
 	removeAttribute(id: number, name: string) {
-		this.validateAttribute(name);
+		this.validateAttribute(name, true);
 		const node = this.element(id);
 		const key = htmlAttributeName(name);
 		if (!Object.hasOwn(node.attributes, key)) return;
@@ -1617,8 +1638,16 @@ export class DocumentTree {
 	}
 
 	createAttribute(name: string, value = ""): number {
+		return this.allocateAttribute(name, value, false);
+	}
+
+	private allocateAttribute(
+		name: string,
+		value: string,
+		parsed: boolean,
+	): number {
 		this.ensureOpen();
-		this.validateAttribute(name);
+		this.validateAttribute(name, parsed);
 		this.validateString(value);
 		this.resources?.check(1);
 		if (
@@ -1646,7 +1675,7 @@ export class DocumentTree {
 		if (value === undefined) return null;
 		const existing = this.attachedAttributes.get(id)?.get(key);
 		if (existing !== undefined) return existing;
-		const attributeId = this.createAttribute(key, value);
+		const attributeId = this.allocateAttribute(key, value, true);
 		this.attributeRecord(attributeId).ownerElement = id;
 		this.attributeMap(id).set(key, attributeId);
 		return attributeId;
@@ -1660,7 +1689,7 @@ export class DocumentTree {
 		this.validateString(value);
 		const attribute = this.attributeRecord(id);
 		if (attribute.ownerElement !== null) {
-			this.setAttribute(attribute.ownerElement, attribute.name, value);
+			this.setParserAttribute(attribute.ownerElement, attribute.name, value);
 			return;
 		}
 		const change = value.length - attribute.value.length;
@@ -2473,12 +2502,14 @@ export class DocumentTree {
 		return node;
 	}
 
-	private validateAttribute(name: string) {
+	private validateAttribute(name: string, parsed = false) {
 		if (
 			typeof name !== "string" ||
 			!name ||
 			name.includes("\0") ||
-			/[\t\n\f\r "'/>=]/.test(name)
+			(parsed
+				? /[\t\n\f\r />]/.test(name) || name.slice(1).includes("=")
+				: /[\t\n\f\r "'/>=]/.test(name))
 		)
 			throw new AgentBrowserError("invalid-input", "Invalid attribute name");
 	}

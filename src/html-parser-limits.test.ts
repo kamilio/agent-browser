@@ -219,11 +219,11 @@ it("keeps abort precedence and non-resource failures unannotated", () => {
 		message: "HTML parsing aborted",
 	});
 	expect(resourceLimitDiagnostic(error)).toBeUndefined();
-	const tokenizer = new HtmlTokenizer('<p "bad>', () => {});
+	const tokenizer = new HtmlTokenizer("<p!>", () => {});
 	const malformed = captureError(() => tokenizer.next());
 	expect(malformed).toMatchObject({
 		code: "unsupported",
-		message: "Malformed HTML attribute name is not implemented",
+		message: "HTML tag name is outside the document model",
 	});
 	expect(resourceLimitDiagnostic(malformed)).toBeUndefined();
 });
