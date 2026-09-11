@@ -7,6 +7,7 @@ import {
 	isInsideDatalist,
 } from "./controls.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import type { FormSubmissionOptions } from "./forms.js";
 import type { NumberConstraintFailure } from "./input-number.js";
 
@@ -36,6 +37,7 @@ export function supportsConstraintValidation(tag: string): boolean {
 export function isValidationCandidate(tree: DocumentTree, id: number): boolean {
 	const control = tree.get(id);
 	if (
+		!isHtmlElement(control) ||
 		!["input", "textarea", "select", "button"].includes(control.tagName) ||
 		isControlDisabled(tree, id) ||
 		isInsideDatalist(tree, id)

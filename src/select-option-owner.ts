@@ -1,7 +1,12 @@
+import type { DocumentNode } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
+
 interface AncestorNode {
 	id: number;
+	kind: DocumentNode["kind"];
 	parent: number | null;
 	tagName: string;
+	namespaceURI?: string;
 }
 
 export function nearestSelect(
@@ -13,6 +18,10 @@ export function nearestSelect(
 	while (current !== null) {
 		const ancestor = read(current);
 		if (!ancestor) return undefined;
+		if (!isHtmlElement(ancestor)) {
+			current = ancestor.parent;
+			continue;
+		}
 		if (["datalist", "hr", "option"].includes(ancestor.tagName))
 			return undefined;
 		if (ancestor.tagName === "optgroup") {

@@ -1,9 +1,10 @@
 import type { DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 
 export function textareaDefaultValue(tree: DocumentTree, id: number): string {
 	const element = tree.get(id);
-	if (element.kind !== "element" || element.tagName !== "textarea")
+	if (!isHtmlElement(element, "textarea"))
 		throw new AgentBrowserError("invalid-input", "Expected a textarea element");
 	const parts: string[] = [];
 	for (const child of element.children) {

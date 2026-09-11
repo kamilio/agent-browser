@@ -1,7 +1,8 @@
 import type { DocumentNode } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
-import { nearestSelect } from "./select-option-owner.js";
 import { optionDisabled } from "./option-disabled.js";
+import { nearestSelect } from "./select-option-owner.js";
 
 interface SelectionNode extends Omit<DocumentNode, "control"> {
 	control: { selected?: boolean };
@@ -21,7 +22,7 @@ export class DocumentSelection {
 
 	initialize(id: number, source?: { state: DocumentSelection; id: number }) {
 		const node = this.node(id);
-		if (node.tagName !== "option") return;
+		if (!isHtmlElement(node, "option")) return;
 		node.control.selected = source
 			? (source.state.node(source.id).control.selected ?? false)
 			: Object.hasOwn(node.attributes, "selected");
@@ -30,7 +31,7 @@ export class DocumentSelection {
 
 	setOption(id: number, selected: boolean, dirty = true, reset = true) {
 		const node = this.node(id);
-		if (node.tagName !== "option")
+		if (!isHtmlElement(node, "option"))
 			throw new AgentBrowserError("invalid-input", "Expected an option");
 		const wasDirty = this.dirty.has(id);
 		if (dirty) this.dirty.add(id);
@@ -52,7 +53,7 @@ export class DocumentSelection {
 	setSelect(id: number, selected: readonly number[], dirtyAll: boolean) {
 		const node = this.node(id);
 		if (
-			node.tagName !== "select" ||
+			!isHtmlElement(node, "select") ||
 			!Array.isArray(selected) ||
 			selected.length > 50_000 ||
 			selected.some((option) => this.owners.get(option) !== id)
@@ -75,6 +76,8 @@ export class DocumentSelection {
 	}
 
 	clearOption(id: number) {
+		if (!isHtmlElement(this.node(id), "option"))
+			throw new AgentBrowserError("invalid-input", "Expected an option");
 		const changed = this.dirty.delete(id);
 		this.setOption(
 			id,
@@ -86,13 +89,14 @@ export class DocumentSelection {
 
 	attribute(id: number, name: string) {
 		const node = this.node(id);
+		if (!isHtmlElement(node)) return;
 		if (
 			name === "disabled" &&
 			(node.tagName === "option" || node.tagName === "optgroup")
 		)
 			for (const option of this.walk(id)) {
 				const owner = this.owners.get(option.id);
-				if (option.tagName === "option" && owner !== undefined)
+				if (isHtmlElement(option, "option") && owner !== undefined)
 					this.updateEligibility(option, owner);
 			}
 		if (node.tagName === "option" && name === "selected" && !this.dirty.has(id))
@@ -108,13 +112,13 @@ export class DocumentSelection {
 		const entries = [...this.walk(root)];
 		const internal = new Set(
 			entries
-				.filter((node) => node.tagName === "select")
+				.filter((node) => isHtmlElement(node, "select"))
 				.map((node) => node.id),
 		);
 		const affected = new Set<number>();
 		const preferred = new Map<number, number>();
 		for (const option of entries) {
-			if (option.tagName !== "option") continue;
+			if (!isHtmlElement(option, "option")) continue;
 			const previous = this.owners.get(option.id);
 			if (previous !== undefined) {
 				this.selected.get(previous)?.delete(option.id);
@@ -180,7 +184,7 @@ export class DocumentSelection {
 
 	private *options(id: number) {
 		for (const node of this.walk(id))
-			if (node.tagName === "option" && this.owners.get(node.id) === id)
+			if (isHtmlElement(node, "option") && this.owners.get(node.id) === id)
 				yield node;
 	}
 

@@ -1,5 +1,6 @@
+import { contentEditableState } from "./content-editability.js";
 import type { DocumentTree } from "./document.js";
-import { isContentEditable } from "./content-editability.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { inputType } from "./input-values.js";
 
 const keyboardInputs = new Set([
@@ -22,10 +23,20 @@ export function supportsFocusKeyboardInput(
 	id: number,
 ): boolean {
 	const node = tree.get(id);
+	if (!isHtmlElement(node)) return false;
 	if (
 		node.tagName === "textarea" ||
 		(node.tagName === "input" && keyboardInputs.has(inputType(node)))
 	)
 		return !Object.hasOwn(node.attributes, "readonly");
-	return isContentEditable(tree, id);
+	let ancestor: number | null = id;
+	while (ancestor !== null) {
+		const current = tree.get(ancestor);
+		if (isHtmlElement(current)) {
+			const state = contentEditableState(current);
+			if (state !== "inherit") return state !== "false";
+		}
+		ancestor = current.parent;
+	}
+	return false;
 }

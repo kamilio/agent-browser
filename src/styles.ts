@@ -1,5 +1,10 @@
 import { imageDimensionHint } from "./replaced-box.js";
 import {
+	elementNamespace,
+	isHtmlElement,
+	svgNamespace,
+} from "./dom-namespaces.js";
+import {
 	cssInteractionProperties,
 	computePointerEvents,
 	type PointerEventsStyle,
@@ -169,10 +174,16 @@ function userAgentDisplay(
 	node: Readonly<DocumentNode>,
 	primarySummary = false,
 ) {
+	if (node.kind === "element" && !isHtmlElement(node)) {
+		const hidden =
+			elementNamespace(node) === svgNamespace &&
+			["script", "style"].includes(node.tagName);
+		return hidden ? "none" : "inline";
+	}
 	if (
 		hiddenTags.has(node.tagName) ||
 		Object.hasOwn(node.attributes, "hidden") ||
-		(node.tagName === "input" &&
+		(isHtmlElement(node, "input") &&
 			node.attributes.type?.toLowerCase() === "hidden")
 	)
 		return "none";
@@ -302,7 +313,7 @@ export class DocumentStyles {
 		if (typeof url !== "string" || url.length > 16_384)
 			throw new AgentBrowserError("invalid-input", "Invalid stylesheet URL");
 		if (
-			this.tree.get(id).tagName !== "link" ||
+			!isHtmlElement(this.tree.get(id), "link") ||
 			typeof text !== "string" ||
 			text.length > this.limits.maxCodeUnits
 		)
@@ -656,7 +667,7 @@ export class DocumentStyles {
 					const node = this.tree.get(change.target);
 					return (
 						node.tagName === "textarea" ||
-						(node.tagName === "input" &&
+						(isHtmlElement(node, "input") &&
 							!["checkbox", "radio"].includes(
 								node.attributes.type?.toLowerCase() ?? "text",
 							))
@@ -741,7 +752,7 @@ export class DocumentStyles {
 			}
 		};
 		for (const node of nodes) {
-			if (node.tagName !== "img") continue;
+			if (!isHtmlElement(node, "img")) continue;
 			for (const property of ["width", "height"] as const) {
 				const raw = node.attributes[property];
 				if (raw !== undefined) charge(raw.length + 1);
@@ -760,12 +771,13 @@ export class DocumentStyles {
 			let text: string | undefined;
 			if (
 				node.tagName === "style" &&
+				(isHtmlElement(node) || elementNamespace(node) === svgNamespace) &&
 				(!node.attributes.type ||
 					node.attributes.type.trim().toLowerCase() === "text/css")
 			)
 				text = this.tree.textContent(node.id);
 			if (
-				node.tagName === "link" &&
+				isHtmlElement(node, "link") &&
 				!Object.hasOwn(node.attributes, "disabled") &&
 				(!node.attributes.type ||
 					node.attributes.type.trim().toLowerCase() === "text/css")
@@ -1013,7 +1025,7 @@ export class DocumentStyles {
 			else if (display === "revert")
 				display = userAgentDisplay(node, details !== undefined);
 			if (
-				node.tagName === "input" &&
+				isHtmlElement(node, "input") &&
 				node.attributes.type?.toLowerCase() === "hidden"
 			)
 				display = "none";

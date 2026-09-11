@@ -327,16 +327,16 @@ export class HtmlTokenizer {
 		}
 	}
 
-	next(): HtmlToken | undefined {
+	next(allowCdata = false): HtmlToken | undefined {
 		this.checkIssueLimit();
 		if (this.offset >= this.source.length) {
 			this.pending = this.boundary !== undefined;
 			return undefined;
 		}
-		return this.read(() => this.readToken());
+		return this.read(() => this.readToken(allowCdata));
 	}
 
-	private readToken(): HtmlToken | undefined {
+	private readToken(allowCdata: boolean): HtmlToken | undefined {
 		if (this.source[this.offset] !== "<") {
 			const nextTag = this.source.indexOf("<", this.offset);
 			let end = nextTag < 0 ? this.source.length : nextTag;
@@ -357,6 +357,36 @@ export class HtmlTokenizer {
 		}
 		if (this.source.startsWith("<!--", this.offset)) {
 			return this.comment();
+		}
+		if (this.source.startsWith("<![CDATA[", this.offset)) {
+			if (!allowCdata) {
+				this.issue("cdata-in-html-content");
+				return this.bogusComment(this.offset + 2);
+			}
+			const start = this.offset + 9;
+			const end = this.source.indexOf("]]>", start);
+			this.offset = end < 0 ? this.source.length : end + 3;
+			if (end < 0) this.issue("unterminated-cdata");
+			return {
+				kind: "text",
+				data: this.source.slice(start, end < 0 ? this.source.length : end),
+			};
+		}
+		if (
+			this.boundary !== undefined &&
+			this.source.length - this.offset < 9 &&
+			["<!--", "<![CDATA[", "<!DOCTYPE"].some(
+				(prefix) =>
+					this.source.length - this.offset < prefix.length &&
+					prefix.startsWith(
+						prefix === "<!DOCTYPE"
+							? this.source.slice(this.offset).toUpperCase()
+							: this.source.slice(this.offset),
+					),
+			)
+		) {
+			this.work += this.source.length - this.offset;
+			throw needInput;
 		}
 		if (/^<!doctype/i.test(this.source.slice(this.offset, this.offset + 9))) {
 			this.offset += 9;

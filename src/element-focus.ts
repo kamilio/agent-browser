@@ -1,11 +1,12 @@
-import type { DocumentNode, DocumentTree } from "./document.js";
-import { summaryDetails } from "./details.js";
-import { AgentBrowserError } from "./errors.js";
-import type { ScriptHostObjectDefinition } from "./script-dom.js";
 import {
 	contentEditableState,
 	isContentEditable,
 } from "./content-editability.js";
+import { summaryDetails } from "./details.js";
+import type { DocumentNode, DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
+import { AgentBrowserError } from "./errors.js";
+import type { ScriptHostObjectDefinition } from "./script-dom.js";
 
 const parsedValues = new WeakMap<Readonly<DocumentNode>, number | null>();
 const defaultZero = new Set([
@@ -21,6 +22,7 @@ const defaultZero = new Set([
 ]);
 
 export function parsedTabIndex(node: Readonly<DocumentNode>): number | null {
+	if (!isHtmlElement(node)) return null;
 	const cached = parsedValues.get(node);
 	if (cached !== undefined) return cached;
 	const match = /^[\t\n\f\r ]*([+-]?[0-9]+)/.exec(
@@ -33,6 +35,7 @@ export function parsedTabIndex(node: Readonly<DocumentNode>): number | null {
 }
 
 function elementTabIndex(tree: DocumentTree, node: Readonly<DocumentNode>) {
+	if (!isHtmlElement(node)) return -1;
 	const parsed = parsedTabIndex(node);
 	if (parsed !== null && parsed >= -2_147_483_648 && parsed <= 2_147_483_647)
 		return parsed;

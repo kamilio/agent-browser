@@ -1,5 +1,6 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 
 export function documentElement(tree: DocumentTree): number | undefined {
 	return tree
@@ -14,10 +15,10 @@ function documentChild(
 	const root = documentElement(tree);
 	if (root === undefined) return undefined;
 	const element = tree.get(root);
-	if (element.tagName !== "html") return undefined;
+	if (!isHtmlElement(element, "html")) return undefined;
 	return element.children.find((id) => {
 		const child = tree.get(id);
-		return child.kind === "element" && names.includes(child.tagName);
+		return isHtmlElement(child) && names.includes(child.tagName);
 	});
 }
 
@@ -31,7 +32,7 @@ export function documentBody(tree: DocumentTree): number | undefined {
 
 export function setDocumentBody(tree: DocumentTree, id: number): void {
 	const body = tree.get(id);
-	if (body.kind !== "element" || !["body", "frameset"].includes(body.tagName))
+	if (!isHtmlElement(body) || !["body", "frameset"].includes(body.tagName))
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Document body requires a body or frameset element",

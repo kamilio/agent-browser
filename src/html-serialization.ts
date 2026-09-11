@@ -1,4 +1,5 @@
 import type { DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlAttributeEntries } from "./html-attributes.js";
 
@@ -108,6 +109,7 @@ export function serializeHtml(
 			const parent = node.parent === null ? undefined : owner.get(node.parent);
 			if (
 				parent &&
+				isHtmlElement(parent) &&
 				(rawTags.has(parent.tagName) ||
 					(parent.tagName === "noscript" && (options.scripting ?? true)))
 			)
@@ -129,11 +131,11 @@ export function serializeHtml(
 				append('"');
 			}
 			append(">");
-			if (!voidTags.has(node.tagName))
+			if (!isHtmlElement(node) || !voidTags.has(node.tagName))
 				pending.push({ close: `</${node.tagName}>` });
 		}
-		if (node.kind === "element" && voidTags.has(node.tagName)) continue;
-		if (node.kind === "element" && node.tagName === "template") {
+		if (isHtmlElement(node) && voidTags.has(node.tagName)) continue;
+		if (isHtmlElement(node, "template")) {
 			const content = owner.templateContent(node.id);
 			pending.push({ ...content, include: false });
 			continue;

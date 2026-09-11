@@ -1,4 +1,5 @@
 import type { DocumentTree } from "./document.js";
+import { elementNamespace } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
 
@@ -28,7 +29,7 @@ export const nodeRelationCapabilities = Object.freeze({
 	methods: ["contains", "compareDocumentPosition", "isSameNode", "isEqualNode"],
 	attributeNodes: true,
 	constantExposure: "node-instances",
-	namespaces: false,
+	namespaces: true,
 	shadowTrees: false,
 	...nodeRelationLimits,
 });
@@ -157,6 +158,9 @@ function equal(first: Identity, second: Identity, budget: Budget): boolean {
 		const firstValue = first.owner.tree.getAttributeRecord(first.id);
 		const secondValue = second.owner.tree.getAttributeRecord(second.id);
 		return (
+			firstValue.namespaceURI === secondValue.namespaceURI &&
+			firstValue.prefix === secondValue.prefix &&
+			firstValue.localName === secondValue.localName &&
 			budget.text(firstValue.name, secondValue.name) &&
 			budget.text(firstValue.value, secondValue.value)
 		);
@@ -176,6 +180,8 @@ function equal(first: Identity, second: Identity, budget: Budget): boolean {
 			)
 				return false;
 			if (firstNode.kind === "element") {
+				if (elementNamespace(firstNode) !== elementNamespace(secondNode))
+					return false;
 				if (!budget.text(firstNode.tagName, secondNode.tagName)) return false;
 				let firstCount = 0;
 				let secondCount = 0;
@@ -185,6 +191,10 @@ function equal(first: Identity, second: Identity, budget: Budget): boolean {
 					budget.text(name, name);
 					if (
 						!Object.hasOwn(secondNode.attributes, name) ||
+						first.owner.tree.getAttributeNamespace(firstNode.id, name)
+							?.namespaceURI !==
+							second.owner.tree.getAttributeNamespace(secondNode.id, name)
+								?.namespaceURI ||
 						!budget.text(
 							firstNode.attributes[name],
 							secondNode.attributes[name],

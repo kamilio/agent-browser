@@ -1,5 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
-import type { HtmlParserNode } from "./html-formatting.js";
+import { type HtmlParserNode, isHtmlParserNode } from "./html-formatting.js";
 import type { HtmlToken } from "./html-tokenizer.js";
 
 type TagToken = Extract<HtmlToken, { kind: "start" | "end" }>;
@@ -81,6 +81,7 @@ export class HtmlTables {
 		const stack = this.options.stack();
 		for (let index = stack.length - 1; index >= 0; index--) {
 			this.visit();
+			if (!isHtmlParserNode(stack[index])) continue;
 			let tag = stack[index].tag;
 			const virtual = index === 0 || tag === "template";
 			if (tag === "template") tag = this.options.template()?.mode ?? "body";
@@ -125,7 +126,11 @@ export class HtmlTables {
 			}
 			const table = ["table", "section", "row"].includes(context.mode);
 			const stack = this.options.stack();
-			if (table && containers.has(stack[stack.length - 1].tag)) {
+			if (
+				table &&
+				isHtmlParserNode(stack[stack.length - 1]) &&
+				containers.has(stack[stack.length - 1].tag)
+			) {
 				if (data.length > this.options.maxText - this.pendingUnits)
 					throw new AgentBrowserError(
 						"resource-limit",
@@ -332,8 +337,12 @@ export class HtmlTables {
 		const stack = this.options.stack();
 		for (let index = stack.length - 1; index > 0; index--) {
 			this.visit();
-			if (stack[index].tag === tag) return index;
-			if (["table", "template", "html"].includes(stack[index].tag)) break;
+			if (isHtmlParserNode(stack[index], tag)) return index;
+			if (
+				isHtmlParserNode(stack[index]) &&
+				["table", "template", "html"].includes(stack[index].tag)
+			)
+				break;
 		}
 		return -1;
 	}

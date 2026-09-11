@@ -1,20 +1,36 @@
-import { type DocumentLimits, DocumentTree } from "./document.js";
-import { AgentBrowserError } from "./errors.js";
-import { resourceLimitError } from "./resource-limit.js";
-import { htmlAttributeEntries } from "./html-attributes.js";
-import { decodeHtmlEntities } from "./html-entities.js";
-import { setHtmlParseInfo } from "./html-info.js";
-import { HtmlTokenizer } from "./html-tokenizer.js";
-import { HtmlFormatting, type HtmlParserNode } from "./html-formatting.js";
-import { HtmlTables } from "./html-tables.js";
-import { HtmlScope } from "./html-scope.js";
-import { HtmlScaffold } from "./html-scaffold.js";
 import {
+	type DocumentMode,
 	doctypeMode,
 	documentMode,
 	setDocumentMode,
-	type DocumentMode,
 } from "./document-mode.js";
+import { type DocumentLimits, DocumentTree } from "./document.js";
+import {
+	elementNamespace,
+	htmlNamespace,
+	isHtmlElement,
+	mathmlNamespace,
+	svgNamespace,
+} from "./dom-namespaces.js";
+import { AgentBrowserError } from "./errors.js";
+import { htmlAttributeEntries } from "./html-attributes.js";
+import { decodeHtmlEntities } from "./html-entities.js";
+import {
+	HtmlForeign,
+	type HtmlForeignContext,
+	foreignAttributes,
+} from "./html-foreign.js";
+import {
+	HtmlFormatting,
+	type HtmlParserNode,
+	isHtmlParserNode,
+} from "./html-formatting.js";
+import { setHtmlParseInfo } from "./html-info.js";
+import { HtmlScaffold } from "./html-scaffold.js";
+import { HtmlScope } from "./html-scope.js";
+import { HtmlTables } from "./html-tables.js";
+import { HtmlTokenizer } from "./html-tokenizer.js";
+import { resourceLimitError } from "./resource-limit.js";
 
 const voidTags = new Set([
 	"area",
@@ -125,8 +141,7 @@ export interface HtmlParseOptions {
 	initializeDocument?: (tree: DocumentTree) => void;
 }
 
-export interface HtmlFragmentContext {
-	tagName: string;
+export interface HtmlFragmentContext extends HtmlForeignContext {
 	hasFormAncestor?: boolean;
 	scripting?: boolean;
 	documentMode?: DocumentMode;
@@ -151,26 +166,37 @@ export function parseHtmlFragment(
 			"invalid-input",
 			"Invalid HTML fragment context",
 		);
-	const tagName = context.tagName.toLowerCase();
-	if (["svg", "math", "frameset", "frame"].includes(tagName))
+	const htmlContext = elementNamespace(context) === htmlNamespace;
+	if (
+		![htmlNamespace, svgNamespace, mathmlNamespace].includes(
+			elementNamespace(context),
+		)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid HTML fragment namespace",
+		);
+	const tagName = htmlContext ? context.tagName.toLowerCase() : context.tagName;
+	if (htmlContext && ["frameset", "frame"].includes(tagName))
 		throw new AgentBrowserError(
 			"unsupported",
 			`HTML ${tagName} fragment context is not implemented`,
 		);
 	const fragmentContext: FragmentContext = { ...context, tagName };
+	const documentContext = htmlContext && tagName === "html";
 	const steps = parseHtmlSteps(
 		source,
 		url,
 		options,
 		context.scripting ?? true,
-		tagName === "html" ? undefined : fragmentContext,
-		tagName === "html" ? fragmentContext : undefined,
+		documentContext ? undefined : fragmentContext,
+		documentContext ? fragmentContext : undefined,
 	);
 	let step = steps.next();
 	while (!step.done) step = steps.next();
 	const tree = step.value;
 	try {
-		if (tagName === "html") {
+		if (documentContext) {
 			const html = tree
 				.get(tree.root)
 				.children.find((id) => tree.get(id).tagName === "html");
@@ -406,6 +432,10 @@ function* parseHtmlSteps(
 		);
 		const tokenizer = new HtmlTokenizer(normalized, issue);
 		const root = fragment ? tree.createFragment() : tree.root;
+		const htmlFragment =
+			fragment && elementNamespace(fragment) === htmlNamespace
+				? fragment
+				: undefined;
 		const scaffold = new HtmlScaffold(tree, fragment ? root : undefined);
 		if (fragment) fragment.root = root;
 		if (fragmentDocument) scaffold.startHtml();
@@ -428,15 +458,17 @@ function* parseHtmlSteps(
 			{
 				tree,
 				id: fragmentDocument ? scaffold.html : root,
-				tag: fragment?.tagName ?? "html",
+				tag: htmlFragment?.tagName ?? "html",
 			},
 		];
 		const templates: { index: number; mode: TemplateMode }[] =
-			fragment?.tagName === "template" ? [{ index: 0, mode: "template" }] : [];
+			htmlFragment?.tagName === "template"
+				? [{ index: 0, mode: "template" }]
+				: [];
 		const templateScope = () => templates[templates.length - 1];
 		const inTemplate = () => templates.length > 0;
 		let form: number | undefined =
-			fragment?.hasFormAncestor || fragment?.tagName === "form"
+			fragment?.hasFormAncestor || htmlFragment?.tagName === "form"
 				? -1
 				: undefined;
 		let initial = !fragment && !fragmentDocument;
@@ -476,10 +508,7 @@ function* parseHtmlSteps(
 			}
 		};
 		const insertionTarget = (entry = current()) => {
-			if (
-				entry.tag === "template" &&
-				entry.tree.get(entry.id).kind === "element"
-			)
+			if (isHtmlElement(entry.tree.get(entry.id), "template"))
 				return entry.tree.templateContent(entry.id);
 			return entry;
 		};
@@ -495,7 +524,12 @@ function* parseHtmlSteps(
 				index >= (templateScope()?.index ?? 0);
 				index--
 			)
-				if (stack[index].tag === tag) return index;
+				if (
+					stack[index].tag === tag &&
+					elementNamespace(stack[index].tree.get(stack[index].id)) ===
+						htmlNamespace
+				)
+					return index;
 			return -1;
 		};
 		const pop = (tag: string) => {
@@ -530,6 +564,7 @@ function* parseHtmlSteps(
 		const location = (foster: boolean, override?: HtmlParserNode) => {
 			if (
 				(foster || tableFoster) &&
+				isHtmlParserNode(override ?? current()) &&
 				tableContainers.has(override?.tag ?? contextTag())
 			) {
 				const tableIndex = position("table");
@@ -575,6 +610,7 @@ function* parseHtmlSteps(
 			name: string,
 			attributes: Record<string, string> = {},
 			foster = false,
+			namespaceURI = htmlNamespace,
 		) => {
 			finishOptions();
 			const target = location(
@@ -584,8 +620,13 @@ function* parseHtmlSteps(
 					: undefined,
 			);
 			lateHeadInsertion = false;
-			const id = target.tree.createParserElement(name, attributes);
+			const id = target.tree.createParserElement(
+				name,
+				attributes,
+				namespaceURI,
+			);
 			if (
+				namespaceURI === htmlNamespace &&
 				form !== undefined &&
 				form > 0 &&
 				!inTemplate() &&
@@ -675,7 +716,7 @@ function* parseHtmlSteps(
 			maxWork: Math.min(1_600_000, tree.limits.maxNodes * 64),
 			maxText: Math.min(16_000_000, tree.limits.maxTextCodeUnits * 8),
 		});
-		if (fragment?.tagName === "template") activeFormatting.mark(current());
+		if (htmlFragment?.tagName === "template") activeFormatting.mark(current());
 		const bodyScope = new HtmlScope({
 			stack: () => stack,
 			reset: () => {
@@ -721,8 +762,22 @@ function* parseHtmlSteps(
 			maxWork: Math.min(1_600_000, tree.limits.maxNodes * 64),
 			maxText: tree.limits.maxTextCodeUnits,
 		});
+		const foreign = new HtmlForeign({
+			stack: () => stack,
+			context: fragment,
+			insert: (name, attributes, namespaceURI) => ({
+				...insert(name, attributes, false, namespaceURI),
+				tag: name,
+			}),
+			text,
+			issue,
+			check: checkInput,
+			maxWork: Math.min(1_600_000, tree.limits.maxNodes * 64),
+		});
 		const nextToken = () => {
-			const token = tokenizer.next();
+			const token = tokenizer.next(
+				elementNamespace(foreign.current()) !== htmlNamespace,
+			);
 			checkInput();
 			if (token && ++tokens > tree.limits.maxNodes * 8)
 				throw resourceLimitError(
@@ -734,14 +789,14 @@ function* parseHtmlSteps(
 			return token;
 		};
 		if (
-			fragment &&
-			(rawTags.has(fragment.tagName) ||
-				["title", "textarea", "plaintext"].includes(fragment.tagName) ||
-				(fragment.tagName === "noscript" && scripting))
+			htmlFragment &&
+			(rawTags.has(htmlFragment.tagName) ||
+				["title", "textarea", "plaintext"].includes(htmlFragment.tagName) ||
+				(htmlFragment.tagName === "noscript" && scripting))
 		) {
 			const data = tokenizer.remainder();
 			text(
-				["title", "textarea"].includes(fragment.tagName)
+				["title", "textarea"].includes(htmlFragment.tagName)
 					? decodeHtmlEntities(data, false, issue)
 					: data,
 			);
@@ -771,6 +826,10 @@ function* parseHtmlSteps(
 			lateHeadInsertion = false;
 			if (token.kind !== "text") tables.flush();
 			activeFormatting.sync();
+			if (foreign.process(token)) {
+				stripNewline = false;
+				continue;
+			}
 			if (token.kind === "doctype") {
 				if (!initial) {
 					issue("misplaced-doctype");
@@ -1004,10 +1063,7 @@ function* parseHtmlSteps(
 				}
 				continue;
 			}
-			if (
-				token.kind === "start" &&
-				["svg", "math", "frameset", "frame"].includes(name)
-			)
+			if (token.kind === "start" && ["frameset", "frame"].includes(name))
 				throw new AgentBrowserError(
 					"unsupported",
 					`HTML ${name} tree construction is not implemented`,
@@ -1140,7 +1196,7 @@ function* parseHtmlSteps(
 			}
 			if (name === "select" || name === "input") {
 				const index = bodyScope.find("select");
-				if (fragment?.tagName === "select") {
+				if (htmlFragment?.tagName === "select") {
 					issue(
 						name === "select"
 							? "nested-select"
@@ -1175,6 +1231,7 @@ function* parseHtmlSteps(
 			if (
 				stack.length > 1 &&
 				/^h[1-6]$/.test(name) &&
+				isHtmlParserNode(current()) &&
 				/^h[1-6]$/.test(current().tag)
 			)
 				stack.pop();
@@ -1187,8 +1244,8 @@ function* parseHtmlSteps(
 				const annotation = name === "rp" || name === "rt";
 				bodyScope.imply(annotation ? "rtc" : undefined);
 				if (
-					current().tag !== "ruby" &&
-					!(annotation && current().tag === "rtc")
+					!isHtmlParserNode(current(), "ruby") &&
+					!(annotation && isHtmlParserNode(current(), "rtc"))
 				)
 					issue("misnested-ruby-start");
 			}
@@ -1202,7 +1259,7 @@ function* parseHtmlSteps(
 						issue(`misnested-${name}-in-select`);
 				} else if (
 					name !== "hr" &&
-					current().tag === "option" &&
+					isHtmlParserNode(current(), "option") &&
 					stack.length > 1
 				)
 					stack.pop();
@@ -1271,6 +1328,17 @@ function* parseHtmlSteps(
 				"input",
 				"form",
 			].includes(name);
+			if (name === "svg" || name === "math") {
+				const namespaceURI = name === "svg" ? svgNamespace : mathmlNamespace;
+				const entry = insert(
+					name,
+					foreignAttributes(attributes, namespaceURI, issue),
+					foster,
+					namespaceURI,
+				);
+				if (!token.selfClosing) stack.push({ ...entry, tag: name });
+				continue;
+			}
 			const entry = insert(name, attributes, foster);
 			const { id } = entry;
 			if (

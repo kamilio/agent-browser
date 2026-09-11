@@ -1,6 +1,5 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
-import { htmlAttributeName } from "./html-attribute-name.js";
 import { ScriptNodePublications } from "./script-node-publications.js";
 import type { NodeRelations } from "./node-relations.js";
 import {
@@ -49,13 +48,13 @@ export class ScriptAttributes {
 		return {
 			getAttribute: (...args) => {
 				const attributes = read().attributes;
-				const name = htmlAttributeName(this.argument(args, 1));
+				const name = this.tree.attributeName(id, this.argument(args, 1));
 				return Object.hasOwn(attributes, name) ? attributes[name] : null;
 			},
 			hasAttribute: (...args) =>
 				Object.hasOwn(
 					read().attributes,
-					htmlAttributeName(this.argument(args, 1)),
+					this.tree.attributeName(id, this.argument(args, 1)),
 				),
 			hasAttributes: () => Object.keys(read().attributes).length > 0,
 			getAttributeNames: () => this.names(id),
@@ -66,7 +65,7 @@ export class ScriptAttributes {
 			},
 			removeAttribute: (...args) => {
 				const attributes = read().attributes;
-				const name = htmlAttributeName(this.argument(args, 1));
+				const name = this.tree.attributeName(id, this.argument(args, 1));
 				if (Object.hasOwn(attributes, name))
 					this.tree.removeAttribute(id, name);
 			},
@@ -105,7 +104,7 @@ export class ScriptAttributes {
 						4_294_967_296
 					: 0;
 				const name = names()[index];
-				return name === undefined ? null : this.get(id, name);
+				return name === undefined ? null : this.getExact(id, name);
 			},
 			getNamedItem: (...args) => this.get(id, this.argument(args, 1)),
 			getNamedItemNS: (...args) => this.getNamespaced(id, args),
@@ -134,7 +133,7 @@ export class ScriptAttributes {
 					length: () => names().length,
 					get: (index) => {
 						const name = names()[index];
-						return name === undefined ? undefined : this.get(id, name);
+						return name === undefined ? undefined : this.getExact(id, name);
 					},
 				},
 				named: {
@@ -159,9 +158,20 @@ export class ScriptAttributes {
 		return attributeId === null ? null : this.attribute(attributeId);
 	}
 
+	private getExact(id: number, name: string): object | null {
+		this.ensureOpen();
+		const attributeId = this.tree.getAttributeNodeExact(id, name);
+		return attributeId === null ? null : this.attribute(attributeId);
+	}
+
 	create(name: string, value = ""): object {
 		this.ensureCapacity();
 		return this.attribute(this.tree.createAttribute(name, value));
+	}
+
+	copyFrom(source: DocumentTree, id: number): object {
+		this.ensureCapacity();
+		return this.attribute(this.tree.copyAttributeFrom(source, id));
 	}
 
 	set(id: number, value: unknown): object | null {
@@ -174,7 +184,7 @@ export class ScriptAttributes {
 				"invalid-input",
 				"Attribute is already in use by another element",
 			);
-		const previous = this.get(id, attribute.name);
+		const previous = this.getExact(id, attribute.name);
 		this.tree.setAttributeNode(id, attributeId);
 		return previous;
 	}
@@ -215,7 +225,9 @@ export class ScriptAttributes {
 		});
 		const properties: NonNullable<ScriptHostObjectDefinition["properties"]> = {
 			name: { get: () => read().name },
-			localName: { get: () => read().name },
+			localName: { get: () => read().localName ?? read().name },
+			namespaceURI: { get: () => read().namespaceURI ?? null },
+			prefix: { get: () => read().prefix ?? null },
 			nodeName: { get: () => read().name },
 			nodeType: {
 				get: () => {
@@ -258,8 +270,6 @@ export class ScriptAttributes {
 			},
 		};
 		for (const name of [
-			"namespaceURI",
-			"prefix",
 			"parentNode",
 			"parentElement",
 			"firstChild",
@@ -282,11 +292,9 @@ export class ScriptAttributes {
 				methods: {
 					...relations.methods,
 					cloneNode: () => {
-						const attribute = read();
+						read();
 						this.ensureCapacity();
-						return this.attribute(
-							this.tree.createAttribute(attribute.name, attribute.value),
-						);
+						return this.attribute(this.tree.cloneAttribute(id));
 					},
 					getRootNode: () => {
 						read();
@@ -322,11 +330,16 @@ export class ScriptAttributes {
 
 	private getNamespaced(id: number, args: readonly unknown[]): object | null {
 		this.require(args, 2);
-		const namespace = args[0] === null ? "" : domString(args[0]);
+		const namespace = args[0] == null ? null : domString(args[0]) || null;
 		const name = domString(args[1]);
-		if (namespace !== "" || !Object.hasOwn(this.tree.get(id).attributes, name))
-			return null;
-		return this.get(id, name);
+		if (name.length + (namespace?.length ?? 0) > 65_536)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Script attribute name limit exceeded",
+			);
+		this.names(id);
+		const attributeId = this.tree.getAttributeNodeNS(id, namespace, name);
+		return attributeId === null ? null : this.attribute(attributeId);
 	}
 
 	private removeName(id: number, name: string): object {

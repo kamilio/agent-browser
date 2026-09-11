@@ -13,6 +13,7 @@ import {
 import { type PaintStyle, paintBackground, paintCaret } from "./css-paint.js";
 import { existingDocumentFiles } from "./document-files.js";
 import type { DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { isInertSubtree } from "./inertness.js";
 import { readNativeControlSelection } from "./native-control-caret.js";
@@ -76,6 +77,7 @@ export function describeControl(
 	fontSize: number,
 ): SoftwareControl | undefined {
 	const node = tree.get(id);
+	if (!isHtmlElement(node)) return;
 	let kind: SoftwareControl["kind"];
 	let text = "";
 	let valueLength = 0;

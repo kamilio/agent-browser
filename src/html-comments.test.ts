@@ -45,7 +45,7 @@ const bogusCases: [string, string, string][] = [
 	["<!>", "", "bogus-declaration"],
 	['<!foo " >', 'foo " ', "bogus-declaration"],
 	["<!foo ' >", "foo ' ", "bogus-declaration"],
-	["<![CDATA[text]]>", "[CDATA[text]]", "bogus-declaration"],
+	["<![CDATA[text]]>", "[CDATA[text]]", "cdata-in-html-content"],
 	["<!foo--!>", "foo--!", "bogus-declaration"],
 	["</42>", "42", "invalid-first-character-of-tag-name"],
 	["</?bad>", "?bad", "invalid-first-character-of-tag-name"],

@@ -193,6 +193,7 @@ export function sanitizeResearchHtml(
 		if (
 			issue.startsWith("unterminated-") ||
 			issue === "eof-before-tag-name" ||
+			issue === "cdata-in-html-content" ||
 			(issue === "bogus-declaration" && !emptyProcessingMarker)
 		)
 			throw new AgentBrowserError("unsupported", "Malformed reader input");

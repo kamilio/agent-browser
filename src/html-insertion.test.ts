@@ -257,11 +257,11 @@ it.each(["outer", "adjacent"])(
 		};
 		expect(() => {
 			if (operation === "outer")
-				target.outerHTML = "<b>staged</b><svg>unsupported";
+				target.outerHTML = "<b>staged</b><frameset>unsupported";
 			else
 				target.insertAdjacentHTML(
 					"beforebegin",
-					"<b>staged</b><svg>unsupported",
+					"<b>staged</b><frameset>unsupported",
 				);
 		}).toThrow("not implemented");
 		expect({

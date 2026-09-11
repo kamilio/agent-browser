@@ -1,5 +1,10 @@
-import type { DocumentTree } from "./document.js";
 import { documentMode } from "./document-mode.js";
+import type { DocumentTree } from "./document.js";
+import {
+	elementNamespace,
+	htmlNamespace,
+	isHtmlElement,
+} from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { type HtmlParseOptions, parseHtmlFragment } from "./html-parser.js";
 
@@ -16,8 +21,9 @@ export function setInnerHtml(
 			"HTML replacement requires an element",
 		);
 	withFragment(tree, id, source, options, (sourceTree, fragment) => {
-		const destination =
-			target.tagName === "template" ? tree.templateContent(id) : { tree, id };
+		const destination = isHtmlElement(target, "template")
+			? tree.templateContent(id)
+			: { tree, id };
 		destination.tree.replaceChildrenFrom(destination.id, sourceTree, fragment);
 	});
 }
@@ -106,11 +112,11 @@ function withFragment(
 ) {
 	const target = tree.get(context);
 	const syntheticBody =
-		target.kind !== "element" || (bodyForHtml && target.tagName === "html");
+		target.kind !== "element" || (bodyForHtml && isHtmlElement(target, "html"));
 	let ancestor = syntheticBody ? null : target;
 	let hasFormAncestor = false;
 	while (ancestor) {
-		if (ancestor.tagName === "form") {
+		if (isHtmlElement(ancestor, "form")) {
 			hasFormAncestor = true;
 			break;
 		}
@@ -122,6 +128,8 @@ function withFragment(
 		tree.url,
 		{
 			tagName: syntheticBody ? "body" : target.tagName,
+			namespaceURI: syntheticBody ? htmlNamespace : elementNamespace(target),
+			attributes: syntheticBody ? undefined : target.attributes,
 			hasFormAncestor,
 			scripting: true,
 			documentMode: documentMode(tree),

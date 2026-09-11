@@ -12,6 +12,7 @@ import {
 } from "./controls.js";
 import { summaryDetails } from "./details.js";
 import type { DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { EditableKeyboard } from "./editable-keyboard.js";
 import { AgentBrowserError } from "./errors.js";
 import {
@@ -195,12 +196,17 @@ export class DocumentKeyboard {
 	}
 
 	collapseEnd(id: number) {
+		this.ensureOpen();
+		if (!isHtmlElement(this.tree.get(id)))
+			throw new AgentBrowserError("not-actionable", "Expected an HTML control");
 		this.clearVerticalCaret();
 		this.controlCaret().collapse(id);
 	}
 
 	placeControlCaret(id: number, offset: number, anchor = offset) {
 		this.ensureOpen();
+		if (!isHtmlElement(this.tree.get(id)))
+			throw new AgentBrowserError("not-actionable", "Expected an HTML control");
 		if (this.editable(false) !== id)
 			throw new AgentBrowserError(
 				"not-actionable",
@@ -448,11 +454,20 @@ export class DocumentKeyboard {
 				"Focus changed during editable key dispatch",
 			);
 		if (permitted && this.focus.activeReference() === focusReference) {
-			if (!literal && editableHost === null)
+			if (
+				!literal &&
+				editableHost === null &&
+				(id === null || isHtmlElement(this.tree.get(id)))
+			)
 				scroll = yield* keyboardScrollAction(this.tree, id, key);
 			if (key.key === "Tab" && !shortcut)
 				yield* this.focus.moveAction(key.shift);
-			else if (scroll === undefined && key.key !== "Escape" && id !== null) {
+			else if (
+				scroll === undefined &&
+				key.key !== "Escape" &&
+				id !== null &&
+				isHtmlElement(this.tree.get(id))
+			) {
 				const node = this.tree.get(id);
 				const currentEditableHost = this.contentEditing.host(id);
 				const editable =
@@ -666,6 +681,11 @@ export class DocumentKeyboard {
 				"No editable element is focused",
 			);
 		const node = this.tree.get(id);
+		if (!isHtmlElement(node))
+			throw new AgentBrowserError(
+				"not-actionable",
+				"Expected an HTML editable element",
+			);
 		if (this.contentEditing.host(id) !== null) {
 			this.contentEditing.validate(id);
 			return id;

@@ -1,4 +1,5 @@
 import type { DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 
 export function canRewriteDocumentUrl(current: URL, target: URL) {
 	if (
@@ -40,10 +41,10 @@ export function selectDocumentFragmentTarget(
 	for (const { node } of tree.walk()) {
 		if (node.kind !== "element") continue;
 		if (node.attributes.id === fragment) rawId ??= node.id;
-		if (node.tagName === "a" && node.attributes.name === fragment)
+		if (isHtmlElement(node, "a") && node.attributes.name === fragment)
 			rawName ??= node.id;
 		if (node.attributes.id === decoded) decodedId ??= node.id;
-		if (node.tagName === "a" && node.attributes.name === decoded)
+		if (isHtmlElement(node, "a") && node.attributes.name === decoded)
 			decodedName ??= node.id;
 	}
 	return rawId ?? rawName ?? decodedId ?? decodedName;
@@ -51,7 +52,7 @@ export function selectDocumentFragmentTarget(
 
 export function documentBaseUrl(tree: DocumentTree) {
 	for (const { node } of tree.walk()) {
-		if (node.tagName !== "base" || !Object.hasOwn(node.attributes, "href"))
+		if (!isHtmlElement(node, "base") || !Object.hasOwn(node.attributes, "href"))
 			continue;
 		try {
 			const url = new URL(node.attributes.href, tree.url);
@@ -67,7 +68,10 @@ export function documentBaseUrl(tree: DocumentTree) {
 
 export function documentBaseTarget(tree: DocumentTree) {
 	for (const { node } of tree.walk()) {
-		if (node.tagName !== "base" || !Object.hasOwn(node.attributes, "target"))
+		if (
+			!isHtmlElement(node, "base") ||
+			!Object.hasOwn(node.attributes, "target")
+		)
 			continue;
 		return /[\t\n\r<]/.test(node.attributes.target)
 			? "_blank"

@@ -32,7 +32,11 @@ import {
 import { writeDocument } from "./document-write.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
-import { htmlNamespace } from "./dom-namespaces.js";
+import {
+	elementNamespace,
+	htmlNamespace,
+	isHtmlElement,
+} from "./dom-namespaces.js";
 import { ScriptDatasets } from "./script-dataset.js";
 import { ElementTraversal } from "./element-traversal.js";
 import { scriptElementFocusProperties } from "./element-focus.js";
@@ -77,6 +81,12 @@ import type { ScriptStorage } from "./script-storage.js";
 import { scriptUrlProperties } from "./script-urls.js";
 import { DocumentQueries } from "./selectors.js";
 import { documentHitTesting, type DocumentHitTesting } from "./hit-testing.js";
+
+function reflectedTagName(node: Readonly<DocumentNode>): string {
+	return isHtmlElement(node)
+		? node.tagName.replace(/[a-z]/g, (letter) => letter.toUpperCase())
+		: node.tagName;
+}
 
 export interface ScriptHostObjectDefinition {
 	named?: {
@@ -231,7 +241,7 @@ export class ScriptDom {
 				nodeName: {
 					get: () =>
 						this.read(id).kind === "element"
-							? this.read(id).tagName.toUpperCase()
+							? reflectedTagName(this.read(id))
 							: this.read(id).kind === "doctype"
 								? (this.read(id).doctype?.name ?? "")
 								: this.read(id).kind === "fragment"
@@ -326,7 +336,7 @@ export class ScriptDom {
 				get: () => this.read(id).doctype?.systemId ?? "",
 			};
 		}
-		if (initial.kind === "element" && initial.tagName === "title")
+		if (isHtmlElement(initial, "title"))
 			definition.properties.text = {
 				get: () => {
 					this.read(id);
@@ -553,13 +563,13 @@ export class ScriptDom {
 			definition.properties.forms = {
 				get: () => {
 					this.read(id);
-					return this.collections.get(id, "tag", "form");
+					return this.collections.getByNamespace(id, htmlNamespace, "form");
 				},
 			};
 			definition.properties.images = {
 				get: () => {
 					this.read(id);
-					return this.collections.get(id, "tag", "img");
+					return this.collections.getByNamespace(id, htmlNamespace, "img");
 				},
 			};
 			for (const [name, kind, query] of [
@@ -572,7 +582,9 @@ export class ScriptDom {
 				definition.properties[name] = {
 					get: () => {
 						this.read(id);
-						return this.collections.get(id, kind, query);
+						return kind === "tag"
+							? this.collections.getByNamespace(id, htmlNamespace, query)
+							: this.collections.get(id, kind, query);
 					},
 				};
 			if (this.storage)
@@ -757,7 +769,7 @@ export class ScriptDom {
 					return pageFocus.blurAsync(id);
 				};
 			}
-			if (initial.tagName === "template")
+			if (isHtmlElement(initial, "template"))
 				definition.properties.content = {
 					get: () => this.templateContent(id),
 				};
@@ -768,7 +780,7 @@ export class ScriptDom {
 					return this.datasets.get(id);
 				},
 			};
-			if (initial.tagName === "img") {
+			if (isHtmlElement(initial, "img")) {
 				const images = documentImages(this.tree);
 				images.get(id);
 				for (const name of [
@@ -807,23 +819,28 @@ export class ScriptDom {
 							},
 						};
 			}
-			Object.assign(
-				definition.properties,
-				scriptFormProperties(
-					this.tree,
-					id,
-					() => this.read(id),
-					(target) => this.node(target),
-					this.collections,
-					domString,
-					this.validity,
-				),
-			);
-			Object.assign(
-				definition.methods,
-				scriptFormMethods(this.tree, id, () => this.read(id)),
-			);
-			if (supportsConstraintValidation(initial.tagName))
+			if (isHtmlElement(initial)) {
+				Object.assign(
+					definition.properties,
+					scriptFormProperties(
+						this.tree,
+						id,
+						() => this.read(id),
+						(target) => this.node(target),
+						this.collections,
+						domString,
+						this.validity,
+					),
+				);
+				Object.assign(
+					definition.methods,
+					scriptFormMethods(this.tree, id, () => this.read(id)),
+				);
+			}
+			if (
+				isHtmlElement(initial) &&
+				supportsConstraintValidation(initial.tagName)
+			)
 				definition.methods.setCustomValidity = (
 					...args: readonly unknown[]
 				) => {
@@ -836,11 +853,12 @@ export class ScriptDom {
 				get: () => this.classLists.get(id),
 				set: (value) => this.classLists.setValue(id, value),
 			};
-			Object.assign(
-				definition.properties,
-				scriptUrlProperties(this.tree, id, () => this.read(id), domString),
-			);
-			if (initial.tagName === "a" || initial.tagName === "area")
+			if (isHtmlElement(initial))
+				Object.assign(
+					definition.properties,
+					scriptUrlProperties(this.tree, id, () => this.read(id), domString),
+				);
+			if (isHtmlElement(initial, "a") || isHtmlElement(initial, "area"))
 				definition.methods.toString = () =>
 					String(definition.properties.href.get());
 			definition.properties.attributes = { get: () => this.attributes.map(id) };
@@ -908,13 +926,10 @@ export class ScriptDom {
 						setOuterHtml(this.tree, id, value === null ? "" : domString(value));
 					},
 				},
-				tagName: { get: () => this.read(id).tagName.toUpperCase() },
+				tagName: { get: () => reflectedTagName(this.read(id)) },
 				localName: { get: () => this.read(id).tagName },
 				namespaceURI: {
-					get: () => {
-						this.read(id);
-						return htmlNamespace;
-					},
+					get: () => elementNamespace(this.read(id)),
 				},
 				prefix: {
 					get: () => {
@@ -932,7 +947,7 @@ export class ScriptDom {
 					domString,
 				),
 			});
-			if (initial.tagName === "details") {
+			if (isHtmlElement(initial, "details")) {
 				definition.properties.name = this.attribute(id, "name");
 				definition.properties.open = {
 					get: () => Object.hasOwn(this.read(id).attributes, "open"),
@@ -980,7 +995,10 @@ export class ScriptDom {
 					return this.optional(this.queries.closest(id, domString(selector)));
 				},
 			});
-			if (initial.tagName === "input" || initial.tagName === "textarea") {
+			if (
+				isHtmlElement(initial, "input") ||
+				isHtmlElement(initial, "textarea")
+			) {
 				definition.properties.value = {
 					get: () => {
 						this.read(id);
@@ -989,7 +1007,7 @@ export class ScriptDom {
 					set: (value) => this.setValue(id, value),
 				};
 			}
-			if (initial.tagName === "input") {
+			if (isHtmlElement(initial, "input")) {
 				definition.properties.checked = {
 					get: () => {
 						this.read(id);
@@ -1001,16 +1019,18 @@ export class ScriptDom {
 					},
 				};
 			}
-			const select = scriptSelectBindings(
-				this.tree,
-				id,
-				() => this.read(id),
-				(target) => this.node(target),
-				this.collections,
-				domString,
-			);
-			Object.assign(definition.properties, select.properties);
-			Object.assign(definition.methods, select.methods);
+			if (isHtmlElement(initial)) {
+				const select = scriptSelectBindings(
+					this.tree,
+					id,
+					() => this.read(id),
+					(target) => this.node(target),
+					this.collections,
+					domString,
+				);
+				Object.assign(definition.properties, select.properties);
+				Object.assign(definition.methods, select.methods);
+			}
 			if (this.inert) {
 				for (const method of ["focus", "blur", "scrollIntoView"])
 					definition.methods[method] = () => {
@@ -1312,8 +1332,7 @@ export class ScriptDom {
 		this.read(this.tree.root);
 		const source = this.relations.source(values[0]);
 		if (source.attribute) {
-			const attribute = source.tree.getAttributeRecord(source.id);
-			return this.attributes.create(attribute.name, attribute.value);
+			return this.attributes.copyFrom(source.tree, source.id);
 		}
 		if (source.tree.get(source.id).kind === "document")
 			throw new DOMException(

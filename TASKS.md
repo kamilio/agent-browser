@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 native SVG/MathML namespace integration passes 6201 selected
+native tests across 105 files, with one reproduced pre-existing test excluded
+and one unchanged test typing error outside the 104 strict roots. Build and
+feature formatting pass. NATIVE-FOREIGN-CONTENT.md preserves every failed attempt
+and records a fresh Wikipedia HTTP200 response that gets past SVG rejection but
+fails the CSS query-work budget. A zero-network parser-only replay confirms 21
+SVG nodes, one HTML form and 13 inputs; no form interaction or painting passes.
+Next optimize repeated stylesheet selector matching without raising budgets,
+then rerun isolated checks and a separate fresh website flow. SVG/MathML painting,
+broader namespace APIs, full research, performance, fingerprint/challenge and
+real credential/passkey-device acceptance remain outstanding.
+
 September 11, 2026 at 07:13 UTC, two zero-network follow-ups strengthen Bing
 recovery evidence: the original failed body now loads under unchanged limits,
 without changing its failed receipt, and the fresh body replays successfully.

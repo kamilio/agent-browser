@@ -7,6 +7,7 @@ import {
 } from "./controls.js";
 import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { activeFocus } from "./focus.js";
 import { htmlParseInfo } from "./html-info.js";
@@ -163,12 +164,13 @@ function clean(text: string, trim = true) {
 
 function hidden(tree: DocumentTree, node: DocumentNode) {
 	return (
-		ignoredTags.has(node.tagName) ||
-		Object.hasOwn(node.attributes, "hidden") ||
-		isInertRoot(tree, node) ||
-		node.attributes["aria-hidden"]?.toLowerCase() === "true" ||
-		(node.tagName === "input" &&
-			node.attributes.type?.toLowerCase() === "hidden")
+		(isHtmlElement(node) &&
+			(ignoredTags.has(node.tagName) ||
+				Object.hasOwn(node.attributes, "hidden") ||
+				isInertRoot(tree, node) ||
+				(node.tagName === "input" &&
+					node.attributes.type?.toLowerCase() === "hidden"))) ||
+		node.attributes["aria-hidden"]?.toLowerCase() === "true"
 	);
 }
 
@@ -188,6 +190,7 @@ function roleOf(
 		node.attributes.role === "presentation"
 	)
 		return undefined;
+	if (!isHtmlElement(node)) return undefined;
 	if (node.tagName === "a" && !Object.hasOwn(node.attributes, "href"))
 		return undefined;
 	if (summaryDetails(tree, node) !== undefined) return "button";
@@ -417,7 +420,7 @@ function collectSnapshot(
 		text.set(node.id, clean(content, false).slice(0, maxStringLength + 1));
 	}
 	for (const node of nodes.values()) {
-		if (node.tagName !== "label" || !visible.has(node.id)) continue;
+		if (!isHtmlElement(node, "label") || !visible.has(node.id)) continue;
 		const control = labelControl(tree, node.id);
 		if (control === undefined) continue;
 		if (incompleteText.has(node.id)) incompleteLabels.add(control);
@@ -451,14 +454,14 @@ function collectSnapshot(
 			if (incompleteLabels.has(node.id)) result.truncated = true;
 			return limit(associated.join(" "));
 		}
-		if (node.tagName === "img")
+		if (isHtmlElement(node, "img"))
 			return limit(node.attributes.alt ?? node.attributes.title ?? "");
 		if (
-			node.tagName === "input" &&
+			isHtmlElement(node, "input") &&
 			node.attributes.type?.toLowerCase() === "file"
 		)
 			return limit(node.attributes.title ?? "Choose files");
-		if (node.tagName === "input" && role === "button")
+		if (isHtmlElement(node, "input") && role === "button")
 			return limit(
 				node.attributes.alt ??
 					node.attributes.value ??
@@ -471,7 +474,9 @@ function collectSnapshot(
 			role === "option"
 		)
 			return limit(nameText(node.id));
-		return limit(node.attributes.title ?? node.attributes.placeholder ?? "");
+		return isHtmlElement(node)
+			? limit(node.attributes.title ?? node.attributes.placeholder ?? "")
+			: "";
 	};
 	const append = (entry: SnapshotEntry) => {
 		if (entry.depth > maxDepth) {
@@ -537,50 +542,63 @@ function collectSnapshot(
 			};
 			if (role === "heading") {
 				const level = Number(
-					node.attributes["aria-level"] ?? node.tagName.slice(1),
+					node.attributes["aria-level"] ??
+						(isHtmlElement(node) ? node.tagName.slice(1) : undefined),
 				);
 				if (Number.isSafeInteger(level) && level > 0) entry.level = level;
 			}
 			for (const state of ["disabled", "readonly", "required"] as const)
 				if (
-					Object.hasOwn(node.attributes, state) ||
+					(isHtmlElement(node) && Object.hasOwn(node.attributes, state)) ||
 					node.attributes[`aria-${state}`] === "true"
 				)
 					entry[state] = true;
-			if (isControlDisabled(tree, node.id)) entry.disabled = true;
+			if (isHtmlElement(node) && isControlDisabled(tree, node.id))
+				entry.disabled = true;
 			if (node.id === tree.targetElement) entry.targeted = true;
 			if (node.id === focused && tree.generatedFocusReference === null)
 				entry.focused = true;
-			const details = summaryDetails(tree, node);
+			const details = isHtmlElement(node)
+				? summaryDetails(tree, node)
+				: undefined;
 			if (details !== undefined && role === "button")
 				entry.expanded = Object.hasOwn(tree.get(details).attributes, "open");
 			if (
-				node.tagName === "input" &&
+				isHtmlElement(node, "input") &&
 				node.attributes.type?.toLowerCase() === "checkbox" &&
 				node.control.indeterminate
 			)
 				entry.indeterminate = true;
 			if (["checkbox", "radio", "switch"].includes(role))
-				entry.checked =
-					node.tagName === "input"
-						? controlChecked(tree, node.id)
-						: (node.control.checked ??
+				entry.checked = isHtmlElement(node, "input")
+					? controlChecked(tree, node.id)
+					: isHtmlElement(node)
+						? (node.control.checked ??
 							(Object.hasOwn(node.attributes, "checked") ||
-								node.attributes["aria-checked"] === "true"));
+								node.attributes["aria-checked"] === "true"))
+						: node.attributes["aria-checked"] === "true";
 			if (role === "option")
-				entry.selected =
-					node.tagName === "option"
-						? optionSelected(tree, node.id)
-						: (node.control.selected ??
+				entry.selected = isHtmlElement(node, "option")
+					? optionSelected(tree, node.id)
+					: isHtmlElement(node)
+						? (node.control.selected ??
 							(Object.hasOwn(node.attributes, "selected") ||
-								node.attributes["aria-selected"] === "true"));
-			if (["input", "textarea", "select"].includes(node.tagName)) {
+								node.attributes["aria-selected"] === "true"))
+						: node.attributes["aria-selected"] === "true";
+			if (
+				isHtmlElement(node) &&
+				["input", "textarea", "select"].includes(node.tagName)
+			) {
 				const type = node.attributes.type?.toLowerCase();
 				if (type === "password" || type === "file") entry.protected = true;
 				else if (!["checkbox", "radio", "button"].includes(role))
 					entry.value = limit(controlValue(tree, node.id));
 			}
-			if (role === "link" && node.attributes.href !== undefined) {
+			if (
+				isHtmlElement(node) &&
+				role === "link" &&
+				node.attributes.href !== undefined
+			) {
 				try {
 					const url = new URL(node.attributes.href, baseUrl);
 					if (["http:", "https:", "mailto:", "tel:"].includes(url.protocol)) {
@@ -596,7 +614,7 @@ function collectSnapshot(
 		if (!expandLeafRoles && role && leafRoles.has(role)) continue;
 		for (let index = node.children.length - 1; index >= 0; index--)
 			pending.push({ id: node.children[index], depth: nextDepth });
-		if (node.tagName === "details" && visible.has(node.id)) {
+		if (isHtmlElement(node, "details") && visible.has(node.id)) {
 			const generated = documentGeneratedControls(tree).detailsSummary(node.id);
 			if (generated) pending.push({ id: node.id, depth: nextDepth, generated });
 		}

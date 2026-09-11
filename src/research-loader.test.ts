@@ -8,6 +8,7 @@ import {
 } from "../scripts/research-browser.js";
 import { CookieJar } from "./cookies.js";
 import { loadBrowserDocument } from "./document-loader.js";
+import { svgNamespace } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { type ExtractedNode, extractDocument } from "./extraction.js";
 import { htmlParseInfo } from "./html-info.js";
@@ -141,9 +142,12 @@ it("reads synthetic vendor content around SVG, MathML, CSS and script omissions"
 	expect(researchReaderInfo(tree)).toBeUndefined();
 });
 
-it("leaves native SVG rejection unchanged", async () => {
+it("keeps native frameset rejection explicit", async () => {
 	await expect(
-		loadBrowserDocument(response("<svg/><p>Paper</p>"), context),
+		loadBrowserDocument(
+			response("<frameset><frame src=/never></frameset>"),
+			context,
+		),
 	).rejects.toMatchObject({ code: "unsupported" });
 });
 
@@ -283,6 +287,10 @@ it.each([
 	"<!>",
 	"<!name <?>",
 	"<?name <?>",
+	"<![CDATA[ambiguous]]><p>Kept</p>",
+	"<p><![CDATA[ambiguous]]></p>",
+	"<math><![CDATA[ambiguous]]></math><p>Kept</p>",
+	"<template><![CDATA[ambiguous]]></template><p>Kept</p>",
 	"<svg><![CDATA[> </svg><p>escape</p>]]></svg>",
 	"<svg><?><g></svg><p>escape</p>",
 	"<svg><?>",
@@ -290,6 +298,9 @@ it.each([
 	"<?><script>unterminated",
 ])("keeps malformed and nonempty declarations rejected: %s", (source) => {
 	expect(() => sanitizeResearchHtml(source)).toThrow(
+		expect.objectContaining({ code: "unsupported" }),
+	);
+	expect(() => loadResearchDocument(response(source), context)).toThrow(
 		expect.objectContaining({ code: "unsupported" }),
 	);
 });
@@ -641,8 +652,49 @@ it("captures bounded response evidence without cookies, raw body or query creden
 	);
 });
 
-it("retains PRIMARY evidence when the native parser rejects graphics", async () => {
-	const input = response("<svg/><p>Paper</p>");
+it("loads native SVG structure without claiming painting support", async () => {
+	const tree = await loadBrowserDocument(
+		response(
+			'<svg viewBox="0 0 10 10"><path id=shape d="M0 0L10 10"/></svg><p>Paper</p>',
+		),
+		context,
+	);
+	try {
+		const shape = new DocumentQueries(tree).querySelector("#shape");
+		if (shape === null) throw new Error("Missing SVG fixture");
+		expect(tree.get(shape)).toMatchObject({
+			tagName: "path",
+			namespaceURI: svgNamespace,
+			attributes: { d: "M0 0L10 10" },
+		});
+		expect(researchReaderInfo(tree)).toBeUndefined();
+		expect(extractDocument(tree).content).toContain("Paper");
+	} finally {
+		tree.close();
+	}
+});
+
+it("retains PRIMARY evidence when native SVG loading succeeds", async () => {
+	const input = response("<svg><path d='M0 0L10 10'/></svg><p>Paper</p>");
+	const request = vi
+		.spyOn(NodeNetworkTransport.prototype, "request")
+		.mockResolvedValue(input);
+	const result = await researchNavigation(input.url);
+	expect(result.profile).toBe("native");
+	expect(result.outcome).toBe("extracted-unverified");
+	expect(result.failure).toBeUndefined();
+	expect(result.contentSuccess).toBeNull();
+	expect(result.extraction?.content).toContain("Paper");
+	expect(result.primaryResponse?.bodySha256).toBe(
+		summarizePrimaryResponse(input).bodySha256,
+	);
+	expect(result.primaryResponse?.status).toBe(200);
+	expect(result.metrics?.closed).toBe(true);
+	expect(request).toHaveBeenCalledOnce();
+});
+
+it("retains PRIMARY evidence when the native parser rejects framesets", async () => {
+	const input = response("<frameset><frame src=/never></frameset>");
 	const request = vi
 		.spyOn(NodeNetworkTransport.prototype, "request")
 		.mockResolvedValue(input);
@@ -745,7 +797,7 @@ it("distinguishes HTTP errors, empty pages and network failures", async () => {
 });
 
 it("classifies response headers before a failing parser and retains only static evidence", async () => {
-	const input = response("<svg/>");
+	const input = response("<frameset><frame src=/never></frameset>");
 	input.headers = {
 		...input.headers,
 		"cf-mitigated": ["challenge"],

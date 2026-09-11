@@ -1,6 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { controlValue, selectedOptions } from "./controls.js";
 import { DocumentTree } from "./document.js";
+import { mathmlNamespace, svgNamespace } from "./dom-namespaces.js";
 import { decodeHtmlEntities } from "./html-entities.js";
 import { htmlParseInfo } from "./html-info.js";
 import { parseHtmlDocument } from "./html-parser.js";
@@ -166,7 +167,22 @@ it("uses scripting-disabled noscript content and does not expose iframe fallback
 	expect(renderSnapshot(snapshotDocument(tree))).not.toContain("not-real");
 });
 
-it.each(["svg", "math", "frameset", "frame"])(
+it.each([
+	["svg", svgNamespace],
+	["math", mathmlNamespace],
+])("constructs %s in its foreign namespace", (tagName, namespaceURI) => {
+	const { tree, node } = fixture(
+		`<${tagName} id=foreign></${tagName}><p>after</p>`,
+	);
+	try {
+		expect(node("#foreign")).toMatchObject({ tagName, namespaceURI });
+		expect(tree.textContent(tree.root)).toContain("after");
+	} finally {
+		tree.close();
+	}
+});
+
+it.each(["frameset", "frame"])(
 	"fails explicitly for unsupported %s construction and cleans the candidate",
 	(tag) => {
 		const closed = vi.spyOn(DocumentTree.prototype, "close");

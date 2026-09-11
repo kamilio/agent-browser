@@ -12,6 +12,7 @@ import {
 } from "./controls.js";
 import { existingDocumentFiles } from "./document-files.js";
 import type { DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import type { FormSubmissionOptions } from "./forms.js";
 import { validEmailValue } from "./input-email.js";
@@ -41,6 +42,11 @@ export function controlValidity(
 	radioMissing = new Map<number, boolean>(),
 ): ControlValidity {
 	const node = tree.get(id);
+	if (!isHtmlElement(node))
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Expected an HTML validation control",
+		);
 	const flags = {
 		valueMissing: false,
 		typeMismatch: false,

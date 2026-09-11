@@ -1,4 +1,5 @@
 import { documentBaseUrl } from "./document-url.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError, type ErrorCode } from "./errors.js";
 import { BrowserEvent } from "./events.js";
@@ -336,7 +337,7 @@ export class DocumentImages {
 					"Image scan work limit exceeded",
 				);
 			if (
-				node.tagName === "meta" &&
+				isHtmlElement(node, "meta") &&
 				node.attributes["http-equiv"]?.toLowerCase() ===
 					"content-security-policy"
 			)
@@ -357,7 +358,7 @@ export class DocumentImages {
 						"resource-limit",
 						"Image scan work limit exceeded",
 					);
-				if (node.tagName === "img") discovered.add(node.id);
+				if (isHtmlElement(node, "img")) discovered.add(node.id);
 			}
 			for (const id of this.entries.keys()) discovered.add(id);
 			for (const id of discovered) this.update(id);
@@ -369,7 +370,7 @@ export class DocumentImages {
 	private update(id: number): Entry {
 		this.ensureOpen();
 		const node = this.tree.get(id);
-		if (node.kind !== "element" || node.tagName !== "img")
+		if (!isHtmlElement(node, "img"))
 			throw new AgentBrowserError(
 				"invalid-input",
 				"Image owner requires an img element",
@@ -377,7 +378,8 @@ export class DocumentImages {
 		const attributes = node.attributes;
 		const { base, blocked } = this.selectionContext();
 		const picture =
-			node.parent !== null && this.tree.get(node.parent).tagName === "picture";
+			node.parent !== null &&
+			isHtmlElement(this.tree.get(node.parent), "picture");
 		const sources = [
 			attributes.src,
 			attributes.srcset,

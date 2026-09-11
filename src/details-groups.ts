@@ -1,4 +1,5 @@
 import type { DocumentNode } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 
 export class DocumentDetailsGroups {
 	private readonly names = new Map<number, string>();
@@ -8,7 +9,7 @@ export class DocumentDetailsGroups {
 
 	sync(id: number) {
 		const node = this.node(id);
-		if (node.tagName !== "details") return;
+		if (!isHtmlElement(node, "details")) return;
 		const name = Object.hasOwn(node.attributes, "open")
 			? node.attributes.name || undefined
 			: undefined;
@@ -33,7 +34,7 @@ export class DocumentDetailsGroups {
 
 	attributeClosure(id: number, key: string, value: string): number | undefined {
 		const node = this.node(id);
-		if (node.tagName !== "details") return;
+		if (!isHtmlElement(node, "details")) return;
 		const open = Object.hasOwn(node.attributes, "open");
 		const opening = key === "open" && !open;
 		if (!opening && !(key === "name" && open)) return;

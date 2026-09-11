@@ -1,4 +1,5 @@
 import type { DocumentNode, DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 
 const firstElements = new WeakMap<Readonly<DocumentNode>, number | null>();
 
@@ -8,9 +9,9 @@ export function isInertRoot(
 	charge?: () => void,
 ): boolean {
 	if (Object.hasOwn(node.attributes, "inert")) return true;
-	if (node.tagName !== "button" || node.parent === null) return false;
+	if (!isHtmlElement(node, "button") || node.parent === null) return false;
 	const parent = tree.get(node.parent);
-	if (parent.tagName !== "select") return false;
+	if (!isHtmlElement(parent, "select")) return false;
 	let first = firstElements.get(parent);
 	if (first === undefined) {
 		first = null;

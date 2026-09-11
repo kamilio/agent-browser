@@ -3,6 +3,7 @@ import { type BoxStyle, initialBoxStyle } from "./css-box.js";
 import { initialPaintStyle, type PaintStyle } from "./css-paint.js";
 import type { TextStyle } from "./css-text.js";
 import type { DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { documentImages } from "./document-images.js";
 import {
 	type ReplacedSize,
@@ -310,6 +311,28 @@ export function buildFormattingTree(
 		}
 		if (node.kind !== "element") return [];
 		const ref = tree.reference(id);
+		if (!isHtmlElement(node)) {
+			const reason = "element-layout-not-supported";
+			const display =
+				id === rootElement
+					? (rootDisplays[visibility.display] ?? visibility.display)
+					: visibility.display;
+			issue(reason);
+			deferredSubtrees++;
+			return [
+				create({
+					kind: "deferred",
+					level:
+						display.startsWith("inline") || display === "contents"
+							? "inline"
+							: "block",
+					ref,
+					display,
+					visible: visibility.visible,
+					deferredReason: reason,
+				}),
+			];
+		}
 		const flow = styles.flow(id);
 		if (flow.position === "sticky") issue("position-layout-not-supported");
 		const outOfFlow =

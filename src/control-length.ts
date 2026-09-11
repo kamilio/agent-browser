@@ -1,7 +1,9 @@
 import type { DocumentNode } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { inputType } from "./input-values.js";
 
 export function lengthApplies(node: Readonly<DocumentNode>): boolean {
+	if (!isHtmlElement(node)) return false;
 	return (
 		node.tagName === "textarea" ||
 		(node.tagName === "input" &&

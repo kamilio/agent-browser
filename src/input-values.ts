@@ -1,4 +1,5 @@
 import type { DocumentNode } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { sanitizeCalendarInput } from "./input-calendar.js";
 import { sanitizeEmailValue } from "./input-email.js";
 import { validNumberValue } from "./input-number.js";
@@ -36,6 +37,7 @@ export function inputTypeName(raw: string | undefined): string {
 }
 
 export function inputType(node: Readonly<DocumentNode>): string {
+	if (!isHtmlElement(node)) return "";
 	return inputTypeName(node.attributes.type);
 }
 

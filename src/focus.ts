@@ -1,3 +1,4 @@
+import { isRootEditableElement } from "./content-editability.js";
 import {
 	controlChecked,
 	controlValue,
@@ -5,7 +6,10 @@ import {
 	isControlDisabled,
 	radioGroup,
 } from "./controls.js";
+import { closedDetailsChild, summaryDetails } from "./details.js";
 import type { DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
+import { parsedTabIndex } from "./element-focus.js";
 import { AgentBrowserError } from "./errors.js";
 import {
 	type EventAction,
@@ -13,18 +17,15 @@ import {
 	runEventActionAsync,
 } from "./event-actions.js";
 import { BrowserEvent, type DocumentEvents } from "./events.js";
-import { isInertRoot } from "./inertness.js";
-import { isRootEditableElement } from "./content-editability.js";
-import { parsedTabIndex } from "./element-focus.js";
-import { closedDetailsChild, summaryDetails } from "./details.js";
-import { documentStyles } from "./styles.js";
-import { documentScrollIntoView } from "./scroll-into-view.js";
-import type { RootScrollRequest } from "./root-scroll.js";
 import {
+	type GeneratedControlTarget,
 	documentGeneratedControls,
 	resolveVisualTarget,
-	type GeneratedControlTarget,
 } from "./generated-controls.js";
+import { isInertRoot } from "./inertness.js";
+import type { RootScrollRequest } from "./root-scroll.js";
+import { documentScrollIntoView } from "./scroll-into-view.js";
+import { documentStyles } from "./styles.js";
 
 export interface ElementFocusOptions {
 	preventScroll?: boolean;
@@ -51,7 +52,7 @@ export class BrowserFocusEvent extends BrowserEvent {
 function focusEligible(tree: DocumentTree, id: number): boolean {
 	const node = tree.get(id);
 	if (
-		node.kind !== "element" ||
+		!isHtmlElement(node) ||
 		!tree.isConnected(id) ||
 		isControlDisabled(tree, id) ||
 		(node.tagName === "input" && inputType(node) === "hidden")
@@ -365,7 +366,7 @@ export class DocumentFocus {
 		let order = 0;
 		for (const { node } of this.tree.walk()) {
 			const generated =
-				node.tagName === "details" &&
+				isHtmlElement(node, "details") &&
 				focusEligible(this.tree, node.id) &&
 				documentStyles(this.tree).get(node.id).visible
 					? documentGeneratedControls(this.tree).detailsSummary(node.id)

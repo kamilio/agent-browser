@@ -1,4 +1,10 @@
 import type { DocumentTree } from "./document.js";
+import {
+	elementNamespace,
+	htmlNamespace,
+	mathmlNamespace,
+	svgNamespace,
+} from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 
 export interface HtmlParserNode {
@@ -104,12 +110,40 @@ const scopeBoundaries = new Set([
 	"select",
 	"template",
 ]);
-export function isHtmlSpecial(tag: string): boolean {
-	return special.has(tag);
+const svgBoundaries = new Set(["foreignObject", "desc", "title"]);
+const mathmlBoundaries = new Set([
+	"mi",
+	"mo",
+	"mn",
+	"ms",
+	"mtext",
+	"annotation-xml",
+]);
+
+export function isHtmlParserNode(node: HtmlParserNode, tag?: string): boolean {
+	return (
+		elementNamespace(node.tree.get(node.id)) === htmlNamespace &&
+		(tag === undefined || node.tag === tag)
+	);
 }
 
-export function isHtmlScopeBoundary(tag: string): boolean {
-	return scopeBoundaries.has(tag);
+function hasCategory(
+	node: string | HtmlParserNode,
+	htmlTags: ReadonlySet<string>,
+): boolean {
+	if (typeof node === "string") return htmlTags.has(node);
+	const namespaceURI = elementNamespace(node.tree.get(node.id));
+	if (namespaceURI === htmlNamespace) return htmlTags.has(node.tag);
+	if (namespaceURI === svgNamespace) return svgBoundaries.has(node.tag);
+	return namespaceURI === mathmlNamespace && mathmlBoundaries.has(node.tag);
+}
+
+export function isHtmlSpecial(node: string | HtmlParserNode): boolean {
+	return hasCategory(node, special);
+}
+
+export function isHtmlScopeBoundary(node: string | HtmlParserNode): boolean {
+	return hasCategory(node, scopeBoundaries);
 }
 
 interface FormattingEntry {
@@ -176,6 +210,8 @@ export class HtmlFormatting {
 			if ("marker" in entry) break;
 			if (
 				entry.node.tag === node.tag &&
+				elementNamespace(entry.node.tree.get(entry.node.id)) ===
+					elementNamespace(node.tree.get(node.id)) &&
 				this.sameAttributes(entry.attributes, attributes)
 			)
 				matches.push(index);
@@ -191,7 +227,7 @@ export class HtmlFormatting {
 			this.visit();
 			const entry = this.entries[index];
 			if ("marker" in entry) break;
-			if (entry.node.tag === tag) return entry.node;
+			if (isHtmlParserNode(entry.node, tag)) return entry.node;
 		}
 		return undefined;
 	}
@@ -206,7 +242,7 @@ export class HtmlFormatting {
 		for (let index = stack.length - 1; index >= 0; index--) {
 			this.visit();
 			if (stack[index] === node) return true;
-			if (scopeBoundaries.has(stack[index].tag)) return false;
+			if (isHtmlScopeBoundary(stack[index])) return false;
 		}
 		return false;
 	}
@@ -239,7 +275,7 @@ export class HtmlFormatting {
 		const stack = this.options.stack();
 		const current = stack[stack.length - 1];
 		if (
-			current.tag === tag &&
+			isHtmlParserNode(current, tag) &&
 			this.activeIndex(current) < 0 &&
 			stack.length > 1
 		) {
@@ -252,11 +288,11 @@ export class HtmlFormatting {
 			if (!formatting) {
 				for (let index = stack.length - 1; index > 0; index--) {
 					this.visit();
-					if (stack[index].tag === tag) {
+					if (isHtmlParserNode(stack[index], tag)) {
 						stack.length = index;
 						return;
 					}
-					if (special.has(stack[index].tag)) break;
+					if (isHtmlSpecial(stack[index])) break;
 				}
 				this.options.issue("unmatched-formatting-end");
 				return;
@@ -276,7 +312,7 @@ export class HtmlFormatting {
 			let furthestIndex = formattingIndex + 1;
 			while (
 				furthestIndex < stack.length &&
-				!special.has(stack[furthestIndex].tag)
+				!isHtmlSpecial(stack[furthestIndex])
 			) {
 				this.visit();
 				furthestIndex++;

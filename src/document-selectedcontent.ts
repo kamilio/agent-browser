@@ -1,4 +1,5 @@
 import type { DocumentNode, DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { nearestSelect } from "./select-option-owner.js";
 
@@ -19,8 +20,8 @@ export class DocumentSelectedContent {
 
 	connected(root: number) {
 		if (!this.count || !this.tree.isConnected(root)) return;
-		const contents = [...this.walk(root)].filter(
-			(node) => node.tagName === "selectedcontent",
+		const contents = [...this.walk(root)].filter((node) =>
+			isHtmlElement(node, "selectedcontent"),
 		);
 		for (const content of contents) {
 			if (!this.tree.isConnected(content.id)) continue;
@@ -47,7 +48,7 @@ export class DocumentSelectedContent {
 			this.update(select);
 			let first = true;
 			for (const descendant of [...this.walk(select)]) {
-				if (descendant.tagName !== "selectedcontent") continue;
+				if (!isHtmlElement(descendant, "selectedcontent")) continue;
 				if (first) first = false;
 				else this.tree.replaceChildren(descendant.id);
 			}
@@ -58,7 +59,7 @@ export class DocumentSelectedContent {
 		if (!this.count) return;
 		for (const content of [...this.walk(root)]) {
 			if (
-				content.tagName !== "selectedcontent" ||
+				!isHtmlElement(content, "selectedcontent") ||
 				this.disabled.has(content.id)
 			)
 				continue;
@@ -79,13 +80,18 @@ export class DocumentSelectedContent {
 	optionClosed(id: number) {
 		if (!this.count) return;
 		const option = this.node(id);
-		if (option.tagName !== "option" || !option.control.selected) return;
+		if (!isHtmlElement(option, "option") || !option.control.selected) return;
 		const select = nearestSelect(option.parent, this.node);
 		if (select !== undefined) this.update(select);
 	}
 
 	update(select: number) {
-		if (!this.count || Object.hasOwn(this.node(select).attributes, "multiple"))
+		if (!this.count) return;
+		const node = this.node(select);
+		if (
+			!isHtmlElement(node, "select") ||
+			Object.hasOwn(node.attributes, "multiple")
+		)
 			return;
 		if (this.updating.has(select)) {
 			this.pending.add(select);
@@ -104,7 +110,7 @@ export class DocumentSelectedContent {
 				if (Object.hasOwn(this.node(select).attributes, "multiple")) return;
 				let content: Readonly<DocumentNode> | undefined;
 				for (const node of this.walk(select))
-					if (node.tagName === "selectedcontent") {
+					if (isHtmlElement(node, "selectedcontent")) {
 						content = node;
 						break;
 					}
@@ -112,7 +118,7 @@ export class DocumentSelectedContent {
 				let option: Readonly<DocumentNode> | undefined;
 				for (const node of this.walk(select))
 					if (
-						node.tagName === "option" &&
+						isHtmlElement(node, "option") &&
 						node.control.selected &&
 						nearestSelect(node.parent, this.node) === select
 					) {
@@ -145,7 +151,7 @@ export class DocumentSelectedContent {
 		let current = parent;
 		while (current !== null) {
 			const node = this.node(current);
-			yield node;
+			if (isHtmlElement(node)) yield node;
 			current = node.parent;
 		}
 	}

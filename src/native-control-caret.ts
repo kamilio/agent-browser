@@ -1,5 +1,6 @@
 import { controlValue, fillTextControl, inputType } from "./controls.js";
 import type { DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { nextOffset, previousOffset } from "./keyboard-text.js";
 
@@ -93,6 +94,7 @@ class NativeControlCaret {
 	private eligible(id: number): boolean {
 		if (!this.tree.isConnected(id)) return false;
 		const node = this.tree.get(id);
+		if (!isHtmlElement(node)) return false;
 		return (
 			node.tagName === "textarea" ||
 			(node.tagName === "input" && textTypes.has(inputType(node)))

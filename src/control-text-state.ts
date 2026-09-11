@@ -2,16 +2,18 @@ import { inputType, isControlDisabled } from "./controls.js";
 import { documentGeometry } from "./document-geometry.js";
 import { layoutDocument } from "./document-layout.js";
 import type { DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { isInertSubtree } from "./inertness.js";
 
 export function controlTextState(tree: DocumentTree, id: number) {
+	const node = tree.get(id);
+	if (!isHtmlElement(node)) return;
 	if (
 		!tree.isConnected(id) ||
 		isControlDisabled(tree, id) ||
 		isInertSubtree(tree, id)
 	)
 		return;
-	const node = tree.get(id);
 	if (
 		node.tagName !== "textarea" &&
 		!(

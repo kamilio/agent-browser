@@ -1,4 +1,6 @@
 import type { ControlState, DocumentNode } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
+import { AgentBrowserError } from "./errors.js";
 
 interface CheckedNode extends Omit<DocumentNode, "control"> {
 	control: ControlState;
@@ -6,7 +8,7 @@ interface CheckedNode extends Omit<DocumentNode, "control"> {
 
 function radio(node: CheckedNode) {
 	return (
-		node.tagName === "input" &&
+		isHtmlElement(node, "input") &&
 		node.attributes.type?.replace(/[A-Z]/g, (letter) =>
 			letter.toLowerCase(),
 		) === "radio"
@@ -30,18 +32,23 @@ export class DocumentCheckedness {
 	) {}
 
 	initialize(id: number, source?: { state: DocumentCheckedness; id: number }) {
+		if (!isHtmlElement(this.node(id), "input")) return;
 		if (source?.state.dirty.has(source.id)) this.dirty.add(id);
 		this.track(id);
 		if (radio(this.node(id))) this.regroup([id]);
 	}
 
 	set(id: number, checked: boolean, dirty = true) {
+		if (!isHtmlElement(this.node(id), "input"))
+			throw new AgentBrowserError("invalid-input", "Expected an input");
 		if (dirty) this.dirty.add(id);
 		this.write(id, checked);
 		if (checked) this.select(id);
 	}
 
 	clear(id: number) {
+		if (!isHtmlElement(this.node(id), "input"))
+			throw new AgentBrowserError("invalid-input", "Expected an input");
 		const wasDirty = this.dirty.delete(id);
 		this.set(id, Object.hasOwn(this.node(id).attributes, "checked"), false);
 		if (wasDirty) this.changed(id);
@@ -49,12 +56,12 @@ export class DocumentCheckedness {
 
 	attribute(id: number, name: string, previous: string | undefined) {
 		const node = this.node(id);
-		if (node.tagName === "input" && name === "checked") {
+		if (isHtmlElement(node, "input") && name === "checked") {
 			const present = Object.hasOwn(node.attributes, "checked");
 			if (!this.dirty.has(id) && present !== (previous !== undefined))
 				this.set(id, present, false);
 		} else if (
-			node.tagName === "input" &&
+			isHtmlElement(node, "input") &&
 			["type", "name", "form"].includes(name)
 		) {
 			this.track(id);
@@ -194,9 +201,14 @@ export class DocumentCheckedness {
 		let owner: number | null = null;
 		while (root.parent !== null) {
 			root = this.node(root.parent);
-			if (owner === null && root.tagName === "form") owner = root.id;
+			if (owner === null && isHtmlElement(root, "form")) owner = root.id;
 		}
-		owner = this.parserOwner(id) ?? owner;
+		const parserOwner = this.parserOwner(id);
+		if (
+			parserOwner !== undefined &&
+			isHtmlElement(this.node(parserOwner), "form")
+		)
+			owner = parserOwner;
 		if (root.kind === "document" && Object.hasOwn(node.attributes, "form")) {
 			if (!this.formLookups.has(node.attributes.form)) {
 				const lookup = new Map<string, number>();
@@ -208,7 +220,9 @@ export class DocumentCheckedness {
 			}
 			const target = this.formLookups.get(node.attributes.form);
 			owner =
-				target != null && this.node(target).tagName === "form" ? target : null;
+				target != null && isHtmlElement(this.node(target), "form")
+					? target
+					: null;
 		}
 		return JSON.stringify([root.id, owner, node.attributes.name]);
 	}

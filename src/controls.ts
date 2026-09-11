@@ -1,12 +1,13 @@
 import { textareaDefaultValue } from "./control-defaults.js";
 import { existingDocumentFiles } from "./document-files.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
+import { isFormAssociatedTag } from "./html-form-association.js";
 import { validNumberValue } from "./input-number.js";
 import { inputType, sanitizeInputValue } from "./input-values.js";
-import { isFormAssociatedTag } from "./html-form-association.js";
-import { nearestSelect } from "./select-option-owner.js";
 import { optionDisabled } from "./option-disabled.js";
+import { nearestSelect } from "./select-option-owner.js";
 
 export { inputType } from "./input-values.js";
 
@@ -46,6 +47,7 @@ interface ControlIndex {
 const indexes = new WeakMap<DocumentTree, ControlIndex>();
 
 export function isLabelable(node: Readonly<DocumentNode>) {
+	if (!isHtmlElement(node)) return false;
 	return (
 		["button", "meter", "output", "progress", "select", "textarea"].includes(
 			node.tagName,
@@ -55,6 +57,7 @@ export function isLabelable(node: Readonly<DocumentNode>) {
 }
 
 export function isInteractiveElement(node: Readonly<DocumentNode>) {
+	if (!isHtmlElement(node)) return false;
 	return (
 		[
 			"button",
@@ -114,10 +117,11 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 	for (const node of nodes.values()) {
 		if (node.attributes.id && !htmlIds.has(node.attributes.id))
 			htmlIds.set(node.attributes.id, node.id);
-		if (node.tagName === "fieldset") {
-			const first = node.children.find(
-				(child) => nodes.get(child)?.tagName === "legend",
-			);
+		if (isHtmlElement(node, "fieldset")) {
+			const first = node.children.find((child) => {
+				const candidate = nodes.get(child);
+				return candidate && isHtmlElement(candidate, "legend");
+			});
 			if (first !== undefined) firstLegends.set(node.id, first);
 		}
 	}
@@ -127,14 +131,15 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 		if (parent) {
 			if (
 				inheritedFieldset.has(parent.id) ||
-				(parent.tagName === "fieldset" &&
+				(isHtmlElement(parent, "fieldset") &&
 					Object.hasOwn(parent.attributes, "disabled") &&
 					firstLegends.get(parent.id) !== node.id)
 			)
 				inheritedFieldset.add(node.id);
-			if (index.datalist.has(parent.id) || parent.tagName === "datalist")
+			if (index.datalist.has(parent.id) || isHtmlElement(parent, "datalist"))
 				index.datalist.add(node.id);
 		}
+		if (!isHtmlElement(node)) continue;
 		if (
 			fieldsetAffected.has(node.tagName) &&
 			(Object.hasOwn(node.attributes, "disabled") ||
@@ -150,17 +155,19 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 			index.disabled.add(node.id);
 		if (isFormAssociatedTag(node.tagName)) {
 			let owner = tree.parserFormOwner(node.id);
+			if (owner !== undefined && !isHtmlElement(tree.get(owner), "form"))
+				owner = undefined;
 			if (
 				owner === undefined &&
 				nodes.get(root)?.kind === "document" &&
 				Object.hasOwn(node.attributes, "form")
 			) {
 				const target = nodes.get(htmlIds.get(node.attributes.form) ?? -1);
-				if (target?.tagName === "form") owner = target.id;
+				if (target && isHtmlElement(target, "form")) owner = target.id;
 			} else if (owner === undefined) {
 				let ancestor = parent;
 				while (ancestor) {
-					if (ancestor.tagName === "form") {
+					if (isHtmlElement(ancestor, "form")) {
 						owner = ancestor.id;
 						break;
 					}
@@ -208,7 +215,7 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 				break;
 			}
 		}
-		if (node.tagName !== "label") continue;
+		if (!isHtmlElement(node, "label")) continue;
 		const target = Object.hasOwn(node.attributes, "for")
 			? htmlIds.get(node.attributes.for)
 			: firstLabelableDescendant.get(node.id);
@@ -221,35 +228,35 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 }
 
 export function labelControl(tree: DocumentTree, id: number) {
-	if (tree.get(id).tagName !== "label")
+	if (!isHtmlElement(tree.get(id), "label"))
 		throw new AgentBrowserError("invalid-input", "Expected a label element");
 	return indexFor(tree, id).labels.get(id);
 }
 
 export function formOwner(tree: DocumentTree, id: number) {
-	tree.get(id);
+	if (!isHtmlElement(tree.get(id))) return undefined;
 	return indexFor(tree, id).owners.get(id);
 }
 export function formControls(tree: DocumentTree, formId: number) {
-	if (tree.get(formId).tagName !== "form")
+	if (!isHtmlElement(tree.get(formId), "form"))
 		throw new AgentBrowserError("invalid-input", "Expected a form");
 	return [...(indexFor(tree, formId).controls.get(formId) ?? [])];
 }
 export function isControlDisabled(tree: DocumentTree, id: number) {
-	tree.get(id);
+	if (!isHtmlElement(tree.get(id))) return false;
 	return indexFor(tree, id).disabled.has(id);
 }
 export function isInsideDatalist(tree: DocumentTree, id: number) {
-	tree.get(id);
+	if (!isHtmlElement(tree.get(id))) return false;
 	return indexFor(tree, id).datalist.has(id);
 }
 export function selectOptions(tree: DocumentTree, id: number) {
-	tree.get(id);
+	if (!isHtmlElement(tree.get(id), "select")) return [];
 	return [...(indexFor(tree, id).options.get(id) ?? [])];
 }
 
 export function selectedOptions(tree: DocumentTree, id: number) {
-	tree.get(id);
+	if (!isHtmlElement(tree.get(id), "select")) return [];
 	const index = indexFor(tree, id);
 	return (index.options.get(id) ?? []).filter((option) =>
 		index.selected.has(option.id),
@@ -258,6 +265,7 @@ export function selectedOptions(tree: DocumentTree, id: number) {
 
 export function optionSelected(tree: DocumentTree, id: number) {
 	const node = tree.get(id);
+	if (!isHtmlElement(node, "option")) return false;
 	const index = indexFor(tree, id);
 	return index.optionOwners.has(id)
 		? index.selected.has(id)
@@ -265,11 +273,12 @@ export function optionSelected(tree: DocumentTree, id: number) {
 }
 
 export function optionOwner(tree: DocumentTree, id: number) {
-	tree.get(id);
+	if (!isHtmlElement(tree.get(id), "option")) return undefined;
 	return indexFor(tree, id).optionOwners.get(id);
 }
 
 export function optionText(tree: DocumentTree, id: number) {
+	if (!isHtmlElement(tree.get(id), "option")) return "";
 	const parts: string[] = [];
 	const skipped = new Set<number>();
 	for (const { node } of tree.walk(id)) {
@@ -290,15 +299,19 @@ export function optionText(tree: DocumentTree, id: number) {
 
 export function optionValue(tree: DocumentTree, id: number) {
 	const option = tree.get(id);
+	if (!isHtmlElement(option, "option")) return "";
 	return option.attributes.value ?? optionText(tree, id);
 }
 
 export function optionLabel(tree: DocumentTree, id: number) {
-	return tree.get(id).attributes.label || optionText(tree, id);
+	const option = tree.get(id);
+	if (!isHtmlElement(option, "option")) return "";
+	return option.attributes.label || optionText(tree, id);
 }
 
 export function controlChecked(tree: DocumentTree, id: number) {
 	const node = tree.get(id);
+	if (!isHtmlElement(node)) return false;
 	return node.control.checked ?? Object.hasOwn(node.attributes, "checked");
 }
 
@@ -309,14 +322,14 @@ export function controlShowsPlaceholder(
 	const node = tree.get(id);
 	return (
 		Object.hasOwn(node.attributes, "placeholder") &&
-		(node.tagName === "textarea" ||
-			(node.tagName === "input" && textTypes.has(inputType(node)))) &&
+		isTextControl(node) &&
 		controlValue(tree, id) === ""
 	);
 }
 
 export function controlValue(tree: DocumentTree, id: number): string {
 	const node = tree.get(id);
+	if (!isHtmlElement(node)) return "";
 	if (node.tagName === "select") {
 		const selected = selectedOptions(tree, id)[0];
 		return selected ? optionValue(tree, selected.id) : "";
@@ -347,12 +360,15 @@ export function controlValue(tree: DocumentTree, id: number): string {
 
 function editable(tree: DocumentTree, reference: string) {
 	const node = tree.resolve(reference);
+	if (!isHtmlElement(node))
+		throw new AgentBrowserError("not-actionable", "Expected an HTML control");
 	if (isControlDisabled(tree, node.id))
 		throw new AgentBrowserError("not-actionable", "Control is disabled");
 	return node;
 }
 
 export function isTextControl(node: Readonly<DocumentNode>) {
+	if (!isHtmlElement(node)) return false;
 	return (
 		node.tagName === "textarea" ||
 		(node.tagName === "input" && textTypes.has(inputType(node)))
@@ -413,7 +429,7 @@ export function radioGroup(
 	id: number,
 ): readonly Readonly<DocumentNode>[] {
 	const node = tree.get(id);
-	if (node.tagName !== "input" || inputType(node) !== "radio")
+	if (!isHtmlElement(node, "input") || inputType(node) !== "radio")
 		throw new AgentBrowserError("invalid-input", "Expected a radio control");
 	const index = indexFor(tree, id);
 	return Object.freeze(
@@ -449,7 +465,7 @@ export function setControlCheckedState(
 		);
 	const node = tree.get(id);
 	if (
-		node.tagName !== "input" ||
+		!isHtmlElement(node, "input") ||
 		!["checkbox", "radio"].includes(inputType(node))
 	)
 		throw new AgentBrowserError(

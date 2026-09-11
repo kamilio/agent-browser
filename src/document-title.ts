@@ -1,16 +1,17 @@
 import { documentElement, documentHead } from "./document-elements.js";
 import { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 
 function titleElement(tree: DocumentTree): number | undefined {
 	for (const { node } of tree.walk())
-		if (node.kind === "element" && node.tagName === "title") return node.id;
+		if (isHtmlElement(node, "title")) return node.id;
 	return undefined;
 }
 
 export function titleElementText(tree: DocumentTree, id: number): string {
 	const title = tree.get(id);
-	if (title.kind !== "element" || title.tagName !== "title")
+	if (!isHtmlElement(title, "title"))
 		throw new AgentBrowserError("invalid-input", "Expected a title element");
 	const parts: string[] = [];
 	for (const child of title.children) {

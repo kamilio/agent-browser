@@ -1,8 +1,9 @@
 import { AgentBrowserError } from "./errors.js";
 import {
-	isHtmlSpecial,
-	isHtmlScopeBoundary,
 	type HtmlParserNode,
+	isHtmlParserNode,
+	isHtmlScopeBoundary,
+	isHtmlSpecial,
 } from "./html-formatting.js";
 
 const implied = new Set([
@@ -54,13 +55,18 @@ export class HtmlScope {
 	find(target: string | HtmlParserNode, kind: ScopeKind = "normal"): number {
 		return this.search(
 			(node) =>
-				typeof target === "string" ? node.tag === target : node === target,
+				typeof target === "string"
+					? isHtmlParserNode(node, target)
+					: node === target,
 			kind,
 		);
 	}
 
 	findHeading(): number {
-		return this.search((node) => headings.has(node.tag), "normal");
+		return this.search(
+			(node) => isHtmlParserNode(node) && headings.has(node.tag),
+			"normal",
+		);
 	}
 
 	canEndBody(): boolean {
@@ -68,13 +74,14 @@ export class HtmlScope {
 		let unclosed = false;
 		for (let index = stack.length - 1; index >= 0; index--) {
 			this.visit();
-			const tag = stack[index].tag;
-			if (tag === "body") {
+			const node = stack[index];
+			if (isHtmlParserNode(node, "body")) {
 				if (unclosed) this.options.issue("unclosed-elements-at-body-end");
 				return true;
 			}
-			if (isHtmlScopeBoundary(tag)) return false;
-			if (!bodyEndAllowed.has(tag)) unclosed = true;
+			if (isHtmlScopeBoundary(node)) return false;
+			if (!isHtmlParserNode(node) || !bodyEndAllowed.has(node.tag))
+				unclosed = true;
 		}
 		return false;
 	}
@@ -83,7 +90,10 @@ export class HtmlScope {
 		const stack = this.options.stack();
 		for (let index = 1; index < stack.length; index++) {
 			this.visit();
-			if (!bodyEndAllowed.has(stack[index].tag)) {
+			if (
+				!isHtmlParserNode(stack[index]) ||
+				!bodyEndAllowed.has(stack[index].tag)
+			) {
 				this.options.issue("unclosed-elements-at-eof");
 				return;
 			}
@@ -94,8 +104,13 @@ export class HtmlScope {
 		const stack = this.options.stack();
 		while (stack.length > 1) {
 			this.visit();
-			const tag = stack[stack.length - 1].tag;
-			if (tag === except || !implied.has(tag)) break;
+			const node = stack[stack.length - 1];
+			if (
+				!isHtmlParserNode(node) ||
+				node.tag === except ||
+				!implied.has(node.tag)
+			)
+				break;
 			stack.pop();
 		}
 		this.options.reset();
@@ -117,8 +132,8 @@ export class HtmlScope {
 		const stack = this.options.stack();
 		for (let index = stack.length - 1; index > 0; index--) {
 			this.visit();
-			if (stack[index].tag === tag) return this.close(index, tag);
-			if (isHtmlSpecial(stack[index].tag)) break;
+			if (isHtmlParserNode(stack[index], tag)) return this.close(index, tag);
+			if (isHtmlSpecial(stack[index])) break;
 		}
 		return false;
 	}
@@ -127,15 +142,20 @@ export class HtmlScope {
 		const stack = this.options.stack();
 		for (let index = stack.length - 1; index > 0; index--) {
 			this.visit();
-			const current = stack[index].tag;
+			const node = stack[index];
+			const current = node.tag;
 			if (
-				current === tag ||
-				(tag !== "li" && (current === "dd" || current === "dt"))
+				isHtmlParserNode(node) &&
+				(current === tag ||
+					(tag !== "li" && (current === "dd" || current === "dt")))
 			) {
 				this.close(index, current);
 				return;
 			}
-			if (isHtmlSpecial(current) && !["address", "div", "p"].includes(current))
+			if (
+				isHtmlSpecial(node) &&
+				!(isHtmlParserNode(node) && ["address", "div", "p"].includes(current))
+			)
 				return;
 		}
 	}
@@ -150,9 +170,10 @@ export class HtmlScope {
 			const node = stack[index];
 			if (matches(node)) return index;
 			if (
-				isHtmlScopeBoundary(node.tag) ||
-				(kind === "button" && node.tag === "button") ||
-				(kind === "list" && (node.tag === "ol" || node.tag === "ul"))
+				isHtmlScopeBoundary(node) ||
+				(kind === "button" && isHtmlParserNode(node, "button")) ||
+				(kind === "list" &&
+					(isHtmlParserNode(node, "ol") || isHtmlParserNode(node, "ul")))
 			)
 				break;
 		}

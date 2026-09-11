@@ -410,7 +410,11 @@ it("keeps old contents, identities and quotas unchanged on nested parse failure"
 	const contentUsage = content.tree.resourceUsage();
 	const revision = content.tree.revision;
 	expect(() =>
-		setInnerHtml(tree, template, "<template>staged</template><svg>unsupported"),
+		setInnerHtml(
+			tree,
+			template,
+			"<template>staged</template><frame>unsupported",
+		),
 	).toThrow("not implemented");
 	expect(content.tree.get(content.id).children).toEqual(children);
 	expect(content.tree.textContent(content.id)).toBe("old");
@@ -452,16 +456,20 @@ it("closes both candidate owners after a parse error inside a template", () => {
 	let primary: DocumentTree | undefined;
 	let contents: DocumentTree | undefined;
 	expect(() =>
-		parseHtmlDocument("<template><p>staged</p><svg>", "https://example.com/", {
-			initializeDocument(owner) {
-				primary = owner;
-				owner.onMutation((record) => {
-					for (const id of record.addedNodes ?? [])
-						if (owner.get(id).tagName === "template")
-							contents = owner.templateContent(id).tree;
-				});
+		parseHtmlDocument(
+			"<template><p>staged</p><frame>",
+			"https://example.com/",
+			{
+				initializeDocument(owner) {
+					primary = owner;
+					owner.onMutation((record) => {
+						for (const id of record.addedNodes ?? [])
+							if (owner.get(id).tagName === "template")
+								contents = owner.templateContent(id).tree;
+					});
+				},
 			},
-		}),
+		),
 	).toThrow("not implemented");
 	expect(() => primary?.get(primary.root)).toThrow("closed");
 	expect(() => contents?.get(contents.root)).toThrow("closed");

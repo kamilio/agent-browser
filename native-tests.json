@@ -1,4 +1,10 @@
 [
+  "src/foreign-document.test.ts",
+  "src/html-foreign.test.ts",
+  "src/foreign-controls.test.ts",
+  "src/foreign-dom-bindings.test.ts",
+  "src/foreign-selectors-serialization.test.ts",
+  "src/foreign-snapshot-layout.test.ts",
   "src/html-malformed-attributes.test.ts",
   "src/research-table-scope.test.ts",
   "src/link-discovery.test.ts",

@@ -6,7 +6,7 @@ import {
 	selectedOptions,
 } from "./controls.js";
 import type { DocumentTree } from "./document.js";
-import { htmlNamespace } from "./dom-namespaces.js";
+import { elementNamespace, isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import type {
 	ScriptHostObjectDefinition,
@@ -90,12 +90,7 @@ export class ScriptCollections {
 			kind === "class"
 				? [...new Set(query.split(/[\t\n\f\r ]+/).filter(Boolean))].sort()
 				: [];
-		const wanted =
-			kind === "tag"
-				? query.replace(/[A-Z]/g, (letter) => letter.toLowerCase())
-				: kind === "class"
-					? tokens.join(" ")
-					: query;
+		const wanted = kind === "class" ? tokens.join(" ") : query;
 		return this.publish(owner, kind, wanted, tokens);
 	}
 
@@ -154,6 +149,7 @@ export class ScriptCollections {
 			ids: [],
 			revision: -1,
 		};
+		const htmlName = wanted.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
 		const entries = (): number[] => {
 			this.ensureOpen(owner);
 			if (!state.active)
@@ -181,14 +177,16 @@ export class ScriptCollections {
 						(node.attributes.id === wanted ||
 							node.attributes.name === wanted)) ||
 					(kind === "links" &&
-						(node.tagName === "a" || node.tagName === "area") &&
+						(isHtmlElement(node, "a") || isHtmlElement(node, "area")) &&
 						Object.hasOwn(node.attributes, "href")) ||
 					(kind === "anchors" &&
-						node.tagName === "a" &&
+						isHtmlElement(node, "a") &&
 						Object.hasOwn(node.attributes, "name")) ||
-					(kind === "tag" && (wanted === "*" || node.tagName === wanted)) ||
+					(kind === "tag" &&
+						(wanted === "*" ||
+							node.tagName === (isHtmlElement(node) ? htmlName : wanted))) ||
 					(kind === "namespace" &&
-						(namespace === "*" || namespace === htmlNamespace) &&
+						(namespace === "*" || namespace === elementNamespace(node)) &&
 						(wanted === "*" || node.tagName === wanted));
 				if (kind === "class" && tokens.length > 0) {
 					const classes = node.attributes.class ?? "";
@@ -199,7 +197,8 @@ export class ScriptCollections {
 				if (kind === "name") {
 					const name = node.attributes.name;
 					charge((name?.length ?? 0) + wanted.length);
-					matches = name !== undefined && name === wanted;
+					matches =
+						isHtmlElement(node) && name !== undefined && name === wanted;
 				}
 				if (!matches) continue;
 				if (ids.length >= this.limits.maxItems)
@@ -230,7 +229,7 @@ export class ScriptCollections {
 									for (const id of entries()) {
 										const node = this.tree.get(id);
 										if (
-											node.tagName === "input" &&
+											isHtmlElement(node, "input") &&
 											inputType(node) === "radio" &&
 											controlChecked(this.tree, id)
 										)
@@ -243,7 +242,7 @@ export class ScriptCollections {
 									for (const id of entries()) {
 										const node = this.tree.get(id);
 										if (
-											node.tagName !== "input" ||
+											!isHtmlElement(node, "input") ||
 											inputType(node) !== "radio" ||
 											(node.attributes.value ?? "on") !== wanted
 										)
@@ -299,7 +298,7 @@ export class ScriptCollections {
 									const node = this.tree.get(id);
 									if (
 										node.attributes.id === name ||
-										node.attributes.name === name
+										(isHtmlElement(node) && node.attributes.name === name)
 									) {
 										if (kind !== "form-controls") return this.node(id);
 										if (found !== undefined)
@@ -353,18 +352,28 @@ export class ScriptCollections {
 	}
 	private *candidates(owner: number, kind: CollectionKind | "namespace") {
 		if (kind === "form-controls" || kind === "form-named") {
+			if (!isHtmlElement(this.tree.get(owner), "form"))
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Expected a form collection owner",
+				);
 			for (const node of formControls(this.tree, owner))
-				if (!(node.tagName === "input" && inputType(node) === "image"))
+				if (
+					isHtmlElement(node) &&
+					!(node.tagName === "input" && inputType(node) === "image")
+				)
 					yield node;
 		} else if (kind === "options" || kind === "selected-options") {
-			if (this.tree.get(owner).tagName !== "select")
+			if (!isHtmlElement(this.tree.get(owner), "select"))
 				throw new AgentBrowserError(
 					"invalid-input",
 					"Expected a select collection owner",
 				);
-			yield* kind === "options"
-				? selectOptions(this.tree, owner)
-				: selectedOptions(this.tree, owner);
+			const options =
+				kind === "options"
+					? selectOptions(this.tree, owner)
+					: selectedOptions(this.tree, owner);
+			for (const node of options) if (isHtmlElement(node, "option")) yield node;
 		} else if (kind === "children") {
 			for (const id of this.tree.get(owner).children) yield this.tree.get(id);
 		} else {

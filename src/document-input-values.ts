@@ -1,4 +1,5 @@
 import type { ControlState, DocumentNode } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import {
 	inputType,
 	inputTypeName,
@@ -21,13 +22,16 @@ export class DocumentInputValues {
 	constructor(private readonly node: (id: number) => InputNode) {}
 
 	initialize(id: number, source: { state: DocumentInputValues; id: number }) {
+		if (!isHtmlElement(this.node(id), "input")) return;
 		if (source.state.dirty.has(source.id)) this.dirty.add(id);
 	}
 
 	markDirty(id: number) {
+		if (!isHtmlElement(this.node(id), "input")) return;
 		this.dirty.add(id);
 	}
 	reset(id: number) {
+		if (!isHtmlElement(this.node(id), "input")) return;
 		this.dirty.delete(id);
 	}
 	close() {
@@ -44,7 +48,7 @@ export class DocumentInputValues {
 		)
 			return undefined;
 		const node = this.node(id);
-		if (node.tagName !== "input") return undefined;
+		if (!isHtmlElement(node, "input")) return undefined;
 		const dirty = this.dirty.has(id);
 		const before = inputType(node);
 		if (
@@ -132,6 +136,7 @@ export class DocumentInputValues {
 
 	apply(id: number, change: InputValueChange) {
 		const node = this.node(id);
+		if (!isHtmlElement(node, "input")) return;
 		if (change.value === undefined)
 			Reflect.deleteProperty(node.control, "value");
 		else node.control.value = change.value;

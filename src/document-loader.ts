@@ -1,4 +1,5 @@
 import { documentBaseUrl } from "./document-url.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { documentImages } from "./document-images.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlParseInfo, setHtmlParseInfo } from "./html-info.js";
@@ -100,7 +101,10 @@ export async function loadBrowserDocument(
 	try {
 		const styles = documentStyles(tree);
 		for (const { node } of tree.walk()) {
-			if (node.tagName !== "link" || Object.hasOwn(node.attributes, "disabled"))
+			if (
+				!isHtmlElement(node, "link") ||
+				Object.hasOwn(node.attributes, "disabled")
+			)
 				continue;
 			const rel =
 				node.attributes.rel?.toLowerCase().split(/[\t\n\f\r ]+/) ?? [];

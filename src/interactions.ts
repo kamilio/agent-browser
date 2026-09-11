@@ -18,6 +18,7 @@ import { summaryDetails } from "./details.js";
 import { documentFiles } from "./document-files.js";
 import { documentBaseTarget, documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { editableFillHost } from "./editable-fill.js";
 import { AgentBrowserError } from "./errors.js";
 import {
@@ -147,7 +148,7 @@ export class DocumentInteractions {
 				} else {
 					const candidate = this.tree.get(target);
 					if (
-						candidate.tagName === "textarea" ||
+						isHtmlElement(candidate, "textarea") ||
 						(candidate.tagName === "input" &&
 							["text", "search", "url", "tel", "password"].includes(
 								inputType(candidate),
@@ -203,6 +204,7 @@ export class DocumentInteractions {
 		value: string,
 		passwordOnly = false,
 	): EventAction<InteractionResult> {
+		this.requireHtmlControl(reference);
 		const node = this.actionable(reference);
 		if (passwordOnly) this.requirePasswordTarget(reference);
 		const prepared = prepareControlFill(this.tree, reference, value);
@@ -325,6 +327,7 @@ export class DocumentInteractions {
 		reference: string,
 		values: readonly string[],
 	): EventAction<InteractionResult> {
+		this.requireHtmlControl(reference);
 		const node = this.actionable(reference);
 		yield* this.focus.focusAction(reference);
 		selectControlValues(this.tree, reference, values);
@@ -350,6 +353,7 @@ export class DocumentInteractions {
 		reference: string,
 		checked: boolean,
 	): EventAction<InteractionResult> {
+		this.requireHtmlControl(reference);
 		const node = this.actionable(reference);
 		if (
 			typeof checked !== "boolean" ||
@@ -483,7 +487,7 @@ export class DocumentInteractions {
 					"pointer",
 				);
 				if (
-					candidate.tagName === "textarea" ||
+					isHtmlElement(candidate, "textarea") ||
 					(candidate.tagName === "input" &&
 						["text", "search", "url", "tel", "password"].includes(
 							inputType(candidate),
@@ -651,6 +655,14 @@ export class DocumentInteractions {
 		return state.node;
 	}
 
+	private requireHtmlControl(reference: string) {
+		if (this.events.metrics().closed)
+			throw new AgentBrowserError("closed", "Document interactions are closed");
+		const { node } = resolveVisualTarget(this.tree, reference);
+		if (!isHtmlElement(node))
+			throw new AgentBrowserError("not-actionable", "Expected an HTML control");
+	}
+
 	private *activateLabel(
 		reference: string,
 		target: number,
@@ -706,6 +718,10 @@ export class DocumentInteractions {
 		let node: Readonly<DocumentNode> | undefined = this.tree.get(id);
 		let interactiveDescendant = false;
 		while (node) {
+			if (!isHtmlElement(node)) {
+				node = node.parent === null ? undefined : this.tree.get(node.parent);
+				continue;
+			}
 			if (
 				["button", "input", "label"].includes(node.tagName) ||
 				(node.tagName === "a" && Object.hasOwn(node.attributes, "href"))
@@ -754,6 +770,7 @@ export class DocumentInteractions {
 		defaultAction?: DefaultActionIntent;
 		reset?: FormResetResult;
 	}> {
+		if (!isHtmlElement(node)) return {};
 		const reference = this.tree.reference(node.id);
 		if (node.tagName === "summary") {
 			const details = summaryDetails(this.tree, node);

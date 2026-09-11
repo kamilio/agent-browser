@@ -21,6 +21,15 @@ import { canRewriteDocumentUrl } from "./document-url.js";
 import { AgentBrowserError } from "./errors.js";
 import { resourceLimitError } from "./resource-limit.js";
 import { htmlAttributeName } from "./html-attribute-name.js";
+import {
+	type AttributeNamespace,
+	elementNamespace,
+	foreignAttributeNamespace,
+	htmlNamespace,
+	isHtmlElement,
+	mathmlNamespace,
+	svgNamespace,
+} from "./dom-namespaces.js";
 import { isFormAssociatedTag } from "./html-form-association.js";
 import {
 	createHtmlAttributes,
@@ -51,12 +60,16 @@ export interface DocumentAttribute {
 	name: string;
 	value: string;
 	ownerElement: number | null;
+	namespaceURI?: string;
+	prefix?: string | null;
+	localName?: string;
 }
 
 export interface DocumentNode {
 	id: number;
 	kind: NodeKind;
 	tagName: string;
+	namespaceURI?: string;
 	attributes: Readonly<Record<string, string>>;
 	data: string;
 	parent: number | null;
@@ -107,7 +120,7 @@ export interface DocumentMutation {
 	readonly previousSibling: number | null;
 	readonly nextSibling: number | null;
 	readonly attributeName: string | null;
-	readonly attributeNamespace: null;
+	readonly attributeNamespace: string | null;
 	readonly oldValue: string | null;
 }
 
@@ -165,6 +178,10 @@ export class DocumentTree {
 	private nodeViews = new Map<number, Readonly<DocumentNode>>();
 	private attributeRecords = new Map<number, DocumentAttribute>();
 	private attachedAttributes = new Map<number, Map<string, number>>();
+	private attributeNamespaces = new Map<
+		number,
+		Map<string, AttributeNamespace>
+	>();
 	private changes: DocumentChange[] = [];
 	private currentRevision = 0;
 	private textCodeUnits = 0;
@@ -484,7 +501,7 @@ export class DocumentTree {
 	}
 
 	templateContent(id: number): DocumentNodeReference {
-		if (this.element(id).tagName !== "template")
+		if (!isHtmlElement(this.element(id), "template"))
 			throw new AgentBrowserError(
 				"invalid-input",
 				"Expected a template element",
@@ -578,15 +595,27 @@ export class DocumentTree {
 	createParserElement(
 		tagName: string,
 		attributes: Record<string, string> = {},
+		namespaceURI = htmlNamespace,
 	) {
-		return this.createElementWithAttributes(tagName, attributes, true);
+		return this.createElementWithAttributes(
+			tagName,
+			attributes,
+			true,
+			namespaceURI,
+		);
 	}
 
 	private createElementWithAttributes(
 		tagName: string,
 		attributes: Record<string, string>,
 		parsed: boolean,
+		namespaceURI = htmlNamespace,
 	) {
+		if (![htmlNamespace, svgNamespace, mathmlNamespace].includes(namespaceURI))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Unsupported element namespace",
+			);
 		if (typeof tagName !== "string" || !/^[a-z][a-z0-9:_-]*$/i.test(tagName))
 			throw new AgentBrowserError("invalid-input", "Invalid element name");
 		if (
@@ -609,20 +638,30 @@ export class DocumentTree {
 			tagName.length,
 		);
 		const initiallyOpen =
+			namespaceURI === htmlNamespace &&
 			tagName.toLowerCase() === "details" &&
 			entries.some(([name]) => htmlAttributeName(name) === "open");
 		if (initiallyOpen) this.detailsToggleTasks.checkAdditional(1);
 		this.checkTextBudget(length);
 		const templateOwner =
-			tagName.toLowerCase() === "template"
+			namespaceURI === htmlNamespace && tagName.toLowerCase() === "template"
 				? this.prepareTemplate(length)
 				: undefined;
-		const id = this.allocate("element", tagName.toLowerCase(), "");
+		const id = this.allocate(
+			"element",
+			namespaceURI === htmlNamespace ? tagName.toLowerCase() : tagName,
+			"",
+			namespaceURI,
+		);
 		const node = this.node(id);
 		for (const [name, value] of entries) {
-			const key = htmlAttributeName(name);
+			const key = this.attributeName(id, name);
 			if (Object.hasOwn(node.attributes, key)) continue;
 			setHtmlAttribute(node.attributes, key, value);
+			if (namespaceURI !== htmlNamespace) {
+				const namespace = foreignAttributeNamespace(key);
+				if (namespace) this.storeAttributeNamespace(id, key, namespace);
+			}
 			this.textCodeUnits += key.length + value.length;
 		}
 		this.selections.initialize(id);
@@ -675,11 +714,7 @@ export class DocumentTree {
 		const entries = deep
 			? [...sourceTree.walk(id)]
 			: [{ node: original, depth: 0 }];
-		if (
-			entries.some(
-				({ node }) => node.kind === "element" && node.tagName === "template",
-			)
-		)
+		if (entries.some(({ node }) => isHtmlElement(node, "template")))
 			return this.copyTemplateGraph(sourceTree, id, deep);
 		if (entries.some(({ depth }) => depth > this.limits.maxDepth))
 			throw new AgentBrowserError(
@@ -690,7 +725,8 @@ export class DocumentTree {
 		this.detailsToggleTasks.checkAdditional(
 			sources.filter(
 				(node) =>
-					node.tagName === "details" && Object.hasOwn(node.attributes, "open"),
+					isHtmlElement(node, "details") &&
+					Object.hasOwn(node.attributes, "open"),
 			).length,
 		);
 		this.resources?.check(sources.length);
@@ -723,11 +759,20 @@ export class DocumentTree {
 				0,
 				source.tagName.length + source.data.length + extraText(source),
 			);
-			const copyId = this.allocate(source.kind, source.tagName, source.data);
+			const copyId = this.allocate(
+				source.kind,
+				source.tagName,
+				source.data,
+				elementNamespace(source),
+			);
 			const copy = this.node(copyId);
 			copy.attributes = createHtmlAttributes(source.attributes);
+			this.copyAttributeNamespaces(sourceTree, source.id, copyId);
 			this.detailsGroups.sync(copyId);
-			if (copy.tagName === "details" && Object.hasOwn(copy.attributes, "open"))
+			if (
+				isHtmlElement(copy, "details") &&
+				Object.hasOwn(copy.attributes, "open")
+			)
 				this.detailsToggleTasks.record(copyId, false, true);
 			copy.control = { ...source.control };
 			if (source.doctype) copy.doctype = source.doctype;
@@ -821,7 +866,10 @@ export class DocumentTree {
 			ownership.set(node.id, inContents);
 			const usage = inContents ? contents : primary;
 			usage.nodes++;
-			if (node.tagName === "details" && Object.hasOwn(node.attributes, "open"))
+			if (
+				isHtmlElement(node, "details") &&
+				Object.hasOwn(node.attributes, "open")
+			)
 				usage.toggles++;
 			usage.text += node.tagName.length + node.data.length + extraText(node);
 		}
@@ -878,15 +926,23 @@ export class DocumentTree {
 			const text =
 				source.tagName.length + source.data.length + extraText(source);
 			target.checkTextBudget(text);
-			const templateOwner =
-				source.kind === "element" && source.tagName === "template"
-					? target.prepareTemplate(text)
-					: undefined;
-			const copyId = target.allocate(source.kind, source.tagName, source.data);
+			const templateOwner = isHtmlElement(source, "template")
+				? target.prepareTemplate(text)
+				: undefined;
+			const copyId = target.allocate(
+				source.kind,
+				source.tagName,
+				source.data,
+				elementNamespace(source),
+			);
 			const copy = target.node(copyId);
 			copy.attributes = createHtmlAttributes(source.attributes);
+			target.copyAttributeNamespaces(entry.tree, source.id, copyId);
 			target.detailsGroups.sync(copyId);
-			if (copy.tagName === "details" && Object.hasOwn(copy.attributes, "open"))
+			if (
+				isHtmlElement(copy, "details") &&
+				Object.hasOwn(copy.attributes, "open")
+			)
 				target.detailsToggleTasks.record(copyId, false, true);
 			copy.control = { ...source.control };
 			if (source.doctype) copy.doctype = source.doctype;
@@ -1108,13 +1164,14 @@ export class DocumentTree {
 		if (
 			child.kind !== "element" ||
 			child.parent !== null ||
-			form.tagName !== "form"
+			!isHtmlElement(form, "form")
 		)
 			throw new AgentBrowserError(
 				"invalid-input",
 				"Invalid parser form insertion",
 			);
 		const associate =
+			isHtmlElement(child) &&
 			isFormAssociatedTag(child.tagName) &&
 			!Object.hasOwn(child.attributes, "form") &&
 			this.rootOf(formId) === this.rootOf(parentId);
@@ -1235,7 +1292,7 @@ export class DocumentTree {
 				for (const moving of children) this.nodeViews.delete(moving);
 				for (const target of closures) this.removeAttribute(target, "open");
 			}
-			if (parent.tagName === "details")
+			if (isHtmlElement(parent, "details"))
 				this.clearCollapsedDetailsFocus(parentId);
 			this.childMutation(childId, [], children);
 			if (!suppress)
@@ -1292,7 +1349,7 @@ export class DocumentTree {
 				this.nodeViews.delete(moving);
 				for (const target of closures) this.removeAttribute(target, "open");
 			}
-			if (parent.tagName === "details")
+			if (isHtmlElement(parent, "details"))
 				this.clearCollapsedDetailsFocus(parentId);
 			if (!suppress)
 				this.childMutation(
@@ -1406,6 +1463,34 @@ export class DocumentTree {
 		return htmlAttributeNames(this.element(id).attributes);
 	}
 
+	attributeName(id: number, name: string): string {
+		this.validateString(name);
+		return isHtmlElement(this.element(id)) ? htmlAttributeName(name) : name;
+	}
+
+	private storeAttributeNamespace(
+		id: number,
+		name: string,
+		namespace: AttributeNamespace,
+	) {
+		let namespaces = this.attributeNamespaces.get(id);
+		if (!namespaces) {
+			namespaces = new Map();
+			this.attributeNamespaces.set(id, namespaces);
+		}
+		namespaces.set(name, { ...namespace });
+	}
+
+	private copyAttributeNamespaces(
+		source: DocumentTree,
+		sourceId: number,
+		targetId: number,
+	) {
+		for (const [name, namespace] of source.attributeNamespaces.get(sourceId) ??
+			[])
+			this.storeAttributeNamespace(targetId, name, namespace);
+	}
+
 	getInlineDeclarations(id: number) {
 		this.element(id);
 		return this.inlineDeclarationStore.get(id);
@@ -1442,29 +1527,46 @@ export class DocumentTree {
 		value: string,
 		state?: InlineDeclarationState,
 		parsed = false,
+		preserveCase = false,
 	) {
 		this.validateAttribute(name, parsed);
 		this.validateString(value);
 		const closure = this.prepareDetailsAttribute(
 			id,
-			htmlAttributeName(name),
+			preserveCase ? name : this.attributeName(id, name),
 			value,
 		);
 		if (closure !== undefined)
 			return this.collectMutations(() =>
-				this.writeAttributeValue(id, name, value, state, closure, parsed),
+				this.writeAttributeValue(
+					id,
+					name,
+					value,
+					state,
+					closure,
+					parsed,
+					preserveCase,
+				),
 			);
-		return this.writeAttributeValue(id, name, value, state, undefined, parsed);
+		return this.writeAttributeValue(
+			id,
+			name,
+			value,
+			state,
+			undefined,
+			parsed,
+			preserveCase,
+		);
 	}
 
 	private prepareDetailsAttribute(id: number, key: string, value: string) {
 		const node = this.element(id);
-		if (node.tagName !== "details" || (key !== "open" && key !== "name"))
+		if (!isHtmlElement(node, "details") || (key !== "open" && key !== "name"))
 			return;
 		const closure = this.detailsGroups.attributeClosure(id, key, value);
 		const transitions: number[] = [];
 		if (
-			node.tagName === "details" &&
+			isHtmlElement(node, "details") &&
 			key === "open" &&
 			!Object.hasOwn(node.attributes, "open")
 		)
@@ -1481,14 +1583,15 @@ export class DocumentTree {
 		state?: InlineDeclarationState,
 		closure?: number,
 		parsed = false,
+		preserveCase = false,
 	) {
 		this.validateAttribute(name, parsed);
 		this.validateString(value);
 		const node = this.element(id);
-		const key = htmlAttributeName(name);
+		const key = preserveCase ? name : this.attributeName(id, name);
 		const previous = node.attributes[key];
 		const inputChange = this.inputValues.prepare(id, key, value);
-		if (node.tagName === "details" && key === "open")
+		if (isHtmlElement(node, "details") && key === "open")
 			this.detailsToggleTasks.check(id, previous !== undefined, true);
 		if (previous === value) {
 			const clearedFocus = key === "inert" && this.clearFocusWithin(id);
@@ -1521,7 +1624,7 @@ export class DocumentTree {
 		setHtmlAttribute(node.attributes, key, value);
 		if (closure !== undefined) this.nodeViews.delete(id);
 		this.detailsGroups.sync(id);
-		if (node.tagName === "details" && key === "open")
+		if (isHtmlElement(node, "details") && key === "open")
 			this.detailsToggleTasks.record(id, previous !== undefined, true);
 		if (key === "form") this.resetParserForm(id);
 		if (attribute) attribute.value = value;
@@ -1559,7 +1662,7 @@ export class DocumentTree {
 	private clearCollapsedDetailsFocus(id: number) {
 		const details = this.node(id);
 		if (
-			details.tagName === "details" &&
+			isHtmlElement(details, "details") &&
 			this.currentFocus === id &&
 			this.currentGeneratedFocus !== null
 		) {
@@ -1568,7 +1671,7 @@ export class DocumentTree {
 				this.clearFocusWithin(id);
 		}
 		if (
-			details.tagName !== "details" ||
+			!isHtmlElement(details, "details") ||
 			Object.hasOwn(details.attributes, "open")
 		)
 			return;
@@ -1592,7 +1695,7 @@ export class DocumentTree {
 				"invalid-input",
 				"Expected a boolean attribute force",
 			);
-		const key = htmlAttributeName(name);
+		const key = this.attributeName(id, name);
 		const present = Object.hasOwn(this.element(id).attributes, key);
 		const wanted = force ?? !present;
 		if (wanted && !present) this.setAttribute(id, key, "");
@@ -1601,23 +1704,33 @@ export class DocumentTree {
 	}
 
 	removeAttribute(id: number, name: string) {
+		this.removeAttributeValue(id, name, false);
+	}
+
+	private removeAttributeValue(
+		id: number,
+		name: string,
+		preserveCase: boolean,
+	) {
 		this.validateAttribute(name, true);
 		const node = this.element(id);
-		const key = htmlAttributeName(name);
+		const key = preserveCase ? name : this.attributeName(id, name);
 		if (!Object.hasOwn(node.attributes, key)) return;
 		const previous = node.attributes[key];
+		const namespace = this.attributeNamespaces.get(id)?.get(key);
 		const inputChange = this.inputValues.prepare(id, key, undefined);
-		if (node.tagName === "details" && key === "open")
+		if (isHtmlElement(node, "details") && key === "open")
 			this.detailsToggleTasks.check(id, true, false);
 		this.checkTextBudget(
 			-key.length - previous.length + this.inputValueDelta(id, inputChange),
 		);
 		this.textCodeUnits -= key.length + node.attributes[key].length;
 		removeHtmlAttribute(node.attributes, key);
+		this.attributeNamespaces.get(id)?.delete(key);
 		this.detailsGroups.sync(id);
-		if (node.tagName === "details" && key === "open")
+		if (isHtmlElement(node, "details") && key === "open")
 			this.detailsToggleTasks.record(id, true, false);
-		if (key === "open" && node.tagName === "details")
+		if (key === "open" && isHtmlElement(node, "details"))
 			this.clearCollapsedDetailsFocus(id);
 		if (key === "form") this.resetParserForm(id);
 		const attributeId = this.attachedAttributes.get(id)?.get(key);
@@ -1631,7 +1744,11 @@ export class DocumentTree {
 			this.inlineDeclarationStore.replace(id);
 			this.changed("attribute", id);
 		}
-		this.mutation("attributes", id, { attributeName: key, oldValue: previous });
+		this.mutation("attributes", id, {
+			attributeName: namespace?.localName ?? key,
+			attributeNamespace: namespace?.namespaceURI ?? null,
+			oldValue: previous,
+		});
 		if (key !== "style") this.changed("attribute", id);
 		this.selections.attribute(id, key);
 		this.checkedness.attribute(id, key, previous);
@@ -1645,6 +1762,7 @@ export class DocumentTree {
 		name: string,
 		value: string,
 		parsed: boolean,
+		preserveCase = false,
 	): number {
 		this.ensureOpen();
 		this.validateAttribute(name, parsed);
@@ -1660,7 +1778,7 @@ export class DocumentTree {
 				this.nodeCount + 1,
 				"Document node limit exceeded",
 			);
-		const key = htmlAttributeName(name);
+		const key = preserveCase ? name : htmlAttributeName(name);
 		this.checkTextBudget(key.length + value.length);
 		const id = nextNodeId++;
 		this.attributeRecords.set(id, { id, name: key, value, ownerElement: null });
@@ -1669,14 +1787,59 @@ export class DocumentTree {
 	}
 
 	getAttributeNode(id: number, name: string): number | null {
+		return this.captureAttribute(id, name, false);
+	}
+
+	getAttributeNodeExact(id: number, name: string): number | null {
+		return this.captureAttribute(id, name, true);
+	}
+
+	getAttributeNamespace(
+		id: number,
+		name: string,
+	): Readonly<AttributeNamespace> | undefined {
+		this.element(id);
 		this.validateString(name);
-		const key = htmlAttributeName(name);
+		const metadata = this.attributeNamespaces.get(id)?.get(name);
+		return metadata === undefined ? undefined : Object.freeze({ ...metadata });
+	}
+
+	getAttributeNodeNS(
+		id: number,
+		namespaceURI: string | null,
+		localName: string,
+	): number | null {
+		if (namespaceURI !== null) this.validateString(namespaceURI);
+		this.validateString(localName);
+		const namespace = namespaceURI || null;
+		for (const name of this.getAttributeNames(id)) {
+			const metadata = this.attributeNamespaces.get(id)?.get(name);
+			if (
+				(metadata?.namespaceURI ?? null) === namespace &&
+				(metadata?.localName ?? name) === localName
+			)
+				return this.captureAttribute(id, name, true);
+		}
+		return null;
+	}
+
+	private captureAttribute(
+		id: number,
+		name: string,
+		preserveCase: boolean,
+	): number | null {
+		this.validateString(name);
+		const key = preserveCase ? name : this.attributeName(id, name);
 		const value = this.element(id).attributes[key];
 		if (value === undefined) return null;
 		const existing = this.attachedAttributes.get(id)?.get(key);
 		if (existing !== undefined) return existing;
-		const attributeId = this.allocateAttribute(key, value, true);
-		this.attributeRecord(attributeId).ownerElement = id;
+		const attributeId = this.allocateAttribute(key, value, true, true);
+		Object.assign(
+			this.attributeRecord(attributeId),
+			this.attributeNamespaces.get(id)?.get(key),
+			{ ownerElement: id },
+		);
 		this.attributeMap(id).set(key, attributeId);
 		return attributeId;
 	}
@@ -1685,11 +1848,34 @@ export class DocumentTree {
 		return Object.freeze({ ...this.attributeRecord(id) });
 	}
 
+	cloneAttribute(id: number): number {
+		return this.copyAttributeFrom(this, id);
+	}
+
+	copyAttributeFrom(sourceTree: DocumentTree, id: number): number {
+		const source = sourceTree.attributeRecord(id);
+		const copy = this.allocateAttribute(source.name, source.value, true, true);
+		if (source.namespaceURI !== undefined)
+			Object.assign(this.attributeRecord(copy), {
+				namespaceURI: source.namespaceURI,
+				prefix: source.prefix,
+				localName: source.localName,
+			});
+		return copy;
+	}
+
 	setAttributeValue(id: number, value: string) {
 		this.validateString(value);
 		const attribute = this.attributeRecord(id);
 		if (attribute.ownerElement !== null) {
-			this.setParserAttribute(attribute.ownerElement, attribute.name, value);
+			this.writeAttribute(
+				attribute.ownerElement,
+				attribute.name,
+				value,
+				undefined,
+				true,
+				true,
+			);
 			return;
 		}
 		const change = value.length - attribute.value.length;
@@ -1725,7 +1911,19 @@ export class DocumentTree {
 				"Attribute is already in use by another element",
 			);
 		const previous = node.attributes[attribute.name];
-		if (node.tagName === "details" && attribute.name === "open")
+		const previousNamespace = this.attributeNamespaces
+			.get(id)
+			?.get(attribute.name);
+		if (
+			previous !== undefined &&
+			(previousNamespace?.namespaceURI ?? null) !==
+				(attribute.namespaceURI ?? null)
+		)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Attributes with the same qualified name and different namespaces are not supported",
+			);
+		if (isHtmlElement(node, "details") && attribute.name === "open")
 			this.detailsToggleTasks.check(id, previous !== undefined, true);
 		const inputChange = this.inputValues.prepare(
 			id,
@@ -1744,12 +1942,19 @@ export class DocumentTree {
 		this.checkTextBudget(
 			change + captureCost + this.inputValueDelta(id, inputChange),
 		);
-		const original = this.getAttributeNode(id, attribute.name);
+		const original = this.captureAttribute(id, attribute.name, true);
 		if (original !== null) this.attributeRecord(original).ownerElement = null;
 		setHtmlAttribute(node.attributes, attribute.name, attribute.value);
+		if (attribute.namespaceURI !== undefined)
+			this.storeAttributeNamespace(id, attribute.name, {
+				namespaceURI: attribute.namespaceURI,
+				prefix: attribute.prefix ?? null,
+				localName: attribute.localName ?? attribute.name,
+			});
+		else this.attributeNamespaces.get(id)?.delete(attribute.name);
 		if (closure !== undefined) this.nodeViews.delete(id);
 		this.detailsGroups.sync(id);
-		if (node.tagName === "details" && attribute.name === "open")
+		if (isHtmlElement(node, "details") && attribute.name === "open")
 			this.detailsToggleTasks.record(id, previous !== undefined, true);
 		if (attribute.name === "form") this.resetParserForm(id);
 		attribute.ownerElement = id;
@@ -1780,7 +1985,7 @@ export class DocumentTree {
 				"not-found",
 				"Attribute is not attached to this element",
 			);
-		this.removeAttribute(id, attribute.name);
+		this.removeAttributeValue(id, attribute.name, true);
 		return attributeId;
 	}
 
@@ -2074,7 +2279,11 @@ export class DocumentTree {
 	}
 
 	setCustomValidity(id: number, message: string) {
-		this.element(id);
+		if (!isHtmlElement(this.element(id)))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Foreign elements do not have HTML constraint validation",
+			);
 		this.validateString(message);
 		const value = message.replace(/\r\n?/g, "\n");
 		const previous = this.customValidity.get(id) ?? "";
@@ -2098,6 +2307,11 @@ export class DocumentTree {
 		origin: "script" | "user" = "script",
 	) {
 		const node = this.element(id);
+		if (!isHtmlElement(node))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Foreign elements do not have HTML control state",
+			);
 		if (!state || typeof state !== "object" || Array.isArray(state))
 			throw new AgentBrowserError("invalid-input", "Invalid control state");
 		if (
@@ -2174,6 +2388,11 @@ export class DocumentTree {
 
 	clearControl(id: number, fields: readonly (keyof ControlState)[]) {
 		const node = this.element(id);
+		if (!isHtmlElement(node))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Foreign elements do not have HTML control state",
+			);
 		if (
 			!Array.isArray(fields) ||
 			fields.length > 4 ||
@@ -2283,7 +2502,7 @@ export class DocumentTree {
 			if (!entry) break;
 			const node = entry.tree.get(entry.id);
 			yield { tree: entry.tree, node, depth: entry.depth, host: entry.host };
-			if (node.kind === "element" && node.tagName === "template") {
+			if (isHtmlElement(node, "template")) {
 				const content = entry.tree.templateContent(node.id);
 				pending.push({ ...content, depth: entry.depth + 1, host: node.id });
 			}
@@ -2423,6 +2642,7 @@ export class DocumentTree {
 		this.nodeViews.clear();
 		this.attributeRecords.clear();
 		this.attachedAttributes.clear();
+		this.attributeNamespaces.clear();
 		this.currentTarget = null;
 		this.currentFocus = null;
 		this.currentFocusVisibleOverride = undefined;
@@ -2456,7 +2676,12 @@ export class DocumentTree {
 			throw new AggregateError(failures, "Document cleanup failed");
 	}
 
-	private allocate(kind: NodeKind, tagName: string, data: string) {
+	private allocate(
+		kind: NodeKind,
+		tagName: string,
+		data: string,
+		namespaceURI = htmlNamespace,
+	) {
 		this.ensureOpen();
 		this.validateString(data);
 		this.resources?.check(1);
@@ -2481,9 +2706,13 @@ export class DocumentTree {
 			parent: null,
 			children: [],
 			control: {},
+			...(kind === "element" && namespaceURI !== htmlNamespace
+				? { namespaceURI }
+				: {}),
 		});
 		this.textCodeUnits += tagName.length + data.length;
-		this.selectedContent.created(tagName);
+		if (kind === "element" && namespaceURI === htmlNamespace)
+			this.selectedContent.created(tagName);
 		return id;
 	}
 
@@ -2626,8 +2855,17 @@ export class DocumentTree {
 			removedNodes: Object.freeze([...(values.removedNodes ?? [])]),
 			previousSibling: values.previousSibling ?? null,
 			nextSibling: values.nextSibling ?? null,
-			attributeName: values.attributeName ?? null,
-			attributeNamespace: null,
+			attributeName:
+				values.attributeName == null
+					? null
+					: (this.attributeNamespaces.get(target)?.get(values.attributeName)
+							?.localName ?? values.attributeName),
+			attributeNamespace:
+				values.attributeNamespace ??
+				(values.attributeName == null
+					? null
+					: (this.attributeNamespaces.get(target)?.get(values.attributeName)
+							?.namespaceURI ?? null)),
 			oldValue: values.oldValue ?? null,
 		});
 		if (values.characterDataEdit)

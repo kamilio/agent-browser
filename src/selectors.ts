@@ -8,6 +8,7 @@ import {
 	radioGroup,
 } from "./controls.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
+import { elementNamespace, isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { activeFocus } from "./focus.js";
 
@@ -197,6 +198,9 @@ const insensitiveAttributes = new Set([
 function asciiLower(value: string) {
 	return value.replace(/[A-Z]/g, (character) => character.toLowerCase());
 }
+function elementTypeKey(node: Readonly<DocumentNode>) {
+	return JSON.stringify([elementNamespace(node), node.tagName]);
+}
 function syntax(message: string): never {
 	throw new AgentBrowserError("invalid-input", `Invalid selector: ${message}`);
 }
@@ -284,7 +288,7 @@ class SelectorParser {
 			tests.push({ kind: "tag", value: "*" });
 			this.component();
 		} else if (this.startsIdentifier()) {
-			tests.push({ kind: "tag", value: asciiLower(this.identifier()) });
+			tests.push({ kind: "tag", value: this.identifier() });
 			this.component();
 		}
 		while (true) {
@@ -309,7 +313,7 @@ class SelectorParser {
 	private attribute(): SimpleSelector {
 		this.position++;
 		this.space();
-		const name = asciiLower(this.identifier());
+		const name = this.identifier();
 		this.space();
 		if (this.source[this.position] === "]") {
 			this.position++;
@@ -898,8 +902,10 @@ export class DocumentQueries {
 			);
 			const counts = new Map<string, number>();
 			for (const child of parent.children) {
-				const tag = nodes.get(child)?.node.tagName ?? "";
-				counts.set(tag, (counts.get(tag) ?? 0) + 1);
+				const node = nodes.get(child)?.node;
+				if (!node) continue;
+				const type = elementTypeKey(node);
+				counts.set(type, (counts.get(type) ?? 0) + 1);
 			}
 			const positions = new Map<string, number>();
 			for (let position = 0; position < parent.children.length; position++) {
@@ -908,9 +914,10 @@ export class DocumentQueries {
 				child.position = position + 1;
 				child.count = parent.children.length;
 				child.previous = parent.children[position - 1] ?? null;
-				child.typePosition = (positions.get(child.node.tagName) ?? 0) + 1;
-				child.typeCount = counts.get(child.node.tagName) ?? 1;
-				positions.set(child.node.tagName, child.typePosition);
+				const type = elementTypeKey(child.node);
+				child.typePosition = (positions.get(type) ?? 0) + 1;
+				child.typeCount = counts.get(type) ?? 1;
+				positions.set(type, child.typePosition);
 			}
 		}
 		this.index = {
@@ -949,7 +956,7 @@ export class DocumentQueries {
 		while (current) {
 			if (current.kind === "element") {
 				matches.add(current.id);
-				if (current.tagName === "label") {
+				if (isHtmlElement(current, "label")) {
 					const control = labelControl(this.tree, current.id);
 					if (control !== undefined) controls.push(control);
 				}
@@ -1010,7 +1017,10 @@ export class DocumentQueries {
 		if (test.kind === "tag") {
 			if (test.value === "*") return true;
 			this.tick(context, node.tagName.length + test.value.length);
-			return node.tagName === test.value;
+			return (
+				node.tagName ===
+				(isHtmlElement(node) ? asciiLower(test.value) : test.value)
+			);
 		}
 		if (test.kind === "id") {
 			this.tick(context, (node.attributes.id?.length ?? 0) + test.value.length);
@@ -1051,7 +1061,9 @@ export class DocumentQueries {
 			case "focus-visible":
 				return node.id === context.index.focusVisibleElement;
 			case "placeholder-shown":
-				return controlShowsPlaceholder(this.tree, node.id);
+				return (
+					isHtmlElement(node) && controlShowsPlaceholder(this.tree, node.id)
+				);
 			case "hover":
 				return context.index.hoverElements.has(node.id);
 			case "active":
@@ -1089,21 +1101,22 @@ export class DocumentQueries {
 			case "link":
 			case "any-link":
 				return (
+					isHtmlElement(node) &&
 					["a", "area"].includes(node.tagName) &&
 					Object.hasOwn(node.attributes, "href")
 				);
 			case "visited":
 				return false;
 			case "checked":
-				return node.tagName === "option"
+				return isHtmlElement(node, "option")
 					? optionSelected(this.tree, node.id)
-					: node.tagName === "input" &&
+					: isHtmlElement(node, "input") &&
 							["checkbox", "radio"].includes(inputType(node)) &&
 							controlChecked(this.tree, node.id);
 			case "indeterminate": {
-				if (node.tagName === "progress")
+				if (isHtmlElement(node, "progress"))
 					return !Object.hasOwn(node.attributes, "value");
-				if (node.tagName !== "input") return false;
+				if (!isHtmlElement(node, "input")) return false;
 				if (inputType(node) === "checkbox")
 					return node.control.indeterminate ?? false;
 				if (inputType(node) !== "radio") return false;
@@ -1116,6 +1129,7 @@ export class DocumentQueries {
 			case "disabled":
 			case "enabled":
 				return (
+					isHtmlElement(node) &&
 					[
 						"button",
 						"input",
@@ -1129,6 +1143,7 @@ export class DocumentQueries {
 				);
 			case "required":
 			case "optional": {
+				if (!isHtmlElement(node)) return false;
 				const eligible =
 					["select", "textarea"].includes(node.tagName) ||
 					(node.tagName === "input" &&
@@ -1156,12 +1171,15 @@ export class DocumentQueries {
 		test: Extract<SimpleSelector, { kind: "attribute" }>,
 		context: MatchContext,
 	) {
-		if (!Object.hasOwn(node.attributes, test.name)) return false;
+		this.tick(context, test.name.length);
+		const html = isHtmlElement(node);
+		const name = html ? asciiLower(test.name) : test.name;
+		if (!Object.hasOwn(node.attributes, name)) return false;
 		if (!test.operator) return true;
-		let value = node.attributes[test.name];
+		let value = node.attributes[name];
 		let expected = test.value ?? "";
 		this.tick(context, value.length + expected.length);
-		if (test.insensitive ?? insensitiveAttributes.has(test.name)) {
+		if (test.insensitive ?? (html && insensitiveAttributes.has(name))) {
 			value = asciiLower(value);
 			expected = asciiLower(expected);
 		}

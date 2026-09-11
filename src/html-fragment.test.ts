@@ -1,4 +1,5 @@
 import { expect, it } from "vitest";
+import { mathmlNamespace, svgNamespace } from "./dom-namespaces.js";
 import { parseHtmlFragment } from "./html-parser.js";
 import { DocumentQueries } from "./selectors.js";
 
@@ -191,10 +192,34 @@ it("keeps inserted script source inert and rejects unsupported contexts", () => 
 	expect(queries.querySelector("script", root)).not.toBeNull();
 	expect(tree.textContent(root)).toContain("after");
 	tree.close();
-	for (const tagName of ["svg", "math", "frameset"]) {
+	for (const tagName of ["frameset", "frame"]) {
 		expect(() => fragment("<b>no</b>", tagName)).toThrow("not implemented");
 	}
 });
+
+it.each([
+	["svg", svgNamespace, "path"],
+	["math", mathmlNamespace, "mi"],
+])(
+	"parses children in a namespaced %s context",
+	(tagName, namespaceURI, childTag) => {
+		const { tree, fragment: root } = parseHtmlFragment(
+			`<${childTag} id="child"/>`,
+			"https://example.com/",
+			{ tagName, namespaceURI },
+		);
+		try {
+			const children = tree.get(root).children;
+			expect(children).toHaveLength(1);
+			expect(tree.get(children[0])).toMatchObject({
+				tagName: childTag,
+				namespaceURI,
+			});
+		} finally {
+			tree.close();
+		}
+	},
+);
 
 it("checks source, depth, node and cancellation limits", () => {
 	expect(() =>
