@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026,21:07 UTC: the unchanged captured W3C table follow-up commits
+via3 native mocks/0 wire requests. The released table coordinator retains5 roots,
+40 rows and80 cells, but the genuine e96-to-e855 fragment click still fails the
+width-profile guard. Retained non-advisory CSS diagnostics remain rejection
+conditions even when the5 coordinated-shell counts match; no geometry refresh,
+CSS omission or partial render is forced. `W3C-TABLE-DOCUMENT-REPLAY.md` records
+49 verified evidence checks, both ledgers and unchanged original resource hashes.
+The stalled worker was closed before execution; parent completed the single run.
+This is not an authorization barrier or full-page pass. Next investigate the
+remaining stylesheet/import acceptance prerequisites without suppressing evidence;
+float/overflow, CSP/image/font and broader browser/research/credential gates stay
+open. Attempted-host inventory remains63 and the overall goal remains active.
+
 September 11, 2026,20:55 UTC: separate-border block-table document integration
 passes the audited native gate:10123 passed,0 failed,2 unchanged exclusions;
 170 selected files,169 strict roots,574 clean manifest entries. Real table cells,

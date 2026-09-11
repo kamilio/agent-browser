@@ -1,5 +1,13 @@
 # Website test expansion — September 11, 2026
 
+**Captured W3C table follow-up,21:07 UTC:** `W3C-TABLE-DOCUMENT-REPLAY.md` uses
+the three unchanged original resources with3 native mocks and0 wire requests.
+The audited10123-pass release retains5 coordinated tables,40 rows and80 cells,
+but a genuine fragment click still fails the width-profile guard. Retained CSS
+diagnostics remain non-advisory; no geometry/partial render is forced. All49
+evidence checks, both ledgers and3 body hashes verify. This is structural progress,
+not a fresh visit or working-site pass; attempted-host inventory stays63.
+
 **Fresh SQLite flow, 20:31 UTC:** `SQLITE-NATIVE-FLOW.md` adds
 `www.sqlite.org`, bringing the attempted-host inventory to **63**, not 63 working
 sites. Three actual native/wire GETs return200 for the documentation page, its

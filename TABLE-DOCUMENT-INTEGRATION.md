@@ -124,3 +124,15 @@ preserved, not relabeled as successful runs.
 
 The captured W3C follow-up remains a separate acceptance step; these native
 fixture results do not establish that the live W3C or Test Pages flow now works.
+
+## Original-content follow-up
+
+`W3C-TABLE-DOCUMENT-REPLAY.md` records the later21:07 UTC replay using this committed
+release. All three original resources remain intact;3 native mocks and0 wire
+requests commit the document. Five coordinated tables now retain40 rows and80
+cells, but the genuine fragment click still fails the width-profile guard.
+Retained non-advisory CSS diagnostics continue to reject the complete profile;
+the five non-CSS shell counts alone do not explain the guard decision. No cell
+geometry or partial render is forced after failure. All49 evidence checks and
+both ledgers verify. CSS/import/CSP and full original-page acceptance remain open;
+this outcome does not weaken or replace those guards.
