@@ -25,7 +25,7 @@ interface MediaList {
 export class PageMedia {
 	private readonly styles;
 	private readonly records: MediaList[] = [];
-	private readonly unregisterViewport: () => void;
+	private readonly unregisterMedia: () => void;
 	private readonly unregisterClose: () => unknown;
 	private timer?: ReturnType<typeof setTimeout>;
 	private controller?: AbortController;
@@ -52,14 +52,14 @@ export class PageMedia {
 			);
 		this.styles = documentStyles(tree);
 		this.previousViewport = this.styles.viewport;
-		this.unregisterViewport = this.styles.onViewportChange(() => {
+		this.unregisterMedia = this.styles.onMediaChange(() => {
 			this.dirty = true;
 			this.schedule();
 		});
 		try {
 			this.unregisterClose = tree.onClose(() => this.close());
 		} catch (error) {
-			this.unregisterViewport();
+			this.unregisterMedia();
 			throw error;
 		}
 	}
@@ -99,7 +99,7 @@ export class PageMedia {
 			media,
 			query,
 			target: this.events.createIndependentTarget(),
-			reported: query.matches(this.styles.viewport),
+			reported: query.matches(this.styles.mediaEnvironment),
 		};
 		const read = () => {
 			this.ensureOpen();
@@ -119,7 +119,7 @@ export class PageMedia {
 			properties: {
 				media: { get: () => read().media, set: readonly },
 				matches: {
-					get: () => read().query.matches(this.styles.viewport),
+					get: () => read().query.matches(this.styles.mediaEnvironment),
 					set: readonly,
 				},
 				onchange: {
@@ -180,7 +180,7 @@ export class PageMedia {
 		if (this.timer !== undefined) clearTimeout(this.timer);
 		this.timer = undefined;
 		this.controller?.abort();
-		this.unregisterViewport();
+		this.unregisterMedia();
 		this.unregisterClose?.();
 		for (const record of this.records)
 			this.bindings.unbindIndependentTarget(record.target);
@@ -227,7 +227,7 @@ export class PageMedia {
 				);
 			for (const record of batch) {
 				if (this.closed) return;
-				const matches = record.query.matches(this.styles.viewport);
+				const matches = record.query.matches(this.styles.mediaEnvironment);
 				if (matches === record.reported) continue;
 				record.reported = matches;
 				await this.dispatch(

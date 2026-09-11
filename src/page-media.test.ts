@@ -175,7 +175,7 @@ it("keeps media and matches readonly and handles malformed/unsupported list bran
 			},
 		}),
 	).toThrow();
-	expect(bindings.media.metrics().invalidOrUnsupportedQueries).toBe(2);
+	expect(bindings.media.metrics().invalidOrUnsupportedQueries).toBe(1);
 });
 
 it("queues resize before change, coalesces same-task updates and uses real event target identity", async () => {

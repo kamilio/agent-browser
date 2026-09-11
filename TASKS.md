@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11,2026,22:50 UTC: explicit native UA color preference now supplies
+light/dark/null state to CSS and native media-query observers, with null explicitly
+meaning no active preference/effective light—not OS detection or a site override.
+Per-tab host configuration survives navigation and initializes before loader
+return; preference-only changes do not fabricate resize events. Bare queries and
+three-valued unknown/negation behavior follow the bounded native source findings.
+`COLOR-SCHEME.md`, `PREFERRED-COLOR-SCHEME-SOURCE.md` and `MEDIA-BOOLEAN-SOURCE.md`
+record APIs, limits and the first source lane's preserved permissions exception.
+One genuine checkbox click fails the clean old width guard and passes the new
+default profile; active dark-only unsupported properties still fail closed.
+The sealed native-color-scheme-september11-round01 gate passes build/strict/format
+and10715 native checks with2 unchanged exclusions,182 selected suites/181 strict
+roots/583 manifest entries,148 new tests,1071 source/1912 compiled files and1058
+unchanged tracked inputs. Three pre-existing dirty source residuals are excluded
+and verified intact. Live OpenBSD retesting on this release remains a separate
+pending gate; prior failures and65 attempted-host inventory remain unchanged.
+No CAPTCHA/access-control bypass, credential/provider, SafeJS, device or TTY
+acceptance is inferred, and the broader website/performance goal remains active.
+
 September 11,2026,22:12 UTC: fresh OpenBSD retesting on10390 retrieves the same
 original HTML/CSS as the21:55 baseline, but its genuine Introduction link still
 fails the width guard. Raw8 property/1 value diagnostics remain; only1 property

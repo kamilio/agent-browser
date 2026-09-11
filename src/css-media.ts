@@ -1,10 +1,15 @@
 import { AgentBrowserError } from "./errors.js";
+import {
+	effectiveColorScheme,
+	type ColorSchemePreference,
+} from "./native-color-scheme.js";
 import { nativeHeadlessDisplay } from "./native-headless-display.js";
 import { nativeRasterColor } from "./native-raster-color.js";
 
 export interface MediaViewport {
 	width: number;
 	height: number;
+	colorSchemePreference?: ColorSchemePreference;
 }
 type MediaValue = boolean | null;
 type Match = (viewport: MediaViewport) => MediaValue;
@@ -113,10 +118,22 @@ function compare(left: number, operator: string, right: number): boolean {
 					: left === right;
 }
 function feature(source: string): Match | undefined {
+	if (source === "prefers-color-scheme")
+		return (viewport) => {
+			effectiveColorScheme(viewport.colorSchemePreference);
+			return true;
+		};
 	if (source === "orientation") return () => true;
 	if (isFeature(source)) return (viewport) => actual(source, viewport) !== 0;
 	const colon = /^([a-z-]+)\s*:\s*(.+)$/.exec(source);
 	if (colon) {
+		if (colon[1] === "prefers-color-scheme") {
+			const preference = colon[2];
+			return preference === "light" || preference === "dark"
+				? (viewport) =>
+						effectiveColorScheme(viewport.colorSchemePreference) === preference
+				: undefined;
+		}
 		if (colon[1] === "orientation")
 			return colon[2] === "portrait"
 				? (viewport) => viewport.height >= viewport.width

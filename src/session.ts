@@ -13,6 +13,11 @@ import {
 } from "./browser-identity.js";
 import { bindDocumentIdentity } from "./document-identity.js";
 import { nativeHeadlessDisplay } from "./native-headless-display.js";
+import {
+	type ColorSchemePreference,
+	nativeColorScheme,
+	validateColorSchemePreference,
+} from "./native-color-scheme.js";
 import { documentFiles, existingDocumentFiles } from "./document-files.js";
 import type { UploadActionRunner } from "./upload-transfers.js";
 import {
@@ -120,6 +125,7 @@ export interface BrowserSessionOptions {
 	documentLimits?: Partial<DocumentLimits>;
 	storageLimits?: Partial<StorageLimits>;
 	cookieLimits?: Partial<CookieLimits>;
+	colorSchemePreference?: ColorSchemePreference;
 }
 
 export interface SessionPage {
@@ -217,6 +223,7 @@ interface TabState {
 	id: string;
 	openerUrl: string | null;
 	viewport: { width: number; height: number };
+	colorSchemePreference: ColorSchemePreference;
 	page?: Readonly<SessionPage>;
 	job?: NavigationJob;
 	postDocument?: boolean;
@@ -226,6 +233,7 @@ interface NavigationJob {
 	controller: AbortController;
 	tab: TabState;
 	pageTraversal: boolean;
+	document?: DocumentTree;
 }
 
 interface HistoryNavigation {
@@ -270,6 +278,7 @@ export class BrowserSession {
 	private readonly transport: NetworkTransport;
 	private readonly networkQueue?: NetworkRequestQueue;
 	private readonly loadDocument: DocumentLoader;
+	private readonly initialColorSchemePreference: ColorSchemePreference;
 	private tabStates = new Map<string, TabState>();
 	private jobs = new Set<NavigationJob>();
 	private selected: string | null = null;
@@ -295,6 +304,11 @@ export class BrowserSession {
 		} catch {
 			throw new AgentBrowserError("invalid-input", "Invalid browser identity");
 		}
+		this.initialColorSchemePreference = validateColorSchemePreference(
+			options.colorSchemePreference === undefined
+				? nativeColorScheme.preference
+				: options.colorSchemePreference,
+		);
 		this.limits = Object.freeze({
 			maxHistoryDocuments: 32,
 			maxHistoryBytes: 8_388_608,
@@ -431,6 +445,7 @@ export class BrowserSession {
 				}
 			}, recordPageTraversalError),
 			viewport: { width: 1280, height: 720 },
+			colorSchemePreference: this.initialColorSchemePreference,
 			journal: new NetworkJournal(),
 			networkNavigation: 0,
 			networkDocument: null,
@@ -456,6 +471,20 @@ export class BrowserSession {
 			partial: true,
 			profile: "logical-css-viewport",
 		});
+	}
+
+	colorSchemePreference(id: string): ColorSchemePreference {
+		return this.tab(id).colorSchemePreference;
+	}
+
+	setColorSchemePreference(id: string, preference: ColorSchemePreference) {
+		const tab = this.tab(id);
+		validateColorSchemePreference(preference);
+		tab.colorSchemePreference = preference;
+		if (tab.job?.document && tab.job.document !== tab.page?.document)
+			documentStyles(tab.job.document).setColorSchemePreference(preference);
+		tab.page?.styles.setColorSchemePreference(preference);
+		return preference;
 	}
 
 	resize(id: string, width: number, height: number) {
@@ -1681,6 +1710,10 @@ export class BrowserSession {
 						"Loaded document URL must match the final response URL",
 					);
 				bindDocumentIdentity(document, this.identity);
+				documentStyles(document).setColorSchemePreference(
+					tab.colorSchemePreference,
+				);
+				job.document = document;
 				for (const [name, limit] of Object.entries(this.documentLimits))
 					if (document.limits[name as keyof DocumentLimits] > limit)
 						throw new AgentBrowserError(
@@ -2168,6 +2201,7 @@ export class BrowserSession {
 			candidate.reference(candidate.root);
 			const styles = documentStyles(candidate);
 			styles.setViewport(tab.viewport.width, tab.viewport.height);
+			styles.setColorSchemePreference(tab.colorSchemePreference);
 			const interactions = documentInteractions(candidate);
 			const documentHistory = sharedDocumentHistory(
 				candidate,

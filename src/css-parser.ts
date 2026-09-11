@@ -45,7 +45,7 @@ import {
 	type CssFlowProperty,
 } from "./css-flow.js";
 import { isBorderShorthand, parseBorderShorthand } from "./css-border.js";
-import { compileCssMedia } from "./css-media.js";
+import { compileCssMedia, type MediaViewport } from "./css-media.js";
 import { cssSupportsLimits, evaluateCssSupports } from "./css-supports.js";
 import { supportsCssSelector } from "./selectors.js";
 import {
@@ -695,7 +695,7 @@ export function parseCssRules(
 
 export function cssMediaMatches(
 	source: string,
-	viewport: StyleViewport,
+	viewport: MediaViewport,
 	issue: CssIssue,
 ): boolean {
 	const compiled = compileCssMedia(source);

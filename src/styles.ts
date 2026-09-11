@@ -89,7 +89,13 @@ import {
 	isCssTextProperty,
 } from "./css-text.js";
 import { documentBaseUrl } from "./document-url.js";
-import { cssMediaLimits } from "./css-media.js";
+import { cssMediaLimits, type MediaViewport } from "./css-media.js";
+import {
+	type ColorSchemePreference,
+	effectiveColorScheme,
+	nativeColorScheme,
+	validateColorSchemePreference,
+} from "./native-color-scheme.js";
 import {
 	stylesheetSourceSize,
 	type StylesheetSource,
@@ -266,6 +272,11 @@ export class DocumentStyles {
 		height: 720,
 	});
 	private readonly viewportListeners = new Set<() => void>();
+	private readonly mediaListeners = new Set<() => void>();
+	private mediaEnvironmentValue: Readonly<MediaViewport> = Object.freeze({
+		...this.viewportValue,
+		colorSchemePreference: nativeColorScheme.preference,
+	});
 	private readonly queries: DocumentQueries;
 	private readonly external = new Map<number, ExternalSheet>();
 	private readonly loadIssues: Record<string, number> = Object.create(null);
@@ -330,13 +341,47 @@ export class DocumentStyles {
 	get viewport() {
 		return this.viewportValue;
 	}
+	get colorSchemePreference(): ColorSchemePreference {
+		return this.mediaEnvironmentValue.colorSchemePreference ?? null;
+	}
+	get mediaEnvironment() {
+		return this.mediaEnvironmentValue;
+	}
+	setColorSchemePreference(preference: ColorSchemePreference) {
+		this.ensureOpen();
+		validateColorSchemePreference(preference);
+		if (preference === this.colorSchemePreference) return;
+		this.mediaEnvironmentValue = Object.freeze({
+			...this.viewport,
+			colorSchemePreference: preference,
+		});
+		this.tree.invalidatePresentation();
+		for (const listener of [...this.mediaListeners]) listener();
+	}
+	onMediaChange(listener: () => void): () => void {
+		this.ensureOpen();
+		if (typeof listener !== "function")
+			throw new TypeError("Expected a media listener");
+		if (
+			!this.mediaListeners.has(listener) &&
+			this.viewportListeners.size + this.mediaListeners.size >= 16
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Media listener limit exceeded",
+			);
+		this.mediaListeners.add(listener);
+		return () => {
+			this.mediaListeners.delete(listener);
+		};
+	}
 	onViewportChange(listener: () => void): () => void {
 		this.ensureOpen();
 		if (typeof listener !== "function")
 			throw new TypeError("Expected a viewport listener");
 		if (
 			!this.viewportListeners.has(listener) &&
-			this.viewportListeners.size >= 16
+			this.viewportListeners.size + this.mediaListeners.size >= 16
 		)
 			throw new AgentBrowserError(
 				"resource-limit",
@@ -358,8 +403,13 @@ export class DocumentStyles {
 		if (width === this.viewport.width && height === this.viewport.height)
 			return;
 		this.viewportValue = Object.freeze({ width, height });
+		this.mediaEnvironmentValue = Object.freeze({
+			...this.viewportValue,
+			colorSchemePreference: this.colorSchemePreference,
+		});
 		this.tree.invalidatePresentation();
 		for (const listener of [...this.viewportListeners]) listener();
+		for (const listener of [...this.mediaListeners]) listener();
 	}
 
 	setExternalSheet(id: number, url: string, text: string) {
@@ -804,6 +854,11 @@ export class DocumentStyles {
 			boxValues: "computed-subset-not-used-geometry",
 			layout: false,
 			viewport: this.viewport,
+			colorScheme: Object.freeze({
+				...nativeColorScheme,
+				preference: this.colorSchemePreference,
+				effective: effectiveColorScheme(this.colorSchemePreference),
+			}),
 			externalSheets: [...this.external.values()].filter(
 				(sheet) => sheet.baseUrl === undefined,
 			).length,
@@ -819,6 +874,7 @@ export class DocumentStyles {
 		if (this.closed) return;
 		this.closed = true;
 		this.viewportListeners.clear();
+		this.mediaListeners.clear();
 		this.external.clear();
 		this.computed.clear();
 		this.boxSpecified.clear();
@@ -952,7 +1008,7 @@ export class DocumentStyles {
 					charge(query.length * (2 * cssMediaLimits.maxDepth + 8));
 					const diagnostics: string[] = [];
 					state = {
-						matches: cssMediaMatches(query, this.viewport, (code) =>
+						matches: cssMediaMatches(query, this.mediaEnvironment, (code) =>
 							diagnostics.push(code),
 						),
 						diagnostics,

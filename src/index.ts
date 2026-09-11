@@ -281,6 +281,10 @@ export {
 export { loadTextDocument } from "./text-loader.js";
 export type { SessionHistorySnapshot } from "./navigation-history.js";
 export {
+	type ColorSchemePreference,
+	nativeColorScheme,
+} from "./native-color-scheme.js";
+export {
 	BrowserSession,
 	type BrowserSessionOptions,
 	type SessionLimits,
