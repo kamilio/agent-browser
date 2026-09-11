@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 TESTPAGES-NUMERIC-MARKERS-REPLAY.md verifies the9188-build on
+the same two unchanged captures:2 native/mock requests,0 wire and no new hostname.
+All3 ordered-marker warnings disappear; native outside decimal metadata contains
+ordinals1/2/3. Fill/select still succeed, but the one genuine checkbox click still
+fails the unchanged formatting-profile guard, with no checkbox events. Remaining
+deferred elements are concretely e87/svg and e2986/tbody, plus coordination
+placeholders; clear4, overflow5, a presentation hint and raw CSS limitations remain.
+The readonly census charges12817 work and3429 text units; it is not a geometry or
+raster pass. All44 named checks and both ledgers verify, with zero cleanup state.
+Next implement the remaining supported-profile gaps, not warning suppression;
+fresh website interactions, research and broader acceptance gates remain open.
+
 September 11, 2026 ORDERED-LIST-INTEGRATION.md adds actual decimal and
 decimal-leading-zero glyphs, bounded HTML start/value/reversed numbering, rendered
 owner grouping, correct marker extents and native link navigation beside ordinal10.
