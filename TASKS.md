@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 MDN-OUTSIDE-MARKERS-REPLAY.md records the unchanged nineteen
+captures on the8529-pass build: one genuine click now completes formatting and
+reaches positioned coordination beyond the earlier eligibility guard. It still
+fails the formatting-profile gate;14 non-coordinated deferred nodes remain and
+no used geometry or destination completes. Parent verifies all28 new receipts;
+historical measurements and build identity remain unchanged. BROKEN-IMAGE-SOURCE.md
+records one native WHATWG rendering GET and two extracted sections, with49 verified
+receipts: stable represented text is non-replaced phrasing content, while stable
+represented nothing retains a zero-natural-size replaced box. Missing/loading/
+quirks branches take precedence and full image-state semantics remain a source
+gap. Bounded fallback implementation proceeds without claiming SVG decoding.
+
 September 11, 2026 OUTSIDE-BLOCK-MARKERS.md implements genuine owner-attached
 outside markers for supported list items and summaries, including block content,
 bounded layout/paint/hit/scroll coordination and unchanged principal DOM geometry.

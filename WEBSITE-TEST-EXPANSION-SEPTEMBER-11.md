@@ -69,6 +69,15 @@ completes and no destination is requested. This earlier failure masks validation
 of the old positioned-menu boundary; it is not evidence that MDN passed that
 boundary, and it is not an additional live website request.
 
+`MDN-OUTSIDE-MARKERS-REPLAY.md` records one later offline click on the immutable
+8,529-pass outside-marker build, again with all nineteen original responses.
+Formatting completes with23 outside markers and reaches positioned coordination
+beyond the old eligibility barrier. The next failure is the issue-free formatting
+profile guard:14 non-coordinated deferred nodes and additional active/CSS issues
+remain. No completed geometry, containing-block coordinates or destination is
+measured. Later native action corrections are separately validated by the8,643
+gate, not by this replay; neither result is a live MDN acceptance claim.
+
 ## Next acceptance work
 
 - Resolve measured Selenium formatting gaps without discarding original CSS;
