@@ -114,6 +114,72 @@ it("places two rows with independent row/column gaps and a spanning item", () =>
 	expect(box("#container", layout).contentHeight).toBe(55);
 });
 
+it.each(["space-around", "space-evenly", "space-between"])(
+	"keeps overflowing %s tracks at the safe start edge in both axes",
+	(alignment) => {
+		const { tree, box } = fixture(
+			`main{width:100px;height:20px;grid-template-columns:200px;grid-template-rows:40px;justify-content:${alignment};align-content:${alignment}}`,
+			'<div id="first">A</div>',
+		);
+		expect(box("#first", layoutDocument(tree))).toMatchObject({
+			borderX: 0,
+			borderY: 0,
+			borderBoxWidth: 200,
+			borderBoxHeight: 40,
+		});
+	},
+);
+
+it.each([
+	["space-around", 20, 80],
+	["space-evenly", 80 / 3, 220 / 3],
+	["space-between", 0, 100],
+] as const)(
+	"distributes positive track space for %s",
+	(alignment, first, second) => {
+		const { tree, box } = fixture(
+			`main{width:120px;grid-template-columns:20px 20px;justify-content:${alignment}}`,
+		);
+		const layout = layoutDocument(tree);
+		expect(box("#first", layout).borderX).toBeCloseTo(first);
+		expect(box("#second", layout).borderX).toBeCloseTo(second);
+	},
+);
+
+it.each([
+	["margin-top:auto", "unsafe end", -20],
+	["margin-bottom:auto", "unsafe center", -10],
+	["margin-top:auto;margin-bottom:auto", "unsafe end", -20],
+	["margin-top:auto", "safe end", 0],
+	["margin-bottom:auto", "start", 0],
+] as const)(
+	"aligns overflowing items with %s and %s",
+	(margins, alignment, top) => {
+		const { tree, box } = fixture(
+			`main{grid-template-rows:20px}#first{height:40px;${margins};align-self:${alignment}}`,
+			'<div id="first">A</div>',
+		);
+		expect(box("#first", layoutDocument(tree))).toMatchObject({
+			borderY: top,
+			borderBoxHeight: 40,
+			marginTop: 0,
+			marginBottom: 0,
+		});
+	},
+);
+
+it("lets auto margins absorb positive area space before self-alignment", () => {
+	const { tree, box } = fixture(
+		"main{grid-template-rows:40px}#first{height:20px;margin-top:auto;align-self:unsafe start}",
+		'<div id="first">A</div>',
+	);
+	expect(box("#first", layoutDocument(tree))).toMatchObject({
+		borderY: 20,
+		borderBoxHeight: 20,
+		marginTop: 20,
+	});
+});
+
 it("flattens contents without a synthetic box and retains anonymous text items", () => {
 	const { tree, id, box } = fixture(
 		"#flat{display:contents}",

@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 GRID-OVERFLOW.md records two corrected Grid overflow alignment
+bugs, preserving five failing baseline cases and a subsequent clean8107-pass
+native gate across131 files with unchanged historical exceptions. Auto margins
+no longer suppress overflowing self-alignment, and distributed track fallbacks
+stay at the safe start edge. The nested percentage-row finding remains open.
+MDN's positioned Grid click boundary and other real-site/research/credential/
+passkey/fingerprint/challenge requirements are not completed by these tests.
+
 September 11, 2026 GRID-LAYOUT.md records real block Grid placement, track sizing,
 native item reflow and shared geometry/paint/hit testing, including nested Grid
 and Flex interoperation. The corrected clean gate passes 8095 selected native

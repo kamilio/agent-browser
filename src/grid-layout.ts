@@ -110,7 +110,7 @@ function alignedTracks(
 			free > 0
 				? free /
 					(value === "space-around" ? sizes.length * 2 : sizes.length + 1)
-				: free / 2;
+				: 0;
 		if (free > 0)
 			spacing +=
 				free / (value === "space-around" ? sizes.length : sizes.length + 1);
@@ -648,7 +648,10 @@ export function layoutFormattingGridContainer(
 				: ["end", "flex-end", "self-end"].includes(value)
 					? free
 					: 0;
-		if (topAuto || bottomAuto || (free < 0 && mode.startsWith("safe ")))
+		if (
+			(free > 0 && (topAuto || bottomAuto)) ||
+			(free < 0 && mode.startsWith("safe "))
+		)
 			offset = 0;
 		placements.set(item.id, {
 			id: item.id,
