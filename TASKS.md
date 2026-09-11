@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 RFC-EDITOR-NATIVE-FLOW.md adds a fresh native-only RFC9110
+test on the9188 build: two HTTP200 wire GETs, no challenge, no retries and no
+credential access. Native Introduction-anchor discovery succeeds, but its single
+genuine click fails the formatting-profile guard without changing URL/history.
+Float592, clear320, overflow162 and12 deferred tables are concrete remaining
+layout gaps, alongside original CSS diagnostics and3 unloaded font imports.
+All39 evidence checks and both ledgers verify; cleanup settles to zero. The
+additive attempted-host inventory is now62, not62 working websites. Native SVG
+foundation work remains separate and is not used by this frozen live build.
+
 September 11, 2026 TESTPAGES-NUMERIC-MARKERS-REPLAY.md verifies the9188-build on
 the same two unchanged captures:2 native/mock requests,0 wire and no new hostname.
 All3 ordered-marker warnings disappear; native outside decimal metadata contains

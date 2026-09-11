@@ -1,5 +1,16 @@
 # Website test expansion — September 11, 2026
 
+**Fresh RFC Editor flow, 18:38 UTC:** `RFC-EDITOR-NATIVE-FLOW.md` adds
+`www.rfc-editor.org`, bringing the attempted-host inventory to **62**. Two actual
+native/wire GETs return200 for RFC9110 and its original empty local stylesheet;
+no challenge is observed. Navigation commits, but one genuine Introduction link
+click fails the formatting-profile guard. Float592, clear320, overflow162 and12
+deferred tables identify native layout gaps; original inline CSS and three
+unloaded font imports remain explicit. This is not a working-site or complete
+research claim. All39 evidence checks and both ledgers verify; no retry, script,
+credential access or access-control bypass occurs. Earlier subtotals below retain
+their original observation scopes and times.
+
 **Captured Test Pages replay, 17:45 UTC:** `TESTPAGES-CSS-CAPACITY-REPLAY.md` uses
 the two unchanged native live captures with2 mocks and0 new wire requests. With
 the audited8192-rule default, the document commits at5929 rules/9701 declarations
