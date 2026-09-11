@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 SVG-FILL-FOUNDATION.md adds bounded native path parsing,
+quadratic/cubic/elliptical-arc flattening and nonzero/evenodd RGBA fill primitives
+for the observed Test Pages SVG blocker. Three independent review findings were
+reproduced and fixed, with original failures retained;215 targeted cases and the
+clean9356-case native gate pass, with2 unchanged exclusions. Build/strict/format
+and source review pass;561 clean manifest entries exclude2 dirty additions.
+This is not inline-SVG BrowserSession support: the SVG formatting guard remains.
+Next integrate native scene construction, sizing/viewBox, paint inheritance,
+transforms and correct descendant geometry/hit ownership, then replay unchanged
+captures and fresh pages. Table/float/clear/overflow, research and broader gates
+remain open; neither fixture pixels nor the62-host inventory proves completion.
+
 September 11, 2026 RFC-EDITOR-NATIVE-FLOW.md adds a fresh native-only RFC9110
 test on the9188 build: two HTTP200 wire GETs, no challenge, no retries and no
 credential access. Native Introduction-anchor discovery succeeds, but its single
