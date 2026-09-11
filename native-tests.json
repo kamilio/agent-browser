@@ -302,6 +302,8 @@
   "src/css-box.test.ts",
   "src/css-color.test.ts",
   "src/css-flex.test.ts",
+  "src/css-grid.test.ts",
+  "src/css-grid-integration.test.ts",
   "src/css-flow.test.ts",
   "src/css-math.test.ts",
   "src/css-math-core.test.ts",

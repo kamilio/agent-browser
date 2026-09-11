@@ -1,5 +1,15 @@
 import { imageDimensionHint } from "./replaced-box.js";
 import {
+	cssGridProperties,
+	isCssGridProperty,
+	computeGridStyle,
+	initialGridStyle,
+	isGridDisplay,
+	type CssGridProperty,
+	type GridStyle,
+	type GridSpecifiedStyle,
+} from "./css-grid.js";
+import {
 	elementNamespace,
 	isHtmlElement,
 	svgNamespace,
@@ -226,6 +236,8 @@ export class DocumentStyles {
 	private boxComputed = new Map<number, BoxStyle>();
 	private flexSpecified = new Map<number, FlexSpecifiedStyle>();
 	private flexComputed = new Map<number, FlexStyle>();
+	private gridSpecified = new Map<number, GridSpecifiedStyle>();
+	private gridComputed = new Map<number, GridStyle>();
 	private flowComputed = new Map<number, FlowStyle>();
 	private pointerEventsNone = new Set<number>();
 	private listComputed = new Map<number, ListStyle>();
@@ -472,6 +484,56 @@ export class DocumentStyles {
 		return this.flexComputed.get(id) ?? initialFlexStyle;
 	}
 
+	grid(id: number): GridStyle {
+		this.get(id);
+		const pending: number[] = [];
+		let current = id;
+		while (!this.gridComputed.has(current)) {
+			const specified = this.gridSpecified.get(current);
+			if (!specified) {
+				this.gridComputed.set(current, initialGridStyle);
+				break;
+			}
+			pending.push(current);
+			const parent = this.tree.get(current).parent;
+			if (parent === null || !Object.values(specified).includes("inherit"))
+				break;
+			current = parent;
+		}
+		for (const target of pending.reverse()) {
+			const specified = this.gridSpecified.get(target) ?? {};
+			const parent = this.tree.get(target).parent;
+			const values = Object.values(specified);
+			let fonts: BoxFontMetrics | undefined;
+			if (values.some((value) => lengthUsesFont(value, "em")))
+				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
+			if (values.some((value) => lengthUsesFont(value, "rem"))) {
+				const root =
+					this.tree
+						.get(this.tree.root)
+						.children.find(
+							(child) => this.tree.get(child).kind === "element",
+						) ?? this.tree.root;
+				fonts = {
+					...fonts,
+					rootFontSize: Number.parseFloat(this.text(root)["font-size"]),
+				};
+			}
+			this.gridComputed.set(
+				target,
+				computeGridStyle(
+					specified,
+					parent === null
+						? initialGridStyle
+						: (this.gridComputed.get(parent) ?? initialGridStyle),
+					this.viewport,
+					fonts,
+				),
+			);
+		}
+		return this.gridComputed.get(id) ?? initialGridStyle;
+	}
+
 	box(id: number): BoxStyle {
 		this.get(id);
 		const pending: number[] = [];
@@ -606,6 +668,7 @@ export class DocumentStyles {
 			properties: Object.freeze(["display", "visibility"]),
 			boxProperties: cssBoxProperties,
 			flexProperties: cssFlexProperties,
+			gridProperties: cssGridProperties,
 			flowProperties: cssFlowProperties,
 			interactionProperties: cssInteractionProperties,
 			listProperties: cssListProperties,
@@ -633,6 +696,8 @@ export class DocumentStyles {
 		this.boxComputed.clear();
 		this.flexSpecified.clear();
 		this.flexComputed.clear();
+		this.gridSpecified.clear();
+		this.gridComputed.clear();
 		this.flowComputed.clear();
 		this.pointerEventsNone.clear();
 		this.listComputed.clear();
@@ -684,6 +749,8 @@ export class DocumentStyles {
 		this.boxComputed.clear();
 		this.flexSpecified.clear();
 		this.flexComputed.clear();
+		this.gridSpecified.clear();
+		this.gridComputed.clear();
 		this.flowComputed.clear();
 		this.pointerEventsNone.clear();
 		this.listComputed.clear();
@@ -961,6 +1028,7 @@ export class DocumentStyles {
 		}
 		const boxSpecified = new Map<number, BoxSpecifiedStyle>();
 		const flexSpecified = new Map<number, FlexSpecifiedStyle>();
+		const gridSpecified = new Map<number, GridSpecifiedStyle>();
 		const flowSpecified = new Map<number, FlowSpecifiedStyle>();
 		const textSpecified = new Map<number, TextSpecifiedStyle>();
 		const paintSpecified = new Map<number, PaintSpecifiedStyle>();
@@ -968,6 +1036,7 @@ export class DocumentStyles {
 		for (const [id, properties] of winners) {
 			const specified: Partial<Record<CssBoxProperty, string>> = {};
 			const flexValues: Partial<Record<CssFlexProperty, string>> = {};
+			const gridValues: Partial<Record<CssGridProperty, string>> = {};
 			const flowValues: Partial<Record<CssFlowProperty, string>> = {};
 			const textValues: Partial<Record<CssTextProperty, string>> = {};
 			const paintValues: Partial<Record<CssPaintProperty, string>> = {};
@@ -980,6 +1049,8 @@ export class DocumentStyles {
 					specified[property] = winner.declaration.value;
 				if (isCssFlexProperty(property))
 					flexValues[property] = winner.declaration.value;
+				if (isCssGridProperty(property))
+					gridValues[property] = winner.declaration.value;
 				if (isCssFlowProperty(property))
 					flowValues[property] = winner.declaration.value;
 				if (isCssTextProperty(property))
@@ -991,6 +1062,8 @@ export class DocumentStyles {
 				boxSpecified.set(id, Object.freeze(specified));
 			if (Object.keys(flexValues).length)
 				flexSpecified.set(id, Object.freeze(flexValues));
+			if (Object.keys(gridValues).length)
+				gridSpecified.set(id, Object.freeze(gridValues));
 			if (Object.keys(flowValues).length)
 				flowSpecified.set(id, Object.freeze(flowValues));
 			if (Object.keys(textValues).length)
@@ -1065,14 +1138,11 @@ export class DocumentStyles {
 				);
 			}
 			const position = flowComputed.get(node.id)?.position;
-			const unpositionedDisplay = isFlexDisplay(parentDisplay)
-				? blockifyDisplay(display)
-				: display;
+			const item = isFlexDisplay(parentDisplay) || isGridDisplay(parentDisplay);
+			const unpositionedDisplay = item ? blockifyDisplay(display) : display;
 			if (
 				node.kind === "element" &&
-				(isFlexDisplay(parentDisplay) ||
-					position === "absolute" ||
-					position === "fixed")
+				(item || position === "absolute" || position === "fixed")
 			)
 				display = blockifyDisplay(display);
 			boxParentDisplay.set(
@@ -1114,6 +1184,7 @@ export class DocumentStyles {
 		this.computed = computed;
 		this.boxSpecified = boxSpecified;
 		this.flexSpecified = flexSpecified;
+		this.gridSpecified = gridSpecified;
 		this.flowComputed = flowComputed;
 		this.pointerEventsNone = pointerEventsNone;
 		this.listComputed = listComputed;

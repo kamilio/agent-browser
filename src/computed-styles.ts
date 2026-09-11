@@ -3,6 +3,12 @@ import {
 	isNeutralBackgroundProperty,
 } from "./css-background.js";
 import { cssBoxProperties, isCssBoxProperty } from "./css-box.js";
+import {
+	cssGridProperties,
+	isCssGridProperty,
+	gridShorthandComponents,
+	serializeGridShorthand,
+} from "./css-grid.js";
 import { cssInteractionProperties } from "./css-interaction.js";
 import { cssListProperties, isCssListProperty } from "./css-list.js";
 import { cssOutlineProperties, isCssOutlineProperty } from "./css-outline.js";
@@ -44,6 +50,7 @@ import { cssVariableLimits } from "./css-variables.js";
 export const computedStyleProperties = Object.freeze(
 	[
 		...cssBoxProperties,
+		...cssGridProperties,
 		...cssFlexProperties,
 		...cssFlowProperties,
 		...cssInteractionProperties,
@@ -115,6 +122,13 @@ export function resolvedStyleValue(
 	}
 	if (name === "pointer-events") return styles.pointerEvents(id);
 	if (isCssListProperty(name)) return styles.list(id)[name];
+	if (isCssGridProperty(name)) return styles.grid(id)[name];
+	const grid = gridShorthandComponents(name);
+	if (grid)
+		return serializeGridShorthand(
+			name,
+			grid.map((property) => styles.grid(id)[property]),
+		);
 	if (isCssFlexProperty(name)) return styles.flex(id)[name];
 	const flex = flexShorthandComponents(name);
 	if (flex)

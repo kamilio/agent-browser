@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 GRID-CSS.md records production Grid grammar integration:
+ten longhands and placement shorthands reach stylesheet/inline parsing, variables,
+cascade, computed values, CSSOM and item blockification through display:contents.
+Named lines/areas retain case and unsupported grammar remains explicit. Clean
+validation passes 7203 selected native cases across 117 files, with the existing
+exceptions; 239 cases are new Grid grammar/integration tests. Grid containers
+still defer real geometry. Implement two-dimensional placement, track sizing and
+item reflow, then verify actual MDN rendering/clicks and remaining CSS blockers.
+
 September 11, 2026 GRID-SPEC-SECTIONS.md records twelve successful exact-title
 section extractions through the native browser's captured-source replay, covering
 Grid grammar, computation, placement and selected sizing stages. No navigation

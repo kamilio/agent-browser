@@ -6,6 +6,14 @@ import {
 	serializeBackgroundValues,
 } from "./css-background.js";
 import { normalizeCssColor } from "./css-color.js";
+import {
+	cssGridProperties,
+	isCssGridProperty,
+	gridShorthandComponents,
+	parseGridDeclarations,
+	parseGridValue,
+	serializeGridShorthand,
+} from "./css-grid.js";
 import { parsePaintValue } from "./css-paint.js";
 import { canonicalCssProperty } from "./css-property-aliases.js";
 import {
@@ -104,6 +112,10 @@ export const inlineProperties = [
 	"outline",
 	...cssListProperties,
 	...cssInteractionProperties,
+	...cssGridProperties,
+	"grid-row",
+	"grid-column",
+	"grid-area",
 	...cssFlexProperties,
 	"flex",
 	"flex-flow",
@@ -214,6 +226,7 @@ function normalize(name: string, source: string): string | undefined {
 			? source || " "
 			: undefined;
 	if (!supported.has(name)) return undefined;
+	if (isCssGridProperty(name)) return parseGridValue(name, source);
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;
 	if (isCssOutlineProperty(name)) return parseOutlineValue(name, value);
@@ -320,6 +333,14 @@ export function expandDeclaration(
 			value: entry.value,
 			important,
 		}));
+	if (gridShorthandComponents(name))
+		return (
+			parseGridDeclarations(name, source)?.map(({ property, value }) => ({
+				name: property,
+				value,
+				important,
+			})) ?? []
+		);
 	if (flexShorthandComponents(name))
 		return (
 			parseFlexDeclarations(
@@ -419,6 +440,8 @@ export function inlineDeclarationComponents(name: string): readonly string[] {
 	const canonical = canonicalCssProperty(name);
 	if (canonical !== name) return inlineDeclarationComponents(canonical);
 	if (name === "outline") return cssOutlineProperties.slice(0, 3);
+	const grid = gridShorthandComponents(name);
+	if (grid) return grid;
 	const flex = flexShorthandComponents(name);
 	if (flex) return flex;
 	if (name === "overflow") return ["overflow-x", "overflow-y"];
@@ -521,6 +544,21 @@ export function propertyValue(
 			)
 			? first.value
 			: "";
+	}
+	const grid = gridShorthandComponents(name);
+	if (grid) {
+		if (
+			found.length !== grid.length ||
+			found.some((entry) => entry.important !== found[0]?.important)
+		)
+			return "";
+		return serializeGridShorthand(
+			name,
+			grid.map(
+				(property) =>
+					found.find((entry) => entry.name === property)?.value ?? "",
+			),
+		);
 	}
 	const flex = flexShorthandComponents(name);
 	if (flex) {

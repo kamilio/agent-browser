@@ -1,4 +1,11 @@
 import { parseBackgroundShorthand } from "./css-background.js";
+import {
+	cssGridProperties,
+	isCssGridProperty,
+	gridShorthandComponents,
+	parseGridDeclarations,
+	type CssGridProperty,
+} from "./css-grid.js";
 import { canonicalCssProperty } from "./css-property-aliases.js";
 import {
 	cssOutlineProperties,
@@ -70,6 +77,7 @@ export type CssProperty =
 	| CssBoxProperty
 	| CssTextProperty
 	| CssPaintProperty
+	| CssGridProperty
 	| CssFlowProperty
 	| CssFlexProperty
 	| CssInteractionProperty
@@ -241,8 +249,10 @@ export function parseCssDeclarations(
 			else issue("unimplemented-or-invalid-css-value");
 			continue;
 		}
-		let value = withoutCssComments(raw.value).trim().toLowerCase();
-		value = value.replace(/[\t\n\f\r ]+/g, " ");
+		const grid =
+			isCssGridProperty(property) || gridShorthandComponents(property);
+		let value = withoutCssComments(raw.value).trim();
+		if (!grid) value = value.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 		if (
 			![
 				"display",
@@ -256,6 +266,7 @@ export function parseCssDeclarations(
 			!isCssBoxProperty(property) &&
 			!isCssTextProperty(property) &&
 			!isCssPaintProperty(property) &&
+			!grid &&
 			!isCssInteractionProperty(property) &&
 			!isCssListProperty(property) &&
 			!isCssOutlineProperty(property) &&
@@ -309,6 +320,11 @@ export function parseCssDeclarations(
 					value,
 					important,
 				})),
+				...cssGridProperties.map((property) => ({
+					property,
+					value,
+					important,
+				})),
 				...cssFlexProperties.map((property) => ({
 					property,
 					value,
@@ -358,6 +374,15 @@ export function parseCssDeclarations(
 		}
 		if (isCssFlowProperty(property) || property === "overflow") {
 			const expanded = parseFlowDeclarations(property, value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((entry) => ({ ...entry, important })),
+				);
+			else issue("unimplemented-or-invalid-css-value");
+			continue;
+		}
+		if (grid) {
+			const expanded = parseGridDeclarations(property, value);
 			if (expanded)
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),
