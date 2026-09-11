@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11,2026,23:33 UTC: the new11025-pass font release4d11abd makes
+two fresh HTTP200 GETs for the OpenBSD introduction and its intact stylesheet;
+22855 bytes and both original hashes match the earlier successful destination
+capture. Applicable CSS diagnostics now fall1→0, while raw3 property/1 value
+diagnostics remain. Actual read-only font samples expose400/700 faces and
+computed400 on the floated header; availability is not live rendering proof.
+One genuine discovered Hardware Support fragment click still fails the native
+width-formatting guard:1 float and3 overflow remain independent blockers.
+`OPENBSD-FONT-WEIGHT-FLOW.md` seals44 evidence checks and44/48-entry ledgers;
+parent independently verifies counters, original bodies, font/color observations,
+census, actual1 event/1 image-owner cleanup and unchanged source/compiled pins.
+`OPENBSD-INTRODUCTION-REPLAY.md` preserves the earlier offline header-prototype
+harness failure (1 mock,0 wire); `OPENBSD-INTRODUCTION-REPLAY-FOLLOWUP.md`
+preserves the separately authorized corrected replay (2 mocks,0 wire), whose
+genuine click fails with1 applicable CSS property plus the same float/overflow
+blockers on10715 production. No report is rewritten as successful. All request,
+resource and authorization limits remain intact; attempted-host coverage stays65.
+Continue real float layout and overflow/scroll-container work, varied-site testing
+and the full performance goal; no bypass, credentials or additional gates inferred.
+
 September 11,2026,23:25 UTC: authored CSS font-weight now computes numeric and
 relative values separately from the native family's two actual400/700 bitmap
 faces. Body text, native control captions and inside/outside numeric markers

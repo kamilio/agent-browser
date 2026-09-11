@@ -1,5 +1,21 @@
 # Website test expansion — September 11, 2026
 
+**Fresh OpenBSD introduction follow-up,23:33 UTC:**
+`OPENBSD-FONT-WEIGHT-FLOW.md` retains the failed genuine Hardware Support
+fragment click on11025-pass font release4d11abd. Two fresh HTTP200 GETs transfer
+22855 bytes; HTML/CSS match the earlier successful destination capture exactly.
+Applicable CSS diagnostics fall1→0, but1 float and3 overflow still block native
+layout/actionability; raw3 property/1 value diagnostics remain separate. Actual
+read-only samples show native400/700 font faces, computed400 on the floated
+header, and null/effective-light preference—not successful rendering. All44
+evidence checks,44/48-entry ledgers and actual owner cleanup independently verify.
+The two `OPENBSD-INTRODUCTION-REPLAY` reports separately retain the first offline
+header-prototype harness failure and corrected genuine-click layout failure;
+neither uses live requests or counts as a fresh working-site pass. No retry,
+mock substitution in the fresh flow, style stripping or capacity change occurs.
+Attempted-host coverage stays **65**; the prior first FAQ link success remains
+valid within its original scope, not evidence that this second interaction works.
+
 **Fresh OpenBSD interaction success,22:54 UTC:**
 `OPENBSD-COLOR-SCHEME-FLOW.md` records the first successful bounded FAQ-to-
 introduction flow after the two retained failures. The10715-pass native release
