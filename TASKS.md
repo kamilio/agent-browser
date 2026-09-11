@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11,2026,22:12 UTC: fresh OpenBSD retesting on10390 retrieves the same
+original HTML/CSS as the21:55 baseline, but its genuine Introduction link still
+fails the width guard. Raw8 property/1 value diagnostics remain; only1 property
+diagnostic is conservatively applicable. Raw media counts13 then15 and the1
+table-shell census entry retain their actual scopes. `OPENBSD-NATIVE-FLOW.md`
+and `OPENBSD-CSS-APPLICABILITY-FLOW.md` record two real HTTP200 GETs each, no
+mock/retry/fallback,48/50 verified evidence checks, four ledgers and instrumented
+owner cleanup. OpenBSD adds the65th attempted exact host, not a working-site
+claim. The remaining unknown preferred-color-scheme condition requires correct
+native preference semantics, not an invented false result or dropped CSS; primary
+source investigation is underway. Keep genuine interaction, full CSS/table/CSP
+compatibility, performance measurement and block-friction goals open.
+
 September 11,2026,22:08 UTC: CSS diagnostic applicability now follows actual
 selector matches and provable media inactivity while preserving raw diagnostics.
 Unsupported-only matching rules, unknown selectors/media, loading/security errors

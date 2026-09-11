@@ -1,5 +1,19 @@
 # Website test expansion — September 11, 2026
 
+**Fresh OpenBSD comparison,21:55 and22:12 UTC:** `OPENBSD-NATIVE-FLOW.md`
+adds `www.openbsd.org`, bringing attempted-host coverage to **65**, not65 working
+websites. The FAQ commits and a genuine Introduction link click fails on the
+10335-pass baseline. `OPENBSD-CSS-APPLICABILITY-FLOW.md` then repeats the live
+flow on the10390-pass applicability release with byte-identical fresh HTML/CSS.
+The click still fails. Raw CSS retains8 property errors and1 value error;
+applicable non-advisory CSS is narrowed to1 property error, without relabeling
+filtered counts as raw. Media diagnostics are13 in the baseline and15 in the
+follow-up, and one table shell remains in each census. Both runs make2 actual
+HTTP200 GETs each, no destination request, retry, mock or access bypass. All48
+baseline and50 follow-up evidence checks, four ledgers, both original body pairs
+and actual instrumented owner cleanup verify. This is diagnostic progress, not
+a successful native interaction or whole-site acceptance.
+
 **Fresh GNU attempt,21:43 UTC:** `GNU-NATIVE-FLOW-FOLLOWUP.md` adds
 `www.gnu.org`, bringing the attempted-host inventory to **64**, not64 working
 websites. Eight actual GETs return200 for1 HTML document,2 stylesheets and5

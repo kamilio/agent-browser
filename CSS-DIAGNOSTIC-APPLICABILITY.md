@@ -104,3 +104,12 @@ All20 gate receipts are sealed.
 Fresh OpenBSD validation is separate. Isolated tests do not establish website,
 socket, device, credential, TTY or SafeJS acceptance. The original OpenBSD flow
 and its failed link click remain unchanged in `OPENBSD-NATIVE-FLOW.md`.
+
+The fresh10390 follow-up is now retained in `OPENBSD-CSS-APPLICABILITY-FLOW.md`.
+It retrieves byte-identical original HTML/CSS and preserves8 raw property and1
+raw value diagnostics, while applicable non-advisory CSS is1 property diagnostic.
+The genuine click still fails; one table shell and unknown-media handling remain
+in the census. Raw media warnings change from13 to15 as additional issue-only
+rules are evaluated. Neither those raw counts nor the failed interaction is
+rewritten into a pass. Parent verifies48 baseline/50 follow-up checks, four
+receipt ledgers, original bodies and actual instrumented owner cleanup.
