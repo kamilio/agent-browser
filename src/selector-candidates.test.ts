@@ -607,3 +607,312 @@ it("prunes an absent outer ancestor and impossible grouped branches within a bou
 		expect(queries.metrics().lastWork).toBeLessThan(scanWork);
 	}
 });
+
+it("merges reset-style tag branches in document order with matching specificity", () => {
+	const { queries, id } = fixture(
+		"<main><h2 id=heading></h2><p id=paragraph class=reset></p><ul id=list><li id=item><a id=link></a></li></ul></main>",
+	);
+	const result = expectSelection(
+		queries,
+		"a, li, ul, p, h2, .reset, #heading, p.reset",
+		["heading", "paragraph", "list", "item", "link"].map((name) =>
+			id(`#${name}`),
+		),
+	);
+	expect([...result.values()]).toEqual([
+		[1, 0, 0],
+		[0, 1, 1],
+		[0, 0, 1],
+		[0, 0, 1],
+		[0, 0, 1],
+	]);
+});
+
+it("combines indexed and unseeded branches without leaking specificity across candidates", () => {
+	const { queries, id } = fixture(
+		"<main><p id=first data-reset></p><span id=second class=reset></span><a id=third></a><div id=outside></div></main>",
+	);
+	const first = id("#first");
+	const second = id("#second");
+	const third = id("#third");
+	const result = expectSelection(
+		queries,
+		"#third, [data-reset], :where(.reset), :is(p, .reset), a",
+		[first, second, third],
+	);
+	expect([...result]).toEqual([
+		[first, [0, 1, 0]],
+		[second, [0, 1, 0]],
+		[third, [1, 0, 0]],
+	]);
+	const all = queries.querySelectorAll("*");
+	const universal = expectSelection(queries, "#third, *, [data-reset]", all);
+	expect(universal.get(id("#outside"))).toEqual([0, 0, 0]);
+	expect(universal.get(first)).toEqual([0, 1, 0]);
+	expect(universal.get(third)).toEqual([1, 0, 0]);
+});
+
+it("counts unique results while later branches upgrade specificity at the result limit", () => {
+	const { tree, id } = fixture(
+		"<main class=scope><a id=first></a><a id=second></a></main>",
+	);
+	const first = id("#first");
+	const second = id("#second");
+	const queries = new DocumentQueries(tree, { maxResults: 2 });
+	const selector = ".scope a, a, #second, #first, .scope > a";
+	for (let repeat = 0; repeat < 2; repeat++) {
+		const result = expectSelection(queries, selector, [first, second]);
+		expect([...result.values()]).toEqual([
+			[1, 0, 0],
+			[1, 0, 0],
+		]);
+	}
+	const extra = tree.createElement("a");
+	tree.append(id("main"), extra);
+	expect(() => queries.matchingSpecificities(selector)).toThrow("result limit");
+	tree.remove(extra);
+	expectSelection(queries, selector, [first, second], [1, 0, 0]);
+});
+
+it("merges repeated and nested ancestor ranges without including the ancestor itself", () => {
+	const { queries, id } = fixture(
+		"<main id=shared class=scope><a id=first></a><section id=shared class=scope><a id=nested></a></section><a id=after></a></main><aside class=scope><a id=last></a></aside><a id=outside></a>",
+	);
+	const all = ["first", "nested", "after", "last"].map((name) =>
+		id(`#${name}`),
+	);
+	expectSelection(queries, ".scope a, .scope > a, .scope a", all, [0, 1, 1]);
+	expectSelection(queries, "#shared a", all.slice(0, 3), [1, 0, 1]);
+	expectSelection(queries, ".scope .scope a", [id("#nested")], [0, 2, 1]);
+	expectSelection(queries, ".scope .scope", [id("section")], [0, 2, 0]);
+	expect(queries.matches(id("main"), ".scope .scope")).toBe(false);
+	expect(queries.matches(id("#outside"), ".scope a")).toBe(false);
+});
+
+it("allows sibling escapes only from seeds that do not provide ancestor ranges", () => {
+	const { queries, id } = fixture(
+		"<main><section class=a><div class=b></div><div id=inside class=c><span id=leaf class=leaf></span></div></section><section class=b><span id=adjacent class=c></span></section><section class=b><span id=later class=c></span></section></main>",
+	);
+	for (const [selector, names, specificity] of [
+		[".a + .b .c", ["adjacent"], [0, 3, 0]],
+		[".a ~ .b > .c", ["adjacent", "later"], [0, 3, 0]],
+		[".a > .b + .c", ["inside"], [0, 3, 0]],
+		[".a .b + .c", ["inside"], [0, 3, 0]],
+		[".a > .b ~ .c .leaf", ["leaf"], [0, 4, 0]],
+	] as const)
+		expectSelection(
+			queries,
+			selector,
+			names.map((name) => id(`#${name}`)),
+			specificity,
+		);
+});
+
+it("does not confuse globally colliding ancestor keys with valid ancestor chains", () => {
+	const { queries, id } = fixture(
+		"<main class=a><section class=b><a id=valid></a></section></main><section class=a><a id=left></a></section><aside class=b><a id=right></a></aside>",
+	);
+	expectSelection(queries, ".a .b a", [id("#valid")], [0, 2, 1]);
+	expectSelection(queries, ".a.b a", []);
+	expectSelection(queries, ".b .a a", []);
+	expectSelection(
+		queries,
+		":is(.a, .b) > a",
+		[id("#valid"), id("#left"), id("#right")],
+		[0, 1, 1],
+	);
+	expectSelection(queries, ".a:not(.b) > a", [id("#left")], [0, 2, 1]);
+	expect(queries.matches(id("#right"), ".a .b a")).toBe(false);
+});
+
+it("unions HTML-folded and exact foreign ancestor type ranges without case leakage", () => {
+	const { tree, queries, id } = fixture(
+		"<lineargradient><a id=html></a></lineargradient><svg id=svg></svg><math id=math></math><a id=outside></a>",
+	);
+	const add = (parent: number, tag: string, namespace: string) => {
+		const ancestor = tree.createParserElement(tag, {}, namespace);
+		const target = tree.createParserElement("a", {}, namespace);
+		tree.append(parent, ancestor);
+		tree.append(ancestor, target);
+		return target;
+	};
+	const svgUpper = add(id("svg"), "linearGradient", svgNamespace);
+	const svgLower = add(id("svg"), "lineargradient", svgNamespace);
+	const mathUpper = add(id("math"), "Mi", mathmlNamespace);
+	const mathLower = add(id("math"), "mi", mathmlNamespace);
+	const html = id("#html");
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expectSelection(queries, "linearGradient a", [html, svgUpper], [0, 0, 2]);
+		expectSelection(queries, "lineargradient a", [html, svgLower], [0, 0, 2]);
+		expectSelection(queries, "LINEARGRADIENT a", [html], [0, 0, 2]);
+		expectSelection(queries, "Mi a", [mathUpper], [0, 0, 2]);
+		expectSelection(queries, "mi a", [mathLower], [0, 0, 2]);
+		expectSelection(
+			queries,
+			"mi a, linearGradient a, Mi a",
+			[html, svgUpper, mathUpper, mathLower],
+			[0, 0, 2],
+		);
+	}
+});
+
+it("rebuilds ancestor ranges and result ordering after reparenting and attribute changes", () => {
+	const { tree, queries, id } = fixture(
+		"<main class=scope><a id=first></a></main><aside><a id=second></a></aside>",
+	);
+	const main = id("main");
+	const aside = id("aside");
+	const first = id("#first");
+	const second = id("#second");
+	expectSelection(queries, ".scope a", [first]);
+	tree.setAttribute(aside, "class", "scope");
+	expectSelection(queries, ".scope a", [first, second]);
+	tree.append(aside, first);
+	expectSelection(queries, ".scope a", [second, first]);
+	tree.removeAttribute(aside, "class");
+	expectSelection(queries, ".scope a", []);
+	tree.append(main, aside);
+	expectSelection(queries, ".scope a", [second, first]);
+	tree.remove(aside);
+	expectSelection(queries, ".scope a", []);
+	expect(queries.querySelectorAll("a", aside)).toEqual([second, first]);
+	tree.append(main, aside);
+	expectSelection(queries, ".scope a", [second, first]);
+});
+
+it("falls back safely when capped indexes cannot provide complete ancestor ranges", () => {
+	const tokens = Array.from(
+		{ length: 48 },
+		(_, index) => `token-${index}`,
+	).join(" ");
+	const { tree, id } = fixture(
+		`<div class="${tokens}"></div><main class=scope><a id=inside></a></main><aside><a id=outside></a></aside>`,
+	);
+	const queries = new DocumentQueries(tree, { maxIndexedNodes: 24 });
+	const inside = id("#inside");
+	const outside = id("#outside");
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expectSelection(queries, ".scope a", [inside], [0, 1, 1]);
+		const result = expectSelection(queries, "#outside, .scope a", [
+			inside,
+			outside,
+		]);
+		expect([...result.values()]).toEqual([
+			[0, 1, 1],
+			[1, 0, 0],
+		]);
+	}
+	tree.append(id("main"), outside);
+	expectSelection(queries, ".scope a", [inside, outside], [0, 1, 1]);
+});
+
+it("recovers complete ordered results after bounded range or branch work fails", () => {
+	const { queries } = fixture(
+		`<main>${Array.from({ length: 64 }, (_, index) => `<section class=scope><a id=link-${index}></a></section>`).join("")}</main>`,
+	);
+	const expected = queries.querySelectorAll("a");
+	const selector = ".scope a, .scope > a, a";
+	expectSelection(queries, selector, expected, [0, 1, 1]);
+	expect(() => queries.matchingSpecificities(selector, 10)).toThrow(
+		"work limit",
+	);
+	expectSelection(queries, selector, expected, [0, 1, 1]);
+});
+
+it("bounds warm matching for rare existing ancestor containers among unrelated anchors and list items", () => {
+	const unrelated = Array.from({ length: 600 }, () => "<li><a></a></li>").join(
+		"",
+	);
+	const { queries, id } = fixture(
+		`<main>${"<div class=article-section>".repeat(12)}<ul>${unrelated}</ul>${"</div>".repeat(12)}<nav class=rare><ul><li id=item><a id=link></a></li></ul></nav></main>`,
+	);
+	const item = id("#item");
+	const link = id("#link");
+	const workAllowance = 30_000;
+	for (const [selector, expected, specificity] of [
+		[".rare a", [link], [0, 1, 1]],
+		[".rare li", [item], [0, 1, 1]],
+		[".rare a, .rare li, nav.rare a", [item, link], undefined],
+	] as const) {
+		expectSelection(queries, selector, expected, specificity);
+		const reference = queries.querySelectorAll(selector);
+		const scanWork = queries.metrics().lastWork;
+		expect(scanWork).toBeGreaterThan(workAllowance);
+		for (let repeat = 0; repeat < 2; repeat++) {
+			const result = queries.matchingSpecificities(selector, workAllowance);
+			expect([...result.keys()]).toEqual(reference);
+			expect(queries.metrics().lastWork).toBeLessThan(scanWork);
+			if (specificity) expect(result.get(expected[0])).toEqual(specificity);
+			else
+				expect([...result.values()]).toEqual([
+					[0, 1, 1],
+					[0, 1, 2],
+				]);
+		}
+	}
+});
+
+it("bounds branch-local work for a multi-tag reset without cross-matching every tag", () => {
+	const tags = [
+		"div",
+		"p",
+		"section",
+		"article",
+		"aside",
+		"nav",
+		"header",
+		"footer",
+		"span",
+		"strong",
+		"em",
+		"b",
+		"i",
+		"small",
+		"code",
+		"pre",
+	];
+	const { queries } = fixture(
+		`<main>${Array.from({ length: 80 }, () => tags.map((tag) => `<${tag}></${tag}>`).join("")).join("")}</main>`,
+	);
+	const selector = [...tags].reverse().join(", ");
+	const expected = queries.querySelectorAll(selector);
+	expect(expected).toHaveLength(tags.length * 80);
+	expectSelection(queries, selector, expected, [0, 0, 1]);
+	queries.querySelectorAll(selector);
+	const scanWork = queries.metrics().lastWork;
+	for (let repeat = 0; repeat < 2; repeat++) {
+		const result = queries.matchingSpecificities(selector, 80_000);
+		expect([...result.keys()]).toEqual(expected);
+		for (const specificity of result.values())
+			expect(specificity).toEqual([0, 0, 1]);
+		expect(queries.metrics().lastWork).toBeLessThan(scanWork);
+	}
+});
+
+it.each([
+	[
+		"one compound",
+		`${".a".repeat(200)} #hit`,
+		"<div class=a><i id=hit></i></div>",
+		29_999,
+	],
+	[
+		"multiple compounds",
+		`${".a".repeat(100)} ${".a".repeat(100)} #hit`,
+		"<div class=a><div class=a><i id=hit></i></div></div>",
+		29_998,
+	],
+])(
+	"bounds repeated ancestor keys in %s without reducing specificity",
+	(_description, selector, target, siblings) => {
+		const { queries, id } = fixture(
+			`${'<div class="a"></div>'.repeat(siblings)}${target}`,
+		);
+		const hit = id("#hit");
+		for (let repeat = 0; repeat < 2; repeat++) {
+			const result = queries.matchingSpecificities(selector);
+			expect([...result]).toEqual([[hit, [1, 200, 0]]]);
+			expect(queries.metrics().lastWork).toBeLessThan(1_000_000);
+		}
+	},
+);

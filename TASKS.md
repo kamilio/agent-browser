@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 branch-local stylesheet matching and ancestor subtree bounds
+pass 6377 selected native tests with the documented baseline/strict exceptions.
+SELECTOR-ANCESTOR-RANGES.md records the repeated-key regression and fix, a captured
+Wikipedia article loading at 4246822 unchanged-budget work units, and a separate
+passing live portal/search/article flow. Python.org advances past query-work
+exhaustion but still fails a 120-branch selector's component limit. Next investigate
+bounded stylesheet-list handling, replay that capture, then run its fresh search
+flow. Rendering, research, varied-site and challenge-effectiveness gates stay open.
+
 September 11, 2026 required-positive-key pruning passes 6363 selected native tests
 with the documented baseline/strict exceptions. SELECTOR-REQUIRED-KEYS.md records
 a captured Wikipedia zero-match hotspot reduced from 2708379 to 11 work units,

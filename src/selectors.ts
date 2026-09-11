@@ -613,6 +613,10 @@ interface NodeInfo {
 }
 type CandidateKind = "tag" | "id" | "class";
 type CandidateTest = { kind: CandidateKind; value: string };
+interface CandidateRange {
+	start: number;
+	end: number;
+}
 interface TreeIndex {
 	root: number;
 	revision: number;
@@ -699,35 +703,47 @@ export class DocumentQueries {
 				const selectors = this.possibleSelectors(compiled.selectors, context);
 				const weights = selectors.map(selectorSpecificity);
 				const result = new Map<number, SelectorSpecificity>();
-				for (const candidate of this.selectorCandidates(selectors, context)) {
-					this.tick(context);
-					let best: SelectorSpecificity | undefined;
-					for (let index = 0; index < selectors.length; index++) {
+				for (let index = 0; index < selectors.length; index++) {
+					for (const candidate of this.selectorCandidates(
+						selectors[index],
+						context,
+					)) {
+						this.tick(context);
 						if (
-							this.match(
+							!this.match(
 								candidate.node.id,
 								selectors[index],
 								selectors[index].length - 1,
 								scope,
 								context,
-							) &&
-							(!best || compareSpecificity(weights[index], best) > 0)
+							)
 						)
-							best = weights[index];
-					}
-					if (best) {
-						if (result.size >= this.limits.maxResults)
+							continue;
+						const previous = result.get(candidate.node.id);
+						if (previous && compareSpecificity(weights[index], previous) <= 0)
+							continue;
+						if (!previous && result.size >= this.limits.maxResults)
 							throw new AgentBrowserError(
 								"resource-limit",
 								"Query result limit exceeded",
 							);
 						result.set(
 							candidate.node.id,
-							Object.freeze([...best]) as SelectorSpecificity,
+							Object.freeze([...weights[index]]) as SelectorSpecificity,
 						);
 					}
 				}
-				return result;
+				if (selectors.length < 2 || result.size < 2) return result;
+				this.tick(context, result.size);
+				return new Map(
+					[...result].sort(([left], [right]) => {
+						this.tick(context);
+						return (
+							context.index.nodes.get(left)!.start -
+							context.index.nodes.get(right)!.start
+						);
+					}),
+				);
 			},
 			maxWork,
 		);
@@ -799,51 +815,125 @@ export class DocumentQueries {
 		});
 	}
 	private selectorCandidates(
-		selectors: Selector[],
+		selector: Selector,
 		context: MatchContext,
 	): readonly NodeInfo[] {
-		const plans = selectors.map((selector) => {
-			const tests = selector[selector.length - 1].tests.filter(
-				(test): test is CandidateTest => {
-					this.tick(context);
-					return (
-						test.kind === "id" ||
-						test.kind === "class" ||
-						(test.kind === "tag" && test.value !== "*")
-					);
-				},
-			);
-			const identifier = tests.find((test) => test.kind === "id");
-			if (identifier) return [identifier];
-			const classes = tests.filter((test) => test.kind === "class");
-			return classes.length ? classes : tests;
-		});
-		if (plans.some((tests) => tests.length === 0))
-			return context.index.elements;
-		const branches: (readonly NodeInfo[])[] = [];
-		for (const tests of plans) {
-			let best: readonly NodeInfo[] | undefined;
-			for (const test of tests) {
-				const index = this.candidateIndex(test.kind, context);
-				if (!index) continue;
-				this.tick(context, test.value.length + 1);
-				let candidates: readonly NodeInfo[] = index.get(test.value) ?? [];
-				if (test.kind === "tag") {
-					const folded = asciiLower(test.value);
-					if (folded !== test.value)
-						candidates = this.mergeCandidates(
-							[candidates, index.get(folded) ?? []],
-							context,
-						);
-				}
-				if (best === undefined || candidates.length < best.length)
-					best = candidates;
-				if (best.length === 0) break;
-			}
-			if (best === undefined) return context.index.elements;
-			branches.push(best);
+		const tests = this.candidateTests(
+			selector[selector.length - 1].tests,
+			context,
+		);
+		const identifier = tests.find((test) => test.kind === "id");
+		const classes = tests.filter((test) => test.kind === "class");
+		const plan = identifier ? [identifier] : classes.length ? classes : tests;
+		let best: readonly NodeInfo[] | undefined;
+		for (const test of plan) {
+			const candidates = this.indexedCandidates(test, context);
+			if (candidates === undefined) continue;
+			if (best === undefined || candidates.length < best.length)
+				best = candidates;
+			if (best.length === 0) break;
 		}
-		return this.mergeCandidates(branches, context);
+		return this.ancestorCandidates(
+			selector,
+			best ?? context.index.elements,
+			context,
+		);
+	}
+	private candidateTests(
+		tests: SimpleSelector[],
+		context: MatchContext,
+	): CandidateTest[] {
+		return tests.filter((test): test is CandidateTest => {
+			this.tick(context);
+			return (
+				test.kind === "id" ||
+				test.kind === "class" ||
+				(test.kind === "tag" && test.value !== "*")
+			);
+		});
+	}
+	private indexedCandidates(
+		test: CandidateTest,
+		context: MatchContext,
+	): readonly NodeInfo[] | undefined {
+		const index = this.candidateIndex(test.kind, context);
+		if (!index) return undefined;
+		this.tick(context, test.value.length + 1);
+		const candidates = index.get(test.value) ?? [];
+		if (test.kind === "tag") {
+			const folded = asciiLower(test.value);
+			if (folded !== test.value)
+				return this.mergeCandidates(
+					[candidates, index.get(folded) ?? []],
+					context,
+				);
+		}
+		return candidates;
+	}
+	private ancestorCandidates(
+		selector: Selector,
+		candidates: readonly NodeInfo[],
+		context: MatchContext,
+	): readonly NodeInfo[] {
+		if (candidates.length === 0 || selector.length === 1) return candidates;
+		let best: CandidateRange[] | undefined;
+		let bestCoverage = Number.POSITIVE_INFINITY;
+		const visited = new Set<string>();
+		for (let position = selector.length - 2; position >= 0; position--) {
+			const relation = selector[position + 1].relation;
+			if (relation !== " " && relation !== ">") continue;
+			for (const test of this.candidateTests(
+				selector[position].tests,
+				context,
+			)) {
+				this.tick(context, test.value.length + 1);
+				const key = `${test.kind}:${test.value}`;
+				if (visited.has(key)) continue;
+				visited.add(key);
+				const ancestors = this.indexedCandidates(test, context);
+				if (ancestors === undefined) continue;
+				const ranges: CandidateRange[] = [];
+				let coverage = 0;
+				for (const ancestor of ancestors) {
+					this.tick(context);
+					const start = ancestor.start + 1;
+					const end = ancestor.end;
+					if (start >= end) continue;
+					const previous = ranges[ranges.length - 1];
+					if (previous && start <= previous.end) {
+						coverage += Math.max(0, end - previous.end);
+						previous.end = Math.max(previous.end, end);
+					} else {
+						ranges.push({ start, end });
+						coverage += end - start;
+					}
+				}
+				if (coverage < bestCoverage) {
+					best = ranges;
+					bestCoverage = coverage;
+				}
+			}
+		}
+		if (best === undefined) return candidates;
+		if (best.length === 0) return [];
+		if (
+			best.length === 1 &&
+			candidates[0].start >= best[0].start &&
+			candidates[candidates.length - 1].start < best[0].end
+		)
+			return candidates;
+		const result: NodeInfo[] = [];
+		let range = 0;
+		for (const candidate of candidates) {
+			this.tick(context);
+			while (range < best.length && candidate.start >= best[range].end) {
+				this.tick(context);
+				range++;
+			}
+			if (range === best.length) break;
+			if (candidate.start >= best[range].start) result.push(candidate);
+		}
+		return result;
 	}
 	private mergeCandidates(
 		branches: readonly (readonly NodeInfo[])[],
