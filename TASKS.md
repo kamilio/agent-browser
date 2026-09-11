@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 a fresh native MDN flow commits the full 19-response page,
+discovers querySelectorAll in main content and attempts one genuine native click.
+MDN-LOGICAL-AVAILABILITY-LIVE.md preserves the new failure: width resolution
+rejects the unsupported formatting profile, not a work/resource limit. All
+18 stylesheets load, no challenge is classified, and cleanup reaches zero pending
+loads. Diagnose the exact formatting issues offline without bypassing geometry;
+destination navigation, rendering, research and challenge effectiveness remain open.
+
 September 11, 2026 the complete 19-response MDN offline replay now commits a
 native document with all 18 stylesheets and bounded title/main-content evidence.
 MDN-LOGICAL-AVAILABILITY-REPLAY.md records 4790072 cascade-work units under the
