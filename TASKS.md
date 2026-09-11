@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 the original nine-response MDN capture now commits natively
+at 3728759 cascade-work units under the unchanged 5000000 limit, with expected
+title/main heading and bounded DOM text. MDN-CUSTOM-NOOP-REPLAY.md records the
+separate offline proof and clean settlement. Styling/resource coverage remains
+partial; full rendering, click and live acceptance are not implied. A fresh
+MDN native flow is separately scoped, while the original broader gates stay open.
+
 September 11, 2026 a fresh CERN early-web native link flow passes: the observed
 What's out there? anchor is clicked, its destination commits, and the replaced
 document closes. CERN-NATIVE-FLOW.md records two real requests, two commits,
