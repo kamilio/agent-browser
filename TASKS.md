@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11,2026,21:41 UTC: bounded native stylesheet imports now connect
+original-source parsing, immutable occurrence graphs, document loading and the
+actual cascade. Imports preserve source order, nested media and final-URL bases;
+inline document URLs are not falsely treated as fetched CSS ancestors. Failed
+children retain diagnostics; cycles, aborts, decoded URL controls and shared
+resource budgets are covered. SRI precedes imports and new requests retain the
+policy-aware transport/CSP guards. `CSS-IMPORTS.md` records10335 passing native
+tests,0 failures,2 existing exclusions,173 selected/172 strict files and577 clean
+manifest entries, including212 new cases. All8 owned sources/tests plus manifest,
+1064 source/1908 compiled inputs and2 preserved dirty residuals are audited.
+The first expanded run's5 cancellation/control regressions remain in evidence
+and pass after fixes. These isolated results do not establish live imports or
+original-page geometry/click acceptance. CSP enforcement, complete referrer and
+Fetch/CSSOM behavior, layers/supports imports, background images, full CSS
+compatibility and remaining website flows stay open. The broader browser goal
+remains active; no credential/device/TTY/SafeJS or challenge-bypass gate is claimed.
+
 September 11, 2026,21:07 UTC: the unchanged captured W3C table follow-up commits
 via3 native mocks/0 wire requests. The released table coordinator retains5 roots,
 40 rows and80 cells, but the genuine e96-to-e855 fragment click still fails the

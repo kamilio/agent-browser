@@ -15,6 +15,11 @@ import type { DocumentLoaderContext } from "./session.js";
 import { documentStyles } from "./styles.js";
 import type { StylesheetFetchPolicy } from "./stylesheet-fetch.js";
 import {
+	loadStylesheetImports,
+	stylesheetImportLimits,
+	type StylesheetInput,
+} from "./stylesheet-imports.js";
+import {
 	parseIntegrityMetadata,
 	verifyIntegrityMetadata,
 } from "./subresource-integrity.js";
@@ -120,7 +125,120 @@ export async function loadBrowserDocument(
 				}
 			}
 		}
+		let importRequests = 0;
+		const decodeStylesheet = (
+			sheet: NetworkResponse,
+			encoding: string,
+		): Readonly<StylesheetInput> => {
+			if (context.signal.aborted)
+				throw new AgentBrowserError("aborted", "Stylesheet loading aborted");
+			if (sheet.status < 200 || sheet.status >= 300)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Stylesheet response failed",
+				);
+			const types = sheet.headers["content-type"];
+			if (
+				types?.length !== 1 ||
+				types[0].split(";", 1)[0].trim().toLowerCase() !== "text/css"
+			)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Stylesheet MIME is not text/css",
+				);
+			if (sheet.body.byteLength > styles.limits.maxCodeUnits * 4 + 3)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Stylesheet body limit exceeded",
+				);
+			return {
+				url: parseNetworkUrl(sheet.url).href,
+				...decodeResponseText(sheet, encoding),
+			};
+		};
+		const installImports = async (
+			id: number,
+			requestedUrl: string,
+			input: Readonly<StylesheetInput>,
+		) => {
+			const loaded = await loadStylesheetImports(input, {
+				signal: context.signal,
+				requestedUrl,
+				inline: isHtmlElement(tree.get(id), "style"),
+				maxSheets: Math.min(
+					styles.limits.maxSheets,
+					stylesheetImportLimits.maxSheets,
+				),
+				maxCodeUnits: Math.min(
+					styles.limits.maxCodeUnits,
+					stylesheetImportLimits.maxCodeUnits,
+				),
+				fetch: async (url, parent) => {
+					if (stylesheetCspBlocked)
+						throw new AgentBrowserError(
+							"policy-denied",
+							"Stylesheet import CSP enforcement is not implemented",
+						);
+					if (!context.fetchStylesheetWithPolicy)
+						throw new AgentBrowserError(
+							"unsupported",
+							"Stylesheet import policy transport is unavailable",
+						);
+					if (++importRequests > stylesheetImportLimits.maxImports)
+						throw new AgentBrowserError(
+							"resource-limit",
+							"Document stylesheet import request limit exceeded",
+						);
+					const result = await context.fetchStylesheetWithPolicy(url, {
+						mode: "no-cors",
+						credentials: "include",
+					});
+					if (!["basic", "cors", "opaque"].includes(result.type))
+						throw new AgentBrowserError(
+							"policy-denied",
+							"Invalid imported stylesheet response type",
+						);
+					return decodeStylesheet(result.response, parent.encoding);
+				},
+			});
+			for (const [code, count] of Object.entries(loaded.issues))
+				for (let occurrence = 0; occurrence < count; occurrence++)
+					styles.noteLoadIssue(code);
+			if (loaded.source.imports.length)
+				styles.setStylesheetSource(id, requestedUrl, loaded.source);
+		};
 		for (const { node } of tree.walk()) {
+			if (
+				isHtmlElement(node, "style") &&
+				(!node.attributes.type ||
+					node.attributes.type.trim().toLowerCase() === "text/css")
+			) {
+				try {
+					const url = documentBaseUrl(tree);
+					await installImports(node.id, url, {
+						url,
+						text: tree.textContent(node.id),
+						encoding: decoded.encoding,
+					});
+				} catch (error) {
+					if (
+						context.signal.aborted ||
+						(error instanceof AgentBrowserError && error.code === "aborted")
+					)
+						throw error;
+					styles.noteLoadIssue(
+						error instanceof AgentBrowserError
+							? `stylesheet-${error.code}`
+							: "stylesheet-load-failed",
+					);
+					if (
+						error instanceof AgentBrowserError &&
+						error.code === "resource-limit"
+					)
+						break;
+				}
+				continue;
+			}
 			if (
 				!isHtmlElement(node, "link") ||
 				Object.hasOwn(node.attributes, "disabled")
@@ -195,27 +313,7 @@ export async function loadBrowserDocument(
 				} else {
 					sheet = await context.fetchStylesheet!(url);
 				}
-				if (context.signal.aborted)
-					throw new AgentBrowserError("aborted", "Stylesheet loading aborted");
-				if (sheet.status < 200 || sheet.status >= 300)
-					throw new AgentBrowserError(
-						"unsupported",
-						"Stylesheet response failed",
-					);
-				const types = sheet.headers["content-type"];
-				if (
-					types?.length !== 1 ||
-					types[0].split(";", 1)[0].trim().toLowerCase() !== "text/css"
-				)
-					throw new AgentBrowserError(
-						"unsupported",
-						"Stylesheet MIME is not text/css",
-					);
-				if (sheet.body.byteLength > styles.limits.maxCodeUnits * 4 + 3)
-					throw new AgentBrowserError(
-						"resource-limit",
-						"Stylesheet body limit exceeded",
-					);
+				const input = decodeStylesheet(sheet, decoded.encoding);
 				if (
 					integrity &&
 					!verifyIntegrityMetadata(
@@ -227,11 +325,8 @@ export async function loadBrowserDocument(
 					styles.noteLoadIssue("stylesheet-integrity-mismatch");
 					continue;
 				}
-				styles.setExternalSheet(
-					node.id,
-					url,
-					decodeResponseText(sheet, decoded.encoding).text,
-				);
+				styles.setExternalSheet(node.id, url, input.text);
+				await installImports(node.id, url, input);
 			} catch (error) {
 				if (
 					context.signal.aborted ||

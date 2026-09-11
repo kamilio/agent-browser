@@ -151,7 +151,7 @@ const displays = new Set([
 const withoutComments = (value: string) =>
 	value.replace(/\/\*[\s\S]*?(?:\*\/|$)/g, " ");
 
-class CssScanner {
+export class CssScanner {
 	position = 0;
 	constructor(
 		readonly source: string,
@@ -565,6 +565,11 @@ export function parseCssRules(
 	issue: CssIssue,
 	media: string[] = [],
 	depth = 0,
+	resolveImport?: (
+		start: number,
+		media: readonly string[],
+		depth: number,
+	) => readonly CssRule[] | undefined,
 ): CssRule[] {
 	if (depth > 16)
 		throw new AgentBrowserError(
@@ -574,12 +579,28 @@ export function parseCssRules(
 	const scanner = new CssScanner(source, issue);
 	const result: CssRule[] = [];
 	while (scanner.position < source.length) {
+		const start = scanner.position;
 		const prelude = scanner.read(";{}");
 		const normalized = withoutCssComments(prelude.text).trim();
+		const preludeStart = skipCssTrivia(
+			prelude.text,
+			start === 0 && prelude.text[0] === "\ufeff" ? 1 : 0,
+			prelude.text.length,
+		);
+		const atName =
+			prelude.text[preludeStart] === "@"
+				? readCssIdentifier(prelude.text, preludeStart + 1)
+				: undefined;
 		if (!normalized && !prelude.stop) break;
 		if (prelude.stop !== "{") {
-			if (/^@import\b/i.test(normalized)) issue("css-import-not-loaded");
-			else if (normalized && !/^@charset\b/i.test(normalized))
+			if (atName?.value.toLowerCase() === "import") {
+				const imported =
+					prelude.stop === ";"
+						? resolveImport?.(start, media, depth)
+						: undefined;
+				if (imported) result.push(...imported);
+				else issue("css-import-not-loaded");
+			} else if (normalized && !/^@charset\b/i.test(normalized))
 				issue("unimplemented-or-invalid-css-rule");
 			continue;
 		}
@@ -599,11 +620,6 @@ export function parseCssRules(
 			);
 			continue;
 		}
-		const preludeStart = skipCssTrivia(prelude.text, 0, prelude.text.length);
-		const atName =
-			prelude.text[preludeStart] === "@"
-				? readCssIdentifier(prelude.text, preludeStart + 1)
-				: undefined;
 		if (atName?.value.toLowerCase() === "supports") {
 			const active = cssSupportsCondition(prelude.text.slice(atName.end));
 			const nested = parseCssRules(

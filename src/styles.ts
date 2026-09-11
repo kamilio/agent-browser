@@ -73,6 +73,7 @@ import {
 	type CssDeclaration,
 	type CssParseBudget,
 	type CssProperty,
+	type CssRule,
 	type StyleViewport,
 	cssMediaMatches,
 	parseCssDeclarations,
@@ -88,6 +89,10 @@ import {
 	isCssTextProperty,
 } from "./css-text.js";
 import { documentBaseUrl } from "./document-url.js";
+import {
+	stylesheetSourceSize,
+	type StylesheetSource,
+} from "./stylesheet-imports.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { closedDetailsChild } from "./details.js";
@@ -144,6 +149,10 @@ interface Winner {
 interface ExternalSheet {
 	url: string;
 	text: string;
+	source?: Readonly<StylesheetSource>;
+	baseUrl?: string;
+	sheets: number;
+	codeUnits: number;
 }
 
 const blockTags = new Set([
@@ -352,11 +361,30 @@ export class DocumentStyles {
 	}
 
 	setExternalSheet(id: number, url: string, text: string) {
+		this.storeSheet(id, url, text);
+	}
+
+	setStylesheetSource(
+		id: number,
+		url: string,
+		source: Readonly<StylesheetSource>,
+	) {
+		stylesheetSourceSize(source);
+		this.storeSheet(id, url, source.text, source);
+	}
+
+	private storeSheet(
+		id: number,
+		url: string,
+		text: string,
+		source?: Readonly<StylesheetSource>,
+	) {
 		this.ensureOpen();
+		const inline = Boolean(source) && isHtmlElement(this.tree.get(id), "style");
 		if (typeof url !== "string" || url.length > 16_384)
 			throw new AgentBrowserError("invalid-input", "Invalid stylesheet URL");
 		if (
-			!isHtmlElement(this.tree.get(id), "link") ||
+			(!isHtmlElement(this.tree.get(id), "link") && !inline) ||
 			typeof text !== "string" ||
 			text.length > this.limits.maxCodeUnits
 		)
@@ -364,21 +392,34 @@ export class DocumentStyles {
 				"resource-limit",
 				"Invalid or oversized external stylesheet",
 			);
-		if (!this.external.has(id) && this.external.size >= this.limits.maxSheets)
+		const size = source
+			? stylesheetSourceSize(source)
+			: { sheets: 1, codeUnits: text.length };
+		const sheets = [...this.external.entries()].reduce(
+			(total, [key, sheet]) => total + (key === id ? 0 : sheet.sheets),
+			size.sheets,
+		);
+		if (sheets > this.limits.maxSheets)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"External stylesheet count exceeded",
 			);
 		const total = [...this.external.entries()].reduce(
-			(size, [key, sheet]) => size + (key === id ? 0 : sheet.text.length),
-			text.length,
+			(size, [key, sheet]) => size + (key === id ? 0 : sheet.codeUnits),
+			size.codeUnits,
 		);
 		if (total > this.limits.maxCodeUnits)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"External stylesheet text limit exceeded",
 			);
-		this.external.set(id, { url, text });
+		this.external.set(id, {
+			url,
+			text,
+			source,
+			...size,
+			baseUrl: inline ? url : undefined,
+		});
 		this.tree.invalidatePresentation();
 	}
 
@@ -761,7 +802,13 @@ export class DocumentStyles {
 			boxValues: "computed-subset-not-used-geometry",
 			layout: false,
 			viewport: this.viewport,
-			externalSheets: this.external.size,
+			externalSheets: [...this.external.values()].filter(
+				(sheet) => sheet.baseUrl === undefined,
+			).length,
+			importedSheets: [...this.external.values()].reduce(
+				(total, sheet) => total + sheet.sheets - 1,
+				0,
+			),
 			...this.info,
 		});
 	}
@@ -876,6 +923,36 @@ export class DocumentStyles {
 			return text;
 		};
 		const winners = new Map<number, Map<CssProperty, Winner>>();
+		const parseSheet = (
+			text: string,
+			graph: Readonly<StylesheetSource> | undefined,
+			media: string[],
+			depth = 0,
+		): CssRule[] => {
+			const imports = new Map(
+				graph?.imports.map((entry) => [entry.start, entry]),
+			);
+			return parseCssRules(
+				source(text),
+				budget,
+				issue,
+				media,
+				depth,
+				(start, inherited, nesting) => {
+					const entry = imports.get(start);
+					if (!entry) return undefined;
+					if (entry.cycle) return [];
+					if (!entry.sheet) return undefined;
+					charge(1);
+					return parseSheet(
+						entry.sheet.text,
+						entry.sheet,
+						entry.media ? [...inherited, entry.media] : [...inherited],
+						nesting + 1,
+					);
+				},
+			);
+		};
 		const nodes = [...this.tree.walk()].map((entry) => entry.node);
 		const apply = (
 			id: number,
@@ -924,13 +1001,24 @@ export class DocumentStyles {
 		}
 		for (const node of nodes) {
 			let text: string | undefined;
+			let graph: Readonly<StylesheetSource> | undefined;
 			if (
 				node.tagName === "style" &&
 				(isHtmlElement(node) || elementNamespace(node) === svgNamespace) &&
 				(!node.attributes.type ||
 					node.attributes.type.trim().toLowerCase() === "text/css")
-			)
+			) {
 				text = this.tree.textContent(node.id);
+				const sheet = this.external.get(node.id);
+				if (sheet?.source) {
+					if (
+						sheet.text === text &&
+						sheet.baseUrl === documentBaseUrl(this.tree)
+					)
+						graph = sheet.source;
+					else issue("changed-stylesheet-needs-reload");
+				}
+			}
 			if (
 				isHtmlElement(node, "link") &&
 				!Object.hasOwn(node.attributes, "disabled") &&
@@ -946,9 +1034,10 @@ export class DocumentStyles {
 							if (
 								new URL(node.attributes.href ?? "", documentBaseUrl(this.tree))
 									.href === sheet.url
-							)
+							) {
 								text = sheet.text;
-							else issue("changed-stylesheet-needs-reload");
+								graph = sheet.source;
+							} else issue("changed-stylesheet-needs-reload");
 						} catch {
 							issue("invalid-stylesheet-url");
 						}
@@ -956,10 +1045,9 @@ export class DocumentStyles {
 				}
 			}
 			if (text === undefined) continue;
-			const rules = parseCssRules(
-				source(text),
-				budget,
-				issue,
+			const rules = parseSheet(
+				text,
+				graph,
 				node.attributes.media ? [node.attributes.media] : [],
 			);
 			for (const rule of rules) {
