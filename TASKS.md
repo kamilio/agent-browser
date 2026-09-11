@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 exact paired replays verify the compound availability change
+across all 323 MDN and 755 Wikipedia selector calls. MDN-COMPOUND-AVAILABILITY.md
+records cascade work 3991128 -> 2891552 and the former hotspot 958911 -> 217.
+WIKIPEDIA-COMPOUND-AVAILABILITY.md records only 2167 net units saved, with 55
+calls costing more; no broad speedup is claimed. Results, specificity, CSS issues
+and cleanup agree; public DOM query work and live grid/click gates are unchanged.
+Wikipedia's historical stylesheet-query redaction remains an explicit limitation.
+
 September 11, 2026 MDN-GRID-INTEGRATION.md maps the captured named tracks/areas,
 minmax/fr syntax and display:contents ancestry into the real parser/cascade,
 formatting, sizing/reflow and geometry paths. It identifies shared alignment,
