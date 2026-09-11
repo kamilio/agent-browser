@@ -1,4 +1,6 @@
 [
+  "src/retry-after.test.ts",
+  "src/research-rate-limit.test.ts",
   "src/html-tokenizer-discard.test.ts",
   "src/research-reader-raw.test.ts",
   "src/research-reader-raw-cli.test.ts",

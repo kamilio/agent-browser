@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+On September 11, 2026 at 05:56 UTC, research handles HTTP429 before primary
+document parsing and blocks later stylesheet dispatch and batch URLs after an
+observed rate limit. Bounded Retry-After advice is reported without sleeping,
+retrying or imposing a persistent cooldown. RESEARCH-RATE-LIMIT.md records the
+contract and preserved first fixture failure. Build, strict25 roots, scoped lint
+and 3060/3060 isolated native cases pass, including 114 new cases; all2823 prior
+reader-policy case outcomes match. Real network behavior, request coordination,
+fingerprint/CAPTCHA effectiveness and secrets/passkey acceptance remain open.
+
 On September 11, 2026 at 05:30 UTC, the explicit separate-omitted-raw-v1 reader
 policy recovers a fresh SWE-bench DOM-reader load with unchanged admission caps:
 HTTP200, 11 headings, one request and a closed transport. One independently

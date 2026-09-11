@@ -47,8 +47,8 @@ and requested subresources. This uses the bounded scheduler in REQUEST-PACING.md
 These are separate scheduling scopes: cross-session redirect destinations are
 not globally coordinated, and grants cannot guarantee packet-arrival spacing.
 The helper does not coordinate other processes/agents, retry blocked responses,
-read Retry-After, change identities/fingerprints or solve CAPTCHAs. Existing
-login/challenge diagnostics still request user handoff.
+schedule Retry-After waits, change identities/fingerprints or solve CAPTCHAs.
+Existing login/challenge diagnostics still request user handoff.
 
 Batch waits count against the overall command deadline; each navigation retains
 its own timeout, with transport waits included. Aborting the supplied signal
@@ -63,7 +63,11 @@ decision is captured before yielding, so mutating a returned report cannot
 restart the batch. Earlier reports remain available. Ordinary unclassified HTTP
 500 responses do not stop subsequent explicitly requested URLs. This prevents
 continued batch traffic after a detected restriction; it does not solve a
-challenge, implement Retry-After, or prove fewer blocks in live use.
+challenge, automatically retry, or prove fewer blocks in live use.
+
+RESEARCH-RATE-LIMIT.md describes the subsequent early 429 stop: primary error
+pages are not parsed, stylesheet rate limits also end the batch, and bounded
+Retry-After advice is reported without sleeping or issuing another request.
 
 ## Programmatic entry points
 

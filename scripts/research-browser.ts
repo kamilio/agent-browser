@@ -46,6 +46,7 @@ import {
 	type ResourceLimitDiagnostic,
 	resourceLimitDiagnostic,
 } from "../src/resource-limit.js";
+import { type RetryAfterAdvice, parseRetryAfter } from "../src/retry-after.js";
 import { validateSelectorSyntax } from "../src/selectors.js";
 import { BrowserSession, type NavigationResult } from "../src/session.js";
 import {
@@ -390,6 +391,14 @@ export type ResearchOutcome =
 export interface ResearchNavigationReport {
 	admission?: ResearchAdmissionProvenance;
 	readerRawPolicy?: ResearchReaderRawPolicy;
+	rateLimit?: {
+		kind: "http-rate-limit";
+		status: 429;
+		url: string;
+		receivedAt: string;
+		action: "stop-without-retry";
+		retryAfter?: Readonly<RetryAfterAdvice>;
+	};
 	requestedUrl: string;
 	finalUrl: string | null;
 	startedAt: string;
@@ -560,6 +569,12 @@ export async function researchNavigation(
 	let primaryStarted = false;
 	let primaryHeaders: NetworkResponse["headers"] = {};
 	let primaryUrl: string | undefined;
+	let rateLimited = false;
+	const stopForRateLimit = (): never => {
+		report.outcome = "http-failure";
+		stage = "rate-limit";
+		throw new AgentBrowserError("policy-denied", "Research rate limit reached");
+	};
 	try {
 		session = new BrowserSession({
 			createTransport: (cookieJar) => {
@@ -573,6 +588,7 @@ export async function researchNavigation(
 				transport = native;
 				return {
 					async request(request) {
+						if (rateLimited) stopForRateLimit();
 						const primary = !primaryStarted;
 						primaryStarted = true;
 						if (primary) stage = "network";
@@ -603,6 +619,19 @@ export async function researchNavigation(
 								credentials: "omit",
 							},
 						});
+						if (response.status === 429) {
+							rateLimited = true;
+							const receivedAt = Date.now();
+							const retryAfter = parseRetryAfter(response.headers, receivedAt);
+							report.rateLimit = {
+								kind: "http-rate-limit",
+								status: 429,
+								url: reportUrl(response.url),
+								receivedAt: new Date(receivedAt).toISOString(),
+								action: "stop-without-retry",
+								...(retryAfter ? { retryAfter } : {}),
+							};
+						}
 						if (primary) {
 							report.primaryResponse = summarizePrimaryResponse(response);
 							report.finalUrl = report.primaryResponse.url;
@@ -630,6 +659,7 @@ export async function researchNavigation(
 							}
 							stage = "navigation";
 						}
+						if (rateLimited) stopForRateLimit();
 						return response;
 					},
 					metrics: () => native.metrics(),
@@ -667,6 +697,7 @@ export async function researchNavigation(
 		const navigation = await session.navigate(tab.id, validated.urls[0], {
 			signal,
 		});
+		if (rateLimited) stopForRateLimit();
 		report.navigation = {
 			...navigation,
 			url: navigation.url ? reportUrl(navigation.url) : null,
@@ -873,6 +904,7 @@ export async function* researchBatch(
 			const stop =
 				report.outcome === "semantic-barrier" ||
 				report.classification.barrier !== null ||
+				report.rateLimit !== undefined ||
 				report.primaryResponse?.status === 429;
 			yield report;
 			if (stop) return;

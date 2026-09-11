@@ -883,7 +883,10 @@ it.each([403, 404, 429, 500])(
 			partial: true,
 		});
 		expect(report.primaryResponse?.status).toBe(status);
-		expect(report.headings?.entries).toHaveLength(1);
+		if (status === 429) {
+			expect(report.headings).toBeUndefined();
+			expect(report.rateLimit?.action).toBe("stop-without-retry");
+		} else expect(report.headings?.entries).toHaveLength(1);
 		expect(report.bodyCapture).toBeDefined();
 		closed(report);
 	},
