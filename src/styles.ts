@@ -1444,14 +1444,22 @@ export class DocumentStyles {
 			const flowValues = flowSpecified.get(node.id);
 			if (flowValues) {
 				charge(cssFlowProperties.length);
+				const computedFlow = computeFlowStyle(
+					flowValues,
+					node.parent === null
+						? initialFlowStyle
+						: (flowComputed.get(node.parent) ?? initialFlowStyle),
+				);
+				const positionedBox =
+					display !== "none" &&
+					display !== "contents" &&
+					(computedFlow.position === "absolute" ||
+						computedFlow.position === "fixed");
 				flowComputed.set(
 					node.id,
-					computeFlowStyle(
-						flowValues,
-						node.parent === null
-							? initialFlowStyle
-							: (flowComputed.get(node.parent) ?? initialFlowStyle),
-					),
+					positionedBox && computedFlow.float !== "none"
+						? Object.freeze({ ...computedFlow, float: "none" })
+						: computedFlow,
 				);
 			}
 			const position = flowComputed.get(node.id)?.position;

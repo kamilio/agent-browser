@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11,2026,23:52 UTC: generated absolute/fixed boxes now compute
+float:none before native formatting and descendant inheritance, preserving the
+authored inline value and priority. This fixes a false float blocker on genuinely
+positioned boxes, not general float layout. `POSITIONED-FLOAT.md` and the audited
+native primary source `FLOAT-FORMATTING-SOURCE.md` record the exact scope;
+display:none and existing contents non-box behavior stay unchanged. A genuine
+native checkbox click fails clean prior production and passes the fix;55 new
+tests also verify cascade, frozen snapshots, containing blocks, stacking, raster,
+hit ownership, fixed scrolling and restoration of real float/overflow guards.
+The sealed native-positioned-float-september11-round01 gate passes build, strict,
+format and11080 checks with2 unchanged exclusions,191 selected/190 strict/588
+manifest entries,1077 source/1916 compiled and1073 unchanged tracked inputs.
+The pre-existing dirty styles residual is excluded and verified unchanged.
+The actual OpenBSD static float and3 overflow blockers remain unresolved; full
+float placement/exclusion, shrink-to-fit sizing, auto heights, BFC ownership and
+scroll-container integration still require substantive coordinated layout work.
+Separate native float-sizing research and a fresh curl documentation flow use
+their own authorizations and audited11025 runtime, not this in-progress release.
+Keep the broad website/performance goal active; no live, credentials, real
+SafeJS/device/TTY acceptance or challenge bypass follows from native checks.
+
 September 11,2026,23:33 UTC: the new11025-pass font release4d11abd makes
 two fresh HTTP200 GETs for the OpenBSD introduction and its intact stylesheet;
 22855 bytes and both original hashes match the earlier successful destination

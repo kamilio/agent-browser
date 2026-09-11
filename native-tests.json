@@ -557,6 +557,8 @@
   "src/bitmap-font-weights.test.ts",
   "src/css-font-weight.test.ts",
   "src/font-weight-integration.test.ts",
+  "src/positioned-float-computation.test.ts",
+  "src/positioned-float-integration.test.ts",
   "src/stylesheet-fetch.test.ts",
   "src/subresource-integrity.test.ts",
   "src/list-ordinals.test.ts",
