@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 exact MDN replay identifies the click's structural blocker:
+body.page-layout computes to display:grid and is deferred before its link subtree
+is formatted. MDN-NATIVE-FORMATTING.md records the absent e1673 box, five visited
+nodes, unchanged width rejection, four rejecting CSS diagnostic categories and
+72 independent verification checks. Implement actual grid/CSS coverage rather
+than suppressing diagnostics or substituting block layout; nested grid and
+display:contents, full native activation and broader acceptance remain unverified.
+
 September 11, 2026 direct compound predicates now precede nested selector tests,
 avoiding ancestor walks for locally false hover/visited/class/attribute checks.
 COMPOUND-PREDICATE-ORDER.md records four preserved work-bound baseline failures,
