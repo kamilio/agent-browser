@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+On September 11, 2026 at 04:09 UTC, one new native-only SWE-bench website probe
+hits the existing 2MB decoded-response cap at 2,009,628 observed bytes. It records
+one request, no mocks/redirects and a closed transport, but no accepted HTTP
+status, extraction or challenge classification. SWE-BENCH-WEBSITE-PROBE.md preserves
+the failure, exact engine identity and measurements; no retry or alternate client
+runs. This identifies large-page admission as the next website-compatibility
+problem, not an authorization barrier or confirmed CAPTCHA. Investigate bounded
+long-source discovery/replay and early response-head diagnostics; do not silently
+raise defaults. No source-content or benchmark-ranking findings are established.
+
 On September 11, 2026 at 04:01 UTC, the research helper exposes JSON/table
 metadata and per-origin batch/transport pacing without changing defaults. All
 196 new native cases pass, including selected challenge text beyond the whole-
