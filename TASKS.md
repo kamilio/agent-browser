@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 this browser fetches the W3C Grid specification with one
+HTTP200 request, then the native semantic reader fails unsupported at loader.
+GRID-SPEC-NATIVE-RESEARCH.md preserves the 957488-byte capture, failed research
+result, zero extracted sections and verified cleanup. There is no general
+authorization barrier or demonstrated challenge; inspect the exact reader error
+offline before implementing a fix or claiming normative Grid findings.
+
 September 11, 2026 exact paired replays verify the compound availability change
 across all 323 MDN and 755 Wikipedia selector calls. MDN-COMPOUND-AVAILABILITY.md
 records cascade work 3991128 -> 2891552 and the former hotspot 958911 -> 217.
