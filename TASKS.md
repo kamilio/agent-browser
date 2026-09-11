@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 STYLESHEET-INTEGRATION.md adds explicit policy-aware stylesheet
+fetching, bounded SHA256/384/512 integrity checks and per-hop CORS/redirect
+credential handling without silently extending URL-only legacy callbacks. The
+targeted loader/session check passes141 cases; source review and the audited
+151-suite native gate pass9060 cases with the same2 explicit baseline exclusions.
+Build/strict/format pass; header/meta CSP remains a fail-closed unsupported boundary
+for this new path. Native SRI/HTML source evidence is retained, including failed
+Fetch extraction at50001 nodes; this adds fetch.spec.whatwg.org for61 attempted
+hosts, not61 working sites. Earlier native-gate ENOSPC and preparation failures
+remain failures; no unowned data is deleted. Disk capacity remains tight. A fresh
+Test Pages stylesheet/control run is separately released; website functionality,
+full Fetch conformance and genuine pointer acceptance are not claimed by tests.
+
 September 11, 2026 PYTHON-IMAGE-FALLBACK-REPLAY.md verifies real literal logo-alt
 formatting children for both displayed broken images on the8831-pass build.
 Their deferred placeholders disappear while images remain undecoded; the actual

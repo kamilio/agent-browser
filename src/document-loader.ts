@@ -13,6 +13,11 @@ import {
 import { resourceLimitError } from "./resource-limit.js";
 import type { DocumentLoaderContext } from "./session.js";
 import { documentStyles } from "./styles.js";
+import type { StylesheetFetchPolicy } from "./stylesheet-fetch.js";
+import {
+	parseIntegrityMetadata,
+	verifyIntegrityMetadata,
+} from "./subresource-integrity.js";
 import { loadTextDocument } from "./text-loader.js";
 
 function prescanEncoding(bytes: Uint8Array) {
@@ -100,6 +105,21 @@ export async function loadBrowserDocument(
 	if (info) setHtmlParseInfo(tree, { ...info, encoding: decoded.encoding });
 	try {
 		const styles = documentStyles(tree);
+		let stylesheetCspBlocked = Object.keys(response.headers).some(
+			(name) => name.toLowerCase() === "content-security-policy",
+		);
+		if (!stylesheetCspBlocked) {
+			for (const { node } of tree.walk()) {
+				if (
+					isHtmlElement(node, "meta") &&
+					node.attributes["http-equiv"]?.toLowerCase() ===
+						"content-security-policy"
+				) {
+					stylesheetCspBlocked = true;
+					break;
+				}
+			}
+		}
 		for (const { node } of tree.walk()) {
 			if (
 				!isHtmlElement(node, "link") ||
@@ -118,14 +138,14 @@ export async function loadBrowserDocument(
 				node.attributes.type.trim().toLowerCase() !== "text/css"
 			)
 				continue;
-			if (
+			const requiresPolicy =
 				Object.hasOwn(node.attributes, "integrity") ||
-				Object.hasOwn(node.attributes, "crossorigin")
-			) {
+				Object.hasOwn(node.attributes, "crossorigin");
+			if (requiresPolicy && !context.fetchStylesheetWithPolicy) {
 				styles.noteLoadIssue("stylesheet-integrity-or-cors-not-implemented");
 				continue;
 			}
-			if (!context.fetchStylesheet) {
+			if (!requiresPolicy && !context.fetchStylesheet) {
 				styles.noteLoadIssue("stylesheet-fetch-unavailable");
 				continue;
 			}
@@ -133,7 +153,48 @@ export async function loadBrowserDocument(
 				const url = parseNetworkUrl(
 					new URL(node.attributes.href ?? "", documentBaseUrl(tree)).href,
 				).href;
-				const sheet = await context.fetchStylesheet(url);
+				const integrity = requiresPolicy
+					? parseIntegrityMetadata(node.attributes.integrity ?? "")
+					: null;
+				let sheet: NetworkResponse;
+				if (requiresPolicy) {
+					if (stylesheetCspBlocked) {
+						styles.noteLoadIssue("stylesheet-csp-not-implemented");
+						continue;
+					}
+					const crossorigin = node.attributes.crossorigin;
+					const policy: StylesheetFetchPolicy = {
+						mode: crossorigin === undefined ? "no-cors" : "cors",
+						credentials:
+							crossorigin === undefined ||
+							crossorigin.toLowerCase() === "use-credentials"
+								? "include"
+								: "same-origin",
+					};
+					const result = await context.fetchStylesheetWithPolicy!(url, policy);
+					if (context.signal.aborted)
+						throw new AgentBrowserError(
+							"aborted",
+							"Stylesheet loading aborted",
+						);
+					if (!["basic", "cors", "opaque"].includes(result.type))
+						throw new AgentBrowserError(
+							"policy-denied",
+							"Invalid stylesheet response type",
+						);
+					if (result.type === "opaque" && policy.mode === "cors") {
+						styles.noteLoadIssue("stylesheet-cors-response-not-readable");
+						continue;
+					}
+					if (result.type === "opaque" && integrity) {
+						styles.noteLoadIssue("stylesheet-integrity-response-not-readable");
+						continue;
+					}
+					sheet = result.response;
+					parseNetworkUrl(sheet.url);
+				} else {
+					sheet = await context.fetchStylesheet!(url);
+				}
 				if (context.signal.aborted)
 					throw new AgentBrowserError("aborted", "Stylesheet loading aborted");
 				if (sheet.status < 200 || sheet.status >= 300)
@@ -155,6 +216,17 @@ export async function loadBrowserDocument(
 						"resource-limit",
 						"Stylesheet body limit exceeded",
 					);
+				if (
+					integrity &&
+					!verifyIntegrityMetadata(
+						sheet.body,
+						integrity,
+						styles.limits.maxCodeUnits * 4 + 3,
+					)
+				) {
+					styles.noteLoadIssue("stylesheet-integrity-mismatch");
+					continue;
+				}
 				styles.setExternalSheet(
 					node.id,
 					url,

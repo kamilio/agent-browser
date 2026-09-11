@@ -1,6 +1,11 @@
 import { CookieJar, type CookieLimits } from "./cookies.js";
 import { NetworkRequestQueue } from "./network-request-queue.js";
 import {
+	fetchStylesheetResource,
+	type StylesheetFetchPolicy,
+	type StylesheetFetchResult,
+} from "./stylesheet-fetch.js";
+import {
 	type BrowserIdentity,
 	type BrowserIdentityOptions,
 	browserIdentityHeaders,
@@ -83,6 +88,10 @@ export interface DocumentLoaderContext {
 	readonly tabId: string;
 	readonly limits: Readonly<DocumentLimits>;
 	readonly fetchStylesheet?: (url: string) => Promise<NetworkResponse>;
+	readonly fetchStylesheetWithPolicy?: (
+		url: string,
+		policy: StylesheetFetchPolicy,
+	) => Promise<Readonly<StylesheetFetchResult>>;
 	readonly fetchScript?: (url: string) => Promise<NetworkResponse>;
 	readonly fetchImage?: ImageFetch;
 	readonly scripts?: HtmlScriptHooks;
@@ -2028,6 +2037,54 @@ export class BrowserSession {
 					limits: this.documentLimits,
 					fetch,
 					fetchImage,
+					fetchStylesheetWithPolicy: async (
+						resourceUrl: string,
+						policy: StylesheetFetchPolicy,
+					) => {
+						let type: StylesheetFetchResult["type"] = "opaque";
+						const response = await journal.run(
+							"stylesheet",
+							resourceUrl,
+							"GET",
+							async () => {
+								this.assertCurrent(job);
+								if (++resources > this.limits.maxStylesheetRequests)
+									throw new AgentBrowserError(
+										"resource-limit",
+										"Stylesheet request limit exceeded",
+									);
+								if (fetchCspBlocked)
+									throw new AgentBrowserError(
+										"policy-denied",
+										"Stylesheet CSP enforcement is not implemented",
+									);
+								const result = await fetchStylesheetResource(
+									resourceUrl,
+									policy,
+									{
+										documentUrl: responseUrl,
+										signal: bootstrapSignal,
+										maxRedirects: this.transport.limits?.maxRedirects ?? 10,
+										request: async (input) => {
+											this.assertCurrent(job);
+											const sheet = await withAbort(
+												this.fetchNetwork({
+													...input,
+													signal: bootstrapSignal,
+												}),
+												bootstrapSignal,
+											);
+											this.assertCurrent(job);
+											return sheet;
+										},
+									},
+								);
+								type = result.type;
+								return result.response;
+							},
+						);
+						return Object.freeze({ response, type });
+					},
 					fetchScript: (resourceUrl: string) =>
 						journal.run("script", resourceUrl, "GET", async () => {
 							this.assertCurrent(job);

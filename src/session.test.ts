@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { getEventListeners } from "node:events";
+import { createHash } from "node:crypto";
 import type { CookieJar } from "./cookies.js";
 import { loadBrowserDocument } from "./document-loader.js";
 import { DocumentTree } from "./document.js";
@@ -469,6 +470,8 @@ it.each([
 	["script", false],
 	["stylesheet", true],
 	["script", true],
+	["stylesheet-policy", false],
+	["stylesheet-policy", true],
 ] as const)(
 	"cancels queued bootstrap %s work when loading settles with commit %s",
 	async (kind, commit) => {
@@ -490,7 +493,17 @@ it.each([
 				);
 				await started.promise;
 				const fetchResource =
-					kind === "script" ? context.fetchScript : context.fetchStylesheet;
+					kind === "script"
+						? context.fetchScript
+						: kind === "stylesheet-policy"
+							? (url: string) =>
+									context
+										.fetchStylesheetWithPolicy?.(url, {
+											mode: "cors",
+											credentials: "same-origin",
+										})
+										.then((result) => result.response)
+							: context.fetchStylesheet;
 				resources.push(
 					(fetchResource?.(queuedUrl) as Promise<NetworkResponse>).catch(
 						() => undefined,
@@ -1051,6 +1064,140 @@ it.each(["replacement", "separate tabs"])(
 		expect(requests).toHaveLength(26);
 	},
 );
+
+it.each([
+	["anonymous", "omit", "cors", "https://example.com"],
+	["use-credentials", "include", "cors", "https://example.com"],
+	[undefined, "include", "opaque", undefined],
+] as const)(
+	"loads integrity stylesheets through per-hop policy for %s",
+	async (crossorigin, credentials, type, origin) => {
+		const body = new TextEncoder().encode("p{visibility:hidden}");
+		const digest = createHash("sha256").update(body).digest("base64");
+		const finalUrl = "https://cdn.example.net/styles/final.css";
+		const { session, requests } = fixture(
+			{ loadDocument: loadBrowserDocument },
+			async (input) => {
+				if (input.url === initialUrl)
+					return response(input.url, {
+						headers: { "content-type": ["text/html"] },
+						body: new TextEncoder().encode(
+							`<link rel=stylesheet href=/sheet.css ${crossorigin ? `crossorigin=${crossorigin}` : ""} integrity=sha256-${digest}><p id=target>Content`,
+						),
+					});
+				if (input.url.endsWith("/sheet.css"))
+					return response(input.url, {
+						status: 302,
+						headers: { location: [finalUrl] },
+						body: new Uint8Array(),
+					});
+				return response(input.url, {
+					headers: {
+						"content-type": ["text/css"],
+						"access-control-allow-origin": ["https://example.com"],
+						"access-control-allow-credentials": ["true"],
+					},
+					body,
+				});
+			},
+		);
+		const tab = session.createTab().id;
+		await session.navigate(tab, initialUrl);
+		expect(requests.map((request) => request.url)).toEqual([
+			initialUrl,
+			"https://example.com/sheet.css",
+			finalUrl,
+		]);
+		expect(requests[1]).toMatchObject({
+			redirect: "manual",
+			cookieContext: {
+				credentials: crossorigin === "anonymous" ? "same-origin" : "include",
+			},
+		});
+		expect(requests[2]).toMatchObject({
+			redirect: "manual",
+			cookieContext: { credentials },
+		});
+		expect(requests[2].headers?.origin).toBe(origin);
+		const page = session.page(tab);
+		expect(page.styles.metrics().externalSheets).toBe(
+			type === "opaque" ? 0 : 1,
+		);
+		if (type === "opaque")
+			expect(
+				page.styles.metrics().issues[
+					"stylesheet-integrity-response-not-readable"
+				],
+			).toBe(1);
+		else
+			expect(
+				page.styles.get(page.queries.querySelector("#target")!).visibility,
+			).toBe("hidden");
+		expect(
+			session
+				.requests(tab)
+				.entries.filter((entry) => entry.kind === "stylesheet"),
+		).toMatchObject([{ state: "complete" }]);
+	},
+);
+
+it("honors the transport redirect budget for policy stylesheet loads", async () => {
+	const { session, requests, transport } = fixture(
+		{ loadDocument: loadBrowserDocument },
+		async (input) =>
+			input.url === initialUrl
+				? response(input.url, {
+						headers: { "content-type": ["text/html"] },
+						body: new TextEncoder().encode(
+							"<link rel=stylesheet href=/sheet.css crossorigin>",
+						),
+					})
+				: response(input.url, {
+						status: 302,
+						headers: { location: ["/next.css"] },
+					}),
+	);
+	Object.defineProperty(transport, "limits", {
+		value: { maxConcurrent: 1, maxRedirects: 0 },
+	});
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	expect(requests.map((request) => request.url)).toEqual([
+		initialUrl,
+		"https://example.com/sheet.css",
+	]);
+	expect(
+		session.page(tab).styles.metrics().issues["stylesheet-resource-limit"],
+	).toBe(1);
+});
+
+it("shares the stylesheet request budget between legacy and policy paths", async () => {
+	const { session, requests } = fixture(
+		{ loadDocument: loadBrowserDocument, limits: { maxStylesheetRequests: 1 } },
+		async (input) =>
+			input.url === initialUrl
+				? response(input.url, {
+						headers: { "content-type": ["text/html"] },
+						body: new TextEncoder().encode(
+							"<link rel=stylesheet href=/first.css><link rel=stylesheet href=/second.css crossorigin>",
+						),
+					})
+				: response(input.url, {
+						headers: { "content-type": ["text/css"] },
+						body: new TextEncoder().encode("p{color:red}"),
+					}),
+	);
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	expect(requests.map((request) => request.url)).toEqual([
+		initialUrl,
+		"https://example.com/first.css",
+	]);
+	expect(session.page(tab).styles.metrics()).toMatchObject({
+		externalSheets: 1,
+		issues: { "stylesheet-resource-limit": 1 },
+	});
+});
 
 it("continues refusing stylesheet requests when a custom loader catches budget failures", async () => {
 	const { session, requests } = fixture({

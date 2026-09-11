@@ -49,7 +49,10 @@ export interface NetworkMetrics {
 }
 
 export interface NetworkTransport {
-	readonly limits?: Readonly<Pick<NetworkLimits, "maxConcurrent">>;
+	readonly limits?: Readonly<
+		Pick<NetworkLimits, "maxConcurrent"> &
+			Partial<Pick<NetworkLimits, "maxRedirects">>
+	>;
 	request(request: NetworkRequest): Promise<NetworkResponse>;
 	requestWithRoutes?(
 		request: NetworkRequest,

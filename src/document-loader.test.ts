@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { expect, it } from "vitest";
 import { loadBrowserDocument } from "./document-loader.js";
 import { htmlParseInfo } from "./html-info.js";
@@ -78,6 +79,291 @@ it("discloses when a caller has not supplied a stylesheet transport", async () =
 		documentStyles(tree).metrics().issues["stylesheet-fetch-unavailable"],
 	).toBe(1);
 	tree.close();
+});
+
+it.each([
+	["integrity=''", "no-cors", "include"],
+	["crossorigin", "cors", "same-origin"],
+	["crossorigin=anonymous", "cors", "same-origin"],
+	["crossorigin=invalid", "cors", "same-origin"],
+	["crossorigin=use-credentials", "cors", "include"],
+	["crossorigin=USE-CREDENTIALS", "cors", "include"],
+	["crossorigin=' use-credentials '", "cors", "same-origin"],
+])(
+	"passes explicit stylesheet policy for %s",
+	async (attributes, mode, credentials) => {
+		const calls: unknown[] = [];
+		const tree = await loadBrowserDocument(
+			response(`<link rel=stylesheet href=/sheet.css ${attributes}><p>Content`),
+			{
+				...context,
+				fetchStylesheet: async () => {
+					throw new Error("Legacy stylesheet callback must not handle policy");
+				},
+				fetchStylesheetWithPolicy: async (url, policy) => {
+					calls.push({ url, ...policy });
+					return {
+						response: { ...response("p{color:red}", "text/css"), url },
+						type: "basic",
+					};
+				},
+			},
+		);
+		expect(calls).toEqual([
+			{ url: "https://example.com/sheet.css", mode, credentials },
+		]);
+		expect(documentStyles(tree).metrics().externalSheets).toBe(1);
+		tree.close();
+	},
+);
+
+it("does not silently drop policy into a legacy URL-only callback", async () => {
+	let requests = 0;
+	const tree = await loadBrowserDocument(
+		response("<link rel=stylesheet href=/sheet.css crossorigin>"),
+		{
+			...context,
+			fetchStylesheet: async () => {
+				requests++;
+				return response("p{color:red}", "text/css");
+			},
+		},
+	);
+	expect(requests).toBe(0);
+	expect(
+		documentStyles(tree).metrics().issues[
+			"stylesheet-integrity-or-cors-not-implemented"
+		],
+	).toBe(1);
+	tree.close();
+});
+
+it.each([
+	["basic", true, undefined],
+	["cors", true, undefined],
+	["basic", false, "stylesheet-integrity-mismatch"],
+	["opaque", true, "stylesheet-integrity-response-not-readable"],
+] as const)(
+	"checks stylesheet integrity on %s responses (matching %s)",
+	async (type, matching, issue) => {
+		const sheet = response("p{color:red}", "text/css");
+		const digest = createHash("sha256")
+			.update(matching ? sheet.body : new Uint8Array())
+			.digest("base64");
+		const tree = await loadBrowserDocument(
+			response(
+				`<link rel=stylesheet href=/sheet.css integrity=sha256-${digest}>`,
+			),
+			{
+				...context,
+				fetchStylesheetWithPolicy: async () => ({ response: sheet, type }),
+			},
+		);
+		expect(documentStyles(tree).metrics().externalSheets).toBe(issue ? 0 : 1);
+		if (issue) expect(documentStyles(tree).metrics().issues[issue]).toBe(1);
+		tree.close();
+	},
+);
+
+it("hashes the response bytes before BOM and charset decoding", async () => {
+	const sheet = response("p{color:red}", "text/css; charset=windows-1252");
+	sheet.body = new Uint8Array([0xef, 0xbb, 0xbf, ...sheet.body]);
+	const digest = createHash("sha384").update(sheet.body).digest("base64");
+	const tree = await loadBrowserDocument(
+		response(
+			`<link rel=stylesheet href=/sheet.css crossorigin integrity=sha384-${digest}>`,
+		),
+		{
+			...context,
+			fetchStylesheetWithPolicy: async () => ({
+				response: sheet,
+				type: "basic",
+			}),
+		},
+	);
+	expect(documentStyles(tree).metrics().externalSheets).toBe(1);
+	tree.close();
+});
+
+it.each(["sha256-", "sha256-malformed", "sha256"])(
+	"retains recognized invalid integrity %s as a restriction",
+	async (integrity) => {
+		const tree = await loadBrowserDocument(
+			response(`<link rel=stylesheet href=/sheet.css integrity=${integrity}>`),
+			{
+				...context,
+				fetchStylesheetWithPolicy: async () => ({
+					response: response("p{color:red}", "text/css"),
+					type: "basic",
+				}),
+			},
+		);
+		expect(documentStyles(tree).metrics().externalSheets).toBe(0);
+		expect(
+			documentStyles(tree).metrics().issues["stylesheet-integrity-mismatch"],
+		).toBe(1);
+		tree.close();
+	},
+);
+
+it("does not accept an opaque response from a CORS stylesheet callback", async () => {
+	const tree = await loadBrowserDocument(
+		response("<link rel=stylesheet href=/sheet.css crossorigin>"),
+		{
+			...context,
+			fetchStylesheetWithPolicy: async () => ({
+				response: response("p{color:red}", "text/css"),
+				type: "opaque",
+			}),
+		},
+	);
+	expect(documentStyles(tree).metrics().externalSheets).toBe(0);
+	expect(
+		documentStyles(tree).metrics().issues[
+			"stylesheet-cors-response-not-readable"
+		],
+	).toBe(1);
+	tree.close();
+});
+
+it("bounds integrity metadata before requesting a stylesheet", async () => {
+	let requests = 0;
+	const tree = await loadBrowserDocument(
+		response(
+			`<link rel=stylesheet href=/sheet.css integrity='${"x".repeat(16385)}'>`,
+		),
+		{
+			...context,
+			fetchStylesheetWithPolicy: async () => {
+				requests++;
+				return {
+					response: response("p{color:red}", "text/css"),
+					type: "basic",
+				};
+			},
+		},
+	);
+	expect(requests).toBe(0);
+	expect(
+		documentStyles(tree).metrics().issues["stylesheet-resource-limit"],
+	).toBe(1);
+	tree.close();
+});
+
+it.each(["header", "meta"])(
+	"keeps %s CSP stylesheet policy fail-closed",
+	async (source) => {
+		let requests = 0;
+		const input = response(
+			`${source === "meta" ? '<meta http-equiv=Content-Security-Policy content="default-src self">' : ""}<link rel=stylesheet href=/sheet.css crossorigin>`,
+		);
+		if (source === "header")
+			input.headers = {
+				...input.headers,
+				"content-security-policy": ["default-src 'self'"],
+			};
+		const tree = await loadBrowserDocument(input, {
+			...context,
+			fetchStylesheetWithPolicy: async () => {
+				requests++;
+				return {
+					response: response("p{color:red}", "text/css"),
+					type: "basic",
+				};
+			},
+		});
+		expect(requests).toBe(0);
+		expect(documentStyles(tree).metrics().externalSheets).toBe(0);
+		expect(
+			documentStyles(tree).metrics().issues["stylesheet-csp-not-implemented"],
+		).toBe(1);
+		tree.close();
+	},
+);
+
+it("does not allow a weaker digest match to override a stronger mismatch", async () => {
+	const sheet = response("p{color:red}", "text/css");
+	const digest = createHash("sha256").update(sheet.body).digest("base64");
+	const tree = await loadBrowserDocument(
+		response(
+			`<link rel=stylesheet href=/sheet.css integrity='sha256-${digest} sha512-malformed'>`,
+		),
+		{
+			...context,
+			fetchStylesheetWithPolicy: async () => ({
+				response: sheet,
+				type: "basic",
+			}),
+		},
+	);
+	expect(documentStyles(tree).metrics().externalSheets).toBe(0);
+	expect(
+		documentStyles(tree).metrics().issues["stylesheet-integrity-mismatch"],
+	).toBe(1);
+	tree.close();
+});
+
+it("permits unsupported-only integrity without claiming a digest match", async () => {
+	const tree = await loadBrowserDocument(
+		response("<link rel=stylesheet href=/sheet.css integrity=unknown-abc>"),
+		{
+			...context,
+			fetchStylesheetWithPolicy: async () => ({
+				response: response("p{color:red}", "text/css"),
+				type: "opaque",
+			}),
+		},
+	);
+	expect(documentStyles(tree).metrics().externalSheets).toBe(1);
+	tree.close();
+});
+
+it.each([
+	[404, ["text/css"]],
+	[200, ["text/html"]],
+	[200, ["text/css", "text/css"]],
+] as const)(
+	"retains status/MIME gates for policy stylesheets (%s %s)",
+	async (status, types) => {
+		const sheet = response("p{color:red}", "text/css");
+		sheet.status = status;
+		sheet.headers = { "content-type": [...types] };
+		const tree = await loadBrowserDocument(
+			response("<link rel=stylesheet href=/sheet.css crossorigin>"),
+			{
+				...context,
+				fetchStylesheetWithPolicy: async () => ({
+					response: sheet,
+					type: "basic",
+				}),
+			},
+		);
+		expect(documentStyles(tree).metrics().externalSheets).toBe(0);
+		expect(
+			documentStyles(tree).metrics().issues["stylesheet-unsupported"],
+		).toBe(1);
+		tree.close();
+	},
+);
+
+it("does not swallow a canceled opaque stylesheet response", async () => {
+	const controller = new AbortController();
+	await expect(
+		loadBrowserDocument(
+			response("<link rel=stylesheet href=/sheet.css crossorigin>"),
+			{
+				...context,
+				signal: controller.signal,
+				fetchStylesheetWithPolicy: async () => {
+					controller.abort();
+					return {
+						response: response("p{color:red}", "text/css"),
+						type: "opaque",
+					};
+				},
+			},
+		),
+	).rejects.toMatchObject({ code: "aborted" });
 });
 
 it.each([

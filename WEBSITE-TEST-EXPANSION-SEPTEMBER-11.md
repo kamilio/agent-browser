@@ -1,5 +1,13 @@
 # Website test expansion — September 11, 2026
 
+**Later source update:** the native Fetch standards attempt at 16:50:42 UTC adds
+`fetch.spec.whatwg.org`, bringing the combined attempted-host inventory to **61**.
+Its HTTP 200 body reaches the reader's 50,001st-node limit; it is not a successful
+source extraction or working website. `STYLESHEET-CORS-SOURCE.md` preserves the
+receipt and failure. The original six-host expansion and 60-host subtotal below
+retain their original scope; repeated `www.w3.org` and `html.spec.whatwg.org`
+source requests add no other hostname.
+
 This is an additive record after `WEBSITE-TEST-INVENTORY.md`'s 54-host audit.
 Do not reinterpret that audit or these attempts as successful website coverage.
 The six new exact hostnames bring the combined attempted-host inventory to
