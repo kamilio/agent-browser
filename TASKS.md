@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 reader table-depth recovery is validated: omitted cell/row
+ends now close ordinary descendants without increasing limits or changing
+sanitized HTML bytes. READER-TABLE-SCOPE.md records the preserved five-case red
+baseline, 3463/3463 passing selected native tests across 33 files, and a separate
+fresh WHATWG HTTP200 capture with 140 headings. Its body hash matches the old
+depth-failing capture; that original failure remains unchanged. The broader
+SVG, malformed-attribute, website access, research, performance and real
+credential/passkey gates remain open, not generally unauthorized.
+
 September 11, 2026 website flows now exercise a real native DuckDuckGo form:
 fill and requestSubmit reach an HTTP200 search result; the original harness's
 case-comparison assertion failure remains preserved, with a separate passing

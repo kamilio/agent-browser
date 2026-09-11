@@ -95,10 +95,18 @@ function discardableRaw(name: string): name is HtmlDiscardRawName {
 	);
 }
 
-function closeAdjacentTableEnds(open: string[], name: string) {
+function closeImpliedTableEnds(open: string[], name: string) {
 	if (!tableCells.has(name) && name !== "tr" && !tableSections.has(name))
 		return;
 	let index = open.length;
+	while (
+		index > 0 &&
+		!tableCells.has(open[index - 1]) &&
+		open[index - 1] !== "tr" &&
+		!tableSections.has(open[index - 1]) &&
+		!["table", "caption", "colgroup"].includes(open[index - 1])
+	)
+		index--;
 	const cell = tableCells.has(open[index - 1]) ? --index : undefined;
 	const row = open[index - 1] === "tr" ? --index : undefined;
 	const section = tableSections.has(open[index - 1]) ? --index : undefined;
@@ -276,7 +284,7 @@ export function sanitizeResearchHtml(
 			continue;
 		}
 		if (!voidTags.has(name)) {
-			closeAdjacentTableEnds(open, name);
+			closeImpliedTableEnds(open, name);
 			if (name === "dt" || name === "dd") {
 				for (let index = open.length - 1; index >= 0; index--) {
 					const current = open[index];

@@ -557,11 +557,9 @@ it("retains formatting ancestors but allows explicitly closed inline children", 
 });
 
 it.each([`<table>${"<tr><td><div>value".repeat(140)}</table>`])(
-	"keeps nonadjacent optional table accounting conservative",
+	"accounts for implicit table closure across cell descendants",
 	(source) => {
-		expect(() => sanitizeResearchHtml(source)).toThrow(
-			expect.objectContaining({ code: "resource-limit" }),
-		);
+		expect(sanitizeResearchHtml(source, { maxDepth: 4 }).html).toBe(source);
 	},
 );
 
