@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 MDN-GRID-LAYOUT.md records one unchanged offline native click
+against all nineteen captured MDN responses using the frozen 8095-pass build.
+Formatting now retains 1753 boxes, ten Grid shells and 47 Grid-item-marked nodes,
+but these are not used geometry. The click first fails at positioned Grid
+coordination; no rectangle or destination request completes. Fifty-four other
+noncoordinated deferred nodes and the original CSS issues remain. Diagnose the
+exact positioned nodes before implementing their containing-block/static-position
+rules; no skipped guard, synthetic click or live-site success is claimed.
+
 September 11, 2026 GRID-OVERFLOW.md records two corrected Grid overflow alignment
 bugs, preserving five failing baseline cases and a subsequent clean8107-pass
 native gate across131 files with unchanged historical exceptions. Auto margins
