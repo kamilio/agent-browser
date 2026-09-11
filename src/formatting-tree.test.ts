@@ -1,12 +1,17 @@
 import { afterEach, expect, it } from "vitest";
 import { initialBoxStyle } from "./css-box.js";
 import type { DocumentTree } from "./document.js";
+import { documentGeometry } from "./document-geometry.js";
+import { layoutDocument } from "./document-layout.js";
+import { rasterizeDocument } from "./document-raster.js";
 import {
 	type FormattingTree,
 	buildFormattingTree,
 	resolveDocumentBlockWidths,
 } from "./formatting-tree.js";
 import { parseHtmlDocument } from "./html-parser.js";
+import { documentHitTesting } from "./hit-testing.js";
+import { documentInteractions } from "./interactions.js";
 import { DocumentQueries } from "./selectors.js";
 import { snapshotDocument } from "./snapshot.js";
 import { documentStyles } from "./styles.js";
@@ -276,7 +281,7 @@ it("handles ordinary breaks and the explicit unusual-element contents profile", 
 	expect(result.issues).toEqual({});
 });
 
-it.each(["flex", "grid", "table", "inline-table", "inline-flex", "list-item"])(
+it.each(["flex", "grid", "table", "inline-table", "inline-flex"])(
 	"retains the width-only guard for %s without fabricating block flow",
 	(display) => {
 		const { tree, ref } = fixture(
@@ -304,6 +309,291 @@ it.each(["flex", "grid", "table", "inline-table", "inline-flex", "list-item"])(
 			expect(child).toBeUndefined();
 		}
 		expect(() => resolveDocumentBlockWidths(tree)).toThrow("issue-free");
+	},
+);
+
+it.each([
+	["ul", "inline <span>content</span>", "inline"],
+	["ol", "<div>block</div><p>content</p>", "blocks"],
+	["ul", "before<div>block</div>after", "blocks"],
+])("formats marker-free %s items with %s", (tag, content, contentMode) => {
+	const { tree, ref } = fixture(
+		`<style>html,body,ul,ol,li,div,p{margin:0;padding:0}li{width:80px}</style><${tag} style="list-style-type:none"><li id="item">${content}</li></${tag}>`,
+	);
+	const before = snapshotDocument(tree);
+	const result = buildFormattingTree(tree);
+	verifyTree(result);
+	expect(result.issues).toEqual({});
+	expect(result.nodes.find((node) => node.ref === ref("#item"))).toMatchObject({
+		kind: "block",
+		display: "list-item",
+		contentMode,
+	});
+	expect(result.nodes.some((node) => node.marker)).toBe(false);
+	expect(textOrder(result)).toBe(content.replace(/<[^>]*>/g, ""));
+	expect(
+		resolveDocumentBlockWidths(tree).widths.find(
+			(node) => node.ref === ref("#item"),
+		)?.contentWidth,
+	).toBe(80);
+	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(0);
+	expect(snapshotDocument(tree)).toEqual(before);
+});
+
+it("inherits and overrides symbolic markers through contents and nested lists", () => {
+	const { tree, ref, styles, id } = fixture(
+		'<ul style="list-style-type:square;list-style-position:inside"><li id="outer">Outer<ul style="display:contents;list-style-type:circle"><li id="inner">Inner</li><li id="override" style="list-style-type:disc">Override</li><li id="none" style="list-style-type:none"><div>None</div></li></ul></li></ul>',
+	);
+	const result = buildFormattingTree(tree);
+	verifyTree(result);
+	expect(result.issues).toEqual({});
+	for (const [selector, type] of [
+		["#outer", "square"],
+		["#inner", "circle"],
+		["#override", "disc"],
+	]) {
+		expect(styles.list(id(selector))["list-style-type"]).toBe(type);
+		expect(
+			result.nodes.find((node) => node.ref === ref(selector) && node.marker)
+				?.marker?.type,
+		).toBe(type);
+	}
+	expect(result.nodes.filter((node) => node.marker)).toHaveLength(3);
+	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(3);
+});
+
+it.each(["disc", "circle", "square", "disclosure-open", "disclosure-closed"])(
+	"paints an ordinary %s marker with native geometry and hit targeting",
+	(type) => {
+		const { tree, id, ref, styles } = fixture(
+			`<style>html,body{margin:0}body{padding-left:20px}li{font-size:16px;line-height:20px;color:red;list-style-type:${type};list-style-position:inside}</style><li id="item">Item</li>`,
+		);
+		styles.setViewport(120, 80);
+		const geometry = documentGeometry(tree);
+		const itemRect = geometry.getBoundingClientRect(id("#item"));
+		expect(itemRect).toMatchObject({ x: 20, width: 100, height: 20 });
+		expect(geometry.getClientRects(id("#item"))).toHaveLength(1);
+		const firstGlyph = () =>
+			layoutDocument(tree).contexts.flatMap((context) => context.glyphs)[0];
+		expect(firstGlyph().x).toBe(36);
+		const image = rasterizeDocument(tree, {
+			clip: { x: 20, y: 0, width: 16, height: 20 },
+		});
+		expect(image.metrics.paintedMarkers).toBe(1);
+		let redPixels = 0;
+		for (let offset = 0; offset < image.image.pixels.length; offset += 4)
+			if (
+				image.image.pixels[offset] === 255 &&
+				image.image.pixels[offset + 1] === 0 &&
+				image.image.pixels[offset + 2] === 0 &&
+				image.image.pixels[offset + 3] === 255
+			)
+				redPixels++;
+		expect(redPixels).toBeGreaterThan(0);
+		expect(documentHitTesting(tree).elementFromPoint(23, 7)).toBe(id("#item"));
+		tree.setAttribute(id("#item"), "style", "list-style-position:outside");
+		expect(firstGlyph().x).toBe(20);
+		expect(geometry.getBoundingClientRect(id("#item"))).toEqual(itemRect);
+		expect(geometry.getClientRects(id("#item"))).toHaveLength(1);
+		expect(documentHitTesting(tree).elementFromPoint(7, 7)).toBe(id("#item"));
+		expect(
+			buildFormattingTree(tree).nodes.find((node) => node.marker)?.box?.[
+				"margin-left"
+			],
+		).toBe("-16px");
+		expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(1);
+		expect(tree.textContent(id("#item"))).toBe("Item");
+		expect(
+			buildFormattingTree(tree).nodes.find((node) => node.marker)?.ref,
+		).toBe(ref("#item"));
+	},
+);
+
+it.each(["flex", "grid"])(
+	"retains %s item flags and contents flattening for ordinary lists",
+	(display) => {
+		const { tree, ref } = fixture(
+			`<style>html,body{margin:0}#container{display:${display};width:120px}li{width:40px;list-style-position:inside}</style><div id="container"><ul id="contents" style="display:contents;list-style-type:square"><li id="first">One</li><li id="second" style="list-style-type:none"><div>Two</div></li></ul></div>`,
+		);
+		const result = buildFormattingTree(tree);
+		verifyTree(result);
+		const items = ["#first", "#second"].map((selector) =>
+			result.nodes.find((node) => node.ref === ref(selector)),
+		);
+		expect(result.nodes.some((node) => node.ref === ref("#contents"))).toBe(
+			false,
+		);
+		expect(
+			result.nodes.find((node) => node.ref === ref("#container"))?.children,
+		).toEqual(items.map((node) => node?.id));
+		for (const item of items)
+			expect(item).toMatchObject({
+				kind: "block",
+				display: "list-item",
+				independentContext: true,
+				[`${display}Item`]: true,
+			});
+		expect(result.issues).toEqual({ "display-layout-not-supported": 1 });
+		expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(1);
+	},
+);
+
+it("does not grant ordinary li or div markers summary activation", () => {
+	const { tree, id, ref } = fixture(
+		'<details open><summary id="summary">More</summary><li id="item">Item</li><div id="div" style="display:list-item;list-style-type:disclosure-closed">Div</div></details>',
+	);
+	const actions = documentInteractions(tree);
+	const markers = () =>
+		buildFormattingTree(tree).nodes.filter((node) => node.marker);
+	expect(markers().map((node) => node.marker?.type)).toEqual([
+		"disclosure-open",
+		"disc",
+		"disclosure-closed",
+	]);
+	for (const selector of ["#item", "#div"]) {
+		actions.click(ref(selector));
+		expect(tree.get(id("details")).attributes.open).toBe("");
+	}
+	actions.click(ref("#summary"));
+	expect(tree.get(id("details")).attributes.open).toBeUndefined();
+	expect(markers()).toHaveLength(1);
+	expect(markers()[0]).toMatchObject({
+		ref: ref("#summary"),
+		marker: { type: "disclosure-closed" },
+	});
+});
+
+it.each([
+	"<div>Block</div>",
+	'<span style="display:contents"><div>Flattened block</div></span>',
+	"<span>Before<div>Split inline</div>After</span>",
+])("rejects outside ordinary markers with block content: %s", (content) => {
+	const { tree, id } = fixture(`<li id="item">${content}</li>`);
+	expect(() => buildFormattingTree(tree)).toThrow(/outside list-item markers/i);
+	expect(() => rasterizeDocument(tree)).toThrow(/outside list-item markers/i);
+	tree.setAttribute(id("#item"), "style", "list-style-position:inside");
+	verifyTree(buildFormattingTree(tree));
+	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(1);
+	tree.setAttribute(id("#item"), "style", "list-style-type:none");
+	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(0);
+});
+
+it.each([
+	"list-style-type:decimal",
+	"list-style-type:lower-roman",
+	"list-style-type:symbols('*')",
+	"list-style-image:url(marker.png)",
+	"counter-reset:item",
+	"counter-increment:item",
+	"list-style:none",
+])("retains CSS diagnostics and the rendering guard for %s", (declaration) => {
+	const { tree } = fixture(`<li style="${declaration}">Item</li>`);
+	const result = buildFormattingTree(tree);
+	expect(
+		Object.keys(result.issues).some((code) => code.startsWith("css:")),
+	).toBe(true);
+	expect(result.nodes.find((node) => node.marker)?.marker?.type).toBe("disc");
+	expect(() => rasterizeDocument(tree)).toThrow();
+});
+
+it("charges ordinary markers to existing box and work budgets without DOM mutations", () => {
+	const { tree } = fixture("<ul><li>One</li><li>Two</li></ul>");
+	const before = snapshotDocument(tree);
+	const result = buildFormattingTree(tree);
+	for (const options of [
+		{ maxBoxes: result.metrics.boxes - 1 },
+		{ maxWork: result.metrics.work - 1 },
+	])
+		expect(() => buildFormattingTree(tree, options)).toThrow(/limit/i);
+	expect(
+		buildFormattingTree(tree, {
+			maxBoxes: result.metrics.boxes,
+			maxWork: result.metrics.work,
+		}),
+	).toEqual(result);
+	expect(() => rasterizeDocument(tree, { maxWork: 10 })).toThrow(/work limit/i);
+	expect(snapshotDocument(tree)).toEqual(before);
+});
+
+it.each([
+	'<ol><li id="item">Numbered</li></ol>',
+	'<ol start="3" reversed><li id="item" value="7">Numbered</li></ol>',
+	'<ol><div style="display:contents"><li id="item">Numbered</li></div></ol>',
+	'<ol style="list-style-type:disc"><li id="item">Ambiguous disc</li></ol>',
+])(
+	"does not silently replace unrepresented ordered-list counters with discs: %s",
+	(markup) => {
+		const { tree, id } = fixture(
+			`<style>body{padding-left:20px}</style>${markup}`,
+		);
+		expect(
+			buildFormattingTree(tree).issues["ordered-list-marker-not-supported"],
+		).toBe(1);
+		expect(() => rasterizeDocument(tree)).toThrow();
+		tree.setAttribute(id("#item"), "style", "list-style-type:none");
+		expect(buildFormattingTree(tree).issues).toEqual({});
+		expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(0);
+		tree.setAttribute(id("#item"), "style", "list-style-type:square");
+		expect(buildFormattingTree(tree).issues).toEqual({});
+		expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(1);
+	},
+);
+
+it("supports unordered descendants of a marker-free ordered list", () => {
+	const { tree } = fixture(
+		'<style>body{padding-left:20px}</style><ol style="list-style-type:none"><li><ul style="list-style-type:disc"><li>Unordered</li></ul></li></ol>',
+	);
+	expect(buildFormattingTree(tree).issues).toEqual({});
+	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(1);
+});
+
+it.each(["block", "inline", "inline-block", "contents", "none"])(
+	"does not generate an ordinary marker after display:%s overrides list-item",
+	(display) => {
+		const { tree } = fixture(`<li style="display:${display}">Item</li>`);
+		expect(buildFormattingTree(tree).nodes.some((node) => node.marker)).toBe(
+			false,
+		);
+		expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(0);
+	},
+);
+
+it("preserves ordinary marker visibility and zero-size suppression", () => {
+	const { tree, id } = fixture(
+		'<li id="item" style="visibility:hidden"><span style="visibility:visible">Visible</span></li>',
+	);
+	expect(
+		buildFormattingTree(tree).nodes.find((node) => node.marker)?.visible,
+	).toBe(false);
+	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(0);
+	expect(rasterizeDocument(tree).metrics.paintedGlyphs).toBeGreaterThan(0);
+	tree.setAttribute(id("#item"), "style", "font-size:0");
+	expect(buildFormattingTree(tree).nodes.some((node) => node.marker)).toBe(
+		false,
+	);
+	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(0);
+});
+
+it.each(["img", "button", "input", "select", "textarea", "meter", "progress"])(
+	"keeps special %s list-item boxes deferred rather than dropping their marker",
+	(tag) => {
+		const { tree, id, ref } = fixture("<main></main>");
+		tree.append(
+			id("main"),
+			tree.createElement(tag, {
+				id: "special",
+				style: "display:list-item",
+			}),
+		);
+		const result = buildFormattingTree(tree);
+		expect(
+			result.nodes.find((node) => node.ref === ref("#special")),
+		).toMatchObject({
+			kind: "deferred",
+			deferredReason: "element-layout-not-supported",
+		});
+		expect(result.issues["element-layout-not-supported"]).toBe(1);
+		expect(() => rasterizeDocument(tree)).toThrow();
 	},
 );
 

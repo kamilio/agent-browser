@@ -584,10 +584,10 @@ export function buildFormattingTree(
 			});
 			return [result];
 		}
-		const markedSummary =
-			display === "list-item" && summaryDetails(tree, node) !== undefined;
+		const listItem =
+			display === "list-item" && !deferredElements.has(node.tagName);
 		const block =
-			markedSummary ||
+			listItem ||
 			["block", "block flow", "flow-root", "block flow-root"].includes(display);
 		const inline = ["inline", "inline flow"].includes(display);
 		const atomicBlock = ["inline-block", "inline flow-root"].includes(display);
@@ -717,8 +717,23 @@ export function buildFormattingTree(
 				...itemFields,
 			});
 			const contents = children();
-			if (markedSummary) {
+			if (listItem) {
 				const list = styles.list(id);
+				const disclosure = summaryDetails(tree, node) !== undefined;
+				if (!disclosure && list["list-style-type"] === "disc") {
+					let ancestor = node.parent;
+					while (ancestor !== null) {
+						charge();
+						const owner = tree.get(ancestor);
+						if (isHtmlElement(owner, "ol")) {
+							issue("ordered-list-marker-not-supported");
+							break;
+						}
+						if (isHtmlElement(owner, "ul") || isHtmlElement(owner, "menu"))
+							break;
+						ancestor = owner.parent;
+					}
+				}
 				const typography = styles.text(id);
 				const fontSize = Number.parseFloat(typography["font-size"]);
 				if (list["list-style-type"] !== "none" && fontSize > 0) {
@@ -728,7 +743,9 @@ export function buildFormattingTree(
 					)
 						throw new AgentBrowserError(
 							"unsupported",
-							"Outside disclosure markers with block content are not implemented",
+							disclosure
+								? "Outside disclosure markers with block content are not implemented"
+								: "Outside list-item markers with block content are not implemented",
 						);
 					contents.unshift(
 						create({

@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 LIST-ITEM-LAYOUT.md adds genuine marker-free and supported
+symbolic list-item formatting, geometry, painting and hits without summary
+activation or discarded markers. Counters, ambiguous ordered-list defaults and
+outside markers with block content remain explicit limitations. The independent
+clean gate passes 8175 selected native cases across 132 files; combined testing
+with the percentage-row fix is next. MDN's absolute accessibility-menu boundary,
+remaining CSS/foreign elements and broader website/research/auth gates stay open.
+
 September 11, 2026 GRID-PERCENTAGE-ROWS.md resolves the nested percentage-row
 finding with intrinsic-then-final track sizing, percentage gaps and preserved
 container height. Eight baseline failures and the intermediate coordinator
