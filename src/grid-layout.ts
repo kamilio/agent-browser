@@ -53,7 +53,7 @@ export const gridLayoutCapabilities = Object.freeze({
 	inlineGrid: false,
 	positionedGrid: false,
 	baselineAlignment: false,
-	cyclicPercentageRows: false,
+	cyclicPercentageRows: true,
 	replacedStretch: false,
 });
 export interface GridContainerConstraints {
@@ -281,25 +281,32 @@ export function layoutFormattingGridContainer(
 			definite: context.contentHeightDefinite === false ? null : preferred,
 		};
 	}
-	if (
+	const cyclicRows =
 		height.definite === null &&
 		placement.rows.tracks.some(
 			(track) =>
 				track.minimum.includes("%") ||
 				track.maximum.includes("%") ||
 				track.fitContent?.includes("%"),
-		)
-	)
-		throw new AgentBrowserError(
-			"unsupported",
-			"Cyclic percentage Grid rows require a second track-resolution phase",
 		);
+	const intrinsicRows = cyclicRows
+		? placement.rows.tracks.map((track) => {
+				charge();
+				return {
+					minimum: track.minimum.includes("%") ? "auto" : track.minimum,
+					maximum: track.maximum.includes("%") ? "auto" : track.maximum,
+					...(track.fitContent && !track.fitContent.includes("%")
+						? { fitContent: track.fitContent }
+						: {}),
+				};
+			})
+		: placement.rows.tracks;
 	const gap = (property: "column-gap" | "row-gap", size: number) =>
 		container.flex?.[property] === "normal"
 			? 0
 			: resolveLayoutLength(container.flex?.[property] ?? "0px", size);
 	const columnGap = gap("column-gap", constraints.contentWidth);
-	const rowGap = gap("row-gap", height.definite ?? 0);
+	let rowGap = gap("row-gap", height.definite ?? 0);
 	const measured = measureFormattingGridItemWidths(
 		formatting,
 		containerId,
@@ -470,8 +477,11 @@ export function layoutFormattingGridContainer(
 			return [box.id, box] as const;
 		}),
 	);
-	const rowContributions: GridTrackContribution[] = placement.items.map(
-		(item) => {
+	const rowContributionsFor = (
+		available: number | null,
+		contributionGap: number,
+	): GridTrackContribution[] =>
+		placement.items.map((item) => {
 			charge();
 			const box = boxes.get(item.id);
 			if (!box)
@@ -499,8 +509,8 @@ export function layoutFormattingGridContainer(
 							item.rowEnd,
 							outer,
 							edges,
-							rowGap,
-							height.definite,
+							contributionGap,
+							available,
 							charge,
 						)
 					: box.minimumHeight + edges;
@@ -511,9 +521,9 @@ export function layoutFormattingGridContainer(
 				minContent: outer,
 				maxContent: outer,
 			};
-		},
-	);
-	let rows = sizeGridTracks(placement.rows.tracks, rowContributions, {
+		});
+	const rowContributions = rowContributionsFor(height.definite, rowGap);
+	let rows = sizeGridTracks(intrinsicRows, rowContributions, {
 		availableSpace: height.definite,
 		gap: rowGap,
 		maxWork: Math.min(gridTrackSizingLimits.maxWork, remaining()),
@@ -529,19 +539,34 @@ export function layoutFormattingGridContainer(
 		(constrainedExtent < rows.extent ||
 			placement.rows.tracks.some((track) => track.maximum.endsWith("fr")))
 	) {
-		rows = sizeGridTracks(placement.rows.tracks, rowContributions, {
+		rows = sizeGridTracks(intrinsicRows, rowContributions, {
 			availableSpace: constrainedExtent,
 			gap: rowGap,
 			maxWork: Math.min(gridTrackSizingLimits.maxWork, remaining()),
 		});
 		charge(rows.metrics.work);
 	}
+	const naturalContentHeight = rows.extent;
 	const contentHeight = layoutNumber(
 		Math.max(
 			height.minimum,
 			Math.min(height.preferred ?? rows.extent, height.maximum ?? Infinity),
 		),
 	);
+	const resolvedRowGap = gap("row-gap", contentHeight);
+	if (height.definite === null && (cyclicRows || resolvedRowGap !== rowGap)) {
+		rowGap = resolvedRowGap;
+		rows = sizeGridTracks(
+			placement.rows.tracks,
+			rowContributionsFor(contentHeight, rowGap),
+			{
+				availableSpace: contentHeight,
+				gap: rowGap,
+				maxWork: Math.min(gridTrackSizingLimits.maxWork, remaining()),
+			},
+		);
+		charge(rows.metrics.work);
+	}
 	const verticalTracks = alignedTracks(
 		placement.rows.tracks,
 		rows,
@@ -682,7 +707,7 @@ export function layoutFormattingGridContainer(
 		columns: horizontalTracks,
 		rows: verticalTracks,
 		contentHeight,
-		naturalContentHeight: rows.extent,
+		naturalContentHeight,
 		...positioned,
 		textMetrics: layout.text.metrics,
 		atomics: layout.text.horizontal.atomics ?? [],

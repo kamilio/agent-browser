@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 GRID-PERCENTAGE-ROWS.md resolves the nested percentage-row
+finding with intrinsic-then-final track sizing, percentage gaps and preserved
+container height. Eight baseline failures and the intermediate coordinator
+height mismatch remain recorded. The clean Grid-only gate passes 8115 selected
+native cases across 131 files with unchanged historical exceptions. The separate
+list-item change still needs combined-source validation; neither MDN replay
+includes these later fixes, and its absolute-child coordination remains open.
+
 September 11, 2026 MDN-POSITIONED-GRID.md identifies the sole first-boundary match:
 absolute ul.a11y-menu e74 under static Grid body e72, with top -320px, left/right
 2px and all-auto Grid placement. It is not an in-flow Grid item, fixed element or

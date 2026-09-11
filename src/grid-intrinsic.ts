@@ -26,7 +26,9 @@ export function gridAutomaticMinimum(
 	for (let index = start; index < end; index++) {
 		charge();
 		const track = tracks[index];
-		automatic ||= track.minimum === "auto";
+		automatic ||=
+			track.minimum === "auto" ||
+			(available === null && track.minimum.includes("%"));
 		flexible ||= track.maximum.endsWith("fr");
 		if (
 			/^-?[\d.e+]+(?:px|%)$/i.test(track.maximum) &&

@@ -343,14 +343,82 @@ it("retains natural replaced-item dimensions and paints its actual image box", a
 	]);
 });
 
-it("keeps horizontal-only, cyclic-row and baseline profile restrictions explicit", () => {
+it.each(["100%", "auto"])(
+	"resolves nested percentage rows after a %s item receives its definite area",
+	(height) => {
+		const { tree, box } = fixture(
+			`main{height:100px;grid-template-rows:100px}#first{display:grid;height:${height};grid-template-rows:50%}`,
+			'<div id="first"><div id="nested">A</div></div>',
+		);
+		const layout = layoutDocument(tree);
+		expect(box("#first", layout).contentHeight).toBe(100);
+		expect(box("#nested", layout)).toMatchObject({
+			borderY: 0,
+			borderBoxHeight: 50,
+		});
+	},
+);
+
+it("resolves cyclic percentage rows against intrinsic container height without resizing the container", () => {
+	const { tree, box } = fixture(
+		"main{grid-template-rows:50%}footer{height:5px}",
+		undefined,
+		'<footer id="after"></footer>',
+	);
+	const layout = layoutDocument(tree);
+	expect(box("#container", layout).contentHeight).toBe(10);
+	expect(box("#first", layout).contentHeight).toBe(5);
+	expect(box("#after", layout).borderY).toBe(10);
+});
+
+it("retains overflow when cyclic percentage tracks exceed the resolved container", () => {
+	const { tree, box } = fixture(
+		"main{grid-template-columns:120px;grid-template-rows:100% 100%}#first{height:10px}#second{height:20px}",
+	);
+	const layout = layoutDocument(tree);
+	expect(box("#container", layout).contentHeight).toBe(30);
+	expect(box("#second", layout)).toMatchObject({
+		borderY: 30,
+		borderBoxHeight: 20,
+	});
+});
+
+it.each([
+	["min-height:100px", 100, 50],
+	["max-height:6px", 6, 3],
+] as const)(
+	"uses %s before resolving cyclic percentages",
+	(constraint, height, row) => {
+		const { tree, box } = fixture(`main{grid-template-rows:50%;${constraint}}`);
+		const layout = layoutDocument(tree);
+		expect(box("#container", layout).contentHeight).toBe(height);
+		expect(box("#first", layout).contentHeight).toBe(row);
+	},
+);
+
+it("resolves cyclic percentage gaps after intrinsic sizing without consuming the container twice", () => {
+	const { tree, box } = fixture(
+		"main{grid-template-columns:120px;row-gap:10%}#first{height:10px}#second{height:20px}",
+	);
+	const layout = layoutDocument(tree);
+	expect(box("#container", layout).contentHeight).toBe(30);
+	expect(box("#second", layout).borderY).toBe(13);
+});
+
+it("caps automatic item minima against the final percentage maximum track", () => {
+	const { tree, box } = fixture(
+		"main{grid-template-columns:120px;grid-template-rows:minmax(auto,50%) 0px}#first{height:30px}",
+	);
+	const layout = layoutDocument(tree);
+	expect(box("#container", layout).contentHeight).toBe(30);
+	expect(box("#second", layout).borderY).toBe(15);
+});
+
+it("keeps horizontal-only and baseline profile restrictions explicit", () => {
 	const { tree } = fixture();
 	expect(() => resolveDocumentBlockWidths(tree)).toThrowError(
 		expect.objectContaining({ code: "unsupported" }),
 	);
-	expect(() =>
-		layoutDocument(fixture("main{grid-template-rows:50%}").tree),
-	).toThrowError(expect.objectContaining({ code: "unsupported" }));
 	expect(() =>
 		layoutDocument(fixture("main{align-items:baseline}").tree),
 	).toThrowError(expect.objectContaining({ code: "unsupported" }));
