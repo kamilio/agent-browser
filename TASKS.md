@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 INTERNET-CHECKBOX-FLOW.md adds a fresh public native example:
+four original same-origin GETs return200, the document commits, and two enabled
+checkboxes are discovered. Native semantic inversion/restoration succeeds with
+matching checked states and ordered click/input/change events; these are not
+hit-tested pointer acceptance. One genuine pointer click then fails the formatting
+profile guard without emitting a control event. All34 evidence checks and both
+receipt ledgers verify; settled cleanup is zero. The additive attempted-host
+inventory is now59, not59 passing sites. Test Pages control checks are separate
+and in progress; original failures and pre-existing work remain preserved.
+
 September 11, 2026 PYTHON-IMAGE-PREDICATES.md adds one unchanged-capture offline
 native inspection: document mode is no-quirks, all three broken images have present
 nonempty Python-logo alt text, no dimension attributes and computed auto sizes.

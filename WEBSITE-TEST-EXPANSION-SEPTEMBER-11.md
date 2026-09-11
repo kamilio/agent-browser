@@ -2,8 +2,8 @@
 
 This is an additive record after `WEBSITE-TEST-INVENTORY.md`'s 54-host audit.
 Do not reinterpret that audit or these attempts as successful website coverage.
-The four new exact hostnames bring the combined attempted-host inventory to
-**58**, including pre-wire admission failures. Original reports and measurements
+The five new exact hostnames bring the combined attempted-host inventory to
+**59**, including pre-wire admission failures. Original reports and measurements
 retain their paths and outcomes.
 
 | New hostname | Recorded scope | Evidence |
@@ -12,6 +12,7 @@ retain their paths and outcomes.
 | `cdn.jsdelivr.net` | Original Selenium markup causes a native CSS GET attempt. The initial same-origin-only harness rejects it before transport/wire admission. This first attempt does not establish CDN reachability. | `SELENIUM-NATIVE-FORM.md` |
 | `docs.python.org` | Documentation-index GET returns 200; original stylesheet/image loading then exceeds the unchanged transport concurrency cap of one. No tutorial discovery or click. | `PYTHON-DOCS-NATIVE-FLOW.md` |
 | `unpkg.com` | A separate Selenium run loads the exact previously observed Bootstrap CSS (HTTP200), then the original native loader requests datepicker CSS from unpkg. That second stylesheet is denied by the test's exact-URL policy before wire admission. | `SELENIUM-STYLESHEET-FLOW.md` |
+| `the-internet.herokuapp.com` | Four original document/CSS/image GETs return200. Native semantic checkbox inversion/restoration succeeds, but the genuine pointer click fails the formatting-profile guard. No full-flow or pointer acceptance. | `INTERNET-CHECKBOX-FLOW.md` |
 
 Both live flows retain original HTML and stylesheet behavior. Neither uses page
 scripts, credentials, account changes, uploads, an alternative browser or a
@@ -59,6 +60,15 @@ none decodes; fetching succeeded while image support did not. Copied stylesheet
 diagnostics remain separate, including an unloaded import. All34 evidence and40
 final-review checks pass with zero cleanup resources; geometry and link activation
 remain unaccepted. Broken-image/alt fallback is distinct from adding SVG decoding.
+
+`INTERNET-CHECKBOX-FLOW.md` adds the fifth hostname using the immutable8,643-pass
+build. Native queries find two enabled real checkboxes. Inverting and restoring
+the first succeeds with ordered click/input/change events and matching checked
+states. These untrusted semantic events are not hit-tested pointer evidence.
+The subsequent single genuine pointer click fails the formatting-profile guard;
+no pointer-stage control event fires. All34 evidence checks pass, receipts verify,
+and cleanup reaches zero. Four same-origin requests return200; no additional
+asset hostname, follow-up navigation, scripts, credentials or submission occurs.
 
 ## Existing host replay
 
