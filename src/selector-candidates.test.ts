@@ -404,3 +404,206 @@ it.each(["queries", "tree"] as const)(
 		queries.close();
 	},
 );
+
+it("rejects absent direct ancestor and sibling keys without losing anchor semantics", () => {
+	const { queries } = fixture(
+		`<main class=present>${Array.from({ length: 96 }, (_, index) => `<a id=link-${index} href=#target></a>`).join("")}</main>`,
+	);
+	const anchors = queries.querySelectorAll("a");
+	for (const selector of [
+		".missing .present a",
+		"#missing > .present a",
+		"missing-element .present a",
+		".present.missing a",
+		"#missing + a",
+		".missing ~ a",
+		"missing-element + a",
+	]) {
+		expectSelection(queries, selector, []);
+		expect(queries.matches(anchors[0], selector)).toBe(false);
+		expect(queries.matches(anchors[anchors.length - 1], selector)).toBe(false);
+	}
+});
+
+it("retains document order and actual branch specificity when impossible branches are skipped", () => {
+	const { queries, id } = fixture(
+		"<main class=present><a id=first class=link></a><a id=second class=link></a></main><a id=third class=link></a>",
+	);
+	const first = id("#first");
+	const second = id("#second");
+	const third = id("#third");
+	const result = expectSelection(
+		queries,
+		"#absent #first, #third, missing-element #second, .present > a, .link, #absent + #second",
+		[first, second, third],
+	);
+	expect([...result]).toEqual([
+		[first, [0, 1, 1]],
+		[second, [0, 1, 1]],
+		[third, [1, 0, 0]],
+	]);
+});
+
+it("does not treat keys nested in ancestor logical or nth operands as required", () => {
+	const { queries, id } = fixture(
+		"<main id=parent class=present><a id=first class=link></a><a id=second class=link></a></main>",
+	);
+	const targets = [id("#first"), id("#second")];
+	for (const [selector, specificity] of [
+		[":is(#absent, .present) > a", [1, 0, 1]],
+		[":where(#absent, .present) > a", [0, 0, 1]],
+		[".present:not(#absent) > a", [1, 1, 1]],
+		[".present:not(:is(#absent, .missing)) > a", [1, 1, 1]],
+		[".present:has(> .link, #absent) > a", [1, 1, 1]],
+		[".present:nth-child(1 of #absent, .present) > a", [1, 2, 1]],
+		[".present:nth-last-child(1 of #absent, .present) > a", [1, 2, 1]],
+	] as const)
+		expectSelection(queries, selector, targets, specificity);
+	expectSelection(queries, ".present:has(#absent) > a", []);
+	expectSelection(
+		queries,
+		".present:not(:has(#absent)) > a",
+		targets,
+		[1, 1, 1],
+	);
+});
+
+it("checks required ancestor type keys with HTML folding and foreign case sensitivity", () => {
+	const { tree, queries, id } = fixture(
+		"<section id=html><a id=html-child></a></section><svg id=svg></svg><math id=math></math>",
+	);
+	const svgAncestor = tree.createParserElement(
+		"linearGradient",
+		{},
+		svgNamespace,
+	);
+	const svgChild = tree.createParserElement("a", {}, svgNamespace);
+	const mathAncestor = tree.createParserElement("Mi", {}, mathmlNamespace);
+	const mathChild = tree.createParserElement("a", {}, mathmlNamespace);
+	tree.append(id("svg"), svgAncestor);
+	tree.append(svgAncestor, svgChild);
+	tree.append(id("math"), mathAncestor);
+	tree.append(mathAncestor, mathChild);
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expectSelection(queries, "SECTION > a", [id("#html-child")], [0, 0, 2]);
+		expectSelection(queries, "linearGradient > a", [svgChild], [0, 0, 2]);
+		expectSelection(
+			queries,
+			String.raw`linear\47 radient > a`,
+			[svgChild],
+			[0, 0, 2],
+		);
+		expectSelection(queries, "lineargradient > a, LINEARGRADIENT > a", []);
+		expectSelection(queries, "Mi > a", [mathChild], [0, 0, 2]);
+		expectSelection(queries, "mi > a, MI > a", []);
+	}
+});
+
+it("invalidates absent ancestor keys after introduction, removal and reparenting", () => {
+	const { tree, queries, id } = fixture(
+		"<main><a id=target></a></main><aside></aside>",
+	);
+	const parent = id("main");
+	const other = id("aside");
+	const target = id("#target");
+	const selector = "#enabled.required > a";
+	expectSelection(queries, selector, []);
+	tree.setAttribute(parent, "id", "enabled");
+	expectSelection(queries, selector, []);
+	tree.setAttribute(parent, "class", "required");
+	expectSelection(queries, selector, [target], [1, 1, 1]);
+	tree.removeAttribute(parent, "class");
+	expectSelection(queries, selector, []);
+	tree.setAttribute(other, "class", "required");
+	expectSelection(queries, selector, []);
+	tree.setAttribute(other, "id", "enabled");
+	tree.append(other, target);
+	expectSelection(queries, selector, [target], [1, 1, 1]);
+	tree.removeAttribute(other, "id");
+	expectSelection(queries, selector, []);
+	tree.setAttribute(other, "id", "enabled");
+	expectSelection(queries, selector, [target], [1, 1, 1]);
+});
+
+it("does not use globally present duplicate IDs as proof of ancestry or sibling relationships", () => {
+	const { queries, id } = fixture(
+		"<aside id=shared></aside><main><a id=unrelated></a><section id=shared><a id=descendant></a></section><a id=sibling></a></main>",
+	);
+	const unrelated = id("#unrelated");
+	const descendant = id("#descendant");
+	const sibling = id("#sibling");
+	expectSelection(queries, "#shared a", [descendant], [1, 0, 1]);
+	expectSelection(queries, "#shared + a", [sibling], [1, 0, 1]);
+	expectSelection(queries, "#shared ~ a", [sibling], [1, 0, 1]);
+	expect(
+		queries.matches(unrelated, "#shared a, #shared + a, #shared ~ a"),
+	).toBe(false);
+});
+
+it("treats capped required-key indexes as unknown instead of trusting partial absence", () => {
+	const tokens = Array.from(
+		{ length: 48 },
+		(_, index) => `token-${index}`,
+	).join(" ");
+	const { tree, id } = fixture(
+		`<div class="${tokens}"></div><main class=late><a id=target></a></main>`,
+	);
+	const target = id("#target");
+	const queries = new DocumentQueries(tree, { maxIndexedNodes: 16 });
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expectSelection(queries, ".late a", [target], [0, 1, 1]);
+		expectSelection(queries, ".absent a, .late > a", [target], [0, 1, 1]);
+		expectSelection(queries, ".absent a", []);
+	}
+	expect(() => queries.matchingSpecificities(".late a", 1)).toThrow(
+		"work limit",
+	);
+	expectSelection(queries, ".late a", [target], [0, 1, 1]);
+});
+
+it("recovers required-key lookups after low-work index construction fails", () => {
+	const { queries, id } = fixture(
+		`<main class=present>${Array.from({ length: 48 }, (_, index) => `<a id=link-${index} class="link token-${index}"></a>`).join("")}</main>`,
+	);
+	const targets = queries.querySelectorAll("a");
+	expect(() =>
+		queries.matchingSpecificities(".absent a, .present a", 10),
+	).toThrow("work limit");
+	expectSelection(queries, ".present a", targets, [0, 1, 1]);
+	expectSelection(queries, ".absent a", []);
+	expect(() => queries.matchingSpecificities(".present a", 1)).toThrow(
+		"work limit",
+	);
+	expectSelection(queries, ".present > #link-47", [id("#link-47")], [1, 1, 0]);
+});
+
+it("prunes an absent outer ancestor and impossible grouped branches within a bounded warm workload", () => {
+	const anchors = Array.from(
+		{ length: 320 },
+		(_, index) => `<a id=link-${index}></a>`,
+	).join("");
+	const { queries } = fixture(
+		`<body class=skin-minerva><main class=mw-parser-output><section class=ambox>${"<div class=article-section>".repeat(12)}${anchors}${"</div>".repeat(12)}</section></main></body>`,
+	);
+	const impossible = ".client-js body.skin-minerva .mw-parser-output .ambox a";
+	const expected = queries.querySelectorAll("a");
+	expectSelection(queries, impossible, []);
+	expectSelection(queries, "a", expected, [0, 0, 1]);
+	const reference = queries.querySelectorAll(`${impossible}, a`);
+	const scanWork = queries.metrics().lastWork;
+	const workAllowance = 20_000;
+	expect(scanWork).toBeGreaterThan(workAllowance);
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expect([
+			...queries.matchingSpecificities(impossible, workAllowance),
+		]).toEqual([]);
+		const result = queries.matchingSpecificities(
+			`${impossible}, a`,
+			workAllowance,
+		);
+		expect([...result.keys()]).toEqual(reference);
+		for (const target of expected)
+			expect(result.get(target)).toEqual([0, 0, 1]);
+		expect(queries.metrics().lastWork).toBeLessThan(scanWork);
+	}
+});

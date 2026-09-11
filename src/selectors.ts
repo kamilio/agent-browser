@@ -696,20 +696,18 @@ export class DocumentQueries {
 			this.tree.root,
 			(compiled, context) => {
 				const scope = context.index.documentElement ?? this.tree.root;
-				const weights = compiled.selectors.map(selectorSpecificity);
+				const selectors = this.possibleSelectors(compiled.selectors, context);
+				const weights = selectors.map(selectorSpecificity);
 				const result = new Map<number, SelectorSpecificity>();
-				for (const candidate of this.selectorCandidates(
-					compiled.selectors,
-					context,
-				)) {
+				for (const candidate of this.selectorCandidates(selectors, context)) {
 					this.tick(context);
 					let best: SelectorSpecificity | undefined;
-					for (let index = 0; index < compiled.selectors.length; index++) {
+					for (let index = 0; index < selectors.length; index++) {
 						if (
 							this.match(
 								candidate.node.id,
-								compiled.selectors[index],
-								compiled.selectors[index].length - 1,
+								selectors[index],
+								selectors[index].length - 1,
 								scope,
 								context,
 							) &&
@@ -773,6 +771,32 @@ export class DocumentQueries {
 		this.controlValueDependent = false;
 		this.index = undefined;
 		this.unregisterClose();
+	}
+	private possibleSelectors(
+		selectors: Selector[],
+		context: MatchContext,
+	): Selector[] {
+		return selectors.filter((selector) => {
+			for (const part of selector)
+				for (const test of part.tests) {
+					this.tick(context);
+					if (
+						test.kind !== "id" &&
+						test.kind !== "class" &&
+						test.kind !== "tag"
+					)
+						continue;
+					if (test.kind === "tag" && test.value === "*") continue;
+					const index = this.candidateIndex(test.kind, context);
+					if (!index) continue;
+					this.tick(context, test.value.length + 1);
+					if (index.has(test.value)) continue;
+					if (test.kind === "tag" && index.has(asciiLower(test.value)))
+						continue;
+					return false;
+				}
+			return true;
+		});
 	}
 	private selectorCandidates(
 		selectors: Selector[],

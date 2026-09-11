@@ -42,3 +42,26 @@ Preserve original failed receipts and diagnose captured stylesheet dependencies
 without new network requests or limit increases. Successful native tests and
 portal recovery do not complete varied-site, rendering, research, fingerprint,
 CAPTCHA or real credential/passkey-device acceptance.
+
+## Verified offline profiles
+
+`node_modules/.cache/native-validation/native-python-css-diagnostic-september11/`
+records one guarded replay at 08:29:36.955–08:29:37.107 UTC. It serves only the four
+captured exact-URL responses and reproduces the failure at selector call 266.
+Successful matching has already consumed 4633730 units; the failing eight-branch
+widget-link selector receives 351963 remaining units and throws at 351968.
+The 35 recoverable selector diagnostics are excluded from successful-work totals.
+
+The largest completed calls are the 69-tag reset (359526 units), top-bar links
+(311246), and banner/sidebar links (293123). Candidate storage is not exhausted:
+1569 entries, 1994 indexed nodes, 833 elements and one structural build. This
+supports branch-local filtering and ancestor-scan reduction rather than a larger
+budget. No network occurs; captures/build pins and cleanup remain verified.
+Receipt SHA-256:
+`e1cf9aa5c245d6bfb8d1965416defd93d9cefcb90c2af735178f75bf0b09a6c6`.
+
+SELECTOR-REQUIRED-KEYS.md records the corresponding Wikipedia diagnosis and a
+validated improvement: its worst zero-match ancestor selector falls from 2708379
+to 11 work units, but later existing-ancestor matches still exhaust the budget.
+Both profiles motivate preserving branch-local candidates and safe ancestor
+subtree restrictions. Neither failed replay is a successful website flow.
