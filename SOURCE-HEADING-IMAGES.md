@@ -55,3 +55,9 @@ run here; this is not a full repository or live website acceptance result.
 Evidence: `node_modules/.cache/native-validation/native-heading-image-policy-september11/`
 and `node_modules/.cache/native-validation/native-heading-image-baseline-september11/`.
 No network, credentials, SafeJS or real TTY/PTY probes are part of those tests.
+
+A subsequent local check against the pinned September 11 SWE-bench capture
+reaches source EOF with 11 headings, and two observed method sections project
+successfully without another HTTP request. WEBSITE-COMPATIBILITY-SEPTEMBER-11.md
+records those distinct operations and their hashes. The original DOM-reader
+failure remains unchanged and ineligible for JSON replay.

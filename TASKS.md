@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 website work now includes successful native JSON reader
+retrievals of the MMLU-Pro arXiv abstract and Apple Mac Studio specifications.
+AMD returns a confirmed Cloudflare429 and is not retried. SWE-bench's reader
+overflow is traced to omitted script text; the new explicit image-aware source
+policy separately reaches EOF with 11 headings and extracts two observed method
+sections from the pinned capture, with zero additional GETs and unchanged caps.
+WEBSITE-COMPATIBILITY-SEPTEMBER-11.md records exact evidence and partial research
+findings. The original DOM failure remains failed, not JSON-replay-admitted.
+Next: bounded omitted-raw/retained-text accounting for large-page DOM reading;
+continue varied-site functionality checks and research. No latest rankings,
+LLM speed tests, CAPTCHA solution or completed X/Astra/Reddit/Poe research is
+claimed. Real secrets/passkeys and broader runtime/device gates remain open.
+
 On September 11, 2026 at 05:11 UTC, explicit balanced-source-elements-v2 accepts
 void image starts in source headings and carries the policy through bounded
 section extraction. Defaults/v1, source pins and existing budgets remain intact;
