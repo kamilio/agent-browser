@@ -1,5 +1,7 @@
 import { type BlockWidth, resolveBlockWidth } from "./block-width.js";
 import { type BoxStyle, initialBoxStyle } from "./css-box.js";
+import { initialTableStyle, type TableStyle } from "./css-table.js";
+import { measureValidatedIntrinsicRoot } from "./intrinsic-widths.js";
 import { initialPaintStyle, type PaintStyle } from "./css-paint.js";
 import type { TextStyle } from "./css-text.js";
 import type { DocumentTree } from "./document.js";
@@ -86,7 +88,9 @@ export interface FormattingNode {
 	box?: BoxStyle;
 	typography?: TextStyle;
 	paint?: PaintStyle;
-	contentMode?: "blocks" | "inline" | "flex" | "grid";
+	contentMode?: "blocks" | "inline" | "flex" | "grid" | "table";
+	table?: TableStyle;
+	tableSpan?: Readonly<{ columns: number; rows: number }>;
 	flex?: FlexStyle;
 	flexItem?: boolean;
 	grid?: GridStyle;
@@ -259,7 +263,142 @@ export function buildFormattingTree(
 		charge(source.length);
 		for (const child of source) destination.push(child);
 	};
+	const tableInternal = (id: number) =>
+		nodes[id].display?.startsWith("table-") ?? false;
+	const omittedTableWhitespace = new Set<number>();
+	const tableGroup = (display: string | undefined) =>
+		["table-row-group", "table-header-group", "table-footer-group"].includes(
+			display ?? "",
+		);
+	const tableAnonymous = (
+		parent: number,
+		display: string,
+		children: number[],
+	): number => {
+		const table = display === "table";
+		if (table) {
+			issue("display-layout-not-supported");
+			deferredSubtrees++;
+		}
+		const result = create({
+			kind: table ? "deferred" : "block",
+			level: "block",
+			display,
+			visible: nodes[parent].visible,
+			box: initialBoxStyle,
+			typography: nodes[parent].typography,
+			table: Object.freeze({
+				...initialTableStyle,
+				"border-collapse":
+					nodes[parent].table?.["border-collapse"] ?? "separate",
+				"border-spacing": nodes[parent].table?.["border-spacing"] ?? "0px 0px",
+				"empty-cells": nodes[parent].table?.["empty-cells"] ?? "show",
+				"caption-side": nodes[parent].table?.["caption-side"] ?? "top",
+			}),
+			independentContext: table || display === "table-cell",
+			...(table
+				? {
+						deferredReason: "display-layout-not-supported",
+						contentMode: "table" as const,
+					}
+				: {}),
+		});
+		if (display === "table-cell") normalizeChildren(result, children);
+		else repairTableChildren(result, children, display);
+		return result;
+	};
+	const repairTableChildren = (
+		parent: number,
+		children: number[],
+		display: string,
+	) => {
+		const filtered: number[] = [];
+		const whitespace = (id: number) => {
+			const node = nodes[id];
+			charge((node.text?.length ?? 0) + 1);
+			return node.kind === "text" && /^[\t\n\f\r ]*$/.test(node.text ?? "");
+		};
+		const adjacent = (id: number | undefined) => {
+			if (id === undefined) return display.startsWith("table");
+			const childDisplay = nodes[id].display;
+			return display === "table-row"
+				? childDisplay === "table-cell"
+				: tableGroup(display)
+					? childDisplay === "table-row"
+					: tableInternal(id);
+		};
+		for (let index = 0; index < children.length; ) {
+			const start = index++;
+			if (!whitespace(children[start])) {
+				filtered.push(children[start]);
+				continue;
+			}
+			while (index < children.length && whitespace(children[index])) index++;
+			const omit = adjacent(children[start - 1]) && adjacent(children[index]);
+			for (let cursor = start; cursor < index; cursor++) {
+				charge();
+				if (omit) omittedTableWhitespace.add(children[cursor]);
+				else filtered.push(children[cursor]);
+			}
+		}
+		const normalized: number[] = [];
+		let run: number[] = [];
+		const flush = () => {
+			if (!run.length) return;
+			const wrapper =
+				display === "table-row"
+					? "table-cell"
+					: tableGroup(display)
+						? "table-row"
+						: display === "table"
+							? "table-row-group"
+							: "table";
+			normalized.push(tableAnonymous(parent, wrapper, run));
+			run = [];
+		};
+		for (const child of filtered) {
+			charge();
+			const entry = nodes[child];
+			const proper =
+				display === "table"
+					? tableGroup(entry.display) ||
+						["table-caption", "table-column", "table-column-group"].includes(
+							entry.display ?? "",
+						)
+					: tableGroup(display)
+						? entry.display === "table-row"
+						: display === "table-row"
+							? entry.display === "table-cell"
+							: !tableInternal(child);
+			if (proper) {
+				flush();
+				normalized.push(child);
+			} else run.push(child);
+		}
+		flush();
+		nodes[parent].children = normalized;
+		nodes[parent].contentMode = display === "table" ? "table" : "blocks";
+		for (const child of normalized) nodes[child].parent = parent;
+		if (display === "table") {
+			const header = normalized.find(
+				(child) => nodes[child].display === "table-header-group",
+			);
+			const footer = normalized.find(
+				(child) => nodes[child].display === "table-footer-group",
+			);
+			charge(normalized.length * 3);
+			if (header !== undefined || footer !== undefined)
+				nodes[parent].orderModifiedChildren = [
+					...(header === undefined ? [] : [header]),
+					...normalized.filter((child) => child !== header && child !== footer),
+					...(footer === undefined ? [] : [footer]),
+				];
+		}
+		return normalized;
+	};
 	const normalizeChildren = (parent: number, children: number[]) => {
+		if (children.some(tableInternal))
+			children = repairTableChildren(parent, children, "block");
 		charge(children.length);
 		const inFlow = (id: number) =>
 			nodes[id].position !== "absolute" && nodes[id].position !== "fixed";
@@ -444,10 +583,37 @@ export function buildFormattingTree(
 			)
 		)
 			issue("html-presentation-hint-not-supported");
+		if (
+			[
+				"table",
+				"thead",
+				"tbody",
+				"tfoot",
+				"tr",
+				"td",
+				"th",
+				"col",
+				"colgroup",
+			].includes(node.tagName) &&
+			[
+				"cellpadding",
+				"cellspacing",
+				"rules",
+				"frame",
+				"bgcolor",
+				"background",
+			].some((name) => Object.hasOwn(node.attributes, name))
+		)
+			issue("html-table-presentation-hint-not-supported");
 		const display =
 			id === rootElement
 				? (rootDisplays[visibility.display] ?? visibility.display)
 				: visibility.display;
+		if (
+			display.startsWith("inline") &&
+			styles.table(id)["vertical-align"] !== "baseline"
+		)
+			issue("inline-vertical-align-not-supported");
 		if (embeddedSvg) {
 			try {
 				if (
@@ -638,6 +804,85 @@ export function buildFormattingTree(
 			node.tagName !== "math"
 		)
 			return children(itemMode);
+		if (
+			(display === "table" || display.startsWith("table-")) &&
+			!deferredElements.has(node.tagName)
+		) {
+			const table = styles.table(id);
+			const root = display === "table";
+			if (flexItem || gridItem) issue("table-item-layout-not-supported");
+			if (root) {
+				issue("display-layout-not-supported");
+				deferredSubtrees++;
+			}
+			if (table["border-collapse"] !== "separate")
+				issue("table-collapsed-borders-not-supported");
+			if (root && table["table-layout"] !== "auto")
+				issue("table-fixed-layout-not-supported");
+			if (display === "table-column" || display === "table-column-group")
+				issue("table-column-layout-not-supported");
+			if (display === "table-caption")
+				issue("table-caption-layout-not-supported");
+			if (display === "table-cell" && table["empty-cells"] !== "show")
+				issue("table-empty-cell-paint-not-supported");
+			if (flow.position !== "static")
+				issue("table-position-layout-not-supported");
+			const cell = display === "table-cell";
+			const span = (
+				name: string,
+				fallback: number,
+				maximum: number,
+				zero: boolean,
+			) => {
+				const source = node.attributes[name];
+				charge(source?.length ?? 0);
+				const match = source?.match(/^[\t\n\f\r ]*\+?(\d+)/);
+				const parsed = match ? Number(match[1]) : fallback;
+				return parsed === 0 && !zero ? fallback : Math.min(parsed, maximum);
+			};
+			const box = styles.box(id);
+			const result = create({
+				kind: root ? "deferred" : "block",
+				level: "block",
+				ref,
+				display,
+				visible: visibility.visible,
+				table,
+				box: cell
+					? Object.freeze({
+							...box,
+							"margin-top": "0px",
+							"margin-right": "0px",
+							"margin-bottom": "0px",
+							"margin-left": "0px",
+							"max-width": "none",
+						})
+					: box,
+				typography: styles.text(id),
+				paint: styles.paint(id),
+				independentContext: root || cell || display === "table-caption",
+				...(cell && (node.tagName === "td" || node.tagName === "th")
+					? {
+							tableSpan: Object.freeze({
+								columns: span("colspan", 1, 1000, false),
+								rows: span("rowspan", 1, 65534, true),
+							}),
+						}
+					: {}),
+				...(root
+					? {
+							contentMode: "table" as const,
+							deferredReason: "display-layout-not-supported",
+						}
+					: {}),
+				...itemFields,
+			});
+			if (cell || display === "table-caption")
+				normalizeChildren(result, children());
+			else if (!display.startsWith("table-column"))
+				repairTableChildren(result, children(), display);
+			return [result];
+		}
 		const gridContainer = isGridDisplay(display);
 		if (
 			(isFlexDisplay(display) || gridContainer) &&
@@ -851,6 +1096,7 @@ export function buildFormattingTree(
 				...itemFields,
 			});
 			const contents = children();
+			if (contents.some(tableInternal)) nodes[result].table = styles.table(id);
 			if (listItem) {
 				renderedListItems.add(id);
 				const list = styles.list(id);
@@ -925,6 +1171,7 @@ export function buildFormattingTree(
 		};
 		for (const child of children()) {
 			charge();
+			if (tableInternal(child)) issue("inline-anonymous-table-not-supported");
 			if (
 				nodes[child].level === "block" &&
 				nodes[child].position !== "absolute" &&
@@ -993,6 +1240,29 @@ export function buildFormattingTree(
 				);
 			}
 		}
+	}
+	if (omittedTableWhitespace.size) {
+		const remap = new Int32Array(nodes.length).fill(-1);
+		let retained = 0;
+		for (const node of nodes) {
+			charge();
+			if (!omittedTableWhitespace.has(node.id)) remap[node.id] = retained++;
+		}
+		let write = 0;
+		for (const node of nodes) {
+			charge();
+			if (omittedTableWhitespace.has(node.id)) continue;
+			node.id = remap[node.id];
+			if (node.parent !== null) node.parent = remap[node.parent];
+			charge(node.children.length + (node.orderModifiedChildren?.length ?? 0));
+			node.children = node.children.map((child) => remap[child]);
+			if (node.orderModifiedChildren)
+				node.orderModifiedChildren = node.orderModifiedChildren.map(
+					(child) => remap[child],
+				);
+			nodes[write++] = node;
+		}
+		nodes.length = retained;
 	}
 	charge(nodes.length);
 	return Object.freeze({
@@ -1078,7 +1348,10 @@ export function resolveFormattingPageWidths(
 ): Readonly<DocumentBlockWidths> {
 	const flexCount = onFlex
 		? formatting.nodes.filter(
-				(node) => node.contentMode === "flex" || node.contentMode === "grid",
+				(node) =>
+					node.contentMode === "flex" ||
+					node.contentMode === "grid" ||
+					node.contentMode === "table",
 			).length
 		: 0;
 	if (
@@ -1182,7 +1455,9 @@ export function resolveFormattingBlockWidths(
 		}
 		const flex =
 			!!onFlex &&
-			(node?.contentMode === "flex" || node?.contentMode === "grid") &&
+			(node?.contentMode === "flex" ||
+				node?.contentMode === "grid" ||
+				node?.contentMode === "table") &&
 			node.level === "block";
 		if (!node || (node.kind === "deferred" && !flex))
 			throw new AgentBrowserError(
@@ -1194,7 +1469,46 @@ export function resolveFormattingBlockWidths(
 		let contentX = frame.contentX;
 		let containingBlock = frame.containingBlock;
 		let replaced: Readonly<ReplacedSize> | undefined;
-		const style = node.box ?? initialBoxStyle;
+		let style = node.box ?? initialBoxStyle;
+		if (node.contentMode === "table" && !frame.usedWidth) {
+			const measured = measureValidatedIntrinsicRoot(
+				formatting,
+				node.id,
+				frame.containingHeight,
+				{
+					maxWork: Math.min(4_000_000, Math.max(1, maxWork - work)),
+					text: context.text,
+				},
+				context.nesting ?? 0,
+			);
+			charge(measured.metrics.work);
+			const intrinsic = measured.widths.find((entry) => entry.id === node.id);
+			if (!intrinsic)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Missing table intrinsic width",
+				);
+			const available = resolveBlockWidth(
+				{ ...style, width: "auto" },
+				frame.containingWidth,
+				resolveBorders(style),
+			);
+			const specified = resolveBlockWidth(
+				style,
+				frame.containingWidth,
+				resolveBorders(style),
+			);
+			const used = Math.max(
+				intrinsic.minContent,
+				style.width === "auto"
+					? Math.min(intrinsic.maxContent, available.contentWidth)
+					: specified.contentWidth,
+			);
+			style = {
+				...style,
+				width: `${used + (style["box-sizing"] === "border-box" ? specified.borderBoxWidth - specified.contentWidth : 0)}px`,
+			};
+		}
 		let heightOverride = frame.contentHeightOverride;
 		if (heightOverride !== undefined) {
 			layoutNumber(heightOverride);

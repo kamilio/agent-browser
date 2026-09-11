@@ -563,17 +563,17 @@ it("retains admitted native table wrapper and non-cell order without grammar rep
 			children: [
 				{
 					ref: tree.reference(footer),
-					type: "inline",
+					type: "container",
 					children: [rowRecord(footerRow, footerCell, "Footer first")],
 				},
 				{
 					ref: tree.reference(caption),
-					type: "inline",
+					type: "container",
 					children: [tableTextRecord(tree, caption, "Caption later")],
 				},
 				{
 					ref: tree.reference(columns),
-					type: "inline",
+					type: "container",
 					children: [tableTextRecord(tree, columns, "Column container text")],
 				},
 				{
@@ -590,7 +590,7 @@ it("retains admitted native table wrapper and non-cell order without grammar rep
 				},
 				{
 					ref: tree.reference(header),
-					type: "inline",
+					type: "container",
 					children: [rowRecord(headerRow, headerCell, "Header last")],
 				},
 			],
@@ -603,7 +603,8 @@ it("retains admitted native table wrapper and non-cell order without grammar rep
 				"Footer first",
 				tableMarkers.cellEnd,
 				tableMarkers.rowEnd,
-				"Caption laterColumn container text",
+				"Caption later",
+				"Column container text",
 				"Not a cell",
 				tableMarkers.rowBegin,
 				tableMarkers.cellBegin,

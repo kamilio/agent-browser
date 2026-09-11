@@ -6,6 +6,22 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026,20:55 UTC: separate-border block-table document integration
+passes the audited native gate:10123 passed,0 failed,2 unchanged exclusions;
+170 selected files,169 strict roots,574 clean manifest entries. Real table cells,
+rows/groups, anonymous repair, spanning, intrinsic widths, vertical alignment,
+geometry, paint order and genuine pointer-click navigation are covered. All264
+new table checks pass. Source1059/compiled1900 inventories and20 receipts verify;
+24 owned source/test files exclude four independently preserved dirty residuals.
+`TABLE-DOCUMENT-INTEGRATION.md` records the scope, earlier failed attempts and the
+separately reproduced pre-existing intrinsic-suite failure. Captions, columns,
+collapsed/fixed/inline tables, table items in Flex/Grid, unsupported percentage
+cycles and positioning remain guarded; float/overflow and CSS/CSP/image/font
+gates remain open. The prepared original-content W3C replay is not yet acceptance,
+and no fresh website, credential/device/SafeJS, challenge bypass or complete
+research outcome is inferred from the native gate. The broader browser goal stays
+active.
+
 September 11, 2026,20:31 UTC: fresh native SQLite documentation probe uses the
 audited9859-pass table-foundation runtime. Three original-resource HTTP200 GETs
 commit the page, but one genuine Getting Started click fails the formatting guard

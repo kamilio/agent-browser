@@ -240,7 +240,8 @@ export class DocumentHitTesting {
 				if (
 					node.ref &&
 					(["inline", "block", "replaced"].includes(node.kind) ||
-						node.contentMode === "flex")
+						node.contentMode === "flex" ||
+						node.contentMode === "table")
 				) {
 					const candidate = this.tree.resolve(node.ref);
 					if (candidate.kind === "element") {

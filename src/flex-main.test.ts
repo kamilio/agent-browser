@@ -363,7 +363,7 @@ it("does not hide an unrelated unsupported layout issue during scoped measuremen
 	const { tree, id, resolve } = fixture();
 	tree.append(
 		tree.get(id()).parent as number,
-		tree.createElement("div", { style: "display:table" }),
+		tree.createElement("div", { style: "display:inline-table" }),
 	);
 	expect(resolve).toThrowError(
 		expect.objectContaining({ code: "unsupported" }),

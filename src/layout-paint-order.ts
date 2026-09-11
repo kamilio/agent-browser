@@ -66,7 +66,12 @@ function* flowContentItems(
 		};
 		let scope = parentScope;
 		const atomic = isAtomicInline(nodes[id]);
-		if (nodes[id].flexItem || nodes[id].gridItem || atomic) {
+		if (
+			nodes[id].flexItem ||
+			nodes[id].gridItem ||
+			atomic ||
+			nodes[id].display === "table-cell"
+		) {
 			scope = id;
 			scopes.set(id, { boxes: [], groups: [] });
 			if (!atomic) scopes.get(parentScope)?.groups.push({ kind: "scope", id });

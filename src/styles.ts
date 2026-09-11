@@ -99,6 +99,15 @@ import {
 	type ListStyle,
 } from "./css-list.js";
 import { htmlListStyleType } from "./list-ordinals.js";
+import {
+	cssTableProperties,
+	computeTableStyle,
+	initialTableStyle,
+	isCssTableProperty,
+	type CssTableProperty,
+	type TableStyle,
+	type TableSpecifiedStyle,
+} from "./css-table.js";
 import { svgPresentationDeclarations } from "./svg-presentation.js";
 import {
 	cssVariableLimits,
@@ -208,9 +217,26 @@ function userAgentDisplay(
 	if (node.tagName === "tr") return "table-row";
 	if (["td", "th"].includes(node.tagName)) return "table-cell";
 	if (node.tagName === "tbody") return "table-row-group";
+	if (node.tagName === "thead") return "table-header-group";
+	if (node.tagName === "tfoot") return "table-footer-group";
+	if (node.tagName === "caption") return "table-caption";
+	if (node.tagName === "col") return "table-column";
+	if (node.tagName === "colgroup") return "table-column-group";
 	return blockTags.has(node.tagName) || node.kind === "document"
 		? "block"
 		: "inline";
+}
+
+function userAgentTableStyle(
+	node: Readonly<DocumentNode>,
+): TableSpecifiedStyle {
+	if (!isHtmlElement(node)) return {};
+	if (node.tagName === "table") return { "border-spacing": "2px" };
+	if (["thead", "tbody", "tfoot"].includes(node.tagName))
+		return { "vertical-align": "middle" };
+	if (["tr", "td", "th"].includes(node.tagName))
+		return { "vertical-align": "inherit" };
+	return {};
 }
 
 function outranks(candidate: Winner, previous: Winner) {
@@ -244,6 +270,8 @@ export class DocumentStyles {
 	private flowComputed = new Map<number, FlowStyle>();
 	private pointerEventsNone = new Set<number>();
 	private listComputed = new Map<number, ListStyle>();
+	private tableSpecified = new Map<number, TableSpecifiedStyle>();
+	private tableComputed = new Map<number, TableStyle>();
 	private outlineSpecified = new Map<number, OutlineSpecifiedStyle>();
 	private outlineComputed = new Map<number, OutlineStyle>();
 	private textSpecified = new Map<number, TextSpecifiedStyle>();
@@ -390,6 +418,54 @@ export class DocumentStyles {
 	list(id: number): ListStyle {
 		this.get(id);
 		return this.listComputed.get(id) ?? initialListStyle;
+	}
+
+	table(id: number): TableStyle {
+		this.get(id);
+		const pending: number[] = [];
+		let current: number | null = id;
+		while (current !== null && !this.tableComputed.has(current)) {
+			pending.push(current);
+			current = this.tree.get(current).parent;
+		}
+		for (const target of pending.reverse()) {
+			const node = this.tree.get(target);
+			const specified = this.tableSpecified.get(target) ?? {};
+			const defaults = userAgentTableStyle(node);
+			const value = specified["border-spacing"];
+			const spacing =
+				(value === undefined || value === "revert"
+					? defaults["border-spacing"]
+					: value) ?? "";
+			let fonts: BoxFontMetrics | undefined;
+			if (lengthUsesFont(spacing, "em"))
+				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
+			if (lengthUsesFont(spacing, "rem")) {
+				const root =
+					this.tree
+						.get(this.tree.root)
+						.children.find(
+							(child) => this.tree.get(child).kind === "element",
+						) ?? this.tree.root;
+				fonts = {
+					...fonts,
+					rootFontSize: Number.parseFloat(this.text(root)["font-size"]),
+				};
+			}
+			this.tableComputed.set(
+				target,
+				computeTableStyle(
+					specified,
+					node.parent === null
+						? initialTableStyle
+						: (this.tableComputed.get(node.parent) ?? initialTableStyle),
+					this.viewport,
+					fonts,
+					defaults,
+				),
+			);
+		}
+		return this.tableComputed.get(id) ?? initialTableStyle;
 	}
 
 	outline(id: number): OutlineStyle {
@@ -675,6 +751,7 @@ export class DocumentStyles {
 			flowProperties: cssFlowProperties,
 			interactionProperties: cssInteractionProperties,
 			listProperties: cssListProperties,
+			tableProperties: cssTableProperties,
 			outlineProperties: cssOutlineProperties,
 			textProperties: cssTextProperties,
 			textFont: "Agent Mono",
@@ -704,6 +781,8 @@ export class DocumentStyles {
 		this.flowComputed.clear();
 		this.pointerEventsNone.clear();
 		this.listComputed.clear();
+		this.tableSpecified.clear();
+		this.tableComputed.clear();
 		this.outlineSpecified.clear();
 		this.outlineComputed.clear();
 		this.textSpecified.clear();
@@ -757,6 +836,8 @@ export class DocumentStyles {
 		this.flowComputed.clear();
 		this.pointerEventsNone.clear();
 		this.listComputed.clear();
+		this.tableSpecified.clear();
+		this.tableComputed.clear();
 		this.outlineSpecified.clear();
 		this.outlineComputed.clear();
 		this.textSpecified.clear();
@@ -1037,6 +1118,7 @@ export class DocumentStyles {
 		const flexSpecified = new Map<number, FlexSpecifiedStyle>();
 		const gridSpecified = new Map<number, GridSpecifiedStyle>();
 		const flowSpecified = new Map<number, FlowSpecifiedStyle>();
+		const tableSpecified = new Map<number, TableSpecifiedStyle>();
 		const textSpecified = new Map<number, TextSpecifiedStyle>();
 		const paintSpecified = new Map<number, PaintSpecifiedStyle>();
 		const outlineSpecified = new Map<number, OutlineSpecifiedStyle>();
@@ -1045,6 +1127,7 @@ export class DocumentStyles {
 			const flexValues: Partial<Record<CssFlexProperty, string>> = {};
 			const gridValues: Partial<Record<CssGridProperty, string>> = {};
 			const flowValues: Partial<Record<CssFlowProperty, string>> = {};
+			const tableValues: Partial<Record<CssTableProperty, string>> = {};
 			const textValues: Partial<Record<CssTextProperty, string>> = {};
 			const paintValues: Partial<Record<CssPaintProperty, string>> = {};
 			const outlineValues: Partial<Record<CssOutlineProperty, string>> = {};
@@ -1060,6 +1143,8 @@ export class DocumentStyles {
 					gridValues[property] = winner.declaration.value;
 				if (isCssFlowProperty(property))
 					flowValues[property] = winner.declaration.value;
+				if (isCssTableProperty(property))
+					tableValues[property] = winner.declaration.value;
 				if (isCssTextProperty(property))
 					textValues[property] = winner.declaration.value;
 				if (isCssPaintProperty(property))
@@ -1073,6 +1158,8 @@ export class DocumentStyles {
 				gridSpecified.set(id, Object.freeze(gridValues));
 			if (Object.keys(flowValues).length)
 				flowSpecified.set(id, Object.freeze(flowValues));
+			if (Object.keys(tableValues).length)
+				tableSpecified.set(id, Object.freeze(tableValues));
 			if (Object.keys(textValues).length)
 				textSpecified.set(id, Object.freeze(textValues));
 			if (Object.keys(paintValues).length)
@@ -1087,6 +1174,35 @@ export class DocumentStyles {
 		const listComputed = new Map<number, ListStyle>();
 		for (const node of nodes) {
 			charge(1);
+			if (isHtmlElement(node, "td") || isHtmlElement(node, "th")) {
+				const specified = { ...boxSpecified.get(node.id) };
+				for (const property of [
+					"padding-top",
+					"padding-right",
+					"padding-bottom",
+					"padding-left",
+				] as const) {
+					charge(1);
+					if (
+						specified[property] === undefined ||
+						specified[property] === "revert"
+					)
+						specified[property] = "1px";
+				}
+				boxSpecified.set(node.id, Object.freeze(specified));
+				if (node.tagName === "th") {
+					charge(1);
+					const text = textSpecified.get(node.id) ?? {};
+					if (
+						text["text-align"] === undefined ||
+						text["text-align"] === "revert"
+					)
+						textSpecified.set(
+							node.id,
+							Object.freeze({ ...text, "text-align": "center" }),
+						);
+				}
+			}
 			const parent =
 				node.parent === null ? undefined : computed.get(node.parent);
 			const properties = winners.get(node.id);
@@ -1198,6 +1314,7 @@ export class DocumentStyles {
 		this.flowComputed = flowComputed;
 		this.pointerEventsNone = pointerEventsNone;
 		this.listComputed = listComputed;
+		this.tableSpecified = tableSpecified;
 		this.textSpecified = textSpecified;
 		this.paintSpecified = paintSpecified;
 		this.outlineSpecified = outlineSpecified;

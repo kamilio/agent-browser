@@ -20,6 +20,12 @@ import {
 	type CssListProperty,
 } from "./css-list.js";
 import {
+	cssTableProperties,
+	isCssTableProperty,
+	parseTableDeclarations,
+	type CssTableProperty,
+} from "./css-table.js";
+import {
 	cssInteractionProperties,
 	isCssInteractionProperty,
 	parseInteractionValue,
@@ -82,6 +88,7 @@ export type CssProperty =
 	| CssFlexProperty
 	| CssInteractionProperty
 	| CssListProperty
+	| CssTableProperty
 	| CssOutlineProperty
 	| `--${string}`;
 export interface CssDeclaration {
@@ -269,6 +276,7 @@ export function parseCssDeclarations(
 			!grid &&
 			!isCssInteractionProperty(property) &&
 			!isCssListProperty(property) &&
+			!isCssTableProperty(property) &&
 			!isCssOutlineProperty(property) &&
 			property !== "outline" &&
 			!isCssFlowProperty(property) &&
@@ -313,6 +321,11 @@ export function parseCssDeclarations(
 					value,
 					important,
 				})),
+				...cssTableProperties.map((property) => ({
+					property,
+					value,
+					important,
+				})),
 				{ property: "display", value, important },
 				{ property: "visibility", value, important },
 				...cssInteractionProperties.map((property) => ({
@@ -351,6 +364,15 @@ export function parseCssDeclarations(
 		}
 		if (isCssOutlineProperty(property) || property === "outline") {
 			const expanded = parseOutlineDeclarations(property, value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((entry) => ({ ...entry, important })),
+				);
+			else issue("unimplemented-or-invalid-css-value");
+			continue;
+		}
+		if (isCssTableProperty(property)) {
+			const expanded = parseTableDeclarations(property, value);
 			if (expanded)
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),

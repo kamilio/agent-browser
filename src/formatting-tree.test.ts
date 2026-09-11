@@ -304,6 +304,10 @@ it.each(["flex", "grid", "table", "inline-table", "inline-flex"])(
 			expect(container?.contentMode).toBe("grid");
 			expect(container?.children).toEqual([child?.id]);
 			expect(child).toMatchObject({ kind: "block", gridItem: true });
+		} else if (display === "table") {
+			expect(container?.contentMode).toBe("table");
+			expect(container?.children).toHaveLength(1);
+			expect(child).toMatchObject({ kind: "inline" });
 		} else {
 			expect(container?.children).toEqual([]);
 			expect(child).toBeUndefined();

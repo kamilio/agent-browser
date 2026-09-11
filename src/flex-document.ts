@@ -18,6 +18,7 @@ import { layoutPositionedDocument } from "./out-of-flow-positioning.js";
 import { applyRelativePositioning } from "./relative-positioning.js";
 import { layoutFormattingFlexContainer } from "./flex-layout.js";
 import { layoutFormattingGridContainer } from "./grid-layout.js";
+import { layoutFormattingTableContainer } from "./table-layout.js";
 import { layoutNumber } from "./layout-values.js";
 import { mergeAtomicInlineLayouts } from "./inline-atomic-placement.js";
 import { isAtomicInline } from "./inline-atomic.js";
@@ -65,6 +66,7 @@ export function layoutFormattingPageDocument(
 		(node) =>
 			node.contentMode === "flex" ||
 			node.contentMode === "grid" ||
+			node.contentMode === "table" ||
 			isAtomicInline(node),
 	);
 	const { formatting: _formatting, ...textLimits } = options;
@@ -99,7 +101,9 @@ export function layoutFormattingFlexFlow(
 	const horizontal = text.horizontal;
 	const formatting = horizontal.formatting;
 	const shells = horizontal.widths.filter((width) =>
-		["flex", "grid"].includes(formatting.nodes[width.id].contentMode ?? ""),
+		["flex", "grid", "table"].includes(
+			formatting.nodes[width.id].contentMode ?? "",
+		),
 	);
 	if (!shells.length && !horizontal.atomicLayouts?.length)
 		return layoutFormattingDocument(text, maxWork, isolated);
@@ -123,15 +127,16 @@ export function layoutFormattingFlexFlow(
 	charge(initialWork);
 	type FlexLayout =
 		| ReturnType<typeof layoutFormattingFlexContainer>
-		| ReturnType<typeof layoutFormattingGridContainer>;
+		| ReturnType<typeof layoutFormattingGridContainer>
+		| ReturnType<typeof layoutFormattingTableContainer>;
 	const layouts = new Map<number, FlexLayout>();
 	const { formatting: _formatting, ...textOptions } = options;
 	const textMetrics = { ...text.metrics };
 	for (const shell of shells) {
 		charge();
 		const layout =
-			formatting.nodes[shell.id].contentMode === "grid"
-				? layoutFormattingGridContainer(
+			formatting.nodes[shell.id].contentMode === "table"
+				? layoutFormattingTableContainer(
 						formatting,
 						shell.id,
 						{
@@ -148,24 +153,42 @@ export function layoutFormattingFlexFlow(
 							intrinsicHeight: shell.intrinsicHeight,
 						},
 					)
-				: layoutFormattingFlexContainer(
-						formatting,
-						shell.id,
-						{
-							contentWidth: shell.contentWidth,
-							containingWidth: shell.containingWidth,
-							containingHeight: shell.containingHeight,
-						},
-						{ maxWork: remaining(), reflow: { text: textOptions } },
-						{
-							atomicRoot: formatting.nodes[shell.id].level === "inline",
-							validatedFormatting: true,
-							nesting,
-							contentHeight: shell.contentHeightOverride,
-							contentHeightDefinite: shell.contentHeightDefinite,
-							intrinsicHeight: shell.intrinsicHeight,
-						},
-					);
+				: formatting.nodes[shell.id].contentMode === "grid"
+					? layoutFormattingGridContainer(
+							formatting,
+							shell.id,
+							{
+								contentWidth: shell.contentWidth,
+								containingWidth: shell.containingWidth,
+								containingHeight: shell.containingHeight,
+							},
+							{ maxWork: remaining(), text: textOptions },
+							{
+								validatedFormatting: true,
+								nesting,
+								contentHeight: shell.contentHeightOverride,
+								contentHeightDefinite: shell.contentHeightDefinite,
+								intrinsicHeight: shell.intrinsicHeight,
+							},
+						)
+					: layoutFormattingFlexContainer(
+							formatting,
+							shell.id,
+							{
+								contentWidth: shell.contentWidth,
+								containingWidth: shell.containingWidth,
+								containingHeight: shell.containingHeight,
+							},
+							{ maxWork: remaining(), reflow: { text: textOptions } },
+							{
+								atomicRoot: formatting.nodes[shell.id].level === "inline",
+								validatedFormatting: true,
+								nesting,
+								contentHeight: shell.contentHeightOverride,
+								contentHeightDefinite: shell.contentHeightDefinite,
+								intrinsicHeight: shell.intrinsicHeight,
+							},
+						);
 		charge(layout.metrics.work);
 		layouts.set(shell.id, layout);
 		for (const key of Object.keys(textMetrics) as (keyof typeof textMetrics)[])

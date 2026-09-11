@@ -28,6 +28,11 @@ import {
 	parseListValue,
 } from "./css-list.js";
 import {
+	cssTableProperties,
+	isCssTableProperty,
+	parseTableValue,
+} from "./css-table.js";
+import {
 	cssInteractionProperties,
 	isCssInteractionProperty,
 	parseInteractionValue,
@@ -111,6 +116,7 @@ export const inlineProperties = [
 	...cssOutlineProperties,
 	"outline",
 	...cssListProperties,
+	...cssTableProperties,
 	...cssInteractionProperties,
 	...cssGridProperties,
 	"grid-row",
@@ -227,6 +233,7 @@ function normalize(name: string, source: string): string | undefined {
 			: undefined;
 	if (!supported.has(name)) return undefined;
 	if (isCssGridProperty(name)) return parseGridValue(name, source);
+	if (isCssTableProperty(name)) return parseTableValue(name, source);
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;
 	if (isCssOutlineProperty(name)) return parseOutlineValue(name, value);

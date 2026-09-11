@@ -1188,9 +1188,9 @@ it("traverses unstyled reader thead, tbody and tfoot while preserving native wra
 			ref: root,
 			type: "table",
 			children: [
-				wrapperRecord("thead", "inline", "th", "Header"),
+				wrapperRecord("thead", "container", "th", "Header"),
 				wrapperRecord("tbody", "container", "td", "Body"),
-				wrapperRecord("tfoot", "inline", "td", "Footer"),
+				wrapperRecord("tfoot", "container", "td", "Footer"),
 			],
 		});
 		const wholeStructured = extractDocument(tree, { format: "json" });

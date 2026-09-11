@@ -7,6 +7,8 @@ import { flexIntrinsicContribution } from "./flex-intrinsic.js";
 import { initialGridStyle } from "./css-grid.js";
 import { placeGridItems } from "./grid-placement.js";
 import { sizeGridTracks } from "./grid-tracks.js";
+import { sizeTableColumns } from "./table-column-sizing.js";
+import { tableColumnContributions, tableStructure } from "./table-structure.js";
 import { gridColumnContributions } from "./grid-intrinsic.js";
 import { crossInput } from "./flex-main.js";
 import { flexLineLimits } from "./flex-line.js";
@@ -329,7 +331,9 @@ function measureScopes(
 			charge();
 			if (
 				node.kind === "deferred" &&
-				(node.contentMode === "flex" || node.contentMode === "grid") &&
+				(node.contentMode === "flex" ||
+					node.contentMode === "grid" ||
+					node.contentMode === "table") &&
 				node.deferredReason === "display-layout-not-supported"
 			)
 				deferredFlexContainers++;
@@ -364,13 +368,14 @@ function measureScopes(
 		const node = formatting.nodes[frame.id];
 		const flex = node.contentMode === "flex";
 		const grid = node.contentMode === "grid";
+		const table = node.contentMode === "table";
 		if (flex && node.children.length > flexLineLimits.maxItems)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"Flex intrinsic item limit exceeded",
 			);
 		if (
-			(node.kind === "deferred" && !flex && !grid) ||
+			(node.kind === "deferred" && !flex && !grid && !table) ||
 			(flex &&
 				!["row", "row-reverse", "column", "column-reverse"].includes(
 					node.flex?.["flex-direction"] ?? "",
@@ -382,7 +387,8 @@ function measureScopes(
 			);
 		order.push(node.id);
 		const flexDepth =
-			(frame.flexDepth ?? 0) + Number(flex || grid || isAtomicInline(node));
+			(frame.flexDepth ?? 0) +
+			Number(flex || grid || table || isAtomicInline(node));
 		if (flexDepth > flexLayoutLimits.maxNesting)
 			throw new AgentBrowserError(
 				"resource-limit",
@@ -529,7 +535,7 @@ function measureScopes(
 				}),
 			);
 		}
-		if (node.kind === "block" || flex || grid)
+		if (node.kind === "block" || flex || grid || table)
 			height =
 				frame.definiteHeight ??
 				resolveHeightConstraints(style, 0, height).definite;
@@ -697,7 +703,8 @@ function measureScopes(
 				node.kind,
 			) &&
 			node.contentMode !== "flex" &&
-			node.contentMode !== "grid"
+			node.contentMode !== "grid" &&
+			node.contentMode !== "table"
 		)
 			continue;
 		let minContent = minWidths.get(id) ?? 0;
@@ -710,6 +717,37 @@ function measureScopes(
 					"Missing intrinsic replaced content size",
 				);
 			minContent = maxContent = measured;
+		} else if (node.contentMode === "table") {
+			const structure = tableStructure(formatting, id, remaining());
+			charge(structure.metrics.work);
+			const contributions = tableColumnContributions(
+				formatting,
+				structure.placement,
+				records,
+				charge,
+			);
+			let captionMinWidth = 0;
+			for (const caption of structure.captions) {
+				charge();
+				captionMinWidth = Math.max(
+					captionMinWidth,
+					records.get(caption)?.minContribution ?? 0,
+				);
+			}
+			const columns = sizeTableColumns(
+				structure.placement.columnCount,
+				contributions,
+				{
+					availableWidth: 0,
+					tableWidth: null,
+					borderSpacing: structure.spacing.horizontal,
+					captionMinWidth,
+					maxWork: Math.min(4_000_000, remaining()),
+				},
+			);
+			charge(columns.metrics.work);
+			minContent = columns.minContentWidth;
+			maxContent = columns.maxContentWidth;
 		} else if (node.contentMode === "grid") {
 			const placement = placeGridItems(
 				node.grid ?? initialGridStyle,

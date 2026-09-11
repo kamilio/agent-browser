@@ -420,7 +420,9 @@ export function layoutFormattingDocument(
 				? context.textHeight
 				: flow(state.children, state.topEscape, state.bottomEscape));
 		const used = clamp(
-			state.preferred ?? state.natural,
+			state.node.contentMode === "table"
+				? Math.max(state.preferred ?? 0, state.natural)
+				: (state.preferred ?? state.natural),
 			state.minimum,
 			state.maximum,
 		);

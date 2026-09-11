@@ -11,6 +11,7 @@ import {
 } from "./css-grid.js";
 import { cssInteractionProperties } from "./css-interaction.js";
 import { cssListProperties, isCssListProperty } from "./css-list.js";
+import { cssTableProperties, isCssTableProperty } from "./css-table.js";
 import { cssOutlineProperties, isCssOutlineProperty } from "./css-outline.js";
 import {
 	cssFlexProperties,
@@ -55,6 +56,7 @@ export const computedStyleProperties = Object.freeze(
 		...cssFlowProperties,
 		...cssInteractionProperties,
 		...cssListProperties,
+		...cssTableProperties,
 		...cssOutlineProperties,
 		...cssPaintProperties,
 		...cssTextProperties,
@@ -122,6 +124,7 @@ export function resolvedStyleValue(
 	}
 	if (name === "pointer-events") return styles.pointerEvents(id);
 	if (isCssListProperty(name)) return styles.list(id)[name];
+	if (isCssTableProperty(name)) return styles.table(id)[name];
 	if (isCssGridProperty(name)) return styles.grid(id)[name];
 	const grid = gridShorthandComponents(name);
 	if (grid)

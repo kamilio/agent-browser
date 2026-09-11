@@ -84,3 +84,9 @@ The two unchanged runtime exclusions remain the separate total host-object ceili
 and real unsupported-display-alongside-advisory-media cases. Strict roots retain
 the existing snapshot-test omission. No table document renderer or previously
 failing website action is certified by this numerical/model foundation gate.
+# Later integration
+
+`TABLE-DOCUMENT-INTEGRATION.md` records the subsequent separate-border block-table
+document/geometry/paint/click implementation and its distinct validation lanes.
+The original foundation measurements and limitations below retain their original
+scope; those earlier primitive tests were not retroactive website validation.
