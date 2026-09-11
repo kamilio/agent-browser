@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 Bing diagnosis narrows the malformed-attribute failure to a
+single U+0022 name on a div, reproduced by eight bounded native synthetic checks.
+BING-ATTRIBUTE-BOUNDARY.md records the preserved initial observer failure and
+separate zero-network reconstruction. No parser fix or Poe opinions are claimed;
+next inspect attribute-name recovery together with document and serialization
+constraints, then test the implementation before a separate fresh website run.
+
 September 11, 2026 reader table-depth recovery is validated: omitted cell/row
 ends now close ordinary descendants without increasing limits or changing
 sanitized HTML bytes. READER-TABLE-SCOPE.md records the preserved five-case red
