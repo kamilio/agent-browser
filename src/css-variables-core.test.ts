@@ -80,6 +80,88 @@ function resolve(source: Record<string, string>) {
 }
 
 it.each([
+	["--base", "red"],
+	["--base", "inherit"],
+	["--base", "unset"],
+	["--base", "revert"],
+	["--base", "revert-layer"],
+	["--alias", "var(--base)"],
+	["--invalid", "initial"],
+	["--invalid", "var(--invalid)"],
+	["--empty", ""],
+] as const)(
+	"shares unchanged inherited custom bindings for %s: %s",
+	(name, value) => {
+		const parent = new Map<string, string | null>([
+			["--base", "red"],
+			["--alias", "red"],
+			["--invalid", null],
+			["--empty", ""],
+		]);
+		let work = 0;
+		const computed = resolveCustomProperties(
+			new Map([[name, value]]),
+			parent,
+			(amount) => {
+				work += amount;
+			},
+		);
+		expect(computed).toBe(parent);
+		expect(work).toBeGreaterThan(parent.size);
+	},
+);
+
+it.each([
+	["--base", "blue", "blue"],
+	["--base", "RED", "RED"],
+	["--base", "var(--base)", null],
+	["--new", "initial", null],
+	["--invalid", "", ""],
+] as const)(
+	"keeps distinct custom maps for changed or new %s: %s",
+	(name, value, expected) => {
+		const parent = new Map<string, string | null>([
+			["--base", "red"],
+			["--alias", "red"],
+			["--invalid", null],
+		]);
+		const before = [...parent];
+		const computed = resolveCustomProperties(
+			new Map([[name, value]]),
+			parent,
+			() => {},
+		);
+		expect(computed).not.toBe(parent);
+		expect(computed.has(name)).toBe(true);
+		expect(computed.get(name)).toBe(expected);
+		expect(computed.get("--alias")).toBe("red");
+		expect([...parent]).toEqual(before);
+	},
+);
+
+it("does not retain duplicate inherited theme maps across wildcard redeclarations", () => {
+	const theme = Array.from(
+		{ length: 100 },
+		(_value, index) => `--v${index}:red`,
+	).join(";");
+	const { tree, id, read, styles } = fixture(
+		`:root{${theme};--theme:red;--alias:var(--theme)}:root *{--theme:red;--alias:var(--theme)}#changed{--theme:blue}`,
+		`<div id=target>Text</div>${"<span></span>".repeat(200)}<section id=changed><span id=reset></span></section>`,
+	);
+	expect(read("--theme")).toBe("red");
+	expect(read("--alias")).toBe("red");
+	expect(styles.custom(id("#changed"), "--theme")).toBe("blue");
+	expect(styles.custom(id("#changed"), "--alias")).toBe("blue");
+	expect(styles.custom(id("#reset"), "--theme")).toBe("red");
+	expect(styles.customNames(id()).length).toBe(102);
+	tree.setAttribute(id(), "style", "--theme:green");
+	expect(read("--theme")).toBe("green");
+	expect(read("--alias")).toBe("green");
+	tree.removeAttribute(id(), "style");
+	expect(read("--theme")).toBe("red");
+});
+
+it.each([
 	["var(--value)", { "--value": "red" }, "red"],
 	["var(--missing, blue)", {}, "blue"],
 	["var(--empty, blue)", { "--empty": "" }, ""],

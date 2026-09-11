@@ -476,5 +476,12 @@ export function resolveCustomProperties(
 	}
 	charge(parent.size);
 	for (const name of specified.keys()) resolve(name);
-	return result;
+	if (result.size !== parent.size) return result;
+	for (const name of specified.keys()) {
+		const value = result.get(name) ?? null;
+		const inherited = parent.get(name) ?? null;
+		charge(name.length + (value?.length ?? 0) + (inherited?.length ?? 0) + 1);
+		if (value !== inherited) return result;
+	}
+	return parent;
 }

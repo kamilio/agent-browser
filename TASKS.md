@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 unchanged inherited custom-property map reuse passes 6687
+selected native tests across 112 explicit files with the documented exceptions.
+CUSTOM-MAP-SHARING.md records the failing wildcard-theme retention baseline and
+resolved-value/key-set identity reuse without increasing limits. Captured MDN
+replay is separate and pending. Continue actual website flow verification and
+Hacker News layout work; research and broader runtime/device gates remain open.
+
 September 11, 2026 captured MDN replay completes the former fatal selector in
 8390 work units but navigation now fails CSS variable retention; no document is
 committed. MDN-RELATIVE-HAS-REPLAY.md preserves this separate outcome. The exact
