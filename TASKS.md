@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 TESTPAGES-STYLESHEET-FLOW.md records a fresh9060-build live
+follow-up at17:23 UTC: two actual native/wire GETs return200 for unchanged HTML
+and original CSS. The same-origin policy is cors/same-origin, and the fresh CSS
+digest matches archived native integrity metadata. The former guard is passed;
+the next exact failure is initial-navigation:native-loader, CSS rule limit
+exceeded with the existing4096-rule budget. There are zero document commits or
+control/geometry actions; no full stylesheet or website acceptance is claimed.
+All29 receipt checks plus12 additive provenance checks and both ledgers verify;
+cleanup settles to zero. The61-host inventory is unchanged. Next investigate the
+CSS budget failure without silently raising live caps or applying partial CSS.
+Storage recovered after the earlier holds; parent released its unused reserve,
+restored all four temporary snapshot copies to their original real directories,
+and reverified source ledgers. Original failure evidence remains unchanged.
+
 September 11, 2026 STYLESHEET-INTEGRATION.md adds explicit policy-aware stylesheet
 fetching, bounded SHA256/384/512 integrity checks and per-hop CORS/redirect
 credential handling without silently extending URL-only legacy callbacks. The

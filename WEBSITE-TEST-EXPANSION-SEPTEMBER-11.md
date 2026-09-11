@@ -1,5 +1,14 @@
 # Website test expansion — September 11, 2026
 
+**Fresh Test Pages follow-up, 17:23 UTC:** `TESTPAGES-STYLESHEET-FLOW.md` records
+two real HTTP200 GETs on the existing host: byte-identical HTML and the original
+CSS, whose digest matches the archived native integrity metadata. The former
+stylesheet guard is passed, but initial navigation now fails at the existing
+4096-rule CSS parser budget. No document commit, control interaction, geometry
+or complete stylesheet-application success is claimed. Parent verification passes
+29 run checks, 12 additive provenance checks and both receipt ledgers. No new host
+or retry is added; the current attempted-host inventory remains61.
+
 **Later source update:** the native Fetch standards attempt at 16:50:42 UTC adds
 `fetch.spec.whatwg.org`, bringing the combined attempted-host inventory to **61**.
 Its HTTP 200 body reaches the reader's 50,001st-node limit; it is not a successful
