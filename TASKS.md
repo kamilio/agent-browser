@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 MDN replay after custom-map sharing reaches a later cascade
+work failure in repeated charged value comparison, with no committed document.
+MDN-CUSTOM-MAP-SHARING-REPLAY.md records the separate failed navigation and clean
+offline cleanup. A single refresh-local no-op declaration recipe is now under
+isolated validation; do not lower work accounting or infer live acceptance.
+Continue varied-site native clicks and the original research/runtime goals.
+
 September 11, 2026 unchanged inherited custom-property map reuse passes 6687
 selected native tests across 112 explicit files with the documented exceptions.
 CUSTOM-MAP-SHARING.md records the failing wildcard-theme retention baseline and
