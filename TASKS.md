@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 the separate MDN native link-activation attempt fails during
+initial CSS/query loading after nine HTTP200 responses; no link is selected or
+clicked. MDN-NATIVE-FLOW.md preserves the failed run and an immediate pendingLoads
+count of one. Session jobs intentionally remain counted until underlying task
+settlement, so this is not yet a proven leak. A separate captured-body CSS profile
+is in progress; do not clear counters, raise budgets or infer rendering success.
+
 September 11, 2026 format-independent research handoff passes 6543 selected native
 tests across 110 explicit files with the documented baseline/strict exceptions.
 RESEARCH-FORMAT-HANDOFF.md records pre-extraction native diagnostics, bounded word
