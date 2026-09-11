@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 TABLE-LAYOUT-FOUNDATION.md adds bounded cell-slot placement
+and numerical auto-table column sizing for the observed W3C/Test Pages blockers.
+Positive/zero rowspans, implied rows, group boundaries, overlap rejection,
+colspans, intrinsic constraints and spacing have182 targeted passing cases.
+The clean9859-case gate passes with2 existing exclusions,164 selected/163 strict
+files and568 manifest entries; build/strict/format and source reviews pass.
+The original fixture-default failure and type-narrowing compile failure remain
+recorded. These helpers are not table rendering: next implement real CSS/HTML
+table structures, cell measurement/reflow, row heights/alignment, paint and
+geometry/hit ownership, then repeat genuine captured/fresh website actions.
+Raw CSS/imports, native CSP image policy, research and broader gates remain open.
+
 September 11, 2026 CLEAR-WITHOUT-FLOATS.md fixes real native clear behavior when
 no float requires clearance. Computed declarations, geometry, pixels and hit
 ownership remain intact; a genuine cleared-block checkbox fixture now clicks.
