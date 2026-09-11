@@ -28,6 +28,7 @@ import {
 	type NetworkResponse,
 } from "../src/network.js";
 import { NodeNetworkTransport } from "../src/node-transport.js";
+import { OriginRequestPacer } from "../src/origin-request-pacer.js";
 import {
 	type ResearchDocumentProfileId,
 	researchLongDocumentAdmission,
@@ -176,6 +177,9 @@ function researchLines(value: unknown): ResearchLineRange {
 export function parseResearchArguments(args: readonly string[]) {
 	let reader = false;
 	let captureBody = false;
+	let format: "markdown" | "json" | undefined;
+	let tableMetadata = false;
+	let minRequestIntervalMs: number | undefined;
 	let documentProfile: ResearchDocumentProfileId | undefined;
 	let selector: string | undefined;
 	let lines: ResearchLineRange | undefined;
@@ -186,6 +190,34 @@ export function parseResearchArguments(args: readonly string[]) {
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (argument === "--format" && format === undefined) {
+			const value = args[++index];
+			if (value !== "markdown" && value !== "json")
+				throw new AgentBrowserError("invalid-input", "Invalid research format");
+			format = value;
+			continue;
+		}
+		if (argument === "--table-metadata" && !tableMetadata) {
+			tableMetadata = true;
+			continue;
+		}
+		if (
+			argument === "--min-request-interval-ms" &&
+			minRequestIntervalMs === undefined
+		) {
+			const value = args[++index];
+			if (
+				typeof value !== "string" ||
+				!/^(?:0|[1-9][0-9]{0,4})$/.test(value) ||
+				Number(value) > 60_000
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid research request interval",
+				);
+			minRequestIntervalMs = Number(value);
+			continue;
+		}
 		if (argument === "--document-profile" && documentProfile === undefined) {
 			const profile = args[++index];
 			if (profile === undefined)
@@ -301,9 +333,22 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Long research requires one reader capture with headings",
 		);
+	if (tableMetadata && format !== "json")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research table metadata requires JSON format",
+		);
+	if (format !== undefined && (headings || find !== undefined))
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research format cannot be combined with discovery",
+		);
 	return {
 		reader,
 		urls,
+		...(format === undefined ? {} : { format }),
+		...(tableMetadata ? { tableMetadata: true as const } : {}),
+		...(minRequestIntervalMs === undefined ? {} : { minRequestIntervalMs }),
 		...(documentProfile === undefined ? {} : { documentProfile }),
 		...(selector === undefined ? {} : { selector }),
 		...(lines === undefined ? {} : { lines }),
@@ -421,6 +466,71 @@ export interface ResearchNavigationReport {
 	metrics?: Readonly<NetworkMetrics>;
 }
 
+export interface ResearchExecutionOptions {
+	format?: "markdown" | "json";
+	tableMetadata?: boolean;
+	minRequestIntervalMs?: number;
+}
+
+function validateExecutionOptions(options: ResearchExecutionOptions): void {
+	if (
+		!options ||
+		typeof options !== "object" ||
+		Array.isArray(options) ||
+		(options.format !== undefined &&
+			options.format !== "markdown" &&
+			options.format !== "json") ||
+		(options.tableMetadata !== undefined &&
+			typeof options.tableMetadata !== "boolean") ||
+		(options.minRequestIntervalMs !== undefined &&
+			(!Number.isSafeInteger(options.minRequestIntervalMs) ||
+				options.minRequestIntervalMs < 0 ||
+				options.minRequestIntervalMs > 60_000))
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid research execution options",
+		);
+}
+
+function hasExtractionContent(extraction: DocumentExtraction): boolean {
+	if (extraction.format === "markdown") return !!extraction.content.trim();
+	const pending = [extraction.content];
+	while (pending.length) {
+		const node = pending.pop();
+		if (!node) break;
+		if (
+			node.text?.trim() ||
+			node.type === "image" ||
+			node.type === "separator" ||
+			node.type === "table" ||
+			node.tableSource !== undefined
+		)
+			return true;
+		for (const child of node.children ?? []) pending.push(child);
+	}
+	return false;
+}
+
+function extractionDiagnosticText(extraction: DocumentExtraction): string {
+	if (extraction.format === "markdown") return extraction.content;
+	const pending = [extraction.content];
+	const limit = researchRunLimits.diagnosticTextCodeUnits + 1;
+	let text = "";
+	while (pending.length && text.length < limit) {
+		const node = pending.pop();
+		if (!node) break;
+		if (node.text) {
+			if (text) text += " ";
+			text += node.text.slice(0, limit - text.length);
+		}
+		if (node.children)
+			for (let index = node.children.length - 1; index >= 0; index--)
+				pending.push(node.children[index]);
+	}
+	return text;
+}
+
 export async function researchNavigation(
 	url: string,
 	reader = false,
@@ -432,7 +542,9 @@ export async function researchNavigation(
 	headings = false,
 	find?: string,
 	documentProfile?: ResearchDocumentProfileId,
+	executionOptions: ResearchExecutionOptions = {},
 ): Promise<ResearchNavigationReport> {
+	validateExecutionOptions(executionOptions);
 	const selectedDocumentProfile =
 		validateResearchDocumentProfile(documentProfile);
 	if (selectedDocumentProfile === "long-v1" && reader !== true)
@@ -445,6 +557,16 @@ export async function researchNavigation(
 	const lineRange =
 		lines === undefined ? undefined : validateResearchLines(lines);
 	const validated = parseResearchArguments([
+		...(executionOptions.format === undefined
+			? []
+			: ["--format", executionOptions.format]),
+		...(executionOptions.tableMetadata ? ["--table-metadata"] : []),
+		...(executionOptions.minRequestIntervalMs === undefined
+			? []
+			: [
+					"--min-request-interval-ms",
+					String(executionOptions.minRequestIntervalMs),
+				]),
 		...(documentProfile === undefined
 			? []
 			: ["--document-profile", selectedDocumentProfile]),
@@ -509,6 +631,9 @@ export async function researchNavigation(
 				const native = new NodeNetworkTransport({
 					cookieJar,
 					limits: admissionLimits?.network ?? researchRunLimits.network,
+					...(validated.minRequestIntervalMs === undefined
+						? {}
+						: { minRequestIntervalMs: validated.minRequestIntervalMs }),
 				});
 				transport = native;
 				return {
@@ -625,6 +750,7 @@ export async function researchNavigation(
 		let root: string | undefined;
 		let sectionRoot: string | undefined;
 		if (
+			validated.format === "json" ||
 			validated.selector !== undefined ||
 			validated.lines !== undefined ||
 			validated.section !== undefined ||
@@ -718,7 +844,8 @@ export async function researchNavigation(
 		}
 		stage = "extraction";
 		const extraction = extractDocument(tree, {
-			format: "markdown",
+			format: validated.format ?? "markdown",
+			...(validated.tableMetadata ? { tableMetadata: true } : {}),
 			...(root === undefined ? {} : { root }),
 			...(validated.lines === undefined ? {} : { lines: validated.lines }),
 			...(sectionRoot === undefined ? {} : { section: sectionRoot }),
@@ -731,16 +858,13 @@ export async function researchNavigation(
 			headers: primaryHeaders,
 			url: primaryUrl,
 			title: extraction.title,
-			text: typeof extraction.content === "string" ? extraction.content : "",
+			text: extractionDiagnosticText(extraction),
 		});
 		report.classification.barrier =
 			report.classification.diagnostic?.kind ?? null;
 		if (report.classification.barrier) report.outcome = "semantic-barrier";
 		else if (status < 200 || status >= 300) report.outcome = "http-failure";
-		else if (
-			typeof extraction.content !== "string" ||
-			!extraction.content.trim()
-		)
+		else if (!hasExtractionContent(extraction))
 			report.outcome = "empty-extraction";
 		else report.outcome = "extracted-unverified";
 		if (report.outcome !== "extracted-unverified")
@@ -770,6 +894,41 @@ export async function researchNavigation(
 		report.elapsedMs = Date.now() - started;
 	}
 	return report;
+}
+
+export async function* researchBatch(
+	args: readonly string[],
+	signal?: AbortSignal,
+): AsyncGenerator<ResearchNavigationReport> {
+	const options = parseResearchArguments(args);
+	const pacer = options.minRequestIntervalMs
+		? new OriginRequestPacer(options.minRequestIntervalMs)
+		: undefined;
+	const batchSignal = signal ?? new AbortController().signal;
+	try {
+		for (const url of options.urls) {
+			await pacer?.wait(new URL(url).origin, batchSignal);
+			yield await researchNavigation(
+				url,
+				options.reader,
+				signal,
+				options.selector,
+				options.captureBody,
+				options.lines,
+				options.section,
+				options.headings,
+				options.find,
+				options.documentProfile,
+				{
+					format: options.format,
+					tableMetadata: options.tableMetadata,
+					minRequestIntervalMs: options.minRequestIntervalMs,
+				},
+			);
+		}
+	} finally {
+		pacer?.close();
+	}
 }
 
 export function researchExitCode(reports: readonly ResearchExitReport[]) {
@@ -839,17 +998,8 @@ export async function emitResearchReport(
 }
 
 async function main() {
-	const {
-		urls,
-		reader,
-		selector,
-		captureBody,
-		lines,
-		section,
-		headings,
-		find,
-		documentProfile,
-	} = parseResearchArguments(process.argv.slice(2));
+	const args = process.argv.slice(2);
+	const { documentProfile } = parseResearchArguments(args);
 	const controller = new AbortController();
 	const timer = setTimeout(
 		() => controller.abort(),
@@ -865,19 +1015,7 @@ async function main() {
 	};
 	process.stdout.on("error", onOutputError);
 	try {
-		for (const url of urls) {
-			const report = await researchNavigation(
-				url,
-				reader,
-				controller.signal,
-				selector,
-				captureBody,
-				lines,
-				section,
-				headings,
-				find,
-				documentProfile,
-			);
+		for await (const report of researchBatch(args, controller.signal)) {
 			if (outputFailed) throw outputFailure();
 			reports.push(
 				await emitResearchReport(process.stdout, report, documentProfile),
@@ -901,7 +1039,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--capture-body] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--capture-body] [--format markdown|json] [--table-metadata] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings)\n",
 		);
 		process.exitCode = 64;
 	});

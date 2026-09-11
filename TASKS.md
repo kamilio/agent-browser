@@ -6,6 +6,17 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+On September 11, 2026 at 04:01 UTC, the research helper exposes JSON/table
+metadata and per-origin batch/transport pacing without changing defaults. All
+196 new native cases pass, including selected challenge text beyond the whole-
+document prefix. Production build, strict15 roots and three-file lint pass.
+The broader16-file run has1489 passes and3 unchanged selector assertion failures;
+baseline comparison reproduces those3 failures and13 existing selector type
+diagnostics exactly. Full16 validation is not green. RESEARCH-WORKFLOW.md records
+the contract, fixture corrections, scoped evidence and remaining live limitations.
+Next: native-only public website testing, preserving challenge/login handoff,
+then diagnose observed extraction or request failures without alternate clients.
+
 Per-origin pacing passes isolated production build, two-root types and four-file
 lint on September 11, 2026 at 03:17 UTC, then all 59 selected synthetic native
 cases at 03:18 UTC. The validated source adds bounded FIFO admission, deadline/

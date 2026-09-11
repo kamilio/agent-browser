@@ -1,4 +1,6 @@
 [
+  "src/research-workflow.test.ts",
+  "src/research-batch-pacing.test.ts",
   "src/origin-request-pacer.test.ts",
   "src/node-request-pacing.test.ts",
   "src/table-source.test.ts",

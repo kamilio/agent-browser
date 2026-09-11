@@ -12,10 +12,12 @@ const transport = new NodeNetworkTransport({
 });
 ```
 
-Pass this transport through the browser's existing createTransport hook. There
-is no new CLI switch or default-wide enablement in this increment. The option
-accepts integer milliseconds from 0 through 60,000; undefined and zero disable
-pacing and preserve the existing request path. Invalid values reject.
+Pass this transport through the browser's existing createTransport hook. The
+research helper also exposes `--min-request-interval-ms`, with additional batch
+navigation-start pacing described in RESEARCH-WORKFLOW.md. General browser
+defaults remain unchanged. The transport option accepts integer milliseconds
+from 0 through 60,000; undefined and zero disable pacing and preserve the existing
+request path. Invalid values reject.
 
 ## Scheduling behavior
 
