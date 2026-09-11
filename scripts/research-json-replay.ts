@@ -1,0 +1,304 @@
+import { types } from "node:util";
+import {
+	type BrowserChallengeDiagnostic,
+	classifyBrowserChallenge,
+} from "../src/browser-challenges.js";
+import { documentTitle } from "../src/document-title.js";
+import type { DocumentTree } from "../src/document.js";
+import { AgentBrowserError } from "../src/errors.js";
+import { type DocumentExtraction, extractDocument } from "../src/extraction.js";
+import { type NetworkResponse, parseNetworkUrl } from "../src/network.js";
+import {
+	type ResearchDocumentProfileId,
+	researchLongDocumentAdmission,
+} from "../src/research-admission.js";
+import { loadResearchDocument } from "../src/research-loader.js";
+import {
+	type ResearchReaderReport,
+	researchReaderInfo,
+} from "../src/research-reader-info.js";
+import { DocumentQueries, validateSelectorSyntax } from "../src/selectors.js";
+import {
+	type ResearchBodyPin,
+	type TrustedResearchReplayAdmission,
+	validateResearchReplayAdmission,
+} from "./research-admission-evidence.js";
+import {
+	hasResearchExtractionContent,
+	researchDocumentDiagnosticText,
+	researchExtractionDiagnosticText,
+} from "./research-content.js";
+
+export const researchJsonReplayLimits = Object.freeze({
+	maxSelectorCodeUnits: 4_096,
+	maxExtractionBytes: 256_000,
+	maxOutputBytes: 327_680,
+	maxNodes: 50_000,
+	maxDepth: 128,
+	timeoutMs: 20_000,
+});
+
+export type ResearchJsonReplaySelection = (
+	| { selector: string; section?: never }
+	| { section: string; selector?: never }
+) & { tableMetadata?: boolean };
+
+export interface ResearchJsonReplayReport {
+	kind: "native-research-json-replay-v1";
+	partial: true;
+	contentSuccess: null | false;
+	outcome: "extracted-unverified" | "empty-extraction" | "semantic-barrier";
+	networkRequests: 0;
+	source: {
+		profile: ResearchDocumentProfileId;
+		reportedFinalUrl: string;
+		receiptSha256: string;
+		body: ResearchBodyPin;
+	};
+	selection: {
+		method: "css-selector" | "heading-section";
+		matches: number | null;
+	};
+	classification: {
+		barrier: BrowserChallengeDiagnostic["kind"] | null;
+		diagnostic: BrowserChallengeDiagnostic | null;
+	};
+	reader?: Readonly<ResearchReaderReport>;
+	extraction?: Extract<DocumentExtraction, { format: "json" }>;
+}
+
+export interface ResearchJsonReplayExtraction {
+	report: ResearchJsonReplayReport;
+	jsonl: string;
+	outputBytes: number;
+}
+
+function invalidSelection(): never {
+	throw new AgentBrowserError(
+		"invalid-input",
+		"Invalid research replay selection",
+	);
+}
+
+function selectionSnapshot(value: unknown) {
+	if (
+		!value ||
+		typeof value !== "object" ||
+		types.isProxy(value) ||
+		Array.isArray(value)
+	)
+		invalidSelection();
+	const prototype = Object.getPrototypeOf(value);
+	if (prototype !== Object.prototype && prototype !== null) invalidSelection();
+	const keys = Reflect.ownKeys(value);
+	if (
+		keys.length < 1 ||
+		keys.length > 2 ||
+		!keys.every(
+			(key) =>
+				typeof key === "string" &&
+				["selector", "section", "tableMetadata"].includes(key),
+		)
+	)
+		invalidSelection();
+	const fields: Record<string, unknown> = Object.create(null);
+	for (const key of keys) {
+		if (typeof key !== "string") invalidSelection();
+		const descriptor = Object.getOwnPropertyDescriptor(value, key);
+		if (!descriptor || !Object.hasOwn(descriptor, "value")) invalidSelection();
+		fields[key] = descriptor.value;
+	}
+	if (Object.hasOwn(fields, "selector") === Object.hasOwn(fields, "section"))
+		invalidSelection();
+	const section = Object.hasOwn(fields, "section");
+	const target = section ? fields.section : fields.selector;
+	if (
+		typeof target !== "string" ||
+		!target.length ||
+		target.trim() !== target ||
+		target.length > researchJsonReplayLimits.maxSelectorCodeUnits ||
+		(fields.tableMetadata !== undefined &&
+			typeof fields.tableMetadata !== "boolean")
+	)
+		invalidSelection();
+	try {
+		validateSelectorSyntax(target);
+	} catch {
+		invalidSelection();
+	}
+	return {
+		method: section ? ("heading-section" as const) : ("css-selector" as const),
+		target,
+		tableMetadata: fields.tableMetadata === true,
+	};
+}
+
+export function extractResearchReplayJson(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchJsonReplaySelection,
+	signal?: AbortSignal,
+): ResearchJsonReplayExtraction {
+	const started = performance.now();
+	const checkpoint = () => {
+		if (signal?.aborted)
+			throw new AgentBrowserError("aborted", "Research JSON replay aborted");
+		if (performance.now() - started >= researchJsonReplayLimits.timeoutMs)
+			throw new AgentBrowserError("timeout", "Research JSON replay timed out");
+	};
+	checkpoint();
+	const selected = selectionSnapshot(selection);
+	checkpoint();
+	const admission = validateResearchReplayAdmission(rawReceipt, trusted);
+	if (admission.kind !== "validated-capture")
+		throw new AgentBrowserError(
+			"policy-denied",
+			"Research replay requires a validated capture",
+		);
+	let tree: DocumentTree | undefined;
+	try {
+		checkpoint();
+		const primary = admission.originalMetadata.primaryResponse as {
+			url: string;
+			status: number;
+			headers: NetworkResponse["headers"];
+			encodedBytes: number;
+			elapsedMs: number;
+		};
+		for (const values of Object.values(primary.headers)) {
+			if (
+				values.length === 0 ||
+				values.some((value) => /[^\t\x20-\x7e\x80-\xff]/.test(value))
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid research replay headers",
+				);
+		}
+		const contentTypes = primary.headers["content-type"];
+		if (
+			contentTypes?.length !== 1 ||
+			contentTypes[0].split(";", 1)[0].trim().toLowerCase() !== "text/html"
+		)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Research JSON replay requires text/html",
+			);
+		const reportedFinalUrl = parseNetworkUrl(primary.url).href;
+		const profile = admission.selectedProfile;
+		tree = loadResearchDocument(
+			{
+				url: reportedFinalUrl,
+				status: primary.status,
+				headers: primary.headers,
+				body: admission.body,
+				encodedBytes: primary.encodedBytes,
+				elapsedMs: primary.elapsedMs,
+				redirects: [],
+			},
+			{
+				tabId: "research-json-replay",
+				signal: signal ?? new AbortController().signal,
+				limits:
+					profile === "long-v1"
+						? researchLongDocumentAdmission.document
+						: {
+								maxNodes: 50_000,
+								maxDepth: 128,
+								maxTextCodeUnits: 2_000_000,
+								maxChanges: 1_024,
+							},
+				initializeDocument: (document) => {
+					tree = document;
+				},
+			},
+			profile,
+		);
+		checkpoint();
+		const report: ResearchJsonReplayReport = {
+			kind: "native-research-json-replay-v1",
+			partial: true,
+			contentSuccess: null,
+			outcome: "extracted-unverified",
+			networkRequests: 0,
+			source: {
+				profile,
+				reportedFinalUrl,
+				receiptSha256: admission.receiptSha256,
+				body: admission.bodyIdentity,
+			},
+			selection: { method: selected.method, matches: null },
+			classification: { barrier: null, diagnostic: null },
+			reader: researchReaderInfo(tree),
+		};
+		const title = documentTitle(tree);
+		const classify = (text: string) => {
+			const diagnostic = classifyBrowserChallenge({
+				status: primary.status,
+				headers: primary.headers,
+				url: reportedFinalUrl,
+				title,
+				text,
+			});
+			report.classification = { barrier: diagnostic?.kind ?? null, diagnostic };
+			if (diagnostic) {
+				report.outcome = "semantic-barrier";
+				report.contentSuccess = false;
+			}
+			return diagnostic;
+		};
+		if (!classify(researchDocumentDiagnosticText(tree))) {
+			checkpoint();
+			const queries = new DocumentQueries(tree);
+			const matches = queries.querySelectorAll(selected.target);
+			report.selection.matches = matches.length;
+			if (matches.length !== 1)
+				throw new AgentBrowserError(
+					matches.length ? "invalid-input" : "not-found",
+					"Research replay requires one selected element",
+				);
+			checkpoint();
+			const reference = tree.reference(matches[0]);
+			const extraction = extractDocument(tree, {
+				format: "json",
+				tableMetadata: selected.tableMetadata,
+				...(selected.method === "heading-section"
+					? { section: reference }
+					: { root: reference }),
+				maxBytes: researchJsonReplayLimits.maxExtractionBytes,
+				maxNodes: researchJsonReplayLimits.maxNodes,
+				maxDepth: researchJsonReplayLimits.maxDepth,
+			});
+			if (extraction.format !== "json")
+				throw new AgentBrowserError(
+					"unsupported",
+					"Research replay requires JSON extraction",
+				);
+			report.extraction = extraction;
+			checkpoint();
+			if (
+				!classify(researchExtractionDiagnosticText(extraction)) &&
+				!hasResearchExtractionContent(extraction)
+			) {
+				report.outcome = "empty-extraction";
+				report.contentSuccess = false;
+			}
+		}
+		checkpoint();
+		const jsonl = `${JSON.stringify(report)}\n`;
+		const outputBytes = new TextEncoder().encode(jsonl).byteLength;
+		if (outputBytes > researchJsonReplayLimits.maxOutputBytes)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Research JSON replay output limit exceeded",
+			);
+		checkpoint();
+		return { report, jsonl, outputBytes };
+	} finally {
+		try {
+			tree?.close();
+		} finally {
+			admission.body.fill(0);
+		}
+	}
+}

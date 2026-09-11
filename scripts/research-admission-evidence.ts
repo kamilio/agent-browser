@@ -949,15 +949,20 @@ export function validateResearchReplayAdmission(
 			invalidEvidence();
 	}
 	const body = decodeResearchBodyCapture(report.bodyCapture, selectedProfile);
-	if (
-		body.byteLength !== pin.bytes ||
-		createHash("sha256").update(body).digest("hex") !== pin.sha256
-	)
-		invalidEvidence();
-	return Object.freeze({
-		...metadata,
-		kind: "validated-capture",
-		body,
-		bodyIdentity: Object.freeze({ bytes: pin.bytes, sha256: pin.sha256 }),
-	});
+	try {
+		if (
+			body.byteLength !== pin.bytes ||
+			createHash("sha256").update(body).digest("hex") !== pin.sha256
+		)
+			invalidEvidence();
+		return Object.freeze({
+			...metadata,
+			kind: "validated-capture",
+			body,
+			bodyIdentity: Object.freeze({ bytes: pin.bytes, sha256: pin.sha256 }),
+		});
+	} catch (error) {
+		body.fill(0);
+		throw error;
+	}
 }

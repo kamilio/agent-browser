@@ -107,11 +107,15 @@ export function decodeResearchBodyCapture(
 	)
 		invalidCapture();
 	const bytes = Buffer.from(data, "base64");
-	if (
-		bytes.byteLength !== decodedBytes ||
-		bytes.toString("base64") !== data ||
-		createHash("sha256").update(bytes).digest("hex") !== sha256
-	)
-		invalidCapture();
-	return new Uint8Array(bytes);
+	try {
+		if (
+			bytes.byteLength !== decodedBytes ||
+			bytes.toString("base64") !== data ||
+			createHash("sha256").update(bytes).digest("hex") !== sha256
+		)
+			invalidCapture();
+		return new Uint8Array(bytes);
+	} finally {
+		bytes.fill(0);
+	}
 }

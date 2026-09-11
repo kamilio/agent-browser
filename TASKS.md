@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+On September11,2026 at04:45 UTC, bounded capture-to-JSON replay passes all84 new
+synthetic cases, production build, strict19 roots and seven-file lint. The20-file
+native run has1733 passes and3 unchanged baseline selector failures; full-suite
+success is not claimed. Replay requires independently pinned eligible captures,
+keeps existing limits, validates classifier headers and clears owned decoded
+buffers on failures/success. RESEARCH-JSON-REPLAY.md records the exact scope.
+The separate SWE-bench4MB capture reaches HTTP200 but still exceeds reader.text;
+it remains failed and cannot be promoted to replay content. Continue diagnosing
+large omitted/raw text under explicit bounded policies, not silently raised caps.
+
 On September 11, 2026 at 04:09 UTC, one new native-only SWE-bench website probe
 hits the existing 2MB decoded-response cap at 2,009,628 observed bytes. It records
 one request, no mocks/redirects and a closed transport, but no accepted HTTP

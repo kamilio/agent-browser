@@ -67,6 +67,10 @@ before transport construction; true table metadata still requires JSON.
 yields research reports. The CLI consumes this generator. Its batch pacing does
 not replace the per-navigation transport limits or the existing output writer.
 
+For a separately admitted capture, RESEARCH-JSON-REPLAY.md describes bounded
+selector/section JSON extraction without a second request. Failed or blocked
+receipts are not promoted to usable captures by that helper.
+
 ## Validation
 
 On September 11, 2026, production build, strict types for 15 selected test roots

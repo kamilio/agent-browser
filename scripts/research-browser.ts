@@ -5,7 +5,6 @@ import {
 	type BrowserChallengeDiagnostic,
 	classifyBrowserChallenge,
 } from "../src/browser-challenges.js";
-import { documentBody } from "../src/document-elements.js";
 import { loadBrowserDocument } from "../src/document-loader.js";
 import { documentTitle } from "../src/document-title.js";
 import { AgentBrowserError } from "../src/errors.js";
@@ -17,7 +16,6 @@ import {
 	discoverDocumentTextLines,
 	extractDocument,
 } from "../src/extraction.js";
-import { htmlParseInfo } from "../src/html-info.js";
 import {
 	type NetworkPolicyDiagnostic,
 	networkPolicyDiagnostic,
@@ -45,11 +43,7 @@ import {
 	resourceLimitDiagnostic,
 } from "../src/resource-limit.js";
 import { validateSelectorSyntax } from "../src/selectors.js";
-import {
-	BrowserSession,
-	type NavigationResult,
-	type SessionPage,
-} from "../src/session.js";
+import { BrowserSession, type NavigationResult } from "../src/session.js";
 import {
 	type ResearchAdmissionProvenance,
 	type ResearchExitReport,
@@ -60,12 +54,18 @@ import {
 	type ResearchBodyCapture,
 	captureResearchBody,
 } from "./research-body-capture.js";
+import {
+	hasResearchExtractionContent,
+	researchDiagnosticTextLimit,
+	researchDocumentDiagnosticText,
+	researchExtractionDiagnosticText,
+} from "./research-content.js";
 
 export const researchRunLimits = Object.freeze({
 	maxUrls: 8,
 	maxUrlCodeUnits: 4096,
 	selectorCodeUnits: 4096,
-	diagnosticTextCodeUnits: 8192,
+	diagnosticTextCodeUnits: researchDiagnosticTextLimit,
 	deadlineMs: 120_000,
 	navigationTimeoutMs: 20_000,
 	extractionBytes: 256_000,
@@ -359,68 +359,6 @@ export function parseResearchArguments(args: readonly string[]) {
 	};
 }
 
-const diagnosticOmissions = new Set(
-	"head script style template iframe noembed noframes object embed canvas input textarea select datalist".split(
-		" ",
-	),
-);
-
-function diagnosticText(page: SessionPage): string {
-	const tree = page.document;
-	const pending: (number | null)[] = [documentBody(tree) ?? tree.root];
-	const scripting = htmlParseInfo(tree)?.scripting ?? false;
-	let text = "";
-	while (
-		pending.length &&
-		text.length < researchRunLimits.diagnosticTextCodeUnits
-	) {
-		const id = pending.pop();
-		if (id === null) {
-			text += " ";
-			continue;
-		}
-		if (id === undefined) break;
-		const node = tree.get(id);
-		if (
-			node.kind === "comment" ||
-			node.kind === "doctype" ||
-			diagnosticOmissions.has(node.tagName) ||
-			Object.hasOwn(node.attributes, "hidden") ||
-			Object.hasOwn(node.attributes, "inert") ||
-			node.attributes["aria-hidden"]?.toLowerCase() === "true" ||
-			(node.tagName === "noscript" && scripting)
-		)
-			continue;
-		const style = page.styles.get(id);
-		if (!style.displayed) continue;
-		if (node.tagName === "br") {
-			if (style.visible) text += " ";
-			continue;
-		}
-		const content =
-			node.kind === "text"
-				? node.data
-				: node.tagName === "img"
-					? ` ${node.attributes.alt ?? ""} `
-					: undefined;
-		if (content !== undefined) {
-			if (style.visible)
-				text += content.slice(
-					0,
-					researchRunLimits.diagnosticTextCodeUnits - text.length,
-				);
-			continue;
-		}
-		if (!style.display.startsWith("inline")) {
-			text += " ";
-			pending.push(null);
-		}
-		for (let index = node.children.length - 1; index >= 0; index--)
-			pending.push(node.children[index]);
-	}
-	return text;
-}
-
 export type ResearchOutcome =
 	| "extracted-unverified"
 	| "semantic-barrier"
@@ -491,44 +429,6 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 			"invalid-input",
 			"Invalid research execution options",
 		);
-}
-
-function hasExtractionContent(extraction: DocumentExtraction): boolean {
-	if (extraction.format === "markdown") return !!extraction.content.trim();
-	const pending = [extraction.content];
-	while (pending.length) {
-		const node = pending.pop();
-		if (!node) break;
-		if (
-			node.text?.trim() ||
-			node.type === "image" ||
-			node.type === "separator" ||
-			node.type === "table" ||
-			node.tableSource !== undefined
-		)
-			return true;
-		for (const child of node.children ?? []) pending.push(child);
-	}
-	return false;
-}
-
-function extractionDiagnosticText(extraction: DocumentExtraction): string {
-	if (extraction.format === "markdown") return extraction.content;
-	const pending = [extraction.content];
-	const limit = researchRunLimits.diagnosticTextCodeUnits + 1;
-	let text = "";
-	while (pending.length && text.length < limit) {
-		const node = pending.pop();
-		if (!node) break;
-		if (node.text) {
-			if (text) text += " ";
-			text += node.text.slice(0, limit - text.length);
-		}
-		if (node.children)
-			for (let index = node.children.length - 1; index >= 0; index--)
-				pending.push(node.children[index]);
-	}
-	return text;
 }
 
 export async function researchNavigation(
@@ -763,7 +663,7 @@ export async function researchNavigation(
 				headers: primaryHeaders,
 				url: primaryUrl,
 				title: documentTitle(tree),
-				text: diagnosticText(page),
+				text: researchDocumentDiagnosticText(tree),
 			});
 			if (diagnostic) {
 				report.classification.diagnostic = diagnostic;
@@ -858,13 +758,13 @@ export async function researchNavigation(
 			headers: primaryHeaders,
 			url: primaryUrl,
 			title: extraction.title,
-			text: extractionDiagnosticText(extraction),
+			text: researchExtractionDiagnosticText(extraction),
 		});
 		report.classification.barrier =
 			report.classification.diagnostic?.kind ?? null;
 		if (report.classification.barrier) report.outcome = "semantic-barrier";
 		else if (status < 200 || status >= 300) report.outcome = "http-failure";
-		else if (!hasExtractionContent(extraction))
+		else if (!hasResearchExtractionContent(extraction))
 			report.outcome = "empty-extraction";
 		else report.outcome = "extracted-unverified";
 		if (report.outcome !== "extracted-unverified")
