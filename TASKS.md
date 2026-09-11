@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 MDN-GRID-INTEGRATION.md maps the captured named tracks/areas,
+minmax/fr syntax and display:contents ancestry into the real parser/cascade,
+formatting, sizing/reflow and geometry paths. It identifies shared alignment,
+height-definiteness, paint-order and non-grid CSS dependencies; it is source-only
+architecture evidence, not implemented grid support. Primary-spec research through
+this browser is separately scoped under existing public browsing authorization.
+Implement the production path and preserve the original native-click acceptance.
+
 September 11, 2026 stylesheet availability now checks same-element positive
 ID/class/type intersections using the smallest complete index, with conservative
 capped-index fallback and unchanged specificity/limits. COMPOUND-AVAILABILITY.md
