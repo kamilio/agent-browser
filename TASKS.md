@@ -6,6 +6,17 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 IMAGE-FALLBACK.md and IMAGE-FALLBACK-INTEGRATION.md implement
+bounded native nonempty alternative text for eligible final-broken images, with
+real glyphs, owner geometry/hits and fixture link navigation. Image decode/fetch
+failure state remains visible; empty-alt/loading/quirks/responsive cases remain
+explicit boundaries. Worker194-case validation and independent source review pass.
+The expanded gate finds an unrelated stale Grid expectation; clean HEAD separately
+reproduces29pass/1fail. The final gate passes8831 cases across149 native files with
+TWO documented exclusions, not one; build/strict/format and source/snapshot checks
+pass. No unrelated test is changed. A single unchanged-capture Python replay is
+released on that immutable final build; full website/decoder acceptance remains open.
+
 September 11, 2026 TESTPAGES-CONTROL-FLOW.md records a native301→200 form-page
 navigation, real textarea fill and changed select choice ms4→ms1 with events.
 Global checkbox discovery then exceeds the harness's20-candidate cap before any

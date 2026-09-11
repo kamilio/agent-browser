@@ -14,6 +14,14 @@ import { decodePng } from "./png-decoder.js";
 import { createRaster } from "./raster.js";
 import { DocumentQueries } from "./selectors.js";
 import { documentStyles } from "./styles.js";
+import { buildFormattingTree } from "./formatting-tree.js";
+import { documentHitTesting } from "./hit-testing.js";
+import { documentInteractions } from "./interactions.js";
+import { snapshotDocument } from "./snapshot.js";
+import { documentMode } from "./document-mode.js";
+import { jpegFixtures } from "../scripts/jpeg-fixtures.js";
+import { loadBrowserDocument } from "./document-loader.js";
+import { BrowserSession } from "./session.js";
 
 const trees: DocumentTree[] = [];
 afterEach(() => {
@@ -46,9 +54,10 @@ async function fixture(
 	content = '<img id="photo" src="/a.png">',
 	css = "",
 	settle = true,
+	doctype = "<!doctype html>",
 ) {
 	const tree = parseHtmlDocument(
-		`<!doctype html><style>main{width:40px;font-size:8px;line-height:10px}${css}</style><main>${content}</main>`,
+		`${doctype}<style>main{width:40px;font-size:8px;line-height:10px}${css}</style><main>${content}</main>`,
 		"https://example.com/page",
 	);
 	trees.push(tree);
@@ -56,17 +65,29 @@ async function fixture(
 	const images = documentImages(tree, {
 		fetch: async (url) => {
 			const second = url.endsWith("b.png");
-			const body = encodePng(
-				createRaster(
-					second ? 6 : 4,
-					second ? 4 : 2,
-					second ? [0, 0, 255, 255] : [255, 0, 0, 128],
-				),
-			);
+			const svg = url.endsWith(".svg");
+			const jpeg = url.endsWith(".jpg");
+			const body = svg
+				? new TextEncoder().encode(
+						'<svg xmlns="http://www.w3.org/2000/svg" width="4" height="2"><rect width="4" height="2"/></svg>',
+					)
+				: jpeg
+					? Buffer.from(jpegFixtures[0].jpeg, "base64")
+					: encodePng(
+							createRaster(
+								second ? 6 : 4,
+								second ? 4 : 2,
+								second ? [0, 0, 255, 255] : [255, 0, 0, 128],
+							),
+						);
 			return {
 				url,
 				status: url.endsWith("missing.png") ? 404 : 200,
-				headers: { "content-type": ["image/png"] },
+				headers: {
+					"content-type": [
+						svg ? "image/svg+xml" : jpeg ? "image/jpeg" : "image/png",
+					],
+				},
 				body,
 				encodedBytes: body.length,
 				redirects: [],
@@ -325,6 +346,437 @@ it("rejects pending and failed images rather than pretending their pixels were c
 	expect(rasterizeDocument(tree).metrics.paintedImages).toBe(1);
 	const broken = await fixture('<img id="photo" src="/missing.png">');
 	expect(() => rasterizeDocument(broken.tree)).toThrow(/supported formatting/);
+});
+
+it.each([
+	"inline",
+	"inline flow",
+	"block",
+	"flow-root",
+	"inline-block",
+	"inline flow-root",
+])(
+	"renders stable broken-image alternative text as non-replaced %s content",
+	async (display) => {
+		const { tree, images, id } = await fixture(
+			'<img id="photo" src="/missing.png" alt="Read more">',
+			`img{display:${display}}`,
+		);
+		expect(images.get(id())).toMatchObject({
+			state: "broken",
+			complete: true,
+			naturalWidth: 0,
+			naturalHeight: 0,
+		});
+		const formatting = buildFormattingTree(tree);
+		expect(formatting.issues).toEqual({});
+		expect(
+			formatting.nodes.some(
+				(node) => node.kind === "text" && node.text === "Read more",
+			),
+		).toBe(true);
+		expect(formatting.nodes.some((node) => node.kind === "replaced")).toBe(
+			false,
+		);
+		const raster = rasterizeDocument(tree);
+		expect(raster.metrics.paintedGlyphs).toBe(8);
+		expect(raster.metrics.paintedImages).toBe(0);
+		expect(images.decoded(id())).toBeUndefined();
+	},
+);
+
+it("formats synthetic shared Python-logo SVG failures without inventing decoded resources", async () => {
+	const { tree, images, id } = await fixture(
+		'<img id="hidden" src="/py.svg" alt="Python logo" style="display:none"><img id="photo" src="/py.svg" alt="Python logo"><img id="second" src="/py.svg" alt="Python logo">',
+	);
+	expect(documentMode(tree)).toBe("no-quirks");
+	const before = snapshotDocument(tree);
+	const states = ["#hidden", "#photo", "#second"].map((selector) =>
+		images.get(id(selector)),
+	);
+	for (const state of states)
+		expect(state).toMatchObject({
+			state: "broken",
+			error: "unsupported",
+			complete: true,
+			naturalWidth: 0,
+			naturalHeight: 0,
+		});
+	expect(images.metrics()).toMatchObject({
+		requests: 1,
+		resources: 1,
+		decodedBytes: 0,
+		decodeWork: 0,
+	});
+	const formatting = buildFormattingTree(tree);
+	expect(formatting.issues).toEqual({});
+	expect(
+		formatting.nodes
+			.filter((node) => node.kind === "text")
+			.map((node) => node.text),
+	).toEqual(["Python logo", "Python logo"]);
+	expect(
+		formatting.nodes.some((node) => node.ref === tree.reference(id("#hidden"))),
+	).toBe(false);
+	const raster = rasterizeDocument(tree);
+	expect(raster.metrics.paintedImages).toBe(0);
+	expect(raster.metrics.paintedGlyphs).toBe(20);
+	expect(
+		["#hidden", "#photo", "#second"].map((selector) =>
+			images.get(id(selector)),
+		),
+	).toEqual(states);
+	expect(snapshotDocument(tree)).toEqual(before);
+	expect(images.metrics().decodedBytes).toBe(0);
+});
+
+it.each(["normal", "nowrap", "pre", "pre-line", "pre-wrap"])(
+	"matches native span geometry and pixels for alternative whitespace %s",
+	async (whiteSpace) => {
+		const alternative = "Read  more\nnow";
+		const css = `#photo{white-space:${whiteSpace};color:red;padding:1px;border:1px solid blue;background:yellow}main{width:42px}`;
+		const image = await fixture(
+			`A<img id="photo" src="/py.svg" alt="${alternative}">B`,
+			css,
+		);
+		const reference = await fixture(
+			`A<span id="photo">${alternative}</span>B`,
+			css,
+		);
+		expect(image.rect()).toEqual(reference.rect());
+		expect(documentGeometry(image.tree).getClientRects(image.id())).toEqual(
+			documentGeometry(reference.tree).getClientRects(reference.id()),
+		);
+		const actual = rasterizeDocument(image.tree);
+		const expected = rasterizeDocument(reference.tree);
+		expect(actual.image.pixels).toEqual(expected.image.pixels);
+		expect(actual.metrics.paintedGlyphs).toBe(expected.metrics.paintedGlyphs);
+		expect(actual.metrics.paintedImages).toBe(0);
+	},
+);
+
+it.each(["inline", "block", "flow-root", "inline-block", "inline flow-root"])(
+	"uses real non-replaced %s typography, edges and authored sizes",
+	async (display) => {
+		const css = `#photo{display:${display};font-size:12px;line-height:18px;text-align:center;width:30px;height:28px;padding:2px;border:1px solid blue;margin:3px;color:red;background:yellow}`;
+		const image = await fixture(
+			'<img id="photo" src="/py.svg" alt="Read more">',
+			css,
+		);
+		const reference = await fixture('<span id="photo">Read more</span>', css);
+		expect(image.rect()).toEqual(reference.rect());
+		expect(rasterizeDocument(image.tree).image.pixels).toEqual(
+			rasterizeDocument(reference.tree).image.pixels,
+		);
+		expect(
+			buildFormattingTree(image.tree).nodes.find(
+				(node) =>
+					node.ref === image.tree.reference(image.id()) && node.kind !== "text",
+			)?.kind,
+		).toBe(display === "inline" ? "inline" : "block");
+	},
+);
+
+it("does not turn present dimension hints into a replaced text surrogate in no-quirks mode", async () => {
+	const { tree, id, rect } = await fixture(
+		'<img id="photo" src="/py.svg" alt="Logo" width="300" height="150">',
+	);
+	expect(rect()).toMatchObject({ width: 24, height: 8 });
+	expect(
+		buildFormattingTree(tree).nodes.some((node) => node.kind === "replaced"),
+	).toBe(false);
+	tree.setAttribute(id(), "style", "display:block");
+	expect(rect()).toMatchObject({ width: 300, height: 150 });
+	tree.setAttribute(id(), "style", "display:block;width:auto;height:auto");
+	expect(rect()).toMatchObject({ width: 40, height: 10 });
+});
+
+it("keeps generated alternative glyphs owned by the image and activates its real ancestor link", async () => {
+	const { tree, id, rect } = await fixture(
+		'<a id="link" href="/next"><img id="photo" src="/py.svg" alt="Python logo"></a>',
+		"img{color:red}",
+	);
+	const original = snapshotDocument(tree);
+	const originalNodes = tree.nodeCount;
+	const layout = layoutDocument(tree);
+	const glyphs = layout.contexts.flatMap((context) => context.glyphs);
+	expect(glyphs.every((glyph) => glyph.ref === tree.reference(id()))).toBe(
+		true,
+	);
+	expect(documentGeometry(tree).getClientRects(id()).length).toBeGreaterThan(1);
+	const point = { x: glyphs[0].x + 1, y: glyphs[0].y + 1 };
+	expect(documentHitTesting(tree).elementFromPoint(point.x, point.y)).toBe(
+		id(),
+	);
+	expect(snapshotDocument(tree).entries).toEqual(original.entries);
+	const actions = documentInteractions(tree);
+	let eventTarget: number | null = null;
+	actions.events.addEventListener(id("#link"), "click", (event) => {
+		eventTarget = event.target;
+	});
+	actions.mouse.move(point.x, point.y);
+	actions.mouse.down();
+	expect(actions.mouse.up().interaction?.defaultAction).toEqual({
+		kind: "navigate",
+		url: "https://example.com/next",
+		target: "_self",
+	});
+	expect(eventTarget).toBe(id());
+	expect(actions.click(tree.reference(id())).defaultAction).toEqual({
+		kind: "navigate",
+		url: "https://example.com/next",
+		target: "_self",
+	});
+	expect(tree.get(id()).children).toEqual([]);
+	expect(tree.textContent(id())).toBe("");
+	expect(tree.nodeCount).toBe(originalNodes);
+	expect(rect().width).toBeLessThan(100);
+});
+
+it("navigates a native session through a broken image's visible alternative", async () => {
+	const session = new BrowserSession({
+		createTransport: () => ({
+			request: async () => {
+				throw new Error("Synthetic routes must not reach outbound transport");
+			},
+			metrics: () => ({
+				requests: 0,
+				active: 0,
+				closed: false,
+				redirects: 0,
+				encodedBytes: 0,
+				decodedBytes: 0,
+			}),
+			close: () => {},
+		}),
+		loadDocument: loadBrowserDocument,
+	});
+	try {
+		session.routes.add("**/start", {
+			body: '<!doctype html><style>main{width:40px;font-size:8px;line-height:10px}</style><main><a href="/next"><img id="photo" src="/py.svg" alt="Python logo"></a></main>',
+			contentType: "text/html",
+		});
+		session.routes.add("**/py.svg", {
+			body: '<svg xmlns="http://www.w3.org/2000/svg"/>',
+			contentType: "image/svg+xml",
+		});
+		session.routes.add("**/next", {
+			body: "<!doctype html><h1>Destination</h1>",
+			contentType: "text/html",
+		});
+		const tab = session.createTab().id;
+		await session.navigate(tab, "https://example.com/start");
+		const page = session.page(tab);
+		const image = page.queries.querySelector("#photo");
+		if (image === null) throw new Error("Missing image fixture");
+		expect(documentImages(page.document).get(image)).toMatchObject({
+			state: "broken",
+			complete: true,
+			naturalWidth: 0,
+			naturalHeight: 0,
+		});
+		expect(rasterizeDocument(page.document).metrics).toMatchObject({
+			paintedGlyphs: 10,
+			paintedImages: 0,
+		});
+		const result = await session.click(tab, page.document.reference(image));
+		expect(result.navigation).toBeDefined();
+		expect(session.page(tab).document.url).toBe("https://example.com/next");
+		expect(
+			session.page(tab).document.textContent(session.page(tab).document.root),
+		).toContain("Destination");
+		expect(session.metrics().routes.fulfilled).toBe(3);
+	} finally {
+		session.close();
+	}
+});
+
+it("preserves error completion and decode rejection while painting text without new events", async () => {
+	const { tree, images, id } = await fixture(
+		'<img id="photo" src="/py.svg" alt="Python logo">',
+		"",
+		false,
+	);
+	const events: string[] = [];
+	for (const type of ["load", "error"])
+		documentInteractions(tree).events.addEventListener(id(), type, () =>
+			events.push(type),
+		);
+	expect(images.get(id()).state).toBe("loading");
+	expect(() => rasterizeDocument(tree)).toThrow(/supported formatting/);
+	await images.settle();
+	expect(events).toEqual(["error"]);
+	const state = images.get(id());
+	const delivered = images.metrics().delivered;
+	rasterizeDocument(tree);
+	buildFormattingTree(tree);
+	await expect(images.decode(id())).rejects.toMatchObject({
+		name: "EncodingError",
+	});
+	expect(images.get(id())).toEqual(state);
+	expect(events).toEqual(["error"]);
+	expect(images.metrics().delivered).toBe(delivered);
+});
+
+it.each(["/a.png", "/photo.jpg"])(
+	"retains loaded %s pixels and intrinsic sizing regardless of alt",
+	async (source) => {
+		const { tree, images, id, rect } = await fixture(
+			`<img id="photo" src="${source}" alt="Must not paint">`,
+		);
+		const decoded = images.decoded(id());
+		expect(decoded).toBeDefined();
+		const before = rasterizeDocument(tree);
+		expect(before.metrics.paintedImages).toBe(1);
+		expect(before.metrics.paintedGlyphs).toBe(0);
+		const originalRect = rect();
+		tree.setAttribute(id(), "alt", "Different text");
+		expect(rasterizeDocument(tree).image.pixels).toEqual(before.image.pixels);
+		expect(rect()).toEqual(originalRect);
+		expect(images.decoded(id())).toBe(decoded);
+		expect(images.get(id()).state).toBe("complete");
+	},
+);
+
+it("invalidates alternative geometry and prepared paints across alt and src transitions", async () => {
+	const { tree, images, id, rect } = await fixture(
+		'<img id="photo" src="/py.svg" alt="A">',
+	);
+	expect(rect().width).toBe(6);
+	const prepared = prepareDocumentRaster(tree);
+	tree.setAttribute(id(), "alt", "Long");
+	expect(() => prepared.rasterize()).toThrow(/stale/);
+	expect(rect().width).toBe(24);
+	expect(images.metrics().requests).toBe(1);
+	tree.setAttribute(id(), "src", "/a.png");
+	expect(images.get(id()).state).toBe("loading");
+	expect(() => rect()).toThrow(/supported formatting/);
+	await images.settle();
+	expect(rect()).toMatchObject({ width: 4, height: 2 });
+	expect(rasterizeDocument(tree).metrics.paintedImages).toBe(1);
+	tree.setAttribute(id(), "src", "/other.svg");
+	await images.settle();
+	expect(rect().width).toBe(24);
+	expect(images.get(id()).state).toBe("broken");
+	tree.removeAttribute(id(), "alt");
+	expect(() => rect()).toThrow(/supported formatting/);
+	tree.setAttribute(id(), "alt", "");
+	expect(() => rect()).toThrow(/supported formatting/);
+	tree.setAttribute(id(), "alt", "A");
+	expect(rect().width).toBe(6);
+});
+
+it("keeps hidden alternative geometry without ink or hits and suppresses display-none formatting", async () => {
+	const { tree, id, rect } = await fixture(
+		'<img id="photo" src="/py.svg" alt="Logo"><img id="gone" src="/py.svg" alt="Logo">',
+		"#photo{visibility:hidden}#gone{display:none}",
+	);
+	expect(rect()).toMatchObject({ width: 24, height: 8 });
+	expect(rect("#gone")).toMatchObject({ width: 0, height: 0 });
+	expect(rasterizeDocument(tree).metrics.paintedGlyphs).toBe(0);
+	expect(documentHitTesting(tree).elementFromPoint(1, 2)).not.toBe(id());
+	expect(
+		buildFormattingTree(tree).nodes.some(
+			(node) => node.ref === tree.reference(id("#gone")),
+		),
+	).toBe(false);
+});
+
+it.each([
+	'src="/py.svg"',
+	'src="/py.svg" alt=""',
+	'src="/py.svg" alt="" width="20" height="30" style="padding:2px;border:1px solid red"',
+	'alt="Text"',
+	'src="" alt="Text"',
+	'src="   " alt="Text"',
+	'src="/py.svg" alt="Text" srcset="/other.svg 2x"',
+	'src="/py.svg" alt="Text" crossorigin="anonymous"',
+	'src="/py.svg" alt="Text" referrerpolicy="no-referrer"',
+])(
+	"retains an explicit unsupported fallback boundary for %s",
+	async (attributes) => {
+		const { tree, id } = await fixture(`<img id="photo" ${attributes}>`);
+		const formatting = buildFormattingTree(tree);
+		expect(
+			formatting.nodes.find((node) => node.ref === tree.reference(id())),
+		).toMatchObject({
+			kind: "deferred",
+			deferredReason: "element-layout-not-supported",
+		});
+		expect(formatting.issues["element-layout-not-supported"]).toBe(1);
+		expect(() => rasterizeDocument(tree)).toThrow(/supported formatting/);
+	},
+);
+
+it.each([
+	"",
+	'<!doctype html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
+])(
+	"keeps the non-no-quirks alternative boundary for doctype %s",
+	async (doctype) => {
+		const { tree } = await fixture(
+			'<img id="photo" src="/py.svg" alt="Text" width="20" height="30">',
+			"",
+			true,
+			doctype,
+		);
+		expect(documentMode(tree)).not.toBe("no-quirks");
+		expect(
+			buildFormattingTree(tree).issues["element-layout-not-supported"],
+		).toBe(1);
+		expect(() => rasterizeDocument(tree)).toThrow(/supported formatting/);
+	},
+);
+
+it.each([
+	"float:left",
+	"filter:blur(1px)",
+	"display:block;align-content:center",
+])(
+	"does not bypass unsupported CSS for a text alternative: %s",
+	async (declaration) => {
+		const { tree } = await fixture(
+			'<img id="photo" src="/py.svg" alt="Text">',
+			`img{${declaration}}`,
+		);
+		expect(
+			Object.keys(buildFormattingTree(tree).issues).length,
+		).toBeGreaterThan(0);
+		expect(() => rasterizeDocument(tree)).toThrow();
+	},
+);
+
+it("charges alternative code units, generated boxes, depth and work without mutating the DOM", async () => {
+	const { tree, id } = await fixture(
+		'<img id="photo" src="/py.svg" alt="Read more">',
+	);
+	const before = snapshotDocument(tree);
+	const formatting = buildFormattingTree(tree);
+	expect(formatting.metrics.textCodeUnits).toBe(9);
+	for (const options of [
+		{ maxTextCodeUnits: 8 },
+		{ maxBoxes: formatting.metrics.boxes - 1 },
+		{ maxWork: formatting.metrics.work - 1 },
+	])
+		expect(() => buildFormattingTree(tree, options)).toThrow(/limit/i);
+	expect(
+		buildFormattingTree(tree, {
+			maxTextCodeUnits: 9,
+			maxBoxes: formatting.metrics.boxes,
+			maxWork: formatting.metrics.work,
+		}),
+	).toEqual(formatting);
+	let depth = 0;
+	let current = tree.get(id());
+	while (current.parent !== null) {
+		depth++;
+		current = tree.get(current.parent);
+	}
+	expect(() => buildFormattingTree(tree, { maxDepth: depth })).toThrow(
+		/alternative formatting depth limit/i,
+	);
+	expect(() => rasterizeDocument(tree, { maxWork: 1 })).toThrow(/work limit/i);
+	expect(snapshotDocument(tree)).toEqual(before);
 });
 
 it("invalidates cached geometry and prepared paints after changing the resource", async () => {

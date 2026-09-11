@@ -5,6 +5,7 @@ import type { TextStyle } from "./css-text.js";
 import type { DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { documentImages } from "./document-images.js";
+import { brokenImageAlternative } from "./image-fallback.js";
 import {
 	type ReplacedSize,
 	resolveHeightConstraints,
@@ -417,8 +418,47 @@ export function buildFormattingTree(
 				? (rootDisplays[visibility.display] ?? visibility.display)
 				: visibility.display;
 		if (display === "contents" && unusualContents.has(node.tagName)) return [];
+		const imageText =
+			node.tagName === "img" &&
+			[
+				"inline",
+				"inline flow",
+				"block",
+				"block flow",
+				"flow-root",
+				"block flow-root",
+				"inline-block",
+				"inline flow-root",
+			].includes(display)
+				? brokenImageAlternative(tree, node)
+				: undefined;
 		const children = (asItems?: "flex" | "grid") => {
 			const result: number[] = [];
+			if (imageText !== undefined) {
+				if (depth + 1 > limits.maxDepth)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Image alternative formatting depth limit exceeded",
+					);
+				textCodeUnits += imageText.length;
+				if (textCodeUnits > limits.maxTextCodeUnits)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Formatting text limit exceeded",
+					);
+				charge(imageText.length);
+				return [
+					create({
+						kind: "text",
+						level: "inline",
+						ref,
+						visible: visibility.visible,
+						text: imageText,
+						typography: styles.text(id),
+						paint: styles.paint(id),
+					}),
+				];
+			}
 			const generated =
 				node.tagName === "details"
 					? documentGeneratedControls(tree).detailsSummary(id)
@@ -596,7 +636,7 @@ export function buildFormattingTree(
 		const atomicBlock = ["inline-block", "inline flow-root"].includes(display);
 		if (
 			(block || atomicBlock) &&
-			!deferredElements.has(node.tagName) &&
+			(!deferredElements.has(node.tagName) || imageText !== undefined) &&
 			styles.flex(id)["align-content"] !== "normal"
 		)
 			issue("block-content-alignment-not-supported");
@@ -641,7 +681,7 @@ export function buildFormattingTree(
 				];
 		}
 		if (
-			deferredElements.has(node.tagName) ||
+			(deferredElements.has(node.tagName) && imageText === undefined) ||
 			(!block && !inline && !atomicBlock)
 		) {
 			if (
