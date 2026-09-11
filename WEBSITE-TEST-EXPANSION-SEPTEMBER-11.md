@@ -1,5 +1,14 @@
 # Website test expansion — September 11, 2026
 
+**Captured Test Pages replay, 17:45 UTC:** `TESTPAGES-CSS-CAPACITY-REPLAY.md` uses
+the two unchanged native live captures with2 mocks and0 new wire requests. With
+the audited8192-rule default, the document commits at5929 rules/9701 declarations
+and1307941 work; other style limits remain unchanged. Semantic fill/select succeed,
+but a genuine checkbox click still fails the formatting-profile guard. The bounded
+active-issue census is separate from copied CSS warnings. Parent verifies41 checks
+and both receipt ledgers. This is not a fresh visit or passing pointer flow, and
+the attempted-host inventory remains61.
+
 **Fresh Test Pages follow-up, 17:23 UTC:** `TESTPAGES-STYLESHEET-FLOW.md` records
 two real HTTP200 GETs on the existing host: byte-identical HTML and the original
 CSS, whose digest matches the archived native integrity metadata. The former

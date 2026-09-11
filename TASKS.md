@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 TESTPAGES-CSS-CAPACITY-REPLAY.md verifies the9064-build against
+the two unchanged live captures, with2 native/mocked requests and0 wire. The page
+now commits with5929 rules,9701 declarations,367894 code units and1307941 work,
+within unchanged declaration/source/work limits. Native textarea fill and a real
+select-option change succeed; exactly one genuine checkbox click still fails the
+issue-free formatting-profile guard, leaving the checkbox unchecked with0 events.
+All41 named checks and both ledgers verify; cleanup is zero. A bounded census
+separates copied CSS warnings from active limitations: deferred table-row-group,
+one unsupported inline-block element, clear4, overflow5, ordered-list markers3
+and a presentation hint, alongside coordination placeholders. These counts are not
+a first-emitter trace or proof every flex placeholder is unsupported. Next resolve
+the actual formatting limitations without weakening the actionability guard.
+This is captured-site replay, not a new visit; attempted-host count remains61.
+
 September 11, 2026 CSS-RULE-CAPACITY.md raises only the native default parsed-rule
 ceiling from4096 to8192, based on5929 native-counted rules/9698 statements in the
 unchanged captured Test Pages CSS. Source524288, declarations16384 and work5M
