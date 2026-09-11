@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 at 08:21 UTC, a separate native Python.org search-flow attempt
+receives HTTP200 for the homepage and three stylesheets but fails query work
+before form discovery or submission. CSS-WORK-SITE-COVERAGE.md preserves the
+four-response evidence, hashes, unchanged budgets and cleanup. Profile its
+captured stylesheets alongside the Wikipedia article to avoid a portal-only
+optimization; the remaining blocker is technical, not missing blanket permission.
+
 September 11, 2026 bounded stylesheet candidate indexing passes 6354 native tests
 across 109 selected files, with one reproduced baseline assertion excluded and
 one unchanged test typing error outside the 108 strict roots. Same-body Wikipedia
