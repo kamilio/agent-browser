@@ -24,7 +24,16 @@ an additional harness boundary, not a browser bug. Its32 verification checks pas
 with settled zero-resource cleanup; the initial Selenium report and its original
 failed temporal-cleanup verifier remain unchanged. A further separately scoped
 test permits original-loader public HTTPS CSS by resource type rather than adding
-one stylesheet exception at a time; it is not accepted until its results exist.
+one stylesheet exception at a time.
+
+`SELENIUM-PUBLIC-CSS-FLOW.md` records that separate test: the original page and both
+stylesheets load (three native/wire GETs, all200), native text fill succeeds, and a
+genuine submit click reaches the native formatting-profile boundary. The select
+call retains the existing placeholder, so changed-choice behavior is not proved.
+No submission/destination is reached; original styling is not declared accepted.
+All37 offline verification checks pass, including settled zero-resource cleanup.
+This establishes a native compatibility issue after fixing harness admission,
+without rewriting either earlier failed run or adding new hostnames.
 
 ## Existing host replay
 
@@ -37,8 +46,8 @@ boundary, and it is not an additional live website request.
 
 ## Next acceptance work
 
-- Run the Selenium form in a separate recorded test admitting its exact natively
-  observed public stylesheet; keep genuine native control actions and submit click.
+- Diagnose Selenium's active formatting issues using unchanged captured HTML/CSS;
+  preserve the real submit-click failure and test changed choices separately.
 - Investigate Python documentation's shared stylesheet/image request admission
   under the original concurrency cap; distinguish scheduling from layout failure.
 - Implement genuine outside markers with block children, not marker removal or an

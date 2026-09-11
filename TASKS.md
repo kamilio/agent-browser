@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 SELENIUM-PUBLIC-CSS-FLOW.md completes normal bounded admission
+for original native-loader public HTTPS stylesheets. Three GETs return200; the
+native document commits, text fill succeeds, and genuine submit click fails at
+the issue-free formatting-profile boundary. Selecting the current placeholder
+does not prove changed-choice behavior; no checkbox/submission/destination or
+full styling acceptance is claimed. Parent verifies all receipts and37 evidence
+checks, including zero-resource cleanup. The attempted-host total remains58.
+An unchanged-capture formatting diagnostic will identify active missing features
+without confusing stylesheet parser totals with actual layout blockers.
+
 September 11, 2026 SESSION-REQUEST-SCHEDULING.md adds bounded shared native session
 request admission at the transport's advertised capacity, with128 pending maximum,
 FIFO fairness, cancellation and actual-settlement permit release. Legacy adapters
