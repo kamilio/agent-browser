@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
+import { getEventListeners } from "node:events";
 import type { CookieJar } from "./cookies.js";
 import { loadBrowserDocument } from "./document-loader.js";
 import { DocumentTree } from "./document.js";
@@ -8,6 +9,10 @@ import type {
 	NetworkResponse,
 	NetworkTransport,
 } from "./network.js";
+import {
+	NetworkRequestQueue,
+	networkRequestQueueLimits,
+} from "./network-request-queue.js";
 import { pageHistoryPort } from "./page-history.js";
 import {
 	BrowserSession,
@@ -128,9 +133,404 @@ function stylesheetResponse(input: NetworkRequest, sheetCount: number) {
 	});
 }
 
+function capacityFixture(
+	maxConcurrent: number,
+	loadDocument: NonNullable<BrowserSessionOptions["loadDocument"]>,
+	handler: (request: NetworkRequest) => Promise<NetworkResponse> = async (
+		input,
+	) => {
+		await Promise.resolve();
+		return response(input.url);
+	},
+) {
+	const requests: string[] = [];
+	let active = 0;
+	let peak = 0;
+	let closed = false;
+	const close = vi.fn(() => {
+		closed = true;
+	});
+	const { session } = fixture({
+		createTransport: () => ({
+			limits: Object.freeze({ maxConcurrent }),
+			async request(input) {
+				if (active >= maxConcurrent)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Concurrent request limit exceeded",
+					);
+				requests.push(input.url);
+				active++;
+				peak = Math.max(peak, active);
+				try {
+					return await handler(input);
+				} finally {
+					active--;
+				}
+			},
+			metrics: () => ({
+				requests: requests.length,
+				active,
+				closed,
+				redirects: 0,
+				encodedBytes: 0,
+				decodedBytes: 0,
+			}),
+			close,
+		}),
+		loadDocument,
+	});
+	return { session, requests, peak: () => peak, close };
+}
+
 afterEach(() => {
 	for (const session of sessions.splice(0)) session.close();
 });
+
+it.each([1, 2])(
+	"schedules shared stylesheet and image work at transport capacity %s",
+	async (capacity) => {
+		const { session, requests, peak } = capacityFixture(
+			capacity,
+			async (result, context) => {
+				const image = new AbortController();
+				await Promise.all([
+					context.fetchStylesheet?.("https://example.com/style-1.css"),
+					context.fetchImage?.("https://example.com/image.png", image.signal),
+					context.fetchStylesheet?.("https://example.com/style-2.css"),
+				]);
+				return documentFixture(result, context);
+			},
+		);
+		const tab = session.createTab();
+		await session.navigate(tab.id, initialUrl);
+		expect(requests).toEqual([
+			initialUrl,
+			"https://example.com/style-1.css",
+			"https://example.com/image.png",
+			"https://example.com/style-2.css",
+		]);
+		expect(peak()).toBe(capacity);
+		expect(session.metrics()).toMatchObject({
+			commits: 1,
+			pendingLoads: 0,
+			network: { active: 0 },
+		});
+	},
+);
+
+it("releases a resource slot after transport failure without retrying it", async () => {
+	const outcomes: PromiseSettledResult<NetworkResponse | undefined>[] = [];
+	const { session, requests } = capacityFixture(
+		1,
+		async (result, context) => {
+			outcomes.push(
+				...(await Promise.allSettled([
+					context.fetchStylesheet?.("https://example.com/failing.css"),
+					context.fetchStylesheet?.("https://example.com/next.css"),
+				])),
+			);
+			return documentFixture(result, context);
+		},
+		async (input) => {
+			await Promise.resolve();
+			if (input.url.endsWith("/failing.css"))
+				throw new AgentBrowserError("network-error", "Fixture failure");
+			return response(input.url);
+		},
+	);
+	await session.navigate(session.createTab().id, initialUrl);
+	expect(outcomes.map((outcome) => outcome.status)).toEqual([
+		"rejected",
+		"fulfilled",
+	]);
+	expect(requests).toEqual([
+		initialUrl,
+		"https://example.com/failing.css",
+		"https://example.com/next.css",
+	]);
+	expect(session.metrics().network.active).toBe(0);
+});
+
+it("removes a canceled queued image without dropping the following stylesheet", async () => {
+	const firstStarted = deferred<void>();
+	const releaseFirst = deferred<void>();
+	const outcomes: PromiseSettledResult<NetworkResponse | undefined>[] = [];
+	const { session, requests } = capacityFixture(
+		1,
+		async (result, context) => {
+			const controller = new AbortController();
+			const first = context.fetchStylesheet?.("https://example.com/first.css");
+			await firstStarted.promise;
+			const image = context.fetchImage?.(
+				"https://example.com/canceled.png",
+				controller.signal,
+			);
+			const last = context.fetchStylesheet?.("https://example.com/last.css");
+			const settled = Promise.allSettled([first, image, last]);
+			controller.abort();
+			releaseFirst.resolve();
+			outcomes.push(...(await settled));
+			return documentFixture(result, context);
+		},
+		async (input) => {
+			if (input.url.endsWith("/first.css")) {
+				firstStarted.resolve();
+				await releaseFirst.promise;
+			}
+			return response(input.url);
+		},
+	);
+	await session.navigate(session.createTab().id, initialUrl);
+	expect(outcomes.map((outcome) => outcome.status)).toEqual([
+		"fulfilled",
+		"rejected",
+		"fulfilled",
+	]);
+	expect(outcomes[1]).toMatchObject({ reason: { code: "aborted" } });
+	expect(requests).toEqual([
+		initialUrl,
+		"https://example.com/first.css",
+		"https://example.com/last.css",
+	]);
+	expect(session.metrics().network.active).toBe(0);
+});
+
+it.each([0, -1, 1.5, 129, Number.NaN])(
+	"rejects invalid advertised transport capacity %s and closes its adapter",
+	(capacity) => {
+		const close = vi.fn();
+		expect(() =>
+			fixture({
+				createTransport: () => ({
+					limits: { maxConcurrent: capacity },
+					request: async (input) => response(input.url),
+					metrics: () => ({
+						requests: 0,
+						active: 0,
+						closed: false,
+						redirects: 0,
+						encodedBytes: 0,
+						decodedBytes: 0,
+					}),
+					close,
+				}),
+			}),
+		).toThrow("concurrency");
+		expect(close).toHaveBeenCalledOnce();
+	},
+);
+
+it("bounds pending network work and removes all abort listeners on close", async () => {
+	const queue = new NetworkRequestQueue(1);
+	const release = await queue.acquire();
+	const controllers = Array.from(
+		{ length: networkRequestQueueLimits.maxPending },
+		() => new AbortController(),
+	);
+	const pending = Promise.allSettled(
+		controllers.map((controller) => queue.acquire(controller.signal)),
+	);
+	expect(queue.metrics()).toMatchObject({ active: 1, pending: 128 });
+	await expect(queue.acquire()).rejects.toMatchObject({
+		code: "resource-limit",
+	});
+	for (const controller of controllers)
+		expect(getEventListeners(controller.signal, "abort")).toHaveLength(1);
+	queue.close();
+	queue.close();
+	const results = await pending;
+	for (const result of results)
+		expect(result).toMatchObject({
+			status: "rejected",
+			reason: { code: "closed" },
+		});
+	for (const controller of controllers)
+		expect(getEventListeners(controller.signal, "abort")).toHaveLength(0);
+	release();
+	release();
+	expect(queue.metrics()).toMatchObject({
+		active: 0,
+		pending: 0,
+		closed: true,
+	});
+	await expect(queue.acquire()).rejects.toMatchObject({ code: "closed" });
+});
+
+it("keeps queued network admission FIFO and releases each slot once", async () => {
+	const queue = new NetworkRequestQueue(1);
+	const release = await queue.acquire();
+	const order: number[] = [];
+	const tasks = Array.from({ length: 6 }, async (_, index) => {
+		const finish = await queue.acquire();
+		order.push(index);
+		expect(queue.metrics().active).toBe(1);
+		finish();
+		finish();
+	});
+	expect(queue.metrics().pending).toBe(6);
+	release();
+	await Promise.all(tasks);
+	expect(order).toEqual([0, 1, 2, 3, 4, 5]);
+	expect(queue.metrics()).toMatchObject({ active: 0, pending: 0 });
+	queue.close();
+});
+
+it("removes aborted queue waiters without consuming a transport slot", async () => {
+	const queue = new NetworkRequestQueue(1);
+	const release = await queue.acquire();
+	const controller = new AbortController();
+	const canceled = expect(
+		queue.acquire(controller.signal),
+	).rejects.toMatchObject({
+		code: "aborted",
+	});
+	const next = queue.acquire();
+	controller.abort();
+	await canceled;
+	expect(queue.metrics()).toMatchObject({ active: 1, pending: 1 });
+	expect(getEventListeners(controller.signal, "abort")).toHaveLength(0);
+	release();
+	(await next)();
+	expect(queue.metrics()).toMatchObject({ active: 0, pending: 0 });
+	await expect(queue.acquire(controller.signal)).rejects.toMatchObject({
+		code: "aborted",
+	});
+	expect(queue.metrics()).toMatchObject({ active: 0, pending: 0 });
+	queue.close();
+});
+
+it("removes a granted queue waiter's abort listener", async () => {
+	const queue = new NetworkRequestQueue(1);
+	const release = await queue.acquire();
+	const controller = new AbortController();
+	const waiting = queue.acquire(controller.signal);
+	expect(getEventListeners(controller.signal, "abort")).toHaveLength(1);
+	release();
+	const finish = await waiting;
+	expect(getEventListeners(controller.signal, "abort")).toHaveLength(0);
+	controller.abort();
+	expect(queue.metrics()).toMatchObject({ active: 1, pending: 0 });
+	finish();
+	queue.close();
+});
+
+it("closes active and queued session resources without late transport requests", async () => {
+	const started = deferred<void>();
+	const loaded = deferred<void>();
+	const { session, requests } = capacityFixture(
+		1,
+		async (result, context) => {
+			try {
+				await Promise.allSettled([
+					context.fetchStylesheet?.("https://example.com/active.css"),
+					context.fetchStylesheet?.("https://example.com/queued.css"),
+				]);
+				return documentFixture(result, context);
+			} finally {
+				loaded.resolve();
+			}
+		},
+		async (input) => {
+			if (input.url.endsWith("/active.css")) {
+				await new Promise<void>((_, reject) => {
+					const abort = () => {
+						input.signal?.removeEventListener("abort", abort);
+						reject(new AgentBrowserError("closed", "Fixture closed"));
+					};
+					input.signal?.addEventListener("abort", abort, { once: true });
+					started.resolve();
+				});
+			}
+			return response(input.url);
+		},
+	);
+	const navigation = session.navigate(session.createTab().id, initialUrl);
+	const canceled = expect(navigation).rejects.toMatchObject({ code: "closed" });
+	await started.promise;
+	expect(session.metrics().requestQueue).toMatchObject({
+		active: 1,
+		pending: 1,
+	});
+	session.close();
+	await canceled;
+	await loaded.promise;
+	expect(requests).toEqual([initialUrl, "https://example.com/active.css"]);
+	expect(session.metrics().requestQueue).toMatchObject({
+		active: 0,
+		pending: 0,
+		closed: true,
+	});
+	expect(session.metrics().network.active).toBe(0);
+});
+
+it.each([
+	["stylesheet", false],
+	["script", false],
+	["stylesheet", true],
+	["script", true],
+] as const)(
+	"cancels queued bootstrap %s work when loading settles with commit %s",
+	async (kind, commit) => {
+		const started = deferred<void>();
+		const releaseActive = deferred<void>();
+		const resources: Promise<unknown>[] = [];
+		const activeUrl = "https://example.com/active.css";
+		const queuedUrl = `https://example.com/stale.${kind === "script" ? "js" : "css"}`;
+		const recoveredUrl = "https://example.com/recovered";
+		const { session, requests } = capacityFixture(
+			1,
+			async (result, context) => {
+				if (result.url === recoveredUrl)
+					return documentFixture(result, context);
+				resources.push(
+					(
+						context.fetchStylesheet?.(activeUrl) as Promise<NetworkResponse>
+					).catch(() => undefined),
+				);
+				await started.promise;
+				const fetchResource =
+					kind === "script" ? context.fetchScript : context.fetchStylesheet;
+				resources.push(
+					(fetchResource?.(queuedUrl) as Promise<NetworkResponse>).catch(
+						() => undefined,
+					),
+				);
+				if (!commit) throw new Error("Fixture loader failed after resources");
+				return documentFixture(result, context);
+			},
+			async (input) => {
+				if (input.url === activeUrl) {
+					started.resolve();
+					await releaseActive.promise;
+				}
+				return response(input.url);
+			},
+		);
+		const tab = session.createTab();
+		try {
+			const navigation = session.navigate(tab.id, initialUrl);
+			if (commit) await navigation;
+			else
+				await expect(navigation).rejects.toMatchObject({ code: "unsupported" });
+			expect(session.metrics().requestQueue).toMatchObject({
+				active: 1,
+				pending: 0,
+			});
+			releaseActive.resolve();
+			await Promise.all(resources);
+			await session.navigate(tab.id, recoveredUrl);
+			expect(requests).toEqual([initialUrl, activeUrl, recoveredUrl]);
+			expect(session.metrics().requestQueue).toMatchObject({
+				active: 0,
+				pending: 0,
+			});
+		} finally {
+			releaseActive.resolve();
+			await Promise.all(resources);
+		}
+	},
+);
 
 it("rejects fresh old-page traversal while an explicit navigation is pending", async () => {
 	const started = deferred<void>();

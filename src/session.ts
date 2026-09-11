@@ -1,4 +1,5 @@
 import { CookieJar, type CookieLimits } from "./cookies.js";
+import { NetworkRequestQueue } from "./network-request-queue.js";
 import {
 	type BrowserIdentity,
 	type BrowserIdentityOptions,
@@ -258,6 +259,7 @@ export class BrowserSession {
 	readonly routes = new NetworkRoutes();
 	private readonly storageEvents = new PageStorageEvents();
 	private readonly transport: NetworkTransport;
+	private readonly networkQueue?: NetworkRequestQueue;
 	private readonly loadDocument: DocumentLoader;
 	private tabStates = new Map<string, TabState>();
 	private jobs = new Set<NavigationJob>();
@@ -356,6 +358,10 @@ export class BrowserSession {
 					"Invalid session transport adapter",
 				);
 			this.transport = transport;
+			if (transport.limits !== undefined)
+				this.networkQueue = new NetworkRequestQueue(
+					transport.limits?.maxConcurrent,
+				);
 		} catch (error) {
 			if (transport && typeof transport.close === "function")
 				this.cleanup(() => transport?.close());
@@ -1242,6 +1248,9 @@ export class BrowserSession {
 			cleanupErrors: this.cleanupErrors,
 			closed: this.closed,
 			network: this.transport.metrics(),
+			...(this.networkQueue
+				? { requestQueue: this.networkQueue.metrics() }
+				: {}),
 			routes: {
 				...this.routes.metrics(),
 				automaticRedirects:
@@ -1256,6 +1265,7 @@ export class BrowserSession {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		this.networkQueue?.close();
 		for (const job of this.jobs)
 			job.controller.abort(
 				new AgentBrowserError("closed", "Session is closed"),
@@ -1282,6 +1292,20 @@ export class BrowserSession {
 	}
 
 	private async fetchNetwork(input: NetworkRequest): Promise<NetworkResponse> {
+		this.ensureOpen();
+		if (!this.networkQueue) return this.dispatchNetwork(input);
+		const release = await this.networkQueue.acquire(input.signal);
+		try {
+			if (input.signal?.aborted) throw aborted(input.signal);
+			return await this.dispatchNetwork(input);
+		} finally {
+			release();
+		}
+	}
+
+	private async dispatchNetwork(
+		input: NetworkRequest,
+	): Promise<NetworkResponse> {
 		this.ensureOpen();
 		const request: NetworkRequest = {
 			...input,
@@ -1587,6 +1611,12 @@ export class BrowserSession {
 		let scriptResources = 0;
 		let fetchResources = 0;
 		const fetchLifetime = new AbortController();
+		const bootstrapLifetime = new AbortController();
+		const bootstrapSignal = AbortSignal.any([
+			signal,
+			fetchLifetime.signal,
+			bootstrapLifetime.signal,
+		]);
 		const fetchCspBlocked = Object.keys(response.headers).some(
 			(name) => name.toLowerCase() === "content-security-policy",
 		);
@@ -2008,14 +2038,14 @@ export class BrowserSession {
 									headers: {
 										accept: "text/javascript, application/javascript",
 									},
-									signal,
+									signal: bootstrapSignal,
 									cookieContext: {
 										siteUrl: responseUrl,
 										credentials: "include",
 										topLevelNavigation: false,
 									},
 								}),
-								signal,
+								bootstrapSignal,
 							);
 							this.assertCurrent(job);
 							return script;
@@ -2042,14 +2072,14 @@ export class BrowserSession {
 									url: target.href,
 									method: "GET",
 									headers: { accept: "text/css" },
-									signal,
+									signal: bootstrapSignal,
 									cookieContext: {
 										siteUrl: responseUrl,
 										credentials: "include",
 										topLevelNavigation: false,
 									},
 								}),
-								signal,
+								bootstrapSignal,
 							);
 							this.assertCurrent(job);
 							return sheet;
@@ -2116,6 +2146,9 @@ export class BrowserSession {
 			if (error instanceof AgentBrowserError) throw error;
 			throw new AgentBrowserError("unsupported", "Document loader failed");
 		} finally {
+			bootstrapLifetime.abort(
+				new AgentBrowserError("closed", "Document bootstrap finished"),
+			);
 			if (!committed)
 				fetchLifetime.abort(
 					new AgentBrowserError("closed", "Fetch document did not commit"),

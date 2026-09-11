@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 SESSION-REQUEST-SCHEDULING.md adds bounded shared native session
+request admission at the transport's advertised capacity, with128 pending maximum,
+FIFO fairness, cancellation and actual-settlement permit release. Legacy adapters
+without advertised limits retain direct behavior; capture wrappers must forward
+their unchanged underlying limit. Nine baseline failures become90 focused passes;
+review then identifies stale queued bootstrap resources. Four reproductions fail,
+and explicit bootstrap lifetime cancellation yields94 focused passes. The clean
+final gate passes8339 native cases across137 files with unchanged historical
+exceptions; build/strict/format also pass. The8335 gate remains historical and no
+live follow-up used it. Fresh Python-documentation validation at the original
+cap1 remains separate; pending outside-marker work is excluded from this gate.
+
 September 11, 2026 SELENIUM-STYLESHEET-FLOW.md verifies the observed Bootstrap CSS
 returns200, then records another harness-only admission boundary for original
 datepicker CSS on unpkg.com. The additive attempted-host count is now58, not58
