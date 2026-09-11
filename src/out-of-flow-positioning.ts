@@ -1,7 +1,7 @@
 import { type BlockWidth, resolveBlockWidth } from "./block-width.js";
 import { resolveBorders } from "./border-box.js";
 import type { BoxStyle } from "./css-box.js";
-import type { DocumentBox, DocumentLayout } from "./document-layout.js";
+import type { DocumentLayout } from "./document-layout.js";
 import { AgentBrowserError } from "./errors.js";
 import {
 	layoutFormattingFlexFlow,
@@ -39,6 +39,9 @@ export const positioningCapabilities = Object.freeze({
 	fixed: "viewport-with-root-scroll-projection",
 	staticPosition: "hypothetical-flow-and-sole-flex-item",
 	staticPositionReuse: "equivalent-simple-targets-in-out-of-flow-sibling-runs",
+	explicitGridChildInsets: "non-grid-containing-block-or-viewport",
+	gridContainingBlocks: false,
+	staticGridPosition: false,
 	staticBlockInInline: false,
 	staticFlexBaselines: false,
 	inlineContainingBlocks: false,
@@ -112,8 +115,39 @@ export function layoutPositionedDocument(
 		return maxWork - work;
 	};
 	const relativeRoots = new Set<number>();
+	const containingBlocks = new Map<number, number>();
 	const nodes = formatting.nodes.map((node) => {
 		charge();
+		if (outOfFlow(node)) {
+			let containing: Readonly<FormattingNode> | undefined;
+			if (node.position === "absolute") {
+				let ancestor = node.parent;
+				while (ancestor !== null) {
+					charge();
+					const parent = formatting.nodes[ancestor];
+					if (parent.position) {
+						containing = parent;
+						containingBlocks.set(node.id, ancestor);
+						break;
+					}
+					ancestor = parent.parent;
+				}
+			}
+			const parent =
+				node.parent === null ? undefined : formatting.nodes[node.parent];
+			if (
+				node.contentMode === "grid" ||
+				containing?.contentMode === "grid" ||
+				(parent?.contentMode === "grid" &&
+					(!node.box ||
+						(node.box.left === "auto" && node.box.right === "auto") ||
+						(node.box.top === "auto" && node.box.bottom === "auto")))
+			)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Positioned Grid boxes require Grid-area coordination",
+				);
+		}
 		if (node.position === "relative") {
 			let ancestor = node;
 			while (ancestor.parent !== null && !outOfFlow(ancestor)) {
@@ -199,24 +233,14 @@ export function layoutPositionedDocument(
 				"unsupported",
 				"Positioned element has no supported box",
 			);
-		let containing: Readonly<DocumentBox> | undefined;
-		if (node.position === "absolute") {
-			let ancestor = node.parent;
-			while (ancestor !== null) {
-				charge();
-				const parent = formatting.nodes[ancestor];
-				if (parent.position) {
-					containing = boxMap.get(ancestor);
-					if (!containing)
-						throw new AgentBrowserError(
-							"unsupported",
-							"Positioned inline containing blocks are not implemented",
-						);
-					break;
-				}
-				ancestor = parent.parent;
-			}
-		}
+		const containingId = containingBlocks.get(node.id);
+		const containing =
+			containingId === undefined ? undefined : boxMap.get(containingId);
+		if (containingId !== undefined && !containing)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Positioned inline containing blocks are not implemented",
+			);
 		const containingWidth = containing
 			? containing.contentWidth +
 				containing.paddingLeft +

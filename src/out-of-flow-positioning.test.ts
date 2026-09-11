@@ -6,8 +6,10 @@ import { layoutDocument } from "./document-layout.js";
 import { prepareDocumentRaster, rasterizeDocument } from "./document-raster.js";
 import { documentScroll } from "./document-scroll.js";
 import type { DocumentTree } from "./document.js";
+import { buildFormattingTree } from "./formatting-tree.js";
 import { documentHitTesting } from "./hit-testing.js";
 import { parseHtmlDocument } from "./html-parser.js";
+import { layoutPositionedDocument } from "./out-of-flow-positioning.js";
 import { encodePng } from "./png.js";
 import { createRaster } from "./raster.js";
 import { DocumentQueries } from "./selectors.js";
@@ -88,6 +90,115 @@ it("uses the nearest positioned padding box across a static ancestor", () => {
 	});
 	expect(box("#absolute").containingBlock).toBe(parent.id);
 });
+
+it("positions an offscreen menu outside a static Grid body's tracks", () => {
+	const { tree, box, rect } = fixture(
+		'<ul id="menu"><li>Skip</li></ul><main>Content</main>',
+		"body{display:grid;grid-template-columns:200px;grid-template-rows:20px}#menu{position:absolute;top:-320px;left:2px;right:2px;width:calc(100% - 2px * 2);margin:0;padding:0;list-style-type:none}main{height:10px}",
+	);
+	expect(rect("#menu")).toMatchObject({
+		x: 2,
+		y: -320,
+		width: 196,
+		height: 10,
+	});
+	expect(box("main")).toMatchObject({ borderX: 0, borderY: 0 });
+	expect(box("body").contentHeight).toBe(20);
+	expect(layoutDocument(tree).flowHeight).toBe(20);
+	const formatting = buildFormattingTree(tree);
+	const menu = formatting.nodes.find((node) => node.ref === box("#menu").ref);
+	expect(menu?.gridItem).not.toBe(true);
+	expect(box("#menu").containingBlock).toBe(formatting.root);
+});
+
+it.each([
+	["absolute", "left:10%;top:20%", 20, 20],
+	["absolute", "right:10%;bottom:20%", 160, 70],
+	["fixed", "left:10%;top:20%", 20, 20],
+	["fixed", "right:10%;bottom:20%", 160, 70],
+])(
+	"uses viewport anchors for a %s child of a static Grid: %s",
+	(position, insets, x, y) => {
+		const { box, rect } = fixture(
+			'<main><div id="target"></div><div id="flow"></div></main>',
+			`main{display:grid;grid-template-columns:80px;grid-template-rows:30px;width:80px;margin:7px}#flow{height:15px}#target{position:${position};${insets};width:20px;height:10px}`,
+		);
+		expect(rect("#target")).toMatchObject({ x, y, width: 20, height: 10 });
+		expect(box("#flow")).toMatchObject({ borderX: 7, borderY: 7 });
+		expect(box("main").contentHeight).toBe(30);
+	},
+);
+
+it("finds a positioned non-Grid ancestor across a static Grid parent", () => {
+	const { box, rect } = fixture(
+		'<main><section><div id="target"></div><div id="flow"></div></section></main>',
+		"main{position:relative;left:7px;top:9px;width:100px;height:50px;padding:10px;border:2px solid black;margin:3px}section{display:grid;grid-template-columns:60px;grid-template-rows:20px;width:60px}#target{position:absolute;left:10%;top:20%;width:50%;height:50%}",
+	);
+	const parent = box("main");
+	expect(rect("#target")).toMatchObject({
+		x: parent.borderX + 2 + 12,
+		y: parent.borderY + 2 + 14,
+		width: 60,
+		height: 35,
+	});
+	expect(box("#target").containingBlock).toBe(parent.id);
+});
+
+it("does not use a positioned Grid ancestor as a fixed containing block", () => {
+	const { rect } = fixture(
+		'<main><div id="target"></div></main>',
+		"main{position:relative;left:30px;top:20px;display:grid;grid-template-columns:80px;width:80px;height:40px}#target{position:fixed;left:10px;top:15px;width:20px;height:10px}",
+	);
+	expect(rect("#target")).toMatchObject({
+		x: 10,
+		y: 15,
+		width: 20,
+		height: 10,
+	});
+});
+
+it.each(["left:10px", "top:10px", "left:auto;right:auto;top:auto;bottom:auto"])(
+	"retains the Grid static-position boundary for %s",
+	(insets) => {
+		const { tree } = fixture(
+			'<main><div id="target"></div></main>',
+			`main{display:grid;grid-template-columns:100px}#target{position:absolute;width:20px;height:10px;${insets}}`,
+		);
+		expect(() => layoutDocument(tree)).toThrow("Grid-area coordination");
+		expect(() =>
+			layoutPositionedDocument(buildFormattingTree(tree), 2_000_000, {}),
+		).toThrow("Grid-area coordination");
+	},
+);
+
+it.each([false, true])(
+	"rejects Grid containing-block coordination through a static wrapper: %s",
+	(wrapped) => {
+		const target = '<div id="target"></div>';
+		const { tree } = fixture(
+			`<main>${wrapped ? `<section>${target}</section>` : target}</main>`,
+			"main{position:relative;display:grid;grid-template-columns:100px;width:100px;height:40px}#target{position:absolute;left:10px;top:10px;width:20px;height:10px}",
+		);
+		expect(() => layoutDocument(tree)).toThrow("Grid-area coordination");
+		expect(() =>
+			layoutPositionedDocument(buildFormattingTree(tree), 2_000_000, {}),
+		).toThrow("Grid-area coordination");
+	},
+);
+
+it.each(["absolute", "fixed"])(
+	"retains the out-of-flow Grid container boundary for %s",
+	(position) => {
+		const { tree } = fixture(
+			"<main><div>Content</div></main>",
+			`main{position:${position};display:grid;left:0;top:0;width:100px;grid-template-columns:100px}`,
+		);
+		expect(() => layoutDocument(tree)).toThrow("Grid-area coordination");
+		expect(() =>
+			layoutPositionedDocument(buildFormattingTree(tree), 2_000_000, {}),
+		).toThrow("Grid-area coordination");
+	},
+);
 
 it("positions nested absolute ancestors in ancestor order", () => {
 	const { rect } = fixture(

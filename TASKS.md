@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 GRID-CHILD-POSITIONING.md resolves the overbroad direct-Grid
+parent guard for explicit physical anchors against a non-Grid containing block
+or viewport. It retains actual Grid-containing-block, static-Grid-anchor and
+out-of-flow Grid-container boundaries in the lower-level coordinator as well.
+The measured-menu and genuine fixture-click regressions reproduce fifteen
+baseline failures, then pass all85 focused cases. The clean combined gate passes
+8321 native cases across137 tracked files with the unchanged historical exception;
+build, strict and format also pass. It includes the earlier percentage-row and
+list-item fixes, whose prior combined gate independently passed8183. Native W3C
+section evidence is in GRID-POSITIONING-SOURCE.md. Unchanged MDN replay, additional
+public-site flows and broader research/auth/challenge acceptance remain separate.
+
 September 11, 2026 WEBSITE-TEST-INVENTORY.md and the compact JSON inventory record
 54 substantiated native-request hostnames, not 54 passing websites: twelve in the
 browser/interaction corpus and 42 additional research/source/failed-attempt hosts.

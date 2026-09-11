@@ -38,19 +38,6 @@ export function layoutPageDocument(
 	const formatting = buildFormattingTree(tree, options.formatting);
 	if (
 		formatting.nodes.some(
-			(node) =>
-				(node.position === "absolute" || node.position === "fixed") &&
-				(node.contentMode === "grid" ||
-					(node.parent !== null &&
-						formatting.nodes[node.parent]?.contentMode === "grid")),
-		)
-	)
-		throw new AgentBrowserError(
-			"unsupported",
-			"Positioned Grid boxes require Grid-area coordination",
-		);
-	if (
-		formatting.nodes.some(
 			(node) => node.position === "absolute" || node.position === "fixed",
 		)
 	)

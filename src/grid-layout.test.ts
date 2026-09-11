@@ -436,67 +436,69 @@ it("keeps horizontal-only and baseline profile restrictions explicit", () => {
 	).toThrowError(expect.objectContaining({ code: "resource-limit" }));
 });
 
-it("completes a genuine native click using Grid geometry and fixture transport", async () => {
-	const requests: NetworkRequest[] = [];
-	let closed = false;
-	const markup =
-		'<!doctype html><style>html,body{margin:0;font-size:10px;line-height:10px}main{display:grid;grid-template-columns:40px 80px;grid-template-rows:20px;width:120px}</style><main><div>First</div><a id="target" href="/destination">Next</a></main>';
-	const session = new BrowserSession({
-		createTransport: () => ({
-			async request(request) {
-				requests.push(request);
-				const body = new TextEncoder().encode(
-					request.url.endsWith("/destination")
-						? "<!doctype html><h1>Destination</h1>"
-						: markup,
-				);
-				return {
-					url: request.url,
-					status: 200,
-					headers: { "content-type": ["text/html; charset=utf-8"] },
-					body,
-					redirects: [],
+it.each([false, true])(
+	"completes a genuine native Grid click with offscreen menu: %s",
+	async (menu) => {
+		const requests: NetworkRequest[] = [];
+		let closed = false;
+		const markup = `<!doctype html><style>html,body{margin:0;font-size:10px;line-height:10px}body{display:grid;grid-template-columns:120px}main{display:grid;grid-template-columns:40px 80px;grid-template-rows:20px;width:120px}#menu{position:absolute;top:-320px;left:2px;right:2px;margin:0;padding:0;list-style-type:none}</style>${menu ? '<ul id="menu"><li>Skip</li></ul>' : ""}<main><div>First</div><a id="target" href="/destination">Next</a></main>`;
+		const session = new BrowserSession({
+			createTransport: () => ({
+				async request(request) {
+					requests.push(request);
+					const body = new TextEncoder().encode(
+						request.url.endsWith("/destination")
+							? "<!doctype html><h1>Destination</h1>"
+							: markup,
+					);
+					return {
+						url: request.url,
+						status: 200,
+						headers: { "content-type": ["text/html; charset=utf-8"] },
+						body,
+						redirects: [],
+						encodedBytes: 0,
+						elapsedMs: 0,
+					};
+				},
+				metrics: () => ({
+					requests: requests.length,
+					active: 0,
+					closed,
+					redirects: 0,
 					encodedBytes: 0,
-					elapsedMs: 0,
-				};
-			},
-			metrics: () => ({
-				requests: requests.length,
-				active: 0,
-				closed,
-				redirects: 0,
-				encodedBytes: 0,
-				decodedBytes: 0,
+					decodedBytes: 0,
+				}),
+				close: () => {
+					closed = true;
+				},
 			}),
-			close: () => {
-				closed = true;
-			},
-		}),
-		loadDocument: loadBrowserDocument,
-	});
-	sessions.push(session);
-	const tab = session.createTab();
-	await session.navigate(tab.id, "https://fixture.invalid/start");
-	const page = session.page(tab.id);
-	const target = page.queries.querySelector("#target")!;
-	const events: string[] = [];
-	for (const type of ["mousedown", "mouseup", "click"])
-		page.interactions.events.addEventListener(target, type, () =>
-			events.push(type),
-		);
-	await session.click(tab.id, page.document.reference(target));
-	expect(events).toEqual(["mousedown", "mouseup", "click"]);
-	expect(requests.map((request) => request.url)).toEqual([
-		"https://fixture.invalid/start",
-		"https://fixture.invalid/destination",
-	]);
-	expect(session.page(tab.id).queries.querySelector("h1")).not.toBeNull();
-	session.close();
-	expect(session.metrics()).toMatchObject({
-		closed: true,
-		tabs: 0,
-		pendingLoads: 0,
-		cleanupErrors: 0,
-	});
-	expect(closed).toBe(true);
-});
+			loadDocument: loadBrowserDocument,
+		});
+		sessions.push(session);
+		const tab = session.createTab();
+		await session.navigate(tab.id, "https://fixture.invalid/start");
+		const page = session.page(tab.id);
+		const target = page.queries.querySelector("#target")!;
+		const events: string[] = [];
+		for (const type of ["mousedown", "mouseup", "click"])
+			page.interactions.events.addEventListener(target, type, () =>
+				events.push(type),
+			);
+		await session.click(tab.id, page.document.reference(target));
+		expect(events).toEqual(["mousedown", "mouseup", "click"]);
+		expect(requests.map((request) => request.url)).toEqual([
+			"https://fixture.invalid/start",
+			"https://fixture.invalid/destination",
+		]);
+		expect(session.page(tab.id).queries.querySelector("h1")).not.toBeNull();
+		session.close();
+		expect(session.metrics()).toMatchObject({
+			closed: true,
+			tabs: 0,
+			pendingLoads: 0,
+			cleanupErrors: 0,
+		});
+		expect(closed).toBe(true);
+	},
+);
