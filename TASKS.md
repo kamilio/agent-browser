@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 format-independent research handoff passes 6543 selected native
+tests across 110 explicit files with the documented baseline/strict exceptions.
+RESEARCH-FORMAT-HANDOFF.md records pre-extraction native diagnostics, bounded word
+lookahead, and six captured PyPI caller cases returning handoff without extraction.
+The reader's absent hidden-content semantics remain explicit, not falsely fixed.
+No live PyPI retry or challenge bypass occurs. Continue varied-site testing and
+MDN's newly observed CSS/resource-cleanup diagnostics; broader gates remain open.
+
 September 11, 2026 a separate native PyPI search reaches an HTTP200 Client Challenge
 that the old classifier misses; PYPI-NATIVE-FLOW.md preserves the failed live run.
 CLIENT-CHALLENGE.md records a paired-title/text recognition fix, 6431 selected

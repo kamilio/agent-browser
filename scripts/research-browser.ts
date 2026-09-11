@@ -722,32 +722,23 @@ export async function researchNavigation(
 		const status = report.primaryResponse?.status ?? 0;
 		let root: string | undefined;
 		let sectionRoot: string | undefined;
-		if (
-			validated.format === "json" ||
-			validated.selector !== undefined ||
-			validated.lines !== undefined ||
-			validated.section !== undefined ||
-			validated.headings ||
-			validated.find !== undefined
-		) {
-			stage = "document-classification";
-			const diagnostic = classifyBrowserChallenge({
-				status,
-				headers: primaryHeaders,
-				url: primaryUrl,
-				title: documentTitle(tree),
-				text: researchDocumentDiagnosticText(tree),
-			});
-			if (diagnostic) {
-				report.classification.diagnostic = diagnostic;
-				report.classification.barrier = diagnostic.kind;
-				report.outcome = "semantic-barrier";
-				stage = "semantic-barrier";
-				throw new AgentBrowserError(
-					"policy-denied",
-					"Research barrier requires user handoff",
-				);
-			}
+		stage = "document-classification";
+		const documentDiagnostic = classifyBrowserChallenge({
+			status,
+			headers: primaryHeaders,
+			url: primaryUrl,
+			title: documentTitle(tree),
+			text: researchDocumentDiagnosticText(tree),
+		});
+		if (documentDiagnostic) {
+			report.classification.diagnostic = documentDiagnostic;
+			report.classification.barrier = documentDiagnostic.kind;
+			report.outcome = "semantic-barrier";
+			stage = "semantic-barrier";
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Research barrier requires user handoff",
+			);
 		}
 		if (validated.find !== undefined) {
 			stage = "extraction";

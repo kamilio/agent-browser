@@ -10,10 +10,15 @@ import {
 	researchNavigation,
 	researchRunLimits,
 } from "../scripts/research-browser.js";
+import {
+	researchDiagnosticTextLimit,
+	researchDocumentDiagnosticText,
+} from "../scripts/research-content.js";
 import * as challenges from "./browser-challenges.js";
 import { AgentBrowserError } from "./errors.js";
 import type { ExtractedNode } from "./extraction.js";
 import * as extraction from "./extraction.js";
+import { parseHtmlDocument } from "./html-parser.js";
 import type { NetworkResponse } from "./network.js";
 import { NodeNetworkTransport } from "./node-transport.js";
 import { researchReaderProfile } from "./research-reader-info.js";
@@ -834,7 +839,7 @@ it.each(
 		expect(texts).toHaveLength(2);
 		expect(texts[0]).toContain("x".repeat(100));
 		expect(texts[0].length).toBeLessThanOrEqual(
-			researchRunLimits.diagnosticTextCodeUnits,
+			researchRunLimits.diagnosticTextCodeUnits + 1,
 		);
 		expect(texts[0]).not.toContain("Checking your browser");
 		expect(texts[1]).toContain("Checking your browser");
@@ -932,5 +937,242 @@ it.each(modes)(
 		expect(JSON.stringify(report)).toBe(before);
 		expect(output.listenerCount("error")).toBe(0);
 		expect(output.listenerCount("close")).toBe(0);
+	},
+);
+
+const challengeOutputModes = modes.flatMap((reader) =>
+	([undefined, "markdown", "json"] as const).map((format) => ({
+		reader,
+		mode: format ?? "default",
+		execution: {
+			minRequestIntervalMs: 0,
+			...(format === undefined ? {} : { format }),
+		},
+	})),
+);
+
+it.each(
+	challengeOutputModes.flatMap((options) =>
+		[
+			{
+				marker: "client",
+				title: "Client Challenge",
+				body: '<p>JavaScript is <strong>disabled</strong> in your browser.</p><p>Please <a href="/help">enable JavaScript</a> to proceed.</p>',
+				text: "JavaScript is disabled in your browser.",
+				provider: "unspecified",
+			},
+			{
+				marker: "human",
+				title: "Security check",
+				body: '<p>Verify <strong>you are</strong> <a href="/help">human</a></p>',
+				text: "Verify you are human",
+				provider: "unspecified",
+			},
+			{
+				marker: "Cloudflare",
+				title: "Attention Required! | Cloudflare",
+				body: '<p><a href="/help">Checking your</a> <em>browser</em> with Cloudflare</p>',
+				text: "Checking your browser with Cloudflare",
+				provider: "cloudflare",
+			},
+		].map((fixture) => ({ ...options, ...fixture })),
+	),
+)(
+	"requests $marker handoff before $mode extraction (reader=$reader)",
+	async ({ reader, execution, title, body, text, provider }) => {
+		const classify = vi.spyOn(challenges, "classifyBrowserChallenge");
+		const extract = vi.spyOn(extraction, "extractDocument");
+		const report = await navigate(`<title>${title}</title>${body}`, {
+			reader,
+			execution,
+		});
+		expect(report).toMatchObject({
+			outcome: "semantic-barrier",
+			partial: true,
+			contentSuccess: false,
+			classification: {
+				classifier: "browser-challenges",
+				barrier: "challenge",
+				diagnostic: {
+					kind: "challenge",
+					provider,
+					confidence: "possible",
+					evidence: ["html-challenge-markers"],
+					action: "stop-and-request-user-handoff",
+				},
+			},
+			failure: { category: "policy-denied", stage: "semantic-barrier" },
+		});
+		expect(report.extraction).toBeUndefined();
+		expect(extract).not.toHaveBeenCalled();
+		const texts = classify.mock.calls.flatMap(([input]) => input.text ?? []);
+		expect(texts).toEqual([expect.stringContaining(text)]);
+		if (title === "Client Challenge")
+			expect(texts[0]).toContain("Please enable JavaScript to proceed.");
+	},
+);
+
+it.each(
+	challengeOutputModes.flatMap((options) =>
+		[
+			{
+				fixture: "ordinary title with quoted markers",
+				source:
+					"<title>Owned documentation</title><p>Verify you are human. JavaScript is disabled in your browser. Please enable JavaScript to proceed.</p>",
+			},
+			{
+				fixture: "client title without both markers",
+				source:
+					"<title>Client Challenge</title><p>JavaScript is disabled in your browser.</p>",
+			},
+			{
+				fixture: "client markers only in script",
+				source:
+					'<title>Client Challenge</title><script type="application/json">"JavaScript is disabled in your browser. Please enable JavaScript to proceed."</script><p>Owned content</p>',
+			},
+			{
+				fixture: "hidden client markers",
+				retainedInReader: true,
+				source:
+					"<title>Client Challenge</title><div hidden>JavaScript is disabled in your browser. Please enable JavaScript to proceed.</div><p>Owned content</p>",
+			},
+			{
+				fixture: "hidden human markers",
+				retainedInReader: true,
+				source:
+					'<title>Security check</title><div hidden>Verify you are human</div><div style="display:none">Checking your browser</div><p>Owned content</p>',
+			},
+			{
+				fixture: "Cloudflare markers only in script",
+				source:
+					'<title>Attention Required! | Cloudflare</title><script type="application/json">"Checking your browser with Cloudflare"</script><p>Owned content</p>',
+			},
+		].map((fixture) => ({
+			...options,
+			...fixture,
+			retainedInReader: "retainedInReader" in fixture,
+		})),
+	),
+)(
+	"keeps $fixture outcomes explicit in $mode (reader=$reader)",
+	async ({ reader, execution, source, retainedInReader }) => {
+		const extract = vi.spyOn(extraction, "extractDocument");
+		const report = await navigate(source, { reader, execution });
+		if (reader && retainedInReader) {
+			expect(report.reader).toMatchObject({ hiddenContentSemantics: false });
+			expect(report).toMatchObject({
+				outcome: "semantic-barrier",
+				contentSuccess: false,
+				classification: {
+					barrier: "challenge",
+					diagnostic: {
+						confidence: "possible",
+						action: "stop-and-request-user-handoff",
+					},
+				},
+				failure: { category: "policy-denied", stage: "semantic-barrier" },
+			});
+			expect(report.extraction).toBeUndefined();
+			expect(extract).not.toHaveBeenCalled();
+			return;
+		}
+		expectUnverified(report, reader);
+		expect(report.extraction?.format).toBe(execution.format ?? "markdown");
+		expect(extract).toHaveBeenCalledOnce();
+	},
+);
+
+it.each([
+	{
+		fixture: "continuing word",
+		marker: "not a robot",
+		suffix: "ic",
+		blocked: false,
+	},
+	{
+		fixture: "continuing underscore",
+		marker: "not a robot",
+		suffix: "_",
+		blocked: false,
+	},
+	{
+		fixture: "continuing digit",
+		marker: "not a robot",
+		suffix: "2",
+		blocked: false,
+	},
+	{
+		fixture: "inline word continuation",
+		marker: "not a <strong>robot</strong>",
+		suffix: "<em>ic</em>",
+		blocked: false,
+	},
+	{
+		fixture: "space boundary",
+		marker: "not a robot",
+		suffix: " remaining",
+		blocked: true,
+	},
+	{
+		fixture: "punctuation boundary",
+		marker: "not a robot",
+		suffix: ".",
+		blocked: true,
+	},
+	{
+		fixture: "block boundary",
+		marker: "not a robot",
+		suffix: "<p>ic</p>",
+		blocked: true,
+	},
+	{ fixture: "document end", marker: "not a robot", suffix: "", blocked: true },
+	{
+		fixture: "marker completed only by lookahead",
+		marker: "not a robo",
+		suffix: "t",
+		blocked: false,
+	},
+	{
+		fixture: "marker beyond search prefix",
+		marker: "",
+		suffix: " not a robot",
+		blocked: false,
+	},
+])(
+	"bounds document diagnostics with one lookahead unit for $fixture",
+	({ marker, suffix, blocked }) => {
+		const visibleMarker = marker.replace(/<[^>]*>/g, "");
+		const padding = "x".repeat(
+			researchDiagnosticTextLimit - visibleMarker.length - 2,
+		);
+		const tree = parseHtmlDocument(
+			`<title>Robot check</title><body>${padding} ${marker}${suffix}</body>`,
+			url,
+		);
+		try {
+			const text = researchDocumentDiagnosticText(tree);
+			expect(text).toHaveLength(8193);
+			expect(text.slice(0, researchDiagnosticTextLimit)).toBe(
+				` ${padding} ${visibleMarker}`,
+			);
+			const diagnostic = challenges.classifyBrowserChallenge({
+				status: 200,
+				headers: { "content-type": ["text/html"] },
+				url,
+				title: "Robot check",
+				text,
+			});
+			if (blocked)
+				expect(diagnostic).toMatchObject({
+					kind: "challenge",
+					provider: "unspecified",
+					confidence: "possible",
+					evidence: ["html-challenge-markers"],
+					action: "stop-and-request-user-handoff",
+				});
+			else expect(diagnostic).toBeNull();
+		} finally {
+			tree.close();
+		}
 	},
 );

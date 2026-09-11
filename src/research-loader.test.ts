@@ -53,7 +53,7 @@ function response(
 afterEach(() => vi.restoreAllMocks());
 
 it.each(["about", "blog"])(
-	"synthetic login diagnostics classify the final Poe-style response after extraction from %s",
+	"synthetic login diagnostics classify the final Poe-style response before extraction from %s",
 	async (path) => {
 		const input = response(
 			"<title>Poe - Fast, Helpful AI Chat</title><p>Continue with GoogleContinue with Apple</p><p>GoUse phone</p>",
@@ -72,11 +72,12 @@ it.each(["about", "blog"])(
 			evidence: ["login-url-and-html-markers"],
 			action: "stop-and-request-user-handoff",
 		});
-		expect(report.extraction?.content).toContain(
-			"Continue with GoogleContinue with Apple",
-		);
-		expect(report.extraction?.url).toBe("https://poe.com/login?redacted");
-		expect(report.failure).toBeUndefined();
+		expect(report.extraction).toBeUndefined();
+		expect(report.finalUrl).toBe("https://poe.com/login?redacted");
+		expect(report.failure).toEqual({
+			category: "policy-denied",
+			stage: "semantic-barrier",
+		});
 		expect(JSON.stringify(report)).not.toContain("PRIVATE");
 		expect(researchExitCode([report])).toBe(1);
 		expect(request).toHaveBeenCalledOnce();

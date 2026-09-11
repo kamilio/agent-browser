@@ -16,8 +16,9 @@ export function researchDocumentDiagnosticText(tree: DocumentTree): string {
 	const styles = documentStyles(tree);
 	const pending: (number | null)[] = [documentBody(tree) ?? tree.root];
 	const scripting = htmlParseInfo(tree)?.scripting ?? false;
+	const limit = researchDiagnosticTextLimit + 1;
 	let text = "";
-	while (pending.length && text.length < researchDiagnosticTextLimit) {
+	while (pending.length && text.length < limit) {
 		const id = pending.pop();
 		if (id === null) {
 			text += " ";
@@ -48,8 +49,7 @@ export function researchDocumentDiagnosticText(tree: DocumentTree): string {
 					? ` ${node.attributes.alt ?? ""} `
 					: undefined;
 		if (content !== undefined) {
-			if (style.visible)
-				text += content.slice(0, researchDiagnosticTextLimit - text.length);
+			if (style.visible) text += content.slice(0, limit - text.length);
 			continue;
 		}
 		if (!style.display.startsWith("inline")) {
