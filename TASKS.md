@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 WEBSITE-TEST-EXPANSION-SEPTEMBER-11.md adds three exact attempted
+hostnames after the54-host inventory: Selenium, its pre-wire-denied jsDelivr CSS,
+and Python documentation, for57 combined attempted hosts, not passing sites.
+PYTHON-DOCS-NATIVE-FLOW.md records HTTP200 then concurrent stylesheet/image
+admission failure under maxConcurrent1; original caps and failed flow stay intact.
+MDN-POSITIONING-REPLAY.md records one unchanged nineteen-response offline click
+with the8321-pass build. Formatting fails on outside list-item markers with block
+content before positioning, so it masks validation of the earlier e74 fix; no
+geometry or destination is reached. Parent verifies both receipt ledgers. Genuine
+outside-marker coordination, resource scheduling and the separately scoped
+Selenium stylesheet/form follow-up remain next acceptance work.
+
 September 11, 2026 SELENIUM-NATIVE-FORM.md adds a real Selenium form-page GET,
 but initial navigation stops when the same-origin-only harness denies its
 observed jsDelivr Bootstrap stylesheet before transport. This is harness admission,
