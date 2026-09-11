@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 at 06:48 UTC, the recovered WHATWG capture yields its unique
+foreign-content section through one zero-network native replay: 801 selected
+nodes, 47631 JSONL bytes, unchanged pins/build and exit 0. READER-TABLE-SCOPE.md
+links the bounded source findings. This advances specification research only;
+integration-point dependencies, CDATA, native SVG semantics and rendering remain
+unimplemented or unverified rather than implied by the extraction.
+
 September 11, 2026 Bing diagnosis narrows the malformed-attribute failure to a
 single U+0022 name on a div, reproduced by eight bounded native synthetic checks.
 BING-ATTRIBUTE-BOUNDARY.md records the preserved initial observer failure and

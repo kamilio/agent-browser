@@ -90,6 +90,27 @@ empty. This one page recovery is not general HTML conformance or a performance
 benchmark. Evidence:
 `node_modules/.cache/native-validation/native-whatwg-table-recovery-september11/`.
 
+## Offline specification follow-up
+
+The successful fresh capture also supports one bounded offline section replay
+at **06:48:39.795Z–06:48:40.165Z UTC** on September 11, 2026, exit 0. Its unique
+observed heading is `e23343`, level 5, titled
+`13.2.6.5 The rules for parsing tokens in foreign content`. The replay selects
+801 nodes plus three context nodes and emits 47,631 JSONL bytes. It makes zero
+network requests or attempts against the installed process-level guards; those
+guards are not an OS network sandbox. Source/build identities and capture pins
+remain unchanged. The original failed capture is not used for this replay.
+
+The result remains `extracted-unverified`, `partial: true`, `contentSuccess: null`.
+The bounded source findings identify namespace-sensitive insertion, HTML
+breakout and end handling, and external integration-point/attribute-adjustment
+dependencies. The selected section does not contain a CDATA rule. No script
+execution, complete specification traversal, SVG implementation or rendering
+acceptance is claimed. Evidence and native-reference annotations:
+`node_modules/.cache/native-validation/native-whatwg-table-recovery-september11/foreign-section/SOURCE-FINDINGS.md`.
+The JSONL SHA-256 is
+`6182df1a95329928bb9796cc2beaee31adb8795c276199a0ee3b4ef40b638e92`.
+
 This change does not implement SVG tree construction, malformed-attribute
 recovery, CAPTCHA solving, or a full HTML tree-builder specification inside the
 reader. Those broader compatibility and research goals remain open.
