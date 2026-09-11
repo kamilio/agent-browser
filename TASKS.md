@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+On September 11, 2026 at 05:11 UTC, explicit balanced-source-elements-v2 accepts
+void image starts in source headings and carries the policy through bounded
+section extraction. Defaults/v1, source pins and existing budgets remain intact;
+image attributes/alt are omitted and disclosed. Production build, strict two
+roots, scoped lint and 1312/1312 isolated cases pass, with 90 new regressions.
+SOURCE-HEADING-IMAGES.md records scope. The separate DOM reader script-text limit
+and broader real-site/credential/passkey/fingerprinting gates remain open.
+
 On September 11, 2026 at 04:54 UTC, research batches stop after a detected access
 barrier or HTTP429, retaining the terminal report and making no further batch
 requests. Production build, strict six roots, scoped lint and 561/561 isolated

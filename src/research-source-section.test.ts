@@ -403,6 +403,172 @@ function assertResult(result: ResearchSourceSectionExtraction) {
 	return report;
 }
 
+describe("image-aware source-heading section integration", () => {
+	const imagePolicies = {
+		...policies,
+		headingInlinePolicy: "balanced-source-elements-v2",
+	} as const;
+
+	async function imageSelection(text: string) {
+		const input = source(text);
+		const outline = await discoverResearchSourceHeadings(input, {
+			method: "native-source-headings-v1",
+			...imagePolicies,
+		});
+		const heading = outline.report.entries[0];
+		if (!heading) throw new Error("Missing image-heading fixture");
+		const selection: ResearchSourceSectionSelection = structuredClone({
+			source: outline.report.source,
+			headingPolicies: imagePolicies,
+			heading: {
+				ordinal: heading.ordinal,
+				level: heading.level,
+				anchor: heading.anchor,
+			},
+		});
+		return { input, selection };
+	}
+
+	it("preserves target, deeper and stopping heading ranges while omitting image attributes", async () => {
+		const selected = `<h2>A<img alt="${marker}" src="https://example.com/image">B</h2>`;
+		const body = `<p>body</p><h3>C<span><img onerror="${marker}"/>D</span></h3><p>tail</p>`;
+		const stopping = `<h2><img alt="${marker}">Stop</h2>`;
+		const { input, selection } = await imageSelection(
+			`${selected}${body}${stopping}`,
+		);
+		const trace = traceCursor();
+		const result = await extractResearchSourceSection(
+			input,
+			selection,
+			baseOptions,
+		);
+		expect(result.report.selection.title).toBe("AB");
+		expect(result.report.selection.anchor).toEqual(selection.heading.anchor);
+		expect(result.report.blocks.map((block) => block.text)).toEqual([
+			"body",
+			"CD",
+			"tail",
+		]);
+		expect(result.report.bodyRange).toEqual({
+			start: selected.length,
+			end: selected.length + body.length,
+		});
+		expect(result.report.boundary).toMatchObject({
+			kind: "next-heading",
+			heading: { ordinal: 3, title: "Stop" },
+		});
+		expect(result.report.validatedThrough).toBe(
+			selected.length + body.length + stopping.length,
+		);
+		expect(result.report.headingPolicies).toEqual(imagePolicies);
+		expect(result.report.headingInlineLimitations).toEqual([
+			...inlineLimitations,
+			"image-elements-and-alt-omitted",
+		]);
+		expect(result.report.limits).toEqual(canonicalLimits);
+		expect(result.report.counters.retainedTextCodeUnits).toBe(10);
+		expect(result.jsonl).not.toContain(marker);
+		expect(result.jsonl).not.toContain("https://example.com/image");
+		expect(result.jsonl).toBe(`${JSON.stringify(result.report)}\n`);
+		expect(result.outputBytes).toBe(encoder.encode(result.jsonl).length);
+		deepFrozen(result.report);
+		expect(trace.cursors.size).toBe(1);
+		for (const cursor of trace.cursors) expect(cursor.closed).toBe(true);
+	});
+
+	it.each(["<img>", "<img/>", `<IMG alt="${marker}">`])(
+		"keeps image-only section titles empty for %s",
+		async (image) => {
+			const { input, selection } = await imageSelection(
+				`<h2>${image}</h2><p>body</p>`,
+			);
+			const result = await extractResearchSourceSection(
+				input,
+				selection,
+				baseOptions,
+			);
+			expect(result.report.selection.title).toBe("");
+			expect(result.report.blocks.map((block) => block.text)).toEqual(["body"]);
+			expect(result.report.boundary).toEqual({ kind: "eof" });
+			expect(result.jsonl).not.toContain(marker);
+		},
+	);
+
+	it("does not silently apply v2 when the section explicitly selects v1", async () => {
+		const { input, selection } = await imageSelection(
+			"<h2>A<img>B</h2><p>body</p>",
+		);
+		await failure(
+			() =>
+				extractResearchSourceSection(
+					input,
+					{ ...selection, headingPolicies: policies },
+					baseOptions,
+				),
+			"unsupported",
+		);
+	});
+
+	it("rejects an unknown image policy before constructing a cursor", async () => {
+		const { input, selection } = await imageSelection(`${target}body`);
+		atPath(selection, ["headingPolicies"]).headingInlinePolicy =
+			"balanced-source-elements-v3";
+		const trace = traceCursor();
+		await failure(
+			() => extractResearchSourceSection(input, selection, baseOptions),
+			"invalid-input",
+		);
+		expect(trace.cursors.size).toBe(0);
+	});
+
+	it("still rejects a changed source identity under v2", async () => {
+		const text = "<h2>A<img>B</h2><p>body</p>";
+		const { selection } = await imageSelection(text);
+		await failure(
+			() =>
+				extractResearchSourceSection(
+					source(text.replace("body", "edit")),
+					selection,
+					baseOptions,
+				),
+			"invalid-input",
+		);
+	});
+
+	it.each([
+		{ maxTextCodeUnits: 3 },
+		{ maxOutputBytes: 128 },
+		{ maxWindowCodeUnits: 16 },
+	])("retains section budgets with image headings: %j", async (limits) => {
+		const { input, selection } = await imageSelection(
+			`<h2>A<img alt="${marker}">B</h2><p>body</p>`,
+		);
+		const error = await failure(
+			() =>
+				extractResearchSourceSection(input, selection, {
+					...baseOptions,
+					...limits,
+				}),
+			"resource-limit",
+		);
+		expect(resourceLimitDiagnostic(error)).toBeDefined();
+	});
+
+	it("does not accept a closing img in a deeper heading", async () => {
+		const input = source(`${target}<h3>A<img></img>B</h3>`);
+		const selected = await selectionFor(input);
+		await failure(
+			() =>
+				extractResearchSourceSection(
+					input,
+					{ ...selected, headingPolicies: imagePolicies },
+					baseOptions,
+				),
+			"unsupported",
+		);
+	});
+});
+
 describe("section exact admission before native input access", () => {
 	it("exports only the exact lowerable section limits and accepts their full defaults", async () => {
 		expect(researchSourceSectionLimits).toEqual(canonicalLimits);

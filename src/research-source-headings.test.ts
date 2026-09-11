@@ -5405,7 +5405,7 @@ describe("explicit balanced source-element heading policy", () => {
 		false,
 		0,
 		"strict",
-		"balanced-source-elements-v2",
+		"balanced-source-elements-v3",
 		{},
 	])(
 		"rejects nonliteral inline selection %j before source access",
@@ -6483,6 +6483,400 @@ describe("explicit balanced source-element heading policy", () => {
 			}
 		},
 	);
+});
+
+describe("explicit v2 source-heading image omission", () => {
+	const headingInlinePolicy = "balanced-source-elements-v2";
+	const limitations = [
+		"source-balance-only",
+		"attributes-ignored",
+		"not-dom-or-visibility",
+		"image-elements-and-alt-omitted",
+	] as const;
+	const images = [
+		"<img>",
+		"<img/>",
+		"<IMG>",
+		"<ImG />",
+		`<img alt="${privateMarker}" src="https://example.com/image" srcset="https://example.com/large 2x" onerror="${privateMarker}" title="${privateMarker}" aria-label="${privateMarker}">`,
+	];
+
+	function selectedScan(source: string, options: Record<string, unknown> = {}) {
+		return scan(source, { headingInlinePolicy, ...options });
+	}
+
+	it.each(images)(
+		"accepts a void %s without deriving image text",
+		async (image) => {
+			const source = `<h1>A${image}B</h1>`;
+			const input = ownedSource(source);
+			const original = input.body.slice();
+			const result = await discoverResearchSourceHeadings(input, {
+				method,
+				headingInlinePolicy,
+			});
+			expect(result.report.entries).toEqual([
+				{
+					ordinal: 1,
+					level: 1,
+					title: "AB",
+					titleTruncated: false,
+					anchor: {
+						kind: "source-utf16-range-v1",
+						startTag: { start: 0, end: 4 },
+						endTag: { start: source.length - 5, end: source.length },
+					},
+				},
+			]);
+			expect(input.body).toEqual(original);
+			expect(result.report.source.bytes).toEqual({
+				length: original.byteLength,
+				sha256: sha256(original),
+			});
+			expect(result.report.source.text.codeUnits).toBe(source.length);
+			expect(result.report.source.text.sha256).toBe(sha256(source));
+			expect(result.report.headingInlinePolicy).toBe(headingInlinePolicy);
+			expect(result.report.headingInlineLimitations).toEqual(limitations);
+			expect(result.report.limits).toEqual(canonicalLimits);
+			expect(result.report.completion).toBe("eof");
+			expect(result.report.scannedTo).toBe(source.length);
+			expect(result.report.partial).toBe(true);
+			expect(result.report.contentSuccess).toBeNull();
+			expect(result.report.counters.tokens).toBe(5);
+			expect(result.report.counters.maxTrackedDepth).toBe(1);
+			expect(result.jsonl).toBe(`${JSON.stringify(result.report)}\n`);
+			expect(result.outputBytes).toBe(encoder.encode(result.jsonl).byteLength);
+			expect(result.jsonl).not.toContain(privateMarker);
+			expect(result.jsonl).not.toContain("https://example.com/image");
+			expectDeepFrozen(result);
+		},
+	);
+
+	it.each(images)("preserves default and v1 rejection of %s", async (image) => {
+		for (const options of [
+			{},
+			{ headingInlinePolicy: "balanced-source-elements-v1" },
+		]) {
+			const error = await captureFailure(() =>
+				scan(`<h1>${image}</h1>`, options),
+			);
+			expectCode(error, "unsupported");
+			expect(sourceHeadingStructureDiagnostic(error)).toEqual({
+				kind: "source-heading-structure",
+				reason: "heading-inline-structure",
+				position: 4 + image.length,
+				positionSemantics: "last-committed-source-utf16",
+			});
+			expect(sourceHeadingInlineDiagnostic(error)).toEqual({
+				kind: "source-heading-inline-start",
+				condition: "non-inline-start",
+				headingLevel: 1,
+				observedTag: "img",
+				inlineDepth: 0,
+			});
+		}
+	});
+
+	it("preserves v1 counters and metadata on image-free source", async () => {
+		const source = "<h1><div>A<span>B</span><br>C<wbr>D</div></h1>";
+		const previous = await scan(source, {
+			headingInlinePolicy: "balanced-source-elements-v1",
+		});
+		const selected = await selectedScan(source);
+		expect(selected.report).toEqual({
+			...previous.report,
+			headingInlinePolicy,
+			headingInlineLimitations: limitations,
+		});
+		expect(previous.report.headingInlineLimitations).toEqual(
+			limitations.slice(0, 3),
+		);
+		expect(
+			Object.hasOwn((await scan("<h1>A</h1>")).report, "headingInlinePolicy"),
+		).toBe(false);
+	});
+
+	it("retains balanced nested formatting without pushing image frames", async () => {
+		const source =
+			"<h1><x-local>A<img><span>B<img/><strong>C<img></strong></span>D</x-local></h1>";
+		const result = await selectedScan(source, { maxTrackedDepth: 4 });
+		expect(result.report.entries[0].title).toBe("ABCD");
+		expect(result.report.counters.maxTrackedDepth).toBe(4);
+		expect(result.report.entries[0].anchor.endTag).toEqual({
+			start: source.length - 5,
+			end: source.length,
+		});
+		const shallow = await selectedScan("<h1><img><img/><img></h1>", {
+			maxTrackedDepth: 1,
+		});
+		expect(shallow.report.counters.maxTrackedDepth).toBe(1);
+	});
+
+	it.each([
+		["<h1><img alt='not title'></h1>", ""],
+		["<h1> \t<img alt='not title'/> \n</h1>", ""],
+		["<h1>A<img>B</h1>", "AB"],
+		["<h1> A \t<img>\n B </h1>", "A B"],
+		["<h1><img> A<img> </h1>", "A"],
+		["<h1>A<img><br/><img><wbr>B</h1>", "A B"],
+	])("does not invent spacing or alt text for %s", async (source, title) => {
+		const result = await selectedScan(source);
+		expect(result.report.entries).toHaveLength(1);
+		expect(result.report.entries[0]).toMatchObject({
+			title,
+			titleTruncated: false,
+		});
+	});
+
+	it.each([
+		{
+			source: "<h1>AB<img alt='long text'>CD</h1>",
+			limit: 3,
+			title: "ABC",
+			truncated: true,
+		},
+		{
+			source: "<h1>A<img alt='long text'>B</h1>",
+			limit: 2,
+			title: "AB",
+			truncated: false,
+		},
+		{ source: "<h1>A<img>😀Z</h1>", limit: 2, title: "A", truncated: true },
+		{
+			source: "<h1><img alt='long text'></h1>",
+			limit: 1,
+			title: "",
+			truncated: false,
+		},
+	])(
+		"keeps title clipping for $source",
+		async ({ source, limit, title, truncated }) => {
+			const result = await selectedScan(source, { maxTitleCodeUnits: limit });
+			expect(result.report.entries[0]).toMatchObject({
+				title,
+				titleTruncated: truncated,
+			});
+		},
+	);
+
+	it.each(["</img>", "</IMG>", "</img/>", "</img alt='ignored'>"])(
+		"does not accept an image closing tag %s",
+		async (close) => {
+			const error = await captureFailure(() =>
+				selectedScan(`<h1><img>${close}</h1>`),
+			);
+			expectCode(error, "unsupported");
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+			if (close === "</img>" || close === "</IMG>") {
+				expect(sourceHeadingStructureDiagnostic(error)?.reason).toBe(
+					"heading-close-structure",
+				);
+			}
+		},
+	);
+
+	it.each([
+		"<h1><span><img></h1>",
+		"<h1><span/><img></h1>",
+		"<h1><div/><img></h1>",
+	])("does not relax surrounding balance for %s", async (source) => {
+		expectCode(await captureFailure(() => selectedScan(source)), "unsupported");
+	});
+
+	it.each(
+		[
+			...new Set([
+				...voidNames,
+				...rawNames,
+				...omittedFrames,
+				...suppressedNames,
+				"html",
+				"body",
+				"h2",
+			]),
+		].filter((name) => name !== "img" && name !== "br" && name !== "wbr"),
+	)("preserves the v1 exclusion and diagnostics for %s", async (name) => {
+		const source = `<h1><${name}>`;
+		const previous = await captureFailure(() =>
+			scan(source, { headingInlinePolicy: "balanced-source-elements-v1" }),
+		);
+		const selected = await captureFailure(() => selectedScan(source));
+		expectCode(previous, "unsupported");
+		expectCode(selected, "unsupported");
+		expect(sourceHeadingStructureDiagnostic(selected)).toEqual(
+			sourceHeadingStructureDiagnostic(previous),
+		);
+		expect(sourceHeadingInlineDiagnostic(selected)).toEqual(
+			sourceHeadingInlineDiagnostic(previous),
+		);
+	});
+
+	it("does not inspect image attributes or selfClosing after tokenization", async () => {
+		const trap = vi.fn((): never => {
+			throw new Error(privateMarker);
+		});
+		const next = HtmlTokenCursor.prototype.next;
+		let instrumented = 0;
+		vi.spyOn(HtmlTokenCursor.prototype, "next").mockImplementation(function (
+			this: HtmlTokenCursor,
+		) {
+			const token = next.call(this);
+			if (token?.kind !== "start" || token.name !== "img") return token;
+			instrumented++;
+			return Object.defineProperties(
+				{ ...token },
+				{
+					attributes: { get: trap },
+					selfClosing: { get: trap },
+				},
+			);
+		});
+		const result = await selectedScan(
+			"<h1>A<img alt='ignored' onload='ignored'/>B</h1>",
+		);
+		expect(result.report.entries[0].title).toBe("AB");
+		expect(instrumented).toBe(1);
+		expect(trap).not.toHaveBeenCalled();
+	});
+
+	it("retains native token accounting and cursor cleanup without omitted-scope frames", async () => {
+		const source = "<h1>A<img>B</h1>";
+		const native = new HtmlTokenCursor(source, () => {
+			throw new Error("Unexpected synthetic tokenizer issue");
+		});
+		let nativeTokens = 0;
+		try {
+			while (native.next()) nativeTokens++;
+			const result = await selectedScan(source);
+			expect(nativeTokens).toBe(5);
+			expect(result.report.counters).toEqual({
+				tokens: 5,
+				operations: native.operations,
+				workUnits: native.workUnits + 5 + 2 + 6,
+				issueAttempts: 0,
+				entityIssues: {},
+				omittedStarts: {},
+				suppressedStarts: {},
+				suppressedHeadingStarts: 0,
+				rawStarts: {},
+				maxTrackedDepth: 1,
+				yields: 0,
+			});
+		} finally {
+			native.close();
+		}
+		const next = HtmlTokenCursor.prototype.next;
+		const cursors = new Set<HtmlTokenCursor>();
+		vi.spyOn(HtmlTokenCursor.prototype, "next").mockImplementation(function (
+			this: HtmlTokenCursor,
+		) {
+			cursors.add(this);
+			return next.call(this);
+		});
+		await selectedScan(source);
+		await captureFailure(() => selectedScan("<h1><img></img></h1>"));
+		expect(cursors.size).toBe(2);
+		for (const cursor of cursors) expect(cursor.closed).toBe(true);
+	});
+
+	it.each([
+		{
+			source: "<h1><img></h1>",
+			options: { maxHeadingCodeUnits: 8 },
+			diagnostic: {
+				kind: "source.heading-extent",
+				unit: "code-units",
+				limit: 8,
+				observed: 9,
+			},
+		},
+		{
+			source: "<h1><img></h1>",
+			options: { maxWindowCodeUnits: 4 },
+			diagnostic: {
+				kind: "html.cursor-window",
+				unit: "code-units",
+				limit: 4,
+				observed: 5,
+			},
+		},
+		{
+			source: "<h1><img duplicate duplicate>",
+			options: { maxIssues: 0 },
+			diagnostic: {
+				kind: "html.issues",
+				unit: "issues",
+				limit: 0,
+				observed: 1,
+			},
+		},
+	] as const)(
+		"preserves the $diagnostic.kind budget",
+		async ({ source, options, diagnostic }) => {
+			const error = await captureFailure(() => selectedScan(source, options));
+			expectLimit(error, diagnostic);
+			expect(sourceHeadingInlineDiagnostic(error)).toBeUndefined();
+		},
+	);
+
+	it("counts the image-omission disclosure in the unchanged exact output cap", async () => {
+		const source = "<h1>A<img>B</h1>";
+		const baseline = await selectedScan(source);
+		let cap = baseline.outputBytes;
+		for (let attempt = 0; attempt < 4; attempt++) {
+			cap = encoder.encode(
+				`${JSON.stringify({ ...baseline.report, limits: { ...baseline.report.limits, maxOutputBytes: cap } })}\n`,
+			).byteLength;
+		}
+		expect(String(cap - 1).length).toBe(String(cap).length);
+		expect(
+			(await selectedScan(source, { maxOutputBytes: cap })).outputBytes,
+		).toBe(cap);
+		expectLimit(
+			await captureFailure(() =>
+				selectedScan(source, { maxOutputBytes: cap - 1 }),
+			),
+			{
+				kind: "source.headings-output",
+				unit: "bytes",
+				limit: cap - 1,
+				observed: cap,
+			},
+		);
+	});
+
+	it("accepts only own literal v2 options and rejects hostile admission before source access", async () => {
+		const accepted = await discoverResearchSourceHeadings(
+			ownedSource("<h1><img></h1>"),
+			Object.assign(Object.create(null), { method, headingInlinePolicy }),
+		);
+		expect(accepted.report.headingInlinePolicy).toBe(headingInlinePolicy);
+		const trap = vi.fn((): never => {
+			throw new Error(privateMarker);
+		});
+		const traps = {
+			get: trap,
+			ownKeys: trap,
+			getPrototypeOf: trap,
+			getOwnPropertyDescriptor: trap,
+		};
+		const invalidOptions = [
+			{ method, headingInlinePolicy: "balanced-source-elements-v3" },
+			{ method, headingInlinePolicy: undefined },
+			{ method, headingInlinePolicy: { toString: trap } },
+			{ method, headingInlinePolicy: new Proxy({}, traps) },
+			Object.defineProperty({ method }, "headingInlinePolicy", { get: trap }),
+			Object.assign(Object.create({ headingInlinePolicy }), { method }),
+			new Proxy({ method, headingInlinePolicy }, traps),
+		];
+		for (const options of invalidOptions) {
+			const error = await captureFailure(() =>
+				discoverResearchSourceHeadings(new Proxy({}, traps), options),
+			);
+			expectCode(error, "invalid-input");
+		}
+		expect(trap).not.toHaveBeenCalled();
+	});
 });
 
 describe("explicit bounded non-entity raw discard", () => {

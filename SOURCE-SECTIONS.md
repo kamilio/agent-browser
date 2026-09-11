@@ -13,9 +13,14 @@ selection and options with `method: "native-source-section-v1"` and
 
 - `source`: the complete native byte/decoder/text identity from heading discovery.
 - `headingPolicies`: `optional-end-tags-v2`, `explicit-body-boundary-v1`,
-  `balanced-source-elements-v1` and `bounded-non-entity-v1` under their respective
+  `balanced-source-elements-v1` (or explicit `balanced-source-elements-v2`)
+  and `bounded-non-entity-v1` under their respective
   `tableScopePolicy`, `headScopePolicy`, `headingInlinePolicy`, `rawDiscardPolicy` keys.
 - `heading`: `ordinal`, `level` and the exact native start/end tag `anchor`.
+
+The v2 heading policy omits images and all their attributes from lexical heading
+text; it retains source ranges and discloses that omission in section reports.
+See SOURCE-HEADING-IMAGES.md. Selecting v1 does not automatically enable v2.
 
 Options and all nested selection records are strict own-data snapshots taken
 before input access or an await. Proxies, accessors, unknown fields, coercion and

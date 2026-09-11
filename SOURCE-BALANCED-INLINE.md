@@ -5,6 +5,9 @@ balanced lexical text collection inside an already admitted source heading.
 It does not classify HTML phrasing content or reconstruct DOM heading membership.
 Strict absence preserves the existing grammar, reports, diagnostics and accounting.
 
+SOURCE-HEADING-IMAGES.md describes the later explicit v2 image-omission policy.
+The v1 contract and historical measurements below remain unchanged.
+
 ## Contract
 
 Additional normalized tag names of at most64 UTF-16 code units may be balanced

@@ -30,12 +30,16 @@ export type ResearchSourceHeadingLimits = {
 	-readonly [Name in keyof typeof researchSourceHeadingLimits]: number;
 };
 
+export type ResearchSourceHeadingInlinePolicy =
+	| "balanced-source-elements-v1"
+	| "balanced-source-elements-v2";
+
 export type ResearchSourceHeadingOptions =
 	Partial<ResearchSourceHeadingLimits> & {
 		method: "native-source-headings-v1";
 		tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
 		headScopePolicy?: "explicit-body-boundary-v1";
-		headingInlinePolicy?: "balanced-source-elements-v1";
+		headingInlinePolicy?: ResearchSourceHeadingInlinePolicy;
 		rawDiscardPolicy?: "bounded-non-entity-v1";
 	};
 
@@ -64,12 +68,19 @@ export interface ResearchSourceHeadingReport {
 	readonly contentSuccess: null;
 	readonly tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
 	readonly headScopePolicy?: "explicit-body-boundary-v1";
-	readonly headingInlinePolicy?: "balanced-source-elements-v1";
-	readonly headingInlineLimitations?: readonly [
-		"source-balance-only",
-		"attributes-ignored",
-		"not-dom-or-visibility",
-	];
+	readonly headingInlinePolicy?: ResearchSourceHeadingInlinePolicy;
+	readonly headingInlineLimitations?:
+		| readonly [
+				"source-balance-only",
+				"attributes-ignored",
+				"not-dom-or-visibility",
+		  ]
+		| readonly [
+				"source-balance-only",
+				"attributes-ignored",
+				"not-dom-or-visibility",
+				"image-elements-and-alt-omitted",
+		  ];
 	readonly rawDiscardPolicy?: "bounded-non-entity-v1";
 	readonly rawDiscardLimitations?: readonly [
 		"six-non-entity-names-only",
@@ -139,7 +150,7 @@ export interface ResearchSourceSectionSelection {
 	readonly headingPolicies: {
 		readonly tableScopePolicy: "optional-end-tags-v2";
 		readonly headScopePolicy: "explicit-body-boundary-v1";
-		readonly headingInlinePolicy: "balanced-source-elements-v1";
+		readonly headingInlinePolicy: ResearchSourceHeadingInlinePolicy;
 		readonly rawDiscardPolicy: "bounded-non-entity-v1";
 	};
 	readonly heading: {
@@ -508,11 +519,24 @@ function invalid(): never {
 	);
 }
 
+function headingInlineLimitations(
+	policy: ResearchSourceHeadingInlinePolicy,
+): NonNullable<ResearchSourceHeadingReport["headingInlineLimitations"]> {
+	const limitations = [
+		"source-balance-only",
+		"attributes-ignored",
+		"not-dom-or-visibility",
+	] as const;
+	return policy === "balanced-source-elements-v2"
+		? [...limitations, "image-elements-and-alt-omitted"]
+		: limitations;
+}
+
 function optionsSnapshot(value: unknown): {
 	readonly limits: Readonly<ResearchSourceHeadingLimits>;
 	readonly tableScopePolicy?: "optional-end-tags-v1" | "optional-end-tags-v2";
 	readonly headScopePolicy?: "explicit-body-boundary-v1";
-	readonly headingInlinePolicy?: "balanced-source-elements-v1";
+	readonly headingInlinePolicy?: ResearchSourceHeadingInlinePolicy;
 	readonly rawDiscardPolicy?: "bounded-non-entity-v1";
 } {
 	if (value === null || typeof value !== "object" || types.isProxy(value))
@@ -534,7 +558,7 @@ function optionsSnapshot(value: unknown): {
 		| "optional-end-tags-v2"
 		| undefined;
 	let headScopePolicy: "explicit-body-boundary-v1" | undefined;
-	let headingInlinePolicy: "balanced-source-elements-v1" | undefined;
+	let headingInlinePolicy: ResearchSourceHeadingInlinePolicy | undefined;
 	let rawDiscardPolicy: "bounded-non-entity-v1" | undefined;
 	for (const key of Reflect.ownKeys(value)) {
 		if (key === "method") continue;
@@ -564,7 +588,11 @@ function optionsSnapshot(value: unknown): {
 			continue;
 		}
 		if (key === "headingInlinePolicy") {
-			if (descriptor.value !== "balanced-source-elements-v1") invalid();
+			if (
+				descriptor.value !== "balanced-source-elements-v1" &&
+				descriptor.value !== "balanced-source-elements-v2"
+			)
+				invalid();
 			headingInlinePolicy = descriptor.value;
 			continue;
 		}
@@ -777,7 +805,8 @@ function sectionSnapshot(
 	if (
 		policies.tableScopePolicy !== "optional-end-tags-v2" ||
 		policies.headScopePolicy !== "explicit-body-boundary-v1" ||
-		policies.headingInlinePolicy !== "balanced-source-elements-v1" ||
+		(policies.headingInlinePolicy !== "balanced-source-elements-v1" &&
+			policies.headingInlinePolicy !== "balanced-source-elements-v2") ||
 		policies.rawDiscardPolicy !== "bounded-non-entity-v1"
 	)
 		invalidSection();
@@ -806,7 +835,7 @@ function sectionSnapshot(
 			headingPolicies: {
 				tableScopePolicy: "optional-end-tags-v2",
 				headScopePolicy: "explicit-body-boundary-v1",
-				headingInlinePolicy: "balanced-source-elements-v1",
+				headingInlinePolicy: policies.headingInlinePolicy,
 				rawDiscardPolicy: "bounded-non-entity-v1",
 			},
 			heading: {
@@ -1133,11 +1162,9 @@ class SourceSectionCollector {
 			contentSuccess: null,
 			source,
 			headingPolicies: this.request.selection.headingPolicies,
-			headingInlineLimitations: [
-				"source-balance-only",
-				"attributes-ignored",
-				"not-dom-or-visibility",
-			],
+			headingInlineLimitations: headingInlineLimitations(
+				this.request.selection.headingPolicies.headingInlinePolicy,
+			),
 			rawDiscardLimitations: [
 				"six-non-entity-names-only",
 				"title-textarea-legacy-raw",
@@ -1797,7 +1824,12 @@ async function walkSource(
 			const level = headingLevel(name);
 			if (heading) {
 				if (token.kind === "start") {
-					if (name === "br" || name === "wbr") {
+					if (
+						name === "br" ||
+						name === "wbr" ||
+						(name === "img" &&
+							headingInlinePolicy === "balanced-source-elements-v2")
+					) {
 						if (name === "br") titleText(heading, " ");
 						if (section)
 							await section.text(name === "br" ? " " : "", {
@@ -2075,11 +2107,8 @@ async function walkSource(
 			...(headingInlinePolicy
 				? {
 						headingInlinePolicy,
-						headingInlineLimitations: [
-							"source-balance-only",
-							"attributes-ignored",
-							"not-dom-or-visibility",
-						] as const,
+						headingInlineLimitations:
+							headingInlineLimitations(headingInlinePolicy),
 					}
 				: {}),
 			...(rawDiscardPolicy
