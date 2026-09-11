@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 at 07:13 UTC, two zero-network follow-ups strengthen Bing
+recovery evidence: the original failed body now loads under unchanged limits,
+without changing its failed receipt, and the fresh body replays successfully.
+Returned title/query links preserve the submitted Reddit/Poe query, but result
+content supplies no verified Reddit opinions or explanation of the mismatch.
+MALFORMED-ATTRIBUTES.md records both outcomes; research relevance remains open.
+
 September 11, 2026 malformed-attribute recovery now preserves quote/apostrophe/<,
 leading equals and normalized NULL names through native tokenization and parser
 document construction without weakening normal setters. MALFORMED-ATTRIBUTES.md

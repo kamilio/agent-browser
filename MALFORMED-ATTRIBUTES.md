@@ -128,3 +128,30 @@ from research relevance or completion. This single observation is not a
 performance benchmark, a full styled/interacting Bing flow, or evidence that
 access challenges have generally been bypassed. The broader website, SVG,
 research, fingerprint and credential/passkey goals remain open.
+
+## Same-body diagnostic and relevance check
+
+Two separate zero-network native operations run at
+**07:13:04.126Z–07:13:04.386Z UTC** on September 11, 2026, both exit 0.
+The first loads the original 116,600-byte Bing body successfully with the new
+build, under its original admission and raw-reader policy. It records 465
+resource-counted nodes, 1,024 reader tokens and 22 tokenizer issues, then closes
+the document. No source title, text or links are extracted from this diagnostic.
+The original failed receipt and its status remain unchanged. This supplies
+same-body recovery evidence independently of the different fresh response.
+
+The second replays the fresh admitted body once: 371 extracted nodes, nine
+headings, 44 links and 27,775 output bytes. Its title and ten query-bearing links
+preserve the submitted public Reddit/Poe query. The seven result headings and
+snippets do not establish any Reddit post, comment or subscription opinion;
+no correction notice is observed in the extracted body. All directly observed
+link destinations are on Bing, including redirect wrappers; none are followed.
+The query/result mismatch has no established cause. In particular, report URL
+redaction is not evidence that the actual query was stripped.
+
+Both operations use unchanged source/build identities and native limits,
+record zero guard attempts, and leave all 79 inventoried parent evidence files
+unchanged. No reruns, new requests or source changes occur. Evidence, native
+references, cleanup qualifications and exact pins:
+`node_modules/.cache/native-validation/native-bing-recovery-followup-september11/RESULT.md`
+and its `SOURCE-FINDINGS.md` companion. Reddit opinion research remains open.
