@@ -81,6 +81,15 @@ stylesheet integrity/CORS handling is unsupported and no CSS request occurs.
 All28 evidence and37 review checks pass; both receipt ledgers verify and cleanup
 is zero. No passwords, uploads, form submissions or stateful endpoints are used.
 
+`TESTPAGES-SCOPED-CHECKBOX.md` subsequently replays only the captured final200
+response offline, not the unarchived301 body. Native form ownership narrows225
+global checkboxes to3 associated with the actual form, retaining the20-candidate
+cap. One genuine click now reaches the formatting-profile boundary and emits no
+control events. Native link metadata identifies both anonymous crossorigin and
+SHA256 integrity on the same-origin stylesheet; either triggers the existing
+loader guard before fetch. All39 checks and both ledgers verify, with zero wire
+and cleanup resources. No actual CORS exchange, SRI validation or style pass occurs.
+
 ## Existing host replay
 
 `MDN-POSITIONING-REPLAY.md` records one offline native click against all nineteen
@@ -98,6 +107,17 @@ profile guard:14 non-coordinated deferred nodes and additional active/CSS issues
 remain. No completed geometry, containing-block coordinates or destination is
 measured. Later native action corrections are separately validated by the8,643
 gate, not by this replay; neither result is a live MDN acceptance claim.
+
+`PYTHON-IMAGE-FALLBACK-REPLAY.md` records one offline seven-response replay on the
+final8,831-pass image-fallback build (two documented baseline exclusions). Both
+displayed logo images now own literal native formatting text rather than deferred
+image placeholders; all three original images remain undecoded and the hidden
+one stays undisplayed. The Tutorial click still fails the profile guard; no
+destination or used geometry completes. The original verifier's38/39 result
+retains its incorrect box-count equality assertion. A separate48-check review
+verifies693 formatting nodes plus70 markers equals763 budgeted boxes, without
+rewriting or repeating the run. Both receipt ledgers verify; no new host or wire
+request is added, and this remains formatting evidence rather than site acceptance.
 
 ## Next acceptance work
 

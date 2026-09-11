@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 PYTHON-IMAGE-FALLBACK-REPLAY.md verifies real literal logo-alt
+formatting children for both displayed broken images on the8831-pass build.
+Their deferred placeholders disappear while images remain undecoded; the actual
+Tutorial click still fails the formatting-profile guard. Original38/39 verifier
+failure is preserved, with a separate48-check review confirming693 nodes plus70
+markers equals763 budgeted boxes. TESTPAGES-SCOPED-CHECKBOX.md narrows225 global
+checkboxes to3 actual form-owned candidates without raising the20 cap; one genuine
+click then fails formatting. Native same-origin CSS metadata has both anonymous
+crossorigin and SHA256 integrity, rejected before fetching. All39 scoped checks
+and both lanes' receipt ledgers verify; zero wire and cleanup resources. Native
+primary-source SRI/CORS research is underway; do not remove the guard without
+correct request/redirect credential semantics. The attempted-host count remains60.
+
 September 11, 2026 IMAGE-FALLBACK.md and IMAGE-FALLBACK-INTEGRATION.md implement
 bounded native nonempty alternative text for eligible final-broken images, with
 real glyphs, owner geometry/hits and fixture link navigation. Image decode/fetch
