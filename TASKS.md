@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 PYTHON-IMAGE-PREDICATES.md adds one unchanged-capture offline
+native inspection: document mode is no-quirks, all three broken images have present
+nonempty Python-logo alt text, no dimension attributes and computed auto sizes.
+Two are displayed/deferred; the third is natively not displayed. All35 evidence
+checks pass with zero wire/resource cleanup. These measured predicates match the
+bounded text-fallback implementation scope, but no fix, decoding or click acceptance
+is claimed by this run. The earlier image/formatting reports remain unchanged.
+
 September 11, 2026 MDN-OUTSIDE-MARKERS-REPLAY.md records the unchanged nineteen
 captures on the8529-pass build: one genuine click now completes formatting and
 reaches positioned coordination beyond the earlier eligibility guard. It still
