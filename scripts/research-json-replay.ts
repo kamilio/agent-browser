@@ -6,7 +6,12 @@ import {
 import { documentTitle } from "../src/document-title.js";
 import type { DocumentTree } from "../src/document.js";
 import { AgentBrowserError } from "../src/errors.js";
-import { type DocumentExtraction, extractDocument } from "../src/extraction.js";
+import {
+	type DocumentExtraction,
+	type DocumentLinkDiscovery,
+	discoverDocumentLinks,
+	extractDocument,
+} from "../src/extraction.js";
 import { type NetworkResponse, parseNetworkUrl } from "../src/network.js";
 import {
 	type ResearchDocumentProfileId,
@@ -40,10 +45,12 @@ export const researchJsonReplayLimits = Object.freeze({
 	timeoutMs: 20_000,
 });
 
-export type ResearchJsonReplaySelection = (
-	| { selector: string; section?: never }
-	| { section: string; selector?: never }
-) & { tableMetadata?: boolean };
+export type ResearchJsonReplaySelection =
+	| ((
+			| { selector: string; section?: never; links?: never }
+			| { section: string; selector?: never; links?: never }
+	  ) & { tableMetadata?: boolean })
+	| { links: string; selector?: never; section?: never; tableMetadata?: never };
 
 export interface ResearchJsonReplayReport {
 	kind: "native-research-json-replay-v1";
@@ -58,7 +65,7 @@ export interface ResearchJsonReplayReport {
 		body: ResearchBodyPin;
 	};
 	selection: {
-		method: "css-selector" | "heading-section";
+		method: "css-selector" | "heading-section" | "link-url-search";
 		matches: number | null;
 	};
 	classification: {
@@ -67,6 +74,7 @@ export interface ResearchJsonReplayReport {
 	};
 	reader?: Readonly<ResearchReaderReport>;
 	extraction?: Extract<DocumentExtraction, { format: "json" }>;
+	links?: DocumentLinkDiscovery;
 }
 
 export interface ResearchJsonReplayExtraction {
@@ -99,7 +107,7 @@ function selectionSnapshot(value: unknown) {
 		!keys.every(
 			(key) =>
 				typeof key === "string" &&
-				["selector", "section", "tableMetadata"].includes(key),
+				["selector", "section", "links", "tableMetadata"].includes(key),
 		)
 	)
 		invalidSelection();
@@ -110,10 +118,18 @@ function selectionSnapshot(value: unknown) {
 		if (!descriptor || !Object.hasOwn(descriptor, "value")) invalidSelection();
 		fields[key] = descriptor.value;
 	}
-	if (Object.hasOwn(fields, "selector") === Object.hasOwn(fields, "section"))
+	if (
+		["selector", "section", "links"].filter((key) => Object.hasOwn(fields, key))
+			.length !== 1
+	)
 		invalidSelection();
 	const section = Object.hasOwn(fields, "section");
-	const target = section ? fields.section : fields.selector;
+	const links = Object.hasOwn(fields, "links");
+	const target = links
+		? fields.links
+		: section
+			? fields.section
+			: fields.selector;
 	if (
 		typeof target !== "string" ||
 		!target.length ||
@@ -123,13 +139,29 @@ function selectionSnapshot(value: unknown) {
 			typeof fields.tableMetadata !== "boolean")
 	)
 		invalidSelection();
-	try {
-		validateSelectorSyntax(target);
-	} catch {
-		invalidSelection();
+	if (links) {
+		if (
+			target.length > 256 ||
+			Array.from(target).some(
+				(character) =>
+					character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127,
+			) ||
+			Object.hasOwn(fields, "tableMetadata")
+		)
+			invalidSelection();
+	} else {
+		try {
+			validateSelectorSyntax(target);
+		} catch {
+			invalidSelection();
+		}
 	}
 	return {
-		method: section ? ("heading-section" as const) : ("css-selector" as const),
+		method: links
+			? ("link-url-search" as const)
+			: section
+				? ("heading-section" as const)
+				: ("css-selector" as const),
 		target,
 		tableMetadata: fields.tableMetadata === true,
 	};
@@ -286,7 +318,31 @@ export function extractResearchReplayJson(
 			}
 			return diagnostic;
 		};
-		if (!classify(researchDocumentDiagnosticText(tree))) {
+		if (
+			!classify(researchDocumentDiagnosticText(tree)) &&
+			selected.method === "link-url-search"
+		) {
+			checkpoint();
+			report.links = discoverDocumentLinks(tree, selected.target, {
+				maxBytes: researchJsonReplayLimits.maxExtractionBytes,
+				maxNodes: researchJsonReplayLimits.maxNodes,
+				maxDepth: researchJsonReplayLimits.maxDepth,
+				checkpoint,
+			});
+			report.selection.matches = report.links.entries.length;
+			if (
+				!classify(
+					report.links.entries.map((entry) => entry.label).join("\n"),
+				) &&
+				!report.links.entries.length
+			) {
+				report.outcome = "empty-extraction";
+				report.contentSuccess = false;
+			}
+		} else if (
+			report.outcome !== "semantic-barrier" &&
+			selected.method !== "link-url-search"
+		) {
 			checkpoint();
 			const queries = new DocumentQueries(tree);
 			const matches = queries.querySelectorAll(selected.target);

@@ -11,6 +11,7 @@ import {
 	collectHeadingTargets,
 } from "./heading-discovery.js";
 import { htmlParseInfo } from "./html-info.js";
+import { type LinkTarget, collectLinkTargets } from "./link-discovery.js";
 import {
 	type ResearchReaderReport,
 	researchReaderInfo,
@@ -94,6 +95,27 @@ export interface DocumentHeadingOutline {
 export interface DocumentTextLineDiscoveryOptions
 	extends TextLineDiscoveryOptions {
 	maxBytes?: number;
+}
+
+export interface LinkDiscoveryOptions {
+	maxBytes?: number;
+	maxNodes?: number;
+	maxDepth?: number;
+	maxEntries?: number;
+	maxLabelCodeUnits?: number;
+	maxUrlCodeUnits?: number;
+	checkpoint?: () => void;
+}
+
+export interface DocumentLinkDiscovery {
+	method: "link-discovery";
+	document: string;
+	revision: number;
+	partial: true;
+	query: string;
+	entries: LinkTarget[];
+	scannedNodes: number;
+	truncated: boolean;
 }
 
 export interface DocumentTextLineDiscovery extends TextLineDiscovery {
@@ -580,6 +602,80 @@ function extractionAdmission(tree: DocumentTree) {
 			!leafElements.has(node.tagName) ||
 			!styles.get(node.id).visible,
 	};
+}
+
+export function discoverDocumentLinks(
+	tree: DocumentTree,
+	query: string,
+	options: LinkDiscoveryOptions = {},
+): DocumentLinkDiscovery {
+	if (
+		typeof query !== "string" ||
+		!query.length ||
+		query.length > 256 ||
+		Array.from(query).some(
+			(character) =>
+				character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127,
+		) ||
+		!options ||
+		typeof options !== "object" ||
+		Array.isArray(options) ||
+		(options.checkpoint !== undefined &&
+			typeof options.checkpoint !== "function")
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid link discovery options",
+		);
+	const maxBytes = options.maxBytes ?? 262_144;
+	const maxNodes = options.maxNodes ?? 50_000;
+	const maxDepth = options.maxDepth ?? 128;
+	const maxEntries = options.maxEntries ?? 32;
+	const maxLabelCodeUnits = options.maxLabelCodeUnits ?? 256;
+	const maxUrlCodeUnits = options.maxUrlCodeUnits ?? 4096;
+	for (const [name, value, minimum, maximum] of [
+		["maxBytes", maxBytes, 256, 1_048_576],
+		["maxNodes", maxNodes, 1, 50_000],
+		["maxDepth", maxDepth, 0, 1024],
+		["maxEntries", maxEntries, 1, 256],
+		["maxLabelCodeUnits", maxLabelCodeUnits, 1, 1024],
+		["maxUrlCodeUnits", maxUrlCodeUnits, 1, 4096],
+	] as const) {
+		if (!Number.isSafeInteger(value) || value < minimum || value > maximum)
+			throw new AgentBrowserError(
+				"invalid-input",
+				`Invalid link limit: ${name}`,
+			);
+	}
+	options.checkpoint?.();
+	const { skip, visible, descend } = extractionAdmission(tree);
+	const targets = collectLinkTargets(tree, query, {
+		maxNodes,
+		maxDepth,
+		maxEntries,
+		maxLabelCodeUnits,
+		maxUrlCodeUnits,
+		baseUrl: documentBaseUrl(tree),
+		skip,
+		visible,
+		descend,
+		checkpoint: options.checkpoint,
+	});
+	const result: DocumentLinkDiscovery = {
+		method: "link-discovery",
+		document: tree.reference(tree.root),
+		revision: tree.revision,
+		partial: true,
+		query,
+		...targets,
+	};
+	if (encoder.encode(JSON.stringify(result)).byteLength > maxBytes)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Link discovery byte limit exceeded",
+		);
+	options.checkpoint?.();
+	return result;
 }
 
 export function discoverDocumentHeadings(

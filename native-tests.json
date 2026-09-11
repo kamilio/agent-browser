@@ -1,4 +1,7 @@
 [
+  "src/link-discovery.test.ts",
+  "src/document-links.test.ts",
+  "src/research-json-replay-links.test.ts",
   "src/retry-after.test.ts",
   "src/research-rate-limit.test.ts",
   "src/html-tokenizer-discard.test.ts",

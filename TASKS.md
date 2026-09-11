@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+On September 11, 2026 at 06:23 UTC, bounded native link discovery adds an explicit
+URL-substring mode to pinned JSON replay without changing ordinary selector
+semantics or raising full-page extraction limits. A cached NVIDIA index yields
+16 links in 3,979 JSONL bytes with zero requests, including the observed DGX Spark
+product route. RESEARCH-LINK-DISCOVERY.md records the API, original failures and
+new evidence. Build, strict 32 roots, scoped lint and 3416/3416 selected native
+tests pass, including 129 new cases; all 3060 prior case outcomes match. SVG,
+malformed HTML attributes, implied table-depth accounting, real-site access
+restrictions and the broader research/credentials/passkey gates remain open.
+
 September 11, 2026 native-only research adds four bounded live requests: Camoufox
 README, Hugging Face quantization documentation and RFC9110 return HTTP200;
 the assigned NVIDIA DGX Spark route returns HTTP404. Local replay yields bounded

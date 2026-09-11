@@ -30,10 +30,13 @@ This increment adds a programmatic helper, not a filesystem-reading CLI.
 The helper reuses validateResearchReplayAdmission. Only validated-capture may
 proceed: missing or mismatched receipt/body pins reject, and failed, blocked,
 incomplete or otherwise evidence-only receipts cannot become successful content.
-It requires HTML and exactly one selector or heading-section target. Invalid,
-ambiguous or missing selections reject; getters, proxies and unsupported option
-shapes do not execute. Table metadata is optional and uses the existing bounded
-allowlist, not inferred table relationships.
+It requires HTML and exactly one selection mode. Selector and heading-section
+modes still require one matching element; invalid, ambiguous or missing targets
+reject. An explicit `{ links: "url-substring" }` mode instead collects bounded
+navigation targets, as described in RESEARCH-LINK-DISCOVERY.md. Getters, proxies
+and unsupported option shapes do not execute. Table metadata is optional for
+selector/section extraction and uses the existing bounded allowlist, not inferred
+table relationships; it cannot be combined with link discovery.
 
 Replay also rejects summarized headers that would invalidate challenge screening,
 including empty value arrays and forbidden control/non-byte characters. The
@@ -52,8 +55,9 @@ They never classify serialized JSON field names as page text.
 The result contains report, jsonl and outputBytes. The report's distinct
 native-research-json-replay-v1 kind, source receipt/body hashes, admitted profile,
 reported final URL and networkRequests:0 distinguish replay from a fresh visit.
-It carries selection counts, reader limitations and optional JSON extraction,
-not the raw receipt/body, the selector string or all original report metadata.
+It carries selection counts, reader limitations and optional JSON extraction or
+link discovery, not the raw receipt/body, the selector string or all original
+report metadata.
 
 - JSON extraction remains at most256000 bytes,50000 nodes and128 levels.
 - Serialized JSONL is checked against327680 bytes, including its trailing LF.
