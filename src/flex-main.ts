@@ -330,10 +330,10 @@ export function resolveFormattingFlexMainSizes(
 				{ ...style, width: "auto", "min-width": "auto", "max-width": "none" },
 				width,
 				constraints.contentHeight,
-				!node.control,
+				!node.control && node.intrinsicRatio !== false,
 			).contentWidth;
 			minContent = maxContent = content;
-			if (!node.control) {
+			if (!node.control && node.intrinsicRatio !== false) {
 				const cross = crossSizes.get(id);
 				if (!cross)
 					throw new AgentBrowserError(

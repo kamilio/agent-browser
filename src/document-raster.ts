@@ -4,6 +4,7 @@ import { rasterizeControl } from "./control-rendering.js";
 import { transparentColor } from "./css-color.js";
 import { initialPaintStyle, paintBackground } from "./css-paint.js";
 import { rasterizeDisclosureMarker } from "./disclosure-marker.js";
+import { rasterizeSvgScene } from "./svg-projection.js";
 import { LayoutGeometry } from "./document-geometry.js";
 import { documentImages } from "./document-images.js";
 import {
@@ -496,33 +497,39 @@ function paintDocumentLayout(
 		charge();
 		const used = images.get(id);
 		const node = nodes[id];
-		if (!used || !node.visible) return;
+		if (
+			!used ||
+			(!node.visible && !node.svg?.shapes.some((shape) => shape.visible))
+		)
+			return;
 		const source =
-			node.control || node.marker
+			node.control || node.marker || node.svg
 				? undefined
 				: documentImages(tree).decoded(tree.resolve(used.ref).id);
-		if (!source && !node.control && !node.marker)
+		if (!source && !node.control && !node.marker && !node.svg)
 			throw new AgentBrowserError(
 				"unsupported",
 				"Image resource is no longer available for painting",
 			);
-		drawBackground(
-			borderX,
-			borderY,
-			used.borderBoxWidth,
-			used.borderBoxHeight,
-			paintBackground(node.paint ?? initialPaintStyle),
-		);
-		metrics.borderPixels += paintSolidBorders(
-			image,
-			borderX - clip.x,
-			borderY - clip.y,
-			used.borderBoxWidth,
-			used.borderBoxHeight,
-			used,
-			node.paint ?? initialPaintStyle,
-			charge,
-		);
+		if (node.visible)
+			drawBackground(
+				borderX,
+				borderY,
+				used.borderBoxWidth,
+				used.borderBoxHeight,
+				paintBackground(node.paint ?? initialPaintStyle),
+			);
+		if (node.visible)
+			metrics.borderPixels += paintSolidBorders(
+				image,
+				borderX - clip.x,
+				borderY - clip.y,
+				used.borderBoxWidth,
+				used.borderBoxHeight,
+				used,
+				node.paint ?? initialPaintStyle,
+				charge,
+			);
 		const originX = borderX + used.borderLeft + used.paddingLeft - clip.x;
 		const originY = borderY + used.borderTop + used.paddingTop - clip.y;
 		const left = Math.max(0, originX);
@@ -538,13 +545,14 @@ function paintDocumentLayout(
 			if (node.marker) metrics.clippedMarkers++;
 			else if (node.control) metrics.clippedControls++;
 			else metrics.clippedImages++;
-			drawOutline(
-				node.ref,
-				borderX,
-				borderY,
-				used.borderBoxWidth,
-				used.borderBoxHeight,
-			);
+			if (node.visible)
+				drawOutline(
+					node.ref,
+					borderX,
+					borderY,
+					used.borderBoxWidth,
+					used.borderBoxHeight,
+				);
 			return;
 		}
 		charge(Math.ceil(right - left + 1) * Math.ceil(bottom - top + 1) * 4);
@@ -566,19 +574,27 @@ function paintDocumentLayout(
 							node.paint ?? initialPaintStyle,
 							charge,
 						)
-					: (source as NonNullable<typeof source>).image,
+					: node.svg
+						? rasterizeSvgScene(
+								node.svg,
+								used.contentWidth,
+								used.contentHeight,
+								charge,
+							)
+						: (source as NonNullable<typeof source>).image,
 			originX,
 			originY,
 			used.contentWidth,
 			used.contentHeight,
 		);
-		drawOutline(
-			node.ref,
-			borderX,
-			borderY,
-			used.borderBoxWidth,
-			used.borderBoxHeight,
-		);
+		if (node.visible)
+			drawOutline(
+				node.ref,
+				borderX,
+				borderY,
+				used.borderBoxWidth,
+				used.borderBoxHeight,
+			);
 		if (node.marker) metrics.paintedMarkers++;
 		else if (node.control) metrics.paintedControls++;
 		else metrics.paintedImages++;

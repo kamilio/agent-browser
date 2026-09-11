@@ -1193,6 +1193,44 @@ it("loads a large integrity-protected utility stylesheet before a genuine checkb
 	]);
 });
 
+it("navigates through a genuinely clicked native SVG path inside an HTML link", async () => {
+	const { session, requests } = fixture(
+		{ loadDocument: loadBrowserDocument },
+		async (input) =>
+			response(input.url, {
+				headers: { "content-type": ["text/html"] },
+				body: new TextEncoder().encode(
+					input.url === initialUrl
+						? '<!doctype html><a href=/next><svg width=80 height=40 viewBox="0 0 80 40"><path id=target d="M0 0H80V40H0Z" fill=red /></svg></a>'
+						: "<!doctype html><p>SVG destination</p>",
+				),
+			}),
+	);
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	const page = session.page(tab);
+	const target = page.queries.querySelector("#target");
+	if (target === null) throw new Error("Missing native SVG fixture path");
+	const reference = page.document.reference(target);
+	const events: string[] = [];
+	for (const type of ["mousedown", "mouseup", "click"])
+		page.interactions.events.addEventListener(target, type, (event) => {
+			expect(event.target).toBe(target);
+			events.push(type);
+		});
+	expect((await session.click(tab, reference)).navigation).toMatchObject({
+		kind: "document",
+		url: "https://example.com/next",
+	});
+	expect(events).toEqual(["mousedown", "mouseup", "click"]);
+	expect(requests.map((request) => request.url)).toEqual([
+		initialUrl,
+		"https://example.com/next",
+	]);
+	expect(() => page.document.resolve(reference)).toThrow("closed");
+	session.close();
+});
+
 it("navigates a genuine link beside native ordered-list markers", async () => {
 	const { session, requests } = fixture(
 		{ loadDocument: loadBrowserDocument },

@@ -433,7 +433,7 @@ function measureScopes(
 					},
 					0,
 					height,
-					!node.control,
+					!node.control && node.intrinsicRatio !== false,
 				).contentWidth,
 			);
 			let minStyle = withCrossHeight(
@@ -449,7 +449,11 @@ function measureScopes(
 						(node.box ?? initialBoxStyle)[property as "width" | "max-width"],
 					),
 				);
-			if (minWidthPercentage && !node.control) {
+			if (
+				minWidthPercentage &&
+				!node.control &&
+				node.intrinsicRatio !== false
+			) {
 				const minHeight = minStyle["min-height"];
 				const transferStyle = {
 					...minStyle,
@@ -482,7 +486,7 @@ function measureScopes(
 				minStyle,
 				0,
 				height,
-				!node.control,
+				!node.control && node.intrinsicRatio !== false,
 			);
 			let maximum = resolveReplacedSize(
 				node.intrinsic.width,
@@ -490,7 +494,7 @@ function measureScopes(
 				replacedStyle,
 				0,
 				height,
-				!node.control,
+				!node.control && node.intrinsicRatio !== false,
 			);
 			if (maximum.contentWidth < minimum.contentWidth)
 				maximum = resolveReplacedSize(
@@ -502,7 +506,7 @@ function measureScopes(
 					},
 					0,
 					height,
-					!node.control,
+					!node.control && node.intrinsicRatio !== false,
 				);
 			minima.set(
 				node.id,

@@ -290,7 +290,7 @@ export function layoutPositionedDocument(
 						style,
 						containingWidth,
 						containingHeight,
-						!node.control,
+						!node.control && node.intrinsicRatio !== false,
 					)
 				: undefined;
 		let width = replaced?.contentWidth;

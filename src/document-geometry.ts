@@ -6,6 +6,8 @@ import { documentScrollPosition } from "./document-scroll.js";
 import { documentGeneratedControls } from "./generated-controls.js";
 import { projectFixedLayout } from "./out-of-flow-positioning.js";
 import { outsideMarkerRects } from "./outside-markers.js";
+import { layoutContentItems } from "./layout-paint-order.js";
+import { projectSvgScene } from "./svg-projection.js";
 
 export type UsedStyle = Readonly<Partial<Record<string, number>>>;
 
@@ -93,8 +95,9 @@ export class LayoutGeometry {
 		const images = new Map(
 			layout.text.horizontal.images.map((image) => [image.id, image]),
 		);
-		const charge = () => {
-			if (++this.work > geometryLimits.maxWork)
+		const charge = (amount = 1) => {
+			this.work += amount;
+			if (this.work > geometryLimits.maxWork)
 				throw new AgentBrowserError(
 					"resource-limit",
 					"Client geometry work limit exceeded",
@@ -116,8 +119,10 @@ export class LayoutGeometry {
 			if (list) list.push(value);
 			else destination.set(ref, [value]);
 		};
+		let hasSvg = false;
 		for (const node of layout.text.horizontal.formatting.nodes) {
 			charge();
+			if (node.svg) hasSvg = true;
 			if (node.ref && (node.fragmentCount ?? 0) > 1)
 				this.splitInlines.add(node.ref);
 		}
@@ -216,6 +221,57 @@ export class LayoutGeometry {
 					);
 			}
 		}
+		if (hasSvg)
+			for (const item of layoutContentItems(layout, charge)) {
+				if (item.kind !== "image" && item.kind !== "fragment") continue;
+				const id =
+					item.kind === "image" ? item.box.id : item.fragment.formattingId;
+				const node = layout.text.horizontal.formatting.nodes[id];
+				const image = images.get(id);
+				if (!node.svg || !image) continue;
+				const borderX =
+					item.kind === "image" ? item.box.borderX : item.fragment.x;
+				const borderY =
+					item.kind === "image" ? item.box.borderY : item.fragment.y;
+				const originX = borderX + image.borderLeft + image.paddingLeft;
+				const originY = borderY + image.borderTop + image.paddingTop;
+				const projection = projectSvgScene(
+					node.svg,
+					image.contentWidth,
+					image.contentHeight,
+					charge,
+				);
+				const bounds = new Map<string, ClientRectangle>();
+				for (const shape of projection.shapes) {
+					charge();
+					if (!shape.bounds) continue;
+					const box = rectangle(
+						originX + shape.bounds.x,
+						originY + shape.bounds.y,
+						shape.bounds.width,
+						shape.bounds.height,
+					);
+					for (const ref of [shape.ref, ...shape.ancestors]) {
+						charge();
+						const previous = bounds.get(ref);
+						if (!previous) bounds.set(ref, box);
+						else {
+							const left = Math.min(previous.left, box.left);
+							const top = Math.min(previous.top, box.top);
+							bounds.set(
+								ref,
+								rectangle(
+									left,
+									top,
+									Math.max(previous.right, box.right) - left,
+									Math.max(previous.bottom, box.bottom) - top,
+								),
+							);
+						}
+					}
+				}
+				for (const [ref, boundsValue] of bounds) append(ref, boundsValue);
+			}
 		for (const marker of outsideMarkerRects(layout, charge)) {
 			charge();
 			const node = layout.text.horizontal.formatting.nodes[marker.id];

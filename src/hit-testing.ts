@@ -6,6 +6,11 @@ import { documentStyles } from "./styles.js";
 import { documentScrollPosition } from "./document-scroll.js";
 import type { FormattingNode } from "./formatting-tree.js";
 import { isInertSubtree } from "./inertness.js";
+import {
+	projectSvgScene,
+	svgShapeContains,
+	type ProjectedSvgShape,
+} from "./svg-projection.js";
 
 export interface HitTestLimits {
 	maxRegions: number;
@@ -47,6 +52,13 @@ interface HitRegion extends HitTarget {
 	y: number;
 	width: number;
 	height: number;
+	svg?: Readonly<{
+		shape: ProjectedSvgShape;
+		originX: number;
+		originY: number;
+		width: number;
+		height: number;
+	}>;
 }
 
 export class DocumentHitTesting {
@@ -169,6 +181,18 @@ export class DocumentHitTesting {
 				targetY >= region.y + region.height
 			)
 				continue;
+			if (region.svg) {
+				const across = targetX - region.svg.originX;
+				const down = targetY - region.svg.originY;
+				if (
+					across < 0 ||
+					down < 0 ||
+					across >= region.svg.width ||
+					down >= region.svg.height ||
+					!svgShapeContains(region.svg.shape, across, down, this.charge)
+				)
+					continue;
+			}
 			append(region.id, region.generated);
 			if (first) return result;
 		}
@@ -178,6 +202,9 @@ export class DocumentHitTesting {
 	private build(): readonly HitRegion[] {
 		const layout = layoutDocument(this.tree);
 		const nodes = layout.text.horizontal.formatting.nodes;
+		const images = new Map(
+			layout.text.horizontal.images.map((image) => [image.id, image]),
+		);
 		const fixed = new Set(layout.fixedIds);
 		const regions: HitRegion[] = [];
 		const owners = new Map<number, number | null>();
@@ -256,6 +283,55 @@ export class DocumentHitTesting {
 				}),
 			);
 		};
+		const appendSvg = (id: number, borderX: number, borderY: number) => {
+			const svg = nodes[id].svg;
+			const image = images.get(id);
+			if (svg && image) {
+				const originX = borderX + image.borderLeft + image.paddingLeft;
+				const originY = borderY + image.borderTop + image.paddingTop;
+				const projection = projectSvgScene(
+					svg,
+					image.contentWidth,
+					image.contentHeight,
+					this.charge,
+				);
+				for (const shape of projection.shapes) {
+					this.charge();
+					if (
+						!shape.visible ||
+						!shape.pointerEvents ||
+						shape.fill === null ||
+						!shape.bounds ||
+						shape.bounds.width <= 0 ||
+						shape.bounds.height <= 0 ||
+						isInert(shape.id)
+					)
+						continue;
+					if (regions.length >= this.limits.maxRegions)
+						throw new AgentBrowserError(
+							"resource-limit",
+							"Hit-test region limit exceeded",
+						);
+					regions.push(
+						Object.freeze({
+							id: shape.id,
+							fixed: fixed.has(id),
+							x: originX + shape.bounds.x,
+							y: originY + shape.bounds.y,
+							width: shape.bounds.width,
+							height: shape.bounds.height,
+							svg: Object.freeze({
+								shape,
+								originX,
+								originY,
+								width: image.contentWidth,
+								height: image.contentHeight,
+							}),
+						}),
+					);
+				}
+			}
+		};
 		for (const item of layoutContentItems(layout, this.charge)) {
 			if (item.kind === "marker") {
 				const marker = item.marker;
@@ -269,6 +345,7 @@ export class DocumentHitTesting {
 					box.borderBoxWidth,
 					box.borderBoxHeight,
 				);
+				appendSvg(box.id, box.borderX, box.borderY);
 			} else if (item.kind === "fragment") {
 				const fragment = item.fragment;
 				append(
@@ -278,6 +355,7 @@ export class DocumentHitTesting {
 					fragment.width,
 					fragment.height,
 				);
+				appendSvg(fragment.formattingId, fragment.x, fragment.y);
 			} else {
 				const glyph = item.glyph;
 				if (glyph.visible)

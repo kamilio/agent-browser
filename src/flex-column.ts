@@ -208,7 +208,7 @@ export function layoutFormattingColumnContainer(
 				style,
 				width,
 				percentageBasis,
-				!node.control,
+				!node.control && node.intrinsicRatio !== false,
 			).contentWidth;
 		const contentWidth = layoutNumber(
 			Math.max(minimum, Math.min(preferred, maximum)),
@@ -322,7 +322,12 @@ export function layoutFormattingColumnContainer(
 		const adjustment = style["box-sizing"] === "border-box" ? edges : 0;
 		const content = box.contentHeight;
 		let contentMinimum = content;
-		if (node.kind === "replaced" && node.intrinsic && !node.control) {
+		if (
+			node.kind === "replaced" &&
+			node.intrinsic &&
+			!node.control &&
+			node.intrinsicRatio !== false
+		) {
 			const ratio = node.intrinsic.width / node.intrinsic.height;
 			contentMinimum =
 				Math.max(cross.minimum, Math.min(node.intrinsic.width, cross.maximum)) /
@@ -509,6 +514,7 @@ export function layoutFormattingColumnContainer(
 			node.kind === "replaced" &&
 			node.intrinsic &&
 			!node.control &&
+			node.intrinsicRatio !== false &&
 			cross.specified === null &&
 			!cross.stretch
 		) {

@@ -3,7 +3,14 @@ import { type BoxStyle, initialBoxStyle } from "./css-box.js";
 import { initialPaintStyle, type PaintStyle } from "./css-paint.js";
 import type { TextStyle } from "./css-text.js";
 import type { DocumentTree } from "./document.js";
-import { isHtmlElement } from "./dom-namespaces.js";
+import {
+	elementNamespace,
+	isHtmlElement,
+	svgNamespace,
+} from "./dom-namespaces.js";
+import { documentSvgScene } from "./svg-scene.js";
+import { svgIntrinsicSize } from "./svg-projection.js";
+import type { SvgScene } from "./svg-scene-types.js";
 import { documentImages } from "./document-images.js";
 import { brokenImageAlternative } from "./image-fallback.js";
 import {
@@ -90,6 +97,8 @@ export interface FormattingNode {
 	fragmentCount?: number;
 	deferredReason?: string;
 	intrinsic?: Readonly<{ width: number; height: number }>;
+	intrinsicRatio?: boolean;
+	svg?: SvgScene;
 	control?: SoftwareControl;
 	marker?: DisclosureMarker;
 	outsideMarker?: DisclosureMarker;
@@ -331,7 +340,9 @@ export function buildFormattingTree(
 		}
 		if (node.kind !== "element") return [];
 		const ref = tree.reference(id);
-		if (!isHtmlElement(node)) {
+		const embeddedSvg =
+			elementNamespace(node) === svgNamespace && node.tagName === "svg";
+		if (!isHtmlElement(node) && !embeddedSvg) {
 			const reason = "element-layout-not-supported";
 			const display =
 				id === rootElement
@@ -366,8 +377,17 @@ export function buildFormattingTree(
 		}
 		if (flow.float !== "none") issue("float-layout-not-supported");
 		if (flow.clear !== "none") issue("clear-layout-not-supported");
-		if (flow["overflow-x"] !== "visible" || flow["overflow-y"] !== "visible")
+		const svgClipping =
+			embeddedSvg &&
+			["hidden", "clip"].includes(flow["overflow-x"]) &&
+			["hidden", "clip"].includes(flow["overflow-y"]);
+		if (
+			(flow["overflow-x"] !== "visible" || flow["overflow-y"] !== "visible") &&
+			!svgClipping
+		)
 			issue("overflow-layout-not-supported");
+		if (embeddedSvg && !svgClipping)
+			issue("svg-viewport-overflow-not-supported");
 		const positionFields = {
 			...(flow.position === "relative" || outOfFlow
 				? { position: flow.position as "relative" | "absolute" | "fixed" }
@@ -416,7 +436,10 @@ export function buildFormattingTree(
 			].some(
 				(name) =>
 					Object.hasOwn(node.attributes, name) &&
-					!(node.tagName === "img" && (name === "width" || name === "height")),
+					!(
+						(node.tagName === "img" || embeddedSvg) &&
+						(name === "width" || name === "height")
+					),
 			)
 		)
 			issue("html-presentation-hint-not-supported");
@@ -424,6 +447,66 @@ export function buildFormattingTree(
 			id === rootElement
 				? (rootDisplays[visibility.display] ?? visibility.display)
 				: visibility.display;
+		if (embeddedSvg) {
+			try {
+				if (
+					![
+						"inline",
+						"inline flow",
+						"inline-block",
+						"inline flow-root",
+						"block",
+						"block flow",
+						"flow-root",
+						"block flow-root",
+					].includes(display)
+				)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Unsupported SVG outer display",
+					);
+				const svg = documentSvgScene(tree, id, charge);
+				const intrinsic = svgIntrinsicSize(svg, styles.box(id));
+				return [
+					create({
+						kind: "replaced",
+						level: display.startsWith("inline") ? "inline" : "block",
+						ref,
+						display,
+						visible: visibility.visible,
+						box: styles.box(id),
+						paint: styles.paint(id),
+						typography: styles.text(id),
+						intrinsic: Object.freeze({
+							width: intrinsic.width,
+							height: intrinsic.height,
+						}),
+						intrinsicRatio: intrinsic.ratio,
+						svg,
+						...itemFields,
+					}),
+				];
+			} catch (error) {
+				if (
+					!(error instanceof AgentBrowserError) ||
+					!["unsupported", "invalid-input"].includes(error.code)
+				)
+					throw error;
+				const reason = "svg-layout-not-supported";
+				issue(reason);
+				deferredSubtrees++;
+				return [
+					create({
+						kind: "deferred",
+						level: display.startsWith("inline") ? "inline" : "block",
+						ref,
+						display,
+						visible: visibility.visible,
+						deferredReason: reason,
+					}),
+				];
+			}
+		}
 		if (display === "contents" && unusualContents.has(node.tagName)) return [];
 		const imageText =
 			node.tagName === "img" &&
@@ -1149,7 +1232,7 @@ export function resolveFormattingBlockWidths(
 				usedStyle,
 				containingWidth,
 				containingHeight,
-				!node.control,
+				!node.control && node.intrinsicRatio !== false,
 			);
 			if (frame.usedWidth)
 				replaced = Object.freeze({

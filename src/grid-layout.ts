@@ -377,7 +377,7 @@ export function layoutFormattingGridContainer(
 								style,
 								areaWidth,
 								areas?.get(item.id) ?? null,
-								!node.control,
+								!node.control && node.intrinsicRatio !== false,
 							)
 						: undefined;
 				const resolved = resolveBlockWidth(

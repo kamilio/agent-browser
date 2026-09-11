@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 SVG-DOCUMENT-INTEGRATION.md connects bounded inline SVG scenes
+to actual native replaced layout, viewBox sizing, filled-shape paint, analytic
+descendant geometry and contour-aware hit testing. A real SVG-path fixture click
+bubbles through an HTML anchor and navigates; no ancestor-click substitute is used.
+Corrected baseline failures, the inline-fragment geometry failure and three review
+findings are retained and fixed. The clean9614-case gate passes with2 unchanged
+exclusions,160 selected/159 strict files and565 clean manifest entries; build,
+strict and formatting pass. Unrelated dirty work remains excluded. SVG text,
+strokes, markers, group effects and unsupported CSS remain explicit limitations.
+Next replay unchanged Test Pages captures and test fresh native website actions;
+table/float/clear/overflow, research, credentials/passkeys and broader gates remain
+open. Native fixture success is not live-site, CAPTCHA or overall-goal completion.
+
 September 11, 2026 SVG-FILL-FOUNDATION.md adds bounded native path parsing,
 quadratic/cubic/elliptical-arc flattening and nonzero/evenodd RGBA fill primitives
 for the observed Test Pages SVG blocker. Three independent review findings were

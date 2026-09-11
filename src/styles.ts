@@ -99,6 +99,7 @@ import {
 	type ListStyle,
 } from "./css-list.js";
 import { htmlListStyleType } from "./list-ordinals.js";
+import { svgPresentationDeclarations } from "./svg-presentation.js";
 import {
 	cssVariableLimits,
 	parseVariableValue,
@@ -821,6 +822,10 @@ export class DocumentStyles {
 			}
 		};
 		for (const node of nodes) {
+			if (elementNamespace(node) === svgNamespace) {
+				for (const declaration of svgPresentationDeclarations(node, charge))
+					apply(node.id, [declaration], [0, 0, 0], false, -2);
+			}
 			if (!isHtmlElement(node, "img")) continue;
 			for (const property of ["width", "height"] as const) {
 				const raw = node.attributes[property];
