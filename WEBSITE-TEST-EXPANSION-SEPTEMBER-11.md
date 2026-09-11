@@ -183,6 +183,17 @@ verify, with zero cleanup. This repeats the already recorded www.w3.org hostname
 the attempted-host inventory remains62. Navigation is not full-page or click
 acceptance, and the native image-policy limitation is not a server challenge.
 
+## Subsequent Test Pages clear replay — September 11
+
+`TESTPAGES-CLEAR-REPLAY.md` repeats the two untouched captures on the committed
+9677-pass build: zero wire and no new hostname. Clear warnings fall four to zero,
+with no active floats; a bounded sample still computes clear:both on e2606. SVG
+and numeric-marker metadata remain intact. Semantic fill/select succeed, but the
+actual checkbox click still fails the formatting guard. Table-row-group,
+overflow, presentation hints, coordination and original CSS/import diagnostics
+remain. All55 evidence checks and both ledgers verify with zero cleanup. The
+attempted-host inventory stays62, and full-page/pointer acceptance remains open.
+
 ## Next acceptance work
 
 - Resolve measured Selenium formatting gaps without discarding original CSS;

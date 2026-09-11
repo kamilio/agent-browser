@@ -65,3 +65,14 @@ earlier9614 build and still fails on five table elements. Captured-page replay,
 native table layout, resource-policy support and broader website interactions
 remain separate work. No CAPTCHA, live-site, credential or runtime acceptance
 claim follows from this change.
+
+## Unchanged-capture follow-up
+
+`TESTPAGES-CLEAR-REPLAY.md` verifies the committed 9677-build against the original
+two HTML/CSS captures, with two native/mock responses and zero wire requests.
+Clear warnings fall from four to zero with no active floats. A bounded native
+sample still reports `clear:both` on e2606; it is not a complete enumeration of
+all four formerly warned nodes. SVG and numeric-marker metadata remain intact.
+The actual checkbox click still fails the independent formatting-profile guard.
+Parent verifies all 55 evidence checks, both ledgers, exact capture hashes and
+zero cleanup state. This is partial captured-site progress, not page acceptance.

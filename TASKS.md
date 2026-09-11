@@ -6,6 +6,17 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 TESTPAGES-CLEAR-REPLAY.md verifies the committed9677 build
+against two untouched captures:2 native/mock responses,0 wire and no new host.
+Clear issues fall4 to0 with0 active floats; sampled e2606 still computes clear:both,
+so the observed declaration was not erased. The512-ref bounded sample is not a
+complete inventory of all4 earlier nodes. SVG e87/three shapes and numeric markers
+remain intact; fill/select succeed, but the one genuine checkbox click still
+fails the independent formatting guard. Table-row-group, overflow5, a presentation
+hint, coordination and raw CSS/import diagnostics remain. All55 evidence checks,
+both ledgers, capture hashes and zero cleanup verify. Continue actual table
+document integration and resource-policy support; broader gates remain open.
+
 September 11, 2026 TABLE-LAYOUT-FOUNDATION.md adds bounded cell-slot placement
 and numerical auto-table column sizing for the observed W3C/Test Pages blockers.
 Positive/zero rowspans, implied rows, group boundaries, overlap rejection,
