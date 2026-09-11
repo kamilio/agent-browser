@@ -311,7 +311,11 @@ class SelectorParser {
 		if (this.source[this.position] === "|")
 			unsupported("namespaces and column combinators");
 		if (!tests.length) syntax("expected a compound selector");
-		return tests;
+		return tests.sort(
+			(left, right) =>
+				Number(left.kind === "logical" || left.kind === "nth") -
+				Number(right.kind === "logical" || right.kind === "nth"),
+		);
 	}
 	private attribute(): SimpleSelector {
 		this.position++;

@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 direct compound predicates now precede nested selector tests,
+avoiding ancestor walks for locally false hover/visited/class/attribute checks.
+COMPOUND-PREDICATE-ORDER.md records four preserved work-bound baseline failures,
+151 focused passes and 6765 selected native passes across 112 files with the
+documented exceptions. All operands, specificity and dependency admission remain
+intact. Compare exact MDN results/work offline separately; the native click's
+unsupported-formatting failure and the broader website/research gates remain open.
+
 September 11, 2026 a fresh native MDN flow commits the full 19-response page,
 discovers querySelectorAll in main content and attempts one genuine native click.
 MDN-LOGICAL-AVAILABILITY-LIVE.md preserves the new failure: width resolution

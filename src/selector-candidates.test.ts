@@ -171,6 +171,174 @@ it("prunes globally absent logical stylesheet ancestors within a small work budg
 });
 
 it.each([
+	":is(.footer__mozilla a):hover",
+	":is(.footer__mozilla a):visited",
+	":is(:is(.footer__mozilla a).ready)",
+	":is(.footer__mozilla a)[data-ready=yes]",
+])("bounds locally failing late predicates for %s", (selector) => {
+	const { tree, queries: lookup } = fixture(
+		`<main class=footer__mozilla>${"<div>".repeat(128)}${"<a href=/target></a>".repeat(256)}${"</div>".repeat(128)}</main><aside class=ready data-ready=yes></aside>`,
+	);
+	for (const key of [".footer__mozilla", "a", ".ready", "[data-ready=yes]"])
+		expect(lookup.querySelector(key)).not.toBeNull();
+	const queries = new DocumentQueries(tree, { maxWork: 30_000 });
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expectSelection(queries, selector, []);
+		expect(queries.metrics().lastWork).toBeLessThan(30_000);
+	}
+});
+
+it.each([
+	[":is(.footer__mozilla a):link", ["first", "second", "third"], [0, 2, 1]],
+	[":is(#absent, .footer__mozilla a).ready", ["first", "second"], [1, 1, 0]],
+	[":where(.footer__mozilla a)[data-ready=yes]", ["first"], [0, 1, 0]],
+	[":not(:has(> .marker))[href].ready", ["first"], [0, 3, 0]],
+	[":has(> :not(.other).marker).ready", ["second"], [0, 3, 0]],
+	[":nth-child(2 of :is(#absent, .ready)).ready", ["second"], [1, 2, 0]],
+	[":nth-last-child(2 of :where(.ready)).ready", ["first"], [0, 2, 0]],
+] as const)(
+	"preserves late-predicate matches and specificity for %s",
+	(selector, names, specificity) => {
+		const { queries, id } = fixture(
+			"<main class=footer__mozilla><a id=first class=ready href=/first data-ready=yes></a><a id=second class=ready href=/second data-ready=no><span class=marker></span></a><a id=third class=other href=/third></a></main>",
+		);
+		const expected = names.map((name) => id(`#${name}`));
+		for (let repeat = 0; repeat < 2; repeat++)
+			expectSelection(queries, selector, expected, specificity);
+	},
+);
+
+it("refreshes cached MDN hover matches without dropping absent-ID specificity", () => {
+	const { tree, queries, id } = fixture(
+		"<main class=footer__mozilla><a id=first href=/first></a><a id=second href=/second></a></main><a id=outside href=/outside></a>",
+	);
+	const first = id("#first");
+	const second = id("#second");
+	for (const hovered of [null, first, second, id("#outside"), null]) {
+		tree.setPointerState(hovered, null);
+		const expected = hovered === first || hovered === second ? [hovered] : [];
+		expectSelection(
+			queries,
+			":is(.footer__mozilla a):hover",
+			expected,
+			[0, 2, 1],
+		);
+		expectSelection(
+			queries,
+			":is(#absent, .footer__mozilla a):hover",
+			expected,
+			[1, 1, 0],
+		);
+	}
+});
+
+it.each(["hover", "active", "focus", "checked", "placeholder-shown"] as const)(
+	"retains cached nested %s dependencies behind a late predicate",
+	(state) => {
+		const type = state === "checked" ? "checkbox" : "text";
+		const { tree, queries, id } = fixture(
+			`<main><input id=first class=field type=${type} placeholder=hint><input id=second class=field type=${type} placeholder=hint></main><aside class=ready></aside>`,
+		);
+		const first = id("#first");
+		const second = id("#second");
+		const selector = `:is(#absent, .field:${state}).ready`;
+		expectSelection(queries, selector, []);
+		if (state === "placeholder-shown")
+			expect(queries.metrics().controlValueDependent).toBe(true);
+		for (const target of [first, second])
+			tree.setAttribute(target, "class", "field ready");
+		for (const selected of [null, first, second, null]) {
+			if (state === "hover") tree.setPointerState(selected, null);
+			else if (state === "active") tree.setPointerState(null, selected);
+			else if (state === "focus") tree.setActiveElement(selected);
+			else
+				for (const target of [first, second])
+					tree.setControl(
+						target,
+						state === "checked"
+							? { checked: target === selected }
+							: { value: target === selected ? "" : "filled" },
+					);
+			for (let repeat = 0; repeat < 2; repeat++)
+				expectSelection(
+					queries,
+					selector,
+					selected === null ? [] : [selected],
+					[1, 1, 0],
+				);
+		}
+	},
+);
+
+it.each([
+	":is(:checked):hover",
+	":not(:has(:checked)):hover",
+	":nth-child(1 of :checked):hover",
+])(
+	"rejects detached native dependencies before short-circuiting %s",
+	(selector) => {
+		const { tree, queries } = fixture("<main></main>");
+		const detached = tree.createElement("input", { type: "checkbox" });
+		for (let repeat = 0; repeat < 2; repeat++) {
+			expectSelection(queries, selector, []);
+			expect(() => queries.querySelectorAll(selector, detached)).toThrow(
+				"detached",
+			);
+			expect(() => queries.matches(detached, selector)).toThrow("detached");
+			expect(() => queries.closest(detached, selector)).toThrow("detached");
+		}
+	},
+);
+
+it.each([
+	":scope > :is(.ready)[data-ready=yes]",
+	":scope > :has(> :not(.other).marker)[data-ready=yes]",
+	":scope > :has(+ :is(.ready)[data-ready=no])[data-ready=yes]",
+])("keeps late predicates local to relative scopes for %s", (selector) => {
+	const { queries, id } = fixture(
+		"<main id=inside><p id=first class=ready data-ready=yes><span class=marker></span></p><p class=ready data-ready=no></p></main><aside id=outside><p id=other class=ready data-ready=yes><span class=marker></span></p><p class=ready data-ready=no></p></aside>",
+	);
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expect(queries.querySelectorAll(selector, id("#inside"))).toEqual([
+			id("#first"),
+		]);
+		expect(queries.querySelectorAll(selector, id("#outside"))).toEqual([
+			id("#other"),
+		]);
+	}
+});
+
+it.each([
+	":is(.ready, :unsupported):hover",
+	":not(:has(:has(.ready))):hover",
+	":nth-child(invalid of .ready):hover",
+	":is(.ready,):hover",
+])("admits errors before a false late predicate for %s", (selector) => {
+	const { queries, id } = fixture("<main class=ready></main>");
+	const target = id("main");
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expect(() => queries.matchingSpecificities(selector)).toThrow();
+		expect(() => queries.querySelectorAll(selector)).toThrow();
+		expect(() => queries.matches(target, selector)).toThrow();
+		expect(() => validateSelectorSyntax(selector)).toThrow();
+		expect(supportsCssSelector(selector)).toBe(false);
+	}
+});
+
+it("retains parser limits before a false late predicate", () => {
+	const { tree } = fixture("<main class=ready></main>");
+	for (const limits of [{ maxComponents: 3 }, { maxNesting: 1 }]) {
+		const queries = new DocumentQueries(tree, limits);
+		const selector = ":is(:where(.ready)):hover";
+		for (let repeat = 0; repeat < 2; repeat++) {
+			expect(() => queries.matchingSpecificities(selector)).toThrow("limit");
+			expect(() => queries.querySelectorAll(selector)).toThrow("limit");
+			expect(queries.metrics().cachedSelectors).toBe(0);
+		}
+	}
+});
+
+it.each([
 	[":is(.missing, .root) > .leaf", ["leaf"], [0, 2, 0]],
 	[":where(.missing, .root) > .leaf", ["leaf"], [0, 1, 0]],
 	[":is(#missing, .root) > .leaf", ["leaf"], [1, 1, 0]],
