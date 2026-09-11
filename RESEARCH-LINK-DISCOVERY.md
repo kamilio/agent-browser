@@ -39,6 +39,8 @@ and does not include an ordinary `extraction` tree. `links.entries` contains nat
 `ref`, resolved `url`, bounded `label` and `labelTruncated` values. Labels are
 visible-text prefixes, not computed accessible names. `selection.matches` counts
 returned entries; it is not a total-match claim when `links.truncated` is true.
+Replay references identify nodes in the captured document, which closes when the
+call finishes; they are evidence references, not live handles in another session.
 
 - Default discovery retains at most 32 links and 256 code units of label text.
 - Raw and resolved URLs are capped at 4,096 code units. Invalid, credential-bearing
@@ -102,3 +104,5 @@ runtime gate. Known unrelated selector-suite failures remain outside this scope.
 This feature does not implement SVG tree construction, relax malformed-attribute
 parsing, resolve the WHATWG reader-depth failure, solve CAPTCHAs or complete the
 four-topic research.
+The subsequent observed product-page visit is recorded separately in
+WEBSITE-FLOWS-SEPTEMBER-11.md, not folded into the cached-page proof.

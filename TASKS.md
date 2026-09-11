@@ -6,6 +6,17 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 website flows now exercise a real native DuckDuckGo form:
+fill and requestSubmit reach an HTTP200 search result; the original harness's
+case-comparison assertion failure remains preserved, with a separate passing
+offline audit. Bounded link discovery then enables an observed NVIDIA DGX Spark
+product visit and specification-section replay. WEBSITE-FLOWS-SEPTEMBER-11.md
+records these sequences, manufacturer-claim qualifications and fresh failures:
+Wikipedia SVG construction, Bing malformed attributes, WHATWG reader depth, and
+OpenAI's Cloudflare403. Continue fixing these engine/reader gaps; Twitter/Poe
+opinions, hardware recommendations, measured performance, CAPTCHA effectiveness
+and credentials/passkey acceptance remain incomplete, not generally unauthorized.
+
 On September 11, 2026 at 06:23 UTC, bounded native link discovery adds an explicit
 URL-substring mode to pinned JSON replay without changing ordinary selector
 semantics or raising full-page extraction limits. A cached NVIDIA index yields
