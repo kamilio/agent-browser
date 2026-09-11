@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { getEventListeners } from "node:events";
 import { createHash } from "node:crypto";
+import { controlChecked } from "./controls.js";
 import type { CookieJar } from "./cookies.js";
 import { loadBrowserDocument } from "./document-loader.js";
 import { DocumentTree } from "./document.js";
@@ -1140,6 +1141,57 @@ it.each([
 		).toMatchObject([{ state: "complete" }]);
 	},
 );
+
+it("loads a large integrity-protected utility stylesheet before a genuine checkbox click", async () => {
+	const css =
+		Array.from(
+			{ length: 4999 },
+			(_, index) => `#unused${index}{color:red}`,
+		).join("") + "#box{display:inline-block}";
+	const body = new TextEncoder().encode(css);
+	const digest = createHash("sha256").update(body).digest("base64");
+	const { session, requests } = fixture(
+		{ loadDocument: loadBrowserDocument },
+		async (input) =>
+			input.url === initialUrl
+				? response(input.url, {
+						headers: { "content-type": ["text/html"] },
+						body: new TextEncoder().encode(
+							`<!doctype html><link rel=stylesheet href=/large.css crossorigin=anonymous integrity=sha256-${digest}><input id=box type=checkbox>`,
+						),
+					})
+				: response(input.url, {
+						headers: { "content-type": ["text/css"] },
+						body,
+						encodedBytes: body.length,
+					}),
+	);
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	const page = session.page(tab);
+	const checkbox = page.queries.querySelector("#box");
+	if (checkbox === null)
+		throw new Error("Missing utility stylesheet fixture checkbox");
+	expect(page.styles.metrics()).toMatchObject({
+		externalSheets: 1,
+		rules: 5000,
+		declarations: 5000,
+		issues: {},
+	});
+	expect(controlChecked(page.document, checkbox)).toBe(false);
+	const events: string[] = [];
+	for (const type of ["mousedown", "mouseup", "click", "input", "change"])
+		page.interactions.events.addEventListener(checkbox, type, () =>
+			events.push(type),
+		);
+	await session.click(tab, page.document.reference(checkbox));
+	expect(controlChecked(page.document, checkbox)).toBe(true);
+	expect(events).toEqual(["mousedown", "mouseup", "click", "input", "change"]);
+	expect(requests.map((request) => request.url)).toEqual([
+		initialUrl,
+		"https://example.com/large.css",
+	]);
+});
 
 it("honors the transport redirect budget for policy stylesheet loads", async () => {
 	const { session, requests, transport } = fixture(

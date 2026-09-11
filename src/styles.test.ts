@@ -202,6 +202,44 @@ it("applies width/height media rules and invalidates presentation on resize", ()
 	expect(() => styles.setViewport(0, 800)).toThrow("Invalid");
 });
 
+it.each([5000, 8192])(
+	"cascades a bounded %s-rule utility stylesheet with default limits",
+	(count) => {
+		const css =
+			Array.from(
+				{ length: count - 1 },
+				(_, index) => `#unused${index}{display:block}`,
+			).join("") + "#target{display:none}";
+		const { tree, styles, id } = fixture(css);
+		try {
+			expect(css.length).toBeLessThan(styles.limits.maxCodeUnits);
+			expect(styles.get(id("#target")).displayed).toBe(false);
+			expect(styles.metrics()).toMatchObject({
+				rules: count,
+				declarations: count,
+				codeUnits: css.length,
+				issues: {},
+			});
+			expect(styles.metrics().work).toBeLessThan(styles.limits.maxWork);
+			const builds = styles.metrics().cascadeBuilds;
+			expect(styles.get(id("#target")).displayed).toBe(false);
+			expect(styles.metrics().cascadeBuilds).toBe(builds);
+		} finally {
+			tree.close();
+		}
+	},
+);
+
+it("still rejects utility stylesheets beyond the default rule ceiling", () => {
+	const { tree, styles } = fixture("#target{display:none}".repeat(8193));
+	try {
+		expect(() => styles.metrics()).toThrow("CSS rule limit exceeded");
+		expect(() => styles.metrics()).toThrow("CSS rule limit exceeded");
+	} finally {
+		tree.close();
+	}
+});
+
 it("honors document order, disabled sheets and changed links without stale CSS", () => {
 	const { tree, styles, id } = fixture(
 		"#target{display:block}",

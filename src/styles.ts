@@ -269,7 +269,7 @@ export class DocumentStyles {
 	) {
 		this.limits = Object.freeze({
 			maxCodeUnits: 524_288,
-			maxRules: 4096,
+			maxRules: 8192,
 			maxDeclarations: 16_384,
 			maxWork: 5_000_000,
 			maxSheets: 32,

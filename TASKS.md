@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 CSS-RULE-CAPACITY.md raises only the native default parsed-rule
+ceiling from4096 to8192, based on5929 native-counted rules/9698 statements in the
+unchanged captured Test Pages CSS. Source524288, declarations16384 and work5M
+limits remain unchanged; no rule filtering or partial-style acceptance is added.
+Original51pass/2fail regressions are retained; the155-case styles/session prototype
+and audited9064-pass native gate succeed, with2 existing exclusions and unchanged
+556-entry committed manifest. A synthetic5000-rule SRI stylesheet reaches a genuine
+checkbox pointer gesture. Sidecar35 checks verify; analytical larger declaration
+allowance is not the production default. Unrelated dirty styles/manifest work is
+preserved and excluded. Captured-site replay is separately released to test the
+whole document; aggregate cascade, real-site controls and full browser gates remain.
+
 September 11, 2026 TESTPAGES-STYLESHEET-FLOW.md records a fresh9060-build live
 follow-up at17:23 UTC: two actual native/wire GETs return200 for unchanged HTML
 and original CSS. The same-origin policy is cors/same-origin, and the fresh CSS

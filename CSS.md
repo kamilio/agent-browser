@@ -122,13 +122,19 @@ Default per-document style limits:
 | Limit | Default |
 | --- | ---: |
 | Combined active CSS source, UTF-16 code units | 524,288 |
-| Parsed rules | 4,096 |
+| Parsed rules | 8,192 |
 | Parsed declaration statements | 16,384 |
 | Cascade/query work units | 5,000,000 |
 | Registered external sheets in the SDK | 32 |
 | Automatic retrieval attempts per navigation | 8 |
 | CSS component nesting | 32 |
 | Nested rule parsing depth | 16 |
+
+The rule ceiling admits bounded utility stylesheets larger than 4,096 rules.
+Rules in nested or unsupported groups still consume the parser budget; this is
+not filtering or partial stylesheet application. Source, declaration and cascade
+work ceilings remain independent and unchanged. Captured-site measurements and
+native boundary/control regressions are recorded in `CSS-RULE-CAPACITY.md`.
 
 External source storage has its own aggregate bound. Queries receive the remaining
 aggregate cascade work budget, not a fresh unlimited budget per rule. Unsupported
