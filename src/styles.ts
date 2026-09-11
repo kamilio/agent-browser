@@ -881,21 +881,41 @@ export class DocumentStyles {
 			ReadonlyMap<string, string | null>
 		>();
 		const emptyCustom = new Map<string, string | null>();
+		let unchangedCustom:
+			| {
+					parent: ReadonlyMap<string, string | null>;
+					declarations: readonly CssDeclaration[];
+			  }
+			| undefined;
 		let retainedBindings = 0;
 		let retainedCodeUnits = 0;
 		for (const node of nodes) {
 			const properties = winners.get(node.id);
 			const specified = new Map<string, string>();
+			const customDeclarations: CssDeclaration[] = [];
 			for (const [name, winner] of properties ?? []) {
 				charge(1);
-				if (name.startsWith("--"))
+				if (name.startsWith("--")) {
 					specified.set(name, winner.declaration.value);
+					customDeclarations.push(winner.declaration);
+				}
 			}
 			const parent =
 				node.parent === null
 					? emptyCustom
 					: (customComputed.get(node.parent) ?? emptyCustom);
-			const values = resolveCustomProperties(specified, parent, charge);
+			const unchanged =
+				unchangedCustom?.parent === parent &&
+				unchangedCustom.declarations.length === customDeclarations.length &&
+				customDeclarations.every((declaration, index) => {
+					charge(1);
+					return declaration === unchangedCustom?.declarations[index];
+				});
+			const values = unchanged
+				? parent
+				: resolveCustomProperties(specified, parent, charge);
+			if (specified.size && values === parent)
+				unchangedCustom = { parent, declarations: customDeclarations };
 			if (values !== parent) {
 				retainedBindings += values.size;
 				for (const [name, value] of values)

@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 one-entry unchanged custom-declaration reuse passes 6689
+selected native tests across 112 explicit files with the documented exceptions.
+CUSTOM-NOOP-REUSE.md records the failing work-cap baseline and exact parent plus
+declaration identity matching, without new retained result maps or higher limits.
+The repeated MDN capture and independent CERN live click flow have separate
+evidence; complete those reviews and continue the outstanding broader goals.
+
 September 11, 2026 MDN replay after custom-map sharing reaches a later cascade
 work failure in repeated charged value comparison, with no committed document.
 MDN-CUSTOM-MAP-SHARING-REPLAY.md records the separate failed navigation and clean

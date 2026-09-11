@@ -161,6 +161,33 @@ it("does not retain duplicate inherited theme maps across wildcard redeclaration
 	expect(read("--theme")).toBe("red");
 });
 
+it("bounds repeated unchanged variable resolution without retaining a result cache", () => {
+	const payload = "token".repeat(500);
+	const { tree, id } = fixture(
+		`#parent{--theme:${payload};--alias:var(--theme)}#parent *{--alias:var(--theme)}`,
+		`<div id=target></div>${"<span></span>".repeat(200)}`,
+	);
+	const limited = new DocumentStyles(tree, { maxWork: 150_000 });
+	expect(limited.custom(id(), "--alias")).toBe(payload);
+	expect(limited.metrics().work).toBeLessThan(150_000);
+	limited.close();
+});
+
+it("keys unchanged declaration reuse by both parent values and winning declarations", () => {
+	const { tree, id, styles } = fixture(
+		"#parent{--theme:red;--alias:red}.same{--alias:var(--theme)}.different{--alias:blue}#blue{--theme:blue}",
+		"<span id=target class=same></span><span id=different class=different></span><section id=blue><span id=inside class=same></span></section><span id=after class=same></span>",
+	);
+	expect(styles.custom(id(), "--alias")).toBe("red");
+	expect(styles.custom(id("#different"), "--alias")).toBe("blue");
+	expect(styles.custom(id("#inside"), "--alias")).toBe("blue");
+	expect(styles.custom(id("#after"), "--alias")).toBe("red");
+	tree.setAttribute(id("#parent"), "style", "--theme:green;--alias:green");
+	expect(styles.custom(id(), "--alias")).toBe("green");
+	expect(styles.custom(id("#inside"), "--alias")).toBe("blue");
+	expect(styles.custom(id("#after"), "--alias")).toBe("green");
+});
+
 it.each([
 	["var(--value)", { "--value": "red" }, "red"],
 	["var(--missing, blue)", {}, "blue"],
