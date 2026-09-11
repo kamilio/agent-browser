@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026,20:31 UTC: fresh native SQLite documentation probe uses the
+audited9859-pass table-foundation runtime. Three original-resource HTTP200 GETs
+commit the page, but one genuine Getting Started click fails the formatting guard
+(11 floats,3 presentation hints,1 overflow); destination is not requested. The SVG
+banner resource is fetched but decoding remains unsupported. `SQLITE-NATIVE-FLOW.md`
+retains raw evidence; parent verifies43 checks, both ledgers and3 body hashes.
+Attempted-host inventory is63, not working-site coverage. No challenge bypass,
+retry, script/credential/device probe or full-site acceptance is claimed. Table
+document layout and the broader browser/research/credential gates remain open.
+
 September 11, 2026 TESTPAGES-CLEAR-REPLAY.md verifies the committed9677 build
 against two untouched captures:2 native/mock responses,0 wire and no new host.
 Clear issues fall4 to0 with0 active floats; sampled e2606 still computes clear:both,

@@ -1,5 +1,17 @@
 # Website test expansion — September 11, 2026
 
+**Fresh SQLite flow, 20:31 UTC:** `SQLITE-NATIVE-FLOW.md` adds
+`www.sqlite.org`, bringing the attempted-host inventory to **63**, not 63 working
+sites. Three actual native/wire GETs return200 for the documentation page, its
+original CSS and SVG banner; no challenge, redirect or retry is observed. The
+page commits, but one genuine Getting Started link click fails the formatting
+guard; its destination is not requested. Active issues are11 floats,3 HTML
+presentation hints and1 overflow. External-SVG image decoding remains separately
+unsupported. All43 evidence checks, both receipt ledgers and3 body digests verify;
+cleanup is complete. The audited9859-pass table-foundation runtime is used, not
+the parallel in-progress table document integration. Earlier measurements below
+retain their original scopes and counts.
+
 **Fresh RFC Editor flow, 18:38 UTC:** `RFC-EDITOR-NATIVE-FLOW.md` adds
 `www.rfc-editor.org`, bringing the attempted-host inventory to **62**. Two actual
 native/wire GETs return200 for RFC9110 and its original empty local stylesheet;
