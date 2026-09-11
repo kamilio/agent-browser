@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11,2026,23:25 UTC: authored CSS font-weight now computes numeric and
+relative values separately from the native family's two actual400/700 bitmap
+faces. Body text, native control captions and inside/outside numeric markers
+paint the selected face; inline normal/bold keywords stay distinct from computed
+400/700. Source requirements and bounded rendering limits are in
+`FONT-WEIGHT.md` and `FONT-WEIGHT-SOURCE.md`. The sealed native-font-weight-
+september11-round01 gate passes build/strict/format and11025 native checks with
+2 unchanged exclusions,189 selected/188 strict/586 manifest,195 new tests,
+1075 source/1916 compiled and1061 unchanged tracked inputs. Two dirty production
+residuals are excluded and verified unchanged. A real checkbox regression fails
+on clean old production and passes with normal-weight support; regular raster
+behavior and resource bounds remain verified. This does not solve every layout
+gate: the old10715 captured introduction replay proves1 float and3 overflow
+blockers in addition to1 applicable CSS property. New-release live introduction
+retesting remains separate and pending. Keep the full website/performance goal
+active; no credentials, SafeJS/device/TTY acceptance or challenge bypass inferred.
+
 September 11,2026,22:54 UTC: the fresh native OpenBSD FAQ-to-introduction flow
 now succeeds on10715 release8936f29. One genuine discovered-anchor click commits
 the HTTP200 destination;4 actual GETs transfer38561 bytes with no mock, retry,

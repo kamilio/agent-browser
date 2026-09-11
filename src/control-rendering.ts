@@ -1,4 +1,8 @@
-import { bitmapFont, bitmapGlyph } from "./bitmap-font.js";
+import {
+	bitmapFont,
+	bitmapGlyph,
+	type BitmapFontWeight,
+} from "./bitmap-font.js";
 import { layoutControlText } from "./control-text-layout.js";
 import {
 	controlChecked,
@@ -304,7 +308,13 @@ export function rasterizeControl(
 	height: number,
 	paint: PaintStyle,
 	charge: (amount: number) => void,
+	weight: BitmapFontWeight = 400,
 ) {
+	if (weight !== 400 && weight !== 700)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Unregistered bitmap font weight",
+		);
 	const columns = Math.ceil(width);
 	const rows = Math.ceil(height);
 	if (
@@ -368,7 +378,7 @@ export function rasterizeControl(
 				controlSelectionBackground,
 			);
 		for (const glyph of textLayout.glyphs) {
-			if (!bitmapGlyph(glyph.character).supported)
+			if (!bitmapGlyph(glyph.character, weight).supported)
 				throw new AgentBrowserError(
 					"unsupported",
 					"Control caption glyph is not supported",
@@ -380,6 +390,7 @@ export function rasterizeControl(
 				glyph.y,
 				control.fontSize,
 				foreground,
+				weight,
 			);
 		}
 		if (textLayout.caret)
@@ -486,7 +497,7 @@ export function rasterizeControl(
 				let horizontal = start;
 				for (const character of caption) {
 					if (horizontal + advance > end) break;
-					if (!bitmapGlyph(character).supported)
+					if (!bitmapGlyph(character, weight).supported)
 						throw new AgentBrowserError(
 							"unsupported",
 							"Control caption glyph is not supported",
@@ -498,6 +509,7 @@ export function rasterizeControl(
 						vertical,
 						control.fontSize,
 						foreground,
+						weight,
 					);
 					horizontal += advance;
 				}
@@ -523,7 +535,7 @@ export function rasterizeControl(
 			if (horizontal + advance > columns - (control.kind === "select" ? 18 : 6))
 				break;
 			if (vertical + control.fontSize > rows - 4) break;
-			if (!bitmapGlyph(character).supported)
+			if (!bitmapGlyph(character, weight).supported)
 				throw new AgentBrowserError(
 					"unsupported",
 					"Control caption glyph is not supported",
@@ -535,6 +547,7 @@ export function rasterizeControl(
 				vertical,
 				control.fontSize,
 				foreground,
+				weight,
 			);
 			horizontal += advance;
 		}

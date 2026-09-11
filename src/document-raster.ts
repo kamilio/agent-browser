@@ -30,6 +30,7 @@ import {
 } from "./editable-selection.js";
 import { AgentBrowserError } from "./errors.js";
 import { activeFocus } from "./focus.js";
+import { matchFontWeight } from "./font-weight.js";
 import { resolveVisualTarget } from "./generated-controls.js";
 import { layoutContentItems } from "./layout-paint-order.js";
 import { layoutNumber } from "./layout-values.js";
@@ -460,7 +461,10 @@ function paintDocumentLayout(
 			metrics.transparentGlyphs++;
 			return;
 		}
-		const ink = bitmapGlyph(glyph.character).ink;
+		const weight = matchFontWeight(
+			Number(nodes[glyph.formattingId].typography?.["font-weight"] ?? "400"),
+		);
+		const ink = bitmapGlyph(glyph.character, weight).ink;
 		if (ink.width === 0 || ink.height === 0) {
 			metrics.blankGlyphs++;
 			return;
@@ -490,6 +494,7 @@ function paintDocumentLayout(
 			originY,
 			glyph.fontSize,
 			color,
+			weight,
 		);
 		metrics.paintedGlyphs++;
 	};
@@ -565,6 +570,7 @@ function paintDocumentLayout(
 						used.contentHeight,
 						(node.paint ?? initialPaintStyle).color,
 						charge,
+						matchFontWeight(Number(node.typography?.["font-weight"] ?? "400")),
 					)
 				: node.control
 					? rasterizeControl(
@@ -573,6 +579,9 @@ function paintDocumentLayout(
 							used.contentHeight,
 							node.paint ?? initialPaintStyle,
 							charge,
+							matchFontWeight(
+								Number(node.typography?.["font-weight"] ?? "400"),
+							),
 						)
 					: node.svg
 						? rasterizeSvgScene(
@@ -624,6 +633,7 @@ function paintDocumentLayout(
 					marker.height,
 					(node.paint ?? initialPaintStyle).color,
 					charge,
+					matchFontWeight(Number(node.typography?.["font-weight"] ?? "400")),
 				),
 				originX,
 				originY,

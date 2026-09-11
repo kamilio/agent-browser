@@ -191,8 +191,8 @@ it("reports unsupported whitespace/alignment, bounds computed sizes and expands 
 	);
 	expect(styles.metrics().issues).toMatchObject({
 		"unimplemented-or-invalid-css-value": 2,
-		"unimplemented-css-property": 1,
 	});
+	expect(styles.metrics().issues["unimplemented-css-property"]).toBeUndefined();
 	expect(() => fixture("#target{font-size:1e20px}").text()).toThrow(
 		"length limit",
 	);
@@ -205,7 +205,7 @@ it("reports unsupported whitespace/alignment, bounds computed sizes and expands 
 		values.filter(({ property }) =>
 			(cssTextProperties as readonly string[]).includes(property),
 		),
-	).toHaveLength(6);
+	).toHaveLength(7);
 });
 
 it("accepts typography through the same inline declaration validation", () => {

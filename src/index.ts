@@ -540,6 +540,7 @@ export {
 	bitmapFontMetrics,
 	bitmapGlyph,
 	type BitmapGlyph,
+	type BitmapFontWeight,
 } from "./bitmap-font.js";
 export {
 	createRaster,

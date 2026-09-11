@@ -1,8 +1,10 @@
+import { computeFontWeight, parseFontWeight } from "./font-weight.js";
 import { layoutNumber } from "./layout-values.js";
 
 export const cssTextProperties = Object.freeze([
 	"font-family",
 	"font-size",
+	"font-weight",
 	"line-height",
 	"white-space",
 	"overflow-wrap",
@@ -16,6 +18,7 @@ export type TextSpecifiedStyle = Readonly<
 export const initialTextStyle: TextStyle = Object.freeze({
 	"font-family": '"agent mono"',
 	"font-size": "16px",
+	"font-weight": "400",
 	"line-height": "normal",
 	"white-space": "normal",
 	"overflow-wrap": "normal",
@@ -45,6 +48,7 @@ export function parseTextValue(
 	value: string,
 ): string | undefined {
 	if (wide.has(value)) return value;
+	if (property === "font-weight") return parseFontWeight(value);
 	if (property === "overflow-wrap")
 		return ["normal", "break-word", "anywhere"].includes(value)
 			? value
@@ -90,6 +94,10 @@ export function computeTextStyle(
 		if (value === "initial") result[property] = initialTextStyle[property];
 		else if (value !== "inherit" && value !== "unset") result[property] = value;
 	}
+	result["font-weight"] = computeFontWeight(
+		result["font-weight"],
+		parent["font-weight"],
+	);
 	const pixels = (value: string, relative: number, rootSize = rootFontSize) => {
 		const parsed = length.exec(value);
 		if (!parsed) return value;

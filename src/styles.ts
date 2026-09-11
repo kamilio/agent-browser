@@ -89,6 +89,7 @@ import {
 	isCssTextProperty,
 } from "./css-text.js";
 import { documentBaseUrl } from "./document-url.js";
+import { bitmapFont } from "./bitmap-font.js";
 import { cssMediaLimits, type MediaViewport } from "./css-media.js";
 import {
 	type ColorSchemePreference,
@@ -847,7 +848,8 @@ export class DocumentStyles {
 			tableProperties: cssTableProperties,
 			outlineProperties: cssOutlineProperties,
 			textProperties: cssTextProperties,
-			textFont: "Agent Mono",
+			textFont: bitmapFont.family,
+			textFontWeights: bitmapFont.weights,
 			paintProperties: cssPaintProperties,
 			paintColorSpace: "srgb-8bit",
 			customProperties: "unregistered-bounded-substitution",

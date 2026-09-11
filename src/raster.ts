@@ -1,4 +1,9 @@
-import { bitmapFont, bitmapFontMetrics, bitmapGlyph } from "./bitmap-font.js";
+import {
+	bitmapFont,
+	bitmapFontMetrics,
+	bitmapGlyph,
+	type BitmapFontWeight,
+} from "./bitmap-font.js";
 import { AgentBrowserError } from "./errors.js";
 import { layoutNumber } from "./layout-values.js";
 
@@ -189,12 +194,13 @@ export function paintBitmapGlyph(
 	originY: number,
 	fontSize = 16,
 	color: Rgba = [0, 0, 0, 255],
+	weight: BitmapFontWeight = 400,
 ): boolean {
 	validateRaster(image);
 	colorValue(color);
 	layoutNumber(originX, true);
 	layoutNumber(originY, true);
-	const glyph = bitmapGlyph(character);
+	const glyph = bitmapGlyph(character, weight);
 	const { scale } = bitmapFontMetrics(fontSize);
 	for (let row = 0; row < bitmapFont.glyphHeight; row++)
 		for (let column = 0; column < bitmapFont.glyphWidth; column++)

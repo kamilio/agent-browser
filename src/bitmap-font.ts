@@ -1,5 +1,7 @@
 import { AgentBrowserError } from "./errors.js";
 
+export type BitmapFontWeight = 400 | 700;
+
 export interface BitmapGlyph {
 	character: string;
 	supported: boolean;
@@ -9,6 +11,7 @@ export interface BitmapGlyph {
 
 export const bitmapFont = Object.freeze({
 	family: "Agent Mono",
+	weights: Object.freeze([400, 700] as const),
 	unitsPerEm: 8,
 	glyphWidth: 5,
 	glyphHeight: 8,
@@ -158,7 +161,23 @@ const glyphs = new Map(
 glyphs.set("\u00a0", makeGlyph("\u00a0", patterns[" "], true));
 const replacement = makeGlyph("\ufffd", [31, 17, 21, 17, 21, 17, 31, 0], false);
 
-export function bitmapGlyph(character: string): Readonly<BitmapGlyph> {
+function makeBoldGlyph(glyph: Readonly<BitmapGlyph>): Readonly<BitmapGlyph> {
+	return makeGlyph(
+		glyph.character,
+		glyph.rows.map((row) => row | (row >> 1)),
+		glyph.supported,
+	);
+}
+
+const boldGlyphs = new Map(
+	[...glyphs].map(([character, glyph]) => [character, makeBoldGlyph(glyph)]),
+);
+const boldReplacement = makeBoldGlyph(replacement);
+
+export function bitmapGlyph(
+	character: string,
+	weight: BitmapFontWeight = 400,
+): Readonly<BitmapGlyph> {
 	if (
 		typeof character !== "string" ||
 		character.length < 1 ||
@@ -169,7 +188,14 @@ export function bitmapGlyph(character: string): Readonly<BitmapGlyph> {
 			"invalid-input",
 			"A single code point is required for a bitmap glyph",
 		);
-	return glyphs.get(character) ?? replacement;
+	if (weight !== 400 && weight !== 700)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Unregistered bitmap font weight",
+		);
+	return weight === 400
+		? (glyphs.get(character) ?? replacement)
+		: (boldGlyphs.get(character) ?? boldReplacement);
 }
 
 export function bitmapFontMetrics(fontSize = 16) {
