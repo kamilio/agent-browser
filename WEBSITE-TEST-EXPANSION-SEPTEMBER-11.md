@@ -35,6 +35,22 @@ All37 offline verification checks pass, including settled zero-resource cleanup.
 This establishes a native compatibility issue after fixing harness admission,
 without rewriting either earlier failed run or adding new hostnames.
 
+`SELENIUM-FORMATTING-DIAGNOSTIC.md` replays those same three captures offline,
+with zero wire requests. Native formatting identifies three coordinated Flex
+placeholders, one hidden-overflow file input, four floated checkbox/radio controls
+and two unsupported color/range inputs. Aggregate CSS parser diagnostics remain
+separate from active-node counts; the width guard also treats those diagnostics
+as fatal. All29 evidence checks pass, but this is diagnosis, not form acceptance.
+
+`PYTHON-DOCS-QUEUED-FLOW.md` records a fresh live run on the corrected native
+request scheduler with the original concurrency cap of one. Seven native/wire
+requests return200, the index commits, and the native Tutorial link is discovered.
+Its genuine click fails at the formatting-profile boundary; no destination is
+requested. The wrapper only forwards the underlying limits, without a harness
+queue. All39 original and82 additive evidence checks pass; final queue/session
+resources are zero. The original admission failure is preserved. Neither this
+run nor the Selenium diagnostic adds an attempted hostname.
+
 ## Existing host replay
 
 `MDN-POSITIONING-REPLAY.md` records one offline native click against all nineteen
@@ -46,11 +62,11 @@ boundary, and it is not an additional live website request.
 
 ## Next acceptance work
 
-- Diagnose Selenium's active formatting issues using unchanged captured HTML/CSS;
+- Resolve measured Selenium formatting gaps without discarding original CSS;
   preserve the real submit-click failure and test changed choices separately.
-- Investigate Python documentation's shared stylesheet/image request admission
-  under the original concurrency cap; distinguish scheduling from layout failure.
-- Implement genuine outside markers with block children, not marker removal or an
-  inside-marker substitution, then repeat unchanged-capture MDN validation.
+- Diagnose Python documentation's remaining formatting/image failures against
+  unchanged captures; scheduling success does not establish layout acceptance.
+- Repeat unchanged-capture MDN validation after the genuine outside-marker
+  implementation; do not replace markers or infer site success from native tests.
 - Keep request, parsing, CSS, runtime, geometry, interaction, content and cleanup
   outcomes separate. Green native regressions are not public-site acceptance.

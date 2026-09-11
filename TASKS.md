@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 PYTHON-DOCS-QUEUED-FLOW.md verifies seven fresh native/wire
+HTTP200 requests at unchanged underlying/advertised concurrency1. The index
+commits and native Tutorial discovery succeeds; its genuine click fails at the
+formatting-profile boundary, with no destination request. All39 original and82
+additive checks pass and queue/session cleanup is zero. Parent verifies both
+receipt ledgers. SELENIUM-FORMATTING-DIAGNOSTIC.md replays three unchanged
+captures with zero wire requests: three coordinated Flex placeholders, hidden
+overflow on the file input, four floated checkbox/radio controls and unsupported
+color/range inputs are distinct from aggregate CSS parser diagnostics. All29
+evidence checks and both ledgers verify. Neither is full-flow acceptance; the
+attempted-host count remains58. Python formatting diagnosis is next, while old
+admission and submit-click failures retain their original reports and measurements.
+
 September 11, 2026 SELENIUM-PUBLIC-CSS-FLOW.md completes normal bounded admission
 for original native-loader public HTTPS stylesheets. Three GETs return200; the
 native document commits, text fill succeeds, and genuine submit click fails at
