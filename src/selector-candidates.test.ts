@@ -365,6 +365,227 @@ it.each([
 	},
 );
 
+it("prunes empty same-element intersections with every MDN key present", () => {
+	const { tree, queries: reference } = fixture(
+		`<main class=baseline-indicator>${"<div>".repeat(96)}${"<span></span>".repeat(192)}${"</div>".repeat(96)}</main><aside>${"<p class=discouraged></p>".repeat(36)}${"<p class=removing></p>".repeat(2)}</aside>`,
+	);
+	const selector =
+		":is(.baseline-indicator.discouraged,.baseline-indicator.removing) *";
+	for (const key of [".baseline-indicator", ".discouraged", ".removing"])
+		expect(reference.querySelector(key)).not.toBeNull();
+	expect(reference.querySelectorAll(selector)).toEqual([]);
+	const queries = new DocumentQueries(tree, { maxWork: 20_000 });
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expect(() => queries.matchingSpecificities(selector, 1)).toThrow(
+			"work limit",
+		);
+		expect([...queries.matchingSpecificities(selector)]).toEqual([]);
+		expect(queries.metrics().lastWork).toBeLessThan(20_000);
+	}
+});
+
+it.each([
+	[
+		":is(.baseline-indicator.discouraged,.baseline-indicator.removing) > .leaf",
+		["outside"],
+		[0, 3, 0],
+	],
+	[
+		":is(#absent,.baseline-indicator.discouraged) > .leaf",
+		["outside"],
+		[1, 1, 0],
+	],
+	[":where(.baseline-indicator.discouraged) > .leaf", ["outside"], [0, 1, 0]],
+	[".baseline-indicator .discouraged", ["first"], [0, 2, 0]],
+	[".active .discouraged", ["first"], [0, 2, 0]],
+	["main#root.baseline-indicator > .leaf", ["first", "second"], [1, 2, 1]],
+	["main#other.baseline-indicator > .leaf", [], [1, 2, 1]],
+	[
+		":is(main#other.baseline-indicator,aside#other.discouraged) > .leaf",
+		["outside"],
+		[1, 2, 1],
+	],
+	[
+		".baseline-indicator:not(.discouraged) > .leaf",
+		["first", "second"],
+		[0, 3, 0],
+	],
+	[
+		".baseline-indicator:not(.removing) > .leaf",
+		["first", "second", "outside"],
+		[0, 3, 0],
+	],
+	[
+		".baseline-indicator:is(.active,.discouraged) > .leaf",
+		["first", "second", "outside"],
+		[0, 3, 0],
+	],
+	[
+		".baseline-indicator:nth-child(1 of .active,.discouraged) > .leaf",
+		["first", "second"],
+		[0, 4, 0],
+	],
+	[
+		".baseline-indicator:has(+ aside.discouraged) > .leaf",
+		["first", "second"],
+		[0, 3, 1],
+	],
+	[".discouraged:has(+ .removing)", ["first"], [0, 2, 0]],
+	[
+		".baseline-indicator:not(:has(> .removing)) > .leaf",
+		["outside"],
+		[0, 3, 0],
+	],
+] as const)(
+	"keeps same-compound availability conservative for %s",
+	(selector, names, specificity) => {
+		const { queries, id } = fixture(
+			'<main id=root class="baseline-indicator active"><p id=first class="discouraged leaf"></p><p id=second class="removing leaf"></p></main><aside id=other class="baseline-indicator discouraged"><span id=outside class=leaf></span></aside>',
+		);
+		const expected = names.map((name) => id(`#${name}`));
+		for (let repeat = 0; repeat < 2; repeat++)
+			expectSelection(queries, selector, expected, specificity);
+	},
+);
+
+it("refreshes compound intersections after mutation, reparenting and reconnection", () => {
+	const { tree, queries, id } = fixture(
+		"<main id=first class=baseline-indicator><span id=inside class=leaf></span></main><aside id=second class=discouraged><span id=outside class=leaf></span></aside><div class=discouraged></div>",
+	);
+	const first = id("#first");
+	const second = id("#second");
+	const inside = id("#inside");
+	const outside = id("#outside");
+	const selector = ":is(#absent,.baseline-indicator.discouraged) > .leaf";
+	const check = (expected: readonly number[]) =>
+		expectSelection(queries, selector, expected, [1, 1, 0]);
+	check([]);
+	tree.setAttribute(first, "class", "baseline-indicator discouraged");
+	check([inside]);
+	tree.setAttribute(first, "class", "baseline-indicator");
+	check([]);
+	tree.setAttribute(second, "class", "baseline-indicator discouraged");
+	check([outside]);
+	tree.append(second, inside);
+	check([outside, inside]);
+	tree.remove(second);
+	check([]);
+	tree.append(first, second);
+	check([outside, inside]);
+	tree.setAttribute(second, "class", "discouraged");
+	check([]);
+	tree.setAttribute(second, "id", "absent");
+	check([outside, inside]);
+});
+
+it("checks all duplicate ID candidates for a type and class intersection", () => {
+	const { queries, id } = fixture(
+		"<div id=shared class=ready><span id=wrong></span></div><main id=shared><span id=plain></span></main><main id=shared class=ready><span id=target></span></main>",
+	);
+	for (let repeat = 0; repeat < 2; repeat++)
+		expectSelection(
+			queries,
+			":is(#absent,main#shared.ready) > span",
+			[id("#target")],
+			[1, 1, 2],
+		);
+});
+
+it("keeps compound type intersections HTML-folded and foreign-exact", () => {
+	const { tree, queries, id } = fixture(
+		"<main><lineargradient class=paint><span id=html-child></span></lineargradient></main><svg id=svg></svg><math id=math></math>",
+	);
+	const gradient = tree.createParserElement(
+		"linearGradient",
+		{ id: "svg-gradient", class: "paint" },
+		svgNamespace,
+	);
+	const svgChild = tree.createParserElement("a", {}, svgNamespace);
+	const math = tree.createParserElement(
+		"Mi",
+		{ class: "paint" },
+		mathmlNamespace,
+	);
+	const mathChild = tree.createParserElement("mo", {}, mathmlNamespace);
+	tree.append(id("#svg"), gradient);
+	tree.append(gradient, svgChild);
+	tree.append(id("#math"), math);
+	tree.append(math, mathChild);
+	const htmlChild = id("#html-child");
+	for (const [selector, expected, specificity] of [
+		[":is(linearGradient.paint) > *", [htmlChild, svgChild], [0, 1, 1]],
+		[":is(lineargradient.paint) > *", [htmlChild], [0, 1, 1]],
+		[":is(LINEARGRADIENT.paint) > *", [htmlChild], [0, 1, 1]],
+		[":is(linearGradient#svg-gradient.paint) > *", [svgChild], [1, 1, 1]],
+		[":is(LINEARGRADIENT#svg-gradient.paint) > *", [], [1, 1, 1]],
+		[":is(Mi.paint) > *", [mathChild], [0, 1, 1]],
+		[":is(mi.paint,MI.paint) > *", [], [0, 1, 1]],
+	] as const)
+		for (let repeat = 0; repeat < 2; repeat++)
+			expectSelection(queries, selector, expected, specificity);
+});
+
+it("uses a complete type index to check compounds when the class index is capped", () => {
+	const tokens = Array.from(
+		{ length: 600 },
+		(_value, index) => `token-${index}`,
+	).join(" ");
+	const { tree, id } = fixture(
+		`<div class="${tokens}"></div><main class=left>${"<div>".repeat(96)}${"<span></span>".repeat(192)}${"</div>".repeat(96)}</main><aside class="left right"><span id=target></span></aside>`,
+	);
+	const target = id("#target");
+	const queries = new DocumentQueries(tree, {
+		maxIndexedNodes: tree.nodeCount,
+	});
+	expect([...queries.matchingSpecificities(".token-0").keys()]).toHaveLength(1);
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expect([
+			...queries.matchingSpecificities(":is(main.left.right) *", 20_000),
+		]).toEqual([]);
+		expect(queries.metrics().lastWork).toBeLessThan(20_000);
+		expectSelection(
+			queries,
+			":is(aside.left.right) > span",
+			[target],
+			[0, 2, 2],
+		);
+		expect(queries.metrics().candidateIndexedEntries).toBeLessThanOrEqual(
+			tree.nodeCount,
+		);
+	}
+});
+
+it("falls back conservatively when every required compound index is unavailable", () => {
+	const { tree, id } = fixture(
+		'<html id=html><head id=head></head><body id=body><div id=filler class="extra tokens overflow"></div><main id=host class="left right"><span id=target></span></main><aside id=other class=left><span id=outside></span></aside></body></html>',
+	);
+	const target = id("#target");
+	const outside = id("#outside");
+	const queries = new DocumentQueries(tree, {
+		maxIndexedNodes: [...tree.walk()].length,
+	});
+	expectSelection(queries, "#target", [target], [1, 0, 0]);
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expectSelection(
+			queries,
+			":is(main.left.right) > span",
+			[target],
+			[0, 2, 2],
+		);
+		expectSelection(queries, ":is(aside.left.right) > span", []);
+		expectSelection(
+			queries,
+			":is(main.left.right,aside.left) > span",
+			[target, outside],
+			[0, 2, 2],
+		);
+		expect(() =>
+			queries.matchingSpecificities(":is(main.left.right) > span", 1),
+		).toThrow("work limit");
+	}
+	expectSelection(queries, ":is(main.left.right) > span", [target], [0, 2, 2]);
+});
+
 it("keeps logical availability conservative when candidate postings are capped", () => {
 	const tokens = Array.from(
 		{ length: 100 },

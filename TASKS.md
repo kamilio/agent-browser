@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 stylesheet availability now checks same-element positive
+ID/class/type intersections using the smallest complete index, with conservative
+capped-index fallback and unchanged specificity/limits. COMPOUND-AVAILABILITY.md
+records two failing unchanged-code work regressions, 172 focused passes and
+6786 selected native passes across 112 files with the documented exceptions.
+Independently compare complete MDN and Wikipedia captures for correctness and
+work regressions; real grid layout, native clicks and broader goals remain open.
+
 September 11, 2026 paired native MDN replays verify identical ordered node IDs,
 specificities and errors across all 323 stylesheet selector calls. The predicate
 ordering change reduces cascade work from 4790072 to 3991128 (16.68%), not a
