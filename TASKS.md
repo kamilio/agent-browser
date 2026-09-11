@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 CLEAR-WITHOUT-FLOATS.md fixes real native clear behavior when
+no float requires clearance. Computed declarations, geometry, pixels and hit
+ownership remain intact; a genuine cleared-block checkbox fixture now clicks.
+Active floats still retain float and clear guards, with unrelated CSS/layout
+issues unchanged. The3pass/11fail baseline is retained;341 focused and9677 clean
+native cases pass with2 existing exclusions,162 selected/161 strict files and566
+manifest entries. Build/strict/format and independent source review pass. A copied
+untracked legacy test was identified, its temporary edits reversed exactly, and
+the final snapshot excludes it and all unrelated dirty work. Next replay unchanged
+Test Pages content and integrate actual table placement/sizing/layout. Fresh W3C
+tables, CSP image-policy handling, research and broader acceptance remain open.
+
 September 11, 2026 W3C-TABLES-NATIVE-FLOW.md adds a fresh native-only visit to
 the W3C CSS2.2 tables specification on the committed9614 build:3 wire HTTP200s,
 0 mocks/redirects,251ms request spacing and no challenge or retry. The actual

@@ -118,7 +118,6 @@ it.each(
 it.each([
 	["position", "sticky", "static", "position-layout-not-supported"],
 	["float", "left", "none", "float-layout-not-supported"],
-	["clear", "both", "none", "clear-layout-not-supported"],
 	["overflow", "hidden", "visible", "overflow-layout-not-supported"],
 ])(
 	"recovers geometry and capture after resetting %s",
@@ -142,6 +141,20 @@ it.each([
 		);
 	},
 );
+
+it("preserves clear geometry and capture without an active float", () => {
+	const { tree, style, computed, id } = fixture();
+	const geometry = documentGeometry(tree);
+	const before = geometry.getBoundingClientRect(id());
+	style.setProperty("clear", "both");
+	expect(style.getPropertyValue("clear")).toBe("both");
+	expect(computed.getPropertyValue("clear")).toBe("both");
+	expect(buildFormattingTree(tree).issues).toEqual({});
+	expect(geometry.getBoundingClientRect(id())).toEqual(before);
+	expect(rasterizeDocument(tree).metrics.paintedBackgrounds).toBeGreaterThan(0);
+	style.setProperty("clear", "none");
+	expect(geometry.getBoundingClientRect(id())).toEqual(before);
+});
 
 it("ignores overridden, unmatched and display-none unsupported flow", () => {
 	const { tree, computed } = fixture(

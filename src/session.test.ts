@@ -1193,6 +1193,36 @@ it("loads a large integrity-protected utility stylesheet before a genuine checkb
 	]);
 });
 
+it("genuinely clicks a checkbox inside a float-free cleared block", async () => {
+	const { session, requests } = fixture(
+		{ loadDocument: loadBrowserDocument },
+		async (input) =>
+			response(input.url, {
+				headers: { "content-type": ["text/html"] },
+				body: new TextEncoder().encode(
+					'<!doctype html><form><div style="clear:both"><input id=target type=checkbox></div></form>',
+				),
+			}),
+	);
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	const page = session.page(tab);
+	const target = page.queries.querySelector("#target");
+	if (target === null) throw new Error("Missing cleared-block checkbox");
+	const events: string[] = [];
+	for (const type of ["mousedown", "mouseup", "click", "input", "change"])
+		page.interactions.events.addEventListener(target, type, (event) => {
+			expect(event.target).toBe(target);
+			events.push(type);
+		});
+	expect(controlChecked(page.document, target)).toBe(false);
+	await session.click(tab, page.document.reference(target));
+	expect(controlChecked(page.document, target)).toBe(true);
+	expect(events).toEqual(["mousedown", "mouseup", "click", "input", "change"]);
+	expect(requests).toHaveLength(1);
+	session.close();
+});
+
 it("navigates through a genuinely clicked native SVG path inside an HTML link", async () => {
 	const { session, requests } = fixture(
 		{ loadDocument: loadBrowserDocument },

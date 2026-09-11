@@ -556,6 +556,7 @@
   "src/svg-path-bounds.test.ts",
   "src/svg-scene.test.ts",
   "src/svg-document.test.ts",
+  "src/clear-layout.test.ts",
   "src/text-font.test.ts",
   "src/text-locator.test.ts",
   "src/trace-export.test.ts",

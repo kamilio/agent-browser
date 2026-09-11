@@ -209,6 +209,7 @@ export function buildFormattingTree(
 	let visitedDomNodes = 0;
 	let deferredSubtrees = 0;
 	let outsideMarkers = 0;
+	let clearanceRequests = 0;
 	const renderedListItems = new Set<number>();
 	const numericMarkers: { node: number; item: number; outside: boolean }[] = [];
 	const charge = (units = 1) => {
@@ -376,7 +377,7 @@ export function buildFormattingTree(
 			itemMode = undefined;
 		}
 		if (flow.float !== "none") issue("float-layout-not-supported");
-		if (flow.clear !== "none") issue("clear-layout-not-supported");
+		if (flow.clear !== "none") clearanceRequests++;
 		const svgClipping =
 			embeddedSvg &&
 			["hidden", "clip"].includes(flow["overflow-x"]) &&
@@ -942,6 +943,8 @@ export function buildFormattingTree(
 	};
 	const children: number[] = [];
 	for (const child of rootChildren) append(children, visit(child, 1));
+	if (clearanceRequests && issues["float-layout-not-supported"])
+		issues["clear-layout-not-supported"] = clearanceRequests;
 	normalizeChildren(root, children);
 	if (numericMarkers.length) {
 		const boxProducers = new Set([tree.root]);
