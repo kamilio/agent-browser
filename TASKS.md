@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 native-only research adds four bounded live requests: Camoufox
+README, Hugging Face quantization documentation and RFC9110 return HTTP200;
+the assigned NVIDIA DGX Spark route returns HTTP404. Local replay yields bounded
+architecture and compatibility claims, not measured evasion or a hardware ranking.
+WEBSITE-RESEARCH-SEPTEMBER-11-FOLLOWUP.md preserves exact times, source pins,
+the Camoufox working-tree audit failure and the RFC local harness assertion
+failure alongside their separate followups. Twitter/X Astra chatter and Reddit
+Poe opinions remain unestablished. Continue usable-site discovery and functional
+coverage; no completed research, CAPTCHA bypass or new secrets/passkey gate.
+
 On September 11, 2026 at 05:56 UTC, research handles HTTP429 before primary
 document parsing and blocks later stylesheet dispatch and batch URLs after an
 observed rate limit. Bounded Retry-After advice is reported without sleeping,
