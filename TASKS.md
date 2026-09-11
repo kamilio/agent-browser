@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 WEBSITE-TEST-INVENTORY.md and the compact JSON inventory record
+54 substantiated native-request hostnames, not 54 passing websites: twelve in the
+browser/interaction corpus and 42 additional research/source/failed-attempt hosts.
+The audit retains nineteen unattributed historical reports rather than guessing
+their hosts. Seventeen proposed new targets plus an owned challenge fixture form
+the next coverage queue. Record fetch, parse, runtime, layout, genuine actions
+and cleanup separately; current MDN and broader acceptance gaps remain open.
+
 September 11, 2026 LIST-ITEM-LAYOUT.md adds genuine marker-free and supported
 symbolic list-item formatting, geometry, painting and hits without summary
 activation or discarded markers. Counters, ambiguous ordered-list defaults and
