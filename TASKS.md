@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11,2026,21:48 UTC: parent verifies four native CSS primary-source
+visits,4 actual GETs and8 offline native heading sections, with31 named checks
+and all four evidence ledgers intact. `CSS-IMPORT-MODE-SOURCE.md` confirms the
+Cascade4 import caller's style/no-cors arguments; credentials include is a
+separate Values4 algorithm consequence, not inherited HTML crossorigin state.
+Earlier Cascade5, Values and CSSOM reports retain their original unresolved
+boundaries. These repeat already inventoried hosts and use the historical10123
+release, not a live run of the new10335 import implementation. Referrer-policy,
+final-response base assignment, cycle specification and full cross-edition
+algorithm compatibility remain unverified; implementation acceptance gates and
+the broader browser goal stay open. No credentials, scripts or alternate browser
+were used for these bounded source visits.
+
 September 11,2026,21:41 UTC: bounded native stylesheet imports now connect
 original-source parsing, immutable occurrence graphs, document loading and the
 actual cascade. Imports preserve source order, nested media and final-URL bases;

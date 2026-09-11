@@ -27,6 +27,12 @@ the child's environment encoding. Imports use no-cors/include rather than
 inheriting an HTML link's crossorigin state. Primary-source verification is
 recorded separately from execution evidence.
 
+`CSS-IMPORT-MODE-SOURCE.md` records the native-confirmed Cascade4 import caller
+and its no-cors argument. `CSS-IMPORT-REQUEST-SOURCE.md` supplies the separately
+derived credentials consequence from Values4, including the cross-edition
+signature caveat. The earlier Cascade5/CSSOM reports preserve what their extracts
+did not establish. None of these source visits proves browser compliance.
+
 `DocumentStyles.setStylesheetSource` accepts only frozen source graphs produced
 by this loader, authenticated by private weak metadata. It accounts for all
 retained source occurrences against the existing aggregate text/sheet limits.
