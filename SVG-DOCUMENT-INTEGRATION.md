@@ -114,3 +114,20 @@ real unsupported-display-alongside-advisory-media test. Strict test roots also
 retain the previous snapshot-test omission. These limitations are not fixed or
 reclassified by this change. Unchanged captured-site replay and fresh live
 interactions remain separate acceptance evidence.
+
+At19:32:30.734 UTC, a subsequent parent check matches22 review-regression cases
+against the retained pre-review implementation and the already audited release.
+All22 fail on the old implementation and pass in the released gate, with identical
+test bytes;171 unrelated cases are excluded from this narrow reproduction. The
+old-input run is retained as `svg-document-work-september11/fixed04`, with
+`REVIEW-REGRESSION-VERIFICATION.json` recording exact matching names. It is a
+post-fix baseline reproduction, not another release gate or website visit.
+
+The subsequent unchanged-capture website replay is recorded in
+`TESTPAGES-SVG-REPLAY-ROUND02.md`: two native/mock responses, zero wire requests,
+actual SVG scene admission, but the original checkbox click still fails the
+formatting-profile guard. Parent verifies all51 named evidence checks, both
+ledgers, original capture hashes and zero cleanup state. This does not establish
+whole-page raster or pointer acceptance. `TESTPAGES-SVG-REPLAY.md` retains the
+earlier preparation-state note, not the final run status; that first lane's
+metadata-path preflight failed before any browser launch and remains sealed.

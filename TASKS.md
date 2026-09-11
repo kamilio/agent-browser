@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 TESTPAGES-SVG-REPLAY-ROUND02.md tests the committed9614 build
+against the same unchanged Test Pages HTML/CSS captures:2 native/mock responses,
+0 wire and no new host coverage. Actual SVG e87 is now an admitted replaced node
+with viewBox405x116 and3 original shapes; its former unsupported-element warning
+disappears and deferred subtrees drop10 to9. Existing numeric markers remain.
+Fill/select still succeed, but the genuine checkbox click still fails the
+formatting-profile guard. Table-row-group, clear4, overflow5, a presentation hint
+and original CSS diagnostics remain; scene admission is not whole-page rendering
+or pointer acceptance. Census work rises12817 to189762 with SVG parsing under
+unchanged budgets. Parent verifies51 checks, both ledgers, capture hashes and cleanup.
+An initial replay-harness metadata-path failure launched no browser; its evidence
+and lock remain intact, with the corrected run in a new lane. Continue native
+table/layout/CSS work and fresh-site tests; research and broader gates stay open.
+
 September 11, 2026 SVG-DOCUMENT-INTEGRATION.md connects bounded inline SVG scenes
 to actual native replaced layout, viewBox sizing, filled-shape paint, analytic
 descendant geometry and contour-aware hit testing. A real SVG-path fixture click

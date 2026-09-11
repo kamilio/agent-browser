@@ -156,6 +156,21 @@ verifies693 formatting nodes plus70 markers equals763 budgeted boxes, without
 rewriting or repeating the run. Both receipt ledgers verify; no new host or wire
 request is added, and this remains formatting evidence rather than site acceptance.
 
+## Subsequent Test Pages SVG replay — September 11
+
+`TESTPAGES-SVG-REPLAY-ROUND02.md` replays the same unchanged HTML/CSS with the
+committed9614-pass native build. This adds no live visit or hostname: the attempted
+host inventory remains62, not62 working websites. Two captured native/mock
+responses and zero wire requests preserve the original styling and content.
+The actual e87 SVG logo is now a replaced node with three original shapes, not a
+deferred unsupported element; existing numeric markers remain. This is scene
+admission only, not whole-page raster or hit testing. Textarea/select still work
+semantically, while the one genuine checkbox click still fails the formatting
+guard. Table-row-group, clear, overflow, presentation hints and raw CSS diagnostics
+remain actionable testing targets. All51 evidence checks and both ledgers verify,
+with zero cleanup state. The earlier prelaunch metadata failure remains sealed
+and is not counted as a browser run or rewritten as a pass.
+
 ## Next acceptance work
 
 - Resolve measured Selenium formatting gaps without discarding original CSS;
