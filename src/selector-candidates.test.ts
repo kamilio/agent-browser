@@ -43,6 +43,117 @@ function expectSelection(
 	return result;
 }
 
+it.each([
+	[".anchor:has(details)", ["first", "third"]],
+	[".anchor:has(> details)", ["third"]],
+	[".anchor:has(> div details)", ["first"]],
+	[".anchor:has(> div + p)", ["first"]],
+	[".anchor:has(.lead + .tail .needle)", ["first"]],
+	[".anchor:has(:where(details, .needle))", ["first", "third"]],
+	[".anchor:has(:not(*))", []],
+	[".anchor:has([open])", ["third"]],
+	[".anchor:has(+ section)", ["first", "second"]],
+	[".anchor:has(+ section details)", ["second"]],
+	[".anchor:has(~ section details)", ["first", "second"]],
+	[".anchor:has(+ section > details)", ["second"]],
+	[".anchor:has(~ section .needle)", []],
+	[".anchor:has(details, + section details)", ["first", "second", "third"]],
+	[".anchor:has(> details, > p .needle)", ["first", "third"]],
+	[".anchor:has(*)", ["first", "third"]],
+	[".anchor:has(.anchor)", []],
+	[".anchor:not(:has(details))", ["second"]],
+] as const)(
+	"keeps scoped relational candidate semantics for %s",
+	(selector, names) => {
+		const { queries, id } = fixture(
+			"<main><section id=first class=anchor><div class=lead><details></details></div>text<!--gap--><p class=tail><span class=needle></span></p></section><section id=second class=anchor></section><section id=third class=anchor><details open></details></section></main><details open class=needle></details>",
+		);
+		const expected = names.map((name) => id(`#${name}`));
+		for (let repeat = 0; repeat < 2; repeat++)
+			expectSelection(queries, selector, expected);
+	},
+);
+
+it("bounds MDN-style descendant has work without increasing the query budget", () => {
+	const { tree, id } = fixture(
+		`<aside>${"<details></details>".repeat(800)}</aside><main class=content-section><ul class=specifications-list>${"<li><span></span></li>".repeat(500)}<li id=target><details></details></li></ul></main>`,
+	);
+	const queries = new DocumentQueries(tree, { maxWork: 150_000 });
+	const selector =
+		":is(.content-section ul.specifications-list) li:has(details)";
+	const target = id("#target");
+	expect([...queries.matchingSpecificities(selector)]).toEqual([
+		[target, [0, 2, 3]],
+	]);
+	expect(queries.metrics().lastWork).toBeLessThan(150_000);
+	expect(queries.querySelectorAll(selector)).toEqual([target]);
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expect(() => queries.matchingSpecificities(selector, 100)).toThrow(
+			"work limit",
+		);
+		expect([...queries.matchingSpecificities(selector).keys()]).toEqual([
+			target,
+		]);
+	}
+});
+
+it("retains scoped has fallback when candidate postings exceed the index cap", () => {
+	const { tree, id } = fixture(
+		`<main id=target><span class="needle ${Array.from({ length: 100 }, (_, index) => `token-${index}`).join(" ")}"></span></main><main id=empty></main><span class=needle></span>`,
+	);
+	const target = id("#target");
+	const queries = new DocumentQueries(tree, {
+		maxIndexedNodes: tree.nodeCount,
+	});
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expectSelection(queries, "main:has(.needle)", [target], [0, 1, 1]);
+		expect(queries.metrics().candidateIndexedEntries).toBeLessThanOrEqual(
+			tree.nodeCount,
+		);
+	}
+});
+
+it("invalidates relative candidates and subtree bounds after mutations", () => {
+	const { tree, queries, id } = fixture(
+		"<main id=first><details id=leaf class=needle></details></main><main id=second></main>",
+	);
+	const first = id("#first");
+	const second = id("#second");
+	const leaf = id("#leaf");
+	const selector = "main:has(> .needle)";
+	expectSelection(queries, selector, [first]);
+	tree.append(second, leaf);
+	expectSelection(queries, selector, [second]);
+	tree.removeAttribute(leaf, "class");
+	expectSelection(queries, selector, []);
+	tree.setAttribute(leaf, "class", "needle");
+	expectSelection(queries, selector, [second]);
+	tree.remove(leaf);
+	expectSelection(queries, selector, []);
+	tree.append(first, leaf);
+	expectSelection(queries, selector, [first]);
+});
+
+it("preserves HTML-folded and foreign exact type keys inside has", () => {
+	const { tree, queries, id } = fixture(
+		"<main id=html><lineargradient></lineargradient></main><svg id=svg></svg>",
+	);
+	const html = id("#html");
+	const svg = id("#svg");
+	const child = tree.createParserElement("linearGradient", {}, svgNamespace);
+	tree.append(svg, child);
+	expectSelection(queries, ":is(main, svg):has(linearGradient)", [html, svg]);
+	expectSelection(queries, ":is(main, svg):has(lineargradient)", [html]);
+	expectSelection(queries, ":is(main, svg):has(LINEARGRADIENT)", [html]);
+});
+
+it("keeps duplicate descendant IDs local to each relative anchor", () => {
+	const { queries, id } = fixture(
+		"<main id=first><span id=shared></span></main><main id=empty></main><main id=second><span id=shared></span></main><span id=shared></span>",
+	);
+	expectSelection(queries, "main:has(#shared)", [id("#first"), id("#second")]);
+});
+
 it("keeps duplicate IDs and class tokens without duplicating results", () => {
 	const { queries, id } = fixture(
 		'<main><div id=shared class="item item"><span id=shared class=item></span></div><p id=other class=Item></p></main>',

@@ -1217,6 +1217,44 @@ export class DocumentQueries {
 			this.match(id, selector, selector.length - 1, scope, context),
 		);
 	}
+	private hasMatch(
+		anchor: NodeInfo,
+		selectors: Selector[],
+		context: MatchContext,
+	): boolean {
+		for (const selector of selectors) {
+			this.tick(context);
+			const candidates = this.selectorCandidates(selector, context);
+			const relation = selector[1].relation;
+			const descendants = relation === " " || relation === ">";
+			let start = 0;
+			if (descendants) {
+				let end = candidates.length;
+				while (start < end) {
+					this.tick(context);
+					const middle = Math.floor((start + end) / 2);
+					if (candidates[middle].start <= anchor.start) start = middle + 1;
+					else end = middle;
+				}
+			}
+			for (let position = start; position < candidates.length; position++) {
+				this.tick(context);
+				const candidate = candidates[position];
+				if (descendants && candidate.start >= anchor.end) break;
+				if (
+					this.match(
+						candidate.node.id,
+						selector,
+						selector.length - 1,
+						anchor.node.id,
+						context,
+					)
+				)
+					return true;
+			}
+		}
+		return false;
+	}
 	private match(
 		id: number,
 		selector: Selector,
@@ -1274,16 +1312,8 @@ export class DocumentQueries {
 		if (test.kind === "attribute")
 			return this.attributeMatches(node, test, context);
 		if (test.kind === "logical") {
-			if (test.name === "has") {
-				for (const candidate of context.index.elements) {
-					this.tick(context);
-					if (
-						this.matchList(candidate.node.id, test.selectors, node.id, context)
-					)
-						return true;
-				}
-				return false;
-			}
+			if (test.name === "has")
+				return this.hasMatch(info, test.selectors, context);
 			const matched = this.matchList(node.id, test.selectors, scope, context);
 			return test.name === "not" ? !matched : matched;
 		}
