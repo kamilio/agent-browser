@@ -41,6 +41,9 @@ The exact native W3C section research is recorded in `GRID-SPEC-SECTIONS.md`.
 It provides grammar/computation/placement evidence while retaining partial-reader
 limitations. Captured MDN track variables motivate integration tests; a synthetic
 fixture using that syntax is not a replay of the full website or visual evidence.
+The separate `MDN-GRID-CSS-REPLAY.md` records a successful full captured-page CSS
+check against the frozen foundation build, while preserving the Grid formatting
+failure. It does not replay the later font-dependency fix or claim live clicks.
 
 ## Validation
 

@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 MDN-GRID-CSS-REPLAY.md verifies the frozen Grid foundation
+build against all nineteen original MDN responses with zero wire traffic. Native
+computed styles now retain body tracks, nested named tracks/areas and header/body
+placement. Cascade work is 2894159 of the unchanged 5000000 limit; CSS remains
+partial. Formatting still defers body grid and gives no descendant boxes. This
+round01 replay does not validate the subsequent font fix, rendering or clicks.
+The next production step is actual Grid placement, sizing and item reflow.
+
 September 11, 2026 a Grid font-dependency regression is fixed at the tokenizer
 boundary: line/area names resembling em/rem dimensions no longer cause font
 resolution. GRID-CSS.md preserves four failing baseline cases and the subsequent
