@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11,2026,21:43 UTC: the first actual GNU software-page attempt returns
+8 HTTP200 responses but aborts before page commit at the unchanged8-request
+guard. `GNU-NATIVE-FLOW-FOLLOWUP.md` records8 admitted native/transport/wire
+GETs,0 mocks,0 clicks and40 verified evidence checks with both receipt ledgers.
+This is a harness-resource boundary, not a website denial or rendering pass;
+full event/image-owner cleanup evidence is unavailable. The earlier preflight
+path-comparison error remains in `GNU-NATIVE-FLOW.md` with0 network activity.
+Original responses, caps and both historical lanes remain unchanged. GNU adds
+the64th attempted exact hostname, not working-site coverage. This live attempt
+uses the historical10123 release; new10335 import live acceptance remains open.
+Continue with bounded lower-asset public documentation flows and original-page
+CSS/CSP/layout recovery, without silently dropping resources or enlarging a
+completed gate to claim success. The full browser goal remains active.
+
 September 11,2026,21:48 UTC: parent verifies four native CSS primary-source
 visits,4 actual GETs and8 offline native heading sections, with31 named checks
 and all four evidence ledgers intact. `CSS-IMPORT-MODE-SOURCE.md` confirms the

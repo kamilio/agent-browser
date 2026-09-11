@@ -1,5 +1,20 @@
 # Website test expansion — September 11, 2026
 
+**Fresh GNU attempt,21:43 UTC:** `GNU-NATIVE-FLOW-FOLLOWUP.md` adds
+`www.gnu.org`, bringing the attempted-host inventory to **64**, not64 working
+websites. Eight actual GETs return200 for1 HTML document,2 stylesheets and5
+images. A further native adapter entry reaches the unchanged8-request guard;
+there is no ninth wire request. Initial navigation aborts before committing a
+page, so no native title/content classification, geometry or click is established.
+This is a bounded harness-resource failure, not evidence of a website access
+denial or successful rendering. All40 retained evidence checks, both ledgers and
+original response bodies verify; event/image-owner cleanup is not independently
+established because loading fails before that instrumentation returns.
+`GNU-NATIVE-FLOW.md` preserves the earlier preflight path-comparison failure with
+zero browser/wire activity. The corrected first live attempt uses the historical
+10123-pass release, not the subsequently committed10335-pass import build.
+No request-cap bypass, retry, page script or credential access occurs.
+
 **Captured W3C table follow-up,21:07 UTC:** `W3C-TABLE-DOCUMENT-REPLAY.md` uses
 the three unchanged original resources with3 native mocks and0 wire requests.
 The audited10123-pass release retains5 coordinated tables,40 rows and80 cells,
