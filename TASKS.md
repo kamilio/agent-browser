@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 the complete 19-response MDN offline replay now commits a
+native document with all 18 stylesheets and bounded title/main-content evidence.
+MDN-LOGICAL-AVAILABILITY-REPLAY.md records 4790072 cascade-work units under the
+unchanged 5000000 cap, verified receipts and zero pending loads. The previously
+largest selector did not improve: other impossible logical branches account for
+the aligned 366946-unit selector-work reduction. CSS remains partial, and no
+rendering/link activation/live acceptance or broader research completion follows
+from replay. A fresh native link flow is the next separate acceptance check.
+
 September 11, 2026 positive-logical stylesheet availability pruning passes 6737
 selected native cases across 112 files with the documented exceptions.
 LOGICAL-SELECTOR-AVAILABILITY.md records conservative OR/negation handling,
