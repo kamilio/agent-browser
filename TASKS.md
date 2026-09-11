@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 GRID-READER-DIAGNOSIS.md reproduces the W3C loader failure
+without networking: the omitted-subtree stack rejects a list end after implicit
+li endings in an object's HTML fallback. Bounded native token positions and an
+independent file-only source correlation identify the exact construct. Original
+child/evidence and a corrected postflight cleanup defect remain preserved.
+Fix that scoped reader behavior without weakening foreign/omission boundaries,
+then revalidate the captured research flow; Grid implementation stays open.
+
 September 11, 2026 this browser fetches the W3C Grid specification with one
 HTTP200 request, then the native semantic reader fails unsupported at loader.
 GRID-SPEC-NATIVE-RESEARCH.md preserves the 957488-byte capture, failed research
