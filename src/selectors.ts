@@ -796,27 +796,35 @@ export class DocumentQueries {
 		selectors: Selector[],
 		context: MatchContext,
 	): Selector[] {
-		return selectors.filter((selector) => {
-			for (const part of selector)
-				for (const test of part.tests) {
-					this.tick(context);
-					if (
-						test.kind !== "id" &&
-						test.kind !== "class" &&
-						test.kind !== "tag"
+		return selectors.filter((selector) =>
+			this.selectorPossible(selector, context),
+		);
+	}
+	private selectorPossible(selector: Selector, context: MatchContext): boolean {
+		for (const part of selector)
+			for (const test of part.tests) {
+				this.tick(context);
+				if (
+					test.kind === "logical" &&
+					(test.name === "is" ||
+						test.name === "where" ||
+						test.name === "has") &&
+					!test.selectors.some((alternative) =>
+						this.selectorPossible(alternative, context),
 					)
-						continue;
-					if (test.kind === "tag" && test.value === "*") continue;
-					const index = this.candidateIndex(test.kind, context);
-					if (!index) continue;
-					this.tick(context, test.value.length + 1);
-					if (index.has(test.value)) continue;
-					if (test.kind === "tag" && index.has(asciiLower(test.value)))
-						continue;
+				)
 					return false;
-				}
-			return true;
-		});
+				if (test.kind !== "id" && test.kind !== "class" && test.kind !== "tag")
+					continue;
+				if (test.kind === "tag" && test.value === "*") continue;
+				const index = this.candidateIndex(test.kind, context);
+				if (!index) continue;
+				this.tick(context, test.value.length + 1);
+				if (index.has(test.value)) continue;
+				if (test.kind === "tag" && index.has(asciiLower(test.value))) continue;
+				return false;
+			}
+		return true;
 	}
 	private selectorCandidates(
 		selector: Selector,

@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 positive-logical stylesheet availability pruning passes 6737
+selected native cases across 112 files with the documented exceptions.
+LOGICAL-SELECTOR-AVAILABILITY.md records conservative OR/negation handling,
+unchanged nested specificity and limits, plus the preserved failing work-bound
+baseline. Replay the complete captured MDN bundle independently; no fresh live,
+rendering, research or challenge-effectiveness completion is implied.
+
 September 11, 2026 explicit stylesheet admission retrieves MDN's HTML and all
 18 linked stylesheets, but native cascade work still exceeds its unchanged cap.
 MDN-STYLESHEET-BUDGET-LIVE.md preserves that fresh failed flow; the independent

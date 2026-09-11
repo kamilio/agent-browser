@@ -154,6 +154,108 @@ it("keeps duplicate descendant IDs local to each relative anchor", () => {
 	expectSelection(queries, "main:has(#shared)", [id("#first"), id("#second")]);
 });
 
+it("prunes globally absent logical stylesheet ancestors within a small work budget", () => {
+	const { tree } = fixture(
+		`<main class=baseline-indicator>${"<div>".repeat(100)}${"<span></span>".repeat(200)}${"</div>".repeat(100)}</main>`,
+	);
+	const queries = new DocumentQueries(tree, { maxWork: 20_000 });
+	const selector =
+		":is(.baseline-indicator.discouraged,.baseline-indicator.removing) *";
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expect([...queries.matchingSpecificities(selector)]).toEqual([]);
+		expect(queries.metrics().lastWork).toBeLessThan(20_000);
+		expect(() => queries.matchingSpecificities(selector, 1)).toThrow(
+			"work limit",
+		);
+	}
+});
+
+it.each([
+	[":is(.missing, .root) > .leaf", ["leaf"], [0, 2, 0]],
+	[":where(.missing, .root) > .leaf", ["leaf"], [0, 1, 0]],
+	[":is(#missing, .root) > .leaf", ["leaf"], [1, 1, 0]],
+	[":is(.missing, :where(.root)) > .leaf", ["leaf"], [0, 2, 0]],
+	[":is(:not(.missing), .absent).leaf", ["leaf"], [0, 2, 0]],
+	[":not(:is(.missing, .absent)).leaf", ["leaf"], [0, 2, 0]],
+	[".root:has(> .missing, + .other)", ["root"], [0, 2, 0]],
+	[".root:has(> .leaf, .missing)", ["root"], [0, 2, 0]],
+	[".root:has(:is(.missing, .leaf))", ["root"], [0, 2, 0]],
+	[".root:has(:not(.missing))", ["root"], [0, 2, 0]],
+	[":is(.missing, .absent) > *", [], [0, 1, 0]],
+	[":where(:has(.missing))", [], [0, 0, 0]],
+	[".root:has(:is(.missing, .absent))", [], [0, 2, 0]],
+	[".root:nth-child(1 of :is(.root, .missing))", ["root"], [0, 3, 0]],
+] as const)(
+	"preserves logical alternatives, negation and specificity for %s",
+	(selector, names, specificity) => {
+		const { queries, id } = fixture(
+			"<main id=root class=root><p id=leaf class=leaf><span></span></p></main><aside id=outside class=other></aside>",
+		);
+		const expected = names.map((name) => id(`#${name}`));
+		for (let repeat = 0; repeat < 2; repeat++)
+			expectSelection(queries, selector, expected, specificity);
+	},
+);
+
+it("keeps logical availability conservative when candidate postings are capped", () => {
+	const tokens = Array.from(
+		{ length: 100 },
+		(_value, index) => `token-${index}`,
+	).join(" ");
+	const { tree, id } = fixture(
+		`<main class="group ${tokens}"><span id=target class=leaf></span></main>`,
+	);
+	const target = id("#target");
+	const queries = new DocumentQueries(tree, { maxIndexedNodes: 32 });
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expectSelection(queries, ":is(.group.missing, .leaf)", [target], [0, 2, 0]);
+		expect(queries.metrics().candidateIndexedEntries).toBeLessThanOrEqual(32);
+	}
+});
+
+it("rechecks logical availability after attribute mutations without rewriting cached alternatives", () => {
+	const { tree, queries, id } = fixture(
+		"<main id=parent><span id=target></span></main><aside class=other></aside>",
+	);
+	const parent = id("#parent");
+	const target = id("#target");
+	const selector = ":is(#absent, .group) > span";
+	expectSelection(queries, selector, []);
+	tree.setAttribute(parent, "class", "group");
+	expectSelection(queries, selector, [target], [1, 0, 1]);
+	tree.removeAttribute(parent, "class");
+	expectSelection(queries, selector, []);
+	tree.setAttribute(parent, "id", "absent");
+	expectSelection(queries, selector, [target], [1, 0, 1]);
+});
+
+it("retains folded HTML and exact foreign type matching inside positive alternatives", () => {
+	const { tree, queries, id } = fixture(
+		"<main id=html><lineargradient></lineargradient></main><svg id=svg></svg>",
+	);
+	const html = id("#html");
+	const svg = id("#svg");
+	tree.append(
+		svg,
+		tree.createParserElement("linearGradient", {}, svgNamespace),
+	);
+	expectSelection(queries, ":is(main, svg):has(:is(linearGradient, absent))", [
+		html,
+		svg,
+	]);
+	expectSelection(queries, ":is(main, svg):has(:is(LINEARGRADIENT, absent))", [
+		html,
+	]);
+});
+
+it.each([":is(.absent, :unsupported)", ".absent:has(:has(.missing))"])(
+	"does not hide parser errors behind impossible logical keys for %s",
+	(selector) => {
+		const { queries } = fixture("<main></main>");
+		expect(() => queries.matchingSpecificities(selector)).toThrow();
+	},
+);
+
 it("keeps duplicate IDs and class tokens without duplicating results", () => {
 	const { queries, id } = fixture(
 		'<main><div id=shared class="item item"><span id=shared class=item></span></div><p id=other class=Item></p></main>',
