@@ -31,6 +31,7 @@ import {
 	addressFamily,
 	networkHostname,
 } from "./network.js";
+import { OriginRequestPacer } from "./origin-request-pacer.js";
 import { resourceLimitError } from "./resource-limit.js";
 import {
 	type ResponseAccountingWriter,
@@ -45,6 +46,7 @@ export type AddressResolver = (
 
 export interface NodeTransportOptions extends NetworkPolicyOptions {
 	limits?: Partial<NetworkLimits>;
+	minRequestIntervalMs?: number;
 	resolver?: AddressResolver;
 	certificateAuthorities?: readonly string[];
 	cookieJar?: CookieJar;
@@ -322,6 +324,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 	private readonly resolver: AddressResolver;
 	private readonly certificateAuthorities?: string[];
 	private readonly cookieJar?: CookieJar;
+	private readonly requestPacer?: OriginRequestPacer;
 	private readonly active = new Set<AbortController>();
 	private closed = false;
 	private counts = {
@@ -397,6 +400,16 @@ export class NodeNetworkTransport implements NetworkTransport {
 					`Invalid network limit: ${name}`,
 				);
 		}
+		const interval =
+			options.minRequestIntervalMs === undefined
+				? 0
+				: options.minRequestIntervalMs;
+		if (!Number.isSafeInteger(interval) || interval < 0 || interval > 60_000)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid request pacing interval",
+			);
+		if (interval > 0) this.requestPacer = new OriginRequestPacer(interval);
 		this.policy = new NetworkPolicy(options);
 		this.resolver = options.resolver ?? resolveAddresses;
 		if (
@@ -419,6 +432,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 		this.closed = true;
 		for (const controller of this.active)
 			controller.abort(new AgentBrowserError("closed", "Transport is closed"));
+		this.requestPacer?.close();
 	}
 
 	request(input: NetworkRequest): Promise<NetworkResponse> {
@@ -645,6 +659,16 @@ export class NodeNetworkTransport implements NetworkTransport {
 						: await awaitWithSignal(this.resolver(hostname, signal), signal);
 					this.policy.checkAddresses(url.href, addresses);
 					ensureActive();
+					if (this.requestPacer) {
+						await this.requestPacer.wait(url.origin, signal);
+						ensureActive();
+						if (this.cookieJar) Reflect.deleteProperty(headers, "cookie");
+						if (useCookies && hopContext) {
+							const value = this.cookieJar?.cookieHeader(url.href, hopContext);
+							if (value) headers.cookie = value;
+						}
+						ensureActive();
+					}
 					response = await this.exchange(
 						url,
 						addresses[0],

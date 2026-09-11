@@ -1,5 +1,21 @@
 # Agent browser implementation tasks
 
+Current objective: improve native-browser performance, speed and functionality
+across varied websites, including actively reducing avoidable crawler blocks and
+CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
+for real-site coverage, performance measurements, compatibility work or human
+handoff at access restrictions. Those broader outcomes remain unverified.
+
+Per-origin pacing passes isolated production build, two-root types and four-file
+lint on September 11, 2026 at 03:17 UTC, then all 59 selected synthetic native
+cases at 03:18 UTC. The validated source adds bounded FIFO admission, deadline/
+abort/close handling, post-wait cookie refresh and an activity recheck after
+synchronous cookie retrieval. REQUEST-PACING.md records the contract and exact
+scope. Original lint and launcher failures remain in their historical lanes;
+the earlier approval-service denial is no longer the current execution state.
+No pacing live/performance or reduced-block/CAPTCHA result is claimed. Research,
+real-site coverage and separate socket/TTY/SafeJS/device/vault gates stay open.
+
 On September 10, 2026, the native browser reaches AMD's ROCm compatibility page
 with one HTTP200 request, zero mocks/redirects, and an independently admitted
 export after13 passing synthetic controls. ROCM-COMPATIBILITY-SOURCE.md records

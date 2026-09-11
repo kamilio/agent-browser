@@ -1,4 +1,6 @@
 [
+  "src/origin-request-pacer.test.ts",
+  "src/node-request-pacing.test.ts",
   "src/passkey-none-attestation.test.ts",
   "src/passkey-provider-throw.test.ts",
   "src/network-policy-diagnostic.test.ts",
