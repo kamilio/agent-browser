@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 GRID-SPEC-SECTIONS.md records twelve successful exact-title
+section extractions through the native browser's captured-source replay, covering
+Grid grammar, computation, placement and selected sizing stages. No navigation
+or wire requests occurred; the existing reader/compiled evidence remains stable.
+This resolves the earlier ambiguous heading selections, not full specification
+coverage, implementation, rendering or completion of the four research topics.
+
 September 11, 2026 GRID-READER-CANDIDATE-REPLAY.md verifies the fixed reader
 against the captured W3C research workflow: one offline navigation discovers 114
 headings and two observed-heading sections extract with zero wire traffic.
