@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 PYTHON-DOCS-FORMATTING.md verifies one offline navigation and
+formatting build from seven unchanged captures, zero wire requests. The native
+result has two broken-image element gaps, nine potentially coordinatable Flex/Grid
+placeholders, two floats, one sticky-position and one overflow issue. All three
+images share a fetched SVG but none decodes; fallback support is independent of
+SVG decoding. Aggregate CSS warnings and an unloaded import remain separate from
+active-node counts. All34 evidence/40 review checks and both receipt ledgers verify;
+cleanup is zero. Native primary-source research for bounded broken-image fallback
+is underway, not a claim that Python interaction or full styling now passes.
+
 September 11, 2026 PYTHON-DOCS-QUEUED-FLOW.md verifies seven fresh native/wire
 HTTP200 requests at unchanged underlying/advertised concurrency1. The index
 commits and native Tutorial discovery succeeds; its genuine click fails at the

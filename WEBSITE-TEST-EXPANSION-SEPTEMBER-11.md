@@ -51,6 +51,15 @@ queue. All39 original and82 additive evidence checks pass; final queue/session
 resources are zero. The original admission failure is preserved. Neither this
 run nor the Selenium diagnostic adds an attempted hostname.
 
+`PYTHON-DOCS-FORMATTING.md` then replays the same seven captures offline with zero
+wire requests. It measures two broken-image formatting gaps, nine potentially
+coordinatable Flex/Grid placeholders, two float issues, one sticky-position issue
+and one overflow issue. Three image elements share a fetched SVG resource, but
+none decodes; fetching succeeded while image support did not. Copied stylesheet
+diagnostics remain separate, including an unloaded import. All34 evidence and40
+final-review checks pass with zero cleanup resources; geometry and link activation
+remain unaccepted. Broken-image/alt fallback is distinct from adding SVG decoding.
+
 ## Existing host replay
 
 `MDN-POSITIONING-REPLAY.md` records one offline native click against all nineteen
