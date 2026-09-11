@@ -16,6 +16,25 @@ the earlier approval-service denial is no longer the current execution state.
 No pacing live/performance or reduced-block/CAPTCHA result is claimed. Research,
 real-site coverage and separate socket/TTY/SafeJS/device/vault gates stay open.
 
+Table-source metadata passes all 418 selected native cases on September 11,
+2026 at 03:15 UTC, following the prior isolated production build, six-root types
+and scoped lint. Seven files receive unrestricted lint; only unchanged host
+import organization is excluded, with exact two-hunk host admission enforced.
+The JSON opt-in and reader preserve bounded allowed header/span strings without
+inferring table relationships. TABLE-SOURCE-METADATA.md records actual results
+and limits. Earlier denials and failures remain historical; real-site feature
+validation, compact output, hardware/benchmark research and the broader browser
+goal remain incomplete.
+
+Combined validation on September 11, 2026 at 03:27 UTC passes production build,
+strict eight-root types and all 477 selected native cases for the exact staged
+table feature plus committed pacing. All 978 source inputs remain unchanged and
+match the Git index afterward. This excludes unrelated dirty-worktree changes.
+The first combined attempt's incorrect emit location and six spy failures are
+preserved; only its validation harness is corrected for the successful fresh run.
+Next: expose pacing and JSON table metadata in the research workflow, then use
+separately authorized native website checks to measure extraction and barriers.
+
 On September 10, 2026, the native browser reaches AMD's ROCm compatibility page
 with one HTTP200 request, zero mocks/redirects, and an independently admitted
 export after13 passing synthetic controls. ROCM-COMPATIBILITY-SOURCE.md records

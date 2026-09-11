@@ -250,7 +250,7 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 	text: [],
 	html: ["max-code-units"],
 	dom: ["depth", "max-nodes", "max-code-units"],
-	extract: ["format", "max-bytes", "max-nodes", "depth"],
+	extract: ["format", "table-metadata", "max-bytes", "max-nodes", "depth"],
 	requests: [],
 	images: [],
 	request: [],
@@ -1823,6 +1823,9 @@ export class BrowserCommandHost {
 		}
 		if (invocation.command === "extract") {
 			return extractDocument(browser.page(tabId).document, {
+				...(options["table-metadata"] === undefined
+					? {}
+					: { tableMetadata: options["table-metadata"] as boolean }),
 				...(args[0] === undefined
 					? {}
 					: { root: this.target(browser, tabId, args[0]) }),

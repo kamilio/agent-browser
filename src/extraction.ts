@@ -16,6 +16,10 @@ import {
 	researchReaderInfo,
 } from "./research-reader-info.js";
 import { documentStyles } from "./styles.js";
+import {
+	type TableSourceMetadata,
+	extractTableSource,
+} from "./table-source.js";
 import { textDocumentInfo } from "./text-document-info.js";
 import {
 	type TextLineDiscovery,
@@ -53,11 +57,13 @@ export interface ExtractedNode {
 	start?: number;
 	url?: string;
 	blocked?: true;
+	tableSource?: TableSourceMetadata;
 	children?: ExtractedNode[];
 }
 
 export interface ExtractionOptions {
 	format?: "markdown" | "json";
+	tableMetadata?: boolean;
 	root?: string;
 	lines?: { start: number; end: number };
 	section?: string;
@@ -697,6 +703,15 @@ export function extractDocument(
 			"unsupported",
 			"Extraction format must be markdown or json",
 		);
+	if (
+		(options.tableMetadata !== undefined &&
+			typeof options.tableMetadata !== "boolean") ||
+		(options.tableMetadata === true && format !== "json")
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Table metadata requires a boolean option and JSON extraction",
+		);
 	const maxBytes = options.maxBytes ?? 262_144;
 	const maxNodes = options.maxNodes ?? 10_000;
 	const maxDepth = options.maxDepth ?? 256;
@@ -805,6 +820,15 @@ export function extractDocument(
 		else if (node.type !== "break" && node.type !== "separator")
 			node.children = [];
 		if (node.type === "heading") node.level = Number(source.tagName.slice(1));
+		if (
+			options.tableMetadata &&
+			visible &&
+			source.kind === "element" &&
+			!section?.context.has(source.id)
+		) {
+			const tableSource = extractTableSource(source.tagName, source.attributes);
+			if (tableSource) node.tableSource = tableSource;
+		}
 		if (node.type === "list") {
 			node.ordered = source.tagName === "ol";
 			const ordinal = Number(source.attributes.start ?? 1);

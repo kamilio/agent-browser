@@ -1042,7 +1042,7 @@ it("traverses unstyled reader thead, tbody and tfoot while preserving native wra
 	}
 });
 
-it("retains reader provenance for discarded table attributes without reconstructing spans", () => {
+it("retains reader provenance for allowed table attributes without reconstructing spans", () => {
 	const tree = loadResearchDocument(
 		response(
 			'<table style="color:red"><caption>Owned sample</caption>' +
@@ -1060,7 +1060,7 @@ it("retains reader provenance for discarded table attributes without reconstruct
 			scripting: false,
 			styling: false,
 			hiddenContentSemantics: false,
-			ignoredAttributes: 8,
+			ignoredAttributes: 1,
 		});
 		const structured = extractDocument(tree, { format: "json" });
 		if (structured.format !== "json") throw new Error("Unexpected format");
@@ -1081,6 +1081,13 @@ it("retains reader provenance for discarded table attributes without reconstruct
 				],
 			});
 		}
+		expect(cells.map((cell) => tree.resolve(cell.ref).attributes)).toEqual([
+			{ id: "device", scope: "col" },
+			{ scope: "col" },
+			{ rowspan: "2", colspan: "2", headers: "device" },
+			{},
+			{ headers: "device" },
+		]);
 		const markdown = extractDocument(tree);
 		expect(markdown.partial).toBe(true);
 		expect(markdown.reader).toEqual(info);

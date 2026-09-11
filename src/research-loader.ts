@@ -25,6 +25,7 @@ import {
 	resourceLimitError,
 } from "./resource-limit.js";
 import type { DocumentLoaderContext } from "./session.js";
+import { isTableSourceAttribute } from "./table-source.js";
 import { loadTextDocument } from "./text-loader.js";
 
 export {
@@ -255,7 +256,9 @@ export function sanitizeResearchHtml(
 				(outputName === "a" && ["href", "title"].includes(attribute)) ||
 				(outputName === "base" && attribute === "href") ||
 				(outputName === "img" && attribute === "alt") ||
-				(outputName === "ol" && attribute === "start");
+				(outputName === "ol" && attribute === "start") ||
+				(outputName !== undefined &&
+					isTableSourceAttribute(outputName, attribute));
 			if (keep && attribute === "href") {
 				try {
 					parseNetworkUrl(new URL(value, "https://reader.invalid/").href);
