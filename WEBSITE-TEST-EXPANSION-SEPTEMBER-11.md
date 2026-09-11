@@ -1,5 +1,19 @@
 # Website test expansion — September 11, 2026
 
+**Fresh OpenBSD interaction success,22:54 UTC:**
+`OPENBSD-COLOR-SCHEME-FLOW.md` records the first successful bounded FAQ-to-
+introduction flow after the two retained failures. The10715-pass native release
+discovers and genuinely clicks the Introduction link, commits its HTTP200
+destination and advances session history. Four actual GETs transfer38561 bytes;
+no retry, mock, fallback, pruning or raised limit is used. Initial original
+HTML/CSS are byte-identical to both previous fresh captures. Four read-only
+samples observe null/effective-light native preference without host overrides;
+initial applicable CSS diagnostics are empty, while raw8 property/1 value
+diagnostics remain. The destination retains1 applicable property diagnostic:
+no second interaction or whole-site compatibility is established. All51 evidence
+checks,45/49-entry ledgers, original bodies and actual2 event/2 image-owner cleanup
+verify. Attempted-host coverage remains **65**, not65 fully working websites.
+
 **Fresh OpenBSD comparison,21:55 and22:12 UTC:** `OPENBSD-NATIVE-FLOW.md`
 adds `www.openbsd.org`, bringing attempted-host coverage to **65**, not65 working
 websites. The FAQ commits and a genuine Introduction link click fails on the

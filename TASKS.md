@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11,2026,22:54 UTC: the fresh native OpenBSD FAQ-to-introduction flow
+now succeeds on10715 release8936f29. One genuine discovered-anchor click commits
+the HTTP200 destination;4 actual GETs transfer38561 bytes with no mock, retry,
+fallback, identity override or cap change. Initial original HTML/CSS exactly
+match both earlier failed fresh captures. Four read-only samples observe native
+preference null/effective light; initial applicable CSS diagnostics are empty.
+`OPENBSD-COLOR-SCHEME-FLOW.md` retains51/51 evidence checks,45/49-entry ledgers
+and cleanup of2 actual event owners,2 image owners and both documents. Parent
+independently verifies bodies, counters, preference samples and the genuine
+click/history transition. Destination still has1 applicable CSS-property issue;
+another destination interaction and whole-site compatibility remain unvalidated.
+Attempted-host coverage stays65. Continue the broader website/performance goal
+and investigate that residual without stripping CSS or bypassing access controls.
+
 September 11,2026,22:50 UTC: explicit native UA color preference now supplies
 light/dark/null state to CSS and native media-query observers, with null explicitly
 meaning no active preference/effective light—not OS detection or a site override.
