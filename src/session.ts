@@ -98,6 +98,7 @@ export interface SessionLimits {
 	maxTabs: number;
 	maxNavigations: number;
 	maxPendingNavigations: number;
+	maxStylesheetRequests: number;
 	navigationTimeoutMs: number;
 }
 
@@ -289,6 +290,7 @@ export class BrowserSession {
 			maxTabs: 32,
 			maxNavigations: 500,
 			maxPendingNavigations: 8,
+			maxStylesheetRequests: 8,
 			navigationTimeoutMs: 30_000,
 			...options.limits,
 		});
@@ -2021,7 +2023,7 @@ export class BrowserSession {
 					fetchStylesheet: (resourceUrl: string) =>
 						journal.run("stylesheet", resourceUrl, "GET", async () => {
 							this.assertCurrent(job);
-							if (++resources > 8)
+							if (++resources > this.limits.maxStylesheetRequests)
 								throw new AgentBrowserError(
 									"resource-limit",
 									"Stylesheet request limit exceeded",

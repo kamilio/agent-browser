@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 the SDK exposes maxStylesheetRequests as a frozen session
+limit, retaining default eight and accepting explicit bounded 1..128 allowances.
+STYLESHEET-REQUEST-BUDGET.md records 6717 selected native passes across 112 files
+with the documented exceptions, and a preserved unchanged-code baseline. No
+network/CSS/work limits or completeness checks are bypassed. A separately scoped
+MDN flow requests a 24-sheet allowance; live and broader gates remain unproven.
+
 September 11, 2026 the fresh MDN run completes native loading/style computation
 after nine HTTP200 responses, then the retained probe assertion rejects its
 stylesheet-resource-limit issue before commit or click. MDN-CUSTOM-NOOP-LIVE.md

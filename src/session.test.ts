@@ -110,6 +110,24 @@ function fixture(
 	return { session, requests, documents, transport, cookies };
 }
 
+function stylesheetResponse(input: NetworkRequest, sheetCount: number) {
+	const sheet = new URL(input.url).pathname.match(/^\/sheet-(\d+)\.css$/);
+	const body = new TextEncoder().encode(
+		sheet
+			? `#sheet-${sheet[1]} { visibility: hidden }`
+			: `${Array.from(
+					{ length: sheetCount },
+					(_, index) =>
+						`<link rel="stylesheet" href="/sheet-${index}.css"><p id="sheet-${index}">Sheet ${index}</p>`,
+				).join("")}<h1>Complete stylesheet fixture</h1>`,
+	);
+	return response(input.url, {
+		body,
+		encodedBytes: body.length,
+		headers: { "content-type": [sheet ? "text/css" : "text/html"] },
+	});
+}
+
 afterEach(() => {
 	for (const session of sessions.splice(0)) session.close();
 });
@@ -530,6 +548,339 @@ it("captures actual stylesheet and image traffic without inventing disabled scri
 			url: "https://example.com/unfetched.png",
 		},
 	]);
+});
+
+it.each([
+	{ sheetCount: 12, maxStylesheetRequests: undefined, admitted: 8 },
+	{ sheetCount: 18, maxStylesheetRequests: undefined, admitted: 8 },
+	{ sheetCount: 12, maxStylesheetRequests: 1, admitted: 1 },
+	{ sheetCount: 18, maxStylesheetRequests: 1, admitted: 1 },
+	{ sheetCount: 12, maxStylesheetRequests: 12, admitted: 12 },
+	{ sheetCount: 18, maxStylesheetRequests: 12, admitted: 12 },
+	{ sheetCount: 12, maxStylesheetRequests: 24, admitted: 12 },
+	{ sheetCount: 18, maxStylesheetRequests: 24, admitted: 18 },
+])(
+	"loads $admitted of $sheetCount real stylesheets with allowance $maxStylesheetRequests",
+	async ({ sheetCount, maxStylesheetRequests, admitted }) => {
+		const { session, requests } = fixture(
+			{
+				loadDocument: loadBrowserDocument,
+				limits:
+					maxStylesheetRequests === undefined ? {} : { maxStylesheetRequests },
+			},
+			async (input) => stylesheetResponse(input, sheetCount),
+		);
+		const tab = session.createTab().id;
+		await session.navigate(tab, initialUrl);
+		expect(session.limits.maxStylesheetRequests).toBe(
+			maxStylesheetRequests ?? 8,
+		);
+		expect(requests.map((request) => request.url)).toEqual([
+			initialUrl,
+			...Array.from(
+				{ length: admitted },
+				(_, index) => `https://example.com/sheet-${index}.css`,
+			),
+		]);
+		const page = session.page(tab);
+		expect(page.styles.metrics()).toMatchObject({ externalSheets: admitted });
+		expect(page.styles.metrics().issues).toEqual(
+			admitted < sheetCount
+				? {
+						"stylesheet-resource-limit": 1,
+						"external-stylesheet-not-loaded": sheetCount - admitted,
+					}
+				: {},
+		);
+		for (let index = 0; index < sheetCount; index++) {
+			const target = page.queries.querySelector(`#sheet-${index}`);
+			if (target === null) throw new Error("Missing stylesheet fixture target");
+			expect(page.styles.get(target).visibility).toBe(
+				index < admitted ? "hidden" : "visible",
+			);
+		}
+		expect(page.document.textContent(page.document.root)).toContain(
+			"Complete stylesheet fixture",
+		);
+		expect(
+			session
+				.requests(tab)
+				.entries.filter((entry) => entry.kind === "stylesheet"),
+		).toMatchObject([
+			...Array.from({ length: admitted }, () => ({ state: "complete" })),
+			...(admitted < sheetCount
+				? [{ state: "failed", error: "resource-limit" }]
+				: []),
+		]);
+	},
+);
+
+it.each(["replacement", "separate tabs"])(
+	"resets the exhausted stylesheet allowance for %s",
+	async (mode) => {
+		const { session, requests } = fixture(
+			{
+				loadDocument: loadBrowserDocument,
+				limits: { maxStylesheetRequests: 12 },
+			},
+			async (input) => stylesheetResponse(input, 18),
+		);
+		const firstTab = session.createTab().id;
+		for (let navigation = 0; navigation < 2; navigation++) {
+			const tab =
+				navigation === 1 && mode === "separate tabs"
+					? session.createTab().id
+					: firstTab;
+			const url = `https://example.com/navigation-${navigation}`;
+			const previousRequests = requests.length;
+			await session.navigate(tab, url);
+			expect(
+				requests.slice(previousRequests).map((request) => request.url),
+			).toEqual([
+				url,
+				...Array.from(
+					{ length: 12 },
+					(_, index) => `https://example.com/sheet-${index}.css`,
+				),
+			]);
+			expect(session.page(tab).styles.metrics()).toMatchObject({
+				externalSheets: 12,
+				issues: { "stylesheet-resource-limit": 1 },
+			});
+		}
+		expect(requests).toHaveLength(26);
+	},
+);
+
+it("continues refusing stylesheet requests when a custom loader catches budget failures", async () => {
+	const { session, requests } = fixture({
+		limits: { maxStylesheetRequests: 2 },
+		loadDocument: async (result, context) => {
+			if (!context.fetchStylesheet) throw new Error("Missing stylesheet fetch");
+			for (let index = 0; index < 6; index++) {
+				const pending = context.fetchStylesheet(
+					`https://example.com/sheet-${index}.css`,
+				);
+				if (index < 2)
+					await expect(pending).resolves.toMatchObject({ status: 200 });
+				else
+					await expect(pending).rejects.toMatchObject({
+						code: "resource-limit",
+						message: "Stylesheet request limit exceeded",
+					});
+			}
+			return documentFixture(result, context);
+		},
+	});
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	expect(requests.map((request) => request.url)).toEqual([
+		initialUrl,
+		"https://example.com/sheet-0.css",
+		"https://example.com/sheet-1.css",
+	]);
+	const entries = session.requests(tab).entries;
+	expect(entries.slice(3)).toMatchObject(
+		Array.from({ length: 4 }, () => ({
+			kind: "stylesheet",
+			state: "failed",
+			error: "resource-limit",
+		})),
+	);
+});
+
+it.each([
+	{ url: "http://example.com/mixed.css", code: "policy-denied" },
+	{ url: "not a network URL", code: "invalid-input" },
+])(
+	"counts a rejected $code stylesheet attempt without reaching transport",
+	async ({ url, code }) => {
+		const { session, requests } = fixture({
+			limits: { maxStylesheetRequests: 1 },
+			loadDocument: async (result, context) => {
+				if (!context.fetchStylesheet)
+					throw new Error("Missing stylesheet fetch");
+				await expect(context.fetchStylesheet(url)).rejects.toMatchObject({
+					code,
+				});
+				await expect(
+					context.fetchStylesheet("https://example.com/valid.css"),
+				).rejects.toMatchObject({ code: "resource-limit" });
+				return documentFixture(result, context);
+			},
+		});
+		await session.navigate(session.createTab().id, initialUrl);
+		expect(requests.map((request) => request.url)).toEqual([initialUrl]);
+	},
+);
+
+it("counts failed stylesheet transport attempts against the real loader allowance", async () => {
+	const { session, requests } = fixture(
+		{ loadDocument: loadBrowserDocument, limits: { maxStylesheetRequests: 2 } },
+		async (input) => {
+			if (input.url.endsWith("/sheet-0.css"))
+				throw new AgentBrowserError(
+					"network-error",
+					"Fixture stylesheet failure",
+				);
+			return stylesheetResponse(input, 12);
+		},
+	);
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	expect(requests.map((request) => request.url)).toEqual([
+		initialUrl,
+		"https://example.com/sheet-0.css",
+		"https://example.com/sheet-1.css",
+	]);
+	expect(session.page(tab).styles.metrics()).toMatchObject({
+		externalSheets: 1,
+		issues: { "stylesheet-network-error": 1, "stylesheet-resource-limit": 1 },
+	});
+});
+
+it("reports an underlying transport resource limit beyond the default stylesheet allowance", async () => {
+	const { session, requests } = fixture(
+		{
+			loadDocument: loadBrowserDocument,
+			limits: { maxStylesheetRequests: 24 },
+		},
+		async (input) => {
+			if (input.url.endsWith("/sheet-8.css"))
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Transport byte limit exceeded",
+				);
+			return stylesheetResponse(input, 18);
+		},
+	);
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	expect(requests.map((request) => request.url)).toEqual([
+		initialUrl,
+		...Array.from(
+			{ length: 9 },
+			(_, index) => `https://example.com/sheet-${index}.css`,
+		),
+	]);
+	expect(session.page(tab).styles.metrics()).toMatchObject({
+		externalSheets: 8,
+		issues: { "stylesheet-resource-limit": 1 },
+	});
+	expect(session.requests(tab).entries.at(-1)).toMatchObject({
+		url: "https://example.com/sheet-8.css",
+		kind: "stylesheet",
+		state: "failed",
+		error: "resource-limit",
+	});
+});
+
+it("preserves an uncaught transport resource failure with a higher stylesheet allowance", async () => {
+	const failure = new AgentBrowserError(
+		"resource-limit",
+		"Transport byte limit exceeded",
+	);
+	const { session, requests } = fixture(
+		{
+			limits: { maxStylesheetRequests: 24 },
+			loadDocument: async (result, context) => {
+				if (!context.fetchStylesheet)
+					throw new Error("Missing stylesheet fetch");
+				for (let index = 0; index < 18; index++)
+					await context.fetchStylesheet(
+						`https://example.com/sheet-${index}.css`,
+					);
+				return documentFixture(result, context);
+			},
+		},
+		async (input) => {
+			if (input.url.endsWith("/sheet-8.css")) throw failure;
+			return response(input.url);
+		},
+	);
+	await expect(
+		session.navigate(session.createTab().id, initialUrl),
+	).rejects.toBe(failure);
+	expect(requests).toHaveLength(10);
+});
+
+it.each([
+	0,
+	-1,
+	1.5,
+	Number.NaN,
+	Number.POSITIVE_INFINITY,
+	Number.NEGATIVE_INFINITY,
+	129,
+	"12",
+	null,
+])(
+	"rejects invalid stylesheet allowance %s before creating transport",
+	(value) => {
+		const createTransport = vi.fn();
+		expect(
+			() =>
+				new BrowserSession({
+					createTransport,
+					loadDocument: documentFixture,
+					limits: { maxStylesheetRequests: value as number },
+				}),
+		).toThrow(
+			expect.objectContaining({
+				code: "invalid-input",
+				message: "Invalid session limit: maxStylesheetRequests",
+			}),
+		);
+		expect(createTransport).not.toHaveBeenCalled();
+	},
+);
+
+it.each([1, 128])(
+	"admits the valid stylesheet allowance endpoint %s",
+	async (maxStylesheetRequests) => {
+		const { session, requests } = fixture({
+			limits: { maxStylesheetRequests },
+			loadDocument: async (result, context) => {
+				if (!context.fetchStylesheet)
+					throw new Error("Missing stylesheet fetch");
+				for (let index = 0; index < maxStylesheetRequests; index++)
+					await context.fetchStylesheet(
+						`https://example.com/sheet-${index}.css`,
+					);
+				await expect(
+					context.fetchStylesheet("https://example.com/excess.css"),
+				).rejects.toMatchObject({ code: "resource-limit" });
+				return documentFixture(result, context);
+			},
+		});
+		await session.navigate(session.createTab().id, initialUrl);
+		expect(session.limits.maxStylesheetRequests).toBe(maxStylesheetRequests);
+		expect(requests).toHaveLength(maxStylesheetRequests + 1);
+		expect(
+			requests.some((request) => request.url.endsWith("/excess.css")),
+		).toBe(false);
+	},
+);
+
+it("copies and freezes the stylesheet allowance without freezing caller options", async () => {
+	const limits = { maxStylesheetRequests: 1 };
+	const { session, requests } = fixture(
+		{ limits, loadDocument: loadBrowserDocument },
+		async (input) => stylesheetResponse(input, 12),
+	);
+	expect(session.limits).not.toBe(limits);
+	expect(Object.isFrozen(session.limits)).toBe(true);
+	expect(Object.isFrozen(limits)).toBe(false);
+	limits.maxStylesheetRequests = 24;
+	expect(Reflect.set(session.limits, "maxStylesheetRequests", 24)).toBe(false);
+	expect(session.limits.maxStylesheetRequests).toBe(1);
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	expect(requests).toHaveLength(2);
+	expect(session.page(tab).styles.metrics()).toMatchObject({
+		externalSheets: 1,
+		issues: { "stylesheet-resource-limit": 1 },
+	});
 });
 
 it("distinguishes a failed navigation attempt from the still-displayed old document", async () => {
