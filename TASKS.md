@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 captured MDN replay completes the former fatal selector in
+8390 work units but navigation now fails CSS variable retention; no document is
+committed. MDN-RELATIVE-HAS-REPLAY.md preserves this separate outcome. The exact
+Hacker News click blockers are a deferred center ancestor plus unsupported CSS
+values/properties, documented in HN-NATIVE-FORMATTING.md. Reuse unchanged inherited
+custom maps, retain genuine limits, and implement real layout support rather
+than disabling click geometry checks. Full website flows and broader gates stay open.
+
 September 11, 2026 relative :has candidate planning passes 6614 selected native
 tests across 111 explicit files with the existing documented exceptions.
 RELATIVE-SELECTOR-CANDIDATES.md records the failing unchanged-code MDN-pattern
