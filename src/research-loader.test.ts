@@ -216,6 +216,156 @@ it.each([
 	expect(sanitized.html).toBe("<p>Kept</p>");
 });
 
+it.each([
+	["object", "ul"],
+	["object", "ol"],
+	["object", "menu"],
+	["template", "ul"],
+	["canvas", "ol"],
+	["video", "ul"],
+])("keeps optional li ends contained in omitted %s/%s", (root, list) => {
+	const source = `<${root}><${list}><li>Hidden one<li><a href=/hidden>Hidden two</a></${list}></${root}><p>Kept</p>`;
+	for (const profile of [undefined, "long-v1"] as const)
+		for (const policy of [undefined, "separate-omitted-raw-v1"] as const) {
+			const sanitized = sanitizeResearchHtml(
+				source,
+				{},
+				undefined,
+				profile,
+				policy,
+			);
+			expect(sanitized.html).toBe("<p>Kept</p>");
+			expect(sanitized.report.omittedSubtrees[root]).toBe(1);
+			expect(sanitized.report.partial).toBe(true);
+		}
+});
+
+it("loads readable headings without exposing W3C-style object fallback lists", () => {
+	const source =
+		'<h2>Before</h2><object data="diagram.svg" type="image/svg+xml"><ul><li>Hidden one<li><a href=/hidden>Hidden two</a></ul></object><h2>After</h2><p>Visible</p>';
+	for (const profile of [undefined, "long-v1"] as const)
+		for (const policy of [undefined, "separate-omitted-raw-v1"] as const) {
+			const tree = loadResearchDocument(
+				response(source),
+				context,
+				profile,
+				policy,
+			);
+			try {
+				const queries = new DocumentQueries(tree);
+				expect(queries.querySelectorAll("h2")).toHaveLength(2);
+				expect(queries.querySelector("object, ul, li, a")).toBeNull();
+				expect(tree.textContent(tree.root)).toBe("BeforeAfterVisible");
+				const extracted = extractDocument(tree).content;
+				expect(extracted).toContain("Before");
+				expect(extracted).toContain("After");
+				expect(extracted).toContain("Visible");
+				expect(extracted).not.toContain("Hidden");
+				expect(researchReaderInfo(tree)?.omittedSubtrees.object).toBe(1);
+			} finally {
+				tree.close();
+			}
+		}
+});
+
+it("closes only the directly containing omitted list when lists nest", () => {
+	const source =
+		"<object><ul><li>Outer<ol><li>Inner one<li>Inner two</ol><li>Outer two</ul></object><p>Kept</p>";
+	for (const policy of [undefined, "separate-omitted-raw-v1"] as const)
+		expect(
+			sanitizeResearchHtml(source, {}, undefined, undefined, policy).html,
+		).toBe("<p>Kept</p>");
+});
+
+it("retains raw omission and sibling omission boundaries around optional li ends", () => {
+	const source =
+		'<object><ul><li><script>"</li></ul></object><p>Leak</p>"</script><li>Hidden</ul></object><p>First</p><template><ol><li>Hidden<li>Hidden</ol></template><p>Second</p>';
+	for (const policy of [undefined, "separate-omitted-raw-v1"] as const)
+		expect(
+			sanitizeResearchHtml(source, {}, undefined, undefined, policy).html,
+		).toBe("<p>First</p><p>Second</p>");
+});
+
+it.each([
+	"<object><ul><li>Hidden</object><p>Leak</p>",
+	"<object><ul><li>Hidden</ol></object><p>Leak</p>",
+	"<object><ul><li><span>Hidden</ul></object><p>Leak</p>",
+	"<object><ul><li>Hidden</ul></li></object><p>Leak</p>",
+	"<object><div><li>Hidden</div></object><p>Leak</p>",
+	"<object><ul><li>Hidden",
+	"<svg><ul><li>Hidden<li>Hidden</ul></svg><p>Leak</p>",
+	"<object><math><ul><li>Hidden<li>Hidden</ul></math></object><p>Leak</p>",
+])(
+	"keeps ambiguous or foreign omitted list boundaries rejected: %s",
+	(source) => {
+		for (const policy of [undefined, "separate-omitted-raw-v1"] as const)
+			expect(() =>
+				sanitizeResearchHtml(source, {}, undefined, undefined, policy),
+			).toThrow(expect.objectContaining({ code: "unsupported" }));
+	},
+);
+
+it("bounds real omitted nesting without accumulating sequential li elements", () => {
+	const source = `<object><ul>${"<li>Hidden".repeat(500)}</ul></object><p>Kept</p>`;
+	for (const policy of [undefined, "separate-omitted-raw-v1"] as const) {
+		const sanitized = sanitizeResearchHtml(
+			source,
+			{ maxDepth: 3 },
+			undefined,
+			undefined,
+			policy,
+		);
+		expect(sanitized.html).toBe("<p>Kept</p>");
+		expect(sanitized.report.textCodeUnits).toBe(3004);
+		expect(() =>
+			sanitizeResearchHtml(
+				source,
+				{ maxDepth: 2 },
+				undefined,
+				undefined,
+				policy,
+			),
+		).toThrow(expect.objectContaining({ code: "resource-limit" }));
+	}
+});
+
+it("keeps text, token and output limits charged across omitted list recovery", () => {
+	const source = "<object><ul><li>First<li>Second</ul></object><p>Kept</p>";
+	for (const policy of [undefined, "separate-omitted-raw-v1"] as const) {
+		const baseline = sanitizeResearchHtml(
+			source,
+			{},
+			undefined,
+			undefined,
+			policy,
+		);
+		for (const [limit, total] of [
+			["maxTextCodeUnits", baseline.report.textCodeUnits],
+			["maxTokens", baseline.report.tokens],
+			["maxOutputCodeUnits", baseline.report.outputCodeUnits],
+		] as const) {
+			expect(
+				sanitizeResearchHtml(
+					source,
+					{ [limit]: total },
+					undefined,
+					undefined,
+					policy,
+				).html,
+			).toBe("<p>Kept</p>");
+			expect(() =>
+				sanitizeResearchHtml(
+					source,
+					{ [limit]: total - 1 },
+					undefined,
+					undefined,
+					policy,
+				),
+			).toThrow(expect.objectContaining({ code: "resource-limit" }));
+		}
+	}
+});
+
 it("escapes decoded text and raw text instead of reinterpreting markup", () => {
 	const tree = loadResearchDocument(
 		response(`<title>&lt;script&gt;Title&lt;/script&gt;</title>

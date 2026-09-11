@@ -83,6 +83,7 @@ const reconstructableFormatting = new Set(
 );
 const tableCells = new Set(["td", "th"]);
 const tableSections = new Set(["tbody", "thead", "tfoot"]);
+const listContainers = new Set(["ul", "ol", "menu"]);
 
 function discardableRaw(name: string): name is HtmlDiscardRawName {
 	return (
@@ -244,6 +245,14 @@ export function sanitizeResearchHtml(
 		}
 		const { name } = token;
 		if (omitting) {
+			if (
+				skipped.at(-1) === "li" &&
+				listContainers.has(skipped.at(-2) ?? "") &&
+				((token.kind === "start" && name === "li") ||
+					(token.kind === "end" && name === skipped.at(-2))) &&
+				!skipped.some((ancestor) => ancestor === "svg" || ancestor === "math")
+			)
+				skipped.pop();
 			if (token.kind === "end") {
 				if (skipped[skipped.length - 1] !== name)
 					throw new AgentBrowserError(

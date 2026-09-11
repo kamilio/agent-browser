@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 the semantic reader handles direct optional li endings in
+omitted HTML lists while retaining their omitted root and foreign/malformed-input
+guards. READER-OMITTED-LISTS.md records 128 focused passes, 11 preserved failing
+baseline cases and 6805 selected native passes across 112 files with the documented
+exceptions. Revalidate the exact W3C captured research flow and use only actually
+discovered headings for bounded section extraction; no Grid or research completion
+is inferred from native unit tests.
+
 September 11, 2026 GRID-READER-DIAGNOSIS.md reproduces the W3C loader failure
 without networking: the omitted-subtree stack rejects a list end after implicit
 li endings in an object's HTML fallback. Bounded native token positions and an
