@@ -1,5 +1,6 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { coordinateOutsideMarkers } from "./outside-markers.js";
 import {
 	layoutFormattingDocument,
 	type DocumentBox,
@@ -41,9 +42,15 @@ export function layoutPageDocument(
 			(node) => node.position === "absolute" || node.position === "fixed",
 		)
 	)
-		return layoutPositionedDocument(formatting, maxWork, options);
-	return applyRelativePositioning(
-		layoutFormattingPageDocument(formatting, maxWork, options),
+		return coordinateOutsideMarkers(
+			layoutPositionedDocument(formatting, maxWork, options),
+			maxWork,
+		);
+	return coordinateOutsideMarkers(
+		applyRelativePositioning(
+			layoutFormattingPageDocument(formatting, maxWork, options),
+			maxWork,
+		),
 		maxWork,
 	);
 }

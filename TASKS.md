@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 OUTSIDE-BLOCK-MARKERS.md implements genuine owner-attached
+outside markers for supported list items and summaries, including block content,
+bounded layout/paint/hit/scroll coordination and unchanged principal DOM geometry.
+Review exposes reference-action regressions on empty summaries, large leading and
+double-click scrolling; baseline reproductions fail before correction, then all57
+focused action cases pass. The final clean combined gate passes8643 native cases
+across144 manifest-selected files, with the unchanged single exclusion; build,
+strict and format pass under the explicit native guards. Source hashes and all16
+owned files match the tested snapshot; closure review resolves all concrete findings.
+The earlier8529 build's unchanged MDN replay now reaches positioned coordination
+but fails the formatting-profile gate, with no completed geometry or destination.
+That offline result is not live acceptance or validation of the later action fixes.
+
 September 11, 2026 PYTHON-DOCS-FORMATTING.md verifies one offline navigation and
 formatting build from seven unchanged captures, zero wire requests. The native
 result has two broken-image element gaps, nine potentially coordinatable Flex/Grid

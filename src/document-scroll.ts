@@ -2,6 +2,7 @@ import { layoutDocument } from "./document-layout.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { layoutNumber } from "./layout-values.js";
+import { outsideMarkerRects } from "./outside-markers.js";
 
 export const viewportScrollLimits = Object.freeze({
 	maxWork: 2_000_000,
@@ -111,15 +112,22 @@ export class DocumentScroll {
 		let right = viewport.width;
 		let bottom = Math.max(viewport.height, layout.flowHeight);
 		this.work = 0;
-		const include = (x: number, y: number, width: number, height: number) => {
+		const charge = () => {
 			if (++this.work > viewportScrollLimits.maxWork)
 				throw new AgentBrowserError(
 					"resource-limit",
 					"Viewport scroll extent work limit exceeded",
 				);
+		};
+		const include = (x: number, y: number, width: number, height: number) => {
+			charge();
 			right = Math.max(right, layoutNumber(x + width, true));
 			bottom = Math.max(bottom, layoutNumber(y + height, true));
 		};
+		for (const marker of outsideMarkerRects(layout, charge)) {
+			if (fixed.has(marker.id)) continue;
+			include(marker.x, marker.y, marker.width, marker.height);
+		}
 		for (const box of layout.boxes) {
 			if (fixed.has(box.id)) continue;
 			include(

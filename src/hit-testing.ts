@@ -257,7 +257,10 @@ export class DocumentHitTesting {
 			);
 		};
 		for (const item of layoutContentItems(layout, this.charge)) {
-			if (item.kind === "image" || item.kind === "box") {
+			if (item.kind === "marker") {
+				const marker = item.marker;
+				append(marker.id, marker.x, marker.y, marker.width, marker.height);
+			} else if (item.kind === "image" || item.kind === "box") {
 				const box = item.box;
 				append(
 					box.id,

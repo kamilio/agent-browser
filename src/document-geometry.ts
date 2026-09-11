@@ -5,6 +5,7 @@ import { resolveInlineEdges } from "./inline-box.js";
 import { documentScrollPosition } from "./document-scroll.js";
 import { documentGeneratedControls } from "./generated-controls.js";
 import { projectFixedLayout } from "./out-of-flow-positioning.js";
+import { outsideMarkerRects } from "./outside-markers.js";
 
 export type UsedStyle = Readonly<Partial<Record<string, number>>>;
 
@@ -45,6 +46,7 @@ function rectangle(
 
 export class LayoutGeometry {
 	private rectangles = new Map<string, readonly ClientRectangle[]>();
+	private markerRectangles = new Map<string, readonly ClientRectangle[]>();
 	private bounds = new Map<string, ClientRectangle>();
 	private splitInlines = new Set<string>();
 	private retained = 0;
@@ -65,6 +67,12 @@ export class LayoutGeometry {
 		return this.rectangles.get(ref) ?? empty;
 	}
 
+	getActionableClientRects(ref: string): readonly ClientRectangle[] {
+		const rects = this.getClientRects(ref);
+		const markers = this.markerRectangles.get(ref);
+		return markers ? Object.freeze([...rects, ...markers]) : rects;
+	}
+
 	getBoundingClientRect(ref: string): ClientRectangle {
 		const rects = this.getClientRects(ref);
 		if (!rects.length) return rectangle(0, 0, 0, 0);
@@ -81,6 +89,7 @@ export class LayoutGeometry {
 
 	constructor(layout: DocumentLayout, includeUsedStyles = false) {
 		const rectangles = new Map<string, ClientRectangle[]>();
+		const markers = new Map<string, ClientRectangle[]>();
 		const images = new Map(
 			layout.text.horizontal.images.map((image) => [image.id, image]),
 		);
@@ -92,16 +101,20 @@ export class LayoutGeometry {
 				);
 		};
 		let count = 0;
-		const append = (ref: string, value: ClientRectangle) => {
+		const append = (
+			ref: string,
+			value: ClientRectangle,
+			destination = rectangles,
+		) => {
 			charge();
 			if (++count > geometryLimits.maxRectangles)
 				throw new AgentBrowserError(
 					"resource-limit",
 					"Client geometry rectangle limit exceeded",
 				);
-			const list = rectangles.get(ref);
+			const list = destination.get(ref);
 			if (list) list.push(value);
-			else rectangles.set(ref, [value]);
+			else destination.set(ref, [value]);
 		};
 		for (const node of layout.text.horizontal.formatting.nodes) {
 			charge();
@@ -203,6 +216,20 @@ export class LayoutGeometry {
 					);
 			}
 		}
+		for (const marker of outsideMarkerRects(layout, charge)) {
+			charge();
+			const node = layout.text.horizontal.formatting.nodes[marker.id];
+			if (node.ref && node.visible)
+				append(
+					node.ref,
+					rectangle(marker.x, marker.y, marker.width, marker.height),
+					markers,
+				);
+		}
+		for (const [ref, list] of markers) {
+			charge();
+			this.markerRectangles.set(ref, Object.freeze(list));
+		}
 		if (includeUsedStyles)
 			for (const position of layout.relativePositions ?? []) {
 				charge();
@@ -297,6 +324,25 @@ export class DocumentGeometry {
 	getDocumentRects(id: number): readonly ClientRectangle[] {
 		if (!this.connectedElement(id)) return empty;
 		return this.refresh().getClientRects(this.tree.reference(id));
+	}
+
+	getActionableClientRects(id: number): readonly ClientRectangle[] {
+		if (!this.connectedElement(id)) return empty;
+		const scroll = documentScrollPosition(this.tree);
+		const rects = this.refresh().getActionableClientRects(
+			this.tree.reference(id),
+		);
+		if (scroll.x === 0 && scroll.y === 0) return rects;
+		return Object.freeze(
+			rects.map((rect) =>
+				rectangle(
+					rect.x - scroll.x,
+					rect.y - scroll.y,
+					rect.width,
+					rect.height,
+				),
+			),
+		);
 	}
 
 	getGeneratedClientRects(reference: string): readonly ClientRectangle[] {

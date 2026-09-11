@@ -584,6 +584,39 @@ function paintDocumentLayout(
 		else metrics.paintedImages++;
 	};
 	for (const item of layoutContentItems(layout, charge)) {
+		if (item.kind === "marker") {
+			const marker = item.marker;
+			const node = nodes[marker.id];
+			if (!node.visible || !node.outsideMarker) continue;
+			const originX = marker.x - clip.x;
+			const originY = marker.y - clip.y;
+			if (
+				originX + marker.width <= 0 ||
+				originY + marker.height <= 0 ||
+				originX >= image.width ||
+				originY >= image.height
+			) {
+				metrics.clippedMarkers++;
+				continue;
+			}
+			charge(Math.ceil(marker.width + 1) * Math.ceil(marker.height + 1) * 4);
+			paintRasterImage(
+				image,
+				rasterizeDisclosureMarker(
+					node.outsideMarker,
+					marker.width,
+					marker.height,
+					(node.paint ?? initialPaintStyle).color,
+					charge,
+				),
+				originX,
+				originY,
+				marker.width,
+				marker.height,
+			);
+			metrics.paintedMarkers++;
+			continue;
+		}
 		if (item.kind === "box") {
 			paintBox(item.box);
 			paintEmptyEditableCaret(caret, item.box, image, clip, charge);

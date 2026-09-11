@@ -904,6 +904,16 @@ export class BrowserSession {
 		alignment: ScrollIntoViewOptions = {},
 		options: NavigationOptions = {},
 	): Promise<ScrollIntoViewResult> {
+		return this.scrollTargetIntoView(id, reference, alignment, options);
+	}
+
+	private async scrollTargetIntoView(
+		id: string,
+		reference: string,
+		alignment: ScrollIntoViewOptions,
+		options: NavigationOptions,
+		includeOutsideMarkers = false,
+	): Promise<ScrollIntoViewResult> {
 		this.validateNavigationOptions(options);
 		if (options.signal?.aborted)
 			throw new AgentBrowserError("aborted", "Scroll into view aborted");
@@ -916,6 +926,7 @@ export class BrowserSession {
 			documentScrollIntoView(page.document).action(
 				target.generated?.ref ?? target.node.id,
 				alignment,
+				includeOutsideMarkers,
 			),
 			options.signal,
 		);
@@ -953,11 +964,12 @@ export class BrowserSession {
 				"not-actionable",
 				"Hover target is hidden or inert",
 			);
-		await this.scrollIntoView(
+		await this.scrollTargetIntoView(
 			id,
 			reference,
 			{ block: "nearest", inline: "nearest" },
 			options,
+			true,
 		);
 		const status = page.interactions.actionability(reference, false, true);
 		if (status.blocked)
@@ -1014,11 +1026,12 @@ export class BrowserSession {
 				"not-actionable",
 				"Click target is hidden, inert or disabled",
 			);
-		await this.scrollIntoView(
+		await this.scrollTargetIntoView(
 			id,
 			reference,
 			{ block: "nearest", inline: "nearest" },
 			options,
+			true,
 		);
 		if (page.interactions.actionability(reference).blocked)
 			throw new AgentBrowserError(
@@ -1090,11 +1103,12 @@ export class BrowserSession {
 				"not-actionable",
 				"Double-click target is hidden, inert or disabled",
 			);
-		await this.scrollIntoView(
+		await this.scrollTargetIntoView(
 			id,
 			reference,
 			{ block: "nearest", inline: "nearest" },
 			options,
+			true,
 		);
 		checkOwnership();
 		if (page.interactions.actionability(reference).blocked)

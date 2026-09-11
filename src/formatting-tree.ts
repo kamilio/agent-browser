@@ -86,6 +86,7 @@ export interface FormattingNode {
 	intrinsic?: Readonly<{ width: number; height: number }>;
 	control?: SoftwareControl;
 	marker?: DisclosureMarker;
+	outsideMarker?: DisclosureMarker;
 	generated?: GeneratedControlTarget;
 }
 interface MutableFormattingNode extends Omit<FormattingNode, "children"> {
@@ -102,6 +103,7 @@ export interface FormattingTree {
 	metrics: Readonly<{
 		visitedDomNodes: number;
 		boxes: number;
+		outsideMarkers?: number;
 		textCodeUnits: number;
 		work: number;
 		deferredSubtrees: number;
@@ -191,6 +193,7 @@ export function buildFormattingTree(
 	let textCodeUnits = 0;
 	let visitedDomNodes = 0;
 	let deferredSubtrees = 0;
+	let outsideMarkers = 0;
 	const charge = (units = 1) => {
 		work += units;
 		if (work > limits.maxWork)
@@ -204,7 +207,7 @@ export function buildFormattingTree(
 		children: readonly number[] = [],
 	) => {
 		charge(children.length + 1);
-		if (nodes.length >= limits.maxBoxes)
+		if (nodes.length + outsideMarkers >= limits.maxBoxes)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"Formatting box limit exceeded",
@@ -737,41 +740,38 @@ export function buildFormattingTree(
 				const typography = styles.text(id);
 				const fontSize = Number.parseFloat(typography["font-size"]);
 				if (list["list-style-type"] !== "none" && fontSize > 0) {
-					if (
-						list["list-style-position"] === "outside" &&
-						contents.some((child) => nodes[child].level === "block")
-					)
-						throw new AgentBrowserError(
-							"unsupported",
-							disclosure
-								? "Outside disclosure markers with block content are not implemented"
-								: "Outside list-item markers with block content are not implemented",
+					if (list["list-style-position"] === "outside") {
+						charge();
+						if (nodes.length + outsideMarkers >= limits.maxBoxes)
+							throw new AgentBrowserError(
+								"resource-limit",
+								"Formatting box limit exceeded",
+							);
+						outsideMarkers++;
+						nodes[result].outsideMarker = Object.freeze({
+							type: list["list-style-type"],
+						});
+					} else
+						contents.unshift(
+							create({
+								kind: "replaced",
+								level: "inline",
+								ref,
+								visible: visibility.visible,
+								typography,
+								marker: Object.freeze({ type: list["list-style-type"] }),
+								box: initialBoxStyle,
+								paint: Object.freeze({
+									...initialPaintStyle,
+									color: styles.paint(id).color,
+								}),
+								intrinsic: Object.freeze({
+									width: fontSize,
+									height:
+										(fontSize * bitmapFont.ascent) / bitmapFont.unitsPerEm,
+								}),
+							}),
 						);
-					contents.unshift(
-						create({
-							kind: "replaced",
-							level: "inline",
-							ref,
-							visible: visibility.visible,
-							typography,
-							marker: Object.freeze({ type: list["list-style-type"] }),
-							box: Object.freeze({
-								...initialBoxStyle,
-								"margin-left":
-									list["list-style-position"] === "outside"
-										? `${-fontSize}px`
-										: "0px",
-							}),
-							paint: Object.freeze({
-								...initialPaintStyle,
-								color: styles.paint(id).color,
-							}),
-							intrinsic: Object.freeze({
-								width: fontSize,
-								height: (fontSize * bitmapFont.ascent) / bitmapFont.unitsPerEm,
-							}),
-						}),
-					);
 				}
 			}
 			normalizeChildren(result, contents);
@@ -846,7 +846,8 @@ export function buildFormattingTree(
 		issues: Object.freeze(issues),
 		metrics: Object.freeze({
 			visitedDomNodes,
-			boxes: nodes.length,
+			boxes: nodes.length + outsideMarkers,
+			...(outsideMarkers ? { outsideMarkers } : {}),
 			textCodeUnits,
 			work,
 			deferredSubtrees,

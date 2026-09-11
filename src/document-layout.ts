@@ -8,6 +8,7 @@ import type {
 } from "./formatting-tree.js";
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 import { resolveHeightConstraints } from "./replaced-box.js";
+import type { OutsideMarker } from "./outside-markers.js";
 import type {
 	DocumentTextLayout,
 	TextContext,
@@ -61,6 +62,7 @@ export interface DocumentLayout {
 	boxes: readonly Readonly<DocumentBox>[];
 	contexts: readonly Readonly<PositionedTextContext>[];
 	flowHeight: number;
+	outsideMarkers?: readonly Readonly<OutsideMarker>[];
 	fixedIds?: readonly number[];
 	positionedInsets?: readonly Readonly<{
 		id: number;

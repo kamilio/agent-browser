@@ -124,6 +124,7 @@ export class DocumentScrollIntoView {
 	plan(
 		target: number | string,
 		argument?: unknown,
+		includeOutsideMarkers = false,
 	): Readonly<{ left: number; top: number }> | null {
 		if (this.closed)
 			throw new AgentBrowserError("closed", "Scroll into view is closed");
@@ -145,9 +146,15 @@ export class DocumentScrollIntoView {
 		const alignment = scrollIntoViewOptions(argument);
 		if (!this.tree.isConnected(id)) return null;
 		const geometry = documentGeometry(this.tree);
-		const rectangles = resolved?.generated
+		const candidates = resolved?.generated
 			? geometry.getGeneratedClientRects(resolved.generated.ref)
-			: geometry.getClientRects(id);
+			: includeOutsideMarkers
+				? geometry.getActionableClientRects(id)
+				: geometry.getClientRects(id);
+		const rectangles =
+			includeOutsideMarkers && !resolved?.generated
+				? candidates.filter((rect) => rect.width > 0 && rect.height > 0)
+				: candidates;
 		if (!rectangles.length) return null;
 		const owner = documentScroll(this.tree);
 		const current = owner.get();
@@ -164,22 +171,23 @@ export class DocumentScrollIntoView {
 			ancestor = node.parent;
 		}
 		const maximum = owner.bounds();
-		const rectangle = resolved?.generated
-			? rectangles.reduce(
-					(bounds, rect) => ({
-						left: Math.min(bounds.left, rect.left),
-						right: Math.max(bounds.right, rect.right),
-						top: Math.min(bounds.top, rect.top),
-						bottom: Math.max(bounds.bottom, rect.bottom),
-					}),
-					{
-						left: Number.POSITIVE_INFINITY,
-						right: Number.NEGATIVE_INFINITY,
-						top: Number.POSITIVE_INFINITY,
-						bottom: Number.NEGATIVE_INFINITY,
-					},
-				)
-			: geometry.getBoundingClientRect(id);
+		const rectangle =
+			resolved?.generated || includeOutsideMarkers
+				? rectangles.reduce(
+						(bounds, rect) => ({
+							left: Math.min(bounds.left, rect.left),
+							right: Math.max(bounds.right, rect.right),
+							top: Math.min(bounds.top, rect.top),
+							bottom: Math.max(bounds.bottom, rect.bottom),
+						}),
+						{
+							left: Number.POSITIVE_INFINITY,
+							right: Number.NEGATIVE_INFINITY,
+							top: Number.POSITIVE_INFINITY,
+							bottom: Number.NEGATIVE_INFINITY,
+						},
+					)
+				: geometry.getBoundingClientRect(id);
 		const viewport = styles.viewport;
 		return Object.freeze({
 			left: Math.max(
@@ -213,8 +221,9 @@ export class DocumentScrollIntoView {
 	*action(
 		target: number | string,
 		argument?: unknown,
+		includeOutsideMarkers = false,
 	): EventAction<ScrollIntoViewResult> {
-		const plan = this.plan(target, argument);
+		const plan = this.plan(target, argument, includeOutsideMarkers);
 		const reference =
 			typeof target === "string" ? target : this.tree.reference(target);
 		if (!plan) {

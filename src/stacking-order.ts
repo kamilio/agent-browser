@@ -72,11 +72,13 @@ export function* stackingContentItems(
 	for (const item of items) {
 		charge();
 		const id =
-			item.kind === "glyph"
-				? item.glyph.formattingId
-				: item.kind === "fragment"
-					? item.fragment.formattingId
-					: item.box.id;
+			item.kind === "marker"
+				? item.marker.id
+				: item.kind === "glyph"
+					? item.glyph.formattingId
+					: item.kind === "fragment"
+						? item.fragment.formattingId
+						: item.box.id;
 		const owner = scopes.get(owners[id]);
 		if (!owner)
 			throw new AgentBrowserError(

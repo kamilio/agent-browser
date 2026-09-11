@@ -55,6 +55,7 @@ export const clickActionabilityCapabilities = Object.freeze({
 	maxPoints: 64,
 	maxAncestorDepth: 1024,
 	rootScroll: true,
+	outsideMarkers: true,
 	pointerSequence: true,
 	ariaDisabled: true,
 	ariaRoleProfile: "existing-semantic-roles",
@@ -185,7 +186,7 @@ function findReceivingPoint(
 		});
 	const rectangles = generated
 		? documentGeometry(tree).getGeneratedClientRects(generated)
-		: documentGeometry(tree).getClientRects(target);
+		: documentGeometry(tree).getActionableClientRects(target);
 	const viewport = documentStyles(tree).viewport;
 	const hits = documentHitTesting(tree);
 	let points = 0;

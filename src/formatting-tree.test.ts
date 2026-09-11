@@ -397,14 +397,13 @@ it.each(["disc", "circle", "square", "disclosure-open", "disclosure-closed"])(
 		expect(geometry.getClientRects(id("#item"))).toHaveLength(1);
 		expect(documentHitTesting(tree).elementFromPoint(7, 7)).toBe(id("#item"));
 		expect(
-			buildFormattingTree(tree).nodes.find((node) => node.marker)?.box?.[
-				"margin-left"
-			],
-		).toBe("-16px");
+			buildFormattingTree(tree).nodes.find((node) => node.outsideMarker)
+				?.outsideMarker,
+		).toEqual({ type });
 		expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(1);
 		expect(tree.textContent(id("#item"))).toBe("Item");
 		expect(
-			buildFormattingTree(tree).nodes.find((node) => node.marker)?.ref,
+			buildFormattingTree(tree).nodes.find((node) => node.outsideMarker)?.ref,
 		).toBe(ref("#item"));
 	},
 );
@@ -444,12 +443,12 @@ it("does not grant ordinary li or div markers summary activation", () => {
 	);
 	const actions = documentInteractions(tree);
 	const markers = () =>
-		buildFormattingTree(tree).nodes.filter((node) => node.marker);
-	expect(markers().map((node) => node.marker?.type)).toEqual([
-		"disclosure-open",
-		"disc",
-		"disclosure-closed",
-	]);
+		buildFormattingTree(tree).nodes.filter(
+			(node) => node.marker || node.outsideMarker,
+		);
+	expect(
+		markers().map((node) => (node.marker ?? node.outsideMarker)?.type),
+	).toEqual(["disclosure-open", "disc", "disclosure-closed"]);
 	for (const selector of ["#item", "#div"]) {
 		actions.click(ref(selector));
 		expect(tree.get(id("details")).attributes.open).toBe("");
@@ -467,10 +466,13 @@ it.each([
 	"<div>Block</div>",
 	'<span style="display:contents"><div>Flattened block</div></span>',
 	"<span>Before<div>Split inline</div>After</span>",
-])("rejects outside ordinary markers with block content: %s", (content) => {
-	const { tree, id } = fixture(`<li id="item">${content}</li>`);
-	expect(() => buildFormattingTree(tree)).toThrow(/outside list-item markers/i);
-	expect(() => rasterizeDocument(tree)).toThrow(/outside list-item markers/i);
+])("coordinates outside ordinary markers with block content: %s", (content) => {
+	const { tree, id } = fixture(
+		`<style>body{padding-left:20px}</style><li id="item">${content}</li>`,
+	);
+	verifyTree(buildFormattingTree(tree));
+	expect(layoutDocument(tree).outsideMarkers).toHaveLength(1);
+	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(1);
 	tree.setAttribute(id("#item"), "style", "list-style-position:inside");
 	verifyTree(buildFormattingTree(tree));
 	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(1);
@@ -492,7 +494,9 @@ it.each([
 	expect(
 		Object.keys(result.issues).some((code) => code.startsWith("css:")),
 	).toBe(true);
-	expect(result.nodes.find((node) => node.marker)?.marker?.type).toBe("disc");
+	expect(
+		result.nodes.find((node) => node.outsideMarker)?.outsideMarker?.type,
+	).toBe("disc");
 	expect(() => rasterizeDocument(tree)).toThrow();
 });
 
@@ -563,7 +567,7 @@ it("preserves ordinary marker visibility and zero-size suppression", () => {
 		'<li id="item" style="visibility:hidden"><span style="visibility:visible">Visible</span></li>',
 	);
 	expect(
-		buildFormattingTree(tree).nodes.find((node) => node.marker)?.visible,
+		buildFormattingTree(tree).nodes.find((node) => node.outsideMarker)?.visible,
 	).toBe(false);
 	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(0);
 	expect(rasterizeDocument(tree).metrics.paintedGlyphs).toBeGreaterThan(0);

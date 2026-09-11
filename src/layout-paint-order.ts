@@ -2,8 +2,13 @@ import type { DocumentBox, DocumentLayout } from "./document-layout.js";
 import { isAtomicInline } from "./inline-atomic.js";
 import { stackingContentItems } from "./stacking-order.js";
 import type { TextGlyph, TextInlineFragment } from "./text-layout.js";
+import {
+	outsideMarkerRects,
+	type OutsideMarkerRect,
+} from "./outside-markers.js";
 
 export type LayoutContentItem =
+	| { kind: "marker"; marker: Readonly<OutsideMarkerRect> }
 	| { kind: "image"; box: Readonly<DocumentBox> }
 	| { kind: "box"; box: Readonly<DocumentBox> }
 	| { kind: "fragment"; fragment: Readonly<TextInlineFragment> }
@@ -43,6 +48,7 @@ function* flowContentItems(
 	const paintOrder = new Int32Array(nodes.length);
 	type Group = { id: number } & (
 		| { kind: "scope" }
+		| { kind: "marker"; marker: Readonly<OutsideMarkerRect> }
 		| { kind: "image"; box: Readonly<DocumentBox> }
 		| { kind: "context"; contextIndex: number }
 	);
@@ -80,6 +86,12 @@ function* flowContentItems(
 			scope.groups.push({ kind: "image", id: box.id, box });
 		else scope.boxes.push(box);
 	}
+	for (const marker of outsideMarkerRects(layout, charge)) {
+		charge();
+		scopes
+			.get(owners[marker.id])
+			?.groups.push({ kind: "marker", id: marker.id, marker });
+	}
 	for (
 		let contextIndex = 0;
 		contextIndex < layout.contexts.length;
@@ -102,6 +114,10 @@ function* flowContentItems(
 		}
 		for (const group of scope.groups.sort(ordered)) {
 			charge();
+			if (group.kind === "marker") {
+				yield { kind: "marker", marker: group.marker };
+				continue;
+			}
 			if (group.kind === "scope") {
 				yield* paintScope(group.id);
 				continue;

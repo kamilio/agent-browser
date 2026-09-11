@@ -3,8 +3,10 @@ import { runWhenActionable } from "./action-wait.js";
 import {
 	clickActionabilityCapabilities,
 	findClickPoint,
+	findHoverPoint,
 } from "./click-target.js";
 import { controlChecked } from "./controls.js";
+import { documentGeometry } from "./document-geometry.js";
 import { documentScroll } from "./document-scroll.js";
 import type { DocumentTree } from "./document.js";
 import { controlledEventListener } from "./events.js";
@@ -120,6 +122,159 @@ function gate() {
 	});
 	return { pending, release: () => release() };
 }
+
+const outsideSummaryCss =
+	"body{padding-left:24px}#target{display:list-item;height:auto;list-style-position:outside}";
+const outsideSummaryMarkup =
+	'<details><summary id="target"></summary><p>Expanded</p></details>';
+
+it("finds a real outside marker without adding it to DOM client rectangles", () => {
+	const { tree, target } = fixture(outsideSummaryCss, outsideSummaryMarkup);
+	const geometry = documentGeometry(tree);
+	const principal = geometry.getBoundingClientRect(target);
+	expect(principal.height).toBe(0);
+	const result = findClickPoint(tree, target);
+	expect(result.point).toBeDefined();
+	expect(result.point?.x).toBeLessThan(principal.left);
+	expect(
+		documentHitTesting(tree).elementFromPoint(result.point!.x, result.point!.y),
+	).toBe(target);
+	expect(findHoverPoint(tree, target).point).toEqual(result.point);
+	expect(geometry.getBoundingClientRect(target)).toEqual(principal);
+	expect(geometry.getClientRects(target)).toHaveLength(1);
+});
+
+it.each([false, true])(
+	"reference-clicks an empty outside summary with root scrolling: %s",
+	async (offscreen) => {
+		const { session, tab, page, target, reference, requests, click } =
+			await sessionFixture(
+				outsideSummaryCss + (offscreen ? "#target{margin-top:200px}" : ""),
+				outsideSummaryMarkup,
+			);
+		const events: string[] = [];
+		for (const type of ["mousedown", "mouseup", "click"])
+			page.interactions.events.addEventListener(target, type, () =>
+				events.push(type),
+			);
+		expect(
+			documentGeometry(page.document).getBoundingClientRect(target).height,
+		).toBe(0);
+		expect(page.queries.querySelector("details[open]")).toBeNull();
+		const result = await click();
+		expect(result.interaction.reference).toBe(reference);
+		expect(events).toEqual(["mousedown", "mouseup", "click"]);
+		expect(page.queries.querySelector("details[open]")).not.toBeNull();
+		expect(requests).toHaveLength(1);
+		if (offscreen)
+			expect(documentScroll(page.document).get().y).toBeGreaterThan(0);
+		await session.hover(tab.id, reference);
+		expect(page.queries.querySelector("details[open]")).not.toBeNull();
+		await click();
+		expect(page.queries.querySelector("details[open]")).toBeNull();
+	},
+);
+
+it.each([false, true])(
+	"hovers an empty outside summary without activation, offscreen: %s",
+	async (offscreen) => {
+		const { session, tab, page, reference } = await sessionFixture(
+			outsideSummaryCss + (offscreen ? "#target{margin-top:200px}" : ""),
+			outsideSummaryMarkup,
+		);
+		await session.hover(tab.id, reference);
+		expect(page.queries.querySelector("details[open]")).toBeNull();
+		if (offscreen)
+			expect(documentScroll(page.document).get().y).toBeGreaterThan(0);
+	},
+);
+
+it.each(["click", "hover", "dblclick"] as const)(
+	"scrolls the receiving outside marker past empty principal geometry for %s",
+	async (action) => {
+		const { session, tab, page, target, reference } = await sessionFixture(
+			`${outsideSummaryCss}#target{font-size:16px;line-height:300px}`,
+			outsideSummaryMarkup,
+		);
+		const clicks: string[] = [];
+		page.interactions.events.addEventListener(target, "click", () =>
+			clicks.push("click"),
+		);
+		expect(
+			documentGeometry(page.document).getBoundingClientRect(target).height,
+		).toBe(0);
+		await session[action](tab.id, reference);
+		expect(documentScroll(page.document).get().y).toBeGreaterThan(0);
+		expect(findHoverPoint(page.document, target).point).toBeDefined();
+		expect(clicks).toHaveLength(
+			action === "hover" ? 0 : action === "click" ? 1 : 2,
+		);
+	},
+);
+
+it("double-clicks the real offscreen outside-summary marker", async () => {
+	const { session, tab, page, target, reference } = await sessionFixture(
+		`${outsideSummaryCss}#target{margin-top:200px;font-size:16px;line-height:20px}`,
+		outsideSummaryMarkup,
+	);
+	const events: string[] = [];
+	for (const type of ["click", "dblclick"])
+		page.interactions.events.addEventListener(target, type, () =>
+			events.push(type),
+		);
+	await session.dblclick(tab.id, reference);
+	expect(documentScroll(page.document).get().y).toBeGreaterThan(0);
+	expect(events).toEqual(["click", "click", "dblclick"]);
+	expect(page.queries.querySelector("details[open]")).toBeNull();
+});
+
+it("requires the outside marker to receive the pointer rather than bypassing an overlay", () => {
+	const { tree, target, id } = fixture(
+		`${outsideSummaryCss}#overlay{position:absolute;left:16px;top:0;width:8px;height:12px;z-index:2}`,
+		`${outsideSummaryMarkup}<div id="overlay"></div>`,
+	);
+	expect(findClickPoint(tree, target)).toMatchObject({
+		blocked: "covered",
+		interceptingRef: tree.reference(id("#overlay")),
+	});
+	tree.setAttribute(id("#overlay"), "style", "pointer-events:none");
+	expect(findClickPoint(tree, target).point).toBeDefined();
+});
+
+it.each(["visibility:hidden", "pointer-events:none", "list-style-type:none"])(
+	"does not invent receiving marker geometry for %s",
+	(style) => {
+		const { tree, target } = fixture(
+			`${outsideSummaryCss}#target{${style}}`,
+			outsideSummaryMarkup,
+		);
+		expect(findClickPoint(tree, target).point).toBeUndefined();
+	},
+);
+
+it.each(["inert", 'aria-disabled="true"'])(
+	"preserves native outside-summary action restrictions: %s",
+	async (attribute) => {
+		const { page, click } = await sessionFixture(
+			outsideSummaryCss,
+			`<details ${attribute}><summary id="target"></summary><p>Expanded</p></details>`,
+		);
+		await expect(click()).rejects.toMatchObject({ code: "not-actionable" });
+		expect(page.queries.querySelector("details[open]")).toBeNull();
+	},
+);
+
+it("keeps fixed outside-marker action points stationary under root scroll", () => {
+	const { tree, target } = fixture(
+		`${outsideSummaryCss}#target{position:fixed;left:24px;top:3px}`,
+		`${outsideSummaryMarkup}<div style="height:300px"></div>`,
+	);
+	const before = findClickPoint(tree, target);
+	expect(before.point).toBeDefined();
+	documentScroll(tree).to(0, 120);
+	expect(findClickPoint(tree, target).point).toEqual(before.point);
+	expect(documentGeometry(tree).getBoundingClientRect(target).height).toBe(0);
+});
 
 it("finds a real receiving point without dispatch or scrolling", () => {
 	const { tree, actions, target, calls } = fixture();
