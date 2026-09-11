@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 TESTPAGES-CONTROL-FLOW.md records a native301→200 form-page
+navigation, real textarea fill and changed select choice ms4→ms1 with events.
+Global checkbox discovery then exceeds the harness's20-candidate cap before any
+click, so this is not browser pointer-failure evidence. Native stylesheet
+integrity/CORS handling independently leaves the original CSS unloaded. All28
+evidence/37 review checks and both receipt ledgers verify with zero cleanup.
+The attempted-host total is now60, not60 passing websites. A narrower native
+form-owner-scoped replay and exact stylesheet-attribute diagnosis are next;
+no cap increase, password inspection, upload or form submission is authorized.
+
 September 11, 2026 INTERNET-CHECKBOX-FLOW.md adds a fresh public native example:
 four original same-origin GETs return200, the document commits, and two enabled
 checkboxes are discovered. Native semantic inversion/restoration succeeds with
