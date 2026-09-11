@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 paired native MDN replays verify identical ordered node IDs,
+specificities and errors across all 323 stylesheet selector calls. The predicate
+ordering change reduces cascade work from 4790072 to 3991128 (16.68%), not a
+measured wall-clock speedup. MDN-SELECTOR-TEST-ORDER.md preserves both runs,
+unchanged CSS issues and complete cleanup. Separate native queries confirm the
+958911-work baseline-indicator hotspot has empty same-element class intersections
+despite individually present keys; investigate sound compound availability next.
+Actual grid/CSS rendering, native clicks and broader original goals stay open.
+
 September 11, 2026 exact MDN replay identifies the click's structural blocker:
 body.page-layout computes to display:grid and is deferred before its link subtree
 is formatted. MDN-NATIVE-FORMATTING.md records the absent e1673 box, five visited
