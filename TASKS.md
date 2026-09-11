@@ -6,6 +6,21 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11,2026,22:08 UTC: CSS diagnostic applicability now follows actual
+selector matches and provable media inactivity while preserving raw diagnostics.
+Unsupported-only matching rules, unknown selectors/media, loading/security errors
+and ambiguous scanner recovery remain conservative blockers. Formatting consumes
+the separate applicable map; original CSS/resources are not omitted. Media work
+is bounded and cached per refresh. The genuine native checkbox click fails on
+clean9b38bec at the old width guard and succeeds after this change; making its
+unsupported rule match blocks the next click again. `CSS-DIAGNOSTIC-APPLICABILITY.md`
+records10390 passing native tests,0 failures,2 existing exclusions,175 selected/
+174 strict roots and579 manifest entries, including55 new cases. The audit checks
+1066 source/1908 compiled inputs,5 owned files+manifest and2 preserved dirty
+residuals. Original OpenBSD live baseline still fails its genuine link click;
+new-release public-page retesting, full CSS/CSP/layout support, performance
+measurements and the broader browser/block-friction goal remain outstanding.
+
 September 11,2026,21:43 UTC: the first actual GNU software-page attempt returns
 8 HTTP200 responses but aborts before page commit at the unchanged8-request
 guard. `GNU-NATIVE-FLOW-FOLLOWUP.md` records8 admitted native/transport/wire

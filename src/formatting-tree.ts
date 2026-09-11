@@ -202,7 +202,7 @@ export function buildFormattingTree(
 	const styles = documentStyles(tree);
 	const styleMetrics = styles.metrics();
 	const issues: Record<string, number> = Object.create(null);
-	for (const [code, count] of Object.entries(styleMetrics.issues))
+	for (const [code, count] of Object.entries(styleMetrics.applicableIssues))
 		issues[`css:${code}`] = count;
 	const issue = (code: string) => {
 		issues[code] = (issues[code] ?? 0) + 1;

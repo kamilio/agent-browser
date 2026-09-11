@@ -89,6 +89,7 @@ import {
 	isCssTextProperty,
 } from "./css-text.js";
 import { documentBaseUrl } from "./document-url.js";
+import { cssMediaLimits } from "./css-media.js";
 import {
 	stylesheetSourceSize,
 	type StylesheetSource,
@@ -300,6 +301,7 @@ export class DocumentStyles {
 		work: 0,
 		codeUnits: 0,
 		issues: {} as Readonly<Record<string, number>>,
+		applicableIssues: {} as Readonly<Record<string, number>>,
 	};
 
 	constructor(
@@ -893,8 +895,13 @@ export class DocumentStyles {
 		this.paintComputed.clear();
 		this.customComputed.clear();
 		const issues: Record<string, number> = { ...this.loadIssues };
-		const issue = (code: string) => {
+		const applicableIssues: Record<string, number> = { ...this.loadIssues };
+		const rawIssue = (code: string) => {
 			issues[code] = (issues[code] ?? 0) + 1;
+		};
+		const issue = (code: string) => {
+			rawIssue(code);
+			applicableIssues[code] = (applicableIssues[code] ?? 0) + 1;
 		};
 		const budget: CssParseBudget = {
 			rules: 0,
@@ -923,6 +930,42 @@ export class DocumentStyles {
 			return text;
 		};
 		const winners = new Map<number, Map<CssProperty, Winner>>();
+		const applicable = (
+			diagnostics: Readonly<Record<string, number>> | undefined,
+		) => {
+			if (!diagnostics) return;
+			for (const [code, count] of Object.entries(diagnostics)) {
+				charge(1);
+				applicableIssues[code] = (applicableIssues[code] ?? 0) + count;
+			}
+		};
+		const mediaCache = new Map<
+			string,
+			{ matches: boolean; diagnostics: readonly string[] }
+		>();
+		const mediaApplicability = (media: readonly string[]) => {
+			let matches = true;
+			for (const query of media) {
+				charge(1);
+				let state = mediaCache.get(query);
+				if (!state) {
+					charge(query.length * (2 * cssMediaLimits.maxDepth + 8));
+					const diagnostics: string[] = [];
+					state = {
+						matches: cssMediaMatches(query, this.viewport, (code) =>
+							diagnostics.push(code),
+						),
+						diagnostics,
+					};
+					mediaCache.set(query, state);
+				}
+				for (const code of state.diagnostics) issue(code);
+				matches &&= state.matches;
+				if (!state.matches && !state.diagnostics.length)
+					return { matches: false, possible: false };
+			}
+			return { matches, possible: true };
+		};
 		const parseSheet = (
 			text: string,
 			graph: Readonly<StylesheetSource> | undefined,
@@ -935,7 +978,7 @@ export class DocumentStyles {
 			return parseCssRules(
 				source(text),
 				budget,
-				issue,
+				rawIssue,
 				media,
 				depth,
 				(start, inherited, nesting) => {
@@ -950,6 +993,9 @@ export class DocumentStyles {
 						entry.media ? [...inherited, entry.media] : [...inherited],
 						nesting + 1,
 					);
+				},
+				(diagnostics, inherited) => {
+					if (mediaApplicability(inherited).possible) applicable(diagnostics);
 				},
 			);
 		};
@@ -1051,15 +1097,11 @@ export class DocumentStyles {
 				node.attributes.media ? [node.attributes.media] : [],
 			);
 			for (const rule of rules) {
-				if (rule.declarations.length === 0) continue;
+				if (rule.declarations.length === 0 && !rule.issues) continue;
 				const baseOrder = order;
 				order += rule.declarations.length;
-				if (
-					!rule.media.every((media) =>
-						cssMediaMatches(media, this.viewport, issue),
-					)
-				)
-					continue;
+				const media = mediaApplicability(rule.media);
+				if (!media.possible || (!media.matches && !rule.issues)) continue;
 				if (work >= this.limits.maxWork)
 					throw new AgentBrowserError(
 						"resource-limit",
@@ -1078,9 +1120,12 @@ export class DocumentStyles {
 					)
 						throw error;
 					issue("unimplemented-or-invalid-css-selector");
+					applicable(rule.issues);
 					continue;
 				}
 				charge(this.queries.metrics().lastWork);
+				if (matches.size) applicable(rule.issues);
+				if (!media.matches) continue;
 				charge(matches.size * rule.declarations.length);
 				for (const [id, specificity] of matches)
 					apply(id, rule.declarations, specificity, false, baseOrder);
@@ -1413,6 +1458,7 @@ export class DocumentStyles {
 			codeUnits,
 			work,
 			issues: Object.freeze(issues),
+			applicableIssues: Object.freeze(applicableIssues),
 		};
 		this.cascadeBuilds++;
 		this.revision = this.tree.revision;

@@ -548,6 +548,8 @@
   "src/css-imports.test.ts",
   "src/stylesheet-imports.test.ts",
   "src/stylesheet-import-loading.test.ts",
+  "src/css-diagnostic-scopes.test.ts",
+  "src/style-diagnostic-applicability.test.ts",
   "src/stylesheet-fetch.test.ts",
   "src/subresource-integrity.test.ts",
   "src/list-ordinals.test.ts",

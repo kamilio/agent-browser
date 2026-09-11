@@ -101,6 +101,7 @@ export interface CssRule {
 	selector: string;
 	declarations: CssDeclaration[];
 	media: string[];
+	readonly issues?: Readonly<Record<string, number>>;
 }
 export interface CssParseBudget {
 	rules: number;
@@ -113,6 +114,10 @@ export interface StyleViewport {
 	height: number;
 }
 export type CssIssue = (code: string) => void;
+export type CssRuleDiagnosticSink = (
+	issues: Readonly<Record<string, number>>,
+	media: readonly string[],
+) => void;
 
 const globals = new Set(["initial", "inherit", "unset", "revert"]);
 const displays = new Set([
@@ -570,13 +575,23 @@ export function parseCssRules(
 		media: readonly string[],
 		depth: number,
 	) => readonly CssRule[] | undefined,
+	diagnostics?: CssRuleDiagnosticSink,
 ): CssRule[] {
 	if (depth > 16)
 		throw new AgentBrowserError(
 			"resource-limit",
 			"CSS rule nesting limit exceeded",
 		);
-	const scanner = new CssScanner(source, issue);
+	const globalIssues: Record<string, number> | undefined = diagnostics
+		? Object.create(null)
+		: undefined;
+	const globalIssue = globalIssues
+		? (code: string) => {
+				issue(code);
+				globalIssues[code] = (globalIssues[code] ?? 0) + 1;
+			}
+		: issue;
+	const scanner = new CssScanner(source, globalIssue);
 	const result: CssRule[] = [];
 	while (scanner.position < source.length) {
 		const start = scanner.position;
@@ -599,13 +614,13 @@ export function parseCssRules(
 						? resolveImport?.(start, media, depth)
 						: undefined;
 				if (imported) result.push(...imported);
-				else issue("css-import-not-loaded");
+				else globalIssue("css-import-not-loaded");
 			} else if (normalized && !/^@charset\b/i.test(normalized))
-				issue("unimplemented-or-invalid-css-rule");
+				globalIssue("unimplemented-or-invalid-css-rule");
 			continue;
 		}
 		const body = scanner.read("}", true);
-		if (!body.stop) issue("unterminated-css-rule");
+		if (!body.stop) globalIssue("unterminated-css-rule");
 		if (++budget.rules > budget.maxRules)
 			throw new AgentBrowserError("resource-limit", "CSS rule limit exceeded");
 		if (/^@media\b/i.test(normalized)) {
@@ -616,6 +631,8 @@ export function parseCssRules(
 					issue,
 					[...media, normalized.slice(6).trim()],
 					depth + 1,
+					undefined,
+					diagnostics,
 				),
 			);
 			continue;
@@ -628,22 +645,51 @@ export function parseCssRules(
 				active ? issue : () => {},
 				media,
 				depth + 1,
+				undefined,
+				active ? diagnostics : undefined,
 			);
 			if (active) result.push(...nested);
 			continue;
 		}
 		if (normalized.startsWith("@")) {
-			issue("unimplemented-css-at-rule");
+			globalIssue("unimplemented-css-at-rule");
 			continue;
 		}
-		const declarations = parseCssDeclarations(body.text, budget, issue);
-		if (declarations.length)
+		const ruleIssues: Record<string, number> | undefined = diagnostics
+			? Object.create(null)
+			: undefined;
+		const declarationIssue = ruleIssues
+			? (code: string) => {
+					if (
+						code === "unterminated-css-comment" ||
+						code === "unterminated-css-string"
+					) {
+						globalIssue(code);
+						return;
+					}
+					issue(code);
+					ruleIssues[code] = (ruleIssues[code] ?? 0) + 1;
+				}
+			: issue;
+		const declarations = parseCssDeclarations(
+			body.text,
+			budget,
+			declarationIssue,
+		);
+		const retainedIssues =
+			ruleIssues && Object.keys(ruleIssues).length
+				? Object.freeze(ruleIssues)
+				: undefined;
+		if (declarations.length || retainedIssues)
 			result.push({
 				selector: prelude.text.slice(preludeStart).trim(),
 				declarations,
 				media,
+				...(retainedIssues ? { issues: retainedIssues } : {}),
 			});
 	}
+	if (diagnostics && globalIssues && Object.keys(globalIssues).length)
+		diagnostics(Object.freeze(globalIssues), Object.freeze([...media]));
 	return result;
 }
 
