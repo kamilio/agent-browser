@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 MDN-POSITIONED-GRID.md identifies the sole first-boundary match:
+absolute ul.a11y-menu e74 under static Grid body e72, with top -320px, left/right
+2px and all-auto Grid placement. It is not an in-flow Grid item, fixed element or
+Grid container. A separate unchanged nineteen-response offline metadata pass
+verifies this without click/geometry calls or wire traffic. Implement and test
+its correct absolute containing-block/inset coordination rather than a generic
+guard bypass; actual containing-block geometry and MDN rendering remain unproved.
+
 September 11, 2026 GRID-ALIGNMENT-NATIVE.md closes the specific track-distribution
 source gap with one native public W3C GET (HTTP200), 76 observed headings and two
 successful bounded offline section extractions. Safe distributed fallbacks and
