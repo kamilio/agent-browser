@@ -1,4 +1,5 @@
 [
+  "src/selector-candidates.test.ts",
   "src/foreign-document.test.ts",
   "src/html-foreign.test.ts",
   "src/foreign-controls.test.ts",

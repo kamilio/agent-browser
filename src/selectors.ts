@@ -611,11 +611,17 @@ interface NodeInfo {
 	typePosition: number;
 	typeCount: number;
 }
+type CandidateKind = "tag" | "id" | "class";
+type CandidateTest = { kind: CandidateKind; value: string };
 interface TreeIndex {
 	root: number;
 	revision: number;
 	nodes: Map<number, NodeInfo>;
 	elements: NodeInfo[];
+	candidateIndexes: Partial<
+		Record<CandidateKind, Map<string, NodeInfo[]> | null>
+	>;
+	candidateEntries: number;
 	documentElement?: number;
 	targetElement?: number;
 	focusElement?: number;
@@ -643,6 +649,7 @@ export class DocumentQueries {
 	private structuralBuilds = 0;
 	private structuralNodesBuilt = 0;
 	private stateRefreshes = 0;
+	private candidateIndexBuilds = 0;
 	private controlValueDependent = false;
 	private unregisterClose: () => unknown;
 
@@ -691,7 +698,10 @@ export class DocumentQueries {
 				const scope = context.index.documentElement ?? this.tree.root;
 				const weights = compiled.selectors.map(selectorSpecificity);
 				const result = new Map<number, SelectorSpecificity>();
-				for (const candidate of context.index.elements) {
+				for (const candidate of this.selectorCandidates(
+					compiled.selectors,
+					context,
+				)) {
 					this.tick(context);
 					let best: SelectorSpecificity | undefined;
 					for (let index = 0; index < compiled.selectors.length; index++) {
@@ -750,6 +760,8 @@ export class DocumentQueries {
 			structuralBuilds: this.structuralBuilds,
 			structuralNodesBuilt: this.structuralNodesBuilt,
 			stateRefreshes: this.stateRefreshes,
+			candidateIndexBuilds: this.candidateIndexBuilds,
+			candidateIndexedEntries: this.index?.candidateEntries ?? 0,
 			controlValueDependent: this.controlValueDependent,
 			closed: this.closed,
 		});
@@ -761,6 +773,107 @@ export class DocumentQueries {
 		this.controlValueDependent = false;
 		this.index = undefined;
 		this.unregisterClose();
+	}
+	private selectorCandidates(
+		selectors: Selector[],
+		context: MatchContext,
+	): readonly NodeInfo[] {
+		const plans = selectors.map((selector) => {
+			const tests = selector[selector.length - 1].tests.filter(
+				(test): test is CandidateTest => {
+					this.tick(context);
+					return (
+						test.kind === "id" ||
+						test.kind === "class" ||
+						(test.kind === "tag" && test.value !== "*")
+					);
+				},
+			);
+			const identifier = tests.find((test) => test.kind === "id");
+			if (identifier) return [identifier];
+			const classes = tests.filter((test) => test.kind === "class");
+			return classes.length ? classes : tests;
+		});
+		if (plans.some((tests) => tests.length === 0))
+			return context.index.elements;
+		const branches: (readonly NodeInfo[])[] = [];
+		for (const tests of plans) {
+			let best: readonly NodeInfo[] | undefined;
+			for (const test of tests) {
+				const index = this.candidateIndex(test.kind, context);
+				if (!index) continue;
+				this.tick(context, test.value.length + 1);
+				let candidates: readonly NodeInfo[] = index.get(test.value) ?? [];
+				if (test.kind === "tag") {
+					const folded = asciiLower(test.value);
+					if (folded !== test.value)
+						candidates = this.mergeCandidates(
+							[candidates, index.get(folded) ?? []],
+							context,
+						);
+				}
+				if (best === undefined || candidates.length < best.length)
+					best = candidates;
+				if (best.length === 0) break;
+			}
+			if (best === undefined) return context.index.elements;
+			branches.push(best);
+		}
+		return this.mergeCandidates(branches, context);
+	}
+	private mergeCandidates(
+		branches: readonly (readonly NodeInfo[])[],
+		context: MatchContext,
+	): readonly NodeInfo[] {
+		if (branches.length === 1) return branches[0];
+		const unique = new Set<NodeInfo>();
+		for (const branch of branches)
+			for (const candidate of branch) {
+				this.tick(context);
+				unique.add(candidate);
+			}
+		return [...unique].sort((left, right) => {
+			this.tick(context);
+			return left.start - right.start;
+		});
+	}
+	private candidateIndex(
+		kind: CandidateKind,
+		context: MatchContext,
+	): Map<string, NodeInfo[]> | null {
+		const cached = context.index.candidateIndexes[kind];
+		if (cached !== undefined) return cached;
+		const index = new Map<string, NodeInfo[]>();
+		let entries = 0;
+		for (const info of context.index.elements) {
+			const value =
+				kind === "tag" ? info.node.tagName : (info.node.attributes[kind] ?? "");
+			this.tick(context, value.length + 1);
+			const keys =
+				kind === "class"
+					? new Set(value.split(/[\t\n\f\r ]+/).filter(Boolean))
+					: value
+						? [value]
+						: [];
+			for (const key of keys) {
+				this.tick(context);
+				if (
+					entries + context.index.candidateEntries >=
+					this.limits.maxIndexedNodes
+				) {
+					context.index.candidateIndexes[kind] = null;
+					return null;
+				}
+				const bucket = index.get(key);
+				if (bucket) bucket.push(info);
+				else index.set(key, [info]);
+				entries++;
+			}
+		}
+		context.index.candidateIndexes[kind] = index;
+		context.index.candidateEntries += entries;
+		this.candidateIndexBuilds++;
+		return index;
 	}
 	private query(selector: string, root: number, first: boolean) {
 		return this.operation(selector, root, (compiled, context) => {
@@ -925,6 +1038,8 @@ export class DocumentQueries {
 			revision: this.tree.revision,
 			nodes,
 			elements,
+			candidateIndexes: {},
+			candidateEntries: 0,
 			...this.interactionState(nodes),
 			documentElement:
 				root.kind === "document" ? nodes.get(root.id)?.children[0] : undefined,

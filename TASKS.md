@@ -6,6 +6,17 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 bounded stylesheet candidate indexing passes 6354 native tests
+across 109 selected files, with one reproduced baseline assertion excluded and
+one unchanged test typing error outside the 108 strict roots. Same-body Wikipedia
+loading now completes at 630524 style work units without raising the 5000000
+budget. STYLESHEET-CANDIDATES.md records a fresh portal load, actual search-field
+fill and native GET submission reaching an HTTP200 article via two redirects.
+That article and its captured stylesheets expose another query-work failure;
+the full form flow remains failed. Diagnose those captures next, without raising
+limits. Full rendering, varied-site coverage, research, fingerprint/challenge
+effectiveness and real credential/passkey-device acceptance remain outstanding.
+
 September 11, 2026 native SVG/MathML namespace integration passes 6201 selected
 native tests across 105 files, with one reproduced pre-existing test excluded
 and one unchanged test typing error outside the 104 strict roots. Build and
