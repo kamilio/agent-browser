@@ -7,6 +7,100 @@ import {
 const html = { "content-type": ["text/html; charset=utf-8"] };
 const challenge = { "cf-mitigated": ["challenge"] };
 
+describe("bounded client JavaScript challenge diagnostics", () => {
+	const text =
+		"JavaScript is disabled in your browser. Please enable JavaScript to proceed.";
+	const response = {
+		status: 200,
+		headers: html,
+		title: "Client Challenge",
+		text,
+	};
+	const expected = {
+		kind: "challenge",
+		provider: "unspecified",
+		confidence: "possible",
+		evidence: ["html-challenge-markers"],
+		action: "stop-and-request-user-handoff",
+	};
+	it.each([200, 403, 503])(
+		"recognizes paired native client challenge markers for HTTP %s",
+		(status) => {
+			expect(classifyBrowserChallenge({ ...response, status })).toEqual(
+				expected,
+			);
+		},
+	);
+	it("normalizes case and whitespace without assigning a vendor", () => {
+		expect(
+			classifyBrowserChallenge({
+				...response,
+				title: " \nCLIENT\tCHALLENGE ",
+				text: "JAVASCRIPT is disabled\nin your browser. Please\tenable JavaScript to proceed.",
+			}),
+		).toEqual(expected);
+	});
+	it.each([
+		["Documentation", text],
+		["Client Challenge documentation", text],
+		["Client Challenge", "Please enable JavaScript to proceed."],
+		["Client Challenge", "JavaScript is disabled in your browser."],
+		[
+			"Client Challenge",
+			"JavaScript is disabled in your browserware. Please enable JavaScript to proceed.",
+		],
+		[
+			"Client Challenge",
+			"JavaScript is disabled in your browser. Please enable JavaScript to proceeding.",
+		],
+		["Client Challenge", "An article about building browser clients."],
+	])(
+		"requires the exact challenge title and both bounded phrases: %s",
+		(title, body) => {
+			expect(
+				classifyBrowserChallenge({ ...response, title, text: body }),
+			).toBeNull();
+		},
+	);
+	it("does not match beyond text/title bounds or inside a truncated word", () => {
+		expect(
+			classifyBrowserChallenge({
+				...response,
+				text: `${" ".repeat(8192)}${text}`,
+			}),
+		).toBeNull();
+		expect(
+			classifyBrowserChallenge({
+				...response,
+				title: `${" ".repeat(256)}Client Challenge`,
+			}),
+		).toBeNull();
+		const marker =
+			"JavaScript is disabled in your browser. Please enable JavaScript to proceed";
+		expect(
+			classifyBrowserChallenge({
+				...response,
+				text: `${" ".repeat(8192 - marker.length)}${marker}ing`,
+			}),
+		).toBeNull();
+	});
+	it.each([204, 205, 302])(
+		"retains non-content response exclusions for HTTP %s",
+		(status) => {
+			expect(classifyBrowserChallenge({ ...response, status })).toBeNull();
+		},
+	);
+	it("still requires valid HTML response headers", () => {
+		expect(classifyBrowserChallenge({ ...response, headers: {} })).toBeNull();
+		expect(
+			classifyBrowserChallenge({
+				...response,
+				headers: { "content-type": "application/json" },
+			}),
+		).toBeNull();
+	});
+});
+
 const savedPoeLoginText = String.raw`# [PoePoe](<https://poe.com/login>)
 
 ## Chat with the best AI, privately or in a group chat\. Explore GPT\-5\.6\-Sol, Claude\-Opus\-5, Claude\-Fable\-5\.1, Grok\-4\.6, Kimi\-K3, and thousands of others, all on Poe\.

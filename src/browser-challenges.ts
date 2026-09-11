@@ -210,6 +210,19 @@ export function classifyBrowserChallenge(
 			return null;
 		const title = boundedText(response, "title", 256);
 		const text = boundedText(response, "text", 8192);
+		if (
+			!title.truncated &&
+			title.value === "client challenge" &&
+			hasTextMarker(text, /\bjavascript is disabled in your browser\b/) &&
+			hasTextMarker(text, /\bplease enable javascript to proceed\b/)
+		)
+			return diagnostic(
+				headers,
+				"challenge",
+				"unspecified",
+				"possible",
+				"html-challenge-markers",
+			);
 		const challengeTitle =
 			!title.truncated &&
 			/^(?:just a moment[.!…]*|attention required!?\s*\|\s*cloudflare|security check|verify (?:that )?you are human|are you (?:a )?human\??|captcha|robot check|duckduckgo)$/.test(
