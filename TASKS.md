@@ -6,6 +6,17 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 ORDERED-LIST-INTEGRATION.md adds actual decimal and
+decimal-leading-zero glyphs, bounded HTML start/value/reversed numbering, rendered
+owner grouping, correct marker extents and native link navigation beside ordinal10.
+The original128pass/8fail baseline remains; targeted338 and clean9188-case native
+gates pass, with2 unchanged exclusions. Build/strict/format and independent source
+review pass; the558-entry candidate manifest excludes2 unrelated dirty entries.
+No runtime dependency, global resource increase or actionability-guard bypass is
+added. Alphabetic/Roman/custom counters remain unsupported, and the next unchanged
+Test Pages capture replay must measure remaining table/clear/overflow/CSS blockers.
+This is native fixture evidence, not new website coverage; broader gates remain.
+
 September 11, 2026 TESTPAGES-CSS-CAPACITY-REPLAY.md verifies the9064-build against
 the two unchanged live captures, with2 native/mocked requests and0 wire. The page
 now commits with5929 rules,9701 declarations,367894 code units and1307941 work,

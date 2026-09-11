@@ -87,6 +87,132 @@ function pixel(
 	return [...image.pixels.slice(start, start + 4)];
 }
 
+it("numbers ordinary ordered lists without mutating DOM text or references", () => {
+	const { tree, id, markers } = fixture(
+		"ol,li{margin:0;padding:0}li{font-size:16px;line-height:20px}",
+		"<ol start=9><li id=first>One</li><li id=second>Two</li></ol>",
+	);
+	const before = {
+		count: tree.nodeCount,
+		revision: tree.revision,
+		text: tree.textContent(tree.root),
+		children: tree.get(id("#first")).children,
+	};
+	expect(markers().map((node) => node.outsideMarker)).toEqual([
+		{ type: "decimal", ordinal: 9 },
+		{ type: "decimal", ordinal: 10 },
+	]);
+	expect(buildFormattingTree(tree).issues).toEqual({});
+	expect({
+		count: tree.nodeCount,
+		revision: tree.revision,
+		text: tree.textContent(tree.root),
+		children: tree.get(id("#first")).children,
+	}).toEqual(before);
+});
+
+it("uses full multi-digit outside marker width while preserving principal rectangles", () => {
+	const { tree, id } = fixture(
+		"body{padding-left:100px}ol,li{margin:0;padding:0}li{font-size:16px;line-height:20px;color:red}",
+		"<ol start=9><li id=first>One</li><li id=second>Two</li></ol>",
+	);
+	documentStyles(tree).setViewport(300, 140);
+	const first = outsideState(tree, tree.reference(id("#first")));
+	const second = outsideState(tree, tree.reference(id("#second")));
+	expect(first.marker.width).toBe(36);
+	expect(second.marker.width).toBe(48);
+	expect(first.marker.x + first.marker.width).toBe(first.box.borderX);
+	expect(second.marker.x + second.marker.width).toBe(second.box.borderX);
+	expect(
+		documentHitTesting(tree).elementFromPoint(
+			second.marker.x + 2,
+			second.marker.y + 2,
+		),
+	).toBe(id("#second"));
+	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(2);
+	const rect = documentGeometry(tree).getBoundingClientRect(id("#second"));
+	tree.setAttribute(id("#second"), "value", "1000");
+	expect(outsideState(tree, tree.reference(id("#second"))).marker.width).toBe(
+		72,
+	);
+	expect(documentGeometry(tree).getBoundingClientRect(id("#second"))).toEqual(
+		rect,
+	);
+});
+
+it("accounts for numeric inside marker advance before text", () => {
+	const { tree, markers } = fixture(
+		"ol,li{margin:0;padding:0}li{font-size:16px;list-style-position:inside}",
+		"<ol start=10><li>One</li></ol>",
+	);
+	expect(markers()[0].marker).toEqual({ type: "decimal", ordinal: 10 });
+	expect(markers()[0].intrinsic).toEqual({ width: 48, height: 14 });
+	expect(firstGlyph(tree).x).toBe(68);
+	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(1);
+});
+
+it("reverses rendered ordinals and honors item values and hidden entries", () => {
+	const { tree, id, markers } = fixture(
+		"ol,li{margin:0;padding:0}#hidden{display:none}#unmarked{list-style-type:none}",
+		"<ol id=list reversed><li id=first>One</li><li id=hidden>Hidden</li><li id=unmarked>Blank</li><li id=last value=0>Last</li></ol>",
+	);
+	expect(markers().map((node) => node.outsideMarker?.ordinal)).toEqual([3, 0]);
+	tree.removeAttribute(id("#last"), "value");
+	expect(markers().map((node) => node.outsideMarker?.ordinal)).toEqual([3, 1]);
+	tree.setAttribute(id("#list"), "start", "  +8suffix");
+	expect(markers().map((node) => node.outsideMarker?.ordinal)).toEqual([8, 6]);
+});
+
+it("keeps nested unordered bullets independent from ordered numbering", () => {
+	const { markers } = fixture(
+		"ol,ul,li{margin:0;padding:0}",
+		"<ol><li>One<ul><li>Bullet</li></ul></li><li>Two</li></ol>",
+	);
+	expect(markers().map((node) => node.outsideMarker)).toEqual([
+		{ type: "decimal", ordinal: 1 },
+		{ type: "disc" },
+		{ type: "decimal", ordinal: 2 },
+	]);
+});
+
+it("generates decimal markers for authored non-li list items", () => {
+	const { markers } = fixture(
+		".item{display:list-item;list-style-type:decimal}",
+		"<div><span class=item>One</span><span class=item>Two</span></div>",
+	);
+	expect(markers().map((node) => node.outsideMarker?.ordinal)).toEqual([1, 2]);
+});
+
+it("keeps unsupported alphabetic hints explicit unless author CSS overrides them", () => {
+	const { tree, id, markers } = fixture(
+		"",
+		"<ol type=a><li id=item>One</li></ol>",
+	);
+	expect(
+		buildFormattingTree(tree).issues["list-marker-type-not-supported"],
+	).toBe(1);
+	expect(markers()).toHaveLength(0);
+	tree.setAttribute(id("#item"), "style", "list-style-type:decimal");
+	expect(buildFormattingTree(tree).issues).toEqual({});
+	expect(markers()[0].outsideMarker).toEqual({ type: "decimal", ordinal: 1 });
+});
+
+it("charges generated numeric text and retains precision failures", () => {
+	const { tree, id } = fixture(
+		"ol,li{margin:0;padding:0}",
+		"<ol id=list><li>X</li></ol>",
+	);
+	const formatting = buildFormattingTree(tree);
+	expect(formatting.metrics.textCodeUnits).toBe(4);
+	expect(() => buildFormattingTree(tree, { maxTextCodeUnits: 3 })).toThrow(
+		"text limit",
+	);
+	tree.setAttribute(id("#list"), "start", "9007199254740992");
+	expect(() => buildFormattingTree(tree)).toThrow("precision limit");
+	tree.setAttribute(id("#list"), "style", "list-style-type:none");
+	expect(buildFormattingTree(tree).issues).toEqual({});
+});
+
 it("renders a generated closed marker while leaving DOM text, children and semantic names unchanged", () => {
 	const { tree, id, markers } = fixture();
 	const summary = id("#summary");
@@ -300,7 +426,7 @@ it("keeps rich inside content and coordinates outside block placement", () => {
 	expect(markers()).toHaveLength(0);
 });
 
-it.each(["decimal", "url(image.png)", "symbols('*')"])(
+it.each(["lower-alpha", "url(image.png)", "symbols('*')"])(
 	"does not advertise unsupported marker type %s",
 	(type) => {
 		const { tree, id, markers } = fixture(`summary{list-style-type:${type}}`);
@@ -818,7 +944,7 @@ it("charges the final outside-marker raster and recovers after work exhaustion",
 	).toEqual(raster.image.pixels);
 });
 
-it.each(["direction:rtl", "float:left", "list-style-type:decimal"])(
+it.each(["direction:rtl", "float:left", "list-style-type:lower-alpha"])(
 	"retains the existing unsupported boundary for %s",
 	(declaration) => {
 		const { tree } = outsideFixture("<div>Block</div>", `li{${declaration}}`);

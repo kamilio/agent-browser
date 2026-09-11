@@ -481,7 +481,7 @@ it.each([
 });
 
 it.each([
-	"list-style-type:decimal",
+	"list-style-type:upper-alpha",
 	"list-style-type:lower-roman",
 	"list-style-type:symbols('*')",
 	"list-style-image:url(marker.png)",
@@ -520,20 +520,31 @@ it("charges ordinary markers to existing box and work budgets without DOM mutati
 });
 
 it.each([
-	'<ol><li id="item">Numbered</li></ol>',
-	'<ol start="3" reversed><li id="item" value="7">Numbered</li></ol>',
-	'<ol><div style="display:contents"><li id="item">Numbered</li></div></ol>',
-	'<ol style="list-style-type:disc"><li id="item">Ambiguous disc</li></ol>',
-])(
-	"does not silently replace unrepresented ordered-list counters with discs: %s",
-	(markup) => {
+	['<ol><li id="item">Numbered</li></ol>', { type: "decimal", ordinal: 1 }],
+	[
+		'<ol start="3" reversed><li id="item" value="7">Numbered</li></ol>',
+		{ type: "decimal", ordinal: 7 },
+	],
+	[
+		'<ol><div style="display:contents"><li id="item">Numbered</li></div></ol>',
+		{ type: "decimal", ordinal: 1 },
+	],
+	[
+		'<ol style="list-style-type:disc"><li id="item">Authored disc</li></ol>',
+		{ type: "disc" },
+	],
+] as const)(
+	"renders ordered-list defaults and explicit author marker overrides: %s",
+	(markup, marker) => {
 		const { tree, id } = fixture(
 			`<style>body{padding-left:20px}</style>${markup}`,
 		);
+		const formatting = buildFormattingTree(tree);
+		expect(formatting.issues).toEqual({});
 		expect(
-			buildFormattingTree(tree).issues["ordered-list-marker-not-supported"],
-		).toBe(1);
-		expect(() => rasterizeDocument(tree)).toThrow();
+			formatting.nodes.find((node) => node.outsideMarker)?.outsideMarker,
+		).toEqual(marker);
+		expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(1);
 		tree.setAttribute(id("#item"), "style", "list-style-type:none");
 		expect(buildFormattingTree(tree).issues).toEqual({});
 		expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(0);

@@ -98,6 +98,7 @@ import {
 	initialListStyle,
 	type ListStyle,
 } from "./css-list.js";
+import { htmlListStyleType } from "./list-ordinals.js";
 import {
 	cssVariableLimits,
 	parseVariableValue,
@@ -1085,6 +1086,7 @@ export class DocumentStyles {
 				node.parent === null ? undefined : computed.get(node.parent);
 			const properties = winners.get(node.id);
 			const details = summaryDetails(this.tree, node);
+			const listType = htmlListStyleType(node);
 			charge(cssListProperties.length);
 			listComputed.set(
 				node.id,
@@ -1099,7 +1101,9 @@ export class DocumentStyles {
 						? initialListStyle
 						: (listComputed.get(node.parent) ?? initialListStyle),
 					details === undefined
-						? {}
+						? listType === undefined
+							? {}
+							: { "list-style-type": listType }
 						: {
 								"list-style-type": Object.hasOwn(
 									this.tree.get(details).attributes,

@@ -15,6 +15,8 @@ export const markerTypes = Object.freeze([
 	"square",
 	"disclosure-open",
 	"disclosure-closed",
+	"decimal",
+	"decimal-leading-zero",
 ]);
 
 export function isCssListProperty(

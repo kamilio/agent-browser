@@ -16,8 +16,13 @@ import { layoutNumber } from "./layout-values.js";
 import { documentStyles } from "./styles.js";
 import { generatedControlStyle } from "./generated-style.js";
 import { describeControl, type SoftwareControl } from "./control-rendering.js";
-import { summaryDetails } from "./details.js";
-import type { DisclosureMarker } from "./disclosure-marker.js";
+import {
+	type DisclosureMarker,
+	disclosureMarkerExtent,
+	disclosureMarkerText,
+} from "./disclosure-marker.js";
+import { markerTypes } from "./css-list.js";
+import { resolveListOrdinals } from "./list-ordinals.js";
 import { bitmapFont } from "./bitmap-font.js";
 import {
 	documentGeneratedControls,
@@ -195,6 +200,8 @@ export function buildFormattingTree(
 	let visitedDomNodes = 0;
 	let deferredSubtrees = 0;
 	let outsideMarkers = 0;
+	const renderedListItems = new Set<number>();
+	const numericMarkers: { node: number; item: number; outside: boolean }[] = [];
 	const charge = (units = 1) => {
 		work += units;
 		if (work > limits.maxWork)
@@ -761,25 +768,16 @@ export function buildFormattingTree(
 			});
 			const contents = children();
 			if (listItem) {
+				renderedListItems.add(id);
 				const list = styles.list(id);
-				const disclosure = summaryDetails(tree, node) !== undefined;
-				if (!disclosure && list["list-style-type"] === "disc") {
-					let ancestor = node.parent;
-					while (ancestor !== null) {
-						charge();
-						const owner = tree.get(ancestor);
-						if (isHtmlElement(owner, "ol")) {
-							issue("ordered-list-marker-not-supported");
-							break;
-						}
-						if (isHtmlElement(owner, "ul") || isHtmlElement(owner, "menu"))
-							break;
-						ancestor = owner.parent;
-					}
-				}
 				const typography = styles.text(id);
 				const fontSize = Number.parseFloat(typography["font-size"]);
-				if (list["list-style-type"] !== "none" && fontSize > 0) {
+				const type = list["list-style-type"];
+				if (!markerTypes.includes(type) && fontSize > 0)
+					issue("list-marker-type-not-supported");
+				else if (type !== "none" && fontSize > 0) {
+					const outside = list["list-style-position"] === "outside";
+					let markerNode = result;
 					if (list["list-style-position"] === "outside") {
 						charge();
 						if (nodes.length + outsideMarkers >= limits.maxBoxes)
@@ -789,29 +787,30 @@ export function buildFormattingTree(
 							);
 						outsideMarkers++;
 						nodes[result].outsideMarker = Object.freeze({
-							type: list["list-style-type"],
+							type,
 						});
-					} else
-						contents.unshift(
-							create({
-								kind: "replaced",
-								level: "inline",
-								ref,
-								visible: visibility.visible,
-								typography,
-								marker: Object.freeze({ type: list["list-style-type"] }),
-								box: initialBoxStyle,
-								paint: Object.freeze({
-									...initialPaintStyle,
-									color: styles.paint(id).color,
-								}),
-								intrinsic: Object.freeze({
-									width: fontSize,
-									height:
-										(fontSize * bitmapFont.ascent) / bitmapFont.unitsPerEm,
-								}),
+					} else {
+						markerNode = create({
+							kind: "replaced",
+							level: "inline",
+							ref,
+							visible: visibility.visible,
+							typography,
+							marker: Object.freeze({ type }),
+							box: initialBoxStyle,
+							paint: Object.freeze({
+								...initialPaintStyle,
+								color: styles.paint(id).color,
 							}),
-						);
+							intrinsic: Object.freeze({
+								width: fontSize,
+								height: (fontSize * bitmapFont.ascent) / bitmapFont.unitsPerEm,
+							}),
+						});
+						contents.unshift(markerNode);
+					}
+					if (type === "decimal" || type === "decimal-leading-zero")
+						numericMarkers.push({ node: markerNode, item: id, outside });
 				}
 			}
 			normalizeChildren(result, contents);
@@ -861,6 +860,54 @@ export function buildFormattingTree(
 	const children: number[] = [];
 	for (const child of rootChildren) append(children, visit(child, 1));
 	normalizeChildren(root, children);
+	if (numericMarkers.length) {
+		const boxProducers = new Set([tree.root]);
+		for (const node of nodes) {
+			charge();
+			if (node.ref && node.kind !== "text" && node.kind !== "break")
+				boxProducers.add(tree.resolve(node.ref).id);
+		}
+		const ordinals = resolveListOrdinals(
+			tree,
+			renderedListItems,
+			boxProducers,
+			charge,
+			new Set(numericMarkers.map((marker) => marker.item)),
+		);
+		for (const target of numericMarkers) {
+			charge();
+			const node = nodes[target.node];
+			const previous = target.outside ? node.outsideMarker : node.marker;
+			const ordinal = ordinals.get(target.item);
+			if (!previous || ordinal === undefined || !node.typography)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Missing numeric list marker owner",
+				);
+			const marker = Object.freeze({ type: previous.type, ordinal });
+			const text = disclosureMarkerText(marker);
+			if (text === undefined)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Missing numeric list marker text",
+				);
+			textCodeUnits += text.length;
+			if (textCodeUnits > limits.maxTextCodeUnits)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Formatting text limit exceeded",
+				);
+			charge(text.length);
+			if (target.outside) node.outsideMarker = marker;
+			else {
+				node.marker = marker;
+				node.intrinsic = disclosureMarkerExtent(
+					marker,
+					Number.parseFloat(node.typography["font-size"]),
+				);
+			}
+		}
+	}
 	charge(nodes.length);
 	return Object.freeze({
 		stage: "display-decomposition",

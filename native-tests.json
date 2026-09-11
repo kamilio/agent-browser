@@ -547,6 +547,8 @@
   "src/text-layout.test.ts",
   "src/stylesheet-fetch.test.ts",
   "src/subresource-integrity.test.ts",
+  "src/list-ordinals.test.ts",
+  "src/numeric-markers.test.ts",
   "src/text-font.test.ts",
   "src/text-locator.test.ts",
   "src/trace-export.test.ts",

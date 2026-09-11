@@ -1193,6 +1193,44 @@ it("loads a large integrity-protected utility stylesheet before a genuine checkb
 	]);
 });
 
+it("navigates a genuine link beside native ordered-list markers", async () => {
+	const { session, requests } = fixture(
+		{ loadDocument: loadBrowserDocument },
+		async (input) =>
+			response(input.url, {
+				headers: { "content-type": ["text/html"] },
+				body: new TextEncoder().encode(
+					input.url === initialUrl
+						? "<!doctype html><ol start=9><li>First<li><a id=next href=/next>Next</a></ol>"
+						: "<!doctype html><p>Destination</p>",
+				),
+			}),
+	);
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	const page = session.page(tab);
+	const link = page.queries.querySelector("#next");
+	if (link === null) throw new Error("Missing ordered-list fixture link");
+	const reference = page.document.reference(link);
+	const events: string[] = [];
+	for (const type of ["mousedown", "mouseup", "click"])
+		page.interactions.events.addEventListener(link, type, () =>
+			events.push(type),
+		);
+	expect((await session.click(tab, reference)).navigation).toMatchObject({
+		kind: "document",
+		url: "https://example.com/next",
+	});
+	expect(events).toEqual(["mousedown", "mouseup", "click"]);
+	expect(requests.map((request) => request.url)).toEqual([
+		initialUrl,
+		"https://example.com/next",
+	]);
+	expect(session.metrics()).toMatchObject({ commits: 2, pendingLoads: 0 });
+	expect(() => page.document.resolve(reference)).toThrow("closed");
+	session.close();
+});
+
 it("honors the transport redirect budget for policy stylesheet loads", async () => {
 	const { session, requests, transport } = fixture(
 		{ loadDocument: loadBrowserDocument },

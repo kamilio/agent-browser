@@ -2,6 +2,7 @@ import type { DocumentLayout } from "./document-layout.js";
 import { AgentBrowserError } from "./errors.js";
 import { layoutNumber } from "./layout-values.js";
 import { textFontExtent } from "./text-font.js";
+import { disclosureMarkerExtent } from "./disclosure-marker.js";
 
 export interface OutsideMarker {
 	readonly id: number;
@@ -100,6 +101,7 @@ export function coordinateOutsideMarkers(
 				"Missing outside marker principal box",
 			);
 		const font = textFontExtent(node.typography);
+		const extent = disclosureMarkerExtent(node.outsideMarker, font.fontSize);
 		const line = lines.get(node.id);
 		const baseline = line
 			? line.baseline + (tops.get(node.id) ?? 0)
@@ -107,8 +109,8 @@ export function coordinateOutsideMarkers(
 		markers.push(
 			Object.freeze({
 				id: node.id,
-				width: font.fontSize,
-				height: font.ascent,
+				width: extent.width,
+				height: extent.height,
 				offsetY: layoutNumber(baseline - box.borderY - font.ascent, true),
 				baselineOwner: line?.id ?? null,
 			}),
