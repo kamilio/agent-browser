@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 SELENIUM-NATIVE-FORM.md adds a real Selenium form-page GET,
+but initial navigation stops when the same-origin-only harness denies its
+observed jsDelivr Bootstrap stylesheet before transport. This is harness admission,
+not browser failure or form acceptance: two native request attempts, one wire
+request, no form actions. Both original and additive receipt ledgers verify;
+the additive review distinguishes immediate pending document cleanup from its
+settled zero-resource state without rewriting the original verifier failure.
+A separate test admitting that exact public stylesheet is the next step.
+
 September 11, 2026 GRID-CHILD-POSITIONING.md resolves the overbroad direct-Grid
 parent guard for explicit physical anchors against a non-Grid containing block
 or viewport. It retains actual Grid-containing-block, static-Grid-anchor and
