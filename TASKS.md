@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 the fresh MDN run completes native loading/style computation
+after nine HTTP200 responses, then the retained probe assertion rejects its
+stylesheet-resource-limit issue before commit or click. MDN-CUSTOM-NOOP-LIVE.md
+preserves the failed flow and pendingLoads settling from one to zero. Source
+inspection confirms the session's separate eight-stylesheet request allowance;
+review bounded resource admission for this multi-sheet page rather than dropping
+the acceptance check. This is a resource/coverage gate, not an authorization or
+proven CAPTCHA barrier. Research, rendering and broader goals remain unfinished.
+
 September 11, 2026 the original nine-response MDN capture now commits natively
 at 3728759 cascade-work units under the unchanged 5000000 limit, with expected
 title/main heading and bounded DOM text. MDN-CUSTOM-NOOP-REPLAY.md records the
