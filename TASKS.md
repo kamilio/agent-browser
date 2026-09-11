@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 GRID-READER-CANDIDATE-REPLAY.md verifies the fixed reader
+against the captured W3C research workflow: one offline navigation discovers 114
+headings and two observed-heading sections extract with zero wire traffic.
+GRID-READER-OMITTED-LIST-REPLAY.md preserves the earlier harness accounting
+failure before candidate execution; it is not a production-reader regression.
+Existing isolated-check authorization covers this follow-up. Partial reader
+semantics, two ambiguous research topics, actual Grid layout/native clicks and
+the four original research topics remain open; no new full-suite run is claimed.
+
 September 11, 2026 the semantic reader handles direct optional li endings in
 omitted HTML lists while retaining their omitted root and foreign/malformed-input
 guards. READER-OMITTED-LISTS.md records 128 focused passes, 11 preserved failing
