@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 a fresh CERN early-web native link flow passes: the observed
+What's out there? anchor is clicked, its destination commits, and the replaced
+document closes. CERN-NATIVE-FLOW.md records two real requests, two commits,
+clean final cleanup, and the exact relative-has build used. This is navigation
+evidence, not complete rendering, challenge avoidance or research completion.
+MDN's separately improved capture and fresh live flow remain separate gates.
+
 September 11, 2026 one-entry unchanged custom-declaration reuse passes 6689
 selected native tests across 112 explicit files with the documented exceptions.
 CUSTOM-NOOP-REUSE.md records the failing work-cap baseline and exact parent plus
