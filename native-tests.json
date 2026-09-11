@@ -1,4 +1,8 @@
 [
+  "src/html-tokenizer-discard.test.ts",
+  "src/research-reader-raw.test.ts",
+  "src/research-reader-raw-cli.test.ts",
+  "src/research-json-replay-raw.test.ts",
   "src/research-capture-cleanup.test.ts",
   "src/research-json-replay.test.ts",
   "src/research-workflow.test.ts",

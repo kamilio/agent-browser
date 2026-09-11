@@ -107,3 +107,17 @@ source-level follow-up plus passing regression coverage.
 These are no-network tests, not live structured-table acceptance. The separate
 SWE-bench long capture still fails the reader text limit and is ineligible for
 this API. Historical failures and source measurements remain unchanged.
+
+## Explicit raw-policy captures
+
+The later bounded raw-reader policy is preserved during replay from a pinned
+eligible receipt's readerRawPolicy or reader.rawTextPolicy declaration. If both
+are present they must agree; unknown values or malformed declarations reject
+with owned-body cleanup. Only the allowlisted literal becomes a loader option,
+not arbitrary metadata counters or limits. No declaration preserves the original
+three-argument loader behavior. Admission still precedes policy interpretation;
+failed/blocked/evidence-only captures remain rejected regardless of policy.
+
+READER-OMITTED-RAW.md records the new synthetic coverage. A new successful
+SWE-bench capture and local replay are documented in SWE-BENCH-READER-RECOVERY.md;
+neither changes the earlier failed capture or the historical validation above.

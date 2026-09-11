@@ -4,7 +4,11 @@ import { htmlEncoding } from "./html-encoding.js";
 import { isHtmlSpecial } from "./html-formatting.js";
 import { htmlParseInfo, setHtmlParseInfo } from "./html-info.js";
 import { parseHtmlDocument } from "./html-parser.js";
-import { HtmlTokenizer } from "./html-tokenizer.js";
+import {
+	type HtmlDiscardRawName,
+	HtmlTokenizer,
+	htmlRawDiscardWindowCodeUnits,
+} from "./html-tokenizer.js";
 import {
 	type NetworkResponse,
 	decodeResponseText,
@@ -16,9 +20,11 @@ import {
 	validateResearchDocumentProfile,
 } from "./research-admission.js";
 import {
+	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
 	researchReaderProfile,
 	setResearchReaderInfo,
+	validateResearchReaderRawPolicy,
 } from "./research-reader-info.js";
 import {
 	type ResourceLimitKind,
@@ -40,6 +46,11 @@ export const researchReaderLimits = Object.freeze({
 	maxOutputCodeUnits: 2_000_000,
 	maxTokens: 100_000,
 	maxDepth: 128,
+});
+
+export const researchReaderRawLimits = Object.freeze({
+	maxWorkUnits: 32_000_000,
+	maxWindowCodeUnits: htmlRawDiscardWindowCodeUnits,
 });
 
 export type ResearchReaderLimits = {
@@ -73,6 +84,17 @@ const reconstructableFormatting = new Set(
 const tableCells = new Set(["td", "th"]);
 const tableSections = new Set(["tbody", "thead", "tfoot"]);
 
+function discardableRaw(name: string): name is HtmlDiscardRawName {
+	return (
+		name === "script" ||
+		name === "style" ||
+		name === "xmp" ||
+		name === "iframe" ||
+		name === "noembed" ||
+		name === "noframes"
+	);
+}
+
 function closeAdjacentTableEnds(open: string[], name: string) {
 	if (!tableCells.has(name) && name !== "tr" && !tableSections.has(name))
 		return;
@@ -103,7 +125,9 @@ export function sanitizeResearchHtml(
 	options: Partial<ResearchReaderLimits> = {},
 	signal?: AbortSignal,
 	profile?: ResearchDocumentProfileId,
+	rawPolicy?: ResearchReaderRawPolicy,
 ) {
+	const selectedRawPolicy = validateResearchReaderRawPolicy(rawPolicy);
 	const readerLimits =
 		validateResearchDocumentProfile(profile) === "long-v1"
 			? researchLongDocumentAdmission.reader
@@ -125,6 +149,15 @@ export function sanitizeResearchHtml(
 	};
 	check("reader.source", limits.maxSourceCodeUnits, source.length);
 	const omittedSubtrees: Record<string, number> = Object.create(null);
+	const omittedRaw = selectedRawPolicy
+		? {
+				codeUnits: 0,
+				workUnits: 0,
+				steps: 0,
+				elements: 0,
+				...researchReaderRawLimits,
+			}
+		: undefined;
 	const report: ResearchReaderReport = {
 		profile: researchReaderProfile,
 		partial: true,
@@ -140,6 +173,7 @@ export function sanitizeResearchHtml(
 		ignoredAttributes: 0,
 		unwrappedElements: 0,
 		tokenizerIssues: 0,
+		...(selectedRawPolicy ? { rawTextPolicy: selectedRawPolicy } : {}),
 	};
 	let tokenStart = 0;
 	const tokenizer = new HtmlTokenizer(source, (issue) => {
@@ -172,6 +206,21 @@ export function sanitizeResearchHtml(
 		check("reader.text", limits.maxTextCodeUnits, report.textCodeUnits);
 		if (!omit) emit(escapeHtml(value));
 	};
+	const omitRaw = (name: string) => {
+		if (omittedRaw && discardableRaw(name)) {
+			const discarded = tokenizer.discardRaw(name, (units) => {
+				omittedRaw.workUnits += units;
+				check(
+					"reader.omitted-work",
+					omittedRaw.maxWorkUnits,
+					omittedRaw.workUnits,
+				);
+			});
+			omittedRaw.codeUnits += discarded.discardedCodeUnits;
+			omittedRaw.steps += discarded.steps;
+			omittedRaw.elements++;
+		} else text(tokenizer.raw(name) ?? "", true);
+	};
 	for (let token = nextToken(); token; token = nextToken()) {
 		check("reader.tokens", limits.maxTokens, ++report.tokens);
 		const omitting = skipped.length > 0;
@@ -196,7 +245,7 @@ export function sanitizeResearchHtml(
 			} else if (!token.selfClosing && !voidTags.has(name)) {
 				skipped.push(name);
 				check("reader.depth", limits.maxDepth, skipped.length);
-				if (rawTags.has(name)) text(tokenizer.raw(name) ?? "", true);
+				if (rawTags.has(name)) omitRaw(name);
 			}
 			continue;
 		}
@@ -208,7 +257,7 @@ export function sanitizeResearchHtml(
 					token.selfClosing && ["svg", "math"].includes(name);
 				if (!voidTags.has(name) && !foreignEmpty) {
 					skipped.push(name);
-					if (rawTags.has(name)) text(tokenizer.raw(name) ?? "", true);
+					if (rawTags.has(name)) omitRaw(name);
 				}
 			}
 			continue;
@@ -285,6 +334,7 @@ export function sanitizeResearchHtml(
 		report: Object.freeze({
 			...report,
 			omittedSubtrees: Object.freeze(omittedSubtrees),
+			...(omittedRaw ? { omittedRaw: Object.freeze({ ...omittedRaw }) } : {}),
 		}),
 	};
 }
@@ -313,7 +363,9 @@ export function loadResearchDocument(
 	response: NetworkResponse,
 	context: DocumentLoaderContext,
 	profile?: ResearchDocumentProfileId,
+	rawPolicy?: ResearchReaderRawPolicy,
 ): DocumentTree {
+	const selectedRawPolicy = validateResearchReaderRawPolicy(rawPolicy);
 	const selectedProfile = validateResearchDocumentProfile(profile);
 	const readerLimits =
 		selectedProfile === "long-v1"
@@ -384,6 +436,7 @@ export function loadResearchDocument(
 		},
 		context.signal,
 		selectedProfile,
+		selectedRawPolicy,
 	);
 	const inertContext = {
 		limits: selectedLimits ?? context.limits,

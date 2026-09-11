@@ -110,3 +110,13 @@ response regressions. All 984 isolated source inputs remain unchanged. Evidence:
 `node_modules/.cache/native-validation/native-research-batch-stop-september11/`.
 This focused check excludes the existing selector failures described above and
 is not a full-repository or live-website pass.
+
+## Bounded omitted raw text
+
+`--reader-raw-policy separate-omitted-raw-v1` is an explicit reader-only option
+that separates omitted nonentity raw text from the text quota while retaining
+source limits and adding bounded raw scanning/work accounting. All default and
+long-v1 admission restrictions remain unchanged. Programmatic execution uses
+readerRawPolicy. READER-OMITTED-RAW.md describes the precise contract, 222 new
+tests and propagation into eligible capture replay; SWE-BENCH-READER-RECOVERY.md
+records a fresh successful website check. No-policy report shapes stay unchanged.

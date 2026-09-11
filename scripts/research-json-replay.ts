@@ -14,8 +14,10 @@ import {
 } from "../src/research-admission.js";
 import { loadResearchDocument } from "../src/research-loader.js";
 import {
+	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
 	researchReaderInfo,
+	validateResearchReaderRawPolicy,
 } from "../src/research-reader-info.js";
 import { DocumentQueries, validateSelectorSyntax } from "../src/selectors.js";
 import {
@@ -133,6 +135,39 @@ function selectionSnapshot(value: unknown) {
 	};
 }
 
+function replayRawPolicy(
+	metadata: Readonly<Record<string, unknown>>,
+): ResearchReaderRawPolicy | undefined {
+	const topDeclared = Object.hasOwn(metadata, "readerRawPolicy");
+	const reader = metadata.reader;
+	const readerRecord =
+		reader !== null && typeof reader === "object" && !Array.isArray(reader)
+			? (reader as Record<string, unknown>)
+			: undefined;
+	const readerDeclared =
+		readerRecord !== undefined && Object.hasOwn(readerRecord, "rawTextPolicy");
+	const invalid = (): never => {
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid research replay raw policy",
+		);
+	};
+	if (topDeclared && Object.hasOwn(metadata, "reader") && !readerRecord)
+		invalid();
+	const declarations = [
+		...(topDeclared ? [metadata.readerRawPolicy] : []),
+		...(readerDeclared ? [readerRecord?.rawTextPolicy] : []),
+	];
+	let policy: ResearchReaderRawPolicy | undefined;
+	for (const declaration of declarations) {
+		const selected = validateResearchReaderRawPolicy(declaration);
+		if (selected === undefined || (policy !== undefined && policy !== selected))
+			invalid();
+		policy = selected;
+	}
+	return policy;
+}
+
 export function extractResearchReplayJson(
 	rawReceipt: Uint8Array,
 	trusted: TrustedResearchReplayAdmission,
@@ -158,6 +193,9 @@ export function extractResearchReplayJson(
 	let tree: DocumentTree | undefined;
 	try {
 		checkpoint();
+		const rawPolicy = replayRawPolicy(admission.originalMetadata);
+		const policyArguments: [] | [ResearchReaderRawPolicy] =
+			rawPolicy === undefined ? [] : [rawPolicy];
 		const primary = admission.originalMetadata.primaryResponse as {
 			url: string;
 			status: number;
@@ -213,6 +251,7 @@ export function extractResearchReplayJson(
 				},
 			},
 			profile,
+			...policyArguments,
 		);
 		checkpoint();
 		const report: ResearchJsonReplayReport = {

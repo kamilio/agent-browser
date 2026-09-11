@@ -40,6 +40,8 @@ export type HtmlDiscardRawName =
 	| "noembed"
 	| "noframes";
 
+export const htmlRawDiscardWindowCodeUnits = 65_536;
+
 type ScriptState = "data" | "escaped" | "double";
 type RawWorkDebit = (units: number) => void;
 
@@ -612,6 +614,53 @@ export class HtmlTokenizer {
 
 	raw(name: string, entities = false): string | undefined {
 		return this.read(() => this.readRaw(name, entities));
+	}
+
+	discardRaw(
+		name: HtmlDiscardRawName,
+		debit: (units: number) => void,
+	): Readonly<{ discardedCodeUnits: number; steps: number }> {
+		if (
+			typeof name !== "string" ||
+			!Object.hasOwn(rawEndings, name) ||
+			typeof debit !== "function" ||
+			this.bounded
+		)
+			throw new AgentBrowserError("invalid-input", "Invalid raw discard input");
+		this.checkIssueLimit();
+		const start = this.offset;
+		const session = new HtmlRawDiscardSession(name);
+		let steps = 0;
+		this.pending = false;
+		try {
+			for (;;) {
+				const windowStart = this.offset;
+				const length = Math.min(
+					this.source.length - windowStart,
+					htmlRawDiscardWindowCodeUnits,
+				);
+				debit(length);
+				const input = this.source.slice(windowStart, windowStart + length);
+				const result = session.step(
+					input,
+					windowStart + length === this.source.length,
+					debit,
+					(code) => {
+						this.offset = windowStart + length;
+						this.issue(code);
+					},
+				);
+				this.offset = windowStart + result.consumed;
+				steps++;
+				if (result.status !== "more")
+					return Object.freeze({
+						discardedCodeUnits: this.offset - start,
+						steps,
+					});
+			}
+		} finally {
+			this.work += Math.max(0, this.offset - start);
+		}
 	}
 
 	private readRaw(name: string, entities: boolean): string {

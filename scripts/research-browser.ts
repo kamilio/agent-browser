@@ -39,6 +39,10 @@ import {
 	researchReaderProfile,
 } from "../src/research-loader.js";
 import {
+	type ResearchReaderRawPolicy,
+	validateResearchReaderRawPolicy,
+} from "../src/research-reader-info.js";
+import {
 	type ResourceLimitDiagnostic,
 	resourceLimitDiagnostic,
 } from "../src/resource-limit.js";
@@ -176,6 +180,7 @@ function researchLines(value: unknown): ResearchLineRange {
 
 export function parseResearchArguments(args: readonly string[]) {
 	let reader = false;
+	let readerRawPolicy: ResearchReaderRawPolicy | undefined;
 	let captureBody = false;
 	let format: "markdown" | "json" | undefined;
 	let tableMetadata = false;
@@ -190,6 +195,16 @@ export function parseResearchArguments(args: readonly string[]) {
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (argument === "--reader-raw-policy" && readerRawPolicy === undefined) {
+			const value = args[++index];
+			if (value === undefined)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Missing research reader raw policy",
+				);
+			readerRawPolicy = validateResearchReaderRawPolicy(value);
+			continue;
+		}
 		if (argument === "--format" && format === undefined) {
 			const value = args[++index];
 			if (value !== "markdown" && value !== "json")
@@ -284,6 +299,11 @@ export function parseResearchArguments(args: readonly string[]) {
 			);
 		urls.push(url.href);
 	}
+	if (readerRawPolicy !== undefined && !reader)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research reader raw policy requires the reader",
+		);
 	if (selector !== undefined && lines !== undefined)
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -346,6 +366,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	return {
 		reader,
 		urls,
+		...(readerRawPolicy === undefined ? {} : { readerRawPolicy }),
 		...(format === undefined ? {} : { format }),
 		...(tableMetadata ? { tableMetadata: true as const } : {}),
 		...(minRequestIntervalMs === undefined ? {} : { minRequestIntervalMs }),
@@ -368,6 +389,7 @@ export type ResearchOutcome =
 
 export interface ResearchNavigationReport {
 	admission?: ResearchAdmissionProvenance;
+	readerRawPolicy?: ResearchReaderRawPolicy;
 	requestedUrl: string;
 	finalUrl: string | null;
 	startedAt: string;
@@ -405,6 +427,7 @@ export interface ResearchNavigationReport {
 }
 
 export interface ResearchExecutionOptions {
+	readerRawPolicy?: ResearchReaderRawPolicy;
 	format?: "markdown" | "json";
 	tableMetadata?: boolean;
 	minRequestIntervalMs?: number;
@@ -429,6 +452,7 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 			"invalid-input",
 			"Invalid research execution options",
 		);
+	validateResearchReaderRawPolicy(options.readerRawPolicy);
 }
 
 export async function researchNavigation(
@@ -445,6 +469,11 @@ export async function researchNavigation(
 	executionOptions: ResearchExecutionOptions = {},
 ): Promise<ResearchNavigationReport> {
 	validateExecutionOptions(executionOptions);
+	if (executionOptions.readerRawPolicy !== undefined && reader !== true)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research reader raw policy requires the reader",
+		);
 	const selectedDocumentProfile =
 		validateResearchDocumentProfile(documentProfile);
 	if (selectedDocumentProfile === "long-v1" && reader !== true)
@@ -457,6 +486,9 @@ export async function researchNavigation(
 	const lineRange =
 		lines === undefined ? undefined : validateResearchLines(lines);
 	const validated = parseResearchArguments([
+		...(executionOptions.readerRawPolicy === undefined
+			? []
+			: ["--reader-raw-policy", executionOptions.readerRawPolicy]),
 		...(executionOptions.format === undefined
 			? []
 			: ["--format", executionOptions.format]),
@@ -488,6 +520,9 @@ export async function researchNavigation(
 	const started = Date.now();
 	const report: ResearchNavigationReport = {
 		...(admissionLimits ? { admission: researchLongAdmissionProvenance } : {}),
+		...(validated.readerRawPolicy === undefined
+			? {}
+			: { readerRawPolicy: validated.readerRawPolicy }),
 		requestedUrl: reportUrl(validated.urls[0]),
 		finalUrl: null,
 		startedAt: new Date(started).toISOString(),
@@ -604,6 +639,13 @@ export async function researchNavigation(
 			loadDocument: (response, context) => {
 				stage = "loader";
 				if (!reader) return loadBrowserDocument(response, context);
+				if (validated.readerRawPolicy !== undefined)
+					return loadResearchDocument(
+						response,
+						context,
+						validated.documentProfile,
+						validated.readerRawPolicy,
+					);
 				return admissionLimits
 					? loadResearchDocument(response, context, "long-v1")
 					: loadResearchDocument(response, context);
@@ -820,6 +862,9 @@ export async function* researchBatch(
 				options.find,
 				options.documentProfile,
 				{
+					...(options.readerRawPolicy === undefined
+						? {}
+						: { readerRawPolicy: options.readerRawPolicy }),
 					format: options.format,
 					tableMetadata: options.tableMetadata,
 					minRequestIntervalMs: options.minRequestIntervalMs,
@@ -945,7 +990,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--capture-body] [--format markdown|json] [--table-metadata] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--reader-raw-policy separate-omitted-raw-v1] [--capture-body] [--format markdown|json] [--table-metadata] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; raw policy requires reader)\n",
 		);
 		process.exitCode = 64;
 	});

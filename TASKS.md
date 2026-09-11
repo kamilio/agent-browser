@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+On September 11, 2026 at 05:30 UTC, the explicit separate-omitted-raw-v1 reader
+policy recovers a fresh SWE-bench DOM-reader load with unchanged admission caps:
+HTTP200, 11 headings, one request and a closed transport. One independently
+pinned local replay then extracts an observed benchmark section as JSON with
+zero extra GETs. READER-OMITTED-RAW.md and SWE-BENCH-READER-RECOVERY.md record the
+bounded raw-work/window contract, policy propagation and exact evidence.
+Build, strict22 roots, scoped lint and 2823/2823 selected tests pass, including
+222 new cases; all2601 retained baseline outcomes match. The first new test
+typing failure is preserved. Old failed receipts remain ineligible. Continue
+varied-site functionality/research, interactive behavior and crawler/CAPTCHA
+friction work; no measured speedup, full-suite pass or completed secrets/passkey/
+fingerprinting/research acceptance is claimed.
+
 September 11, 2026 website work now includes successful native JSON reader
 retrievals of the MMLU-Pro arXiv abstract and Apple Mac Studio specifications.
 AMD returns a confirmed Cloudflare429 and is not retried. SWE-bench's reader

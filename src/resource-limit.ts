@@ -7,6 +7,7 @@ const units = Object.freeze({
 	"network.session-decoded": "bytes",
 	"reader.source": "code-units",
 	"reader.text": "code-units",
+	"reader.omitted-work": "code-units",
 	"reader.output": "code-units",
 	"reader.tokens": "tokens",
 	"reader.depth": "levels",
