@@ -171,6 +171,18 @@ remain actionable testing targets. All51 evidence checks and both ledgers verify
 with zero cleanup state. The earlier prelaunch metadata failure remains sealed
 and is not counted as a browser run or rewritten as a pass.
 
+## Subsequent fresh W3C tables probe — September 11
+
+`W3C-TABLES-NATIVE-FLOW.md` uses the committed9614-pass build for a fresh native
+visit to the CSS2.2 tables specification. Three wire GETs return HTTP200, with
+no mocks, redirects, challenge or retry. The real table-layout anchor click still
+fails the formatting-profile guard; all five active deferred elements are tables.
+An unloaded CSS import, original CSS diagnostics and nine native CSP-denied image
+states remain separately documented. All42 evidence checks and both ledgers
+verify, with zero cleanup. This repeats the already recorded www.w3.org hostname;
+the attempted-host inventory remains62. Navigation is not full-page or click
+acceptance, and the native image-policy limitation is not a server challenge.
+
 ## Next acceptance work
 
 - Resolve measured Selenium formatting gaps without discarding original CSS;

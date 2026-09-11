@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 W3C-TABLES-NATIVE-FLOW.md adds a fresh native-only visit to
+the W3C CSS2.2 tables specification on the committed9614 build:3 wire HTTP200s,
+0 mocks/redirects,251ms request spacing and no challenge or retry. The actual
+table-layout anchor is discovered, but its one genuine click fails the formatting
+guard without changing URL/history. Five deferred table elements are the sole
+active formatting issue category; original CSS diagnostics and an unloaded import
+remain separate. Nine image states reflect the native loader's conservative
+CSP-presence denial, not server or harness access denial. All42 evidence checks,
+both ledgers and body hashes verify; cleanup is zero. www.w3.org was already in
+the attempted-host inventory, so it stays62, not62 working sites. Implement real
+table placement/sizing/layout and proper resource-policy handling, then replay
+unchanged captures; broader browser, research and credential gates remain open.
+
 September 11, 2026 TESTPAGES-SVG-REPLAY-ROUND02.md tests the committed9614 build
 against the same unchanged Test Pages HTML/CSS captures:2 native/mock responses,
 0 wire and no new host coverage. Actual SVG e87 is now an admitted replaced node
