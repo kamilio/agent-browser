@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 an offline MDN CSS profile reproduces full-index :has scanning
+at fatal selector call 146; MDN-NATIVE-PROFILE.md records the exact selector and
+unchanged-budget costs. A separate live Hacker News homepage loads but native
+link click fails its formatting profile, as preserved in HN-NATIVE-FLOW.md.
+Repair relative-selector candidate work and diagnose the exact click formatting
+issues; neither failed flow is a completed website or research acceptance gate.
+
 September 11, 2026 native navigation failure-settlement regressions pass with
 6591 selected native cases across 111 explicit files and the existing documented
 exceptions. NAVIGATION-FAILURE-SETTLEMENT.md distinguishes eventual task cleanup
