@@ -6,6 +6,13 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 native navigation failure-settlement regressions pass with
+6591 selected native cases across 111 explicit files and the existing documented
+exceptions. NAVIGATION-FAILURE-SETTLEMENT.md distinguishes eventual task cleanup
+from immediate outer rejection; no counters or production semantics changed.
+The MDN live cleanup observation remains historical and inconclusive. Continue
+MDN selector-cost repair, varied-site flows, and the outstanding broader gates.
+
 September 11, 2026 the separate MDN native link-activation attempt fails during
 initial CSS/query loading after nine HTTP200 responses; no link is selected or
 clicked. MDN-NATIVE-FLOW.md preserves the failed run and an immediate pendingLoads

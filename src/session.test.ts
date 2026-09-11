@@ -836,6 +836,50 @@ it("supersedes pending work and closes a late document without allowing stale co
 	expect(session.tabs()[0].url).toBe("https://example.com/new");
 });
 
+it.each(["throw", "abort-then-throw"] as const)(
+	"settles an initialized loader resource failure after close: %s",
+	async (failureMode) => {
+		const controller = new AbortController();
+		const failure = new AgentBrowserError(
+			"resource-limit",
+			"Query work limit exceeded",
+		);
+		let partial: DocumentTree | undefined;
+		let loaderCalls = 0;
+		const { session, requests } = fixture({
+			loadDocument: (result, context) => {
+				loaderCalls++;
+				partial = documentFixture(result, context);
+				if (!context.initializeDocument)
+					throw new Error("Missing native document initialization");
+				context.initializeDocument(partial);
+				if (failureMode === "abort-then-throw") controller.abort(failure);
+				throw failure;
+			},
+		});
+		const tab = session.createTab();
+		await expect(
+			session.navigate(tab.id, initialUrl, { signal: controller.signal }),
+		).rejects.toMatchObject({
+			code: failureMode === "throw" ? "resource-limit" : "aborted",
+		});
+		session.close();
+		expect(session.metrics().pendingLoads).toBeLessThanOrEqual(1);
+		await vi.waitFor(() => expect(session.metrics().pendingLoads).toBe(0));
+		expect(loaderCalls).toBe(1);
+		expect(requests).toHaveLength(1);
+		expect(partial?.nodeCount).toBe(0);
+		expect(session.metrics()).toMatchObject({
+			closed: true,
+			tabs: 0,
+			navigations: 1,
+			commits: 0,
+			cleanupErrors: 0,
+			network: { active: 0, closed: true },
+		});
+	},
+);
+
 it("aborts queued same-document work before it can change the current fragment", async () => {
 	const { session } = fixture();
 	const tab = session.createTab();
