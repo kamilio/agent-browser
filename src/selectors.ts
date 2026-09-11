@@ -30,6 +30,7 @@ export const selectorSyntaxLimits = Object.freeze({
 });
 
 type Relation = " " | ">" | "+" | "~";
+type SelectorComponentScope = "list" | "branch";
 type AttributeOperator = "=" | "~=" | "|=" | "^=" | "$=" | "*=";
 type SimpleSelector =
 	| { kind: "tag" | "id" | "class"; value: string }
@@ -222,6 +223,7 @@ class SelectorParser {
 		private readonly limits: Readonly<
 			Pick<QueryLimits, keyof typeof selectorSyntaxLimits>
 		>,
+		private readonly componentScope: SelectorComponentScope = "list",
 	) {
 		if (typeof source !== "string") syntax("expected a string");
 		if (source.length > limits.maxSelectorCodeUnits)
@@ -256,6 +258,7 @@ class SelectorParser {
 		const result: Selector[] = [];
 		this.space();
 		while (true) {
+			if (depth === 0 && this.componentScope === "branch") this.components = 0;
 			const parts: Selector = [];
 			if (relative) parts.push({ tests: [{ kind: "pseudo", name: "scope" }] });
 			let relation: Relation | undefined;
@@ -746,6 +749,7 @@ export class DocumentQueries {
 				);
 			},
 			maxWork,
+			"branch",
 		);
 	}
 	matches(id: number, selector: string) {
@@ -1023,21 +1027,28 @@ export class DocumentQueries {
 		root: number,
 		run: (compiled: CompiledSelector, context: MatchContext) => T,
 		workLimit = this.limits.maxWork,
+		componentScope: SelectorComponentScope = "list",
 	): T {
 		if (this.closed)
 			throw new AgentBrowserError("closed", "Document queries are closed");
-		let compiled = this.cache.get(selector);
+		if (typeof selector !== "string") syntax("expected a string");
+		const cacheKey = `${componentScope}:${selector}`;
+		let compiled = this.cache.get(cacheKey);
 		if (!compiled) {
-			compiled = new SelectorParser(selector, this.limits).parse();
+			compiled = new SelectorParser(
+				selector,
+				this.limits,
+				componentScope,
+			).parse();
 			this.controlValueDependent ||= compiled.controlValue;
 			if (this.cache.size >= this.limits.maxCachedSelectors) {
 				const oldest = this.cache.keys().next().value;
 				if (oldest !== undefined) this.cache.delete(oldest);
 			}
-			this.cache.set(selector, compiled);
+			this.cache.set(cacheKey, compiled);
 		} else {
-			this.cache.delete(selector);
-			this.cache.set(selector, compiled);
+			this.cache.delete(cacheKey);
+			this.cache.set(cacheKey, compiled);
 		}
 		const index = this.indexFor(root);
 		if (compiled.nativeState && index.root !== this.tree.root)

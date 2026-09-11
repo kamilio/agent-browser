@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 stylesheet selector-list admission passes 6406 selected native
+tests with the documented baseline/strict exceptions. STYLESHEET-SELECTOR-LISTS.md
+records per-top-level-branch component bounds, unchanged aggregate ordinary-query
+limits and isolated cache modes. Python.org passes its former 120-branch failure
+but now fails a selector text cap inflated by leading CSS comments. Next separate
+stylesheet trivia, replay the unchanged captures, then run the fresh Python.org
+search flow. Rendering, research and challenge-effectiveness gates remain open.
+
 September 11, 2026 branch-local stylesheet matching and ancestor subtree bounds
 pass 6377 selected native tests with the documented baseline/strict exceptions.
 SELECTOR-ANCESTOR-RANGES.md records the repeated-key regression and fix, a captured

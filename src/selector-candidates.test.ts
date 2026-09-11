@@ -2,7 +2,11 @@ import { afterEach, expect, it } from "vitest";
 import type { DocumentTree } from "./document.js";
 import { mathmlNamespace, svgNamespace } from "./dom-namespaces.js";
 import { parseHtmlDocument } from "./html-parser.js";
-import { DocumentQueries } from "./selectors.js";
+import {
+	DocumentQueries,
+	supportsCssSelector,
+	validateSelectorSyntax,
+} from "./selectors.js";
 import { DocumentStyles } from "./styles.js";
 
 const documents: DocumentTree[] = [];
@@ -914,5 +918,295 @@ it.each([
 			expect([...result]).toEqual([[hit, [1, 200, 0]]]);
 			expect(queries.metrics().lastWork).toBeLessThan(1_000_000);
 		}
+	},
+);
+
+function stylesheetBranches() {
+	return Array.from(
+		{ length: 120 },
+		(_value, index) => `.group-${index} > p.leaf`,
+	);
+}
+
+it("rejects non-string selectors before constructing mode-specific cache keys", () => {
+	const { queries } = fixture("<p></p>");
+	let coercions = 0;
+	const selector = {
+		toString() {
+			coercions++;
+			return "p";
+		},
+	} as unknown as string;
+	expect(() => queries.querySelectorAll(selector)).toThrow("expected a string");
+	expect(() => queries.matchingSpecificities(selector)).toThrow(
+		"expected a string",
+	);
+	expect(coercions).toBe(0);
+	expect(queries.metrics().cachedSelectors).toBe(0);
+});
+
+it("matches 120 stylesheet branches in document order with full matching and maximum specificity", () => {
+	const { queries, id } = fixture(
+		"<main class=group-119><p id=first class=leaf data-ready></p><p id=second class=leaf></p><section><p id=nested class=leaf></p></section><span id=wrong-tag class=leaf></span></main><main class=group-0><p id=third class=leaf></p></main><p id=outside class=leaf></p>",
+	);
+	const first = id("#first");
+	const second = id("#second");
+	const third = id("#third");
+	const branches = stylesheetBranches();
+	branches[118] = "#first.leaf[data-ready]";
+	const selector = branches.join(", ");
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expect([...queries.matchingSpecificities(selector)]).toEqual([
+			[first, [1, 2, 0]],
+			[second, [0, 2, 1]],
+			[third, [0, 2, 1]],
+		]);
+	}
+});
+
+it.each([1, 2, 3])(
+	"applies a custom component allowance of %s separately to stylesheet branches",
+	(maxComponents) => {
+		const { tree, id } = fixture("<p id=target class=leaf></p>");
+		const target = id("#target");
+		const queries = new DocumentQueries(tree, { maxComponents });
+		const branch = ".leaf".repeat(maxComponents);
+		const selector = Array.from({ length: 4 }, () => branch).join(", ");
+		expect([...queries.matchingSpecificities(selector)]).toEqual([
+			[target, [0, maxComponents, 0]],
+		]);
+		expect(() => queries.querySelectorAll(selector)).toThrow("component limit");
+		expect(() =>
+			queries.matchingSpecificities(`${selector}, ${branch}.leaf`),
+		).toThrow("component limit");
+	},
+);
+
+it("rejects a single over-complex stylesheet branch even after valid branches", () => {
+	const { queries, id } = fixture("<p id=target class=leaf></p>");
+	const target = id("#target");
+	const selector = `${stylesheetBranches().join(", ")}, ${".leaf".repeat(256)}`;
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expect([...queries.matchingSpecificities(selector)]).toEqual([
+			[target, [0, 256, 0]],
+		]);
+		const cached = queries.metrics().cachedSelectors;
+		expect(() => queries.matchingSpecificities(`${selector}.leaf`)).toThrow(
+			"component limit",
+		);
+		expect(queries.metrics().cachedSelectors).toBe(cached);
+	}
+});
+
+it.each([
+	"is(.leaf, .missing)",
+	"where(.leaf, .missing)",
+	"not(.missing, .absent)",
+	"has(.leaf, .missing)",
+	"nth-child(1 of .leaf, .missing)",
+	"nth-last-child(1 of .leaf, .missing)",
+	"is(.leaf):where(.leaf)",
+])(
+	"keeps nested %s components within their enclosing branch allowance",
+	(pseudo) => {
+		const { tree, id } = fixture(
+			'<main><p id=target class="host leaf tail"><span class=leaf></span></p></main>',
+		);
+		const target = id("#target");
+		const branch = `.host:${pseudo}.tail`;
+		const selector = `.absent, ${branch}`;
+		const acceptedComponents = pseudo === "is(.leaf):where(.leaf)" ? 6 : 5;
+		const accepted = new DocumentQueries(tree, {
+			maxComponents: acceptedComponents,
+		});
+		expect([...accepted.matchingSpecificities(selector).keys()]).toEqual([
+			target,
+		]);
+		const rejected = new DocumentQueries(tree, {
+			maxComponents: acceptedComponents - 1,
+		});
+		for (let repeat = 0; repeat < 2; repeat++) {
+			expect(() => rejected.matchingSpecificities(selector)).toThrow(
+				"component limit",
+			);
+			expect(rejected.metrics().cachedSelectors).toBe(0);
+		}
+	},
+);
+
+it.each([
+	[",", "Invalid selector"],
+	[", [", "Invalid selector"],
+	[", :unsupported-native-pseudo", "Unsupported selector"],
+	[", ::before", "Unsupported selector"],
+	[", :is(.leaf, :unsupported-native-pseudo)", "Unsupported selector"],
+])(
+	"rejects and does not cache a stylesheet list with suffix %s",
+	(suffix, message) => {
+		const { tree, id } = fixture(
+			"<main class=group-0><p id=target class=leaf></p></main>",
+		);
+		const target = id("#target");
+		const queries = new DocumentQueries(tree);
+		const selector = stylesheetBranches().join(", ");
+		for (let repeat = 0; repeat < 2; repeat++) {
+			expect(() =>
+				queries.matchingSpecificities(`${selector}${suffix}`),
+			).toThrow(message);
+			expect(queries.metrics().cachedSelectors).toBe(repeat);
+			expect([...queries.matchingSpecificities(selector)]).toEqual([
+				[target, [0, 2, 1]],
+			]);
+		}
+	},
+);
+
+it("does not let cached stylesheet selectors weaken any ordinary query syntax limits", () => {
+	const { queries, id } = fixture(
+		"<main class=group-119><p id=target class=leaf></p></main>",
+	);
+	const target = id("#target");
+	const selector = stylesheetBranches().join(", ");
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expect([...queries.matchingSpecificities(selector)]).toEqual([
+			[target, [0, 2, 1]],
+		]);
+		const cached = queries.metrics().cachedSelectors;
+		for (const operation of [
+			() => queries.querySelector(selector),
+			() => queries.querySelectorAll(selector),
+			() => queries.matches(target, selector),
+			() => queries.closest(target, selector),
+			() => validateSelectorSyntax(selector),
+			() => supportsCssSelector(selector),
+		]) {
+			expect(operation).toThrow("component limit");
+			expect(queries.metrics().cachedSelectors).toBe(cached);
+		}
+	}
+});
+
+it.each(["queries", "tree"] as const)(
+	"shares a bounded cache across selector modes and clears both on %s close",
+	(owner) => {
+		const { tree, id } = fixture("<p id=target class=leaf></p>");
+		const target = id("#target");
+		const queries = new DocumentQueries(tree, { maxCachedSelectors: 3 });
+		expect(queries.querySelectorAll("p.leaf")).toEqual([target]);
+		expect(queries.metrics().cachedSelectors).toBe(1);
+		expect([...queries.matchingSpecificities("p.leaf")]).toEqual([
+			[target, [0, 1, 1]],
+		]);
+		expect(queries.metrics().cachedSelectors).toBe(2);
+		for (const selector of [".leaf", "#target", "p", "p.leaf"]) {
+			expect(queries.querySelectorAll(selector)).toEqual([target]);
+			expect(queries.metrics().cachedSelectors).toBe(3);
+			expect([...queries.matchingSpecificities(selector).keys()]).toEqual([
+				target,
+			]);
+			expect(queries.metrics().cachedSelectors).toBe(3);
+		}
+		if (owner === "tree") tree.close();
+		else queries.close();
+		expect(queries.metrics()).toMatchObject({
+			closed: true,
+			cachedSelectors: 0,
+			indexedNodes: 0,
+		});
+		expect(() => queries.querySelectorAll("p.leaf")).toThrow("closed");
+		expect(() => queries.matchingSpecificities("p.leaf")).toThrow("closed");
+	},
+);
+
+it("charges repeated stylesheet branches to one shared work budget and recovers after failure", () => {
+	const { tree, id } = fixture(
+		"<main class=group-119><p id=target class=leaf></p></main>",
+	);
+	const target = id("#target");
+	const queries = new DocumentQueries(tree);
+	const branch = ".group-119 > p.leaf";
+	queries.matchingSpecificities(branch);
+	queries.matchingSpecificities(branch);
+	const branchWork = queries.metrics().lastWork;
+	const selector = Array.from({ length: 120 }, () => branch).join(", ");
+	const expected = [[target, [0, 2, 1]]];
+	expect([...queries.matchingSpecificities(selector)]).toEqual(expected);
+	expect(queries.metrics().lastWork).toBeGreaterThan(branchWork);
+	for (let repeat = 0; repeat < 2; repeat++) {
+		expect(() => queries.matchingSpecificities(selector, branchWork)).toThrow(
+			"work limit",
+		);
+		expect([...queries.matchingSpecificities(selector)]).toEqual(expected);
+	}
+	const limited = new DocumentQueries(tree, { maxWork: branchWork });
+	expect(() => limited.matchingSpecificities(selector)).toThrow("work limit");
+	expect(() => limited.matchingSpecificities(selector, branchWork + 1)).toThrow(
+		"Invalid selector work budget",
+	);
+});
+
+it("shares result limits across stylesheet branches without counting duplicate matches", () => {
+	const { tree, id } = fixture(
+		"<main class=group-119><p id=first class=leaf data-ready></p><p id=second class=leaf></p></main><main class=group-0><p id=third class=leaf></p></main>",
+	);
+	const first = id("#first");
+	const second = id("#second");
+	const third = id("#third");
+	const queries = new DocumentQueries(tree, { maxResults: 2 });
+	const branches = stylesheetBranches();
+	branches.push("#first.leaf[data-ready]", ".group-119 > p.leaf");
+	const selector = branches.join(", ");
+	for (let repeat = 0; repeat < 2; repeat++)
+		expect(() => queries.matchingSpecificities(selector)).toThrow(
+			"result limit",
+		);
+	tree.remove(third);
+	for (let repeat = 0; repeat < 2; repeat++)
+		expect([...queries.matchingSpecificities(selector)]).toEqual([
+			[first, [1, 2, 0]],
+			[second, [0, 2, 1]],
+		]);
+});
+
+it("retains whole-list default and custom selector text limits for stylesheet matching", () => {
+	const { tree, id } = fixture(
+		"<main class=group-119><p id=target class=leaf></p></main>",
+	);
+	const target = id("#target");
+	const selector = stylesheetBranches().join(", ");
+	for (const maxSelectorCodeUnits of [selector.length, 8192]) {
+		const queries = new DocumentQueries(
+			tree,
+			maxSelectorCodeUnits === 8192 ? {} : { maxSelectorCodeUnits },
+		);
+		const padded = selector.padEnd(maxSelectorCodeUnits, " ");
+		expect([...queries.matchingSpecificities(padded)]).toEqual([
+			[target, [0, 2, 1]],
+		]);
+		expect(() => queries.matchingSpecificities(`${padded} `)).toThrow(
+			"text limit",
+		);
+		expect(queries.metrics().cachedSelectors).toBe(1);
+	}
+});
+
+it.each([2, 16])(
+	"retains a nesting limit of %s after many stylesheet branches",
+	(maxNesting) => {
+		const { tree, id } = fixture("<p id=target class=leaf></p>");
+		const target = id("#target");
+		const queries = new DocumentQueries(
+			tree,
+			maxNesting === 16 ? {} : { maxNesting },
+		);
+		const nested = `${":is(".repeat(maxNesting)}.leaf${")".repeat(maxNesting)}`;
+		const prefix = stylesheetBranches().join(", ");
+		expect([...queries.matchingSpecificities(`${prefix}, ${nested}`)]).toEqual([
+			[target, [0, 1, 0]],
+		]);
+		expect(() =>
+			queries.matchingSpecificities(`${prefix}, :is(${nested})`),
+		).toThrow("nesting limit");
+		expect(queries.metrics().cachedSelectors).toBe(1);
 	},
 );

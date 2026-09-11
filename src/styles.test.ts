@@ -306,3 +306,64 @@ it("scans CSS strings/comments/blocks without turning embedded punctuation into 
 		),
 	).toEqual([{ property: "display", value: "none", important: true }]);
 });
+
+it("applies a late branch in a 120-branch stylesheet selector list without weakening full matching", () => {
+	const selector = Array.from(
+		{ length: 120 },
+		(_value, index) => `.group-${index} > p.leaf`,
+	).join(", ");
+	const { tree, styles, queries, id } = fixture(
+		`${selector}{display:none} p.leaf{display:block}`,
+		"<main class=group-119><p id=target class=leaf>Hidden</p><section><p id=nested class=leaf>Nested</p></section><span id=wrong-tag class=leaf>Span</span></main><p id=outside class=leaf>Outside</p>",
+	);
+	try {
+		for (let repeat = 0; repeat < 2; repeat++) {
+			expect(styles.get(id("#target"))).toMatchObject({
+				display: "none",
+				visible: false,
+			});
+			for (const unaffected of ["#nested", "#wrong-tag", "#outside"])
+				expect(styles.get(id(unaffected)).visible).toBe(true);
+			expect(() => queries.querySelectorAll(selector)).toThrow(
+				"component limit",
+			);
+		}
+		tree.setAttribute(id("main"), "class", "unmatched");
+		expect(styles.get(id("#target"))).toMatchObject({
+			display: "block",
+			visible: true,
+		});
+		tree.setAttribute(id("main"), "class", "group-119");
+		expect(styles.get(id("#target")).visible).toBe(false);
+		expect(
+			styles.metrics().issues["unimplemented-or-invalid-css-selector"] ?? 0,
+		).toBe(0);
+	} finally {
+		tree.close();
+	}
+});
+
+it.each([":unsupported-native-pseudo", "::before"])(
+	"ignores an entire over-aggregate stylesheet list with unsupported suffix %s",
+	(suffix) => {
+		const selector = Array.from(
+			{ length: 120 },
+			(_value, index) => `.group-${index} > p.leaf`,
+		).join(", ");
+		const { tree, styles, id } = fixture(
+			`${selector}, ${suffix}{display:none} p.leaf{display:block}`,
+			"<main class=group-0><p id=target class=leaf>Visible</p></main>",
+		);
+		try {
+			expect(styles.get(id("#target"))).toMatchObject({
+				display: "block",
+				visible: true,
+			});
+			expect(
+				styles.metrics().issues["unimplemented-or-invalid-css-selector"],
+			).toBe(1);
+		} finally {
+			tree.close();
+		}
+	},
+);
