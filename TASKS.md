@@ -6,6 +6,22 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11,2026,23:57 UTC: parent independently verifies the new native
+`FLOAT-SIZING-SOURCE.md` receipt:9 checks,76 ledger entries,1 native HTTP200 GET
+and3 offline heading sections on the audited11025 release. It establishes float
+shrink-to-fit's exact clamp formula, auto float margins, replaced-size distinctions,
+ordered width constraints and same-BFC descendant-float auto-height inclusion.
+It does not specify the exact intrinsic measurement algorithm or establish
+general min/max-height, percentage heights, line-height or margin collapsing.
+The preserved local final-audit quoting error required only a helper correction,
+not a native rerun, extra request or additional extraction. Original bodies and
+all earlier formatting/font/OpenBSD seals remain unchanged. Separate newly
+authorized offline height/line-height source work will use11080 releasefb4ea24
+and the accepted intact body, with zero network and its own limits/receipts.
+No float layout or website actionability is claimed from source extraction;
+keep actual placement, per-line exclusion, block/BFC height coordination,
+paint/hit ownership and the independent overflow gates outstanding.
+
 September 11,2026,23:52 UTC: generated absolute/fixed boxes now compute
 float:none before native formatting and descendant inheritance, preserving the
 authored inline value and priority. This fixes a false float blocker on genuinely
