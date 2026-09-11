@@ -575,7 +575,11 @@ export function parseCssRules(
 		}
 		const declarations = parseCssDeclarations(body.text, budget, issue);
 		if (declarations.length)
-			result.push({ selector: prelude.text.trim(), declarations, media });
+			result.push({
+				selector: prelude.text.slice(preludeStart).trim(),
+				declarations,
+				media,
+			});
 	}
 	return result;
 }

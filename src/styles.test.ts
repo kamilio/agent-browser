@@ -367,3 +367,85 @@ it.each([":unsupported-native-pseudo", "::before"])(
 		}
 	},
 );
+
+it.each([
+	"p",
+	".box/**/.active",
+	"di/**/v",
+	'p[data-label="/*not trivia*/"]',
+	String.raw`.a\,b, p:not(.skip, .absent)`,
+])(
+	"excludes leading stylesheet trivia without rewriting selector tokens: %s",
+	(selector) => {
+		const prefix = ` \n\t/*${"documentation ".repeat(900)}*/\n/**/ `;
+		const budget: CssParseBudget = {
+			rules: 0,
+			declarations: 0,
+			maxRules: 1,
+			maxDeclarations: 1,
+		};
+		const issues: string[] = [];
+		const rules = parseCssRules(
+			`${prefix}${selector}{display:none}`,
+			budget,
+			(issue) => issues.push(issue),
+		);
+		expect(rules.map((rule) => rule.selector)).toEqual([selector]);
+		expect(budget.rules).toBe(1);
+		expect(budget.declarations).toBe(1);
+		expect(issues).toEqual([]);
+	},
+);
+
+it("loads a comment-heavy stylesheet while retaining full source-size accounting", () => {
+	const prefix = `/*${"documentation ".repeat(900)}*/\n`;
+	const css = `${prefix}#target{display:none}`;
+	const { tree, styles, queries, id } = fixture(css);
+	try {
+		expect(styles.get(id("#target")).visible).toBe(false);
+		expect(styles.metrics().codeUnits).toBe(css.length);
+		expect(
+			styles.metrics().issues["unimplemented-or-invalid-css-selector"] ?? 0,
+		).toBe(0);
+		expect(() => queries.querySelector(`${prefix}#target`)).toThrow(
+			"Selector text limit exceeded",
+		);
+		const limited = new DocumentStyles(tree, { maxCodeUnits: css.length - 1 });
+		expect(() => limited.metrics()).toThrow("CSS source text limit exceeded");
+	} finally {
+		tree.close();
+	}
+});
+
+it.each([
+	["long identifier", `.${"long".repeat(2048)}`],
+	["interior comment", `.box/*${"interior ".repeat(1024)}*/.active`],
+])(
+	"retains the selector text cap after leading trivia is excluded: %s",
+	(_description, selector) => {
+		const { tree, styles } = fixture(`/* heading */ ${selector}{display:none}`);
+		try {
+			expect(() => styles.metrics()).toThrow("Selector text limit exceeded");
+		} finally {
+			tree.close();
+		}
+	},
+);
+
+it("drops leading comments inside media rules without joining interior identifier fragments", () => {
+	const { tree, styles, id } = fixture(
+		"@media screen { /* heading */ di/**/v{display:none} /* next */ .box/**/.active{visibility:hidden} }",
+		'<div id=target class="box active">Text</div>',
+	);
+	try {
+		expect(styles.get(id("#target"))).toMatchObject({
+			display: "block",
+			visibility: "hidden",
+		});
+		expect(
+			styles.metrics().issues["unimplemented-or-invalid-css-selector"],
+		).toBe(1);
+	} finally {
+		tree.close();
+	}
+});

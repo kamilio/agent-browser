@@ -6,6 +6,14 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 leading stylesheet trivia handling passes 6415 selected native
+tests with the documented baseline/strict exceptions. CSS-LEADING-TRIVIA.md records
+Python.org's captured homepage loading at 441906 work units and a separate fresh
+structural search flow with preserved query state and 20 native result links.
+The earlier literal-query check stays failed; relevance remains unverified. No
+query/source limits are raised. Continue varied-site and challenge diagnostics;
+rendering, scripts, research and credential/passkey acceptance remain open.
+
 September 11, 2026 stylesheet selector-list admission passes 6406 selected native
 tests with the documented baseline/strict exceptions. STYLESHEET-SELECTOR-LISTS.md
 records per-top-level-branch component bounds, unchanged aggregate ordinary-query
