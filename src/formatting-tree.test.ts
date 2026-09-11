@@ -277,7 +277,7 @@ it("handles ordinary breaks and the explicit unusual-element contents profile", 
 });
 
 it.each(["flex", "grid", "table", "inline-table", "inline-flex", "list-item"])(
-	"defers %s rather than normalizing an unsupported layout into fake blocks",
+	"retains the width-only guard for %s without fabricating block flow",
 	(display) => {
 		const { tree, ref } = fixture(
 			`<div id="outer" style="display:${display}"><span id="inside">inside</span></div>`,
@@ -295,6 +295,10 @@ it.each(["flex", "grid", "table", "inline-table", "inline-flex", "list-item"])(
 			expect(container?.contentMode).toBe("flex");
 			expect(container?.children).toEqual([child?.id]);
 			expect(child).toMatchObject({ kind: "block", flexItem: true });
+		} else if (display === "grid") {
+			expect(container?.contentMode).toBe("grid");
+			expect(container?.children).toEqual([child?.id]);
+			expect(child).toMatchObject({ kind: "block", gridItem: true });
 		} else {
 			expect(container?.children).toEqual([]);
 			expect(child).toBeUndefined();

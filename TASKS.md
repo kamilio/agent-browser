@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 11, 2026 GRID-LAYOUT.md records real block Grid placement, track sizing,
+native item reflow and shared geometry/paint/hit testing, including nested Grid
+and Flex interoperation. The corrected clean gate passes 8095 selected native
+cases across 131 files with unchanged historical exceptions; prior failed runs
+remain preserved. The genuine fixture click is not live-site evidence. Replay
+the unchanged captured MDN page, reproduce reviewed percentage/overflow edge
+cases, and continue CSS/foreign-element compatibility, public-site testing and
+the original research/credential/passkey/fingerprint/challenge acceptance work.
+
 September 11, 2026 MDN-GRID-CSS-REPLAY.md verifies the frozen Grid foundation
 build against all nineteen original MDN responses with zero wire traffic. Native
 computed styles now retain body tracks, nested named tracks/areas and header/body

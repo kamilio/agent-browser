@@ -260,7 +260,7 @@ it.each(["grid", "inline-grid", "block grid", "inline grid"])(
 	},
 );
 
-it("keeps the real Grid layout acceptance guard until geometry is implemented", () => {
+it("keeps the horizontal-only Grid guard outside coordinated layout", () => {
 	const { tree, id, styles } = fixture(
 		"#outer{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:min-content min-content 1fr min-content}",
 	);

@@ -16,6 +16,7 @@ import {
 import { layoutPositionedDocument } from "./out-of-flow-positioning.js";
 import { applyRelativePositioning } from "./relative-positioning.js";
 import { layoutFormattingFlexContainer } from "./flex-layout.js";
+import { layoutFormattingGridContainer } from "./grid-layout.js";
 import { layoutNumber } from "./layout-values.js";
 import { mergeAtomicInlineLayouts } from "./inline-atomic-placement.js";
 import { isAtomicInline } from "./inline-atomic.js";
@@ -37,6 +38,19 @@ export function layoutPageDocument(
 	const formatting = buildFormattingTree(tree, options.formatting);
 	if (
 		formatting.nodes.some(
+			(node) =>
+				(node.position === "absolute" || node.position === "fixed") &&
+				(node.contentMode === "grid" ||
+					(node.parent !== null &&
+						formatting.nodes[node.parent]?.contentMode === "grid")),
+		)
+	)
+		throw new AgentBrowserError(
+			"unsupported",
+			"Positioned Grid boxes require Grid-area coordination",
+		);
+	if (
+		formatting.nodes.some(
 			(node) => node.position === "absolute" || node.position === "fixed",
 		)
 	)
@@ -54,7 +68,10 @@ export function layoutFormattingPageDocument(
 ): Readonly<DocumentLayout> {
 	const shells: Readonly<FormattingBlockWidth>[] = [];
 	const needsCoordinatedLayout = formatting.nodes.some(
-		(node) => node.contentMode === "flex" || isAtomicInline(node),
+		(node) =>
+			node.contentMode === "flex" ||
+			node.contentMode === "grid" ||
+			isAtomicInline(node),
 	);
 	const { formatting: _formatting, ...textLimits } = options;
 	const horizontal = resolveFormattingPageWidths(
@@ -87,8 +104,8 @@ export function layoutFormattingFlexFlow(
 ): Readonly<DocumentLayout> {
 	const horizontal = text.horizontal;
 	const formatting = horizontal.formatting;
-	const shells = horizontal.widths.filter(
-		(width) => formatting.nodes[width.id].contentMode === "flex",
+	const shells = horizontal.widths.filter((width) =>
+		["flex", "grid"].includes(formatting.nodes[width.id].contentMode ?? ""),
 	);
 	if (!shells.length && !horizontal.atomicLayouts?.length)
 		return layoutFormattingDocument(text, maxWork, isolated);
@@ -110,30 +127,51 @@ export function layoutFormattingFlexFlow(
 		return maxWork - work;
 	};
 	charge(initialWork);
-	type FlexLayout = ReturnType<typeof layoutFormattingFlexContainer>;
+	type FlexLayout =
+		| ReturnType<typeof layoutFormattingFlexContainer>
+		| ReturnType<typeof layoutFormattingGridContainer>;
 	const layouts = new Map<number, FlexLayout>();
 	const { formatting: _formatting, ...textOptions } = options;
 	const textMetrics = { ...text.metrics };
 	for (const shell of shells) {
 		charge();
-		const layout = layoutFormattingFlexContainer(
-			formatting,
-			shell.id,
-			{
-				contentWidth: shell.contentWidth,
-				containingWidth: shell.containingWidth,
-				containingHeight: shell.containingHeight,
-			},
-			{ maxWork: remaining(), reflow: { text: textOptions } },
-			{
-				atomicRoot: formatting.nodes[shell.id].level === "inline",
-				validatedFormatting: true,
-				nesting,
-				contentHeight: shell.contentHeightOverride,
-				contentHeightDefinite: shell.contentHeightDefinite,
-				intrinsicHeight: shell.intrinsicHeight,
-			},
-		);
+		const layout =
+			formatting.nodes[shell.id].contentMode === "grid"
+				? layoutFormattingGridContainer(
+						formatting,
+						shell.id,
+						{
+							contentWidth: shell.contentWidth,
+							containingWidth: shell.containingWidth,
+							containingHeight: shell.containingHeight,
+						},
+						{ maxWork: remaining(), text: textOptions },
+						{
+							validatedFormatting: true,
+							nesting,
+							contentHeight: shell.contentHeightOverride,
+							contentHeightDefinite: shell.contentHeightDefinite,
+							intrinsicHeight: shell.intrinsicHeight,
+						},
+					)
+				: layoutFormattingFlexContainer(
+						formatting,
+						shell.id,
+						{
+							contentWidth: shell.contentWidth,
+							containingWidth: shell.containingWidth,
+							containingHeight: shell.containingHeight,
+						},
+						{ maxWork: remaining(), reflow: { text: textOptions } },
+						{
+							atomicRoot: formatting.nodes[shell.id].level === "inline",
+							validatedFormatting: true,
+							nesting,
+							contentHeight: shell.contentHeightOverride,
+							contentHeightDefinite: shell.contentHeightDefinite,
+							intrinsicHeight: shell.intrinsicHeight,
+						},
+					);
 		charge(layout.metrics.work);
 		layouts.set(shell.id, layout);
 		for (const key of Object.keys(textMetrics) as (keyof typeof textMetrics)[])

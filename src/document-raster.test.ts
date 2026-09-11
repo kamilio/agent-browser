@@ -213,8 +213,25 @@ it("rejects unknown options and unsupported styling rather than fabricating a sc
 		rasterizeDocument(fixture('<img src="data:image/png;base64,x">')),
 	).toThrow();
 	expect(() =>
-		rasterizeDocument(fixture('<main style="display:grid">Text</main>')),
+		rasterizeDocument(fixture('<main style="display:inline-grid">Text</main>')),
 	).toThrow();
+});
+
+it("paints Grid track positions through the document raster path", () => {
+	const result = rasterizeDocument(
+		fixture(
+			'<main style="display:grid;grid-template-columns:10px 20px;grid-template-rows:5px"><div style="background:red"></div><div style="background:blue"></div></main>',
+		),
+	);
+	expect(result.image.pixels.slice(0, 4)).toEqual(
+		new Uint8Array([255, 0, 0, 255]),
+	);
+	expect(result.image.pixels.slice(10 * 4, 11 * 4)).toEqual(
+		new Uint8Array([0, 0, 255, 255]),
+	);
+	expect(result.image.pixels.slice(30 * 4, 31 * 4)).toEqual(
+		new Uint8Array([255, 255, 255, 255]),
+	);
 });
 
 it("charges scaled glyph row traversal even when almost all columns are clipped", () => {

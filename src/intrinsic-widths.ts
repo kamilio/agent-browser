@@ -4,6 +4,10 @@ import { lengthHasPercentage } from "./css-math.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { flexIntrinsicContribution } from "./flex-intrinsic.js";
+import { initialGridStyle } from "./css-grid.js";
+import { placeGridItems } from "./grid-placement.js";
+import { sizeGridTracks } from "./grid-tracks.js";
+import { gridColumnContributions } from "./grid-intrinsic.js";
 import { crossInput } from "./flex-main.js";
 import { flexLineLimits } from "./flex-line.js";
 import { layoutFormattingColumnContainer } from "./flex-column.js";
@@ -208,7 +212,7 @@ export function measureFormattingFlexItemWidths(
 	if (
 		!Number.isSafeInteger(containerId) ||
 		!container ||
-		container.contentMode !== "flex"
+		(container.contentMode !== "flex" && container.contentMode !== "grid")
 	)
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -228,6 +232,8 @@ export function measureFormattingFlexItemWidths(
 			: undefined,
 	);
 }
+
+export const measureFormattingGridItemWidths = measureFormattingFlexItemWidths;
 
 type MutableTextMetrics = {
 	-readonly [Key in keyof IntrinsicWidthMeasurement["metrics"]["minText"]]: IntrinsicWidthMeasurement["metrics"]["minText"][Key];
@@ -323,7 +329,7 @@ function measureScopes(
 			charge();
 			if (
 				node.kind === "deferred" &&
-				node.contentMode === "flex" &&
+				(node.contentMode === "flex" || node.contentMode === "grid") &&
 				node.deferredReason === "display-layout-not-supported"
 			)
 				deferredFlexContainers++;
@@ -357,13 +363,14 @@ function measureScopes(
 		if (!frame) break;
 		const node = formatting.nodes[frame.id];
 		const flex = node.contentMode === "flex";
+		const grid = node.contentMode === "grid";
 		if (flex && node.children.length > flexLineLimits.maxItems)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"Flex intrinsic item limit exceeded",
 			);
 		if (
-			(node.kind === "deferred" && !flex) ||
+			(node.kind === "deferred" && !flex && !grid) ||
 			(flex &&
 				!["row", "row-reverse", "column", "column-reverse"].includes(
 					node.flex?.["flex-direction"] ?? "",
@@ -375,7 +382,7 @@ function measureScopes(
 			);
 		order.push(node.id);
 		const flexDepth =
-			(frame.flexDepth ?? 0) + Number(flex || isAtomicInline(node));
+			(frame.flexDepth ?? 0) + Number(flex || grid || isAtomicInline(node));
 		if (flexDepth > flexLayoutLimits.maxNesting)
 			throw new AgentBrowserError(
 				"resource-limit",
@@ -518,7 +525,7 @@ function measureScopes(
 				}),
 			);
 		}
-		if (node.kind === "block" || flex)
+		if (node.kind === "block" || flex || grid)
 			height =
 				frame.definiteHeight ??
 				resolveHeightConstraints(style, 0, height).definite;
@@ -685,7 +692,8 @@ function measureScopes(
 			!["viewport", "block", "anonymous-block", "replaced"].includes(
 				node.kind,
 			) &&
-			node.contentMode !== "flex"
+			node.contentMode !== "flex" &&
+			node.contentMode !== "grid"
 		)
 			continue;
 		let minContent = minWidths.get(id) ?? 0;
@@ -698,6 +706,48 @@ function measureScopes(
 					"Missing intrinsic replaced content size",
 				);
 			minContent = maxContent = measured;
+		} else if (node.contentMode === "grid") {
+			const placement = placeGridItems(
+				node.grid ?? initialGridStyle,
+				node.children.map((child) => {
+					charge();
+					return {
+						id: child,
+						style: formatting.nodes[child].grid ?? initialGridStyle,
+						order: Number(formatting.nodes[child].flex?.order ?? 0),
+					};
+				}),
+				{ maxWork: remaining() },
+			);
+			charge(placement.metrics.work);
+			const gap =
+				node.flex?.["column-gap"] === "normal"
+					? 0
+					: resolveLayoutLength(node.flex?.["column-gap"] ?? "0px", 0);
+			const contributions = gridColumnContributions(
+				formatting,
+				placement,
+				records,
+				gap,
+				null,
+				charge,
+			);
+			const minimum = sizeGridTracks(placement.columns.tracks, contributions, {
+				availableSpace: null,
+				gap,
+				mode: "min-content",
+				maxWork: remaining(),
+			});
+			charge(minimum.metrics.work);
+			const maximum = sizeGridTracks(placement.columns.tracks, contributions, {
+				availableSpace: null,
+				gap,
+				mode: "max-content",
+				maxWork: remaining(),
+			});
+			charge(maximum.metrics.work);
+			minContent = minimum.extent;
+			maxContent = maximum.extent;
 		} else if (
 			node.contentMode === "flex" &&
 			!node.flex?.["flex-direction"].startsWith("column")

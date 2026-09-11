@@ -38,7 +38,7 @@ it("exports exactly the ten non-inherited longhands and frozen defaults", () => 
 	}
 	expect(isCssGridProperty("grid")).toBe(false);
 	expect(isCssGridProperty("toString")).toBe(false);
-	expect(gridStyleCapabilities.layout).toBe(false);
+	expect(gridStyleCapabilities.layout).toBe(true);
 });
 
 it.each([

@@ -13,6 +13,34 @@ export {
 } from "./passkeys.js";
 export { PagePasskeys, type PagePasskeyContext } from "./page-passkeys.js";
 export {
+	cssGridProperties,
+	cssGridLimits,
+	gridStyleCapabilities,
+	type CssGridProperty,
+	type GridStyle,
+	type GridSpecifiedStyle,
+} from "./css-grid.js";
+export { placeGridItems, gridPlacementLimits } from "./grid-placement.js";
+export { sizeGridTracks, gridTrackSizingLimits } from "./grid-tracks.js";
+export {
+	layoutFormattingGridContainer,
+	gridLayoutCapabilities,
+	gridLayoutLimits,
+	type GridContainerConstraints,
+	type GridContainerOptions,
+	type GridLayoutContext,
+} from "./grid-layout.js";
+export type {
+	GridTrack,
+	GridPlacementInput,
+	GridPlacedItem,
+	GridPlacedAxis,
+	GridPlacement,
+	GridTrackContribution,
+	GridTrackSizingOptions,
+	GridTrackSizing,
+} from "./grid-types.js";
+export {
 	SecretBroker,
 	secretProviderLimits,
 	type SecretBinding,

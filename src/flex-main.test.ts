@@ -347,7 +347,7 @@ it("retains the width-only guard while allowing supported full-document intrinsi
 it.each([
 	"#container{flex-direction:column}",
 	"#first{display:flex;flex-direction:column;flex-wrap:wrap;position:absolute}",
-	"#first{display:grid}",
+	"#first{display:table}",
 	"#first{overflow:hidden}",
 	"#first{writing-mode:vertical-rl}",
 	"#first{align-content:center}",
@@ -363,11 +363,23 @@ it("does not hide an unrelated unsupported layout issue during scoped measuremen
 	const { tree, id, resolve } = fixture();
 	tree.append(
 		tree.get(id()).parent as number,
-		tree.createElement("div", { style: "display:grid" }),
+		tree.createElement("div", { style: "display:table" }),
 	);
 	expect(resolve).toThrowError(
 		expect.objectContaining({ code: "unsupported" }),
 	);
+});
+it("measures Grid tracks as the intrinsic contribution of a Flex item", () => {
+	const { resolve } = fixture(
+		"#first{display:grid;grid-template-columns:20px 30px}",
+		'<div id="first"><span>A</span><span>B</span></div><span id="second">cc</span>',
+	);
+	expect(resolve().items[0]).toMatchObject({
+		minContent: 50,
+		maxContent: 50,
+		baseSize: 50,
+		minSize: 50,
+	});
 });
 it("rejects unavailable or non-flex targets", () => {
 	const { tree, ref } = fixture();

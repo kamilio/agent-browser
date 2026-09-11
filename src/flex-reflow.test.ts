@@ -559,10 +559,24 @@ it("keeps item reflow separate from page placement and the width-only guard", ()
 		expect.objectContaining({ code: "unsupported" }),
 	);
 });
+it("reflows a Grid item's native child boxes inside a Flex container", () => {
+	const { reflow, ref } = fixture(
+		"#item{display:grid;grid-template-columns:20px 30px;grid-template-rows:15px}",
+		'<div id="item"><span id="left">A</span><span id="right">B</span></div>',
+	);
+	const result = reflow();
+	expect(result.items[0].box).toMatchObject({
+		contentWidth: 120,
+		contentHeight: 15,
+	});
+	expect(
+		result.layout.boxes.find((box) => box.ref === ref("#right")),
+	).toMatchObject({ borderX: 20, borderBoxWidth: 30, borderBoxHeight: 15 });
+});
 it.each([
 	"#container{flex-direction:column}",
 	"#item{display:flex;flex-direction:column;flex-wrap:wrap;position:absolute}",
-	"#item{display:grid}",
+	"#item{display:table}",
 	"#item{overflow:hidden}",
 ])("does not hide unsupported item content: %s", (css) => {
 	expect(() => fixture(css).reflow()).toThrowError(

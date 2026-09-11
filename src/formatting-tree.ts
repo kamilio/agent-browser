@@ -24,6 +24,7 @@ import {
 } from "./generated-controls.js";
 import { resolveBorders } from "./border-box.js";
 import { isFlexDisplay, initialFlexStyle, type FlexStyle } from "./css-flex.js";
+import { isGridDisplay, initialGridStyle, type GridStyle } from "./css-grid.js";
 import type { AtomicInlineMetrics } from "./inline-atomic.js";
 import {
 	layoutFormattingAtomicInline,
@@ -72,9 +73,11 @@ export interface FormattingNode {
 	box?: BoxStyle;
 	typography?: TextStyle;
 	paint?: PaintStyle;
-	contentMode?: "blocks" | "inline" | "flex";
+	contentMode?: "blocks" | "inline" | "flex" | "grid";
 	flex?: FlexStyle;
 	flexItem?: boolean;
+	grid?: GridStyle;
+	gridItem?: boolean;
 	orderModifiedChildren?: readonly number[];
 	independentContext?: boolean;
 	fragmentIndex?: number;
@@ -276,7 +279,13 @@ export function buildFormattingTree(
 		nodes[parent].contentMode = "blocks";
 		for (const child of normalized) nodes[child].parent = parent;
 	};
-	const visit = (id: number, depth: number, flexItem = false): number[] => {
+	const visit = (
+		id: number,
+		depth: number,
+		itemMode?: "flex" | "grid",
+	): number[] => {
+		let flexItem = itemMode === "flex";
+		let gridItem = itemMode === "grid";
 		charge();
 		if (depth > limits.maxDepth)
 			throw new AgentBrowserError(
@@ -339,7 +348,11 @@ export function buildFormattingTree(
 			visibility.display !== "contents" &&
 			(flow.position === "absolute" || flow.position === "fixed");
 		if (outOfFlow) issue("positioned-layout-requires-coordination");
-		if (outOfFlow) flexItem = false;
+		if (outOfFlow) {
+			flexItem = false;
+			gridItem = false;
+			itemMode = undefined;
+		}
 		if (flow.float !== "none") issue("float-layout-not-supported");
 		if (flow.clear !== "none") issue("clear-layout-not-supported");
 		if (flow["overflow-x"] !== "visible" || flow["overflow-y"] !== "visible")
@@ -356,7 +369,7 @@ export function buildFormattingTree(
 					}
 				: {}),
 			...(flow["z-index"] !== "auto" &&
-			(flow.position === "relative" || outOfFlow || flexItem)
+			(flow.position === "relative" || outOfFlow || flexItem || gridItem)
 				? { zIndex: Number(flow["z-index"]) }
 				: {}),
 		};
@@ -364,6 +377,14 @@ export function buildFormattingTree(
 			...positionFields,
 			...(flexItem
 				? { flexItem: true, flex: styles.flex(id), independentContext: true }
+				: {}),
+			...(gridItem
+				? {
+						gridItem: true,
+						grid: styles.grid(id),
+						flex: styles.flex(id),
+						independentContext: true,
+					}
 				: {}),
 		};
 		if (
@@ -393,7 +414,7 @@ export function buildFormattingTree(
 				? (rootDisplays[visibility.display] ?? visibility.display)
 				: visibility.display;
 		if (display === "contents" && unusualContents.has(node.tagName)) return [];
-		const children = (asItems = false) => {
+		const children = (asItems?: "flex" | "grid") => {
 			const result: number[] = [];
 			const generated =
 				node.tagName === "details"
@@ -461,7 +482,9 @@ export function buildFormattingTree(
 							contentMode: "inline",
 							...(asItems
 								? {
-										flexItem: true,
+										...(asItems === "grid"
+											? { gridItem: true, grid: initialGridStyle }
+											: { flexItem: true }),
 										flex: initialFlexStyle,
 										independentContext: true,
 									}
@@ -480,8 +503,12 @@ export function buildFormattingTree(
 			node.tagName !== "svg" &&
 			node.tagName !== "math"
 		)
-			return children(flexItem);
-		if (isFlexDisplay(display) && !deferredElements.has(node.tagName)) {
+			return children(itemMode);
+		const gridContainer = isGridDisplay(display);
+		if (
+			(isFlexDisplay(display) || gridContainer) &&
+			!deferredElements.has(node.tagName)
+		) {
 			issue("display-layout-not-supported");
 			deferredSubtrees++;
 			const result = create({
@@ -495,8 +522,10 @@ export function buildFormattingTree(
 				paint: styles.paint(id),
 				flex: styles.flex(id),
 				flexItem,
+				gridItem,
+				...(gridContainer || gridItem ? { grid: styles.grid(id) } : {}),
 				independentContext: true,
-				contentMode: "flex",
+				contentMode: gridContainer ? "grid" : "flex",
 				deferredReason: "display-layout-not-supported",
 				...positionFields,
 			});
@@ -521,7 +550,9 @@ export function buildFormattingTree(
 								typography: styles.text(id),
 								paint: styles.paint(id),
 								contentMode: "inline",
-								flexItem: true,
+								...(gridContainer
+									? { gridItem: true, grid: initialGridStyle }
+									: { flexItem: true }),
 								flex: initialFlexStyle,
 								independentContext: true,
 							},
@@ -530,7 +561,7 @@ export function buildFormattingTree(
 					);
 				text = [];
 			};
-			for (const child of children(true)) {
+			for (const child of children(gridContainer ? "grid" : "flex")) {
 				charge();
 				if (nodes[child].kind === "text") text.push(child);
 				else {
@@ -667,7 +698,7 @@ export function buildFormattingTree(
 					visible: visibility.visible,
 					deferredReason: reason,
 					...itemFields,
-					...(flexItem ? { box: styles.box(id) } : {}),
+					...(flexItem || gridItem ? { box: styles.box(id) } : {}),
 				}),
 			];
 		}
@@ -855,7 +886,9 @@ export function resolveFormattingPageWidths(
 	context: AtomicInlineResolutionContext = {},
 ): Readonly<DocumentBlockWidths> {
 	const flexCount = onFlex
-		? formatting.nodes.filter((node) => node.contentMode === "flex").length
+		? formatting.nodes.filter(
+				(node) => node.contentMode === "flex" || node.contentMode === "grid",
+			).length
 		: 0;
 	if (
 		Object.entries(formatting.issues).some(
@@ -957,7 +990,9 @@ export function resolveFormattingBlockWidths(
 			continue;
 		}
 		const flex =
-			!!onFlex && node?.contentMode === "flex" && node.level === "block";
+			!!onFlex &&
+			(node?.contentMode === "flex" || node?.contentMode === "grid") &&
+			node.level === "block";
 		if (!node || (node.kind === "deferred" && !flex))
 			throw new AgentBrowserError(
 				"unsupported",

@@ -62,7 +62,8 @@ export const gridStyleCapabilities = Object.freeze({
 	nestedRepeat: false,
 	subgrid: false,
 	masonry: false,
-	layout: false,
+	layout: true,
+	layoutProfile: "coordinated-block-grid",
 	canonicalShorthandSerialization: false,
 });
 const properties = new Set<string>(cssGridProperties);
@@ -100,6 +101,58 @@ type TrackList = {
 	tracks: number;
 	expandedComponents: number;
 };
+export type GridTrackComponent = TrackComponent;
+export type GridParsedLine =
+	| { type: "auto" }
+	| { type: "line"; count: number; name?: string; area: boolean }
+	| { type: "span"; count: number; name?: string };
+
+export function parseGridTrackList(
+	value: string,
+	auto = false,
+): TrackList | undefined {
+	const tokens = tokenize(value);
+	if (!tokens?.length || wideKeyword(tokens)) return;
+	if (
+		!auto &&
+		tokens.length === 1 &&
+		tokens[0].type === "ident" &&
+		tokens[0].value.toLowerCase() === "none"
+	)
+		return { items: [], tracks: 0, expandedComponents: 0 };
+	return trackList(tokens, auto);
+}
+
+export function parseGridAreas(value: string): string[][] | undefined {
+	const tokens = tokenize(value);
+	if (!tokens?.length) return;
+	if (
+		tokens.length === 1 &&
+		tokens[0].type === "ident" &&
+		tokens[0].value.toLowerCase() === "none"
+	)
+		return [];
+	return areaRows(tokens);
+}
+
+export function parseGridLine(value: string): GridParsedLine | undefined {
+	const tokens = tokenize(value);
+	if (!tokens || placement(tokens) === undefined) return;
+	if (tokens.length === 1 && tokens[0].value.toLowerCase() === "auto")
+		return { type: "auto" };
+	const count = tokens.find((token) => token.type === "number");
+	const name = tokens.map(customIdent).find((entry) => entry !== undefined);
+	return tokens.some(
+		(token) => token.type === "ident" && token.value.toLowerCase() === "span",
+	)
+		? { type: "span", count: count ? Number(count.value) : 1, name }
+		: {
+				type: "line",
+				count: count ? Number(count.value) : 1,
+				name,
+				area: count === undefined,
+			};
+}
 
 export function isCssGridProperty(
 	property: string,
@@ -330,7 +383,7 @@ function renderTracks(
 		})
 		.join(" ");
 }
-function areas(tokens: readonly Token[]): string | undefined {
+function areaRows(tokens: readonly Token[]): string[][] | undefined {
 	if (!tokens.length || tokens.length > cssGridLimits.maxAreaRows) return;
 	const rows: string[][] = [];
 	const rectangles = new Map<
@@ -386,7 +439,12 @@ function areas(tokens: readonly Token[]): string | undefined {
 				(rectangle.right - rectangle.left + 1)
 		)
 			return;
-	return rows.map((row) => `"${row.join(" ")}"`).join(" ");
+	return rows;
+}
+function areas(tokens: readonly Token[]): string | undefined {
+	return areaRows(tokens)
+		?.map((row) => `"${row.join(" ")}"`)
+		.join(" ");
 }
 function placement(tokens: readonly Token[]): string | undefined {
 	if (!tokens.length || tokens.length > 3) return;

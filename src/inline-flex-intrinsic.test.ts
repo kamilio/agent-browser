@@ -212,8 +212,18 @@ it("limits active atomic recursion before an unbounded stack is created", () => 
 	expect(measure).toThrow(expect.objectContaining({ code: "resource-limit" }));
 });
 
+it("measures Grid tracks nested inside an inline-flex atomic box", () => {
+	const { record } = fixture(
+		"#first{display:grid;grid-template-columns:20px 30px}",
+		'<div id="first"><span>A</span><span>B</span></div><div id="second">dd</div>',
+	);
+	expect(record("#first")).toMatchObject({ minContent: 50, maxContent: 50 });
+	expect(record("#atom")).toMatchObject({ minContent: 65, maxContent: 65 });
+	expect(record()).toMatchObject({ minContent: 65, maxContent: 77 });
+});
+
 it.each([
-	"#first{display:grid}",
+	"#first{display:table}",
 	"#atom{position:absolute}",
 	"#host{writing-mode:vertical-rl}",
 ])("retains unsupported-formatting checks for %s", (css) => {
