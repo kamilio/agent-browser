@@ -16,7 +16,7 @@ import {
 import {
 	cssListProperties,
 	isCssListProperty,
-	parseListValue,
+	parseListDeclarations,
 	type CssListProperty,
 } from "./css-list.js";
 import {
@@ -299,6 +299,7 @@ export function parseCssDeclarations(
 			!isCssTableProperty(property) &&
 			!isCssOutlineProperty(property) &&
 			property !== "outline" &&
+			property !== "list-style" &&
 			!isCssFlowProperty(property) &&
 			property !== "overflow" &&
 			!isCssFlexProperty(property) &&
@@ -400,10 +401,12 @@ export function parseCssDeclarations(
 			else issue("unimplemented-or-invalid-css-value");
 			continue;
 		}
-		if (isCssListProperty(property)) {
-			const normalized = parseListValue(property, value);
-			if (normalized !== undefined)
-				declarations.push({ property, value: normalized, important });
+		if (isCssListProperty(property) || property === "list-style") {
+			const expanded = parseListDeclarations(property, value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((entry) => ({ ...entry, important })),
+				);
 			else issue("unimplemented-or-invalid-css-value");
 			continue;
 		}

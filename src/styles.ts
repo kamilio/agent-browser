@@ -1453,6 +1453,8 @@ export class DocumentStyles {
 							properties?.get("list-style-type")?.declaration.value,
 						"list-style-position": properties?.get("list-style-position")
 							?.declaration.value,
+						"list-style-image":
+							properties?.get("list-style-image")?.declaration.value,
 					},
 					node.parent === null
 						? initialListStyle

@@ -26,6 +26,8 @@ import {
 	cssListProperties,
 	isCssListProperty,
 	parseListValue,
+	parseListDeclarations,
+	serializeListStyle,
 } from "./css-list.js";
 import {
 	cssTableProperties,
@@ -116,6 +118,7 @@ export const inlineProperties = [
 	...cssOutlineProperties,
 	"outline",
 	...cssListProperties,
+	"list-style",
 	...cssTableProperties,
 	...cssInteractionProperties,
 	...cssGridProperties,
@@ -327,6 +330,13 @@ export function expandDeclaration(
 				}))
 			: [];
 	}
+	if (name === "list-style")
+		return (
+			parseListDeclarations(
+				name,
+				source.toLowerCase().replace(/[\t\n\f\r ]+/g, " "),
+			) ?? []
+		).map((entry) => ({ name: entry.property, value: entry.value, important }));
 	if (name === "outline")
 		return (
 			parseOutlineDeclarations(
@@ -446,6 +456,7 @@ export function parseInlineDeclarations(
 export function inlineDeclarationComponents(name: string): readonly string[] {
 	const canonical = canonicalCssProperty(name);
 	if (canonical !== name) return inlineDeclarationComponents(canonical);
+	if (name === "list-style") return cssListProperties;
 	if (name === "outline") return cssOutlineProperties.slice(0, 3);
 	const grid = gridShorthandComponents(name);
 	if (grid) return grid;
@@ -590,6 +601,22 @@ export function propertyValue(
 			found.find((entry) => entry.name === "overflow-y")?.value ?? "",
 		);
 	}
+	if (name === "list-style") {
+		if (
+			found.length !== cssListProperties.length ||
+			found.some((entry) => entry.important !== found[0].important)
+		)
+			return "";
+		return serializeListStyle({
+			"list-style-type":
+				found.find((entry) => entry.name === "list-style-type")?.value ?? "",
+			"list-style-position":
+				found.find((entry) => entry.name === "list-style-position")?.value ??
+				"",
+			"list-style-image":
+				found.find((entry) => entry.name === "list-style-image")?.value ?? "",
+		});
+	}
 	if (name === "outline") {
 		if (
 			found.length !== 3 ||
@@ -681,7 +708,45 @@ export function serializeDeclarations(
 	const present = new Set(entries.map((entry) => entry.name));
 	const emitted = new Set<string>();
 	const output: string[] = [];
+	const pendingSources = new Map<string, InlineDeclaration>();
+	for (const entry of entries)
+		if (entry.pending && !pendingSources.has(entry.pending))
+			pendingSources.set(entry.pending, entry);
 	for (const entry of entries) {
+		if (emitted.has(entry.name)) continue;
+		for (const shorthand of shorthandsFor(entry.name)) {
+			const pending = pendingSources.get(shorthand.name);
+			if (!pending) continue;
+			const found = shorthand.components.map((component) =>
+				winningEntry(entries, component),
+			);
+			if (
+				found.every((candidate) => {
+					if (!candidate) return false;
+					if (candidate.pending)
+						return (
+							candidate.pending === pending.pending &&
+							candidate.value === pending.value &&
+							candidate.important === pending.important &&
+							!emitted.has(candidate.name)
+						);
+					return (
+						(!pending.important || candidate.important) &&
+						(!emitted.has(candidate.name) ||
+							(candidate.important && !pending.important))
+					);
+				})
+			) {
+				output.push(
+					`${pending.pending}: ${pending.value}${pending.important ? " !important" : ""};`,
+				);
+				for (const candidate of found)
+					if (candidate && candidate.pending === pending.pending)
+						emitted.add(candidate.name);
+				pendingSources.delete(shorthand.name);
+				break;
+			}
+		}
 		if (emitted.has(entry.name)) continue;
 		let name = entry.name;
 		let value = entry.pending ? "" : entry.value;

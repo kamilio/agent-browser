@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 native list-style improvement:180 new cases and690 focused
+checks cover shorthand resets,type/position/image:none,CSS-wide inheritance,
+variables,CSSOM/computed values and markers. The selected native gate passes
+12650 cases with two unchanged exclusions;build/strict/format and audited
+clean projections pass. Reviewer-found pending-shorthand round-trip regressions
+are reproduced and repaired,including CSSOM component ordering. LIST-STYLE.md
+records limitations and historical failures. Image marker URLs,unrepresentable
+pending-group serialization and other GnuPG profiles remain open. This is not
+live GnuPG acceptance;older Libpng12470 evidence is separate. Full browser,
+performance/research,provider/passkey/device/TTY/realSafeJS and challenge goals
+remain open. No limits raised,foreign dependency,bypass or push.
+
 September12 live GIF follow-up:the committed12470 native runtime now completes
 one genuine Netlib homepage-to-FAQ click,with two document commits,four GETs,
 34762 transferred bytes and no mocks/retries. Parent verifies12 Git inputs and

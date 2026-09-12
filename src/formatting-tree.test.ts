@@ -491,7 +491,7 @@ it.each([
 	"list-style-image:url(marker.png)",
 	"counter-reset:item",
 	"counter-increment:item",
-	"list-style:none",
+	"list-style:url(marker.png)",
 ])("retains CSS diagnostics and the rendering guard for %s", (declaration) => {
 	const { tree } = fixture(`<li style="${declaration}">Item</li>`);
 	const result = buildFormattingTree(tree);
