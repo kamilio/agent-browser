@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 website evidence ninth update preserves78 recorded attempted
+hosts,not78working websites. A new predeclared Libarchive contract admitted only
+the exact previously observed public S3 ribbon image:HTML/CSS200,asset403,
+3GET/7588encoded-and-decoded bytes,zero document commits/clicks,stopped without
+retry or bypass. Parent verification checked11 actual Git inputs and35 readonly
+evidence assertions. Original single-origin admission failure is unchanged.
+LIBARCHIVE-PUBLIC-ASSET-FLOW.md and WEBSITE-TEST-INVENTORY-SEPTEMBER-12-NINTH-UPDATE.md
+record this separately from native gates. Libpng had zero adapter rejections
+but an image-owner mixed-content denial before any SourceForge request;this
+is not a codec/server result and adds no host. Historical reports/seals and
+workingWebsiteCount:null remain unchanged. Broader browser gates stay open.
+
 September12 image-border follow-up:HTML img/object/image-input border
 presentation hints now participate in the normal cascade; zero/invalid hints
 do not erase author CSS. Native loaded-image geometry/raster/hits and the
