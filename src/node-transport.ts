@@ -659,28 +659,35 @@ export class NodeNetworkTransport implements NetworkTransport {
 						: await awaitWithSignal(this.resolver(hostname, signal), signal);
 					this.policy.checkAddresses(url.href, addresses);
 					ensureActive();
-					if (this.requestPacer) {
-						await this.requestPacer.wait(url.origin, signal);
+					const exchange = () => {
 						ensureActive();
-						if (this.cookieJar) Reflect.deleteProperty(headers, "cookie");
-						if (useCookies && hopContext) {
-							const value = this.cookieJar?.cookieHeader(url.href, hopContext);
-							if (value) headers.cookie = value;
+						if (this.requestPacer) {
+							if (this.cookieJar) Reflect.deleteProperty(headers, "cookie");
+							if (useCookies && hopContext) {
+								const value = this.cookieJar?.cookieHeader(
+									url.href,
+									hopContext,
+								);
+								if (value) headers.cookie = value;
+							}
+							ensureActive();
 						}
-						ensureActive();
-					}
-					response = await this.exchange(
-						url,
-						addresses[0],
-						method,
-						headers,
-						body,
-						redirect,
-						signal,
-						maxResponseBytes,
-						storeCookies,
-						accounting,
-					);
+						return this.exchange(
+							url,
+							addresses[0],
+							method,
+							headers,
+							body,
+							redirect,
+							signal,
+							maxResponseBytes,
+							storeCookies,
+							accounting,
+						);
+					};
+					response = this.requestPacer
+						? await this.requestPacer.dispatch(url.origin, signal, exchange)
+						: await exchange();
 				}
 				ensureActive();
 				encodedBytes += response.encodedBytes;

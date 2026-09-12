@@ -1,3 +1,6 @@
+import { EventEmitter } from "node:events";
+import type { IncomingMessage, RequestOptions } from "node:http";
+import { Readable } from "node:stream";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { CookieJar } from "./cookies.js";
 import { AgentBrowserError } from "./errors.js";
@@ -7,6 +10,29 @@ import {
 	type NodeTransportOptions,
 } from "./node-transport.js";
 import { OriginRequestPacer } from "./origin-request-pacer.js";
+
+const network = vi.hoisted(() => ({
+	https: vi.fn(),
+	blocked: vi.fn(() => {
+		throw new Error("Actual network access is forbidden in pacing tests");
+	}),
+}));
+
+vi.mock("node:http", async (original) => ({
+	...(await original<typeof import("node:http")>()),
+	request: network.blocked,
+	get: network.blocked,
+	createServer: network.blocked,
+}));
+
+vi.mock("node:https", async (original) => ({
+	...(await original<typeof import("node:https")>()),
+	request: network.https,
+	get: network.blocked,
+	createServer: network.blocked,
+}));
+
+vi.mock("node:dns/promises", () => ({ Resolver: network.blocked }));
 
 type ExchangeResponse = Omit<
 	NetworkResponse,
@@ -32,8 +58,11 @@ const publicAddress = "93.184.216.34";
 const transports: NodeNetworkTransport[] = [];
 const jars: CookieJar[] = [];
 const pending: Promise<unknown>[] = [];
+const responses: Readable[] = [];
 
 beforeEach(() => {
+	vi.clearAllMocks();
+	network.https.mockImplementation(network.blocked);
 	vi.useFakeTimers({
 		toFake: ["setTimeout", "clearTimeout", "Date", "performance"],
 	});
@@ -43,6 +72,8 @@ afterEach(async () => {
 	for (const transport of transports.splice(0)) transport.close();
 	await Promise.allSettled(pending.splice(0));
 	for (const jar of jars.splice(0)) jar.close();
+	for (const response of responses.splice(0)) response.destroy();
+	expect(network.blocked).not.toHaveBeenCalled();
 	vi.restoreAllMocks();
 	vi.useRealTimers();
 });
@@ -133,6 +164,77 @@ it.each([1, 60_000])("accepts pacing option boundary %s", async (interval) => {
 	await test.request();
 	expect(test.starts.map((start) => start.time)).toEqual([0]);
 });
+
+it.each([1, 10, 99, 100, 250])(
+	"preserves the start interval after %s ms of synchronous request setup",
+	async (setupMs) => {
+		const test = fixture();
+		const exchange = test.exchange.getMockImplementation();
+		if (!exchange) throw new Error("Missing exchange fixture");
+		test.exchange.mockImplementationOnce((...arguments_) => {
+			vi.advanceTimersByTime(setupMs);
+			return exchange(...arguments_);
+		});
+		await test.request(`${origin}/slow-setup`);
+		const next = test.request(`${origin}/next`);
+		await flush();
+		await vi.advanceTimersByTimeAsync(100);
+		await next;
+		expect(test.starts).toHaveLength(2);
+		expect(test.starts[1].time - test.starts[0].time).toBeGreaterThanOrEqual(
+			100,
+		);
+		expect(test.transport.metrics()).toMatchObject({ active: 0 });
+		expect(vi.getTimerCount()).toBe(0);
+	},
+);
+
+it.each([1, 10, 99, 100, 250])(
+	"paces actual exchange construction after %s ms without opening a socket",
+	async (setupMs) => {
+		const starts: number[] = [];
+		network.https.mockImplementation(
+			(
+				options: RequestOptions,
+				callback: (response: IncomingMessage) => void,
+			) => {
+				expect(options.hostname).toBe(publicAddress);
+				expect(options.method).toBe("GET");
+				if (starts.length === 0) vi.advanceTimersByTime(setupMs);
+				starts.push(performance.now());
+				const response = Object.assign(
+					Readable.from([], { objectMode: false }),
+					{ statusCode: 204, headers: {}, rawHeaders: [] },
+				);
+				responses.push(response);
+				const request = Object.assign(new EventEmitter(), {
+					destroy: vi.fn(() => request),
+					end: vi.fn(() => {
+						queueMicrotask(() =>
+							callback(response as unknown as IncomingMessage),
+						);
+						return request;
+					}),
+				});
+				return request;
+			},
+		);
+		const test = fixture();
+		test.exchange.mockRestore();
+		await expect(test.request(`${origin}/first`)).resolves.toMatchObject({
+			status: 204,
+		});
+		const next = test.request(`${origin}/second`);
+		await flush();
+		await vi.advanceTimersByTimeAsync(100);
+		await expect(next).resolves.toMatchObject({ status: 204 });
+		expect(starts).toHaveLength(2);
+		expect(starts[1] - starts[0]).toBeGreaterThanOrEqual(100);
+		expect(network.https).toHaveBeenCalledTimes(2);
+		expect(test.transport.metrics()).toMatchObject({ active: 0, requests: 2 });
+		expect(vi.getTimerCount()).toBe(0);
+	},
+);
 
 it.each([
 	-1,
@@ -378,14 +480,22 @@ it("close aborts queued calls, rejects future calls and clears timers", async ()
 	expect(vi.getTimerCount()).toBe(0);
 });
 
-it("rechecks abort after a pacing grant before starting the exchange", async () => {
+it("rechecks abort at a queued pacing dispatch before starting the exchange", async () => {
 	const test = fixture();
 	await test.request();
 	const controller = new AbortController();
-	const wait = OriginRequestPacer.prototype.wait;
-	vi.spyOn(OriginRequestPacer.prototype, "wait").mockImplementationOnce(
-		function (this: OriginRequestPacer, target, signal) {
-			return wait.call(this, target, signal).then(() => controller.abort());
+	const dispatch = OriginRequestPacer.prototype.dispatch;
+	vi.spyOn(OriginRequestPacer.prototype, "dispatch").mockImplementationOnce(
+		function <Result>(
+			this: OriginRequestPacer,
+			target: string,
+			signal: AbortSignal,
+			start: () => Result | PromiseLike<Result>,
+		) {
+			return dispatch.bind(this)(target, signal, () => {
+				controller.abort();
+				return start();
+			});
 		},
 	);
 	const cancelled = test.request(`${origin}/cancelled-after-grant`, {

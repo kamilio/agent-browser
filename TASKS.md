@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 request-start pacing strengthens the documented grant-only
+contract: synchronous cookie/request startup now runs inside the owned origin
+grant, and cooldown starts after invocation without waiting for the response.
+Ten original-source regression failures are retained. The focused four-suite
+gate passes 215 cases; build, 260-root strict checks, formatting and the broader
+261-suite native gate pass 13588/0 with two unchanged exclusions at
+14:20:48.559–14:23:43.100 UTC. Count growth is 28 new cases plus 59 pre-existing
+pacing cases newly selected, not 87 new tests. The clean 653-entry manifest is
+unchanged. REQUEST-START-PACING.md and REQUEST-PACING.md preserve the original
+contract/history and distinguish in-memory constructor tests from real wire
+timing. NASA causality, website improvements and speedup remain unproved;
+rich-button descendants and all broader acceptance gates remain open.
+
 September 12 NASA homepage testing on committed13501 adds one attempted host,
 www.nasa.gov, beyond the retained 85-host inventory. One native GET returned
 HTTP 200 (46546 encoded / 355707 decoded bytes); the next original stylesheet

@@ -2,13 +2,14 @@ import { AgentBrowserError } from "./errors.js";
 
 interface PendingRequest {
 	readonly signal: AbortSignal;
-	readonly resolve: () => void;
-	readonly reject: (error: AgentBrowserError) => void;
+	readonly start: () => void;
+	readonly reject: (error: unknown) => void;
 	readonly abort: () => void;
 }
 
 interface OriginQueue {
 	nextStart: number;
+	active: boolean;
 	readonly pending: PendingRequest[];
 	timer?: ReturnType<typeof setTimeout>;
 }
@@ -37,6 +38,14 @@ export class OriginRequestPacer {
 	}
 
 	wait(origin: string, signal: AbortSignal): Promise<void> {
+		return this.dispatch(origin, signal, () => undefined);
+	}
+
+	dispatch<Result>(
+		origin: string,
+		signal: AbortSignal,
+		start: () => Result | PromiseLike<Result>,
+	): Promise<Result> {
 		if (this.closed)
 			return Promise.reject(
 				new AgentBrowserError("closed", "Request pacing is closed"),
@@ -45,6 +54,7 @@ export class OriginRequestPacer {
 		const now = performance.now();
 		for (const [name, queue] of this.origins) {
 			if (
+				!queue.active &&
 				queue.pending.length === 0 &&
 				queue.timer === undefined &&
 				queue.nextStart <= now
@@ -60,14 +70,12 @@ export class OriginRequestPacer {
 						"Request pacing origin limit exceeded",
 					),
 				);
-			queue = { nextStart: now, pending: [] };
+			queue = { nextStart: now, active: false, pending: [] };
 			this.origins.set(origin, queue);
 		}
-		if (queue.pending.length === 0 && queue.nextStart <= now) {
-			queue.nextStart = now + this.intervalMs;
-			return Promise.resolve();
-		}
-		if (this.pending >= 128)
+		const immediate =
+			!queue.active && queue.pending.length === 0 && queue.nextStart <= now;
+		if (!immediate && this.pending >= 128)
 			return Promise.reject(
 				new AgentBrowserError(
 					"resource-limit",
@@ -75,10 +83,15 @@ export class OriginRequestPacer {
 				),
 			);
 		const selected = queue;
-		return new Promise<void>((resolve, reject) => {
+		return new Promise<Result>((resolve, reject) => {
+			const invoke = () => resolve(start());
+			if (immediate) {
+				this.grant(selected, invoke, reject);
+				return;
+			}
 			const request: PendingRequest = {
 				signal,
-				resolve,
+				start: invoke,
 				reject,
 				abort: () => {
 					const index = selected.pending.indexOf(request);
@@ -102,18 +115,38 @@ export class OriginRequestPacer {
 		this.closed = true;
 		for (const queue of this.origins.values()) {
 			if (queue.timer !== undefined) clearTimeout(queue.timer);
+			queue.timer = undefined;
 			for (const request of queue.pending) {
 				request.signal.removeEventListener("abort", request.abort);
 				request.reject(
 					new AgentBrowserError("closed", "Request pacing is closed"),
 				);
 			}
+			queue.pending.length = 0;
 		}
 		this.origins.clear();
 		this.pending = 0;
 	}
 
+	private grant(
+		queue: OriginQueue,
+		start: () => void,
+		reject: (error: unknown) => void,
+	): void {
+		queue.active = true;
+		try {
+			start();
+		} catch (error) {
+			reject(error);
+		} finally {
+			queue.nextStart = performance.now() + this.intervalMs;
+			queue.active = false;
+			this.pump(queue);
+		}
+	}
+
 	private pump(queue: OriginQueue): void {
+		if (this.closed || queue.active) return;
 		if (queue.timer !== undefined) {
 			clearTimeout(queue.timer);
 			queue.timer = undefined;
@@ -131,8 +164,6 @@ export class OriginRequestPacer {
 		if (!request) return;
 		this.pending--;
 		request.signal.removeEventListener("abort", request.abort);
-		queue.nextStart = performance.now() + this.intervalMs;
-		request.resolve();
-		this.pump(queue);
+		this.grant(queue, request.start, request.reject);
 	}
 }

@@ -26,7 +26,10 @@ request path. Invalid values reject.
   origin receive FIFO grants separated by the configured interval. FIFO begins
   after address resolution, not at the public request-call boundary. Other origins
   do not share that queue. Redirected real exchanges use their target origin.
-- Spacing is measured from actual grants using a monotonic clock. A delayed timer
+- Synchronous exchange startup runs inside its grant. The next cooldown starts
+  after that invocation returns, using a monotonic clock, so cookie preparation
+  and request construction cannot consume the following request's spacing.
+  The scheduler does not wait for the response promise to settle. A delayed timer
   does not release a backlog of accumulated grants in a single catch-up burst.
 - Waiting counts against the existing whole-request deadline and active-request
   cap. Abort and close remove pending work; timed-out work must not begin an
@@ -44,10 +47,12 @@ removing spacing. Closing the transport clears pacing timers and retained state.
 
 ## Limits
 
-Pacing local admission grants cannot guarantee exact exchange-call timestamps:
-promise continuations and synchronous cookie preparation follow a grant. It also
-cannot guarantee spacing of arrivals observed by a remote server: DNS, TLS,
-network delays and server processing still vary.
+Pacing separates synchronous native exchange startup invocations; it does not
+guarantee exact packet transmission or arrival spacing observed by a remote
+server. Runtime scheduling, DNS, TLS, network delays and server processing still
+vary. Slow synchronous startup can increase the interval, and asynchronous
+responses may overlap. The earlier grant-only limitation and the September 12
+startup-coordination validation are recorded in REQUEST-START-PACING.md.
 It does not coordinate separate transports, processes or agents, queue beyond
 the existing concurrency cap, retry failed requests, interpret Retry-After,
 cache responses, obey a newly added robots policy or automate human challenges.
