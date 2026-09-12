@@ -6,6 +6,17 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 fresh Netlib12350 flow still fails its genuine FAQ click,
+after two HTTP200 GETs and one commit. The old deferred center is no longer
+the observed node;one img remains deferred with empty CSS diagnostic maps.
+Its response declares image/gif and begins GIF87a;native PNG/JPEG-only dispatch
+makes GIF support a concrete follow-up,not a verified decode or sole-cause claim.
+Parent verifies35 checks,140/142-entry ledgers and eight actual Git inputs. See
+`NETLIB-CENTER-FLOW.md` and `WEBSITE-TEST-INVENTORY-SEPTEMBER-12-SIXTH-UPDATE.md`.
+The attempted-host union remains75;historical outcomes are not rewritten. Next:
+native GIF investigation and scoped CSS compatibility. Broader research/provider/
+device/TTY/realSafeJS/challenge gates remain open;no destination success claimed.
+
 September12,2026 GnuPG source-only CSS diagnosis on committed12350 retains
 124 parsed rules and35 declaration-diagnostic candidates:ten current matches,
 23 unmatched and two unsupported pseudo-element selectors with unknown counts.
