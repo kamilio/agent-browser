@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 fresh post-casing Selenium flow on committed14922 remains partial:
+simpleTest.html and its GIF return200, but the one genuine e137 link click fails
+the local width/formatting-profile guard before any destination request. Native
+navigation-flow acceptance is false; no retry, forced navigation, restriction or
+challenge bypass. The17:31:40.097–17:31:40.962UTC run has two requests, one page
+commit, clear exposed resource policies and proved instrumented-owner cleanup.
+SELENIUM-TRANSFORM-FLOW.md retains this new run separately from the original.
+Main's17:36:35.769–17:36:36.076UTC offline verification passes10checks, recaptures
+24actual Git objects matching48archived copies, and checks310sealed receipts,
+21snapshot inputs and all1176source/1992compiled files without page import,
+HTML reparse or network replay. Seal and ledger remain byte-identical.
+Separate cached formatting investigation is not a live image-loaded replay:
+its first parse failed a harness revision assertion after changing the viewport;
+the unchanged-default-viewport follow-up at17:36:10.852–17:36:10.923UTC observes
+zero CSS issues but a deferred table e151 and two deferred images e168/e170.
+Both diagnostic lanes and failures remain private original evidence; these are
+investigation targets, not an established exact cause or successful click.
+Broader sites/research, performance, provider/passkey/device/SafeJS and challenge
+acceptance remain open; no new-host count or full-site support claim follows.
+
 September12 post-casing cached Selenium CSS check on committed14922 observes
 the identical six statements, with raw/applicable unsupported counts3→0:
 capitalize/lowercase/uppercase are accepted without stripping CSS. One native
