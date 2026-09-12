@@ -6,6 +6,17 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 GnuPG12254 captured replay gets beyond the old clearance-owner
+guard but still fails at document-width supported-profile validation. Six exact
+mocks include all four images; zero HTTP,one commit and one genuine FAQ click.
+Clear requests fall8→2 while independent CSS counts and nine float diagnostics
+remain. Parent verifies22 checks,282/284-entry ledgers and eight actual Git
+outputs with no new page run. See `GNUPG-APPLICABILITY-FOLLOWUP.md` and
+`GNUPG-CLEAR-APPLICABILITY-REPLAY.md`. Host count75 and historical live failures
+remain unchanged. Next: Netlib center layout and regression-backed CSS/HTML
+compatibility,not guard suppression. Research/provider/device/TTY/realSafeJS/
+challenge acceptance remains open; no successful destination navigation claimed.
+
 September12,2026 BusyBox source-only diagnosis on committed12254 isolates
 the three raw CSS invalid-value diagnostics to font-family lists; two matching
 rules explain the applicable count. Font-size percentages are not the cause.
