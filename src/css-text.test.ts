@@ -178,7 +178,7 @@ it.each(["monospace", '"agent mono"', "'agent mono'", "agent mono"])(
 	},
 );
 
-it.each(["-1px", "12", "calc(1px + 1px)", "1e999px", "10ch", "larger"])(
+it.each(["-1px", "12", "calc(1px + 1px)", "1e999px", "10ch", "larger smaller"])(
 	"rejects unsupported or invalid size %s",
 	(value) => {
 		expect(parseTextValue("font-size", value)).toBeUndefined();

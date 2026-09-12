@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12, 2026 native font-size keywords: all eight absolute keywords and
+parent-relative larger/smaller now compute to native pixels, retaining inheritance,
+root/rem, frozen identity, custom-property behavior and independent limits. The
+eight-value table and 1.2 relative ratio are explicit native policy, not verified
+Fonts 4/browser parity. An unchanged baseline geometry/raster/hit fixture fails
+before and passes after; 57 new cases, focused 477/0 and the sealed 227-suite
+native gate pass 12094/0 with two unchanged exclusions, 226 strict roots and
+621 clean manifest entries. See `FONT-SIZE-KEYWORDS.md`. The verified GnuPG
+captured replay still fails at non-floating clearance; the fresh IANA flow fails
+at float/flex/grid/table coordination. Those observations used the earlier
+12037 runtime and do not validate this release on live sites. Next: bounded
+clearance implementation and fresh public documentation flows. Research
+completeness and provider/device/TTY/realSafeJS/challenge gates remain open.
+
 September12,2026 zlib CSS recovery replay: exactly one11952 native session
 replays nine original responses with zeroHTTP, one page commit and one genuine
 FAQ click. The invalid-rule diagnostic drops1→0 and one advisory discarded-rule

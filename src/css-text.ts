@@ -36,6 +36,16 @@ const absoluteFactors: Readonly<Record<string, number>> = Object.freeze({
 	pt: 96 / 72,
 	pc: 16,
 });
+const absoluteFontSizes: Readonly<Record<string, number>> = Object.freeze({
+	"xx-small": (16 * 3) / 5,
+	"x-small": (16 * 3) / 4,
+	small: (16 * 8) / 9,
+	medium: 16,
+	large: (16 * 6) / 5,
+	"x-large": (16 * 3) / 2,
+	"xx-large": 16 * 2,
+	"xxx-large": 16 * 3,
+});
 
 export function isCssTextProperty(
 	property: string,
@@ -68,7 +78,11 @@ export function parseTextValue(
 			? '"agent mono"'
 			: undefined;
 	if (property === "line-height" && value === "normal") return value;
-	if (property === "font-size" && value === "medium") return "16px";
+	if (property === "font-size") {
+		if (Object.hasOwn(absoluteFontSizes, value))
+			return `${absoluteFontSizes[value]}px`;
+		if (value === "larger" || value === "smaller") return value;
+	}
 	const parsed = length.exec(value);
 	if (!parsed || !Number.isFinite(Number(parsed[1])) || Number(parsed[1]) < 0)
 		return;
@@ -98,6 +112,12 @@ export function computeTextStyle(
 		result["font-weight"],
 		parent["font-weight"],
 	);
+	if (result["font-size"] === "larger" || result["font-size"] === "smaller") {
+		const parentSize = Number.parseFloat(parent["font-size"]);
+		result["font-size"] = `${layoutNumber(
+			result["font-size"] === "larger" ? parentSize * 1.2 : parentSize / 1.2,
+		)}px`;
+	}
 	const pixels = (value: string, relative: number, rootSize = rootFontSize) => {
 		const parsed = length.exec(value);
 		if (!parsed) return value;
