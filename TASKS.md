@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026,01:09 UTC: parent verifies `MAN7-MANUAL-FLOW.md` on the prior
+11268 release. Three man7.org HTTP200 GETs return22573 encoded/37435 decoded
+bytes. An original-loader c.statcounter.com image attempt is rejected before
+transport; no wire call reaches that host. The harness aborts with zero commits,
+discovery or clicks: a policy boundary, not a server/CAPTCHA/layout verdict.
+Both exact hosts count under the existing pre-wire-attempt convention, taking
+coverage67→69, not working-site passes. The new machine-readable daily expansion
+records all three additions without rewriting historical inventory measurements.
+All24 checks,54/56-entry ledgers, encoded/decoded/header/archive/report claims
+verify. Document cleanup settles to zero; event/control/image-owner cleanup is
+explicitly unproved. The offline timestamp precheck failure/draft remain preserved
+with no native retry. NetBSD's sealed Markdown hard-break whitespace warning and
+subsequent independent commit ownership/hash check are recorded in the private
+NETBSD-COMMIT-CHECK-NOTE.md; no sealed report was reformatted. Continue full float
+coordination, independent CSS/overflow/table work and varied public-site testing.
+An optional-resource policy/failed-load cleanup follow-up needs its own bounded
+task; neither widening origins nor bypassing access restrictions is authorized.
+
 September12,2026,01:03 UTC: parent verifies the fresh NetBSD guide flow on prior
 11268 release8daf14b. `NETBSD-GUIDE-FLOW.md` adds www.netbsd.org, coverage66→67
 attempted hosts, not working-site passes. Two HTTP200 GETs return83873 bytes;

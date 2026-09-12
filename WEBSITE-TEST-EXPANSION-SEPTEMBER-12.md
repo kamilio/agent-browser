@@ -4,6 +4,33 @@ Starting coverage remains **66 attempted exact hosts**, not66 working websites.
 The historical host list is in `WEBSITE-TEST-INVENTORY.md`, with additions and
 their actual outcomes in `WEBSITE-TEST-EXPANSION-SEPTEMBER-11.md`.
 
+After the two newly verified flows below, combined coverage is **69 attempted
+exact hosts**. The three additions are `www.netbsd.org`, `man7.org`, and the
+pre-wire-rejected image host `c.statcounter.com`. As in the earlier CDN case,
+an observed rejected subresource attempt counts as an attempt, not reachability.
+Machine-readable additions: `reports/website-test-expansion-2026-09-12.json`.
+
+## Man7 manual and rejected image host
+
+`MAN7-MANUAL-FLOW.md` records the fresh00:58 UTC attempt on audited11268 release.
+Three man7.org GETs return HTTP200: manual HTML, original CSS and a PNG cover,
+22573 encoded/37435 decoded bytes. An original-loader tracking-image request to
+c.statcounter.com is rejected by the harness before native transport admission.
+No wire request reaches that host. This stops the navigation with zero commits,
+anchor inspections or clicks; it is a test policy boundary, not a server
+rejection, CAPTCHA or demonstrated layout defect. A further discovered relative
+stylesheet remains unfetched. No resource removal, allowlist expansion or retry
+is used to manufacture a working result.
+
+Parent verifies24 evidence checks,54/56-entry ledgers, encoded/decoded body
+equality, gzip/header/accounting claims and exact archive/report metadata. The
+document reaches zero owned nodes after one bounded settlement observation;
+event/control/image-owner cleanup remains **unproved**, because the failed load
+never reaches completed-page instrumentation. An offline seal precheck rejects
+abbreviated report timestamps; its original draft/checker are byte-preserved,
+and full dates are added before sealing without another native run. These two
+host additions raise the preceding67-host coverage to69, not69 working websites.
+
 ## NetBSD guide
 
 `NETBSD-GUIDE-FLOW.md` adds `www.netbsd.org`, bringing verified attempted-host
