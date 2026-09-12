@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 Lua collapsed-border replay and diagnostic correction: exactly
+two offline native page runs retain the same four original responses, failed
+manual click, one deferred table and seven collapsed-border guards. No new HTTP
+or destination request; native DOM agrees, bounded extraction fails unchanged.
+Parent reproduces27 original replay checks and113/115-entry ledgers, but also
+finds a wrong `a` rule excerpt that those checks missed. The additive correction
+audits all38 grouped records, fixes only the two inaccurate excerpts/offsets and
+passes21 correction checks plus60 separate native-parser regression cases.
+Original seals remain unchanged, with no third page replay. Parent invocation
+failures/corrections are explicit. See `LUA-COLLAPSED-FOLLOWUP.md`,
+`LUA-COLLAPSED-TABLE-REPLAY.md` and `LUA-CSS-DIAGNOSTIC-CORRECTION.md`.
+Next gates: isolate the remaining table/CSS/presentation-hint blockers before
+claiming Lua layout/navigation progress; use a newly scoped resource-budget
+contract before another zlib flow. The71-host inventory and11848-pass selected
+native gate remain distinct from live-site, credential/passkey-device, real
+SafeJS/TTY, fingerprinting and challenge-handling acceptance. Overall goal open.
+
 September12,2026 zlib live follow-up: the pinned11784 runtime returned eight
 HTTP200 responses (one document/seven images), then stopped before transport of
 the ninth resource at the fixed eight-GET cap. Zero commits/anchors/clicks;
