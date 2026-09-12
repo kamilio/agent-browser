@@ -6,6 +6,22 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 plain fractional geometry fixes public collapsed Range deduplication
+at its root and shares finite bounded coordinate comparisons with caret/selection.
+No Range-error-string fallback or duplicate geometry scan remains.143new cases
+have a byte-identical119pass/24fail baseline and143pass final suite;889related
+cases pass. One old tiny literal-control expectation deliberately changes from
+unsupported to clipped, without rewriting the historical14922 artifacts.
+PLAIN-FRACTIONAL-EDITABLE.md records retained failures, strict/format validation,
+independent review scope and the new15065passed/0failed/2unchanged-exclusion gate
+at2026-09-12T17:49:28.212Z–2026-09-12T17:52:41.615Z:291suites,290strict roots,
+669clean manifest entries,1177source/1992compiled files,fiveowned inputs plus
+manifest. Real subpixel gaps, mixed identities/lines, nonfinite/summed-overflow
+metrics and existing unsupported typography remain guarded. Prior Selenium
+reports still use14922; the missing-src/alt image state/sizing policy and wider
+website/research/performance/provider/passkey/device/SafeJS/challenge gates remain
+open. Native tests are not a new live, navigation or whole-site acceptance run.
+
 September12 separate image-loaded native replay narrows the remaining Selenium
 guard without another live request. Original fresh HTML and127byte GIF feed one
 native parse and one exact-URL memory callback at17:43:03.346–17:43:03.424UTC.

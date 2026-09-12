@@ -16,7 +16,10 @@ import { type RasterImage, type Rgba, paintRasterRect } from "./raster.js";
 import { documentStyles } from "./styles.js";
 import { textFontExtent } from "./text-font.js";
 import type { TextGlyph } from "./text-layout.js";
-import { consolidateSourceGlyphs } from "./text-source-glyphs.js";
+import {
+	consolidateSourceGlyphs,
+	sourceGlyphCoordinatesEqual,
+} from "./text-source-glyphs.js";
 
 export const editableCaretLimits = Object.freeze({
 	maxWork: 250_000,
@@ -454,12 +457,19 @@ export function prepareEditableCaret(
 					return rangeClientRects(temporary, geometryOptions);
 				})
 			: rangeClientRects(range, geometryOptions);
-		if (rects.length !== 1 || rects[0].width !== 0 || rects[0].height <= 0)
+		if (
+			rects.length !== 1 ||
+			rects[0].width !== 0 ||
+			!Number.isFinite(rects[0].height) ||
+			rects[0].height <= 0
+		)
 			return result("unsupported");
 		const rect = rects[0];
 		const scroll = documentScrollPosition(tree);
 		const x = rect.x + scroll.x;
 		const y = rect.y + scroll.y;
+		if (!Number.isFinite(x) || !Number.isFinite(y))
+			return result("unsupported");
 		const ref = tree.reference(source.id);
 		let anchor: CaretAnchor | undefined;
 		let startsAtPoint = false;
@@ -470,13 +480,20 @@ export function prepareEditableCaret(
 				if (
 					glyph.ref !== ref ||
 					!glyph.visible ||
+					!Number.isFinite(glyph.advance) ||
+					glyph.advance < 0 ||
+					!Number.isFinite(glyph.x + glyph.advance) ||
+					!Number.isFinite(glyph.y + glyph.fontSize) ||
 					glyph.fontSize !== rect.height ||
-					glyph.y !== y
+					!sourceGlyphCoordinatesEqual(glyph.y, y)
 				)
 					continue;
 				const start = point.offset === glyph.offset;
 				const end = point.offset === glyph.offset + glyph.codeUnits;
-				if ((!start && !end) || glyph.x + (start ? 0 : glyph.advance) !== x)
+				if (
+					(!start && !end) ||
+					!sourceGlyphCoordinatesEqual(glyph.x + (start ? 0 : glyph.advance), x)
+				)
 					continue;
 				if (!anchor || (start && !startsAtPoint)) {
 					startsAtPoint = start;

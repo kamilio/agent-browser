@@ -640,6 +640,7 @@
   "src/unicode-casing-data.test.ts",
   "src/text-transform-layout.test.ts",
   "src/text-transform-limits.test.ts",
+  "src/plain-fractional-editable-geometry.test.ts",
   "src/subresource-integrity.test.ts",
   "src/list-ordinals.test.ts",
   "src/numeric-markers.test.ts",

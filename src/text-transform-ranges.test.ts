@@ -472,7 +472,7 @@ describe("actual native uppercase expansion", () => {
 				fontSize < 1 ? "clipped" : "painted",
 			);
 			expect(rasterizeDocument(control.tree).metrics.selectionStatus).toBe(
-				fontSize < 1 ? "unsupported" : "painted",
+				fontSize < 1 ? "clipped" : "painted",
 			);
 			state.select(source.length);
 			control.select(4);

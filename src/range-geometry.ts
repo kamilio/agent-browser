@@ -5,7 +5,10 @@ import type { DomBoundaryPoint, DomRange } from "./dom-range.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlDocumentFamily } from "./html-document-family.js";
 import type { TextGlyph } from "./text-layout.js";
-import { consolidateSourceGlyphs } from "./text-source-glyphs.js";
+import {
+	consolidateSourceGlyphs,
+	sourceGlyphCoordinatesEqual,
+} from "./text-source-glyphs.js";
 
 export const rangeGeometryLimits = Object.freeze({
 	maxWork: 2_000_000,
@@ -43,6 +46,17 @@ function rectangle(
 	width: number,
 	height: number,
 ): ClientRectangle {
+	if (
+		!Number.isFinite(left) ||
+		!Number.isFinite(top) ||
+		!Number.isFinite(width) ||
+		width < 0 ||
+		!Number.isFinite(height) ||
+		height < 0 ||
+		!Number.isFinite(left + width) ||
+		!Number.isFinite(top + height)
+	)
+		throw new AgentBrowserError("unsupported", "Range rectangle is invalid");
 	return Object.freeze({
 		x: left,
 		y: top,
@@ -353,6 +367,21 @@ export function rangeClientRects(
 		for (const { glyph } of entries) {
 			charge();
 			if (
+				!Number.isFinite(glyph.x) ||
+				!Number.isFinite(glyph.y) ||
+				!Number.isFinite(glyph.advance) ||
+				glyph.advance < 0 ||
+				!Number.isFinite(glyph.x + glyph.advance) ||
+				!Number.isFinite(glyph.fontSize) ||
+				glyph.fontSize < 0 ||
+				!Number.isFinite(glyph.y + glyph.fontSize) ||
+				(glyph.fontSize === 0 && glyph.advance !== 0)
+			)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Range glyph metrics are invalid",
+				);
+			if (
 				glyph.offset < precedingEnd ||
 				glyph.codeUnits < 1 ||
 				glyph.offset + glyph.codeUnits > data.length
@@ -377,8 +406,8 @@ export function rangeClientRects(
 			);
 		}
 		if (lower === upper) {
-			const candidates: ClientRectangle[] = [];
-			for (const { glyph, afterBreak } of entries) {
+			const candidates: (SourceGlyph & { rect: ClientRectangle })[] = [];
+			for (const { glyph, context, afterBreak } of entries) {
 				charge();
 				if (lower < glyph.offset || lower > glyph.offset + glyph.codeUnits)
 					continue;
@@ -398,20 +427,30 @@ export function rangeClientRects(
 				if (
 					!candidates.some(
 						(candidate) =>
-							candidate.x === rect.x &&
-							candidate.y === rect.y &&
-							candidate.width === rect.width &&
-							candidate.height === rect.height,
+							(candidate.rect.x === rect.x ||
+								(!candidate.afterBreak &&
+									!afterBreak &&
+									candidate.context === context &&
+									candidate.glyph.formattingId === glyph.formattingId &&
+									candidate.glyph.line === glyph.line &&
+									candidate.glyph.offset + candidate.glyph.codeUnits ===
+										lower &&
+									glyph.offset === lower &&
+									rect.width === 0 &&
+									sourceGlyphCoordinatesEqual(candidate.rect.x, rect.x))) &&
+							candidate.rect.y === rect.y &&
+							candidate.rect.width === rect.width &&
+							candidate.rect.height === rect.height,
 					)
 				)
-					candidates.push(rect);
+					candidates.push({ glyph, context, afterBreak, rect });
 			}
 			if (candidates.length !== 1)
 				throw new AgentBrowserError(
 					"unsupported",
 					"Range collapsed source position has no unambiguous glyph boundary",
 				);
-			append(candidates[0], fixedRefs.has(ref));
+			append(candidates[0].rect, fixedRefs.has(ref));
 			continue;
 		}
 		let current:

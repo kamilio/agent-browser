@@ -269,11 +269,23 @@ export function prepareEditableSelection(
 				)
 					continue;
 				if (!glyph.visible) return finish("hidden");
+				if (
+					!Number.isFinite(glyph.x) ||
+					!Number.isFinite(glyph.y) ||
+					!Number.isFinite(glyph.advance) ||
+					glyph.advance < 0 ||
+					!Number.isFinite(glyph.x + glyph.advance) ||
+					!Number.isFinite(glyph.fontSize) ||
+					glyph.fontSize < 0 ||
+					!Number.isFinite(glyph.y + glyph.fontSize) ||
+					(glyph.fontSize === 0 && glyph.advance !== 0)
+				)
+					return finish("unsupported");
 				if (glyph.advance <= 0 || glyph.fontSize <= 0) continue;
 				const within = (lower: number, upper: number) =>
-					lower <= upper ||
-					(glyph.transformed === true &&
-						sourceGlyphCoordinatesEqual(lower, upper));
+					Number.isFinite(lower) &&
+					Number.isFinite(upper) &&
+					(lower <= upper || sourceGlyphCoordinatesEqual(lower, upper));
 				const supported = rects.some((rect) => {
 					charge();
 					return (
