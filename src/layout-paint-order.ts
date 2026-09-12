@@ -11,6 +11,7 @@ export type LayoutContentItem =
 	| { kind: "marker"; marker: Readonly<OutsideMarkerRect> }
 	| { kind: "image"; box: Readonly<DocumentBox> }
 	| { kind: "box"; box: Readonly<DocumentBox> }
+	| { kind: "table-borders"; box: Readonly<DocumentBox> }
 	| { kind: "fragment"; fragment: Readonly<TextInlineFragment> }
 	| { kind: "glyph"; glyph: Readonly<TextGlyph>; contentY: number };
 
@@ -55,12 +56,13 @@ function* flowContentItems(
 	);
 	type Scope = {
 		boxes: Readonly<DocumentBox>[];
+		tableBorders: Readonly<DocumentBox>[];
 		floats: number[];
 		groups: Group[];
 	};
 	const root = layout.text.horizontal.formatting.root;
 	const scopes = new Map<number, Scope>([
-		[root, { boxes: [], floats: [], groups: [] }],
+		[root, { boxes: [], tableBorders: [], floats: [], groups: [] }],
 	]);
 	const owners = new Int32Array(nodes.length);
 	let order = 0;
@@ -82,7 +84,7 @@ function* flowContentItems(
 			nodes[id].display === "table-cell"
 		) {
 			scope = id;
-			scopes.set(id, { boxes: [], floats: [], groups: [] });
+			scopes.set(id, { boxes: [], tableBorders: [], floats: [], groups: [] });
 			if (floating) scopes.get(parentScope)?.floats.push(id);
 			else if (!atomic)
 				scopes.get(parentScope)?.groups.push({ kind: "scope", id });
@@ -97,10 +99,17 @@ function* flowContentItems(
 	}
 	for (const box of layout.boxes) {
 		charge();
-		const scope = scopes.get(owners[box.id]) as Scope;
-		if (nodes[box.id].kind === "replaced")
+		const node = nodes[box.id];
+		const backgroundOwner =
+			node.display === "table-cell" && node.collapsedBorderOwner !== undefined
+				? node.collapsedBorderOwner
+				: box.id;
+		const scope = scopes.get(owners[backgroundOwner]) as Scope;
+		if (node.kind === "replaced")
 			scope.groups.push({ kind: "image", id: box.id, box });
 		else scope.boxes.push(box);
+		if (box.collapsedTableBorders !== undefined)
+			(scopes.get(owners[box.id]) as Scope).tableBorders.push(box);
 	}
 	for (const marker of outsideMarkerRects(layout, charge)) {
 		charge();
@@ -127,6 +136,10 @@ function* flowContentItems(
 		for (const box of scope.boxes.sort(ordered)) {
 			charge();
 			yield { kind: "box", box };
+		}
+		for (const box of scope.tableBorders.sort(ordered)) {
+			charge();
+			yield { kind: "table-borders", box };
 		}
 		for (const float of scope.floats) {
 			charge();

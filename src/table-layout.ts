@@ -41,6 +41,7 @@ import {
 	type TableRowContribution,
 } from "./table-row-sizing.js";
 import { tableColumnContributions, tableStructure } from "./table-structure.js";
+import { projectCollapsedTableBorders } from "./table-collapsed-geometry.js";
 import { layoutFormattingText, textLayoutWorkLimit } from "./text-layout.js";
 
 export const tableLayoutLimits = Object.freeze({
@@ -252,7 +253,10 @@ export function layoutFormattingTableContainer(
 		const node = formatting.nodes[id];
 		if (node.position !== undefined)
 			unsupported("Positioned table roles require table-aware coordination");
-		if ((node.table ?? initialTableStyle)["empty-cells"] !== "show")
+		if (
+			node.collapsedBorderOwner === undefined &&
+			(node.table ?? initialTableStyle)["empty-cells"] !== "show"
+		)
 			unsupported("Hidden empty table cells are not supported");
 		const style = node.box ?? initialBoxStyle;
 		for (const property of [
@@ -271,6 +275,11 @@ export function layoutFormattingTableContainer(
 			unsupported("Table role maximum heights are not supported");
 	};
 	guardRole(containerId);
+	if (
+		formatting.nodes[containerId].table?.["border-collapse"] === "collapse" &&
+		!formatting.nodes[containerId].collapsedTable
+	)
+		unsupported("Collapsed table layout requires resolved border conflicts");
 	const structure = tableStructure(formatting, containerId, remaining());
 	charge(structure.metrics.work);
 	if (structure.captions.length)
@@ -676,6 +685,10 @@ export function layoutFormattingTableContainer(
 		charge();
 		return box.id;
 	});
+	const collapsedTable = formatting.nodes[containerId].collapsedTable;
+	const collapsedTableBorders = collapsedTable
+		? projectCollapsedTableBorders(collapsedTable, columns, rows, charge)
+		: undefined;
 	let first: number | null = null;
 	let last: number | null = null;
 	for (let index = 0; index < rows.baselines.length; index++) {
@@ -705,6 +718,7 @@ export function layoutFormattingTableContainer(
 		atomics: layout.text.horizontal.atomics ?? Object.freeze([]),
 		textMetrics: layout.text.metrics,
 		paintOrder: Object.freeze(paintOrder),
+		...(collapsedTableBorders ? { collapsedTableBorders } : {}),
 		baselines: Object.freeze({
 			first: baselineUnsupported ? null : first,
 			last: baselineUnsupported ? null : last,

@@ -9,6 +9,7 @@ import type {
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 import { resolveHeightConstraints } from "./replaced-box.js";
 import type { OutsideMarker } from "./outside-markers.js";
+import type { CollapsedTableBorderPaint } from "./table-collapsed-raster.js";
 import type {
 	DocumentTextLayout,
 	TextContext,
@@ -22,6 +23,7 @@ export interface MarginStrut {
 	readonly value: number;
 }
 export interface DocumentBox extends FormattingBlockWidth {
+	collapsedTableBorders?: readonly CollapsedTableBorderPaint[];
 	flexBaselines?: Readonly<{
 		first: number | null;
 		last: number | null;

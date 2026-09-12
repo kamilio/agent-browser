@@ -12,7 +12,7 @@ import {
 } from "./table-slot-placement.js";
 
 export function tableStructure(
-	formatting: FormattingTree,
+	formatting: Pick<FormattingTree, "nodes">,
 	rootId: number,
 	maxWork: number,
 ) {
@@ -33,16 +33,19 @@ export function tableStructure(
 		);
 	const style = root.table ?? initialTableStyle;
 	if (
-		style["border-collapse"] !== "separate" ||
+		!["separate", "collapse"].includes(style["border-collapse"]) ||
 		style["table-layout"] !== "auto"
 	)
 		throw new AgentBrowserError(
 			"unsupported",
-			"Only separate-border automatic tables are supported",
+			"Only supported-border automatic tables are supported",
 		);
-	const spacing = style["border-spacing"]
-		.split(" ")
-		.map((value) => layoutNumber(resolveLayoutLength(value, 0)));
+	const spacing =
+		style["border-collapse"] === "collapse"
+			? [0, 0]
+			: style["border-spacing"]
+					.split(" ")
+					.map((value) => layoutNumber(resolveLayoutLength(value, 0)));
 	const groups: TableSlotGroupInput[] = [];
 	const captions: number[] = [];
 	let header: TableSlotGroupInput | undefined;

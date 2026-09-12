@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026,03:51 UTC: native automatic tables gain actual collapsed-border
+conflict resolution, half-width sizing and shared single-alpha painting within
+the existing none/hidden/solid profile. Sparse bounded edges retain spans,
+row/group/table participants, transparent/hidden winners and physical hit
+ownership. Original CSS/DOM remain intact; padding/spacing/empty-cells are ignored
+for the collapsed model. Nested models, ancestor translation, relative overlays,
+mutation caches and a genuine native pointer link flow have isolated coverage.
+The unchanged failing baseline passes; five new suites add186tests. Final focused
+847/0 and sealed gate11784/0/2 unchanged exclusions pass across213 selected suites,
+212 strict roots,607 clean manifest entries,1103source/1944compiled files.
+See COLLAPSED-TABLE-BORDERS.md. Two early type-check stops and two expanded fixture
+failures are preserved. Column/caption/fixed/positioned-role and percentage
+profiles remain guarded; nonzero borders on empty grids and float/table reflow
+still need support. Native junction/max-half-edge policies are not full CSS
+Tables3 harmonization or cross-engine pixel parity. Existing Lua/Man7 failed
+clicks are not relabeled: bounded website/replay follow-ups remain required.
+The broader performance, site interactions, crawler/challenge handling and
+provider/device/TTY/real-runtime gates stay open; pre-existing edits are retained.
+
 September12,2026,03:17 UTC: parent independently verifies the fresh Lua5.4
 manual flow and paired Man7 captured-page replay on native11599 release0ca889d.
 Lua makes4HTTP200 GETs/45114bytes, commits the contents page and genuinely clicks

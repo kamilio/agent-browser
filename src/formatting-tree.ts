@@ -1,6 +1,10 @@
 import { type BlockWidth, resolveBlockWidth } from "./block-width.js";
 import { type BoxStyle, initialBoxStyle } from "./css-box.js";
 import { initialTableStyle, type TableStyle } from "./css-table.js";
+import {
+	applyCollapsedTableBorders,
+	type CollapsedTableFormatting,
+} from "./table-collapsed-formatting.js";
 import { measureValidatedIntrinsicRoot } from "./intrinsic-widths.js";
 import { initialPaintStyle, type PaintStyle } from "./css-paint.js";
 import type { TextStyle } from "./css-text.js";
@@ -93,6 +97,8 @@ export interface FormattingNode {
 	paint?: PaintStyle;
 	contentMode?: "blocks" | "inline" | "flex" | "grid" | "table";
 	table?: TableStyle;
+	collapsedBorderOwner?: number;
+	collapsedTable?: CollapsedTableFormatting;
 	tableSpan?: Readonly<{ columns: number; rows: number }>;
 	flex?: FlexStyle;
 	flexItem?: boolean;
@@ -210,6 +216,8 @@ export function buildFormattingTree(
 		issues[code] = (issues[code] ?? 0) + 1;
 	};
 	const nodes: MutableFormattingNode[] = [];
+	const collapsedBorderGuards = new Set<string>();
+	const emptyCellGuards = new Set<string>();
 	let work = 0;
 	let textCodeUnits = 0;
 	let visitedDomNodes = 0;
@@ -841,16 +849,20 @@ export function buildFormattingTree(
 				issue("display-layout-not-supported");
 				deferredSubtrees++;
 			}
-			if (table["border-collapse"] !== "separate")
+			if (table["border-collapse"] !== "separate") {
 				issue("table-collapsed-borders-not-supported");
+				collapsedBorderGuards.add(tree.reference(id));
+			}
 			if (root && table["table-layout"] !== "auto")
 				issue("table-fixed-layout-not-supported");
 			if (display === "table-column" || display === "table-column-group")
 				issue("table-column-layout-not-supported");
 			if (display === "table-caption")
 				issue("table-caption-layout-not-supported");
-			if (display === "table-cell" && table["empty-cells"] !== "show")
+			if (display === "table-cell" && table["empty-cells"] !== "show") {
 				issue("table-empty-cell-paint-not-supported");
+				emptyCellGuards.add(tree.reference(id));
+			}
 			if (flow.position !== "static")
 				issue("table-position-layout-not-supported");
 			const cell = display === "table-cell";
@@ -1285,6 +1297,24 @@ export function buildFormattingTree(
 			nodes[write++] = node;
 		}
 		nodes.length = retained;
+	}
+	if (collapsedBorderGuards.size) {
+		const collapsed = applyCollapsedTableBorders(
+			nodes,
+			Math.max(1, limits.maxWork - work),
+		);
+		charge(collapsed.work);
+		for (const ref of collapsed.resolvedRefs) {
+			collapsedBorderGuards.delete(ref);
+			emptyCellGuards.delete(ref);
+		}
+		if (collapsedBorderGuards.size)
+			issues["table-collapsed-borders-not-supported"] =
+				collapsedBorderGuards.size;
+		else delete issues["table-collapsed-borders-not-supported"];
+		if (emptyCellGuards.size)
+			issues["table-empty-cell-paint-not-supported"] = emptyCellGuards.size;
+		else delete issues["table-empty-cell-paint-not-supported"];
 	}
 	charge(nodes.length);
 	return Object.freeze({

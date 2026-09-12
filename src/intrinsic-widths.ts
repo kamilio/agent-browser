@@ -718,6 +718,14 @@ function measureScopes(
 				);
 			minContent = maxContent = measured;
 		} else if (node.contentMode === "table") {
+			if (
+				node.table?.["border-collapse"] === "collapse" &&
+				!node.collapsedTable
+			)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Collapsed table measurement requires resolved border conflicts",
+				);
 			const structure = tableStructure(formatting, id, remaining());
 			charge(structure.metrics.work);
 			const contributions = tableColumnContributions(

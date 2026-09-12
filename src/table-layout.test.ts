@@ -387,7 +387,6 @@ it("exposes stretched cell, row and group refs to document geometry and hit test
 });
 
 it.each([
-	"table{border-collapse:collapse}",
 	"table{table-layout:fixed}",
 	"td{height:50%}",
 	"tr{height:50%}",

@@ -45,6 +45,7 @@ import {
 	paintRasterRect,
 } from "./raster.js";
 import { documentStyles } from "./styles.js";
+import { paintCollapsedTableBorders } from "./table-collapsed-raster.js";
 import type { TextGlyph } from "./text-layout.js";
 
 export interface DocumentClip {
@@ -395,16 +396,17 @@ function paintDocumentLayout(
 				box.borderBoxHeight,
 				paintBackground(node.paint),
 			);
-		metrics.borderPixels += paintSolidBorders(
-			image,
-			box.borderX - clip.x,
-			box.borderY - clip.y,
-			box.borderBoxWidth,
-			box.borderBoxHeight,
-			box,
-			node.paint,
-			charge,
-		);
+		if (node.collapsedBorderOwner === undefined)
+			metrics.borderPixels += paintSolidBorders(
+				image,
+				box.borderX - clip.x,
+				box.borderY - clip.y,
+				box.borderBoxWidth,
+				box.borderBoxHeight,
+				box,
+				node.paint,
+				charge,
+			);
 		drawOutline(
 			box.ref,
 			box.borderX,
@@ -524,7 +526,7 @@ function paintDocumentLayout(
 				used.borderBoxHeight,
 				paintBackground(node.paint ?? initialPaintStyle),
 			);
-		if (node.visible)
+		if (node.visible && node.collapsedBorderOwner === undefined)
 			metrics.borderPixels += paintSolidBorders(
 				image,
 				borderX - clip.x,
@@ -609,6 +611,24 @@ function paintDocumentLayout(
 		else metrics.paintedImages++;
 	};
 	for (const item of layoutContentItems(layout, charge)) {
+		if (item.kind === "table-borders") {
+			const segments = item.box.collapsedTableBorders ?? [];
+			charge(segments.length);
+			const visibleSegments = segments.map((segment) => {
+				charge();
+				return nodes[segment.ownerId]?.visible
+					? segment
+					: { ...segment, color: transparentColor };
+			});
+			metrics.borderPixels += paintCollapsedTableBorders(
+				image,
+				item.box.contentX - clip.x,
+				item.box.contentY - clip.y,
+				visibleSegments,
+				charge,
+			);
+			continue;
+		}
 		if (item.kind === "marker") {
 			const marker = item.marker;
 			const node = nodes[marker.id];
@@ -683,7 +703,7 @@ function paintDocumentLayout(
 			fragment.height,
 			paintBackground(node.paint),
 		);
-		if (fragment.borders)
+		if (fragment.borders && node.collapsedBorderOwner === undefined)
 			metrics.borderPixels += paintSolidBorders(
 				image,
 				fragment.x - clip.x,

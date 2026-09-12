@@ -564,9 +564,8 @@ it("excludes hidden tables and their unsupported descendants", () => {
 
 it.each([
 	{
-		label: "collapsed borders",
-		markup:
-			'<table style="border-collapse:collapse"><tr><td>Cell</td></tr></table>',
+		label: "collapsed empty-grid borders",
+		markup: '<table style="border-collapse:collapse;border:2px solid"></table>',
 		issue: "table-collapsed-borders-not-supported",
 	},
 	{

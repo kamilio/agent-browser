@@ -334,6 +334,7 @@ export class DocumentHitTesting {
 			}
 		};
 		for (const item of layoutContentItems(layout, this.charge)) {
+			if (item.kind === "table-borders") continue;
 			if (item.kind === "marker") {
 				const marker = item.marker;
 				append(marker.id, marker.x, marker.y, marker.width, marker.height);

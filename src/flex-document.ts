@@ -229,6 +229,10 @@ export function layoutFormattingFlexFlow(
 		boxes.push(
 			Object.freeze({
 				...shell,
+				...(layout.stage === "native-table-container-layout" &&
+				layout.collapsedTableBorders
+					? { collapsedTableBorders: layout.collapsedTableBorders }
+					: {}),
 				flexBaselines: Object.freeze({
 					first:
 						layout.baselines.first === null
