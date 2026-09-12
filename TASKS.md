@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 isolated PCRE captured-source attribution identifies active
+a{text-decoration:underline;cursor:pointer} as the two applicable unsupported
+property occurrences;each selector matches43 source anchors. Native whole-sheet
+and statement diagnostics agree on6raw/2applicable issues,10source rules,
+9retained rules and22declarations. Source262nodes/revision263 stays unchanged.
+PCRE-CSS-SOURCE-CHECK.md preserves a prelaunch ledger-base failure and an
+incorrect10-versus9 retained-rule oracle before corrected offline success.
+Parent verifies20release receipts,1144source,1960compiled,10actualGit inputs
+and the216entry original live ledger;27source-evidence receipts pass readonly
+verification. Zero browser sessions/requests/clicks/newhosts. Genuine decoration
+and cursor support with cascade/paint/interaction tests is the next narrow
+PCRE opportunity,not diagnostic suppression or proof of final flow success.
+
 September12 website inventory twelfth update records81 attempted hosts,
 adding onlywww.pcre.org;the allowed bare alias was never attempted. TwoGET200
 carry2905encoded/8579decoded bytes. One homepage commits;43actual anchors
