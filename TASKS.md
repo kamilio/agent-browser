@@ -6,6 +6,21 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 exact captured-Python replay on committed15601/9abc836 now eliminates
+the false float ownership-count error. PYTHON-FLOAT-APPLICABILITY-REPLAY.md records
+20:08:17.037–20:08:17.176UTC,8memory responses/72064decoded bytes,0wire/clicks,
+1native commit/format/layout attempt,853nodes/revision860. Float diagnostics10→8
+match8actual owners; ignored computed floats remain e344left/e730right. The first
+layout failure is now the issue-free supported-formatting-profile guard; all
+other measured CSS/display/overflow/position/clear issues and3unsupported py.svg
+states remain. No CSS/DOM/resource/guard alterations or whole-page acceptance.
+Main20:10:12.961UTC readonly verification passes11receipts, exact old/new runtime/
+capture/diagnostic comparisons and instrumented owner cleanup. The first verifier's
+report-versus-artifact hash mistake is retained and corrected from the original
+sealed ledger, without another page replay. Prior evidence stays unchanged.
+Fresh bounded IANA public-document testing is separately in progress on15522;
+no result is yet claimed. Broader browser/research and acceptance gates stay open.
+
 September12 native float diagnostics now follow actual floatSide ownership,
 not every non-none computed float. FLOAT-APPLICABILITY.md records the one-line
 formatter correction for ignored flex/grid-item and ordinary boxless floats;
