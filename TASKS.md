@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 libjpeg-turbo documentation flow on committed13226 receives three
+GET200 responses,10690encoded/30178decoded bytes at12:26:18.000–12:26:18.978UTC.
+Homepage commits; one genuine current-DOM documentation click on e124 stops at
+Float integration with flex, grid and table reflow is not coordinated. There
+is no destination request, retry, forced navigation or server challenge. This
+independent coordination gap is not repaired by cellpadding support. Only
+libjpeg-turbo.org is attempted; www remains allowed-only. It adds one host to
+the preceding83-host inventory; a separate dated84-host update follows.
+LIBJPEG-TURBO-DOCUMENTATION-FLOW.md preserves diagnostics and the failed flow.
+Parent independently verifies11actualGit objects/eightinputs/12readonlygroups/
+136sealedentries at12:30:10.928UTC. All historical artifacts remain unchanged.
+The source release13446 is separately verified; this older13226 live result
+does not establish new-release live acceptance or complete the broader goal.
+
 September 12 native HTML cellpadding support adds220cases and passes13446 with
 zero failures/two unchanged exclusions. Exact HTML table/row/group ownership,
 streaming integer-prefix/-0 handling, four independent author-origin hints,
