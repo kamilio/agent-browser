@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 Selenium web-form testing retains a stopped partial result on
+committed13588, not the later13769 alignment release. One GET200 response
+(1233encoded/4988decoded bytes) precedes a before-wire local rejection of the
+off-origin jsDelivr stylesheet. At15:13:09.715–15:13:10.434 UTC, no document
+commit, control/anchor snapshot, click, form action or retry occurs. This is
+the experiment's exact-origin admission boundary, not a proved server denial
+or native browser defect. SELENIUM-WEB-FORM-FLOW.md preserves original errors,
+cleanup and post-run tooling failures without replay. Parent verification at
+15:19:53.550–15:19:53.879 UTC recaptures eight actual Git objects against both
+archives, verifies five inputs/165sealed entries and seven flow-check groups
+under kernel socket/socketpair denial. Flow acceptance remains false. Selenium
+is already historical:87attempted hosts remain, not87working websites; jsDelivr
+was discovered but not contacted. Broader gates and form-control coverage stay open.
+
 September12 ordinary block-content alignment adds real descendant translation
 without moving the owner's physical content box. Positional safe/unsafe and
 distribution fallbacks, independent contexts, text/atoms/floats and empty-marker
