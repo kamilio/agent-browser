@@ -619,6 +619,8 @@
   "src/html-background-color.test.ts",
   "src/html-background-color-layout.test.ts",
   "src/html-cell-padding-geometry.test.ts",
+  "src/html-cell-spacing-geometry.test.ts",
+  "src/html-cell-spacing-layout.test.ts",
   "src/html-cell-padding.test.ts",
   "src/html-cell-padding-layout.test.ts",
   "src/float-shell-geometry.test.ts",

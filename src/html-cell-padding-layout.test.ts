@@ -622,7 +622,23 @@ it("restores current hints after inline and stylesheet-owner overrides are remov
 	expectContentOffsets(test);
 });
 
-it.each(["cellspacing", "rules", "frame", "background"])(
+it("ignores invalid cellspacing without changing the cellpadding hint", () => {
+	const test = fixture(
+		withHint("3").replace(
+			'cellpadding="3"',
+			'cellpadding="3" cellspacing="legacy"',
+		),
+	);
+	expectSpecifiedPadding(test, "#target", [3, 3, 3, 3]);
+	expect(
+		buildFormattingTree(test.tree).issues[
+			"html-table-presentation-hint-not-supported"
+		],
+	).toBeUndefined();
+	expectContentOffsets(test);
+});
+
+it.each(["rules", "frame", "background"])(
 	"preserves the independent %s table hint guard",
 	(attribute) => {
 		const test = fixture(

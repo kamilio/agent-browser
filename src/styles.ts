@@ -4,6 +4,7 @@ import {
 	cellPaddingOwner,
 	supportsCellPaddingHint,
 } from "./html-cell-padding.js";
+import { htmlPixelLength } from "./html-pixel-length.js";
 import {
 	legacyColor,
 	supportsBackgroundColorHint,
@@ -1122,6 +1123,19 @@ export class DocumentStyles {
 		};
 		const cellPaddingByTable = new Map<number, string>();
 		for (const node of nodes) {
+			if (isHtmlElement(node, "table")) {
+				const raw = node.attributes.cellspacing;
+				if (raw !== undefined) charge(raw.length + 1);
+				const spacing = htmlPixelLength(raw);
+				if (spacing !== undefined)
+					apply(
+						node.id,
+						[{ property: "border-spacing", value: spacing, important: false }],
+						[0, 0, 0],
+						false,
+						-2,
+					);
+			}
 			if (supportsCellPaddingHint(node)) {
 				const raw = node.attributes.cellpadding;
 				if (raw !== undefined) charge(raw.length + 1);

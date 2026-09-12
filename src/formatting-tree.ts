@@ -745,6 +745,7 @@ export function buildFormattingTree(
 				(name) =>
 					Object.hasOwn(node.attributes, name) &&
 					!(name === "bgcolor" && supportsBackgroundColorHint(node)) &&
+					!(name === "cellspacing" && isHtmlElement(node, "table")) &&
 					!(name === "cellpadding" && supportsCellPaddingHint(node)),
 			)
 		)

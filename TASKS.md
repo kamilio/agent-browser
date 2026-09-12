@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 native HTML table cellspacing now supplies a normal author hint for
+both border-spacing axes through the shared nonnegative-integer pixel parser.
+HTML-CELL-SPACING.md records101new cases, the failing pre-fix canonical fixtures,
+preserved worker oracle failures and four updated legacy guard expectations.
+Main focused637/637 and worker567/567 pass. The clean isolated native gate passes
+15522/0/2unchanged exclusions at19:11:03.315–19:14:35.433UTC:297selected suites,
+296strict roots,675manifest entries,1184source/1996compiled files,1173unchanged
+tracked inputs. Build, strict TypeScript, formatting and source stability pass.
+Only the HTML table cellspacing guard is removed; namespace, work/precision/
+magnitude limits and unrelated table/font/overflow/image/CSP guards remain.
+No live website or HN acceptance is inferred. Broader website/research/performance/
+provider/passkey/device/SafeJS/challenge gates remain open; no changes are pushed.
+
 September12 HN cached-page attribution on committed native15421 still rejects
 used layout. HN-MODERN-NATIVE-DIAGNOSIS.md retains four offline attempts, including
 two corrected harness mistakes: seven exact captured memory responses total,

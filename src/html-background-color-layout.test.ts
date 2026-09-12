@@ -550,7 +550,15 @@ it("keeps background hints and author padding when cellpadding is supported", ()
 	expectPaintAndHit(test, "td", red);
 });
 
-it.each(["cellspacing", "rules", "frame", "background"])(
+it("ignores invalid cellspacing without changing the background hint", () => {
+	const test = fixture(
+		'<table id="target" bgcolor="red" cellspacing="legacy"><tr><td></td></tr></table>',
+	);
+	expectNoHintGuards(test.tree);
+	expectPaintAndHit(test, "td", red);
+});
+
+it.each(["rules", "frame", "background"])(
 	"does not remove the independent table %s presentation guard",
 	(attribute) => {
 		const test = fixture(
