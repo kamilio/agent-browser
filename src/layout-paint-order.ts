@@ -65,6 +65,7 @@ function* flowContentItems(
 		[root, { boxes: [], tableBorders: [], floats: [], groups: [] }],
 	]);
 	const owners = new Int32Array(nodes.length);
+	const collapsedBackgroundEnds = new Map<number, number>();
 	let order = 0;
 	const pending = [{ id: root, scope: root }];
 	while (pending.length) {
@@ -100,6 +101,17 @@ function* flowContentItems(
 	for (const box of layout.boxes) {
 		charge();
 		const node = nodes[box.id];
+		if (
+			node.collapsedBorderOwner !== undefined &&
+			node.display !== "table-cell"
+		)
+			collapsedBackgroundEnds.set(
+				node.collapsedBorderOwner,
+				Math.max(
+					collapsedBackgroundEnds.get(node.collapsedBorderOwner) ?? 0,
+					paintOrder[box.id],
+				),
+			);
 		const backgroundOwner =
 			node.display === "table-cell" && node.collapsedBorderOwner !== undefined
 				? node.collapsedBorderOwner
@@ -130,10 +142,30 @@ function* flowContentItems(
 		charge();
 		return paintOrder[left.id] - paintOrder[right.id];
 	};
+	const backgroundOrder = (box: Readonly<DocumentBox>) => {
+		const node = nodes[box.id];
+		return node.display === "table-cell" &&
+			node.collapsedBorderOwner !== undefined
+			? (collapsedBackgroundEnds.get(node.collapsedBorderOwner) ??
+					paintOrder[node.collapsedBorderOwner]) + 0.5
+			: paintOrder[box.id];
+	};
+	const orderedBackgrounds = (
+		left: Readonly<DocumentBox>,
+		right: Readonly<DocumentBox>,
+	) => {
+		charge();
+		return (
+			backgroundOrder(left) - backgroundOrder(right) ||
+			paintOrder[left.id] - paintOrder[right.id]
+		);
+	};
 	function* paintScope(id: number): Generator<LayoutContentItem> {
 		charge();
 		const scope = scopes.get(id) as Scope;
-		for (const box of scope.boxes.sort(ordered)) {
+		for (const box of scope.boxes.sort(
+			collapsedBackgroundEnds.size ? orderedBackgrounds : ordered,
+		)) {
 			charge();
 			yield { kind: "box", box };
 		}

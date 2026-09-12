@@ -9,6 +9,7 @@ import { measureValidatedIntrinsicRoot } from "./intrinsic-widths.js";
 import { initialPaintStyle, type PaintStyle } from "./css-paint.js";
 import type { TextStyle } from "./css-text.js";
 import type { DocumentTree } from "./document.js";
+import { supportsBackgroundColorHint } from "./html-background-color.js";
 import {
 	elementNamespace,
 	isHtmlElement,
@@ -671,7 +672,11 @@ export function buildFormattingTree(
 				"frame",
 				"bgcolor",
 				"background",
-			].some((name) => Object.hasOwn(node.attributes, name))
+			].some(
+				(name) =>
+					Object.hasOwn(node.attributes, name) &&
+					!(name === "bgcolor" && supportsBackgroundColorHint(node)),
+			)
 		)
 			issue("html-table-presentation-hint-not-supported");
 		if (

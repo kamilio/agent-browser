@@ -1,5 +1,9 @@
 import { imageDimensionHint } from "./replaced-box.js";
 import {
+	legacyColor,
+	supportsBackgroundColorHint,
+} from "./html-background-color.js";
+import {
 	imageBorderWidth,
 	supportsImageBorderHint,
 } from "./html-image-border.js";
@@ -1112,6 +1116,25 @@ export class DocumentStyles {
 			}
 		};
 		for (const node of nodes) {
+			if (supportsBackgroundColorHint(node)) {
+				const raw = node.attributes.bgcolor;
+				if (raw !== undefined) charge(raw.length + 1);
+				const color = legacyColor(raw);
+				if (color !== undefined)
+					apply(
+						node.id,
+						[
+							{
+								property: "background-color",
+								value: color,
+								important: false,
+							},
+						],
+						[0, 0, 0],
+						false,
+						-2,
+					);
+			}
 			if (elementNamespace(node) === svgNamespace) {
 				for (const declaration of svgPresentationDeclarations(node, charge))
 					apply(node.id, [declaration], [0, 0, 0], false, -2);

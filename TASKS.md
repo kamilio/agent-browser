@@ -6,6 +6,21 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 native HTMLbackground-color gate adds184cases andpasses13226
+with0failures/2unchanged exclusions. Fulllegacycolorconversion nowdrivesbgcolor
+hints onHTMLbody/table/groups/rows/cells/marquee through theexistingcascade.
+No strict-hexshortcut,dependency,capraise or unrelatedhintguard suppression.
+Testingalsoreproducesandfixes collapsedCSSrowspanbackground/hit order:table
+structuralbackgrounds precede owncellbackgrounds,thenexistingborderphase.
+Marquee remainsstaticfallback; column behavior staysunchanged. Baseline01
+old13042 has1pass/2fail;891focusedcases nowpass. HTML-BACKGROUND-COLOR.md
+records253suites/252strict/647manifest,1148source/1964compiled,
+1140unchangedinputs andfullgateUTC2026-09-12T11:39:05.200Z–2026-09-12T11:41:48.275Z.
+PrimaryWHATWG evidencewasfetchedwithnativebrowsertransport,2GET200/no redirects,
+thenparsedoffline. Allfailedfixtures/baselinesremain; pre-existingdirtywork
+isexcluded. Fullcaptured/liveLibpng,performance,research,providers/passkeys/
+devices/TTY/realSafeJS/challengeacceptance remainopen,notprovedbythisgate.
+
 September12 fresh Netlib13042 regression PASSES the bounded homepage-to-FAQ
 flow:21currentDOManchors inspected,one actual FAQclick,two committeddocuments,
 checked URL/title/history,newdocument identity,oldowner released and11352text
