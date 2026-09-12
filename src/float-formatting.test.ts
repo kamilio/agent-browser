@@ -237,7 +237,7 @@ it("does not transfer boxless float or clear values to children or anonymous wra
 	expect(
 		formatting.nodes.filter((entry) => entry.floatSide !== undefined),
 	).toEqual([node("#float")]);
-	expect(formatting.issues["float-layout-not-supported"]).toBe(2);
+	expect(formatting.issues["float-layout-not-supported"]).toBe(1);
 	expect(formatting.issues["clear-layout-not-supported"]).toBeUndefined();
 	expect(textOrder(formatting)).toBe("ABC");
 });
@@ -268,7 +268,7 @@ it.each(["absolute", "fixed"])(
 );
 
 it.each(["flex", "grid"])(
-	"keeps %s items as diagnosed items rather than floating normal-flow anchors",
+	"keeps %s items without manufacturing floating normal-flow anchors",
 	(display) => {
 		const { tree, id, formatting, node } = fixture(
 			`<main style="display:${display}"><div style="display:contents"><span id="first" style="float:left;clear:right;order:2">A</span></div><span id="second" style="float:right;order:1">B</span></main>`,
@@ -291,7 +291,7 @@ it.each(["flex", "grid"])(
 			node("#second").id,
 			node("#first").id,
 		]);
-		expect(formatting.issues["float-layout-not-supported"]).toBe(2);
+		expect(formatting.issues["float-layout-not-supported"]).toBeUndefined();
 		expect(formatting.issues["display-layout-not-supported"]).toBe(1);
 		expect(formatting.issues["clear-layout-not-supported"]).toBeUndefined();
 		expect(() => resolveFormattingPageWidths(formatting)).toThrow("issue-free");
@@ -319,16 +319,19 @@ it("preserves floated table structure and remapped ownership without accepting t
 });
 
 it.each([
-	["float:left", "float-layout-not-supported"],
-	["float:right;clear:both", "clear-layout-not-supported"],
-	["float:left;overflow:hidden", "overflow-layout-not-supported"],
-	["float:left;position:sticky", "position-layout-not-supported"],
-])("keeps the width guard closed for %s", (style, issue) => {
-	const { formatting } = fixture(`<main style="${style}">text</main>`);
-	expect(formatting.issues[issue]).toBe(1);
-	expect(formatting.issues["float-layout-not-supported"]).toBe(1);
-	expect(() => resolveFormattingPageWidths(formatting)).toThrow("issue-free");
-});
+	["float:left", "float-layout-not-supported", 1],
+	["float:right;clear:both", "clear-layout-not-supported", 1],
+	["float:left;overflow:hidden", "overflow-layout-not-supported", 1],
+	["float:left;position:sticky", "position-layout-not-supported", undefined],
+] as const)(
+	"keeps the width guard closed for %s",
+	(style, issue, floatIssues) => {
+		const { formatting } = fixture(`<main style="${style}">text</main>`);
+		expect(formatting.issues[issue]).toBe(1);
+		expect(formatting.issues["float-layout-not-supported"]).toBe(floatIssues);
+		expect(() => resolveFormattingPageWidths(formatting)).toThrow("issue-free");
+	},
+);
 
 it("requires a float coordinator even for an isolated floated reflow root", () => {
 	const { formatting, node } = fixture(

@@ -652,7 +652,7 @@ export function buildFormattingTree(
 			gridItem = false;
 			itemMode = undefined;
 		}
-		if (flow.float !== "none") issue("float-layout-not-supported");
+		if (floating) issue("float-layout-not-supported");
 		if (clearing) clearanceRequests++;
 		const svgClipping =
 			embeddedSvg &&

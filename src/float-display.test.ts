@@ -288,9 +288,9 @@ it.each(["flex", "grid"] as const)(
 		);
 		expect(display()).toBe("block");
 		expect(styles.flow(target).float).toBe("left");
-		expect(buildFormattingTree(tree).issues["float-layout-not-supported"]).toBe(
-			1,
-		);
+		expect(
+			buildFormattingTree(tree).issues["float-layout-not-supported"],
+		).toBeUndefined();
 	},
 );
 

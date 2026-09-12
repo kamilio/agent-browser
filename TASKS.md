@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 native float diagnostics now follow actual floatSide ownership,
+not every non-none computed float. FLOAT-APPLICABILITY.md records the one-line
+formatter correction for ignored flex/grid-item and ordinary boxless floats;
+computed values/blockification, real floats and independent unsupported guards
+remain.79new cases,6superseded expectations, Main384/384focused and worker76/76
+pass. Retained baseline, worker-oracle, missing-selected-file and Main strict
+typing failures are not rewritten. Final clean isolated gate passes15601/0/
+2unchanged exclusions at20:02:06.780–20:05:51.501UTC:299selected suites,
+298strict roots,677manifest entries,1186source/1996compiled files and1180unchanged
+tracked inputs. Build, strict TypeScript, formatting and source stability pass.
+FLOAT-APPLICABILITY-SOURCE.md retains3fresh native W3C captures and the Flexbox
+node-limit/first Display sampling gaps; Main14actualGit/28archive verification
+passes over159receipts. The separate SOURCE-FOLLOWUP report establishes ordinary
+contents box suppression and a qualified older local Flexbox editor-source rule;
+the published Flexbox failure and unexamined Display Appendix B remain explicit.
+Next is one exact captured-Python post-fix replay, not an inferred website pass.
+Broader live/research/performance/provider/passkey-device/SafeJS/challenge gates
+remain open. Pre-existing dirty work is preserved; no changes are pushed.
+
 September12 corrected parent-owned Python offline diagnosis now reaches one
 native document commit and formatting on15522 using all eight fresh responses.
 PYTHON-FRESH-NATIVE-DIAGNOSIS.md records19:37:34.473–19:37:34.612UTC,
