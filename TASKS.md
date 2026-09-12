@@ -6,6 +6,22 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 12: fresh IANA SVG website check
+
+The committed native SVG runtime now loads IANA's original logo at 234×72 and
+commits the Example Domains document: three HTTP 200 responses, one navigation,
+one commit, one formatting inspection and one used-layout attempt; zero clicks.
+This is partial progress, not a website pass. Used layout stops at the issue-free
+formatting-profile guard, with applicable CSS and float/display coordination
+diagnostics still outstanding. No stylesheet stripping or issue waiver is used.
+
+See `IANA-SVG-NATIVE-CHECK.md` for the fresh September 12, 22:43 UTC evidence,
+body hashes in the private lane, independent before/after checks and observed
+owner cleanup. The 16,405-case selected native gate was not rerun. Next: identify
+the exact CSS constraints and repair supported behavior; continue Python and
+varied-site checks. The overall browser goal and broader acceptance gates remain
+open. No credentials, SafeJS, alternate browser or challenge bypass was used.
+
 ### September 12: bounded native SVG images and exact captured-logo checks
 
 Native SVG image support now parses strict UTF-8 XML into a standalone SVG tree,
