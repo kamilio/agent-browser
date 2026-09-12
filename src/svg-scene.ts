@@ -1,4 +1,5 @@
-import { parseCssColor, type CssColor } from "./css-color.js";
+import { cssNamedColors } from "./css-color.js";
+import type { SvgFill } from "./svg-paint-value.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import {
 	elementNamespace,
@@ -57,7 +58,7 @@ function resource(message: string): never {
 }
 
 interface Presentation {
-	fill: CssColor | { readonly reference: string } | null;
+	fill: SvgFill;
 	fillRule: "nonzero" | "evenodd";
 	fillOpacity: number;
 }
@@ -272,38 +273,26 @@ function buildSvgScene(
 			Math.min(1, value.endsWith("%") ? amount / 100 : amount),
 		);
 	}
-	function presentation(
-		node: Readonly<DocumentNode>,
-		parent: Presentation,
-	): Presentation {
-		const fillText = attribute(node, "fill");
-		let fill = parent.fill;
-		if (
-			fillText !== undefined &&
-			fillText !== "inherit" &&
-			fillText !== "unset"
-		) {
-			const reference =
-				/^url\([\t\n\r ]*(["']?)#([^\s"'()]+)\1[\t\n\r ]*\)$/.exec(fillText);
-			if (reference && !references.has(reference[2]))
-				unsupported("unresolved paint reference");
-			const parsed = reference
-				? Object.freeze({ reference: reference[2] })
-				: fillText === "none"
-					? null
-					: parseCssColor(fillText === "initial" ? "black" : fillText);
-			if (parsed === undefined) unsupported("unsupported fill paint");
-			fill = parsed;
+	function presentation(node: Readonly<DocumentNode>): Presentation {
+		const computed = styles.paint(node.id);
+		if (computed.svgPaintError)
+			unsupported("unsupported fill presentation attribute");
+		let fill =
+			computed.fill === undefined ? cssNamedColors.black : computed.fill;
+		if (fill !== null && typeof fill === "object" && "reference" in fill) {
+			const targetId = references.get(fill.reference);
+			const target = targetId === undefined ? undefined : tree.get(targetId);
+			charge(2);
+			if (
+				!target ||
+				target.kind !== "element" ||
+				elementNamespace(target) !== svgNamespace ||
+				!["linearGradient", "radialGradient", "pattern"].includes(
+					target.tagName,
+				)
+			)
+				fill = fill.fallback === undefined ? null : fill.fallback;
 		}
-		const rule = attribute(node, "fill-rule");
-		const fillRule =
-			rule === undefined || rule === "inherit" || rule === "unset"
-				? parent.fillRule
-				: rule === "initial"
-					? "nonzero"
-					: rule;
-		if (fillRule !== "nonzero" && fillRule !== "evenodd")
-			unsupported("unsupported fill rule");
 		const stroke = attribute(node, "stroke");
 		if (
 			stroke !== undefined &&
@@ -326,8 +315,8 @@ function buildSvgScene(
 		charge(3);
 		return {
 			fill,
-			fillRule,
-			fillOpacity: opacity(attribute(node, "fill-opacity"), parent.fillOpacity),
+			fillRule: computed["fill-rule"] ?? "nonzero",
+			fillOpacity: computed["fill-opacity"] ?? 1,
 		};
 	}
 	function path(node: Readonly<DocumentNode>): readonly SvgPathSegment[] {
@@ -493,7 +482,6 @@ function buildSvgScene(
 	}
 	function visit(
 		node: Readonly<DocumentNode>,
-		inherited: Presentation,
 		transform: SvgMatrix,
 		ancestors: readonly string[],
 	): void {
@@ -514,7 +502,7 @@ function buildSvgScene(
 		if (node.id !== id && node.tagName !== "g" && !shapes.has(node.tagName))
 			unsupported(`unsupported element ${node.tagName}`);
 		const container = node.id === id || node.tagName === "g";
-		const paint = presentation(node, inherited);
+		const paint = presentation(node);
 		const alpha = opacity(attribute(node, "opacity"), 1);
 		if (container && alpha !== 1)
 			unsupported("group opacity requires compositing");
@@ -619,20 +607,11 @@ function buildSvgScene(
 				!metadata.has(childNode.tagName)
 			)
 				unsupported("graphics nested inside a shape");
-			visit(childNode, paint, matrix, childAncestors);
+			visit(childNode, matrix, childAncestors);
 		}
 	}
 	charge(5);
-	visit(
-		root,
-		{
-			fill: Object.freeze([0, 0, 0, 255]),
-			fillRule: "nonzero",
-			fillOpacity: 1,
-		},
-		svgIdentity,
-		Object.freeze([]),
-	);
+	visit(root, svgIdentity, Object.freeze([]));
 	charge(8);
 	return Object.freeze({
 		rootRef: tree.reference(id),

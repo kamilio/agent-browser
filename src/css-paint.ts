@@ -12,6 +12,11 @@ import {
 } from "./css-color.js";
 import type { Rgba } from "./raster.js";
 import {
+	normalizeSvgFill,
+	parseSvgFill,
+	type SvgFill,
+} from "./svg-paint-value.js";
+import {
 	borderColorProperties,
 	type BorderColorProperty,
 } from "./css-border.js";
@@ -23,6 +28,9 @@ export const cssPaintProperties = Object.freeze([
 	"accent-color",
 	"stop-color",
 	"stop-opacity",
+	"fill",
+	"fill-opacity",
+	"fill-rule",
 	...cssBackgroundProperties,
 ] as const);
 export type CssPaintProperty = (typeof cssPaintProperties)[number];
@@ -36,6 +44,10 @@ export interface PaintStyle
 	readonly "accent-color"?: CssColor | "auto";
 	readonly "stop-color"?: CssColor;
 	readonly "stop-opacity"?: number;
+	readonly fill?: SvgFill;
+	readonly "fill-opacity"?: number;
+	readonly "fill-rule"?: "nonzero" | "evenodd";
+	readonly svgPaintError?: true;
 	readonly "background-color": CssColor;
 }
 export const initialPaintStyle: PaintStyle = Object.freeze({
@@ -52,6 +64,9 @@ export function isCssPaintProperty(
 		property === "accent-color" ||
 		property === "stop-color" ||
 		property === "stop-opacity" ||
+		property === "fill" ||
+		property === "fill-opacity" ||
+		property === "fill-rule" ||
 		property === "background-color" ||
 		isNeutralBackgroundProperty(property)
 	);
@@ -60,10 +75,35 @@ export function parsePaintValue(
 	value: string,
 	property: CssPaintProperty = "color",
 ): string | undefined {
-	if (property === "stop-opacity") {
+	if (property === "fill") {
+		const keyword = value
+			.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
+			.toLowerCase();
+		return ["initial", "inherit", "unset", "revert"].includes(keyword)
+			? keyword
+			: normalizeSvgFill(value);
+	}
+	if (property === "fill-rule") {
+		const keyword = value
+			.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
+			.toLowerCase();
+		return [
+			"initial",
+			"inherit",
+			"unset",
+			"revert",
+			"nonzero",
+			"evenodd",
+		].includes(keyword)
+			? keyword
+			: undefined;
+	}
+	if (property === "stop-opacity" || property === "fill-opacity") {
 		if (["initial", "inherit", "unset", "revert"].includes(value)) return value;
 		const match = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)(%)?$/i.exec(
-			value.trim(),
+			property === "fill-opacity"
+				? value.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
+				: value.trim(),
 		);
 		if (!match || !Number.isFinite(Number(match[1]))) return undefined;
 		return `${Number(match[1])}${match[2] ?? ""}`;
@@ -106,11 +146,57 @@ export function computePaintStyle(
 		"accent-color"?: CssColor | "auto";
 		"stop-color"?: CssColor;
 		"stop-opacity"?: number;
+		fill?: SvgFill;
+		"fill-opacity"?: number;
+		"fill-rule"?: "nonzero" | "evenodd";
+		svgPaintError?: true;
 	} & Partial<Record<BorderColorProperty, Rgba>> = {
 		color:
 			foreground && foreground !== "currentcolor" ? foreground : parent.color,
 		"background-color": fill ?? transparentColor,
 	};
+	const svgFill = specified.fill;
+	if (
+		svgFill === undefined ||
+		["inherit", "unset", "revert"].includes(svgFill)
+	) {
+		if (parent.fill !== undefined) result.fill = parent.fill;
+	} else if (svgFill !== "initial") {
+		const parsed = parseSvgFill(svgFill);
+		if (parsed !== undefined) result.fill = parsed;
+		else result.svgPaintError = true;
+	}
+	const fillRule = specified["fill-rule"];
+	if (
+		fillRule === undefined ||
+		["inherit", "unset", "revert"].includes(fillRule)
+	) {
+		if (parent["fill-rule"] !== undefined)
+			result["fill-rule"] = parent["fill-rule"];
+	} else if (fillRule === "nonzero" || fillRule === "evenodd")
+		result["fill-rule"] = fillRule;
+	else if (fillRule !== "initial") result.svgPaintError = true;
+	const fillOpacity = specified["fill-opacity"];
+	if (
+		fillOpacity === undefined ||
+		["inherit", "unset", "revert"].includes(fillOpacity)
+	) {
+		if (parent["fill-opacity"] !== undefined)
+			result["fill-opacity"] = parent["fill-opacity"];
+	} else if (fillOpacity !== "initial") {
+		const parsed = parsePaintValue(fillOpacity, "fill-opacity");
+		const percent = parsed?.endsWith("%") ?? false;
+		const amount =
+			parsed === undefined
+				? Number.NaN
+				: Number(percent ? parsed.slice(0, -1) : parsed);
+		if (Number.isFinite(amount))
+			result["fill-opacity"] = Math.max(
+				0,
+				Math.min(1, percent ? amount / 100 : amount),
+			);
+		else result.svgPaintError = true;
+	}
 	const stopColor = specified["stop-color"];
 	if (stopColor === "inherit") {
 		if (parent["stop-color"] !== undefined)
@@ -171,6 +257,10 @@ export function computePaintStyle(
 		result["accent-color"] === parent["accent-color"] &&
 		result["stop-color"] === parent["stop-color"] &&
 		result["stop-opacity"] === parent["stop-opacity"] &&
+		result.fill === parent.fill &&
+		result["fill-opacity"] === parent["fill-opacity"] &&
+		result["fill-rule"] === parent["fill-rule"] &&
+		result.svgPaintError === parent.svgPaintError &&
 		borderColorProperties.every(
 			(property) => result[property] === parent[property],
 		) &&

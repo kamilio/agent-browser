@@ -1,3 +1,4 @@
+import { serializeSvgFill } from "./svg-paint-value.js";
 import {
 	initialBackgroundValues,
 	isNeutralBackgroundProperty,
@@ -183,8 +184,24 @@ export function resolvedStyleValue(
 			? `${Number(value) * Number.parseFloat(text["font-size"])}px`
 			: value;
 	}
-	if (name === "stop-opacity")
-		return String(styles.paint(id)["stop-opacity"] ?? 1);
+	if (
+		["fill", "fill-opacity", "fill-rule"].includes(name) &&
+		styles.paint(id).svgPaintError
+	)
+		throw new AgentBrowserError(
+			"unsupported",
+			"Unsupported SVG fill presentation attribute",
+		);
+	if (name === "stop-opacity" || name === "fill-opacity")
+		return String(styles.paint(id)[name] ?? 1);
+	if (name === "fill-rule") return styles.paint(id)["fill-rule"] ?? "nonzero";
+	if (name === "fill") {
+		const paint = styles.paint(id);
+		return serializeSvgFill(
+			paint.fill === undefined ? [0, 0, 0, 255] : paint.fill,
+			paint.color,
+		);
+	}
 	if (
 		name === "color" ||
 		name === "caret-color" ||

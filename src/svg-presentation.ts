@@ -27,10 +27,24 @@ export function svgPresentationDeclarations(
 		"overflow",
 		"stop-color",
 		"stop-opacity",
+		"fill",
+		"fill-opacity",
+		"fill-rule",
 	];
 	if (node.tagName === "svg" || node.tagName === "rect")
 		properties.push("width", "height");
 	for (const property of properties) {
+		if (
+			property === "fill" &&
+			[
+				"animate",
+				"animateColor",
+				"animateMotion",
+				"animateTransform",
+				"set",
+			].includes(node.tagName)
+		)
+			continue;
 		const source = node.attributes[property];
 		if (source === undefined) continue;
 		if (source.length > 4096)
@@ -39,7 +53,9 @@ export function svgPresentationDeclarations(
 				"SVG presentation attribute limit exceeded",
 			);
 		charge(source.length * 3 + 1);
-		let value = source.trim();
+		let value = ["fill", "fill-opacity", "fill-rule"].includes(property)
+			? source.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
+			: source.trim();
 		if (
 			(property === "width" || property === "height") &&
 			/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(value)
@@ -73,11 +89,20 @@ export function svgPresentationDeclarations(
 					declaration.important ||
 					declaration.substitution,
 			)
-		)
+		) {
+			if (["fill", "fill-opacity", "fill-rule"].includes(property)) {
+				result.push({
+					property: property as CssProperty,
+					value,
+					important: false,
+				});
+				continue;
+			}
 			throw new AgentBrowserError(
 				"unsupported",
 				"Unsupported SVG presentation attribute",
 			);
+		}
 		for (const declaration of declarations) result.push(declaration);
 	}
 	return Object.freeze(result.map((declaration) => Object.freeze(declaration)));

@@ -357,7 +357,7 @@ it("rejects foreign roots, non-svg roots, disconnected roots and foreign descend
 });
 
 it.each<Record<string, string>>([
-	{ fill: "url(#gradient)" },
+	{ fill: "context-fill" },
 	{ fill: "bogus" },
 	{ "fill-rule": "invalid" },
 	{ "fill-opacity": "NaN" },
@@ -727,11 +727,11 @@ it("returns deeply frozen detached scene data across mutations and document clos
 	expect(scene).toThrow(expect.objectContaining({ code: "closed" }));
 });
 
-it("leaves CSS fill and stroke declarations as existing unsupported diagnostics", () => {
+it("applies CSS fill while retaining unsupported stroke diagnostics", () => {
 	const { tree, add, scene } = fixture();
 	add("path", { d: "M0 0", fill: "red", style: "fill:blue;stroke:green" });
-	expect(scene().shapes[0].fill).toEqual([255, 0, 0, 255]);
+	expect(scene().shapes[0].fill).toEqual([0, 0, 255, 255]);
 	expect(documentStyles(tree).metrics()).toMatchObject({
-		issues: { "unimplemented-css-property": 2 },
+		issues: { "unimplemented-css-property": 1 },
 	});
 });

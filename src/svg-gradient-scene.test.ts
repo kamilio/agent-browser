@@ -159,9 +159,9 @@ it("does not silently replace inherited linearRGB with sRGB", () => {
 });
 
 it.each([
-	"url(#missing)",
+	"context-fill",
 	"url(https://example.invalid/image.svg#paint)",
-	"url(#paint) red",
+	"url(#paint) context-fill",
 ])("does not fetch or substitute unsupported paint %s", (fill) => {
 	expect(() =>
 		fixture(`<rect width="4" height="2" fill="${fill}"/>`),
@@ -184,11 +184,10 @@ it.each([
 });
 
 it("does not reinterpret the first duplicate ID as a later paint server", () => {
-	expect(() =>
-		fixture(
-			`<rect id="paint"/><linearGradient id="paint">${stops}</linearGradient><rect width="4" height="2" fill="url(#paint)"/>`,
-		),
-	).toThrow("must identify a linearGradient");
+	const scene = fixture(
+		`<rect id="paint"/><linearGradient id="paint">${stops}</linearGradient><rect width="4" height="2" fill="url(#paint)"/>`,
+	);
+	expect(scene.shapes[1].fill).toBeNull();
 });
 
 it("rejects a meaningful unsupported stop child instead of deleting it", () => {

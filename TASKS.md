@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 12: native SVG CSS fill paint implemented and gated
+
+SVG fill/fill-opacity/fill-rule now use the actual native CSS cascade and scene
+renderer, including case-sensitive local paint servers, fallback/no-paint,
+currentColor, inherited opacity and winding rules. CSSOM/presentation changes
+invalidate paint state. Unsupported SVG styles are not waived or stripped.
+
+The clean selected gate passes **16,496/0/2 unchanged exclusions**, with 91 new
+cases, 318 suites, 317 strict roots and 696 manifest entries (378 not run).
+Build/strict/format pass. Exact retained IANA/Python SVG pixels stay unchanged;
+SQLite still fails its SVG style profile. These three offline body checks make
+zero HTTP/navigation requests and do not establish website acceptance.
+
+See `SVG-CSS-PAINT.md` for evidence, source gaps and preserved failures. Next:
+real SVG stroke/clipping and fractional intrinsic sizing, then fresh bounded
+website checks; broader CSS/text/layout coverage, research, credential/provider/
+passkey-device, SafeJS and access-challenge gates remain open. No push.
+
 ### September 12: concrete IANA CSS targets, not diagnostic waivers
 
 A separate native static census identifies exact text-decoration/font-style,

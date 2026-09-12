@@ -151,6 +151,9 @@ export const inlineProperties = [
 	"accent-color",
 	"stop-color",
 	"stop-opacity",
+	"fill",
+	"fill-opacity",
+	"fill-rule",
 	"background",
 	...cssBackgroundProperties,
 ];
@@ -239,6 +242,7 @@ function normalize(name: string, source: string): string | undefined {
 	if (!supported.has(name)) return undefined;
 	if (isCssGridProperty(name)) return parseGridValue(name, source);
 	if (isCssTableProperty(name)) return parseTableValue(name, source);
+	if (name === "fill") return parsePaintValue(source, name);
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;
 	if (isCssOutlineProperty(name)) return parseOutlineValue(name, value);
@@ -294,7 +298,9 @@ function normalize(name: string, source: string): string | undefined {
 		name === "caret-color" ||
 		name === "accent-color" ||
 		name === "stop-color" ||
-		name === "stop-opacity"
+		name === "stop-opacity" ||
+		name === "fill-opacity" ||
+		name === "fill-rule"
 	)
 		return parsePaintValue(value, name);
 	return undefined;

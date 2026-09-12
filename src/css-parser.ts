@@ -293,7 +293,7 @@ export function parseCssDeclarations(
 				: valueSource,
 		);
 		let value = trimCssWhitespace(withoutCssComments(raw.value));
-		if (!grid)
+		if (!grid && property !== "fill")
 			value = value
 				.replace(/[A-Z]/g, (letter) => letter.toLowerCase())
 				.replace(/[\t\n\f\r ]+/g, " ");
