@@ -1,4 +1,5 @@
 import { imageDimensionHint } from "./replaced-box.js";
+import { htmlScriptingEnabled } from "./html-info.js";
 import {
 	cssGridProperties,
 	isCssGridProperty,
@@ -1449,8 +1450,9 @@ export class DocumentStyles {
 			else if (display === "revert")
 				display = userAgentDisplay(node, details !== undefined);
 			if (
-				isHtmlElement(node, "input") &&
-				node.attributes.type?.toLowerCase() === "hidden"
+				(isHtmlElement(node, "input") &&
+					node.attributes.type?.toLowerCase() === "hidden") ||
+				(isHtmlElement(node, "noscript") && htmlScriptingEnabled(this.tree))
 			)
 				display = "none";
 			const parentDisplay =

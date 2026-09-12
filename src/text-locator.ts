@@ -1,6 +1,8 @@
 import { controlValue, inputType, labelControl } from "./controls.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
+import { htmlScriptingEnabled } from "./html-info.js";
 
 export interface TextTargetLocator {
 	kind: "text" | "label" | "placeholder" | "alt-text" | "title";
@@ -51,6 +53,7 @@ export function textLocatorCandidates(
 	const excluded = new Set<number>();
 	const ids = new Map<string, number>();
 	const labels = new Map<number, number[]>();
+	const scripting = htmlScriptingEnabled(tree);
 	for (const { node, depth } of tree.walk()) {
 		charge(1);
 		if (nodes.length >= textLocatorLimits.maxNodes)
@@ -61,7 +64,8 @@ export function textLocatorCandidates(
 		nodes.push(node);
 		if (
 			(node.parent !== null && excluded.has(node.parent)) ||
-			["head", "script", "style", "noscript"].includes(node.tagName)
+			["head", "script", "style"].includes(node.tagName) ||
+			(node.tagName === "noscript" && (!isHtmlElement(node) || scripting))
 		)
 			excluded.add(node.id);
 		if (node.kind !== "element") continue;

@@ -2,6 +2,7 @@ import type { DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlAttributeEntries } from "./html-attributes.js";
+import { htmlScriptingEnabled } from "./html-info.js";
 
 const voidTags = new Set([
 	"area",
@@ -111,7 +112,8 @@ export function serializeHtml(
 				parent &&
 				isHtmlElement(parent) &&
 				(rawTags.has(parent.tagName) ||
-					(parent.tagName === "noscript" && (options.scripting ?? true)))
+					(parent.tagName === "noscript" &&
+						(options.scripting ?? htmlScriptingEnabled(owner))))
 			)
 				append(node.data);
 			else appendEscaped(node.data);

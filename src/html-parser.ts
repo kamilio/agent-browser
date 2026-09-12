@@ -25,7 +25,7 @@ import {
 	type HtmlParserNode,
 	isHtmlParserNode,
 } from "./html-formatting.js";
-import { setHtmlParseInfo } from "./html-info.js";
+import { initializeHtmlScripting, setHtmlParseInfo } from "./html-info.js";
 import { HtmlScaffold } from "./html-scaffold.js";
 import { HtmlScope } from "./html-scope.js";
 import { HtmlTables } from "./html-tables.js";
@@ -421,6 +421,7 @@ function* parseHtmlSteps(
 				source.length,
 				"HTML source text limit exceeded",
 			);
+		initializeHtmlScripting(tree, scripting);
 		if (!fragment && !fragmentDocument) options.initializeDocument?.(tree);
 		const normalize = (text: string) =>
 			text.replace(/\r\n?/g, "\n").replace(/\0|\p{Cs}/gu, () => {

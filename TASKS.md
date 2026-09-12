@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026,02:55 UTC: native noscript now follows the document's scripting
+profile instead of an unconditional layout deferral. Disabled fallback children
+use ordinary layout/paint/hit paths; active HTML noscript stays display:none even
+against author!important. Early internal state preserves public parse-info timing;
+owner-state fragment replacement, serialization escaping and text/label locators
+have coverage. The corrected unchanged baseline fails before the fix and passes
+after it. Three new suites add58checks; final focused570/0 and sealed release
+11599/0/2 unchanged exclusions pass across208 selected suites,207 strict roots,
+602 clean manifest entries. See NOSCRIPT.md, NOSCRIPT-SOURCE.md and
+NOSCRIPT-SERIALIZATION-SOURCE.md. Native WHATWG acquisition retains threeGETs/five
+offline sections; the separate serialization source adds one offline section and
+zeroHTTP. Source checks and complete ledgers are independently reverified.
+This is not full four-mode scripting, general scripting media-query support or
+real SafeJS acceptance. Man7's other table/fieldset/CSS guards and its genuine
+date(1) navigation remain unverified after this fix; Debian's bounded-budget stop,
+other website workflows, performance, crawler/challenge handling and private
+provider/device/TTY gates remain separate. Pre-existing edits stay unbundled.
+
 September12,2026,02:22 UTC: parent independently verifies the fresh Man7 and
 Debian native probes on actual11492 runtime99108ab. Man7's optional tracking-image
 policy rejection stays local, allowing the initial ls(1) document to commit with

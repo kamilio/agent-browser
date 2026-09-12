@@ -10,16 +10,41 @@ export interface HtmlParseInfo {
 	issues: Readonly<Record<string, number>>;
 }
 
-const information = new WeakMap<DocumentTree, Readonly<HtmlParseInfo>>();
+interface HtmlInformation {
+	scripting: boolean;
+	parsed?: Readonly<HtmlParseInfo>;
+}
+
+const information = new WeakMap<DocumentTree, HtmlInformation>();
+
+function retainInformation(tree: DocumentTree, state: HtmlInformation) {
+	if (!information.has(tree)) tree.onClose(() => information.delete(tree));
+	information.set(tree, state);
+}
+
+export function initializeHtmlScripting(
+	tree: DocumentTree,
+	scripting: boolean,
+) {
+	retainInformation(tree, { scripting });
+}
+
+export function htmlScriptingEnabled(tree: DocumentTree) {
+	return information.get(tree)?.scripting ?? false;
+}
 
 export function htmlParseInfo(tree: DocumentTree) {
-	return information.get(tree);
+	return information.get(tree)?.parsed;
 }
 
 export function setHtmlParseInfo(tree: DocumentTree, info: HtmlParseInfo) {
-	if (!information.has(tree)) tree.onClose(() => information.delete(tree));
-	information.set(
-		tree,
-		Object.freeze({ ...info, issues: Object.freeze({ ...info.issues }) }),
-	);
+	const scriptingChanged = htmlScriptingEnabled(tree) !== info.scripting;
+	retainInformation(tree, {
+		scripting: info.scripting,
+		parsed: Object.freeze({
+			...info,
+			issues: Object.freeze({ ...info.issues }),
+		}),
+	});
+	if (scriptingChanged) tree.invalidatePresentation();
 }

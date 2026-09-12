@@ -93,17 +93,17 @@ it("does not invent whitespace between elements or interpret comments as text", 
 	expect(() => test.resolve("getByText('ignored')")).toThrow("matched no");
 });
 
-it("skips head, script, style and noscript content without excluding hidden body text", () => {
+it("skips head, script and style while retaining disabled fallback and hidden body text", () => {
 	const test = fixture(
-		'<head><title>metadata-only</title></head><body><script>script-only</script><style>style-only</style><noscript>noscript-only</noscript><p hidden id="hidden">retained-hidden</p></body>',
+		'<head><title>metadata-only</title></head><body><script>script-only</script><style>style-only</style><noscript id="fallback">noscript-only</noscript><p hidden id="hidden">retained-hidden</p></body>',
 	);
-	for (const value of [
-		"metadata-only",
-		"script-only",
-		"style-only",
-		"noscript-only",
-	])
-		expect(() => test.resolve(`getByText('${value}')`)).toThrow("matched no");
+	for (const value of ["metadata-only", "script-only", "style-only"])
+		expect(() => test.resolve(`getByText('${value}', {exact: true})`)).toThrow(
+			"matched no",
+		);
+	expect(test.resolve("getByText('noscript-only')").attributes.id).toBe(
+		"fallback",
+	);
 	expect(test.resolve("getByText('retained-hidden')").attributes.id).toBe(
 		"hidden",
 	);

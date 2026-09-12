@@ -6,6 +6,7 @@ import {
 	isHtmlElement,
 } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
+import { htmlScriptingEnabled } from "./html-info.js";
 import { type HtmlParseOptions, parseHtmlFragment } from "./html-parser.js";
 
 export function setInnerHtml(
@@ -131,7 +132,7 @@ function withFragment(
 			namespaceURI: syntheticBody ? htmlNamespace : elementNamespace(target),
 			attributes: syntheticBody ? undefined : target.attributes,
 			hasFormAncestor,
-			scripting: true,
+			scripting: htmlScriptingEnabled(tree),
 			documentMode: documentMode(tree),
 		},
 		{ limits: tree.limits, signal: options.signal },
