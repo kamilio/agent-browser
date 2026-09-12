@@ -6,6 +6,21 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 cached block-alignment research uses committed13588 for exactly
+one offline native parse of the unchanged September11 W3C capture. At
+14:37:52.834–14:37:53.170 UTC, 76 observed headings yield the requested sections
+5.1 introduction and5.1.1: 1506/1080 context code units, with zero HTTP or layout.
+BUTTON-BLOCK-ALIGNMENT-SOURCE.md records non-normal independent formatting
+contexts, block-axis collective alignment and the non-scroll safe-overflow rule;
+fixed/auto extent and general button-baseline semantics remain unresolved.
+Parent verifies eight actual Git objects/five inputs and 27 sealed private
+files at14:43:04.440 UTC without reparsing. Old source receipts remain unchanged.
+Separately, the pending button fixture removes an incorrect inline-strut
+assumption: ordinary native comparators pass9px/8px heights, while both corrected
+button cases still hit the unsupported rich-content guard at14:37:02.691 UTC.
+Those unfinished tests/manifest edits are not in the13588 release; no button,
+website, performance, provider, passkey or broader acceptance is claimed.
+
 September 12 weather-service testing on committed13588 contacts one additional
 host beyond the 86-host inventory: www.weather.gov. Eight GET200 responses
 (one document, seven stylesheets; 46919 encoded /201151 decoded bytes) precede
