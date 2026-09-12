@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 GnuPG source-only CSS diagnosis on committed12350 retains
+124 parsed rules and35 declaration-diagnostic candidates:ten current matches,
+23 unmatched and two unsupported pseudo-element selectors with unknown counts.
+Raw/applicable totals remain7/2 invalid values,43/14 properties and2/2 selectors.
+See `GNUPG-CSS-COMPATIBILITY-DIAGNOSIS.md`. Font-family,variant/spacing,decorations,
+list shorthand,shadows/radii and generated content remain separate features.
+List-style shorthand is a concrete regression-backed next candidate,not a
+reason to suppress diagnostics. Zero sessions/HTTP/images/geometry;owners close.
+Host count75,historical failures and all broader acceptance gates remain open.
+
 September12,2026 native center layout: HTML center now has block/text fallback
 and inherited legacy descendant alignment. Used margins center normal blocks
 with non-auto explicit margins,including clamped auto widths; computed CSS and
