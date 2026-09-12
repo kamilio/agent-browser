@@ -6,6 +6,22 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 post-casing cached Selenium CSS check on committed14922 observes
+the identical six statements, with raw/applicable unsupported counts3→0:
+capitalize/lowercase/uppercase are accepted without stripping CSS. One native
+parse at17:29:16.916–17:29:16.981UTC retains197nodes/revision198; no new HTTP,
+image hydration, layout or click. SELENIUM-TRANSFORM-CSS-CHECK.md preserves the
+worker's sealed85entry result and its separately executed read-only verification.
+Main's additional17:33:27.478–17:33:27.604UTC verification recaptures24actual Git
+objects, links21snapshot inputs, checks the exhaustive seal and full1176source/
+1992compiled inventories under socket/socketpair denial without page imports,
+reparse or network replay. The initial parent pin-schema assertion stopped before
+Git/child execution and remains preserved separately; no native probe was retried.
+Historical four-issue and three-issue reports remain unchanged. CSS acceptance
+does not establish full-page rendering or navigation; the separate fresh live
+flow, broader website/research and provider/passkey/device/challenge gates remain
+separate, with no new-host or performance claim.
+
 September12 native case transformation supports inherited upper/lower/capitalize
 with Unicode16 contextual casing, source-preserving expansions/deletions, language
 metadata, intrinsic/wrapped layout and native range/selection/caret integration.
