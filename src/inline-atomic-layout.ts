@@ -24,7 +24,10 @@ import {
 	type ShrinkToFitIntrinsicWidths,
 } from "./shrink-to-fit.js";
 import { layoutFormattingText, type TextLayoutLimits } from "./text-layout.js";
-import type { FloatBoxLayout } from "./float-document.js";
+import {
+	layoutFormattingFloatFlow,
+	type FloatBoxLayout,
+} from "./float-document.js";
 
 export interface AtomicInlineResolutionContext {
 	nesting?: number;
@@ -169,18 +172,22 @@ export function layoutFormattingAtomicInline(
 					{ ...context, atomicRoot: node.id, nesting: nesting + 1 },
 				);
 	charge(horizontal.metrics.work);
-	const text = layoutFormattingText(horizontal, {
-		...context.text,
-		maxWork: Math.min(context.text?.maxWork ?? remaining(), remaining()),
-	});
-	charge(text.metrics.work);
-	const document = layoutFormattingFlexFlow(
-		text,
-		remaining(),
-		context.text,
-		true,
-		node.contentMode === "flex" ? nesting : nesting + 1,
-	);
+	const document = horizontal.floatLayouts?.length
+		? layoutFormattingFloatFlow(horizontal, remaining(), context.text, true)
+		: (() => {
+				const text = layoutFormattingText(horizontal, {
+					...context.text,
+					maxWork: Math.min(context.text?.maxWork ?? remaining(), remaining()),
+				});
+				charge(text.metrics.work);
+				return layoutFormattingFlexFlow(
+					text,
+					remaining(),
+					context.text,
+					true,
+					node.contentMode === "flex" ? nesting : nesting + 1,
+				);
+			})();
 	charge(document.metrics.work);
 	const root = document.boxes.find((box) => {
 		charge();

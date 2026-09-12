@@ -340,8 +340,8 @@ it.each([
 		'<span style="float:left;width:12px;height:4px;margin-top:-8px"></span>',
 	],
 	[
-		"atomic interaction",
-		'<span style="float:left;width:12px;height:8px"></span><span style="display:inline-block;width:12px;height:8px"></span>',
+		"inline-flex interaction",
+		'<span style="float:left;width:12px;height:8px"></span><span style="display:inline-flex;width:12px;height:8px"></span>',
 	],
 	[
 		"flex interaction",
@@ -355,10 +355,6 @@ it.each([
 		"table interaction",
 		'<span style="float:left;width:12px;height:8px"></span><table><tr><td>A</td></tr></table>',
 	],
-	[
-		"unmeasured nested-auto intrinsic contents",
-		'<div style="float:left"><div style="float:right">AA BB</div></div>',
-	],
 ])("keeps the unfinished %s gate explicitly unsupported", (_name, content) => {
 	const { tree, layout } = fixture(content);
 	const revision = tree.revision;
@@ -368,6 +364,20 @@ it.each([
 	);
 	expect(tree.revision).toBe(revision);
 	expect(snapshotDocument(tree)).toEqual(before);
+});
+
+it("measures auto-width floating descendants before placing their owner", () => {
+	const { box } = fixture(
+		'<div id="outer" style="float:left"><div id="inner" style="float:right">AA BB</div></div>',
+	);
+	expect(box("#outer")).toMatchObject({
+		borderBoxWidth: 30,
+		borderBoxHeight: 8,
+	});
+	expect(box("#inner")).toMatchObject({
+		borderBoxWidth: 30,
+		borderBoxHeight: 8,
+	});
 });
 
 it.each<{ name: string; options: DocumentLayoutOptions }>([

@@ -198,6 +198,7 @@ export interface TextFormattingInput {
 	}>[];
 	images: readonly Readonly<FormattingImageSize>[];
 	atomics?: readonly Readonly<AtomicInlineMetrics>[];
+	intrinsicFloats?: readonly Readonly<{ id: number; width: number }>[];
 	floatLayout?: TextFloatLayout;
 }
 
@@ -292,12 +293,43 @@ function layoutTextContexts(
 		horizontal.atomics ?? [],
 		charge,
 	);
+	const intrinsicFloats = new Set<number>();
+	for (const value of horizontal.intrinsicFloats ?? []) {
+		charge();
+		if (
+			constraint === "used" ||
+			!value ||
+			!Number.isSafeInteger(value.id) ||
+			value.id < 0 ||
+			intrinsicFloats.has(value.id) ||
+			atomics.has(value.id)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid intrinsic float metrics",
+			);
+		const node = horizontal.formatting.nodes[value.id];
+		if (!node?.ref || !["left", "right"].includes(node.floatSide ?? ""))
+			throw new AgentBrowserError(
+				"unsupported",
+				"Intrinsic float metrics require a retained physical float",
+			);
+		layoutNumber(value.width);
+		intrinsicFloats.add(value.id);
+		atomics.set(value.id, {
+			id: value.id,
+			borderBoxWidth: value.width,
+			marginLeft: 0,
+			marginRight: 0,
+		});
+	}
 	for (const block of horizontal.widths) {
 		charge();
 		const container = horizontal.formatting.nodes[block.id];
 		if (container.contentMode !== "inline") continue;
 		const style = container.typography ?? initialTextStyle;
 		const strut = extent(style);
+		let activeIntrinsicFloats: Token[] = [];
 		const lines: Readonly<TextLine>[] = [];
 		const glyphs: Readonly<TextGlyph>[] = [];
 		const fragments: Readonly<TextInlineFragment>[] = [];
@@ -1072,7 +1104,7 @@ function layoutTextContexts(
 			const frame = pending.pop();
 			if (!frame) break;
 			const node: FormattingNode = horizontal.formatting.nodes[frame.id];
-			if (node.floatSide !== undefined) {
+			if (node.floatSide !== undefined && !intrinsicFloats.has(node.id)) {
 				countToken();
 				if (constraint !== "used")
 					throw new AgentBrowserError(
@@ -1182,7 +1214,7 @@ function layoutTextContexts(
 				}
 				continue;
 			}
-			if (isAtomicInline(node)) {
+			if (isAtomicInline(node) || intrinsicFloats.has(node.id)) {
 				const atomic = atomics.get(node.id);
 				if (!atomic || (constraint === "used" && !atomic.block))
 					throw new AgentBrowserError(
@@ -1195,6 +1227,7 @@ function layoutTextContexts(
 						"Atomic inline baseline is not supported",
 					);
 				const wrap =
+					intrinsicFloats.has(node.id) ||
 					frame.whiteSpace === "normal" ||
 					frame.whiteSpace === "pre-line" ||
 					frame.whiteSpace === "pre-wrap";
@@ -1214,8 +1247,31 @@ function layoutTextContexts(
 					breakable: true,
 				};
 				const baseline = atomic.block ? atomicInlineBaseline(atomic.block) : 0;
+				if (
+					intrinsicFloats.has(node.id) &&
+					constraint === "max-content" &&
+					node.clear !== undefined
+				) {
+					const retained = activeIntrinsicFloats.filter((token) => {
+						charge();
+						return (
+							node.clear !== "both" &&
+							node.clear !==
+								horizontal.formatting.nodes[token.formattingId].floatSide
+						);
+					});
+					if (retained.length !== activeIntrinsicFloats.length) {
+						flushWord();
+						finish();
+						for (const token of retained) {
+							charge();
+							emit(token);
+						}
+						activeIntrinsicFloats = retained;
+					}
+				}
 				if (wrap && !gap) emit(opportunity);
-				emit({
+				const token: Token = {
 					...font,
 					advance: layoutNumber(
 						atomic.marginLeft + atomic.borderBoxWidth + atomic.marginRight,
@@ -1241,7 +1297,10 @@ function layoutTextContexts(
 					visible: node.visible,
 					collapsible: false,
 					breakable: false,
-				});
+				};
+				emit(token);
+				if (intrinsicFloats.has(node.id) && constraint === "max-content")
+					activeIntrinsicFloats.push(token);
 				if (wrap) emit(opportunity);
 				collapsing = false;
 				skipLf = false;

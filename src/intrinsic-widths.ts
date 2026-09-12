@@ -357,6 +357,10 @@ function measureScopes(
 	const pending = [...roots].reverse();
 	const order: number[] = [];
 	const atomicResults = new Map<number, Readonly<IntrinsicWidthMeasurement>>();
+	const floatingResults = new Map<
+		number,
+		Readonly<IntrinsicWidthMeasurement>
+	>();
 	const intrinsicContexts = new Map<
 		number,
 		{ containingHeight: number | null; contentHeight?: number; nesting: number }
@@ -388,13 +392,19 @@ function measureScopes(
 		order.push(node.id);
 		const flexDepth =
 			(frame.flexDepth ?? 0) +
-			Number(flex || grid || table || isAtomicInline(node));
+			Number(
+				flex ||
+					grid ||
+					table ||
+					isAtomicInline(node) ||
+					node.floatSide !== undefined,
+			);
 		if (flexDepth > flexLayoutLimits.maxNesting)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"Intrinsic flex nesting limit exceeded",
 			);
-		if (isAtomicInline(node) && node.id !== root) {
+		if ((isAtomicInline(node) || node.floatSide) && node.id !== root) {
 			const result = measureScopes(
 				formatting,
 				{ ...options, maxWork: remaining() },
@@ -403,7 +413,7 @@ function measureScopes(
 				state,
 			);
 			charge(result.metrics.work);
-			atomicResults.set(node.id, result);
+			(node.floatSide ? floatingResults : atomicResults).set(node.id, result);
 			continue;
 		}
 		if (flex)
@@ -561,7 +571,9 @@ function measureScopes(
 		.filter((id) => {
 			charge();
 			return (
-				formatting.nodes[id].contentMode === "inline" && !atomicResults.has(id)
+				formatting.nodes[id].contentMode === "inline" &&
+				!atomicResults.has(id) &&
+				!floatingResults.has(id)
 			);
 		})
 		.map((id) => {
@@ -612,6 +624,23 @@ function measureScopes(
 				marginRight,
 			};
 		});
+	const floatingContributions = (maximum: boolean) =>
+		[...floatingResults].map(([id, result]) => {
+			charge();
+			const measured = result.widths.find((width) => {
+				charge();
+				return width.id === id;
+			});
+			if (!measured)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Missing intrinsic floating contribution",
+				);
+			return {
+				id,
+				width: maximum ? measured.maxContribution : measured.minContribution,
+			};
+		});
 	const textBudget = (used: MutableTextMetrics): Partial<TextLayoutLimits> => ({
 		maxTokens: Math.max(
 			1,
@@ -658,6 +687,7 @@ function measureScopes(
 			widths,
 			images: [...minima.values()],
 			atomics: atomicContributions(false),
+			intrinsicFloats: floatingContributions(false),
 		},
 		"min-content",
 		textBudget(state.minimum),
@@ -670,6 +700,7 @@ function measureScopes(
 			widths,
 			images: [...maxima.values()],
 			atomics: atomicContributions(true),
+			intrinsicFloats: floatingContributions(true),
 		},
 		"max-content",
 		textBudget(state.maximum),
@@ -689,14 +720,14 @@ function measureScopes(
 		}),
 	);
 	const records = new Map<number, Readonly<IntrinsicWidth>>();
-	for (const result of atomicResults.values())
+	for (const result of [...atomicResults.values(), ...floatingResults.values()])
 		for (const record of result.widths) {
 			charge();
 			records.set(record.id, record);
 		}
 	for (const id of order.reverse()) {
 		charge();
-		if (atomicResults.has(id)) continue;
+		if (atomicResults.has(id) || floatingResults.has(id)) continue;
 		const node: FormattingNode = formatting.nodes[id];
 		if (
 			!["viewport", "block", "anonymous-block", "replaced"].includes(

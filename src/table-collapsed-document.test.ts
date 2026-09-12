@@ -251,7 +251,7 @@ it("retains the existing table and descendant-float reflow guard", () => {
 		'<table id="table"><tr><td id="first"><div id="cover"></div></td><td id="second">B</td></tr></table>',
 	);
 	expect(() => rasterizeDocument(test.tree)).toThrow(
-		"Float integration with atomic, flex, grid and table reflow is not coordinated",
+		"Float integration with flex, grid and table reflow is not coordinated",
 	);
 });
 

@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 native float/inline-block coordination: shared bounded flow now
+measures and places inline-blocks beside/inside floats and floats inside atomic
+contexts. Review exposed and tests reproduced floated-child baseline leakage and
+missing auto-width floating contributions; both are fixed, retaining actual
+float boxes/height and normal-flow baselines. Five new suites add85 cases;
+focused534/0 and sealed224-suite native12037/0 with2 unchanged exclusions pass,
+including223 strict roots and618 clean manifest entries. The old nested-auto
+rejection is now a measured-width success case; unsupported flex/grid/table,
+nonfloating-clear and CSS profiles stay guarded. See `FLOAT-ATOMIC-COORDINATION.md`.
+The native intrinsic policy is not full CSS sizing/height-dependent packing
+parity. Next: new scoped captured GnuPG replay on this committed release, without
+relabeling its original failed live flow. Broader site/provider/device/challenge
+and research-completeness gates remain open.
+
 September12,2026 GnuPG source-only triage: one socket-denied native formatting
 build identifies seven inline-block navigation nodes in the float coordinator's
 explicit rejected combination, beginning with list iteme48. No page session,

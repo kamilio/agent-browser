@@ -40,7 +40,11 @@ export function collectFlexBaselines(
 	const children = new Map<number, number[]>();
 	for (const box of layout.boxes) {
 		charge();
-		if (box.containingBlock === box.id) continue;
+		if (
+			box.containingBlock === box.id ||
+			formatting.nodes[box.id].floatSide !== undefined
+		)
+			continue;
 		const siblings = children.get(box.containingBlock) ?? [];
 		siblings.push(box.id);
 		children.set(box.containingBlock, siblings);

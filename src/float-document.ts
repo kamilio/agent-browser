@@ -23,8 +23,8 @@ import {
 	type DocumentBlockWidths,
 	type FormattingTree,
 } from "./formatting-tree.js";
-import { isAtomicInline } from "./inline-atomic.js";
 import type { AtomicInlineResolutionContext } from "./inline-atomic-layout.js";
+import { mergeAtomicInlineLayouts } from "./inline-atomic-placement.js";
 import {
 	intrinsicWidthLimits,
 	measureValidatedIntrinsicRoot,
@@ -85,13 +85,10 @@ function acceptedFormatting(formatting: FormattingTree, charge: () => void) {
 				);
 			clears++;
 		}
-		if (
-			isAtomicInline(node) ||
-			["flex", "grid", "table"].includes(node.contentMode ?? "")
-		)
+		if (["flex", "grid", "table"].includes(node.contentMode ?? ""))
 			throw new AgentBrowserError(
 				"unsupported",
-				"Float integration with atomic, flex, grid and table reflow is not coordinated",
+				"Float integration with flex, grid and table reflow is not coordinated",
 			);
 	}
 	if (!floats || formatting.issues["float-layout-not-supported"] !== floats)
@@ -184,10 +181,23 @@ function layoutFloatScope(
 		return maxWork - work;
 	};
 	const resolution: AtomicInlineResolutionContext = {
+		nesting,
 		floatRoot: root?.id,
 		text: options,
-		layoutFloat: (frame, limit) =>
-			measureFloatBox(formatting, frame, limit, options, nesting + 1),
+		layoutFloat: (frame, limit, context) =>
+			measureFloatBox(
+				formatting,
+				frame,
+				limit,
+				options,
+				Math.max(nesting, context.nesting ?? 0) + 1,
+			),
+	};
+	const rejectShell = () => {
+		throw new AgentBrowserError(
+			"unsupported",
+			"Float flex, grid and table shell reflow is not coordinated",
+		);
 	};
 	const horizontal = root
 		? resolveFormattingBlockWidths(
@@ -195,16 +205,62 @@ function layoutFloatScope(
 				[root],
 				Math.min(remaining(), formattingLimits.maxWork),
 				true,
-				undefined,
+				rejectShell,
 				resolution,
 			)
 		: resolveFormattingPageWidths(
 				formatting,
 				Math.min(remaining(), formattingLimits.maxWork),
-				undefined,
+				rejectShell,
 				resolution,
 			);
 	charge(horizontal.metrics.work);
+	const document = layoutFormattingFloatFlow(
+		horizontal,
+		remaining(),
+		options,
+		root !== undefined,
+	);
+	charge(document.metrics.work);
+	return Object.freeze({
+		...document,
+		metrics: Object.freeze({ ...document.metrics, work }),
+	});
+}
+
+export function layoutFormattingFloatFlow(
+	horizontal: DocumentBlockWidths,
+	maxWork: number,
+	options: TextLayoutOptions = {},
+	isolated = false,
+): Readonly<DocumentLayout> {
+	if (
+		!Number.isSafeInteger(maxWork) ||
+		maxWork < 1 ||
+		maxWork > formattingLimits.maxWork
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid float flow work limit",
+		);
+	let work = 0;
+	const charge = (amount = 1) => {
+		work += amount;
+		if (work > maxWork)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Float flow work limit exceeded",
+			);
+	};
+	const remaining = () => {
+		if (work >= maxWork)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Float flow work limit exceeded",
+			);
+		return maxWork - work;
+	};
+	const formatting = horizontal.formatting;
 	if (!horizontal.floatLayouts?.length) {
 		const text = layoutFormattingText(horizontal, {
 			...options,
@@ -214,16 +270,17 @@ function layoutFloatScope(
 			),
 		});
 		charge(text.metrics.work);
-		const document = layoutFormattingDocument(
-			text,
-			remaining(),
-			root !== undefined,
-		);
+		const document = layoutFormattingDocument(text, remaining(), isolated);
 		charge(document.metrics.work);
-		return Object.freeze({
-			...document,
-			metrics: Object.freeze({ ...document.metrics, work }),
-		});
+		return mergeAtomicInlineLayouts(
+			Object.freeze({
+				...document,
+				metrics: Object.freeze({ ...document.metrics, work }),
+			}),
+			horizontal.atomicLayouts ?? [],
+			maxWork,
+			options,
+		);
 	}
 	const widths = new Map(
 		horizontal.widths.map((width) => {
@@ -466,7 +523,7 @@ function layoutFloatScope(
 		const base = layoutFormattingDocument(
 			provisional,
 			remaining(),
-			root !== undefined,
+			isolated,
 			new Map(),
 			coordinator,
 		);
@@ -476,7 +533,12 @@ function layoutFloatScope(
 				"unsupported",
 				"Not every retained float has a text source anchor",
 			);
-		return mergeFloats(base, horizontal, placed, work, maxWork, options);
+		return mergeAtomicInlineLayouts(
+			mergeFloats(base, horizontal, placed, work, maxWork, options),
+			horizontal.atomicLayouts ?? [],
+			maxWork,
+			options,
+		);
 	} finally {
 		for (const scope of scopes.values()) scope.context?.close();
 	}
