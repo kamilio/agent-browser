@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 zlib CSS recovery replay: exactly one11952 native session
+replays nine original responses with zeroHTTP, one page commit and one genuine
+FAQ click. The invalid-rule diagnostic drops1→0 and one advisory discarded-rule
+diagnostic replaces it; original76-characterstyle and other sourcebytes remain.
+Center/table/HTMLpresentation guards still block the FAQ before any destination
+request. Parent reproduces17 read-only checks and eight exact localGit outputs;
+sealed original/replay evidence and sampledcleanup remain intact. See
+`ZLIB-CSS-RECOVERY-REPLAY.md` and `ZLIB-CSS-RECOVERY-FOLLOWUP.md`. This closes the
+scoped CSS-recovery comparison, not zlib website acceptance, and adds no host to
+the72 attempted inventory. The newer12037 float release has separate GnuPG replay
+and fresh IANA flow checks underway; do not merge their runtime/time scopes.
+
 September12,2026 native float/inline-block coordination: shared bounded flow now
 measures and places inline-blocks beside/inside floats and floats inside atomic
 contexts. Review exposed and tests reproduced floated-child baseline leakage and
