@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 NASA homepage testing on committed13501 adds one attempted host,
+www.nasa.gov, beyond the retained 85-host inventory. One native GET returned
+HTTP 200 (46546 encoded / 355707 decoded bytes); the next original stylesheet
+attempt failed before a second recorded wire event with a wrapped ERR_ASSERTION.
+No page committed or About/editorial link was clicked. NASA-ABOUT-FLOW.md keeps
+the original 13:59:38.807–13:59:39.387 UTC failure, limits and missing assertion
+detail: neither a NASA access denial nor an exact pacing root cause is proved.
+Parent independently verifies 16 actual Git objects, 13 committed inputs and
+153 sealed entries in 13 read-only groups at 14:13:25.842 UTC. No website retry,
+credentials or broader acceptance. A separate fake-clock pacing regression
+currently reproduces five short-start intervals; rich-button descendant layout
+also remains unfinished with its two original native failures retained.
+
 September 12 native button-layout source check uses committed13501 for one
 GET20054444encoded/366253decoded bytes at13:46:51.121–13:46:51.250UTC. Fresh
 WHATWGrendering bytes exactlymatch the originalnativeSeptember12capture and
