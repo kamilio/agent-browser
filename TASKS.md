@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 fresh Netlib regression on committed 13226 passes the actual FAQ
+click: two committed documents, advancing history, changed document identity
+and title, released old owner, readable destination text and loaded GIF frames.
+The run at 12:09:17.417–12:09:18.308 UTC receives four GET200 responses totaling
+34762 encoded/decoded bytes. All four bodies independently match both retained
+12470 and 13042 captures. No retries, denials, redirects, mocks or new hosts.
+NETLIB-BACKGROUND-COLOR-FLOW.md records the bounded success, not whole-site
+parity. Parent verifies eight actual Git inputs and 37 readonly checks at
+12:10:50.105 UTC. Historical artifacts remain unchanged. The sealed report
+retains one trailing space on line9; staging explicitly records that exception
+rather than rewriting evidence or claiming a clean default whitespace check.
+Broader performance, research, credential, passkey, TTY, SafeJS and challenge
+acceptance gates remain open and separate from this successful native flow.
+
 September 12 paint-order performance observation compares committed 13042 and
 13226 over precomputed native layouts. One BA process supplies 54 samples: new
 median time is +3.3% for ordinary blocks, +10.5% for separate tables and -4.8%
