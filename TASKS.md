@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 paint-order performance observation compares committed 13042 and
+13226 over precomputed native layouts. One BA process supplies 54 samples: new
+median time is +3.3% for ordinary blocks, +10.5% for separate tables and -4.8%
+for collapsed rowspan tables. These order-sensitive observations do not prove
+a regression or speedup. The planned AB/BA pair is incomplete: the first run
+failed a harness table-coordinator expectation before timing; both authorized
+processes are consumed, and no extra benchmark runs were added. Item semantics
+pass; collapsed charged work falls from 1046 to 832 in this fixture only.
+LAYOUT-PAINT-ORDER-PERFORMANCE.md preserves failures, exact samples and limits.
+Parent independently checks 18 actual Git inputs, all 1144/1148 source blobs,
+39 sealed artifacts and 54 samples at 12:05:48.497 UTC. Git capture and strictly
+socket-denied readonly verification remain separate. No full-browser speed,
+website, credential, passkey, SafeJS or overall acceptance claim follows.
+
 September12 captured Libpng replay on committed13226 confirms57to49 non-CSS
 occurrences: eight bgcolor guards removed,41hard guards plus8table coordinator
 markers remain. All8original rows retain source attributes and compute6blue/
