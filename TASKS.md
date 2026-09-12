@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 external stylesheet CSP closes the ordinary-link authorization gap.
+STYLESHEET-CONTENT-SECURITY-POLICY.md records bounded style-src-elem/style-src/default
+URL matching, enforcing-policy intersection, all supported native link/import
+paths and checks before each manual redirect and CSS installation. Images/styles
+share the metadata observer; unsupported meta remains latched, and CSP-bearing
+inline-parent imports stay fail-closed. Independent CORS/SRI/MIME/origin/mixed-
+content/resource/abort guards remain. Nonce/inline/full-CSP and metadata-construction
+limits stay explicit; this is not complete untrusted-page CSP isolation.
+Main734/734focused and finalrelease15946/0/2unchanged exclusions pass,77newcases.
+Release2026-09-12T21:25:49.988Z–2026-09-12T21:29:36.666Z:306selected
+suites from684manifest entries,305strict roots,1196source/2008compiled files and
+1183unchanged tracked inputs. Other378manifest entries are unexecuted here.
+Five obsolete legacy cases are updated, none removed or skipped; earlier focused,
+worker and15944/2failed fullround00 evidence stays intact. Native primary-source
+review verifies14sections and18receipts, without new HTTP or larger query bounds.
+The prior IANA live check remains3GET200 followed by unsupported SVG, not website
+acceptance. Next are the exact prior mixed-resource fixture and external SVG image
+support; broader CSS/research/performance/provider/passkey-device/SafeJS/challenge
+gates remain open. No dependencies or caps added, unrelated work preserved, no push.
+
 September12 distinct post-image-CSP IANA native check is verified in
 IANA-IMAGE-CSP-NATIVE-CHECK.md. Committed15869/04bc696 performs3GET200 at21:07:20.781–
 21:07:21.620UTC, including32870decoded SVG response bytes. The previous own-CSP

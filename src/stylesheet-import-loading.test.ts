@@ -394,7 +394,7 @@ it.each(["header", "meta"] as const)(
 );
 
 it.each(["header", "meta"] as const)(
-	"fails policy-aware roots closed for a CSP %s",
+	"authorizes header policy-aware roots and retains unsupported CSP %s metadata denial",
 	async (kind) => {
 		const fixture = harness({
 			[rootUrl]: response(
@@ -411,10 +411,26 @@ it.each(["header", "meta"] as const)(
 			`${meta}${rootLink}${target}`,
 			kind === "header" ? { "content-security-policy": ["style-src *"] } : {},
 		);
-		expect(fixture.calls).toEqual([]);
+		expect(fixture.calls).toEqual(
+			kind === "header"
+				? [
+						{
+							url: rootUrl,
+							policy: { mode: "cors", credentials: "same-origin" },
+						},
+						{
+							url: childUrl,
+							policy: { mode: "no-cors", credentials: "include" },
+						},
+					]
+				: [],
+		);
 		expect(fixture.legacyCalls).toEqual([]);
-		expect(styles.get(id("#target")).visible).toBe(true);
-		expect(styles.metrics().issues["stylesheet-csp-not-implemented"]).toBe(1);
+		expect(styles.get(id("#target")).visible).toBe(kind === "meta");
+		expect(styles.metrics().externalSheets).toBe(kind === "header" ? 1 : 0);
+		expect(styles.metrics().importedSheets).toBe(kind === "header" ? 1 : 0);
+		if (kind === "header") expect(styles.metrics().issues).toEqual({});
+		else expect(styles.metrics().issues["stylesheet-policy-denied"]).toBe(1);
 	},
 );
 

@@ -1,4 +1,5 @@
 import type { DocumentChange, DocumentTree } from "./document.js";
+import { ContentSecurityPolicy } from "./content-security-policy.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { ImageContentSecurityPolicy } from "./image-content-security-policy.js";
@@ -14,6 +15,7 @@ export function imageContentSecurityPolicyValues(
 
 export class DocumentImageContentSecurityPolicy {
 	private policy?: ImageContentSecurityPolicy;
+	private stylePolicy?: ContentSecurityPolicy;
 	private headerValues: readonly string[];
 	private readonly unregisterChange: () => void;
 	private readonly unregisterClose: () => unknown;
@@ -28,6 +30,11 @@ export class DocumentImageContentSecurityPolicy {
 		headerValues: readonly string[],
 	) {
 		this.policy = new ImageContentSecurityPolicy(tree.url, headerValues);
+		this.stylePolicy = new ContentSecurityPolicy(
+			tree.url,
+			headerValues,
+			"style",
+		);
 		this.headerValues = Object.freeze([...headerValues]);
 		this.scan(tree.root);
 		this.unregisterChange = tree.onChange((change) => {
@@ -80,12 +87,28 @@ export class DocumentImageContentSecurityPolicy {
 			);
 	}
 
+	checkStylesheet(url: string, redirectCount = 0): void {
+		this.ensureOpen();
+		if (this.failure) throw this.failure;
+		if (this.metaBlocked)
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Meta stylesheet CSP enforcement is not implemented",
+			);
+		if (!this.stylePolicy?.allows(url, redirectCount))
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Stylesheet blocked by Content Security Policy",
+			);
+	}
+
 	close(): void {
 		if (this.closed) return;
 		this.closed = true;
 		this.unregisterChange();
 		this.unregisterClose();
 		this.policy = undefined;
+		this.stylePolicy = undefined;
 		this.headerValues = [];
 		this.imageChange = undefined;
 	}

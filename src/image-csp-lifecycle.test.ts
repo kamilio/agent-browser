@@ -458,7 +458,7 @@ it("aborts a replaced native redirect and settles its denied replacement before 
 	expect(images.metrics()).toMatchObject({ resources: 0, decodedBytes: 0 });
 });
 
-it("does not extend the image-only matcher to generic fetch or stylesheets", async () => {
+it("keeps generic fetch closed and independently enforces stylesheet denial", async () => {
 	const test = nativeFixture(async (request) => response(request.url), {
 		policies: ["img-src 'self'; connect-src *; style-src 'none'"],
 		html: '<link rel="stylesheet" crossorigin="anonymous" href="/blocked.css"><img src="/admitted/entry.png">',
@@ -474,7 +474,7 @@ it("does not extend the image-only matcher to generic fetch or stylesheets", asy
 	expect(documentImages(tree).get(imageId(tree)).state).toBe("complete");
 	expect(documentStyles(tree).metrics()).toMatchObject({
 		externalSheets: 0,
-		issues: { "stylesheet-csp-not-implemented": 1 },
+		issues: { "stylesheet-policy-denied": 1 },
 	});
 	expectIdle(tree);
 });

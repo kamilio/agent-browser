@@ -1,4 +1,5 @@
 import { CookieJar, type CookieLimits } from "./cookies.js";
+import { ContentSecurityPolicy } from "./content-security-policy.js";
 import { NetworkRequestQueue } from "./network-request-queue.js";
 import {
 	fetchStylesheetResource,
@@ -1682,6 +1683,23 @@ export class BrowserSession {
 			responseUrl,
 			imageCspHeaders,
 		);
+		const stylesheetCsp = new ContentSecurityPolicy(
+			responseUrl,
+			imageCspHeaders,
+			"style",
+		);
+		const checkStylesheetCsp = (url: string, redirectCount: number) => {
+			if (candidate)
+				documentImageContentSecurityPolicy(candidate).checkStylesheet(
+					url,
+					redirectCount,
+				);
+			else if (!stylesheetCsp.allows(url, redirectCount))
+				throw new AgentBrowserError(
+					"policy-denied",
+					"Stylesheet blocked by Content Security Policy",
+				);
+		};
 		const checkImageCsp = (url: string, redirectCount: number) => {
 			if (candidate)
 				documentImageContentSecurityPolicy(candidate).check(url, redirectCount);
@@ -2103,11 +2121,6 @@ export class BrowserSession {
 										"resource-limit",
 										"Stylesheet request limit exceeded",
 									);
-								if (fetchCspBlocked)
-									throw new AgentBrowserError(
-										"policy-denied",
-										"Stylesheet CSP enforcement is not implemented",
-									);
 								const result = await fetchStylesheetResource(
 									resourceUrl,
 									policy,
@@ -2115,6 +2128,7 @@ export class BrowserSession {
 										documentUrl: responseUrl,
 										signal: bootstrapSignal,
 										maxRedirects: this.transport.limits?.maxRedirects ?? 10,
+										checkContentSecurityPolicy: checkStylesheetCsp,
 										request: async (input) => {
 											this.assertCurrent(job);
 											const sheet = await withAbort(
@@ -2179,31 +2193,27 @@ export class BrowserSession {
 									"resource-limit",
 									"Stylesheet request limit exceeded",
 								);
-							const target = parseNetworkUrl(resourceUrl);
-							if (
-								new URL(responseUrl).protocol === "https:" &&
-								target.protocol !== "https:"
-							)
-								throw new AgentBrowserError(
-									"policy-denied",
-									"Mixed-content stylesheet is not allowed",
-								);
-							const sheet = await withAbort(
-								this.fetchNetwork({
-									url: target.href,
-									method: "GET",
-									headers: { accept: "text/css" },
+							const result = await fetchStylesheetResource(
+								parseNetworkUrl(resourceUrl).href,
+								{ mode: "no-cors", credentials: "include" },
+								{
+									documentUrl: responseUrl,
 									signal: bootstrapSignal,
-									cookieContext: {
-										siteUrl: responseUrl,
-										credentials: "include",
-										topLevelNavigation: false,
+									maxRedirects: this.transport.limits?.maxRedirects ?? 10,
+									checkContentSecurityPolicy: checkStylesheetCsp,
+									request: async (input) => {
+										this.assertCurrent(job);
+										const sheet = await withAbort(
+											this.fetchNetwork({ ...input, signal: bootstrapSignal }),
+											bootstrapSignal,
+										);
+										this.assertCurrent(job);
+										return sheet;
 									},
-								}),
-								bootstrapSignal,
+								},
 							);
 							this.assertCurrent(job);
-							return sheet;
+							return result.response;
 						}),
 				}),
 			);

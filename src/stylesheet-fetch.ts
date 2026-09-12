@@ -17,6 +17,10 @@ export interface StylesheetFetchContext {
 	readonly signal: AbortSignal;
 	readonly maxRedirects: number;
 	readonly request: (input: NetworkRequest) => Promise<NetworkResponse>;
+	readonly checkContentSecurityPolicy?: (
+		url: string,
+		redirectCount: number,
+	) => void;
 }
 
 export interface StylesheetFetchResult {
@@ -90,6 +94,8 @@ export async function fetchStylesheetResource(
 		!context ||
 		!(context.signal instanceof AbortSignal) ||
 		typeof context.request !== "function" ||
+		(context.checkContentSecurityPolicy !== undefined &&
+			typeof context.checkContentSecurityPolicy !== "function") ||
 		!Number.isInteger(context.maxRedirects) ||
 		context.maxRedirects < 0 ||
 		context.maxRedirects > 20
@@ -99,7 +105,13 @@ export async function fetchStylesheetResource(
 			"Invalid stylesheet fetch policy or context",
 		);
 	const { mode, credentials } = policy;
-	const { documentUrl, signal, maxRedirects, request } = context;
+	const {
+		documentUrl,
+		signal,
+		maxRedirects,
+		request,
+		checkContentSecurityPolicy,
+	} = context;
 	const document = parseNetworkUrl(documentUrl);
 	let url = target(input, document.href, document);
 	let crossOriginTainted = false;
@@ -109,6 +121,8 @@ export async function fetchStylesheetResource(
 	let elapsedMs = 0;
 	const redirects: NetworkResponse["redirects"][number][] = [];
 	for (;;) {
+		signal.throwIfAborted();
+		checkContentSecurityPolicy?.(url.href, redirects.length);
 		signal.throwIfAborted();
 		crossOriginTainted ||= url.origin !== document.origin;
 		const cors = mode === "cors" && crossOriginTainted;
@@ -138,6 +152,8 @@ export async function fetchStylesheetResource(
 				"policy-denied",
 				"Stylesheet fetch adapter must not follow redirects",
 			);
+		checkContentSecurityPolicy?.(response.url, redirects.length);
+		signal.throwIfAborted();
 		const { headers, locations } = responseHeaders(response.headers);
 		if (cors) checkCors(headers, origin, credentials);
 		encodedBytes += response.encodedBytes;

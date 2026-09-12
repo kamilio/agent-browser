@@ -1,5 +1,8 @@
 import { documentBaseUrl } from "./document-url.js";
-import { imageContentSecurityPolicyValues } from "./document-image-content-security-policy.js";
+import {
+	documentImageContentSecurityPolicy,
+	imageContentSecurityPolicyValues,
+} from "./document-image-content-security-policy.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { documentImages } from "./document-images.js";
 import { AgentBrowserError } from "./errors.js";
@@ -83,15 +86,16 @@ export async function loadBrowserDocument(
 			"Encoded HTML document limit exceeded",
 		);
 	const decoded = decodeResponseText(response, prescanEncoding(response.body));
+	const contentSecurityPolicyHeaders = imageContentSecurityPolicyValues(
+		response.headers,
+	);
 	const parseContext = {
 		...context,
 		initializeDocument: (tree: import("./document.js").DocumentTree) => {
 			context.initializeDocument?.(tree);
 			documentImages(tree, {
 				fetch: context.fetchImage,
-				contentSecurityPolicy: imageContentSecurityPolicyValues(
-					response.headers,
-				),
+				contentSecurityPolicy: contentSecurityPolicyHeaders,
 			});
 		},
 	};
@@ -111,21 +115,7 @@ export async function loadBrowserDocument(
 	if (info) setHtmlParseInfo(tree, { ...info, encoding: decoded.encoding });
 	try {
 		const styles = documentStyles(tree);
-		let stylesheetCspBlocked = Object.keys(response.headers).some(
-			(name) => name.toLowerCase() === "content-security-policy",
-		);
-		if (!stylesheetCspBlocked) {
-			for (const { node } of tree.walk()) {
-				if (
-					isHtmlElement(node, "meta") &&
-					node.attributes["http-equiv"]?.toLowerCase() ===
-						"content-security-policy"
-				) {
-					stylesheetCspBlocked = true;
-					break;
-				}
-			}
-		}
+		const contentSecurityPolicy = documentImageContentSecurityPolicy(tree);
 		let importRequests = 0;
 		const decodeStylesheet = (
 			sheet: NetworkResponse,
@@ -133,6 +123,7 @@ export async function loadBrowserDocument(
 		): Readonly<StylesheetInput> => {
 			if (context.signal.aborted)
 				throw new AgentBrowserError("aborted", "Stylesheet loading aborted");
+			contentSecurityPolicy.checkStylesheet(sheet.url, sheet.redirects.length);
 			if (sheet.status < 200 || sheet.status >= 300)
 				throw new AgentBrowserError(
 					"unsupported",
@@ -162,10 +153,11 @@ export async function loadBrowserDocument(
 			requestedUrl: string,
 			input: Readonly<StylesheetInput>,
 		) => {
+			const inline = isHtmlElement(tree.get(id), "style");
 			const loaded = await loadStylesheetImports(input, {
 				signal: context.signal,
 				requestedUrl,
-				inline: isHtmlElement(tree.get(id), "style"),
+				inline,
 				maxSheets: Math.min(
 					styles.limits.maxSheets,
 					stylesheetImportLimits.maxSheets,
@@ -175,10 +167,11 @@ export async function loadBrowserDocument(
 					stylesheetImportLimits.maxCodeUnits,
 				),
 				fetch: async (url, parent) => {
-					if (stylesheetCspBlocked)
+					contentSecurityPolicy.checkStylesheet(url);
+					if (inline && contentSecurityPolicyHeaders.length)
 						throw new AgentBrowserError(
 							"policy-denied",
-							"Stylesheet import CSP enforcement is not implemented",
+							"Inline stylesheet CSP enforcement is not implemented",
 						);
 					if (!context.fetchStylesheetWithPolicy)
 						throw new AgentBrowserError(
@@ -272,15 +265,12 @@ export async function loadBrowserDocument(
 				const url = parseNetworkUrl(
 					new URL(node.attributes.href ?? "", documentBaseUrl(tree)).href,
 				).href;
+				contentSecurityPolicy.checkStylesheet(url);
 				const integrity = requiresPolicy
 					? parseIntegrityMetadata(node.attributes.integrity ?? "")
 					: null;
 				let sheet: NetworkResponse;
 				if (requiresPolicy) {
-					if (stylesheetCspBlocked) {
-						styles.noteLoadIssue("stylesheet-csp-not-implemented");
-						continue;
-					}
 					const crossorigin = node.attributes.crossorigin;
 					const policy: StylesheetFetchPolicy = {
 						mode: crossorigin === undefined ? "no-cors" : "cors",

@@ -251,7 +251,7 @@ it("bounds integrity metadata before requesting a stylesheet", async () => {
 });
 
 it.each(["header", "meta"])(
-	"keeps %s CSP stylesheet policy fail-closed",
+	"evaluates %s CSP without weakening unsupported metadata denial",
 	async (source) => {
 		let requests = 0;
 		const input = response(
@@ -272,11 +272,18 @@ it.each(["header", "meta"])(
 				};
 			},
 		});
-		expect(requests).toBe(0);
-		expect(documentStyles(tree).metrics().externalSheets).toBe(0);
-		expect(
-			documentStyles(tree).metrics().issues["stylesheet-csp-not-implemented"],
-		).toBe(1);
+		expect(requests).toBe(source === "header" ? 1 : 0);
+		expect(documentStyles(tree).metrics().externalSheets).toBe(
+			source === "header" ? 1 : 0,
+		);
+		expect(documentStyles(tree).metrics().issues).toEqual(
+			source === "header"
+				? {}
+				: {
+						"stylesheet-policy-denied": 1,
+						"external-stylesheet-not-loaded": 1,
+					},
+		);
 		tree.close();
 	},
 );
