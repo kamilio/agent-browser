@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 captured Libjpeg replay on committed13501 confirms that the
+former blanket float/container guard givesway to independent supported-profile
+width rejection. One actualcurrentdocumentation click,3captured responses/
+30178decodedbytes,zeroHTTP/newhosts at13:48:12.786–13:48:13.420UTC.12nonCSS/
+39applicableCSS/4deferred remain; this is not successfuldocumentationnavigation
+orfullpagegeometry. LIBJPEG-FLOAT-SHELL-REPLAY.md retains all170sealedentries
+and failedpreflight .sha259 setup beforetheonlyreplay. Parent independently
+verifies16actualGitobjects/13inputs/14readonlygroups at13:52:58.787UTC. Parent
+postprocessing initially assumed Checks ratherthanGroups fields; existing
+exit0output is schema-verified at13:53:54.809UTC without rerunningtheverifier.
+All originalcaptures/failures stayunchanged. No broaderacceptance isclaimed.
+
 September 12 fresh Netlib regression on committed13501 passes one genuine
 homepage-to-FAQ flow:4GET20034762encoded/decoded bytes at13:43:44.718–
 13:43:45.803UTC.21currentanchors yield ref e133; click commitsFAQ/newdocument/
