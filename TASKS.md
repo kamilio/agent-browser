@@ -6,6 +6,17 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 website inventory twelfth update records81 attempted hosts,
+adding onlywww.pcre.org;the allowed bare alias was never attempted. TwoGET200
+carry2905encoded/8579decoded bytes. One homepage commits;43actual anchors
+are inspected,and one real documentation click fails native width before
+destination. No denials,retries,bypass or working-site claim. Parent verifies
+10actualGit inputs and36readonly checks;56inventory input hashes match.
+PCRE-DOCUMENTATION-FLOW.md and WEBSITE-TEST-INVENTORY-SEPTEMBER-12-TWELFTH-UPDATE.md
+keep this live13042 failure separate from the isolated13042 test pass and
+zero-wire Libpng captured comparison. Existing historical evidence and all
+broader browser acceptance gates remain unchanged.
+
 September12 parent-verified captured Libpng comparison records12817 ->13042:
 58 ->57 non-CSS guard occurrences and9 ->8 deferred entries;the badge now
 uses a replaced imageAlternative while remaining broken,policy-denied,natural0
