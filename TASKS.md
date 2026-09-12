@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 separately declared Selenium basic-fixture testing uses committed13769.
+Two GET200responses load simpleTest.html and its GIF,1423encoded/3250decoded
+bytes total; the initial197node document commits. Eight native anchors yield
+one genuine e137 reference click toward resultPage.html, which stops at the
+unsupported document-width formatting guard before any destination request.
+SELENIUM-SIMPLE-FLOW.md retains the15:21:45.553–15:21:46.395 UTC partial failure,
+three clear exposed policy observations and261.055491ms request-start interval.
+Four applicable CSS issue counters are observed live, not localized by that run.
+No retry, post-stop analysis, successful hit/paint or full navigation acceptance
+is claimed. Parent verification15:30:10.010–15:30:10.301 UTC checks17actual Git
+objects against34archived copies,14inputs and221sealed entries across10groups
+without page/network replay. Selenium is already in the87attempted-host union.
+This is not a forms, button, speedup, security or whole-site acceptance pass.
+
 September12 Selenium web-form testing retains a stopped partial result on
 committed13588, not the later13769 alignment release. One GET200 response
 (1233encoded/4988decoded bytes) precedes a before-wire local rejection of the
