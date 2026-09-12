@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12, 2026 website evidence: the attempted-host inventory is now73,
+not73 working sites, adding only the fresh IANA reserved-domain flow. Two real
+HTTP200 GETs commit one document; a genuine discovered guide click fails at
+float/flex/grid/table coordination. Parent verification passes35 checks and
+13 actual Git blobs. The one full-image GnuPG12037 replay uses6 mocks, zero
+HTTP and still fails, now at non-floating clearance; parent passes22 checks,
+286/288-entry ledgers and14 actual Git outputs. See
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-12-THIRD-UPDATE.md`,
+`IANA-RESERVED-DOMAINS-FLOW.md` and `GNUPG-FLOAT-ATOMIC-REPLAY.md`.
+No historical flow is relabeled, and the subsequent12094 font release is not
+live-site acceptance. Next: scoped non-floating clearance work and the separately
+running Netlib flow, excluded from this snapshot until verified. Broader
+research/provider/device/TTY/realSafeJS/challenge gates remain open.
+
 September 12, 2026 native font-size keywords: all eight absolute keywords and
 parent-relative larger/smaller now compute to native pixels, retaining inheritance,
 root/rem, frozen identity, custom-property behavior and independent limits. The

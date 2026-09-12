@@ -1,0 +1,401 @@
+{
+  "schemaVersion": 3,
+  "auditedAt": "2026-09-12T06:27:43.316Z",
+  "scope": "Cumulative recorded attempted hosts, not working websites; one fresh IANA flow and one captured-only GnuPG replay.",
+  "previousSnapshot": {
+    "path": "reports/website-test-inventory-2026-09-12-second-update.json",
+    "sha256": "e4edbae28d44f37bcbd78bb3e413a8292fb63a830bf4d829b19e67a958111e07",
+    "hostCount": 72
+  },
+  "hostCount": 73,
+  "workingWebsiteCount": null,
+  "baselineHostCount": 54,
+  "addedUniqueHostsSinceBaseline": 19,
+  "hosts": [
+    "aclanthology.org",
+    "api.llm-speed.com",
+    "arxiv.org",
+    "books.toscrape.com",
+    "c.statcounter.com",
+    "camoufox.com",
+    "cdn.jsdelivr.net",
+    "crfm.stanford.edu",
+    "curl.se",
+    "deploymentsafety.openai.com",
+    "developer.mozilla.org",
+    "developers.cloudflare.com",
+    "developers.openai.com",
+    "developers.yubico.com",
+    "docs.kernel.org",
+    "docs.mlcommons.org",
+    "docs.nvidia.com",
+    "docs.python.org",
+    "drafts.csswg.org",
+    "en.wikipedia.org",
+    "example.com",
+    "fetch.spec.whatwg.org",
+    "fidoalliance.org",
+    "github.com",
+    "gorilla.cs.berkeley.edu",
+    "help.openai.com",
+    "help.poe.com",
+    "html.duckduckgo.com",
+    "html.spec.whatwg.org",
+    "httpbingo.org",
+    "huggingface.co",
+    "info.cern.ch",
+    "lastexam.ai",
+    "lite.duckduckgo.com",
+    "livecodebench.github.io",
+    "llm-speed.com",
+    "man7.org",
+    "news.ycombinator.com",
+    "openai.com",
+    "poe.com",
+    "pypi.org",
+    "quotes.toscrape.com",
+    "raw.githubusercontent.com",
+    "rocm.docs.amd.com",
+    "search.yahoo.com",
+    "support.apple.com",
+    "testpages.eviltester.com",
+    "the-internet.herokuapp.com",
+    "unpkg.com",
+    "www.amd.com",
+    "www.apple.com",
+    "www.bing.com",
+    "www.cnbc.com",
+    "www.debian.org",
+    "www.gnu.org",
+    "www.gnupg.org",
+    "www.google.com",
+    "www.hardware-corner.net",
+    "www.iana.org",
+    "www.lua.org",
+    "www.netbsd.org",
+    "www.nvidia.com",
+    "www.openbsd.org",
+    "www.python.org",
+    "www.reddit.com",
+    "www.rfc-editor.org",
+    "www.selenium.dev",
+    "www.sqlite.org",
+    "www.swebench.com",
+    "www.w3.org",
+    "www.wikipedia.org",
+    "www.zlib.net",
+    "x.com"
+  ],
+  "hostRepresentation": "Normalized hostname strings. Per-host historical URLs, outcomes and evidence remain in the immutable previous snapshot chain.",
+  "historicalReportsModified": false,
+  "countRule": "Exact previous attempted-host union plus www.iana.org. Replays, candidates and repeated visits add no host; prior substantiated pre-wire resource attempts remain historical attempts.",
+  "newHost": {
+    "host": "www.iana.org",
+    "kind": "fresh native public documentation flow",
+    "runtime": 12037,
+    "commit": "addf9898d11f2d2a16b56499393b740e0d74271a",
+    "startedAt": "2026-09-12T06:10:45.086Z",
+    "finishedAt": "2026-09-12T06:10:45.478Z",
+    "flowPassed": false,
+    "failure": {
+      "stage": "native-documentation-link-click",
+      "name": "AgentBrowserError",
+      "code": "unsupported",
+      "message": "Float integration with flex, grid and table reflow is not coordinated"
+    },
+    "accounting": {
+      "nativeRequestAttempts": 2,
+      "transportRequests": 2,
+      "wireRequestCalls": 2,
+      "wireResponses": 2,
+      "wireRedirectResponses": 0,
+      "followedRedirects": 0,
+      "encodedBytes": 16536,
+      "decodedBytes": 99157,
+      "mockedRequests": 0,
+      "note": "Native requests, wire request constructions/responses and mocks are separate; every recorded response body is fresh; wire events are native instrumentation, not packet capture",
+      "adapterEntries": 2,
+      "admittedRequests": 2,
+      "rejectedAdapterEntries": 0,
+      "rejectedAdapterSamples": [],
+      "admissionScope": "admittedRequests counts adapter calls forwarded to native transport; rejectedAdapterEntries counts calls rejected before forwarding; request-start records are counted separately"
+    },
+    "committed": {
+      "url": "https://www.iana.org/domains/reserved",
+      "title": "IANA-managed Reserved Domains",
+      "root": "e1",
+      "nodeCount": 549,
+      "revision": 551,
+      "sameDocument": true,
+      "observedColorScheme": {
+        "at": "2026-09-12T06:10:45.452Z",
+        "reason": "before-or-after-click-state",
+        "url": "https://www.iana.org/domains/reserved",
+        "root": "e1",
+        "revision": 551,
+        "source": "page.styles.metrics().colorScheme",
+        "colorScheme": {
+          "preference": null,
+          "effective": "light",
+          "profile": "native-ua-color-preference",
+          "systemIntegration": false,
+          "siteOverrides": false
+        },
+        "sessionPreferenceSource": "session.colorSchemePreference(tabId)",
+        "sessionPreference": null
+      },
+      "history": {
+        "key": "h1-1",
+        "url": "https://www.iana.org/domains/reserved",
+        "state": null,
+        "index": 0,
+        "length": 1
+      },
+      "sessionHistory": {
+        "index": 0,
+        "length": 1,
+        "entries": [
+          {
+            "key": "h1-1",
+            "url": "https://www.iana.org/domains/reserved",
+            "active": true,
+            "requiresResubmission": false
+          }
+        ],
+        "retainedBytes": 45,
+        "evictedDocuments": 0
+      },
+      "scroll": {
+        "x": 0,
+        "y": 0,
+        "maximum": {
+          "x": 0,
+          "y": 0
+        },
+        "revision": -1,
+        "builds": 0,
+        "updates": 0,
+        "work": 0,
+        "closed": false
+      },
+      "scrollObservation": "existing native metrics only; no geometry refresh or direct scrolling",
+      "nativeRequestAttempts": 2
+    },
+    "discovery": {
+      "inspected": 56,
+      "eligibleOccurrences": 24,
+      "uniqueDestinations": 15,
+      "selected": {
+        "index": 18,
+        "reference": "e323",
+        "href": "/domains/root/help",
+        "url": "https://www.iana.org/domains/root/help",
+        "text": "Instructions & Guides",
+        "browsingTarget": "_self",
+        "availability": {
+          "source": "native styles.get and interactions.actionability before URL deduplication",
+          "displayed": true,
+          "visible": true,
+          "blocked": null,
+          "ariaDisabled": false,
+          "ancestorDepth": 11,
+          "ancestorComplete": true
+        },
+        "urlQualifies": true,
+        "eligible": true,
+        "eligibleOccurrences": 1
+      }
+    },
+    "formatting": {
+      "metrics": {
+        "visitedDomNodes": 527,
+        "boxes": 583,
+        "outsideMarkers": 22,
+        "textCodeUnits": 4381,
+        "work": 21922,
+        "deferredSubtrees": 3
+      },
+      "nodes": 561,
+      "nonCss": {
+        "float-layout-not-supported": 22,
+        "display-layout-not-supported": 3,
+        "overflow-layout-not-supported": 1
+      },
+      "rawCss": {
+        "unimplemented-css-at-rule": 9,
+        "unimplemented-or-invalid-css-value": 42,
+        "unimplemented-css-property": 309,
+        "unimplemented-or-invalid-css-selector": 32,
+        "unimplemented-or-invalid-media-query": 1
+      },
+      "applicableCss": {
+        "unimplemented-css-at-rule": 9,
+        "unimplemented-css-property": 53,
+        "unimplemented-or-invalid-css-selector": 32,
+        "unimplemented-or-invalid-css-value": 11,
+        "unimplemented-or-invalid-media-query": 1
+      },
+      "deferredSubtrees": 3
+    },
+    "owners": {
+      "eventOwnersInstrumented": 1,
+      "imageOwnersInstrumented": 1,
+      "eventOwnerCleanupProved": true,
+      "imageOwnerCleanupProved": true,
+      "documentOwnersInstrumented": 1,
+      "controlOwnersInstrumented": 1,
+      "documentOwnerCleanupProved": true,
+      "controlOwnerCleanupProved": true,
+      "scope": "Proof covers only instrumented owners; empty sample arrays do not prove owner cleanup"
+    },
+    "evidence": {
+      "report": "IANA-RESERVED-DOMAINS-FLOW.md",
+      "reportSha256": "8272e489fc7cdaba4c2af1ac9beb4972d73c41f4adbe8253c7cc04128cf20e4c",
+      "finalLedger": "node_modules/.cache/native-validation/native-iana-flow-september12/FINAL-RECEIPTS.sha256",
+      "finalLedgerSha256": "de775d2dc0e4a35019d053cdca84917d2e4072720a39af7dffe822975d75cc9a",
+      "parentVerifiedAt": "2026-09-12T06:16:13.705Z",
+      "checks": 35,
+      "actualGitOutputs": 13,
+      "readOnly": true,
+      "extraBrowserRuns": 0
+    }
+  },
+  "capturedFollowup": {
+    "host": "www.gnupg.org",
+    "kind": "one full-image captured-only replay; no new live observation",
+    "runtime": 12037,
+    "commit": "addf9898d11f2d2a16b56499393b740e0d74271a",
+    "startedAt": "2026-09-12T06:17:15.629Z",
+    "finishedAt": "2026-09-12T06:17:16.927Z",
+    "flowPassed": false,
+    "failure": {
+      "name": "AgentBrowserError",
+      "code": "unsupported",
+      "message": "Non-floating clearance requires margin coordination"
+    },
+    "mocks": 6,
+    "wireCalls": 0,
+    "replayMisses": [],
+    "commits": 1,
+    "clicks": 1,
+    "comparison": {
+      "observedFailureChanged": true,
+      "originalCapturedResponses": 6,
+      "responsesActuallyReplayed": [
+        {
+          "archiveIndex": 1,
+          "url": "https://www.gnupg.org/documentation/",
+          "decodedBytes": 8307,
+          "decodedSha256": "cff89f6b754a9c593bfff6c4f6d1f15c68cba9ab434a4e81796b94625225b438",
+          "originalEncodedSha256": "3e8d139291f92135b5432c6d33caf6072363c44e921955f86156bd60654fddce",
+          "rawHeaderSha256": "30c0d214ab6e2ea7029cf90390d9110243be1c461770a1b48a356a4a57cb7e4f"
+        },
+        {
+          "archiveIndex": 2,
+          "url": "https://www.gnupg.org/share/site.css",
+          "decodedBytes": 11804,
+          "decodedSha256": "48233e2b7bd1f22cca5f901465a95ff7fb8d9bb80f862378d8530b2fa422863b",
+          "originalEncodedSha256": "12fffe7d37fb32e413c9cd063e3fc6362612ee8d03a5e88690596d0c0c22ec53",
+          "rawHeaderSha256": "aa435d5a27bb5505563cf84beff08e6f75ec11fad6cf406195f5b25e134caa83"
+        },
+        {
+          "archiveIndex": 3,
+          "url": "https://www.gnupg.org/share/logo-gnupg-light-purple-bg.png",
+          "decodedBytes": 9024,
+          "decodedSha256": "015aeb94125ecedefd25c7fadd7f3a9b2461eb4ba117ec6b10f577792e51e479",
+          "originalEncodedSha256": "015aeb94125ecedefd25c7fadd7f3a9b2461eb4ba117ec6b10f577792e51e479",
+          "rawHeaderSha256": "d8a58f6ba340db873a605b9de42f7b7bad94a22be46217fbcb26bff2060365f6"
+        },
+        {
+          "archiveIndex": 4,
+          "url": "https://www.gnupg.org/share/traueranzeige-g10_v2015.png",
+          "decodedBytes": 3821,
+          "decodedSha256": "e0950effbe2e332c27101d2407a173743b214867ea1c91051c51eafe3bd0c2af",
+          "originalEncodedSha256": "e0950effbe2e332c27101d2407a173743b214867ea1c91051c51eafe3bd0c2af",
+          "rawHeaderSha256": "dcea345833e3ad6e0fa330664964f79962587f7303e0843440fdce2a0d9fb41f"
+        },
+        {
+          "archiveIndex": 5,
+          "url": "https://www.gnupg.org/share/mastodon-icon.png",
+          "decodedBytes": 1249,
+          "decodedSha256": "c8a8448c8195e33897ea085749b458d8ce21d4706fe6b50168fd60f3b495019a",
+          "originalEncodedSha256": "c8a8448c8195e33897ea085749b458d8ce21d4706fe6b50168fd60f3b495019a",
+          "rawHeaderSha256": "c2a5eeceb316b5af634b41daef329b37d58034661e510f6e786c4b5356e326c8"
+        },
+        {
+          "archiveIndex": 6,
+          "url": "https://www.gnupg.org/share/cc-by-sa_80x15.png",
+          "decodedBytes": 672,
+          "decodedSha256": "5283893486a4fafa05b9cfecd1181b7b41f0367a5b1cfdd693bd423a1cccf5f3",
+          "originalEncodedSha256": "5283893486a4fafa05b9cfecd1181b7b41f0367a5b1cfdd693bd423a1cccf5f3",
+          "rawHeaderSha256": "f3a11f3366bd077b4d46a100c52edbe47bd9d2f6fa712113d9d4d6544de48703"
+        }
+      ],
+      "allSixOriginalResponsesReplayed": true,
+      "historicalViewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "replayViewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "documentRootTextEqual": true,
+      "domBefore": {
+        "bytes": 8088,
+        "sha256": "99c90697dffc8991a4b26775b1f62d25fa6e0ef5e6c61dc53e00d76cd0212443",
+        "nodeCount": 428,
+        "revision": 434
+      },
+      "domAfter": {
+        "bytes": 8088,
+        "sha256": "99c90697dffc8991a4b26775b1f62d25fa6e0ef5e6c61dc53e00d76cd0212443",
+        "nodeCount": 428,
+        "revision": 434
+      },
+      "historicalDomSerializationAvailable": false,
+      "historicalBodyTextComparisonAvailable": false,
+      "historicalFormattingNodes": 277,
+      "actualReplayFormattingNodes": 277,
+      "noSourceOnlyDiagnosisComparator": true,
+      "noSoleCauseClaim": true
+    },
+    "evidence": {
+      "report": "GNUPG-FLOAT-ATOMIC-REPLAY.md",
+      "reportSha256": "7b8db2d8bc89f969141f770761000b94e9d5ab6ee84e6f470ab9ba316a693cb2",
+      "finalLedger": "node_modules/.cache/native-validation/native-gnupg-float-replay-september12/FINAL-RECEIPTS.sha256",
+      "finalLedgerSha256": "1ae7646470a7d625ff034893fc811f26e4bcf90a6f6af1e063baca0a72230b10",
+      "parentVerifiedAt": "2026-09-12T06:23:17.087Z",
+      "checks": 22,
+      "actualGitOutputs": 14,
+      "readOnly": true,
+      "extraBrowserRuns": 0
+    }
+  },
+  "otherAdditiveFollowups": [
+    "ZLIB-CSS-RECOVERY-FOLLOWUP.md",
+    "LUA-PERCENTAGE-FOLLOWUP.md"
+  ],
+  "latestCodeGate": {
+    "commit": "18a6c7a2879dc9c68fd4e06dca93fe7249172c81",
+    "report": "FONT-SIZE-KEYWORDS.md",
+    "tests": {
+      "passed": 12094,
+      "failed": 0,
+      "excluded": 2
+    },
+    "selectedSuites": 227,
+    "strictRoots": 226,
+    "manifestEntries": 621,
+    "evidence": "node_modules/.cache/native-validation/native-font-size-september12-round01/AUDIT.json",
+    "auditSha256": "3c58c2a9e2d42589fe6d171fe904c3a3ed22a638bee71a6e98e70063e051e21c",
+    "scope": "Isolated native validation, not the runtime used for these live/replay observations."
+  },
+  "limitations": [
+    "The earlier RFC Editor duplicate correction remains; historical reports are not rewritten.",
+    "HTTP200/document commits are not successful navigation. IANA and GnuPG flows remain failed.",
+    "The font release has no live site acceptance in this update.",
+    "Netlib is in progress and excluded from this snapshot, not inferred as attempted or working.",
+    "Credential/provider/passkey-device/TTY/realSafeJS/challenge gates and research completeness remain unverified."
+  ]
+}
