@@ -6,6 +6,21 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 fresh zlib resource-budget flow: the new predeclared32-GET
+scope makes9 actual GETs and commits the root document, then its genuine
+discovered FAQ click fails native layout before any destination request. All
+eight overlapping resources match the old captured encoded/decoded bytes; the
+old8-GET failure remains unchanged. Parent reproduces38 checks and238/240-entry
+seals, including the explicit21-input runtime pin and observed document/image/
+event/control cleanup. Its nested Git-IPC verifier failure and exact-blob preload
+correction are preserved, with no extra native run. The census exposes native
+center/table, HTML-presentation and CSS-rule blockers; it is not a sole-cause
+proof. See `ZLIB-RESOURCE-BUDGET-FLOW.md` and
+`reports/zlib-resource-budget-2026-09-12.json`. This run uses11784/ffc7b2, not the
+new11901 percentage-table release. The inventory stays71 unique attempted hosts,
+not71 working sites; broader interactions and challenge/provider/device gates
+remain open, and Lua still needs a new scoped check on the new release.
+
 September12,2026 percentage cell widths: automatic tables now use simple CSS
 percentage width preferences in both separate/collapsed models, with intrinsic
 row/span maxima, constrained track allocation, spacing and actual box edges.

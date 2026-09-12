@@ -1,0 +1,430 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-09-12T04:58:49.284Z",
+  "host": "www.zlib.net",
+  "inventoryHostCount": 71,
+  "newHost": false,
+  "scope": "New predeclared32-GET scope, not a retry or rewritten result under the historical eight-GET contract",
+  "runtimeCommit": "ffc7b2ef34b271c617ca846ec2296e8deede88b2",
+  "runtimeSelectedTestPasses": 11784,
+  "startedAt": "2026-09-12T04:40:34.392Z",
+  "finishedAt": "2026-09-12T04:40:36.650Z",
+  "budget": {
+    "checks": [
+      "new32GETScopeFixedBeforeLaunchOtherNativeLimitsPreserved",
+      "newWallAndStorageBudgetExplicit",
+      "historicalEightGETFailureNotReclassified",
+      "originalDocumentLimitsAndNoPageRuntimePreserved",
+      "independentAdapterNativeWireAndMockAccounting",
+      "perResponseAndTotalTransferCapsObserved",
+      "exactResponseRawHeadersNoPairsExcluded",
+      "noWireRequestsAfterFirstGlobalStop",
+      "singleFreshNavigationAtMostOneGenuineClick",
+      "FAQPreferenceAndEligibleURLDedupIndependentlyRecomputed",
+      "oneBoundedAuthoritativeCountAndDeferredStyleCensus",
+      "SiteByteComparisonUsesActualEncodedAndDecodedHashes",
+      "all21InputsReverifiedAgainstExplicitFFC7B2NeverHEAD",
+      "allNewLaneFilesPrivate"
+    ],
+    "separatelyDeclaredScope": true,
+    "fixedBeforeLaunch": {
+      "maxRequests": 32,
+      "maxResponseBytes": 2097152,
+      "maxTotalBytes": 8388608
+    },
+    "previous": {
+      "report": "ZLIB-NATIVE-FLOW.md",
+      "flowPassed": false,
+      "requestCap": 8,
+      "wireRequests": 8,
+      "adapterEntries": 9,
+      "commits": 0,
+      "clicks": 0,
+      "failure": {
+        "stage": "initial-navigation:network",
+        "name": "AssertionError",
+        "code": "ERR_ASSERTION",
+        "message": "Native request attempt cap exceeded"
+      }
+    },
+    "current": {
+      "flowPassed": false,
+      "requestCap": 32,
+      "wireRequests": 9,
+      "adapterEntries": 9,
+      "commits": 1,
+      "clicks": 1,
+      "failure": {
+        "stage": "native-documentation-link-click",
+        "name": "AgentBrowserError",
+        "code": "unsupported",
+        "message": "Document width resolution requires an issue-free supported formatting profile"
+      },
+      "wallMs": 2385
+    },
+    "comparisons": [
+      {
+        "url": "https://www.zlib.net/",
+        "previousResponseObserved": true,
+        "previousDecodedSha256": "a2654af9cc15e4943a11c8aa27ce378f7293230d2953f18609fca7485b9423a5",
+        "currentDecodedSha256": "a2654af9cc15e4943a11c8aa27ce378f7293230d2953f18609fca7485b9423a5",
+        "decodedBytesEqual": true,
+        "previousEncodedSha256": "5077967ebad3aae65b5496fdca8490882ef32419d06e7061e264d6f1ce03360e",
+        "currentEncodedSha256": "5077967ebad3aae65b5496fdca8490882ef32419d06e7061e264d6f1ce03360e",
+        "encodedBytesEqual": true
+      },
+      {
+        "url": "https://www.zlib.net/images/zlib3d-b1.png",
+        "previousResponseObserved": true,
+        "previousDecodedSha256": "6b07c17f68a007b4930aa473f943a68ba7da5ed9e180e2ced23faca428697d2e",
+        "currentDecodedSha256": "6b07c17f68a007b4930aa473f943a68ba7da5ed9e180e2ced23faca428697d2e",
+        "decodedBytesEqual": true,
+        "previousEncodedSha256": "4eee70f5e0a6cbaa8edb47948d3105190f281605094a26ff523b2be45efe8faa",
+        "currentEncodedSha256": "4eee70f5e0a6cbaa8edb47948d3105190f281605094a26ff523b2be45efe8faa",
+        "encodedBytesEqual": true
+      },
+      {
+        "url": "https://www.zlib.net/images/zlib_ddj.png",
+        "previousResponseObserved": true,
+        "previousDecodedSha256": "b9c50afcdbe2bc64a88fd75fb754de0ecc0da8756842f8aa9709251703c84e40",
+        "currentDecodedSha256": "b9c50afcdbe2bc64a88fd75fb754de0ecc0da8756842f8aa9709251703c84e40",
+        "decodedBytesEqual": true,
+        "previousEncodedSha256": "6411bff29eae6b48cf89cf4752fb8139153ff0fe09c1b7c8264b1229abfa9603",
+        "currentEncodedSha256": "6411bff29eae6b48cf89cf4752fb8139153ff0fe09c1b7c8264b1229abfa9603",
+        "encodedBytesEqual": true
+      },
+      {
+        "url": "https://www.zlib.net/zlib-email.png",
+        "previousResponseObserved": true,
+        "previousDecodedSha256": "d19a90be9072b591afbb2b86fcc55d941a29e493aed6160c9d36aaf9fa79776a",
+        "currentDecodedSha256": "d19a90be9072b591afbb2b86fcc55d941a29e493aed6160c9d36aaf9fa79776a",
+        "decodedBytesEqual": true,
+        "previousEncodedSha256": "0dadc968e89681d6a2b4f16ea08298e4ad73081b1d01a326766951f6d9359378",
+        "currentEncodedSha256": "0dadc968e89681d6a2b4f16ea08298e4ad73081b1d01a326766951f6d9359378",
+        "encodedBytesEqual": true
+      },
+      {
+        "url": "https://www.zlib.net/images/li_blue.png",
+        "previousResponseObserved": true,
+        "previousDecodedSha256": "b12d1b2a46ad7bb8f13c54e4a68a070a65b264e8d0eeffde01a1374db24b3ed1",
+        "currentDecodedSha256": "b12d1b2a46ad7bb8f13c54e4a68a070a65b264e8d0eeffde01a1374db24b3ed1",
+        "decodedBytesEqual": true,
+        "previousEncodedSha256": "ea357efa9291d5d51841a6bff903c44e5c3c838ab896693332f86c3eb41a4982",
+        "currentEncodedSha256": "ea357efa9291d5d51841a6bff903c44e5c3c838ab896693332f86c3eb41a4982",
+        "encodedBytesEqual": true
+      },
+      {
+        "url": "https://www.zlib.net/images/li_green.png",
+        "previousResponseObserved": true,
+        "previousDecodedSha256": "0ef29e0e417588163795e594655f0f8f8694bc26d1a95d7eacd32e8093e2cd2a",
+        "currentDecodedSha256": "0ef29e0e417588163795e594655f0f8f8694bc26d1a95d7eacd32e8093e2cd2a",
+        "decodedBytesEqual": true,
+        "previousEncodedSha256": "236229e7c6543cdc2a551e288aa6abe629228aefaf8a0ab15f8bc36facedcde6",
+        "currentEncodedSha256": "236229e7c6543cdc2a551e288aa6abe629228aefaf8a0ab15f8bc36facedcde6",
+        "encodedBytesEqual": true
+      },
+      {
+        "url": "https://www.zlib.net/images/li_red.png",
+        "previousResponseObserved": true,
+        "previousDecodedSha256": "ecbbf1b6975047f1cf3c1bf7f4b2ace14da8e3cfa4bc84572eea2cc48eb9c9e1",
+        "currentDecodedSha256": "ecbbf1b6975047f1cf3c1bf7f4b2ace14da8e3cfa4bc84572eea2cc48eb9c9e1",
+        "decodedBytesEqual": true,
+        "previousEncodedSha256": "509d7259e8f431a86b357dce93ed86e86998ae252cc69cddb02d43f51d0f5d19",
+        "currentEncodedSha256": "509d7259e8f431a86b357dce93ed86e86998ae252cc69cddb02d43f51d0f5d19",
+        "encodedBytesEqual": true
+      },
+      {
+        "url": "https://www.zlib.net/images/li_yellow.png",
+        "previousResponseObserved": true,
+        "previousDecodedSha256": "9e4963cdc2098ba0890fbdde7795547c2193a7088f4b11c054d4872e36ba252f",
+        "currentDecodedSha256": "9e4963cdc2098ba0890fbdde7795547c2193a7088f4b11c054d4872e36ba252f",
+        "decodedBytesEqual": true,
+        "previousEncodedSha256": "bbd723987820705f57dffcf2104341bfe2fe3540ea646d0b211f97971dcc7f3b",
+        "currentEncodedSha256": "bbd723987820705f57dffcf2104341bfe2fe3540ea646d0b211f97971dcc7f3b",
+        "encodedBytesEqual": true
+      },
+      {
+        "url": "https://www.zlib.net/madler-email.png",
+        "previousResponseObserved": false,
+        "previousDecodedSha256": null,
+        "currentDecodedSha256": "230d3ede9b44ee4a0fd83ab6fca41e71aff82274213dc230b7e371a9b97db371",
+        "decodedBytesEqual": null,
+        "previousEncodedSha256": null,
+        "currentEncodedSha256": "cae5ebaef983fd18a8e8baf1a1960b380f7dc6441a0e242baf1eb3880293e1d1",
+        "encodedBytesEqual": null
+      }
+    ],
+    "censusMethod": "authoritative raw/applicable and non-CSS/deferred counts; actual bounded deferred element attributes/styles; no substring rule excerpts",
+    "newFailedCheckArtifacts": []
+  },
+  "metrics": {
+    "mockedRequests": 0,
+    "mockedDecodedBytes": 0,
+    "requests": 9,
+    "redirects": 0,
+    "encodedBytes": 51535,
+    "decodedBytes": 74133,
+    "active": 0,
+    "closed": true
+  },
+  "commits": 1,
+  "clicks": 1,
+  "destinationRequested": false,
+  "flowPassed": false,
+  "nativeCommittedState": {
+    "url": "https://www.zlib.net/",
+    "title": "zlib Home Site",
+    "root": "e1",
+    "nodeCount": 1170,
+    "revision": 1179,
+    "sameDocument": true,
+    "observedColorScheme": {
+      "at": "2026-09-12T04:40:36.624Z",
+      "reason": "before-or-after-click-state",
+      "url": "https://www.zlib.net/",
+      "root": "e1",
+      "revision": 1179,
+      "source": "page.styles.metrics().colorScheme",
+      "colorScheme": {
+        "preference": null,
+        "effective": "light",
+        "profile": "native-ua-color-preference",
+        "systemIntegration": false,
+        "siteOverrides": false
+      },
+      "sessionPreferenceSource": "session.colorSchemePreference(tabId)",
+      "sessionPreference": null
+    },
+    "history": {
+      "key": "h1-1",
+      "url": "https://www.zlib.net/",
+      "state": null,
+      "index": 0,
+      "length": 1
+    },
+    "sessionHistory": {
+      "index": 0,
+      "length": 1,
+      "entries": [
+        {
+          "key": "h1-1",
+          "url": "https://www.zlib.net/",
+          "active": true,
+          "requiresResubmission": false
+        }
+      ],
+      "retainedBytes": 29,
+      "evictedDocuments": 0
+    },
+    "scroll": {
+      "x": 0,
+      "y": 0,
+      "maximum": {
+        "x": 0,
+        "y": 0
+      },
+      "revision": -1,
+      "builds": 0,
+      "updates": 0,
+      "work": 0,
+      "closed": false
+    },
+    "scrollObservation": "existing native metrics only; no geometry refresh or direct scrolling",
+    "nativeRequestAttempts": 9
+  },
+  "selected": {
+    "index": 17,
+    "reference": "e228",
+    "href": "zlib_faq.html",
+    "url": "https://www.zlib.net/zlib_faq.html",
+    "text": "FAQ",
+    "browsingTarget": "_self",
+    "availability": {
+      "source": "native styles.get and interactions.actionability before URL deduplication",
+      "displayed": true,
+      "visible": true,
+      "blocked": null,
+      "ariaDisabled": false,
+      "ancestorDepth": 5,
+      "ancestorComplete": true
+    },
+    "urlQualifies": true,
+    "eligible": true,
+    "eligibleOccurrences": 3
+  },
+  "afterClick": {
+    "url": "https://www.zlib.net/",
+    "title": "zlib Home Site",
+    "root": "e1",
+    "nodeCount": 1170,
+    "revision": 1179,
+    "sameDocument": true,
+    "observedColorScheme": {
+      "at": "2026-09-12T04:40:36.643Z",
+      "reason": "before-or-after-click-state",
+      "url": "https://www.zlib.net/",
+      "root": "e1",
+      "revision": 1179,
+      "source": "page.styles.metrics().colorScheme",
+      "colorScheme": {
+        "preference": null,
+        "effective": "light",
+        "profile": "native-ua-color-preference",
+        "systemIntegration": false,
+        "siteOverrides": false
+      },
+      "sessionPreferenceSource": "session.colorSchemePreference(tabId)",
+      "sessionPreference": null
+    },
+    "history": {
+      "key": "h1-1",
+      "url": "https://www.zlib.net/",
+      "state": null,
+      "index": 0,
+      "length": 1
+    },
+    "sessionHistory": {
+      "index": 0,
+      "length": 1,
+      "entries": [
+        {
+          "key": "h1-1",
+          "url": "https://www.zlib.net/",
+          "active": true,
+          "requiresResubmission": false
+        }
+      ],
+      "retainedBytes": 29,
+      "evictedDocuments": 0
+    },
+    "scroll": {
+      "x": 0,
+      "y": 0,
+      "maximum": {
+        "x": 0,
+        "y": 0
+      },
+      "revision": -1,
+      "builds": 0,
+      "updates": 0,
+      "work": 0,
+      "closed": false
+    },
+    "scrollObservation": "existing native metrics only; no geometry refresh or direct scrolling",
+    "nativeRequestAttempts": 9
+  },
+  "formatting": {
+    "metrics": {
+      "visitedDomNodes": 1149,
+      "boxes": 1283,
+      "outsideMarkers": 30,
+      "textCodeUnits": 13076,
+      "work": 23635,
+      "deferredSubtrees": 2
+    },
+    "nodes": 1253,
+    "nonCss": {
+      "html-presentation-hint-not-supported": 9,
+      "element-layout-not-supported": 1,
+      "html-table-presentation-hint-not-supported": 1,
+      "display-layout-not-supported": 1
+    },
+    "rawCss": {
+      "unimplemented-or-invalid-css-rule": 1
+    },
+    "applicableCss": {
+      "unimplemented-or-invalid-css-rule": 1
+    },
+    "deferrals": [
+      {
+        "ref": "e68",
+        "tag": "center",
+        "reason": "element-layout-not-supported",
+        "attributes": {}
+      },
+      {
+        "ref": "e1135",
+        "tag": "table",
+        "reason": "display-layout-not-supported",
+        "attributes": {
+          "width": "100%",
+          "cellpadding": "0",
+          "border": "0"
+        }
+      }
+    ]
+  },
+  "ownerEvidence": {
+    "eventOwnersInstrumented": 1,
+    "imageOwnersInstrumented": 1,
+    "eventOwnerCleanupProved": true,
+    "imageOwnerCleanupProved": true,
+    "documentOwnersInstrumented": 1,
+    "controlOwnersInstrumented": 1,
+    "documentOwnerCleanupProved": true,
+    "controlOwnerCleanupProved": true,
+    "scope": "Proof covers only instrumented owners; empty sample arrays do not prove owner cleanup"
+  },
+  "parentVerification": {
+    "independentlyVerifiedAt": "2026-09-12T04:49:22.884Z",
+    "evidenceChecksPassed": true,
+    "flowPassed": false,
+    "checks": 38,
+    "exactArtifactInventory": true,
+    "firstLedger": {
+      "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/native-zlib-budget-flow-september12/RECEIPTS.sha256",
+      "base": "/home/kjopek/project/agent-browser",
+      "files": 238,
+      "sha256": "b8614dd33b1c46dab8ad9c5c475f6e7d9ffc8606e8884f7e1057341787a7761d"
+    },
+    "finalLedger": {
+      "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/native-zlib-budget-flow-september12/FINAL-RECEIPTS.sha256",
+      "base": "/home/kjopek/project/agent-browser",
+      "files": 240,
+      "sha256": "6a421ec5068c3ad0e6e34449ea655943bdf0a4ac318c032530878062862facc2"
+    },
+    "reportSha256": "f17ac9b123adc6f62cb31c27dc609438556c70450d961dc8dea3b50fc5c55b96",
+    "markdownSha256": "765a5ed61cf5eac2cbea2d9ab440e9c5677e56b6ea49adceb11dbb66842e8f4f",
+    "storage": {
+      "allocatedBytes": 9789440,
+      "logicalBytes": 9202713,
+      "availableBytes": 919797760,
+      "availableInodes": 1796559
+    },
+    "offlineGuardAttempts": []
+  },
+  "parentExecution": {
+    "startedAt": "2026-09-12T04:49:22.614Z",
+    "finishedAt": "2026-09-12T04:49:22.894Z",
+    "exitCode": 0,
+    "signal": null,
+    "error": null,
+    "verifierSha256": "036b64e29f4961b497656d96df9c99ed6eb51685903e677aa836e8733b055ebc",
+    "nativeRerun": false
+  },
+  "parentVerificationCorrection": "Nested Git IPC was denied by kernel socketpair policy. The first failure is retained;21 pinned Git blobs were then preverified locally and read by a socket-denied verifier derivative. No additional browser run.",
+  "sources": [
+    {
+      "path": "ZLIB-RESOURCE-BUDGET-FLOW.md",
+      "sha256": "765a5ed61cf5eac2cbea2d9ab440e9c5677e56b6ea49adceb11dbb66842e8f4f"
+    },
+    {
+      "path": "node_modules/.cache/native-validation/native-zlib-budget-flow-september12/RECEIPTS.sha256",
+      "sha256": "b8614dd33b1c46dab8ad9c5c475f6e7d9ffc8606e8884f7e1057341787a7761d"
+    },
+    {
+      "path": "node_modules/.cache/native-validation/native-zlib-budget-flow-september12/FINAL-RECEIPTS.sha256",
+      "sha256": "6a421ec5068c3ad0e6e34449ea655943bdf0a4ac318c032530878062862facc2"
+    },
+    {
+      "path": "ZLIB-NATIVE-FLOW.md",
+      "sha256": "ce2b329c44c9f1199a43aea87bd4deaa032c76415eb650bc26324cb319f81616"
+    }
+  ],
+  "limitations": [
+    "HTTP200 and initial page commit do not establish a working FAQ flow.",
+    "Census shows independent HTML presentation, unsupported center/table layout and CSS-rule guards, not a proven single root cause.",
+    "The later11901 percentage-table release is not the runtime used in this live test.",
+    "No credential, passkey-device, real SafeJS/TTY, fingerprint or challenge-bypass acceptance."
+  ]
+}
