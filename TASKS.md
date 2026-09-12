@@ -6,6 +6,22 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 native non-floating clearance: physical source-ordered float
+bottoms now position normal blocks before text/descendants and following static
+positions. Leading ancestor struts are prepared before entry; zero-strut empty
+clearance advances flow. Independent review exposed wrong ancestor origins and
+stale later cached floors after an earlier no-op becomes real clearance. Two
+and three unchanged regressions reproduced those errors before fixes. Four new
+suites add93 cases; focused422/0 and final231-suite native12187/0 with two
+unchanged exclusions pass, including230 strict roots and625 manifest entries.
+See `NONFLOATING-CLEARANCE.md`. Nonzero-through/adjoining-empty and unresolved
+escaped profiles, logical clear and independent CSS/flex/grid/table guards stay
+explicit; no full CSS/browser parity claim. Next: one scoped captured GnuPG
+replay of the committed release, plus Netlib center layout (its unchanged
+synthetic baseline now fails on clean12094). Historical74-host/live outcomes,
+research completeness and provider/device/TTY/realSafeJS/challenge gates remain
+unchanged and open. No fresh website success follows from this native gate.
+
 September 12, 2026 Netlib native flow: two real HTTP200 GETs,10631 encoded
 and decoded bytes,one document commit and one genuine discovered FAQ click.
 The click fails at the width/profile guard; the bounded census retains one

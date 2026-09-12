@@ -179,7 +179,7 @@ it.each([
 	["grid", "", '<div style="display:grid"><span>A</span></div>'],
 	["table", "", "<table><tr><td>A</td></tr></table>"],
 	["inline flex", "#atom{display:inline-flex}", ""],
-	["nonfloating clearance", "", '<div style="clear:both">A</div>'],
+	["logical clearance", "", '<div style="clear:inline-start">A</div>'],
 	["clipped overflow", "#atom{overflow:hidden}", ""],
 	["unsupported property", "#atom{animation-name:spin}", ""],
 ])(

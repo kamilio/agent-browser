@@ -246,6 +246,20 @@ export class FloatLayoutContext {
 		}
 	}
 
+	clearanceBottom(clear: Exclude<FloatClear, "none">): number | null {
+		this.ensureOpen();
+		this.charge();
+		if (clear !== "left" && clear !== "right" && clear !== "both")
+			throw new AgentBrowserError("invalid-input", "Invalid block clearance");
+		const left = clear === "right" ? undefined : this.leftBottom;
+		const right = clear === "left" ? undefined : this.rightBottom;
+		return left === undefined
+			? (right ?? null)
+			: right === undefined
+				? left
+				: Math.max(left, right);
+	}
+
 	lineInterval(
 		request: Readonly<FloatLineRequest>,
 	): Readonly<FloatLineInterval> {

@@ -258,12 +258,29 @@ it.each([
 	},
 );
 
-it("keeps nonfloating clearance explicit rather than erasing float diagnostics", () => {
+it("coordinates nonfloating clearance before resolving following static positions", () => {
 	const test = fixture(
 		'<main><i id="float"></i><div id="clear"></div><span id="target">X</span></main>',
 		"#clear{clear:both;height:10px}#target{position:absolute}",
 	);
-	expect(() => layoutDocument(test.tree)).toThrow(/Non-floating clearance/);
+	expect(buildFormattingTree(test.tree).issues).toMatchObject({
+		"float-layout-not-supported": 1,
+		"clear-layout-not-supported": 1,
+	});
+	expect(
+		documentGeometry(test.tree).getBoundingClientRect(test.id("#clear")),
+	).toMatchObject({
+		x: 12,
+		y: 25,
+		width: 60,
+		height: 10,
+	});
+	expect(
+		documentGeometry(test.tree).getBoundingClientRect(test.id("#target")),
+	).toMatchObject({
+		x: 12,
+		y: 35,
+	});
 });
 
 it("rejects hypothetical float coordination inside a positioned reflow root explicitly", () => {

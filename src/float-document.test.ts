@@ -328,8 +328,8 @@ it.each([
 		'<span style="float:inline-start;width:12px;height:8px"></span>',
 	],
 	[
-		"nonfloating clear",
-		'<span style="float:left;width:12px;height:8px"></span><div style="clear:both">A</div>',
+		"logical nonfloating clear",
+		'<span style="float:left;width:12px;height:8px"></span><div style="clear:inline-start">A</div>',
 	],
 	[
 		"negative outer width",

@@ -78,10 +78,15 @@ function acceptedFormatting(formatting: FormattingTree, charge: () => void) {
 			floats++;
 		}
 		if (node.clear) {
-			if (!node.floatSide || !["left", "right", "both"].includes(node.clear))
+			if (!["left", "right", "both"].includes(node.clear))
 				throw new AgentBrowserError(
 					"unsupported",
-					"Non-floating clearance requires margin coordination",
+					"Logical float clearance is not coordinated",
+				);
+			if (!node.floatSide && node.kind !== "block" && node.kind !== "replaced")
+				throw new AgentBrowserError(
+					"unsupported",
+					"Clearance requires a supported block owner",
 				);
 			clears++;
 		}
@@ -432,6 +437,22 @@ export function layoutFormattingFloatFlow(
 	};
 	const coordinator: DocumentFlowCoordinator = {
 		work: () => coordinationWork,
+		clearanceBottom: (frame, owner) => {
+			account();
+			const clear = frame.node.clear;
+			if (!clear || frame.node.floatSide) return null;
+			if (clear !== "left" && clear !== "right" && clear !== "both")
+				throw new AgentBrowserError(
+					"unsupported",
+					"Logical float clearance is not coordinated",
+				);
+			const scope = owners.get(owner ?? frame.width.containingBlock);
+			if (!scope?.context) return null;
+			const bottom = use(scope, (context) => context.clearanceBottom(clear));
+			return bottom === null
+				? null
+				: layoutNumber(scope.frame.contentY + bottom, true);
+		},
 		enterBlock: (frame) => {
 			account();
 			frames.set(frame.node.id, frame);

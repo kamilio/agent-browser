@@ -141,6 +141,16 @@ interface State {
 	relativeY: number;
 	borderY: number;
 	contentY: number;
+	clearance: number | null;
+	clearanceFloor: number | null;
+	clearancePrepared: boolean;
+	initialThrough: boolean;
+}
+interface FlowBoundary {
+	cursor: number;
+	pending: MarginStrut;
+	escapingTop: boolean;
+	throughMargins: boolean;
 }
 export interface DocumentFlowFrame {
 	node: Readonly<FormattingNode>;
@@ -154,6 +164,10 @@ export interface DocumentFlowFrame {
 }
 export interface DocumentFlowCoordinator {
 	work(): number;
+	clearanceBottom?(
+		frame: Readonly<DocumentFlowFrame>,
+		owner?: number,
+	): number | null;
 	enterBlock(frame: Readonly<DocumentFlowFrame>): void;
 	layoutText(
 		context: Readonly<TextContext>,
@@ -349,6 +363,10 @@ export function layoutFormattingDocument(
 			relativeY: 0,
 			borderY: 0,
 			contentY: 0,
+			clearance: null,
+			clearanceFloor: null,
+			clearancePrepared: false,
+			initialThrough: false,
 		};
 		states.set(width.id, state);
 		(parent?.children ?? roots).push(state);
@@ -357,13 +375,20 @@ export function layoutFormattingDocument(
 		children: readonly State[],
 		topEscape: boolean,
 		bottomEscape: boolean,
-		visit?: (child: State) => void,
+		visit?: (child: State, boundary: FlowBoundary) => void,
 	) => {
 		let cursor = 0;
 		let pending = zero;
 		let leading = true;
+		let throughMargins = false;
 		for (const child of children) {
 			charge();
+			const boundary = {
+				cursor,
+				pending,
+				escapingTop: topEscape && leading,
+				throughMargins,
+			};
 			if (child.through) {
 				child.relativeY =
 					topEscape && leading
@@ -372,17 +397,27 @@ export function layoutFormattingDocument(
 								cursor + merge(pending, child.beforeBottom).value,
 								true,
 							);
-				visit?.(child);
-				pending = merge(pending, child.top);
+				visit?.(child, boundary);
+				if (child.through) {
+					pending = merge(pending, child.top);
+					throughMargins ||=
+						child.top.positive !== 0 || child.top.negative !== 0;
+				} else {
+					cursor = layoutNumber(child.relativeY + child.borderHeight, true);
+					pending = child.bottom;
+					leading = false;
+					throughMargins = false;
+				}
 			} else {
 				child.relativeY =
 					topEscape && leading
 						? 0
 						: layoutNumber(cursor + merge(pending, child.top).value, true);
-				visit?.(child);
+				visit?.(child, boundary);
 				cursor = layoutNumber(child.relativeY + child.borderHeight, true);
 				pending = child.bottom;
 				leading = false;
+				throughMargins = false;
 			}
 		}
 		return layoutNumber(
@@ -424,6 +459,7 @@ export function layoutFormattingDocument(
 			(state.preferred === null || state.preferred === 0) &&
 			!hasLines &&
 			allThrough;
+		state.initialThrough = state.through;
 		state.top = margin(state.marginTop);
 		if (state.topEscape)
 			for (const child of state.children) {
@@ -468,9 +504,17 @@ export function layoutFormattingDocument(
 		);
 	}
 	let resolvedText = text;
-	let coordinatedVisit: ((state: State, borderY: number) => void) | undefined;
+	let coordinatedVisit:
+		| ((state: State, borderY: number, boundary?: FlowBoundary) => void)
+		| undefined;
 	let coordinatedMetrics: DocumentTextLayout["metrics"] | undefined;
 	if (coordinator) {
+		const floatingContexts = new Set(
+			(text.horizontal.floatLayouts ?? []).map((owner) => {
+				charge();
+				return owner.containingBlock;
+			}),
+		);
 		const textMetrics = {
 			tokens: 0,
 			lines: 0,
@@ -508,13 +552,160 @@ export function layoutFormattingDocument(
 				borderBoxHeight: state.borderHeight,
 				naturalContentHeight: state.natural,
 			});
-		const visit = (state: State, borderY: number) => {
+		const prepareClearance = (
+			state: State,
+			borderY: number,
+			owner: number,
+		): "unchanged" | "changed" | "blocked" => {
 			charge();
+			if (state.clearancePrepared)
+				return state.clearanceFloor === null ? "unchanged" : "changed";
+			if (state.node.clear && coordinator.clearanceBottom) {
+				const hypothetical = Object.freeze({
+					...frame(state),
+					borderY,
+					contentY: layoutNumber(
+						borderY + state.borderTop + state.paddingTop,
+						true,
+					),
+				});
+				const bottom = invoke(() =>
+					coordinator.clearanceBottom!(hypothetical, owner),
+				);
+				if (bottom !== null && layoutNumber(bottom, true) > borderY) {
+					state.clearanceFloor = bottom;
+					state.clearancePrepared = true;
+					state.through = false;
+					return "changed";
+				}
+			}
+			if (state.node.independentContext || floatingContexts.has(state.node.id))
+				return "blocked";
+			let changed = false;
+			if (state.topEscape)
+				for (const child of state.children) {
+					const result = prepareClearance(
+						child,
+						borderY + state.borderTop + state.paddingTop + child.relativeY,
+						owner,
+					);
+					if (result === "blocked") return result;
+					changed ||= result === "changed";
+					if (!child.through) break;
+				}
+			state.clearancePrepared = true;
+			if (!changed) return "unchanged";
+			state.top = margin(state.marginTop);
+			if (state.topEscape)
+				for (const child of state.children) {
+					charge();
+					if (child.clearanceFloor !== null) break;
+					state.top = merge(state.top, child.top);
+					if (!child.through) break;
+				}
+			state.beforeBottom = state.top;
+			state.through =
+				state.through &&
+				state.children.every((child) => {
+					charge();
+					return child.through;
+				});
+			state.bottom = margin(state.marginBottom);
+			if (state.bottomEscape)
+				for (let index = state.children.length - 1; index >= 0; index--) {
+					charge();
+					const child = state.children[index];
+					state.bottom = merge(state.bottom, child.bottom);
+					if (!child.through) break;
+				}
+			if (state.through) {
+				state.top = merge(state.top, state.bottom);
+				state.bottom = state.top;
+			}
+			return "changed";
+		};
+		const visit = (
+			state: State,
+			borderY: number,
+			boundary?: FlowBoundary,
+			escapedMargins = false,
+		) => {
+			charge();
+			if (state.clearanceFloor !== null && boundary && !boundary.escapingTop) {
+				state.clearanceFloor = null;
+				state.clearancePrepared = false;
+				state.through = state.initialThrough;
+			}
+			if (coordinator.clearanceBottom && !state.clearancePrepared) {
+				const prepared = prepareClearance(
+					state,
+					borderY,
+					state.width.containingBlock,
+				);
+				if (prepared === "changed" && boundary) {
+					const relativeY = boundary.escapingTop
+						? 0
+						: layoutNumber(
+								boundary.cursor +
+									merge(
+										boundary.pending,
+										state.through ? state.beforeBottom : state.top,
+									).value,
+								true,
+							);
+					borderY = layoutNumber(borderY + relativeY - state.relativeY, true);
+					state.relativeY = relativeY;
+				}
+			}
 			state.borderY = layoutNumber(borderY, true);
 			state.contentY = layoutNumber(
 				state.borderY + state.borderTop + state.paddingTop,
 				true,
 			);
+			const bottom =
+				state.clearanceFloor ??
+				(coordinator.clearanceBottom
+					? invoke(() => coordinator.clearanceBottom!(frame(state)))
+					: null);
+			if (
+				bottom !== null &&
+				(state.clearanceFloor !== null ||
+					layoutNumber(bottom, true) > state.borderY)
+			) {
+				if (
+					escapedMargins ||
+					boundary?.throughMargins ||
+					state.top.positive !== Math.max(0, state.marginTop) ||
+					state.top.negative !== Math.min(0, state.marginTop) ||
+					(state.initialThrough &&
+						(state.top.positive !== 0 ||
+							state.top.negative !== 0 ||
+							state.bottom.positive !== 0 ||
+							state.bottom.negative !== 0))
+				)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Clearance through escaped or adjoining empty margins is not coordinated",
+					);
+				const uncollapsed = boundary
+					? state.borderY -
+						state.relativeY +
+						boundary.cursor +
+						boundary.pending.value +
+						state.marginTop
+					: state.borderY;
+				state.clearance = layoutNumber(bottom - uncollapsed, true);
+				state.relativeY = layoutNumber(
+					state.relativeY + bottom - state.borderY,
+					true,
+				);
+				state.borderY = bottom;
+				state.contentY = layoutNumber(
+					bottom + state.borderTop + state.paddingTop,
+					true,
+				);
+				state.through = false;
+			}
 			invoke(() => coordinator.enterBlock(frame(state)));
 			const context = contextsById.get(state.node.id);
 			if (context) {
@@ -549,10 +740,45 @@ export function layoutFormattingDocument(
 				state.natural =
 					flexSizes.get(state.node.id)?.naturalContentHeight ??
 					images.get(state.node.id)?.contentHeight ??
-					flow(state.children, state.topEscape, state.bottomEscape, (child) =>
-						visit(child, state.contentY + child.relativeY),
+					flow(
+						state.children,
+						state.topEscape,
+						state.bottomEscape,
+						(child, childBoundary) => {
+							const retainedTop = merge(
+								margin(state.marginTop),
+								childBoundary.pending,
+							);
+							visit(
+								child,
+								state.contentY + child.relativeY,
+								childBoundary,
+								childBoundary.escapingTop &&
+									((state.initialThrough && escapedMargins) ||
+										state.top.positive !== retainedTop.positive ||
+										state.top.negative !== retainedTop.negative),
+							);
+						},
 					);
 			}
+			if (
+				state.through &&
+				(state.natural > 0 ||
+					state.children.some((child) => {
+						charge();
+						return !child.through;
+					}))
+			)
+				state.through = false;
+			state.bottom = margin(state.marginBottom);
+			if (state.bottomEscape)
+				for (let index = state.children.length - 1; index >= 0; index--) {
+					charge();
+					const child = state.children[index];
+					state.bottom = merge(state.bottom, child.bottom);
+					if (!child.through) break;
+				}
+			if (state.through) state.bottom = state.top;
 			state.natural = layoutNumber(
 				invoke(() => coordinator.naturalHeight(frame(state))),
 			);
@@ -605,7 +831,7 @@ export function layoutFormattingDocument(
 			false,
 			false,
 			coordinatedVisit
-				? (root) => coordinatedVisit?.(root, root.relativeY)
+				? (root, boundary) => coordinatedVisit?.(root, root.relativeY, boundary)
 				: undefined,
 		);
 	if (coordinatedMetrics)

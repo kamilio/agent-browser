@@ -67,7 +67,7 @@ it("does not introduce clearance into an empty block's collapsing margins withou
 });
 
 it.each(["before", "target", "after"])(
-	"retains float and clear guards when an active float is at #%s",
+	"retains raw float and clear diagnostics with coordinated geometry at #%s",
 	(selector) => {
 		const test = fixture(
 			"",
@@ -76,9 +76,12 @@ it.each(["before", "target", "after"])(
 		const issues = buildFormattingTree(test.tree).issues;
 		expect(issues["float-layout-not-supported"]).toBe(1);
 		expect(issues["clear-layout-not-supported"]).toBe(3);
-		expect(() => test.rectangle("#target")).toThrow(
-			expect.objectContaining({ code: "unsupported" }),
-		);
+		expect(test.rectangle("#target")).toMatchObject({
+			x: 0,
+			y: 0,
+			width: 40,
+			height: 20,
+		});
 	},
 );
 
@@ -113,7 +116,7 @@ it("does not count overridden or unmatched float declarations", () => {
 it("invalidates clearance admission when a float is revealed and hidden again", () => {
 	const test = fixture(
 		"",
-		"#before{float:left;display:none}#target{clear:both}",
+		"#before{float:left;display:none;height:24px}#target{clear:both}",
 	);
 	const before = test.rectangle("#target");
 	test.tree.setAttribute(test.id("#before"), "style", "display:block");
@@ -121,9 +124,7 @@ it("invalidates clearance admission when a float is revealed and hidden again", 
 		"float-layout-not-supported": 1,
 		"clear-layout-not-supported": 1,
 	});
-	expect(() => test.rectangle("#target")).toThrow(
-		expect.objectContaining({ code: "unsupported" }),
-	);
+	expect(test.rectangle("#target")).toMatchObject({ y: 24, height: 20 });
 	test.tree.setAttribute(test.id("#before"), "style", "display:none");
 	expect(buildFormattingTree(test.tree).issues).toEqual({});
 	expect(test.rectangle("#target")).toEqual(before);
