@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 fresh GnuPG documentation flow: six native wireGETs, zero mocks,
+one actual page commit and one genuine discovered FAQ click. The click fails
+before any destination request at float integration with atomic/flex/grid/table
+reflow; independent applicableCSS3/14/2 and float9/clear8 guards remain, with no
+deferred subtree. Parent reproduces35 read-only checks,145/147-entry ledgers and
+eight exact pinnedGit blobs; all sampled owner classes close. No retry, source
+stripping, credentials or bypass. See `GNUPG-DOCUMENTATION-FLOW.md` and the complete
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-12-SECOND-UPDATE.md` / matching reports JSON.
+The exact union is now72 attempted hosts, not72 working sites. This flow uses
+11901/1478cd7, not the later11952 CSS release; older outcomes and the RFC Editor
+duplicate correction remain unchanged. Next: diagnose coordinated float reflow
+from the capture, independently of remaining CSS guards; zlib CSS replay pending.
+
 September12,2026 new Lua percentage-table replay: exactly one11901 native session
 replays four unchanged captures with zeroHTTP; seven collapsed-border guards
 drop to zero, but the genuine manual link still fails before any destination
