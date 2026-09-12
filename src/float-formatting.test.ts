@@ -146,17 +146,19 @@ it("retains a float-only source anchor between ordinary blocks", () => {
 });
 
 it("still splits an inline ancestor at a normal block but not at its float", () => {
-	const { formatting, matches, node } = fixture(
+	const { tree, id, formatting, matches, node } = fixture(
 		'<main><span id="inline" style="clear:both">A<span id="float" style="float:right">B</span>C<div id="block">D</div>E</span></main>',
 	);
 	const fragments = matches("#inline");
+	expect(documentStyles(tree).flow(id("#inline")).clear).toBe("both");
 	expect(fragments).toHaveLength(2);
 	expect(fragments.map((fragment) => fragment.fragmentIndex)).toEqual([0, 1]);
 	for (const fragment of fragments) {
 		expect(fragment.fragmentCount).toBe(2);
-		expect(fragment.clear).toBe("both");
+		expect(fragment.clear).toBeUndefined();
 		expect(fragment.floatSide).toBeUndefined();
 	}
+	expect(formatting.issues["clear-layout-not-supported"]).toBeUndefined();
 	expect(node("#float").parent).toBe(fragments[0].id);
 	expect(node("#block").parent).toBe(node("main").id);
 	expect(
@@ -229,13 +231,14 @@ it("does not transfer boxless float or clear values to children or anonymous wra
 	expect(matches("#hidden")).toEqual([]);
 	expect(matches("#contents")).toEqual([]);
 	expect(documentStyles(tree).flow(id("#contents")).float).toBe("right");
+	expect(documentStyles(tree).flow(id("#contents")).clear).toBe("right");
 	expect(node("#child").floatSide).toBeUndefined();
 	expect(node("#child").clear).toBeUndefined();
 	expect(
 		formatting.nodes.filter((entry) => entry.floatSide !== undefined),
 	).toEqual([node("#float")]);
 	expect(formatting.issues["float-layout-not-supported"]).toBe(2);
-	expect(formatting.issues["clear-layout-not-supported"]).toBe(1);
+	expect(formatting.issues["clear-layout-not-supported"]).toBeUndefined();
 	expect(textOrder(formatting)).toBe("ABC");
 });
 
@@ -246,13 +249,15 @@ it.each(["absolute", "fixed"])(
 			`<main>A<span id="positioned" style="position:${position};float:right;clear:both"><div>B</div></span>C<span id="float" style="float:left">D</span></main>`,
 		);
 		expect(documentStyles(tree).flow(id("#positioned")).float).toBe("none");
+		expect(documentStyles(tree).flow(id("#positioned")).clear).toBe("both");
 		expect(node("#positioned")).toMatchObject({
 			position,
-			clear: "both",
 			independentContext: true,
 			parent: node("main").id,
 		});
 		expect(node("#positioned").floatSide).toBeUndefined();
+		expect(node("#positioned").clear).toBeUndefined();
+		expect(formatting.issues["clear-layout-not-supported"]).toBeUndefined();
 		expect(node("#float").position).toBeUndefined();
 		expect(formatting.issues["float-layout-not-supported"]).toBe(1);
 		expect(formatting.issues["positioned-layout-requires-coordination"]).toBe(
@@ -276,7 +281,8 @@ it.each(["flex", "grid"])(
 			expect(node(selector).independentContext).toBe(true);
 		}
 		expect(documentStyles(tree).flow(id("#first")).float).toBe("left");
-		expect(node("#first").clear).toBe("right");
+		expect(documentStyles(tree).flow(id("#first")).clear).toBe("right");
+		expect(node("#first").clear).toBeUndefined();
 		expect(node("main").children).toEqual([
 			node("#first").id,
 			node("#second").id,
@@ -287,7 +293,7 @@ it.each(["flex", "grid"])(
 		]);
 		expect(formatting.issues["float-layout-not-supported"]).toBe(2);
 		expect(formatting.issues["display-layout-not-supported"]).toBe(1);
-		expect(formatting.issues["clear-layout-not-supported"]).toBe(1);
+		expect(formatting.issues["clear-layout-not-supported"]).toBeUndefined();
 		expect(() => resolveFormattingPageWidths(formatting)).toThrow("issue-free");
 	},
 );

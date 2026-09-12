@@ -495,12 +495,35 @@ export function buildFormattingTree(
 		if (node.kind !== "element") return [];
 		const ref = tree.reference(id);
 		const flow = styles.flow(id);
+		const display =
+			id === rootElement
+				? (rootDisplays[visibility.display] ?? visibility.display)
+				: visibility.display;
 		const floating =
 			visibility.display !== "contents" &&
 			(flow.position === "static" || flow.position === "relative") &&
 			!flexItem &&
 			!gridItem &&
 			flow.float !== "none";
+		const clearing =
+			flow.clear !== "none" &&
+			(flow.position === "static" || flow.position === "relative") &&
+			!flexItem &&
+			!gridItem &&
+			(floating ||
+				[
+					"block",
+					"block flow",
+					"flow-root",
+					"block flow-root",
+					"list-item",
+					"flex",
+					"block flex",
+					"grid",
+					"block grid",
+					"table",
+					"block table",
+				].includes(display));
 		const boxFlowFields = {
 			...(floating
 				? {
@@ -508,7 +531,7 @@ export function buildFormattingTree(
 						independentContext: true,
 					}
 				: {}),
-			...(visibility.display !== "contents" && flow.clear !== "none"
+			...(clearing
 				? { clear: flow.clear as NonNullable<FormattingNode["clear"]> }
 				: {}),
 		};
@@ -516,10 +539,6 @@ export function buildFormattingTree(
 			elementNamespace(node) === svgNamespace && node.tagName === "svg";
 		if (!isHtmlElement(node) && !embeddedSvg) {
 			const reason = "element-layout-not-supported";
-			const display =
-				id === rootElement
-					? (rootDisplays[visibility.display] ?? visibility.display)
-					: visibility.display;
 			issue(reason);
 			deferredSubtrees++;
 			return [
@@ -548,7 +567,7 @@ export function buildFormattingTree(
 			itemMode = undefined;
 		}
 		if (flow.float !== "none") issue("float-layout-not-supported");
-		if (flow.clear !== "none") clearanceRequests++;
+		if (clearing) clearanceRequests++;
 		const svgClipping =
 			embeddedSvg &&
 			["hidden", "clip"].includes(flow["overflow-x"]) &&
@@ -638,10 +657,6 @@ export function buildFormattingTree(
 			].some((name) => Object.hasOwn(node.attributes, name))
 		)
 			issue("html-table-presentation-hint-not-supported");
-		const display =
-			id === rootElement
-				? (rootDisplays[visibility.display] ?? visibility.display)
-				: visibility.display;
 		if (
 			display.startsWith("inline") &&
 			styles.table(id)["vertical-align"] !== "baseline"

@@ -6,6 +6,21 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 native clear applicability: inline, boxless, out-of-flow and
+flex/grid item declarations retain their computed clear values without becoming
+false clearance owners. Normal block/floating requests remain, and forged
+inline-level coordinator owners are explicitly rejected. The unchanged12187
+baseline reproduces the GnuPG-motivated owner guard;67 new cases now pass,
+with focused479/0 and selected native12254/0/two unchanged exclusions.
+Build,233 strict roots,234 selected suites and628 clean manifest entries pass.
+See `CLEAR-APPLICABILITY.md`. Block-in-inline client geometry and independent
+CSS/margin/float/flex/grid/table guards remain explicit. Next: one captured
+GnuPG replay of the committed release, independently pinned BusyBox live testing,
+then Netlib center layout. Historical74-host outcomes, research completeness
+and provider/device/TTY/realSafeJS/challenge gates remain unchanged and open.
+The separate pre-existing `inline flow-root` float-blockification gap identified
+by source review is recorded but not runtime reproduced or changed here.
+
 September12,2026 GnuPG12187 captured replay: six exact mocks and zero HTTP;
 one commit and one genuine FAQ click still fail, now at the supported-block-owner
 guard. Parent independently verifies22 checks,281/283-entry ledgers and13 actual

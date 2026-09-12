@@ -83,7 +83,11 @@ function acceptedFormatting(formatting: FormattingTree, charge: () => void) {
 					"unsupported",
 					"Logical float clearance is not coordinated",
 				);
-			if (!node.floatSide && node.kind !== "block" && node.kind !== "replaced")
+			if (
+				!node.floatSide &&
+				(node.level !== "block" ||
+					(node.kind !== "block" && node.kind !== "replaced"))
+			)
 				throw new AgentBrowserError(
 					"unsupported",
 					"Clearance requires a supported block owner",
