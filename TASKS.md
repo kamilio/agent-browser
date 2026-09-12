@@ -6,6 +6,21 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 12: SQLite SVG paint and sizing gaps isolated
+
+Fresh native SQLite testing fetches three original HTTP 200 responses but stops
+before commit on the banner SVG. There are zero clicks or layout calls. Separate
+offline checks of the exact captured image identify 49 unsupported inline SVG
+paint-property diagnostics and native fractional dimensions from millimetres.
+The first direct decoder stop is the CSS profile gate, not a proved size/clip
+failure. No image changes, issue suppression or website retries are performed.
+
+See `SQLITE-SVG-NATIVE-CHECK.md`. Next: implement real SVG CSS fill/opacity/rule
+cascade, fractional intrinsic/raster sizing and required stroke/clipping semantics
+with focused native regressions, then run a new bounded live check. Existing
+IANA/Python SVG progress does not imply arbitrary SVG or complete website support.
+The overall goal and broader research/device/SafeJS/access gates remain open.
+
 ### September 12: fresh Python SVG website check
 
 The native browser commits the Python documentation homepage and completes all
