@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 separate image-loaded native replay narrows the remaining Selenium
+guard without another live request. Original fresh HTML and127byte GIF feed one
+native parse and one exact-URL memory callback at17:43:03.346–17:43:03.424UTC.
+GIF87a decoding succeeds18x18/1296bytes; e170 is no longer deferred. e168 has no
+src or alt and remains empty/complete with zero natural dimensions and the sole
+element-layout-not-supported issue. The table marker is normal intermediate
+coordinated representation, not itself a proven table bug. The one used-layout
+attempt still fails: acceptance remains false. SELENIUM-TRANSFORM-IMAGE-REPLAY.md
+preserves exact scope, native owner cleanup, lowered bounds, captured hashes and
+all three earlier exploratory parse outcomes. A separate17:45:41.104–
+17:45:41.197UTC read-only kernel-denied verification checks recorded results,
+release/capture stability and the8entry post-run seal without page import,
+parsing, decoding, layout or HTTP. This is Main's own verification, not independent
+review or retrospective harness attestation. Missing-alt/unselected-image sizing
+and state policy require dedicated implementation/tests; no image/content is
+dropped or universal300x150 fallback invented to force a pass. Wider gates stay open.
+
 September12 fresh post-casing Selenium flow on committed14922 remains partial:
 simpleTest.html and its GIF return200, but the one genuine e137 link click fails
 the local width/formatting-profile guard before any destination request. Native
