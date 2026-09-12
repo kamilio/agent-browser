@@ -6,6 +6,22 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 fresh native Python initial-load evidence now has independent parent
+verification. PYTHON-FRESH-NATIVE-INITIAL.md records8native GET/HTTP200 responses,
+16924encoded/72064decoded bytes, including a genuine basic.css capture. At
+19:19:31.654UTC the live harness stops before document commit on three py.svg
+references with native error unsupported. Its generic resource-limit wrapper is
+not measured capacity exhaustion: global image failure is null, and sampled
+stylesheet resource errors are empty. No commit/click/formatting/layout occurs.
+One bounded settlement sample proves instrumented owner cleanup. Main recaptures
+16actual Git objects against32archives and runs the exact readonly verifier at
+19:26:21.640UTC; the280-entry seal remains unchanged. No resource was added to
+the historical seven-response corpus and no website acceptance is claimed.
+A separately released offline native15522 diagnosis may observe these known
+unsupported decoder states through the unchanged native fallback path; it cannot
+clear errors, bypass policy/resource failures, modify DOM/CSS, retry live requests
+or invent SVG pixels. Its outcome remains pending. Broader goal gates stay open.
+
 September12 independently verified fresh HN navigation stops before commit on
 native image-policy observations, not a server challenge:2GET/2HTTP200,
 7652encoded/42510decoded bytes,0anchors/clicks/commits. HN-MODERN-NATIVE-FLOW.md
