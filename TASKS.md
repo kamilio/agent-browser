@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 corrected parent-owned Python offline diagnosis now reaches one
+native document commit and formatting on15522 using all eight fresh responses.
+PYTHON-FRESH-NATIVE-DIAGNOSIS.md records19:37:34.473–19:37:34.612UTC,
+72064memory-decoded bytes,0wire requests/clicks,853nodes/revision860 and title
+3.14.7 Documentation. The unchanged native engine retains three unsupported
+py.svg states without an unsupported image-element diagnostic; no SVG pixels,
+style/DOM/error changes or live acceptance are claimed. Styles have579rules,
+1071declarations,5external sheets and1import. One layout attempt rejects with
+Float formatting ownership does not match its diagnostics; independent CSS,
+alignment, display, position and overflow issues remain. Main19:40:18.648UTC
+readonly verification seals11receipts and checks exact inputs and owner cleanup.
+PYTHON-FRESH-NATIVE-REPLAY.md separately preserves the first worker's header-object
+prototype assertion:1native memory response/19434bytes despite its empty later
+recording array,0commit/format/layout/network. Main14actualGit/28archive readonly
+verification passes19:40:49.826UTC over its238-entry seal. That harness failure
+is not a website defect. Next targeted code investigation is ignored-float
+diagnostic applicability and ownership; it is not yet a tested repair. The overall
+browser and wider acceptance gates remain open. No changes are pushed.
+
 September12 focused CSP source extraction now covers all ten selected policy-list,
 source-list, URL/expression, scheme/host/port/path and directive-fallback sections.
 CSP-MATCHING-SOURCE.md records one offline native15421 parse at19:23:43.731–.969UTC,
