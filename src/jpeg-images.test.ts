@@ -244,7 +244,7 @@ it("dispatches explicit supported MIME types without weakening decoder validatio
 	expect(
 		decodeImage(encodePng(createRaster(1, 1)), "image/png").mediaType,
 	).toBe("image/png");
-	expect(() => decodeImage(new Uint8Array(), "image/gif")).toThrow(/MIME/);
+	expect(() => decodeImage(new Uint8Array(), "image/webp")).toThrow(/MIME/);
 	expect(() =>
 		decodeImage(Buffer.from(jpegFixtures[0].jpeg, "base64"), "image/jpeg", {
 			maxWork: 1,

@@ -593,6 +593,12 @@ export {
 	type JpegDecodeOptions,
 } from "./jpeg-decoder.js";
 export {
+	decodeGif,
+	gifDecodeLimits,
+	type DecodedGif,
+	type GifDecodeOptions,
+} from "./gif-decoder.js";
+export {
 	decodeImage,
 	imageMediaTypes,
 	type DecodedImage,

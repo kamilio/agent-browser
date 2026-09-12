@@ -49,6 +49,15 @@ export interface ImageSnapshot {
 	readonly ignoredAncillaryChunks: readonly string[];
 	readonly mediaType?: ImageMediaType;
 	readonly ignoredMetadata: readonly string[];
+	readonly gif?: Readonly<{
+		version: "87a" | "89a";
+		frameCount: number;
+		animated: boolean;
+		loopCount: number | null;
+		durationMs: number;
+		presentation: "initial-frame";
+		animationPlayback: false;
+	}>;
 }
 interface Entry {
 	id: number;
@@ -198,7 +207,22 @@ export class DocumentImages {
 			ignoredMetadata:
 				decoded?.mediaType === "image/png"
 					? decoded.ignoredAncillaryChunks
-					: (decoded?.ignoredAppMarkers ?? Object.freeze([])),
+					: decoded?.mediaType === "image/jpeg"
+						? decoded.ignoredAppMarkers
+						: (decoded?.ignoredMetadata ?? Object.freeze([])),
+			...(decoded?.mediaType === "image/gif"
+				? {
+						gif: Object.freeze({
+							version: decoded.version,
+							frameCount: decoded.frameCount,
+							animated: decoded.animated,
+							loopCount: decoded.loopCount,
+							durationMs: decoded.durationMs,
+							presentation: "initial-frame" as const,
+							animationPlayback: false as const,
+						}),
+					}
+				: {}),
 		});
 	}
 	decoded(id: number): Readonly<DecodedImage> | undefined {
@@ -605,7 +629,7 @@ export class DocumentImages {
 			)
 				throw new AgentBrowserError(
 					"unsupported",
-					"Image response MIME is not a supported PNG or JPEG type",
+					"Image response MIME is not a supported PNG, JPEG or GIF type",
 				);
 			const finalUrl = parseNetworkUrl(response.url);
 			if (

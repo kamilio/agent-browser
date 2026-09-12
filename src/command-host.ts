@@ -808,6 +808,16 @@ export class BrowserCommandHost {
 			imageResources: {
 				partial: true,
 				formats: imageMediaTypes,
+				gif: {
+					versions: ["87a", "89a"],
+					presentation: "initial-frame",
+					fullStreamValidation: true,
+					animationPlayback: false,
+					interlacing: true,
+					transparency: true,
+					plainTextRendering: false,
+					pixelAspectRatio: false,
+				},
 				jpeg: {
 					precision: 8,
 					frames: ["baseline", "extended-sequential", "progressive"],

@@ -6,6 +6,17 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 native GIF improvement: image/gif dispatch and bounded GIF87a/89a
+initial-frame rendering now validate every image frame before loading. Three
+new suites add120 cases;573 focused checks and12470 selected native cases pass
+with the same two exclusions. Build/strict/format and clean-input audit pass;
+details and limitations are in GIF-IMAGES.md. A separate pre-existing Node
+capability test outside the selected gate still fails49/1 on the old baseline.
+Animation playback and wider compatibility remain open. The75 attempted-host
+inventory and previous failed Netlib flow are unchanged; live navigation,
+credentials/providers/passkeys/devices/TTY/realSafeJS and challenge handling
+are not established by isolated native tests. No bypass or new dependency.
+
 September12,2026 fresh Netlib12350 flow still fails its genuine FAQ click,
 after two HTTP200 GETs and one commit. The old deferred center is no longer
 the observed node;one img remains deferred with empty CSS diagnostic maps.
