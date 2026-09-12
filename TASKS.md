@@ -6,6 +6,22 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026,00:59 UTC: captured CSS2.2 float display adjustment now fixes
+the genuine public-API regression where a floated inline span computed inline
+instead of block. `FLOAT-DISPLAY.md` records the exact unchanged baseline fixture,
+63 new passing checks,590 focused passes and the audited11331-check release gate
+with2 unchanged exclusions,197 selected/196 strict/593 manifest,1084 source/1924
+compiled and1080 unchanged tracked inputs. Build, strict and formatting pass;
+the20-line owned styles delta excludes and preserves the pre-existing residual.
+Specified CSS, inheritance, mutation and absolute/fixed float:none precedence
+remain correct. Inline-table becomes table, not indiscriminately block. Modern
+float display/applicability and boxless contents limitations remain explicit.
+This is not full float DOM/text/height/paint integration; guards stay strict.
+Fresh NetBSD/man7 probes use the prior11268 release and have separate pending
+evidence audits, not live validation of this change. Keep the full browser goal,
+independent overflow/CSS/table issues and live/provider/real SafeJS/device/TTY
+acceptance gates open; no CAPTCHA or access-control bypass is implemented.
+
 September 12,2026,00:37 UTC: parent verifies the captured curl replay's runtime,
 original bodies, visibility-aware selection, cleanup and38/44-entry ledgers.
 `CURL-LINK-SELECTION-REPLAY.md` uses11025 production,2 mocks/28849 decoded bytes

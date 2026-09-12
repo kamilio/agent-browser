@@ -562,6 +562,8 @@
   "src/shrink-to-fit.test.ts",
   "src/shrink-to-fit-integration.test.ts",
   "src/float-layout.test.ts",
+  "src/float-display-computation.test.ts",
+  "src/float-display.test.ts",
   "src/stylesheet-fetch.test.ts",
   "src/subresource-integrity.test.ts",
   "src/list-ordinals.test.ts",

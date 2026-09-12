@@ -163,6 +163,20 @@ interface ExternalSheet {
 	codeUnits: number;
 }
 
+const floatAdjustedDisplays = new Set([
+	"inline-table",
+	"inline",
+	"inline-block",
+	"table-row-group",
+	"table-column",
+	"table-column-group",
+	"table-header-group",
+	"table-footer-group",
+	"table-row",
+	"table-cell",
+	"table-caption",
+]);
+
 const blockTags = new Set([
 	"html",
 	"body",
@@ -1468,6 +1482,12 @@ export class DocumentStyles {
 			if (
 				node.kind === "element" &&
 				(item || position === "absolute" || position === "fixed")
+			)
+				display = blockifyDisplay(display);
+			else if (
+				node.kind === "element" &&
+				(flowComputed.get(node.id)?.float ?? "none") !== "none" &&
+				floatAdjustedDisplays.has(display)
 			)
 				display = blockifyDisplay(display);
 			boxParentDisplay.set(
