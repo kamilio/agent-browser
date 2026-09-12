@@ -6,6 +6,17 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 BusyBox live testing adds one recorded attempted host,bringing
+the inventory to75,not75 working websites. Pinned12187 performs four HTTP200
+GETs and one genuine About-link click,which fails at the width/profile guard.
+Three deferred tables and independent presentation-hint/CSS diagnostics remain.
+Parent verifies35 checks,152/154-entry ledgers and12 actual Git blobs without
+another page run. See `BUSYBOX-DOCUMENTATION-FLOW.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-12-FIFTH-UPDATE.md`. New clear-applicability
+native validation is not this live run. GnuPG captured follow-up,Netlib center
+layout,BusyBox compatibility and all broader research/provider/device/TTY/
+realSafeJS/challenge gates remain open; historical outcomes are not rewritten.
+
 September12,2026 native clear applicability: inline, boxless, out-of-flow and
 flex/grid item declarations retain their computed clear values without becoming
 false clearance owners. Normal block/floating requests remain, and forged
