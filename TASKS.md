@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 exact mixed stylesheet/image native control now passes on committed
+15946/0076134. STYLESHEET-CSP-MIXED-CONTROL.md records one constructed native load
+at21:31:25.667–21:31:25.724UTC:document+admittedPNG callbacks,0CSS callbacks/sheets,
+complete2x4origin-clean PNG and1document commit. ZeroHTTP/layout/click acceptance;
+this does not increase the86real attempted-host inventory or release test count.
+Old15601control and image-candidate thirteenth-fixture failures remain unchanged.
+Main21:32:35.628UTC readonly verification checks exact fixture identity, native
+cleanup,1196source/2008compiled files,20release and8control receipts;13actual
+committed runtime inputs already match the audited snapshot. Metadata/inline/
+nonce/full-CSP limitations remain explicit. Next concrete browser gap is external
+SVG image decoding, not image or ordinary-link CSP presence denial. Wider CSS,
+research/performance/provider/passkey-device/SafeJS/challenge gates stay open.
+Unrelated work remains preserved; no push.
+
 September12 external stylesheet CSP closes the ordinary-link authorization gap.
 STYLESHEET-CONTENT-SECURITY-POLICY.md records bounded style-src-elem/style-src/default
 URL matching, enforcing-policy intersection, all supported native link/import
