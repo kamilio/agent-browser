@@ -10,6 +10,7 @@ import { initialPaintStyle, type PaintStyle } from "./css-paint.js";
 import type { TextStyle } from "./css-text.js";
 import type { DocumentTree } from "./document.js";
 import { supportsBackgroundColorHint } from "./html-background-color.js";
+import { supportsCellPaddingHint } from "./html-cell-padding.js";
 import {
 	elementNamespace,
 	isHtmlElement,
@@ -675,7 +676,8 @@ export function buildFormattingTree(
 			].some(
 				(name) =>
 					Object.hasOwn(node.attributes, name) &&
-					!(name === "bgcolor" && supportsBackgroundColorHint(node)),
+					!(name === "bgcolor" && supportsBackgroundColorHint(node)) &&
+					!(name === "cellpadding" && supportsCellPaddingHint(node)),
 			)
 		)
 			issue("html-table-presentation-hint-not-supported");

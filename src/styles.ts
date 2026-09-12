@@ -1,5 +1,10 @@
 import { imageDimensionHint } from "./replaced-box.js";
 import {
+	cellPaddingLength,
+	cellPaddingOwner,
+	supportsCellPaddingHint,
+} from "./html-cell-padding.js";
+import {
 	legacyColor,
 	supportsBackgroundColorHint,
 } from "./html-background-color.js";
@@ -1002,7 +1007,7 @@ export class DocumentStyles {
 		let codeUnits = 0;
 		let work = 0;
 		let order = 0;
-		const charge = (amount: number) => {
+		const charge = (amount = 1) => {
 			work += amount;
 			if (work > this.limits.maxWork)
 				throw new AgentBrowserError(
@@ -1115,7 +1120,37 @@ export class DocumentStyles {
 					properties.set(declaration.property, candidate);
 			}
 		};
+		const cellPaddingByTable = new Map<number, string>();
 		for (const node of nodes) {
+			if (supportsCellPaddingHint(node)) {
+				const raw = node.attributes.cellpadding;
+				if (raw !== undefined) charge(raw.length + 1);
+				const padding = cellPaddingLength(raw);
+				if (padding !== undefined) cellPaddingByTable.set(node.id, padding);
+			}
+			if (cellPaddingByTable.size) {
+				const owner = cellPaddingOwner(this.tree, node, charge);
+				const padding =
+					owner === undefined ? undefined : cellPaddingByTable.get(owner);
+				if (padding !== undefined) {
+					for (const side of ["top", "right", "bottom", "left"] as const) {
+						charge(1);
+						apply(
+							node.id,
+							[
+								{
+									property: `padding-${side}`,
+									value: padding,
+									important: false,
+								},
+							],
+							[0, 0, 0],
+							false,
+							-2,
+						);
+					}
+				}
+			}
 			if (supportsBackgroundColorHint(node)) {
 				const raw = node.attributes.bgcolor;
 				if (raw !== undefined) charge(raw.length + 1);

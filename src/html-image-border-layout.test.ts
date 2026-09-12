@@ -333,7 +333,7 @@ it.each([
 
 it("retains table-specific presentation guards around eligible image borders", async () => {
 	const { tree } = await fixture(
-		'<table cellpadding="2"><tr><td><img id="photo" src="/image.png" border="0"></td></tr></table>',
+		'<table cellspacing="2"><tr><td><img id="photo" src="/image.png" border="0"></td></tr></table>',
 	);
 	const formatting = buildFormattingTree(tree);
 	expect(formatting.issues["html-table-presentation-hint-not-supported"]).toBe(

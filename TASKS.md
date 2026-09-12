@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 native HTML cellpadding support adds220cases and passes13446 with
+zero failures/two unchanged exclusions. Exact HTML table/row/group ownership,
+streaming integer-prefix/-0 handling, four independent author-origin hints,
+existing UA1px defaults, CSS overrides, native geometry/paint/hits and mutation
+recovery are covered. New helper bounds parent reads and parses once per table;
+raw input and side applications use existing work limits. Review caught an
+introduced omitted-charge NaN; default debit1 plus finite-work/formatting and
+capacity regressions repair it before release. No unrelated guards/caps relaxed.
+The original old13226 canonical CSS control passes and three HTML hints fail;
+identical formatted fixture bytes pass after repair. Focused1181/0 across22suites;
+full256selected255strict650manifest clean gate passes build/strict/format/native.
+HTML-CELL-PADDING.md preserves failed runs, exact native primary table-model
+capture and corrected fixture assumptions. Existing percentage-table-width and
+float/table coordination gaps remain explicit. New-release Libpng replay/live,
+performance, research, providers/passkeys/devices/TTY/realSafeJS and challenge
+acceptance remain separate; this feature does not complete the overall goal.
+
 September 12 website inventory fourteenth update records 83 attempted hosts,
 adding only www.vim.org. Its off-origin Kuwasha image was rejected before
 native transport/DNS/wire and is not added. Working-website count remains null;

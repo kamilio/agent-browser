@@ -541,7 +541,16 @@ it.each([
 	},
 );
 
-it.each(["cellpadding", "cellspacing", "rules", "frame", "background"])(
+it("keeps background hints and author padding when cellpadding is supported", () => {
+	const test = fixture(
+		'<table id="target" bgcolor="red" cellpadding="5"><tr><td></td></tr></table>',
+	);
+	expectNoHintGuards(test.tree);
+	expect(test.styles.box(test.id("td"))["padding-left"]).toBe("0px");
+	expectPaintAndHit(test, "td", red);
+});
+
+it.each(["cellspacing", "rules", "frame", "background"])(
 	"does not remove the independent table %s presentation guard",
 	(attribute) => {
 		const test = fixture(

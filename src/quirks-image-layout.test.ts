@@ -773,7 +773,7 @@ it.each([
 
 it("retains independent table presentation guards beside an eligible badge", async () => {
 	const actual = await fixture(
-		`<table cellpadding="2"><tr><td><img id="photo" src="${blockedSource}" alt="Badge" width="80" height="15"></td></tr></table>`,
+		`<table cellspacing="2"><tr><td><img id="photo" src="${blockedSource}" alt="Badge" width="80" height="15"></td></tr></table>`,
 	);
 	expect(
 		buildFormattingTree(actual.tree).issues[
