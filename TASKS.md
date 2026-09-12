@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 native center layout: HTML center now has block/text fallback
+and inherited legacy descendant alignment. Used margins center normal blocks
+with non-auto explicit margins,including clamped auto widths; computed CSS and
+independent float/position/item ownership remain intact. The canonical12254
+baseline fails before the change;96 new cases pass,with focused564/0
+and selected native12350/0/two unchanged exclusions. Build,236 strict
+roots,237 selected suites and631 clean manifest entries pass. See
+`CENTER-ELEMENT.md`. The existing negative-center guard fixture now uses a
+still-deferred fieldset instead; no independent guard is removed. Next: one fresh
+Netlib native flow using the committed release. Historical75-host outcomes and
+research/provider/device/TTY/realSafeJS/challenge gates remain unchanged and open.
+
 September12,2026 GnuPG12254 captured replay gets beyond the old clearance-owner
 guard but still fails at document-width supported-profile validation. Six exact
 mocks include all four images; zero HTTP,one commit and one genuine FAQ click.

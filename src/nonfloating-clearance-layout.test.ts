@@ -541,7 +541,7 @@ it.each([
 	["grid", "#after{display:grid}", ""],
 	["table", "", "<table><tr><td>DD</td></tr></table>"],
 	["unrelated CSS", "#cleared{animation-name:spin}", ""],
-	["deferred center", "", "<center>DD</center>"],
+	["deferred fieldset", "", "<fieldset>DD</fieldset>"],
 ])("preserves the independent %s guard", (_name, css, extra) => {
 	const { tree, rect, hits } = fixture(css, content + extra);
 	const before = snapshotDocument(tree);

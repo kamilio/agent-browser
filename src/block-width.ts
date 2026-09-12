@@ -16,6 +16,7 @@ export type BlockWidthStyle = Pick<
 
 export interface BlockWidthOptions {
 	containingDirection?: "ltr" | "rtl";
+	legacyAlignment?: "center";
 	borderLeft?: number;
 	borderRight?: number;
 }
@@ -50,6 +51,11 @@ export function resolveBlockWidth(
 	)
 		throw new AgentBrowserError("invalid-input", "Invalid block width inputs");
 	const direction = options.containingDirection ?? "ltr";
+	if (
+		options.legacyAlignment !== undefined &&
+		options.legacyAlignment !== "center"
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid legacy alignment");
 	if (direction !== "ltr" && direction !== "rtl")
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -119,7 +125,10 @@ export function resolveBlockWidth(
 			resolvedLeft = resolvedRight = free / 2;
 		else if (left === null) resolvedLeft = free;
 		else if (right === null) resolvedRight = free;
-		else if (direction === "ltr") resolvedRight += free;
+		else if (options.legacyAlignment === "center" && free > 0) {
+			resolvedLeft += free / 2;
+			resolvedRight += free / 2;
+		} else if (direction === "ltr") resolvedRight += free;
 		else resolvedLeft += free;
 		return {
 			contentWidth: width,

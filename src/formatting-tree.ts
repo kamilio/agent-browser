@@ -94,6 +94,7 @@ export interface FormattingNode {
 	text?: string;
 	box?: BoxStyle;
 	typography?: TextStyle;
+	legacyChildAlignment?: "center";
 	paint?: PaintStyle;
 	contentMode?: "blocks" | "inline" | "flex" | "grid" | "table";
 	table?: TableStyle;
@@ -164,7 +165,6 @@ const deferredElements = new Set([
 	"dialog",
 	"svg",
 	"math",
-	"center",
 ]);
 const rootDisplays: Readonly<Record<string, string>> = Object.freeze({
 	inline: "block",
@@ -297,6 +297,9 @@ export function buildFormattingTree(
 			visible: nodes[parent].visible,
 			box: initialBoxStyle,
 			typography: nodes[parent].typography,
+			...(nodes[parent].legacyChildAlignment
+				? { legacyChildAlignment: nodes[parent].legacyChildAlignment }
+				: {}),
 			table: Object.freeze({
 				...initialTableStyle,
 				"border-collapse":
@@ -435,6 +438,9 @@ export function buildFormattingTree(
 						contentMode: "inline",
 						box: initialBoxStyle,
 						typography: nodes[parent].typography,
+						...(nodes[parent].legacyChildAlignment
+							? { legacyChildAlignment: nodes[parent].legacyChildAlignment }
+							: {}),
 					},
 					run,
 				),
@@ -525,6 +531,9 @@ export function buildFormattingTree(
 					"block table",
 				].includes(display));
 		const boxFlowFields = {
+			...(styles.legacyChildAlignment(id)
+				? { legacyChildAlignment: "center" as const }
+				: {}),
 			...(floating
 				? {
 						floatSide: flow.float as NonNullable<FormattingNode["floatSide"]>,
@@ -1673,7 +1682,21 @@ export function resolveFormattingBlockWidths(
 							}
 						: style,
 					containingWidth,
-					resolveBorders(style),
+					{
+						...resolveBorders(style),
+						...(node.level === "block" &&
+						!node.floatSide &&
+						node.position !== "absolute" &&
+						node.position !== "fixed" &&
+						!node.flexItem &&
+						!node.gridItem &&
+						formatting.nodes[containingBlock]?.legacyChildAlignment
+							? {
+									legacyAlignment:
+										formatting.nodes[containingBlock].legacyChildAlignment,
+								}
+							: {}),
+					},
 				);
 			const borderX = layoutNumber(
 				contentX + (frame.usedWidth ? 0 : used.marginLeft),

@@ -181,6 +181,7 @@ const floatAdjustedDisplays = new Set([
 const blockTags = new Set([
 	"html",
 	"body",
+	"center",
 	"div",
 	"p",
 	"h1",
@@ -313,6 +314,7 @@ export class DocumentStyles {
 	private outlineComputed = new Map<number, OutlineStyle>();
 	private textSpecified = new Map<number, TextSpecifiedStyle>();
 	private textComputed = new Map<number, TextStyle>();
+	private legacyCentered = new Set<number>();
 	private paintSpecified = new Map<number, PaintSpecifiedStyle>();
 	private paintComputed = new Map<number, PaintStyle>();
 	private customComputed = new Map<
@@ -771,6 +773,11 @@ export class DocumentStyles {
 		return this.boxComputed.get(id) ?? initialBoxStyle;
 	}
 
+	legacyChildAlignment(id: number): "center" | undefined {
+		this.get(id);
+		return this.legacyCentered.has(id) ? "center" : undefined;
+	}
+
 	text(id: number): TextStyle {
 		this.get(id);
 		if (this.textComputed.has(id))
@@ -909,6 +916,7 @@ export class DocumentStyles {
 		this.outlineComputed.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
+		this.legacyCentered.clear();
 		this.paintSpecified.clear();
 		this.paintComputed.clear();
 		this.customComputed.clear();
@@ -964,6 +972,7 @@ export class DocumentStyles {
 		this.outlineComputed.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
+		this.legacyCentered.clear();
 		this.paintSpecified.clear();
 		this.paintComputed.clear();
 		this.customComputed.clear();
@@ -1378,8 +1387,29 @@ export class DocumentStyles {
 		const flowComputed = new Map<number, FlowStyle>();
 		const pointerEventsNone = new Set<number>();
 		const listComputed = new Map<number, ListStyle>();
+		const legacyCentered = new Set<number>();
 		for (const node of nodes) {
 			charge(1);
+			const textAlign = textSpecified.get(node.id)?.["text-align"];
+			if (
+				isHtmlElement(node, "center") &&
+				(textAlign === undefined || textAlign === "revert")
+			) {
+				textSpecified.set(
+					node.id,
+					Object.freeze({
+						...textSpecified.get(node.id),
+						"text-align": "center",
+					}),
+				);
+				legacyCentered.add(node.id);
+			} else if (
+				(textAlign === undefined ||
+					["inherit", "unset", "revert"].includes(textAlign)) &&
+				node.parent !== null &&
+				legacyCentered.has(node.parent)
+			)
+				legacyCentered.add(node.id);
 			if (isHtmlElement(node, "td") || isHtmlElement(node, "th")) {
 				const specified = { ...boxSpecified.get(node.id) };
 				for (const property of [
@@ -1537,6 +1567,7 @@ export class DocumentStyles {
 		this.listComputed = listComputed;
 		this.tableSpecified = tableSpecified;
 		this.textSpecified = textSpecified;
+		this.legacyCentered = legacyCentered;
 		this.paintSpecified = paintSpecified;
 		this.outlineSpecified = outlineSpecified;
 		this.customComputed = customComputed;
