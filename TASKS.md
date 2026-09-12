@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 separate offline native CSS localization on the exact captured
+Selenium basic document identifies text-indent:80% and text-transform values
+capitalize/lowercase/uppercase as its four applicable unimplemented-property
+diagnostics. At15:28:04.980–15:28:05.031 UTC, one13769native HTML parse inspects
+seven style-bearing owners,121CSS code units and six declarations; zero HTTP,
+image hydration or layout. SELENIUM-SIMPLE-CSS-DIAGNOSTIC.md preserves the
+pre-parse import-path failure and unchanged successful capture/runtime hashes.
+Read-only kernel-denied verification15:32:53.085–15:32:53.161 UTC checks21sealed
+entries and source1160/compiled1972 inventories without reparsing. This accounts
+for the CSS counters, not every possible click/layout obstacle; neither CSS
+feature is implemented by this diagnostic. These are concrete compatibility
+follow-ups, alongside the still-pending real HTML button work. Do not drop
+unsupported guards or relabel this offline finding as a live retry/success.
+
 September12 separately declared Selenium basic-fixture testing uses committed13769.
 Two GET200responses load simpleTest.html and its GIF,1423encoded/3250decoded
 bytes total; the initial197node document commits. Eight native anchors yield
