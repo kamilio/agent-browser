@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 native stylesheet recovery: exact stylesheet-boundary CDO/CDC
+tokens are ignored without stripping HTML-style comment blocks or rewriting
+source. Incomplete qualified rules at EOF retain a specific advisory diagnostic;
+independent lexical, unsupported CSS and nested-context guards remain. The exact
+captured zlib style fixture fails before and passes after with geometry/raster/
+hits and original bytes checked. Three suites add51 cases; focused580/0 with
+one existing exclusion and sealed219-suite native11952/0 with2 unchanged
+exclusions pass, including218 strict roots and613 clean manifest entries.
+See `CSS-STYLESHEET-RECOVERY.md`. This does not resolve the full zlib HTML center/
+table/presentation profile, prove its FAQ click or close any live/device/provider/
+challenge gate. Next: separately scoped capture replay on the released runtime;
+keep the original live and replay outcomes immutable.
+
 September12,2026 fresh zlib resource-budget flow: the new predeclared32-GET
 scope makes9 actual GETs and commits the root document, then its genuine
 discovered FAQ click fails native layout before any destination request. All

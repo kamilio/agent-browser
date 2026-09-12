@@ -1390,7 +1390,10 @@ export function resolveDocumentBlockWidths(
 }
 
 export function isAdvisoryFormattingIssue(code: string): boolean {
-	return code === "css:unimplemented-or-invalid-media-query";
+	return (
+		code === "css:unimplemented-or-invalid-media-query" ||
+		code === "css:discarded-incomplete-css-rule"
+	);
 }
 
 export function resolveFormattingPageWidths(

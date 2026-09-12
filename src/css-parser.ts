@@ -162,6 +162,21 @@ export class CssScanner {
 		readonly source: string,
 		readonly issue: CssIssue,
 	) {}
+	skipStylesheetMarker(): boolean {
+		const position = skipCssTrivia(
+			this.source,
+			this.position === 0 && this.source[0] === "\ufeff" ? 1 : this.position,
+			this.source.length,
+		);
+		const width = this.source.startsWith("<!--", position)
+			? 4
+			: this.source.startsWith("-->", position)
+				? 3
+				: 0;
+		if (width === 0) return false;
+		this.position = position + width;
+		return true;
+	}
 	read(stops: string, braces = false) {
 		const start = this.position;
 		const stack: string[] = [];
@@ -576,7 +591,10 @@ export function parseCssRules(
 		depth: number,
 	) => readonly CssRule[] | undefined,
 	diagnostics?: CssRuleDiagnosticSink,
+	topLevel = true,
 ): CssRule[] {
+	if (typeof topLevel !== "boolean")
+		throw new AgentBrowserError("invalid-input", "Invalid stylesheet context");
 	if (depth > 16)
 		throw new AgentBrowserError(
 			"resource-limit",
@@ -591,10 +609,16 @@ export function parseCssRules(
 				globalIssues[code] = (globalIssues[code] ?? 0) + 1;
 			}
 		: issue;
-	const scanner = new CssScanner(source, globalIssue);
+	let scannerIssues = 0;
+	const scanner = new CssScanner(source, (code) => {
+		scannerIssues++;
+		globalIssue(code);
+	});
 	const result: CssRule[] = [];
 	while (scanner.position < source.length) {
+		if (topLevel && scanner.skipStylesheetMarker()) continue;
 		const start = scanner.position;
+		const beforeIssues = scannerIssues;
 		const prelude = scanner.read(";{}");
 		const normalized = withoutCssComments(prelude.text).trim();
 		const preludeStart = skipCssTrivia(
@@ -616,7 +640,13 @@ export function parseCssRules(
 				if (imported) result.push(...imported);
 				else globalIssue("css-import-not-loaded");
 			} else if (normalized && !/^@charset\b/i.test(normalized))
-				globalIssue("unimplemented-or-invalid-css-rule");
+				globalIssue(
+					!atName &&
+						prelude.stop === undefined &&
+						scannerIssues === beforeIssues
+						? "discarded-incomplete-css-rule"
+						: "unimplemented-or-invalid-css-rule",
+				);
 			continue;
 		}
 		const body = scanner.read("}", true);
@@ -633,6 +663,7 @@ export function parseCssRules(
 					depth + 1,
 					undefined,
 					diagnostics,
+					false,
 				),
 			);
 			continue;
@@ -647,6 +678,7 @@ export function parseCssRules(
 				depth + 1,
 				undefined,
 				active ? diagnostics : undefined,
+				false,
 			);
 			if (active) result.push(...nested);
 			continue;

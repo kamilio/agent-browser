@@ -203,6 +203,7 @@ export function parseCssImports(
 	const scanner = new CssScanner(source, issue);
 	let importsAllowed = true;
 	while (scanner.position < source.length) {
+		if (scanner.skipStylesheetMarker()) continue;
 		const start = scanner.position;
 		const prelude = scanner.read(";{}");
 		const end = scanner.position;
