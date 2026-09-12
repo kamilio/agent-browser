@@ -1,6 +1,5 @@
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { documentImages } from "./document-images.js";
-import { documentMode } from "./document-mode.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 
 export function brokenImageAlternative(
@@ -9,7 +8,6 @@ export function brokenImageAlternative(
 ): string | undefined {
 	if (
 		!isHtmlElement(node, "img") ||
-		documentMode(tree) !== "no-quirks" ||
 		!Object.hasOwn(node.attributes, "alt") ||
 		node.attributes.alt === "" ||
 		!node.attributes.src ||

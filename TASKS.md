@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 quirks-image follow-up adds mode-aware broken-image alternatives:
+dimensioned quirks images use independent replaced sizing and clipped native
+text;no/limited-quirks and auto-size quirks retain text layout. Original80x15
+badge geometry,hit ownership and real ancestor default action pass while its
+mixed-content image stays unfetched,broken,natural0 and undecoded. Direct glyph
+painting fixes fractional rescaling and avoids whole-content scratch images.
+QUIRKS-IMAGE-ALTERNATIVES.md records225new cases,759focused passes and the
+2026-09-12T10:35:50.485Z–2026-09-12T10:38:30.544Z isolated gate:13042passed/0failed/2unchanged
+exclusions,250selected suites,249strict roots,644manifest entries. Earlier
+failures and corrected focus-oracle baselines remain preserved. Native-only
+single-line fallback is not foreign-engine parity or full website acceptance;
+all broader website/research/performance/provider/passkey/device/TTY/realSafeJS
+and challenge-handling gates remain open.
+
 September12 website evidence eleventh update keeps80 attempted hosts.
 A separate Expat contract fetched only the exact already-observed Google
 Fonts stylesheet once(HTTP200);six GET200 carried43608encoded/255948decoded

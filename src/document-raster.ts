@@ -7,6 +7,7 @@ import { rasterizeDisclosureMarker } from "./disclosure-marker.js";
 import { rasterizeSvgScene } from "./svg-projection.js";
 import { LayoutGeometry } from "./document-geometry.js";
 import { documentImages } from "./document-images.js";
+import { paintImageAlternative } from "./image-alternative.js";
 import {
 	type DocumentBox,
 	type DocumentLayout,
@@ -510,10 +511,16 @@ function paintDocumentLayout(
 		)
 			return;
 		const source =
-			node.control || node.marker || node.svg
+			node.control || node.marker || node.svg || node.imageAlternative
 				? undefined
 				: documentImages(tree).decoded(tree.resolve(used.ref).id);
-		if (!source && !node.control && !node.marker && !node.svg)
+		if (
+			!source &&
+			!node.control &&
+			!node.marker &&
+			!node.svg &&
+			!node.imageAlternative
+		)
 			throw new AgentBrowserError(
 				"unsupported",
 				"Image resource is no longer available for painting",
@@ -562,42 +569,58 @@ function paintDocumentLayout(
 				);
 			return;
 		}
-		charge(Math.ceil(right - left + 1) * Math.ceil(bottom - top + 1) * 4);
-		paintRasterImage(
-			image,
-			node.marker
-				? rasterizeDisclosureMarker(
-						node.marker,
-						used.contentWidth,
-						used.contentHeight,
-						(node.paint ?? initialPaintStyle).color,
-						charge,
-						matchFontWeight(Number(node.typography?.["font-weight"] ?? "400")),
-					)
-				: node.control
-					? rasterizeControl(
-							node.control,
+		if (node.imageAlternative)
+			paintImageAlternative(
+				image,
+				node.imageAlternative,
+				originX,
+				originY,
+				used.contentWidth,
+				used.contentHeight,
+				(node.paint ?? initialPaintStyle).color,
+				charge,
+				matchFontWeight(Number(node.typography?.["font-weight"] ?? "400")),
+			);
+		else {
+			charge(Math.ceil(right - left + 1) * Math.ceil(bottom - top + 1) * 4);
+			paintRasterImage(
+				image,
+				node.marker
+					? rasterizeDisclosureMarker(
+							node.marker,
 							used.contentWidth,
 							used.contentHeight,
-							node.paint ?? initialPaintStyle,
+							(node.paint ?? initialPaintStyle).color,
 							charge,
 							matchFontWeight(
 								Number(node.typography?.["font-weight"] ?? "400"),
 							),
 						)
-					: node.svg
-						? rasterizeSvgScene(
-								node.svg,
+					: node.control
+						? rasterizeControl(
+								node.control,
 								used.contentWidth,
 								used.contentHeight,
+								node.paint ?? initialPaintStyle,
 								charge,
+								matchFontWeight(
+									Number(node.typography?.["font-weight"] ?? "400"),
+								),
 							)
-						: (source as NonNullable<typeof source>).image,
-			originX,
-			originY,
-			used.contentWidth,
-			used.contentHeight,
-		);
+						: node.svg
+							? rasterizeSvgScene(
+									node.svg,
+									used.contentWidth,
+									used.contentHeight,
+									charge,
+								)
+							: (source as NonNullable<typeof source>).image,
+				originX,
+				originY,
+				used.contentWidth,
+				used.contentHeight,
+			);
+		}
 		if (node.visible)
 			drawOutline(
 				node.ref,

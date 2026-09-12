@@ -19,6 +19,11 @@ import { svgIntrinsicSize } from "./svg-projection.js";
 import type { SvgScene } from "./svg-scene-types.js";
 import { documentImages } from "./document-images.js";
 import { brokenImageAlternative } from "./image-fallback.js";
+import { documentMode } from "./document-mode.js";
+import {
+	describeImageAlternative,
+	type ImageAlternative,
+} from "./image-alternative.js";
 import { supportsImageBorderHint } from "./html-image-border.js";
 import {
 	type ReplacedSize,
@@ -113,6 +118,7 @@ export interface FormattingNode {
 	deferredReason?: string;
 	intrinsic?: Readonly<{ width: number; height: number }>;
 	intrinsicRatio?: boolean;
+	imageAlternative?: Readonly<ImageAlternative>;
 	svg?: SvgScene;
 	control?: SoftwareControl;
 	marker?: DisclosureMarker;
@@ -735,7 +741,7 @@ export function buildFormattingTree(
 			}
 		}
 		if (display === "contents" && unusualContents.has(node.tagName)) return [];
-		const imageText =
+		const brokenAlternative =
 			node.tagName === "img" &&
 			[
 				"inline",
@@ -749,6 +755,14 @@ export function buildFormattingTree(
 			].includes(display)
 				? brokenImageAlternative(tree, node)
 				: undefined;
+		const alternativeBox =
+			brokenAlternative !== undefined && documentMode(tree) === "quirks"
+				? styles.box(id)
+				: undefined;
+		const replacedAlternative =
+			alternativeBox !== undefined &&
+			(alternativeBox.width !== "auto" || alternativeBox.height !== "auto");
+		const imageText = replacedAlternative ? undefined : brokenAlternative;
 		const children = (asItems?: "flex" | "grid") => {
 			const result: number[] = [];
 			if (imageText !== undefined) {
@@ -1079,6 +1093,39 @@ export function buildFormattingTree(
 						...itemFields,
 					}),
 				];
+			if (replacedAlternative && brokenAlternative !== undefined) {
+				textCodeUnits += brokenAlternative.length;
+				if (textCodeUnits > limits.maxTextCodeUnits)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"Formatting text limit exceeded",
+					);
+				const typography = styles.text(id);
+				const alternative = describeImageAlternative(
+					brokenAlternative,
+					Number.parseFloat(typography["font-size"]),
+					charge,
+				);
+				return [
+					create({
+						kind: "replaced",
+						level: block ? "block" : "inline",
+						ref,
+						display,
+						visible: visibility.visible,
+						box: styles.box(id),
+						paint: styles.paint(id),
+						typography,
+						intrinsic: Object.freeze({
+							width: alternative.width,
+							height: alternative.height,
+						}),
+						intrinsicRatio: false,
+						imageAlternative: alternative,
+						...itemFields,
+					}),
+				];
+			}
 		}
 		if (
 			(deferredElements.has(node.tagName) && imageText === undefined) ||

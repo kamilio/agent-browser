@@ -711,22 +711,22 @@ it.each([
 it.each([
 	"",
 	'<!doctype html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
-])(
-	"keeps the non-no-quirks alternative boundary for doctype %s",
-	async (doctype) => {
-		const { tree } = await fixture(
-			'<img id="photo" src="/py.svg" alt="Text" width="20" height="30">',
-			"",
-			true,
-			doctype,
-		);
-		expect(documentMode(tree)).not.toBe("no-quirks");
-		expect(
-			buildFormattingTree(tree).issues["element-layout-not-supported"],
-		).toBe(1);
-		expect(() => rasterizeDocument(tree)).toThrow(/supported formatting/);
-	},
-);
+])("uses mode-specific alternative sizing for doctype %s", async (doctype) => {
+	const { tree, rect } = await fixture(
+		'<img id="photo" src="/py.svg" alt="Text" width="20" height="30">',
+		"",
+		true,
+		doctype,
+	);
+	expect(documentMode(tree)).not.toBe("no-quirks");
+	const replaced = documentMode(tree) === "quirks";
+	expect(buildFormattingTree(tree).issues).toEqual({});
+	expect(rect()).toMatchObject({
+		width: replaced ? 20 : 24,
+		height: replaced ? 30 : 8,
+	});
+	expect(rasterizeDocument(tree).metrics.paintedImages).toBe(replaced ? 1 : 0);
+});
 
 it("places a floated image text alternative without losing its glyph ownership", async () => {
 	const { tree, id, rect } = await fixture(

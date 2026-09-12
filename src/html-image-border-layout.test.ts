@@ -274,20 +274,27 @@ it.each([
 	"",
 	'<!doctype html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
 ])(
-	"retains the broken-image boundary outside standards mode: %s",
+	"keeps border-zero alternatives compatible with their document mode: %s",
 	async (doctype) => {
-		const { tree, requests } = await fixture(
+		const { tree, requests, rect } = await fixture(
 			'<img id="photo" src="http://blocked.invalid/image.png" border="0" alt="Logo" width="20" height="10">',
 			"",
 			doctype,
 		);
 		expect(documentMode(tree)).not.toBe("no-quirks");
 		const formatting = buildFormattingTree(tree);
-		expect(formatting.issues["element-layout-not-supported"]).toBe(1);
+		expect(formatting.issues["element-layout-not-supported"]).toBeUndefined();
 		expect(
 			formatting.issues["html-presentation-hint-not-supported"],
 		).toBeUndefined();
-		expect(() => rasterizeDocument(tree)).toThrow(/supported formatting/);
+		const replaced = documentMode(tree) === "quirks";
+		expect(rect()).toMatchObject({
+			width: replaced ? 20 : 24,
+			height: replaced ? 10 : 8,
+		});
+		expect(rasterizeDocument(tree).metrics.paintedImages).toBe(
+			replaced ? 1 : 0,
+		);
 		expect(requests).toEqual([]);
 	},
 );
