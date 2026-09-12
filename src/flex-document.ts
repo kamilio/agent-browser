@@ -22,6 +22,7 @@ import { layoutFormattingTableContainer } from "./table-layout.js";
 import { layoutNumber } from "./layout-values.js";
 import { mergeAtomicInlineLayouts } from "./inline-atomic-placement.js";
 import { isAtomicInline } from "./inline-atomic.js";
+import { layoutFormattingFloatDocument } from "./float-document.js";
 import {
 	layoutFormattingText,
 	textLayoutLimits,
@@ -61,6 +62,8 @@ export function layoutFormattingPageDocument(
 	maxWork: number,
 	options: TextLayoutOptions = {},
 ): Readonly<DocumentLayout> {
+	if (formatting.issues["float-layout-not-supported"] > 0)
+		return layoutFormattingFloatDocument(formatting, maxWork, options);
 	const shells: Readonly<FormattingBlockWidth>[] = [];
 	const needsCoordinatedLayout = formatting.nodes.some(
 		(node) =>

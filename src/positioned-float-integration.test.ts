@@ -103,7 +103,7 @@ it("retains a positioned descendant's actual containing block and stacking", () 
 });
 
 it.each(["static", "relative"])(
-	"restores the real float blocker when position becomes %s",
+	"switches to real float geometry when position becomes %s",
 	(position) => {
 		const test = fixture(
 			"<div id=target></div>",
@@ -115,11 +115,16 @@ it.each(["static", "relative"])(
 		expect(
 			buildFormattingTree(test.tree).issues["float-layout-not-supported"],
 		).toBe(1);
-		expect(() => layoutDocument(test.tree)).toThrow("issue-free");
+		expect(test.rect("#target")).toMatchObject({
+			x: 72,
+			y: 0,
+			width: 24,
+			height: 16,
+		});
 	},
 );
 
-it("does not hide an independent real float elsewhere in the page", () => {
+it("positions an absolute sibling without hiding an independent real float", () => {
 	const test = fixture(
 		"<div id=target></div><div id=other></div>",
 		"#target{position:absolute;float:right;width:24px;height:16px}#other{float:left;width:8px;height:8px}",
@@ -128,7 +133,18 @@ it("does not hide an independent real float elsewhere in the page", () => {
 	expect(
 		buildFormattingTree(test.tree).issues["float-layout-not-supported"],
 	).toBe(1);
-	expect(() => layoutDocument(test.tree)).toThrow("issue-free");
+	expect(test.rect("#target")).toMatchObject({
+		x: 0,
+		y: 0,
+		width: 24,
+		height: 16,
+	});
+	expect(test.rect("#other")).toMatchObject({
+		x: 0,
+		y: 0,
+		width: 8,
+		height: 8,
+	});
 });
 
 it("retains overflow blockers on an otherwise correctly positioned box", () => {

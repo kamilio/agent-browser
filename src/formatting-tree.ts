@@ -47,6 +47,7 @@ import {
 	type AtomicInlineResolutionContext,
 } from "./inline-atomic-layout.js";
 import { isAtomicInline } from "./inline-atomic.js";
+import type { FloatBoxLayout } from "./float-document.js";
 
 export interface FormattingLimits {
 	maxOwnedNodes: number;
@@ -80,6 +81,8 @@ export interface FormattingNode {
 	ref?: string;
 	display?: string;
 	position?: "relative" | "absolute" | "fixed";
+	floatSide?: "left" | "right" | "inline-start" | "inline-end";
+	clear?: "left" | "right" | "both" | "inline-start" | "inline-end";
 	staticDisplay?: string;
 	staticFlex?: FlexStyle;
 	zIndex?: number;
@@ -396,13 +399,17 @@ export function buildFormattingTree(
 		}
 		return normalized;
 	};
+	const inNormalFlow = (id: number) =>
+		nodes[id].position !== "absolute" &&
+		nodes[id].position !== "fixed" &&
+		nodes[id].floatSide === undefined;
 	const normalizeChildren = (parent: number, children: number[]) => {
 		if (children.some(tableInternal))
 			children = repairTableChildren(parent, children, "block");
 		charge(children.length);
-		const inFlow = (id: number) =>
-			nodes[id].position !== "absolute" && nodes[id].position !== "fixed";
-		if (!children.some((id) => inFlow(id) && nodes[id].level === "block")) {
+		if (
+			!children.some((id) => inNormalFlow(id) && nodes[id].level === "block")
+		) {
 			nodes[parent].children = children;
 			nodes[parent].contentMode = "inline";
 			for (const child of children) nodes[child].parent = parent;
@@ -429,7 +436,7 @@ export function buildFormattingTree(
 		};
 		for (const child of children) {
 			charge();
-			if (inFlow(child) && nodes[child].level === "block") {
+			if (inNormalFlow(child) && nodes[child].level === "block") {
 				flush();
 				normalized.push(child);
 			} else run.push(child);
@@ -480,6 +487,24 @@ export function buildFormattingTree(
 		}
 		if (node.kind !== "element") return [];
 		const ref = tree.reference(id);
+		const flow = styles.flow(id);
+		const floating =
+			visibility.display !== "contents" &&
+			(flow.position === "static" || flow.position === "relative") &&
+			!flexItem &&
+			!gridItem &&
+			flow.float !== "none";
+		const boxFlowFields = {
+			...(floating
+				? {
+						floatSide: flow.float as NonNullable<FormattingNode["floatSide"]>,
+						independentContext: true,
+					}
+				: {}),
+			...(visibility.display !== "contents" && flow.clear !== "none"
+				? { clear: flow.clear as NonNullable<FormattingNode["clear"]> }
+				: {}),
+		};
 		const embeddedSvg =
 			elementNamespace(node) === svgNamespace && node.tagName === "svg";
 		if (!isHtmlElement(node) && !embeddedSvg) {
@@ -501,10 +526,10 @@ export function buildFormattingTree(
 					display,
 					visible: visibility.visible,
 					deferredReason: reason,
+					...boxFlowFields,
 				}),
 			];
 		}
-		const flow = styles.flow(id);
 		if (flow.position === "sticky") issue("position-layout-not-supported");
 		const outOfFlow =
 			visibility.display !== "contents" &&
@@ -529,6 +554,7 @@ export function buildFormattingTree(
 		if (embeddedSvg && !svgClipping)
 			issue("svg-viewport-overflow-not-supported");
 		const positionFields = {
+			...boxFlowFields,
 			...(flow.position === "relative" || outOfFlow
 				? { position: flow.position as "relative" | "absolute" | "fixed" }
 				: {}),
@@ -670,6 +696,7 @@ export function buildFormattingTree(
 						display,
 						visible: visibility.visible,
 						deferredReason: reason,
+						...itemFields,
 					}),
 				];
 			}
@@ -1081,7 +1108,7 @@ export function buildFormattingTree(
 				}),
 			];
 		}
-		if (block || atomicBlock) {
+		if (block || atomicBlock || floating) {
 			const result = create({
 				kind: "block",
 				level: atomicBlock ? "inline" : "block",
@@ -1172,11 +1199,7 @@ export function buildFormattingTree(
 		for (const child of children()) {
 			charge();
 			if (tableInternal(child)) issue("inline-anonymous-table-not-supported");
-			if (
-				nodes[child].level === "block" &&
-				nodes[child].position !== "absolute" &&
-				nodes[child].position !== "fixed"
-			) {
+			if (nodes[child].level === "block" && inNormalFlow(child)) {
 				flush();
 				result.push(child);
 			} else run.push(child);
@@ -1318,6 +1341,7 @@ export interface DocumentBlockWidths {
 	images: readonly Readonly<FormattingImageSize>[];
 	atomics?: readonly Readonly<AtomicInlineMetrics>[];
 	atomicLayouts?: readonly Readonly<AtomicInlineLayout>[];
+	floatLayouts?: readonly Readonly<FloatBoxLayout>[];
 	metrics: Readonly<{ work: number }>;
 }
 
@@ -1426,12 +1450,29 @@ export function resolveFormattingBlockWidths(
 	const widths: Readonly<FormattingBlockWidth>[] = [];
 	const images: Readonly<FormattingImageSize>[] = [];
 	const atomicLayouts: Readonly<AtomicInlineLayout>[] = [];
+	const floatLayouts: Readonly<FloatBoxLayout>[] = [];
 	const pending: Readonly<BlockReflowRoot>[] = [...roots].reverse();
 	while (pending.length) {
 		charge();
 		const frame = pending.pop();
 		if (!frame) break;
 		const node = formatting.nodes[frame.id];
+		if (node?.floatSide && node.id !== context.floatRoot) {
+			if (!context.layoutFloat)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Float content requires coordinated page layout",
+				);
+			if (work >= maxWork)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Float width work limit exceeded",
+				);
+			const layout = context.layoutFloat(frame, maxWork - work, context);
+			charge(layout.metrics.work);
+			floatLayouts.push(layout);
+			continue;
+		}
 		if (isAtomicInline(node) && node.id !== context.atomicRoot) {
 			if (!onFlex)
 				throw new AgentBrowserError(
@@ -1652,6 +1693,9 @@ export function resolveFormattingBlockWidths(
 					atomicLayouts: Object.freeze(atomicLayouts),
 					atomics: Object.freeze(atomicLayouts.map((layout) => layout.atomic)),
 				}
+			: {}),
+		...(floatLayouts.length
+			? { floatLayouts: Object.freeze(floatLayouts) }
 			: {}),
 		metrics: Object.freeze({ work }),
 	});

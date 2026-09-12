@@ -944,7 +944,29 @@ it("charges the final outside-marker raster and recovers after work exhaustion",
 	).toEqual(raster.image.pixels);
 });
 
-it.each(["direction:rtl", "float:left", "list-style-type:lower-alpha"])(
+it("retains outside marker geometry and hit ownership on a floating list item", () => {
+	const { tree, id } = outsideFixture("<div>Block</div>", "li{float:left}");
+	expect(buildFormattingTree(tree).issues["float-layout-not-supported"]).toBe(
+		1,
+	);
+	expect(
+		documentGeometry(tree).getBoundingClientRect(id("#item")),
+	).toMatchObject({
+		x: 40,
+		y: 0,
+		width: 120,
+		height: 20,
+	});
+	const { marker } = outsideState(tree);
+	expect(marker.x).toBeLessThan(40);
+	expect(marker.y).toBe(2);
+	expect(
+		documentHitTesting(tree).elementFromPoint(marker.x + 3, marker.y + 5),
+	).toBe(id("#item"));
+	expect(rasterizeDocument(tree).metrics.paintedMarkers).toBe(1);
+});
+
+it.each(["direction:rtl", "list-style-type:lower-alpha"])(
 	"retains the existing unsupported boundary for %s",
 	(declaration) => {
 		const { tree } = outsideFixture("<div>Block</div>", `li{${declaration}}`);

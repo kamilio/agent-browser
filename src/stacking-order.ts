@@ -7,8 +7,9 @@ interface PaintScope {
 	level: number;
 	order: number;
 	context: boolean;
+	flowParent?: PaintScope;
 	backgrounds: LayoutContentItem[];
-	content: LayoutContentItem[];
+	content: (LayoutContentItem | { kind: "float-scope"; scope: PaintScope })[];
 	children: PaintScope[];
 }
 
@@ -33,6 +34,7 @@ export function* stackingContentItems(
 	});
 	const root = scope(formatting.root, 0, 0, true);
 	const scopes = new Map<number, PaintScope>([[root.id, root]]);
+	const retainedFloats = new Set<number>();
 	charge(formatting.nodes.length);
 	const owners = new Int32Array(formatting.nodes.length);
 	const pending = [{ id: formatting.root, group: root, context: root }];
@@ -60,6 +62,10 @@ export function* stackingContentItems(
 			context.children.push(group);
 			scopes.set(group.id, group);
 			if (actualContext) context = group;
+		} else if (node.id !== root.id && node.floatSide !== undefined) {
+			group = scope(node.id, 0, order, false);
+			group.flowParent = state.group;
+			scopes.set(group.id, group);
 		}
 		owners[node.id] = group.id;
 		order++;
@@ -68,6 +74,13 @@ export function* stackingContentItems(
 			charge();
 			pending.push({ id: children[index], group, context });
 		}
+	}
+	function retainFloat(owner: PaintScope) {
+		if (!owner.flowParent || retainedFloats.has(owner.id)) return;
+		charge();
+		retainFloat(owner.flowParent);
+		owner.flowParent.content.push({ kind: "float-scope", scope: owner });
+		retainedFloats.add(owner.id);
 	}
 	for (const item of items) {
 		charge();
@@ -85,6 +98,7 @@ export function* stackingContentItems(
 				"invalid-input",
 				"Missing stacking paint owner",
 			);
+		retainFloat(owner);
 		if (owner.context && item.kind === "box" && item.box.id === owner.id)
 			owner.backgrounds.push(item);
 		else owner.content.push(item);
@@ -106,7 +120,8 @@ export function* stackingContentItems(
 		}
 		for (const item of owner.content) {
 			charge();
-			yield item;
+			if (item.kind === "float-scope") yield* paint(item.scope);
+			else yield item;
 		}
 		while (index < children.length) {
 			charge();

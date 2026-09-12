@@ -34,7 +34,9 @@ export const flowStyleCapabilities = Object.freeze({
 	staticPositionFallback: "hypothetical-flow-and-sole-flex-item",
 	inlinePositionedContainingBlocks: false,
 	stickyPositioning: false,
-	floats: false,
+	floats: true,
+	floatLayout: "physical-left-right-block-inline-replaced-flow-root",
+	floatClearance: "floating-boxes-only",
 	clearance: false,
 	overflowClipping: false,
 });

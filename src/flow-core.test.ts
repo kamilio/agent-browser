@@ -117,7 +117,6 @@ it.each(
 
 it.each([
 	["position", "sticky", "static", "position-layout-not-supported"],
-	["float", "left", "none", "float-layout-not-supported"],
 	["overflow", "hidden", "visible", "overflow-layout-not-supported"],
 ])(
 	"recovers geometry and capture after resetting %s",
@@ -141,6 +140,25 @@ it.each([
 		);
 	},
 );
+
+it("updates coordinated float geometry and restores ordinary block flow", () => {
+	const { tree, style, computed, id } = fixture();
+	const geometry = documentGeometry(tree);
+	const before = geometry.getBoundingClientRect(id());
+	expect(geometry.getBoundingClientRect(id("#other")).y).toBe(10);
+	style.cssFloat = "left";
+	expect(computed.getPropertyValue("float")).toBe("left");
+	expect(buildFormattingTree(tree).issues["float-layout-not-supported"]).toBe(
+		1,
+	);
+	expect(geometry.getBoundingClientRect(id())).toEqual(before);
+	expect(geometry.getBoundingClientRect(id("#parent")).height).toBe(0);
+	expect(geometry.getBoundingClientRect(id("#other")).y).toBe(0);
+	expect(rasterizeDocument(tree).metrics.paintedBackgrounds).toBeGreaterThan(0);
+	style.cssFloat = "none";
+	expect(geometry.getBoundingClientRect(id())).toEqual(before);
+	expect(geometry.getBoundingClientRect(id("#other")).y).toBe(10);
+});
 
 it("preserves clear geometry and capture without an active float", () => {
 	const { tree, style, computed, id } = fixture();

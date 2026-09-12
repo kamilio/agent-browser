@@ -728,11 +728,32 @@ it.each([
 	},
 );
 
-it.each([
-	"float:left",
-	"filter:blur(1px)",
-	"display:block;align-content:center",
-])(
+it("places a floated image text alternative without losing its glyph ownership", async () => {
+	const { tree, id, rect } = await fixture(
+		'<img id="photo" src="/py.svg" alt="Text">AA',
+		"img{float:left}",
+	);
+	expect(buildFormattingTree(tree).issues["float-layout-not-supported"]).toBe(
+		1,
+	);
+	expect(rect()).toMatchObject({ x: 0, y: 0, width: 24, height: 10 });
+	const glyphs = layoutDocument(tree).contexts.flatMap(
+		(context) => context.glyphs,
+	);
+	expect(
+		glyphs
+			.filter((glyph) => glyph.ref === tree.reference(id()))
+			.map((glyph) => glyph.character)
+			.join(""),
+	).toBe("Text");
+	expect(
+		glyphs.filter((glyph) => glyph.character === "A").map((glyph) => glyph.x),
+	).toEqual([24, 30]);
+	expect(documentHitTesting(tree).elementFromPoint(1, 1)).toBe(id());
+	expect(rasterizeDocument(tree).metrics.paintedGlyphs).toBe(6);
+});
+
+it.each(["filter:blur(1px)", "display:block;align-content:center"])(
 	"does not bypass unsupported CSS for a text alternative: %s",
 	async (declaration) => {
 		const { tree } = await fixture(

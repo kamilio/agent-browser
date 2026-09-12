@@ -162,6 +162,32 @@ export function textLayoutWorkLimit(options: TextLayoutOptions = {}) {
 	return checkedLimits(options).maxWork;
 }
 
+export interface TextFloatAnchor {
+	readonly top: number;
+	readonly height: number;
+	readonly occupiedWidth: number;
+	readonly hasContent: boolean;
+}
+
+export interface TextFloatInterval {
+	readonly left: number;
+	readonly right: number;
+	readonly nextBottom: number | null;
+}
+
+export interface TextFloatLayout {
+	place(
+		contextId: number,
+		floatId: number,
+		anchor: Readonly<TextFloatAnchor>,
+	): void;
+	interval(
+		contextId: number,
+		top: number,
+		bottom: number,
+	): Readonly<TextFloatInterval>;
+}
+
 export interface TextFormattingInput {
 	formatting: FormattingTree;
 	widths: readonly Readonly<{
@@ -172,6 +198,7 @@ export interface TextFormattingInput {
 	}>[];
 	images: readonly Readonly<FormattingImageSize>[];
 	atomics?: readonly Readonly<AtomicInlineMetrics>[];
+	floatLayout?: TextFloatLayout;
 }
 
 export function layoutDocumentText(
@@ -184,7 +211,7 @@ export function layoutDocumentText(
 }
 
 export function layoutFormattingText(
-	horizontal: DocumentBlockWidths,
+	horizontal: DocumentBlockWidths & Pick<TextFormattingInput, "floatLayout">,
 	options: TextLayoutOptions = {},
 ): Readonly<DocumentTextLayout> {
 	const limits = checkedLimits(options);
@@ -220,6 +247,19 @@ function layoutTextContexts(
 	limits: TextLayoutLimits,
 	constraint: "used" | "min-content" | "max-content",
 ) {
+	const floatLayout = horizontal.floatLayout;
+	if (
+		floatLayout !== undefined &&
+		(!floatLayout ||
+			typeof floatLayout !== "object" ||
+			Array.isArray(floatLayout) ||
+			typeof floatLayout.place !== "function" ||
+			typeof floatLayout.interval !== "function")
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid text float coordinator",
+		);
 	const images = new Map(horizontal.images.map((image) => [image.id, image]));
 	const contexts: Readonly<TextContext>[] = [];
 	const measurements: Readonly<{ id: number; width: number }>[] = [];
@@ -265,6 +305,7 @@ function layoutTextContexts(
 		let measuredWidth = 0;
 		let lineWidth = 0;
 		let lineContent = 0;
+		let lineTokens: Token[] = [];
 		let entries: { token: Token; offset: number; advance: number }[] = [];
 		let segments: { tokens: Token[]; closing: Token[]; gap?: Token[] }[] = [];
 		let word: Token[] = [];
@@ -275,10 +316,11 @@ function layoutTextContexts(
 		let skipLf = false;
 		let pendingBreakLine: number | undefined;
 		let pendingCrLine: number | undefined;
-		const advance = (token: Token, cursor: number) => {
+		const advance = (token: Token, cursor: number, origin = 0) => {
 			if (token.kind !== "tab" || token.advance <= 0) return token.advance;
 			const stop = token.advance * 8;
-			const distance = (Math.floor(cursor / stop) + 1) * stop - cursor;
+			const position = origin + cursor;
+			const distance = (Math.floor(position / stop) + 1) * stop - position;
 			return distance < token.advance / 2 ? distance + stop : distance;
 		};
 		const append = (token: Token) => {
@@ -312,6 +354,130 @@ function layoutTextContexts(
 				} else break;
 			}
 			return hanging;
+		};
+		const intervalFor = (
+			height: number,
+			fit: number | ((left: number) => number),
+			retry: boolean,
+		) => {
+			while (true) {
+				if (!floatLayout || constraint !== "used")
+					return {
+						left: 0,
+						right: block.contentWidth,
+						width: block.contentWidth,
+					};
+				charge();
+				const interval = floatLayout.interval(
+					block.id,
+					textHeight,
+					layoutNumber(textHeight + height),
+				);
+				if (
+					!interval ||
+					typeof interval !== "object" ||
+					Array.isArray(interval)
+				)
+					throw new AgentBrowserError(
+						"invalid-input",
+						"Invalid text float interval",
+					);
+				const left = layoutNumber(interval.left);
+				const right = layoutNumber(interval.right);
+				const nextBottom = interval.nextBottom;
+				if (
+					left > block.contentWidth ||
+					right > block.contentWidth ||
+					(nextBottom !== null && layoutNumber(nextBottom) <= textHeight)
+				)
+					throw new AgentBrowserError(
+						"invalid-input",
+						"Invalid text float interval",
+					);
+				const width = Math.max(0, right - left);
+				const occupied = typeof fit === "number" ? fit : fit(left);
+				const obstructed = left > 0 || right < block.contentWidth;
+				if (!retry || !obstructed || (occupied <= width && width > 0))
+					return { left, right, width };
+				if (nextBottom === null)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Obstructed text float interval cannot advance",
+					);
+				textHeight = nextBottom;
+			}
+		};
+		const pendingGeometry = (tokens: readonly Token[], origin = 0) => {
+			const combined: Token[] = [];
+			let content = false;
+			for (const source of [lineTokens, tokens]) {
+				for (const token of source) {
+					charge();
+					if (!token.collapsible || content) combined.push(token);
+					content ||= !token.collapsible && contributes(token);
+				}
+			}
+			let lastContent = combined.length - 1;
+			while (lastContent >= 0) {
+				charge();
+				const token = combined[lastContent];
+				if (
+					!token.collapsible &&
+					token.kind !== "strut" &&
+					token.kind !== "close" &&
+					(token.kind !== "open" || token.contributes)
+				)
+					break;
+				lastContent--;
+			}
+			let width = 0;
+			let untrimmedWidth = 0;
+			let above = strut.above;
+			let below = strut.below;
+			let hasContent = false;
+			const items: { token: Token; advance: number }[] = [];
+			for (let index = 0; index < combined.length; index++) {
+				charge();
+				const token = combined[index];
+				untrimmedWidth = layoutNumber(
+					untrimmedWidth + advance(token, untrimmedWidth, origin),
+					true,
+				);
+				if (token.collapsible && index > lastContent) continue;
+				const used = advance(token, width, origin);
+				width = layoutNumber(width + used, true);
+				above = Math.max(above, token.above);
+				below = Math.max(below, token.below);
+				hasContent ||= contributes(token);
+				items.push({ token, advance: used });
+			}
+			return {
+				height: layoutNumber(above + below),
+				width: untrimmedWidth,
+				fit: Math.max(0, width - hangingAdvance(items)),
+				hasContent,
+			};
+		};
+		const project = (tokens: readonly Token[]) => {
+			if (!floatLayout || constraint !== "used")
+				return { ...predict(tokens, lineWidth), available: block.contentWidth };
+			const candidate = pendingGeometry(tokens);
+			const interval = intervalFor(
+				candidate.height,
+				(left) => pendingGeometry(tokens, left).fit,
+				!lineContent && candidate.hasContent,
+			);
+			return {
+				...pendingGeometry(tokens, interval.left),
+				available: interval.width,
+			};
+		};
+		const retainTokens = (tokens: readonly Token[]) => {
+			if (!floatLayout || constraint !== "used") return;
+			for (const token of tokens) {
+				charge();
+				lineTokens.push(token);
+			}
 		};
 		const finish = (forced?: FontExtent, final = false) => {
 			entries = [];
@@ -358,7 +524,32 @@ function layoutTextContexts(
 				hasContent ||= contributes(entry.token);
 			}
 			const collapsed = !hasContent && !forced;
-			const hanging = hangingAdvance(entries);
+			let hanging = hangingAdvance(entries);
+			let above = Math.max(strut.above, forced?.above ?? strut.above);
+			let below = Math.max(strut.below, forced?.below ?? strut.below);
+			if (constraint === "used") {
+				for (const { token } of entries) {
+					charge();
+					above = Math.max(above, token.above);
+					below = Math.max(below, token.below);
+				}
+			}
+			const height = layoutNumber(above + below);
+			const interval = intervalFor(
+				height,
+				(left) => {
+					lineWidth = 0;
+					for (const entry of entries) {
+						charge();
+						entry.offset = lineWidth;
+						entry.advance = advance(entry.token, lineWidth, left);
+						lineWidth = layoutNumber(lineWidth + entry.advance, true);
+					}
+					hanging = hangingAdvance(entries);
+					return Math.max(0, lineWidth - hanging);
+				},
+				!collapsed,
+			);
 			const measured = Math.max(
 				0,
 				lineWidth -
@@ -366,7 +557,7 @@ function layoutTextContexts(
 						? 0
 						: constraint === "min-content" || (!forced && !final)
 							? hanging
-							: Math.min(hanging, Math.max(0, lineWidth - block.contentWidth))),
+							: Math.min(hanging, Math.max(0, lineWidth - interval.width))),
 			);
 			if (!collapsed && ++metrics.lines > limits.maxLines)
 				throw new AgentBrowserError(
@@ -379,24 +570,18 @@ function layoutTextContexts(
 				segments = [];
 				lineWidth = 0;
 				lineContent = 0;
+				lineTokens = [];
 				return;
 			}
-			let above = Math.max(strut.above, forced?.above ?? strut.above);
-			let below = Math.max(strut.below, forced?.below ?? strut.below);
-			for (const { token } of entries) {
-				charge();
-				above = Math.max(above, token.above);
-				below = Math.max(below, token.below);
-			}
-			const height = layoutNumber(above + below);
 			const baseline = layoutNumber(textHeight + above, true);
 			const alignment = style["text-align"];
 			const offset =
-				alignment === "center"
-					? (block.contentWidth - measured) / 2
+				interval.left +
+				(alignment === "center"
+					? (interval.width - measured) / 2
 					: ["right", "end"].includes(alignment)
-						? block.contentWidth - measured
-						: 0;
+						? interval.width - measured
+						: 0);
 			if (pendingBreakLine !== undefined && (!collapsed || final)) {
 				charge();
 				const previous = lines[pendingBreakLine];
@@ -590,6 +775,7 @@ function layoutTextContexts(
 				segments = [];
 				lineWidth = 0;
 				lineContent = 0;
+				lineTokens = [];
 				return;
 			}
 			lines.push(
@@ -600,7 +786,7 @@ function layoutTextContexts(
 					height,
 					baseline,
 					width: measured,
-					overflow: Math.max(0, measured - block.contentWidth),
+					overflow: Math.max(0, measured - interval.width),
 					forcedBreak: !!forced,
 					glyphStart,
 					glyphEnd: glyphs.length,
@@ -615,6 +801,7 @@ function layoutTextContexts(
 			segments = [];
 			lineWidth = 0;
 			lineContent = 0;
+			lineTokens = [];
 		};
 		const predict = (tokens: readonly Token[], start: number) => {
 			let width = start;
@@ -726,19 +913,19 @@ function layoutTextContexts(
 				});
 			}
 			const tokens = [...word, ...(gap ?? []), ...closing];
-			let predicted = predict(tokens, lineWidth);
+			let predicted = project(tokens);
 			if (
 				previous?.gap &&
 				lineContent &&
 				(constraint === "min-content" ||
-					(constraint === "used" && predicted.fit > block.contentWidth))
+					(constraint === "used" && predicted.fit > predicted.available))
 			) {
 				finish();
-				predicted = predict(tokens, 0);
+				predicted = project(tokens);
 			}
 			if (
 				(constraint === "min-content" ||
-					(constraint === "used" && predicted.fit > block.contentWidth)) &&
+					(constraint === "used" && predicted.fit > predicted.available)) &&
 				hasEmergency
 			) {
 				const starts = emergencyStarts(word);
@@ -748,19 +935,21 @@ function layoutTextContexts(
 					const piece = word.slice(starts[index], starts[index + 1]);
 					const trailing = final ? [...(gap ?? []), ...closing] : [];
 					const candidates = [...piece, ...trailing];
-					let projected = predict(candidates, lineWidth);
+					let projected = project(candidates);
 					if (
 						lineContent &&
-						(constraint === "min-content" || projected.fit > block.contentWidth)
+						(constraint === "min-content" ||
+							projected.fit > projected.available)
 					) {
 						finish();
-						projected = predict(candidates, 0);
+						projected = project(candidates);
 					}
 					segments.push({
 						tokens: piece,
 						closing: final ? closing : [],
 						gap: final ? gap : undefined,
 					});
+					retainTokens(candidates);
 					for (const token of candidates) {
 						charge();
 						if (!token.collapsible && contributes(token)) lineContent++;
@@ -774,6 +963,7 @@ function layoutTextContexts(
 				return;
 			}
 			segments.push({ tokens: word, closing, gap });
+			retainTokens(tokens);
 			for (const token of tokens) {
 				charge();
 				if (!token.collapsible && contributes(token)) lineContent++;
@@ -817,6 +1007,26 @@ function layoutTextContexts(
 		) => {
 			countToken();
 			collapsing = false;
+			if (floatLayout && constraint === "used") {
+				closing.push({
+					...font,
+					...(source ? { sourceBreak: source } : {}),
+					advance: 0,
+					formattingId: node.id,
+					ref: node.ref ?? "",
+					offset: 0,
+					codeUnits: 0,
+					character: "",
+					kind: "strut",
+					visible: false,
+					collapsible: false,
+					breakable: false,
+				});
+				flushWord();
+				gap = undefined;
+				finish(font);
+				return;
+			}
 			flushWord();
 			gap = undefined;
 			segments.push({
@@ -847,18 +1057,79 @@ function layoutTextContexts(
 			whiteSpace: TextStyle["white-space"];
 			closing?: boolean;
 		}[] = container.children
-			.map((id) => ({
-				id,
-				above: strut.above,
-				below: strut.below,
-				whiteSpace: style["white-space"],
-			}))
+			.map((id) => {
+				if (floatLayout) charge();
+				return {
+					id,
+					above: strut.above,
+					below: strut.below,
+					whiteSpace: style["white-space"],
+				};
+			})
 			.reverse();
 		while (pending.length) {
 			charge();
 			const frame = pending.pop();
 			if (!frame) break;
 			const node: FormattingNode = horizontal.formatting.nodes[frame.id];
+			if (node.floatSide !== undefined) {
+				countToken();
+				if (constraint !== "used")
+					throw new AgentBrowserError(
+						"unsupported",
+						"Intrinsic text measurement requires measured floating children",
+					);
+				if (!floatLayout)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Floating text anchors require a float coordinator",
+					);
+				const tokens: Token[] = [];
+				for (const source of [word, gap ?? [], closing]) {
+					for (const token of source) {
+						charge();
+						tokens.push(token);
+					}
+				}
+				let candidate = pendingGeometry(tokens);
+				let interval = intervalFor(
+					candidate.height,
+					(left) => pendingGeometry(tokens, left).fit,
+					!lineContent && candidate.hasContent,
+				);
+				candidate = pendingGeometry(tokens, interval.left);
+				if (
+					lineContent &&
+					segments.at(-1)?.gap &&
+					candidate.fit > interval.width
+				) {
+					finish();
+					candidate = pendingGeometry(tokens);
+					interval = intervalFor(
+						candidate.height,
+						(left) => pendingGeometry(tokens, left).fit,
+						candidate.hasContent,
+					);
+					candidate = pendingGeometry(tokens, interval.left);
+				}
+				if (hasEmergency && candidate.fit > interval.width)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Float anchor inside an emergency-wrapped word is not supported",
+					);
+				charge();
+				floatLayout.place(
+					block.id,
+					node.id,
+					Object.freeze({
+						top: textHeight,
+						height: candidate.height,
+						occupiedWidth: candidate.fit,
+						hasContent: candidate.hasContent,
+					}),
+				);
+				continue;
+			}
 			const typography = node.typography ?? style;
 			const own = extent(typography);
 			const font = {
@@ -900,13 +1171,15 @@ function layoutTextContexts(
 					whiteSpace: typography["white-space"],
 					closing: true,
 				});
-				for (let index = node.children.length - 1; index >= 0; index--)
+				for (let index = node.children.length - 1; index >= 0; index--) {
+					if (floatLayout) charge();
 					pending.push({
 						id: node.children[index],
 						above: font.above,
 						below: font.below,
 						whiteSpace: typography["white-space"],
 					});
+				}
 				continue;
 			}
 			if (isAtomicInline(node)) {

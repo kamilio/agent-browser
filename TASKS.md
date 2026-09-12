@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026,02:02 UTC: `FLOAT-DOCUMENT.md` records actual physical native
+float document integration: source-ordered margin-box placement, text intervals,
+ordinary/BFC height ownership, shrink-to-fit/replaced sizing, native paint/hits
+and ordinary-flow static anchors. The corrected exact public-API baseline fails
+the old width guard on clean d7dce49; the immutable fixture passes with the fix.
+Six new suites add161 checks. Final focused validation passes888 checks in23
+explicit suites. The sealed native-float-document-september12-round03 gate
+passes build, strict checks, formatting and11492 selected native tests, with
+zero failures and the same2 exclusions:203 suites,202 strict roots,599 manifest
+entries,1069 unchanged tracked inputs,1091 source and1928 compiled files.
+Twenty-one owned source/test files plus the clean manifest are release-verified;
+pre-existing uncommitted work is excluded. Earlier strict-fixture and obsolete
+blanket-float assertions, and the marker fixture correction, remain preserved
+with their failed runs. General clearance, logical sides, atomic/modern-layout
+interactions, positioned float reflow roots and overflow remain explicit gates.
+Separate legacy grid failures remain outside this selected gate. No new live
+website, credential/passkey-device, real SafeJS, socket/TTY or challenge success
+is inferred. Continue captured-page and varied public-site testing, remaining
+overflow/CSS work and optional-resource policy/failed-load cleanup;69 attempted
+hosts still means attempts, not69 working websites. The overall goal remains open.
+
 September12,2026,01:09 UTC: parent verifies `MAN7-MANUAL-FLOW.md` on the prior
 11268 release. Three man7.org HTTP200 GETs return22573 encoded/37435 decoded
 bytes. An original-loader c.statcounter.com image attempt is rejected before

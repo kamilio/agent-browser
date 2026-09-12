@@ -24,11 +24,18 @@ import {
 	type ShrinkToFitIntrinsicWidths,
 } from "./shrink-to-fit.js";
 import { layoutFormattingText, type TextLayoutLimits } from "./text-layout.js";
+import type { FloatBoxLayout } from "./float-document.js";
 
 export interface AtomicInlineResolutionContext {
 	nesting?: number;
 	text?: Partial<TextLayoutLimits>;
 	atomicRoot?: number;
+	floatRoot?: number;
+	layoutFloat?: (
+		frame: Readonly<BlockReflowRoot>,
+		maxWork: number,
+		context: AtomicInlineResolutionContext,
+	) => Readonly<FloatBoxLayout>;
 }
 export interface AtomicInlineLayout {
 	id: number;

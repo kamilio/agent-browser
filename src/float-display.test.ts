@@ -2,7 +2,10 @@ import { afterEach, expect, it } from "vitest";
 import { resolvedStyleValue } from "./computed-styles.js";
 import { layoutDocument } from "./document-layout.js";
 import type { DocumentTree } from "./document.js";
-import { buildFormattingTree } from "./formatting-tree.js";
+import {
+	buildFormattingTree,
+	resolveFormattingPageWidths,
+} from "./formatting-tree.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { InlineStyles } from "./inline-styles.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
@@ -291,15 +294,22 @@ it.each(["flex", "grid"] as const)(
 	},
 );
 
-it("keeps the strict float layout guard after computing the correct block display", () => {
-	const { tree, display } = fixture("", "display:inline;float:left");
-	expect(display()).toBe("block");
-	expect(buildFormattingTree(tree).issues["float-layout-not-supported"]).toBe(
-		1,
+it("retains the raw width guard while coordinating floated page geometry", () => {
+	const { tree, target, display } = fixture(
+		"#target{font-size:8px;line-height:8px}",
+		"display:inline;float:left",
 	);
-	expect(() => layoutDocument(tree)).toThrow(
+	expect(display()).toBe("block");
+	const formatting = buildFormattingTree(tree);
+	expect(formatting.issues["float-layout-not-supported"]).toBe(1);
+	expect(() => resolveFormattingPageWidths(formatting)).toThrow(
 		expect.objectContaining({ code: "unsupported" }),
 	);
+	expect(
+		layoutDocument(tree).boxes.find(
+			(box) => box.ref === tree.reference(target),
+		),
+	).toMatchObject({ contentWidth: 30, contentHeight: 8 });
 });
 
 it("keeps floating inline-table as table and preserves negative table layout guards", () => {

@@ -24,6 +24,7 @@ export function* layoutContentItems(
 		!nodes.some((node) => {
 			charge();
 			return (
+				node.floatSide !== undefined ||
 				node.zIndex !== undefined ||
 				node.position === "absolute" ||
 				node.position === "fixed"
@@ -52,9 +53,15 @@ function* flowContentItems(
 		| { kind: "image"; box: Readonly<DocumentBox> }
 		| { kind: "context"; contextIndex: number }
 	);
-	type Scope = { boxes: Readonly<DocumentBox>[]; groups: Group[] };
+	type Scope = {
+		boxes: Readonly<DocumentBox>[];
+		floats: number[];
+		groups: Group[];
+	};
 	const root = layout.text.horizontal.formatting.root;
-	const scopes = new Map<number, Scope>([[root, { boxes: [], groups: [] }]]);
+	const scopes = new Map<number, Scope>([
+		[root, { boxes: [], floats: [], groups: [] }],
+	]);
 	const owners = new Int32Array(nodes.length);
 	let order = 0;
 	const pending = [{ id: root, scope: root }];
@@ -66,15 +73,19 @@ function* flowContentItems(
 		};
 		let scope = parentScope;
 		const atomic = isAtomicInline(nodes[id]);
+		const floating = nodes[id].floatSide !== undefined;
 		if (
+			floating ||
 			nodes[id].flexItem ||
 			nodes[id].gridItem ||
 			atomic ||
 			nodes[id].display === "table-cell"
 		) {
 			scope = id;
-			scopes.set(id, { boxes: [], groups: [] });
-			if (!atomic) scopes.get(parentScope)?.groups.push({ kind: "scope", id });
+			scopes.set(id, { boxes: [], floats: [], groups: [] });
+			if (floating) scopes.get(parentScope)?.floats.push(id);
+			else if (!atomic)
+				scopes.get(parentScope)?.groups.push({ kind: "scope", id });
 		}
 		owners[id] = scope;
 		paintOrder[id] = order++;
@@ -116,6 +127,10 @@ function* flowContentItems(
 		for (const box of scope.boxes.sort(ordered)) {
 			charge();
 			yield { kind: "box", box };
+		}
+		for (const float of scope.floats) {
+			charge();
+			yield* paintScope(float);
 		}
 		for (const group of scope.groups.sort(ordered)) {
 			charge();

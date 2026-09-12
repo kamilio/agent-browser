@@ -177,7 +177,25 @@ export function flowStaticPosition(
 			break;
 		scopeId = candidate.parent ?? formatting.root;
 	}
-	const scope = boxes.get(scopeId);
+	const hasFloats = formatting.nodes.some((node) => {
+		charge();
+		return node.floatSide !== undefined;
+	});
+	if (hasFloats) {
+		let ancestor = target.parent;
+		while (ancestor !== null) {
+			charge();
+			const node = formatting.nodes[ancestor];
+			if (node.position === "absolute" || node.position === "fixed")
+				throw new AgentBrowserError(
+					"unsupported",
+					"Float-aware static positioning inside positioned reflow roots is not coordinated",
+				);
+			ancestor = node.parent;
+		}
+		scopeId = formatting.root;
+	}
+	const scope = hasFloats ? undefined : boxes.get(scopeId);
 	const nodes: FormattingNode[] = formatting.nodes.map((node) => {
 		charge();
 		return { ...node };
@@ -205,6 +223,11 @@ export function flowStaticPosition(
 			display === "inline-block",
 		box: Object.freeze(targetStyle),
 	};
+	const inFlowBlock = (nodeId: number) => {
+		charge();
+		const node = nodes[nodeId];
+		return node.level === "block" && node.floatSide === undefined;
+	};
 	const normalize = (nodeId: number): number[] => {
 		charge();
 		const node = nodes[nodeId];
@@ -221,10 +244,7 @@ export function flowStaticPosition(
 		}
 		if (node.kind === "anonymous-block" && !node.flexItem && nodeId !== scopeId)
 			return children;
-		if (
-			node.kind === "inline" &&
-			children.some((child) => nodes[child].level === "block")
-		)
+		if (node.kind === "inline" && children.some(inFlowBlock))
 			throw new AgentBrowserError(
 				"unsupported",
 				"Static positioning across block-in-inline splits is not implemented",
@@ -235,7 +255,7 @@ export function flowStaticPosition(
 				node.kind === "anonymous-block") &&
 			node.contentMode !== "flex"
 		) {
-			if (children.some((child) => nodes[child].level === "block")) {
+			if (children.some(inFlowBlock)) {
 				const normalized: number[] = [];
 				let run: number[] = [];
 				const flush = () => {
@@ -267,7 +287,7 @@ export function flowStaticPosition(
 				};
 				for (const child of children) {
 					charge();
-					if (nodes[child].level === "block") {
+					if (inFlowBlock(child)) {
 						flush();
 						normalized.push(child);
 					} else run.push(child);
