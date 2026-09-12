@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 fresh Netlib13042 regression PASSES the bounded homepage-to-FAQ
+flow:21currentDOManchors inspected,one actual FAQclick,two committeddocuments,
+checked URL/title/history,newdocument identity,oldowner released and11352text
+codeunits. FourGET200 carry34762encoded/decoded bytes;no denials,mocks,retries
+oraddedhosts. GIFinitialframes remain available in bothdocuments. Parent
+verifies10actualGit inputs and37readonly checks at11:12:58.476UTC,and separately
+comparesall4responsebody buffers with historical12470captures:identicalbytes.
+NETLIB-QUIRKS-FLOW.md records actual11:10:36.349–11:10:37.263UTC observations,
+not a rerun/rewrite of oldevidence. Cumulativeattemptedhostunion stays82;the
+thirteenth inventory remains its own immutableearlier snapshot. This successful
+publicflow doesnot establishwhole-siteparity orclose broaderacceptancegates.
+
 September12 website inventory thirteenth update records82attempted hosts,
 adding onlywww.tukaani.org;the bare allowedalias was never attempted. TwoGET200
 carry10113encoded/32394decoded bytes. Homepage commits;14currentDOManchors
