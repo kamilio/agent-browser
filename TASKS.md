@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 captured Libpng replay on committed13446 confirms49to41 non-CSS
+occurrences: eight cellpadding guards removed;33hard guards and8coordinator
+markers remain, with8deferred subtrees. All16HTMLcells across8originaltables
+compute64padding sides at5px. The genuine FAQ click still fails width resolution
+before a destination request. Exactly23captured responses and zero HTTP/wire/
+newhosts; no whole-page used geometry or live website acceptance is claimed.
+LIBPNG-CELL-PADDING-REPLAY.md preserves the12:57:20.882–12:57:26.601UTC
+observation. Parent independently verifies13actualGit objects/10snapshot inputs/
+19readonly groups/237sealed entries at13:02:16.964UTC. Original row backgrounds
+and the policy-denied SourceForge badge remain unchanged. Historical failures
+and source/live evidence stay separate; the broader goal and acceptance gates
+remain open.
+
 September 12 libjpeg-turbo documentation flow on committed13226 receives three
 GET200 responses,10690encoded/30178decoded bytes at12:26:18.000–12:26:18.978UTC.
 Homepage commits; one genuine current-DOM documentation click on e124 stops at
