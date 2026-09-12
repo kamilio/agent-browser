@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12,2026,00:37 UTC: parent verifies the captured curl replay's runtime,
+original bodies, visibility-aware selection, cleanup and38/44-entry ledgers.
+`CURL-LINK-SELECTION-REPLAY.md` uses11025 production,2 mocks/28849 decoded bytes
+and zero wire. Actual native metadata excludes the first FAQ e82 below closed
+details and selects visible e408; its one genuine click then fails the width-
+formatting guard, not the original availability gate. No destination request or
+mouse dispatch occurs, and attempted hosts stay66. Parent also finds an invalid
+embedded packaging draft pin: it hashes the saved draft plus one final LF,
+not the named saved file. `CURL-LINK-SELECTION-SEAL-NOTE.md` explains the trimming
+defect additively; original bytes/receipts stay unchanged and the contemporaneous
+untrimmed original is not independently archived. Its8/10/12-entry ledgers and46
+source pins verify, with a separate verification-text quoting erratum preserved.
+The native result is established within that scope, not blanket acceptance of
+every packaging claim. Future archives must preserve raw bytes and verify
+cross-file hash assertions after writing. `WEBSITE-TEST-EXPANSION-SEPTEMBER-12.md`
+continues the inventory without relabeling replay as live success. Continue full
+float/overflow coordination and varied-site testing; no access bypass is implied.
+
 September 12,2026,00:35 UTC: parent independently verifies the new
 `FLOAT-MARGINS-SOURCE.md`:9 checks/71 ledger entries,1 native HTTP200 GET and2
 offline sections on11268 release8daf14b, with all prior seals unchanged. It
