@@ -241,6 +241,7 @@ export class DocumentHitTesting {
 					node.ref &&
 					(["inline", "block", "replaced"].includes(node.kind) ||
 						node.contentMode === "flex" ||
+						node.contentMode === "grid" ||
 						node.contentMode === "table")
 				) {
 					const candidate = this.tree.resolve(node.ref);

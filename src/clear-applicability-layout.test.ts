@@ -321,18 +321,85 @@ it.each([
 	["grid", "#after{display:grid}", ""],
 	["table", "", "<table><tr><td>DD</td></tr></table>"],
 ])(
-	"does not erase the independent %s guard when inline clear is ignored",
-	(_name, css, extra) => {
-		const { tree, id } = fixture(css, content + extra);
+	"retains %s shell geometry and ownership when inline clear is ignored",
+	(name, css, extra) => {
+		const { tree, id, rect, hits, pixel } = fixture(css, content + extra);
+		const before = snapshotDocument(tree);
+		const revision = tree.revision;
 		const formatting = buildFormattingTree(tree);
 		expect(
 			formatting.nodes.find(
 				(node) => node.ref === tree.reference(id("#target")),
 			)?.clear,
 		).toBeUndefined();
-		expect(() => layoutDocument(tree)).toThrow(
-			expect.objectContaining({ code: "unsupported" }),
-		);
+		const layout = layoutDocument(tree);
+		expect(rect("#float")).toMatchObject({ x: 0, y: 0, width: 8, height: 24 });
+		expect(rect("#target")).toMatchObject({ x: 8, y: 0, width: 12, height: 8 });
+		expect(rect("#cleared")).toMatchObject({
+			x: 0,
+			y: 24,
+			width: 32,
+			height: 8,
+		});
+		expect(rect("#after")).toMatchObject({
+			x: 0,
+			y: 32,
+			width: 32,
+			height: 8,
+		});
+		const glyphs = layout.contexts.flatMap((context) => context.glyphs);
+		for (const [character, left, top] of [
+			["A", 8, 0],
+			["B", 0, 24],
+			["C", 0, 32],
+		] as const)
+			expect(
+				glyphs
+					.filter((glyph) => glyph.character === character)
+					.map((glyph) => [glyph.x, glyph.y]),
+			).toEqual([
+				[left, top],
+				[left + 6, top],
+			]);
+		if (name === "table") {
+			expect(rect("table")).toMatchObject({
+				x: 0,
+				y: 40,
+				width: 18,
+				height: 14,
+			});
+			expect(rect("td")).toMatchObject({
+				x: 2,
+				y: 42,
+				width: 14,
+				height: 10,
+			});
+			expect(
+				glyphs
+					.filter((glyph) => glyph.character === "D")
+					.map((glyph) => [glyph.x, glyph.y]),
+			).toEqual([
+				[3, 43],
+				[9, 43],
+			]);
+			expect(hits.elementFromPoint(1, 41)).toBe(id("table"));
+			expect(hits.elementFromPoint(3, 43)).toBe(id("td"));
+		}
+		expect(glyphs).toHaveLength(name === "table" ? 8 : 6);
+		expect(rect("#main").height).toBe(name === "table" ? 54 : 40);
+		const shell = name === "table" ? "table" : "#after";
+		expect(
+			layout.boxes.filter((box) => box.ref === tree.reference(id(shell))),
+		).toHaveLength(1);
+		expect(hits.elementFromPoint(1, 1)).toBe(id("#float"));
+		expect(hits.elementFromPoint(9, 1)).toBe(id("#target"));
+		expect(hits.elementFromPoint(30, 25)).toBe(id("#cleared"));
+		expect(hits.elementFromPoint(30, 33)).toBe(id("#after"));
+		expect(pixel(1, 1)).toEqual([0, 0, 255, 255]);
+		expect(pixel(9, 1)).toEqual([255, 0, 0, 255]);
+		expect(pixel(30, 33)).toEqual([0, 128, 0, 255]);
+		expect(tree.revision).toBe(revision);
+		expect(snapshotDocument(tree)).toEqual(before);
 	},
 );
 

@@ -173,7 +173,13 @@ export function layoutFormattingAtomicInline(
 				);
 	charge(horizontal.metrics.work);
 	const document = horizontal.floatLayouts?.length
-		? layoutFormattingFloatFlow(horizontal, remaining(), context.text, true)
+		? layoutFormattingFloatFlow(
+				horizontal,
+				remaining(),
+				context.text,
+				true,
+				nesting + 1,
+			)
 		: (() => {
 				const text = layoutFormattingText(horizontal, {
 					...context.text,

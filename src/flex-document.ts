@@ -101,6 +101,31 @@ export function layoutFormattingFlexFlow(
 	nesting = 0,
 	initialWork = 0,
 ): Readonly<DocumentLayout> {
+	const document = layoutFormattingShellFlow(
+		text,
+		maxWork,
+		options,
+		isolated,
+		nesting,
+		initialWork,
+	);
+	return mergeAtomicInlineLayouts(
+		document,
+		text.horizontal.atomicLayouts ?? [],
+		maxWork,
+		options,
+	);
+}
+
+export function layoutFormattingShellFlow(
+	text: DocumentTextLayout,
+	maxWork: number,
+	options: TextLayoutOptions = {},
+	isolated = false,
+	nesting = 0,
+	initialWork = 0,
+	layoutOuter: typeof layoutFormattingDocument = layoutFormattingDocument,
+): Readonly<DocumentLayout> {
 	const horizontal = text.horizontal;
 	const formatting = horizontal.formatting;
 	const shells = horizontal.widths.filter((width) =>
@@ -108,8 +133,8 @@ export function layoutFormattingFlexFlow(
 			formatting.nodes[width.id].contentMode ?? "",
 		),
 	);
-	if (!shells.length && !horizontal.atomicLayouts?.length)
-		return layoutFormattingDocument(text, maxWork, isolated);
+	if (!shells.length && !initialWork)
+		return layoutOuter(text, maxWork, isolated);
 	let work = 0;
 	const charge = (amount = 1) => {
 		work += amount;
@@ -134,7 +159,6 @@ export function layoutFormattingFlexFlow(
 		| ReturnType<typeof layoutFormattingTableContainer>;
 	const layouts = new Map<number, FlexLayout>();
 	const { formatting: _formatting, ...textOptions } = options;
-	const textMetrics = { ...text.metrics };
 	for (const shell of shells) {
 		charge();
 		const layout =
@@ -194,6 +218,12 @@ export function layoutFormattingFlexFlow(
 						);
 		charge(layout.metrics.work);
 		layouts.set(shell.id, layout);
+	}
+	const outer = layoutOuter(text, remaining(), isolated, layouts);
+	charge(outer.metrics.work);
+	const textMetrics = { ...outer.text.metrics };
+	for (const layout of layouts.values()) {
+		charge();
 		for (const key of Object.keys(textMetrics) as (keyof typeof textMetrics)[])
 			textMetrics[key] += layout.textMetrics[key];
 		for (const [limit, metric] of [
@@ -209,13 +239,11 @@ export function layoutFormattingFlexFlow(
 				);
 		}
 	}
-	const outer = layoutFormattingDocument(text, remaining(), isolated, layouts);
-	charge(outer.metrics.work);
 	const boxes: Readonly<DocumentBox>[] = [];
 	const contexts: Readonly<PositionedTextContext>[] = [...outer.contexts];
-	const relativeContexts: Readonly<TextContext>[] = [...text.contexts];
-	const images = [...horizontal.images];
-	const atomics = [...(horizontal.atomics ?? [])];
+	const relativeContexts: Readonly<TextContext>[] = [...outer.text.contexts];
+	const images = [...outer.text.horizontal.images];
+	const atomics = [...(outer.text.horizontal.atomics ?? [])];
 	let glyphs = outer.metrics.glyphs;
 	let lines = outer.metrics.lines;
 	for (const shell of outer.boxes) {
@@ -361,11 +389,11 @@ export function layoutFormattingFlexFlow(
 	const result = Object.freeze({
 		...outer,
 		text: Object.freeze({
-			...text,
+			...outer.text,
 			contexts: Object.freeze(relativeContexts),
 			metrics: Object.freeze(textMetrics),
 			horizontal: Object.freeze({
-				...horizontal,
+				...outer.text.horizontal,
 				widths: Object.freeze(boxes),
 				images: Object.freeze(images),
 				...(atomics.length ? { atomics: Object.freeze(atomics) } : {}),
@@ -375,10 +403,5 @@ export function layoutFormattingFlexFlow(
 		contexts: Object.freeze(contexts),
 		metrics: Object.freeze({ work, boxes: boxes.length, glyphs, lines }),
 	});
-	return mergeAtomicInlineLayouts(
-		result,
-		horizontal.atomicLayouts ?? [],
-		maxWork,
-		options,
-	);
+	return result;
 }

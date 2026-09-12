@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 native float-shell coordination gate passes13501/0/2,
+adding55cases with1364focused passes across33suites.
+FLOAT-SHELL-COORDINATION.md records ordinary float scopes with real flex/grid/
+table shell heights, reflowed text, retained metadata and one atomic merge per
+scope. Existing child-float/floating-container roots and grid atomic baseline
+limitations remain guarded. New regressions reproduce then fix missing floated
+atomic metrics and grid background hit ownership;14old blanket guards now check
+real geometry without deleting cases. A mocked native grid-anchor click checks
+actionability separately from live websites. Full gate2026-09-12T13:33:04.718Z–2026-09-12T13:35:58.306Z;
+259selected/258strict/653manifest/1155source/1968compiled.
+Historical failures and user residuals remain unchanged. Real Libjpeg/Go flows,
+performance, research/providers/passkeys/devices/TTY/SafeJS/challenge acceptance
+remain separate open gates; no whole-browser completion or push is claimed.
+
 September 12 separate Go stylesheet-origin flow on committed13446 receives
 threeGET200,39271encoded/175096decoded bytes at13:21:05.069–13:21:05.802UTC.
 Homepage commits;96anchors inspected and one genuine current-ref documentation

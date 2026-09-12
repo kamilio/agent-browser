@@ -339,6 +339,18 @@ it.each([
 		"negative outer height",
 		'<span style="float:left;width:12px;height:4px;margin-top:-8px"></span>',
 	],
+])("keeps the unfinished %s gate explicitly unsupported", (_name, content) => {
+	const { tree, layout } = fixture(content);
+	const revision = tree.revision;
+	const before = snapshotDocument(tree);
+	expect(() => layout()).toThrow(
+		expect.objectContaining({ code: "unsupported" }),
+	);
+	expect(tree.revision).toBe(revision);
+	expect(snapshotDocument(tree)).toEqual(before);
+});
+
+it.each([
 	[
 		"inline-flex interaction",
 		'<span style="float:left;width:12px;height:8px"></span><span style="display:inline-flex;width:12px;height:8px"></span>',
@@ -355,13 +367,53 @@ it.each([
 		"table interaction",
 		'<span style="float:left;width:12px;height:8px"></span><table><tr><td>A</td></tr></table>',
 	],
-])("keeps the unfinished %s gate explicitly unsupported", (_name, content) => {
-	const { tree, layout } = fixture(content);
+])("lays out the supported %s with retained ownership", (name, content) => {
+	const { tree, id, rect, layout } = fixture(content);
 	const revision = tree.revision;
 	const before = snapshotDocument(tree);
-	expect(() => layout()).toThrow(
-		expect.objectContaining({ code: "unsupported" }),
-	);
+	const document = layout();
+	const inline = name === "inline-flex interaction";
+	const table = name === "table interaction";
+	const shell = inline
+		? "main > span:last-child"
+		: table
+			? "table"
+			: "main > div";
+	const float = "main > span:first-child";
+	expect(rect(float)).toMatchObject({ x: 0, y: 0, width: 12, height: 8 });
+	expect(rect(shell)).toMatchObject({
+		x: inline ? 12 : 0,
+		y: inline ? 0 : 8,
+		width: inline || table ? 12 : 36,
+		height: table ? 14 : 8,
+	});
+	for (const selector of [float, shell])
+		expect(
+			document.boxes.filter((box) => box.ref === tree.reference(id(selector))),
+		).toHaveLength(1);
+	expect(
+		document.contexts
+			.flatMap((context) => context.glyphs)
+			.map((glyph) => [glyph.character, glyph.x, glyph.y]),
+	).toEqual(inline ? [] : [["A", table ? 3 : 0, table ? 11 : 8]]);
+	const hits = documentHitTesting(tree);
+	expect(hits.elementFromPoint(1, 1)).toBe(id(float));
+	if (inline) {
+		expect(hits.elementFromPoint(13, 1)).toBe(id(shell));
+	} else {
+		const child = table ? "td" : "main > div > span";
+		expect(rect(child)).toMatchObject({
+			x: table ? 2 : 0,
+			y: table ? 10 : 8,
+			height: table ? 10 : 8,
+		});
+		expect(
+			document.boxes.filter((box) => box.ref === tree.reference(id(child))),
+		).toHaveLength(1);
+		expect(hits.elementFromPoint(table ? 3 : 1, 11)).toBe(id(child));
+		if (table) expect(hits.elementFromPoint(1, 9)).toBe(id(shell));
+		expect(rect("#main").height).toBe(table ? 22 : 16);
+	}
 	expect(tree.revision).toBe(revision);
 	expect(snapshotDocument(tree)).toEqual(before);
 });

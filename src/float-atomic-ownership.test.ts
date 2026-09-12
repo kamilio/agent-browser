@@ -179,6 +179,70 @@ it.each([
 	["grid", "", '<div style="display:grid"><span>A</span></div>'],
 	["table", "", "<table><tr><td>A</td></tr></table>"],
 	["inline flex", "#atom{display:inline-flex}", ""],
+])(
+	"retains atomic and float ownership with a supported %s shell",
+	(name, css, extra) => {
+		const { tree, id, rect } = fixture(css, content + extra);
+		const before = snapshotDocument(tree);
+		const revision = tree.revision;
+		const layout = layoutDocument(tree);
+		const hits = documentHitTesting(tree);
+		expect(rect("#float")).toMatchObject({ x: 0, y: 0, width: 8, height: 24 });
+		expect(rect("#atom")).toMatchObject({ x: 8, y: 0, width: 12, height: 8 });
+		const glyphs = layout.contexts.flatMap((context) => context.glyphs);
+		const positions = [...glyphs]
+			.sort((left, right) => left.y - right.y || left.x - right.x)
+			.map((glyph) => [glyph.character, glyph.x, glyph.y]);
+		expect(positions).toEqual([
+			["A", 8, 0],
+			["A", 14, 0],
+			...(name === "inline flex"
+				? []
+				: [["A", name === "table" ? 3 : 0, name === "table" ? 27 : 24]]),
+		]);
+		if (name !== "inline flex") {
+			const shell = name === "table" ? "table" : "main > div";
+			const child = name === "table" ? "td" : "main > div > span";
+			expect(rect(shell)).toMatchObject({
+				x: 0,
+				y: 24,
+				width: name === "table" ? 12 : 36,
+				height: name === "table" ? 14 : 8,
+			});
+			expect(rect(child)).toMatchObject({
+				x: name === "table" ? 2 : 0,
+				y: name === "table" ? 26 : 24,
+				height: name === "table" ? 10 : 8,
+			});
+			for (const selector of [shell, child])
+				expect(
+					layout.boxes.filter(
+						(box) => box.ref === tree.reference(id(selector)),
+					),
+				).toHaveLength(1);
+			expect(hits.elementFromPoint(name === "table" ? 3 : 1, 27)).toBe(
+				id(child),
+			);
+			if (name === "table")
+				expect(hits.elementFromPoint(1, 25)).toBe(id(shell));
+		}
+		expect(rect("#main").height).toBe(
+			name === "inline flex" ? 8 : name === "table" ? 38 : 32,
+		);
+		for (const selector of ["#float", "#atom"])
+			expect(
+				layout.boxes.filter((box) => box.ref === tree.reference(id(selector))),
+			).toHaveLength(1);
+		expect(hits.elementFromPoint(1, 20)).toBe(id("#float"));
+		expect(hits.elementFromPoint(9, 7)).toBe(id("#atom"));
+		expect(pixel(tree, 1, 20)).toEqual([0, 0, 255, 255]);
+		expect(pixel(tree, 9, 7)).toEqual([255, 0, 0, 255]);
+		expect(tree.revision).toBe(revision);
+		expect(snapshotDocument(tree)).toEqual(before);
+	},
+);
+
+it.each([
 	["logical clearance", "", '<div style="clear:inline-start">A</div>'],
 	["clipped overflow", "#atom{overflow:hidden}", ""],
 	["unsupported property", "#atom{animation-name:spin}", ""],

@@ -24,6 +24,7 @@ import {
 	type FormattingTree,
 } from "./formatting-tree.js";
 import type { AtomicInlineResolutionContext } from "./inline-atomic-layout.js";
+import { layoutFormattingShellFlow } from "./flex-document.js";
 import { mergeAtomicInlineLayouts } from "./inline-atomic-placement.js";
 import {
 	intrinsicWidthLimits,
@@ -94,10 +95,13 @@ function acceptedFormatting(formatting: FormattingTree, charge: () => void) {
 				);
 			clears++;
 		}
-		if (["flex", "grid", "table"].includes(node.contentMode ?? ""))
+		if (
+			node.floatSide &&
+			["flex", "grid", "table"].includes(node.contentMode ?? "")
+		)
 			throw new AgentBrowserError(
 				"unsupported",
-				"Float integration with flex, grid and table reflow is not coordinated",
+				"Floating flex, grid and table roots are not coordinated",
 			);
 	}
 	if (!floats || formatting.issues["float-layout-not-supported"] !== floats)
@@ -202,25 +206,19 @@ function layoutFloatScope(
 				Math.max(nesting, context.nesting ?? 0) + 1,
 			),
 	};
-	const rejectShell = () => {
-		throw new AgentBrowserError(
-			"unsupported",
-			"Float flex, grid and table shell reflow is not coordinated",
-		);
-	};
 	const horizontal = root
 		? resolveFormattingBlockWidths(
 				formatting,
 				[root],
 				Math.min(remaining(), formattingLimits.maxWork),
 				true,
-				rejectShell,
+				() => {},
 				resolution,
 			)
 		: resolveFormattingPageWidths(
 				formatting,
 				Math.min(remaining(), formattingLimits.maxWork),
-				rejectShell,
+				() => {},
 				resolution,
 			);
 	charge(horizontal.metrics.work);
@@ -229,6 +227,7 @@ function layoutFloatScope(
 		remaining(),
 		options,
 		root !== undefined,
+		nesting,
 	);
 	charge(document.metrics.work);
 	return Object.freeze({
@@ -242,6 +241,7 @@ export function layoutFormattingFloatFlow(
 	maxWork: number,
 	options: TextLayoutOptions = {},
 	isolated = false,
+	nesting = 0,
 ): Readonly<DocumentLayout> {
 	if (
 		!Number.isSafeInteger(maxWork) ||
@@ -269,6 +269,27 @@ export function layoutFormattingFloatFlow(
 			);
 		return maxWork - work;
 	};
+	const layoutOuter = (
+		text: DocumentTextLayout,
+		budget: number,
+		coordinator?: DocumentFlowCoordinator,
+	) =>
+		layoutFormattingShellFlow(
+			text,
+			budget,
+			options,
+			isolated,
+			nesting,
+			0,
+			(outerText, outerBudget, outerIsolated, heights) =>
+				layoutFormattingDocument(
+					outerText,
+					outerBudget,
+					outerIsolated,
+					heights,
+					coordinator,
+				),
+		);
 	const formatting = horizontal.formatting;
 	if (!horizontal.floatLayouts?.length) {
 		const text = layoutFormattingText(horizontal, {
@@ -279,7 +300,7 @@ export function layoutFormattingFloatFlow(
 			),
 		});
 		charge(text.metrics.work);
-		const document = layoutFormattingDocument(text, remaining(), isolated);
+		const document = layoutOuter(text, remaining());
 		charge(document.metrics.work);
 		return mergeAtomicInlineLayouts(
 			Object.freeze({
@@ -545,13 +566,7 @@ export function layoutFormattingFloatFlow(
 		},
 	};
 	try {
-		const base = layoutFormattingDocument(
-			provisional,
-			remaining(),
-			isolated,
-			new Map(),
-			coordinator,
-		);
+		const base = layoutOuter(provisional, remaining(), coordinator);
 		charge(base.metrics.work);
 		if (placed.size !== floats.size)
 			throw new AgentBrowserError(
@@ -700,14 +715,16 @@ function mergeFloats(
 	const boxes = [...base.boxes];
 	const contexts = [...base.contexts];
 	const relativeContexts = [...base.text.contexts];
-	const widths = [...horizontal.widths];
-	const images = [...horizontal.images];
+	const widths = [...base.text.horizontal.widths];
+	const images = [...base.text.horizontal.images];
+	const atomics = [...(base.text.horizontal.atomics ?? [])];
 	charge(
 		boxes.length +
 			contexts.length +
 			relativeContexts.length +
 			widths.length +
-			images.length,
+			images.length +
+			atomics.length,
 	);
 	const roots = new Map(
 		base.boxes.map((box) => {
@@ -774,6 +791,10 @@ function mergeFloats(
 		for (const image of owner.document.text.horizontal.images) {
 			charge();
 			images.push(image);
+		}
+		for (const atomic of owner.document.text.horizontal.atomics ?? []) {
+			charge();
+			atomics.push(atomic);
 		}
 		for (const context of owner.document.contexts) {
 			charge();
@@ -858,9 +879,10 @@ function mergeFloats(
 	const text: DocumentTextLayout = Object.freeze({
 		...base.text,
 		horizontal: Object.freeze({
-			...horizontal,
+			...base.text.horizontal,
 			widths: Object.freeze(widths),
 			images: Object.freeze(images),
+			...(atomics.length ? { atomics: Object.freeze(atomics) } : {}),
 		}),
 		contexts: Object.freeze(relativeContexts),
 		metrics: Object.freeze(textMetrics),
