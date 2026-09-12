@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 GnuPG source-only triage: one socket-denied native formatting
+build identifies seven inline-block navigation nodes in the float coordinator's
+explicit rejected combination, beginning with list iteme48. No page session,
+navigation, mock orHTTP; unloaded images make this279-node/two-deferred source
+census distinct from the277-node/no-deferred live census. Nine float/eight clear
+and independent CSS guards remain. See `GNUPG-FLOAT-DIAGNOSIS.md`. Next: minimize
+inline-block navigation plus floated sibling, then implement bounded atomic/float
+reflow coordination with geometry/raster/hit regression checks, not guard removal.
+
 September12,2026 fresh GnuPG documentation flow: six native wireGETs, zero mocks,
 one actual page commit and one genuine discovered FAQ click. The click fails
 before any destination request at float integration with atomic/flex/grid/table
