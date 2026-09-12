@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 website evidence tenth update records80 attempted hosts,not
+80working sites:libexpat.github.io contacted,and fonts.googleapis.com locally
+adapter-denied before transport under the original same-origin Expat contract.
+3GET200 carried41186encoded/247529decoded bytes;zero documents committed or
+clicks,one off-origin Google stylesheet admission rejection. Parent verified
+11actual Git inputs and35readonly checks;no server/challenge/codec verdict
+follows from that local boundary. EXPAT-DOCUMENTATION-FLOW.md and
+WEBSITE-TEST-INVENTORY-SEPTEMBER-12-TENTH-UPDATE.md preserve the12650 live runtime
+separately from the newer12817 native gate and zero-HTTP badge source check.
+The separate font-asset contract is excluded from this inventory. Historical
+evidence and workingWebsiteCount:null stay unchanged;broader gates remain open.
+
 September12 captured Libpng badge paired-doctype check on12817/3890c33
 now passes the HTML5 positive control at216x8 after the border fix;the exact
 original quirks doctype still fails with one unsupported-element guard. Both
