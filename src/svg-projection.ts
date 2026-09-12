@@ -7,6 +7,7 @@ import {
 	transformSvgPoint,
 } from "./svg-affine.js";
 import { rasterizeSvgFills } from "./svg-fill-raster.js";
+import { SvgLinearGradient } from "./svg-linear-gradient.js";
 import { svgPathBounds } from "./svg-path-bounds.js";
 import {
 	flattenSvgPath,
@@ -136,6 +137,10 @@ export function projectSvgScene(
 			shapes.push(
 				Object.freeze({
 					...shape,
+					fill:
+						shape.fill instanceof SvgLinearGradient
+							? shape.fill.transformed(transform, charge)
+							: shape.fill,
 					contours: Object.freeze(contours),
 					bounds: svgPathBounds(shape.path, transform, charge),
 				}),
@@ -198,7 +203,13 @@ export function rasterizeSvgScene(
 	const fills = projection.shapes
 		.filter((shape) => shape.visible && shape.fill !== null)
 		.map((shape) => ({
-			color: shape.fill!,
+			color:
+				shape.fill instanceof SvgLinearGradient
+					? shape.fill.transformed(
+							[columns / width, 0, 0, rows / height, 0, 0],
+							charge,
+						)
+					: shape.fill!,
 			fillRule: shape.fillRule,
 			contours: shape.contours.map((contour) => ({
 				closed: contour.closed,

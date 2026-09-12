@@ -25,6 +25,8 @@ export function svgPresentationDeclarations(
 		"visibility",
 		"pointer-events",
 		"overflow",
+		"stop-color",
+		"stop-opacity",
 	];
 	if (node.tagName === "svg" || node.tagName === "rect")
 		properties.push("width", "height");

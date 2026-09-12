@@ -183,11 +183,14 @@ export function resolvedStyleValue(
 			? `${Number(value) * Number.parseFloat(text["font-size"])}px`
 			: value;
 	}
+	if (name === "stop-opacity")
+		return String(styles.paint(id)["stop-opacity"] ?? 1);
 	if (
 		name === "color" ||
 		name === "caret-color" ||
 		name === "accent-color" ||
 		name === "background-color" ||
+		name === "stop-color" ||
 		borderColorProperties.includes(name as BorderColorProperty)
 	) {
 		const style = styles.paint(id);
@@ -204,11 +207,15 @@ export function resolvedStyleValue(
 				? accent
 				: name === "color"
 					? style.color
-					: name === "background-color"
-						? paintBackground(style)
-						: name === "caret-color"
-							? paintCaret(style)
-							: (style[name as BorderColorProperty] ?? style.color);
+					: name === "stop-color"
+						? style["stop-color"] === "currentcolor"
+							? style.color
+							: (style["stop-color"] ?? ([0, 0, 0, 255] as const))
+						: name === "background-color"
+							? paintBackground(style)
+							: name === "caret-color"
+								? paintCaret(style)
+								: (style[name as BorderColorProperty] ?? style.color);
 		return color[3] === 255
 			? `rgb(${color[0]}, ${color[1]}, ${color[2]})`
 			: `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${Number((color[3] / 255).toFixed(3))})`;

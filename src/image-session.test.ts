@@ -92,7 +92,7 @@ it("loads PNGs through session policy and exposes redacted agent/resource journa
 		);
 		expect(imageRequest).toMatchObject({
 			redirect: "manual",
-			headers: { accept: "image/png, image/jpeg, image/gif" },
+			headers: { accept: "image/png, image/jpeg, image/gif, image/svg+xml" },
 			cookieContext: { credentials: "include", topLevelNavigation: false },
 		});
 		const journal = await host.execute(["requests"]);

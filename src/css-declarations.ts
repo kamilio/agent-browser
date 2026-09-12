@@ -149,6 +149,8 @@ export const inlineProperties = [
 	"color",
 	"caret-color",
 	"accent-color",
+	"stop-color",
+	"stop-opacity",
 	"background",
 	...cssBackgroundProperties,
 ];
@@ -288,7 +290,12 @@ function normalize(name: string, source: string): string | undefined {
 	if (name === "color" || name === "background-color") {
 		return normalizeCssColor(value);
 	}
-	if (name === "caret-color" || name === "accent-color")
+	if (
+		name === "caret-color" ||
+		name === "accent-color" ||
+		name === "stop-color" ||
+		name === "stop-opacity"
+	)
 		return parsePaintValue(value, name);
 	return undefined;
 }

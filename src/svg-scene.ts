@@ -7,13 +7,16 @@ import {
 } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import type { Rgba } from "./raster.js";
-import { documentStyles } from "./styles.js";
+import { documentStyles, type DocumentStyles } from "./styles.js";
 import {
 	multiplySvgMatrices,
 	parseSvgTransform,
 	svgIdentity,
 } from "./svg-affine.js";
 import { parseSvgPath } from "./svg-path.js";
+import { svgGradientPaint } from "./svg-gradient-paint.js";
+import { SvgLinearGradient } from "./svg-linear-gradient.js";
+import { svgPathBounds } from "./svg-path-bounds.js";
 import type { SvgPathSegment, SvgPoint } from "./svg-path-types.js";
 import type { SvgMatrix, SvgScene, SvgSceneShape } from "./svg-scene-types.js";
 
@@ -26,7 +29,15 @@ const limits = Object.freeze({
 	field: 4096,
 });
 const scalar = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?(?:px)?$/;
-const metadata = new Set(["title", "desc", "defs", "style"]);
+const metadata = new Set([
+	"title",
+	"desc",
+	"defs",
+	"style",
+	"linearGradient",
+	"radialGradient",
+	"stop",
+]);
 const shapes = new Set([
 	"path",
 	"rect",
@@ -46,7 +57,7 @@ function resource(message: string): never {
 }
 
 interface Presentation {
-	fill: CssColor | null;
+	fill: CssColor | { readonly reference: string } | null;
 	fillRule: "nonzero" | "evenodd";
 	fillOpacity: number;
 }
@@ -56,9 +67,54 @@ export function documentSvgScene(
 	id: number,
 	charge: (amount: number) => void,
 ): SvgScene {
+	return buildSvgScene(tree, id, charge, "inline");
+}
+
+export function imageSvgScene(
+	tree: DocumentTree,
+	id: number,
+	charge: (amount: number) => void,
+	styleOwner?: DocumentStyles,
+): SvgScene {
+	const root = tree.get(id);
+	charge(1);
+	if (
+		root.kind !== "element" ||
+		root.tagName !== "svg" ||
+		elementNamespace(root) !== svgNamespace
+	)
+		unsupported("root must be an SVG-namespace svg");
+	if (root.parent !== tree.root)
+		unsupported("image root must be a document child");
+	for (const childId of tree.get(tree.root).children) {
+		charge(1);
+		if (childId === id) continue;
+		const child = tree.get(childId);
+		if (child.kind === "comment") continue;
+		if (child.kind === "text") {
+			charge(child.data.length + 1);
+			if (/^[\t\n\r ]*$/.test(child.data)) continue;
+		}
+		unsupported("image document must contain exactly one SVG root");
+	}
+	const styles = styleOwner ?? documentStyles(tree);
+	const metrics = styles.metrics();
+	if (Object.keys(metrics.issues).length)
+		unsupported("image styles require an issue-free supported profile");
+	return buildSvgScene(tree, id, charge, "image", styles);
+}
+
+function buildSvgScene(
+	tree: DocumentTree,
+	id: number,
+	charge: (amount: number) => void,
+	context: "inline" | "image",
+	styleOwner?: DocumentStyles,
+): SvgScene {
 	let sourceCodeUnits = 0;
 	let nodeCount = 0;
 	let segmentCount = 0;
+	const references = new Map<string, number>();
 	charge(1);
 	const root = tree.get(id);
 	if (
@@ -68,7 +124,10 @@ export function documentSvgScene(
 	)
 		unsupported("root must be an SVG-namespace svg");
 	charge(1);
-	if (root.parent === null || !isHtmlElement(tree.get(root.parent)))
+	if (
+		context === "inline" &&
+		(root.parent === null || !isHtmlElement(tree.get(root.parent)))
+	)
 		unsupported("root must be embedded in HTML");
 
 	function source(text: string): void {
@@ -87,6 +146,12 @@ export function documentSvgScene(
 			source(name);
 			source(node.attributes[name]);
 		}
+		if (
+			node.kind === "element" &&
+			node.attributes.id !== undefined &&
+			!references.has(node.attributes.id)
+		)
+			references.set(node.attributes.id, node.id);
 		for (const child of node.children) {
 			if (nodeCount >= limits.nodes) resource("visited node limit exceeded");
 			charge(1);
@@ -94,7 +159,7 @@ export function documentSvgScene(
 		}
 	}
 	preflight(root, 0);
-	const styles = documentStyles(tree);
+	const styles = styleOwner ?? documentStyles(tree);
 	function field(text: string): string {
 		if (text.length > limits.field)
 			resource("style or attribute field limit exceeded");
@@ -218,8 +283,13 @@ export function documentSvgScene(
 			fillText !== "inherit" &&
 			fillText !== "unset"
 		) {
-			const parsed =
-				fillText === "none"
+			const reference =
+				/^url\([\t\n\r ]*(["']?)#([^\s"'()]+)\1[\t\n\r ]*\)$/.exec(fillText);
+			if (reference && !references.has(reference[2]))
+				unsupported("unresolved paint reference");
+			const parsed = reference
+				? Object.freeze({ reference: reference[2] })
+				: fillText === "none"
 					? null
 					: parseCssColor(fillText === "initial" ? "black" : fillText);
 			if (parsed === undefined) unsupported("unsupported fill paint");
@@ -490,15 +560,41 @@ export function documentSvgScene(
 				paint.fill === "currentcolor"
 					? styles.paint(node.id).color
 					: paint.fill;
-			const fill: Rgba | null =
-				color === null
-					? null
-					: Object.freeze([
-							color[0],
-							color[1],
-							color[2],
-							Math.round(color[3] * paint.fillOpacity * alpha),
-						]);
+			let fill: Rgba | SvgLinearGradient | null;
+			if (color !== null && typeof color === "object" && "reference" in color) {
+				const target = references.get(color.reference);
+				if (target === undefined) unsupported("unresolved paint reference");
+				const rootBox = styles.box(id);
+				const absolute = (value: string) =>
+					/^\d+(?:\.\d+)?px$/.test(value)
+						? Number.parseFloat(value)
+						: undefined;
+				const width = absolute(rootBox.width);
+				const height = absolute(rootBox.height);
+				const viewport =
+					viewBox ??
+					(width !== undefined && height !== undefined
+						? { x: 0, y: 0, width, height }
+						: null);
+				fill =
+					svgGradientPaint(
+						tree,
+						target,
+						styles,
+						viewport,
+						svgPathBounds(segments, svgIdentity, charge),
+						charge,
+					)?.withOpacity(paint.fillOpacity * alpha, charge) ?? null;
+			} else
+				fill =
+					color === null
+						? null
+						: Object.freeze([
+								color[0],
+								color[1],
+								color[2],
+								Math.round(color[3] * paint.fillOpacity * alpha),
+							]);
 			charge(10);
 			output.push(
 				Object.freeze({

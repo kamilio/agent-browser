@@ -88,7 +88,12 @@ function fixture(
 }
 
 it("dispatches GIF without changing PNG or JPEG MIME ordering", () => {
-	expect(imageMediaTypes).toEqual(["image/png", "image/jpeg", "image/gif"]);
+	expect(imageMediaTypes).toEqual([
+		"image/png",
+		"image/jpeg",
+		"image/gif",
+		"image/svg+xml",
+	]);
 	expect(Object.isFrozen(imageMediaTypes)).toBe(true);
 	const result = decodeImage(golden, "image/gif");
 	expect(Object.isFrozen(result)).toBe(true);
@@ -105,7 +110,7 @@ it("advertises initial-frame GIF support without claiming animation playback", (
 	try {
 		expect(host.capabilities()).toMatchObject({
 			imageResources: {
-				formats: ["image/png", "image/jpeg", "image/gif"],
+				formats: ["image/png", "image/jpeg", "image/gif", "image/svg+xml"],
 				gif: {
 					versions: ["87a", "89a"],
 					presentation: "initial-frame",

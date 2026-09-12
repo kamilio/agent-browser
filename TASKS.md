@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 12: bounded native SVG images and exact captured-logo checks
+
+Native SVG image support now parses strict UTF-8 XML into a standalone SVG tree,
+uses native stop CSS and inverse-affine linear gradients, and flows through the
+existing image owner/CSP/layout/raster path. No HTML recovery wrapper, new runtime
+dependency, external DTD/subresource loading or gradient-to-flat-paint substitution.
+
+The clean selected gate passes **16,405/0/2 unchanged exclusions**: 315 suites,
+314 strict roots, 459 new cases, 693 manifest entries (378 not run), 1,210 source
+files and 2,028 compiled artifacts. Build/strict/format pass; pre-existing dirty
+work stays excluded. Exact retained IANA and Python SVGs independently decode
+to 234×72/40 shapes and16×16/2 shapes with real gradients under existing limits.
+These two offline attempts made zero HTTP requests and are not website passes.
+
+See `SVG-IMAGES.md` for hashes, timestamps, preserved failures and limits. Next:
+fresh complete IANA/Python website flows; fuller SVG intrinsic sizing, author-CSS
+fill, text/strokes/filters, templates and linearRGB. Positive integer absolute
+image dimensions and the bounded UTF-8 static subset remain explicit. Broader
+research, credential/provider/passkey-device, real TTY/SafeJS and challenge gates
+remain open; no new acceptance is inferred from the native gate or captured logos.
+
 September12 exact mixed stylesheet/image native control now passes on committed
 15946/0076134. STYLESHEET-CSP-MIXED-CONTROL.md records one constructed native load
 at21:31:25.667–21:31:25.724UTC:document+admittedPNG callbacks,0CSS callbacks/sheets,

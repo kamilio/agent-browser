@@ -6,10 +6,11 @@ import {
 	type Rgba,
 } from "./raster.js";
 import { svgFlattenLimits, type SvgContour } from "./svg-path-flatten.js";
+import { SvgLinearGradient } from "./svg-linear-gradient.js";
 
 export interface SvgFill {
 	readonly contours: readonly SvgContour[];
-	readonly color: Rgba;
+	readonly color: Rgba | SvgLinearGradient;
 	readonly fillRule: "nonzero" | "evenodd";
 }
 
@@ -84,7 +85,7 @@ export function rasterizeSvgFills(
 	let edgeCount = 0;
 	const prepared: {
 		edges: Edge[];
-		color: Rgba;
+		color: Rgba | SvgLinearGradient;
 		fillRule: SvgFill["fillRule"];
 	}[] = [];
 	for (let shapeIndex = 0; shapeIndex < shapeCount; shapeIndex++) {
@@ -96,16 +97,20 @@ export function rasterizeSvgFills(
 		if (fillRule !== "nonzero" && fillRule !== "evenodd")
 			invalid("Invalid SVG fill rule");
 		const color = fill.color;
-		if (!Array.isArray(color) || color.length !== 4)
-			invalid("Invalid SVG fill color");
-		const copiedColor = [color[0], color[1], color[2], color[3]] as const;
-		if (
-			!copiedColor.every(
-				(channel) =>
-					Number.isInteger(channel) && channel >= 0 && channel <= 255,
+		let copiedColor: Rgba | SvgLinearGradient;
+		if (color instanceof SvgLinearGradient) copiedColor = color;
+		else {
+			if (!Array.isArray(color) || color.length !== 4)
+				invalid("Invalid SVG fill color");
+			copiedColor = [color[0], color[1], color[2], color[3]] as const;
+			if (
+				!copiedColor.every(
+					(channel) =>
+						Number.isInteger(channel) && channel >= 0 && channel <= 255,
+				)
 			)
-		)
-			invalid("Invalid SVG fill color");
+				invalid("Invalid SVG fill color");
+		}
 		const count = fill.contours.length;
 		contourCount += count;
 		if (contourCount > limits.maxContours)
@@ -177,7 +182,11 @@ export function rasterizeSvgFills(
 	const image = createRaster(width, height, [0, 0, 0, 0]);
 	for (const fill of prepared) {
 		charge(1);
-		if (!fill.edges.length || fill.color[3] === 0) continue;
+		if (
+			!fill.edges.length ||
+			(!(fill.color instanceof SvgLinearGradient) && fill.color[3] === 0)
+		)
+			continue;
 		let minimumRow = height;
 		let maximumRow = 0;
 		for (const edge of fill.edges) {
@@ -217,7 +226,18 @@ export function rasterizeSvgFills(
 					);
 					if (right > left) {
 						charge((right - left) * 4);
-						paintRasterRect(image, left, row, right - left, 1, fill.color);
+						if (fill.color instanceof SvgLinearGradient) {
+							for (let column = left; column < right; column++)
+								paintRasterRect(
+									image,
+									column,
+									row,
+									1,
+									1,
+									fill.color.sample(column + 0.5, row + 0.5, charge),
+								);
+						} else
+							paintRasterRect(image, left, row, right - left, 1, fill.color);
 					}
 				}
 				winding += crossing.direction;

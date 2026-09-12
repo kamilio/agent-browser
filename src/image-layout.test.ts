@@ -69,7 +69,7 @@ async function fixture(
 			const jpeg = url.endsWith(".jpg");
 			const body = svg
 				? new TextEncoder().encode(
-						'<svg xmlns="http://www.w3.org/2000/svg" width="4" height="2"><rect width="4" height="2"/></svg>',
+						'<svg xmlns="http://www.w3.org/2000/svg" width="4" height="2"><rect width="4" height="2"/><text>Unsupported text fixture</text></svg>',
 					)
 				: jpeg
 					? Buffer.from(jpegFixtures[0].jpeg, "base64")
@@ -385,7 +385,7 @@ it.each([
 	},
 );
 
-it("formats synthetic shared Python-logo SVG failures without inventing decoded resources", async () => {
+it("formats synthetic shared unsupported SVG text failures without inventing decoded resources", async () => {
 	const { tree, images, id } = await fixture(
 		'<img id="hidden" src="/py.svg" alt="Python logo" style="display:none"><img id="photo" src="/py.svg" alt="Python logo"><img id="second" src="/py.svg" alt="Python logo">',
 	);

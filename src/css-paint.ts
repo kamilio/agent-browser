@@ -21,6 +21,8 @@ export const cssPaintProperties = Object.freeze([
 	"color",
 	"caret-color",
 	"accent-color",
+	"stop-color",
+	"stop-opacity",
 	...cssBackgroundProperties,
 ] as const);
 export type CssPaintProperty = (typeof cssPaintProperties)[number];
@@ -32,6 +34,8 @@ export interface PaintStyle
 	readonly color: Rgba;
 	readonly "caret-color"?: CssColor | "auto";
 	readonly "accent-color"?: CssColor | "auto";
+	readonly "stop-color"?: CssColor;
+	readonly "stop-opacity"?: number;
 	readonly "background-color": CssColor;
 }
 export const initialPaintStyle: PaintStyle = Object.freeze({
@@ -46,6 +50,8 @@ export function isCssPaintProperty(
 		property === "color" ||
 		property === "caret-color" ||
 		property === "accent-color" ||
+		property === "stop-color" ||
+		property === "stop-opacity" ||
 		property === "background-color" ||
 		isNeutralBackgroundProperty(property)
 	);
@@ -54,6 +60,14 @@ export function parsePaintValue(
 	value: string,
 	property: CssPaintProperty = "color",
 ): string | undefined {
+	if (property === "stop-opacity") {
+		if (["initial", "inherit", "unset", "revert"].includes(value)) return value;
+		const match = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)(%)?$/i.exec(
+			value.trim(),
+		);
+		if (!match || !Number.isFinite(Number(match[1]))) return undefined;
+		return `${Number(match[1])}${match[2] ?? ""}`;
+	}
 	if (
 		(property === "caret-color" || property === "accent-color") &&
 		value.trim().toLowerCase() === "auto"
@@ -90,11 +104,44 @@ export function computePaintStyle(
 		"background-color": CssColor;
 		"caret-color"?: CssColor | "auto";
 		"accent-color"?: CssColor | "auto";
+		"stop-color"?: CssColor;
+		"stop-opacity"?: number;
 	} & Partial<Record<BorderColorProperty, Rgba>> = {
 		color:
 			foreground && foreground !== "currentcolor" ? foreground : parent.color,
 		"background-color": fill ?? transparentColor,
 	};
+	const stopColor = specified["stop-color"];
+	if (stopColor === "inherit") {
+		if (parent["stop-color"] !== undefined)
+			result["stop-color"] = parent["stop-color"];
+	} else if (
+		stopColor !== undefined &&
+		!["initial", "unset", "revert"].includes(stopColor)
+	) {
+		const parsed = parseCssColor(stopColor);
+		if (parsed !== undefined) result["stop-color"] = parsed;
+	}
+	const stopOpacity = specified["stop-opacity"];
+	if (stopOpacity === "inherit") {
+		if (parent["stop-opacity"] !== undefined)
+			result["stop-opacity"] = parent["stop-opacity"];
+	} else if (
+		stopOpacity !== undefined &&
+		!["initial", "unset", "revert"].includes(stopOpacity)
+	) {
+		const parsed = parsePaintValue(stopOpacity, "stop-opacity");
+		const percent = parsed?.endsWith("%") ?? false;
+		const amount =
+			parsed === undefined
+				? Number.NaN
+				: Number(percent ? parsed.slice(0, -1) : parsed);
+		if (Number.isFinite(amount))
+			result["stop-opacity"] = Math.max(
+				0,
+				Math.min(1, percent ? amount / 100 : amount),
+			);
+	}
 	for (const property of ["caret-color", "accent-color"] as const) {
 		const specifiedColor = specified[property];
 		let inheritedColor = parent[property];
@@ -122,6 +169,8 @@ export function computePaintStyle(
 	return result.color === parent.color &&
 		result["caret-color"] === parent["caret-color"] &&
 		result["accent-color"] === parent["accent-color"] &&
+		result["stop-color"] === parent["stop-color"] &&
+		result["stop-opacity"] === parent["stop-opacity"] &&
 		borderColorProperties.every(
 			(property) => result[property] === parent[property],
 		) &&

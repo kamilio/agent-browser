@@ -1,4 +1,5 @@
 import type { Rgba } from "./raster.js";
+import type { SvgLinearGradient } from "./svg-linear-gradient.js";
 import type { SvgPathSegment } from "./svg-path-types.js";
 
 export type SvgMatrix = readonly [
@@ -23,7 +24,7 @@ export interface SvgSceneShape {
 	readonly ancestors: readonly string[];
 	readonly path: readonly SvgPathSegment[];
 	readonly transform: SvgMatrix;
-	readonly fill: Rgba | null;
+	readonly fill: Rgba | SvgLinearGradient | null;
 	readonly fillRule: "nonzero" | "evenodd";
 	readonly visible: boolean;
 	readonly pointerEvents: boolean;
