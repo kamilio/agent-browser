@@ -19,6 +19,7 @@ import { svgIntrinsicSize } from "./svg-projection.js";
 import type { SvgScene } from "./svg-scene-types.js";
 import { documentImages } from "./document-images.js";
 import { brokenImageAlternative } from "./image-fallback.js";
+import { supportsImageBorderHint } from "./html-image-border.js";
 import {
 	type ReplacedSize,
 	resolveHeightConstraints,
@@ -637,6 +638,7 @@ export function buildFormattingTree(
 			].some(
 				(name) =>
 					Object.hasOwn(node.attributes, name) &&
+					!(name === "border" && supportsImageBorderHint(node)) &&
 					!(
 						(node.tagName === "img" || embeddedSvg) &&
 						(name === "width" || name === "height")

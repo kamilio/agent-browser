@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 image-border follow-up:HTML img/object/image-input border
+presentation hints now participate in the normal cascade; zero/invalid hints
+do not erase author CSS. Native loaded-image geometry/raster/hits and the
+standards-mode blocked SourceForge badge border-zero regression pass with
+zero badge fetches. The original Libpng quirks fallback and full click remain
+unresolved; no network/security policy was relaxed. HTML-IMAGE-BORDER.md records
+167 new cases,475 focused passes,and the 2026-09-12T09:48:10.449Z–2026-09-12T09:50:47.980Z
+isolated gate:12817passed/0failed/2unchanged exclusions,247selected suites,
+246strict roots,641manifest entries. Baseline failure and14 incorrect new
+dashed/dotted test fixtures are retained; unsupported styles still reject.
+Live/provider/passkey/device/TTY/realSafeJS and broader research/performance/
+challenge-handling outcomes remain separate and unverified.
+
 September12 post-list-style verification:paired exact GnuPG HTML/CSS on12470
 and12650 reduces raw unsupported-property diagnostics43→38 and applicable14→12;
 other diagnostic categories are unchanged. Six navigation lists and one footer

@@ -1,4 +1,8 @@
 import { imageDimensionHint } from "./replaced-box.js";
+import {
+	imageBorderWidth,
+	supportsImageBorderHint,
+} from "./html-image-border.js";
 import { htmlScriptingEnabled } from "./html-info.js";
 import {
 	cssGridProperties,
@@ -1111,6 +1115,33 @@ export class DocumentStyles {
 			if (elementNamespace(node) === svgNamespace) {
 				for (const declaration of svgPresentationDeclarations(node, charge))
 					apply(node.id, [declaration], [0, 0, 0], false, -2);
+			}
+			if (supportsImageBorderHint(node)) {
+				const raw = node.attributes.border;
+				if (raw !== undefined) charge(raw.length + 1);
+				const width = imageBorderWidth(raw);
+				if (width !== undefined) {
+					for (const side of ["top", "right", "bottom", "left"] as const) {
+						apply(
+							node.id,
+							[
+								{
+									property: `border-${side}-width`,
+									value: width,
+									important: false,
+								},
+								{
+									property: `border-${side}-style`,
+									value: "solid",
+									important: false,
+								},
+							],
+							[0, 0, 0],
+							false,
+							-2,
+						);
+					}
+				}
 			}
 			if (!isHtmlElement(node, "img")) continue;
 			for (const property of ["width", "height"] as const) {
