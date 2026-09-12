@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 parent-verified captured Libpng comparison records12817 ->13042:
+58 ->57 non-CSS guard occurrences and9 ->8 deferred entries;the badge now
+uses a replaced imageAlternative while remaining broken,policy-denied,natural0
+and undecoded. Each run uses23 original native mocks,zeroHTTP and adds nohosts.
+One genuine FAQclick in each still fails native width before destination.
+Parent checked10/13 actual Git objects,7/10snapshot inputs and14/16readonly
+groups,with stable ledgers. LIBPNG-QUIRKS-COMPARISON.md qualifies eight table
+display markers as coordinator entries,not proof of eight missing algorithms.
+Original source,failed preparations,reports and historical paths remain intact.
+The13042 isolated pass is not fullwebsite or liveacceptance;retained HTML/table
+presentation hints and inlinealignment remain investigation targets.
+
 September12 quirks-image follow-up adds mode-aware broken-image alternatives:
 dimensioned quirks images use independent replaced sizing and clipped native
 text;no/limited-quirks and auto-size quirks retain text layout. Original80x15
