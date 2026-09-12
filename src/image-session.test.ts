@@ -3,10 +3,14 @@ import { BrowserCommandHost } from "./command-host.js";
 import { documentImages } from "./document-images.js";
 import { loadBrowserDocument } from "./document-loader.js";
 import type { DocumentTree } from "./document.js";
+import { AgentBrowserError } from "./errors.js";
+import { documentInteractions } from "./interactions.js";
 import type { NetworkRequest, NetworkResponse } from "./network.js";
 import { encodePng } from "./png.js";
 import { createRaster } from "./raster.js";
 import { BrowserSession } from "./session.js";
+import { DocumentQueries } from "./selectors.js";
+import { documentStyles } from "./styles.js";
 
 const sessions: BrowserSession[] = [];
 afterEach(() => {
@@ -32,6 +36,7 @@ function response(url: string, html?: string): NetworkResponse {
 function fixture(
 	load?: (input: NetworkRequest) => Promise<NetworkResponse>,
 	html = '<img src="/image.png?secret=value"><img src="/image.png?secret=value">',
+	initialized?: (tree: DocumentTree) => void,
 ) {
 	const requests: NetworkRequest[] = [];
 	const documents: DocumentTree[] = [];
@@ -59,6 +64,7 @@ function fixture(
 				initializeDocument(tree) {
 					documents.push(tree);
 					context.initializeDocument?.(tree);
+					initialized?.(tree);
 				},
 			}),
 	});
@@ -250,4 +256,218 @@ it("never shares decoded resources or network ownership across sessions", async 
 	expect(secondImages.inspect().images[0].state).toBe("complete");
 	expect(first.requests).toHaveLength(2);
 	expect(second.requests).toHaveLength(2);
+});
+
+it.each(["policy-denied", "network-error", "aborted"] as const)(
+	"keeps optional image %s local while loading original CSS and navigating a link",
+	async (code) => {
+		const failed: number[] = [];
+		const loaded: number[] = [];
+		const { browser, tab, requests } = fixture(
+			async (input) => {
+				if (new URL(input.url).hostname === "blocked.invalid")
+					throw new AgentBrowserError(
+						code,
+						"Isolated optional-image rejection",
+					);
+				if (input.url.endsWith("/style.css"))
+					return {
+						...response(
+							input.url,
+							"html,body{margin:0}main{width:120px;font-size:8px;line-height:10px}img{display:block}",
+						),
+						headers: { "content-type": ["text/css"] },
+					};
+				if (input.url.endsWith("/good.png")) return response(input.url);
+				return response(
+					input.url,
+					input.url.endsWith("/next")
+						? "<!doctype html><p>Next page</p>"
+						: '<!doctype html><link rel="stylesheet" href="/style.css"><main><img id="blocked" src="https://blocked.invalid/track.png" alt="Blocked"><img id="good" src="/good.png"><a id="next" href="/next">Next</a></main>',
+				);
+			},
+			undefined,
+			(tree) => {
+				const events = documentInteractions(tree).events;
+				events.addEventListener(
+					tree.root,
+					"error",
+					(event) => {
+						if (event.target !== null) failed.push(event.target);
+					},
+					{ capture: true },
+				);
+				events.addEventListener(
+					tree.root,
+					"load",
+					(event) => {
+						if (event.target !== null) loaded.push(event.target);
+					},
+					{ capture: true },
+				);
+			},
+		);
+		await browser.navigate(tab, "https://example.com/page");
+		const tree = browser.page(tab).document;
+		const queries = new DocumentQueries(tree);
+		const blocked = queries.querySelector("#blocked");
+		const good = queries.querySelector("#good");
+		const next = queries.querySelector("#next");
+		if (blocked === null || good === null || next === null)
+			throw new Error("Missing optional-image navigation fixture");
+		const images = documentImages(tree);
+		const events = documentInteractions(tree).events;
+		expect(images.get(blocked)).toMatchObject({ state: "broken", error: code });
+		expect(images.get(good)).toMatchObject({
+			state: "complete",
+			naturalWidth: 3,
+		});
+		expect(tree.get(blocked).attributes.src).toBe(
+			"https://blocked.invalid/track.png",
+		);
+		expect(failed).toEqual([blocked]);
+		expect(loaded).toEqual([good]);
+		expect(documentStyles(tree).metrics().externalSheets).toBe(1);
+		expect(
+			requests.filter((request) => request.url.endsWith("/style.css")),
+		).toHaveLength(1);
+		expect(
+			browser
+				.requests(tab)
+				.entries.find(
+					(entry) => entry.kind === "image" && entry.error === code,
+				),
+		).toMatchObject({ state: code === "policy-denied" ? "blocked" : "failed" });
+		expect(images.metrics()).toMatchObject({
+			active: 0,
+			queued: 0,
+			requests: 2,
+			closed: false,
+		});
+		await browser.click(tab, tree.reference(next));
+		expect(browser.page(tab).document.url).toBe("https://example.com/next");
+		expect(tree.nodeCount).toBe(0);
+		expect(images.metrics()).toMatchObject({
+			closed: true,
+			active: 0,
+			queued: 0,
+			resources: 0,
+			decodedBytes: 0,
+		});
+		expect(events.metrics()).toMatchObject({
+			closed: true,
+			listeners: 0,
+			activeDispatches: 0,
+		});
+	},
+);
+
+it("shares one locally denied image failure and recovers only the changed source", async () => {
+	const { browser, tab, requests } = fixture(async (input) => {
+		if (new URL(input.url).hostname === "blocked.invalid")
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Isolated image origin policy",
+			);
+		return input.url.endsWith("/good.png")
+			? response(input.url)
+			: response(
+					input.url,
+					'<img id="first" src="https://blocked.invalid/track.png"><img id="second" src="https://blocked.invalid/track.png">',
+				);
+	});
+	await browser.navigate(tab, "https://example.com/page");
+	const tree = browser.page(tab).document;
+	const queries = new DocumentQueries(tree);
+	const first = queries.querySelector("#first");
+	const second = queries.querySelector("#second");
+	if (first === null || second === null)
+		throw new Error("Missing shared images");
+	const images = documentImages(tree);
+	expect(images.get(first)).toMatchObject({
+		state: "broken",
+		error: "policy-denied",
+	});
+	expect(images.get(second)).toMatchObject({
+		state: "broken",
+		error: "policy-denied",
+	});
+	expect(
+		requests.filter(
+			(request) => new URL(request.url).hostname === "blocked.invalid",
+		),
+	).toHaveLength(1);
+	const recovered: number[] = [];
+	documentInteractions(tree).events.addEventListener(first, "load", () =>
+		recovered.push(first),
+	);
+	tree.setAttribute(first, "src", "/good.png");
+	await images.settle();
+	expect(images.get(first)).toMatchObject({
+		state: "complete",
+		naturalWidth: 3,
+	});
+	expect(images.get(second)).toMatchObject({
+		state: "broken",
+		error: "policy-denied",
+	});
+	expect(recovered).toEqual([first]);
+	expect(
+		requests.filter(
+			(request) => new URL(request.url).hostname === "blocked.invalid",
+		),
+	).toHaveLength(1);
+	expect(browser.page(tab).document).toBe(tree);
+});
+
+it("keeps global cancellation fatal and closes candidate owners without replacing the prior page", async () => {
+	let imageStarted!: () => void;
+	const started = new Promise<void>((resolve) => {
+		imageStarted = resolve;
+	});
+	const { browser, tab, documents } = fixture(async (input) => {
+		if (input.url.endsWith("/pending.png")) {
+			imageStarted();
+			return new Promise(() => {});
+		}
+		return response(
+			input.url,
+			input.url.endsWith("/candidate")
+				? '<img src="/pending.png">'
+				: "<p>Original page</p>",
+		);
+	});
+	await browser.navigate(tab, "https://example.com/start");
+	const original = browser.page(tab).document;
+	const history = browser.history(tab);
+	const controller = new AbortController();
+	const navigation = browser.navigate(tab, "https://example.com/candidate", {
+		signal: controller.signal,
+	});
+	const rejected = expect(navigation).rejects.toMatchObject({
+		code: "aborted",
+	});
+	await started;
+	const candidate = documents[1];
+	const images = documentImages(candidate);
+	const events = documentInteractions(candidate).events;
+	expect(images.metrics()).toMatchObject({ active: 1, closed: false });
+	controller.abort();
+	await rejected;
+	expect(browser.page(tab).document).toBe(original);
+	expect(browser.history(tab)).toEqual(history);
+	expect(original.nodeCount).toBeGreaterThan(0);
+	expect(candidate.nodeCount).toBe(0);
+	expect(images.metrics()).toMatchObject({
+		closed: true,
+		active: 0,
+		queued: 0,
+		resources: 0,
+		decodedBytes: 0,
+	});
+	expect(events.metrics()).toMatchObject({
+		closed: true,
+		listeners: 0,
+		activeDispatches: 0,
+	});
 });

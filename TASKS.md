@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026,02:13 UTC: `OPTIONAL-IMAGE-FAILURES.md` records five new native
+session regressions establishing that existing local image failures preserve
+original CSS/DOM, error/load ownership and genuine link navigation; shared-image
+source recovery remains local, while global cancellation closes candidate owners
+without replacing the previous page/history. The prior Man7 stop was a harness
+global-abort policy, not an inherent native requirement. Clean baseline180 and
+candidate185 checks pass in4 explicit suites. The sealed optional-image gate
+passes build, strict, formatting and11504 selected native tests,0 failures and
+the same2 exclusions,204 suites,203 strict roots,599 unchanged manifest entries.
+All1928 compiled files match the prior float release byte-for-byte: production
+is unchanged. Native image-session joins selected coverage with7 existing and5
+new cases. Separate legacy grid failures and all live/provider/device/real
+SafeJS/socket/TTY gates remain explicit. One bounded native Man7 policy follow-up
+and one Debian docs probe run separately on the actual11492 release; do not
+infer their results from this isolated gate. Continue varied site testing and
+remaining CSS/overflow work; the overall browser goal stays open.
+
 September12,2026,02:02 UTC: `FLOAT-DOCUMENT.md` records actual physical native
 float document integration: source-ordered margin-box placement, text intervals,
 ordinary/BFC height ownership, shrink-to-fit/replaced sizing, native paint/hits
