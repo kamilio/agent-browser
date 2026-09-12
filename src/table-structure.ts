@@ -1,5 +1,5 @@
 import { resolveBorders } from "./border-box.js";
-import { initialBoxStyle } from "./css-box.js";
+import { initialBoxStyle, type BoxStyle } from "./css-box.js";
 import { lengthHasPercentage } from "./css-math.js";
 import { initialTableStyle } from "./css-table.js";
 import { AgentBrowserError } from "./errors.js";
@@ -10,6 +10,12 @@ import {
 	placeTableCells,
 	type TableSlotGroupInput,
 } from "./table-slot-placement.js";
+
+export function tableCellPercentage(style: BoxStyle): number | undefined {
+	return /^(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?%$/.test(style.width)
+		? resolveLayoutLength(style.width, 1)
+		: undefined;
+}
 
 export function tableStructure(
 	formatting: Pick<FormattingTree, "nodes">,
@@ -99,8 +105,10 @@ export function tableStructure(
 								"padding-right",
 								"padding-bottom",
 								"padding-left",
-							].some((name) =>
-								lengthHasPercentage(box[name as keyof typeof box]),
+							].some(
+								(name) =>
+									lengthHasPercentage(box[name as keyof typeof box]) &&
+									!(name === "width" && tableCellPercentage(box) !== undefined),
 							)
 						)
 							throw new AgentBrowserError(
@@ -169,11 +177,18 @@ export function tableColumnContributions(
 				measured.maxContribution,
 			),
 		);
+		const percentage = tableCellPercentage(style);
 		return Object.freeze({
 			column: cell.columnStart,
 			span: cell.columnEnd - cell.columnStart,
 			minContent,
 			maxContent,
+			...(percentage === undefined
+				? {}
+				: {
+						percentage,
+						percentageOffset: style["box-sizing"] === "border-box" ? 0 : edges,
+					}),
 		});
 	});
 }

@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 percentage cell widths: automatic tables now use simple CSS
+percentage width preferences in both separate/collapsed models, with intrinsic
+row/span maxima, constrained track allocation, spacing and actual box edges.
+An unchanged failing geometry/hit fixture passes; three new suites add53 cases.
+The final focused14 suites pass579/0 and sealed216-suite native gate11901/0 with
+2 unchanged exclusions,215 strict roots and610 clean manifest entries. The
+legacy intrinsic grid rejection is separately reproduced on clean source and
+left outside the established gate. Cell max-width remains intentionally ignored;
+percentage minimum/padding/height/mixed-math, root/group/row sizing, HTML width
+hints and other independent profiles remain limited. Conservative intrinsic
+bounds are not full CSS Tables3 parity. See `TABLE-PERCENTAGE-WIDTHS.md`.
+Next: a newly scoped Lua capture replay on this actual release is still required;
+the prior failed Lua click and fresh zlib11784 flow are not retroactively relabeled.
+
 September12,2026 Lua collapsed-border replay and diagnostic correction: exactly
 two offline native page runs retain the same four original responses, failed
 manual click, one deferred table and seven collapsed-border guards. No new HTTP

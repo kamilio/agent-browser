@@ -270,7 +270,7 @@ it("keeps immutable snapshots through border mutation and collapse-mode changes"
 it.each([
 	{ css: "td{position:relative}", markup: undefined },
 	{ css: "table{table-layout:fixed}", markup: undefined },
-	{ css: "td{width:50%}", markup: undefined },
+	{ css: "td{min-width:50%}", markup: undefined },
 	{ css: "", markup: '<table id="table"><col><tr><td>A</td></tr></table>' },
 	{
 		css: "",

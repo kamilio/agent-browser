@@ -40,7 +40,11 @@ import {
 	tableRowSizingLimits,
 	type TableRowContribution,
 } from "./table-row-sizing.js";
-import { tableColumnContributions, tableStructure } from "./table-structure.js";
+import {
+	tableCellPercentage,
+	tableColumnContributions,
+	tableStructure,
+} from "./table-structure.js";
 import { projectCollapsedTableBorders } from "./table-collapsed-geometry.js";
 import { layoutFormattingText, textLayoutWorkLimit } from "./text-layout.js";
 
@@ -268,7 +272,14 @@ export function layoutFormattingTableContainer(
 			"max-height",
 		] as const) {
 			charge();
-			if (lengthHasPercentage(style[property]))
+			if (
+				lengthHasPercentage(style[property]) &&
+				!(
+					property === "width" &&
+					node.display === "table-cell" &&
+					tableCellPercentage(style) !== undefined
+				)
+			)
 				unsupported("Percentage table role sizing requires cycle resolution");
 		}
 		if (style["max-height"] !== "none")
