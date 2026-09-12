@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 captured Libpng replay on committed13226 confirms57to49 non-CSS
+occurrences: eight bgcolor guards removed,41hard guards plus8table coordinator
+markers remain. All8original rows retain source attributes and compute6blue/
+2green backgrounds;8deferred subtrees remain. The actual FAQ click still fails
+native width resolution before destination. Exactly23captured responses,zero
+HTTP/wire/newhosts; this is not a live visit or full-page render/acceptance pass.
+LIBPNG-BACKGROUND-COLOR-REPLAY.md preserves the11:54:48.647–11:54:54.343UTC
+observation and all historical evidence. Parent independently verifies11actual
+Git objects/8snapshot inputs/18readonly groups/228sealed entries at11:56:10.946UTC.
+The broken SourceForge badge remains policy-denied without a request. Latest
+website inventory stays82attempted hosts; performance,research,providers,
+passkeys,devices,TTY,realSafeJS and challenge gates remain separate and open.
+
 September12 native HTMLbackground-color gate adds184cases andpasses13226
 with0failures/2unchanged exclusions. Fulllegacycolorconversion nowdrivesbgcolor
 hints onHTMLbody/table/groups/rows/cells/marquee through theexistingcascade.
