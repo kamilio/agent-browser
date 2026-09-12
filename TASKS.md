@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 new cached Selenium replay on committed native15421 now succeeds
+at one used-layout attempt with63contexts. It retains the original3123byte HTML,
+127byte GIF and197nodes; e168's no-src/no-alt state is no longer an element guard.
+The table decomposition marker remains and is handled by the layout coordinator.
+One parse and one exact-URL memory image response run18:33:06.674–18:33:06.762UTC;
+there are0new HTTP requests and no click/navigation/raster acceptance claim.
+SELENIUM-EMPTY-IMAGE-REPLAY.md preserves the new result separately from earlier
+failed14922 evidence. Main's18:35:09.074UTC read-only verification checks recorded
+results, stable release/capture hashes and the8entry post-run seal without page
+import, parsing, decoding, layout or network. Fresh website/navigation and wider
+research/performance/provider/passkey/device/SafeJS/challenge gates stay open.
+
 September12 stable no-content images now retain native replaced boxes with zero
 intrinsic dimensions and no aspect ratio, preserving authored dimensions, edges,
 backgrounds, outlines and hit identity without inventing pixels. Source-less or
