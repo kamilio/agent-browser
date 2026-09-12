@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 fifteenth website inventory records84attempted hosts, not84
+working websites. Onlylibjpeg-turbo.org extends the immutablefourteenth83host
+union;www.libjpeg-turbo.org was allowed-only. WEBSITE-TEST-INVENTORY-SEPTEMBER-
+12-FIFTEENTH-UPDATE.md and its schema3JSON preserve13226live evidence separately
+from the13446isolated code gate, plus completedNetlib13226 and retained source
+research. The inventory excludes the then-pending13446Libpng replay; its later
+completed report is a separate dated result, not a rewritten inventory. Parent
+checks321of322inputs and2actualprevious committed files at13:04:32.969UTC. One
+inherited source checksum retains its explicit agent no-reopen scope exception;
+parent verifies only that inherited digest and does not reopen that payload.
+WorkingWebsiteCount remainsnull; all broader acceptance gates remain open.
+
 September 12 captured Libpng replay on committed13446 confirms49to41 non-CSS
 occurrences: eight cellpadding guards removed;33hard guards and8coordinator
 markers remain, with8deferred subtrees. All16HTMLcells across8originaltables
