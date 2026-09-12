@@ -6,6 +6,21 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12,2026,00:01 UTC: parent independently verifies the fresh curl
+documentation attempt executed September 11 at23:56 UTC on11025 release4d11abd.
+`CURL-DOCUMENTATION-FLOW.md` preserves2 actual HTTP200 GETs,6556 encoded/28849
+decoded bytes,43 evidence checks and40/44-entry ledgers. New host curl.se raises
+attempted-host coverage65→66, not66 working sites. The single FAQ click selects
+the first occurrence of a duplicated URL and fails not-actionable before any
+pointer action or destination request. The generic hidden/inert/disabled error
+does not identify an ancestor or prove an engine bug. A separate bounded census
+retains active CSS issues,9 deferred flex nodes,1 image and1 overflow; it is not
+the established click cause. Native image policy denies the logo before wire
+admission, not a server rejection. Actual owner cleanup and original bodies/pins
+verify with no retry, resource rewrite, script, credential or bypass. Next
+investigate visibility-aware native link selection using a separately authorized
+offline replay, while retaining this first failure and the wider layout gates.
+
 September 11,2026,23:57 UTC: parent independently verifies the new native
 `FLOAT-SIZING-SOURCE.md` receipt:9 checks,76 ledger entries,1 native HTTP200 GET
 and3 offline heading sections on the audited11025 release. It establishes float

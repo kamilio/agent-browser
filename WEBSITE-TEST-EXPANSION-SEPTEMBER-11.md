@@ -1,5 +1,17 @@
 # Website test expansion — September 11, 2026
 
+**Fresh curl documentation attempt,23:56 UTC; parent verified September 12:**
+`CURL-DOCUMENTATION-FLOW.md` adds `curl.se`, raising attempted-host coverage to
+**66**, not66 working sites. Two HTTP200 GETs load the documentation index and
+original CSS on11025 release4d11abd,6556 encoded/28849 decoded bytes. The native
+page commits, but the one FAQ click fails `not-actionable` on the first occurrence
+of a duplicated destination. No pointer action or FAQ request occurs; the generic
+hidden/inert/disabled error does not prove a particular ancestor or engine defect.
+The separate CSS/formatting census and native pre-wire image policy denial remain
+supplementary limitations, not the established click cause. All43 evidence checks,
+40/44-entry ledgers, original body hashes and actual owner cleanup verify. No
+retry, alternate target, style stripping or access bypass is used.
+
 **Fresh OpenBSD introduction follow-up,23:33 UTC:**
 `OPENBSD-FONT-WEIGHT-FLOW.md` retains the failed genuine Hardware Support
 fragment click on11025-pass font release4d11abd. Two fresh HTTP200 GETs transfer
