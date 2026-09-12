@@ -633,27 +633,51 @@ it("leaves pending and loaded owners unchanged by alternative text", async () =>
 });
 
 it.each([
-	`src="${blockedSource}"`,
-	`src="${blockedSource}" alt=""`,
-	'alt="Badge"',
-	'src="" alt="Badge"',
-	'src="   " alt="Badge"',
-	`src="${blockedSource}" alt="Badge" srcset=""`,
-	`src="${blockedSource}" alt="Badge" srcset="/other.png 2x"`,
-	`src="${blockedSource}" alt="Badge" crossorigin="anonymous"`,
-	`src="${blockedSource}" alt="Badge" referrerpolicy="no-referrer"`,
-])("does not promote ineligible quirks sources: %s", async (attributes) => {
-	const actual = await fixture(
-		`<img id="photo" width="80" height="15" ${attributes}>`,
-	);
-	expect(actual.node()).toMatchObject({
-		kind: "deferred",
-		deferredReason: "element-layout-not-supported",
-	});
-	expect(() => rasterizeDocument(actual.tree)).toThrow(/supported formatting/i);
-	expect(actual.images.decoded(actual.id())).toBeUndefined();
-	expect(actual.requests).toEqual([]);
-});
+	[`src="${blockedSource}"`, false],
+	[`src="${blockedSource}" alt=""`, false],
+	['alt="Badge"', true],
+	['src="" alt="Badge"', true],
+	['src="   " alt="Badge"', true],
+	[`src="${blockedSource}" alt="Badge" srcset=""`, false],
+	[`src="${blockedSource}" alt="Badge" srcset="/other.png 2x"`, false],
+	[`src="${blockedSource}" alt="Badge" crossorigin="anonymous"`, false],
+	[`src="${blockedSource}" alt="Badge" referrerpolicy="no-referrer"`, false],
+] as const)(
+	"classifies terminal quirks sources: %s",
+	async (attributes, text) => {
+		const actual = await fixture(
+			`<img id="photo" width="80" height="15" ${attributes}>`,
+		);
+		if (text) {
+			const reference = await fixture(
+				`<img id="photo" width="80" height="15" src="${blockedSource}" alt="Badge">`,
+			);
+			expect(actual.node()).toMatchObject({
+				kind: "replaced",
+				imageAlternative: { text: "Badge" },
+			});
+			expect(actual.rect()).toMatchObject({ width: 80, height: 15 });
+			const raster = rasterizeDocument(actual.tree);
+			expect(raster.image.pixels).toEqual(
+				rasterizeDocument(reference.tree).image.pixels,
+			);
+			expect(raster.metrics).toMatchObject({
+				paintedGlyphs: 0,
+				paintedImages: 1,
+			});
+		} else {
+			expect(actual.node()).toMatchObject({
+				kind: "deferred",
+				deferredReason: "element-layout-not-supported",
+			});
+			expect(() => rasterizeDocument(actual.tree)).toThrow(
+				/supported formatting/i,
+			);
+		}
+		expect(actual.images.decoded(actual.id())).toBeUndefined();
+		expect(actual.requests).toEqual([]);
+	},
+);
 
 it("does not promote a picture child into a quirks alternative", async () => {
 	const actual = await fixture(

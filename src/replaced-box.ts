@@ -119,7 +119,10 @@ export function resolveReplacedSize(
 ): Readonly<ReplacedSize> {
 	layoutNumber(intrinsicWidth);
 	layoutNumber(intrinsicHeight);
-	if (intrinsicWidth === 0 || intrinsicHeight === 0)
+	if (
+		preserveAspectRatio !== false &&
+		(intrinsicWidth === 0 || intrinsicHeight === 0)
+	)
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Replaced content requires positive intrinsic dimensions",

@@ -516,8 +516,13 @@ function paintDocumentLayout(
 			(!node.visible && !node.svg?.shapes.some((shape) => shape.visible))
 		)
 			return;
+		if (node.emptyImage) documentImages(tree).get(tree.resolve(used.ref).id);
 		const source =
-			node.control || node.marker || node.svg || node.imageAlternative
+			node.control ||
+			node.marker ||
+			node.svg ||
+			node.imageAlternative ||
+			node.emptyImage
 				? undefined
 				: documentImages(tree).decoded(tree.resolve(used.ref).id);
 		if (
@@ -525,7 +530,8 @@ function paintDocumentLayout(
 			!node.control &&
 			!node.marker &&
 			!node.svg &&
-			!node.imageAlternative
+			!node.imageAlternative &&
+			!node.emptyImage
 		)
 			throw new AgentBrowserError(
 				"unsupported",
@@ -550,6 +556,16 @@ function paintDocumentLayout(
 				node.paint ?? initialPaintStyle,
 				charge,
 			);
+		if (node.emptyImage) {
+			drawOutline(
+				node.ref,
+				borderX,
+				borderY,
+				used.borderBoxWidth,
+				used.borderBoxHeight,
+			);
+			return;
+		}
 		const originX = borderX + used.borderLeft + used.paddingLeft - clip.x;
 		const originY = borderY + used.borderTop + used.paddingTop - clip.y;
 		const left = Math.max(0, originX);

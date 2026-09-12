@@ -280,9 +280,15 @@ it.each([
 		);
 		const result = formatting();
 		expect(styles.flow(id("#target")).clear).toBe("both");
-		expect(owners("#target", result)).toHaveLength(1);
-		expect(owners("#target", result)[0].level).toBe("inline");
-		expect(owners("#target", result)[0].clear).toBeUndefined();
+		const targetOwners = owners("#target", result);
+		expect(targetOwners.map((node) => node.kind)).toEqual(
+			_name === "image alternative" ? ["text", "inline"] : ["replaced"],
+		);
+		for (const owner of targetOwners) {
+			expect(owner.level).toBe("inline");
+			expect(owner.clear).toBeUndefined();
+		}
+		if (_name === "image alternative") expect(targetOwners[0].text).toBe("AA");
 		expect(result.issues["clear-layout-not-supported"] ?? 0).toBe(0);
 	},
 );

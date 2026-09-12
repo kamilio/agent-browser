@@ -617,14 +617,30 @@ it.each(["img", "button", "input", "select", "textarea", "meter", "progress"])(
 );
 
 it.each(["img", "dialog", "fieldset", "svg", "math"])(
-	"defers special %s element layout without pretending to know intrinsic size",
+	"keeps special %s layout within its known intrinsic profile",
 	(tag) => {
 		const { tree, id } = fixture("<main></main>");
 		tree.append(id("main"), tree.createElement(tag, { id: "special" }));
 		const result = buildFormattingTree(tree);
-		expect(result.metrics.deferredSubtrees).toBe(1);
-		expect(result.issues["element-layout-not-supported"]).toBe(1);
-		expect(() => resolveDocumentBlockWidths(tree)).toThrow("issue-free");
+		if (tag === "img") {
+			expect(result.metrics.deferredSubtrees).toBe(0);
+			expect(result.issues).toEqual({});
+			expect(
+				result.nodes.find(
+					(node) => node.ref === tree.reference(id("#special")),
+				),
+			).toMatchObject({
+				kind: "replaced",
+				emptyImage: true,
+				intrinsic: { width: 0, height: 0 },
+				intrinsicRatio: false,
+			});
+			expect(() => resolveDocumentBlockWidths(tree)).not.toThrow();
+		} else {
+			expect(result.metrics.deferredSubtrees).toBe(1);
+			expect(result.issues["element-layout-not-supported"]).toBe(1);
+			expect(() => resolveDocumentBlockWidths(tree)).toThrow("issue-free");
+		}
 	},
 );
 

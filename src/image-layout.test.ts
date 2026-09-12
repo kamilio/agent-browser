@@ -661,8 +661,14 @@ it("invalidates alternative geometry and prepared paints across alt and src tran
 	tree.removeAttribute(id(), "alt");
 	expect(() => rect()).toThrow(/supported formatting/);
 	tree.setAttribute(id(), "alt", "");
-	expect(() => rect()).toThrow(/supported formatting/);
+	expect(rect()).toMatchObject({ width: 0, height: 0 });
+	expect(rasterizeDocument(tree).metrics).toMatchObject({
+		paintedImages: 0,
+		paintedGlyphs: 0,
+	});
+	const emptyPrepared = prepareDocumentRaster(tree);
 	tree.setAttribute(id(), "alt", "A");
+	expect(() => emptyPrepared.rasterize()).toThrow(/stale/);
 	expect(rect().width).toBe(6);
 });
 
@@ -683,28 +689,61 @@ it("keeps hidden alternative geometry without ink or hits and suppresses display
 });
 
 it.each([
-	'src="/py.svg"',
-	'src="/py.svg" alt=""',
-	'src="/py.svg" alt="" width="20" height="30" style="padding:2px;border:1px solid red"',
-	'alt="Text"',
-	'src="" alt="Text"',
-	'src="   " alt="Text"',
-	'src="/py.svg" alt="Text" srcset="/other.svg 2x"',
-	'src="/py.svg" alt="Text" crossorigin="anonymous"',
-	'src="/py.svg" alt="Text" referrerpolicy="no-referrer"',
+	['src="/py.svg"', "unsupported"],
+	['src="/py.svg" alt=""', "empty"],
+	[
+		'src="/py.svg" alt="" width="20" height="30" style="padding:2px;border:1px solid red"',
+		"empty",
+	],
+	['alt="Text"', "text"],
+	['src="" alt="Text"', "text"],
+	['src="   " alt="Text"', "text"],
+	['src="/py.svg" alt="Text" srcset="/other.svg 2x"', "unsupported"],
+	['src="/py.svg" alt="Text" crossorigin="anonymous"', "unsupported"],
+	['src="/py.svg" alt="Text" referrerpolicy="no-referrer"', "unsupported"],
 ])(
-	"retains an explicit unsupported fallback boundary for %s",
-	async (attributes) => {
+	"retains the native presence and terminal-state fallback boundary for %s",
+	async (attributes, expected) => {
 		const { tree, id } = await fixture(`<img id="photo" ${attributes}>`);
 		const formatting = buildFormattingTree(tree);
-		expect(
-			formatting.nodes.find((node) => node.ref === tree.reference(id())),
-		).toMatchObject({
-			kind: "deferred",
-			deferredReason: "element-layout-not-supported",
-		});
-		expect(formatting.issues["element-layout-not-supported"]).toBe(1);
-		expect(() => rasterizeDocument(tree)).toThrow(/supported formatting/);
+		if (expected === "unsupported") {
+			expect(
+				formatting.nodes.find((node) => node.ref === tree.reference(id())),
+			).toMatchObject({
+				kind: "deferred",
+				deferredReason: "element-layout-not-supported",
+			});
+			expect(formatting.issues["element-layout-not-supported"]).toBe(1);
+			expect(() => rasterizeDocument(tree)).toThrow(/supported formatting/);
+		} else {
+			expect(formatting.issues).toEqual({});
+			if (expected === "empty") {
+				expect(
+					formatting.nodes.find((node) => node.ref === tree.reference(id())),
+				).toMatchObject({
+					kind: "replaced",
+					emptyImage: true,
+					intrinsic: { width: 0, height: 0 },
+					intrinsicRatio: false,
+				});
+			} else {
+				expect(
+					formatting.nodes.some(
+						(node) =>
+							node.ref === tree.reference(id()) &&
+							node.kind === "text" &&
+							node.text === "Text",
+					),
+				).toBe(true);
+				expect(
+					documentGeometry(tree).getBoundingClientRect(id()),
+				).toMatchObject({ width: 24, height: 8 });
+			}
+			expect(rasterizeDocument(tree).metrics).toMatchObject({
+				paintedImages: 0,
+				paintedGlyphs: expected === "text" ? 4 : 0,
+			});
+		}
 	},
 );
 

@@ -21,7 +21,10 @@ import { documentSvgScene } from "./svg-scene.js";
 import { svgIntrinsicSize } from "./svg-projection.js";
 import type { SvgScene } from "./svg-scene-types.js";
 import { documentImages } from "./document-images.js";
-import { brokenImageAlternative } from "./image-fallback.js";
+import {
+	brokenImageAlternative,
+	emptyImageAlternative,
+} from "./image-fallback.js";
 import { documentMode } from "./document-mode.js";
 import {
 	describeImageAlternative,
@@ -128,6 +131,7 @@ export interface FormattingNode {
 	intrinsic?: Readonly<{ width: number; height: number }>;
 	intrinsicRatio?: boolean;
 	imageAlternative?: Readonly<ImageAlternative>;
+	emptyImage?: true;
 	svg?: SvgScene;
 	control?: SoftwareControl;
 	marker?: DisclosureMarker;
@@ -1164,6 +1168,23 @@ export function buildFormattingTree(
 							width: decoded.image.width,
 							height: decoded.image.height,
 						}),
+						...itemFields,
+					}),
+				];
+			if (emptyImageAlternative(tree, node))
+				return [
+					create({
+						kind: "replaced",
+						level: block ? "block" : "inline",
+						ref,
+						display,
+						visible: visibility.visible,
+						box: styles.box(id),
+						paint: styles.paint(id),
+						typography: styles.text(id),
+						intrinsic: Object.freeze({ width: 0, height: 0 }),
+						intrinsicRatio: false,
+						emptyImage: true,
 						...itemFields,
 					}),
 				];

@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 stable no-content images now retain native replaced boxes with zero
+intrinsic dimensions and no aspect ratio, preserving authored dimensions, edges,
+backgrounds, outlines and hit identity without inventing pixels. Source-less or
+empty-source nonempty alt renders literal text in the supported terminal states.
+Loaded/pending, policy/resource and unsupported profile guards remain explicit.
+EMPTY-IMAGE.md records source scope, retained failures, independent review and
+356new cases. The clean native gate passes15421/0/2unchanged exclusions
+at2026-09-12T18:28:47.411Z–2026-09-12T18:32:05.312Z:295selected suites,
+294strict roots,673clean manifest entries,1181source/1992compiled files.
+Build, strict checking and owned formatting pass. This is not a new live website
+or navigation acceptance run; prior Selenium failure evidence remains unchanged.
+Broader website/research/performance/provider/passkey/device/SafeJS/challenge
+gates stay open. No content removal, universal fallback size or bypass is added.
+
 September12 separate native primary-source capture records image represented
 content and completion conditions in IMAGE-SEMANTICS-SOURCE.md. One native GET
 returned HTTP200, followed by one offline native parse; full current/pending
