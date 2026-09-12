@@ -1,5 +1,8 @@
 # Website test expansion — September 12, 2026
 
+Later same-day evidence and the **70 attempted-host** total are recorded in
+`WEBSITE-TEST-FOLLOWUPS-SEPTEMBER-12.md`. The original snapshot below is retained.
+
 Starting coverage remains **66 attempted exact hosts**, not66 working websites.
 The historical host list is in `WEBSITE-TEST-INVENTORY.md`, with additions and
 their actual outcomes in `WEBSITE-TEST-EXPANSION-SEPTEMBER-11.md`.

@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026,02:22 UTC: parent independently verifies the fresh Man7 and
+Debian native probes on actual11492 runtime99108ab. Man7's optional tracking-image
+policy rejection stays local, allowing the initial ls(1) document to commit with
+both original CSS loads; one genuinely discovered date(1) click still fails layout before
+destination transport. Four HTTP200 GETs carry23256 encoded/39562 decoded bytes.
+All36 assertions,104/106 ledgers and actual document/image/event/control cleanup
+verify. Debian adds www.debian.org: eight HTTP200 GETs carry17557 encoded/52649
+decoded bytes, then the ninth adapter entry is rejected at the eight-GET cap before
+wire. No commit/discovery/click/census occurs; document/image cleanup verifies,
+event/control cleanup remains unproved. All28 assertions and83/85 ledgers verify.
+Neither flow retries or bypasses restrictions. The additive follow-up inventory
+records70 attempted exact hosts, not70 working sites, without rewriting earlier
+reports. See WEBSITE-TEST-FOLLOWUPS-SEPTEMBER-12.md and its machine-readable record.
+Continue actual CSS/table/fieldset/noscript investigation, overflow work and varied
+website coverage. Debian needs a separately scoped resource-budget follow-up;
+its cap failure is not a browser-layout verdict. The full goal remains open.
+
 September12,2026,02:13 UTC: `OPTIONAL-IMAGE-FAILURES.md` records five new native
 session regressions establishing that existing local image failures preserve
 original CSS/DOM, error/load ownership and genuine link navigation; shared-image
