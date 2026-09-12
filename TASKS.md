@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 sixteenth inventory records85attempted hosts, addingonlygo.dev
+to the immutablefifteenth84host union; this is not85working websites. The two
+Go13446flows and completedLibpng13446replay remain distinct from the13501
+isolated source gate. Go stylesheetflow contract acceptance andfirst-policy-
+denial-stop are explicitly unproved after56nonthrowingCSPimage denials.
+WEBSITE-TEST-INVENTORY-SEPTEMBER-12-SIXTEENTH-UPDATE.md and its schema3JSON
+retain workingWebsiteCount:null. Parent independently rehashes319metadata
+inputs andchecks2actual previous committed files at13:49:03.440UTC;47inherited
+payload claims are copiedonly, not reopened or newly verified. This doesnot
+repeat the prior checksum scopeexception. Pending13501Libjpeg/Netlib results
+and laterbuttonsourceinvestigation are not folded into this datedsnapshot.
+Historical reports remain unchanged and the broader acceptance gates stayopen.
+
 September 12 native float-shell coordination gate passes13501/0/2,
 adding55cases with1364focused passes across33suites.
 FLOAT-SHELL-COORDINATION.md records ordinary float scopes with real flex/grid/
