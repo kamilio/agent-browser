@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026,03:17 UTC: parent independently verifies the fresh Lua5.4
+manual flow and paired Man7 captured-page replay on native11599 release0ca889d.
+Lua makes4HTTP200 GETs/45114bytes, commits the contents page and genuinely clicks
+the discovered manual.html link; native layout stops before destination transport.
+Applicable CSS, presentation-hint and collapsed-table-border guards remain.
+Actual document/image/event/control cleanup and24 evidence checks/121+123 ledgers
+verify. The two Man7 offline runs use4mocks each/zeroHTTP: noscript deferral drops
+5→4, but table/fieldset/CSS guards still block date(1). Parent reproduces40 passed
+and1failed replay check: old mock pacing249.957322ms is below250ms, preserved without
+retry. Both74+75 ledgers and sampled owner cleanup verify, not full acceptance.
+The consolidated WEBSITE-TEST-INVENTORY-SEPTEMBER-12.md and matching JSON list
+70 unique attempted hosts including new www.lua.org. Prior subtotals double-counted
+www.rfc-editor.org already present in the54-host baseline:66/69/70 correct to
+65/68/69, then Lua adds one. Historical reports/measurements remain unchanged.
+This is not70 working websites. Next real gaps include collapsed table borders,
+fieldset/legend and remaining applicable CSS; pacing-harness precision also needs
+separate qualification. Genuine destination flows, broader performance/crawler
+coverage and private provider/device/TTY/real-runtime gates remain open.
+
 September12,2026,02:55 UTC: native noscript now follows the document's scripting
 profile instead of an unconditional layout deferral. Disabled fallback children
 use ordinary layout/paint/hit paths; active HTML noscript stays display:none even
