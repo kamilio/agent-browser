@@ -105,7 +105,7 @@ export function coordinateOutsideMarkers(
 		const line = lines.get(node.id);
 		const baseline = line
 			? line.baseline + (tops.get(node.id) ?? 0)
-			: box.contentY + font.above;
+			: box.contentY + (box.contentAlignmentOffset ?? 0) + font.above;
 		markers.push(
 			Object.freeze({
 				id: node.id,

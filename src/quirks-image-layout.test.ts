@@ -717,17 +717,61 @@ it.each(['align="left"', 'hspace="2"', 'vspace="2"', 'valign="top"'])(
 	},
 );
 
-it("retains block content alignment guards on non-replaced alternatives", async () => {
+it("aligns auto-height non-replaced alternatives as ordinary block text", async () => {
 	const actual = await fixture(
 		undefined,
 		"#photo{display:block;width:auto;height:auto;align-content:center}",
 	);
+	const reference = await fixture(
+		'<span id="photo">Badge</span>',
+		"#photo{display:block;width:auto;height:auto}",
+	);
+	const formatting = buildFormattingTree(actual.tree);
+	const ref = actual.tree.reference(actual.id());
+	const node = actual.node();
+	expect(documentMode(actual.tree)).toBe("quirks");
+	expect(formatting.issues).toEqual({});
+	expect(node).toMatchObject({
+		kind: "block",
+		independentContext: true,
+		blockContentAlignment: { position: "center", overflow: "safe" },
+	});
+	expect(node?.children.map((child) => formatting.nodes[child])).toMatchObject([
+		{ kind: "text", parent: node?.id, ref, text: "Badge" },
+	]);
+	const layout = layoutDocument(actual.tree);
+	expect(layout.boxes.find((box) => box.ref === ref)).toMatchObject({
+		borderY: 0,
+		contentY: 0,
+		naturalContentHeight: 8,
+		contentHeight: 8,
+		contentAlignmentOffset: 0,
+	});
+	expect(actual.rect()).toMatchObject({ x: 0, y: 0, width: 160, height: 8 });
+	expect(actual.rect()).toEqual(reference.rect());
+	const context = layout.contexts.find((entry) => entry.ref === ref);
+	expect(context?.lines).toMatchObject([{ top: 0, height: 8 }]);
 	expect(
-		buildFormattingTree(actual.tree).issues[
-			"block-content-alignment-not-supported"
-		],
-	).toBe(1);
-	expect(() => rasterizeDocument(actual.tree)).toThrow(/supported formatting/i);
+		context?.glyphs.map((glyph) => [
+			glyph.character,
+			glyph.x,
+			glyph.y,
+			glyph.ref,
+		]),
+	).toEqual([
+		["B", 0, 0, ref],
+		["a", 6, 0, ref],
+		["d", 12, 0, ref],
+		["g", 18, 0, ref],
+		["e", 24, 0, ref],
+	]);
+	const raster = rasterizeDocument(actual.tree);
+	expect(raster.image.pixels).toEqual(
+		rasterizeDocument(reference.tree).image.pixels,
+	);
+	expect(raster.metrics).toMatchObject({ paintedGlyphs: 5, paintedImages: 0 });
+	expect(actual.images.decoded(actual.id())).toBeUndefined();
+	expect(actual.requests).toEqual([]);
 });
 
 it("ignores block content alignment on replaced alternatives like loaded images", async () => {

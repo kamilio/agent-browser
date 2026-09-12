@@ -755,6 +755,7 @@ function mergeFloats(
 		);
 		const offsetY = layoutNumber(
 			containing.contentY +
+				(containing.contentAlignmentOffset ?? 0) +
 				location.placement.top +
 				owner.marginTop -
 				root.borderY,

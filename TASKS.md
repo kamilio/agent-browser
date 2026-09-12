@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 ordinary block-content alignment adds real descendant translation
+without moving the owner's physical content box. Positional safe/unsafe and
+distribution fallbacks, independent contexts, text/atoms/floats and empty-marker
+native anchor policy are covered. BLOCK-CONTENT-ALIGNMENT.md retains original
+0/4baseline, marker failures and obsolete-guard integration failures. Final
+2026-09-12T15:12:20.251Z–2026-09-12T15:15:16.493Z UTC gate passes13769/0/2 across266selected
+suites; build,265strict roots and13file formatting pass. This adds153new cases
+and selects28existing cases, not181new tests. The clean657entry manifest and
+1160source/1972compiled inventories exclude unrelated dirty work. Real HTML
+button conversion/theme/fit-content/baseline/state remain pending, as do scroll,
+block baseline-sharing and table-cell alignment. Two untracked suites retain
+old alignment expectations outside this clean gate. No new live, performance,
+provider/passkey, SafeJS/TTY/device or challenge acceptance is claimed.
+
 September 12 cached block-alignment research uses committed13588 for exactly
 one offline native parse of the unchanged September11 W3C capture. At
 14:37:52.834–14:37:53.170 UTC, 76 observed headings yield the requested sections

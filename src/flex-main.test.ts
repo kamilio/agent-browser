@@ -344,13 +344,48 @@ it("retains the width-only guard while allowing supported full-document intrinsi
 	);
 	expect(measureIntrinsicWidths(tree).widths.length).toBeGreaterThan(2);
 });
+it("preserves intrinsic main sizes and real text in a centered block flex item", () => {
+	const { tree, ref, resolve } = fixture("#first{align-content:center}");
+	const formatting = buildFormattingTree(tree);
+	const first = formatting.nodes.find((node) => node.ref === ref("#first"));
+	expect(formatting.issues).toEqual({ "display-layout-not-supported": 1 });
+	expect(first).toMatchObject({
+		kind: "block",
+		flexItem: true,
+		independentContext: true,
+		blockContentAlignment: { position: "center", overflow: "safe" },
+	});
+	expect(first?.children.map((child) => formatting.nodes[child])).toMatchObject(
+		[{ kind: "text", parent: first?.id, text: "aa bbbb" }],
+	);
+	const result = resolve();
+	expect(result.items.map((item) => item.ref)).toEqual([
+		ref("#first"),
+		ref("#second"),
+	]);
+	expect(
+		result.items.map((item) => [
+			item.minContent,
+			item.maxContent,
+			item.baseSize,
+			item.minSize,
+		]),
+	).toEqual([
+		[24, 42, 42, 24],
+		[12, 12, 12, 12],
+	]);
+	expect(result.resolved.lines).toHaveLength(1);
+	expect(
+		result.resolved.lines[0].items.map((item) => item.contentSize),
+	).toEqual([75, 45]);
+	expect(result.resolved.lines[0].remainingFreeSpace).toBe(0);
+});
 it.each([
 	"#container{flex-direction:column}",
 	"#first{display:flex;flex-direction:column;flex-wrap:wrap;position:absolute}",
 	"#first{display:table}",
 	"#first{overflow:hidden}",
 	"#first{writing-mode:vertical-rl}",
-	"#first{align-content:center}",
 ])(
 	"rejects an unsupported prerequisite rather than fabricating sizes: %s",
 	(css) => {

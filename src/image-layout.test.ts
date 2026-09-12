@@ -753,7 +753,52 @@ it("places a floated image text alternative without losing its glyph ownership",
 	expect(rasterizeDocument(tree).metrics.paintedGlyphs).toBe(6);
 });
 
-it.each(["filter:blur(1px)", "display:block;align-content:center"])(
+it("lays out centered block text alternatives without adding auto-height free space", async () => {
+	const { tree, images, id, rect } = await fixture(
+		'<img id="photo" src="/py.svg" alt="Text">',
+		"img{display:block;align-content:center}",
+	);
+	const formatting = buildFormattingTree(tree);
+	const ref = tree.reference(id());
+	const node = formatting.nodes.find(
+		(entry) => entry.ref === ref && entry.kind === "block",
+	);
+	expect(formatting.issues).toEqual({});
+	expect(node).toMatchObject({
+		kind: "block",
+		independentContext: true,
+		blockContentAlignment: { position: "center", overflow: "safe" },
+	});
+	expect(node?.children.map((child) => formatting.nodes[child])).toMatchObject([
+		{ kind: "text", parent: node?.id, ref, text: "Text" },
+	]);
+	const layout = layoutDocument(tree);
+	expect(layout.boxes.find((box) => box.ref === ref)).toMatchObject({
+		borderY: 0,
+		contentY: 0,
+		naturalContentHeight: 10,
+		contentHeight: 10,
+		contentAlignmentOffset: 0,
+	});
+	expect(rect()).toMatchObject({ x: 0, y: 0, width: 40, height: 10 });
+	const context = layout.contexts.find((entry) => entry.ref === ref);
+	expect(context?.lines).toMatchObject([{ top: 0, height: 10 }]);
+	expect(
+		context?.glyphs.map((glyph) => [glyph.character, glyph.x, glyph.ref]),
+	).toEqual([
+		["T", 0, ref],
+		["e", 6, ref],
+		["x", 12, ref],
+		["t", 18, ref],
+	]);
+	expect(images.decoded(id())).toBeUndefined();
+	expect(rasterizeDocument(tree).metrics).toMatchObject({
+		paintedGlyphs: 4,
+		paintedImages: 0,
+	});
+});
+
+it.each(["filter:blur(1px)"])(
 	"does not bypass unsupported CSS for a text alternative: %s",
 	async (declaration) => {
 		const { tree } = await fixture(

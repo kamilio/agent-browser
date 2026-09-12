@@ -33,6 +33,10 @@ import {
 	resolveReplacedSize,
 } from "./replaced-box.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	resolveBlockContentAlignment,
+	type BlockContentAlignment,
+} from "./block-content-alignment.js";
 import { layoutNumber } from "./layout-values.js";
 import { documentStyles } from "./styles.js";
 import { generatedControlStyle } from "./generated-style.js";
@@ -115,6 +119,7 @@ export interface FormattingNode {
 	gridItem?: boolean;
 	orderModifiedChildren?: readonly number[];
 	independentContext?: boolean;
+	blockContentAlignment?: Readonly<BlockContentAlignment>;
 	fragmentIndex?: number;
 	fragmentCount?: number;
 	deferredReason?: string;
@@ -913,6 +918,8 @@ export function buildFormattingTree(
 			if (flow.position !== "static")
 				issue("table-position-layout-not-supported");
 			const cell = display === "table-cell";
+			if (cell && styles.flex(id)["align-content"] !== "normal")
+				issue("block-content-alignment-not-supported");
 			const span = (
 				name: string,
 				fallback: number,
@@ -1055,11 +1062,12 @@ export function buildFormattingTree(
 			["block", "block flow", "flow-root", "block flow-root"].includes(display);
 		const inline = ["inline", "inline flow"].includes(display);
 		const atomicBlock = ["inline-block", "inline flow-root"].includes(display);
-		if (
+		const blockContentAlignment =
 			(block || atomicBlock) &&
-			(!deferredElements.has(node.tagName) || imageText !== undefined) &&
-			styles.flex(id)["align-content"] !== "normal"
-		)
+			(!deferredElements.has(node.tagName) || imageText !== undefined)
+				? resolveBlockContentAlignment(styles.flex(id)["align-content"])
+				: undefined;
+		if (blockContentAlignment === null)
 			issue("block-content-alignment-not-supported");
 		if (node.tagName === "br" && inline)
 			return [
@@ -1210,7 +1218,12 @@ export function buildFormattingTree(
 				paint: styles.paint(id),
 				typography: styles.text(id),
 				independentContext:
-					atomicBlock || id === rootElement || display.includes("flow-root"),
+					atomicBlock ||
+					id === rootElement ||
+					display.includes("flow-root") ||
+					(blockContentAlignment !== undefined &&
+						blockContentAlignment !== null),
+				...(blockContentAlignment ? { blockContentAlignment } : {}),
 				...itemFields,
 			});
 			const contents = children();

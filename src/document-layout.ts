@@ -1,3 +1,4 @@
+import { blockContentAlignmentOffset } from "./block-content-alignment.js";
 import { initialBoxStyle } from "./css-box.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -42,6 +43,7 @@ export interface DocumentBox extends FormattingBlockWidth {
 	paddingBottom: number;
 	naturalContentHeight: number;
 	contentHeight: number;
+	contentAlignmentOffset?: number;
 	borderBoxHeight: number;
 	borderY: number;
 	contentY: number;
@@ -141,6 +143,7 @@ interface State {
 	relativeY: number;
 	borderY: number;
 	contentY: number;
+	contentAlignmentOffset?: number;
 	clearance: number | null;
 	clearanceFloor: number | null;
 	clearancePrepared: boolean;
@@ -850,13 +853,21 @@ export function layoutFormattingDocument(
 		charge();
 		const parent = states.get(state.width.containingBlock);
 		state.borderY = layoutNumber(
-			(parent?.contentY ?? 0) + state.relativeY,
+			(parent?.contentY ?? 0) +
+				(parent?.contentAlignmentOffset ?? 0) +
+				state.relativeY,
 			true,
 		);
 		state.contentY = layoutNumber(
 			state.borderY + state.borderTop + state.paddingTop,
 			true,
 		);
+		if (state.node.blockContentAlignment)
+			state.contentAlignmentOffset = blockContentAlignmentOffset(
+				state.node.blockContentAlignment,
+				state.height,
+				state.natural,
+			);
 		layoutNumber(state.borderY + state.borderHeight, true);
 		boxes.push(
 			Object.freeze({
@@ -874,6 +885,9 @@ export function layoutFormattingDocument(
 				paddingBottom: state.paddingBottom,
 				naturalContentHeight: state.natural,
 				contentHeight: state.height,
+				...(state.contentAlignmentOffset === undefined
+					? {}
+					: { contentAlignmentOffset: state.contentAlignmentOffset }),
 				borderBoxHeight: state.borderHeight,
 				borderY: state.borderY,
 				contentY: state.contentY,
@@ -898,7 +912,10 @@ export function layoutFormattingDocument(
 				"invalid-input",
 				"Missing text containing block",
 			);
-		const contentY = state.contentY;
+		const contentY = layoutNumber(
+			state.contentY + (state.contentAlignmentOffset ?? 0),
+			true,
+		);
 		const lines = context.lines.map((line) => {
 			charge();
 			lineCount++;

@@ -572,6 +572,48 @@ it.each(["", "<div style='height:30px'></div>", "<div><div></div></div>"])(
 	},
 );
 
+it.each(
+	["normal", "start", "center", "end"].flatMap((alignment) =>
+		[0, 30].map((natural) => ({ alignment, natural })),
+	),
+)(
+	"moves the no-line native marker anchor with $alignment content of height $natural",
+	({ alignment, natural }) => {
+		const { tree, id, queries } = outsideFixture(
+			natural ? `<div style="height:${natural}px"></div>` : "",
+			`li{height:100px;padding:5px;border:2px solid blue;line-height:24px;align-content:${alignment}}`,
+		);
+		try {
+			const { layout, marker, box } = outsideState(tree);
+			const offset =
+				alignment === "center"
+					? (100 - natural) / 2
+					: alignment === "end"
+						? 100 - natural
+						: 0;
+			expect(box.contentHeight).toBe(100);
+			expect(box.naturalContentHeight).toBe(natural);
+			expect(box.contentY).toBe(box.borderY + 7);
+			expect(marker.baselineOwner).toBeNull();
+			expect(marker.y).toBe(box.contentY + offset + 4);
+			expect(
+				layout.contexts.every((context) => context.lines.length === 0),
+			).toBe(true);
+			expect(
+				documentHitTesting(tree).elementFromPoint(marker.x + 3, marker.y + 5),
+			).toBe(id("#item"));
+			expect(pixel(tree, marker.x + 3, marker.y + 5)).toEqual([255, 0, 0, 255]);
+			tree.setAttribute(id("#item"), "style", "list-style-type:none");
+			const unmarked = layoutDocument(tree);
+			expect(unmarked.boxes).toEqual(layout.boxes);
+			expect(unmarked.flowHeight).toBe(layout.flowHeight);
+			expect(unmarked.contexts).toEqual(layout.contexts);
+		} finally {
+			queries.close();
+		}
+	},
+);
+
 it.each([
 	"<div style='margin:20px 0 30px'>Block</div>",
 	"<div style='margin:20px 0 30px'></div>",
