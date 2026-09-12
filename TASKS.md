@@ -6,6 +6,15 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 captured Libpng badge paired-doctype check on12817/3890c33
+now passes the HTML5 positive control at216x8 after the border fix;the exact
+original quirks doctype still fails with one unsupported-element guard. Both
+owners remain mixed-content policy-denied with zero HTTP/resources/decoded
+bytes and clean teardown. LIBPNG-IMAGE-BORDER-SOURCE-CHECK.md preserves the two
+earlier failed controls and verifies7 actual Git inputs plus full release
+ledgers. This is not a full live replay,FAQ success or a new attempted host;
+quirks rendering and the overall browser gates remain open.
+
 September12 website evidence ninth update preserves78 recorded attempted
 hosts,not78working websites. A new predeclared Libarchive contract admitted only
 the exact previously observed public S3 ribbon image:HTML/CSS200,asset403,
