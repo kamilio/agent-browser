@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 website evidence eleventh update keeps80 attempted hosts.
+A separate Expat contract fetched only the exact already-observed Google
+Fonts stylesheet once(HTTP200);six GET200 carried43608encoded/255948decoded
+bytes. The homepage committed,and one genuine Documentation click failed at
+native width resolution before destination navigation. There were no adapter
+rejections,retries,fontbinary fetches or bypass. Parent verified11actual Git
+inputs and36readonly checks. EXPAT-FONT-STYLESHEET-FLOW.md and
+WEBSITE-TEST-INVENTORY-SEPTEMBER-12-ELEVENTH-UPDATE.md distinguish this12650
+interaction failure from the original local admission failure and the newer
+12817 isolated code gate. CSS/non-CSS guards are independent diagnostics,not
+a sole-cause claim. Stylesheet200 is not installed-font or working-site
+acceptance;historical failures and all broader browser gates remain open.
+
 September12 website evidence tenth update records80 attempted hosts,not
 80working sites:libexpat.github.io contacted,and fonts.googleapis.com locally
 adapter-denied before transport under the original same-origin Expat contract.
