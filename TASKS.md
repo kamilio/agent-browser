@@ -6,6 +6,21 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 separate Go stylesheet-origin flow on committed13446 receives
+threeGET200,39271encoded/175096decoded bytes at13:21:05.069–13:21:05.802UTC.
+Homepage commits;96anchors inspected and one genuine current-ref documentation
+click fails Rich button content layout is not implemented before destination.
+The predeclared extra origin is only Google Fonts original-loader CSS. No
+newhost is added beyond the first Go run; no source stripping, fallback or retry
+occurs. IMPORTANT:56earlier nonthrowing CSP image policy denials did not cause
+the promised immediate stop. First-policy-denial-stop coverage and contract
+acceptance are therefore NOT proved. The later exception is only the first
+recorded top-level failure, not the first policy denial. GO-STYLESHEET-
+DOCUMENTATION-FLOW.md retains this limitation, original sources and155sealed
+entries. Parent verifies13actualGit objects/10inputs/12readonly integrity groups
+at13:30:57.972UTC without treating them as contract or website acceptance.
+The first single-origin Go report remains unchanged; broader gates remain open.
+
 September 12 Go documentation flow on committed13446 receives one native
 GET200,12085encoded/64185decoded bytes at13:08:35.278–13:08:35.658UTC.
 The original loader discovers a Google Fonts stylesheet, but the predeclared
