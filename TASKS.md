@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 focused CSP source extraction now covers all ten selected policy-list,
+source-list, URL/expression, scheme/host/port/path and directive-fallback sections.
+CSP-MATCHING-SOURCE.md records one offline native15421 parse at19:23:43.731–.969UTC,
+zero HTTP,28732nodes,45368serialized bytes and18691native semantic bytes. All ten
+targets are complete;64references remain unfollowed and external definitions are
+not complete. The IP-host note/algorithm tension remains explicit. No policy
+admission or CSP implementation is changed. Main independently recaptures16Git
+objects matching32archives and verifies the132-entry seal at19:30:36.750UTC,
+without reparsing or network. Earlier146-entry evidence stays byte-identical.
+Next CSP work must resolve header-list extraction, URL/origin details and actual
+request/redirect/meta integration before allowing resources; a matching helper
+alone cannot justify disabling the conservative image-policy guard. The overall
+browser, research and security acceptance gates remain open.
+
 September12 fresh native Python initial-load evidence now has independent parent
 verification. PYTHON-FRESH-NATIVE-INITIAL.md records8native GET/HTTP200 responses,
 16924encoded/72064decoded bytes, including a genuine basic.css capture. At
