@@ -6,6 +6,21 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 12: fresh Python SVG website check
+
+The native browser commits the Python documentation homepage and completes all
+three SVG-icon references through one shared image request. Eight HTTP 200
+responses include the original imported basic.css. One formatting inspection
+and one used-layout attempt follow; layout remains unsupported at the formatting
+profile guard. Zero clicks, retries or post-failure page analysis are performed.
+
+See `PYTHON-SVG-NATIVE-CHECK.md` for the fresh 22:54 UTC observations, exact
+body/result hashes, owner cleanup and independently checked runtime identities.
+The earlier zero-request syntax failure is preserved separately; setup repair
+does not establish its underlying cause. Next: concrete CSS/layout regressions
+and broader native-site testing, without waiving diagnostics or stripping CSS.
+The overall browser goal and research/device/SafeJS/access gates remain open.
+
 ### September 12: fresh IANA SVG website check
 
 The committed native SVG runtime now loads IANA's original logo at 234×72 and
