@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 native image CSP now compiles enforcing header policy lists instead
+of rejecting every CSP-bearing document's images. IMAGE-CONTENT-SECURITY-POLICY.md
+records immutable policy intersection, img-src/default-src fallback, URL-source
+matching and checks before every native manual redirect plus returned URLs.
+Independent origin/mixed-content/byte/MIME/decode/lifecycle and generic-fetch/
+policy-aware-style guards remain. Meta image policies stay explicitly unsupported
+and latched fail-closed; notification sharing preserves the32-handler ceiling.
+Main661/661focused and the isolated fullgate15869/0/2unchanged exclusions pass at
+20:54:07.560–20:57:52.980UTC:303selected suites,302strict roots,681manifest entries,
+1192source/2004compiled files,1182unchanged tracked inputs and268new scoped cases.
+Build, strict TypeScript, formatting and source stability pass. Prior exclusions,
+runner/worker/registration failures and the pending style acceptance stay intact.
+This is NOT complete browser-wide CSP. A valid plain-style-src-none counterexample
+still fetches/installs a stylesheet; one exact native15601 control proves it
+predates this image change. The12image lifecycle cases are selected; the worker's
+thirteenth future stylesheet case remains a separately retained failing gate,
+not a passing or newly skipped image test. Opaque custom fetch checks are only
+post-response; native redirects have the stronger before-I/O boundary.
+Next are a distinct bounded post-change website check and real stylesheet/meta
+CSP enforcement. Wider CSS/functionality/research/performance/provider/passkey-
+device/SafeJS/challenge gates remain open. No website pass or inventory expansion
+is inferred, no dependency/cap increase is added, and no changes are pushed.
+
 September12 fresh IANA public-document test is now verified and recorded in
 IANA-NATIVE-PUBLIC-FLOW.md. Native15522/4306022 performs2GET200 at20:10:59.056–
 20:10:59.642UTC:15836encoded/95297decoded bytes,111133combined. Before commit,

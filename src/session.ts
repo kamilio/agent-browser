@@ -12,6 +12,11 @@ import {
 	createBrowserIdentity,
 } from "./browser-identity.js";
 import { bindDocumentIdentity } from "./document-identity.js";
+import {
+	documentImageContentSecurityPolicy,
+	imageContentSecurityPolicyValues,
+} from "./document-image-content-security-policy.js";
+import { ImageContentSecurityPolicy } from "./image-content-security-policy.js";
 import { nativeHeadlessDisplay } from "./native-headless-display.js";
 import {
 	type ColorSchemePreference,
@@ -1672,6 +1677,20 @@ export class BrowserSession {
 		const fetchCspBlocked = Object.keys(response.headers).some(
 			(name) => name.toLowerCase() === "content-security-policy",
 		);
+		const imageCspHeaders = imageContentSecurityPolicyValues(response.headers);
+		const imageCsp = new ImageContentSecurityPolicy(
+			responseUrl,
+			imageCspHeaders,
+		);
+		const checkImageCsp = (url: string, redirectCount: number) => {
+			if (candidate)
+				documentImageContentSecurityPolicy(candidate).check(url, redirectCount);
+			else if (!imageCsp.allows(url, redirectCount))
+				throw new AgentBrowserError(
+					"policy-denied",
+					"Image blocked by Content Security Policy",
+				);
+		};
 		const postDocument =
 			request?.method === "POST" &&
 			!response.redirects.some((redirect) =>
@@ -1710,6 +1729,7 @@ export class BrowserSession {
 						"Loaded document URL must match the final response URL",
 					);
 				bindDocumentIdentity(document, this.identity);
+				documentImageContentSecurityPolicy(document, imageCspHeaders);
 				documentStyles(document).setColorSchemePreference(
 					tab.colorSchemePreference,
 				);
@@ -1976,11 +1996,6 @@ export class BrowserSession {
 						);
 				};
 				assertOwner();
-				if (fetchCspBlocked)
-					throw new AgentBrowserError(
-						"policy-denied",
-						"Image CSP enforcement is not implemented",
-					);
 				const controller = new AbortController();
 				const abortImage = () => controller.abort(imageSignal.reason);
 				const abortLifetime = () =>
@@ -2004,6 +2019,7 @@ export class BrowserSession {
 					for (;;) {
 						assertOwner();
 						if (controller.signal.aborted) throw aborted(controller.signal);
+						checkImageCsp(target.href, redirects.length);
 						if (
 							new URL(responseUrl).protocol === "https:" &&
 							target.protocol !== "https:"
@@ -2029,6 +2045,7 @@ export class BrowserSession {
 							controller.signal,
 						);
 						assertOwner();
+						checkImageCsp(image.url, redirects.length);
 						encodedBytes += image.encodedBytes;
 						if (![301, 302, 303, 307, 308].includes(image.status))
 							return { ...image, encodedBytes, redirects };

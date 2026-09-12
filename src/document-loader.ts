@@ -1,4 +1,5 @@
 import { documentBaseUrl } from "./document-url.js";
+import { imageContentSecurityPolicyValues } from "./document-image-content-security-policy.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { documentImages } from "./document-images.js";
 import { AgentBrowserError } from "./errors.js";
@@ -88,8 +89,8 @@ export async function loadBrowserDocument(
 			context.initializeDocument?.(tree);
 			documentImages(tree, {
 				fetch: context.fetchImage,
-				blockedByCsp: Object.keys(response.headers).some(
-					(name) => name.toLowerCase() === "content-security-policy",
+				contentSecurityPolicy: imageContentSecurityPolicyValues(
+					response.headers,
 				),
 			});
 		},

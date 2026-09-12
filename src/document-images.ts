@@ -1,4 +1,5 @@
 import { documentBaseUrl } from "./document-url.js";
+import { documentImageContentSecurityPolicy } from "./document-image-content-security-policy.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError, type ErrorCode } from "./errors.js";
@@ -35,6 +36,7 @@ export type ImageFetch = (
 export interface DocumentImageOptions {
 	fetch?: ImageFetch;
 	blockedByCsp?: boolean;
+	contentSecurityPolicy?: readonly string[];
 	limits?: Partial<Record<keyof DocumentImageLimits, number>>;
 }
 export interface ImageSnapshot {
@@ -138,7 +140,13 @@ export class DocumentImages {
 			typeof options !== "object" ||
 			Array.isArray(options) ||
 			Object.keys(options).some(
-				(key) => !["fetch", "blockedByCsp", "limits"].includes(key),
+				(key) =>
+					![
+						"fetch",
+						"blockedByCsp",
+						"contentSecurityPolicy",
+						"limits",
+					].includes(key),
 			) ||
 			(options.fetch !== undefined && typeof options.fetch !== "function") ||
 			(options.blockedByCsp !== undefined &&
@@ -170,7 +178,11 @@ export class DocumentImages {
 					"invalid-input",
 					"Invalid image owner limit",
 				);
-		this.unregisterChange = tree.onChange((change) => {
+		const contentSecurityPolicy = documentImageContentSecurityPolicy(
+			tree,
+			options.contentSecurityPolicy,
+		);
+		this.unregisterChange = contentSecurityPolicy.watchImages((change) => {
 			if (["insert", "remove", "attribute", "location"].includes(change.kind)) {
 				this.context = undefined;
 				this.dirty = true;
@@ -362,6 +374,8 @@ export class DocumentImages {
 				);
 			if (
 				isHtmlElement(node, "meta") &&
+				node.attributes["http-equiv"]?.length ===
+					"content-security-policy".length &&
 				node.attributes["http-equiv"]?.toLowerCase() ===
 					"content-security-policy"
 			)
@@ -497,6 +511,7 @@ export class DocumentImages {
 					"policy-denied",
 					"Image CSP enforcement is not implemented",
 				);
+			documentImageContentSecurityPolicy(this.tree).check(resourceUrl);
 			if (!this.options.fetch)
 				throw new AgentBrowserError(
 					"unsupported",
@@ -632,6 +647,10 @@ export class DocumentImages {
 					"Image response MIME is not a supported PNG, JPEG or GIF type",
 				);
 			const finalUrl = parseNetworkUrl(response.url);
+			documentImageContentSecurityPolicy(this.tree).check(
+				finalUrl.href,
+				response.redirects.length,
+			);
 			if (
 				new URL(this.tree.url).protocol === "https:" &&
 				finalUrl.protocol !== "https:"
