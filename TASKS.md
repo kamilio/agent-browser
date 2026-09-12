@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 independently verified fresh HN navigation stops before commit on
+native image-policy observations, not a server challenge:2GET/2HTTP200,
+7652encoded/42510decoded bytes,0anchors/clicks/commits. HN-MODERN-NATIVE-FLOW.md
+retains the original header-verifier failure and append-only corrected v2.
+Independent19:14:49.563–19:14:49.981UTC review recaptures16Git objects, matches
+32archives and passes10checks without page/network execution;291original files
+remain unchanged. Navigation acceptance remains false.
+PYTHON-MODERN-REPLAY.md records a distinct offline capture-completeness stop:
+classic.css imports missing basic.css. Four adapter attempts serve three original
+responses,29572decoded bytes,0wire requests and no commit/formatting/layout.
+Independent19:17:09.240–19:17:09.915UTC review confirms16Git object identities,
+13snapshot inputs and129unchanged originals; the exact readonly verifier passes.
+No missing resource is fabricated or appended to the historical capture.
+HN-CELL-SPACING-REPLAY.md then verifies the narrow native15522 repair on unchanged
+captured HN bytes:all four tables compute0px spacing and table-hint issues drop
+4to0; other issues and the used-layout rejection remain. One19:18:42.322–.468UTC
+offline load serves two memory responses,42364bytes,0newHTTP/clicks; owners close.
+Main19:20:28.799UTC readonly verification checks the11-entry new receipt seal,
+capture/runtime identity and unchanged remaining issues without another replay.
+The broader goal and website/research/performance/provider/passkey/device/SafeJS/
+challenge gates remain open. Fresh Python and focused CSP matching investigations
+have separate bounded authorizations; no outcome is claimed before evidence.
+
 September12 native HTML table cellspacing now supplies a normal author hint for
 both border-spacing axes through the shared nonnegative-integer pixel parser.
 HTML-CELL-SPACING.md records101new cases, the failing pre-fix canonical fixtures,
