@@ -6,6 +6,22 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 HN cached-page attribution on committed native15421 still rejects
+used layout. HN-MODERN-NATIVE-DIAGNOSIS.md retains four offline attempts, including
+two corrected harness mistakes: seven exact captured memory responses total,
+162038decoded bytes, no new HTTP/click and no website acceptance. The completed
+attribution identifies four cellspacing hints,61hidden-overflow table cells,
+font-profile/CSS gaps and two native image-policy errors. The four table display
+markers alone are not coordinator defects. Main's readonly verification checks
+all four results, cleanup and unchanged release/capture inventories without
+replaying a page. The separate new live HN report remains a distinct gate.
+CSP-NATIVE-SOURCE.md records one native W3C GET and one offline parse,19sections
+and64unfollowed references. Main independently recaptures16actual Git objects,
+compares32archives and verifies its146-entry seal at19:07:50.181UTC. Full CSP
+policy-list/URL/origin/redirect matching remains incomplete; no policy is bypassed.
+The native browser goal and website/research/performance/provider/passkey/device/
+SafeJS/challenge gates remain open. Historical evidence is not rewritten.
+
 September12 fresh Selenium native reference navigation now passes on committed
 native15421. The18:37:02.509–18:37:03.723UTC flow receives three HTTP200 responses,
 performs one genuine observed e137 click and commits two distinct documents,
