@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 website inventory fourteenth update records 83 attempted hosts,
+adding only www.vim.org. Its off-origin Kuwasha image was rejected before
+native transport/DNS/wire and is not added. Working-website count remains null;
+83 is not a compatibility-pass count. Parent independently rehashes all 259
+consumed inputs and both committed previous-snapshot files at 12:18:54.221 UTC.
+WEBSITE-TEST-INVENTORY-SEPTEMBER-12-FOURTEENTH-UPDATE.md and its JSON preserve
+the 82-host snapshot and distinguish the failed bounded Vim flow, isolated
+13226 gate, offline Libpng replay and incomplete primitive performance study.
+The inventory's audit snapshot deliberately excludes Netlib13226/cellpadding
+followups that were still pending in its task; their separately verified
+reports are recorded in TASKS and add no hosts. No historical evidence, native
+test results or wider research/provider/passkey/SafeJS/challenge gates are
+rewritten or reclassified as successful website acceptance.
+
 September 12 retained-spec/source investigation identifies the remaining HTML
 cellpadding requirements: four cell-padding hints, permissive non-negative
 integer-prefix parsing, existing 1px UA default, bounded ownership work and
