@@ -6,6 +6,17 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 zlib live follow-up: the pinned11784 runtime returned eight
+HTTP200 responses (one document/seven images), then stopped before transport of
+the ninth resource at the fixed eight-GET cap. Zero commits/anchors/clicks;
+formatting unobserved, not a native-layout or access-restriction verdict. Parent
+reproduces37 evidence checks and150/152-entry seals; its initial Git-IPC verifier
+failure and exact-blob preload correction remain explicit, with no live rerun.
+`ZLIB-NATIVE-FLOW.md` and `WEBSITE-TEST-INVENTORY-SEPTEMBER-12-UPDATE.md` record
+the outcome and complete71-unique-host inventory. Previous70-host records remain
+unchanged. A separately scoped resource-budget follow-up is still needed before
+zlib layout/navigation acceptance; Lua replay source-attribution review is pending.
+
 September12,2026 collapsed-border model follow-up:64 deterministic dense-oracle
 cases now cover32 generated grids in both resolver directions, cell/perimeter
 widths, participant/occupancy order independence and exact work-budget edges.
