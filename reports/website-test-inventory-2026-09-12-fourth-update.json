@@ -1,0 +1,351 @@
+{
+  "schemaVersion": 3,
+  "auditedAt": "2026-09-12T06:29:46.989Z",
+  "scope": "Cumulative recorded attempted hosts, not working websites; one fresh Netlib flow.",
+  "previousSnapshot": {
+    "path": "reports/website-test-inventory-2026-09-12-third-update.json",
+    "sha256": "9f902a81dde3b15cbb6d00a115a2fde89686156becca4bf62c7c07b4a46a34b8",
+    "hostCount": 73
+  },
+  "hostCount": 74,
+  "workingWebsiteCount": null,
+  "baselineHostCount": 54,
+  "addedUniqueHostsSinceBaseline": 20,
+  "hosts": [
+    "aclanthology.org",
+    "api.llm-speed.com",
+    "arxiv.org",
+    "books.toscrape.com",
+    "c.statcounter.com",
+    "camoufox.com",
+    "cdn.jsdelivr.net",
+    "crfm.stanford.edu",
+    "curl.se",
+    "deploymentsafety.openai.com",
+    "developer.mozilla.org",
+    "developers.cloudflare.com",
+    "developers.openai.com",
+    "developers.yubico.com",
+    "docs.kernel.org",
+    "docs.mlcommons.org",
+    "docs.nvidia.com",
+    "docs.python.org",
+    "drafts.csswg.org",
+    "en.wikipedia.org",
+    "example.com",
+    "fetch.spec.whatwg.org",
+    "fidoalliance.org",
+    "github.com",
+    "gorilla.cs.berkeley.edu",
+    "help.openai.com",
+    "help.poe.com",
+    "html.duckduckgo.com",
+    "html.spec.whatwg.org",
+    "httpbingo.org",
+    "huggingface.co",
+    "info.cern.ch",
+    "lastexam.ai",
+    "lite.duckduckgo.com",
+    "livecodebench.github.io",
+    "llm-speed.com",
+    "man7.org",
+    "news.ycombinator.com",
+    "openai.com",
+    "poe.com",
+    "pypi.org",
+    "quotes.toscrape.com",
+    "raw.githubusercontent.com",
+    "rocm.docs.amd.com",
+    "search.yahoo.com",
+    "support.apple.com",
+    "testpages.eviltester.com",
+    "the-internet.herokuapp.com",
+    "unpkg.com",
+    "www.amd.com",
+    "www.apple.com",
+    "www.bing.com",
+    "www.cnbc.com",
+    "www.debian.org",
+    "www.gnu.org",
+    "www.gnupg.org",
+    "www.google.com",
+    "www.hardware-corner.net",
+    "www.iana.org",
+    "www.lua.org",
+    "www.netbsd.org",
+    "www.netlib.org",
+    "www.nvidia.com",
+    "www.openbsd.org",
+    "www.python.org",
+    "www.reddit.com",
+    "www.rfc-editor.org",
+    "www.selenium.dev",
+    "www.sqlite.org",
+    "www.swebench.com",
+    "www.w3.org",
+    "www.wikipedia.org",
+    "www.zlib.net",
+    "x.com"
+  ],
+  "hostRepresentation": "Normalized hostname strings. Per-host historical URLs, outcomes and evidence remain in the immutable previous snapshot chain.",
+  "historicalReportsModified": false,
+  "countRule": "Exact previous attempted-host union plus www.netlib.org. Replays, candidate URLs and repeat visits add no host; prior substantiated pre-wire attempts stay historical attempts.",
+  "newHost": {
+    "host": "www.netlib.org",
+    "kind": "fresh native public documentation flow",
+    "runtime": 12037,
+    "commit": "addf9898d11f2d2a16b56499393b740e0d74271a",
+    "startedAt": "2026-09-12T06:26:34.198Z",
+    "finishedAt": "2026-09-12T06:26:34.567Z",
+    "flowPassed": false,
+    "failure": {
+      "stage": "native-documentation-link-click",
+      "name": "AgentBrowserError",
+      "code": "unsupported",
+      "message": "Document width resolution requires an issue-free supported formatting profile"
+    },
+    "accounting": {
+      "nativeRequestAttempts": 2,
+      "transportRequests": 2,
+      "wireRequestCalls": 2,
+      "wireResponses": 2,
+      "wireRedirectResponses": 0,
+      "followedRedirects": 0,
+      "encodedBytes": 10631,
+      "decodedBytes": 10631,
+      "mockedRequests": 0,
+      "note": "Native requests, wire request constructions/responses and mocks are separate; every recorded response body is fresh; wire events are native instrumentation, not packet capture",
+      "adapterEntries": 2,
+      "admittedRequests": 2,
+      "rejectedAdapterEntries": 0,
+      "rejectedAdapterSamples": [],
+      "admissionScope": "admittedRequests counts adapter calls forwarded to native transport; rejectedAdapterEntries counts calls rejected before forwarding; request-start records are counted separately"
+    },
+    "responses": [
+      {
+        "url": "https://www.netlib.org/",
+        "status": 200,
+        "encodedBytes": 3921,
+        "decodedBytes": 3921
+      },
+      {
+        "url": "https://www.netlib.org/netlib2.gif",
+        "status": 200,
+        "encodedBytes": 6710,
+        "decodedBytes": 6710
+      }
+    ],
+    "committed": {
+      "url": "https://www.netlib.org/",
+      "title": "The Netlib",
+      "root": "e1",
+      "nodeCount": 163,
+      "revision": 164,
+      "sameDocument": true,
+      "observedColorScheme": {
+        "at": "2026-09-12T06:26:34.555Z",
+        "reason": "before-or-after-click-state",
+        "url": "https://www.netlib.org/",
+        "root": "e1",
+        "revision": 164,
+        "source": "page.styles.metrics().colorScheme",
+        "colorScheme": {
+          "preference": null,
+          "effective": "light",
+          "profile": "native-ua-color-preference",
+          "systemIntegration": false,
+          "siteOverrides": false
+        },
+        "sessionPreferenceSource": "session.colorSchemePreference(tabId)",
+        "sessionPreference": null
+      },
+      "history": {
+        "key": "h1-1",
+        "url": "https://www.netlib.org/",
+        "state": null,
+        "index": 0,
+        "length": 1
+      },
+      "sessionHistory": {
+        "index": 0,
+        "length": 1,
+        "entries": [
+          {
+            "key": "h1-1",
+            "url": "https://www.netlib.org/",
+            "active": true,
+            "requiresResubmission": false
+          }
+        ],
+        "retainedBytes": 31,
+        "evictedDocuments": 0
+      },
+      "scroll": {
+        "x": 0,
+        "y": 0,
+        "maximum": {
+          "x": 0,
+          "y": 0
+        },
+        "revision": -1,
+        "builds": 0,
+        "updates": 0,
+        "work": 0,
+        "closed": false
+      },
+      "scrollObservation": "existing native metrics only; no geometry refresh or direct scrolling",
+      "nativeRequestAttempts": 2
+    },
+    "discovery": {
+      "inspected": 21,
+      "eligibleOccurrences": 2,
+      "uniqueDestinations": 1,
+      "selected": {
+        "index": 15,
+        "reference": "e133",
+        "href": "misc/faq.html",
+        "url": "https://www.netlib.org/misc/faq.html",
+        "text": "Frequently Asked Questions about Netlib (FAQ)",
+        "browsingTarget": "_self",
+        "availability": {
+          "source": "native styles.get and interactions.actionability before URL deduplication",
+          "displayed": true,
+          "visible": true,
+          "blocked": null,
+          "ariaDisabled": false,
+          "ancestorDepth": 6,
+          "ancestorComplete": true
+        },
+        "urlQualifies": true,
+        "eligible": true,
+        "eligibleOccurrences": 2
+      }
+    },
+    "formatting": {
+      "metrics": {
+        "visitedDomNodes": 129,
+        "boxes": 153,
+        "outsideMarkers": 17,
+        "textCodeUnits": 924,
+        "work": 1686,
+        "deferredSubtrees": 1
+      },
+      "nodes": 136,
+      "nonCss": {
+        "element-layout-not-supported": 1
+      },
+      "rawCss": {},
+      "applicableCss": {},
+      "deferredSubtrees": 1,
+      "deferred": [
+        {
+          "id": 5,
+          "ref": "e21",
+          "kind": "deferred",
+          "domTag": "center",
+          "display": "inline",
+          "contentMode": null,
+          "deferredReason": "element-layout-not-supported",
+          "attributes": {},
+          "actualStyles": {
+            "visibility": {
+              "display": "inline",
+              "visibility": "visible",
+              "displayed": true,
+              "visible": true
+            },
+            "box": {
+              "top": "auto",
+              "right": "auto",
+              "bottom": "auto",
+              "left": "auto",
+              "border-top-width": "3px",
+              "border-right-width": "3px",
+              "border-bottom-width": "3px",
+              "border-left-width": "3px",
+              "border-top-style": "none",
+              "border-right-style": "none",
+              "border-bottom-style": "none",
+              "border-left-style": "none",
+              "width": "auto",
+              "height": "auto",
+              "min-width": "auto",
+              "min-height": "auto",
+              "max-width": "none",
+              "max-height": "none",
+              "box-sizing": "content-box",
+              "margin-top": "0px",
+              "margin-right": "0px",
+              "margin-bottom": "0px",
+              "margin-left": "0px",
+              "padding-top": "0px",
+              "padding-right": "0px",
+              "padding-bottom": "0px",
+              "padding-left": "0px"
+            },
+            "table": {
+              "table-layout": "auto",
+              "border-collapse": "separate",
+              "border-spacing": "0px 0px",
+              "caption-side": "top",
+              "empty-cells": "show",
+              "vertical-align": "baseline"
+            }
+          }
+        }
+      ]
+    },
+    "owners": {
+      "eventOwnersInstrumented": 1,
+      "imageOwnersInstrumented": 1,
+      "eventOwnerCleanupProved": true,
+      "imageOwnerCleanupProved": true,
+      "documentOwnersInstrumented": 1,
+      "controlOwnersInstrumented": 1,
+      "documentOwnerCleanupProved": true,
+      "controlOwnerCleanupProved": true,
+      "scope": "Proof covers only instrumented owners; empty sample arrays do not prove owner cleanup"
+    },
+    "evidence": {
+      "report": "NETLIB-DOCUMENTATION-FLOW.md",
+      "reportSha256": "49bbd83a22c391852661579a51a5522bf2777d743875d144331392b5da1dac00",
+      "finalLedger": "node_modules/.cache/native-validation/native-netlib-flow-september12/FINAL-RECEIPTS.sha256",
+      "finalLedgerSha256": "24a35bc337b639d634faf453b9a7b4817ae2ac603e3b688925f95d603a1b17f1",
+      "primaryLedgerEntries": 146,
+      "finalLedgerEntries": 148,
+      "parentVerifiedAt": "2026-09-12T06:28:06.169Z",
+      "checks": 35,
+      "actualGitBlobs": 13,
+      "readOnly": true,
+      "extraBrowserRuns": 0
+    }
+  },
+  "latestCodeGate": {
+    "commit": "18a6c7a2879dc9c68fd4e06dca93fe7249172c81",
+    "report": "FONT-SIZE-KEYWORDS.md",
+    "tests": {
+      "passed": 12094,
+      "failed": 0,
+      "excluded": 2
+    },
+    "selectedSuites": 227,
+    "strictRoots": 226,
+    "manifestEntries": 621,
+    "evidence": "node_modules/.cache/native-validation/native-font-size-september12-round01/AUDIT.json",
+    "auditSha256": "3c58c2a9e2d42589fe6d171fe904c3a3ed22a638bee71a6e98e70063e051e21c",
+    "scope": "Isolated native validation, not the runtime used for these live/replay observations."
+  },
+  "previousFollowups": [
+    "IANA-RESERVED-DOMAINS-FLOW.md",
+    "GNUPG-FLOAT-ATOMIC-REPLAY.md",
+    "ZLIB-CSS-RECOVERY-FOLLOWUP.md",
+    "LUA-PERCENTAGE-FOLLOWUP.md"
+  ],
+  "limitations": [
+    "HTTP200 and one document commit do not establish successful FAQ navigation.",
+    "The bounded census identifies an unsupported center node, not sole-cause proof that implementing it makes the whole website work.",
+    "The 12094 font release was not used in this live flow.",
+    "All earlier historical observations and RFC Editor duplicate corrections remain unchanged.",
+    "Research completeness and credential/provider/passkey-device/TTY/realSafeJS/challenge gates remain unverified."
+  ]
+}

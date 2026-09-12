@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12, 2026 Netlib native flow: two real HTTP200 GETs,10631 encoded
+and decoded bytes,one document commit and one genuine discovered FAQ click.
+The click fails at the width/profile guard; the bounded census retains one
+deferred center element and no CSS diagnostics. This is not sole-cause proof
+or working-site acceptance. Parent verifies35 checks,146/148-entry ledgers
+and13 actual Git blobs without another page run. Attempted-host inventory74
+adds only www.netlib.org; see `NETLIB-DOCUMENTATION-FLOW.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-12-FOURTH-UPDATE.md`. Native12037 was used,
+not the subsequent12094 font release. Next: non-floating clearance and center
+layout while preserving all broader research/provider/device/TTY/realSafeJS
+and challenge gates. No historical report is rewritten.
+
 September 12, 2026 website evidence: the attempted-host inventory is now73,
 not73 working sites, adding only the fresh IANA reserved-domain flow. Two real
 HTTP200 GETs commit one document; a genuine discovered guide click fails at
