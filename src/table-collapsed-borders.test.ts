@@ -7,6 +7,7 @@ import {
 	type CollapsedTableBorderInput,
 	type CollapsedTableBorderKind,
 	type CollapsedTableBorderOptions,
+	type CollapsedTableBorderSegment,
 	type CollapsedTableBorderSides,
 	collapsedTableBorderLimits,
 	resolveCollapsedTableBorders,
@@ -67,6 +68,233 @@ const fails = (run: () => unknown, code: string, message?: string) => {
 	}
 	throw new Error(`Expected ${code}`);
 };
+
+function generatedGrid(seed: number): CollapsedTableBorderInput {
+	let state = seed;
+	const choose = (count: number) => {
+		state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+		return Math.floor((state / 4294967296) * count);
+	};
+	const rowCount = 2 + choose(5);
+	const columnCount = 2 + choose(5);
+	const cells: CollapsedTableBorderCell[] = [];
+	const occupied = Array.from({ length: rowCount }, () =>
+		Array<boolean>(columnCount).fill(false),
+	);
+	for (let row = 0; row < rowCount; row++) {
+		for (let column = 0; column < columnCount; column++) {
+			if (occupied[row][column] || choose(6) === 0) continue;
+			let rowEnd = row + 1 + choose(rowCount - row);
+			let columnEnd = column + 1 + choose(columnCount - column);
+			if (
+				occupied
+					.slice(row, rowEnd)
+					.some((slots) => slots.slice(column, columnEnd).some(Boolean))
+			) {
+				rowEnd = row + 1;
+				columnEnd = column + 1;
+			}
+			cells.push(cell(cells.length, row, rowEnd, column, columnEnd));
+			for (let occupiedRow = row; occupiedRow < rowEnd; occupiedRow++)
+				for (
+					let occupiedColumn = column;
+					occupiedColumn < columnEnd;
+					occupiedColumn++
+				)
+					occupied[occupiedRow][occupiedColumn] = true;
+		}
+	}
+	const randomBorder = () =>
+		border(
+			choose(9) / 2,
+			`color-${choose(4)}`,
+			(["none", "hidden", "solid", "solid"] as const)[choose(4)],
+		);
+	const participant = (
+		box: CollapsedTableBorderCell,
+		kind: CollapsedTableBorderKind,
+	) =>
+		entry(
+			box,
+			{
+				top: randomBorder(),
+				right: randomBorder(),
+				bottom: randomBorder(),
+				left: randomBorder(),
+			},
+			kind,
+		);
+	const entries = cells
+		.filter(() => choose(5) !== 0)
+		.map((box) => participant(box, "cell"));
+	let identifier = 100;
+	entries.push(
+		participant(cell(identifier++, 0, rowCount, 0, columnCount), "table"),
+	);
+	for (let row = 0; row < rowCount; row++)
+		entries.push(
+			participant(cell(identifier++, row, row + 1, 0, columnCount), "row"),
+		);
+	for (let column = 0; column < columnCount; column++)
+		entries.push(
+			participant(
+				cell(identifier++, 0, rowCount, column, column + 1),
+				"column",
+			),
+		);
+	for (const kind of ["row-group", "column-group"] as const)
+		entries.push(
+			participant(cell(identifier++, 0, rowCount, 0, columnCount), kind),
+		);
+	return grid(rowCount, columnCount, cells, entries);
+}
+
+function denseBorderReference(input: CollapsedTableBorderInput) {
+	const segments: CollapsedTableBorderSegment[] = [];
+	const rank = ["table", "column-group", "column", "row-group", "row", "cell"];
+	for (const orientation of ["horizontal", "vertical"] as const) {
+		const horizontal = orientation === "horizontal";
+		for (let row = 0; row < input.rowCount + Number(horizontal); row++) {
+			for (
+				let column = 0;
+				column < input.columnCount + Number(!horizontal);
+				column++
+			) {
+				if (
+					input.cells.some((box) =>
+						horizontal
+							? box.rowStart < row &&
+								row < box.rowEnd &&
+								box.columnStart <= column &&
+								column < box.columnEnd
+							: box.columnStart < column &&
+								column < box.columnEnd &&
+								box.rowStart <= row &&
+								row < box.rowEnd,
+					)
+				)
+					continue;
+				const candidates = input.entries.flatMap((box) => {
+					if (horizontal) {
+						if (column < box.columnStart || column >= box.columnEnd) return [];
+						if (row === box.rowStart) return [{ box, edge: box.borders.top }];
+						if (row === box.rowEnd) return [{ box, edge: box.borders.bottom }];
+					} else {
+						if (row < box.rowStart || row >= box.rowEnd) return [];
+						if (column === box.columnStart)
+							return [{ box, edge: box.borders.left }];
+						if (column === box.columnEnd)
+							return [{ box, edge: box.borders.right }];
+					}
+					return [];
+				});
+				if (candidates.some(({ edge }) => edge.style === "hidden")) continue;
+				const visible = candidates.filter(
+					({ edge }) => edge.style === "solid" && edge.width > 0,
+				);
+				visible.sort(
+					(first, second) =>
+						second.edge.width - first.edge.width ||
+						rank.indexOf(second.box.kind) - rank.indexOf(first.box.kind) ||
+						first.box.rowStart - second.box.rowStart ||
+						(input.direction === "rtl"
+							? second.box.columnEnd - first.box.columnEnd
+							: first.box.columnStart - second.box.columnStart) ||
+						first.box.id - second.box.id,
+				);
+				const winner = visible[0];
+				if (winner)
+					segments.push({
+						orientation,
+						row,
+						column,
+						width: winner.edge.width,
+						color: winner.edge.color,
+						ownerId: winner.box.id,
+						ownerKind: winner.box.kind,
+					});
+			}
+		}
+	}
+	const widths = (box: CollapsedTableBorderCell) => {
+		const matching = (
+			orientation: string,
+			boundary: number,
+			start: number,
+			end: number,
+		) =>
+			Math.max(
+				0,
+				...segments
+					.filter(
+						(segment) =>
+							segment.orientation === orientation &&
+							(orientation === "horizontal"
+								? segment.row === boundary &&
+									segment.column >= start &&
+									segment.column < end
+								: segment.column === boundary &&
+									segment.row >= start &&
+									segment.row < end),
+					)
+					.map((segment) => segment.width / 2),
+			);
+		return {
+			top: matching("horizontal", box.rowStart, box.columnStart, box.columnEnd),
+			right: matching("vertical", box.columnEnd, box.rowStart, box.rowEnd),
+			bottom: matching(
+				"horizontal",
+				box.rowEnd,
+				box.columnStart,
+				box.columnEnd,
+			),
+			left: matching("vertical", box.columnStart, box.rowStart, box.rowEnd),
+		};
+	};
+	return {
+		segments,
+		cells: input.cells.map((box) => ({ id: box.id, ...widths(box) })),
+		outer: widths(cell(0, 0, input.rowCount, 0, input.columnCount)),
+	};
+}
+
+describe.each(["ltr", "rtl"] as const)(
+	"generated %s collapsed grids",
+	(direction) => {
+		it.each(Array.from({ length: 32 }, (_, index) => index + 1))(
+			"matches a dense model and remains order-independent for seed %i",
+			(seed) => {
+				const input = { ...generatedGrid(seed), direction };
+				const expected = denseBorderReference(input);
+				const result = resolveCollapsedTableBorders(input);
+				expect(result).toMatchObject(expected);
+				expect(
+					resolveCollapsedTableBorders({
+						...input,
+						entries: [...input.entries].reverse(),
+					}),
+				).toMatchObject(expected);
+				expect(
+					resolveCollapsedTableBorders({
+						...input,
+						cells: [...input.cells].reverse(),
+					}),
+				).toMatchObject({ ...expected, cells: [...expected.cells].reverse() });
+				expect(
+					resolveCollapsedTableBorders(input, { maxWork: result.metrics.work }),
+				).toEqual(result);
+				fails(
+					() =>
+						resolveCollapsedTableBorders(input, {
+							maxWork: result.metrics.work - 1,
+						}),
+					"resource-limit",
+					"work",
+				);
+			},
+		);
+	},
+);
 
 describe("native collapsed table border resolver", () => {
 	it("resolves one nonzero shared border and returns centered half widths", () => {

@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 collapsed-border model follow-up:64 deterministic dense-oracle
+cases now cover32 generated grids in both resolver directions, cell/perimeter
+widths, participant/occupancy order independence and exact work-budget edges.
+The focused20 suites pass911 cases; the source-built213-suite clean regression
+passes11848/0 with2 unchanged exclusions,212 strict roots and607 manifest entries.
+No production/runtime or manifest change; the failed old-dist preparation stays
+recorded separately. See `COLLAPSED-BORDER-MODEL-CHECK.md`. Lua replay and zlib live
+follow-ups retain the independently sealed11784 runtime and separate acceptance
+gates; this native-only result does not establish their website outcomes.
+
 September12,2026,03:51 UTC: native automatic tables gain actual collapsed-border
 conflict resolution, half-width sizing and shared single-alpha painting within
 the existing none/hidden/solid profile. Sparse bounded edges retain spans,
