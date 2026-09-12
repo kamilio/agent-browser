@@ -16,6 +16,7 @@ import { type RasterImage, type Rgba, paintRasterRect } from "./raster.js";
 import { documentStyles } from "./styles.js";
 import { textFontExtent } from "./text-font.js";
 import type { TextGlyph } from "./text-layout.js";
+import { consolidateSourceGlyphs } from "./text-source-glyphs.js";
 
 export const editableCaretLimits = Object.freeze({
 	maxWork: 250_000,
@@ -464,7 +465,7 @@ export function prepareEditableCaret(
 		let startsAtPoint = false;
 		for (const context of layout.contexts) {
 			charge();
-			for (const glyph of context.glyphs) {
+			for (const glyph of consolidateSourceGlyphs(context.glyphs, charge)) {
 				charge();
 				if (
 					glyph.ref !== ref ||

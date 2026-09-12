@@ -1,6 +1,7 @@
 import { computeFontWeight, parseFontWeight } from "./font-weight.js";
 import { layoutNumber } from "./layout-values.js";
 import { computeTextIndent, parseTextIndent } from "./text-indent.js";
+import { parseTextTransform } from "./text-transform-style.js";
 
 export const cssTextProperties = Object.freeze([
 	"font-family",
@@ -11,6 +12,7 @@ export const cssTextProperties = Object.freeze([
 	"overflow-wrap",
 	"text-align",
 	"text-indent",
+	"text-transform",
 ] as const);
 export type CssTextProperty = (typeof cssTextProperties)[number];
 export type TextStyle = Readonly<Record<CssTextProperty, string>>;
@@ -26,6 +28,7 @@ export const initialTextStyle: TextStyle = Object.freeze({
 	"overflow-wrap": "normal",
 	"text-align": "start",
 	"text-indent": "0px",
+	"text-transform": "none",
 });
 const wide = new Set(["initial", "inherit", "unset", "revert"]);
 const length =
@@ -61,6 +64,7 @@ export function parseTextValue(
 	value: string,
 ): string | undefined {
 	if (wide.has(value)) return value;
+	if (property === "text-transform") return parseTextTransform(value);
 	if (property === "text-indent") return parseTextIndent(value);
 	if (property === "font-weight") return parseFontWeight(value);
 	if (property === "overflow-wrap")

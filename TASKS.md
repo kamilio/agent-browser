@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 native case transformation supports inherited upper/lower/capitalize
+with Unicode16 contextual casing, source-preserving expansions/deletions, language
+metadata, intrinsic/wrapped layout and native range/selection/caret integration.
+TEXT-TRANSFORM-NATIVE.md retains491new cases plus399newly selected existing cases,
+the native source provenance, formatter-loss evidence and all review failures.
+The initial14911passing candidate missed zero-font and floating-point geometry
+defects. Eleven added cases and bounded source/containment corrections yield
+14922passed/0failed/2unchanged exclusions in round01 at2026-09-12T17:21:44.328Z–
+2026-09-12T17:24:56.781Z:290suites,289strict roots,668manifest entries,
+1176source/1992compiled files,20owned inputs plus manifest. Build/strict/format
+pass; independent review/follow-up remains separately scoped. Four pre-existing
+stale CSS property-count failures outside this selection and the tiny unmarked
+selection-control limitation remain explicit, not fixed or silently passed.
+No live website/navigation, provider/passkey/device/SafeJS or challenge gate is
+established by these native tests. The Selenium historical reports stay unchanged;
+separate post-release cached/live observations and broader research remain open.
+
 September12 native Unicode16 source research completes two bodyless GETs with200
 responses and no retry, redirect or challenge at16:40:09.570–16:40:10.344UTC.
 UNICODE-CASING-SOURCE.md preserves177selected plaintext rows:119SpecialCasing

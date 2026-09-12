@@ -455,7 +455,13 @@ function paintDocumentLayout(
 			metrics.hiddenGlyphs++;
 			return;
 		}
-		if (glyph.kind === "tab" || glyph.fontSize === 0) {
+		if (
+			glyph.kind === "tab" ||
+			glyph.fontSize === 0 ||
+			(glyph.transformed === true &&
+				glyph.character === "" &&
+				glyph.advance === 0)
+		) {
 			metrics.blankGlyphs++;
 			return;
 		}

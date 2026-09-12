@@ -5,6 +5,7 @@ import type { DomBoundaryPoint, DomRange } from "./dom-range.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlDocumentFamily } from "./html-document-family.js";
 import type { TextGlyph } from "./text-layout.js";
+import { consolidateSourceGlyphs } from "./text-source-glyphs.js";
 
 export const rangeGeometryLimits = Object.freeze({
 	maxWork: 2_000_000,
@@ -220,7 +221,7 @@ export function rangeClientRects(
 	};
 	for (const context of layout.contexts) {
 		charge();
-		for (const glyph of context.glyphs) {
+		for (const glyph of consolidateSourceGlyphs(context.glyphs, charge)) {
 			charge();
 			const entries = glyphs.get(glyph.ref) ?? [];
 			entries.push({ glyph, context: context.id });

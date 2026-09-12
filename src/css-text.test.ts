@@ -205,7 +205,7 @@ it("reports unsupported whitespace/alignment, bounds computed sizes and expands 
 		values.filter(({ property }) =>
 			(cssTextProperties as readonly string[]).includes(property),
 		),
-	).toHaveLength(8);
+	).toHaveLength(9);
 });
 
 it("accepts typography through the same inline declaration validation", () => {

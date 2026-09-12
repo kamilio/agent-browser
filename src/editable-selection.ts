@@ -13,6 +13,10 @@ import { rangeClientRects } from "./range-geometry.js";
 import { type RasterImage, type Rgba, paintRasterRect } from "./raster.js";
 import { documentStyles } from "./styles.js";
 import type { TextGlyph } from "./text-layout.js";
+import {
+	consolidateSourceGlyphs,
+	sourceGlyphCoordinatesEqual,
+} from "./text-source-glyphs.js";
 
 export const editableSelectionLimits = Object.freeze({
 	maxWork: 250_000,
@@ -91,6 +95,7 @@ export interface EditableSelection {
 	paintedGlyphs: number;
 	clippedGlyphs: number;
 	pixels: number;
+	paintedSources?: Set<string>;
 	readonly maxWork: number;
 	readonly glyphs: ReadonlyMap<string, Readonly<SelectedGlyph>>;
 }
@@ -254,7 +259,7 @@ export function prepareEditableSelection(
 		const scroll = documentScrollPosition(tree);
 		for (const context of layout.contexts) {
 			charge();
-			for (const glyph of context.glyphs) {
+			for (const glyph of consolidateSourceGlyphs(context.glyphs, charge)) {
 				charge();
 				const span = spans.get(glyph.ref);
 				if (
@@ -265,13 +270,17 @@ export function prepareEditableSelection(
 					continue;
 				if (!glyph.visible) return finish("hidden");
 				if (glyph.advance <= 0 || glyph.fontSize <= 0) continue;
+				const within = (lower: number, upper: number) =>
+					lower <= upper ||
+					(glyph.transformed === true &&
+						sourceGlyphCoordinatesEqual(lower, upper));
 				const supported = rects.some((rect) => {
 					charge();
 					return (
-						glyph.x >= rect.left + scroll.x &&
-						glyph.x + glyph.advance <= rect.right + scroll.x &&
-						glyph.y >= rect.top + scroll.y &&
-						glyph.y + glyph.fontSize <= rect.bottom + scroll.y
+						within(rect.left + scroll.x, glyph.x) &&
+						within(glyph.x + glyph.advance, rect.right + scroll.x) &&
+						within(rect.top + scroll.y, glyph.y) &&
+						within(glyph.y + glyph.fontSize, rect.bottom + scroll.y)
 					);
 				});
 				if (!supported) return finish("unsupported");
@@ -315,10 +324,15 @@ export function paintEditableSelection(
 		return;
 	}
 	selection.work++;
-	const selected = selection.glyphs.get(
-		`${glyph.formattingId}:${glyph.offset}`,
-	);
+	const key = `${glyph.formattingId}:${glyph.offset}`;
+	const selected = selection.glyphs.get(key);
 	if (!selected || selected.ref !== glyph.ref) return;
+	if ("transformed" in glyph && glyph.transformed === true) {
+		if (glyph.advance <= 0) return;
+		selection.paintedSources ??= new Set();
+		if (selection.paintedSources.has(key)) return;
+		selection.paintedSources.add(key);
+	}
 	const x = selected.x - clip.x;
 	const y = selected.y - clip.y;
 	const left = Math.max(0, Math.min(image.width, Math.ceil(x - 0.5)));

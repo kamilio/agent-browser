@@ -156,6 +156,14 @@ const displays = new Set([
 const withoutComments = (value: string) =>
 	value.replace(/\/\*[\s\S]*?(?:\*\/|$)/g, " ");
 
+function trimCssWhitespace(value: string): string {
+	let start = 0;
+	let end = value.length;
+	while (start < end && /[\t\n\f\r ]/.test(value[start])) start++;
+	while (end > start && /[\t\n\f\r ]/.test(value[end - 1])) end--;
+	return value.slice(start, end);
+}
+
 export class CssScanner {
 	position = 0;
 	constructor(
@@ -260,7 +268,8 @@ export function parseCssDeclarations(
 		const rawProperty = withoutComments(statement.slice(0, colon)).trim();
 		const custom = customPropertyName(rawProperty);
 		const property = custom ?? canonicalCssProperty(rawProperty.toLowerCase());
-		const raw = splitCssValue(statement.slice(colon + 1));
+		const valueSource = statement.slice(colon + 1);
+		const raw = splitCssValue(valueSource);
 		if (!raw) {
 			issue("unimplemented-or-invalid-css-value");
 			continue;
@@ -278,8 +287,16 @@ export function parseCssDeclarations(
 		}
 		const grid =
 			isCssGridProperty(property) || gridShorthandComponents(property);
-		let value = withoutCssComments(raw.value).trim();
-		if (!grid) value = value.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
+		raw.value = trimCssWhitespace(
+			raw.important
+				? new CssScanner(valueSource, issue).read("!", true).text
+				: valueSource,
+		);
+		let value = trimCssWhitespace(withoutCssComments(raw.value));
+		if (!grid)
+			value = value
+				.replace(/[A-Z]/g, (letter) => letter.toLowerCase())
+				.replace(/[\t\n\f\r ]+/g, " ");
 		if (
 			![
 				"display",

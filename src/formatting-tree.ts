@@ -15,6 +15,7 @@ import {
 	elementNamespace,
 	isHtmlElement,
 	svgNamespace,
+	xmlNamespace,
 } from "./dom-namespaces.js";
 import { documentSvgScene } from "./svg-scene.js";
 import { svgIntrinsicSize } from "./svg-projection.js";
@@ -106,6 +107,7 @@ export interface FormattingNode {
 	text?: string;
 	box?: BoxStyle;
 	typography?: TextStyle;
+	language?: string;
 	legacyChildAlignment?: "center";
 	paint?: PaintStyle;
 	contentMode?: "blocks" | "inline" | "flex" | "grid" | "table";
@@ -248,6 +250,56 @@ export function buildFormattingTree(
 				"Formatting work limit exceeded",
 			);
 	};
+	const languages = new Map<number, string>();
+	const contentLanguage = (id: number): string => {
+		const visited: number[] = [];
+		let current: number | null = id;
+		let language = "";
+		while (current !== null) {
+			charge();
+			const cached = languages.get(current);
+			if (cached !== undefined) {
+				language = cached;
+				break;
+			}
+			visited.push(current);
+			const source = tree.get(current);
+			if (source.kind === "element") {
+				let value: string | undefined;
+				for (const name of Object.keys(source.attributes)) {
+					charge();
+					const metadata = tree.getAttributeNamespace(current, name);
+					if (
+						metadata?.namespaceURI === xmlNamespace &&
+						metadata.localName === "lang"
+					) {
+						value = source.attributes[name];
+						break;
+					}
+				}
+				if (
+					value === undefined &&
+					(isHtmlElement(source) || elementNamespace(source) === svgNamespace)
+				)
+					value = source.attributes.lang;
+				if (value !== undefined) {
+					charge(value.length);
+					language =
+						value.length <= 255 &&
+						/^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$/i.test(value)
+							? value.toLowerCase()
+							: "";
+					break;
+				}
+			}
+			current = source.parent;
+		}
+		for (const visitedId of visited) {
+			charge();
+			languages.set(visitedId, language);
+		}
+		return language;
+	};
 	const create = (
 		data: Omit<MutableFormattingNode, "id" | "parent" | "children">,
 		children: readonly number[] = [],
@@ -264,6 +316,13 @@ export function buildFormattingTree(
 			parent: null,
 			children: [...children],
 		};
+		const transform = data.typography?.["text-transform"] ?? "none";
+		if (transform !== "none") {
+			if (!["uppercase", "lowercase", "capitalize"].includes(transform))
+				issue("text-transform-not-supported");
+			if (data.ref && /^e[1-9][0-9]*$/.test(data.ref))
+				node.language = contentLanguage(Number(data.ref.slice(1)));
+		}
 		nodes.push(node);
 		for (const child of children) nodes[child].parent = node.id;
 		return node.id;

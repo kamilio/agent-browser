@@ -26,6 +26,10 @@ import {
 	textFontExtent as extent,
 } from "./text-font.js";
 import { textGraphemeBoundaries } from "./text-grapheme-boundaries.js";
+import {
+	planTextTransforms,
+	type TextTransformInput,
+} from "./text-transform.js";
 
 export interface TextLayoutLimits {
 	maxTokens: number;
@@ -43,6 +47,7 @@ export interface TextLayoutOptions extends Partial<TextLayoutLimits> {
 	formatting?: Partial<FormattingLimits>;
 }
 export interface TextGlyph {
+	transformed?: true;
 	formattingId: number;
 	ref: string;
 	offset: number;
@@ -125,6 +130,7 @@ export interface DocumentTextLayout {
 	}>;
 }
 interface Token extends FontExtent {
+	transformed?: true;
 	sourceBreak?: Readonly<TextBreakSource>;
 	formattingId: number;
 	ref: string;
@@ -250,6 +256,9 @@ function layoutTextContexts(
 	constraint: "used" | "min-content" | "max-content",
 ) {
 	const floatLayout = horizontal.floatLayout;
+	const hasTransforms = horizontal.formatting.nodes.some(
+		(node) => (node.typography?.["text-transform"] ?? "none") !== "none",
+	);
 	if (
 		floatLayout !== undefined &&
 		(!floatLayout ||
@@ -330,6 +339,38 @@ function layoutTextContexts(
 		if (container.contentMode !== "inline") continue;
 		const style = container.typography ?? initialTextStyle;
 		const strut = extent(style);
+		let transformations:
+			| ReadonlyMap<number, ReadonlyMap<number, string>>
+			| undefined;
+		if (hasTransforms) {
+			const inputs: (TextTransformInput | null)[] = [];
+			const pending = [...container.children].reverse();
+			while (pending.length) {
+				charge();
+				const id = pending.pop() as number;
+				const node = horizontal.formatting.nodes[id];
+				if (
+					node.floatSide !== undefined ||
+					node.position === "absolute" ||
+					node.position === "fixed"
+				)
+					continue;
+				if (node.kind === "inline") {
+					for (let index = node.children.length - 1; index >= 0; index--) {
+						charge();
+						pending.push(node.children[index]);
+					}
+				} else if (node.kind === "text") {
+					inputs.push({
+						id,
+						text: node.text ?? "",
+						transform: (node.typography ?? style)["text-transform"] ?? "none",
+						language: node.language,
+					});
+				} else inputs.push(null);
+			}
+			transformations = planTextTransforms(inputs, charge);
+		}
 		const indent = resolveTextIndent(
 			style["text-indent"] ?? "0px",
 			constraint === "used" ? block.contentWidth : 0,
@@ -756,10 +797,13 @@ function layoutTextContexts(
 				}
 				if (token.kind !== "glyph" && token.kind !== "tab") continue;
 				const supported =
-					token.kind === "tab" || bitmapGlyph(token.character).supported;
+					token.kind === "tab" ||
+					(token.transformed === true && token.character === "") ||
+					bitmapGlyph(token.character).supported;
 				if (!supported) metrics.unsupportedGlyphs++;
 				glyphs.push(
 					Object.freeze({
+						...(token.transformed ? { transformed: true as const } : {}),
 						formattingId: token.formattingId,
 						ref: token.ref,
 						offset: token.offset,
@@ -893,6 +937,14 @@ function layoutTextContexts(
 		};
 		const emergencyStarts = (tokens: readonly Token[]) => {
 			const allowsBoundary = (before: Token, after: Token) => {
+				if (
+					before.transformed &&
+					after.transformed &&
+					before.formattingId === after.formattingId &&
+					before.offset === after.offset &&
+					before.codeUnits === after.codeUnits
+				)
+					return false;
 				if (!before.emergency && !after.emergency) return false;
 				if (before.formattingId === after.formattingId) return true;
 				const ancestors = new Set<number>();
@@ -918,7 +970,10 @@ function layoutTextContexts(
 			const characters: string[] = [];
 			for (const token of tokens) {
 				charge();
-				if (token.kind === "glyph" || token.kind === "tab")
+				if (
+					(token.kind === "glyph" || token.kind === "tab") &&
+					token.character !== ""
+				)
 					characters.push(token.character);
 			}
 			const boundaries = textGraphemeBoundaries(characters.join(""), charge);
@@ -929,7 +984,11 @@ function layoutTextContexts(
 			for (let index = 0; index < tokens.length; index++) {
 				charge();
 				const token = tokens[index];
-				if (token.kind !== "glyph" && token.kind !== "tab") continue;
+				if (
+					(token.kind !== "glyph" && token.kind !== "tab") ||
+					token.character === ""
+				)
+					continue;
 				if (
 					previous &&
 					boundaries.has(position) &&
@@ -1429,6 +1488,7 @@ function layoutTextContexts(
 					"Unsupported text formatting content",
 				);
 			const source = node.text ?? "";
+			const transformationsForNode = transformations?.get(node.id);
 			for (let offset = 0; offset < source.length; ) {
 				let character = String.fromCodePoint(
 					source.codePointAt(offset) as number,
@@ -1510,7 +1570,18 @@ function layoutTextContexts(
 						collapsing = true;
 					} else {
 						collapsing = false;
-						emit(token);
+						const transformed = transformationsForNode?.get(offset);
+						if (transformed === undefined) emit(token);
+						else
+							for (const character of transformed === "" ? [""] : transformed) {
+								charge();
+								emit({
+									...token,
+									character,
+									advance: character === "" ? 0 : token.advance,
+									transformed: true,
+								});
+							}
 					}
 				}
 				offset += codeUnits;
