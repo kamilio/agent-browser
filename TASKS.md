@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 12: concrete IANA CSS targets, not diagnostic waivers
+
+A separate native static census identifies exact text-decoration/font-style,
+pseudo-element/content, SVG CSS paint, background/effect and font/keyframe gaps.
+It processes 878 rules/2,228 declarations without HTTP or page construction.
+Proper selector validation distinguishes 35 unsupported pseudo-element rules
+from 101 valid comma lists rejected only by a narrower single-selector probe.
+Individual rule applicability remains unknown; raw counts are not active winners.
+
+See `IANA-CSS-TARGETS.md` for provenance and preserved failed diagnostics. Next:
+standards-backed CSS SVG fill/opacity/rule cascade and focused native regressions,
+followed by sizing/stroke/clipping and new bounded live checks. The original
+IANA/Python layout failures and SQLite precommit failure remain explicit.
+
 ### September 12: SQLite SVG paint and sizing gaps isolated
 
 Fresh native SQLite testing fetches three original HTTP 200 responses but stops
