@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 Libpng candidate:23 native GETs on prior12470/e8375ac,
+345538 encoded/366824 decoded bytes,
+one committed homepage and one discovered FAQ click attempt that fails native
+width resolution. No mocks,retries,off-origin denials or challenge verdict.
+The retained census includes CSS/presentation/table/inline-alignment/image
+limitations. Parent verifies12 Git blobs and36 readonly checks. The eighth
+inventory records78 attempted hosts,not78 working websites;only www.libpng.org
+is new. LIBPNG-DOCUMENTATION-FLOW.md preserves the exact older-runtime evidence.
+The newer LIST-STYLE.md code gate is separate,not live Libpng/GnuPG acceptance.
+Historical failures and Netlib's bounded success remain unchanged;the full
+browser/performance/research/provider/passkey/device/TTY/realSafeJS/challenge
+goals remain open. No bypass or push.
+
 September12 native list-style improvement:180 new cases and690 focused
 checks cover shorthand resets,type/position/image:none,CSS-wide inheritance,
 variables,CSSOM/computed values and markers. The selected native gate passes

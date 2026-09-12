@@ -1,0 +1,2823 @@
+{
+  "schemaVersion": 3,
+  "auditedAt": "2026-09-12T09:13:45.447Z",
+  "scope": "Cumulative recorded attempted hosts including historically denied subresources,not working websites;one new Libpng attempt.",
+  "previousSnapshot": {
+    "path": "reports/website-test-inventory-2026-09-12-seventh-update.json",
+    "sha256": "3dbc40e099663d6cc9547065bcaef22aa1d2b2b2691b82d85aaa0d6b3493e0b8",
+    "hostCount": 77
+  },
+  "hostCount": 78,
+  "workingWebsiteCount": null,
+  "baselineHostCount": 54,
+  "addedUniqueHostsSinceBaseline": 24,
+  "hosts": [
+    "aclanthology.org",
+    "api.llm-speed.com",
+    "arxiv.org",
+    "books.toscrape.com",
+    "c.statcounter.com",
+    "camoufox.com",
+    "cdn.jsdelivr.net",
+    "crfm.stanford.edu",
+    "curl.se",
+    "deploymentsafety.openai.com",
+    "developer.mozilla.org",
+    "developers.cloudflare.com",
+    "developers.openai.com",
+    "developers.yubico.com",
+    "docs.kernel.org",
+    "docs.mlcommons.org",
+    "docs.nvidia.com",
+    "docs.python.org",
+    "drafts.csswg.org",
+    "en.wikipedia.org",
+    "example.com",
+    "fetch.spec.whatwg.org",
+    "fidoalliance.org",
+    "github.com",
+    "gorilla.cs.berkeley.edu",
+    "help.openai.com",
+    "help.poe.com",
+    "html.duckduckgo.com",
+    "html.spec.whatwg.org",
+    "httpbingo.org",
+    "huggingface.co",
+    "info.cern.ch",
+    "lastexam.ai",
+    "lite.duckduckgo.com",
+    "livecodebench.github.io",
+    "llm-speed.com",
+    "man7.org",
+    "news.ycombinator.com",
+    "openai.com",
+    "poe.com",
+    "pypi.org",
+    "quotes.toscrape.com",
+    "raw.githubusercontent.com",
+    "rocm.docs.amd.com",
+    "s3.amazonaws.com",
+    "search.yahoo.com",
+    "support.apple.com",
+    "testpages.eviltester.com",
+    "the-internet.herokuapp.com",
+    "unpkg.com",
+    "www.amd.com",
+    "www.apple.com",
+    "www.bing.com",
+    "www.busybox.net",
+    "www.cnbc.com",
+    "www.debian.org",
+    "www.gnu.org",
+    "www.gnupg.org",
+    "www.google.com",
+    "www.hardware-corner.net",
+    "www.iana.org",
+    "www.libarchive.org",
+    "www.libpng.org",
+    "www.lua.org",
+    "www.netbsd.org",
+    "www.netlib.org",
+    "www.nvidia.com",
+    "www.openbsd.org",
+    "www.python.org",
+    "www.reddit.com",
+    "www.rfc-editor.org",
+    "www.selenium.dev",
+    "www.sqlite.org",
+    "www.swebench.com",
+    "www.w3.org",
+    "www.wikipedia.org",
+    "www.zlib.net",
+    "x.com"
+  ],
+  "hostRepresentation": "Normalized hostname strings. Per-host historical URLs, outcomes and evidence remain in the immutable previous snapshot chain.",
+  "historicalReportsModified": false,
+  "countRule": "Previous77-host union plus newly contacted www.libpng.org. No locally denied host in this run;historical denied-only S3 and statcounter entries remain qualified. Isolated code tests and source probes add no host.",
+  "newHost": "www.libpng.org",
+  "newlyRecordedHosts": [
+    "www.libpng.org"
+  ],
+  "newWireContactedHosts": [
+    "www.libpng.org"
+  ],
+  "deniedOnlyHostsInThisUpdate": [],
+  "latestFollowup": {
+    "host": "www.libpng.org",
+    "kind": "fresh native PNG documentation candidate on the prior GIF release",
+    "runtime": 12470,
+    "commit": "e8375acfaeb460cea9a7dc4b35d5c1e45ae3fda3",
+    "startedAt": "2026-09-12T08:56:00.180Z",
+    "finishedAt": "2026-09-12T08:56:06.428Z",
+    "flowPassed": false,
+    "failure": {
+      "stage": "native-documentation-link-click",
+      "name": "AgentBrowserError",
+      "code": "unsupported",
+      "message": "Document width resolution requires an issue-free supported formatting profile"
+    },
+    "hosts": {
+      "contacted": [
+        "www.libpng.org"
+      ],
+      "replied": [
+        "www.libpng.org"
+      ],
+      "locallyDenied": [],
+      "localDenials": [],
+      "scope": "Contacted means native HTTPS request construction; replies are separate. Local denials never establish contact."
+    },
+    "classification": "native-or-site-failure",
+    "accounting": {
+      "nativeRequestAttempts": 23,
+      "transportRequests": 23,
+      "wireRequestCalls": 23,
+      "wireResponses": 23,
+      "wireRedirectResponses": 0,
+      "followedRedirects": 0,
+      "encodedBytes": 345538,
+      "decodedBytes": 366824,
+      "mockedRequests": 0,
+      "note": "Native requests, wire request constructions/responses and mocks are separate; every recorded response body is fresh; wire events are native instrumentation, not packet capture",
+      "adapterEntries": 23,
+      "admittedRequests": 23,
+      "rejectedAdapterEntries": 0,
+      "rejectedAdapterSamples": [],
+      "admissionScope": "admittedRequests counts adapter calls forwarded to native transport; rejectedAdapterEntries counts calls rejected before forwarding; request-start records are counted separately"
+    },
+    "responses": [
+      {
+        "url": "https://www.libpng.org/pub/png/",
+        "status": 200,
+        "encodedBytes": 11571,
+        "decodedBytes": 32857
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/img_png/pnglogo--povray-3.7--black826--800x600.png",
+        "status": 200,
+        "encodedBytes": 311321,
+        "decodedBytes": 311321
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/yahoo-search-black.png",
+        "status": 200,
+        "encodedBytes": 823,
+        "decodedBytes": 823
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/img_png/libpng.png",
+        "status": 200,
+        "encodedBytes": 265,
+        "decodedBytes": 265
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/smile.happy.png",
+        "status": 200,
+        "encodedBytes": 150,
+        "decodedBytes": 150
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/li_purple.png",
+        "status": 200,
+        "encodedBytes": 299,
+        "decodedBytes": 299
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/li_blupur.png",
+        "status": 200,
+        "encodedBytes": 299,
+        "decodedBytes": 299
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/li_blue.png",
+        "status": 200,
+        "encodedBytes": 302,
+        "decodedBytes": 302
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/li_medblue.png",
+        "status": 200,
+        "encodedBytes": 299,
+        "decodedBytes": 299
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/li_ltblue.png",
+        "status": 200,
+        "encodedBytes": 299,
+        "decodedBytes": 299
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/img_png/pngbook-cover-micro.png",
+        "status": 200,
+        "encodedBytes": 619,
+        "decodedBytes": 619
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/li_aqua.png",
+        "status": 200,
+        "encodedBytes": 302,
+        "decodedBytes": 302
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/li_green.png",
+        "status": 200,
+        "encodedBytes": 302,
+        "decodedBytes": 302
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/li_yelgrn.png",
+        "status": 200,
+        "encodedBytes": 302,
+        "decodedBytes": 302
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/li_yellow.png",
+        "status": 200,
+        "encodedBytes": 295,
+        "decodedBytes": 295
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/img_png/pngs-img-ie5mac-micro.png",
+        "status": 200,
+        "encodedBytes": 2969,
+        "decodedBytes": 2969
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/li_orange3.png",
+        "status": 200,
+        "encodedBytes": 302,
+        "decodedBytes": 302
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/li_red.png",
+        "status": 200,
+        "encodedBytes": 302,
+        "decodedBytes": 302
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/li_magenta.png",
+        "status": 200,
+        "encodedBytes": 295,
+        "decodedBytes": 295
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/img_png/pnglogo-blk-tiny.png",
+        "status": 200,
+        "encodedBytes": 685,
+        "decodedBytes": 685
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/img_png/png01aaaa-crb.png",
+        "status": 200,
+        "encodedBytes": 10607,
+        "decodedBytes": 10607
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/img_png/pngnow.png",
+        "status": 200,
+        "encodedBytes": 2174,
+        "decodedBytes": 2174
+      },
+      {
+        "url": "https://www.libpng.org/pub/png/images/vh40.png",
+        "status": 200,
+        "encodedBytes": 756,
+        "decodedBytes": 756
+      }
+    ],
+    "discovery": {
+      "selector": "body a[href]",
+      "inspected": 96,
+      "candidateCap": 96,
+      "observations": [
+        {
+          "index": 0,
+          "reference": "e30",
+          "href": "png-sitemap.html#info",
+          "url": "https://www.libpng.org/pub/png/png-sitemap.html#info",
+          "text": "General Information",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 1,
+          "reference": "e39",
+          "href": "png-sitemap.html#apps",
+          "url": "https://www.libpng.org/pub/png/png-sitemap.html#apps",
+          "text": "Applications",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 2,
+          "reference": "e48",
+          "href": "png-sitemap.html#programming",
+          "url": "https://www.libpng.org/pub/png/png-sitemap.html#programming",
+          "text": "Programming Resources",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 3,
+          "reference": "e57",
+          "href": "png-sitemap.html#images",
+          "url": "https://www.libpng.org/pub/png/png-sitemap.html#images",
+          "text": "Images",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 4,
+          "reference": "e66",
+          "href": "png-sitemap.html#animation",
+          "url": "https://www.libpng.org/pub/png/png-sitemap.html#animation",
+          "text": "Animation",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 5,
+          "reference": "e99",
+          "href": "pngpic2.html",
+          "url": "https://www.libpng.org/pub/png/pngpic2.html",
+          "text": "",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 6,
+          "reference": "e107",
+          "href": "pngfaq.html#jpeg-logo",
+          "url": "https://www.libpng.org/pub/png/pngfaq.html#jpeg-logo",
+          "text": "FAQ",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 7,
+            "ancestorComplete": true
+          },
+          "urlQualifies": true,
+          "eligible": true
+        },
+        {
+          "index": 7,
+          "reference": "e140",
+          "href": "http://gregroelofs.com/",
+          "url": "http://gregroelofs.com/",
+          "text": "Greg Roelofs",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 8,
+          "reference": "e153",
+          "href": "http://search.yahoo.com/",
+          "url": "http://search.yahoo.com/",
+          "text": "",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 9,
+          "reference": "e189",
+          "href": "libpng.html",
+          "url": "https://www.libpng.org/pub/png/libpng.html",
+          "text": "",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 10,
+          "reference": "e192",
+          "href": "http://www.libpng.org/pub/png/",
+          "url": "http://www.libpng.org/pub/png/",
+          "text": "http://www.libpng.org/pub/png/",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 11,
+          "reference": "e340",
+          "href": "https://sourceforge.net/",
+          "url": "https://sourceforge.net/",
+          "text": "SourceForge",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 12,
+          "reference": "e343",
+          "href": "http://sourceforge.net/projects/png-mng",
+          "url": "http://sourceforge.net/projects/png-mng",
+          "text": "",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 13,
+          "reference": "e389",
+          "href": "http://www.libpng.org/pub/mng/",
+          "url": "http://www.libpng.org/pub/mng/",
+          "text": "MNG site",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 14,
+          "reference": "e392",
+          "href": "png-sitemap.html",
+          "url": "https://www.libpng.org/pub/png/png-sitemap.html",
+          "text": "complete site map",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 15,
+          "reference": "e403",
+          "href": "#history",
+          "url": "https://www.libpng.org/pub/png/#history",
+          "text": "informal history",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 16,
+          "reference": "e406",
+          "href": "pngintro.html",
+          "url": "https://www.libpng.org/pub/png/pngintro.html",
+          "text": "basic introduction",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 17,
+          "reference": "e409",
+          "href": "pngfaq.html",
+          "url": "https://www.libpng.org/pub/png/pngfaq.html",
+          "text": "FAQ",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": true,
+          "eligible": true
+        },
+        {
+          "index": 18,
+          "reference": "e412",
+          "href": "pnghist.html",
+          "url": "https://www.libpng.org/pub/png/pnghist.html",
+          "text": "longer history",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 19,
+          "reference": "e417",
+          "href": "pngapps.html",
+          "url": "https://www.libpng.org/pub/png/pngapps.html",
+          "text": "PNG-supporting application lists",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 20,
+          "reference": "e448",
+          "href": "pngintro.html",
+          "url": "https://www.libpng.org/pub/png/pngintro.html",
+          "text": "A Basic Introduction to PNG Features",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 21,
+          "reference": "e459",
+          "href": "pngstatus.html",
+          "url": "https://www.libpng.org/pub/png/pngstatus.html",
+          "text": "Current Status of PNG",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 22,
+          "reference": "e470",
+          "href": "pngfaq.html",
+          "url": "https://www.libpng.org/pub/png/pngfaq.html",
+          "text": "Frequently Asked Questions",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": true,
+          "eligible": true
+        },
+        {
+          "index": 23,
+          "reference": "e483",
+          "href": "./#history",
+          "url": "https://www.libpng.org/pub/png/#history",
+          "text": "An Informal History of PNG",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 7,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 24,
+          "reference": "e486",
+          "href": "pnghist.html",
+          "url": "https://www.libpng.org/pub/png/pnghist.html",
+          "text": "More Detailed History",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 7,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 25,
+          "reference": "e494",
+          "href": "pngnews.html",
+          "url": "https://www.libpng.org/pub/png/pngnews.html",
+          "text": "News of the PNG Development Group",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 26,
+          "reference": "e502",
+          "href": "pngmisc.html#lists",
+          "url": "https://www.libpng.org/pub/png/pngmisc.html#lists",
+          "text": "Links to Other PNG Resources",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 27,
+          "reference": "e513",
+          "href": "book/",
+          "url": "https://www.libpng.org/pub/png/book/",
+          "text": "",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 7,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 28,
+          "reference": "e518",
+          "href": "pngdocs.html",
+          "url": "https://www.libpng.org/pub/png/pngdocs.html",
+          "text": "PNG Technical Documentation",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 7,
+            "ancestorComplete": true
+          },
+          "urlQualifies": true,
+          "eligible": true
+        },
+        {
+          "index": 29,
+          "reference": "e524",
+          "href": "spec/",
+          "url": "https://www.libpng.org/pub/png/spec/",
+          "text": "PNG Specification and Extensions",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 30,
+          "reference": "e527",
+          "href": "spec/iso/",
+          "url": "https://www.libpng.org/pub/png/spec/iso/",
+          "text": "latest version",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 31,
+          "reference": "e531",
+          "href": "http://www.zlib.net/zlib_docs.html",
+          "url": "http://www.zlib.net/zlib_docs.html",
+          "text": "zlib Technical Documentation",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 32,
+          "reference": "e537",
+          "href": "http://www.libpng.org/pub/mng/mngdocs.html",
+          "url": "http://www.libpng.org/pub/mng/mngdocs.html",
+          "text": "MNG / JNG Technical Documentation",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 33,
+          "reference": "e546",
+          "href": "pngbook.html",
+          "url": "https://www.libpng.org/pub/png/pngbook.html",
+          "text": "PNG: The Definitive Guide and Related Books",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": true,
+          "eligible": true
+        },
+        {
+          "index": 34,
+          "reference": "e577",
+          "href": "pngapps.html",
+          "url": "https://www.libpng.org/pub/png/pngapps.html",
+          "text": "Applications with PNG Support",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 35,
+          "reference": "e583",
+          "href": "pngapbr.html",
+          "url": "https://www.libpng.org/pub/png/pngapbr.html",
+          "text": "Browsers",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 36,
+          "reference": "e587",
+          "href": "pngapvw.html",
+          "url": "https://www.libpng.org/pub/png/pngapvw.html",
+          "text": "Image Viewers",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 37,
+          "reference": "e591",
+          "href": "pngaped.html",
+          "url": "https://www.libpng.org/pub/png/pngaped.html",
+          "text": "Image Editors",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 38,
+          "reference": "e595",
+          "href": "pngapcv.html",
+          "url": "https://www.libpng.org/pub/png/pngapcv.html",
+          "text": "Image Converters",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 39,
+          "reference": "e599",
+          "href": "pngap3d.html",
+          "url": "https://www.libpng.org/pub/png/pngap3d.html",
+          "text": "3D Applications",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 40,
+          "reference": "e602",
+          "href": "pngvrml.html",
+          "url": "https://www.libpng.org/pub/png/pngvrml.html",
+          "text": "VRML Browsers",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 41,
+          "reference": "e606",
+          "href": "pngapgm.html",
+          "url": "https://www.libpng.org/pub/png/pngapgm.html",
+          "text": "Games / Entertainment",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 42,
+          "reference": "e610",
+          "href": "pngapof.html",
+          "url": "https://www.libpng.org/pub/png/pngapof.html",
+          "text": "Office / Business Applications",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 43,
+          "reference": "e614",
+          "href": "pngapsc.html",
+          "url": "https://www.libpng.org/pub/png/pngapsc.html",
+          "text": "Scientific / Graphing Applications",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 44,
+          "reference": "e618",
+          "href": "pngapmi.html",
+          "url": "https://www.libpng.org/pub/png/pngapmi.html",
+          "text": "Miscellaneous Applications",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 45,
+          "reference": "e627",
+          "href": "pnghw.html",
+          "url": "https://www.libpng.org/pub/png/pnghw.html",
+          "text": "Hardware with PNG Support",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 46,
+          "reference": "e659",
+          "href": "pngaptk.html",
+          "url": "https://www.libpng.org/pub/png/pngaptk.html",
+          "text": "PNG-supporting Libraries and Toolkits",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 47,
+          "reference": "e665",
+          "href": "libpng.html",
+          "url": "https://www.libpng.org/pub/png/libpng.html",
+          "text": "libpng home page",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 10,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 48,
+          "reference": "e671",
+          "href": "http://www.zlib.net/",
+          "url": "http://www.zlib.net/",
+          "text": "zlib home page",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 10,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 49,
+          "reference": "e679",
+          "href": "http://www.libmng.com/",
+          "url": "http://www.libmng.com/",
+          "text": "libmng home page",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 10,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 50,
+          "reference": "e686",
+          "href": "pngcode.html",
+          "url": "https://www.libpng.org/pub/png/pngcode.html",
+          "text": "PNG Source Code",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 51,
+          "reference": "e714",
+          "href": "pngs-img.html",
+          "url": "https://www.libpng.org/pub/png/pngs-img.html",
+          "text": "",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 52,
+          "reference": "e722",
+          "href": "pngsuite.html",
+          "url": "https://www.libpng.org/pub/png/pngsuite.html",
+          "text": "Willem van Schaik's Test Suite of PNG Icons",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 53,
+          "reference": "e726",
+          "href": "png-textures.html",
+          "url": "https://www.libpng.org/pub/png/png-textures.html",
+          "text": "Greg's Test Suite of PNG Textures for VRML",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 54,
+          "reference": "e730",
+          "href": "pngpic2.html",
+          "url": "https://www.libpng.org/pub/png/pngpic2.html",
+          "text": "Ray-traced PNG Interlacing Demo",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 55,
+          "reference": "e733",
+          "href": "pngpics.html",
+          "url": "https://www.libpng.org/pub/png/pngpics.html",
+          "text": "JPEG version",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 56,
+          "reference": "e737",
+          "href": "pngs-img.html",
+          "url": "https://www.libpng.org/pub/png/pngs-img.html",
+          "text": "Miscellaneous Transparent PNGs using IMG Tags",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 57,
+          "reference": "e741",
+          "href": "pngs.html",
+          "url": "https://www.libpng.org/pub/png/pngs.html",
+          "text": "Miscellaneous Transparent PNGs using OBJECT Tags",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 58,
+          "reference": "e744",
+          "href": "pngs-strict.html",
+          "url": "https://www.libpng.org/pub/png/pngs-strict.html",
+          "text": "strict HTML 4.0 version",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 59,
+          "reference": "e748",
+          "href": "png-rgba32.html",
+          "url": "https://www.libpng.org/pub/png/png-rgba32.html",
+          "text": "Miscellaneous 32-bit RGBA PNGs",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 60,
+          "reference": "e756",
+          "href": "png-IceAlpha.html",
+          "url": "https://www.libpng.org/pub/png/png-IceAlpha.html",
+          "text": "Icicles",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 10,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 61,
+          "reference": "e760",
+          "href": "png-RedbrushAlpha.html",
+          "url": "https://www.libpng.org/pub/png/png-RedbrushAlpha.html",
+          "text": "Redbrush flower",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 10,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 62,
+          "reference": "e767",
+          "href": "png-MagnoliaAlpha.html",
+          "url": "https://www.libpng.org/pub/png/png-MagnoliaAlpha.html",
+          "text": "Magnolia tree",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 10,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 63,
+          "reference": "e771",
+          "href": "png-OwlAlpha.html",
+          "url": "https://www.libpng.org/pub/png/png-OwlAlpha.html",
+          "text": "Horned Owl",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 10,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 64,
+          "reference": "e776",
+          "href": "png-gammatest.html",
+          "url": "https://www.libpng.org/pub/png/png-gammatest.html",
+          "text": "Browser Gamma-Correction Test",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 65,
+          "reference": "e782",
+          "href": "png-colortest.html",
+          "url": "https://www.libpng.org/pub/png/png-colortest.html",
+          "text": "Browser Color-Correction Test",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 8,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 66,
+          "reference": "e797",
+          "href": "pngmisc.html#images",
+          "url": "https://www.libpng.org/pub/png/pngmisc.html#images",
+          "text": "Links to Other PNG Resources",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 67,
+          "reference": "e826",
+          "href": "http://www.libpng.org/pub/mng/",
+          "url": "http://www.libpng.org/pub/mng/",
+          "text": "Multiple-image Network Graphics (MNG) Home Site",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 68,
+          "reference": "e868",
+          "href": "pngintro.html",
+          "url": "https://www.libpng.org/pub/png/pngintro.html",
+          "text": "spiffier features",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 69,
+          "reference": "e889",
+          "href": "pngpics.html",
+          "url": "https://www.libpng.org/pub/png/pngpics.html",
+          "text": "majorly gnarly two-dimensional interlacing scheme",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 70,
+          "reference": "e914",
+          "href": "libpng.html",
+          "url": "https://www.libpng.org/pub/png/libpng.html",
+          "text": "free and complete reference implementation with full source code",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": true,
+          "eligible": true
+        },
+        {
+          "index": 71,
+          "reference": "e936",
+          "href": "pngintro.html",
+          "url": "https://www.libpng.org/pub/png/pngintro.html",
+          "text": "Basic Introduction to PNG Features",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 72,
+          "reference": "e942",
+          "href": "http://www.ddj.com/ddj/1995/1995.07/",
+          "url": "http://www.ddj.com/ddj/1995/1995.07/",
+          "text": "July 1995 issue",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 73,
+          "reference": "e945",
+          "href": "http://www.ddj.com/",
+          "url": "http://www.ddj.com/",
+          "text": "Dr. Dobb's Journal",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 74,
+          "reference": "e949",
+          "href": "http://www.piclab.com/",
+          "url": "http://www.piclab.com/",
+          "text": "Lee Crocker",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 75,
+          "reference": "e954",
+          "href": "pngbook.html",
+          "url": "https://www.libpng.org/pub/png/pngbook.html",
+          "text": "PNG: The Definitive Guide",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": true,
+          "eligible": true
+        },
+        {
+          "index": 76,
+          "reference": "e958",
+          "href": "spec/",
+          "url": "https://www.libpng.org/pub/png/spec/",
+          "text": "Portable Network Graphics Specification",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 77,
+          "reference": "e965",
+          "href": "http://www.w3.org/",
+          "url": "http://www.w3.org/",
+          "text": "W3C",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 78,
+          "reference": "e971",
+          "href": "pngdocs.html",
+          "url": "https://www.libpng.org/pub/png/pngdocs.html",
+          "text": "PNG documentation page",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": true,
+          "eligible": true
+        },
+        {
+          "index": 79,
+          "reference": "e974",
+          "href": "http://www.w3.org/Graphics/PNG/",
+          "url": "http://www.w3.org/Graphics/PNG/",
+          "text": "PNG page",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 80,
+          "reference": "e977",
+          "href": "http://www.w3.org/Press/PNG-PR.en.html",
+          "url": "http://www.w3.org/Press/PNG-PR.en.html",
+          "text": "press release",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 81,
+          "reference": "e1001",
+          "href": "png1999.html",
+          "url": "https://www.libpng.org/pub/png/png1999.html",
+          "text": "10 May 1999",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 82,
+          "reference": "e1006",
+          "href": "http://www.web3d.org/x3d/specifications/vrml/ISO-IEC-14772-VRML97/",
+          "url": "http://www.web3d.org/x3d/specifications/vrml/ISO-IEC-14772-VRML97/",
+          "text": "VRML97",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 83,
+          "reference": "e1016",
+          "href": "png2004.html",
+          "url": "https://www.libpng.org/pub/png/png2004.html",
+          "text": "3 March 2004",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 84,
+          "reference": "e1022",
+          "href": "http://www.w3.org/TR/2003/REC-PNG-20031110/",
+          "url": "http://www.w3.org/TR/2003/REC-PNG-20031110/",
+          "text": "PNG Second Edition",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 85,
+          "reference": "e1037",
+          "href": "http://www.mheg.org/users/mheg/archives/doc/MHEG-5_Profile_Issue_1.pdf",
+          "url": "http://www.mheg.org/users/mheg/archives/doc/MHEG-5_Profile_Issue_1.pdf",
+          "text": "UK profile",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 86,
+          "reference": "e1040",
+          "href": "http://www.mhp.org/html_index.html",
+          "url": "http://www.mhp.org/html_index.html",
+          "text": "Multimedia Home Platform",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 87,
+          "reference": "e1043",
+          "href": "http://www.havi.org/",
+          "url": "http://www.havi.org/",
+          "text": "Home Audio-Video Interoperability",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 88,
+          "reference": "e1049",
+          "href": "http://www.libpng.org/pub/mng/",
+          "url": "http://www.libpng.org/pub/mng/",
+          "text": "MNG",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 89,
+          "reference": "e1053",
+          "href": "http://www.libmng.com/",
+          "url": "http://www.libmng.com/",
+          "text": "free reference library",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 90,
+          "reference": "e1060",
+          "href": "pngapps.html",
+          "url": "https://www.libpng.org/pub/png/pngapps.html",
+          "text": "applications",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 91,
+          "reference": "e1063",
+          "href": "pngcode.html",
+          "url": "https://www.libpng.org/pub/png/pngcode.html",
+          "text": "programming tools",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 5,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 92,
+          "reference": "e1077",
+          "href": "pngapps.html",
+          "url": "https://www.libpng.org/pub/png/pngapps.html",
+          "text": "",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 93,
+          "reference": "e1091",
+          "href": "png-sitemap.html#info",
+          "url": "https://www.libpng.org/pub/png/png-sitemap.html#info",
+          "text": "General Information",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 9,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 94,
+          "reference": "e1100",
+          "href": "png-sitemap.html#apps",
+          "url": "https://www.libpng.org/pub/png/png-sitemap.html#apps",
+          "text": "Applications",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 9,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        },
+        {
+          "index": 95,
+          "reference": "e1109",
+          "href": "png-sitemap.html#programming",
+          "url": "https://www.libpng.org/pub/png/png-sitemap.html#programming",
+          "text": "Programming Resources",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 9,
+            "ancestorComplete": true
+          },
+          "urlQualifies": false,
+          "eligible": false
+        }
+      ],
+      "eligibleOccurrences": 8,
+      "uniqueDestinations": 4,
+      "candidates": [
+        {
+          "index": 6,
+          "reference": "e107",
+          "href": "pngfaq.html#jpeg-logo",
+          "url": "https://www.libpng.org/pub/png/pngfaq.html#jpeg-logo",
+          "text": "FAQ",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 7,
+            "ancestorComplete": true
+          },
+          "urlQualifies": true,
+          "eligible": true,
+          "eligibleOccurrences": 3
+        },
+        {
+          "index": 28,
+          "reference": "e518",
+          "href": "pngdocs.html",
+          "url": "https://www.libpng.org/pub/png/pngdocs.html",
+          "text": "PNG Technical Documentation",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 7,
+            "ancestorComplete": true
+          },
+          "urlQualifies": true,
+          "eligible": true,
+          "eligibleOccurrences": 2
+        },
+        {
+          "index": 33,
+          "reference": "e546",
+          "href": "pngbook.html",
+          "url": "https://www.libpng.org/pub/png/pngbook.html",
+          "text": "PNG: The Definitive Guide and Related Books",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": true,
+          "eligible": true,
+          "eligibleOccurrences": 2
+        },
+        {
+          "index": 70,
+          "reference": "e914",
+          "href": "libpng.html",
+          "url": "https://www.libpng.org/pub/png/libpng.html",
+          "text": "free and complete reference implementation with full source code",
+          "browsingTarget": "_self",
+          "availability": {
+            "source": "native styles.get and interactions.actionability before URL deduplication",
+            "displayed": true,
+            "visible": true,
+            "blocked": null,
+            "ariaDisabled": false,
+            "ancestorDepth": 6,
+            "ancestorComplete": true
+          },
+          "urlQualifies": true,
+          "eligible": true,
+          "eligibleOccurrences": 1
+        }
+      ],
+      "selected": {
+        "index": 6,
+        "reference": "e107",
+        "href": "pngfaq.html#jpeg-logo",
+        "url": "https://www.libpng.org/pub/png/pngfaq.html#jpeg-logo",
+        "text": "FAQ",
+        "browsingTarget": "_self",
+        "availability": {
+          "source": "native styles.get and interactions.actionability before URL deduplication",
+          "displayed": true,
+          "visible": true,
+          "blocked": null,
+          "ariaDisabled": false,
+          "ancestorDepth": 7,
+          "ancestorComplete": true
+        },
+        "urlQualifies": true,
+        "eligible": true,
+        "eligibleOccurrences": 3
+      },
+      "documentationPreferred": true,
+      "faqPreferred": true,
+      "preference": "actual available discovered HTML guide/FAQ/about preferred, then HTML documentation; never downloads or archives",
+      "ordering": "native availability for every inspected occurrence before URL deduplication",
+      "revisionBefore": 1197,
+      "revisionAfter": 1197
+    },
+    "formatting": {
+      "rawCss": {
+        "unimplemented-css-property": 1
+      },
+      "applicableCss": {
+        "unimplemented-css-property": 1
+      },
+      "nonCss": {
+        "html-presentation-hint-not-supported": 34,
+        "html-table-presentation-hint-not-supported": 16,
+        "display-layout-not-supported": 8,
+        "inline-vertical-align-not-supported": 2,
+        "element-layout-not-supported": 1
+      },
+      "deferredSubtrees": 9,
+      "deferred": [
+        {
+          "id": 5,
+          "ref": "e23",
+          "kind": "deferred",
+          "domTag": "table",
+          "display": "table",
+          "contentMode": "table",
+          "deferredReason": "display-layout-not-supported",
+          "attributes": {
+            "width": "100%",
+            "cellpadding": "5",
+            "border": "0"
+          },
+          "actualStyles": {
+            "visibility": {
+              "display": "table",
+              "visibility": "visible",
+              "displayed": true,
+              "visible": true
+            },
+            "box": {
+              "top": "auto",
+              "right": "auto",
+              "bottom": "auto",
+              "left": "auto",
+              "border-top-width": "3px",
+              "border-right-width": "3px",
+              "border-bottom-width": "3px",
+              "border-left-width": "3px",
+              "border-top-style": "none",
+              "border-right-style": "none",
+              "border-bottom-style": "none",
+              "border-left-style": "none",
+              "width": "auto",
+              "height": "auto",
+              "min-width": "auto",
+              "min-height": "auto",
+              "max-width": "none",
+              "max-height": "none",
+              "box-sizing": "content-box",
+              "margin-top": "0px",
+              "margin-right": "0px",
+              "margin-bottom": "0px",
+              "margin-left": "0px",
+              "padding-top": "0px",
+              "padding-right": "0px",
+              "padding-bottom": "0px",
+              "padding-left": "0px"
+            },
+            "table": {
+              "table-layout": "auto",
+              "border-collapse": "separate",
+              "border-spacing": "2px 2px",
+              "caption-side": "top",
+              "empty-cells": "show",
+              "vertical-align": "baseline"
+            }
+          }
+        },
+        {
+          "id": 245,
+          "ref": "e344",
+          "kind": "deferred",
+          "domTag": "img",
+          "display": "inline",
+          "contentMode": null,
+          "deferredReason": "element-layout-not-supported",
+          "attributes": {
+            "width": "80",
+            "height": "15",
+            "border": "0"
+          },
+          "actualStyles": {
+            "visibility": {
+              "display": "inline",
+              "visibility": "visible",
+              "displayed": true,
+              "visible": true
+            },
+            "box": {
+              "top": "auto",
+              "right": "auto",
+              "bottom": "auto",
+              "left": "auto",
+              "border-top-width": "3px",
+              "border-right-width": "3px",
+              "border-bottom-width": "3px",
+              "border-left-width": "3px",
+              "border-top-style": "none",
+              "border-right-style": "none",
+              "border-bottom-style": "none",
+              "border-left-style": "none",
+              "width": "80px",
+              "height": "15px",
+              "min-width": "auto",
+              "min-height": "auto",
+              "max-width": "none",
+              "max-height": "none",
+              "box-sizing": "content-box",
+              "margin-top": "0px",
+              "margin-right": "0px",
+              "margin-bottom": "0px",
+              "margin-left": "0px",
+              "padding-top": "0px",
+              "padding-right": "0px",
+              "padding-bottom": "0px",
+              "padding-left": "0px"
+            },
+            "table": {
+              "table-layout": "auto",
+              "border-collapse": "separate",
+              "border-spacing": "0px 0px",
+              "caption-side": "top",
+              "empty-cells": "show",
+              "vertical-align": "baseline"
+            }
+          }
+        },
+        {
+          "id": 265,
+          "ref": "e372",
+          "kind": "deferred",
+          "domTag": "table",
+          "display": "table",
+          "contentMode": "table",
+          "deferredReason": "display-layout-not-supported",
+          "attributes": {
+            "cellpadding": "5",
+            "border": "0"
+          },
+          "actualStyles": {
+            "visibility": {
+              "display": "table",
+              "visibility": "visible",
+              "displayed": true,
+              "visible": true
+            },
+            "box": {
+              "top": "auto",
+              "right": "auto",
+              "bottom": "auto",
+              "left": "auto",
+              "border-top-width": "3px",
+              "border-right-width": "3px",
+              "border-bottom-width": "3px",
+              "border-left-width": "3px",
+              "border-top-style": "none",
+              "border-right-style": "none",
+              "border-bottom-style": "none",
+              "border-left-style": "none",
+              "width": "auto",
+              "height": "auto",
+              "min-width": "auto",
+              "min-height": "auto",
+              "max-width": "none",
+              "max-height": "none",
+              "box-sizing": "content-box",
+              "margin-top": "0px",
+              "margin-right": "0px",
+              "margin-bottom": "0px",
+              "margin-left": "0px",
+              "padding-top": "0px",
+              "padding-right": "0px",
+              "padding-bottom": "0px",
+              "padding-left": "0px"
+            },
+            "table": {
+              "table-layout": "auto",
+              "border-collapse": "separate",
+              "border-spacing": "2px 2px",
+              "caption-side": "top",
+              "empty-cells": "show",
+              "vertical-align": "baseline"
+            }
+          }
+        },
+        {
+          "id": 315,
+          "ref": "e428",
+          "kind": "deferred",
+          "domTag": "table",
+          "display": "table",
+          "contentMode": "table",
+          "deferredReason": "display-layout-not-supported",
+          "attributes": {
+            "cellpadding": "5",
+            "border": "0"
+          },
+          "actualStyles": {
+            "visibility": {
+              "display": "table",
+              "visibility": "visible",
+              "displayed": true,
+              "visible": true
+            },
+            "box": {
+              "top": "auto",
+              "right": "auto",
+              "bottom": "auto",
+              "left": "auto",
+              "border-top-width": "3px",
+              "border-right-width": "3px",
+              "border-bottom-width": "3px",
+              "border-left-width": "3px",
+              "border-top-style": "none",
+              "border-right-style": "none",
+              "border-bottom-style": "none",
+              "border-left-style": "none",
+              "width": "auto",
+              "height": "auto",
+              "min-width": "auto",
+              "min-height": "auto",
+              "max-width": "none",
+              "max-height": "none",
+              "box-sizing": "content-box",
+              "margin-top": "0px",
+              "margin-right": "0px",
+              "margin-bottom": "0px",
+              "margin-left": "0px",
+              "padding-top": "0px",
+              "padding-right": "0px",
+              "padding-bottom": "0px",
+              "padding-left": "0px"
+            },
+            "table": {
+              "table-layout": "auto",
+              "border-collapse": "separate",
+              "border-spacing": "2px 2px",
+              "caption-side": "top",
+              "empty-cells": "show",
+              "vertical-align": "baseline"
+            }
+          }
+        },
+        {
+          "id": 454,
+          "ref": "e557",
+          "kind": "deferred",
+          "domTag": "table",
+          "display": "table",
+          "contentMode": "table",
+          "deferredReason": "display-layout-not-supported",
+          "attributes": {
+            "cellpadding": "5",
+            "border": "0"
+          },
+          "actualStyles": {
+            "visibility": {
+              "display": "table",
+              "visibility": "visible",
+              "displayed": true,
+              "visible": true
+            },
+            "box": {
+              "top": "auto",
+              "right": "auto",
+              "bottom": "auto",
+              "left": "auto",
+              "border-top-width": "3px",
+              "border-right-width": "3px",
+              "border-bottom-width": "3px",
+              "border-left-width": "3px",
+              "border-top-style": "none",
+              "border-right-style": "none",
+              "border-bottom-style": "none",
+              "border-left-style": "none",
+              "width": "auto",
+              "height": "auto",
+              "min-width": "auto",
+              "min-height": "auto",
+              "max-width": "none",
+              "max-height": "none",
+              "box-sizing": "content-box",
+              "margin-top": "0px",
+              "margin-right": "0px",
+              "margin-bottom": "0px",
+              "margin-left": "0px",
+              "padding-top": "0px",
+              "padding-right": "0px",
+              "padding-bottom": "0px",
+              "padding-left": "0px"
+            },
+            "table": {
+              "table-layout": "auto",
+              "border-collapse": "separate",
+              "border-spacing": "2px 2px",
+              "caption-side": "top",
+              "empty-cells": "show",
+              "vertical-align": "baseline"
+            }
+          }
+        },
+        {
+          "id": 534,
+          "ref": "e636",
+          "kind": "deferred",
+          "domTag": "table",
+          "display": "table",
+          "contentMode": "table",
+          "deferredReason": "display-layout-not-supported",
+          "attributes": {
+            "cellpadding": "5",
+            "border": "0"
+          },
+          "actualStyles": {
+            "visibility": {
+              "display": "table",
+              "visibility": "visible",
+              "displayed": true,
+              "visible": true
+            },
+            "box": {
+              "top": "auto",
+              "right": "auto",
+              "bottom": "auto",
+              "left": "auto",
+              "border-top-width": "3px",
+              "border-right-width": "3px",
+              "border-bottom-width": "3px",
+              "border-left-width": "3px",
+              "border-top-style": "none",
+              "border-right-style": "none",
+              "border-bottom-style": "none",
+              "border-left-style": "none",
+              "width": "auto",
+              "height": "auto",
+              "min-width": "auto",
+              "min-height": "auto",
+              "max-width": "none",
+              "max-height": "none",
+              "box-sizing": "content-box",
+              "margin-top": "0px",
+              "margin-right": "0px",
+              "margin-bottom": "0px",
+              "margin-left": "0px",
+              "padding-top": "0px",
+              "padding-right": "0px",
+              "padding-bottom": "0px",
+              "padding-left": "0px"
+            },
+            "table": {
+              "table-layout": "auto",
+              "border-collapse": "separate",
+              "border-spacing": "2px 2px",
+              "caption-side": "top",
+              "empty-cells": "show",
+              "vertical-align": "baseline"
+            }
+          }
+        },
+        {
+          "id": 596,
+          "ref": "e696",
+          "kind": "deferred",
+          "domTag": "table",
+          "display": "table",
+          "contentMode": "table",
+          "deferredReason": "display-layout-not-supported",
+          "attributes": {
+            "cellpadding": "5",
+            "border": "0"
+          },
+          "actualStyles": {
+            "visibility": {
+              "display": "table",
+              "visibility": "visible",
+              "displayed": true,
+              "visible": true
+            },
+            "box": {
+              "top": "auto",
+              "right": "auto",
+              "bottom": "auto",
+              "left": "auto",
+              "border-top-width": "3px",
+              "border-right-width": "3px",
+              "border-bottom-width": "3px",
+              "border-left-width": "3px",
+              "border-top-style": "none",
+              "border-right-style": "none",
+              "border-bottom-style": "none",
+              "border-left-style": "none",
+              "width": "auto",
+              "height": "auto",
+              "min-width": "auto",
+              "min-height": "auto",
+              "max-width": "none",
+              "max-height": "none",
+              "box-sizing": "content-box",
+              "margin-top": "0px",
+              "margin-right": "0px",
+              "margin-bottom": "0px",
+              "margin-left": "0px",
+              "padding-top": "0px",
+              "padding-right": "0px",
+              "padding-bottom": "0px",
+              "padding-left": "0px"
+            },
+            "table": {
+              "table-layout": "auto",
+              "border-collapse": "separate",
+              "border-spacing": "2px 2px",
+              "caption-side": "top",
+              "empty-cells": "show",
+              "vertical-align": "baseline"
+            }
+          }
+        },
+        {
+          "id": 706,
+          "ref": "e806",
+          "kind": "deferred",
+          "domTag": "table",
+          "display": "table",
+          "contentMode": "table",
+          "deferredReason": "display-layout-not-supported",
+          "attributes": {
+            "cellpadding": "5",
+            "border": "0"
+          },
+          "actualStyles": {
+            "visibility": {
+              "display": "table",
+              "visibility": "visible",
+              "displayed": true,
+              "visible": true
+            },
+            "box": {
+              "top": "auto",
+              "right": "auto",
+              "bottom": "auto",
+              "left": "auto",
+              "border-top-width": "3px",
+              "border-right-width": "3px",
+              "border-bottom-width": "3px",
+              "border-left-width": "3px",
+              "border-top-style": "none",
+              "border-right-style": "none",
+              "border-bottom-style": "none",
+              "border-left-style": "none",
+              "width": "auto",
+              "height": "auto",
+              "min-width": "auto",
+              "min-height": "auto",
+              "max-width": "none",
+              "max-height": "none",
+              "box-sizing": "content-box",
+              "margin-top": "0px",
+              "margin-right": "0px",
+              "margin-bottom": "0px",
+              "margin-left": "0px",
+              "padding-top": "0px",
+              "padding-right": "0px",
+              "padding-bottom": "0px",
+              "padding-left": "0px"
+            },
+            "table": {
+              "table-layout": "auto",
+              "border-collapse": "separate",
+              "border-spacing": "2px 2px",
+              "caption-side": "top",
+              "empty-cells": "show",
+              "vertical-align": "baseline"
+            }
+          }
+        },
+        {
+          "id": 973,
+          "ref": "e1084",
+          "kind": "deferred",
+          "domTag": "table",
+          "display": "table",
+          "contentMode": "table",
+          "deferredReason": "display-layout-not-supported",
+          "attributes": {
+            "width": "100%",
+            "cellpadding": "5",
+            "border": "0"
+          },
+          "actualStyles": {
+            "visibility": {
+              "display": "table",
+              "visibility": "visible",
+              "displayed": true,
+              "visible": true
+            },
+            "box": {
+              "top": "auto",
+              "right": "auto",
+              "bottom": "auto",
+              "left": "auto",
+              "border-top-width": "3px",
+              "border-right-width": "3px",
+              "border-bottom-width": "3px",
+              "border-left-width": "3px",
+              "border-top-style": "none",
+              "border-right-style": "none",
+              "border-bottom-style": "none",
+              "border-left-style": "none",
+              "width": "auto",
+              "height": "auto",
+              "min-width": "auto",
+              "min-height": "auto",
+              "max-width": "none",
+              "max-height": "none",
+              "box-sizing": "content-box",
+              "margin-top": "0px",
+              "margin-right": "0px",
+              "margin-bottom": "0px",
+              "margin-left": "0px",
+              "padding-top": "0px",
+              "padding-right": "0px",
+              "padding-bottom": "0px",
+              "padding-left": "0px"
+            },
+            "table": {
+              "table-layout": "auto",
+              "border-collapse": "separate",
+              "border-spacing": "2px 2px",
+              "caption-side": "top",
+              "empty-cells": "show",
+              "vertical-align": "baseline"
+            }
+          }
+        }
+      ]
+    },
+    "evidence": {
+      "report": "LIBPNG-DOCUMENTATION-FLOW.md",
+      "reportSha256": "a0fd9f8c9ccfc1af81ec9f49773dcb4540422cdb9ebd0e61f66fb37722300c52",
+      "finalLedger": "node_modules/.cache/native-validation/native-libpng-flow-september12/FINAL-RECEIPTS.sha256",
+      "finalLedgerSha256": "3379066e83b7f5f5e9c4c899ce5380308d9b0445d67d4a64d0f8e696380bfdcf",
+      "primaryLedgerEntries": 240,
+      "finalLedgerEntries": 242,
+      "parentVerifiedAt": "2026-09-12T08:59:46.120Z",
+      "checks": 36,
+      "actualGitBlobs": 12,
+      "readOnly": true,
+      "extraBrowserRuns": 0
+    }
+  },
+  "latestCodeGate": {
+    "commit": "8b112c85d478279fef3913e66f013d5b25a8410f",
+    "report": "LIST-STYLE.md",
+    "tests": {
+      "passed": 12650,
+      "failed": 0,
+      "excluded": 2
+    },
+    "selectedSuites": 244,
+    "strictRoots": 243,
+    "manifestEntries": 638,
+    "evidence": "node_modules/.cache/native-validation/native-list-style-september12-round02/AUDIT.json",
+    "auditSha256": "186d31a2143e8b518467bdcfb32cee1281ed928d29ed067e7a964b724be9c43b",
+    "scope": "Newer isolated native list-style/serializer gate;the Libpng live run uses prior12470/e8375ac and does not validate this newer runtime."
+  },
+  "previousFollowups": [
+    "LIBARCHIVE-DOCUMENTATION-FLOW.md",
+    "NETLIB-GIF-FLOW.md",
+    "NETLIB-GIF-SOURCE-CHECK.md",
+    "NETLIB-CENTER-FLOW.md",
+    "GNUPG-CSS-COMPATIBILITY-DIAGNOSIS.md",
+    "GNUPG-APPLICABILITY-FOLLOWUP.md",
+    "BUSYBOX-COMPATIBILITY-DIAGNOSIS.md",
+    "GNUPG-CLEARANCE-FOLLOWUP.md",
+    "NETLIB-DOCUMENTATION-FLOW.md",
+    "IANA-RESERVED-DOMAINS-FLOW.md",
+    "GNUPG-FLOAT-ATOMIC-REPLAY.md",
+    "ZLIB-CSS-RECOVERY-FOLLOWUP.md",
+    "LUA-PERCENTAGE-FOLLOWUP.md"
+  ],
+  "limitations": [
+    "The FAQ interaction fails at native width resolution;HTTP200 and one committed homepage do not establish working navigation.",
+    "The retained census shows multiple independent CSS/HTML/table/inline alignment/deferred-image limitations,not a proved sole cause.",
+    "No denial/challenge/CAPTCHA occurred in the bounded Libpng run;it is a native formatting failure,not a crawler-block verdict.",
+    "Historical outcomes and receipts remain unchanged.",
+    "No credential/provider/passkey/device/TTY/realSafeJS or broad challenge acceptance follows from these checks."
+  ]
+}
