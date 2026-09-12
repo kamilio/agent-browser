@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 retained Libpng source census reconstructs49hard guard occurrences
+across41distinct elements:31generic/16table/2inlinevertical,caused by43/16/2
+attributes. Eight tabledisplay entries are coordinator markers,not missing
+algorithms. Table-specific hints are8cellpadding=5 and8tr bgcolor rows(sixblue,
+twogreen);vertical-align:middle failures are2radioinputs,not tablecells.
+LIBPNG-PRESENTATION-HINT-CENSUS.md recommends bounded tr bgcolor support via
+existing cascade/rowpaint,not suppression or an alreadyimplemented fix. Exact
+serializedDOM/sourcepredicate linkage has documented original-ref/event gaps.
+All failed imports,doctype roundtrip and parser attempts remain sealed. Parent
+verifies13actualGit objects,10snapshot inputs,12readonly groups and280entries
+at11:10:43.274UTC with unchanged ledger. No browser/replay/network/geometry run;
+all fullwebsite,standards,research,device and other acceptance gates stay open.
+
 September12 isolated PCRE captured-source attribution identifies active
 a{text-decoration:underline;cursor:pointer} as the two applicable unsupported
 property occurrences;each selector matches43 source anchors. Native whole-sheet
