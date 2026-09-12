@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 weather-service testing on committed13588 contacts one additional
+host beyond the 86-host inventory: www.weather.gov. Eight GET200 responses
+(one document, seven stylesheets; 46919 encoded /201151 decoded bytes) precede
+a stop at the first exposed resource-policy observation, before page commit or
+any anchor inspection/click. Twelve image denials and one CSS-import policy
+issue are recorded; their exact underlying rule is not proved by the observation.
+WEATHER-SERVICE-FLOW.md preserves the 14:32:15.255–14:32:17.731 UTC partial
+failure, zero retries and seven measured request-start intervals of at least
+250ms. This is not remote-arrival timing, NASA causality or whole-site success.
+Parent verifies eight actual Git objects against both captures (five inputs)
+and all 188 sealed entries at 14:43:03.776 UTC with no replay. The total is now
+87 attempted hosts; the immutable seventeenth inventory remains an 86-host
+snapshot from before this run. Broader gates stay open.
+
 September 12 seventeenth website inventory records 86 attempted hosts, adding
 only www.nasa.gov to the retained 85-host union; workingWebsiteCount stays null.
 The metadata snapshot at 14:23:38.837 UTC distinguishes NASA's failed partial
