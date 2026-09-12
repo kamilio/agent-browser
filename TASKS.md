@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 website inventory thirteenth update records82attempted hosts,
+adding onlywww.tukaani.org;the bare allowedalias was never attempted. TwoGET200
+carry10113encoded/32394decoded bytes. Homepage commits;14currentDOManchors
+are inspected,and one genuine Tukaani developers/about click failsnativewidth
+before destination. No denials,retries,bypass orwhole-sitepass. Parent verifies
+10actualGit inputs and36readonlychecks;62consumed inventory hashes match.
+TUKAANI-DOCUMENTATION-FLOW.md and WEBSITE-TEST-INVENTORY-SEPTEMBER-12-THIRTEENTH-UPDATE.md
+retain distinct raw/applicable CSS andoverflow diagnostics,with no solecause
+claim. The inventory includes separatezero-browser PCRE CSSattribution,not
+newlive evidence ornewcode. Isolated13042gate andallbroaderacceptance remain
+separate;historical reports andfailed preparations are unchanged.
+
 September12 retained Libpng source census reconstructs49hard guard occurrences
 across41distinct elements:31generic/16table/2inlinevertical,caused by43/16/2
 attributes. Eight tabledisplay entries are coordinator markers,not missing
