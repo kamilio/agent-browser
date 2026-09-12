@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 separate native primary-source capture records image represented
+content and completion conditions in IMAGE-SEMANTICS-SOURCE.md. One native GET
+returned HTTP200, followed by one offline native parse; full current/pending
+request-state definitions remain uncaptured. Missing versus empty attributes,
+available-image versus text/nothing, and authored sizing remain distinct.
+Main's18:15:20.812–18:15:21.143UTC read-only check independently recaptures nine
+actual Git objects against both archives and verifies114sealed receipts, six
+snapshot inputs,1177source/1992compiled files and20gate receipts. It imports no
+page, reparses no HTML and sends no request. This is source evidence, not a new
+website/layout/navigation pass. Empty-image implementation and broader website,
+research, performance, provider/passkey/device/SafeJS/challenge gates remain open.
+
 September12 plain fractional geometry fixes public collapsed Range deduplication
 at its root and shares finite bounded coordinate comparisons with caret/selection.
 No Range-error-string fallback or duplicate geometry scan remains.143new cases
