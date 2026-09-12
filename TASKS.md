@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 fresh Netlib regression on committed13501 passes one genuine
+homepage-to-FAQ flow:4GET20034762encoded/decoded bytes at13:43:44.718–
+13:43:45.803UTC.21currentanchors yield ref e133; click commitsFAQ/newdocument/
+title/history and11352codeunits ofreadabletext. Five exposedresource-policy
+checks areclear, notinstantaneousdenialinstrumentation. Two nativeGIF initial
+147x148frames remain; all4bodies match13226 onlyin post-live comparison.
+NETLIB-FLOAT-SHELL-FLOW.md preserves theboundedpass and176sealedentries. Parent
+verifies16actualGitobjects/13inputs/15readonlygroups at13:52:58.554UTC. Zero
+newhosts, retries, mocks, redirects oradmissiondenials. This is not a general
+performance benchmark or entireNetlib/browser acceptance. Historicalreports
+and the85host inventory remainunchanged; broadergates stayopen.
+
 September 12 sixteenth inventory records85attempted hosts, addingonlygo.dev
 to the immutablefifteenth84host union; this is not85working websites. The two
 Go13446flows and completedLibpng13446replay remain distinct from the13501
