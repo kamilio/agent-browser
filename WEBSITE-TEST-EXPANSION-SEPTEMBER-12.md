@@ -4,6 +4,28 @@ Starting coverage remains **66 attempted exact hosts**, not66 working websites.
 The historical host list is in `WEBSITE-TEST-INVENTORY.md`, with additions and
 their actual outcomes in `WEBSITE-TEST-EXPANSION-SEPTEMBER-11.md`.
 
+## NetBSD guide
+
+`NETBSD-GUIDE-FLOW.md` adds `www.netbsd.org`, bringing verified attempted-host
+coverage to **67**, not67 working sites. The fresh00:53 UTC native flow uses
+audited11268 release8daf14b. The guide and original global CSS return HTTP200,
+83873 encoded/decoded bytes and zero mocks. Native availability is checked
+before deduplicating96 of588 anchors; visible Introduction link e129 is chosen.
+Its one genuine click fails the supported width-profile guard before pointer
+dispatch or destination navigation. Applicable CSS diagnostics,12 unsupported
+presentation hints and2 deferred table nodes remain; no sole-cause attribution
+or float-specific defect is inferred from that separate census.
+
+Parent independently verifies51 evidence checks,43/54-entry ledgers, exact
+body/header/archive cross-file metadata and actual document/event/image/control
+cleanup. A stale September11 path breaks final packaging, not the native flow;
+all four partial-output/draft versions are byte-preserved before filesystem-only
+completion. Parent verifies both old claims against the archived draft and new
+claims against the actual report. Its own initial check assumed a nonexistent
+old report.bytes field; the original verifier and correction note are retained.
+There is no native retry, website restriction, capacity change or live validation
+of the newer11331-check computed-display release.
+
 ## Curl captured-document follow-up
 
 `CURL-LINK-SELECTION-REPLAY.md` records the isolated00:16 UTC replay on the same

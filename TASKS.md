@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026,01:03 UTC: parent verifies the fresh NetBSD guide flow on prior
+11268 release8daf14b. `NETBSD-GUIDE-FLOW.md` adds www.netbsd.org, coverage66→67
+attempted hosts, not working-site passes. Two HTTP200 GETs return83873 bytes;
+one genuine visible Introduction click fails the width-formatting guard with
+unchanged history and zero mouse dispatch/destination request. Availability is
+checked before URL deduplication. The separate census retains applicable CSS,
+12 presentation hints and2 deferred table nodes; no sole cause is inferred.
+All51 checks,43/54 ledger entries, body/header/archive metadata and actual owner
+cleanup verify. The unsealed stale-path packaging failure and four exact failed
+versions remain preserved; filesystem-only finalization performs no native retry.
+Parent also preserves/corrects its initial old-schema byte-field assumption.
+Man7 evidence audit and the broader float/overflow/website acceptance work remain
+pending; full goal and isolated/live/provider/device/SafeJS gates stay open.
+
 September12,2026,00:59 UTC: captured CSS2.2 float display adjustment now fixes
 the genuine public-API regression where a floated inline span computed inline
 instead of block. `FLOAT-DISPLAY.md` records the exact unchanged baseline fixture,
