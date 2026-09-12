@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 fresh IANA public-document test is now verified and recorded in
+IANA-NATIVE-PUBLIC-FLOW.md. Native15522/4306022 performs2GET200 at20:10:59.056–
+20:10:59.642UTC:15836encoded/95297decoded bytes,111133combined. Before commit,
+the original image owner reports policy-denied for the discovered logo SVG;
+0image requests/bytes,0document commits/clicks/format/layout. This is our current
+CSP image limitation, not a proved server/Cloudflare denial or SVG decode failure.
+No post-failure page analysis, bypass, retry, alternate navigation or cap change.
+The www.iana.org host already exists in the86-host inventory; no new attempted
+host or working-website count is claimed. Main independently recaptures14actual
+Git objects against28archives and passes the131-entry read-only verifier at
+20:14:54.750UTC with settled instrumented owner cleanup. The runtime is the older
+tested15522, not the subsequent15601 float repair. Image CSP support remains a
+concrete gap; Python's residual CSS triage is independently underway on15601.
+Broader functionality/research/performance/provider/passkey-device/SafeJS/challenge
+gates remain open. Historical evidence and unrelated dirty work are preserved;
+no changes are pushed.
+
 September12 exact captured-Python replay on committed15601/9abc836 now eliminates
 the false float ownership-count error. PYTHON-FLOAT-APPLICABILITY-REPLAY.md records
 20:08:17.037–20:08:17.176UTC,8memory responses/72064decoded bytes,0wire/clicks,
