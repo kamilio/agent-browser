@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 live GIF follow-up:the committed12470 native runtime now completes
+one genuine Netlib homepage-to-FAQ click,with two document commits,four GETs,
+34762 transferred bytes and no mocks/retries. Parent verifies12 Git inputs and
+37 readonly checks. A separate Libarchive candidate makes two GETs/7325 bytes
+but stops before commit/click at the fixed harness origin boundary for an S3
+image;S3 is never contacted. Its12 Git inputs/34 evidence checks pass. The new
+seventh inventory records77 attempted hosts:previous75 plus Libarchive and the
+locally denied S3 target,not77 working sites. Captured Netlib GIF decoding is
+separate zero-network evidence. See NETLIB-GIF-FLOW.md,
+LIBARCHIVE-DOCUMENTATION-FLOW.md,NETLIB-GIF-SOURCE-CHECK.md and
+WEBSITE-TEST-INVENTORY-SEPTEMBER-12-SEVENTH-UPDATE.md. Historical failures remain
+unchanged;animation,broad compatibility,research,provider/passkey/device/TTY/
+realSafeJS and challenge/human-handoff goals remain open. No bypass or push.
+
 September12 native GIF improvement: image/gif dispatch and bounded GIF87a/89a
 initial-frame rendering now validate every image frame before loading. Three
 new suites add120 cases;573 focused checks and12470 selected native cases pass
