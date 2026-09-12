@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 native button-layout source check uses committed13501 for one
+GET20054444encoded/366253decoded bytes at13:46:51.121–13:46:51.250UTC. Fresh
+WHATWGrendering bytes exactlymatch the originalnativeSeptember12capture and
+reportSeptember8last-modified; no newhost or websiteinteraction. Native source02
+retains1205-characterlayout+148-characterapplicability sections; source04 adds
+threeCSSblocks withactualcontext, separating generalbutton defaults from
+conditionalbidi/base-select rules. BUTTON-LAYOUT-SOURCE.md corrects a conflicting
+externallookup assumption without inventing its versionhistory. Sourcebound
+failures andshortincompleteexcerpts remain. Parent13actualGitinputs and69sealed
+receipts verifyread-only underkernelsocketdenial at14:01:28.860UTC. This source
+research doesnotimplementrichbuttons orcompleteanywebsite/security/performance
+gate; actualdescendantlayout and independentGoCSS/CSP limitations remainopen.
+
 September 12 captured Libjpeg replay on committed13501 confirms that the
 former blanket float/container guard givesway to independent supported-profile
 width rejection. One actualcurrentdocumentation click,3captured responses/
