@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 post-list-style verification:paired exact GnuPG HTML/CSS on12470
+and12650 reduces raw unsupported-property diagnostics43→38 and applicable14→12;
+other diagnostic categories are unchanged. Six navigation lists and one footer
+list compute marker type:none. This is source-only evidence,not layout or live
+navigation. Two warm serializer microbenchmarks show the complete-pending case
+at0.295/0.299 of old median time with identical outputs;static cases show small
+1.4–5.0% increases,not a statistically established whole-browser result. Every
+workload and both runs are retained. GNUPG-LIST-STYLE-SOURCE-CHECK.md and
+CSS-SERIALIZER-PERFORMANCE.md record bounds and hashes. Each probe verifies23
+Git inputs and both source/compiled inventories;no HTTP/page session occurs.
+The78-host inventory and all broader compatibility,performance,provider/passkey/
+device/TTY/realSafeJS/research/challenge/handoff goals remain open. No push.
+
 September12 Libpng candidate:23 native GETs on prior12470/e8375ac,
 345538 encoded/366824 decoded bytes,
 one committed homepage and one discovered FAQ click attempt that fails native
