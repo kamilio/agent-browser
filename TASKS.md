@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12,2026,00:21 UTC: native float foundations now provide bounded
+same-BFC physical placement, source-order/clear constraints and line exclusion,
+with sorted bottom events, immutable snapshots, aggregate work limits and clean
+closure. Shared shrink-to-fit sizing is consumed by existing atomic inline
+layout; its genuine native geometry/raster/hit fixture passes both clean old
+production and the refactor. `FLOAT-FOUNDATION.md` distinguishes these foundations
+from unfinished DOM/text/height/paint coordination: real float/overflow guards
+remain strict, and OpenBSD actionability is not solved.128 new tests pass; the
+sealed native-float-foundation-september12-round02 gate passes build, strict,
+format and11268 checks with2 unchanged exclusions,195 selected/194 strict/591
+manifest,1082 source/1924 compiled and1074 unchanged tracked inputs. The dirty
+index residual is excluded and preserved. Two unrelated legacy grid assertions
+also fail on unchanged clean HEAD and remain reported outside this selected
+gate; no all-repository pass is claimed. Round01 preserves a pre-execution
+configuration failure from selecting2 manifest-listed uncommitted tests absent
+from the clean snapshot; those files were not bundled. `FLOAT-HEIGHT-SOURCE.md`
+adds9 verified checks/56 ledger entries for fresh offline discovery+3 sections
+on11080 production,4 owners closed and zero network. Native tests/source reads
+do not establish live, provider/credential, real SafeJS/device/TTY or challenge
+acceptance. Continue full float integration, overflow and varied-site testing.
+
 September 12,2026,00:01 UTC: parent independently verifies the fresh curl
 documentation attempt executed September 11 at23:56 UTC on11025 release4d11abd.
 `CURL-DOCUMENTATION-FLOW.md` preserves2 actual HTTP200 GETs,6556 encoded/28849

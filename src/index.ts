@@ -534,6 +534,25 @@ export {
 	type BlockWidthStyle,
 	type BlockWidthOptions,
 } from "./block-width.js";
+export {
+	resolveShrinkToFitWidth,
+	type ShrinkToFitIntrinsicWidths,
+	type ShrinkToFitWidthOptions,
+	type ShrinkToFitWidth,
+} from "./shrink-to-fit.js";
+export {
+	FloatLayoutContext,
+	floatLayoutLimits,
+	type FloatSide,
+	type FloatClear,
+	type FloatLayoutLimits,
+	type FloatContainingBlock,
+	type FloatPlacementRequest,
+	type FloatPlacement,
+	type FloatLineRequest,
+	type FloatLineInterval,
+	type FloatLayoutMetrics,
+} from "./float-layout.js";
 export { layoutValueLimits } from "./layout-values.js";
 export {
 	bitmapFont,

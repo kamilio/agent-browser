@@ -18,7 +18,11 @@ import {
 	intrinsicWidthLimits,
 	measureValidatedIntrinsicRoot,
 } from "./intrinsic-widths.js";
-import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
+import { layoutNumber } from "./layout-values.js";
+import {
+	resolveShrinkToFitWidth,
+	type ShrinkToFitIntrinsicWidths,
+} from "./shrink-to-fit.js";
 import { layoutFormattingText, type TextLayoutLimits } from "./text-layout.js";
 
 export interface AtomicInlineResolutionContext {
@@ -75,28 +79,7 @@ export function layoutFormattingAtomicInline(
 	const style = node.box ?? initialBoxStyle;
 	const borders = resolveBorders(style);
 	const basis = frame.containingWidth;
-	const paddingLeft = resolveLayoutLength(style["padding-left"], basis);
-	const paddingRight = resolveLayoutLength(style["padding-right"], basis);
-	const marginLeft =
-		style["margin-left"] === "auto"
-			? 0
-			: resolveLayoutLength(style["margin-left"], basis, true);
-	const marginRight =
-		style["margin-right"] === "auto"
-			? 0
-			: resolveLayoutLength(style["margin-right"], basis, true);
-	const edges = layoutNumber(
-		paddingLeft + paddingRight + borders.borderLeft + borders.borderRight,
-	);
-	const adjustment = style["box-sizing"] === "border-box" ? edges : 0;
-	const size = (value: string) =>
-		Math.max(0, resolveLayoutLength(value, basis) - adjustment);
-	const minimum = style["min-width"] === "auto" ? 0 : size(style["min-width"]);
-	const maximum =
-		style["max-width"] === "none"
-			? Number.POSITIVE_INFINITY
-			: size(style["max-width"]);
-	let preferred: number;
+	let intrinsicWidths: ShrinkToFitIntrinsicWidths | undefined;
 	if (style.width === "auto") {
 		const intrinsic = measureValidatedIntrinsicRoot(
 			formatting,
@@ -118,14 +101,16 @@ export function layoutFormattingAtomicInline(
 				"unsupported",
 				"Missing atomic intrinsic width",
 			);
-		preferred = Math.min(
-			measured.maxContent,
-			Math.max(measured.minContent, basis - edges - marginLeft - marginRight),
-		);
-	} else preferred = size(style.width);
-	const contentWidth = layoutNumber(
-		Math.max(minimum, Math.min(preferred, maximum)),
+		intrinsicWidths = measured;
+	}
+	const resolved = resolveShrinkToFitWidth(
+		style,
+		basis,
+		intrinsicWidths,
+		borders,
 	);
+	const { contentWidth, paddingLeft, paddingRight, marginLeft, marginRight } =
+		resolved;
 	const width: FormattingBlockWidth = Object.freeze({
 		id: node.id,
 		ref: node.ref,
@@ -139,17 +124,14 @@ export function layoutFormattingAtomicInline(
 		borderRight: borders.borderRight,
 		marginLeft,
 		marginRight,
-		borderBoxWidth: layoutNumber(contentWidth + edges),
-		contentOffset: layoutNumber(
-			marginLeft + borders.borderLeft + paddingLeft,
-			true,
-		),
+		borderBoxWidth: resolved.borderBoxWidth,
+		contentOffset: resolved.contentOffset,
 		borderX: 0,
 		contentX: borders.borderLeft + paddingLeft,
 		clampedBy:
-			contentWidth > preferred
+			contentWidth > resolved.tentativeContentWidth
 				? "min-width"
-				: contentWidth < preferred
+				: contentWidth < resolved.tentativeContentWidth
 					? "max-width"
 					: "none",
 	});
