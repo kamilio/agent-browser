@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 BusyBox source-only diagnosis on committed12254 isolates
+the three raw CSS invalid-value diagnostics to font-family lists; two matching
+rules explain the applicable count. Font-size percentages are not the cause.
+Nine elements carry unsupported presentation hints,two table-hint owners and
+three table-display guards remain. Images are deliberately unloaded,adding
+three deferred boxes; this is not equivalent to the sealed live census. See
+`BUSYBOX-COMPATIBILITY-DIAGNOSIS.md`. Zero HTTP/sessions and closed owners are
+verified. Host count75 and live failure remain unchanged; font fallback,HTML
+hints and table coordination need separate tested work. Broader gates stay open.
+
 September12,2026 BusyBox live testing adds one recorded attempted host,bringing
 the inventory to75,not75 working websites. Pinned12187 performs four HTTP200
 GETs and one genuine About-link click,which fails at the width/profile guard.
