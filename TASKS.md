@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 distinct post-image-CSP IANA native check is verified in
+IANA-IMAGE-CSP-NATIVE-CHECK.md. Committed15869/04bc696 performs3GET200 at21:07:20.781–
+21:07:21.620UTC, including32870decoded SVG response bytes. The previous own-CSP
+policy denial is gone; first failure is now unsupported image e35, before commit.
+0commits/clicks/format/layout, no retry/bypass/cap change or post-failure inspection.
+This is not IANA functionality acceptance or a Cloudflare/server denial. Main's
+independent readonly13actual-Git-object/26archive recapture and153-receipt sealed
+verification passes21:11:43.150UTC. Old native15522 evidence remains unchanged;
+the existing86-host attempted inventory does not expand. External-style CSP repair
+is separately in progress; SVG, broader CSS/research/performance/provider/passkey-
+device/SafeJS/challenge gates remain open. No push.
+
 September12 native image CSP now compiles enforcing header policy lists instead
 of rejecting every CSP-bearing document's images. IMAGE-CONTENT-SECURITY-POLICY.md
 records immutable policy intersection, img-src/default-src fallback, URL-source
