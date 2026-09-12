@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 fresh Vim documentation test on committed 13226 stops at the
+predeclared same-origin admission boundary, not a demonstrated browser-layout
+failure or server challenge. Seven GET200 responses from www.vim.org carry
+96397 encoded/113897 decoded bytes at 12:04:19.388–12:04:22.079 UTC. The next
+Kuwasha image is rejected before native transport, DNS or wire; its host is not
+counted. Zero document commits, inspected anchors or clicks; no retry or origin
+expansion. One partial-document census is diagnostic context, not a render or
+sole-cause claim. VIM-DOCUMENTATION-FLOW.md preserves the failed flow and cleanup.
+Parent verifies 11 actual Git objects, eight inputs, 12 readonly groups and
+153 sealed entries at 12:07:45.296 UTC. Vim adds one attempted/contacted host to
+the prior 82-host inventory; a separate dated inventory update follows. This
+is not evidence of 83 working websites or completion of the broader gates.
+
 September 12 fresh Netlib regression on committed 13226 passes the actual FAQ
 click: two committed documents, advancing history, changed document identity
 and title, released old owner, readable destination text and loaded GIF frames.
