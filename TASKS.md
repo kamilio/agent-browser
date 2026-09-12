@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 CSS Text source research preserves the original single200response
+followed by an absent-header capture-harness TypeError: zero native parses there.
+TEXT-INDENT-TRANSFORM-SOURCE.md is not relabeled a successful capture workflow.
+TEXT-INDENT-TRANSFORM-EXTRACTION.md records the separate native cached extraction
+and its independent verification: one parse,12733nodes,74headings,10308 context
+code units across indentation and transformation, no further HTTP/layout/scripts.
+Main's additional16:07:21.958–16:07:22.164UTC read-only sealed check passes12groups,
+recaptures17actual Git objects matching51archived copies, and confirms14snapshot
+inputs and both original/new seals unchanged. Original extraction-receipt limits
+remain explicit; no retrospective attestation or latest-remote-revision claim.
+This is narrow source research, not completion of the broader LLM hardware,
+benchmark, Astra/Twitter or Poe/Reddit research, credential/passkey/device gates,
+or website/challenge acceptance. Attempted-host count remains87, not87site passes.
+
 September12 native text indentation supports signed lengths/percentages, bounded
 CSS math, inherited computation, hanging/each-line, own-block percentage basis,
 wrapping/floats/atoms and consistent hit/paint geometry in the horizontal/LTR
