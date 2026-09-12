@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 seventeenth website inventory records 86 attempted hosts, adding
+only www.nasa.gov to the retained 85-host union; workingWebsiteCount stays null.
+The metadata snapshot at 14:23:38.837 UTC distinguishes NASA's failed partial
+load, Netlib's bounded FAQ success, Libjpeg's failed captured replay and known-
+host source research. It does not include later request-start pacing acceptance
+or any pending weather-service run. WEBSITE-TEST-INVENTORY-SEPTEMBER-12-
+SEVENTEENTH-UPDATE.md and its JSON retain 17 untested candidate workflows.
+Parent metadata verification passes at 14:27:34.817 UTC: 39 selected metadata
+paths, seven actual committed metadata blobs, 391 inherited paths/1223 claims
+classified before reads; 389 paths not rehashed, including all 47 predecessor
+payload exclusions. Of 568 ledger claims, only 16 selected-target claims are
+rehashed. No payload files, native runtime, live tests or historical edits.
+
 September 12 request-start pacing strengthens the documented grant-only
 contract: synchronous cookie/request startup now runs inside the owned origin
 grant, and cooldown starts after invocation without waiting for the response.
