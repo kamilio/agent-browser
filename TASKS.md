@@ -6,6 +6,21 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 retained-spec/source investigation identifies the remaining HTML
+cellpadding requirements: four cell-padding hints, permissive non-negative
+integer-prefix parsing, existing 1px UA default, bounded ownership work and
+author-cascade precedence. Applying four sides as one order-minus-two batch is
+unsafe; the last side could outrank zero-specificity author CSS. No fix or new
+tests are claimed. HTML-CELLPADDING-INVESTIGATION.md explicitly leaves general
+HTML table membership unresolved because the linked tables.html is uncaptured.
+The initial pre-import harness failure and successful self-directed attempt01
+at 12:04:16.494–12:04:16.823 UTC remain; later parent instructions are not
+retroactive authorization. No third extraction occurred. Parent verifies eight
+release Git inputs plus 18 reviewed source files outside the kernel seal, then
+checks all evidence/spec/release/source/compiled ledgers with sockets denied at
+12:17:53.083 UTC. Two retained documents yield nine matches; no network, feature
+test, live/replay or overall acceptance gate is completed by this investigation.
+
 September 12 fresh Vim documentation test on committed 13226 stops at the
 predeclared same-origin admission boundary, not a demonstrated browser-layout
 failure or server challenge. Seven GET200 responses from www.vim.org carry
