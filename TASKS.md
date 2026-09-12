@@ -6,6 +6,18 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 new Lua percentage-table replay: exactly one11901 native session
+replays four unchanged captures with zeroHTTP; seven collapsed-border guards
+drop to zero, but the genuine manual link still fails before any destination
+request. Independent CSS/presentation/table display guards remain; bounded
+extraction still fails and formatting work increases30299→31358. Parent reproduces
+16 read-only checks,120 ledger entries and nine exact localGit outputs. Original
+live/replay/corrected-source evidence stays immutable. See
+`LUA-PERCENTAGE-TABLE-REPLAY.md` and `LUA-PERCENTAGE-FOLLOWUP.md`. This closes the
+previous request for a newly scoped11901 comparison, not Lua website acceptance,
+and adds no host to the71 attempted-host inventory. The later11952 CSS recovery
+release has a separate zlib replay pending; provider/device/challenge gates remain.
+
 September12,2026 native stylesheet recovery: exact stylesheet-boundary CDO/CDC
 tokens are ignored without stripping HTML-style comment blocks or rewriting
 source. Incomplete qualified rules at EOF retain a specific advisory diagnostic;
