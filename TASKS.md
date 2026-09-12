@@ -6,6 +6,21 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12,2026 GnuPG12187 captured replay: six exact mocks and zero HTTP;
+one commit and one genuine FAQ click still fail, now at the supported-block-owner
+guard. Parent independently verifies22 checks,281/283-entry ledgers and13 actual
+Git outputs. Raw/applicable invalid CSS counts fall13→7 and3→2, while other CSS
+and float/clear diagnostics remain. A separate source-only12187 formatting probe
+finds six inline anchors carrying clear:left plus two genuine block clear:both
+owners. Its unloaded-image279 nodes are not the full replay's277. See
+`GNUPG-CLEARANCE-FOLLOWUP.md` and `GNUPG-NONFLOATING-CLEARANCE-REPLAY.md`.
+Next: correct clear applicability without stripping CSS or bypassing owner guards,
+then resume the Netlib center implementation. Its canonical baseline01 now fails
+on clean12187; the older12094 baseline is retained separately and only incidental
+glyph-array ordering was normalized before any center implementation. Host count74,
+historical/live outcomes and broader research/provider/device/TTY/realSafeJS/
+challenge gates remain unchanged and open.
+
 September12,2026 native non-floating clearance: physical source-ordered float
 bottoms now position normal blocks before text/descendants and following static
 positions. Leading ancestor struts are prepared before entry; zero-strut empty
