@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12,2026,00:35 UTC: parent independently verifies the new
+`FLOAT-MARGINS-SOURCE.md`:9 checks/71 ledger entries,1 native HTTP200 GET and2
+offline sections on11268 release8daf14b, with all prior seals unchanged. It
+establishes adjoining-margin criteria, retained positive/negative extrema,
+through-block positioning, computed-height dependencies, clearance exceptions
+and noncollapsing float/BFC boundaries. It links the earlier anonymous-block
+float anchor and preserves the source's conditional undefined negative-margin
+case. Negative margins are not globally forbidden, and the current foundation's
+nonnegative outer-extent restriction remains an explicit native subset. This
+source read is not full float placement/text/height/paint integration or another
+working-site pass. Continue coordinating those stages and independent overflow
+behavior without suppressing unresolved formatting issues.
+
 September 12,2026,00:21 UTC: native float foundations now provide bounded
 same-BFC physical placement, source-order/clear constraints and line exclusion,
 with sorted bottom events, immutable snapshots, aggregate work limits and clean
