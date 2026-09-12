@@ -1,5 +1,6 @@
 import { computeFontWeight, parseFontWeight } from "./font-weight.js";
 import { layoutNumber } from "./layout-values.js";
+import { computeTextIndent, parseTextIndent } from "./text-indent.js";
 
 export const cssTextProperties = Object.freeze([
 	"font-family",
@@ -9,6 +10,7 @@ export const cssTextProperties = Object.freeze([
 	"white-space",
 	"overflow-wrap",
 	"text-align",
+	"text-indent",
 ] as const);
 export type CssTextProperty = (typeof cssTextProperties)[number];
 export type TextStyle = Readonly<Record<CssTextProperty, string>>;
@@ -23,6 +25,7 @@ export const initialTextStyle: TextStyle = Object.freeze({
 	"white-space": "normal",
 	"overflow-wrap": "normal",
 	"text-align": "start",
+	"text-indent": "0px",
 });
 const wide = new Set(["initial", "inherit", "unset", "revert"]);
 const length =
@@ -58,6 +61,7 @@ export function parseTextValue(
 	value: string,
 ): string | undefined {
 	if (wide.has(value)) return value;
+	if (property === "text-indent") return parseTextIndent(value);
 	if (property === "font-weight") return parseFontWeight(value);
 	if (property === "overflow-wrap")
 		return ["normal", "break-word", "anywhere"].includes(value)
@@ -144,6 +148,14 @@ export function computeTextStyle(
 			result["line-height"],
 			Number.parseFloat(result["font-size"]),
 			root ? Number.parseFloat(result["font-size"]) : rootFontSize,
+		);
+	const indent = specified["text-indent"];
+	if (indent !== undefined && !wide.has(indent))
+		result["text-indent"] = computeTextIndent(
+			indent,
+			Number.parseFloat(result["font-size"]),
+			root ? Number.parseFloat(result["font-size"]) : rootFontSize,
+			viewport,
 		);
 	return cssTextProperties.every(
 		(property) => result[property] === parent[property],

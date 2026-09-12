@@ -2,6 +2,7 @@ import { bitmapGlyph } from "./bitmap-font.js";
 import { resolveBorders } from "./border-box.js";
 import { initialBoxStyle } from "./css-box.js";
 import { type TextStyle, initialTextStyle } from "./css-text.js";
+import { resolveTextIndent } from "./text-indent.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import {
@@ -329,6 +330,26 @@ function layoutTextContexts(
 		if (container.contentMode !== "inline") continue;
 		const style = container.typography ?? initialTextStyle;
 		const strut = extent(style);
+		const indent = resolveTextIndent(
+			style["text-indent"] ?? "0px",
+			constraint === "used" ? block.contentWidth : 0,
+		);
+		let firstFormattedLine =
+			indent.eachLine ||
+			container.kind !== "anonymous-block" ||
+			(container.parent !== null &&
+				horizontal.formatting.nodes[container.parent].children[0] ===
+					container.id);
+		let afterForcedBreak = false;
+		const indentation = () =>
+			(firstFormattedLine || (indent.eachLine && afterForcedBreak)) !==
+			indent.hanging
+				? indent.size
+				: 0;
+		const consumeIndentedLine = (forced: boolean) => {
+			firstFormattedLine = false;
+			afterForcedBreak = forced;
+		};
 		let activeIntrinsicFloats: Token[] = [];
 		const lines: Readonly<TextLine>[] = [];
 		const glyphs: Readonly<TextGlyph>[] = [];
@@ -348,7 +369,7 @@ function layoutTextContexts(
 		let skipLf = false;
 		let pendingBreakLine: number | undefined;
 		let pendingCrLine: number | undefined;
-		const advance = (token: Token, cursor: number, origin = 0) => {
+		const advance = (token: Token, cursor: number, origin = indentation()) => {
 			if (token.kind !== "tab" || token.advance <= 0) return token.advance;
 			const stop = token.advance * 8;
 			const position = origin + cursor;
@@ -393,11 +414,12 @@ function layoutTextContexts(
 			retry: boolean,
 		) => {
 			while (true) {
+				const indentSize = indentation();
 				if (!floatLayout || constraint !== "used")
 					return {
-						left: 0,
+						left: indentSize,
 						right: block.contentWidth,
-						width: block.contentWidth,
+						width: layoutNumber(Math.max(0, block.contentWidth - indentSize)),
 					};
 				charge();
 				const interval = floatLayout.interval(
@@ -414,11 +436,11 @@ function layoutTextContexts(
 						"invalid-input",
 						"Invalid text float interval",
 					);
-				const left = layoutNumber(interval.left);
+				const originalLeft = layoutNumber(interval.left);
 				const right = layoutNumber(interval.right);
 				const nextBottom = interval.nextBottom;
 				if (
-					left > block.contentWidth ||
+					originalLeft > block.contentWidth ||
 					right > block.contentWidth ||
 					(nextBottom !== null && layoutNumber(nextBottom) <= textHeight)
 				)
@@ -426,9 +448,10 @@ function layoutTextContexts(
 						"invalid-input",
 						"Invalid text float interval",
 					);
-				const width = Math.max(0, right - left);
+				const left = layoutNumber(originalLeft + indentSize, true);
+				const width = layoutNumber(Math.max(0, right - left));
 				const occupied = typeof fit === "number" ? fit : fit(left);
-				const obstructed = left > 0 || right < block.contentWidth;
+				const obstructed = originalLeft > 0 || right < block.contentWidth;
 				if (!retry || !obstructed || (occupied <= width && width > 0))
 					return { left, right, width };
 				if (nextBottom === null)
@@ -439,7 +462,10 @@ function layoutTextContexts(
 				textHeight = nextBottom;
 			}
 		};
-		const pendingGeometry = (tokens: readonly Token[], origin = 0) => {
+		const pendingGeometry = (
+			tokens: readonly Token[],
+			origin = indentation(),
+		) => {
 			const combined: Token[] = [];
 			let content = false;
 			for (const source of [lineTokens, tokens]) {
@@ -492,7 +518,12 @@ function layoutTextContexts(
 		};
 		const project = (tokens: readonly Token[]) => {
 			if (!floatLayout || constraint !== "used")
-				return { ...predict(tokens, lineWidth), available: block.contentWidth };
+				return {
+					...predict(tokens, lineWidth),
+					available: layoutNumber(
+						Math.max(0, block.contentWidth - indentation()),
+					),
+				};
 			const candidate = pendingGeometry(tokens);
 			const interval = intervalFor(
 				candidate.height,
@@ -548,12 +579,16 @@ function layoutTextContexts(
 			});
 			lineWidth = 0;
 			let hasContent = false;
+			let hasFormattedContent = !!forced;
 			for (const entry of entries) {
 				charge();
 				entry.offset = lineWidth;
 				entry.advance = advance(entry.token, lineWidth);
 				lineWidth = layoutNumber(lineWidth + entry.advance, true);
 				hasContent ||= contributes(entry.token);
+				hasFormattedContent ||=
+					contributes(entry.token) &&
+					!intrinsicFloats.has(entry.token.formattingId);
 			}
 			const collapsed = !hasContent && !forced;
 			let hanging = hangingAdvance(entries);
@@ -582,6 +617,10 @@ function layoutTextContexts(
 				},
 				!collapsed,
 			);
+			const remainingWidth =
+				indentation() === 0
+					? interval.width
+					: layoutNumber(interval.right - interval.left, true);
 			const measured = Math.max(
 				0,
 				lineWidth -
@@ -589,7 +628,7 @@ function layoutTextContexts(
 						? 0
 						: constraint === "min-content" || (!forced && !final)
 							? hanging
-							: Math.min(hanging, Math.max(0, lineWidth - interval.width))),
+							: Math.min(hanging, Math.max(0, lineWidth - remainingWidth))),
 			);
 			if (!collapsed && ++metrics.lines > limits.maxLines)
 				throw new AgentBrowserError(
@@ -597,7 +636,13 @@ function layoutTextContexts(
 					"Text layout line limit exceeded",
 				);
 			if (constraint !== "used") {
-				measuredWidth = Math.max(measuredWidth, measured);
+				measuredWidth = layoutNumber(
+					Math.max(
+						measuredWidth,
+						measured + (hasFormattedContent ? indentation() : 0),
+					),
+				);
+				if (hasFormattedContent) consumeIndentedLine(!!forced);
 				entries = [];
 				segments = [];
 				lineWidth = 0;
@@ -610,9 +655,9 @@ function layoutTextContexts(
 			const offset =
 				interval.left +
 				(alignment === "center"
-					? (interval.width - measured) / 2
+					? (remainingWidth - measured) / 2
 					: ["right", "end"].includes(alignment)
-						? interval.width - measured
+						? remainingWidth - measured
 						: 0);
 			if (pendingBreakLine !== undefined && (!collapsed || final)) {
 				charge();
@@ -818,7 +863,7 @@ function layoutTextContexts(
 					height,
 					baseline,
 					width: measured,
-					overflow: Math.max(0, measured - interval.width),
+					overflow: Math.max(0, measured - remainingWidth),
 					forcedBreak: !!forced,
 					glyphStart,
 					glyphEnd: glyphs.length,
@@ -827,6 +872,7 @@ function layoutTextContexts(
 				}),
 			);
 			if (sourceBreak) pendingBreakLine = lines.length - 1;
+			consumeIndentedLine(!!forced);
 			metrics.glyphs += glyphs.length - glyphStart;
 			textHeight = layoutNumber(textHeight + height);
 			entries = [];
@@ -1156,7 +1202,16 @@ function layoutTextContexts(
 					Object.freeze({
 						top: textHeight,
 						height: candidate.height,
-						occupiedWidth: candidate.fit,
+						occupiedWidth:
+							indentation() === 0
+								? candidate.fit
+								: layoutNumber(
+										Math.max(
+											0,
+											candidate.fit +
+												(candidate.hasContent ? indentation() : 0),
+										),
+									),
 						hasContent: candidate.hasContent,
 					}),
 				);

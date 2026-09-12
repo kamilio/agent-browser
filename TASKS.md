@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 native text indentation supports signed lengths/percentages, bounded
+CSS math, inherited computation, hanging/each-line, own-block percentage basis,
+wrapping/floats/atoms and consistent hit/paint geometry in the horizontal/LTR
+profile. TEXT-INDENT-NATIVE.md records200 new cases and63 existing math cases
+newly selected, not263 new tests. Independent review found oversized-indent
+alignment/overflow beyond the initial14017 passing selection;15new regressions
+fail before correction and pass after separating fitting from signed alignment
+space. Corrected clean round01 passes14032 cases, zero failures and two unchanged
+exclusions across271 suites; build, strict and formatting checks pass. Original
+failures remain evidence, including the unrelated legacy intrinsic grid guard.
+Source-capture failure and separate extraction are not relabeled. Text transform,
+rich HTML buttons, live Selenium click/full-page, provider/passkey, SafeJS,
+device/TTY, challenge-solving and measured timing-speedup acceptance remain open.
+
 September12 separate offline native CSS localization on the exact captured
 Selenium basic document identifies text-indent:80% and text-transform values
 capitalize/lowercase/uppercase as its four applicable unimplemented-property
