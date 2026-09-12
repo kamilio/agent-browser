@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September 12 Go documentation flow on committed13446 receives one native
+GET200,12085encoded/64185decoded bytes at13:08:35.278–13:08:35.658UTC.
+The original loader discovers a Google Fonts stylesheet, but the predeclared
+single-origin policy rejects it before transport. Zero commits, anchor
+inspections or clicks follow; this is a harness admission boundary, not a
+server challenge or demonstrated layout defect. Onlygo.dev is attempted and
+adds one to the84host inventory; a separate85host inventory update follows.
+GO-DOCUMENTATION-FLOW.md preserves the failed flow and141sealedentries. Parent
+verifies13actualGit objects/10inputs/12readonly groups at13:16:52.939UTC.
+No origin expansion, stripping or retry occurs within that completed run.
+A separately contracted followup admits only the observed public stylesheet
+origin; its pending result is not folded into this historical observation.
+
 September 12 fifteenth website inventory records84attempted hosts, not84
 working websites. Onlylibjpeg-turbo.org extends the immutablefourteenth83host
 union;www.libjpeg-turbo.org was allowed-only. WEBSITE-TEST-INVENTORY-SEPTEMBER-
