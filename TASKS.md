@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 fresh Selenium native reference navigation now passes on committed
+native15421. The18:37:02.509–18:37:03.723UTC flow receives three HTTP200 responses,
+performs one genuine observed e137 click and commits two distinct documents,
+reaching resultPage.html with title We Arrive Here and verified history progress.
+SELENIUM-EMPTY-IMAGE-FLOW.md records1674encoded/3630decoded bytes, retained250ms
+pacing, native TLS/address checks, five policy observations and instrumented owner
+cleanup. No retry, mock, forced destination navigation, new-host, whole-site,
+paint, performance, form, provider or challenge acceptance is claimed.
+Main's18:40:54.862–18:40:55.205UTC read-only verification separately recaptures
+16actual Git objects matching32archives and passes10sealed-evidence checks over
+277receipts,13snapshot inputs and1181source/1992compiled files. It imports no page,
+reparses no HTML and performs no network replay; seal/ledger stay byte-identical.
+Main's earlier ledger-filename setup error is retained privately and occurred
+before Git recapture or verifier launch, not during another live attempt.
+Historical Selenium failures remain unchanged. The bounded navigation gate is
+now met for this flow; broader sites/research/performance/provider/passkey/device/
+SafeJS/challenge gates remain open. No changes are pushed.
+
 September12 new cached Selenium replay on committed native15421 now succeeds
 at one used-layout attempt with63contexts. It retains the original3123byte HTML,
 127byte GIF and197nodes; e168's no-src/no-alt state is no longer an element guard.
