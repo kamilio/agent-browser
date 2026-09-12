@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 native Unicode16 source research completes two bodyless GETs with200
+responses and no retry, redirect or challenge at16:40:09.570–16:40:10.344UTC.
+UNICODE-CASING-SOURCE.md preserves177selected plaintext rows:119SpecialCasing
+plus58simple-titlecase differences, exact full bodies and source/license metadata.
+This pins16.0.0 to the measured ICU77.1/Unicode16 runtime, not latest Unicode.
+Main's separate16:58:37.071–16:58:37.411UTC read-only verification recaptures12
+actual Git objects matching24archived copies, checks9snapshot inputs,126sealed
+entries and full1165source/1976compiled inventories under socket/socketpair denial.
+No native request, DOM/layout, page decode or Git executes inside that verifier;
+bounded plaintext re-extraction is explicit. Case-rendering development and its
+source-data generation are separate, not proven by this source capture. Wider
+website, hardware/benchmark/Astra/Poe research, provider/passkey/device and
+challenge acceptance gates remain open; no whole-site or global-host-count claim.
+
 September12 post-indentation Selenium check on committed14032 independently
 observes the same captured six statements, not a new live page: raw/applicable
 unsupported CSS counts each drop4→3. Native div e136 text-indent:80% is accepted;
