@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+September12 post-indentation Selenium check on committed14032 independently
+observes the same captured six statements, not a new live page: raw/applicable
+unsupported CSS counts each drop4→3. Native div e136 text-indent:80% is accepted;
+capitalize/lowercase/uppercase text-transform remain unsupported. One native
+parse at16:23:10.903–16:23:10.953UTC yields197nodes/revision198, unchanged; no new
+HTTP, image hydration, layout or click. SELENIUM-INDENT-CSS-CHECK.md retains source,
+output and release pins; separate16:25:56.474–16:25:56.549UTC kernel-denied read-only
+verification checks20sealed entries, nine actual-Git-linked snapshot inputs and
+all1165source/1976compiled files without page imports/reparse. Main's execution
+and verification are not an independent implementation review. Original live
+partial and four-issue diagnostic remain unchanged; no full-page or navigation
+acceptance and no new host. Text-transform is the next localized compatibility
+gap, not permission to drop guards, strip CSS or retry a restricted website.
+
 September12 CSS Text source research preserves the original single200response
 followed by an absent-header capture-harness TypeError: zero native parses there.
 TEXT-INDENT-TRANSFORM-SOURCE.md is not relabeled a successful capture workflow.
