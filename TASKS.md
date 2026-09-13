@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: generated content, real CSS recovery and a reader-depth gap
+
+Implemented bounded modern/legacy before/after selectors, independent pseudo
+cascade/substitution, string content, ref-less formatting and real native text/
+empty-box rasterization. DOM/query/action/source-range identity stays unchanged.
+Unsupported positioned/floated/effect/item layouts remain explicit. Real retained
+CSS exposed a pseudo float-diagnostic ownership mismatch; fixed at its source,
+with two additional regressions rather than suppressing unsupported layout.
+
+Final focused1019pass; native18903pass/0fail/2unchangedexclusions,370selected/
+369strict roots,741manifest entries. Native fixture pixels and range/caret tests
+pass. Rootdist not rebuilt; prior dirty work preserved. See GENERATED-CONTENT.md.
+
+ZeroHTTP TestPages comparison: selector failures169->43, raw173->46;31generated
+boxes+31textnodes now retained; body/table universal box-sizing recovered.
+Fullpagegeometry stillunsupported; fonts, positioned/floated pseudos and other
+pagegaps remain. Earlier replay-label and float-ownership failures are preserved.
+
+Three native source GETs to W3C CSSPseudo/Selectors/CSSContent return200. Source
+extraction is not rendering acceptance. Selectors researchreader stillfails
+reader.depth129/128 while originalbytes parse as22686nodes/depth13 through the
+fullnativeDOMpath. This is a real reader-path discrepancy, not authorization or
+Cloudflare refusal. Next: isolate implied-end/stack bookkeeping with bounded
+native regressions, without increasinglimits or rewriting source evidence.
+
+Overallgoal ACTIVE. Originalfourresearchtopics, fullpage rendering, credentials/
+passkeydevices, SafeJS, realTTY and humanchallengehandoff remainOPEN. Full audit,
+sourcegaps and website receipts: WEBSITE-TEST-INVENTORY-SEPTEMBER-13-EIGHTEENTH-UPDATE.md.
+
+
 ### September 13: native validity selectors and a fresh public form
 
 Implemented :valid/:invalid through the existing native validator, with form
