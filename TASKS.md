@@ -6,6 +6,50 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: cursor semantics and exact remaining CSS attribution
+
+**PROGRESS; overall browser goal remains ACTIVE.** Native cursor keywords now
+participate in parsing/cascade, inheritance, variables, CSSOM/computed styles and
+generated metadata. All36keywords supported; URL/image cursors still rejected,
+no physical/system cursor rendering. Cursor does not disable clicks or focus.
+
+Actual native gate21:54:05.253–21:59:01.715UTC: **21,262passed/0failed/2unchanged
+skips**,414selected/413strict/768manifest,354unselected. Build/strict/scopedformat/
+source checks pass;1311source/2132compiled/1302unchangedtrackedinputs.93newcases;
+identical13file focused593/80/0→673/0/0,80improvements/0regressions. Read-only review
+found no concrete gap within scope; it is not runtime or live acceptance.
+
+Native Wikipedia CSS attribution at21:35:10UTC exactly reconciles97property and
+24value diagnostics across76records/36properties. Cursor12, radius20 and sprite
+position21 occurrences guide real implementation. Other11CSS diagnostics remain
+outside that attribution.57922charged query work includes conservative stale work
+on2selector failures, not an exact unique-work count or benchmark. Logo e51's asset
+was not fetched by this single-body profile; no unsupported-PNG conclusion.
+
+One native W3C sourceGET200 at21:45:27UTC reads CSS Backgrounds and Borders Level3,
+returned March11,2024 CRD,544031decoded/79214encodedbytes. Native bounded extraction
+establishes radius grammar/normalization and border/padding/content paint/hit curves.
+Inline fragmentation remains a source gap. **Rounded rendering not implemented**;
+no latest-spec, challenge-bypass or full-conformance claim.
+
+Python fresh unchanged-resource baseline21:55:33UTC and cursor replay22:02:48UTC:
+property issues8→7, Tutorial native click still blocked. Same669boxes/8965formatwork;
+stylework93886→94741, not a speedup. Wikipedia unchanged-body replay22:04:29UTC:
+properties97→85,totalissues199→187,CSS132→120,formatwork20974unchanged; **fullgeometry
+still unsupported**. These replays make zeroHTTP; no source/style stripping.
+Early Wikipedia preparation pin/write-once failures are preserved; no browser
+probe ran until the corrected fresh lane. Historical evidence remains unchanged.
+
+Source/runtime/fixture/framework/history ledgers and cleanup verified; no guard or
+process attempts, recorded groups absent. Native20receiptledger
+fbf9508c3f0a8b95c92b808c6bd9b62b91fe3c593e737f174bf6f223790580b3.
+Details: CURSOR-STYLING.md, CURSOR-WEBSITE-REPLAYS-SEPTEMBER-13.md,
+WIKIPEDIA-CSS-ATTRIBUTION-SEPTEMBER-13.md and websiteinventory39. No push; old edits
+preserved. Next: real rounded paint/hit clipping, remaining CSS/layout gaps,
+original-asset pointer flows and varied-site performance. Hardware/benchmark/Astra/
+verified Reddit-Poe research and separate credential/provider/passkey-device/
+SafeJS/socket/TTY gates remain open.
+
 ### September 13: line-edge geometry resolves Wikipedia's remaining alignment
 
 **PROGRESS; overall browser goal remains ACTIVE.** Commit03cbad9 implements real
