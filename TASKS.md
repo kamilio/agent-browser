@@ -6,6 +6,45 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: native box-sizing aliases and unchanged-harness checkbox replay
+
+Implemented explicit `-moz-box-sizing` / `-webkit-box-sizing` aliases using real
+canonical native parser/cascade/CSSOM state and existing geometry; shared Webkit,
+webkit and Moz host accessors retain canonical indexing and revocation. No general
+prefix stripping, CSS filtering, fake geometry, new engine or dependency.
+See `CSS-BOX-SIZING-ALIASES.md`.
+
+Two new suites contain 134 cases. Identical-test final baseline: 526 passed /
+126 failed / zero skipped; candidate: 652 passed / zero failed / zero skipped.
+Initial 524/128 and 650/2 results remain preserved; the latter's two stale
+word-wrap property-count assertions used 73 although the canonical list already
+had 114 entries on both runtimes. Corrected expectations retain exact canonical
+index/name and alias-exclusion checks. Four existing suites add 140 previously
+unselected cases, not newly authored tests.
+
+Fresh selected native gate, 18:28:39.480–18:33:30.400 UTC: 20,672 passed / zero
+failed / two unchanged skips; 402 selected files / 401 strict roots / 760 manifest
+entries, leaving 358 unselected. Build, strict, scoped formatting and immutable
+source/compiled checks pass. The host-object ceiling and unsupported-display
+media-fallback exclusions remain. Evidence:
+`node_modules/.cache/native-validation/native-box-sizing-alias-september13-round00/`.
+
+One new-runtime full-asset checkbox replay, 18:33:38.576–18:33:38.993 UTC, retains
+all four historical HTML/CSS/PNG responses (391,809 bytes), the exact action
+harness and native resource limits. Zero HTTP. Applicable property guards 11→8;
+raw property diagnostics 374→359. Semantic inversion/restoration passes, but one
+genuine pointer click still fails before events. Formatting observations and the
+remaining at-rule/selector/layout guards are unchanged. One instrumented offline
+run records 0.41 seconds and 134.36 MiB peak RSS, not a performance improvement.
+Details: `INTERNET-CHECKBOX-BOX-SIZING-SEPTEMBER-13.md`; inventory update 33:
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-13-THIRTY-THIRD-UPDATE.md`.
+
+Overall goal ACTIVE. Internet/Wikipedia/Python full interaction gates, broader
+website coverage, repeatable performance, safe access-block handling and research
+remain unfinished. Two native skips, unselected suites and separate credential,
+passkey-device, SafeJS, socket and TTY gates remain open. No push. Pre-existing
+uncommitted edits are excluded from the focused feature and evidence commits.
+
 ### September 13: current Internet checkbox HTML and full-asset pointer evidence
 
 Broadened beyond Wikipedia/Python. This is an existinghost, not newcoverageclaim.
