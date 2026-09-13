@@ -6,6 +6,47 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: real inline-middle geometry across Python and Wikipedia
+
+**PROGRESS; overall browser goal remains ACTIVE.** Commite5bcc24 implements
+parent-font-x-height/margin-box middle alignment for retained inline replaced and
+atomic boxes, including generated atomics. Actual line extents and fragments move
+together. A reproduced nested inline-flex baseline dependency leak is fixed without
+clearing required baseline guards. Non-atomic inline middle, top/bottom and other
+unsupported profiles remain explicit. No source/style removal or fake geometry.
+
+Final native gate **21,097passed/0failed/2unchangedskips**,412selected/411strict/
+766manifest,354unselected,20:47:46.337–20:52:41.223UTC. Build/strict/scopedformat/
+source checks pass;1308source/2128compiled/1301unchangedtrackedinputs.
+55newcases; identical focused tests741/44/0→785/0/0. Actual earlier failures and
+corrected test assumptions remain preserved; no test exclusion conceals them.
+
+Native CSS22 source: oneGET200 at20:40:32UTC,87037decoded/16235encodedbytes, one
+liveparse and one sealedofflineparse, onequery/12098excerptunits. Returned document
+Last-Modified is April8,2016, not a latest-spec claim. Source confirms margin-box
+alignment to parent baseline/x-height; native x-height comes from existing font
+metrics. No source rewriting, stripping, resources, scripts or reference raster.
+
+Python unchanged eight-resource replay at20:52:54UTC: inline guards2→0, but genuine
+Tutorial click still fails on8CSSproperties/1value/position/overflow. Same853nodes/
+669boxes; work8294→8965, stylesunchanged. **ZeroHTTP, no navigation pass.**
+Wikipedia unchanged119573-byte replay at20:57:04UTC: alignmentguards32→3; total
+formattingissues231→202, CSS132unchanged, work18685→20971. Fullgeometry still
+unsupported. That comparison includes intervening features, not an isolated A/B.
+**ZeroHTTP/actions/raster; remaining3alignment cases need native attribution.**
+
+Native20receiptledger1f434980f05634ca3ccb43b729bf639d4edec8db7d9a95dd35ff8bfe8bdd1dbb.
+Python28entryledgerabefacf7e6b1ccb4201d208996f5c29c811593a6472d4f138512182409029fe4.
+Source/runtime/fixture/framework evidence and closure verified separately; no
+historical report overwritten. Single0.25s/109.55MiB Python and0.31s/117.37MiB
+Wikipedia observations are not benchmarks or speedups. No push; old edits remain.
+
+Details: INLINE-MIDDLE.md, PYTHON-INLINE-MIDDLE-REPLAY-SEPTEMBER-13.md,
+WIKIPEDIA-INLINE-MIDDLE-REPLAY-SEPTEMBER-13.md, websiteinventory37. Next: exact
+remaining Wikipedia alignment attribution, Python/Internet CSS and real original-
+asset/pointer flows. Broader functionality/performance/research and separate
+credential/provider/passkey-device/SafeJS/socket/TTY gates stay open.
+
 ### September 13: native legends unblock the HTTPBin public form
 
 **PROGRESS; overall browser goal remains ACTIVE.** Commitc60b133 adds rendered
