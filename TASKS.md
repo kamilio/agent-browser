@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: reusable ARIA table metadata and native newline fidelity
+
+Native reader preserves bounded explicit ARIA table/row/cell/header source
+attributes on unchanged supported tags. Existing JSON tableMetadata exports
+ariaTableSource without computed roles, header mappings, ownership resolution or
+visualcolumn inference. HTMLmetadata/default node types remain separate. New
+CRroundtrip regressions fixed by native newline preprocessing and re-escaping
+decodedCR; originalsource-size accounting and output ceilings retained.
+
+108newcases nowpass; baseline62fail/46controls. Focused917pass/3baselinefail.
+Expanded native19269pass/3baselinefail/2unchangedskips,376suites/375strictroots/
+744manifest. The fullsuite is NOTgreen: previously unselected research-section
+has2oldpseudo-selector expectations and table-source has1oldglobal-id assertion.
+They remainactual failures, not newskips; no unrelatedsource/test fixes.
+Another previouslyunselected selector suite retains13strict typing errors outside
+thisgate. Exactearlierfailedreceipts preserved. Source/compiledpins verified.
+
+ZeroHTTP originalApple before/after:2426native/1475extractednodes unchanged;
+0->81ARIArecords,1table/18rowheaders.3completerowdigests matchpriorfullDOM; stripped
+JSONcontenthash identical. Oneafterreader+productionextraction, nofullDOMreload.
+RetainedWHATWG:10816nodes/depth17/19headings/9tables andheadings unchanged. Owners
+closed; no scripts/actions/credentials/SafeJS/TTY/devices/rendering claimed.
+
+Contract ARIA-TABLE-SOURCE.md; receipts
+WEBSITE-TEST-INVENTORY-SEPTEMBER-13-TWENTY-FIRST-UPDATE.md. Overallgoal ACTIVE.
+Originalresearch/hardwareranking and fullsite rendering/performance, device and
+human-challenge gates remainOPEN. Source metadata is not automatictable analysis.
+
+
 ### September 13: table-heavy website and Apple section extraction
 
 Fresh WHATWG tables GET200,12:16:17.507UTC: exactbody native-reader10816nodes,
