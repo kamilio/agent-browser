@@ -401,13 +401,13 @@ it.each([
 	expectError(() => current.container(), "unsupported");
 });
 
-it("rejects descendant percentage heights and caption wrapper semantics", () => {
+it("rejects descendant percentage heights and positioned caption wrappers", () => {
 	const percentage = fixture(
 		'<tbody><tr><td><div style="height:50%">A</div></td></tr></tbody>',
 	);
 	expectError(() => percentage.container(), "unsupported");
 	const caption = fixture(
-		"<caption>Caption</caption><tbody><tr><td>A</td></tr></tbody>",
+		'<caption style="position:absolute">Caption</caption><tbody><tr><td>A</td></tr></tbody>',
 	);
 	expectError(() => caption.container(), "unsupported");
 });

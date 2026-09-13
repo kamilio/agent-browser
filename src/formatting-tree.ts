@@ -8,6 +8,11 @@ import {
 import { measureValidatedIntrinsicRoot } from "./intrinsic-widths.js";
 import { buttonFitContentStyle, buttonUsedDisplay } from "./button-layout.js";
 import {
+	captionedTableStyle,
+	resolveCaptionedTableWidth,
+	tableWrapperStyle,
+} from "./table-caption.js";
+import {
 	fieldsetContentStyle,
 	fieldsetIntrinsicPadding,
 	fieldsetOuterStyle,
@@ -146,6 +151,9 @@ export interface FormattingNode {
 	fieldsetOwner?: number;
 	buttonLayout?: true;
 	buttonAppearance?: SoftwareControl;
+	tableGrid?: number;
+	tableWrapper?: number;
+	tableCaptions?: readonly number[];
 	blockContentAlignment?: Readonly<BlockContentAlignment>;
 	fragmentIndex?: number;
 	fragmentCount?: number;
@@ -266,6 +274,7 @@ export function buildFormattingTree(
 	let deferredSubtrees = 0;
 	let outsideMarkers = 0;
 	let clearanceRequests = 0;
+	let hasCaptions = false;
 	const renderedListItems = new Set<number>();
 	const numericMarkers: { node: number; item: number; outside: boolean }[] = [];
 	const charge = (units = 1) => {
@@ -1082,8 +1091,10 @@ export function buildFormattingTree(
 				issue("table-fixed-layout-not-supported");
 			if (display === "table-column" || display === "table-column-group")
 				issue("table-column-layout-not-supported");
-			if (display === "table-caption")
+			if (display === "table-caption") {
+				hasCaptions = true;
 				issue("table-caption-layout-not-supported");
+			}
 			if (display === "table-cell" && table["empty-cells"] !== "show") {
 				issue("table-empty-cell-paint-not-supported");
 				emptyCellGuards.add(tree.reference(id));
@@ -1091,6 +1102,12 @@ export function buildFormattingTree(
 			if (flow.position !== "static")
 				issue("table-position-layout-not-supported");
 			const cell = display === "table-cell";
+			const captionAlignment =
+				display === "table-caption"
+					? resolveBlockContentAlignment(styles.flex(id)["align-content"])
+					: undefined;
+			if (captionAlignment === null)
+				issue("block-content-alignment-not-supported");
 			if (cell && styles.flex(id)["align-content"] !== "normal")
 				issue("block-content-alignment-not-supported");
 			const span = (
@@ -1126,6 +1143,9 @@ export function buildFormattingTree(
 				typography: styles.text(id),
 				paint: styles.paint(id),
 				independentContext: root || cell || display === "table-caption",
+				...(captionAlignment
+					? { blockContentAlignment: captionAlignment }
+					: {}),
 				...(cell && (node.tagName === "td" || node.tagName === "th")
 					? {
 							tableSpan: Object.freeze({
@@ -1588,6 +1608,87 @@ export function buildFormattingTree(
 		}
 		nodes.length = retained;
 	}
+	const captionTables = hasCaptions
+		? nodes.filter((node) => {
+				charge();
+				return node.contentMode === "table";
+			})
+		: [];
+	for (const table of captionTables) {
+		charge(table.children.length);
+		const captions = table.children.filter(
+			(child) => nodes[child].display === "table-caption",
+		);
+		if (
+			!captions.length ||
+			table.parent === null ||
+			table.flexItem ||
+			table.gridItem ||
+			(table.position !== undefined && table.position !== "relative") ||
+			captions.some((caption) => {
+				charge();
+				return (
+					nodes[caption].position !== undefined || nodes[caption].floatSide
+				);
+			})
+		)
+			continue;
+		const parent = nodes[table.parent];
+		const before: number[] = [];
+		const after: number[] = [];
+		const captionSet = new Set(captions);
+		for (const caption of captions) {
+			charge();
+			(nodes[caption].table?.["caption-side"] === "bottom"
+				? after
+				: before
+			).push(caption);
+			nodes[caption].display = "flow-root";
+			const reference = nodes[caption].ref;
+			if (reference) collapsedBorderGuards.delete(reference);
+			const count = (issues["table-caption-layout-not-supported"] ?? 0) - 1;
+			if (count) issues["table-caption-layout-not-supported"] = count;
+			else delete issues["table-caption-layout-not-supported"];
+		}
+		const wrapper = create(
+			{
+				kind: "block",
+				level: "block",
+				display: "flow-root",
+				contentMode: "blocks",
+				visible: table.visible,
+				independentContext: true,
+				typography: table.typography,
+				box: tableWrapperStyle(table.box ?? initialBoxStyle),
+				tableGrid: table.id,
+				...(table.position ? { position: table.position } : {}),
+				...(table.zIndex === undefined ? {} : { zIndex: table.zIndex }),
+				...(table.clear === undefined ? {} : { clear: table.clear }),
+				...(table.floatSide === undefined
+					? {}
+					: { floatSide: table.floatSide }),
+			},
+			[...before, table.id, ...after],
+		);
+		nodes[wrapper].parent = parent.id;
+		charge(parent.children.length + table.children.length);
+		parent.children = parent.children.map((child) =>
+			child === table.id ? wrapper : child,
+		);
+		table.children = table.children.filter((child) => !captionSet.has(child));
+		table.tableWrapper = wrapper;
+		table.tableCaptions = Object.freeze(captions);
+		table.box = captionedTableStyle(table.box ?? initialBoxStyle);
+		if (table.position === "relative") {
+			const count = (issues["table-position-layout-not-supported"] ?? 0) - 1;
+			if (count) issues["table-position-layout-not-supported"] = count;
+			else delete issues["table-position-layout-not-supported"];
+		}
+		delete table.position;
+		delete table.zIndex;
+		delete table.clear;
+		delete table.floatSide;
+	}
 	if (collapsedBorderGuards.size) {
 		const collapsed = applyCollapsedTableBorders(
 			nodes,
@@ -1840,13 +1941,50 @@ export function resolveFormattingBlockWidths(
 		let contentX = frame.contentX;
 		let containingBlock = frame.containingBlock;
 		let replaced: Readonly<ReplacedSize> | undefined;
+		let captionedGridWidth: Readonly<BlockWidth> | undefined;
 		let style = node.box ?? initialBoxStyle;
 		const paddingBasis =
-			node.fieldsetOwner === undefined
+			node.fieldsetOwner === undefined && node.tableWrapper === undefined
 				? undefined
 				: (frame.paddingBasis ?? containingWidth);
 		if (paddingBasis !== undefined)
 			style = fieldsetPaddingStyle(style, paddingBasis);
+		if (node.tableGrid !== undefined) {
+			const measured = measureValidatedIntrinsicRoot(
+				formatting,
+				node.id,
+				frame.containingHeight,
+				{
+					maxWork: Math.min(4_000_000, Math.max(1, maxWork - work)),
+					text: context.text,
+				},
+				context.nesting ?? 0,
+			);
+			charge(measured.metrics.work);
+			let gridIntrinsic: (typeof measured.widths)[number] | undefined;
+			let wrapperIntrinsic: (typeof measured.widths)[number] | undefined;
+			for (const entry of measured.widths) {
+				charge();
+				if (entry.id === node.tableGrid) gridIntrinsic = entry;
+				if (entry.id === node.id) wrapperIntrinsic = entry;
+			}
+			if (!gridIntrinsic || !wrapperIntrinsic)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Missing captioned table intrinsic widths",
+				);
+			captionedGridWidth = resolveCaptionedTableWidth(
+				formatting.nodes[node.tableGrid].box ?? initialBoxStyle,
+				style,
+				frame.containingWidth,
+				gridIntrinsic,
+				wrapperIntrinsic.minContent,
+			);
+			style = {
+				...style,
+				width: `${layoutNumber(captionedGridWidth.borderBoxWidth)}px`,
+			};
+		}
 		if (
 			(style["min-width"] === "min-content" ||
 				(node.buttonLayout && style.width === "auto")) &&
@@ -2063,13 +2201,17 @@ export function resolveFormattingBlockWidths(
 		}
 		for (let index = node.children.length - 1; index >= 0; index--) {
 			charge();
+			const tableGrid = node.children[index] === node.tableGrid;
 			pending.push({
 				id: node.children[index],
 				containingBlock,
 				containingWidth,
-				containingHeight,
+				containingHeight: tableGrid ? frame.containingHeight : containingHeight,
 				contentX,
-				...(node.fieldsetContent === undefined
+				...(tableGrid && captionedGridWidth
+					? { usedWidth: captionedGridWidth }
+					: {}),
+				...(node.fieldsetContent === undefined && !tableGrid
 					? {}
 					: { paddingBasis: frame.containingWidth }),
 			});

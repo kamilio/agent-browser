@@ -273,7 +273,7 @@ it.each([
 	{ css: "td{min-width:50%}", markup: undefined },
 	{ css: "", markup: '<table id="table"><col><tr><td>A</td></tr></table>' },
 	{
-		css: "",
+		css: "table{position:absolute}",
 		markup: '<table id="table"><caption>C</caption><tr><td>A</td></tr></table>',
 	},
 	{ css: "table{border:2px solid red}", markup: '<table id="table"></table>' },

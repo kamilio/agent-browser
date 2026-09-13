@@ -94,7 +94,7 @@ function verifyTree(formatting: FormattingTree) {
 	expect(formatting.nodes[formatting.root].parent).toBeNull();
 }
 
-it("preserves real table, caption, group, row and cell references in an immutable shell", () => {
+it("preserves real table, caption, group, row and cell references beneath a caption wrapper", () => {
 	const { tree, ref } = fixture(
 		'<table id="table"><caption id="caption">Title</caption><thead id="head"><tr id="heading"><th id="header">Header</th></tr></thead><tbody id="body"><tr id="row"><td id="cell">Body</td></tr></tbody><tfoot id="foot"><tr id="last"><td id="footer">Footer</td></tr></tfoot></table>',
 	);
@@ -110,11 +110,18 @@ it("preserves real table, caption, group, row and cell references in an immutabl
 		deferredReason: "display-layout-not-supported",
 	});
 	expect(table.children.map((id) => result.nodes[id].ref)).toEqual([
-		ref("#caption"),
 		ref("#head"),
 		ref("#body"),
 		ref("#foot"),
 	]);
+	const wrapper = result.nodes[table.tableWrapper!];
+	expect(wrapper).toMatchObject({ tableGrid: table.id, contentMode: "blocks" });
+	expect(wrapper.ref).toBeUndefined();
+	expect(wrapper.children).toEqual([
+		nodeFor(result, ref("#caption")).id,
+		table.id,
+	]);
+	expect(table.tableCaptions).toEqual([nodeFor(result, ref("#caption")).id]);
 	for (const [group, display, row, cell] of [
 		["#head", "table-header-group", "#heading", "#header"],
 		["#body", "table-row-group", "#row", "#cell"],
@@ -134,14 +141,14 @@ it("preserves real table, caption, group, row and cell references in an immutabl
 		});
 	}
 	expect(nodeFor(result, ref("#caption"))).toMatchObject({
-		display: "table-caption",
+		display: "flow-root",
+		parent: wrapper.id,
 		independentContext: true,
 		contentMode: "inline",
 	});
 	expect(textOrder(result)).toBe("TitleHeaderBodyFooter");
 	expect(result.issues).toEqual({
 		"display-layout-not-supported": 1,
-		"table-caption-layout-not-supported": 1,
 	});
 	expect(result.metrics.deferredSubtrees).toBe(1);
 	expect(Object.isFrozen(table.table)).toBe(true);

@@ -10,6 +10,7 @@ import {
 } from "./document-layout.js";
 import { AgentBrowserError } from "./errors.js";
 import { resolveFieldsetMinimum } from "./fieldset-layout.js";
+import { resolveCaptionedTableWidth } from "./table-caption.js";
 import {
 	FloatLayoutContext,
 	floatLayoutLimits,
@@ -634,6 +635,25 @@ function measureFloatBox(
 			intrinsic.minContent,
 			frame.containingWidth,
 		);
+		if (node.tableGrid !== undefined) {
+			const grid = measured.widths.find((entry) => {
+				charge();
+				return entry.id === node.tableGrid;
+			});
+			if (!grid)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Missing floated table intrinsic grid",
+				);
+			const used = resolveCaptionedTableWidth(
+				formatting.nodes[node.tableGrid].box ?? initialBoxStyle,
+				style,
+				frame.containingWidth,
+				grid,
+				intrinsic.minContent,
+			);
+			style = { ...style, width: `${layoutNumber(used.borderBoxWidth)}px` };
+		}
 	}
 	let width: Readonly<BlockWidth>;
 	if (node.kind === "replaced" && node.intrinsic) {

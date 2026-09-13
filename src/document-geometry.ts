@@ -120,17 +120,35 @@ export class LayoutGeometry {
 			else destination.set(ref, [value]);
 		};
 		let hasSvg = false;
+		let hasTableGeometry = false;
 		for (const node of layout.text.horizontal.formatting.nodes) {
 			charge();
 			if (node.svg) hasSvg = true;
+			if (node.tableWrapper !== undefined || node.tableCaptions !== undefined)
+				hasTableGeometry = true;
 			if (node.ref && (node.fragmentCount ?? 0) > 1)
 				this.splitInlines.add(node.ref);
 		}
+		const boxesById = new Map<number, DocumentLayout["boxes"][number]>();
+		if (hasTableGeometry)
+			for (const box of layout.boxes) {
+				charge();
+				boxesById.set(box.id, box);
+			}
 		for (const box of layout.boxes) {
 			charge();
+			const node = layout.text.horizontal.formatting.nodes[box.id];
 			if (includeUsedStyles && box.ref) {
-				const sizing =
-					layout.text.horizontal.formatting.nodes[box.id].box?.["box-sizing"];
+				const sizing = node.box?.["box-sizing"];
+				const margins =
+					node.tableWrapper === undefined
+						? box
+						: boxesById.get(node.tableWrapper);
+				if (!margins)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Used table margins require a retained table wrapper",
+					);
 				this.usedStyles.set(
 					box.ref,
 					Object.freeze({
@@ -138,10 +156,10 @@ export class LayoutGeometry {
 							sizing === "border-box" ? box.borderBoxWidth : box.contentWidth,
 						height:
 							sizing === "border-box" ? box.borderBoxHeight : box.contentHeight,
-						"margin-top": box.marginTop,
-						"margin-right": box.marginRight,
-						"margin-bottom": box.marginBottom,
-						"margin-left": box.marginLeft,
+						"margin-top": margins.marginTop,
+						"margin-right": margins.marginRight,
+						"margin-bottom": margins.marginBottom,
+						"margin-left": margins.marginLeft,
 						"padding-top": box.paddingTop,
 						"padding-right": box.paddingRight,
 						"padding-bottom": box.paddingBottom,
@@ -153,9 +171,7 @@ export class LayoutGeometry {
 					}),
 				);
 			}
-			const reference =
-				box.ref ??
-				layout.text.horizontal.formatting.nodes[box.id].generated?.ref;
+			const reference = box.ref ?? node.generated?.ref;
 			if (reference)
 				append(
 					reference,
@@ -166,6 +182,21 @@ export class LayoutGeometry {
 						box.borderBoxHeight,
 					),
 				);
+			if (box.ref)
+				for (const captionId of node.tableCaptions ?? []) {
+					charge();
+					const caption = boxesById.get(captionId);
+					if (caption)
+						append(
+							box.ref,
+							rectangle(
+								caption.borderX,
+								caption.borderY,
+								caption.borderBoxWidth,
+								caption.borderBoxHeight,
+							),
+						);
+				}
 		}
 		for (const context of layout.contexts) {
 			charge();

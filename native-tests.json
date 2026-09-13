@@ -718,6 +718,8 @@
   "src/table-styles.test.ts",
   "src/table-formatting.test.ts",
   "src/table-layout.test.ts",
+  "src/table-caption-layout.test.ts",
+  "src/table-caption-geometry.test.ts",
   "src/table-document.test.ts",
   "src/text-font.test.ts",
   "src/text-locator.test.ts",

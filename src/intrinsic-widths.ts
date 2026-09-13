@@ -749,6 +749,27 @@ function measureScopes(
 					"Missing intrinsic replaced content size",
 				);
 			minContent = maxContent = measured;
+		} else if (node.tableGrid !== undefined) {
+			const grid = records.get(node.tableGrid);
+			if (!grid)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Missing captioned table intrinsic grid",
+				);
+			minContent = grid.minContribution;
+			maxContent = grid.maxContribution;
+			for (const child of node.children) {
+				charge();
+				if (child === node.tableGrid) continue;
+				const caption = records.get(child);
+				if (!caption)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Missing caption intrinsic width",
+					);
+				minContent = Math.max(minContent, caption.minContribution);
+				maxContent = Math.max(maxContent, caption.minContribution);
+			}
 		} else if (node.contentMode === "table") {
 			if (
 				node.table?.["border-collapse"] === "collapse" &&
