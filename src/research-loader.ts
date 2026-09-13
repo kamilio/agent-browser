@@ -97,6 +97,7 @@ function discardableRaw(name: string): name is HtmlDiscardRawName {
 }
 
 function closeImpliedTableEnds(open: string[], name: string) {
+	if (open.at(-1) === "colgroup" && open.at(-2) === "table") open.pop();
 	if (!tableCells.has(name) && name !== "tr" && !tableSections.has(name))
 		return;
 	let index = open.length;
