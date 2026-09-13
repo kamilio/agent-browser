@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: GitHub policy and Wikipedia functionality checked
+
+Two fresh public native GETs return200 using the audited17741 runtime. GitHub's
+original policy fragment remains unmatched; one offline native parse finds
+prefixed source IDs, not an exact target. Policy content is readable, but no
+script/alias/retry workaround or full GitHub acceptance is claimed. Selected
+scenario/division rules advance benchmark research; version/eligibility and
+unselected audit details remain unresolved.
+
+Wikipedia's original Evaluation fragment resolves in the reader. A separate
+raw native parse explicitly establishes its own target, extracts the bounded
+heading section and39 links, stopping before the next section. Reader math
+omission and missing mathematical content in extraction remain fidelity gaps.
+No scroll/rendering/script or full-site acceptance is claimed. No retry,
+credentials, device, SafeJS, realTTY or challenge solving occurred. See
+WEBSITE-TEST-INVENTORY-SEPTEMBER-13-FOURTH-UPDATE.md for original receipts and
+distinct HTTP/target/extraction outcomes. The overall browser goal stays active.
+
 ### September 13: heading/section rate-limit coverage corrected
 
 A fresh unchanged-source run reproduces the four legacy HTTP429 expectation
