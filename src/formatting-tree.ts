@@ -14,9 +14,10 @@ import {
 } from "./table-caption.js";
 import {
 	fieldsetContentStyle,
-	fieldsetIntrinsicPadding,
+	fieldsetIntrinsicWidths,
 	fieldsetOuterStyle,
 	fieldsetPaddingStyle,
+	legendFitContentStyle,
 	resolveFieldsetMinimum,
 } from "./fieldset-layout.js";
 import { initialPaintStyle, type PaintStyle } from "./css-paint.js";
@@ -59,7 +60,7 @@ import {
 	resolveBlockContentAlignment,
 	type BlockContentAlignment,
 } from "./block-content-alignment.js";
-import { layoutNumber } from "./layout-values.js";
+import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 import { documentStyles } from "./styles.js";
 import { generatedControlStyle } from "./generated-style.js";
 import type { GeneratedContentStyle } from "./generated-content-style.js";
@@ -156,6 +157,8 @@ export interface FormattingNode {
 	independentContext?: boolean;
 	fieldsetContent?: number;
 	fieldsetOwner?: number;
+	fieldsetLegend?: number;
+	legendOwner?: number;
 	buttonLayout?: true;
 	buttonAppearance?: SoftwareControl;
 	tableGrid?: number;
@@ -181,6 +184,10 @@ export interface FormattingNode {
 }
 interface MutableFormattingNode extends Omit<FormattingNode, "children"> {
 	children: number[];
+}
+interface FieldsetLegendContext {
+	owner: number;
+	legendDomId?: number;
 }
 export interface FormattingTree {
 	stage: "display-decomposition";
@@ -222,7 +229,6 @@ const deferredElements = new Set([
 	...unusualContents,
 	"button",
 	"fieldset",
-	"legend",
 	"dialog",
 	"svg",
 	"math",
@@ -772,6 +778,7 @@ export function buildFormattingTree(
 		id: number,
 		depth: number,
 		itemMode?: "flex" | "grid",
+		legendContext?: FieldsetLegendContext,
 	): number[] => {
 		let flexItem = itemMode === "flex";
 		let gridItem = itemMode === "grid";
@@ -832,7 +839,42 @@ export function buildFormattingTree(
 				return tree.get(child).kind === "element";
 			});
 		if (buttonLayout) display = buttonUsedDisplay(display);
-		const deferredElement = deferredElements.has(node.tagName) && !buttonLayout;
+		const renderedLegend =
+			legendContext !== undefined &&
+			legendContext.legendDomId === undefined &&
+			isHtmlElement(node, "legend") &&
+			display !== "contents" &&
+			flow.float === "none" &&
+			flow.position !== "absolute" &&
+			flow.position !== "fixed";
+		let unsupportedLegend = false;
+		if (renderedLegend) {
+			legendContext.legendDomId = id;
+			const ownerBox = nodes[legendContext.owner].box ?? initialBoxStyle;
+			const legendBox = styles.box(id);
+			unsupportedLegend =
+				![
+					"block",
+					"block flow",
+					"flow-root",
+					"block flow-root",
+					"inline",
+					"inline flow",
+					"inline-block",
+					"inline flow-root",
+				].includes(display) ||
+				flow.position !== "static" ||
+				flow.clear !== "none" ||
+				!["0px", "auto"].includes(legendBox["margin-top"]) ||
+				!["0px", "auto"].includes(legendBox["margin-bottom"]) ||
+				ownerBox.height !== "auto" ||
+				!["0px", "auto"].includes(ownerBox["min-height"]) ||
+				ownerBox["max-height"] !== "none";
+			display = "flow-root";
+		}
+		const deferredElement =
+			(deferredElements.has(node.tagName) && !buttonLayout) ||
+			unsupportedLegend;
 		const clearing =
 			flow.clear !== "none" &&
 			(flow.position === "static" || flow.position === "relative") &&
@@ -853,6 +895,7 @@ export function buildFormattingTree(
 					"block table",
 				].includes(display));
 		const boxFlowFields = {
+			...(renderedLegend ? { legendOwner: legendContext.owner } : {}),
 			...(htmlTextAlignment(node) !== undefined
 				? { legacyAlignmentBoundary: true as const }
 				: {}),
@@ -1090,7 +1133,11 @@ export function buildFormattingTree(
 			alternativeBox !== undefined &&
 			(alternativeBox.width !== "auto" || alternativeBox.height !== "auto");
 		const imageText = replacedAlternative ? undefined : brokenAlternative;
-		const children = (asItems?: "flex" | "grid", extraDepth = 0) => {
+		const children = (
+			asItems?: "flex" | "grid",
+			extraDepth = 0,
+			childLegendContext?: FieldsetLegendContext,
+		) => {
 			const result: number[] = [];
 			if (imageText !== undefined) {
 				if (depth + 1 > limits.maxDepth)
@@ -1221,7 +1268,10 @@ export function buildFormattingTree(
 				);
 			for (const child of node.children) {
 				if (child === summary) continue;
-				append(result, visit(child, depth + 1 + extraDepth, asItems));
+				append(
+					result,
+					visit(child, depth + 1 + extraDepth, asItems, childLegendContext),
+				);
 			}
 			if (after)
 				result.push(
@@ -1234,7 +1284,7 @@ export function buildFormattingTree(
 			node.tagName !== "svg" &&
 			node.tagName !== "math"
 		)
-			return children(itemMode);
+			return children(itemMode, 0, legendContext);
 		if (
 			isHtmlElement(node, "fieldset") &&
 			[
@@ -1297,10 +1347,23 @@ export function buildFormattingTree(
 					: {}),
 			});
 			nodes[outer].fieldsetContent = content;
-			const contents = children(undefined, 1);
+			const contents = children(undefined, 1, { owner: outer });
+			const legendIndex = contents.findIndex((child) => {
+				charge();
+				return nodes[child].legendOwner === outer;
+			});
+			const legend = legendIndex < 0 ? undefined : contents[legendIndex];
+			if (legend !== undefined) {
+				charge(contents.length - legendIndex - 1);
+				nodes[outer].fieldsetLegend = legend;
+				contents.splice(legendIndex, 1);
+			}
 			if (contents.some(tableInternal)) nodes[content].table = styles.table(id);
 			normalizeChildren(content, contents);
-			normalizeChildren(outer, [content]);
+			normalizeChildren(
+				outer,
+				legend === undefined ? [content] : [legend, content],
+			);
 			return [outer];
 		}
 		if (
@@ -1629,7 +1692,9 @@ export function buildFormattingTree(
 				}
 			}
 			const reason = deferredElement
-				? "element-layout-not-supported"
+				? unsupportedLegend
+					? "fieldset-legend-layout-not-supported"
+					: "element-layout-not-supported"
 				: "display-layout-not-supported";
 			issue(reason);
 			deferredSubtrees++;
@@ -1833,6 +1898,10 @@ export function buildFormattingTree(
 				node.fieldsetContent = remap[node.fieldsetContent];
 			if (node.fieldsetOwner !== undefined)
 				node.fieldsetOwner = remap[node.fieldsetOwner];
+			if (node.fieldsetLegend !== undefined)
+				node.fieldsetLegend = remap[node.fieldsetLegend];
+			if (node.legendOwner !== undefined)
+				node.legendOwner = remap[node.legendOwner];
 			charge(node.children.length + (node.orderModifiedChildren?.length ?? 0));
 			node.children = node.children.map((child) => remap[child]);
 			if (node.orderModifiedChildren)
@@ -2222,7 +2291,8 @@ export function resolveFormattingBlockWidths(
 		}
 		if (
 			(style["min-width"] === "min-content" ||
-				(node.buttonLayout && style.width === "auto")) &&
+				((node.buttonLayout || node.legendOwner !== undefined) &&
+					style.width === "auto")) &&
 			!frame.usedWidth
 		) {
 			const measured = measureValidatedIntrinsicRoot(
@@ -2245,20 +2315,23 @@ export function resolveFormattingBlockWidths(
 					"unsupported",
 					"Missing intrinsic minimum width",
 				);
-			const contentBox =
-				node.fieldsetContent === undefined
-					? undefined
-					: formatting.nodes[node.fieldsetContent].box;
-			const adjustment = contentBox
-				? fieldsetIntrinsicPadding(contentBox, frame.containingWidth)
-				: 0;
+			const corrected = fieldsetIntrinsicWidths(
+				node,
+				formatting.nodes,
+				intrinsic,
+				measured.widths,
+				frame.containingWidth,
+				charge,
+			);
 			style = resolveFieldsetMinimum(
 				style,
-				Math.max(0, intrinsic.minContent + adjustment),
+				corrected.minContent,
 				frame.containingWidth,
 			);
 			if (node.buttonLayout)
 				style = buttonFitContentStyle(style, frame.containingWidth, intrinsic);
+			if (node.legendOwner !== undefined)
+				style = legendFitContentStyle(style, frame.containingWidth, intrinsic);
 		}
 		if (node.contentMode === "table" && !frame.usedWidth) {
 			const measured = measureValidatedIntrinsicRoot(
@@ -2437,12 +2510,32 @@ export function resolveFormattingBlockWidths(
 		for (let index = node.children.length - 1; index >= 0; index--) {
 			charge();
 			const tableGrid = node.children[index] === node.tableGrid;
+			const legend = node.children[index] === node.fieldsetLegend;
+			const fieldsetBox =
+				legend && node.fieldsetContent !== undefined
+					? (formatting.nodes[node.fieldsetContent].box ?? initialBoxStyle)
+					: undefined;
+			const legendPaddingLeft = fieldsetBox
+				? resolveLayoutLength(
+						fieldsetBox["padding-left"],
+						frame.containingWidth,
+					)
+				: 0;
+			const legendPaddingRight = fieldsetBox
+				? resolveLayoutLength(
+						fieldsetBox["padding-right"],
+						frame.containingWidth,
+					)
+				: 0;
 			pending.push({
 				id: node.children[index],
 				containingBlock,
-				containingWidth,
+				containingWidth: Math.max(
+					0,
+					containingWidth - legendPaddingLeft - legendPaddingRight,
+				),
 				containingHeight: tableGrid ? frame.containingHeight : containingHeight,
-				contentX,
+				contentX: layoutNumber(contentX + legendPaddingLeft, true),
 				...(tableGrid && captionedGridWidth
 					? { usedWidth: captionedGridWidth }
 					: {}),

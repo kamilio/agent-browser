@@ -3,6 +3,13 @@ import type { PaintStyle } from "./css-paint.js";
 import { AgentBrowserError } from "./errors.js";
 import { paintRasterRect, type RasterImage, type Rgba } from "./raster.js";
 
+export type BorderPaintExclusion = Readonly<{
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+}>;
+
 type BorderWidths = {
 	borderTop: number;
 	borderRight: number;
@@ -46,6 +53,7 @@ export function paintBorders(
 	styles: BorderStyles,
 	charge: (work: number) => void,
 	horizontalOffset = 0,
+	exclusion?: BorderPaintExclusion,
 ) {
 	const widths = [
 		borders.borderTop,
@@ -93,6 +101,7 @@ export function paintBorders(
 		patterned ? dashLengths : undefined,
 		horizontalOffset,
 		grooves.some(Boolean) ? grooves : undefined,
+		exclusion,
 	);
 }
 
@@ -108,7 +117,20 @@ function rasterBorders(
 	dashLengths?: readonly number[],
 	horizontalOffset = 0,
 	grooves?: readonly boolean[],
+	exclusion?: BorderPaintExclusion,
 ) {
+	if (
+		exclusion &&
+		(!Number.isFinite(exclusion.x) ||
+			!Number.isFinite(exclusion.y) ||
+			!Number.isFinite(exclusion.width) ||
+			!Number.isFinite(exclusion.height) ||
+			exclusion.width < 0 ||
+			exclusion.height < 0 ||
+			!Number.isFinite(exclusion.x + exclusion.width) ||
+			!Number.isFinite(exclusion.y + exclusion.height))
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid border exclusion");
 	if (
 		!(
 			borders.borderTop > 0 ||
@@ -145,10 +167,24 @@ function rasterBorders(
 	const top = Math.max(0, Math.ceil(y - 0.5));
 	const right = Math.min(image.width, Math.ceil(x + width - 0.5));
 	const bottom = Math.min(image.height, Math.ceil(y + height - 0.5));
+	const excludedLeft = exclusion
+		? Math.max(left, Math.ceil(exclusion.x - 0.5))
+		: 0;
+	const excludedTop = exclusion
+		? Math.max(top, Math.ceil(exclusion.y - 0.5))
+		: 0;
+	const excludedRight = exclusion
+		? Math.min(right, Math.ceil(exclusion.x + exclusion.width - 0.5))
+		: 0;
+	const excludedBottom = exclusion
+		? Math.min(bottom, Math.ceil(exclusion.y + exclusion.height - 0.5))
+		: 0;
+	const hasExclusion =
+		excludedLeft < excludedRight && excludedTop < excludedBottom;
 	charge(
 		Math.max(0, right - left) *
 			Math.max(0, bottom - top) *
-			((dashLengths ? 16 : 10) + (grooves ? 4 : 0)),
+			((dashLengths ? 16 : 10) + (grooves ? 4 : 0) + (hasExclusion ? 4 : 0)),
 	);
 	let pixels = 0;
 	for (let row = top; row < bottom; row++) {
@@ -159,6 +195,14 @@ function rasterBorders(
 			? (y + height - row - 0.5) / borders.borderBottom
 			: Number.POSITIVE_INFINITY;
 		for (let column = left; column < right; column++) {
+			if (
+				hasExclusion &&
+				column >= excludedLeft &&
+				column < excludedRight &&
+				row >= excludedTop &&
+				row < excludedBottom
+			)
+				continue;
 			const fromRight = borders.borderRight
 				? (x + width - column - 0.5) / borders.borderRight
 				: Number.POSITIVE_INFINITY;

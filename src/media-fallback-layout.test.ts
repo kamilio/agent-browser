@@ -217,10 +217,11 @@ it.each([
 		issue: "display-layout-not-supported",
 	},
 	{
-		name: "unsupported visible legend",
+		name: "unsupported relative legend",
 		css: "",
-		markup: '<fieldset id="target"><legend>Label</legend>ab</fieldset>',
-		issue: "element-layout-not-supported",
+		markup:
+			'<fieldset id="target"><legend style="position:relative;top:2px">Label</legend>ab</fieldset>',
+		issue: "fieldset-legend-layout-not-supported",
 	},
 	{
 		name: "malformed stylesheet",

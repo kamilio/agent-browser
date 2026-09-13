@@ -1,6 +1,31 @@
 import { resolveBorders } from "./border-box.js";
 import { type BoxStyle, initialBoxStyle } from "./css-box.js";
+import { AgentBrowserError } from "./errors.js";
+import type { FormattingNode } from "./formatting-tree.js";
+import type { IntrinsicWidth } from "./intrinsic-widths.js";
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
+import {
+	resolveShrinkToFitWidth,
+	type ShrinkToFitIntrinsicWidths,
+} from "./shrink-to-fit.js";
+
+export function legendFitContentStyle(
+	style: BoxStyle,
+	containingWidth: number,
+	intrinsic: Readonly<ShrinkToFitIntrinsicWidths>,
+): BoxStyle {
+	if (style.width !== "auto") return style;
+	const used = resolveShrinkToFitWidth(
+		style,
+		containingWidth,
+		intrinsic,
+		resolveBorders(style),
+	);
+	return Object.freeze({
+		...style,
+		width: `${layoutNumber(style["box-sizing"] === "border-box" ? used.borderBoxWidth : used.contentWidth)}px`,
+	});
+}
 
 export function fieldsetOuterStyle(style: BoxStyle): BoxStyle {
 	return Object.freeze({
@@ -43,6 +68,52 @@ export function fieldsetIntrinsicPadding(style: BoxStyle, basis: number) {
 			resolveLayoutLength(style["padding-right"], 0),
 		true,
 	);
+}
+
+export function fieldsetIntrinsicWidths(
+	node: Readonly<FormattingNode>,
+	nodes: readonly Readonly<FormattingNode>[],
+	measured: Readonly<ShrinkToFitIntrinsicWidths>,
+	widths: readonly Readonly<IntrinsicWidth>[],
+	basis: number,
+	charge: (work?: number) => void,
+): Readonly<ShrinkToFitIntrinsicWidths> {
+	if (node.fieldsetContent === undefined) return measured;
+	const contentBox = nodes[node.fieldsetContent].box;
+	const adjustment = contentBox
+		? fieldsetIntrinsicPadding(contentBox, basis)
+		: 0;
+	if (node.fieldsetLegend === undefined)
+		return {
+			minContent: Math.max(0, measured.minContent + adjustment),
+			maxContent: Math.max(0, measured.maxContent + adjustment),
+		};
+	let content: Readonly<IntrinsicWidth> | undefined;
+	let legend: Readonly<IntrinsicWidth> | undefined;
+	for (const entry of widths) {
+		charge();
+		if (entry.id === node.fieldsetContent) content = entry;
+		if (entry.id === node.fieldsetLegend) legend = entry;
+		if (content && legend) break;
+	}
+	if (!content || !legend)
+		throw new AgentBrowserError(
+			"unsupported",
+			"Missing fieldset intrinsic child contributions",
+		);
+	const minContent = Math.max(
+		0,
+		legend.minContribution,
+		content.minContribution + adjustment,
+	);
+	return {
+		minContent,
+		maxContent: Math.max(
+			minContent,
+			legend.maxContribution,
+			content.maxContribution + adjustment,
+		),
+	};
 }
 
 export function resolveFieldsetMinimum(

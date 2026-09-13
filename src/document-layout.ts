@@ -430,6 +430,44 @@ export function layoutFormattingDocument(
 			),
 		);
 	};
+	const flowChildren = (
+		state: State,
+		visit?: (child: State, boundary: FlowBoundary) => void,
+	) => {
+		if (state.node.fieldsetLegend === undefined)
+			return flow(state.children, state.topEscape, state.bottomEscape, visit);
+		charge();
+		const legend = states.get(state.node.fieldsetLegend);
+		const content =
+			state.node.fieldsetContent === undefined
+				? undefined
+				: states.get(state.node.fieldsetContent);
+		if (!legend || !content || state.children.length !== 2)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Missing fieldset legend layout ownership",
+			);
+		const boundary = {
+			cursor: 0,
+			pending: zero,
+			escapingTop: false,
+			throughMargins: false,
+		};
+		const placeLegend = () => {
+			const reserved = Math.max(state.borderTop, legend.borderHeight);
+			legend.relativeY = layoutNumber(
+				(reserved - legend.borderHeight) / 2 - state.borderTop,
+				true,
+			);
+			return reserved;
+		};
+		placeLegend();
+		visit?.(legend, boundary);
+		const reserved = placeLegend();
+		content.relativeY = layoutNumber(reserved - state.borderTop);
+		visit?.(content, boundary);
+		return layoutNumber(content.relativeY + content.borderHeight);
+	};
 	for (const state of [...states.values()].reverse()) {
 		charge();
 		const context = contextsById.get(state.width.id);
@@ -486,9 +524,7 @@ export function layoutFormattingDocument(
 		state.natural =
 			flexSizes.get(state.node.id)?.naturalContentHeight ??
 			images.get(state.node.id)?.contentHeight ??
-			(context
-				? context.textHeight
-				: flow(state.children, state.topEscape, state.bottomEscape));
+			(context ? context.textHeight : flowChildren(state));
 		const used = clamp(
 			state.node.contentMode === "table"
 				? Math.max(state.preferred ?? 0, state.natural)
@@ -743,26 +779,21 @@ export function layoutFormattingDocument(
 				state.natural =
 					flexSizes.get(state.node.id)?.naturalContentHeight ??
 					images.get(state.node.id)?.contentHeight ??
-					flow(
-						state.children,
-						state.topEscape,
-						state.bottomEscape,
-						(child, childBoundary) => {
-							const retainedTop = merge(
-								margin(state.marginTop),
-								childBoundary.pending,
-							);
-							visit(
-								child,
-								state.contentY + child.relativeY,
-								childBoundary,
-								childBoundary.escapingTop &&
-									((state.initialThrough && escapedMargins) ||
-										state.top.positive !== retainedTop.positive ||
-										state.top.negative !== retainedTop.negative),
-							);
-						},
-					);
+					flowChildren(state, (child, childBoundary) => {
+						const retainedTop = merge(
+							margin(state.marginTop),
+							childBoundary.pending,
+						);
+						visit(
+							child,
+							state.contentY + child.relativeY,
+							childBoundary,
+							childBoundary.escapingTop &&
+								((state.initialThrough && escapedMargins) ||
+									state.top.positive !== retainedTop.positive ||
+									state.top.negative !== retainedTop.negative),
+						);
+					});
 			}
 			if (
 				state.through &&

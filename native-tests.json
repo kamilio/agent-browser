@@ -403,6 +403,8 @@
   "src/rich-control-deferral.test.ts",
   "src/fieldset-style.test.ts",
   "src/fieldset-layout.test.ts",
+  "src/border-exclusion-raster.test.ts",
+  "src/fieldset-legend.test.ts",
   "src/groove-border-raster.test.ts",
   "src/groove-border-document.test.ts",
   "src/time-control-rendering.test.ts",

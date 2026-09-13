@@ -20,7 +20,7 @@ import {
 } from "./intrinsic-widths.js";
 import { layoutNumber } from "./layout-values.js";
 import {
-	fieldsetIntrinsicPadding,
+	fieldsetIntrinsicWidths,
 	resolveFieldsetMinimum,
 } from "./fieldset-layout.js";
 import {
@@ -115,17 +115,14 @@ export function layoutFormattingAtomicInline(
 				"unsupported",
 				"Missing atomic intrinsic width",
 			);
-		const contentBox =
-			node.fieldsetContent === undefined
-				? undefined
-				: formatting.nodes[node.fieldsetContent].box;
-		const adjustment = contentBox
-			? fieldsetIntrinsicPadding(contentBox, basis)
-			: 0;
-		intrinsicWidths = {
-			minContent: Math.max(0, measured.minContent + adjustment),
-			maxContent: Math.max(0, measured.maxContent + adjustment),
-		};
+		intrinsicWidths = fieldsetIntrinsicWidths(
+			node,
+			formatting.nodes,
+			measured,
+			intrinsic.widths,
+			basis,
+			charge,
+		);
 		style = resolveFieldsetMinimum(style, intrinsicWidths.minContent, basis);
 	}
 	const resolved = resolveShrinkToFitWidth(

@@ -428,8 +428,8 @@ it("does not treat a hidden legend as rendered content", () => {
 
 it.each([
 	{
-		name: "visible legend",
-		css: "",
+		name: "relatively positioned legend",
+		css: "legend{position:relative;top:2px}",
 		markup:
 			'<fieldset id="target"><legend>Visible</legend><div id="child"></div></fieldset>',
 	},

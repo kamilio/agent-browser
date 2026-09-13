@@ -346,9 +346,10 @@ describe("native center layout regressions (source-only; no browser parity or ex
 			supported: false,
 		},
 		{
-			label: "unsupported visible fieldset legend",
-			markup: "<fieldset><legend>Label</legend>AA</fieldset>",
-			issue: "element-layout-not-supported",
+			label: "unsupported relative fieldset legend",
+			markup:
+				'<fieldset><legend style="position:relative;top:2px">Label</legend>AA</fieldset>',
+			issue: "fieldset-legend-layout-not-supported",
 			supported: false,
 		},
 	])(

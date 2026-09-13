@@ -282,6 +282,23 @@ function paintDocumentLayout(
 	charge(clip.width * clip.height);
 	const image = createRaster(clip.width, clip.height, [255, 255, 255, 255]);
 	const nodes = layout.text.horizontal.formatting.nodes;
+	let legendBoxes: Map<number, Readonly<DocumentBox>> | undefined;
+	const legendBox = (id: number) => {
+		if (!legendBoxes)
+			legendBoxes = new Map(
+				layout.boxes.map((box) => {
+					charge();
+					return [box.id, box] as const;
+				}),
+			);
+		const box = legendBoxes.get(id);
+		if (!box)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Missing rendered legend paint box",
+			);
+		return box;
+	};
 	const caret = prepareEditableCaret(
 		tree,
 		layout,
@@ -397,6 +414,28 @@ function paintDocumentLayout(
 		charge();
 		const node = nodes[box.id];
 		if (!node.visible || !node.paint || node.kind === "replaced") return;
+		const legend =
+			node.fieldsetLegend === undefined
+				? undefined
+				: legendBox(node.fieldsetLegend);
+		const borderOffset = legend
+			? Math.max(0, (legend.borderBoxHeight - box.borderTop) / 2)
+			: 0;
+		const paintedBorderY = box.borderY + borderOffset;
+		const paintedBorderHeight = box.borderBoxHeight - borderOffset;
+		const exclusionTop = legend ? Math.min(paintedBorderY, legend.borderY) : 0;
+		const borderExclusion = legend
+			? {
+					x: legend.borderX - clip.x,
+					y: exclusionTop - clip.y,
+					width: legend.borderBoxWidth,
+					height:
+						Math.max(
+							paintedBorderY + box.borderTop,
+							legend.borderY + legend.borderBoxHeight,
+						) - exclusionTop,
+				}
+			: undefined;
 		if (node.buttonAppearance) {
 			const horizontal = box.borderX - clip.x;
 			const vertical = box.borderY - clip.y;
@@ -425,22 +464,24 @@ function paintDocumentLayout(
 		} else if (!box.ref || !suppressed.has(box.ref))
 			drawBackground(
 				box.borderX,
-				box.borderY,
+				paintedBorderY,
 				box.borderBoxWidth,
-				box.borderBoxHeight,
+				paintedBorderHeight,
 				paintBackground(node.paint),
 			);
 		if (node.collapsedBorderOwner === undefined)
 			metrics.borderPixels += paintBorders(
 				image,
 				box.borderX - clip.x,
-				box.borderY - clip.y,
+				paintedBorderY - clip.y,
 				box.borderBoxWidth,
-				box.borderBoxHeight,
+				paintedBorderHeight,
 				box,
 				node.paint,
 				node.box ?? initialBoxStyle,
 				charge,
+				0,
+				borderExclusion,
 			);
 		drawOutline(
 			box.ref,

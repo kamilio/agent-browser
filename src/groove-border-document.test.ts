@@ -201,9 +201,9 @@ it("retains anonymous content ownership and a unique real fieldset reference", (
 	expect(page.rect()).toMatchObject({ width: 84, height: 22 });
 });
 
-it("does not conceal visible legends behind the newly admitted groove fieldset", () => {
+it("does not conceal unsupported relative legends behind a groove fieldset", () => {
 	const page = fixture(
-		"",
+		"legend{position:relative;top:2px}",
 		'<fieldset id="target"><legend id="legend">Visible</legend><input></fieldset>',
 	);
 	const formatting = buildFormattingTree(page.tree);
@@ -215,7 +215,7 @@ it("does not conceal visible legends behind the newly admitted groove fieldset",
 		formatting.nodes.find(
 			(node) => node.ref === page.tree.reference(page.id("#legend")),
 		)?.deferredReason,
-	).toBe("element-layout-not-supported");
+	).toBe("fieldset-legend-layout-not-supported");
 	expect(() => layoutDocument(page.tree)).toThrow(
 		expect.objectContaining({ code: "unsupported" }),
 	);
