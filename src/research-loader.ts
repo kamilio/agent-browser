@@ -71,7 +71,7 @@ const rawTags = new Set(
 	"script style xmp iframe noembed noframes title textarea".split(" "),
 );
 const preservedTags = new Set(
-	"html head body title base a abbr address article aside b bdi bdo blockquote br caption cite code col colgroup dd del div dl dt em figcaption figure footer h1 h2 h3 h4 h5 h6 header hgroup hr i img ins kbd li main mark nav ol p pre q rp rt ruby s samp section small span strong sub sup table tbody td tfoot th thead time tr u ul var wbr".split(
+	"html head body title base a abbr address article aside b bdi bdo blockquote br caption cite code col colgroup dd del dfn div dl dt em figcaption figure footer h1 h2 h3 h4 h5 h6 header hgroup hr i img ins kbd li main mark nav ol p pre q rp rt ruby s samp section small span strong sub sup table tbody td tfoot th thead time tr u ul var wbr".split(
 		" ",
 	),
 );
@@ -320,7 +320,7 @@ export function sanitizeResearchHtml(
 		let attributes = "";
 		for (const [attribute, value] of Object.entries(token.attributes)) {
 			let keep =
-				(outputName !== undefined && attribute === "id") ||
+				attribute === "id" ||
 				(outputName === "a" && ["href", "title", "name"].includes(attribute)) ||
 				(outputName === "base" && attribute === "href") ||
 				(outputName === "img" && attribute === "alt") ||
@@ -338,6 +338,7 @@ export function sanitizeResearchHtml(
 			else report.ignoredAttributes++;
 		}
 		if (outputName) emit(`<${outputName}${attributes}>`);
+		else if (attributes) emit(`<span${attributes}></span>`);
 		if (rawTags.has(name))
 			text(tokenizer.raw(name, name === "title") ?? "", false);
 		else if (name === "plaintext") text(tokenizer.remainder(), false);

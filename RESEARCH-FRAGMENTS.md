@@ -20,6 +20,11 @@ Retained attributes are escaped and charged to existing output limits. Omitted
 script, style, control, template and foreign-content subtrees remain omitted;
 retaining an ID does not bring them back. This is not a full-fidelity DOM.
 
+The later point-anchor follow-up also retains passive `dfn` elements and emits
+empty ID anchors for other non-omitted unwrapped tags. Their content is not
+wrapped by those anchors; selecting one alone does not extract its original
+descendants. See READER-POINT-ANCHORS.md for the precise projection and new tests.
+
 The session's selected target supplies `:target` and the new report metadata.
 There is no second DOM scan or separate fragment matcher. Existing raw/decoded
 ID matching, named-anchor fallback and first-match behavior remain native-core

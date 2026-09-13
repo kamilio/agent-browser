@@ -312,9 +312,17 @@ describe.each(profiles)(
 		it("does not transfer an unwrapped element's ID to its preserved child", () => {
 			const source =
 				'<widget id="unwrapped" name="not-anchor"><span id="child">Child</span></widget>';
-			expect(sanitize(source).html).toBe('<span id="child">Child</span>');
+			expect(sanitize(source).html).toBe(
+				'<span id="unwrapped"></span><span id="child">Child</span>',
+			);
 			const { tree, queries } = reader(source);
-			expect(target(tree, "unwrapped")).toBeNull();
+			const point = queries.querySelector("#unwrapped") as number;
+			const child = queries.querySelector("#child") as number;
+			expect(target(tree, "unwrapped")).toBe(point);
+			expect(tree.get(point).children).toEqual([]);
+			expect(tree.get(point).parent).toBe(tree.get(child).parent);
+			expect(point).not.toBe(child);
+			expect(target(tree, "not-anchor")).toBeNull();
 			expect(target(tree, "child")).toBe(queries.querySelector("#child"));
 		});
 
