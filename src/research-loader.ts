@@ -1,3 +1,7 @@
+import {
+	ariaTableSourceRole,
+	isAriaTableSourceAttribute,
+} from "./aria-table-source.js";
 import type { DocumentLimits, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlEncoding } from "./html-encoding.js";
@@ -127,7 +131,8 @@ function escapeHtml(value: string) {
 		.replace(/&/g, "&amp;")
 		.replace(/</g, "&lt;")
 		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;");
+		.replace(/"/g, "&quot;")
+		.replace(/\r/g, "&#13;");
 }
 
 export function sanitizeResearchHtml(
@@ -186,12 +191,13 @@ export function sanitizeResearchHtml(
 		...(selectedRawPolicy ? { rawTextPolicy: selectedRawPolicy } : {}),
 	};
 	let tokenStart = 0;
-	const tokenizer = new HtmlTokenizer(source, (issue) => {
+	const normalizedSource = source.replace(/\r\n?/g, "\n");
+	const tokenizer = new HtmlTokenizer(normalizedSource, (issue) => {
 		report.tokenizerIssues++;
 		const emptyProcessingMarker =
 			issue === "bogus-declaration" &&
 			tokenizer.position === tokenStart + 3 &&
-			source.startsWith("<?>", tokenStart);
+			normalizedSource.startsWith("<?>", tokenStart);
 		if (
 			issue.startsWith("unterminated-") ||
 			issue === "eof-before-tag-name" ||
@@ -318,6 +324,8 @@ export function sanitizeResearchHtml(
 			check("reader.depth", limits.maxDepth, open.length);
 		}
 		if (!outputName) report.unwrappedElements++;
+		const ariaTableRole =
+			outputName === name ? ariaTableSourceRole(token.attributes) : undefined;
 		let attributes = "";
 		for (const [attribute, value] of Object.entries(token.attributes)) {
 			let keep =
@@ -326,6 +334,8 @@ export function sanitizeResearchHtml(
 				(outputName === "base" && attribute === "href") ||
 				(outputName === "img" && attribute === "alt") ||
 				(outputName === "ol" && attribute === "start") ||
+				(ariaTableRole !== undefined &&
+					isAriaTableSourceAttribute(ariaTableRole, attribute)) ||
 				(outputName !== undefined &&
 					isTableSourceAttribute(outputName, attribute));
 			if (keep && attribute === "href") {

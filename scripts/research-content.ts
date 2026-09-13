@@ -75,7 +75,8 @@ export function hasResearchExtractionContent(
 			node.type === "image" ||
 			node.type === "separator" ||
 			node.type === "table" ||
-			node.tableSource !== undefined
+			node.tableSource !== undefined ||
+			node.ariaTableSource !== undefined
 		)
 			return true;
 		for (const child of node.children ?? []) pending.push(child);

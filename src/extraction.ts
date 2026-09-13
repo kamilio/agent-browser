@@ -1,3 +1,7 @@
+import {
+	type AriaTableSourceMetadata,
+	extractAriaTableSource,
+} from "./aria-table-source.js";
 import { documentTitle } from "./document-title.js";
 import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
@@ -59,6 +63,7 @@ export interface ExtractedNode {
 	url?: string;
 	blocked?: true;
 	tableSource?: TableSourceMetadata;
+	ariaTableSource?: AriaTableSourceMetadata;
 	children?: ExtractedNode[];
 }
 
@@ -924,6 +929,11 @@ export function extractDocument(
 		) {
 			const tableSource = extractTableSource(source.tagName, source.attributes);
 			if (tableSource) node.tableSource = tableSource;
+			const ariaTableSource = extractAriaTableSource(
+				source.tagName,
+				source.attributes,
+			);
+			if (ariaTableSource) node.ariaTableSource = ariaTableSource;
 		}
 		if (node.type === "list") {
 			node.ordered = source.tagName === "ol";
