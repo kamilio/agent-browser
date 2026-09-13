@@ -6,6 +6,54 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: exact Python CSS attribution and Effective Go content coverage
+
+One new native Effective Go GET returnsHTTP200,142913decoded/51485encoded bytes
+at15:31:11.935UTC. Independent long-v1 reader/full-DOM loads both succeed with
+60headings/123links/153pre/589code and24equal complete labels. Reader4259nodes,
+DOM4328; partial/script/iframe/malformed-source diagnostics remain explicit.
+Observed timings use unequal decoding boundaries and are not benchmarks. No
+Go actions/layout/resources/scripts or repaired earlier homepage-click claim.
+
+Native Python attribution on the unchanged eight fixtures now reconciles all
+9property/3value diagnostics. Missing properties: hyphens plus3vendorvariants,
+cursor,3border-radius declarations,text-underline-offset. Missing/invalid values:
+justify,underline1px,and nested .good/.bad/.maybe pre rules inside div.body.
+The exact rejected nested statement parses natively as3standalone border rules;
+nesting is NOT implemented or installed into the page. Native ownership isolates
+two middle-aligned inline images e283/e759; middle-aligned span e732 is block.
+
+Final helper shares native8192rule/16384declaration budgets:576/1115actual,
+29selectorqueries/12455work,853DOMnodes/51314CSSunits. All3actualTutorial clicks
+still fail. Preserve initialwrongaccessor failure and round01per-call-budget
+limitation; onlyround02 establishes shared-parser-bound acceptance. No newPython
+HTTP, rawsourcegrep, CSSrewrite, extra geometry or productioncodechanges.
+
+Last native19803pass/0fail/2skip is inherited, NOT rerun. Runtime remains
+native-generated-clear-september13-round00/snapshot01/dist; source
+9b0e9de877ee416b542a3169025125a3ba89bbbd4db557d1128b3844520de619,compiled
+86c6dbcfc1a59d787d59432a5feb82cc51b06db4336c10c2c952e4fab7e3dde9.
+Fullpins/fixtures/frameworks/owner/private-directory/processgroup cleanup verified.
+
+Separateone-nativeGET W3Ccss-nesting-1 HTTP200 at15:38:42.283UTC captures213027
+decoded/39883encoded bytes. Reader3444nodes/12complete sections/22546textunits.
+ObservedpublicationisJanuary22,2026WorkingDraft,NOTretrievaldate/latestclaim.
+Sourcecoversparent-list specificity,sourceorderednesteddeclarations,conditional
+context andpseudo-elementdistinctions. Fixedlabelselectionmissesformalrecovery
+andpreciseimplicit-&algorithm; thosespecificclausesremainunverified. No second
+load/fallbackorclaimofcompleteCSSnestingcontract. Seeprimarysourcereport.
+
+OPEN: actualCSSnesting implementation and specificity/order/budget regressions,
+otherPythonCSS/alignment/sticky/overflow,Go fullinteractions/resources/scripts,
+reproducibleperformance,unit skips/unselectedcoverage andoriginalresearchgaps.
+Separatecredentials/passkeydevices/TTY/socket/SafeJS gatesremain. No spoofing,
+challenge solving orpush. Preservehistoricalevidence/dirtywork. Goal ACTIVE.
+
+See PYTHON-CSS-ATTRIBUTION-SEPTEMBER-13.md,
+GO-EFFECTIVE-NATIVE-CHECK-SEPTEMBER-13.md,
+CSS-NESTING-PRIMARY-SOURCE-SEPTEMBER-13.md and
+WEBSITE-TEST-INVENTORY-SEPTEMBER-13-TWENTY-SEVENTH-UPDATE.md.
+
 ### September 13: generated clearance and complete-asset Python replay
 
 Implemented physical left/right/both clearance for normal-flow generated block
