@@ -6,6 +6,48 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: groove/time rendering and remaining HTTPBin legends
+
+**PROGRESS; overall browser goal remains ACTIVE.** Commit7e2734d implements real
+native groove border parsing/geometry/relief paint and distinct time-value
+appearance, with119newcases. Time remains native-agent-fill-only: no text caret,
+segmented keyboard editor or picker. Visible legends and border interruption are
+not implemented; HTML time width/height hint compatibility also remains limited.
+
+Final isolated native gate: **20,952passed/0failed/2unchangedskips**,409selected/
+408strictroots/763manifestentries,354unselected, at19:35:05.248–19:39:58.997UTC.
+Build, strict, scoped format and source checks pass;1304source/2124compiled inputs,
+1289unowned tracked inputs match parent2ed8556. Final focused pair has identical
+tests: baseline1070/99/1 versus candidate1169/0/1. The single focused exclusion
+already exists in the broader gate; no new skip is introduced.
+
+Failed00configurations, initial focused935/5, broader truncated ENOBUFS output and
+round01's20947/5/2 remain preserved. The harness buffer grows from6,000,000bytes to
+bounded10MiB, not a browser-limit relaxation. Four obsolete negative fieldset
+fixtures now use real visible legends; the default intrinsic-profile case checks
+actual supported ownership. No production guard is weakened to satisfy them.
+
+Captured native HTTPBin attribution confirms2pxgroove fieldsets and time min11:00/
+max21:00/step900. A bounded native retained CSS-source read supports groove relief,
+not universal pixel coefficients. Neither operation makes a fresh HTTP request.
+At19:40:06.979–19:40:07.155UTC, an unchanged-harness replay preserves the1397-byte
+body,8synthetic preparations and19events. Formatting advances43→91visitednodes,
+53→112boxes; fieldsetse28/e52 andtimee85 no longer defer. Visiblelegends e30/e54
+now cause the two remaining deferrals, and the genuine pointer submit still fails
+before pointer/submit events. **Zero HTTP, zero POST, no fabricated echo.**
+
+New audited runtime: native-public-form-rendering-september13-round02. Its20receipt
+ledger is215aa98b779e7a4c161fe5bd897a42c803ae965321514e72ac6eda2eb6f9ec93.
+Replay28entryledger63375ffdae664d1a724778128d7c7f3d86ce6b7dafdae4e0382f1df232748834.
+Source/runtime/framework/fixture pins and clean closure are verified; recorded
+offline groups absent. Single0.17s/88.53MiB observation is not a speedup/benchmark.
+
+Next: real visible-legend selection/ownership/sizing/placement and interrupted
+border paint, then unchanged captured-form pointer flow before fresh live echo.
+Broader site/functionality/performance/research and credential/provider/passkey-
+device/SafeJS/socket/TTY gates stay open. No push. Details: PUBLIC-FORM-RENDERING-
+PREREQUISITES.md, HTTPBIN-RENDERING-PREREQUISITES-SEPTEMBER-13.md and website inventory35.
+
 ### September 13: HTTPBin public form, working values and blocked pointer submit
 
 One fresh native BrowserSession GET of `https://httpbin.org/forms/post`,
