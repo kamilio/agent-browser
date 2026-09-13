@@ -6,6 +6,38 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: Python tutorial coverage and no failing executed selected tests
+
+Fresh direct native GET of docs.python.org/3/tutorial/index.html: HTTP200,
+36953decoded/7681encoded bytes, one GET/no redirects/retries/resources. One
+long-v1 reader load succeeds:1087nodes/9headings/174links/0pre/11code, three
+queries and24complete labels. No full-DOM fallback, link follow, geometry or
+rendering. Earlier Python-homepage Tutorial click failure remains OPEN; direct
+target retrieval is not a repaired click or image/layout acceptance.
+
+Corrected the final selected table-source test's stale source-ID expectation,
+without changing production code. Allowed ID now has a separate sentinel and
+exact positive map; forbidden table/executable attributes and non-table metadata
+exclusion checks remain. Same test names/counts and same manifest. Focused
+baseline331pass/1fail; fixed332pass. Broad19765pass/0fail/TWOunchanged skips;
+383suites/382strict roots/748manifest entries,365unselected. Both runner/auditexit0.
+All executed selected tests pass, not every skipped/unselected test. No blanket
+browser completion claim. All2124compiled production files match prior bytes.
+
+Runtime native-reader-id-contract-september13-round01/snapshot01/dist;
+base12197a6a1e469b2ab35416213a721464a965b4d5; sourceledger
+91b3541762349300d8a13d49e432cf7528caaefe5dfe4b5b7de4cb9615678b8b; compiledledger
+6d146c57138d241b8aca0b6aec0b9a875110188ad6220a3d6bd88a4fdf31c315. Full receipts and original failed preparation
+remain. Python capture retains its original prior preflight-runtime provenance.
+See PYTHON-TUTORIAL-NATIVE-CHECK-SEPTEMBER-13.md and
+WEBSITE-TEST-INVENTORY-SEPTEMBER-13-TWENTY-FIFTH-UPDATE.md.
+
+OPEN: native skips/unselected coverage, Python click/layout/image issue, complete
+website/CSS/script/resource behavior, reproducible performance and four-topic
+research gaps. Separate credential/passkey/device/TTY/socket/SafeJS gates remain.
+No credentials, spoofing, challenge solving or push. Preserve old captures and
+dirty work. Overall browser objective remains ACTIVE.
+
 ### September 13: research element-target preflight and restored selector coverage
 
 Fixed a real shared preflight regression: CSS before/after targets no longer
