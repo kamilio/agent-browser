@@ -6,6 +6,37 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: live forms and actionable layout errors
+
+Five fresh native wireGETs exercise Bing search and Wikipedia's real form flow.
+The native portal field fill and requestSubmit reach the article through two
+observed redirects, closing the old document. This is HTML/form/navigation
+coverage without asset/script callbacks, not rendering or pointer acceptance.
+Bing is readable but none of its ten decoded result destinations is Reddit;
+Poe-opinion research remains unresolved. A separate archived native replay now
+retains all14 Datacenter-table rows and98 cells with their actual td label row.
+MLPerf version/round alignment and original research completion remain open.
+
+The captured portal's first pointer-geometry check fails before any action or
+raster. Independent native inspection identifies eight actual width-blocking
+categories and a search input whose fieldset ancestor is deferred. Existing
+position/float coordination markers and advisory media diagnostics are not
+misreported as additional missing engines. No guard suppression or CSS rewrite.
+
+Width errors now include bounded blocker codes/counts while retaining rejection.
+Four new tests are included in291/0/0 focused results; broad17840/0/2 retains the
+same two exclusions across344 suites/343strict roots out of722manifest entries.
+Build, strict, format, source immutability and1249 unchanged tracked inputs pass.
+One offline captured-page check using audited17840 verifies the useful error;
+geometrySupported remains false. Earlier live probes use audited17836, not the
+later code. Root dist was not rebuilt. All previous failure evidence is retained.
+
+See LAYOUT-WIDTH-DIAGNOSTICS.md and the sixth September13 website inventory.
+Next rendering work must address real fieldset/control ownership and independent
+CSS/overflow/alignment/direction gaps rather than inventing rectangles. Overall
+website/performance/research, credential/passkey-device, SafeJS, realTTY and
+human challenge-handoff gates remain open. No CAPTCHA/fingerprint spoofing work.
+
 ### September 13: bounded offline replay CLI implemented
 
 New scripts/research-replay-cli.ts exposes existing validated reader replay via
