@@ -156,6 +156,11 @@ import {
 import { svgPresentationDeclarations } from "./svg-presentation.js";
 import { fieldsetBoxDefaults, fieldsetPaintDefaults } from "./html-fieldset.js";
 import {
+	buttonBoxDefaults,
+	buttonFlexDefaults,
+	buttonTextDefaults,
+} from "./html-button.js";
+import {
 	cssVariableLimits,
 	parseVariableValue,
 	resolveCustomProperties,
@@ -1678,6 +1683,39 @@ export class DocumentStyles {
 		const legacyCentered = new Set<number>();
 		for (const node of nodes) {
 			charge(1);
+			const buttonBox = buttonBoxDefaults(node);
+			if (buttonBox) {
+				const specified = { ...boxSpecified.get(node.id) };
+				for (const [property, value] of Object.entries(buttonBox)) {
+					charge(1);
+					const name = property as CssBoxProperty;
+					if (specified[name] === undefined || specified[name] === "revert")
+						specified[name] = value;
+				}
+				boxSpecified.set(node.id, Object.freeze(specified));
+			}
+			const buttonText = buttonTextDefaults(node);
+			if (buttonText) {
+				const specified = { ...textSpecified.get(node.id) };
+				for (const [property, value] of Object.entries(buttonText)) {
+					charge(1);
+					const name = property as CssTextProperty;
+					if (specified[name] === undefined || specified[name] === "revert")
+						specified[name] = value;
+				}
+				textSpecified.set(node.id, Object.freeze(specified));
+			}
+			const buttonFlex = buttonFlexDefaults(node);
+			if (buttonFlex) {
+				const specified = { ...flexSpecified.get(node.id) };
+				for (const [property, value] of Object.entries(buttonFlex)) {
+					charge(1);
+					const name = property as CssFlexProperty;
+					if (specified[name] === undefined || specified[name] === "revert")
+						specified[name] = value;
+				}
+				flexSpecified.set(node.id, Object.freeze(specified));
+			}
 			const fieldsetBox = fieldsetBoxDefaults(node);
 			if (fieldsetBox) {
 				const specified = { ...boxSpecified.get(node.id) };

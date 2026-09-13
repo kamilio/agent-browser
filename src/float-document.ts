@@ -9,6 +9,7 @@ import {
 	type PositionedTextContext,
 } from "./document-layout.js";
 import { AgentBrowserError } from "./errors.js";
+import { resolveFieldsetMinimum } from "./fieldset-layout.js";
 import {
 	FloatLayoutContext,
 	floatLayoutLimits,
@@ -601,10 +602,13 @@ function measureFloatBox(
 			);
 	};
 	const node = formatting.nodes[frame.id];
-	const style = node.box ?? initialBoxStyle;
+	let style = node.box ?? initialBoxStyle;
 	const borders = resolveBorders(style);
 	let intrinsic: { minContent: number; maxContent: number } | undefined;
-	if (style.width === "auto" && node.kind !== "replaced") {
+	if (
+		(style.width === "auto" || style["min-width"] === "min-content") &&
+		node.kind !== "replaced"
+	) {
 		const measured = measureValidatedIntrinsicRoot(
 			formatting,
 			node.id,
@@ -625,6 +629,11 @@ function measureFloatBox(
 				"unsupported",
 				"Missing floated intrinsic width",
 			);
+		style = resolveFieldsetMinimum(
+			style,
+			intrinsic.minContent,
+			frame.containingWidth,
+		);
 	}
 	let width: Readonly<BlockWidth>;
 	if (node.kind === "replaced" && node.intrinsic) {

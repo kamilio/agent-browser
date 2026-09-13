@@ -48,16 +48,18 @@ export function fieldsetIntrinsicPadding(style: BoxStyle, basis: number) {
 export function resolveFieldsetMinimum(
 	style: BoxStyle,
 	minContent: number,
+	paddingBasis = 0,
 ): BoxStyle {
 	if (style["min-width"] !== "min-content") return style;
 	layoutNumber(minContent);
+	layoutNumber(paddingBasis);
 	const borders = resolveBorders(style);
 	const edges =
 		style["box-sizing"] === "border-box"
 			? borders.borderLeft +
 				borders.borderRight +
-				resolveLayoutLength(style["padding-left"], 0) +
-				resolveLayoutLength(style["padding-right"], 0)
+				resolveLayoutLength(style["padding-left"], paddingBasis) +
+				resolveLayoutLength(style["padding-right"], paddingBasis)
 			: 0;
 	return Object.freeze({
 		...style,

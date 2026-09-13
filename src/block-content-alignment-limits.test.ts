@@ -299,10 +299,10 @@ it("guards table-cell align-content independently of the ordinary aligned block 
 	expectSimpleRecovery(page);
 });
 
-it("keeps real HTML button descendants guarded rather than substituting a flattened caption", () => {
+it("keeps positioned HTML button descendants guarded rather than substituting a flattened caption", () => {
 	const page = fixture(
 		'<button id="button" type="button"><span id="child">AA</span></button>',
-		"#button{display:inline-block;width:24px;height:16px;align-content:center}",
+		"#button{position:absolute;display:inline-block;width:24px;height:16px;align-content:center}",
 	);
 	const formatting = buildFormattingTree(page.tree);
 	expect(formatting.issues["element-layout-not-supported"]).toBeGreaterThan(0);

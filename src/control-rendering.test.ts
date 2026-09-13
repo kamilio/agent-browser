@@ -194,7 +194,7 @@ it("normalizes ordinary indented option labels before measuring and painting", (
 it.each([
 	'<input id="target" type="range">',
 	'<select id="target" multiple><option>A</option></select>',
-	'<button id="target"><span>Rich</span></button>',
+	'<button id="target" style="position:absolute"><span>Rich</span></button>',
 ])("keeps unsupported control profile explicit: %s", (html) => {
 	const { tree } = fixture(html);
 	expect(() => rasterizeDocument(tree)).toThrow();

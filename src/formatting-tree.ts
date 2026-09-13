@@ -6,6 +6,7 @@ import {
 	type CollapsedTableFormatting,
 } from "./table-collapsed-formatting.js";
 import { measureValidatedIntrinsicRoot } from "./intrinsic-widths.js";
+import { buttonFitContentStyle, buttonUsedDisplay } from "./button-layout.js";
 import {
 	fieldsetContentStyle,
 	fieldsetIntrinsicPadding,
@@ -56,7 +57,11 @@ import {
 import { layoutNumber } from "./layout-values.js";
 import { documentStyles } from "./styles.js";
 import { generatedControlStyle } from "./generated-style.js";
-import { describeControl, type SoftwareControl } from "./control-rendering.js";
+import {
+	describeButtonAppearance,
+	describeControl,
+	type SoftwareControl,
+} from "./control-rendering.js";
 import {
 	type DisclosureMarker,
 	disclosureMarkerExtent,
@@ -139,6 +144,8 @@ export interface FormattingNode {
 	independentContext?: boolean;
 	fieldsetContent?: number;
 	fieldsetOwner?: number;
+	buttonLayout?: true;
+	buttonAppearance?: SoftwareControl;
 	blockContentAlignment?: Readonly<BlockContentAlignment>;
 	fragmentIndex?: number;
 	fragmentCount?: number;
@@ -593,7 +600,7 @@ export function buildFormattingTree(
 		if (node.kind !== "element") return [];
 		const ref = tree.reference(id);
 		const flow = styles.flow(id);
-		const display =
+		let display =
 			id === rootElement
 				? (rootDisplays[visibility.display] ?? visibility.display)
 				: visibility.display;
@@ -603,6 +610,19 @@ export function buildFormattingTree(
 			!flexItem &&
 			!gridItem &&
 			flow.float !== "none";
+		const buttonLayout =
+			isHtmlElement(node, "button") &&
+			(flow.position === "static" || flow.position === "relative") &&
+			!flexItem &&
+			!gridItem &&
+			display !== "contents" &&
+			!(isGridDisplay(display) && display.startsWith("inline")) &&
+			node.children.some((child) => {
+				charge();
+				return tree.get(child).kind === "element";
+			});
+		if (buttonLayout) display = buttonUsedDisplay(display);
+		const deferredElement = deferredElements.has(node.tagName) && !buttonLayout;
 		const clearing =
 			flow.clear !== "none" &&
 			(flow.position === "static" || flow.position === "relative") &&
@@ -1045,7 +1065,7 @@ export function buildFormattingTree(
 		}
 		if (
 			(display === "table" || display.startsWith("table-")) &&
-			!deferredElements.has(node.tagName)
+			!deferredElement
 		) {
 			const table = styles.table(id);
 			const root = display === "table";
@@ -1129,10 +1149,7 @@ export function buildFormattingTree(
 			return [result];
 		}
 		const gridContainer = isGridDisplay(display);
-		if (
-			(isFlexDisplay(display) || gridContainer) &&
-			!deferredElements.has(node.tagName)
-		) {
+		if ((isFlexDisplay(display) || gridContainer) && !deferredElement) {
 			issue("display-layout-not-supported");
 			deferredSubtrees++;
 			const result = create({
@@ -1151,6 +1168,12 @@ export function buildFormattingTree(
 				independentContext: true,
 				contentMode: gridContainer ? "grid" : "flex",
 				deferredReason: "display-layout-not-supported",
+				...(buttonLayout
+					? {
+							buttonLayout: true as const,
+							buttonAppearance: describeButtonAppearance(tree, id),
+						}
+					: {}),
 				...positionFields,
 			});
 			const items: number[] = [];
@@ -1208,16 +1231,14 @@ export function buildFormattingTree(
 			});
 			return [result];
 		}
-		const listItem =
-			display === "list-item" && !deferredElements.has(node.tagName);
+		const listItem = display === "list-item" && !deferredElement;
 		const block =
 			listItem ||
 			["block", "block flow", "flow-root", "block flow-root"].includes(display);
 		const inline = ["inline", "inline flow"].includes(display);
 		const atomicBlock = ["inline-block", "inline flow-root"].includes(display);
 		const blockContentAlignment =
-			(block || atomicBlock) &&
-			(!deferredElements.has(node.tagName) || imageText !== undefined)
+			(block || atomicBlock) && (!deferredElement || imageText !== undefined)
 				? resolveBlockContentAlignment(styles.flex(id)["align-content"])
 				: undefined;
 		if (blockContentAlignment === null)
@@ -1313,7 +1334,7 @@ export function buildFormattingTree(
 			}
 		}
 		if (
-			(deferredElements.has(node.tagName) && imageText === undefined) ||
+			(deferredElement && imageText === undefined) ||
 			(!block && !inline && !atomicBlock)
 		) {
 			if (
@@ -1356,7 +1377,7 @@ export function buildFormattingTree(
 					];
 				}
 			}
-			const reason = deferredElements.has(node.tagName)
+			const reason = deferredElement
 				? "element-layout-not-supported"
 				: "display-layout-not-supported";
 			issue(reason);
@@ -1394,6 +1415,12 @@ export function buildFormattingTree(
 					(blockContentAlignment !== undefined &&
 						blockContentAlignment !== null),
 				...(blockContentAlignment ? { blockContentAlignment } : {}),
+				...(buttonLayout
+					? {
+							buttonLayout: true as const,
+							buttonAppearance: describeButtonAppearance(tree, id),
+						}
+					: {}),
 				...itemFields,
 			});
 			const contents = children();
@@ -1820,7 +1847,11 @@ export function resolveFormattingBlockWidths(
 				: (frame.paddingBasis ?? containingWidth);
 		if (paddingBasis !== undefined)
 			style = fieldsetPaddingStyle(style, paddingBasis);
-		if (style["min-width"] === "min-content" && !frame.usedWidth) {
+		if (
+			(style["min-width"] === "min-content" ||
+				(node.buttonLayout && style.width === "auto")) &&
+			!frame.usedWidth
+		) {
 			const measured = measureValidatedIntrinsicRoot(
 				formatting,
 				node.id,
@@ -1851,7 +1882,10 @@ export function resolveFormattingBlockWidths(
 			style = resolveFieldsetMinimum(
 				style,
 				Math.max(0, intrinsic.minContent + adjustment),
+				frame.containingWidth,
 			);
+			if (node.buttonLayout)
+				style = buttonFitContentStyle(style, frame.containingWidth, intrinsic);
 		}
 		if (node.contentMode === "table" && !frame.usedWidth) {
 			const measured = measureValidatedIntrinsicRoot(

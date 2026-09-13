@@ -76,6 +76,25 @@ export interface SoftwareControl {
 	>;
 }
 
+export function describeButtonAppearance(
+	tree: DocumentTree,
+	id: number,
+): SoftwareControl | undefined {
+	if (!isHtmlElement(tree.get(id), "button")) return;
+	return Object.freeze({
+		kind: "button",
+		text: "",
+		fontSize: 0,
+		width: 0,
+		height: 0,
+		disabled: isControlDisabled(tree, id),
+		focused: tree.activeElement === id,
+		checked: false,
+		indeterminate: false,
+		placeholder: false,
+	});
+}
+
 export function describeControl(
 	tree: DocumentTree,
 	id: number,

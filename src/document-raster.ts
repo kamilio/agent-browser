@@ -396,7 +396,32 @@ function paintDocumentLayout(
 		charge();
 		const node = nodes[box.id];
 		if (!node.visible || !node.paint || node.kind === "replaced") return;
-		if (!box.ref || !suppressed.has(box.ref))
+		if (node.buttonAppearance) {
+			const horizontal = box.borderX - clip.x;
+			const vertical = box.borderY - clip.y;
+			const left = Math.max(0, horizontal);
+			const top = Math.max(0, vertical);
+			const right = Math.min(image.width, horizontal + box.borderBoxWidth);
+			const bottom = Math.min(image.height, vertical + box.borderBoxHeight);
+			if (right > left && bottom > top) {
+				charge(Math.ceil(right - left + 1) * Math.ceil(bottom - top + 1) * 4);
+				paintRasterImage(
+					image,
+					rasterizeControl(
+						node.buttonAppearance,
+						box.borderBoxWidth,
+						box.borderBoxHeight,
+						node.paint,
+						charge,
+					),
+					horizontal,
+					vertical,
+					box.borderBoxWidth,
+					box.borderBoxHeight,
+				);
+				metrics.paintedControls++;
+			} else metrics.clippedControls++;
+		} else if (!box.ref || !suppressed.has(box.ref))
 			drawBackground(
 				box.borderX,
 				box.borderY,

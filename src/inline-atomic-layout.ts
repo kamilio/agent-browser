@@ -126,7 +126,7 @@ export function layoutFormattingAtomicInline(
 			minContent: Math.max(0, measured.minContent + adjustment),
 			maxContent: Math.max(0, measured.maxContent + adjustment),
 		};
-		style = resolveFieldsetMinimum(style, intrinsicWidths.minContent);
+		style = resolveFieldsetMinimum(style, intrinsicWidths.minContent, basis);
 	}
 	const resolved = resolveShrinkToFitWidth(
 		style,

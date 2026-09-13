@@ -20,7 +20,9 @@ afterEach(() => {
 	}
 });
 
-function fixture(markup = '<button id="target"><span>Rich</span></button>') {
+function fixture(
+	markup = '<button id="target" style="position:absolute"><span>Rich</span></button>',
+) {
 	const tree = parseHtmlDocument(
 		`<!doctype html><style>html,body{margin:0;padding:0;font-size:8px;line-height:8px}fieldset{border:none;padding:0;margin:0}</style>${markup}`,
 		"https://fixture.invalid/rich-control-deferral",
@@ -38,25 +40,32 @@ it.each([
 	'<img alt="Image">',
 	"<svg><title>Icon</title></svg>",
 	"<span hidden>Hidden</span>Text",
-])("defers rather than flattens rich button content: %s", (content) => {
-	const page = fixture(`<button id="target">${content}</button>`);
-	const revision = page.tree.revision;
-	const source = serializeHtml(page.tree);
-	expect(describeControl(page.tree, page.target, 8)).toBeUndefined();
-	const formatting = buildFormattingTree(page.tree);
-	const target = formatting.nodes.filter((node) => node.ref === page.reference);
-	expect(target).toHaveLength(1);
-	expect(target[0]).toMatchObject({
-		kind: "deferred",
-		deferredReason: "element-layout-not-supported",
-		children: [],
-	});
-	expect(target[0].control).toBeUndefined();
-	expect(formatting.issues["element-layout-not-supported"]).toBe(1);
-	expect(formatting.metrics.deferredSubtrees).toBe(1);
-	expect(page.tree.revision).toBe(revision);
-	expect(serializeHtml(page.tree)).toBe(source);
-});
+])(
+	"defers rather than flattens positioned rich button content: %s",
+	(content) => {
+		const page = fixture(
+			`<button id="target" style="position:absolute">${content}</button>`,
+		);
+		const revision = page.tree.revision;
+		const source = serializeHtml(page.tree);
+		expect(describeControl(page.tree, page.target, 8)).toBeUndefined();
+		const formatting = buildFormattingTree(page.tree);
+		const target = formatting.nodes.filter(
+			(node) => node.ref === page.reference,
+		);
+		expect(target).toHaveLength(1);
+		expect(target[0]).toMatchObject({
+			kind: "deferred",
+			deferredReason: "element-layout-not-supported",
+			children: [],
+		});
+		expect(target[0].control).toBeUndefined();
+		expect(formatting.issues["element-layout-not-supported"]).toBe(1);
+		expect(formatting.metrics.deferredSubtrees).toBe(1);
+		expect(page.tree.revision).toBe(revision);
+		expect(serializeHtml(page.tree)).toBe(source);
+	},
+);
 
 it.each(["Text", "<!-- comment -->Text", ""])(
 	"preserves simple software button rendering: %s",
@@ -103,7 +112,10 @@ it("retains fieldset ownership and sibling diagnostics around a rich button", ()
 	expect(
 		formatting.nodes.some((node) => node.ref === page.tree.reference(tail)),
 	).toBe(true);
-	expect(formatting.metrics.deferredSubtrees).toBe(1);
+	expect(formatting.metrics.deferredSubtrees).toBe(0);
+	expect(
+		formatting.nodes.find((node) => node.ref === page.reference),
+	).toMatchObject({ kind: "block", independentContext: true });
 });
 
 it("invalidates plain-to-rich-to-plain descriptor and formatting state", () => {
@@ -112,9 +124,14 @@ it("invalidates plain-to-rich-to-plain descriptor and formatting state", () => {
 	const child = page.tree.createElement("span");
 	page.tree.append(page.target, child);
 	expect(describeControl(page.tree, page.target, 8)).toBeUndefined();
+	const formatting = buildFormattingTree(page.tree);
+	expect(formatting.issues).toEqual({});
 	expect(
-		buildFormattingTree(page.tree).issues["element-layout-not-supported"],
-	).toBe(1);
+		formatting.nodes.find((node) => node.ref === page.reference),
+	).toMatchObject({ kind: "block", independentContext: true });
+	expect(
+		formatting.nodes.some((node) => node.ref === page.tree.reference(child)),
+	).toBe(true);
 	page.tree.setTextContent(page.target, "Simple again");
 	expect(describeControl(page.tree, page.target, 8)?.text).toBe("Simple again");
 	expect(buildFormattingTree(page.tree).issues).toEqual({});
