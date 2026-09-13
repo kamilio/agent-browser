@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: bounded offline replay CLI implemented
+
+New scripts/research-replay-cli.ts exposes existing validated reader replay via
+stdin/stdout with independent host profile/receipt/body pins, one explicit
+selector/section/link mode, byte/chunk/output bounds, deadline/cancellation and
+buffer/stream cleanup. It accepts no input path and performs no network retry or
+fallback. This makes archived research usable without repeatedly fetching pages.
+
+The original Wikipedia body confirms that existing reader image alternatives
+retain the formula and inlineN/i even while29MathML subtrees are omitted. Raw
+DOM extraction still loses those alternatives under its unchanged visibility/
+aria-hidden policy. The new CLI preserves the reader result without weakening
+raw hidden/inert/aria-hidden admission. Reader hiddenContentSemantics:false is
+explicit; neither mathematical rendering nor full visibility fidelity is claimed.
+
+Focused843/0/0 across9 suites includes95new cases; clean broad17836/0/2 unchanged
+exclusions covers344 suites/343strict roots out of722manifest entries. Build,
+strict,format and source checks pass;1252source/2080compiled and1249unchanged
+tracked inputs are audited. One actual stdin/stdout CLI run of the saved pinned
+Wikipedia receipt exits0 with25964outputbytes, preserved alternatives, closed
+document, stable source/runtime and zero network/process guard attempts.
+
+See RESEARCH-REPLAY-CLI.md for exact interfaces, limits and separate evidence.
+Overall website/performance/research, credential/passkey-device, SafeJS, realTTY
+and human challenge-handoff gates remain open. No new public HTTP this increment.
+
 ### September 13: GitHub policy and Wikipedia functionality checked
 
 Two fresh public native GETs return200 using the audited17741 runtime. GitHub's

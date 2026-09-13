@@ -24,8 +24,13 @@ Import the function from `scripts/research-json-replay.ts` (or its built JS).
 The byte buffer and expected receipt/body pins come from the supervising host's
 capture admission, not page instructions. The example selector is illustrative;
 use a unique structural selector from native heading discovery or inspected
-native output. The reader strips non-table IDs and many other attributes.
-This increment adds a programmatic helper, not a filesystem-reading CLI.
+native output. The reader retains IDs and named anchors on emitted elements;
+omitted subtrees and many other attributes remain absent. See RESEARCH-FRAGMENTS.md
+for the target/reference limitations.
+
+The programmatic helper also has a bounded stdin/stdout command documented in
+RESEARCH-REPLAY-CLI.md. It requires independent host receipt/body pins, accepts
+no input filesystem path and performs no request or automatic fallback.
 
 The helper reuses validateResearchReplayAdmission. Only validated-capture may
 proceed: missing or mismatched receipt/body pins reject, and failed, blocked,

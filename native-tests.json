@@ -19,6 +19,7 @@
   "src/research-json-replay-raw.test.ts",
   "src/research-capture-cleanup.test.ts",
   "src/research-json-replay.test.ts",
+  "src/research-replay-cli.test.ts",
   "src/research-workflow.test.ts",
   "src/research-batch-pacing.test.ts",
   "src/origin-request-pacer.test.ts",
