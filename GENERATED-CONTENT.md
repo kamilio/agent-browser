@@ -77,3 +77,12 @@ uncaptured fonts and other page limitations remain explicit. No new HTTP request
 credential operation, SafeJS execution, real TTY or challenge solve occurs in
 that replay. See `WEBSITE-TEST-INVENTORY-SEPTEMBER-13-EIGHTEENTH-UPDATE.md` for
 receipts and the separate primary-source capture/reader failures.
+
+## Later implementations
+
+The initial-profile limitations and measurements above retain their historical
+scope. Subsequent relative/absolute/fixed positioning and DOM-origin hit targets
+are described in `GENERATED-CONTENT-POSITIONING.md`. Physical clearance for
+supported normal-flow generated block boxes, and inapplicable-clear no-ops, are
+described in `GENERATED-CONTENT-CLEAR.md`. Neither extension establishes full
+website rendering or changes the recorded results of the initial implementation.

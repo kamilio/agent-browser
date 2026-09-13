@@ -407,7 +407,7 @@ it.each([
 	["position:sticky;left:3px", "position"],
 	["position:sticky;top:3px", "position"],
 	["float:left", "float"],
-	["clear:both", "clear"],
+	["display:block;clear:inline-start", "clear"],
 	["overflow:hidden", "overflow"],
 	["clip-path:url(#clip)", "clip"],
 	["outline:1px solid red", "outline"],
@@ -425,7 +425,7 @@ it.each([
 	).toBe(1);
 });
 
-it.each(["float:left", "clear:both"])(
+it.each(["float:left", "display:block;clear:inline-start"])(
 	"rejects unsupported pseudo %s without claiming owned float geometry",
 	(declaration) => {
 		const { tree } = fixture(

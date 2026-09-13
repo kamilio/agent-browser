@@ -566,6 +566,7 @@
   "src/generated-content-style.test.ts",
   "src/generated-content-formatting.test.ts",
   "src/generated-content-positioning.test.ts",
+  "src/generated-content-clear.test.ts",
   "src/selector-validity.test.ts",
   "src/control-index-work.test.ts",
   "src/nth-tokens.test.ts",

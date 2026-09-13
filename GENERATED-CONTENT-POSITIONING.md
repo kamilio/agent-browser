@@ -12,7 +12,9 @@ than inventing CSS pseudo-elements as DOM nodes or separate action references.
   hypothetical static placement; actual flex/grid-parent item context is also
   accounted for when formatting that static display.
 - Float computes to `none` for an actual out-of-flow box. `clear` does not create
-  clearance for it. Nonpositioned generated floats/clearance remain unsupported.
+  clearance for it. In-flow generated floats remain unsupported; physical
+  clearance on supported normal-flow block boxes is covered separately in
+  `GENERATED-CONTENT-CLEAR.md`.
 - Formatting records carry position, static display/flex data and applicable
   z-index into the same native coordinators used for ordinary boxes.
 - Relative positioning retains normal-flow space and shifts the resulting
@@ -37,7 +39,7 @@ that does not enable positioned Grid-area coordination.
 `display:contents` is not silently turned into an out-of-flow pseudo box.
 
 Unsupported generated overflow, clipping, outlines, decorations, vertical
-alignment and nonpositioned float/clearance still report their existing issues.
+alignment, in-flow floats and logical block clearance retain explicit issues.
 An out-of-flow box uses the coordination marker until the native positioning
 stage consumes it; removing a generated-position error is not evidence that
 an otherwise unsupported page can render. Source, CSS, formatting, layout,

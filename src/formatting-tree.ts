@@ -617,6 +617,12 @@ export function buildFormattingTree(
 			"flow-root",
 			"block flow-root",
 		].includes(display);
+		const clearing =
+			block &&
+			!itemMode &&
+			flow.float === "none" &&
+			(flow.position === "static" || flow.position === "relative") &&
+			["left", "right", "both"].includes(flow.clear);
 		let deferredReason: string | undefined;
 		if (!inline && !atomic && !block) {
 			issue("display-layout-not-supported");
@@ -639,9 +645,16 @@ export function buildFormattingTree(
 		if (flow.float !== "none") {
 			issue("generated-content-float-layout-not-supported");
 		}
-		if (flow.clear !== "none" && !outOfFlow) {
+		if (
+			flow.clear !== "none" &&
+			!outOfFlow &&
+			!inline &&
+			!atomic &&
+			!clearing
+		) {
 			issue("generated-content-clear-layout-not-supported");
 		}
+		if (clearing) clearanceRequests++;
 		if (flow["overflow-x"] !== "visible" || flow["overflow-y"] !== "visible") {
 			issue("overflow-layout-not-supported");
 			issue("generated-content-overflow-layout-not-supported");
@@ -703,6 +716,9 @@ export function buildFormattingTree(
 				typography: style.typography,
 				paint: style.paint,
 				generatedContent: metadata,
+				...(clearing
+					? { clear: flow.clear as NonNullable<FormattingNode["clear"]> }
+					: {}),
 				...(flow.position === "relative" || outOfFlow
 					? { position: flow.position as "relative" | "absolute" | "fixed" }
 					: {}),

@@ -558,7 +558,7 @@ it.each([
 
 it.each([
 	["static", "float:left", "float"],
-	["static", "clear:both", "clear"],
+	["static", "display:block;clear:inline-start", "clear"],
 	["absolute", "overflow:hidden", "overflow"],
 	["absolute", "clip-path:url(#clip)", "clip"],
 	["absolute", "outline:1px solid red", "outline"],
