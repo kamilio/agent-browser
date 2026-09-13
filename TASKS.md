@@ -6,6 +6,42 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: current Internet checkbox HTML and full-asset pointer evidence
+
+Broadened beyond Wikipedia/Python. This is an existinghost, not newcoverageclaim.
+OnefreshnativeGET https://the-internet.herokuapp.com/checkboxes at18:07:13.359–.485UTC
+returns200/2008bytes, byte-identical toSeptember11HTML. NoCSS/images/scripts/auth/
+redirects/retries. Separateoffline nativeparse confirms e56false/e60true, both
+enabled,forme54withoutmethod/actionattributes. This is source-only, not liveflow.
+
+Faithful normalBrowserSession replay retains allfour391809-byte HTML/CSS/PNG
+resources and0HTTP. At18:03:10.789–18:03:11.209UTC semantic e56false→true→false
+passes with6untrustedevents. Exactlyone genuine session.click fails widthresolution
+onCSS at-rules8/properties11/selectors2;0pointerevents,stillfalse. Nofakegeometry,
+CSSdropping/actionsubstitution/retry. Sixgeneratedtable pseudos have realtable
+shellmetadata, butfullpagepointeracceptance remainsFAIL. Oneinstrumented run:
+0.41selapsed/134656KiBRSS(131.5MiB),aboveprovisional100MiB;notrepeatablebenchmark.
+
+Separate0action/0HTTP nativeCSSattribution accounts forall11properties: two
+text-size-adjustvendoroccurrences,threebox-sizingaliases,unknown-selectorappearance,
+cursor,interpolationmode,*zoom,direction,text-rendering. Tenconfirmedmatches,one
+conservativeunknownpseudo match. Two unsupported selectorlists areWebKitsearch/
+Mozfocusinner. Sevenkeyframes+onefontface areapplicable;printpageisnot. TwoCSSroots/
+382141units,1685scannedrules,1613stylequeries/141802work,sharedparser1659/3402.
+Preserve threeincompleteinstrumentationattempts. FinalusesexactnativeCSSstyle API
+withper-branchlimit,notDOMsyntaxwhole-listpreflight;noenginelimitincrease/guarddrop.
+Finaldiagnostic18:08:01.531–.891UTC. Allsource/runtime/fixture/frameworkpins and
+cleanupverified;live64receipts,replay28,eachdiagnostic30. Runtimeunchanged20398/0/2;
+no productionchanges ornewnative-suiterun. Preserveoriginalreports/dirtywork.
+
+NEXT: genuineCSSproperty/selector/font/animationcompatibility,invalidlegacyCSS
+handling and repeatablememory/latencymeasurement;then recheckactualpointerwithout
+substitution. Morevariedliveflows/access-restrictionhandling,researchfreshness/
+verifiedReddit-Poe andseparatecredential/passkeydevice/SafeJS/socket/TTYgates stay
+open. Nofingerprintspoofing/challengesolving/push.GoalACTIVE.
+SeeINTERNET-CHECKBOX-REPLAY-SEPTEMBER-13.md and
+WEBSITE-TEST-INVENTORY-SEPTEMBER-13-THIRTY-SECOND-UPDATE.md.
+
 ### September 13: generated native tables and actual Wikipedia footer replay
 
 Native attribution identifies actual owner e2373/footer.footer's before/after
