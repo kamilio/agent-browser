@@ -81,6 +81,15 @@ function acceptedFormatting(formatting: FormattingTree, charge: () => void) {
 			floats++;
 		}
 		if (node.clear) {
+			const tableShell =
+				node.kind === "deferred" &&
+				node.contentMode === "table" &&
+				node.display === "table" &&
+				node.deferredReason === "display-layout-not-supported" &&
+				node.independentContext === true &&
+				node.position === undefined &&
+				!node.flexItem &&
+				!node.gridItem;
 			if (!["left", "right", "both"].includes(node.clear))
 				throw new AgentBrowserError(
 					"unsupported",
@@ -89,7 +98,7 @@ function acceptedFormatting(formatting: FormattingTree, charge: () => void) {
 			if (
 				!node.floatSide &&
 				(node.level !== "block" ||
-					(node.kind !== "block" && node.kind !== "replaced"))
+					(node.kind !== "block" && node.kind !== "replaced" && !tableShell))
 			)
 				throw new AgentBrowserError(
 					"unsupported",

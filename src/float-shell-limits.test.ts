@@ -211,7 +211,7 @@ it.each([
 	},
 );
 
-it.each(shells)(
+it.each(shells.filter((shell) => shell.kind !== "table"))(
 	"does not silently admit clear on a deferred $kind shell",
 	({ css, markup }) => {
 		const tree = fixture(
@@ -226,6 +226,28 @@ it.each(shells)(
 		);
 	},
 );
+
+it("coordinates physical clearance on a supported deferred table shell", () => {
+	const shell = shells[2];
+	const tree = fixture(
+		`<div id="float"></div>${shell.markup("AA")}`,
+		`${shell.css}#shell{clear:both}`,
+	);
+	const revision = tree.revision;
+	const before = snapshotDocument(tree);
+	const layout = layoutDocument(tree);
+	const table = layout.text.horizontal.formatting.nodes.find(
+		(node) => node.display === "table",
+	);
+	expect(table).toBeDefined();
+	const box = layout.boxes.find((candidate) => candidate.id === table?.id);
+	expect(box).toMatchObject({ borderX: 0, borderY: 16, borderBoxWidth: 36 });
+	const glyphs = layout.contexts.flatMap((context) => context.glyphs);
+	expect(glyphs.map((glyph) => glyph.character).join("")).toBe("AA");
+	for (const glyph of glyphs) expect(glyph.y).toBeGreaterThanOrEqual(16);
+	expect(tree.revision).toBe(revision);
+	expect(snapshotDocument(tree)).toEqual(before);
+});
 
 it("preserves an independent unsupported CSS diagnostic beside a coordinated shell", () => {
 	const shell = shells[0];

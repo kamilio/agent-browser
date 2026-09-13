@@ -574,6 +574,8 @@
   "src/selector-nesting.test.ts",
   "src/css-nesting-layout.test.ts",
   "src/generated-content-clear.test.ts",
+  "src/generated-content-table.test.ts",
+  "src/generated-content-table-layout.test.ts",
   "src/selector-validity.test.ts",
   "src/control-index-work.test.ts",
   "src/nth-tokens.test.ts",

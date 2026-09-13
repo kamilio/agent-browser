@@ -379,7 +379,7 @@ it("charges generated text, boxes, depth and work to existing formatting limits"
 	).not.toThrow();
 });
 
-it.each(["flex", "grid", "table", "list-item", "contents"])(
+it.each(["flex", "grid", "inline-table", "list-item", "contents"])(
 	"reports unsupported generated display:%s without erasing native diagnostics",
 	(display) => {
 		const { tree, id } = fixture(

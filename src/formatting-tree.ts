@@ -279,6 +279,7 @@ export function buildFormattingTree(
 	const nodes: MutableFormattingNode[] = [];
 	const tableNodes: MutableFormattingNode[] = [];
 	const collapsedBorderGuards = new Set<string>();
+	const generatedCollapsedTables = new Set<MutableFormattingNode>();
 	const emptyCellGuards = new Set<string>();
 	let work = 0;
 	let textCodeUnits = 0;
@@ -617,14 +618,23 @@ export function buildFormattingTree(
 			"flow-root",
 			"block flow-root",
 		].includes(display);
+		const table = display === "table" && flow.position === "static";
 		const clearing =
-			block &&
+			(block || table) &&
 			!itemMode &&
 			flow.float === "none" &&
 			(flow.position === "static" || flow.position === "relative") &&
 			["left", "right", "both"].includes(flow.clear);
 		let deferredReason: string | undefined;
-		if (!inline && !atomic && !block) {
+		if (table) {
+			issue("display-layout-not-supported");
+			deferredReason = "display-layout-not-supported";
+			if (style.table["table-layout"] !== "auto")
+				issue("table-fixed-layout-not-supported");
+			if (style.table["border-collapse"] !== "separate")
+				issue("table-collapsed-borders-not-supported");
+		}
+		if (!inline && !atomic && !block && !table) {
 			issue("display-layout-not-supported");
 			deferredReason = "generated-content-display-layout-not-supported";
 			issue(deferredReason);
@@ -690,7 +700,10 @@ export function buildFormattingTree(
 				: undefined;
 		if (alignment === null) issue("block-content-alignment-not-supported");
 		const content: number[] = [];
-		if (style.content.length)
+		if (
+			style.content.length &&
+			!(table && /^[\t\n\f\r ]*$/.test(style.content))
+		)
 			content.push(
 				create({
 					kind: "text",
@@ -716,6 +729,7 @@ export function buildFormattingTree(
 				typography: style.typography,
 				paint: style.paint,
 				generatedContent: metadata,
+				...(table ? { table: style.table, contentMode: "table" as const } : {}),
 				...(clearing
 					? { clear: flow.clear as NonNullable<FormattingNode["clear"]> }
 					: {}),
@@ -736,14 +750,22 @@ export function buildFormattingTree(
 					: {}),
 				...(deferredReason ? { deferredReason } : {}),
 				...(inline ? { fragmentIndex: 0, fragmentCount: 1 } : {}),
-				...(outOfFlow || atomic || display.includes("flow-root") || alignment
+				...(table ||
+				outOfFlow ||
+				atomic ||
+				display.includes("flow-root") ||
+				alignment
 					? { independentContext: true }
 					: {}),
 				...(alignment ? { blockContentAlignment: alignment } : {}),
 			},
 			content,
 		);
-		if (!inline && !deferredReason) normalizeChildren(result, content);
+		if (table) {
+			repairTableChildren(result, content, "table");
+			if (style.table["border-collapse"] === "collapse")
+				generatedCollapsedTables.add(nodes[result]);
+		} else if (!inline && !deferredReason) normalizeChildren(result, content);
 		return result;
 	};
 	const visit = (
@@ -1807,6 +1829,10 @@ export function buildFormattingTree(
 			if (omittedTableWhitespace.has(node.id)) continue;
 			node.id = remap[node.id];
 			if (node.parent !== null) node.parent = remap[node.parent];
+			if (node.fieldsetContent !== undefined)
+				node.fieldsetContent = remap[node.fieldsetContent];
+			if (node.fieldsetOwner !== undefined)
+				node.fieldsetOwner = remap[node.fieldsetOwner];
 			charge(node.children.length + (node.orderModifiedChildren?.length ?? 0));
 			node.children = node.children.map((child) => remap[child]);
 			if (node.orderModifiedChildren)
@@ -1892,7 +1918,7 @@ export function buildFormattingTree(
 		delete table.clear;
 		delete table.floatSide;
 	}
-	if (collapsedBorderGuards.size) {
+	if (collapsedBorderGuards.size || generatedCollapsedTables.size) {
 		const collapsed = applyCollapsedTableBorders(
 			nodes,
 			Math.max(1, limits.maxWork - work),
@@ -1902,9 +1928,14 @@ export function buildFormattingTree(
 			collapsedBorderGuards.delete(ref);
 			emptyCellGuards.delete(ref);
 		}
-		if (collapsedBorderGuards.size)
+		let unresolvedGenerated = 0;
+		for (const table of generatedCollapsedTables) {
+			charge();
+			if (!table.collapsedTable) unresolvedGenerated++;
+		}
+		if (collapsedBorderGuards.size || unresolvedGenerated)
 			issues["table-collapsed-borders-not-supported"] =
-				collapsedBorderGuards.size;
+				collapsedBorderGuards.size + unresolvedGenerated;
 		else delete issues["table-collapsed-borders-not-supported"];
 		if (emptyCellGuards.size)
 			issues["table-empty-cell-paint-not-supported"] = emptyCellGuards.size;

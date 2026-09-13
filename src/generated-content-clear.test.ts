@@ -377,7 +377,7 @@ it("keeps generated floats guarded even when they request physical clearance", (
 	);
 });
 
-it.each(["flex", "grid", "table"] as const)(
+it.each(["flex", "grid", "inline-table"] as const)(
 	"does not admit generated display:%s through physical-clear support",
 	(display) => {
 		const { tree } = fixture(
