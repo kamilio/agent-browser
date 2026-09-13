@@ -609,6 +609,8 @@
   "src/clear-applicability.test.ts",
   "src/clear-applicability-layout.test.ts",
   "src/center-element-fallback.test.ts",
+  "src/html-align-hints.test.ts",
+  "src/html-alignment.test.ts",
   "src/center-alignment.test.ts",
   "src/center-layout.test.ts",
   "src/gif-image-fallback.test.ts",

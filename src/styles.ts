@@ -6,6 +6,10 @@ import {
 } from "./html-cell-padding.js";
 import { htmlPixelLength } from "./html-pixel-length.js";
 import {
+	htmlTextAlignment,
+	supportsTextAlignmentHint,
+} from "./html-alignment.js";
+import {
 	legacyColor,
 	supportsBackgroundColorHint,
 } from "./html-background-color.js";
@@ -1157,6 +1161,19 @@ export class DocumentStyles {
 		};
 		const cellPaddingByTable = new Map<number, string>();
 		for (const node of nodes) {
+			if (supportsTextAlignmentHint(node)) {
+				const raw = node.attributes.align;
+				if (raw !== undefined) charge(raw.length + 1);
+				const alignment = htmlTextAlignment(node);
+				if (alignment !== undefined)
+					apply(
+						node.id,
+						[{ property: "text-align", value: alignment, important: false }],
+						[0, 0, 0],
+						false,
+						-2,
+					);
+			}
 			if (isHtmlElement(node, "table")) {
 				const raw = node.attributes.cellspacing;
 				if (raw !== undefined) charge(raw.length + 1);

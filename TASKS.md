@@ -6,6 +6,37 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: paragraph and heading alignment hints implemented
+
+Native HTML p/h1–h6 left/center/right alignment now participates in the real
+author cascade, inherited text styling, geometry, raster and hit testing.
+Exact case-insensitive values are supported without trimming or importing DIV's
+middle alias. Applicable hints prevent ancestor legacy CENTER positioning;
+auto margins still work. Namespace, mutation, CSS-wide/variable precedence and
+4096-unit attribute bounds are covered. Justification and unrelated element
+alignment remain explicit unsupported scope. No runtime dependency or cap raise.
+
+The final selected gate passes **17,072/0/2 unchanged exclusions**, including112
+new tests;328 suites,327 strict roots,706 manifest entries (378 not run).
+Build/strict/format/source checks pass in native-html-align-september13-round01.
+Its audit binds1229source/2052compiled files and1223 unchanged tracked inputs.
+The superseded round00 and intermediate harness failures remain preserved.
+Original dirty work remains separate; no push. See HTML-ALIGNMENT.md.
+
+Offline original SQLite HTML/CSS replay02 passes: both actual center hints now
+compute correctly and their two formatting flags disappear. Six CSS values,
+fifteen properties,six selectors,eleven float flags and one overflow remain.
+No HTTP,image,used-layout,raster or script call; this is not whole-site acceptance.
+Two earlier replay assertion errors are preserved and explicitly explained:
+stylesheet installation invalidates presentation and changes accessibility
+visibility, without mutating source DOM. Corrected checks verify raw DOM records,
+post-install snapshots and revisions473→474→474 on unchanged sources/runtime.
+
+Native-only primary-source work establishes the next ex x-height basis, but its
+implementation remains open. Original research, SafeJS, real TTY, credentials,
+passkey-device and challenge/human-handoff gates also remain open. The historical
+86-host inventory gains no host; the overall browser goal stays active.
+
 ### September 13: SQLite image and document load; used layout remains blocked
 
 A fresh native16960/0c2323f SQLite initial-load check makes three original

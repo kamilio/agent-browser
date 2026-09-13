@@ -33,6 +33,10 @@ import {
 } from "./image-alternative.js";
 import { supportsImageBorderHint } from "./html-image-border.js";
 import {
+	htmlTextAlignment,
+	supportsTextAlignmentHint,
+} from "./html-alignment.js";
+import {
 	type ReplacedSize,
 	resolveHeightConstraints,
 	resolveReplacedSize,
@@ -113,6 +117,7 @@ export interface FormattingNode {
 	typography?: TextStyle;
 	language?: string;
 	legacyChildAlignment?: "center";
+	legacyAlignmentBoundary?: true;
 	paint?: PaintStyle;
 	contentMode?: "blocks" | "inline" | "flex" | "grid" | "table";
 	table?: TableStyle;
@@ -609,6 +614,9 @@ export function buildFormattingTree(
 					"block table",
 				].includes(display));
 		const boxFlowFields = {
+			...(htmlTextAlignment(node) !== undefined
+				? { legacyAlignmentBoundary: true as const }
+				: {}),
 			...(styles.legacyChildAlignment(id)
 				? { legacyChildAlignment: "center" as const }
 				: {}),
@@ -717,6 +725,7 @@ export function buildFormattingTree(
 			].some(
 				(name) =>
 					Object.hasOwn(node.attributes, name) &&
+					!(name === "align" && supportsTextAlignmentHint(node)) &&
 					!(name === "border" && supportsImageBorderHint(node)) &&
 					!(
 						(node.tagName === "img" || embeddedSvg) &&
@@ -1838,6 +1847,7 @@ export function resolveFormattingBlockWidths(
 					{
 						...resolveBorders(style),
 						...(node.level === "block" &&
+						!node.legacyAlignmentBoundary &&
 						!node.floatSide &&
 						node.position !== "absolute" &&
 						node.position !== "fixed" &&
