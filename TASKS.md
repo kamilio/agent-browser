@@ -6,6 +6,46 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: native legends unblock the HTTPBin public form
+
+**PROGRESS; overall browser goal remains ACTIVE.** Commitc60b133 adds rendered
+legend ownership/fit-content sizing/vertical allocation and a legend-local border
+gap. Shared intrinsic sizing fixes percentage-padding double counting; extraction
+movement is budgeted before mutation. Normal-flow simple static legends with zero
+block margins and unconstrained auto-height fieldsets are supported. Other legend
+profiles and general fieldset conformance remain explicit limits.
+
+Final native gate: **21,042passed/0failed/2unchangedskips**,411selected/410strict/
+765manifest,354unselected, at20:13:59.593–20:18:53.793UTC. Build/strict/scopedformat
+and source checks pass;1306source/2124compiled/1291unchangedtrackedinputs.
+90newcases (43borderexclusion/47legend); identical focused tests581/84/1→665/0/1.
+Initial failures, five review regressions and superseded broader results remain
+retained; no new exclusion or browser-limit relaxation conceals them.
+
+At20:20:13UTC the unchanged captured HTTPBin form reaches native click+submit and
+a valid synthetic POST intent, deliberately denied by the offline guard. Two
+legend deferrals become zero. **ZeroHTTP; offline flowPassed remains false.**
+Separately, at20:22:57.507–20:22:57.891UTC, a fresh native full-loader GET and
+genuine pointer POST both return200; the exact eight synthetic entries echo and
+the session commits the destination. **This bounded live form flow passes.**
+No fallback, page edits, omitted resources, scripts, credentials or extra HTTP.
+2requests/2213responsebytes/259msstartspacing; single0.38s/93.73MiB is not a benchmark.
+
+Native primary prose still has ambiguous border-gap min/max wording. The retained
+SVG's geometry/order supports a local gap by inference only; text/dash/marker
+limitations prevent faithful native diagram rasterization. Both source reads
+are zeroHTTP. Source/runtime/framework ledgers and cleanup are independently
+verified; all recorded process groups absent. Historical evidence unchanged.
+
+Runtime: native-fieldset-legend-september13-round01,20receiptledger
+5975ff847221e0f0cd90512ff5e4c42d70366693cea4e88540f956d85798ddb5.
+Live31entryledger839759fb32cfa08c1c56cd847520d7576d8083ece7da9bf4d0e01ef6d4968300.
+Details: FIELDSET-LEGEND.md, HTTPBIN-LEGEND-FORM-SEPTEMBER-13.md and website
+inventory36. No push. Next: varied original-asset/pointer website flows, including
+Internet/Wikipedia/Python; repeatable performance and requested hardware/benchmark/
+Astra/verified Reddit-Poe research. Credential/provider/passkey-device/SafeJS/
+socket/TTY gates and the broader browser goal remain open.
+
 ### September 13: groove/time rendering and remaining HTTPBin legends
 
 **PROGRESS; overall browser goal remains ACTIVE.** Commit7e2734d implements real
