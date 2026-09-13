@@ -247,7 +247,7 @@ it.each([
 	["font-family:serif,", "unimplemented-or-invalid-css-value"],
 	["font:small monospace", "unimplemented-css-property"],
 	["font-size:math", "unimplemented-or-invalid-css-value"],
-	["font-size:calc(1px + 1px)", "unimplemented-or-invalid-css-value"],
+	["font-size:calc(1px + 1)", "unimplemented-or-invalid-css-value"],
 	["animation-name:spin", "unimplemented-css-property"],
 ])(
 	"does not mask the independent %s guard with a supported keyword",

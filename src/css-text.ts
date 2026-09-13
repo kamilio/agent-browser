@@ -1,9 +1,14 @@
-import { lengthUsesFont } from "./css-math.js";
+import {
+	computeLengthMath,
+	isCssLengthMath,
+	lengthUsesFont,
+	normalizeLengthMath,
+} from "./css-math.js";
 import { normalizeFontFamily } from "./font-family.js";
 import { nativeFontXHeight } from "./font-metrics.js";
 import { parseFontStyle } from "./font-style.js";
 import { computeFontWeight, parseFontWeight } from "./font-weight.js";
-import { layoutNumber } from "./layout-values.js";
+import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 import { computeTextIndent, parseTextIndent } from "./text-indent.js";
 import { parseTextTransform } from "./text-transform-style.js";
 
@@ -89,6 +94,7 @@ export function parseTextValue(
 			: undefined;
 	if (property === "line-height" && value === "normal") return value;
 	if (property === "font-size") {
+		if (isCssLengthMath(value.trim())) return normalizeLengthMath(value);
 		if (Object.hasOwn(absoluteFontSizes, value))
 			return `${absoluteFontSizes[value]}px`;
 		if (value === "larger" || value === "smaller") return value;
@@ -134,10 +140,7 @@ export function computeTextStyle(
 		rootSize: number,
 		font: TextStyle,
 	) => {
-		const parsed = length.exec(value);
-		if (!parsed) return value;
-		const unit = parsed[2] ?? "px";
-		const factor =
+		const factor = (unit: string): number =>
 			unit === "ex"
 				? nativeFontXHeight(
 						Number.parseFloat(font["font-size"]),
@@ -154,7 +157,11 @@ export function computeTextStyle(
 						vmin: Math.min(viewport.width, viewport.height) / 100,
 						vmax: Math.max(viewport.width, viewport.height) / 100,
 					}[unit]);
-		return `${layoutNumber(Number(parsed[1]) * factor)}px`;
+		if (isCssLengthMath(value))
+			return `${resolveLayoutLength(computeLengthMath(value, factor), relative)}px`;
+		const parsed = length.exec(value);
+		if (!parsed) return value;
+		return `${layoutNumber(Number(parsed[1]) * factor(parsed[2] ?? "px"))}px`;
 	};
 	result["font-size"] = pixels(
 		result["font-size"],

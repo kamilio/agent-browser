@@ -74,22 +74,36 @@ it("rejects malformed ex and negative font sizes or line heights", () => {
 		expect(parseTextIndent(value)).toBeUndefined();
 });
 
-it("keeps font-size and line-height math unsupported without fake pixels", () => {
-	for (const property of ["font-size", "line-height"] as const)
-		for (const value of [
-			"calc(1ex + 2px)",
-			"min(1ex, 2px)",
-			"max(1ex, 2px)",
-			"clamp(1px, 1ex, 20px)",
-		]) {
-			expect(parseTextValue(property, value)).toBeUndefined();
-			expect(cssSupportsDeclaration(property, value)).toBe(false);
-			expect(
-				computeTextStyle({ [property]: value }, initialTextStyle, viewport, 16)[
-					property
-				],
-			).toBe(value);
-		}
+it("computes ex font-size math while keeping line-height math unsupported", () => {
+	const xHeight = fontMetrics.nativeFontXHeight(
+		16,
+		Number(initialTextStyle["font-weight"]),
+		initialTextStyle["font-family"],
+	);
+	for (const [value, expected] of [
+		["calc(1ex + 2px)", xHeight + 2],
+		["min(1ex, 2px)", Math.min(xHeight, 2)],
+		["max(1ex, 2px)", Math.max(xHeight, 2)],
+		["clamp(1px, 1ex, 20px)", Math.max(1, Math.min(xHeight, 20))],
+	] as const) {
+		expect(parseTextValue("font-size", value)).toBe(value);
+		expect(cssSupportsDeclaration("font-size", value)).toBe(true);
+		expect(
+			computeTextStyle({ "font-size": value }, initialTextStyle, viewport, 16)[
+				"font-size"
+			],
+		).toBe(`${expected}px`);
+		expect(parseTextValue("line-height", value)).toBeUndefined();
+		expect(cssSupportsDeclaration("line-height", value)).toBe(false);
+		expect(
+			computeTextStyle(
+				{ "line-height": value },
+				initialTextStyle,
+				viewport,
+				16,
+			)["line-height"],
+		).toBe(value);
+	}
 });
 
 it("preserves fractional and zero native x-heights at text use sites", () => {

@@ -202,7 +202,7 @@ it("rejects malformed, quoted, unsupported and combined font-size keywords", () 
 	}
 });
 
-it("retains invalid length and unsupported math guards", () => {
+it("retains invalid length and malformed math guards", () => {
 	for (const value of [
 		"-1px",
 		"12",
@@ -210,7 +210,7 @@ it("retains invalid length and unsupported math guards", () => {
 		"NaNpx",
 		"Infinitypx",
 		"10ch",
-		"calc(1px + 1px)",
+		"calc(1px + 1)",
 	]) {
 		expect(parseTextValue("font-size", value)).toBeUndefined();
 		expect(cssSupportsCondition(`(font-size:${value})`)).toBe(false);

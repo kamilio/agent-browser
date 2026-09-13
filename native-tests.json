@@ -324,6 +324,7 @@
   "src/css-supports.test.ts",
   "src/css-paint.test.ts",
   "src/css-text.test.ts",
+  "src/css-font-size-math.test.ts",
   "src/css-variables.test.ts",
   "src/css-variables-core.test.ts",
   "src/custom-validity.test.ts",

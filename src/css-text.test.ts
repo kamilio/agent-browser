@@ -182,7 +182,7 @@ it.each([
 	expect(parseTextValue("font-family", family)).toBe(expected);
 });
 
-it.each(["-1px", "12", "calc(1px + 1px)", "1e999px", "10ch", "larger smaller"])(
+it.each(["-1px", "12", "calc(1px + 1)", "1e999px", "10ch", "larger smaller"])(
 	"rejects unsupported or invalid size %s",
 	(value) => {
 		expect(parseTextValue("font-size", value)).toBeUndefined();
