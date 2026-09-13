@@ -6,6 +6,39 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: native validity selectors and a fresh public form
+
+Implemented :valid/:invalid through the existing native validator, with form
+ownership, fieldset descendants, barred-control exclusions and live value-sensitive
+styling. Charged control-index preparation and operation-local state/subtree
+memoization retain work and memory ceilings. Unsupported constraints remain
+explicit; known invalid aggregate members do not fabricate successful flags.
+
+All51new selector cases fail on the unchanged runtime. Corrected focused gate:
+876pass; canonical native18655pass/0fail/2unchanged exclusions,366selected suites/
+365strictroots,737manifest entries/371unrun.58new cases and227existing validation
+cases newlyselected. Rootdist and pre-existing dirty work remain untouched.
+
+A native-discovered HTML Form link leads to one actual200GET at10:50:38.186UTC,
+160810decodedbytes, no redirects/retries/challenge/credentials. The page contains
+3233nodes,2forms and240controls. Exact-byte audited before/after replay changes
+unsupported validity queries into239valid/0invalid matches, cross-checked against
+237native candidates and2forms;3controls areexcluded. No values are emitted and
+no fills/actions/submissions occur. No required attributes or invalid matches
+exist in this captured page, so live required-invalid feedback remains unproved.
+
+The unchanged real table stylesheet loses26validity-selector failures: formatting
+selector diagnostics195to169, rawselectors199to173. Newly nonmatching rules also
+stop contributing conservative property/value warnings; those features are not
+implemented. Formattingwork remains192948 and fullgeometry still fails.
+
+See `SELECTOR-VALIDITY.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-13-SEVENTEENTH-UPDATE.md` for dates, hashes,
+source-scope limits and preserved failed attempts. Next prioritize the actual
+pseudo-element/mixed-list and resource gaps, plus a genuinely invalid form example
+and broader website/research coverage. Rendering, credentials/passkey devices,
+SafeJS, realTTY and humanhandoff gates remain open. Overallgoalactive.
+
 ### September 13: real CSS diagnosis, MDN reading and reduced-motion support
 
 A bounded zeroHTTP native diagnosis identifies the denied import as Google Fonts,
