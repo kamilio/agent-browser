@@ -6,6 +6,48 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: rounded CSS reaches painting, hit testing and captured-site replays
+
+**PROGRESS; overall browser goal remains ACTIVE.** Commit `ee3d3c7` implements
+physical corner shorthand/longhands, computed/inline CSSOM, variables/cascade,
+shared normalized curves, actual curved solid/dashed/groove rings, background
+and replaced-content clipping, generated boxes, equal-height LTR slices and
+matching native hit regions. Deferred table/flex/grid decomposition retains the
+metadata. Ordinary descendants are not unconditionally clipped. Clone,
+unequal-height slices and rounded fieldsets with rendered legends remain explicit
+limitations; source requirements are not represented as broader conformance.
+
+The isolated focused gate passes 887/0/0, including 184 new cases and 703 unchanged
+adjacent cases. The full selected native gate passes **21,517/0/2 unchanged skips**
+at 23:16:29.388–23:21:28.820 UTC: 419 selected files, 418 strict roots and 773
+manifest entries; 354 remain unselected. Runtime/source audits and exact retained
+residuals pass. See `ROUNDED-CSS-DOCUMENT.md`.
+
+Three unchanged captured-site checks make zero new HTTP requests:
+- Python: eight original fixtures, 72,064 bytes, one discovered Tutorial click;
+  property issues 7→4, but the click still fails on remaining value/position/
+  overflow and property guards. All other issue counts/formatting metrics remain.
+- Wikipedia: original 119,573-byte portal, property issues 85→65; input geometry
+  remains unsupported. No asset expansion, action or successful live flow.
+- kernel.org: original HTML and two stylesheets only, raw/applicable CSS issues
+  61/25→53/20. Eight raw/five applicable radius occurrences disappear; all other
+  property-attribution objects remain identical. The copied historical checker
+  rejected its stale 57-count expectation; a separate evidence-only checker
+  validates the exact delta, without rerunning the browser. The earlier live
+  request-cap failure remains incomplete and unchanged.
+
+All three observation processes exit zero with unchanged source/runtime/fixture
+and framework inventories, empty private-directory cleanup and independently
+absent process groups. That is not native click/geometry or live-site acceptance.
+Details: `ROUNDED-WEBSITE-REPLAYS-SEPTEMBER-13.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-13-FORTY-SECOND-UPDATE.md`.
+
+Next: remaining website CSS/layout blockers, full original-resource live flows,
+and repeatable varied-site performance. Credential/provider/device/passkey,
+SafeJS, socket and real-TTY gates remain separate. Hardware/benchmark/Astra/
+verified Reddit-Poe research remains incomplete. Historical evidence and
+pre-existing work are preserved; commits are local, with no push.
+
 ### September 13: shared rounded curves and exact kernel CSS attribution
 
 **PROGRESS; overall browser goal remains ACTIVE.** Commit2f1e208 adds immutable
