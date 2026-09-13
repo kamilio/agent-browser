@@ -1,7 +1,10 @@
 import type { BoxStyle } from "./css-box.js";
 import type { PaintStyle } from "./css-paint.js";
 import { AgentBrowserError } from "./errors.js";
+import { layoutNumber } from "./layout-values.js";
 import { paintRasterRect, type RasterImage, type Rgba } from "./raster.js";
+import { type RoundedBox, validateRoundedBox } from "./rounded-box.js";
+import { paintRoundedBorders } from "./rounded-border-raster.js";
 
 export type BorderPaintExclusion = Readonly<{
 	x: number;
@@ -54,6 +57,8 @@ export function paintBorders(
 	charge: (work: number) => void,
 	horizontalOffset = 0,
 	exclusion?: BorderPaintExclusion,
+	rounded?: RoundedBox,
+	paintBounds?: BorderPaintExclusion,
 ) {
 	const widths = [
 		borders.borderTop,
@@ -61,6 +66,39 @@ export function paintBorders(
 		borders.borderBottom,
 		borders.borderLeft,
 	];
+	if (rounded !== undefined || paintBounds !== undefined) {
+		if (typeof charge !== "function")
+			throw new AgentBrowserError("invalid-input", "Invalid border work owner");
+		layoutNumber(originX, true);
+		layoutNumber(originY, true);
+		layoutNumber(width);
+		layoutNumber(height);
+		layoutNumber(originX + width, true);
+		layoutNumber(originY + height, true);
+		for (const borderWidth of widths) layoutNumber(borderWidth);
+		for (const color of [
+			paint["border-top-color"] ?? paint.color,
+			paint["border-right-color"] ?? paint.color,
+			paint["border-bottom-color"] ?? paint.color,
+			paint["border-left-color"] ?? paint.color,
+		])
+			paintRasterRect(image, 0, 0, 0, 0, color);
+	}
+	if (rounded !== undefined) {
+		validateRoundedBox(rounded);
+		if (
+			rounded.x !== originX ||
+			rounded.y !== originY ||
+			rounded.width !== width ||
+			rounded.height !== height
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Border rounded box mismatch",
+			);
+	}
+	validatePaintBounds(exclusion, "exclusion");
+	validatePaintBounds(paintBounds, "paint bounds");
 	const dashLengths = [0, 0, 0, 0];
 	const grooves = [false, false, false, false];
 	const properties = [
@@ -84,6 +122,23 @@ export function paintBorders(
 	const patterned = dashLengths.some((length) => length > 0);
 	if (patterned && !Number.isFinite(horizontalOffset))
 		throw new AgentBrowserError("invalid-input", "Invalid border dash offset");
+	if (
+		rounded?.radii.some(
+			(radius) => radius.horizontal > 0 && radius.vertical > 0,
+		)
+	)
+		return paintRoundedBorders(
+			image,
+			rounded,
+			widths,
+			paint,
+			charge,
+			dashLengths,
+			horizontalOffset,
+			grooves,
+			exclusion,
+			paintBounds,
+		);
 	return rasterBorders(
 		image,
 		originX,
@@ -102,7 +157,27 @@ export function paintBorders(
 		horizontalOffset,
 		grooves.some(Boolean) ? grooves : undefined,
 		exclusion,
+		paintBounds,
 	);
+}
+
+function validatePaintBounds(
+	bounds: BorderPaintExclusion | undefined,
+	name: string,
+) {
+	if (
+		bounds !== undefined &&
+		(!bounds ||
+			!Number.isFinite(bounds.x) ||
+			!Number.isFinite(bounds.y) ||
+			!Number.isFinite(bounds.width) ||
+			!Number.isFinite(bounds.height) ||
+			bounds.width < 0 ||
+			bounds.height < 0 ||
+			!Number.isFinite(bounds.x + bounds.width) ||
+			!Number.isFinite(bounds.y + bounds.height))
+	)
+		throw new AgentBrowserError("invalid-input", `Invalid border ${name}`);
 }
 
 function rasterBorders(
@@ -118,6 +193,7 @@ function rasterBorders(
 	horizontalOffset = 0,
 	grooves?: readonly boolean[],
 	exclusion?: BorderPaintExclusion,
+	paintBounds?: BorderPaintExclusion,
 ) {
 	if (
 		exclusion &&
@@ -163,10 +239,30 @@ function rasterBorders(
 				] as Rgba,
 			}))
 		: undefined;
-	const left = Math.max(0, Math.ceil(x - 0.5));
-	const top = Math.max(0, Math.ceil(y - 0.5));
-	const right = Math.min(image.width, Math.ceil(x + width - 0.5));
-	const bottom = Math.min(image.height, Math.ceil(y + height - 0.5));
+	const left = Math.max(
+		0,
+		Math.ceil(x - 0.5),
+		paintBounds ? Math.ceil(paintBounds.x - 0.5) : 0,
+	);
+	const top = Math.max(
+		0,
+		Math.ceil(y - 0.5),
+		paintBounds ? Math.ceil(paintBounds.y - 0.5) : 0,
+	);
+	const right = Math.min(
+		image.width,
+		Math.ceil(x + width - 0.5),
+		paintBounds
+			? Math.ceil(paintBounds.x + paintBounds.width - 0.5)
+			: image.width,
+	);
+	const bottom = Math.min(
+		image.height,
+		Math.ceil(y + height - 0.5),
+		paintBounds
+			? Math.ceil(paintBounds.y + paintBounds.height - 0.5)
+			: image.height,
+	);
 	const excludedLeft = exclusion
 		? Math.max(left, Math.ceil(exclusion.x - 0.5))
 		: 0;

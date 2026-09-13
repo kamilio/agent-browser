@@ -114,7 +114,10 @@ export const formattingLimits: Readonly<FormattingLimits> = Object.freeze({
 	maxWork: 2_000_000,
 });
 
+import { hasRadiusStyle, type RadiusStyle } from "./css-radius.js";
+
 export interface FormattingNode {
+	radius?: RadiusStyle;
 	id: number;
 	parent: number | null;
 	kind:
@@ -372,6 +375,14 @@ export function buildFormattingTree(
 			parent: null,
 			children: [...children],
 		};
+		if (
+			data.ref &&
+			/^e[1-9][0-9]*$/.test(data.ref) &&
+			["inline", "block", "replaced", "deferred"].includes(data.kind)
+		) {
+			const radius = styles.radius(Number(data.ref.slice(1)));
+			if (hasRadiusStyle(radius)) node.radius = radius;
+		}
 		const transform = data.typography?.["text-transform"] ?? "none";
 		if (transform !== "none") {
 			if (!["uppercase", "lowercase", "capitalize"].includes(transform))
@@ -748,6 +759,7 @@ export function buildFormattingTree(
 				display,
 				visible: style.visible,
 				box: style.box,
+				...(style.radius ? { radius: style.radius } : {}),
 				typography: style.typography,
 				paint: style.paint,
 				generatedContent: metadata,
@@ -2063,8 +2075,14 @@ export function buildFormattingTree(
 		root,
 		viewport: Object.freeze({ ...styles.viewport }),
 		nodes: Object.freeze(
-			nodes.map((node) =>
-				Object.freeze({
+			nodes.map((node) => {
+				if (node.radius) {
+					if (node.collapsedBorderOwner !== undefined || node.collapsedTable)
+						delete node.radius;
+					else if (node.fieldsetLegend !== undefined)
+						issue("rounded-fieldset-legend-not-supported");
+				}
+				return Object.freeze({
 					...node,
 					children: Object.freeze(node.children),
 					...(node.orderModifiedChildren
@@ -2074,8 +2092,8 @@ export function buildFormattingTree(
 								),
 							}
 						: {}),
-				}),
-			),
+				});
+			}),
 		),
 		issues: Object.freeze(issues),
 		metrics: Object.freeze({

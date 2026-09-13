@@ -1,4 +1,10 @@
 import { bitmapFont } from "./bitmap-font.js";
+import {
+	prepareRoundedLayout,
+	translateRoundedBox,
+	type RoundedDecoration,
+} from "./rounded-layout.js";
+import type { RoundedBox } from "./rounded-box.js";
 import { paintBorders } from "./border-raster.js";
 import { rasterizeControl } from "./control-rendering.js";
 import { initialBoxStyle } from "./css-box.js";
@@ -282,6 +288,14 @@ function paintDocumentLayout(
 	charge(clip.width * clip.height);
 	const image = createRaster(clip.width, clip.height, [255, 255, 255, 255]);
 	const nodes = layout.text.horizontal.formatting.nodes;
+	const roundedItems = nodes.some((node) => node.radius)
+		? [...layoutContentItems(layout, charge)]
+		: undefined;
+	const rounded = roundedItems
+		? prepareRoundedLayout(layout, roundedItems, charge)
+		: undefined;
+	const localCurve = (box: RoundedBox | undefined) =>
+		translateRoundedBox(box, -clip.x, -clip.y);
 	let legendBoxes: Map<number, Readonly<DocumentBox>> | undefined;
 	const legendBox = (id: number) => {
 		if (!legendBoxes)
@@ -318,6 +332,7 @@ function paintDocumentLayout(
 		width: number,
 		height: number,
 		color: Rgba,
+		curve?: RoundedBox,
 	) => {
 		if (!color[3] || width === 0 || height === 0) return;
 		layoutNumber(originX, true);
@@ -331,6 +346,7 @@ function paintDocumentLayout(
 		const right = Math.min(image.width, originX + width - clip.x);
 		const bottom = Math.min(image.height, originY + height - clip.y);
 		if (right <= left || bottom <= top) return;
+		if (curve) charge(32 + Math.ceil(bottom - top + 1) * 2);
 		charge(
 			Math.ceil(right - left + 1) * Math.ceil(bottom - top + 1) +
 				Math.ceil(bottom - top + 1),
@@ -342,6 +358,7 @@ function paintDocumentLayout(
 			width,
 			height,
 			color,
+			localCurve(curve),
 		);
 		metrics.paintedBackgrounds++;
 	};
@@ -410,7 +427,10 @@ function paintDocumentLayout(
 		color: canvasColor,
 	});
 	drawBackground(clip.x, clip.y, image.width, image.height, canvasColor);
-	const paintBox = (box: Readonly<DocumentBox>) => {
+	const paintBox = (
+		box: Readonly<DocumentBox>,
+		decoration?: RoundedDecoration,
+	) => {
 		charge();
 		const node = nodes[box.id];
 		if (!node.visible || !node.paint || node.kind === "replaced") return;
@@ -444,6 +464,7 @@ function paintDocumentLayout(
 			const right = Math.min(image.width, horizontal + box.borderBoxWidth);
 			const bottom = Math.min(image.height, vertical + box.borderBoxHeight);
 			if (right > left && bottom > top) {
+				if (decoration) charge(32 + Math.ceil(bottom - top + 1) * 2);
 				charge(Math.ceil(right - left + 1) * Math.ceil(bottom - top + 1) * 4);
 				paintRasterImage(
 					image,
@@ -458,6 +479,7 @@ function paintDocumentLayout(
 					vertical,
 					box.borderBoxWidth,
 					box.borderBoxHeight,
+					localCurve(decoration?.outer),
 				);
 				metrics.paintedControls++;
 			} else metrics.clippedControls++;
@@ -468,6 +490,7 @@ function paintDocumentLayout(
 				box.borderBoxWidth,
 				paintedBorderHeight,
 				paintBackground(node.paint),
+				decoration?.outer,
 			);
 		if (node.collapsedBorderOwner === undefined)
 			metrics.borderPixels += paintBorders(
@@ -482,6 +505,7 @@ function paintDocumentLayout(
 				charge,
 				0,
 				borderExclusion,
+				localCurve(decoration?.outer),
 			);
 		drawOutline(
 			box.ref,
@@ -585,7 +609,12 @@ function paintDocumentLayout(
 		);
 		metrics.paintedGlyphs++;
 	};
-	const paintImage = (id: number, borderX: number, borderY: number) => {
+	const paintImage = (
+		id: number,
+		borderX: number,
+		borderY: number,
+		decoration?: RoundedDecoration,
+	) => {
 		charge();
 		const used = images.get(id);
 		const node = nodes[id];
@@ -622,6 +651,7 @@ function paintDocumentLayout(
 				used.borderBoxWidth,
 				used.borderBoxHeight,
 				paintBackground(node.paint ?? initialPaintStyle),
+				decoration?.outer,
 			);
 		if (node.visible && node.collapsedBorderOwner === undefined)
 			metrics.borderPixels += paintBorders(
@@ -634,6 +664,9 @@ function paintDocumentLayout(
 				node.paint ?? initialPaintStyle,
 				node.box ?? initialBoxStyle,
 				charge,
+				0,
+				undefined,
+				localCurve(decoration?.outer),
 			);
 		if (node.emptyImage) {
 			drawOutline(
@@ -682,8 +715,10 @@ function paintDocumentLayout(
 				charge,
 				matchFontWeight(Number(node.typography?.["font-weight"] ?? "400")),
 				(node.typography?.["font-style"] ?? "normal") as NativeFontStyle,
+				localCurve(decoration?.content),
 			);
 		else {
+			if (decoration) charge(32 + Math.ceil(bottom - top + 1) * 2);
 			charge(Math.ceil(right - left + 1) * Math.ceil(bottom - top + 1) * 4);
 			paintRasterImage(
 				image,
@@ -724,6 +759,7 @@ function paintDocumentLayout(
 				originY,
 				used.contentWidth,
 				used.contentHeight,
+				localCurve(decoration?.content),
 			);
 		}
 		if (node.visible)
@@ -738,7 +774,8 @@ function paintDocumentLayout(
 		else if (node.control) metrics.paintedControls++;
 		else metrics.paintedImages++;
 	};
-	for (const item of layoutContentItems(layout, charge)) {
+	for (const item of roundedItems ?? layoutContentItems(layout, charge)) {
+		const decoration = rounded?.decorations.get(item);
 		if (item.kind === "table-borders") {
 			const segments = item.box.collapsedTableBorders ?? [];
 			charge(segments.length);
@@ -793,12 +830,12 @@ function paintDocumentLayout(
 			continue;
 		}
 		if (item.kind === "box") {
-			paintBox(item.box);
+			paintBox(item.box, decoration);
 			paintEmptyEditableCaret(caret, item.box, image, clip, charge);
 			continue;
 		}
 		if (item.kind === "image") {
-			paintImage(item.box.id, item.box.borderX, item.box.borderY);
+			paintImage(item.box.id, item.box.borderX, item.box.borderY, decoration);
 			continue;
 		}
 		if (item.kind === "glyph") {
@@ -828,7 +865,7 @@ function paintDocumentLayout(
 		const fragment = item.fragment;
 		const node = nodes[fragment.formattingId];
 		if (node.kind === "replaced") {
-			paintImage(node.id, fragment.x, fragment.y);
+			paintImage(node.id, fragment.x, fragment.y, decoration);
 			continue;
 		}
 		if (node.kind !== "inline" || !node.visible || !node.paint) continue;
@@ -856,19 +893,30 @@ function paintDocumentLayout(
 			fragment.width,
 			fragment.height,
 			paintBackground(node.paint),
+			decoration?.outer,
 		);
 		if (fragment.borders && node.collapsedBorderOwner === undefined)
 			metrics.borderPixels += paintBorders(
 				image,
-				fragment.x - clip.x,
-				fragment.y - clip.y,
-				fragment.width,
-				fragment.height,
-				fragment.borders,
+				(decoration?.outer.x ?? fragment.x) - clip.x,
+				(decoration?.outer.y ?? fragment.y) - clip.y,
+				decoration?.outer.width ?? fragment.width,
+				decoration?.outer.height ?? fragment.height,
+				decoration?.borders ?? fragment.borders,
 				node.paint,
 				node.box ?? initialBoxStyle,
 				charge,
-				fragment.borderHorizontalOffset,
+				decoration ? 0 : fragment.borderHorizontalOffset,
+				undefined,
+				localCurve(decoration?.outer),
+				decoration
+					? {
+							x: fragment.x - clip.x,
+							y: fragment.y - clip.y,
+							width: fragment.width,
+							height: fragment.height,
+						}
+					: undefined,
 			);
 		paintInlineDecorationEdges(textDecorations, fragment, image, clip, charge);
 		drawOutline(

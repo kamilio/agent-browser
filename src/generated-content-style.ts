@@ -1,4 +1,10 @@
 import { computeBoxStyle, type BoxStyle } from "./css-box.js";
+import {
+	computeRadiusStyle,
+	hasRadiusStyle,
+	initialRadiusStyle,
+	type RadiusStyle,
+} from "./css-radius.js";
 import { parseCssContent } from "./css-content.js";
 import {
 	blockifyDisplay,
@@ -26,6 +32,7 @@ import { nativeFontXHeight } from "./font-metrics.js";
 import { computeCursor, type CursorStyle } from "./css-interaction.js";
 
 export interface GeneratedContentStyle {
+	readonly radius?: RadiusStyle;
 	readonly cursor?: CursorStyle;
 	readonly content: string;
 	readonly display: string;
@@ -113,7 +120,14 @@ export function computeGeneratedContentStyle(
 	};
 	const paint = computePaintStyle(specified, parent.paint);
 	const cursor = computeCursor(specified.cursor, parent.cursor ?? "auto");
+	const radius = computeRadiusStyle(
+		specified,
+		parent.radius ?? initialRadiusStyle,
+		viewport,
+		fonts,
+	);
 	return Object.freeze({
+		...(hasRadiusStyle(radius) ? { radius } : {}),
 		...(cursor === "auto" ? {} : { cursor }),
 		content,
 		display: outOfFlow ? blockifyDisplay(display) : display,

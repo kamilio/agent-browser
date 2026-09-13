@@ -10,6 +10,7 @@ import {
 	type NativeFontStyle,
 } from "./font-style.js";
 import { layoutNumber } from "./layout-values.js";
+import { validateRoundedBox, type RoundedBox } from "./rounded-box.js";
 import {
 	createRaster,
 	paintBitmapGlyph,
@@ -219,7 +220,9 @@ export function paintImageAlternative(
 	charge: (amount: number) => void,
 	weight: BitmapFontWeight = 400,
 	style: NativeFontStyle = "normal",
+	clip?: RoundedBox,
 ): void {
+	if (clip) validateRoundedBox(clip);
 	if (!image || typeof image !== "object")
 		throw new AgentBrowserError("invalid-input", "Invalid raster image");
 	const target: RasterImage = {
@@ -284,6 +287,14 @@ export function paintImageAlternative(
 				4,
 		);
 	}
+	if (clip)
+		charge(
+			visibleCount *
+				bitmapFont.glyphWidth *
+				bitmapFont.glyphHeight *
+				(Math.ceil(scale) + 1) *
+				2,
+		);
 	let glyphIndex = 0;
 	for (const character of text) {
 		const glyphLeft = originX + glyphIndex * advance;
@@ -325,6 +336,7 @@ export function paintImageAlternative(
 						clippedRight - clippedLeft,
 						1,
 						copiedColor,
+						clip,
 					);
 				}
 			}
@@ -352,6 +364,7 @@ export function paintImageAlternative(
 						clippedRight - clippedLeft,
 						clippedBottom - clippedTop,
 						copiedColor,
+						clip,
 					);
 				}
 			}

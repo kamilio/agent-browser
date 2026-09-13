@@ -1,4 +1,13 @@
 import { imageDimensionHint } from "./replaced-box.js";
+import {
+	computeRadiusStyle,
+	initialRadiusStyle,
+	isCssRadiusProperty,
+	radiusValueUsesFont,
+	type RadiusStyle,
+	type RadiusSpecifiedStyle,
+	type CssRadiusProperty,
+} from "./css-radius.js";
 import { computeCursor, type CursorStyle } from "./css-interaction.js";
 import {
 	computeGeneratedContentStyle,
@@ -356,6 +365,8 @@ export class DocumentStyles {
 	private flowComputed = new Map<number, FlowStyle>();
 	private pointerEventsNone = new Set<number>();
 	private cursorComputed = new Map<number, CursorStyle>();
+	private radiusSpecified = new Map<number, RadiusSpecifiedStyle>();
+	private radiusComputed = new Map<number, RadiusStyle>();
 	private listComputed = new Map<number, ListStyle>();
 	private tableSpecified = new Map<number, TableSpecifiedStyle>();
 	private tableComputed = new Map<number, TableStyle>();
@@ -982,6 +993,66 @@ export class DocumentStyles {
 		return this.boxComputed.get(id) ?? initialBoxStyle;
 	}
 
+	radius(id: number): RadiusStyle {
+		this.get(id);
+		const pending: number[] = [];
+		let current = id;
+		while (!this.radiusComputed.has(current)) {
+			const specified = this.radiusSpecified.get(current);
+			if (!specified) {
+				this.radiusComputed.set(current, initialRadiusStyle);
+				break;
+			}
+			pending.push(current);
+			const parent = this.tree.get(current).parent;
+			if (parent === null || !Object.values(specified).includes("inherit"))
+				break;
+			current = parent;
+		}
+		for (const target of pending.reverse()) {
+			const parent = this.tree.get(target).parent;
+			const specified = this.radiusSpecified.get(target) ?? {};
+			let fonts: BoxFontMetrics | undefined;
+			const values = Object.values(specified);
+			if (values.some((value) => radiusValueUsesFont(value, "em")))
+				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
+			if (values.some((value) => radiusValueUsesFont(value, "ex"))) {
+				const text = this.text(target);
+				fonts = {
+					...fonts,
+					xHeight: nativeFontXHeight(
+						Number.parseFloat(text["font-size"]),
+						Number(text["font-weight"]),
+						text["font-family"],
+					),
+				};
+			}
+			if (values.some((value) => radiusValueUsesFont(value, "rem"))) {
+				const rootElement = this.tree
+					.get(this.tree.root)
+					.children.find((child) => this.tree.get(child).kind === "element");
+				fonts = {
+					...fonts,
+					rootFontSize: Number.parseFloat(
+						this.text(rootElement ?? this.tree.root)["font-size"],
+					),
+				};
+			}
+			this.radiusComputed.set(
+				target,
+				computeRadiusStyle(
+					specified,
+					parent === null
+						? initialRadiusStyle
+						: (this.radiusComputed.get(parent) ?? initialRadiusStyle),
+					this.viewport,
+					fonts,
+				),
+			);
+		}
+		return this.radiusComputed.get(id) ?? initialRadiusStyle;
+	}
+
 	legacyChildAlignment(id: number): "center" | undefined {
 		this.get(id);
 		return this.legacyCentered.has(id) ? "center" : undefined;
@@ -1145,6 +1216,9 @@ export class DocumentStyles {
 			textDecoration: this.textDecoration(id),
 			clip: this.clip(id),
 			cursor: this.cursor(id),
+			...(this.radius(id) === initialRadiusStyle
+				? {}
+				: { radius: this.radius(id) }),
 		};
 		for (const category of Object.values(parent)) {
 			charge(typeof category === "string" ? category.length + 1 : 1);
@@ -1219,6 +1293,8 @@ export class DocumentStyles {
 		this.flowComputed.clear();
 		this.pointerEventsNone.clear();
 		this.cursorComputed.clear();
+		this.radiusSpecified.clear();
+		this.radiusComputed.clear();
 		this.listComputed.clear();
 		this.tableSpecified.clear();
 		this.tableComputed.clear();
@@ -1289,6 +1365,8 @@ export class DocumentStyles {
 		this.flowComputed.clear();
 		this.pointerEventsNone.clear();
 		this.cursorComputed.clear();
+		this.radiusSpecified.clear();
+		this.radiusComputed.clear();
 		this.listComputed.clear();
 		this.tableSpecified.clear();
 		this.tableComputed.clear();
@@ -1306,6 +1384,7 @@ export class DocumentStyles {
 		const issues: Record<string, number> = { ...this.loadIssues };
 		const applicableIssues: Record<string, number> = { ...this.loadIssues };
 		const cursorComputed = new Map<number, CursorStyle>();
+		const radiusSpecified = new Map<number, RadiusSpecifiedStyle>();
 		const rawIssue = (code: string) => {
 			issues[code] = (issues[code] ?? 0) + 1;
 		};
@@ -1865,6 +1944,7 @@ export class DocumentStyles {
 			TextDecorationSpecifiedStyle
 		>();
 		for (const [id, properties] of winners) {
+			const radiusValues: Partial<Record<CssRadiusProperty, string>> = {};
 			const specified: Partial<Record<CssBoxProperty, string>> = {};
 			const flexValues: Partial<Record<CssFlexProperty, string>> = {};
 			const gridValues: Partial<Record<CssGridProperty, string>> = {};
@@ -1884,6 +1964,8 @@ export class DocumentStyles {
 					textDecorationValues[property] = winner.declaration.value;
 				if (isCssBoxProperty(property))
 					specified[property] = winner.declaration.value;
+				if (isCssRadiusProperty(property))
+					radiusValues[property] = winner.declaration.value;
 				if (isCssFlexProperty(property))
 					flexValues[property] = winner.declaration.value;
 				if (isCssGridProperty(property))
@@ -1899,6 +1981,8 @@ export class DocumentStyles {
 			}
 			if (Object.keys(specified).length)
 				boxSpecified.set(id, Object.freeze(specified));
+			if (Object.keys(radiusValues).length)
+				radiusSpecified.set(id, Object.freeze(radiusValues));
 			if (Object.keys(flexValues).length)
 				flexSpecified.set(id, Object.freeze(flexValues));
 			if (Object.keys(gridValues).length)
@@ -2164,6 +2248,7 @@ export class DocumentStyles {
 		this.flowComputed = flowComputed;
 		this.pointerEventsNone = pointerEventsNone;
 		this.cursorComputed = cursorComputed;
+		this.radiusSpecified = radiusSpecified;
 		this.listComputed = listComputed;
 		this.tableSpecified = tableSpecified;
 		this.textSpecified = textSpecified;

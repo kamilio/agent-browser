@@ -11,7 +11,12 @@ export const borderCapabilities = Object.freeze({
 	groove: "half-width-recessed-half-black-white-shades",
 	inline: "ltr-sliced-fragments",
 	clone: false,
-	radius: false,
+	radius: true,
+	radiusProfile: "physical-ellipses-and-equal-height-ltr-slices",
+	radiusLimitations: Object.freeze([
+		"unequal-height-inline-slices",
+		"fieldset-legend",
+	]),
 	image: false,
 });
 export function resolveBorders(style: BoxStyle) {

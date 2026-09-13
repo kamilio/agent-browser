@@ -87,6 +87,13 @@ import {
 	withoutCssComments,
 } from "./css-variables.js";
 
+import {
+	cssRadiusProperties,
+	isCssRadiusProperty,
+	parseRadiusDeclarations,
+	type CssRadiusProperty,
+} from "./css-radius.js";
+
 export type VisibilityProperty = "display" | "visibility";
 import { parseCssContent } from "./css-content.js";
 
@@ -94,6 +101,7 @@ export type CssProperty =
 	| "content"
 	| VisibilityProperty
 	| CssBoxProperty
+	| CssRadiusProperty
 	| CssTextProperty
 	| CssPaintProperty
 	| CssGridProperty
@@ -332,6 +340,8 @@ export function parseCssDeclarations(
 				"content",
 			].includes(property) &&
 			!isBorderShorthand(property) &&
+			property !== "border-radius" &&
+			!isCssRadiusProperty(property) &&
 			!isCssBoxProperty(property) &&
 			!isCssTextProperty(property) &&
 			!isCssPaintProperty(property) &&
@@ -428,6 +438,11 @@ export function parseCssDeclarations(
 					important,
 				})),
 				...cssBoxProperties.map((property) => ({ property, value, important })),
+				...cssRadiusProperties.map((property) => ({
+					property,
+					value,
+					important,
+				})),
 				...cssPaintProperties.map((property) => ({
 					property,
 					value,
@@ -519,6 +534,15 @@ export function parseCssDeclarations(
 		}
 		if (isCssFlexProperty(property) || flexShorthandComponents(property)) {
 			const expanded = parseFlexDeclarations(property, value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((entry) => ({ ...entry, important })),
+				);
+			else issue("unimplemented-or-invalid-css-value");
+			continue;
+		}
+		if (isCssRadiusProperty(property) || property === "border-radius") {
+			const expanded = parseRadiusDeclarations(property, value);
 			if (expanded)
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),

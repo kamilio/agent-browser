@@ -1,4 +1,10 @@
 import { layoutDocument } from "./document-layout.js";
+import {
+	prepareRoundedLayout,
+	roundedOwnerKey,
+	type RoundedDecoration,
+} from "./rounded-layout.js";
+import { roundedBoxContains, type RoundedBox } from "./rounded-box.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { layoutContentItems } from "./layout-paint-order.js";
@@ -47,6 +53,8 @@ export interface HitTarget {
 	generated?: string;
 }
 interface HitRegion extends HitTarget {
+	curves?: readonly RoundedDecoration[];
+	contentCurve?: RoundedBox;
 	fixed: boolean;
 	x: number;
 	y: number;
@@ -181,6 +189,32 @@ export class DocumentHitTesting {
 				targetY >= region.y + region.height
 			)
 				continue;
+			if (region.contentCurve) {
+				this.charge(8);
+				if (!roundedBoxContains(region.contentCurve, targetX, targetY))
+					continue;
+			}
+			if (region.curves) {
+				let insideBounds = false;
+				let insideCurve = false;
+				for (const decoration of region.curves) {
+					this.charge(8);
+					const bounds = decoration.bounds;
+					if (
+						targetX < bounds.x ||
+						targetY < bounds.y ||
+						targetX >= bounds.x + bounds.width ||
+						targetY >= bounds.y + bounds.height
+					)
+						continue;
+					insideBounds = true;
+					if (roundedBoxContains(decoration.outer, targetX, targetY)) {
+						insideCurve = true;
+						break;
+					}
+				}
+				if (insideBounds && !insideCurve) continue;
+			}
 			if (region.svg) {
 				const across = targetX - region.svg.originX;
 				const down = targetY - region.svg.originY;
@@ -202,6 +236,12 @@ export class DocumentHitTesting {
 	private build(): readonly HitRegion[] {
 		const layout = layoutDocument(this.tree);
 		const nodes = layout.text.horizontal.formatting.nodes;
+		const roundedItems = nodes.some((node) => node.radius)
+			? [...layoutContentItems(layout, this.charge)]
+			: undefined;
+		const rounded = roundedItems
+			? prepareRoundedLayout(layout, roundedItems, this.charge)
+			: undefined;
 		const images = new Map(
 			layout.text.horizontal.images.map((image) => [image.id, image]),
 		);
@@ -277,8 +317,13 @@ export class DocumentHitTesting {
 					"Hit-test region limit exceeded",
 				);
 			const generated = nodes[formattingId].generated?.ref;
+			let key = `e${id}`;
+			if (nodes[formattingId].generatedContent)
+				key = roundedOwnerKey(nodes[formattingId]) ?? key;
+			const curves = rounded?.owners.get(key);
 			regions.push(
 				Object.freeze({
+					...(curves ? { curves } : {}),
 					id,
 					fixed: fixed.has(formattingId),
 					x,
@@ -289,7 +334,12 @@ export class DocumentHitTesting {
 				}),
 			);
 		};
-		const appendSvg = (id: number, borderX: number, borderY: number) => {
+		const appendSvg = (
+			id: number,
+			borderX: number,
+			borderY: number,
+			contentCurve?: RoundedBox,
+		) => {
 			const svg = nodes[id].svg;
 			const image = images.get(id);
 			if (svg && image) {
@@ -321,6 +371,7 @@ export class DocumentHitTesting {
 						Object.freeze({
 							id: shape.id,
 							fixed: fixed.has(id),
+							...(contentCurve ? { contentCurve } : {}),
 							x: originX + shape.paintBounds.x,
 							y: originY + shape.paintBounds.y,
 							width: shape.paintBounds.width,
@@ -337,7 +388,9 @@ export class DocumentHitTesting {
 				}
 			}
 		};
-		for (const item of layoutContentItems(layout, this.charge)) {
+		for (const item of roundedItems ??
+			layoutContentItems(layout, this.charge)) {
+			const decoration = rounded?.decorations.get(item);
 			if (item.kind === "table-borders") continue;
 			if (item.kind === "marker") {
 				const marker = item.marker;
@@ -351,7 +404,7 @@ export class DocumentHitTesting {
 					box.borderBoxWidth,
 					box.borderBoxHeight,
 				);
-				appendSvg(box.id, box.borderX, box.borderY);
+				appendSvg(box.id, box.borderX, box.borderY, decoration?.content);
 			} else if (item.kind === "fragment") {
 				const fragment = item.fragment;
 				append(
@@ -361,7 +414,12 @@ export class DocumentHitTesting {
 					fragment.width,
 					fragment.height,
 				);
-				appendSvg(fragment.formattingId, fragment.x, fragment.y);
+				appendSvg(
+					fragment.formattingId,
+					fragment.x,
+					fragment.y,
+					decoration?.content,
+				);
 			} else {
 				const glyph = item.glyph;
 				if (glyph.visible)

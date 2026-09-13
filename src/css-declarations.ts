@@ -123,7 +123,17 @@ const lengths = new Set([
 	...sides.map((side) => `margin-${side}`),
 	...sides.map((side) => `padding-${side}`),
 ]);
+import {
+	cssRadiusProperties,
+	isCssRadiusProperty,
+	parseRadiusDeclarations,
+	serializeRadiusStyle,
+	type RadiusStyle,
+} from "./css-radius.js";
+
 export const inlineProperties = [
+	...cssRadiusProperties,
+	"border-radius",
 	...cssTextDecorationStyleProperties,
 	"text-decoration",
 	...cssOutlineProperties,
@@ -276,6 +286,8 @@ function normalize(name: string, source: string): string | undefined {
 		return parseTextDecorationValue(name, value);
 	if (isCssFlowProperty(name)) return parseFlowValue(name, value);
 	if (isCssFlexProperty(name)) return parseFlexValue(name, value);
+	if (isCssRadiusProperty(name))
+		return parseRadiusDeclarations(name, value)?.[0]?.value;
 	if (name.startsWith("border-")) {
 		if (name.endsWith("-width")) return normalizeBorderWidth(value);
 		if (name.endsWith("-style")) return normalizeBorderStyle(value);
@@ -383,6 +395,10 @@ export function expandDeclaration(
 				}))
 			: [];
 	}
+	if (name === "border-radius" || isCssRadiusProperty(name))
+		return (parseRadiusDeclarations(name, source.toLowerCase()) ?? []).map(
+			(entry) => ({ name: entry.property, value: entry.value, important }),
+		);
 	if (name === "list-style")
 		return (
 			parseListDeclarations(
@@ -514,6 +530,7 @@ export function inlineDeclarationComponents(name: string): readonly string[] {
 	const canonical = canonicalCssProperty(name);
 	if (canonical !== name) return inlineDeclarationComponents(canonical);
 	if (name === "list-style") return cssListProperties;
+	if (name === "border-radius") return cssRadiusProperties;
 	if (name === "outline") return cssOutlineProperties.slice(0, 3);
 	if (name === "text-decoration") return cssTextDecorationProperties;
 	const grid = gridShorthandComponents(name);
@@ -693,6 +710,23 @@ export function propertyValue(
 				),
 			);
 		return values.join(" ");
+	}
+	if (name === "border-radius") {
+		if (
+			found.length !== 4 ||
+			found.some((entry) => entry.important !== found[0]?.important)
+		)
+			return "";
+		const values = cssRadiusProperties.map(
+			(property) => found.find((entry) => entry.name === property)?.value ?? "",
+		);
+		if (values.some((value) => wide.has(value)))
+			return values.every((value) => value === values[0]) ? values[0] : "";
+		return serializeRadiusStyle(
+			Object.fromEntries(
+				cssRadiusProperties.map((property, index) => [property, values[index]]),
+			) as RadiusStyle,
+		);
 	}
 	if (isBorderShorthand(name)) {
 		const expected = parseBorderShorthand(name, "initial")?.length;

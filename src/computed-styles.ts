@@ -1,5 +1,10 @@
 import { serializeSvgFill } from "./svg-paint-value.js";
 import {
+	cssRadiusProperties,
+	isCssRadiusProperty,
+	serializeRadiusStyle,
+} from "./css-radius.js";
+import {
 	initialBackgroundValues,
 	isNeutralBackgroundProperty,
 } from "./css-background.js";
@@ -62,6 +67,7 @@ import { cssVariableLimits } from "./css-variables.js";
 export const computedStyleProperties = Object.freeze(
 	[
 		...cssBoxProperties,
+		...cssRadiusProperties,
 		...cssGridProperties,
 		...cssFlexProperties,
 		...cssFlowProperties,
@@ -141,6 +147,8 @@ export function resolvedStyleValue(
 	}
 	if (name === "pointer-events") return styles.pointerEvents(id);
 	if (name === "cursor") return styles.cursor(id);
+	if (isCssRadiusProperty(name)) return styles.radius(id)[name];
+	if (name === "border-radius") return serializeRadiusStyle(styles.radius(id));
 	if (isCssListProperty(name)) return styles.list(id)[name];
 	if (name === "list-style") return serializeListStyle(styles.list(id));
 	if (isCssTableProperty(name)) return styles.table(id)[name];
@@ -367,6 +375,7 @@ export class ComputedStyles {
 			"gap",
 			"overflow",
 			"text-decoration",
+			"border-radius",
 		]) {
 			const property = {
 				get: () => read(canonicalCssProperty(name)),
