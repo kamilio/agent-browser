@@ -6,6 +6,37 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: real rich-button content and percentage minimums
+
+Rich HTML buttons now retain genuine child formatting, geometry, hit targets
+and raster content in supported block/inline/float/flex/block-grid profiles.
+Source-backed UA defaults and auto fit-content sizing preserve author cascade
+and one outer owner. Buttons do not borrow the fieldset padding-transfer model.
+Used intrinsic border-box minimums now resolve percentage padding against the
+actual containing width; cyclic intrinsic measurement keeps its zero basis.
+
+Two new suites add84 cases. The78-case baseline reproduces59 failures; the
+six-case inherited-minimum reproduction adds4 failures on the earlier rich-button
+implementation. Final focused699/0/0 covers19 suites/19strict roots. Clean broad
+18046/0/2 unchanged exclusions covers350 suites/349strict roots,728manifest
+entries and378 unrun suites. Build/strict/format/source integrity and1247
+unchanged tracked inputs pass. Root dist and unrelated dirty work are preserved.
+
+The sealed identical-byte Wikipedia replay now retains button e522 and its
+actual child e524. Deferred subtrees fall2→1; the logo remains unsupported.
+Traversing genuine children also exposes another vertical-alignment issue.
+Whole-page geometry still fails; no pointer, raster, submission or speed success
+is claimed for this page. No new HTTP occurs in this replay; earlier failed
+and diagnostic evidence keeps its original paths, measurements and hashes.
+
+See BUTTON-CONTENT.md and the tenth September13 website inventory. Absolute/fixed
+buttons, flex/grid items, inline-grid and plain/rich appearance/inset consistency
+remain open. Next work must continue genuine layout and website coverage rather
+than relabel diagnostics as rendering acceptance. Full fieldset/legend, Selenium
+CSS/color/range, original four research topics, varied-site performance,
+credentials/passkey devices, SafeJS, realTTY and human challenge handoff remain
+open. The overall browser goal stays active.
+
 ### September 13: rich-control diagnostics retain the real formatting tree
 
 Unsupported rich HTML buttons now return no software descriptor and become
