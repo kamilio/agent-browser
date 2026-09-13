@@ -6,6 +6,41 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: native CSS nesting and same-capture Python regression
+
+Implemented bounded native CSS nesting with immutable parent contexts, shared
+selector ASTs, exact parent-list specificity, source-ordered declaration runs,
+conditional groups, custom-property data, pseudo-target ownership and mutation
+invalidation. No external browser, stylesheet rewriting or new dependency.
+
+157new cases:41parser/64selector/52layout, including actual border geometry and
+pixels. Initial127cases reproduce124baseline failures. Independent review finds
+unsupported nesting escaping absent parents, namespace attributes incorrectly
+advisory, and unsafe specificity rounding.19review failures now pass; final
+focused951/0 and native19960/0/2unchanged skips. Build/strict/format pass.
+387selected/386strict/752manifest;365unselected remain. Initialfailed attempts,
+firstsuperseded19930gate and all original evidence are preserved.
+
+Finalruntime native-css-nesting-september13-round02/snapshot01/dist; source
+71c2f59fa78432d95c4c2b72eea3f022dc8de68054be9faa5b8a540f72d286f7,compiled
+5d76d645410761cf11c9047bc093eae96260f47282c8de91efe4aee75c62e86c.
+Run16:19:09.545–16:23:44.357UTC,1293source/2124compiled/1285unchangedinputs.
+
+One same-eight-resource Python replay at16:23:52UTC:72064decodedbytes,0HTTP,
+853nodes/revision860, samee375Tutorialclick STILLFAILS, no destinationfallback.
+ApplicableCSS9properties/3values becomes9/2; raw54/9 becomes57/7, unhidden.
+Rules579→584,declarations1071→1075,cascadework93131→93132; formattingunchanged.
+The separateW3C Syntax replay covers3369complete textunits with0HTTP, resolving
+the prior report's missingsection, not claiming fullCSSSyntax3/CSSOMconformance.
+
+OPEN: remainingPythonCSS/alignment/sticky/overflow and successfulactualclick,
+Go fullinteractions, repeatableperformance, originalReddit/Poe researchgap,
+native skips/unselectedtests, CSSunknownfunctions/layer/scope/container.
+Credentials/passkeydevices/TTY/socket/SafeJS requireseparategates; nospoofing,
+challenge solving orpush. Preserve927pre-existingTASKSlines,3manifestadditions,
+parser/style rearrangements and all otherdirtywork. GoalACTIVE.
+SeeCSS-NESTING.md,PYTHON-CSS-NESTING-REPLAY-SEPTEMBER-13.md and inventory28.
+
 ### September 13: exact Python CSS attribution and Effective Go content coverage
 
 One new native Effective Go GET returnsHTTP200,142913decoded/51485encoded bytes
