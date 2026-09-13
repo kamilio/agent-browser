@@ -241,9 +241,9 @@ it("does not alias or case-fold custom names or fabricate camel-case method name
 	expect(names(style)).toEqual(["--word-wrap", "--Word-Wrap"]);
 });
 
-it("keeps canonical computed metadata at 73 and excludes the alias from enumeration", () => {
+it("keeps canonical computed metadata and excludes the alias from enumeration", () => {
 	const { computed } = fixture("overflow-wrap:anywhere");
-	expect(computed.length).toBe(73);
+	expect(computed.length).toBe(computedStyleProperties.length);
 	expect(names(computed)).toEqual(computedStyleProperties);
 	expect(
 		Array.from({ length: computed.length }, (_value, index) => computed[index]),
@@ -350,7 +350,7 @@ it("keeps inline alias access live while detached and computed alias reads empty
 	style.wordWrap = "break-word";
 	tree.append(parent, id);
 	expect(computed.wordWrap).toBe("break-word");
-	expect(computed.length).toBe(73);
+	expect(computed.length).toBe(computedStyleProperties.length);
 });
 
 it.each(["document", "dom"])(

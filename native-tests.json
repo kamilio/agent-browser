@@ -304,6 +304,8 @@
   "src/css-overflow-wrap.test.ts",
   "src/text-grapheme-boundaries.test.ts",
   "src/word-wrap.test.ts",
+  "src/box-sizing-aliases-style.test.ts",
+  "src/box-sizing-aliases-cssom.test.ts",
   "src/word-wrap-cssom.test.ts",
   "src/coordinate-inert.test.ts",
   "src/controls.test.ts",

@@ -11,6 +11,7 @@ import {
 } from "./css-declarations.js";
 import {
 	canonicalCssProperty,
+	cssPropertyAccessors,
 	cssPropertyAliases,
 } from "./css-property-aliases.js";
 import type { DocumentTree } from "./document.js";
@@ -120,12 +121,8 @@ export class InlineStyles {
 			...Object.keys(cssPropertyAliases),
 		]) {
 			const canonical = canonicalCssProperty(name);
-			properties[name] = property(canonical);
-			properties[
-				name.replace(/-([a-z])/g, (_match, letter: string) =>
-					letter.toUpperCase(),
-				)
-			] = property(canonical);
+			for (const accessor of cssPropertyAccessors(name))
+				properties[accessor] = property(canonical);
 		}
 		properties.cssFloat = property("float");
 		const argument = (args: readonly unknown[], minimum: number) => {

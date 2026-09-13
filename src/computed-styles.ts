@@ -40,6 +40,7 @@ import {
 } from "./css-paint.js";
 import {
 	canonicalCssProperty,
+	cssPropertyAccessors,
 	cssPropertyAliases,
 } from "./css-property-aliases.js";
 import { cssTextProperties, isCssTextProperty } from "./css-text.js";
@@ -370,12 +371,8 @@ export class ComputedStyles {
 				get: () => read(canonicalCssProperty(name)),
 				set: readonly,
 			};
-			properties[name] = property;
-			properties[
-				name.replace(/-([a-z])/g, (_match, letter: string) =>
-					letter.toUpperCase(),
-				)
-			] = property;
+			for (const accessor of cssPropertyAccessors(name))
+				properties[accessor] = property;
 		}
 		properties.cssFloat = { get: () => read("float"), set: readonly };
 		const capability = this.factory.createHostObject({
