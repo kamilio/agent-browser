@@ -6,6 +6,33 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: SQLite image and document load; used layout remains blocked
+
+A fresh native16960/0c2323f SQLite initial-load check makes three original
+same-origin GET200s and commits one document titled SQLite Home Page. The same
+12707-byte SVG banner now completes: natural392x176,278244decodedbytes,
+3471819decodeWork. One formatting inspection returns; the single used-layout
+attempt fails at the actual issue-free-profile guard. No used-layout artifact,
+click, screenshot, second layout, script execution, retry or downstream action.
+This is progress past the old image failure, not a whole-website pass.
+
+The retained formatting vector is6CSSvalues/15CSSproperties/6CSSselectors/
+11floatflags/1overflow/2HTMLpresentationhints. Do not infer every float is an
+independent failure; exact declaration-level classification is a separate
+offline task using original sealed HTML/CSS and new owners, not the closed live
+session. No unsupported profile is waived and no page source is rewritten.
+
+See SQLITE-CLIP-LIVE.md and native-sqlite-clip-september13 private receipts.
+The original evidence verifier's incorrect zero-cumulative-counter assumption
+is preserved; separate offline verification01 checks commits1 and historical
+decodeWork against their recorded activity while retaining zero live resources.
+The new seal and Main's read-only verification pass:289receipts/266originals
+unchanged, zero additional HTTP. This verifies evidence, not the website.
+No additional website run is needed for that verifier correction. The existing
+86-host inventory gains no new host; working-website count remains unestablished.
+All broader research, script, credential, passkey-device, SafeJS, TTY and
+challenge/human-handoff gates stay open. Overall browser goal remains active.
+
 ### September 13: native SVG clipping implemented and gated
 
 Native SVG now supports bounded local-fragment clip paths: raw basic/curved
