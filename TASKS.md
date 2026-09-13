@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: kernel.org original assets reach the scoped request limit
+
+**PROGRESS; overall browser goal remains ACTIVE.** A new bounded native live
+kernel.org check at22:16:40.351–22:16:45.071UTC makes10HTTPS GETs, all200,
+65903decoded/49123encoded bytes, minimum502.21ms wire-start spacing. Original
+homepage/two stylesheets/seven images are retained unchanged. The next original
+image is denied locally before an eleventh request; the probe stop latch prevents
+homepage commit. **No About discovery, geometry, formatting, click or navigation
+acceptance.** This is a scoped request-budget failure, not an observed remote block.
+
+Native partial load:857nodes,151CSSrules;42property/15value/2at-rule/2selector issues.
+Seven original images complete; final image is blocked by the count guard. One
+native script query finds none; no execution/credentials/devices/SafeJS/TTY, POST,
+retry, resource skipping or fallback. Do not interpret10HTTP200s as a site pass.
+
+Uses the already audited21,262/0/2cursor runtime; no new native test run. Before/
+after source/runtime/framework checks match. Childexit1, processgroup997129absent,
+owners/queues close, empty private HOME/TMP removed. Parent independently verifies
+4ledgers/3509entries at22:20:48.996UTC. Live guard is JS, not an OS network seal.
+46entryEVIDENCE SHA36e2315d11df8d2da335e5ebd79c464347dd37e639ac81d76528b8402cccae9c;
+SEAL.json separately hashes toa258ce6505d5cba0c6bb1e22f06c75ea0df5e1f033865923720fb89a34166f9c.
+
+Details: KERNEL-NATIVE-SITE-SEPTEMBER-13.md and websiteinventory40. Next: native
+offline CSS attribution on retained original sources, rounded shared paint/hit
+geometry, and a separately scoped complete original-asset/pointer test. Never
+silently widen this exhausted live authorization or omit the missing resource.
+Rounded integration notes identify all background/border/control/image/SVG/fragment
+and hit-region paths; no radius implementation is claimed. Broader research and
+separate acceptance gates remain open. No push; pre-existing edits preserved.
+
 ### September 13: cursor semantics and exact remaining CSS attribution
 
 **PROGRESS; overall browser goal remains ACTIVE.** Native cursor keywords now
