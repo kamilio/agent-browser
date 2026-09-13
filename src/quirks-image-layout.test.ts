@@ -823,7 +823,7 @@ it("paints a bounded viewport of a large alternative without a content-sized scr
 });
 
 it.each([
-	"vertical-align:top",
+	"vertical-align:text-top",
 	"filter:blur(1px)",
 	"display:table-cell",
 	"font-family:unregistered,",
@@ -835,6 +835,20 @@ it.each([
 			`#photo{width:80px;height:15px;${declaration}}`,
 		);
 		expect(() => rasterizeDocument(actual.tree)).toThrow();
+		expect(actual.requests).toEqual([]);
+	},
+);
+
+it.each(["top", "bottom"])(
+	"aligns a retained quirks image alternative to the line %s",
+	async (alignment) => {
+		const actual = await fixture(
+			undefined,
+			`#photo{width:80px;height:15px;vertical-align:${alignment}}`,
+		);
+		expect(buildFormattingTree(actual.tree).issues).toEqual({});
+		expect(actual.rect()).toMatchObject({ x: 0, y: 0, width: 80, height: 15 });
+		expect(rasterizeDocument(actual.tree).metrics.paintedImages).toBe(1);
 		expect(actual.requests).toEqual([]);
 	},
 );

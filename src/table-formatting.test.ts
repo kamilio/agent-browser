@@ -613,11 +613,11 @@ it.each([
 	expect(() => resolveDocumentBlockWidths(tree)).toThrow("issue-free");
 });
 
-it.each(["inline", "inline-block", "inline-flex"])(
-	"does not confuse parsed vertical-align with supported %s top alignment",
-	(display) => {
+it.each(["top", "bottom", "middle"])(
+	"does not confuse parsed vertical-align with supported non-atomic %s alignment",
+	(alignment) => {
 		const { tree } = fixture(
-			`<main><span style="display:${display};vertical-align:top">Value</span></main>`,
+			`<main><span style="display:inline;vertical-align:${alignment}">Value</span></main>`,
 		);
 		const result = buildFormattingTree(tree);
 		expect(result.issues["inline-vertical-align-not-supported"]).toBe(1);

@@ -21,6 +21,7 @@ import {
 } from "./inline-atomic.js";
 import { resolveInlineEdges } from "./inline-box.js";
 import { inlineMiddleBaseline, type InlineMiddleBox } from "./inline-middle.js";
+import { inlineEdgeExtents } from "./inline-edge-alignment.js";
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 import {
 	type TextFontExtent as FontExtent,
@@ -132,6 +133,7 @@ export interface DocumentTextLayout {
 	}>;
 }
 interface Token extends FontExtent {
+	lineEdge?: { side: "top" | "bottom"; height: number };
 	transformed?: true;
 	sourceBreak?: Readonly<TextBreakSource>;
 	formattingId: number;
@@ -353,6 +355,21 @@ function layoutTextContexts(
 					: (horizontal.formatting.nodes[node.parent].typography ?? style);
 			return inlineMiddleBaseline(parent, box);
 		};
+		const lineEdge = (
+			node: FormattingNode,
+			box: Readonly<InlineMiddleBox> | undefined,
+		): Token["lineEdge"] => {
+			const side = node.inlineVerticalAlign;
+			if ((side !== "top" && side !== "bottom") || !box) return;
+			charge();
+			return {
+				side,
+				height: layoutNumber(
+					box.borderBoxHeight + box.marginTop + box.marginBottom,
+					true,
+				),
+			};
+		};
 		let transformations:
 			| ReadonlyMap<number, ReadonlyMap<number, string>>
 			| undefined;
@@ -548,6 +565,8 @@ function layoutTextContexts(
 			let untrimmedWidth = 0;
 			let above = strut.above;
 			let below = strut.below;
+			let topHeight = 0;
+			let bottomHeight = 0;
 			let hasContent = false;
 			const items: { token: Token; advance: number }[] = [];
 			for (let index = 0; index < combined.length; index++) {
@@ -562,11 +581,15 @@ function layoutTextContexts(
 				width = layoutNumber(width + used, true);
 				above = Math.max(above, token.above);
 				below = Math.max(below, token.below);
+				if (token.lineEdge?.side === "top")
+					topHeight = Math.max(topHeight, token.lineEdge.height);
+				if (token.lineEdge?.side === "bottom")
+					bottomHeight = Math.max(bottomHeight, token.lineEdge.height);
 				hasContent ||= contributes(token);
 				items.push({ token, advance: used });
 			}
 			return {
-				height: layoutNumber(above + below),
+				height: inlineEdgeExtents(above, below, topHeight, bottomHeight).height,
 				width: untrimmedWidth,
 				fit: Math.max(0, width - hangingAdvance(items)),
 				hasContent,
@@ -650,14 +673,23 @@ function layoutTextContexts(
 			let hanging = hangingAdvance(entries);
 			let above = Math.max(strut.above, forced?.above ?? strut.above);
 			let below = Math.max(strut.below, forced?.below ?? strut.below);
+			let topHeight = 0;
+			let bottomHeight = 0;
 			if (constraint === "used") {
 				for (const { token } of entries) {
 					charge();
 					above = Math.max(above, token.above);
 					below = Math.max(below, token.below);
+					if (token.lineEdge?.side === "top")
+						topHeight = Math.max(topHeight, token.lineEdge.height);
+					if (token.lineEdge?.side === "bottom")
+						bottomHeight = Math.max(bottomHeight, token.lineEdge.height);
 				}
 			}
-			const height = layoutNumber(above + below);
+			const edges = inlineEdgeExtents(above, below, topHeight, bottomHeight);
+			above = edges.above;
+			below = edges.below;
+			const height = edges.height;
 			const interval = intervalFor(
 				height,
 				(left) => {
@@ -863,14 +895,22 @@ function layoutTextContexts(
 					block.contentWidth,
 				);
 				const x = layoutNumber(block.contentX + offset + range.left, true);
+				const alignedBox = atomic?.block ?? replaced;
 				const y = layoutNumber(
-					baseline -
-						(middleBaseline(node, atomic?.block ?? replaced) ??
-							(atomic?.block
-								? atomicInlineBaseline(atomic.block)
-								: replaced
-									? replaced.borderBoxHeight + replaced.marginBottom
-									: font.ascent + paddingTop + (borders?.borderTop ?? 0))),
+					node.inlineVerticalAlign === "top" && alignedBox
+						? textHeight + alignedBox.marginTop
+						: node.inlineVerticalAlign === "bottom" && alignedBox
+							? textHeight +
+								height -
+								alignedBox.marginBottom -
+								alignedBox.borderBoxHeight
+							: baseline -
+								(middleBaseline(node, atomic?.block ?? replaced) ??
+									(atomic?.block
+										? atomicInlineBaseline(atomic.block)
+										: replaced
+											? replaced.borderBoxHeight + replaced.marginBottom
+											: font.ascent + paddingTop + (borders?.borderTop ?? 0))),
 					true,
 				);
 				const width = layoutNumber(Math.max(0, range.right - range.left));
@@ -1369,7 +1409,7 @@ function layoutTextContexts(
 				if (
 					constraint === "used" &&
 					atomic.block?.unsupportedBaseline &&
-					node.inlineVerticalAlign !== "middle"
+					node.inlineVerticalAlign === undefined
 				)
 					throw new AgentBrowserError(
 						"unsupported",
@@ -1398,6 +1438,7 @@ function layoutTextContexts(
 				const baseline =
 					middleBaseline(node, atomic.block) ??
 					(atomic.block ? atomicInlineBaseline(atomic.block) : 0);
+				const edge = lineEdge(node, atomic.block);
 				if (
 					intrinsicFloats.has(node.id) &&
 					constraint === "max-content" &&
@@ -1424,20 +1465,22 @@ function layoutTextContexts(
 				if (wrap && !gap) emit(opportunity);
 				const token: Token = {
 					...font,
+					...(edge ? { lineEdge: edge } : {}),
 					advance: layoutNumber(
 						atomic.marginLeft + atomic.borderBoxWidth + atomic.marginRight,
 						true,
 					),
-					above: Math.max(
-						frame.above,
-						(atomic.block?.marginTop ?? 0) + baseline,
-					),
-					below: Math.max(
-						frame.below,
-						(atomic.block?.borderBoxHeight ?? 0) -
-							baseline +
-							(atomic.block?.marginBottom ?? 0),
-					),
+					above: edge
+						? frame.above
+						: Math.max(frame.above, (atomic.block?.marginTop ?? 0) + baseline),
+					below: edge
+						? frame.below
+						: Math.max(
+								frame.below,
+								(atomic.block?.borderBoxHeight ?? 0) -
+									baseline +
+									(atomic.block?.marginBottom ?? 0),
+							),
 					formattingId: node.id,
 					ref: node.ref ?? "",
 					offset: 0,
@@ -1468,8 +1511,10 @@ function layoutTextContexts(
 					typography["white-space"] === "normal" ||
 					typography["white-space"] === "pre-line" ||
 					typography["white-space"] === "pre-wrap";
+				const edge = lineEdge(node, replaced);
 				const opportunity: Token = {
 					...font,
+					...(edge ? { above: frame.above, below: frame.below } : {}),
 					advance: 0,
 					formattingId: node.parent ?? container.id,
 					ref: "",
@@ -1487,17 +1532,22 @@ function layoutTextContexts(
 					replaced.borderBoxHeight + replaced.marginBottom;
 				emit({
 					...font,
+					...(edge ? { lineEdge: edge } : {}),
 					advance: layoutNumber(
 						replaced.marginLeft +
 							replaced.borderBoxWidth +
 							replaced.marginRight,
 						true,
 					),
-					above: Math.max(frame.above, replaced.marginTop + baseline),
-					below: Math.max(
-						frame.below,
-						replaced.borderBoxHeight + replaced.marginBottom - baseline,
-					),
+					above: edge
+						? frame.above
+						: Math.max(frame.above, replaced.marginTop + baseline),
+					below: edge
+						? frame.below
+						: Math.max(
+								frame.below,
+								replaced.borderBoxHeight + replaced.marginBottom - baseline,
+							),
 					formattingId: node.id,
 					ref: node.ref ?? "",
 					offset: 0,

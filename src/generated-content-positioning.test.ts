@@ -563,7 +563,7 @@ it.each([
 	["absolute", "clip-path:url(#clip)", "clip"],
 	["absolute", "outline:1px solid red", "outline"],
 	["absolute", "text-decoration:underline", "text-decoration"],
-	["relative", "vertical-align:top", "vertical-align"],
+	["relative", "display:inline;vertical-align:top", "vertical-align"],
 ] as const)(
 	"retains unsupported generated %s styling %s",
 	(position, declaration, feature) => {
@@ -574,6 +574,32 @@ it.each([
 		const issue = `generated-content-${feature}-layout-not-supported`;
 		expect(buildFormattingTree(tree).issues[issue]).toBe(1);
 		expect(() => layoutDocument(tree)).toThrow(issue);
+	},
+);
+
+it.each(["top", "bottom"])(
+	"applies relative offsets after generated %s alignment without shifting flow",
+	(alignment) => {
+		const { tree, id } = fixture(
+			'<main id="target">Z</main><footer id="after"></footer>',
+			`#target{line-height:40px}#target::before{content:"";display:inline-block;position:relative;left:2px;top:3px;vertical-align:${alignment};width:12px;height:20px;margin:4px 0 2px;background:blue}`,
+		);
+		const rendered = rasterizeDocument(tree);
+		const borderY = alignment === "top" ? 7 : 21;
+		expect(rectangle(pseudoBox(rendered.layout, id()))).toEqual({
+			x: 2,
+			y: borderY,
+			width: 12,
+			height: 20,
+		});
+		expect(
+			glyphs(rendered.layout).find((glyph) => glyph.character === "Z"),
+		).toMatchObject({
+			x: 12,
+			y: 16,
+		});
+		expect(elementBox(rendered.layout, tree, id("#after")).borderY).toBe(40);
+		expect(pixel(rendered.image, 3, borderY + 1)).toEqual([0, 0, 255, 255]);
 	},
 );
 

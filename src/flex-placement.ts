@@ -82,7 +82,7 @@ export function collectFlexBaselines(
 			const childNode = formatting.nodes[child];
 			if (
 				!lines?.length ||
-				childNode.inlineVerticalAlign !== "middle" ||
+				childNode.inlineVerticalAlign === undefined ||
 				!(childNode.kind === "replaced" || isAtomicInline(childNode))
 			)
 				unsupported ||= value.unsupported;

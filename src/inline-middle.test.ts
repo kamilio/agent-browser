@@ -451,12 +451,8 @@ it.each([
 
 it.each([
 	["ordinary inline middle", '<span id="target">X</span>', "middle"],
-	[
-		"atomic top",
-		'<span id="target" style="display:inline-block">X</span>',
-		"top",
-	],
-	["image bottom", '<img id="target">', "bottom"],
+	["ordinary inline top", '<span id="target">X</span>', "top"],
+	["ordinary inline bottom", '<span id="target">X</span>', "bottom"],
 ])(
 	"keeps the explicit unsupported guard for %s",
 	(_name, markup, alignment) => {

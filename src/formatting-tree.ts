@@ -140,7 +140,7 @@ export interface FormattingNode {
 	text?: string;
 	box?: BoxStyle;
 	typography?: TextStyle;
-	inlineVerticalAlign?: "middle";
+	inlineVerticalAlign?: "middle" | "top" | "bottom";
 	language?: string;
 	legacyChildAlignment?: "center";
 	legacyAlignmentBoundary?: true;
@@ -288,7 +288,7 @@ export function buildFormattingTree(
 	const collapsedBorderGuards = new Set<string>();
 	const generatedCollapsedTables = new Set<MutableFormattingNode>();
 	const emptyCellGuards = new Set<string>();
-	const middleAlignedRefs = new Set<string>();
+	const alignedRefs = new Map<string, "middle" | "top" | "bottom">();
 	let work = 0;
 	let textCodeUnits = 0;
 	let visitedDomNodes = 0;
@@ -698,17 +698,20 @@ export function buildFormattingTree(
 				break;
 			}
 		}
-		const middleAligned =
+		const verticalAlign = style.table["vertical-align"];
+		const boxAligned =
 			atomic &&
 			!deferredReason &&
 			!itemMode &&
 			!outOfFlow &&
 			flow.float === "none" &&
-			style.table["vertical-align"] === "middle";
+			(verticalAlign === "middle" ||
+				verticalAlign === "top" ||
+				verticalAlign === "bottom");
 		if (
 			(inline || atomic) &&
 			style.table["vertical-align"] !== "baseline" &&
-			!middleAligned
+			!boxAligned
 		) {
 			issue("inline-vertical-align-not-supported");
 			issue("generated-content-vertical-align-layout-not-supported");
@@ -748,7 +751,7 @@ export function buildFormattingTree(
 				typography: style.typography,
 				paint: style.paint,
 				generatedContent: metadata,
-				...(middleAligned ? { inlineVerticalAlign: "middle" as const } : {}),
+				...(boxAligned ? { inlineVerticalAlign: verticalAlign } : {}),
 				...(table ? { table: style.table, contentMode: "table" as const } : {}),
 				...(clearing
 					? { clear: flow.clear as NonNullable<FormattingNode["clear"]> }
@@ -1062,8 +1065,13 @@ export function buildFormattingTree(
 			display.startsWith("inline") &&
 			styles.table(id)["vertical-align"] !== "baseline"
 		) {
-			if (styles.table(id)["vertical-align"] === "middle")
-				middleAlignedRefs.add(ref);
+			const verticalAlign = styles.table(id)["vertical-align"];
+			if (
+				verticalAlign === "middle" ||
+				verticalAlign === "top" ||
+				verticalAlign === "bottom"
+			)
+				alignedRefs.set(ref, verticalAlign);
 			else issue("inline-vertical-align-not-supported");
 		}
 		if (embeddedSvg) {
@@ -2027,21 +2035,21 @@ export function buildFormattingTree(
 			issues["table-empty-cell-paint-not-supported"] = emptyCellGuards.size;
 		else delete issues["table-empty-cell-paint-not-supported"];
 	}
-	if (middleAlignedRefs.size) {
+	if (alignedRefs.size) {
 		const supported = new Set<string>();
 		const unsupported = new Set<string>();
 		for (const node of nodes) {
 			charge();
-			if (!node.ref || !middleAlignedRefs.has(node.ref)) continue;
+			if (!node.ref || !alignedRefs.has(node.ref)) continue;
 			if (
 				node.level === "inline" &&
 				(node.kind === "replaced" || isAtomicInline(node))
 			) {
-				node.inlineVerticalAlign = "middle";
+				node.inlineVerticalAlign = alignedRefs.get(node.ref);
 				supported.add(node.ref);
 			} else unsupported.add(node.ref);
 		}
-		for (const ref of middleAlignedRefs) {
+		for (const ref of alignedRefs.keys()) {
 			charge();
 			if (!supported.has(ref) || unsupported.has(ref))
 				issue("inline-vertical-align-not-supported");

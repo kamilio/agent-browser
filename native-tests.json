@@ -448,6 +448,7 @@
   "src/image-csp-lifecycle.test.ts",
   "src/inflate.test.ts",
   "src/inline-atomic.test.ts",
+  "src/inline-edge-alignment.test.ts",
   "src/inline-middle.test.ts",
   "src/inline-block.test.ts",
   "src/inline-borders.test.ts",
