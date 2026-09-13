@@ -6,6 +6,46 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: line-edge geometry resolves Wikipedia's remaining alignment
+
+**PROGRESS; overall browser goal remains ACTIVE.** Commit03cbad9 implements real
+top/bottom margin-box alignment for retained inline atomic/replaced boxes and
+eligible generated atomics. Shared line extents drive float fitting and final
+fragments; signed margins/leading, baseline independence and real geometry/raster/
+hit/click-point behavior are tested. Non-atomic aligned subtrees remain guarded.
+The minimum-height baseline policy is deterministic, not cross-browser pixel proof.
+
+Native attribution at21:09:43UTC identifies Wikipedia e53 heading/bottom, e234
+search wrapper/top and e522 rich button/top; all are inline-block. One native
+load/query/formatting,1174element inspections,seven generated reads; zero HTTP or
+geometry/actions/raster. Source unchanged; no guessed alignment attribution.
+
+Final native gate **21,169passed/0failed/2unchangedskips**,413selected/412strict/
+767manifest,354unselected;21:22:52.490–21:27:49.463UTC. Build/strict/scopedformat/
+source checks pass,1310source/2132compiled/1300unchangedtracked inputs.72newcases;
+identical18file focused925/62/0→987/0/0. Initial fixture/obsolete-guard failures
+and the failed21166/1/2full round remain preserved; no test exclusions conceal them.
+
+Wikipedia unchanged119573-byte replay at21:28:05UTC: alignmentguards3→0 and total
+formattingissues202→199;CSS132unchanged,work20971→20974. Same2708nodes/2250boxes,
+input/button/fieldset identities and generated footer styles. **Fullgeometry still
+unsupported.** One geometry request, zero HTTP/actions/raster; not a search pass.
+Remaining CSS/value/selector/media, overflow, element/direction and coordination
+diagnostics are retained. Other websites are not rerun in this checkpoint.
+
+Native20receiptledger1888d06212c2bfb4e3169916ed8dee937bfd0a6a1b471f00276042272d4a995f.
+Attribution31entryledger878d4f8617f19c163d4a6ae8eb29a3632c6f162c84a4a7148906cdfecb34ad07.
+Replay31entryledgerf87a23153b08b808bb94c6e01fd844799f297ec72b5a868d8650b423f6bd82dc.
+Source/runtime/history inventories and actual closure verified separately. The
+single0.30s/121064KiB replay is not a benchmark or speedup. No push; old edits stay.
+
+Details: INLINE-EDGE-ALIGNMENT.md, WIKIPEDIA-INLINE-EDGE-REPLAY-SEPTEMBER-13.md,
+websiteinventory38. Next: native attribution of actual remaining CSS/element/
+direction/overflow requirements, then genuine implementation and original-asset
+pointer acceptance. Python/Internet flows, varied live sites, repeatable performance,
+four research topics and credential/provider/passkey-device/SafeJS/socket/TTY gates
+remain open. No source/style removal, fake geometry or challenge bypass.
+
 ### September 13: real inline-middle geometry across Python and Wikipedia
 
 **PROGRESS; overall browser goal remains ACTIVE.** Commite5bcc24 implements
