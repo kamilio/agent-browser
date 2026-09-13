@@ -616,8 +616,9 @@ it("owns metadata snapshots independently of later DOM mutations and extractions
 
 it("does not extend reader attribute retention to non-table elements or executable subtrees", () => {
 	const source =
-		'<div id="discarded" headers="discarded" span="2" scope="row" abbr="discarded" data-source="discarded" onclick="discarded" style="color:red"><p colspan="2" rowspan="3">Public</p><a href="/next" title="Next">Link</a><img alt="Alternative" src="/discarded"><ol start="2"><li>Item</li></ol></div><script>omitted-script</script><style>omitted-css</style><template><table id="omitted-table"></table></template>';
+		'<div id="retained-root" headers="discarded" span="2" scope="row" abbr="discarded" data-source="discarded" onclick="discarded" style="color:red"><p colspan="2" rowspan="3">Public</p><a href="/next" title="Next">Link</a><img alt="Alternative" src="/discarded"><ol start="2"><li>Item</li></ol></div><script>omitted-script</script><style>omitted-css</style><template><table id="omitted-table"></table></template>';
 	const sanitized = sanitizeResearchHtml(source);
+	expect(sanitized.html).toContain('id="retained-root"');
 	for (const marker of [
 		"discarded",
 		"omitted-script",
@@ -626,8 +627,10 @@ it("does not extend reader attribute retention to non-table elements or executab
 	])
 		expect(sanitized.html).not.toContain(marker);
 	const tree = load(source, "reader");
-	for (const selector of ["div", "p"])
-		expect(tree.get(element(tree, selector)).attributes).toEqual({});
+	expect(tree.get(element(tree, "div")).attributes).toEqual({
+		id: "retained-root",
+	});
+	expect(tree.get(element(tree, "p")).attributes).toEqual({});
 	expect(tree.get(element(tree, "a")).attributes).toEqual({
 		href: "/next",
 		title: "Next",
