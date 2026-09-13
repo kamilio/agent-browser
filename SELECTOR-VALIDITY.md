@@ -32,7 +32,9 @@ never swallowed by aggregation.
 Native control-state selectors in detached trees retain their existing explicit
 unsupported result. Form-associated custom elements, shadow-tree integration,
 `:user-valid`, `:user-invalid`, full pattern validation and UI-only invalid input
-buffers are not implemented by this change. Pseudo-elements remain unsupported.
+buffers are not implemented by this change. Subsequently added native before/after
+pseudo-element support is documented in `GENERATED-CONTENT.md`; other
+pseudo-element kinds remain unsupported.
 
 ## Bounded operation
 

@@ -84,7 +84,7 @@ it.each([
 	["div, span", false],
 	["> div", false],
 	["div >", false],
-	["::before", false],
+	["::before", true],
 	["::-webkit-unknown-feature", false],
 	[":is(div, :unknown-feature)", false],
 	[":where(.known, :unknown-feature)", false],

@@ -68,7 +68,7 @@ export function atomicInlineMetrics(
 				"Invalid or duplicate atomic inline metrics",
 			);
 		const node = formatting.nodes[value.id];
-		if (!isAtomicInline(node) || !node?.ref)
+		if (!isAtomicInline(node) || (!node?.ref && !node?.generatedContent))
 			throw new AgentBrowserError(
 				"unsupported",
 				"Atomic inline metrics require a retained atomic container",

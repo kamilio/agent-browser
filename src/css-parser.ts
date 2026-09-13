@@ -84,7 +84,10 @@ import {
 } from "./css-variables.js";
 
 export type VisibilityProperty = "display" | "visibility";
+import { parseCssContent } from "./css-content.js";
+
 export type CssProperty =
+	| "content"
 	| VisibilityProperty
 	| CssBoxProperty
 	| CssTextProperty
@@ -299,9 +302,12 @@ export function parseCssDeclarations(
 				? new CssScanner(valueSource, issue).read("!", true).text
 				: valueSource,
 		);
-		let value = trimCssWhitespace(withoutCssComments(raw.value));
+		let value = trimCssWhitespace(
+			property === "content" ? raw.value : withoutCssComments(raw.value),
+		);
 		if (
 			!grid &&
+			property !== "content" &&
 			property !== "font-family" &&
 			property !== "fill" &&
 			property !== "stroke" &&
@@ -318,6 +324,7 @@ export function parseCssDeclarations(
 				"margin",
 				"padding",
 				"background",
+				"content",
 			].includes(property) &&
 			!isBorderShorthand(property) &&
 			!isCssBoxProperty(property) &&
@@ -372,6 +379,7 @@ export function parseCssDeclarations(
 		}
 		if (property === "all" && globals.has(value)) {
 			declarations.push(
+				{ property: "content", value, important },
 				...cssTextDecorationProperties.map((property) => ({
 					property,
 					value,
@@ -426,6 +434,18 @@ export function parseCssDeclarations(
 					important,
 				})),
 			);
+			continue;
+		}
+		if (property === "content") {
+			const keyword = trimCssWhitespace(
+				withoutCssComments(value),
+			).toLowerCase();
+			const parsed = globals.has(keyword)
+				? keyword
+				: parseCssContent(value)?.value;
+			if (parsed !== undefined)
+				declarations.push({ property, value: parsed, important });
+			else issue("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (

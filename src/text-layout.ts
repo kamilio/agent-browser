@@ -1498,8 +1498,8 @@ function layoutTextContexts(
 				hardBreak(font, node);
 				continue;
 			}
-			const textReference = node.ref ?? node.generated?.ref;
-			if (node.kind !== "text" || !textReference)
+			const textReference = node.ref ?? node.generated?.ref ?? "";
+			if (node.kind !== "text" || (!textReference && !node.generatedContent))
 				throw new AgentBrowserError(
 					"unsupported",
 					"Unsupported text formatting content",

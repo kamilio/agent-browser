@@ -1,5 +1,11 @@
 import { imageDimensionHint } from "./replaced-box.js";
 import {
+	computeGeneratedContentStyle,
+	generatedContentValue,
+	type GeneratedContentStyle,
+} from "./generated-content-style.js";
+import { parseCssContent } from "./css-content.js";
+import {
 	cellPaddingLength,
 	cellPaddingOwner,
 	supportsCellPaddingHint,
@@ -169,6 +175,7 @@ import {
 import {
 	DocumentQueries,
 	type SelectorSpecificity,
+	type GeneratedPseudoElement,
 	compareSpecificity,
 } from "./selectors.js";
 
@@ -368,6 +375,16 @@ export class DocumentStyles {
 		ReadonlyMap<string, string | null>
 	>();
 	private revision = -1;
+	private pseudoSpecified = {
+		before: new Map<number, Readonly<Record<string, string>>>(),
+		after: new Map<number, Readonly<Record<string, string>>>(),
+	};
+	private pseudoComputed = {
+		before: new Map<number, GeneratedContentStyle | undefined>(),
+		after: new Map<number, GeneratedContentStyle | undefined>(),
+	};
+	private elementContent = new Map<number, string>();
+	private pseudoWork = 0;
 	private cascadeBuilds = 0;
 	private closed = false;
 	private info = {
@@ -396,7 +413,7 @@ export class DocumentStyles {
 				throw new AgentBrowserError("invalid-input", "Invalid style limit");
 		this.queries = new DocumentQueries(tree, {
 			maxIndexedNodes: tree.limits.maxNodes,
-			maxResults: tree.limits.maxNodes,
+			maxResults: tree.limits.maxNodes * 3,
 			maxWork: this.limits.maxWork,
 		});
 		this.unregister = tree.onClose(() => this.close());
@@ -1028,11 +1045,81 @@ export class DocumentStyles {
 			.sort();
 	}
 
+	generatedContent(
+		id: number,
+		name: GeneratedPseudoElement,
+	): GeneratedContentStyle | undefined {
+		const visibility = this.get(id);
+		if (name !== "before" && name !== "after")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid generated pseudo-element",
+			);
+		const cache = this.pseudoComputed[name];
+		if (cache.has(id)) return cache.get(id);
+		const specified = this.pseudoSpecified[name].get(id);
+		if (!specified) return;
+		const charge = (amount: number) => {
+			this.pseudoWork += amount;
+			if (this.info.work + this.pseudoWork > this.limits.maxWork)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"CSS generated content work limit exceeded",
+				);
+		};
+		const inherited = this.elementContent.get(id) ?? "normal";
+		const contentValue = generatedContentValue(specified.content, inherited);
+		charge(contentValue.length * 2 + 1);
+		if (!visibility.displayed || parseCssContent(contentValue)?.text == null) {
+			cache.set(id, undefined);
+			return;
+		}
+		for (const [property, value] of Object.entries(specified))
+			charge(property.length + value.length + 1);
+		const rootChildren = this.tree.get(this.tree.root).children;
+		charge(rootChildren.length + 1);
+		const root =
+			rootChildren.find((child) => this.tree.get(child).kind === "element") ??
+			this.tree.root;
+		const parent = {
+			content: inherited,
+			display: visibility.display,
+			displayed: visibility.displayed,
+			visibility: visibility.visibility,
+			box: this.box(id),
+			typography: this.text(id),
+			paint: this.paint(id),
+			flow: this.flow(id),
+			flex: this.flex(id),
+			grid: this.grid(id),
+			list: this.list(id),
+			table: this.table(id),
+			outline: this.outline(id),
+			textDecoration: this.textDecoration(id),
+			clip: this.clip(id),
+		};
+		for (const category of Object.values(parent)) {
+			charge(typeof category === "string" ? category.length + 1 : 1);
+			if (typeof category === "object")
+				for (const value of Object.values(category))
+					charge(typeof value === "string" ? value.length + 1 : 1);
+		}
+		const result = computeGeneratedContentStyle(
+			specified,
+			parent,
+			this.viewport,
+			Number.parseFloat(this.text(root)["font-size"]),
+		);
+		cache.set(id, result);
+		return result;
+	}
+
 	metrics() {
 		this.refresh();
 		return Object.freeze({
 			partial: true,
 			cascadeBuilds: this.cascadeBuilds,
+			generatedContentWork: this.pseudoWork,
 			properties: Object.freeze(["display", "visibility"]),
 			boxProperties: cssBoxProperties,
 			flexProperties: cssFlexProperties,
@@ -1097,10 +1184,19 @@ export class DocumentStyles {
 		this.paintComputed.clear();
 		this.clipComputed.clear();
 		this.customComputed.clear();
+		this.clearGeneratedContent();
 		this.queries.close();
 		this.unregister();
 	}
 
+	private clearGeneratedContent() {
+		this.pseudoSpecified.before.clear();
+		this.pseudoSpecified.after.clear();
+		this.pseudoComputed.before.clear();
+		this.pseudoComputed.after.clear();
+		this.elementContent.clear();
+		this.pseudoWork = 0;
+	}
 	private ensureOpen() {
 		if (this.closed)
 			throw new AgentBrowserError("closed", "Document styles are closed");
@@ -1133,6 +1229,7 @@ export class DocumentStyles {
 			}
 		}
 		this.revision = -1;
+		this.clearGeneratedContent();
 		this.computed.clear();
 		this.boxSpecified.clear();
 		this.boxComputed.clear();
@@ -1192,6 +1289,10 @@ export class DocumentStyles {
 			return text;
 		};
 		const winners = new Map<number, Map<CssProperty, Winner>>();
+		const pseudoWinners = {
+			before: new Map<number, Map<CssProperty, Winner>>(),
+			after: new Map<number, Map<CssProperty, Winner>>(),
+		};
 		const applicable = (
 			diagnostics: Readonly<Record<string, number>> | undefined,
 		) => {
@@ -1268,11 +1369,12 @@ export class DocumentStyles {
 			specificity: SelectorSpecificity,
 			inline: boolean,
 			baseOrder: number,
+			target = winners,
 		) => {
-			let properties = winners.get(id);
+			let properties = target.get(id);
 			if (!properties) {
 				properties = new Map();
-				winners.set(id, properties);
+				target.set(id, properties);
 			}
 			for (let index = 0; index < declarations.length; index++) {
 				const declaration = declarations[index];
@@ -1471,9 +1573,9 @@ export class DocumentStyles {
 						"resource-limit",
 						"CSS cascade work limit exceeded",
 					);
-				let matches: ReadonlyMap<number, SelectorSpecificity>;
+				let matches: ReturnType<DocumentQueries["matchingStyleSpecificities"]>;
 				try {
-					matches = this.queries.matchingSpecificities(
+					matches = this.queries.matchingStyleSpecificities(
 						rule.selector,
 						this.limits.maxWork - work,
 					);
@@ -1488,11 +1590,21 @@ export class DocumentStyles {
 					continue;
 				}
 				charge(this.queries.metrics().lastWork);
-				if (matches.size) applicable(rule.issues);
+				if (matches.elements.size || matches.before.size || matches.after.size)
+					applicable(rule.issues);
 				if (!media.matches) continue;
-				charge(matches.size * rule.declarations.length);
-				for (const [id, specificity] of matches)
-					apply(id, rule.declarations, specificity, false, baseOrder);
+				for (const name of ["elements", "before", "after"] as const) {
+					charge(matches[name].size * rule.declarations.length);
+					for (const [id, specificity] of matches[name])
+						apply(
+							id,
+							rule.declarations,
+							specificity,
+							false,
+							baseOrder,
+							name === "elements" ? winners : pseudoWinners[name],
+						);
+				}
 			}
 		}
 		for (const node of nodes) {
@@ -1541,6 +1653,7 @@ export class DocumentStyles {
 			| undefined;
 		let retainedBindings = 0;
 		let retainedCodeUnits = 0;
+		const elementContent = new Map<number, string>();
 		for (const node of nodes) {
 			const properties = winners.get(node.id);
 			const specified = new Map<string, string>();
@@ -1609,6 +1722,82 @@ export class DocumentStyles {
 					value: resolved?.value ?? "unset",
 					important: original.important,
 				};
+			}
+			const content = generatedContentValue(
+				properties?.get("content")?.declaration.value,
+				node.parent === null
+					? "normal"
+					: (elementContent.get(node.parent) ?? "normal"),
+			);
+			if (content !== "normal") {
+				charge(content.length + 1);
+				elementContent.set(node.id, content);
+				if (node.kind === "element" && content !== "none")
+					issue("unimplemented-element-content");
+			}
+		}
+		const pseudoSpecified = {
+			before: new Map<number, Readonly<Record<string, string>>>(),
+			after: new Map<number, Readonly<Record<string, string>>>(),
+		};
+		for (const target of ["before", "after"] as const) {
+			for (const [id, properties] of pseudoWinners[target]) {
+				const custom = new Map<string, string>();
+				for (const [name, winner] of properties) {
+					charge(1);
+					if (name.startsWith("--")) custom.set(name, winner.declaration.value);
+				}
+				const parent = customComputed.get(id) ?? emptyCustom;
+				const values = resolveCustomProperties(custom, parent, charge);
+				if (values !== parent) {
+					retainedBindings += values.size;
+					for (const [name, value] of values)
+						retainedCodeUnits += name.length + (value?.length ?? 0);
+					if (
+						retainedBindings > cssVariableLimits.maxRetainedBindings ||
+						retainedCodeUnits > cssVariableLimits.maxRetainedCodeUnits
+					)
+						throw new AgentBrowserError(
+							"resource-limit",
+							"CSS variable retention limit exceeded",
+						);
+				}
+				const specified: Record<string, string> = Object.create(null);
+				for (const [name, winner] of properties) {
+					if (name.startsWith("--")) continue;
+					const original = winner.declaration;
+					let value = original.value;
+					if (original.substitution) {
+						const parsed = parseVariableValue(value, charge);
+						const substituted = parsed
+							? substituteVariables(
+									parsed,
+									(key) => values.get(key) ?? null,
+									charge,
+								)
+							: null;
+						value =
+							substituted === null
+								? "unset"
+								: (parseCssDeclarations(
+										`${original.substitution}:${substituted}`,
+										{
+											rules: 0,
+											declarations: 0,
+											maxRules: 1,
+											maxDeclarations: 1,
+										},
+										() => {},
+									).find(
+										(declaration) =>
+											declaration.property === name &&
+											!declaration.substitution,
+									)?.value ?? "unset");
+					}
+					charge(name.length + value.length + 1);
+					specified[name] = value;
+				}
+				pseudoSpecified[target].set(id, Object.freeze(specified));
 			}
 		}
 		const boxSpecified = new Map<number, BoxSpecifiedStyle>();
@@ -1922,6 +2111,8 @@ export class DocumentStyles {
 		this.outlineSpecified = outlineSpecified;
 		this.textDecorationSpecified = textDecorationSpecified;
 		this.customComputed = customComputed;
+		this.elementContent = elementContent;
+		this.pseudoSpecified = pseudoSpecified;
 		this.info = {
 			rules: budget.rules,
 			declarations: budget.declarations,

@@ -332,6 +332,7 @@ it("scans CSS strings/comments/blocks without turning embedded punctuation into 
 	);
 	expect(rules).toHaveLength(2);
 	expect(rules[0].declarations).toEqual([
+		{ property: "content", value: '"}; display:none"', important: false },
 		{ property: "display", value: "block", important: false },
 		{ property: "visibility", value: "hidden", important: true },
 	]);
@@ -381,7 +382,7 @@ it("applies a late branch in a 120-branch stylesheet selector list without weake
 	}
 });
 
-it.each([":unsupported-native-pseudo", "::before"])(
+it.each([":unsupported-native-pseudo", "::marker"])(
 	"ignores an entire over-aggregate stylesheet list with unsupported suffix %s",
 	(suffix) => {
 		const selector = Array.from(

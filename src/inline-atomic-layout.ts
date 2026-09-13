@@ -85,7 +85,7 @@ export function layoutFormattingAtomicInline(
 		return maxWork - work;
 	};
 	const node = formatting.nodes[frame.id];
-	if (!node?.ref || !isAtomicInline(node))
+	if ((!node?.ref && !node?.generatedContent) || !isAtomicInline(node))
 		throw new AgentBrowserError(
 			"unsupported",
 			"Atomic sizing requires a retained inline container",

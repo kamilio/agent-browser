@@ -33,8 +33,10 @@ export const selectorSyntaxLimits = Object.freeze({
 type Relation = " " | ">" | "+" | "~";
 type SelectorComponentScope = "list" | "branch";
 type AttributeOperator = "=" | "~=" | "|=" | "^=" | "$=" | "*=";
+export type GeneratedPseudoElement = "before" | "after";
 type SimpleSelector =
 	| { kind: "tag" | "id" | "class"; value: string }
+	| { kind: "pseudo-element"; name: GeneratedPseudoElement }
 	| {
 			kind: "attribute";
 			name: string;
@@ -97,6 +99,7 @@ function selectorSpecificity(selector: Selector): SelectorSpecificity {
 			let value: SelectorSpecificity = [0, 0, 0];
 			if (test.kind === "id") value = [1, 0, 0];
 			else if (test.kind === "tag") value = [0, 0, test.value === "*" ? 0 : 1];
+			else if (test.kind === "pseudo-element") value = [0, 0, 1];
 			else if (test.kind === "logical")
 				value =
 					test.name === "where"
@@ -272,6 +275,12 @@ class SelectorParser {
 				const spaced = this.space();
 				const next = this.source[this.position];
 				if (!next || next === "," || next === ")") break;
+				if (
+					parts[parts.length - 1].tests.some(
+						(test) => test.kind === "pseudo-element",
+					)
+				)
+					unsupported("selectors after pseudo-elements");
 				const explicit = this.combinator();
 				if (!explicit && !spaced) syntax("expected a combinator");
 				this.space();
@@ -289,6 +298,7 @@ class SelectorParser {
 	}
 	private compound(depth: number, insideHas: boolean) {
 		const tests: SimpleSelector[] = [];
+		let pseudoElement = false;
 		if (this.source[this.position] === "*") {
 			this.position++;
 			tests.push({ kind: "tag", value: "*" });
@@ -300,6 +310,8 @@ class SelectorParser {
 		while (true) {
 			this.comments();
 			const next = this.source[this.position];
+			if (["#", ".", "[", ":"].includes(next) && pseudoElement)
+				unsupported("selectors after pseudo-elements");
 			if (next === "#" || next === ".") {
 				this.position++;
 				tests.push({
@@ -307,8 +319,11 @@ class SelectorParser {
 					value: this.identifier(),
 				});
 			} else if (next === "[") tests.push(this.attribute());
-			else if (next === ":") tests.push(this.pseudo(depth, insideHas));
-			else break;
+			else if (next === ":") {
+				const test = this.pseudo(depth, insideHas);
+				tests.push(test);
+				pseudoElement = test.kind === "pseudo-element";
+			} else break;
 			this.component();
 		}
 		if (this.source[this.position] === "|")
@@ -357,8 +372,18 @@ class SelectorParser {
 	}
 	private pseudo(depth: number, insideHas: boolean): SimpleSelector {
 		this.position++;
-		if (this.source[this.position] === ":") unsupported("pseudo-elements");
+		const doubleColon = this.source[this.position] === ":";
+		if (doubleColon) this.position++;
 		const name = asciiLower(this.identifier());
+		if (doubleColon || name === "before" || name === "after") {
+			if (
+				(name !== "before" && name !== "after") ||
+				this.source[this.position] === "("
+			)
+				unsupported("pseudo-elements");
+			if (depth > 0 || insideHas) unsupported("nested pseudo-elements");
+			return { kind: "pseudo-element", name };
+		}
 		if (this.source[this.position] !== "(") {
 			if (!simplePseudos.has(name)) unsupported(`:${name}`);
 			if (insideHas && name === "scope") unsupported(":scope inside :has");
@@ -650,6 +675,7 @@ interface MatchContext {
 	workLimit: number;
 	memoEntries: number;
 	validity?: SelectorValidity;
+	pseudoElement?: GeneratedPseudoElement;
 	nth: Map<
 		SimpleSelector,
 		Map<string, { positions: Map<number, number>; total: number }>
@@ -698,6 +724,30 @@ export class DocumentQueries {
 		selector: string,
 		maxWork = this.limits.maxWork,
 	): ReadonlyMap<number, SelectorSpecificity> {
+		return this.styleSpecificities(selector, maxWork).elements;
+	}
+	matchingPseudoSpecificities(
+		selector: string,
+		pseudoElement: GeneratedPseudoElement,
+		maxWork = this.limits.maxWork,
+	): ReadonlyMap<number, SelectorSpecificity> {
+		if (pseudoElement !== "before" && pseudoElement !== "after")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid generated pseudo-element",
+			);
+		return this.styleSpecificities(selector, maxWork, pseudoElement)[
+			pseudoElement
+		];
+	}
+	matchingStyleSpecificities(selector: string, maxWork = this.limits.maxWork) {
+		return this.styleSpecificities(selector, maxWork, "all");
+	}
+	private styleSpecificities(
+		selector: string,
+		maxWork: number,
+		pseudoElement?: GeneratedPseudoElement | "all",
+	) {
 		if (
 			!Number.isSafeInteger(maxWork) ||
 			maxWork < 1 ||
@@ -712,10 +762,28 @@ export class DocumentQueries {
 			this.tree.root,
 			(compiled, context) => {
 				const scope = context.index.documentElement ?? this.tree.root;
-				const selectors = this.possibleSelectors(compiled.selectors, context);
+				const branches = compiled.selectors.filter((branch) => {
+					const tests = branch[branch.length - 1].tests;
+					this.tick(context, tests.length + 1);
+					const target = tests.find((test) => test.kind === "pseudo-element");
+					return pseudoElement === "all" || target?.name === pseudoElement;
+				});
+				const selectors = this.possibleSelectors(branches, context);
 				const weights = selectors.map(selectorSpecificity);
-				const result = new Map<number, SelectorSpecificity>();
+				const results = {
+					elements: new Map<number, SelectorSpecificity>(),
+					before: new Map<number, SelectorSpecificity>(),
+					after: new Map<number, SelectorSpecificity>(),
+				};
+				let resultCount = 0;
 				for (let index = 0; index < selectors.length; index++) {
+					const branch = selectors[index];
+					const tests = branch[branch.length - 1].tests;
+					this.tick(context, tests.length);
+					context.pseudoElement = tests.find(
+						(test) => test.kind === "pseudo-element",
+					)?.name;
+					const result = results[context.pseudoElement ?? "elements"];
 					for (const candidate of this.selectorCandidates(
 						selectors[index],
 						context,
@@ -734,28 +802,33 @@ export class DocumentQueries {
 						const previous = result.get(candidate.node.id);
 						if (previous && compareSpecificity(weights[index], previous) <= 0)
 							continue;
-						if (!previous && result.size >= this.limits.maxResults)
+						if (!previous && resultCount >= this.limits.maxResults)
 							throw new AgentBrowserError(
 								"resource-limit",
 								"Query result limit exceeded",
 							);
+						if (!previous) resultCount++;
 						result.set(
 							candidate.node.id,
 							Object.freeze([...weights[index]]) as SelectorSpecificity,
 						);
 					}
 				}
-				if (selectors.length < 2 || result.size < 2) return result;
-				this.tick(context, result.size);
-				return new Map(
-					[...result].sort(([left], [right]) => {
-						this.tick(context);
-						return (
-							context.index.nodes.get(left)!.start -
-							context.index.nodes.get(right)!.start
-						);
-					}),
-				);
+				for (const target of ["elements", "before", "after"] as const) {
+					const result = results[target];
+					if (selectors.length < 2 || result.size < 2) continue;
+					this.tick(context, result.size);
+					results[target] = new Map(
+						[...result].sort(([left], [right]) => {
+							this.tick(context);
+							return (
+								context.index.nodes.get(left)!.start -
+								context.index.nodes.get(right)!.start
+							);
+						}),
+					);
+				}
+				return Object.freeze(results);
 			},
 			maxWork,
 			"branch",
@@ -1323,6 +1396,8 @@ export class DocumentQueries {
 	): boolean {
 		this.tick(context);
 		const node = info.node;
+		if (test.kind === "pseudo-element")
+			return context.pseudoElement === test.name;
 		if (test.kind === "tag") {
 			if (test.value === "*") return true;
 			this.tick(context, node.tagName.length + test.value.length);

@@ -62,6 +62,8 @@ import {
 import { layoutNumber } from "./layout-values.js";
 import { documentStyles } from "./styles.js";
 import { generatedControlStyle } from "./generated-style.js";
+import type { GeneratedContentStyle } from "./generated-content-style.js";
+import { firstDetailsSummary } from "./details.js";
 import {
 	describeButtonAppearance,
 	describeControl,
@@ -79,7 +81,7 @@ import {
 	documentGeneratedControls,
 	type GeneratedControlTarget,
 } from "./generated-controls.js";
-import { resolveBorders } from "./border-box.js";
+import { borderCapabilities, resolveBorders } from "./border-box.js";
 import { isFlexDisplay, initialFlexStyle, type FlexStyle } from "./css-flex.js";
 import { isGridDisplay, initialGridStyle, type GridStyle } from "./css-grid.js";
 import type { AtomicInlineMetrics } from "./inline-atomic.js";
@@ -167,6 +169,10 @@ export interface FormattingNode {
 	marker?: DisclosureMarker;
 	outsideMarker?: DisclosureMarker;
 	generated?: GeneratedControlTarget;
+	generatedContent?: Readonly<{
+		owner: number;
+		name: "before" | "after";
+	}>;
 }
 interface MutableFormattingNode extends Omit<FormattingNode, "children"> {
 	children: number[];
@@ -358,6 +364,8 @@ export function buildFormattingTree(
 				issue("text-transform-not-supported");
 			if (data.ref && /^e[1-9][0-9]*$/.test(data.ref))
 				node.language = contentLanguage(Number(data.ref.slice(1)));
+			else if (data.generatedContent)
+				node.language = contentLanguage(data.generatedContent.owner);
 		}
 		nodes.push(node);
 		if (node.contentMode === "table") {
@@ -571,6 +579,128 @@ export function buildFormattingTree(
 		nodes[parent].children = normalized;
 		nodes[parent].contentMode = "blocks";
 		for (const child of normalized) nodes[child].parent = parent;
+	};
+	const generatedContent = (
+		owner: number,
+		name: "before" | "after",
+		style: GeneratedContentStyle,
+		depth: number,
+		itemMode?: "flex" | "grid",
+	): number => {
+		charge(style.content.length + 1);
+		if (depth + (style.content.length ? 1 : 0) > limits.maxDepth)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Generated content formatting depth limit exceeded",
+			);
+		textCodeUnits += style.content.length;
+		if (textCodeUnits > limits.maxTextCodeUnits)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Formatting text limit exceeded",
+			);
+		const metadata = Object.freeze({ owner, name });
+		const { display, flow } = style;
+		const inline = display === "inline" || display === "inline flow";
+		const atomic = display === "inline-block" || display === "inline flow-root";
+		const block = [
+			"block",
+			"block flow",
+			"flow-root",
+			"block flow-root",
+		].includes(display);
+		let deferredReason: string | undefined;
+		if (!inline && !atomic && !block) {
+			issue("display-layout-not-supported");
+			deferredReason = "generated-content-display-layout-not-supported";
+			issue(deferredReason);
+		}
+		if (itemMode) {
+			deferredReason = "generated-content-item-layout-not-supported";
+			issue(deferredReason);
+		}
+		if (flow.position !== "static") {
+			issue("position-layout-not-supported");
+			issue("generated-content-position-layout-not-supported");
+		}
+		if (flow.float !== "none") {
+			issue("generated-content-float-layout-not-supported");
+		}
+		if (flow.clear !== "none") {
+			issue("generated-content-clear-layout-not-supported");
+		}
+		if (flow["overflow-x"] !== "visible" || flow["overflow-y"] !== "visible") {
+			issue("overflow-layout-not-supported");
+			issue("generated-content-overflow-layout-not-supported");
+		}
+		if (
+			style.clip["clip-path"] != null ||
+			style.clip.svgClipError ||
+			style.paint["clip-path"] != null
+		) {
+			issue("clip-path-layout-not-supported");
+			issue("generated-content-clip-layout-not-supported");
+		}
+		if (!["none", "hidden"].includes(style.outline["outline-style"]))
+			issue("generated-content-outline-layout-not-supported");
+		if (style.textDecoration["text-decoration-line"] !== "none")
+			issue("generated-content-text-decoration-layout-not-supported");
+		for (const side of ["top", "right", "bottom", "left"] as const) {
+			charge();
+			if (
+				!borderCapabilities.styles.includes(style.box[`border-${side}-style`])
+			) {
+				issue("generated-content-border-layout-not-supported");
+				break;
+			}
+		}
+		if ((inline || atomic) && style.table["vertical-align"] !== "baseline") {
+			issue("inline-vertical-align-not-supported");
+			issue("generated-content-vertical-align-layout-not-supported");
+		}
+		const alignment =
+			block || atomic
+				? resolveBlockContentAlignment(style.flex["align-content"])
+				: undefined;
+		if (alignment === null) issue("block-content-alignment-not-supported");
+		const content: number[] = [];
+		if (style.content.length)
+			content.push(
+				create({
+					kind: "text",
+					level: "inline",
+					visible: style.visible,
+					text: style.content,
+					typography: style.typography,
+					paint: style.paint,
+					generatedContent: metadata,
+				}),
+			);
+		if (deferredReason) deferredSubtrees++;
+		const result = create(
+			{
+				kind: deferredReason ? "deferred" : inline ? "inline" : "block",
+				level:
+					itemMode || (!display.startsWith("inline") && display !== "contents")
+						? "block"
+						: "inline",
+				display,
+				visible: style.visible,
+				box: style.box,
+				typography: style.typography,
+				paint: style.paint,
+				generatedContent: metadata,
+				...(deferredReason ? { deferredReason } : {}),
+				...(inline ? { fragmentIndex: 0, fragmentCount: 1 } : {}),
+				...(atomic || display.includes("flow-root") || alignment
+					? { independentContext: true }
+					: {}),
+				...(alignment ? { blockContentAlignment: alignment } : {}),
+			},
+			content,
+		);
+		if (!inline && !deferredReason) normalizeChildren(result, content);
+		return result;
 	};
 	const visit = (
 		id: number,
@@ -921,6 +1051,18 @@ export function buildFormattingTree(
 					}),
 				];
 			}
+			const eligible =
+				!unusualContents.has(node.tagName) &&
+				(node.tagName !== "details" || Object.hasOwn(node.attributes, "open"));
+			if (eligible) charge(2);
+			const before = eligible
+				? styles.generatedContent(id, "before")
+				: undefined;
+			const after = eligible ? styles.generatedContent(id, "after") : undefined;
+			const summary =
+				node.tagName === "details" && (before || after)
+					? firstDetailsSummary(tree, node, charge)
+					: null;
 			const generated =
 				node.tagName === "details"
 					? documentGeneratedControls(tree).detailsSummary(id)
@@ -999,8 +1141,26 @@ export function buildFormattingTree(
 					),
 				);
 			}
-			for (const child of node.children)
+			if (summary !== null)
+				append(result, visit(summary, depth + 1 + extraDepth, asItems));
+			if (before)
+				result.push(
+					generatedContent(
+						id,
+						"before",
+						before,
+						depth + 1 + extraDepth,
+						asItems,
+					),
+				);
+			for (const child of node.children) {
+				if (child === summary) continue;
 				append(result, visit(child, depth + 1 + extraDepth, asItems));
+			}
+			if (after)
+				result.push(
+					generatedContent(id, "after", after, depth + 1 + extraDepth, asItems),
+				);
 			return result;
 		};
 		if (

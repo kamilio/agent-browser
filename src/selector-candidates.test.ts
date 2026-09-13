@@ -1640,7 +1640,7 @@ it.each([
 	[",", "Invalid selector"],
 	[", [", "Invalid selector"],
 	[", :unsupported-native-pseudo", "Unsupported selector"],
-	[", ::before", "Unsupported selector"],
+	[", ::marker", "Unsupported selector"],
 	[", :is(.leaf, :unsupported-native-pseudo)", "Unsupported selector"],
 ])(
 	"rejects and does not cache a stylesheet list with suffix %s",

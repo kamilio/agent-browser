@@ -342,7 +342,7 @@ it.each([
 
 it.each([
 	"input:user-valid",
-	"li::before",
+	"li::marker",
 	"svg|rect",
 	"*|rect",
 	"[svg|href]",

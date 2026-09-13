@@ -6,6 +6,7 @@ import {
 	serializeBackgroundValues,
 } from "./css-background.js";
 import { normalizeCssColor } from "./css-color.js";
+import { parseCssContent } from "./css-content.js";
 import {
 	cssGridProperties,
 	isCssGridProperty,
@@ -151,6 +152,7 @@ export const inlineProperties = [
 	...Object.keys(keywords),
 	...lengths,
 	"all",
+	"content",
 	"margin",
 	"padding",
 	"opacity",
@@ -256,6 +258,10 @@ function normalize(name: string, source: string): string | undefined {
 			? source || " "
 			: undefined;
 	if (!supported.has(name)) return undefined;
+	if (name === "content") {
+		const keyword = withoutCssComments(source).trim().toLowerCase();
+		return wide.has(keyword) ? keyword : parseCssContent(source)?.value;
+	}
 	if (name === "font-family") return parseTextValue(name, source);
 	if (isCssGridProperty(name)) return parseGridValue(name, source);
 	if (isCssTableProperty(name)) return parseTableValue(name, source);
@@ -361,9 +367,10 @@ export function expandDeclaration(
 					: {}),
 			}));
 	}
-	const source = name.startsWith("--")
-		? input
-		: withoutCssComments(input).trim();
+	const source =
+		name.startsWith("--") || name === "content"
+			? input
+			: withoutCssComments(input).trim();
 	if (name === "all") {
 		const value = source.toLowerCase();
 		return wide.has(value)

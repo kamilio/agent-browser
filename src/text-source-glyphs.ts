@@ -30,6 +30,12 @@ export function* consolidateSourceGlyphs(
 	};
 	for (const glyph of glyphs as readonly SourceGlyph[]) {
 		charge();
+		if (!glyph.ref) {
+			if (pending) yield pending;
+			pending = undefined;
+			last = undefined;
+			continue;
+		}
 		if (glyph.transformed === true) {
 			if (
 				!Number.isSafeInteger(glyph.formattingId) ||
