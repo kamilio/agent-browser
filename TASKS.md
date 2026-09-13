@@ -6,6 +6,42 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: research element-target preflight and restored selector coverage
+
+Fixed a real shared preflight regression: CSS before/after targets no longer
+proceed into research navigation setup or replay receipt admission. An opt-in
+parsed element-only mode preserves default CSS/generated matching and DOM-query
+semantics, escaped literal colon text and link searches. All four research entry
+points retain static non-echoing errors. No substring matching or new dependency.
+
+Corrected baseline751pass/42fail; fixed793pass across9suites.55new cases and
+118restored existing research-selector cases pass.13explicit union guards restore
+strict compilation; four old ID/diagnostic expectations are updated to earlier
+committed contracts without changing their case count or weakening exact limit
+checks. Original failed attempts and diagnostic-kind correction remain recorded.
+
+Broad gate19764pass/ONE unchanged table-source failure/TWO unchanged skips:
+383selected suites/382strict roots/748manifest entries. Two prior selected
+research-section failures now pass; the restored suite's two equivalent failures
+also pass. Build/strict/format pass; source stable. Native runnerexit1/auditexit0,
+NOT a green suite. Runtime native-research-element-preflight-september13-round00/snapshot01/dist;
+base974a3bbca0ef0af3becf242f3f05bfd2370613f0; source ledger
+bfc81f3308a3d35766e6b3911ac7a8bdf51af9d87364378edaec3d83925d917f; compiled ledger
+6bec295291cc5a30586ce6de68e0229e13f356e49a67bb818701aab536689ce6.
+
+No website requests or device/credential/SafeJS/TTY/socket probes this increment.
+The previous actual website inventory remains twenty-fourth update. Local
+RESEARCH-STATUS-SEPTEMBER-13.md audits original topics without fresh external
+claims: hardware and benchmark evidence exists, historical Astra posts must not
+be erased by later login failures, and verified Reddit/Poe opinions remain absent.
+Full details: RESEARCH-PREFLIGHT-VALIDATION-SEPTEMBER-13.md and
+RESEARCH-ELEMENT-PREFLIGHT.md. No push; unrelated dirty work preserved.
+
+OPEN: final native baseline failure, full website/CSS/script/resource behavior,
+whole-browser performance, research comparison/provenance/sampling gaps and
+independent credential/passkey/device/TTY/socket/SafeJS gates. No challenge
+solving or fingerprint spoofing. Overall browser objective remains ACTIVE.
+
 ### September 13: native generated positioning and W3C reader coverage
 
 Implemented shared relative/absolute/fixed before/after formatting coordination,
