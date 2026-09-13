@@ -11,6 +11,11 @@ import {
 	type NativeFontStyle,
 } from "./font-style.js";
 import { layoutNumber } from "./layout-values.js";
+import {
+	type RoundedBox,
+	roundedBoxSpan,
+	validateRoundedBox,
+} from "./rounded-box.js";
 
 export type Rgba = readonly [number, number, number, number];
 export interface RasterImage {
@@ -83,6 +88,7 @@ function fill(
 	width: number,
 	height: number,
 	color: Rgba,
+	clip?: RoundedBox,
 ) {
 	if (width === 0 || height === 0 || color[3] === 0) return;
 	const left = Math.max(0, Math.min(image.width, Math.ceil(originX - 0.5)));
@@ -95,9 +101,18 @@ function fill(
 		0,
 		Math.min(image.height, Math.ceil(originY + height - 0.5)),
 	);
+	if (left >= right || top >= bottom) return;
 	const sourceAlpha = color[3] / 255;
-	for (let row = top; row < bottom; row++)
-		for (let column = left; column < right; column++) {
+	for (let row = top; row < bottom; row++) {
+		let rowLeft = left;
+		let rowRight = right;
+		if (clip !== undefined) {
+			const span = roundedBoxSpan(clip, row + 0.5);
+			if (!span) continue;
+			rowLeft = Math.max(left, Math.ceil(span.left - 0.5));
+			rowRight = Math.min(right, Math.ceil(span.right - 0.5));
+		}
+		for (let column = rowLeft; column < rowRight; column++) {
 			const offset = (row * image.width + column) * 4;
 			if (color[3] === 255) image.pixels.set(color, offset);
 			else {
@@ -113,6 +128,7 @@ function fill(
 				image.pixels[offset + 3] = Math.round(alpha * 255);
 			}
 		}
+	}
 }
 
 export function paintRasterRect(
@@ -122,6 +138,7 @@ export function paintRasterRect(
 	width: number,
 	height: number,
 	color: Rgba,
+	clip?: RoundedBox,
 ) {
 	validateRaster(image);
 	colorValue(color);
@@ -129,7 +146,8 @@ export function paintRasterRect(
 	layoutNumber(originY, true);
 	layoutNumber(width);
 	layoutNumber(height);
-	fill(image, originX, originY, width, height, color);
+	if (clip !== undefined) validateRoundedBox(clip);
+	fill(image, originX, originY, width, height, color, clip);
 }
 
 export function paintRasterImage(
@@ -139,6 +157,7 @@ export function paintRasterImage(
 	originY: number,
 	width: number,
 	height: number,
+	clip?: RoundedBox,
 ) {
 	validateRaster(image);
 	validateRaster(source);
@@ -148,6 +167,7 @@ export function paintRasterImage(
 	layoutNumber(height);
 	layoutNumber(originX + width, true);
 	layoutNumber(originY + height, true);
+	if (clip !== undefined) validateRoundedBox(clip);
 	if (width === 0 || height === 0) return;
 	const left = Math.max(0, Math.min(image.width, Math.ceil(originX - 0.5)));
 	const right = Math.max(
@@ -165,11 +185,19 @@ export function paintRasterImage(
 			? source.pixels.slice()
 			: source.pixels;
 	for (let row = top; row < bottom; row++) {
+		let rowLeft = left;
+		let rowRight = right;
+		if (clip !== undefined) {
+			const span = roundedBoxSpan(clip, row + 0.5);
+			if (!span) continue;
+			rowLeft = Math.max(left, Math.ceil(span.left - 0.5));
+			rowRight = Math.min(right, Math.ceil(span.right - 0.5));
+		}
 		const sourceRow = Math.min(
 			source.height - 1,
 			Math.floor(((row + 0.5 - originY) / height) * source.height),
 		);
-		for (let column = left; column < right; column++) {
+		for (let column = rowLeft; column < rowRight; column++) {
 			const sourceColumn = Math.min(
 				source.width - 1,
 				Math.floor(((column + 0.5 - originX) / width) * source.width),

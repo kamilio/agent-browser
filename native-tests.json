@@ -538,6 +538,8 @@
   "src/radio-state.test.ts",
   "src/raster-image.test.ts",
   "src/raster.test.ts",
+  "src/rounded-box.test.ts",
+  "src/rounded-raster.test.ts",
   "src/reference-images.test.ts",
   "src/reference-renderer.test.ts",
   "src/relative-positioning.test.ts",
