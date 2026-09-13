@@ -6,6 +6,58 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: generated clearance and complete-asset Python replay
+
+Implemented physical left/right/both clearance for normal-flow generated block
+and flow-root boxes through the existing native float coordinator. Empty
+clearfix, hidden layout, margins, relative offsets and origin hit ownership
+have concrete geometry/raster regressions; unsupported generated floats,
+logical block clearance and complex layouts remain guarded. No new dependency.
+
+Final focused tests: 501pass/0fail/0skip; unchanged production baseline with
+identical tests: 471pass/30fail, all failures in the new38-case suite. Preserve
+the earlier test-only glyph-reference expectation failure and its correction.
+Full selected native run: 19803pass/0fail/TWOunchanged skips,384suites/383strict
+roots/749manifest entries;365unselected. Build/strict/format/native/auditexit0.
+Native success is not acceptance of live, skipped or unselected gates.
+
+Runtime native-generated-clear-september13-round00/snapshot01/dist;
+baseea00b5b71952efeae0f7467e3c3280b9dc7471bb. Source inventory
+9b0e9de877ee416b542a3169025125a3ba89bbbd4db557d1128b3844520de619;
+compiled86c6dbcfc1a59d787d59432a5feb82cc51b06db4336c10c2c952e4fab7e3dde9.
+1290source/2124compiled/1285unchanged tracked inputs; no bundled dirty work.
+
+One new native GET captured the exact missing docs.python.org/3/_static/basic.css
+import: HTTP200,14685decoded/3390encoded bytes at15:03:52.901UTC September13.
+No redirects/retries/subresources/credentials/challenges. Earlier seven-fixture
+replay denied this import before transport; that missing fixture was not a site
+rejection or proof of a browser CSS defect. Initial header-prototype harness
+failure also remains preserved, not misreported as a failed website click.
+
+Complete-asset native replay mixes seven unchanged September11 captures with
+this September13 CSS. The baseline observes two empty static block ::after
+boxes on UL owners e269/e745, both computed clear:both but missing formatting
+clear metadata. Each actual Tutorial click outcome is tracked separately from
+successful diagnostic execution; no direct target navigation substitutes for it.
+
+After-proof at15:17:46.522–15:17:46.637UTC preserves the exact same eight inputs,
+72064decoded bytes,853DOMnodes and669formattingboxes. Both generated boxes now
+emit clear:both; generated-clear issues fall2to0, while raw coordinator clear
+markers rise1to3. Both phases make zeroHTTP and oneactualclick, which STILL
+fails on CSSproperty9/value3, inlinealignment2, stickyposition1 andoverflow1.
+No furtherpagegeometry/raster success is claimed; nativefixtures proveactual
+clearance separately. Exactbefore/afterguards/pins/cleanup remain recorded.
+
+OPEN: Python click/layout/image and CSS/inline-alignment/sticky/overflow gates;
+native skips/unselected coverage, whole-site resource/script behavior, measured
+performance and four-topic research gaps. Separate credentials/passkey devices,
+TTY/socket/SafeJS gates remain. No spoofing, challenge solving or push. Preserve
+all historical evidence and dirty work. Overall browser objective stays ACTIVE.
+
+See GENERATED-CONTENT-CLEAR.md, PYTHON-BASIC-CSS-CAPTURE-SEPTEMBER-13.md and
+PYTHON-GENERATED-CLEAR-REPLAY-SEPTEMBER-13.md, plus
+WEBSITE-TEST-INVENTORY-SEPTEMBER-13-TWENTY-SIXTH-UPDATE.md.
+
 ### September 13: Python tutorial coverage and no failing executed selected tests
 
 Fresh direct native GET of docs.python.org/3/tutorial/index.html: HTTP200,
