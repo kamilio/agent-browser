@@ -46,6 +46,7 @@ import { cssTextProperties, isCssTextProperty } from "./css-text.js";
 import {
 	cssTextDecorationProperties,
 	isCssTextDecorationProperty,
+	serializeTextDecoration,
 } from "./css-text-decoration.js";
 import { documentGeometry } from "./document-geometry.js";
 import type { DocumentTree } from "./document.js";
@@ -127,9 +128,7 @@ export function resolvedStyleValue(
 	if (isCssTextDecorationProperty(name)) return styles.textDecoration(id)[name];
 	if (name === "text-decoration") {
 		const decoration = styles.textDecoration(id);
-		return cssTextDecorationProperties
-			.map((property) => decoration[property])
-			.join(" ");
+		return serializeTextDecoration(decoration);
 	}
 	if (isCssOutlineProperty(name)) return styles.outline(id)[name];
 	if (name === "outline") {

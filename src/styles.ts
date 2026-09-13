@@ -682,15 +682,45 @@ export class DocumentStyles {
 		for (const target of pending.reverse()) {
 			const parent = this.tree.get(target).parent;
 			const color = this.paint(target).color;
+			const specified = this.textDecorationSpecified.get(target) ?? {};
+			const thickness = specified["text-decoration-thickness"] ?? "auto";
+			let fonts: BoxFontMetrics | undefined;
+			if (lengthUsesFont(thickness, "em"))
+				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
+			if (lengthUsesFont(thickness, "ex")) {
+				const text = this.text(target);
+				fonts = {
+					...fonts,
+					xHeight: nativeFontXHeight(
+						Number.parseFloat(text["font-size"]),
+						Number(text["font-weight"]),
+						text["font-family"],
+					),
+				};
+			}
+			if (lengthUsesFont(thickness, "rem")) {
+				const root =
+					this.tree
+						.get(this.tree.root)
+						.children.find(
+							(child) => this.tree.get(child).kind === "element",
+						) ?? this.tree.root;
+				fonts = {
+					...fonts,
+					rootFontSize: Number.parseFloat(this.text(root)["font-size"]),
+				};
+			}
 			this.textDecorationComputed.set(
 				target,
 				computeTextDecorationStyle(
-					this.textDecorationSpecified.get(target) ?? {},
+					specified,
 					(parent === null
 						? undefined
 						: this.textDecorationComputed.get(parent)) ??
 						computeTextDecorationStyle({}, initialTextDecorationStyle, color),
 					color,
+					this.viewport,
+					fonts,
 				),
 			);
 		}

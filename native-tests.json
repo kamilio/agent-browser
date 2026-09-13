@@ -384,6 +384,8 @@
   "src/font-family-style.test.ts",
   "src/text-decoration-baseline.test.ts",
   "src/css-text-decoration.test.ts",
+  "src/css-text-decoration-thickness.test.ts",
+  "src/text-decoration-thickness-raster.test.ts",
   "src/text-decoration-raster.test.ts",
   "src/font-style-css.test.ts",
   "src/font-style-raster.test.ts",

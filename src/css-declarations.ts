@@ -28,6 +28,7 @@ import {
 	isCssTextDecorationProperty,
 	parseTextDecorationDeclarations,
 	parseTextDecorationValue,
+	serializeTextDecoration,
 } from "./css-text-decoration.js";
 import {
 	cssListProperties,
@@ -675,7 +676,7 @@ export function propertyValue(
 	}
 	if (name === "outline" || name === "text-decoration") {
 		if (
-			found.length !== 3 ||
+			found.length !== components.length ||
 			found.some((entry) => entry.important !== found[0].important)
 		)
 			return "";
@@ -684,6 +685,12 @@ export function propertyValue(
 		);
 		if (values.some((value) => wide.has(value)))
 			return values.every((value) => value === values[0]) ? values[0] : "";
+		if (name === "text-decoration")
+			return serializeTextDecoration(
+				Object.fromEntries(
+					components.map((property, index) => [property, values[index]]),
+				),
+			);
 		return values.join(" ");
 	}
 	if (isBorderShorthand(name)) {

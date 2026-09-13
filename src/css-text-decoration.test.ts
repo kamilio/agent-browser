@@ -146,6 +146,7 @@ it("accepts all five-component shorthand orders with a balanced color function",
 				property: "text-decoration-line",
 				value: "underline overline line-through",
 			},
+			{ property: "text-decoration-thickness", value: "auto" },
 			{ property: "text-decoration-style", value: "solid" },
 			{ property: "text-decoration-color", value: "rgba(10, 20, 30, 0.502)" },
 		];
@@ -228,11 +229,11 @@ it.each([
 	"initial underline",
 	"unset solid",
 	"revert overline",
-	"2px underline",
+	"2px 3px underline",
 	"underline / red",
 	"underline,overline",
 	"url(red)",
-	"calc(1px)",
+	"calc(1px / 0)",
 	"rgb(0 0 0) solid solid",
 	"rgb(0 0 0 underline)",
 	"rgb(0 0 0))",
@@ -246,7 +247,7 @@ it.each([
 	expect(cssSupportsDeclaration("text-decoration", value)).toBe(false);
 	expect(
 		declarations(`text-decoration:overline red;text-decoration:${value}`),
-	).toHaveLength(3);
+	).toHaveLength(cssTextDecorationProperties.length);
 	expect(
 		propertyValue(
 			parseInlineDeclarations(
@@ -340,6 +341,7 @@ it("computes root inherit against initial values with its own color", () => {
 	const { styles, id } = fixture("html{color:blue;text-decoration:inherit}");
 	expect(styles.textDecoration(id("html"))).toEqual({
 		"text-decoration-line": "none",
+		"text-decoration-thickness": "auto",
 		"text-decoration-style": "solid",
 		"text-decoration-color": "rgb(0, 0, 255)",
 	});
@@ -472,6 +474,7 @@ it("refreshes immutable cached styles and the gate on ancestor mutation and clos
 	expect(styles.hasTextDecorations()).toBe(false);
 	expect(styles.textDecoration(id())).toEqual({
 		"text-decoration-line": "none",
+		"text-decoration-thickness": "auto",
 		"text-decoration-style": "solid",
 		"text-decoration-color": "rgb(0, 128, 0)",
 	});

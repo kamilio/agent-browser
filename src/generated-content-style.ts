@@ -137,6 +137,8 @@ export function computeGeneratedContentStyle(
 			specified,
 			parent.textDecoration,
 			paint.color,
+			viewport,
+			fonts,
 		),
 		clip: computeClipStyle(specified, parent.clip),
 	});

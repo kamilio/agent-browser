@@ -10,7 +10,7 @@ import { fontStyleSlope, type NativeFontStyle } from "./font-style.js";
 import { matchFontWeight } from "./font-weight.js";
 import { isAtomicInline } from "./inline-atomic.js";
 import { resolveInlineEdges } from "./inline-box.js";
-import { layoutNumber } from "./layout-values.js";
+import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 import { type RasterImage, type Rgba, paintRasterRect } from "./raster.js";
 import { documentStyles } from "./styles.js";
 import type { TextGlyph, TextInlineFragment } from "./text-layout.js";
@@ -38,6 +38,14 @@ export interface TextDecorations {
 	lineSpacing: WeakSet<Readonly<TextGlyph>>;
 	edges: WeakMap<Readonly<TextInlineFragment>, InlineEdges>;
 	layers: Decoration[];
+}
+
+function decorationThickness(value: string, fontSize: number): number {
+	if (value === "auto" || value === "from-font") return fontSize / 16;
+	if (value === "thin") return 1;
+	if (value === "medium") return 3;
+	if (value === "thick") return 5;
+	return Math.max(1, Math.round(resolveLayoutLength(value, fontSize, true)));
 }
 
 export function prepareTextDecorations(
@@ -98,7 +106,10 @@ export function prepareTextDecorations(
 						domId,
 						lines: style["text-decoration-line"].split(" ") as DecorationLine[],
 						color,
-						thickness: size / 16,
+						thickness: decorationThickness(
+							style["text-decoration-thickness"],
+							size,
+						),
 						underline: size / 16,
 						overline: (-size * bitmapFont.ascent) / bitmapFont.unitsPerEm,
 						strike:
