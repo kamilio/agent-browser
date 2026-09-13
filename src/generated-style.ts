@@ -8,7 +8,9 @@ export function generatedControlStyle(tree: DocumentTree, reference: string) {
 	const target = documentGeneratedControls(tree).resolve(reference);
 	const styles = documentStyles(tree);
 	const visibility = styles.get(target.owner);
+	const cursor = styles.cursor(target.owner);
 	return Object.freeze({
+		...(cursor === "auto" ? {} : { cursor }),
 		display: "list-item" as const,
 		visibility: visibility.visibility,
 		displayed: visibility.displayed,

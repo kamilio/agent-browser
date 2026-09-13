@@ -493,7 +493,7 @@ export function parseCssDeclarations(
 			continue;
 		}
 		if (isCssInteractionProperty(property)) {
-			const normalized = parseInteractionValue(value);
+			const normalized = parseInteractionValue(value, property);
 			if (normalized !== undefined)
 				declarations.push({ property, value: normalized, important });
 			else issue("unimplemented-or-invalid-css-value");

@@ -529,6 +529,7 @@
   "src/png.test.ts",
   "src/pointer-activation.test.ts",
   "src/pointer-events.test.ts",
+  "src/cursor-style.test.ts",
   "src/pointer-state.test.ts",
   "src/portable-boundary.test.ts",
   "src/programmatic-click.test.ts",

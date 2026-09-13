@@ -1,4 +1,5 @@
 import { imageDimensionHint } from "./replaced-box.js";
+import { computeCursor, type CursorStyle } from "./css-interaction.js";
 import {
 	computeGeneratedContentStyle,
 	generatedContentValue,
@@ -354,6 +355,7 @@ export class DocumentStyles {
 	private gridComputed = new Map<number, GridStyle>();
 	private flowComputed = new Map<number, FlowStyle>();
 	private pointerEventsNone = new Set<number>();
+	private cursorComputed = new Map<number, CursorStyle>();
 	private listComputed = new Map<number, ListStyle>();
 	private tableSpecified = new Map<number, TableSpecifiedStyle>();
 	private tableComputed = new Map<number, TableStyle>();
@@ -587,6 +589,11 @@ export class DocumentStyles {
 	pointerEvents(id: number): PointerEventsStyle {
 		this.get(id);
 		return this.pointerEventsNone.has(id) ? "none" : "auto";
+	}
+
+	cursor(id: number): CursorStyle {
+		this.get(id);
+		return this.cursorComputed.get(id) ?? "auto";
 	}
 
 	list(id: number): ListStyle {
@@ -1137,6 +1144,7 @@ export class DocumentStyles {
 			outline: this.outline(id),
 			textDecoration: this.textDecoration(id),
 			clip: this.clip(id),
+			cursor: this.cursor(id),
 		};
 		for (const category of Object.values(parent)) {
 			charge(typeof category === "string" ? category.length + 1 : 1);
@@ -1210,6 +1218,7 @@ export class DocumentStyles {
 		this.gridComputed.clear();
 		this.flowComputed.clear();
 		this.pointerEventsNone.clear();
+		this.cursorComputed.clear();
 		this.listComputed.clear();
 		this.tableSpecified.clear();
 		this.tableComputed.clear();
@@ -1279,6 +1288,7 @@ export class DocumentStyles {
 		this.gridComputed.clear();
 		this.flowComputed.clear();
 		this.pointerEventsNone.clear();
+		this.cursorComputed.clear();
 		this.listComputed.clear();
 		this.tableSpecified.clear();
 		this.tableComputed.clear();
@@ -1295,6 +1305,7 @@ export class DocumentStyles {
 		this.customComputed.clear();
 		const issues: Record<string, number> = { ...this.loadIssues };
 		const applicableIssues: Record<string, number> = { ...this.loadIssues };
+		const cursorComputed = new Map<number, CursorStyle>();
 		const rawIssue = (code: string) => {
 			issues[code] = (issues[code] ?? 0) + 1;
 		};
@@ -2125,6 +2136,14 @@ export class DocumentStyles {
 				) === "none"
 			)
 				pointerEventsNone.add(node.id);
+			charge(1);
+			const cursor = computeCursor(
+				properties?.get("cursor")?.declaration.value,
+				node.parent === null
+					? "auto"
+					: (cursorComputed.get(node.parent) ?? "auto"),
+			);
+			if (cursor !== "auto") cursorComputed.set(node.id, cursor);
 			computed.set(
 				node.id,
 				Object.freeze({
@@ -2144,6 +2163,7 @@ export class DocumentStyles {
 		this.gridSpecified = gridSpecified;
 		this.flowComputed = flowComputed;
 		this.pointerEventsNone = pointerEventsNone;
+		this.cursorComputed = cursorComputed;
 		this.listComputed = listComputed;
 		this.tableSpecified = tableSpecified;
 		this.textSpecified = textSpecified;

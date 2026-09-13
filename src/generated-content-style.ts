@@ -23,8 +23,10 @@ import {
 	type TextDecorationStyle,
 } from "./css-text-decoration.js";
 import { nativeFontXHeight } from "./font-metrics.js";
+import { computeCursor, type CursorStyle } from "./css-interaction.js";
 
 export interface GeneratedContentStyle {
+	readonly cursor?: CursorStyle;
 	readonly content: string;
 	readonly display: string;
 	readonly unpositionedDisplay?: string;
@@ -110,7 +112,9 @@ export function computeGeneratedContentStyle(
 		),
 	};
 	const paint = computePaintStyle(specified, parent.paint);
+	const cursor = computeCursor(specified.cursor, parent.cursor ?? "auto");
 	return Object.freeze({
+		...(cursor === "auto" ? {} : { cursor }),
 		content,
 		display: outOfFlow ? blockifyDisplay(display) : display,
 		...(outOfFlow ? { unpositionedDisplay } : {}),

@@ -283,7 +283,7 @@ function normalize(name: string, source: string): string | undefined {
 	}
 	if (isNeutralBackgroundProperty(name))
 		return parseBackgroundComponent(name, value);
-	if (isCssInteractionProperty(name)) return parseInteractionValue(value);
+	if (isCssInteractionProperty(name)) return parseInteractionValue(value, name);
 	if (isCssListProperty(name)) return parseListValue(name, value);
 	if (isCssTextProperty(name)) return parseTextValue(name, value);
 	if (keywords[name]?.includes(value)) return value;

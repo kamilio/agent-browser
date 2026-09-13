@@ -140,6 +140,7 @@ export function resolvedStyleValue(
 			.join(" ");
 	}
 	if (name === "pointer-events") return styles.pointerEvents(id);
+	if (name === "cursor") return styles.cursor(id);
 	if (isCssListProperty(name)) return styles.list(id)[name];
 	if (name === "list-style") return serializeListStyle(styles.list(id));
 	if (isCssTableProperty(name)) return styles.table(id)[name];
