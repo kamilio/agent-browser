@@ -719,6 +719,7 @@
   "src/table-formatting.test.ts",
   "src/table-layout.test.ts",
   "src/research-reader-anchors.test.ts",
+  "src/table-caption-work.test.ts",
   "src/table-caption-layout.test.ts",
   "src/table-caption-geometry.test.ts",
   "src/table-document.test.ts",

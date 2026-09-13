@@ -266,6 +266,7 @@ export function buildFormattingTree(
 		issues[code] = (issues[code] ?? 0) + 1;
 	};
 	const nodes: MutableFormattingNode[] = [];
+	const tableNodes: MutableFormattingNode[] = [];
 	const collapsedBorderGuards = new Set<string>();
 	const emptyCellGuards = new Set<string>();
 	let work = 0;
@@ -359,6 +360,10 @@ export function buildFormattingTree(
 				node.language = contentLanguage(Number(data.ref.slice(1)));
 		}
 		nodes.push(node);
+		if (node.contentMode === "table") {
+			charge();
+			tableNodes.push(node);
+		}
 		for (const child of children) nodes[child].parent = node.id;
 		return node.id;
 	};
@@ -1608,14 +1613,8 @@ export function buildFormattingTree(
 		}
 		nodes.length = retained;
 	}
-	const captionTables = hasCaptions
-		? nodes.filter((node) => {
-				charge();
-				return node.contentMode === "table";
-			})
-		: [];
-	for (const table of captionTables) {
-		charge(table.children.length);
+	for (const table of hasCaptions ? tableNodes : []) {
+		charge(table.children.length + 1);
 		const captions = table.children.filter(
 			(child) => nodes[child].display === "table-caption",
 		);
