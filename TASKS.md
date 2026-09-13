@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: table-heavy website and Apple section extraction
+
+Fresh WHATWG tables GET200,12:16:17.507UTC: exactbody native-reader10816nodes,
+depth17;19headings/9tables/0column-groups.3queries/341956work;ownersclosed.
+OneactualGET,no redirects/retries/subresources/credentials. Fullreport
+WHATWG-TABLES-NATIVE-CHECK.md. This is readercoverage, not pagegeometry.
+
+Retained Applebody from12:01:16.690UTC now yields associated Chip/Memory/
+Electrical rows: initial heading-only selection missed native non-heading labels.
+Two readerloads and one separately scoped fullDOMload,zeroHTTP,4queries/
+106142work;41completeblocks/8839text acrossthreeboundedphases. Three complete
+rowtextdigests agree acrossreader/fullDOM. Sourcecolumn associations, vendor
+claims and limits are explicit; original title-only evidence staysunchanged.
+Fullreport APPLE-CONFIGURATION-RESEARCH-SEPTEMBER-13.md.
+
+All followups use audited18931nativepass/0fail/2oldexclusions build; no suite
+rerun or rootdist rebuild. Receipts WEBSITE-TEST-INVENTORY-SEPTEMBER-13-TWENTIETH-UPDATE.md.
+Overallgoal ACTIVE: research ranking/benchmarks/Astra/Poe, CSS/fullsite rendering,
+credentials/passkeydevices/SafeJS/realTTY/challengehandoff remainOPEN. Next:
+reusable non-heading section selection and actual-page CSS gaps, without
+conflating source extraction with rendering or hardware measurement.
+
+
 ### September 13: verified reader column-group repair and hardware sources
 
 Fixed the retained W3C Selectors reader failure at its root: a direct table's
