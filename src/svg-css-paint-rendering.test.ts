@@ -219,8 +219,8 @@ it("resolves inherited CSS currentColor independently for each rendered shape", 
 });
 
 it.each([
-	'<rect width="4" height="2" stroke="blue" style="fill:red"/>',
-	'<rect width="4" height="2" style="fill:red;stroke:blue"/>',
+	'<rect width="4" height="2" stroke="blue" stroke-dasharray="1 1" style="fill:red"/>',
+	'<rect width="4" height="2" style="fill:red;stroke:blue;stroke-dasharray:1 1"/>',
 	'<rect width="4" height="2" clip-path="url(#clip)" style="fill:red"/>',
 	'<rect width="4" height="2" style="fill:red;clip-path:url(#clip)"/>',
 	'<rect width="4" height="2" style="fill:url(https://example.invalid/external.svg#paint)"/>',

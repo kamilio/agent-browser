@@ -185,20 +185,33 @@ export function resolvedStyleValue(
 			: value;
 	}
 	if (
-		["fill", "fill-opacity", "fill-rule"].includes(name) &&
+		(["fill", "fill-opacity", "fill-rule", "stroke"].includes(name) ||
+			name.startsWith("stroke-")) &&
 		styles.paint(id).svgPaintError
 	)
 		throw new AgentBrowserError(
 			"unsupported",
-			"Unsupported SVG fill presentation attribute",
+			"Unsupported SVG paint presentation attribute",
 		);
-	if (name === "stop-opacity" || name === "fill-opacity")
+	if (
+		name === "stop-opacity" ||
+		name === "fill-opacity" ||
+		name === "stroke-opacity"
+	)
 		return String(styles.paint(id)[name] ?? 1);
 	if (name === "fill-rule") return styles.paint(id)["fill-rule"] ?? "nonzero";
-	if (name === "fill") {
+	if (name === "stroke-width") return styles.paint(id)[name] ?? "1px";
+	if (name === "stroke-linecap") return styles.paint(id)[name] ?? "butt";
+	if (name === "stroke-linejoin") return styles.paint(id)[name] ?? "miter";
+	if (name === "stroke-miterlimit") return String(styles.paint(id)[name] ?? 4);
+	if (name === "fill" || name === "stroke") {
 		const paint = styles.paint(id);
 		return serializeSvgFill(
-			paint.fill === undefined ? [0, 0, 0, 255] : paint.fill,
+			paint[name] === undefined
+				? name === "fill"
+					? [0, 0, 0, 255]
+					: null
+				: paint[name],
 			paint.color,
 		);
 	}

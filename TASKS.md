@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: native SVG stroke implemented and gated
+
+Native stroke now participates in CSS/presentation inheritance and the actual
+scene renderer: bounded local-coordinate outlines, affine transforms, caps/
+joins, local gradients, union alpha, individual shape opacity and stroke hit
+targets. Percentage widths resolve against the used SVG viewport, not preferred
+CSS root sizes. Malformed numeric declarations no longer override valid stroke
+values. No new runtime dependency, discarded diagnostics or raised limits.
+
+The clean selected gate passes **16,711/0/2 unchanged exclusions**, including 215
+new cases; 321 suites, 320 strict roots, 699 manifest entries (378 not run).
+Build/strict/format and source stability pass. Separate retained IANA/Python SVG
+decodes preserve exact pixels. SQLite now passes the SVG CSS profile check and
+stops at positive-integer intrinsic dimensions, before scene construction.
+All three body checks are offline: zero HTTP/navigation and no website pass.
+
+See `SVG-STROKE.md` for exact UTC receipts, bounds, source gaps and preserved
+attempts. Next: fractional intrinsic SVG sizing and real clipping, then fresh
+bounded website checks. Broader CSS/text/layout, the four requested research
+topics, credential/provider/passkey-device, SafeJS and access-challenge gates
+remain open. Pre-existing dirty work is preserved; no push.
+
 ### September 12: native SVG CSS fill paint implemented and gated
 
 SVG fill/fill-opacity/fill-rule now use the actual native CSS cascade and scene

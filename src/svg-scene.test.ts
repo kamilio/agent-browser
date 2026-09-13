@@ -361,8 +361,8 @@ it.each<Record<string, string>>([
 	{ fill: "bogus" },
 	{ "fill-rule": "invalid" },
 	{ "fill-opacity": "NaN" },
-	{ stroke: "red" },
-	{ stroke: "currentColor" },
+	{ stroke: "context-stroke" },
+	{ "stroke-linejoin": "arcs" },
 	{ filter: "url(#filter)" },
 	{ mask: "url(external)" },
 	{ "clip-path": "url(#clip)" },
@@ -727,11 +727,12 @@ it("returns deeply frozen detached scene data across mutations and document clos
 	expect(scene).toThrow(expect.objectContaining({ code: "closed" }));
 });
 
-it("applies CSS fill while retaining unsupported stroke diagnostics", () => {
+it("applies CSS fill and stroke without unsupported-property diagnostics", () => {
 	const { tree, add, scene } = fixture();
 	add("path", { d: "M0 0", fill: "red", style: "fill:blue;stroke:green" });
 	expect(scene().shapes[0].fill).toEqual([0, 0, 255, 255]);
+	expect(scene().shapes[0].stroke?.paint).toEqual([0, 128, 0, 255]);
 	expect(documentStyles(tree).metrics()).toMatchObject({
-		issues: { "unimplemented-css-property": 1 },
+		issues: {},
 	});
 });

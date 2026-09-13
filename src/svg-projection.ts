@@ -6,7 +6,11 @@ import {
 	svgIdentity,
 	transformSvgPoint,
 } from "./svg-affine.js";
-import { rasterizeSvgFills } from "./svg-fill-raster.js";
+import {
+	rasterizeSvgFills,
+	svgFillLimits,
+	type SvgFill,
+} from "./svg-fill-raster.js";
 import { SvgLinearGradient } from "./svg-linear-gradient.js";
 import { svgPathBounds } from "./svg-path-bounds.js";
 import {
@@ -20,11 +24,14 @@ import type {
 	SvgScene,
 	SvgSceneShape,
 } from "./svg-scene-types.js";
-import { rasterLimits } from "./raster.js";
+import { strokeSvgContours } from "./svg-stroke-outline.js";
+import { paintRasterImage, rasterLimits, type RasterImage } from "./raster.js";
 
 export interface ProjectedSvgShape extends SvgSceneShape {
 	readonly contours: readonly SvgContour[];
+	readonly strokeContours: readonly SvgContour[];
 	readonly bounds: SvgBounds | null;
+	readonly paintBounds: SvgBounds | null;
 }
 
 export interface SvgProjection {
@@ -106,6 +113,25 @@ export function projectSvgScene(
 	if (!scene.disabled && width && height)
 		for (const shape of scene.shapes) {
 			charge(1);
+			let strokeWidth = shape.stroke?.width ?? 0;
+			if (shape.stroke?.widthPercentage) {
+				charge(8);
+				strokeWidth =
+					(strokeWidth / 100) *
+					(Math.hypot(
+						scene.viewBox?.width ?? width,
+						scene.viewBox?.height ?? height,
+					) /
+						Math.SQRT2);
+			}
+			if (
+				!Number.isFinite(strokeWidth) ||
+				Math.abs(strokeWidth) > svgFlattenLimits.maxCoordinate
+			)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"SVG stroke width magnitude limit exceeded",
+				);
 			const transform = multiplySvgMatrices(viewport, shape.transform, charge);
 			const scale = Math.hypot(
 				transform[0],
@@ -118,22 +144,46 @@ export function projectSvgScene(
 					"resource-limit",
 					"SVG projection point limit exceeded",
 				);
-			const contours = flattenSvgPath(
-				shape.path,
-				charge,
-				scale > 0 ? 0.01 / scale : 0.25,
-				{ maxPoints: svgFlattenLimits.maxPoints - points },
-			).map((contour) => {
-				const transformed = contour.points.map((point) => {
-					charge(12);
-					points++;
-					return transformSvgPoint(transform, point);
-				});
-				return Object.freeze({
-					closed: contour.closed,
-					points: Object.freeze(transformed),
-				});
+			const tolerance = scale > 0 ? 0.01 / scale : 0.25;
+			const localContours = flattenSvgPath(shape.path, charge, tolerance, {
+				maxPoints: svgFlattenLimits.maxPoints - points,
 			});
+			const projectContours = (contours: readonly SvgContour[]) =>
+				Object.freeze(
+					contours.map((contour) => {
+						charge(1);
+						if (contour.points.length > svgFlattenLimits.maxPoints - points)
+							throw new AgentBrowserError(
+								"resource-limit",
+								"SVG projection point limit exceeded",
+							);
+						const transformed = contour.points.map((point) => {
+							charge(12);
+							points++;
+							return transformSvgPoint(transform, point);
+						});
+						return Object.freeze({
+							closed: contour.closed,
+							points: Object.freeze(transformed),
+						});
+					}),
+				);
+			const contours = projectContours(localContours);
+			const strokeContours = projectContours(
+				shape.stroke
+					? strokeSvgContours(
+							localContours,
+							{
+								width: strokeWidth,
+								lineCap: shape.stroke.lineCap,
+								lineJoin: shape.stroke.lineJoin,
+								miterLimit: shape.stroke.miterLimit,
+							},
+							charge,
+							tolerance,
+						)
+					: [],
+			);
 			shapes.push(
 				Object.freeze({
 					...shape,
@@ -141,8 +191,28 @@ export function projectSvgScene(
 						shape.fill instanceof SvgLinearGradient
 							? shape.fill.transformed(transform, charge)
 							: shape.fill,
-					contours: Object.freeze(contours),
+					...(shape.stroke
+						? {
+								stroke: Object.freeze({
+									width: strokeWidth,
+									lineCap: shape.stroke.lineCap,
+									lineJoin: shape.stroke.lineJoin,
+									miterLimit: shape.stroke.miterLimit,
+									paint:
+										shape.stroke.paint instanceof SvgLinearGradient
+											? shape.stroke.paint.transformed(transform, charge)
+											: shape.stroke.paint,
+								}),
+							}
+						: {}),
+					contours,
+					strokeContours,
 					bounds: svgPathBounds(shape.path, transform, charge),
+					paintBounds: svgPaintBounds(
+						shape.fill === null ? [] : contours,
+						strokeContours,
+						charge,
+					),
 				}),
 			);
 		}
@@ -155,14 +225,48 @@ export function projectSvgScene(
 	return result;
 }
 
-export function svgShapeContains(
-	shape: ProjectedSvgShape,
+function svgPaintBounds(
+	fill: readonly SvgContour[],
+	stroke: readonly SvgContour[],
+	charge: (amount: number) => void,
+): SvgBounds | null {
+	let left = Infinity;
+	let right = -Infinity;
+	let top = Infinity;
+	let bottom = -Infinity;
+	for (const contours of [fill, stroke])
+		for (const contour of contours) {
+			charge(1);
+			if (contour.points.length < 3) continue;
+			for (const point of contour.points) {
+				charge(1);
+				left = Math.min(left, point.x);
+				right = Math.max(right, point.x);
+				top = Math.min(top, point.y);
+				bottom = Math.max(bottom, point.y);
+			}
+		}
+	return left === Infinity
+		? null
+		: Object.freeze({
+				x: left,
+				y: top,
+				width: right - left,
+				height: bottom - top,
+			});
+}
+
+function svgContoursContain(
+	contours: readonly SvgContour[],
+	fillRule: SvgFill["fillRule"],
 	across: number,
 	down: number,
 	charge: (amount: number) => void,
 ) {
 	let winding = 0;
-	for (const contour of shape.contours) {
+	for (const contour of contours) {
+		charge(1);
+		if (contour.points.length < 3) continue;
 		for (let index = 0; index < contour.points.length; index++) {
 			charge(1);
 			const start = contour.points[index];
@@ -177,9 +281,26 @@ export function svgShapeContains(
 			if (across < crossing) winding += start.y < end.y ? 1 : -1;
 		}
 	}
-	return shape.fillRule === "nonzero"
-		? winding !== 0
-		: Math.abs(winding) % 2 === 1;
+	return fillRule === "nonzero" ? winding !== 0 : Math.abs(winding) % 2 === 1;
+}
+
+export function svgShapeContains(
+	shape: ProjectedSvgShape,
+	across: number,
+	down: number,
+	charge: (amount: number) => void,
+) {
+	return (
+		(shape.fill !== null &&
+			svgContoursContain(
+				shape.contours,
+				shape.fillRule,
+				across,
+				down,
+				charge,
+			)) ||
+		svgContoursContain(shape.strokeContours, "nonzero", across, down, charge)
+	);
 }
 
 export function rasterizeSvgScene(
@@ -200,27 +321,100 @@ export function rasterizeSvgScene(
 			"SVG viewport raster limit exceeded",
 		);
 	const projection = projectSvgScene(scene, width, height, charge);
-	const fills = projection.shapes
-		.filter((shape) => shape.visible && shape.fill !== null)
-		.map((shape) => ({
+	const layers: { fills: SvgFill[]; opacity: number }[] = [];
+	let fillCount = 0;
+	let contourCount = 0;
+	let pointCount = 0;
+	let edgeCount = 0;
+	const prepareFill = (
+		contours: readonly SvgContour[],
+		color: SvgFill["color"],
+		fillRule: SvgFill["fillRule"],
+	): SvgFill => {
+		charge(1);
+		if (++fillCount > svgFillLimits.maxShapes)
+			throw new AgentBrowserError("resource-limit", "SVG shape limit exceeded");
+		return {
 			color:
-				shape.fill instanceof SvgLinearGradient
-					? shape.fill.transformed(
+				color instanceof SvgLinearGradient
+					? color.transformed(
 							[columns / width, 0, 0, rows / height, 0, 0],
 							charge,
 						)
-					: shape.fill!,
-			fillRule: shape.fillRule,
-			contours: shape.contours.map((contour) => ({
-				closed: contour.closed,
-				points: contour.points.map((point) => {
-					charge(1);
-					return {
-						x: (point.x * columns) / width,
-						y: (point.y * rows) / height,
-					};
-				}),
-			})),
-		}));
-	return rasterizeSvgFills(fills, columns, rows, charge);
+					: color,
+			fillRule,
+			contours: contours.map((contour) => {
+				charge(1);
+				if (++contourCount > svgFillLimits.maxContours)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"SVG contour limit exceeded",
+					);
+				pointCount += contour.points.length;
+				if (pointCount > svgFillLimits.maxPoints)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"SVG fill point limit exceeded",
+					);
+				return {
+					closed: contour.closed,
+					points: contour.points.map((point, index) => {
+						charge(1);
+						if (
+							contour.points.length >= 3 &&
+							point.y !==
+								contour.points[(index + 1) % contour.points.length].y &&
+							++edgeCount > svgFillLimits.maxEdges
+						)
+							throw new AgentBrowserError(
+								"resource-limit",
+								"SVG edge limit exceeded",
+							);
+						return {
+							x: (point.x * columns) / width,
+							y: (point.y * rows) / height,
+						};
+					}),
+				};
+			}),
+		};
+	};
+	for (const shape of projection.shapes) {
+		charge(1);
+		if (!shape.visible) continue;
+		const opacity = shape.opacity ?? 1;
+		if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1)
+			throw new AgentBrowserError("invalid-input", "Invalid SVG shape opacity");
+		const fills: SvgFill[] = [];
+		if (shape.fill !== null)
+			fills.push(prepareFill(shape.contours, shape.fill, shape.fillRule));
+		if (shape.stroke && shape.strokeContours.length)
+			fills.push(
+				prepareFill(shape.strokeContours, shape.stroke.paint, "nonzero"),
+			);
+		if (!fills.length) continue;
+		const previous = layers[layers.length - 1];
+		if (opacity === 1 && previous?.opacity === 1) previous.fills.push(...fills);
+		else layers.push({ fills, opacity });
+	}
+	let image: RasterImage | undefined;
+	for (const layer of layers) {
+		charge(1);
+		const source = rasterizeSvgFills(layer.fills, columns, rows, charge);
+		if (layer.opacity !== 1) {
+			charge(columns * rows * 4);
+			for (let offset = 3; offset < source.pixels.length; offset += 4) {
+				source.pixels[offset] = Math.round(
+					source.pixels[offset] * layer.opacity,
+				);
+				if (source.pixels[offset] === 0)
+					source.pixels.fill(0, offset - 3, offset);
+			}
+		}
+		if (image) {
+			charge(columns * rows * 4);
+			paintRasterImage(image, source, 0, 0, columns, rows);
+		} else image = source;
+	}
+	return image ?? rasterizeSvgFills([], columns, rows, charge);
 }

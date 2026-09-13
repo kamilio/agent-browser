@@ -30,6 +30,12 @@ export function svgPresentationDeclarations(
 		"fill",
 		"fill-opacity",
 		"fill-rule",
+		"stroke",
+		"stroke-opacity",
+		"stroke-width",
+		"stroke-linecap",
+		"stroke-linejoin",
+		"stroke-miterlimit",
 	];
 	if (node.tagName === "svg" || node.tagName === "rect")
 		properties.push("width", "height");
@@ -53,7 +59,11 @@ export function svgPresentationDeclarations(
 				"SVG presentation attribute limit exceeded",
 			);
 		charge(source.length * 3 + 1);
-		let value = ["fill", "fill-opacity", "fill-rule"].includes(property)
+		const svgPaint =
+			["fill", "fill-opacity", "fill-rule"].includes(property) ||
+			property === "stroke" ||
+			property.startsWith("stroke-");
+		let value = svgPaint
 			? source.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
 			: source.trim();
 		if (
@@ -90,7 +100,7 @@ export function svgPresentationDeclarations(
 					declaration.substitution,
 			)
 		) {
-			if (["fill", "fill-opacity", "fill-rule"].includes(property)) {
+			if (svgPaint) {
 				result.push({
 					property: property as CssProperty,
 					value,

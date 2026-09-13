@@ -302,10 +302,9 @@ export class DocumentHitTesting {
 					if (
 						!shape.visible ||
 						!shape.pointerEvents ||
-						shape.fill === null ||
-						!shape.bounds ||
-						shape.bounds.width <= 0 ||
-						shape.bounds.height <= 0 ||
+						!shape.paintBounds ||
+						shape.paintBounds.width <= 0 ||
+						shape.paintBounds.height <= 0 ||
 						isInert(shape.id)
 					)
 						continue;
@@ -318,10 +317,10 @@ export class DocumentHitTesting {
 						Object.freeze({
 							id: shape.id,
 							fixed: fixed.has(id),
-							x: originX + shape.bounds.x,
-							y: originY + shape.bounds.y,
-							width: shape.bounds.width,
-							height: shape.bounds.height,
+							x: originX + shape.paintBounds.x,
+							y: originY + shape.paintBounds.y,
+							width: shape.paintBounds.width,
+							height: shape.paintBounds.height,
 							svg: Object.freeze({
 								shape,
 								originX,

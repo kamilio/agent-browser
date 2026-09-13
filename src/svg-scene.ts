@@ -19,7 +19,12 @@ import { svgGradientPaint } from "./svg-gradient-paint.js";
 import { SvgLinearGradient } from "./svg-linear-gradient.js";
 import { svgPathBounds } from "./svg-path-bounds.js";
 import type { SvgPathSegment, SvgPoint } from "./svg-path-types.js";
-import type { SvgMatrix, SvgScene, SvgSceneShape } from "./svg-scene-types.js";
+import type {
+	SvgMatrix,
+	SvgScene,
+	SvgSceneShape,
+	SvgSceneStroke,
+} from "./svg-scene-types.js";
 
 const limits = Object.freeze({
 	nodes: 4096,
@@ -61,6 +66,12 @@ interface Presentation {
 	fill: SvgFill;
 	fillRule: "nonzero" | "evenodd";
 	fillOpacity: number;
+	stroke: SvgFill;
+	strokeOpacity: number;
+	strokeWidth: string;
+	lineCap: "butt" | "round" | "square";
+	lineJoin: "miter" | "round" | "bevel";
+	miterLimit: number;
 }
 
 export function documentSvgScene(
@@ -276,29 +287,33 @@ function buildSvgScene(
 	function presentation(node: Readonly<DocumentNode>): Presentation {
 		const computed = styles.paint(node.id);
 		if (computed.svgPaintError)
-			unsupported("unsupported fill presentation attribute");
-		let fill =
-			computed.fill === undefined ? cssNamedColors.black : computed.fill;
-		if (fill !== null && typeof fill === "object" && "reference" in fill) {
-			const targetId = references.get(fill.reference);
-			const target = targetId === undefined ? undefined : tree.get(targetId);
-			charge(2);
-			if (
-				!target ||
-				target.kind !== "element" ||
-				elementNamespace(target) !== svgNamespace ||
-				!["linearGradient", "radialGradient", "pattern"].includes(
-					target.tagName,
+			unsupported("unsupported paint presentation attribute");
+		function resolve(fill: SvgFill): SvgFill {
+			if (fill !== null && typeof fill === "object" && "reference" in fill) {
+				const targetId = references.get(fill.reference);
+				const target = targetId === undefined ? undefined : tree.get(targetId);
+				charge(2);
+				if (
+					!target ||
+					target.kind !== "element" ||
+					elementNamespace(target) !== svgNamespace ||
+					!["linearGradient", "radialGradient", "pattern"].includes(
+						target.tagName,
+					)
 				)
-			)
-				fill = fill.fallback === undefined ? null : fill.fallback;
+					fill = fill.fallback === undefined ? null : fill.fallback;
+			}
+			return fill;
 		}
-		const stroke = attribute(node, "stroke");
-		if (
-			stroke !== undefined &&
-			!["none", "inherit", "unset", "initial"].includes(stroke)
-		)
-			unsupported("stroke painting is not implemented");
+		for (const [name, neutral] of [
+			["stroke-dasharray", "none"],
+			["stroke-dashoffset", "0"],
+			["paint-order", "normal"],
+		] as const) {
+			const value = attribute(node, name);
+			if (value !== undefined && value !== neutral)
+				unsupported(`unsupported ${name}`);
+		}
 		for (const name of ["marker-start", "marker-mid", "marker-end"]) {
 			const value = attribute(node, name);
 			if (
@@ -314,9 +329,17 @@ function buildSvgScene(
 		}
 		charge(3);
 		return {
-			fill,
+			fill: resolve(
+				computed.fill === undefined ? cssNamedColors.black : computed.fill,
+			),
 			fillRule: computed["fill-rule"] ?? "nonzero",
 			fillOpacity: computed["fill-opacity"] ?? 1,
+			stroke: resolve(computed.stroke ?? null),
+			strokeOpacity: computed["stroke-opacity"] ?? 1,
+			strokeWidth: computed["stroke-width"] ?? "1px",
+			lineCap: computed["stroke-linecap"] ?? "butt",
+			lineJoin: computed["stroke-linejoin"] ?? "miter",
+			miterLimit: computed["stroke-miterlimit"] ?? 4,
 		};
 	}
 	function path(node: Readonly<DocumentNode>): readonly SvgPathSegment[] {
@@ -544,45 +567,75 @@ function buildSvgScene(
 			if (output.length >= limits.shapes) resource("shape limit exceeded");
 			const segments = path(node);
 			charge(4);
-			const color =
-				paint.fill === "currentcolor"
-					? styles.paint(node.id).color
-					: paint.fill;
-			let fill: Rgba | SvgLinearGradient | null;
-			if (color !== null && typeof color === "object" && "reference" in color) {
-				const target = references.get(color.reference);
-				if (target === undefined) unsupported("unresolved paint reference");
-				const rootBox = styles.box(id);
-				const absolute = (value: string) =>
-					/^\d+(?:\.\d+)?px$/.test(value)
-						? Number.parseFloat(value)
-						: undefined;
-				const width = absolute(rootBox.width);
-				const height = absolute(rootBox.height);
-				const viewport =
-					viewBox ??
-					(width !== undefined && height !== undefined
-						? { x: 0, y: 0, width, height }
-						: null);
-				fill =
-					svgGradientPaint(
-						tree,
-						target,
-						styles,
-						viewport,
-						svgPathBounds(segments, svgIdentity, charge),
-						charge,
-					)?.withOpacity(paint.fillOpacity * alpha, charge) ?? null;
-			} else
-				fill =
-					color === null
+			const rootBox = styles.box(id);
+			const absolute = (value: string) =>
+				/^\d+(?:\.\d+)?(?:e[+-]?\d+)?px$/i.test(value)
+					? Number.parseFloat(value)
+					: undefined;
+			const width = absolute(rootBox.width);
+			const height = absolute(rootBox.height);
+			const viewport =
+				viewBox ??
+				(width !== undefined && height !== undefined
+					? { x: 0, y: 0, width, height }
+					: null);
+			function paintValue(
+				value: SvgFill,
+				opacity: number,
+			): Rgba | SvgLinearGradient | null {
+				const color =
+					value === "currentcolor" ? styles.paint(node.id).color : value;
+				if (
+					color !== null &&
+					typeof color === "object" &&
+					"reference" in color
+				) {
+					const target = references.get(color.reference);
+					if (target === undefined) unsupported("unresolved paint reference");
+					return (
+						svgGradientPaint(
+							tree,
+							target,
+							styles,
+							viewport,
+							svgPathBounds(segments, svgIdentity, charge),
+							charge,
+						)?.withOpacity(opacity, charge) ?? null
+					);
+				} else
+					return color === null
 						? null
 						: Object.freeze([
 								color[0],
 								color[1],
 								color[2],
-								Math.round(color[3] * paint.fillOpacity * alpha),
+								Math.round(color[3] * opacity),
 							]);
+			}
+			let stroke: SvgSceneStroke | undefined;
+			if (paint.stroke !== null) {
+				const strokeWidth = Number.parseFloat(paint.strokeWidth);
+				if (!Number.isFinite(strokeWidth) || strokeWidth > 1e9)
+					resource("stroke width magnitude limit exceeded");
+				if (strokeWidth > 0) {
+					const strokePaint = paintValue(paint.stroke, paint.strokeOpacity);
+					if (strokePaint !== null)
+						stroke = Object.freeze({
+							paint: strokePaint,
+							width: strokeWidth,
+							...(paint.strokeWidth.endsWith("%")
+								? { widthPercentage: true as const }
+								: {}),
+							lineCap: paint.lineCap,
+							lineJoin: paint.lineJoin,
+							miterLimit: paint.miterLimit,
+						});
+				}
+			}
+			const fill = paintValue(
+				paint.fill,
+				paint.fillOpacity * (stroke === undefined ? alpha : 1),
+			);
 			charge(10);
 			output.push(
 				Object.freeze({
@@ -592,6 +645,9 @@ function buildSvgScene(
 					path: segments,
 					transform: matrix,
 					fill,
+					...(stroke === undefined
+						? {}
+						: { stroke, ...(alpha === 1 ? {} : { opacity: alpha }) }),
 					fillRule: paint.fillRule,
 					visible: visibility.visible,
 					pointerEvents: styles.pointerEvents(node.id) !== "none",

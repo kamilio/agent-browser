@@ -270,7 +270,7 @@ it.each([
 	"<foreignObject><p>HTML</p></foreignObject>",
 	"<svg></svg>",
 	'<a href="/next"><rect width=10 height=10 /></a>',
-	"<rect width=10 height=10 stroke=red />",
+	'<rect width=10 height=10 stroke=red stroke-dasharray="2 2" />',
 	'<g opacity="0.5"><rect width=10 height=10 /></g>',
 	'<rect width=10 height=10 fill="context-fill" />',
 ])("preserves the unsupported SVG guard for %s", (content) => {
@@ -284,7 +284,7 @@ it.each([
 it("does not hide unsupported SVG CSS or visible-overflow declarations", () => {
 	const styled = fixture(
 		"<svg id=svg width=100 height=50><rect width=20 height=20 /></svg>",
-		"rect{stroke:red}",
+		"rect{stroke:red;stroke-dasharray:2 2}",
 	);
 	expect(() => styled.rect("#svg")).toThrow("issue-free");
 	const overflow = fixture(

@@ -12,6 +12,10 @@ import {
 } from "./css-color.js";
 import type { Rgba } from "./raster.js";
 import {
+	computeSvgStrokeWidth,
+	normalizeSvgStrokeWidth,
+} from "./svg-stroke-width.js";
+import {
 	normalizeSvgFill,
 	parseSvgFill,
 	type SvgFill,
@@ -31,6 +35,12 @@ export const cssPaintProperties = Object.freeze([
 	"fill",
 	"fill-opacity",
 	"fill-rule",
+	"stroke",
+	"stroke-opacity",
+	"stroke-width",
+	"stroke-linecap",
+	"stroke-linejoin",
+	"stroke-miterlimit",
 	...cssBackgroundProperties,
 ] as const);
 export type CssPaintProperty = (typeof cssPaintProperties)[number];
@@ -47,6 +57,12 @@ export interface PaintStyle
 	readonly fill?: SvgFill;
 	readonly "fill-opacity"?: number;
 	readonly "fill-rule"?: "nonzero" | "evenodd";
+	readonly stroke?: SvgFill;
+	readonly "stroke-opacity"?: number;
+	readonly "stroke-width"?: string;
+	readonly "stroke-linecap"?: "butt" | "round" | "square";
+	readonly "stroke-linejoin"?: "miter" | "round" | "bevel";
+	readonly "stroke-miterlimit"?: number;
 	readonly svgPaintError?: true;
 	readonly "background-color": CssColor;
 }
@@ -67,6 +83,12 @@ export function isCssPaintProperty(
 		property === "fill" ||
 		property === "fill-opacity" ||
 		property === "fill-rule" ||
+		property === "stroke" ||
+		property === "stroke-opacity" ||
+		property === "stroke-width" ||
+		property === "stroke-linecap" ||
+		property === "stroke-linejoin" ||
+		property === "stroke-miterlimit" ||
 		property === "background-color" ||
 		isNeutralBackgroundProperty(property)
 	);
@@ -75,7 +97,7 @@ export function parsePaintValue(
 	value: string,
 	property: CssPaintProperty = "color",
 ): string | undefined {
-	if (property === "fill") {
+	if (property === "fill" || property === "stroke") {
 		const keyword = value
 			.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
 			.toLowerCase();
@@ -98,10 +120,46 @@ export function parsePaintValue(
 			? keyword
 			: undefined;
 	}
-	if (property === "stop-opacity" || property === "fill-opacity") {
+	if (property === "stroke-width") return normalizeSvgStrokeWidth(value);
+	if (
+		property === "stroke-linecap" ||
+		property === "stroke-linejoin" ||
+		property === "stroke-miterlimit"
+	) {
+		const keyword = value
+			.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
+			.toLowerCase();
+		if (["initial", "inherit", "unset", "revert"].includes(keyword))
+			return keyword;
+		if (property === "stroke-miterlimit") {
+			return /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?$/.test(keyword) &&
+				Number.isFinite(Number(keyword)) &&
+				Number(keyword) >= 0
+				? String(Number(keyword))
+				: undefined;
+		}
+		return (property === "stroke-linecap"
+			? ["butt", "round", "square"]
+			: ["miter", "round", "bevel"]
+		).includes(keyword)
+			? keyword
+			: undefined;
+	}
+	if (
+		property === "stop-opacity" ||
+		property === "fill-opacity" ||
+		property === "stroke-opacity"
+	) {
 		if (["initial", "inherit", "unset", "revert"].includes(value)) return value;
+		if (
+			property === "stroke-opacity" &&
+			!/^[\t\n\f\r ]*[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?%?[\t\n\f\r ]*$/i.test(
+				value,
+			)
+		)
+			return undefined;
 		const match = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)(%)?$/i.exec(
-			property === "fill-opacity"
+			property !== "stop-opacity"
 				? value.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
 				: value.trim(),
 		);
@@ -149,22 +207,56 @@ export function computePaintStyle(
 		fill?: SvgFill;
 		"fill-opacity"?: number;
 		"fill-rule"?: "nonzero" | "evenodd";
+		stroke?: SvgFill;
+		"stroke-opacity"?: number;
+		"stroke-width"?: string;
+		"stroke-linecap"?: "butt" | "round" | "square";
+		"stroke-linejoin"?: "miter" | "round" | "bevel";
+		"stroke-miterlimit"?: number;
 		svgPaintError?: true;
 	} & Partial<Record<BorderColorProperty, Rgba>> = {
 		color:
 			foreground && foreground !== "currentcolor" ? foreground : parent.color,
 		"background-color": fill ?? transparentColor,
 	};
-	const svgFill = specified.fill;
-	if (
-		svgFill === undefined ||
-		["inherit", "unset", "revert"].includes(svgFill)
-	) {
-		if (parent.fill !== undefined) result.fill = parent.fill;
-	} else if (svgFill !== "initial") {
-		const parsed = parseSvgFill(svgFill);
-		if (parsed !== undefined) result.fill = parsed;
-		else result.svgPaintError = true;
+	for (const property of ["fill", "stroke"] as const) {
+		const svgFill = specified[property];
+		if (
+			svgFill === undefined ||
+			["inherit", "unset", "revert"].includes(svgFill)
+		) {
+			if (parent[property] !== undefined) result[property] = parent[property];
+		} else if (svgFill !== "initial") {
+			const parsed = parseSvgFill(svgFill);
+			if (parsed !== undefined) result[property] = parsed;
+			else result.svgPaintError = true;
+		}
+	}
+	for (const property of [
+		"stroke-width",
+		"stroke-linecap",
+		"stroke-linejoin",
+		"stroke-miterlimit",
+	] as const) {
+		const value = specified[property];
+		if (value === undefined || ["inherit", "unset", "revert"].includes(value)) {
+			Object.assign(
+				result,
+				parent[property] === undefined ? {} : { [property]: parent[property] },
+			);
+		} else if (value !== "initial") {
+			const parsed = parsePaintValue(value, property);
+			if (parsed === undefined) result.svgPaintError = true;
+			else
+				Object.assign(result, {
+					[property]:
+						property === "stroke-width"
+							? computeSvgStrokeWidth(parsed)
+							: property === "stroke-miterlimit"
+								? Number(parsed)
+								: parsed,
+				});
+		}
 	}
 	const fillRule = specified["fill-rule"];
 	if (
@@ -176,26 +268,27 @@ export function computePaintStyle(
 	} else if (fillRule === "nonzero" || fillRule === "evenodd")
 		result["fill-rule"] = fillRule;
 	else if (fillRule !== "initial") result.svgPaintError = true;
-	const fillOpacity = specified["fill-opacity"];
-	if (
-		fillOpacity === undefined ||
-		["inherit", "unset", "revert"].includes(fillOpacity)
-	) {
-		if (parent["fill-opacity"] !== undefined)
-			result["fill-opacity"] = parent["fill-opacity"];
-	} else if (fillOpacity !== "initial") {
-		const parsed = parsePaintValue(fillOpacity, "fill-opacity");
-		const percent = parsed?.endsWith("%") ?? false;
-		const amount =
-			parsed === undefined
-				? Number.NaN
-				: Number(percent ? parsed.slice(0, -1) : parsed);
-		if (Number.isFinite(amount))
-			result["fill-opacity"] = Math.max(
-				0,
-				Math.min(1, percent ? amount / 100 : amount),
-			);
-		else result.svgPaintError = true;
+	for (const property of ["fill-opacity", "stroke-opacity"] as const) {
+		const fillOpacity = specified[property];
+		if (
+			fillOpacity === undefined ||
+			["inherit", "unset", "revert"].includes(fillOpacity)
+		) {
+			if (parent[property] !== undefined) result[property] = parent[property];
+		} else if (fillOpacity !== "initial") {
+			const parsed = parsePaintValue(fillOpacity, property);
+			const percent = parsed?.endsWith("%") ?? false;
+			const amount =
+				parsed === undefined
+					? Number.NaN
+					: Number(percent ? parsed.slice(0, -1) : parsed);
+			if (Number.isFinite(amount))
+				result[property] = Math.max(
+					0,
+					Math.min(1, percent ? amount / 100 : amount),
+				);
+			else result.svgPaintError = true;
+		}
 	}
 	const stopColor = specified["stop-color"];
 	if (stopColor === "inherit") {
@@ -260,6 +353,12 @@ export function computePaintStyle(
 		result.fill === parent.fill &&
 		result["fill-opacity"] === parent["fill-opacity"] &&
 		result["fill-rule"] === parent["fill-rule"] &&
+		result.stroke === parent.stroke &&
+		result["stroke-opacity"] === parent["stroke-opacity"] &&
+		result["stroke-width"] === parent["stroke-width"] &&
+		result["stroke-linecap"] === parent["stroke-linecap"] &&
+		result["stroke-linejoin"] === parent["stroke-linejoin"] &&
+		result["stroke-miterlimit"] === parent["stroke-miterlimit"] &&
 		result.svgPaintError === parent.svgPaintError &&
 		borderColorProperties.every(
 			(property) => result[property] === parent[property],

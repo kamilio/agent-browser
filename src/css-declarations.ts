@@ -154,6 +154,12 @@ export const inlineProperties = [
 	"fill",
 	"fill-opacity",
 	"fill-rule",
+	"stroke",
+	"stroke-opacity",
+	"stroke-width",
+	"stroke-linecap",
+	"stroke-linejoin",
+	"stroke-miterlimit",
 	"background",
 	...cssBackgroundProperties,
 ];
@@ -242,7 +248,8 @@ function normalize(name: string, source: string): string | undefined {
 	if (!supported.has(name)) return undefined;
 	if (isCssGridProperty(name)) return parseGridValue(name, source);
 	if (isCssTableProperty(name)) return parseTableValue(name, source);
-	if (name === "fill") return parsePaintValue(source, name);
+	if (name === "fill" || name === "stroke")
+		return parsePaintValue(source, name);
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;
 	if (isCssOutlineProperty(name)) return parseOutlineValue(name, value);
@@ -300,7 +307,12 @@ function normalize(name: string, source: string): string | undefined {
 		name === "stop-color" ||
 		name === "stop-opacity" ||
 		name === "fill-opacity" ||
-		name === "fill-rule"
+		name === "fill-rule" ||
+		name === "stroke-opacity" ||
+		name === "stroke-width" ||
+		name === "stroke-linecap" ||
+		name === "stroke-linejoin" ||
+		name === "stroke-miterlimit"
 	)
 		return parsePaintValue(value, name);
 	return undefined;
