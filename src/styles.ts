@@ -154,6 +154,7 @@ import {
 	type TableSpecifiedStyle,
 } from "./css-table.js";
 import { svgPresentationDeclarations } from "./svg-presentation.js";
+import { fieldsetBoxDefaults, fieldsetPaintDefaults } from "./html-fieldset.js";
 import {
 	cssVariableLimits,
 	parseVariableValue,
@@ -1677,6 +1678,28 @@ export class DocumentStyles {
 		const legacyCentered = new Set<number>();
 		for (const node of nodes) {
 			charge(1);
+			const fieldsetBox = fieldsetBoxDefaults(node);
+			if (fieldsetBox) {
+				const specified = { ...boxSpecified.get(node.id) };
+				for (const [property, value] of Object.entries(fieldsetBox)) {
+					charge(1);
+					const name = property as CssBoxProperty;
+					if (specified[name] === undefined || specified[name] === "revert")
+						specified[name] = value;
+				}
+				boxSpecified.set(node.id, Object.freeze(specified));
+			}
+			const fieldsetPaint = fieldsetPaintDefaults(node);
+			if (fieldsetPaint) {
+				const specified = { ...paintSpecified.get(node.id) };
+				for (const [property, value] of Object.entries(fieldsetPaint)) {
+					charge(1);
+					const name = property as CssPaintProperty;
+					if (specified[name] === undefined || specified[name] === "revert")
+						specified[name] = value;
+				}
+				paintSpecified.set(node.id, Object.freeze(specified));
+			}
 			const textAlign = textSpecified.get(node.id)?.["text-align"];
 			if (
 				isHtmlElement(node, "center") &&

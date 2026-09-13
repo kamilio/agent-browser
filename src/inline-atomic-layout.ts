@@ -20,6 +20,10 @@ import {
 } from "./intrinsic-widths.js";
 import { layoutNumber } from "./layout-values.js";
 import {
+	fieldsetIntrinsicPadding,
+	resolveFieldsetMinimum,
+} from "./fieldset-layout.js";
+import {
 	resolveShrinkToFitWidth,
 	type ShrinkToFitIntrinsicWidths,
 } from "./shrink-to-fit.js";
@@ -86,11 +90,11 @@ export function layoutFormattingAtomicInline(
 			"unsupported",
 			"Atomic sizing requires a retained inline container",
 		);
-	const style = node.box ?? initialBoxStyle;
+	let style = node.box ?? initialBoxStyle;
 	const borders = resolveBorders(style);
 	const basis = frame.containingWidth;
 	let intrinsicWidths: ShrinkToFitIntrinsicWidths | undefined;
-	if (style.width === "auto") {
+	if (style.width === "auto" || style["min-width"] === "min-content") {
 		const intrinsic = measureValidatedIntrinsicRoot(
 			formatting,
 			node.id,
@@ -111,7 +115,18 @@ export function layoutFormattingAtomicInline(
 				"unsupported",
 				"Missing atomic intrinsic width",
 			);
-		intrinsicWidths = measured;
+		const contentBox =
+			node.fieldsetContent === undefined
+				? undefined
+				: formatting.nodes[node.fieldsetContent].box;
+		const adjustment = contentBox
+			? fieldsetIntrinsicPadding(contentBox, basis)
+			: 0;
+		intrinsicWidths = {
+			minContent: Math.max(0, measured.minContent + adjustment),
+			maxContent: Math.max(0, measured.maxContent + adjustment),
+		};
+		style = resolveFieldsetMinimum(style, intrinsicWidths.minContent);
 	}
 	const resolved = resolveShrinkToFitWidth(
 		style,

@@ -295,7 +295,7 @@ export function layoutFormattingDocument(
 		const style = node.box ?? initialBoxStyle;
 		const resolvedHeight = resolveHeightConstraints(
 			style,
-			width.containingWidth,
+			width.paddingBasis ?? width.containingWidth,
 			containingHeight,
 		);
 		const constraints = width.intrinsicHeight

@@ -383,6 +383,8 @@
   "src/form-defaults.test.ts",
   "src/form-submit.test.ts",
   "src/formatting-tree.test.ts",
+  "src/fieldset-style.test.ts",
+  "src/fieldset-layout.test.ts",
   "src/dialog-display.test.ts",
   "src/forms.test.ts",
   "src/geometry-command.test.ts",

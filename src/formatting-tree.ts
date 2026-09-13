@@ -6,6 +6,13 @@ import {
 	type CollapsedTableFormatting,
 } from "./table-collapsed-formatting.js";
 import { measureValidatedIntrinsicRoot } from "./intrinsic-widths.js";
+import {
+	fieldsetContentStyle,
+	fieldsetIntrinsicPadding,
+	fieldsetOuterStyle,
+	fieldsetPaddingStyle,
+	resolveFieldsetMinimum,
+} from "./fieldset-layout.js";
 import { initialPaintStyle, type PaintStyle } from "./css-paint.js";
 import type { TextStyle } from "./css-text.js";
 import type { DocumentTree } from "./document.js";
@@ -130,6 +137,8 @@ export interface FormattingNode {
 	gridItem?: boolean;
 	orderModifiedChildren?: readonly number[];
 	independentContext?: boolean;
+	fieldsetContent?: number;
+	fieldsetOwner?: number;
 	blockContentAlignment?: Readonly<BlockContentAlignment>;
 	fragmentIndex?: number;
 	fragmentCount?: number;
@@ -851,7 +860,7 @@ export function buildFormattingTree(
 			alternativeBox !== undefined &&
 			(alternativeBox.width !== "auto" || alternativeBox.height !== "auto");
 		const imageText = replacedAlternative ? undefined : brokenAlternative;
-		const children = (asItems?: "flex" | "grid") => {
+		const children = (asItems?: "flex" | "grid", extraDepth = 0) => {
 			const result: number[] = [];
 			if (imageText !== undefined) {
 				if (depth + 1 > limits.maxDepth)
@@ -957,7 +966,7 @@ export function buildFormattingTree(
 				);
 			}
 			for (const child of node.children)
-				append(result, visit(child, depth + 1, asItems));
+				append(result, visit(child, depth + 1 + extraDepth, asItems));
 			return result;
 		};
 		if (
@@ -966,6 +975,74 @@ export function buildFormattingTree(
 			node.tagName !== "math"
 		)
 			return children(itemMode);
+		if (
+			isHtmlElement(node, "fieldset") &&
+			[
+				"block",
+				"block flow",
+				"flow-root",
+				"block flow-root",
+				"inline",
+				"inline flow",
+				"inline-block",
+				"inline flow-root",
+			].includes(display) &&
+			!flexItem &&
+			!gridItem &&
+			!floating &&
+			!outOfFlow &&
+			["top", "right", "bottom", "left"].every((side) =>
+				["none", "hidden", "solid"].includes(
+					styles.box(id)[`border-${side}-style` as keyof BoxStyle],
+				),
+			)
+		) {
+			if (depth + 1 > limits.maxDepth)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Fieldset content formatting depth limit exceeded",
+				);
+			const box = styles.box(id);
+			const typography = styles.text(id);
+			const paint = styles.paint(id);
+			const contentAlignment = resolveBlockContentAlignment(
+				styles.flex(id)["align-content"],
+			);
+			if (contentAlignment === null)
+				issue("block-content-alignment-not-supported");
+			const outer = create({
+				kind: "block",
+				level: display.startsWith("inline") ? "inline" : "block",
+				ref,
+				display: display.startsWith("inline") ? "inline-block" : "flow-root",
+				visible: visibility.visible,
+				box: fieldsetOuterStyle(box),
+				paint,
+				typography,
+				independentContext: true,
+				...itemFields,
+			});
+			const content = create({
+				kind: "block",
+				level: "block",
+				display: "flow-root",
+				visible: visibility.visible,
+				box: fieldsetContentStyle(box),
+				paint: Object.freeze({ ...initialPaintStyle, color: paint.color }),
+				typography,
+				independentContext: true,
+				fieldsetOwner: outer,
+				...(contentAlignment
+					? { blockContentAlignment: contentAlignment }
+					: {}),
+			});
+			nodes[outer].fieldsetContent = content;
+			const contents = children(undefined, 1);
+			if (contents.some(tableInternal)) nodes[content].table = styles.table(id);
+			normalizeChildren(content, contents);
+			normalizeChildren(outer, [content]);
+			return [outer];
+		}
 		if (
 			(display === "table" || display.startsWith("table-")) &&
 			!deferredElements.has(node.tagName)
@@ -1546,6 +1623,7 @@ export interface FormattingBlockWidth extends BlockWidth {
 	contentHeightOverride?: number;
 	contentHeightDefinite?: boolean;
 	intrinsicHeight?: boolean;
+	paddingBasis?: number;
 }
 
 export interface DocumentBlockWidths {
@@ -1643,6 +1721,7 @@ export interface BlockReflowRoot {
 	contentHeightOverride?: number;
 	contentHeightDefinite?: boolean;
 	intrinsicHeight?: boolean;
+	paddingBasis?: number;
 }
 
 export function resolveFormattingBlockWidths(
@@ -1735,6 +1814,45 @@ export function resolveFormattingBlockWidths(
 		let containingBlock = frame.containingBlock;
 		let replaced: Readonly<ReplacedSize> | undefined;
 		let style = node.box ?? initialBoxStyle;
+		const paddingBasis =
+			node.fieldsetOwner === undefined
+				? undefined
+				: (frame.paddingBasis ?? containingWidth);
+		if (paddingBasis !== undefined)
+			style = fieldsetPaddingStyle(style, paddingBasis);
+		if (style["min-width"] === "min-content" && !frame.usedWidth) {
+			const measured = measureValidatedIntrinsicRoot(
+				formatting,
+				node.id,
+				frame.containingHeight,
+				{
+					maxWork: Math.min(4_000_000, Math.max(1, maxWork - work)),
+					text: context.text,
+				},
+				context.nesting ?? 0,
+			);
+			charge(measured.metrics.work);
+			const intrinsic = measured.widths.find((entry) => {
+				charge();
+				return entry.id === node.id;
+			});
+			if (!intrinsic)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Missing intrinsic minimum width",
+				);
+			const contentBox =
+				node.fieldsetContent === undefined
+					? undefined
+					: formatting.nodes[node.fieldsetContent].box;
+			const adjustment = contentBox
+				? fieldsetIntrinsicPadding(contentBox, frame.containingWidth)
+				: 0;
+			style = resolveFieldsetMinimum(
+				style,
+				Math.max(0, intrinsic.minContent + adjustment),
+			);
+		}
 		if (node.contentMode === "table" && !frame.usedWidth) {
 			const measured = measureValidatedIntrinsicRoot(
 				formatting,
@@ -1884,6 +2002,7 @@ export function resolveFormattingBlockWidths(
 					borderX,
 					contentX,
 					containingHeight,
+					...(paddingBasis === undefined ? {} : { paddingBasis }),
 					...(frame.intrinsicHeight ? { intrinsicHeight: true } : {}),
 					...(frame.contentHeightDefinite === false
 						? { contentHeightDefinite: false }
@@ -1916,6 +2035,9 @@ export function resolveFormattingBlockWidths(
 				containingWidth,
 				containingHeight,
 				contentX,
+				...(node.fieldsetContent === undefined
+					? {}
+					: { paddingBasis: frame.containingWidth }),
 			});
 		}
 	}

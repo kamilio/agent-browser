@@ -25,6 +25,7 @@ import {
 	type FormattingTree,
 } from "./formatting-tree.js";
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
+import { resolveFieldsetMinimum } from "./fieldset-layout.js";
 import {
 	resolveHeightConstraints,
 	resolveReplacedSize,
@@ -953,7 +954,10 @@ function measureScopes(
 		maxContent = Math.max(minContent, maxContent);
 		const replacedMin = minima.get(id);
 		const replacedMax = maxima.get(id);
-		const style = cyclicStyle(node.box ?? initialBoxStyle);
+		const style = resolveFieldsetMinimum(
+			cyclicStyle(node.box ?? initialBoxStyle),
+			minContent,
+		);
 		const minContribution = replacedMin
 			? layoutNumber(
 					replacedMin.borderBoxWidth +
