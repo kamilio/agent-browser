@@ -6,6 +6,43 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: actual table-caption wrappers and client geometry
+
+Captions now flow around a real native table grid inside an anonymous wrapper.
+Margins/relative offsets/floats belong to the wrapper; borders/padding/background
+remain on the grid. Caption minimums constrain sizing, percentage bases remain
+distinct, and actual grid/caption boxes contribute to table client geometry.
+An alignment review exposed dropped align-content metadata; four isolated
+reproductions fail before the correction and pass through the existing block path.
+
+Two suites add65 cases. The original61-case red baseline gives7pass/54fail;
+the supplemental alignment baseline gives0pass/4fail/44unselected pending.
+Final focused573/0/0 covers16suites/16strictroots. Broad18111/0/2 unchanged
+exclusions covers352suites/351strictroots,730manifest entries and378unrun suites.
+Build/strict/format/source integrity and1253 unchanged tracked inputs pass.
+Root dist, historical evidence and unrelated uncommitted work remain untouched.
+
+Fresh native CSS22 source reading confirms separate wrapper/grid ownership;
+its CAPMIN auto-width recipe is explicitly non-normative. The unchanged-byte
+TestPages replay now retains grid e3000 and caption e3002 under a real wrapper.
+Caption and collapsed-border diagnostics clear; the table's raw coordination
+shell remains. Whole-page geometry still fails on stylesheet integrity/CORS,
+an unloaded stylesheet and two CSS values. No rectangle/raster/action or speed
+success is claimed. Replay HTTP0; prior failed17962 evidence keeps its exit1.
+An additional native CSSOM capture succeeds, but its semantic-reader algorithm
+anchor query returns no match and the offline lane exits1 without excerpts.
+Independent CSSOM rectangle-source verification remains open; possible dropped
+anchors in unwrapped reader elements require a separate evidence-led diagnosis.
+
+See TABLE-CAPTIONS.md and the twelfth September13 inventory. Next, investigate
+the actual stylesheet/CSS requirements and reduce avoidable caption bookkeeping
+without changing ownership. On the real page formatting work rises230592→234223;
+those counters are not a benchmark. Preserve source bytes and admission guards.
+Inline-table, absolute/fixed and flex/grid-item tables, complete caption UA/
+positioned behavior, broader website/performance work, original four research
+topics, credentials/passkey devices, SafeJS, realTTY and human challenge handoff
+remain open. The overall browser goal stays active.
+
 ### September 13: fresh public table page exposes remaining layout gates
 
 One native public navigation to TestPages follows its observed same-origin301
