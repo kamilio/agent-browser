@@ -6,6 +6,39 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: responsive font-size math and bounded LiveBench research
+
+Native font-size now accepts bounded calc/min/max/clamp expressions through the
+existing CSS math evaluator. Parent percentages/em, root rem, inherited ex and
+viewport units resolve to computed pixels, with final negative clamping and
+existing resource limits. No new dependency or site-specific stylesheet rewrite.
+
+New regressions: 74 pass; unchanged baseline 54 failures/20 passing controls.
+Focused validation: 663 pass, zero failures/skips. Expanded selected native run:
+19,343 pass, THREE unchanged baseline-confirmed failures, two unchanged skips;
+377 suites/376 strict roots/745 manifest entries. Build, strict and format pass.
+The full selected suite is NOT green; existing failures remain real failures.
+
+Exact retained TestPages HTML/CSS, zero HTTP: native h1 is now 34px rather than
+16px at width 800; the existing wide-screen media rule remains 40px at 1280.
+All 15 unsupported font-size-math declarations are accepted; invalid CSS value
+diagnostics fall 101 to 86. The 3153 DOM nodes and heading identity/text remain;
+two expected viewport presentation invalidations are explicitly accounted for.
+The failed wrapper, normalization attempt and first six-failure broad run are
+preserved, not relabeled. Three related rejection tests now check the supported
+math contract while retaining invalid math/line-height guards. Positioning,
+overflow and full rendering remain OPEN.
+
+Native-only LiveBench research: two public GETs succeeded under the prior ARIA
+runtime. Website reader admits title only; text/plain README supplies methodology
+claims and reporting limitations. Dated release claims are not latest-state
+verification; no leaderboard scores, model evaluation or cross-topic inference.
+The original four research topics and all broader browser/device/TTY/socket/
+SafeJS/credential/passkey/live-site acceptance gates remain OPEN. No push.
+
+Evidence: WEBSITE-TEST-INVENTORY-SEPTEMBER-13-TWENTY-SECOND-UPDATE.md,
+FONT-SIZE-MATH.md and BENCHMARK-LIVEBENCH-RESEARCH-SEPTEMBER-13.md.
+
 ### September 13: reusable ARIA table metadata and native newline fidelity
 
 Native reader preserves bounded explicit ARIA table/row/cell/header source
