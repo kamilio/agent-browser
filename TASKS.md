@@ -6,6 +6,55 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: shared rounded curves and exact kernel CSS attribution
+
+**PROGRESS; overall browser goal remains ACTIVE.** Commit2f1e208 adds immutable
+used rounded-box geometry, one-factor all8radius normalization, derived inner
+curves without renormalization, shared containment/spans and native rectangle/
+image clipping. Source scaling, alpha and alias handling remain intact. Work is
+charged before paint mutation. **Page-level border-radius remains unsupported**
+until CSS/cascade, curved border rings, generated/fragment/canvas and native hit
+paths are integrated; this foundation does not remove website guards.
+
+Actual native gate22:37:11.585–22:42:08.259UTC: **21,333passed/0failed/2unchanged
+skips**,416selected/415strict/770manifest,354unselected. Build/strict/scopedformat/
+source checks pass;1315source/2140compiled/1309unchangedtrackedinputs.71newcases:
+45geometry/26raster. Geometry-only108/0/0; combined13file462/0/0 includes391unchanged
+existing cases. Read-only geometry review found no concrete issue, not live proof.
+Two preparation assertions caught a nonexistent guessed adjacent-test filename
+before any test or snapshot; actual css-math-core/border-core selections are used.
+
+Kernel original CSS attribution at22:33:59UTC makes zeroHTTP/image-fetch/decode/
+geometry/action/raster/script calls. Original HTML plus both unchanged stylesheets:
+61raw/25applicable CSS diagnostics;57raw/21applicable property/value occurrences,
+zero reconciliation mismatches. Five applicable rounded-property occurrences and
+four background-image pipeline values are identified, without claiming winners.
+Two selector failures retain conservative applicability; stale lastWork53values
+are excluded and full query allowances reserved.95queries/532436charged work,
+38records/114references; missing unfetched images are not unsupported-image proof.
+
+Native20receiptledger7f4142966fbfb2eb8524096fca8c9e5a3cce8cb20ac23180ffdab24030b97f50.
+Attribution33entryledgerbecf2d1dc326e32f1080ba83151ff473423bc0bb5b69e65b16abe000f49468a9.
+Parent source/runtime/history/framework checks and cleanup pass; attribution group
+1006634absent. The old kernel live request-budget failure stays unchanged. No
+Python/Wikipedia/kernel full-resource live flow is rerun by this foundation gate.
+
+Separately, one native W3C CSSBreak3 GET200 at22:42:50UTC plus one offline parse
+clarifies defaultslice versus clone: unbroken decoration then slicing, versus
+independent fragment decoration; broken edges follow the parent's inline direction.
+Returned document is December4,2018 CR, not latest claim.171462decoded/32270encoded
+bytes,11651excerpt units, no redirects/assets/scripts or rendering. Unequal-size
+slice percentage-radius geometry remains unresolved; source is not implementation.
+Groups1012605/1012694absent; parent7ledgers/7031entries verified.66entryledger
+e16927811b4fbd95869297903fe3b0f4c7d347bc302dc4143d9b019562d5e5cb.
+
+Details: ROUNDED-GEOMETRY-PAINT.md, KERNEL-CSS-ATTRIBUTION-SEPTEMBER-13.md,
+ROUNDED-FRAGMENT-SOURCE-SEPTEMBER-13.md and websiteinventory41.
+Next: real CSS/radius/border/fragment/hit integration, original-
+asset pointer flows and repeatable varied-site performance. Hardware/benchmark/
+Astra/verified Reddit-Poe research and separate credential/provider/passkey-device/
+SafeJS/socket/TTY acceptance remain open. No push; old edits preserved.
+
 ### September 13: kernel.org original assets reach the scoped request limit
 
 **PROGRESS; overall browser goal remains ACTIVE.** A new bounded native live
