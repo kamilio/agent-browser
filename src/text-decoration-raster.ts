@@ -101,16 +101,23 @@ export function prepareTextDecorations(
 							"invalid-input",
 							"Unresolved text decoration color",
 						);
+					const lines = style["text-decoration-line"].split(
+						" ",
+					) as DecorationLine[];
+					const underlineOffset = style["text-underline-offset"];
 					chain = {
 						parent: chain,
 						domId,
-						lines: style["text-decoration-line"].split(" ") as DecorationLine[],
+						lines,
 						color,
 						thickness: decorationThickness(
 							style["text-decoration-thickness"],
 							size,
 						),
-						underline: size / 16,
+						underline:
+							lines.includes("underline") && underlineOffset !== "auto"
+								? resolveLayoutLength(underlineOffset, size, true)
+								: size / 16,
 						overline: (-size * bitmapFont.ascent) / bitmapFont.unitsPerEm,
 						strike:
 							-nativeFontXHeight(

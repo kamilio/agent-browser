@@ -199,7 +199,10 @@ it.each(["initial", "inherit", "unset", "revert"])(
 			declarations(`all:${value}`).filter((entry) =>
 				isCssTextDecorationProperty(entry.property),
 			),
-		).toEqual(expected);
+		).toEqual([
+			...expected,
+			{ property: "text-underline-offset", value, important: false },
+		]);
 		expect(
 			propertyValue(
 				parseInlineDeclarations(`text-decoration:${value}`, 10),
@@ -304,9 +307,10 @@ it("advertises a separate group without extending inherited text styles", () => 
 		expect(computedStyleProperties).toContain(property);
 		expect(cssTextProperties).not.toContain(property);
 	}
-	expect(styles.metrics().textDecorationProperties).toEqual(
-		cssTextDecorationProperties,
-	);
+	expect(styles.metrics().textDecorationProperties).toEqual([
+		...cssTextDecorationProperties,
+		"text-underline-offset",
+	]);
 	expect(computed.textDecoration).toBe("none solid rgb(0, 0, 0)");
 	expect(computed.textDecorationLine).toBe("none");
 	expect(computed.textDecorationStyle).toBe("solid");
@@ -344,6 +348,7 @@ it("computes root inherit against initial values with its own color", () => {
 		"text-decoration-thickness": "auto",
 		"text-decoration-style": "solid",
 		"text-decoration-color": "rgb(0, 0, 255)",
+		"text-underline-offset": "auto",
 	});
 });
 
@@ -477,6 +482,7 @@ it("refreshes immutable cached styles and the gate on ancestor mutation and clos
 		"text-decoration-thickness": "auto",
 		"text-decoration-style": "solid",
 		"text-decoration-color": "rgb(0, 128, 0)",
+		"text-underline-offset": "auto",
 	});
 	expect(before["text-decoration-line"]).toBe("underline");
 	inline.textDecoration = "line-through";

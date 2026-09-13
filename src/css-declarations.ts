@@ -25,6 +25,7 @@ import {
 } from "./css-outline.js";
 import {
 	cssTextDecorationProperties,
+	cssTextDecorationStyleProperties,
 	isCssTextDecorationProperty,
 	parseTextDecorationDeclarations,
 	parseTextDecorationValue,
@@ -123,7 +124,7 @@ const lengths = new Set([
 	...sides.map((side) => `padding-${side}`),
 ]);
 export const inlineProperties = [
-	...cssTextDecorationProperties,
+	...cssTextDecorationStyleProperties,
 	"text-decoration",
 	...cssOutlineProperties,
 	"outline",

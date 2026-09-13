@@ -44,7 +44,7 @@ import {
 } from "./css-property-aliases.js";
 import { cssTextProperties, isCssTextProperty } from "./css-text.js";
 import {
-	cssTextDecorationProperties,
+	cssTextDecorationStyleProperties,
 	isCssTextDecorationProperty,
 	serializeTextDecoration,
 } from "./css-text-decoration.js";
@@ -68,7 +68,7 @@ export const computedStyleProperties = Object.freeze(
 		...cssListProperties,
 		...cssTableProperties,
 		...cssOutlineProperties,
-		...cssTextDecorationProperties,
+		...cssTextDecorationStyleProperties,
 		...cssPaintProperties,
 		...cssTextProperties,
 		"display",

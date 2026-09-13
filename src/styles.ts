@@ -66,7 +66,7 @@ import {
 	type CssOutlineProperty,
 } from "./css-outline.js";
 import {
-	cssTextDecorationProperties,
+	cssTextDecorationStyleProperties,
 	isCssTextDecorationProperty,
 	computeTextDecorationStyle,
 	initialTextDecorationStyle,
@@ -672,7 +672,14 @@ export class DocumentStyles {
 		while (current !== null && !this.textDecorationComputed.has(current)) {
 			pending.push(current);
 			const specified = this.textDecorationSpecified.get(current);
-			if (!specified || !Object.values(specified).includes("inherit")) break;
+			const offset = specified?.["text-underline-offset"];
+			if (
+				offset !== undefined &&
+				offset !== "unset" &&
+				offset !== "revert" &&
+				!Object.values(specified ?? {}).includes("inherit")
+			)
+				break;
 			const parent: number | null = this.tree.get(current).parent;
 			current =
 				parent !== null && this.tree.get(parent).kind === "element"
@@ -683,11 +690,14 @@ export class DocumentStyles {
 			const parent = this.tree.get(target).parent;
 			const color = this.paint(target).color;
 			const specified = this.textDecorationSpecified.get(target) ?? {};
-			const thickness = specified["text-decoration-thickness"] ?? "auto";
+			const lengths = [
+				specified["text-decoration-thickness"] ?? "auto",
+				specified["text-underline-offset"] ?? "auto",
+			];
 			let fonts: BoxFontMetrics | undefined;
-			if (lengthUsesFont(thickness, "em"))
+			if (lengths.some((value) => lengthUsesFont(value, "em")))
 				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
-			if (lengthUsesFont(thickness, "ex")) {
+			if (lengths.some((value) => lengthUsesFont(value, "ex"))) {
 				const text = this.text(target);
 				fonts = {
 					...fonts,
@@ -698,7 +708,7 @@ export class DocumentStyles {
 					),
 				};
 			}
-			if (lengthUsesFont(thickness, "rem")) {
+			if (lengths.some((value) => lengthUsesFont(value, "rem"))) {
 				const root =
 					this.tree
 						.get(this.tree.root)
@@ -1159,7 +1169,7 @@ export class DocumentStyles {
 			listProperties: cssListProperties,
 			tableProperties: cssTableProperties,
 			outlineProperties: cssOutlineProperties,
-			textDecorationProperties: cssTextDecorationProperties,
+			textDecorationProperties: cssTextDecorationStyleProperties,
 			textProperties: cssTextProperties,
 			textFont: bitmapFont.family,
 			textFontWeights: bitmapFont.weights,

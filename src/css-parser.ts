@@ -14,7 +14,7 @@ import {
 	type CssOutlineProperty,
 } from "./css-outline.js";
 import {
-	cssTextDecorationProperties,
+	cssTextDecorationStyleProperties,
 	isCssTextDecorationProperty,
 	parseTextDecorationDeclarations,
 	type CssTextDecorationProperty,
@@ -385,7 +385,7 @@ export function parseCssDeclarations(
 		if (property === "all" && globals.has(value)) {
 			declarations.push(
 				{ property: "content", value, important },
-				...cssTextDecorationProperties.map((property) => ({
+				...cssTextDecorationStyleProperties.map((property) => ({
 					property,
 					value,
 					important,

@@ -14,8 +14,12 @@ export const cssTextDecorationProperties = Object.freeze([
 	"text-decoration-style",
 	"text-decoration-color",
 ] as const);
+export const cssTextDecorationStyleProperties = Object.freeze([
+	...cssTextDecorationProperties,
+	"text-underline-offset",
+] as const);
 export type CssTextDecorationProperty =
-	(typeof cssTextDecorationProperties)[number];
+	(typeof cssTextDecorationStyleProperties)[number];
 export type TextDecorationStyle = Readonly<
 	Record<CssTextDecorationProperty, string>
 >;
@@ -27,6 +31,7 @@ export const initialTextDecorationStyle: TextDecorationStyle = Object.freeze({
 	"text-decoration-thickness": "auto",
 	"text-decoration-style": "solid",
 	"text-decoration-color": "rgb(0, 0, 0)",
+	"text-underline-offset": "auto",
 });
 const initial = {
 	...initialTextDecorationStyle,
@@ -38,7 +43,9 @@ const lines = ["underline", "overline", "line-through"];
 export function isCssTextDecorationProperty(
 	property: string,
 ): property is CssTextDecorationProperty {
-	return (cssTextDecorationProperties as readonly string[]).includes(property);
+	return (cssTextDecorationStyleProperties as readonly string[]).includes(
+		property,
+	);
 }
 
 export function parseTextDecorationValue(
@@ -50,6 +57,10 @@ export function parseTextDecorationValue(
 		.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
 		.toLowerCase();
 	if (wide.has(value)) return value;
+	if (property === "text-underline-offset") {
+		if (value === "auto") return value;
+		return parseBoxDeclarations("margin-top", value)?.[0].value;
+	}
 	if (property === "text-decoration-thickness") {
 		if (["auto", "from-font", "thin", "medium", "thick"].includes(value))
 			return value;
@@ -161,9 +172,14 @@ export function computeTextDecorationStyle(
 	fonts?: Readonly<BoxFontMetrics>,
 ): TextDecorationStyle {
 	const values = { ...initial };
-	for (const property of cssTextDecorationProperties) {
+	for (const property of cssTextDecorationStyleProperties) {
 		const value = specified[property];
-		if (value === "inherit") values[property] = parent[property];
+		if (
+			value === "inherit" ||
+			(property === "text-underline-offset" &&
+				(value === undefined || value === "unset" || value === "revert"))
+		)
+			values[property] = parent[property];
 		else if (value !== undefined && !wide.has(value)) values[property] = value;
 	}
 	const thickness = values["text-decoration-thickness"];
@@ -173,6 +189,14 @@ export function computeTextDecorationStyle(
 	)
 		values["text-decoration-thickness"] = computeBoxStyle(
 			{ "margin-top": thickness },
+			initialBoxStyle,
+			viewport,
+			fonts,
+		)["margin-top"];
+	const offset = specified["text-underline-offset"];
+	if (offset !== undefined && offset !== "auto" && !wide.has(offset))
+		values["text-underline-offset"] = computeBoxStyle(
+			{ "margin-top": offset },
 			initialBoxStyle,
 			viewport,
 			fonts,
