@@ -1,8 +1,13 @@
 import { computeBoxStyle, type BoxStyle } from "./css-box.js";
 import { parseCssContent } from "./css-content.js";
-import { computeFlexStyle, type FlexStyle } from "./css-flex.js";
+import {
+	blockifyDisplay,
+	computeFlexStyle,
+	isFlexDisplay,
+	type FlexStyle,
+} from "./css-flex.js";
 import { computeFlowStyle, type FlowStyle } from "./css-flow.js";
-import { computeGridStyle, type GridStyle } from "./css-grid.js";
+import { computeGridStyle, isGridDisplay, type GridStyle } from "./css-grid.js";
 import { computeListStyle, type ListStyle } from "./css-list.js";
 import { computeOutlineStyle, type OutlineStyle } from "./css-outline.js";
 import {
@@ -22,6 +27,7 @@ import { nativeFontXHeight } from "./font-metrics.js";
 export interface GeneratedContentStyle {
 	readonly content: string;
 	readonly display: string;
+	readonly unpositionedDisplay?: string;
 	readonly visible: boolean;
 	readonly box: BoxStyle;
 	readonly typography: TextStyle;
@@ -72,6 +78,14 @@ export function computeGeneratedContentStyle(
 				? "inline"
 				: specified.display;
 	if (display === "none") return;
+	const flow = computeFlowStyle(specified, parent.flow);
+	const outOfFlow =
+		display !== "contents" &&
+		(flow.position === "absolute" || flow.position === "fixed");
+	const unpositionedDisplay =
+		isFlexDisplay(parent.display) || isGridDisplay(parent.display)
+			? blockifyDisplay(display)
+			: display;
 	const visibility =
 		specified.visibility === "initial"
 			? "visible"
@@ -98,12 +112,16 @@ export function computeGeneratedContentStyle(
 	const paint = computePaintStyle(specified, parent.paint);
 	return Object.freeze({
 		content,
-		display,
+		display: outOfFlow ? blockifyDisplay(display) : display,
+		...(outOfFlow ? { unpositionedDisplay } : {}),
 		visible: visibility === "visible",
 		typography,
 		box: computeBoxStyle(specified, parent.box, viewport, fonts),
 		paint,
-		flow: computeFlowStyle(specified, parent.flow),
+		flow:
+			outOfFlow && flow.float !== "none"
+				? Object.freeze({ ...flow, float: "none" })
+				: flow,
 		flex: computeFlexStyle(specified, parent.flex, viewport, fonts),
 		grid: computeGridStyle(specified, parent.grid, viewport, fonts),
 		list: computeListStyle(specified, parent.list),

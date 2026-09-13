@@ -82,7 +82,12 @@ import {
 	type GeneratedControlTarget,
 } from "./generated-controls.js";
 import { borderCapabilities, resolveBorders } from "./border-box.js";
-import { isFlexDisplay, initialFlexStyle, type FlexStyle } from "./css-flex.js";
+import {
+	blockifyDisplay,
+	isFlexDisplay,
+	initialFlexStyle,
+	type FlexStyle,
+} from "./css-flex.js";
 import { isGridDisplay, initialGridStyle, type GridStyle } from "./css-grid.js";
 import type { AtomicInlineMetrics } from "./inline-atomic.js";
 import {
@@ -601,6 +606,9 @@ export function buildFormattingTree(
 			);
 		const metadata = Object.freeze({ owner, name });
 		const { display, flow } = style;
+		const outOfFlow =
+			display !== "contents" &&
+			(flow.position === "absolute" || flow.position === "fixed");
 		const inline = display === "inline" || display === "inline flow";
 		const atomic = display === "inline-block" || display === "inline flow-root";
 		const block = [
@@ -615,18 +623,23 @@ export function buildFormattingTree(
 			deferredReason = "generated-content-display-layout-not-supported";
 			issue(deferredReason);
 		}
-		if (itemMode) {
+		if (itemMode && !outOfFlow) {
 			deferredReason = "generated-content-item-layout-not-supported";
 			issue(deferredReason);
 		}
-		if (flow.position !== "static") {
+		if (
+			flow.position !== "static" &&
+			flow.position !== "relative" &&
+			!outOfFlow
+		) {
 			issue("position-layout-not-supported");
 			issue("generated-content-position-layout-not-supported");
 		}
+		if (outOfFlow) issue("positioned-layout-requires-coordination");
 		if (flow.float !== "none") {
 			issue("generated-content-float-layout-not-supported");
 		}
-		if (flow.clear !== "none") {
+		if (flow.clear !== "none" && !outOfFlow) {
 			issue("generated-content-clear-layout-not-supported");
 		}
 		if (flow["overflow-x"] !== "visible" || flow["overflow-y"] !== "visible") {
@@ -690,9 +703,24 @@ export function buildFormattingTree(
 				typography: style.typography,
 				paint: style.paint,
 				generatedContent: metadata,
+				...(flow.position === "relative" || outOfFlow
+					? { position: flow.position as "relative" | "absolute" | "fixed" }
+					: {}),
+				...(outOfFlow
+					? {
+							staticDisplay: itemMode
+								? blockifyDisplay(style.unpositionedDisplay ?? display)
+								: (style.unpositionedDisplay ?? display),
+							staticFlex: style.flex,
+						}
+					: {}),
+				...(flow["z-index"] !== "auto" &&
+				(flow.position === "relative" || outOfFlow)
+					? { zIndex: Number(flow["z-index"]) }
+					: {}),
 				...(deferredReason ? { deferredReason } : {}),
 				...(inline ? { fragmentIndex: 0, fragmentCount: 1 } : {}),
-				...(atomic || display.includes("flow-root") || alignment
+				...(outOfFlow || atomic || display.includes("flow-root") || alignment
 					? { independentContext: true }
 					: {}),
 				...(alignment ? { blockContentAlignment: alignment } : {}),

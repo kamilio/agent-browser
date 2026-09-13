@@ -223,6 +223,10 @@ export class DocumentHitTesting {
 			while (current !== null) {
 				this.charge();
 				const node: Readonly<FormattingNode> = nodes[current];
+				if (node.generatedContent) {
+					target = node.generatedContent.owner;
+					break;
+				}
 				if (node.generated) {
 					target = node.generated.owner;
 					break;
