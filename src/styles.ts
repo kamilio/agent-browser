@@ -1578,6 +1578,7 @@ export class DocumentStyles {
 					matches = this.queries.matchingStyleSpecificities(
 						rule.selector,
 						this.limits.maxWork - work,
+						rule.nesting,
 					);
 				} catch (error) {
 					if (

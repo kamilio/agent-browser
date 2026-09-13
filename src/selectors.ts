@@ -30,12 +30,18 @@ export const selectorSyntaxLimits = Object.freeze({
 	maxNesting: 16,
 });
 
+export interface SelectorNestingContext {
+	readonly selector: string;
+	readonly parent?: SelectorNestingContext;
+}
+
 type Relation = " " | ">" | "+" | "~";
 type SelectorComponentScope = "list" | "branch";
 type AttributeOperator = "=" | "~=" | "|=" | "^=" | "$=" | "*=";
 export type GeneratedPseudoElement = "before" | "after";
 type SimpleSelector =
 	| { kind: "tag" | "id" | "class"; value: string }
+	| { kind: "nesting"; parent: CompiledSelector }
 	| { kind: "pseudo-element"; name: GeneratedPseudoElement }
 	| {
 			kind: "attribute";
@@ -65,6 +71,7 @@ interface SelectorPart {
 type Selector = SelectorPart[];
 interface CompiledSelector {
 	selectors: Selector[];
+	specificity: SelectorSpecificity;
 	nativeState: boolean;
 	controlValue: boolean;
 }
@@ -84,6 +91,15 @@ export function compareSpecificity(
 	return left[0] - right[0] || left[1] - right[1] || left[2] - right[2];
 }
 
+function addSpecificityComponent(left: number, right: number) {
+	if (right > Number.MAX_SAFE_INTEGER - left)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Selector specificity limit exceeded",
+		);
+	return left + right;
+}
+
 function selectorSpecificity(selector: Selector): SelectorSpecificity {
 	const total: [number, number, number] = [0, 0, 0];
 	const maximum = (selectors: Selector[]) =>
@@ -98,6 +114,7 @@ function selectorSpecificity(selector: Selector): SelectorSpecificity {
 		for (const test of part.tests) {
 			let value: SelectorSpecificity = [0, 0, 0];
 			if (test.kind === "id") value = [1, 0, 0];
+			else if (test.kind === "nesting") value = test.parent.specificity;
 			else if (test.kind === "tag") value = [0, 0, test.value === "*" ? 0 : 1];
 			else if (test.kind === "pseudo-element") value = [0, 0, 1];
 			else if (test.kind === "logical")
@@ -111,9 +128,10 @@ function selectorSpecificity(selector: Selector): SelectorSpecificity {
 							);
 			else if (test.kind === "nth") {
 				const nested = test.of ? maximum(test.of) : [0, 0, 0];
-				value = [nested[0], nested[1] + 1, nested[2]];
+				value = [nested[0], addSpecificityComponent(nested[1], 1), nested[2]];
 			} else value = [0, 1, 0];
-			for (let index = 0; index < 3; index++) total[index] += value[index];
+			for (let index = 0; index < 3; index++)
+				total[index] = addSpecificityComponent(total[index], value[index]);
 		}
 	return total;
 }
@@ -221,6 +239,7 @@ function unsupported(message: string): never {
 class SelectorParser {
 	private position = 0;
 	private components = 0;
+	private nestingTokens = 0;
 	private nativeState = false;
 	private controlValue = false;
 	private readonly source: string;
@@ -230,6 +249,7 @@ class SelectorParser {
 			Pick<QueryLimits, keyof typeof selectorSyntaxLimits>
 		>,
 		private readonly componentScope: SelectorComponentScope = "list",
+		private readonly parent?: CompiledSelector,
 	) {
 		if (typeof source !== "string") syntax("expected a string");
 		if (source.length > limits.maxSelectorCodeUnits)
@@ -245,11 +265,19 @@ class SelectorParser {
 	parse(): CompiledSelector {
 		const selectors = this.list(0, false, false);
 		if (this.position !== this.source.length) syntax("unexpected token");
-		return {
+		const specificity = selectors
+			.map(selectorSpecificity)
+			.reduce(
+				(best, candidate) =>
+					compareSpecificity(candidate, best) > 0 ? candidate : best,
+				[0, 0, 0] as SelectorSpecificity,
+			);
+		return Object.freeze({
 			selectors,
-			nativeState: this.nativeState,
-			controlValue: this.controlValue,
-		};
+			specificity: Object.freeze(specificity),
+			nativeState: this.nativeState || !!this.parent?.nativeState,
+			controlValue: this.controlValue || !!this.parent?.controlValue,
+		});
 	}
 	private list(
 		depth: number,
@@ -266,9 +294,15 @@ class SelectorParser {
 		while (true) {
 			if (depth === 0 && this.componentScope === "branch") this.components = 0;
 			const parts: Selector = [];
+			const nestingTokens = this.nestingTokens;
+			const nested = depth === 0 && this.parent !== undefined;
 			if (relative) parts.push({ tests: [{ kind: "pseudo", name: "scope" }] });
 			let relation: Relation | undefined;
 			if (relative) relation = this.combinator() ?? " ";
+			else if (nested) {
+				relation = this.combinator();
+				if (relation) parts.push({ tests: [this.nesting()] });
+			}
 			this.space();
 			parts.push({ tests: this.compound(depth, insideHas), relation });
 			while (true) {
@@ -289,12 +323,28 @@ class SelectorParser {
 					relation: explicit ?? " ",
 				});
 			}
+			if (nested && !relation && nestingTokens === this.nestingTokens) {
+				parts[0].relation = " ";
+				parts.unshift({ tests: [this.nesting()] });
+			}
+			for (const part of parts) {
+				for (const test of part.tests) Object.freeze(test);
+				Object.freeze(part.tests);
+				Object.freeze(part);
+			}
+			Object.freeze(parts);
 			result.push(parts);
 			if (this.source[this.position] !== ",") break;
 			this.position++;
 			this.space();
 		}
+		Object.freeze(result);
 		return result;
+	}
+	private nesting(): SimpleSelector {
+		if (!this.parent) syntax("nesting selector requires a context");
+		this.component();
+		return { kind: "nesting", parent: this.parent };
 	}
 	private compound(depth: number, insideHas: boolean) {
 		const tests: SimpleSelector[] = [];
@@ -310,9 +360,14 @@ class SelectorParser {
 		while (true) {
 			this.comments();
 			const next = this.source[this.position];
-			if (["#", ".", "[", ":"].includes(next) && pseudoElement)
+			if (["#", ".", "[", ":", "&"].includes(next) && pseudoElement)
 				unsupported("selectors after pseudo-elements");
-			if (next === "#" || next === ".") {
+			if (next === "&") {
+				this.position++;
+				this.nestingTokens++;
+				tests.push(this.nesting());
+				continue;
+			} else if (next === "#" || next === ".") {
 				this.position++;
 				tests.push({
 					kind: next === "#" ? "id" : "class",
@@ -338,6 +393,13 @@ class SelectorParser {
 	private attribute(): SimpleSelector {
 		this.position++;
 		this.space();
+		if (this.source[this.position] === "*") {
+			this.position++;
+			this.comments();
+			if (this.source[this.position] !== "|")
+				syntax("expected an attribute namespace separator");
+		}
+		if (this.source[this.position] === "|") unsupported("attribute namespaces");
 		const name = this.identifier();
 		this.space();
 		if (this.source[this.position] === "]") {
@@ -616,11 +678,77 @@ class SelectorParser {
 	}
 }
 
+function selectorSources(
+	source: string,
+	limits: Readonly<Pick<QueryLimits, keyof typeof selectorSyntaxLimits>>,
+	nesting?: SelectorNestingContext,
+): string[] {
+	if (typeof source !== "string") syntax("expected a string");
+	const sources = [source];
+	let length = source.length;
+	const visited = new Set<SelectorNestingContext>();
+	let current = nesting;
+	while (current !== undefined) {
+		if (
+			current === null ||
+			typeof current !== "object" ||
+			Array.isArray(current) ||
+			visited.has(current)
+		)
+			syntax("invalid or cyclic nesting context");
+		if (
+			visited.size >=
+			Math.min(limits.maxNesting, selectorSyntaxLimits.maxNesting)
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Selector nesting context limit exceeded",
+			);
+		visited.add(current);
+		const parentSource = current.selector;
+		if (typeof parentSource !== "string")
+			syntax("invalid nesting context selector");
+		length += parentSource.length;
+		if (length > limits.maxSelectorCodeUnits)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Selector text limit exceeded",
+			);
+		sources.push(parentSource);
+		current = current.parent;
+	}
+	if (length > limits.maxSelectorCodeUnits)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Selector text limit exceeded",
+		);
+	return sources;
+}
+
+function compileSelectorSources(
+	sources: string[],
+	limits: Readonly<Pick<QueryLimits, keyof typeof selectorSyntaxLimits>>,
+	componentScope: SelectorComponentScope = "list",
+): CompiledSelector {
+	let compiled: CompiledSelector | undefined;
+	for (let index = sources.length - 1; index >= 0; index--)
+		compiled = new SelectorParser(
+			sources[index],
+			limits,
+			componentScope,
+			compiled,
+		).parse();
+	return compiled!;
+}
+
 export function validateSelectorSyntax(
 	source: string,
-	options: { pseudoElements?: boolean } = {},
+	options: { pseudoElements?: boolean; nesting?: SelectorNestingContext } = {},
 ): void {
-	const compiled = new SelectorParser(source, selectorSyntaxLimits).parse();
+	const compiled = compileSelectorSources(
+		selectorSources(source, selectorSyntaxLimits, options.nesting),
+		selectorSyntaxLimits,
+	);
 	if (
 		options.pseudoElements === false &&
 		compiled.selectors.some((selector) =>
@@ -688,6 +816,7 @@ interface MatchContext {
 	memoEntries: number;
 	validity?: SelectorValidity;
 	pseudoElement?: GeneratedPseudoElement;
+	nesting: Map<CompiledSelector, Map<number, boolean>>;
 	nth: Map<
 		SimpleSelector,
 		Map<string, { positions: Map<number, number>; total: number }>
@@ -752,13 +881,18 @@ export class DocumentQueries {
 			pseudoElement
 		];
 	}
-	matchingStyleSpecificities(selector: string, maxWork = this.limits.maxWork) {
-		return this.styleSpecificities(selector, maxWork, "all");
+	matchingStyleSpecificities(
+		selector: string,
+		maxWork = this.limits.maxWork,
+		nesting?: SelectorNestingContext,
+	) {
+		return this.styleSpecificities(selector, maxWork, "all", nesting);
 	}
 	private styleSpecificities(
 		selector: string,
 		maxWork: number,
 		pseudoElement?: GeneratedPseudoElement | "all",
+		nesting?: SelectorNestingContext,
 	) {
 		if (
 			!Number.isSafeInteger(maxWork) ||
@@ -844,6 +978,7 @@ export class DocumentQueries {
 			},
 			maxWork,
 			"branch",
+			nesting,
 		);
 	}
 	matches(id: number, selector: string) {
@@ -1144,18 +1279,15 @@ export class DocumentQueries {
 		run: (compiled: CompiledSelector, context: MatchContext) => T,
 		workLimit = this.limits.maxWork,
 		componentScope: SelectorComponentScope = "list",
+		nesting?: SelectorNestingContext,
 	): T {
 		if (this.closed)
 			throw new AgentBrowserError("closed", "Document queries are closed");
-		if (typeof selector !== "string") syntax("expected a string");
-		const cacheKey = `${componentScope}:${selector}`;
+		const sources = selectorSources(selector, this.limits, nesting);
+		const cacheKey = JSON.stringify([componentScope, sources]);
 		let compiled = this.cache.get(cacheKey);
 		if (!compiled) {
-			compiled = new SelectorParser(
-				selector,
-				this.limits,
-				componentScope,
-			).parse();
+			compiled = compileSelectorSources(sources, this.limits, componentScope);
 			this.controlValueDependent ||= compiled.controlValue;
 			if (this.cache.size >= this.limits.maxCachedSelectors) {
 				const oldest = this.cache.keys().next().value;
@@ -1174,6 +1306,7 @@ export class DocumentQueries {
 			work: 0,
 			workLimit,
 			memoEntries: 0,
+			nesting: new Map(),
 			nth: new Map(),
 		};
 		try {
@@ -1333,6 +1466,40 @@ export class DocumentQueries {
 			this.match(id, selector, selector.length - 1, scope, context),
 		);
 	}
+	private nestingMatch(
+		id: number,
+		parent: CompiledSelector,
+		context: MatchContext,
+	): boolean {
+		this.tick(context);
+		let matches = context.nesting.get(parent);
+		const previous = matches?.get(id);
+		if (previous !== undefined) return previous;
+		if (!matches) {
+			matches = new Map();
+			context.nesting.set(parent, matches);
+		}
+		const pseudoElement = context.pseudoElement;
+		let matched: boolean;
+		context.pseudoElement = undefined;
+		try {
+			matched = this.matchList(
+				id,
+				parent.selectors,
+				context.index.documentElement ?? this.tree.root,
+				context,
+			);
+		} finally {
+			context.pseudoElement = pseudoElement;
+		}
+		if (++context.memoEntries > this.limits.maxMemoEntries)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Query memo limit exceeded",
+			);
+		matches.set(id, matched);
+		return matched;
+	}
 	private hasMatch(
 		anchor: NodeInfo,
 		selectors: Selector[],
@@ -1408,6 +1575,8 @@ export class DocumentQueries {
 	): boolean {
 		this.tick(context);
 		const node = info.node;
+		if (test.kind === "nesting")
+			return this.nestingMatch(node.id, test.parent, context);
 		if (test.kind === "pseudo-element")
 			return context.pseudoElement === test.name;
 		if (test.kind === "tag") {

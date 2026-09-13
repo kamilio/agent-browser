@@ -53,7 +53,11 @@ import {
 import { isBorderShorthand, parseBorderShorthand } from "./css-border.js";
 import { compileCssMedia, type MediaViewport } from "./css-media.js";
 import { cssSupportsLimits, evaluateCssSupports } from "./css-supports.js";
-import { supportsCssSelector } from "./selectors.js";
+import {
+	supportsCssSelector,
+	validateSelectorSyntax,
+	type SelectorNestingContext,
+} from "./selectors.js";
 import {
 	type CssBoxProperty,
 	cssBoxProperties,
@@ -112,6 +116,7 @@ export interface CssRule {
 	declarations: CssDeclaration[];
 	media: string[];
 	readonly issues?: Readonly<Record<string, number>>;
+	readonly nesting?: SelectorNestingContext;
 }
 export interface CssParseBudget {
 	rules: number;
@@ -659,6 +664,165 @@ export function cssSupportsCondition(
 	);
 }
 
+function parseStyleRuleBody(
+	source: string,
+	selector: string,
+	media: string[],
+	depth: number,
+	budget: CssParseBudget,
+	issue: CssIssue,
+	diagnostics?: CssRuleDiagnosticSink,
+	nesting?: SelectorNestingContext,
+	scopedGlobalIssue?: CssIssue,
+): CssRule[] {
+	if (depth > 16)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"CSS rule nesting limit exceeded",
+		);
+	const result: CssRule[] = [];
+	const scanner = new CssScanner(source, () => {});
+	let segmentStart = 0;
+	const globalIssue =
+		scopedGlobalIssue ??
+		((code: string) => {
+			issue(code);
+			diagnostics?.(Object.freeze({ [code]: 1 }), Object.freeze([...media]));
+		});
+	const nestedIssue = (code: string) => {
+		issue(code);
+		if (diagnostics)
+			result.push({
+				selector,
+				declarations: [],
+				media,
+				issues: Object.freeze({ [code]: 1 }),
+				...(nesting ? { nesting } : {}),
+			});
+	};
+	const declarations = (end: number) => {
+		const ruleIssues: Record<string, number> | undefined = diagnostics
+			? Object.create(null)
+			: undefined;
+		const parsed = parseCssDeclarations(
+			source.slice(segmentStart, end),
+			budget,
+			(code) => {
+				if (
+					code === "unterminated-css-comment" ||
+					code === "unterminated-css-string"
+				) {
+					globalIssue(code);
+					return;
+				}
+				issue(code);
+				if (ruleIssues) ruleIssues[code] = (ruleIssues[code] ?? 0) + 1;
+			},
+		);
+		const retained =
+			ruleIssues && Object.keys(ruleIssues).length
+				? Object.freeze(ruleIssues)
+				: undefined;
+		if (parsed.length || retained)
+			result.push({
+				selector,
+				declarations: parsed,
+				media,
+				...(retained ? { issues: retained } : {}),
+				...(nesting ? { nesting } : {}),
+			});
+	};
+	const parent: SelectorNestingContext = Object.freeze({
+		selector,
+		...(nesting ? { parent: nesting } : {}),
+	});
+	while (scanner.position < source.length) {
+		const start = scanner.position;
+		const prelude = scanner.read(";{}");
+		const preludeStart = skipCssTrivia(prelude.text, 0, prelude.text.length);
+		const atName =
+			prelude.text[preludeStart] === "@"
+				? readCssIdentifier(prelude.text, preludeStart + 1)
+				: undefined;
+		if (prelude.stop !== "{") {
+			if (atName) {
+				declarations(start);
+				globalIssue("unimplemented-css-at-rule");
+				segmentStart = scanner.position;
+			}
+			continue;
+		}
+		const colon = cssDeclarationColon(prelude.text);
+		if (
+			colon >= 0 &&
+			customPropertyName(
+				withoutCssComments(prelude.text.slice(0, colon)).trim(),
+			)
+		) {
+			scanner.position = start;
+			scanner.read(";", true);
+			continue;
+		}
+		declarations(start);
+		const body = scanner.read("}", true);
+		segmentStart = scanner.position;
+		if (!body.stop) globalIssue("unterminated-css-rule");
+		if (++budget.rules > budget.maxRules)
+			throw new AgentBrowserError("resource-limit", "CSS rule limit exceeded");
+		const name = atName?.value.toLowerCase();
+		if (name === "media" || name === "supports") {
+			const condition = prelude.text.slice(atName!.end).trim();
+			const active = name === "media" || cssSupportsCondition(condition);
+			const nested = parseStyleRuleBody(
+				body.text,
+				selector,
+				name === "media" ? [...media, condition] : media,
+				depth + 1,
+				budget,
+				active ? issue : () => {},
+				active ? diagnostics : undefined,
+				nesting,
+				name === "supports" ? (active ? globalIssue : () => {}) : undefined,
+			);
+			if (active) result.push(...nested);
+			continue;
+		}
+		if (atName) {
+			globalIssue("unimplemented-css-at-rule");
+			continue;
+		}
+		const nestedSelector = prelude.text.slice(preludeStart).trim();
+		let accepted = true;
+		try {
+			validateSelectorSyntax(nestedSelector, { nesting: parent });
+		} catch (error) {
+			if (
+				!(error instanceof AgentBrowserError) ||
+				(error.code !== "invalid-input" && error.code !== "unsupported")
+			)
+				throw error;
+			accepted = false;
+			if (error.code === "invalid-input")
+				nestedIssue("discarded-invalid-nested-css-rule");
+			else globalIssue("unimplemented-nested-css-selector");
+		}
+		const nested = parseStyleRuleBody(
+			body.text,
+			nestedSelector,
+			media,
+			depth + 1,
+			budget,
+			accepted ? issue : () => {},
+			accepted ? diagnostics : undefined,
+			parent,
+			accepted ? globalIssue : () => {},
+		);
+		if (accepted) result.push(...nested);
+	}
+	declarations(source.length);
+	return result;
+}
+
 export function parseCssRules(
 	source: string,
 	budget: CssParseBudget,
@@ -767,38 +931,19 @@ export function parseCssRules(
 			globalIssue("unimplemented-css-at-rule");
 			continue;
 		}
-		const ruleIssues: Record<string, number> | undefined = diagnostics
-			? Object.create(null)
-			: undefined;
-		const declarationIssue = ruleIssues
-			? (code: string) => {
-					if (
-						code === "unterminated-css-comment" ||
-						code === "unterminated-css-string"
-					) {
-						globalIssue(code);
-						return;
-					}
-					issue(code);
-					ruleIssues[code] = (ruleIssues[code] ?? 0) + 1;
-				}
-			: issue;
-		const declarations = parseCssDeclarations(
-			body.text,
-			budget,
-			declarationIssue,
-		);
-		const retainedIssues =
-			ruleIssues && Object.keys(ruleIssues).length
-				? Object.freeze(ruleIssues)
-				: undefined;
-		if (declarations.length || retainedIssues)
-			result.push({
-				selector: prelude.text.slice(preludeStart).trim(),
-				declarations,
+		result.push(
+			...parseStyleRuleBody(
+				body.text,
+				prelude.text.slice(preludeStart).trim(),
 				media,
-				...(retainedIssues ? { issues: retainedIssues } : {}),
-			});
+				depth,
+				budget,
+				issue,
+				diagnostics,
+				undefined,
+				globalIssue,
+			),
+		);
 	}
 	if (diagnostics && globalIssues && Object.keys(globalIssues).length)
 		diagnostics(Object.freeze(globalIssues), Object.freeze([...media]));
