@@ -6,6 +6,43 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: generated native tables and actual Wikipedia footer replay
+
+Native attribution identifies actual owner e2373/footer.footer's before/after
+pseudos: content one ASCIIspace, static displaytable, nofloat, clearnone/both.
+New generated tables use real anonymous table fixup, intrinsic layout/raster,
+collapsed-border resolution and physicalclearance, not fake zero-sized blocks.
+Whitespace-only generated table children avoid transient allocation; ordinary
+table whitespace compaction remaps fieldset ownership links. Reviewed float
+admission accepts only marked static blocktable shells; other guards stay.
+
+85newtests(47format/38layout). Finalfocused baseline902/70→candidate972/0 across
+27suites,zeroskips. Preserve allfourpairs and initialfullgate20397/1/2: its stale
+table-clearnegative becomes actualcoordinate/glyph/immutability assertions;
+flex/gridnegatives and23-case suitecount remain. Productionunchanged afterfirst
+candidate. Finalnative20398/0/2unchangedskips,396selected/395strict/758manifest/
+362unselected. Build/strict/format/sourceauditpass. Run17:51:24.281–17:56:12.212UTC;
+1299source/2124compiled/1291unchangedtracked. Runtime
+native-generated-table-september13-round01/snapshot01/dist; auditSHA256
+462d19862c2f17120824b0501722e456050b4a44cd8a44719427d94e60b1db6b.
+
+Wikipedia: same119573-byte portal,0HTTP at17:56:18.466–.771UTC;1load/3queries/
+1format/1geometry/2generatedstylereads. Generateddisplay2→0,generatedclear1→0,
+genericdisplay2→2,physicalclear4→5. Allformatissues233→231,boxes2252→2250,
+work18689→18685,CSS132unchanged,deferred3unchanged. Geometry stillFAILS; actual
+input/fieldset/richbuttonchildren and closed-dialog behavior retained.31receipts;
+ledger061a527a1c2816259a3485f8e2cb2553e184b3dafec40f9bd460667f0a90a79a.
+No freshsitevisit/search/raster/liveperformanceacceptance or researchrefresh.
+
+NEXT: broaden real native navigation/form interactions with a bounded public-site
+scope; retain firstfailedstage, no fakeCSS/geometry or mutationretries. Wikipedia
+CSS/image/direction/inlinealignment/overflow remain; PythonTutorialclick stillfails.
+Researchfreshness/verifiedReddit-Poe,performance,nativeskips/unselectedsuites and
+separatecredentials/passkeydevices/SafeJS/socket/TTYgates remain. No spoofing,
+challengesolving orpush. Preservepreexistingwork/historicalevidence.GoalACTIVE.
+SeeGENERATED-CONTENT-TABLES.md,WIKIPEDIA-GENERATED-TABLE-REPLAY-SEPTEMBER-13.md,
+WEBSITE-TEST-INVENTORY-SEPTEMBER-13-THIRTY-FIRST-UPDATE.md.
+
 ### September 13: inherited underline offsets and two-site regression checks
 
 Implemented separate inherited text-underline-offset through parser, CSSOM,
