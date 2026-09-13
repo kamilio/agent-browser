@@ -405,6 +405,77 @@ function timestamp(value: unknown): boolean {
 	return boundedString(value, 64) && Number.isFinite(Date.parse(value));
 }
 
+function fragmentIdentity(value: unknown): DataRecord | null {
+	if (value === null) return null;
+	const identity = record(value);
+	if (
+		Object.keys(identity).length !== 3 ||
+		!integer(identity.codeUnits) ||
+		identity.codeUnits > 16384 ||
+		!digest(identity.sha256) ||
+		identity.digestEncoding !== "utf8-serialized-fragment"
+	)
+		invalidEvidence();
+	return identity;
+}
+
+function fragmentProjection(value: unknown): DataRecord {
+	const fragment = record(value);
+	if (
+		Object.keys(fragment).some(
+			(key) =>
+				![
+					"schemaVersion",
+					"requested",
+					"effective",
+					"resolution",
+					"target",
+					"semantics",
+				].includes(key),
+		) ||
+		fragment.schemaVersion !== 1 ||
+		fragment.semantics !== "native-dom-target-no-scroll-or-script" ||
+		![
+			"pending",
+			"absent",
+			"element",
+			"unmatched",
+			"document-top",
+			"unsupported-directive",
+		].includes(fragment.resolution as string)
+	)
+		invalidEvidence();
+	const requested = fragmentIdentity(fragment.requested);
+	const effective = Object.hasOwn(fragment, "effective")
+		? fragmentIdentity(fragment.effective)
+		: undefined;
+	if (requested === null && (effective === null || effective === undefined))
+		invalidEvidence();
+	if (fragment.resolution !== "pending" && effective === undefined)
+		invalidEvidence();
+	if (fragment.resolution === "absent" && effective !== null) invalidEvidence();
+	if (
+		!["pending", "absent"].includes(fragment.resolution as string) &&
+		!effective
+	)
+		invalidEvidence();
+	if (
+		["element", "unmatched", "unsupported-directive"].includes(
+			fragment.resolution as string,
+		) &&
+		effective?.codeUnits === 0
+	)
+		invalidEvidence();
+	if (fragment.resolution === "element") {
+		if (
+			!boundedString(fragment.target, 64) ||
+			!/^e[1-9][0-9]*$/.test(fragment.target as string)
+		)
+			invalidEvidence();
+	} else if (Object.hasOwn(fragment, "target")) invalidEvidence();
+	return fragment;
+}
+
 function reportUrl(value: unknown): boolean {
 	if (!boundedString(value, 4096)) return false;
 	try {
@@ -416,6 +487,7 @@ function reportUrl(value: unknown): boolean {
 }
 
 function validateIdentity(report: DataRecord): void {
+	if (Object.hasOwn(report, "fragment")) fragmentProjection(report.fragment);
 	if (
 		!reportUrl(report.requestedUrl) ||
 		!(report.finalUrl === null || reportUrl(report.finalUrl)) ||
@@ -630,6 +702,9 @@ function outputFallback(
 	return {
 		requestedUrl: report.requestedUrl,
 		finalUrl: report.finalUrl,
+		...(Object.hasOwn(report, "fragment")
+			? { fragment: fragmentProjection(report.fragment) }
+			: {}),
 		startedAt: report.startedAt,
 		finishedAt: report.finishedAt,
 		elapsedMs: report.elapsedMs,
@@ -670,6 +745,10 @@ export function serializeResearchReport(
 	const profile = validateResearchDocumentProfile(selectedProfile);
 	if (profile === "default") {
 		if (Object.hasOwn(report, "admission")) invalidEvidence();
+		if (Object.hasOwn(report, "fragment"))
+			fragmentProjection(
+				snapshot(Object.getOwnPropertyDescriptor(report, "fragment")?.value),
+			);
 		const jsonl = new TextEncoder().encode(`${JSON.stringify(report)}\n`);
 		return {
 			disposition: "complete",
@@ -867,6 +946,7 @@ export function validateResearchReplayAdmission(
 		if (`${JSON.stringify(report)}\n` !== text) invalidEvidence();
 	} else if (Object.hasOwn(report, "admission")) invalidEvidence();
 	validatePolicyFragments(report);
+	if (Object.hasOwn(report, "fragment")) fragmentProjection(report.fragment);
 	const originalMetadata = metadataProjection(report);
 	const originalFieldPresence = fieldPresence(report);
 	if (

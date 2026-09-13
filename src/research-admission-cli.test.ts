@@ -525,7 +525,10 @@ it.each([
 	{ name: "trailing malformed URL", args: [...longFlags, url, "not-a-url"] },
 	{ name: "multiple long URLs", args: [...longFlags, url, otherUrl] },
 	{ name: "missing long URL", args: longFlags },
-	{ name: "fragment URL", args: [...longFlags, `${url}#heading`] },
+	{
+		name: "normalized fragment overflow",
+		args: [...longFlags, `${url}#${"é".repeat(800)}`],
+	},
 	{
 		name: "selector combination",
 		args: [...longFlags, url, "--selector", "main"],

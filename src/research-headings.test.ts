@@ -205,7 +205,7 @@ it.each([
 	"http://10.0.0.1/paper",
 	"file:///paper",
 	"https://user:password@research.example/paper",
-	`${url}#heading`,
+	`${url}#${"é".repeat(800)}`,
 ])("does not widen network admission for %s", async (target) => {
 	expect(() => parseResearchArguments(["--headings", target])).toThrow();
 	await expect(

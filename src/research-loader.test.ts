@@ -778,7 +778,7 @@ it("requires explicit public URLs and an explicit reader switch", () => {
 		["http://127.0.0.1/"],
 		["http://10.0.0.1/"],
 		["https://user:secret@research.example/"],
-		["https://research.example/#fragment"],
+		[`https://research.example/#${"é".repeat(800)}`],
 		Array(9).fill("https://research.example/"),
 	])
 		expect(() => parseResearchArguments(args)).toThrow();

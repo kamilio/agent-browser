@@ -65,6 +65,10 @@ import {
 	researchDocumentDiagnosticText,
 	researchExtractionDiagnosticText,
 } from "./research-content.js";
+import {
+	type ResearchFragmentReport,
+	researchFragmentReport,
+} from "./research-fragment.js";
 
 export const researchRunLimits = Object.freeze({
 	maxUrls: 8,
@@ -293,10 +297,10 @@ export function parseResearchArguments(args: readonly string[]) {
 				"Invalid research arguments",
 			);
 		const url = policy.checkUrl(argument);
-		if (url.hash)
+		if (url.href.length > researchRunLimits.maxUrlCodeUnits)
 			throw new AgentBrowserError(
 				"invalid-input",
-				"Research URLs cannot contain fragments",
+				"Research URL length limit exceeded",
 			);
 		urls.push(url.href);
 	}
@@ -389,6 +393,7 @@ export type ResearchOutcome =
 	| "failure";
 
 export interface ResearchNavigationReport {
+	fragment?: ResearchFragmentReport;
 	admission?: ResearchAdmissionProvenance;
 	readerRawPolicy?: ResearchReaderRawPolicy;
 	rateLimit?: {
@@ -527,7 +532,9 @@ export async function researchNavigation(
 			? researchLongDocumentAdmission
 			: undefined;
 	const started = Date.now();
+	const fragment = researchFragmentReport(validated.urls[0]);
 	const report: ResearchNavigationReport = {
+		...(fragment === undefined ? {} : { fragment }),
 		...(admissionLimits ? { admission: researchLongAdmissionProvenance } : {}),
 		...(validated.readerRawPolicy === undefined
 			? {}
@@ -633,6 +640,11 @@ export async function researchNavigation(
 							};
 						}
 						if (primary) {
+							const fragment = researchFragmentReport(
+								validated.urls[0],
+								response.url,
+							);
+							if (fragment !== undefined) report.fragment = fragment;
 							report.primaryResponse = summarizePrimaryResponse(response);
 							report.finalUrl = report.primaryResponse.url;
 							if (captureBody) {
@@ -740,6 +752,12 @@ export async function researchNavigation(
 				"Research barrier requires user handoff",
 			);
 		}
+		const resolvedFragment = researchFragmentReport(
+			validated.urls[0],
+			tree.url,
+			tree,
+		);
+		if (resolvedFragment !== undefined) report.fragment = resolvedFragment;
 		if (validated.find !== undefined) {
 			stage = "extraction";
 			const found = discoverDocumentTextLines(tree, validated.find, {

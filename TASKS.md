@@ -6,6 +6,44 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: research fragment navigation implemented
+
+The research CLI accepts bounded fragment-bearing public URLs instead of
+rejecting discovered links before transport creation. Both raw and normalized
+navigation URLs remain bounded; network/credential/private-address/redirect
+policies are unchanged. The semantic reader now retains inert IDs and named
+anchors, enabling the native session's existing target selection. Metadata
+records requested/effective serialized-fragment digests and resolution without
+raw fragment strings or another DOM scan. Default extraction remains whole-
+document; explicit :target selector/heading-section extraction is supported.
+Evidence/replay and long-output failure projection preserve bounded provenance.
+No scroll, script-driven tab, text-directive or complete browser behavior claim.
+
+Focused validation passes2614/0/4 across17files, including238new cases. The four
+focused exclusions are old HTTP429 expectation failures independently reproduced
+on unchanged audited source (264pass/4fail across two legacy suites). They remain
+unmodified and are not disguised as successes. Those legacy suites were not in
+the prior broad selection. Initial missing-reader-ID and obsolete blanket-
+fragment-rejection failures are preserved and corrected at their actual causes.
+
+Clean broad gate passes17,741/0/2 unchanged exclusions:343selected suites,
+342strict roots,721manifest entries (378not run). Build/strict/format/source
+checks pass;1250source/2076compiled files and1239 unchanged tracked inputs audited
+in native-research-fragment-september13-round00. New tests verify that fragment
+selection cannot bypass challenge classification or cause retry after429.
+
+Native MLPerf overview and submission-guide source visits returned200 in
+separate bounded runs using the older17503 runtime. They improve partial
+benchmark-methodology research, not benchmark execution or proof of current
+round eligibility; documentation inconsistencies remain. Live regression of
+the original NVIDIA fragment-bearing URL is separately scoped to the new audited
+runtime; website evidence must not be inferred from unit-test counts.
+
+Overall browser/website/performance goal remains active. Original hardware,
+benchmark, Astra and Poe/Reddit research, credential/passkey-device, SafeJS,
+realTTY and human challenge-handoff acceptance remain open. Pre-existing dirty
+work stays separate; no push. See RESEARCH-FRAGMENTS.md and inventory updates.
+
 ### September 13: native font-style implemented
 
 Author font-style normal/italic/oblique now inherits through the existing CSS
