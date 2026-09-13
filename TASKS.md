@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: fresh public table page exposes remaining layout gates
+
+One native public navigation to TestPages follows its observed same-origin301
+to the current HTML-table page:2 GETs, HTTP200,158955 decoded bytes. This uses
+the separately pinned17962 runtime, not the new18046 button runtime. One sealed
+offline load observes3153 nodes,1 table,5 rows and10 cells;3 queries cost54166
+work units. The table geometry request fails unsupported and exits1. External
+CSS/integrity, invalid CSS values, collapsed-border and caption diagnostics
+remain explicit; no table rectangle or rendering success is claimed.
+
+Source/runtime hashes, absent processes, closed offline owners and empty
+private-directory cleanup verify. No retry, source rewrite, scripts/resources,
+interaction, credentials or alternate browser. See the eleventh September13
+inventory. Next, isolate the real table/caption constraints and stylesheet
+requirements; do not treat diagnostic categories as independently proven causes
+or remove guards to obtain a rectangle. All broader gates remain open.
+
 ### September 13: real rich-button content and percentage minimums
 
 Rich HTML buttons now retain genuine child formatting, geometry, hit targets
