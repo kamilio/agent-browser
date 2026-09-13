@@ -3,6 +3,11 @@ import {
 	extractAriaTableSource,
 } from "./aria-table-source.js";
 import { documentTitle } from "./document-title.js";
+import {
+	type DateTimeSourceMetadata,
+	extractDateTimeSource,
+} from "./date-time-source.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -64,6 +69,7 @@ export interface ExtractedNode {
 	blocked?: true;
 	tableSource?: TableSourceMetadata;
 	ariaTableSource?: AriaTableSourceMetadata;
+	dateTimeSource?: DateTimeSourceMetadata;
 	children?: ExtractedNode[];
 }
 
@@ -921,6 +927,19 @@ export function extractDocument(
 		else if (node.type !== "break" && node.type !== "separator")
 			node.children = [];
 		if (node.type === "heading") node.level = Number(source.tagName.slice(1));
+		if (
+			format === "json" &&
+			visible &&
+			source.kind === "element" &&
+			isHtmlElement(source) &&
+			!section?.context.has(source.id)
+		) {
+			const dateTimeSource = extractDateTimeSource(
+				source.tagName,
+				source.attributes,
+			);
+			if (dateTimeSource) node.dateTimeSource = dateTimeSource;
+		}
 		if (
 			options.tableMetadata &&
 			visible &&

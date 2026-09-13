@@ -130,6 +130,7 @@
   "src/node-passkey-checkpoint.test.ts",
   "src/node-passkey-checkpoint-file.test.ts",
   "src/research-loader.test.ts",
+  "src/date-time-source.test.ts",
   "src/aria-table-source.test.ts",
   "src/research-aria-table.test.ts",
   "src/research-colgroup-scope.test.ts",

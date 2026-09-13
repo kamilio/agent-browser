@@ -3,6 +3,7 @@ import {
 	isAriaTableSourceAttribute,
 } from "./aria-table-source.js";
 import type { DocumentLimits, DocumentTree } from "./document.js";
+import { isDateTimeSourceTag } from "./date-time-source.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlEncoding } from "./html-encoding.js";
 import { isHtmlSpecial } from "./html-formatting.js";
@@ -334,6 +335,9 @@ export function sanitizeResearchHtml(
 				(outputName === "base" && attribute === "href") ||
 				(outputName === "img" && attribute === "alt") ||
 				(outputName === "ol" && attribute === "start") ||
+				(outputName === name &&
+					isDateTimeSourceTag(name) &&
+					attribute === "datetime") ||
 				(ariaTableRole !== undefined &&
 					isAriaTableSourceAttribute(ariaTableRole, attribute)) ||
 				(outputName !== undefined &&
