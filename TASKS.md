@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: verified reader column-group repair and hardware sources
+
+Fixed the retained W3C Selectors reader failure at its root: a direct table's
+omitted column-group end kept the reader stack in the wrong table ancestry.
+Guarded closure restores row/cell/section bookkeeping without source rewriting,
+raising limits, swallowing errors or relaxing orphan/malformed depth controls.
+
+28newcases: baseline22fail/6pass controls; fixedfocused569pass. Canonical native
+18931pass/0fail/2unchangedexclusions,371selected/370strictroots/742manifest.
+FinalzeroHTTP originalbody replay: reader.depth129/128 -> successful22522nodes/
+depth13,138headings/1table, match-against-tree sectionqueryable. Source/tokenprefix
+unchanged;3queries/700859work; ownersclosed. Prior diagnostic-unit and tokenizer-
+selection wrapper failures remain preserved, not rewritten as passing runs.
+
+Native-only hardware research adds two freshGET200s: RTXPRO6000 workstation
+capacity/power/formfactor rows and AppleMacStudio title-only evidence. No fresh
+Appleconfiguration, hardware throughput, stock or value ranking is established.
+Fullreport LOCAL-LLM-HARDWARE-RESEARCH-SEPTEMBER-13.md; native reader fix profile
+RESEARCH-COLUMN-GROUPS.md; receipts WEBSITE-TEST-INVENTORY-SEPTEMBER-13-NINETEENTH-UPDATE.md.
+
+Overallgoal ACTIVE. The specific reader defect is verifiedfixed; next targeted
+research: Appleconfiguration association and matchedhardware comparisons.
+Originalbenchmark/Astra/Poe topics, fullsite rendering, generatedpositioning,
+credentials/passkeydevices, SafeJS, realTTY and humanchallengehandoff remainOPEN.
+
+
 ### September 13: generated content, real CSS recovery and a reader-depth gap
 
 Implemented bounded modern/legacy before/after selectors, independent pseudo
