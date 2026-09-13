@@ -6,6 +6,43 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: inherited underline offsets and two-site regression checks
+
+Implemented separate inherited text-underline-offset through parser, CSSOM,
+all/CSS-wide/variables, font/viewport computation and actual signed baseline-relative
+underline pixels. Shorthand remains four components and never resets offset.
+Preserve auto placement, originating decoration ownership, overline/strike-through,
+geometry/clipping/ink skipping. No underline-position, vertical writing or generated
+decoration support claim. Reuse already captured August17 CSSWG native sections;
+no fresh source GET. Cold ancestor-style computation remains unmeasured.
+
+136 new cases (84 style/CSSOM,52 raster). Corrected identical-test baseline740/143
+and candidate883/0; all136 new cases fail baseline. Seven existing expectations
+include the independent property. Initial882/1 stale cached-object expectation
+failure remains recorded; its correction did not change production.
+Native20313/0/2unchangedskips,394selected/393strict/756manifest/362unselected.
+Build/strict/format/source stability pass. Run17:06:40.641–17:11:19.560UTC;
+1297source/2124compiled/1287unchangedtracked; runtime
+native-underline-offset-september13-round00/snapshot01/dist.
+
+Python: same8captures/72064bytes/0HTTP at17:11:28.434–.691UTC. Real e375 Tutorial
+click stillFAILS. ApplicableCSS9/1→8/1,raw57/6→54/6; cascade93872→93886 and
+formattingunchanged. No destinationfallback, successfulnavigation or speedup.
+Wikipedia: same119573-byte portal,0HTTP at17:15:09.981–10.288UTC; threequeries,
+oneformat/onegeometry. Sincehistorical18046, CSSissues153→132 but geometry still
+fails. Formattingboxes2238→2252,work16700→18689,deferred1→3; retain newlyexposed
+generated-display/clear failures and realfieldset/richbuttonchildren. Cumulative
+comparison, not attribution solely to offset; no search/raster/live acceptance.
+
+NEXT: native attribution of Wikipedia's two generated-display subtrees and
+generated-clear failure; varied-site real interactions and repeatableperformance.
+Pythonjustify/hyphens+vendors/cursor/radii/inlinealignment/sticky/overflow remain.
+Original research refresh and verifiedReddit/Poe opinions incomplete; native
+skips/unselectedtests and separatecredential/passkeydevice/SafeJS/socket/TTYgates
+remain. No spoofing/challengesolving/push. Preserve pre-existing work and all
+historical measurements. GoalACTIVE. SeeTEXT-UNDERLINE-OFFSET.md, Pythonreplay
+report andWEBSITE-TEST-INVENTORY-SEPTEMBER-13-THIRTIETH-UPDATE.md.
+
 ### September 13: painted text-decoration thickness and two native source checks
 
 Implemented noninherited text-decoration-thickness and four-component shorthand,
