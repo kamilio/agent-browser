@@ -6,6 +6,42 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: native generated positioning and W3C reader coverage
+
+Implemented shared relative/absolute/fixed before/after formatting coordination,
+out-of-flow blockification/static display, stacking and real DOM-origin hit targets
+for boxless owners.67new regression cases all pass;11focused suites473pass.
+Corrected unchanged baseline424pass/49new failures. Expanded manifest-selected
+native gate19589pass/THREE unchanged failures/TWO unchanged skips:381suites,
+380strict roots/747manifest entries.46existing pointer-event cases newly selected
+and passing. Build/strict/formatter pass. Full suite remains NOT GREEN.
+
+Exact retained TestPages HTML/CSS, zero HTTP, confirms all26absolute generated
+labels at800/1280now have blockified display, actual absolute position and retained
+inline-block static display. Position flags26→0; coordination markers1→27.
+All other CSS/deferred/overflow/float issues remain; this is formatting handoff,
+not full-page geometry/raster. Independent fixtures prove actual boxes/pixels.
+
+New bounded native W3C centering-examples GET: HTTP200,20483decoded bytes;
+reader484nodes,10headings,43links,11preformatted examples. OneGET, no linked
+resources/scripts/actions; no conditional full-DOM fallback needed. This content
+check uses the prior datetime build, not the positioning runtime. Full details:
+W3C-CENTERING-NATIVE-CHECK-SEPTEMBER-13.md and
+WEBSITE-TEST-INVENTORY-SEPTEMBER-13-TWENTY-FOURTH-UPDATE.md.
+
+Current audited runtime native-generated-position-september13-round00/snapshot01/dist;
+base59e614469765f6e93e624637c9ce2788dc477694; source inventory
+a4d0029f602923fa5a13a4e13bdf59b8fd6430adeae06d08f09ed47e9a8d9469; compiled inventory
+d406e52942320f146b7844fdb6544ba44b7ab3c1691a7309e11db6e2c25bab3d. Evidence lanes remain under
+node_modules/.cache/native-validation/, with exact hashes, guards, closed owners
+and private/process cleanup. Prior failed fixture/preparation attempts retained.
+
+OPEN: complete website rendering and performance, remaining CSS/flex/Grid/float
+limitations, original four-topic research and crawler/challenge compatibility;
+independent SafeJS, TTY/PTY/socket, credential/passkey and device gates. No
+spoofing, challenge solving, real-secret access or push. Preserve prior dirty
+work and historical reports. Overall browser goal remains ACTIVE.
+
 ### September 13: GOV.UK coverage and native datetime source metadata
 
 New native-only live check: GOV.UK bank-holidays, one public GET, HTTP200,
