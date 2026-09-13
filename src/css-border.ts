@@ -40,7 +40,8 @@ export function normalizeBorderWidth(value: string): string | undefined {
 	return `${Number(parsed[1])}${parsed[2] ?? "px"}`;
 }
 export function normalizeBorderStyle(value: string): string | undefined {
-	return wide.has(value) || ["none", "hidden", "solid"].includes(value)
+	return wide.has(value) ||
+		["none", "hidden", "solid", "dashed"].includes(value)
 		? value
 		: undefined;
 }

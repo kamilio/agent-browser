@@ -1,6 +1,7 @@
 import { bitmapFont } from "./bitmap-font.js";
-import { paintSolidBorders } from "./border-raster.js";
+import { paintBorders } from "./border-raster.js";
 import { rasterizeControl } from "./control-rendering.js";
+import { initialBoxStyle } from "./css-box.js";
 import { transparentColor } from "./css-color.js";
 import { initialPaintStyle, paintBackground } from "./css-paint.js";
 import { rasterizeDisclosureMarker } from "./disclosure-marker.js";
@@ -430,7 +431,7 @@ function paintDocumentLayout(
 				paintBackground(node.paint),
 			);
 		if (node.collapsedBorderOwner === undefined)
-			metrics.borderPixels += paintSolidBorders(
+			metrics.borderPixels += paintBorders(
 				image,
 				box.borderX - clip.x,
 				box.borderY - clip.y,
@@ -438,6 +439,7 @@ function paintDocumentLayout(
 				box.borderBoxHeight,
 				box,
 				node.paint,
+				node.box ?? initialBoxStyle,
 				charge,
 			);
 		drawOutline(
@@ -581,7 +583,7 @@ function paintDocumentLayout(
 				paintBackground(node.paint ?? initialPaintStyle),
 			);
 		if (node.visible && node.collapsedBorderOwner === undefined)
-			metrics.borderPixels += paintSolidBorders(
+			metrics.borderPixels += paintBorders(
 				image,
 				borderX - clip.x,
 				borderY - clip.y,
@@ -589,6 +591,7 @@ function paintDocumentLayout(
 				used.borderBoxHeight,
 				used,
 				node.paint ?? initialPaintStyle,
+				node.box ?? initialBoxStyle,
 				charge,
 			);
 		if (node.emptyImage) {
@@ -814,7 +817,7 @@ function paintDocumentLayout(
 			paintBackground(node.paint),
 		);
 		if (fragment.borders && node.collapsedBorderOwner === undefined)
-			metrics.borderPixels += paintSolidBorders(
+			metrics.borderPixels += paintBorders(
 				image,
 				fragment.x - clip.x,
 				fragment.y - clip.y,
@@ -822,7 +825,9 @@ function paintDocumentLayout(
 				fragment.height,
 				fragment.borders,
 				node.paint,
+				node.box ?? initialBoxStyle,
 				charge,
+				fragment.borderHorizontalOffset,
 			);
 		paintInlineDecorationEdges(textDecorations, fragment, image, clip, charge);
 		drawOutline(

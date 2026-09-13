@@ -251,6 +251,8 @@
   "src/block-width.test.ts",
   "src/borders.test.ts",
   "src/border-core.test.ts",
+  "src/dashed-border-document.test.ts",
+  "src/dashed-border-raster.test.ts",
   "src/flow-core.test.ts",
   "src/flex-core.test.ts",
   "src/layout-core.test.ts",

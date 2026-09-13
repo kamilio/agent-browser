@@ -302,7 +302,7 @@ it.each([
 		);
 });
 
-it.each(["dashed", "dotted"])(
+it.each(["dotted", "double"])(
 	"retains unsupported %s border declarations without replacing hints",
 	(style) => {
 		for (const inline of [false, true]) {

@@ -76,7 +76,7 @@ it.each([
 	["width ", "12px", false],
 	["w\\69 dth", "12px", false],
 	["border", "2px solid red", true],
-	["border", "2px dashed red", false],
+	["border", "2px dashed red", true],
 	["background", "url(secret.png)", false],
 	["font-family", "monospace", true],
 	["font-family", "unknown-font", true],

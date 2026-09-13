@@ -5,8 +5,9 @@ import { AgentBrowserError } from "./errors.js";
 
 export const borderCapabilities = Object.freeze({
 	partial: true,
-	profile: "normal-flow-solid-borders",
-	styles: Object.freeze(["none", "hidden", "solid"]),
+	profile: "normal-flow-solid-dashed-borders",
+	styles: Object.freeze(["none", "hidden", "solid", "dashed"]),
+	dashes: "rectangular-three-width-dash-gap",
 	inline: "ltr-sliced-fragments",
 	clone: false,
 	radius: false,
@@ -17,7 +18,7 @@ export function resolveBorders(style: BoxStyle) {
 		const kind = style[`border-${side}-style`];
 		if (!borderCapabilities.styles.includes(kind))
 			throw new AgentBrowserError("unsupported", "Unsupported border style");
-		if (kind !== "solid") return 0;
+		if (kind === "none" || kind === "hidden") return 0;
 		const width = style[`border-${side}-width`];
 		if (!width.endsWith("px"))
 			throw new AgentBrowserError(

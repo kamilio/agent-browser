@@ -97,6 +97,7 @@ export interface TextInlineFragment {
 	marginRight?: number;
 	marginBottom?: number;
 	borders?: Readonly<ReturnType<typeof resolveBorders>>;
+	borderHorizontalOffset?: number;
 	formattingId: number;
 	ref: string;
 	line: number | null;
@@ -395,6 +396,7 @@ function layoutTextContexts(
 		const lines: Readonly<TextLine>[] = [];
 		const glyphs: Readonly<TextGlyph>[] = [];
 		const fragments: Readonly<TextInlineFragment>[] = [];
+		const borderOffsets = new Map<number, number>();
 		let textHeight = 0;
 		let measuredWidth = 0;
 		let lineWidth = 0;
@@ -869,9 +871,24 @@ function layoutTextContexts(
 				);
 				layoutNumber(x + width, true);
 				layoutNumber(y + fragmentHeight, true);
+				let borderHorizontalOffset: number | undefined;
+				if (
+					borders &&
+					((borders.borderTop > 0 &&
+						node.box?.["border-top-style"] === "dashed") ||
+						(borders.borderBottom > 0 &&
+							node.box?.["border-bottom-style"] === "dashed"))
+				) {
+					charge(2);
+					borderHorizontalOffset = borderOffsets.get(id) ?? 0;
+					borderOffsets.set(id, layoutNumber(borderHorizontalOffset + width));
+				}
 				fragments.push(
 					Object.freeze({
 						formattingId: id,
+						...(borderHorizontalOffset === undefined
+							? {}
+							: { borderHorizontalOffset }),
 						...(atomic ? { atomic: true as const } : {}),
 						...(range.marginRight ? { marginRight: range.marginRight } : {}),
 						...(replaced?.marginBottom
