@@ -621,7 +621,13 @@ it.each(["img", "dialog", "fieldset", "svg", "math"])(
 	"keeps special %s layout within its known intrinsic profile",
 	(tag) => {
 		const { tree, id } = fixture("<main></main>");
-		tree.append(id("main"), tree.createElement(tag, { id: "special" }));
+		tree.append(
+			id("main"),
+			tree.createElement(tag, {
+				id: "special",
+				...(tag === "dialog" ? { open: "" } : {}),
+			}),
+		);
 		const result = buildFormattingTree(tree);
 		if (tag === "img") {
 			expect(result.metrics.deferredSubtrees).toBe(0);

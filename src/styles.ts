@@ -229,6 +229,7 @@ const blockTags = new Set([
 	"main",
 	"nav",
 	"form",
+	"dialog",
 	"fieldset",
 	"pre",
 	"blockquote",
@@ -269,6 +270,8 @@ function userAgentDisplay(
 	if (
 		hiddenTags.has(node.tagName) ||
 		Object.hasOwn(node.attributes, "hidden") ||
+		(isHtmlElement(node, "dialog") &&
+			!Object.hasOwn(node.attributes, "open")) ||
 		(isHtmlElement(node, "input") &&
 			node.attributes.type?.toLowerCase() === "hidden")
 	)
