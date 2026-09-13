@@ -6,6 +6,7 @@ import type {
 import type { FormattingTree } from "./formatting-tree.js";
 import { AgentBrowserError } from "./errors.js";
 import { layoutNumber } from "./layout-values.js";
+import { isAtomicInline } from "./inline-atomic.js";
 
 interface Baselines {
 	first: number | null;
@@ -78,7 +79,13 @@ export function collectFlexBaselines(
 					"unsupported",
 					"Missing child baseline state",
 				);
-			unsupported ||= value.unsupported;
+			const childNode = formatting.nodes[child];
+			if (
+				!lines?.length ||
+				childNode.inlineVerticalAlign !== "middle" ||
+				!(childNode.kind === "replaced" || isAtomicInline(childNode))
+			)
+				unsupported ||= value.unsupported;
 			if (first === null && value.first !== null) first = value.first;
 			if (value.last !== null && !lines?.length) last = value.last;
 		}

@@ -20,6 +20,7 @@ import {
 	isAtomicInline,
 } from "./inline-atomic.js";
 import { resolveInlineEdges } from "./inline-box.js";
+import { inlineMiddleBaseline, type InlineMiddleBox } from "./inline-middle.js";
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 import {
 	type TextFontExtent as FontExtent,
@@ -340,6 +341,18 @@ function layoutTextContexts(
 		if (container.contentMode !== "inline") continue;
 		const style = container.typography ?? initialTextStyle;
 		const strut = extent(style);
+		const middleBaseline = (
+			node: FormattingNode,
+			box: Readonly<InlineMiddleBox> | undefined,
+		) => {
+			if (node.inlineVerticalAlign !== "middle" || !box) return;
+			charge();
+			const parent =
+				node.parent === null
+					? style
+					: (horizontal.formatting.nodes[node.parent].typography ?? style);
+			return inlineMiddleBaseline(parent, box);
+		};
 		let transformations:
 			| ReadonlyMap<number, ReadonlyMap<number, string>>
 			| undefined;
@@ -852,11 +865,12 @@ function layoutTextContexts(
 				const x = layoutNumber(block.contentX + offset + range.left, true);
 				const y = layoutNumber(
 					baseline -
-						(atomic?.block
-							? atomicInlineBaseline(atomic.block)
-							: replaced
-								? replaced.borderBoxHeight + replaced.marginBottom
-								: font.ascent + paddingTop + (borders?.borderTop ?? 0)),
+						(middleBaseline(node, atomic?.block ?? replaced) ??
+							(atomic?.block
+								? atomicInlineBaseline(atomic.block)
+								: replaced
+									? replaced.borderBoxHeight + replaced.marginBottom
+									: font.ascent + paddingTop + (borders?.borderTop ?? 0))),
 					true,
 				);
 				const width = layoutNumber(Math.max(0, range.right - range.left));
@@ -1352,7 +1366,11 @@ function layoutTextContexts(
 						"unsupported",
 						"Missing used atomic inline layout metrics",
 					);
-				if (constraint === "used" && atomic.block?.unsupportedBaseline)
+				if (
+					constraint === "used" &&
+					atomic.block?.unsupportedBaseline &&
+					node.inlineVerticalAlign !== "middle"
+				)
 					throw new AgentBrowserError(
 						"unsupported",
 						"Atomic inline baseline is not supported",
@@ -1377,7 +1395,9 @@ function layoutTextContexts(
 					collapsible: true,
 					breakable: true,
 				};
-				const baseline = atomic.block ? atomicInlineBaseline(atomic.block) : 0;
+				const baseline =
+					middleBaseline(node, atomic.block) ??
+					(atomic.block ? atomicInlineBaseline(atomic.block) : 0);
 				if (
 					intrinsicFloats.has(node.id) &&
 					constraint === "max-content" &&
@@ -1462,6 +1482,9 @@ function layoutTextContexts(
 					breakable: true,
 				};
 				if (wrap && !gap) emit(opportunity);
+				const baseline =
+					middleBaseline(node, replaced) ??
+					replaced.borderBoxHeight + replaced.marginBottom;
 				emit({
 					...font,
 					advance: layoutNumber(
@@ -1470,13 +1493,11 @@ function layoutTextContexts(
 							replaced.marginRight,
 						true,
 					),
-					above: Math.max(
-						frame.above,
-						replaced.marginTop +
-							replaced.borderBoxHeight +
-							replaced.marginBottom,
+					above: Math.max(frame.above, replaced.marginTop + baseline),
+					below: Math.max(
+						frame.below,
+						replaced.borderBoxHeight + replaced.marginBottom - baseline,
 					),
-					below: Math.max(0, frame.below),
 					formattingId: node.id,
 					ref: node.ref ?? "",
 					offset: 0,

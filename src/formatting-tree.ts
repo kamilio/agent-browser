@@ -140,6 +140,7 @@ export interface FormattingNode {
 	text?: string;
 	box?: BoxStyle;
 	typography?: TextStyle;
+	inlineVerticalAlign?: "middle";
 	language?: string;
 	legacyChildAlignment?: "center";
 	legacyAlignmentBoundary?: true;
@@ -287,6 +288,7 @@ export function buildFormattingTree(
 	const collapsedBorderGuards = new Set<string>();
 	const generatedCollapsedTables = new Set<MutableFormattingNode>();
 	const emptyCellGuards = new Set<string>();
+	const middleAlignedRefs = new Set<string>();
 	let work = 0;
 	let textCodeUnits = 0;
 	let visitedDomNodes = 0;
@@ -696,7 +698,18 @@ export function buildFormattingTree(
 				break;
 			}
 		}
-		if ((inline || atomic) && style.table["vertical-align"] !== "baseline") {
+		const middleAligned =
+			atomic &&
+			!deferredReason &&
+			!itemMode &&
+			!outOfFlow &&
+			flow.float === "none" &&
+			style.table["vertical-align"] === "middle";
+		if (
+			(inline || atomic) &&
+			style.table["vertical-align"] !== "baseline" &&
+			!middleAligned
+		) {
 			issue("inline-vertical-align-not-supported");
 			issue("generated-content-vertical-align-layout-not-supported");
 		}
@@ -735,6 +748,7 @@ export function buildFormattingTree(
 				typography: style.typography,
 				paint: style.paint,
 				generatedContent: metadata,
+				...(middleAligned ? { inlineVerticalAlign: "middle" as const } : {}),
 				...(table ? { table: style.table, contentMode: "table" as const } : {}),
 				...(clearing
 					? { clear: flow.clear as NonNullable<FormattingNode["clear"]> }
@@ -1047,8 +1061,11 @@ export function buildFormattingTree(
 		if (
 			display.startsWith("inline") &&
 			styles.table(id)["vertical-align"] !== "baseline"
-		)
-			issue("inline-vertical-align-not-supported");
+		) {
+			if (styles.table(id)["vertical-align"] === "middle")
+				middleAlignedRefs.add(ref);
+			else issue("inline-vertical-align-not-supported");
+		}
 		if (embeddedSvg) {
 			try {
 				if (
@@ -2009,6 +2026,26 @@ export function buildFormattingTree(
 		if (emptyCellGuards.size)
 			issues["table-empty-cell-paint-not-supported"] = emptyCellGuards.size;
 		else delete issues["table-empty-cell-paint-not-supported"];
+	}
+	if (middleAlignedRefs.size) {
+		const supported = new Set<string>();
+		const unsupported = new Set<string>();
+		for (const node of nodes) {
+			charge();
+			if (!node.ref || !middleAlignedRefs.has(node.ref)) continue;
+			if (
+				node.level === "inline" &&
+				(node.kind === "replaced" || isAtomicInline(node))
+			) {
+				node.inlineVerticalAlign = "middle";
+				supported.add(node.ref);
+			} else unsupported.add(node.ref);
+		}
+		for (const ref of middleAlignedRefs) {
+			charge();
+			if (!supported.has(ref) || unsupported.has(ref))
+				issue("inline-vertical-align-not-supported");
+		}
 	}
 	charge(nodes.length);
 	return Object.freeze({

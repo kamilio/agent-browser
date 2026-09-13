@@ -614,10 +614,10 @@ it.each([
 });
 
 it.each(["inline", "inline-block", "inline-flex"])(
-	"does not confuse parsed vertical-align with supported %s alignment",
+	"does not confuse parsed vertical-align with supported %s top alignment",
 	(display) => {
 		const { tree } = fixture(
-			`<main><span style="display:${display};vertical-align:middle">Value</span></main>`,
+			`<main><span style="display:${display};vertical-align:top">Value</span></main>`,
 		);
 		const result = buildFormattingTree(tree);
 		expect(result.issues["inline-vertical-align-not-supported"]).toBe(1);
