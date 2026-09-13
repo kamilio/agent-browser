@@ -44,11 +44,12 @@ const properties = new Set<string>(cssBoxProperties);
 const insets = new Set<string>(["top", "right", "bottom", "left"]);
 const wide = new Set(["initial", "inherit", "unset", "revert"]);
 const length =
-	/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|em|rem|cm|mm|q|in|pt|pc|vw|vh|vmin|vmax|%)?$/;
-export const fontRelativeBoxUnits = Object.freeze(["em", "rem"] as const);
+	/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|em|rem|ex|cm|mm|q|in|pt|pc|vw|vh|vmin|vmax|%)?$/;
+export const fontRelativeBoxUnits = Object.freeze(["em", "rem", "ex"] as const);
 export interface BoxFontMetrics {
 	fontSize?: number;
 	rootFontSize?: number;
+	xHeight?: number;
 }
 const absoluteFactors: Readonly<Record<string, number>> = Object.freeze({
 	px: 1,
@@ -161,7 +162,7 @@ export function computeBoxStyle(
 				"invalid-input",
 				"Invalid computed box font metrics",
 			);
-		for (const value of [fonts.fontSize, fonts.rootFontSize])
+		for (const value of [fonts.fontSize, fonts.rootFontSize, fonts.xHeight])
 			if (value !== undefined && (!Number.isFinite(value) || value < 0))
 				throw new AgentBrowserError(
 					"invalid-input",
@@ -172,7 +173,8 @@ export function computeBoxStyle(
 	const unitFactor = (unit: string): number => {
 		if (
 			(unit === "em" && fonts?.fontSize === undefined) ||
-			(unit === "rem" && fonts?.rootFontSize === undefined)
+			(unit === "rem" && fonts?.rootFontSize === undefined) ||
+			(unit === "ex" && fonts?.xHeight === undefined)
 		)
 			throw new AgentBrowserError(
 				"unsupported",
@@ -183,6 +185,7 @@ export function computeBoxStyle(
 			{
 				em: fonts?.fontSize,
 				rem: fonts?.rootFontSize,
+				ex: fonts?.xHeight,
 				vw: viewport.width / 100,
 				vh: viewport.height / 100,
 				vmin: Math.min(viewport.width, viewport.height) / 100,

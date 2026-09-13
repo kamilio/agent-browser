@@ -6,6 +6,39 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: native ex lengths implemented
+
+Native ex lengths now derive actual lowercase-x metrics from the selected Agent
+Mono bitmap face. Shared scalar/math box, border, outline, flex and table paths,
+scalar grid tracks, font size, line height and text indentation use proper own,
+parent or initial bases. Inheritance, custom-property use sites, typography/cache
+invalidation, border snapping, fractional/zero metrics and lazy dependencies are
+covered. Standalone APIs require an explicit x-height basis. No hard-coded pixel
+substitution, runtime dependency or cap increase. Existing unsupported grid-track,
+font-size and line-height math grammars remain explicit.
+
+The clean selected gate passes **17,142/0/2 unchanged exclusions**, including70
+new cases;331suites,330strict roots,709manifest entries (378 not run).
+Build/strict/format/source checks pass in native-ex-length-september13-round01;
+1233source/2056compiled files and1219 unchanged tracked inputs are audited.
+Canonical scalar/math padding failures now pass unchanged. Earlier test-bound
+and setup-manifest failures remain preserved. The pre-existing untracked font-
+relative test remains byte-identical, uncommitted and outside the selected gate.
+All original dirty work stays separate; no push. See EX-LENGTHS.md.
+
+Offline original SQLite HTML/CSS replay passes with the five ex value failures
+removed: unsupported CSS values fall6→1. Representative computed x-heights9/10px
+produce the original button/sidebar/menu/search padding and margin declarations.
+One font-family value,15properties,6selectors,11float flags and one overflow
+remain; alignment flags stay absent. No HTTP,image,used-layout,raster or scripts,
+so this is not whole-site acceptance or a new host. Source DOM and post-install
+presentation stay unchanged; all owners close and runtime inventories match.
+
+Native retained-source font-family fallback research is underway for the next
+CSS-value issue. Original research topics, broader website/performance coverage,
+SafeJS, real TTY, credentials, passkey-device and challenge/human-handoff gates
+remain open. Overall browser goal stays active; historical host count stays86.
+
 ### September 13: paragraph and heading alignment hints implemented
 
 Native HTML p/h1–h6 left/center/right alignment now participates in the real

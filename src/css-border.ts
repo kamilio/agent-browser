@@ -27,7 +27,7 @@ export function normalizeBorderWidth(value: string): string | undefined {
 	if (value === "thick") return "5px";
 	if (isCssLengthMath(value)) return normalizeLengthMath(value, false);
 	const parsed =
-		/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|em|rem|cm|mm|q|in|pt|pc|vw|vh|vmin|vmax)?$/.exec(
+		/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|em|rem|ex|cm|mm|q|in|pt|pc|vw|vh|vmin|vmax)?$/.exec(
 			value,
 		);
 	if (

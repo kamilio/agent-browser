@@ -112,6 +112,7 @@ import {
 } from "./css-text.js";
 import { documentBaseUrl } from "./document-url.js";
 import { bitmapFont } from "./bitmap-font.js";
+import { nativeFontXHeight } from "./font-metrics.js";
 import { cssMediaLimits, type MediaViewport } from "./css-media.js";
 import {
 	type ColorSchemePreference,
@@ -573,6 +574,16 @@ export class DocumentStyles {
 			let fonts: BoxFontMetrics | undefined;
 			if (lengthUsesFont(spacing, "em"))
 				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
+			if (lengthUsesFont(spacing, "ex")) {
+				const text = this.text(target);
+				fonts = {
+					...fonts,
+					xHeight: nativeFontXHeight(
+						Number.parseFloat(text["font-size"]),
+						Number(text["font-weight"]),
+					),
+				};
+			}
 			if (lengthUsesFont(spacing, "rem")) {
 				const root =
 					this.tree
@@ -618,6 +629,16 @@ export class DocumentStyles {
 			let fonts: BoxFontMetrics | undefined;
 			if (values.some((value) => lengthUsesFont(value, "em")))
 				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
+			if (values.some((value) => lengthUsesFont(value, "ex"))) {
+				const text = this.text(target);
+				fonts = {
+					...fonts,
+					xHeight: nativeFontXHeight(
+						Number.parseFloat(text["font-size"]),
+						Number(text["font-weight"]),
+					),
+				};
+			}
 			if (values.some((value) => lengthUsesFont(value, "rem"))) {
 				const root =
 					this.tree
@@ -669,6 +690,16 @@ export class DocumentStyles {
 			let fonts: BoxFontMetrics | undefined;
 			if (values.some((value) => lengthUsesFont(value, "em")))
 				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
+			if (values.some((value) => lengthUsesFont(value, "ex"))) {
+				const text = this.text(target);
+				fonts = {
+					...fonts,
+					xHeight: nativeFontXHeight(
+						Number.parseFloat(text["font-size"]),
+						Number(text["font-weight"]),
+					),
+				};
+			}
 			if (values.some((value) => lengthUsesFont(value, "rem"))) {
 				const root =
 					this.tree
@@ -719,6 +750,16 @@ export class DocumentStyles {
 			let fonts: BoxFontMetrics | undefined;
 			if (values.some((value) => gridValueUsesFont(value, "em")))
 				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
+			if (values.some((value) => gridValueUsesFont(value, "ex"))) {
+				const text = this.text(target);
+				fonts = {
+					...fonts,
+					xHeight: nativeFontXHeight(
+						Number.parseFloat(text["font-size"]),
+						Number(text["font-weight"]),
+					),
+				};
+			}
 			if (values.some((value) => gridValueUsesFont(value, "rem"))) {
 				const root =
 					this.tree
@@ -769,6 +810,16 @@ export class DocumentStyles {
 			const values = Object.values(specified);
 			if (values.some((value) => lengthUsesFont(value, "em")))
 				fonts = { fontSize: Number.parseFloat(this.text(target)["font-size"]) };
+			if (values.some((value) => lengthUsesFont(value, "ex"))) {
+				const text = this.text(target);
+				fonts = {
+					...fonts,
+					xHeight: nativeFontXHeight(
+						Number.parseFloat(text["font-size"]),
+						Number(text["font-weight"]),
+					),
+				};
+			}
 			if (values.some((value) => lengthUsesFont(value, "rem"))) {
 				const rootElement = this.tree
 					.get(this.tree.root)

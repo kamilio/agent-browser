@@ -27,7 +27,7 @@ interface IndentComponents {
 }
 
 const length =
-	/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|em|rem|cm|mm|q|in|pt|pc|vw|vh|vmin|vmax|%)?$/;
+	/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|em|rem|ex|cm|mm|q|in|pt|pc|vw|vh|vmin|vmax|%)?$/;
 const absoluteFactors: Readonly<Record<string, number>> = Object.freeze({
 	px: 1,
 	cm: 96 / 2.54,
@@ -106,6 +106,7 @@ export function computeTextIndent(
 	fontSize: number,
 	rootFontSize: number,
 	viewport: { width: number; height: number },
+	xHeight?: number,
 ): string {
 	const expanded =
 		typeof value === "string" &&
@@ -117,12 +118,21 @@ export function computeTextIndent(
 	layoutNumber(rootFontSize);
 	layoutNumber(viewport.width);
 	layoutNumber(viewport.height);
+	if (xHeight !== undefined) layoutNumber(xHeight);
 	const factor = (unit: string): number => {
 		if (expanded && unit !== "px")
 			throw new AgentBrowserError(
 				"unsupported",
 				"Computed text indentation requires pixel or percentage units",
 			);
+		if (unit === "ex") {
+			if (xHeight === undefined)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Text indentation requires an x-height basis for ex units",
+				);
+			return xHeight;
+		}
 		return (
 			absoluteFactors[unit] ??
 			{

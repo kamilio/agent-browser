@@ -1,3 +1,5 @@
+import { lengthUsesFont } from "./css-math.js";
+import { nativeFontXHeight } from "./font-metrics.js";
 import { computeFontWeight, parseFontWeight } from "./font-weight.js";
 import { layoutNumber } from "./layout-values.js";
 import { computeTextIndent, parseTextIndent } from "./text-indent.js";
@@ -32,7 +34,7 @@ export const initialTextStyle: TextStyle = Object.freeze({
 });
 const wide = new Set(["initial", "inherit", "unset", "revert"]);
 const length =
-	/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|em|rem|%|cm|mm|q|in|pt|pc|vw|vh|vmin|vmax)?$/;
+	/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|em|rem|ex|%|cm|mm|q|in|pt|pc|vw|vh|vmin|vmax)?$/;
 const absoluteFactors: Readonly<Record<string, number>> = Object.freeze({
 	px: 1,
 	cm: 96 / 2.54,
@@ -126,32 +128,45 @@ export function computeTextStyle(
 			result["font-size"] === "larger" ? parentSize * 1.2 : parentSize / 1.2,
 		)}px`;
 	}
-	const pixels = (value: string, relative: number, rootSize = rootFontSize) => {
+	const pixels = (
+		value: string,
+		relative: number,
+		rootSize: number,
+		font: TextStyle,
+	) => {
 		const parsed = length.exec(value);
 		if (!parsed) return value;
 		const unit = parsed[2] ?? "px";
 		const factor =
-			absoluteFactors[unit] ??
-			{
-				em: relative,
-				rem: rootSize,
-				"%": relative / 100,
-				vw: viewport.width / 100,
-				vh: viewport.height / 100,
-				vmin: Math.min(viewport.width, viewport.height) / 100,
-				vmax: Math.max(viewport.width, viewport.height) / 100,
-			}[unit];
+			unit === "ex"
+				? nativeFontXHeight(
+						Number.parseFloat(font["font-size"]),
+						Number(font["font-weight"]),
+					)
+				: (absoluteFactors[unit] ??
+					{
+						em: relative,
+						rem: rootSize,
+						"%": relative / 100,
+						vw: viewport.width / 100,
+						vh: viewport.height / 100,
+						vmin: Math.min(viewport.width, viewport.height) / 100,
+						vmax: Math.max(viewport.width, viewport.height) / 100,
+					}[unit]);
 		return `${layoutNumber(Number(parsed[1]) * factor)}px`;
 	};
 	result["font-size"] = pixels(
 		result["font-size"],
 		Number.parseFloat(parent["font-size"]),
+		rootFontSize,
+		root ? initialTextStyle : parent,
 	);
 	if (length.exec(result["line-height"])?.[2])
 		result["line-height"] = pixels(
 			result["line-height"],
 			Number.parseFloat(result["font-size"]),
 			root ? Number.parseFloat(result["font-size"]) : rootFontSize,
+			result,
 		);
 	const indent = specified["text-indent"];
 	if (indent !== undefined && !wide.has(indent))
@@ -160,6 +175,12 @@ export function computeTextStyle(
 			Number.parseFloat(result["font-size"]),
 			root ? Number.parseFloat(result["font-size"]) : rootFontSize,
 			viewport,
+			lengthUsesFont(indent, "ex")
+				? nativeFontXHeight(
+						Number.parseFloat(result["font-size"]),
+						Number(result["font-weight"]),
+					)
+				: undefined,
 		);
 	return cssTextProperties.every(
 		(property) => result[property] === parent[property],

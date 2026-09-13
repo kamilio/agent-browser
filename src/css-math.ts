@@ -28,7 +28,7 @@ interface Term {
 }
 const whitespace = /[\t\n\f\r ]/;
 const dimension =
-	/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|rem|em|cm|mm|q|in|pt|pc|vmin|vmax|vw|vh|%)?/;
+	/^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(px|rem|em|ex|cm|mm|q|in|pt|pc|vmin|vmax|vw|vh|%)?/;
 
 export function isCssLengthMath(value: string): boolean {
 	return /^(?:calc|min|max|clamp)\(/i.test(value);
@@ -212,8 +212,12 @@ export function splitLengthComponents(value: string): string[] | undefined {
 const fontUnits = {
 	em: /(?:\d|\.)em(?![a-z])/i,
 	rem: /(?:\d|\.)rem(?![a-z])/i,
+	ex: /(?:\d|\.)ex(?![a-z])/i,
 };
-export function lengthUsesFont(value: string, unit: "em" | "rem"): boolean {
+export function lengthUsesFont(
+	value: string,
+	unit: "em" | "rem" | "ex",
+): boolean {
 	return fontUnits[unit].test(value);
 }
 

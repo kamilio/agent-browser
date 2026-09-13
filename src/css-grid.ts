@@ -226,7 +226,10 @@ function tokenize(value: string): Token[] | undefined {
 	}
 	return tokens;
 }
-export function gridValueUsesFont(value: string, unit: "em" | "rem"): boolean {
+export function gridValueUsesFont(
+	value: string,
+	unit: "em" | "rem" | "ex",
+): boolean {
 	return (
 		tokenize(value)?.some(
 			(token) =>

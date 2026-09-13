@@ -175,7 +175,7 @@ it.each([
 	"1pxhanging",
 	"1px;",
 	"1ch",
-	"1ex",
+	"1rex",
 	"1dvw",
 	"1e999px",
 	"-1e999%",

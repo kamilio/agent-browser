@@ -132,7 +132,7 @@ it.each([
 	"clamp(0px, 1px, 0%)",
 	"calc(0 * 10%)",
 	"calc(1px + min(2px, 0%))",
-	"1ex",
+	"1rex",
 	"1ch",
 	"1dvw",
 	"NaNpx",
