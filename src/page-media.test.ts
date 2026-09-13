@@ -126,12 +126,30 @@ it.each([
 	["(orientation: portrait)", false],
 	["not screen and (max-width: 10px)", true],
 	["print, (min-height: 40px)", true],
+	["(prefers-reduced-motion: no-preference)", true],
+	["(prefers-reduced-motion: reduce)", false],
+	["(prefers-reduced-motion)", false],
+	["not (prefers-reduced-motion)", true],
 ])("shares stylesheet and page matching for %s", (source, expected) => {
 	const { query, styles } = fixture();
 	expect(query(source as string).matches).toBe(expected);
 	expect(cssMediaMatches(source as string, styles.viewport, () => {})).toBe(
 		expected,
 	);
+});
+
+it("keeps fixed motion queries unchanged across viewport changes", async () => {
+	const { query, resize } = fixture();
+	const normal = query("(prefers-reduced-motion: no-preference)");
+	const reduced = query("(prefers-reduced-motion: reduce)");
+	const listener = vi.fn();
+	normal.addEventListener("change", listener);
+	reduced.addEventListener("change", listener);
+	resize(40, 80);
+	await vi.runAllTimersAsync();
+	expect(normal.matches).toBe(true);
+	expect(reduced.matches).toBe(false);
+	expect(listener).not.toHaveBeenCalled();
 });
 
 it("shares the global function and live Window dimensions without creating document nodes", () => {

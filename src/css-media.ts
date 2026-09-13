@@ -4,6 +4,7 @@ import {
 	type ColorSchemePreference,
 } from "./native-color-scheme.js";
 import { nativeHeadlessDisplay } from "./native-headless-display.js";
+import { nativeMotionPreference } from "./native-motion-preference.js";
 import { nativeRasterColor } from "./native-raster-color.js";
 
 export interface MediaViewport {
@@ -118,6 +119,8 @@ function compare(left: number, operator: string, right: number): boolean {
 					: left === right;
 }
 function feature(source: string): Match | undefined {
+	if (source === "prefers-reduced-motion")
+		return () => nativeMotionPreference.preference !== "no-preference";
 	if (source === "prefers-color-scheme")
 		return (viewport) => {
 			effectiveColorScheme(viewport.colorSchemePreference);
@@ -127,6 +130,12 @@ function feature(source: string): Match | undefined {
 	if (isFeature(source)) return (viewport) => actual(source, viewport) !== 0;
 	const colon = /^([a-z-]+)\s*:\s*(.+)$/.exec(source);
 	if (colon) {
+		if (colon[1] === "prefers-reduced-motion") {
+			const preference = colon[2];
+			return preference === "no-preference" || preference === "reduce"
+				? () => nativeMotionPreference.preference === preference
+				: undefined;
+		}
 		if (colon[1] === "prefers-color-scheme") {
 			const preference = colon[2];
 			return preference === "light" || preference === "dark"
