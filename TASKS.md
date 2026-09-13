@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: TestPages style failures narrowed to real causes
+
+New native-only retained-page diagnosis loads3153nodes, makes3selectors and uses
+45849query-work units. Its own CSS parser inspects442source units and retains
+63diagnostic units. The embedded358-unit/3-rule stylesheet is issue-free; both
+CSS value diagnostics are div e2598's dashed thin green top/bottom borders.
+The supported native border profile remains none/hidden/solid; implement dashed
+geometry/rendering deliberately rather than suppressing these authored values.
+
+Link e72 is a same-origin stylesheet with anonymous CORS and SHA256integrity.
+The replay deliberately has no resource callbacks; that explains the callback
+and unloaded-stylesheet diagnostics, not an absence of all native SRI/CORS support.
+The actual session already supplies the policy-aware callback. Resource-backed
+validation remains separate and must retain integrity/CORS checks. This run
+makes0HTTP/resources/geometry/raster/actions and is not website rendering success.
+See TESTPAGES-STYLE-DIAGNOSIS.md for observed attributes, exact evidence and next
+work. Runtime pins/cleanup/closed owners verify. Overallgoal and separate gatesopen.
+
 ### September 13: reader anchors recovered and caption scan removed
 
 An identical-byte full-loader/reader comparison proves both real CSSOM dfn
