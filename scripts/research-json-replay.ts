@@ -151,7 +151,7 @@ function selectionSnapshot(value: unknown) {
 			invalidSelection();
 	} else {
 		try {
-			validateSelectorSyntax(target);
+			validateSelectorSyntax(target, { pseudoElements: false });
 		} catch {
 			invalidSelection();
 		}

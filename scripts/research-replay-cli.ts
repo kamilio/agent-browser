@@ -94,7 +94,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 			invalidArguments();
 	} else {
 		try {
-			validateSelectorSyntax(target);
+			validateSelectorSyntax(target, { pseudoElements: false });
 		} catch {
 			invalidArguments();
 		}

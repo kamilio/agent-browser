@@ -144,7 +144,7 @@ function researchSelector(value: unknown): string {
 	)
 		throw new AgentBrowserError("invalid-input", "Invalid research selector");
 	try {
-		validateSelectorSyntax(value);
+		validateSelectorSyntax(value, { pseudoElements: false });
 	} catch {
 		throw new AgentBrowserError("invalid-input", "Invalid research selector");
 	}

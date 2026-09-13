@@ -616,8 +616,20 @@ class SelectorParser {
 	}
 }
 
-export function validateSelectorSyntax(source: string): void {
-	new SelectorParser(source, selectorSyntaxLimits).parse();
+export function validateSelectorSyntax(
+	source: string,
+	options: { pseudoElements?: boolean } = {},
+): void {
+	const compiled = new SelectorParser(source, selectorSyntaxLimits).parse();
+	if (
+		options.pseudoElements === false &&
+		compiled.selectors.some((selector) =>
+			selector.some((part) =>
+				part.tests.some((test) => test.kind === "pseudo-element"),
+			),
+		)
+	)
+		unsupported("pseudo-element targets");
 }
 
 export function supportsCssSelector(source: string): boolean {

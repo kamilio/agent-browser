@@ -214,6 +214,8 @@ it.each(["main, #chosen", ":is(main, article):not(.excluded)"])(
 			response('<main id="chosen"><p>One root</p></main>'),
 			selector,
 		);
+		if (report.selection?.method !== "css-selector")
+			throw new Error("Expected css-selector selection");
 		expect(report.selection?.matches).toBe(1);
 		expect(report.outcome).toBe("extracted-unverified");
 	},
@@ -227,6 +229,8 @@ it.each([false, true])(
 			'a[title="Paper"][href]',
 			reader,
 		);
+		if (report.selection?.method !== "css-selector")
+			throw new Error("Expected css-selector selection");
 		expect(report.selection?.matches).toBe(1);
 		expect(report.extraction?.content).toContain("Selected link");
 		expect(report.extraction?.content).not.toContain("Outside");
@@ -234,16 +238,26 @@ it.each([false, true])(
 );
 
 it.each(["#chosen", ".chosen"])(
-	"does not restore reader-stripped IDs/classes for %s",
+	"preserves reader source IDs but strips classes for %s",
 	async (selector) => {
 		const input = response('<main id="chosen" class="chosen">Body</main>');
 		const report = await navigate(input, selector, true);
-		expect(report.selection?.matches).toBe(0);
-		expect(report.failure).toEqual({
-			category: "not-found",
-			stage: "selection",
-		});
-		expect(report.extraction).toBeUndefined();
+		if (report.selection?.method !== "css-selector")
+			throw new Error("Expected css-selector selection");
+		if (selector === "#chosen") {
+			expect(report.selection?.matches).toBe(1);
+			expect(report.outcome).toBe("extracted-unverified");
+			expect(report.failure).toBeUndefined();
+			expect(report.extraction?.format).toBe("markdown");
+			expect(report.extraction?.content).toBe("Body\n");
+		} else {
+			expect(report.selection?.matches).toBe(0);
+			expect(report.failure).toEqual({
+				category: "not-found",
+				stage: "selection",
+			});
+			expect(report.extraction).toBeUndefined();
+		}
 	},
 );
 
@@ -277,6 +291,8 @@ it.each([false, true])(
 		expect(report.primaryResponse?.decodedBytes).toBeGreaterThan(256_000);
 		expect(report.outcome).toBe("extracted-unverified");
 		expect(report.extraction?.content).toBe("Small selected root\n");
+		if (report.selection?.method !== "css-selector")
+			throw new Error("Expected css-selector selection");
 		expect(report.selection?.matches).toBe(1);
 	},
 );
@@ -288,6 +304,8 @@ it.each([false, true])(
 			`<script>omitted()</script><main>${"é".repeat(128_001)}</main>`,
 		);
 		const report = await navigate(input, "main", reader);
+		if (report.selection?.method !== "css-selector")
+			throw new Error("Expected css-selector selection");
 		expect(report.selection?.matches).toBe(1);
 		expect(report.failure).toEqual({
 			category: "resource-limit",
@@ -312,6 +330,8 @@ it.each([
 	"reports an empty extraction for hidden/empty native roots: %s",
 	async (source) => {
 		const report = await navigate(response(source), "main");
+		if (report.selection?.method !== "css-selector")
+			throw new Error("Expected css-selector selection");
 		expect(report.selection?.matches).toBe(1);
 		expect(report.outcome).toBe("empty-extraction");
 		expect(report.contentSuccess).toBe(false);
@@ -441,6 +461,8 @@ it.each([
 		expect(report.classification.diagnostic).toBeNull();
 		expect(report.outcome).toBe("extracted-unverified");
 		expect(report.contentSuccess).toBeNull();
+		if (report.selection?.method !== "css-selector")
+			throw new Error("Expected css-selector selection");
 		expect(report.selection?.matches).toBe(1);
 	},
 );
@@ -474,6 +496,8 @@ it.each([false, true])(
 		expect(report.outcome).toBe("semantic-barrier");
 		expect(report.classification.barrier).toBe("challenge");
 		expect(report.contentSuccess).toBe(false);
+		if (report.selection?.method !== "css-selector")
+			throw new Error("Expected css-selector selection");
 		expect(report.selection?.matches).toBe(1);
 		expect(report.extraction?.content).toBe("Checking your browser\n");
 	},
@@ -493,6 +517,8 @@ it.each([403, 404, 500])(
 		);
 		expect(report.outcome).toBe("http-failure");
 		expect(report.classification.diagnostic).toBeNull();
+		if (report.selection?.method !== "css-selector")
+			throw new Error("Expected css-selector selection");
 		expect(report.selection?.matches).toBe(1);
 		expect(report.contentSuccess).toBe(false);
 		expect(report.primaryResponse?.status).toBe(status);
@@ -565,6 +591,8 @@ it("cleans up cancellation during a synthetic request", async () => {
 		"main",
 	);
 	expect(report.failure?.category).toBe("aborted");
+	if (report.selection?.method !== "css-selector")
+		throw new Error("Expected css-selector selection");
 	expect(report.selection?.matches).toBeNull();
 	expect(report.extraction).toBeUndefined();
 	expect(report.metrics?.closed).toBe(true);
@@ -616,6 +644,8 @@ it.each(
 		expect(report.outcome).toBe("semantic-barrier");
 		expect(report.classification.barrier).toBe("challenge");
 		expect(report.failure?.stage).toBe("semantic-barrier");
+		if (report.selection?.method !== "css-selector")
+			throw new Error("Expected css-selector selection");
 		expect(report.selection?.matches).toBeNull();
 		expect(report.extraction).toBeUndefined();
 	},
@@ -634,22 +664,35 @@ it.each([false, true])(
 		expect(report.failure).toEqual({
 			category: "resource-limit",
 			stage: "loader",
+			resourceLimit: {
+				kind: reader ? "reader.depth" : "document.depth",
+				unit: "levels",
+				limit: 128,
+				observed: 129,
+			},
 		});
+		if (report.selection?.method !== "css-selector")
+			throw new Error("Expected css-selector selection");
 		expect(report.selection?.matches).toBeNull();
 		expect(report.extraction).toBeUndefined();
 	},
 );
 
 it("does not bypass reader source limits with a small selected root", async () => {
-	const report = await navigate(
-		response(`<main>Small root</main><!--${"x".repeat(2_000_001)}-->`),
-		"main",
-		true,
-	);
+	const source = `<main>Small root</main><!--${"x".repeat(2_000_001)}-->`;
+	const report = await navigate(response(source), "main", true);
 	expect(report.failure).toEqual({
 		category: "resource-limit",
 		stage: "loader",
+		resourceLimit: {
+			kind: "reader.decoded",
+			unit: "code-units",
+			limit: 2_000_000,
+			observed: source.length,
+		},
 	});
+	if (report.selection?.method !== "css-selector")
+		throw new Error("Expected css-selector selection");
 	expect(report.selection?.matches).toBeNull();
 	expect(report.extraction).toBeUndefined();
 	expect(report.primaryResponse?.decodedBytes).toBeGreaterThan(2_000_000);
