@@ -6,6 +6,40 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: real CSS diagnosis, MDN reading and reduced-motion support
+
+A bounded zeroHTTP native diagnosis identifies the denied import as Google Fonts,
+not an authorization or Cloudflare denial. The actual stylesheet has199 unsupported
+selector rules, led by163 pseudo-element rules and26 validity rules, plus real
+property/value/at-rule gaps. No source is rewritten or warning suppressed.
+
+A fresh native MDN navigation uses exactly2GETs (same-origin301then200) and retains
+331666decodedbytes. The full loader parses7795nodes; the semantic reader7528.
+Both read the actual heading, but full-loader geometry remains unsupported by
+missing stylesheet callbacks and HTML/element/SVG layout gates. No new rendering,
+script, resource-fetch or device acceptance is inferred from successful reading.
+
+Retained native Media Queries source confirms reduced-motion preference semantics.
+The implemented fixedUA no-preference profile shares stylesheet/page matching,
+including Booleanfalse and unchanged notifications across viewport changes.
+It does not inspect OS settings, implement animations or add preference overrides.
+Focused504pass; canonical native18370pass/0fail/2unchanged exclusions,359selected
+suites/358strictroots,735manifest entries/376unrun. Existing87media cases are
+newly selected;36new feature/page cases are added. Rootdist is not rebuilt.
+
+An audited18370 replay of unchanged real TestPages HTML+CSS reduces actual media
+diagnostics36to3 with no newHTTP; remaining conditions concern hover/pointer.
+Known-inactive branches also reduce conservative selector/property diagnostics,
+not their underlying unsupported syntax. Formatting work stays192948 and the
+table still has no supported rectangle. Full site rendering is not complete.
+
+See `REDUCED-MOTION-MEDIA.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-13-SIXTEENTH-UPDATE.md` for dated evidence,
+hashes, unchanged failures and scope. Next prioritize actual selector/pseudo-element
+compatibility and explicitly scoped font/resource handling, with native fixtures
+and fresh sealed real-document replay. Originalresearch, broader site coverage,
+fullrendering/device/SafeJS/TTY/handoff gates remain open. Overallgoalactive.
+
 ### September 13: real stylesheet accepted, wider compatibility gaps exposed
 
 One initial capture fails locally before networking: explicit omit cookie context
