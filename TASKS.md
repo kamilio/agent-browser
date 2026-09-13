@@ -6,6 +6,38 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: GOV.UK coverage and native datetime source metadata
+
+New native-only live check: GOV.UK bank-holidays, one public GET, HTTP200,
+175842 decoded bytes, no redirects/retries/subresources/cookies/credentials.
+Native full DOM and semantic reader retain33tables,313rows and85links, but
+the reader drops all280 machine-readable datetime declarations. This actual
+site discrepancy motivates a shared reader/extraction fix, not rewritten HTML.
+
+Reader now preserves raw datetime on unchanged HTML time/ins/del. JSON
+extraction exports bounded dateTimeSource metadata automatically; Markdown
+stays unchanged. Values are source declarations, not parsed/validated dates or
+timezone inference. Per-value4096-unit and existing output/structure limits apply.
+Hidden/foreign/executable/context-wrapper exclusions remain. Metadata-only
+content counts only for non-whitespace values and is not rendered diagnostic text.
+
+70new regressions pass; corrected baseline48fail/22passing controls. Focused
+809pass/zero failures/skips across10suites. Expanded native gate19476pass,
+THREE unchanged baseline failures, two unchanged skips;379suites/378strictroots/
+746manifest entries. Includes63previously unselected existing text-line cases,
+not63additional new feature tests. Build/strict/format pass; full suite NOT green.
+
+Exact retained-source native reader/JSON before-after proof, zero HTTP:
+280datetime declarations and280 JSON metadata records now match native full
+DOM exactly, with unchanged5412reader nodes/5407extracted nodes and identical
+metadata-stripped content/references. Larger output cost is recorded explicitly.
+No full rendering, legal/calendar accuracy, SafeJS, action or credential claim.
+
+Evidence: WEBSITE-TEST-INVENTORY-SEPTEMBER-13-TWENTY-THIRD-UPDATE.md and
+DATE-TIME-SOURCE.md. Original research topics, browser performance/rendering,
+challenge handling, live/device/TTY/socket/SafeJS/credential/passkey gates remain
+OPEN. No challenge solving/spoofing, no push; unrelated dirty work preserved.
+
 ### September 13: responsive font-size math and bounded LiveBench research
 
 Native font-size now accepts bounded calc/min/max/clamp expressions through the
