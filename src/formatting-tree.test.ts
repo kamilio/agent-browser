@@ -8,6 +8,7 @@ import {
 	type FormattingTree,
 	buildFormattingTree,
 	resolveDocumentBlockWidths,
+	resolveFormattingPageWidths,
 } from "./formatting-tree.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { documentHitTesting } from "./hit-testing.js";
@@ -754,6 +755,94 @@ it("enforces owned-node, box, depth, text and work limits without mutating the D
 	expect(() => buildFormattingTree(tree, { unknown: 1 } as never)).toThrow(
 		"Invalid",
 	);
+});
+
+it("reports actual width blockers without including advisory CSS issues", () => {
+	const { tree, id } = fixture(
+		'<main><div style="position:sticky">sticky</div><div style="position:sticky">sticky</div></main>',
+	);
+	const formatting = buildFormattingTree(tree);
+	expect(formatting.issues["position-layout-not-supported"]).toBe(2);
+	const diagnosticInput = {
+		...formatting,
+		issues: {
+			"css:unimplemented-or-invalid-media-query": 3,
+			...formatting.issues,
+			"css:discarded-incomplete-css-rule": 1,
+		},
+	};
+	expect(() => resolveFormattingPageWidths(diagnosticInput)).toThrow(
+		"Document width resolution requires an issue-free supported formatting profile: position-layout-not-supported (2)",
+	);
+	expect(() =>
+		documentGeometry(tree).getBoundingClientRect(id("main")),
+	).toThrow("position-layout-not-supported (2)");
+	expect(() => resolveDocumentBlockWidths(tree)).toThrow(
+		"position-layout-not-supported (2)",
+	);
+});
+
+it("omits coordinated display issues but retains unsupported layout blockers", () => {
+	const { tree } = fixture(
+		'<main style="display:flex"><div style="position:sticky">sticky</div></main>',
+	);
+	const formatting = buildFormattingTree(tree);
+	expect(formatting.issues).toMatchObject({
+		"display-layout-not-supported": 1,
+		"position-layout-not-supported": 1,
+	});
+	expect(() =>
+		resolveFormattingPageWidths(formatting, undefined, () => {}),
+	).toThrow(
+		"Document width resolution requires an issue-free supported formatting profile: position-layout-not-supported (1)",
+	);
+	expect(() => resolveFormattingPageWidths(formatting)).toThrow(
+		"display-layout-not-supported (1)",
+	);
+});
+
+it("bounds width blocker diagnostics without discarding the rejection", () => {
+	const { tree } = fixture("<main>text</main>");
+	const formatting = buildFormattingTree(tree);
+	const issues = Object.fromEntries(
+		Array.from({ length: 11 }, (_, index) => [
+			`issue-${index}-${"x".repeat(200)}`,
+			index + 1,
+		]),
+	);
+	let caught: unknown;
+	try {
+		resolveFormattingPageWidths({ ...formatting, issues });
+	} catch (error) {
+		caught = error;
+	}
+	expect(caught).toMatchObject({
+		name: "AgentBrowserError",
+		code: "unsupported",
+	});
+	expect(caught).toBeInstanceOf(Error);
+	const message = (caught as Error).message;
+	expect(message).toContain(`${Object.keys(issues)[0].slice(0, 96)} (1)`);
+	expect(message).toContain(`${Object.keys(issues)[7].slice(0, 96)} (8)`);
+	expect(message).not.toContain("issue-8-");
+	expect(message).not.toContain("x".repeat(97));
+	expect(message).toMatch(/; 3 more issue types$/);
+	expect(message.length).toBeLessThan(1000);
+	expect(formatting.issues).toEqual({});
+});
+
+it("keeps advisory-only formatting issues admitted", () => {
+	const { tree } = fixture("<main>text</main>");
+	const formatting = buildFormattingTree(tree);
+	expect(() =>
+		resolveFormattingPageWidths({
+			...formatting,
+			issues: {
+				"css:unimplemented-or-invalid-media-query": 2,
+				"css:discarded-incomplete-css-rule": 1,
+			},
+		}),
+	).not.toThrow();
 });
 
 it("bounds multiplicative inline fragment expansion", () => {

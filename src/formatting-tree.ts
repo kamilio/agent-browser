@@ -1596,18 +1596,24 @@ export function resolveFormattingPageWidths(
 					node.contentMode === "table",
 			).length
 		: 0;
-	if (
-		Object.entries(formatting.issues).some(
-			([issue, count]) =>
-				!isAdvisoryFormattingIssue(issue) &&
-				(issue !== "display-layout-not-supported" ||
-					!onFlex ||
-					count !== flexCount),
-		)
-	)
+	const blockers = Object.entries(formatting.issues).filter(
+		([issue, count]) =>
+			!isAdvisoryFormattingIssue(issue) &&
+			(issue !== "display-layout-not-supported" ||
+				!onFlex ||
+				count !== flexCount),
+	);
+	if (blockers.length)
 		throw new AgentBrowserError(
 			"unsupported",
-			"Document width resolution requires an issue-free supported formatting profile",
+			"Document width resolution requires an issue-free supported formatting profile: " +
+				blockers
+					.slice(0, 8)
+					.map(([issue, count]) => `${issue.slice(0, 96)} (${count})`)
+					.join(", ") +
+				(blockers.length > 8
+					? `; ${blockers.length - 8} more issue types`
+					: ""),
 		);
 	return resolveFormattingBlockWidths(
 		formatting,
