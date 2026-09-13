@@ -19,6 +19,7 @@ import { existingDocumentFiles } from "./document-files.js";
 import type { DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
+import { fontStyleSlope, type NativeFontStyle } from "./font-style.js";
 import { isInertSubtree } from "./inertness.js";
 import { readNativeControlSelection } from "./native-control-caret.js";
 import {
@@ -309,12 +310,14 @@ export function rasterizeControl(
 	paint: PaintStyle,
 	charge: (amount: number) => void,
 	weight: BitmapFontWeight = 400,
+	style: NativeFontStyle = "normal",
 ) {
 	if (weight !== 400 && weight !== 700)
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Unregistered bitmap font weight",
 		);
+	const slope = fontStyleSlope(style);
 	const columns = Math.ceil(width);
 	const rows = Math.ceil(height);
 	if (
@@ -334,6 +337,25 @@ export function rasterizeControl(
 		columns * rows * 8 +
 			(control.text.length + (control.buttonText?.length ?? 0)) * 64,
 	);
+	if (slope !== 0 && control.kind !== "checkbox" && control.kind !== "radio") {
+		const scale = control.fontSize / bitmapFont.unitsPerEm;
+		const glyphPixels =
+			Math.min(
+				columns,
+				Math.ceil(
+					(bitmapFont.glyphWidth + Math.abs(slope) * bitmapFont.glyphHeight) *
+						scale,
+				) + 1,
+			) * Math.min(rows, Math.ceil(bitmapFont.glyphHeight * scale) + 1);
+		charge(
+			(control.text.length +
+				(control.kind === "file"
+					? (control.buttonText ?? "Choose File").length
+					: 0)) *
+				glyphPixels *
+				4,
+		);
+	}
 	const textLayout =
 		control.kind === "text" || control.kind === "textarea"
 			? layoutControlText({
@@ -391,6 +413,7 @@ export function rasterizeControl(
 				control.fontSize,
 				foreground,
 				weight,
+				style,
 			);
 		}
 		if (textLayout.caret)
@@ -510,6 +533,7 @@ export function rasterizeControl(
 						control.fontSize,
 						foreground,
 						weight,
+						style,
 					);
 					horizontal += advance;
 				}
@@ -548,6 +572,7 @@ export function rasterizeControl(
 				control.fontSize,
 				foreground,
 				weight,
+				style,
 			);
 			horizontal += advance;
 		}

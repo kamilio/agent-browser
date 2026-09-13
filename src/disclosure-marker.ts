@@ -2,6 +2,7 @@ import { AgentBrowserError } from "./errors.js";
 import { markerTypes } from "./css-list.js";
 import { bitmapFont, type BitmapFontWeight } from "./bitmap-font.js";
 import { layoutNumber } from "./layout-values.js";
+import { fontStyleSlope, type NativeFontStyle } from "./font-style.js";
 import {
 	createRaster,
 	paintBitmapGlyph,
@@ -87,12 +88,14 @@ export function rasterizeDisclosureMarker(
 	color: Rgba,
 	charge: (amount: number) => void,
 	weight: BitmapFontWeight = 400,
+	style: NativeFontStyle = "normal",
 ) {
 	if (weight !== 400 && weight !== 700)
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Unregistered bitmap font weight",
 		);
+	const slope = fontStyleSlope(style);
 	const text = disclosureMarkerText(marker);
 	if (text !== undefined) {
 		layoutNumber(width);
@@ -109,6 +112,22 @@ export function rasterizeDisclosureMarker(
 			columns * rows * 8 +
 				text.length * bitmapFont.glyphWidth * bitmapFont.glyphHeight,
 		);
+		if (slope !== 0) {
+			const scale = fontSize / bitmapFont.unitsPerEm;
+			charge(
+				text.length *
+					Math.min(
+						columns,
+						Math.ceil(
+							(bitmapFont.glyphWidth +
+								Math.abs(slope) * bitmapFont.glyphHeight) *
+								scale,
+						) + 1,
+					) *
+					Math.min(rows, Math.ceil(bitmapFont.glyphHeight * scale) + 1) *
+					4,
+			);
+		}
 		const image = createRaster(columns, rows, [0, 0, 0, 0]);
 		if (fontSize === 0) return image;
 		const advance = (fontSize * bitmapFont.advance) / bitmapFont.unitsPerEm;
@@ -121,6 +140,7 @@ export function rasterizeDisclosureMarker(
 				fontSize,
 				color,
 				weight,
+				style,
 			);
 		return image;
 	}

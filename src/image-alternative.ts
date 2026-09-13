@@ -4,6 +4,11 @@ import {
 	type BitmapFontWeight,
 } from "./bitmap-font.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	bitmapGlyphInk,
+	fontStyleSlope,
+	type NativeFontStyle,
+} from "./font-style.js";
 import { layoutNumber } from "./layout-values.js";
 import {
 	createRaster,
@@ -123,6 +128,7 @@ export function rasterizeImageAlternative(
 	color: Rgba,
 	charge: (amount: number) => void,
 	weight: BitmapFontWeight = 400,
+	style: NativeFontStyle = "normal",
 ): RasterImage {
 	const { text, size } = alternativeValues(alternative);
 	layoutNumber(width);
@@ -139,10 +145,15 @@ export function rasterizeImageAlternative(
 			"Image alternative raster pixel limit exceeded",
 		);
 	const copiedColor = alternativeColor(color, charge, weight);
+	const slope = fontStyleSlope(style);
 	const clipWidth = Math.max(0, Math.ceil(width - 0.5));
 	const clipHeight = Math.max(0, Math.ceil(height - 0.5));
 	const scale = size / bitmapFont.unitsPerEm;
 	const advance = bitmapFont.advance * scale;
+	const leftOverhang =
+		Math.abs(slope) * (bitmapFont.glyphHeight - bitmapFont.ascent) * scale;
+	const inkWidth =
+		bitmapFont.glyphWidth + Math.abs(slope) * bitmapFont.glyphHeight;
 	const hasInk =
 		clipWidth > 0 &&
 		clipHeight > 0 &&
@@ -151,9 +162,12 @@ export function rasterizeImageAlternative(
 		text.length > 0;
 	charge(pixelWidth * pixelHeight * 4);
 	if (hasInk) {
-		const glyphCount = Math.min(text.length, Math.ceil(width / advance) + 1);
+		const glyphCount = Math.min(
+			text.length,
+			Math.ceil((width + leftOverhang) / advance) + 1,
+		);
 		const glyphPixels =
-			Math.min(pixelWidth, Math.ceil(bitmapFont.glyphWidth * scale) + 1) *
+			Math.min(pixelWidth, Math.ceil(inkWidth * scale) + 1) *
 			Math.min(pixelHeight, Math.ceil(bitmapFont.glyphHeight * scale) + 1);
 		const clippedBytes =
 			(clipHeight * (pixelWidth - clipWidth) +
@@ -177,9 +191,10 @@ export function rasterizeImageAlternative(
 			size,
 			copiedColor,
 			weight,
+			style,
 		);
 		glyphIndex++;
-		if (glyphIndex * advance >= width) break;
+		if (glyphIndex * advance >= width + leftOverhang) break;
 	}
 	if (clipWidth < pixelWidth)
 		for (let row = 0; row < clipHeight; row++)
@@ -203,6 +218,7 @@ export function paintImageAlternative(
 	color: Rgba,
 	charge: (amount: number) => void,
 	weight: BitmapFontWeight = 400,
+	style: NativeFontStyle = "normal",
 ): void {
 	if (!image || typeof image !== "object")
 		throw new AgentBrowserError("invalid-input", "Invalid raster image");
@@ -220,8 +236,13 @@ export function paintImageAlternative(
 	const contentRight = layoutNumber(originX + width, true);
 	const contentBottom = layoutNumber(originY + height, true);
 	const copiedColor = alternativeColor(color, charge, weight);
+	const slope = fontStyleSlope(style);
 	const scale = size / bitmapFont.unitsPerEm;
 	const advance = bitmapFont.advance * scale;
+	const leftOverhang =
+		Math.abs(slope) * (bitmapFont.glyphHeight - bitmapFont.ascent) * scale;
+	const inkWidth =
+		bitmapFont.glyphWidth + Math.abs(slope) * bitmapFont.glyphHeight;
 	const left = Math.max(0, originX);
 	const top = Math.max(0, originY);
 	const right = Math.min(target.width, contentRight);
@@ -236,11 +257,11 @@ export function paintImageAlternative(
 		return;
 	const iterationCount = Math.min(
 		text.length,
-		Math.ceil((right - originX) / advance) + 1,
+		Math.ceil((right + leftOverhang - originX) / advance) + 1,
 	);
 	const visibleCount = Math.min(
 		iterationCount,
-		Math.ceil((right - left + bitmapFont.glyphWidth * scale) / advance) + 2,
+		Math.ceil((right - left + inkWidth * scale) / advance) + 2,
 	);
 	const cellPixels =
 		Math.min(Math.ceil(scale) + 1, Math.ceil(right - left) + 1) *
@@ -252,10 +273,65 @@ export function paintImageAlternative(
 			bitmapFont.glyphHeight *
 			(1 + cellPixels * 4),
 	);
+	if (slope !== 0) {
+		charge(
+			visibleCount *
+				Math.min(Math.ceil(inkWidth * scale) + 1, Math.ceil(right - left) + 1) *
+				Math.min(
+					Math.ceil(bitmapFont.glyphHeight * scale) + 1,
+					Math.ceil(bottom - top) + 1,
+				) *
+				4,
+		);
+	}
 	let glyphIndex = 0;
 	for (const character of text) {
 		const glyphLeft = originX + glyphIndex * advance;
-		if (glyphLeft + bitmapFont.glyphWidth * scale > left) {
+		if (
+			slope !== 0 &&
+			glyphLeft + (bitmapFont.glyphWidth + slope * bitmapFont.ascent) * scale >
+				left &&
+			glyphLeft - leftOverhang < right
+		) {
+			const ink = bitmapGlyphInk(character, weight, style);
+			const glyph = bitmapGlyph(character, weight);
+			const pixelLeft = Math.ceil(
+				Math.max(left, glyphLeft + ink.x * scale) - 0.5,
+			);
+			const pixelRight = Math.ceil(
+				Math.min(right, glyphLeft + (ink.x + ink.width) * scale) - 0.5,
+			);
+			const pixelTop = Math.ceil(Math.max(top, originY + ink.y * scale) - 0.5);
+			const pixelBottom = Math.ceil(
+				Math.min(bottom, originY + (ink.y + ink.height) * scale) - 0.5,
+			);
+			for (let vertical = pixelTop; vertical < pixelBottom; vertical++) {
+				const relativeY = vertical + 0.5 - originY;
+				const row = Math.floor(relativeY / scale);
+				if (row < 0 || row >= bitmapFont.glyphHeight) continue;
+				const shift = slope * (bitmapFont.ascent * scale - relativeY);
+				if (pixelLeft >= pixelRight) continue;
+				for (let column = 0; column < bitmapFont.glyphWidth; column++) {
+					if (!(glyph.rows[row] & (1 << (bitmapFont.glyphWidth - column - 1))))
+						continue;
+					const cellLeft = glyphLeft + column * scale + shift;
+					const clippedLeft = Math.max(left, cellLeft);
+					const clippedRight = Math.min(right, cellLeft + scale);
+					if (clippedLeft >= clippedRight) continue;
+					paintRasterRect(
+						target,
+						clippedLeft,
+						vertical,
+						clippedRight - clippedLeft,
+						1,
+						copiedColor,
+					);
+				}
+			}
+		} else if (
+			slope === 0 &&
+			glyphLeft + bitmapFont.glyphWidth * scale > left
+		) {
 			const glyph = bitmapGlyph(character, weight);
 			for (let row = 0; row < bitmapFont.glyphHeight; row++) {
 				const cellTop = originY + row * scale;
@@ -281,6 +357,6 @@ export function paintImageAlternative(
 			}
 		}
 		glyphIndex++;
-		if (originX + glyphIndex * advance >= right) break;
+		if (originX + glyphIndex * advance >= right + leftOverhang) break;
 	}
 }

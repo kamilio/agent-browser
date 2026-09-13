@@ -5,6 +5,11 @@ import {
 	type BitmapFontWeight,
 } from "./bitmap-font.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	bitmapGlyphInk,
+	fontStyleSlope,
+	type NativeFontStyle,
+} from "./font-style.js";
 import { layoutNumber } from "./layout-values.js";
 
 export type Rgba = readonly [number, number, number, number];
@@ -195,6 +200,7 @@ export function paintBitmapGlyph(
 	fontSize = 16,
 	color: Rgba = [0, 0, 0, 255],
 	weight: BitmapFontWeight = 400,
+	style: NativeFontStyle = "normal",
 ): boolean {
 	validateRaster(image);
 	colorValue(color);
@@ -202,6 +208,25 @@ export function paintBitmapGlyph(
 	layoutNumber(originY, true);
 	const glyph = bitmapGlyph(character, weight);
 	const { scale } = bitmapFontMetrics(fontSize);
+	const slope = fontStyleSlope(style);
+	if (slope !== 0) {
+		if (scale === 0 || color[3] === 0) return glyph.supported;
+		const ink = bitmapGlyphInk(character, weight, style);
+		const top = Math.max(0, Math.ceil(originY + ink.y * scale - 0.5));
+		const bottom = Math.min(
+			image.height,
+			Math.ceil(originY + (ink.y + ink.height) * scale - 0.5),
+		);
+		for (let row = top; row < bottom; row++) {
+			const relativeY = row + 0.5 - originY;
+			const bitmapRow = Math.floor(relativeY / scale);
+			const shift = slope * (bitmapFont.ascent * scale - relativeY);
+			for (let column = 0; column < bitmapFont.glyphWidth; column++)
+				if (glyph.rows[bitmapRow] & (1 << (bitmapFont.glyphWidth - column - 1)))
+					fill(image, originX + column * scale + shift, row, scale, 1, color);
+		}
+		return glyph.supported;
+	}
 	for (let row = 0; row < bitmapFont.glyphHeight; row++)
 		for (let column = 0; column < bitmapFont.glyphWidth; column++)
 			if (glyph.rows[row] & (1 << (bitmapFont.glyphWidth - column - 1)))

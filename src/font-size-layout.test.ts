@@ -214,23 +214,37 @@ it("retains raw invalid typography diagnostics while scoping their applicability
 	);
 	expect(styles.metrics().issues).toEqual({
 		"unimplemented-or-invalid-css-value": 1,
-		"unimplemented-css-property": 1,
 	});
 	expect(styles.metrics().applicableIssues).toEqual({});
+	expect(text()["font-style"]).toBe("normal");
 	expect(rect().width).toBe(36);
+	const upright = pixel(tree, 3, 0);
 	styles.setViewport(256, 96);
 	expect(text()["font-size"]).toBe("24px");
-	expect(styles.metrics().applicableIssues).toEqual({
-		"unimplemented-css-property": 1,
-	});
-	expect(() => layoutDocument(tree)).toThrow(
-		expect.objectContaining({ code: "unsupported" }),
+	expect(text()["font-style"]).toBe("italic");
+	expect(styles.metrics().applicableIssues).toEqual({});
+	expect(rect().width).toBe(36);
+	expect(() => layoutDocument(tree)).not.toThrow();
+	expect(upright).toEqual([0, 0, 0, 255]);
+	expect(pixel(tree, 3, 0)).toEqual([255, 0, 0, 255]);
+});
+
+it("renders the formerly guarded italic keyword fixture with real slanted ink", () => {
+	const { tree, styles, text, rect } = fixture(
+		"#target{font-size:x-large;font-style:italic}",
 	);
+	expect(styles.metrics().issues).toEqual({});
+	expect(styles.metrics().applicableIssues).toEqual({});
+	expect(text()["font-style"]).toBe("italic");
+	expect(buildFormattingTree(tree).issues).toEqual({});
+	expect(rect()).toMatchObject({ width: 36, height: 24 });
+	expect(() => layoutDocument(tree)).not.toThrow();
+	expect(pixel(tree, 3, 0)).toEqual([255, 0, 0, 255]);
+	expect(pixel(tree, 9, 0)).toEqual([0, 0, 0, 255]);
 });
 
 it.each([
 	["font-family:serif,", "unimplemented-or-invalid-css-value"],
-	["font-style:italic", "unimplemented-css-property"],
 	["font:small monospace", "unimplemented-css-property"],
 	["font-size:math", "unimplemented-or-invalid-css-value"],
 	["font-size:calc(1px + 1px)", "unimplemented-or-invalid-css-value"],

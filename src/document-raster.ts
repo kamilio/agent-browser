@@ -1,4 +1,4 @@
-import { bitmapFont, bitmapGlyph } from "./bitmap-font.js";
+import { bitmapFont } from "./bitmap-font.js";
 import { paintSolidBorders } from "./border-raster.js";
 import { rasterizeControl } from "./control-rendering.js";
 import { transparentColor } from "./css-color.js";
@@ -31,6 +31,7 @@ import {
 } from "./editable-selection.js";
 import { AgentBrowserError } from "./errors.js";
 import { activeFocus } from "./focus.js";
+import { bitmapGlyphInk, type NativeFontStyle } from "./font-style.js";
 import { matchFontWeight } from "./font-weight.js";
 import { resolveVisualTarget } from "./generated-controls.js";
 import { layoutContentItems } from "./layout-paint-order.js";
@@ -479,7 +480,9 @@ function paintDocumentLayout(
 		const weight = matchFontWeight(
 			Number(nodes[glyph.formattingId].typography?.["font-weight"] ?? "400"),
 		);
-		const ink = bitmapGlyph(glyph.character, weight).ink;
+		const style = (nodes[glyph.formattingId].typography?.["font-style"] ??
+			"normal") as NativeFontStyle;
+		const ink = bitmapGlyphInk(glyph.character, weight, style);
 		if (ink.width === 0 || ink.height === 0) {
 			metrics.blankGlyphs++;
 			return;
@@ -510,6 +513,7 @@ function paintDocumentLayout(
 			glyph.fontSize,
 			color,
 			weight,
+			style,
 		);
 		metrics.paintedGlyphs++;
 	};
@@ -608,6 +612,7 @@ function paintDocumentLayout(
 				(node.paint ?? initialPaintStyle).color,
 				charge,
 				matchFontWeight(Number(node.typography?.["font-weight"] ?? "400")),
+				(node.typography?.["font-style"] ?? "normal") as NativeFontStyle,
 			);
 		else {
 			charge(Math.ceil(right - left + 1) * Math.ceil(bottom - top + 1) * 4);
@@ -623,6 +628,7 @@ function paintDocumentLayout(
 							matchFontWeight(
 								Number(node.typography?.["font-weight"] ?? "400"),
 							),
+							(node.typography?.["font-style"] ?? "normal") as NativeFontStyle,
 						)
 					: node.control
 						? rasterizeControl(
@@ -634,6 +640,8 @@ function paintDocumentLayout(
 								matchFontWeight(
 									Number(node.typography?.["font-weight"] ?? "400"),
 								),
+								(node.typography?.["font-style"] ??
+									"normal") as NativeFontStyle,
 							)
 						: node.svg
 							? rasterizeSvgScene(
@@ -705,6 +713,7 @@ function paintDocumentLayout(
 					(node.paint ?? initialPaintStyle).color,
 					charge,
 					matchFontWeight(Number(node.typography?.["font-weight"] ?? "400")),
+					(node.typography?.["font-style"] ?? "normal") as NativeFontStyle,
 				),
 				originX,
 				originY,

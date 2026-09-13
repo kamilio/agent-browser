@@ -1,6 +1,7 @@
 import { lengthUsesFont } from "./css-math.js";
 import { normalizeFontFamily } from "./font-family.js";
 import { nativeFontXHeight } from "./font-metrics.js";
+import { parseFontStyle } from "./font-style.js";
 import { computeFontWeight, parseFontWeight } from "./font-weight.js";
 import { layoutNumber } from "./layout-values.js";
 import { computeTextIndent, parseTextIndent } from "./text-indent.js";
@@ -9,6 +10,7 @@ import { parseTextTransform } from "./text-transform-style.js";
 export const cssTextProperties = Object.freeze([
 	"font-family",
 	"font-size",
+	"font-style",
 	"font-weight",
 	"line-height",
 	"white-space",
@@ -25,6 +27,7 @@ export type TextSpecifiedStyle = Readonly<
 export const initialTextStyle: TextStyle = Object.freeze({
 	"font-family": '"agent mono"',
 	"font-size": "16px",
+	"font-style": "normal",
 	"font-weight": "400",
 	"line-height": "normal",
 	"white-space": "normal",
@@ -70,6 +73,7 @@ export function parseTextValue(
 	if (wide.has(value)) return value;
 	if (property === "text-transform") return parseTextTransform(value);
 	if (property === "text-indent") return parseTextIndent(value);
+	if (property === "font-style") return parseFontStyle(value);
 	if (property === "font-weight") return parseFontWeight(value);
 	if (property === "overflow-wrap")
 		return ["normal", "break-word", "anywhere"].includes(value)

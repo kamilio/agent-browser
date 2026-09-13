@@ -6,6 +6,44 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: native font-style implemented
+
+Author font-style normal/italic/oblique now inherits through the existing CSS
+cascade, custom properties and live CSSOM. Agent Mono paints actual synthetic
+slanted regular/bold ink, with transformed clip bounds and unchanged logical
+geometry/hit regions. Text controls, image alternatives and textual markers
+receive the style; geometric controls do not. Decoration ink skipping accounts
+for slanted cells. Native matching treats italic as a synonym for oblique while
+preserving the computed keyword, as permitted by the retained primary source.
+No true italic face, explicit angle, UA tag default, synthesis control, external
+font or new runtime dependency is claimed. See FONT-STYLE.md.
+
+Focused isolated checks pass966/0/0 across23files, including127new cases. The
+original media/italic fixtures now render slanted pixels without moving boxes.
+The clean broad gate passes17,503/0/2 unchanged exclusions:340selected suites,
+339strict roots,718manifest entries (378not run). Build/strict/format and source
+checks pass;1246source/2072compiled files and1232 unchanged tracked inputs are
+audited in native-font-style-september13-round01. The initial zero-size test
+fixture failure and the first broad run's two obsolete italic-rejection
+expectations remain preserved. Their fixtures and unrelated guards are retained.
+
+Original SQLite offline replay passes: raw unsupported properties18→15,
+applicable properties12→11. Six selector issues, eleven float flags and one
+overflow flag remain, with no CSS-value failures. The element-style census finds
+179normal/twoitalic computed elements, not a visible-rendering claim. Source DOM,
+post-install presentation and runtime inventories are unchanged, owners close,
+and no HTTP/image/used-layout/raster/script call occurs. No whole-site pass.
+
+Retained CSS Fonts4 native-source work verifies the unqualified oblique14degree
+default and the synonym-matching condition for italic synthesis. The initial
+partial extraction and follow-up topical-selection defect remain documented;
+neither is misrepresented as new live HTTP or full font-matching compliance.
+
+Overall website/performance/crawler-friction work remains active. Original
+hardware/benchmark/Astra/Poe research, credential/passkey-device, SafeJS, real
+TTY and human challenge-handoff gates remain open. Native unit passes do not
+close them. Preserve pre-existing dirty work; no push.
+
 ### September 13: native text decoration implemented
 
 Author-CSS text-decoration and line/style/color longhands now have a bounded,

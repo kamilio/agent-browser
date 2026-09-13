@@ -6,6 +6,7 @@ import type { DocumentClip } from "./document-raster.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { nativeFontXHeight } from "./font-metrics.js";
+import { fontStyleSlope, type NativeFontStyle } from "./font-style.js";
 import { matchFontWeight } from "./font-weight.js";
 import { isAtomicInline } from "./inline-atomic.js";
 import { resolveInlineEdges } from "./inline-box.js";
@@ -33,6 +34,7 @@ export interface TextDecorations {
 	chains: readonly (Decoration | null)[];
 	inherited: readonly (Decoration | null)[];
 	weights: readonly (400 | 700)[];
+	slopes: readonly number[];
 	lineSpacing: WeakSet<Readonly<TextGlyph>>;
 	edges: WeakMap<Readonly<TextInlineFragment>, InlineEdges>;
 	layers: Decoration[];
@@ -53,6 +55,7 @@ export function prepareTextDecorations(
 		null,
 	);
 	const weights = new Array<400 | 700>(formatting.nodes.length).fill(400);
+	const slopes = new Array<number>(formatting.nodes.length).fill(0);
 	const pending = [formatting.root];
 	while (pending.length) {
 		charge();
@@ -68,6 +71,9 @@ export function prepareTextDecorations(
 		inherited[node.id] = chain;
 		weights[node.id] = matchFontWeight(
 			Number(node.typography?.["font-weight"] ?? "400"),
+		);
+		slopes[node.id] = fontStyleSlope(
+			(node.typography?.["font-style"] ?? "normal") as NativeFontStyle,
 		);
 		if (node.ref && (node.kind === "inline" || node.kind === "block")) {
 			const domId = tree.resolve(node.ref).id;
@@ -176,7 +182,7 @@ export function prepareTextDecorations(
 			});
 		}
 	}
-	return { chains, inherited, weights, lineSpacing, edges, layers: [] };
+	return { chains, inherited, weights, slopes, lineSpacing, edges, layers: [] };
 }
 
 function paintInterval(
@@ -291,6 +297,62 @@ export function paintTextDecorations(
 				glyph.character,
 				state.weights[glyph.formattingId],
 			);
+			const slope = state.slopes[glyph.formattingId];
+			if (slope !== 0) {
+				const intervals: [number, number][] = [];
+				for (let row = 0; row < bitmap.rows.length; row++) {
+					charge();
+					const inkTop = contentY + glyph.y + row * scale;
+					const startY = Math.max(inkTop, top);
+					const endY = Math.min(inkTop + scale, top + decoration.thickness);
+					if (startY >= endY) continue;
+					for (let column = 0; column < bitmapFont.glyphWidth; column++) {
+						charge();
+						if (
+							!(bitmap.rows[row] & (1 << (bitmapFont.glyphWidth - column - 1)))
+						)
+							continue;
+						intervals.push([
+							glyph.x +
+								column * scale +
+								slope * (baseline - endY) -
+								decoration.thickness,
+							glyph.x +
+								(column + 1) * scale +
+								slope * (baseline - startY) +
+								decoration.thickness,
+						]);
+					}
+				}
+				intervals.sort((left, right) => {
+					charge();
+					return left[0] - right[0];
+				});
+				let cursor = glyph.x;
+				for (const [start, end] of intervals) {
+					charge();
+					paintInterval(
+						image,
+						clip,
+						cursor,
+						Math.min(start, glyph.x + glyph.advance),
+						top,
+						decoration,
+						charge,
+					);
+					cursor = Math.max(cursor, end);
+				}
+				paintInterval(
+					image,
+					clip,
+					cursor,
+					glyph.x + glyph.advance,
+					top,
+					decoration,
+					charge,
+				);
+				return;
+			}
 			let blocked = 0;
 			for (let row = 0; row < bitmap.rows.length; row++) {
 				charge();
