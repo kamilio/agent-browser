@@ -6,6 +6,40 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: reader anchors recovered and caption scan removed
+
+An identical-byte full-loader/reader comparison proves both real CSSOM dfn
+anchors exist in the full native DOM but disappear in the old semantic reader.
+The reader now preserves passive dfn and empty opening-position point anchors
+for other non-omitted unwrapped tags. Active/foreign subtrees stay omitted;
+point anchors do not wrap or retain unknown-element semantics. Output/node
+limits still apply.29new cases cover projection, fragments, omissions and limits.
+
+Formatting construction indexes table nodes with charged insertion/enumeration,
+avoiding the all-node caption scan.9new cases cover scaling, ownership, anonymous
+tables, compaction, unsupported profiles and resource failure/recovery.
+Red baseline7pass/31fail; final focused815/0/0 over15suites/15strictroots.
+Broad18149/0/2 unchanged exclusions covers354suites/353strictroots and732manifest
+entries, leaving378unrun. Build/strict/format/source integrity pass;1261unchanged
+tracked inputs audited. Three obsolete dropped-ID assertions now require distinct
+point anchors without changing child ownership; no new exclusions.
+
+New native-only CSSOM replay recovers both exact method targets and6source blocks,
+2006code units, verifying requested table/caption/content-order/bounding rules.
+It uses retained bytes, not a new download. The initial comparison harness failure
+and old failed source extraction remain at their original paths with real exits.
+Separate unchanged-byte TestPages replay lowers formatting work234223→230608
+(3615units, about1.54%) with equal boxes/ownership/styles/diagnostics. This is not
+wall-clock speed evidence. Whole-page geometry still returns unsupported for
+stylesheet integrity/CORS, unloaded stylesheet and CSS values; no rectangle.
+Both replays use zeroHTTP and verify runtime pins, cleanup and closed owners.
+
+See READER-POINT-ANCHORS.md, TABLE-CAPTION-WORK.md and the thirteenth September13
+website inventory for exact evidence and limitations. Investigate real stylesheet
+and CSS gates without weakening policy; continue varied-site coverage separately.
+Original research topics, password/passkey devices, SafeJS, realTTY and human
+challenge handoff remain open. Rootdist/unrelated work unchanged; overallgoalactive.
+
 ### September 13: actual table-caption wrappers and client geometry
 
 Captions now flow around a real native table grid inside an anonymous wrapper.
