@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: heading/section rate-limit coverage corrected
+
+A fresh unchanged-source run reproduces the four legacy HTTP429 expectation
+failures (264pass/4fail/no exclusions). Their assertions now require stopping
+before heading/section extraction rather than extracting from a429 document.
+Production handling is unchanged. Sixteen additional native/reader cases cover
+asset-bearing bodies, capture on/off, Retry-After and simultaneous confirmed
+header challenges, with one request, omitted credentials and closed owners.
+
+Focused validation passes496/0/0 across five explicit manifest suites; strict,
+format and source immutability pass. The formatting-only first attempt remains
+preserved. See RESEARCH-RATE-LIMIT-COVERAGE.md. This later update supersedes the
+four legacy cases' current status, not the historical reports below. The previous
+17741/0/2 broad gate remains historical; no new broad audit or live acceptance
+is claimed from these tests. Original research, site compatibility/performance,
+credential/passkey-device, SafeJS, realTTY and human handoff gates remain open.
+
 ### September 13: research fragment navigation implemented
 
 The research CLI accepts bounded fragment-bearing public URLs instead of

@@ -629,9 +629,75 @@ it.each(
 		expect(report).toMatchObject({
 			outcome: "http-failure",
 			contentSuccess: false,
-			selection: { matches: 1 },
+			selection: { matches: fixture.status === 429 ? null : 1 },
 			classification: { barrier: null, diagnostic: null },
 		});
+		if (fixture.status === 429) {
+			expect(report.extraction).toBeUndefined();
+			expect(report.failure).toEqual({
+				category: "policy-denied",
+				stage: "rate-limit",
+			});
+			expect(report.rateLimit).toMatchObject({
+				status: 429,
+				action: "stop-without-retry",
+			});
+		}
+	},
+);
+
+it.each(
+	[false, true].flatMap((reader) =>
+		[false, true].flatMap((captureBody) =>
+			[false, true].map((challenge) => ({ reader, captureBody, challenge })),
+		),
+	),
+)(
+	"stops rate-limited sections before loading assets or selecting content (reader=$reader, capture=$captureBody, challenge=$challenge)",
+	async ({ reader, captureBody, challenge }) => {
+		const nativeLoad = vi.spyOn(documentLoader, "loadBrowserDocument");
+		const readerLoad = vi.spyOn(readerLoader, "loadResearchDocument");
+		const extract = vi.spyOn(extraction, "extractDocument");
+		const input = response(
+			'<link rel="stylesheet" href="/style.css"><script src="/script.js"></script><h2>Unavailable</h2><p>No article available.</p><img src="/image.png">',
+			{
+				status: 429,
+				headers: {
+					"content-type": ["text/html"],
+					"retry-after": ["120"],
+					...(challenge ? { "cf-mitigated": ["challenge"] } : {}),
+				},
+			},
+		);
+		const report = await navigate(input, "h2", reader, captureBody);
+		expect(report).toMatchObject({
+			outcome: challenge ? "semantic-barrier" : "http-failure",
+			contentSuccess: false,
+			selection: { method: "heading-section", matches: null },
+			classification: { barrier: challenge ? "challenge" : null },
+			failure: {
+				category: "policy-denied",
+				stage: challenge ? "semantic-barrier" : "rate-limit",
+			},
+			rateLimit: {
+				kind: "http-rate-limit",
+				status: 429,
+				action: "stop-without-retry",
+				retryAfter: { kind: "delay-seconds", delaySeconds: 120 },
+			},
+		});
+		expect(report.rateLimit?.retryAfter?.retryAt).toBe(
+			new Date(
+				Date.parse(report.rateLimit?.receivedAt ?? "") + 120_000,
+			).toISOString(),
+		);
+		expect(report.extraction).toBeUndefined();
+		expect(nativeLoad).not.toHaveBeenCalled();
+		expect(readerLoad).not.toHaveBeenCalled();
+		expect(extract).not.toHaveBeenCalled();
+		if (captureBody)
+			expect(decodeResearchBodyCapture(report.bodyCapture)).toEqual(input.body);
+		else expect(report.bodyCapture).toBeUndefined();
 	},
 );
 
