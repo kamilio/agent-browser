@@ -24,6 +24,9 @@ import type {
 	SvgScene,
 	SvgSceneShape,
 	SvgSceneStroke,
+	SvgSceneClip,
+	SvgSceneClipShape,
+	SvgBounds,
 } from "./svg-scene-types.js";
 
 const limits = Object.freeze({
@@ -43,6 +46,7 @@ const metadata = new Set([
 	"linearGradient",
 	"radialGradient",
 	"stop",
+	"clipPath",
 ]);
 const shapes = new Set([
 	"path",
@@ -63,6 +67,7 @@ function resource(message: string): never {
 }
 
 interface Presentation {
+	clipPath: string | null;
 	fill: SvgFill;
 	fillRule: "nonzero" | "evenodd";
 	fillOpacity: number;
@@ -127,6 +132,8 @@ function buildSvgScene(
 	let nodeCount = 0;
 	let segmentCount = 0;
 	const references = new Map<string, number>();
+	const preflighted = new Set<number>();
+	let clipReferences: Map<string, number> | undefined;
 	charge(1);
 	const root = tree.get(id);
 	if (
@@ -149,8 +156,10 @@ function buildSvgScene(
 		sourceCodeUnits += text.length;
 	}
 	function preflight(node: Readonly<DocumentNode>, depth: number): void {
-		if (++nodeCount > limits.nodes) resource("visited node limit exceeded");
 		if (depth > limits.depth) resource("ancestry depth limit exceeded");
+		if (preflighted.has(node.id)) return;
+		if (++nodeCount > limits.nodes) resource("visited node limit exceeded");
+		preflighted.add(node.id);
 		charge(1);
 		source(node.tagName);
 		source(node.data);
@@ -270,6 +279,85 @@ function buildSvgScene(
 	charge(4);
 	const preserveAspectRatio = Object.freeze({ alignX, alignY, mode });
 	const output: SvgSceneShape[] = [];
+	interface ClipRequest {
+		target: number;
+		transform: SvgMatrix;
+		start: number;
+		end: number;
+	}
+	const pendingClips = new Map<number, readonly ClipRequest[]>();
+	const clipDefinitions = new Map<
+		number,
+		Readonly<{ units: string; shapes: readonly SvgSceneClipShape[] }>
+	>();
+	const resolvedClips = new Map<ClipRequest, SvgSceneClip>();
+	let clipShapeCount = 0;
+	let clipInstanceCount = 0;
+	function indexClipReferences(): Map<string, number> {
+		if (clipReferences) return clipReferences;
+		const indexed = new Map<string, number>();
+		let visited = 0;
+		function visit(node: Readonly<DocumentNode>, depth: number): void {
+			charge(1);
+			if (++visited > limits.nodes)
+				resource("clip reference node limit exceeded");
+			if (depth > limits.depth) resource("clip reference depth limit exceeded");
+			const identifier = node.attributes.id;
+			if (node.kind === "element" && identifier !== undefined) {
+				if (!preflighted.has(node.id)) source(identifier);
+				else charge(identifier.length + 1);
+				if (!indexed.has(identifier)) indexed.set(identifier, node.id);
+			}
+			for (const child of node.children) visit(tree.get(child), depth + 1);
+		}
+		visit(tree.get(tree.root), 0);
+		clipReferences = indexed;
+		return indexed;
+	}
+	function clipTarget(reference: string | null): number | undefined {
+		if (reference === null) return undefined;
+		charge(reference.length + 2);
+		let fragment: string;
+		try {
+			fragment = decodeURIComponent(reference);
+		} catch {
+			return undefined;
+		}
+		const target = indexClipReferences().get(fragment);
+		if (target === undefined) return undefined;
+		const node = tree.get(target);
+		return node.kind === "element" &&
+			elementNamespace(node) === svgNamespace &&
+			node.tagName === "clipPath"
+			? target
+			: undefined;
+	}
+	function elementMatrix(
+		node: Readonly<DocumentNode>,
+		parent: SvgMatrix,
+		root = false,
+	): SvgMatrix {
+		const text = attribute(node, "transform");
+		if (root && text) unsupported("root transform is not implemented");
+		const origin = attribute(node, "transform-origin");
+		if (text && origin !== undefined) {
+			charge(origin.length + 1);
+			const coordinates = origin.split(/\s+/);
+			const zero = /^[+-]?(?:0+(?:\.0*)?|\.0+)(?:px|%)?$/;
+			if (
+				coordinates.length !== 2 ||
+				!(
+					((coordinates[0] === "left" || zero.test(coordinates[0])) &&
+						(coordinates[1] === "top" || zero.test(coordinates[1]))) ||
+					(coordinates[0] === "top" && coordinates[1] === "left")
+				)
+			)
+				unsupported("nondefault transform-origin is not implemented");
+		}
+		return root
+			? parent
+			: multiplySvgMatrices(parent, parseSvgTransform(text, charge), charge);
+	}
 
 	function opacity(value: string | undefined, inherited: number): number {
 		if (value === undefined || value === "inherit" || value === "unset")
@@ -286,7 +374,7 @@ function buildSvgScene(
 	}
 	function presentation(node: Readonly<DocumentNode>): Presentation {
 		const computed = styles.paint(node.id);
-		if (computed.svgPaintError)
+		if (computed.svgPaintError || computed.svgClipError)
 			unsupported("unsupported paint presentation attribute");
 		function resolve(fill: SvgFill): SvgFill {
 			if (fill !== null && typeof fill === "object" && "reference" in fill) {
@@ -322,13 +410,14 @@ function buildSvgScene(
 			)
 				unsupported("marker painting is not implemented");
 		}
-		for (const name of ["filter", "mask", "clip-path", "vector-effect"]) {
+		for (const name of ["filter", "mask", "vector-effect"]) {
 			const value = attribute(node, name);
 			if (value !== undefined && value !== "none")
 				unsupported(`unsupported ${name}`);
 		}
 		charge(3);
 		return {
+			clipPath: computed["clip-path"] ?? null,
 			fill: resolve(
 				computed.fill === undefined ? cssNamedColors.black : computed.fill,
 			),
@@ -503,10 +592,150 @@ function buildSvgScene(
 		}
 		return Object.freeze(result);
 	}
+	function clipDefinition(target: number) {
+		const cached = clipDefinitions.get(target);
+		if (cached) return cached;
+		const definition = tree.get(target);
+		preflight(definition, 0);
+		const rootPaint = styles.clip(target);
+		if (rootPaint.svgClipError)
+			unsupported("unsupported clip presentation attribute");
+		if (clipTarget(rootPaint["clip-path"] ?? null) !== undefined)
+			unsupported("nested clip definitions are not implemented");
+		const units = attribute(definition, "clipPathUnits") ?? "userSpaceOnUse";
+		if (units !== "userSpaceOnUse" && units !== "objectBoundingBox")
+			unsupported("unsupported clipPathUnits");
+		const transform = elementMatrix(definition, svgIdentity);
+		const content: SvgSceneClipShape[] = [];
+		for (const childId of definition.children) {
+			charge(1);
+			const child = tree.get(childId);
+			if (child.kind === "comment") continue;
+			if (child.kind === "text") {
+				charge(child.data.length + 1);
+				if (child.data.trim())
+					unsupported("text clip geometry is not implemented");
+				continue;
+			}
+			if (child.kind !== "element") unsupported("unsupported clip node kind");
+			const visibility = styles.get(childId);
+			if (visibility.display === "none" || visibility.visibility !== "visible")
+				continue;
+			if (elementNamespace(child) !== svgNamespace)
+				unsupported("non-SVG clip geometry");
+			if (["title", "desc"].includes(child.tagName)) continue;
+			if (!shapes.has(child.tagName))
+				unsupported(`unsupported clip element ${child.tagName}`);
+			const paint = styles.clip(childId);
+			if (paint.svgClipError)
+				unsupported("unsupported clip presentation attribute");
+			if (clipTarget(paint["clip-path"] ?? null) !== undefined)
+				unsupported("nested clipping of clip geometry is not implemented");
+			for (const grandchildId of child.children) {
+				charge(1);
+				const grandchild = tree.get(grandchildId);
+				if (
+					grandchild.kind === "element" &&
+					!["title", "desc"].includes(grandchild.tagName)
+				)
+					unsupported("graphics nested inside clip geometry");
+				if (grandchild.kind === "text") {
+					charge(grandchild.data.length + 1);
+					if (grandchild.data.trim())
+						unsupported("text nested inside clip geometry");
+				}
+			}
+			if (++clipShapeCount > limits.shapes)
+				resource("clip shape limit exceeded");
+			content.push(
+				Object.freeze({
+					path: path(child),
+					transform: elementMatrix(child, transform),
+					fillRule: paint["clip-rule"] ?? "nonzero",
+				}),
+			);
+		}
+		const result = Object.freeze({ units, shapes: Object.freeze(content) });
+		clipDefinitions.set(target, result);
+		return result;
+	}
+	function objectBounds(request: ClipRequest): SvgBounds {
+		charge(24);
+		const matrix = request.transform;
+		const determinant = matrix[0] * matrix[3] - matrix[1] * matrix[2];
+		if (!Number.isFinite(determinant))
+			resource("clip bounding transform overflow");
+		if (determinant === 0)
+			unsupported("degenerate objectBoundingBox clipping is not implemented");
+		const inverse: SvgMatrix = Object.freeze([
+			bounded(matrix[3] / determinant),
+			bounded(-matrix[1] / determinant),
+			bounded(-matrix[2] / determinant),
+			bounded(matrix[0] / determinant),
+			bounded((matrix[2] * matrix[5] - matrix[3] * matrix[4]) / determinant),
+			bounded((matrix[1] * matrix[4] - matrix[0] * matrix[5]) / determinant),
+		]);
+		let left = Infinity,
+			top = Infinity,
+			right = -Infinity,
+			bottom = -Infinity;
+		for (let index = request.start; index < request.end; index++) {
+			charge(4);
+			const shape = output[index];
+			const bounds = svgPathBounds(
+				shape.path,
+				multiplySvgMatrices(inverse, shape.transform, charge),
+				charge,
+			);
+			if (!bounds) continue;
+			left = Math.min(left, bounds.x);
+			top = Math.min(top, bounds.y);
+			right = Math.max(right, bounds.x + bounds.width);
+			bottom = Math.max(bottom, bounds.y + bounds.height);
+		}
+		if (!Number.isFinite(left) || right <= left || bottom <= top)
+			unsupported("degenerate objectBoundingBox clipping is not implemented");
+		return Object.freeze({
+			x: bounded(left),
+			y: bounded(top),
+			width: bounded(right - left),
+			height: bounded(bottom - top),
+		});
+	}
+	function resolveClip(request: ClipRequest): SvgSceneClip {
+		const cached = resolvedClips.get(request);
+		if (cached) return cached;
+		const definition = clipDefinition(request.target);
+		let transform = request.transform;
+		if (definition.units === "objectBoundingBox" && definition.shapes.length) {
+			const bounds = objectBounds(request);
+			transform = multiplySvgMatrices(
+				transform,
+				[bounds.width, 0, 0, bounds.height, bounds.x, bounds.y],
+				charge,
+			);
+		}
+		const content: SvgSceneClipShape[] = [];
+		for (const shape of definition.shapes) {
+			charge(3);
+			if (++clipInstanceCount > limits.shapes)
+				resource("clip instance shape limit exceeded");
+			content.push(
+				Object.freeze({
+					...shape,
+					transform: multiplySvgMatrices(transform, shape.transform, charge),
+				}),
+			);
+		}
+		const result = Object.freeze({ shapes: Object.freeze(content) });
+		resolvedClips.set(request, result);
+		return result;
+	}
 	function visit(
 		node: Readonly<DocumentNode>,
 		transform: SvgMatrix,
 		ancestors: readonly string[],
+		inheritedClips: readonly ClipRequest[],
 	): void {
 		charge(1);
 		if (node.kind === "comment") return;
@@ -529,32 +758,22 @@ function buildSvgScene(
 		const alpha = opacity(attribute(node, "opacity"), 1);
 		if (container && alpha !== 1)
 			unsupported("group opacity requires compositing");
-		const transformText = attribute(node, "transform");
-		if (node.id === id && transformText)
-			unsupported("root transform is not implemented");
-		const originText = attribute(node, "transform-origin");
-		if (transformText && originText !== undefined) {
-			charge(originText.length + 1);
-			const coordinates = originText.split(/\s+/);
-			const zero = /^[+-]?(?:0+(?:\.0*)?|\.0+)(?:px|%)?$/;
-			if (
-				coordinates.length !== 2 ||
-				!(
-					((coordinates[0] === "left" || zero.test(coordinates[0])) &&
-						(coordinates[1] === "top" || zero.test(coordinates[1]))) ||
-					(coordinates[0] === "top" && coordinates[1] === "left")
-				)
-			)
-				unsupported("nondefault transform-origin is not implemented");
+		const matrix = elementMatrix(node, transform, node.id === id);
+		const target = clipTarget(paint.clipPath);
+		let clips = inheritedClips;
+		let request: ClipRequest | undefined;
+		if (target !== undefined) {
+			if (clips.length >= limits.depth)
+				resource("clip ancestry limit exceeded");
+			charge(clips.length + 5);
+			request = {
+				target,
+				transform: matrix,
+				start: output.length,
+				end: output.length,
+			};
+			clips = Object.freeze(clips.concat(request));
 		}
-		const matrix =
-			node.id === id
-				? transform
-				: multiplySvgMatrices(
-						transform,
-						parseSvgTransform(transformText, charge),
-						charge,
-					);
 		charge(1);
 		const ref = tree.reference(node.id);
 		let childAncestors = ancestors;
@@ -637,6 +856,7 @@ function buildSvgScene(
 				paint.fillOpacity * (stroke === undefined ? alpha : 1),
 			);
 			charge(10);
+			if (clips.length) pendingClips.set(output.length, clips);
 			output.push(
 				Object.freeze({
 					id: node.id,
@@ -663,11 +883,23 @@ function buildSvgScene(
 				!metadata.has(childNode.tagName)
 			)
 				unsupported("graphics nested inside a shape");
-			visit(childNode, matrix, childAncestors);
+			visit(childNode, matrix, childAncestors, clips);
 		}
+		if (request) request.end = output.length;
 	}
 	charge(5);
-	visit(root, svgIdentity, Object.freeze([]));
+	visit(root, svgIdentity, Object.freeze([]), Object.freeze([]));
+	const clipLists = new Map<readonly ClipRequest[], readonly SvgSceneClip[]>();
+	for (const [index, requests] of pendingClips) {
+		charge(2);
+		let clips = clipLists.get(requests);
+		if (!clips) {
+			charge(requests.length + 1);
+			clips = Object.freeze(requests.map(resolveClip));
+			clipLists.set(requests, clips);
+		}
+		output[index] = Object.freeze({ ...output[index], clips });
+	}
 	charge(8);
 	return Object.freeze({
 		rootRef: tree.reference(id),

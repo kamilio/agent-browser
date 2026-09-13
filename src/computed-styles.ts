@@ -193,6 +193,17 @@ export function resolvedStyleValue(
 			"unsupported",
 			"Unsupported SVG paint presentation attribute",
 		);
+	if (name === "clip-path" || name === "clip-rule") {
+		const clip = styles.clip(id);
+		if (clip.svgClipError)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Unsupported SVG clip presentation attribute",
+			);
+		if (name === "clip-rule") return clip["clip-rule"] ?? "nonzero";
+		const reference = clip["clip-path"];
+		return reference == null ? "none" : `url("#${reference}")`;
+	}
 	if (
 		name === "stop-opacity" ||
 		name === "fill-opacity" ||

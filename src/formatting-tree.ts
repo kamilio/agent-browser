@@ -624,6 +624,8 @@ export function buildFormattingTree(
 		};
 		const embeddedSvg =
 			elementNamespace(node) === svgNamespace && node.tagName === "svg";
+		if (isHtmlElement(node) && styles.paint(id)["clip-path"] != null)
+			issue("clip-path-layout-not-supported");
 		if (!isHtmlElement(node) && !embeddedSvg) {
 			const reason = "element-layout-not-supported";
 			issue(reason);

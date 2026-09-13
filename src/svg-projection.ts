@@ -11,6 +11,7 @@ import {
 	svgFillLimits,
 	type SvgFill,
 } from "./svg-fill-raster.js";
+import { clipSvgRaster, type SvgClipRegion } from "./svg-clip-raster.js";
 import { SvgLinearGradient } from "./svg-linear-gradient.js";
 import { svgPathBounds } from "./svg-path-bounds.js";
 import {
@@ -22,6 +23,8 @@ import type {
 	SvgBounds,
 	SvgMatrix,
 	SvgScene,
+	SvgSceneClip,
+	SvgSceneClipShape,
 	SvgSceneShape,
 } from "./svg-scene-types.js";
 import { strokeSvgContours } from "./svg-stroke-outline.js";
@@ -32,6 +35,12 @@ export interface ProjectedSvgShape extends SvgSceneShape {
 	readonly strokeContours: readonly SvgContour[];
 	readonly bounds: SvgBounds | null;
 	readonly paintBounds: SvgBounds | null;
+	readonly clipRegions: readonly ProjectedSvgClipRegion[];
+}
+
+export interface ProjectedSvgClipRegion {
+	readonly fills: SvgClipRegion;
+	readonly bounds: SvgBounds | null;
 }
 
 export interface SvgProjection {
@@ -41,6 +50,8 @@ export interface SvgProjection {
 }
 
 const projections = new WeakMap<SvgScene, SvgProjection>();
+const noClipRegions: readonly ProjectedSvgClipRegion[] = Object.freeze([]);
+const maxClipRegions = 64;
 
 export function svgIntrinsicSize(scene: SvgScene, style: BoxStyle) {
 	const absolute = (value: string) =>
@@ -110,6 +121,171 @@ export function projectSvgScene(
 	}
 	const shapes: ProjectedSvgShape[] = [];
 	let points = 0;
+	let clipFillCount = 0;
+	let clipContourCount = 0;
+	let clipEdgeCount = 0;
+	const clipCache = new Map<
+		SvgSceneClip,
+		{ region: ProjectedSvgClipRegion; key: number }
+	>();
+	const clipArrays = new Map<
+		readonly SvgSceneClip[],
+		readonly ProjectedSvgClipRegion[]
+	>();
+	const clipSequences = new Map<string, readonly ProjectedSvgClipRegion[]>();
+	const projectContours = (
+		contours: readonly SvgContour[],
+		transform: SvgMatrix,
+	) =>
+		Object.freeze(
+			contours.map((contour) => {
+				charge(1);
+				if (contour.points.length > svgFlattenLimits.maxPoints - points)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"SVG projection point limit exceeded",
+					);
+				const transformed = contour.points.map((point) => {
+					charge(12);
+					points++;
+					return transformSvgPoint(transform, point);
+				});
+				return Object.freeze({
+					closed: contour.closed,
+					points: Object.freeze(transformed),
+				});
+			}),
+		);
+	const projectClips = (clips: readonly SvgSceneClip[] | undefined) => {
+		charge(1);
+		if (clips === undefined) return noClipRegions;
+		if (!Array.isArray(clips))
+			throw new AgentBrowserError("invalid-input", "Invalid SVG clips");
+		if (clips.length > maxClipRegions)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"SVG clip region limit exceeded",
+			);
+		if (!clips.length) return noClipRegions;
+		const cached = clipArrays.get(clips);
+		if (cached) return cached;
+		const regions: ProjectedSvgClipRegion[] = [];
+		const keys: number[] = [];
+		const seen = new Set<SvgSceneClip>();
+		for (const clip of clips) {
+			charge(1);
+			if (seen.has(clip)) continue;
+			seen.add(clip);
+			let entry = clipCache.get(clip);
+			if (!entry) {
+				if (!clip || typeof clip !== "object" || !Array.isArray(clip.shapes))
+					throw new AgentBrowserError(
+						"invalid-input",
+						"Invalid SVG clip region",
+					);
+				if (clipCache.size >= svgFillLimits.maxShapes)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"SVG clip region limit exceeded",
+					);
+				clipFillCount += clip.shapes.length;
+				if (clipFillCount > svgFillLimits.maxShapes)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"SVG shape limit exceeded",
+					);
+				const fills: SvgClipRegion = Object.freeze(
+					clip.shapes.map((clipShape: SvgSceneClipShape) => {
+						charge(1);
+						if (
+							!clipShape ||
+							!["nonzero", "evenodd"].includes(clipShape.fillRule)
+						)
+							throw new AgentBrowserError(
+								"invalid-input",
+								"Invalid SVG clip fill rule",
+							);
+						const transform = multiplySvgMatrices(
+							viewport,
+							clipShape.transform,
+							charge,
+						);
+						const scale = Math.hypot(
+							transform[0],
+							transform[1],
+							transform[2],
+							transform[3],
+						);
+						if (points >= svgFlattenLimits.maxPoints)
+							throw new AgentBrowserError(
+								"resource-limit",
+								"SVG projection point limit exceeded",
+							);
+						const contours = projectContours(
+							flattenSvgPath(
+								clipShape.path,
+								charge,
+								scale > 0 ? 0.01 / scale : 0.25,
+								{
+									maxPoints: svgFlattenLimits.maxPoints - points,
+								},
+							),
+							transform,
+						);
+						clipContourCount += contours.length;
+						if (clipContourCount > svgFillLimits.maxContours)
+							throw new AgentBrowserError(
+								"resource-limit",
+								"SVG contour limit exceeded",
+							);
+						for (const contour of contours) {
+							charge(1);
+							if (contour.points.length < 3) continue;
+							for (let index = 0; index < contour.points.length; index++) {
+								charge(1);
+								if (
+									contour.points[index].y !==
+										contour.points[(index + 1) % contour.points.length].y &&
+									++clipEdgeCount > svgFillLimits.maxEdges
+								)
+									throw new AgentBrowserError(
+										"resource-limit",
+										"SVG edge limit exceeded",
+									);
+							}
+						}
+						return Object.freeze({ contours, fillRule: clipShape.fillRule });
+					}),
+				);
+				const contours: SvgContour[] = [];
+				for (const fill of fills) {
+					charge(1);
+					for (const contour of fill.contours) {
+						charge(1);
+						contours.push(contour);
+					}
+				}
+				entry = {
+					region: Object.freeze({
+						fills,
+						bounds: svgPaintBounds(contours, [], charge),
+					}),
+					key: clipCache.size,
+				};
+				clipCache.set(clip, entry);
+			}
+			regions.push(entry.region);
+			keys.push(entry.key);
+		}
+		charge(keys.length * 6 + 1);
+		const key = keys.join(",");
+		const result = clipSequences.get(key) ?? Object.freeze(regions);
+		clipSequences.set(key, result);
+		clipArrays.set(clips, result);
+		return result;
+	};
+	if (scene.shapes.length > svgFillLimits.maxShapes)
+		throw new AgentBrowserError("resource-limit", "SVG shape limit exceeded");
 	if (!scene.disabled && width && height)
 		for (const shape of scene.shapes) {
 			charge(1);
@@ -148,27 +324,7 @@ export function projectSvgScene(
 			const localContours = flattenSvgPath(shape.path, charge, tolerance, {
 				maxPoints: svgFlattenLimits.maxPoints - points,
 			});
-			const projectContours = (contours: readonly SvgContour[]) =>
-				Object.freeze(
-					contours.map((contour) => {
-						charge(1);
-						if (contour.points.length > svgFlattenLimits.maxPoints - points)
-							throw new AgentBrowserError(
-								"resource-limit",
-								"SVG projection point limit exceeded",
-							);
-						const transformed = contour.points.map((point) => {
-							charge(12);
-							points++;
-							return transformSvgPoint(transform, point);
-						});
-						return Object.freeze({
-							closed: contour.closed,
-							points: Object.freeze(transformed),
-						});
-					}),
-				);
-			const contours = projectContours(localContours);
+			const contours = projectContours(localContours, transform);
 			const strokeContours = projectContours(
 				shape.stroke
 					? strokeSvgContours(
@@ -183,7 +339,18 @@ export function projectSvgScene(
 							tolerance,
 						)
 					: [],
+				transform,
 			);
+			const clipRegions = projectClips(shape.clips);
+			let paintBounds = svgPaintBounds(
+				shape.fill === null ? [] : contours,
+				strokeContours,
+				charge,
+			);
+			for (const region of clipRegions) {
+				charge(1);
+				paintBounds = intersectSvgBounds(paintBounds, region.bounds);
+			}
 			shapes.push(
 				Object.freeze({
 					...shape,
@@ -207,15 +374,54 @@ export function projectSvgScene(
 						: {}),
 					contours,
 					strokeContours,
+					clipRegions,
 					bounds: svgPathBounds(shape.path, transform, charge),
-					paintBounds: svgPaintBounds(
-						shape.fill === null ? [] : contours,
-						strokeContours,
-						charge,
-					),
+					paintBounds,
 				}),
 			);
 		}
+	if (clipCache.size) {
+		let fillCount = clipFillCount;
+		let contourCount = clipContourCount;
+		let edgeCount = clipEdgeCount;
+		for (const shape of shapes) {
+			charge(1);
+			const fills: (readonly SvgContour[])[] = [];
+			if (shape.fill !== null) fills.push(shape.contours);
+			if (shape.stroke && shape.strokeContours.length)
+				fills.push(shape.strokeContours);
+			for (const contours of fills) {
+				charge(1);
+				if (++fillCount > svgFillLimits.maxShapes)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"SVG shape limit exceeded",
+					);
+				contourCount += contours.length;
+				if (contourCount > svgFillLimits.maxContours)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"SVG contour limit exceeded",
+					);
+				for (const contour of contours) {
+					charge(1);
+					if (contour.points.length < 3) continue;
+					for (let index = 0; index < contour.points.length; index++) {
+						charge(1);
+						if (
+							contour.points[index].y !==
+								contour.points[(index + 1) % contour.points.length].y &&
+							++edgeCount > svgFillLimits.maxEdges
+						)
+							throw new AgentBrowserError(
+								"resource-limit",
+								"SVG edge limit exceeded",
+							);
+					}
+				}
+			}
+		}
+	}
 	const result = Object.freeze({
 		width,
 		height,
@@ -223,6 +429,25 @@ export function projectSvgScene(
 	});
 	projections.set(scene, result);
 	return result;
+}
+
+function intersectSvgBounds(
+	first: SvgBounds | null,
+	second: SvgBounds | null,
+): SvgBounds | null {
+	if (!first || !second) return null;
+	const left = Math.max(first.x, second.x);
+	const top = Math.max(first.y, second.y);
+	const right = Math.min(first.x + first.width, second.x + second.width);
+	const bottom = Math.min(first.y + first.height, second.y + second.height);
+	return left >= right || top >= bottom
+		? null
+		: Object.freeze({
+				x: left,
+				y: top,
+				width: right - left,
+				height: bottom - top,
+			});
 }
 
 function svgPaintBounds(
@@ -290,6 +515,20 @@ export function svgShapeContains(
 	down: number,
 	charge: (amount: number) => void,
 ) {
+	for (const region of shape.clipRegions) {
+		charge(1);
+		let inside = false;
+		for (const fill of region.fills) {
+			charge(1);
+			if (
+				svgContoursContain(fill.contours, fill.fillRule, across, down, charge)
+			) {
+				inside = true;
+				break;
+			}
+		}
+		if (!inside) return false;
+	}
 	return (
 		(shape.fill !== null &&
 			svgContoursContain(
@@ -321,7 +560,16 @@ export function rasterizeSvgScene(
 			"SVG viewport raster limit exceeded",
 		);
 	const projection = projectSvgScene(scene, width, height, charge);
-	const layers: { fills: SvgFill[]; opacity: number }[] = [];
+	const layers: {
+		fills: SvgFill[];
+		opacity: number;
+		clips: readonly SvgClipRegion[];
+	}[] = [];
+	const clipCache = new Map<ProjectedSvgClipRegion, SvgClipRegion>();
+	const clipArrays = new Map<
+		readonly ProjectedSvgClipRegion[],
+		readonly SvgClipRegion[]
+	>();
 	let fillCount = 0;
 	let contourCount = 0;
 	let pointCount = 0;
@@ -379,6 +627,32 @@ export function rasterizeSvgScene(
 			}),
 		};
 	};
+	const prepareClips = (regions: readonly ProjectedSvgClipRegion[]) => {
+		charge(1);
+		const cached = clipArrays.get(regions);
+		if (cached) return cached;
+		const result = Object.freeze(
+			regions.map((region) => {
+				charge(1);
+				const cachedRegion = clipCache.get(region);
+				if (cachedRegion) return cachedRegion;
+				const fills: SvgClipRegion = Object.freeze(
+					region.fills.map((fill) => {
+						const { contours, fillRule } = prepareFill(
+							fill.contours,
+							[255, 255, 255, 255],
+							fill.fillRule,
+						);
+						return Object.freeze({ contours, fillRule });
+					}),
+				);
+				clipCache.set(region, fills);
+				return fills;
+			}),
+		);
+		clipArrays.set(regions, result);
+		return result;
+	};
 	for (const shape of projection.shapes) {
 		charge(1);
 		if (!shape.visible) continue;
@@ -393,9 +667,11 @@ export function rasterizeSvgScene(
 				prepareFill(shape.strokeContours, shape.stroke.paint, "nonzero"),
 			);
 		if (!fills.length) continue;
+		const clips = prepareClips(shape.clipRegions);
 		const previous = layers[layers.length - 1];
-		if (opacity === 1 && previous?.opacity === 1) previous.fills.push(...fills);
-		else layers.push({ fills, opacity });
+		if (opacity === 1 && previous?.opacity === 1 && previous.clips === clips)
+			previous.fills.push(...fills);
+		else layers.push({ fills, opacity, clips });
 	}
 	let image: RasterImage | undefined;
 	for (const layer of layers) {
@@ -411,6 +687,7 @@ export function rasterizeSvgScene(
 					source.pixels.fill(0, offset - 3, offset);
 			}
 		}
+		if (layer.clips.length) clipSvgRaster(source, layer.clips, charge);
 		if (image) {
 			charge(columns * rows * 4);
 			paintRasterImage(image, source, 0, 0, columns, rows);

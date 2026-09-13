@@ -30,6 +30,8 @@ export function svgPresentationDeclarations(
 		"fill",
 		"fill-opacity",
 		"fill-rule",
+		"clip-path",
+		"clip-rule",
 		"stroke",
 		"stroke-opacity",
 		"stroke-width",
@@ -60,7 +62,9 @@ export function svgPresentationDeclarations(
 			);
 		charge(source.length * 3 + 1);
 		const svgPaint =
-			["fill", "fill-opacity", "fill-rule"].includes(property) ||
+			["fill", "fill-opacity", "fill-rule", "clip-path", "clip-rule"].includes(
+				property,
+			) ||
 			property === "stroke" ||
 			property.startsWith("stroke-");
 		let value = svgPaint

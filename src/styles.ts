@@ -76,11 +76,14 @@ import {
 	isCssBoxProperty,
 } from "./css-box.js";
 import {
+	type ClipStyle,
 	type CssPaintProperty,
 	type PaintSpecifiedStyle,
 	type PaintStyle,
+	computeClipStyle,
 	computePaintStyle,
 	cssPaintProperties,
+	initialClipStyle,
 	initialPaintStyle,
 	isCssPaintProperty,
 } from "./css-paint.js";
@@ -331,6 +334,7 @@ export class DocumentStyles {
 	private legacyCentered = new Set<number>();
 	private paintSpecified = new Map<number, PaintSpecifiedStyle>();
 	private paintComputed = new Map<number, PaintStyle>();
+	private clipComputed = new Map<number, ClipStyle>();
 	private customComputed = new Map<
 		number,
 		ReadonlyMap<string, string | null>
@@ -833,6 +837,34 @@ export class DocumentStyles {
 		return this.textComputed.get(id) as TextStyle;
 	}
 
+	clip(id: number): ClipStyle {
+		this.get(id);
+		const pending: number[] = [];
+		let current: number | null = id;
+		while (current !== null && !this.clipComputed.has(current)) {
+			if (pending.length >= this.tree.limits.maxNodes)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"CSS clip ancestry limit exceeded",
+				);
+			pending.push(current);
+			current = this.tree.get(current).parent;
+		}
+		for (const target of pending.reverse()) {
+			const parent = this.tree.get(target).parent;
+			this.clipComputed.set(
+				target,
+				computeClipStyle(
+					this.paintSpecified.get(target) ?? {},
+					parent === null
+						? initialClipStyle
+						: (this.clipComputed.get(parent) ?? initialClipStyle),
+				),
+			);
+		}
+		return this.clipComputed.get(id) as ClipStyle;
+	}
+
 	paint(id: number): PaintStyle {
 		this.get(id);
 		const pending: number[] = [];
@@ -933,6 +965,7 @@ export class DocumentStyles {
 		this.legacyCentered.clear();
 		this.paintSpecified.clear();
 		this.paintComputed.clear();
+		this.clipComputed.clear();
 		this.customComputed.clear();
 		this.queries.close();
 		this.unregister();
@@ -989,6 +1022,7 @@ export class DocumentStyles {
 		this.legacyCentered.clear();
 		this.paintSpecified.clear();
 		this.paintComputed.clear();
+		this.clipComputed.clear();
 		this.customComputed.clear();
 		const issues: Record<string, number> = { ...this.loadIssues };
 		const applicableIssues: Record<string, number> = { ...this.loadIssues };

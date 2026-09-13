@@ -365,7 +365,7 @@ it.each<Record<string, string>>([
 	{ "stroke-linejoin": "arcs" },
 	{ filter: "url(#filter)" },
 	{ mask: "url(external)" },
-	{ "clip-path": "url(#clip)" },
+	{ "clip-path": "url(https://example.invalid/external.svg#clip)" },
 	{ "vector-effect": "non-scaling-stroke" },
 	{ opacity: ".5" },
 	{ transform: "translate(0)" },

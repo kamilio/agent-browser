@@ -11,6 +11,7 @@ import {
 	transparentColor,
 } from "./css-color.js";
 import type { Rgba } from "./raster.js";
+import { normalizeSvgClipPath, parseSvgClipPath } from "./svg-clip-value.js";
 import {
 	computeSvgStrokeWidth,
 	normalizeSvgStrokeWidth,
@@ -35,6 +36,8 @@ export const cssPaintProperties = Object.freeze([
 	"fill",
 	"fill-opacity",
 	"fill-rule",
+	"clip-path",
+	"clip-rule",
 	"stroke",
 	"stroke-opacity",
 	"stroke-width",
@@ -57,6 +60,8 @@ export interface PaintStyle
 	readonly fill?: SvgFill;
 	readonly "fill-opacity"?: number;
 	readonly "fill-rule"?: "nonzero" | "evenodd";
+	readonly "clip-path"?: string | null;
+	readonly "clip-rule"?: "nonzero" | "evenodd";
 	readonly stroke?: SvgFill;
 	readonly "stroke-opacity"?: number;
 	readonly "stroke-width"?: string;
@@ -64,8 +69,14 @@ export interface PaintStyle
 	readonly "stroke-linejoin"?: "miter" | "round" | "bevel";
 	readonly "stroke-miterlimit"?: number;
 	readonly svgPaintError?: true;
+	readonly svgClipError?: true;
 	readonly "background-color": CssColor;
 }
+export type ClipStyle = Pick<
+	PaintStyle,
+	"clip-path" | "clip-rule" | "svgClipError"
+>;
+export const initialClipStyle: ClipStyle = Object.freeze({});
 export const initialPaintStyle: PaintStyle = Object.freeze({
 	color: cssNamedColors.black,
 	"background-color": transparentColor,
@@ -83,6 +94,8 @@ export function isCssPaintProperty(
 		property === "fill" ||
 		property === "fill-opacity" ||
 		property === "fill-rule" ||
+		property === "clip-path" ||
+		property === "clip-rule" ||
 		property === "stroke" ||
 		property === "stroke-opacity" ||
 		property === "stroke-width" ||
@@ -105,7 +118,15 @@ export function parsePaintValue(
 			? keyword
 			: normalizeSvgFill(value);
 	}
-	if (property === "fill-rule") {
+	if (property === "clip-path") {
+		const keyword = value
+			.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
+			.toLowerCase();
+		return ["initial", "inherit", "unset", "revert"].includes(keyword)
+			? keyword
+			: normalizeSvgClipPath(value);
+	}
+	if (property === "fill-rule" || property === "clip-rule") {
 		const keyword = value
 			.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
 			.toLowerCase();
@@ -177,6 +198,43 @@ export function parsePaintValue(
 		? value
 		: normalizeCssColor(value);
 }
+export function computeClipStyle(
+	specified: PaintSpecifiedStyle,
+	parent: ClipStyle,
+): ClipStyle {
+	const result: {
+		"clip-path"?: string | null;
+		"clip-rule"?: "nonzero" | "evenodd";
+		svgClipError?: true;
+	} = {};
+	const clipPath = specified["clip-path"];
+	if (clipPath === "inherit") {
+		if (parent["clip-path"] !== undefined)
+			result["clip-path"] = parent["clip-path"];
+	} else if (
+		clipPath !== undefined &&
+		!["initial", "unset", "revert"].includes(clipPath)
+	) {
+		const parsed = parseSvgClipPath(clipPath);
+		if (parsed === undefined) result.svgClipError = true;
+		else result["clip-path"] = parsed;
+	}
+	const clipRule = specified["clip-rule"];
+	if (
+		clipRule === undefined ||
+		["inherit", "unset", "revert"].includes(clipRule)
+	) {
+		if (parent["clip-rule"] !== undefined)
+			result["clip-rule"] = parent["clip-rule"];
+	} else if (clipRule === "nonzero" || clipRule === "evenodd")
+		result["clip-rule"] = clipRule;
+	else if (clipRule !== "initial") result.svgClipError = true;
+	return result["clip-path"] === undefined &&
+		result["clip-rule"] === undefined &&
+		result.svgClipError === undefined
+		? initialClipStyle
+		: Object.freeze(result);
+}
 export function computePaintStyle(
 	specified: PaintSpecifiedStyle,
 	parent: PaintStyle,
@@ -207,6 +265,8 @@ export function computePaintStyle(
 		fill?: SvgFill;
 		"fill-opacity"?: number;
 		"fill-rule"?: "nonzero" | "evenodd";
+		"clip-path"?: string | null;
+		"clip-rule"?: "nonzero" | "evenodd";
 		stroke?: SvgFill;
 		"stroke-opacity"?: number;
 		"stroke-width"?: string;
@@ -214,6 +274,7 @@ export function computePaintStyle(
 		"stroke-linejoin"?: "miter" | "round" | "bevel";
 		"stroke-miterlimit"?: number;
 		svgPaintError?: true;
+		svgClipError?: true;
 	} & Partial<Record<BorderColorProperty, Rgba>> = {
 		color:
 			foreground && foreground !== "currentcolor" ? foreground : parent.color,
@@ -258,6 +319,7 @@ export function computePaintStyle(
 				});
 		}
 	}
+	Object.assign(result, computeClipStyle(specified, parent));
 	const fillRule = specified["fill-rule"];
 	if (
 		fillRule === undefined ||
@@ -353,6 +415,8 @@ export function computePaintStyle(
 		result.fill === parent.fill &&
 		result["fill-opacity"] === parent["fill-opacity"] &&
 		result["fill-rule"] === parent["fill-rule"] &&
+		result["clip-path"] === parent["clip-path"] &&
+		result["clip-rule"] === parent["clip-rule"] &&
 		result.stroke === parent.stroke &&
 		result["stroke-opacity"] === parent["stroke-opacity"] &&
 		result["stroke-width"] === parent["stroke-width"] &&
@@ -360,6 +424,7 @@ export function computePaintStyle(
 		result["stroke-linejoin"] === parent["stroke-linejoin"] &&
 		result["stroke-miterlimit"] === parent["stroke-miterlimit"] &&
 		result.svgPaintError === parent.svgPaintError &&
+		result.svgClipError === parent.svgClipError &&
 		borderColorProperties.every(
 			(property) => result[property] === parent[property],
 		) &&

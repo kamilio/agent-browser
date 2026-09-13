@@ -27,6 +27,7 @@ export interface SvgSceneShape {
 	readonly fill: Rgba | SvgLinearGradient | null;
 	readonly stroke?: SvgSceneStroke;
 	readonly opacity?: number;
+	readonly clips?: readonly SvgSceneClip[];
 	readonly fillRule: "nonzero" | "evenodd";
 	readonly visible: boolean;
 	readonly pointerEvents: boolean;
@@ -39,6 +40,16 @@ export interface SvgSceneStroke {
 	readonly lineCap: "butt" | "round" | "square";
 	readonly lineJoin: "miter" | "round" | "bevel";
 	readonly miterLimit: number;
+}
+
+export interface SvgSceneClipShape {
+	readonly path: readonly SvgPathSegment[];
+	readonly transform: SvgMatrix;
+	readonly fillRule: "nonzero" | "evenodd";
+}
+
+export interface SvgSceneClip {
+	readonly shapes: readonly SvgSceneClipShape[];
 }
 
 export interface SvgScene {

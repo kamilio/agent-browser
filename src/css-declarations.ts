@@ -154,6 +154,8 @@ export const inlineProperties = [
 	"fill",
 	"fill-opacity",
 	"fill-rule",
+	"clip-path",
+	"clip-rule",
 	"stroke",
 	"stroke-opacity",
 	"stroke-width",
@@ -248,7 +250,7 @@ function normalize(name: string, source: string): string | undefined {
 	if (!supported.has(name)) return undefined;
 	if (isCssGridProperty(name)) return parseGridValue(name, source);
 	if (isCssTableProperty(name)) return parseTableValue(name, source);
-	if (name === "fill" || name === "stroke")
+	if (name === "fill" || name === "stroke" || name === "clip-path")
 		return parsePaintValue(source, name);
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;
@@ -308,6 +310,7 @@ function normalize(name: string, source: string): string | undefined {
 		name === "stop-opacity" ||
 		name === "fill-opacity" ||
 		name === "fill-rule" ||
+		name === "clip-rule" ||
 		name === "stroke-opacity" ||
 		name === "stroke-width" ||
 		name === "stroke-linecap" ||

@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: native SVG clipping implemented and gated
+
+Native SVG now supports bounded local-fragment clip paths: raw basic/curved
+silhouettes, per-definition unions, ancestor intersections, coordinate transforms,
+nondegenerate object bounding boxes, CSS cascade and mutation, raster composition
+and clip-aware hits without shrinking geometric bounding rectangles. Definitions
+can be shared across inline SVG roots; isolated clip-style computation avoids
+irrelevant paint-length overflows. No new dependency or raised decoder limit.
+Nested/text/use/group clip children, HTML/basic-shape clipping, degenerate boxes
+and full SVG/CSS conformance remain explicit limitations.
+
+The clean selected gate passes **16,960/0/2 unchanged exclusions**, including
+219 new cases; 326 suites, 325 strict roots, 704 manifest entries (378 not run).
+Build/strict/format/source checks pass in native-svg-clip-september13-round01.
+The setup-only round00 failure and focused strict-only annotation failure are
+preserved. Original dirty work remains separate; no push. See SVG-CLIPPING.md.
+
+All three retained IANA/Python/SQLite SVG decoder calls return successfully,
+without HTTP/navigation; IANA/Python pixels remain exact. SQLite now decodes
+393x177/10shapes/work3471819 with fractional intrinsic dimensions retained.
+The capture harness still exits1 because it incorrectly demands transparent
+pixels in the whole opaque SQLite image. Its false compound field and original
+exit remain intact; successful native decoding is not relabeled as a passed
+capture/visual/website check. CAPTURED-REVIEW.md explains the distinction.
+
+A fresh pinned native SQLite initial-load check is prepared separately and has
+not executed at this checkpoint. Whole-site layout, scripts, credentials,
+passkey devices, SafeJS, real TTY, challenge/human-handoff and the original four
+research topics remain separate open gates; the overall browser goal is active.
+
 ### September 13: fractional SVG image dimensions implemented and gated
 
 Native SVG decoding now preserves fractional intrinsic dimensions separately
