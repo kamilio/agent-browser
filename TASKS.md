@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: native dashed-border layout and paint
+
+Actual dashed declarations now parse, retain used widths and paint through box,
+replaced-image and inline-fragment paths. The native UA pattern is square-ended
+3width dash/3width gap; clipping preserves phase, simpleLTR inline slices carry
+charged cumulative width, and alpha corners retain single-side ownership.
+Other styles, cloned decorations and collapsed-table dashed conflicts stayguarded.
+
+55new cases plus43newlyselected existing border-core cases. Redbaseline45pass/
+21fail; initialfocused751/2 then753/0; initialbroad18246/1 exposes stale CSS.supports
+expectation, now true. Finalfocused829/0/0 across19suites/19strictroots. Finalbroad
+18247/0/2 unchanged exclusions across357suites/356strictroots,734manifest/377unrun.
+Build/strict/format/sourceintegrity and1258unchangedtrackedinputs verify.
+
+New unchanged-byte TestPages replay computes e2598 top/bottom borders as dashed1px
+and clears both CSS value diagnostics. Formatting work230608/3894boxes/3073visited
+and table/caption ownership remain unchanged. NoHTTP/resources/raster/actions;
+geometry still rejects the two missing-stylesheet/policy-callback requirements.
+The real native session already has policy-aware loading; keep SRI/CORS checks.
+
+Two freshnative W3C source GETs retain dashed definition and slice/parent-direction
+rules. Both offline source attempts retain honest exit1 for optional/fullcoverage
+failures; no general fragmentation or latest-specification claim. SimpleLTR
+painting tests do not establish RTL/bidi/vertical or complete standards support.
+Further definition-list extraction and observed stylesheet capture are separate
+follow-ups. See DASHED-BORDERS.md and the fourteenth September13website inventory.
+Rootdist/unrelateddirtywork preserved; no push. Original research, realdevice/
+SafeJS/TTY/handoff and fullsite gates remainopen; overallgoalactive.
+
 ### September 13: TestPages style failures narrowed to real causes
 
 New native-only retained-page diagnosis loads3153nodes, makes3selectors and uses
