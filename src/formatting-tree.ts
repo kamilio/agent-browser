@@ -21,6 +21,7 @@ import { documentSvgScene } from "./svg-scene.js";
 import { svgIntrinsicSize } from "./svg-projection.js";
 import type { SvgScene } from "./svg-scene-types.js";
 import { documentImages } from "./document-images.js";
+import { imageIntrinsicSize } from "./image-decoder.js";
 import {
 	brokenImageAlternative,
 	emptyImageAlternative,
@@ -1166,8 +1167,8 @@ export function buildFormattingTree(
 						paint: styles.paint(id),
 						typography: styles.text(id),
 						intrinsic: Object.freeze({
-							width: decoded.image.width,
-							height: decoded.image.height,
+							width: imageIntrinsicSize(decoded).width,
+							height: imageIntrinsicSize(decoded).height,
 						}),
 						...itemFields,
 					}),

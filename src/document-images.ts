@@ -9,6 +9,7 @@ import { type NetworkResponse, parseNetworkUrl } from "./network.js";
 import { diagnosticUrl } from "./network-journal.js";
 import {
 	decodeImage,
+	imageIntrinsicSize,
 	imageMediaTypes,
 	type DecodedImage,
 	type ImageMediaType,
@@ -201,13 +202,15 @@ export class DocumentImages {
 		this.ensureOpen();
 		const entry = this.update(id);
 		const decoded = entry.resource?.decoded;
+		const intrinsic =
+			decoded === undefined ? undefined : imageIntrinsicSize(decoded);
 		return Object.freeze({
 			ref: this.tree.reference(id),
 			state: entry.state,
 			complete: entry.state !== "loading",
 			currentSrc: entry.state === "empty" ? "" : entry.url,
-			naturalWidth: decoded?.image.width ?? 0,
-			naturalHeight: decoded?.image.height ?? 0,
+			naturalWidth: Math.floor(intrinsic?.width ?? 0),
+			naturalHeight: Math.floor(intrinsic?.height ?? 0),
 			...(entry.error ? { error: entry.error } : {}),
 			originClean:
 				entry.resource?.state === "complete" && entry.resource.originClean,

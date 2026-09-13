@@ -20,6 +20,7 @@ export const svgImageDecodeLimits = Object.freeze({
 
 export interface DecodedSvgImage {
 	readonly image: Readonly<RasterImage>;
+	readonly intrinsic: Readonly<{ width: number; height: number }>;
 	readonly work: number;
 	readonly sourceCodeUnits: number;
 	readonly xmlNodes: number;
@@ -101,16 +102,16 @@ export function decodeSvgImage(
 		const box = styles.box(root);
 		function dimension(value: string): number {
 			charge(value.length + 1);
-			if (!/^\d+(?:\.\d+)?px$/.test(value))
+			if (!/^\d+(?:\.\d+)?(?:e[+-]?\d+)?px$/i.test(value))
 				throw new AgentBrowserError(
 					"unsupported",
 					"SVG image requires absolute width and height",
 				);
 			const amount = Number.parseFloat(value);
-			if (!Number.isSafeInteger(amount) || amount <= 0)
+			if (!Number.isFinite(amount) || amount <= 0)
 				throw new AgentBrowserError(
 					"unsupported",
-					"SVG image requires positive integer intrinsic dimensions",
+					"SVG image requires positive intrinsic dimensions",
 				);
 			if (amount > svgImageDecodeLimits.maxDimension)
 				throw new AgentBrowserError(
@@ -121,15 +122,24 @@ export function decodeSvgImage(
 		}
 		const width = dimension(box.width);
 		const height = dimension(box.height);
-		if (width * height > maxPixels)
+		charge(8);
+		const columns = Math.ceil(width);
+		const rows = Math.ceil(height);
+		if (columns * rows > maxPixels)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"SVG image pixel limit exceeded",
+			);
+		if (!Number.isFinite(columns / width) || !Number.isFinite(rows / height))
+			throw new AgentBrowserError(
+				"resource-limit",
+				"SVG image raster scale overflow",
 			);
 		const scene = imageSvgScene(tree, root, charge, styles);
 		const image = rasterizeSvgScene(scene, width, height, charge);
 		return Object.freeze({
 			image,
+			intrinsic: Object.freeze({ width, height }),
 			work,
 			sourceCodeUnits: xml.sourceCodeUnits,
 			xmlNodes: xml.nodes,

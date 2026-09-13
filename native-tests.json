@@ -679,6 +679,7 @@
   "src/svg-image-xml.test.ts",
   "src/svg-image-document.test.ts",
   "src/svg-image-decoder.test.ts",
+  "src/svg-image-intrinsic.test.ts",
   "src/svg-images.test.ts",
   "src/svg-document.test.ts",
   "src/clear-layout.test.ts",

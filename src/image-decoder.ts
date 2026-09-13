@@ -21,6 +21,14 @@ export type DecodedImage =
 	| (Readonly<DecodedGif> & { readonly mediaType: "image/gif" })
 	| (Readonly<DecodedSvgImage> & { readonly mediaType: "image/svg+xml" });
 
+export function imageIntrinsicSize(
+	decoded: Readonly<DecodedImage>,
+): Readonly<{ width: number; height: number }> {
+	return decoded.mediaType === "image/svg+xml"
+		? decoded.intrinsic
+		: decoded.image;
+}
+
 export function decodeImage(
 	input: Uint8Array,
 	mediaType: string,

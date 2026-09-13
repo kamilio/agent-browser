@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: fractional SVG image dimensions implemented and gated
+
+Native SVG decoding now preserves fractional intrinsic dimensions separately
+from bounded integer raster storage. Replaced layout uses the real dimensions
+and ratio; image natural-dimension getters remain integer-valued. Ceil-sized
+pixel allocation is checked against the caller's budget before rasterization.
+Subpixel images are not mistaken for broken resources. No new runtime dependency
+or raised limit; missing/percentage intrinsic sizing remains unsupported.
+
+The clean selected gate passes **16,741/0/2 unchanged exclusions**, including 30
+new cases; 322 suites, 321 strict roots and 700 manifest entries (378 not run).
+Build/strict/format/source checks pass. Retained IANA/Python pixels stay exact.
+SQLite now passes intrinsic sizing and reaches the real unsupported clip-path
+guard. These three offline decodes make zero HTTP/navigation requests.
+
+Native standards browsing adds three GET/200s and two parsed pages. Masking's
+CRLF response exposes a provenance-adapter assumption before parsing; keep the
+stopped evidence and fix source-position accounting in a new offline scope.
+SQLite's separate native structure check identifies a transformed group clip,
+not permission to strip it. See `SVG-IMAGE-INTRINSICS.md` for receipts and gaps.
+Next: real clipping, then fresh bounded website checks. The four research
+topics, broader compatibility/performance, credential/provider/passkey-device,
+SafeJS and access-challenge gates remain open. No push; dirty work preserved.
+
 ### September 13: native SVG stroke implemented and gated
 
 Native stroke now participates in CSS/presentation inheritance and the actual

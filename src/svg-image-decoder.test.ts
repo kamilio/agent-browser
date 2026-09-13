@@ -77,10 +77,10 @@ it.each([
 	'width="100%" height="2"',
 	'width="4"',
 	'width="0" height="2"',
-	'width="3.5" height="2"',
+	'width="4" height="auto"',
 ])("does not fabricate intrinsic dimensions for %s", (attributes) => {
 	expect(() => decodeSvgImage(source(rectangle, attributes))).toThrow(
-		/requires (absolute|positive integer)/,
+		/requires (absolute|positive)/,
 	);
 });
 
