@@ -6,6 +6,42 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: HTTPBin public form, working values and blocked pointer submit
+
+One fresh native BrowserSession GET of `https://httpbin.org/forms/post`,
+18:51:40.726–18:51:40.878 UTC: HTTP200,1397bytes,96nodes,zero externalCSS/images,
+no native access/challenge/login diagnostic. No credentials, retries, redirects
+or POST. Initial live harness fails after loading because `formControls` returns
+nodes, not IDs; this is preserved as a harness mistake, not a browser defect.
+
+Corrected zeroHTTP native captured-body preflight,18:54:27.493–18:54:27.668UTC,
+passes eight synthetic text/tel/email/time/textarea/radio/checkbox preparations,
+with19untrusted preparation events. One genuine native pointer submit fails before
+pointer/submit events: element-layout-not-supported3. Native deferred references
+are fieldsets e28/e52 and input[type=time] e85. No outboundPOST reaches the adapter,
+no echo is fabricated, and no semantic-submit fallback occurs. Captured HTML is
+exact; only retained allowlisted headers are replayed, not full-header parity.
+
+Existing fieldset support explicitly excludes default groove painting and visible
+legend/interrupted-border layout. Time value preparation works but visual control
+support is missing. These are next implementation leads; do not silence guards or
+replace the actual form controls. See `HTTPBIN-NATIVE-FORM-SEPTEMBER-13.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-13-THIRTY-FOURTH-UPDATE.md`.
+
+Both failed executions are sealed with clean native-owner/process cleanup and
+runtime/source/compiled/framework/fixture verification. One-sample live/offline
+measurements0.14s/85.22MiB and0.17s/88.48MiB are not speedup or full-flow latency.
+Runtime unchanged: previous20672pass/0fail/2unchangedskips,402selected/401strict/
+760manifest/358unselected; no new native-suite run or production changes here.
+
+Overall goal ACTIVE. Implement real rendering for the observed form and revalidate
+the native pointer path before additional live echo traffic. Internet/Wikipedia/
+Python full interactions, broader coverage, repeatable performance, safe access
+handling, hardware/benchmark/Astra research freshness and verified Reddit/Poe
+opinions remain unfinished. Credential/provider,passkey-device,SafeJS,socket,TTY
+gates remain separate. Pre-existing edits and historical evidence are preserved;
+no push.
+
 ### September 13: native box-sizing aliases and unchanged-harness checkbox replay
 
 Implemented explicit `-moz-box-sizing` / `-webkit-box-sizing` aliases using real
