@@ -47,6 +47,10 @@ export const controlRenderingCapabilities = Object.freeze({
 	placeholderWhileFocused: true,
 	fileSelection: "owned-metadata-only",
 	fileChooser: false,
+	timeValueDisplay: "sanitized-24-hour-value-or-empty-marker",
+	timeEditing: "native-agent-fill-only",
+	timePicker: false,
+	timeSegmentedKeyboardEditing: false,
 	...controlRenderingLimits,
 });
 export const controlSelectionBackground: Rgba = Object.freeze([
@@ -56,6 +60,7 @@ export interface SoftwareControl {
 	readonly kind:
 		| "button"
 		| "text"
+		| "time"
 		| "textarea"
 		| "select"
 		| "file"
@@ -153,7 +158,10 @@ export function describeControl(
 		}
 	} else if (node.tagName === "input") {
 		const type = inputType(node);
-		if (type === "file") {
+		if (type === "time") {
+			kind = "time";
+			text = controlValue(tree, id) || "--:--";
+		} else if (type === "file") {
 			kind = "file";
 			const multiple = Object.hasOwn(node.attributes, "multiple");
 			buttonText = multiple ? "Choose Files" : "Choose File";
@@ -232,10 +240,12 @@ export function describeControl(
 			? square
 			: kind === "file"
 				? 34 * advance + 24
-				: kind === "text" || kind === "textarea"
-					? count(kind === "textarea" ? "cols" : "size", 20) * advance + 12
-					: Math.max(1, widest, Array.from(text).length) * advance +
-						(kind === "select" ? 24 : 12);
+				: kind === "time"
+					? 12 * advance + 12
+					: kind === "text" || kind === "textarea"
+						? count(kind === "textarea" ? "cols" : "size", 20) * advance + 12
+						: Math.max(1, widest, Array.from(text).length) * advance +
+							(kind === "select" ? 24 : 12);
 	const height =
 		kind === "checkbox" || kind === "radio"
 			? square

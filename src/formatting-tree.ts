@@ -1252,7 +1252,7 @@ export function buildFormattingTree(
 			!floating &&
 			!outOfFlow &&
 			["top", "right", "bottom", "left"].every((side) =>
-				["none", "hidden", "solid"].includes(
+				["none", "hidden", "solid", "groove"].includes(
 					styles.box(id)[`border-${side}-style` as keyof BoxStyle],
 				),
 			)

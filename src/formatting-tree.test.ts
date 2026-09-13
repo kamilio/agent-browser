@@ -629,19 +629,31 @@ it.each(["img", "dialog", "fieldset", "svg", "math"])(
 			}),
 		);
 		const result = buildFormattingTree(tree);
-		if (tag === "img") {
+		if (tag === "img" || tag === "fieldset") {
 			expect(result.metrics.deferredSubtrees).toBe(0);
 			expect(result.issues).toEqual({});
-			expect(
-				result.nodes.find(
-					(node) => node.ref === tree.reference(id("#special")),
-				),
-			).toMatchObject({
-				kind: "replaced",
-				emptyImage: true,
-				intrinsic: { width: 0, height: 0 },
-				intrinsicRatio: false,
-			});
+			const special = result.nodes.find(
+				(node) => node.ref === tree.reference(id("#special")),
+			);
+			if (tag === "img") {
+				expect(special).toMatchObject({
+					kind: "replaced",
+					emptyImage: true,
+					intrinsic: { width: 0, height: 0 },
+					intrinsicRatio: false,
+				});
+			} else {
+				expect(special).toMatchObject({
+					kind: "block",
+					display: "flow-root",
+					independentContext: true,
+				});
+				expect(special?.fieldsetContent).toBeTypeOf("number");
+				expect(result.nodes[special?.fieldsetContent as number]).toMatchObject({
+					fieldsetOwner: special?.id,
+					parent: special?.id,
+				});
+			}
 			expect(() => resolveDocumentBlockWidths(tree)).not.toThrow();
 		} else {
 			expect(result.metrics.deferredSubtrees).toBe(1);

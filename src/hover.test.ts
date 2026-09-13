@@ -466,10 +466,10 @@ it("rejects ambiguous selectors and unsupported options before movement", async 
 	expect(calls).toEqual([]);
 });
 
-it("reports unsupported fieldset layout instead of substituting semantic movement", async () => {
+it("reports unsupported visible legend layout instead of substituting semantic movement", async () => {
 	const { hover, calls } = await fixture(
 		"",
-		'<fieldset disabled><button id="target">Go</button></fieldset>',
+		'<fieldset disabled><legend>Label</legend><button id="target">Go</button></fieldset>',
 	);
 	await expect(hover()).rejects.toMatchObject({ code: "unsupported" });
 	expect(calls).toEqual([]);

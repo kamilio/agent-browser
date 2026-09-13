@@ -1,7 +1,7 @@
 import type { BoxStyle } from "./css-box.js";
 import type { PaintStyle } from "./css-paint.js";
 import { AgentBrowserError } from "./errors.js";
-import { paintRasterRect, type RasterImage } from "./raster.js";
+import { paintRasterRect, type RasterImage, type Rgba } from "./raster.js";
 
 type BorderWidths = {
 	borderTop: number;
@@ -54,6 +54,7 @@ export function paintBorders(
 		borders.borderLeft,
 	];
 	const dashLengths = [0, 0, 0, 0];
+	const grooves = [false, false, false, false];
 	const properties = [
 		"border-top-style",
 		"border-right-style",
@@ -65,6 +66,7 @@ export function paintBorders(
 		const style = styles[property] ?? "solid";
 		if (style === "none" || style === "hidden") widths[index] = 0;
 		else if (style === "dashed") dashLengths[index] = 3 * widths[index];
+		else if (style === "groove") grooves[index] = true;
 		else if (style !== "solid")
 			throw new AgentBrowserError(
 				"unsupported",
@@ -90,6 +92,7 @@ export function paintBorders(
 		charge,
 		patterned ? dashLengths : undefined,
 		horizontalOffset,
+		grooves.some(Boolean) ? grooves : undefined,
 	);
 }
 
@@ -104,6 +107,7 @@ function rasterBorders(
 	charge: (work: number) => void,
 	dashLengths?: readonly number[],
 	horizontalOffset = 0,
+	grooves?: readonly boolean[],
 ) {
 	if (
 		!(
@@ -121,6 +125,22 @@ function rasterBorders(
 		paint["border-left-color"] ?? paint.color,
 	];
 	if (!colors.some((color) => color[3] !== 0)) return 0;
+	const shades = grooves
+		? colors.map((color) => ({
+				dark: [
+					Math.floor(color[0] / 2),
+					Math.floor(color[1] / 2),
+					Math.floor(color[2] / 2),
+					color[3],
+				] as Rgba,
+				light: [
+					Math.floor((color[0] + 255) / 2),
+					Math.floor((color[1] + 255) / 2),
+					Math.floor((color[2] + 255) / 2),
+					color[3],
+				] as Rgba,
+			}))
+		: undefined;
 	const left = Math.max(0, Math.ceil(x - 0.5));
 	const top = Math.max(0, Math.ceil(y - 0.5));
 	const right = Math.min(image.width, Math.ceil(x + width - 0.5));
@@ -128,7 +148,7 @@ function rasterBorders(
 	charge(
 		Math.max(0, right - left) *
 			Math.max(0, bottom - top) *
-			(dashLengths ? 16 : 10),
+			((dashLengths ? 16 : 10) + (grooves ? 4 : 0)),
 	);
 	let pixels = 0;
 	for (let row = top; row < bottom; row++) {
@@ -155,7 +175,13 @@ function rasterBorders(
 						: nearest === fromBottom
 							? 2
 							: 3;
-			const color = colors[side];
+			const recessed = side === 0 || side === 3;
+			const color =
+				grooves?.[side] && shades
+					? nearest <= 0.5 === recessed
+						? shades[side].dark
+						: shades[side].light
+					: colors[side];
 			if (!color[3]) continue;
 			const dashLength = dashLengths?.[side];
 			if (dashLength) {

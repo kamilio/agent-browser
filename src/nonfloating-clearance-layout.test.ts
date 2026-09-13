@@ -613,7 +613,7 @@ it.each([
 it.each([
 	["logical clear", "#cleared{clear:inline-start}", ""],
 	["unrelated CSS", "#cleared{animation-name:spin}", ""],
-	["deferred fieldset", "", "<fieldset>DD</fieldset>"],
+	["deferred legend", "", "<fieldset><legend>Label</legend>DD</fieldset>"],
 ])("preserves the independent %s guard", (_name, css, extra) => {
 	const { tree, rect, hits } = fixture(css, content + extra);
 	const before = snapshotDocument(tree);

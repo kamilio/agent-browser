@@ -217,9 +217,9 @@ it.each([
 		issue: "display-layout-not-supported",
 	},
 	{
-		name: "unsupported element",
+		name: "unsupported visible legend",
 		css: "",
-		markup: '<fieldset id="target">ab</fieldset>',
+		markup: '<fieldset id="target"><legend>Label</legend>ab</fieldset>',
 		issue: "element-layout-not-supported",
 	},
 	{

@@ -41,7 +41,7 @@ export function normalizeBorderWidth(value: string): string | undefined {
 }
 export function normalizeBorderStyle(value: string): string | undefined {
 	return wide.has(value) ||
-		["none", "hidden", "solid", "dashed"].includes(value)
+		["none", "hidden", "solid", "dashed", "groove"].includes(value)
 		? value
 		: undefined;
 }

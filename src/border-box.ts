@@ -5,9 +5,10 @@ import { AgentBrowserError } from "./errors.js";
 
 export const borderCapabilities = Object.freeze({
 	partial: true,
-	profile: "normal-flow-solid-dashed-borders",
-	styles: Object.freeze(["none", "hidden", "solid", "dashed"]),
+	profile: "normal-flow-solid-dashed-groove-borders",
+	styles: Object.freeze(["none", "hidden", "solid", "dashed", "groove"]),
 	dashes: "rectangular-three-width-dash-gap",
+	groove: "half-width-recessed-half-black-white-shades",
 	inline: "ltr-sliced-fragments",
 	clone: false,
 	radius: false,

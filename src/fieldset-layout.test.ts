@@ -434,8 +434,8 @@ it.each([
 			'<fieldset id="target"><legend>Visible</legend><div id="child"></div></fieldset>',
 	},
 	{
-		name: "groove border",
-		css: "#target{border-style:groove}",
+		name: "ridge border",
+		css: "#target{border-style:ridge}",
 		markup: content,
 	},
 	{ name: "flex container", css: "#target{display:flex}", markup: content },
