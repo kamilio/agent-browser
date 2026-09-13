@@ -304,8 +304,23 @@ it("keeps real HTML button descendants guarded rather than substituting a flatte
 		'<button id="button" type="button"><span id="child">AA</span></button>',
 		"#button{display:inline-block;width:24px;height:16px;align-content:center}",
 	);
+	const formatting = buildFormattingTree(page.tree);
+	expect(formatting.issues["element-layout-not-supported"]).toBeGreaterThan(0);
+	expect(
+		formatting.nodes.find(
+			(node) => node.ref === page.tree.reference(page.id("#button")),
+		),
+	).toMatchObject({
+		kind: "deferred",
+		deferredReason: "element-layout-not-supported",
+		children: [],
+	});
+	expect(
+		formatting.nodes.some(
+			(node) => node.ref === page.tree.reference(page.id("#child")),
+		),
+	).toBe(false);
 	for (const operation of [
-		() => buildFormattingTree(page.tree),
 		() => layoutDocument(page.tree),
 		() => documentGeometry(page.tree).getBoundingClientRect(page.id("#button")),
 		() => rasterizeDocument(page.tree),
@@ -315,7 +330,7 @@ it("keeps real HTML button descendants guarded rather than substituting a flatte
 			page.tree,
 			operation,
 			"unsupported",
-			/Rich button content layout is not implemented/,
+			/element-layout-not-supported/,
 		);
 	expect(page.tree.get(page.id("#button")).children).toContain(
 		page.id("#child"),

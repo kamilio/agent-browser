@@ -90,10 +90,7 @@ export function describeControl(
 	let widest = 0;
 	if (node.tagName === "button") {
 		if (node.children.some((child) => tree.get(child).kind === "element"))
-			throw new AgentBrowserError(
-				"unsupported",
-				"Rich button content layout is not implemented",
-			);
+			return;
 		kind = "button";
 		text = tree
 			.textContent(id)
