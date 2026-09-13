@@ -6,6 +6,41 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: fieldset content implemented; rich-button blocker exposed
+
+Legend-free fieldsets now have genuine outer/content ownership, zero used outer
+padding, transferred padding with the original percentage basis, and a native
+min-content minimum. HTML UA defaults preserve author overrides and foreign
+namespaces. Supported simple-border normal-flow fieldsets are admitted; visible
+legend, default groove, absolute/fixed/floated and flex/grid fieldsets remain open.
+
+The two new suites reproduce51 failures on unchanged source, then pass all82
+cases. Focused712/0/1 explicitly excludes one legacy intrinsic-grid expectation
+that also fails independently on unchanged production. Broad17945/0/2 unchanged
+exclusions covers347 suites/346strict roots from725manifest entries;378 remain
+unrun. Build/strict/format, source integrity and1247 unchanged tracked inputs
+pass. Root dist and unrelated uncommitted work are preserved.
+
+The identical-byte Wikipedia replay does not pass: fieldset traversal reaches
+a rich button and throws unsupported before completing formatting or calling
+geometry. The failed after process exits1 and remains recorded. No after-tree,
+search-input rectangle, pointer or full-page rendering success is claimed.
+Runtime pins, closed native owners, process termination and private cleanup
+verify independently of that failed website acceptance gate.
+
+A fresh native Selenium public-form GET returns200. A sealed inspection finds
+one form,17 controls and15 labels, but geometry fails for intentionally unfetched
+stylesheets and deferred color/range inputs. No submission, values, credentials
+or scripts are used. This is additional capture/inspection coverage, not a
+renderer pass; it uses the prior audited17863 runtime and retains exit1.
+
+See FIELDSET-CONTENT.md and the eighth September13 website inventory. Next:
+implement rich-child button layout from native-captured standards context and
+replay the unchanged portal again. Complete fieldset/legend/default decoration,
+varied-site performance, all original research, credentials/passkey devices,
+SafeJS, realTTY and human challenge handoff remain open. No fingerprint spoofing
+or automated CAPTCHA solving is added. The overall browser goal remains active.
+
 ### September 13: closed-dialog visibility corrected
 
 One new native WHATWG rendering-chapter GET returns200; a separate bounded
