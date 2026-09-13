@@ -217,7 +217,7 @@ it("retains invalid length and unsupported math guards", () => {
 	}
 });
 
-it("does not accept size keywords on another text property", () => {
+it("treats size keywords as ordinary family names but not other text values", () => {
 	const keywords = [
 		...absoluteSizes.map(([keyword]) => keyword),
 		"larger",
@@ -225,8 +225,11 @@ it("does not accept size keywords on another text property", () => {
 	];
 	for (const property of cssTextProperties) {
 		if (property === "font-size") continue;
-		for (const keyword of keywords)
-			expect(parseTextValue(property, keyword)).toBeUndefined();
+		for (const keyword of keywords) {
+			if (property === "font-family")
+				expect(parseTextValue(property, keyword)).toBe(`"${keyword}"`);
+			else expect(parseTextValue(property, keyword)).toBeUndefined();
+		}
 	}
 });
 

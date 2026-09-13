@@ -79,7 +79,7 @@ it.each([
 	["border", "2px dashed red", false],
 	["background", "url(secret.png)", false],
 	["font-family", "monospace", true],
-	["font-family", "unknown-font", false],
+	["font-family", "unknown-font", true],
 	["--Theme", "", true],
 	["--Theme", " arbitrary(foo) ", true],
 	["--Theme", "unclosed(", false],

@@ -229,7 +229,7 @@ it("retains raw invalid typography diagnostics while scoping their applicability
 });
 
 it.each([
-	["font-family:serif", "unimplemented-or-invalid-css-value"],
+	["font-family:serif,", "unimplemented-or-invalid-css-value"],
 	["font-style:italic", "unimplemented-css-property"],
 	["font:small monospace", "unimplemented-css-property"],
 	["font-size:math", "unimplemented-or-invalid-css-value"],

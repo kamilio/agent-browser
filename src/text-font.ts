@@ -1,6 +1,6 @@
-import { bitmapFont } from "./bitmap-font.js";
 import type { TextStyle } from "./css-text.js";
 import { AgentBrowserError } from "./errors.js";
+import { resolveNativeFont } from "./font-family.js";
 import { layoutNumber } from "./layout-values.js";
 
 export interface TextFontExtent {
@@ -12,9 +12,10 @@ export interface TextFontExtent {
 }
 
 export function textFontExtent(style: TextStyle): TextFontExtent {
+	const { font } = resolveNativeFont(style["font-family"]);
 	const fontSize = Number.parseFloat(style["font-size"]);
 	layoutNumber(fontSize);
-	if (fontSize > bitmapFont.maxFontSize)
+	if (fontSize > font.maxFontSize)
 		throw new AgentBrowserError(
 			"resource-limit",
 			"Text font size limit exceeded",
@@ -26,13 +27,13 @@ export function textFontExtent(style: TextStyle): TextFontExtent {
 				? Number.parseFloat(style["line-height"])
 				: Number(style["line-height"]) * fontSize,
 	);
-	const scale = fontSize / bitmapFont.unitsPerEm;
-	const ascent = bitmapFont.ascent * scale;
+	const scale = fontSize / font.unitsPerEm;
+	const ascent = font.ascent * scale;
 	return {
 		fontSize,
-		advance: bitmapFont.advance * scale,
+		advance: font.advance * scale,
 		ascent,
 		above: ascent + (lineHeight - fontSize) / 2,
-		below: bitmapFont.descent * scale + (lineHeight - fontSize) / 2,
+		below: font.descent * scale + (lineHeight - fontSize) / 2,
 	};
 }

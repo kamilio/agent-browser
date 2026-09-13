@@ -295,6 +295,7 @@ export function parseCssDeclarations(
 		let value = trimCssWhitespace(withoutCssComments(raw.value));
 		if (
 			!grid &&
+			property !== "font-family" &&
 			property !== "fill" &&
 			property !== "stroke" &&
 			property !== "clip-path"

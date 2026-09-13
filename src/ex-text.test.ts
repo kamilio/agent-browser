@@ -144,7 +144,7 @@ it("uses the initial font weight for root font-affecting ex", () => {
 		true,
 	);
 	expect(root["font-size"]).toBe("20px");
-	expect(metric).toHaveBeenCalledExactlyOnceWith(16, 400);
+	expect(metric).toHaveBeenCalledExactlyOnceWith(16, 400, '"agent mono"');
 });
 
 it("preserves root rem and relative-size keyword behavior beside ex", () => {
@@ -228,9 +228,9 @@ it("passes parent versus own computed weights to the shared metric matcher", () 
 		"text-indent": "15.625px",
 	});
 	expect(metric.mock.calls).toEqual([
-		[20, 501],
-		[25, 1000],
-		[25, 1000],
+		[20, 501, '"agent mono"'],
+		[25, 1000, '"agent mono"'],
+		[25, 1000, '"agent mono"'],
 	]);
 });
 

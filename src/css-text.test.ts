@@ -160,23 +160,27 @@ it("refreshes typography on mutation and viewport changes, rejecting disconnecte
 	expect(() => styles.text(target)).toThrow();
 });
 
-it.each(["serif", '"Unknown", monospace', "Arial"])(
-	"does not pretend to implement font family %s",
-	(family) => {
+it.each([
+	["serif", "serif"],
+	['"Unknown", monospace', '"Unknown", monospace'],
+	["Arial", '"Arial"'],
+])(
+	"preserves the requested family rather than claiming it is installed: %s",
+	(family, expected) => {
 		const { text, styles } = fixture(`#target{font-family:${family}}`);
-		expect(text()["font-family"]).toBe('"agent mono"');
-		expect(styles.metrics().issues["unimplemented-or-invalid-css-value"]).toBe(
-			1,
-		);
+		expect(text()["font-family"]).toBe(expected);
+		expect(styles.metrics().issues).toEqual({});
 	},
 );
 
-it.each(["monospace", '"agent mono"', "'agent mono'", "agent mono"])(
-	"uses the actual built-in family for %s",
-	(family) => {
-		expect(parseTextValue("font-family", family)).toBe('"agent mono"');
-	},
-);
+it.each([
+	["monospace", "monospace"],
+	['"agent mono"', '"agent mono"'],
+	["'agent mono'", '"agent mono"'],
+	["agent mono", '"agent mono"'],
+])("normalizes specified family syntax for %s", (family, expected) => {
+	expect(parseTextValue("font-family", family)).toBe(expected);
+});
 
 it.each(["-1px", "12", "calc(1px + 1px)", "1e999px", "10ch", "larger smaller"])(
 	"rejects unsupported or invalid size %s",
@@ -218,7 +222,7 @@ it("accepts typography through the same inline declaration validation", () => {
 		["font-size", "1.5em"],
 		["line-height", "2"],
 		["white-space", "pre"],
-		["font-family", '"agent mono"'],
+		["font-family", '"Agent Mono"'],
 		["text-align", "center"],
 	]);
 	expect(

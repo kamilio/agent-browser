@@ -581,6 +581,7 @@ export class DocumentStyles {
 					xHeight: nativeFontXHeight(
 						Number.parseFloat(text["font-size"]),
 						Number(text["font-weight"]),
+						text["font-family"],
 					),
 				};
 			}
@@ -636,6 +637,7 @@ export class DocumentStyles {
 					xHeight: nativeFontXHeight(
 						Number.parseFloat(text["font-size"]),
 						Number(text["font-weight"]),
+						text["font-family"],
 					),
 				};
 			}
@@ -697,6 +699,7 @@ export class DocumentStyles {
 					xHeight: nativeFontXHeight(
 						Number.parseFloat(text["font-size"]),
 						Number(text["font-weight"]),
+						text["font-family"],
 					),
 				};
 			}
@@ -757,6 +760,7 @@ export class DocumentStyles {
 					xHeight: nativeFontXHeight(
 						Number.parseFloat(text["font-size"]),
 						Number(text["font-weight"]),
+						text["font-family"],
 					),
 				};
 			}
@@ -817,6 +821,7 @@ export class DocumentStyles {
 					xHeight: nativeFontXHeight(
 						Number.parseFloat(text["font-size"]),
 						Number(text["font-weight"]),
+						text["font-family"],
 					),
 				};
 			}

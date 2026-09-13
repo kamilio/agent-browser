@@ -6,6 +6,42 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: native font-family fallback implemented
+
+Native font-family lists preserve requested computed names while matching the
+actual available Agent Mono face through ordered named, generic or default
+fallback. All eleven supported generic keywords use the single native face;
+quoted generics remain names. Both CSS declaration paths preserve case and quoted
+whitespace. Text and ex metrics use the selected face, with proper parent/own
+dependencies. Bounds cover both input and normalized output plus complete lists.
+No external font installation, generic visual fidelity or new runtime dependency
+is claimed. See FONT-FAMILIES.md for the exact profile and remaining limitations.
+
+Focused native validation passes792/0/0 across19suites, including121new cases.
+Both original family rendering failures pass unchanged through geometry, raster,
+hit testing and ex padding. The clean broad selected gate passes17,263/0/2
+unchanged exclusions:334suites,333strict roots,712manifest entries (378not run).
+Build/strict/format and source checks pass;1237source/2060compiled files and1218
+unchanged tracked inputs are audited in native-font-family-september13-round01.
+The first broad run's outdated family-name rejection test is corrected; its
+failed evidence stays preserved. All original dirty work remains separate.
+
+The original SQLite offline replay passes with its last CSS-value failure gone.
+Four computed samples retain Verdana/sans-serif while selecting Agent Mono via
+the generic; actual x-heights9/10px and prior padding/margins remain correct.
+Fifteen CSS-property issues, six selector issues, eleven float flags and one
+overflow flag remain. Float flags alone do not establish a missing float engine.
+Raw DOM and post-install presentation stay unchanged, all owners close, and
+runtime inventories match. No HTTP, image, used-layout, raster or scripts in this
+replay: it is not whole-site acceptance or a new host. No push.
+
+The retained primary-source grammar follow-up preserves useful native clauses,
+but its receipt check failed on an erroneously included volatile procfs input.
+The failed run remains failed, with no retry or rewritten evidence. Original
+research topics, broader website/performance coverage, SafeJS, real TTY,
+credentials, passkey-device and human challenge-handoff gates remain open.
+No new live website or host has been tested in this change; overall goal active.
+
 ### September 13: native ex lengths implemented
 
 Native ex lengths now derive actual lowercase-x metrics from the selected Agent

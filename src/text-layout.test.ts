@@ -260,7 +260,7 @@ it("keeps anonymous/split-block text contexts distinct and reflows after mutatio
 it.each([
 	"main{filter:blur(1px)}",
 	"main{white-space:break-spaces}",
-	"main{font-family:serif}",
+	"main{font-family:serif,}",
 	"span{border-left:1px dashed red}",
 ])(
 	"refuses unresolved styling instead of inventing line geometry for %s",

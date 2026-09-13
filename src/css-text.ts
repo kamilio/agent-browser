@@ -1,4 +1,5 @@
 import { lengthUsesFont } from "./css-math.js";
+import { normalizeFontFamily } from "./font-family.js";
 import { nativeFontXHeight } from "./font-metrics.js";
 import { computeFontWeight, parseFontWeight } from "./font-weight.js";
 import { layoutNumber } from "./layout-values.js";
@@ -65,6 +66,7 @@ export function parseTextValue(
 	property: CssTextProperty,
 	value: string,
 ): string | undefined {
+	if (property === "font-family") return normalizeFontFamily(value);
 	if (wide.has(value)) return value;
 	if (property === "text-transform") return parseTextTransform(value);
 	if (property === "text-indent") return parseTextIndent(value);
@@ -80,12 +82,6 @@ export function parseTextValue(
 	if (property === "text-align")
 		return ["start", "end", "left", "right", "center"].includes(value)
 			? value
-			: undefined;
-	if (property === "font-family")
-		return ["monospace", '"agent mono"', "'agent mono'", "agent mono"].includes(
-			value,
-		)
-			? '"agent mono"'
 			: undefined;
 	if (property === "line-height" && value === "normal") return value;
 	if (property === "font-size") {
@@ -142,6 +138,7 @@ export function computeTextStyle(
 				? nativeFontXHeight(
 						Number.parseFloat(font["font-size"]),
 						Number(font["font-weight"]),
+						font["font-family"],
 					)
 				: (absoluteFactors[unit] ??
 					{
@@ -179,6 +176,7 @@ export function computeTextStyle(
 				? nativeFontXHeight(
 						Number.parseFloat(result["font-size"]),
 						Number(result["font-weight"]),
+						result["font-family"],
 					)
 				: undefined,
 		);

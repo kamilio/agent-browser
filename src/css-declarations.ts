@@ -248,6 +248,7 @@ function normalize(name: string, source: string): string | undefined {
 			? source || " "
 			: undefined;
 	if (!supported.has(name)) return undefined;
+	if (name === "font-family") return parseTextValue(name, source);
 	if (isCssGridProperty(name)) return parseGridValue(name, source);
 	if (isCssTableProperty(name)) return parseTableValue(name, source);
 	if (name === "fill" || name === "stroke" || name === "clip-path")

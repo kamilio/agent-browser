@@ -826,7 +826,7 @@ it.each([
 	"vertical-align:top",
 	"filter:blur(1px)",
 	"display:table-cell",
-	"font-family:unregistered",
+	"font-family:unregistered,",
 ])(
 	"does not bypass independent layout or font guards: %s",
 	async (declaration) => {

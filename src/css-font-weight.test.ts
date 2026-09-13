@@ -171,13 +171,16 @@ it("keeps existing size, line-height and whitespace computation stable alongside
 	);
 });
 
-it("does not add font shorthand or external-family support implicitly", () => {
+it("keeps font shorthand unsupported while allowing generic family fallback", () => {
 	expect(declarations('font:bold 16px "agent mono"').issues).toEqual([
 		"unimplemented-css-property",
 	]);
 	expect(declarations("font-family:serif;font-weight:bold")).toEqual({
-		parsed: [{ property: "font-weight", value: "bold", important: false }],
-		issues: ["unimplemented-or-invalid-css-value"],
+		parsed: [
+			{ property: "font-family", value: "serif", important: false },
+			{ property: "font-weight", value: "bold", important: false },
+		],
+		issues: [],
 	});
 });
 
