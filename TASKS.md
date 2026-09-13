@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: rich-control diagnostics retain the real formatting tree
+
+Unsupported rich HTML buttons now return no software descriptor and become
+explicit deferred formatting nodes, consistently with other unrepresentable
+controls. This preserves full-tree diagnostics without flattening children or
+admitting their geometry. Plain controls and resource errors are unchanged.
+
+New17-case regression coverage first reproduces6 failures on unchanged source.
+Expanded focused335/0/0 covers10 suites/10strict roots. A related legacy test is
+updated to expect a deferred node while retaining all layout/geometry/raster/hit
+failures; no exclusion is added. Its original broad failure remains recorded.
+Clean broad17962/0/2 unchanged exclusions covers348 suites/347strict roots from
+726manifest entries, leaving378 unrun. Build/strict/format/source integrity and
+1254 unchanged tracked inputs pass; root dist and unrelated work are untouched.
+
+A fresh offline Wikipedia replay now completes formatting and retains the
+search input under genuine fieldset content ownership. Logo and rich button
+remain deferred; whole-page geometry remains unsupported. Traversal exposes
+more real content and issues rather than hiding them. The earlier failed17945
+replay retains its original exit1 and missing tree; no HTTP or source rewrite.
+
+A separate sealed native reading of the retained WHATWG source establishes
+button display/context, auto fit-content and UA alignment requirements; it is
+not a rendered conformance test. See RICH-CONTROL-DEFERRAL.md, the ninth September13
+inventory, and rich-control-deferral-work-september13/BUTTON-NEXT.md. Implement
+actual rich-child button layout next, not another diagnostic-only milestone.
+Full fieldset/legend, Selenium CSS/color/range controls, original four research
+topics, varied-site performance, credentials/passkey devices, SafeJS, realTTY
+and human challenge handoff remain open. The overall browser goal stays active.
+
 ### September 13: fieldset content implemented; rich-button blocker exposed
 
 Legend-free fieldsets now have genuine outer/content ownership, zero used outer
