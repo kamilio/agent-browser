@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: real stylesheet accepted, wider compatibility gaps exposed
+
+One initial capture fails locally before networking: explicit omit cookie context
+needs an initialized native jar. The separate corrected harness uses a fresh
+empty in-memory jar with credentialsomit, no Cookie header/storage callback and
+zero cookies before/after/close. One native GET returns367810decoded/62160encoded
+CSSbytes; native SRI helpers verify the actual capturedSHA256. This is a same-
+origin basic response, not cross-origin CORS or website-rendering acceptance.
+
+A new audited18247 zeroHTTP replay installs that exact sheet for native link72
+through the normal resourcepolicy/loaderintegrity path. The main resource/callback
+diagnostics clear. Its imported resource triggers a second denied policy callback
+outside the one-captured-resource scope; only1resource response is read. The final
+exact-one-callback assertion fails honestly with exit1. Native geometry separately
+returnsunsupported: actual CSS exposes196property/199selector/29value/14at-rule
+formattingdiagnostics plus import and other layout gaps. Default style limits are
+not exhausted; no rewriting, raster, scripts or actions fake a complete result.
+
+The separate retained-source dt/dd extraction closes the missing inline-joining
+source pair with11blocks/2242units, zeroHTTP, audited18149. Scope is backgrounds/
+border-image; ordinary dash-phase mapping remains a limitedLTR inference. Both
+earlier failed source lanes remain unchanged. See the fifteenth September13
+website inventory for dates, hashes, failures and narrower verified outcomes.
+
+Next inspect the denied import and exact unsupported CSS rules through bounded
+native diagnostics, then implement real compatibility improvements. Fresh-site
+coverage, originalresearch, fullrendering/device/SafeJS/TTY/handoff gates stayopen.
+No new production changes or native audit rerun in this follow-up; overallgoalactive.
+
 ### September 13: native dashed-border layout and paint
 
 Actual dashed declarations now parse, retain used widths and paint through box,
