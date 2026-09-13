@@ -84,7 +84,11 @@ function radioKey(index: ControlIndex, node: Readonly<DocumentNode>) {
 	]);
 }
 
-function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
+function indexFor(
+	tree: DocumentTree,
+	target = tree.root,
+	charge?: (work: number) => void,
+): ControlIndex {
 	tree.reference(tree.root);
 	const root = tree.rootOf(target);
 	const cached = indexes.get(tree);
@@ -94,9 +98,13 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 		cached.formRevision === tree.formAssociationRevision
 	)
 		return cached;
-	const nodes = new Map(
-		Array.from(tree.walk(root), ({ node }) => [node.id, node] as const),
-	);
+	const nodes = new Map<number, Readonly<DocumentNode>>();
+	for (const { node } of tree.walk(root)) {
+		charge?.(1);
+		if (charge)
+			for (const value of Object.values(node.attributes)) charge(value.length);
+		nodes.set(node.id, node);
+	}
 	const index: ControlIndex = {
 		root,
 		revision: tree.revision,
@@ -115,10 +123,12 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 	const htmlIds = new Map<string, number>();
 	const firstLegends = new Map<number, number>();
 	for (const node of nodes.values()) {
+		charge?.(1);
 		if (node.attributes.id && !htmlIds.has(node.attributes.id))
 			htmlIds.set(node.attributes.id, node.id);
 		if (isHtmlElement(node, "fieldset")) {
 			const first = node.children.find((child) => {
+				charge?.(1);
 				const candidate = nodes.get(child);
 				return candidate && isHtmlElement(candidate, "legend");
 			});
@@ -127,6 +137,7 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 	}
 	const inheritedFieldset = new Set<number>();
 	for (const node of nodes.values()) {
+		charge?.(1);
 		const parent = nodes.get(node.parent ?? -1);
 		if (parent) {
 			if (
@@ -148,7 +159,10 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 			index.disabled.add(node.id);
 		if (
 			(node.tagName === "option" &&
-				optionDisabled(node, (id) => nodes.get(id))) ||
+				optionDisabled(node, (id) => {
+					charge?.(1);
+					return nodes.get(id);
+				})) ||
 			(node.tagName === "optgroup" &&
 				Object.hasOwn(node.attributes, "disabled"))
 		)
@@ -167,6 +181,7 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 			} else if (owner === undefined) {
 				let ancestor = parent;
 				while (ancestor) {
+					charge?.(1);
 					if (isHtmlElement(ancestor, "form")) {
 						owner = ancestor.id;
 						break;
@@ -180,7 +195,10 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 			index.controls.set(owner, controls);
 		}
 		if (node.tagName === "option") {
-			const owner = nearestSelect(node.parent, (id) => nodes.get(id));
+			const owner = nearestSelect(node.parent, (id) => {
+				charge?.(1);
+				return nodes.get(id);
+			});
 			if (owner !== undefined) {
 				const options = index.options.get(owner) ?? [];
 				options.push(node);
@@ -200,11 +218,16 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 		}
 	}
 	for (const options of index.options.values())
-		for (const option of options)
+		for (const option of options) {
+			charge?.(1);
 			if (option.control.selected) index.selected.add(option.id);
+		}
 	const firstLabelableDescendant = new Map<number, number>();
+	charge?.(nodes.size * 2);
 	for (const node of [...nodes.values()].reverse()) {
+		charge?.(1);
 		for (const childId of node.children) {
+			charge?.(1);
 			const child = nodes.get(childId);
 			const candidate =
 				child && isLabelable(child)
@@ -225,6 +248,13 @@ function indexFor(tree: DocumentTree, target = tree.root): ControlIndex {
 	if (!cached) tree.onClose(() => indexes.delete(tree));
 	indexes.set(tree, index);
 	return index;
+}
+
+export function prepareControlIndex(
+	tree: DocumentTree,
+	charge: (work: number) => void,
+): void {
+	indexFor(tree, tree.root, charge);
 }
 
 export function labelControl(tree: DocumentTree, id: number) {

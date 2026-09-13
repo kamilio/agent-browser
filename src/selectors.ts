@@ -11,6 +11,7 @@ import type { DocumentNode, DocumentTree } from "./document.js";
 import { elementNamespace, isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { activeFocus } from "./focus.js";
+import { SelectorValidity } from "./selector-validity.js";
 
 export interface QueryLimits {
 	maxSelectorCodeUnits: number;
@@ -124,6 +125,8 @@ const statePseudos = new Set([
 	"disabled",
 	"required",
 	"optional",
+	"valid",
+	"invalid",
 ]);
 const simplePseudos = new Set([
 	"scope",
@@ -360,7 +363,8 @@ class SelectorParser {
 			if (!simplePseudos.has(name)) unsupported(`:${name}`);
 			if (insideHas && name === "scope") unsupported(":scope inside :has");
 			if (statePseudos.has(name)) this.nativeState = true;
-			if (name === "placeholder-shown") this.controlValue = true;
+			if (["placeholder-shown", "valid", "invalid"].includes(name))
+				this.controlValue = true;
 			return { kind: "pseudo", name };
 		}
 		this.position++;
@@ -645,6 +649,7 @@ interface MatchContext {
 	work: number;
 	workLimit: number;
 	memoEntries: number;
+	validity?: SelectorValidity;
 	nth: Map<
 		SimpleSelector,
 		Map<string, { positions: Map<number, number>; total: number }>
@@ -1403,6 +1408,21 @@ export class DocumentQueries {
 				);
 			case "visited":
 				return false;
+			case "valid":
+			case "invalid":
+				context.validity ??= new SelectorValidity(
+					this.tree,
+					(work) => this.tick(context, work),
+					(entries) => {
+						context.memoEntries += entries;
+						if (context.memoEntries > this.limits.maxMemoEntries)
+							throw new AgentBrowserError(
+								"resource-limit",
+								"Query memo limit exceeded",
+							);
+					},
+				);
+				return context.validity.matches(node.id, test.name === "valid");
 			case "checked":
 				return isHtmlElement(node, "option")
 					? optionSelected(this.tree, node.id)

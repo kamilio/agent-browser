@@ -87,9 +87,7 @@ it("updates required-file validity and safe filename values without byte copies"
 	const { tree, queries, file, actions, owner, select, formReference } =
 		fixture();
 	expect(controlValidity(tree, file).valueMissing).toBe(true);
-	expect(() => queries.matches(file, ":invalid")).toThrow(
-		/Unsupported selector/,
-	);
+	expect(queries.matches(file, ":invalid")).toBe(true);
 	const copied = vi.spyOn(owner, "files");
 	const submissionCopied = vi.spyOn(owner, "filesForSubmission");
 	const revision = tree.revision;
@@ -97,7 +95,7 @@ it("updates required-file validity and safe filename values without byte copies"
 	expect(tree.revision).toBeGreaterThan(revision);
 	expect(controlValue(tree, file)).toBe("C:\\fakepath\\notes.txt");
 	expect(controlValidity(tree, file).valid).toBe(true);
-	expect(() => queries.matches(file, ":valid")).toThrow(/Unsupported selector/);
+	expect(queries.matches(file, ":valid")).toBe(true);
 	expect(actions.forms.checkValidity(formReference)).toBe(true);
 	expect(tree.get(file).attributes.value).toBeUndefined();
 	expect(copied).not.toHaveBeenCalled();

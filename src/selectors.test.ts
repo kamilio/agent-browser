@@ -341,7 +341,7 @@ it.each([
 );
 
 it.each([
-	"input:valid",
+	"input:user-valid",
 	"li::before",
 	"svg|rect",
 	"*|rect",
