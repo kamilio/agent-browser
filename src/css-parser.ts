@@ -14,6 +14,12 @@ import {
 	type CssOutlineProperty,
 } from "./css-outline.js";
 import {
+	cssTextDecorationProperties,
+	isCssTextDecorationProperty,
+	parseTextDecorationDeclarations,
+	type CssTextDecorationProperty,
+} from "./css-text-decoration.js";
+import {
 	cssListProperties,
 	isCssListProperty,
 	parseListDeclarations,
@@ -90,6 +96,7 @@ export type CssProperty =
 	| CssListProperty
 	| CssTableProperty
 	| CssOutlineProperty
+	| CssTextDecorationProperty
 	| `--${string}`;
 export interface CssDeclaration {
 	property: CssProperty;
@@ -322,6 +329,8 @@ export function parseCssDeclarations(
 			!isCssTableProperty(property) &&
 			!isCssOutlineProperty(property) &&
 			property !== "outline" &&
+			!isCssTextDecorationProperty(property) &&
+			property !== "text-decoration" &&
 			property !== "list-style" &&
 			!isCssFlowProperty(property) &&
 			property !== "overflow" &&
@@ -329,6 +338,14 @@ export function parseCssDeclarations(
 			!flexShorthandComponents(property)
 		) {
 			issue("unimplemented-css-property");
+			continue;
+		}
+		if (
+			(isCssTextDecorationProperty(property) ||
+				property === "text-decoration") &&
+			raw.value.length > 4096
+		) {
+			issue("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (/var\s*\(|\\/i.test(raw.value)) {
@@ -355,6 +372,11 @@ export function parseCssDeclarations(
 		}
 		if (property === "all" && globals.has(value)) {
 			declarations.push(
+				...cssTextDecorationProperties.map((property) => ({
+					property,
+					value,
+					important,
+				})),
 				...cssOutlineProperties.map((property) => ({
 					property,
 					value,
@@ -404,6 +426,18 @@ export function parseCssDeclarations(
 					important,
 				})),
 			);
+			continue;
+		}
+		if (
+			isCssTextDecorationProperty(property) ||
+			property === "text-decoration"
+		) {
+			const expanded = parseTextDecorationDeclarations(property, value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((entry) => ({ ...entry, important })),
+				);
+			else issue("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssOutlineProperty(property) || property === "outline") {

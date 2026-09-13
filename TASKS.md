@@ -6,6 +6,43 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: native text decoration implemented
+
+Author-CSS text-decoration and line/style/color longhands now have a bounded,
+non-inherited computed style group with shorthand reset and normal cascade/vars.
+Real native solid underline/overline/line-through paint preserves originating
+font/color, propagates through boxes, survives descendant none, and respects
+atomic/out-of-flow boundaries, visibility and relative positioning. Native ink
+skipping, descendant inline edges, wrapped spacing, clipping and work accounting
+are exercised without changing layout or hit regions. No UA defaults, non-solid
+styles, runtime dependencies or modern skip-ink property support is claimed.
+
+Focused native checks pass490/0/0 across14suites, including113new cases. The two
+original unsupported-profile cases now paint correctly without changing fixture
+bytes. Clean broad native gate passes17,376/0/2 unchanged exclusions:337suites,
+336strict roots,715manifest entries (378not run). Build/strict/format/source checks
+pass;1242source/2068compiled files and1231 unchanged tracked inputs are audited
+in native-text-decoration-september13-round00. An import-merge setup failure
+remains preserved; it ran no tests.
+
+Original SQLite offline replay01 passes. Applicable unsupported properties fall
+15→12; raw properties fall24→18. Six selectors, eleven float flags and one
+overflow remain; CSS-value failures stay absent. Raw DOM and post-install
+presentation are stable, owners close and runtime inventories match. No HTTP,
+image, used-layout, raster or script call in the replay: no whole-site pass.
+The first replay's incorrect count assertion and a sealed prose-count mistake
+are preserved with an explicit erratum; prefix counts are not full-site counts.
+
+One actual native-browser GET of the W3C text-decoration source returned200;
+one sealed native parse extracted32containers with stable runtime inventories.
+The served document is the May5,2022 Level3 draft, freshly retrieved September13,
+2026—not a claimed 2026 standards revision or application rendering pass.
+
+The broader website/performance/crawler-friction goal remains active. Hardware
+research browsing is continuing separately; the original four research topics,
+credentials/passkey-device, SafeJS, real TTY and human challenge handoff remain
+open. Original dirty work stays separate; no push. See TEXT-DECORATION.md.
+
 ### September 13: native font-family fallback implemented
 
 Native font-family lists preserve requested computed names while matching the

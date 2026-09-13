@@ -43,6 +43,10 @@ import {
 	cssPropertyAliases,
 } from "./css-property-aliases.js";
 import { cssTextProperties, isCssTextProperty } from "./css-text.js";
+import {
+	cssTextDecorationProperties,
+	isCssTextDecorationProperty,
+} from "./css-text-decoration.js";
 import { documentGeometry } from "./document-geometry.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -63,6 +67,7 @@ export const computedStyleProperties = Object.freeze(
 		...cssListProperties,
 		...cssTableProperties,
 		...cssOutlineProperties,
+		...cssTextDecorationProperties,
 		...cssPaintProperties,
 		...cssTextProperties,
 		"display",
@@ -119,6 +124,13 @@ export function resolvedStyleValue(
 		return values.join(" ");
 	}
 	const styles = documentStyles(tree);
+	if (isCssTextDecorationProperty(name)) return styles.textDecoration(id)[name];
+	if (name === "text-decoration") {
+		const decoration = styles.textDecoration(id);
+		return cssTextDecorationProperties
+			.map((property) => decoration[property])
+			.join(" ");
+	}
 	if (isCssOutlineProperty(name)) return styles.outline(id)[name];
 	if (name === "outline") {
 		const outline = styles.outline(id);
@@ -353,6 +365,7 @@ export class ComputedStyles {
 			"flex-flow",
 			"gap",
 			"overflow",
+			"text-decoration",
 		]) {
 			const property = {
 				get: () => read(canonicalCssProperty(name)),

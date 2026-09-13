@@ -23,6 +23,12 @@ import {
 	parseOutlineValue,
 } from "./css-outline.js";
 import {
+	cssTextDecorationProperties,
+	isCssTextDecorationProperty,
+	parseTextDecorationDeclarations,
+	parseTextDecorationValue,
+} from "./css-text-decoration.js";
+import {
 	cssListProperties,
 	isCssListProperty,
 	parseListValue,
@@ -115,6 +121,8 @@ const lengths = new Set([
 	...sides.map((side) => `padding-${side}`),
 ]);
 export const inlineProperties = [
+	...cssTextDecorationProperties,
+	"text-decoration",
 	...cssOutlineProperties,
 	"outline",
 	...cssListProperties,
@@ -256,6 +264,8 @@ function normalize(name: string, source: string): string | undefined {
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;
 	if (isCssOutlineProperty(name)) return parseOutlineValue(name, value);
+	if (isCssTextDecorationProperty(name))
+		return parseTextDecorationValue(name, value);
 	if (isCssFlowProperty(name)) return parseFlowValue(name, value);
 	if (isCssFlexProperty(name)) return parseFlexValue(name, value);
 	if (name.startsWith("border-")) {
@@ -330,6 +340,11 @@ export function expandDeclaration(
 	const canonical = canonicalCssProperty(name);
 	if (canonical !== name) return expandDeclaration(canonical, input, important);
 	if (
+		(isCssTextDecorationProperty(name) || name === "text-decoration") &&
+		input.length > 4096
+	)
+		return [];
+	if (
 		!name.startsWith("--") &&
 		supported.has(name) &&
 		/var\s*\(|\\/i.test(input)
@@ -366,6 +381,10 @@ export function expandDeclaration(
 				source.toLowerCase().replace(/[\t\n\f\r ]+/g, " "),
 			) ?? []
 		).map((entry) => ({ name: entry.property, value: entry.value, important }));
+	if (name === "text-decoration")
+		return (parseTextDecorationDeclarations(name, source) ?? []).map(
+			(entry) => ({ name: entry.property, value: entry.value, important }),
+		);
 	if (name === "outline")
 		return (
 			parseOutlineDeclarations(
@@ -487,6 +506,7 @@ export function inlineDeclarationComponents(name: string): readonly string[] {
 	if (canonical !== name) return inlineDeclarationComponents(canonical);
 	if (name === "list-style") return cssListProperties;
 	if (name === "outline") return cssOutlineProperties.slice(0, 3);
+	if (name === "text-decoration") return cssTextDecorationProperties;
 	const grid = gridShorthandComponents(name);
 	if (grid) return grid;
 	const flex = flexShorthandComponents(name);
@@ -646,7 +666,7 @@ export function propertyValue(
 				found.find((entry) => entry.name === "list-style-image")?.value ?? "",
 		});
 	}
-	if (name === "outline") {
+	if (name === "outline" || name === "text-decoration") {
 		if (
 			found.length !== 3 ||
 			found.some((entry) => entry.important !== found[0].important)

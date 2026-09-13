@@ -60,6 +60,15 @@ import {
 	type CssOutlineProperty,
 } from "./css-outline.js";
 import {
+	cssTextDecorationProperties,
+	isCssTextDecorationProperty,
+	computeTextDecorationStyle,
+	initialTextDecorationStyle,
+	type TextDecorationStyle,
+	type TextDecorationSpecifiedStyle,
+	type CssTextDecorationProperty,
+} from "./css-text-decoration.js";
+import {
 	cssFlowProperties,
 	computeFlowStyle,
 	initialFlowStyle,
@@ -334,6 +343,11 @@ export class DocumentStyles {
 	private tableComputed = new Map<number, TableStyle>();
 	private outlineSpecified = new Map<number, OutlineSpecifiedStyle>();
 	private outlineComputed = new Map<number, OutlineStyle>();
+	private textDecorationSpecified = new Map<
+		number,
+		TextDecorationSpecifiedStyle
+	>();
+	private textDecorationComputed = new Map<number, TextDecorationStyle>();
 	private textSpecified = new Map<number, TextSpecifiedStyle>();
 	private textComputed = new Map<number, TextStyle>();
 	private legacyCentered = new Set<number>();
@@ -611,6 +625,50 @@ export class DocumentStyles {
 			);
 		}
 		return this.tableComputed.get(id) ?? initialTableStyle;
+	}
+
+	hasTextDecorations(): boolean {
+		this.get(this.tree.root);
+		for (const specified of this.textDecorationSpecified.values())
+			if (
+				/(?:^| )(?:underline|overline|line-through)(?: |$)/.test(
+					specified["text-decoration-line"] ?? "",
+				)
+			)
+				return true;
+		return false;
+	}
+
+	textDecoration(id: number): TextDecorationStyle {
+		this.get(id);
+		const pending: number[] = [];
+		let current: number | null = id;
+		while (current !== null && !this.textDecorationComputed.has(current)) {
+			pending.push(current);
+			const specified = this.textDecorationSpecified.get(current);
+			if (!specified || !Object.values(specified).includes("inherit")) break;
+			const parent: number | null = this.tree.get(current).parent;
+			current =
+				parent !== null && this.tree.get(parent).kind === "element"
+					? parent
+					: null;
+		}
+		for (const target of pending.reverse()) {
+			const parent = this.tree.get(target).parent;
+			const color = this.paint(target).color;
+			this.textDecorationComputed.set(
+				target,
+				computeTextDecorationStyle(
+					this.textDecorationSpecified.get(target) ?? {},
+					(parent === null
+						? undefined
+						: this.textDecorationComputed.get(parent)) ??
+						computeTextDecorationStyle({}, initialTextDecorationStyle, color),
+					color,
+				),
+			);
+		}
+		return this.textDecorationComputed.get(id) ?? initialTextDecorationStyle;
 	}
 
 	outline(id: number): OutlineStyle {
@@ -975,6 +1033,7 @@ export class DocumentStyles {
 			listProperties: cssListProperties,
 			tableProperties: cssTableProperties,
 			outlineProperties: cssOutlineProperties,
+			textDecorationProperties: cssTextDecorationProperties,
 			textProperties: cssTextProperties,
 			textFont: bitmapFont.family,
 			textFontWeights: bitmapFont.weights,
@@ -1020,6 +1079,8 @@ export class DocumentStyles {
 		this.tableComputed.clear();
 		this.outlineSpecified.clear();
 		this.outlineComputed.clear();
+		this.textDecorationSpecified.clear();
+		this.textDecorationComputed.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
 		this.legacyCentered.clear();
@@ -1077,6 +1138,8 @@ export class DocumentStyles {
 		this.tableComputed.clear();
 		this.outlineSpecified.clear();
 		this.outlineComputed.clear();
+		this.textDecorationSpecified.clear();
+		this.textDecorationComputed.clear();
 		this.textSpecified.clear();
 		this.textComputed.clear();
 		this.legacyCentered.clear();
@@ -1547,6 +1610,10 @@ export class DocumentStyles {
 		const textSpecified = new Map<number, TextSpecifiedStyle>();
 		const paintSpecified = new Map<number, PaintSpecifiedStyle>();
 		const outlineSpecified = new Map<number, OutlineSpecifiedStyle>();
+		const textDecorationSpecified = new Map<
+			number,
+			TextDecorationSpecifiedStyle
+		>();
 		for (const [id, properties] of winners) {
 			const specified: Partial<Record<CssBoxProperty, string>> = {};
 			const flexValues: Partial<Record<CssFlexProperty, string>> = {};
@@ -1556,10 +1623,15 @@ export class DocumentStyles {
 			const textValues: Partial<Record<CssTextProperty, string>> = {};
 			const paintValues: Partial<Record<CssPaintProperty, string>> = {};
 			const outlineValues: Partial<Record<CssOutlineProperty, string>> = {};
+			const textDecorationValues: Partial<
+				Record<CssTextDecorationProperty, string>
+			> = {};
 			for (const [property, winner] of properties) {
 				charge(1);
 				if (isCssOutlineProperty(property))
 					outlineValues[property] = winner.declaration.value;
+				if (isCssTextDecorationProperty(property))
+					textDecorationValues[property] = winner.declaration.value;
 				if (isCssBoxProperty(property))
 					specified[property] = winner.declaration.value;
 				if (isCssFlexProperty(property))
@@ -1591,6 +1663,8 @@ export class DocumentStyles {
 				paintSpecified.set(id, Object.freeze(paintValues));
 			if (Object.keys(outlineValues).length)
 				outlineSpecified.set(id, Object.freeze(outlineValues));
+			if (Object.keys(textDecorationValues).length)
+				textDecorationSpecified.set(id, Object.freeze(textDecorationValues));
 		}
 		const computed = new Map<number, Readonly<VisibilityStyle>>();
 		const boxParentDisplay = new Map<number, string>();
@@ -1782,6 +1856,7 @@ export class DocumentStyles {
 		this.legacyCentered = legacyCentered;
 		this.paintSpecified = paintSpecified;
 		this.outlineSpecified = outlineSpecified;
+		this.textDecorationSpecified = textDecorationSpecified;
 		this.customComputed = customComputed;
 		this.info = {
 			rules: budget.rules,

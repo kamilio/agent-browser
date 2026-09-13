@@ -48,6 +48,11 @@ import {
 import { documentStyles } from "./styles.js";
 import { paintCollapsedTableBorders } from "./table-collapsed-raster.js";
 import type { TextGlyph } from "./text-layout.js";
+import {
+	paintInlineDecorationEdges,
+	paintTextDecorations,
+	prepareTextDecorations,
+} from "./text-decoration-raster.js";
 
 export interface DocumentClip {
 	x: number;
@@ -322,6 +327,7 @@ function paintDocumentLayout(
 		metrics.paintedBackgrounds++;
 	};
 	const styles = documentStyles(tree);
+	const textDecorations = prepareTextDecorations(tree, layout, charge);
 	const drawOutline = (
 		reference: string | undefined,
 		horizontal: number,
@@ -719,7 +725,25 @@ function paintDocumentLayout(
 		}
 		if (item.kind === "glyph") {
 			paintEditableSelection(selection, item.glyph, image, clip, charge);
+			paintTextDecorations(
+				textDecorations,
+				item.glyph,
+				item.contentY,
+				image,
+				clip,
+				"before",
+				charge,
+			);
 			paintGlyph(item.glyph, item.contentY);
+			paintTextDecorations(
+				textDecorations,
+				item.glyph,
+				item.contentY,
+				image,
+				clip,
+				"after",
+				charge,
+			);
 			paintEditableCaret(caret, item.glyph, image, clip, charge);
 			continue;
 		}
@@ -731,6 +755,13 @@ function paintDocumentLayout(
 		}
 		if (node.kind !== "inline" || !node.visible || !node.paint) continue;
 		if (!paintBackground(node.paint)[3] && !fragment.borders) {
+			paintInlineDecorationEdges(
+				textDecorations,
+				fragment,
+				image,
+				clip,
+				charge,
+			);
 			drawOutline(
 				node.ref,
 				fragment.x,
@@ -759,6 +790,7 @@ function paintDocumentLayout(
 				node.paint,
 				charge,
 			);
+		paintInlineDecorationEdges(textDecorations, fragment, image, clip, charge);
 		drawOutline(
 			node.ref,
 			fragment.x,
