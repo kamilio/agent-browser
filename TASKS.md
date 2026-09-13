@@ -6,6 +6,41 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: painted text-decoration thickness and two native source checks
+
+Implemented noninherited text-decoration-thickness and four-component shorthand,
+CSSOM/reset/inherit/customvariables, font/viewport-unit computation, retained
+percentages/boundedmath and realstroke pixels. Usedexplicitwidthnearestinteger/
+minimumone; preserveautoAgentMonosize/16 and existingplacement/geometry/inkskip.
+No underlineoffset/newstyles/generated-decoration/fullCSS4claim.
+
+Two fresh nativeGETs: W3CpublishedLevel4servesMay4,2022Draft(288319/44482bytes),
+linkedCSSWGEditorservesAugust17,2026Draft(391569/67844bytes).EachHTTP200,0redirect,
+0retry/subresource,one native reader,12complete sections. Sourceversion/table
+inconsistencies remainexplicit;97sealedreceipts. No currenteditionguessing.
+
+105newtests(60style/45raster); baseline639/108 → focused747/0. Preservefirstfixed
+745/2test-assumption failures(xheightandresource-limit expectations), nohistory
+overwrite. Native20177/0/2unchangedskips,392selected/391strict/754manifest,
+362unselected.217additionalpassesinclude112previouslyunselectedexistingcases.
+Build/strict/formatpass; run16:44:47.451–16:49:24.665UTC. Runtime
+native-decoration-thickness-september13-round00/snapshot01/dist; source
+3e4c454470fcfd394a42950b9f67aa88937043010a26401355818a5424306ab6,compiled
+135b47b134ccac7024b8247f55afdab05c0bd0c931dc13ba9a2670515abbfd07.
+
+Same8capturePythonreplay at16:49:34.790–16:49:35.043UTC,0HTTP/72064bytes,
+853nodes/revision860/samee375Tutoriallink. ActualclickSTILLFAILS; nofallback.
+ApplicableCSS9/2→9/1,raw57/7→57/6;rules584/declarations1075unchanged,
+cascadework93132→93872; formattingunchanged. No speedup or fullrasterclaim.
+
+OPEN: justify,hyphens+vendorvariants,cursor,radii,underlineoffset,inlinealignment,
+sticky/overflow andactualclick; variedsites/interactions/repeatableperformance,
+originalReddit/Poe researchgap, native skips/unselectedtests, separatecredential/
+passkeydevice/SafeJS/socket/TTYgates. No spoofing/challengesolving/push.
+Preserve927TASKSlines,3manifestadditions,parser10/10,declarations14/14,
+computedstyles11/11,styles19/19pre-existingrearrangements andotherdirtywork.
+GoalACTIVE. SeeTEXT-DECORATION-THICKNESS.md,source/replayreports andinventory29.
+
 ### September 13: native CSS nesting and same-capture Python regression
 
 Implemented bounded native CSS nesting with immutable parent contexts, shared
