@@ -6,6 +6,38 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13: closed-dialog visibility corrected
+
+One new native WHATWG rendering-chapter GET returns200; a separate bounded
+reader operation retains fieldset/legend and dialog source context. Fieldsets
+need genuine outer/content-box ownership, intrinsic sizing and legend/border
+handling; removing their deferred guard is not an acceptable implementation.
+
+An independent UA-default bug is fixed: closed HTML dialogs now default to
+display:none, open dialogs to block, with author cascade/foreign namespace
+behavior preserved. Visible/open/modal dialog layout remains deferred. The new
+23-case suite first reproduces11 failures on unchanged production code; fixed
+focused validation passes373/0/0 across8 suites/7strict roots. The snapshot suite
+still runs behaviorally with its pre-existing strict-root typing omission.
+
+Clean broad17863/0/2 unchanged exclusions covers345 suites/344strict roots from
+723manifest entries. Build/strict/format/source integrity and1249 unchanged
+tracked inputs pass. Unrelated import ordering and three old manifest additions
+remain outside the owned changes. Root dist is not rebuilt.
+
+Two offline native replays of identical Wikipedia bytes verify that its closed
+dialog stays queryable but no longer creates a formatting node: deferred3→2,
+boxes2208→2207, with other issue counts unchanged. Search-field ownership still
+fails under fieldset, and both geometry requests remain unsupported. No source
+rewriting, fabricated rectangles, interactions or HTTP occurs in that comparison.
+
+See DIALOG-DISPLAY.md and the seventh September13 website inventory. The full
+fieldset implementation map is retained in the fieldset-dialog work lane as
+FIELDSET-NEXT.md; complete fieldset/legend, other rendering gaps, varied-site
+performance, all original research, credentials/passkey devices, SafeJS, realTTY
+and human challenge-handoff acceptance remain open. No fingerprint spoofing or
+automated CAPTCHA solving is added.
+
 ### September 13: live forms and actionable layout errors
 
 Five fresh native wireGETs exercise Bing search and Wikipedia's real form flow.
