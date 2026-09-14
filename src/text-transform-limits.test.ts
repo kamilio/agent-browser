@@ -4,6 +4,7 @@ import { layoutDocument } from "./document-layout.js";
 import { rasterizeDocument } from "./document-raster.js";
 import type { DocumentTree } from "./document.js";
 import { domRangeOwner } from "./dom-range.js";
+import { documentElementScroll } from "./element-scroll.js";
 import { prepareEditableCaret } from "./editable-caret.js";
 import {
 	editableSelectionLimits,
@@ -494,6 +495,54 @@ describe("bounded source consolidation and editable recovery", () => {
 });
 
 describe("unsupported profile guards survive casing", () => {
+	it("clips and scrolls expanded uppercase glyphs without changing source text", () => {
+		const page = fixture(
+			"ßﬃ",
+			"width:18px;height:8px;white-space:pre;overflow:hidden;",
+		);
+		expect(
+			buildFormattingTree(page.tree).issues["overflow-layout-not-supported"],
+		).toBeUndefined();
+		expect(
+			layoutDocument(page.tree)
+				.contexts.flatMap((context) => context.glyphs)
+				.map((glyph) => glyph.character)
+				.join(""),
+		).toBe("SSFFI");
+		page.range.setStart(page.text, 0);
+		page.range.setEnd(page.text, 2);
+		expect(rangeClientRects(page.range).at(-1)?.right).toBe(30);
+		const scroll = documentElementScroll(page.tree);
+		expect(scroll.get(page.editor)).toMatchObject({
+			scrollWidth: 30,
+			scrollHeight: 8,
+		});
+		const source = serializeHtml(page.tree);
+		scroll.to(page.editor, 12, 0);
+		expect(scroll.get(page.editor).scrollLeft).toBe(12);
+		expect(rangeClientRects(page.range)[0].x).toBe(-12);
+		expect(rangeClientRects(page.range).at(-1)?.right).toBe(18);
+		expect(
+			documentGeometry(page.tree).getBoundingClientRect(page.editor),
+		).toMatchObject({ x: 0, y: 0, width: 18, height: 8 });
+		expect(documentHitTesting(page.tree).elementFromPoint(1, 1)).toBe(
+			page.editor,
+		);
+		expect(
+			documentHitTesting(page.tree).elementsFromPoint(19, 1),
+		).not.toContain(page.editor);
+		expect(rasterizeDocument(page.tree).image.width).toBe(160);
+		expect(page.range.toString()).toBe("ßﬃ");
+		expect(page.tree.textContent(page.editor)).toBe("ßﬃ");
+		expect(serializeHtml(page.tree)).toBe(source);
+		page.tree.setAttribute(
+			page.editor,
+			"style",
+			"width:120px;height:auto;white-space:pre-wrap;overflow:visible",
+		);
+		recovery(page);
+	});
+
 	it.each([
 		"text-transform:full-width",
 		"text-transform:full-size-kana",
@@ -502,7 +551,6 @@ describe("unsupported profile guards survive casing", () => {
 		"writing-mode:vertical-rl",
 		"direction:rtl",
 		"unicode-bidi:bidi-override",
-		"overflow:hidden",
 	])("rejects %s across native consumers without mutating source", (style) => {
 		const page = fixture();
 		page.tree.setAttribute(page.editor, "style", style);

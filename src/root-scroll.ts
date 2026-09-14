@@ -2,7 +2,7 @@ import { documentScroll } from "./document-scroll.js";
 import { documentElementScroll } from "./element-scroll.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
-import { scrollCoordinate } from "./page-scroll.js";
+import { scrollArguments, scrollCoordinate } from "./page-scroll.js";
 import { documentStyles } from "./styles.js";
 import { documentScrollIntoView } from "./scroll-into-view.js";
 
@@ -13,19 +13,22 @@ export const rootScrollProperties = Object.freeze([
 	"scrollHeight",
 ] as const);
 export type RootScrollProperty = (typeof rootScrollProperties)[number];
-export type RootScrollRequest = (position: {
+export interface ScrollPositionRequest {
 	left?: number;
 	top?: number;
-}) => void;
+	target?: number;
+	elements?: readonly { target: number; left: number; top: number }[];
+}
+export type RootScrollRequest = (position: ScrollPositionRequest) => void;
 export const rootScrollCapabilities = Object.freeze({
 	partial: true,
 	profile: "standards-normal-flow-ltr-root",
 	documentScrollingElement: true,
 	properties: rootScrollProperties,
 	notifications: "shared-programmatic-scroll-queue",
-	connectedNonRoot: "normal-flow-visible-overflow",
+	connectedNonRoot: "normal-flow-overflow-scrollports",
 	quirks: false,
-	nestedScrolling: false,
+	nestedScrolling: true,
 	smooth: false,
 });
 
@@ -58,8 +61,54 @@ export class RootScroll {
 	set(id: number, property: "scrollTop" | "scrollLeft", value: unknown): void {
 		this.tree.get(id);
 		const coordinate = scrollCoordinate(value);
+		this.position(
+			id,
+			property === "scrollTop" ? { top: coordinate } : { left: coordinate },
+		);
+	}
+	scroll(
+		id: number,
+		relative: boolean,
+		args: readonly unknown[],
+	): Promise<void> {
+		this.tree.get(id);
+		this.position(id, scrollArguments(args), relative);
+		return Promise.resolve();
+	}
+	private position(
+		id: number,
+		position: { left?: number; top?: number },
+		relative = false,
+	): void {
 		if (!this.root(id)) {
-			documentElementScroll(this.tree).get(id);
+			const owner = documentElementScroll(this.tree);
+			const current = owner.get(id);
+			const bounds = owner.bounds(id);
+			const left = Math.max(
+				0,
+				Math.min(
+					relative
+						? current.scrollLeft + (position.left ?? 0)
+						: (position.left ?? current.scrollLeft),
+					bounds.x,
+				),
+			);
+			const top = Math.max(
+				0,
+				Math.min(
+					relative
+						? current.scrollTop + (position.top ?? 0)
+						: (position.top ?? current.scrollTop),
+					bounds.y,
+				),
+			);
+			if (left === current.scrollLeft && top === current.scrollTop) return;
+			if (!this.request)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Element scrolling requires a page scrolling host port",
+				);
+			this.request({ target: id, left, top });
 			return;
 		}
 		if (!this.request)
@@ -67,9 +116,16 @@ export class RootScroll {
 				"unsupported",
 				"Root scroll setters require a page scrolling host port",
 			);
-		this.request(
-			property === "scrollTop" ? { top: coordinate } : { left: coordinate },
-		);
+		if (relative) {
+			const owner = documentScroll(this.tree);
+			const current = owner.get();
+			const bounds = owner.bounds();
+			position = {
+				left: Math.max(0, Math.min(current.x + (position.left ?? 0), bounds.x)),
+				top: Math.max(0, Math.min(current.y + (position.top ?? 0), bounds.y)),
+			};
+		}
+		this.request(position);
 	}
 	intoView(id: number, argument?: unknown): Promise<void> {
 		const position = documentScrollIntoView(this.tree).plan(id, argument);

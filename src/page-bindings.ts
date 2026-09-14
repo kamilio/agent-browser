@@ -486,7 +486,7 @@ export class PageBindings {
 			this.focus = new PageFocus(
 				page.interactions.focus,
 				(position) => {
-					void this.scrolling.methods.scrollTo(position);
+					void this.scrolling.requestPosition(position);
 				},
 				registerFocus
 					? {
@@ -520,7 +520,7 @@ export class PageBindings {
 				this.location,
 				this.storage,
 				(position) => {
-					void this.scrolling.methods.scrollTo(position);
+					void this.scrolling.requestPosition(position);
 				},
 				this.focus.synchronousPageMethods ? this.focus : undefined,
 			);

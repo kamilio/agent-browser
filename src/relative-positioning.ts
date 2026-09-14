@@ -112,6 +112,9 @@ export function positionDocumentLayout(
 	layout: Readonly<DocumentLayout>,
 	resolve: (id: number) => Readonly<{ left: number; top: number }>,
 	maxWork: number,
+	resolveContent: (
+		id: number,
+	) => Readonly<{ left: number; top: number }> = resolve,
 ): Readonly<DocumentLayout> {
 	let work = layout.metrics.work;
 	const charge = () => {
@@ -131,7 +134,8 @@ export function positionDocumentLayout(
 		return { x: layoutNumber(x, true), y: layoutNumber(y, true) };
 	};
 	const contexts = layout.contexts.map((context) => {
-		const own = offset(context.id);
+		charge();
+		const own = resolveContent(context.id);
 		return Object.freeze({
 			...context,
 			contentX: layoutNumber(context.contentX + own.left, true),
@@ -213,7 +217,8 @@ export function positionDocumentLayout(
 		const shift = offset(box.id);
 		let gridArea = box.gridArea;
 		if (gridArea) {
-			const ownerShift = offset(box.containingBlock);
+			charge();
+			const ownerShift = resolveContent(box.containingBlock);
 			gridArea = Object.freeze({
 				...gridArea,
 				...rectangle(

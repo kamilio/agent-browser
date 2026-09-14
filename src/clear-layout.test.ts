@@ -6,6 +6,7 @@ import { buildFormattingTree } from "./formatting-tree.js";
 import { documentGeometry } from "./document-geometry.js";
 import { documentHitTesting } from "./hit-testing.js";
 import { rasterizeDocument } from "./document-raster.js";
+import { documentElementScroll } from "./element-scroll.js";
 
 const documents: ReturnType<typeof parseHtmlDocument>[] = [];
 afterEach(() => {
@@ -130,10 +131,42 @@ it("invalidates clearance admission when a float is revealed and hidden again", 
 	expect(test.rectangle("#target")).toEqual(before);
 });
 
-it.each([
-	["overflow:hidden", "overflow-layout-not-supported"],
-	["filter:blur(2px)", "css:unimplemented-css-property"],
-])(
+it("preserves float clearance while clipping and scrolling overflow:hidden content", () => {
+	const test = fixture(
+		"",
+		"#before{float:left;width:12px;height:24px}#target{clear:both;overflow:hidden}",
+	);
+	const child = test.tree.createElement("div", {
+		id: "content",
+		style: "width:80px;height:40px;background:blue",
+	});
+	test.tree.append(test.id("#target"), child);
+	const issues = buildFormattingTree(test.tree).issues;
+	expect(issues["overflow-layout-not-supported"]).toBeUndefined();
+	expect(issues).toMatchObject({
+		"float-layout-not-supported": 1,
+		"clear-layout-not-supported": 1,
+	});
+	expect(test.rectangle("#target")).toMatchObject({ y: 24, height: 20 });
+	const scroll = documentElementScroll(test.tree);
+	expect(scroll.get(test.id("#target"))).toMatchObject({
+		scrollWidth: 80,
+		scrollHeight: 40,
+	});
+	scroll.to(test.id("#target"), 10, 10);
+	expect(test.rectangle("#target")).toMatchObject({ y: 24, height: 20 });
+	const rectangle = test.rectangle("#content");
+	expect(rectangle).toMatchObject({ x: -10, y: 14, width: 80, height: 40 });
+	expect(
+		documentGeometry(test.tree).clipClientRect(child, rectangle),
+	).toMatchObject({ x: 0, y: 24, width: 40, height: 20 });
+	expect(documentHitTesting(test.tree).elementFromPoint(1, 25)).toBe(child);
+	expect(documentHitTesting(test.tree).elementsFromPoint(41, 25)).not.toContain(
+		child,
+	);
+});
+
+it.each([["filter:blur(2px)", "css:unimplemented-css-property"]])(
 	"retains independent unsupported %s diagnostics alongside clear",
 	(declaration, issue) => {
 		const test = fixture("", `#target{clear:both;${declaration}}`);

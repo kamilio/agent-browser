@@ -7,6 +7,7 @@ import {
 } from "./document-layout.js";
 import { rasterizeDocument } from "./document-raster.js";
 import type { DocumentTree } from "./document.js";
+import { documentElementScroll } from "./element-scroll.js";
 import { buildFormattingTree } from "./formatting-tree.js";
 import { DocumentHitTesting, documentHitTesting } from "./hit-testing.js";
 import { parseHtmlDocument } from "./html-parser.js";
@@ -260,19 +261,40 @@ it("keeps independent document ownership when another indented document closes",
 });
 
 it.each(["hidden", "auto"])(
-	"does not convert indentation into overflow:%s support",
+	"preserves indentation while clipping and scrolling overflow:%s",
 	(overflow) => {
 		const page = fixture(undefined, `#main{overflow:${overflow}}`);
 		expect(
 			buildFormattingTree(page.tree).issues["overflow-layout-not-supported"],
-		).toBeGreaterThan(0);
-		for (const operation of [
-			() => layoutDocument(page.tree),
-			() => documentGeometry(page.tree).getBoundingClientRect(page.id("#text")),
-			() => rasterizeDocument(page.tree),
-			() => documentHitTesting(page.tree).elementFromPoint(7, 1),
-		])
-			expectFailure(page.tree, operation, "unsupported");
+		).toBeUndefined();
+		expectRecovery(page);
+		page.tree.setAttribute(page.id("#main"), "style", "height:8px");
+		const scroll = documentElementScroll(page.tree);
+		expect(scroll.get(page.id("#main"))).toMatchObject({
+			scrollWidth: 24,
+			scrollHeight: 24,
+		});
+		const source = serializeHtml(page.tree);
+		scroll.to(page.id("#main"), 0, 8);
+		expect(scroll.get(page.id("#main")).scrollTop).toBe(8);
+		const geometry = documentGeometry(page.tree);
+		expect(geometry.getClientRects(page.id("#text"))[0]).toMatchObject({
+			x: 6,
+			y: -8,
+		});
+		expect(geometry.getBoundingClientRect(page.id("#main"))).toMatchObject({
+			x: 0,
+			y: 0,
+			width: 24,
+			height: 8,
+		});
+		expect(documentHitTesting(page.tree).elementFromPoint(1, 1)).toBe(
+			page.id("#text"),
+		);
+		expect(documentHitTesting(page.tree).elementsFromPoint(7, 9)).not.toContain(
+			page.id("#text"),
+		);
+		expect(serializeHtml(page.tree)).toBe(source);
 		page.tree.setAttribute(page.id("#main"), "style", "overflow:visible");
 		expectRecovery(page);
 	},

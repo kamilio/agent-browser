@@ -5,6 +5,7 @@ import { layoutDocument } from "./document-layout.js";
 import { loadBrowserDocument } from "./document-loader.js";
 import { rasterizeDocument } from "./document-raster.js";
 import { documentScroll } from "./document-scroll.js";
+import { documentElementScroll } from "./element-scroll.js";
 import type { DocumentTree } from "./document.js";
 import { buildFormattingTree } from "./formatting-tree.js";
 import { documentHitTesting } from "./hit-testing.js";
@@ -147,15 +148,30 @@ it("positions an absolute sibling without hiding an independent real float", () 
 	});
 });
 
-it("retains overflow blockers on an otherwise correctly positioned box", () => {
+it("scrolls an absolute box without activating its authored float", () => {
 	const test = fixture(
-		"<div id=target></div>",
-		"#target{position:absolute;float:right;overflow:auto;width:24px;height:16px}",
+		"<div id=target><div id=child></div></div>",
+		"#target{position:absolute;left:0;top:0;float:right;overflow:auto;width:24px;height:16px}#child{width:48px;height:40px}",
 	);
 	const issues = buildFormattingTree(test.tree).issues;
 	expect(issues["float-layout-not-supported"]).toBeUndefined();
-	expect(issues["overflow-layout-not-supported"]).toBe(1);
-	expect(() => layoutDocument(test.tree)).toThrow("issue-free");
+	expect(issues["overflow-layout-not-supported"]).toBeUndefined();
+	const before = test.rect("#target");
+	expect(before).toMatchObject({ x: 0, y: 0, width: 24, height: 16 });
+	const scroll = documentElementScroll(test.tree);
+	expect(scroll.bounds(test.id("#target"))).toEqual({ x: 24, y: 24 });
+	expect(scroll.to(test.id("#target"), 8, 10)).toBe(true);
+	expect(scroll.get(test.id("#target"))).toMatchObject({
+		scrollLeft: 8,
+		scrollTop: 10,
+	});
+	expect(test.rect("#target")).toEqual(before);
+	expect(test.rect("#child")).toMatchObject({
+		x: -8,
+		y: -10,
+		width: 48,
+		height: 40,
+	});
 });
 
 it("does not invent clearance for a following block from a positioned box", () => {

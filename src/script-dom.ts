@@ -41,6 +41,7 @@ import { ScriptDatasets } from "./script-dataset.js";
 import { ElementTraversal } from "./element-traversal.js";
 import { scriptElementFocusProperties } from "./element-focus.js";
 import type { PageFocus } from "./page-focus.js";
+import { scrollArguments } from "./page-scroll.js";
 import {
 	type DocumentElementSizes,
 	documentElementSizes,
@@ -870,6 +871,11 @@ export class ScriptDom {
 				this.read(id);
 				return this.rootScroll.intoView(id, argument);
 			};
+			for (const name of ["scroll", "scrollTo", "scrollBy"])
+				definition.methods[name] = (...args) => {
+					this.read(id);
+					return this.rootScroll.scroll(id, name === "scrollBy", args);
+				};
 			for (const property of rootScrollProperties)
 				definition.properties[property] = {
 					get: () => {
@@ -1032,6 +1038,12 @@ export class ScriptDom {
 				Object.assign(definition.methods, select.methods);
 			}
 			if (this.inert) {
+				for (const name of ["scroll", "scrollTo", "scrollBy"])
+					definition.methods[name] = (...args) => {
+						this.read(id);
+						scrollArguments(args);
+						return Promise.resolve();
+					};
 				for (const method of ["focus", "blur", "scrollIntoView"])
 					definition.methods[method] = () => {
 						this.read(id);

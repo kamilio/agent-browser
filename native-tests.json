@@ -776,5 +776,15 @@
   "src/trace-view.test.ts",
   "src/validity-state.test.ts",
   "src/viewport-scroll.test.ts",
-  "src/wheel-command.test.ts"
+  "src/wheel-command.test.ts",
+  "src/layout-overflow.test.ts",
+  "src/overflow-paint.test.ts",
+  "src/overflow-host.test.ts",
+  "src/overflow-input.test.ts",
+  "src/overflow-layout.test.ts",
+  "src/overflow-minimum.test.ts",
+  "src/overflow-edge.test.ts",
+  "src/overflow-inline-metrics.test.ts",
+  "src/overflow-svg.test.ts",
+  "src/overflow-grid-sticky.test.ts"
 ]

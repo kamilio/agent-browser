@@ -46,7 +46,7 @@ export interface MeasuredFlexMainItem extends FlexLineItemInput {
 		| "max-content"
 		| "fit-content"
 		| "aspect-ratio";
-	minimumSource: "explicit" | "content-based";
+	minimumSource: "explicit" | "content-based" | "scrollable";
 	definiteCrossSize: number | null;
 }
 
@@ -354,6 +354,7 @@ export function resolveFormattingFlexMainSizes(
 		if (specified !== null) minimum = Math.min(minimum, specified);
 		if (maximum !== null) minimum = Math.min(minimum, maximum);
 		if (style["min-width"] !== "auto") minimum = size(style["min-width"]);
+		else if (node.scrollableOverflow) minimum = 0;
 		let basis = flex["flex-basis"];
 		if (basis === "auto")
 			basis = style.width === "auto" ? "content" : style.width;
@@ -393,7 +394,11 @@ export function resolveFormattingFlexMainSizes(
 				maxContent,
 				baseSource: source,
 				minimumSource:
-					style["min-width"] === "auto" ? "content-based" : "explicit",
+					style["min-width"] !== "auto"
+						? "explicit"
+						: node.scrollableOverflow
+							? "scrollable"
+							: "content-based",
 				baseSize: layoutNumber(base, true),
 				minSize: layoutNumber(minimum),
 				maxSize: maximum,

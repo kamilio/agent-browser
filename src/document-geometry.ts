@@ -5,7 +5,12 @@ import { resolveInlineEdges } from "./inline-box.js";
 import { documentScrollPosition } from "./document-scroll.js";
 import { documentGeneratedControls } from "./generated-controls.js";
 import { projectFixedLayout } from "./out-of-flow-positioning.js";
-import { projectStickyLayout } from "./sticky-positioning.js";
+import { projectScrollLayout } from "./document-overflow.js";
+import {
+	clipOverflowRectangle,
+	layoutOverflowClips,
+	type OverflowClipFrame,
+} from "./overflow-clips.js";
 import { outsideMarkerRects } from "./outside-markers.js";
 import { layoutContentItems } from "./layout-paint-order.js";
 import { projectSvgScene } from "./svg-projection.js";
@@ -55,6 +60,22 @@ export class LayoutGeometry {
 	private retained = 0;
 	private work = 0;
 	private usedStyles = new Map<string, UsedStyle>();
+	private overflow = new Map<string, Readonly<OverflowClipFrame>>();
+
+	clipClientRect(
+		ref: string,
+		rect: ClientRectangle,
+		content = false,
+	): ClientRectangle | undefined {
+		const frame = this.overflow.get(ref);
+		const clipped = clipOverflowRectangle(
+			content ? frame?.content : frame?.border,
+			rect,
+		);
+		return clipped
+			? rectangle(clipped.x, clipped.y, clipped.width, clipped.height)
+			: undefined;
+	}
 
 	getUsedStyle(ref: string): UsedStyle | undefined {
 		this.getClientRects(ref);
@@ -122,8 +143,11 @@ export class LayoutGeometry {
 		};
 		let hasSvg = false;
 		let hasTableGeometry = false;
+		const overflow = layoutOverflowClips(layout, charge);
 		for (const node of layout.text.horizontal.formatting.nodes) {
 			charge();
+			const frame = overflow.get(node.id);
+			if (node.ref && frame) this.overflow.set(node.ref, frame);
 			if (node.svg) hasSvg = true;
 			if (node.tableWrapper !== undefined || node.tableCaptions !== undefined)
 				hasTableGeometry = true;
@@ -273,6 +297,10 @@ export class LayoutGeometry {
 					image.contentHeight,
 					charge,
 				);
+				const contentClip = overflow.get(id)?.content;
+				const descendantClip = contentClip
+					? Object.freeze({ border: contentClip, content: contentClip })
+					: undefined;
 				const bounds = new Map<string, ClientRectangle>();
 				for (const shape of projection.shapes) {
 					charge();
@@ -302,7 +330,11 @@ export class LayoutGeometry {
 						}
 					}
 				}
-				for (const [ref, boundsValue] of bounds) append(ref, boundsValue);
+				for (const [ref, boundsValue] of bounds) {
+					append(ref, boundsValue);
+					if (descendantClip && ref !== node.ref)
+						this.overflow.set(ref, descendantClip);
+				}
 			}
 		for (const marker of outsideMarkerRects(layout, charge)) {
 			charge();
@@ -433,6 +465,28 @@ export class DocumentGeometry {
 		);
 	}
 
+	clipClientRect(
+		id: number,
+		rect: ClientRectangle,
+		content = false,
+	): ClientRectangle | undefined {
+		if (!this.connectedElement(id)) return;
+		const scroll = documentScrollPosition(this.tree);
+		const clipped = this.refresh().clipClientRect(
+			this.tree.reference(id),
+			rectangle(rect.x + scroll.x, rect.y + scroll.y, rect.width, rect.height),
+			content,
+		);
+		return clipped
+			? rectangle(
+					clipped.x - scroll.x,
+					clipped.y - scroll.y,
+					clipped.width,
+					clipped.height,
+				)
+			: undefined;
+	}
+
 	getGeneratedClientRects(reference: string): readonly ClientRectangle[] {
 		const scroll = documentScrollPosition(this.tree);
 		const rects = this.getGeneratedDocumentRects(reference);
@@ -536,9 +590,9 @@ export class DocumentGeometry {
 		const layout = layoutDocument(this.tree);
 		const snapshot = new LayoutGeometry(
 			projectFixedLayout(
-				projectStickyLayout(
+				projectScrollLayout(
+					this.tree,
 					layout,
-					scroll,
 					layout.metrics.work + geometryLimits.maxWork,
 				),
 				scroll,

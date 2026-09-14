@@ -1,5 +1,6 @@
 import { afterEach, expect, it } from "vitest";
 import { documentGeometry } from "./document-geometry.js";
+import { documentElementScroll } from "./element-scroll.js";
 import { layoutDocument } from "./document-layout.js";
 import type { DocumentTree } from "./document.js";
 import { parseHtmlDocument } from "./html-parser.js";
@@ -209,15 +210,26 @@ it("returns empty geometry for detached elements without laying out unrelated un
 	expect(geometry.metrics().builds).toBe(0);
 });
 
-it("rejects non-elements and unsupported layouts rather than inventing rectangles", () => {
+it("rejects non-elements and unsupported transforms rather than inventing rectangles", () => {
 	const { tree, geometry, box } = fixture(
-		'<div id="target" style="display:flex;flex-direction:column;flex-wrap:wrap;position:sticky;overflow:hidden">x</div>',
+		'<div id="target" style="transform:translateX(1px)">x</div>',
 	);
 	expect(() => geometry.getClientRects(tree.root)).toThrow(
 		"requires an element",
 	);
 	expect(() => box("#target")).toThrow();
 	expect(geometry.metrics().rectangles).toBe(0);
+});
+
+it("keeps full descendant rectangles while projecting hidden-overflow scrolling", () => {
+	const { tree, id, box } = fixture(
+		'<div id="target" style="overflow:hidden;width:20px;height:20px"><div id="child" style="width:60px;height:40px"></div></div>',
+	);
+	expect(box("#target")).toMatchObject({ x: 0, y: 0, width: 20, height: 20 });
+	expect(box("#child")).toMatchObject({ x: 0, y: 0, width: 60, height: 40 });
+	expect(documentElementScroll(tree).to(id("#target"), 12, 8)).toBe(true);
+	expect(box("#target")).toMatchObject({ x: 0, y: 0, width: 20, height: 20 });
+	expect(box("#child")).toMatchObject({ x: -12, y: -8, width: 60, height: 40 });
 });
 
 it("explicitly rejects block-in-inline geometry until anonymous-fragment ownership is implemented", () => {

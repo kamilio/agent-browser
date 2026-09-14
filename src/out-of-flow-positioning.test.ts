@@ -529,12 +529,28 @@ it.each([
 	"position:absolute;inset:0;width:20px;height:10px",
 	"position:fixed;transform:translateX(1px);width:20px;height:10px",
 	"position:sticky;top:0;transform:translateY(1px)",
-	"position:absolute;left:0;top:0;overflow:hidden",
 ])("fails explicitly for unsupported layout: %s", (style) => {
 	const { tree } = fixture(`<div style="${style}">A</div>`);
 	expect(() => layoutDocument(tree)).toThrow(
 		expect.objectContaining({ code: "unsupported" }),
 	);
+});
+
+it("positions a hidden-overflow box and clips descendants without shrinking their rectangles", () => {
+	const { tree, id, rect } = fixture(
+		'<div id="target"><div id="spill"></div></div>',
+		"#target{position:absolute;left:0;top:0;overflow:hidden;width:20px;height:10px}#spill{width:40px;height:20px;background:red}",
+	);
+	expect(rect("#target")).toMatchObject({ x: 0, y: 0, width: 20, height: 10 });
+	expect(rect("#spill")).toMatchObject({ x: 0, y: 0, width: 40, height: 20 });
+	expect(
+		buildFormattingTree(tree).issues["overflow-layout-not-supported"],
+	).toBeUndefined();
+	const hits = documentHitTesting(tree);
+	expect(hits.elementFromPoint(5, 5)).toBe(id("#spill"));
+	expect(hits.elementFromPoint(25, 5)).not.toBe(id("#spill"));
+	expect(pixel(tree, 5, 5)).toEqual([255, 0, 0, 255]);
+	expect(pixel(tree, 25, 5)).not.toEqual([255, 0, 0, 255]);
 });
 
 it("rejects positioned inline containing blocks rather than using the viewport", () => {

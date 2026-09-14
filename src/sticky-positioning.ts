@@ -2,6 +2,7 @@ import type { DocumentLayout } from "./document-layout.js";
 import { AgentBrowserError } from "./errors.js";
 import { layoutNumber, resolveLayoutLength } from "./layout-values.js";
 import { positionDocumentLayout } from "./relative-positioning.js";
+import { establishesScrollport } from "./overflow-policy.js";
 
 interface Rectangle {
 	x: number;
@@ -129,9 +130,13 @@ export function projectStickyLayout(
 		top: 0,
 	});
 	const viewport = { x: 0, y: 0, ...formatting.viewport };
-	const pending = [
-		{ id: formatting.root, containing: formatting.root, ...zero },
-	];
+	const pending: {
+		id: number;
+		containing: number;
+		left: number;
+		top: number;
+		port?: number;
+	}[] = [{ id: formatting.root, containing: formatting.root, ...zero }];
 	let moved = false;
 	while (pending.length) {
 		charge();
@@ -140,6 +145,10 @@ export function projectStickyLayout(
 		const box = boxes.get(node.id);
 		let left = node.position === "fixed" ? 0 : state.left;
 		let top = node.position === "fixed" ? 0 : state.top;
+		const portId = node.position === "fixed" ? undefined : state.port;
+		const port = portId === undefined ? undefined : boxes.get(portId);
+		const portOffset =
+			portId === undefined ? zero : (offsets.get(portId) ?? zero);
 		if (node.position === "sticky" && node.box) {
 			let containingId = box?.containingBlock ?? state.containing;
 			while (formatting.nodes[containingId].kind === "anonymous-block") {
@@ -176,8 +185,14 @@ export function projectStickyLayout(
 				const ownLeft = axisOffset(
 					node.box.left,
 					node.box.right,
-					fixed.has(node.id) ? 0 : scroll.x,
-					viewport.width,
+					port
+						? port.borderX + port.borderLeft + portOffset.left
+						: fixed.has(node.id)
+							? 0
+							: scroll.x,
+					port
+						? port.borderBoxWidth - port.borderLeft - port.borderRight
+						: viewport.width,
 					border.x + left,
 					border.width,
 					containing.x + containingOffset.left,
@@ -192,8 +207,14 @@ export function projectStickyLayout(
 				const ownTop = axisOffset(
 					node.box.top,
 					node.box.bottom,
-					fixed.has(node.id) ? 0 : scroll.y,
-					viewport.height,
+					port
+						? port.borderY + port.borderTop + portOffset.top
+						: fixed.has(node.id)
+							? 0
+							: scroll.y,
+					port
+						? port.borderBoxHeight - port.borderTop - port.borderBottom
+						: viewport.height,
 					border.y + top,
 					border.height,
 					containing.y + containingOffset.top,
@@ -218,6 +239,10 @@ export function projectStickyLayout(
 				containing: box ? node.id : state.containing,
 				left,
 				top,
+				port:
+					box && node.overflow && establishesScrollport(node.overflow)
+						? node.id
+						: portId,
 			});
 		}
 	}

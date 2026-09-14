@@ -1,4 +1,11 @@
 import { type BlockWidth, resolveBlockWidth } from "./block-width.js";
+import {
+	establishesScrollport,
+	overflowBoxDisplay,
+	usedOverflow,
+	visibleOverflow,
+	type OverflowStyle,
+} from "./overflow-policy.js";
 import { type BoxStyle, initialBoxStyle } from "./css-box.js";
 import { initialTableStyle, type TableStyle } from "./css-table.js";
 import {
@@ -117,6 +124,8 @@ export const formattingLimits: Readonly<FormattingLimits> = Object.freeze({
 import { hasRadiusStyle, type RadiusStyle } from "./css-radius.js";
 
 export interface FormattingNode {
+	overflow?: Readonly<OverflowStyle>;
+	scrollableOverflow?: true;
 	radius?: RadiusStyle;
 	id: number;
 	parent: number | null;
@@ -199,6 +208,7 @@ export interface FormattingTree {
 	revision: number;
 	root: number;
 	viewport: Readonly<{ width: number; height: number }>;
+	viewportOverflow?: Readonly<OverflowStyle>;
 	nodes: readonly Readonly<FormattingNode>[];
 	issues: Readonly<Record<string, number>>;
 	metrics: Readonly<{
@@ -299,6 +309,8 @@ export function buildFormattingTree(
 	let outsideMarkers = 0;
 	let clearanceRequests = 0;
 	let hasCaptions = false;
+	let overflowDonor: number | undefined;
+	let viewportOverflow: Readonly<OverflowStyle> | undefined;
 	const renderedListItems = new Set<number>();
 	const numericMarkers: { node: number; item: number; outside: boolean }[] = [];
 	const charge = (units = 1) => {
@@ -415,6 +427,39 @@ export function buildFormattingTree(
 	if (topElements.length > 1) issue("multiple-document-elements");
 	if (topElements.length === 0) issue("missing-document-element");
 	const rootElement = topElements[0];
+	if (rootElement !== undefined && styles.get(rootElement).display !== "none") {
+		overflowDonor = rootElement;
+		let overflow = usedOverflow(styles.flow(rootElement));
+		if (
+			isHtmlElement(tree.get(rootElement), "html") &&
+			overflow.x === "visible" &&
+			overflow.y === "visible"
+		) {
+			const body = tree.get(rootElement).children.find((id) => {
+				charge();
+				return isHtmlElement(tree.get(id), "body");
+			});
+			if (body !== undefined && styles.get(body).display !== "none") {
+				overflowDonor = body;
+				overflow = usedOverflow(styles.flow(body));
+			}
+		}
+		if (overflow.x !== "visible" || overflow.y !== "visible")
+			viewportOverflow = Object.freeze({
+				x:
+					overflow.x === "visible"
+						? "auto"
+						: overflow.x === "clip"
+							? "hidden"
+							: overflow.x,
+				y:
+					overflow.y === "visible"
+						? "auto"
+						: overflow.y === "clip"
+							? "hidden"
+							: overflow.y,
+			});
+	}
 	const append = (destination: number[], source: readonly number[]) => {
 		charge(source.length);
 		for (const child of source) destination.push(child);
@@ -626,6 +671,8 @@ export function buildFormattingTree(
 			);
 		const metadata = Object.freeze({ owner, name });
 		const { display, flow } = style;
+		const generatedOverflow = usedOverflow(flow);
+		const generatedScrollable = establishesScrollport(generatedOverflow);
 		const outOfFlow =
 			display !== "contents" &&
 			(flow.position === "absolute" || flow.position === "fixed");
@@ -760,6 +807,17 @@ export function buildFormattingTree(
 				display,
 				visible: style.visible,
 				box: style.box,
+				...(!inline &&
+				!table &&
+				!deferredReason &&
+				(generatedOverflow.x !== "visible" || generatedOverflow.y !== "visible")
+					? {
+							overflow: generatedOverflow,
+							...(generatedScrollable
+								? { scrollableOverflow: true as const }
+								: {}),
+						}
+					: {}),
 				...(style.radius ? { radius: style.radius } : {}),
 				typography: style.typography,
 				paint: style.paint,
@@ -797,6 +855,7 @@ export function buildFormattingTree(
 				...(table ||
 				outOfFlow ||
 				atomic ||
+				generatedScrollable ||
 				display.includes("flow-root") ||
 				alignment
 					? { independentContext: true }
@@ -988,15 +1047,38 @@ export function buildFormattingTree(
 			embeddedSvg &&
 			["hidden", "clip"].includes(flow["overflow-x"]) &&
 			["hidden", "clip"].includes(flow["overflow-y"]);
+		const computedOverflow = usedOverflow(flow);
+		const elementOverflow =
+			id === overflowDonor ? visibleOverflow : computedOverflow;
+		const overflowSupported =
+			overflowBoxDisplay(display) &&
+			!embeddedSvg &&
+			!deferredElements.has(node.tagName) &&
+			!["input", "textarea", "select", "button", "fieldset", "legend"].some(
+				(tag) => isHtmlElement(node, tag),
+			);
+		const overflowIgnored =
+			["inline", "inline flow", "contents"].includes(display) &&
+			!deferredElements.has(node.tagName);
 		if (
 			(flow["overflow-x"] !== "visible" || flow["overflow-y"] !== "visible") &&
-			!svgClipping
+			!svgClipping &&
+			id !== overflowDonor &&
+			!overflowSupported &&
+			!overflowIgnored
 		)
 			issue("overflow-layout-not-supported");
 		if (embeddedSvg && !svgClipping)
 			issue("svg-viewport-overflow-not-supported");
 		const positionFields = {
 			...boxFlowFields,
+			...(overflowSupported &&
+			(elementOverflow.x !== "visible" || elementOverflow.y !== "visible")
+				? { overflow: elementOverflow }
+				: {}),
+			...(overflowSupported && establishesScrollport(computedOverflow)
+				? { scrollableOverflow: true as const }
+				: {}),
 			...(flow.position === "relative" ||
 			flow.position === "sticky" ||
 			outOfFlow
@@ -1777,6 +1859,7 @@ export function buildFormattingTree(
 				typography: styles.text(id),
 				independentContext:
 					atomicBlock ||
+					(overflowSupported && establishesScrollport(computedOverflow)) ||
 					id === rootElement ||
 					display.includes("flow-root") ||
 					(blockContentAlignment !== undefined &&
@@ -2090,6 +2173,7 @@ export function buildFormattingTree(
 		revision: tree.revision,
 		root,
 		viewport: Object.freeze({ ...styles.viewport }),
+		...(viewportOverflow ? { viewportOverflow } : {}),
 		nodes: Object.freeze(
 			nodes.map((node) => {
 				if (node.radius) {

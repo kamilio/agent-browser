@@ -489,7 +489,8 @@ export function layoutFormattingGridContainer(
 					"unsupported",
 					"Missing reflowed Grid item",
 				);
-			const style = formatting.nodes[item.id].box ?? initialBoxStyle;
+			const node = formatting.nodes[item.id];
+			const style = node.box ?? initialBoxStyle;
 			const outer = Math.max(
 				0,
 				box.borderBoxHeight + box.marginTop + box.marginBottom,
@@ -512,6 +513,7 @@ export function layoutFormattingGridContainer(
 							contributionGap,
 							available,
 							charge,
+							node.scrollableOverflow,
 						)
 					: box.minimumHeight + edges;
 			return {

@@ -1,4 +1,5 @@
 import { layoutDocument } from "./document-layout.js";
+import { measureLayoutOverflow } from "./layout-overflow.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { layoutNumber } from "./layout-values.js";
@@ -13,7 +14,7 @@ export const viewportScrollCapabilities = Object.freeze({
 	profile: "normal-flow-ltr-root-viewport",
 	positionedOverflow: "absolute-included-fixed-excluded",
 	command: "mousewheel",
-	elementScrolling: false,
+	elementScrolling: true,
 	smooth: false,
 	scrollbars: false,
 	programmaticGuestScrolling: true,
@@ -108,6 +109,28 @@ export class DocumentScroll {
 		}
 		const layout = layoutDocument(this.tree);
 		const viewport = layout.text.horizontal.formatting.viewport;
+		if (layout.text.horizontal.formatting.nodes.some((node) => node.overflow)) {
+			const measured = measureLayoutOverflow(
+				layout,
+				viewportScrollLimits.maxWork,
+			);
+			this.work = measured.work;
+			this.maximum = Object.freeze({
+				x: Math.max(0, measured.root.width - viewport.width),
+				y: Math.max(0, measured.root.height - viewport.height),
+			});
+			this.revision = this.tree.revision;
+			this.builds++;
+			const next = Object.freeze({
+				x: Math.min(this.position.x, this.maximum.x),
+				y: Math.min(this.position.y, this.maximum.y),
+			});
+			if (next.x !== this.position.x || next.y !== this.position.y) {
+				this.position = next;
+				this.tree.invalidatePresentation("paint");
+			}
+			return;
+		}
 		const fixed = new Set(layout.fixedIds);
 		let right = viewport.width;
 		let bottom = Math.max(viewport.height, layout.flowHeight);

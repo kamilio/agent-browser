@@ -777,10 +777,29 @@ it("enforces owned-node, box, depth, text and work limits without mutating the D
 
 it("reports actual width blockers without including advisory CSS issues", () => {
 	const { tree, id } = fixture(
-		'<main><div style="position:sticky;overflow:auto">sticky</div><div style="position:sticky;overflow:auto">sticky</div></main>',
+		'<main style="width:96px"><div id="first" style="position:sticky;overflow:auto;width:48px;height:12px">sticky</div><div id="second" style="position:sticky;overflow:auto;width:48px;height:12px">sticky</div></main>',
 	);
+	expect(buildFormattingTree(tree).issues).toEqual({});
+	const admitted = resolveDocumentBlockWidths(tree);
+	for (const selector of ["#first", "#second"]) {
+		expect(
+			admitted.widths.find((box) => box.ref === tree.reference(id(selector)))
+				?.contentWidth,
+		).toBe(48);
+		expect(
+			documentGeometry(tree).getBoundingClientRect(id(selector)),
+		).toMatchObject({ width: 48, height: 12 });
+	}
+	for (const selector of ["#first", "#second"]) {
+		tree.setAttribute(
+			id(selector),
+			"style",
+			"position:sticky;overflow:auto;width:48px;height:12px;filter:blur(2px)",
+		);
+	}
 	const formatting = buildFormattingTree(tree);
-	expect(formatting.issues["overflow-layout-not-supported"]).toBe(2);
+	expect(formatting.issues["overflow-layout-not-supported"]).toBeUndefined();
+	expect(formatting.issues["css:unimplemented-css-property"]).toBe(2);
 	const diagnosticInput = {
 		...formatting,
 		issues: {
@@ -790,32 +809,53 @@ it("reports actual width blockers without including advisory CSS issues", () => 
 		},
 	};
 	expect(() => resolveFormattingPageWidths(diagnosticInput)).toThrow(
-		"Document width resolution requires an issue-free supported formatting profile: overflow-layout-not-supported (2)",
+		"Document width resolution requires an issue-free supported formatting profile: css:unimplemented-css-property (2)",
 	);
 	expect(() =>
 		documentGeometry(tree).getBoundingClientRect(id("main")),
-	).toThrow("overflow-layout-not-supported (2)");
+	).toThrow("css:unimplemented-css-property (2)");
 	expect(() => resolveDocumentBlockWidths(tree)).toThrow(
-		"overflow-layout-not-supported (2)",
+		"css:unimplemented-css-property (2)",
 	);
 });
 
 it("omits coordinated display issues but retains unsupported layout blockers", () => {
-	const { tree } = fixture(
-		'<main style="display:flex"><div style="position:sticky;overflow:auto">sticky</div></main>',
+	const { tree, id } = fixture(
+		'<main style="display:flex;width:96px;height:24px;align-items:flex-start"><div id="child" style="position:sticky;overflow:auto;width:48px;height:12px">sticky</div></main>',
 	);
 	const formatting = buildFormattingTree(tree);
 	expect(formatting.issues).toMatchObject({
 		"display-layout-not-supported": 1,
-		"overflow-layout-not-supported": 1,
 	});
-	expect(() =>
-		resolveFormattingPageWidths(formatting, undefined, () => {}),
-	).toThrow(
-		"Document width resolution requires an issue-free supported formatting profile: overflow-layout-not-supported (1)",
+	expect(formatting.issues["overflow-layout-not-supported"]).toBeUndefined();
+	const coordinated: number[] = [];
+	const admitted = resolveFormattingPageWidths(
+		formatting,
+		undefined,
+		(width) => {
+			coordinated.push(width.contentWidth);
+		},
 	);
+	expect(coordinated).toEqual([96]);
+	expect(
+		admitted.widths.find((box) => box.ref === tree.reference(id("main")))
+			?.contentWidth,
+	).toBe(96);
+	expect(
+		documentGeometry(tree).getBoundingClientRect(id("#child")),
+	).toMatchObject({ width: 48, height: 12 });
 	expect(() => resolveFormattingPageWidths(formatting)).toThrow(
 		"display-layout-not-supported (1)",
+	);
+	tree.setAttribute(
+		id("#child"),
+		"style",
+		"position:sticky;overflow:auto;width:48px;height:12px;filter:blur(2px)",
+	);
+	expect(() =>
+		resolveFormattingPageWidths(buildFormattingTree(tree), undefined, () => {}),
+	).toThrow(
+		"Document width resolution requires an issue-free supported formatting profile: css:unimplemented-css-property (1)",
 	);
 });
 

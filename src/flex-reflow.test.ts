@@ -577,11 +577,23 @@ it.each([
 	"#container{flex-direction:column}",
 	"#item{display:flex;flex-direction:column;flex-wrap:wrap;position:absolute}",
 	"#item{display:table}",
-	"#item{overflow:hidden}",
 ])("does not hide unsupported item content: %s", (css) => {
 	expect(() => fixture(css).reflow()).toThrowError(
 		expect.objectContaining({ code: "unsupported" }),
 	);
+});
+it("reflows a hidden-overflow item below its content-based automatic minimum", () => {
+	const result = fixture("#item{overflow:hidden;min-width:auto}").reflow(18);
+	expect(result.main.items[0]).toMatchObject({
+		minContent: 24,
+		minSize: 0,
+		minimumSource: "scrollable",
+	});
+	expect(result.items[0].box).toMatchObject({
+		contentWidth: 18,
+		contentHeight: 30,
+	});
+	expect(result.layout.contexts[0].lines).toHaveLength(3);
 });
 it.each([
 	null,

@@ -74,6 +74,13 @@ export interface DocumentLayout {
 	flowHeight: number;
 	outsideMarkers?: readonly Readonly<OutsideMarker>[];
 	fixedIds?: readonly number[];
+	scrollOffsets?: readonly Readonly<{
+		id: number;
+		left: number;
+		top: number;
+		contentLeft: number;
+		contentTop: number;
+	}>[];
 	stickyOffsets?: readonly Readonly<{
 		id: number;
 		left: number;

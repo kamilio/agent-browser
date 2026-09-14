@@ -7,6 +7,7 @@ import {
 } from "./document-layout.js";
 import { rasterizeDocument } from "./document-raster.js";
 import type { DocumentTree } from "./document.js";
+import { documentElementScroll } from "./element-scroll.js";
 import { buildFormattingTree } from "./formatting-tree.js";
 import { DocumentHitTesting, documentHitTesting } from "./hit-testing.js";
 import { parseHtmlDocument } from "./html-parser.js";
@@ -245,13 +246,37 @@ it.each(["baseline", "last baseline"])(
 );
 
 it.each(["hidden", "auto"])(
-	"does not silently add overflow:%s layout or scrolling",
+	"preserves block alignment while scrolling supported overflow:%s",
 	(overflow) => {
 		const page = fixture(undefined, `#container{overflow:${overflow}}`);
 		expect(
 			buildFormattingTree(page.tree).issues["overflow-layout-not-supported"],
-		).toBeGreaterThan(0);
-		expectFailure(page.tree, () => layoutDocument(page.tree), "unsupported");
+		).toBeUndefined();
+		expectSimpleRecovery(page);
+		page.tree.setAttribute(page.id("#child"), "style", "width:96px");
+		const scroll = documentElementScroll(page.tree);
+		expect(scroll.get(page.id("#container"))).toMatchObject({
+			scrollWidth: 96,
+			scrollHeight: 32,
+		});
+		scroll.to(page.id("#container"), 12, 0);
+		expect(scroll.get(page.id("#container")).scrollLeft).toBe(12);
+		const geometry = documentGeometry(page.tree);
+		const child = geometry.getBoundingClientRect(page.id("#child"));
+		expect(child).toMatchObject({ x: -12, y: 12, width: 96, height: 8 });
+		expect(geometry.clipClientRect(page.id("#child"), child)).toMatchObject({
+			x: 0,
+			y: 12,
+			width: 48,
+			height: 8,
+		});
+		expect(documentHitTesting(page.tree).elementFromPoint(1, 13)).toBe(
+			page.id("#child"),
+		);
+		expect(
+			documentHitTesting(page.tree).elementsFromPoint(49, 13),
+		).not.toContain(page.id("#child"));
+		page.tree.removeAttribute(page.id("#child"), "style");
 		page.tree.setAttribute(page.id("#container"), "style", "overflow:visible");
 		expectSimpleRecovery(page);
 	},

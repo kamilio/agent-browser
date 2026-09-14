@@ -46,7 +46,7 @@ export const positioningCapabilities = Object.freeze({
 	staticFlexBaselines: false,
 	inlineContainingBlocks: false,
 	transformedContainingBlocks: false,
-	sticky: "root-scrollport-ltr-physical-insets",
+	sticky: "nearest-scrollport-ltr-physical-insets",
 });
 
 function outOfFlow(node: Readonly<FormattingNode>) {

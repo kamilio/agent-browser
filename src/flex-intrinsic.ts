@@ -43,11 +43,13 @@ export function flexIntrinsicContribution(
 			: size(style["max-width"]);
 	const minimum =
 		style["min-width"] === "auto"
-			? Math.min(
-					measured.minContent,
-					specified ?? Number.POSITIVE_INFINITY,
-					maximum,
-				)
+			? node.scrollableOverflow
+				? 0
+				: Math.min(
+						measured.minContent,
+						specified ?? Number.POSITIVE_INFINITY,
+						maximum,
+					)
 			: size(style["min-width"]);
 	const content = maximumContent ? measured.maxContent : measured.minContent;
 	let basis = flex["flex-basis"];

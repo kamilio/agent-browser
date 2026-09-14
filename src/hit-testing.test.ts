@@ -11,6 +11,7 @@ import { DocumentQueries } from "./selectors.js";
 import { documentStyles } from "./styles.js";
 import { ScriptDom, type ScriptHostObjectDefinition } from "./script-dom.js";
 import { documentGeometry } from "./document-geometry.js";
+import { documentElementScroll } from "./element-scroll.js";
 import { rasterizeDocument } from "./document-raster.js";
 import { documentImages } from "./document-images.js";
 import { createRaster } from "./raster.js";
@@ -277,7 +278,6 @@ it.each([
 	"position:sticky;transform:translateY(1px)",
 	"transform:translateX(1px)",
 	"pointer-events:visiblepainted",
-	"overflow:hidden",
 	"opacity:0.5",
 ])("fails closed for unsupported hit-affecting CSS %s", (rule) => {
 	const { tree, hits, id } = fixture(
@@ -290,6 +290,31 @@ it.each([
 	tree.setTextContent(id("style"), "#target{width:40px;height:30px}");
 	expect(hits.elementFromPoint(1, 1)).toBe(id("#target"));
 });
+
+it.each(["hidden", "clip"])(
+	"clips descendant hit regions for supported overflow:%s",
+	(overflow) => {
+		const { tree, hits, id } = fixture(
+			'<main><div id="target"><div id="child"></div></div></main>',
+			`#target{width:40px;height:30px;overflow:${overflow}}#child{width:60px;height:50px}`,
+		);
+		expect(hits.elementFromPoint(10, 10)).toBe(id("#child"));
+		expect(hits.elementFromPoint(50, 10)).toBe(id("main"));
+		expect(documentElementScroll(tree).to(id("#target"), 12, 8)).toBe(
+			overflow === "hidden",
+		);
+		expect(
+			documentGeometry(tree).getBoundingClientRect(id("#child")),
+		).toMatchObject({
+			x: overflow === "hidden" ? -12 : 0,
+			y: overflow === "hidden" ? -8 : 0,
+			width: 60,
+			height: 50,
+		});
+		expect(hits.elementFromPoint(10, 10)).toBe(id("#child"));
+		expect(hits.elementFromPoint(50, 10)).toBe(id("main"));
+	},
+);
 
 it("bounds query, region, result and cumulative work without partial successes", () => {
 	const { tree } = fixture();

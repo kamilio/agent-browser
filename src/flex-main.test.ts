@@ -384,7 +384,6 @@ it.each([
 	"#container{flex-direction:column}",
 	"#first{display:flex;flex-direction:column;flex-wrap:wrap;position:absolute}",
 	"#first{display:table}",
-	"#first{overflow:hidden}",
 	"#first{writing-mode:vertical-rl}",
 ])(
 	"rejects an unsupported prerequisite rather than fabricating sizes: %s",
@@ -394,6 +393,22 @@ it.each([
 		);
 	},
 );
+it("admits hidden overflow and zeros only the scrollable flex item's automatic minimum", () => {
+	const result = fixture("#first{overflow:hidden}").resolve(20);
+	expect(result.items[0]).toMatchObject({
+		minContent: 24,
+		maxContent: 42,
+		minSize: 0,
+		minimumSource: "scrollable",
+	});
+	expect(result.items[1]).toMatchObject({
+		minSize: 12,
+		minimumSource: "content-based",
+	});
+	expect(
+		result.resolved.lines[0].items.map((item) => item.contentSize),
+	).toEqual([8, 12]);
+});
 it("does not hide an unrelated unsupported layout issue during scoped measurement", () => {
 	const { tree, id, resolve } = fixture();
 	tree.append(

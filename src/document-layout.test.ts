@@ -478,14 +478,29 @@ it("enforces inherited compatibility and work/numeric limits instead of guessing
 			'<div style="height:16777216px"></div><div style="height:1px"></div>',
 		).layout(),
 	).toThrow("length limit");
+	const sticky = fixture(
+		'<div id="port" style="position:sticky;overflow:auto;width:40px;height:20px"><div id="content" style="width:80px;height:40px">Text</div></div>',
+	);
+	expect(sticky.box("#port")).toMatchObject({
+		contentWidth: 40,
+		contentHeight: 20,
+	});
+	expect(sticky.box("#content")).toMatchObject({
+		contentWidth: 80,
+		contentHeight: 40,
+	});
+	expect(sticky.layout().flowHeight).toBe(20);
+	const wrapped = fixture(
+		'<div id="port" style="display:flex;flex-direction:column;flex-wrap:wrap;position:sticky;overflow:hidden;width:40px;height:20px">Text</div>',
+	);
+	expect(wrapped.box("#port")).toMatchObject({
+		contentWidth: 40,
+		contentHeight: 20,
+	});
+	expect(wrapped.layout().metrics.glyphs).toBe(4);
 	expect(() =>
-		fixture('<div style="position:sticky;overflow:auto">Text</div>').layout(),
-	).toThrow();
-	expect(() =>
-		fixture(
-			'<div style="display:flex;flex-direction:column;flex-wrap:wrap;position:sticky;overflow:hidden">Text</div>',
-		).layout(),
-	).toThrow();
+		fixture('<fieldset style="overflow:hidden">Text</fieldset>').layout(),
+	).toThrow("overflow-layout-not-supported");
 	expect(() =>
 		fixture(
 			'<div style="height:16777200px"></div><div style="height:0;line-height:20px">Text</div>',

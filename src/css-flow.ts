@@ -23,7 +23,7 @@ export const flowStyleCapabilities = Object.freeze({
 	partial: true,
 	properties: cssFlowProperties,
 	shorthands: Object.freeze(["overflow"]),
-	rendering: "static-relative-absolute-fixed-sticky-visible-overflow",
+	rendering: "static-relative-absolute-fixed-sticky-bounded-overflow",
 	overflowComputation: "2026-editor-draft-clip-preserved",
 	positionedLayout: "partial-ltr-physical-and-static-insets",
 	relativePositioning: "ltr-css2-physical-insets",
@@ -33,12 +33,12 @@ export const flowStyleCapabilities = Object.freeze({
 	fixedPositioning: "viewport-root-scroll",
 	staticPositionFallback: "hypothetical-flow-and-sole-flex-item",
 	inlinePositionedContainingBlocks: false,
-	stickyPositioning: "root-scrollport-ltr-physical-insets",
+	stickyPositioning: "nearest-scrollport-ltr-physical-insets",
 	floats: true,
 	floatLayout: "physical-left-right-block-inline-replaced-flow-root",
 	floatClearance: "floating-boxes-only",
 	clearance: false,
-	overflowClipping: false,
+	overflowClipping: true,
 });
 const wide = new Set(["initial", "inherit", "unset", "revert"]);
 const keywords: Record<CssFlowProperty, readonly string[]> = {

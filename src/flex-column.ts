@@ -345,6 +345,7 @@ export function layoutFormattingColumnContainer(
 			vertical.maximum ?? Number.POSITIVE_INFINITY,
 		);
 		if (style["min-height"] !== "auto") minimum = vertical.minimum;
+		else if (node.scrollableOverflow) minimum = 0;
 		let basis =
 			ownFlex["flex-basis"] === "auto" ? style.height : ownFlex["flex-basis"];
 		if (
@@ -397,7 +398,11 @@ export function layoutFormattingColumnContainer(
 						? "min-content"
 						: "max-content",
 				minimumSource:
-					style["min-height"] === "auto" ? "content-based" : "explicit",
+					style["min-height"] !== "auto"
+						? "explicit"
+						: node.scrollableOverflow
+							? "scrollable"
+							: "content-based",
 				definiteCrossSize:
 					cross.stretch || cross.specified !== null
 						? (crossWidths.get(id)?.contentWidth ?? null)

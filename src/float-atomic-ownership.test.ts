@@ -244,7 +244,6 @@ it.each([
 
 it.each([
 	["logical clearance", "", '<div style="clear:inline-start">A</div>'],
-	["clipped overflow", "#atom{overflow:hidden}", ""],
 	["unsupported property", "#atom{animation-name:spin}", ""],
 ])(
 	"preserves the independent %s guard with atomic and float content present",
@@ -265,6 +264,25 @@ it.each([
 		expect(snapshotDocument(tree)).toEqual(before);
 	},
 );
+
+it("clips atomic descendants beside a float without changing their ownership or geometry", () => {
+	const { tree, id, rect } = fixture(
+		"#atom{overflow:hidden;height:8px}",
+		'<span id="float"></span><span id="atom" class="atom"><span id="spill" style="display:block;width:24px;height:8px;background:lime"></span></span>',
+	);
+	const before = snapshotDocument(tree);
+	const revision = tree.revision;
+	expect(rect("#float")).toMatchObject({ x: 0, y: 0, width: 8, height: 24 });
+	expect(rect("#atom")).toMatchObject({ x: 8, y: 0, width: 12, height: 8 });
+	expect(rect("#spill")).toMatchObject({ x: 8, y: 0, width: 24, height: 8 });
+	const hits = documentHitTesting(tree);
+	expect(hits.elementFromPoint(9, 4)).toBe(id("#spill"));
+	expect(hits.elementFromPoint(21, 4)).not.toBe(id("#spill"));
+	expect(pixel(tree, 9, 4)).toEqual([0, 255, 0, 255]);
+	expect(pixel(tree, 21, 4)).not.toEqual([0, 255, 0, 255]);
+	expect(tree.revision).toBe(revision);
+	expect(snapshotDocument(tree)).toEqual(before);
+});
 
 it("preserves the existing absolute-positioned blockification path beside a float", () => {
 	const { tree, id, rect } = fixture(

@@ -14,6 +14,7 @@ import { rasterizeDisclosureMarker } from "./disclosure-marker.js";
 import { rasterizeSvgScene } from "./svg-projection.js";
 import { LayoutGeometry } from "./document-geometry.js";
 import { documentImages } from "./document-images.js";
+import { projectScrollLayout } from "./document-overflow.js";
 import { paintImageAlternative } from "./image-alternative.js";
 import {
 	type DocumentBox,
@@ -44,8 +45,12 @@ import { resolveVisualTarget } from "./generated-controls.js";
 import { layoutContentItems } from "./layout-paint-order.js";
 import { layoutNumber } from "./layout-values.js";
 import { projectFixedLayout } from "./out-of-flow-positioning.js";
-import { projectStickyLayout } from "./sticky-positioning.js";
 import { paintOutline } from "./outline-raster.js";
+import {
+	layoutOverflowClips,
+	rasterOverflowClips,
+	type OverflowClip,
+} from "./overflow-clips.js";
 import {
 	type RasterImage,
 	type Rgba,
@@ -53,6 +58,7 @@ import {
 	paintBitmapGlyph,
 	paintRasterImage,
 	paintRasterRect,
+	withRasterClips,
 } from "./raster.js";
 import { documentStyles } from "./styles.js";
 import { paintCollapsedTableBorders } from "./table-collapsed-raster.js";
@@ -188,7 +194,7 @@ function paintDocumentLayout(
 	const viewport = layout.text.horizontal.formatting.viewport;
 	const scroll = documentScrollPosition(tree);
 	layout = projectFixedLayout(
-		projectStickyLayout(layout, scroll, maxWork),
+		projectScrollLayout(tree, layout, maxWork),
 		scroll,
 		maxWork,
 	);
@@ -291,7 +297,25 @@ function paintDocumentLayout(
 			);
 	};
 	charge(clip.width * clip.height);
-	const image = createRaster(clip.width, clip.height, [255, 255, 255, 255]);
+	const canvas = createRaster(clip.width, clip.height, [255, 255, 255, 255]);
+	let image: Readonly<RasterImage> = canvas;
+	const overflow = layoutOverflowClips(layout, charge);
+	const clipViews = new Map<OverflowClip, Readonly<RasterImage>>();
+	const destination = (chain: OverflowClip | undefined) => {
+		if (!chain) return canvas;
+		charge();
+		let view = clipViews.get(chain);
+		if (!view) {
+			view = withRasterClips(
+				canvas,
+				rasterOverflowClips(chain, clip, charge),
+				charge,
+			);
+			charge();
+			clipViews.set(chain, view);
+		}
+		return view;
+	};
 	const nodes = layout.text.horizontal.formatting.nodes;
 	const roundedItems = nodes.some((node) => node.radius)
 		? [...layoutContentItems(layout, charge)]
@@ -710,7 +734,7 @@ function paintDocumentLayout(
 		}
 		if (node.imageAlternative)
 			paintImageAlternative(
-				image,
+				destination(overflow.get(id)?.content),
 				node.imageAlternative,
 				originX,
 				originY,
@@ -726,7 +750,7 @@ function paintDocumentLayout(
 			if (decoration) charge(32 + Math.ceil(bottom - top + 1) * 2);
 			charge(Math.ceil(right - left + 1) * Math.ceil(bottom - top + 1) * 4);
 			paintRasterImage(
-				image,
+				destination(overflow.get(id)?.content),
 				node.marker
 					? rasterizeDisclosureMarker(
 							node.marker,
@@ -780,6 +804,20 @@ function paintDocumentLayout(
 		else metrics.paintedImages++;
 	};
 	for (const item of roundedItems ?? layoutContentItems(layout, charge)) {
+		if (overflow.size > 0) {
+			charge();
+			const chain =
+				item.kind === "table-borders"
+					? overflow.get(item.box.id)?.content
+					: item.kind === "marker"
+						? overflow.get(item.marker.id)?.content
+						: item.kind === "glyph"
+							? overflow.get(item.glyph.formattingId)?.border
+							: item.kind === "fragment"
+								? overflow.get(item.fragment.formattingId)?.border
+								: overflow.get(item.box.id)?.border;
+			image = destination(chain);
+		}
 		const decoration = rounded?.decorations.get(item);
 		if (item.kind === "table-borders") {
 			const segments = item.box.collapsedTableBorders ?? [];
@@ -836,7 +874,13 @@ function paintDocumentLayout(
 		}
 		if (item.kind === "box") {
 			paintBox(item.box, decoration);
-			paintEmptyEditableCaret(caret, item.box, image, clip, charge);
+			paintEmptyEditableCaret(
+				caret,
+				item.box,
+				destination(overflow.get(item.box.id)?.content),
+				clip,
+				charge,
+			);
 			continue;
 		}
 		if (item.kind === "image") {
@@ -952,7 +996,7 @@ function paintDocumentLayout(
 		partial: true as const,
 		layout,
 		clip: Object.freeze({ ...clip }),
-		image,
+		image: canvas,
 		canvasBackground,
 		metrics: Object.freeze(metrics),
 	});

@@ -22,7 +22,7 @@ it("advertises the partial physical float profile without general clearance", ()
 		floatLayout: "physical-left-right-block-inline-replaced-flow-root",
 		floatClearance: "floating-boxes-only",
 		clearance: false,
-		overflowClipping: false,
+		overflowClipping: true,
 	});
 });
 

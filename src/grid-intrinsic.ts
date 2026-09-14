@@ -19,7 +19,12 @@ export function gridAutomaticMinimum(
 	gap: number,
 	available: number | null,
 	charge: (amount?: number) => void,
+	scrollableOverflow = false,
 ): number {
+	if (scrollableOverflow) {
+		charge();
+		return layoutNumber(Math.max(0, edges));
+	}
 	let automatic = false;
 	let flexible = false;
 	let definiteMaximum = gap * Math.max(0, end - start - 1);
@@ -54,7 +59,8 @@ export function gridColumnContributions(
 		const measured = widths.get(item.id);
 		if (!measured)
 			throw new AgentBrowserError("unsupported", "Missing intrinsic Grid item");
-		const style = formatting.nodes[item.id].box ?? initialBoxStyle;
+		const node = formatting.nodes[item.id];
+		const style = node.box ?? initialBoxStyle;
 		const borders = resolveBorders(style);
 		const padding =
 			resolveLayoutLength(style["padding-left"], 0) +
@@ -79,6 +85,7 @@ export function gridColumnContributions(
 						gap,
 						available,
 						charge,
+						node.scrollableOverflow,
 					)
 				: Math.max(
 						0,

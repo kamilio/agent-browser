@@ -101,9 +101,8 @@ it("resolves cascade, inheritance, currentcolor and alpha without layout", () =>
 	expect(style.color).toBe("rgb(102, 51, 153)");
 	expect(style.backgroundColor).toBe(style.color);
 	expect(documentGeometry(tree).metrics().builds).toBe(0);
-	expect(() => style.width).toThrowError(
-		expect.objectContaining({ code: "unsupported" }),
-	);
+	expect(style.width).toBe("200px");
+	expect(documentGeometry(tree).metrics().builds).toBe(1);
 });
 
 it("returns used block widths, heights, margins and padding, not authored percentages", () => {

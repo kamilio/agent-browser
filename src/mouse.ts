@@ -3,8 +3,9 @@ import {
 	clickTargetAriaDisabled,
 	clickTargetContains,
 } from "./click-target.js";
-import { documentScroll, documentScrollPosition } from "./document-scroll.js";
+import { documentScrollPosition } from "./document-scroll.js";
 import type { DocumentTree } from "./document.js";
+import { documentElementScroll } from "./element-scroll.js";
 import {
 	type DoubleClickOptions,
 	type DoubleClickResult,
@@ -86,7 +87,7 @@ export const mouseCapabilities = Object.freeze({
 	textCaretPlacement: "primary-press-native-software-control",
 	controlShiftSelection: "focused-native-anchor-primary-press",
 	doubleClick: false,
-	scrolling: "root-viewport-pixel-wheel",
+	scrolling: "nested-scrollport-pixel-wheel",
 	wheelDeltaMode: "pixel",
 	modifierWheelDefaults: false,
 	screenCoordinates: false,
@@ -735,14 +736,38 @@ export class DocumentMouse {
 					"unsupported",
 					"Modified wheel defaults are not implemented",
 				);
-			const changed = documentScroll(this.tree).by(deltaX, deltaY);
-			if (changed) {
+			const scrolling = documentElementScroll(this.tree);
+			const fallback = this.tree
+				.get(this.tree.root)
+				.children.find((id) => this.tree.get(id).kind === "element");
+			const start = this.tree.isConnected(target) ? target : fallback;
+			const chain = start === undefined ? [] : scrolling.chain(start, true);
+			let remainingX = deltaX;
+			let remainingY = deltaY;
+			let changed = false;
+			for (const id of chain) {
+				if (!remainingX && !remainingY) break;
+				if (!this.tree.isConnected(id)) continue;
+				const port = scrolling.port(id);
+				if (!port) continue;
+				const before = scrolling.get(id);
+				if (!scrolling.userBy(id, remainingX, remainingY)) continue;
+				const after = scrolling.get(id);
+				const horizontal = remainingX - (after.scrollLeft - before.scrollLeft);
+				const vertical = remainingY - (after.scrollTop - before.scrollTop);
+				remainingX =
+					remainingX > 0 ? Math.max(0, horizontal) : Math.min(0, horizontal);
+				remainingY =
+					remainingY > 0 ? Math.max(0, vertical) : Math.min(0, vertical);
+				changed = true;
+				const root = port.id === -1;
 				yield {
-					target: this.tree.root,
-					event: new BrowserEvent("scroll", { bubbles: true }),
+					target: root ? this.tree.root : id,
+					event: new BrowserEvent("scroll", { bubbles: root }),
 				};
-				yield* this.refreshTarget();
+				this.ensureOpen();
 			}
+			if (changed) yield* this.refreshTarget();
 		}
 		return {
 			...this.result(target, !allowed),

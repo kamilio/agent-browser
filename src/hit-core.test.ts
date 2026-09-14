@@ -115,7 +115,7 @@ it("exposes the hit-test and scroll-into-view commands without changing inspecti
 		},
 		scrollIntoView: {
 			command: "scroll-into-view",
-			containerScope: "root-only",
+			containerScope: "nested-scrollports",
 		},
 		clientGeometry: { scroll: "root-viewport" },
 		interactionStyles: { properties: ["pointer-events"] },

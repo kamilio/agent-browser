@@ -84,7 +84,7 @@ it("parses and advertises a strict extension command with alignment options", as
 	expect((await host.execute(["capabilities"])).data).toMatchObject({
 		scrollIntoView: {
 			command: "scroll-into-view",
-			containerScope: "root-only",
+			containerScope: "nested-scrollports",
 			smooth: false,
 		},
 	});

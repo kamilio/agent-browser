@@ -521,11 +521,6 @@ it.each(modes)(
 );
 
 it.each([
-	{ css: "#first{overflow:auto}", issue: "overflow-layout-not-supported" },
-	{
-		css: "#first{position:sticky;overflow:hidden}",
-		issue: "overflow-layout-not-supported",
-	},
 	{ css: "#first{display:table}", issue: "table-item-layout-not-supported" },
 	{
 		css: "#container{justify-items:center}",
@@ -544,6 +539,28 @@ it.each([
 			);
 			expectErrorCode(() => layoutDocument(actual.tree), "unsupported");
 			expectErrorCode(() => layoutDocument(control.tree), "unsupported");
+		}
+	},
+);
+
+it.each(["#first{overflow:auto}", "#first{position:sticky;overflow:hidden}"])(
+	"admits scrollable items without activating their ignored floats: %s",
+	(css) => {
+		for (const mode of modes) {
+			const actual = fixture(`${containerCss(mode)}.item{float:right}${css}`);
+			const control = fixture(`${containerCss(mode)}${css}`);
+			const formatting = expectAnchors(actual, []);
+			expect(
+				formatting.issues["overflow-layout-not-supported"],
+			).toBeUndefined();
+			expect(actual.matches(formatting, "#first")[0].scrollableOverflow).toBe(
+				true,
+			);
+			expect(actual.rectangle("#first")).toMatchObject({
+				width: 26,
+				height: 20,
+			});
+			expectEquivalent(actual, control);
 		}
 	},
 );

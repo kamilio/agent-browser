@@ -238,17 +238,35 @@ it("rejects rendered control metrics rather than guessing internal scrolling", (
 	expect(() => read()).toThrow(/Control scroll/);
 });
 
-it("fails closed on unsupported clipping or positioned layout", () => {
-	for (const style of [
-		"overflow:auto",
-		"overflow:hidden",
-		"position:sticky;transform:translateY(1px)",
-	]) {
-		const { read } = fixture(
-			`<div id="target" style="${style};width:100px;height:100px">Text</div>`,
+it.each(["auto", "hidden"])(
+	"measures and clamps supported overflow:%s scrollports",
+	(overflow) => {
+		const { read, owner, id } = fixture(
+			`<div id="target" style="overflow:${overflow};width:100px;height:100px"><div style="width:180px;height:220px"></div></div>`,
 		);
-		expect(() => read()).toThrow();
-	}
+		expect(read()).toEqual({
+			scrollLeft: 0,
+			scrollTop: 0,
+			scrollWidth: 180,
+			scrollHeight: 220,
+		});
+		expect(owner.to(id("#target"), 25, 45)).toBe(true);
+		expect(read()).toMatchObject({ scrollLeft: 25, scrollTop: 45 });
+		expect(owner.to(id("#target"), 999, 999)).toBe(true);
+		expect(read()).toEqual({
+			scrollLeft: 80,
+			scrollTop: 120,
+			scrollWidth: 180,
+			scrollHeight: 220,
+		});
+	},
+);
+
+it("fails closed on unsupported transformed positioned layout", () => {
+	const { read } = fixture(
+		'<div id="target" style="position:sticky;transform:translateY(1px);width:100px;height:100px">Text</div>',
+	);
+	expect(() => read()).toThrow();
 });
 
 it.each([{ maxWork: 1 }, { maxElements: 1 }])(

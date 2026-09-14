@@ -2,6 +2,7 @@ import { afterEach, expect, it } from "vitest";
 import { documentGeometry } from "./document-geometry.js";
 import { layoutDocument } from "./document-layout.js";
 import { documentScroll } from "./document-scroll.js";
+import { documentElementScroll } from "./element-scroll.js";
 import type { DocumentTree } from "./document.js";
 import { domRangeOwner } from "./dom-range.js";
 import { parseHtmlDocument } from "./html-parser.js";
@@ -308,12 +309,41 @@ it("shares glyph coordinates after viewport-dependent wrapping", () => {
 it("retains unsupported layout errors rather than returning empty geometry", () => {
 	const { range, text } = fixture(
 		undefined,
-		"main{position:sticky;overflow:auto}",
+		"main{position:sticky;transform:translateY(1px)}",
 	);
 	range.selectNodeContents(text());
 	expect(() => rangeClientRects(range)).toThrow(
 		expect.objectContaining({ code: "unsupported" }),
 	);
+});
+
+it("keeps text range rectangles unclipped while following element scroll offsets", () => {
+	const { tree, range, text, id } = fixture(
+		undefined,
+		"main{position:sticky;overflow:auto;width:18px;height:10px;white-space:nowrap}",
+	);
+	range.selectNodeContents(text());
+	expect(rangeClientRects(range)).toMatchObject([
+		{ x: 0, y: 1, width: 30, height: 8 },
+	]);
+	expect(documentElementScroll(tree).to(id("#target"), 6, 0)).toBe(true);
+	expect(rangeClientRects(range)).toMatchObject([
+		{ x: -6, y: 1, width: 30, height: 8 },
+	]);
+	expect(rangeBoundingClientRect(range)).toMatchObject({
+		x: -6,
+		y: 1,
+		width: 30,
+		height: 8,
+	});
+	expect(
+		documentGeometry(tree).getBoundingClientRect(id("#target")),
+	).toMatchObject({
+		x: 0,
+		y: 0,
+		width: 18,
+		height: 10,
+	});
 });
 
 it("validates bounds and charges source, layout and rectangle work", () => {

@@ -1,6 +1,7 @@
 import { afterEach, expect, it } from "vitest";
 import { documentGeometry } from "./document-geometry.js";
 import { documentScroll } from "./document-scroll.js";
+import { documentElementScroll } from "./element-scroll.js";
 import type { DocumentTree } from "./document.js";
 import { runEventAction } from "./event-actions.js";
 import { parseHtmlDocument } from "./html-parser.js";
@@ -212,13 +213,34 @@ it.each(["all", "nearest"])(
 	},
 );
 
-it.each(["position:sticky;transform:translateY(1px)", "overflow:auto"])(
+it.each(["position:sticky;transform:translateY(1px)"])(
 	"does not guess geometry for unsupported %s",
 	(css) => {
 		const { run } = fixture(`#target{${css}}`);
 		expect(() => run()).toThrow();
 	},
 );
+
+it("reveals a scrollable target without scrolling its own contents", () => {
+	const { tree, id, run } = fixture(
+		"#target{overflow:auto}",
+		'<div id="target" tabindex="0"><div style="width:60px;height:80px"></div></div>',
+	);
+	const elements = documentElementScroll(tree);
+	expect(elements.to(id, 5, 7)).toBe(true);
+	expect(run()).toMatchObject({
+		hasBox: true,
+		changed: true,
+		scroll: { x: 70, y: 160 },
+	});
+	expect(documentGeometry(tree).getBoundingClientRect(id)).toMatchObject({
+		x: 80,
+		y: 0,
+		width: 20,
+		height: 20,
+	});
+	expect(elements.get(id)).toMatchObject({ scrollLeft: 5, scrollTop: 7 });
+});
 
 it("returns a no-op plan for detached nodes and bounds repeated calls", () => {
 	const { tree, owner } = fixture();

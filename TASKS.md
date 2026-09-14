@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: native nested overflow and scrolling
+
+**PROGRESS; overall browser goal remains ACTIVE.** Supported ordinary overflow
+boxes now have bounded extents, stable element scroll positions, shared
+projection/clipping, nearest-scrollport sticky constraints and automatic
+flex/grid minima. Guest methods, queued element events, nested reveal, wheel and
+keyboard routing are integrated. Unsupported special-box cases remain guarded.
+
+Final focus: **4,142 pass/0 fail/2 unchanged exclusions**, 105 selected files.
+The 272 new cases all pass; five cases are added to existing test files.
+Review reproduced and corrected inline image/control metric loss, stationary
+sticky grid-area constraints and missing SVG descendant clip ownership.
+Failed candidates and the first broad run remain recorded; the latter omitted
+two existing exclusions and the baseline per-test timeout. The final gate
+restores those exact settings, without new exclusions or higher engine limits.
+
+Final selected gate: **22,050 pass/0 fail/2 unchanged exclusions**,
+436 selected files, 435 strict roots, 788 manifest entries and
+352 unselected entries. Build, strict checking, scoped formatting and
+inventory audit pass; 1,341 source and 2,172 compiled files are retained.
+See `OVERFLOW-SCROLLING.md` and `node_modules/.cache/native-validation/native-overflow-september14-round01/` for exact boundaries and evidence.
+
+Original-resource Python replay is prepared but not executed at this checkpoint.
+No new live website, credential/passkey/device, SafeJS, socket, TTY or challenge
+acceptance follows from this native gate. The stopped CSSOM acquisition remains
+closed; its offending selector and exact API algorithms are not established.
+Broader website flows, performance, original research and outstanding acceptance
+gates remain work to do. No push is part of this checkpoint.
+
 ### September 14: bounded sibling matching without larger budgets
 
 **PROGRESS; overall browser goal remains ACTIVE.** General-sibling matching

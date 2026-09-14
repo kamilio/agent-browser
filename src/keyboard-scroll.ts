@@ -2,15 +2,15 @@ import { documentScroll } from "./document-scroll.js";
 import { contentEditableState } from "./content-editability.js";
 import { summaryDetails } from "./details.js";
 import type { DocumentTree } from "./document.js";
+import { documentElementScroll } from "./element-scroll.js";
 import { AgentBrowserError } from "./errors.js";
 import type { EventAction } from "./event-actions.js";
 import { BrowserEvent } from "./events.js";
 import type { KeyboardKey } from "./keyboard-state.js";
-import { documentStyles } from "./styles.js";
 
 export const keyboardScrollCapabilities = Object.freeze({
 	partial: true,
-	profile: "instant-ltr-root-viewport",
+	profile: "instant-ltr-nested-scrollports",
 	keys: [
 		"ArrowLeft",
 		"ArrowRight",
@@ -86,47 +86,66 @@ export function* keyboardScrollAction(
 		if (editable) return;
 	}
 	const scroll = documentScroll(tree);
-	const position = scroll.get();
+	const scrolling = documentElementScroll(tree);
+	const root = tree
+		.get(tree.root)
+		.children.find((target) => tree.get(target).kind === "element");
+	const target = id !== null && tree.isConnected(id) ? id : root;
+	const chain = target === undefined ? [] : scrolling.chain(target, true);
 	const line = keyboardScrollCapabilities.linePixels;
-	const page = Math.max(
-		1,
-		documentStyles(tree).viewport.height *
-			keyboardScrollCapabilities.pageFraction,
-	);
-	let changed = false;
-	switch (key.key) {
-		case "ArrowLeft":
-			changed = scroll.by(-line, 0);
+	const horizontal = key.key === "ArrowLeft" || key.key === "ArrowRight";
+	for (const owner of chain) {
+		const allowed = scrolling.allows(owner, true);
+		if (horizontal ? !allowed.x : !allowed.y) continue;
+		const port = scrolling.port(owner);
+		if (!port) continue;
+		const position = scrolling.get(owner);
+		const page = Math.max(
+			1,
+			port.height * keyboardScrollCapabilities.pageFraction,
+		);
+		let changed = false;
+		switch (key.key) {
+			case "ArrowLeft":
+				changed = scrolling.userBy(owner, -line, 0);
+				break;
+			case "ArrowRight":
+				changed = scrolling.userBy(owner, line, 0);
+				break;
+			case "ArrowUp":
+				changed = scrolling.userBy(owner, 0, -line);
+				break;
+			case "ArrowDown":
+				changed = scrolling.userBy(owner, 0, line);
+				break;
+			case "PageUp":
+				changed = scrolling.userBy(owner, 0, -page);
+				break;
+			case "PageDown":
+				changed = scrolling.userBy(owner, 0, page);
+				break;
+			case "Home":
+				changed = scrolling.to(owner, position.scrollLeft, 0);
+				break;
+			case "End":
+				changed = scrolling.to(
+					owner,
+					position.scrollLeft,
+					scrolling.bounds(owner).y,
+				);
+				break;
+			case " ":
+				changed = scrolling.userBy(owner, 0, key.shift ? -page : page);
+				break;
+		}
+		if (changed) {
+			const root = port.id === -1;
+			yield {
+				target: root ? tree.root : owner,
+				event: new BrowserEvent("scroll", { bubbles: root }),
+			};
 			break;
-		case "ArrowRight":
-			changed = scroll.by(line, 0);
-			break;
-		case "ArrowUp":
-			changed = scroll.by(0, -line);
-			break;
-		case "ArrowDown":
-			changed = scroll.by(0, line);
-			break;
-		case "PageUp":
-			changed = scroll.by(0, -page);
-			break;
-		case "PageDown":
-			changed = scroll.by(0, page);
-			break;
-		case "Home":
-			changed = scroll.to(position.x, 0);
-			break;
-		case "End":
-			changed = scroll.to(position.x, scroll.bounds().y);
-			break;
-		case " ":
-			changed = scroll.by(0, key.shift ? -page : page);
-			break;
+		}
 	}
-	if (changed)
-		yield {
-			target: tree.root,
-			event: new BrowserEvent("scroll", { bubbles: true }),
-		};
 	return scroll.get();
 }

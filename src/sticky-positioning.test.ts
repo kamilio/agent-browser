@@ -2,6 +2,7 @@ import { afterEach, expect, it } from "vitest";
 import { documentGeometry } from "./document-geometry.js";
 import { prepareDocumentRaster, rasterizeDocument } from "./document-raster.js";
 import { documentScroll } from "./document-scroll.js";
+import { documentElementScroll } from "./element-scroll.js";
 import type { DocumentTree } from "./document.js";
 import { domRangeOwner } from "./dom-range.js";
 import { runEventAction } from "./event-actions.js";
@@ -511,9 +512,12 @@ it("isolates sticky presentation by document and revokes public owners on close"
 });
 
 it.each(["auto", "scroll", "hidden"])(
-	"retains the unsupported nested overflow:%s guard instead of treating it as root sticky",
+	"anchors sticky descendants to the nearest overflow:%s port rather than the viewport",
 	(overflow) => {
-		const { tree, id, hits, scroll, move } = fixture();
+		const { tree, id, hits, scroll, move, rect } = fixture(
+			"#host{height:160px}#after{height:200px}",
+		);
+		const elements = documentElementScroll(tree);
 		const interactions = documentInteractions(tree);
 		const owner = documentScrollIntoView(tree);
 		const run = () =>
@@ -525,9 +529,25 @@ it.each(["auto", "scroll", "hidden"])(
 		expect(hits.elementFromPoint(5, 15)).toBe(id("#target"));
 		expect(run()).toMatchObject({ changed: false });
 		tree.setAttribute(id("#host"), "style", `overflow:${overflow}`);
-		expect(() => hits.elementFromPoint(5, 15)).toThrow();
-		expect(run).toThrow();
+		expect(scroll.get()).toEqual({ x: 0, y: 80 });
+		expect(elements.bounds(id("#host"))).toEqual({ x: 0, y: 100 });
+		expect(rect().y).toBe(-40);
+		expect(hits.elementFromPoint(5, 15)).not.toBe(id("#target"));
+		move(0, 5);
+		expect(rect().y).toBe(35);
+		expect(elements.to(id("#host"), 0, 50)).toBe(true);
+		expect(rect().y).toBe(5);
+		expect(hits.elementFromPoint(5, 10)).toBe(id("#target"));
+		expect(run()).toMatchObject({ changed: false });
+		expect(elements.get(id("#host")).scrollTop).toBe(50);
+		expect(scroll.get()).toEqual({ x: 0, y: 5 });
+		move(0, 15);
+		expect(rect().y).toBe(-5);
 		tree.setAttribute(id("#host"), "style", "overflow:visible");
+		expect(elements.get(id("#host")).scrollTop).toBe(0);
+		expect(scroll.get()).toEqual({ x: 0, y: 15 });
+		expect(rect().y).toBe(25);
+		move(0, 80);
 		expect(scroll.get()).toEqual({ x: 0, y: 80 });
 		expect(hits.elementFromPoint(5, 15)).toBe(id("#target"));
 	},

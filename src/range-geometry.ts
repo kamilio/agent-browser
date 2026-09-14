@@ -1,6 +1,6 @@
 import { type ClientRectangle, LayoutGeometry } from "./document-geometry.js";
 import { layoutDocument } from "./document-layout.js";
-import { projectStickyLayout } from "./sticky-positioning.js";
+import { projectScrollLayout } from "./document-overflow.js";
 import { documentScrollPosition } from "./document-scroll.js";
 import type { DomBoundaryPoint, DomRange } from "./dom-range.js";
 import { AgentBrowserError } from "./errors.js";
@@ -176,9 +176,9 @@ export function rangeClientRects(
 						(first < source.start + source.length && last > source.start));
 	});
 	if (!chosen.length) return empty;
-	const layout = projectStickyLayout(
+	const layout = projectScrollLayout(
+		tree,
 		layoutDocument(tree, { maxWork: limits.maxWork - work }),
-		documentScrollPosition(tree),
 		limits.maxWork - work,
 	);
 	charge(
@@ -208,6 +208,14 @@ export function rangeClientRects(
 	}
 	const relative = new Map<number, Readonly<{ left: number; top: number }>>();
 	const sticky = new Map<number, Readonly<{ left: number; top: number }>>();
+	const scrolled = new Map<
+		number,
+		NonNullable<typeof layout.scrollOffsets>[number]
+	>();
+	for (const offset of layout.scrollOffsets ?? []) {
+		charge();
+		scrolled.set(offset.id, offset);
+	}
 	for (const offset of layout.stickyOffsets ?? []) {
 		charge();
 		sticky.set(offset.id, offset);
@@ -226,6 +234,11 @@ export function rangeClientRects(
 		if (existing) return existing;
 		let left = (sticky.get(id)?.left ?? 0) - (sticky.get(contextId)?.left ?? 0);
 		let top = (sticky.get(id)?.top ?? 0) - (sticky.get(contextId)?.top ?? 0);
+		left +=
+			(scrolled.get(id)?.left ?? 0) -
+			(scrolled.get(contextId)?.contentLeft ?? 0);
+		top +=
+			(scrolled.get(id)?.top ?? 0) - (scrolled.get(contextId)?.contentTop ?? 0);
 		let ancestor: number | null = id;
 		while (ancestor !== contextId) {
 			charge();

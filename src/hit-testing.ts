@@ -1,5 +1,10 @@
 import { layoutDocument } from "./document-layout.js";
-import { projectStickyLayout } from "./sticky-positioning.js";
+import { projectScrollLayout } from "./document-overflow.js";
+import {
+	layoutOverflowClips,
+	overflowClipContains,
+	type OverflowClip,
+} from "./overflow-clips.js";
 import {
 	prepareRoundedLayout,
 	roundedOwnerKey,
@@ -55,6 +60,7 @@ export interface HitTarget {
 	generated?: string;
 }
 interface HitRegion extends HitTarget {
+	overflow?: OverflowClip;
 	curves?: readonly RoundedDecoration[];
 	contentCurve?: RoundedBox;
 	fixed: boolean;
@@ -191,6 +197,11 @@ export class DocumentHitTesting {
 				targetY >= region.y + region.height
 			)
 				continue;
+			if (
+				region.overflow &&
+				!overflowClipContains(region.overflow, targetX, targetY, this.charge)
+			)
+				continue;
 			if (region.contentCurve) {
 				this.charge(8);
 				if (!roundedBoxContains(region.contentCurve, targetX, targetY))
@@ -237,12 +248,13 @@ export class DocumentHitTesting {
 	}
 	private build(): readonly HitRegion[] {
 		const normal = layoutDocument(this.tree);
-		const layout = projectStickyLayout(
+		const layout = projectScrollLayout(
+			this.tree,
 			normal,
-			documentScrollPosition(this.tree),
 			normal.metrics.work + this.limits.maxWork - this.work,
 		);
 		this.charge(layout.metrics.work - normal.metrics.work);
+		const overflow = layoutOverflowClips(layout, this.charge);
 		const nodes = layout.text.horizontal.formatting.nodes;
 		const roundedItems = nodes.some((node) => node.radius)
 			? [...layoutContentItems(layout, this.charge)]
@@ -313,6 +325,7 @@ export class DocumentHitTesting {
 			y: number,
 			width: number,
 			height: number,
+			content = false,
 		) => {
 			this.charge();
 			if (!nodes[formattingId].visible || width <= 0 || height <= 0) return;
@@ -329,9 +342,12 @@ export class DocumentHitTesting {
 			if (nodes[formattingId].generatedContent)
 				key = roundedOwnerKey(nodes[formattingId]) ?? key;
 			const curves = rounded?.owners.get(key);
+			const chain =
+				overflow.get(formattingId)?.[content ? "content" : "border"];
 			regions.push(
 				Object.freeze({
 					...(curves ? { curves } : {}),
+					...(chain ? { overflow: chain } : {}),
 					id,
 					fixed: fixed.has(formattingId),
 					x,
@@ -351,6 +367,7 @@ export class DocumentHitTesting {
 			const svg = nodes[id].svg;
 			const image = images.get(id);
 			if (svg && image) {
+				const chain = overflow.get(id)?.content;
 				const originX = borderX + image.borderLeft + image.paddingLeft;
 				const originY = borderY + image.borderTop + image.paddingTop;
 				const projection = projectSvgScene(
@@ -379,6 +396,7 @@ export class DocumentHitTesting {
 						Object.freeze({
 							id: shape.id,
 							fixed: fixed.has(id),
+							...(chain ? { overflow: chain } : {}),
 							...(contentCurve ? { contentCurve } : {}),
 							x: originX + shape.paintBounds.x,
 							y: originY + shape.paintBounds.y,
@@ -402,7 +420,14 @@ export class DocumentHitTesting {
 			if (item.kind === "table-borders") continue;
 			if (item.kind === "marker") {
 				const marker = item.marker;
-				append(marker.id, marker.x, marker.y, marker.width, marker.height);
+				append(
+					marker.id,
+					marker.x,
+					marker.y,
+					marker.width,
+					marker.height,
+					true,
+				);
 			} else if (item.kind === "image" || item.kind === "box") {
 				const box = item.box;
 				append(

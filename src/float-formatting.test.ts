@@ -321,7 +321,6 @@ it("preserves floated table structure and remapped ownership without accepting t
 it.each([
 	["float:left", "float-layout-not-supported", 1],
 	["float:right;clear:both", "clear-layout-not-supported", 1],
-	["float:left;overflow:hidden", "overflow-layout-not-supported", 1],
 	["float:left;position:sticky", "float-layout-not-supported", 1],
 ] as const)(
 	"keeps the width guard closed for %s",
@@ -332,6 +331,20 @@ it.each([
 		expect(() => resolveFormattingPageWidths(formatting)).toThrow("issue-free");
 	},
 );
+
+it("admits hidden overflow metadata while preserving the real float width guard", () => {
+	const { formatting, node } = fixture(
+		'<main style="float:left;overflow:hidden;width:20px">text</main>',
+	);
+	expect(node("main")).toMatchObject({
+		floatSide: "left",
+		scrollableOverflow: true,
+		overflow: { x: "hidden", y: "hidden" },
+	});
+	expect(formatting.issues["overflow-layout-not-supported"]).toBeUndefined();
+	expect(formatting.issues["float-layout-not-supported"]).toBe(1);
+	expect(() => resolveFormattingPageWidths(formatting)).toThrow("issue-free");
+});
 
 it("requires a float coordinator even for an isolated floated reflow root", () => {
 	const { formatting, node } = fixture(

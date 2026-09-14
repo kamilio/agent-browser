@@ -5,7 +5,9 @@ import { documentGeometry } from "./document-geometry.js";
 import { layoutDocument } from "./document-layout.js";
 import { rasterizeDocument } from "./document-raster.js";
 import type { DocumentTree } from "./document.js";
+import { documentElementScroll } from "./element-scroll.js";
 import { buildFormattingTree } from "./formatting-tree.js";
+import { documentHitTesting } from "./hit-testing.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { InlineStyles } from "./inline-styles.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
@@ -141,23 +143,34 @@ it("preserves all-auto sticky geometry and capture through CSSOM position reset"
 	expect(reset.metrics.paintedBackgrounds).toBeGreaterThan(0);
 });
 
-it.each([["overflow", "hidden", "visible", "overflow-layout-not-supported"]])(
-	"recovers geometry and capture after resetting %s",
-	(name, value, neutral, issue) => {
+it.each([["overflow", "hidden", "visible"]])(
+	"invalidates clipping and capture without changing geometry when resetting %s",
+	(name, value, neutral) => {
 		const { tree, style, computed, id } = fixture();
+		const child = tree.createElement("div", {
+			style: "width:20px;height:20px;background:blue",
+		});
+		tree.append(id(), child);
 		const geometry = documentGeometry(tree);
+		const hits = documentHitTesting(tree);
 		const before = geometry.getBoundingClientRect(id());
+		const childBefore = geometry.getBoundingClientRect(child);
+		const capture = rasterizeDocument(tree);
+		expect(hits.elementFromPoint(15, 5)).toBe(child);
 		style.setProperty(name, value);
 		expect(computed.getPropertyValue(name)).toBe(value);
-		expect(buildFormattingTree(tree).issues[issue]).toBe(1);
-		expect(() => geometry.getBoundingClientRect(id())).toThrow(
-			expect.objectContaining({ code: "unsupported" }),
-		);
-		expect(() => rasterizeDocument(tree)).toThrow(
-			expect.objectContaining({ code: "unsupported" }),
+		expect(buildFormattingTree(tree).issues).toEqual({});
+		expect(geometry.getBoundingClientRect(id())).toEqual(before);
+		expect(geometry.getBoundingClientRect(child)).toEqual(childBefore);
+		expect(hits.elementFromPoint(5, 5)).toBe(child);
+		expect(hits.elementFromPoint(15, 5)).not.toBe(child);
+		expect(rasterizeDocument(tree).image.pixels).not.toEqual(
+			capture.image.pixels,
 		);
 		style.setProperty(name, neutral);
 		expect(geometry.getBoundingClientRect(id())).toEqual(before);
+		expect(hits.elementFromPoint(15, 5)).toBe(child);
+		expect(rasterizeDocument(tree).image.pixels).toEqual(capture.image.pixels);
 		expect(rasterizeDocument(tree).metrics.paintedBackgrounds).toBeGreaterThan(
 			0,
 		);
@@ -206,18 +219,33 @@ it("ignores overridden, unmatched and display-none unsupported flow", () => {
 	expect(() => layoutDocument(tree)).not.toThrow();
 });
 
-it("keeps important overflow axes and only recovers when both winners change", () => {
-	const { tree, style, computed } = fixture(
+it("keeps important scrollable axes until both cascade winners become visible", () => {
+	const { tree, style, computed, id } = fixture(
 		"#target{overflow:hidden!important}",
 	);
+	tree.append(
+		id(),
+		tree.createElement("div", { style: "width:20px;height:30px" }),
+	);
+	const scroll = documentElementScroll(tree);
 	style.overflow = "visible";
 	expect(computed.overflow).toBe("hidden");
+	expect(scroll.bounds(id())).toEqual({ x: 10, y: 20 });
 	style.setProperty("overflow-x", "visible", "important");
 	expect(computed.overflow).toBe("auto hidden");
-	expect(() => layoutDocument(tree)).toThrow();
+	expect(scroll.bounds(id())).toEqual({ x: 10, y: 20 });
+	expect(scroll.to(id(), 5, 6)).toBe(true);
+	expect(scroll.get(id())).toMatchObject({ scrollLeft: 5, scrollTop: 6 });
 	style.setProperty("overflow-y", "visible", "important");
 	expect(computed.overflow).toBe("visible");
-	expect(() => layoutDocument(tree)).not.toThrow();
+	expect(scroll.bounds(id())).toEqual({ x: 0, y: 0 });
+	expect(scroll.get(id())).toMatchObject({ scrollLeft: 0, scrollTop: 0 });
+	expect(documentGeometry(tree).getBoundingClientRect(id())).toMatchObject({
+		x: 0,
+		y: 0,
+		width: 10,
+		height: 10,
+	});
 });
 
 it.each(["initial", "unset", "revert", "inherit"])(
@@ -307,16 +335,25 @@ it.each(["-9007199254740991", "9007199254740991", "+0002", "-0"])(
 );
 
 it("invalidates media winners without mutating saved computed objects", () => {
-	const { styles, computed, tree } = fixture(
+	const { styles, computed, tree, id } = fixture(
 		"@media(min-width:150px){#target{overflow:hidden}}",
 	);
+	tree.append(
+		id(),
+		tree.createElement("div", { style: "width:20px;height:30px" }),
+	);
+	const scroll = documentElementScroll(tree);
+	const before = documentGeometry(tree).getBoundingClientRect(id());
 	expect(computed.overflow).toBe("visible");
+	expect(scroll.bounds(id())).toEqual({ x: 0, y: 0 });
 	styles.setViewport(200, 100);
 	expect(computed.overflow).toBe("hidden");
-	expect(() => layoutDocument(tree)).toThrow();
+	expect(scroll.bounds(id())).toEqual({ x: 10, y: 20 });
+	expect(documentGeometry(tree).getBoundingClientRect(id())).toEqual(before);
 	styles.setViewport(100, 100);
 	expect(computed.overflow).toBe("visible");
-	expect(() => layoutDocument(tree)).not.toThrow();
+	expect(scroll.bounds(id())).toEqual({ x: 0, y: 0 });
+	expect(documentGeometry(tree).getBoundingClientRect(id())).toEqual(before);
 });
 
 it("empties detached computed declarations, restores them, and revokes them on close", () => {

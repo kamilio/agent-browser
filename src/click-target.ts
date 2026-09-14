@@ -201,10 +201,16 @@ function findReceivingPoint(
 			);
 		if (rectangle.width <= 0 || rectangle.height <= 0) continue;
 		hasBox = true;
-		const left = Math.max(0, rectangle.left);
-		const right = Math.min(viewport.width, rectangle.right);
-		const top = Math.max(0, rectangle.top);
-		const bottom = Math.min(viewport.height, rectangle.bottom);
+		const visible = documentGeometry(tree).clipClientRect(
+			target,
+			rectangle,
+			generated !== undefined,
+		);
+		if (!visible) continue;
+		const left = Math.max(0, visible.left);
+		const right = Math.min(viewport.width, visible.right);
+		const top = Math.max(0, visible.top);
+		const bottom = Math.min(viewport.height, visible.bottom);
 		if (right <= left || bottom <= top) continue;
 		const insetX = Math.min(1, (right - left) / 2);
 		const insetY = Math.min(1, (bottom - top) / 2);
