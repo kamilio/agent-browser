@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: current Wikipedia diagnostics and blocked geometry
+
+**PROGRESS; overall browser goal remains ACTIVE.** The original119573-byte portal
+capture is loaded once through native loadBrowserDocument on committedfefbb8b,
+with formatting, cached diagnostics, one search-input lookup and one geometry
+attempt. No wire/scripts/actions or recorded JS guard attempts; integrity/cleanup
+pass. Compared with the latest executed September13radius replay, overlapping
+formatting occurrences167→160: unknown CSS properties65→64 and overflow7→1.
+All other issue counts and formatting sizes stay unchanged; work rises3units.
+
+Inpute239is found but its rectangle remains rejected by the existing width
+guard. No search flow, raster or live-site success is claimed. Native diagnostics
+retain128samples/omit14, exposing background sprites and other actual gaps;
+cached metrics stay unchanged. See WIKIPEDIA-CURRENT-DIAGNOSTICS-SEPTEMBER-14.md
+and the twelfth website inventory update. Reused22741nativepasses/twoexclusions
+were rehashed, not rerun. New RAM evidence is copied durably with original paths
+and exact hashes retained after project capacity recovers; historical evidence
+is unchanged.
+
+NEXT: implement actual native behavior for observed layout/paint gaps, with
+synthetic regressions before another separately scoped captured replay. Do not
+accept sprite syntax as painting support or silently fetch missing logo/assets.
+MDN destination, original research, broader live sites/forms, credential/provider/
+passkey/device, SafeJS, socket/TTY and challenge gates remain open. Preserve
+unrelated work; keep watching storage. Nothing pushed; continue the full goal.
+
 ### September 14: captured MDN confirms font-wide improvement
 
 **PROGRESS; overall browser goal remains ACTIVE.** A fresh separately scoped
