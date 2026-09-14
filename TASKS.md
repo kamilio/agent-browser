@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured MDN confirms generated-item formatting progress
+
+**PROGRESS; overall browser goal remains ACTIVE.** One separately scoped native
+diagnostic on committed generated-item runtime97a98e1 completes using the same
+19captured resources/270288decoded bytes, zero wire/denials and no scripts or
+interaction. The full raw issue map loses29generated-item and six overlapping
+alignment occurrences:13categories/255occurrences become10/220, not35distinct
+bugs. All remaining counts stay unchanged. The same2047indexed nodes plus
+seven markers/2054boxes,15270text units and83210formatting work are retained;
+deferred subtrees fall94→65. Empty generated boxes are not dropped.
+
+New verifier and independent parent checks pass, including exact runtime/fixture
+bindings, cleanup and corrected node-plus-marker accounting. The older false
+verifier and all historical evidence remain unchanged. Sampling still leaves
+36generated and530ordinary-inline candidates unexamined. See
+`MDN-GENERATED-ITEMS-REPLAY.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-14-EIGHTH-UPDATE.md`.
+
+NEXT: obtain bounded native property/value attribution for remaining CSS issues,
+then implement genuine missing behavior and separately retest original actions.
+No fresh live site or MDN destination/action pass is claimed. Broader website/
+form flows, research, credentials/devices, SafeJS, socket, real TTY and challenge
+gates remain open. Preserve unrelated work and historical evidence. No push.
+
+
 ### September 14: generated pseudo boxes participate as flex/grid items
 
 **PROGRESS; overall browser goal remains ACTIVE.** Native `::before`/`::after`
