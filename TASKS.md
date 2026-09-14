@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured Wikipedia opacity recheck
+
+**PROGRESS; overall browser goal remains ACTIVE.** The scoped captured native
+diagnostic on committed 39b55d9 completes at 13:51:28.935–13:51:29.302 UTC.
+Overlapping formatting issue occurrences fall 137→131 and unsupported-property
+occurrences 63→57; invalid-value occurrences remain two. Input e239 is found
+and has a formatting node, but geometry is still unsupported. There is no
+new host, wire request, raster, sprite acquisition or search interaction.
+
+All 12 verifier checks and the independent parent metadata/hash audit pass.
+All 33 original evidence entries match; 36 final sealed entries and the complete
+37-file evidence copy are verified. The prior word-spacing sealing correction
+remains historical; no current sealing failure is repeated. The audited runtime
+has 23,757 native passes and two unchanged exclusions, plus 264 distinct existing
+supplemental controls. See WIKIPEDIA-OPACITY-DIAGNOSTICS-SEPTEMBER-14.md and
+WEBSITE-TEST-INVENTORY-SEPTEMBER-14-TWENTY-THIRD-UPDATE.md.
+
+NEXT: broaden captured-site coverage and implement real layered-background,
+clipping and other missing behavior without suppressing unsupported guards.
+Original research, new live-site checks, credentials/passkeys, SafeJS, device
+and challenge-handling gates remain open. This diagnostic is not a rendered
+Wikipedia or performance acceptance result. Do not push this iteration.
+
 ### September 14: native group opacity validated
 
 **PROGRESS; overall browser goal remains ACTIVE.** Implemented actual grouped
