@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured HN confirms word-break diagnostic removal
+
+**PROGRESS; overall browser goal remains ACTIVE.** One separate native recheck
+on committed cd62d4d loads the unchanged September 11 HN capture at
+16:18:22.688–16:18:22.907 UTC. The applicable word-break declaration diagnostic
+is gone: overlapping formatting occurrences fall from 135 to 134, with every
+other category and all formatting metrics unchanged. `.morelink` e1261 remains
+discoverable but geometry returns unsupported; zero clicks or destination
+requests. This is not HN rendering/link-flow acceptance or a new live visit.
+
+Exactly two original mocked responses supply 42,364 decoded bytes; zero wire
+requests, scripts, SafeJS, credentials/devices or real terminal probes. Native
+run, verifier and parent comparison pass; guarded source/capture integrity,
+native-owner cleanup, empty-private-directory removal and absent process group
+are verified. `HN-WORD-BREAK-RECHECK-SEPTEMBER-14.md` and the twenty-eighth
+inventory update retain the evidence and independent remaining site blockers.
+
+The word-break feature's durable archive and 5,168-file final-gate copy are now
+byte-verified; 42 dirty tracked paths and 697 original untracked files remain
+preserved. Its separate two failing soft-hyphen sizing reproductions remain
+open, not folded into the 23,935 passing selected native cases. Next correct
+that shared min-content path; broader research, varied live coverage, speed,
+provider/passkey-device and challenge gates remain open. No push.
+
 ### September 14: independent word-break compatibility passes native profile
 
 **PROGRESS; overall browser goal remains ACTIVE.** `WORD-BREAK.md` records the
