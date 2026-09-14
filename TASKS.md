@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: fresh native man7 two-page live flow verified
+
+**PROGRESS; overall browser goal remains ACTIVE.** One freshly authorized native
+live run on 71d0c8b at 15:47:57.021–15:48:00.348 UTC completes ls(1) → genuinely
+discovered date(1), with two document commits and native destination title/text.
+Eight real HTTP 200 responses, zero redirects/mocks/retries, 46,184 encoded /
+78,042 decoded bytes. Two optional tracker denials remain local, so ten adapter
+entries are not ten wire requests. No scripts, credentials/devices or bypass.
+
+All 14 independent evidence checks and a separate 83-file seal recheck pass.
+Child/supervisor exit 0, owners/process group close cleanly, private directories
+remain empty. The new complete eight-response corpus retains the destination
+without modifying older captures or failed reports. This proves this bounded
+workflow, not whole-site/visual acceptance, a performance gain or challenge
+handoff; no challenge was encountered. See MAN7-LIVE-FLOW-SEPTEMBER-14.md and
+the twenty-seventh website inventory. The repeated host is not new host coverage.
+
+Parent review corrected local-denial/wire counter conflation before launch and
+rebound a stale syntax receipt without weakening checks. Both preparation states
+remain preserved; only one live attempt occurred. Existing dirty work is intact.
+
+NEXT: preserve this complete corpus for regressions and move to other site
+blockers. Static HN findings identify independent inherited word-break handling
+with meaningful min-content behavior; confirm semantics and add native tests
+before implementation. Layered backgrounds, wider complete/live coverage,
+performance measurements, research, providers/passkeys, devices and human
+challenge handoff remain open. No push or overall-goal completion.
+
 ### September 14: man7 native activation reaches the capture boundary
 
 **PROGRESS; overall browser goal remains ACTIVE.** One unchanged captured man7
