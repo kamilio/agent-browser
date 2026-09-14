@@ -496,17 +496,27 @@ it("inherits font and text values through anonymous table cells without DOM text
 });
 
 it("retains unsupported letter-spacing diagnostics for generated and ordinary tables", () => {
-	const current = pair({ css: "#target{letter-spacing:1px}" });
+	const current = pair({ css: "#target{letter-spacing:-1px}" });
 	for (const fixture of [current.generated, current.ordinary]) {
 		expect(() => layoutDocument(fixture.tree)).toThrow(
-			/unimplemented-css-property/,
+			/unimplemented-or-invalid-css-value/,
 		);
 		expect(
 			documentStyles(fixture.tree).metrics().issues[
-				"unimplemented-css-property"
+				"unimplemented-or-invalid-css-value"
 			],
 		).toBe(1);
 	}
+});
+
+it("renders supported letter spacing in generated and ordinary tables", () => {
+	const current = pair({ css: "#target{letter-spacing:1px}" });
+	const { generated, box } = expectEquivalent(current);
+	expect(glyphs(generated.layout).map((glyph) => glyph.x)).toEqual([0, 7]);
+	expect(glyphs(generated.layout).map((glyph) => glyph.advance)).toEqual([
+		7, 6,
+	]);
+	expect(box.borderBoxWidth).toBe(13);
 });
 
 it("refreshes geometry and hits after float, content and inherited font mutations", () => {

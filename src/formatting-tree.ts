@@ -309,6 +309,7 @@ export function buildFormattingTree(
 	let outsideMarkers = 0;
 	let clearanceRequests = 0;
 	let hasCaptions = false;
+	let hasLetterSpacing = false;
 	let overflowDonor: number | undefined;
 	let viewportOverflow: Readonly<OverflowStyle> | undefined;
 	const renderedListItems = new Set<number>();
@@ -396,6 +397,11 @@ export function buildFormattingTree(
 			if (hasRadiusStyle(radius)) node.radius = radius;
 		}
 		const transform = data.typography?.["text-transform"] ?? "none";
+		const spaced =
+			Number.parseFloat(data.typography?.["letter-spacing"] ?? "0") > 0;
+		hasLetterSpacing ||= spaced;
+		if ((data.control || data.imageAlternative) && spaced)
+			issue("letter-spacing-replaced-text-not-supported");
 		if (transform !== "none") {
 			if (!["uppercase", "lowercase", "capitalize"].includes(transform))
 				issue("text-transform-not-supported");
@@ -1892,6 +1898,11 @@ export function buildFormattingTree(
 				const typography = styles.text(id);
 				const fontSize = Number.parseFloat(typography["font-size"]);
 				const type = list["list-style-type"];
+				if (
+					(type === "decimal" || type === "decimal-leading-zero") &&
+					Number.parseFloat(typography["letter-spacing"] ?? "0") > 0
+				)
+					issue("letter-spacing-marker-text-not-supported");
 				if (!markerTypes.includes(type) && fontSize > 0)
 					issue("list-marker-type-not-supported");
 				else if (type !== "none" && fontSize > 0) {
@@ -2175,6 +2186,77 @@ export function buildFormattingTree(
 			charge();
 			if (!supported.has(ref) || unsupported.has(ref))
 				issue("inline-vertical-align-not-supported");
+		}
+	}
+	for (const container of hasLetterSpacing ? nodes : []) {
+		charge();
+		if (container.contentMode !== "inline") continue;
+		let previous: MutableFormattingNode | undefined;
+		let collapsing = false;
+		let skipLf = false;
+		const boundary = (node: MutableFormattingNode, atomic: boolean) => {
+			if (
+				previous &&
+				(atomic || previous.kind === "replaced" || isAtomicInline(previous)) &&
+				(Number.parseFloat(node.typography?.["letter-spacing"] ?? "0") > 0 ||
+					Number.parseFloat(previous.typography?.["letter-spacing"] ?? "0") > 0)
+			)
+				issue("letter-spacing-atomic-boundary-not-supported");
+			previous = node;
+		};
+		const pending = [...container.children].reverse();
+		while (pending.length) {
+			charge();
+			const node = nodes[pending.pop() as number];
+			if (!inNormalFlow(node.id)) continue;
+			if (node.kind === "inline") {
+				for (let index = node.children.length - 1; index >= 0; index--) {
+					charge();
+					pending.push(node.children[index]);
+				}
+				continue;
+			}
+			const atomic = node.kind === "replaced" || isAtomicInline(node);
+			if (!atomic && node.kind !== "text") {
+				previous = undefined;
+				collapsing = false;
+				skipLf = false;
+				continue;
+			}
+			if (node.kind === "text") {
+				const whiteSpace = node.typography?.["white-space"] ?? "normal";
+				const preserved = whiteSpace === "pre" || whiteSpace === "pre-wrap";
+				for (const character of node.text ?? "") {
+					charge(character.length);
+					if (skipLf && character === "\n") {
+						skipLf = false;
+						continue;
+					}
+					skipLf = character === "\r";
+					if (/^[\u00ad\u200b\u2060\ufeff]$/.test(character)) {
+						collapsing = false;
+						continue;
+					}
+					if (
+						(/^[\n\r\f]$/.test(character) &&
+							(preserved || whiteSpace === "pre-line")) ||
+						(character === "\t" && preserved)
+					) {
+						previous = undefined;
+						collapsing = false;
+						continue;
+					}
+					if (!preserved && /^[\t\n\r\f ]$/.test(character)) {
+						if (collapsing) continue;
+						collapsing = true;
+					} else collapsing = false;
+					boundary(node, false);
+				}
+				continue;
+			}
+			collapsing = false;
+			skipLf = false;
+			boundary(node, atomic);
 		}
 	}
 	charge(nodes.length);

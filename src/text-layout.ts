@@ -29,9 +29,11 @@ import {
 } from "./text-font.js";
 import { textGraphemeBoundaries } from "./text-grapheme-boundaries.js";
 import {
-	planTextTransforms,
-	type TextTransformInput,
-} from "./text-transform.js";
+	planTextSpacing,
+	type TextSpacingInput,
+	type TextSpacingPlan,
+} from "./text-spacing.js";
+import { planTextTransforms } from "./text-transform.js";
 
 export interface TextLayoutLimits {
 	maxTokens: number;
@@ -133,6 +135,8 @@ export interface DocumentTextLayout {
 	}>;
 }
 interface Token extends FontExtent {
+	letterSpacing?: number;
+	spacingAfter?: number;
 	lineEdge?: { side: "top" | "bottom"; height: number };
 	transformed?: true;
 	sourceBreak?: Readonly<TextBreakSource>;
@@ -272,7 +276,6 @@ function layoutTextContexts(
 	constraint: "used" | "min-content" | "max-content",
 ) {
 	const floatLayout = horizontal.floatLayout;
-	let hasTransforms: boolean | undefined;
 	if (
 		floatLayout !== undefined &&
 		(!floatLayout ||
@@ -383,13 +386,34 @@ function layoutTextContexts(
 		let transformations:
 			| ReadonlyMap<number, ReadonlyMap<number, string>>
 			| undefined;
-		if (
-			container.children.length > 0 &&
-			(hasTransforms ??= horizontal.formatting.nodes.some(
-				(node) => (node.typography?.["text-transform"] ?? "none") !== "none",
-			))
-		) {
-			const inputs: (TextTransformInput | null)[] = [];
+		let spacingPlan: TextSpacingPlan | undefined;
+		let hasTransforms = false;
+		let hasSpacing = false;
+		const featureNodes = [...container.children];
+		while (featureNodes.length > 0 && !(hasTransforms && hasSpacing)) {
+			charge();
+			const node = horizontal.formatting.nodes[featureNodes.pop() as number];
+			if (
+				node.floatSide !== undefined ||
+				node.position === "absolute" ||
+				node.position === "fixed"
+			)
+				continue;
+			if (node.kind === "inline") {
+				for (const child of node.children) {
+					charge();
+					featureNodes.push(child);
+				}
+			} else if (node.kind === "text") {
+				charge();
+				const typography = node.typography ?? style;
+				hasTransforms ||= (typography["text-transform"] ?? "none") !== "none";
+				hasSpacing ||=
+					Number.parseFloat(typography["letter-spacing"] ?? "0") > 0;
+			}
+		}
+		if (container.children.length > 0 && (hasTransforms || hasSpacing)) {
+			const inputs: (TextSpacingInput | null)[] = [];
 			const pending = [...container.children].reverse();
 			while (pending.length) {
 				charge();
@@ -407,15 +431,26 @@ function layoutTextContexts(
 						pending.push(node.children[index]);
 					}
 				} else if (node.kind === "text") {
+					const typography = node.typography ?? style;
 					inputs.push({
 						id,
 						text: node.text ?? "",
-						transform: (node.typography ?? style)["text-transform"] ?? "none",
+						transform: typography["text-transform"] ?? "none",
 						language: node.language,
+						whiteSpace: typography["white-space"],
+						letterSpacing: resolveLayoutLength(
+							typography["letter-spacing"] === "normal" ||
+								typography["letter-spacing"] === undefined
+								? "0px"
+								: typography["letter-spacing"],
+							0,
+						),
 					});
 				} else inputs.push(null);
 			}
-			transformations = planTextTransforms(inputs, charge);
+			if (hasTransforms) transformations = planTextTransforms(inputs, charge);
+			if (hasSpacing)
+				spacingPlan = planTextSpacing(inputs, transformations, charge);
 		}
 		const indent = resolveTextIndent(
 			style["text-indent"] ?? "0px",
@@ -459,7 +494,8 @@ function layoutTextContexts(
 		let pendingBreakLine: number | undefined;
 		let pendingCrLine: number | undefined;
 		const advance = (token: Token, cursor: number, origin = indentation()) => {
-			if (token.kind !== "tab" || token.advance <= 0) return token.advance;
+			if (token.kind !== "tab" || token.advance <= 0)
+				return layoutNumber(token.advance + (token.spacingAfter ?? 0), true);
 			const stop = token.advance * 8;
 			const position = origin + cursor;
 			const distance = (Math.floor(position / stop) + 1) * stop - position;
@@ -490,10 +526,17 @@ function layoutTextContexts(
 				else if (
 					token.kind === "close" ||
 					token.kind === "open" ||
-					token.kind === "strut"
+					token.kind === "strut" ||
+					(spacingPlan?.size &&
+						token.kind === "glyph" &&
+						token.character === "")
 				) {
 					blocked ||= !!token.padding || !!token.border;
-				} else break;
+				} else {
+					if (token.kind === "glyph")
+						hanging += Math.max(0, used - token.advance);
+					break;
+				}
 			}
 			return hanging;
 		};
@@ -672,6 +715,16 @@ function layoutTextContexts(
 				charge();
 				return !token.collapsible || index <= lastContent;
 			});
+			if (spacingPlan?.size)
+				for (let index = entries.length - 1; index >= 0; index--) {
+					charge();
+					const entry = entries[index];
+					if (entry.token.kind === "glyph" && entry.token.character !== "") {
+						entry.token = { ...entry.token, spacingAfter: 0 };
+						break;
+					}
+					if (["tab", "image", "atomic"].includes(entry.token.kind)) break;
+				}
 			lineWidth = 0;
 			let hasContent = false;
 			let hasFormattedContent = !!forced;
@@ -1226,6 +1279,8 @@ function layoutTextContexts(
 				let cursor = lineWidth;
 				let first: { marker: number; end: number } | undefined;
 				let selected: { marker: number; end: number } | undefined;
+				const hyphenSpacing = (before: Token, marker: Token) =>
+					((before.letterSpacing ?? 0) + (marker.letterSpacing ?? 0)) / 2;
 				const prefix = (boundary: { marker: number; end: number }) => {
 					const piece = word.slice(0, boundary.end);
 					const token = piece[boundary.marker];
@@ -1233,10 +1288,24 @@ function layoutTextContexts(
 						...token,
 						character: "-",
 						advance: token.discretionaryAdvance ?? 0,
+						spacingAfter: 0,
 						discretionaryAdvance: undefined,
 					};
+					for (let index = boundary.marker - 1; index >= 0; index--) {
+						charge();
+						const before = piece[index];
+						if (before.kind === "glyph" && before.character !== "") {
+							piece[index] = {
+								...before,
+								spacingAfter: hyphenSpacing(before, token),
+							};
+							break;
+						}
+						if (["tab", "image", "atomic"].includes(before.kind)) break;
+					}
 					return piece;
 				};
+				let precedingGlyph: Token | undefined;
 				for (let index = 0; index < lastContent; index++) {
 					charge();
 					const token = word[index];
@@ -1244,6 +1313,13 @@ function layoutTextContexts(
 					if (hasContent && token.discretionaryAdvance !== undefined) {
 						let end = index + 1;
 						let fit = layoutNumber(cursor + token.discretionaryAdvance, true);
+						if (precedingGlyph)
+							fit = layoutNumber(
+								fit +
+									hyphenSpacing(precedingGlyph, token) -
+									(precedingGlyph.spacingAfter ?? 0),
+								true,
+							);
 						while (end < word.length && word[end].kind === "close") {
 							charge();
 							fit = layoutNumber(fit + advance(word[end], fit), true);
@@ -1261,6 +1337,10 @@ function layoutTextContexts(
 						if (measured.fit <= measured.available) selected = boundary;
 					}
 					hasContent ||= contentToken(token);
+					if (token.kind === "glyph" && token.character !== "")
+						precedingGlyph = token;
+					else if (["tab", "image", "atomic"].includes(token.kind))
+						precedingGlyph = undefined;
 				}
 				if (!first) break;
 				if (!selected && segments.at(-1)?.gap && lineContent) {
@@ -1757,6 +1837,14 @@ function layoutTextContexts(
 				);
 			const source = node.text ?? "";
 			const transformationsForNode = transformations?.get(node.id);
+			const spacingForNode = spacingPlan?.get(node.id);
+			const letterSpacing = resolveLayoutLength(
+				typography["letter-spacing"] === "normal" ||
+					typography["letter-spacing"] === undefined
+					? "0px"
+					: typography["letter-spacing"],
+				0,
+			);
 			for (let offset = 0; offset < source.length; ) {
 				let character = String.fromCodePoint(
 					source.codePointAt(offset) as number,
@@ -1816,6 +1904,8 @@ function layoutTextContexts(
 					const collapsible = !preserved && whitespace;
 					const token: Token = {
 						...font,
+						letterSpacing,
+						spacingAfter: spacingForNode?.get(offset)?.get(0) ?? 0,
 						formattingId: node.id,
 						ref: textReference,
 						offset,
@@ -1855,16 +1945,20 @@ function layoutTextContexts(
 						collapsing = false;
 						const transformed = transformationsForNode?.get(offset);
 						if (transformed === undefined) emit(token);
-						else
+						else {
+							let index = 0;
 							for (const character of transformed === "" ? [""] : transformed) {
 								charge();
 								emit({
 									...token,
 									character,
-									advance: character === "" ? 0 : token.advance,
+									advance: character === "" ? 0 : font.advance,
+									spacingAfter: spacingForNode?.get(offset)?.get(index) ?? 0,
 									transformed: true,
 								});
+								index++;
 							}
+						}
 					}
 				}
 				offset += codeUnits;

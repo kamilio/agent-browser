@@ -216,6 +216,7 @@ export function resolvedStyleValue(
 	if (isCssTextProperty(name)) {
 		const text = styles.text(id);
 		const value = text[name];
+		if (name === "letter-spacing" && value === "0px") return "normal";
 		return name === "line-height" && value !== "normal" && !value.endsWith("px")
 			? `${Number(value) * Number.parseFloat(text["font-size"])}px`
 			: value;

@@ -805,5 +805,9 @@
   "src/logical-block-layout.test.ts",
   "src/logical-inline-declarations.test.ts",
   "src/logical-inline-style.test.ts",
-  "src/logical-inline-layout.test.ts"
+  "src/logical-inline-layout.test.ts",
+  "src/letter-spacing.test.ts",
+  "src/letter-spacing-geometry.test.ts",
+  "src/letter-spacing-click.test.ts",
+  "src/letter-spacing-boundaries.test.ts"
 ]

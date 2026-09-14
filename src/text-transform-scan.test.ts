@@ -43,8 +43,11 @@ function fixture(siblings = 0, css = "") {
 
 function observe(input: LayoutInput) {
 	const counts = { calls: 0, visits: 0 };
+	let indexedReads = 0;
 	const nodes = new Proxy(input.formatting.nodes, {
 		get(target, property, receiver) {
+			if (typeof property === "string" && /^\d+$/.test(property))
+				indexedReads++;
 			if (property !== "some") return Reflect.get(target, property, receiver);
 			return (
 				predicate: Parameters<typeof target.some>[0],
@@ -60,6 +63,7 @@ function observe(input: LayoutInput) {
 	});
 	return {
 		counts,
+		indexedReads: () => indexedReads,
 		input: { ...input, formatting: { ...input.formatting, nodes } },
 	};
 }
@@ -107,17 +111,14 @@ it.each(
 		["none", "uppercase"].map((transform) => [mode, transform] as const),
 	),
 )(
-	"scans once when nonempty inline contexts follow empty contexts in %s with %s",
+	"scans only selected inline contexts after empty contexts in %s with %s",
 	(mode, transform) => {
 		const page = fixture(20, `#word{text-transform:${transform}}`);
 		const selected = page.select("#empty", "#word", "#plain");
 		const observed = observe(selected);
 		expect(measure(observed.input, mode)).toEqual(measure(selected, mode));
-		expect(observed.counts.calls).toBe(1);
-		expect(observed.counts.visits).toBeGreaterThan(0);
-		expect(observed.counts.visits).toBeLessThanOrEqual(
-			selected.formatting.nodes.length,
-		);
+		expect(observed.counts).toEqual({ calls: 0, visits: 0 });
+		expect(observed.indexedReads()).toBeGreaterThan(0);
 		if (mode === "used")
 			expect(
 				layoutFormattingText(selected)
@@ -171,8 +172,26 @@ it("does not retain the transform decision across calls with caller-owned input"
 			};
 	}
 	expect(text()).toBe("AB");
-	expect(observed.counts.calls).toBe(2);
+	expect(observed.counts).toEqual({ calls: 0, visits: 0 });
 });
+
+it.each(constraints)(
+	"keeps local text feature reads and charged work independent of unrelated nodes in %s",
+	(mode) => {
+		const measurements = [20, 1_000].map((siblings) => {
+			const page = fixture(
+				siblings,
+				"#word{text-transform:uppercase;letter-spacing:2px}",
+			);
+			const observed = observe(page.select("#empty", "#word", "#plain"));
+			const result = measure(observed.input, mode);
+			expect(observed.counts).toEqual({ calls: 0, visits: 0 });
+			return { work: result.metrics.work, reads: observed.indexedReads() };
+		});
+		expect(measurements[0].reads).toBeGreaterThan(0);
+		expect(measurements[1]).toEqual(measurements[0]);
+	},
+);
 
 it.each([100, 1_000])(
 	"does not rescan unrelated nodes across %s empty-context measurements",

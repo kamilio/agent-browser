@@ -18,6 +18,7 @@ export const cssTextProperties = Object.freeze([
 	"font-style",
 	"font-weight",
 	"line-height",
+	"letter-spacing",
 	"white-space",
 	"overflow-wrap",
 	"hyphens",
@@ -36,6 +37,7 @@ export const initialTextStyle: TextStyle = Object.freeze({
 	"font-style": "normal",
 	"font-weight": "400",
 	"line-height": "normal",
+	"letter-spacing": "0px",
 	"white-space": "normal",
 	"overflow-wrap": "normal",
 	hyphens: "manual",
@@ -78,6 +80,20 @@ export function parseTextValue(
 ): string | undefined {
 	if (property === "font-family") return normalizeFontFamily(value);
 	if (wide.has(value)) return value;
+	if (property === "letter-spacing") {
+		if (value === "normal") return value;
+		const parsed = length.exec(value);
+		if (
+			!parsed ||
+			!Number.isFinite(Number(parsed[1])) ||
+			Number(parsed[1]) < 0 ||
+			(parsed[2]
+				? !["px", "em", "rem"].includes(parsed[2])
+				: Number(parsed[1]) !== 0)
+		)
+			return;
+		return `${Number(parsed[1])}${parsed[2] ?? "px"}`;
+	}
 	if (property === "text-transform") return parseTextTransform(value);
 	if (property === "text-indent") return parseTextIndent(value);
 	if (property === "font-style") return parseFontStyle(value);
@@ -182,6 +198,15 @@ export function computeTextStyle(
 			root ? Number.parseFloat(result["font-size"]) : rootFontSize,
 			result,
 		);
+	const spacing = specified["letter-spacing"];
+	if (spacing !== undefined && !wide.has(spacing))
+		result["letter-spacing"] = pixels(
+			spacing,
+			Number.parseFloat(result["font-size"]),
+			root ? Number.parseFloat(result["font-size"]) : rootFontSize,
+			result,
+		);
+	if (result["letter-spacing"] === "normal") result["letter-spacing"] = "0px";
 	const indent = specified["text-indent"];
 	if (indent !== undefined && !wide.has(indent))
 		result["text-indent"] = computeTextIndent(

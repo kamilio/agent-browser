@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: native letter spacing validated with geometry and clicks
+
+**PROGRESS; overall browser goal remains ACTIVE.** Real nonnegative px/em/rem
+letter spacing now affects grapheme advances, wrapping, intrinsic widths,
+rectangles, ranges, pixels and hit ownership. W3C-native research corrects the
+computed-zero/CSSOM-normal distinction. Unsupported fixed-advance consumers and
+atomic boundaries remain fail-closed, including suppressed-text guard cases.
+
+Final isolated build/types/format/native gate passes23,097/0/2unchanged exclusions
+at10:47:11UTC across459selected files; focused checks pass1,151. There are106new
+passing cases, preserving all22,993previous occurrence statuses. A quadratic
+positioned-subtree scan is fixed without raising limits; six scan-test labels
+and one obsolete positive-spacing rejection fixture are updated transparently.
+All initial failures and evidence paths remain recorded in LETTER-SPACING.md.
+
+NEXT: bounded captured MDN checks on the committed runtime; do not infer full
+page click success from synthetic fixtures. Wikipedia geometry, original
+research, broader live sites/forms, credential/providers/passkeys/devices,
+SafeJS, socket/TTY and challenge gates remain open. Preserve unrelated work;
+no push.
+
 ### September 14: fresh native W3C source check informs text spacing
 
 **PROGRESS; overall browser goal remains ACTIVE.** One anonymous native GET of
