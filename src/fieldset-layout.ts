@@ -40,7 +40,7 @@ export function fieldsetOuterStyle(style: BoxStyle): BoxStyle {
 export function fieldsetContentStyle(style: BoxStyle): BoxStyle {
 	return Object.freeze({
 		...initialBoxStyle,
-		height: "100%",
+		height: style.height === "auto" ? "auto" : "100%",
 		"padding-top": style["padding-top"],
 		"padding-right": style["padding-right"],
 		"padding-bottom": style["padding-bottom"],

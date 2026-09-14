@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: auto-height fieldsets no longer invent a table dependency
+
+**PROGRESS; overall browser goal remains ACTIVE.** The man7 captures contain no
+authored percentage-height declaration. Static investigation identifies the
+internal fieldset wrapper's unconditional 100% as the likely false dependency.
+Native table/form/fieldset fixtures reproduce the exact guard. The producer now
+keeps auto for auto-height owners, retaining 100% for non-auto owners. The table
+guard, padding, ownership and existing definite-height behavior stay unchanged.
+
+Final release01 at 15:12:15.777–15:18:52.589 UTC passes 23,851, zero failures and
+two unchanged exclusions: 482 selected files, 481 strict roots, build/format pass.
+Audit preserves all 23,824 baseline occurrences and records 29 new passes, with
+no case-name migrations. Focused01 passes 317. Final identical-test red02 records
+19 expected failures on old production. Review additions cover inline atomic
+fieldset reflow and percentage children under constrained auto versus definite
+owners. Exact pixels, hits, ordinary/canceled clicks and cleanup are covered.
+
+The initial wrong min-height test expectation and raw-Git-byte audit correction
+remain recorded; no production workaround follows either. Existing dirty work
+and historical evidence remain intact. See FIELDSET-AUTO-HEIGHT-TABLES.md.
+
+NEXT: one separately bounded captured man7 recheck on the adopted audited runtime.
+The recorded site flow still fails; this native fix does not rewrite it or prove
+which captured descendant failed. Retain original assets and ordinary navigation,
+and distinguish further native blockers from the absent destination capture.
+Broader complete-corpus/live coverage, HN CSS gaps, research, providers/passkeys,
+devices and challenge handoff remain open. No push or overall-goal completion.
+
 ### September 14: captured man7 advances to cell-height reflow
 
 **PROGRESS; overall browser goal remains ACTIVE.** One captured man7 observation

@@ -87,7 +87,7 @@ it("keeps distinct fieldset/content boxes without duplicating DOM or public geom
 		parent: outerNode.id,
 		fieldsetOwner: outerNode.id,
 		independentContext: true,
-		box: { height: "100%" },
+		box: { height: "auto" },
 	});
 	expect(innerNode.ref).toBeUndefined();
 	expect(

@@ -830,5 +830,7 @@
   "src/letter-spacing-boundaries.test.ts",
   "src/table-container-percentage-layout.test.ts",
   "src/table-container-percentage-render.test.ts",
-  "src/table-container-percentage-interaction.test.ts"
+  "src/table-container-percentage-interaction.test.ts",
+  "src/fieldset-table-auto-height.test.ts",
+  "src/fieldset-table-interaction.test.ts"
 ]
