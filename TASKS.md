@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: large-page content recovered and find regressions aligned
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+An explicit existing long-v1 native request loads SWE-bench's 2,392,125-byte page
+and eleven headings; six socket-denied local replays extract useful benchmark
+descriptions with zero additional HTTP requests. The prior default-limit failure
+and September 11 evidence remain intact. `CONTENT-FIRST-RESEARCH.md` documents
+the practical capture/outline/section workflow without automatic retries or
+relaxing limits. NVIDIA's GPU reference yields 48 source-order table cells after
+one automatic redirect: two HTTP requests. Its reviewer flags strict one-request
+scope wording; that caveat is retained, not promoted to a clean strict-scope pass.
+Overall, two navigation launches make three real HTTP requests and no mocks.
+The stale fragment/429 find expectations are replaced by positive behavior tests,
+with added literal-feed coordinate, source-integrity and capture coverage. No
+production policy changes: all 2,208 compiled files match the previous candidate.
+All 1,597 cases across 21 selected native files pass, including 260 find cases;
+build, 21 strict roots, formatting and lint pass. Prior failed logs are retained.
+The thirty-seventh inventory records exact new observations and scope limits.
+Original dirty work is preserved; no push. Broad site/research coverage, automatic
+content workflows, rendering/interaction, restricted sites, performance, live
+service, SafeJS/device/credentials and full native release remain open.
+
 ### September 14: public feed content no longer fails MIME admission
 
 **PROGRESS; overall browser goal remains ACTIVE.**

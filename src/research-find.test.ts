@@ -22,6 +22,12 @@ const otherUrl = "https://research.example/other";
 const privateQuery = "FIND_PRIVATE_QUERY";
 const privateSource = "FIND_PRIVATE_SOURCE";
 const privateException = "FIND_PRIVATE_EXCEPTION";
+const feedMimes = [
+	"text/xml",
+	"application/xml",
+	"application/rss+xml",
+	"application/atom+xml",
+];
 type Report = Awaited<ReturnType<typeof researchNavigation>>;
 
 function response(
@@ -79,6 +85,7 @@ function expectRedacted(report: Report) {
 		selection: report.selection,
 		textLines: report.textLines,
 		failure: report.failure,
+		fragment: report.fragment,
 	});
 	for (const secret of [privateQuery, privateSource, privateException])
 		expect(fields).not.toContain(secret);
@@ -89,13 +96,14 @@ async function navigate(
 	reader = false,
 	captureBody = false,
 	query = privateQuery,
+	target = url,
 ) {
 	const originalBody = input.body.slice();
 	vi.mocked(NodeNetworkTransport.prototype.request).mockResolvedValueOnce(
 		input,
 	);
 	const report = await researchNavigation(
-		url,
+		target,
 		reader,
 		undefined,
 		undefined,
@@ -108,7 +116,7 @@ async function navigate(
 	expectCleanup(report);
 	expect(NodeNetworkTransport.prototype.request).toHaveBeenCalledWith(
 		expect.objectContaining({
-			url,
+			url: target,
 			cookieContext: {
 				credentials: "omit",
 				siteUrl: null,
@@ -375,7 +383,6 @@ it.each([
 	"http://10.0.0.1/paper",
 	"file:///paper",
 	"https://user:password@research.example/paper",
-	`${url}#line`,
 ])("does not widen public URL policy for %s", async (target) => {
 	expect(() =>
 		parseResearchArguments(["--find", privateQuery, target]),
@@ -395,6 +402,104 @@ it.each([
 	).rejects.toBeInstanceOf(AgentBrowserError);
 	expectNoSetup();
 });
+
+it.each(
+	[
+		{
+			requested: privateQuery,
+			effective: privateQuery,
+			resolution: "unmatched",
+		},
+		{
+			requested: privateQuery,
+			effective: privateSource,
+			resolution: "unmatched",
+		},
+		{ requested: privateQuery, effective: null, resolution: "absent" },
+		{ requested: privateQuery, effective: "", resolution: "document-top" },
+		{
+			requested: privateQuery,
+			effective: `:~:text=${privateSource}`,
+			resolution: "unsupported-directive",
+		},
+		{ requested: null, effective: privateSource, resolution: "unmatched" },
+	].flatMap((fixture) =>
+		[false, true].map((reader) => ({ ...fixture, reader })),
+	),
+)(
+	"finds bounded literal text with $resolution fragments (requested=$requested, effective=$effective, reader=$reader)",
+	async ({ requested, effective, resolution, reader }) => {
+		const target = url + (requested === null ? "" : `#${requested}`);
+		const finalUrl = otherUrl + (effective === null ? "" : `#${effective}`);
+		const source = `<entry id="${privateQuery}">${privateQuery}</entry>\r\n${`😀${privateQuery}\n`.repeat(50)}${privateSource}`;
+		expect(
+			parseResearchArguments([
+				...(reader ? ["--reader"] : []),
+				"--find",
+				privateQuery,
+				target,
+			]).urls,
+		).toEqual([target]);
+		const report = await navigate(
+			response(source, {
+				url: finalUrl,
+				redirects: [{ url: target, status: 302, location: finalUrl }],
+			}),
+			reader,
+			false,
+			privateQuery,
+			target,
+		);
+		const identity = (fragment: string | null) =>
+			fragment === null
+				? null
+				: {
+						codeUnits: fragment.length,
+						sha256: createHash("sha256").update(fragment).digest("hex"),
+						digestEncoding: "utf8-serialized-fragment",
+					};
+		expect(report).toMatchObject({
+			requestedUrl: url,
+			finalUrl: otherUrl,
+			primaryResponse: { url: otherUrl, redirects: 1 },
+			navigation: {
+				kind: "document",
+				url: otherUrl,
+				response: { url: otherUrl },
+			},
+			outcome: "extracted-unverified",
+			contentSuccess: null,
+		});
+		expect(report.fragment).toEqual({
+			schemaVersion: 1,
+			requested: identity(requested),
+			effective: identity(effective),
+			resolution,
+			semantics: "native-dom-target-no-scroll-or-script",
+		});
+		expect(discovery(report)).toMatchObject({
+			entries: [
+				{ line: 1, column: 12 },
+				...Array.from({ length: 49 }, (_, index) => ({
+					line: index + 2,
+					column: 3,
+				})),
+			],
+			totalLines: 52,
+			matchedLines: 51,
+			sourceCodeUnits: source.length,
+			truncated: true,
+		});
+		expect(extraction.discoverDocumentTextLines).toHaveBeenCalledWith(
+			expect.anything(),
+			privateQuery,
+			{ maxBytes: researchRunLimits.extractionBytes },
+		);
+		expect(report.failure).toBeUndefined();
+		expect(JSON.stringify(report)).not.toMatch(/FIND_PRIVATE_/);
+		expect(researchExitCode([report])).toBe(0);
+	},
+);
 
 it("retains the explicit URL count bound", () => {
 	expect(() =>
@@ -456,6 +561,77 @@ it.each(
 				styling: false,
 				hiddenContentSemantics: false,
 			});
+	},
+);
+
+it.each(
+	feedMimes.flatMap((mime) =>
+		[false, true].flatMap((reader) =>
+			[
+				{
+					query: privateQuery,
+					entries: [
+						{ line: 2, column: 10 },
+						{ line: 3, column: 10 },
+					],
+				},
+				{
+					query: "&amp;",
+					entries: [
+						{ line: 2, column: privateQuery.length + 11 },
+						{ line: 3, column: privateQuery.length + 15 },
+					],
+				},
+				{ query: "<![CDATA[", entries: [{ line: 3, column: 1 }] },
+				{ query: privateSource, entries: [{ line: 4, column: 6 }] },
+				{ query: "&</entry>", entries: [] },
+			].map((fixture) => ({ mime, reader, ...fixture })),
+		),
+	),
+)(
+	"finds literal feed markup without XML parsing in $mime (query=$query, reader=$reader)",
+	async ({ mime, reader, query, entries }) => {
+		const source = `<feed>\r\n<entry>😀${privateQuery} &amp;</entry>\r<![CDATA[${privateQuery}<tag>&amp;]]>\n<!-- ${privateSource} -->\n</feed>\n`;
+		const report = await navigate(
+			response(source, {
+				headers: { "content-type": [`${mime}; charset=utf-8`] },
+			}),
+			reader,
+			false,
+			query,
+		);
+		expect(report).toMatchObject({
+			outcome: entries.length ? "extracted-unverified" : "empty-extraction",
+			contentSuccess: entries.length ? null : false,
+			profile: reader ? readerLoader.researchReaderProfile : "native",
+			classification: { barrier: null },
+			primaryResponse: {
+				headers: { "content-type": [`${mime}; charset=utf-8`] },
+			},
+		});
+		expect(report.failure).toBeUndefined();
+		expect(discovery(report)).toMatchObject({
+			entries,
+			totalLines: 6,
+			matchedLines: entries.length,
+			sourceCodeUnits: source.length,
+			truncated: false,
+		});
+		expect(extraction.discoverDocumentTextLines).toHaveBeenCalledWith(
+			expect.anything(),
+			query,
+			{ maxBytes: researchRunLimits.extractionBytes },
+		);
+		if (reader)
+			expect(report.reader).toMatchObject({
+				partial: true,
+				scripting: false,
+				styling: false,
+				hiddenContentSemantics: false,
+				sourceCodeUnits: source.length,
+				textCodeUnits: source.length,
+			});
+		expect(researchExitCode([report])).toBe(entries.length ? 0 : 1);
 	},
 );
 
@@ -543,7 +719,7 @@ it.each([50, 51])(
 );
 
 it.each(
-	[300, 301, 302, 303, 307, 308, 399, 400, 403, 404, 429, 500, 503].flatMap(
+	[300, 301, 302, 303, 307, 308, 399, 400, 403, 404, 500, 503].flatMap(
 		(status) =>
 			[false, true].flatMap((reader) =>
 				[false, true].map((matches) => ({ status, reader, matches })),
@@ -564,6 +740,68 @@ it.each(
 		expect(discovery(report).entries).toEqual(
 			matches ? [{ line: 1, column: 1 }] : [],
 		);
+		expect(researchExitCode([report])).toBe(1);
+	},
+);
+
+it.each(
+	[false, true].flatMap((reader) =>
+		[false, true].flatMap((matches) =>
+			[false, true].map((captureBody) => ({ reader, matches, captureBody })),
+		),
+	),
+)(
+	"stops HTTP 429 before find loading (reader=$reader, matches=$matches, capture=$captureBody)",
+	async ({ reader, matches, captureBody }) => {
+		const nativeLoad = vi.spyOn(documentLoader, "loadBrowserDocument");
+		const readerLoad = vi.spyOn(readerLoader, "loadResearchDocument");
+		const report = await navigate(
+			response(matches ? privateQuery : privateSource, {
+				url: `${otherUrl}#${privateSource}`,
+				status: 429,
+				headers: {
+					"content-type": ["text/plain; charset=utf-8"],
+					"retry-after": ["120"],
+				},
+			}),
+			reader,
+			captureBody,
+			privateQuery,
+			`${url}#${privateQuery}`,
+		);
+		expect(report).toMatchObject({
+			requestedUrl: url,
+			finalUrl: otherUrl,
+			profile: reader ? readerLoader.researchReaderProfile : "native",
+			outcome: "http-failure",
+			contentSuccess: false,
+			classification: { barrier: null, diagnostic: null },
+			failure: { category: "policy-denied", stage: "rate-limit" },
+			primaryResponse: {
+				url: otherUrl,
+				status: 429,
+				headers: { "content-type": ["text/plain; charset=utf-8"] },
+			},
+			rateLimit: {
+				kind: "http-rate-limit",
+				status: 429,
+				url: otherUrl,
+				receivedAt: expect.any(String),
+				action: "stop-without-retry",
+				retryAfter: { kind: "delay-seconds", delaySeconds: 120 },
+			},
+			fragment: { resolution: "pending" },
+		});
+		if (!report.rateLimit) throw new Error("Expected rate-limit metadata");
+		expect(report.rateLimit.retryAfter?.retryAt).toBe(
+			new Date(Date.parse(report.rateLimit.receivedAt) + 120_000).toISOString(),
+		);
+		expect(report.fragment).not.toHaveProperty("target");
+		expect(report.textLines).toBeUndefined();
+		expect(report.reader).toBeUndefined();
+		expect(nativeLoad).not.toHaveBeenCalled();
+		expect(readerLoad).not.toHaveBeenCalled();
+		expect(extraction.discoverDocumentTextLines).not.toHaveBeenCalled();
 		expect(researchExitCode([report])).toBe(1);
 	},
 );
@@ -661,9 +899,13 @@ it.each([false, true])(
 	},
 );
 
-it.each([false, true])(
-	"rejects changed loader wrappers and closes their trees (reader=%s)",
-	async (reader) => {
+it.each(
+	["text/plain", ...feedMimes].flatMap((mime) =>
+		[false, true].map((reader) => ({ mime, reader })),
+	),
+)(
+	"rejects changed $mime loader wrappers and closes their trees (reader=$reader)",
+	async ({ mime, reader }) => {
 		let loadedTree: DocumentTree | undefined;
 		const mutate = (tree: DocumentTree) => {
 			loadedTree = tree;
@@ -685,7 +927,10 @@ it.each([false, true])(
 				async (input, context) => mutate(await original(input, context)),
 			);
 		}
-		const report = await navigate(response(privateQuery), reader);
+		const report = await navigate(
+			response(privateQuery, { headers: { "content-type": [mime] } }),
+			reader,
+		);
 		expect(report.failure).toEqual({
 			category: "unsupported",
 			stage: "extraction",
@@ -844,11 +1089,17 @@ it.each(
 	},
 );
 
-it.each([false, true])(
-	"preserves opt-in captured bytes, including the literal query (reader=%s)",
-	async (reader) => {
+it.each(
+	["text/plain", ...feedMimes].flatMap((mime) =>
+		[false, true].map((reader) => ({ mime, reader })),
+	),
+)(
+	"preserves opt-in captured $mime bytes, including the literal query (reader=$reader)",
+	async ({ mime, reader }) => {
 		const source = `${privateSource} 😀\r\n${privateQuery}\rhttps://research.example/no-follow\n`;
-		const input = response(source);
+		const input = response(source, {
+			headers: { "content-type": [`${mime}; charset=utf-8`] },
+		});
 		const report = await navigate(input, reader, true);
 		expect(discovery(report).entries).toEqual([{ line: 2, column: 1 }]);
 		expect(report.outcome).toBe("extracted-unverified");
