@@ -26,7 +26,9 @@ Navigation, scripts and page fetch keep their existing credential behavior.
 This option alone does **not** make every browser request anonymous; the live
 comparison additionally uses a credential-omitting document adapter and empty jar.
 
-This increment adds native API support, not a new CLI switch. A custom transport
+The CLI can opt in at host startup with
+`AGENT_BROWSER_RESOURCE_CACHE=public-anonymous-v1`; see `CLI-RESOURCE-REUSE.md`
+for configuration, daemon lifetime and validation limits. A custom transport
 wrapper must forward the native `resourceReuse` capability for the session to
 attach resource hints. Wrappers should preserve delivery provenance and metrics.
 Ordinary document, script, page-fetch and response-accounting operations are not

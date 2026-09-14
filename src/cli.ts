@@ -12,6 +12,7 @@ import { listenCommandServer } from "./node-command-server.js";
 import { documentProfileFromEnvironment } from "./node-document-profile.js";
 import { identityFromEnvironment } from "./node-identity-config.js";
 import { loadPlaygroundAssets } from "./node-playground-assets.js";
+import { resourceCacheFromEnvironment } from "./node-resource-cache-config.js";
 import {
 	readCommandConnection,
 	writeCommandConnection,
@@ -50,6 +51,13 @@ function runtimeConfiguration() {
 			"invalid-input",
 			"AGENT_BROWSER_PAGE_RUNTIME requires an explicit SafeJS package root",
 		);
+	const resourceCache = resourceCacheFromEnvironment(
+		process.env.AGENT_BROWSER_RESOURCE_CACHE,
+		{
+			documentProfile,
+			processRuntime: packageRoot !== undefined || websiteScripts !== undefined,
+		},
+	);
 	return {
 		packageRoot,
 		runtimeAdapter,
@@ -57,6 +65,7 @@ function runtimeConfiguration() {
 		documentProfile,
 		secretConfig,
 		websiteScripts,
+		resourceCache,
 	};
 }
 
@@ -68,6 +77,7 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 		documentProfile,
 		secretConfig,
 		websiteScripts,
+		resourceCache,
 	} = configuration;
 	const secrets = await loadSecretConfig(secretConfig, {
 		processRuntime: packageRoot !== undefined,
@@ -99,7 +109,12 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 		createSession: () =>
 			new BrowserSession({
 				identity,
-				createTransport: (cookieJar) => new NodeNetworkTransport({ cookieJar }),
+				...(resourceCache ? { resourceCredentials: "omit" as const } : {}),
+				createTransport: (cookieJar) =>
+					new NodeNetworkTransport({
+						cookieJar,
+						...(resourceCache ? { resourceCache: {} } : {}),
+					}),
 				loadDocument,
 			}),
 	});

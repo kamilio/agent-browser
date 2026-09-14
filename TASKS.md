@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: usable CLI resource reuse and more documentation coverage
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+`CLI-RESOURCE-REUSE.md` exposes the public anonymous CSS/image cache through
+`AGENT_BROWSER_RESOURCE_CACHE=public-anonymous-v1` at native host startup.
+Defaults remain unchanged; unsupported reader/process/page-script combinations
+and invalid values fail before connection/secret IO. Existing daemons are not
+reconfigured by a client's environment. 563 tests across eight native-manifest
+files, production build, eight strict roots, formatting and new-file lint pass.
+Four real CLI configuration smokes pass under socket denial, without credentials,
+subprocesses, addons or service startup; they do not prove a live daemon cache hit.
+The thirty-fifth website inventory adds useful ROCm documentation (16,358 Markdown
+bytes) and records vLLM's HTTP 429 Cloudflare barrier honestly. Only two requests
+were made; SWE-bench was not attempted after the batch stopped. No restricted
+target retry or bypass. Previous source/evidence paths and measurements remain.
+Prior dirty work is preserved. Broad research and website coverage, rendering,
+live-service/cache acceptance, SafeJS/device/credentials and full native release
+remain open. No push or unrelated adoption.
+
 ### September 14: fewer repeated resource requests without changing content
 
 **PROGRESS; overall browser goal remains ACTIVE.**

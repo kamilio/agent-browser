@@ -53,6 +53,7 @@ beforeEach(() => {
 	vi.stubEnv("AGENT_BROWSER_PAGE_SCRIPTS", undefined);
 	vi.stubEnv("AGENT_BROWSER_LANGUAGES", undefined);
 	vi.stubEnv("AGENT_BROWSER_DOCUMENT_PROFILE", undefined);
+	vi.stubEnv("AGENT_BROWSER_RESOURCE_CACHE", undefined);
 	vi.stubEnv("AGENT_BROWSER_SESSION", undefined);
 	vi.stubEnv("PLAYWRIGHT_CLI_SESSION", undefined);
 	process.exitCode = 0;
