@@ -22,6 +22,7 @@ export const cssTextProperties = Object.freeze([
 	"word-spacing",
 	"white-space",
 	"overflow-wrap",
+	"word-break",
 	"hyphens",
 	"text-align",
 	"text-indent",
@@ -42,6 +43,7 @@ export const initialTextStyle: TextStyle = Object.freeze({
 	"word-spacing": "0px",
 	"white-space": "normal",
 	"overflow-wrap": "normal",
+	"word-break": "normal",
 	hyphens: "manual",
 	"text-align": "start",
 	"text-indent": "0px",
@@ -104,6 +106,8 @@ export function parseTextValue(
 		return ["normal", "break-word", "anywhere"].includes(value)
 			? value
 			: undefined;
+	if (property === "word-break")
+		return ["normal", "break-word"].includes(value) ? value : undefined;
 	if (property === "hyphens")
 		return ["none", "manual", "auto"].includes(value) ? value : undefined;
 	if (property === "white-space")

@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: independent word-break compatibility passes native profile
+
+**PROGRESS; overall browser goal remains ACTIVE.** `WORD-BREAK.md` records the
+independent inherited `normal`/`break-word` longhand and shared emergency-wrap
+integration. The final 485-file selected native profile passes 23,935 cases,
+zero failures and two unchanged exclusions; build, 484-root strict types and
+scoped formatting pass. All 23,853 prior case occurrences retain their statuses
+and identities; 84 passing tests are added. Registration-only evidence still
+fails 26/34 layout cases, so this is actual wrapping support, not diagnostic
+suppression. Source/compiled inventories and all unowned Git files are verified.
+
+Independent review also exposes a shared soft-hyphen minimum-width defect:
+two separate characterizations each pass 35 cases and fail two, reporting 18px
+instead of 6px for manual-hyphen/emergency-wrap composition. These remain
+explicitly failing evidence outside the adopted 84-case suite; the defect is
+not fixed or counted as acceptance. Next: correct that shared min-content path
+with mixed-inline/whitespace/Unicode coverage and stronger failure-path teardown.
+
+The HN captured stylesheet motivates this change, but no new HN load occurs in
+the feature lane. A separately reviewed captured recheck is prepared, not yet
+executed. HN's layered backgrounds, presentation hints, image and table-cell
+overflow blockers remain. Live sites, real socket/TTY, SafeJS, credential/vault,
+passkey-device, research, challenge and performance acceptance gates remain
+open. Preserve the 42 pre-existing dirty paths, original 927-line TASKS residual,
+three original manifest additions and 697 original untracked files. No push.
+
 ### September 14: fresh native man7 two-page live flow verified
 
 **PROGRESS; overall browser goal remains ACTIVE.** One freshly authorized native

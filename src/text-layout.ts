@@ -1942,7 +1942,8 @@ function layoutTextContexts(
 						emergency:
 							mode !== "nowrap" &&
 							mode !== "pre" &&
-							(typography["overflow-wrap"] === "anywhere" ||
+							(typography["word-break"] === "break-word" ||
+								typography["overflow-wrap"] === "anywhere" ||
 								(typography["overflow-wrap"] === "break-word" &&
 									constraint === "used")),
 					};

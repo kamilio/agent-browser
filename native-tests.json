@@ -832,5 +832,8 @@
   "src/table-container-percentage-render.test.ts",
   "src/table-container-percentage-interaction.test.ts",
   "src/fieldset-table-auto-height.test.ts",
-  "src/fieldset-table-interaction.test.ts"
+  "src/fieldset-table-interaction.test.ts",
+  "src/word-break-layout.test.ts",
+  "src/word-break-style.test.ts",
+  "src/word-break-interaction.test.ts"
 ]
