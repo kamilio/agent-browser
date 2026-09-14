@@ -6,6 +6,38 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: shared soft-hyphen minimum sizing repaired and measured
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+`HYPHEN-EMERGENCY-MIN-CONTENT.md` records the shared min-content correction for
+emergency wrapping plus manual soft hyphens. It partitions at existing valid
+emergency boundaries first, preserving manual opportunities in protected pieces,
+used-layout hyphen priority and the OW:break-word minimum distinction. Native
+inline-block geometry, fixed-line raster references, same-point hit invalidation,
+Unicode/source boundaries, resets and work caps are covered.
+
+The final 488-file selected native profile passes 23,975 cases, zero failures
+and two unchanged exclusions; build, 487-root strict types and scoped formatting
+pass. All 23,937 prior case occurrences are preserved and 40 passing cases added.
+The unchanged original 37-case characterization now passes all 37, repairing
+both previously recorded failures without editing expectations. Nine passes /
+31 failures on old production provide the identical-final-test baseline.
+
+Paired native counters for 128/256 repeated-SHY groups fall from 53,784/205,848
+minimum-pass work units to 10,145/20,257, while maxima and maximum-pass metrics
+stay identical. These are 81.14%/90.16% charged-work reductions for two fixtures,
+not measured website speedups. Protected manual islands can still be quadratic;
+arbitrary explicit SHY placement is not a new Unicode-conformance guarantee.
+
+A bounded static inventory verifies 44 retained public response bodies from
+seven hosts, with zero target soft-hyphen forms. No new live or captured browser
+run occurs in this increment. Next broaden website testing with MDN's retained
+sidebar case and its missing SVG/resource boundary, or the Python Tutorial flow;
+do not fabricate targeted site coverage by injecting characters or omitting CSS.
+Preserve the 42 dirty tracked paths and 697 original untracked files. Research,
+varied live coverage, wall-clock performance, SafeJS, credential/provider,
+passkey-device, real terminal and challenge gates remain open. No push.
+
 ### September 14: captured HN confirms word-break diagnostic removal
 
 **PROGRESS; overall browser goal remains ACTIVE.** One separate native recheck

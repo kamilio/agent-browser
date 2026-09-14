@@ -1260,6 +1260,32 @@ function layoutTextContexts(
 					return !token.collapsible || content;
 				});
 			}
+			if (constraint === "min-content" && hasDiscretionary && hasEmergency) {
+				const starts = emergencyStarts(word);
+				if (starts.length > 1) {
+					const originalWord = word;
+					const trailingGap = gap;
+					const trailingClosing = closing;
+					if (lineContent) finish();
+					for (let index = 0; index < starts.length; index++) {
+						charge();
+						const final = index === starts.length - 1;
+						word = originalWord.slice(starts[index], starts[index + 1]);
+						gap = final ? trailingGap : undefined;
+						closing = final ? trailingClosing : [];
+						hasDiscretionary = false;
+						hasEmergency = false;
+						for (const token of word) {
+							charge();
+							hasDiscretionary ||= token.discretionaryAdvance !== undefined;
+							hasEmergency ||= token.emergency === true;
+						}
+						flushWord();
+						if (!final) finish();
+					}
+					return;
+				}
+			}
 			let tokens = [...word, ...(gap ?? []), ...closing];
 			let predicted = project(tokens, !hasDiscretionary);
 			while (
