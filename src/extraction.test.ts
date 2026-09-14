@@ -347,6 +347,244 @@ function tableTextRecord(
 	return { ref: tree.reference(textId), type: "text", text };
 }
 
+it.each(["markdown", "json"] as const)(
+	"keeps default and disabled compact table output identical for %s",
+	(format) => {
+		const tree = parseHtmlDocument(
+			"<table><tr><td>Content</td><td></td></tr></table>",
+			"https://example.com/",
+		);
+		try {
+			const original = extractDocument(tree, { format });
+			expect(
+				JSON.stringify(extractDocument(tree, { format, compactTables: false })),
+			).toBe(JSON.stringify(original));
+			expect(original).not.toHaveProperty("compactTables");
+		} finally {
+			tree.close();
+		}
+	},
+);
+
+it.each(["true", "false", 0, 1, null, {}, []].map((value) => ({ value })))(
+	"rejects nonboolean compact table options: $value",
+	({ value }) => {
+		const tree = new DocumentTree("https://example.com/");
+		try {
+			expect(() =>
+				extractDocument(tree, { compactTables: value as boolean }),
+			).toThrow(expect.objectContaining({ code: "invalid-input" }));
+		} finally {
+			tree.close();
+		}
+	},
+);
+
+it("requires Markdown and discloses compact mode even without tables", () => {
+	const tree = parseHtmlDocument(
+		"<p>Plain content</p>",
+		"https://example.com/",
+	);
+	try {
+		expect(() =>
+			extractDocument(tree, { format: "json", compactTables: true }),
+		).toThrow(expect.objectContaining({ code: "invalid-input" }));
+		const original = extractDocument(tree);
+		const compact = extractDocument(tree, { compactTables: true });
+		expect(compact).toEqual({ ...original, compactTables: true });
+		expect(JSON.parse(JSON.stringify(compact)).compactTables).toBe(true);
+	} finally {
+		tree.close();
+	}
+});
+
+it("saves many-row bytes by substituting only enclosed begin markers", () => {
+	const tree = new DocumentTree("https://example.com/");
+	try {
+		const table = appendTableNode(tree, tree.root, "table");
+		for (let index = 0; index < 24; index++) {
+			const row = appendTableNode(tree, table, "tr");
+			appendTableNode(tree, row, "th", `Device ${index}`);
+			const cell = appendTableNode(tree, row, "td", "雪|GPU-A ");
+			appendTableNode(tree, cell, "a", "Details", { href: "/next" });
+			appendTableNode(tree, row, "td");
+			const codeCell = appendTableNode(tree, row, "td");
+			appendTableNode(tree, codeCell, "code", "value`code");
+		}
+		const original = extractDocument(tree);
+		const structured = extractDocument(tree, { format: "json" });
+		const compact = extractDocument(tree, { compactTables: true });
+		if (original.format !== "markdown" || compact.format !== "markdown")
+			throw new Error("Expected Markdown");
+		expect(compact).toEqual({
+			...original,
+			compactTables: true,
+			content: original.content
+				.replaceAll(tableMarkers.rowBegin, "**Native row begin**")
+				.replaceAll(tableMarkers.cellBegin, "**Native cell begin**"),
+		});
+		for (const [type, count] of [
+			["table", 1],
+			["row", 24],
+			["cell", 96],
+		] as const) {
+			for (const boundary of ["begin", "end"]) {
+				const marker = new RegExp(`\\*\\*Native ${type} ${boundary}`, "g");
+				expect(compact.content.match(marker)).toHaveLength(count);
+				expect(original.content.match(marker)).toHaveLength(count);
+			}
+		}
+		const encoder = new TextEncoder();
+		expect(
+			encoder.encode(original.content).length -
+				encoder.encode(compact.content).length,
+		).toBe(120 * " (selected structure only)".length);
+		expect(encoder.encode(JSON.stringify(compact)).length).toBeLessThan(
+			encoder.encode(JSON.stringify(original)).length,
+		);
+		expect(extractDocument(tree, { format: "json" })).toEqual(structured);
+		expect(extractDocument(tree)).toEqual(original);
+	} finally {
+		tree.close();
+	}
+});
+
+it.each(["tr", "td", "th"])(
+	"retains standalone %s warnings despite an unselected enclosing table",
+	(tagName) => {
+		const tree = new DocumentTree("https://example.com/");
+		try {
+			const table = appendTableNode(tree, tree.root, "table");
+			const row = appendTableNode(tree, table, "tr");
+			const cell = appendTableNode(tree, row, tagName === "th" ? "th" : "td");
+			appendTableNode(tree, cell, "p", "Scoped content");
+			const root = tree.reference(tagName === "tr" ? row : cell);
+			const original = extractDocument(tree, { root });
+			expect(extractDocument(tree, { root, compactTables: true })).toEqual({
+				...original,
+				compactTables: true,
+			});
+			expect(original.content).toContain(tableMarkers.cellBegin);
+			if (tagName === "tr")
+				expect(original.content).toContain(tableMarkers.rowBegin);
+		} finally {
+			tree.close();
+		}
+	},
+);
+
+it("tracks emitted table context through nesting and standalone siblings", () => {
+	const tree = new DocumentTree("https://example.com/");
+	try {
+		const row = appendTableNode(tree, tree.root, "tr");
+		const outerCell = appendTableNode(tree, row, "td", "Before");
+		const table = appendTableNode(tree, outerCell, "table");
+		const innerRow = appendTableNode(tree, table, "tr");
+		const innerCell = appendTableNode(tree, innerRow, "td");
+		const nested = appendTableNode(tree, innerCell, "table");
+		const nestedRow = appendTableNode(tree, nested, "tr");
+		appendTableNode(tree, nestedRow, "td", "Nested");
+		appendTableNode(tree, innerRow, "td");
+		appendTableNode(tree, row, "td", "After inner table");
+		const following = appendTableNode(tree, tree.root, "tr");
+		appendTableNode(tree, following, "td", "After outer row");
+		expect(extractDocument(tree, { compactTables: true }).content).toBe(
+			tableBlocks(
+				tableMarkers.rowBegin,
+				tableMarkers.cellBegin,
+				"Before",
+				tableMarkers.tableBegin,
+				"**Native row begin**",
+				"**Native cell begin**",
+				tableMarkers.tableBegin,
+				"**Native row begin**",
+				"**Native cell begin**",
+				"Nested",
+				tableMarkers.cellEnd,
+				tableMarkers.rowEnd,
+				tableMarkers.tableEnd,
+				tableMarkers.cellEnd,
+				"**Native cell begin**",
+				tableMarkers.cellEnd,
+				tableMarkers.rowEnd,
+				tableMarkers.tableEnd,
+				tableMarkers.cellEnd,
+				tableMarkers.cellBegin,
+				"After inner table",
+				tableMarkers.cellEnd,
+				tableMarkers.rowEnd,
+				tableMarkers.rowBegin,
+				tableMarkers.cellBegin,
+				"After outer row",
+				tableMarkers.cellEnd,
+				tableMarkers.rowEnd,
+			),
+		);
+	} finally {
+		tree.close();
+	}
+});
+
+it("compacts prefixed tables without rewriting literal marker text", () => {
+	const tree = new DocumentTree("https://example.com/");
+	try {
+		const quote = appendTableNode(tree, tree.root, "blockquote");
+		const list = appendTableNode(tree, quote, "ol", undefined, { start: "3" });
+		const item = appendTableNode(tree, list, "li");
+		const table = appendTableNode(tree, item, "table");
+		const row = appendTableNode(tree, table, "tr");
+		const cell = appendTableNode(tree, row, "td");
+		appendTableNode(tree, cell, "pre", tableMarkers.cellBegin);
+		appendTableNode(tree, list, "li", "Following");
+		expect(extractDocument(tree, { compactTables: true }).content).toBe(
+			tableBlocks(
+				`> 3. ${tableMarkers.tableBegin}`,
+				">    **Native row begin**",
+				">    **Native cell begin**",
+				`>    \`\`\`\n>    ${tableMarkers.cellBegin}\n>    \`\`\``,
+				`>    ${tableMarkers.cellEnd}`,
+				`>    ${tableMarkers.rowEnd}`,
+				`>    ${tableMarkers.tableEnd}`,
+				"> 4. Following",
+			),
+		);
+	} finally {
+		tree.close();
+	}
+});
+
+it("charges compact metadata and UTF8 output at exact unchanged quotas", () => {
+	const tree = new DocumentTree("https://example.com/");
+	try {
+		const table = appendTableNode(tree, tree.root, "table");
+		const row = appendTableNode(tree, table, "tr");
+		appendTableNode(tree, row, "td", "雪|\\GPU-A");
+		const options = { root: tree.reference(table), compactTables: true };
+		const result = extractDocument(tree, options);
+		const serialized = JSON.stringify(result);
+		const bytes = new TextEncoder().encode(serialized).length;
+		expect(result).toHaveProperty("compactTables", true);
+		expect(bytes).toBeGreaterThan(serialized.length);
+		expect(extractDocument(tree, { ...options, maxBytes: bytes })).toEqual(
+			result,
+		);
+		expect(() =>
+			extractDocument(tree, { ...options, maxBytes: bytes - 1 }),
+		).toThrow(expect.objectContaining({ code: "resource-limit" }));
+		expect(
+			extractDocument(tree, { ...options, maxNodes: 4, maxDepth: 3 }),
+		).toEqual(result);
+		expect(() => extractDocument(tree, { ...options, maxNodes: 3 })).toThrow(
+			expect.objectContaining({ code: "resource-limit" }),
+		);
+		expect(() => extractDocument(tree, { ...options, maxDepth: 2 })).toThrow(
+			expect.objectContaining({ code: "resource-limit" }),
+		);
+	} finally {
+		tree.close();
+	}
+});
+
 it("labels every native 2x3 table node without changing structured JSON", () => {
 	const tree = new DocumentTree("https://example.com/");
 	try {

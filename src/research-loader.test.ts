@@ -997,6 +997,12 @@ it("keeps response and omission metadata when bounded extraction fails", async (
 	expect(report.failure).toEqual({
 		category: "resource-limit",
 		stage: "extraction",
+		resourceLimit: {
+			kind: "extraction.output",
+			unit: "bytes",
+			limit: 256_000,
+			observed: 260_001,
+		},
 	});
 	expect(report.primaryResponse?.bodySha256).toBe(
 		summarizePrimaryResponse(input).bodySha256,

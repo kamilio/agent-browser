@@ -77,6 +77,7 @@ export interface ExtractedNode {
 export interface ExtractionOptions {
 	format?: "markdown" | "json";
 	tableMetadata?: boolean;
+	compactTables?: boolean;
 	root?: string;
 	lines?: { start: number; end: number };
 	section?: string;
@@ -144,6 +145,7 @@ interface ExtractionMetadata {
 	title: string;
 	revision: number;
 	partial: true;
+	compactTables?: true;
 	reader?: Readonly<ResearchReaderReport>;
 	sectionSelection?: Readonly<HeadingSectionMetadata>;
 	textSelection?: {
@@ -475,14 +477,19 @@ function validateTableStructure(
 	return transparentWrappers;
 }
 
-function markdown(root: ExtractedNode, maxBytes: number) {
+function markdown(
+	root: ExtractedNode,
+	maxBytes: number,
+	compactTables: boolean,
+) {
 	const transparentWrappers = validateTableStructure(root);
 	const output: string[] = [];
 	let bytes = 0;
+	let tableDepth = 0;
 	type Task =
 		| { node: ExtractedNode; prefixes: Prefix[]; ordinal?: number }
 		| { nodes: ExtractedNode[]; prefixes: Prefix[] }
-		| { closingMarker: string; prefixes: Prefix[] }
+		| { closingMarker: string; prefixes: Prefix[]; closesTable: boolean }
 		| { emptyItem: Prefix; prefixes: Prefix[] };
 	const pending: Task[] = [{ node: root, prefixes: [] }];
 	const emit = (text: string, prefixes: Prefix[]) => {
@@ -539,6 +546,7 @@ function markdown(root: ExtractedNode, maxBytes: number) {
 		if (!task) break;
 		if ("closingMarker" in task) {
 			emit(task.closingMarker, task.prefixes);
+			if (task.closesTable) tableDepth--;
 			continue;
 		}
 		if ("emptyItem" in task) {
@@ -553,8 +561,17 @@ function markdown(root: ExtractedNode, maxBytes: number) {
 		const children = node.children ?? [];
 		const boundary = tableBoundaryMarkers[node.type];
 		if (boundary) {
-			emit(boundary.begin, prefixes);
-			pending.push({ closingMarker: boundary.end, prefixes });
+			const enclosed =
+				compactTables &&
+				tableDepth > 0 &&
+				(node.type === "row" || node.type === "cell");
+			emit(
+				enclosed ? `**Native ${node.type} begin**` : boundary.begin,
+				prefixes,
+			);
+			const closesTable = node.type === "table";
+			if (closesTable) tableDepth++;
+			pending.push({ closingMarker: boundary.end, prefixes, closesTable });
 			schedule(children, prefixes);
 		} else if (node.type === "heading")
 			emit(`${"#".repeat(node.level ?? 1)} ${inline(children)}`, prefixes);
@@ -824,6 +841,15 @@ export function extractDocument(
 			"invalid-input",
 			"Table metadata requires a boolean option and JSON extraction",
 		);
+	if (
+		(options.compactTables !== undefined &&
+			typeof options.compactTables !== "boolean") ||
+		(options.compactTables === true && format !== "markdown")
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Compact tables require a boolean option and Markdown extraction",
+		);
 	const maxBytes = options.maxBytes ?? 262_144;
 	const maxNodes = options.maxNodes ?? 10_000;
 	const maxDepth = options.maxDepth ?? 256;
@@ -867,6 +893,7 @@ export function extractDocument(
 		title,
 		revision: tree.revision,
 		partial: true,
+		...(options.compactTables === true ? { compactTables: true as const } : {}),
 		...(reader ? { reader } : {}),
 		...(selection ? { textSelection: selection.metadata } : {}),
 		...(section ? { sectionSelection: section.metadata } : {}),
@@ -998,7 +1025,11 @@ export function extractDocument(
 	const result: DocumentExtraction =
 		format === "json"
 			? { ...metadata, format, content: root }
-			: { ...metadata, format, content: markdown(root, maxBytes) };
+			: {
+					...metadata,
+					format,
+					content: markdown(root, maxBytes, options.compactTables === true),
+				};
 	const outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
 	if (outputBytes > maxBytes)
 		throw resourceLimitError(

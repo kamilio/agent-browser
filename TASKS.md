@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: more public content and smaller table-heavy output
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+`COMPACT-MARKDOWN-TABLES.md` adds opt-in `--compact-tables`, retaining all content
+and boundaries while removing repeated caveats only inside an emitted table
+warning. Defaults, JSON, independently scoped warnings and quotas stay unchanged.
+Six saved-page comparisons prove exact default-output preservation and only the
+documented compact substitutions. A fresh GitHub CLI visit saves9,204 Markdown
+bytes (16.95%) without a second request;795 targeted native tests, production
+compilation and eight strict test roots pass. Validation also catches and repairs
+one older test expectation for the intentional structured output diagnostic.
+The thirty-first inventory update adds nine reader requests across eight hosts:
+seven useful documents, PyTorch's continuation-only stub and a Stack Overflow403
+challenge. Following the stub's real public anchor yields CUDA documentation;
+arXiv, SQLite, Apple, NVIDIA and Lobsters also yield checked content. No new
+content omission is demonstrated by the bounded saved-capture review. Research,
+full release, rendering/interaction and SafeJS/device gates remain incomplete;
+access restrictions are not bypassed. No push or unrelated work adoption.
+
 ### September 14: native browsing recovers oversized content explicitly
 
 **PROGRESS; overall browser goal remains ACTIVE.**

@@ -225,6 +225,88 @@ it("preserves exact default argument shapes", () => {
 	expectNoSetup();
 });
 
+it.each([[], ["--format", "markdown"]].map((flags) => ({ flags })))(
+	"accepts opt-in compact table markers with format flags $flags",
+	({ flags }) => {
+		expect(parseResearchArguments([url, "--compact-tables", ...flags])).toEqual(
+			{
+				reader: false,
+				urls: [url],
+				compactTables: true,
+				...(flags.length ? { format: "markdown" } : {}),
+			},
+		);
+		expectNoSetup();
+	},
+);
+
+it.each([
+	["--compact-tables", "--compact-tables"],
+	["--compact-tables", "true"],
+	["--compact-tables=false"],
+	["--compact-tables", "--format", "json"],
+	["--format", "json", "--compact-tables"],
+	["--compact-tables", "--table-metadata"],
+	["--compact-tables", "--headings"],
+	["--compact-tables", "--find", "Owned"],
+])("rejects invalid compact table flags %j before setup", (...flags) => {
+	expect(() => parseResearchArguments([url, ...flags])).toThrowError(
+		expect.objectContaining({ code: "invalid-input" }),
+	);
+	expectNoSetup();
+});
+
+it.each(modes)(
+	"carries compact table markers through the reader batch (reader=%s)",
+	async (reader) => {
+		vi.mocked(NodeNetworkTransport.prototype.request).mockResolvedValueOnce(
+			response(tableMarkup),
+		);
+		const reports: ResearchNavigationReport[] = [];
+		for await (const report of researchBatch([
+			url,
+			...(reader ? ["--reader"] : []),
+			"--compact-tables",
+			"--min-request-interval-ms",
+			"0",
+		]))
+			reports.push(report);
+		expect(reports).toHaveLength(1);
+		const report = reports[0];
+		expectClosed(report);
+		expect(report).toMatchObject({
+			outcome: "extracted-unverified",
+			extraction: { format: "markdown", compactTables: true },
+		});
+		const content = report.extraction?.content;
+		expect(typeof content).toBe("string");
+		if (typeof content !== "string") throw new Error("Expected Markdown");
+		expect(content).toContain(
+			"selected structure only; associations unspecified",
+		);
+		expect(content).toContain("**Native row begin**");
+		expect(content).toContain("**Native cell begin**");
+		expect(content).not.toContain(
+			"**Native row begin (selected structure only)**",
+		);
+		expect(content).toContain("Header");
+		expect(content).toContain("42");
+		expect(content).toContain("End");
+		const chunks: Buffer[] = [];
+		const output = new Writable({
+			write(chunk, _encoding, callback) {
+				chunks.push(Buffer.from(chunk));
+				callback();
+			},
+		});
+		outputs.push(output);
+		await emitResearchReport(output, report);
+		expect(JSON.parse(Buffer.concat(chunks).toString("utf8"))).toEqual(
+			JSON.parse(JSON.stringify(report)),
+		);
+	},
+);
+
 it.each(["markdown", "json"] as const)(
 	"accepts explicit %s before or after URLs",
 	(format) => {
@@ -349,6 +431,10 @@ it.each(
 		})),
 		{ tableMetadata: true },
 		{ format: "markdown", tableMetadata: true },
+		...[null, 0, 1, "true", [], {}].map((compactTables) => ({
+			compactTables,
+		})),
+		{ format: "json", compactTables: true },
 		...[
 			null,
 			-1,
