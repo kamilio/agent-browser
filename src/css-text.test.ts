@@ -191,7 +191,7 @@ it.each(["-1px", "12", "calc(1px + 1)", "1e999px", "10ch", "larger smaller"])(
 
 it("reports unsupported whitespace/alignment, bounds computed sizes and expands all", () => {
 	const { styles } = fixture(
-		"#target{white-space:break-spaces;text-align:justify;font-weight:bold}",
+		"#target{white-space:break-spaces;text-align:match-parent;font-weight:bold}",
 	);
 	expect(styles.metrics().issues).toMatchObject({
 		"unimplemented-or-invalid-css-value": 2,

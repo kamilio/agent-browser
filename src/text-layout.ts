@@ -150,8 +150,19 @@ interface Token extends FontExtent {
 	collapsible: boolean;
 	breakable: boolean;
 	hangable?: boolean;
+	justifiable?: boolean;
 	emergency?: boolean;
 }
+
+const justificationSeparators = new Set([
+	" ",
+	"\u00a0",
+	"\u1361",
+	"\u{10100}",
+	"\u{10101}",
+	"\u{1039f}",
+	"\u{1091f}",
+]);
 
 function checkedLimits(options: TextLayoutOptions) {
 	if (!options || typeof options !== "object" || Array.isArray(options))
@@ -709,7 +720,7 @@ function layoutTextContexts(
 				indentation() === 0
 					? interval.width
 					: layoutNumber(interval.right - interval.left, true);
-			const measured = Math.max(
+			let measured = Math.max(
 				0,
 				lineWidth -
 					(constraint === "max-content"
@@ -740,6 +751,65 @@ function layoutTextContexts(
 			}
 			const baseline = layoutNumber(textHeight + above, true);
 			const alignment = style["text-align"];
+			if (
+				alignment === "justify" &&
+				!forced &&
+				!final &&
+				remainingWidth > measured
+			) {
+				const separator = (token: Token) =>
+					token.kind === "glyph" &&
+					justificationSeparators.has(token.character);
+				let firstContent = -1;
+				let lastContent = -1;
+				let lastTab = -1;
+				for (let index = 0; index < entries.length; index++) {
+					charge();
+					const token = entries[index].token;
+					if (token.kind === "tab") lastTab = index;
+					if (
+						token.kind === "image" ||
+						token.kind === "atomic" ||
+						(token.kind === "glyph" &&
+							token.character !== "" &&
+							!separator(token))
+					) {
+						if (firstContent < 0) firstContent = index;
+						lastContent = index;
+					}
+				}
+				firstContent = Math.max(firstContent, lastTab);
+				const eligible = (index: number) =>
+					index > firstContent &&
+					index < lastContent &&
+					entries[index].token.justifiable === true &&
+					entries[index].advance > 0 &&
+					separator(entries[index].token);
+				let opportunities = 0;
+				for (let index = firstContent + 1; index < lastContent; index++) {
+					charge();
+					if (eligible(index)) opportunities++;
+				}
+				if (opportunities > 0) {
+					const available = remainingWidth - measured;
+					let expansion = 0;
+					let distributed = 0;
+					for (let index = 0; index < entries.length; index++) {
+						charge();
+						const entry = entries[index];
+						entry.offset = layoutNumber(entry.offset + expansion, true);
+						if (eligible(index)) {
+							const nextExpansion = available * (++distributed / opportunities);
+							entry.advance = layoutNumber(
+								entry.advance + nextExpansion - expansion,
+							);
+							expansion = nextExpansion;
+						}
+					}
+					lineWidth = layoutNumber(lineWidth + available, true);
+					measured = remainingWidth;
+				}
+			}
 			const offset =
 				interval.left +
 				(alignment === "center"
@@ -1646,6 +1716,7 @@ function layoutTextContexts(
 						collapsible,
 						breakable: whitespace && mode !== "nowrap" && mode !== "pre",
 						hangable: mode === "pre-wrap" && whitespace,
+						justifiable: !preserved,
 						emergency:
 							mode !== "nowrap" &&
 							mode !== "pre" &&

@@ -89,7 +89,9 @@ export function parseTextValue(
 			? value
 			: undefined;
 	if (property === "text-align")
-		return ["start", "end", "left", "right", "center"].includes(value)
+		return ["start", "end", "left", "right", "center", "justify"].includes(
+			value,
+		)
 			? value
 			: undefined;
 	if (property === "line-height" && value === "normal") return value;

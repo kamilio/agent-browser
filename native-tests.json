@@ -615,6 +615,7 @@
   "src/template-bindings.test.ts",
   "src/template-parser.test.ts",
   "src/text-layout.test.ts",
+  "src/text-justify.test.ts",
   "src/css-imports.test.ts",
   "src/stylesheet-imports.test.ts",
   "src/stylesheet-import-loading.test.ts",
