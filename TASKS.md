@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: MDN click rechecked on committed letter spacing
+
+**PROGRESS; overall browser goal remains ACTIVE.** A new captured ordinary click
+on e5f76b6 runs at10:55:31UTC. Initial navigation and link discovery succeed;
+native width admission still rejects the click. Exception property counts fall
+54→51; the other six named categories stay unchanged. No destination or wire
+request, scripts, forced click, fallback or retry. This is not a Cloudflare block.
+
+The original19responses/270,288bytes,49links and50,087query work are unchanged.
+Prepared and parent verification pass with stable inputs/clean closure. The
+23,097-pass gate is rehashed, not rerun. See MDN-LETTER-SPACING-CLICK-REPLAY.md
+and the eighteenth inventory; historical failures and paths remain preserved.
+
+NEXT: build actual single-layer CSS backgrounds, including URL provenance,
+existing image/network/CSP ownership, position/size/repeat pixels, invalidation
+and cleanup. Native diagnostics plus source inspection identify missing behavior;
+do not replace implementation with syntax acceptance or admission exceptions.
+Keep the old captured corpus closed. Original research, Wikipedia geometry,
+broader live forms/sites, credential/passkey/device, SafeJS, socket/TTY and
+challenge gates remain open. Preserve unrelated work; no push.
+
 ### September 14: native letter spacing validated with geometry and clicks
 
 **PROGRESS; overall browser goal remains ACTIVE.** Real nonnegative px/em/rem
