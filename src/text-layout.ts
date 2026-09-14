@@ -272,9 +272,7 @@ function layoutTextContexts(
 	constraint: "used" | "min-content" | "max-content",
 ) {
 	const floatLayout = horizontal.floatLayout;
-	const hasTransforms = horizontal.formatting.nodes.some(
-		(node) => (node.typography?.["text-transform"] ?? "none") !== "none",
-	);
+	let hasTransforms: boolean | undefined;
 	if (
 		floatLayout !== undefined &&
 		(!floatLayout ||
@@ -385,7 +383,12 @@ function layoutTextContexts(
 		let transformations:
 			| ReadonlyMap<number, ReadonlyMap<number, string>>
 			| undefined;
-		if (hasTransforms) {
+		if (
+			container.children.length > 0 &&
+			(hasTransforms ??= horizontal.formatting.nodes.some(
+				(node) => (node.typography?.["text-transform"] ?? "none") !== "none",
+			))
+		) {
 			const inputs: (TextTransformInput | null)[] = [];
 			const pending = [...container.children].reverse();
 			while (pending.length) {

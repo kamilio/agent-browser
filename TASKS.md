@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: eliminate text-transform scans without text demand
+
+**PROGRESS; overall browser goal remains ACTIVE.** Native text layout now delays
+its full-formatting-node transform-presence scan until a nonempty inline context
+needs it, retaining either boolean only within that call. No-width, block-only
+and childless inline requests avoid the scan; validation, outputs and charged
+metrics remain. There is no persistent cache, dependency or budget increase.
+
+Deterministic native regressions reproduce11000 and1010000 predicate visits for
+100/1000 empty-context measurements before the fix, versus zero afterward. These
+are predicate counts, not whole-page timings or all node work. Nonempty-context
+and broader repeated-layout costs remain. See `TEXT-TRANSFORM-SCAN.md`.
+
+Retained unchanged-engine focus:299pass/14fail. Final focus:316pass/0fail,
+nine files. Final selected native gate:22101pass/0fail/two unchanged exclusions,
+439selected files,438strict roots,791manifest entries and352unselected.
+All27new cases, build, strict checking, scoped formatting and exact case/source
+inventory checks pass;1344source/2172compiled/66receipt entries are retained.
+An initial fixture type error and an intermediate24-case passing run remain
+separate. Bounded source review finds no blocking issue; no live-site speedup
+or standalone memory improvement is claimed.
+
+NEXT: consume the separately scoped MDN formatting diagnosis on its unchanged
+older runtime, implement genuine missing layout behavior rather than suppressing
+guards, and broaden website/form flows and production-only performance checks.
+Research, live-site, credentials/devices, SafeJS, socket, TTY and challenge gates
+remain open. Preserve historical evidence and pre-existing work. No push.
+
+
 ### September 14: captured MDN blocker and native action profile
 
 **PROGRESS; overall browser goal remains ACTIVE.** One separately scoped MDN
