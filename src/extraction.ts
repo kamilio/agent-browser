@@ -25,6 +25,7 @@ import {
 	type ResearchReaderReport,
 	researchReaderInfo,
 } from "./research-reader-info.js";
+import { resourceLimitError } from "./resource-limit.js";
 import { documentStyles } from "./styles.js";
 import {
 	type TableSourceMetadata,
@@ -498,8 +499,10 @@ function markdown(root: ExtractedNode, maxBytes: number) {
 			const line = `${prefix}${lines[index]}\n`;
 			bytes += encoder.encode(line).byteLength;
 			if (bytes > maxBytes)
-				throw new AgentBrowserError(
-					"resource-limit",
+				throw resourceLimitError(
+					"extraction.output",
+					maxBytes,
+					bytes,
 					"Markdown extraction output limit exceeded",
 				);
 			output.push(line);
@@ -507,8 +510,10 @@ function markdown(root: ExtractedNode, maxBytes: number) {
 		for (const part of prefixes) if (part.item) part.used = true;
 		bytes++;
 		if (bytes > maxBytes)
-			throw new AgentBrowserError(
-				"resource-limit",
+			throw resourceLimitError(
+				"extraction.output",
+				maxBytes,
+				bytes,
 				"Markdown extraction output limit exceeded",
 			);
 		output.push("\n");
@@ -994,9 +999,12 @@ export function extractDocument(
 		format === "json"
 			? { ...metadata, format, content: root }
 			: { ...metadata, format, content: markdown(root, maxBytes) };
-	if (encoder.encode(JSON.stringify(result)).byteLength > maxBytes)
-		throw new AgentBrowserError(
-			"resource-limit",
+	const outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
+	if (outputBytes > maxBytes)
+		throw resourceLimitError(
+			"extraction.output",
+			maxBytes,
+			outputBytes,
 			"Extraction output limit exceeded",
 		);
 	return result;

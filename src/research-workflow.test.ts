@@ -1,5 +1,6 @@
 import { Writable } from "node:stream";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { decodeResearchBodyCapture } from "../scripts/research-body-capture.js";
 import {
 	type ResearchExecutionOptions,
 	type ResearchLineRange,
@@ -21,7 +22,10 @@ import * as extraction from "./extraction.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import type { NetworkResponse } from "./network.js";
 import { NodeNetworkTransport } from "./node-transport.js";
+import { loadResearchDocument } from "./research-loader.js";
 import { researchReaderProfile } from "./research-reader-info.js";
+import { resourceLimitDiagnostic } from "./resource-limit.js";
+import { DocumentQueries } from "./selectors.js";
 import { BrowserSession } from "./session.js";
 
 const url = "https://research-workflow.fixture.invalid/paper";
@@ -80,6 +84,7 @@ interface WorkflowOptions {
 	selector?: string;
 	lines?: ResearchLineRange;
 	section?: string;
+	captureBody?: boolean;
 	execution?: ResearchExecutionOptions;
 	response?: Partial<NetworkResponse>;
 }
@@ -158,7 +163,7 @@ async function navigate(source: string, options: WorkflowOptions = {}) {
 		options.reader,
 		undefined,
 		options.selector,
-		false,
+		options.captureBody ?? false,
 		options.lines,
 		options.section,
 		false,
@@ -654,6 +659,124 @@ it.each(modes)(
 			failure: { category: "resource-limit", stage: "extraction" },
 		});
 		expect(report.extraction).toBeUndefined();
+	},
+);
+
+it("retains captured reader source and bounded sections after a Markdown output limit", async () => {
+	const destination = `${url}/${"x".repeat(4096)}`;
+	const label = "Référence";
+	const linkCount = 70;
+	const source = `<!doctype html><html><head><title>Owned article</title></head><body><h2 id="history">History</h2><p>Owned history</p><h2>References</h2><p>${`<a href="${destination}">${label}</a>`.repeat(linkCount)}</p></body></html>`;
+	const report = await navigate(source, {
+		reader: true,
+		captureBody: true,
+		execution: { format: "markdown", minRequestIntervalMs: 0 },
+	});
+	expect(report.reader?.textCodeUnits).toBeLessThanOrEqual(131_072);
+	expect(report).toMatchObject({
+		outcome: "failure",
+		contentSuccess: false,
+		classification: { barrier: null, diagnostic: null },
+	});
+	expect(report.extraction).toBeUndefined();
+	const body = decodeResearchBodyCapture(report.bodyCapture);
+	expect(body).toEqual(new TextEncoder().encode(source));
+	const tree = loadResearchDocument(
+		{ ...response(source), body },
+		{
+			signal: new AbortController().signal,
+			tabId: "owned-capture",
+			limits: { maxNodes: 50_000, maxDepth: 128, maxTextCodeUnits: 2_000_000 },
+		},
+	);
+	try {
+		const heading = new DocumentQueries(tree).querySelector("#history");
+		if (heading === null) throw new Error("Missing owned history section");
+		const section = extraction.extractDocument(tree, {
+			section: tree.reference(heading),
+			maxBytes: researchRunLimits.extractionBytes,
+		});
+		expect(section.content).toBe("## History\n\nOwned history\n");
+		expect(section.partial).toBe(true);
+	} finally {
+		tree.close();
+	}
+	expectClosed(report);
+	expect(researchRunLimits.extractionBytes).toBe(256_000);
+	const observed = new TextEncoder().encode(
+		`## History\n\nOwned history\n\n## References\n\n${`[${label}](<${destination}>)`.repeat(linkCount)}\n`,
+	).byteLength;
+	expect(observed).toBeGreaterThan(256_000);
+	expect(report.failure).toEqual({
+		category: "resource-limit",
+		stage: "extraction",
+		resourceLimit: {
+			kind: "extraction.output",
+			unit: "bytes",
+			limit: 256_000,
+			observed,
+		},
+	});
+});
+
+it.each([
+	{ quota: "line", text: "é".repeat(256) },
+	{ quota: "separator", text: `${"é".repeat(255)}x` },
+])("measures Markdown $quota output limits in bytes", ({ text }) => {
+	const tree = parseHtmlDocument(`<p>${text}</p>`, url);
+	try {
+		expect(() => extraction.extractDocument(tree, { maxBytes: 512 })).toThrow(
+			expect.objectContaining({
+				code: "resource-limit",
+				message: "Markdown extraction output limit exceeded",
+			}),
+		);
+		try {
+			extraction.extractDocument(tree, { maxBytes: 512 });
+		} catch (error) {
+			expect(resourceLimitDiagnostic(error)).toEqual({
+				kind: "extraction.output",
+				unit: "bytes",
+				limit: 512,
+				observed: 513,
+			});
+		}
+	} finally {
+		tree.close();
+	}
+});
+
+it.each(["markdown", "json"] as const)(
+	"measures final serialized %s extraction output in bytes",
+	(format) => {
+		const tree = parseHtmlDocument(`<p>${"é".repeat(180)}</p>`, url);
+		try {
+			const result = extraction.extractDocument(tree, { format });
+			const observed = new TextEncoder().encode(
+				JSON.stringify(result),
+			).byteLength;
+			const maxBytes = observed - 1;
+			expect(() =>
+				extraction.extractDocument(tree, { format, maxBytes }),
+			).toThrow(
+				expect.objectContaining({
+					code: "resource-limit",
+					message: "Extraction output limit exceeded",
+				}),
+			);
+			try {
+				extraction.extractDocument(tree, { format, maxBytes });
+			} catch (error) {
+				expect(resourceLimitDiagnostic(error)).toEqual({
+					kind: "extraction.output",
+					unit: "bytes",
+					limit: maxBytes,
+					observed,
+				});
+			}
+		} finally {
+			tree.close();
+		}
 	},
 );
 

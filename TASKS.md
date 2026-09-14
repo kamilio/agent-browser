@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: output-limit diagnostics support bounded content recovery
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+`CONTENT-OUTPUT-LIMITS.md` records structured `extraction.output` byte diagnostics
+for Markdown and final serialized extraction quotas. Caps, error codes/messages
+and failed-receipt admission stay unchanged; there is no silent truncation or
+automatic refetch. The owned regression retains captured source and reads a
+bounded section without another request. Five new cases first fail against the
+old code;298 targeted native tests then pass across three explicitly manifested
+files, with a successful parent repeat and production no-emit typecheck. The
+full release profile and separate test-root typecheck are not rerun. Combined
+Biome checking retains an independently reproduced pre-existing import-order
+failure; new formatting and whitespace checks pass. Fresh website evidence still
+belongs to earlier runtime5c7a882, not this patch. Keep browsing in content-first
+mode, recover oversized pages by useful sections, and track real access blocks
+without bypassing them. SDK activation and other acceptance gates remain open.
+
 ### September 14: content-first browsing works across varied sites
 
 **PROGRESS; overall browser goal remains ACTIVE.**

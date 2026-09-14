@@ -44,6 +44,7 @@ const units = Object.freeze({
 	"document.nodes": "nodes",
 	"document.text": "code-units",
 	"document.depth": "levels",
+	"extraction.output": "bytes",
 } as const);
 
 export type ResourceLimitKind = keyof typeof units;
