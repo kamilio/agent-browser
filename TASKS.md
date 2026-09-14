@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: percentage table container handoff validated
+
+**PROGRESS; overall browser goal remains ACTIVE.** Corrected the stale table-role
+guard that rejected an already-resolved container percentage width unless a
+caption wrapper existed. The existing coordinator computes real used widths and
+intrinsic minima; no parser-only acceptance, fabricated geometry or broad guard
+bypass is added. Row/group, height/min/max, fixed-layout, positioning and direct
+float/flex/grid table restrictions remain. Tables inside allocated blocks work.
+
+Final release01 at 14:36:44–14:43:16 UTC passes 23,822 with zero failures and the
+same two exclusions: 480 selected files, 479 strict roots, build/format pass.
+Audit preserves 23,757 baseline case occurrences, records two explicit existing
+case migrations and 65 new passes. Identical-source controls add 264 distinct
+existing passes, giving 24,086 unique passing occurrences. Focused01 passes 542.
+Review-driven tests prove width-induced text/natural-height reflow and allocated
+float/flex/grid containing blocks, with real pixels, hits and native clicks.
+
+The first red check's missing type-resolution setup failure and the subsequent
+21 expected percentage failures remain intact. Existing dirty work is preserved;
+no new runtime dependency, live, credential, SafeJS or device probe. See
+TABLE-CONTAINER-PERCENTAGE-WIDTHS.md. Native gates are not website acceptance or
+a performance benchmark.
+
+NEXT: release the separately prepared captured man7 check only against the
+adopted audited runtime. Retain exact original responses and ordinary date(1)
+click; distinguish any later missing destination fixture from a native blocker.
+Word breaking, layered backgrounds, broader complete-corpus/live coverage,
+original research, providers/passkeys, devices and challenge handling remain
+open. Do not push this increment or mark the overall goal complete.
+
 ### September 14: broader captured-site checks expose table sizing
 
 **PROGRESS; overall browser goal remains ACTIVE.** Four captured attempts across

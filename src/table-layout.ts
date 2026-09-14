@@ -278,7 +278,7 @@ export function layoutFormattingTableContainer(
 					property === "width" &&
 					((node.display === "table-cell" &&
 						tableCellPercentage(style) !== undefined) ||
-						(id === containerId && node.tableWrapper !== undefined))
+						id === containerId)
 				)
 			)
 				unsupported("Percentage table role sizing requires cycle resolution");

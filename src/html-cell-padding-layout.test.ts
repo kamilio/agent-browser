@@ -517,16 +517,15 @@ it.each(["separate", "collapse"])(
 	},
 );
 
-it("preserves the percentage table-width guard for both hints and CSS controls", () => {
+it("resolves percentage table widths for both hints and CSS controls", () => {
 	const actual = fixture(withHint("3"), "#table{width:50%}");
 	const expected = fixture(singleCell, "#table{width:50%}#target{padding:3px}");
 	for (const test of [actual, expected]) {
 		expectSpecifiedPadding(test, "#target", [3, 3, 3, 3]);
-		expectErrorCode(() => layoutDocument(test.tree), "unsupported");
-		expect(() => layoutDocument(test.tree)).toThrow(
-			"Percentage table role sizing requires cycle resolution",
-		);
+		expect(test.rectangle("#table").width).toBe(90);
+		expectContentOffsets(test);
 	}
+	expectEquivalent(actual, expected);
 });
 
 it("reflows viewport-relative table widths without scaling pixel padding", () => {

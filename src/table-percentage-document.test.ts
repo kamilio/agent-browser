@@ -388,14 +388,21 @@ it("keeps percentage padding, minimum widths, heights and mixed math unsupported
 		}
 });
 
-it("keeps root, row and group percentage sizing guards independent of cell support", () => {
-	for (const model of ["separate", "collapse"])
-		for (const selector of ["#table", "#row", "#group"]) {
+it("resolves root percentage widths while retaining row and group sizing guards", () => {
+	for (const model of ["separate", "collapse"]) {
+		const root = fixture(
+			`table{width:50%;border-collapse:${model}}#first{width:50%}`,
+		);
+		expect(root.rectangle("#table").width).toBe(160);
+		expect(root.rectangle("#first").width).toBe(80);
+		expect(root.rectangle("#second").width).toBe(80);
+		for (const selector of ["#row", "#group"]) {
 			const test = fixture(
 				`table{border-collapse:${model}}#first{width:50%}${selector}{width:50%}`,
 			);
 			expectUnsupported(() => layoutDocument(test.tree));
 		}
+	}
 });
 
 it("does not admit fixed layout or positioned table roles through percentage support", () => {

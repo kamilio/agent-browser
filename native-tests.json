@@ -827,5 +827,8 @@
   "src/letter-spacing.test.ts",
   "src/letter-spacing-geometry.test.ts",
   "src/letter-spacing-click.test.ts",
-  "src/letter-spacing-boundaries.test.ts"
+  "src/letter-spacing-boundaries.test.ts",
+  "src/table-container-percentage-layout.test.ts",
+  "src/table-container-percentage-render.test.ts",
+  "src/table-container-percentage-interaction.test.ts"
 ]
