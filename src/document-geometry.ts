@@ -5,6 +5,7 @@ import { resolveInlineEdges } from "./inline-box.js";
 import { documentScrollPosition } from "./document-scroll.js";
 import { documentGeneratedControls } from "./generated-controls.js";
 import { projectFixedLayout } from "./out-of-flow-positioning.js";
+import { projectStickyLayout } from "./sticky-positioning.js";
 import { outsideMarkerRects } from "./outside-markers.js";
 import { layoutContentItems } from "./layout-paint-order.js";
 import { projectSvgScene } from "./svg-projection.js";
@@ -535,7 +536,11 @@ export class DocumentGeometry {
 		const layout = layoutDocument(this.tree);
 		const snapshot = new LayoutGeometry(
 			projectFixedLayout(
-				layout,
+				projectStickyLayout(
+					layout,
+					scroll,
+					layout.metrics.work + geometryLimits.maxWork,
+				),
 				scroll,
 				layout.metrics.work + geometryLimits.maxWork,
 			),

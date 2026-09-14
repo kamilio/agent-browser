@@ -1,4 +1,5 @@
 import { layoutDocument } from "./document-layout.js";
+import { projectStickyLayout } from "./sticky-positioning.js";
 import {
 	prepareRoundedLayout,
 	roundedOwnerKey,
@@ -32,7 +33,8 @@ export const hitTestLimits: Readonly<HitTestLimits> = Object.freeze({
 });
 export const hitTestCapabilities = Object.freeze({
 	partial: true,
-	profile: "normal-relative-absolute-fixed-and-flex-stacking-paint-order",
+	profile:
+		"normal-relative-absolute-fixed-sticky-and-flex-stacking-paint-order",
 	methods: ["elementFromPoint", "elementsFromPoint"],
 	command: "hit-test",
 	coordinateSpace: "viewport-css-pixels",
@@ -234,7 +236,13 @@ export class DocumentHitTesting {
 		return result;
 	}
 	private build(): readonly HitRegion[] {
-		const layout = layoutDocument(this.tree);
+		const normal = layoutDocument(this.tree);
+		const layout = projectStickyLayout(
+			normal,
+			documentScrollPosition(this.tree),
+			normal.metrics.work + this.limits.maxWork - this.work,
+		);
+		this.charge(layout.metrics.work - normal.metrics.work);
 		const nodes = layout.text.horizontal.formatting.nodes;
 		const roundedItems = nodes.some((node) => node.radius)
 			? [...layoutContentItems(layout, this.charge)]

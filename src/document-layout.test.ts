@@ -479,11 +479,11 @@ it("enforces inherited compatibility and work/numeric limits instead of guessing
 		).layout(),
 	).toThrow("length limit");
 	expect(() =>
-		fixture('<div style="position:sticky">Text</div>').layout(),
+		fixture('<div style="position:sticky;overflow:auto">Text</div>').layout(),
 	).toThrow();
 	expect(() =>
 		fixture(
-			'<div style="display:flex;flex-direction:column;flex-wrap:wrap;position:sticky">Text</div>',
+			'<div style="display:flex;flex-direction:column;flex-wrap:wrap;position:sticky;overflow:hidden">Text</div>',
 		).layout(),
 	).toThrow();
 	expect(() =>

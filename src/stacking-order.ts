@@ -52,7 +52,10 @@ export function* stackingContentItems(
 			(rootElement || node.position !== undefined || node.zIndex !== undefined)
 		) {
 			const actualContext =
-				rootElement || node.position === "fixed" || node.zIndex !== undefined;
+				rootElement ||
+				node.position === "fixed" ||
+				node.position === "sticky" ||
+				node.zIndex !== undefined;
 			group = scope(
 				node.id,
 				rootElement ? 0 : (node.zIndex ?? 0),

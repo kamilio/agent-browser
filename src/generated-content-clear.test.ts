@@ -395,10 +395,13 @@ it.each(["flex", "grid", "inline-table"] as const)(
 );
 
 it.each([
-	{ declaration: "position:sticky;top:0", feature: "position" },
+	{
+		declaration: "position:sticky;top:0;overflow:hidden",
+		feature: "overflow",
+	},
 	{ declaration: "overflow:hidden", feature: "overflow" },
 ] as const)(
-	"retains the generated $feature guard alongside physical clearance",
+	"retains the generated $feature guard alongside physical clearance for $declaration",
 	({ declaration, feature }) => {
 		const { tree } = fixture(
 			`#target::before{content:"X";display:block;clear:both;${declaration}}`,

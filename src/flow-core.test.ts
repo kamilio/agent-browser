@@ -115,10 +115,33 @@ it.each(
 	},
 );
 
-it.each([
-	["position", "sticky", "static", "position-layout-not-supported"],
-	["overflow", "hidden", "visible", "overflow-layout-not-supported"],
-])(
+it("preserves all-auto sticky geometry and capture through CSSOM position reset", () => {
+	const { tree, style, computed, id } = fixture();
+	const geometry = documentGeometry(tree);
+	const before = geometry.getBoundingClientRect(id());
+	const following = geometry.getBoundingClientRect(id("#other"));
+	const capture = rasterizeDocument(tree);
+	style.setProperty("position", "sticky");
+	expect(style.getPropertyValue("position")).toBe("sticky");
+	expect(computed.getPropertyValue("position")).toBe("sticky");
+	for (const inset of ["top", "right", "bottom", "left"])
+		expect(resolvedStyleValue(tree, id(), inset)).toBe("auto");
+	expect(buildFormattingTree(tree).issues).toEqual({});
+	expect(geometry.getBoundingClientRect(id())).toEqual(before);
+	expect(geometry.getBoundingClientRect(id("#other"))).toEqual(following);
+	const sticky = rasterizeDocument(tree);
+	expect(sticky.clip).toEqual(capture.clip);
+	expect(sticky.image.pixels).toEqual(capture.image.pixels);
+	style.setProperty("position", "static");
+	expect(computed.getPropertyValue("position")).toBe("static");
+	expect(geometry.getBoundingClientRect(id())).toEqual(before);
+	expect(geometry.getBoundingClientRect(id("#other"))).toEqual(following);
+	const reset = rasterizeDocument(tree);
+	expect(reset.image.pixels).toEqual(capture.image.pixels);
+	expect(reset.metrics.paintedBackgrounds).toBeGreaterThan(0);
+});
+
+it.each([["overflow", "hidden", "visible", "overflow-layout-not-supported"]])(
 	"recovers geometry and capture after resetting %s",
 	(name, value, neutral, issue) => {
 		const { tree, style, computed, id } = fixture();

@@ -801,9 +801,19 @@ function mergeFloats(
 		);
 		for (const box of owner.document.boxes) {
 			charge();
+			let gridArea = box.gridArea;
+			if (gridArea) {
+				charge();
+				const areaX = layoutNumber(gridArea.x + offsetX, true);
+				const areaY = layoutNumber(gridArea.y + offsetY, true);
+				layoutNumber(areaX + gridArea.width, true);
+				layoutNumber(areaY + gridArea.height, true);
+				gridArea = Object.freeze({ ...gridArea, x: areaX, y: areaY });
+			}
 			boxes.push(
 				Object.freeze({
 					...box,
+					...(gridArea ? { gridArea } : {}),
 					containingBlock:
 						box.id === owner.id ? owner.containingBlock : box.containingBlock,
 					borderX: layoutNumber(box.borderX + offsetX, true),

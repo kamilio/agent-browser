@@ -44,6 +44,7 @@ import { resolveVisualTarget } from "./generated-controls.js";
 import { layoutContentItems } from "./layout-paint-order.js";
 import { layoutNumber } from "./layout-values.js";
 import { projectFixedLayout } from "./out-of-flow-positioning.js";
+import { projectStickyLayout } from "./sticky-positioning.js";
 import { paintOutline } from "./outline-raster.js";
 import {
 	type RasterImage,
@@ -186,7 +187,11 @@ function paintDocumentLayout(
 ): Readonly<DocumentRaster> {
 	const viewport = layout.text.horizontal.formatting.viewport;
 	const scroll = documentScrollPosition(tree);
-	layout = projectFixedLayout(layout, scroll, maxWork);
+	layout = projectFixedLayout(
+		projectStickyLayout(layout, scroll, maxWork),
+		scroll,
+		maxWork,
+	);
 	let clip =
 		options.clip === undefined
 			? {

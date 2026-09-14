@@ -96,7 +96,7 @@ it("exposes live sorted longhand names, aliases and empty computed cssText", () 
 
 it("resolves cascade, inheritance, currentcolor and alpha without layout", () => {
 	const { tree, style } = fixture(
-		"main{color:rebeccapurple} #target{display:flex;flex-direction:column;flex-wrap:wrap;position:sticky;background-color:currentcolor}",
+		"main{color:rebeccapurple} #target{display:flex;flex-direction:column;flex-wrap:wrap;position:sticky;overflow:auto;background-color:currentcolor}",
 	);
 	expect(style.color).toBe("rgb(102, 51, 153)");
 	expect(style.backgroundColor).toBe(style.color);

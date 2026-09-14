@@ -322,7 +322,7 @@ it.each([
 	["float:left", "float-layout-not-supported", 1],
 	["float:right;clear:both", "clear-layout-not-supported", 1],
 	["float:left;overflow:hidden", "overflow-layout-not-supported", 1],
-	["float:left;position:sticky", "position-layout-not-supported", undefined],
+	["float:left;position:sticky", "float-layout-not-supported", 1],
 ] as const)(
 	"keeps the width guard closed for %s",
 	(style, issue, floatIssues) => {

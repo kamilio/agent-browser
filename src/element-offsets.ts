@@ -16,8 +16,8 @@ export const elementOffsetLimits = Object.freeze({
 export const elementOffsetCapabilities = Object.freeze({
 	partial: true,
 	properties: ["offsetParent", "offsetTop", "offsetLeft"],
-	profile: "static-relative-absolute-fixed-first-box-padding-edge",
-	positionedContainingBlocks: "relative-absolute-fixed",
+	profile: "static-relative-absolute-fixed-sticky-first-box-padding-edge",
+	positionedContainingBlocks: "relative-absolute-fixed-sticky",
 	viewportFixedOffsetParent: null,
 	transforms: false,
 	zoom: false,
@@ -104,7 +104,7 @@ export class DocumentElementOffsets {
 						(staticPosition &&
 							["table", "td", "th"].includes(parent.tagName)) ||
 						(styles.get(ancestor).display !== "contents" &&
-							["relative", "absolute", "fixed"].includes(
+							["relative", "absolute", "fixed", "sticky"].includes(
 								styles.flow(ancestor).position,
 							)))
 				) {

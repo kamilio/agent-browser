@@ -28,6 +28,7 @@ export function* layoutContentItems(
 				node.floatSide !== undefined ||
 				node.zIndex !== undefined ||
 				node.position === "absolute" ||
+				node.position === "sticky" ||
 				node.position === "fixed"
 			);
 		})

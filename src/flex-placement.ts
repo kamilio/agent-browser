@@ -113,8 +113,18 @@ export function placeFlexLayout(
 		const borderY = layoutNumber(box.borderY + placement.y, true);
 		layoutNumber(borderX + box.borderBoxWidth, true);
 		layoutNumber(borderY + box.borderBoxHeight, true);
+		let gridArea = box.gridArea;
+		if (gridArea && root !== box.id) {
+			charge();
+			const areaX = layoutNumber(gridArea.x + placement.x, true);
+			const areaY = layoutNumber(gridArea.y + placement.y, true);
+			layoutNumber(areaX + gridArea.width, true);
+			layoutNumber(areaY + gridArea.height, true);
+			gridArea = Object.freeze({ ...gridArea, x: areaX, y: areaY });
+		}
 		return Object.freeze({
 			...box,
+			...(gridArea ? { gridArea } : {}),
 			borderX,
 			borderY,
 			contentX: layoutNumber(box.contentX + placement.x, true),

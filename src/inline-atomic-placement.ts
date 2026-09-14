@@ -71,9 +71,19 @@ export function mergeAtomicInlineLayouts(
 			const borderY = layoutNumber(box.borderY + offsetY, true);
 			layoutNumber(borderX + box.borderBoxWidth, true);
 			layoutNumber(borderY + box.borderBoxHeight, true);
+			let gridArea = box.gridArea;
+			if (gridArea) {
+				charge();
+				const areaX = layoutNumber(gridArea.x + offsetX, true);
+				const areaY = layoutNumber(gridArea.y + offsetY, true);
+				layoutNumber(areaX + gridArea.width, true);
+				layoutNumber(areaY + gridArea.height, true);
+				gridArea = Object.freeze({ ...gridArea, x: areaX, y: areaY });
+			}
 			boxes.push(
 				Object.freeze({
 					...box,
+					...(gridArea ? { gridArea } : {}),
 					borderX,
 					borderY,
 					containingBlock:

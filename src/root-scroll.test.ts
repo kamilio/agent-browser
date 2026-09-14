@@ -205,7 +205,7 @@ it("reflects layout growth and clamps position after shrink without changing own
 
 it("does not invent root geometry when layout requires an unsupported feature", () => {
 	const { root } = fixture(
-		'<main style="position:sticky;height:180px"></main>',
+		'<main style="position:sticky;transform:translateY(1px);height:180px"></main>',
 	);
 	expect(() => root.scrollHeight).toThrow();
 	expect(() => {

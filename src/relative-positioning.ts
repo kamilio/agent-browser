@@ -211,6 +211,19 @@ export function positionDocumentLayout(
 	);
 	const positionedBoxes = layout.boxes.map((box) => {
 		const shift = offset(box.id);
+		let gridArea = box.gridArea;
+		if (gridArea) {
+			const ownerShift = offset(box.containingBlock);
+			gridArea = Object.freeze({
+				...gridArea,
+				...rectangle(
+					gridArea.x + ownerShift.left,
+					gridArea.y + ownerShift.top,
+					gridArea.width,
+					gridArea.height,
+				),
+			});
+		}
 		const border = rectangle(
 			box.borderX + shift.left,
 			box.borderY + shift.top,
@@ -219,6 +232,7 @@ export function positionDocumentLayout(
 		);
 		return Object.freeze({
 			...box,
+			...(gridArea ? { gridArea } : {}),
 			borderX: border.x,
 			borderY: border.y,
 			contentX: layoutNumber(box.contentX + shift.left, true),

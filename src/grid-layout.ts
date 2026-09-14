@@ -2,7 +2,7 @@ import { resolveBlockWidth } from "./block-width.js";
 import { resolveBorders } from "./border-box.js";
 import { initialBoxStyle } from "./css-box.js";
 import { initialGridStyle } from "./css-grid.js";
-import { documentLayoutLimits } from "./document-layout.js";
+import { documentLayoutLimits, type DocumentBox } from "./document-layout.js";
 import { AgentBrowserError } from "./errors.js";
 import { layoutFormattingFlexFlow } from "./flex-document.js";
 import {
@@ -647,8 +647,31 @@ export function layoutFormattingGridContainer(
 		);
 	}
 	const placements = new Map<number, ItemPlacement>();
+	const gridAreas = new Map<number, NonNullable<DocumentBox["gridArea"]>>();
 	for (const [index, item] of placement.items.entries()) {
 		charge();
+		const areaX = layoutNumber(
+			horizontalTracks.offsets[item.columnStart],
+			true,
+		);
+		const areaY = layoutNumber(verticalTracks.offsets[item.rowStart], true);
+		const areaWidth = spanSize(
+			horizontalTracks,
+			item.columnStart,
+			item.columnEnd,
+		);
+		const areaHeight = spanSize(verticalTracks, item.rowStart, item.rowEnd);
+		layoutNumber(areaX + areaWidth, true);
+		layoutNumber(areaY + areaHeight, true);
+		gridAreas.set(
+			item.id,
+			Object.freeze({
+				x: areaX,
+				y: areaY,
+				width: areaWidth,
+				height: areaHeight,
+			}),
+		);
 		const box = boxes.get(item.id)!;
 		const used = usedWidths.get(item.id)!;
 		const style = formatting.nodes[item.id].box ?? initialBoxStyle;
@@ -699,6 +722,19 @@ export function layoutFormattingGridContainer(
 		});
 	}
 	const positioned = placeLayoutItems(layout, placements, charge);
+	const itemBoxes = new Map<number, Readonly<DocumentBox>>();
+	const positionedBoxes = positioned.boxes.map((box) => {
+		charge();
+		const gridArea = gridAreas.get(box.id);
+		if (!gridArea) return box;
+		const positionedBox = Object.freeze({ ...box, gridArea });
+		itemBoxes.set(box.id, positionedBox);
+		return positionedBox;
+	});
+	const positionedItems = positioned.items.map((item) => {
+		charge();
+		return Object.freeze({ ...item, box: itemBoxes.get(item.id)! });
+	});
 	return Object.freeze({
 		stage: "native-grid-container-layout" as const,
 		partial: true as const,
@@ -709,6 +745,8 @@ export function layoutFormattingGridContainer(
 		contentHeight,
 		naturalContentHeight,
 		...positioned,
+		boxes: positionedBoxes,
+		items: positionedItems,
 		textMetrics: layout.text.metrics,
 		atomics: layout.text.horizontal.atomics ?? [],
 		paintOrder: Object.freeze(placement.items.map((item) => item.id)),

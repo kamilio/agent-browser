@@ -404,8 +404,8 @@ it.each(["flex", "grid", "inline-table", "list-item", "contents"])(
 );
 
 it.each([
-	["position:sticky;left:3px", "position"],
-	["position:sticky;top:3px", "position"],
+	["position:sticky;left:3px;overflow:hidden", "overflow"],
+	["position:sticky;top:3px;overflow:hidden", "overflow"],
 	["float:left", "float"],
 	["display:block;clear:inline-start", "clear"],
 	["overflow:hidden", "overflow"],

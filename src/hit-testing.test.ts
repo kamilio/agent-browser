@@ -274,7 +274,7 @@ it("caches regions but invalidates them for style, viewport, insertion and detac
 });
 
 it.each([
-	"position:sticky",
+	"position:sticky;transform:translateY(1px)",
 	"transform:translateX(1px)",
 	"pointer-events:visiblepainted",
 	"overflow:hidden",

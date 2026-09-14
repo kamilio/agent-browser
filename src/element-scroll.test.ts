@@ -239,7 +239,11 @@ it("rejects rendered control metrics rather than guessing internal scrolling", (
 });
 
 it("fails closed on unsupported clipping or positioned layout", () => {
-	for (const style of ["overflow:auto", "overflow:hidden", "position:sticky"]) {
+	for (const style of [
+		"overflow:auto",
+		"overflow:hidden",
+		"position:sticky;transform:translateY(1px)",
+	]) {
 		const { read } = fixture(
 			`<div id="target" style="${style};width:100px;height:100px">Text</div>`,
 		);

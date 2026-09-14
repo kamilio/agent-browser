@@ -24,6 +24,12 @@ export interface MarginStrut {
 	readonly value: number;
 }
 export interface DocumentBox extends FormattingBlockWidth {
+	readonly gridArea?: Readonly<{
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	}>;
 	collapsedTableBorders?: readonly CollapsedTableBorderPaint[];
 	flexBaselines?: Readonly<{
 		first: number | null;
@@ -68,6 +74,11 @@ export interface DocumentLayout {
 	flowHeight: number;
 	outsideMarkers?: readonly Readonly<OutsideMarker>[];
 	fixedIds?: readonly number[];
+	stickyOffsets?: readonly Readonly<{
+		id: number;
+		left: number;
+		top: number;
+	}>[];
 	positionedInsets?: readonly Readonly<{
 		id: number;
 		left: number;

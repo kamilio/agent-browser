@@ -528,7 +528,7 @@ it("updates positioned used insets and dimensions after mutation and viewport re
 it.each([
 	"position:absolute;inset:0;width:20px;height:10px",
 	"position:fixed;transform:translateX(1px);width:20px;height:10px",
-	"position:sticky;top:0",
+	"position:sticky;top:0;transform:translateY(1px)",
 	"position:absolute;left:0;top:0;overflow:hidden",
 ])("fails explicitly for unsupported layout: %s", (style) => {
 	const { tree } = fixture(`<div style="${style}">A</div>`);

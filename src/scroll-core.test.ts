@@ -282,18 +282,19 @@ it("bounds offset traversal and scroll update admission", () => {
 	expect(scroll.get()).toEqual({ x: 0, y: 0 });
 });
 
-it.each(["position:sticky", "display:grid", "overflow:hidden"])(
-	"rejects unsupported layout and recovers after reset: %s",
-	(style) => {
-		const { tree, id, offsets, scroll } = fixture();
-		tree.setAttribute(id("main"), "style", style);
-		expect(() => offsets.get(id("#target"))).toThrow();
-		expect(() => scroll.get()).toThrow();
-		tree.setAttribute(id("main"), "style", "");
-		expect(offsets.get(id("#target")).offsetTop).toBe(60);
-		expect(scroll.bounds()).toEqual({ x: 60, y: 100 });
-	},
-);
+it.each([
+	"position:sticky;transform:translateY(1px)",
+	"display:grid",
+	"overflow:hidden",
+])("rejects unsupported layout and recovers after reset: %s", (style) => {
+	const { tree, id, offsets, scroll } = fixture();
+	tree.setAttribute(id("main"), "style", style);
+	expect(() => offsets.get(id("#target"))).toThrow();
+	expect(() => scroll.get()).toThrow();
+	tree.setAttribute(id("main"), "style", "");
+	expect(offsets.get(id("#target")).offsetTop).toBe(60);
+	expect(scroll.bounds()).toEqual({ x: 60, y: 100 });
+});
 
 it.each(["table", "td", "th"])(
 	"skips a static %s ancestor for a relatively positioned target",

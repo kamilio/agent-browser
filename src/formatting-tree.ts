@@ -133,7 +133,7 @@ export interface FormattingNode {
 	children: readonly number[];
 	ref?: string;
 	display?: string;
-	position?: "relative" | "absolute" | "fixed";
+	position?: "relative" | "absolute" | "fixed" | "sticky";
 	floatSide?: "left" | "right" | "inline-start" | "inline-end";
 	clear?: "left" | "right" | "both" | "inline-start" | "inline-end";
 	staticDisplay?: string;
@@ -642,7 +642,7 @@ export function buildFormattingTree(
 			(block || table) &&
 			!itemMode &&
 			flow.float === "none" &&
-			(flow.position === "static" || flow.position === "relative") &&
+			["static", "relative", "sticky"].includes(flow.position) &&
 			["left", "right", "both"].includes(flow.clear);
 		let deferredReason: string | undefined;
 		if (table) {
@@ -665,6 +665,7 @@ export function buildFormattingTree(
 		if (
 			flow.position !== "static" &&
 			flow.position !== "relative" &&
+			flow.position !== "sticky" &&
 			!outOfFlow
 		) {
 			issue("position-layout-not-supported");
@@ -768,8 +769,14 @@ export function buildFormattingTree(
 				...(clearing
 					? { clear: flow.clear as NonNullable<FormattingNode["clear"]> }
 					: {}),
-				...(flow.position === "relative" || outOfFlow
-					? { position: flow.position as "relative" | "absolute" | "fixed" }
+				...(flow.position === "relative" ||
+				flow.position === "sticky" ||
+				outOfFlow
+					? {
+							position: flow.position as NonNullable<
+								FormattingNode["position"]
+							>,
+						}
 					: {}),
 				...(outOfFlow
 					? {
@@ -780,7 +787,9 @@ export function buildFormattingTree(
 						}
 					: {}),
 				...(flow["z-index"] !== "auto" &&
-				(flow.position === "relative" || outOfFlow)
+				(flow.position === "relative" ||
+					flow.position === "sticky" ||
+					outOfFlow)
 					? { zIndex: Number(flow["z-index"]) }
 					: {}),
 				...(deferredReason ? { deferredReason } : {}),
@@ -852,13 +861,13 @@ export function buildFormattingTree(
 				: visibility.display;
 		const floating =
 			visibility.display !== "contents" &&
-			(flow.position === "static" || flow.position === "relative") &&
+			["static", "relative", "sticky"].includes(flow.position) &&
 			!flexItem &&
 			!gridItem &&
 			flow.float !== "none";
 		const buttonLayout =
 			isHtmlElement(node, "button") &&
-			(flow.position === "static" || flow.position === "relative") &&
+			["static", "relative", "sticky"].includes(flow.position) &&
 			!flexItem &&
 			!gridItem &&
 			display !== "contents" &&
@@ -906,7 +915,7 @@ export function buildFormattingTree(
 			unsupportedLegend;
 		const clearing =
 			flow.clear !== "none" &&
-			(flow.position === "static" || flow.position === "relative") &&
+			["static", "relative", "sticky"].includes(flow.position) &&
 			!flexItem &&
 			!gridItem &&
 			(floating ||
@@ -964,7 +973,6 @@ export function buildFormattingTree(
 				}),
 			];
 		}
-		if (flow.position === "sticky") issue("position-layout-not-supported");
 		const outOfFlow =
 			visibility.display !== "contents" &&
 			(flow.position === "absolute" || flow.position === "fixed");
@@ -989,8 +997,10 @@ export function buildFormattingTree(
 			issue("svg-viewport-overflow-not-supported");
 		const positionFields = {
 			...boxFlowFields,
-			...(flow.position === "relative" || outOfFlow
-				? { position: flow.position as "relative" | "absolute" | "fixed" }
+			...(flow.position === "relative" ||
+			flow.position === "sticky" ||
+			outOfFlow
+				? { position: flow.position as NonNullable<FormattingNode["position"]> }
 				: {}),
 			...(outOfFlow
 				? {
@@ -1000,7 +1010,11 @@ export function buildFormattingTree(
 					}
 				: {}),
 			...(flow["z-index"] !== "auto" &&
-			(flow.position === "relative" || outOfFlow || flexItem || gridItem)
+			(flow.position === "relative" ||
+				flow.position === "sticky" ||
+				outOfFlow ||
+				flexItem ||
+				gridItem)
 				? { zIndex: Number(flow["z-index"]) }
 				: {}),
 		};
@@ -1863,6 +1877,8 @@ export function buildFormattingTree(
 			nodes[fragment].fragmentCount = fragments.length;
 		if (flow.position === "relative" && fragments.length > 1)
 			issue("relative-block-in-inline-not-supported");
+		if (flow.position === "sticky" && fragments.length > 1)
+			issue("sticky-block-in-inline-not-supported");
 		return result;
 	};
 	const children: number[] = [];

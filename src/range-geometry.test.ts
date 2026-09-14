@@ -306,7 +306,10 @@ it("shares glyph coordinates after viewport-dependent wrapping", () => {
 });
 
 it("retains unsupported layout errors rather than returning empty geometry", () => {
-	const { range, text } = fixture(undefined, "main{position:sticky}");
+	const { range, text } = fixture(
+		undefined,
+		"main{position:sticky;overflow:auto}",
+	);
 	range.selectNodeContents(text());
 	expect(() => rangeClientRects(range)).toThrow(
 		expect.objectContaining({ code: "unsupported" }),

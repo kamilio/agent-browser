@@ -777,10 +777,10 @@ it("enforces owned-node, box, depth, text and work limits without mutating the D
 
 it("reports actual width blockers without including advisory CSS issues", () => {
 	const { tree, id } = fixture(
-		'<main><div style="position:sticky">sticky</div><div style="position:sticky">sticky</div></main>',
+		'<main><div style="position:sticky;overflow:auto">sticky</div><div style="position:sticky;overflow:auto">sticky</div></main>',
 	);
 	const formatting = buildFormattingTree(tree);
-	expect(formatting.issues["position-layout-not-supported"]).toBe(2);
+	expect(formatting.issues["overflow-layout-not-supported"]).toBe(2);
 	const diagnosticInput = {
 		...formatting,
 		issues: {
@@ -790,29 +790,29 @@ it("reports actual width blockers without including advisory CSS issues", () => 
 		},
 	};
 	expect(() => resolveFormattingPageWidths(diagnosticInput)).toThrow(
-		"Document width resolution requires an issue-free supported formatting profile: position-layout-not-supported (2)",
+		"Document width resolution requires an issue-free supported formatting profile: overflow-layout-not-supported (2)",
 	);
 	expect(() =>
 		documentGeometry(tree).getBoundingClientRect(id("main")),
-	).toThrow("position-layout-not-supported (2)");
+	).toThrow("overflow-layout-not-supported (2)");
 	expect(() => resolveDocumentBlockWidths(tree)).toThrow(
-		"position-layout-not-supported (2)",
+		"overflow-layout-not-supported (2)",
 	);
 });
 
 it("omits coordinated display issues but retains unsupported layout blockers", () => {
 	const { tree } = fixture(
-		'<main style="display:flex"><div style="position:sticky">sticky</div></main>',
+		'<main style="display:flex"><div style="position:sticky;overflow:auto">sticky</div></main>',
 	);
 	const formatting = buildFormattingTree(tree);
 	expect(formatting.issues).toMatchObject({
 		"display-layout-not-supported": 1,
-		"position-layout-not-supported": 1,
+		"overflow-layout-not-supported": 1,
 	});
 	expect(() =>
 		resolveFormattingPageWidths(formatting, undefined, () => {}),
 	).toThrow(
-		"Document width resolution requires an issue-free supported formatting profile: position-layout-not-supported (1)",
+		"Document width resolution requires an issue-free supported formatting profile: overflow-layout-not-supported (1)",
 	);
 	expect(() => resolveFormattingPageWidths(formatting)).toThrow(
 		"display-layout-not-supported (1)",

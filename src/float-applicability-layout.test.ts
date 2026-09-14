@@ -522,7 +522,10 @@ it.each(modes)(
 
 it.each([
 	{ css: "#first{overflow:auto}", issue: "overflow-layout-not-supported" },
-	{ css: "#first{position:sticky}", issue: "position-layout-not-supported" },
+	{
+		css: "#first{position:sticky;overflow:hidden}",
+		issue: "overflow-layout-not-supported",
+	},
 	{ css: "#first{display:table}", issue: "table-item-layout-not-supported" },
 	{
 		css: "#container{justify-items:center}",
