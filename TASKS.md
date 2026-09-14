@@ -6,6 +6,43 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: bounded sibling matching without larger budgets
+
+**PROGRESS; overall browser goal remains ACTIVE.** General-sibling matching
+reuses operation-local preceding-prefix answers instead of repeatedly scanning
+wide sibling chains. Cache keys isolate selector, position, scope, pseudo target
+and parent. Immediate positives avoid unnecessary memo retention; recursive
+probes preserve lower-prefix tables. Default work and memo limits are unchanged.
+
+The final focus passes **565/0/0**, including 16 new cases. The exact final test
+file on original source has **11/5/0**: four large-work failures and one expectation
+of the new memo contract, not five pre-existing bugs. Review found and tests
+reproduced two candidate regressions: excess memo for cheap positive lists, then
+overwritten lower-prefix tables after recursion. Both are corrected without
+weakening caps or tests. Earlier passing/failing runs and a formatting-only stop
+remain recorded. See `SELECTOR-SIBLING-WORK.md` for the complete differential.
+
+Final selected round01 passes **21,773/0/2 unchanged skips**, from 2026-09-14T02:06:48.357Z
+to 2026-09-14T02:11:51.622Z: 426 selected, 425 strict, 778 manifest and 352 unselected. Build,
+strict checking, scoped formatting and inventory audit pass; 1,327 source and
+2,156 compiled files are retained. Intermediate full round00 passed 21,772/0/2
+before the final recursive-cache regression was added; it is not relabeled as
+the final gate. Existing selected test bytes and the prior raster feature remain
+unchanged. No dependency, skip or guard waiver is introduced.
+
+This is synthetic selector/cascade progress, not proof that the stopped W3C
+CSSOM navigation is fixed. No captured source is reopened and no further HTTP
+request occurs. Its precise offending selector, edition and API/event algorithms
+remain unknown. Python's Tutorial click still has the overflow blocker; actual
+nested overflow/scroll-state/extent/clipping and nearest-scrollport sticky are
+next, with the 40-case draft preserved outside the source/manifest until those
+APIs exist. The existing source requirements and architecture notes are retained.
+
+Varied website flows, elapsed-time performance, challenge handling, credentials/
+providers/device/passkeys, SafeJS, socket, real-TTY and incomplete hardware/
+benchmark/Astra/verified Reddit-Poe research remain separate open gates. All
+unrelated work and historical evidence are preserved; commits stay local.
+
 ### September 14: bounded clipping primitive and a stopped-source failure
 
 **PROGRESS; overall browser goal remains ACTIVE.** Native raster destinations

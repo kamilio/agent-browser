@@ -817,6 +817,7 @@ interface MatchContext {
 	validity?: SelectorValidity;
 	pseudoElement?: GeneratedPseudoElement;
 	nesting: Map<CompiledSelector, Map<number, boolean>>;
+	siblings: Map<Selector, Map<string, Map<number, boolean>>>;
 	nth: Map<
 		SimpleSelector,
 		Map<string, { positions: Map<number, number>; total: number }>
@@ -1307,6 +1308,7 @@ export class DocumentQueries {
 			workLimit,
 			memoEntries: 0,
 			nesting: new Map(),
+			siblings: new Map(),
 			nth: new Map(),
 		};
 		try {
@@ -1538,6 +1540,69 @@ export class DocumentQueries {
 		}
 		return false;
 	}
+	private precedingSiblingMatch(
+		info: NodeInfo,
+		selector: Selector,
+		position: number,
+		scope: number,
+		context: MatchContext,
+	): boolean {
+		if (info.previous === null) return false;
+		const key = `${position}:${scope}:${context.pseudoElement ?? "element"}:${info.node.parent}`;
+		this.tick(context, key.length + 1);
+		let tables = context.siblings.get(selector);
+		let matches = tables?.get(key);
+		const immediate = matches?.get(info.previous);
+		if (immediate !== undefined) return immediate;
+		if (this.match(info.previous, selector, position, scope, context))
+			return true;
+		this.tick(context);
+		tables = context.siblings.get(selector);
+		matches = tables?.get(key);
+		if (!matches) {
+			if (++context.memoEntries > this.limits.maxMemoEntries)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Query memo limit exceeded",
+				);
+			matches = new Map();
+			if (!tables) {
+				tables = new Map();
+				context.siblings.set(selector, tables);
+			}
+			tables.set(key, matches);
+		}
+		const pending: number[] = [];
+		let current: number | null = info.previous;
+		let matched = false;
+		while (current !== null) {
+			this.tick(context);
+			const cached = matches.get(current);
+			if (cached !== undefined) {
+				matched = cached;
+				break;
+			}
+			if (++context.memoEntries > this.limits.maxMemoEntries)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Query memo limit exceeded",
+				);
+			pending.push(current);
+			if (
+				current !== info.previous &&
+				this.match(current, selector, position, scope, context)
+			) {
+				matched = true;
+				break;
+			}
+			current = context.index.nodes.get(current)?.previous ?? null;
+		}
+		for (const sibling of pending) {
+			this.tick(context);
+			matches.set(sibling, matched);
+		}
+		return matched;
+	}
 	private match(
 		id: number,
 		selector: Selector,
@@ -1553,17 +1618,21 @@ export class DocumentQueries {
 			return false;
 		if (position === 0) return true;
 		const relation = part.relation;
-		let previous =
-			relation === "+" || relation === "~" ? info.previous : info.node.parent;
+		if (relation === "~")
+			return this.precedingSiblingMatch(
+				info,
+				selector,
+				position - 1,
+				scope,
+				context,
+			);
+		let previous = relation === "+" ? info.previous : info.node.parent;
 		while (previous !== null) {
 			if (this.match(previous, selector, position - 1, scope, context))
 				return true;
 			if (relation === ">" || relation === "+") break;
 			const ancestor = context.index.nodes.get(previous);
-			previous =
-				relation === "~"
-					? (ancestor?.previous ?? null)
-					: (ancestor?.node.parent ?? null);
+			previous = ancestor?.node.parent ?? null;
 		}
 		return false;
 	}

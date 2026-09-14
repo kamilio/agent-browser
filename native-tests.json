@@ -581,6 +581,7 @@
   "src/selectedcontent.test.ts",
   "src/select-typeahead.test.ts",
   "src/selectors.test.ts",
+  "src/selector-sibling-work.test.ts",
   "src/css-content.test.ts",
   "src/selector-pseudo.test.ts",
   "src/generated-content-style.test.ts",
