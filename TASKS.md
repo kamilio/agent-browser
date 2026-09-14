@@ -6,6 +6,39 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: broader captured-site checks expose table sizing
+
+**PROGRESS; overall browser goal remains ACTIVE.** Four captured attempts across
+three existing hosts use audited 39b55d9 without live requests. Hacker News
+loads but link geometry remains unsupported; exact-input formatting occurrences
+fall 145→135 relative to its September 12 replay. Native samples identify
+word-break and layered backgrounds, with presentation hints and overflow still
+blocking geometry. zlib reaches the known missing ninth resource after eight
+captured responses: a fixture limit, not a demonstrated browser regression.
+
+The first man7 check fails on premature image-owner instrumentation; its
+17-pass/1-failed verifier and evidence remain immutable. A separately scoped
+one-line instrumentation retest commits ls(1), rediscovers date(1), and attempts
+one genuine native click. It now fails at "Percentage table role sizing requires
+cycle resolution", with no applicable CSS issues and only three table shells.
+Its 18 verification checks pass without relabeling the incomplete flow.
+
+All four outcomes and seals are independently audited and copied byte-for-byte.
+Total: 15 mocked responses / 171,934 decoded bytes, four initial navigations,
+two initial commits, one click attempt, zero destination commits or wire requests.
+No code/test changes or new gate run; the prior 23,757-pass/two-exclusion gate
+and source/compiled inventories reverify. See
+WEBSITE-TEST-INVENTORY-SEPTEMBER-14-TWENTY-FOURTH-UPDATE.md and its four reports.
+
+NEXT: implement genuine percentage table sizing at the table-layout role guard,
+including containing-block resolution and retained protection for unresolved
+intrinsic cycles, then retest the same man7 flow. Do not merely remove the
+guard. Word breaking, layered backgrounds, wider rendering and complete-corpus
+coverage follow; do not repeat zlib's incomplete capture as a layout test.
+Research, live-site, provider/passkey, SafeJS, device and challenge-handling
+acceptance remain open. No performance improvement or whole-site success is
+claimed. Preserve original work and evidence; do not push this increment.
+
 ### September 14: captured Wikipedia opacity recheck
 
 **PROGRESS; overall browser goal remains ACTIVE.** The scoped captured native
