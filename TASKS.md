@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: MDN diagnosis identifies generated flex-item candidates
+
+**PROGRESS; overall browser goal remains ACTIVE.** A separately scoped native
+formatting diagnosis on unchanged ownership23e988d completes without interaction:
+one navigation/build/hint query,19captured responses/270288 bytes, zero wire.
+The raw formatting map contains13codes/255overlapping occurrences, not255bugs.
+127attribution calls retain22direct generated-item records with flex parents,
+three generated vertical-align candidates and five hint candidates. Sampling
+leaves36generated and530ordinary-inline candidates unexamined; no exhaustive
+attribution or MDN action success is claimed. The source optimization is separate.
+
+The prepared verifier remains false: its2047nodes==2054boxes assumption ignored
+seven outside markers. Separate supplemental and parent checks confirm the
+native node-plus-marker convention, remaining sample constraints,18ledgers/
+11049entries and cleanup. Original verifier failure, result and seals remain
+unchanged; no retry or post-run browser probe. See
+`MDN-FORMATTING-DIAGNOSIS-SEPTEMBER-14.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-14-SEVENTH-UPDATE.md`.
+
+NEXT: implement genuine generated flex-item participation/blockification and
+alignment handling with focused regressions, rather than dropping empty pseudo
+boxes or weakening the width-resolution guard. Preserve candidate-vs-exact
+attribution. Correct node-plus-marker accounting in any future diagnostic lane;
+do not rewrite this one. Recheck original actions separately, then broaden live
+sites/forms and production-only performance measurements. Destination capture,
+research, credentials/devices, SafeJS, socket, TTY and challenge gates stay open.
+Historical evidence and pre-existing work remain intact. No push.
+
+
 ### September 14: eliminate text-transform scans without text demand
 
 **PROGRESS; overall browser goal remains ACTIVE.** Native text layout now delays
