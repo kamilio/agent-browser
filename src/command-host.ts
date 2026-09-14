@@ -757,9 +757,18 @@ export class BrowserCommandHost {
 			cssPaint: {
 				partial: true,
 				properties: cssPaintProperties,
-				backgroundShorthand: "solid-color-or-none",
+				backgroundShorthand: "single-layer-url-or-color",
 				nonColorBackgroundComponents:
-					"initial-values-and-css-wide-keywords-only",
+					"single-layer-scroll-px-percentage-position-size-repeat-boxes",
+				backgroundImageProfile: "block-replaced-atomic-pseudo-and-canvas",
+				backgroundImageLayers: 1,
+				backgroundImageSampling: "nearest-neighbor",
+				backgroundUnsupportedTargets: [
+					"non-atomic-inline",
+					"native-controls",
+					"special-table-wrappers",
+					"fieldset-legends",
+				],
 				colorSpace: "srgb-8bit",
 			},
 			cssText: {

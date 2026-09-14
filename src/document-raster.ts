@@ -1,10 +1,16 @@
 import { bitmapFont } from "./bitmap-font.js";
 import {
+	backgroundAreas,
+	paintBackgroundImage,
+	type BackgroundGeometry,
+} from "./background-raster.js";
+import { backgroundImageUrl } from "./css-background.js";
+import {
 	prepareRoundedLayout,
 	translateRoundedBox,
 	type RoundedDecoration,
 } from "./rounded-layout.js";
-import type { RoundedBox } from "./rounded-box.js";
+import { createRoundedBox, type RoundedBox } from "./rounded-box.js";
 import { paintBorders } from "./border-raster.js";
 import { rasterizeControl } from "./control-rendering.js";
 import { initialBoxStyle } from "./css-box.js";
@@ -38,6 +44,7 @@ import {
 	prepareEditableSelection,
 } from "./editable-selection.js";
 import { AgentBrowserError } from "./errors.js";
+import type { FormattingNode } from "./formatting-tree.js";
 import { activeFocus } from "./focus.js";
 import { bitmapGlyphInk, type NativeFontStyle } from "./font-style.js";
 import { matchFontWeight } from "./font-weight.js";
@@ -392,6 +399,125 @@ function paintDocumentLayout(
 		metrics.paintedBackgrounds++;
 	};
 	const styles = documentStyles(tree);
+	const backgroundGeometry = (
+		box: Readonly<{
+			borderX: number;
+			borderY: number;
+			borderBoxWidth: number;
+			borderBoxHeight: number;
+			borderTop: number;
+			borderRight: number;
+			borderBottom: number;
+			borderLeft: number;
+			paddingTop: number;
+			paddingRight: number;
+			paddingBottom: number;
+			paddingLeft: number;
+		}>,
+	): BackgroundGeometry => ({
+		x: box.borderX - clip.x,
+		y: box.borderY - clip.y,
+		width: box.borderBoxWidth,
+		height: box.borderBoxHeight,
+		borderTop: box.borderTop,
+		borderRight: box.borderRight,
+		borderBottom: box.borderBottom,
+		borderLeft: box.borderLeft,
+		paddingTop: box.paddingTop,
+		paddingRight: box.paddingRight,
+		paddingBottom: box.paddingBottom,
+		paddingLeft: box.paddingLeft,
+	});
+	const backgroundSource = (node: Readonly<FormattingNode>) => {
+		const layer = node.paint?.background;
+		if (!layer || backgroundImageUrl(layer["background-image"]) === undefined)
+			return;
+		const owner =
+			node.generatedContent?.owner ??
+			(node.ref ? tree.resolve(node.ref).id : undefined);
+		if (owner === undefined)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Background image owner is unavailable",
+			);
+		const resources = documentImages(tree);
+		const state = resources.background(owner, node.generatedContent?.name);
+		if (state.state === "loading")
+			throw new AgentBrowserError(
+				"unsupported",
+				"Background image is still loading",
+			);
+		return resources.decodedBackground(owner, node.generatedContent?.name);
+	};
+	const hasVisualBackgroundLayer = (node: Readonly<FormattingNode>) => {
+		const paint = node.paint ?? initialPaintStyle;
+		const layer = paint.background;
+		return (
+			layer !== undefined &&
+			(backgroundImageUrl(layer["background-image"]) !== undefined ||
+				(layer["background-clip"] !== "border-box" &&
+					paintBackground(paint)[3] !== 0))
+		);
+	};
+	const drawNodeBackground = (
+		node: Readonly<FormattingNode>,
+		geometry: BackgroundGeometry,
+		decoration?: RoundedDecoration,
+	) => {
+		const paint = node.paint ?? initialPaintStyle;
+		const layer = paint.background;
+		if (!layer) {
+			drawBackground(
+				geometry.x + clip.x,
+				geometry.y + clip.y,
+				geometry.width,
+				geometry.height,
+				paintBackground(paint),
+				decoration?.outer,
+			);
+			return;
+		}
+		if (
+			hasVisualBackgroundLayer(node) &&
+			(node.control ||
+				node.buttonAppearance ||
+				node.marker ||
+				node.tableWrapper !== undefined ||
+				node.tableGrid !== undefined ||
+				node.collapsedBorderOwner !== undefined ||
+				node.fieldsetLegend !== undefined)
+		)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Background layers on native controls or table wrappers are not supported",
+			);
+		charge(64);
+		const outer = localCurve(decoration?.outer);
+		const areas = backgroundAreas(geometry, layer, outer);
+		const colorClip = {
+			...areas.clip,
+			x: areas.clip.x + clip.x,
+			y: areas.clip.y + clip.y,
+		};
+		drawBackground(
+			colorClip.x,
+			colorClip.y,
+			colorClip.width,
+			colorClip.height,
+			paintBackground(paint),
+			colorClip,
+		);
+		const source = backgroundSource(node);
+		if (source)
+			metrics.paintedBackgrounds += paintBackgroundImage(
+				image,
+				source,
+				layer,
+				geometry,
+				charge,
+				outer,
+			);
+	};
 	const textDecorations = prepareTextDecorations(tree, layout, charge);
 	const drawOutline = (
 		reference: string | undefined,
@@ -419,6 +545,7 @@ function paintDocumentLayout(
 	});
 	let canvasSource = root;
 	let canvasColor = transparentColor;
+	let canvasPaint = initialPaintStyle;
 	const suppressed = new Set<string>();
 	if (root !== undefined) {
 		suppressed.add(tree.reference(root));
@@ -427,7 +554,10 @@ function paintDocumentLayout(
 			let sourcePaint = rootPaint;
 			if (
 				tree.get(root).tagName === "html" &&
-				paintBackground(rootPaint)[3] === 0
+				paintBackground(rootPaint)[3] === 0 &&
+				backgroundImageUrl(
+					rootPaint.background?.["background-image"] ?? "none",
+				) === undefined
 			) {
 				const body = tree.get(root).children.find((id) => {
 					charge();
@@ -444,11 +574,13 @@ function paintDocumentLayout(
 				canvasSource !== undefined &&
 				styles.get(canvasSource).displayed &&
 				styles.get(canvasSource).display !== "contents"
-			)
+			) {
+				canvasPaint = sourcePaint;
 				canvasColor =
 					sourcePaint["background-color"] === "currentcolor"
 						? rootPaint.color
 						: sourcePaint["background-color"];
+			}
 		}
 	}
 	const canvasBackground = Object.freeze({
@@ -456,6 +588,49 @@ function paintDocumentLayout(
 		color: canvasColor,
 	});
 	drawBackground(clip.x, clip.y, image.width, image.height, canvasColor);
+	if (
+		canvasPaint.background &&
+		canvasSource !== undefined &&
+		root !== undefined
+	) {
+		const rootBox = layout.boxes.find((box) => {
+			charge();
+			return box.ref === tree.reference(root);
+		});
+		if (
+			backgroundImageUrl(canvasPaint.background["background-image"]) !==
+			undefined
+		) {
+			if (!rootBox)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Canvas background positioning geometry is unavailable",
+				);
+			const source = backgroundSource({
+				...nodes[rootBox.id],
+				ref: tree.reference(canvasSource),
+				paint: canvasPaint,
+			});
+			if (source) {
+				const canvasClip = createRoundedBox(0, 0, image.width, image.height, [
+					{ horizontal: 0, vertical: 0 },
+					{ horizontal: 0, vertical: 0 },
+					{ horizontal: 0, vertical: 0 },
+					{ horizontal: 0, vertical: 0 },
+				]);
+				metrics.paintedBackgrounds += paintBackgroundImage(
+					image,
+					source,
+					canvasPaint.background,
+					backgroundGeometry(rootBox),
+					charge,
+					undefined,
+					canvasClip,
+					true,
+				);
+			}
+		}
+	}
 	const paintBox = (
 		box: Readonly<DocumentBox>,
 		decoration?: RoundedDecoration,
@@ -486,6 +661,11 @@ function paintDocumentLayout(
 				}
 			: undefined;
 		if (node.buttonAppearance) {
+			if (hasVisualBackgroundLayer(node))
+				throw new AgentBrowserError(
+					"unsupported",
+					"Background layers on native buttons are not supported",
+				);
 			const horizontal = box.borderX - clip.x;
 			const vertical = box.borderY - clip.y;
 			const left = Math.max(0, horizontal);
@@ -513,13 +693,14 @@ function paintDocumentLayout(
 				metrics.paintedControls++;
 			} else metrics.clippedControls++;
 		} else if (!box.ref || !suppressed.has(box.ref))
-			drawBackground(
-				box.borderX,
-				paintedBorderY,
-				box.borderBoxWidth,
-				paintedBorderHeight,
-				paintBackground(node.paint),
-				decoration?.outer,
+			drawNodeBackground(
+				node,
+				backgroundGeometry({
+					...box,
+					borderY: paintedBorderY,
+					borderBoxHeight: paintedBorderHeight,
+				}),
+				decoration,
 			);
 		if (node.collapsedBorderOwner === undefined)
 			metrics.borderPixels += paintBorders(
@@ -674,13 +855,10 @@ function paintDocumentLayout(
 				"Image resource is no longer available for painting",
 			);
 		if (node.visible)
-			drawBackground(
-				borderX,
-				borderY,
-				used.borderBoxWidth,
-				used.borderBoxHeight,
-				paintBackground(node.paint ?? initialPaintStyle),
-				decoration?.outer,
+			drawNodeBackground(
+				node,
+				backgroundGeometry({ ...used, borderX, borderY }),
+				decoration,
 			);
 		if (node.visible && node.collapsedBorderOwner === undefined)
 			metrics.borderPixels += paintBorders(
@@ -918,6 +1096,11 @@ function paintDocumentLayout(
 			continue;
 		}
 		if (node.kind !== "inline" || !node.visible || !node.paint) continue;
+		if (hasVisualBackgroundLayer(node))
+			throw new AgentBrowserError(
+				"unsupported",
+				"Background layers on non-atomic inline fragments are not supported",
+			);
 		if (!paintBackground(node.paint)[3] && !fragment.borders) {
 			paintInlineDecorationEdges(
 				textDecorations,

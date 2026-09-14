@@ -290,7 +290,12 @@ function normalize(name: string, source: string): string | undefined {
 	if (name === "font-family") return parseTextValue(name, source);
 	if (isCssGridProperty(name)) return parseGridValue(name, source);
 	if (isCssTableProperty(name)) return parseTableValue(name, source);
-	if (name === "fill" || name === "stroke" || name === "clip-path")
+	if (
+		name === "fill" ||
+		name === "stroke" ||
+		name === "clip-path" ||
+		name === "background-image"
+	)
 		return parsePaintValue(source, name);
 	const value = source.toLowerCase().replace(/[\t\n\f\r ]+/g, " ");
 	if (wide.has(value)) return value;

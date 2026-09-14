@@ -1,5 +1,8 @@
 import {
+	type BackgroundLayer,
+	type NeutralBackgroundProperty,
 	cssBackgroundProperties,
+	initialBackgroundValues,
 	isNeutralBackgroundProperty,
 	parseBackgroundComponent,
 } from "./css-background.js";
@@ -71,6 +74,7 @@ export interface PaintStyle
 	readonly svgPaintError?: true;
 	readonly svgClipError?: true;
 	readonly "background-color": CssColor;
+	readonly background?: BackgroundLayer;
 }
 export type ClipStyle = Pick<
 	PaintStyle,
@@ -81,6 +85,9 @@ export const initialPaintStyle: PaintStyle = Object.freeze({
 	color: cssNamedColors.black,
 	"background-color": transparentColor,
 });
+const backgroundProperties = cssBackgroundProperties.filter(
+	isNeutralBackgroundProperty,
+);
 export function isCssPaintProperty(
 	property: string,
 ): property is CssPaintProperty {
@@ -258,6 +265,7 @@ export function computePaintStyle(
 	const result: {
 		color: Rgba;
 		"background-color": CssColor;
+		background?: BackgroundLayer;
 		"caret-color"?: CssColor | "auto";
 		"accent-color"?: CssColor | "auto";
 		"stop-color"?: CssColor;
@@ -280,6 +288,35 @@ export function computePaintStyle(
 			foreground && foreground !== "currentcolor" ? foreground : parent.color,
 		"background-color": fill ?? transparentColor,
 	};
+	if (
+		backgroundProperties.some((property) => specified[property] !== undefined)
+	) {
+		const layer = {} as Record<NeutralBackgroundProperty, string>;
+		for (const property of backgroundProperties) {
+			const component = specified[property];
+			const parsed =
+				component === undefined
+					? undefined
+					: parseBackgroundComponent(property, component);
+			layer[property] =
+				parsed === "inherit"
+					? (parent.background?.[property] ?? initialBackgroundValues[property])
+					: parsed === undefined ||
+							["initial", "unset", "revert"].includes(parsed)
+						? initialBackgroundValues[property]
+						: parsed;
+		}
+		if (
+			backgroundProperties.some(
+				(property) => layer[property] !== initialBackgroundValues[property],
+			)
+		)
+			result.background = backgroundProperties.every(
+				(property) => layer[property] === parent.background?.[property],
+			)
+				? parent.background
+				: Object.freeze(layer);
+	}
 	for (const property of ["fill", "stroke"] as const) {
 		const svgFill = specified[property];
 		if (
@@ -428,7 +465,8 @@ export function computePaintStyle(
 		borderColorProperties.every(
 			(property) => result[property] === parent[property],
 		) &&
-		result["background-color"] === parent["background-color"]
+		result["background-color"] === parent["background-color"] &&
+		result.background === parent.background
 		? parent
 		: Object.freeze(result);
 }

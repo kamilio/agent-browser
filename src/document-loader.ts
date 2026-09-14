@@ -96,6 +96,7 @@ export async function loadBrowserDocument(
 			documentImages(tree, {
 				fetch: context.fetchImage,
 				contentSecurityPolicy: contentSecurityPolicyHeaders,
+				deferBackgrounds: true,
 			});
 		},
 	};
@@ -316,7 +317,7 @@ export async function loadBrowserDocument(
 					styles.noteLoadIssue("stylesheet-integrity-mismatch");
 					continue;
 				}
-				styles.setExternalSheet(node.id, url, input.text);
+				styles.setExternalSheet(node.id, url, input.text, input.url);
 				await installImports(node.id, url, input);
 			} catch (error) {
 				if (
@@ -336,6 +337,7 @@ export async function loadBrowserDocument(
 					break;
 			}
 		}
+		documentImages(tree).enableBackgrounds();
 		await context.scripts?.finish(tree);
 		await documentImages(tree).settle(context.signal);
 		return tree;

@@ -1,4 +1,5 @@
 import { imageDimensionHint } from "./replaced-box.js";
+import { backgroundImageUrl } from "./css-background.js";
 import {
 	CssDiagnosticCollector,
 	type CssDiagnosticSink,
@@ -214,12 +215,14 @@ export interface VisibilityStyle {
 }
 interface Winner {
 	declaration: CssDeclaration;
+	baseUrl: string;
 	specificity: SelectorSpecificity;
 	inline: boolean;
 	order: number;
 }
 interface ExternalSheet {
 	url: string;
+	sourceUrl: string;
 	text: string;
 	source?: Readonly<StylesheetSource>;
 	baseUrl?: string;
@@ -516,8 +519,8 @@ export class DocumentStyles {
 		for (const listener of [...this.mediaListeners]) listener();
 	}
 
-	setExternalSheet(id: number, url: string, text: string) {
-		this.storeSheet(id, url, text);
+	setExternalSheet(id: number, url: string, text: string, sourceUrl = url) {
+		this.storeSheet(id, url, text, undefined, sourceUrl);
 	}
 
 	setStylesheetSource(
@@ -534,11 +537,17 @@ export class DocumentStyles {
 		url: string,
 		text: string,
 		source?: Readonly<StylesheetSource>,
+		sourceUrl = source?.url ?? url,
 	) {
 		this.ensureOpen();
 		const inline = Boolean(source) && isHtmlElement(this.tree.get(id), "style");
 		if (typeof url !== "string" || url.length > 16_384)
 			throw new AgentBrowserError("invalid-input", "Invalid stylesheet URL");
+		if (typeof sourceUrl !== "string" || sourceUrl.length > 16_384)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid stylesheet source URL",
+			);
 		if (
 			(!isHtmlElement(this.tree.get(id), "link") && !inline) ||
 			typeof text !== "string" ||
@@ -571,6 +580,7 @@ export class DocumentStyles {
 			);
 		this.external.set(id, {
 			url,
+			sourceUrl,
 			text,
 			source,
 			...size,
@@ -1498,12 +1508,17 @@ export class DocumentStyles {
 			}
 			return { matches, possible: true, uncertain };
 		};
+		const nodes = [...this.tree.walk()].map((entry) => entry.node);
+		const documentBase = documentBaseUrl(this.tree);
+		charge(nodes.length);
+		const declarationBases = new WeakMap<CssDeclaration, string>();
 		const parseSheet = (
 			text: string,
 			graph: Readonly<StylesheetSource> | undefined,
 			media: string[],
 			depth = 0,
 			importDepth = 0,
+			baseUrl = graph?.url ?? documentBase,
 		): CssRule[] => {
 			const sheet = diagnosticSheet++;
 			const diagnostic: CssDiagnosticSink = Object.assign(
@@ -1519,7 +1534,7 @@ export class DocumentStyles {
 			const imports = new Map(
 				graph?.imports.map((entry) => [entry.start, entry]),
 			);
-			return parseCssRules(
+			const rules = parseCssRules(
 				source(text),
 				budget,
 				rawIssue,
@@ -1545,8 +1560,14 @@ export class DocumentStyles {
 				true,
 				diagnostic,
 			);
+			for (const rule of rules)
+				for (const declaration of rule.declarations) {
+					charge(1);
+					if (!declarationBases.has(declaration))
+						declarationBases.set(declaration, baseUrl);
+				}
+			return rules;
 		};
-		const nodes = [...this.tree.walk()].map((entry) => entry.node);
 		const apply = (
 			id: number,
 			declarations: CssDeclaration[],
@@ -1564,6 +1585,7 @@ export class DocumentStyles {
 				const declaration = declarations[index];
 				const candidate: Winner = {
 					declaration,
+					baseUrl: declarationBases.get(declaration) ?? documentBase,
 					specificity,
 					inline,
 					order: baseOrder + index,
@@ -1698,6 +1720,7 @@ export class DocumentStyles {
 		for (const node of nodes) {
 			let text: string | undefined;
 			let graph: Readonly<StylesheetSource> | undefined;
+			let baseUrl = documentBase;
 			if (
 				node.tagName === "style" &&
 				(isHtmlElement(node) || elementNamespace(node) === svgNamespace) &&
@@ -1707,10 +1730,7 @@ export class DocumentStyles {
 				text = this.tree.textContent(node.id);
 				const sheet = this.external.get(node.id);
 				if (sheet?.source) {
-					if (
-						sheet.text === text &&
-						sheet.baseUrl === documentBaseUrl(this.tree)
-					)
+					if (sheet.text === text && sheet.baseUrl === documentBase)
 						graph = sheet.source;
 					else issue("changed-stylesheet-needs-reload");
 				}
@@ -1728,11 +1748,12 @@ export class DocumentStyles {
 					if (sheet) {
 						try {
 							if (
-								new URL(node.attributes.href ?? "", documentBaseUrl(this.tree))
-									.href === sheet.url
+								new URL(node.attributes.href ?? "", documentBase).href ===
+								sheet.url
 							) {
 								text = sheet.text;
 								graph = sheet.source;
+								baseUrl = graph?.url ?? sheet.sourceUrl;
 							} else issue("changed-stylesheet-needs-reload");
 						} catch {
 							issue("invalid-stylesheet-url");
@@ -1745,6 +1766,9 @@ export class DocumentStyles {
 				text,
 				graph,
 				node.attributes.media ? [node.attributes.media] : [],
+				0,
+				0,
+				graph?.url ?? baseUrl,
 			);
 			for (const rule of rules) {
 				if (rule.declarations.length === 0 && !rule.issues) continue;
@@ -1887,6 +1911,19 @@ export class DocumentStyles {
 			apply(node.id, declarations, [0, 0, 0], true, order);
 			order += declarations.length;
 		}
+		const resolvedBackgroundImage = (value: string, baseUrl: string) => {
+			const source = backgroundImageUrl(value);
+			if (source === undefined) return value;
+			charge(source.length + baseUrl.length + 1);
+			try {
+				const absolute = new URL(source, baseUrl).href
+					.replace(/"/g, "%22")
+					.replace(/\\/g, "%5C");
+				return `url("${absolute}")`;
+			} catch {
+				return value;
+			}
+		};
 		const customComputed = new Map<
 			number,
 			ReadonlyMap<string, string | null>
@@ -2057,7 +2094,10 @@ export class DocumentStyles {
 									)?.value ?? "unset");
 					}
 					charge(name.length + value.length + 1);
-					specified[name] = value;
+					specified[name] =
+						name === "background-image"
+							? resolvedBackgroundImage(value, winner.baseUrl)
+							: value;
 				}
 				applyLogicalSpacing(properties, specified);
 				pseudoSpecified[target].set(id, Object.freeze(specified));
@@ -2109,7 +2149,13 @@ export class DocumentStyles {
 				if (isCssTextProperty(property))
 					textValues[property] = winner.declaration.value;
 				if (isCssPaintProperty(property))
-					paintValues[property] = winner.declaration.value;
+					paintValues[property] =
+						property === "background-image"
+							? resolvedBackgroundImage(
+									winner.declaration.value,
+									winner.baseUrl,
+								)
+							: winner.declaration.value;
 			}
 			applyLogicalSpacing(properties, specified);
 			if (Object.keys(specified).length)

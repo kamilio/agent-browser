@@ -352,7 +352,9 @@ export function parseCssDeclarations(
 			property !== "font-family" &&
 			property !== "fill" &&
 			property !== "stroke" &&
-			property !== "clip-path"
+			property !== "clip-path" &&
+			property !== "background" &&
+			property !== "background-image"
 		)
 			value = value
 				.replace(/[A-Z]/g, (letter) => letter.toLowerCase())

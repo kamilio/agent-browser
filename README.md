@@ -96,7 +96,9 @@ still fails with the selected experimental runtime, so its full probe stays red.
 
 `BACKGROUNDS.md` adds solid-color/none `background` shorthand with eight-component
 resets, live inline/computed CSSOM, and actual SafeJS-driven PNG/PDF checks.
-Images, layers and non-default background component values remain unsupported.
+Those measurements describe the solid-background checkpoint.
+`CSS-BACKGROUND-IMAGES.md` documents the later native-only single-layer URL
+background profile. It does not imply a new live-site or SafeJS validation run.
 
 `COMPUTED-STYLES.md` adds live, readonly `getComputedStyle` on the global and
 window objects. Thirty-one longhands use the existing cascade and actual

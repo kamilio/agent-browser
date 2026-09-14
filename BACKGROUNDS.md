@@ -1,5 +1,9 @@
 # Solid background shorthand
 
+This historical checkpoint is extended by the native single-layer URL profile
+in `CSS-BACKGROUND-IMAGES.md`. Its original paths, measurements and SafeJS
+evidence below remain unchanged; they do not validate the newer image profile.
+
 The September 3 checkpoint supports `background: red`, `background: none`,
 `background: currentcolor`, and a color with an optional `none` image before or
 after it. Accepted color functions use the shared bounded RGBA8 parser. The

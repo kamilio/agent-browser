@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: single-layer CSS background images validated
+
+**PROGRESS; overall browser goal remains ACTIVE.** URL backgrounds now have real
+native loading, stylesheet/import/redirect/variable provenance, size/position/
+repeat pixels, clipping and canvas propagation. Shared image ownership retains
+CSP, budgets, cancellation and taint metadata; resource transfers/swaps preserve
+decoded data and detached img consumers. Initial background loading waits for
+stylesheets. Pending paint and stale prepared captures remain explicit failures.
+
+The isolated final gate passes23,335/0/2unchanged exclusions at11:42:08UTC across
+465selected files. Independent audit preserves23,099prior case occurrences and
+verifies238new passing cases,2,899inputs and2,192compiled files. Initial failures
+remain recorded, including URL lowercasing, an invalid opaque-source attempt and
+an obsolete support assertion. No cap, dependency, engine or exclusion changes.
+See CSS-BACKGROUND-IMAGES.md for scope, limitations and retained evidence.
+
+NEXT: recheck the captured MDN flow on this committed runtime without opening its
+old19-response corpus or claiming missing image assets were rendered. Additional
+asset acquisition needs a separately bounded scope. Non-atomic inline/control/
+special-table/fieldset image backgrounds remain fail-closed; gradients, multiple
+layers and unsupported attachment modes remain rejected. Original research,
+Wikipedia geometry, broader live websites/forms, credentials/providers/passkeys/
+devices, SafeJS, sockets/TTY and challenge gates remain open. No push.
+
 ### September 14: MDN click rechecked on committed letter spacing
 
 **PROGRESS; overall browser goal remains ACTIVE.** A new captured ordinary click

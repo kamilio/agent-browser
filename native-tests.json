@@ -1,4 +1,10 @@
 [
+  "src/background-loader-integration.test.ts",
+  "src/css-background-image-values.test.ts",
+  "src/document-background-images.test.ts",
+  "src/background-raster.test.ts",
+  "src/background-provenance.test.ts",
+  "src/document-background-raster.test.ts",
   "src/selector-candidates.test.ts",
   "src/foreign-document.test.ts",
   "src/html-foreign.test.ts",

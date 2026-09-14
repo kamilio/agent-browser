@@ -133,12 +133,12 @@ it.each([
 	"none red none",
 	"inherit red",
 	"none unset",
-	"url(a.png)",
+	"url(a.png),url(b.png)",
 	"linear-gradient(red,blue)",
 	"red, none",
-	"red center",
+	"red left 1px top 1px",
 	"red / cover",
-	"red no-repeat",
+	"red round",
 ])(
 	"rejects unsupported or invalid shorthand %s without partial expansion",
 	(value) => {
@@ -228,7 +228,7 @@ it("keeps all resets in order and declines mixed CSS-wide shorthand serializatio
 	).toBe("");
 });
 
-it("accepts only neutral non-color components and keeps unsupported authored values explicit", () => {
+it("accepts initial non-color components and keeps unsupported layered values explicit", () => {
 	const { style, computed } = fixture();
 	for (const name of cssBackgroundProperties.slice(0, 7)) {
 		style.setProperty(name, initialBackgroundValues[name]);
@@ -236,11 +236,13 @@ it("accepts only neutral non-color components and keeps unsupported authored val
 	}
 	style.backgroundSize = "auto auto";
 	expect(style.backgroundSize).toBe("auto");
-	style.backgroundImage = "url(secret.png)";
+	style.backgroundImage = "url(first.png),url(second.png)";
 	expect(style.backgroundImage).toBe("none");
-	const unsupported = fixture("#target{background:url(secret.png)}");
+	const unsupported = fixture(
+		"#target{background:url(first.png),url(second.png)}",
+	);
 	expect(() => rasterizeDocument(unsupported.tree)).toThrow();
-	const invalidClip = fixture("#target{background-clip:content-box}");
+	const invalidClip = fixture("#target{background-clip:text}");
 	expect(() => rasterizeDocument(invalidClip.tree)).toThrow();
 });
 

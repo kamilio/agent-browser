@@ -5,8 +5,10 @@ import {
 	serializeRadiusStyle,
 } from "./css-radius.js";
 import {
+	cssBackgroundProperties,
 	initialBackgroundValues,
 	isNeutralBackgroundProperty,
+	serializeBackgroundValues,
 } from "./css-background.js";
 import { cssBoxProperties, isCssBoxProperty } from "./css-box.js";
 import {
@@ -130,9 +132,18 @@ export function resolvedStyleValue(
 		);
 		return values[0] === values[1] ? values[0] : values.join(" ");
 	}
-	if (isNeutralBackgroundProperty(name)) return initialBackgroundValues[name];
+	if (isNeutralBackgroundProperty(name))
+		return (
+			documentStyles(tree).paint(id).background?.[name] ??
+			initialBackgroundValues[name]
+		);
 	if (name === "background")
-		return `${resolvedStyleValue(tree, id, "background-color")} none repeat scroll 0% 0% / auto padding-box border-box`;
+		return serializeBackgroundValues(
+			cssBackgroundProperties.map((component) =>
+				resolvedStyleValue(tree, id, component),
+			),
+			true,
+		);
 	if (name === "margin" || name === "padding") {
 		const values = ["top", "right", "bottom", "left"].map((side) =>
 			resolvedStyleValue(tree, id, `${name}-${side}`),

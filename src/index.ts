@@ -614,7 +614,11 @@ export { parseCssColor, cssNamedColors, type CssColor } from "./css-color.js";
 export {
 	cssBackgroundProperties,
 	initialBackgroundValues,
+	backgroundImageUrl,
+	parseBackgroundComponent,
 	parseBackgroundShorthand,
+	type BackgroundLayer,
+	type NeutralBackgroundProperty,
 	type CssBackgroundProperty,
 } from "./css-background.js";
 export {

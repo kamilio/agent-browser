@@ -1,4 +1,4 @@
-import { documentBaseUrl } from "./document-url.js";
+import { backgroundImageUrl } from "./css-background.js";
 import { documentImageContentSecurityPolicy } from "./document-image-content-security-policy.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import type { DocumentTree } from "./document.js";
@@ -7,6 +7,7 @@ import { BrowserEvent } from "./events.js";
 import { documentInteractions } from "./interactions.js";
 import { type NetworkResponse, parseNetworkUrl } from "./network.js";
 import { diagnosticUrl } from "./network-journal.js";
+import { documentStyles } from "./styles.js";
 import {
 	decodeImage,
 	imageIntrinsicSize,
@@ -37,6 +38,7 @@ export type ImageFetch = (
 export interface DocumentImageOptions {
 	fetch?: ImageFetch;
 	blockedByCsp?: boolean;
+	deferBackgrounds?: boolean;
 	contentSecurityPolicy?: readonly string[];
 	limits?: Partial<Record<keyof DocumentImageLimits, number>>;
 }
@@ -64,6 +66,7 @@ export interface ImageSnapshot {
 }
 interface Entry {
 	id: number;
+	background: boolean;
 	controller: AbortController;
 	version: number;
 	selection: string;
@@ -110,7 +113,7 @@ function withImageAbort<Value>(
 
 export class DocumentImages {
 	readonly limits: Readonly<Record<keyof DocumentImageLimits, number>>;
-	private readonly entries = new Map<number, Entry>();
+	private readonly entries = new Map<number | string, Entry>();
 	private readonly resources = new Map<string, Resource>();
 	private readonly queue: Resource[] = [];
 	private readonly events: { id: number; version: number; type: string }[] = [];
@@ -120,6 +123,8 @@ export class DocumentImages {
 	private timer?: ReturnType<typeof setTimeout>;
 	private running?: Promise<void>;
 	private dirty = true;
+	private backgroundsDeferred: boolean;
+	private reconciling = false;
 	private closed = false;
 	private failure?: AgentBrowserError;
 	private active = 0;
@@ -145,13 +150,16 @@ export class DocumentImages {
 					![
 						"fetch",
 						"blockedByCsp",
+						"deferBackgrounds",
 						"contentSecurityPolicy",
 						"limits",
 					].includes(key),
 			) ||
 			(options.fetch !== undefined && typeof options.fetch !== "function") ||
 			(options.blockedByCsp !== undefined &&
-				typeof options.blockedByCsp !== "boolean")
+				typeof options.blockedByCsp !== "boolean") ||
+			(options.deferBackgrounds !== undefined &&
+				typeof options.deferBackgrounds !== "boolean")
 		)
 			throw new AgentBrowserError(
 				"invalid-input",
@@ -167,6 +175,7 @@ export class DocumentImages {
 				"invalid-input",
 				"Invalid image owner limits",
 			);
+		this.backgroundsDeferred = options.deferBackgrounds === true;
 		this.limits = Object.freeze({ ...documentImageLimits, ...options.limits });
 		for (const [key, value] of Object.entries(this.limits))
 			if (
@@ -184,8 +193,9 @@ export class DocumentImages {
 			options.contentSecurityPolicy,
 		);
 		this.unregisterChange = contentSecurityPolicy.watchImages((change) => {
-			if (["insert", "remove", "attribute", "location"].includes(change.kind)) {
+			if (["insert", "remove", "attribute", "location"].includes(change.kind))
 				this.context = undefined;
+			if (!change.presentationOnly) {
 				this.dirty = true;
 				this.schedule();
 			}
@@ -200,20 +210,53 @@ export class DocumentImages {
 	}
 	get(id: number): Readonly<ImageSnapshot> {
 		this.ensureOpen();
-		const entry = this.update(id);
-		const decoded = entry.resource?.decoded;
+		return this.snapshot(id, this.update(id));
+	}
+	background(id: number, pseudo?: "before" | "after"): ImageSnapshot {
+		this.ensureOpen();
+		if (
+			this.tree.get(id).kind !== "element" ||
+			(pseudo !== undefined && pseudo !== "before" && pseudo !== "after")
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Background owner requires an element and an optional before or after pseudo-element",
+			);
+		this.refresh();
+		return this.snapshot(id, this.entries.get(this.backgroundKey(id, pseudo)));
+	}
+	decodedBackground(
+		id: number,
+		pseudo?: "before" | "after",
+	): Readonly<DecodedImage> | undefined {
+		this.background(id, pseudo);
+		return this.entries.get(this.backgroundKey(id, pseudo))?.resource?.decoded;
+	}
+	enableBackgrounds() {
+		this.ensureOpen();
+		if (!this.backgroundsDeferred) return;
+		this.backgroundsDeferred = false;
+		this.dirty = true;
+		this.schedule();
+	}
+	private backgroundKey(id: number, pseudo?: "before" | "after") {
+		return `${id}:${pseudo ?? "background"}`;
+	}
+	private snapshot(id: number, entry?: Entry): Readonly<ImageSnapshot> {
+		const decoded = entry?.resource?.decoded;
+		const state = entry?.state ?? "empty";
 		const intrinsic =
 			decoded === undefined ? undefined : imageIntrinsicSize(decoded);
 		return Object.freeze({
 			ref: this.tree.reference(id),
-			state: entry.state,
-			complete: entry.state !== "loading",
-			currentSrc: entry.state === "empty" ? "" : entry.url,
+			state,
+			complete: state !== "loading",
+			currentSrc: state === "empty" ? "" : (entry?.url ?? ""),
 			naturalWidth: Math.floor(intrinsic?.width ?? 0),
 			naturalHeight: Math.floor(intrinsic?.height ?? 0),
-			...(entry.error ? { error: entry.error } : {}),
+			...(entry?.error ? { error: entry.error } : {}),
 			originClean:
-				entry.resource?.state === "complete" && entry.resource.originClean,
+				entry?.resource?.state === "complete" && entry.resource.originClean,
 			ignoredAncillaryChunks:
 				decoded?.mediaType === "image/png"
 					? decoded.ignoredAncillaryChunks
@@ -306,13 +349,17 @@ export class DocumentImages {
 		return Object.freeze({
 			...this.metrics(),
 			images: Object.freeze(
-				[...this.entries.keys()].map((id) => {
-					const state = this.get(id);
-					return Object.freeze({
-						...state,
-						currentSrc: state.currentSrc ? diagnosticUrl(state.currentSrc) : "",
-					});
-				}),
+				[...this.entries.values()]
+					.filter((entry) => !entry.background)
+					.map((entry) => {
+						const state = this.get(entry.id);
+						return Object.freeze({
+							...state,
+							currentSrc: state.currentSrc
+								? diagnosticUrl(state.currentSrc)
+								: "",
+						});
+					}),
 			),
 		});
 	}
@@ -369,12 +416,23 @@ export class DocumentImages {
 	private selectionContext() {
 		if (this.context) return this.context;
 		let blocked = this.options.blockedByCsp === true;
+		let base = this.tree.url;
+		let foundBase = false;
 		for (const { node } of this.tree.walk()) {
-			if (++this.scanWork > this.limits.maxScanWork)
-				throw new AgentBrowserError(
-					"resource-limit",
-					"Image scan work limit exceeded",
-				);
+			this.chargeScan();
+			if (
+				!foundBase &&
+				isHtmlElement(node, "base") &&
+				Object.hasOwn(node.attributes, "href")
+			) {
+				foundBase = true;
+				try {
+					const url = new URL(node.attributes.href, this.tree.url);
+					if (!["data:", "javascript:"].includes(url.protocol)) base = url.href;
+				} catch {
+					base = this.tree.url;
+				}
+			}
 			if (
 				isHtmlElement(node, "meta") &&
 				node.attributes["http-equiv"]?.length ===
@@ -384,7 +442,7 @@ export class DocumentImages {
 			)
 				blocked = true;
 		}
-		this.context = { base: documentBaseUrl(this.tree), blocked };
+		this.context = { base, blocked };
 		return this.context;
 	}
 	private refresh() {
@@ -392,21 +450,88 @@ export class DocumentImages {
 		if (!this.dirty) return;
 		this.dirty = false;
 		try {
-			const discovered = new Set<number>();
-			for (const { node } of this.tree.walk()) {
-				if (++this.scanWork > this.limits.maxScanWork)
+			const desired = new Map<
+				number | string,
+				{ id: number; source?: string }
+			>();
+			const discover = (id: number, key: number | string, source?: string) => {
+				if (!desired.has(key) && desired.size >= this.limits.maxElements)
 					throw new AgentBrowserError(
 						"resource-limit",
-						"Image scan work limit exceeded",
+						"Image element limit exceeded",
 					);
-				if (isHtmlElement(node, "img")) discovered.add(node.id);
+				desired.set(key, { id, source });
+			};
+			for (const entry of this.entries.values()) {
+				this.chargeScan();
+				if (!entry.background) discover(entry.id, entry.id);
 			}
-			for (const id of this.entries.keys()) discovered.add(id);
-			for (const id of discovered) this.update(id);
+			const styles = this.backgroundsDeferred
+				? undefined
+				: documentStyles(this.tree);
+			for (const { node } of this.tree.walk()) {
+				this.chargeScan();
+				if (isHtmlElement(node, "img")) discover(node.id, node.id);
+				if (node.kind !== "element" || !styles) continue;
+				const visibility = styles.get(node.id);
+				if (!visibility.displayed) continue;
+				for (const pseudo of [undefined, "before", "after"] as const) {
+					this.chargeScan();
+					if (pseudo === undefined && visibility.display === "contents")
+						continue;
+					const paint =
+						pseudo === undefined
+							? styles.paint(node.id)
+							: styles.generatedContent(node.id, pseudo)?.paint;
+					const source = backgroundImageUrl(
+						paint?.background?.["background-image"] ?? "none",
+					);
+					if (source === undefined) continue;
+					const key = this.backgroundKey(node.id, pseudo);
+					discover(node.id, key, source);
+				}
+			}
+			this.reconciling = true;
+			for (const [key, entry] of this.entries) {
+				this.chargeScan();
+				if (desired.has(key)) continue;
+				this.chargeUpdate();
+				this.release(entry);
+				this.entries.delete(key);
+			}
+			for (const [key, selection] of desired) {
+				this.chargeScan();
+				if (typeof key === "number") this.update(selection.id);
+				else
+					this.updateSource(selection.id, key, {
+						src: selection.source as string,
+					});
+			}
+			for (const resource of this.resources.values()) {
+				this.chargeScan();
+				if (!resource.consumers.size) this.releaseResource(resource);
+			}
 		} catch (error) {
 			this.halt(error);
 			throw error;
+		} finally {
+			this.reconciling = false;
+			this.pump();
 		}
+	}
+	private chargeScan() {
+		if (++this.scanWork > this.limits.maxScanWork)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Image scan work limit exceeded",
+			);
+	}
+	private chargeUpdate() {
+		if (++this.updates > this.limits.maxUpdates)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Image update limit exceeded",
+			);
 	}
 	private update(id: number): Entry {
 		this.ensureOpen();
@@ -416,11 +541,18 @@ export class DocumentImages {
 				"invalid-input",
 				"Image owner requires an img element",
 			);
-		const attributes = node.attributes;
-		const { base, blocked } = this.selectionContext();
 		const picture =
 			node.parent !== null &&
 			isHtmlElement(this.tree.get(node.parent), "picture");
+		return this.updateSource(id, id, node.attributes, picture);
+	}
+	private updateSource(
+		id: number,
+		key: number | string,
+		attributes: Readonly<Record<string, string>>,
+		picture = false,
+	): Entry {
+		const { base, blocked } = this.selectionContext();
 		const sources = [
 			attributes.src,
 			attributes.srcset,
@@ -438,8 +570,9 @@ export class DocumentImages {
 					: [value.slice(0, this.limits.maxUrlCodeUnits), value.length],
 			),
 			picture,
+			blocked,
 		]);
-		let entry = this.entries.get(id);
+		let entry = this.entries.get(key);
 		if (entry?.selection === selection) return entry;
 		if (!entry) {
 			if (this.entries.size >= this.limits.maxElements)
@@ -449,19 +582,16 @@ export class DocumentImages {
 				);
 			entry = {
 				id,
+				background: typeof key === "string",
 				controller: new AbortController(),
 				version: 0,
 				selection: "",
 				url: "",
 				state: "empty",
 			};
-			this.entries.set(id, entry);
+			this.entries.set(key, entry);
 		}
-		if (++this.updates > this.limits.maxUpdates)
-			throw new AgentBrowserError(
-				"resource-limit",
-				"Image update limit exceeded",
-			);
+		this.chargeUpdate();
 		this.release(entry);
 		entry.selection = selection;
 		entry.version++;
@@ -555,7 +685,8 @@ export class DocumentImages {
 			entry.state = "broken";
 			entry.error =
 				error instanceof AgentBrowserError ? error.code : "invalid-input";
-			this.events.push({ id, version: entry.version, type: "error" });
+			if (!entry.background)
+				this.events.push({ id, version: entry.version, type: "error" });
 			this.schedule();
 		}
 		return entry;
@@ -569,7 +700,10 @@ export class DocumentImages {
 		entry.resource = undefined;
 		if (!resource) return;
 		resource.consumers.delete(entry);
-		if (resource.consumers.size) return;
+		if (resource.consumers.size || this.reconciling) return;
+		this.releaseResource(resource);
+	}
+	private releaseResource(resource: Resource) {
 		resource.controller.abort(
 			new AgentBrowserError("aborted", "Image source no longer used"),
 		);
@@ -584,6 +718,7 @@ export class DocumentImages {
 		while (
 			!this.closed &&
 			!this.failure &&
+			!this.reconciling &&
 			this.active < this.limits.maxConcurrent &&
 			this.queue.length
 		) {
@@ -670,8 +805,14 @@ export class DocumentImages {
 					"resource-limit",
 					"Image decoded byte limit exceeded",
 				);
+			const remainingWork = this.limits.maxDecodeWork - this.decodeWork;
+			if (remainingWork < 1)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Image decode work limit exceeded",
+				);
 			const decoded = decodeImage(response.body, mediaType, {
-				maxWork: this.limits.maxDecodeWork,
+				maxWork: remainingWork,
 				maxPixels: remainingPixels,
 			});
 			this.decodeWork += decoded.work;
@@ -704,7 +845,7 @@ export class DocumentImages {
 			if (!this.closed && resource.consumers.size) {
 				for (const entry of resource.consumers)
 					this.finishEntry(entry, resource);
-				this.tree.invalidatePresentation();
+				this.tree.invalidatePresentation("paint");
 			}
 			resource.resolve();
 		}
@@ -712,11 +853,12 @@ export class DocumentImages {
 	private finishEntry(entry: Entry, resource: Resource) {
 		entry.state = resource.state === "complete" ? "complete" : "broken";
 		entry.error = resource.error;
-		this.events.push({
-			id: entry.id,
-			version: entry.version,
-			type: entry.state === "complete" ? "load" : "error",
-		});
+		if (!entry.background)
+			this.events.push({
+				id: entry.id,
+				version: entry.version,
+				type: entry.state === "complete" ? "load" : "error",
+			});
 		this.schedule();
 	}
 	private schedule() {
