@@ -326,7 +326,11 @@ it.each(["font", "font-synthesis", "font-synthesis-style"])(
 		expect(cssSupportsDeclaration(property, value)).toBe(false);
 		expect(declarations(`${property}:${value}`)).toEqual({
 			parsed: [],
-			issues: ["unimplemented-css-property"],
+			issues: [
+				property === "font"
+					? "unimplemented-or-invalid-css-value"
+					: "unimplemented-css-property",
+			],
 		});
 	},
 );

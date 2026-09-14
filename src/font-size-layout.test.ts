@@ -245,7 +245,7 @@ it("renders the formerly guarded italic keyword fixture with real slanted ink", 
 
 it.each([
 	["font-family:serif,", "unimplemented-or-invalid-css-value"],
-	["font:small monospace", "unimplemented-css-property"],
+	["font:small monospace", "unimplemented-or-invalid-css-value"],
 	["font-size:math", "unimplemented-or-invalid-css-value"],
 	["font-size:calc(1px + 1)", "unimplemented-or-invalid-css-value"],
 	["animation-name:spin", "unimplemented-css-property"],

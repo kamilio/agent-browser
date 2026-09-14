@@ -796,5 +796,8 @@
   "src/css-rejection-parser.test.ts",
   "src/style-diagnostic-details.test.ts",
   "src/text-decoration-aliases-style.test.ts",
-  "src/text-decoration-aliases-cssom.test.ts"
+  "src/text-decoration-aliases-cssom.test.ts",
+  "src/font-wide-declarations.test.ts",
+  "src/font-wide-cssom.test.ts",
+  "src/font-wide-inheritance.test.ts"
 ]

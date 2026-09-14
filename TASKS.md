@@ -6,6 +6,38 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: native font-wide inheritance and pending serialization
+
+**PROGRESS; overall browser goal remains ACTIVE.** Font initial/inherit/unset/
+revert now expand into five real native font longhands. Priority, variables,
+CSSOM resets/removal/serialization, parent/root and generated inheritance,
+button defaults and live caches are covered. Real text/button fixtures change
+height8→48pixels with exact canonical pixels and expanded hit regions; native
+font/control limits remain. Full/system font grammar and full computed font
+serialization are not implemented, nor unsupported reset-only font features.
+
+Review caught a genuine deferred all/font serialization regression. The fix
+orders strictly nested pending groups before scalar overrides and preserves
+all121components rather than losing116on reparse. Thirteen round-trip cases
+cover importance, earlier slots, direct setters, nesting and siblings. Existing
+missing-component and crossed non-contained pending limitations remain explicit.
+
+Final selected gate:22741passed/0failed/2unchangedexclusions,449files/448strictroots;
+build/strict/format pass. See `FONT-WIDE-INHERITANCE.md` and
+font-wide-work-september14/release01. Focused545pass with229new cases. All earlier
+failed development/native receipts remain, including two old full-font negative
+tests whose expected rejection category changed; their layout guards stay intact.
+Pre-existing parser/declaration reordering and other unrelated work are preserved.
+
+NEXT: separately bind/release/recheck the original MDN capture, then use the
+existing Wikipedia portal capture for a different-site diagnostic on current
+code. Continue logical spacing/units and remaining real sampled failures; do
+not treat repeated MDN checks as broad site acceptance. Original research, fresh
+live sites/forms, credentials/devices, SafeJS, socket/TTY and challenge gates
+remain open. Project storage is nearly full; use explicitly scoped new scratch
+capacity rather than deleting historical evidence or blindly copying builds.
+Nothing pushed.
+
 ### September 14: captured MDN confirms text-decoration alias improvement
 
 **PROGRESS; overall browser goal remains ACTIVE.** A separately scoped offline

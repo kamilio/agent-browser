@@ -7,6 +7,7 @@ import {
 } from "./css-background.js";
 import { normalizeCssColor } from "./css-color.js";
 import { parseCssContent } from "./css-content.js";
+import { cssFontProperties, parseFontWideDeclarations } from "./css-font.js";
 import {
 	cssGridProperties,
 	isCssGridProperty,
@@ -161,6 +162,7 @@ export const inlineProperties = [
 	"border-color",
 	...borderSides.map((side) => `border-${side}`),
 	...cssTextProperties,
+	"font",
 	...Object.keys(keywords),
 	...lengths,
 	"all",
@@ -385,6 +387,14 @@ export function expandDeclaration(
 		name.startsWith("--") || name === "content"
 			? input
 			: withoutCssComments(input).trim();
+	if (name === "font")
+		return (
+			parseFontWideDeclarations(source)?.map(({ property, value }) => ({
+				name: property,
+				value,
+				important,
+			})) ?? []
+		);
 	if (name === "all") {
 		const value = source.toLowerCase();
 		return wide.has(value)
@@ -529,6 +539,7 @@ export function parseInlineDeclarations(
 export function inlineDeclarationComponents(name: string): readonly string[] {
 	const canonical = canonicalCssProperty(name);
 	if (canonical !== name) return inlineDeclarationComponents(canonical);
+	if (name === "font") return cssFontProperties;
 	if (name === "list-style") return cssListProperties;
 	if (name === "border-radius") return cssRadiusProperties;
 	if (name === "outline") return cssOutlineProperties.slice(0, 3);
@@ -623,6 +634,19 @@ export function propertyValue(
 		return pending.value;
 	if (components.some((component) => winningEntry(entries, component)?.pending))
 		return "";
+	if (name === "font") {
+		const first = winningEntry(entries, cssFontProperties[0]);
+		return first &&
+			wide.has(first.value) &&
+			cssFontProperties.every((property) => {
+				const entry = winningEntry(entries, property);
+				return (
+					entry?.value === first.value && entry.important === first.important
+				);
+			})
+			? first.value
+			: "";
+	}
 	const found = propertyDeclarations(entries, name).filter(
 		(entry) => !entry.pending,
 	);
@@ -810,38 +834,78 @@ export function serializeDeclarations(
 	for (const entry of entries)
 		if (entry.pending && !pendingSources.has(entry.pending))
 			pendingSources.set(entry.pending, entry);
+	const pendingShorthands = [...pendingSources.keys()]
+		.map((name) => ({ name, components: inlineDeclarationComponents(name) }))
+		.sort((left, right) => right.components.length - left.components.length);
+	const nestedWithin = (
+		inner: SerializationShorthand,
+		outer: SerializationShorthand,
+	) =>
+		inner.components.length < outer.components.length &&
+		inner.components.every((component) => outer.components.includes(component));
+	function canEmitPending(
+		shorthand: SerializationShorthand,
+		pending: InlineDeclaration,
+	): boolean {
+		return shorthand.components.every((component) => {
+			const candidate = winningEntry(entries, component);
+			if (!candidate) return false;
+			if (candidate.pending === pending.pending)
+				return (
+					candidate.value === pending.value &&
+					candidate.important === pending.important &&
+					!emitted.has(candidate.name)
+				);
+			if (
+				(pending.important && !candidate.important) ||
+				(emitted.has(candidate.name) &&
+					(!candidate.important || pending.important))
+			)
+				return false;
+			if (!candidate.pending) return true;
+			const nested = pendingShorthands.find(
+				(entry) => entry.name === candidate.pending,
+			);
+			return (
+				!!nested &&
+				nestedWithin(nested, shorthand) &&
+				canEmitPending(nested, candidate)
+			);
+		});
+	}
+	function emitPending(
+		shorthand: SerializationShorthand,
+		pending: InlineDeclaration,
+	) {
+		output.push(
+			`${pending.pending}: ${pending.value}${pending.important ? " !important" : ""};`,
+		);
+		for (const component of shorthand.components) {
+			const candidate = winningEntry(entries, component);
+			if (candidate && candidate.pending === pending.pending)
+				emitted.add(candidate.name);
+		}
+		pendingSources.delete(shorthand.name);
+	}
+	for (const shorthand of pendingShorthands) {
+		if (
+			!pendingShorthands.some(
+				(other) =>
+					nestedWithin(shorthand, other) || nestedWithin(other, shorthand),
+			)
+		)
+			continue;
+		const pending = pendingSources.get(shorthand.name);
+		if (pending && canEmitPending(shorthand, pending))
+			emitPending(shorthand, pending);
+	}
 	for (const entry of entries) {
 		if (emitted.has(entry.name)) continue;
 		for (const shorthand of shorthandsFor(entry.name)) {
 			const pending = pendingSources.get(shorthand.name);
 			if (!pending) continue;
-			const found = shorthand.components.map((component) =>
-				winningEntry(entries, component),
-			);
-			if (
-				found.every((candidate) => {
-					if (!candidate) return false;
-					if (candidate.pending)
-						return (
-							candidate.pending === pending.pending &&
-							candidate.value === pending.value &&
-							candidate.important === pending.important &&
-							!emitted.has(candidate.name)
-						);
-					return (
-						(!pending.important || candidate.important) &&
-						(!emitted.has(candidate.name) ||
-							(candidate.important && !pending.important))
-					);
-				})
-			) {
-				output.push(
-					`${pending.pending}: ${pending.value}${pending.important ? " !important" : ""};`,
-				);
-				for (const candidate of found)
-					if (candidate && candidate.pending === pending.pending)
-						emitted.add(candidate.name);
-				pendingSources.delete(shorthand.name);
+			if (canEmitPending(shorthand, pending)) {
+				emitPending(shorthand, pending);
 				break;
 			}
 		}

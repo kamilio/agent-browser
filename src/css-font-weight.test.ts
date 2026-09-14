@@ -173,7 +173,7 @@ it("keeps existing size, line-height and whitespace computation stable alongside
 
 it("keeps font shorthand unsupported while allowing generic family fallback", () => {
 	expect(declarations('font:bold 16px "agent mono"').issues).toEqual([
-		"unimplemented-css-property",
+		"unimplemented-or-invalid-css-value",
 	]);
 	expect(declarations("font-family:serif;font-weight:bold")).toEqual({
 		parsed: [

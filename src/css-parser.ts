@@ -1,4 +1,5 @@
 import { parseBackgroundShorthand } from "./css-background.js";
+import { parseFontWideDeclarations } from "./css-font.js";
 import type {
 	CssDiagnosticSink,
 	CssDiagnosticSource,
@@ -356,6 +357,7 @@ export function parseCssDeclarations(
 				"margin",
 				"padding",
 				"background",
+				"font",
 				"content",
 			].includes(property) &&
 			!isBorderShorthand(property) &&
@@ -473,6 +475,15 @@ export function parseCssDeclarations(
 					important,
 				})),
 			);
+			continue;
+		}
+		if (property === "font") {
+			const expanded = parseFontWideDeclarations(value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((entry) => ({ ...entry, important })),
+				);
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (property === "content") {
