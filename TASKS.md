@@ -6,6 +6,48 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: real sticky positioning removes Python's position guard
+
+**PROGRESS; overall browser goal remains ACTIVE.** Commit `7ec49ac` implements
+root-scrollport sticky insets, containing-block and grid-area constraints,
+oversized view rectangles and margin limits without changing sibling allocation.
+Geometry, paint/capture, hits, ranges/carets and scroll targeting share visual
+offsets. Sticky creates an auto-z stacking context; absolute descendants follow
+it while viewport-fixed descendants escape. Nested grid areas survive relative,
+flex, sticky, atomic-inline and float relocation. No new dependency is added.
+
+The focused gate passes **1,003/0/0**, including 56 new sticky regressions. The
+final selected native gate passes **21,706/0/2 unchanged skips** on September 14,
+01:09:31.649–01:14:33.945 UTC: 424 selected, 423 strict, 776 manifest and 352
+unselected. Build, strict checking, scoped formatting and independent receipt/
+inventory verification pass. The final snapshot contains 1,325 source and 2,156
+compiled files. Failed round00's ten obsolete sticky rejection fixtures remain
+recorded; corrected tests retain real guards or positive supported behavior.
+The supplemental scroll-core suite still has 25 passes/three independently
+confirmed pre-existing failures and remains outside the successful gate.
+
+The unchanged Python replay runs **01:18:52.344–01:18:52.467 UTC**, with one native
+homepage load, one discovered Tutorial click and **zero HTTP requests**. Its
+eight original resources remain 72,064 bytes. Position issues drop 1→0 and raw
+issues 22→21; every other issue count and formatting metric is unchanged. The
+click still fails on **overflow-layout-not-supported (1)** alone. This is not
+successful whole-page geometry, paint, navigation or fresh live validation.
+Owners close, empty private directories are removed and group 1140002 is absent.
+
+One separately bounded native W3C GET plus offline parse supplies the sticky
+rules, returning Working Draft, 7 October 2025, with complete sticky sections.
+It is a source read, not a live layout test or latest-edition claim. See
+`STICKY-POSITIONING.md`, `STICKY-WEBSITE-SEPTEMBER-14.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-14-SECOND-UPDATE.md`. Older evidence and all
+unrelated uncommitted work remain preserved; no push occurs.
+
+Next: actual nested overflow/clipping/scrolling and nearest-scrollport sticky
+composition, then original-resource live flows and repeatable performance.
+Multiline/table sticky, transformed/vertical contexts and outside-CB margin
+conformance remain unclaimed. Credential/provider/device/passkey, SafeJS,
+socket, real-TTY, challenge and incomplete hardware/benchmark/Astra/verified
+Reddit-Poe research gates remain separate.
+
 ### September 14: discretionary hyphens remove Python's remaining CSS-property guards
 
 **PROGRESS; overall browser goal remains ACTIVE.** Commit `0ab2f0a` implements
