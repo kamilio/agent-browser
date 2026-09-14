@@ -538,6 +538,7 @@
   "src/radio-state.test.ts",
   "src/raster-image.test.ts",
   "src/raster.test.ts",
+  "src/raster-clipping.test.ts",
   "src/css-radius.test.ts",
   "src/rounded-border-raster.test.ts",
   "src/rounded-document.test.ts",

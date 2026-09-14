@@ -12,6 +12,7 @@ import {
 } from "./font-style.js";
 import { layoutNumber } from "./layout-values.js";
 import {
+	type CornerRadii,
 	type RoundedBox,
 	roundedBoxSpan,
 	validateRoundedBox,
@@ -27,6 +28,22 @@ export const rasterLimits = Object.freeze({
 	maxDimension: 4096,
 	maxPixels: 4_194_304,
 });
+export const rasterClipLimits = Object.freeze({
+	maxClips: 1024,
+});
+
+interface RasterClipSpan {
+	readonly left: number;
+	readonly right: number;
+}
+
+interface RasterClipState {
+	readonly clips: readonly Readonly<RoundedBox>[];
+	readonly rows: Map<number, Readonly<RasterClipSpan>>;
+	readonly charge: ((work: number) => void) | undefined;
+}
+
+const rasterClipStates = new WeakMap<RasterImage, RasterClipState>();
 
 function dimensions(width: number, height: number) {
 	if (
@@ -81,6 +98,102 @@ export function createRaster(
 	return Object.freeze({ width, height, pixels });
 }
 
+export function withRasterClips(
+	image: RasterImage,
+	clips: readonly Readonly<RoundedBox>[],
+	charge?: (work: number) => void,
+): Readonly<RasterImage> {
+	validateRaster(image);
+	if (!Array.isArray(clips))
+		throw new AgentBrowserError("invalid-input", "Invalid raster clips");
+	if (charge !== undefined && typeof charge !== "function")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid raster clip charge callback",
+		);
+	const inherited = rasterClipStates.get(image);
+	const count = clips.length;
+	if (count + (inherited?.clips.length ?? 0) > rasterClipLimits.maxClips)
+		throw new AgentBrowserError("resource-limit", "Raster clip limit exceeded");
+	const work = charge ?? inherited?.charge;
+	work?.(1 + (inherited?.clips.length ?? 0));
+	const captured = inherited ? [...inherited.clips] : [];
+	for (let index = 0; index < count; index++) {
+		work?.(5);
+		const clip = clips[index];
+		if (!clip || typeof clip !== "object")
+			throw new AgentBrowserError("invalid-input", "Invalid rounded box");
+		const radii = clip.radii;
+		if (!Array.isArray(radii) || radii.length !== 4)
+			throw new AgentBrowserError("invalid-input", "Invalid corner radii");
+		const snapshot = Object.freeze({
+			x: clip.x,
+			y: clip.y,
+			width: clip.width,
+			height: clip.height,
+			radii: Object.freeze(
+				[0, 1, 2, 3].map((corner) => {
+					const radius = radii[corner];
+					if (!radius || typeof radius !== "object")
+						throw new AgentBrowserError(
+							"invalid-input",
+							"Invalid corner radius",
+						);
+					return Object.freeze({
+						horizontal: radius.horizontal,
+						vertical: radius.vertical,
+					});
+				}),
+			) as unknown as CornerRadii,
+		});
+		validateRoundedBox(snapshot);
+		captured.push(snapshot);
+	}
+	const view = Object.freeze({
+		width: image.width,
+		height: image.height,
+		pixels: image.pixels,
+	});
+	validateRaster(view);
+	rasterClipStates.set(view, {
+		clips: Object.freeze(captured),
+		rows: new Map(),
+		charge: work,
+	});
+	return view;
+}
+
+function rasterClipSpan(
+	image: RasterImage,
+	row: number,
+): Readonly<RasterClipSpan> | undefined {
+	const state = rasterClipStates.get(image);
+	if (!state) return;
+	state.charge?.(1);
+	const cached = state.rows.get(row);
+	if (cached !== undefined) return cached;
+	let left = 0;
+	let right = image.width;
+	for (const clip of state.clips) {
+		state.charge?.(1);
+		const span = roundedBoxSpan(clip, row + 0.5);
+		if (!span) {
+			left = right = 0;
+			break;
+		}
+		left = Math.max(left, Math.ceil(span.left - 0.5));
+		right = Math.min(right, Math.ceil(span.right - 0.5));
+		if (left >= right) {
+			left = right = 0;
+			break;
+		}
+	}
+	state.charge?.(1);
+	const span = Object.freeze({ left, right });
+	state.rows.set(row, span);
+	return span;
+}
+
 function fill(
 	image: RasterImage,
 	originX: number,
@@ -106,11 +219,18 @@ function fill(
 	for (let row = top; row < bottom; row++) {
 		let rowLeft = left;
 		let rowRight = right;
+		const inheritedClip = rasterClipSpan(image, row);
+		if (inheritedClip !== undefined) {
+			rowLeft = Math.max(rowLeft, inheritedClip.left);
+			rowRight = Math.min(rowRight, inheritedClip.right);
+			if (rowLeft >= rowRight) continue;
+		}
 		if (clip !== undefined) {
+			rasterClipStates.get(image)?.charge?.(1);
 			const span = roundedBoxSpan(clip, row + 0.5);
 			if (!span) continue;
-			rowLeft = Math.max(left, Math.ceil(span.left - 0.5));
-			rowRight = Math.min(right, Math.ceil(span.right - 0.5));
+			rowLeft = Math.max(rowLeft, Math.ceil(span.left - 0.5));
+			rowRight = Math.min(rowRight, Math.ceil(span.right - 0.5));
 		}
 		for (let column = rowLeft; column < rowRight; column++) {
 			const offset = (row * image.width + column) * 4;
@@ -187,11 +307,18 @@ export function paintRasterImage(
 	for (let row = top; row < bottom; row++) {
 		let rowLeft = left;
 		let rowRight = right;
+		const inheritedClip = rasterClipSpan(image, row);
+		if (inheritedClip !== undefined) {
+			rowLeft = Math.max(rowLeft, inheritedClip.left);
+			rowRight = Math.min(rowRight, inheritedClip.right);
+			if (rowLeft >= rowRight) continue;
+		}
 		if (clip !== undefined) {
+			rasterClipStates.get(image)?.charge?.(1);
 			const span = roundedBoxSpan(clip, row + 0.5);
 			if (!span) continue;
-			rowLeft = Math.max(left, Math.ceil(span.left - 0.5));
-			rowRight = Math.min(right, Math.ceil(span.right - 0.5));
+			rowLeft = Math.max(rowLeft, Math.ceil(span.left - 0.5));
+			rowRight = Math.min(rowRight, Math.ceil(span.right - 0.5));
 		}
 		const sourceRow = Math.min(
 			source.height - 1,
