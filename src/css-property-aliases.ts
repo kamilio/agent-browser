@@ -4,6 +4,10 @@ export const cssPropertyAliases = Object.freeze({
 	"-moz-hyphens": "hyphens",
 	"-ms-hyphens": "hyphens",
 	"-webkit-hyphens": "hyphens",
+	"-webkit-text-decoration": "text-decoration",
+	"-webkit-text-decoration-line": "text-decoration-line",
+	"-webkit-text-decoration-style": "text-decoration-style",
+	"-webkit-text-decoration-color": "text-decoration-color",
 	"word-wrap": "overflow-wrap",
 });
 

@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: native WebKit text-decoration aliases
+
+**PROGRESS; overall browser goal remains ACTIVE.** Four exact prefixed decoration
+names now use the canonical native parser, cascade, CSSOM and rendering behavior.
+Both Webkit/ webkit accessors work; serialization/enumeration stay canonical.
+Priority, variables, CSS-wide expansion, shorthand resets, atomic invalid writes
+and resource/ownership limits remain enforced. Actual synthetic pixels/geometry
+match canonical decoration. Generated decoration computes but retains its existing
+layout guard; wavy/double and other unsupported values are not newly admitted.
+
+Final clean selected gate:22512passed/0failed/2unchangedexclusions,446files,
+445strictroots,798cleanmanifestentries. Build/strict/scoped format pass. Added120
+cases; focused428pass. Historical failing baseline/test-development receipts remain
+intact. See `TEXT-DECORATION-ALIASES.md` and the text-decoration-aliases-work-
+september14 cache, release00. Preserve unrelated residual work; no push.
+
+NEXT: separately pin/release/replay the original MDN corpus to measure the sampled
+alias rejection reduction, without assuming interaction or zero remaining issues.
+Then implement bounded font-wide inheritance using the source-backed next-step
+investigation, followed by logical spacing/units and other sampled features.
+Full/system font syntax is not implemented. Original research, fresh live sites,
+forms, credentials/devices, SafeJS, socket/real terminal and challenge gates remain
+open; native passes do not establish those outcomes.
+
+
 ### September 14: captured MDN yields actionable CSS rejection samples
 
 **PROGRESS; overall browser goal remains ACTIVE.** A separately scoped native

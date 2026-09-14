@@ -794,5 +794,7 @@
   "src/generated-item-layout.test.ts",
   "src/css-diagnostic-collector.test.ts",
   "src/css-rejection-parser.test.ts",
-  "src/style-diagnostic-details.test.ts"
+  "src/style-diagnostic-details.test.ts",
+  "src/text-decoration-aliases-style.test.ts",
+  "src/text-decoration-aliases-cssom.test.ts"
 ]
