@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured MDN blocker and native action profile
+
+**PROGRESS; overall browser goal remains ACTIVE.** One separately scoped MDN
+replay loads the original captured querySelector document and discovers49 main
+links/two exact destinations. One native querySelectorAll click fails on
+unsupported formatting-profile width resolution before any destination request.
+All19 responses/270288 bytes are accepted, zero denials/wire requests. The0.415s
+observation retains exit1; integrity,18ledgers/11034entries and cleanup pass.
+This is a native capability blocker, not a site or authorization block. No retry,
+fallback or extra diagnostic probe. See `MDN-OWNERSHIP-REPLAY.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-14-SIXTH-UPDATE.md`.
+
+One independent native-only CPU profile passes36 cases (9nested-actionability,
+27positioning), zero failures/skips. Frozen1343source/2172compiled/46receipt
+entries remain stable. Actual implementation samples identify layoutTextContexts
+for investigation; deliberate withoutReuse baselines and two negative timing
+deltas prevent unwarranted speed claims. Whole profiled job3.14s wall/404.156MiB
+peakRSS is not standalone-browser memory or comparable to the Python flow.
+No source change, speculative cache or full native-gate rerun occurs. See
+`NATIVE-ACTION-PROFILE.md`.
+
+NEXT: isolate MDN generated-content/vertical-alignment failures in a distinct
+diagnostic scope and measure text-transform scan work on production-only native
+fixtures before optimizing. Preserve the unsupported-layout guard. The MDN
+destination remains uncaptured. Broader live-site/form flows, repeatable
+performance, research, credentials/devices, SafeJS, socket, TTY and challenge
+gates remain open. Historical reports and pre-existing work stay intact. No push.
+
+
 ### September 14: captured Python two-page flow passes
 
 **PROGRESS; overall browser goal remains ACTIVE.** A separately scoped expanded
