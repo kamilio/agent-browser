@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: current captured CERN flow and Wikipedia diagnostics
+
+**PROGRESS; overall browser goal remains ACTIVE.** Broadened current-runtime
+testing to two existing hosts without live requests. CERN's original two-page
+capture passes native discovery, real mouse click, destination navigation/content
+and old-document closure at 12:27:50 UTC: two responses / 2,881 bytes, two commits.
+An earlier harness-only header-prototype failure is preserved; an explicit
+separately sealed retest compares exact header entries. No production change.
+
+Wikipedia's original portal diagnostic at 12:25:23 UTC reduces overlapping
+formatting occurrences 160→138 and applicable CSS-value issues 24→2. Its search
+input e239 is found but geometry remains unsupported. No sprite bytes, raster or
+search flow. Native samples retain real gaps including word-spacing:-4px on the
+search fieldset, opacity, layered backgrounds, clipping and appearance.
+
+See CERN-CURRENT-CAPTURED-FLOW-SEPTEMBER-14.md,
+WIKIPEDIA-BACKGROUND-DIAGNOSTICS-SEPTEMBER-14.md and the twenty-first inventory.
+Both audited observations use b5d2efd; its 23,340-pass gate is rehashed, not rerun.
+
+NEXT: implement genuine negative word-spacing layout for the observed search
+fieldset, with native width/wrapping/range/hit/pixel regressions; do not only
+accept its syntax. Opacity still needs group compositing, not a guard bypass.
+Keep missing-asset/live scopes separate. Original research, broader forms/sites,
+credentials/providers/passkeys/devices, SafeJS, socket/TTY and challenge gates
+remain open. Preserve unrelated work; no push.
+
 ### September 14: captured MDN abort cleanup settles within its bound
 
 **PROGRESS; overall browser goal remains ACTIVE.** A separately sealed native
