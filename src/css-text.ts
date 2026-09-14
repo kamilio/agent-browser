@@ -20,6 +20,7 @@ export const cssTextProperties = Object.freeze([
 	"line-height",
 	"white-space",
 	"overflow-wrap",
+	"hyphens",
 	"text-align",
 	"text-indent",
 	"text-transform",
@@ -37,6 +38,7 @@ export const initialTextStyle: TextStyle = Object.freeze({
 	"line-height": "normal",
 	"white-space": "normal",
 	"overflow-wrap": "normal",
+	hyphens: "manual",
 	"text-align": "start",
 	"text-indent": "0px",
 	"text-transform": "none",
@@ -84,6 +86,8 @@ export function parseTextValue(
 		return ["normal", "break-word", "anywhere"].includes(value)
 			? value
 			: undefined;
+	if (property === "hyphens")
+		return ["none", "manual", "auto"].includes(value) ? value : undefined;
 	if (property === "white-space")
 		return ["normal", "nowrap", "pre", "pre-line", "pre-wrap"].includes(value)
 			? value

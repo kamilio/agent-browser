@@ -1,6 +1,9 @@
 export const cssPropertyAliases = Object.freeze({
 	"-moz-box-sizing": "box-sizing",
 	"-webkit-box-sizing": "box-sizing",
+	"-moz-hyphens": "hyphens",
+	"-ms-hyphens": "hyphens",
+	"-webkit-hyphens": "hyphens",
 	"word-wrap": "overflow-wrap",
 });
 
@@ -14,7 +17,7 @@ export function cssPropertyAccessors(name: string): readonly string[] {
 	const camelName = name.replace(/-([a-z])/g, (_match, letter: string) =>
 		letter.toUpperCase(),
 	);
-	if (name.startsWith("-webkit-"))
+	if (name.startsWith("-webkit-") || name.startsWith("-ms-"))
 		return [name, camelName, camelName[0].toLowerCase() + camelName.slice(1)];
 	return name === camelName ? [name] : [name, camelName];
 }

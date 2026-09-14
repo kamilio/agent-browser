@@ -151,6 +151,7 @@ interface Token extends FontExtent {
 	breakable: boolean;
 	hangable?: boolean;
 	justifiable?: boolean;
+	discretionaryAdvance?: number;
 	emergency?: boolean;
 }
 
@@ -447,6 +448,7 @@ function layoutTextContexts(
 		let segments: { tokens: Token[]; closing: Token[]; gap?: Token[] }[] = [];
 		let word: Token[] = [];
 		let hasEmergency = false;
+		let hasDiscretionary = false;
 		let closing: Token[] = [];
 		let gap: Token[] | undefined;
 		let collapsing = false;
@@ -606,7 +608,7 @@ function layoutTextContexts(
 				hasContent,
 			};
 		};
-		const project = (tokens: readonly Token[]) => {
+		const project = (tokens: readonly Token[], retry = true) => {
 			if (!floatLayout || constraint !== "used")
 				return {
 					...predict(tokens, lineWidth),
@@ -618,7 +620,7 @@ function layoutTextContexts(
 			const interval = intervalFor(
 				candidate.height,
 				(left) => pendingGeometry(tokens, left).fit,
-				!lineContent && candidate.hasContent,
+				retry && !lineContent && candidate.hasContent,
 			);
 			return {
 				...pendingGeometry(tokens, interval.left),
@@ -1175,7 +1177,6 @@ function layoutTextContexts(
 					return true;
 				});
 			}
-			const previous = segments.at(-1);
 			if (
 				!lineContent &&
 				!word.some((token) => {
@@ -1190,10 +1191,113 @@ function layoutTextContexts(
 					return !token.collapsible || content;
 				});
 			}
-			const tokens = [...word, ...(gap ?? []), ...closing];
-			let predicted = project(tokens);
+			let tokens = [...word, ...(gap ?? []), ...closing];
+			let predicted = project(tokens, !hasDiscretionary);
+			while (
+				hasDiscretionary &&
+				(constraint === "min-content" ||
+					(constraint === "used" && predicted.fit > predicted.available))
+			) {
+				charge();
+				if (
+					constraint === "min-content" &&
+					segments.at(-1)?.gap &&
+					lineContent
+				) {
+					finish();
+					predicted = project(tokens, false);
+				}
+				const contentToken = (token: Token) =>
+					token.kind === "image" ||
+					token.kind === "atomic" ||
+					(token.kind === "glyph" && token.character !== "");
+				let lastContent = -1;
+				for (let index = word.length - 1; index >= 0; index--) {
+					charge();
+					if (contentToken(word[index])) {
+						lastContent = index;
+						break;
+					}
+				}
+				let hasContent = false;
+				let cursor = lineWidth;
+				let first: { marker: number; end: number } | undefined;
+				let selected: { marker: number; end: number } | undefined;
+				const prefix = (boundary: { marker: number; end: number }) => {
+					const piece = word.slice(0, boundary.end);
+					const token = piece[boundary.marker];
+					piece[boundary.marker] = {
+						...token,
+						character: "-",
+						advance: token.discretionaryAdvance ?? 0,
+						discretionaryAdvance: undefined,
+					};
+					return piece;
+				};
+				for (let index = 0; index < lastContent; index++) {
+					charge();
+					const token = word[index];
+					cursor = layoutNumber(cursor + advance(token, cursor), true);
+					if (hasContent && token.discretionaryAdvance !== undefined) {
+						let end = index + 1;
+						let fit = layoutNumber(cursor + token.discretionaryAdvance, true);
+						while (end < word.length && word[end].kind === "close") {
+							charge();
+							fit = layoutNumber(fit + advance(word[end], fit), true);
+							end++;
+						}
+						const boundary = { marker: index, end };
+						first ??= boundary;
+						if (constraint === "min-content") {
+							selected = boundary;
+							break;
+						}
+						const measured = floatLayout
+							? project(prefix(boundary), false)
+							: { fit, available: predicted.available };
+						if (measured.fit <= measured.available) selected = boundary;
+					}
+					hasContent ||= contentToken(token);
+				}
+				if (!first) break;
+				if (!selected && segments.at(-1)?.gap && lineContent) {
+					finish();
+					predicted = project(tokens, false);
+					continue;
+				}
+				if (!selected && !lineContent && floatLayout && constraint === "used") {
+					const previousHeight = textHeight;
+					project(prefix(first));
+					if (textHeight !== previousHeight) {
+						predicted = project(tokens, false);
+						continue;
+					}
+				}
+				if (!selected && hasEmergency) break;
+				selected ??= first;
+				const piece = prefix(selected);
+				const measured = project(piece);
+				segments.push({ tokens: piece, closing: [] });
+				retainTokens(piece);
+				for (const token of piece) {
+					charge();
+					if (!token.collapsible && contributes(token)) lineContent++;
+				}
+				lineWidth = measured.width;
+				finish();
+				word = word.slice(selected.end);
+				hasDiscretionary = false;
+				hasEmergency = false;
+				for (const token of word) {
+					charge();
+					hasDiscretionary ||= token.discretionaryAdvance !== undefined;
+					hasEmergency ||= token.emergency === true;
+				}
+				tokens = [...word, ...(gap ?? []), ...closing];
+				predicted = project(tokens, !hasDiscretionary);
+			}
 			if (
-				previous?.gap &&
+				segments.at(-1)?.gap &&
 				lineContent &&
 				(constraint === "min-content" ||
 					(constraint === "used" && predicted.fit > predicted.available))
@@ -1236,6 +1340,7 @@ function layoutTextContexts(
 				}
 				word = [];
 				hasEmergency = false;
+				hasDiscretionary = false;
 				closing = [];
 				gap = undefined;
 				return;
@@ -1249,6 +1354,7 @@ function layoutTextContexts(
 			lineWidth = predicted.width;
 			word = [];
 			hasEmergency = false;
+			hasDiscretionary = false;
 			closing = [];
 			gap = undefined;
 		};
@@ -1276,6 +1382,7 @@ function layoutTextContexts(
 				}
 				word.push(token);
 				hasEmergency ||= token.emergency === true;
+				hasDiscretionary ||= token.discretionaryAdvance !== undefined;
 			}
 		};
 		const hardBreak = (
@@ -1724,7 +1831,21 @@ function layoutTextContexts(
 								(typography["overflow-wrap"] === "break-word" &&
 									constraint === "used")),
 					};
-					if (collapsible) {
+					if (character === "\u00ad") {
+						collapsing = false;
+						emit({
+							...token,
+							character: "",
+							advance: 0,
+							transformed: true,
+							discretionaryAdvance:
+								typography.hyphens !== "none" &&
+								mode !== "nowrap" &&
+								mode !== "pre"
+									? font.advance
+									: undefined,
+						});
+					} else if (collapsible) {
 						if (!collapsing) emit(token);
 						collapsing = true;
 					} else {
