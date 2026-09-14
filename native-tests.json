@@ -787,5 +787,6 @@
   "src/overflow-inline-metrics.test.ts",
   "src/overflow-svg.test.ts",
   "src/overflow-grid-sticky.test.ts",
-  "src/overflow-ownership.test.ts"
+  "src/overflow-ownership.test.ts",
+  "src/nested-actionability.test.ts"
 ]

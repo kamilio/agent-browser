@@ -61,7 +61,7 @@ export const clickActionabilityCapabilities = Object.freeze({
 	ariaRoleProfile: "existing-semantic-roles",
 	stableAnimationFrames: false,
 	replayDispatchedActions: false,
-	nestedScroll: false,
+	nestedScroll: true,
 	force: false,
 });
 

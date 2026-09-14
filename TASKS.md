@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: nested pointer actions and capability advertisement
+
+**PROGRESS; overall browser goal remains ACTIVE.** Native session click,
+double-click and hover now have explicit nested-scroll regressions. Existing
+behavior passes through auto, scroll and hidden inner ports, delivers inner and
+outer scroll events before pointer events, and preserves clip boundaries and
+disabled-state revalidation. The stale `nestedScroll:false` capability is now
+true; partial support, no force and no stable-animation-frame promise remain.
+
+Retained pre-fix focus: **222 pass/1 fail**; only the capability assertion fails.
+Final focus: **223 pass/0 fail**, six files. Final selected native gate:
+**22,074 pass/0 fail/2 unchanged exclusions**, 438 selected files, 437 strict
+roots, 790 manifest entries and 352 unselected entries. Nine new cases pass.
+Build, strict checking, scoped formatting and inventory/test-set verification
+pass. See `NESTED-ACTIONABILITY.md` and
+`node_modules/.cache/native-validation/nested-actionability-work-september14/`.
+
+These fixtures use one in-memory initial document and synthetic button actions;
+they are not public-site navigation, script, credential/device, socket or TTY
+acceptance. The separately scoped Python replay stays pinned to the preceding
+ownership commit, not this newer capability flag. Broader website performance,
+compatibility, research and challenge-handling gates remain open. No push.
+
+
 ### September 14: overflow ownership regression after Python replay
 
 **PROGRESS; overall browser goal remains ACTIVE.** The single V2 captured Python
