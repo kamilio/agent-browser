@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured MDN confirms logical-block improvement
+
+**PROGRESS; overall browser goal remains ACTIVE.** A separately scoped native
+replay on committed565aa1e completes with19originalresources/270288bytes, one
+navigation/formatting/cached diagnostics/hint query and unchanged bounded native
+attribution. Zero wire/scripts/clicks/recorded JS guard attempts; prepared and
+parent outcome verification pass, with stable inventories and clean closure.
+
+Raw unknown-property occurrences132→126, applicable68→64, total overlapping
+formatting occurrences210→206 versus the latest font-wide observation. All
+other issue counts and formatting metrics stay unchanged. Retained samples128,
+omitted37→31; cached metrics stay unchanged, cross-runtime cascade work rises
+2151units. No speed, used-geometry, raster or interaction success is claimed.
+See MDN-LOGICAL-BLOCK-REPLAY.md and the thirteenth inventory update. The final
+22926-pass native gate/two exclusions is rehashed, not rerun; RAM evidence is
+copied durably without rewriting original execution paths or historical data.
+
+NEXT: a separately scoped current-runtime Python two-page replay to exercise
+actual interaction on another captured site, then observed inline logical
+spacing/unit gaps. Do not silently fetch MDN's destination or missing assets.
+Original research, broader live sites/forms, credential/provider/passkey/device,
+SafeJS, socket/TTY and challenge gates remain open. Preserve unrelated work and
+historical evidence; goal active, nothing pushed.
+
 ### September 14: native logical block spacing and CSSOM ordering
 
 **PROGRESS; overall browser goal remains ACTIVE.** Native margin-block and
