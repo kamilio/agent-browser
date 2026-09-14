@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured MDN confirms text-decoration alias improvement
+
+**PROGRESS; overall browser goal remains ACTIVE.** A separately scoped offline
+native replay on committedd9933a1 completes and passes prepared plus independent
+parent verification:19original resources/270288bytes, zero wire/denials/scripts/
+clicks. Applicable unknown-property occurrences fall78→70; raw147→134. The raw
+invalid-value count rises30→31 because a retained unmatched underline-wavy alias
+now correctly rejects the unsupported value; applicable invalid values stay15.
+
+Formatting remains partial with10categories, now212rather than220overlapping
+occurrences. All formatting metrics and other applicable issue counts are
+unchanged. Cached diagnostics reuse cascadebuild1, retaining128samples and
+omitting39rather than51. Cascade work increases1336units; no speedup claim.
+See `MDN-TEXT-DECORATION-REPLAY.md` and the website inventory's tenth update.
+
+NEXT: implement the persisting matched font:inherit case with genuine longhand
+inheritance, priority, reset, CSSOM and control regressions. Then logical spacing/
+units and remaining sampled layout features; justify-items:center is now exposed
+by the bounded sample window. Do not assume sampling is exhaustive or weaken
+remaining guards. Interaction, the uncaptured MDN destination, new live sites/
+forms, original research, credentials/devices, SafeJS, socket/TTY and challenge
+gates remain open. Preserve historical evidence and unrelated work. No push.
+
+
 ### September 14: native WebKit text-decoration aliases
 
 **PROGRESS; overall browser goal remains ACTIVE.** Four exact prefixed decoration
