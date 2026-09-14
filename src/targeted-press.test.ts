@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from "vitest";
 import { BrowserCommandHost } from "./command-host.js";
-import { controlValue } from "./controls.js";
+import { controlChecked, controlValue } from "./controls.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { DocumentQueries } from "./selectors.js";
 import { BrowserSession } from "./session.js";
@@ -9,12 +9,16 @@ const cleanup: (() => void)[] = [];
 afterEach(() => {
 	for (const close of cleanup.splice(0).reverse()) close();
 });
-async function fixture() {
+async function fixture(
+	content = '<form action="/send"><input id="field" name="value"><input id="other"><input id="readonly" value="abcd" readonly><input id="disabled" disabled><input id="hidden" hidden><select id="pick" name="choice"><option>a</option><option>b</option></select><button id="send">Send</button></form><div id="custom" tabindex="0">Custom</div>',
+) {
 	const requests: string[] = [];
+	const methods: string[] = [];
 	const session = new BrowserSession({
 		createTransport: () => ({
 			async request(input) {
 				requests.push(input.url);
+				methods.push(input.method ?? "GET");
 				return {
 					url: input.url,
 					status: 200,
@@ -35,11 +39,7 @@ async function fixture() {
 			}),
 			close() {},
 		}),
-		loadDocument: (response) =>
-			parseHtmlDocument(
-				'<form action="/send"><input id="field" name="value"><input id="other"><input id="readonly" value="abcd" readonly><input id="disabled" disabled><input id="hidden" hidden><select id="pick" name="choice"><option>a</option><option>b</option></select><button id="send">Send</button></form><div id="custom" tabindex="0">Custom</div>',
-				response.url,
-			),
+		loadDocument: (response) => parseHtmlDocument(content, response.url),
 	});
 	const host = new BrowserCommandHost({ createSession: () => session });
 	cleanup.push(() => host.close());
@@ -48,7 +48,54 @@ async function fixture() {
 	const page = session.page(tab);
 	const id = (selector: string) =>
 		new DocumentQueries(page.document).querySelector(selector) as number;
-	return { host, session, tab, page, id, requests };
+	return { host, session, tab, page, id, requests, methods };
+}
+
+async function searchFixture() {
+	const test = await fixture(
+		[
+			"<!doctype html><style>aside{filter:blur(2px)}</style>",
+			"<aside>Search help</aside>",
+			'<form action="/search" method="get">',
+			'<input id="comments" type="radio" name="what" value="comments" checked>',
+			'<input id="stories" type="radio" name="what" value="stories">',
+			'<label id="stories-label" for="stories">Stories</label>',
+			'<input id="query" type="search" name="q">',
+			'<button id="search">Search</button></form>',
+		].join(""),
+	);
+	const pointerEvents: string[] = [];
+	for (const type of [
+		"pointerover",
+		"pointerenter",
+		"pointermove",
+		"pointerdown",
+		"pointerup",
+		"pointerout",
+		"pointerleave",
+		"pointercancel",
+		"mouseover",
+		"mouseenter",
+		"mousemove",
+		"mousedown",
+		"mouseup",
+		"mouseout",
+		"mouseleave",
+		"auxclick",
+		"dblclick",
+		"contextmenu",
+		"click",
+	])
+		test.page.interactions.events.addEventListener(
+			test.page.document.root,
+			type,
+			(event) => {
+				if (type !== "click" || Reflect.get(event, "pointerType") !== "")
+					pointerEvents.push(type);
+			},
+			{ capture: true },
+		);
+	return { ...test, pointerEvents };
 }
 
 it("focuses a unique selector before key dispatch without generating a click", async () => {
@@ -96,6 +143,74 @@ it("navigates selects and submits native form values through the same command", 
 	await host.execute(["press", "Enter", "--target", "#send"]);
 	expect(new URL(requests[1]).searchParams.get("choice")).toBe("b");
 });
+
+it("submits a native keyboard search when unrelated CSS blocks pointer layout", async () => {
+	const { host, session, tab, page, id, requests, methods, pointerEvents } =
+		await searchFixture();
+	expect(controlChecked(page.document, id("#comments"))).toBe(true);
+	expect(controlChecked(page.document, id("#stories"))).toBe(false);
+	await expect(
+		session.click(tab, page.document.reference(id("#stories-label"))),
+	).rejects.toMatchObject({
+		code: "unsupported",
+		message: expect.stringContaining("issue-free supported formatting profile"),
+	});
+	expect(controlChecked(page.document, id("#comments"))).toBe(true);
+	expect(controlChecked(page.document, id("#stories"))).toBe(false);
+	expect(requests).toEqual(["https://fixture.invalid/"]);
+	expect(pointerEvents).toEqual([]);
+
+	await host.execute(["press", "Space", "--target", "#stories"]);
+	expect(controlChecked(page.document, id("#stories"))).toBe(true);
+	expect(controlChecked(page.document, id("#comments"))).toBe(false);
+	expect(session.page(tab)).toBe(page);
+	expect(requests).toEqual(["https://fixture.invalid/"]);
+	expect(pointerEvents).toEqual([]);
+
+	const query = "native & typed search";
+	await host.execute(["fill", "#query", query]);
+	expect(controlValue(page.document, id("#query"))).toBe(query);
+	expect(requests).toHaveLength(1);
+	await host.execute(["press", "Enter", "--target", "#query"]);
+	expect(requests).toHaveLength(2);
+	expect(methods).toEqual(["GET", "GET"]);
+	const submitted = new URL(requests[1]);
+	expect(submitted.origin).toBe("https://fixture.invalid");
+	expect(submitted.pathname).toBe("/search");
+	expect([...submitted.searchParams]).toEqual([
+		["what", "stories"],
+		["q", query],
+	]);
+	expect(pointerEvents).toEqual([]);
+});
+
+it.each(["keydown", "keyup", "click", "disabled"])(
+	"preserves the native radio group without navigation after %s blocks Space",
+	async (mode) => {
+		const { host, session, tab, page, id, requests, pointerEvents } =
+			await searchFixture();
+		const stories = id("#stories");
+		if (mode === "disabled") {
+			page.document.setAttribute(stories, "disabled", "");
+			await expect(
+				host.execute(["press", "Space", "--target", "#stories"]),
+			).rejects.toThrow();
+		} else {
+			const canceled: string[] = [];
+			page.interactions.events.addEventListener(stories, mode, (event) => {
+				canceled.push(event.type);
+				event.preventDefault();
+			});
+			await host.execute(["press", "Space", "--target", "#stories"]);
+			expect(canceled).toEqual([mode]);
+		}
+		expect(controlChecked(page.document, stories)).toBe(false);
+		expect(controlChecked(page.document, id("#comments"))).toBe(true);
+		expect(session.page(tab)).toBe(page);
+		expect(requests).toEqual(["https://fixture.invalid/"]);
+		expect(pointerEvents).toEqual([]);
+	},
+);
 
 it("readonly controls permit targeted selection but not text edits", async () => {
 	const { host, page, id } = await fixture();

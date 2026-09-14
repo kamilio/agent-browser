@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: native keyboard search gets content despite layout gaps
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+`NATIVE-CONTENT-SEARCH.md` records two successful real native search workflows:
+fill/Enter for comments, and Space on Stories followed by fill/Enter. A separate
+label-pointer attempt fails at the existing global layout gate; that failure is
+preserved rather than hidden by a click fallback. The explicit keyboard route
+returns useful content without new APIs or weaker geometry guarantees. Five new
+regressions protect radio state, GET serialization, cancellation and absence of
+pointer gestures;321 tests across eight manifest-listed files, production build,
+eight strict test roots and formatting pass. Three actual search-result links
+also yield checked article/thread content. The thirty-third inventory accounts
+for28 real requests: eight document GETs and twenty CSS/image GETs, not28 sites.
+Header review identifies only two explicitly fresh reusable assets; caching is
+not yet implemented. Broad research/website coverage, pointer rendering,
+SafeJS/device/credential and full release gates remain open. No push, challenge
+bypass or unrelated work adoption.
+
 ### September 14: choose oversized-document sections without another request
 
 **PROGRESS; overall browser goal remains ACTIVE.**
