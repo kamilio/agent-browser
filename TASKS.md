@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured Python two-page flow passes
+
+**PROGRESS; overall browser goal remains ACTIVE.** A separately scoped expanded
+corpus now passes native homepage discovery, genuine Tutorial click, destination
+document replacement, old-document closure and native title/h1 verification.
+The 04:41:05–04:41:06 UTC run uses the same ownership runtime 23e988d as the prior
+comparison; it adds the already captured Tutorial response, not fresh HTTP.
+
+All nine URLs are used: two documents once each and seven shared assets once per
+loader phase. Sixteen requests are accepted, zero denied, with 109,017 unique and
+161,647 served decoded bytes. Wire requests stay zero. Eighteen ledgers/10,980
+entries verify; process group 1278218 is absent and private directories/owners
+are cleaned up. No retry, source substitution, page scripts or further browsing.
+The earlier eight-response denial remains unchanged; the new corpus is distinct.
+
+One-run performance: 1.279 seconds native observation, 214,488 KiB peak RSS
+(about 209.5 MiB). This is not a benchmark or a lightweight-memory success claim.
+See `PYTHON-TWO-PAGE-REPLAY.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-14-FIFTH-UPDATE.md` for evidence and boundaries.
+
+NEXT: the retained MDN 19-response action corpus and separate memory/layout
+profiling. MDN's identified destination capture is missing; do not substitute
+its newer source-only border-style page or claim complete navigation. Destination
+rendering, live-site behavior, repeatable performance, research, challenge and
+credential/device/SafeJS/socket/TTY gates remain open. No push.
+
 ### September 14: captured Python click reaches the destination boundary
 
 **PROGRESS; overall browser goal remains ACTIVE.** One separately released,
