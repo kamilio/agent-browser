@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: fewer repeated resource requests without changing content
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+`RESOURCE-REUSE.md` adds opt-in native transport reuse for strictly admitted public
+same-origin anonymous CSS/images, plus explicit resource credential omission.
+Defaults, navigation/script/fetch credentials and pointer geometry remain intact.
+Bounded copied bytes, expiry, route checks, unsafe-method start/completion
+invalidation and memory-delivery accounting avoid fabricated HTTP successes.
+805 cases across fourteen native-manifest files pass, along with production build,
+fourteen strict test roots, formatting and new-file lint; two old session-test
+lint findings are preserved. Native regression work catches zero-byte limits,
+route invalidation and overlapping writes before live use. A fresh paired native
+search uses eight rather than ten real HTTP requests with byte-identical content;
+two asset memory deliveries are recorded separately. The thirty-fourth inventory
+also checks actual RFC caching text through the native reader, for19 fresh HTTP
+requests overall. This is measured request reduction for one flow, not a general
+speedup, CAPTCHA solution or complete HTTP cache. CLI exposure, broad research and
+website coverage, pointer/rendering, SafeJS/device/credentials and full release
+remain open. No push or unrelated work adoption.
+
 ### September 14: native keyboard search gets content despite layout gaps
 
 **PROGRESS; overall browser goal remains ACTIVE.**

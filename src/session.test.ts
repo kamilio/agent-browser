@@ -189,6 +189,102 @@ afterEach(() => {
 	for (const session of sessions.splice(0)) session.close();
 });
 
+it.each([
+	["default", false],
+	["default", true],
+	["omit", false],
+	["omit", true],
+] as const)(
+	"keeps %s resource credentials explicit with reuse capability %s",
+	async (resourceCredentials, enabled) => {
+		const { session, requests, transport } = fixture({
+			resourceCredentials,
+			loadDocument: async (result, context) => {
+				await context.fetchStylesheet?.("https://example.com/style.css");
+				await context.fetchStylesheetWithPolicy?.(
+					"https://example.com/cors.css",
+					{
+						mode: "cors",
+						credentials: "same-origin",
+					},
+				);
+				await context.fetchImage?.(
+					"https://example.com/image.png",
+					context.signal,
+				);
+				await context.fetchScript?.("https://example.com/script.js");
+				return documentFixture(result, context);
+			},
+		});
+		Object.defineProperty(transport, "resourceReuse", { value: enabled });
+		await session.navigate(session.createTab().id, initialUrl);
+		expect(requests).toHaveLength(5);
+		expect(requests.map((request) => request.resourceReuse)).toEqual([
+			undefined,
+			enabled ? "stylesheet" : undefined,
+			enabled ? "stylesheet" : undefined,
+			enabled ? "image" : undefined,
+			undefined,
+		]);
+		expect(
+			requests.map((request) => request.cookieContext?.credentials),
+		).toEqual([
+			"include",
+			resourceCredentials === "omit" ? "omit" : "include",
+			resourceCredentials === "omit" ? "omit" : "same-origin",
+			resourceCredentials === "omit" ? "omit" : "include",
+			"include",
+		]);
+		expect(
+			requests
+				.slice(1)
+				.every((request) => request.cookieContext?.siteUrl === initialUrl),
+		).toBe(true);
+	},
+);
+
+it("uses omitted credentials for the actual stylesheet CORS check", async () => {
+	const { session, requests } = fixture(
+		{
+			resourceCredentials: "omit",
+			loadDocument: async (result, context) => {
+				const stylesheet = await context.fetchStylesheetWithPolicy?.(
+					"https://cdn.example/style.css",
+					{
+						mode: "cors",
+						credentials: "include",
+					},
+				);
+				expect(stylesheet?.type).toBe("cors");
+				return documentFixture(result, context);
+			},
+		},
+		async (input) =>
+			response(input.url, {
+				headers: { "access-control-allow-origin": ["*"] },
+			}),
+	);
+	await session.navigate(session.createTab().id, initialUrl);
+	expect(requests[1].cookieContext?.credentials).toBe("omit");
+	expect(requests[1].headers?.origin).toBe("https://example.com");
+});
+
+it.each([null, true, "include", "same-origin"])(
+	"rejects unsupported resource credential mode %s before transport creation",
+	(value) => {
+		const createTransport = vi.fn();
+		expect(
+			() =>
+				new BrowserSession({
+					createTransport,
+					loadDocument: documentFixture,
+					resourceCredentials: value as "omit",
+				}),
+		).toThrow("Invalid resource credentials mode");
+		expect(createTransport).not.toHaveBeenCalled();
+	},
+);
+
 it.each([1, 2])(
 	"schedules shared stylesheet and image work at transport capacity %s",
 	async (capacity) => {

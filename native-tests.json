@@ -43,6 +43,8 @@
   "src/research-batch-pacing.test.ts",
   "src/origin-request-pacer.test.ts",
   "src/node-request-pacing.test.ts",
+  "src/node-resource-reuse.test.ts",
+  "src/resource-reuse-cache.test.ts",
   "src/table-source.test.ts",
   "src/table-source-command.test.ts",
   "src/passkey-none-attestation.test.ts",

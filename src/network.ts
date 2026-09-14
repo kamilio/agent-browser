@@ -16,6 +16,7 @@ export interface NetworkLimits {
 
 export interface NetworkRequest {
 	url: string;
+	resourceReuse?: "stylesheet" | "image";
 	method?: string;
 	headers?: Readonly<Record<string, string>>;
 	body?: string | Uint8Array;
@@ -28,6 +29,7 @@ export interface NetworkRequest {
 
 export interface NetworkResponse {
 	routeId?: number;
+	delivery?: "memory-cache";
 	url: string;
 	status: number;
 	headers: Readonly<Record<string, readonly string[]>>;
@@ -38,6 +40,10 @@ export interface NetworkResponse {
 }
 
 export interface NetworkMetrics {
+	cacheHits?: number;
+	cachedDecodedBytes?: number;
+	cacheEntries?: number;
+	cacheBytes?: number;
 	mockedRequests?: number;
 	mockedDecodedBytes?: number;
 	requests: number;
@@ -49,6 +55,7 @@ export interface NetworkMetrics {
 }
 
 export interface NetworkTransport {
+	readonly resourceReuse?: boolean;
 	readonly limits?: Readonly<
 		Pick<NetworkLimits, "maxConcurrent"> &
 			Partial<Pick<NetworkLimits, "maxRedirects">>

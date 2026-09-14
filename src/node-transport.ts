@@ -34,6 +34,11 @@ import {
 import { OriginRequestPacer } from "./origin-request-pacer.js";
 import { resourceLimitError } from "./resource-limit.js";
 import {
+	ResourceReuseCache,
+	type ResourceReuseCacheOptions,
+	type ResourceReuseRequest,
+} from "./resource-reuse-cache.js";
+import {
 	type ResponseAccountingWriter,
 	claimResponseAccounting,
 	validateResponseAccountingLease,
@@ -45,6 +50,7 @@ export type AddressResolver = (
 ) => Promise<readonly string[]>;
 
 export interface NodeTransportOptions extends NetworkPolicyOptions {
+	resourceCache?: Partial<ResourceReuseCacheOptions>;
 	limits?: Partial<NetworkLimits>;
 	minRequestIntervalMs?: number;
 	resolver?: AddressResolver;
@@ -320,6 +326,8 @@ function wireHeaders(
 
 export class NodeNetworkTransport implements NetworkTransport {
 	readonly limits: Readonly<NetworkLimits>;
+	readonly resourceReuse: boolean;
+	private readonly resourceCache?: ResourceReuseCache;
 	private readonly policy: NetworkPolicy;
 	private readonly resolver: AddressResolver;
 	private readonly certificateAuthorities?: string[];
@@ -418,11 +426,15 @@ export class NodeNetworkTransport implements NetworkTransport {
 		)
 			throw new AgentBrowserError("invalid-input", "Invalid cookie jar");
 		this.cookieJar = options.cookieJar;
+		this.resourceReuse = options.resourceCache !== undefined;
+		if (this.resourceReuse)
+			this.resourceCache = new ResourceReuseCache(options.resourceCache);
 	}
 
 	metrics(): Readonly<NetworkMetrics> {
 		return Object.freeze({
 			...this.counts,
+			...this.resourceCache?.metrics(),
 			active: this.active.size,
 			closed: this.closed,
 		});
@@ -433,6 +445,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 		for (const controller of this.active)
 			controller.abort(new AgentBrowserError("closed", "Transport is closed"));
 		this.requestPacer?.close();
+		this.resourceCache?.close();
 	}
 
 	request(input: NetworkRequest): Promise<NetworkResponse> {
@@ -460,6 +473,16 @@ export class NodeNetworkTransport implements NetworkTransport {
 		if (!input || typeof input !== "object")
 			throw new AgentBrowserError("invalid-input", "Invalid network request");
 		const inputSignal = input.signal;
+		const resourceReuse = input.resourceReuse;
+		if (
+			resourceReuse !== undefined &&
+			resourceReuse !== "stylesheet" &&
+			resourceReuse !== "image"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid resource reuse kind",
+			);
 		if (inputSignal !== undefined && !(inputSignal instanceof AbortSignal))
 			throw new AgentBrowserError("invalid-input", "Invalid network request");
 		const requestedAccounting = input.responseAccounting;
@@ -542,6 +565,28 @@ export class NodeNetworkTransport implements NetworkTransport {
 			: null;
 		let originTainted = cookieOrigin !== url.origin;
 		let siteTainted = cookieContext?.crossSiteRedirect ?? false;
+		const unsafeMethod = !["GET", "HEAD", "OPTIONS"].includes(method);
+		if (unsafeMethod) this.resourceCache?.clear();
+		const cacheRequest: ResourceReuseRequest | undefined =
+			this.resourceCache &&
+			resourceReuse !== undefined &&
+			method === "GET" &&
+			requestedBody === undefined &&
+			requestedAccounting === undefined &&
+			redirect === "manual" &&
+			cookieContext?.credentials === "omit" &&
+			cookieContext.topLevelNavigation === false &&
+			!siteTainted &&
+			cookieOrigin === url.origin &&
+			url.protocol === "https:"
+				? {
+						url: url.href,
+						resource: resourceReuse,
+						origin: url.origin,
+						headers,
+					}
+				: undefined;
+		const cacheStamp = cacheRequest ? this.resourceCache?.start() : undefined;
 		if (typeof requestedBody === "string")
 			headers["content-type"] ??= "text/plain;charset=UTF-8";
 		if (this.closed)
@@ -606,12 +651,12 @@ export class NodeNetworkTransport implements NetworkTransport {
 					const value = this.cookieJar?.cookieHeader(url.href, hopContext);
 					if (value) headers.cookie = value;
 				}
-				if (this.counts.requests >= this.limits.maxRequests)
+				if (!cacheRequest && this.counts.requests >= this.limits.maxRequests)
 					throw new AgentBrowserError(
 						"resource-limit",
 						"Session request limit exceeded",
 					);
-				this.counts.requests++;
+				if (!cacheRequest) this.counts.requests++;
 				const storeCookies =
 					useCookies && hopContext
 						? (values: NetworkResponse["headers"]) => {
@@ -621,6 +666,25 @@ export class NodeNetworkTransport implements NetworkTransport {
 						: undefined;
 				const resolved = resolveRoute?.({ url: url.href, method, signal });
 				ensureActive();
+				if (resolved !== undefined) this.resourceCache?.clear();
+				if (cacheRequest) {
+					if (resolved === undefined) {
+						const cached = this.resourceCache?.get(
+							cacheRequest,
+							maxResponseBytes,
+						);
+						if (cached) {
+							ensureActive();
+							return { ...cached, elapsedMs: performance.now() - start };
+						}
+					}
+					if (this.counts.requests >= this.limits.maxRequests)
+						throw new AgentBrowserError(
+							"resource-limit",
+							"Session request limit exceeded",
+						);
+					this.counts.requests++;
+				}
 				let response: Omit<NetworkResponse, "url" | "redirects" | "elapsedMs">;
 				if (resolved !== undefined) {
 					response = routedResponse(
@@ -692,14 +756,19 @@ export class NodeNetworkTransport implements NetworkTransport {
 				ensureActive();
 				encodedBytes += response.encodedBytes;
 				const location = response.headers.location;
-				if (!redirectStatuses.has(response.status) || redirect === "manual")
-					return {
+				if (!redirectStatuses.has(response.status) || redirect === "manual") {
+					const result: NetworkResponse = {
 						...response,
 						url: url.href,
 						redirects,
 						encodedBytes,
 						elapsedMs: performance.now() - start,
 					};
+					if (cacheRequest && cacheStamp && resolved === undefined)
+						this.resourceCache?.put(cacheRequest, result, cacheStamp);
+					ensureActive();
+					return result;
+				}
 				if (redirect === "error")
 					throw networkPolicyError("redirect-mode-error");
 				if (!location)
@@ -772,6 +841,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 			);
 		} finally {
 			clearTimeout(timer);
+			if (unsafeMethod) this.resourceCache?.clear();
 			try {
 				inputSignal?.removeEventListener("abort", abort);
 			} finally {

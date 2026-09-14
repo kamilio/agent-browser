@@ -20,6 +20,44 @@ function response(overrides: Partial<NetworkResponse> = {}): NetworkResponse {
 	};
 }
 
+it("distinguishes cached byte delivery from a network transfer without a route id", async () => {
+	const journal = new NetworkJournal();
+	await journal.run(
+		"stylesheet",
+		"https://example.com/style.css",
+		"GET",
+		async () => response(),
+	);
+	await journal.run(
+		"stylesheet",
+		"https://example.com/style.css",
+		"GET",
+		async () =>
+			response({
+				delivery: "memory-cache",
+				encodedBytes: 0,
+			}),
+	);
+	const entries = journal.snapshot().entries;
+	expect(entries[0].delivery).toBeUndefined();
+	expect(entries[0].encodedBytes).toBe(1);
+	expect(entries[1]).toMatchObject({
+		delivery: "memory-cache",
+		encodedBytes: 0,
+		decodedBytes: 2,
+		state: "complete",
+	});
+	expect(entries[1].routeId).toBeUndefined();
+	expect(journal.snapshot().retainedBytes).toBe(
+		entries.reduce(
+			(bytes, entry) =>
+				bytes + new TextEncoder().encode(JSON.stringify(entry)).byteLength,
+			0,
+		),
+	);
+	journal.close();
+});
+
 it("redacts credentials, queries and fragments, bounds URLs and rejects non-http data", () => {
 	expect(
 		diagnosticUrl("https://user:secret@example.com/path?secret=value#hidden"),

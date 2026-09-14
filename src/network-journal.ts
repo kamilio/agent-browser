@@ -22,6 +22,7 @@ export interface NetworkJournalEntry {
 	readonly state: "pending" | "complete" | "failed" | "blocked";
 	readonly cors?: "pending" | NetworkCorsResult;
 	readonly routeId?: number;
+	readonly delivery?: "memory-cache";
 	readonly elapsedMs: number;
 	readonly finalUrl?: string;
 	readonly status?: number;
@@ -175,6 +176,9 @@ export class NetworkJournal {
 					elapsedMs: Math.max(0, this.now() - started),
 					finalUrl: diagnosticUrl(response.url),
 					status: response.status,
+					...(response.delivery === "memory-cache"
+						? { delivery: "memory-cache" as const }
+						: {}),
 					...(Number.isSafeInteger(response.routeId) &&
 					(response.routeId ?? 0) > 0
 						? { routeId: response.routeId }

@@ -124,6 +124,7 @@ export interface SessionLimits {
 }
 
 export interface BrowserSessionOptions {
+	resourceCredentials?: "default" | "omit";
 	createTransport: (cookies: CookieJar) => NetworkTransport;
 	loadDocument: DocumentLoader;
 	identity?: BrowserIdentityOptions;
@@ -282,6 +283,7 @@ export class BrowserSession {
 	readonly routes = new NetworkRoutes();
 	private readonly storageEvents = new PageStorageEvents();
 	private readonly transport: NetworkTransport;
+	private readonly resourceCredentials: "default" | "omit";
 	private readonly networkQueue?: NetworkRequestQueue;
 	private readonly loadDocument: DocumentLoader;
 	private readonly initialColorSchemePreference: ColorSchemePreference;
@@ -304,6 +306,15 @@ export class BrowserSession {
 			throw new AgentBrowserError(
 				"invalid-input",
 				"A session requires explicit transport and document loader adapters",
+			);
+		this.resourceCredentials =
+			options.resourceCredentials === undefined
+				? "default"
+				: options.resourceCredentials;
+		if (!["default", "omit"].includes(this.resourceCredentials))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid resource credentials mode",
 			);
 		try {
 			this.identity = createBrowserIdentity(options.identity);
@@ -2051,11 +2062,15 @@ export class BrowserSession {
 								url: target.href,
 								method: "GET",
 								headers: { accept: imageMediaTypes.join(", ") },
+								...(this.transport.resourceReuse
+									? { resourceReuse: "image" as const }
+									: {}),
 								redirect: "manual",
 								signal: controller.signal,
 								cookieContext: {
 									siteUrl: responseUrl,
-									credentials: "include",
+									credentials:
+										this.resourceCredentials === "omit" ? "omit" : "include",
 									topLevelNavigation: false,
 									crossSiteRedirect,
 								},
@@ -2123,7 +2138,9 @@ export class BrowserSession {
 									);
 								const result = await fetchStylesheetResource(
 									resourceUrl,
-									policy,
+									this.resourceCredentials === "omit"
+										? { ...policy, credentials: "omit" }
+										: policy,
 									{
 										documentUrl: responseUrl,
 										signal: bootstrapSignal,
@@ -2134,6 +2151,9 @@ export class BrowserSession {
 											const sheet = await withAbort(
 												this.fetchNetwork({
 													...input,
+													...(this.transport.resourceReuse
+														? { resourceReuse: "stylesheet" as const }
+														: {}),
 													signal: bootstrapSignal,
 												}),
 												bootstrapSignal,
@@ -2195,7 +2215,11 @@ export class BrowserSession {
 								);
 							const result = await fetchStylesheetResource(
 								parseNetworkUrl(resourceUrl).href,
-								{ mode: "no-cors", credentials: "include" },
+								{
+									mode: "no-cors",
+									credentials:
+										this.resourceCredentials === "omit" ? "omit" : "include",
+								},
 								{
 									documentUrl: responseUrl,
 									signal: bootstrapSignal,
@@ -2204,7 +2228,13 @@ export class BrowserSession {
 									request: async (input) => {
 										this.assertCurrent(job);
 										const sheet = await withAbort(
-											this.fetchNetwork({ ...input, signal: bootstrapSignal }),
+											this.fetchNetwork({
+												...input,
+												...(this.transport.resourceReuse
+													? { resourceReuse: "stylesheet" as const }
+													: {}),
+												signal: bootstrapSignal,
+											}),
 											bootstrapSignal,
 										);
 										this.assertCurrent(job);
