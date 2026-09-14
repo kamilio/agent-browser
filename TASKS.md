@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: man7 native activation reaches the capture boundary
+
+**PROGRESS; overall browser goal remains ACTIVE.** One unchanged captured man7
+flow on adopted 71d0c8b at 15:24:52.577–15:24:53.765 UTC commits ls(1), discovers
+date(1) and activates the ordinary link far enough to request its destination.
+The prior width/fieldset-height guards no longer stop this input. The actual
+failure is now ReplayMiss for the uncaptured date(1) response, before transport.
+There is still no destination commit or whole-site/live acceptance.
+
+Four original mocks / 39,562 decoded bytes, one initial navigate, one click,
+two session navigation attempts / one commit, zero wire/scripts/credentials.
+Revision changes 727→732; URL/root/history stay. All 18 evidence/cleanup checks
+pass while browser/supervisor retain exit 1. Historical failures and old captures
+remain immutable. See MAN7-FIELDSET-RECHECK-SEPTEMBER-14.md and the twenty-sixth
+website inventory. This repeated host does not increase host coverage.
+
+NEXT: prepare and separately release a bounded fresh native live flow so the
+natural destination can be observed and captured without altering old evidence.
+Do not repeat this incomplete replay, invent assets, force navigation or bypass
+restrictions. HN text/background gaps, wider complete-corpus/live coverage,
+research, providers/passkeys and device/human-handoff gates remain open. No push.
+
 ### September 14: auto-height fieldsets no longer invent a table dependency
 
 **PROGRESS; overall browser goal remains ACTIVE.** The man7 captures contain no
