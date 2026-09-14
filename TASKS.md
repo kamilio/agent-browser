@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: ordinary MDN click still fails current native layout
+
+**PROGRESS; overall browser goal remains ACTIVE.** At 10:04:18 UTC, committed
+be3aaf6 loads all19original MDN resources and rediscovers the querySelectorAll
+link, but an ordinary click still fails document-width capability admission.
+There is no destination request, wire access, forced click or fallback. Current
+click diagnostics name54unsupported-property occurrences versus78earlier; both
+clicks fail. This is a native layout blocker, not a Cloudflare challenge.
+
+The original verifier's missing-import failure remains recorded. A separately
+corrected verifier and independent parent check pass on the same observation;
+the browser is not rerun. The22991-pass gate is rehashed, not rerun. See
+MDN-CURRENT-CLICK-SEPTEMBER-14.md and the sixteenth inventory for scope/evidence.
+
+NEXT: implement actual missing text/layout behavior, starting with bounded
+letter spacing, without weakening whole-document geometry or pointer checks.
+Count-only issue maps and truncated samples do not justify target-only admission.
+Wikipedia geometry, original research, broader live sites/forms, provider/passkey/
+device, SafeJS, socket/TTY and challenge gates remain open. Preserve unrelated
+work and all historical failures; no push.
+
 ### September 14: captured MDN confirms inline-spacing improvement
 
 **PROGRESS; overall browser goal remains ACTIVE.** A new captured MDN native
