@@ -63,6 +63,10 @@ export function measureLayoutOverflow(
 	};
 	const rootNode = nodeAt(formatting.root);
 	if (rootNode.parent !== null) invalid();
+	for (let index = 0; index < nodes.length; index++) {
+		charge();
+		nodeAt(index);
+	}
 	const rectangle = (x: number, y: number, width: number, height: number) => {
 		charge();
 		return {
@@ -121,7 +125,15 @@ export function measureLayoutOverflow(
 			pending.push({ id: child, owner, fixed: fixedRoot });
 		}
 	}
-	if (nearest.size !== nodes.length) invalid();
+	const ownedNode = (id: number) => {
+		const node = nodeAt(id);
+		if (!nearest.has(id)) invalid();
+		return node;
+	};
+	for (const id of fixedIds) {
+		charge();
+		ownedNode(id);
+	}
 	const states = new Map<number, PortState>();
 	const viewport: PortState = {
 		id: formatting.root,
@@ -139,7 +151,8 @@ export function measureLayoutOverflow(
 	};
 	for (const box of layout.boxes) {
 		charge();
-		const node = nodeAt(box.id);
+		const node = ownedNode(box.id);
+		ownedNode(box.containingBlock);
 		const overflow = node.overflow ?? visibleOverflow;
 		for (const value of [overflow.x, overflow.y])
 			if (!["visible", "hidden", "clip", "scroll", "auto"].includes(value))
@@ -285,7 +298,7 @@ export function measureLayoutOverflow(
 	}
 	for (const context of layout.contexts) {
 		charge();
-		nodeAt(context.id);
+		ownedNode(context.id);
 		const owner = nearest.get(context.id) ?? null;
 		const fixedRoot = fixed.get(context.id) ?? null;
 		for (const line of context.lines)
@@ -297,7 +310,7 @@ export function measureLayoutOverflow(
 			);
 		for (const fragment of context.fragments) {
 			charge();
-			nodeAt(fragment.formattingId);
+			ownedNode(fragment.formattingId);
 			if (boxes.has(fragment.formattingId)) continue;
 			include(
 				nearest.get(fragment.formattingId) ?? null,
@@ -315,7 +328,7 @@ export function measureLayoutOverflow(
 		}
 		for (const glyph of context.glyphs) {
 			charge();
-			nodeAt(glyph.formattingId);
+			ownedNode(glyph.formattingId);
 			if (glyph.advance === 0) continue;
 			include(
 				nearest.get(glyph.formattingId) ?? null,

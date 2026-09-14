@@ -6,6 +6,37 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: overflow ownership regression after Python replay
+
+**PROGRESS; overall browser goal remains ACTIVE.** The single V2 captured Python
+replay removed the overflow diagnostic (1 to 0; total 21 to 20), but the discovered
+Tutorial click failed with `Invalid overflow ownership`. Integrity and cleanup
+verification passed; the flow did not. Eight original resources, 72,064 decoded
+bytes and zero wire requests were used. This is not fresh website validation.
+
+New synthetic flex/grid fixtures reproduced an overflow ownership defect:
+normalization retains discarded whitespace in the formatting arena, while the
+old extent measurer required every allocated node to remain reachable. The fix
+retains charged identity validation for every slot and requires reachability
+only for measured boxes, containing blocks, fixed nodes, contexts, fragments and
+glyphs. Existing cycle, duplicate, numerical and work guards remain intact.
+
+Retained pre-fix focus: **90 pass/2 fail**. Final focus: **101 pass/0 fail** across
+6 files; 15 new cases cover whitespace, normalization and malformed/consumed
+ownership. Final selected native gate: **22,065 pass/0 fail/2 unchanged
+exclusions**, 437 selected files, 436 strict roots, 789 manifest entries and
+352 unselected entries.
+Build, strict checking, formatting, exact test-set/count checks and source/
+compiled inventory verification pass. Evidence remains under
+`node_modules/.cache/native-validation/overflow-ownership-work-september14/`.
+An earlier passing candidate is retained separately; it predates arena hardening.
+
+See `PYTHON-OVERFLOW-REPLAY.md` for the failed replay and native follow-up evidence.
+No saved-page replay was repeated after the fix; its effect on the original
+Tutorial flow remains unverified. No new live website, credential/device,
+SafeJS, socket, TTY or challenge acceptance is claimed. Broader research and
+browser compatibility gates remain open. No push is part of this checkpoint.
+
 ### September 14: native nested overflow and scrolling
 
 **PROGRESS; overall browser goal remains ACTIVE.** Supported ordinary overflow
