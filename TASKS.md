@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured MDN confirms inline-spacing improvement
+
+**PROGRESS; overall browser goal remains ACTIVE.** A new captured MDN native
+observation on committed be3aaf6 completes at 09:54:18.823 UTC. The same 19
+resources/270288 bytes support one navigation, formatting build, cached CSS
+diagnostics read, hint query and bounded attribution. No wire/scripts/clicks;
+prepared and parent verification pass with stable inputs and clean closure.
+
+Raw unsupported-property occurrences fall 126→113, applicable 64→54, and
+overlapping formatting occurrences 206→196. All other issue counts and formatting
+metrics stay unchanged. Samples retain128/omit18, still nonexhaustive; cascade
+work rises1305 and generated-content work117. No speed, raster or interaction
+success is claimed. See MDN-INLINE-SPACING-REPLAY.md and the fifteenth inventory.
+The22991-pass native gate/two exclusions is rehashed, not rerun. Historical
+evidence and original execution paths remain unchanged in durable copies.
+
+NEXT: revisit the earlier captured MDN ordinary-click failure on current code
+under a separate bounded scope. No implicit destination/asset fetch if geometry
+now succeeds; unknown requests must fail closed. Wikipedia geometry, original
+research, broader live sites/forms, credential/provider/passkey/device, SafeJS,
+socket/TTY and challenge gates remain open. Preserve unrelated work; no push.
+
 ### September 14: native inline logical spacing and actual geometry
 
 **PROGRESS; overall browser goal remains ACTIVE.** Native margin-inline and
