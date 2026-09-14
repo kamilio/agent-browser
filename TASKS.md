@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured Python click reaches the destination boundary
+
+**PROGRESS; overall browser goal remains ACTIVE.** One separately released,
+unchanged eight-resource replay proves the prior ownership failure is absent
+on the captured Python homepage. Its discovered Tutorial click now reaches a
+destination GET attempt, denied before transport because that response is not
+in the original corpus. This is the local fixture allowlist, not a site block.
+
+No click result or destination navigation completes; `flowPassed` remains false.
+Eight resources/72,064 decoded bytes are accepted; the ninth adapter attempt is
+denied; wire requests remain zero. Two queries and one formatting observation
+complete. All 20 residual diagnostics and formatting metrics stay unchanged.
+Eighteen ledgers verify, process group1261783 is absent and cleanup completes.
+The 04:13:57–04:13:58 UTC run stays pinned to ownership commit23e988d, not the
+newer capability build. See `PYTHON-OWNERSHIP-REPLAY.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-14-FOURTH-UPDATE.md`.
+
+NEXT: a separately scoped two-document capture using the already retained
+Tutorial response, with exact destination assets and a genuine discovered click.
+Do not expand or relabel the completed comparison. Broaden next to the original
+MDN capture and separately scoped public forms. Live navigation/rendering,
+repeatable performance, research, credential/device, SafeJS, socket, TTY and
+challenge gates remain open. No fresh requests or push at this checkpoint.
+
+
 ### September 14: nested pointer actions and capability advertisement
 
 **PROGRESS; overall browser goal remains ACTIVE.** Native session click,
