@@ -1,4 +1,5 @@
 [
+  "src/background-navigation-abort.test.ts",
   "src/background-loader-integration.test.ts",
   "src/css-background-image-values.test.ts",
   "src/document-background-images.test.ts",

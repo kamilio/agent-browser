@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: MDN background request exposes capture and cleanup boundaries
+
+**PROGRESS; overall browser goal remains ACTIVE.** On committed bce6e10, a new
+11:49:00UTC captured navigation serves all19original responses/270288bytes, then
+denies an uncaptured high.712917a113e51658.svg before transport. No query, click,
+wire request, new asset, rendering or retry. This is not a Cloudflare challenge.
+
+The original overall verifier FAILS: its immediate post-close snapshot retains
+2731nodes,one pending load andone active queue lease. Existing session contracts
+allow asynchronous settlement; neither a persistent leak nor later captured
+cleanup is proven. An independent11-check fact audit preserves the failure and
+confirms containment/process absence. The consumed lane is not rerun or rewritten.
+
+Five separate native abort regressions cover signal/stop/tab/session cancellation
+and honest accounting of an uncooperative active transport. Focused checks pass
+308/0; the full466-file gate passes23,340/0/2unchanged exclusions at12:01:35UTC.
+All23,337previous case occurrences and compiled runtime bytes are preserved.
+See MDN-BACKGROUND-IMAGE-ABORT-SEPTEMBER-14.md, BACKGROUND-NAVIGATION-ABORT.md and
+the nineteenth inventory. This is test/evidence work, not a production-code fix.
+
+NEXT: a separately sealed bounded cleanup-aware observation, with no further page
+actions after its blocker; then separately scoped/authorized missing-asset capture
+and resumed MDN flow. Keep the old19-response corpus closed. Original research,
+Wikipedia geometry, broader live sites/forms, credential/passkey/device, SafeJS,
+socket/TTY and challenge gates remain open. Preserve unrelated work; no push.
+
 ### September 14: single-layer CSS background images validated
 
 **PROGRESS; overall browser goal remains ACTIVE.** URL backgrounds now have real
