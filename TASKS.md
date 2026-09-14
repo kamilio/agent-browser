@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: content-first browsing works across varied sites
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+The user prioritizes getting content rather than perfect rendering.
+`CONTENT-FIRST-BROWSING-SEPTEMBER-14.md` and the twenty-ninth inventory update
+record seven fresh native-reader page requests: five whole-page content checks
+pass, Wikipedia hits its Markdown output quota but yields three useful sections
+from the same saved response without another request, and Reddit returns403 with
+an access-denied classification. Python and HN links are genuinely discovered
+and followed as URLs, not claimed as geometry clicks. Content-only browsing now
+proceeds independently of the separate visual/interaction acceptance gate.
+An earlier26-resource live MDN visit commits its initial document but stops at
+the harness's strict formatting census. Its original14/15 verifier outcome is
+preserved; a separate parent Accept-default reconciliation passes15 checks,
+without upgrading the incomplete interactive flow. No SafeJS activation,
+credentials, CAPTCHA bypass or push occurs. Precise output-limit diagnostics,
+readable table/boilerplate output, SDK acceptance and further site research remain
+outstanding; historical reports and native-test counts remain unchanged.
+
 ### September 14: latest SafeJS source pulled and release staged
 
 **PROGRESS; overall browser goal remains ACTIVE.**
