@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured MDN abort cleanup settles within its bound
+
+**PROGRESS; overall browser goal remains ACTIVE.** A separately sealed native
+observation on b5d2efd runs at 12:13:35 UTC. It reaches the same uncaptured SVG
+at adapter attempt 20 after 19 responses / 270,288 bytes. Zero wire requests,
+queries or clicks; navigation and missing-image rendering remain unverified.
+
+The immediate 2,731 nodes, one pending job and one active queue lease settle by
+the next metric sample, about 1.25 ms later, with an empty closed image owner.
+No counters are cleared or page actions retried. Prepared and parent observation
+verification pass within the 1,000 ms bound. The previous immediate-cleanup
+failure remains immutable; this is not a retroactive pass or production fix.
+See MDN-BACKGROUND-SETTLEMENT-SEPTEMBER-14.md and the twentieth inventory.
+The 23,340-pass native gate is rehashed, not rerun for this captured observation.
+
+NEXT: separately scoped/authorized missing-asset capture before further MDN flow
+claims; preserve the old closed corpus. Original research, Wikipedia geometry,
+broader live sites/forms, credentials/providers/passkeys/devices, SafeJS,
+socket/TTY and challenge gates remain open. Preserve unrelated work; no push.
+
 ### September 14: MDN background request exposes capture and cleanup boundaries
 
 **PROGRESS; overall browser goal remains ACTIVE.** On committed bce6e10, a new
