@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured Wikipedia word-spacing recheck
+
+**PROGRESS; overall browser goal remains ACTIVE.** One current captured native
+observation on committed 6e95ddc at 13:13:00.256–13:13:00.631 UTC completes
+formatting, cached diagnostics and search lookup. Its genuine word-spacing
+implementation reduces overlapping formatting occurrences 138→137 and
+unsupported-property occurrences 64→63; invalid-value occurrences stay at two.
+Input e239 is found, but supported geometry still fails. No wire, scripts,
+resources, raster or form actions; owners close cleanly. This is not a search
+flow, live website acceptance or speedup claim.
+
+Preserved the first harness-only tab-identity failure before native execution.
+A separately prepared same-scope retest passes 12 metadata/cleanup checks.
+Also retained one stale redirected-verifier-stdout seal entry explicitly; the
+parent verifies the actual output and makes a separate final seal after closure,
+without rerunning the browser or verifier. Both lanes have byte-verified durable
+copies. See WIKIPEDIA-WORD-SPACING-DIAGNOSTICS-SEPTEMBER-14.md and the twenty-second
+website inventory. All historical evidence remains unchanged.
+
+NEXT: address real remaining rendering gaps, prioritizing genuine group opacity
+and clipping/layered-background behavior with layout/raster/hit regressions.
+Do not suppress unsupported guards or treat diagnostics alone as interaction
+acceptance. Broader website/research and credential/passkey/device gates remain
+open; preserve original work and require separately scoped observations.
+
 ### September 14: genuine native word spacing validated
 
 **PROGRESS; overall browser goal remains ACTIVE.** Implemented inherited signed
