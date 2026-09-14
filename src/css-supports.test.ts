@@ -67,7 +67,7 @@ it.each([
 	["clear", "both", false],
 	["overflow", "visible", true],
 	["overflow", "hidden", false],
-	["opacity", "0.5", false],
+	["opacity", "0.5", true],
 	["width", "calc(2px + 3px)", true],
 	["width", "invalid", false],
 	["width", "1px; height:2px", false],

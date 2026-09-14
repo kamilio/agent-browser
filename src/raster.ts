@@ -278,6 +278,7 @@ export function paintRasterImage(
 	width: number,
 	height: number,
 	clip?: RoundedBox,
+	opacity = 1,
 ) {
 	validateRaster(image);
 	validateRaster(source);
@@ -288,7 +289,14 @@ export function paintRasterImage(
 	layoutNumber(originX + width, true);
 	layoutNumber(originY + height, true);
 	if (clip !== undefined) validateRoundedBox(clip);
-	if (width === 0 || height === 0) return;
+	if (
+		typeof opacity !== "number" ||
+		!Number.isFinite(opacity) ||
+		opacity < 0 ||
+		opacity > 1
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid raster opacity");
+	if (width === 0 || height === 0 || opacity === 0) return;
 	const left = Math.max(0, Math.min(image.width, Math.ceil(originX - 0.5)));
 	const right = Math.max(
 		0,
@@ -331,7 +339,7 @@ export function paintRasterImage(
 			);
 			const input = (sourceRow * source.width + sourceColumn) * 4;
 			const offset = (row * image.width + column) * 4;
-			const sourceAlpha = pixels[input + 3] / 255;
+			const sourceAlpha = (pixels[input + 3] / 255) * opacity;
 			if (sourceAlpha === 0) continue;
 			const destinationWeight =
 				(image.pixels[offset + 3] / 255) * (1 - sourceAlpha);

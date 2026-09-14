@@ -49,10 +49,14 @@ export function* stackingContentItems(
 			node.parent === formatting.root && node.ref !== undefined;
 		if (
 			node.id !== root.id &&
-			(rootElement || node.position !== undefined || node.zIndex !== undefined)
+			(rootElement ||
+				node.position !== undefined ||
+				node.zIndex !== undefined ||
+				node.opacity !== undefined)
 		) {
 			const actualContext =
 				rootElement ||
+				node.opacity !== undefined ||
 				node.position === "fixed" ||
 				node.position === "sticky" ||
 				node.zIndex !== undefined;

@@ -24,6 +24,7 @@ export function svgPresentationDeclarations(
 		"display",
 		"visibility",
 		"pointer-events",
+		"opacity",
 		"overflow",
 		"stop-color",
 		"stop-opacity",
@@ -71,6 +72,14 @@ export function svgPresentationDeclarations(
 			? source.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
 			: source.trim();
 		if (
+			property === "opacity" &&
+			/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?%?$/.test(value)
+		) {
+			const percentage = value.endsWith("%");
+			const number = Number(percentage ? value.slice(0, -1) : value);
+			if (Number.isFinite(number)) value = `${number}${percentage ? "%" : ""}`;
+		}
+		if (
 			(property === "width" || property === "height") &&
 			/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(value)
 		) {
@@ -104,7 +113,7 @@ export function svgPresentationDeclarations(
 					declaration.substitution,
 			)
 		) {
-			if (svgPaint) {
+			if (svgPaint || property === "opacity") {
 				result.push({
 					property: property as CssProperty,
 					value,

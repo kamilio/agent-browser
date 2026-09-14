@@ -32,6 +32,7 @@ import {
 export const cssPaintProperties = Object.freeze([
 	...borderColorProperties,
 	"color",
+	"opacity",
 	"caret-color",
 	"accent-color",
 	"stop-color",
@@ -56,6 +57,7 @@ export type PaintSpecifiedStyle = Readonly<
 export interface PaintStyle
 	extends Readonly<Partial<Record<BorderColorProperty, Rgba>>> {
 	readonly color: Rgba;
+	readonly opacity?: number;
 	readonly "caret-color"?: CssColor | "auto";
 	readonly "accent-color"?: CssColor | "auto";
 	readonly "stop-color"?: CssColor;
@@ -94,6 +96,7 @@ export function isCssPaintProperty(
 	return (
 		borderColorProperties.includes(property as BorderColorProperty) ||
 		property === "color" ||
+		property === "opacity" ||
 		property === "caret-color" ||
 		property === "accent-color" ||
 		property === "stop-color" ||
@@ -117,6 +120,18 @@ export function parsePaintValue(
 	value: string,
 	property: CssPaintProperty = "color",
 ): string | undefined {
+	if (property === "opacity") {
+		const normalized = value
+			.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
+			.toLowerCase();
+		if (["initial", "inherit", "unset", "revert"].includes(normalized))
+			return normalized;
+		const match = /^([+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?)(%)?$/.exec(
+			normalized,
+		);
+		if (!match || !Number.isFinite(Number(match[1]))) return undefined;
+		return `${Number(match[1])}${match[2] ?? ""}`;
+	}
 	if (property === "fill" || property === "stroke") {
 		const keyword = value
 			.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
@@ -264,6 +279,7 @@ export function computePaintStyle(
 				: parseCssColor(background);
 	const result: {
 		color: Rgba;
+		opacity?: number;
 		"background-color": CssColor;
 		background?: BackgroundLayer;
 		"caret-color"?: CssColor | "auto";
@@ -288,6 +304,21 @@ export function computePaintStyle(
 			foreground && foreground !== "currentcolor" ? foreground : parent.color,
 		"background-color": fill ?? transparentColor,
 	};
+	const specifiedOpacity =
+		specified.opacity === undefined
+			? undefined
+			: parsePaintValue(specified.opacity, "opacity");
+	const opacity =
+		specifiedOpacity === "inherit"
+			? (parent.opacity ?? 1)
+			: specifiedOpacity === undefined ||
+					["initial", "unset", "revert"].includes(specifiedOpacity)
+				? 1
+				: specifiedOpacity.endsWith("%")
+					? Number(specifiedOpacity.slice(0, -1)) / 100
+					: Number(specifiedOpacity);
+	const computedOpacity = Math.max(0, Math.min(1, opacity));
+	if (computedOpacity !== 1) result.opacity = computedOpacity;
 	if (
 		backgroundProperties.some((property) => specified[property] !== undefined)
 	) {
@@ -445,6 +476,7 @@ export function computePaintStyle(
 		}
 	}
 	return result.color === parent.color &&
+		result.opacity === parent.opacity &&
 		result["caret-color"] === parent["caret-color"] &&
 		result["accent-color"] === parent["accent-color"] &&
 		result["stop-color"] === parent["stop-color"] &&

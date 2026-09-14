@@ -68,6 +68,7 @@ function resource(message: string): never {
 
 interface Presentation {
 	clipPath: string | null;
+	opacity: number;
 	fill: SvgFill;
 	fillRule: "nonzero" | "evenodd";
 	fillOpacity: number;
@@ -83,8 +84,16 @@ export function documentSvgScene(
 	tree: DocumentTree,
 	id: number,
 	charge: (amount: number) => void,
+	options: { readonly outerOpacityHandled?: boolean } = {},
 ): SvgScene {
-	return buildSvgScene(tree, id, charge, "inline");
+	return buildSvgScene(
+		tree,
+		id,
+		charge,
+		"inline",
+		undefined,
+		options.outerOpacityHandled,
+	);
 }
 
 export function imageSvgScene(
@@ -127,6 +136,7 @@ function buildSvgScene(
 	charge: (amount: number) => void,
 	context: "inline" | "image",
 	styleOwner?: DocumentStyles,
+	outerOpacityHandled = false,
 ): SvgScene {
 	let sourceCodeUnits = 0;
 	let nodeCount = 0;
@@ -359,18 +369,16 @@ function buildSvgScene(
 			: multiplySvgMatrices(parent, parseSvgTransform(text, charge), charge);
 	}
 
-	function opacity(value: string | undefined, inherited: number): number {
-		if (value === undefined || value === "inherit" || value === "unset")
-			return inherited;
-		if (value === "initial") return 1;
+	function validateOpacity(value: string | undefined): void {
+		if (
+			value === undefined ||
+			["inherit", "unset", "initial", "revert"].includes(value)
+		)
+			return;
 		if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?%?$/.test(value))
 			unsupported("invalid opacity");
 		const amount = Number(value.endsWith("%") ? value.slice(0, -1) : value);
 		if (!Number.isFinite(amount)) unsupported("invalid opacity");
-		return Math.max(
-			0,
-			Math.min(1, value.endsWith("%") ? amount / 100 : amount),
-		);
 	}
 	function presentation(node: Readonly<DocumentNode>): Presentation {
 		const computed = styles.paint(node.id);
@@ -418,6 +426,7 @@ function buildSvgScene(
 		charge(3);
 		return {
 			clipPath: computed["clip-path"] ?? null,
+			opacity: computed.opacity ?? 1,
 			fill: resolve(
 				computed.fill === undefined ? cssNamedColors.black : computed.fill,
 			),
@@ -755,8 +764,13 @@ function buildSvgScene(
 			unsupported(`unsupported element ${node.tagName}`);
 		const container = node.id === id || node.tagName === "g";
 		const paint = presentation(node);
-		const alpha = opacity(attribute(node, "opacity"), 1);
-		if (container && alpha !== 1)
+		validateOpacity(attribute(node, "opacity"));
+		const alpha = paint.opacity;
+		if (
+			container &&
+			alpha !== 1 &&
+			!(node.id === id && context === "inline" && outerOpacityHandled)
+		)
 			unsupported("group opacity requires compositing");
 		const matrix = elementMatrix(node, transform, node.id === id);
 		const target = clipTarget(paint.clipPath);

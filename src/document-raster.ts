@@ -51,6 +51,7 @@ import { matchFontWeight } from "./font-weight.js";
 import { resolveVisualTarget } from "./generated-controls.js";
 import { layoutContentItems } from "./layout-paint-order.js";
 import { layoutNumber } from "./layout-values.js";
+import { prepareOpacityLayout } from "./opacity-layout.js";
 import { projectFixedLayout } from "./out-of-flow-positioning.js";
 import { paintOutline } from "./outline-raster.js";
 import {
@@ -97,6 +98,9 @@ export interface DocumentRaster {
 	canvasBackground: Readonly<{ sourceRef: string | null; color: Rgba }>;
 	metrics: Readonly<{
 		work: number;
+		opacityGroups?: number;
+		opacityPixels?: number;
+		opacityPeakPixels?: number;
 		paintedGlyphs: number;
 		clippedGlyphs: number;
 		hiddenGlyphs: number;
@@ -306,15 +310,21 @@ function paintDocumentLayout(
 	charge(clip.width * clip.height);
 	const canvas = createRaster(clip.width, clip.height, [255, 255, 255, 255]);
 	let image: Readonly<RasterImage> = canvas;
+	let paintTarget: Readonly<RasterImage> = canvas;
+	const opacity = prepareOpacityLayout(
+		layout.text.horizontal.formatting,
+		canvas,
+		charge,
+	);
 	const overflow = layoutOverflowClips(layout, charge);
 	const clipViews = new Map<OverflowClip, Readonly<RasterImage>>();
 	const destination = (chain: OverflowClip | undefined) => {
-		if (!chain) return canvas;
+		if (!chain) return paintTarget;
 		charge();
 		let view = clipViews.get(chain);
 		if (!view) {
 			view = withRasterClips(
-				canvas,
+				paintTarget,
 				rasterOverflowClips(chain, clip, charge),
 				charge,
 			);
@@ -546,6 +556,7 @@ function paintDocumentLayout(
 	let canvasSource = root;
 	let canvasColor = transparentColor;
 	let canvasPaint = initialPaintStyle;
+	let rootOpacityOwner: number | undefined;
 	const suppressed = new Set<string>();
 	if (root !== undefined) {
 		suppressed.add(tree.reference(root));
@@ -587,6 +598,23 @@ function paintDocumentLayout(
 		sourceRef: canvasSource === undefined ? null : tree.reference(canvasSource),
 		color: canvasColor,
 	});
+	if (opacity && root !== undefined) {
+		const rootRef = tree.reference(root);
+		const rootNode = nodes.find((node) => {
+			charge();
+			return (
+				node.ref === rootRef && node.kind !== "text" && node.kind !== "break"
+			);
+		});
+		const rootOwner = rootNode && nodes[rootNode.tableWrapper ?? rootNode.id];
+		if (
+			rootOwner?.opacity !== undefined &&
+			rootOwner.parent === layout.text.horizontal.formatting.root
+		) {
+			rootOpacityOwner = rootOwner.id;
+			image = paintTarget = opacity.target(rootOwner.id);
+		}
+	}
 	drawBackground(clip.x, clip.y, image.width, image.height, canvasColor);
 	if (
 		canvasPaint.background &&
@@ -982,6 +1010,25 @@ function paintDocumentLayout(
 		else metrics.paintedImages++;
 	};
 	for (const item of roundedItems ?? layoutContentItems(layout, charge)) {
+		if (opacity) {
+			const id =
+				item.kind === "marker"
+					? item.marker.id
+					: item.kind === "glyph"
+						? item.glyph.formattingId
+						: item.kind === "fragment"
+							? item.fragment.formattingId
+							: item.box.id;
+			image = paintTarget = opacity.target(
+				id === layout.text.horizontal.formatting.root
+					? (rootOpacityOwner ?? id)
+					: id,
+				() => {
+					clipViews.clear();
+					image = paintTarget = canvas;
+				},
+			);
+		}
 		if (overflow.size > 0) {
 			charge();
 			const chain =
@@ -1159,6 +1206,7 @@ function paintDocumentLayout(
 			fragment.height,
 		);
 	}
+	opacity?.finish();
 	if (caret.status === "ready") caret.status = "unsupported";
 	metrics.caretStatus = caret.status;
 	metrics.selectionStatus =
@@ -1181,6 +1229,15 @@ function paintDocumentLayout(
 		clip: Object.freeze({ ...clip }),
 		image: canvas,
 		canvasBackground,
-		metrics: Object.freeze(metrics),
+		metrics: Object.freeze({
+			...metrics,
+			...(opacity
+				? {
+						opacityGroups: opacity.metrics.groups,
+						opacityPixels: opacity.metrics.pixels,
+						opacityPeakPixels: opacity.metrics.peakPixels,
+					}
+				: {}),
+		}),
 	});
 }

@@ -148,6 +148,7 @@ export interface FormattingNode {
 	staticDisplay?: string;
 	staticFlex?: FlexStyle;
 	zIndex?: number;
+	opacity?: number;
 	visible: boolean;
 	text?: string;
 	box?: BoxStyle;
@@ -388,6 +389,15 @@ export function buildFormattingTree(
 			parent: null,
 			children: [...children],
 		};
+		if (
+			data.kind !== "text" &&
+			data.kind !== "break" &&
+			data.display !== "contents" &&
+			(data.ref !== undefined || data.generatedContent !== undefined) &&
+			data.paint?.opacity !== undefined &&
+			data.paint.opacity < 1
+		)
+			node.opacity = data.paint.opacity;
 		if (
 			data.ref &&
 			/^e[1-9][0-9]*$/.test(data.ref) &&
@@ -1222,7 +1232,9 @@ export function buildFormattingTree(
 						"unsupported",
 						"Unsupported SVG outer display",
 					);
-				const svg = documentSvgScene(tree, id, charge);
+				const svg = documentSvgScene(tree, id, charge, {
+					outerOpacityHandled: true,
+				});
 				const intrinsic = svgIntrinsicSize(svg, styles.box(id));
 				return [
 					create({
@@ -1995,6 +2007,8 @@ export function buildFormattingTree(
 			issue("relative-block-in-inline-not-supported");
 		if (flow.position === "sticky" && fragments.length > 1)
 			issue("sticky-block-in-inline-not-supported");
+		if (styles.paint(id).opacity !== undefined && fragments.length > 1)
+			issue("opacity-block-in-inline-not-supported");
 		return result;
 	};
 	const children: number[] = [];
@@ -2130,6 +2144,7 @@ export function buildFormattingTree(
 				tableGrid: table.id,
 				...(table.position ? { position: table.position } : {}),
 				...(table.zIndex === undefined ? {} : { zIndex: table.zIndex }),
+				...(table.opacity === undefined ? {} : { opacity: table.opacity }),
 				...(table.clear === undefined ? {} : { clear: table.clear }),
 				...(table.floatSide === undefined
 					? {}
@@ -2153,6 +2168,7 @@ export function buildFormattingTree(
 		}
 		delete table.position;
 		delete table.zIndex;
+		delete table.opacity;
 		delete table.clear;
 		delete table.floatSide;
 	}
@@ -2280,6 +2296,11 @@ export function buildFormattingTree(
 		...(viewportOverflow ? { viewportOverflow } : {}),
 		nodes: Object.freeze(
 			nodes.map((node) => {
+				if (
+					node.opacity !== undefined &&
+					node.collapsedBorderOwner !== undefined
+				)
+					issue("opacity-collapsed-border-owner-not-supported");
 				if (node.radius) {
 					if (node.collapsedBorderOwner !== undefined || node.collapsedTable)
 						delete node.radius;

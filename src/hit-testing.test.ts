@@ -278,7 +278,7 @@ it.each([
 	"position:sticky;transform:translateY(1px)",
 	"transform:translateX(1px)",
 	"pointer-events:visiblepainted",
-	"opacity:0.5",
+	"filter:blur(1px)",
 ])("fails closed for unsupported hit-affecting CSS %s", (rule) => {
 	const { tree, hits, id } = fixture(
 		undefined,

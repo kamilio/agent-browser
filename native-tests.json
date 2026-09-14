@@ -1,4 +1,11 @@
 [
+	"src/opacity-style.test.ts",
+	"src/raster-opacity.test.ts",
+	"src/opacity-svg.test.ts",
+	"src/opacity-document.test.ts",
+	"src/opacity-stacking.test.ts",
+	"src/opacity-layout.test.ts",
+	"src/opacity-click.test.ts",
 	"src/word-spacing-style.test.ts",
 	"src/word-spacing-layout.test.ts",
 	"src/word-spacing-click.test.ts",

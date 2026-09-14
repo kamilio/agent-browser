@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: native group opacity validated
+
+**PROGRESS; overall browser goal remains ACTIVE.** Implemented actual grouped
+opacity compositing, not per-glyph fading or parser-only acceptance. Non-inherited
+CSS numbers/percentages, stacking isolation, nested layers, native controls,
+generated text, clipping, SVG shape cascade and explicit outer-SVG handoff share
+the native raster path. Zero opacity retains geometry and genuine click dispatch.
+Review fixes cover captioned document-root table backgrounds and releasing old
+destination/clipping references before replacement-layer allocation.
+
+Final release01 at 13:42:28–13:48:43 UTC passes 23,757 cases with zero failures
+and the same two exclusions: 477 files / 476 strict roots, build and formatting
+pass. The audit verifies 23,514 unchanged baseline occurrences, one explicit
+opacity-to-filter unsupported-fixture migration, and 244 new passing cases.
+Identical-source supplemental controls pass 508, adding 264 distinct existing
+cases: 24,021 unique passing occurrences. Focused05 passes 859. See OPACITY.md.
+
+No new runtime dependency, live request, credential, device or SafeJS probe.
+Retained opacity buffers and work are bounded; this is not a measured RSS or
+speedup claim. Internal SVG groups, block-in-inline splits and individual
+collapsed-border owners retain explicit compositing restrictions. Failed earlier
+runs remain unchanged. All original dirty work is preserved during adoption.
+
+NEXT: run the separately scoped original Wikipedia captured diagnostic against
+the committed audited runtime, without inferring search-flow success from these
+native cases. Broaden captured-site checks afterward; layered backgrounds,
+clipping, live-site/research, credentials/passkeys, device and challenge gates
+remain open. Do not suppress unsupported guards or rewrite historical evidence.
+
 ### September 14: captured Wikipedia word-spacing recheck
 
 **PROGRESS; overall browser goal remains ACTIVE.** One current captured native

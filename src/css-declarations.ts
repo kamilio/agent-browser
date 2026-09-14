@@ -343,12 +343,7 @@ function normalize(name: string, source: string): string | undefined {
 			return undefined;
 		return `${number}${match[2] ?? "px"}`;
 	}
-	if (
-		name === "opacity" &&
-		/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value) &&
-		Number.isFinite(Number(value))
-	)
-		return String(Number(value));
+	if (name === "opacity") return parsePaintValue(value, "opacity");
 	if (name === "color" || name === "background-color") {
 		return normalizeCssColor(value);
 	}

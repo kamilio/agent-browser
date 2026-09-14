@@ -253,6 +253,7 @@ export function resolvedStyleValue(
 		return reference == null ? "none" : `url("#${reference}")`;
 	}
 	if (
+		name === "opacity" ||
 		name === "stop-opacity" ||
 		name === "fill-opacity" ||
 		name === "stroke-opacity"

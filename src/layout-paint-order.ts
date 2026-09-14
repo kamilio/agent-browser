@@ -25,6 +25,7 @@ export function* layoutContentItems(
 		!nodes.some((node) => {
 			charge();
 			return (
+				node.opacity !== undefined ||
 				node.floatSide !== undefined ||
 				node.zIndex !== undefined ||
 				node.position === "absolute" ||
