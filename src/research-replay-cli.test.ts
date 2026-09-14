@@ -130,6 +130,7 @@ async function fixture(
 	source = '<h1>Owned heading</h1><main id="owned"><p>Owned body</p></main>',
 	profile: ResearchDocumentProfileId = "default",
 	reader = true,
+	headings = true,
 ): Promise<Fixture> {
 	const body = encoder.encode(source);
 	const response: NetworkResponse = {
@@ -152,7 +153,7 @@ async function fixture(
 		true,
 		undefined,
 		undefined,
-		true,
+		headings,
 		undefined,
 		profile,
 		{ minRequestIntervalMs: 0 },
@@ -246,6 +247,58 @@ afterEach(() => {
 });
 
 describe("bounded replay CLI arguments", () => {
+	it.each([false, true])(
+		"accepts explicit output-limit section recovery with table metadata %s",
+		(tableMetadata) => {
+			const args = Object.freeze([
+				...parserArgs.slice(0, 8),
+				"--section",
+				"#owned",
+				"--recover-output-limit",
+				...(tableMetadata ? ["--table-metadata"] : []),
+			]);
+			expect(parseResearchReplayArguments(args)).toMatchObject({
+				recoverOutputLimit: true,
+				selection: {
+					section: "#owned",
+					...(tableMetadata ? { tableMetadata: true } : {}),
+				},
+			});
+		},
+	);
+
+	it.each([
+		[...parserArgs, "--recover-output-limit"],
+		[...parserArgs.slice(0, 8), "--links", "owned", "--recover-output-limit"],
+		[
+			...replaceFlag(parserArgs.slice(0, 8), "--expected-profile", "long-v1"),
+			"--section",
+			"#owned",
+			"--recover-output-limit",
+		],
+		[
+			...parserArgs.slice(0, 8),
+			"--section",
+			"#owned",
+			"--recover-output-limit",
+			"--recover-output-limit",
+		],
+		[
+			...parserArgs.slice(0, 8),
+			"--section",
+			"#owned",
+			"--recover-output-limit",
+			"true",
+		],
+	])(
+		"rejects recovery outside one explicit default-profile section: %j",
+		(...args) => {
+			expect(() => parseResearchReplayArguments(args)).toThrow(
+				expect.objectContaining({ code: "invalid-input" }),
+			);
+		},
+	);
+
 	it("exposes fixed receipt, chunk and deadline bounds", () => {
 		expect(researchReplayCliLimits).toEqual({
 			maxReceiptBytes: 6_000_000,
@@ -446,6 +499,35 @@ describe("bounded replay CLI arguments", () => {
 });
 
 describe("pinned offline replay integration", () => {
+	it("recovers a pinned output-limited section without changing the original failed receipt", async () => {
+		const destination = `https://example.com/${"x".repeat(4096)}`;
+		const source = `<h2 id="owned">Owned section</h2><p>Readable saved content.</p><h2>References</h2><p>${`<a href="${destination}">Reference</a>`.repeat(70)}</p>`;
+		const value = await fixture(source, "default", true, false);
+		expect(value.report.failure?.resourceLimit?.kind).toBe("extraction.output");
+		const original = value.raw.slice();
+		const target = sink();
+		const result = await runResearchReplayCli(
+			argumentsFor(value, ["--section", "#owned", "--recover-output-limit"]),
+			input([value.raw]),
+			target.output,
+		);
+		expect(result).toBe(0);
+		const output = record(target);
+		expect(output.recovery).toMatchObject({
+			kind: "captured-output-limit-section",
+		});
+		expect(output.networkRequests).toBe(0);
+		expect(output.source.receiptSha256).toBe(
+			value.trusted.expectedReceiptSha256,
+		);
+		expect(JSON.stringify(output.extraction)).toContain(
+			"Readable saved content.",
+		);
+		expect(JSON.stringify(output.extraction)).not.toContain(destination);
+		expect(value.raw).toEqual(original);
+		expect(value.report.outcome).toBe("failure");
+	});
+
 	it.each(profiles)(
 		"emits one bounded %s replay JSONL record without network or capture changes",
 		async (profile) => {

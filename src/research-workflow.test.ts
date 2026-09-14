@@ -686,7 +686,12 @@ it("retains captured reader source and bounded sections after a Markdown output 
 		{
 			signal: new AbortController().signal,
 			tabId: "owned-capture",
-			limits: { maxNodes: 50_000, maxDepth: 128, maxTextCodeUnits: 2_000_000 },
+			limits: {
+				maxNodes: 50_000,
+				maxDepth: 128,
+				maxTextCodeUnits: 2_000_000,
+				maxChanges: 1024,
+			},
 		},
 	);
 	try {

@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: native browsing recovers oversized content explicitly
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+`CONTENT-SECTION-RECOVERY.md` implements explicit saved-capture heading recovery
+through the API and `--recover-output-limit` CLI flag. Default replay remains
+closed to failed receipts; typed output failures require intact pinned captures,
+unrestricted HTML and closed native-reader state.729 targeted native tests pass,
+production compilation succeeds, and eight selected test roots typecheck after
+repairing the previous regression fixture's missing default limit. Its196 tests
+also pass again. A fresh Wikipedia observation hits the whole-page quota; three
+useful sections then pass content checks through the socket-denied CLI without
+refetching or changing the failed receipt. The thirtieth inventory update records
+seven HTTP requests across six seeds: five useful documents including Wikipedia,
+plus HELM's empty script-driven application. GitHub README/build instructions,
+Hugging Face optimization docs and Stanford's static benchmark article yield
+content. Research remains incomplete; Reddit/X, SafeJS activation, rendering,
+interaction and full release gates stay separate. No push or access bypass.
+
 ### September 14: output-limit diagnostics support bounded content recovery
 
 **PROGRESS; overall browser goal remains ACTIVE.**

@@ -121,6 +121,28 @@ export type ResearchReplayAdmission = ResearchReplayMetadata &
 		  }
 	);
 
+export interface ResearchOutputLimitSectionRecovery {
+	readonly kind: "captured-output-limit-section";
+	readonly originalOutcome: "failure";
+	readonly originalContentSuccess: false;
+	readonly originalFailure: {
+		readonly category: "resource-limit";
+		readonly stage: "extraction";
+		readonly resourceLimit: {
+			readonly kind: "extraction.output";
+			readonly unit: "bytes";
+			readonly limit: number;
+			readonly observed: number;
+		};
+	};
+	readonly originalRequestRetried: false;
+}
+
+export type ResearchOutputLimitSectionAdmission = Extract<
+	ResearchReplayAdmission,
+	{ kind: "validated-capture" }
+> & { readonly recovery: ResearchOutputLimitSectionRecovery };
+
 type DataRecord = Record<string, unknown>;
 type ByteObservation = { bytes: number; complete: boolean };
 type EvidenceReason = Extract<
@@ -921,12 +943,18 @@ function outlineReady(report: DataRecord): boolean {
 	return true;
 }
 
-export function validateResearchReplayAdmission(
+function replayEvidence(
 	rawReceipt: Uint8Array,
 	trusted: TrustedResearchReplayAdmission,
-): ResearchReplayAdmission {
+	defaultOnly = false,
+) {
 	const raw = receiptSnapshot(rawReceipt);
 	const authority = trustedAdmission(trusted);
+	if (defaultOnly && authority.expectedProfile !== "default")
+		throw new AgentBrowserError(
+			"unsupported",
+			"Output-limit section recovery requires the default profile",
+		);
 	const receiptSha256 = createHash("sha256").update(raw).digest("hex");
 	if (receiptSha256 !== authority.expectedReceiptSha256) invalidEvidence();
 	let text: string;
@@ -962,6 +990,15 @@ export function validateResearchReplayAdmission(
 		originalMetadata,
 		originalFieldPresence,
 	};
+	return { report, authority, metadata };
+}
+
+export function validateResearchReplayAdmission(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+): ResearchReplayAdmission {
+	const { report, authority, metadata } = replayEvidence(rawReceipt, trusted);
+	const selectedProfile = metadata.selectedProfile;
 	function evidenceOnly(reason: EvidenceReason): ResearchReplayAdmission {
 		return Object.freeze({
 			...metadata,
@@ -1006,10 +1043,99 @@ export function validateResearchReplayAdmission(
 		)
 			return evidenceOnly("discovery-incomplete");
 	}
+	return validatedCapture(report, authority, metadata);
+}
+
+export function validateResearchOutputLimitSectionAdmission(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+): ResearchOutputLimitSectionAdmission {
+	const { report, authority, metadata } = replayEvidence(
+		rawReceipt,
+		trusted,
+		true,
+	);
+	const classification = record(report.classification);
+	const failure = record(report.failure);
+	const diagnostic = record(failure.resourceLimit);
+	const reader = record(report.reader);
+	const navigation = record(report.navigation);
+	const response = record(navigation.response);
+	const metrics = record(report.metrics);
+	const primary = primaryProjection(report.primaryResponse);
+	if (
+		report.outcome !== "failure" ||
+		report.partial !== true ||
+		report.contentSuccess !== false ||
+		report.profile !== "native-semantic-reader-v1" ||
+		Object.hasOwn(report, "rateLimit") ||
+		Object.hasOwn(report, "outputLimit") ||
+		classification.classifier !== "browser-challenges" ||
+		classification.barrier !== null ||
+		classification.diagnostic !== null ||
+		Object.keys(failure).length !== 3 ||
+		failure.category !== "resource-limit" ||
+		failure.stage !== "extraction" ||
+		Object.keys(diagnostic).length !== 4 ||
+		diagnostic.kind !== "extraction.output" ||
+		diagnostic.unit !== "bytes" ||
+		!integer(diagnostic.limit) ||
+		diagnostic.limit <= 0 ||
+		!integer(diagnostic.observed) ||
+		diagnostic.observed <= diagnostic.limit ||
+		reader.profile !== "native-semantic-reader-v1" ||
+		reader.partial !== true ||
+		reader.scripting !== false ||
+		reader.styling !== false ||
+		reader.hiddenContentSemantics !== false ||
+		navigation.kind !== "document" ||
+		!boundedString(navigation.tabId, 4096) ||
+		!boundedString(navigation.documentRef, 4096) ||
+		Object.hasOwn(navigation, "scripts") ||
+		navigation.url !== report.finalUrl ||
+		response.url !== report.finalUrl ||
+		metrics.active !== 0 ||
+		metrics.closed !== true ||
+		primary === null ||
+		response.status !== primary.status ||
+		response.bytes !== primary.decodedBytes ||
+		response.redirects !== primary.redirects ||
+		authority.expectedBody === undefined
+	)
+		invalidEvidence();
+	const contentType = record(primary.headers)["content-type"];
+	if (
+		!Array.isArray(contentType) ||
+		contentType.length !== 1 ||
+		typeof contentType[0] !== "string" ||
+		contentType[0].split(";", 1)[0].trim().toLowerCase() !== "text/html"
+	)
+		invalidEvidence();
+	const recovery: ResearchOutputLimitSectionRecovery = Object.freeze({
+		kind: "captured-output-limit-section",
+		originalOutcome: "failure",
+		originalContentSuccess: false,
+		originalFailure:
+			failure as unknown as ResearchOutputLimitSectionRecovery["originalFailure"],
+		originalRequestRetried: false,
+	});
+	return Object.freeze({
+		...validatedCapture(report, authority, metadata),
+		recovery,
+	});
+}
+
+function validatedCapture(
+	report: DataRecord,
+	authority: TrustedResearchReplayAdmission,
+	metadata: ResearchReplayMetadata,
+): Extract<ResearchReplayAdmission, { kind: "validated-capture" }> {
+	const selectedProfile = metadata.selectedProfile;
 	validateIdentity(report);
 	const primary = primaryProjection(report.primaryResponse);
 	const pin = authority.expectedBody;
 	if (
+		pin === undefined ||
 		primary === null ||
 		report.finalUrl !== primary.url ||
 		primary.decodedBytes !== pin.bytes ||

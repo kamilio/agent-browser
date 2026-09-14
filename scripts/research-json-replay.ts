@@ -27,7 +27,10 @@ import {
 import { DocumentQueries, validateSelectorSyntax } from "../src/selectors.js";
 import {
 	type ResearchBodyPin,
+	type ResearchOutputLimitSectionRecovery,
+	type ResearchReplayAdmission,
 	type TrustedResearchReplayAdmission,
+	validateResearchOutputLimitSectionAdmission,
 	validateResearchReplayAdmission,
 } from "./research-admission-evidence.js";
 import {
@@ -52,6 +55,11 @@ export type ResearchJsonReplaySelection =
 	  ) & { tableMetadata?: boolean })
 	| { links: string; selector?: never; section?: never; tableMetadata?: never };
 
+export interface ResearchOutputLimitSectionSelection {
+	section: string;
+	tableMetadata?: boolean;
+}
+
 export interface ResearchJsonReplayReport {
 	kind: "native-research-json-replay-v1";
 	partial: true;
@@ -75,12 +83,20 @@ export interface ResearchJsonReplayReport {
 	reader?: Readonly<ResearchReaderReport>;
 	extraction?: Extract<DocumentExtraction, { format: "json" }>;
 	links?: DocumentLinkDiscovery;
+	recovery?: ResearchOutputLimitSectionRecovery;
 }
 
 export interface ResearchJsonReplayExtraction {
 	report: ResearchJsonReplayReport;
 	jsonl: string;
 	outputBytes: number;
+}
+
+export interface ResearchOutputLimitSectionExtraction
+	extends ResearchJsonReplayExtraction {
+	report: ResearchJsonReplayReport & {
+		recovery: ResearchOutputLimitSectionRecovery;
+	};
 }
 
 function invalidSelection(): never {
@@ -200,19 +216,23 @@ function replayRawPolicy(
 	return policy;
 }
 
+function replayCheckpoint(signal?: AbortSignal) {
+	const started = performance.now();
+	return () => {
+		if (signal?.aborted)
+			throw new AgentBrowserError("aborted", "Research JSON replay aborted");
+		if (performance.now() - started >= researchJsonReplayLimits.timeoutMs)
+			throw new AgentBrowserError("timeout", "Research JSON replay timed out");
+	};
+}
+
 export function extractResearchReplayJson(
 	rawReceipt: Uint8Array,
 	trusted: TrustedResearchReplayAdmission,
 	selection: ResearchJsonReplaySelection,
 	signal?: AbortSignal,
 ): ResearchJsonReplayExtraction {
-	const started = performance.now();
-	const checkpoint = () => {
-		if (signal?.aborted)
-			throw new AgentBrowserError("aborted", "Research JSON replay aborted");
-		if (performance.now() - started >= researchJsonReplayLimits.timeoutMs)
-			throw new AgentBrowserError("timeout", "Research JSON replay timed out");
-	};
+	const checkpoint = replayCheckpoint(signal);
 	checkpoint();
 	const selected = selectionSnapshot(selection);
 	checkpoint();
@@ -222,6 +242,42 @@ export function extractResearchReplayJson(
 			"policy-denied",
 			"Research replay requires a validated capture",
 		);
+	return extractValidatedReplayJson(
+		admission,
+		selected,
+		checkpoint,
+		signal,
+		{},
+	);
+}
+
+export function recoverResearchOutputLimitSection(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchOutputLimitSectionSelection,
+	signal?: AbortSignal,
+): ResearchOutputLimitSectionExtraction {
+	const checkpoint = replayCheckpoint(signal);
+	checkpoint();
+	const selected = selectionSnapshot(selection);
+	if (selected.method !== "heading-section") invalidSelection();
+	checkpoint();
+	const admission = validateResearchOutputLimitSectionAdmission(
+		rawReceipt,
+		trusted,
+	);
+	return extractValidatedReplayJson(admission, selected, checkpoint, signal, {
+		recovery: admission.recovery,
+	});
+}
+
+function extractValidatedReplayJson<Extra extends object>(
+	admission: Extract<ResearchReplayAdmission, { kind: "validated-capture" }>,
+	selected: ReturnType<typeof selectionSnapshot>,
+	checkpoint: () => void,
+	signal: AbortSignal | undefined,
+	extra: Extra,
+): ResearchJsonReplayExtraction & { report: ResearchJsonReplayReport & Extra } {
 	let tree: DocumentTree | undefined;
 	try {
 		checkpoint();
@@ -286,7 +342,7 @@ export function extractResearchReplayJson(
 			...policyArguments,
 		);
 		checkpoint();
-		const report: ResearchJsonReplayReport = {
+		const report: ResearchJsonReplayReport & Extra = {
 			kind: "native-research-json-replay-v1",
 			partial: true,
 			contentSuccess: null,
@@ -301,6 +357,7 @@ export function extractResearchReplayJson(
 			selection: { method: selected.method, matches: null },
 			classification: { barrier: null, diagnostic: null },
 			reader: researchReaderInfo(tree),
+			...extra,
 		};
 		const title = documentTitle(tree);
 		const classify = (text: string) => {
