@@ -6,6 +6,48 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: bounded clipping primitive and a stopped-source failure
+
+**PROGRESS; overall browser goal remains ACTIVE.** Native raster destinations
+now support nested immutable rounded clipping views with shared pixel storage,
+cached row intersections and bounded work. Rectangle, image and glyph paths
+compose inherited and per-draw clips without changing alpha or alias behavior.
+The 1,024-clip cap uses a separate namespace; existing raster limits remain
+exactly unchanged. No overflow guard is removed and no new dependency is added.
+
+The corrected focus passes **858/0/0**, including 51 new cases. Full corrected
+round01 passes **21,757/0/2 unchanged skips**, September 14,
+01:47:18.445–01:52:20.365 UTC: 425 selected, 424 strict, 777 manifest and 352
+unselected. Build, strict checking, scoped formatting and inventory audit pass;
+1,326 source and 2,156 compiled files are retained. Failed round00 remains
+21,756/1/2: an old numeric-marker assertion caught the limits-object regression.
+The production namespace is corrected, not the old test weakened.
+
+Exactly two further native standards GETs run. Overflow3 succeeds with one live
+and one offline native load; CSSOM View parses 23,906 nodes but navigation fails
+at the internal query-work cap. The stop rule prevents its offline load/retry;
+its edition and metric/API/event algorithms remain unverified. All source
+owners close and process groups are absent. Parent verification checks 36
+historical/source ledgers and 25,080 entries without another load or request.
+See `RASTER-CLIPPING.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-14-THIRD-UPDATE.md`.
+
+Read-only diagnosis identifies eager cascade matching during navigation and a
+separate quadratic general-sibling selector shape, not the actual failing W3C
+selector. A synthetic optimization candidate passes 563 focused cases; the
+same 14-case file on old source has four large-work cap failures and one new
+memo-contract expectation failure. That candidate is not yet a released or
+real-site-verified fix. Its separate review and full gate are next.
+
+Full nested overflow, scroll-state/extent/clip integration and nearest-scrollport
+sticky are still pending. The 40-case overflow draft stays outside source and
+the native manifest until its APIs exist. Python's original-resource Tutorial
+click still has the overflow blocker and is not rerun here. Varied website flows,
+repeatable performance, credential/provider/device/passkey, SafeJS, socket,
+real-TTY, challenge and incomplete hardware/benchmark/Astra/verified Reddit-Poe
+research acceptance gates remain open. Historical evidence and unrelated work
+are preserved; no push occurs.
+
 ### September 14: real sticky positioning removes Python's position guard
 
 **PROGRESS; overall browser goal remains ACTIVE.** Commit `7ec49ac` implements
