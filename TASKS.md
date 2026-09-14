@@ -6,6 +6,45 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: discretionary hyphens remove Python's remaining CSS-property guards
+
+**PROGRESS; overall browser goal remains ACTIVE.** Commit `0ab2f0a` implements
+source-preserving U+00AD soft-hyphen rendering and breaks, inherited
+`hyphens:none/manual/auto`, and three legacy aliases through stylesheet and
+live/computed CSSOM. It covers actual ranges/copying, pixels/hits, intrinsic and
+shrink-to-fit sizing, float-shortened intervals and closing edges. `auto` keeps
+explicit opportunities with no automatic dictionary installed. Language-specific
+markers/spelling/shaping and complete Unicode line breaking remain limitations;
+the source's language/resource gate is not waived. See `TEXT-HYPHENATION.md`.
+
+The focused gate passes **721/0/0**, with 39 new and 682 existing cases. The identical
+final-test parser-only baseline has 36 failures fixed by actual layout. The full
+selected native gate passes **21,590/0/2 unchanged skips** on September 14,
+00:20:18.754–00:25:18.553 UTC: 421 selected, 420 strict, 775 manifest, 354 unselected.
+Compilation, strict tests, formatting, complete source/runtime inventories and
+independent verification pass. Historical failures and the intentional registry
+count/test-fixture corrections remain documented, not relabeled as successes.
+
+The unchanged Python replay runs **00:27:41.765–00:27:41.887 UTC**, with one
+native homepage load, one discovered Tutorial click and **zero HTTP requests**.
+It removes all four remaining property occurrences: raw issues 26→22, with every
+other count and formatting metric unchanged. The click still fails, but its
+width-resolution guards now contain only **sticky position and overflow**.
+This is not successful page geometry, painting, navigation or a fresh capture.
+Native owners close, empty private directories are removed and the group is absent.
+
+One separately scoped offline native read of the unchanged W3C body establishes
+the hyphenation rules and resource-less-auto inference, with the complete
+hyphenation section retained. It adds no HTTP request or latest-edition claim.
+See `TEXT-HYPHENATION-WEBSITE-SEPTEMBER-14.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-14-FIRST-UPDATE.md`. Other websites are not rerun.
+
+Next: sticky-position geometry and nested overflow/scroll integration, then
+original-resource live flows and repeatable performance. Credential/provider/
+device/passkey, SafeJS, socket, real-TTY, challenge and incomplete hardware/
+benchmark/Astra/verified Reddit-Poe research gates remain separate. Pre-existing
+work and historical evidence are preserved. Changes remain local; no push.
+
 ### September 13–14: native justification and the captured Python value blocker
 
 **PROGRESS; overall browser goal remains ACTIVE.** Commit `3b85a5b` implements
