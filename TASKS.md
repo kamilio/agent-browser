@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: fresh native W3C source check informs text spacing
+
+**PROGRESS; overall browser goal remains ACTIVE.** One anonymous native GET of
+W3C CSS Text3 succeeds at10:23:36UTC, followed by one offline native extraction
+of discovered section7.2. Source findings expose a zero-value CSSOM mismatch in
+the letter-spacing candidate; regression tests and correction precede adoption.
+Ordinary text line-edge/mixed-value rules are confirmed; atomic-boundary tracking
+remains explicitly unsupported rather than silently omitted.
+
+The offline harness's nonexistent-field assertion fails after emitting its
+receipt; the original failure is retained. Independent artifact verification
+passes without rerunning the browser. No scripts, credentials, redirects,
+subresources or alternate browser. This is live reader coverage, not CSS layout
+acceptance. See W3C-TEXT-SPACING-RESEARCH-SEPTEMBER-14.md and the seventeenth
+inventory. Original research and all separate acceptance gates remain open.
+
+NEXT: finish isolated validation and adopt the bounded text-spacing feature,
+preserving unrelated work and the still-failing MDN ordinary-click evidence.
+
 ### September 14: ordinary MDN click still fails current native layout
 
 **PROGRESS; overall browser goal remains ACTIVE.** At 10:04:18 UTC, committed
