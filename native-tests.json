@@ -791,5 +791,8 @@
   "src/nested-actionability.test.ts",
   "src/text-transform-scan.test.ts",
   "src/generated-item-style.test.ts",
-  "src/generated-item-layout.test.ts"
+  "src/generated-item-layout.test.ts",
+  "src/css-diagnostic-collector.test.ts",
+  "src/css-rejection-parser.test.ts",
+  "src/style-diagnostic-details.test.ts"
 ]

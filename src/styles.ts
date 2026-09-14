@@ -1,5 +1,10 @@
 import { imageDimensionHint } from "./replaced-box.js";
 import {
+	CssDiagnosticCollector,
+	type CssDiagnosticSink,
+	type CssDiagnosticSnapshot,
+} from "./css-diagnostics.js";
+import {
 	computeRadiusStyle,
 	initialRadiusStyle,
 	isCssRadiusProperty,
@@ -399,6 +404,7 @@ export class DocumentStyles {
 	private elementContent = new Map<number, string>();
 	private pseudoWork = 0;
 	private cascadeBuilds = 0;
+	private diagnosticSnapshot: CssDiagnosticSnapshot | undefined;
 	private closed = false;
 	private info = {
 		rules: 0,
@@ -1254,6 +1260,11 @@ export class DocumentStyles {
 		return result;
 	}
 
+	diagnostics(): CssDiagnosticSnapshot {
+		this.refresh();
+		return this.diagnosticSnapshot as CssDiagnosticSnapshot;
+	}
+
 	metrics() {
 		this.refresh();
 		return Object.freeze({
@@ -1298,6 +1309,7 @@ export class DocumentStyles {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		this.diagnosticSnapshot = undefined;
 		this.viewportListeners.clear();
 		this.mediaListeners.clear();
 		this.external.clear();
@@ -1372,6 +1384,7 @@ export class DocumentStyles {
 			}
 		}
 		this.revision = -1;
+		this.diagnosticSnapshot = undefined;
 		this.clearGeneratedContent();
 		this.computed.clear();
 		this.boxSpecified.clear();
@@ -1401,6 +1414,8 @@ export class DocumentStyles {
 		this.customComputed.clear();
 		const issues: Record<string, number> = { ...this.loadIssues };
 		const applicableIssues: Record<string, number> = { ...this.loadIssues };
+		const diagnosticCollector = new CssDiagnosticCollector();
+		let diagnosticSheet = 0;
 		const cursorComputed = new Map<number, CursorStyle>();
 		const radiusSpecified = new Map<number, RadiusSpecifiedStyle>();
 		const rawIssue = (code: string) => {
@@ -1456,6 +1471,7 @@ export class DocumentStyles {
 		>();
 		const mediaApplicability = (media: readonly string[]) => {
 			let matches = true;
+			let uncertain = false;
 			for (const query of media) {
 				charge(1);
 				let state = mediaCache.get(query);
@@ -1471,18 +1487,31 @@ export class DocumentStyles {
 					mediaCache.set(query, state);
 				}
 				for (const code of state.diagnostics) issue(code);
+				uncertain ||= state.diagnostics.length > 0;
 				matches &&= state.matches;
 				if (!state.matches && !state.diagnostics.length)
-					return { matches: false, possible: false };
+					return { matches: false, possible: false, uncertain: false };
 			}
-			return { matches, possible: true };
+			return { matches, possible: true, uncertain };
 		};
 		const parseSheet = (
 			text: string,
 			graph: Readonly<StylesheetSource> | undefined,
 			media: string[],
 			depth = 0,
+			importDepth = 0,
 		): CssRule[] => {
+			const sheet = diagnosticSheet++;
+			const diagnostic: CssDiagnosticSink = Object.assign(
+				(code: string, context?: Parameters<CssDiagnosticSink>[1]) =>
+					diagnosticCollector.record(code, {
+						...context,
+						scope: "rule",
+						sheet,
+						importDepth,
+					}),
+				{ source: Object.freeze({ sheet, importDepth }) },
+			);
 			const imports = new Map(
 				graph?.imports.map((entry) => [entry.start, entry]),
 			);
@@ -1503,11 +1532,14 @@ export class DocumentStyles {
 						entry.sheet,
 						entry.media ? [...inherited, entry.media] : [...inherited],
 						nesting + 1,
+						importDepth + 1,
 					);
 				},
 				(diagnostics, inherited) => {
 					if (mediaApplicability(inherited).possible) applicable(diagnostics);
 				},
+				true,
+				diagnostic,
 			);
 		};
 		const nodes = [...this.tree.walk()].map((entry) => entry.node);
@@ -1715,7 +1747,15 @@ export class DocumentStyles {
 				const baseOrder = order;
 				order += rule.declarations.length;
 				const media = mediaApplicability(rule.media);
-				if (!media.possible || (!media.matches && !rule.issues)) continue;
+				if (!media.possible || (!media.matches && !rule.issues)) {
+					if (rule.diagnosticSampleIds)
+						diagnosticCollector.resolve(rule.diagnosticSampleIds, {
+							applicable: false,
+							selectorState: "not-evaluated",
+							mediaState: "inactive",
+						});
+					continue;
+				}
 				if (work >= this.limits.maxWork)
 					throw new AgentBrowserError(
 						"resource-limit",
@@ -1736,11 +1776,45 @@ export class DocumentStyles {
 						throw error;
 					issue("unimplemented-or-invalid-css-selector");
 					applicable(rule.issues);
+					const selectorSample = diagnosticCollector.record(
+						"unimplemented-or-invalid-css-selector",
+						{
+							...rule.diagnosticSource,
+							selector: rule.selector,
+							nesting: rule.nesting,
+							scope: "rule",
+						},
+					);
+					const resolution = {
+						applicable: true,
+						selectorState: "unresolved" as const,
+						mediaState: media.uncertain
+							? ("uncertain" as const)
+							: ("active" as const),
+					};
+					diagnosticCollector.resolve(rule.diagnosticSampleIds, resolution);
+					if (selectorSample !== undefined)
+						diagnosticCollector.resolve([selectorSample], resolution);
 					continue;
 				}
 				charge(this.queries.metrics().lastWork);
 				if (matches.elements.size || matches.before.size || matches.after.size)
 					applicable(rule.issues);
+				if (rule.diagnosticSampleIds) {
+					const matched = Boolean(
+						matches.elements.size || matches.before.size || matches.after.size,
+					);
+					diagnosticCollector.resolve(rule.diagnosticSampleIds, {
+						applicable: matched,
+						selectorState: matched ? "matched" : "unmatched",
+						mediaState: media.uncertain ? "uncertain" : "active",
+						matches: {
+							elements: matches.elements.size,
+							before: matches.before.size,
+							after: matches.after.size,
+						},
+					});
+				}
 				if (!media.matches) continue;
 				for (const name of ["elements", "before", "after"] as const) {
 					charge(matches[name].size * rule.declarations.length);
@@ -1760,6 +1834,20 @@ export class DocumentStyles {
 			if (node.kind !== "element") continue;
 			const owned = this.tree.getInlineDeclarations(node.id);
 			if (!node.attributes.style && !owned) continue;
+			const diagnostic: CssDiagnosticSink = (code, context) => {
+				const sample = diagnosticCollector.record(code, {
+					...context,
+					scope: "inline",
+					owner: node.id,
+				});
+				if (sample !== undefined)
+					diagnosticCollector.resolve([sample], {
+						applicable: true,
+						selectorState: "not-evaluated",
+						mediaState: "not-evaluated",
+					});
+				return sample;
+			};
 			const parsed = new Map<string, CssDeclaration[]>();
 			const declarations = owned
 				? owned.flatMap((entry) => {
@@ -1776,6 +1864,7 @@ export class DocumentStyles {
 								),
 								budget,
 								issue,
+								diagnostic,
 							);
 							parsed.set(key, values);
 						}
@@ -1784,7 +1873,12 @@ export class DocumentStyles {
 								!entry.pending || declaration.property === entry.name,
 						);
 					})
-				: parseCssDeclarations(source(node.attributes.style), budget, issue);
+				: parseCssDeclarations(
+						source(node.attributes.style),
+						budget,
+						issue,
+						diagnostic,
+					);
 			charge(declarations.length);
 			apply(node.id, declarations, [0, 0, 0], true, order);
 			order += declarations.length;
@@ -2259,6 +2353,11 @@ export class DocumentStyles {
 				}),
 			);
 		}
+		const diagnosticSnapshot = diagnosticCollector.snapshot(
+			this.cascadeBuilds + 1,
+			issues,
+			applicableIssues,
+		);
 		this.computed = computed;
 		this.boxSpecified = boxSpecified;
 		this.flexSpecified = flexSpecified;
@@ -2286,6 +2385,7 @@ export class DocumentStyles {
 			applicableIssues: Object.freeze(applicableIssues),
 		};
 		this.cascadeBuilds++;
+		this.diagnosticSnapshot = diagnosticSnapshot;
 		this.revision = this.tree.revision;
 	}
 }

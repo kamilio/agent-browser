@@ -1,4 +1,8 @@
 import { parseBackgroundShorthand } from "./css-background.js";
+import type {
+	CssDiagnosticSink,
+	CssDiagnosticSource,
+} from "./css-diagnostics.js";
 import {
 	cssGridProperties,
 	isCssGridProperty,
@@ -125,6 +129,8 @@ export interface CssRule {
 	media: string[];
 	readonly issues?: Readonly<Record<string, number>>;
 	readonly nesting?: SelectorNestingContext;
+	readonly diagnosticSampleIds?: readonly number[];
+	readonly diagnosticSource?: CssDiagnosticSource;
 }
 export interface CssParseBudget {
 	rules: number;
@@ -275,12 +281,16 @@ export function parseCssDeclarations(
 	source: string,
 	budget: CssParseBudget,
 	issue: CssIssue,
+	diagnostic?: CssDiagnosticSink,
 ): CssDeclaration[] {
 	const declarations: CssDeclaration[] = [];
 	for (const statement of cssDeclarationStatements(source, issue)) {
 		const colon = cssDeclarationColon(statement);
 		if (colon < 0) {
-			if (withoutComments(statement).trim()) issue("invalid-css-declaration");
+			if (withoutComments(statement).trim()) {
+				issue("invalid-css-declaration");
+				diagnostic?.("invalid-css-declaration");
+			}
 			continue;
 		}
 		if (++budget.declarations > budget.maxDeclarations)
@@ -293,8 +303,17 @@ export function parseCssDeclarations(
 		const property = custom ?? canonicalCssProperty(rawProperty.toLowerCase());
 		const valueSource = statement.slice(colon + 1);
 		const raw = splitCssValue(valueSource);
+		const reject = (code: string) => {
+			issue(code);
+			diagnostic?.(code, {
+				authoredProperty: rawProperty,
+				property,
+				value: trimCssWhitespace(valueSource),
+				...(raw ? { important: raw.important } : {}),
+			});
+		};
 		if (!raw) {
-			issue("unimplemented-or-invalid-css-value");
+			reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		const { important } = raw;
@@ -305,7 +324,7 @@ export function parseCssDeclarations(
 					value: raw.value,
 					important,
 				});
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		const grid =
@@ -359,7 +378,7 @@ export function parseCssDeclarations(
 			!isCssFlexProperty(property) &&
 			!flexShorthandComponents(property)
 		) {
-			issue("unimplemented-css-property");
+			reject("unimplemented-css-property");
 			continue;
 		}
 		if (
@@ -367,13 +386,13 @@ export function parseCssDeclarations(
 				property === "text-decoration") &&
 			raw.value.length > 4096
 		) {
-			issue("unimplemented-or-invalid-css-value");
+			reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (/var\s*\(|\\/i.test(raw.value)) {
 			const parsed = parseVariableValue(raw.value);
 			if (!parsed) {
-				issue("unimplemented-or-invalid-css-value");
+				reject("unimplemented-or-invalid-css-value");
 				continue;
 			}
 			if (parsed.variables) {
@@ -465,7 +484,7 @@ export function parseCssDeclarations(
 				: parseCssContent(value)?.value;
 			if (parsed !== undefined)
 				declarations.push({ property, value: parsed, important });
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (
@@ -477,7 +496,7 @@ export function parseCssDeclarations(
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),
 				);
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssOutlineProperty(property) || property === "outline") {
@@ -486,7 +505,7 @@ export function parseCssDeclarations(
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),
 				);
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssTableProperty(property)) {
@@ -495,7 +514,7 @@ export function parseCssDeclarations(
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),
 				);
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssListProperty(property) || property === "list-style") {
@@ -504,14 +523,14 @@ export function parseCssDeclarations(
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),
 				);
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssInteractionProperty(property)) {
 			const normalized = parseInteractionValue(value, property);
 			if (normalized !== undefined)
 				declarations.push({ property, value: normalized, important });
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssFlowProperty(property) || property === "overflow") {
@@ -520,7 +539,7 @@ export function parseCssDeclarations(
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),
 				);
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (grid) {
@@ -529,7 +548,7 @@ export function parseCssDeclarations(
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),
 				);
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssFlexProperty(property) || flexShorthandComponents(property)) {
@@ -538,7 +557,7 @@ export function parseCssDeclarations(
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),
 				);
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssRadiusProperty(property) || property === "border-radius") {
@@ -547,7 +566,7 @@ export function parseCssDeclarations(
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),
 				);
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isBorderShorthand(property)) {
@@ -556,14 +575,14 @@ export function parseCssDeclarations(
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),
 				);
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssTextProperty(property)) {
 			const normalized = parseTextValue(property, value);
 			if (normalized !== undefined)
 				declarations.push({ property, value: normalized, important });
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (property === "background") {
@@ -572,14 +591,14 @@ export function parseCssDeclarations(
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),
 				);
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (isCssPaintProperty(property)) {
 			const normalized = parsePaintValue(value, property);
 			if (normalized !== undefined)
 				declarations.push({ property, value: normalized, important });
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (
@@ -592,7 +611,7 @@ export function parseCssDeclarations(
 				declarations.push(
 					...expanded.map((declaration) => ({ ...declaration, important })),
 				);
-			else issue("unimplemented-or-invalid-css-value");
+			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}
 		if (
@@ -606,7 +625,7 @@ export function parseCssDeclarations(
 				value,
 				important,
 			});
-		else issue("unimplemented-or-invalid-css-value");
+		else reject("unimplemented-or-invalid-css-value");
 	}
 	return declarations;
 }
@@ -698,6 +717,7 @@ function parseStyleRuleBody(
 	diagnostics?: CssRuleDiagnosticSink,
 	nesting?: SelectorNestingContext,
 	scopedGlobalIssue?: CssIssue,
+	diagnostic?: CssDiagnosticSink,
 ): CssRule[] {
 	if (depth > 16)
 		throw new AgentBrowserError(
@@ -722,9 +742,13 @@ function parseStyleRuleBody(
 				media,
 				issues: Object.freeze({ [code]: 1 }),
 				...(nesting ? { nesting } : {}),
+				...(diagnostic?.source ? { diagnosticSource: diagnostic.source } : {}),
 			});
 	};
 	const declarations = (end: number) => {
+		const diagnosticSampleIds: number[] | undefined = diagnostic
+			? []
+			: undefined;
 		const ruleIssues: Record<string, number> | undefined = diagnostics
 			? Object.create(null)
 			: undefined;
@@ -742,18 +766,34 @@ function parseStyleRuleBody(
 				issue(code);
 				if (ruleIssues) ruleIssues[code] = (ruleIssues[code] ?? 0) + 1;
 			},
+			diagnostic
+				? (code, context) => {
+						const id = diagnostic(code, {
+							...context,
+							selector,
+							scope: "rule",
+							...(nesting ? { nesting } : {}),
+						});
+						if (id !== undefined) diagnosticSampleIds!.push(id);
+						return id;
+					}
+				: undefined,
 		);
 		const retained =
 			ruleIssues && Object.keys(ruleIssues).length
 				? Object.freeze(ruleIssues)
 				: undefined;
-		if (parsed.length || retained)
+		if (parsed.length || retained || diagnosticSampleIds?.length)
 			result.push({
 				selector,
 				declarations: parsed,
 				media,
 				...(retained ? { issues: retained } : {}),
 				...(nesting ? { nesting } : {}),
+				...(diagnosticSampleIds?.length
+					? { diagnosticSampleIds: Object.freeze(diagnosticSampleIds) }
+					: {}),
+				...(diagnostic?.source ? { diagnosticSource: diagnostic.source } : {}),
 			});
 	};
 	const parent: SelectorNestingContext = Object.freeze({
@@ -807,6 +847,7 @@ function parseStyleRuleBody(
 				active ? diagnostics : undefined,
 				nesting,
 				name === "supports" ? (active ? globalIssue : () => {}) : undefined,
+				active ? diagnostic : undefined,
 			);
 			if (active) result.push(...nested);
 			continue;
@@ -840,6 +881,7 @@ function parseStyleRuleBody(
 			accepted ? diagnostics : undefined,
 			parent,
 			accepted ? globalIssue : () => {},
+			accepted ? diagnostic : undefined,
 		);
 		if (accepted) result.push(...nested);
 	}
@@ -860,6 +902,7 @@ export function parseCssRules(
 	) => readonly CssRule[] | undefined,
 	diagnostics?: CssRuleDiagnosticSink,
 	topLevel = true,
+	diagnostic?: CssDiagnosticSink,
 ): CssRule[] {
 	if (typeof topLevel !== "boolean")
 		throw new AgentBrowserError("invalid-input", "Invalid stylesheet context");
@@ -932,6 +975,7 @@ export function parseCssRules(
 					undefined,
 					diagnostics,
 					false,
+					diagnostic,
 				),
 			);
 			continue;
@@ -947,6 +991,7 @@ export function parseCssRules(
 				undefined,
 				active ? diagnostics : undefined,
 				false,
+				active ? diagnostic : undefined,
 			);
 			if (active) result.push(...nested);
 			continue;
@@ -966,6 +1011,7 @@ export function parseCssRules(
 				diagnostics,
 				undefined,
 				globalIssue,
+				diagnostic,
 			),
 		);
 	}

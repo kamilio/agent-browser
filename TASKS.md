@@ -6,6 +6,33 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: bounded native CSS rejection details
+
+**PROGRESS; overall browser goal remains ACTIVE.** DocumentStyles.diagnostics()
+now returns a read-only cached cascade snapshot with full raw/applicable counts
+and at most128bounded rejection samples. It retains authored/canonical property,
+value, selector chain, matching/media state, source ordinal/import depth and
+inline ownership where known. Explicit truncation/omissions and exhaustive=false
+prevent treating absent samples as absence of problems. Existing accepted CSS,
+issue counts, budgets and unsupported-layout guards remain unchanged.
+
+Final focus:443pass/0fail. Final selected native gate:22392pass/0fail/two unchanged
+exclusions,444files,443strict roots,796manifest entries and352unselected. All96new
+cases and prior case identities/outcomes, build, strict checks, scoped formatting
+and exact source/receipt checks pass. Retain1350source/2176compiled/113receipts.
+Source review's selector-provenance gap is corrected and covered by import,
+grandchild, cycle, inactive-media and cache tests. Earlier variable-fixture
+failures and the intermediate22388-pass gate remain separate. See
+`CSS-DIAGNOSTIC-DETAILS.md` for bounds, evidence and limitations.
+
+NEXT: separately pin and use this diagnostic API through the native browser on
+the MDN capture, identify real remaining CSS features, then improve compatibility
+and retest actions. This native gate alone is not a new website result. Research,
+broader live sites/forms, credentials/devices, SafeJS, socket, real TTY and
+challenge gates remain open. Preserve pre-existing parser/styles/manifest work
+and historical evidence. No push.
+
+
 ### September 14: captured MDN confirms generated-item formatting progress
 
 **PROGRESS; overall browser goal remains ACTIVE.** One separately scoped native
