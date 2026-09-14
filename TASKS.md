@@ -6,6 +6,22 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: latest SafeJS source pulled and release staged
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+`SAFEJS-REFRESH-SEPTEMBER-14.md` records the clean source fast-forward to
+`9baf685284b3a089eaa3a22d1521b6dc391fccd9` and registry-latest
+`@poe-platform/safe-js@0.1.599` observed at17:15:33 UTC. The exact tarball matches
+registry SHA-512/SHA-1 and its372 files are staged without install scripts,
+dependency installation, SDK execution or active browser runtime replacement.
+Public-contract compatibility, isolated SafeJS execution and activation remain
+outstanding; artifact integrity is not source provenance or runtime acceptance.
+The browser still uses audited runtime5c7a882 with23975 native passes,0 failures
+and2 exclusions from the prior gate, not a new test run. Fresh MDN remains
+PREPARED: review corrections are authored, final syntax/hash review and a single
+live launch are still pending. No new website run or push occurred. Original42
+dirty tracked paths and697 untracked file hashes remain preserved.
+
 ### September 14: shared soft-hyphen minimum sizing repaired and measured
 
 **PROGRESS; overall browser goal remains ACTIVE.**
