@@ -789,5 +789,7 @@
   "src/overflow-grid-sticky.test.ts",
   "src/overflow-ownership.test.ts",
   "src/nested-actionability.test.ts",
-  "src/text-transform-scan.test.ts"
+  "src/text-transform-scan.test.ts",
+  "src/generated-item-style.test.ts",
+  "src/generated-item-layout.test.ts"
 ]

@@ -1199,6 +1199,23 @@ export class DocumentStyles {
 		const root =
 			rootChildren.find((child) => this.tree.get(child).kind === "element") ??
 			this.tree.root;
+		let containerDisplay = visibility.display;
+		if (containerDisplay === "contents") {
+			charge(1);
+			let ancestor = this.tree.get(id).parent;
+			while (ancestor !== null) {
+				charge(1);
+				const node = this.tree.get(ancestor);
+				if (node.kind === "element") {
+					const display = this.get(ancestor).display;
+					if (display !== "contents") {
+						containerDisplay = display;
+						break;
+					}
+				}
+				ancestor = node.parent;
+			}
+		}
 		const parent = {
 			content: inherited,
 			display: visibility.display,
@@ -1231,6 +1248,7 @@ export class DocumentStyles {
 			parent,
 			this.viewport,
 			Number.parseFloat(this.text(root)["font-size"]),
+			containerDisplay,
 		);
 		cache.set(id, result);
 		return result;

@@ -74,6 +74,7 @@ export function computeGeneratedContentStyle(
 	parent: GeneratedContentParent,
 	viewport: Readonly<{ width: number; height: number }>,
 	rootFontSize: number,
+	containerDisplay = parent.display,
 ): GeneratedContentStyle | undefined {
 	const content = parseCssContent(
 		generatedContentValue(specified.content, parent.content),
@@ -92,7 +93,7 @@ export function computeGeneratedContentStyle(
 		display !== "contents" &&
 		(flow.position === "absolute" || flow.position === "fixed");
 	const unpositionedDisplay =
-		isFlexDisplay(parent.display) || isGridDisplay(parent.display)
+		isFlexDisplay(containerDisplay) || isGridDisplay(containerDisplay)
 			? blockifyDisplay(display)
 			: display;
 	const visibility =
@@ -130,7 +131,7 @@ export function computeGeneratedContentStyle(
 		...(hasRadiusStyle(radius) ? { radius } : {}),
 		...(cursor === "auto" ? {} : { cursor }),
 		content,
-		display: outOfFlow ? blockifyDisplay(display) : display,
+		display: outOfFlow ? blockifyDisplay(display) : unpositionedDisplay,
 		...(outOfFlow ? { unpositionedDisplay } : {}),
 		visible: visibility === "visible",
 		typography,

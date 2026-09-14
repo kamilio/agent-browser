@@ -670,12 +670,14 @@ export function buildFormattingTree(
 				"Formatting text limit exceeded",
 			);
 		const metadata = Object.freeze({ owner, name });
-		const { display, flow } = style;
+		const { flow } = style;
+		const display = itemMode ? blockifyDisplay(style.display) : style.display;
 		const generatedOverflow = usedOverflow(flow);
 		const generatedScrollable = establishesScrollport(generatedOverflow);
 		const outOfFlow =
 			display !== "contents" &&
 			(flow.position === "absolute" || flow.position === "fixed");
+		const item = itemMode !== undefined && display !== "contents" && !outOfFlow;
 		const inline = display === "inline" || display === "inline flow";
 		const atomic = display === "inline-block" || display === "inline flow-root";
 		const block = [
@@ -705,7 +707,7 @@ export function buildFormattingTree(
 			deferredReason = "generated-content-display-layout-not-supported";
 			issue(deferredReason);
 		}
-		if (itemMode && !outOfFlow) {
+		if (item && table) {
 			deferredReason = "generated-content-item-layout-not-supported";
 			issue(deferredReason);
 		}
@@ -719,12 +721,13 @@ export function buildFormattingTree(
 			issue("generated-content-position-layout-not-supported");
 		}
 		if (outOfFlow) issue("positioned-layout-requires-coordination");
-		if (flow.float !== "none") {
+		if (flow.float !== "none" && !item) {
 			issue("generated-content-float-layout-not-supported");
 		}
 		if (
 			flow.clear !== "none" &&
 			!outOfFlow &&
+			!item &&
 			!inline &&
 			!atomic &&
 			!clearing
@@ -822,6 +825,12 @@ export function buildFormattingTree(
 				typography: style.typography,
 				paint: style.paint,
 				generatedContent: metadata,
+				...(itemMode === "flex" && item
+					? { flexItem: true, flex: style.flex }
+					: {}),
+				...(itemMode === "grid" && item
+					? { gridItem: true, grid: style.grid, flex: style.flex }
+					: {}),
 				...(boxAligned ? { inlineVerticalAlign: verticalAlign } : {}),
 				...(table ? { table: style.table, contentMode: "table" as const } : {}),
 				...(clearing
@@ -847,13 +856,15 @@ export function buildFormattingTree(
 				...(flow["z-index"] !== "auto" &&
 				(flow.position === "relative" ||
 					flow.position === "sticky" ||
-					outOfFlow)
+					outOfFlow ||
+					item)
 					? { zIndex: Number(flow["z-index"]) }
 					: {}),
 				...(deferredReason ? { deferredReason } : {}),
 				...(inline ? { fragmentIndex: 0, fragmentCount: 1 } : {}),
 				...(table ||
 				outOfFlow ||
+				item ||
 				atomic ||
 				generatedScrollable ||
 				display.includes("flow-root") ||

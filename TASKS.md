@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: generated pseudo boxes participate as flex/grid items
+
+**PROGRESS; overall browser goal remains ACTIVE.** Native `::before`/`::after`
+block-like boxes now participate in flex/grid sizing, order, alignment,
+independent formatting and static stacking. Empty generated strings keep their
+styled boxes. Effective-container blockification works through generating
+`display:contents` ancestry without changing inheritance; the walk charges the
+existing work limit. Out-of-flow placement remains separate. Unsupported
+generated table items, nested containers and transparent pseudo displays retain
+their guards; unsupported contents nodes do not gain phantom item metadata.
+
+Final focused gate:582pass/0fail. Final selected native gate:22296pass/0fail/
+two unchanged exclusions,441selected files,440strict roots,793manifest entries
+and352unselected. Build, strict checks, scoped formatting and exact source/case
+audits pass;195additional cases cover styles, geometry/pixels, stacking/hits,
+position transitions, mutations and bounded work. Two old blanket-rejection
+expectations are deliberately replaced. Baseline441pass/77fail and all earlier
+preparation/fixture failures remain intact. See `GENERATED-FLEX-GRID-ITEMS.md`.
+
+This is synthetic native evidence, not an MDN action or new live-site pass.
+NEXT: separately pin and run a captured MDN formatting diagnosis on this new
+runtime, retaining node-plus-outside-marker accounting and every remaining
+issue. Then scope action/destination testing and broader website/form flows.
+Research, fresh live access, credentials/devices, SafeJS, socket, real TTY and
+challenge gates stay open. Historical evidence and unrelated work remain
+unchanged. No push.
+
+
 ### September 14: MDN diagnosis identifies generated flex-item candidates
 
 **PROGRESS; overall browser goal remains ACTIVE.** A separately scoped native

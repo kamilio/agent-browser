@@ -458,7 +458,7 @@ it("retains CSS rejection of unsupported dotted borders before pseudo computatio
 });
 
 it.each(["flex", "grid"])(
-	"reports generated %s item integration as unsupported",
+	"integrates generated %s items as independent block boxes",
 	(display) => {
 		const { tree, id } = fixture(
 			'<main id="target"></main>',
@@ -466,13 +466,85 @@ it.each(["flex", "grid"])(
 		);
 		const formatting = buildFormattingTree(tree);
 		expect(pseudoBox(formatting, id())).toMatchObject({
-			kind: "deferred",
+			kind: "block",
 			level: "block",
-			deferredReason: "generated-content-item-layout-not-supported",
+			display: "block",
+			independentContext: true,
+			[display === "flex" ? "flexItem" : "gridItem"]: true,
 		});
 		expect(
 			formatting.issues["generated-content-item-layout-not-supported"],
-		).toBe(1);
+		).toBeUndefined();
+		expect(() => layoutDocument(tree)).not.toThrow();
+	},
+);
+
+it.each(["flex", "grid"])(
+	"retains unsupported nested generated display boundaries under %s",
+	(containerDisplay) => {
+		for (const transparent of [false, true]) {
+			for (const display of [
+				"flex",
+				"inline-flex",
+				"grid",
+				"inline-grid",
+				"contents",
+				"list-item",
+			]) {
+				const { tree, id } = fixture(
+					'<section id="container"><main id="target"></main></section>',
+					`#container{display:${containerDisplay}}#target{display:${transparent ? "contents" : containerDisplay}}#target::before{content:"";display:${display}}`,
+				);
+				const formatting = buildFormattingTree(tree);
+				expect(pseudoBox(formatting, id()).deferredReason).toBe(
+					"generated-content-display-layout-not-supported",
+				);
+				expect(
+					formatting.issues["generated-content-display-layout-not-supported"],
+				).toBe(1);
+				expect(() => layoutDocument(tree)).toThrow(
+					/generated-content-display-layout-not-supported/,
+				);
+			}
+		}
+	},
+);
+
+it.each(["flex", "grid"])(
+	"does not invent a principal generated contents item under %s",
+	(display) => {
+		for (const position of ["static", "absolute", "fixed"]) {
+			const { tree, id } = fixture(
+				'<main id="target"></main>',
+				`#target{display:${display}}#target::before{content:"";display:contents;position:${position};z-index:7}`,
+			);
+			const node = pseudoBox(buildFormattingTree(tree), id());
+			expect(node.deferredReason).toBe(
+				"generated-content-display-layout-not-supported",
+			);
+			expect(node.flexItem).toBeUndefined();
+			expect(node.gridItem).toBeUndefined();
+			expect(node.independentContext).toBeUndefined();
+			expect(node.zIndex).toBeUndefined();
+		}
+	},
+);
+
+it.each(["flex", "grid"])(
+	"retains the generated inline-table item boundary under %s",
+	(display) => {
+		const { tree, id } = fixture(
+			'<main id="target"></main>',
+			`#target{display:${display}}#target::after{content:"";display:inline-table}`,
+		);
+		const formatting = buildFormattingTree(tree);
+		expect(pseudoBox(formatting, id(), "after")).toMatchObject({
+			display: "table",
+			deferredReason: "generated-content-item-layout-not-supported",
+		});
+		expect(() => layoutDocument(tree)).toThrow(
+			/generated-content-item-layout-not-supported/,
+		);
 	},
 );
 
