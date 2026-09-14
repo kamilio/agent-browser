@@ -8,7 +8,9 @@ import type { DocumentTree } from "../src/document.js";
 import { AgentBrowserError } from "../src/errors.js";
 import {
 	type DocumentExtraction,
+	type DocumentHeadingOutline,
 	type DocumentLinkDiscovery,
+	discoverDocumentHeadings,
 	discoverDocumentLinks,
 	extractDocument,
 } from "../src/extraction.js";
@@ -60,6 +62,11 @@ export interface ResearchOutputLimitSectionSelection {
 	tableMetadata?: boolean;
 }
 
+export type ResearchOutputLimitOutlineRecovery = Omit<
+	ResearchOutputLimitSectionRecovery,
+	"kind"
+> & { readonly kind: "captured-output-limit-outline" };
+
 export interface ResearchJsonReplayReport {
 	kind: "native-research-json-replay-v1";
 	partial: true;
@@ -73,7 +80,11 @@ export interface ResearchJsonReplayReport {
 		body: ResearchBodyPin;
 	};
 	selection: {
-		method: "css-selector" | "heading-section" | "link-url-search";
+		method:
+			| "css-selector"
+			| "heading-section"
+			| "link-url-search"
+			| "heading-outline";
 		matches: number | null;
 	};
 	classification: {
@@ -83,7 +94,10 @@ export interface ResearchJsonReplayReport {
 	reader?: Readonly<ResearchReaderReport>;
 	extraction?: Extract<DocumentExtraction, { format: "json" }>;
 	links?: DocumentLinkDiscovery;
-	recovery?: ResearchOutputLimitSectionRecovery;
+	headings?: DocumentHeadingOutline;
+	recovery?:
+		| ResearchOutputLimitSectionRecovery
+		| ResearchOutputLimitOutlineRecovery;
 }
 
 export interface ResearchJsonReplayExtraction {
@@ -96,6 +110,13 @@ export interface ResearchOutputLimitSectionExtraction
 	extends ResearchJsonReplayExtraction {
 	report: ResearchJsonReplayReport & {
 		recovery: ResearchOutputLimitSectionRecovery;
+	};
+}
+
+export interface ResearchOutputLimitOutlineExtraction
+	extends ResearchJsonReplayExtraction {
+	report: ResearchJsonReplayReport & {
+		recovery: ResearchOutputLimitOutlineRecovery;
 	};
 }
 
@@ -271,9 +292,36 @@ export function recoverResearchOutputLimitSection(
 	});
 }
 
+export function outlineResearchOutputLimitCapture(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	signal?: AbortSignal,
+): ResearchOutputLimitOutlineExtraction {
+	const checkpoint = replayCheckpoint(signal);
+	checkpoint();
+	const admission = validateResearchOutputLimitSectionAdmission(
+		rawReceipt,
+		trusted,
+	);
+	return extractValidatedReplayJson(
+		admission,
+		{ method: "heading-outline" },
+		checkpoint,
+		signal,
+		{
+			recovery: {
+				...admission.recovery,
+				kind: "captured-output-limit-outline" as const,
+			},
+		},
+	);
+}
+
 function extractValidatedReplayJson<Extra extends object>(
 	admission: Extract<ResearchReplayAdmission, { kind: "validated-capture" }>,
-	selected: ReturnType<typeof selectionSnapshot>,
+	selected:
+		| ReturnType<typeof selectionSnapshot>
+		| { method: "heading-outline" },
 	checkpoint: () => void,
 	signal: AbortSignal | undefined,
 	extra: Extra,
@@ -375,10 +423,26 @@ function extractValidatedReplayJson<Extra extends object>(
 			}
 			return diagnostic;
 		};
-		if (
-			!classify(researchDocumentDiagnosticText(tree)) &&
-			selected.method === "link-url-search"
-		) {
+		const documentBarrier = classify(researchDocumentDiagnosticText(tree));
+		if (!documentBarrier && selected.method === "heading-outline") {
+			checkpoint();
+			report.headings = discoverDocumentHeadings(tree, {
+				maxBytes: researchJsonReplayLimits.maxExtractionBytes,
+				maxNodes: researchJsonReplayLimits.maxNodes,
+				maxDepth: researchJsonReplayLimits.maxDepth,
+			});
+			checkpoint();
+			report.selection.matches = report.headings.entries.length;
+			if (
+				!classify(
+					report.headings.entries.map((entry) => entry.title).join("\n"),
+				) &&
+				!report.headings.entries.length
+			) {
+				report.outcome = "empty-extraction";
+				report.contentSuccess = false;
+			}
+		} else if (!documentBarrier && selected.method === "link-url-search") {
 			checkpoint();
 			report.links = discoverDocumentLinks(tree, selected.target, {
 				maxBytes: researchJsonReplayLimits.maxExtractionBytes,
@@ -398,7 +462,8 @@ function extractValidatedReplayJson<Extra extends object>(
 			}
 		} else if (
 			report.outcome !== "semantic-barrier" &&
-			selected.method !== "link-url-search"
+			selected.method !== "link-url-search" &&
+			selected.method !== "heading-outline"
 		) {
 			checkpoint();
 			const queries = new DocumentQueries(tree);

@@ -247,6 +247,40 @@ afterEach(() => {
 });
 
 describe("bounded replay CLI arguments", () => {
+	it("accepts explicit default-profile output-limit heading discovery", () => {
+		expect(
+			parseResearchReplayArguments([
+				...parserArgs.slice(0, 8),
+				"--recover-output-limit",
+				"--headings",
+			]),
+		).toMatchObject({
+			recoverOutputLimit: true,
+			selection: { headings: true },
+		});
+	});
+
+	it.each([
+		["--headings"],
+		["--recover-output-limit", "--headings", "--headings"],
+		["--recover-output-limit", "--headings", "true"],
+		["--recover-output-limit", "--headings", "--table-metadata"],
+		["--recover-output-limit", "--headings", "--section", "#owned"],
+	])("rejects ambiguous or ordinary outline arguments %j", (...flags) => {
+		expect(() =>
+			parseResearchReplayArguments([...parserArgs.slice(0, 8), ...flags]),
+		).toThrowError(expect.objectContaining({ code: "invalid-input" }));
+	});
+
+	it("rejects long-profile output-limit outlines", () => {
+		expect(() =>
+			parseResearchReplayArguments([
+				...replaceFlag(parserArgs.slice(0, 8), "--expected-profile", "long-v1"),
+				"--recover-output-limit",
+				"--headings",
+			]),
+		).toThrowError(expect.objectContaining({ code: "invalid-input" }));
+	});
 	it.each([false, true])(
 		"accepts explicit output-limit section recovery with table metadata %s",
 		(tableMetadata) => {
@@ -499,6 +533,40 @@ describe("bounded replay CLI arguments", () => {
 });
 
 describe("pinned offline replay integration", () => {
+	it("discovers a heading then recovers its section from the same failed receipt", async () => {
+		const destination = `https://example.com/${"x".repeat(4096)}`;
+		const source = `<h2 id="owned">Owned section</h2><p>Readable saved content.</p><h2>References</h2><p>${`<a href="${destination}">Reference</a>`.repeat(70)}</p>`;
+		const value = await fixture(source, "default", true, false);
+		const before = value.raw.slice();
+		const outline = sink();
+		expect(
+			await runResearchReplayCli(
+				argumentsFor(value, ["--recover-output-limit", "--headings"]),
+				input([value.raw]),
+				outline.output,
+			),
+		).toBe(0);
+		const discovered = record(outline);
+		expect(discovered.recovery?.kind).toBe("captured-output-limit-outline");
+		expect(discovered.networkRequests).toBe(0);
+		const selector = discovered.headings?.entries[0].selector;
+		expect(selector).toEqual(expect.any(String));
+		if (typeof selector !== "string")
+			throw new Error("Expected native heading selector");
+		const section = sink();
+		expect(
+			await runResearchReplayCli(
+				argumentsFor(value, ["--recover-output-limit", "--section", selector]),
+				input([value.raw]),
+				section.output,
+			),
+		).toBe(0);
+		expect(JSON.stringify(record(section).extraction)).toContain(
+			"Readable saved content.",
+		);
+		expect(value.raw).toEqual(before);
+		expect(value.report.outcome).toBe("failure");
+	});
 	it("recovers a pinned output-limited section without changing the original failed receipt", async () => {
 		const destination = `https://example.com/${"x".repeat(4096)}`;
 		const source = `<h2 id="owned">Owned section</h2><p>Readable saved content.</p><h2>References</h2><p>${`<a href="${destination}">Reference</a>`.repeat(70)}</p>`;

@@ -201,6 +201,126 @@ it("retains a real typed output failure and keeps ordinary replay closed", async
 	);
 });
 
+it("discovers native headings from a failed capture without retrying or relabeling it", async () => {
+	const input = await fixture();
+	const original = structuredClone(input);
+	const released = observeOwnership();
+	const result = replay.outlineResearchOutputLimitCapture(
+		input.raw,
+		input.trusted,
+	);
+	expect(result.report).toMatchObject({
+		outcome: "extracted-unverified",
+		networkRequests: 0,
+		selection: { method: "heading-outline", matches: 3 },
+		recovery: {
+			kind: "captured-output-limit-outline",
+			originalOutcome: "failure",
+			originalFailure: input.report.failure,
+			originalRequestRetried: false,
+		},
+		headings: { method: "heading-outline", truncated: false },
+	});
+	expect(result.report.headings?.entries.map((entry) => entry.title)).toEqual([
+		"Large",
+		"Wanted",
+		"Next",
+	]);
+	expect(result.report.headings?.entries[1].selector).toEqual(
+		expect.any(String),
+	);
+	expect(result.report.extraction).toBeUndefined();
+	expect(result.report.source.receiptSha256).toBe(hash(input.raw));
+	expect(result.outputBytes).toBe(encoder.encode(result.jsonl).byteLength);
+	expect(input).toEqual(original);
+	released();
+});
+
+it.each([
+	["failure.resourceLimit", undefined],
+	["failure.stage", "loader"],
+	["classification.barrier", "challenge"],
+	["primaryResponse.status", 403],
+	["bodyCapture", undefined],
+	["metrics.closed", false],
+])("keeps outline admission closed for %s", async (path, value) => {
+	const input = revised(await fixture(), path, value);
+	rejects(() =>
+		replay.outlineResearchOutputLimitCapture(input.raw, input.trusted),
+	);
+});
+
+it("keeps outline discovery bounded and reports truncation", async () => {
+	const input = await fixture(`${oversized}${"<h2>More</h2>".repeat(300)}`);
+	const released = observeOwnership();
+	const result = replay.outlineResearchOutputLimitCapture(
+		input.raw,
+		input.trusted,
+	);
+	expect(result.report.headings?.entries).toHaveLength(256);
+	expect(result.report.headings?.truncated).toBe(true);
+	expect(result.outputBytes).toBeLessThanOrEqual(
+		replay.researchJsonReplayLimits.maxOutputBytes,
+	);
+	released();
+});
+
+it("reports an empty outline without falling back to article text", async () => {
+	const input = await fixture(
+		`<p>${"Background content. ".repeat(16_000)}</p>`,
+	);
+	const released = observeOwnership();
+	const result = replay.outlineResearchOutputLimitCapture(
+		input.raw,
+		input.trusted,
+	);
+	expect(result.report).toMatchObject({
+		outcome: "empty-extraction",
+		contentSuccess: false,
+		selection: { method: "heading-outline", matches: 0 },
+		headings: { entries: [], truncated: false },
+	});
+	expect(result.report.extraction).toBeUndefined();
+	released();
+});
+
+it("rechecks outline text for a late challenge beyond document diagnostic text", async () => {
+	const input = await fixture(
+		`<title>Just a moment...</title>${oversized}<h2>Verify you are human. Checking your browser. Complete the CAPTCHA.</h2>`,
+	);
+	const released = observeOwnership();
+	const result = replay.outlineResearchOutputLimitCapture(
+		input.raw,
+		input.trusted,
+	);
+	expect(result.report).toMatchObject({
+		outcome: "semantic-barrier",
+		contentSuccess: false,
+		classification: { barrier: "challenge" },
+	});
+	released();
+});
+
+it("rejects cancelled outline discovery before admission", async () => {
+	const input = await fixture();
+	const controller = new AbortController();
+	controller.abort();
+	const validate = vi.spyOn(
+		admission,
+		"validateResearchOutputLimitSectionAdmission",
+	);
+	rejects(
+		() =>
+			replay.outlineResearchOutputLimitCapture(
+				input.raw,
+				input.trusted,
+				controller.signal,
+			),
+		"aborted",
+	);
+	expect(validate).not.toHaveBeenCalled();
+});
+
 it("explicitly recovers one bounded heading section without retrying or changing identities", async () => {
 	const input = await fixture();
 	const original = structuredClone(input);

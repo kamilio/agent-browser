@@ -8,6 +8,7 @@ import { researchBodyCaptureLimit } from "./research-body-capture.js";
 import {
 	type ResearchJsonReplaySelection,
 	extractResearchReplayJson,
+	outlineResearchOutputLimitCapture,
 	recoverResearchOutputLimitSection,
 	researchJsonReplayLimits,
 } from "./research-json-replay.js";
@@ -19,7 +20,7 @@ export const researchReplayCliLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT) [--table-metadata] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --section.\n";
+	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings) [--table-metadata] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --section or --headings. Headings require recovery and do not accept table metadata.\n";
 
 function invalidArguments(): never {
 	throw new AgentBrowserError(
@@ -30,7 +31,7 @@ function invalidArguments(): never {
 
 export function parseResearchReplayArguments(args: readonly string[]): {
 	trusted: TrustedResearchReplayAdmission;
-	selection: ResearchJsonReplaySelection;
+	selection: ResearchJsonReplaySelection | { headings: true };
 	recoverOutputLimit?: true;
 } {
 	if (
@@ -42,6 +43,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	const fields = new Map<string, string>();
 	let tableMetadata = false;
 	let recoverOutputLimit = false;
+	let headings = false;
 	const valueFlags = new Set([
 		"--expected-profile",
 		"--receipt-sha256",
@@ -59,6 +61,10 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		}
 		if (flag === "--recover-output-limit" && !recoverOutputLimit) {
 			recoverOutputLimit = true;
+			continue;
+		}
+		if (flag === "--headings" && !headings) {
+			headings = true;
 			continue;
 		}
 		if (!valueFlags.has(flag) || fields.has(flag)) invalidArguments();
@@ -88,7 +94,17 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	const modes = ["--selector", "--section", "--links"].filter((flag) =>
 		fields.has(flag),
 	);
-	if (modes.length !== 1) invalidArguments();
+	if (modes.length + Number(headings) !== 1) invalidArguments();
+	const trusted: TrustedResearchReplayAdmission = {
+		expectedProfile: profile,
+		expectedReceiptSha256: receiptSha256,
+		expectedBody: { bytes: Number(bodyBytes), sha256: bodySha256 },
+	};
+	if (headings) {
+		if (!recoverOutputLimit || profile !== "default" || tableMetadata)
+			invalidArguments();
+		return { trusted, recoverOutputLimit: true, selection: { headings: true } };
+	}
 	const mode = modes[0];
 	if (recoverOutputLimit && (profile !== "default" || mode !== "--section"))
 		invalidArguments();
@@ -111,11 +127,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	const metadata = tableMetadata ? { tableMetadata: true } : {};
 	return {
 		...(recoverOutputLimit ? { recoverOutputLimit: true as const } : {}),
-		trusted: {
-			expectedProfile: profile,
-			expectedReceiptSha256: receiptSha256,
-			expectedBody: { bytes: Number(bodyBytes), sha256: bodySha256 },
-		},
+		trusted,
 		selection:
 			mode === "--links"
 				? { links: target }
@@ -288,7 +300,14 @@ export async function runResearchReplayCli(
 		receipt = await readReceipt(input, controller.signal);
 		checkpoint();
 		let result: ReturnType<typeof extractResearchReplayJson>;
-		if (options.recoverOutputLimit) {
+		if ("headings" in options.selection) {
+			if (!options.recoverOutputLimit) invalidArguments();
+			result = outlineResearchOutputLimitCapture(
+				receipt,
+				options.trusted,
+				controller.signal,
+			);
+		} else if (options.recoverOutputLimit) {
 			const section = options.selection.section;
 			if (section === undefined) invalidArguments();
 			result = recoverResearchOutputLimitSection(

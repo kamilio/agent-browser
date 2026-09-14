@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: choose oversized-document sections without another request
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+`OUTPUT-LIMIT-HEADING-DISCOVERY.md` adds explicit
+`--recover-output-limit --headings` and `outlineResearchOutputLimitCapture`.
+It uses the same strict failed-capture admission, preserves original failure
+identities, and reports bounded native selectors/truncation without relaxing
+ordinary replay. A fresh GitLab reference hits its output cap; its saved response
+then yields175 headings and three useful sections through actual returned
+selectors, with zero further requests.630 targeted native cases, production
+compilation and eight strict test roots pass; final affected API/CLI tests repeat
+after fixture type/format corrections. The thirty-second inventory records four
+new reader requests: Docker and Python forum navigation work, GitLab recovers,
+and Britannica returns a challenge. A separate profile attributes the old slow
+receipt tests to assertion/GC overhead, so no speculative production optimization
+is made. Research, broad website coverage, rendering/interaction, SafeJS/device
+and full release gates remain open. No push, bypass or unrelated work adoption.
+
 ### September 14: more public content and smaller table-heavy output
 
 **PROGRESS; overall browser goal remains ACTIVE.**
