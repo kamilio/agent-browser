@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured MDN confirms font-wide improvement
+
+**PROGRESS; overall browser goal remains ACTIVE.** A fresh separately scoped
+offline native observation on commitfefbb8b completes with19original resources/
+270288bytes, zero wire/denials/scripts/clicks. Prepared and independent parent
+verification pass. Applicable unknown-property occurrences70→68, raw134→132,
+total overlapping formatting occurrences212→210. The retained font:inherit
+rejection is gone; this is not complete sampling or full-font conformance.
+
+All formatting metrics and other raw/applicable issue counts stay unchanged.
+Cached diagnostics reuse build1, retain128samples and omit37rather than39.
+Cascade work rises157units; no speed/memory claim. See `MDN-FONT-WIDE-REPLAY.md`
+and the website inventory's eleventh update. Earlier evidence is untouched.
+
+NEXT: current-code diagnostics on the existing Wikipedia portal capture to
+broaden coverage, then logical spacing/units and remaining actual sampled
+features. Reuse original fixture metadata and a new scoped lane; do not silently
+fetch missing logo/assets. No fresh Wikipedia pass, MDN destination capture,
+interaction, original research completion, broader live sites/forms, credential/
+device, SafeJS, socket/TTY or challenge acceptance is claimed. Project storage
+is nearly full; use separately scoped new scratch capacity, not deletion of
+historical evidence or another blind full-build copy. Preserve unrelated work.
+Nothing pushed; continue the full browser objective.
+
+
 ### September 14: native font-wide inheritance and pending serialization
 
 **PROGRESS; overall browser goal remains ACTIVE.** Font initial/inherit/unset/
