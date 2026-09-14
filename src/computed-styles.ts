@@ -10,6 +10,11 @@ import {
 } from "./css-background.js";
 import { cssBoxProperties, isCssBoxProperty } from "./css-box.js";
 import {
+	cssLogicalBlockProperties,
+	logicalBlockComponents,
+	logicalBlockPhysicalProperty,
+} from "./css-logical-box.js";
+import {
 	cssGridProperties,
 	isCssGridProperty,
 	gridShorthandComponents,
@@ -67,6 +72,7 @@ import { cssVariableLimits } from "./css-variables.js";
 export const computedStyleProperties = Object.freeze(
 	[
 		...cssBoxProperties,
+		...cssLogicalBlockProperties,
 		...cssRadiusProperties,
 		...cssGridProperties,
 		...cssFlexProperties,
@@ -115,6 +121,15 @@ export function resolvedStyleValue(
 		throw new TypeError("Computed style requires an element");
 	if (!tree.isConnected(id)) return "";
 	const name = canonicalCssProperty(property);
+	const physical = logicalBlockPhysicalProperty(name);
+	if (physical !== undefined) return resolvedStyleValue(tree, id, physical);
+	const logical = logicalBlockComponents(name);
+	if (logical !== undefined) {
+		const values = logical.map((component) =>
+			resolvedStyleValue(tree, id, component),
+		);
+		return values[0] === values[1] ? values[0] : values.join(" ");
+	}
 	if (isNeutralBackgroundProperty(name)) return initialBackgroundValues[name];
 	if (name === "background")
 		return `${resolvedStyleValue(tree, id, "background-color")} none repeat scroll 0% 0% / auto padding-box border-box`;
@@ -369,6 +384,8 @@ export class ComputedStyles {
 			...Object.keys(cssPropertyAliases),
 			"margin",
 			"padding",
+			"margin-block",
+			"padding-block",
 			"background",
 			"flex",
 			"flex-flow",

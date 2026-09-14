@@ -70,6 +70,13 @@ import {
 	parseBoxDeclarations,
 } from "./css-box.js";
 import {
+	cssLogicalBlockProperties,
+	isCssLogicalBlockProperty,
+	logicalBlockComponents,
+	parseLogicalBlockDeclarations,
+	type CssLogicalBlockProperty,
+} from "./css-logical-box.js";
+import {
 	type CssPaintProperty,
 	cssPaintProperties,
 	isCssPaintProperty,
@@ -106,6 +113,7 @@ export type CssProperty =
 	| "content"
 	| VisibilityProperty
 	| CssBoxProperty
+	| CssLogicalBlockProperty
 	| CssRadiusProperty
 	| CssTextProperty
 	| CssPaintProperty
@@ -364,6 +372,8 @@ export function parseCssDeclarations(
 			property !== "border-radius" &&
 			!isCssRadiusProperty(property) &&
 			!isCssBoxProperty(property) &&
+			!isCssLogicalBlockProperty(property) &&
+			!logicalBlockComponents(property) &&
 			!isCssTextProperty(property) &&
 			!isCssPaintProperty(property) &&
 			!grid &&
@@ -439,6 +449,11 @@ export function parseCssDeclarations(
 				{ property: "display", value, important },
 				{ property: "visibility", value, important },
 				...cssInteractionProperties.map((property) => ({
+					property,
+					value,
+					important,
+				})),
+				...cssLogicalBlockProperties.map((property) => ({
 					property,
 					value,
 					important,
@@ -609,6 +624,18 @@ export function parseCssDeclarations(
 			const normalized = parsePaintValue(value, property);
 			if (normalized !== undefined)
 				declarations.push({ property, value: normalized, important });
+			else reject("unimplemented-or-invalid-css-value");
+			continue;
+		}
+		if (
+			isCssLogicalBlockProperty(property) ||
+			logicalBlockComponents(property)
+		) {
+			const expanded = parseLogicalBlockDeclarations(property, value);
+			if (expanded)
+				declarations.push(
+					...expanded.map((entry) => ({ ...entry, important })),
+				);
 			else reject("unimplemented-or-invalid-css-value");
 			continue;
 		}

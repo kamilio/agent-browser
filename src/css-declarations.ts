@@ -9,6 +9,12 @@ import { normalizeCssColor } from "./css-color.js";
 import { parseCssContent } from "./css-content.js";
 import { cssFontProperties, parseFontWideDeclarations } from "./css-font.js";
 import {
+	cssLogicalBlockProperties,
+	isCssLogicalBlockProperty,
+	logicalBlockComponents,
+	parseLogicalBlockDeclarations,
+} from "./css-logical-box.js";
+import {
 	cssGridProperties,
 	isCssGridProperty,
 	gridShorthandComponents,
@@ -169,6 +175,9 @@ export const inlineProperties = [
 	"content",
 	"margin",
 	"padding",
+	...cssLogicalBlockProperties,
+	"margin-block",
+	"padding-block",
 	"opacity",
 	"color",
 	"caret-color",
@@ -405,6 +414,10 @@ export function expandDeclaration(
 				}))
 			: [];
 	}
+	if (isCssLogicalBlockProperty(name) || logicalBlockComponents(name))
+		return (
+			parseLogicalBlockDeclarations(name, source.toLowerCase()) ?? []
+		).map((entry) => ({ name: entry.property, value: entry.value, important }));
 	if (name === "border-radius" || isCssRadiusProperty(name))
 		return (parseRadiusDeclarations(name, source.toLowerCase()) ?? []).map(
 			(entry) => ({ name: entry.property, value: entry.value, important }),
@@ -544,6 +557,8 @@ export function inlineDeclarationComponents(name: string): readonly string[] {
 	if (name === "border-radius") return cssRadiusProperties;
 	if (name === "outline") return cssOutlineProperties.slice(0, 3);
 	if (name === "text-decoration") return cssTextDecorationProperties;
+	const logical = logicalBlockComponents(name);
+	if (logical) return logical;
 	const grid = gridShorthandComponents(name);
 	if (grid) return grid;
 	const flex = flexShorthandComponents(name);
@@ -661,6 +676,16 @@ export function propertyValue(
 			)
 			? first.value
 			: "";
+	}
+	const logical = logicalBlockComponents(name);
+	if (logical) {
+		if (found.length !== 2 || found[0].important !== found[1].important)
+			return "";
+		if (found.some((entry) => parseVariableValue(entry.value)?.variables))
+			return "";
+		const values = found.map((entry) => entry.value);
+		if (values[0] === values[1]) return values[0];
+		return values.some((value) => wide.has(value)) ? "" : values.join(" ");
 	}
 	const grid = gridShorthandComponents(name);
 	if (grid) {
@@ -828,6 +853,20 @@ export function serializeDeclarations(
 	entries: readonly InlineDeclaration[],
 ): string {
 	const present = new Set(entries.map((entry) => entry.name));
+	const mixedLogicalBlocks = new Set<string>();
+	for (const family of ["margin", "padding"]) {
+		if (
+			cssLogicalBlockProperties.some(
+				(property) =>
+					property.startsWith(family + "-") && present.has(property),
+			) &&
+			sides.some((side) => present.has(`${family}-${side}`))
+		)
+			mixedLogicalBlocks.add(family);
+	}
+	const crossesLogicalMapping = (name: string) =>
+		mixedLogicalBlocks.has(name) ||
+		(name.endsWith("-block") && mixedLogicalBlocks.has(name.slice(0, -6)));
 	const emitted = new Set<string>();
 	const output: string[] = [];
 	const pendingSources = new Map<string, InlineDeclaration>();
@@ -888,6 +927,7 @@ export function serializeDeclarations(
 		pendingSources.delete(shorthand.name);
 	}
 	for (const shorthand of pendingShorthands) {
+		if (crossesLogicalMapping(shorthand.name)) continue;
 		if (
 			!pendingShorthands.some(
 				(other) =>
@@ -913,6 +953,7 @@ export function serializeDeclarations(
 		let name = entry.name;
 		let value = entry.pending ? "" : entry.value;
 		for (const shorthand of shorthandsFor(entry.name)) {
+			if (crossesLogicalMapping(shorthand.name)) continue;
 			if (
 				!shorthand.components.every(
 					(component) => present.has(component) && !emitted.has(component),

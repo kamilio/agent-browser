@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: native logical block spacing and CSSOM ordering
+
+**PROGRESS; overall browser goal remains ACTIVE.** Native margin-block and
+padding-block plus four start/end longhands now share the real physical-edge
+cascade in horizontal-tb. Variables, priority, inheritance, generated content,
+computed accessors and live cache invalidation are covered. Real boxes move and
+grow with canonical physical rectangle/pixel/hit parity; existing vertical/RTL
+guards remain. This is not inline-axis or full logical/vertical CSS support.
+
+Focused676nativecases pass, including185new cases. An integrated run first
+reproduced16CSSOM ordering failures; mixed-mapping compaction, pending-group
+pre-emission and spacing setter order are corrected with effective-value round
+trips. Review's16additional regressions also fix independent-variable shorthand
+synthesis and interposed left/right order. Existing generic partial-pending/
+crossed-group limitations remain explicit.
+See LOGICAL-BLOCK-SPACING.md. Final selected native gate and audit pass:
+22926passed/0failed/2unchangedexclusions,452files/451strictroots; build/strict/
+format pass. Final inventories bind1360source/2184compiledfiles and155receipts.
+No new website observation or live-site acceptance is claimed. RAM evidence is
+copied durably with original paths and hashes retained; unrelated work stays out
+of the atomic feature commit.
+
+NEXT: bind the completed committed runtime and final native gate, then separately
+replay the original MDN capture. Wikipedia's earlier geometry rejection remains;
+do not silently fetch sprite/logo assets or relax native guards. Original
+research, broader live sites/forms, credential/provider/passkey/device, SafeJS,
+socket/TTY and challenge gates remain open. Preserve all pre-existing work and
+historical evidence; goal active, nothing pushed.
+
 ### September 14: current Wikipedia diagnostics and blocked geometry
 
 **PROGRESS; overall browser goal remains ACTIVE.** The original119573-byte portal

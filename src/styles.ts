@@ -110,6 +110,10 @@ import {
 	isCssBoxProperty,
 } from "./css-box.js";
 import {
+	cssLogicalBlockProperties,
+	logicalBlockPhysicalProperty,
+} from "./css-logical-box.js";
+import {
 	type ClipStyle,
 	type CssPaintProperty,
 	type PaintSpecifiedStyle,
@@ -1979,6 +1983,21 @@ export class DocumentStyles {
 					issue("unimplemented-element-content");
 			}
 		}
+		const applyLogicalBlocks = (
+			properties: ReadonlyMap<CssProperty, Winner>,
+			values: Partial<Record<CssProperty, string>>,
+		) => {
+			for (const logical of cssLogicalBlockProperties) {
+				const candidate = properties.get(logical);
+				const physical = logicalBlockPhysicalProperty(logical);
+				if (!candidate || physical === undefined) continue;
+				charge(1);
+				const previous = properties.get(physical);
+				if (!previous || outranks(candidate, previous) >= 0)
+					values[physical] = values[logical] ?? candidate.declaration.value;
+				delete values[logical];
+			}
+		};
 		const pseudoSpecified = {
 			before: new Map<number, Readonly<Record<string, string>>>(),
 			after: new Map<number, Readonly<Record<string, string>>>(),
@@ -2040,6 +2059,7 @@ export class DocumentStyles {
 					charge(name.length + value.length + 1);
 					specified[name] = value;
 				}
+				applyLogicalBlocks(properties, specified);
 				pseudoSpecified[target].set(id, Object.freeze(specified));
 			}
 		}
@@ -2091,6 +2111,7 @@ export class DocumentStyles {
 				if (isCssPaintProperty(property))
 					paintValues[property] = winner.declaration.value;
 			}
+			applyLogicalBlocks(properties, specified);
 			if (Object.keys(specified).length)
 				boxSpecified.set(id, Object.freeze(specified));
 			if (Object.keys(radiusValues).length)

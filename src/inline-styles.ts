@@ -9,6 +9,7 @@ import {
 	propertyValue,
 	serializeDeclarations,
 } from "./css-declarations.js";
+import { isCssLogicalBlockProperty } from "./css-logical-box.js";
 import {
 	canonicalCssProperty,
 	cssPropertyAccessors,
@@ -234,10 +235,38 @@ export class InlineStyles {
 		if (!additions.length) return;
 		const previous = this.read(id, state);
 		const entries = previous.map((entry) => ({ ...entry }));
+		const physicalProperty = /^(margin|padding)-(top|right|bottom|left)$/;
+		const logical = additions.every((entry) =>
+			isCssLogicalBlockProperty(entry.name),
+		);
+		const physical = additions.every((entry) =>
+			physicalProperty.test(entry.name),
+		);
+		let moveToEnd = false;
+		if (logical || physical) {
+			const first = entries.findIndex((current) =>
+				additions.some((entry) => entry.name === current.name),
+			);
+			const family = additions[0].name.split("-")[0] + "-";
+			moveToEnd =
+				first >= 0 &&
+				entries
+					.slice(first + 1)
+					.some(
+						(entry) =>
+							entry.name.startsWith(family) &&
+							(logical
+								? physicalProperty.test(entry.name)
+								: isCssLogicalBlockProperty(entry.name)),
+					);
+		}
 		for (const entry of additions) {
 			const index = entries.findIndex((current) => current.name === entry.name);
 			if (index < 0) entries.push(entry);
-			else entries[index] = entry;
+			else if (moveToEnd) {
+				entries.splice(index, 1);
+				entries.push(entry);
+			} else entries[index] = entry;
 		}
 		if (
 			entries.length === previous.length &&

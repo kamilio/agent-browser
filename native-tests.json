@@ -799,5 +799,8 @@
   "src/text-decoration-aliases-cssom.test.ts",
   "src/font-wide-declarations.test.ts",
   "src/font-wide-cssom.test.ts",
-  "src/font-wide-inheritance.test.ts"
+  "src/font-wide-inheritance.test.ts",
+  "src/logical-block-declarations.test.ts",
+  "src/logical-block-style.test.ts",
+  "src/logical-block-layout.test.ts"
 ]
