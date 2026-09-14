@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured MDN yields actionable CSS rejection samples
+
+**PROGRESS; overall browser goal remains ACTIVE.** A separately scoped native
+run on committed diagnostics runtimeea13cf6 completes with19original captured
+resources/270288bytes, zero wire/denials/scripts/clicks. One cached diagnostic
+read retains128samples and explicitly omits51instrumented occurrences:53samples
+are matched/active,60unmatched/active,13inactive,one matched/uncertain and one
+unresolved/active. Samples are not unique bugs or exhaustive visible failures.
+
+Concrete matched/active samples include five -webkit-text-decoration cases,
+font:inherit, masks/transforms, logical spacing, letter-spacing, .5ch and100svh.
+The existing10formatting categories/220occurrences, full raw/applicable maps,
+boxes/text/work metrics and cascade-build identity remain unchanged. New verifier
+and independent parent checks pass, including all bindings, sample bounds and
+cleanup. See `MDN-CSS-DIAGNOSTIC-REPLAY.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-14-NINTH-UPDATE.md`.
+
+NEXT: implement genuine prefixed text-decoration compatibility and font-wide
+inheritance semantics with regressions, then logical spacing/units and remaining
+features based on the native samples. Do not just suppress guards or assume
+unsampled properties are absent. Recheck original actions separately; additional
+image/mask resources and the MDN destination are not captured. Broader live sites,
+forms, research, credentials/devices, SafeJS, socket, real TTY and challenge gates
+remain open. Preserve historical evidence and unrelated work. No push.
+
+
 ### September 14: bounded native CSS rejection details
 
 **PROGRESS; overall browser goal remains ACTIVE.** DocumentStyles.diagnostics()
