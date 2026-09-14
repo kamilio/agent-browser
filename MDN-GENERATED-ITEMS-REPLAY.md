@@ -57,6 +57,15 @@ profile. Some represent required layout coordination; they must not all be
 described as independent missing features. CSS property/value attribution is
 still needed before selecting the next compatibility implementation.
 
+The CSS entries specifically use the cascade's **applicable** diagnostic map.
+The same saved browser result reports 147 raw unsupported-property and 30 raw
+invalid/unimplemented-value occurrences, versus 78 and 15 applicable occurrences.
+Applicability already excludes supported unmatched/inactive cases, but includes
+conservative uncertain/global cases; it does not prove a visible winning
+declaration. Existing APIs retain these counts but discard rejected property/
+value details. The next bounded diagnostic extension must preserve that
+distinction, rather than treating all raw CSS rejections as layout blockers.
+
 Attribution uses 127 of 128 allowed calls and retains five presentation-hint
 candidates. It leaves 36 generated and 530 ordinary-inline candidates unexamined.
 The samples remain nonexhaustive and do not establish exact hint ownership.
