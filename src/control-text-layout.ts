@@ -1,5 +1,6 @@
 import { bitmapFont } from "./bitmap-font.js";
 import { AgentBrowserError } from "./errors.js";
+import { wordSpacingAdvance } from "./word-spacing.js";
 
 export interface NativeControlSelection {
 	readonly anchor: number;
@@ -13,6 +14,7 @@ export interface ControlTextLayoutInput {
 	readonly kind: "text" | "textarea";
 	readonly text: string;
 	readonly fontSize: number;
+	readonly wordSpacing?: number;
 	readonly columns: number;
 	readonly rows: number;
 	readonly placeholder: boolean;
@@ -148,7 +150,27 @@ function checkedInput(input: ControlTextLayoutInput): ControlTextLayoutInput {
 			"Control text must use normalized line endings",
 		);
 	const selection = checkedSelection(input.selection, text, placeholder);
-	return { kind, text, fontSize, columns, rows, placeholder, selection };
+	const wordSpacing = input.wordSpacing === undefined ? 0 : input.wordSpacing;
+	const advance = (bitmapFont.advance * fontSize) / bitmapFont.unitsPerEm;
+	wordSpacingAdvance("", advance, wordSpacing);
+	for (const character of text) {
+		const cellAdvance = wordSpacingAdvance(character, advance, wordSpacing);
+		if (cellAdvance > 4096)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Control text cell advance limit exceeded",
+			);
+	}
+	return {
+		kind,
+		text,
+		fontSize,
+		wordSpacing,
+		columns,
+		rows,
+		placeholder,
+		selection,
+	};
 }
 
 interface HitStop {
@@ -204,10 +226,16 @@ function controlTextGeometry(
 	};
 	stop();
 	for (const character of text) {
+		const cellAdvance = wordSpacingAdvance(
+			character,
+			advance,
+			input.wordSpacing ?? 0,
+		);
 		if (
 			kind === "textarea" &&
 			character !== "\n" &&
-			horizontal + advance > clip.width
+			horizontal > 0 &&
+			horizontal + cellAdvance > clip.width
 		) {
 			horizontal = 0;
 			row++;
@@ -223,14 +251,14 @@ function controlTextGeometry(
 			codeUnits: character.length,
 			x: clip.x + horizontal,
 			y: top + row * fontSize,
-			width: advance,
+			width: cellAdvance,
 			height: fontSize,
 		});
 		offset += character.length;
 		if (kind === "textarea" && character === "\n") {
 			horizontal = 0;
 			row++;
-		} else horizontal += advance;
+		} else horizontal += cellAdvance;
 		stop();
 	}
 	if (kind === "textarea" && horizontal + 1 > clip.width) {

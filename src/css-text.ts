@@ -19,6 +19,7 @@ export const cssTextProperties = Object.freeze([
 	"font-weight",
 	"line-height",
 	"letter-spacing",
+	"word-spacing",
 	"white-space",
 	"overflow-wrap",
 	"hyphens",
@@ -38,6 +39,7 @@ export const initialTextStyle: TextStyle = Object.freeze({
 	"font-weight": "400",
 	"line-height": "normal",
 	"letter-spacing": "0px",
+	"word-spacing": "0px",
 	"white-space": "normal",
 	"overflow-wrap": "normal",
 	hyphens: "manual",
@@ -80,13 +82,13 @@ export function parseTextValue(
 ): string | undefined {
 	if (property === "font-family") return normalizeFontFamily(value);
 	if (wide.has(value)) return value;
-	if (property === "letter-spacing") {
+	if (property === "letter-spacing" || property === "word-spacing") {
 		if (value === "normal") return value;
 		const parsed = length.exec(value);
 		if (
 			!parsed ||
 			!Number.isFinite(Number(parsed[1])) ||
-			Number(parsed[1]) < 0 ||
+			(property === "letter-spacing" && Number(parsed[1]) < 0) ||
 			(parsed[2]
 				? !["px", "em", "rem"].includes(parsed[2])
 				: Number(parsed[1]) !== 0)
@@ -161,6 +163,7 @@ export function computeTextStyle(
 		relative: number,
 		rootSize: number,
 		font: TextStyle,
+		signed = false,
 	) => {
 		const factor = (unit: string): number =>
 			unit === "ex"
@@ -180,10 +183,10 @@ export function computeTextStyle(
 						vmax: Math.max(viewport.width, viewport.height) / 100,
 					}[unit]);
 		if (isCssLengthMath(value))
-			return `${resolveLayoutLength(computeLengthMath(value, factor), relative)}px`;
+			return `${resolveLayoutLength(computeLengthMath(value, factor), relative, signed)}px`;
 		const parsed = length.exec(value);
 		if (!parsed) return value;
-		return `${layoutNumber(Number(parsed[1]) * factor(parsed[2] ?? "px"))}px`;
+		return `${layoutNumber(Number(parsed[1]) * factor(parsed[2] ?? "px"), signed)}px`;
 	};
 	result["font-size"] = pixels(
 		result["font-size"],
@@ -207,6 +210,16 @@ export function computeTextStyle(
 			result,
 		);
 	if (result["letter-spacing"] === "normal") result["letter-spacing"] = "0px";
+	const wordSpacing = specified["word-spacing"];
+	if (wordSpacing !== undefined && !wide.has(wordSpacing))
+		result["word-spacing"] = pixels(
+			wordSpacing,
+			Number.parseFloat(result["font-size"]),
+			root ? Number.parseFloat(result["font-size"]) : rootFontSize,
+			result,
+			true,
+		);
+	if (result["word-spacing"] === "normal") result["word-spacing"] = "0px";
 	const indent = specified["text-indent"];
 	if (indent !== undefined && !wide.has(indent))
 		result["text-indent"] = computeTextIndent(

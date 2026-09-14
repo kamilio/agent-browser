@@ -1,4 +1,5 @@
 import { bitmapGlyph } from "./bitmap-font.js";
+import { wordSpacingAdvance } from "./word-spacing.js";
 import { resolveBorders } from "./border-box.js";
 import { initialBoxStyle } from "./css-box.js";
 import { type TextStyle, initialTextStyle } from "./css-text.js";
@@ -136,6 +137,7 @@ export interface DocumentTextLayout {
 }
 interface Token extends FontExtent {
 	letterSpacing?: number;
+	wordSpacing?: number;
 	spacingAfter?: number;
 	lineEdge?: { side: "top" | "bottom"; height: number };
 	transformed?: true;
@@ -493,9 +495,20 @@ function layoutTextContexts(
 		let skipLf = false;
 		let pendingBreakLine: number | undefined;
 		let pendingCrLine: number | undefined;
+		const baseAdvance = (token: Token) =>
+			token.kind === "glyph" && token.wordSpacing
+				? wordSpacingAdvance(
+						token.character,
+						token.advance,
+						token.wordSpacing ?? 0,
+					)
+				: token.advance;
 		const advance = (token: Token, cursor: number, origin = indentation()) => {
 			if (token.kind !== "tab" || token.advance <= 0)
-				return layoutNumber(token.advance + (token.spacingAfter ?? 0), true);
+				return layoutNumber(
+					baseAdvance(token) + (token.spacingAfter ?? 0),
+					true,
+				);
 			const stop = token.advance * 8;
 			const position = origin + cursor;
 			const distance = (Math.floor(position / stop) + 1) * stop - position;
@@ -534,7 +547,7 @@ function layoutTextContexts(
 					blocked ||= !!token.padding || !!token.border;
 				} else {
 					if (token.kind === "glyph")
-						hanging += Math.max(0, used - token.advance);
+						hanging += Math.max(0, used - baseAdvance(token));
 					break;
 				}
 			}
@@ -841,7 +854,7 @@ function layoutTextContexts(
 					index > firstContent &&
 					index < lastContent &&
 					entries[index].token.justifiable === true &&
-					entries[index].advance > 0 &&
+					(entries[index].token.advance > 0 || entries[index].advance > 0) &&
 					separator(entries[index].token);
 				let opportunities = 0;
 				for (let index = firstContent + 1; index < lastContent; index++) {
@@ -1838,6 +1851,14 @@ function layoutTextContexts(
 			const source = node.text ?? "";
 			const transformationsForNode = transformations?.get(node.id);
 			const spacingForNode = spacingPlan?.get(node.id);
+			const wordSpacing = resolveLayoutLength(
+				typography["word-spacing"] === "normal" ||
+					typography["word-spacing"] === undefined
+					? "0px"
+					: typography["word-spacing"],
+				0,
+				true,
+			);
 			const letterSpacing = resolveLayoutLength(
 				typography["letter-spacing"] === "normal" ||
 					typography["letter-spacing"] === undefined
@@ -1905,6 +1926,7 @@ function layoutTextContexts(
 					const token: Token = {
 						...font,
 						letterSpacing,
+						wordSpacing,
 						spacingAfter: spacingForNode?.get(offset)?.get(0) ?? 0,
 						formattingId: node.id,
 						ref: textReference,

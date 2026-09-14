@@ -6,6 +6,33 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: genuine native word spacing validated
+
+**PROGRESS; overall browser goal remains ACTIVE.** Implemented inherited signed
+px/em/rem word spacing in actual separator geometry, not only CSS acceptance.
+SPACE/NBSP advances now feed wrapping, intrinsic widths, ranges, hit testing,
+pixels and native controls' caret/selection/navigation. Fixed file capacity and
+default-zero behavior remain intact. Review regressions cover applicability,
+fully contracted spaces, zero-font separators and letter-spacing justification.
+
+Final isolated release02 at 13:03:42–13:09:45 UTC passes 23,513 cases with zero
+failures and the same two explicit exclusions: 470 files / 469 strict roots,
+build and formatting pass. The source/compiled audit preserves every prior case
+and adds 173. Identical-source supplemental controls pass 437 cases, including
+264 additional existing cases: 23,777 unique passing occurrences, not double
+counting the repeated feature suites. Focused02 passes 475. See WORD-SPACING.md.
+
+The captured W3C section was extracted natively and independently rehashed;
+this is not a conformance result. Backwards separator advances, unsupported
+units, non-native separators and independent marker/image-alt pipelines retain
+explicit limits. No new runtime dependency or live/credential/device access.
+
+NEXT: re-observe the original Wikipedia portal capture using the committed,
+audited runtime and its own isolated scope. Do not infer search geometry or
+site acceptance from these native tests. Opacity, layered backgrounds,
+appearance/clipping, broader research and real-device/provider/passkey gates
+remain open. Preserve all historical measurements and pre-existing dirty work.
+
 ### September 14: current captured CERN flow and Wikipedia diagnostics
 
 **PROGRESS; overall browser goal remains ACTIVE.** Broadened current-runtime

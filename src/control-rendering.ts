@@ -28,6 +28,7 @@ import {
 	paintBitmapGlyph,
 	paintRasterRect,
 } from "./raster.js";
+import { wordSpacingAdvance } from "./word-spacing.js";
 
 export const controlRenderingLimits = Object.freeze({
 	maxTextCodeUnits: 4096,
@@ -69,6 +70,7 @@ export interface SoftwareControl {
 	readonly text: string;
 	readonly buttonText?: string;
 	readonly fontSize: number;
+	readonly wordSpacing?: number;
 	readonly width: number;
 	readonly height: number;
 	readonly disabled: boolean;
@@ -100,10 +102,21 @@ export function describeButtonAppearance(
 	});
 }
 
+function controlCaptionWidth(text: string, advance: number, spacing: number) {
+	let width = 0;
+	let count = 0;
+	for (const character of text) {
+		width += wordSpacingAdvance(character, advance, spacing);
+		count++;
+	}
+	return spacing === 0 ? count * advance : width;
+}
+
 export function describeControl(
 	tree: DocumentTree,
 	id: number,
 	fontSize: number,
+	wordSpacing = 0,
 ): SoftwareControl | undefined {
 	const node = tree.get(id);
 	if (!isHtmlElement(node)) return;
@@ -111,7 +124,7 @@ export function describeControl(
 	let text = "";
 	let valueLength = 0;
 	let buttonText: string | undefined;
-	let widest = 0;
+	const optionLabels: string[] = [];
 	if (node.tagName === "button") {
 		if (node.children.some((child) => tree.get(child).kind === "element"))
 			return;
@@ -151,10 +164,7 @@ export function describeControl(
 					"resource-limit",
 					"Control option text limit exceeded",
 				);
-			widest = Math.max(
-				widest,
-				Array.from(label.replace(/[\t\n\f\r ]+/g, " ").trim()).length,
-			);
+			optionLabels.push(label.replace(/[\t\n\f\r ]+/g, " ").trim());
 		}
 	} else if (node.tagName === "input") {
 		const type = inputType(node);
@@ -222,6 +232,11 @@ export function describeControl(
 			"resource-limit",
 			"Control font limit exceeded",
 		);
+	const advance = (bitmapFont.advance * fontSize) / bitmapFont.unitsPerEm;
+	wordSpacingAdvance("", advance, wordSpacing);
+	let widest = 0;
+	for (const label of optionLabels)
+		widest = Math.max(widest, controlCaptionWidth(label, advance, wordSpacing));
 	const count = (name: string, fallback: number) => {
 		const value = node.attributes[name];
 		if (!value || !/^\d+$/.test(value) || Number(value) < 1) return fallback;
@@ -233,7 +248,7 @@ export function describeControl(
 			);
 		return number;
 	};
-	const advance = (bitmapFont.advance * fontSize) / bitmapFont.unitsPerEm;
+	const textWidth = controlCaptionWidth(text, advance, wordSpacing);
 	const square = Math.max(12, fontSize);
 	const width =
 		kind === "checkbox" || kind === "radio"
@@ -244,7 +259,7 @@ export function describeControl(
 					? 12 * advance + 12
 					: kind === "text" || kind === "textarea"
 						? count(kind === "textarea" ? "cols" : "size", 20) * advance + 12
-						: Math.max(1, widest, Array.from(text).length) * advance +
+						: Math.max(advance, widest, textWidth) +
 							(kind === "select" ? 24 : 12);
 	const height =
 		kind === "checkbox" || kind === "radio"
@@ -283,6 +298,7 @@ export function describeControl(
 		text,
 		...(buttonText === undefined ? {} : { buttonText }),
 		fontSize,
+		...(wordSpacing === 0 ? {} : { wordSpacing }),
 		width,
 		height,
 		placeholder,
@@ -344,6 +360,25 @@ export function rasterizeControl(
 			"Unregistered bitmap font weight",
 		);
 	const slope = fontStyleSlope(style);
+	const wordSpacing =
+		control.wordSpacing === undefined ? 0 : control.wordSpacing;
+	const advance =
+		(bitmapFont.advance * control.fontSize) / bitmapFont.unitsPerEm;
+	wordSpacingAdvance("", advance, wordSpacing);
+	if (
+		control.text.length > controlRenderingLimits.maxTextCodeUnits ||
+		(control.buttonText?.length ?? 0) > controlRenderingLimits.maxTextCodeUnits
+	)
+		throw new AgentBrowserError(
+			"resource-limit",
+			"Control text limit exceeded",
+		);
+	const labelWidth = controlCaptionWidth(control.text, advance, wordSpacing);
+	const buttonText = control.buttonText ?? "Choose File";
+	const fileButtonWidth =
+		control.kind === "file"
+			? controlCaptionWidth(buttonText, advance, wordSpacing)
+			: 0;
 	const columns = Math.ceil(width);
 	const rows = Math.ceil(height);
 	if (
@@ -388,6 +423,7 @@ export function rasterizeControl(
 					kind: control.kind,
 					text: control.text,
 					fontSize: control.fontSize,
+					wordSpacing,
 					columns,
 					rows,
 					placeholder: control.placeholder,
@@ -519,14 +555,8 @@ export function rasterizeControl(
 		}
 		return image;
 	}
-	const advance =
-		(bitmapFont.advance * control.fontSize) / bitmapFont.unitsPerEm;
 	if (control.kind === "file") {
-		const buttonText = control.buttonText ?? "Choose File";
-		const buttonWidth = Math.min(
-			columns - 1,
-			Math.ceil(buttonText.length * advance + 12),
-		);
+		const buttonWidth = Math.min(columns - 1, Math.ceil(fileButtonWidth + 12));
 		paintRasterRect(
 			image,
 			1,
@@ -545,7 +575,12 @@ export function rasterizeControl(
 			] as const) {
 				let horizontal = start;
 				for (const character of caption) {
-					if (horizontal + advance > end) break;
+					const cellAdvance = wordSpacingAdvance(
+						character,
+						advance,
+						wordSpacing,
+					);
+					if (horizontal + cellAdvance > end) break;
 					if (!bitmapGlyph(character, weight).supported)
 						throw new AgentBrowserError(
 							"unsupported",
@@ -561,12 +596,11 @@ export function rasterizeControl(
 						weight,
 						style,
 					);
-					horizontal += advance;
+					horizontal += cellAdvance;
 				}
 			}
 		return image;
 	}
-	const labelWidth = Array.from(control.text).length * advance;
 	if (control.kind === "select" && columns >= 18 && rows >= 8)
 		for (let row = 0; row < 4; row++)
 			paintRasterRect(
@@ -582,7 +616,11 @@ export function rasterizeControl(
 	const vertical = Math.max(4, (rows - control.fontSize) / 2);
 	if (control.fontSize > 0)
 		for (const character of control.text) {
-			if (horizontal + advance > columns - (control.kind === "select" ? 18 : 6))
+			const cellAdvance = wordSpacingAdvance(character, advance, wordSpacing);
+			if (
+				horizontal + cellAdvance >
+				columns - (control.kind === "select" ? 18 : 6)
+			)
 				break;
 			if (vertical + control.fontSize > rows - 4) break;
 			if (!bitmapGlyph(character, weight).supported)
@@ -600,7 +638,7 @@ export function rasterizeControl(
 				weight,
 				style,
 			);
-			horizontal += advance;
+			horizontal += cellAdvance;
 		}
 	return image;
 }

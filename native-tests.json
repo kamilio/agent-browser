@@ -1,4 +1,8 @@
 [
+	"src/word-spacing-style.test.ts",
+	"src/word-spacing-layout.test.ts",
+	"src/word-spacing-click.test.ts",
+	"src/word-spacing-controls.test.ts",
   "src/background-navigation-abort.test.ts",
   "src/background-loader-integration.test.ts",
   "src/css-background-image-values.test.ts",

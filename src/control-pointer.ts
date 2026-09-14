@@ -35,6 +35,7 @@ export function prepareControlPointer(
 			kind: state.kind,
 			text: state.control.text,
 			fontSize: state.control.fontSize,
+			wordSpacing: state.control.wordSpacing,
 			columns: state.columns,
 			rows: state.rows,
 			placeholder: state.control.placeholder,
@@ -84,14 +85,18 @@ export function prepareControlPointer(
 		offset,
 		anchor,
 		verify() {
-			if (
+			const current =
 				released ||
 				changed ||
 				focusChanges !== expectedFocusChanges ||
 				tree.activeElement !== id ||
 				tree.generatedFocusReference !== null ||
-				controlValue(tree, id) !== value ||
-				controlTextState(tree, id)?.fingerprint !== state.fingerprint
+				controlValue(tree, id) !== value
+					? undefined
+					: controlTextState(tree, id);
+			if (
+				current?.fingerprint !== state.fingerprint ||
+				current?.control.wordSpacing !== state.control.wordSpacing
 			)
 				throw new AgentBrowserError(
 					"not-actionable",

@@ -402,6 +402,11 @@ export function buildFormattingTree(
 		hasLetterSpacing ||= spaced;
 		if ((data.control || data.imageAlternative) && spaced)
 			issue("letter-spacing-replaced-text-not-supported");
+		if (
+			data.imageAlternative &&
+			Number.parseFloat(data.typography?.["word-spacing"] ?? "0") !== 0
+		)
+			issue("word-spacing-image-alternative-not-supported");
 		if (transform !== "none") {
 			if (!["uppercase", "lowercase", "capitalize"].includes(transform))
 				issue("text-transform-not-supported");
@@ -1812,6 +1817,7 @@ export function buildFormattingTree(
 					tree,
 					id,
 					Number.parseFloat(typography["font-size"]),
+					resolveLayoutLength(typography["word-spacing"] ?? "0px", 0, true),
 				);
 				if (control) {
 					charge(control.text.length);
@@ -1903,6 +1909,11 @@ export function buildFormattingTree(
 					Number.parseFloat(typography["letter-spacing"] ?? "0") > 0
 				)
 					issue("letter-spacing-marker-text-not-supported");
+				if (
+					(type === "decimal" || type === "decimal-leading-zero") &&
+					Number.parseFloat(typography["word-spacing"] ?? "0") !== 0
+				)
+					issue("word-spacing-marker-text-not-supported");
 				if (!markerTypes.includes(type) && fontSize > 0)
 					issue("list-marker-type-not-supported");
 				else if (type !== "none" && fontSize > 0) {

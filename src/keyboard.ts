@@ -817,12 +817,17 @@ export class DocumentKeyboard {
 		if (!state || state.kind !== "textarea" || !state.control.focused) return;
 		const selection = state.control.selection;
 		if (!selection) return;
+		const fingerprint = JSON.stringify([
+			state.fingerprint,
+			state.control.wordSpacing ?? 0,
+		]);
 		const caret = previous ? this.caretOwner?.selection(id) : undefined;
 		const destination = moveControlText(
 			{
 				kind: state.kind,
 				text: state.control.text,
 				fontSize: state.control.fontSize,
+				wordSpacing: state.control.wordSpacing,
 				columns: state.columns,
 				rows: state.rows,
 				placeholder: state.control.placeholder,
@@ -831,7 +836,7 @@ export class DocumentKeyboard {
 			key.key === "ArrowUp" ? "up" : "down",
 			previous &&
 				previous.record === caret &&
-				previous.fingerprint === state.fingerprint
+				previous.fingerprint === fingerprint
 				? previous.horizontal
 				: undefined,
 		);
@@ -844,7 +849,7 @@ export class DocumentKeyboard {
 		if (generation === this.verticalGeneration)
 			this.verticalCaret = {
 				record,
-				fingerprint: state.fingerprint,
+				fingerprint,
 				horizontal: destination.horizontal,
 			};
 	}
