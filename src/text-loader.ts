@@ -25,11 +25,15 @@ export function loadTextDocument(
 	if (
 		mime !== "text/plain" &&
 		mime !== "application/json" &&
+		mime !== "text/xml" &&
+		mime !== "application/xml" &&
+		mime !== "application/rss+xml" &&
+		mime !== "application/atom+xml" &&
 		!/^application\/[a-z0-9!#$&^_.+-]+\+json$/.test(mime)
 	)
 		throw new AgentBrowserError(
 			"unsupported",
-			"This loader supports plain text and JSON, not HTML or executable documents",
+			"This loader supports plain text, JSON and literal XML feeds, not HTML or executable documents",
 		);
 	if (response.body.byteLength > context.limits.maxTextCodeUnits * 4 + 3)
 		throw resourceLimitError(

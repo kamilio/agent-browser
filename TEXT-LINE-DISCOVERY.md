@@ -1,5 +1,9 @@
 # Native text-line discovery
 
+September 14 extension: `LITERAL-FEEDS.md` adds four explicitly admitted XML/feed
+MIME types to the same literal-text loader and line discovery. The initial MIME
+scope and historical measurements below retain their original context.
+
 The research CLI adds `--find QUERY` to locate useful lines before a separately
 chosen `--lines START:END` extraction. This complements `--headings` for large
 plain-text and JSON responses whose native document has no HTML headings,

@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: public feed content no longer fails MIME admission
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Five fresh native HTTP requests cover four URLs on three hosts. Our World in Data
+article and benchmark/source text are usable (18,053 and 19,163 Markdown bytes).
+The default SWE-bench visit hits its decoded-byte cap; no status/body/content is
+claimed and earlier long-profile evidence is not rewritten. BBC RSS returns 200
+but exposes a real loader gap: text/xml is rejected. `LITERAL-FEEDS.md` fixes the
+exact XML/RSS/Atom MIME admission through inert bounded text, not an XML parser.
+Native and reader same-body replays recover all 21 item blocks with zero network;
+a separate fresh BBC visit confirms 15,195 Markdown bytes and all 21 literal items.
+No scripts, entities, stylesheet/resource loads, auto-following or relaxed limits.
+Native CLI capabilities expose the admitted formats; line discovery/selection work.
+All 38 new feed cases pass. The 16-file selection has 1,199 passes and five failures
+reproduced on the unchanged baseline research-find tests; they are retained and
+the run is not all green. Production build, 16 strict roots, formatting and lint
+pass. The thirty-sixth inventory preserves receipts, original failures and source
+pins. Prior dirty work remains untouched; no push. Larger-page admission, those
+baseline test mismatches, interactive charts, broad research/site coverage,
+rendering, live service, SafeJS/device/credential and full-release gates stay open.
+
 ### September 14: usable CLI resource reuse and more documentation coverage
 
 **PROGRESS; overall browser goal remains ACTIVE.**

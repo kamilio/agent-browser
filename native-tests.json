@@ -102,6 +102,8 @@
   "src/fido-hid-packets.test.ts",
   "src/fido-hid-message.test.ts",
   "src/text-line-extraction.test.ts",
+  "src/text-loader.test.ts",
+  "src/literal-feed.test.ts",
   "src/research-lines.test.ts",
   "src/script-dom-namespaces.test.ts",
   "src/script-namespace-collections.test.ts",

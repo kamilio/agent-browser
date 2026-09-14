@@ -249,6 +249,10 @@ describe("mocked CLI document profile boundaries", () => {
 					"text/plain",
 					"application/json",
 					"application/*+json",
+					"text/xml",
+					"application/xml",
+					"application/rss+xml",
+					"application/atom+xml",
 				],
 				createSession: expect.any(Function),
 			});

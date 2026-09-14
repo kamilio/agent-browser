@@ -1,5 +1,9 @@
 # Bounded native plaintext line selection
 
+September 14 extension: `LITERAL-FEEDS.md` adds four explicitly admitted XML/feed
+MIME types to the same literal-text loader. They also qualify for line selection;
+this does not add XML parsing or change the historical measurements below.
+
 The native research CLI accepts `--lines START:END`. Its purpose is to read a
 small section of an already successfully loaded literal-text document without
 raising extraction limits or inspecting a raw body capture as if it were native
