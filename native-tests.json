@@ -802,5 +802,8 @@
   "src/font-wide-inheritance.test.ts",
   "src/logical-block-declarations.test.ts",
   "src/logical-block-style.test.ts",
-  "src/logical-block-layout.test.ts"
+  "src/logical-block-layout.test.ts",
+  "src/logical-inline-declarations.test.ts",
+  "src/logical-inline-style.test.ts",
+  "src/logical-inline-layout.test.ts"
 ]

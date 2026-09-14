@@ -70,11 +70,11 @@ import {
 	parseBoxDeclarations,
 } from "./css-box.js";
 import {
-	cssLogicalBlockProperties,
-	isCssLogicalBlockProperty,
-	logicalBlockComponents,
-	parseLogicalBlockDeclarations,
-	type CssLogicalBlockProperty,
+	cssLogicalSpacingProperties,
+	isCssLogicalSpacingProperty,
+	logicalSpacingComponents,
+	parseLogicalSpacingDeclarations,
+	type CssLogicalSpacingProperty,
 } from "./css-logical-box.js";
 import {
 	type CssPaintProperty,
@@ -113,7 +113,7 @@ export type CssProperty =
 	| "content"
 	| VisibilityProperty
 	| CssBoxProperty
-	| CssLogicalBlockProperty
+	| CssLogicalSpacingProperty
 	| CssRadiusProperty
 	| CssTextProperty
 	| CssPaintProperty
@@ -372,8 +372,8 @@ export function parseCssDeclarations(
 			property !== "border-radius" &&
 			!isCssRadiusProperty(property) &&
 			!isCssBoxProperty(property) &&
-			!isCssLogicalBlockProperty(property) &&
-			!logicalBlockComponents(property) &&
+			!isCssLogicalSpacingProperty(property) &&
+			!logicalSpacingComponents(property) &&
 			!isCssTextProperty(property) &&
 			!isCssPaintProperty(property) &&
 			!grid &&
@@ -453,7 +453,7 @@ export function parseCssDeclarations(
 					value,
 					important,
 				})),
-				...cssLogicalBlockProperties.map((property) => ({
+				...cssLogicalSpacingProperties.map((property) => ({
 					property,
 					value,
 					important,
@@ -628,10 +628,10 @@ export function parseCssDeclarations(
 			continue;
 		}
 		if (
-			isCssLogicalBlockProperty(property) ||
-			logicalBlockComponents(property)
+			isCssLogicalSpacingProperty(property) ||
+			logicalSpacingComponents(property)
 		) {
-			const expanded = parseLogicalBlockDeclarations(property, value);
+			const expanded = parseLogicalSpacingDeclarations(property, value);
 			if (expanded)
 				declarations.push(
 					...expanded.map((entry) => ({ ...entry, important })),

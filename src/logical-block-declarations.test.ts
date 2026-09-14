@@ -487,7 +487,7 @@ it("retains existing length source and nesting bounds", () => {
 	);
 });
 
-it.each(["margin-inline", "padding-inline", "writing-mode", "direction"])(
+it.each(["writing-mode", "direction"])(
 	"does not widen the native property profile to %s",
 	(name) => {
 		expect(sheet(`${name}:initial`)).toMatchObject({

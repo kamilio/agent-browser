@@ -9,10 +9,10 @@ import { normalizeCssColor } from "./css-color.js";
 import { parseCssContent } from "./css-content.js";
 import { cssFontProperties, parseFontWideDeclarations } from "./css-font.js";
 import {
-	cssLogicalBlockProperties,
-	isCssLogicalBlockProperty,
-	logicalBlockComponents,
-	parseLogicalBlockDeclarations,
+	cssLogicalSpacingProperties,
+	isCssLogicalSpacingProperty,
+	logicalSpacingComponents,
+	parseLogicalSpacingDeclarations,
 } from "./css-logical-box.js";
 import {
 	cssGridProperties,
@@ -175,9 +175,11 @@ export const inlineProperties = [
 	"content",
 	"margin",
 	"padding",
-	...cssLogicalBlockProperties,
+	...cssLogicalSpacingProperties,
 	"margin-block",
 	"padding-block",
+	"margin-inline",
+	"padding-inline",
 	"opacity",
 	"color",
 	"caret-color",
@@ -414,9 +416,9 @@ export function expandDeclaration(
 				}))
 			: [];
 	}
-	if (isCssLogicalBlockProperty(name) || logicalBlockComponents(name))
+	if (isCssLogicalSpacingProperty(name) || logicalSpacingComponents(name))
 		return (
-			parseLogicalBlockDeclarations(name, source.toLowerCase()) ?? []
+			parseLogicalSpacingDeclarations(name, source.toLowerCase()) ?? []
 		).map((entry) => ({ name: entry.property, value: entry.value, important }));
 	if (name === "border-radius" || isCssRadiusProperty(name))
 		return (parseRadiusDeclarations(name, source.toLowerCase()) ?? []).map(
@@ -557,7 +559,7 @@ export function inlineDeclarationComponents(name: string): readonly string[] {
 	if (name === "border-radius") return cssRadiusProperties;
 	if (name === "outline") return cssOutlineProperties.slice(0, 3);
 	if (name === "text-decoration") return cssTextDecorationProperties;
-	const logical = logicalBlockComponents(name);
+	const logical = logicalSpacingComponents(name);
 	if (logical) return logical;
 	const grid = gridShorthandComponents(name);
 	if (grid) return grid;
@@ -677,7 +679,7 @@ export function propertyValue(
 			? first.value
 			: "";
 	}
-	const logical = logicalBlockComponents(name);
+	const logical = logicalSpacingComponents(name);
 	if (logical) {
 		if (found.length !== 2 || found[0].important !== found[1].important)
 			return "";
@@ -853,20 +855,21 @@ export function serializeDeclarations(
 	entries: readonly InlineDeclaration[],
 ): string {
 	const present = new Set(entries.map((entry) => entry.name));
-	const mixedLogicalBlocks = new Set<string>();
+	const mixedLogicalSpacing = new Set<string>();
 	for (const family of ["margin", "padding"]) {
 		if (
-			cssLogicalBlockProperties.some(
+			cssLogicalSpacingProperties.some(
 				(property) =>
 					property.startsWith(family + "-") && present.has(property),
 			) &&
 			sides.some((side) => present.has(`${family}-${side}`))
 		)
-			mixedLogicalBlocks.add(family);
+			mixedLogicalSpacing.add(family);
 	}
 	const crossesLogicalMapping = (name: string) =>
-		mixedLogicalBlocks.has(name) ||
-		(name.endsWith("-block") && mixedLogicalBlocks.has(name.slice(0, -6)));
+		mixedLogicalSpacing.has(name) ||
+		(logicalSpacingComponents(name) !== undefined &&
+			mixedLogicalSpacing.has(name.split("-")[0]));
 	const emitted = new Set<string>();
 	const output: string[] = [];
 	const pendingSources = new Map<string, InlineDeclaration>();

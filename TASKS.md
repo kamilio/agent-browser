@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: native inline logical spacing and actual geometry
+
+**PROGRESS; overall browser goal remains ACTIVE.** Native margin-inline and
+padding-inline plus four start/end longhands now participate in the real
+horizontal-tb/LTR physical-edge cascade. Authored identity, variables, priority,
+CSS-wide/all, CSSOM accessors/order, pseudo content and invalidation are covered.
+Geometry, pixels and hits match canonical physical edges, including negative
+margins, auto centering, containing-width changes, text and rich buttons.
+Existing vertical/RTL guards and legacy block-only helper behavior remain.
+
+All67new cases fail on the old runtime; the corrected focused run passes741.
+Final native gate passes22991/0/2unchanged exclusions across455files/454strict
+roots; build/strict/format pass and inputs stay stable. The net65-pass increase
+retires two obsolete global inline-property rejection cases; all other previous
+selected cases/statuses remain unchanged. Audit verifies1363source files,
+2184compiled files and100receipts. See LOGICAL-INLINE-SPACING.md for scope,
+test-helper corrections, retained failures and existing generic CSSOM limits.
+
+NEXT: bind the committed runtime/final gate, then separately replay the original
+MDN capture. No new captured/live website, credential/provider/passkey/device,
+SafeJS, socket/TTY or challenge gate is claimed by this native implementation.
+Original research and broader website/form/browser acceptance remain open.
+Preserve unrelated work and historical evidence; goal active, nothing pushed.
+
 ### September 14: current Python two-page interaction remains passing
 
 **PROGRESS; overall browser goal remains ACTIVE.** A fresh captured Python flow

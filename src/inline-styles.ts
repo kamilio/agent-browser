@@ -9,7 +9,7 @@ import {
 	propertyValue,
 	serializeDeclarations,
 } from "./css-declarations.js";
-import { isCssLogicalBlockProperty } from "./css-logical-box.js";
+import { isCssLogicalSpacingProperty } from "./css-logical-box.js";
 import {
 	canonicalCssProperty,
 	cssPropertyAccessors,
@@ -237,7 +237,7 @@ export class InlineStyles {
 		const entries = previous.map((entry) => ({ ...entry }));
 		const physicalProperty = /^(margin|padding)-(top|right|bottom|left)$/;
 		const logical = additions.every((entry) =>
-			isCssLogicalBlockProperty(entry.name),
+			isCssLogicalSpacingProperty(entry.name),
 		);
 		const physical = additions.every((entry) =>
 			physicalProperty.test(entry.name),
@@ -257,7 +257,7 @@ export class InlineStyles {
 							entry.name.startsWith(family) &&
 							(logical
 								? physicalProperty.test(entry.name)
-								: isCssLogicalBlockProperty(entry.name)),
+								: isCssLogicalSpacingProperty(entry.name)),
 					);
 		}
 		for (const entry of additions) {

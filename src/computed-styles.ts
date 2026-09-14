@@ -10,9 +10,9 @@ import {
 } from "./css-background.js";
 import { cssBoxProperties, isCssBoxProperty } from "./css-box.js";
 import {
-	cssLogicalBlockProperties,
-	logicalBlockComponents,
-	logicalBlockPhysicalProperty,
+	cssLogicalSpacingProperties,
+	logicalSpacingComponents,
+	logicalSpacingPhysicalProperty,
 } from "./css-logical-box.js";
 import {
 	cssGridProperties,
@@ -72,7 +72,7 @@ import { cssVariableLimits } from "./css-variables.js";
 export const computedStyleProperties = Object.freeze(
 	[
 		...cssBoxProperties,
-		...cssLogicalBlockProperties,
+		...cssLogicalSpacingProperties,
 		...cssRadiusProperties,
 		...cssGridProperties,
 		...cssFlexProperties,
@@ -121,9 +121,9 @@ export function resolvedStyleValue(
 		throw new TypeError("Computed style requires an element");
 	if (!tree.isConnected(id)) return "";
 	const name = canonicalCssProperty(property);
-	const physical = logicalBlockPhysicalProperty(name);
+	const physical = logicalSpacingPhysicalProperty(name);
 	if (physical !== undefined) return resolvedStyleValue(tree, id, physical);
-	const logical = logicalBlockComponents(name);
+	const logical = logicalSpacingComponents(name);
 	if (logical !== undefined) {
 		const values = logical.map((component) =>
 			resolvedStyleValue(tree, id, component),
@@ -386,6 +386,8 @@ export class ComputedStyles {
 			"padding",
 			"margin-block",
 			"padding-block",
+			"margin-inline",
+			"padding-inline",
 			"background",
 			"flex",
 			"flex-flow",
