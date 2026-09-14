@@ -6,6 +6,46 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 13–14: native justification and the captured Python value blocker
+
+**PROGRESS; overall browser goal remains ACTIVE.** Commit `3b85a5b` implements
+bounded inter-word `text-align: justify`: eligible soft-wrapped lines share
+expanded advances across text, inline geometry, paint and hits; final/forced
+lines and intrinsic widths remain unchanged. Source-listed separators include
+NBSP. Preserved whitespace is not expanded, and mixed tab lines retain the
+tab-anchored prefix. General shaping, hanging-edge rules and all tab cases are
+not claimed complete. See `TEXT-JUSTIFICATION.md`.
+
+The final focused gate passes **569/0/0**, including 34 new cases. The full
+selected native gate passes **21,551/0/2 unchanged skips** on September 13,
+23:54:35.196–23:59:36.704 UTC: 420 selected files, 419 strict roots, 774 manifest
+entries, 354 unselected. Compilation, strict tests, formatting and complete
+source/runtime inventories pass. Independent verification completes September
+14 at 00:01:46 UTC. Historical failed iterations remain recorded, including the
+19 parser-only failures; one old negative fixture intentionally changes to
+still-unsupported `match-parent`. Existing unrelated work is preserved.
+
+The unchanged eight-resource Python replay runs **September 14,
+00:04:34.776–00:04:34.897 UTC**, makes **zero HTTP requests**, and reduces CSS
+value issues 1→0 and total formatting issues 27→26. The discovered Tutorial
+click still fails on four property occurrences, sticky position and overflow;
+all other diagnostics and formatting metrics remain unchanged. This is neither
+a fresh complete capture nor successful full-page geometry/paint/click evidence.
+Native owners close, private directories are removed and the process group is
+absent. Wikipedia and kernel.org are not rerun in this cycle.
+
+One separate bounded W3C CSS Text source GET succeeds on September 13, followed
+by native offline extraction; it returns the August 14, 2026 CRD, not a verified
+latest-edition claim. Exact scope, remaining gates and dates are recorded in
+`TEXT-JUSTIFICATION-WEBSITE-SEPTEMBER-13.md` and
+`WEBSITE-TEST-INVENTORY-SEPTEMBER-13-FORTY-THIRD-UPDATE.md`.
+
+Next: investigate the remaining hyphenation properties and sticky/overflow
+integration, then original-resource live flows and separate performance work.
+Credential/provider/device/passkey, SafeJS, socket, real-TTY and challenge gates
+remain separate. Hardware/benchmark/Astra/verified Reddit-Poe research remains
+incomplete. No push; earlier evidence keeps its original paths and measurements.
+
 ### September 13: rounded CSS reaches painting, hit testing and captured-site replays
 
 **PROGRESS; overall browser goal remains ACTIVE.** Commit `ee3d3c7` implements
