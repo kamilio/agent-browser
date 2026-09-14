@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: captured man7 advances to cell-height reflow
+
+**PROGRESS; overall browser goal remains ACTIVE.** One captured man7 observation
+on adopted bdb923d at 14:58:56.168–14:58:57.018 UTC loads ls(1), rediscovers
+date(1) and attempts one ordinary click. The exact previous workload advances
+past percentage table-container sizing, then fails with `Percentage cell
+descendant heights require table reflow`. No destination request/commit occurs;
+the absent destination capture is not reached. This is not website acceptance.
+
+Four original responses / 39,562 decoded bytes replay unchanged, with zero wire,
+scripts, credentials/devices or extra assets. All 18 evidence/cleanup checks pass
+while browser and supervisor retain exit 1. One missing-argument parent command
+fails before any lock or browser launch; only one website observation occurs.
+Original evidence and dirty work remain intact. See
+MAN7-TABLE-WIDTH-RECHECK-SEPTEMBER-14.md and the twenty-fifth website inventory.
+
+NEXT: trace the actual cell-descendant percentage-height declaration and its
+containing-height definiteness; add native red/green geometry/rendering/click
+tests before changing the guard. Do not suppress it or replay without a relevant
+validated change. Complete-corpus/live coverage, HN CSS gaps, original research,
+providers/passkeys, devices and challenge handling remain open. No push.
+
 ### September 14: percentage table container handoff validated
 
 **PROGRESS; overall browser goal remains ACTIVE.** Corrected the stale table-role
