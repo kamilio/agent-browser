@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14: current Python two-page interaction remains passing
+
+**PROGRESS; overall browser goal remains ACTIVE.** A fresh captured Python flow
+on committed565aa1e completes at09:12:47.025UTC: native homepage navigation, ordinary
+rediscovered Tutorial click, replacement document and title/h1 verification.
+Nine original resources/109017unique bytes yield16responses/161647served bytes;
+zero wire/scripts/denials/fallback. Both documents and all owners close cleanly;
+prepared22checks and independent parent verification pass.
+
+Compared with the actual04:41UTC flow on23e988d, document sizes, loader-time
+scalar stylesheet metrics and raw issue counts are unchanged. Each phase still
+reports22unsupported properties/5invalid values. No extra formatting/raster or
+destination action is tested; single-run timing is not a performance benchmark.
+See PYTHON-CURRENT-REPLAY-SEPTEMBER-14.md and the fourteenth inventory update.
+The22926-pass native gate/two exclusions is rehashed, not rerun. Durable evidence
+copies preserve original paths, hashes and historical failures.
+
+NEXT: implement observed inline logical-spacing/unit behavior with native
+regressions, then a separately scoped captured-site recheck. Wikipedia geometry,
+MDN destination/assets, original research, broader live sites/forms, credential/
+provider/passkey/device, SafeJS, socket/TTY and challenge gates remain open.
+Preserve unrelated work and historical evidence; goal active, nothing pushed.
+
 ### September 14: captured MDN confirms logical-block improvement
 
 **PROGRESS; overall browser goal remains ACTIVE.** A separately scoped native
