@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: developer content paths and Rustdoc gutters
+
+- Nine source-derived developer targets exercised with the native browser, plus
+  one fresh post-fix Tokio source check:10 navigations/11 HTTPS GETs/10 captures.
+  Nine useful source observations include that duplicate; npm returns a
+  Cloudflare403 and was not retried. All observed child/request/socket closures
+  pass. No credentials, scripts, SDK, code examples or raw-CDN requests.
+- Omit only exact Rustdoc line-number anchors at source line starts with bounded
+  HTML ancestry and strict marker/id/href/text checks; retain ordinary numeric
+  text/links and original DOM. Emit `sourceCodeGutters` metadata. Reader preserves
+  only empty anchor markers; node/depth/output budgets remain charged.
+-40 new regressions pass. Selected baseline862/0, final candidate902/0 across13
+  files; old production with final tests893/9 expected red. Build/types/format/
+  lint pass. Not a full917-file manifest or actual SDK/interactive acceptance run.
+- Eight saved-page comparisons load/close19 documents offline. Seven controls
+  remain byte-identical. Tokio's709 gutters remove2019 bytes without losing code;
+  full Markdown and scoped JSON match independently transformed-input oracles.
+  Fresh same-body live source produces30099 Markdown bytes and exact replay hash.
+- Preserve the original100-page sweep, ranking caveat and all historical results.
+  GitHub source text is retrievable but still flattened/escaped; structural code
+  fidelity, UI noise, npm access barrier and JS-only applications remain open.
+  See `SOURCE-CODE-GUTTERS.md` and developer-content-paths September15 reports.
+
 ### September 15: opt-in same-origin HTTPS redirect policy
 
 - Add Node transport and research CLI `same-origin-upgrade-v1`: only current

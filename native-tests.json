@@ -914,5 +914,6 @@
 	"src/research-reader-fallback.test.ts",
 	"src/research-reader-fallback-cli.test.ts",
 	"src/node-https-redirect-policy.test.ts",
-	"src/research-https-redirect-cli.test.ts"
+	"src/research-https-redirect-cli.test.ts",
+	"src/rustdoc-code-gutters.test.ts"
 ]

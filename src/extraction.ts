@@ -65,6 +65,7 @@ import {
 	resourceLimitError,
 } from "./resource-limit.js";
 import { documentStyles } from "./styles.js";
+import { rustdocLineNumberAnchor } from "./rustdoc-code-gutters.js";
 import {
 	type TableSourceMetadata,
 	extractTableSource,
@@ -203,6 +204,10 @@ interface ExtractionMetadata {
 	sourceAccess?: ResearchSourceAccess;
 	sourceFeeds?: DocumentFeeds;
 	sourceMarkdown?: MarkdownSourceOutline;
+	sourceCodeGutters?: Readonly<{
+		kind: "rustdoc-line-number-anchors-v1";
+		anchors: number;
+	}>;
 	sectionSelection?: Readonly<HeadingSectionMetadata>;
 	textSelection?: {
 		method: "text-lines";
@@ -1234,10 +1239,16 @@ export function extractDocument(
 			hidden = true;
 			break;
 		}
-	const pending = hidden ? [] : [{ id: start, parent: holder, depth: 0 }];
+	const pending: {
+		id: number;
+		parent: ExtractedNode;
+		depth: number;
+		lineState?: { atLineStart: boolean };
+	}[] = hidden ? [] : [{ id: start, parent: holder, depth: 0 }];
 	const base = documentBaseUrl(tree);
 	let nodes = 0;
 	let intermediateBytes = 0;
+	let gutterAnchors = 0;
 	while (pending.length) {
 		const current = pending.pop();
 		if (!current) break;
@@ -1251,6 +1262,27 @@ export function extractDocument(
 				"resource-limit",
 				"Extraction structure limit exceeded",
 			);
+		const lineState =
+			current.lineState ??
+			(isHtmlElement(source, "code") ? { atLineStart: true } : undefined);
+		if (
+			visible &&
+			current.id !== start &&
+			lineState !== undefined &&
+			rustdocLineNumberAnchor(tree, source, lineState.atLineStart)
+		) {
+			if (++nodes > maxNodes || current.depth + 1 > maxDepth)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Extraction structure limit exceeded",
+				);
+			gutterAnchors++;
+			continue;
+		}
+		if (lineState && source.kind === "text" && source.data.length)
+			lineState.atLineStart = source.data.endsWith("\n");
+		else if (lineState && leafElements.has(source.tagName))
+			lineState.atLineStart = false;
 		const fallback =
 			source.kind === "element" &&
 			styles.get(source.id).display.startsWith("inline")
@@ -1329,10 +1361,16 @@ export function extractDocument(
 					id: children[index],
 					parent: node,
 					depth: current.depth + 1,
+					...(lineState === undefined ? {} : { lineState }),
 				});
 			}
 		}
 	}
+	if (gutterAnchors)
+		metadata.sourceCodeGutters = Object.freeze({
+			kind: "rustdoc-line-number-anchors-v1",
+			anchors: gutterAnchors,
+		});
 	const root = holder.children?.[0] ?? {
 		ref: metadata.scope,
 		type: "container" as const,

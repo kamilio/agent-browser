@@ -606,6 +606,7 @@ export function sanitizeResearchHtml(
 					(attribute === "class" || attribute === "role")) ||
 				(outputName === "a" &&
 					(["href", "title", "name"].includes(attribute) ||
+						(attribute === "data-nosnippet" && value === "") ||
 						(attribute === "aria-label" && value.length <= 8192))) ||
 				(outputName === "base" && attribute === "href") ||
 				(outputName === "img" && attribute === "alt") ||
