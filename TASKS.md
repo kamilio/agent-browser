@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: reuse captured literal text without refetching
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Added explicit offline replay `--find` and `--lines` modes for successful,
+host-pinned default-profile literal text captures. Find preserves spaces and
+returns case-sensitive line/column discoveries; inclusive line ranges return
+bounded JSON or fenced Markdown. MIME/profile/format admission, source pins,
+caps, challenge screening, buffer wiping and closure stay intact. No HTML
+sniffing, structured-text execution, new dependency, failed-capture promotion,
+long-text profile or network fallback. HTML selections/recovery stay separate.
+All 168 new API/CLI cases pass. The final selected suite is 1,500 passed / 2
+failed across 22 files, with all 1,334 original case statuses unchanged. The
+two known body-capture assertions remain unresolved. Build/types/format/lint
+pass; production artifacts are identical across three candidate iterations.
+Earlier test/type authoring failures are preserved, not represented as passes.
+Ten guarded offline children (two API, eight actual CLI) use the saved Ollama
+Markdown and academic CSV captures, plus a Python HTML control. Before this
+change the text receipts were admitted but HTML-only replay rejected them;
+now their search/range coordinates match independent literal-source checks.
+Selected Markdown is 700 / 112 bytes respectively; Python's 43,583-byte control
+is unchanged. Zero HTTP attempts; all children/process groups close and
+receipt/body/source pins remain unchanged. This is not new website coverage,
+a latency measurement, verified source truth or full browser acceptance.
+See `RESEARCH-TEXT-REPLAY.md` and `reports/text-replay-2026-09-15.json`.
+Next: useful-content versus application-shell reporting, hidden startup data,
+HTTP/response/redirect failure provenance and content recovery from saved/public
+sources. Full native release, research conclusions, rendering/interaction and
+separately gated SafeJS, service/socket, TTY/PTY, credentials and passkey-device
+acceptance remain open. Original work and historical evidence stay preserved.
+
 ### September 15: identify the missed browser-check interstitial
 
 **PROGRESS; overall browser goal remains ACTIVE.**

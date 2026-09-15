@@ -26,8 +26,10 @@ the command itself does not read credentials, environment providers or input
 paths. The example file must already be authorized for this operation.
 
 Required value flags are `--expected-profile`, `--receipt-sha256`,
-`--body-sha256`, `--body-bytes` and exactly one of `--selector`, `--section` or
-`--links`. Flags can appear in any order, once each, with separate values.
+`--body-sha256`, `--body-bytes` and exactly one of `--selector`, `--section`,
+`--links`, `--find` or `--lines`. Flags can appear in any order, once each,
+with separate values. Literal `--find QUERY` and `--lines START:END` require
+the default profile and no table/recovery flags; see RESEARCH-TEXT-REPLAY.md.
 Standalone `--table-metadata` is optional for selector/section extraction only.
 No URLs, positional filenames, `--flag=value` forms or duplicate flags are
 accepted. `--help` prints usage without consuming input.

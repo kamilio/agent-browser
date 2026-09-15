@@ -10,8 +10,10 @@ import {
 	type DocumentExtraction,
 	type DocumentHeadingOutline,
 	type DocumentLinkDiscovery,
+	type DocumentTextLineDiscovery,
 	discoverDocumentHeadings,
 	discoverDocumentLinks,
+	discoverDocumentTextLines,
 	extractDocument,
 } from "../src/extraction.js";
 import { type NetworkResponse, parseNetworkUrl } from "../src/network.js";
@@ -50,7 +52,12 @@ export const researchJsonReplayLimits = Object.freeze({
 	timeoutMs: 20_000,
 });
 
-export type ResearchJsonReplaySelection =
+export interface ResearchReplayLineRange {
+	start: number;
+	end: number;
+}
+
+type ResearchHtmlReplaySelection =
 	| ((
 			| { selector: string; section?: never; links?: never }
 			| { section: string; selector?: never; links?: never }
@@ -62,6 +69,19 @@ export type ResearchJsonReplaySelection =
 			tableMetadata?: never;
 			tableRows?: never;
 	  };
+
+export type ResearchJsonReplaySelection =
+	| (ResearchHtmlReplaySelection & { lines?: never; find?: never })
+	| ((
+			| { lines: ResearchReplayLineRange; find?: never }
+			| { find: string; lines?: never }
+	  ) & {
+			selector?: never;
+			section?: never;
+			links?: never;
+			tableMetadata?: never;
+			tableRows?: never;
+	  });
 
 export interface ResearchOutputLimitSectionSelection {
 	section: string;
@@ -102,7 +122,9 @@ export interface ResearchJsonReplayReport<
 			| "css-selector"
 			| "heading-section"
 			| "link-url-search"
-			| "heading-outline";
+			| "heading-outline"
+			| "text-lines"
+			| "text-line-discovery";
 		matches: number | null;
 	};
 	classification: {
@@ -113,6 +135,7 @@ export interface ResearchJsonReplayReport<
 	extraction?: ReplayDocumentByFormat[Format];
 	links?: DocumentLinkDiscovery;
 	headings?: DocumentHeadingOutline;
+	textLines?: DocumentTextLineDiscovery;
 	recovery?:
 		| ResearchOutputLimitSectionRecovery
 		| ResearchOutputLimitOutlineRecovery;
@@ -148,6 +171,46 @@ function invalidSelection(): never {
 	);
 }
 
+function lineRangeSnapshot(value: unknown): Readonly<ResearchReplayLineRange> {
+	if (
+		!value ||
+		typeof value !== "object" ||
+		types.isProxy(value) ||
+		Array.isArray(value)
+	)
+		invalidSelection();
+	const prototype = Object.getPrototypeOf(value);
+	if (prototype !== Object.prototype && prototype !== null) invalidSelection();
+	const keys = Reflect.ownKeys(value);
+	if (
+		keys.length !== 2 ||
+		!keys.every((key) => key === "start" || key === "end")
+	)
+		invalidSelection();
+	const startDescriptor = Object.getOwnPropertyDescriptor(value, "start");
+	const endDescriptor = Object.getOwnPropertyDescriptor(value, "end");
+	if (
+		!startDescriptor ||
+		!endDescriptor ||
+		!Object.hasOwn(startDescriptor, "value") ||
+		!Object.hasOwn(endDescriptor, "value")
+	)
+		invalidSelection();
+	const start: unknown = startDescriptor.value;
+	const end: unknown = endDescriptor.value;
+	if (
+		typeof start !== "number" ||
+		typeof end !== "number" ||
+		!Number.isSafeInteger(start) ||
+		!Number.isSafeInteger(end) ||
+		start < 1 ||
+		end < start ||
+		end > 2_000_001
+	)
+		invalidSelection();
+	return Object.freeze({ start, end });
+}
+
 function selectionSnapshot(value: unknown) {
 	if (
 		!value ||
@@ -165,9 +228,15 @@ function selectionSnapshot(value: unknown) {
 		!keys.every(
 			(key) =>
 				typeof key === "string" &&
-				["selector", "section", "links", "tableMetadata", "tableRows"].includes(
-					key,
-				),
+				[
+					"selector",
+					"section",
+					"links",
+					"lines",
+					"find",
+					"tableMetadata",
+					"tableRows",
+				].includes(key),
 		)
 	)
 		invalidSelection();
@@ -179,10 +248,38 @@ function selectionSnapshot(value: unknown) {
 		fields[key] = descriptor.value;
 	}
 	if (
-		["selector", "section", "links"].filter((key) => Object.hasOwn(fields, key))
-			.length !== 1
+		["selector", "section", "links", "lines", "find"].filter((key) =>
+			Object.hasOwn(fields, key),
+		).length !== 1
 	)
 		invalidSelection();
+	if (Object.hasOwn(fields, "lines")) {
+		if (keys.length !== 1) invalidSelection();
+		return {
+			method: "text-lines" as const,
+			target: "",
+			lines: lineRangeSnapshot(fields.lines),
+			tableMetadata: false,
+			tableRows: false,
+		};
+	}
+	if (Object.hasOwn(fields, "find")) {
+		const query = fields.find;
+		if (
+			keys.length !== 1 ||
+			typeof query !== "string" ||
+			query.length < 1 ||
+			query.length > 256 ||
+			/[\r\n]/.test(query)
+		)
+			invalidSelection();
+		return {
+			method: "text-line-discovery" as const,
+			target: query,
+			tableMetadata: false,
+			tableRows: false,
+		};
+	}
 	const section = Object.hasOwn(fields, "section");
 	const links = Object.hasOwn(fields, "links");
 	const target = links
@@ -280,7 +377,9 @@ function validateReplayFormat(
 	if (
 		(format !== "json" && format !== "markdown") ||
 		(format === "markdown" &&
-			(selected.method === "link-url-search" || selected.tableMetadata)) ||
+			(selected.method === "link-url-search" ||
+				selected.method === "text-line-discovery" ||
+				selected.tableMetadata)) ||
 		(selected.tableRows && format !== "markdown")
 	)
 		throw new AgentBrowserError("invalid-input", "Invalid replay format");
@@ -435,13 +534,25 @@ function extractValidatedReplayJson<
 				);
 		}
 		const contentTypes = primary.headers["content-type"];
+		const mime =
+			contentTypes?.length === 1
+				? contentTypes[0].split(";", 1)[0].trim().toLowerCase()
+				: undefined;
+		const textSelection =
+			selected.method === "text-lines" ||
+			selected.method === "text-line-discovery";
 		if (
-			contentTypes?.length !== 1 ||
-			contentTypes[0].split(";", 1)[0].trim().toLowerCase() !== "text/html"
+			textSelection
+				? admission.selectedProfile !== "default" ||
+					mime === undefined ||
+					mime === "text/html"
+				: mime !== "text/html"
 		)
 			throw new AgentBrowserError(
 				"unsupported",
-				"Research JSON replay requires text/html",
+				textSelection
+					? "Text replay requires a default-profile literal text document"
+					: "Research JSON replay requires text/html",
 			);
 		const reportedFinalUrl = parseNetworkUrl(primary.url).href;
 		const profile = admission.selectedProfile;
@@ -545,29 +656,46 @@ function extractValidatedReplayJson<
 				report.outcome = "empty-extraction";
 				report.contentSuccess = false;
 			}
+		} else if (!documentBarrier && selected.method === "text-line-discovery") {
+			checkpoint();
+			report.textLines = discoverDocumentTextLines(tree, selected.target, {
+				maxBytes: researchJsonReplayLimits.maxExtractionBytes,
+			});
+			checkpoint();
+			report.selection.matches = report.textLines.entries.length;
+			if (!report.textLines.entries.length) {
+				report.outcome = "empty-extraction";
+				report.contentSuccess = false;
+			}
 		} else if (
 			report.outcome !== "semantic-barrier" &&
 			selected.method !== "link-url-search" &&
-			selected.method !== "heading-outline"
+			selected.method !== "heading-outline" &&
+			selected.method !== "text-line-discovery"
 		) {
 			checkpoint();
-			const queries = new DocumentQueries(tree);
-			const matches = queries.querySelectorAll(selected.target);
-			report.selection.matches = matches.length;
-			if (matches.length !== 1)
-				throw new AgentBrowserError(
-					matches.length ? "invalid-input" : "not-found",
-					"Research replay requires one selected element",
-				);
+			let reference: string | undefined;
+			if (selected.method !== "text-lines") {
+				const queries = new DocumentQueries(tree);
+				const matches = queries.querySelectorAll(selected.target);
+				report.selection.matches = matches.length;
+				if (matches.length !== 1)
+					throw new AgentBrowserError(
+						matches.length ? "invalid-input" : "not-found",
+						"Research replay requires one selected element",
+					);
+				reference = tree.reference(matches[0]);
+			}
 			checkpoint();
-			const reference = tree.reference(matches[0]);
 			const extraction = extractDocument(tree, {
 				format,
 				tableMetadata: selected.tableMetadata,
 				tableRows: selected.tableRows,
-				...(selected.method === "heading-section"
-					? { section: reference }
-					: { root: reference }),
+				...(selected.method === "text-lines"
+					? { lines: selected.lines }
+					: selected.method === "heading-section"
+						? { section: reference }
+						: { root: reference }),
 				maxBytes: researchJsonReplayLimits.maxExtractionBytes,
 				maxNodes: researchJsonReplayLimits.maxNodes,
 				maxDepth: researchJsonReplayLimits.maxDepth,
@@ -578,6 +706,9 @@ function extractValidatedReplayJson<
 					"Research replay extraction format mismatch",
 				);
 			report.extraction = extraction as ReplayDocumentByFormat[Format];
+			if (selected.method === "text-lines")
+				report.selection.matches =
+					selected.lines.end - selected.lines.start + 1;
 			checkpoint();
 			if (
 				!classify(researchExtractionDiagnosticText(extraction)) &&

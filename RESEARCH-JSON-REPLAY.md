@@ -35,7 +35,11 @@ no input filesystem path and performs no request or automatic fallback.
 The helper reuses validateResearchReplayAdmission. Only validated-capture may
 proceed: missing or mismatched receipt/body pins reject, and failed, blocked,
 incomplete or otherwise evidence-only receipts cannot become successful content.
-It requires HTML and exactly one selection mode. Selector and heading-section
+It requires exactly one selection mode. HTML selectors, sections and links
+require `text/html`. Default-profile literal-text captures also support
+`{ find: "literal query" }` and `{ lines: { start: 1, end: 4 } }`; see
+RESEARCH-TEXT-REPLAY.md for MIME, format and line-coordinate restrictions.
+Selector and heading-section
 modes still require one matching element; invalid, ambiguous or missing targets
 reject. An explicit `{ links: "url-substring" }` mode instead collects bounded
 navigation targets, as described in RESEARCH-LINK-DISCOVERY.md. Getters, proxies

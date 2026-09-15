@@ -1,0 +1,294 @@
+{
+  "kind": "native-literal-text-replay-validation-v1",
+  "date": "2026-09-15",
+  "parentCommit": "acb315f2b5b9fbd4c0ddf2fa2f6cc316f3066e71",
+  "scope": "Offline replay follow-up; no fresh website visits",
+  "evidenceLane": "/dev/shm/agent-browser-text-replay-september15/",
+  "durableEvidence": "node_modules/.cache/native-validation/text-replay-september15/",
+  "at": "2026-09-15T04:30:01.666Z",
+  "passed": true,
+  "baseline": {
+    "passed": 1332,
+    "failed": 2,
+    "files": 20
+  },
+  "candidate": {
+    "passed": 1500,
+    "failed": 2,
+    "files": 22
+  },
+  "finalLabel": "release03",
+  "unchangedPriorCaseStatuses": 1334,
+  "newCases": 168,
+  "newCasesByFile": {
+    "research-replay-text.test.ts": 54,
+    "research-replay-text-cli.test.ts": 114
+  },
+  "unchangedFailures": [
+    {
+      "file": "research-body-capture.test.ts",
+      "name": "retains unscoped capture and post-extraction barrier classification (reader=false)",
+      "status": "failed"
+    },
+    {
+      "file": "research-body-capture.test.ts",
+      "name": "retains unscoped capture and post-extraction barrier classification (reader=true)",
+      "status": "failed"
+    }
+  ],
+  "changedCompiled": [
+    "scripts/research-json-replay.d.ts",
+    "scripts/research-json-replay.d.ts.map",
+    "scripts/research-json-replay.js",
+    "scripts/research-json-replay.js.map",
+    "scripts/research-replay-cli.d.ts.map",
+    "scripts/research-replay-cli.js",
+    "scripts/research-replay-cli.js.map"
+  ],
+  "productionIdenticalAcrossCandidates": true,
+  "canonicalNativeTests": 861,
+  "offlineNativeChildren": 10,
+  "actualCliChildren": 8,
+  "apiChildren": 2,
+  "httpRequests": 0,
+  "originalReceiptsUnchanged": true,
+  "authoringChecks": {
+    "baseline": {
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 1
+      },
+      "tests": {
+        "passed": 1332,
+        "failed": 2,
+        "files": 20
+      }
+    },
+    "release01": {
+      "checks": {
+        "build": 0,
+        "types": 2,
+        "format": 0,
+        "lint": 0,
+        "native": 1
+      },
+      "tests": {
+        "passed": 1497,
+        "failed": 5,
+        "files": 22
+      }
+    },
+    "release02": {
+      "checks": {
+        "build": 0,
+        "types": 2,
+        "format": 0,
+        "lint": 0,
+        "native": 1
+      },
+      "tests": {
+        "passed": 1500,
+        "failed": 2,
+        "files": 22
+      }
+    },
+    "release03": {
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 1
+      },
+      "tests": {
+        "passed": 1500,
+        "failed": 2,
+        "files": 22
+      }
+    }
+  },
+  "proof": {
+    "baseline": {
+      "passed": true,
+      "label": "baseline",
+      "httpRequests": 0,
+      "results": [
+        {
+          "key": "markdown",
+          "admitted": true,
+          "failure": {
+            "code": "unsupported",
+            "message": "Research JSON replay requires text/html"
+          }
+        },
+        {
+          "key": "csv",
+          "admitted": true,
+          "failure": {
+            "code": "unsupported",
+            "message": "Research JSON replay requires text/html"
+          }
+        }
+      ],
+      "control": {
+        "markdownBytes": 43583,
+        "markdownSha256": "4e9128406bd375ab821c27c1d6c39011ebe11ff0b7b891205c1fa971580b3a26"
+      },
+      "originalReceiptsUnchanged": true
+    },
+    "release03": {
+      "passed": true,
+      "label": "release03",
+      "httpRequests": 0,
+      "results": [
+        {
+          "key": "markdown",
+          "admitted": true,
+          "matchedLines": 13,
+          "entries": [
+            {
+              "line": 17,
+              "column": 24
+            },
+            {
+              "line": 19,
+              "column": 24
+            },
+            {
+              "line": 20,
+              "column": 24
+            },
+            {
+              "line": 22,
+              "column": 24
+            },
+            {
+              "line": 24,
+              "column": 24
+            },
+            {
+              "line": 25,
+              "column": 24
+            },
+            {
+              "line": 27,
+              "column": 24
+            },
+            {
+              "line": 29,
+              "column": 24
+            },
+            {
+              "line": 30,
+              "column": 24
+            },
+            {
+              "line": 34,
+              "column": 24
+            },
+            {
+              "line": 45,
+              "column": 22
+            },
+            {
+              "line": 54,
+              "column": 6
+            },
+            {
+              "line": 55,
+              "column": 29
+            }
+          ],
+          "range": {
+            "method": "text-lines",
+            "start": 16,
+            "end": 19,
+            "totalLines": 179,
+            "sourceCodeUnits": 12570,
+            "selectedCodeUnits": 692
+          },
+          "selectedSourceSha256": "9518c7c2f4bd85353d4b4776fef93e5915690bcaa27c4ad3200d65771ace0423",
+          "markdownBytes": 700,
+          "markdownSha256": "1149dc4fb5b7c4d164b87a5de503eb067be05f08ea3acc0c80362fa8922ae0a9",
+          "contentSuccess": null
+        },
+        {
+          "key": "csv",
+          "admitted": true,
+          "matchedLines": 1,
+          "entries": [
+            {
+              "line": 2,
+              "column": 2
+            }
+          ],
+          "range": {
+            "method": "text-lines",
+            "start": 1,
+            "end": 4,
+            "totalLines": 15,
+            "sourceCodeUnits": 321,
+            "selectedCodeUnits": 104
+          },
+          "selectedSourceSha256": "04946ec30a2d2b72276cfd4837330b48dea2dceede0707a659218e21ab3c7d35",
+          "markdownBytes": 112,
+          "markdownSha256": "e03c3e49afa2c135b89da69e9d46f06c045e7c01447c63949b2525185940cfbd",
+          "contentSuccess": null
+        }
+      ],
+      "control": {
+        "markdownBytes": 43583,
+        "markdownSha256": "4e9128406bd375ab821c27c1d6c39011ebe11ff0b7b891205c1fa971580b3a26"
+      },
+      "originalReceiptsUnchanged": true
+    }
+  },
+  "fixtures": [
+    {
+      "key": "markdown",
+      "url": "https://docs.ollama.com/gpu.md",
+      "originalReceiptPath": "/dev/shm/agent-browser-ollama-hardware-markdown-fixed-september14/stdout.jsonl",
+      "receiptSha256": "88a7bf48f71f9dd65914bb574382e2a50928d6642bc542b1424fe6244c581866",
+      "bodySha256": "dc6569345668d8dac4a2ab36e338600782650704e5cd1d2908cfc9d1e61a942a",
+      "bodyBytes": 12570,
+      "query": "NVIDIA",
+      "selectedRange": {
+        "start": 16,
+        "end": 19
+      }
+    },
+    {
+      "key": "csv",
+      "url": "https://people.sc.fsu.edu/~jburkardt/data/csv/airtravel.csv",
+      "originalReceiptPath": "/dev/shm/agent-browser-academic-csv-fixed-september14/stdout.jsonl",
+      "receiptSha256": "cea2ed4c03de272a3636cc1de50063e73c5f4f420fbdadc161098db0cedc8ca7",
+      "bodySha256": "f6a5fc622a83ef040fe708b7305fb6f34b8725a62e19da03a9bc8ff8592d8054",
+      "bodyBytes": 321,
+      "query": "JAN",
+      "selectedRange": {
+        "start": 1,
+        "end": 4
+      }
+    }
+  ],
+  "authoringNotes": [
+    "The first API union draft failed formatter parsing before any candidate snapshot; an internal HTML-selection type resolved it.",
+    "release01: three new test failures (unstable document reference comparison and two null mock diagnostics) plus a readonly-header test assignment type error.",
+    "release02: all native statuses matched, but the normalization helper needed an explicit report-format union type.",
+    "release03: build/types/format/lint pass; two pre-existing body-capture failures remain.",
+    "The result auditor initially omitted expected declaration/map changes from its compiled-artifact allowlist; corrected without changing candidate output.",
+    "Independent static review found no blocking issue; it did not execute validation."
+  ],
+  "limitations": [
+    "No current full native release.",
+    "Nonempty extraction remains partial/unverified, not verified website functionality.",
+    "No source refetch, latency benchmark, structured parsing or source-truth assessment.",
+    "No SafeJS, real socket/TTY, credential/passkey-device or interactive acceptance.",
+    "Original top-100 sweep counts and receipts unchanged."
+  ],
+  "pushed": false,
+  "overallGoal": "active"
+}

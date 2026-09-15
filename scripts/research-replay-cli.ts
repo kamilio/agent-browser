@@ -22,7 +22,7 @@ export const researchReplayCliLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings) [--format json|markdown] [--table-metadata] [--table-rows] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --section or --headings. Markdown requires selector/section extraction without table metadata. Table rows require explicit Markdown. Headings require recovery and do not accept table metadata.\n";
+	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--table-metadata] [--table-rows] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --section or --headings. Markdown requires selector/section extraction without table metadata or literal --lines extraction. Table rows require explicit Markdown. Headings require recovery and do not accept table metadata. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
 
 function invalidArguments(): never {
 	throw new AgentBrowserError(
@@ -56,6 +56,8 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		"--selector",
 		"--section",
 		"--links",
+		"--find",
+		"--lines",
 		"--format",
 	]);
 	for (let index = 0; index < args.length; index++) {
@@ -103,9 +105,13 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 			? researchLongDocumentAdmission.maxCaptureBytes
 			: researchBodyCaptureLimit;
 	if (Number(bodyBytes) > cap) invalidArguments();
-	const modes = ["--selector", "--section", "--links"].filter((flag) =>
-		fields.has(flag),
-	);
+	const modes = [
+		"--selector",
+		"--section",
+		"--links",
+		"--find",
+		"--lines",
+	].filter((flag) => fields.has(flag));
 	if (modes.length + Number(headings) !== 1) invalidArguments();
 	if (
 		format === "markdown" &&
@@ -131,6 +137,28 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	if (recoverOutputLimit && (profile !== "default" || mode !== "--section"))
 		invalidArguments();
 	const target = fields.get(mode);
+	if (mode === "--find" || mode === "--lines") {
+		if (profile !== "default" || tableMetadata || tableRows || !target)
+			invalidArguments();
+		let selection: ResearchJsonReplaySelection;
+		if (mode === "--find") {
+			if (format === "markdown" || target.length > 256 || /[\r\n]/.test(target))
+				invalidArguments();
+			selection = { find: target };
+		} else {
+			const range = /^([1-9][0-9]{0,6}):([1-9][0-9]{0,6})$/.exec(target);
+			if (!range || range[0] !== target) invalidArguments();
+			const start = Number(range[1]);
+			const end = Number(range[2]);
+			if (end < start || end > 2_000_001) invalidArguments();
+			selection = { lines: { start, end } };
+		}
+		return {
+			trusted,
+			selection,
+			...(format === undefined ? {} : { format }),
+		};
+	}
 	if (!target || target.trim() !== target) invalidArguments();
 	if (mode === "--links") {
 		if (
