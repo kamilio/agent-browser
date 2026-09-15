@@ -19,8 +19,10 @@ import {
 	validateResearchReaderMimePolicy,
 } from "../src/research-mime-policy.js";
 import {
+	type ResearchReaderFallbackEncoding,
 	type ResearchReaderRawPolicy,
 	researchReaderInfo,
+	validateResearchReaderFallbackEncoding,
 } from "../src/research-reader-info.js";
 import { resourceLimitDiagnostic } from "../src/resource-limit.js";
 import { DocumentQueries } from "../src/selectors.js";
@@ -87,7 +89,10 @@ export function researchVisibilityEvidence(
 	rawPolicy: ResearchReaderRawPolicy | undefined,
 	operation: VisibilityOperation,
 	mimePolicy?: ResearchReaderMimePolicy,
+	fallbackEncoding?: ResearchReaderFallbackEncoding,
 ) {
+	const selectedFallbackEncoding =
+		validateResearchReaderFallbackEncoding(fallbackEncoding);
 	const selectedMimePolicy = validateResearchReaderMimePolicy(mimePolicy);
 	const types = response.headers["content-type"];
 	const declaredMime = types?.[0]?.split(";", 1)[0].trim().toLowerCase();
@@ -99,8 +104,16 @@ export function researchVisibilityEvidence(
 		return;
 	let tree: DocumentTree | undefined;
 	try {
-		const mimeArguments: [undefined?, ResearchReaderMimePolicy?] =
-			selectedMimePolicy ? [undefined, selectedMimePolicy] : [];
+		const mimeArguments: [
+			undefined?,
+			ResearchReaderMimePolicy?,
+			ResearchReaderFallbackEncoding?,
+		] =
+			selectedFallbackEncoding !== undefined
+				? [undefined, selectedMimePolicy, selectedFallbackEncoding]
+				: selectedMimePolicy
+					? [undefined, selectedMimePolicy]
+					: [];
 		tree = loadResearchDocument(
 			response,
 			{

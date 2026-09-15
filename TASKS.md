@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: explicit UTF-8 reader fallback and article retrieval
+
+- Add opt-in `--reader-fallback-encoding utf-8`, requiring reader mode, with
+  matching capture/replay provenance and actual-encoding validation. Preserve
+  BOM/HTTP/early-meta precedence, 1024-byte prescan and all budgets. Shared
+  invalid-meta continuation and x-user-defined mapping now match native loader.
+- 191 new native tests pass; selected candidate 2584 pass/two unchanged baseline
+  failures across 17 files. Build/types/format/lint pass; no full-manifest or
+  actual-SDK acceptance claim. One related source-input expectation is corrected.
+- Three saved-body comparisons preserve default hashes; explicit UTF-8 restores
+  WebMD punctuation while two HTTP-UTF-8 controls remain identical. Nine native
+  loads in six closed, guarded children; zero network or mocked navigations.
+- Fresh WebMD root-to-source-linked article and Bankrate article checks return
+  useful partial source: 23632/22774/43171 Markdown bytes. Three GETs, complete
+  captures, no redirects/retries. Three guarded offline replays match exactly.
+  All twelve saved/live/replay children/groups and three live requests/sockets
+  close. These are source retrieval, not click or factual-content validation.
+- Guide: `READER-FALLBACK-ENCODING.md`; report:
+  `reports/reader-utf8-fallback-2026-09-15.{md,json}`. Original 100-page matrix and
+  original42 tracked/697 untracked work remain unchanged. No push. Broader
+  SafeJS, live interaction/passkey, access and performance gates remain open.
+
 ### September 15: preserve SDK-probe errors and identify intentional admission gap
 
 - Fixed the maintained core fixture, not the SDK/browser scheduler: record each

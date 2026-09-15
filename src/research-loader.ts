@@ -42,12 +42,14 @@ import {
 	setResearchSourceDataTables,
 } from "./research-source-data-tables.js";
 import {
+	type ResearchReaderFallbackEncoding,
 	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
 	type ResearchReaderVisibilityPolicy,
 	researchReaderHiddenContentSemantics,
 	researchReaderProfile,
 	setResearchReaderInfo,
+	validateResearchReaderFallbackEncoding,
 	validateResearchReaderRawPolicy,
 	validateResearchReaderVisibilityPolicy,
 } from "./research-reader-info.js";
@@ -681,7 +683,10 @@ export function loadResearchDocument(
 	rawPolicy?: ResearchReaderRawPolicy,
 	visibilityPolicy: ResearchReaderVisibilityPolicy | undefined = undefined,
 	mimePolicy?: ResearchReaderMimePolicy,
+	fallbackEncoding?: ResearchReaderFallbackEncoding,
 ): DocumentTree {
+	const selectedFallbackEncoding =
+		validateResearchReaderFallbackEncoding(fallbackEncoding);
 	const selectedRawPolicy = validateResearchReaderRawPolicy(rawPolicy);
 	const selectedVisibilityPolicy =
 		validateResearchReaderVisibilityPolicy(visibilityPolicy);
@@ -725,7 +730,7 @@ export function loadResearchDocument(
 		);
 	const decoded = decodeResponseText(
 		response,
-		html ? htmlEncoding(response.body) : "utf-8",
+		html ? htmlEncoding(response.body, selectedFallbackEncoding) : "utf-8",
 	);
 	if (
 		decoded.text.length > maxSourceCodeUnits ||
@@ -797,6 +802,9 @@ export function loadResearchDocument(
 	const report = Object.freeze({
 		...sanitized.report,
 		encoding: decoded.encoding,
+		...(selectedFallbackEncoding === undefined
+			? {}
+			: { fallbackEncoding: selectedFallbackEncoding }),
 		...(mimeInterpretation
 			? { mimePolicy: selectedMimePolicy, mimeInterpretation }
 			: {}),

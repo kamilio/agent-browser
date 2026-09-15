@@ -4,7 +4,10 @@ const rawTags = new Set(
 	"script style xmp iframe noembed noframes title textarea".split(" "),
 );
 
-export function htmlEncoding(bytes: Uint8Array) {
+export function htmlEncoding(
+	bytes: Uint8Array,
+	fallbackEncoding: "windows-1252" | "utf-8" = "windows-1252",
+) {
 	const tokenizer = new HtmlTokenizer(
 		String.fromCharCode(...bytes.subarray(0, 1024)),
 		() => {},
@@ -22,9 +25,13 @@ export function htmlEncoding(bytes: Uint8Array) {
 						)?.[1]
 					: undefined);
 			if (!label) continue;
-			const encoding = new TextDecoder(label).encoding;
-			return encoding.startsWith("utf-16") ? "utf-8" : encoding;
+			if (label.trim().toLowerCase() === "x-user-defined")
+				return "windows-1252";
+			try {
+				const encoding = new TextDecoder(label).encoding;
+				return encoding.startsWith("utf-16") ? "utf-8" : encoding;
+			} catch {}
 		}
 	} catch {}
-	return "windows-1252";
+	return fallbackEncoding;
 }

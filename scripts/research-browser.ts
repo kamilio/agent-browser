@@ -39,8 +39,10 @@ import {
 	researchReaderProfile,
 } from "../src/research-loader.js";
 import {
+	type ResearchReaderFallbackEncoding,
 	type ResearchReaderRawPolicy,
 	type ResearchReaderVisibilityPolicy,
+	validateResearchReaderFallbackEncoding,
 	validateResearchReaderRawPolicy,
 	validateResearchReaderVisibilityPolicy,
 } from "../src/research-reader-info.js";
@@ -199,6 +201,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	let readerRawPolicy: ResearchReaderRawPolicy | undefined;
 	let readerVisibilityPolicy: ResearchReaderVisibilityPolicy | undefined;
 	let readerMimePolicy: ResearchReaderMimePolicy | undefined;
+	let readerFallbackEncoding: ResearchReaderFallbackEncoding | undefined;
 	let captureBody = false;
 	let format: "markdown" | "json" | undefined;
 	let outputLimitPolicy: "text-prefix-v1" | undefined;
@@ -217,6 +220,19 @@ export function parseResearchArguments(args: readonly string[]) {
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (
+			argument === "--reader-fallback-encoding" &&
+			readerFallbackEncoding === undefined
+		) {
+			const value = args[++index];
+			if (value === undefined)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Missing research reader fallback encoding",
+				);
+			readerFallbackEncoding = validateResearchReaderFallbackEncoding(value);
+			continue;
+		}
 		if (argument === "--content-focus" && contentFocus === undefined) {
 			const value = args[++index];
 			if (value !== "main-content-v1")
@@ -379,6 +395,11 @@ export function parseResearchArguments(args: readonly string[]) {
 			);
 		urls.push(url.href);
 	}
+	if (readerFallbackEncoding !== undefined && !reader)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research reader fallback encoding requires the reader",
+		);
 	if (readerRawPolicy !== undefined && !reader)
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -508,6 +529,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		...(readerRawPolicy === undefined ? {} : { readerRawPolicy }),
 		...(readerVisibilityPolicy === undefined ? {} : { readerVisibilityPolicy }),
 		...(readerMimePolicy === undefined ? {} : { readerMimePolicy }),
+		...(readerFallbackEncoding === undefined ? {} : { readerFallbackEncoding }),
 		...(format === undefined ? {} : { format }),
 		...(outputLimitPolicy === undefined ? {} : { outputLimitPolicy }),
 		...(contentFocus === undefined ? {} : { contentFocus }),
@@ -533,6 +555,7 @@ export type ResearchOutcome =
 	| "failure";
 
 export interface ResearchNavigationReport {
+	readerFallbackEncoding?: ResearchReaderFallbackEncoding;
 	contentFocus?: "main-content-v1";
 	representationPreference?: "markdown";
 	readerMimePolicy?: ResearchReaderMimePolicy;
@@ -586,6 +609,7 @@ export interface ResearchNavigationReport {
 }
 
 export interface ResearchExecutionOptions {
+	readerFallbackEncoding?: ResearchReaderFallbackEncoding;
 	contentFocus?: "main-content-v1";
 	preferMarkdown?: boolean;
 	readerMimePolicy?: ResearchReaderMimePolicy;
@@ -631,6 +655,7 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 	validateResearchReaderRawPolicy(options.readerRawPolicy);
 	validateResearchReaderVisibilityPolicy(options.readerVisibilityPolicy);
 	validateResearchReaderMimePolicy(options.readerMimePolicy);
+	validateResearchReaderFallbackEncoding(options.readerFallbackEncoding);
 }
 
 export async function researchNavigation(
@@ -647,6 +672,11 @@ export async function researchNavigation(
 	executionOptions: ResearchExecutionOptions = {},
 ): Promise<ResearchNavigationReport> {
 	validateExecutionOptions(executionOptions);
+	if (executionOptions.readerFallbackEncoding !== undefined && reader !== true)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research reader fallback encoding requires the reader",
+		);
 	if (executionOptions.readerRawPolicy !== undefined && reader !== true)
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -669,6 +699,12 @@ export async function researchNavigation(
 	const lineRange =
 		lines === undefined ? undefined : validateResearchLines(lines);
 	const validated = parseResearchArguments([
+		...(executionOptions.readerFallbackEncoding === undefined
+			? []
+			: [
+					"--reader-fallback-encoding",
+					executionOptions.readerFallbackEncoding,
+				]),
 		...(executionOptions.preferMarkdown ? ["--prefer-markdown"] : []),
 		...(executionOptions.readerRawPolicy === undefined
 			? []
@@ -721,6 +757,9 @@ export async function researchNavigation(
 	const started = Date.now();
 	const fragment = researchFragmentReport(validated.urls[0]);
 	const report: ResearchNavigationReport = {
+		...(validated.readerFallbackEncoding === undefined
+			? {}
+			: { readerFallbackEncoding: validated.readerFallbackEncoding }),
 		...(validated.contentFocus === undefined
 			? {}
 			: { contentFocus: validated.contentFocus }),
@@ -894,6 +933,15 @@ export async function researchNavigation(
 			loadDocument: (response, context) => {
 				stage = "loader";
 				if (!reader) return loadBrowserDocument(response, context);
+				const decodingArguments: [
+					ResearchReaderMimePolicy?,
+					ResearchReaderFallbackEncoding?,
+				] =
+					validated.readerFallbackEncoding !== undefined
+						? [validated.readerMimePolicy, validated.readerFallbackEncoding]
+						: validated.readerMimePolicy
+							? [validated.readerMimePolicy]
+							: [];
 				if (validated.readerVisibilityPolicy !== undefined) {
 					const evidence = researchVisibilityEvidence(
 						response,
@@ -920,9 +968,7 @@ export async function researchNavigation(
 							},
 							headingLimits: admissionLimits?.headings,
 						},
-						...(validated.readerMimePolicy
-							? ([validated.readerMimePolicy] as const)
-							: []),
+						...decodingArguments,
 					);
 					visibilityTitle = evidence?.title;
 					const diagnostic = evidence?.diagnostic;
@@ -942,11 +988,19 @@ export async function researchNavigation(
 						validated.documentProfile,
 						validated.readerRawPolicy,
 						validated.readerVisibilityPolicy,
-						...(validated.readerMimePolicy
-							? ([validated.readerMimePolicy] as const)
-							: []),
+						...decodingArguments,
 					);
 				}
+				if (validated.readerFallbackEncoding !== undefined)
+					return loadResearchDocument(
+						response,
+						context,
+						validated.documentProfile,
+						validated.readerRawPolicy,
+						undefined,
+						validated.readerMimePolicy,
+						validated.readerFallbackEncoding,
+					);
 				if (validated.readerMimePolicy !== undefined)
 					return loadResearchDocument(
 						response,
@@ -1211,6 +1265,9 @@ export async function* researchBatch(
 				{
 					preferMarkdown: options.preferMarkdown,
 					readerMimePolicy: options.readerMimePolicy,
+					...(options.readerFallbackEncoding === undefined
+						? {}
+						: { readerFallbackEncoding: options.readerFallbackEncoding }),
 					outputLimitPolicy: options.outputLimitPolicy,
 					contentFocus: options.contentFocus,
 					...(options.readerRawPolicy === undefined
@@ -1347,7 +1404,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies require reader; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});

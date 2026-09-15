@@ -1,0 +1,271 @@
+{
+  "kind": "native-reader-utf8-fallback-validation-v1",
+  "date": "2026-09-15",
+  "parent": "10ff160f6587fcc60095d4ecb0fa491443dde1d6",
+  "passed": true,
+  "validation": {
+    "native": {
+      "baseline": {
+        "files": 15,
+        "suites": 36,
+        "passed": 2393,
+        "failed": 2,
+        "checks": {
+          "build": 0,
+          "types": 0,
+          "format": 0,
+          "lint": 0,
+          "native": 1
+        }
+      },
+      "red01": {
+        "files": 17,
+        "suites": 38,
+        "passed": 2469,
+        "failed": 117,
+        "checks": {
+          "build": 0,
+          "types": 2,
+          "format": 0,
+          "lint": 0,
+          "native": 1
+        }
+      },
+      "release01": {
+        "files": 17,
+        "suites": 38,
+        "passed": 2584,
+        "failed": 2,
+        "checks": {
+          "build": 0,
+          "types": 0,
+          "format": 0,
+          "lint": 0,
+          "native": 1
+        }
+      }
+    },
+    "newTests": 191,
+    "existingFailures": [
+      "retains unscoped capture and post-extraction barrier classification (reader=false)",
+      "retains unscoped capture and post-extraction barrier classification (reader=true)"
+    ],
+    "fullManifestRun": false,
+    "actualSdkExecutions": 0
+  },
+  "saved": [
+    {
+      "key": "012-www.webmd.com",
+      "domain": "www.webmd.com",
+      "receiptSha256": "4d832fab099d9c3a335ecd3527ad6b60527c7c08585e53623a31e7341b5cfb79",
+      "bodySha256": "547c1e20ce7f3bd83284ca5558facfc07a37fb632e332fa9be310aa128632be1",
+      "default": {
+        "bytes": 23679,
+        "codeUnits": 23632,
+        "sha256": "e6f9e9d04bedbfcf1fe6d1a3b8c6d5ed137198c78a9123736c1f13b5cae5cd7c"
+      },
+      "utf8Fallback": {
+        "bytes": 23632,
+        "codeUnits": 23613,
+        "sha256": "fd7de8fa3e050733389bc71dc58f4e16c3889f2c0ebd64335f2635a79d50b581"
+      }
+    },
+    {
+      "key": "087-www.bankrate.com",
+      "domain": "www.bankrate.com",
+      "receiptSha256": "d08c8d23105f1bb8269e5bfb9998b6d6aaa1c129e452f8e6def1d1a54c6ecfca",
+      "bodySha256": "cf9cbe3506e77e640dbdd0fbccbab531ede9663481bac345886dfdabf6b8a4e6",
+      "default": {
+        "bytes": 23689,
+        "codeUnits": 23644,
+        "sha256": "fb091a3a7ab2f3febc664ccfbb718f0481f9deb25ae24268fd8a895139bcc051"
+      },
+      "utf8Fallback": {
+        "bytes": 23689,
+        "codeUnits": 23644,
+        "sha256": "fb091a3a7ab2f3febc664ccfbb718f0481f9deb25ae24268fd8a895139bcc051"
+      }
+    },
+    {
+      "key": "002-en.wikipedia.org",
+      "domain": "en.wikipedia.org",
+      "receiptSha256": "90973a3d7e4cf75c2d92962eedf46ef40cdd3d37685a016aea5ba75ef8d31e84",
+      "bodySha256": "00a54682c55d2d9b8661a88ae26f4afab79a6815bec56e392ec98e809a4b5e9d",
+      "default": {
+        "bytes": 57367,
+        "codeUnits": 55815,
+        "sha256": "99fc9aaffe4bdbe4f404fafb5508c616f8455f190a92692792205b6b0bb06a51"
+      },
+      "utf8Fallback": {
+        "bytes": 57367,
+        "codeUnits": 55815,
+        "sha256": "99fc9aaffe4bdbe4f404fafb5508c616f8455f190a92692792205b6b0bb06a51"
+      }
+    }
+  ],
+  "live": [
+    {
+      "url": "https://www.webmd.com/",
+      "startedAt": "2026-09-15T20:19:46.731Z",
+      "finishedAt": "2026-09-15T20:19:46.971Z",
+      "outcome": "extracted-unverified",
+      "status": 200,
+      "bodyBytes": 422915,
+      "bodySha256": "969231369d0fec3f015e2fb9fd6630481d5333525750e313c5eb559ccfb5224f",
+      "receiptSha256": "6993043ed84bb1c1ac5e93a2d02296254fe518304150504327e3cf64dd34bb2c",
+      "markdownBytes": 23632,
+      "markdownSha256": "0653fe705d7d85a1d62d63ca25d7582489b5e2961385e6a4d29ab6f8cb1c9754",
+      "encoding": "utf-8",
+      "fallbackEncoding": "utf-8",
+      "replayExact": true,
+      "review": "sampled source content and structural headings; factual accuracy not assessed"
+    },
+    {
+      "url": "https://www.webmd.com/healthy-aging/features/rebecca-romijn-fit-focused-fearless",
+      "startedAt": "2026-09-15T20:19:49.148Z",
+      "finishedAt": "2026-09-15T20:19:49.421Z",
+      "outcome": "extracted-unverified",
+      "status": 200,
+      "bodyBytes": 666589,
+      "bodySha256": "d88e62d03f1185c4473d3a9da96a341dfe05346a7688e83a0714d9ef02d75f45",
+      "receiptSha256": "aae123a28146195625aa89f2d632c5b25be0325210e99cd00783addb9cb0d616",
+      "markdownBytes": 22774,
+      "markdownSha256": "88791af393cf5f8d12cf6d12032d37bb8b6fb61a3c5b0a3ef85ed6fd7e8a3a7c",
+      "encoding": "utf-8",
+      "fallbackEncoding": "utf-8",
+      "replayExact": true,
+      "review": "sampled source content and structural headings; factual accuracy not assessed"
+    },
+    {
+      "url": "https://www.bankrate.com/mortgages/how-to-get-a-mortgage/",
+      "startedAt": "2026-09-15T20:19:51.619Z",
+      "finishedAt": "2026-09-15T20:19:51.908Z",
+      "outcome": "extracted-unverified",
+      "status": 200,
+      "bodyBytes": 920483,
+      "bodySha256": "f3801d4902ffb037e29e3e9d3095fc5fec84e3b5263bde01ed7bb14c07ea26f8",
+      "receiptSha256": "04384aa69815dfdf86b4081c504881a501a37fe1e10b4746ae115bc66d657cc9",
+      "markdownBytes": 43171,
+      "markdownSha256": "50ffb7a7335a4493ec953bd4bd811c857d63f18dd8ff1638f6aa91bad4436912",
+      "encoding": "utf-8",
+      "fallbackEncoding": "utf-8",
+      "replayExact": true,
+      "review": "sampled source content and structural headings; factual accuracy not assessed"
+    }
+  ],
+  "counts": {
+    "savedChildren": 6,
+    "savedDocumentLoads": 9,
+    "savedHttpRequests": 0,
+    "liveNavigations": 3,
+    "liveGetRequests": 3,
+    "liveRedirects": 0,
+    "retries": 0,
+    "completeLiveCaptures": 3,
+    "offlineReplayChildren": 3,
+    "offlineReplayHttpRequests": 0,
+    "closedChildrenAndGroups": 12
+  },
+  "overlay": {
+    "src/html-encoding.ts": "c80f043af1eb779b6fe84cd43b72b9862edc509c708aff09798e07aa4dfd59ef",
+    "src/research-reader-info.ts": "25e7be1da758d291bd958eb1921c12b5d777e73706820b24c10050f63fcf5fd5",
+    "src/research-loader.ts": "c9db4328db83123f0434da27b9df7457e9a346794de0acffbfc4a67155ef6bdf",
+    "scripts/research-json-replay.ts": "ec18f00ebf8063086f7ede2d84d5e2a04dcf2900b75391ae3ff945b5c33c0f05",
+    "scripts/research-visibility.ts": "dd62938c550ae8da6bafba3f3bfa54435907becc15a4ca6097ec409023405db5",
+    "scripts/research-browser.ts": "f9fda04f9583dba9e75d16b90936a0b1132244a4ccd328f0e3b15f33b1ba1366",
+    "src/research-reader-fallback.test.ts": "a0016f45b0f3b554b2d4e729466ae7fbc4738b382cd27747fa418946653b199f",
+    "src/research-reader-fallback-cli.test.ts": "3e596ca02552dc4962d94e55ab147a78c4bc6a85e54fbb2695dd474e2ae1b5d3",
+    "src/research-source-input.test.ts": "ba9c7ccba8d66e8f01c3e15b4b45b6f1dad8fdc0d2b5bd086d1d18a1be15682d"
+  },
+  "evidence": {
+    "native-baseline.json": "5e2fa019704da398d75138d6934c1f059304bd1306ec7799f78db22c9a7a4460",
+    "CHECK-baseline.json": "d476f028f57f7bda09c5e8084012e698f234c51881dcbc98f6983adff717a024",
+    "SOURCE-baseline.json": "2154dbe1df1cf68fccf1f1dc960a55c584921c8e9baf69f8557126e3da779702",
+    "COMPILED-baseline.json": "60b10149c9bfc1ef2ebb7f5d63c9c96b1c31e978c5a0bd567bb2bea88caaf270",
+    "OVERLAY-baseline.json": "f8088fe5c51f20d9b874a8d45ce12b478c4839f66298086bbb7747222dd4f3a1",
+    "native-red01.json": "e8674c263e36a99c915b3d80998fb3951397716f2128780d1bd25d9091301902",
+    "CHECK-red01.json": "07cc9cca3457d0ac86142170cf97a7bdde12c5619d1b287b6614907071fc1c86",
+    "SOURCE-red01.json": "104dd2616d8245991e8b6ee3d6066f37121f31d09e7ab4c1817e0bbcc190d3b4",
+    "COMPILED-red01.json": "60b10149c9bfc1ef2ebb7f5d63c9c96b1c31e978c5a0bd567bb2bea88caaf270",
+    "OVERLAY-red01.json": "7f4cf19079c07d6c5bec58d10914e831b99462dad871107ebcf3413266f2ae58",
+    "native-release01.json": "a7230aa185eb385f3b4194409a5adec1d45bad70b53d6b57b1de9c4785331b49",
+    "CHECK-release01.json": "d476f028f57f7bda09c5e8084012e698f234c51881dcbc98f6983adff717a024",
+    "SOURCE-release01.json": "1ffc2ea5d64ad28dfabd5f09188c33704f64622aa899ad096d861845e5a4cc78",
+    "COMPILED-release01.json": "5143455ab5332edf0f388e5ed20f30513c1a9fb8747b4d6371d9f0149174ca39",
+    "OVERLAY-release01.json": "5dbd59e6d80229c408ab0cbc77b36053d1f71fd8411cdbb5164f5b4b33634176",
+    "acceptance-baseline/012-www.webmd.com/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "acceptance-baseline/012-www.webmd.com/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "acceptance-baseline/012-www.webmd.com/EXECUTION.json": "849d2e9e155c9fd3ce5983c16dfcda6220bc11cb50fb8b4b0a1946920aaa4304",
+    "acceptance-baseline/012-www.webmd.com/INVOCATION.json": "f585c07a689076e79856d6d78e9afe58c2c8a3f0c2cac28aa4592a74ed774498",
+    "acceptance-baseline/012-www.webmd.com/stdout.jsonl": "594d85cbf68a5188af9ba28f5a180f683611d8d4785aa25ae9435ec634d864a8",
+    "acceptance-release01/012-www.webmd.com/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "acceptance-release01/012-www.webmd.com/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "acceptance-release01/012-www.webmd.com/EXECUTION.json": "7779c578ae8bc60887cc5e45a1f3499946356bc8b8d91db331d56e5fbeab941c",
+    "acceptance-release01/012-www.webmd.com/INVOCATION.json": "47581b3a5d49eb5619c38824608fdbf0dc0167643ecee5684901d4d7a8b5806f",
+    "acceptance-release01/012-www.webmd.com/stdout.jsonl": "f42fcae83c9cf631814f93cf6a4d616c28bf294629c17f781085575eab89a2cf",
+    "acceptance-baseline/087-www.bankrate.com/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "acceptance-baseline/087-www.bankrate.com/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "acceptance-baseline/087-www.bankrate.com/EXECUTION.json": "84ad92e3812e1c9741b1259a669c400a212e427daa5721e0cf2bbd482496c4a8",
+    "acceptance-baseline/087-www.bankrate.com/INVOCATION.json": "5699176bd815a7dc2f1894b4c31312f45f48aa431dbdc2f4a6a5908633c5fdc4",
+    "acceptance-baseline/087-www.bankrate.com/stdout.jsonl": "e771103f37866d9ff497b2df01a19a4aabbc0af48fd0a7288417b4c5b283caad",
+    "acceptance-release01/087-www.bankrate.com/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "acceptance-release01/087-www.bankrate.com/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "acceptance-release01/087-www.bankrate.com/EXECUTION.json": "d4476ec83535fabd81722eb441bdd7fca82fea4ed91f3ed47a0e1bca5dd4bb28",
+    "acceptance-release01/087-www.bankrate.com/INVOCATION.json": "6b29fc787638c7d3354b28e1a6d1c5444a805cb4632490262c2fcfdc7aa9185f",
+    "acceptance-release01/087-www.bankrate.com/stdout.jsonl": "2532dca12314e0dfb8bd7bfd1f8240ca9af67107ae7c5846aa6a996c110ec414",
+    "acceptance-baseline/002-en.wikipedia.org/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "acceptance-baseline/002-en.wikipedia.org/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "acceptance-baseline/002-en.wikipedia.org/EXECUTION.json": "2462baa758bd9723d2e67cc2285db2e3030aa0144aae455c51f769f96dd7a6a7",
+    "acceptance-baseline/002-en.wikipedia.org/INVOCATION.json": "f2e5727ff1c8456e4a18d5a1e164ea38a1a4932eca83df4a6869e36aacaa5227",
+    "acceptance-baseline/002-en.wikipedia.org/stdout.jsonl": "e5aab59fa1370da46d6fd168ee0666484a1f3dc682d2f67c491ad2af89190bb7",
+    "acceptance-release01/002-en.wikipedia.org/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "acceptance-release01/002-en.wikipedia.org/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "acceptance-release01/002-en.wikipedia.org/EXECUTION.json": "25814121cb00eb7baaa5ffda42dbcfce7b569e44a31190994d7f6b5401617d84",
+    "acceptance-release01/002-en.wikipedia.org/INVOCATION.json": "04dad0224294e0a4de786f67991de8b5f3b23f147253b3021137ce70cf73be7c",
+    "acceptance-release01/002-en.wikipedia.org/stdout.jsonl": "b9a95132bd018b79a4a181462e55c88ecfd72588a2d5892124d50b8798c3d262",
+    "replay/01-www.webmd.com/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay/01-www.webmd.com/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "replay/01-www.webmd.com/EXECUTION.json": "248fc217a48a0dd540eafedba7c81a1b77ee79e90b67d892ba372b334d45e63e",
+    "replay/01-www.webmd.com/INVOCATION.json": "28bfcd21b499e81362a1fd74f0b328e34cbbc2af793597fa3ded6e34628327f9",
+    "replay/01-www.webmd.com/stdout.jsonl": "14f48218d2e8de35369d06a134ca199149707bb90d1b1f21bac214db935a35ba",
+    "live/01-www.webmd.com/stdout.jsonl": "6993043ed84bb1c1ac5e93a2d02296254fe518304150504327e3cf64dd34bb2c",
+    "live/01-www.webmd.com/http-events.jsonl": "a8293768cd9f85bd0ddda6146052dec4014a70320cbe43207cf97181768a2cb7",
+    "live/01-www.webmd.com/INVOCATION.json": "7395c1f0eb8478b4ba2c6983dde4210b61a571c5d113be3aba9d8684caf91114",
+    "live/01-www.webmd.com/EXECUTION.json": "a3143d3e85e13eedfb2086c1f5c302aa7e0440653537342dadd52d3e1e07fd1b",
+    "replay/02-www.webmd.com/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay/02-www.webmd.com/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "replay/02-www.webmd.com/EXECUTION.json": "4f1b0cb149837e5252be3e72d454d5b7b0d75c0be4f7204fea93a1de366b6495",
+    "replay/02-www.webmd.com/INVOCATION.json": "d4fe97a0f01f895df2ecc0b8453cc94ed1c058bac79ad540a2f8db7a76dd85b7",
+    "replay/02-www.webmd.com/stdout.jsonl": "ccf9ff2acf5d3cdccd222ba0d8df6e580f6936128cfe076d0790cc3db45121eb",
+    "live/02-www.webmd.com/stdout.jsonl": "aae123a28146195625aa89f2d632c5b25be0325210e99cd00783addb9cb0d616",
+    "live/02-www.webmd.com/http-events.jsonl": "28d9514dd28c0fcd579cb252a129e53dcc43cfb2e3e9357899d6e484e0549805",
+    "live/02-www.webmd.com/INVOCATION.json": "8a91291226901ed8eb7d14e2db96f97fdd078eb278f3b00cc17e660e7eb7affc",
+    "live/02-www.webmd.com/EXECUTION.json": "36ab2d7633a5b9c0cc49de238ec3967b088d486f1addb22ea54e570b2acacd46",
+    "replay/03-www.bankrate.com/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay/03-www.bankrate.com/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "replay/03-www.bankrate.com/EXECUTION.json": "ac74468c84c5d800dae3e9b5959463d8faff6815b6411f415f6ce58f4b341a92",
+    "replay/03-www.bankrate.com/INVOCATION.json": "79af855b67e3cbe9f7bfcd0ed10ffa368ebde46ea7437b8dae3d0e947a4417de",
+    "replay/03-www.bankrate.com/stdout.jsonl": "738cf39b118b9eea3422bda54d5271fa4bf2009d9807b5ad1689a6f26a6ae564",
+    "live/03-www.bankrate.com/stdout.jsonl": "04384aa69815dfdf86b4081c504881a501a37fe1e10b4746ae115bc66d657cc9",
+    "live/03-www.bankrate.com/http-events.jsonl": "a90454491889849edce3101d1dc117b6f328a2180216d5557ec757d32b99f587",
+    "live/03-www.bankrate.com/INVOCATION.json": "28f2886a0d51c9fd2e34910f5c080c7ef2040d4a7b230978daccc73afc0d4172",
+    "live/03-www.bankrate.com/EXECUTION.json": "ea2d25ff38160e584e8fd9ef50c04783b726132bd08825fbb7d17bba9b870c0b",
+    "SCOPE.md": "08abe9b954ac514da6c8a3bc8dd262f57be6882d2763b82acda18f6856f61f48",
+    "ACCEPTANCE-SCOPE.md": "952fe620e62c45f6847a1410f27d1e7f806bbd3b7652334338be2d527fe2662d",
+    "LIVE-SCOPE.md": "d7880cb54b4a3d4625f568d873722f485ff2348ae58a1cbd44f2f5d0a2749796",
+    "REPLAY-SCOPE.md": "a2633864618eaeaf5a41acb600af901d53077fdb6533cc82b15b3cae9672a17b",
+    "PREFLIGHT.json": "dac04b3e6d73be4e70e57ffd14b97eccb7891440215ee0af247901d0931928e2",
+    "CORPUS.json": "3348109492b3062ee920b1192f222d10ae037e1241438cee1c3cd3b974636c99",
+    "fixtures.json": "ab91962f73a877df637395ddfe3826f6bbf4ef2ace756ba9859cd46cb1d7c050",
+    "LIVE-EXECUTIONS.json": "a17b5974888765e6629028f67ab4183c2966b329a787306c467782460dbae606",
+    "REPLAY-EXECUTIONS.json": "17f0f1ef0fe29e5f2da808b25162f39195815d328d7fbf2b03fdd2b3a71b0e06",
+    "ACCEPTANCE-baseline-EXECUTIONS.json": "a0c487662973248a0a57184685b0c49d5062b28dc61ee63f38cdaa810f4c32f7",
+    "ACCEPTANCE-release01-EXECUTIONS.json": "6f01db8cbae82924d1f876d96428025cf3326024a856bae5fe75bc97c39fcf37",
+    "acceptance.mjs": "78ad58b60e7ba30f1a728f8e2caa44b455bc84c0ffa9f2efbf649ddfa18b67fe",
+    "acceptance.py": "3e517dc92567e52aa99cd34246c6c85d55b5364e1006734d5974f199df0722e8",
+    "run-live.py": "45e90cfac322c227ec54447595327cc38f029bcd0568bc9306645dd5f9300c56",
+    "run-replay.py": "2c3419903f4682b6aaff7a9172d59d00689e999a4e86e81ee8b5cd87d8eeb5d4",
+    "observe.cjs": "74e2ba75cb46ed7f6a286095aafb04a9bf2554c7d75b7b3c95c13752b04a3fc6",
+    "audit.mjs": "026a5deeebde844429c4f71625814b357a24ad0088ac5de790d367219a18fc0c"
+  }
+}

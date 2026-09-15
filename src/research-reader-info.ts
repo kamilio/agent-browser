@@ -9,6 +9,18 @@ export const researchReaderProfile = "native-semantic-reader-v1";
 
 export type ResearchReaderRawPolicy = "separate-omitted-raw-v1";
 
+export type ResearchReaderFallbackEncoding = "utf-8";
+
+export function validateResearchReaderFallbackEncoding(
+	value: unknown,
+): ResearchReaderFallbackEncoding | undefined {
+	if (value === undefined || value === "utf-8") return value;
+	throw new AgentBrowserError(
+		"invalid-input",
+		"Invalid reader fallback encoding",
+	);
+}
+
 export type ResearchReaderVisibilityPolicy =
 	| "source-hidden-v1"
 	| "source-hidden-inline-v1";
@@ -69,6 +81,7 @@ export interface ResearchReaderReport {
 	readonly mimeInterpretation?: Readonly<ResearchMimeInterpretation>;
 	sourceHiddenSubtrees?: number;
 	encoding?: string;
+	fallbackEncoding?: ResearchReaderFallbackEncoding;
 	sourceCodeUnits: number;
 	textCodeUnits: number;
 	mathAlternatives?: Readonly<{ elements: number; codeUnits: number }>;

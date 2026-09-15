@@ -26,11 +26,13 @@ import {
 	validateResearchReaderMimePolicy,
 } from "../src/research-mime-policy.js";
 import {
+	type ResearchReaderFallbackEncoding,
 	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
 	type ResearchReaderVisibilityPolicy,
 	researchReaderHiddenContentSemantics,
 	researchReaderInfo,
+	validateResearchReaderFallbackEncoding,
 	validateResearchReaderRawPolicy,
 	validateResearchReaderVisibilityPolicy,
 } from "../src/research-reader-info.js";
@@ -421,6 +423,35 @@ function replayRawPolicy(
 	return policy;
 }
 
+function replayFallbackEncoding(
+	metadata: Readonly<Record<string, unknown>>,
+): ResearchReaderFallbackEncoding | undefined {
+	const topDeclared = Object.hasOwn(metadata, "readerFallbackEncoding");
+	const reader = metadata.reader;
+	const readerRecord =
+		reader !== null && typeof reader === "object" && !Array.isArray(reader)
+			? (reader as Record<string, unknown>)
+			: undefined;
+	const readerDeclared =
+		readerRecord !== undefined &&
+		Object.hasOwn(readerRecord, "fallbackEncoding");
+	if (!topDeclared && !readerDeclared) return undefined;
+	const selected = validateResearchReaderFallbackEncoding(
+		metadata.readerFallbackEncoding,
+	);
+	if (
+		!topDeclared ||
+		!readerDeclared ||
+		selected === undefined ||
+		readerRecord?.fallbackEncoding !== selected
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid research replay fallback encoding",
+		);
+	return selected;
+}
+
 function replayVisibilityPolicy(
 	metadata: Readonly<Record<string, unknown>>,
 ): ResearchReaderVisibilityPolicy | undefined {
@@ -779,6 +810,7 @@ function extractValidatedReplayJson<
 	try {
 		checkpoint();
 		const rawPolicy = replayRawPolicy(admission.originalMetadata);
+		const fallbackEncoding = replayFallbackEncoding(admission.originalMetadata);
 		const visibilityPolicy = replayVisibilityPolicy(admission.originalMetadata);
 		const { policy: mimePolicy, interpretation: mimeInterpretation } =
 			replayMimePolicy(admission.originalMetadata);
@@ -791,14 +823,17 @@ function extractValidatedReplayJson<
 			ResearchReaderRawPolicy?,
 			ResearchReaderVisibilityPolicy?,
 			ResearchReaderMimePolicy?,
+			ResearchReaderFallbackEncoding?,
 		] =
-			mimePolicy !== undefined
-				? [rawPolicy, visibilityPolicy, mimePolicy]
-				: visibilityPolicy !== undefined
-					? [rawPolicy, visibilityPolicy]
-					: rawPolicy === undefined
-						? []
-						: [rawPolicy];
+			fallbackEncoding !== undefined
+				? [rawPolicy, visibilityPolicy, mimePolicy, fallbackEncoding]
+				: mimePolicy !== undefined
+					? [rawPolicy, visibilityPolicy, mimePolicy]
+					: visibilityPolicy !== undefined
+						? [rawPolicy, visibilityPolicy]
+						: rawPolicy === undefined
+							? []
+							: [rawPolicy];
 		const primary = admission.originalMetadata.primaryResponse as {
 			url: string;
 			status: number;
@@ -897,8 +932,15 @@ function extractValidatedReplayJson<
 				tree = document;
 			},
 		};
-		const mimeArguments: [ResearchReaderMimePolicy?] =
-			mimePolicy === undefined ? [] : [mimePolicy];
+		const mimeArguments: [
+			ResearchReaderMimePolicy?,
+			ResearchReaderFallbackEncoding?,
+		] =
+			fallbackEncoding !== undefined
+				? [mimePolicy, fallbackEncoding]
+				: mimePolicy === undefined
+					? []
+					: [mimePolicy];
 		const visibilityEvidence =
 			visibilityPolicy === undefined
 				? undefined
@@ -941,6 +983,15 @@ function extractValidatedReplayJson<
 		tree = loadResearchDocument(response, context, profile, ...policyArguments);
 		checkpoint();
 		const reader = researchReaderInfo(tree);
+		if (
+			fallbackEncoding !== undefined &&
+			(reader?.fallbackEncoding !== fallbackEncoding ||
+				originalReader?.encoding !== reader?.encoding)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Research replay encoding does not match captured evidence",
+			);
 		const actualInterpretation = reader?.mimeInterpretation;
 		if (
 			mimeInterpretation !== undefined &&

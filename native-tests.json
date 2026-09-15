@@ -910,5 +910,7 @@
 	"src/node-response-prefix.test.ts",
 	"src/research-empty-outline-recovery.test.ts",
 	"src/research-empty-outline-cli.test.ts",
-	"src/released-safejs-check-diagnostics.test.ts"
+	"src/released-safejs-check-diagnostics.test.ts",
+	"src/research-reader-fallback.test.ts",
+	"src/research-reader-fallback-cli.test.ts"
 ]

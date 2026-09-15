@@ -844,13 +844,13 @@ const decoderCases: DecodeCase[] = [
 		bomConsumed: false,
 	},
 	{
-		name: "unknown meta falls back rather than adopting later meta",
+		name: "unknown meta is ignored before a supported declaration",
 		body: encoder.encode(
 			"<meta charset=synthetic-unknown><meta charset=utf-8>é",
 		),
 		contentType: "text/html",
-		text: "<meta charset=synthetic-unknown><meta charset=utf-8>Ã©",
-		encoding: "windows-1252",
+		text: "<meta charset=synthetic-unknown><meta charset=utf-8>é",
+		encoding: "utf-8",
 		bomConsumed: false,
 	},
 	{
