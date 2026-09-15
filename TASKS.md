@@ -6,6 +6,39 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: explicit bounded content-landmark focus
+
+- Added opt-in `main-content-v1` to core extraction, native `extract` and research
+  CLI/API. A unique nonempty outermost main wins, otherwise a unique article;
+  ambiguity/absence falls back to the document. Frozen selection metadata records
+  scope basis/counts. Existing roles, admission and byte/node/depth caps apply;
+  scan limits throw, manual scopes/discovery conflict, defaults remain unchanged.
+- Surveyed 60 saved nonempty sources, then ran 95 baseline and 190 candidate
+  mocked native navigations across all 95 retained bodies. All 95 default
+  outputs/outcomes/classifications are unchanged. Focus retains all outcomes and
+  established barriers. Header/document and optional unfiltered checks precede
+  focus; complete captured bodies survive, and replay does not inherit focus.
+- Forty-four nonempty unverified sources select landmarks: combined Markdown
+  bytes 1125577 to690484 (38.7% fewer); Kateminimalist 34787 to11565 on its same
+  pinned fresh body. This is not a latency/token benchmark or a usefulness pass.
+  Reviewed Home Depot/Grokipedia scopes lose substantial context or retain only
+  promotion/topic shells; Consumer Reports/Ulta also lose outside context. Keep
+  opt-in. Button labels can count; this does not filter all login/control shells.
+- Final selected suite: 3530pass/4 unchanged pre-existing failures across49files;
+  all200 new tests also pass separately. Build/formatter/lint/new-test types pass.
+  Broad types retain one existing snapshot-test error. The expanded baseline adds
+  a known node-relations capability expectation to the prior three failures.
+  No unrelated fix/exclusion. Initial fixture and probe-harness failures remain
+  recorded. Final fixture-only revision has byte-identical compiled runtime to
+  the candidate probes. Canonical native manifest904; three old residuals remain.
+- Zero new HTTP, SDK, credential, listener or TTY probes:250 successful offline
+  children and1 earlier pre-navigation failed child all closed. Original100 live
+  measurements remain unchanged; five missing bodies were not fabricated. Preserve
+  42dirtytracked/697untracked originals with exact partial staging; no push.
+  Contract `EXTRACTION-FOCUS.md`; evidence/report
+  `reports/content-landmark-focus-2026-09-15.{md,json}`. Overall goal stays active;
+  broad real-site, interaction/passkey, SafeJS and challenge gates remain open.
+
 ### September 15: fresh live confirmation of reader and header fixes
 
 - Revisited four previously tested public entry pages with the pinned native

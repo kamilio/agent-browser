@@ -250,7 +250,14 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 	text: [],
 	html: ["max-code-units"],
 	dom: ["depth", "max-nodes", "max-code-units"],
-	extract: ["format", "table-metadata", "max-bytes", "max-nodes", "depth"],
+	extract: [
+		"format",
+		"content-focus",
+		"table-metadata",
+		"max-bytes",
+		"max-nodes",
+		"depth",
+	],
 	requests: [],
 	images: [],
 	request: [],
@@ -1842,6 +1849,13 @@ export class BrowserCommandHost {
 		}
 		if (invocation.command === "extract") {
 			return extractDocument(browser.page(tabId).document, {
+				...(options["content-focus"] === undefined
+					? {}
+					: {
+							contentFocus: options[
+								"content-focus"
+							] as ExtractionOptions["contentFocus"],
+						}),
 				...(options["table-metadata"] === undefined
 					? {}
 					: { tableMetadata: options["table-metadata"] as boolean }),

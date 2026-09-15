@@ -899,5 +899,8 @@
   "src/research-mime-replay.test.ts",
   "src/research-response-headers.test.ts",
   "src/research-header-capture.test.ts",
-  "src/research-header-admission.test.ts"
+  "src/research-header-admission.test.ts",
+  "src/extraction-content-focus.test.ts",
+  "src/research-content-focus.test.ts",
+  "src/command-content-focus.test.ts"
 ]

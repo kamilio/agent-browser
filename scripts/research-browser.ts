@@ -202,6 +202,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	let captureBody = false;
 	let format: "markdown" | "json" | undefined;
 	let outputLimitPolicy: "text-prefix-v1" | undefined;
+	let contentFocus: "main-content-v1" | undefined;
 	let tableMetadata = false;
 	let compactTables = false;
 	let tableRows = false;
@@ -216,6 +217,16 @@ export function parseResearchArguments(args: readonly string[]) {
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (argument === "--content-focus" && contentFocus === undefined) {
+			const value = args[++index];
+			if (value !== "main-content-v1")
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid research content focus policy",
+				);
+			contentFocus = value;
+			continue;
+		}
 		if (argument === "--reader-mime-policy" && readerMimePolicy === undefined) {
 			const value = args[++index];
 			if (value === undefined)
@@ -439,6 +450,18 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Long research requires one reader capture with headings",
 		);
+	if (
+		contentFocus !== undefined &&
+		(selector !== undefined ||
+			section !== undefined ||
+			lines !== undefined ||
+			headings ||
+			find !== undefined)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research content focus cannot be combined with selection or discovery",
+		);
 	if (tableMetadata && format !== "json")
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -487,6 +510,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		...(readerMimePolicy === undefined ? {} : { readerMimePolicy }),
 		...(format === undefined ? {} : { format }),
 		...(outputLimitPolicy === undefined ? {} : { outputLimitPolicy }),
+		...(contentFocus === undefined ? {} : { contentFocus }),
 		...(tableMetadata ? { tableMetadata: true as const } : {}),
 		...(compactTables ? { compactTables: true as const } : {}),
 		...(tableRows ? { tableRows: true as const } : {}),
@@ -509,6 +533,7 @@ export type ResearchOutcome =
 	| "failure";
 
 export interface ResearchNavigationReport {
+	contentFocus?: "main-content-v1";
 	representationPreference?: "markdown";
 	readerMimePolicy?: ResearchReaderMimePolicy;
 	outputLimitPolicy?: "text-prefix-v1";
@@ -561,6 +586,7 @@ export interface ResearchNavigationReport {
 }
 
 export interface ResearchExecutionOptions {
+	contentFocus?: "main-content-v1";
 	preferMarkdown?: boolean;
 	readerMimePolicy?: ResearchReaderMimePolicy;
 	outputLimitPolicy?: "text-prefix-v1";
@@ -582,6 +608,8 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 			typeof options.preferMarkdown !== "boolean") ||
 		(options.outputLimitPolicy !== undefined &&
 			options.outputLimitPolicy !== "text-prefix-v1") ||
+		(options.contentFocus !== undefined &&
+			options.contentFocus !== "main-content-v1") ||
 		(options.format !== undefined &&
 			options.format !== "markdown" &&
 			options.format !== "json") ||
@@ -660,6 +688,9 @@ export async function researchNavigation(
 		...(executionOptions.outputLimitPolicy === undefined
 			? []
 			: ["--output-limit-policy", executionOptions.outputLimitPolicy]),
+		...(executionOptions.contentFocus === undefined
+			? []
+			: ["--content-focus", executionOptions.contentFocus]),
 		...(executionOptions.tableMetadata ? ["--table-metadata"] : []),
 		...(executionOptions.compactTables ? ["--compact-tables"] : []),
 		...(executionOptions.tableRows ? ["--table-rows"] : []),
@@ -690,6 +721,9 @@ export async function researchNavigation(
 	const started = Date.now();
 	const fragment = researchFragmentReport(validated.urls[0]);
 	const report: ResearchNavigationReport = {
+		...(validated.contentFocus === undefined
+			? {}
+			: { contentFocus: validated.contentFocus }),
 		...(validated.readerMimePolicy === undefined
 			? {}
 			: { readerMimePolicy: validated.readerMimePolicy }),
@@ -1088,6 +1122,9 @@ export async function researchNavigation(
 		}
 		const extraction = extractDocument(tree, {
 			format: validated.format ?? "markdown",
+			...(validated.contentFocus === undefined
+				? {}
+				: { contentFocus: validated.contentFocus }),
 			...(validated.outputLimitPolicy === undefined
 				? {}
 				: { outputLimitPolicy: validated.outputLimitPolicy }),
@@ -1175,6 +1212,7 @@ export async function* researchBatch(
 					preferMarkdown: options.preferMarkdown,
 					readerMimePolicy: options.readerMimePolicy,
 					outputLimitPolicy: options.outputLimitPolicy,
+					contentFocus: options.contentFocus,
 					...(options.readerRawPolicy === undefined
 						? {}
 						: { readerRawPolicy: options.readerRawPolicy }),
@@ -1309,7 +1347,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies require reader; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies require reader; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});

@@ -20,6 +20,10 @@ import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import {
+	type ContentFocusMetadata,
+	selectContentFocus,
+} from "./extraction-content-focus.js";
+import {
 	type ExtractionContentFallback,
 	boundedExtractionTextPrefix,
 } from "./extraction-prefix.js";
@@ -105,6 +109,7 @@ export interface ExtractedNode {
 
 export interface ExtractionOptions {
 	format?: "markdown" | "json";
+	contentFocus?: "main-content-v1";
 	outputLimitPolicy?: "text-prefix-v1";
 	tableMetadata?: boolean;
 	compactTables?: boolean;
@@ -178,6 +183,7 @@ interface ExtractionMetadata {
 	revision: number;
 	partial: true;
 	contentFallback?: Readonly<ExtractionContentFallback>;
+	contentSelection?: Readonly<ContentFocusMetadata>;
 	compactTables?: true;
 	tableRows?: true;
 	reader?: Readonly<ResearchReaderReport>;
@@ -1055,6 +1061,17 @@ export function extractDocument(
 	tree: DocumentTree,
 	options: ExtractionOptions = {},
 ): DocumentExtraction {
+	if (
+		options.contentFocus !== undefined &&
+		(options.contentFocus !== "main-content-v1" ||
+			options.root !== undefined ||
+			options.section !== undefined ||
+			options.lines !== undefined)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Content focus requires main-content-v1 without root, section or lines",
+		);
 	if (options.lines !== undefined && options.root !== undefined)
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -1127,9 +1144,20 @@ export function extractDocument(
 		options.lines === undefined
 			? undefined
 			: selectTextLines(tree, options.lines);
-	const start =
+	const requestedRoot =
 		options.root === undefined ? tree.root : tree.resolve(options.root).id;
 	const { styles, skip, visible, descend } = extractionAdmission(tree);
+	const focus =
+		options.contentFocus === undefined
+			? undefined
+			: selectContentFocus(tree, {
+					maxNodes,
+					maxDepth,
+					skip,
+					visible,
+					descend,
+				});
+	const start = focus?.root ?? requestedRoot;
 	const section =
 		options.section === undefined
 			? undefined
@@ -1165,6 +1193,7 @@ export function extractDocument(
 		revision: tree.revision,
 		partial: true,
 		...(options.compactTables === true ? { compactTables: true as const } : {}),
+		...(focus ? { contentSelection: focus.metadata } : {}),
 		...(options.tableRows === true ? { tableRows: true as const } : {}),
 		...(reader ? { reader } : {}),
 		...(descriptions ? { sourceDescriptions: descriptions } : {}),

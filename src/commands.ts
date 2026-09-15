@@ -242,6 +242,7 @@ const definitions: CommandDefinition[] = [
 		1,
 		{
 			format: stringOption,
+			"content-focus": stringOption,
 			"table-metadata": booleanOption,
 			"max-bytes": { ...positiveInteger, minimum: 256, maximum: 1_048_576 },
 			"max-nodes": { ...positiveInteger, maximum: 50_000 },
