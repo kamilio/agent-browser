@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: real content pages and bounded recovery workflows
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Twelve fresh public documentation/reference navigations used only the native
+reader with explicit Markdown preference, producing 13 observed GETs and 12
+verified captures. Ten yielded substantial-looking source content, one hit the
+extraction output limit, and one yielded only a textual redirect notice. All
+HTTP statuses were 200 after redirects, illustrating why status/nonempty text
+alone is not content success. Four initial responses served Markdown; these are
+literal fenced source with empty title metadata, not semantic Markdown parsing.
+One scoped follow-up to PyTorch's public source-linked versioned URL recovered
+163,872 extraction bytes. Total: 13 navigation attempts, 14 GETs, zero retries,
+13 verified captures and clean child/request/socket closure. No script execution,
+credentials, challenge bypass or production behavior change.
+Wikipedia's original 256,013/256,000-byte extraction failure remains unchanged.
+Existing pinned offline output-limit recovery yields 64 headings and Training,
+Inference/Evaluation sections of 2,919/6,828/8,239 bytes; actual CLI/API agree.
+Ordinary failed-receipt replay stays denied and no request is repeated. Six
+guarded offline children include one preserved prototype-comparison assertion
+error followed by a corrected data comparison, with zero network attempts.
+Current committed runtime/config sources match the previously validated frozen
+build; worktree and source/compiled pins stayed unchanged throughout the probes.
+See `CONTENT-PAGE-WORKFLOWS.md` and `reports/content-pages-2026-09-15.md`.
+Next: semantic Markdown/title/navigation support, MDN's absent dynamic sections,
+less navigation noise and source-backed research conclusions. Full rendering,
+interactions, credentials/passkeys, SafeJS, service/socket and TTY gates remain
+open. Original work and all earlier website evidence are preserved. No push.
+
 ### September 15: recover bounded, labeled source descriptions
 
 **PROGRESS; overall browser goal remains ACTIVE.**
