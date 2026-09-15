@@ -873,5 +873,6 @@
   "src/research-reader-visibility.test.ts",
   "src/research-visibility-policy.test.ts",
   "src/research-inline-visibility.test.ts",
-  "src/research-inline-visibility-policy.test.ts"
+  "src/research-inline-visibility-policy.test.ts",
+  "src/research-replay-compact-tables.test.ts"
 ]

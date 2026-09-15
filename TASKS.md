@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: content follow-ups and compact replay parity
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Eight additional native page attempts and two explicit source-linked follow-ups:
+10 GETs, no redirects/retries, 10 verified captures and clean child closure.
+Seven direct nonempty results, Reuters401, Phoronix404 and an arXiv output-cap
+failure remain distinct. Follow Phoronix's authored /reviews link to useful
+content without relabeling its original404. The arXiv abstract links full HTML;
+that captured source fits loading but not whole-page output. Existing offline
+recovery finds 130 headings; its observed Pretraining section is recoverable.
+Expose existing compactTables in replay/selector/section recovery and CLI,
+including tableRows composition and exact 15-argument parsing. Defaults, source
+pins, failure provenance, limits, visibility preflight and ownership remain.
+Pretraining output is 36,118 bytes normally, 28,448 compact and 24,758 compact
+with rows. Actual CLI matches API/direct source extraction; the whole paper
+still hits the unchanged cap. Fourteen guarded offline children close without
+network attempts; preserved failed helpers and rejection controls are explicit.
+All 158 new tests pass; 1,311 selected assertions pass and one stale baseline
+row-CLI recovery assertion still fails. All 1,154 baseline statuses match;
+build/types/format/lint pass. This is not a full native release. Independent
+static review finds no actionable two-file production issue. See
+RESEARCH-COMPACT-REPLAY.md and reports/reader-fallback-content-2026-09-15.md.
+Static inspection of 22 prior top-100 receipts finds no demonstrated lost
+article/data text in its 13 empty results; runtime shells are not manufactured
+into passes. Historical evidence, 42 dirty tracked paths and 697 original
+untracked files are preserved. No push or wider gate completion is claimed.
+Next: bounded large-document reading and source-linked navigation; script-driven
+apps, full rendering/interactions, credentials/passkeys and service gates remain.
+
 ### September 15: conservative inline source filtering
 
 **PROGRESS; overall browser goal remains ACTIVE.**

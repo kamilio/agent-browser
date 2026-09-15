@@ -66,13 +66,18 @@ type ResearchHtmlReplaySelection =
 	| ((
 			| { selector: string; section?: never; links?: never }
 			| { section: string; selector?: never; links?: never }
-	  ) & { tableMetadata?: boolean; tableRows?: boolean })
+	  ) & {
+			tableMetadata?: boolean;
+			tableRows?: boolean;
+			compactTables?: boolean;
+	  })
 	| {
 			links: string;
 			selector?: never;
 			section?: never;
 			tableMetadata?: never;
 			tableRows?: never;
+			compactTables?: never;
 	  };
 
 export type ResearchJsonReplaySelection =
@@ -86,18 +91,21 @@ export type ResearchJsonReplaySelection =
 			links?: never;
 			tableMetadata?: never;
 			tableRows?: never;
+			compactTables?: never;
 	  });
 
 export interface ResearchOutputLimitSectionSelection {
 	section: string;
 	tableMetadata?: boolean;
 	tableRows?: boolean;
+	compactTables?: boolean;
 }
 
 export interface ResearchOutputLimitSelectorSelection {
 	selector: string;
 	tableMetadata?: boolean;
 	tableRows?: boolean;
+	compactTables?: boolean;
 }
 
 export type ResearchOutputLimitSelectorRecovery = Omit<
@@ -249,7 +257,7 @@ function selectionSnapshot(value: unknown) {
 	const keys = Reflect.ownKeys(value);
 	if (
 		keys.length < 1 ||
-		keys.length > 3 ||
+		keys.length > 4 ||
 		!keys.every(
 			(key) =>
 				typeof key === "string" &&
@@ -261,6 +269,7 @@ function selectionSnapshot(value: unknown) {
 					"find",
 					"tableMetadata",
 					"tableRows",
+					"compactTables",
 				].includes(key),
 		)
 	)
@@ -286,6 +295,7 @@ function selectionSnapshot(value: unknown) {
 			lines: lineRangeSnapshot(fields.lines),
 			tableMetadata: false,
 			tableRows: false,
+			compactTables: false,
 		};
 	}
 	if (Object.hasOwn(fields, "find")) {
@@ -303,6 +313,7 @@ function selectionSnapshot(value: unknown) {
 			target: query,
 			tableMetadata: false,
 			tableRows: false,
+			compactTables: false,
 		};
 	}
 	const section = Object.hasOwn(fields, "section");
@@ -319,7 +330,9 @@ function selectionSnapshot(value: unknown) {
 		target.length > researchJsonReplayLimits.maxSelectorCodeUnits ||
 		(fields.tableMetadata !== undefined &&
 			typeof fields.tableMetadata !== "boolean") ||
-		(fields.tableRows !== undefined && typeof fields.tableRows !== "boolean")
+		(fields.tableRows !== undefined && typeof fields.tableRows !== "boolean") ||
+		(fields.compactTables !== undefined &&
+			typeof fields.compactTables !== "boolean")
 	)
 		invalidSelection();
 	if (links) {
@@ -330,7 +343,8 @@ function selectionSnapshot(value: unknown) {
 					character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127,
 			) ||
 			Object.hasOwn(fields, "tableMetadata") ||
-			Object.hasOwn(fields, "tableRows")
+			Object.hasOwn(fields, "tableRows") ||
+			Object.hasOwn(fields, "compactTables")
 		)
 			invalidSelection();
 	} else {
@@ -349,6 +363,7 @@ function selectionSnapshot(value: unknown) {
 		target,
 		tableMetadata: fields.tableMetadata === true,
 		tableRows: fields.tableRows === true,
+		compactTables: fields.compactTables === true,
 	};
 }
 
@@ -451,7 +466,7 @@ function validateReplayFormat(
 			(selected.method === "link-url-search" ||
 				selected.method === "text-line-discovery" ||
 				selected.tableMetadata)) ||
-		(selected.tableRows && format !== "markdown")
+		((selected.tableRows || selected.compactTables) && format !== "markdown")
 	)
 		throw new AgentBrowserError("invalid-input", "Invalid replay format");
 	return format;
@@ -739,6 +754,9 @@ function extractValidatedReplayJson<
 						tableMetadata:
 							"tableMetadata" in selected ? selected.tableMetadata : undefined,
 						tableRows: "tableRows" in selected ? selected.tableRows : undefined,
+						...("compactTables" in selected && selected.compactTables
+							? { compactTables: true }
+							: {}),
 						limits: {
 							maxBytes: researchJsonReplayLimits.maxExtractionBytes,
 							maxNodes: researchJsonReplayLimits.maxNodes,
@@ -861,6 +879,7 @@ function extractValidatedReplayJson<
 				format,
 				tableMetadata: selected.tableMetadata,
 				tableRows: selected.tableRows,
+				...(selected.compactTables ? { compactTables: true } : {}),
 				...(selected.method === "text-lines"
 					? { lines: selected.lines }
 					: selected.method === "heading-section"

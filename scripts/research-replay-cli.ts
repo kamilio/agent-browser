@@ -23,7 +23,7 @@ export const researchReplayCliLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--table-metadata] [--table-rows] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --selector, --section or --headings. Markdown requires selector/section extraction without table metadata or literal --lines extraction. Table rows require explicit Markdown. Headings require recovery and do not accept table metadata. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
+	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --selector, --section or --headings. Markdown requires selector/section extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section extraction and may be combined. Headings require recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
 
 function invalidArguments(): never {
 	throw new AgentBrowserError(
@@ -40,13 +40,14 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 } {
 	if (
 		!Array.isArray(args) ||
-		args.length > 14 ||
+		args.length > 15 ||
 		args.some((value) => typeof value !== "string" || value.length > 4096)
 	)
 		invalidArguments();
 	const fields = new Map<string, string>();
 	let tableMetadata = false;
 	let tableRows = false;
+	let compactTables = false;
 	let recoverOutputLimit = false;
 	let headings = false;
 	const valueFlags = new Set([
@@ -71,6 +72,10 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 			tableRows = true;
 			continue;
 		}
+		if (flag === "--compact-tables" && !compactTables) {
+			compactTables = true;
+			continue;
+		}
 		if (flag === "--recover-output-limit" && !recoverOutputLimit) {
 			recoverOutputLimit = true;
 			continue;
@@ -86,7 +91,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	}
 	const profile = fields.get("--expected-profile");
 	const format = fields.get("--format");
-	if (tableRows && format !== "markdown") invalidArguments();
+	if ((tableRows || compactTables) && format !== "markdown") invalidArguments();
 	const receiptSha256 = fields.get("--receipt-sha256");
 	const bodySha256 = fields.get("--body-sha256");
 	const bodyBytes = fields.get("--body-bytes");
@@ -142,7 +147,13 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		invalidArguments();
 	const target = fields.get(mode);
 	if (mode === "--find" || mode === "--lines") {
-		if (profile !== "default" || tableMetadata || tableRows || !target)
+		if (
+			profile !== "default" ||
+			tableMetadata ||
+			tableRows ||
+			compactTables ||
+			!target
+		)
 			invalidArguments();
 		let selection: ResearchJsonReplaySelection;
 		if (mode === "--find") {
@@ -186,6 +197,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	const metadata = {
 		...(tableMetadata ? { tableMetadata: true } : {}),
 		...(tableRows ? { tableRows: true } : {}),
+		...(compactTables ? { compactTables: true } : {}),
 	};
 	return {
 		...(format === undefined ? {} : { format }),
@@ -378,6 +390,9 @@ export async function runResearchReplayCli(
 				...(options.selection.tableRows === undefined
 					? {}
 					: { tableRows: options.selection.tableRows }),
+				...(options.selection.compactTables === undefined
+					? {}
+					: { compactTables: options.selection.compactTables }),
 			};
 			if (options.selection.selector !== undefined) {
 				result = recoverResearchOutputLimitSelector(

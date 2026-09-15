@@ -1,0 +1,1373 @@
+{
+  "passed": true,
+  "scopeVerified": true,
+  "fullNativeSuitePassed": false,
+  "parent": "243406a3ab947d1e0b774aebc9e5e38dbd1087c8",
+  "actualHttpRequests": 10,
+  "offlineHttpRequests": 0,
+  "validation": {
+    "label": "release02",
+    "files": 19,
+    "passed": 1311,
+    "failed": 1,
+    "newPassed": 158,
+    "newFailures": 0,
+    "baselineStatusesMatched": 1154,
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0,
+      "native": 1
+    },
+    "baselineFailure": "src/research-table-rows-cli.test.ts:186 still expects selector output-limit recovery to be rejected; unchanged"
+  },
+  "live": {
+    "initial": {
+      "at": "2026-09-15T08:53:49.653Z",
+      "passed": true,
+      "commit": "243406a3ab947d1e0b774aebc9e5e38dbd1087c8",
+      "navigationAttempts": 8,
+      "httpRequestsObserved": 8,
+      "retries": 0,
+      "capturesVerified": 8,
+      "nativeChildren": 8,
+      "outcomes": {
+        "extracted-unverified": 6,
+        "http-failure": 2
+      },
+      "sourcesAndCompiledUnchanged": true,
+      "worktreeClaim": "Owned development follows the pinned-build sweep; preservation audited separately",
+      "results": [
+        {
+          "rank": 1,
+          "domain": "github.com",
+          "url": "https://github.com/ggml-org/llama.cpp",
+          "startedAt": "2026-09-15T08:53:13.037Z",
+          "finishedAt": "2026-09-15T08:53:13.832244+00:00",
+          "elapsedSeconds": 0.9177383650094271,
+          "exitCode": 0,
+          "timedOut": false,
+          "reaped": true,
+          "signals": [],
+          "childPid": 2498593,
+          "childAbsent": true,
+          "groupAbsent": true,
+          "attempts": 1,
+          "requestsObserved": 1,
+          "parseError": null,
+          "reportCount": 1,
+          "status": 200,
+          "finalUrl": "https://github.com/ggml-org/llama.cpp",
+          "outcome": "extracted-unverified",
+          "contentSuccess": null,
+          "classification": {
+            "classifier": "browser-challenges",
+            "barrier": null,
+            "diagnostic": null
+          },
+          "failure": null,
+          "contentType": [
+            "text/html; charset=utf-8"
+          ],
+          "title": "GitHub - ggml-org/llama.cpp: LLM inference in C/C++ · GitHub",
+          "decodedBytes": 430598,
+          "encodedBytes": 54980,
+          "markdownBytes": 50135,
+          "receiptSha256": "f09b96a37a357f9a96c25c2c2eed54a24352d66ce89b010227463670937a86a3",
+          "bodySha256": "df9414b534c4299d6e8d5ff5a79a66da80072300e12925c52400fc1c36be9825",
+          "guardExited": true,
+          "denied": [],
+          "credentialsObserved": false,
+          "onlyGet": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "directory": "001-github.com",
+          "markdownSha256": "35cc615cc12f5912364a5f792082e8d7190819637a150fef8ffe7ea9ea58b178",
+          "requestCloses": 1,
+          "socketCloses": 1,
+          "bodyVerified": true
+        },
+        {
+          "rank": 2,
+          "domain": "arxiv.org",
+          "url": "https://arxiv.org/abs/2307.09288",
+          "startedAt": "2026-09-15T08:53:15.955Z",
+          "finishedAt": "2026-09-15T08:53:16.099436+00:00",
+          "elapsedSeconds": 0.265151746571064,
+          "exitCode": 0,
+          "timedOut": false,
+          "reaped": true,
+          "signals": [],
+          "childPid": 2498672,
+          "childAbsent": true,
+          "groupAbsent": true,
+          "attempts": 1,
+          "requestsObserved": 1,
+          "parseError": null,
+          "reportCount": 1,
+          "status": 200,
+          "finalUrl": "https://arxiv.org/abs/2307.09288",
+          "outcome": "extracted-unverified",
+          "contentSuccess": null,
+          "classification": {
+            "classifier": "browser-challenges",
+            "barrier": null,
+            "diagnostic": null
+          },
+          "failure": null,
+          "contentType": [
+            "text/html; charset=utf-8"
+          ],
+          "title": "[2307.09288] Llama 2: Open Foundation and Fine-Tuned Chat Models",
+          "decodedBytes": 53001,
+          "encodedBytes": 53001,
+          "markdownBytes": 16485,
+          "receiptSha256": "a34d01400b97191400eeadd437e8469af6fc86c73854fc9394ec955c8bf5d87a",
+          "bodySha256": "6576feaee0e427f22d746709bddbe224eca66672540a18fc7448265d9e3cf5b5",
+          "guardExited": true,
+          "denied": [],
+          "credentialsObserved": false,
+          "onlyGet": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "directory": "002-arxiv.org",
+          "markdownSha256": "6b92df0c3c53ce20e02960e26e6c190253ff59edbc53de993a128958824b6ff7",
+          "requestCloses": 1,
+          "socketCloses": 1,
+          "bodyVerified": true
+        },
+        {
+          "rank": 3,
+          "domain": "www.phoronix.com",
+          "url": "https://www.phoronix.com/review",
+          "startedAt": "2026-09-15T08:53:18.223Z",
+          "finishedAt": "2026-09-15T08:53:18.415839+00:00",
+          "elapsedSeconds": 0.3153054863214493,
+          "exitCode": 1,
+          "timedOut": false,
+          "reaped": true,
+          "signals": [],
+          "childPid": 2498693,
+          "childAbsent": true,
+          "groupAbsent": true,
+          "attempts": 1,
+          "requestsObserved": 1,
+          "parseError": null,
+          "reportCount": 1,
+          "status": 404,
+          "finalUrl": "https://www.phoronix.com/review",
+          "outcome": "http-failure",
+          "contentSuccess": false,
+          "classification": {
+            "classifier": "browser-challenges",
+            "barrier": null,
+            "diagnostic": null
+          },
+          "failure": null,
+          "contentType": [
+            "text/html; charset=UTF-8"
+          ],
+          "title": "Linux Performance, Benchmarks & Open-Source News - Phoronix",
+          "decodedBytes": 24870,
+          "encodedBytes": 9036,
+          "markdownBytes": 5132,
+          "receiptSha256": "2fa40d3eb8c8276b2282ce24ac20a2e0d9fbd712a497ccea583d2038f8dd06e1",
+          "bodySha256": "cc181a5428e56f345cf73cb72d2bffcb4df9d58c51507001595fbe587a6d1202",
+          "guardExited": true,
+          "denied": [],
+          "credentialsObserved": false,
+          "onlyGet": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "directory": "003-www.phoronix.com",
+          "markdownSha256": "7fe1b413e8c6ff419cea3466ec1b19c7bbbde5977a2b5bc52385a5161040c423",
+          "requestCloses": 1,
+          "socketCloses": 1,
+          "bodyVerified": true
+        },
+        {
+          "rank": 4,
+          "domain": "lobste.rs",
+          "url": "https://lobste.rs/",
+          "startedAt": "2026-09-15T08:53:20.538Z",
+          "finishedAt": "2026-09-15T08:53:20.782345+00:00",
+          "elapsedSeconds": 0.36545037664473057,
+          "exitCode": 0,
+          "timedOut": false,
+          "reaped": true,
+          "signals": [],
+          "childPid": 2498803,
+          "childAbsent": true,
+          "groupAbsent": true,
+          "attempts": 1,
+          "requestsObserved": 1,
+          "parseError": null,
+          "reportCount": 1,
+          "status": 200,
+          "finalUrl": "https://lobste.rs/",
+          "outcome": "extracted-unverified",
+          "contentSuccess": null,
+          "classification": {
+            "classifier": "browser-challenges",
+            "barrier": null,
+            "diagnostic": null
+          },
+          "failure": null,
+          "contentType": [
+            "text/html; charset=utf-8"
+          ],
+          "title": "Lobsters",
+          "decodedBytes": 58899,
+          "encodedBytes": 8201,
+          "markdownBytes": 20350,
+          "receiptSha256": "758b389282f1728c0312df4bc6ec3ebef5ce815b3f246b350b7175d4660e1acd",
+          "bodySha256": "18b56fd96260d30e21648f0a4029e0f3651bb7b82bfcdc6e52b940a14ad3336c",
+          "guardExited": true,
+          "denied": [],
+          "credentialsObserved": false,
+          "onlyGet": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "directory": "004-lobste.rs",
+          "markdownSha256": "d3958a7879aa55cdc3095e7510627f905ef25f938b7f3a017cedb9be1310fb4c",
+          "requestCloses": 1,
+          "socketCloses": 1,
+          "bodyVerified": true
+        },
+        {
+          "rank": 5,
+          "domain": "www.reuters.com",
+          "url": "https://www.reuters.com/technology/",
+          "startedAt": "2026-09-15T08:53:13.037Z",
+          "finishedAt": "2026-09-15T08:53:13.129153+00:00",
+          "elapsedSeconds": 0.2146680224686861,
+          "exitCode": 1,
+          "timedOut": false,
+          "reaped": true,
+          "signals": [],
+          "childPid": 2498592,
+          "childAbsent": true,
+          "groupAbsent": true,
+          "attempts": 1,
+          "requestsObserved": 1,
+          "parseError": null,
+          "reportCount": 1,
+          "status": 401,
+          "finalUrl": "https://www.reuters.com/technology/",
+          "outcome": "http-failure",
+          "contentSuccess": false,
+          "classification": {
+            "classifier": "browser-challenges",
+            "barrier": null,
+            "diagnostic": null
+          },
+          "failure": null,
+          "contentType": [
+            "text/html;charset=utf-8"
+          ],
+          "title": "reuters.com",
+          "decodedBytes": 774,
+          "encodedBytes": 774,
+          "markdownBytes": 44,
+          "receiptSha256": "dfe301f9dd43a9acdfe669c9c333c045916cc1f2b9e8c46c4fa58fe6606fe09c",
+          "bodySha256": "94940df397214f17239a2126eb83c1eaf6208c75fe410ccdddc0cde3fa28c708",
+          "guardExited": true,
+          "denied": [],
+          "credentialsObserved": false,
+          "onlyGet": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "directory": "005-www.reuters.com",
+          "markdownSha256": "7c1725dc310e52edb2671de4a5655b936002e5765834f2853bd15c6e6b3614d7",
+          "requestCloses": 1,
+          "socketCloses": 1,
+          "bodyVerified": true
+        },
+        {
+          "rank": 6,
+          "domain": "www.rfc-editor.org",
+          "url": "https://www.rfc-editor.org/rfc/rfc9309.html",
+          "startedAt": "2026-09-15T08:53:15.257Z",
+          "finishedAt": "2026-09-15T08:53:15.495957+00:00",
+          "elapsedSeconds": 0.3656151480972767,
+          "exitCode": 0,
+          "timedOut": false,
+          "reaped": true,
+          "signals": [],
+          "childPid": 2498647,
+          "childAbsent": true,
+          "groupAbsent": true,
+          "attempts": 1,
+          "requestsObserved": 1,
+          "parseError": null,
+          "reportCount": 1,
+          "status": 200,
+          "finalUrl": "https://www.rfc-editor.org/rfc/rfc9309.html",
+          "outcome": "extracted-unverified",
+          "contentSuccess": null,
+          "classification": {
+            "classifier": "browser-challenges",
+            "barrier": null,
+            "diagnostic": null
+          },
+          "failure": null,
+          "contentType": [
+            "text/html"
+          ],
+          "title": "RFC 9309: Robots Exclusion Protocol",
+          "decodedBytes": 82367,
+          "encodedBytes": 18660,
+          "markdownBytes": 38930,
+          "receiptSha256": "96e76673b21ae54cd77bbed0595ef7863cae466eb8d0e143cd079a3a2ba3e20f",
+          "bodySha256": "bbaa280636d3e38f0a1a130a5ce40e9753db1ed18c860945b0bf795ff8dc1a87",
+          "guardExited": true,
+          "denied": [],
+          "credentialsObserved": false,
+          "onlyGet": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "directory": "006-www.rfc-editor.org",
+          "markdownSha256": "f9ce60a5f4762fe11ce2f43dbf44c29bda539df55f4b49d3f56c83346c1e8e8f",
+          "requestCloses": 1,
+          "socketCloses": 1,
+          "bodyVerified": true
+        },
+        {
+          "rank": 7,
+          "domain": "www.anthropic.com",
+          "url": "https://www.anthropic.com/news",
+          "startedAt": "2026-09-15T08:53:17.619Z",
+          "finishedAt": "2026-09-15T08:53:17.863715+00:00",
+          "elapsedSeconds": 0.3665664792060852,
+          "exitCode": 0,
+          "timedOut": false,
+          "reaped": true,
+          "signals": [],
+          "childPid": 2498679,
+          "childAbsent": true,
+          "groupAbsent": true,
+          "attempts": 1,
+          "requestsObserved": 1,
+          "parseError": null,
+          "reportCount": 1,
+          "status": 200,
+          "finalUrl": "https://www.anthropic.com/news",
+          "outcome": "extracted-unverified",
+          "contentSuccess": null,
+          "classification": {
+            "classifier": "browser-challenges",
+            "barrier": null,
+            "diagnostic": null
+          },
+          "failure": null,
+          "contentType": [
+            "text/html; charset=utf-8"
+          ],
+          "title": "Newsroom \\ Anthropic",
+          "decodedBytes": 465418,
+          "encodedBytes": 70037,
+          "markdownBytes": 10786,
+          "receiptSha256": "9334ef7d0944fbc0568e5f647b361f5884720d386dc5739ec787b14c4daf7b8d",
+          "bodySha256": "5982aa6980cfda9db5d3f448f6740b70d4308053ca59edfa8e8c2b836da9f9ac",
+          "guardExited": true,
+          "denied": [],
+          "credentialsObserved": false,
+          "onlyGet": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "directory": "007-www.anthropic.com",
+          "markdownSha256": "5b815f144ae796ffd6d4bcd091f51188eaa9fe4f0820e5769366276797dbe8a5",
+          "requestCloses": 1,
+          "socketCloses": 1,
+          "bodyVerified": true
+        },
+        {
+          "rank": 8,
+          "domain": "en.wiktionary.org",
+          "url": "https://en.wiktionary.org/wiki/benchmark",
+          "startedAt": "2026-09-15T08:53:19.987Z",
+          "finishedAt": "2026-09-15T08:53:20.130875+00:00",
+          "elapsedSeconds": 0.2653708290308714,
+          "exitCode": 0,
+          "timedOut": false,
+          "reaped": true,
+          "signals": [],
+          "childPid": 2498792,
+          "childAbsent": true,
+          "groupAbsent": true,
+          "attempts": 1,
+          "requestsObserved": 1,
+          "parseError": null,
+          "reportCount": 1,
+          "status": 200,
+          "finalUrl": "https://en.wiktionary.org/wiki/benchmark",
+          "outcome": "extracted-unverified",
+          "contentSuccess": null,
+          "classification": {
+            "classifier": "browser-challenges",
+            "barrier": null,
+            "diagnostic": null
+          },
+          "failure": null,
+          "contentType": [
+            "text/html; charset=UTF-8"
+          ],
+          "title": "benchmark - Wiktionary, the free dictionary",
+          "decodedBytes": 109545,
+          "encodedBytes": 20918,
+          "markdownBytes": 30222,
+          "receiptSha256": "7be74bb6ff598e63174d17f90cf45a0958e80b108d6c0236fa4ce20c1a64c22e",
+          "bodySha256": "28b1794eab901dfcdcbfd94e076305b82f7f493ae23857a83eec94d5a3034e1d",
+          "guardExited": true,
+          "denied": [],
+          "credentialsObserved": false,
+          "onlyGet": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "directory": "008-en.wiktionary.org",
+          "markdownSha256": "e4519d89fa0e5b9624a1c0636cec7b8b3b60e1cbafc0f2faa93e0ca99b08eb03",
+          "requestCloses": 1,
+          "socketCloses": 1,
+          "bodyVerified": true
+        }
+      ]
+    },
+    "sourceLinkedFollowups": {
+      "at": "2026-09-15T09:02:22.881Z",
+      "passed": true,
+      "commit": "243406a3ab947d1e0b774aebc9e5e38dbd1087c8",
+      "navigationAttempts": 2,
+      "httpRequestsObserved": 2,
+      "retries": 0,
+      "capturesVerified": 2,
+      "nativeChildren": 2,
+      "outcomes": {
+        "extracted-unverified": 1,
+        "failure": 1
+      },
+      "sourcesAndCompiledUnchanged": true,
+      "worktreeClaim": "Owned development follows the pinned-build sweep; preservation audited separately",
+      "results": [
+        {
+          "rank": 1,
+          "domain": "www.phoronix.com",
+          "url": "https://www.phoronix.com/reviews",
+          "startedAt": "2026-09-15T08:56:01.637Z",
+          "finishedAt": "2026-09-15T08:56:02.029936+00:00",
+          "elapsedSeconds": 0.5153757929801941,
+          "exitCode": 0,
+          "timedOut": false,
+          "reaped": true,
+          "signals": [],
+          "childPid": 2501659,
+          "childAbsent": true,
+          "groupAbsent": true,
+          "attempts": 1,
+          "requestsObserved": 1,
+          "parseError": null,
+          "reportCount": 1,
+          "status": 200,
+          "finalUrl": "https://www.phoronix.com/reviews",
+          "outcome": "extracted-unverified",
+          "contentSuccess": null,
+          "classification": {
+            "classifier": "browser-challenges",
+            "barrier": null,
+            "diagnostic": null
+          },
+          "failure": null,
+          "contentType": [
+            "text/markdown; charset=utf-8"
+          ],
+          "title": "",
+          "decodedBytes": 28558,
+          "encodedBytes": 9041,
+          "markdownBytes": 28567,
+          "receiptSha256": "e8da00ef186788be9a6af608f593b09e0927169fced38d2cd1356a788e1f4d05",
+          "bodySha256": "a05426e8f9814efd8d117f5ad6bad2237c2eebc5fff2380b5a21f1d71998d107",
+          "guardExited": true,
+          "denied": [],
+          "credentialsObserved": false,
+          "onlyGet": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "directory": "001-www.phoronix.com",
+          "markdownSha256": "4a7b6b79b5d5d139d5404ccd10bac77df6deabe8161ea7cf2ac8be582a49de5e",
+          "requestCloses": 1,
+          "socketCloses": 1,
+          "bodyVerified": true
+        },
+        {
+          "rank": 2,
+          "domain": "arxiv.org",
+          "url": "https://arxiv.org/html/2307.09288v2",
+          "startedAt": "2026-09-15T08:56:01.637Z",
+          "finishedAt": "2026-09-15T08:56:02.232202+00:00",
+          "elapsedSeconds": 0.7176426500082016,
+          "exitCode": 1,
+          "timedOut": false,
+          "reaped": true,
+          "signals": [],
+          "childPid": 2501658,
+          "childAbsent": true,
+          "groupAbsent": true,
+          "attempts": 1,
+          "requestsObserved": 1,
+          "parseError": null,
+          "reportCount": 1,
+          "status": 200,
+          "finalUrl": "https://arxiv.org/html/2307.09288v2",
+          "outcome": "failure",
+          "contentSuccess": false,
+          "classification": {
+            "classifier": "browser-challenges",
+            "barrier": null,
+            "diagnostic": null
+          },
+          "failure": {
+            "category": "resource-limit",
+            "stage": "extraction",
+            "resourceLimit": {
+              "kind": "extraction.output",
+              "unit": "bytes",
+              "limit": 256000,
+              "observed": 256047
+            }
+          },
+          "contentType": [
+            "text/html; charset=utf-8"
+          ],
+          "title": null,
+          "decodedBytes": 1071548,
+          "encodedBytes": 1071548,
+          "markdownBytes": 0,
+          "receiptSha256": "56dfd660da872c6d8c935cf32783f7337c8e2a8af2b9a8a24a1cb8b95fda41a1",
+          "bodySha256": "d3cae2eab8bfb2ba30f8abf2ee5863f0644af5eb00e3637cd0b09cbc2a53a357",
+          "guardExited": true,
+          "denied": [],
+          "credentialsObserved": false,
+          "onlyGet": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "directory": "002-arxiv.org",
+          "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "requestCloses": 1,
+          "socketCloses": 1,
+          "bodyVerified": true
+        }
+      ]
+    },
+    "retries": 0,
+    "capturesVerified": 10
+  },
+  "shellAudit": {
+    "receiptsVerified": 22,
+    "emptyResultsInspected": 13,
+    "tinyResultsInspected": 9,
+    "conclusion": "No demonstrated lost article/data text or justified reader fix in saved empty results",
+    "sha256": "0807fbd03df4eb706bf560a3efdc57557d540ed65f889111f51a2aa000ea0e12",
+    "path": "SHELL-INVESTIGATION.md"
+  },
+  "proof": {
+    "results": [
+      {
+        "key": "arxiv-pretraining",
+        "receiptSha256": "56dfd660da872c6d8c935cf32783f7337c8e2a8af2b9a8a24a1cb8b95fda41a1",
+        "bodySha256": "d3cae2eab8bfb2ba30f8abf2ee5863f0644af5eb00e3637cd0b09cbc2a53a357",
+        "bodyBytes": 1071548,
+        "originalOutcome": "failure",
+        "selection": {
+          "section": "html:root:nth-child(1) > body:nth-child(2) > div:nth-child(5) > div:nth-child(2) > article:nth-child(1) > section:nth-child(9) > h2:nth-child(1)"
+        },
+        "modes": {
+          "default": {
+            "direct": {
+              "markdownBytes": 36118,
+              "markdownSha256": "52f25338f625c74ebb49215db1fbe0d9591c19e8a6d13d776249367c6c62a3e9",
+              "compactTables": false,
+              "tableRows": false,
+              "readerSha256": "8b4c66c8da4c1a42969a387e8b6fca4f1f479feb27bff7f7e4b32e21e4b39b0a"
+            },
+            "replay": {
+              "markdownSha256": "52f25338f625c74ebb49215db1fbe0d9591c19e8a6d13d776249367c6c62a3e9",
+              "outputBytes": 40863,
+              "source": {
+                "profile": "default",
+                "reportedFinalUrl": "https://arxiv.org/html/2307.09288v2",
+                "receiptSha256": "56dfd660da872c6d8c935cf32783f7337c8e2a8af2b9a8a24a1cb8b95fda41a1",
+                "body": {
+                  "bytes": 1071548,
+                  "sha256": "d3cae2eab8bfb2ba30f8abf2ee5863f0644af5eb00e3637cd0b09cbc2a53a357"
+                }
+              },
+              "recovery": {
+                "kind": "captured-output-limit-section",
+                "originalOutcome": "failure",
+                "originalContentSuccess": false,
+                "originalFailure": {
+                  "category": "resource-limit",
+                  "stage": "extraction",
+                  "resourceLimit": {
+                    "kind": "extraction.output",
+                    "unit": "bytes",
+                    "limit": 256000,
+                    "observed": 256047
+                  }
+                },
+                "originalRequestRetried": false
+              }
+            }
+          },
+          "rows": {
+            "direct": {
+              "markdownBytes": 29542,
+              "markdownSha256": "6d9888951739aa87bfd18dbd0752d575c3425f996fd9a3d4f88a7bc72ff463ff",
+              "compactTables": false,
+              "tableRows": true,
+              "readerSha256": "8b4c66c8da4c1a42969a387e8b6fca4f1f479feb27bff7f7e4b32e21e4b39b0a"
+            },
+            "replay": {
+              "markdownSha256": "6d9888951739aa87bfd18dbd0752d575c3425f996fd9a3d4f88a7bc72ff463ff",
+              "outputBytes": 33799,
+              "source": {
+                "profile": "default",
+                "reportedFinalUrl": "https://arxiv.org/html/2307.09288v2",
+                "receiptSha256": "56dfd660da872c6d8c935cf32783f7337c8e2a8af2b9a8a24a1cb8b95fda41a1",
+                "body": {
+                  "bytes": 1071548,
+                  "sha256": "d3cae2eab8bfb2ba30f8abf2ee5863f0644af5eb00e3637cd0b09cbc2a53a357"
+                }
+              },
+              "recovery": {
+                "kind": "captured-output-limit-section",
+                "originalOutcome": "failure",
+                "originalContentSuccess": false,
+                "originalFailure": {
+                  "category": "resource-limit",
+                  "stage": "extraction",
+                  "resourceLimit": {
+                    "kind": "extraction.output",
+                    "unit": "bytes",
+                    "limit": 256000,
+                    "observed": 256047
+                  }
+                },
+                "originalRequestRetried": false
+              }
+            }
+          },
+          "compact": {
+            "direct": {
+              "markdownBytes": 28448,
+              "markdownSha256": "ae1020efd0220152b300792c715d29c00c3289fbffaea42ea3c12d3c5efff6f0",
+              "compactTables": true,
+              "tableRows": false,
+              "readerSha256": "8b4c66c8da4c1a42969a387e8b6fca4f1f479feb27bff7f7e4b32e21e4b39b0a"
+            },
+            "replay": {
+              "markdownSha256": "ae1020efd0220152b300792c715d29c00c3289fbffaea42ea3c12d3c5efff6f0",
+              "outputBytes": 33218,
+              "source": {
+                "profile": "default",
+                "reportedFinalUrl": "https://arxiv.org/html/2307.09288v2",
+                "receiptSha256": "56dfd660da872c6d8c935cf32783f7337c8e2a8af2b9a8a24a1cb8b95fda41a1",
+                "body": {
+                  "bytes": 1071548,
+                  "sha256": "d3cae2eab8bfb2ba30f8abf2ee5863f0644af5eb00e3637cd0b09cbc2a53a357"
+                }
+              },
+              "recovery": {
+                "kind": "captured-output-limit-section",
+                "originalOutcome": "failure",
+                "originalContentSuccess": false,
+                "originalFailure": {
+                  "category": "resource-limit",
+                  "stage": "extraction",
+                  "resourceLimit": {
+                    "kind": "extraction.output",
+                    "unit": "bytes",
+                    "limit": 256000,
+                    "observed": 256047
+                  }
+                },
+                "originalRequestRetried": false
+              }
+            }
+          },
+          "compact-rows": {
+            "direct": {
+              "markdownBytes": 24758,
+              "markdownSha256": "112f6fc27d444d30ca85690f9eaeff14eb3a985823bdfa0879527132b06f69ea",
+              "compactTables": true,
+              "tableRows": true,
+              "readerSha256": "8b4c66c8da4c1a42969a387e8b6fca4f1f479feb27bff7f7e4b32e21e4b39b0a"
+            },
+            "replay": {
+              "markdownSha256": "112f6fc27d444d30ca85690f9eaeff14eb3a985823bdfa0879527132b06f69ea",
+              "outputBytes": 29040,
+              "source": {
+                "profile": "default",
+                "reportedFinalUrl": "https://arxiv.org/html/2307.09288v2",
+                "receiptSha256": "56dfd660da872c6d8c935cf32783f7337c8e2a8af2b9a8a24a1cb8b95fda41a1",
+                "body": {
+                  "bytes": 1071548,
+                  "sha256": "d3cae2eab8bfb2ba30f8abf2ee5863f0644af5eb00e3637cd0b09cbc2a53a357"
+                }
+              },
+              "recovery": {
+                "kind": "captured-output-limit-section",
+                "originalOutcome": "failure",
+                "originalContentSuccess": false,
+                "originalFailure": {
+                  "category": "resource-limit",
+                  "stage": "extraction",
+                  "resourceLimit": {
+                    "kind": "extraction.output",
+                    "unit": "bytes",
+                    "limit": 256000,
+                    "observed": 256047
+                  }
+                },
+                "originalRequestRetried": false
+              }
+            }
+          }
+        },
+        "wholeBodyCompactDirect": {
+          "outcome": "resource-limit",
+          "diagnostic": {
+            "kind": "extraction.output",
+            "unit": "bytes",
+            "limit": 256000,
+            "observed": 256006
+          }
+        },
+        "wholeBodyCompactReplay": {
+          "outcome": "resource-limit",
+          "diagnostic": {
+            "kind": "extraction.output",
+            "unit": "bytes",
+            "limit": 256000,
+            "observed": 256006
+          }
+        }
+      },
+      {
+        "key": "rfc",
+        "receiptSha256": "96e76673b21ae54cd77bbed0595ef7863cae466eb8d0e143cd079a3a2ba3e20f",
+        "bodySha256": "bbaa280636d3e38f0a1a130a5ce40e9753db1ed18c860945b0bf795ff8dc1a87",
+        "bodyBytes": 82367,
+        "originalOutcome": "extracted-unverified",
+        "selection": {
+          "selector": "body"
+        },
+        "modes": {
+          "default": {
+            "direct": {
+              "markdownBytes": 39405,
+              "markdownSha256": "74c58bc8fcea930ff15750617736435e98600d7a8981862a2ba3bd2365068485",
+              "compactTables": false,
+              "tableRows": false,
+              "readerSha256": "0215a3bdffbf167ccdfac7fe218efcc26c6d048d95f2aa5b0facad47c8f67e82"
+            },
+            "replay": {
+              "markdownSha256": "74c58bc8fcea930ff15750617736435e98600d7a8981862a2ba3bd2365068485",
+              "outputBytes": 43136,
+              "source": {
+                "profile": "default",
+                "reportedFinalUrl": "https://www.rfc-editor.org/rfc/rfc9309.html",
+                "receiptSha256": "96e76673b21ae54cd77bbed0595ef7863cae466eb8d0e143cd079a3a2ba3e20f",
+                "body": {
+                  "bytes": 82367,
+                  "sha256": "bbaa280636d3e38f0a1a130a5ce40e9753db1ed18c860945b0bf795ff8dc1a87"
+                }
+              },
+              "recovery": null
+            }
+          },
+          "rows": {
+            "direct": {
+              "markdownBytes": 38930,
+              "markdownSha256": "f9ce60a5f4762fe11ce2f43dbf44c29bda539df55f4b49d3f56c83346c1e8e8f",
+              "compactTables": false,
+              "tableRows": true,
+              "readerSha256": "0215a3bdffbf167ccdfac7fe218efcc26c6d048d95f2aa5b0facad47c8f67e82"
+            },
+            "replay": {
+              "markdownSha256": "f9ce60a5f4762fe11ce2f43dbf44c29bda539df55f4b49d3f56c83346c1e8e8f",
+              "outputBytes": 42641,
+              "source": {
+                "profile": "default",
+                "reportedFinalUrl": "https://www.rfc-editor.org/rfc/rfc9309.html",
+                "receiptSha256": "96e76673b21ae54cd77bbed0595ef7863cae466eb8d0e143cd079a3a2ba3e20f",
+                "body": {
+                  "bytes": 82367,
+                  "sha256": "bbaa280636d3e38f0a1a130a5ce40e9753db1ed18c860945b0bf795ff8dc1a87"
+                }
+              },
+              "recovery": null
+            }
+          },
+          "compact": {
+            "direct": {
+              "markdownBytes": 39197,
+              "markdownSha256": "f3267fb4b718aedef1978d36e379fc917b17aae97a0b9a5292014a5c3b110c48",
+              "compactTables": true,
+              "tableRows": false,
+              "readerSha256": "0215a3bdffbf167ccdfac7fe218efcc26c6d048d95f2aa5b0facad47c8f67e82"
+            },
+            "replay": {
+              "markdownSha256": "f3267fb4b718aedef1978d36e379fc917b17aae97a0b9a5292014a5c3b110c48",
+              "outputBytes": 42949,
+              "source": {
+                "profile": "default",
+                "reportedFinalUrl": "https://www.rfc-editor.org/rfc/rfc9309.html",
+                "receiptSha256": "96e76673b21ae54cd77bbed0595ef7863cae466eb8d0e143cd079a3a2ba3e20f",
+                "body": {
+                  "bytes": 82367,
+                  "sha256": "bbaa280636d3e38f0a1a130a5ce40e9753db1ed18c860945b0bf795ff8dc1a87"
+                }
+              },
+              "recovery": null
+            }
+          },
+          "compact-rows": {
+            "direct": {
+              "markdownBytes": 38930,
+              "markdownSha256": "f9ce60a5f4762fe11ce2f43dbf44c29bda539df55f4b49d3f56c83346c1e8e8f",
+              "compactTables": true,
+              "tableRows": true,
+              "readerSha256": "0215a3bdffbf167ccdfac7fe218efcc26c6d048d95f2aa5b0facad47c8f67e82"
+            },
+            "replay": {
+              "markdownSha256": "f9ce60a5f4762fe11ce2f43dbf44c29bda539df55f4b49d3f56c83346c1e8e8f",
+              "outputBytes": 42662,
+              "source": {
+                "profile": "default",
+                "reportedFinalUrl": "https://www.rfc-editor.org/rfc/rfc9309.html",
+                "receiptSha256": "96e76673b21ae54cd77bbed0595ef7863cae466eb8d0e143cd079a3a2ba3e20f",
+                "body": {
+                  "bytes": 82367,
+                  "sha256": "bbaa280636d3e38f0a1a130a5ce40e9753db1ed18c860945b0bf795ff8dc1a87"
+                }
+              },
+              "recovery": null
+            }
+          }
+        }
+      }
+    ],
+    "guardedExecutions": [
+      {
+        "directory": "offline/headings",
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedSeconds": 0.7435097247362137,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "offline/body",
+        "exitCode": 1,
+        "timedOut": false,
+        "elapsedSeconds": 0.8945851754397154,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "proof/baseline",
+        "exitCode": 1,
+        "timedOut": false,
+        "elapsedSeconds": 1.8088112976402044,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "proof/baseline02",
+        "exitCode": 1,
+        "timedOut": false,
+        "elapsedSeconds": 2.20341288857162,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "proof/baseline03",
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedSeconds": 2.350274136289954,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "proof/baseline-arxiv-compact-cli",
+        "exitCode": 64,
+        "timedOut": false,
+        "elapsedSeconds": 0.2719506472349167,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "proof/baseline-arxiv-compact-rows-cli",
+        "exitCode": 64,
+        "timedOut": false,
+        "elapsedSeconds": 0.27435178123414516,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "proof/release01",
+        "exitCode": 1,
+        "timedOut": false,
+        "elapsedSeconds": 1.6001103185117245,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "proof/release01-corrected",
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedSeconds": 3.9616958219558,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "proof/release02",
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedSeconds": 3.7031636480242014,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "proof/release02-arxiv-compact-cli",
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedSeconds": 0.7792704179883003,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "proof/release02-arxiv-compact-rows-cli",
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedSeconds": 0.7788153439760208,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "proof/release02-rfc-compact-cli",
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedSeconds": 0.3758266121149063,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      },
+      {
+        "directory": "proof/release02-arxiv-body-compact-cli",
+        "exitCode": 1,
+        "timedOut": false,
+        "elapsedSeconds": 0.8291789814829826,
+        "reaped": true,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "guard": {
+          "attempts": []
+        },
+        "kernelGuard": {
+          "installed": true,
+          "deniedSyscalls": [
+            "socket",
+            "socketpair",
+            "connect",
+            "bind",
+            "listen",
+            "accept",
+            "accept4",
+            "sendto",
+            "sendmsg",
+            "sendmmsg",
+            "io_uring_setup",
+            "io_uring_enter",
+            "io_uring_register"
+          ],
+          "action": "EPERM",
+          "fileLimitBytes": 16777216,
+          "noTty": true,
+          "socketProbePerformed": false
+        }
+      }
+    ],
+    "baselineAndRowOnlyOutputUnchanged": true,
+    "compactReplayMatchesExistingNativeExtraction": true,
+    "actualCliMatches": 3,
+    "wholePaperStillExceedsOutputLimit": true
+  },
+  "review": {
+    "path": "REVIEW.md",
+    "sha256": "9f1a367b2a555fa33bffb1390dd6bf72c4f9a8622245e2bc1eed54e9d6b5483d",
+    "productionFilesPinned": 2,
+    "actionableFindings": 0
+  },
+  "limitations": [
+    "No interactive website/runtime/credential/passkey/service acceptance",
+    "No challenge bypass",
+    "No complete paper extraction or validated benchmark conclusions",
+    "No native-suite all-green claim",
+    "Historical source failures retained, not promoted",
+    "Compact tables do not infer rendered associations"
+  ],
+  "pushed": false
+}
