@@ -13,7 +13,15 @@ import {
 import type { NetworkResponse } from "../src/network.js";
 import type { ResearchDocumentProfileId } from "../src/research-admission.js";
 import { loadResearchDocument } from "../src/research-loader.js";
-import type { ResearchReaderRawPolicy } from "../src/research-reader-info.js";
+import {
+	type ResearchReaderMimePolicy,
+	type ResearchMimeInterpretation,
+	validateResearchReaderMimePolicy,
+} from "../src/research-mime-policy.js";
+import {
+	type ResearchReaderRawPolicy,
+	researchReaderInfo,
+} from "../src/research-reader-info.js";
 import { resourceLimitDiagnostic } from "../src/resource-limit.js";
 import { DocumentQueries } from "../src/selectors.js";
 import type { DocumentLoaderContext } from "../src/session.js";
@@ -42,13 +50,34 @@ interface VisibilityOperation {
 export function classifyResearchVisibility(
 	response: BrowserChallengeResponse,
 	sourceTitle?: string,
+	interpretation?: Readonly<ResearchMimeInterpretation>,
 ) {
-	return (
+	const interpreted =
+		interpretation?.policy === "markdown-html-document-v1" &&
+		interpretation.declaredMime === "text/markdown" &&
+		interpretation.effectiveMime === "text/html";
+	const classificationResponse = interpreted
+		? {
+				...response,
+				headers: { ...response.headers, "content-type": ["text/html"] },
+			}
+		: response;
+	const diagnostic =
 		(sourceTitle === undefined
 			? null
-			: classifyBrowserChallenge({ ...response, title: sourceTitle })) ??
-		classifyBrowserChallenge(response)
-	);
+			: classifyBrowserChallenge({
+					...classificationResponse,
+					title: sourceTitle,
+				})) ?? classifyBrowserChallenge(classificationResponse);
+	return diagnostic && interpreted
+		? Object.freeze({
+				...diagnostic,
+				evidence: Object.freeze([
+					...diagnostic.evidence,
+					"reader-mime-interpretation" as const,
+				]),
+			})
+		: diagnostic;
 }
 
 export function researchVisibilityEvidence(
@@ -57,15 +86,21 @@ export function researchVisibilityEvidence(
 	profile: ResearchDocumentProfileId | undefined,
 	rawPolicy: ResearchReaderRawPolicy | undefined,
 	operation: VisibilityOperation,
+	mimePolicy?: ResearchReaderMimePolicy,
 ) {
+	const selectedMimePolicy = validateResearchReaderMimePolicy(mimePolicy);
 	const types = response.headers["content-type"];
+	const declaredMime = types?.[0]?.split(";", 1)[0].trim().toLowerCase();
 	if (
 		types?.length !== 1 ||
-		types[0].split(";", 1)[0].trim().toLowerCase() !== "text/html"
+		(declaredMime !== "text/html" &&
+			!(selectedMimePolicy && declaredMime === "text/markdown"))
 	)
 		return;
 	let tree: DocumentTree | undefined;
 	try {
+		const mimeArguments: [undefined?, ResearchReaderMimePolicy?] =
+			selectedMimePolicy ? [undefined, selectedMimePolicy] : [];
 		tree = loadResearchDocument(
 			response,
 			{
@@ -76,16 +111,27 @@ export function researchVisibilityEvidence(
 			},
 			profile,
 			rawPolicy,
+			...mimeArguments,
 		);
+		if (
+			declaredMime === "text/markdown" &&
+			!researchReaderInfo(tree)?.mimeInterpretation
+		)
+			return;
+		const interpretation = researchReaderInfo(tree)?.mimeInterpretation;
 		const title = documentTitle(tree).slice(0, 257);
 		const classify = (text: string) =>
-			classifyBrowserChallenge({
-				status: response.status,
-				headers: response.headers,
-				url: response.url,
-				title,
-				text,
-			});
+			classifyResearchVisibility(
+				{
+					status: response.status,
+					headers: response.headers,
+					url: response.url,
+					title,
+					text,
+				},
+				undefined,
+				interpretation,
+			);
 		let diagnostic: BrowserChallengeDiagnostic | null = classify(
 			researchDocumentDiagnosticText(tree, { collapseWhitespace: true }),
 		);

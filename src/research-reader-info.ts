@@ -1,5 +1,9 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import type {
+	ResearchMimeInterpretation,
+	ResearchReaderMimePolicy,
+} from "./research-mime-policy.js";
 
 export const researchReaderProfile = "native-semantic-reader-v1";
 
@@ -61,6 +65,8 @@ export interface ResearchReaderReport {
 		| "source-attributes"
 		| "source-attributes-and-inline-display";
 	visibilityPolicy?: ResearchReaderVisibilityPolicy;
+	mimePolicy?: ResearchReaderMimePolicy;
+	readonly mimeInterpretation?: Readonly<ResearchMimeInterpretation>;
 	sourceHiddenSubtrees?: number;
 	encoding?: string;
 	sourceCodeUnits: number;
@@ -107,6 +113,11 @@ export function setResearchReaderInfo(
 		Object.freeze({
 			...report,
 			omittedSubtrees: Object.freeze({ ...report.omittedSubtrees }),
+			...(report.mimeInterpretation
+				? {
+						mimeInterpretation: Object.freeze({ ...report.mimeInterpretation }),
+					}
+				: {}),
 			...(report.mathAlternatives
 				? { mathAlternatives: Object.freeze({ ...report.mathAlternatives }) }
 				: {}),

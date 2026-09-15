@@ -6,6 +6,43 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: explicit interpretation of Markdown-labelled HTML
+
+- Added opt-in `--reader-mime-policy markdown-html-document-v1` and matching
+  research API/loader support. Only default-profile, single-declared Markdown
+  with a bounded HTML5 doctype/root/head-or-body prefix is interpreted. Original
+  decoding, response headers/body hashes and resource caps remain unchanged;
+  the existing inert sanitizer/parser performs extraction without execution.
+- Genuine Markdown, fenced/indented examples, prose, YAML frontmatter, fragments
+  and other MIME types retain existing behavior. Complete unfenced HTML examples
+  remain ambiguous; explicit opt-in and interpretation provenance are required.
+  Source-hidden prechecks inspect unfiltered interpreted HTML. Classification
+  discloses `reader-mime-interpretation`, not fabricated transport evidence.
+- Ordinary validated capture replay checks declarations, regenerates the prefix
+  from original bytes and rejects contradictions. Literal line operations reject
+  interpreted HTML. **Captured output-limit recovery remains declared-HTML-only**;
+  this change does not expand its admission gate or enable automatic fallback.
+- Final selected suite: **2632 pass / one unchanged pre-existing failure**, with
+  **263 new passing tests / 35 files**. Build, narrowed types, formatting and lint
+  pass. Baseline2369pass/1fail; the replay-row-flag failure stays visible. Initial
+  type/lint and new fixture assertion failures remain in the evidence lane.
+- Saved-body validation: **95 default cases unchanged, 94 explicit-policy cases
+  unchanged; one corrected extraction**. The captured Kateminimalist response now
+  yields **34787 Markdown bytes /38085 serialized bytes**, with original body
+  SHA and declared Markdown MIME intact. Prefix68codeunits; no partial fallback,
+  cap increase or new request. Sampled output contains storefront categories,
+  product/service text and links, but also duplicate navigation and zeroed timer
+  placeholders. Current pricing, inventory, scripts and checkout are unverified.
+- **285 mocked navigations /190 closed saved-body child groups /zeroHTTP**.
+  Five original missing bodies remain failures, not offline passes; original
+  live barrier records remain authoritative where capture headers are incomplete.
+  Canonical native manifest898entries; original three working-only entries remain.
+- Documentation: `RESEARCH-MIME.md`; complete95-row follow-up in
+  `reports/research-mime-2026-09-15.{md,json}`. Original100-page sweep and its
+  citation-not-traffic caveat remain in the original reports. Preserve42tracked
+  and699pre-existing untracked files, including unfinished response-header helpers.
+  No new live/socket/TTY/SafeJS/credential acceptance claim and no push.
+
 ### September 15: bounded extraction prefixes and MIME diagnosis
 
 - Added explicit `--output-limit-policy text-prefix-v1` for reader Markdown and

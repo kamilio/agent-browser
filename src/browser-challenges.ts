@@ -16,6 +16,7 @@ export interface BrowserChallengeDiagnostic {
 		| "html-login-markers"
 		| "login-url-and-html-markers"
 		| "html-network-security-block"
+		| "reader-mime-interpretation"
 	)[];
 	readonly action: "stop-and-request-user-handoff";
 	readonly retryAfterSeconds?: number;

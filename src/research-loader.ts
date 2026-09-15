@@ -28,6 +28,11 @@ import {
 } from "./research-admission.js";
 import { sourceInlineDisplayHidden } from "./research-inline-visibility.js";
 import {
+	type ResearchReaderMimePolicy,
+	markdownHtmlDocumentPrefix,
+	validateResearchReaderMimePolicy,
+} from "./research-mime-policy.js";
+import {
 	ResearchSourceDataTableCollector,
 	setResearchSourceDataTables,
 } from "./research-source-data-tables.js";
@@ -650,11 +655,18 @@ export function loadResearchDocument(
 	profile?: ResearchDocumentProfileId,
 	rawPolicy?: ResearchReaderRawPolicy,
 	visibilityPolicy: ResearchReaderVisibilityPolicy | undefined = undefined,
+	mimePolicy?: ResearchReaderMimePolicy,
 ): DocumentTree {
 	const selectedRawPolicy = validateResearchReaderRawPolicy(rawPolicy);
 	const selectedVisibilityPolicy =
 		validateResearchReaderVisibilityPolicy(visibilityPolicy);
 	const selectedProfile = validateResearchDocumentProfile(profile);
+	const selectedMimePolicy = validateResearchReaderMimePolicy(mimePolicy);
+	if (selectedMimePolicy !== undefined && selectedProfile !== "default")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Reader MIME interpretation requires the default profile",
+		);
 	const readerLimits =
 		selectedProfile === "long-v1"
 			? researchLongDocumentAdmission.reader
@@ -679,7 +691,8 @@ export function loadResearchDocument(
 	const types = response.headers["content-type"];
 	if (types?.length !== 1)
 		throw new AgentBrowserError("unsupported", "Reader requires Content-Type");
-	const html = types[0].split(";", 1)[0].trim().toLowerCase() === "text/html";
+	const declaredMime = types[0].split(";", 1)[0].trim().toLowerCase();
+	const html = declaredMime === "text/html";
 	if (selectedProfile === "long-v1" && !html)
 		throw new AgentBrowserError(
 			"unsupported",
@@ -701,10 +714,25 @@ export function loadResearchDocument(
 			decoded.text.length,
 			"Decoded reader limit exceeded",
 		);
+	const prefixCodeUnits =
+		selectedMimePolicy !== undefined && declaredMime === "text/markdown"
+			? markdownHtmlDocumentPrefix(decoded.text)
+			: undefined;
+	const mimeInterpretation =
+		prefixCodeUnits === undefined || selectedMimePolicy === undefined
+			? undefined
+			: Object.freeze({
+					policy: selectedMimePolicy,
+					declaredMime: "text/markdown" as const,
+					effectiveMime: "text/html" as const,
+					basis: "html5-doctype-root-prefix" as const,
+					prefixCodeUnits,
+				});
+	const effectiveHtml = html || mimeInterpretation !== undefined;
 	const visibilityArguments: [ResearchReaderVisibilityPolicy?] =
 		selectedVisibilityPolicy ? [selectedVisibilityPolicy] : [];
 	const sanitized = sanitizeResearchHtml(
-		html ? decoded.text : "",
+		effectiveHtml ? decoded.text : "",
 		{
 			maxSourceCodeUnits,
 			maxTextCodeUnits: Math.min(
@@ -734,7 +762,7 @@ export function loadResearchDocument(
 		signal: context.signal,
 		initializeDocument: context.initializeDocument,
 	};
-	const tree = html
+	const tree = effectiveHtml
 		? parseHtmlDocument(
 				sanitized.html,
 				parseNetworkUrl(response.url).href,
@@ -744,7 +772,10 @@ export function loadResearchDocument(
 	const report = Object.freeze({
 		...sanitized.report,
 		encoding: decoded.encoding,
-		...(!html
+		...(mimeInterpretation
+			? { mimePolicy: selectedMimePolicy, mimeInterpretation }
+			: {}),
+		...(!effectiveHtml
 			? {
 					hiddenContentSemantics: false as const,
 					sourceCodeUnits: decoded.text.length,

@@ -20,6 +20,12 @@ import {
 } from "../src/research-admission.js";
 import { loadResearchDocument } from "../src/research-loader.js";
 import {
+	type ResearchMimeInterpretation,
+	type ResearchReaderMimePolicy,
+	researchMimePrefixLimits,
+	validateResearchReaderMimePolicy,
+} from "../src/research-mime-policy.js";
+import {
 	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
 	type ResearchReaderVisibilityPolicy,
@@ -447,6 +453,76 @@ function replayVisibilityPolicy(
 	return policy;
 }
 
+function replayMimePolicy(metadata: Readonly<Record<string, unknown>>): {
+	policy?: ResearchReaderMimePolicy;
+	interpretation?: Readonly<ResearchMimeInterpretation>;
+} {
+	const invalid = (): never => {
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid research replay MIME policy evidence",
+		);
+	};
+	const topDeclared = Object.hasOwn(metadata, "readerMimePolicy");
+	const reader = metadata.reader;
+	const readerRecord =
+		reader !== null && typeof reader === "object" && !Array.isArray(reader)
+			? (reader as Record<string, unknown>)
+			: undefined;
+	if (topDeclared && Object.hasOwn(metadata, "reader") && !readerRecord)
+		invalid();
+	const readerDeclared =
+		readerRecord !== undefined && Object.hasOwn(readerRecord, "mimePolicy");
+	const interpretationDeclared =
+		readerRecord !== undefined &&
+		Object.hasOwn(readerRecord, "mimeInterpretation");
+	let policy: ResearchReaderMimePolicy | undefined;
+	for (const declaration of [
+		...(topDeclared ? [metadata.readerMimePolicy] : []),
+		...(readerDeclared ? [readerRecord?.mimePolicy] : []),
+	]) {
+		const selected = validateResearchReaderMimePolicy(declaration);
+		if (selected === undefined || (policy !== undefined && policy !== selected))
+			invalid();
+		policy = selected;
+	}
+	if (!interpretationDeclared) {
+		if (readerDeclared) invalid();
+		return { policy };
+	}
+	const interpretation = readerRecord?.mimeInterpretation;
+	if (
+		policy === undefined ||
+		interpretation === null ||
+		typeof interpretation !== "object" ||
+		Array.isArray(interpretation)
+	)
+		return invalid();
+	const fields = interpretation as Record<string, unknown>;
+	if (
+		Object.keys(fields).length !== 5 ||
+		fields.policy !== policy ||
+		fields.declaredMime !== "text/markdown" ||
+		fields.effectiveMime !== "text/html" ||
+		fields.basis !== "html5-doctype-root-prefix" ||
+		typeof fields.prefixCodeUnits !== "number" ||
+		!Number.isSafeInteger(fields.prefixCodeUnits) ||
+		fields.prefixCodeUnits < 1 ||
+		fields.prefixCodeUnits > researchMimePrefixLimits.maxCodeUnits
+	)
+		return invalid();
+	return {
+		policy,
+		interpretation: {
+			policy,
+			declaredMime: "text/markdown",
+			effectiveMime: "text/html",
+			basis: "html5-doctype-root-prefix",
+			prefixCodeUnits: fields.prefixCodeUnits,
+		},
+	};
+}
+
 function replayCheckpoint(signal?: AbortSignal) {
 	const started = performance.now();
 	return () => {
@@ -649,15 +725,25 @@ function extractValidatedReplayJson<
 		checkpoint();
 		const rawPolicy = replayRawPolicy(admission.originalMetadata);
 		const visibilityPolicy = replayVisibilityPolicy(admission.originalMetadata);
+		const { policy: mimePolicy, interpretation: mimeInterpretation } =
+			replayMimePolicy(admission.originalMetadata);
+		if (mimePolicy !== undefined && admission.selectedProfile !== "default")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Research replay MIME policy requires the default profile",
+			);
 		const policyArguments: [
 			ResearchReaderRawPolicy?,
 			ResearchReaderVisibilityPolicy?,
+			ResearchReaderMimePolicy?,
 		] =
-			visibilityPolicy !== undefined
-				? [rawPolicy, visibilityPolicy]
-				: rawPolicy === undefined
-					? []
-					: [rawPolicy];
+			mimePolicy !== undefined
+				? [rawPolicy, visibilityPolicy, mimePolicy]
+				: visibilityPolicy !== undefined
+					? [rawPolicy, visibilityPolicy]
+					: rawPolicy === undefined
+						? []
+						: [rawPolicy];
 		const primary = admission.originalMetadata.primaryResponse as {
 			url: string;
 			status: number;
@@ -683,21 +769,32 @@ function extractValidatedReplayJson<
 		const originalReader = admission.originalMetadata.reader as
 			| Record<string, unknown>
 			| undefined;
-		if (
-			visibilityPolicy !== undefined &&
-			originalReader &&
-			(originalReader.hiddenContentSemantics !==
-				(mime === "text/html"
-					? researchReaderHiddenContentSemantics(visibilityPolicy)
-					: false) ||
-				!Number.isSafeInteger(originalReader.sourceHiddenSubtrees) ||
-				(originalReader.sourceHiddenSubtrees as number) < 0 ||
-				(mime !== "text/html" && originalReader.sourceHiddenSubtrees !== 0))
-		)
+		if (mimeInterpretation !== undefined && mime !== "text/markdown")
 			throw new AgentBrowserError(
 				"invalid-input",
-				"Invalid research replay visibility semantics",
+				"Research replay MIME interpretation contradicts captured headers",
 			);
+		const validateVisibilitySemantics = (html: boolean) => {
+			if (
+				visibilityPolicy !== undefined &&
+				originalReader &&
+				(originalReader.hiddenContentSemantics !==
+					(html
+						? researchReaderHiddenContentSemantics(visibilityPolicy)
+						: false) ||
+					!Number.isSafeInteger(originalReader.sourceHiddenSubtrees) ||
+					(originalReader.sourceHiddenSubtrees as number) < 0 ||
+					(!html && originalReader.sourceHiddenSubtrees !== 0))
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid research replay visibility semantics",
+				);
+		};
+		const markdownHtmlCandidate =
+			mimePolicy !== undefined && mime === "text/markdown";
+		if (!markdownHtmlCandidate)
+			validateVisibilitySemantics(mime === "text/html");
 		const textSelection =
 			selected.method === "text-lines" ||
 			selected.method === "text-line-discovery";
@@ -710,7 +807,7 @@ function extractValidatedReplayJson<
 				? admission.selectedProfile !== "default" ||
 					mime === undefined ||
 					mime === "text/html"
-				: mime !== "text/html" && !markdownLinks
+				: mime !== "text/html" && !markdownLinks && !markdownHtmlCandidate
 		)
 			throw new AgentBrowserError(
 				"unsupported",
@@ -745,29 +842,41 @@ function extractValidatedReplayJson<
 				tree = document;
 			},
 		};
+		const mimeArguments: [ResearchReaderMimePolicy?] =
+			mimePolicy === undefined ? [] : [mimePolicy];
 		const visibilityEvidence =
 			visibilityPolicy === undefined
 				? undefined
-				: researchVisibilityEvidence(response, context, profile, rawPolicy, {
-						method:
-							selected.method === "text-lines" ||
-							selected.method === "text-line-discovery"
-								? "document"
-								: selected.method,
-						target: "target" in selected ? selected.target : undefined,
-						format,
-						tableMetadata:
-							"tableMetadata" in selected ? selected.tableMetadata : undefined,
-						tableRows: "tableRows" in selected ? selected.tableRows : undefined,
-						...("compactTables" in selected && selected.compactTables
-							? { compactTables: true }
-							: {}),
-						limits: {
-							maxBytes: researchJsonReplayLimits.maxExtractionBytes,
-							maxNodes: researchJsonReplayLimits.maxNodes,
-							maxDepth: researchJsonReplayLimits.maxDepth,
+				: researchVisibilityEvidence(
+						response,
+						context,
+						profile,
+						rawPolicy,
+						{
+							method:
+								selected.method === "text-lines" ||
+								selected.method === "text-line-discovery"
+									? "document"
+									: selected.method,
+							target: "target" in selected ? selected.target : undefined,
+							format,
+							tableMetadata:
+								"tableMetadata" in selected
+									? selected.tableMetadata
+									: undefined,
+							tableRows:
+								"tableRows" in selected ? selected.tableRows : undefined,
+							...("compactTables" in selected && selected.compactTables
+								? { compactTables: true }
+								: {}),
+							limits: {
+								maxBytes: researchJsonReplayLimits.maxExtractionBytes,
+								maxNodes: researchJsonReplayLimits.maxNodes,
+								maxDepth: researchJsonReplayLimits.maxDepth,
+							},
 						},
-					});
+						...mimeArguments,
+					);
 		if (visibilityEvidence?.diagnostic)
 			throw new AgentBrowserError(
 				"policy-denied",
@@ -776,6 +885,53 @@ function extractValidatedReplayJson<
 		checkpoint();
 		tree = loadResearchDocument(response, context, profile, ...policyArguments);
 		checkpoint();
+		const reader = researchReaderInfo(tree);
+		const actualInterpretation = reader?.mimeInterpretation;
+		if (
+			mimeInterpretation !== undefined &&
+			(reader?.mimePolicy !== mimePolicy ||
+				actualInterpretation === undefined ||
+				Object.entries(mimeInterpretation).some(
+					([key, value]) =>
+						actualInterpretation[key as keyof ResearchMimeInterpretation] !==
+						value,
+				))
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Research replay MIME interpretation does not match captured bytes",
+			);
+		const interpretedHtml =
+			mimePolicy !== undefined &&
+			reader?.mimePolicy === mimePolicy &&
+			actualInterpretation?.policy === mimePolicy;
+		if (
+			(textSelection && interpretedHtml) ||
+			(markdownHtmlCandidate &&
+				!textSelection &&
+				!markdownLinks &&
+				!interpretedHtml)
+		)
+			throw new AgentBrowserError(
+				"unsupported",
+				textSelection
+					? "Text replay requires a default-profile literal text document"
+					: "Research JSON replay requires text/html",
+			);
+		if (markdownHtmlCandidate) {
+			validateVisibilitySemantics(interpretedHtml);
+			if (
+				visibilityPolicy !== undefined &&
+				originalReader &&
+				(originalReader.hiddenContentSemantics !==
+					reader?.hiddenContentSemantics ||
+					originalReader.sourceHiddenSubtrees !== reader?.sourceHiddenSubtrees)
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Research replay visibility evidence does not match captured bytes",
+				);
+		}
 		const report: ResearchJsonReplayReport<Format> & Extra = {
 			kind: "native-research-json-replay-v1",
 			partial: true,
@@ -790,7 +946,7 @@ function extractValidatedReplayJson<
 			},
 			selection: { method: selected.method, matches: null },
 			classification: { barrier: null, diagnostic: null },
-			reader: researchReaderInfo(tree),
+			reader,
 			...extra,
 		};
 		const title = documentTitle(tree);
@@ -804,6 +960,7 @@ function extractValidatedReplayJson<
 					text,
 				},
 				visibilityEvidence?.title,
+				reader?.mimeInterpretation,
 			);
 			report.classification = { barrier: diagnostic?.kind ?? null, diagnostic };
 			if (diagnostic) {

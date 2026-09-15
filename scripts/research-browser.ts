@@ -72,6 +72,10 @@ import {
 	researchFragmentReport,
 } from "./research-fragment.js";
 import {
+	type ResearchReaderMimePolicy,
+	validateResearchReaderMimePolicy,
+} from "../src/research-mime-policy.js";
+import {
 	classifyResearchVisibility,
 	researchVisibilityEvidence,
 } from "./research-visibility.js";
@@ -194,6 +198,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	let preferMarkdown = false;
 	let readerRawPolicy: ResearchReaderRawPolicy | undefined;
 	let readerVisibilityPolicy: ResearchReaderVisibilityPolicy | undefined;
+	let readerMimePolicy: ResearchReaderMimePolicy | undefined;
 	let captureBody = false;
 	let format: "markdown" | "json" | undefined;
 	let outputLimitPolicy: "text-prefix-v1" | undefined;
@@ -211,6 +216,16 @@ export function parseResearchArguments(args: readonly string[]) {
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (argument === "--reader-mime-policy" && readerMimePolicy === undefined) {
+			const value = args[++index];
+			if (value === undefined)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Missing research reader MIME policy",
+				);
+			readerMimePolicy = validateResearchReaderMimePolicy(value);
+			continue;
+		}
 		if (
 			argument === "--reader-visibility-policy" &&
 			readerVisibilityPolicy === undefined
@@ -430,6 +445,17 @@ export function parseResearchArguments(args: readonly string[]) {
 			"Research table metadata requires JSON format",
 		);
 	if (
+		readerMimePolicy !== undefined &&
+		(!reader ||
+			documentProfile === "long-v1" ||
+			lines !== undefined ||
+			find !== undefined)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Reader MIME policy requires default reader DOM operations",
+		);
+	if (
 		outputLimitPolicy !== undefined &&
 		(!reader || format === "json" || headings || find !== undefined)
 	)
@@ -458,6 +484,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		...(preferMarkdown ? { preferMarkdown: true as const } : {}),
 		...(readerRawPolicy === undefined ? {} : { readerRawPolicy }),
 		...(readerVisibilityPolicy === undefined ? {} : { readerVisibilityPolicy }),
+		...(readerMimePolicy === undefined ? {} : { readerMimePolicy }),
 		...(format === undefined ? {} : { format }),
 		...(outputLimitPolicy === undefined ? {} : { outputLimitPolicy }),
 		...(tableMetadata ? { tableMetadata: true as const } : {}),
@@ -483,6 +510,7 @@ export type ResearchOutcome =
 
 export interface ResearchNavigationReport {
 	representationPreference?: "markdown";
+	readerMimePolicy?: ResearchReaderMimePolicy;
 	outputLimitPolicy?: "text-prefix-v1";
 	fragment?: ResearchFragmentReport;
 	admission?: ResearchAdmissionProvenance;
@@ -534,6 +562,7 @@ export interface ResearchNavigationReport {
 
 export interface ResearchExecutionOptions {
 	preferMarkdown?: boolean;
+	readerMimePolicy?: ResearchReaderMimePolicy;
 	outputLimitPolicy?: "text-prefix-v1";
 	readerRawPolicy?: ResearchReaderRawPolicy;
 	readerVisibilityPolicy?: ResearchReaderVisibilityPolicy;
@@ -573,6 +602,7 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 		);
 	validateResearchReaderRawPolicy(options.readerRawPolicy);
 	validateResearchReaderVisibilityPolicy(options.readerVisibilityPolicy);
+	validateResearchReaderMimePolicy(options.readerMimePolicy);
 }
 
 export async function researchNavigation(
@@ -624,6 +654,9 @@ export async function researchNavigation(
 		...(executionOptions.format === undefined
 			? []
 			: ["--format", executionOptions.format]),
+		...(executionOptions.readerMimePolicy === undefined
+			? []
+			: ["--reader-mime-policy", executionOptions.readerMimePolicy]),
 		...(executionOptions.outputLimitPolicy === undefined
 			? []
 			: ["--output-limit-policy", executionOptions.outputLimitPolicy]),
@@ -657,6 +690,9 @@ export async function researchNavigation(
 	const started = Date.now();
 	const fragment = researchFragmentReport(validated.urls[0]);
 	const report: ResearchNavigationReport = {
+		...(validated.readerMimePolicy === undefined
+			? {}
+			: { readerMimePolicy: validated.readerMimePolicy }),
 		...(validated.outputLimitPolicy === undefined
 			? {}
 			: { outputLimitPolicy: validated.outputLimitPolicy }),
@@ -850,6 +886,9 @@ export async function researchNavigation(
 							},
 							headingLimits: admissionLimits?.headings,
 						},
+						...(validated.readerMimePolicy
+							? ([validated.readerMimePolicy] as const)
+							: []),
 					);
 					visibilityTitle = evidence?.title;
 					const diagnostic = evidence?.diagnostic;
@@ -869,8 +908,20 @@ export async function researchNavigation(
 						validated.documentProfile,
 						validated.readerRawPolicy,
 						validated.readerVisibilityPolicy,
+						...(validated.readerMimePolicy
+							? ([validated.readerMimePolicy] as const)
+							: []),
 					);
 				}
+				if (validated.readerMimePolicy !== undefined)
+					return loadResearchDocument(
+						response,
+						context,
+						validated.documentProfile,
+						validated.readerRawPolicy,
+						undefined,
+						validated.readerMimePolicy,
+					);
 				if (validated.readerRawPolicy !== undefined)
 					return loadResearchDocument(
 						response,
@@ -934,6 +985,7 @@ export async function researchNavigation(
 				text: researchDocumentDiagnosticText(tree),
 			},
 			visibilityTitle,
+			report.reader?.mimeInterpretation,
 		);
 		if (documentDiagnostic) {
 			report.classification.diagnostic = documentDiagnostic;
@@ -989,6 +1041,7 @@ export async function researchNavigation(
 						.slice(0, researchRunLimits.diagnosticTextCodeUnits),
 				},
 				visibilityTitle,
+				report.reader?.mimeInterpretation,
 			);
 			report.classification.barrier =
 				report.classification.diagnostic?.kind ?? null;
@@ -1057,6 +1110,7 @@ export async function researchNavigation(
 				text: researchExtractionDiagnosticText(extraction),
 			},
 			visibilityTitle,
+			report.reader?.mimeInterpretation,
 		);
 		report.classification.barrier =
 			report.classification.diagnostic?.kind ?? null;
@@ -1119,6 +1173,7 @@ export async function* researchBatch(
 				options.documentProfile,
 				{
 					preferMarkdown: options.preferMarkdown,
+					readerMimePolicy: options.readerMimePolicy,
 					outputLimitPolicy: options.outputLimitPolicy,
 					...(options.readerRawPolicy === undefined
 						? {}
@@ -1254,7 +1309,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies require reader; text-prefix requires reader Markdown extraction; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies require reader; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});
