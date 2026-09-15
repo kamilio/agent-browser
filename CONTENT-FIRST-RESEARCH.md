@@ -44,6 +44,10 @@ See the thirty-seventh website inventory for the exact evidence and limitations.
 
 ## Avoid unnecessary requests
 
+- Read a successful saved HTML capture with a unique article `--selector` and
+  `--format markdown` in the replay CLI, instead of navigating again to remove
+  surrounding menus. See `CAPTURED-ARTICLE-MARKDOWN.md`; output remains a JSONL
+  provenance envelope containing native Markdown, with zero replay requests.
 - For publishers supporting content negotiation, opt in to
   `--reader --prefer-markdown` at the same public URL. This asks for Markdown while
   retaining HTML fallback in the same response, not an automatic second

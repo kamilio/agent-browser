@@ -67,7 +67,18 @@ export type ResearchOutputLimitOutlineRecovery = Omit<
 	"kind"
 > & { readonly kind: "captured-output-limit-outline" };
 
-export interface ResearchJsonReplayReport {
+export type ResearchReplayFormat = "json" | "markdown";
+
+type ReplayDocumentByFormat = {
+	[Format in ResearchReplayFormat]: Extract<
+		DocumentExtraction,
+		{ format: Format }
+	>;
+};
+
+export interface ResearchJsonReplayReport<
+	Format extends ResearchReplayFormat = "json",
+> {
 	kind: "native-research-json-replay-v1";
 	partial: true;
 	contentSuccess: null | false;
@@ -92,7 +103,7 @@ export interface ResearchJsonReplayReport {
 		diagnostic: BrowserChallengeDiagnostic | null;
 	};
 	reader?: Readonly<ResearchReaderReport>;
-	extraction?: Extract<DocumentExtraction, { format: "json" }>;
+	extraction?: ReplayDocumentByFormat[Format];
 	links?: DocumentLinkDiscovery;
 	headings?: DocumentHeadingOutline;
 	recovery?:
@@ -100,15 +111,18 @@ export interface ResearchJsonReplayReport {
 		| ResearchOutputLimitOutlineRecovery;
 }
 
-export interface ResearchJsonReplayExtraction {
-	report: ResearchJsonReplayReport;
+export interface ResearchJsonReplayExtraction<
+	Format extends ResearchReplayFormat = "json",
+> {
+	report: ResearchJsonReplayReport<Format>;
 	jsonl: string;
 	outputBytes: number;
 }
 
-export interface ResearchOutputLimitSectionExtraction
-	extends ResearchJsonReplayExtraction {
-	report: ResearchJsonReplayReport & {
+export interface ResearchOutputLimitSectionExtraction<
+	Format extends ResearchReplayFormat = "json",
+> extends ResearchJsonReplayExtraction<Format> {
+	report: ResearchJsonReplayReport<Format> & {
 		recovery: ResearchOutputLimitSectionRecovery;
 	};
 }
@@ -247,15 +261,43 @@ function replayCheckpoint(signal?: AbortSignal) {
 	};
 }
 
+function validateReplayFormat(
+	format: unknown,
+	selected: ReturnType<typeof selectionSnapshot>,
+): ResearchReplayFormat {
+	if (
+		(format !== "json" && format !== "markdown") ||
+		(format === "markdown" &&
+			(selected.method === "link-url-search" || selected.tableMetadata))
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid replay format");
+	return format;
+}
+
+export function extractResearchReplayJson<Format extends ResearchReplayFormat>(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchJsonReplaySelection,
+	signal: AbortSignal | undefined,
+	format: Format,
+): ResearchJsonReplayExtraction<Format>;
 export function extractResearchReplayJson(
 	rawReceipt: Uint8Array,
 	trusted: TrustedResearchReplayAdmission,
 	selection: ResearchJsonReplaySelection,
 	signal?: AbortSignal,
-): ResearchJsonReplayExtraction {
+): ResearchJsonReplayExtraction;
+export function extractResearchReplayJson(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchJsonReplaySelection,
+	signal?: AbortSignal,
+	format: ResearchReplayFormat = "json",
+): ResearchJsonReplayExtraction<ResearchReplayFormat> {
 	const checkpoint = replayCheckpoint(signal);
 	checkpoint();
 	const selected = selectionSnapshot(selection);
+	const selectedFormat = validateReplayFormat(format, selected);
 	checkpoint();
 	const admission = validateResearchReplayAdmission(rawReceipt, trusted);
 	if (admission.kind !== "validated-capture")
@@ -269,27 +311,50 @@ export function extractResearchReplayJson(
 		checkpoint,
 		signal,
 		{},
+		selectedFormat,
 	);
 }
 
+export function recoverResearchOutputLimitSection<
+	Format extends ResearchReplayFormat,
+>(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchOutputLimitSectionSelection,
+	signal: AbortSignal | undefined,
+	format: Format,
+): ResearchOutputLimitSectionExtraction<Format>;
 export function recoverResearchOutputLimitSection(
 	rawReceipt: Uint8Array,
 	trusted: TrustedResearchReplayAdmission,
 	selection: ResearchOutputLimitSectionSelection,
 	signal?: AbortSignal,
-): ResearchOutputLimitSectionExtraction {
+): ResearchOutputLimitSectionExtraction;
+export function recoverResearchOutputLimitSection(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchOutputLimitSectionSelection,
+	signal?: AbortSignal,
+	format: ResearchReplayFormat = "json",
+): ResearchOutputLimitSectionExtraction<ResearchReplayFormat> {
 	const checkpoint = replayCheckpoint(signal);
 	checkpoint();
 	const selected = selectionSnapshot(selection);
 	if (selected.method !== "heading-section") invalidSelection();
+	const selectedFormat = validateReplayFormat(format, selected);
 	checkpoint();
 	const admission = validateResearchOutputLimitSectionAdmission(
 		rawReceipt,
 		trusted,
 	);
-	return extractValidatedReplayJson(admission, selected, checkpoint, signal, {
-		recovery: admission.recovery,
-	});
+	return extractValidatedReplayJson(
+		admission,
+		selected,
+		checkpoint,
+		signal,
+		{ recovery: admission.recovery },
+		selectedFormat,
+	);
 }
 
 export function outlineResearchOutputLimitCapture(
@@ -314,10 +379,14 @@ export function outlineResearchOutputLimitCapture(
 				kind: "captured-output-limit-outline" as const,
 			},
 		},
+		"json",
 	);
 }
 
-function extractValidatedReplayJson<Extra extends object>(
+function extractValidatedReplayJson<
+	Extra extends object,
+	Format extends ResearchReplayFormat,
+>(
 	admission: Extract<ResearchReplayAdmission, { kind: "validated-capture" }>,
 	selected:
 		| ReturnType<typeof selectionSnapshot>
@@ -325,7 +394,10 @@ function extractValidatedReplayJson<Extra extends object>(
 	checkpoint: () => void,
 	signal: AbortSignal | undefined,
 	extra: Extra,
-): ResearchJsonReplayExtraction & { report: ResearchJsonReplayReport & Extra } {
+	format: Format,
+): ResearchJsonReplayExtraction<Format> & {
+	report: ResearchJsonReplayReport<Format> & Extra;
+} {
 	let tree: DocumentTree | undefined;
 	try {
 		checkpoint();
@@ -390,7 +462,7 @@ function extractValidatedReplayJson<Extra extends object>(
 			...policyArguments,
 		);
 		checkpoint();
-		const report: ResearchJsonReplayReport & Extra = {
+		const report: ResearchJsonReplayReport<Format> & Extra = {
 			kind: "native-research-json-replay-v1",
 			partial: true,
 			contentSuccess: null,
@@ -477,7 +549,7 @@ function extractValidatedReplayJson<Extra extends object>(
 			checkpoint();
 			const reference = tree.reference(matches[0]);
 			const extraction = extractDocument(tree, {
-				format: "json",
+				format,
 				tableMetadata: selected.tableMetadata,
 				...(selected.method === "heading-section"
 					? { section: reference }
@@ -486,12 +558,12 @@ function extractValidatedReplayJson<Extra extends object>(
 				maxNodes: researchJsonReplayLimits.maxNodes,
 				maxDepth: researchJsonReplayLimits.maxDepth,
 			});
-			if (extraction.format !== "json")
+			if (extraction.format !== format)
 				throw new AgentBrowserError(
 					"unsupported",
-					"Research replay requires JSON extraction",
+					"Research replay extraction format mismatch",
 				);
-			report.extraction = extraction;
+			report.extraction = extraction as ReplayDocumentByFormat[Format];
 			checkpoint();
 			if (
 				!classify(researchExtractionDiagnosticText(extraction)) &&

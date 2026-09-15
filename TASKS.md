@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: readable captured articles without another request
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+One new Python tutorial navigation recovers 34 headings, 57 code blocks and 132
+paragraphs. Native replay now accepts explicit Markdown output in its bounded
+JSONL envelope, including section recovery, without changing default JSON types
+or source/output/admission limits. MDN main-scope Markdown yields 20,693 JSONL
+bytes versus 44,259 for byte-identical baseline/candidate JSON. Python scoped JSON
+hits the existing 256,000-byte ceiling at 342,496 bytes; Markdown recovers 43,583
+content bytes with all 57 code blocks, 24 scoped headings and 128 paragraphs.
+All six CLI attempts are retained (four succeed, two JSON limits); two offline
+diagnoses verify the original/candidate failure. No replay makes an HTTP request.
+All 2,477 tests in 19 selected files, build, 19 strict roots, formatting and lint
+pass. Initial failures/types/lint and 5-second harness timeouts are retained;
+final per-test allowance is 30 seconds, not a changed application deadline.
+The fortieth inventory and `CAPTURED-ARTICLE-MARKDOWN.md` record evidence.
+Python's stripped main role/class, large-receipt serialization cost, prior
+unresolved tests, broader research/sites, rendering/interaction, restricted
+content, full native release and separate runtime/service/device/credential
+gates remain open. Existing dirty work is preserved; no push.
+
 ### September 15: opt-in publisher Markdown negotiation
 
 **PROGRESS; overall browser goal remains ACTIVE.**

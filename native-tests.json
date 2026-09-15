@@ -39,6 +39,8 @@
   "src/research-json-replay.test.ts",
   "src/research-output-limit-recovery.test.ts",
   "src/research-replay-cli.test.ts",
+  "src/research-replay-markdown.test.ts",
+  "src/research-replay-markdown-cli.test.ts",
   "src/research-workflow.test.ts",
   "src/research-prefer-markdown.test.ts",
   "src/research-batch-pacing.test.ts",

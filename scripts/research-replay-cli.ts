@@ -6,7 +6,9 @@ import { validateSelectorSyntax } from "../src/selectors.js";
 import type { TrustedResearchReplayAdmission } from "./research-admission-evidence.js";
 import { researchBodyCaptureLimit } from "./research-body-capture.js";
 import {
+	type ResearchJsonReplayExtraction,
 	type ResearchJsonReplaySelection,
+	type ResearchReplayFormat,
 	extractResearchReplayJson,
 	outlineResearchOutputLimitCapture,
 	recoverResearchOutputLimitSection,
@@ -20,7 +22,7 @@ export const researchReplayCliLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings) [--table-metadata] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --section or --headings. Headings require recovery and do not accept table metadata.\n";
+	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings) [--format json|markdown] [--table-metadata] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --section or --headings. Markdown requires selector/section extraction without table metadata. Headings require recovery and do not accept table metadata.\n";
 
 function invalidArguments(): never {
 	throw new AgentBrowserError(
@@ -33,10 +35,11 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	trusted: TrustedResearchReplayAdmission;
 	selection: ResearchJsonReplaySelection | { headings: true };
 	recoverOutputLimit?: true;
+	format?: ResearchReplayFormat;
 } {
 	if (
 		!Array.isArray(args) ||
-		args.length > 12 ||
+		args.length > 14 ||
 		args.some((value) => typeof value !== "string" || value.length > 4096)
 	)
 		invalidArguments();
@@ -52,6 +55,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		"--selector",
 		"--section",
 		"--links",
+		"--format",
 	]);
 	for (let index = 0; index < args.length; index++) {
 		const flag = args[index];
@@ -73,10 +77,12 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		fields.set(flag, value);
 	}
 	const profile = fields.get("--expected-profile");
+	const format = fields.get("--format");
 	const receiptSha256 = fields.get("--receipt-sha256");
 	const bodySha256 = fields.get("--body-sha256");
 	const bodyBytes = fields.get("--body-bytes");
 	if (
+		(format !== undefined && format !== "json" && format !== "markdown") ||
 		(profile !== "default" && profile !== "long-v1") ||
 		typeof receiptSha256 !== "string" ||
 		!/^[a-f0-9]{64}$/.test(receiptSha256) ||
@@ -95,6 +101,11 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		fields.has(flag),
 	);
 	if (modes.length + Number(headings) !== 1) invalidArguments();
+	if (
+		format === "markdown" &&
+		(headings || tableMetadata || modes[0] === "--links")
+	)
+		invalidArguments();
 	const trusted: TrustedResearchReplayAdmission = {
 		expectedProfile: profile,
 		expectedReceiptSha256: receiptSha256,
@@ -103,7 +114,12 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	if (headings) {
 		if (!recoverOutputLimit || profile !== "default" || tableMetadata)
 			invalidArguments();
-		return { trusted, recoverOutputLimit: true, selection: { headings: true } };
+		return {
+			trusted,
+			recoverOutputLimit: true,
+			selection: { headings: true },
+			...(format === undefined ? {} : { format }),
+		};
 	}
 	const mode = modes[0];
 	if (recoverOutputLimit && (profile !== "default" || mode !== "--section"))
@@ -114,7 +130,12 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		if (
 			tableMetadata ||
 			target.length > 256 ||
-			/[\s\x00-\x1f\x7f]/.test(target)
+			Array.from(target).some(
+				(character) =>
+					/\s/.test(character) ||
+					character.charCodeAt(0) < 32 ||
+					character.charCodeAt(0) === 127,
+			)
 		)
 			invalidArguments();
 	} else {
@@ -126,6 +147,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	}
 	const metadata = tableMetadata ? { tableMetadata: true } : {};
 	return {
+		...(format === undefined ? {} : { format }),
 		...(recoverOutputLimit ? { recoverOutputLimit: true as const } : {}),
 		trusted,
 		selection:
@@ -299,7 +321,7 @@ export async function runResearchReplayCli(
 		checkpoint();
 		receipt = await readReceipt(input, controller.signal);
 		checkpoint();
-		let result: ReturnType<typeof extractResearchReplayJson>;
+		let result: ResearchJsonReplayExtraction<ResearchReplayFormat>;
 		if ("headings" in options.selection) {
 			if (!options.recoverOutputLimit) invalidArguments();
 			result = outlineResearchOutputLimitCapture(
@@ -320,6 +342,7 @@ export async function runResearchReplayCli(
 						: { tableMetadata: options.selection.tableMetadata }),
 				},
 				controller.signal,
+				options.format ?? "json",
 			);
 		} else {
 			result = extractResearchReplayJson(
@@ -327,6 +350,7 @@ export async function runResearchReplayCli(
 				options.trusted,
 				options.selection,
 				controller.signal,
+				options.format ?? "json",
 			);
 		}
 		checkpoint();
