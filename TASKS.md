@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: bounded source-backed product tables
+
+- Recovered AMD's source-backed product specifications without running page
+  scripts: five tables, 31 rows and 276 formatted fields, including supplied
+  units and prefix/suffix qualifiers. The complete 27,409-byte metadata matches
+  an independent inventory of the previously captured response.
+- Added optional, immutable `sourceDataTables` to research extraction. It is
+  explicitly partial document-source data, not rendered content. Schema/input/
+  output bounds apply; whole-row metadata fitting preserves the existing body
+  budget, including exact-boundary outputs. No raw numeric conversions or
+  arbitrary application-state dumping.
+- Clean selected native validation: 1,647/21 baseline to **1,722/23 candidate**,
+  **75 new tests**, every original case unchanged. Final build, narrowed types,
+  formatting, lint and selected tests pass. Initial formatting/lint corrections
+  and their evidence remain recorded.
+- Both builds passed 26 saved-response/policy cases over 22 original captures;
+  all body outcomes/hashes and prior metadata are unchanged. Only AMD gains
+  source tables. Independent inventory and replay groups closed with **zero new
+  HTTP requests**. This is not a new live sweep or full-manifest acceptance.
+- See `SOURCE-DATA-TABLES.md` and
+  `reports/source-data-tables-2026-09-15.{md,json}`. The overall goal remains
+  active; SafeJS/JavaScript, credentials/passkeys, interactive/service/TTY,
+  CAPTCHA and broad website compatibility gates remain open. No push.
+
 ### September 15: hardware pages and inline XML content recovery
 
 **PROGRESS; overall browser goal remains ACTIVE.** Four public hardware pages,

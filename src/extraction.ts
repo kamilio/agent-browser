@@ -37,6 +37,11 @@ import {
 	type ResearchReaderReport,
 	researchReaderInfo,
 } from "./research-reader-info.js";
+import {
+	type ResearchSourceDataTables,
+	fitResearchSourceDataTables,
+	researchSourceDataTables,
+} from "./research-source-data-tables.js";
 import { resourceLimitError } from "./resource-limit.js";
 import { documentStyles } from "./styles.js";
 import {
@@ -169,6 +174,7 @@ interface ExtractionMetadata {
 	reader?: Readonly<ResearchReaderReport>;
 	sourceDescriptions?: DocumentDescriptions;
 	sourceAlternates?: DocumentAlternates;
+	sourceDataTables?: ResearchSourceDataTables;
 	sourceMarkdown?: MarkdownSourceOutline;
 	sectionSelection?: Readonly<HeadingSectionMetadata>;
 	textSelection?: {
@@ -1295,5 +1301,19 @@ export function extractDocument(
 			outputBytes,
 			"Extraction output limit exceeded",
 		);
+	const sourceData = researchSourceDataTables(tree);
+	if (sourceData) {
+		const remaining =
+			maxBytes -
+			outputBytes -
+			encoder.encode(',"sourceDataTables":').byteLength;
+		if (remaining >= 0) {
+			const sourceDataTables = fitResearchSourceDataTables(
+				sourceData,
+				remaining,
+			);
+			if (sourceDataTables) return { ...result, sourceDataTables };
+		}
+	}
 	return result;
 }

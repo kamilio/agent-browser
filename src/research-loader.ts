@@ -28,6 +28,10 @@ import {
 } from "./research-admission.js";
 import { sourceInlineDisplayHidden } from "./research-inline-visibility.js";
 import {
+	ResearchSourceDataTableCollector,
+	setResearchSourceDataTables,
+} from "./research-source-data-tables.js";
+import {
 	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
 	type ResearchReaderVisibilityPolicy,
@@ -270,6 +274,7 @@ export function sanitizeResearchHtml(
 	const open: string[] = [];
 	let sourceHiddenOmission = false;
 	let legacyOmittedDepth = 0;
+	let sourceTables: ResearchSourceDataTableCollector | undefined;
 	const emit = (value: string) => {
 		report.outputCodeUnits += value.length;
 		check("reader.output", limits.maxOutputCodeUnits, report.outputCodeUnits);
@@ -483,6 +488,13 @@ export function sanitizeResearchHtml(
 			}
 			continue;
 		}
+		if (
+			token.kind === "start" &&
+			Object.hasOwn(token.attributes, "data-json")
+		) {
+			sourceTables ??= new ResearchSourceDataTableCollector();
+			sourceTables.add(name, token.attributes, tokenStart);
+		}
 		const outputName = blockReplacements.has(name)
 			? "div"
 			: name === "xmp"
@@ -563,8 +575,10 @@ export function sanitizeResearchHtml(
 			"unsupported",
 			"Unclosed omitted reader subtree",
 		);
+	const sourceDataTables = sourceTables?.finish();
 	return {
 		html: output.join(""),
+		...(sourceDataTables ? { sourceDataTables } : {}),
 		report: Object.freeze({
 			...report,
 			...(mathAlternatives.elements
@@ -705,6 +719,8 @@ export function loadResearchDocument(
 			: {}),
 	});
 	setResearchReaderInfo(tree, report);
+	if (sanitized.sourceDataTables)
+		setResearchSourceDataTables(tree, sanitized.sourceDataTables);
 	const info = htmlParseInfo(tree);
 	if (info) setHtmlParseInfo(tree, { ...info, encoding: decoded.encoding });
 	return tree;
