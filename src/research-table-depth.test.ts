@@ -10,6 +10,7 @@ import {
 	researchReaderProfile,
 	sanitizeResearchHtml,
 } from "./research-loader.js";
+import { resourceLimitDiagnostic } from "./resource-limit.js";
 import { DocumentQueries } from "./selectors.js";
 
 const url = "https://research.example/tables";
@@ -64,14 +65,76 @@ function load(source: string, maxDepth = 128) {
 	return tree;
 }
 
-function exactSourceDepth(source: string, maxDepth: number) {
+function exactSourceDepth(source: string, maxDepth: number, expected = source) {
 	const result = sanitizeResearchHtml(source, { maxDepth });
-	expect(result.html).toBe(source);
-	expect(result.report.outputCodeUnits).toBe(source.length);
-	expect(() =>
-		sanitizeResearchHtml(source, { maxDepth: maxDepth - 1 }),
-	).toThrow(expect.objectContaining({ code: "resource-limit" }));
+	expect(result.html).toBe(expected);
+	expect(result.report.outputCodeUnits).toBe(expected.length);
+	let failure: unknown;
+	try {
+		sanitizeResearchHtml(source, { maxDepth: maxDepth - 1 });
+	} catch (error) {
+		failure = error;
+	}
+	expect(failure).toMatchObject({ code: "resource-limit" });
+	expect(resourceLimitDiagnostic(failure)).toEqual({
+		kind: "reader.depth",
+		unit: "levels",
+		limit: maxDepth - 1,
+		observed: maxDepth,
+	});
 	return result;
+}
+
+function expectImpliedTableEndRecovery(tag: string) {
+	for (const next of [...cells, "tr", ...groups]) {
+		const source = `<table><tbody><tr><td><${tag}>first<${next}>second`;
+		const unwrapped = [
+			"big",
+			"font",
+			"nobr",
+			"strike",
+			"tt",
+			"unknown",
+		].includes(tag);
+		const expected = unwrapped
+			? source.replace(`<${tag}>`, "")
+			: tag === "form"
+				? source.replace("<form>", "<div>")
+				: source;
+		const result = exactSourceDepth(source, 5, expected);
+		expect(result.report).toMatchObject({
+			sourceCodeUnits: source.length,
+			textCodeUnits: 11,
+			tokens: 8,
+			omittedTokens: 0,
+			ignoredAttributes: 0,
+			unwrappedElements: Number(unwrapped),
+			tokenizerIssues: 0,
+		});
+		const tree = load(source);
+		const native = parseHtmlDocument(expected, url);
+		trees.push(native);
+		expect(serializeHtml(tree, tree.root)).toBe(
+			serializeHtml(native, native.root),
+		);
+		expect(tree.textContent(tree.root)).toBe(
+			cells.includes(next) ? "firstsecond" : "secondfirst",
+		);
+		const queries = new DocumentQueries(tree);
+		expect(queries.querySelectorAll("table")).toHaveLength(1);
+		expect(queries.querySelectorAll("tr > td, tr > th")).toHaveLength(
+			cells.includes(next) ? 2 : 1,
+		);
+		expect(
+			queries.querySelectorAll("table > tbody, table > thead, table > tfoot"),
+		).toHaveLength(groups.includes(next) ? 2 : 1);
+		expect(
+			queries.querySelectorAll("tbody > tr, thead > tr, tfoot > tr"),
+		).toHaveLength(next === "tr" ? 2 : 1);
+		expect(
+			queries.querySelector("td td, td th, th td, th th, tr tr"),
+		).toBeNull();
+	}
 }
 
 function expectNativeStructure(
@@ -226,21 +289,16 @@ it.each([...cells, "tr", ...groups])(
 );
 
 it.each(formatting)(
-	"does not discard open formatting depth across %s",
-	(tag) => {
-		for (const next of [...cells, "tr", ...groups]) {
-			const source = `<table><tbody><tr><td><${tag}>first<${next}>second`;
-			expect(
-				sanitizeResearchHtml(source, { maxDepth: 6 }).report.sourceCodeUnits,
-			).toBe(source.length);
-			expect(() => sanitizeResearchHtml(source, { maxDepth: 5 })).toThrow(
-				expect.objectContaining({ code: "resource-limit" }),
-			);
-		}
-	},
+	"accounts for implied table ends across open formatting %s without losing descendant depth",
+	expectImpliedTableEndRecovery,
 );
 
-it.each(["span", "div", "section", "unknown", "form", "caption", "colgroup"])(
+it.each(["span", "div", "section", "unknown", "form"])(
+	"accounts for implied table ends across open nonformatting %s without losing descendant depth",
+	expectImpliedTableEndRecovery,
+);
+
+it.each(["caption", "colgroup"])(
 	"does not cross an open nonformatting %s wrapper",
 	(tag) => {
 		for (const next of [...cells, "tr", ...groups]) {
@@ -263,15 +321,30 @@ it.each([
 	exactSourceDepth(source, 6);
 });
 
-it.each(["caption", "colgroup"])(
-	"does not treat %s as a table row/group prefix",
-	(tag) => {
-		for (const next of [...cells, "tr", ...groups]) {
-			const source = `<table><${tag}><${next}>first<${next}>second`;
-			exactSourceDepth(source, 4);
-		}
-	},
-);
+it.each(["caption"])("does not treat %s as a table row/group prefix", (tag) => {
+	for (const next of [...cells, "tr", ...groups]) {
+		const source = `<table><${tag}><${next}>first<${next}>second`;
+		exactSourceDepth(source, 4);
+	}
+});
+
+it("accounts for implied table ends after a table-level colgroup", () => {
+	for (const next of [...cells, "tr", ...groups]) {
+		const source = `<table><colgroup><${next}>first<${next}>second`;
+		exactSourceDepth(source, 2);
+		const tree = load(source);
+		const native = parseHtmlDocument(source, url);
+		trees.push(native);
+		expect(serializeHtml(tree, tree.root)).toBe(
+			serializeHtml(native, native.root),
+		);
+		const queries = new DocumentQueries(tree);
+		expect(queries.querySelectorAll("table > colgroup")).toHaveLength(1);
+		expect(queries.querySelectorAll(`table ${next}`)).toHaveLength(2);
+		expect(queries.querySelector(`colgroup ${next}`)).toBeNull();
+		expect(tree.textContent(tree.root)).toBe("firstsecond");
+	}
+});
 
 it.each(formatting)(
 	"allows adjacent cells after explicitly closed %s children",
@@ -379,7 +452,7 @@ it("still charges omitted subtree depth and text budgets", () => {
 it("preserves sanitized bytes and complete omission provenance around optional table ends", () => {
 	const source =
 		"<table id=x><tr><td hidden>one<svg/><template><p>hidden</p></template><script>bad()</script><th class=y>two</table>";
-	const expected = "<table><tr><td>one<th>two</table>";
+	const expected = '<table id="x"><tr><td>one<th class="y">two</table>';
 	const sanitized = sanitizeResearchHtml(source, { maxDepth: 3 });
 	expect(sanitized).toEqual({
 		html: expected,
@@ -395,7 +468,7 @@ it("preserves sanitized bytes and complete omission provenance around optional t
 			tokens: 15,
 			omittedTokens: 8,
 			omittedSubtrees: { svg: 1, template: 1, script: 1 },
-			ignoredAttributes: 3,
+			ignoredAttributes: 1,
 			unwrappedElements: 0,
 			tokenizerIssues: 0,
 		},
@@ -405,6 +478,15 @@ it("preserves sanitized bytes and complete omission provenance around optional t
 		...sanitized.report,
 		encoding: "utf-8",
 	});
+	const native = parseHtmlDocument(expected, url);
+	trees.push(native);
+	expect(serializeHtml(tree, tree.root)).toBe(
+		serializeHtml(native, native.root),
+	);
+	expect(tree.textContent(tree.root)).toBe("onetwo");
+	expect(
+		new DocumentQueries(tree).querySelectorAll("table#x > tbody > tr > th.y"),
+	).toHaveLength(1);
 	expect(extractDocument(tree).reader).toEqual(researchReaderInfo(tree));
 	expect(extractDocument(tree).content).toContain("one");
 	expect(extractDocument(tree).content).toContain("two");

@@ -190,15 +190,35 @@ it("preserves omission and attribute accounting around definition ends", () => {
 	const source =
 		"<dl><dt id=source>term<svg/><dd hidden>definition<script>ignored()</script><dt>last</dl>";
 	const result = sanitizeResearchHtml(source, { maxDepth: 2 });
-	expect(result.html).toBe("<dl><dt>term<dd>definition<dt>last</dl>");
+	const expected = '<dl><dt id="source">term<dd>definition<dt>last</dl>';
+	expect(result.html).toBe(expected);
 	expect(result.report).toMatchObject({
 		partial: true,
 		scripting: false,
 		styling: false,
 		hiddenContentSemantics: false,
-		ignoredAttributes: 2,
+		sourceCodeUnits: source.length,
+		outputCodeUnits: expected.length,
+		ignoredAttributes: 1,
 		omittedSubtrees: { svg: 1, script: 1 },
 		tokenizerIssues: 0,
+	});
+	const tree = load(source);
+	const native = parseHtmlDocument(
+		expected,
+		"https://research.example/definitions",
+	);
+	trees.push(native);
+	expect(serializeHtml(tree, tree.root)).toBe(
+		serializeHtml(native, native.root),
+	);
+	expect(tree.textContent(tree.root)).toBe("termdefinitionlast");
+	expect(
+		new DocumentQueries(tree).querySelectorAll("dl > dt#source"),
+	).toHaveLength(1);
+	expect(researchReaderInfo(tree)).toEqual({
+		...result.report,
+		encoding: "utf-8",
 	});
 });
 

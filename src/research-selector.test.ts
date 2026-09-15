@@ -303,6 +303,12 @@ it.each([false, true])(
 		expect(report.failure).toEqual({
 			category: "resource-limit",
 			stage: "extraction",
+			resourceLimit: {
+				kind: "extraction.output",
+				unit: "bytes",
+				limit: 256_000,
+				observed: 256_003,
+			},
 		});
 		expect(report.extraction).toBeUndefined();
 		expect(report.primaryResponse?.bodySha256).toBe(
