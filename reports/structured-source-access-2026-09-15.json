@@ -1,0 +1,459 @@
+{
+  "date": "2026-09-15",
+  "publishedAt": "2026-09-15T17:35:33.306Z",
+  "baselineCommit": "55e852d14a6a828de7280fd9686569f93ec8ac2c",
+  "kind": "bounded-source-access-metadata-validation",
+  "candidateLabel": "release01",
+  "corpus": {
+    "savedResponses": 103,
+    "retainedTop100Bodies": 95,
+    "deeperPageBodies": 8,
+    "original100Report": "reports/agent-citation-pages-2026-09-15.md",
+    "globalAgentVisitRanking": false
+  },
+  "totals": {
+    "freshNativeHttpRequests": 0,
+    "surveyChildren": 103,
+    "replayChildren": 206,
+    "closedSurveyAndReplayChildren": 309,
+    "mockedNavigations": 412,
+    "pairedCases": 206,
+    "metadataPages": 3
+  },
+  "survey": {
+    "counts": {
+      "corpus": {
+        "pages": 95,
+        "pagesWithBlocks": 45,
+        "blocks": 65,
+        "pagesWithFindings": 1,
+        "findings": 1
+      },
+      "deeper": {
+        "pages": 8,
+        "pagesWithBlocks": 6,
+        "blocks": 12,
+        "pagesWithFindings": 4,
+        "findings": 6
+      },
+      "declaredHtmlPages": 100,
+      "nonHtmlSkippedPages": 3,
+      "htmlPagesWithNoJsonLdBlocks": 49,
+      "pagesWithJsonLdBlocks": 51,
+      "blocks": 77,
+      "parsedBlocks": 77,
+      "invalidJsonBlocks": 0,
+      "parserOrDecodeErrors": 0,
+      "pagesReportingLimits": 0,
+      "pagesWithFindings": 5,
+      "findings": 7,
+      "articleBodyStrings": 1,
+      "reviewBodyStrings": 2,
+      "accessDeclarations": 4,
+      "pagesWithAccessDeclarations": 3,
+      "accessDeclarationValues": {
+        "booleanFalse": 2,
+        "stringFalseCapitalized": 1,
+        "booleanTrue": 1
+      },
+      "encodings": {
+        "utf-8": 95,
+        "windows-1252": 5
+      },
+      "originalOutcomes": {
+        "empty-extraction": 5,
+        "extracted-unverified": 67,
+        "http-failure": 13,
+        "semantic-barrier": 18
+      },
+      "recordedActualHttpRequests": 0
+    },
+    "skipped": [
+      {
+        "key": "054-www.bbb.org",
+        "mime": "text/markdown",
+        "reason": "not-declared-html"
+      },
+      {
+        "key": "060-www.ziprecruiter.com",
+        "mime": "text/markdown",
+        "reason": "not-declared-html"
+      },
+      {
+        "key": "089-kateminimalist.com",
+        "mime": "text/markdown",
+        "reason": "not-declared-html"
+      }
+    ],
+    "findings": [
+      {
+        "key": "058-www.rtings.com",
+        "block": 0,
+        "path": "$.hasPart",
+        "type": "WebPageElement",
+        "context": null,
+        "blockRootContext": "https://schema.org",
+        "isAccessibleForFree": "False",
+        "cssSelector": ".ld-paywall",
+        "headline": null,
+        "url": null,
+        "articleBodyCodeUnits": 0,
+        "articleBodySha256": null,
+        "reviewBodyCodeUnits": 0,
+        "reviewBodySha256": null
+      },
+      {
+        "key": "page-002-www.consumerreports.org",
+        "block": 1,
+        "path": "$",
+        "type": "Article",
+        "context": "https://schema.org",
+        "isAccessibleForFree": false,
+        "headline": "13 Best TVs of 2026, Tested by Our Experts",
+        "url": "https://www.consumerreports.org/electronics-computers/tvs/best-tvs-of-the-year-a3862868628/",
+        "articleBodyCodeUnits": 0,
+        "articleBodySha256": null,
+        "reviewBodyCodeUnits": 0,
+        "reviewBodySha256": null
+      },
+      {
+        "key": "page-002-www.consumerreports.org",
+        "block": 1,
+        "path": "$.hasPart",
+        "type": "WebPageElement",
+        "context": null,
+        "blockRootContext": "https://schema.org",
+        "isAccessibleForFree": false,
+        "cssSelector": ".paywall",
+        "headline": null,
+        "url": null,
+        "articleBodyCodeUnits": 0,
+        "articleBodySha256": null,
+        "reviewBodyCodeUnits": 0,
+        "reviewBodySha256": null
+      },
+      {
+        "key": "page-003-www.pcmag.com",
+        "block": 0,
+        "path": "$",
+        "type": "Article",
+        "context": "https://schema.org",
+        "isAccessibleForFree": null,
+        "headline": "Apple's First Budget Laptop Cost More Than Two MacBook Neos",
+        "url": null,
+        "articleBodyCodeUnits": 10986,
+        "articleBodySha256": "d53bda4e247f7f75fb82a91c86e931fe67ff1111762b47f62c0472b6a8f9e4ae",
+        "reviewBodyCodeUnits": 0,
+        "reviewBodySha256": null
+      },
+      {
+        "key": "page-004-www.nerdwallet.com",
+        "block": 2,
+        "path": "$",
+        "type": "Article",
+        "context": "https://schema.org",
+        "isAccessibleForFree": true,
+        "headline": "Is It Time to Declutter Your Life (and Your Brain)?",
+        "url": "https://www.nerdwallet.com/finance/learn/sell-your-stuff#article",
+        "articleBodyCodeUnits": 0,
+        "articleBodySha256": null,
+        "reviewBodyCodeUnits": 0,
+        "reviewBodySha256": null
+      },
+      {
+        "key": "page-006-www.cargurus.com",
+        "block": 0,
+        "path": "$.@graph.4",
+        "type": "Review",
+        "context": null,
+        "headline": "2026 BMW X5 Review",
+        "url": "https://www.cargurus.com/research/2026-BMW-X5-c33915#main-entity",
+        "isAccessibleForFree": null,
+        "articleBodyCodeUnits": 0,
+        "articleBodySha256": null,
+        "reviewBodyCodeUnits": 11833,
+        "reviewBodySha256": "39cc561330e4824850b7ae3738416466ebd2e80b5458d59a437e15a22738eb0b"
+      },
+      {
+        "key": "page-006-www.cargurus.com",
+        "block": 0,
+        "path": "$.@graph.3.review.0",
+        "type": "UserReview",
+        "context": null,
+        "headline": null,
+        "url": "https://sd.cargurus.com/370880",
+        "isAccessibleForFree": null,
+        "articleBodyCodeUnits": 0,
+        "articleBodySha256": null,
+        "reviewBodyCodeUnits": 86,
+        "reviewBodySha256": "4716939a312f6f4922c1a058212134ff9050298aa9793f95aff2c0565896c2ae"
+      }
+    ],
+    "novelContentRecoveryEstablished": false,
+    "limitations": [
+      "103 successful processes do not mean 103 accessible or useful pages; original outcomes include HTTP failures, semantic barriers and empty extraction.",
+      "Three Markdown responses were intentionally not parsed as HTML. No findings means absence within this retained, MIME-filtered, bounded sample, not site-wide absence.",
+      "Only exact application/ld+json script types are surveyed. Microdata, RDFa, generic attribute payloads, other application state, scripts and remote contexts are not recovered or executed.",
+      "Raw-block hash reconstruction is a read-only fixture cross-check, not a replacement HTML parser or parser conformance test. It matched all 77 retained blocks; no adversarial cases were run.",
+      "The survey walks arbitrary nested JSON objects without validating schema context, primary-page identity or ordinary-reader visibility/admission/focus. It is exploratory evidence, not a safe production collector contract.",
+      "Metadata strings are truncated to 256 code units; non-string/non-boolean values become other. Missing access fields appear as null; these representations are not validated JSON-LD semantics. No dedicated global finding-count limit exists beyond the bounded input/walk.",
+      "Publisher isAccessibleForFree declarations are untrusted source hints, not actual entitlement, successful access, factual correctness or full content availability. Preserve boolean/string distinctions and scope; do not relabel recommendation or user-review objects as primary content.",
+      "Recorded guard/closure evidence was inspected, not newly exercised. Existing source/compiled hashes were verified, but preflight git-blob comparisons and historical native tests were not rerun.",
+      "No article/review body text is emitted. No live, SDK, credentials, socket, SafeJS, TTY, authenticated, anti-bot or complete-browser acceptance gate is closed. Overall browser goals and outstanding gates remain unchanged."
+    ]
+  },
+  "validation": {
+    "at": "2026-09-15T17:35:33.275Z",
+    "label": "release01",
+    "baselineCommit": "55e852d14a6a828de7280fd9686569f93ec8ac2c",
+    "passedForChange": true,
+    "freshHttpRequests": 0,
+    "savedResponses": 103,
+    "pairedCases": 206,
+    "mockNavigations": 412,
+    "closedReplayChildren": 206,
+    "contentAndOutcomesUnchanged": true,
+    "baselinePassed": 3530,
+    "candidatePassed": 3646,
+    "newPassed": 116,
+    "existingFailures": [
+      {
+        "file": "command-host.test.ts",
+        "name": "advertises bounded node relations without claiming full Node or namespace support",
+        "caseIndex": 4
+      },
+      {
+        "file": "research-body-capture.test.ts",
+        "name": "retains unscoped capture and post-extraction barrier classification (reader=false)",
+        "caseIndex": 135
+      },
+      {
+        "file": "research-body-capture.test.ts",
+        "name": "retains unscoped capture and post-extraction barrier classification (reader=true)",
+        "caseIndex": 136
+      },
+      {
+        "file": "research-table-rows-cli.test.ts",
+        "name": "rejects replay row flags [ '--selector', 'main', …(4) ] without consuming input",
+        "caseIndex": 28
+      }
+    ],
+    "checks": {
+      "build": 0,
+      "types": 2,
+      "format": 0,
+      "lint": 0,
+      "native": 1
+    },
+    "newChecks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0,
+      "native": 0
+    },
+    "sourceAccessPages": 3,
+    "declarations": [
+      {
+        "key": "058-www.rtings.com",
+        "url": "https://www.rtings.com/",
+        "policy": "document",
+        "sourceAccess": {
+          "kind": "jsonld-free-access-declarations-v1",
+          "scope": "document-source",
+          "partial": true,
+          "verified": false,
+          "truncated": false,
+          "entries": [
+            {
+              "source": {
+                "offset": 12835
+              },
+              "path": "$.hasPart",
+              "value": "False"
+            }
+          ]
+        },
+        "addedExtractionBytes": 212,
+        "markdownBytes": 15275,
+        "markdownSha256": "954c6749b3b9c4da49ba62e6dc7dfc802614561eaa2f0ab1f7375ace337c5d16"
+      },
+      {
+        "key": "058-www.rtings.com",
+        "url": "https://www.rtings.com/",
+        "policy": "main-content-v1",
+        "sourceAccess": {
+          "kind": "jsonld-free-access-declarations-v1",
+          "scope": "document-source",
+          "partial": true,
+          "verified": false,
+          "truncated": false,
+          "entries": [
+            {
+              "source": {
+                "offset": 12835
+              },
+              "path": "$.hasPart",
+              "value": "False"
+            }
+          ]
+        },
+        "addedExtractionBytes": 212,
+        "markdownBytes": 15275,
+        "markdownSha256": "954c6749b3b9c4da49ba62e6dc7dfc802614561eaa2f0ab1f7375ace337c5d16"
+      },
+      {
+        "key": "page-002-www.consumerreports.org",
+        "url": "https://www.consumerreports.org/electronics-computers/tvs/best-tvs-of-the-year-a3862868628/",
+        "policy": "document",
+        "sourceAccess": {
+          "kind": "jsonld-free-access-declarations-v1",
+          "scope": "document-source",
+          "partial": true,
+          "verified": false,
+          "truncated": false,
+          "entries": [
+            {
+              "source": {
+                "offset": 47729
+              },
+              "path": "$",
+              "value": false
+            },
+            {
+              "source": {
+                "offset": 47729
+              },
+              "path": "$.hasPart",
+              "value": false
+            }
+          ]
+        },
+        "addedExtractionBytes": 263,
+        "markdownBytes": 45201,
+        "markdownSha256": "c85b82ec4939302bc438a08eb65f3a0b3fdde2f45c50f47043f09fc8bd7a5d0b"
+      },
+      {
+        "key": "page-002-www.consumerreports.org",
+        "url": "https://www.consumerreports.org/electronics-computers/tvs/best-tvs-of-the-year-a3862868628/",
+        "policy": "main-content-v1",
+        "sourceAccess": {
+          "kind": "jsonld-free-access-declarations-v1",
+          "scope": "document-source",
+          "partial": true,
+          "verified": false,
+          "truncated": false,
+          "entries": [
+            {
+              "source": {
+                "offset": 47729
+              },
+              "path": "$",
+              "value": false
+            },
+            {
+              "source": {
+                "offset": 47729
+              },
+              "path": "$.hasPart",
+              "value": false
+            }
+          ]
+        },
+        "addedExtractionBytes": 263,
+        "markdownBytes": 17388,
+        "markdownSha256": "d380416a19e3b7185f3872f44fbcce91f5e3eb4ced5bd61b3bcf09ec8bc666d8"
+      },
+      {
+        "key": "page-004-www.nerdwallet.com",
+        "url": "https://www.nerdwallet.com/finance/learn/sell-your-stuff",
+        "policy": "document",
+        "sourceAccess": {
+          "kind": "jsonld-free-access-declarations-v1",
+          "scope": "document-source",
+          "partial": true,
+          "verified": false,
+          "truncated": false,
+          "entries": [
+            {
+              "source": {
+                "offset": 981956
+              },
+              "path": "$",
+              "value": true
+            }
+          ]
+        },
+        "addedExtractionBytes": 202,
+        "markdownBytes": 51203,
+        "markdownSha256": "6802b17b9ea1cf924d03c5091e3a664d04c9f544292fae4ff3e29cf49610fcd8"
+      },
+      {
+        "key": "page-004-www.nerdwallet.com",
+        "url": "https://www.nerdwallet.com/finance/learn/sell-your-stuff",
+        "policy": "main-content-v1",
+        "sourceAccess": {
+          "kind": "jsonld-free-access-declarations-v1",
+          "scope": "document-source",
+          "partial": true,
+          "verified": false,
+          "truncated": false,
+          "entries": [
+            {
+              "source": {
+                "offset": 981956
+              },
+              "path": "$",
+              "value": true
+            }
+          ]
+        },
+        "addedExtractionBytes": 202,
+        "markdownBytes": 18560,
+        "markdownSha256": "9b5748ff93a14ecd3fb1b70bad4ecd968c61a69d2746d5c0770e7c6aaa21a954"
+      }
+    ]
+  },
+  "initialFailure": {
+    "label": "release00-new",
+    "passed": 111,
+    "failed": 5,
+    "cause": "Integration fixtures compared distinct document/scope/node references across separate documents.",
+    "correction": "Normalize only document/scope/ref keys for semantic equality; no production change."
+  },
+  "comparisonCorrection": "Initial verifier compared local receivedAt timestamps across separate mocked navigations; now validates timestamps and compares all other response fields. No reruns or browser changes.",
+  "evidenceDirectory": "node_modules/.cache/native-validation/structured-source-survey-september15",
+  "evidence": {
+    "SCOPE.md": "2dc7d421c935425c38c7f3420f34a244e31bdc35a802b95475409a4f4c6da6e5",
+    "VALIDATION-SCOPE.md": "a28fc089a55117d1bdad4b3ec05089a9704a8c2dd799a98d69ec691bd90e0d76",
+    "IMPLEMENTATION.md": "9906d119599d2f16ab2322ec3c75ed391b31b8ff6ef62ec52a2219110fe8f9e6",
+    "BEFORE.json": "e11c9ab40c6a3f1291978c1e71afadc30bcedde26d4328f235804ad6639ac6d1",
+    "fixtures.json": "8365271085e106711f60b7e7eac1a1787933dc8715bced23193e9f08449e9471",
+    "PREFLIGHT.json": "065a808b2e98d21d60e40ff711d906a4e4e080f657b320f6786582d28ac880ce",
+    "SURVEY-AUDIT.json": "5c6b5748da069cff77c0f24d59f76b7a15bbc603633e6b901b6ce5288be78ea2",
+    "SURVEY-FINDINGS.md": "172edbb99924602b1bacaa13ef74a89b37ff2fc22df7c512963b29a2e0c0d3a8",
+    "SURVEY-EXECUTIONS.json": "63048f243ade021f82de474d684e5cdad45f6772257f0e389c1e8e2c618c041c",
+    "VERIFY-release01.json": "c5175184db678734df2d7946d7eb1044b07993423fa75bc79ff05de5fb3c1caf",
+    "REPLAY-EXECUTIONS-baseline.json": "8581f2c63d73280b30c5b8068f5aed505902e5919d8d76dfeb171bd17f6e1cd5",
+    "REPLAY-EXECUTIONS-release01.json": "913ec9915c44590add368a22052d6fdd5c6b62450da4d7d51e604e342ac84647",
+    "SOURCE-baseline.json": "ce41a7e527de31e80b8e752e9713392f9b200f992f1ce57cf56875c08b5203e8",
+    "SOURCE-release01.json": "19e98d78ccfd8dc6ac607306a6e082b6aebb46077199ad7b3293afd959f30cb0",
+    "COMPILED-baseline.json": "56e2b8ae43ffa7139fc5e32d6e3b1496e7ad59f71a4fe132752e9a14b0134bda",
+    "COMPILED-release01.json": "352b6ca9f100b144e4bfedf3b79e4761d8a3589e206c445d414c8ff4254e41ff",
+    "native-baseline.json": "0aad49e20ea75bd85d29e4fc624342693f86bff822ffbf4851cc86b2b7541a4e",
+    "native-release01.json": "1398b9bed931acad7e5d649e79b2b4b908c1fb79800cddf2fd6b036046b40b63",
+    "native-release01-new.json": "d0ed6e47a20420f512267a9c407469da8df6aef0aea5965b90779130312b0548",
+    "native-release00-new.json": "662fe2a93fd89383f614d5a1d5ad46166a9ccb771cee8a734cf3cccc5c1e3178",
+    "VERIFY-INITIAL-FAILURE.md": "29510ee40c57a3180c3d1597fca2e0c26d1875019634e7b89cee7d4f3116edcd"
+  },
+  "limitations": [
+    "No fresh website or interaction validation in this phase.",
+    "Advisory metadata is not authorization, entitlement, content completeness or a barrier verdict.",
+    "No articleBody/reviewBody/member-payload recovery, JavaScript, SDK, credentials, challenge solving or alternative browser.",
+    "The previous 100-URL corpus is a citation proxy, not measured global agent traffic.",
+    "Four existing native failures and one existing broad snapshot-test type error remain.",
+    "Five original sweep responses had no retained body and are not in the offline replay."
+  ],
+  "pushed": false,
+  "overallGoal": "active"
+}

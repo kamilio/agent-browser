@@ -6,6 +6,38 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: bounded source-access declarations after 103-body validation
+
+- Surveyed 95 retained corpus bodies and eight deeper-page bodies using the
+  pinned native parser: 103 closed children, 77 JSON-LD blocks on 51 pages,
+  three non-HTML skips and no reported parser/JSON limits or errors. Four access
+  declarations appear on three pages. PCMag/CarGurus structured bodies do not
+  establish new missing public prose; no article/member-payload recovery added.
+- Research extraction now exposes bounded, frozen `sourceAccess` declarations
+  with original normalized-source offsets, object paths and uncoerced values.
+  Exact recognized contexts, narrow graph/part traversal, block/text/value/depth
+  and entry caps apply. Existing content/table metadata have byte-budget priority.
+  Omitted/hidden ancestors remain excluded under the selected reader policy.
+- These are unverified source hints, not entitlement, completeness or barrier
+  verdicts. Consumer Reports retains its two false declarations; RTINGS retains
+  the part-level string "False"; NerdWallet retains true. No access bypass,
+  default content replacement, source-cap increase or script execution.
+- All 103 bodies run with document/focus policies on baseline and candidate:
+  412 mocked navigations, 206 closed replay children, 206 paired comparisons.
+  Every content hash, outcome, barrier, contentSuccess, reader report and
+  non-access extraction payload is unchanged. Six policy cases gain metadata;
+  all outputs remain within 256,000 serialized bytes. Zero fresh native HTTP.
+- All 116 new native cases pass. Selected candidate: 3646 pass/four unchanged
+  baseline failures across 51 files; baseline: 3530 pass/four failures in 49.
+  Build, changed-file format/lint and new-test types pass; broad types retain
+  the existing snapshot-test error. Initial five test-fixture reference mismatch
+  failures and one timestamp-comparison error remain recorded, not browser fixes.
+- Reports: `reports/structured-source-access-2026-09-15.{md,json}`; contract:
+  `RESEARCH-SOURCE-ACCESS.md`. Original 100-URL matrix remains unchanged and is
+  a citation proxy, not a global agent-traffic ranking or 100 working websites.
+  Preserve 42 tracked/697 untracked originals; no push. Overall browser, real
+  interactions/passkeys, SafeJS and website challenge gates remain outstanding.
+
 ### September 15: source-linked content pages and hidden-tab recovery
 
 - Followed eight exact links from native-captured homepages into deeper public

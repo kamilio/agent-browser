@@ -51,6 +51,11 @@ import {
 	researchSourceDataTables,
 } from "./research-source-data-tables.js";
 import {
+	type ResearchSourceAccess,
+	fitResearchSourceAccess,
+	researchSourceAccess,
+} from "./research-source-access.js";
+import {
 	resourceLimitDiagnostic,
 	resourceLimitError,
 } from "./resource-limit.js";
@@ -190,6 +195,7 @@ interface ExtractionMetadata {
 	sourceDescriptions?: DocumentDescriptions;
 	sourceAlternates?: DocumentAlternates;
 	sourceDataTables?: ResearchSourceDataTables;
+	sourceAccess?: ResearchSourceAccess;
 	sourceMarkdown?: MarkdownSourceOutline;
 	sectionSelection?: Readonly<HeadingSectionMetadata>;
 	textSelection?: {
@@ -1387,7 +1393,19 @@ export function extractDocument(
 				sourceData,
 				remaining,
 			);
-			if (sourceDataTables) return { ...result, sourceDataTables };
+			if (sourceDataTables) {
+				result = { ...result, sourceDataTables };
+				outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
+			}
+		}
+	}
+	const access = researchSourceAccess(tree);
+	if (access) {
+		const remaining =
+			maxBytes - outputBytes - encoder.encode(',"sourceAccess":').byteLength;
+		if (remaining >= 0) {
+			const sourceAccess = fitResearchSourceAccess(access, remaining);
+			if (sourceAccess) return { ...result, sourceAccess };
 		}
 	}
 	return result;

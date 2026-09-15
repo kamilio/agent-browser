@@ -902,5 +902,7 @@
   "src/research-header-admission.test.ts",
   "src/extraction-content-focus.test.ts",
   "src/research-content-focus.test.ts",
-  "src/command-content-focus.test.ts"
+  "src/command-content-focus.test.ts",
+	"src/research-source-access.test.ts",
+	"src/research-source-access-reader.test.ts"
 ]

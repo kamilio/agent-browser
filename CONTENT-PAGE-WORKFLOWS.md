@@ -66,6 +66,13 @@ data with working components, member access, or a complete recommendation list.
 Consumer Reports' article in this same run retained prose but omitted its readable
 headline picks; that limitation was recorded rather than bypassed.
 
+The research reader now also exposes bounded `sourceAccess` metadata when eligible
+JSON-LD contains free-access declarations and the extraction byte budget permits.
+Treat false values as source hints to check completeness, not as a blanket denial;
+true values do not prove complete delivery or entitlement. Missing metadata proves
+neither. This does not recover member payloads or change barrier classification.
+See `RESEARCH-SOURCE-ACCESS.md` for context, scope and limit details.
+
 `main-content-v1` is independently opt-in and may omit relevant outside context.
 It is not a cure for access errors: the source-linked Home Depot product page
 returned HTTP 403 both with Markdown preference and in one separately scoped

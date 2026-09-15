@@ -28,6 +28,10 @@ import {
 } from "./research-admission.js";
 import { sourceInlineDisplayHidden } from "./research-inline-visibility.js";
 import {
+	ResearchSourceAccessCollector,
+	setResearchSourceAccess,
+} from "./research-source-access.js";
+import {
 	type ResearchReaderMimePolicy,
 	markdownHtmlDocumentPrefix,
 	validateResearchReaderMimePolicy,
@@ -312,6 +316,7 @@ export function sanitizeResearchHtml(
 	let sourceHiddenOmission = false;
 	let legacyOmittedDepth = 0;
 	let sourceTables: ResearchSourceDataTableCollector | undefined;
+	let sourceAccess: ResearchSourceAccessCollector | undefined;
 	const emit = (value: string) => {
 		report.outputCodeUnits += value.length;
 		check("reader.output", limits.maxOutputCodeUnits, report.outputCodeUnits);
@@ -521,8 +526,24 @@ export function sanitizeResearchHtml(
 							open.length + skipped.length,
 						);
 					}
-					if (rawTags.has(name))
+					if (rawTags.has(name)) {
+						const rawStart = tokenizer.position;
 						omitRaw(name, sourceHidden && name === "title");
+						if (
+							name === "script" &&
+							!sourceHidden &&
+							token.attributes.type?.trim().toLowerCase() ===
+								"application/ld+json"
+						) {
+							sourceAccess ??= new ResearchSourceAccessCollector();
+							sourceAccess.add(
+								normalizedSource,
+								rawStart,
+								tokenizer.position,
+								tokenStart,
+							);
+						}
+					}
 				}
 			}
 			continue;
@@ -615,9 +636,11 @@ export function sanitizeResearchHtml(
 			"Unclosed omitted reader subtree",
 		);
 	const sourceDataTables = sourceTables?.finish();
+	const access = sourceAccess?.finish();
 	return {
 		html: output.join(""),
 		...(sourceDataTables ? { sourceDataTables } : {}),
+		...(access ? { sourceAccess: access } : {}),
 		report: Object.freeze({
 			...report,
 			...(mathAlternatives.elements
@@ -786,6 +809,8 @@ export function loadResearchDocument(
 	setResearchReaderInfo(tree, report);
 	if (sanitized.sourceDataTables)
 		setResearchSourceDataTables(tree, sanitized.sourceDataTables);
+	if (effectiveHtml && sanitized.sourceAccess)
+		setResearchSourceAccess(tree, sanitized.sourceAccess);
 	const info = htmlParseInfo(tree);
 	if (info) setHtmlParseInfo(tree, { ...info, encoding: decoded.encoding });
 	return tree;
