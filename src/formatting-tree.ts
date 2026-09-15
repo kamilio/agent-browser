@@ -181,6 +181,7 @@ export interface FormattingNode {
 	blockContentAlignment?: Readonly<BlockContentAlignment>;
 	fragmentIndex?: number;
 	fragmentCount?: number;
+	splitInlineAncestors?: readonly string[];
 	deferredReason?: string;
 	intrinsic?: Readonly<{ width: number; height: number }>;
 	intrinsicRatio?: boolean;
@@ -1997,6 +1998,9 @@ export function buildFormattingTree(
 			if (tableInternal(child)) issue("inline-anonymous-table-not-supported");
 			if (nodes[child].level === "block" && inNormalFlow(child)) {
 				flush();
+				const ancestors = nodes[child].splitInlineAncestors ?? [];
+				charge(ancestors.length + 1);
+				nodes[child].splitInlineAncestors = Object.freeze([...ancestors, ref]);
 				result.push(child);
 			} else run.push(child);
 		}

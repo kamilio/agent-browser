@@ -90,7 +90,7 @@ async function fixture(href = "/brooks-revel-9", base = "") {
 	return { session, tab, page, id, link, reference, requests, events };
 }
 
-it("rejects block-in-inline pointer geometry without navigating, then permits explicit Enter", async () => {
+it("clicks a reader anchor through its owned block descendant geometry", async () => {
 	const { session, tab, page, link, reference, requests, events } =
 		await fixture();
 	expect(researchReaderInfo(page.document)).toMatchObject({
@@ -102,23 +102,15 @@ it("rejects block-in-inline pointer geometry without navigating, then permits ex
 	expect(page.queries.querySelector("#hidden")).toBeNull();
 	expect(page.queries.querySelector("#review > div > h2")).not.toBeNull();
 	expect(page.document.get(link).attributes.href).toBe("/brooks-revel-9");
-	await expect(session.click(tab.id, reference)).rejects.toMatchObject({
-		code: "unsupported",
-		message: expect.stringContaining("block-in-inline"),
-	});
-	expect(requests).toEqual([rootUrl]);
-	expect(session.page(tab.id)).toBe(page);
-	expect(events).toEqual([]);
-
-	const result = await session.press(tab.id, "Enter", { target: reference });
-	expect(result.keyboard.defaultAction).toMatchObject({
+	const result = await session.click(tab.id, reference);
+	expect(result.interaction.defaultAction).toMatchObject({
 		kind: "navigate",
 		url: reviewUrl,
 	});
 	expect(result.navigation?.kind).toBe("document");
 	expect(requests).toEqual([rootUrl, reviewUrl]);
 	expect(session.page(tab.id)).not.toBe(page);
-	expect(events).toEqual(["keydown", "keypress", "click", "keyup"]);
+	expect(events).toEqual(["mousedown", "mouseup", "click"]);
 });
 
 it("activates the block-child anchor directly with targeted Enter", async () => {

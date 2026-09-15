@@ -55,6 +55,7 @@ function rectangle(
 export class LayoutGeometry {
 	private rectangles = new Map<string, readonly ClientRectangle[]>();
 	private markerRectangles = new Map<string, readonly ClientRectangle[]>();
+	private splitBlockRectangles = new Map<string, readonly ClientRectangle[]>();
 	private bounds = new Map<string, ClientRectangle>();
 	private splitInlines = new Set<string>();
 	private retained = 0;
@@ -92,9 +93,12 @@ export class LayoutGeometry {
 	}
 
 	getActionableClientRects(ref: string): readonly ClientRectangle[] {
-		const rects = this.getClientRects(ref);
+		const rects = this.rectangles.get(ref) ?? empty;
+		const blocks = this.splitBlockRectangles.get(ref);
 		const markers = this.markerRectangles.get(ref);
-		return markers ? Object.freeze([...rects, ...markers]) : rects;
+		return blocks || markers
+			? Object.freeze([...rects, ...(blocks ?? empty), ...(markers ?? empty)])
+			: rects;
 	}
 
 	getBoundingClientRect(ref: string): ClientRectangle {
@@ -114,6 +118,7 @@ export class LayoutGeometry {
 	constructor(layout: DocumentLayout, includeUsedStyles = false) {
 		const rectangles = new Map<string, ClientRectangle[]>();
 		const markers = new Map<string, ClientRectangle[]>();
+		const splitBlocks = new Map<string, ClientRectangle[]>();
 		const images = new Map(
 			layout.text.horizontal.images.map((image) => [image.id, image]),
 		);
@@ -163,6 +168,17 @@ export class LayoutGeometry {
 		for (const box of layout.boxes) {
 			charge();
 			const node = layout.text.horizontal.formatting.nodes[box.id];
+			for (const ancestor of node.splitInlineAncestors ?? [])
+				append(
+					ancestor,
+					rectangle(
+						box.borderX,
+						box.borderY,
+						box.borderBoxWidth,
+						box.borderBoxHeight,
+					),
+					splitBlocks,
+				);
 			if (includeUsedStyles && box.ref) {
 				const sizing = node.box?.["box-sizing"];
 				const margins =
@@ -349,6 +365,10 @@ export class LayoutGeometry {
 		for (const [ref, list] of markers) {
 			charge();
 			this.markerRectangles.set(ref, Object.freeze(list));
+		}
+		for (const [ref, list] of splitBlocks) {
+			charge();
+			this.splitBlockRectangles.set(ref, Object.freeze(list));
 		}
 		if (includeUsedStyles)
 			for (const position of layout.relativePositions ?? []) {

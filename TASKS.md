@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: native split-inline pointer action ownership
+
+- Fixed the observed RunRepeat pointer failure at its ownership source. Normal-flow
+  blocks lifted out of inline ancestors now retain frozen, bounded source-owner
+  references; actionable geometry uses their real projected border boxes. No
+  fabricated CSS box, direct destination fetch, keyboard substitution or hit-test
+  bypass. Ordinary split-inline CSS geometry still explicitly rejects unsupported
+  ownership. See `SPLIT-INLINE-ACTIONS.md`.
+- Fresh native RunRepeat root → observed review anchor → pointer click completed
+  with two HTTPS GETs and 27,423 Markdown bytes. Mouse events target the descendant
+  and bubble to the requested owner. Four source-reader trees in network-denied
+  baseline/candidate replay and both fresh live trees closed; requests, sockets,
+  session/transport and child groups closed. No retries or page scripts.
+- Saved-body comparison changes baseline pointer rejection into candidate pointer
+  navigation, with identical root and destination Markdown to the baseline's
+  explicit keyboard path. Historical failed-click records remain unchanged.
+- Clean selected baseline: 518 pass. Candidate: 534 pass across 16 manifest files,
+  with 16 new ownership/action cases and one updated reader pointer regression.
+  Build, strict selected types and formatting pass. The 13 existing formatting
+  lint diagnostics are unchanged; no new lint diagnostics. Not a full-manifest or
+  SDK acceptance claim. Report: `reports/split-inline-actions-2026-09-15.md`.
+- Covered guards include sibling/gap exclusion, immutable metadata, ownership
+  mutation, clipping/coverage, hidden/inert/pointer-events/ARIA restrictions and
+  automatic root scrolling. Split-specific nested scrolling and mutation during
+  mouse dispatch remain coverage follow-ups. Full split-inline CSS geometry,
+  other original site/source/access failures and separately authorized credential,
+  passkey and SDK gates remain open; overall browser goal stays active. No push.
+
 ### September 15: native link workflows and original hundred-site evidence audit
 
 - Re-audited the original citation-derived 100-target selection, all receipt and

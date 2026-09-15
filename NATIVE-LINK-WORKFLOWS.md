@@ -7,11 +7,17 @@ useful content, and full website functionality are different acceptance levels.
 
 ## Choose an explicit interaction
 
+Current support for inline owners with block descendants is documented in
+`SPLIT-INLINE-ACTIONS.md`: native pointer actions now retain the owned blocks'
+real actionable rectangles. Ordinary split-inline CSS geometry remains explicit
+unsupported behavior. The measured follow-up below records the older runtime and
+is retained unchanged; the subsequent pointer fix has its own report.
+
 For a real pointer workflow, use `BrowserSession.click(tabId, reference)` and
 respect its geometry, visibility and hit-testing failures. The native reader
 retains source anchors but does not reconstruct external CSS or execute scripts.
-An inline anchor wrapping block children can therefore hit the deliberately
-unsupported block-in-inline client-geometry contract.
+Before split-inline action ownership was retained, an inline anchor wrapping
+block children hit the deliberately unsupported client-geometry contract.
 
 For a keyboard link workflow, use the existing targeted Enter action:
 

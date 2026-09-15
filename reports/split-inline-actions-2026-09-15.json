@@ -1,0 +1,188 @@
+{
+  "passed": true,
+  "date": "2026-09-15",
+  "scope": "Native split-inline pointer ownership and source-linked live acceptance",
+  "runtimeBaseCommit": "c14b085dd05c2fefdd080a8aec612357c1d10987",
+  "evidenceDirectory": "node_modules/.cache/native-validation/split-inline-actions-september15",
+  "productionFiles": [
+    "src/formatting-tree.ts",
+    "src/document-geometry.ts"
+  ],
+  "overlay": {
+    "src/formatting-tree.ts": "2bf7716cdcb77cc75f093066a3731573d683ecdd0d5679b4dfc00aa4f1e9d040",
+    "src/document-geometry.ts": "2f55fbc7ee6f2f33b769cd590057ceb5ba01d265576a6aa99b522a5d11ded481",
+    "src/session-reader-link-workflows.test.ts": "10db2c2e5be3a2f8c053c3b8c4c863a75e471663c78981d425b15816a01b6bb3",
+    "src/split-inline-actions.test.ts": "aa9b1fb11013f7a2fc6e48f17287d59b115b6e8b2129f8746bddef523f428403"
+  },
+  "validation": {
+    "baseline": {
+      "passed": 518,
+      "failed": 0,
+      "files": 15,
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 1,
+        "native": 0
+      }
+    },
+    "red": {
+      "passed": 518,
+      "failed": 16,
+      "files": 16,
+      "checks": {
+        "build": 0,
+        "types": 2,
+        "format": 0,
+        "lint": 0,
+        "native": 1
+      }
+    },
+    "candidate": {
+      "passed": 534,
+      "failed": 0,
+      "files": 16,
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 1,
+        "native": 0
+      }
+    },
+    "newTests": 16,
+    "updatedTests": 1,
+    "identicalFinalTestsInRed": true,
+    "fullManifestRun": false,
+    "actualSdkExecutions": 0,
+    "lint": {
+      "preExistingErrors": 13,
+      "newDiagnostics": 0
+    }
+  },
+  "live": {
+    "target": "https://runrepeat.com/",
+    "startedAt": "2026-09-15T23:40:05.566Z",
+    "finishedAt": "2026-09-15T23:40:06.029Z",
+    "outcome": "clicked-and-extracted-unverified",
+    "selectedLink": {
+      "reference": "e250",
+      "href": "https://runrepeat.com/brooks-revel-9",
+      "url": "https://runrepeat.com/brooks-revel-9",
+      "label": "Brooks Revel 9 Sep 14, 2026"
+    },
+    "destination": {
+      "url": "https://runrepeat.com/brooks-revel-9",
+      "title": "Cut in half: Brooks Revel 9 Review (2026) | RunRepeat",
+      "markdownBytes": 27423,
+      "partial": true
+    },
+    "mouseEvents": [
+      {
+        "type": "mousedown",
+        "target": 251,
+        "currentTarget": 250
+      },
+      {
+        "type": "mouseup",
+        "target": 251,
+        "currentTarget": 250
+      },
+      {
+        "type": "click",
+        "target": 251,
+        "currentTarget": 250
+      }
+    ],
+    "responses": [
+      {
+        "phase": "root",
+        "url": "https://runrepeat.com/",
+        "status": 200,
+        "headers": {
+          "content-type": [
+            "text/html;charset=utf-8"
+          ],
+          "content-encoding": [
+            "br"
+          ]
+        },
+        "decodedBytes": 380615,
+        "sha256": "7bb4278a3424ed8d9fcbcbcc366fe6f53843d74669837cf28f1cc66acaaac725",
+        "redirects": []
+      },
+      {
+        "phase": "click",
+        "url": "https://runrepeat.com/brooks-revel-9",
+        "status": 200,
+        "headers": {
+          "content-type": [
+            "text/html;charset=utf-8"
+          ],
+          "content-encoding": [
+            "br"
+          ]
+        },
+        "decodedBytes": 643648,
+        "sha256": "b2cb857241062833a8e072300fbe98826ffedb7e4a41e362f583876ef330cf06",
+        "redirects": []
+      }
+    ],
+    "requests": 2,
+    "retries": 0,
+    "treeClosures": [
+      {
+        "url": "https://runrepeat.com/",
+        "calls": 1
+      },
+      {
+        "url": "https://runrepeat.com/brooks-revel-9",
+        "calls": 1
+      }
+    ],
+    "sessionClosed": true,
+    "transportClosed": true,
+    "requestsAndSocketsClosed": true,
+    "childAndGroupReaped": true,
+    "resultSha256": "2fee693965dce193208fbc28a115e009e342985f4293c36d3be2366af9cdf2b0"
+  },
+  "offline": {
+    "equalRootAndDestinationMarkdown": true,
+    "syntheticRequests": 4,
+    "treesClosed": 4,
+    "realNetworkAttempts": 0
+  },
+  "sourceAndCompiledPinsUnchanged": true,
+  "limitations": [
+    "Ordinary split-inline CSS geometry remains unsupported",
+    "DOM pointerdown/pointerup events not introduced; native mouse actions validated",
+    "Selected native test list, not full-manifest acceptance",
+    "Thirteen unchanged pre-existing formatting-file lint diagnostics",
+    "New split-specific nested-scroll and during-dispatch mutation coverage remain follow-ups",
+    "Source reader only; no external styles or page scripts; no CAPTCHA/access recovery claim"
+  ],
+  "evidence": {
+    "PREFLIGHT.json": "47acc578dd5df59dcfbe45f4da5007f78e6d7187b2a68e6f7dd6eedf61222863",
+    "LIVE-SCOPE.md": "1677c20b8f308660378b65583e818f0f8d18b8d19c552900d6e82c6a455f7cb4",
+    "LIVE-EXECUTIONS.json": "e18e872c2680446b7a494fc39d726d444c8724263c559e0bf11c0d0b318b6f18",
+    "AUDIT.json": "fbd35db78a6d9661dd2243d85af5dec3faa996a7cd1cd5462e5f092cba8f8715",
+    "REVIEW.md": "a7accf77b2291690573df1566b2bd845b0e1903bbea00f808979ada94aeec50d",
+    "VALIDATION-NOTES.md": "7032da2bee394f19e6cc4d6ed739d8d41fca8dc2b63be2960408699f8f737e92",
+    "LINT-COMPARISON.json": "4dc883109569394e1a88297ff1dc9f919fcefd12c7ab0a97b7be54387fe5b35c",
+    "CHECK-baseline.json": "10a78b2bf02e4c06c2a8c16a2542fcd76496e25d851124f0d486d64a58243cc2",
+    "CHECK-red02.json": "07cc9cca3457d0ac86142170cf97a7bdde12c5619d1b287b6614907071fc1c86",
+    "CHECK-release02.json": "10a78b2bf02e4c06c2a8c16a2542fcd76496e25d851124f0d486d64a58243cc2",
+    "native-baseline.json": "57e3ee4d849ee1b7ae906e57535089c0237e6f66ab833e122fd58584d6d3bd42",
+    "native-red02.json": "1be8dc4f26dd81d84c9a7af42c658295715303ea3ddb891c986b7070c01b3c9d",
+    "native-release02.json": "3978e429f053d81776fbdd54f4e10b743a83938e1f650090670e736c8c369fe5",
+    "SOURCE-release02.json": "4c582b0eb082471156f6acf4d2c90a94b6f363ca62a804301cd22524eba611d1",
+    "COMPILED-release02.json": "f622de8da91da0a14ae6e311e9547f821de9d504994ba5591250a096a9524fb8",
+    "comparison-release02/RESULT.json": "52837f37441b0152666cbc171122174c4410ba68c4dbb185e435030d0853ecb8",
+    "comparison-release02/EXECUTION.json": "8c7f937a4b8383a923025d585fe55d0d14aae6f42f151f6c43949c4d05438da2",
+    "comparison-release02/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "comparison-release02/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe"
+  },
+  "pushed": false,
+  "overallGoal": "active"
+}
