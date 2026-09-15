@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: article/review tasks and request-free follow-up reading
+
+- Five new source-linked article/review targets checked: CNET, Consumer Reports,
+  RunRepeat, Kelley Blue Book and IGN. All return source text, not just headings.
+  Five navigations/HTTPS GETs/captures; no retries, scripts, credentials or solvers.
+- Validate full, main-focused, compact row-list and discovered heading-section
+  extraction on each saved body. Ten API documents close; original output matches
+  receipts, resource state remains unchanged, all 226 selected text nodes match
+  source, and 39 selected table cells independently match cell extraction.
+- Five actual replay CLI invocations reproduce the selected Markdown byte-for-
+  byte with zero network requests; all child/process-group and observed live
+  request/socket closures pass. Source/compiled pins match committed runtime.
+- Focus plus row lists yields 26,686 bytes on CNET (48,500 full), 19,688 on
+  RunRepeat (48,718 full), 16,010 on Consumer Reports, 7,488 on KBB and 22,730 on
+  IGN. Focus intentionally omits context; smaller is not automatically complete.
+  The Consumer Reports ranked-product sections remain incomplete and its source
+  free-access declarations remain false after focus and section/CLI replay.
+- Record 12 alternating extraction-only samples per mode/site, not general
+  latency or network-speed claims. This turn validates existing runtime rather
+  than claiming a new production fix or native regression-suite run.
+- Source duplication, image-label noise, missing interactive/media content,
+  subscription/access barriers and SDK/credential/passkey gates remain open.
+  See `CONTENT-FIRST-RESEARCH.md` and review-content-tasks September 15 reports.
+
 ### September 15: consumer detail content and inert product descriptions
 
 - Four source-linked detail pages checked with the native browser: Target,

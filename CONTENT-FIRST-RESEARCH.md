@@ -44,6 +44,32 @@ See the thirty-seventh website inventory for the exact evidence and limitations.
 
 ## Avoid unnecessary requests
 
+For ordinary public article HTML, explicit main-content focus can remove much of
+the surrounding navigation while keeping a whole-document capture for later
+questions. After building, an authorized one-navigation example is:
+
+```sh
+node dist/scripts/research-browser.js --reader --capture-body \
+  --reader-raw-policy separate-omitted-raw-v1 \
+  --content-focus main-content-v1 --table-rows "$PUBLIC_URL" > captured-page.jsonl
+```
+
+Focus is a source-landmark selection, not an article-quality detector. Inspect
+`extraction.contentSelection`: ambiguous landmarks fall back to the document.
+Keep `title`, source metadata and the original capture; RunRepeat's tested main
+starts below its page title. A focused Consumer Reports article retains public
+testing/FAQ text but not the missing ranked product details, and its source-access
+declarations remain `false`. Do not treat headings or focus as subscription access.
+
+Five September 15 article/review captures validate main focus and five actual
+offline section-replay CLI invocations. Focus plus row lists reduces CNET Markdown
+from 48,500 to 26,686 bytes and RunRepeat from 48,718 to 19,688 bytes. A selected
+CNET comparison section is 1,641 bytes; a RunRepeat measurement section is 613.
+These are scoped outputs, not equivalent full-document summaries. Exact URLs,
+cell/source checks, timing scope and caveats are recorded in
+`reports/review-content-tasks-2026-09-15.md`. No new website request is needed to
+ask a follow-up question from these successful retained captures.
+
 - Read a successful saved HTML capture with a unique article `--selector` and
   `--format markdown` in the replay CLI, instead of navigating again to remove
   surrounding menus. See `CAPTURED-ARTICLE-MARKDOWN.md`; output remains a JSONL
