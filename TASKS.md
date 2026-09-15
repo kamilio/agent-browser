@@ -6,6 +6,43 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: advertised feeds and bounded literal-content workflows
+
+- Added separate bounded `sourceFeeds` metadata for RSS/Atom head links; existing
+  Markdown `sourceAlternates` stays unchanged. Shared URL validation, head/entry
+  limits, frozen snapshots, source visibility and serialized byte fitting apply.
+  No automatic feed/item fetch, guessed endpoint, XML execution or authorization
+  change. Contract: `SOURCE-FEEDS.md`.
+- Native survey: 103 saved sources, 26 head-feed links on 16 pages, 22 distinct
+  URLs, three non-HTML skips. Two explicit RSS anchors supplied two more targets.
+  Fresh native run: 24 navigations/25 GETs, one redirect, zero retries, 23 complete
+  captures; 20 nonempty outputs separate into 16 sampled useful literal feeds and
+  four empty envelopes. Four sources hit limits. All requests/sockets/children
+  close. Full URL/provenance matrix: `reports/source-feeds-2026-09-15.{md,json}`.
+- Existing reader prefix mode retains bounded literal source from Wikipedia and
+  Reviewed output-limit captures. Three native-prefix calls are correctly rejected
+  before navigation; that experimental harness stays failed. BobVila's ordinary
+  native loader accepts the captured RSS under its existing 2M cap; find/lines
+  returns 2479 bytes of first-item title/teaser/metadata/disclosure, not substantive
+  article-body recovery. Its original fence-newline assertion remains failed;
+  a separate artifact check verifies the exact 2471-byte source window.
+- All 126 retained sources compare in document/focused baseline/candidate modes:
+  504 mocked navigations, 252 pairs, identical visible Markdown and outcomes.
+  Metadata exposes all 26 surveyed entries on 16 pages; reader accounting changes
+  on 17 pages. CNET's extra Atom link remains in the parsed body, not head metadata;
+  four extra mocked navigations verify its sole focus scan-counter delta of two.
+- New native tests: 67 pass. Selected candidate: 3896 pass/four unchanged baseline
+  failures in 55 files; baseline: 3829 pass/four failures in 53. Build, format,
+  lint and new-test types pass; broad snapshot-test type error remains. Retain five
+  initial test lint findings and three audit assumptions about redacted/null URLs;
+  no browser failure or fresh request was hidden by those corrections.
+- Standalone experiments total 385 closed children, 517 actual mocked navigations
+  and 25 live GETs; native-test workers are not included in child totals. Preserve
+  original 42 tracked/697 untracked files and historical reports; no push.
+  WhoWhatWear still lacks a complete oversized feed body. Failure-preserving
+  decoded-prefix capture is assessed but not implemented. Broader website,
+  interaction/passkey, SafeJS and challenge gates remain active.
+
 ### September 15: bounded source-access declarations after 103-body validation
 
 - Surveyed 95 retained corpus bodies and eight deeper-page bodies using the

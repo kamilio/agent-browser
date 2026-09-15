@@ -904,5 +904,7 @@
   "src/research-content-focus.test.ts",
   "src/command-content-focus.test.ts",
 	"src/research-source-access.test.ts",
-	"src/research-source-access-reader.test.ts"
+	"src/research-source-access-reader.test.ts",
+	"src/document-feeds.test.ts",
+	"src/research-feed-discovery.test.ts"
 ]

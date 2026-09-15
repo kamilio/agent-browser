@@ -1,4 +1,5 @@
 import { sourceAlternateLink } from "./document-alternates.js";
+import { sourceFeedLink } from "./document-feeds.js";
 import {
 	ariaTableSourceRole,
 	isAriaTableSourceAttribute,
@@ -465,7 +466,8 @@ export function sanitizeResearchHtml(
 			token.kind === "start" &&
 			name === "link" &&
 			open.every((ancestor) => ancestor === "html" || ancestor === "head")
-				? sourceAlternateLink(token.attributes)
+				? (sourceAlternateLink(token.attributes) ??
+					sourceFeedLink(token.attributes))
 				: undefined;
 		if (alternate && !sourceHidden) {
 			emit(

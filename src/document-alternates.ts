@@ -4,9 +4,10 @@ import type { DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { parseNetworkUrl } from "./network.js";
 
-export function sourceAlternateLink(
+export function sourceTypedAlternateLink<Type extends string>(
 	attributes: Readonly<Record<string, string>>,
-): { type: "text/markdown"; href: string } | undefined {
+	types: readonly Type[],
+): { type: Type; href: string } | undefined {
 	const { rel, type, href } = attributes;
 	if (
 		Object.hasOwn(attributes, "http-equiv") ||
@@ -18,8 +19,9 @@ export function sourceAlternateLink(
 			.includes("alternate") ||
 		type === undefined ||
 		type.length > 256 ||
-		type.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "").toLowerCase() !==
-			"text/markdown" ||
+		!types.includes(
+			type.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "").toLowerCase() as Type,
+		) ||
 		href === undefined ||
 		href.length > 4096 ||
 		!href.trim() ||
@@ -38,7 +40,18 @@ export function sourceAlternateLink(
 	} catch {
 		return undefined;
 	}
-	return { type: "text/markdown", href };
+	return {
+		type: type
+			.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
+			.toLowerCase() as Type,
+		href,
+	};
+}
+
+export function sourceAlternateLink(
+	attributes: Readonly<Record<string, string>>,
+): { type: "text/markdown"; href: string } | undefined {
+	return sourceTypedAlternateLink(attributes, ["text/markdown"]);
 }
 
 export interface DocumentAlternates {

@@ -56,6 +56,11 @@ import {
 	researchSourceAccess,
 } from "./research-source-access.js";
 import {
+	type DocumentFeeds,
+	documentFeeds,
+	fitDocumentFeeds,
+} from "./document-feeds.js";
+import {
 	resourceLimitDiagnostic,
 	resourceLimitError,
 } from "./resource-limit.js";
@@ -196,6 +201,7 @@ interface ExtractionMetadata {
 	sourceAlternates?: DocumentAlternates;
 	sourceDataTables?: ResearchSourceDataTables;
 	sourceAccess?: ResearchSourceAccess;
+	sourceFeeds?: DocumentFeeds;
 	sourceMarkdown?: MarkdownSourceOutline;
 	sectionSelection?: Readonly<HeadingSectionMetadata>;
 	textSelection?: {
@@ -1405,7 +1411,19 @@ export function extractDocument(
 			maxBytes - outputBytes - encoder.encode(',"sourceAccess":').byteLength;
 		if (remaining >= 0) {
 			const sourceAccess = fitResearchSourceAccess(access, remaining);
-			if (sourceAccess) return { ...result, sourceAccess };
+			if (sourceAccess) {
+				result = { ...result, sourceAccess };
+				outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
+			}
+		}
+	}
+	const feeds = documentFeeds(tree);
+	if (feeds) {
+		const remaining =
+			maxBytes - outputBytes - encoder.encode(',"sourceFeeds":').byteLength;
+		if (remaining >= 0) {
+			const sourceFeeds = fitDocumentFeeds(feeds, remaining);
+			if (sourceFeeds) return { ...result, sourceFeeds };
 		}
 	}
 	return result;

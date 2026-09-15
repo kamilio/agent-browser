@@ -45,7 +45,9 @@ only 256 DOM nodes. Existing extraction metadata/output budgets still apply.
 ## Reader and replay
 
 The semantic reader preserves eligible head links with only `rel`, `type` and
-`href`; other link declarations remain omitted. Known unsafe URL syntax is
+`href`. Advertised RSS/Atom links are handled separately as `sourceFeeds`;
+see `SOURCE-FEEDS.md`. Other link declarations remain omitted. Known unsafe URL
+syntax is
 rejected before retention, with final base-aware validation during discovery.
 Base-dependent validity is not inferred from a placeholder origin. Explicit
 source-visibility policies can omit a link or its ancestor before discovery.

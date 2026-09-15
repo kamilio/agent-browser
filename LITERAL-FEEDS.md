@@ -50,3 +50,25 @@ See `WEBSITE-TEST-INVENTORY-SEPTEMBER-14-THIRTY-SIXTH-UPDATE.md` for actual outc
 and limitations. Evidence begins at
 `/dev/shm/agent-browser-literal-feed-september14/`; durable copies use
 `node_modules/.cache/native-validation/literal-feed-september14/`.
+
+## September 15 discovery and bounded windows
+
+`sourceFeeds` now exposes eligible RSS/Atom links from an HTML document head,
+without automatically fetching them. See `SOURCE-FEEDS.md` and the new 24-target
+matrix in `reports/source-feeds-2026-09-15.md`. The September 14 measurements above
+remain their original run; the new source-advertised feed visits are separate.
+
+The ordinary native text loader and HTML reader have different existing source
+bounds. On a retained BobVila RSS response, the reader rejects 1,089,570 code units,
+while the ordinary native loader accepts it under its existing 2M limit. Full
+extraction still exceeds 256KB. Native literal `<item>` discovery and a selected
+three-line window retain 2,479 Markdown bytes of first-item metadata and teaser;
+they do not recover the full item or substantive article body. The probe's original
+closing-fence-newline assertion remains failed; an independent artifact check
+verifies the enclosed 2,471 source bytes exactly. No website was refetched.
+
+For smaller admitted sources, existing default-reader Markdown `text-prefix-v1`
+can retain a bounded prefix after an output limit. It does not work around source
+or network caps, and the research CLI rejects it in ordinary native mode. New
+offline checks retain partial Wikipedia/Reviewed feed prefixes while preserving
+the original live failures. A cut XML tag, item or URL is not a complete entity.
