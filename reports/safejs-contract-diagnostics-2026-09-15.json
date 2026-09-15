@@ -1,0 +1,200 @@
+{
+  "date": "2026-09-15",
+  "scope": "native-fake-core-probe-diagnostics-and-public-source-inspection",
+  "browserParent": "58d018879981091a05fb83a5183405ec373bd396",
+  "fixture": {
+    "script": "scripts/check-released-safejs.ts",
+    "sha256": "de4d47bae4d19148796fe0a9c74f8af06a1d63dfcd5457696be05538fd116cf7",
+    "unchangedExpectedChecks": 19,
+    "unchangedGuestSources": 14,
+    "primaryFailurePreserved": true,
+    "failedCheckRecorded": true,
+    "cleanupFailuresSeparatelyAttributed": true,
+    "failFastPreserved": true
+  },
+  "validation": {
+    "passed": true,
+    "baseline": {
+      "label": "baseline",
+      "files": 3,
+      "passed": 67,
+      "failed": 1,
+      "commands": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 1
+      }
+    },
+    "red": {
+      "label": "red01",
+      "files": 4,
+      "passed": 67,
+      "failed": 21,
+      "commands": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 1
+      }
+    },
+    "candidate": {
+      "label": "release00",
+      "files": 4,
+      "passed": 87,
+      "failed": 1,
+      "commands": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 1
+      }
+    },
+    "unchangedFailures": [
+      {
+        "file": "src/page-scripts.test.ts",
+        "name": "creates one persistent realm with live document/window aliases and explicit lifetime limits",
+        "status": "failed",
+        "failure": "AssertionError: expected [ Array(26) ] to deeply equal [ Array(25) ]"
+      }
+    ],
+    "newRegressions": 20,
+    "newTestSha256": "b166b7c9ab4de60d6af24b45940ba1b20a60c27263ea979d672fc21a8dc32667",
+    "contractComparison": {
+      "passed": true,
+      "method": "TypeScript AST comparison of ordered labels, boolean predicates and literal guest source; no guest execution",
+      "beforeSha256": "b6db9a04b0bcdc6be291207db8ad7a6f81c40268dcd43208a1ce1c0f7b2118cd",
+      "afterSha256": "de4d47bae4d19148796fe0a9c74f8af06a1d63dfcd5457696be05538fd116cf7",
+      "checks": 19,
+      "guestSourceStrings": 14,
+      "labels": [
+        "Realm-owned host aliases preserve identity and indexed reads",
+        "Indexed capabilities remain live across evaluations",
+        "Named writes reach native storage",
+        "Named deletion reaches native storage",
+        "Native named updates are visible without replacing the host object",
+        "Named mutation cannot overwrite fixed members",
+        "Explicit nested operations finish before the next guest statement",
+        "Repeated close runs extension cleanup exactly once",
+        "Closed realms reject further evaluation",
+        "Context callback prefix completes while the final result remains pending",
+        "Realm callback progresses while an earlier async tail is pending",
+        "A new source evaluation progresses after a callback prefix while its async tail remains pending",
+        "Callback result preserves async ordering and returned data",
+        "Retained guest arguments can return through the owning callback",
+        "Released guest references reject reuse",
+        "Owner closure rejects a suspended callback without releasing its host wait",
+        "Builtin console remains protected without explicit authorization before setup",
+        "Authorized console and Window aliases share the actual owned host object",
+        "Authorized console cleanup runs once across repeated owner closure"
+      ],
+      "sdkExecutions": 0
+    },
+    "upstreamSnapshot": {
+      "observedAt": "2026-09-15T19:42:11.876Z",
+      "head": "3057055465eea7b2017d83cd601c61fb408e8d41",
+      "previousSourceRefresh": "9baf685284b3a089eaa3a22d1521b6dc391fccd9",
+      "commit": "2026-09-15T13:50:18-05:00\nfeat(safe-bash): strip and preserve ZIP extra metadata",
+      "dirtySafejsTrackedPaths": [],
+      "headAfter": "3057055465eea7b2017d83cd601c61fb408e8d41",
+      "files": [
+        {
+          "file": "packages/safe-js/README.md",
+          "sha256": "c62b365456b3e7b4ce7b646e6a08294a57909dcab220755bfecc1b3b9524b4cb",
+          "bytes": 106145,
+          "previousSha256": "36d8110ce8b4dea4aa0dcb0e94497158539c73b34f5afe3bc4eb761f6531badf",
+          "changedSinceRefresh": true,
+          "deltaSha256": "ae0984aa0ee09e0a96126ad21121df1be77f8035fc7e1d4b4c25748be64b2389"
+        },
+        {
+          "file": "packages/safe-js/src/realm.ts",
+          "sha256": "2d5a9fcaad2e610de13c87e7d7ad7f891c588cd1ef9fdc4f3b7ccff716cf1396",
+          "bytes": 40100,
+          "previousSha256": "a272665371636df42826d00184c5900f14cc3bfd4e169bb865e29caf14e424c3",
+          "changedSinceRefresh": true,
+          "deltaSha256": "be9a15417e69908f78e84e2f458444af1644b31671b240b53bc8b2c9a8ebfead"
+        },
+        {
+          "file": "packages/safe-js/src/realm-callback-phases.test.ts",
+          "sha256": "83fee17086b2871054fb7d73b6e1ead31b937479c7f827a27c1ed57efc198a9d",
+          "bytes": 18629,
+          "previousSha256": "83fee17086b2871054fb7d73b6e1ead31b937479c7f827a27c1ed57efc198a9d",
+          "changedSinceRefresh": false,
+          "deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "packages/safe-js/src/extensions.ts",
+          "sha256": "62f90e6125ad4189731c22f995c15abad9e9b7be377f6c29fa2b6c974e30c7d9",
+          "bytes": 5834,
+          "previousSha256": "62f90e6125ad4189731c22f995c15abad9e9b7be377f6c29fa2b6c974e30c7d9",
+          "changedSinceRefresh": false,
+          "deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "packages/safe-js/src/core.ts",
+          "sha256": "88057a461abd95ffe1134bb550696ef5413ec06f97b3f060d3fc3bda11a61c9c",
+          "bytes": 1074,
+          "previousSha256": "88057a461abd95ffe1134bb550696ef5413ec06f97b3f060d3fc3bda11a61c9c",
+          "changedSinceRefresh": false,
+          "deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "actualSdkExecutions": 0,
+      "networkRequests": 0,
+      "sourceBuilds": 0,
+      "upstreamWrites": 0,
+      "latestPublishedVersionVerified": false,
+      "publishedArtifactEquivalenceVerified": false,
+      "conclusion": "Current committed public source still admits evaluation through perform, which rejects an active operation; external callback execution owns perform until result settlement. Callback-prefix completion is not a documented new-source admission API."
+    },
+    "actualSdkExecutions": 0,
+    "websiteRequests": 0,
+    "upstreamCheckoutWrites": 0,
+    "adapterChanges": false,
+    "initialRedRetained": "red:14 new failures plus existing failure; initial format/lint issues retained"
+  },
+  "evidenceLane": "node_modules/.cache/native-validation/safejs-contract-diagnostics-september15",
+  "evidence": {
+    "SCOPE.md": "ea1b922b4ce9f0e7e183875c9f46d436b567e85513c4420595220f24f94ba653",
+    "FIXTURE-PROMPT.md": "3db170a01eab3f1e20618c9b5abe9049f3e75bd45bd522d675b5d9f52816812c",
+    "FIXTURE-RESULT.md": "affc935eee8fdf9c40f1120f595a95d0795c9e763414fede70cd9fdb2a787738",
+    "UPSTREAM-SNAPSHOT.json": "5e81b28990909fc10383582776a4f0c4fca4efd7ccefbd559e47be430ccb9530",
+    "CONTRACT-FINDING.md": "96b38b6153647a4991d6fb3eb368edfcaba7394dc79d3721d47a65b81b4c5937",
+    "CONTRACT-COMPARISON.json": "48dc542f99675e5598fce3552c780e32c511fe565433433621691120d83c3ff7",
+    "VERIFIED.json": "8d9d7d82a943307cd8e96e71c8f7d7fa034c3cded4c41499374486dcdebd22ea",
+    "BEFORE.json": "cf691fc7cfe5ecf794fd666429022e6ae273443db85a849ce790a3597284d97c",
+    "inspect-upstream.mjs": "7136381c88f609a2392d5a632883c9eba4387475f880e1e09e0ab307c8d981aa",
+    "prepare-validation.mjs": "041c30b874e1f0ff9182d85b9ea0c07c36ee3479cf1fdf79d4205e5a305ba5c4",
+    "check.py": "0462495ea2cfcd680fa5477d216b810a8939aeae526e3293ecc3bfbfe228dc81",
+    "compare-contract.mjs": "81668e321c694a2d8d8040fdd3b248904cfb3ea56371773d0140ef58720d27aa",
+    "verify.mjs": "317d9519d8d7fe42f1fb118df60a740095d29e6ab76401a1b370b209a963a190",
+    "SOURCE-baseline.json": "d7e35754cfd67909bbd06c9c2a526382f776230e646a864b2e0df313e6368f6a",
+    "OVERLAY-baseline.json": "753865cca46516841ed8ae79b20d3f483d95ac99ace169380062804d5050d628",
+    "COMPILED-baseline.json": "b18ba7dabc1f13086a28c64df722c2b48f1dc31feafc30e5b40b046ffab8f4fa",
+    "CHECK-baseline.json": "d476f028f57f7bda09c5e8084012e698f234c51881dcbc98f6983adff717a024",
+    "native-baseline.json": "dd3dfe9a5752dae89bc9cbb2947b7927f8032f56267ed711ce179b27e2702b76",
+    "SOURCE-red.json": "ad0350a852dc4f03d8073baef0ac3e8651cc3d528947ffabb21f25eea20bf098",
+    "OVERLAY-red.json": "2941a46b5ee19acd3f4c3d4b425a75cae81ccea23906b2175c5e1bbd06280051",
+    "COMPILED-red.json": "b18ba7dabc1f13086a28c64df722c2b48f1dc31feafc30e5b40b046ffab8f4fa",
+    "CHECK-red.json": "aa53768db66b6440ff02cc8c9ec548e8a932e18f9c55717bf5aa7696530015b4",
+    "native-red.json": "8f14ce758768868847f5a93a80d33df8859442f694faa375bba73c258daade18",
+    "SOURCE-red01.json": "7c6c195ffad874a7e821ce22f93cdf8183dd51b518cc3c7cc5b31f01bcdc9b26",
+    "OVERLAY-red01.json": "415fb49592329d47f794db63a5f795a733276702aa76104a1323c64d8d66306d",
+    "COMPILED-red01.json": "b18ba7dabc1f13086a28c64df722c2b48f1dc31feafc30e5b40b046ffab8f4fa",
+    "CHECK-red01.json": "d476f028f57f7bda09c5e8084012e698f234c51881dcbc98f6983adff717a024",
+    "native-red01.json": "afbf6795cb7182be146598bd1ab32ae1d1adc3988e5a8e3c409ee6423df94c69",
+    "SOURCE-release00.json": "2d04e39ef8e169a47086b13e54ae7d58341d6b5091da94735b0578c102b051e4",
+    "OVERLAY-release00.json": "906480d9bb369cca6ce40c261a30bbf2ad00863b9a81b9b7bc52f15eb4147fcb",
+    "COMPILED-release00.json": "60b10149c9bfc1ef2ebb7f5d63c9c96b1c31e978c5a0bd567bb2bea88caaf270",
+    "CHECK-release00.json": "d476f028f57f7bda09c5e8084012e698f234c51881dcbc98f6983adff717a024",
+    "native-release00.json": "76af81dfcf96c3c4fb82f44db4118e57a82ec19fd209d4e46ad869f87553e978"
+  },
+  "realSdkAcceptance": false,
+  "newLiveSiteAcceptance": false,
+  "defaultRuntimeActivation": false,
+  "overallGoal": "active",
+  "pushed": false
+}

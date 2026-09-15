@@ -1,21 +1,63 @@
 import {
 	type ReleasedContext,
 	type ReleasedCore,
+	type ReleasedInvocation,
 	type ReleasedRealm,
 	loadReleasedCore,
 } from "./released-safejs-core.js";
 
 const startedAt = new Date().toISOString();
-const checks: { label: string; passed: boolean }[] = [];
+const checks: { label: string; passed: boolean; message?: string }[] = [];
+const cleanupFailures: { fixture: string; message: string }[] = [];
 let selected: { packageName: string; version: string } | undefined;
 let completed = false;
-let failure: { stage: string; message: string } | undefined;
+let failure: { stage: string; message: string; label?: string } | undefined;
 
-function check(label: string, passed: boolean) {
-	checks.push({ label, passed });
-	if (process.argv.includes("--trace"))
-		console.error(`${passed ? "PASS" : "FAIL"} ${label}`);
-	if (!passed) throw new Error("SafeJS release acceptance failed");
+function message(error: unknown) {
+	return error instanceof Error
+		? error.message.slice(0, 512)
+		: "Unknown probe failure";
+}
+
+async function check(
+	label: string,
+	operation: () => boolean | Promise<boolean>,
+) {
+	const entry: (typeof checks)[number] = { label, passed: false };
+	checks.push(entry);
+	try {
+		entry.passed = await operation();
+		if (!entry.passed) throw new Error("SafeJS release acceptance failed");
+	} catch (error) {
+		entry.message = message(error);
+		failure = { stage: "contract", label, message: entry.message };
+		throw error;
+	} finally {
+		if (process.argv.includes("--trace"))
+			console.error(`${entry.passed ? "PASS" : "FAIL"} ${label}`);
+	}
+}
+
+async function withCleanup(
+	label: string,
+	operation: () => Promise<void>,
+	close: () => Promise<void>,
+) {
+	let failed = false;
+	let primary: unknown;
+	try {
+		await operation();
+	} catch (error) {
+		failed = true;
+		primary = error;
+	}
+	try {
+		await close();
+	} catch (error) {
+		cleanupFailures.push({ fixture: label, message: message(error) });
+		if (!failed) throw error;
+	}
+	if (failed) throw primary;
 }
 
 async function bounded<Value>(
@@ -166,167 +208,209 @@ try {
 	);
 	selected = { packageName: loaded.packageName, version: loaded.version };
 	const capabilities = fixture(loaded.core);
-	try {
-		check(
-			"Realm-owned host aliases preserve identity and indexed reads",
-			(await capabilities.evaluate(
-				'return probe === alias && probe.length === 2 && probe[0] === "first";',
-			)) === true,
-		);
-		capabilities.values.push("third");
-		check(
-			"Indexed capabilities remain live across evaluations",
-			(await capabilities.evaluate('return Array.from(probe).join(",");')) ===
-				"first,second,third",
-		);
-		check(
-			"Named writes reach native storage",
-			(await capabilities.evaluate(
-				'probe.theme = "dark"; probe.fresh = "value"; return probe.theme === "dark" && probe.fresh === "value";',
-			)) === true &&
-				capabilities.named.get("theme") === "dark" &&
-				capabilities.named.get("fresh") === "value",
-		);
-		check(
-			"Named deletion reaches native storage",
-			(await capabilities.evaluate("return delete probe.fresh;")) === true &&
-				!capabilities.named.has("fresh"),
-		);
-		capabilities.named.set("theme", "native");
-		check(
-			"Native named updates are visible without replacing the host object",
-			(await capabilities.evaluate("return alias.theme;")) === "native",
-		);
-		check(
-			"Named mutation cannot overwrite fixed members",
-			(await capabilities.evaluate(
-				'try { probe.fixed = "bad"; } catch (error) {} return probe.fixed === "protected";',
-			)) === true && !capabilities.named.has("fixed"),
-		);
-		await capabilities.evaluate('nested(); mark("after");');
-		check(
-			"Explicit nested operations finish before the next guest statement",
-			JSON.stringify(capabilities.marks) === '["nested","after"]',
-		);
-	} finally {
-		await capabilities.close();
-	}
-	await capabilities.close();
-	check(
+	await withCleanup(
+		"capabilities",
+		async () => {
+			await check(
+				"Realm-owned host aliases preserve identity and indexed reads",
+				async () =>
+					(await capabilities.evaluate(
+						'return probe === alias && probe.length === 2 && probe[0] === "first";',
+					)) === true,
+			);
+			await check(
+				"Indexed capabilities remain live across evaluations",
+				async () => {
+					capabilities.values.push("third");
+					return (
+						(await capabilities.evaluate(
+							'return Array.from(probe).join(",");',
+						)) === "first,second,third"
+					);
+				},
+			);
+			await check(
+				"Named writes reach native storage",
+				async () =>
+					(await capabilities.evaluate(
+						'probe.theme = "dark"; probe.fresh = "value"; return probe.theme === "dark" && probe.fresh === "value";',
+					)) === true &&
+					capabilities.named.get("theme") === "dark" &&
+					capabilities.named.get("fresh") === "value",
+			);
+			await check(
+				"Named deletion reaches native storage",
+				async () =>
+					(await capabilities.evaluate("return delete probe.fresh;")) ===
+						true && !capabilities.named.has("fresh"),
+			);
+			await check(
+				"Native named updates are visible without replacing the host object",
+				async () => {
+					capabilities.named.set("theme", "native");
+					return (
+						(await capabilities.evaluate("return alias.theme;")) === "native"
+					);
+				},
+			);
+			await check(
+				"Named mutation cannot overwrite fixed members",
+				async () =>
+					(await capabilities.evaluate(
+						'try { probe.fixed = "bad"; } catch (error) {} return probe.fixed === "protected";',
+					)) === true && !capabilities.named.has("fixed"),
+			);
+			await check(
+				"Explicit nested operations finish before the next guest statement",
+				async () => {
+					await capabilities.evaluate('nested(); mark("after");');
+					return JSON.stringify(capabilities.marks) === '["nested","after"]';
+				},
+			);
+		},
+		() => capabilities.close(),
+	);
+	await check(
 		"Repeated close runs extension cleanup exactly once",
-		capabilities.cleanups === 1 && capabilities.context.signal.aborted,
+		async () => {
+			await capabilities.close();
+			return capabilities.cleanups === 1 && capabilities.context.signal.aborted;
+		},
 	);
-	const stale = await bounded(
-		Promise.allSettled([capabilities.realm.evaluate("return 1;")]),
-		capabilities.abort,
-	);
-	check(
-		"Closed realms reject further evaluation",
-		stale[0].status === "rejected",
-	);
+	await check("Closed realms reject further evaluation", async () => {
+		const stale = await bounded(
+			Promise.allSettled([capabilities.realm.evaluate("return 1;")]),
+			capabilities.abort,
+		);
+		return stale[0].status === "rejected";
+	});
 
 	const phases = fixture(loaded.core);
-	try {
-		await phases.evaluate(
-			'register(async function() { mark("prefix"); await wait(); mark("tail"); return 7; }); register(function(value) { mark(value); });',
-		);
-		const first = phases.context.startCallback(phases.callbacks[0]);
-		let settled = false;
-		void first.result.then(
-			() => {
-				settled = true;
-			},
-			() => {
-				settled = true;
-			},
-		);
-		void first.synchronous.catch(() => undefined);
-		await bounded(first.synchronous, phases.abort);
-		check(
-			"Context callback prefix completes while the final result remains pending",
-			Object.isFrozen(first) &&
-				!settled &&
-				JSON.stringify(phases.marks) === '["prefix"]',
-		);
-		const second = phases.realm.startCallback(phases.callbacks[1], {
-			args: ["second"],
-		});
-		void second.result.catch(() => undefined);
-		void second.synchronous.catch(() => undefined);
-		await bounded(
-			Promise.all([second.synchronous, second.result]),
-			phases.abort,
-		);
-		check(
-			"Realm callback progresses while an earlier async tail is pending",
-			!settled && JSON.stringify(phases.marks) === '["prefix","second"]',
-		);
-		check(
-			"A new source evaluation progresses after a callback prefix while its async tail remains pending",
-			(await phases.evaluate("return 1;")) === 1 && !settled,
-		);
-		phases.release();
-		check(
-			"Callback result preserves async ordering and returned data",
-			(await bounded(first.result, phases.abort)) === 7 &&
-				JSON.stringify(phases.marks) === '["prefix","second","tail"]',
-		);
-		await phases.evaluate(
-			'capture({ marker: "identity" }); register(function(value) { return value.marker === "identity"; });',
-		);
-		const retained = phases.realm.startCallback(phases.callbacks[2], {
-			args: [phases.references[0]],
-		});
-		void retained.result.catch(() => undefined);
-		void retained.synchronous.catch(() => undefined);
-		check(
-			"Retained guest arguments can return through the owning callback",
-			(
-				await bounded(
-					Promise.all([retained.synchronous, retained.result]),
+	await withCleanup(
+		"phases",
+		async () => {
+			let first!: ReleasedInvocation;
+			let settled = false;
+			await check(
+				"Context callback prefix completes while the final result remains pending",
+				async () => {
+					await phases.evaluate(
+						'register(async function() { mark("prefix"); await wait(); mark("tail"); return 7; }); register(function(value) { mark(value); });',
+					);
+					first = phases.context.startCallback(phases.callbacks[0]);
+					void first.result.then(
+						() => {
+							settled = true;
+						},
+						() => {
+							settled = true;
+						},
+					);
+					void first.synchronous.catch(() => undefined);
+					await bounded(first.synchronous, phases.abort);
+					return (
+						Object.isFrozen(first) &&
+						!settled &&
+						JSON.stringify(phases.marks) === '["prefix"]'
+					);
+				},
+			);
+			await check(
+				"Realm callback progresses while an earlier async tail is pending",
+				async () => {
+					const second = phases.realm.startCallback(phases.callbacks[1], {
+						args: ["second"],
+					});
+					void second.result.catch(() => undefined);
+					void second.synchronous.catch(() => undefined);
+					await bounded(
+						Promise.all([second.synchronous, second.result]),
+						phases.abort,
+					);
+					return (
+						!settled && JSON.stringify(phases.marks) === '["prefix","second"]'
+					);
+				},
+			);
+			await check(
+				"A new source evaluation progresses after a callback prefix while its async tail remains pending",
+				async () => (await phases.evaluate("return 1;")) === 1 && !settled,
+			);
+			await check(
+				"Callback result preserves async ordering and returned data",
+				async () => {
+					phases.release();
+					return (
+						(await bounded(first.result, phases.abort)) === 7 &&
+						JSON.stringify(phases.marks) === '["prefix","second","tail"]'
+					);
+				},
+			);
+			await check(
+				"Retained guest arguments can return through the owning callback",
+				async () => {
+					await phases.evaluate(
+						'capture({ marker: "identity" }); register(function(value) { return value.marker === "identity"; });',
+					);
+					const retained = phases.realm.startCallback(phases.callbacks[2], {
+						args: [phases.references[0]],
+					});
+					void retained.result.catch(() => undefined);
+					void retained.synchronous.catch(() => undefined);
+					return (
+						(
+							await bounded(
+								Promise.all([retained.synchronous, retained.result]),
+								phases.abort,
+							)
+						)[1] === true
+					);
+				},
+			);
+			await check("Released guest references reject reuse", async () => {
+				phases.context.releaseGuestReference(phases.references[0]);
+				const revoked = phases.realm.startCallback(phases.callbacks[2], {
+					args: [phases.references[0]],
+				});
+				const outcomes = await bounded(
+					Promise.allSettled([revoked.synchronous, revoked.result]),
 					phases.abort,
-				)
-			)[1] === true,
-		);
-		phases.context.releaseGuestReference(phases.references[0]);
-		const revoked = phases.realm.startCallback(phases.callbacks[2], {
-			args: [phases.references[0]],
-		});
-		const outcomes = await bounded(
-			Promise.allSettled([revoked.synchronous, revoked.result]),
-			phases.abort,
-		);
-		check(
-			"Released guest references reject reuse",
-			outcomes.every((outcome) => outcome.status === "rejected"),
-		);
-	} finally {
-		await phases.close();
-	}
+				);
+				return outcomes.every((outcome) => outcome.status === "rejected");
+			});
+		},
+		() => phases.close(),
+	);
 
 	const cancellation = fixture(loaded.core);
-	try {
-		await cancellation.evaluate(
-			'register(async function() { await wait(); mark("must not run"); });',
-		);
-		const invocation = cancellation.realm.startCallback(
-			cancellation.callbacks[0],
-		);
-		void invocation.result.catch(() => undefined);
-		void invocation.synchronous.catch(() => undefined);
-		await bounded(invocation.synchronous, cancellation.abort);
-		await cancellation.close();
-		const outcomes = await bounded(
-			Promise.allSettled([invocation.result]),
-			cancellation.abort,
-		);
-		check(
-			"Owner closure rejects a suspended callback without releasing its host wait",
-			outcomes[0].status === "rejected" && cancellation.marks.length === 0,
-		);
-	} finally {
-		await cancellation.close();
-	}
+	await withCleanup(
+		"cancellation",
+		async () => {
+			await check(
+				"Owner closure rejects a suspended callback without releasing its host wait",
+				async () => {
+					await cancellation.evaluate(
+						'register(async function() { await wait(); mark("must not run"); });',
+					);
+					const invocation = cancellation.realm.startCallback(
+						cancellation.callbacks[0],
+					);
+					void invocation.result.catch(() => undefined);
+					void invocation.synchronous.catch(() => undefined);
+					await bounded(invocation.synchronous, cancellation.abort);
+					await cancellation.close();
+					const outcomes = await bounded(
+						Promise.allSettled([invocation.result]),
+						cancellation.abort,
+					);
+					return (
+						outcomes[0].status === "rejected" && cancellation.marks.length === 0
+					);
+				},
+			);
+		},
+		() => cancellation.close(),
+	);
 	const consoleAbort = new AbortController();
 	const consoleMessages: unknown[] = [];
 	let consoleCleanups = 0;
@@ -364,54 +448,67 @@ try {
 			dataSize: 1_048_576,
 		}),
 	};
-	let collision = false;
-	let unauthorized: ReleasedRealm | undefined;
-	try {
-		unauthorized = loaded.core.createRealm(consoleOptions);
-	} catch {
-		collision = true;
-	} finally {
-		if (unauthorized) await bounded(unauthorized.close(), consoleAbort);
-	}
-	check(
+	await check(
 		"Builtin console remains protected without explicit authorization before setup",
-		collision && consoleSetups === 0,
+		async () => {
+			let collision = false;
+			let unauthorized: ReleasedRealm | undefined;
+			await withCleanup(
+				"unauthorized-console",
+				async () => {
+					try {
+						unauthorized = loaded.core.createRealm(consoleOptions);
+					} catch {
+						collision = true;
+					}
+				},
+				async () => {
+					if (unauthorized) await bounded(unauthorized.close(), consoleAbort);
+				},
+			);
+			return collision && consoleSetups === 0;
+		},
 	);
 	const consoleRealm = loaded.core.createRealm({
 		...consoleOptions,
 		builtinOverrides: { console: "browser-console-probe" },
 	});
-	try {
-		const result = await bounded(
-			consoleRealm.evaluate(
-				'console.warn("owned"); return console === window.console && console === self.console;',
-			),
-			consoleAbort,
-		);
-		check(
-			"Authorized console and Window aliases share the actual owned host object",
-			result.ok &&
-				result.returnValue === true &&
-				consoleMessages.length === 1 &&
-				consoleMessages[0] === "owned" &&
-				consoleSetups === 1,
-		);
-	} finally {
-		await bounded(consoleRealm.close(), consoleAbort);
-	}
-	await bounded(consoleRealm.close(), consoleAbort);
-	check(
+	await withCleanup(
+		"console",
+		async () => {
+			await check(
+				"Authorized console and Window aliases share the actual owned host object",
+				async () => {
+					const result = await bounded(
+						consoleRealm.evaluate(
+							'console.warn("owned"); return console === window.console && console === self.console;',
+						),
+						consoleAbort,
+					);
+					return (
+						result.ok &&
+						result.returnValue === true &&
+						consoleMessages.length === 1 &&
+						consoleMessages[0] === "owned" &&
+						consoleSetups === 1
+					);
+				},
+			);
+		},
+		() => bounded(consoleRealm.close(), consoleAbort),
+	);
+	await check(
 		"Authorized console cleanup runs once across repeated owner closure",
-		consoleCleanups === 1,
+		async () => {
+			await bounded(consoleRealm.close(), consoleAbort);
+			return consoleCleanups === 1;
+		},
 	);
 	completed = true;
 } catch (error) {
-	failure = {
+	failure ??= {
 		stage: selected ? "contract" : "selection",
-		message:
-			error instanceof Error
-				? error.message.slice(0, 512)
-				: "Unknown probe failure",
+		message: message(error),
 	};
 	process.exitCode = 1;
 } finally {
@@ -426,6 +523,7 @@ try {
 				publicationProvenanceVerified: false,
 				browserIntegrationVerified: false,
 				failure,
+				cleanupFailures,
 				checks,
 				passed: checks.filter((entry) => entry.passed).length,
 			},

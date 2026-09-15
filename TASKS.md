@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: preserve SDK-probe errors and identify intentional admission gap
+
+- Fixed the maintained core fixture, not the SDK/browser scheduler: record each
+  attempted check before its awaited work, retain bounded primary failure and
+  label, and separately report fixture cleanup failures. Cleanup-only failure
+  still fails; later checks are not invented. All19 predicates/order and14 guest
+  source strings remain unchanged under independent TypeScript AST comparison.
+- Native fake-core regression: final20 new cases fail on the original script and
+  pass on the fix. Baseline3 suites67pass/1fail; candidate4 suites87pass/the same
+  existing page-scripts globals-list failure (26 vs25). Build, selected types,
+  format and lint pass. This is not a full native suite or real SDK pass.
+- Current pinned neighboring source3057055465eea7b2017d83cd601c61fb408e8d41
+  explicitly tests rejection of fresh evaluation after a suspended callback's
+  prefix completes. Its active-operation guard remains. This is an intentional
+  public-SDK/browser-requirement mismatch, not just ambiguous documentation;
+  details and required capability: `SAFEJS-CALLBACK-ADMISSION.md`.
+- No actual SDK import/retry, page script, website request, dependency update,
+  upstream checkout edit, latest-release claim or default activation. The old
+  SDK receipt's exact throw site remains unproven; preserve it unchanged.
+- Report: `reports/safejs-contract-diagnostics-2026-09-15.{md,json}`. Original42
+  tracked/697 untracked work preserved; focused commit, no push. Public admission
+  support, launcher hardening and a new execution scope precede the next SDK
+  gate. Broader website/access, interaction/passkey and performance goals stay open.
+
 ### September 15: diagnose eight shells and validate two task pages
 
 - Source-only reviews of eight pinned original empty/tiny responses distinguish
