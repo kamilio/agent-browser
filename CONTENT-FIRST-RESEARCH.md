@@ -61,6 +61,9 @@ See the thirty-seventh website inventory for the exact evidence and limitations.
   lists instead of per-cell boundary noise. Replay also needs explicit
   `--format markdown`. Complex tables fall back without dropping content or
   inferring headers; defaults and budgets stay unchanged. See `TABLE-ROWS.md`.
+- The reader keeps explicit MathML `alttext` as labeled inert source code instead
+  of losing formulas inside prose or cells. It does not render or evaluate math,
+  infer missing alternatives or load a dependency. See `MATHML-ALTERNATIVES.md`.
 - For plain text, Markdown source, CSV, JSON and the literal XML/feed types,
   native `--find` and `--lines` locate source text. Separate research-CLI invocations navigate again;
   the HTML replay admission is not a generic XML or arbitrary-file reader.

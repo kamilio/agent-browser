@@ -165,6 +165,7 @@ export function sanitizeResearchHtml(
 	};
 	check("reader.source", limits.maxSourceCodeUnits, source.length);
 	const omittedSubtrees: Record<string, number> = Object.create(null);
+	const mathAlternatives = { elements: 0, codeUnits: 0 };
 	const omittedRaw = selectedRawPolicy
 		? {
 				codeUnits: 0,
@@ -279,6 +280,17 @@ export function sanitizeResearchHtml(
 			report.omittedTokens++;
 			if (token.kind === "start") {
 				omittedSubtrees[name] = (omittedSubtrees[name] ?? 0) + 1;
+				const alternative =
+					name === "math" && Object.hasOwn(token.attributes, "alttext")
+						? token.attributes.alttext
+						: undefined;
+				if (alternative?.trim()) {
+					emit("<code>MathML source: ");
+					text(alternative, false);
+					emit("</code>");
+					mathAlternatives.elements++;
+					mathAlternatives.codeUnits += alternative.length;
+				}
 				const foreignEmpty =
 					token.selfClosing && ["svg", "math"].includes(name);
 				if (!voidTags.has(name) && !foreignEmpty) {
@@ -370,6 +382,9 @@ export function sanitizeResearchHtml(
 		html: output.join(""),
 		report: Object.freeze({
 			...report,
+			...(mathAlternatives.elements
+				? { mathAlternatives: Object.freeze(mathAlternatives) }
+				: {}),
 			omittedSubtrees: Object.freeze(omittedSubtrees),
 			...(omittedRaw ? { omittedRaw: Object.freeze({ ...omittedRaw }) } : {}),
 		}),

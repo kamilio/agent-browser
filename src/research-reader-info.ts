@@ -33,6 +33,7 @@ export interface ResearchReaderReport {
 	encoding?: string;
 	sourceCodeUnits: number;
 	textCodeUnits: number;
+	mathAlternatives?: Readonly<{ elements: number; codeUnits: number }>;
 	outputCodeUnits: number;
 	tokens: number;
 	omittedTokens: number;
@@ -60,6 +61,9 @@ export function setResearchReaderInfo(
 		Object.freeze({
 			...report,
 			omittedSubtrees: Object.freeze({ ...report.omittedSubtrees }),
+			...(report.mathAlternatives
+				? { mathAlternatives: Object.freeze({ ...report.mathAlternatives }) }
+				: {}),
 			...(report.omittedRaw
 				? { omittedRaw: Object.freeze({ ...report.omittedRaw }) }
 				: {}),

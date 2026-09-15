@@ -6,6 +6,39 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: retain explicit formula text and read product specifications
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Two fresh native GETs broaden coverage to an NVIDIA product page and an arXiv
+scientific paper, both HTTP 200 without redirects. Source-backed product reading
+recovers all 47 specification rows / 141 cells from the static `#specsmodal`, not
+the empty script-populated `#specs` placeholder. Large navigation, unresolved
+price/date placeholders and multiline-table fallback remain; no hardware/LLM
+performance, availability, rendered visibility or recommendation is established.
+The arXiv capture proves actual loss: eight explicit MathML `alttext` alternatives
+vanish, leaving three equation cells empty and damaging one paragraph and three
+table labels. The reader now retains nonblank alternatives as labeled inert code,
+without evaluating TeX/MathML, inferring absent formulas or fetching dependencies.
+MathML DOM remains omitted. Optional frozen source counters disclose retained
+alternatives; their decoded units consume the existing text/output budgets.
+All **1,498 cases across 22 selected native files pass**, including 104 new cases.
+Build, 22-root strict types and three-file format/lint pass. All 1,394 original
+case statuses stay unchanged; the initial literal-NUL fixture correction and its
+failed report are retained. Only the reader loader and reader-info modules change.
+Four offline CLI and two API children restore all eight captured alternatives,
+with an exact +215 text-unit charge and unchanged surrounding text. The paper's
+Markdown grows 28,586→28,957 bytes; NVIDIA stays byte-identical at 17,259 bytes.
+NVIDIA API JSON differs only in generated references after prior allocations,
+not content. No replay HTTP requests; the local code-span-padding verifier
+correction remains preserved without repeating any native child. Together with
+the website inspections: two fresh GETs and eight offline native children.
+See `MATHML-ALTERNATIVES.md` and the forty-fourth inventory for scope/evidence.
+Full browser/research outcomes remain open: more sites, product-page focus and
+metadata, runtime/rendering/interaction, JS-only/iframe content, doctype provenance,
+full native release, older table-source/body-capture failures and ARIA-test lint.
+SafeJS, service/socket, TTY/PTY, credentials and passkey-device gates remain separate.
+Original work and evidence remain preserved; access restrictions are not bypassed.
+
 ### September 15: readable table rows and broader native reading
 
 **PROGRESS; overall browser goal remains ACTIVE.**

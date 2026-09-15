@@ -397,6 +397,7 @@
   "src/extraction-table-rows.test.ts",
   "src/research-table-rows.test.ts",
   "src/research-table-rows-cli.test.ts",
+  "src/research-math-alternatives.test.ts",
   "src/flex-column-wrap.test.ts",
   "src/flex-column.test.ts",
   "src/flex-document.test.ts",
