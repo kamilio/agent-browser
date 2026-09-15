@@ -498,7 +498,9 @@ export function sanitizeResearchHtml(
 				attribute === "id" ||
 				(outputName === name &&
 					(attribute === "class" || attribute === "role")) ||
-				(outputName === "a" && ["href", "title", "name"].includes(attribute)) ||
+				(outputName === "a" &&
+					(["href", "title", "name"].includes(attribute) ||
+						(attribute === "aria-label" && value.length <= 8192))) ||
 				(outputName === "base" && attribute === "href") ||
 				(outputName === "img" && attribute === "alt") ||
 				(outputName === "ol" && attribute === "start") ||

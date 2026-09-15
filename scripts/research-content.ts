@@ -1,10 +1,26 @@
 import { documentBody } from "../src/document-elements.js";
 import type { DocumentTree } from "../src/document.js";
-import type { DocumentExtraction } from "../src/extraction.js";
+import type {
+	DocumentExtraction,
+	DocumentLinkDiscovery,
+} from "../src/extraction.js";
 import { htmlParseInfo } from "../src/html-info.js";
 import { documentStyles } from "../src/styles.js";
 
 export const researchDiagnosticTextLimit = 8192;
+
+export function researchLinkDiagnosticText(
+	links: DocumentLinkDiscovery,
+): string {
+	return [
+		...links.entries.map((entry) =>
+			entry.sourceLabel
+				? `${entry.label}\n${entry.sourceLabel.text}`
+				: entry.label,
+		),
+		...(links.sourceMarkdown?.entries.map((entry) => entry.label) ?? []),
+	].join("\n");
+}
 
 const diagnosticOmissions = new Set(
 	"head script style template iframe noembed noframes object embed canvas input textarea select datalist".split(

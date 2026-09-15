@@ -6,6 +6,40 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: real content pages and authored link labels
+
+**PROGRESS; overall browser goal remains ACTIVE.** Six new content-page
+navigations made 8 GETs with no retries; all bodies verified and children /
+transports closed. PyTorch's authored versioned link now yields documentation,
+not a redirect note. Gutenberg, NASA, Rust and web.dev provide substantial
+content; Wikipedia's full extraction retains its 256000-byte output-limit failure.
+Pinned replay finds 64 native headings and recovers Training/Architecture/
+Evaluation sections (2919/7529/8239 Markdown bytes) without another request.
+
+Real NASA/web.dev captures reveal useful icon-only links losing authored labels.
+Preserve bounded anchor aria-label in the reader and expose sourceLabel only as
+explicit link-discovery metadata for empty collected labels, with title fallback.
+Do not inject invented visible text or change URL-only matching. Both selected
+and unfiltered diagnostics include the metadata. Seven sampled source labels
+are recovered across NASA/web.dev/Gutenberg; Rust and literal PyTorch controls
+retain their behavior. Default Markdown and extraction JSON content match five
+saved baselines; changed reader attribute/output accounting is explicit.
+
+Clean isolated selection: 1857/1857 tests, 22 files, 55 new cases; all 1802
+baseline statuses unchanged. Build/types/format/lint pass. Final production
+review has no actionable findings. Initial formatting/preparation/auxiliary
+comparison-envelope errors are retained, not rewritten as successful gates.
+Details: SOURCE-LINK-LABELS.md and reports/content-pages-runtime-2026-09-15.md.
+
+Rust's cross-origin redirect timing is consistent with per-origin pacing, not
+a production bug; initial scope wording was overbroad. Server Retry-After advice
+versus future-request cooldown handling remains an investigation point, not an
+implemented fix or authorization to retry blocked sites. Hidden UI, table
+associations, complete large-page recovery and full rendered interaction remain
+open. No new SafeJS execution authorization received; runtime, providers/passkeys/
+devices, real TTY/service, full-release and broader research gates remain open.
+No dependency or production-budget increase; no push.
+
 ### September 15: bounded Markdown source-link discovery
 
 **PROGRESS; overall browser goal remains ACTIVE.** Reverified all 100 saved

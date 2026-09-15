@@ -7,6 +7,35 @@ export interface LinkTarget {
 	url: string;
 	label: string;
 	labelTruncated: boolean;
+	sourceLabel?: {
+		attribute: "aria-label" | "title";
+		text: string;
+		truncated: boolean;
+	};
+}
+
+function sourceLinkLabel(
+	attributes: Readonly<Record<string, string>>,
+	maxCodeUnits: number,
+): LinkTarget["sourceLabel"] {
+	for (const attribute of ["aria-label", "title"] as const) {
+		const value = attributes[attribute];
+		if (value === undefined || value.length > 8192) continue;
+		const normalized = value.replace(/\s+/g, " ").trim();
+		if (!normalized) continue;
+		let text = "";
+		let consumed = 0;
+		for (const character of normalized) {
+			const escaped = /[\p{Cc}\p{Cf}]/u.test(character)
+				? `\\u{${character.codePointAt(0)?.toString(16)}}`
+				: character;
+			if (text.length + escaped.length > maxCodeUnits) break;
+			text += escaped;
+			consumed += character.length;
+		}
+		return { attribute, text, truncated: consumed < normalized.length };
+	}
+	return undefined;
 }
 
 interface LinkFrame {
@@ -51,6 +80,7 @@ export function collectLinkTargets(
 	truncated: boolean;
 } {
 	const entries: LinkTarget[] = [];
+	const sourceNodes: Readonly<DocumentNode>[] = [];
 	const active: LinkTarget[] = [];
 	const pending: LinkFrame[] = [
 		{ node: tree.get(tree.root), childIndex: -1, link: null },
@@ -61,8 +91,17 @@ export function collectLinkTargets(
 		if (truncated) {
 			for (const link of active) link.labelTruncated = true;
 		}
-		for (const link of entries)
+		for (const [index, link] of entries.entries()) {
 			link.label = link.label.replace(/\s+/g, " ").trim();
+			if (!link.label) {
+				options.checkpoint?.();
+				const sourceLabel = sourceLinkLabel(
+					sourceNodes[index].attributes,
+					options.maxLabelCodeUnits,
+				);
+				if (sourceLabel) link.sourceLabel = sourceLabel;
+			}
+		}
 		return { entries, scannedNodes, truncated };
 	};
 	while (pending.length) {
@@ -102,6 +141,7 @@ export function collectLinkTargets(
 						labelTruncated: false,
 					};
 					entries.push(link);
+					sourceNodes.push(node);
 					active.push(link);
 					current.link = link;
 				}

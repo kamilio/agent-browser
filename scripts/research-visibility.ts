@@ -20,6 +20,7 @@ import type { DocumentLoaderContext } from "../src/session.js";
 import {
 	researchDocumentDiagnosticText,
 	researchExtractionDiagnosticText,
+	researchLinkDiagnosticText,
 } from "./research-content.js";
 
 interface VisibilityOperation {
@@ -104,9 +105,7 @@ export function researchVisibilityEvidence(
 						operation.target ?? "",
 						operation.limits,
 					);
-					diagnostic = classify(
-						links.entries.map((entry) => entry.label).join("\n"),
-					);
+					diagnostic = classify(researchLinkDiagnosticText(links));
 				} else {
 					let reference: string | undefined;
 					if (operation.target !== undefined) {

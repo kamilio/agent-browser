@@ -42,6 +42,7 @@ import {
 	hasResearchExtractionContent,
 	researchDocumentDiagnosticText,
 	researchExtractionDiagnosticText,
+	researchLinkDiagnosticText,
 } from "./research-content.js";
 import {
 	classifyResearchVisibility,
@@ -844,7 +845,7 @@ function extractValidatedReplayJson<
 			];
 			report.selection.matches = entries.length;
 			if (
-				!classify(entries.map((entry) => entry.label).join("\n")) &&
+				!classify(researchLinkDiagnosticText(report.links)) &&
 				!entries.length
 			) {
 				report.outcome = "empty-extraction";
