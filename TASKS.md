@@ -6,6 +6,40 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: LLM reference pages and hidden paragraph-end recovery
+
+**PROGRESS; overall browser goal remains ACTIVE.** Four public native navigations,
+four GETs, no redirects/retries, four verified captures and closed transports/
+children. Hugging Face negotiates Markdown (9863 extraction bytes), MLCommons
+provides benchmark methodology (16986), and Apple's research article provides
+5498. MLCommons' interactive numerical results remain absent. GitHub returns
+HTTP 200 / 643745 body bytes but the source-hidden loader fails; this original
+failure receipt is retained, not rewritten as success.
+
+Saved-response diagnosis finds redundant end-p tags after implied paragraph
+closure inside GitHub's hidden fallback. Ignore end p only while omitting a
+source-hidden subtree and neither visible nor skipped ancestry contains p/svg/
+math. Emit nothing, keep both stacks, retain all other mismatch checks and
+resource accounting. Do not disable visibility filtering as a fallback.
+
+Clean baseline: 1330 passing tests in 17 explicit files. Candidate: 1426 in 18,
+96 new, all baseline outcomes unchanged; build/types/format/lint pass. Independent
+source review finds no actionable issue. Fourteen saved responses, 16 policy
+cases per build: 14 cases unchanged; both GitHub hidden policies recover useful
+build documentation (51435 attribute-hidden / 51421 inline-hidden Markdown bytes).
+The default GitHub output stays unchanged at 52904 bytes. Original failed-receipt
+ordinary replay remains denied. Three offline child groups close with no network
+attempts; 32 in-memory navigations, 18 successful original-receipt replays and six
+failed-GitHub admission checks. No candidate live retry or speed claim.
+
+Research notes now distinguish quantization/backend documentation, benchmark
+comparability and paper-specific memory claims from verified hardware results.
+No buying recommendation or current model/ranking conclusion. See
+reports/llm-reference-content-2026-09-15.md and
+reports/llm-reference-research-2026-09-15.md. Continue real-page content coverage;
+Astra/Twitter, Poe/Reddit, hardware measurements and separate runtime/provider/
+interactive gates remain open. Prior top-100 results and work stay unchanged.
+
 ### September 15: namespace-only parser reads and measured recovery performance
 
 **PROGRESS; overall browser goal remains ACTIVE.** Baseline CPU profiling of the

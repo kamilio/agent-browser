@@ -319,6 +319,14 @@ export function sanitizeResearchHtml(
 		const { name } = token;
 		if (omitting && sourceHiddenOmission) {
 			if (token.kind === "end") {
+				if (
+					name === "p" &&
+					![...open, ...skipped].some(
+						(ancestor) =>
+							ancestor === "p" || ancestor === "svg" || ancestor === "math",
+					)
+				)
+					continue;
 				if (skipped.at(-1) !== name)
 					throw new AgentBrowserError(
 						"unsupported",
