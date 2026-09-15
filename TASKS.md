@@ -6,6 +6,39 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: hardware pages and inline XML content recovery
+
+**PROGRESS; overall browser goal remains ACTIVE.** Four public hardware pages,
+four GETs, all 200, no redirects/retries, four verified bodies and closed native
+transports/children. NVIDIA yields 37845 Markdown bytes, AMD 42340, Intel 39856.
+Framework returns 211555 HTML bytes but originally fails all reader policies.
+Its 43-unit XML declaration at normalized offset195463 precedes a footer SVG;
+the reader's offset-zero restriction, not decoding or a challenge, causes failure.
+
+Apply the existing strict <=256-unit XML declaration grammar relative to each
+token start, omitting it as an inert HTML comment anywhere in markup. No XML mode,
+charset override, generic processing instructions, visibility bypass or limit
+change. Malformed/overlong input and CDATA still fail; raw/escaped text is intact.
+
+Clean baseline1790/22 files; final1849/23 files, 59 new tests. Build/types/format/
+lint/native all pass. Preserve first-candidate type/new-test expectation failures;
+corrections affect tests only. 1783 baseline cases match unchanged; seven old
+negative vectors intentionally switch newly accepted inline XML to invalid2.0.
+Static review finds no production blocker and documents token-accounting caveats.
+
+22 saved responses, 26 policy cases/build: 23 unchanged; all three Framework
+policies recover useful CPU/iGPU/memory/product text (18778 bytes for both hidden
+policies, 19694 default). Two proof groups close after52 in-memory navigations,
+30 successful original replays and14 original-failure replay denials; two other
+diagnostic groups also close. Zero offline HTTP; original live failures remain
+unchanged. No candidate live retry or speed/CAPTCHA-success claim.
+
+Next content gap: AMD specification rows already exist in saved data-json but are
+absent from Markdown. Explore bounded, source-labeled extraction without another
+request or execution. Preserve table/footnote/teaser semantics and manufacturer
+claim qualifications. SafeJS/provider/passkey, interactive/service/TTY and broader
+research remain open. See reports/hardware-reader-2026-09-15.md. No push.
+
 ### September 15: isolated SafeJS dependency closure and contract failure
 
 **PROGRESS; overall browser goal remains ACTIVE.** The specific isolated-gate

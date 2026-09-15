@@ -434,7 +434,7 @@ it.each([
 	"<?",
 	"<? >",
 	"<?name?>",
-	"<p>Before</p><?xml version='1.0'?>",
+	"<p>Before</p><?xml version='2.0'?>",
 	"<!>",
 	"<!name <?>",
 	"<?name <?>",

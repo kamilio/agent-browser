@@ -283,23 +283,24 @@ describe.each(policies)("$name", ({ rawPolicy, visibilityPolicy }) => {
 		}
 	});
 
-	it("rejects declarations outside normalized offset zero, including omitted subtrees", () => {
+	it("rejects malformed declarations at nonzero offsets, including omitted subtrees", () => {
+		const invalidDeclaration = '<?xml version="2.0"?>';
 		for (const source of [
-			` ${declaration}`,
-			`\t${declaration}`,
-			`\r\n${declaration}`,
-			`\ufeff${declaration}`,
-			`<!--before-->${declaration}`,
-			`<!doctype html>${declaration}`,
-			`<?>${declaration}`,
-			`${declaration}${declaration}`,
-			`<body>${declaration}</body>`,
-			`<p>Before${declaration}After</p>`,
-			`<svg>${declaration}</svg>`,
-			`<template>${declaration}</template>`,
-			`<div hidden>${declaration}</div>`,
-			`<div aria-hidden="true">${declaration}</div>`,
-			`<div style="display:none">${declaration}</div>`,
+			` ${invalidDeclaration}`,
+			`\t${invalidDeclaration}`,
+			`\r\n${invalidDeclaration}`,
+			`\ufeff${invalidDeclaration}`,
+			`<!--before-->${invalidDeclaration}`,
+			`<!doctype html>${invalidDeclaration}`,
+			`<?>${invalidDeclaration}`,
+			`${declaration}${invalidDeclaration}`,
+			`<body>${invalidDeclaration}</body>`,
+			`<p>Before${invalidDeclaration}After</p>`,
+			`<svg>${invalidDeclaration}</svg>`,
+			`<template>${invalidDeclaration}</template>`,
+			`<div hidden>${invalidDeclaration}</div>`,
+			`<div aria-hidden="true">${invalidDeclaration}</div>`,
+			`<div style="display:none">${invalidDeclaration}</div>`,
 			`${declaration}<?target data?>`,
 			`${declaration}<![CDATA[ambiguous]]>`,
 		])

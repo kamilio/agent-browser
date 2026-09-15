@@ -1,0 +1,699 @@
+{
+  "dateUtc": "2026-09-15",
+  "status": "verified-inline-xml-recovery",
+  "overallBrowserGoal": "active",
+  "parent": "02e50f038b4aca9ba7a890ac38455631f830c557",
+  "productionSha256": "03c947f51593de7bf11f9875147df270b9faf411dd8504db6d942e62ad3fec6a",
+  "runtime": {
+    "passed": true,
+    "at": "2026-09-15T12:58:46.504Z",
+    "commit": "02e50f038b4aca9ba7a890ac38455631f830c557",
+    "baseCommit": "ae584d14d8450b048e060081bf55116ab0a51ead",
+    "candidate": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/multilingual-content-september15/validation/candidate-release02",
+    "label": "release02",
+    "hasOwnedOverlay": true,
+    "committedSourceFilesCompared": 1452,
+    "sourceFiles": 3100,
+    "compiledFiles": 2232,
+    "sourceManifestSha256": "2e68bab842463460b230a10222a922f7efbaed5cc2ffdee0e88a0f6f99c87a3c",
+    "compiledManifestSha256": "df2a521ef5bc3ec23738af805357dc1ff287c2d7f751b91f24a49d544b46cede",
+    "overlayManifestSha256": "ca59f39486d36409a78105252c2ffeb05c8cb3c056411bee2f06b00aed6d00ab",
+    "runtimeQualification": "Pinned prior build source/scripts/package/config match current HEAD; older archive docs/reports are not all current HEAD.",
+    "trackedDiffSha256": "e533b823acc828dbdaea173526bb2d322a4bdb0bbdec914aaebcb4b4d7886b74",
+    "indexDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "live": {
+    "navigationAttempts": 4,
+    "actualHttpRequests": 4,
+    "redirects": 0,
+    "retries": 0,
+    "capturesVerified": 4,
+    "outcomes": {
+      "failure": 1,
+      "extracted-unverified": 3
+    },
+    "results": [
+      {
+        "rank": 1,
+        "domain": "frame.work",
+        "url": "https://frame.work/desktop",
+        "startedAt": "2026-09-15T12:58:46.679Z",
+        "finishedAt": "2026-09-15T12:58:46.823561+00:00",
+        "elapsedSeconds": 0.2650646083056927,
+        "exitCode": 1,
+        "timedOut": false,
+        "reaped": true,
+        "signals": [],
+        "childPid": 2683617,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "attempts": 1,
+        "requestsObserved": 1,
+        "parseError": null,
+        "reportCount": 1,
+        "status": 200,
+        "finalUrl": "https://frame.work/desktop",
+        "outcome": "failure",
+        "contentSuccess": false,
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": null,
+          "diagnostic": null
+        },
+        "failure": {
+          "category": "unsupported",
+          "stage": "loader"
+        },
+        "contentType": [
+          "text/html; charset=utf-8"
+        ],
+        "title": null,
+        "decodedBytes": 211555,
+        "encodedBytes": 24475,
+        "markdownBytes": 0,
+        "receiptSha256": "8e0b64beaf9f5db0106e00f2520ab8451b368e951b677054efaaa01c1c6c830b",
+        "bodySha256": "7856c214365463ee326f0e2a70d6dc777a9bf0e65800f3407bb8db75ebc65557",
+        "guardExited": true,
+        "denied": [],
+        "credentialsObserved": false,
+        "onlyGet": true,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "directory": "001-frame.work",
+        "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "requestCloses": 1,
+        "socketCloses": 1,
+        "bodyVerified": true
+      },
+      {
+        "rank": 2,
+        "domain": "www.nvidia.com",
+        "url": "https://www.nvidia.com/en-us/products/workstations/dgx-spark/",
+        "startedAt": "2026-09-15T12:59:06.547Z",
+        "finishedAt": "2026-09-15T12:59:06.942920+00:00",
+        "elapsedSeconds": 0.5170346833765507,
+        "exitCode": 0,
+        "timedOut": false,
+        "reaped": true,
+        "signals": [],
+        "childPid": 2683893,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "attempts": 1,
+        "requestsObserved": 1,
+        "parseError": null,
+        "reportCount": 1,
+        "status": 200,
+        "finalUrl": "https://www.nvidia.com/en-us/products/workstations/dgx-spark/",
+        "outcome": "extracted-unverified",
+        "contentSuccess": null,
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": null,
+          "diagnostic": null
+        },
+        "failure": null,
+        "contentType": [
+          "text/html; charset=UTF-8"
+        ],
+        "title": "Personal AI Supercomputer Powered by Blackwell | NVIDIA DGX Spark",
+        "decodedBytes": 608385,
+        "encodedBytes": 80528,
+        "markdownBytes": 37845,
+        "receiptSha256": "324d93e96a6115bf4a6594b0d0344b4b3c08c80c23ca8a07a491bd6bad2ea480",
+        "bodySha256": "744bbb3d6ded91cc3b0d3667e7c356822c71a813450ade86db012064ba2fa3a8",
+        "guardExited": true,
+        "denied": [],
+        "credentialsObserved": false,
+        "onlyGet": true,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "directory": "002-www.nvidia.com",
+        "markdownSha256": "e89e33360daa6f49f18fe623b785944dddb6af568fa59a8516bdb14354b1f830",
+        "requestCloses": 1,
+        "socketCloses": 1,
+        "bodyVerified": true
+      },
+      {
+        "rank": 3,
+        "domain": "www.amd.com",
+        "url": "https://www.amd.com/en/products/processors/consumer/ryzen-ai.html",
+        "startedAt": "2026-09-15T12:59:09.096Z",
+        "finishedAt": "2026-09-15T12:59:09.542764+00:00",
+        "elapsedSeconds": 0.566786402836442,
+        "exitCode": 0,
+        "timedOut": false,
+        "reaped": true,
+        "signals": [],
+        "childPid": 2683924,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "attempts": 1,
+        "requestsObserved": 1,
+        "parseError": null,
+        "reportCount": 1,
+        "status": 200,
+        "finalUrl": "https://www.amd.com/en/products/processors/consumer/ryzen-ai.html",
+        "outcome": "extracted-unverified",
+        "contentSuccess": null,
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": null,
+          "diagnostic": null
+        },
+        "failure": null,
+        "contentType": [
+          "text/html"
+        ],
+        "title": "AMD Ryzen™ AI - Windows PCs with AI Built In",
+        "decodedBytes": 449532,
+        "encodedBytes": 42991,
+        "markdownBytes": 42340,
+        "receiptSha256": "f36487704fef4169753beb68662465632379e8a123c3c8c12a4f4a698cf3991d",
+        "bodySha256": "93cd5805518369e4df2a3d144ba8aefeb6be978461acb86b673de9172b53f12d",
+        "guardExited": true,
+        "denied": [],
+        "credentialsObserved": false,
+        "onlyGet": true,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "directory": "003-www.amd.com",
+        "markdownSha256": "6230f4534b7b64dd462660161ed5add72bc6d2569cd4c89cb2b64ed7c66ab146",
+        "requestCloses": 1,
+        "socketCloses": 1,
+        "bodyVerified": true
+      },
+      {
+        "rank": 4,
+        "domain": "www.intel.com",
+        "url": "https://www.intel.com/content/www/us/en/products/details/processors/core-ultra.html",
+        "startedAt": "2026-09-15T12:59:11.698Z",
+        "finishedAt": "2026-09-15T12:59:12.142011+00:00",
+        "elapsedSeconds": 0.5661861896514893,
+        "exitCode": 0,
+        "timedOut": false,
+        "reaped": true,
+        "signals": [],
+        "childPid": 2683952,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "attempts": 1,
+        "requestsObserved": 1,
+        "parseError": null,
+        "reportCount": 1,
+        "status": 200,
+        "finalUrl": "https://www.intel.com/content/www/us/en/products/details/processors/core-ultra.html",
+        "outcome": "extracted-unverified",
+        "contentSuccess": null,
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": null,
+          "diagnostic": null
+        },
+        "failure": null,
+        "contentType": [
+          "text/html;charset=utf-8"
+        ],
+        "title": "New Intel® Core™ Ultra Series 3 Processors",
+        "decodedBytes": 281689,
+        "encodedBytes": 32630,
+        "markdownBytes": 39856,
+        "receiptSha256": "cb546bad1b24c5822a1a134ba833b9745a0c2ed4618eeaa0dba6a80f2ac2134e",
+        "bodySha256": "b9d158ed6c3b00dabb470960021031f72eb763d04366f8c3c0ea7c0cab980fd4",
+        "guardExited": true,
+        "denied": [],
+        "credentialsObserved": false,
+        "onlyGet": true,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "directory": "004-www.intel.com",
+        "markdownSha256": "15aeda527539664ba148652edfc9b1efb4f6a49efbb5ab9d6516d4a2cc628fdc",
+        "requestCloses": 1,
+        "socketCloses": 1,
+        "bodyVerified": true
+      }
+    ]
+  },
+  "fix": {
+    "description": "Omit the existing bounded XML declaration grammar at any HTML token position using token-relative bounds",
+    "exampleOffset": 195463,
+    "exampleDeclarationUnits": 43,
+    "maximumNormalizedDeclarationUnits": 256,
+    "decodingChanged": false,
+    "xmlParsingEnabled": false,
+    "resourceLimitsChanged": false,
+    "scopeTypo": "Review scope says 40 units; measured 43-unit correction is retained in review"
+  },
+  "validation": {
+    "baselineTests": 1790,
+    "baselineFiles": 22,
+    "candidateTests": 1849,
+    "candidateFiles": 23,
+    "additionalTests": 59,
+    "unchangedBaselineCases": 1783,
+    "intentionallyUpdatedCases": 7,
+    "newFailures": 0,
+    "finalLabel": "release02",
+    "finalExitCodes": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0,
+      "native": 0
+    },
+    "preservedFirstCandidate": {
+      "passedTests": 1847,
+      "failedTests": 2,
+      "exitCodes": {
+        "build": 0,
+        "types": 2,
+        "format": 0,
+        "lint": 0,
+        "native": 1
+      },
+      "qualification": "New-test type/accounting/Markdown-escaping corrections only; production unchanged"
+    }
+  },
+  "savedResponseProof": {
+    "uniqueReceipts": 22,
+    "policyCasesPerBuild": 26,
+    "inMemoryNavigations": 52,
+    "changedPolicyCases": 3,
+    "unchangedPolicyCases": 23,
+    "originalFailedReceiptReplayDenials": 14,
+    "successfulOriginalReplays": 30,
+    "runtimeHttpRequests": 0,
+    "childrenAndGroupsClosed": 2,
+    "comparisons": [
+      {
+        "key": "office",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 52523
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 52523,
+          "sha256": "a3ab6476dd2639b37ccc114be74aff8e162b20a730d0ac4323c65af4fa695cdc"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "nasa",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 48247
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 48247,
+          "sha256": "985c4ca76a5aac45f348eaf683e8ee878c1274f78756b344ef8f3f38f81eab52"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "webdev",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 34250
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 34250,
+          "sha256": "c593142eca5d0a3b48e6b37b3f6a403d5f2a6915f951b15c68127640e5c594be"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "pytorch",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 18681
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 18681,
+          "sha256": "483ab0686be927fcbc11245fe6bf3e76e12c1a12a883fcdb2a689b2e91844154"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": false
+      },
+      {
+        "key": "govuk",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 9837
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 9837,
+          "sha256": "e86d9327058a7aed4cf28b8c9fab86a5d578d71ee3478c55397a4dc4692a5ae2"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "julia",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 107037
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 107037,
+          "sha256": "eb8222b581fa9386f8c977d4ac49b83f407b4e9aeabc5f3d175c9e821772ac18"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "numpy",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 62932
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 62932,
+          "sha256": "f0697c27db64f012eb9fec2ca15b0db31a523aa93a8f20c4884baad7ff5edb4a"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "rfc",
+        "changed": false,
+        "before": {
+          "outcome": "failure",
+          "bytes": 0
+        },
+        "after": {
+          "outcome": "failure",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": false
+      },
+      {
+        "key": "apple-html",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 285
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 285,
+          "sha256": "72a4e83ff515641f5f48a3c97940ee69648d955e01606392ba84268c8e203f83"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "apple-markdown",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 12844
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 12844,
+          "sha256": "b6265f9f20ead6d62e5887a1e4f233a4139e6a15fc8cf146b8062af28c7eb40f"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": false
+      },
+      {
+        "key": "huggingface.co",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 9863
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 9863,
+          "sha256": "a9230a2883dec7e1857e6049901ba9cbda415ee887e29bee47e89d888a4334a4"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": false
+      },
+      {
+        "key": "mlcommons.org",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 16986
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 16986,
+          "sha256": "f52ba561cc4645bd8ebfa485eb1c7bfaa5c011c9ec7144da1038558f3a57aee4"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "github.com",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 51421
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 51421,
+          "sha256": "b75255f78b8b3601ef32ca81931c38c68acd559df8d10bfb8389b062ad3955ce"
+        },
+        "originalFailedReceiptReplayDenied": true,
+        "originalReceiptReplayMatches": false
+      },
+      {
+        "key": "machinelearning.apple.com",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 5498
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 5498,
+          "sha256": "08d788146469fc7d078afdafe7235e05e1049bdc84207fba4dcccfc1caffcb75"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "www.aozora.gr.jp",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 127443
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 127443,
+          "sha256": "cf3f283e20303ef71c98d5202c7bc6ba220261e159ffb5c34a5dae4875a8532e"
+        },
+        "originalFailedReceiptReplayDenied": true,
+        "originalReceiptReplayMatches": false
+      },
+      {
+        "key": "ja.wikipedia.org",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 18426
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 18426,
+          "sha256": "0d3b41df44c235ee6745245e0a79d8c86b4ef4c2af23d5eaed867b1d4f2fd1f6"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "www.w3.org",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 33538
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 33538,
+          "sha256": "b9ea449f6d699da2f42e9d4d67046748316359c493901d53f7d6008c30799c11"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "developer.mozilla.org",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 44962
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 44962,
+          "sha256": "20deaf33c28f24387d43cbe394bcfba728e0cd79d277a59baa2e7eda12d74304"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "aozora-default",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 127443
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 127443,
+          "sha256": "cf3f283e20303ef71c98d5202c7bc6ba220261e159ffb5c34a5dae4875a8532e"
+        },
+        "originalFailedReceiptReplayDenied": true,
+        "originalReceiptReplayMatches": false
+      },
+      {
+        "key": "aozora-source-hidden",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 127443
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 127443,
+          "sha256": "cf3f283e20303ef71c98d5202c7bc6ba220261e159ffb5c34a5dae4875a8532e"
+        },
+        "originalFailedReceiptReplayDenied": true,
+        "originalReceiptReplayMatches": false
+      },
+      {
+        "key": "hardware-frame.work",
+        "changed": true,
+        "before": {
+          "outcome": "failure",
+          "bytes": 0
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 18778,
+          "sha256": "d118045ea2f0a9833a13eec6285d532aba6de1db6f3bc0843212d23bc7f1a2a0"
+        },
+        "originalFailedReceiptReplayDenied": true,
+        "originalReceiptReplayMatches": false
+      },
+      {
+        "key": "framework-default",
+        "changed": true,
+        "before": {
+          "outcome": "failure",
+          "bytes": 0
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 19694,
+          "sha256": "05eb90262b3a91f304890b2ae35115e37d715d9afe6428607e534790f9bb0341"
+        },
+        "originalFailedReceiptReplayDenied": true,
+        "originalReceiptReplayMatches": false
+      },
+      {
+        "key": "framework-hidden",
+        "changed": true,
+        "before": {
+          "outcome": "failure",
+          "bytes": 0
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 18778,
+          "sha256": "d118045ea2f0a9833a13eec6285d532aba6de1db6f3bc0843212d23bc7f1a2a0"
+        },
+        "originalFailedReceiptReplayDenied": true,
+        "originalReceiptReplayMatches": false
+      },
+      {
+        "key": "hardware-www.nvidia.com",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 37845
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 37845,
+          "sha256": "e89e33360daa6f49f18fe623b785944dddb6af568fa59a8516bdb14354b1f830"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "hardware-www.amd.com",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 42340
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 42340,
+          "sha256": "6230f4534b7b64dd462660161ed5add72bc6d2569cd4c89cb2b64ed7c66ab146"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "hardware-www.intel.com",
+        "changed": false,
+        "before": {
+          "outcome": "extracted-unverified",
+          "bytes": 39856
+        },
+        "after": {
+          "outcome": "extracted-unverified",
+          "bytes": 39856,
+          "sha256": "15aeda527539664ba148652edfc9b1efb4f6a49efbb5ab9d6516d4a2cc628fdc"
+        },
+        "originalFailedReceiptReplayDenied": false,
+        "originalReceiptReplayMatches": true
+      }
+    ]
+  },
+  "otherOfflineDiagnostics": {
+    "childrenAndGroups": 2,
+    "actualHttpRequests": 0,
+    "scope": "Saved Framework all-policy sanitizer diagnosis and two owned new-test expectation fixtures"
+  },
+  "limitations": [
+    "Framework recovery is from exact saved-response substitution, not a live candidate retry or rewritten original success",
+    "Nonempty Markdown is not complete site functionality; no script, account or purchasing interaction",
+    "The 256-unit bound applies to the admission matcher, not the preceding tokenizer scan",
+    "AMD embedded data-json specification values are present in source but remain absent from Markdown",
+    "Footnote/table associations, teaser grouping and duplicate/entity-encoded boilerplate remain incomplete",
+    "Manufacturer specifications are not measured LLM performance or purchase/ranking evidence",
+    "SafeJS failed contract and provider/passkey, interactive/service/TTY and broader research gates remain open"
+  ],
+  "reviews": {
+    "CONTENT-REVIEW.md": "f6b55048bd789c25021e331d757532f88920401aa7320929284b18f4a96970ee",
+    "INLINE-XML-REVIEW.md": "8b34abb0323b95e7c496acfbf179ef1ae4ae6651ab28e8b553cc34dd769e023c"
+  },
+  "pushed": false
+}

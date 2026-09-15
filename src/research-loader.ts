@@ -245,12 +245,11 @@ export function sanitizeResearchHtml(
 			issue === "bogus-declaration" &&
 			tokenizer.position === tokenStart + 3 &&
 			normalizedSource.startsWith("<?>", tokenStart);
-		const leadingXmlDeclaration =
+		const boundedXmlDeclaration =
 			issue === "bogus-declaration" &&
-			tokenStart === 0 &&
-			tokenizer.position <= 256 &&
+			tokenizer.position - tokenStart <= 256 &&
 			/^<\?xml[ \t\n]+version[ \t\n]*=[ \t\n]*(["'])1\.[01]\1(?:[ \t\n]+encoding[ \t\n]*=[ \t\n]*(["'])[A-Za-z][A-Za-z0-9._-]*\2)?(?:[ \t\n]+standalone[ \t\n]*=[ \t\n]*(["'])(?:yes|no)\3)?[ \t\n]*\?>$/.test(
-				normalizedSource.slice(0, tokenizer.position),
+				normalizedSource.slice(tokenStart, tokenizer.position),
 			);
 		if (
 			issue.startsWith("unterminated-") ||
@@ -258,7 +257,7 @@ export function sanitizeResearchHtml(
 			issue === "cdata-in-html-content" ||
 			(issue === "bogus-declaration" &&
 				!emptyProcessingMarker &&
-				!leadingXmlDeclaration)
+				!boundedXmlDeclaration)
 		)
 			throw new AgentBrowserError("unsupported", "Malformed reader input");
 	});
