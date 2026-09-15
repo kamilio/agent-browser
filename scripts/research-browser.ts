@@ -1205,7 +1205,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1] [--capture-body] [--format markdown|json] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies require reader; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--capture-body] [--format markdown|json] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies require reader; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});

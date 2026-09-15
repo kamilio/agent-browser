@@ -25,10 +25,12 @@ import {
 	researchLongDocumentAdmission,
 	validateResearchDocumentProfile,
 } from "./research-admission.js";
+import { sourceInlineDisplayHidden } from "./research-inline-visibility.js";
 import {
 	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
 	type ResearchReaderVisibilityPolicy,
+	researchReaderHiddenContentSemantics,
 	researchReaderProfile,
 	setResearchReaderInfo,
 	validateResearchReaderRawPolicy,
@@ -218,7 +220,9 @@ export function sanitizeResearchHtml(
 			? {
 					visibilityPolicy: selectedVisibilityPolicy,
 					sourceHiddenSubtrees: 0,
-					hiddenContentSemantics: "source-attributes" as const,
+					hiddenContentSemantics: researchReaderHiddenContentSemantics(
+						selectedVisibilityPolicy,
+					),
 				}
 			: {}),
 		sourceCodeUnits: source.length,
@@ -388,7 +392,9 @@ export function sanitizeResearchHtml(
 			selectedVisibilityPolicy !== undefined &&
 			token.kind === "start" &&
 			(Object.hasOwn(token.attributes, "hidden") ||
-				token.attributes["aria-hidden"]?.toLowerCase() === "true");
+				token.attributes["aria-hidden"]?.toLowerCase() === "true" ||
+				(selectedVisibilityPolicy === "source-hidden-inline-v1" &&
+					sourceInlineDisplayHidden(token.attributes.style)));
 		const description =
 			token.kind === "start" &&
 			name === "meta" &&

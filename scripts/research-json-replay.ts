@@ -23,6 +23,7 @@ import {
 	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
 	type ResearchReaderVisibilityPolicy,
+	researchReaderHiddenContentSemantics,
 	researchReaderInfo,
 	validateResearchReaderRawPolicy,
 	validateResearchReaderVisibilityPolicy,
@@ -414,7 +415,12 @@ function replayVisibilityPolicy(
 			invalid();
 		policy = selected;
 	}
-	if (readerRecord?.hiddenContentSemantics === "source-attributes" && !policy)
+	if (
+		(readerRecord?.hiddenContentSemantics === "source-attributes" ||
+			readerRecord?.hiddenContentSemantics ===
+				"source-attributes-and-inline-display") &&
+		!policy
+	)
 		invalid();
 	if (
 		!policy &&
@@ -665,7 +671,9 @@ function extractValidatedReplayJson<
 			visibilityPolicy !== undefined &&
 			originalReader &&
 			(originalReader.hiddenContentSemantics !==
-				(mime === "text/html" ? "source-attributes" : false) ||
+				(mime === "text/html"
+					? researchReaderHiddenContentSemantics(visibilityPolicy)
+					: false) ||
 				!Number.isSafeInteger(originalReader.sourceHiddenSubtrees) ||
 				(originalReader.sourceHiddenSubtrees as number) < 0 ||
 				(mime !== "text/html" && originalReader.sourceHiddenSubtrees !== 0))

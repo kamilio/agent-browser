@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: conservative inline source filtering
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Add explicit source-hidden-inline-v1, retaining default and attribute-only v1.
+Recognize bounded, simple inline display:none with declaration order/importance;
+retain ambiguous CSS, variables, comments, escapes and all shorthands rather than
+guessing. Do not compute styles, execute runtime code, infer prices or raise limits.
+Preserve the same-budget unfiltered barrier/operation checks, source accounting,
+ownership, raw-policy composition and explicit replay/recovery provenance.
+Nine saved controls retain exact default/v1 output, reports and normalized DOM/
+discovery. Office's two CSS-hidden configuration blocks disappear; selected
+Markdown changes 41,839→26,082 bytes and nodes 1,439→1,403 versus v1. Microsoft
+price placeholders remain. In-memory Office/PayPal policy captures match API
+replay; Office's actual offline CLI also matches. Four guarded children close
+cleanly with unchanged pins and zero HTTP requests; these are not fresh live reads.
+Recheck all 100 historical top-100 receipts and 90 bodies without rewriting results.
+All 1,525 selected native tests pass (189 new; all 1,336 baseline statuses match),
+plus build/format/lint. The unchanged snapshot fixture TS2345 remains in broad
+types; separate 24-file strict types pass while it stays in native execution.
+Three initial test-expectation failures remain recorded; independent static
+review finds no actionable production issue. See READER-INLINE-VISIBILITY.md.
+No push or full native/runtime/interaction/credential/passkey/service acceptance
+is claimed. Next: useful-content recovery, large-document and JS-shell handling;
+computed visibility and all wider browser gates remain open.
+
 ### September 15: explicit source-hidden filtering and six more pages
 
 **PROGRESS; overall browser goal remains ACTIVE.**

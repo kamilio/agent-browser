@@ -1089,9 +1089,13 @@ export function validateResearchOutputLimitSectionAdmission(
 		reader.styling !== false ||
 		(reader.hiddenContentSemantics !== false &&
 			!(
-				reader.hiddenContentSemantics === "source-attributes" &&
-				(reader.visibilityPolicy ?? report.readerVisibilityPolicy) ===
-					"source-hidden-v1"
+				(reader.hiddenContentSemantics === "source-attributes" &&
+					(reader.visibilityPolicy ?? report.readerVisibilityPolicy) ===
+						"source-hidden-v1") ||
+				(reader.hiddenContentSemantics ===
+					"source-attributes-and-inline-display" &&
+					(reader.visibilityPolicy ?? report.readerVisibilityPolicy) ===
+						"source-hidden-inline-v1")
 			)) ||
 		navigation.kind !== "document" ||
 		!boundedString(navigation.tabId, 4096) ||
