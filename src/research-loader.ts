@@ -1,3 +1,4 @@
+import { sourceAlternateLink } from "./document-alternates.js";
 import {
 	ariaTableSourceRole,
 	isAriaTableSourceAttribute,
@@ -395,6 +396,19 @@ export function sanitizeResearchHtml(
 				token.attributes["aria-hidden"]?.toLowerCase() === "true" ||
 				(selectedVisibilityPolicy === "source-hidden-inline-v1" &&
 					sourceInlineDisplayHidden(token.attributes.style)));
+		const alternate =
+			token.kind === "start" &&
+			name === "link" &&
+			open.every((ancestor) => ancestor === "html" || ancestor === "head")
+				? sourceAlternateLink(token.attributes)
+				: undefined;
+		if (alternate && !sourceHidden) {
+			emit(
+				`<link rel="alternate" type="${alternate.type}" href="${escapeHtml(alternate.href)}">`,
+			);
+			report.ignoredAttributes += Object.keys(token.attributes).length - 3;
+			continue;
+		}
 		const description =
 			token.kind === "start" &&
 			name === "meta" &&

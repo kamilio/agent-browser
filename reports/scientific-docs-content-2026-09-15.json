@@ -1,0 +1,375 @@
+{
+  "passed": true,
+  "qualification": "Scoped native validation, public content observations and offline recovery; not full browser or interactive acceptance.",
+  "dateUtc": "2026-09-15",
+  "baseCommit": "dda1af413d51ab66ecebc189f036b308af48a79e",
+  "validation": {
+    "baselinePassed": 1173,
+    "baselineFiles": 14,
+    "candidatePassed": 1369,
+    "candidateFiles": 16,
+    "newTests": 196,
+    "newFailures": 0,
+    "baselineOutcomesUnchanged": true,
+    "duplicateNamesPreserved": true,
+    "selectedFiles": [
+      "src/document-descriptions.test.ts",
+      "src/research-loader.test.ts",
+      "src/extraction.test.ts",
+      "src/document-url.test.ts",
+      "src/research-workflow.test.ts",
+      "src/research-json-replay.test.ts",
+      "src/research-admission-evidence.test.ts",
+      "src/research-reader-visibility.test.ts",
+      "src/research-visibility-policy.test.ts",
+      "src/research-inline-visibility.test.ts",
+      "src/research-inline-visibility-policy.test.ts",
+      "src/research-noscript-challenge.test.ts",
+      "src/research-link-source-label.test.ts",
+      "src/document-markdown-links.test.ts",
+      "src/document-alternates.test.ts",
+      "src/research-alternates.test.ts"
+    ],
+    "checks": {
+      "baseline": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 0
+      },
+      "release03": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 0
+      }
+    },
+    "fullNativeRelease": false
+  },
+  "priorValidation": {
+    "release01": {
+      "passed": 1334,
+      "failed": 33,
+      "cause": "New shared Markdown expectations omitted existing escaping and link destination syntax."
+    },
+    "release02": {
+      "passed": 1367,
+      "failed": 0,
+      "qualification": "Before final two absolute serialized-length regression cases."
+    }
+  },
+  "navigationAttempts": 5,
+  "actualHttpRequests": 5,
+  "retries": 0,
+  "redirects": 0,
+  "capturesVerified": 5,
+  "allLiveCleanupVerified": true,
+  "liveBuildQualification": "Pinned prior build source/scripts/package/config match current HEAD; older archive docs/reports are not all current HEAD.",
+  "advertisedFollowupVerified": true,
+  "pages": [
+    {
+      "url": "https://docs.julialang.org/en/v1/manual/performance-tips/",
+      "status": 200,
+      "outcome": "extracted-unverified",
+      "failure": null,
+      "markdownBytes": 107037,
+      "decodedBytes": 128936,
+      "requests": 1,
+      "receiptSha256": "39caed41a1041d7412f147204f85ee00937d3923cf592c560ddb34cd32d98e8b",
+      "bodySha256": "f386342513621cb120a16f0ed962a19fe429992a12c4febfc6e4741f0f34bc81"
+    },
+    {
+      "url": "https://numpy.org/doc/stable/user/absolute_beginners.html",
+      "status": 200,
+      "outcome": "extracted-unverified",
+      "failure": null,
+      "markdownBytes": 62932,
+      "decodedBytes": 184737,
+      "requests": 1,
+      "receiptSha256": "2d720d1284effd86021aeae58ad439a4c359893cbc78ba9fae3f09cb13ecdce7",
+      "bodySha256": "4cdee60af5a7f0f9e5850cde7f7f8850a86e92a09a5e796407a53f8a189b049f"
+    },
+    {
+      "url": "https://www.rfc-editor.org/rfc/rfc9110.html",
+      "status": 200,
+      "outcome": "failure",
+      "failure": {
+        "category": "resource-limit",
+        "stage": "extraction",
+        "resourceLimit": {
+          "kind": "extraction.output",
+          "unit": "bytes",
+          "limit": 256000,
+          "observed": 256604
+        }
+      },
+      "markdownBytes": 0,
+      "decodedBytes": 1187554,
+      "requests": 1,
+      "receiptSha256": "1500c9826255bea97cb6b089851feca38a517bf5a5e89050f544c7c6a5e4c8ec",
+      "bodySha256": "d431760660ea44e130f6e919dab216df2d0b3a490567a98089267523368fe1e5"
+    },
+    {
+      "url": "https://developer.apple.com/documentation/metal",
+      "status": 200,
+      "outcome": "extracted-unverified",
+      "failure": null,
+      "markdownBytes": 285,
+      "decodedBytes": 18208,
+      "requests": 1,
+      "receiptSha256": "21150e7cffc64ec8392062e59423090ab448fe939e0ec024df7b74969af4c40a",
+      "bodySha256": "7a961caccaf901512f425a91b66c6c6311a1631a68df4c0020c9a25de6bdaf99"
+    },
+    {
+      "url": "https://developer.apple.com/documentation/metal.md",
+      "status": 200,
+      "outcome": "extracted-unverified",
+      "failure": null,
+      "markdownBytes": 12844,
+      "decodedBytes": 12835,
+      "requests": 1,
+      "receiptSha256": "1ca46700e1b3083cff6c08d08caed5132d0f27567631ce62dddabec8a08f7ce6",
+      "bodySha256": "eff17062529eadf6906eff8c8e4af4d89614e42cabd89a08dc89969283ecce1f"
+    }
+  ],
+  "sourceComparison": {
+    "savedSources": 10,
+    "visibleMarkdownAndOutcomesUnchanged": true,
+    "otherReaderReportsUnchanged": 9,
+    "appleAlternates": {
+      "kind": "html-alternate-representations-v1",
+      "partial": true,
+      "truncated": false,
+      "entries": [
+        {
+          "type": "text/markdown",
+          "url": "https://developer.apple.com/documentation/metal.md"
+        }
+      ]
+    },
+    "appleReaderOutputCodeUnits": [
+      927,
+      1028
+    ],
+    "appleOmittedTokens": [
+      192,
+      191
+    ],
+    "appleOmittedLinks": [
+      16,
+      15
+    ],
+    "originalAppleCliReplayMatches": true,
+    "originalReceiptsAndBodiesVerified": true,
+    "sources": [
+      {
+        "key": "office",
+        "receiptSha256": "7a992432bd67439974aca1b54248190374f6fab02bd7ff9761e272f4041ae9d4",
+        "bodySha256": "6db8e6a8e5aae7bafd1507d29c73b3737b1e4b3442fd92b925983542b196df6d",
+        "markdownBytes": 52523,
+        "markdownSha256": "a3ab6476dd2639b37ccc114be74aff8e162b20a730d0ac4323c65af4fa695cdc",
+        "outcome": "extracted-unverified",
+        "sourceAlternates": null
+      },
+      {
+        "key": "nasa",
+        "receiptSha256": "8abe6a478a6ecd0166f8fb55a7c2ab4179eea07ffc7196e6c402265a550afc66",
+        "bodySha256": "9bf136b480c92b641b81700acadfdd0263a912e02f296591bccf0fbacc6507b7",
+        "markdownBytes": 48247,
+        "markdownSha256": "985c4ca76a5aac45f348eaf683e8ee878c1274f78756b344ef8f3f38f81eab52",
+        "outcome": "extracted-unverified",
+        "sourceAlternates": null
+      },
+      {
+        "key": "webdev",
+        "receiptSha256": "fbc78bf0d40eac35e8177e9e59f5cf0f5133c6223be44a372b68409f36d68b45",
+        "bodySha256": "f5867f499e77b64d54049a83a85595bae9441c437ad7689c9d556fd65ec9732f",
+        "markdownBytes": 34250,
+        "markdownSha256": "c593142eca5d0a3b48e6b37b3f6a403d5f2a6915f951b15c68127640e5c594be",
+        "outcome": "extracted-unverified",
+        "sourceAlternates": null
+      },
+      {
+        "key": "pytorch",
+        "receiptSha256": "1343a7a26b3e92755632f49527aaf7cf10094ec587472f933f071313d3432be2",
+        "bodySha256": "8044c90a6489d903273627650f1b0612cd27ef4e530269270b3b62c5adfda175",
+        "markdownBytes": 18681,
+        "markdownSha256": "483ab0686be927fcbc11245fe6bf3e76e12c1a12a883fcdb2a689b2e91844154",
+        "outcome": "extracted-unverified",
+        "sourceAlternates": null
+      },
+      {
+        "key": "govuk",
+        "receiptSha256": "7fee2a0f1f2885a32ebba2e26067f743a0e5e4e34e95b64b80e6317282a0285c",
+        "bodySha256": "642c6cb8515a61967a093ffa6a9d13ddc227f1360a469eaa4189dbae615fe733",
+        "markdownBytes": 9837,
+        "markdownSha256": "e86d9327058a7aed4cf28b8c9fab86a5d578d71ee3478c55397a4dc4692a5ae2",
+        "outcome": "extracted-unverified",
+        "sourceAlternates": null
+      },
+      {
+        "key": "julia",
+        "receiptSha256": "39caed41a1041d7412f147204f85ee00937d3923cf592c560ddb34cd32d98e8b",
+        "bodySha256": "f386342513621cb120a16f0ed962a19fe429992a12c4febfc6e4741f0f34bc81",
+        "markdownBytes": 107037,
+        "markdownSha256": "eb8222b581fa9386f8c977d4ac49b83f407b4e9aeabc5f3d175c9e821772ac18",
+        "outcome": "extracted-unverified",
+        "sourceAlternates": null
+      },
+      {
+        "key": "numpy",
+        "receiptSha256": "2d720d1284effd86021aeae58ad439a4c359893cbc78ba9fae3f09cb13ecdce7",
+        "bodySha256": "4cdee60af5a7f0f9e5850cde7f7f8850a86e92a09a5e796407a53f8a189b049f",
+        "markdownBytes": 62932,
+        "markdownSha256": "f0697c27db64f012eb9fec2ca15b0db31a523aa93a8f20c4884baad7ff5edb4a",
+        "outcome": "extracted-unverified",
+        "sourceAlternates": null
+      },
+      {
+        "key": "rfc",
+        "receiptSha256": "1500c9826255bea97cb6b089851feca38a517bf5a5e89050f544c7c6a5e4c8ec",
+        "bodySha256": "d431760660ea44e130f6e919dab216df2d0b3a490567a98089267523368fe1e5",
+        "markdownBytes": 0,
+        "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outcome": "failure",
+        "sourceAlternates": null
+      },
+      {
+        "key": "apple-html",
+        "receiptSha256": "21150e7cffc64ec8392062e59423090ab448fe939e0ec024df7b74969af4c40a",
+        "bodySha256": "7a961caccaf901512f425a91b66c6c6311a1631a68df4c0020c9a25de6bdaf99",
+        "markdownBytes": 285,
+        "markdownSha256": "72a4e83ff515641f5f48a3c97940ee69648d955e01606392ba84268c8e203f83",
+        "outcome": "extracted-unverified",
+        "sourceAlternates": {
+          "kind": "html-alternate-representations-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "type": "text/markdown",
+              "url": "https://developer.apple.com/documentation/metal.md"
+            }
+          ]
+        }
+      },
+      {
+        "key": "apple-markdown",
+        "receiptSha256": "1ca46700e1b3083cff6c08d08caed5132d0f27567631ce62dddabec8a08f7ce6",
+        "bodySha256": "eff17062529eadf6906eff8c8e4af4d89614e42cabd89a08dc89969283ecce1f",
+        "markdownBytes": 12844,
+        "markdownSha256": "b6265f9f20ead6d62e5887a1e4f233a4139e6a15fc8cf146b8062af28c7eb40f",
+        "outcome": "extracted-unverified",
+        "sourceAlternates": null
+      }
+    ]
+  },
+  "rfcRecovery": {
+    "originalFailure": {
+      "category": "resource-limit",
+      "stage": "extraction",
+      "resourceLimit": {
+        "kind": "extraction.output",
+        "unit": "bytes",
+        "limit": 256000,
+        "observed": 256604
+      }
+    },
+    "decodedBytes": 1187554,
+    "headingEntries": 256,
+    "headingsTruncated": true,
+    "sections": [
+      {
+        "title": "9.2.2. Idempotent Methods",
+        "selector": "html:root:nth-child(1) > body:nth-child(2) > div:nth-child(18) > section:nth-child(1) > div:nth-child(3) > section:nth-child(1) > div:nth-child(3) > section:nth-child(1) > h4:nth-child(1)",
+        "markdownBytes": 3035,
+        "networkRequests": 0
+      },
+      {
+        "title": "10.2.3. Retry-After",
+        "selector": "html:root:nth-child(1) > body:nth-child(2) > div:nth-child(19) > section:nth-child(1) > div:nth-child(3) > section:nth-child(1) > div:nth-child(5) > section:nth-child(1) > h4:nth-child(1)",
+        "markdownBytes": 1719,
+        "networkRequests": 0
+      }
+    ],
+    "wholeDocumentRecovered": false
+  },
+  "offlineProofChildren": 8,
+  "offlineHttpRequests": 0,
+  "executions": {
+    "offline/headings": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 1.6325494349002838
+    },
+    "offline/section1": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 1.6900946665555239
+    },
+    "offline/section2": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 1.7372158244252205
+    },
+    "proof/baseline": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 3.4007451720535755
+    },
+    "proof/release02": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 3.406747780740261
+    },
+    "proof/release02-cli": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 0.2999687399715185
+    },
+    "proof/release03": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 3.4043167997151613
+    },
+    "proof/release03-cli": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 0.3494882769882679
+    }
+  },
+  "remainingLimitations": [
+    "Alternatives are hints, not verified availability or authorization; no auto-fetch",
+    "Original Apple HTML remains a JavaScript notice; Markdown remains literal source",
+    "RFC whole-document output cap remains; only explicit sections recovered",
+    "No measured speedup, block-rate reduction or CAPTCHA bypass",
+    "SafeJS/provider/passkey/device/TTY, full release and broader research gates remain open"
+  ],
+  "evidenceLane": "node_modules/.cache/native-validation/scientific-docs-content-september15/"
+}

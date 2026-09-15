@@ -6,6 +6,41 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: scientific documentation and advertised Markdown alternatives
+
+**PROGRESS; overall browser goal remains ACTIVE.** Four public native probes plus
+one separately scoped author-advertised Apple Markdown navigation make five GETs,
+no retries or redirects, with five verified captures and closed child/transports.
+Julia and NumPy provide substantial documentation; Apple's HTML remains a 285-byte
+JavaScript notice, while its advertised Markdown URL yields 12844 bytes of literal
+documentation. RFC 9110 retains its full-output failure (256604 observed bytes /
+256000 limit); offline replay finds 256 headings, truncated, and recovers observed
+Idempotent Methods / Retry-After sections (3035 / 1719 bytes), no new requests.
+
+Expose bounded sourceAlternates metadata from head rel=alternate text/markdown
+links, preserving eligible links through the semantic reader. No body injection,
+automatic fetching, MIME retagging or inferred authorization. Limit entries/head
+scan/URLs; reject unsafe syntax and overlong absolute serialization before reader
+retention, with final actual-base validation. Keep visibility and runtime defaults.
+
+Clean baseline: 1173 passing native cases in 14 explicit files. Final candidate:
+1369 in 16 files, 196 new, baseline outcomes unchanged; build/types/format/lint pass.
+Review identified two retention/filtering defects, both corrected and re-reviewed.
+Release01's 33 failures were new shared Markdown expectation errors, retained as
+evidence; release02 passed 1367 before the final two review regressions were added.
+Ten saved-source comparisons preserve visible Markdown and original failures.
+Apple HTML gains its authored alternate URL; reader output units change 927 to
+1028 and omitted link count 16 to 15. Actual offline CLI replay reproduces the
+metadata from the unchanged original receipt. Eight offline proof child groups
+(including intermediate release02 checks) close, with zero HTTP requests.
+
+Next: continue diverse content checks, especially large-page recovery and
+JavaScript-only shells; measure performance rather than inferring speedups.
+Source alternatives are hints, not verified availability or access permission.
+Runtime/SafeJS activation, providers/passkeys/devices/TTY, full-release and the
+hardware/benchmark/Astra/Poe research gates remain open. Details:
+SOURCE-ALTERNATES.md and `reports/scientific-docs-content-2026-09-15.md`.
+
 ### September 15: saved-page visibility and noscript challenge fallback
 
 **PROGRESS; overall browser goal remains ACTIVE.** Compare 17 immutable public

@@ -2,6 +2,10 @@ import {
 	type AriaTableSourceMetadata,
 	extractAriaTableSource,
 } from "./aria-table-source.js";
+import {
+	type DocumentAlternates,
+	documentAlternates,
+} from "./document-alternates.js";
 import { documentTitle } from "./document-title.js";
 import {
 	type DocumentDescriptions,
@@ -164,6 +168,7 @@ interface ExtractionMetadata {
 	tableRows?: true;
 	reader?: Readonly<ResearchReaderReport>;
 	sourceDescriptions?: DocumentDescriptions;
+	sourceAlternates?: DocumentAlternates;
 	sourceMarkdown?: MarkdownSourceOutline;
 	sectionSelection?: Readonly<HeadingSectionMetadata>;
 	textSelection?: {
@@ -1118,6 +1123,7 @@ export function extractDocument(
 	safeUrl.password = "";
 	const reader = researchReaderInfo(tree);
 	const descriptions = documentDescriptions(tree);
+	const alternates = documentAlternates(tree);
 	const textInfo = textDocumentInfo(tree);
 	const markdownSource =
 		textInfo?.mime === "text/markdown"
@@ -1139,6 +1145,7 @@ export function extractDocument(
 		...(options.tableRows === true ? { tableRows: true as const } : {}),
 		...(reader ? { reader } : {}),
 		...(descriptions ? { sourceDescriptions: descriptions } : {}),
+		...(alternates ? { sourceAlternates: alternates } : {}),
 		...(sourceMarkdown?.entries.length ? { sourceMarkdown } : {}),
 		...(selection ? { textSelection: selection.metadata } : {}),
 		...(section ? { sectionSelection: section.metadata } : {}),
