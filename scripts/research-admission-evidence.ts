@@ -147,6 +147,24 @@ export type ResearchOutputLimitSectionAdmission = Extract<
 	{ kind: "validated-capture" }
 > & { readonly recovery: ResearchOutputLimitSectionRecovery };
 
+export interface ResearchEmptyOutlineRecovery {
+	readonly kind: "captured-empty-outline-selector";
+	readonly originalOutcome: "empty-extraction";
+	readonly originalContentSuccess: false;
+	readonly originalRequestRetried: false;
+	readonly originalDiscovery: {
+		readonly method: "heading-outline";
+		readonly entries: 0;
+		readonly truncated: false;
+		readonly scannedNodes: number;
+	};
+}
+
+export type ResearchEmptyOutlineAdmission = Extract<
+	ResearchReplayAdmission,
+	{ kind: "validated-capture" }
+> & { readonly recovery: ResearchEmptyOutlineRecovery };
+
 type DataRecord = Record<string, unknown>;
 type ByteObservation = { bytes: number; complete: boolean };
 type EvidenceReason = Extract<
@@ -970,12 +988,12 @@ function fieldPresence(report: DataRecord): Readonly<Record<string, boolean>> {
 	return Object.freeze(presence);
 }
 
-function outlineReady(report: DataRecord): boolean {
+function outlineReady(report: DataRecord, allowEmpty = false): boolean {
 	if (report.headings === undefined || report.headings === null) return false;
 	const outline = record(report.headings);
 	if (outline.truncated === true) return false;
 	if (!Array.isArray(outline.entries)) invalidEvidence();
-	if (outline.entries.length === 0) return false;
+	if (outline.entries.length === 0 && !allowEmpty) return false;
 	const limits = researchLongDocumentAdmission.headings;
 	if (
 		outline.method !== "heading-outline" ||
@@ -1196,6 +1214,85 @@ export function validateResearchOutputLimitSectionAdmission(
 		originalFailure:
 			failure as unknown as ResearchOutputLimitSectionRecovery["originalFailure"],
 		originalRequestRetried: false,
+	});
+	return Object.freeze({
+		...validatedCapture(report, authority, metadata),
+		recovery,
+	});
+}
+
+export function validateResearchEmptyOutlineAdmission(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+): ResearchEmptyOutlineAdmission {
+	const { report, authority, metadata } = replayEvidence(rawReceipt, trusted);
+	const classification = record(report.classification);
+	const reader = record(report.reader);
+	const navigation = record(report.navigation);
+	const response = record(navigation.response);
+	const metrics = record(report.metrics);
+	const selection = record(report.selection);
+	const outline = record(report.headings);
+	const primary = primaryProjection(report.primaryResponse);
+	if (
+		metadata.selectedProfile !== "long-v1" ||
+		report.outcome !== "empty-extraction" ||
+		report.partial !== true ||
+		report.contentSuccess !== false ||
+		report.profile !== "native-semantic-reader-v1" ||
+		Object.hasOwn(report, "failure") ||
+		Object.hasOwn(report, "rateLimit") ||
+		Object.hasOwn(report, "outputLimit") ||
+		classification.classifier !== "browser-challenges" ||
+		classification.barrier !== null ||
+		classification.diagnostic !== null ||
+		selection.method !== "heading-outline" ||
+		Object.keys(selection).length !== 1 ||
+		!outlineReady(report, true) ||
+		!Array.isArray(outline.entries) ||
+		outline.entries.length !== 0 ||
+		outline.scannedNodes === 0 ||
+		outline.document !== navigation.documentRef ||
+		reader.profile !== "native-semantic-reader-v1" ||
+		reader.partial !== true ||
+		reader.scripting !== false ||
+		reader.styling !== false ||
+		(reader.hiddenContentSemantics !== false &&
+			!(
+				(reader.hiddenContentSemantics === "source-attributes" &&
+					(reader.visibilityPolicy ?? report.readerVisibilityPolicy) ===
+						"source-hidden-v1") ||
+				(reader.hiddenContentSemantics ===
+					"source-attributes-and-inline-display" &&
+					(reader.visibilityPolicy ?? report.readerVisibilityPolicy) ===
+						"source-hidden-inline-v1")
+			)) ||
+		navigation.kind !== "document" ||
+		!boundedString(navigation.tabId, 4096) ||
+		!boundedString(navigation.documentRef, 4096) ||
+		Object.hasOwn(navigation, "scripts") ||
+		navigation.url !== report.finalUrl ||
+		response.url !== report.finalUrl ||
+		metrics.active !== 0 ||
+		metrics.closed !== true ||
+		primary === null ||
+		response.status !== primary.status ||
+		response.bytes !== primary.decodedBytes ||
+		response.redirects !== primary.redirects ||
+		authority.expectedBody === undefined
+	)
+		invalidEvidence();
+	const recovery: ResearchEmptyOutlineRecovery = Object.freeze({
+		kind: "captured-empty-outline-selector",
+		originalOutcome: "empty-extraction",
+		originalContentSuccess: false,
+		originalRequestRetried: false,
+		originalDiscovery: Object.freeze({
+			method: "heading-outline",
+			entries: 0,
+			truncated: false,
+			scannedNodes: outline.scannedNodes as number,
+		}),
 	});
 	return Object.freeze({
 		...validatedCapture(report, authority, metadata),

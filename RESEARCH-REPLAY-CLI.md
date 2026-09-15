@@ -1,5 +1,9 @@
 # Offline research replay CLI
 
+For the separate explicit long-capture `--recover-empty-outline` selector path,
+see `RESEARCH-EMPTY-OUTLINE.md`. It retains the original empty-discovery result,
+rechecks the actual empty outline, and does not weaken ordinary replay admission.
+
 `scripts/research-replay-cli.ts` exposes the existing validated reader replay
 helper as a stdin/stdout command. It performs no navigation, reads no supplied
 filesystem path and never retries or falls back to a network client. Build with

@@ -11,6 +11,7 @@ import {
 	type ResearchReplayFormat,
 	extractResearchReplayJson,
 	outlineResearchOutputLimitCapture,
+	recoverResearchEmptyOutlineSelector,
 	recoverResearchOutputLimitSection,
 	recoverResearchOutputLimitSelector,
 	researchJsonReplayLimits,
@@ -23,7 +24,7 @@ export const researchReplayCliLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --selector, --section or --headings. Markdown requires selector/section extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section extraction and may be combined. Headings require recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
+	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit | --recover-empty-outline] < receipt.jsonl\nOutput-limit recovery requires the default profile and one explicit --selector, --section or --headings. Empty-outline recovery requires long-v1 and one explicit --selector. Recovery flags are mutually exclusive. Markdown requires selector/section extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section extraction and may be combined. Headings require output-limit recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
 
 function invalidArguments(): never {
 	throw new AgentBrowserError(
@@ -36,6 +37,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	trusted: TrustedResearchReplayAdmission;
 	selection: ResearchJsonReplaySelection | { headings: true };
 	recoverOutputLimit?: true;
+	recoverEmptyOutline?: true;
 	format?: ResearchReplayFormat;
 } {
 	if (
@@ -49,6 +51,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	let tableRows = false;
 	let compactTables = false;
 	let recoverOutputLimit = false;
+	let recoverEmptyOutline = false;
 	let headings = false;
 	const valueFlags = new Set([
 		"--expected-profile",
@@ -78,6 +81,10 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		}
 		if (flag === "--recover-output-limit" && !recoverOutputLimit) {
 			recoverOutputLimit = true;
+			continue;
+		}
+		if (flag === "--recover-empty-outline" && !recoverEmptyOutline) {
+			recoverEmptyOutline = true;
 			continue;
 		}
 		if (flag === "--headings" && !headings) {
@@ -119,6 +126,11 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		"--lines",
 	].filter((flag) => fields.has(flag));
 	if (modes.length + Number(headings) !== 1) invalidArguments();
+	if (
+		recoverEmptyOutline &&
+		(recoverOutputLimit || profile !== "long-v1" || modes[0] !== "--selector")
+	)
+		invalidArguments();
 	if (
 		format === "markdown" &&
 		(headings || tableMetadata || modes[0] === "--links")
@@ -202,6 +214,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	return {
 		...(format === undefined ? {} : { format }),
 		...(recoverOutputLimit ? { recoverOutputLimit: true as const } : {}),
+		...(recoverEmptyOutline ? { recoverEmptyOutline: true as const } : {}),
 		trusted,
 		selection:
 			mode === "--links"
@@ -382,7 +395,7 @@ export async function runResearchReplayCli(
 				options.trusted,
 				controller.signal,
 			);
-		} else if (options.recoverOutputLimit) {
+		} else if (options.recoverOutputLimit || options.recoverEmptyOutline) {
 			const metadata = {
 				...(options.selection.tableMetadata === undefined
 					? {}
@@ -395,13 +408,22 @@ export async function runResearchReplayCli(
 					: { compactTables: options.selection.compactTables }),
 			};
 			if (options.selection.selector !== undefined) {
-				result = recoverResearchOutputLimitSelector(
-					receipt,
-					options.trusted,
-					{ selector: options.selection.selector, ...metadata },
-					controller.signal,
-					options.format ?? "json",
-				);
+				const selection = { selector: options.selection.selector, ...metadata };
+				result = options.recoverEmptyOutline
+					? recoverResearchEmptyOutlineSelector(
+							receipt,
+							options.trusted,
+							selection,
+							controller.signal,
+							options.format ?? "json",
+						)
+					: recoverResearchOutputLimitSelector(
+							receipt,
+							options.trusted,
+							selection,
+							controller.signal,
+							options.format ?? "json",
+						);
 			} else {
 				const section = options.selection.section;
 				if (section === undefined) invalidArguments();

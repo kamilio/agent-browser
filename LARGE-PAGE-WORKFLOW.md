@@ -55,8 +55,10 @@ capture loaded and emitted reader text, but contained no discovered headings.
 The long heading operation returned `empty-extraction`, and generic replay
 correctly rejected that receipt under its current contract. This does **not** mean
 the page body was empty. Do not forge headings or change the outcome to work around
-admission. An explicit, failure-preserving empty-outline selection path remains
-to be implemented and validated; ordinary failed/blocked replay must stay closed.
+admission. Use the separate explicit `--recover-empty-outline --selector body`
+path for a fully verified long capture; see `RESEARCH-EMPTY-OUTLINE.md` for its
+strict conditions and preserved original outcome. Ordinary failed/blocked replay
+remains closed.
 
 The host-side diagnostic prefix API in `RESPONSE-PREFIX.md` is a different path:
 its bytes are incomplete and must never be passed off as a complete long capture.

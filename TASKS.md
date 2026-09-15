@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: explicit empty-outline selection recovers Google Play content
+
+- Added `validateResearchEmptyOutlineAdmission`, `recoverResearchEmptyOutlineSelector`
+  and replay CLI `--recover-empty-outline`. The opt-in long-v1 path requires one
+  CSS selector, complete independently pinned HTML, matching successful navigation,
+  closed metrics, inert reader, clean classification and an empty nontruncated
+  outline tied to that document. Native reparsing verifies actual empty discovery.
+  Generic replay, caps, barriers and incomplete/failed-capture gates stay unchanged.
+- The original Google receipt remains empty-extraction/contentSuccess false with
+  zero headings and 2535808 body bytes. API and actual CLI now yield identical
+  27716-byte catalogue Markdown, preserving original outcome/scan count and zero
+  retries in recovery metadata. Samples show named app/game cards, categories,
+  ratings and links; no app-detail navigation, install/purchase/account or rating
+  accuracy verified. Contract: `RESEARCH-EMPTY-OUTLINE.md`.
+- Saved-body controls preserve generic Google rejection and three existing news
+  content hashes; those nonempty outlines and default Comparor reject the new path.
+  Thirteen API calls plus one CLI call run in ten closed isolated children/groups,
+  zero actual/mocked navigations or HTTP; source receipts/pins remain unchanged.
+- New tests: 126 admission/helper +65 CLI =191 pass. Main baseline1404pass/two
+  failures; candidate1595pass/the same two. Separate table-row CLI supplement is
+  38pass/one unchanged failure on each. Aggregate18-file candidate:1633pass/three
+  existing failures. Build, selected-test types, format and lint pass. Retain initial
+  overload-union compiler error and escaped-hyphen test assertion failure.
+- Report: `reports/empty-outline-recovery-2026-09-15.{md,json}`. Original42 dirty
+  tracked/697 untracked files are preserved; no push. The five original transport
+  cases now have useful source observations under explicit workflows, not default
+  or full-site acceptance. Broader browser/access, interaction/passkey and SafeJS
+  gates remain open; no new website request, script or CAPTCHA solver ran here.
+
 ### September 15: large-page workflow recovers four original failures
 
 - Revisited all five original missing-body transport cases. The default 2MB pass

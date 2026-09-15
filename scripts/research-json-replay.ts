@@ -38,9 +38,11 @@ import { DocumentQueries, validateSelectorSyntax } from "../src/selectors.js";
 import type { DocumentLoaderContext } from "../src/session.js";
 import {
 	type ResearchBodyPin,
+	type ResearchEmptyOutlineRecovery,
 	type ResearchOutputLimitSectionRecovery,
 	type ResearchReplayAdmission,
 	type TrustedResearchReplayAdmission,
+	validateResearchEmptyOutlineAdmission,
 	validateResearchOutputLimitSectionAdmission,
 	validateResearchReplayAdmission,
 } from "./research-admission-evidence.js";
@@ -115,6 +117,9 @@ export interface ResearchOutputLimitSelectorSelection {
 	compactTables?: boolean;
 }
 
+export type ResearchEmptyOutlineSelectorSelection =
+	ResearchOutputLimitSelectorSelection;
+
 export type ResearchOutputLimitSelectorRecovery = Omit<
 	ResearchOutputLimitSectionRecovery,
 	"kind"
@@ -168,6 +173,7 @@ export interface ResearchJsonReplayReport<
 	headings?: DocumentHeadingOutline;
 	textLines?: DocumentTextLineDiscovery;
 	recovery?:
+		| ResearchEmptyOutlineRecovery
 		| ResearchOutputLimitSectionRecovery
 		| ResearchOutputLimitSelectorRecovery
 		| ResearchOutputLimitOutlineRecovery;
@@ -201,6 +207,14 @@ export interface ResearchOutputLimitSelectorExtraction<
 > extends ResearchJsonReplayExtraction<Format> {
 	report: ResearchJsonReplayReport<Format> & {
 		recovery: ResearchOutputLimitSelectorRecovery;
+	};
+}
+
+export interface ResearchEmptyOutlineSelectorExtraction<
+	Format extends ResearchReplayFormat = "json",
+> extends ResearchJsonReplayExtraction<Format> {
+	report: ResearchJsonReplayReport<Format> & {
+		recovery: ResearchEmptyOutlineRecovery;
 	};
 }
 
@@ -679,6 +693,46 @@ export function recoverResearchOutputLimitSelector(
 	);
 }
 
+export function recoverResearchEmptyOutlineSelector<
+	Format extends ResearchReplayFormat,
+>(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchEmptyOutlineSelectorSelection,
+	signal: AbortSignal | undefined,
+	format: Format,
+): ResearchEmptyOutlineSelectorExtraction<Format>;
+export function recoverResearchEmptyOutlineSelector(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchEmptyOutlineSelectorSelection,
+	signal?: AbortSignal,
+): ResearchEmptyOutlineSelectorExtraction;
+export function recoverResearchEmptyOutlineSelector(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchEmptyOutlineSelectorSelection,
+	signal?: AbortSignal,
+	format: ResearchReplayFormat = "json",
+): ResearchEmptyOutlineSelectorExtraction<ResearchReplayFormat> {
+	const checkpoint = replayCheckpoint(signal);
+	checkpoint();
+	const selected = selectionSnapshot(selection);
+	if (selected.method !== "css-selector") invalidSelection();
+	const selectedFormat = validateReplayFormat(format, selected);
+	checkpoint();
+	const admission = validateResearchEmptyOutlineAdmission(rawReceipt, trusted);
+	return extractValidatedReplayJson(
+		admission,
+		selected,
+		checkpoint,
+		signal,
+		{ recovery: admission.recovery },
+		selectedFormat,
+		true,
+	);
+}
+
 export function outlineResearchOutputLimitCapture(
 	rawReceipt: Uint8Array,
 	trusted: TrustedResearchReplayAdmission,
@@ -717,6 +771,7 @@ function extractValidatedReplayJson<
 	signal: AbortSignal | undefined,
 	extra: Extra,
 	format: Format,
+	requireEmptyOutline = false,
 ): ResearchJsonReplayExtraction<Format> & {
 	report: ResearchJsonReplayReport<Format> & Extra;
 } {
@@ -970,6 +1025,19 @@ function extractValidatedReplayJson<
 			return diagnostic;
 		};
 		const documentBarrier = classify(researchDocumentDiagnosticText(tree));
+		if (!documentBarrier && requireEmptyOutline) {
+			checkpoint();
+			const outline = discoverDocumentHeadings(
+				tree,
+				researchLongDocumentAdmission.headings,
+			);
+			if (outline.entries.length !== 0 || outline.truncated)
+				throw new AgentBrowserError(
+					"policy-denied",
+					"Research recovery requires an empty complete heading outline",
+				);
+			checkpoint();
+		}
 		if (!documentBarrier && selected.method === "heading-outline") {
 			checkpoint();
 			report.headings = discoverDocumentHeadings(tree, {
