@@ -196,6 +196,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	let readerVisibilityPolicy: ResearchReaderVisibilityPolicy | undefined;
 	let captureBody = false;
 	let format: "markdown" | "json" | undefined;
+	let outputLimitPolicy: "text-prefix-v1" | undefined;
 	let tableMetadata = false;
 	let compactTables = false;
 	let tableRows = false;
@@ -238,6 +239,19 @@ export function parseResearchArguments(args: readonly string[]) {
 			if (value !== "markdown" && value !== "json")
 				throw new AgentBrowserError("invalid-input", "Invalid research format");
 			format = value;
+			continue;
+		}
+		if (
+			argument === "--output-limit-policy" &&
+			outputLimitPolicy === undefined
+		) {
+			const value = args[++index];
+			if (value !== "text-prefix-v1")
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid research output limit policy",
+				);
+			outputLimitPolicy = value;
 			continue;
 		}
 		if (argument === "--table-metadata" && !tableMetadata) {
@@ -415,6 +429,14 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Research table metadata requires JSON format",
 		);
+	if (
+		outputLimitPolicy !== undefined &&
+		(!reader || format === "json" || headings || find !== undefined)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research text-prefix output requires reader Markdown extraction",
+		);
 	if (compactTables && (format === "json" || headings || find !== undefined))
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -437,6 +459,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		...(readerRawPolicy === undefined ? {} : { readerRawPolicy }),
 		...(readerVisibilityPolicy === undefined ? {} : { readerVisibilityPolicy }),
 		...(format === undefined ? {} : { format }),
+		...(outputLimitPolicy === undefined ? {} : { outputLimitPolicy }),
 		...(tableMetadata ? { tableMetadata: true as const } : {}),
 		...(compactTables ? { compactTables: true as const } : {}),
 		...(tableRows ? { tableRows: true as const } : {}),
@@ -460,6 +483,7 @@ export type ResearchOutcome =
 
 export interface ResearchNavigationReport {
 	representationPreference?: "markdown";
+	outputLimitPolicy?: "text-prefix-v1";
 	fragment?: ResearchFragmentReport;
 	admission?: ResearchAdmissionProvenance;
 	readerRawPolicy?: ResearchReaderRawPolicy;
@@ -510,6 +534,7 @@ export interface ResearchNavigationReport {
 
 export interface ResearchExecutionOptions {
 	preferMarkdown?: boolean;
+	outputLimitPolicy?: "text-prefix-v1";
 	readerRawPolicy?: ResearchReaderRawPolicy;
 	readerVisibilityPolicy?: ResearchReaderVisibilityPolicy;
 	format?: "markdown" | "json";
@@ -526,6 +551,8 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 		Array.isArray(options) ||
 		(options.preferMarkdown !== undefined &&
 			typeof options.preferMarkdown !== "boolean") ||
+		(options.outputLimitPolicy !== undefined &&
+			options.outputLimitPolicy !== "text-prefix-v1") ||
 		(options.format !== undefined &&
 			options.format !== "markdown" &&
 			options.format !== "json") ||
@@ -597,6 +624,9 @@ export async function researchNavigation(
 		...(executionOptions.format === undefined
 			? []
 			: ["--format", executionOptions.format]),
+		...(executionOptions.outputLimitPolicy === undefined
+			? []
+			: ["--output-limit-policy", executionOptions.outputLimitPolicy]),
 		...(executionOptions.tableMetadata ? ["--table-metadata"] : []),
 		...(executionOptions.compactTables ? ["--compact-tables"] : []),
 		...(executionOptions.tableRows ? ["--table-rows"] : []),
@@ -627,6 +657,9 @@ export async function researchNavigation(
 	const started = Date.now();
 	const fragment = researchFragmentReport(validated.urls[0]);
 	const report: ResearchNavigationReport = {
+		...(validated.outputLimitPolicy === undefined
+			? {}
+			: { outputLimitPolicy: validated.outputLimitPolicy }),
 		...(validated.preferMarkdown
 			? { representationPreference: "markdown" as const }
 			: {}),
@@ -988,15 +1021,30 @@ export async function researchNavigation(
 			else sectionRoot = tree.reference(matches[0]);
 		}
 		stage = "extraction";
+		let extractionBudget = researchRunLimits.extractionBytes;
+		if (validated.outputLimitPolicy !== undefined) {
+			const sourceUrl = new URL(tree.url);
+			sourceUrl.username = "";
+			sourceUrl.password = "";
+			const encoder = new TextEncoder();
+			extractionBudget -= Math.max(
+				0,
+				encoder.encode(JSON.stringify(reportUrl(sourceUrl.href))).byteLength -
+					encoder.encode(JSON.stringify(sourceUrl.href)).byteLength,
+			);
+		}
 		const extraction = extractDocument(tree, {
 			format: validated.format ?? "markdown",
+			...(validated.outputLimitPolicy === undefined
+				? {}
+				: { outputLimitPolicy: validated.outputLimitPolicy }),
 			...(validated.tableMetadata ? { tableMetadata: true } : {}),
 			...(validated.compactTables ? { compactTables: true } : {}),
 			...(validated.tableRows ? { tableRows: true } : {}),
 			...(root === undefined ? {} : { root }),
 			...(validated.lines === undefined ? {} : { lines: validated.lines }),
 			...(sectionRoot === undefined ? {} : { section: sectionRoot }),
-			maxBytes: researchRunLimits.extractionBytes,
+			maxBytes: extractionBudget,
 			maxNodes: 50_000,
 			maxDepth: 128,
 		});
@@ -1071,6 +1119,7 @@ export async function* researchBatch(
 				options.documentProfile,
 				{
 					preferMarkdown: options.preferMarkdown,
+					outputLimitPolicy: options.outputLimitPolicy,
 					...(options.readerRawPolicy === undefined
 						? {}
 						: { readerRawPolicy: options.readerRawPolicy }),
@@ -1205,7 +1254,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--capture-body] [--format markdown|json] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies require reader; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies require reader; text-prefix requires reader Markdown extraction; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});

@@ -6,6 +6,38 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: bounded extraction prefixes and MIME diagnosis
+
+- Added explicit `--output-limit-policy text-prefix-v1` for reader Markdown and
+  the matching core/API option. Defaults remain strict; fitting results remain
+  unchanged. Genuine typed output-size limits can yield an indented plain-text
+  prefix with source/retained units, truncation and original trigger metadata.
+  Full serialized extraction still fits its existing byte cap; no limit increase,
+  hidden/form/script admission change, new request or automatic replay fallback.
+- Static review found a final-URL redaction overrun. Isolated negative controls
+  confirm256007 bytes for HTML and Markdown; positive-growth reservation brings
+  both to256000, with truthful255993-byte internal trigger limits for `?x`.
+- Final selected suite: **2156 pass, one unchanged pre-existing failure**, with
+  **91 new passing tests / 30 files**. Build, narrowed types, formatter and lint
+  pass. Baseline2065pass/1fail; the unrelated replay-row-flag expectation in
+  `research-table-rows-cli.test.ts` remains visible, not fixed or excluded.
+  Canonical native manifest895 entries; original three working-only entries stay.
+- Final saved-source comparison: **95 strict cases unchanged, 94 requested-prefix
+  cases unchanged**; one output-limit error yields245353 bytes /255995 serialized
+  bytes. Final pairing285 mocked navigations; zeroHTTP. Five missing original
+  captures remain untested failures. Prior live barrier classifications remain
+  authoritative where stored headers omit Cloudflare evidence.
+- **Do not call the Kateminimalist page fixed.** Inspecting that retained prefix
+  reveals HTML/script/style source served as `text/markdown`, not useful content.
+  A separate diagnostic-only HTML MIME override on the unchanged body yields
+  34787 native Markdown bytes without fallback. It is not production sniffing or
+  a live acceptance result; product/promotion placeholders remain unverified.
+- Next root-cause work: explicit, narrowly validated HTML-as-Markdown recovery
+  with controls for real Markdown/code examples and source MIME provenance.
+  Preserve unfinished response-header work separately. See `EXTRACTION-PREFIX.md`
+  and `reports/extraction-prefix-2026-09-15.{md,json}`. SafeJS, access restrictions,
+  credentials/passkeys and interactive acceptance gates remain open; no push.
+
 ### September 15: 100 citation-derived agent entry-page checks
 
 - Completed **100/100 fresh native entry-page navigations**, 107 GETs including

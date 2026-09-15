@@ -20,6 +20,10 @@ import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import {
+	type ExtractionContentFallback,
+	boundedExtractionTextPrefix,
+} from "./extraction-prefix.js";
+import {
 	type HeadingSectionMetadata,
 	selectHeadingSection,
 } from "./extraction-section.js";
@@ -42,7 +46,10 @@ import {
 	fitResearchSourceDataTables,
 	researchSourceDataTables,
 } from "./research-source-data-tables.js";
-import { resourceLimitError } from "./resource-limit.js";
+import {
+	resourceLimitDiagnostic,
+	resourceLimitError,
+} from "./resource-limit.js";
 import { documentStyles } from "./styles.js";
 import {
 	type TableSourceMetadata,
@@ -98,6 +105,7 @@ export interface ExtractedNode {
 
 export interface ExtractionOptions {
 	format?: "markdown" | "json";
+	outputLimitPolicy?: "text-prefix-v1";
 	tableMetadata?: boolean;
 	compactTables?: boolean;
 	tableRows?: boolean;
@@ -169,6 +177,7 @@ interface ExtractionMetadata {
 	title: string;
 	revision: number;
 	partial: true;
+	contentFallback?: Readonly<ExtractionContentFallback>;
 	compactTables?: true;
 	tableRows?: true;
 	reader?: Readonly<ResearchReaderReport>;
@@ -1066,6 +1075,14 @@ export function extractDocument(
 			"Extraction format must be markdown or json",
 		);
 	if (
+		options.outputLimitPolicy !== undefined &&
+		(options.outputLimitPolicy !== "text-prefix-v1" || format !== "markdown")
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Text-prefix output policy requires Markdown extraction",
+		);
+	if (
 		(options.tableMetadata !== undefined &&
 			typeof options.tableMetadata !== "boolean") ||
 		(options.tableMetadata === true && format !== "json")
@@ -1280,20 +1297,49 @@ export function extractDocument(
 		type: "container" as const,
 		children: [],
 	};
-	const result: DocumentExtraction =
-		format === "json"
-			? { ...metadata, format, content: root }
-			: {
-					...metadata,
-					format,
-					content: markdown(
-						root,
-						maxBytes,
-						options.compactTables === true,
-						options.tableRows === true,
-					),
-				};
-	const outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
+	let result: DocumentExtraction;
+	let outputBytes: number;
+	try {
+		result =
+			format === "json"
+				? { ...metadata, format, content: root }
+				: {
+						...metadata,
+						format,
+						content: markdown(
+							root,
+							maxBytes,
+							options.compactTables === true,
+							options.tableRows === true,
+						),
+					};
+		outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
+		if (outputBytes > maxBytes)
+			throw resourceLimitError(
+				"extraction.output",
+				maxBytes,
+				outputBytes,
+				"Extraction output limit exceeded",
+			);
+	} catch (error) {
+		const trigger = resourceLimitDiagnostic(error);
+		if (
+			options.outputLimitPolicy !== "text-prefix-v1" ||
+			format !== "markdown" ||
+			trigger?.kind !== "extraction.output" ||
+			trigger.limit !== maxBytes
+		)
+			throw error;
+		const prefix = boundedExtractionTextPrefix(
+			root,
+			metadata,
+			maxBytes,
+			trigger,
+		);
+		if (!prefix) throw error;
+		result = { ...metadata, format, ...prefix };
+		outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
+	}
 	if (outputBytes > maxBytes)
 		throw resourceLimitError(
 			"extraction.output",
