@@ -1,0 +1,3843 @@
+{
+  "dateUtc": "2026-09-15",
+  "status": "verified-hidden-block-recovery",
+  "overallBrowserGoal": "active",
+  "parent": "e9ebab88f586d623d40597cd9ce94e144f10f565",
+  "productionSha256": "712d3db16210549c4ceb7e138109b7ebac62097efce4988037e7acb0081b6228",
+  "actualHttpRequests": 0,
+  "corpus": {
+    "rankingMonth": "2026-05",
+    "capturedBodies": 90,
+    "missingBodies": [
+      {
+        "rank": 15,
+        "domain": "baidu.com",
+        "originalOutcome": "failure",
+        "failure": {
+          "category": "timeout",
+          "stage": "network"
+        }
+      },
+      {
+        "rank": 19,
+        "domain": "netflix.com",
+        "originalOutcome": "failure",
+        "failure": {
+          "category": "resource-limit",
+          "stage": "network",
+          "resourceLimit": {
+            "kind": "network.response-decoded",
+            "unit": "bytes",
+            "limit": 2000000,
+            "observed": 2014330
+          }
+        }
+      },
+      {
+        "rank": 33,
+        "domain": "sharepoint.com",
+        "originalOutcome": "failure",
+        "failure": {
+          "category": "resource-limit",
+          "stage": "network"
+        }
+      },
+      {
+        "rank": 38,
+        "domain": "globo.com",
+        "originalOutcome": "failure",
+        "failure": {
+          "category": "resource-limit",
+          "stage": "network",
+          "resourceLimit": {
+            "kind": "network.response-decoded",
+            "unit": "bytes",
+            "limit": 2000000,
+            "observed": 2015232
+          }
+        }
+      },
+      {
+        "rank": 40,
+        "domain": "aliexpress.com",
+        "originalOutcome": "failure",
+        "failure": {
+          "category": "resource-limit",
+          "stage": "network"
+        }
+      },
+      {
+        "rank": 44,
+        "domain": "e-office.cloud",
+        "originalOutcome": "failure",
+        "failure": {
+          "category": "network-error",
+          "stage": "network"
+        }
+      },
+      {
+        "rank": 76,
+        "domain": "hbomax.com",
+        "originalOutcome": "failure",
+        "failure": {
+          "category": "resource-limit",
+          "stage": "network",
+          "resourceLimit": {
+            "kind": "network.response-decoded",
+            "unit": "bytes",
+            "limit": 2000000,
+            "observed": 2015232
+          }
+        }
+      },
+      {
+        "rank": 81,
+        "domain": "bet.br",
+        "originalOutcome": "failure",
+        "failure": {
+          "category": "network-error",
+          "stage": "network"
+        }
+      },
+      {
+        "rank": 84,
+        "domain": "gemini.google.com",
+        "originalOutcome": "failure",
+        "failure": {
+          "category": "resource-limit",
+          "stage": "network"
+        }
+      },
+      {
+        "rank": 87,
+        "domain": "9animetv.to",
+        "originalOutcome": "failure",
+        "failure": {
+          "category": "timeout",
+          "stage": "network"
+        }
+      }
+    ],
+    "policyCasesPerBuild": 180,
+    "pairedInMemoryNavigations": 360,
+    "currentBuildUnchangedCases": 179,
+    "recoveredCases": 1,
+    "historicalHeaderOmissions": [
+      "chatgpt.com",
+      "canva.com",
+      "indeed.com"
+    ],
+    "counts": {
+      "baseline": {
+        "original": {
+          "extracted-unverified": 65,
+          "empty-extraction": 13,
+          "http-failure": 7,
+          "semantic-barrier": 5
+        },
+        "source-hidden-inline-v1": {
+          "extracted-unverified": 63,
+          "empty-extraction": 14,
+          "http-failure": 7,
+          "semantic-barrier": 5,
+          "failure": 1
+        }
+      },
+      "candidate": {
+        "original": {
+          "extracted-unverified": 65,
+          "empty-extraction": 13,
+          "http-failure": 7,
+          "semantic-barrier": 5
+        },
+        "source-hidden-inline-v1": {
+          "extracted-unverified": 64,
+          "empty-extraction": 14,
+          "http-failure": 7,
+          "semantic-barrier": 5
+        }
+      }
+    }
+  },
+  "validation": {
+    "baselineTests": 1818,
+    "baselineFiles": 24,
+    "candidateTests": 1945,
+    "candidateFiles": 25,
+    "unchangedBaselineCases": 1812,
+    "intentionallyUpdatedCases": 6,
+    "additionalTests": 127,
+    "finalExitCodes": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0,
+      "native": 0
+    },
+    "finalLabel": "release02",
+    "nativeManifestSha256": "56e51aa9b63361af1cd91b47e6cd10bb9e9c731ed550f1418ad654b59c26e170"
+  },
+  "evidence": {
+    "runtimeFilesMatchedToHead": 1456,
+    "firstHarnessAttempt": {
+      "terminalChildren": 83,
+      "countedAsPairedResults": false,
+      "reason": "Invalid descriptive visibility identifier; corrected to source-hidden-inline-v1 in separate scripts/run."
+    },
+    "successfulReassessmentChildren": 180,
+    "successfulDiagnosticChildren": 1,
+    "totalClosedChildGroups": 264,
+    "reviews": {
+      "REVIEW.md": "0adcb34e37eac376ee8ea0d83efb67c8992da49ead2905f4f13b9871461ca4c5",
+      "REVIEW-FOLLOWUP.md": "acc1fc4f2938c066f28c24aa64dacb18317d4dc0e73b5a3cef96bc40be7bd505",
+      "EMPTY-SOURCE-REVIEW.md": "2227569f213d4788f35f2c8973f240c1e592bb59f4dc08888e2015089e22e2ac"
+    }
+  },
+  "limitations": [
+    "No new live website, SDK, credential or challenge-bypass execution.",
+    "Historical captures omit cf-mitigated; three old header-confirmed barriers cannot be faithfully reclassified from stored headers alone.",
+    "Ten original attempts have no captured body and were not replayed.",
+    "Nonempty extraction is not validated website functionality; descriptions are not feeds/catalogs.",
+    "Single-run processing times are not a comparative performance benchmark.",
+    "Bounded hidden-stack recovery does not implement full HTML or CSS visibility."
+  ],
+  "rows": [
+    {
+      "rank": 1,
+      "domain": "google.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "942c425bb19449966d742195d6073b0cc018a70b52f477ee1e770959e17c0f6a",
+      "bodySha256": "741d0817a7f13bef974fd2f9120897668b8733ea7f2a02f3db57e73fa28de640",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 1018
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 1018,
+            "sha256": "53a13ea77c79f4d45285e3be68146a7549a65c0b82e70bb9d5774de43ac4432f"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 1018
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 1018,
+            "sha256": "53a13ea77c79f4d45285e3be68146a7549a65c0b82e70bb9d5774de43ac4432f"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "domain": "youtube.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "2fa5c81747032c221b08fb97aa86bca3bc1ac9cc1a46d67299be0bd7533049dd",
+      "bodySha256": "419c03cbd88ed1f389c807bf69279a02efa2d8793866cafdab577d0085d02939",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 893
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 893,
+            "sha256": "0eb44be7e9298ab057431c4178731a041953fab6b4d38ded8023104b29e83a4d"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "domain": "facebook.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "6cf1d1825042d18fea15d9e32b7dd0c12d6f6e7719bd045b646b20c7fc5ebbeb",
+      "bodySha256": "18535b0c2b9f5c198b9843cc7e52ed2de27908b59ff0845ef070f4f32edbbd85",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 3993
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 3993,
+            "sha256": "8d1afb9467f3df566c3605be0aefa824eab04f628aad60e4494d635d9027cc3c"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 3993
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 3993,
+            "sha256": "8d1afb9467f3df566c3605be0aefa824eab04f628aad60e4494d635d9027cc3c"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 4,
+      "domain": "instagram.com",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "0c1cf22ce0aadf58e50a7a2f8fe7d58c2b4e729c28c5b52a9d2a21ee172726bd",
+      "bodySha256": "12889c810e5c3a3a731e777f4bdecf570490198672e71b9c79cb1a69f12ff440",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 5,
+      "domain": "chatgpt.com",
+      "originalOutcome": "semantic-barrier",
+      "receiptSha256": "c5449f7b65d31fd6953d847f1a8e06217b988d39e9bc112584ae9dc759d46583",
+      "bodySha256": "48c03fcae0032f72182018eb9424174ffd5abaace7c957d2a054409bdb56b37a",
+      "historicalHeaderOmission": true,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 42
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 42,
+            "sha256": "d74d12c3026fe5f8ff3224c522ed3ec8d0bcafeaed085c907a4468c8b0412835"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 42
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 42,
+            "sha256": "d74d12c3026fe5f8ff3224c522ed3ec8d0bcafeaed085c907a4468c8b0412835"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 6,
+      "domain": "x.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "99cd97e51356c84f7d546e6cacf7f4daa5cec0d27c25514dfe354f3f28c1f11a",
+      "bodySha256": "a4e0bb45720b9d306667affafbee4ce3b242aef1a34f8a8f796509e8895aa4a9",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 1288
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 1288,
+            "sha256": "284d3455decec10d1c405318c68264fea7dc37032378c6fd13b45f73139de5f4"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 1288
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 1288,
+            "sha256": "284d3455decec10d1c405318c68264fea7dc37032378c6fd13b45f73139de5f4"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 7,
+      "domain": "reddit.com",
+      "originalOutcome": "semantic-barrier",
+      "receiptSha256": "8abbd25ab30ef73cf13a34cebadf0955f262d0e6dfdb44a5131475a0da0a977b",
+      "bodySha256": "dc131f91303300301ab1b23a7e3b0a084b9e325b318b2722d00fc637247b8b7a",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "semantic-barrier",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "semantic-barrier",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": {
+            "category": "policy-denied",
+            "stage": "semantic-barrier"
+          },
+          "barrier": "access-denied"
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "semantic-barrier",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "semantic-barrier",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": {
+            "category": "policy-denied",
+            "stage": "semantic-barrier"
+          },
+          "barrier": "access-denied"
+        }
+      ]
+    },
+    {
+      "rank": 8,
+      "domain": "whatsapp.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "48dcb0e9e8df41b82f055f890d2444a3541e597f4ec2fceaa1394a7201e3bec9",
+      "bodySha256": "0a5670492b17ea7682ff8ad5a3626211a5ca1cd767b7dd1c709a3fab98839bb9",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 8855
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 8855,
+            "sha256": "029b9e5e268adfc7be1452fe4303f915cd7256c4dc754938ab06dec31486e614"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 5647
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 5647,
+            "sha256": "4ac3e0c901d5f41d42fc584c4c8b0fa343652d03db8717ff4f89d25d28d270bf"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 9,
+      "domain": "bing.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "e42a9fba83e77545fa5eb37d45b6e5ce13f6582672b07926f0d6188c518e0125",
+      "bodySha256": "7d97d703107c6c15b6a912774c0e726ab7e07c94227fab6d866f4a6e447294fc",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 4081
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 4081,
+            "sha256": "0551d555803958e3b383ebbfe6715efcd31117df12b5206d8158021cff252dd7"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 2811
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 2811,
+            "sha256": "a197fa9f0803f08ee31703dc84f5bc40e5434fd184d9c7a033c1a6fab3f98484"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 10,
+      "domain": "yahoo.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "58c0b6f95561d9b83df81d0c35e3aa807f272956c999978bfb7f1cbd430d7337",
+      "bodySha256": "6d99c8e7ffdaa2f9abd484182cf86ae64fd7817e8fd46dd3810e6b9eb6e64a2b",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 34785
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 34785,
+            "sha256": "c4fe0b79ebbfa2d7e4655542f7d17bb2e8425551ca49a931764fd2b1263808b2"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 16139
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 16139,
+            "sha256": "d6bc61c9e9f4e385d5322655725c95e0d908bb7ce2591ace23eb5a5b03b043ee"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 11,
+      "domain": "wikipedia.org",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "4dbf187a3a035b5a1e1614f1f3b574984e368dc5f1f7dc19ad9607acb45c2580",
+      "bodySha256": "6345affdc48c5e0c313f4e483c7a5c07d86f32aea8ee07ce6fd031094133e30c",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 23395
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 23395,
+            "sha256": "6fdb89fe9c6ad9075293e3c30d898ace099d3820b2d568084868613455605d24"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 23395
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 23395,
+            "sha256": "6fdb89fe9c6ad9075293e3c30d898ace099d3820b2d568084868613455605d24"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 12,
+      "domain": "yahoo.co.jp",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "1d05ce71c74b02358021ec67c5cdf7f1d8689a26c74f3655da2c05f80f102e65",
+      "bodySha256": "0672f6ebfbba5cb58d3a81d25ba54c6e1df19a60b034d758a1b3eb8d6dc0d09b",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 5484
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 5484,
+            "sha256": "22e5a45ebfa91b993d810826a668ac262396a32f83f44b05ab579636a8210122"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 5484
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 5484,
+            "sha256": "22e5a45ebfa91b993d810826a668ac262396a32f83f44b05ab579636a8210122"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 13,
+      "domain": "tiktok.com",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "7c818c1e41c457949b2524ab0e56f2ad117be177bd8e4c3107c9f2b8c32ccb7e",
+      "bodySha256": "15606955fbd094c641270436d2b995799b12c86082ffe1e4b6037b2071da1bb5",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 14,
+      "domain": "yandex.ru",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "bf7494dc316192c531d49c8214616793d8944d59f85e7ce1857d141f076f2550",
+      "bodySha256": "47ff14089f2dc9cb9485f97bae205f17e36b1af7a2cc8a24407ccd4777ad3748",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 16,
+      "domain": "amazon.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "1017dae184adf7f56493ca2e4400b5e5a4894f6a175d59524e43543c9d402852",
+      "bodySha256": "51f7078e9d0952d4823ed16d388f6db164ce3caa370bb776803ac9d8d4c199e9",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 24484
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 24484,
+            "sha256": "97f2a6dfc9fe6be3353607810d54b4f8d002670399009393e26eecf8496f8b0b"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 23341
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 23341,
+            "sha256": "051d3a9ae9794accaeada10a86bc5c5c676e84828089e10592d46c2a1a20c2bd"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 17,
+      "domain": "pornhub.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "ca7d5df2cc11c11c67ef4f8a92e8ac016978723d9788ee2e63d8c0dadf602055",
+      "bodySha256": "e646da1edf3152f282512d219fba06606f598c63ea964aa5359b41c9df6a9d5e",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 14987
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 14987,
+            "sha256": "360e2f53be7178da693cfa1f0ceabe67ac77a5984a0c6f4378d09f05a9f19012"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 14987
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 14987,
+            "sha256": "360e2f53be7178da693cfa1f0ceabe67ac77a5984a0c6f4378d09f05a9f19012"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 18,
+      "domain": "linkedin.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "24c081a6f67ccb413dc24d59c9779dcf7f46f3b1b074814409bb519c67aa2978",
+      "bodySha256": "20ce0ad3b2719c7b81bf1d3f188b50f38f9cb08d2d3f2c61e64139368355abbb",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "semantic-barrier",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "semantic-barrier",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": {
+            "category": "policy-denied",
+            "stage": "semantic-barrier"
+          },
+          "barrier": "challenge"
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "semantic-barrier",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "semantic-barrier",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": {
+            "category": "policy-denied",
+            "stage": "semantic-barrier"
+          },
+          "barrier": "challenge"
+        }
+      ]
+    },
+    {
+      "rank": 20,
+      "domain": "temu.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "180f98e65ee89dd8769d6d58beb16776e9d6968fd5a879dfeb4ebbe8ec8ec010",
+      "bodySha256": "e34a4a340ba7fae873135ca49b72f27144ef8905da675d60c38e8535af1300a3",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 9623
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 9623,
+            "sha256": "4f51e7920c81ea0085e03c2d5f9d15a674561e807981df888adc56c4963662fe"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 2821
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 2821,
+            "sha256": "0e4d33468e5d69d0cacbb3361c9f0b675816697220bd8062b1b8483b5cdd06d7"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 21,
+      "domain": "live.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "0bbfa16034820ddff9f7ad7f4bf6a8804a2b078cc1c072739924bf4e6ddab71f",
+      "bodySha256": "9fb5b1ab9698efb51b9d4ae3fefae963d226e40108cc6b27b77cd45f2a8fd383",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 40
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 40,
+            "sha256": "0cef239fa138efb1bdeabc4d797a67cb696f961267f0487c8f6ec5a41a585fd9"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 40
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 40,
+            "sha256": "0cef239fa138efb1bdeabc4d797a67cb696f961267f0487c8f6ec5a41a585fd9"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 22,
+      "domain": "xvideos.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "372005f2d031effbb6ff718c77deeab12bc53475b3777143c8ab4ccc389f19bb",
+      "bodySha256": "c0df0bcc3ea84355e63b7a08770f49469b0a2a3ac1b42b10667c7b506a7dae37",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 33318
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 33318,
+            "sha256": "b8c63209a82c53ae52f6cbf3893855e38f0b41d223009ccd4b868dc8f52d792d"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 33318
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 33318,
+            "sha256": "b8c63209a82c53ae52f6cbf3893855e38f0b41d223009ccd4b868dc8f52d792d"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 23,
+      "domain": "naver.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "ae6ecb8a3023337b2d105065506382fff8b203f5c2a5bf6ea7862687a3f53e9d",
+      "bodySha256": "bc11ce1da39d9229125c308f729a84834c99b5a05e467d3aa893d11cc743cf4c",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 574
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 574,
+            "sha256": "0571e5b043e2a4660274e887855f79494e614d80681bb1048a3758cd29207c51"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 551
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 551,
+            "sha256": "7837a39d8234a9479e11f699071068f0e08b39008e0d27b274e0f167861ac69c"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 24,
+      "domain": "office.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "7a992432bd67439974aca1b54248190374f6fab02bd7ff9761e272f4041ae9d4",
+      "bodySha256": "6db8e6a8e5aae7bafd1507d29c73b3737b1e4b3442fd92b925983542b196df6d",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 52523
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 52523,
+            "sha256": "a3ab6476dd2639b37ccc114be74aff8e162b20a730d0ac4323c65af4fa695cdc"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 26082
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 26082,
+            "sha256": "a1c53d1aed65565e95d98976ca4df4c9362acfa35349ea0279c74ad772becde7"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 25,
+      "domain": "weather.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "56844f7866f93df311794ff2f62360c041922b945a2668287dd540206155b35d",
+      "bodySha256": "3fd36458740ac6d254f491f91217ba52fa026d695473e0846bad0d88e703a7d4",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 3478
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 3478,
+            "sha256": "1806e4640048feb72acf356b32ea7021579c1f889eb6c2c2e81a62e61c638772"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 3478
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 3478,
+            "sha256": "1806e4640048feb72acf356b32ea7021579c1f889eb6c2c2e81a62e61c638772"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 26,
+      "domain": "pinterest.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "8f24b53c12a6bc4c2bb156cf71fce78b0e70f1fc365b3da33b8b73442281969b",
+      "bodySha256": "9174d73ee6bddd8256f14975a1c208d28f00e11ca19a2d78193b4814e35f36b9",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 98
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 98,
+            "sha256": "e11c99b282136db812a751c62999ff81fe333050fc2042bc78e010a25faf4912"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 98
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 98,
+            "sha256": "e11c99b282136db812a751c62999ff81fe333050fc2042bc78e010a25faf4912"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 27,
+      "domain": "discord.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "5cbab41421e6411a8660fed7ff1a360010f184f9032e086f42fc37d743501c38",
+      "bodySha256": "5599ddc4e6cb221a0ef9032beaaee8073b5e6fbc540fe1ad655d4cacb373944d",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 10233
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 10233,
+            "sha256": "61a4c844188b23d0eb9f58535ad3737f949fe7161b428e8281e05087b7bb6539"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 10233
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 10233,
+            "sha256": "61a4c844188b23d0eb9f58535ad3737f949fe7161b428e8281e05087b7bb6539"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 28,
+      "domain": "twitch.tv",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "6060ffa8e083df49e84a24320827af92dec4c4211b0834254640ffbe0c28073a",
+      "bodySha256": "764ff62f0724ca12fc11ad1ed062cd18aeece47053047832fac2e39ca80a3397",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 29,
+      "domain": "microsoft.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "739d6b1ccd53c194e6e12e8b31b265cc4f43fcc29a37efacb15a2b81203b61c3",
+      "bodySha256": "1881d69881feefb362ad8603e373b5f35d2ceb26978ae968e5480c4400338ae5",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 17999
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 17999,
+            "sha256": "ad0c4de884bdcaa5230e56345cffb6b02634e944874e4636d7f39bc500789cf4"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 17942
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 17942,
+            "sha256": "72fd855b04e78167b3cd8629b383ddd30fed451a28a705ac4c12b17a58ec1144"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 30,
+      "domain": "vk.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "206264667464e957eacf4507cdff3c8faebf3d3c0a12c0936ade75799280ab3c",
+      "bodySha256": "927ee8e977fe6e8c086b94e7709ee963ae46bc05856ee802958da68a0a4f5a02",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 201
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 201,
+            "sha256": "d03dbd1054b350595c409fe3e03238493ec93d21fdad782731a1afaa0211ee22"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 201
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 201,
+            "sha256": "d03dbd1054b350595c409fe3e03238493ec93d21fdad782731a1afaa0211ee22"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 31,
+      "domain": "xhamster.com",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "cdaa92138f7977328783d1230e451a696e6cfaee2e46101c4f79473a07646c0b",
+      "bodySha256": "0acde030f3ad1f491b77e49fa3c7bc649057e56ba8309c1c5b085a2b3e24b437",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 32,
+      "domain": "duckduckgo.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "367527b8607b76b1dbf26a7c3cb2029f1428f5b57884408144fd85d08abeead0",
+      "bodySha256": "9a57d75cb03e278565d1fcaad4252517ea3958b1a4be7d38e99749b97084f9aa",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 246
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 246,
+            "sha256": "9b3d4157d0858ee755e03ebae0a5f31e1a8331737c0fa96b0a4e6518d2690218"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 219
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 219,
+            "sha256": "ccf10f61f3007c4b1f003a45d52bf7d5859a19501d73de6dde22bf6ec165e770"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 34,
+      "domain": "fandom.com",
+      "originalOutcome": "semantic-barrier",
+      "receiptSha256": "dd552d214e426da8c3e5f0b92e8231f29233c9b70abd4828f3c858691d3191f5",
+      "bodySha256": "c9d6c937ef2b19876ae9a667c51746e08b8b5f3e79e0a6059f75568c97f65a2b",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "semantic-barrier",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "semantic-barrier",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": {
+            "category": "policy-denied",
+            "stage": "semantic-barrier"
+          },
+          "barrier": "challenge"
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "semantic-barrier",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "semantic-barrier",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": {
+            "category": "policy-denied",
+            "stage": "semantic-barrier"
+          },
+          "barrier": "challenge"
+        }
+      ]
+    },
+    {
+      "rank": 35,
+      "domain": "qq.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "8c58b3c625630311b25db441442c0dda4aee76194823b780d44f42a8fab73b48",
+      "bodySha256": "61bcb11995f6cb236934254044ad511e1ae43c823d78bb9eb53859a20f4d3077",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 8641
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 8641,
+            "sha256": "24a78bbf960917b59280a1309759be1d77f061d9a849b539f99c0e829f1f5582"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 8641
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 8641,
+            "sha256": "24a78bbf960917b59280a1309759be1d77f061d9a849b539f99c0e829f1f5582"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 36,
+      "domain": "mail.ru",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "d3ad355a362dbe0215e8c1319b51daf7188f115064000a24a73d7f1d7ba39da2",
+      "bodySha256": "b37d136a3465e4d4995622fab880ac52db71faec4cea0c99a8b03e8d8572d228",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 37,
+      "domain": "xnxx.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "26944323c6b087f9a1aa3e2d0486633226962a958d6c114045be2dc96637801c",
+      "bodySha256": "fe2ca7950cfeaa32440c56e698bb4f2139e5f179e4764a37d29ef563b5cc904a",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 3422
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 3422,
+            "sha256": "3eddc52768a4042528550556e9c0f45230ac9d51d4123efa18f716946605e0c6"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 3422
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 3422,
+            "sha256": "3eddc52768a4042528550556e9c0f45230ac9d51d4123efa18f716946605e0c6"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 39,
+      "domain": "paypal.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "afd0f923a7df7e8ac13bdf54409d48802dec29a6f6156bf89c565e11011e33d5",
+      "bodySha256": "1a12d249691278aea00b6836a367874f40bf037a7c5bbffffa98e61879ef6b3d",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 11784
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 11784,
+            "sha256": "95c9488b26b8f8636f7d63cd4778a83f2ba0edee1224e7b1d9570544393b9383"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 11547
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 11547,
+            "sha256": "9a153131de50970a3a5137404bba047faeb8e2c2899f721cb6b9c6063d951392"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 41,
+      "domain": "ebay.com",
+      "originalOutcome": "http-failure",
+      "receiptSha256": "569a2d6c3e5792d6fc84dea229e0085842d745e0d089287b32d8e71c0bc63e4a",
+      "bodySha256": "926dcfbab89bcd151480d42c53fa2b4e549cba3fae3f32e7838773a7e3449361",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 242
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 242,
+            "sha256": "b92b60d9c53672940962b03c3a10c7ce66d275266203e7471903243f119c4eb5"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 242
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 242,
+            "sha256": "b92b60d9c53672940962b03c3a10c7ce66d275266203e7471903243f119c4eb5"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 42,
+      "domain": "msn.com",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "4b68da1a30c3abd71923720f7aed9ffe54796b84d7fa4dcb16d8c092926f51c2",
+      "bodySha256": "34ca1ff888b53d209c66422c4fef145ffa359d9a0a360b3b31ef29c33ddca551",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 43,
+      "domain": "canva.com",
+      "originalOutcome": "semantic-barrier",
+      "receiptSha256": "0b079c989710e713a36ab60e8a7f2b34f106e62c015a460a9f067ffbd49492dc",
+      "bodySha256": "304e548f89c9050e0da0f010ecf73b79ecc810582817358a3fc784e215c95735",
+      "historicalHeaderOmission": true,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 263
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 263,
+            "sha256": "bc6bb6b6e177a9105da59d628768f4d800c6f1ab974cf076e362b8b3ee422744"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 263
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 263,
+            "sha256": "bc6bb6b6e177a9105da59d628768f4d800c6f1ab974cf076e362b8b3ee422744"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 45,
+      "domain": "samsung.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "9b4c97af3b6b8efd3e87f0b22ccf3c736499969d73118d356f35b392dbc72b7e",
+      "bodySha256": "fc250e2d35a4864d1fac7b50c8d5d275472298e16156b5864657d75bb5013243",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 40339
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 40339,
+            "sha256": "540b16e25e49ebe63c2b23f0ef1de01abc83b785044c0cb01e55ed33e33cdffa"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 40281
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 40281,
+            "sha256": "5a8c6b92b6e01571db7c90f3261ea4408afe70092ed637bdb8842c684ded5740"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 46,
+      "domain": "github.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "1d4ef5d5660f5ff5313038d7f7c556a1c4343ea2c3d76f5d63575abac2f25ff0",
+      "bodySha256": "64cf5eb3ed2d857cb049f2f62dc67a53fa31453792a48862a2c4bd6107548820",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 15380
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 15380,
+            "sha256": "89ad7831b4c81128f2e028939529eb4f187e43b8ce5c6f0191229bd1e53ee6c2"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 14174
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 14174,
+            "sha256": "759d9d3ea64b7f4c148c12f67cb802780fbb30d4786bb0211be0cd0a69e46dc6"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 47,
+      "domain": "roblox.com",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "d8f743e80c22a15b54d6521a80c54f8d8e7efba8e65af2ac3cfd9761c1cbc200",
+      "bodySha256": "496f283c415581fe14209f02992fdb6721d860f8948647f128fb03ad9581b2ff",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 48,
+      "domain": "espn.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "bbfcab6d69df1e14660261e8de3b57118ca480de68e4a686622c27d93b1d7ff5",
+      "bodySha256": "5d810a6153ad2fa04894b14afdf83d264327c965e131a2e83b45a43f537e348c",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 21222
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 21222,
+            "sha256": "dc46684e1dc5aef780793ac394db85f1dad7465b1a938bca532016d20799f0c4"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 21222
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 21222,
+            "sha256": "dc46684e1dc5aef780793ac394db85f1dad7465b1a938bca532016d20799f0c4"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 49,
+      "domain": "amazon.co.jp",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "bf227cae6597a8c7ec06881ca1aab941e190b37a105f2d8ccdc819ef4a80b2f9",
+      "bodySha256": "a87342284016d826ddbed288ac91910469ad3a4a07d64094053e90a5848292c5",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 67399
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 67399,
+            "sha256": "d906368010674049b057d2c00ff189b0f011be190430183ca28341aaa48b4159"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 66369
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 66369,
+            "sha256": "83836f8de1b8fd7d3e17b71addbf3964f934220db10459b2edfa00df29d27b00"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 50,
+      "domain": "booking.com",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "c55fdcf893dfc05c0b35dd45b88587c556a8ac200340e29d3fb25333a610bdff",
+      "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 51,
+      "domain": "xhamster43.desi",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "defa7396ef929ccf48bf00b9c3819985efd958cfc9766a2bbac01ffc7aaabd28",
+      "bodySha256": "0c2492c9469d91f2912bd194a3b1c9b079f34d98492fcaba8cdf5f54e8e18a77",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 52,
+      "domain": "quora.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "a31a428366c595532228586ecc3e2d748ebc89ed0cf43864751e3fd825b083ca",
+      "bodySha256": "065ca4c7b2187cbf09cf4d35fc643cafe0256d068b9223510962e0082c4e8035",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 123
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 123,
+            "sha256": "ebd41a003d78d51f4519cab7796e6f75f635d063965133fa5503cd4724ca6b1a"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 58
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 58,
+            "sha256": "55bbcf34596bfcecedd42269361c9297fa1bf5b2de248d86498873f1818db5f8"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 53,
+      "domain": "craigslist.org",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "3cd7973c398571e5f7ed78877439a2f126c42a6a0fd96fa54d5e86f8ce1861d8",
+      "bodySha256": "73e5c5c325ace85a8c045b45fdefd50d2f5627284dcff3003ca79f5b689ac510",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 32011
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 32011,
+            "sha256": "a451360fa6d9c81097d464f472b59d8140fdbd68d7e035abff57ce7bf76327d9"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 32010
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 32010,
+            "sha256": "3da0ac0d986ca786c8836eb8d3787d569fbab96f5a3a02ed670e16eb636b56d1"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 54,
+      "domain": "bilibili.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "e2aa0f0c74b2706dee16b4e80666c65cc98e93982d80a0e8c4b49c11ce6d1cc5",
+      "bodySha256": "25e3b54f5682c2e01a116b6f235e01b81140926ac7922200df285432da4508d6",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 7884
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 7884,
+            "sha256": "2f3ab7b1e20b66c63f71322aaaf930fea20715c4f4bebe51c9326a1997c1bde3"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 7884
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 7884,
+            "sha256": "2f3ab7b1e20b66c63f71322aaaf930fea20715c4f4bebe51c9326a1997c1bde3"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 55,
+      "domain": "apple.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "8d38a4ba82852a94e48f8fddd403aaf9178fa679f84026fcc22b1dface9d08f1",
+      "bodySha256": "0b0a933f6f7da26ca4b0c80b49506fb8fe6246045dd8eec8de85142f50e05f01",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 76021
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 76021,
+            "sha256": "080f9ac9ff655a784e6954079c605a49dc07dd210b8db692e5da12bd712291f2"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 70421
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 70421,
+            "sha256": "0c3df00d774bd82cdf549c1eee8e025cb7518112fb5f781e6cf14b9ae04164c3"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 56,
+      "domain": "bbc.co.uk",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "e2f41b1334819ac53c0276a99e9c5c09a8145452d9e53bad6fda3008a26ae9b1",
+      "bodySha256": "d23f3e9c7534c6c8d97ca7420541277e870fe5cc77f1da159abb5e14014f2b95",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 33129
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 33129,
+            "sha256": "7622e06994d986e1f788afbaf54419494681cf0129abf5f4f240778287973131"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 30689
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 30689,
+            "sha256": "03edb015f43a7a9c05cba08b866818afc46ffd53d7dde9a4771f92bd4df2d744"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 57,
+      "domain": "spotify.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "df14d6e6849f5ac0e35074e67166ae9597bae44cbc88c84ab9f4310601368aa4",
+      "bodySha256": "1796c684ba065c28082ed773d95e73be6a7d151882bc0746212040ec7edbdf6d",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 7053
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 7053,
+            "sha256": "d4b6713b05de30c7a07123ad6449f09050cce2c24c75862ed959b0852070a3ca"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 7053
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 7053,
+            "sha256": "d4b6713b05de30c7a07123ad6449f09050cce2c24c75862ed959b0852070a3ca"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 58,
+      "domain": "rakuten.co.jp",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "673e66a5ec06b0f07a443bd3d0f65803eade5bbc88d0dce66026fd2cd8935c5e",
+      "bodySha256": "8ae4a7bb9ed891bd46bbf7c9e557248b10e0cdce5773d3103e01cb513b65ce8f",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 66879
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 66879,
+            "sha256": "6a43d05c38bec0bbcc558a2c43f9a894b55530223dfe18ad3f0b339c6e95fc5e"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": true,
+          "before": {
+            "outcome": "failure",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 57936,
+            "sha256": "787da0c187540291f874d1760f76d7dd770bde40f21dc454d1ac4d93d67eb7f2"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 59,
+      "domain": "amazon.de",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "91e327dcf0186a26af8ab4d6ad57b4d65aff7707f4ac1e6d3104a4d260d5a196",
+      "bodySha256": "763841867c1428a56951b6d82b62b00b4dba77a1ecb55286d5efe72a7a8b961c",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 30498
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 30498,
+            "sha256": "f72266aeaeea1aa8432d0b7d2b2369036f6d67ebb2347bfc05394b06de52fc15"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 25565
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 25565,
+            "sha256": "4da550671f9c6b6cc42c537943f5d0d29e4a946867cff248e3cecfa9a18c3fba"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 60,
+      "domain": "zoom.us",
+      "originalOutcome": "failure",
+      "receiptSha256": "9b67f6b506570f30a0af335bf03645dc6f692ebc7ed522025241822b89cbb7d8",
+      "bodySha256": "d847ded317bf9eac596a45ff0da02f6f342c8f950a849ca6e542646b96e322dd",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 31023
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 31023,
+            "sha256": "a7c36a0bd799b2d33def76910c35fb32793cb89d46e7bb5860d58248b996f4ec"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 14051
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 14051,
+            "sha256": "b00ad90c8752312bde3363fe594295b22274a55b387f84d70cdac1cc20dff1a2"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 61,
+      "domain": "nytimes.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "63d53af78eaaa67032deaaadc180af4e7fff36919a40b1d3dc7865bfd48b4a22",
+      "bodySha256": "5fe35135410c89924459ea3c2deba21d6903c80f5d0d2051ff620f4e062ba943",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 22522
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 22522,
+            "sha256": "dee22bb3e48d5704d330cee8874e430531845ad80363d29fbeb03eeddc2817aa"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 20813
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 20813,
+            "sha256": "21dcdb6a645f28e7eff64e1920477326e822ef27c24e57519a350da618c6d219"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 62,
+      "domain": "sahibinden.com",
+      "originalOutcome": "semantic-barrier",
+      "receiptSha256": "5436df7e9ffb4d7a789451351ddf59bb4b81646dc44be8f4452cb567ce426491",
+      "bodySha256": "d43a3b5376c66bdc59ffac6bb46fd64feef71f80bf6d572a84bc72f332da2e6d",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "semantic-barrier",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "semantic-barrier",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": {
+            "category": "policy-denied",
+            "stage": "semantic-barrier"
+          },
+          "barrier": "challenge"
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "semantic-barrier",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "semantic-barrier",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": {
+            "category": "policy-denied",
+            "stage": "semantic-barrier"
+          },
+          "barrier": "challenge"
+        }
+      ]
+    },
+    {
+      "rank": 63,
+      "domain": "stripchat.com",
+      "originalOutcome": "http-failure",
+      "receiptSha256": "6c04ec0907a83f3b9acf70942ee9b56c829fe829cbb3437932a10d63757927ec",
+      "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 64,
+      "domain": "imdb.com",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "e3c7ae95dfa4829c5cc37f2abfb63eed36decad834dcccdb755aee714b1be989",
+      "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 65,
+      "domain": "cnn.com",
+      "originalOutcome": "failure",
+      "receiptSha256": "2a7fb7382dc7544e46408ce8c238fe986c9b864ef8bd4eee8b9623ad5c4a529c",
+      "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": {
+            "category": "unsupported",
+            "stage": "loader"
+          },
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": {
+            "category": "unsupported",
+            "stage": "loader"
+          },
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 66,
+      "domain": "amazon.in",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "872fc02de8d12b30f5c08586145bf97ee72717e95ecbc9b5491a7ba3f32a339e",
+      "bodySha256": "234233dcb8912381a2cd2edb51b062367b9c561a53ba8b627b9f6df05bb0d9e2",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 26035
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 26035,
+            "sha256": "d5db7321f826949ff08cbaec8ea2606562842a3b3f468677acd47068992ff668"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 24954
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 24954,
+            "sha256": "62e0530a7ac8b736dd9503d832f4ebf2f783428375ee89e7548d5fa9c4e78fee"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 67,
+      "domain": "google.de",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "4e65ba6a427bd821e8338b15c45294101b44d1685d751ba8771968621ce8be58",
+      "bodySha256": "5fd66954d4ebed9f36c015fa7cdce956a1afec6b336208a2176f6f03fc1d7ec9",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 1018
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 1018,
+            "sha256": "53a13ea77c79f4d45285e3be68146a7549a65c0b82e70bb9d5774de43ac4432f"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 1018
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 1018,
+            "sha256": "53a13ea77c79f4d45285e3be68146a7549a65c0b82e70bb9d5774de43ac4432f"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 68,
+      "domain": "vercel.app",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "6878e987ff32b822b0f0de243dcda15f66730cd803599da249d668983da5558d",
+      "bodySha256": "7dd6422bf47140c821e495fb9d5d62ff79ddd82a34f9b68c6112a04165b80c51",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 11534
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 11534,
+            "sha256": "37ad05be85e39dac24f445ce45f6c99c62d7503cf7adecb50cb4387d3a465471"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 6806
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 6806,
+            "sha256": "37bfa8780828bc5733930024ae726eb33b7af7bce4756030576fa05ee908d5b8"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 69,
+      "domain": "shein.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "e1ce6441a7ed8fb583297210a424e04e5adfb237e5c21f6e42c4f53f64d5236a",
+      "bodySha256": "e92e16285627820b158176f35ba168d301e57516ed3c78338ac084c3b363a933",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 11566
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 11566,
+            "sha256": "e93038ba3dc5901207eabb581ee51c0ace9e6cfe97bbc42e9c76138c515cc0d7"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 8582
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 8582,
+            "sha256": "3aedab33ac682591d7aac1ec7cdd0d18c39c95692690dbb83d93b85c9239da52"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 70,
+      "domain": "indeed.com",
+      "originalOutcome": "semantic-barrier",
+      "receiptSha256": "bb935a1ed616781a9061b6f369e81cdadf509129772d3fd2d4e24343e03672e3",
+      "bodySha256": "6429c826bed479c6c4234823005bee524a4e09fe49704e1f94f624e0aa2a2773",
+      "historicalHeaderOmission": true,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 179
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 179,
+            "sha256": "972d5a8f7a043231b6a199895a3e1a2f8ce383b6e65a9db88e1b9495c0644b5f"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 179
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 179,
+            "sha256": "972d5a8f7a043231b6a199895a3e1a2f8ce383b6e65a9db88e1b9495c0644b5f"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 71,
+      "domain": "pinterest.com.mx",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "a25dc2ecbca46f223a092bb490da23d81797eab6ec99be7649989e021ca579d1",
+      "bodySha256": "f47deff482af696f8d1b3f5058757720ec46862ed977c379a013d35f9480f1f8",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 98
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 98,
+            "sha256": "e11c99b282136db812a751c62999ff81fe333050fc2042bc78e010a25faf4912"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 98
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 98,
+            "sha256": "e11c99b282136db812a751c62999ff81fe333050fc2042bc78e010a25faf4912"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 72,
+      "domain": "chaturbate.com",
+      "originalOutcome": "semantic-barrier",
+      "receiptSha256": "b4f0d513e0dfb79804be8f45ae06c67d61139ac8d677083527baba411d11ab20",
+      "bodySha256": "ce6b3eaf92773a3e39c38be8238e84bece5b2ca8f811dd33c1b76b08c61e0e63",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "semantic-barrier",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "semantic-barrier",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": {
+            "category": "policy-denied",
+            "stage": "semantic-barrier"
+          },
+          "barrier": "challenge"
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "semantic-barrier",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "semantic-barrier",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": {
+            "category": "policy-denied",
+            "stage": "semantic-barrier"
+          },
+          "barrier": "challenge"
+        }
+      ]
+    },
+    {
+      "rank": 73,
+      "domain": "ok.ru",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "357e0702eb12d2d5b1f84be405d18e9cff121a15403f304ac3ea09cf103af0d9",
+      "bodySha256": "4ad733c1e3f54123c153d6aa3752e9962e0820c5342e11195338e12c3e0d3065",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 4213
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 4213,
+            "sha256": "a68dcdd7223a16402c013f8ac2cb9e721b04cccb4c38690f5a490d9004274715"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 4213
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 4213,
+            "sha256": "a68dcdd7223a16402c013f8ac2cb9e721b04cccb4c38690f5a490d9004274715"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 74,
+      "domain": "cricbuzz.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "f3c94d77555b60afd86f101c3bdc02554bc77cfffea4512b6701f2d170ea5b0d",
+      "bodySha256": "0dc5fc46d50ea1e7217dbc960e2bc4985dd3c16a3333249516adab074d260420",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 41157
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 41157,
+            "sha256": "f1da66d04b41ca8c51283420402604ca9b3a8bf67cf8b5e5ad0d2ccb12a308e0"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 41157
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 41157,
+            "sha256": "f1da66d04b41ca8c51283420402604ca9b3a8bf67cf8b5e5ad0d2ccb12a308e0"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 75,
+      "domain": "xnxx.gold",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "418fac632560a880c2010e114980517de08ac28fa86b3ce3799cbb623361415a",
+      "bodySha256": "76fa4ecb4e0c64d2f98f390037df7897e2ee4da862d98c946824911ba2bac087",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 2634
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 2634,
+            "sha256": "89d27ca0ef809cc1942120804d5b8dcaf7ecc2226273b355c84dee9b30bc95e8"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 2634
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 2634,
+            "sha256": "89d27ca0ef809cc1942120804d5b8dcaf7ecc2226273b355c84dee9b30bc95e8"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 77,
+      "domain": "music.youtube.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "6339abfdf16ec014096ddf43170b71627a5b71cc4245a9512c403a14b7313ff0",
+      "bodySha256": "8ff7e5bd7ab1efb39381af5c28f8cce618247d81be78fa5beb044da6ff4a41ca",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 155
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 155,
+            "sha256": "16f958a3211b7226758a29b1ab671436e7a44736b668e0c3f3a8c3e7ccce50f2"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 155
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 155,
+            "sha256": "16f958a3211b7226758a29b1ab671436e7a44736b668e0c3f3a8c3e7ccce50f2"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 78,
+      "domain": "onlyfans.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "c8767e3c7fb20f481381ed722419dc60caf80d2565d941c1e0fc3db150d201fc",
+      "bodySha256": "62328a0610d0d144b5b6645736acf7edb9bbe8f098ec4ddf539f4625cab0a50c",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 78
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 78,
+            "sha256": "1e62554135238ddb876e0822e4d92d2459c74032ee4af7c08ae65bd2c6a4dfd5"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 9
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 9,
+            "sha256": "00498c976e82644c76f0d7de7299892eaa9e7476077caf1170ee70f780737341"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 79,
+      "domain": "glance.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "b5decefb498e91ff06d9d1764189182fc3639c84bda819a59914fa93d1760d52",
+      "bodySha256": "eda50985dd2bcbabecd8b229365d085bbde57bed6ad0a99bbe14aa0167f77c4c",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 5538
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 5538,
+            "sha256": "3fa407bf395f1e9bda225bac1da0cbb4017c856ce3b96cdd53dad40694479af2"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 5538
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 5538,
+            "sha256": "3fa407bf395f1e9bda225bac1da0cbb4017c856ce3b96cdd53dad40694479af2"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 80,
+      "domain": "beeg.com",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "ee617fa64a706ed58b8a462ca793701603679d1e8b4a72514c38dfde7e7e4f6d",
+      "bodySha256": "07d9b04416628e048fc54e9bc3313728735691375d744cc00b86d8e4bc2783d3",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 82,
+      "domain": "google.co.jp",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "a1f4345db80ed652e8bd0f8042a5f945447306983aebbb66b127400dd8deebe1",
+      "bodySha256": "439dc1ba63b4b483601b65de67d7deaaefcb72421610a04245ffff751fc1781b",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 1018
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 1018,
+            "sha256": "53a13ea77c79f4d45285e3be68146a7549a65c0b82e70bb9d5774de43ac4432f"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 1018
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 1018,
+            "sha256": "53a13ea77c79f4d45285e3be68146a7549a65c0b82e70bb9d5774de43ac4432f"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 83,
+      "domain": "bbc.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "fa8eb1f7cb736181209899b4520f2c86467c2a7be235e9b0bab46a85c713a696",
+      "bodySha256": "e06fb9d4b3ae7e01b21b69bc951e4dfcdecca310388936491650b2e8b7187b37",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 50899
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 50899,
+            "sha256": "76cb1bbc8871b4b6542767a47deec7cf9e335107e149670a87f0be35f26070db"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 47773
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 47773,
+            "sha256": "342082fad321f1ce882b24f1ae630d8881056e30c7b3846c0853ab8c5639feb1"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 85,
+      "domain": "amazon.co.uk",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "11e4ebeb0c787ad922886cd42bdcd65fcb623bfdeba57a4018fc09dde18a5770",
+      "bodySha256": "5e1bad22cfd48e75e0075a978c020515699ee873fff411b9e14c0294e1739bc9",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 26054
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 26054,
+            "sha256": "60585750625f090e7874cdfaf69cfe117dcdfd4c2fc47096913e191b089882c1"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 23089
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 23089,
+            "sha256": "336a33401e140fe85a43f516d916733eb5c223601f54d921b8a5db1cf7d86c3d"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 86,
+      "domain": "doubleclick.net",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "3b5d233fa223a2854606e6910566235c2eee4ec73f5d4ece0b2c46dbb0579add",
+      "bodySha256": "1ab9657f629b5bf22e7e84e1d34210a820abc6f8034e88c55ff9f96a8258d764",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 16454
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 16454,
+            "sha256": "a7dc29b686de5fd3f1796caaa0847f4e8be6f056bfeb4883aa138da250b25a43"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 16423
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 16423,
+            "sha256": "33504473283a6ebc4c4f7596677d6d5828f0bb4c1ac4f62ccd71e4eefd9864cb"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 88,
+      "domain": "uol.com.br",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "2d9663398ca227d992dfefe5b349e12fdf41f14e2a3a46755f6f64c326e4bfd5",
+      "bodySha256": "8e4cd4f12294310f592b8ccd5152e3f1625c7f9b6c6a24c43e3ce224dbfa04bb",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 95276
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 95276,
+            "sha256": "d9f7507e779f501058552b3f7dd2c8f12cc03193cdcf7b6148d797e5594b0959"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 84564
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 84564,
+            "sha256": "b3f0ef42c0714fcfed6cbc632967afe44943197ca062821107c4124f6918e1a8"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 89,
+      "domain": "nudevista.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "74262ac7b32aaea4a665a45212cf1b09fe65ce18f38ecc825dfeb68c9ada6b77",
+      "bodySha256": "d55198dedf1b4213440720b9157118be946cb6c1ecce791ea414eddf23b8acea",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 58731
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 58731,
+            "sha256": "c49e07c680ab5e3c0aefcb8a536324284fad7b2bf0ac95315df41cae4026cc11"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 58549
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 58549,
+            "sha256": "8d7517d4cba6d8ab9b515f51687dc3ec027fdc37bac6e1a41e98ed405dfde83c"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 90,
+      "domain": "news.yahoo.co.jp",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "066ac31e6a73dd62a14f915eca7fd93408c231b9d7725b7233b6847c8efc5e12",
+      "bodySha256": "ebac37b4c28a1e9981a6d2368885754512ea0ccca948dca32e0d572d833aeda3",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 15342
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 15342,
+            "sha256": "e93356a73b13b5f61438e4cfe278a7189a08ae1d9c1fe77e65597fb8aec158c8"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 15342
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 15342,
+            "sha256": "e93356a73b13b5f61438e4cfe278a7189a08ae1d9c1fe77e65597fb8aec158c8"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 91,
+      "domain": "nicovideo.jp",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "f6baf713e01d171d9ee7c7131291e35eefad529e2be0eeb5b669fb229610bae1",
+      "bodySha256": "b696f1daee3f58d6dbd6633cf5bfa5c34554e125a21a5906ccd0c2e07c13a506",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 11782
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 11782,
+            "sha256": "3d601bdd41b183e40e1e7a19e7755df56a3be8d25e0b1de22fff78acd6973cb9"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 11341
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 11341,
+            "sha256": "fb1a3d085785f7b67d6279cb57d617460a1ce8ae6191b459ce2a7e3aaa3f3439"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 92,
+      "domain": "mercadolivre.com.br",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "661584bbbf6c06489ace15e292c54bb774320543cf82612b5037d98fa7d4573b",
+      "bodySha256": "d9dde5a4003c0502e15eea32eb9b8c3003f085859cc70a173362c1e0828b3ba7",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 55159
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 55159,
+            "sha256": "43cbd39b67f57f3ea46557f9c462952a1224796d287e92361df76e2feba6abc1"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 29280
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 29280,
+            "sha256": "6d0e01a77f3eb99ce6a321f804e059f21fba4a326055b178235813bca0b076dd"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 93,
+      "domain": "theguardian.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "75ad1a6dfeb7b9fc27e45c5e547cf22103c77d26448153a0592bf940d0316c41",
+      "bodySha256": "4bc5d14ea6539ca901001088c65f1b949de1f58e560f1451161e0adf51b9b5a0",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 54476
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 54476,
+            "sha256": "75fab4a994efc437829843d090ae863191c2a2c1c4a47cd615cefa127df5fd70"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 51600
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 51600,
+            "sha256": "609c04d360d635b3e7f3621f744d73f1c8da30118483a96050e18430486e556a"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 94,
+      "domain": "primevideo.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "cde4ec3c030395e1a9049ab8b62bfd8875b00337074f1891090176457ba77496",
+      "bodySha256": "604e008788d95c4a5e1fbcd296e56d56ac212c39a70814b58d17371fdcdc8cc2",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 5162
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 5162,
+            "sha256": "5071fa66dd0acffde1c3db780938498e7d68d8ebf70d86e5545fc44d90411ee2"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 1616
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 1616,
+            "sha256": "f4929ec3ab61a0312b8294bafc1bb35dc5dbbff22f63056e77d0b9def2842fb5"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 95,
+      "domain": "minesweeper.one",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "990ee462f9ce63e41decca28d6aa9a9692152cf6a077aeb4ce5fb3ef6c94cc3b",
+      "bodySha256": "884b2427dc6edfdcf96219fe831f6fbf23de04fdb178934449b9589785817f41",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 16032
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 16032,
+            "sha256": "7f5cef58a361551dde755e8b10ca7ff13903839b7dff3b9713b275a37fcaebeb"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 16032
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 16032,
+            "sha256": "7f5cef58a361551dde755e8b10ca7ff13903839b7dff3b9713b275a37fcaebeb"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 96,
+      "domain": "dailymotion.com",
+      "originalOutcome": "empty-extraction",
+      "receiptSha256": "a76a235ae18d7d5cc56ebad19922ac1361912ea712187ee11a24ff1c7e0b5790",
+      "bodySha256": "b59edcf9703ea86df367297cee5fc8d6ed388e8ba4e5b464fe9c6cd502386432",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "empty-extraction",
+            "bytes": 0
+          },
+          "after": {
+            "outcome": "empty-extraction",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 97,
+      "domain": "fc2.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "afa0a00a59f35ea9fa3b3a6f013e262b47902d29dec0b06dca5d2dd5599119b5",
+      "bodySha256": "99146ddc9bfb73c6420419296a3e7eeaaf6eaa64f62ddd6b948d7a40ddeba7c1",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 2737
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 2737,
+            "sha256": "a30ec7c42c48c14075815288f317b9a6fdaa17b4dd808c92483f254f1b168b97"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 2732
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 2732,
+            "sha256": "44e4b67993305430548cd60278421f5adc0df92088f7828d049f32a547d3112d"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 98,
+      "domain": "telegram.org",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "fb1ccaefdb4350b184271a31727b866a54048533f46eb95210e7050f6a945144",
+      "bodySha256": "90fbb9744ab53eb92089851404436773a180366f981675da615fec21c463e53d",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 5005
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 5005,
+            "sha256": "a3ead3e33d7f25bae0838f3f9dd0235225f50875be626bda0227bc1e3c90aad1"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 5005
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 5005,
+            "sha256": "a3ead3e33d7f25bae0838f3f9dd0235225f50875be626bda0227bc1e3c90aad1"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 99,
+      "domain": "nyanx.com",
+      "originalOutcome": "http-failure",
+      "receiptSha256": "71b51f2fa5c692880c71f83020cb353b45301499b6ddf7e36ae4af5b3e27687f",
+      "bodySha256": "415ff807abb2fd49ce840d67bf14cb4d647e78afa9ab115c2b2dd8c8614928dd",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 179
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 179,
+            "sha256": "5bd22066c7d3e0cb28d40d82c325a5b4f8ffadc2e8486c8f7df66411ce693ac1"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "http-failure",
+            "bytes": 179
+          },
+          "after": {
+            "outcome": "http-failure",
+            "bytes": 179,
+            "sha256": "5bd22066c7d3e0cb28d40d82c325a5b4f8ffadc2e8486c8f7df66411ce693ac1"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    },
+    {
+      "rank": 100,
+      "domain": "tradingview.com",
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "50a2b91cba8d2347795090b49c704dabf3df80590dcd54dccd0061ff360d8f94",
+      "bodySha256": "dcc20c1ec7d093cca4027c7a2d78af75dc43519dd419120cacc9876c533dc104",
+      "historicalHeaderOmission": false,
+      "cases": [
+        {
+          "policy": "original",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 70086
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 70086,
+            "sha256": "cd8af8f56fb597d70e7adf18241f6d396abfabcad844b8113d226e4faba0e7a6"
+          },
+          "failure": null,
+          "barrier": null
+        },
+        {
+          "policy": "source-hidden-inline-v1",
+          "changed": false,
+          "before": {
+            "outcome": "extracted-unverified",
+            "bytes": 69932
+          },
+          "after": {
+            "outcome": "extracted-unverified",
+            "bytes": 69932,
+            "sha256": "84bfc98bb9823faa7f5a2d281e92d21f906a4a5540bfedb76f9387e95e6957b1"
+          },
+          "failure": null,
+          "barrier": null
+        }
+      ]
+    }
+  ],
+  "pushed": false
+}

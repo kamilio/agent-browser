@@ -8,7 +8,7 @@ import { descriptionMeta } from "./document-descriptions.js";
 import { isDateTimeSourceTag } from "./date-time-source.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlEncoding } from "./html-encoding.js";
-import { isHtmlSpecial } from "./html-formatting.js";
+import { isHtmlScopeBoundary, isHtmlSpecial } from "./html-formatting.js";
 import { htmlParseInfo, setHtmlParseInfo } from "./html-info.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import {
@@ -104,6 +104,38 @@ const paragraphClosers = new Set(
 		" ",
 	),
 );
+const sourceHiddenBlockEnds = new Set(
+	"address article aside blockquote center details dialog dir div dl fieldset figcaption figure footer header hgroup listing main menu nav ol pre search section summary ul".split(
+		" ",
+	),
+);
+
+function closeSourceHiddenBlockEnd(
+	skipped: string[],
+	open: string[],
+	name: string,
+) {
+	if (
+		!sourceHiddenBlockEnds.has(name) ||
+		open.some((ancestor) => ancestor === "svg" || ancestor === "math") ||
+		skipped.some((ancestor) => ancestor === "svg" || ancestor === "math")
+	)
+		return;
+	for (let index = skipped.length - 1; index >= 0; index--) {
+		const ancestor = skipped[index];
+		if (ancestor === name) {
+			skipped.length = index + 1;
+			return;
+		}
+		if (
+			ancestor === "body" ||
+			ancestor === "form" ||
+			isHtmlScopeBoundary(ancestor) ||
+			reconstructableFormatting.has(ancestor)
+		)
+			return;
+	}
+}
 
 function closeSourceHiddenImpliedEnds(
 	skipped: string[],
@@ -340,6 +372,8 @@ export function sanitizeResearchHtml(
 					)
 				)
 					continue;
+				if (skipped.at(-1) !== name && legacyOmittedDepth === 0)
+					closeSourceHiddenBlockEnd(skipped, open, name);
 				if (skipped.at(-1) !== name)
 					throw new AgentBrowserError(
 						"unsupported",

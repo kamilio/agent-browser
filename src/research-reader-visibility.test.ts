@@ -255,7 +255,7 @@ it.each([
 });
 
 it.each([
-	"<div hidden><span>drop</div><p>leak</p>",
+	"<div hidden><b>drop</div><p>leak</p>",
 	"<p hidden><b>drop<p>ambiguous</p>",
 	"<ul><li hidden><span>drop<li>ambiguous</ul>",
 	"<x-card hidden/>unclosed",

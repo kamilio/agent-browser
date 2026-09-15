@@ -890,5 +890,6 @@
   "src/research-xml-declaration.test.ts",
   "src/research-inline-xml-declaration.test.ts",
   "src/research-source-data-tables.test.ts",
-  "src/research-source-data-workflow.test.ts"
+  "src/research-source-data-workflow.test.ts",
+  "src/research-hidden-block-ends.test.ts"
 ]

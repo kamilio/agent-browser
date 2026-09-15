@@ -213,7 +213,7 @@ describe.each(hiddenCases)(
 			`<div ${attribute}><p><span>SECRET</p></span></div>`,
 			`<p><span ${attribute}>SECRET</p></span></p>`,
 			`<p ${attribute}><span>SECRET</p></span></p>`,
-			`<div ${attribute}><p><p>SECRET</p></p><span></div></span>`,
+			`<div ${attribute}><p><p>SECRET</p></p><b></div></b>`,
 			`<div ${attribute}><p><p>SECRET</p></p></span></div>`,
 			`<div ${attribute}><p><p>SECRET</p></p></section></div>`,
 			`<div ${attribute}><p><p>SECRET</p></p>`,

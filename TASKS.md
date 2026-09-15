@@ -6,6 +6,39 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: full saved top-100 reassessment and hidden block recovery
+
+- Reassessed all 90 available top-100 bodies under original and inline-hidden
+  reader policies on both builds: **360 in-memory navigations, zero HTTP**.
+  Ten missing captures remain unreplayed original failures, not passes.
+- Fixed Rakuten's missing list end inside a hidden div with bounded explicit
+  block-ancestor closure: inline-hidden extraction recovers **57936 bytes**;
+  original-policy 66879 bytes stay identical. The other **179 paired cases**
+  retain body outcomes/hashes, diagnostics and source metadata. Source coupon
+  placeholders remain; this is not rendered or transactional website acceptance.
+- Review exposed document-body/form side effects in the initial new helper.
+  Six new negative controls fail on that version; local body/form boundaries
+  make the final identical suite pass. Existing direct-matching document-tag/
+  form limitations remain documented, not disguised as a full visibility fix.
+- Clean native baseline1818/24; final **1945/25**, **127 new tests**. Build,
+  narrowed types, formatting, lint and selected tests pass. 1812 original cases
+  unchanged; six negative vectors intentionally replaced by still-rejected
+  formatting variants. Explicit canonical native manifest now893 entries.
+- Preserve first harness policy-spelling failures separately: 83 terminal
+  children, not website failures or paired results. Corrected baseline/candidate
+  runs have 180 successful children plus one diagnostic; all264 groups close.
+  Original source/body/compiled evidence and dirty workspace are preserved.
+- Three old header-confirmed challenges (ChatGPT/Canva/Indeed) cannot be faithfully
+  reclassified from their stored headers because cf-mitigated was omitted. Their
+  original live barrier records remain authoritative. Next: bounded challenge/
+  cooldown header retention without clipping conflicts into false evidence.
+- Empty-source inspection identifies Roblox catalog and TikTok navigation inert
+  JSON as useful next extraction candidates; do not execute bootstrap programs
+  or count age-verification state as content. See `HIDDEN-BLOCK-ENDS.md` and
+  `reports/top100-reassessment-2026-09-15.{md,json}` for the complete90-site matrix.
+  SafeJS, providers/passkeys, interactive/service/TTY, CAPTCHA and broad live
+  compatibility remain open. Overall goal stays active; no push.
+
 ### September 15: bounded source-backed product tables
 
 - Recovered AMD's source-backed product specifications without running page
