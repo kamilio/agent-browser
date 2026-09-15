@@ -6,6 +6,40 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: saved-page visibility and noscript challenge fallback
+
+**PROGRESS; overall browser goal remains ACTIVE.** Compare 17 immutable public
+captures under default, source-hidden-v1 and source-hidden-inline-v1 policies,
+without another website request. GOV.UK drops its whole hidden cookie banner and
+contradictory confirmations: 9837 to 6700 Markdown bytes, services content retained.
+Office drops inline-hidden configuration (52523 to 26082); NASA loses hidden menu
+clutter (48247 to 12590). These are source-filtering observations, not computed
+visibility or a blanket default-policy change. No cookie consent action occurred.
+
+The comparison exposes a diagnostic gap: LOC's saved primary-header projection
+omits cf-mitigated while its original receipt retains a confirmed challenge.
+Supplying only the projected response through a development in-memory transport
+previously yielded an HTTP failure without a challenge diagnostic. Add a bounded
+fallback pairing exact Just a moment title with Enable JavaScript and cookies to
+continue. Report possible/unspecified unless independent provider evidence exists;
+keep the original failed receipt fail-closed. No invented header, retry or bypass.
+
+Clean isolated baseline: 1095 passing native cases in 12 explicit files. Candidate:
+1218 in 14 files, 123 new, all baseline outcomes unchanged; build/types/format/lint
+pass. Independent scoped review has no concrete findings. Final baseline/candidate
+proofs perform 102 in-memory navigations, no HTTP requests; 48 non-LOC page/policy
+outputs match exactly. GOV.UK's actual offline CLI matches selected API output.
+Initial incorrect cookie-button expectation and the diagnostic-triggering run are
+retained separately. All five offline proof child groups close and pins remain
+unchanged. Historical live captures/results are not rewritten.
+
+Next: use explicit source filtering where hidden UI is unwanted, continue broader
+content/interaction checks and measure parser/runtime bottlenecks. Real-site
+blocking reductions, JS shells/runtime activation, providers/passkeys/devices/TTY,
+full-release acceptance and hardware/benchmark/Astra/Poe research remain open.
+Details: NOSCRIPT-CHALLENGE.md and
+`reports/content-visibility-evaluation-2026-09-15.md`.
+
 ### September 15: paced server cooldowns and three content checks
 
 **PROGRESS; overall browser goal remains ACTIVE.** Opt-in native pacing now
