@@ -6,6 +6,37 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: large-page workflow recovers four original failures
+
+- Revisited all five original missing-body transport cases. The default 2MB pass
+  retains four 64KiB prefixes, all ending in head material: useful diagnostics,
+  not page-content recovery. Tom's Guide now reports decoded overflow rather
+  than its historical timeout; no same-body timing or causal claim is made.
+- Existing explicit `long-v1` CLI capture/headings obtains complete Google Play,
+  TechRadar, Tom's Guide and CNBC HTML under its existing 4MB ceiling. No default
+  budget, engine, parser or production code changed. Ordinary admitted offline
+  body selections recover 131592 / 108446 / 30962 Markdown bytes for the latter
+  three, with sampled useful source beyond menus/member prompts.
+- Comparor works with the default research CLI, producing 12160 bytes of offer
+  catalogue source. An earlier custom-wrapper attempt was correctly stopped by
+  the observer after redirect cookies appeared; resourceCredentials omit alone
+  does not override top-level cookies. Existing CLI credential omission fixes
+  the experiment, not a site restriction. No values or stored credentials accessed.
+- Google Play's full 2535808-byte body loads and emits 6861 reader text code units,
+  but its 2758-node heading scan has zero entries. Generic replay correctly
+  rejects the resulting empty-extraction receipt. Next: explicit, tightly checked
+  empty-outline selector recovery that preserves original evidence, not fabricated
+  headings or weakened generic failed/partial-capture admission.
+- Ten live navigations / 16 request starts / 15 responses / six redirects / one
+  guard denial / five complete captures; four offline children yield three useful
+  selections and one expected admission rejection, zero HTTP. All 14 children /
+  groups and 16 requests / sockets close. Source/build and original 42 tracked /
+  697 untracked files remain unchanged; no new native test/build pass claimed.
+- Workflow: `LARGE-PAGE-WORKFLOW.md`. Separate full report:
+  `reports/oversized-html-workflow-2026-09-15.{md,json}`. Original 100-page results
+  remain historical. No push; broader page/access, interaction/passkey and SafeJS
+  acceptance remain open. Source prices/news and linked articles are unverified.
+
 ### September 15: failure-preserving decoded response prefixes
 
 - Added default-off Node `captureDecodedPrefixBytes` (1..65536) and transport-local
