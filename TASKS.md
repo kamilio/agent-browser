@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: paced server cooldowns and three content checks
+
+**PROGRESS; overall browser goal remains ACTIVE.** Opt-in native pacing now
+records bounded Retry-After advice from real HTTP 429/503 headers before body
+completion, delaying queued exchanges for that origin without retrying. Preserve
+longer deadlines, FIFO, cancellation and resource caps; disabled pacing, routed
+responses and cache hits retain prior behavior. Cross-transport coordination and
+real-server effectiveness are not established.
+
+Clean baseline: 1042 passing selected native cases in 16 files. Owned candidate:
+1125 in 18 files, 83 new, with baseline outcomes unchanged and build/types/format/
+lint passing. Independent review found no actionable defects in its scoped read.
+Three candidate public navigations made three GETs, no retries, all captures and
+cleanup verified: GOV.UK 200 / 9837 Markdown bytes; ESA 200 / 18667 bytes; Library
+of Congress 403 / challenge, stopped. No 429/503 occurred. GOV.UK exposes hidden,
+mutually exclusive cookie confirmations in default extraction; no consent was
+given. Next: evaluate explicit source-visibility filtering on that immutable
+capture, without another website request or rewriting the original result.
+
+The completed top-100 homepage sweep remains historical: 100 attempts, 197 GETs,
+65 nonempty-unverified, 13 empty and 22 other failures/barriers, not 100 working
+websites or a verified September traffic ranking. JS/runtime activation, provider/
+passkey/device/TTY gates, interaction acceptance, content-quality checks and
+hardware/benchmark/Astra/Poe research remain open. Report:
+`reports/retry-after-cooldown-2026-09-15.md`.
+
 ### September 15: real content pages and authored link labels
 
 **PROGRESS; overall browser goal remains ACTIVE.** Six new content-page

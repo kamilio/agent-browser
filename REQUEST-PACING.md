@@ -47,6 +47,34 @@ removing spacing. Closing the transport clears pacing timers and retained state.
 
 ## Limits
 
+### Server-directed cooldowns
+
+When pacing is enabled, validated headers from real HTTP 429 or 503 responses
+also establish an origin cooldown from accepted `Retry-After` advice. The existing
+bounded parser accepts delay seconds or supported HTTP dates, at most 86,400
+seconds. Invalid, ambiguous, oversized and unsupported values are ignored.
+Other response statuses, including redirects, do not establish this cooldown.
+This is rate/service backoff handling, not complete `Retry-After` semantics.
+
+The cooldown is recorded at header arrival, before the response body completes.
+It delays exchanges that have not started; it cannot recall in-flight requests.
+The original response is not retried. A zero, stale or shorter delay cannot
+shorten the configured interval or a longer existing cooldown. Accepted wall-clock
+advice becomes a monotonic deadline; later clock changes do not move it.
+
+Queued work remains FIFO and subject to existing abort, close, concurrency and
+whole-request deadlines. A long server delay can cause a waiting request to time
+out without starting its exchange. The cooldown remains if body reading later
+fails. Other origins are independent. Fully routed responses and cache hits do not
+establish server cooldowns; disabled pacing retains its previous behavior.
+
+Origin/pending capacities are unchanged. If a late response needs a reclaimed
+origin slot and all slots are occupied by unexpired state, recording the cooldown
+fails with resource-limit rather than evicting another origin or silently sending
+premature traffic. This can fail response handling before body completion.
+
+### Remaining limits
+
 Pacing separates synchronous native exchange startup invocations; it does not
 guarantee exact packet transmission or arrival spacing observed by a remote
 server. Runtime scheduling, DNS, TLS, network delays and server processing still
@@ -54,8 +82,9 @@ vary. Slow synchronous startup can increase the interval, and asynchronous
 responses may overlap. The earlier grant-only limitation and the September 12
 startup-coordination validation are recorded in REQUEST-START-PACING.md.
 It does not coordinate separate transports, processes or agents, queue beyond
-the existing concurrency cap, retry failed requests, interpret Retry-After,
-cache responses, obey a newly added robots policy or automate human challenges.
+the existing concurrency cap, retry failed requests, interpret cooldown advice on
+other statuses, cache responses, obey a newly added robots policy or automate
+human challenges.
 Existing challenge detection and human-handoff behavior remain unchanged.
 
 Deliberate spacing adds latency. No throughput, end-to-end speedup, reduced block
@@ -81,3 +110,24 @@ Evidence is in `node_modules/.cache/native-validation/native-origin-request-paci
 The original lint failure, round02 launcher preflight failure and earlier denied
 request remain historical evidence in their original lanes. No performance
 measurement, live compatibility or reduced-block/CAPTCHA result is claimed.
+
+### September 15 server-cooldown validation
+
+The clean base has 1042 passing selected native cases across 16 files. The owned
+cooldown candidate has 1125 across 18 files, including 83 new scheduler/transport
+cases; all baseline outcomes are preserved. Build, strict selected-root types,
+format and lint pass. Fake clocks and mocked HTTPS cover header-time recording,
+synchronous startup, slow bodies, FIFO, deadlines, independent origins, capacity,
+disabled/routed/cache behavior and cookie refresh. These are not real sockets or
+server-rate-limit measurements.
+
+Separately, the pinned candidate made three public native navigations and three
+GETs, with no retries: GOV.UK and ESA returned text; Library of Congress returned
+a Cloudflare challenge and remained a failure. All three bodies and cleanup were
+verified. No 429/503 occurred, so these observations do not establish real-site
+cooldown effectiveness or reduced blocking. GOV.UK's default reader also exposed
+hidden cookie-confirmation messages without any consent action; visibility remains
+an explicit extraction limitation.
+
+Details: `reports/retry-after-cooldown-2026-09-15.md` and the private evidence lane
+`node_modules/.cache/native-validation/retry-after-cooldown-september15/`.

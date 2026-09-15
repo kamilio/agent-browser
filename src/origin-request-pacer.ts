@@ -41,6 +41,31 @@ export class OriginRequestPacer {
 		return this.dispatch(origin, signal, () => undefined);
 	}
 
+	defer(origin: string, delayMs: number): void {
+		if (this.closed)
+			throw new AgentBrowserError("closed", "Request pacing is closed");
+		if (!Number.isSafeInteger(delayMs) || delayMs < 0 || delayMs > 86_400_000)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid request cooldown delay",
+			);
+		if (delayMs === 0) return;
+		const now = performance.now();
+		this.reclaim(now);
+		let queue = this.origins.get(origin);
+		if (!queue) {
+			if (this.origins.size >= 256)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Request pacing origin limit exceeded",
+				);
+			queue = { nextStart: now, active: false, pending: [] };
+			this.origins.set(origin, queue);
+		}
+		queue.nextStart = Math.max(queue.nextStart, now + delayMs);
+		this.pump(queue);
+	}
+
 	dispatch<Result>(
 		origin: string,
 		signal: AbortSignal,
@@ -52,15 +77,7 @@ export class OriginRequestPacer {
 			);
 		if (signal.aborted) return Promise.reject(aborted(signal));
 		const now = performance.now();
-		for (const [name, queue] of this.origins) {
-			if (
-				!queue.active &&
-				queue.pending.length === 0 &&
-				queue.timer === undefined &&
-				queue.nextStart <= now
-			)
-				this.origins.delete(name);
-		}
+		this.reclaim(now);
 		let queue = this.origins.get(origin);
 		if (!queue) {
 			if (this.origins.size >= 256)
@@ -128,6 +145,18 @@ export class OriginRequestPacer {
 		this.pending = 0;
 	}
 
+	private reclaim(now: number): void {
+		for (const [name, queue] of this.origins) {
+			if (
+				!queue.active &&
+				queue.pending.length === 0 &&
+				queue.timer === undefined &&
+				queue.nextStart <= now
+			)
+				this.origins.delete(name);
+		}
+	}
+
 	private grant(
 		queue: OriginQueue,
 		start: () => void,
@@ -139,7 +168,10 @@ export class OriginRequestPacer {
 		} catch (error) {
 			reject(error);
 		} finally {
-			queue.nextStart = performance.now() + this.intervalMs;
+			queue.nextStart = Math.max(
+				queue.nextStart,
+				performance.now() + this.intervalMs,
+			);
 			queue.active = false;
 			this.pump(queue);
 		}

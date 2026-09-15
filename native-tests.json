@@ -877,5 +877,7 @@
   "src/research-replay-compact-tables.test.ts",
   "src/markdown-source-links.test.ts",
   "src/document-markdown-links.test.ts",
-  "src/research-link-source-label.test.ts"
+  "src/research-link-source-label.test.ts",
+  "src/origin-request-cooldown.test.ts",
+  "src/node-retry-after-pacing.test.ts"
 ]

@@ -33,6 +33,7 @@ import {
 } from "./network.js";
 import { OriginRequestPacer } from "./origin-request-pacer.js";
 import { resourceLimitError } from "./resource-limit.js";
+import { parseRetryAfter } from "./retry-after.js";
 import {
 	ResourceReuseCache,
 	type ResourceReuseCacheOptions,
@@ -935,6 +936,11 @@ export class NodeNetworkTransport implements NetworkTransport {
 					const status = response.statusCode ?? 0;
 					const responseHeaderValues = responseHeaders(response);
 					try {
+						if (this.requestPacer && (status === 429 || status === 503)) {
+							const advice = parseRetryAfter(responseHeaderValues, Date.now());
+							if (advice)
+								this.requestPacer.defer(url.origin, advice.delaySeconds * 1000);
+						}
 						onHeaders?.(responseHeaderValues);
 					} catch (error) {
 						fail(error);

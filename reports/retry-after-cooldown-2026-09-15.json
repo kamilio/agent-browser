@@ -1,0 +1,123 @@
+{
+  "passed": true,
+  "qualification": "Scoped validation and evidence audit passed; one live page remains a challenge failure, not full browser acceptance.",
+  "testedDateUtc": "2026-09-15",
+  "baseCommit": "5c5605d0fc1f68cd036175714875069b1d72a69d",
+  "runtimeQualification": "Base commit plus owned cooldown overlay, not unmodified HEAD.",
+  "ownedSourceHashes": {
+    "src/origin-request-pacer.ts": "317b5a611765f21566301ee96bb0c2e9607c41e40880606fa7142ef667e09927",
+    "src/node-transport.ts": "f5b9417804485b604b99f5dbf20c2428f86df2a85c19034bbd24ef2a0d64bc59",
+    "src/origin-request-cooldown.test.ts": "16c49629bc47dfe5ecfb127e5f089deb980b95fbe0994f757276ca036b0c1565",
+    "src/node-retry-after-pacing.test.ts": "4d52bd362c40dbb30dae41096a6384ebaa3eb255fd3d93e42a29d07ad4cc6820"
+  },
+  "validation": {
+    "baselinePassed": 1042,
+    "baselineFiles": 16,
+    "candidatePassed": 1125,
+    "candidateFiles": 18,
+    "newTests": 83,
+    "newFailures": 0,
+    "baselineOutcomesUnchanged": true,
+    "comparison": "Per-file arrays of full test name and outcome preserve duplicate occurrences.",
+    "checks": {
+      "baseline": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 0
+      },
+      "release01": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 0
+      }
+    },
+    "selectedFiles": [
+      "src/origin-request-pacer.test.ts",
+      "src/node-request-pacing.test.ts",
+      "src/retry-after.test.ts",
+      "src/node-resource-reuse.test.ts",
+      "src/network-policy-diagnostic.test.ts",
+      "src/network-byte-diagnostics.test.ts",
+      "src/network-response-budget.test.ts",
+      "src/network-signal-admission.test.ts",
+      "src/network-routes.test.ts",
+      "src/node-route-transport.test.ts",
+      "src/network.test.ts",
+      "src/cookies.test.ts",
+      "src/research-workflow.test.ts",
+      "src/research-batch-pacing.test.ts",
+      "src/research-http-provenance.test.ts",
+      "src/research-admission-evidence.test.ts",
+      "src/origin-request-cooldown.test.ts",
+      "src/node-retry-after-pacing.test.ts"
+    ],
+    "mockedNetworkOnly": true,
+    "fullNativeRelease": false
+  },
+  "navigationAttempts": 3,
+  "actualHttpRequests": 3,
+  "retries": 0,
+  "capturesVerified": 3,
+  "outcomes": {
+    "extracted-unverified": 2,
+    "semantic-barrier": 1
+  },
+  "allCleanupVerified": true,
+  "sourcesAndCompiledUnchanged": true,
+  "pages": [
+    {
+      "url": "https://www.gov.uk/browse/driving",
+      "status": 200,
+      "outcome": "extracted-unverified",
+      "barrier": null,
+      "markdownBytes": 9837,
+      "requests": 1,
+      "receiptSha256": "7fee2a0f1f2885a32ebba2e26067f743a0e5e4e34e95b64b80e6317282a0285c",
+      "bodySha256": "642c6cb8515a61967a093ffa6a9d13ddc227f1360a469eaa4189dbae615fe733",
+      "cleanupVerified": true
+    },
+    {
+      "url": "https://www.loc.gov/collections/",
+      "status": 403,
+      "outcome": "semantic-barrier",
+      "barrier": "challenge",
+      "markdownBytes": 0,
+      "requests": 1,
+      "receiptSha256": "e8478a6bbfe1b4c45878922e13506e130ef6d395dde68e81486111ea1917d3db",
+      "bodySha256": "cf8da8d659c666d9b66f1b6d9743d5d37273c7075371d3d9dc07b5d2ec4d72b8",
+      "cleanupVerified": true
+    },
+    {
+      "url": "https://www.esa.int/Science_Exploration/Space_Science",
+      "status": 200,
+      "outcome": "extracted-unverified",
+      "barrier": null,
+      "markdownBytes": 18667,
+      "requests": 1,
+      "receiptSha256": "758cbc0d1ad0163259e507d651a2d1879a4d66a636f99540c852e95bae24659a",
+      "bodySha256": "fac8b77daeb48fd0f23e17894076bc326d2ff4cfdcbea9fb26ff6ad68d8907ae",
+      "cleanupVerified": true
+    }
+  ],
+  "realCooldownResponseObserved": false,
+  "reducedBlockingClaim": false,
+  "remainingLimitations": [
+    "Hidden cookie confirmations in default GOV.UK extraction, without consent action",
+    "Library of Congress HTTP 403 Cloudflare challenge remains a failure",
+    "No real-server 429/503 cooldown measurement",
+    "No cross-transport or cross-process coordination",
+    "No rendered/interactive, SafeJS, credential/provider/passkey/device or TTY acceptance"
+  ],
+  "historicalTop100": {
+    "report": "reports/top100-websites-2026-09-15.md",
+    "attempts": 100,
+    "requests": 197,
+    "rankingMonth": "2026-05",
+    "qualification": "Historical published corpus, not verified September ranking; excluded from current request count."
+  },
+  "evidenceLane": "node_modules/.cache/native-validation/retry-after-cooldown-september15/"
+}
