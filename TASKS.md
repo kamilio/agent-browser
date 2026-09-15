@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: connection-verification handoff and full captured-corpus control
+
+- The saved Trustpilot403 contains a connection-verification notice, not reviews.
+  Add exact bounded connection-title and browser-wait phrase alternatives to the
+  existing classifier. Preserve possible confidence, unspecified observed provider,
+  header precedence and stop-for-user-handoff; no retry/solver/fingerprint change.
+-154 new regressions pass. Selected baseline1227/0 and final1381/0 across15 files;
+  old production with identical final tests1310/71 expected red. Build/types/
+  format/lint pass; not a full923-file manifest or actual SafeJS run.
+- Inspect all100 original receipts and classify all95 complete saved bodies;
+  five have no complete captured response. Trustpilot is the only old/new rule
+  difference;94 other current diagnostic results are unchanged. All95 returned
+  documents close. Partial captured headers do not reproduce historical signals.
+- Eight actual researchNavigation calls with synthetic transport responses using
+  the same saved Trustpilot body compare old/new Markdown/JSON and main focus.
+  Four old generic HTTP failures become four explicit semantic handoffs, retaining
+  captures but omitting extraction. All eight sessions/transports close, no retries,
+  credential headers or real network/process attempts. Fixture calls are not live.
+- Original100-page outcomes remain unchanged. This improves diagnosis, not blocked
+  content recovery or CAPTCHA avoidance. Missing bodies, dynamic content, other
+  access barriers and SDK/interactive/credential/passkey gates remain open. See
+  `CONNECTION-CHALLENGE.md` and connection-challenge September15 reports.
+
 ### September 15: equal-output extraction byte-accounting performance
 
 - Profile 1,500 extractions of five saved articles before changing code. UTF-8

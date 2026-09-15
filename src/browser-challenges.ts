@@ -226,13 +226,13 @@ export function classifyBrowserChallenge(
 			);
 		const challengeTitle =
 			!title.truncated &&
-			/^(?:just a moment[.!…]*|attention required!?\s*\|\s*cloudflare|security check|verify (?:that )?you are human|are you (?:a )?human\??|captcha|robot check|duckduckgo|checking your browser - recaptcha)$/.test(
+			/^(?:just a moment[.!…]*|attention required!?\s*\|\s*cloudflare|security check|verify (?:that )?you are human|are you (?:a )?human\??|captcha|robot check|duckduckgo|checking your browser - recaptcha|verifying (?:your )?connection[.!…]*)$/.test(
 				title.value,
 			);
 		const challengeText =
 			hasTextMarker(
 				text,
-				/\b(?:verify (?:that )?you are (?:a )?human|verifying you are human|checking your browser|complete the following challenge|confirm you are (?:a )?human|prove you are (?:a )?human|not a robot)\b/,
+				/\b(?:verify (?:that )?you are (?:a )?human|verifying you are human|checking your browser|complete the following challenge|confirm you are (?:a )?human|prove you are (?:a )?human|not a robot|please wait while we verify your browser)\b/,
 			) ||
 			(/^just a moment[.!…]*$/.test(title.value) &&
 				hasTextMarker(text, /\benable javascript and cookies to continue\b/));

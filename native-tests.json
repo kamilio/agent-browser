@@ -919,5 +919,7 @@
 	"src/github-source-lines.test.ts",
 	"src/research-source-products.test.ts",
 	"src/utf8-byte-length.test.ts",
-	"src/extraction-byte-accounting.test.ts"
+	"src/extraction-byte-accounting.test.ts",
+	"src/browser-connection-challenge.test.ts",
+	"src/research-connection-challenge.test.ts"
 ]
