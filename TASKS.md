@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: fresh live confirmation of reader and header fixes
+
+- Revisited four previously tested public entry pages with the pinned native
+  build at15:57UTC: **4GETs, no redirects/retries, 4closed live child groups**.
+  Empty HOME/TMP and no credential headers, page JavaScript, external browser,
+  alternate fetch client, identity spoofing, CAPTCHA solver, listener or TTY.
+- **Kateminimalist succeeds at source extraction on a fresh HTTP200 response**:
+  still525193bytes of HTML declared Markdown; explicit MIME interpretation yields
+  34787Markdown bytes without fallback or raised caps. The fresh body hash differs
+  from the old capture, while emitted content hash is unchanged. Full Markdown
+  review plus sampled source confirms useful storefront text with substantial
+  navigation/placeholder noise; offers, inventory, claims and checkout unverified.
+- **The Spruce, Serious Eats and Byrdie remain HTTP403 challenge barriers.**
+  Observed original `cf-mitigated: challenge` values now survive capture exactly.
+  Their source contains managed challenge markup, not publisher content. No
+  challenge bypass or successful access is claimed.
+- **4additional network-disabled mocked navigations preserve all4 fresh content
+  and classification results**, including confirmed header-based barriers.
+  All8 child groups are closed; selected-header equality/omissions, body/receipt
+  hashes, actual GET/socket closure and offline guards verify. Historical missing
+  headers and original100-page measurements remain unchanged.
+- Report: `reports/live-reader-header-recheck-2026-09-15.{md,json}`. Reused clean
+  runtime commitcdf7e2e after matching1469 committed source/config files and all
+  source/compiled hashes. Prior suite3269pass/3baselinefailures was not rerun or
+  relabelled as new native acceptance. Preserve42tracked/697untracked originals;
+  report-only commit, no push. Broad compatibility, three barriers, SafeJS and
+  interaction/passkey acceptance remain outstanding; overall goal stays active.
+
 ### September 15: retain bounded challenge and retry header evidence
 
 - New primary summaries retain whole selected Content-Type, Content-Length,

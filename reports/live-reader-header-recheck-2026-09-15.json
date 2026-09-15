@@ -1,0 +1,392 @@
+{
+  "at": "2026-09-15T16:05:12.550Z",
+  "kind": "fresh-native-reader-header-recheck-v1",
+  "runtimeCommit": "cdf7e2e2272ed51985a104c15ae164eb152a1921",
+  "live": {
+    "at": "2026-09-15T16:00:12.616Z",
+    "passed": true,
+    "commit": "cdf7e2e2272ed51985a104c15ae164eb152a1921",
+    "navigations": 4,
+    "actualHttpRequests": 4,
+    "retries": 0,
+    "liveChildrenClosed": 4,
+    "rows": [
+      {
+        "rank": 1,
+        "url": "https://kateminimalist.com/",
+        "directory": "001-kateminimalist.com",
+        "at": "2026-09-15T15:57:10.091Z",
+        "status": 200,
+        "outcome": "extracted-unverified",
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": null,
+          "diagnostic": null
+        },
+        "headerCapture": {
+          "kind": "selected-response-headers-v1",
+          "partial": true,
+          "omitted": []
+        },
+        "capturedHeaders": {
+          "content-type": [
+            "text/markdown; charset=utf-8"
+          ],
+          "content-length": [
+            "75844"
+          ],
+          "content-encoding": [
+            "br"
+          ]
+        },
+        "observedSelectedHeaders": {
+          "content-type": [
+            "text/markdown; charset=utf-8"
+          ],
+          "content-length": [
+            "75844"
+          ],
+          "content-encoding": [
+            "br"
+          ]
+        },
+        "receiptSha256": "4a3501f2a879237705d705928f7f30f4649ab79e89c678a97051c3bbe63feb20",
+        "bodySha256": "9a3e41665855ca0742c6913859066b1c6f8edeb1ee9627093a52294f87198295",
+        "bodyBytes": 525193,
+        "markdownBytes": 34787,
+        "markdownSha256": "8fb6191f2ba38dd7f187ec4b8034fec3e65175936c67dfbd1827e8a7f152ad42",
+        "mimeInterpretation": {
+          "policy": "markdown-html-document-v1",
+          "declaredMime": "text/markdown",
+          "effectiveMime": "text/html",
+          "basis": "html5-doctype-root-prefix",
+          "prefixCodeUnits": 68
+        },
+        "requests": 1,
+        "requestCloses": 1,
+        "socketCloses": 1,
+        "elapsedSeconds": 0.7680198848247528,
+        "childClosed": true
+      },
+      {
+        "rank": 2,
+        "url": "https://www.thespruce.com/",
+        "directory": "002-www.thespruce.com",
+        "at": "2026-09-15T15:57:12.854Z",
+        "status": 403,
+        "outcome": "semantic-barrier",
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": "challenge",
+          "diagnostic": {
+            "kind": "challenge",
+            "provider": "cloudflare",
+            "confidence": "confirmed",
+            "evidence": [
+              "cf-mitigated-challenge"
+            ],
+            "action": "stop-and-request-user-handoff"
+          }
+        },
+        "headerCapture": {
+          "kind": "selected-response-headers-v1",
+          "partial": true,
+          "omitted": []
+        },
+        "capturedHeaders": {
+          "content-type": [
+            "text/html; charset=UTF-8"
+          ],
+          "content-encoding": [
+            "gzip"
+          ],
+          "cf-mitigated": [
+            "challenge"
+          ]
+        },
+        "observedSelectedHeaders": {
+          "content-type": [
+            "text/html; charset=UTF-8"
+          ],
+          "cf-mitigated": [
+            "challenge"
+          ],
+          "content-encoding": [
+            "gzip"
+          ]
+        },
+        "receiptSha256": "0caa9bf56b878602f4e42a759da39b9450969f6191af513bc475c2ef5caac3aa",
+        "bodySha256": "c6be95242a442bd7476665eec0a54de6eb565bfb1b3326bf624440e98fd4ba42",
+        "bodyBytes": 680174,
+        "markdownBytes": 0,
+        "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "mimeInterpretation": null,
+        "requests": 1,
+        "requestCloses": 1,
+        "socketCloses": 1,
+        "elapsedSeconds": 0.2662639897316694,
+        "childClosed": true
+      },
+      {
+        "rank": 3,
+        "url": "https://www.seriouseats.com/",
+        "directory": "003-www.seriouseats.com",
+        "at": "2026-09-15T15:57:15.126Z",
+        "status": 403,
+        "outcome": "semantic-barrier",
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": "challenge",
+          "diagnostic": {
+            "kind": "challenge",
+            "provider": "cloudflare",
+            "confidence": "confirmed",
+            "evidence": [
+              "cf-mitigated-challenge"
+            ],
+            "action": "stop-and-request-user-handoff"
+          }
+        },
+        "headerCapture": {
+          "kind": "selected-response-headers-v1",
+          "partial": true,
+          "omitted": []
+        },
+        "capturedHeaders": {
+          "content-type": [
+            "text/html; charset=UTF-8"
+          ],
+          "content-encoding": [
+            "gzip"
+          ],
+          "cf-mitigated": [
+            "challenge"
+          ]
+        },
+        "observedSelectedHeaders": {
+          "content-type": [
+            "text/html; charset=UTF-8"
+          ],
+          "cf-mitigated": [
+            "challenge"
+          ],
+          "content-encoding": [
+            "gzip"
+          ]
+        },
+        "receiptSha256": "28d380b51ecaefd086a2b394802640d4a893f263db277bbca8c0224799289d79",
+        "bodySha256": "626d1598b73404edcc8e88d4ebeaf92a9a0bb28cdc4c00e8c0e4041c7806bdbd",
+        "bodyBytes": 680176,
+        "markdownBytes": 0,
+        "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "mimeInterpretation": null,
+        "requests": 1,
+        "requestCloses": 1,
+        "socketCloses": 1,
+        "elapsedSeconds": 0.3164410926401615,
+        "childClosed": true
+      },
+      {
+        "rank": 4,
+        "url": "https://www.byrdie.com/",
+        "directory": "004-www.byrdie.com",
+        "at": "2026-09-15T15:57:17.439Z",
+        "status": 403,
+        "outcome": "semantic-barrier",
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": "challenge",
+          "diagnostic": {
+            "kind": "challenge",
+            "provider": "cloudflare",
+            "confidence": "confirmed",
+            "evidence": [
+              "cf-mitigated-challenge"
+            ],
+            "action": "stop-and-request-user-handoff"
+          }
+        },
+        "headerCapture": {
+          "kind": "selected-response-headers-v1",
+          "partial": true,
+          "omitted": []
+        },
+        "capturedHeaders": {
+          "content-type": [
+            "text/html; charset=UTF-8"
+          ],
+          "content-encoding": [
+            "gzip"
+          ],
+          "cf-mitigated": [
+            "challenge"
+          ]
+        },
+        "observedSelectedHeaders": {
+          "content-type": [
+            "text/html; charset=UTF-8"
+          ],
+          "cf-mitigated": [
+            "challenge"
+          ],
+          "content-encoding": [
+            "gzip"
+          ]
+        },
+        "receiptSha256": "d0e4deae97a88178bdda9b02f3cbc1342f325a0f4059819a7084aaa4a116bf55",
+        "bodySha256": "86858142b5e935c9a0a5c6609de5938cde25680542e431bfd280952c9c26afe9",
+        "bodyBytes": 680150,
+        "markdownBytes": 0,
+        "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "mimeInterpretation": null,
+        "requests": 1,
+        "requestCloses": 1,
+        "socketCloses": 1,
+        "elapsedSeconds": 0.26624418050050735,
+        "childClosed": true
+      }
+    ]
+  },
+  "offline": [
+    {
+      "passed": true,
+      "rank": 1,
+      "url": "https://kateminimalist.com/",
+      "receiptSha256": "4a3501f2a879237705d705928f7f30f4649ab79e89c678a97051c3bbe63feb20",
+      "bodySha256": "9a3e41665855ca0742c6913859066b1c6f8edeb1ee9627093a52294f87198295",
+      "markdownBytes": 34787,
+      "markdownSha256": "8fb6191f2ba38dd7f187ec4b8034fec3e65175936c67dfbd1827e8a7f152ad42",
+      "outcome": "extracted-unverified",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "headerCapture": {
+        "kind": "selected-response-headers-v1",
+        "partial": true,
+        "omitted": []
+      },
+      "mockNavigations": 1,
+      "actualHttpRequests": 0,
+      "metricsClosed": true,
+      "unchanged": true
+    },
+    {
+      "passed": true,
+      "rank": 2,
+      "url": "https://www.thespruce.com/",
+      "receiptSha256": "0caa9bf56b878602f4e42a759da39b9450969f6191af513bc475c2ef5caac3aa",
+      "bodySha256": "c6be95242a442bd7476665eec0a54de6eb565bfb1b3326bf624440e98fd4ba42",
+      "markdownBytes": 0,
+      "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outcome": "semantic-barrier",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": "challenge",
+        "diagnostic": {
+          "kind": "challenge",
+          "provider": "cloudflare",
+          "confidence": "confirmed",
+          "evidence": [
+            "cf-mitigated-challenge"
+          ],
+          "action": "stop-and-request-user-handoff"
+        }
+      },
+      "headerCapture": {
+        "kind": "selected-response-headers-v1",
+        "partial": true,
+        "omitted": []
+      },
+      "mockNavigations": 1,
+      "actualHttpRequests": 0,
+      "metricsClosed": true,
+      "unchanged": true
+    },
+    {
+      "passed": true,
+      "rank": 3,
+      "url": "https://www.seriouseats.com/",
+      "receiptSha256": "28d380b51ecaefd086a2b394802640d4a893f263db277bbca8c0224799289d79",
+      "bodySha256": "626d1598b73404edcc8e88d4ebeaf92a9a0bb28cdc4c00e8c0e4041c7806bdbd",
+      "markdownBytes": 0,
+      "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outcome": "semantic-barrier",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": "challenge",
+        "diagnostic": {
+          "kind": "challenge",
+          "provider": "cloudflare",
+          "confidence": "confirmed",
+          "evidence": [
+            "cf-mitigated-challenge"
+          ],
+          "action": "stop-and-request-user-handoff"
+        }
+      },
+      "headerCapture": {
+        "kind": "selected-response-headers-v1",
+        "partial": true,
+        "omitted": []
+      },
+      "mockNavigations": 1,
+      "actualHttpRequests": 0,
+      "metricsClosed": true,
+      "unchanged": true
+    },
+    {
+      "passed": true,
+      "rank": 4,
+      "url": "https://www.byrdie.com/",
+      "receiptSha256": "d0e4deae97a88178bdda9b02f3cbc1342f325a0f4059819a7084aaa4a116bf55",
+      "bodySha256": "86858142b5e935c9a0a5c6609de5938cde25680542e431bfd280952c9c26afe9",
+      "markdownBytes": 0,
+      "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outcome": "semantic-barrier",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": "challenge",
+        "diagnostic": {
+          "kind": "challenge",
+          "provider": "cloudflare",
+          "confidence": "confirmed",
+          "evidence": [
+            "cf-mitigated-challenge"
+          ],
+          "action": "stop-and-request-user-handoff"
+        }
+      },
+      "headerCapture": {
+        "kind": "selected-response-headers-v1",
+        "partial": true,
+        "omitted": []
+      },
+      "mockNavigations": 1,
+      "actualHttpRequests": 0,
+      "metricsClosed": true,
+      "unchanged": true
+    }
+  ],
+  "sourceContentReview": {
+    "file": "node_modules/.cache/native-validation/live-content-recheck-september15/CONTENT-REVIEW.md",
+    "sha256": "51ce4cf5ead2da520ac5572cb21a0d22425f50f11602bee9d557f7bc10f663ca",
+    "outcome": "one useful but noisy storefront extraction; three access-challenge responses",
+    "coverage": "Kateminimalist full emitted Markdown plus sampled source; other three sampled source and full receipts"
+  },
+  "evidence": {
+    "lane": "node_modules/.cache/native-validation/live-content-recheck-september15",
+    "preflightSha256": "98483055ccfab80743fdb8bc004c9d6195f4f48f26659d4eb478e456d3d7c8f0",
+    "liveAuditSha256": "9bb627d80c9e670ce63ac7be74b09d80406736a35cda6df9ba3abe99b2ef225a",
+    "offlineExecutionsSha256": "6886c5623ea019a899a13d45df4ed3043a7445cd7c645fbf7d324cd6674a3c88"
+  },
+  "qualifications": [
+    "Four fresh GETs with no redirects or retries; four additional offline mock navigations.",
+    "Eight child groups closed; body/header/request/socket checks passed.",
+    "Fresh HTTP response does not mean recently updated content or verified product claims.",
+    "No JavaScript/SafeJS, credentials, CAPTCHA solution, rendering or interaction acceptance.",
+    "Reused pinned build: prior selected suite3269pass/3 unchanged failures; no new native-suite run.",
+    "Historical100-page report and missing legacy headers are unchanged."
+  ]
+}
