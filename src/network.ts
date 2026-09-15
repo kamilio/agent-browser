@@ -1,5 +1,6 @@
 import type { CookieRequestContext } from "./cookies.js";
 import { AgentBrowserError } from "./errors.js";
+import type { HttpsRedirectPolicy } from "./https-redirect-policy.js";
 import { networkPolicyError } from "./network-policy-diagnostic.js";
 import type { ResponseAccountingLease } from "./response-byte-accounting.js";
 
@@ -34,12 +35,21 @@ export interface NetworkResponse {
 	status: number;
 	headers: Readonly<Record<string, readonly string[]>>;
 	body: Uint8Array;
-	redirects: readonly { url: string; status: number; location: string }[];
+	redirects: readonly {
+		url: string;
+		status: number;
+		location: string;
+		httpsUpgrade?: Readonly<{
+			policy: HttpsRedirectPolicy;
+			originalLocation: string;
+		}>;
+	}[];
 	encodedBytes: number;
 	elapsedMs: number;
 }
 
 export interface NetworkMetrics {
+	httpsRedirectUpgrades?: number;
 	cacheHits?: number;
 	cachedDecodedBytes?: number;
 	cacheEntries?: number;

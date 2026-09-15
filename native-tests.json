@@ -912,5 +912,7 @@
 	"src/research-empty-outline-cli.test.ts",
 	"src/released-safejs-check-diagnostics.test.ts",
 	"src/research-reader-fallback.test.ts",
-	"src/research-reader-fallback-cli.test.ts"
+	"src/research-reader-fallback-cli.test.ts",
+	"src/node-https-redirect-policy.test.ts",
+	"src/research-https-redirect-cli.test.ts"
 ]

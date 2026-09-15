@@ -9,6 +9,10 @@ import { loadBrowserDocument } from "../src/document-loader.js";
 import { documentTitle } from "../src/document-title.js";
 import { AgentBrowserError } from "../src/errors.js";
 import {
+	type HttpsRedirectPolicy,
+	validateHttpsRedirectPolicy,
+} from "../src/https-redirect-policy.js";
+import {
 	type DocumentExtraction,
 	type DocumentHeadingOutline,
 	type DocumentTextLineDiscovery,
@@ -117,6 +121,12 @@ export interface PrimaryResponseSummary {
 	bodySha256: string;
 	hashScope: "transport-decoded-body-before-loader";
 	redirects: number;
+	httpsRedirectUpgrades?: {
+		policy: HttpsRedirectPolicy;
+		fromUrl: string;
+		originalLocation: string;
+		effectiveLocation: string;
+	}[];
 	elapsedMs: number;
 }
 
@@ -133,6 +143,18 @@ export function summarizePrimaryResponse(
 	response: NetworkResponse,
 ): PrimaryResponseSummary {
 	const captured = captureResearchResponseHeaders(response.headers);
+	const httpsRedirectUpgrades = response.redirects.flatMap((redirect) =>
+		redirect.httpsUpgrade === undefined
+			? []
+			: [
+					{
+						policy: redirect.httpsUpgrade.policy,
+						fromUrl: reportUrl(redirect.url),
+						originalLocation: reportUrl(redirect.httpsUpgrade.originalLocation),
+						effectiveLocation: reportUrl(redirect.location),
+					},
+				],
+	);
 	return {
 		url: reportUrl(response.url),
 		status: response.status,
@@ -143,6 +165,7 @@ export function summarizePrimaryResponse(
 		bodySha256: createHash("sha256").update(response.body).digest("hex"),
 		hashScope: "transport-decoded-body-before-loader",
 		redirects: response.redirects.length,
+		...(httpsRedirectUpgrades.length ? { httpsRedirectUpgrades } : {}),
 		elapsedMs: response.elapsedMs,
 	};
 }
@@ -197,6 +220,7 @@ function researchLines(value: unknown): ResearchLineRange {
 
 export function parseResearchArguments(args: readonly string[]) {
 	let reader = false;
+	let httpsRedirectPolicy: HttpsRedirectPolicy | undefined;
 	let preferMarkdown = false;
 	let readerRawPolicy: ResearchReaderRawPolicy | undefined;
 	let readerVisibilityPolicy: ResearchReaderVisibilityPolicy | undefined;
@@ -220,6 +244,19 @@ export function parseResearchArguments(args: readonly string[]) {
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (
+			argument === "--https-redirect-policy" &&
+			httpsRedirectPolicy === undefined
+		) {
+			const value = args[++index];
+			if (value === undefined)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Missing research HTTPS redirect policy",
+				);
+			httpsRedirectPolicy = validateHttpsRedirectPolicy(value);
+			continue;
+		}
 		if (
 			argument === "--reader-fallback-encoding" &&
 			readerFallbackEncoding === undefined
@@ -525,6 +562,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	return {
 		reader,
 		urls,
+		...(httpsRedirectPolicy === undefined ? {} : { httpsRedirectPolicy }),
 		...(preferMarkdown ? { preferMarkdown: true as const } : {}),
 		...(readerRawPolicy === undefined ? {} : { readerRawPolicy }),
 		...(readerVisibilityPolicy === undefined ? {} : { readerVisibilityPolicy }),
@@ -555,6 +593,7 @@ export type ResearchOutcome =
 	| "failure";
 
 export interface ResearchNavigationReport {
+	httpsRedirectPolicy?: HttpsRedirectPolicy;
 	readerFallbackEncoding?: ResearchReaderFallbackEncoding;
 	contentFocus?: "main-content-v1";
 	representationPreference?: "markdown";
@@ -609,6 +648,7 @@ export interface ResearchNavigationReport {
 }
 
 export interface ResearchExecutionOptions {
+	httpsRedirectPolicy?: HttpsRedirectPolicy;
 	readerFallbackEncoding?: ResearchReaderFallbackEncoding;
 	contentFocus?: "main-content-v1";
 	preferMarkdown?: boolean;
@@ -652,6 +692,7 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 			"invalid-input",
 			"Invalid research execution options",
 		);
+	validateHttpsRedirectPolicy(options.httpsRedirectPolicy);
 	validateResearchReaderRawPolicy(options.readerRawPolicy);
 	validateResearchReaderVisibilityPolicy(options.readerVisibilityPolicy);
 	validateResearchReaderMimePolicy(options.readerMimePolicy);
@@ -699,6 +740,9 @@ export async function researchNavigation(
 	const lineRange =
 		lines === undefined ? undefined : validateResearchLines(lines);
 	const validated = parseResearchArguments([
+		...(executionOptions.httpsRedirectPolicy === undefined
+			? []
+			: ["--https-redirect-policy", executionOptions.httpsRedirectPolicy]),
 		...(executionOptions.readerFallbackEncoding === undefined
 			? []
 			: [
@@ -757,6 +801,9 @@ export async function researchNavigation(
 	const started = Date.now();
 	const fragment = researchFragmentReport(validated.urls[0]);
 	const report: ResearchNavigationReport = {
+		...(validated.httpsRedirectPolicy === undefined
+			? {}
+			: { httpsRedirectPolicy: validated.httpsRedirectPolicy }),
 		...(validated.readerFallbackEncoding === undefined
 			? {}
 			: { readerFallbackEncoding: validated.readerFallbackEncoding }),
@@ -830,6 +877,9 @@ export async function researchNavigation(
 				const native = new NodeNetworkTransport({
 					cookieJar,
 					limits: admissionLimits?.network ?? researchRunLimits.network,
+					...(validated.httpsRedirectPolicy === undefined
+						? {}
+						: { httpsRedirectPolicy: validated.httpsRedirectPolicy }),
 					...(validated.minRequestIntervalMs === undefined
 						? {}
 						: { minRequestIntervalMs: validated.minRequestIntervalMs }),
@@ -1263,6 +1313,9 @@ export async function* researchBatch(
 				options.find,
 				options.documentProfile,
 				{
+					...(options.httpsRedirectPolicy === undefined
+						? {}
+						: { httpsRedirectPolicy: options.httpsRedirectPolicy }),
 					preferMarkdown: options.preferMarkdown,
 					readerMimePolicy: options.readerMimePolicy,
 					...(options.readerFallbackEncoding === undefined
@@ -1404,7 +1457,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});

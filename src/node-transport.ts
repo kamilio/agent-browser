@@ -18,6 +18,10 @@ import {
 	normalizeCookieContext,
 } from "./cookies.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	type HttpsRedirectPolicy,
+	validateHttpsRedirectPolicy,
+} from "./https-redirect-policy.js";
 import { networkPolicyError } from "./network-policy-diagnostic.js";
 import {
 	type NetworkLimits,
@@ -51,6 +55,7 @@ export type AddressResolver = (
 ) => Promise<readonly string[]>;
 
 export interface NodeTransportOptions extends NetworkPolicyOptions {
+	httpsRedirectPolicy?: HttpsRedirectPolicy;
 	captureDecodedPrefixBytes?: number;
 	resourceCache?: Partial<ResourceReuseCacheOptions>;
 	limits?: Partial<NetworkLimits>;
@@ -352,6 +357,8 @@ export class NodeNetworkTransport implements NetworkTransport {
 	private readonly certificateAuthorities?: string[];
 	private readonly cookieJar?: CookieJar;
 	private readonly requestPacer?: OriginRequestPacer;
+	private readonly httpsRedirectPolicy?: HttpsRedirectPolicy;
+	private httpsRedirectUpgrades = 0;
 	private readonly captureDecodedPrefixBytes?: number;
 	private pendingResponsePrefixes = new WeakMap<
 		object,
@@ -370,6 +377,9 @@ export class NodeNetworkTransport implements NetworkTransport {
 	};
 
 	constructor(options: NodeTransportOptions = {}) {
+		this.httpsRedirectPolicy = validateHttpsRedirectPolicy(
+			options.httpsRedirectPolicy,
+		);
 		if (options.captureDecodedPrefixBytes !== undefined) {
 			if (
 				!Number.isSafeInteger(options.captureDecodedPrefixBytes) ||
@@ -471,6 +481,9 @@ export class NodeNetworkTransport implements NetworkTransport {
 	metrics(): Readonly<NetworkMetrics> {
 		return Object.freeze({
 			...this.counts,
+			...(this.httpsRedirectPolicy === undefined
+				? {}
+				: { httpsRedirectUpgrades: this.httpsRedirectUpgrades }),
 			...this.resourceCache?.metrics(),
 			active: this.active.size,
 			closed: this.closed,
@@ -664,7 +677,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 			if (performance.now() - start >= this.limits.timeoutMs)
 				throw new AgentBrowserError("timeout", "Network deadline exceeded");
 		};
-		const redirects: { url: string; status: number; location: string }[] = [];
+		const redirects: NetworkResponse["redirects"][number][] = [];
 		let encodedBytes = 0;
 		let accounting: ResponseAccountingOperation | undefined;
 		this.active.add(controller);
@@ -843,6 +856,25 @@ export class NodeNetworkTransport implements NetworkTransport {
 					throw new AgentBrowserError("network-error", "Invalid redirect URL");
 				}
 				if (!location[0].includes("#")) next.hash = url.hash;
+				let httpsUpgrade: NetworkResponse["redirects"][number]["httpsUpgrade"];
+				if (
+					this.httpsRedirectPolicy !== undefined &&
+					url.protocol === "https:" &&
+					next.protocol === "http:" &&
+					["GET", "HEAD"].includes(method) &&
+					!next.username &&
+					!next.password
+				) {
+					const upgraded = new URL(next.href);
+					upgraded.protocol = "https:";
+					if (upgraded.origin === url.origin) {
+						httpsUpgrade = Object.freeze({
+							policy: this.httpsRedirectPolicy,
+							originalLocation: next.href,
+						});
+						next = upgraded;
+					}
+				}
 				next = this.policy.checkUrl(next.href);
 				if (url.protocol === "https:" && next.protocol !== "https:")
 					throw networkPolicyError("https-downgrade");
@@ -850,7 +882,9 @@ export class NodeNetworkTransport implements NetworkTransport {
 					url: url.href,
 					status: response.status,
 					location: next.href,
+					...(httpsUpgrade === undefined ? {} : { httpsUpgrade }),
 				});
+				if (httpsUpgrade !== undefined) this.httpsRedirectUpgrades++;
 				this.counts.redirects++;
 				if (
 					([301, 302].includes(response.status) && method === "POST") ||

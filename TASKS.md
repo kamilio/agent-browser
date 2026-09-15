@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: opt-in same-origin HTTPS redirect policy
+
+- Add Node transport and research CLI `same-origin-upgrade-v1`: only current
+  HTTPS GET/HEAD redirects whose protocol-only upgrade retains the current origin
+  qualify. Effective URL/origin/address/DNS/TLS checks and all budgets remain;
+  defaults still reject downgrades. No initial-URL upgrade or plaintext fallback.
+- Record frozen per-hop original/effective provenance, redacted research summaries
+  and opt-in metrics.74 new mocked tests pass; selected baseline863/0 and final
+  candidate937/0 across11 files; build/types/format/lint pass. Not a full native
+  manifest or actual SDK/adversarial TLS acceptance run.
+- Fresh arXiv original search now returns54864 Markdown bytes in one native
+  navigation with two HTTPS GETs and one upgrade. Body/content match the prior
+  manual HTTPS retrieval exactly. Python index control returns3069 bytes with no
+  upgrade. Original default-policy failure is preserved; no retry or bypass.
+- Two guarded offline selections succeed with zero HTTP. All four live/replay
+  children/groups and three live requests/sockets close. No plaintext HTTP,
+  credentials, page scripts, SafeJS, form actions, altered identity or raised caps.
+- Guide: `HTTPS-REDIRECTS.md`; report:
+  `reports/https-redirect-upgrade-2026-09-15.{md,json}`. Original42 tracked/697
+  untracked work and historical measurements preserved; focused commit, no push.
+  Broader runtime, access, interactive/passkey and performance goals stay open.
+
 ### September 15: source-derived search tasks and bounded index recovery
 
 - Fresh Wikipedia and arXiv search pages provide results; source-linked article
