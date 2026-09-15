@@ -6,6 +6,40 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: isolated SafeJS dependency closure and contract failure
+
+**PROGRESS; overall browser goal remains ACTIVE.** The specific isolated-gate
+approval has arrived; this is no longer an authorization wait. Stage the pinned
+SafeJS 0.1.599 and its full declared closure outside project resolution: 15
+packages, 19 edges, 2686 files, 137923752 extracted bytes. Native transport makes
+28 dependency metadata/tarball GETs, all 200, no redirects; requests, sockets and
+child groups close. Verify integrity, exact file/link inventories, unchanged
+original SDK and canonical browser build. No install scripts or latest claim.
+
+Preserve two zero-HTTP acquisition input failures and three no-SDK host-control
+failures. The explicit ABI1 guard with truncation compensation, owned OpenSSL
+config and constructible denial wrappers passes its synthetic control. Then run
+the approved canonical core fixture exactly once: 11 of 19 checks pass, check12
+is interrupted and the retained error is "Sandbox object is already running."
+New source evaluation is attempted while a callback's asynchronous tail remains
+pending despite its completed prefix. Finally-close may mask the original error;
+the exact throw site is unproven. Public SDK docs do not promise this admission
+boundary; clarify the supported contract before speculative adapter changes.
+The remaining seven core checks and all ten page-extension checks are unrun.
+No SDK retry, private SDK mutation, default activation or live scripted browsing.
+
+All actual runtime children/groups close; no runtime HTTP or recorded prohibited
+I/O attempts. Independent review identifies launcher reuse gaps: unconditional
+exception-safe cleanup, non-assert prerequisite enforcement and complete terminal
+failure records. Exact staging inventory is separately audited. This is bounded
+fixture evidence, not a hostile-code sandbox or general browser compatibility.
+
+Resolve the public pending-callback/new-evaluation contract without weakening
+browser progress expectations; harden the runner before a separately scoped
+follow-up gate. Keep diverse-site/content, performance, crawler/CAPTCHA friction,
+provider/passkey, interactive/TTY/service and broader research work open. See
+reports/safejs-isolated-gate-2026-09-15.md. Prior work preserved; no push.
+
 ### September 15: multilingual content and inert leading XML declarations
 
 **PROGRESS; overall browser goal remains ACTIVE.** Four public native navigations,
