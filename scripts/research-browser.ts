@@ -48,6 +48,10 @@ import {
 	type ResourceLimitDiagnostic,
 	resourceLimitDiagnostic,
 } from "../src/resource-limit.js";
+import {
+	type ResearchResponseHeaderCapture,
+	captureResearchResponseHeaders,
+} from "../src/research-response-headers.js";
 import { type RetryAfterAdvice, parseRetryAfter } from "../src/retry-after.js";
 import { validateSelectorSyntax } from "../src/selectors.js";
 import { BrowserSession, type NavigationResult } from "../src/session.js";
@@ -105,6 +109,7 @@ export interface PrimaryResponseSummary {
 	status: number;
 	receivedAt: string;
 	headers: Readonly<Record<string, readonly string[]>>;
+	headerCapture?: ResearchResponseHeaderCapture;
 	decodedBytes: number;
 	encodedBytes: number;
 	bodySha256: string;
@@ -125,17 +130,12 @@ function reportUrl(value: string) {
 export function summarizePrimaryResponse(
 	response: NetworkResponse,
 ): PrimaryResponseSummary {
-	const headers: Record<string, readonly string[]> = Object.create(null);
-	for (const name of ["content-type", "content-length", "content-encoding"]) {
-		const values = response.headers[name];
-		if (values)
-			headers[name] = values.slice(0, 2).map((value) => value.slice(0, 160));
-	}
+	const captured = captureResearchResponseHeaders(response.headers);
 	return {
 		url: reportUrl(response.url),
 		status: response.status,
 		receivedAt: new Date().toISOString(),
-		headers,
+		...captured,
 		decodedBytes: response.body.byteLength,
 		encodedBytes: response.encodedBytes,
 		bodySha256: createHash("sha256").update(response.body).digest("hex"),

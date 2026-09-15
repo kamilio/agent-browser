@@ -691,6 +691,7 @@ it.each([
 		const original = await fixture();
 		const input = revised(original, (report) => {
 			if (!report.primaryResponse) throw new Error("Missing owned response");
+			Reflect.deleteProperty(report.primaryResponse, "headerCapture");
 			report.primaryResponse.headers = {
 				...report.primaryResponse.headers,
 				"content-encoding": values,

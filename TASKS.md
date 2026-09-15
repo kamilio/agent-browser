@@ -6,6 +6,44 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: retain bounded challenge and retry header evidence
+
+- New primary summaries retain whole selected Content-Type, Content-Length,
+  Content-Encoding, CF-Mitigated and Retry-After fields:16values/160Latin-1-safe
+  codeunits per value. Whitespace, duplicates and conflicts survive; invalid or
+  oversized fields are omitted completely and identified by the immutable
+  `selected-response-headers-v1` marker. Unknown/sensitive headers stay excluded.
+- New marker/schema validation preserves legacy three-header/two-value behavior
+  for unmarked evidence. Explicit default reports serialize the detached graph
+  actually validated; proxy/hook rejection precedes access, and fragment schema
+  validation precedes undefined-field pruning. Default emission does not acquire
+  long-profile depth/property caps; replay and long-profile caps are unchanged.
+  These protections do not enable retries, CAPTCHA solving or content access.
+- Adopted the previously unfinished header helper and tests. Production helper
+  bytes are unchanged; one test assertion received a formatter-only line wrap,
+  with original bytes archived. The existing replay optional-header negatives
+  explicitly use legacy unmarked fixtures; new-schema negatives test earlier
+  rejection separately. Preserve the remaining697 original untracked files and
+  original42 dirty tracked files/residuals; no unrelated work is bundled.
+- Final selected suite: **3269 pass /three unchanged pre-existing failures**;
+  **271 new passing tests /44 files**. Baseline2998pass/3fail. The broader baseline
+  includes two body-capture extraction expectations plus the existing replay-row
+  expectation. Build, narrowed types, formatter and lint pass; initial type,
+  fixture and formatting failures remain in the private evidence lane.
+- **190 saved-body pairs unchanged**:95strict and95explicit-MIME cases, with
+  receipt admission and exact retained header/marker checks. Final paired run:
+  **380mock navigations/190closed children/zeroHTTP**. One earlier harness child
+  stopped on a record-prototype comparison, was reaped, and is preserved as a
+  failed attempt, not a passing case; including it totals381mocks/191closed groups.
+- **Historical loss remains explicit:**17 old receipts cite confirmed Cloudflare
+  header evidence but omit that header; three lose their barrier category from
+  saved headers alone (The Spruce, Serious Eats, Byrdie). No original values were
+  fabricated or captures rewritten. Five missing bodies remain unavailable.
+- Documentation: `RESEARCH-HEADERS.md`;95-row evidence report in
+  `reports/research-headers-2026-09-15.{md,json}`. Canonical native manifest901;
+  working904 retains the original three working-only entries. No new live,
+  credential, socket/TTY or SafeJS acceptance claim; overall goal remains active.
+
 ### September 15: explicit interpretation of Markdown-labelled HTML
 
 - Added opt-in `--reader-mime-policy markdown-html-document-v1` and matching

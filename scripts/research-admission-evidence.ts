@@ -8,6 +8,10 @@ import {
 	validateResearchDocumentProfile,
 } from "../src/research-admission.js";
 import {
+	captureResearchResponseHeaders,
+	researchResponseHeaderNames,
+} from "../src/research-response-headers.js";
+import {
 	decodeResearchBodyCapture,
 	researchBodyCaptureLimit,
 } from "./research-body-capture.js";
@@ -205,7 +209,13 @@ function record(value: unknown): DataRecord {
 	return value;
 }
 
-function snapshot(value: unknown): unknown {
+function snapshot(
+	value: unknown,
+	limits: Readonly<{
+		maxDepth: number;
+		maxProperties: number;
+	}> = researchEvidenceCodecLimits,
+): unknown {
 	let properties = 0;
 	const ancestors = new Set<object>();
 	const pending: {
@@ -216,7 +226,7 @@ function snapshot(value: unknown): unknown {
 		depth: number;
 	}[] = [];
 	function copy(current: unknown, depth: number): unknown {
-		if (depth > researchEvidenceCodecLimits.maxDepth) evidenceLimit();
+		if (depth > limits.maxDepth) evidenceLimit();
 		if (
 			current === null ||
 			current === undefined ||
@@ -242,11 +252,10 @@ function snapshot(value: unknown): unknown {
 		const length = array
 			? (Object.getOwnPropertyDescriptor(current, "length")?.value as number)
 			: 0;
-		if (length > researchEvidenceCodecLimits.maxProperties - properties)
-			evidenceLimit();
+		if (length > limits.maxProperties - properties) evidenceLimit();
 		const keys = Reflect.ownKeys(current);
 		properties += array ? length : keys.length;
-		if (properties > researchEvidenceCodecLimits.maxProperties) evidenceLimit();
+		if (properties > limits.maxProperties) evidenceLimit();
 		const fields: string[] = [];
 		for (const key of keys) {
 			if (typeof key !== "string" || key === "toJSON") invalidEvidence();
@@ -540,20 +549,51 @@ function primaryProjection(value: unknown): DataRecord | null {
 	)
 		invalidEvidence();
 	const headers = record(primary.headers);
-	for (const [name, values] of Object.entries(headers)) {
+	let headerCapture: DataRecord | undefined;
+	if (Object.hasOwn(primary, "headerCapture")) {
+		headerCapture = record(primary.headerCapture);
 		if (
-			!["content-type", "content-length", "content-encoding"].includes(name) ||
-			!Array.isArray(values) ||
-			values.length > 2 ||
-			!values.every((value) => boundedString(value, 160, true))
+			Object.keys(headerCapture).length !== 3 ||
+			headerCapture.kind !== "selected-response-headers-v1" ||
+			headerCapture.partial !== true ||
+			!Array.isArray(headerCapture.omitted)
 		)
 			invalidEvidence();
+		const captured = captureResearchResponseHeaders(
+			headers as Readonly<Record<string, readonly string[]>>,
+		);
+		if (
+			captured.headerCapture.omitted.length !== 0 ||
+			Object.keys(headers).length !== Object.keys(captured.headers).length
+		)
+			invalidEvidence();
+		let previous = -1;
+		for (const name of headerCapture.omitted) {
+			const index = researchResponseHeaderNames.findIndex(
+				(selected) => selected === name,
+			);
+			if (index <= previous || Object.hasOwn(headers, name)) invalidEvidence();
+			previous = index;
+		}
+	} else {
+		for (const [name, values] of Object.entries(headers)) {
+			if (
+				!["content-type", "content-length", "content-encoding"].includes(
+					name,
+				) ||
+				!Array.isArray(values) ||
+				values.length > 2 ||
+				!values.every((value) => boundedString(value, 160, true))
+			)
+				invalidEvidence();
+		}
 	}
 	return {
 		url: primary.url,
 		status: primary.status,
 		receivedAt: primary.receivedAt,
 		headers,
+		...(headerCapture === undefined ? {} : { headerCapture }),
 		decodedBytes: primary.decodedBytes,
 		encodedBytes: primary.encodedBytes,
 		bodySha256: primary.bodySha256,
@@ -561,6 +601,11 @@ function primaryProjection(value: unknown): DataRecord | null {
 		redirects: primary.redirects,
 		elapsedMs: primary.elapsedMs,
 	};
+}
+
+function validateExplicitHeaderCapture(primary: unknown): void {
+	if (isRecord(primary) && Object.hasOwn(primary, "headerCapture"))
+		primaryProjection(primary);
 }
 
 function validateLong(report: DataRecord): void {
@@ -766,19 +811,42 @@ export function serializeResearchReport(
 ): ResearchJsonlEmission {
 	const profile = validateResearchDocumentProfile(selectedProfile);
 	if (profile === "default") {
+		if (types.isProxy(report) || !isRecord(report)) invalidEvidence();
 		if (Object.hasOwn(report, "admission")) invalidEvidence();
-		if (Object.hasOwn(report, "fragment"))
-			fragmentProjection(
-				snapshot(Object.getOwnPropertyDescriptor(report, "fragment")?.value),
+		const primaryDescriptor = Object.getOwnPropertyDescriptor(
+			report,
+			"primaryResponse",
+		);
+		if (primaryDescriptor && !Object.hasOwn(primaryDescriptor, "value"))
+			invalidEvidence();
+		const primary = primaryDescriptor?.value;
+		if (types.isProxy(primary)) invalidEvidence();
+		let serialized: ResearchNavigationReport = report;
+		if (isRecord(primary) && Object.hasOwn(primary, "headerCapture")) {
+			const detached = record(
+				snapshot(report, {
+					maxDepth: Number.POSITIVE_INFINITY,
+					maxProperties: Number.POSITIVE_INFINITY,
+				}),
 			);
-		const jsonl = new TextEncoder().encode(`${JSON.stringify(report)}\n`);
+			validateExplicitHeaderCapture(detached.primaryResponse);
+			serialized = detached as unknown as ResearchNavigationReport;
+		}
+		if (Object.hasOwn(serialized, "fragment"))
+			fragmentProjection(
+				snapshot(
+					Object.getOwnPropertyDescriptor(serialized, "fragment")?.value,
+				),
+			);
+		if (serialized !== report) finishSnapshot(serialized);
+		const jsonl = new TextEncoder().encode(`${JSON.stringify(serialized)}\n`);
 		return {
 			disposition: "complete",
-			record: report,
+			record: serialized,
 			jsonl,
 			receiptBytes: jsonl.byteLength,
 			metadataBytes: null,
-			exitReport: Object.freeze({ outcome: report.outcome }),
+			exitReport: Object.freeze({ outcome: serialized.outcome }),
 		};
 	}
 	let detached = record(snapshot(report));
@@ -974,6 +1042,7 @@ function replayEvidence(
 		if (`${JSON.stringify(report)}\n` !== text) invalidEvidence();
 	} else if (Object.hasOwn(report, "admission")) invalidEvidence();
 	validatePolicyFragments(report);
+	validateExplicitHeaderCapture(report.primaryResponse);
 	if (Object.hasOwn(report, "fragment")) fragmentProjection(report.fragment);
 	const originalMetadata = metadataProjection(report);
 	const originalFieldPresence = fieldPresence(report);

@@ -896,5 +896,8 @@
   "src/extraction-prefix-workflow.test.ts",
   "src/research-mime-policy.test.ts",
   "src/research-mime-workflow.test.ts",
-  "src/research-mime-replay.test.ts"
+  "src/research-mime-replay.test.ts",
+  "src/research-response-headers.test.ts",
+  "src/research-header-capture.test.ts",
+  "src/research-header-admission.test.ts"
 ]
