@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: 100 citation-derived agent entry-page checks
+
+- Completed **100/100 fresh native entry-page navigations**, 107 GETs including
+  redirects, zero retries; 95 decoded bodies retained and hash-verified. Native
+  outcomes: **59 nonempty/unverified, 5 empty, 18 semantic barriers, 12 HTTP
+  failures and 6 resource/timeout failures**. Nonempty is not useful-content or
+  interactive acceptance. Offline review finds **48 useful source-content
+  results**; all100 have individual verdicts and inspection-depth disclosures.
+- This is **not a measured global top-100 agent page-visit ranking**. Five
+  Ahrefs September2026 citation tables (updated September2) yield113 unique
+  hosts; deterministic appearance/rank-sum/hostname ordering selects100 normalized
+  publisher-linked HTTPS roots. US/search-backed source sampling, top50 cutoffs,
+  equal platform weighting and missing dedicated ChatGPT/Claude lists remain
+  explicit limitations. Host citations do not establish which deep pages agents
+  visit. Five successful and five404 source acquisitions are separate evidence.
+- The clean pinned runtime matches1457 committed source/script/config files.
+  All110 experiment children/groups and observed requests/sockets close. No
+  page scripts, SafeJS, credentials, form actions, impersonation or challenge
+  bypass; prior dirty work and runtime pins are unchanged at postflight.
+- Fix candidates: explicit bounded partial output for Kateminimalist's525193-byte
+  Markdown response (256KB output cap), bounded handling of oversized Google
+  Play/TechRadar/CNBC bodies, and clearer JS/login-shell usefulness reporting.
+  Tom's Guide/Comparor timeouts and real403/429/challenge barriers remain failures.
+  No caps were raised and no production behavior changes accompany this sweep.
+- Reports: `reports/agent-citation-pages-2026-09-15.md` and JSON companion;
+  full source ranks/selection in `reports/agent-citation-corpus-2026-09-15.json`.
+  The historical human-traffic sweep remains unchanged. Next: deep-page/task
+  coverage and fixture-backed fixes; preserve unfinished response-header work
+  separately. SafeJS contract, credential/passkey and interaction gates stay open.
+
 ### September 15: full saved top-100 reassessment and hidden block recovery
 
 - Reassessed all 90 available top-100 bodies under original and inline-hidden
