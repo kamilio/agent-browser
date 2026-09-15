@@ -37,6 +37,11 @@ import {
 } from "./table-source.js";
 import { textDocumentInfo } from "./text-document-info.js";
 import {
+	type MarkdownSourceOutline,
+	markdownSourceOutlineLimits,
+	outlineMarkdownSource,
+} from "./markdown-source-outline.js";
+import {
 	type TextLineDiscovery,
 	type TextLineDiscoveryOptions,
 	discoverTextLines,
@@ -154,6 +159,7 @@ interface ExtractionMetadata {
 	tableRows?: true;
 	reader?: Readonly<ResearchReaderReport>;
 	sourceDescriptions?: DocumentDescriptions;
+	sourceMarkdown?: MarkdownSourceOutline;
 	sectionSelection?: Readonly<HeadingSectionMetadata>;
 	textSelection?: {
 		method: "text-lines";
@@ -244,14 +250,10 @@ const tableBoundaryMarkers: Partial<
 const leafElements = new Set(["img", "br", "hr"]);
 const encoder = new TextEncoder();
 
-function textLineSource(tree: DocumentTree) {
+function eligibleTextLineSource(tree: DocumentTree) {
 	const root = tree.get(tree.root);
 	const info = textDocumentInfo(tree);
-	if (!info || info.revision !== tree.revision)
-		throw new AgentBrowserError(
-			"unsupported",
-			"Text line extraction requires an unchanged text-loader document",
-		);
+	if (!info || info.revision !== tree.revision) return undefined;
 	const source = tree.get(info.textNode);
 	const pre = source.parent === null ? undefined : tree.get(source.parent);
 	if (
@@ -265,17 +267,28 @@ function textLineSource(tree: DocumentTree) {
 		pre.children[0] !== source.id ||
 		source.kind !== "text"
 	)
+		return undefined;
+	return source;
+}
+
+function textLineSource(tree: DocumentTree) {
+	const source = eligibleTextLineSource(tree);
+	if (!source) {
+		const info = textDocumentInfo(tree);
 		throw new AgentBrowserError(
 			"unsupported",
-			"Text line extraction requires only the native pre and registered text node",
+			!info || info.revision !== tree.revision
+				? "Text line extraction requires an unchanged text-loader document"
+				: "Text line extraction requires only the native pre and registered text node",
 		);
+	}
 	const text = source.data;
 	if (text.length > 2_000_000)
 		throw new AgentBrowserError(
 			"resource-limit",
 			"Text line extraction scan limit exceeded",
 		);
-	return { textNode: info.textNode, text };
+	return { textNode: source.id, text };
 }
 
 function selectTextLines(
@@ -990,6 +1003,16 @@ export function extractDocument(
 	safeUrl.password = "";
 	const reader = researchReaderInfo(tree);
 	const descriptions = documentDescriptions(tree);
+	const textInfo = textDocumentInfo(tree);
+	const markdownSource =
+		textInfo?.mime === "text/markdown"
+			? eligibleTextLineSource(tree)
+			: undefined;
+	const sourceMarkdown =
+		markdownSource &&
+		markdownSource.data.length <= markdownSourceOutlineLimits.maxSourceCodeUnits
+			? outlineMarkdownSource(markdownSource.data)
+			: undefined;
 	const metadata: ExtractionMetadata = {
 		document: tree.reference(tree.root),
 		scope: tree.reference(start),
@@ -1001,6 +1024,7 @@ export function extractDocument(
 		...(options.tableRows === true ? { tableRows: true as const } : {}),
 		...(reader ? { reader } : {}),
 		...(descriptions ? { sourceDescriptions: descriptions } : {}),
+		...(sourceMarkdown?.entries.length ? { sourceMarkdown } : {}),
 		...(selection ? { textSelection: selection.metadata } : {}),
 		...(section ? { sectionSelection: section.metadata } : {}),
 	};

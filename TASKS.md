@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: bounded Markdown source navigation
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Explicit unchanged text/markdown documents now expose partial sourceMarkdown
+metadata: bounded ATX-shaped candidates and physical source ranges usable with
+existing offline --lines. Literal body bytes, pre/text DOM, empty rendered title,
+DOM heading/link behavior and HTTP/content classification remain unchanged.
+No MIME sniffing, new dependency, runtime or fetching. Bound source at 2,000,000
+UTF-16 units, 128 entries and 128 title units; keep source coordinates, explicit
+truncation and existing extraction quotas. This is not semantic Markdown:
+unfenced code comments in the saved PyTorch source are genuine lexical candidates
+and can terminate ranges. Do not infer author intent or repair source silently.
+All 1,642 selected native tests pass across 23 files, including 106 new cases;
+all 1,536 previous case statuses match. Build/types/format/lint pass in isolated
+archives. Six saved-page bodies, titles and outcomes stay unchanged. Docker,
+Hugging Face, Ollama and PyTorch gain source navigation; a redirect notice gains
+no invented heading and an HTML control stays unchanged. Actual PyTorch CLI
+replay extracts the same 2,643-byte selected body with source metadata added.
+Seven guarded offline children, zero network attempts, all closed/reaped with
+pins unchanged. Initial harness path errors, a replaced potentially quadratic
+title helper and an invalid proof assumption about PyTorch fences are recorded,
+not erased. Review also caught Unicode fence-regex backtracking and optional
+metadata rejecting initialized source shapes; both are fixed with regressions.
+One new assertion was corrected for existing Markdown period escaping without
+production changes. See MARKDOWN-SOURCE-OUTLINE.md and the dated JSON report.
+Next: richer source representations, navigation noise and useful-content versus
+shell diagnostics. Broader research conclusions remain incomplete. Full native
+release, rendering/interaction, SafeJS, credential/passkey-device, service/socket
+and TTY/PTY gates remain open. Original dirty work is preserved. No push.
+
 ### September 15: real content pages and bounded recovery workflows
 
 **PROGRESS; overall browser goal remains ACTIVE.**

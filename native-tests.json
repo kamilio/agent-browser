@@ -864,5 +864,7 @@
   "src/hyphen-emergency-boundaries.test.ts",
   "src/hyphen-emergency-interaction.test.ts",
   "src/document-descriptions.test.ts",
-  "src/research-descriptions.test.ts"
+  "src/research-descriptions.test.ts",
+  "src/markdown-source-outline.test.ts",
+  "src/document-markdown-outline.test.ts"
 ]

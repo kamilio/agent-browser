@@ -62,7 +62,7 @@ export function loadTextDocument(
 		tree.append(tree.root, pre);
 		const textNode = tree.createText(text);
 		tree.append(pre, textNode);
-		registerTextDocument(tree, textNode);
+		registerTextDocument(tree, textNode, mime);
 		return tree;
 	} catch (error) {
 		tree.close();
