@@ -33,6 +33,47 @@ admitted captured literal text without another website request.
 Keep capture/observer files private: redirects can contain query values. Do not
 use supplied credentials, execute source suggestions, or retry access barriers.
 
+## Choose source completeness or source visibility
+
+The optional `source-hidden-v1` and `source-hidden-inline-v1` policies can remove
+useful public article text stored in inactive tabs. They are visibility filters,
+not general readability improvements. Default reader mode deliberately reports
+`hiddenContentSemantics: false`; it can retain that supplied text without claiming
+the corresponding tab was visible, activated or rendered.
+
+For source reading on an authorized public page, omit the visibility-policy flag:
+
+```sh
+node dist/scripts/research-browser.js \
+  --reader --content-focus main-content-v1 \
+  --reader-raw-policy separate-omitted-raw-v1 \
+  --capture-body --format markdown --table-rows \
+  --min-request-interval-ms 1000 "$PUBLIC_URL"
+```
+
+On the September 15 CarGurus capture, the explicit inline-hidden policy retained
+only the active editorial tab. An offline native run of the existing default
+reader recovered five additional supplied panels: output changed from 29,805 to
+39,331 bytes, with the same source body and no further HTTP request or script
+execution. This is a verified workflow choice, not a production parser fix or
+proof that the whole article, specifications or ratings are accurate.
+
+Use visibility filtering when the task actually requires its source-state
+semantics. Keep the outputs and policy provenance distinct; replay does not
+silently discard the original capture's policy. Source mode can also retain
+hidden interface noise, so inspect the result. Do not equate captured component
+data with working components, member access, or a complete recommendation list.
+Consumer Reports' article in this same run retained prose but omitted its readable
+headline picks; that limitation was recorded rather than bypassed.
+
+`main-content-v1` is independently opt-in and may omit relevant outside context.
+It is not a cure for access errors: the source-linked Home Depot product page
+returned HTTP 403 both with Markdown preference and in one separately scoped
+default-Accept contrast. No CAPTCHA cause was established or access recovered.
+Do not automatically retry such failures or change identities to hide them.
+
+Full results: `reports/linked-content-pages-2026-09-15.md`.
+
 ## Distinguish content pointers from content
 
 The PyTorch stable URL issued one HTTP redirect, then served a 108-byte Markdown

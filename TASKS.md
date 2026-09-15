@@ -6,6 +6,41 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: source-linked content pages and hidden-tab recovery
+
+- Followed eight exact links from native-captured homepages into deeper public
+  content: Wikipedia, Consumer Reports, PCMag, NerdWallet, Cambridge, CarGurus,
+  Home Depot and ScienceInsights. Seven HTTP200 outputs contain actual source
+  prose/definitions, but reviews retain incompleteness and boilerplate caveats.
+  Consumer Reports lacks its readable headline picks; no member-data recovery or
+  authenticated/interactive success is claimed. Full URL/evidence matrix in
+  `reports/linked-content-pages-2026-09-15.{md,json}`; no new top100 ranking claim.
+- Home Depot's product page returnsHTTP403/error text despite its readable earlier
+  homepage. One separately scoped no-Markdown-preference contrast also returns403
+  with the same61byte text; error-body hashes differ. Actual contrast headers show
+  Accept `*/*` and native identity; first-run ordinary request headers were not
+  observed. No causal fix, CAPTCHA diagnosis, solver or further retry is claimed.
+- Total9fresh native navigations/GETs, zero redirects/automatic retries, nine
+  closed live child groups. Selected raw headers, body/receipt hashes and request/
+  socket closure verify. Empty HOME/TMP; no credentials/profile/page scripts/SDK,
+  alternative browser/client, listener, identity spoofing or TTY.
+- All nine focused outputs/outcomes reproduce from saved bodies in18mocked
+  navigations; default-vs-focused outcomes/classifications also agree. Another
+  offline native source-mode run recovers five CarGurus editorial panels omitted
+  by the explicit visibility filter:29805 to39331bytes, no refetch/cap increase or
+  tab activation. Documented existing-reader workflow, not a production bug fix.
+- The earlier noscript fixture queried the wrong root: the returned fragment is
+  detached, and extraction correctly rejects its detached reference. Insertion
+  preserves the article for both scripting states; no parser fix is needed.
+  Retain the failed probe and one pre-child wrapper-preparation failure. All21
+  actual child groups close, including the failed fragment probe. Nineteen mocked
+  navigations plus two successful native fragment cases run without network.
+- Reused pinnedaae29ea runtime after1472 committed source/config comparisons and
+  semantic native-manifest equality; prior3530pass/4baselinefailures and existing
+  broad type error are not a fresh all-green native gate. Preserve42tracked/
+  697untracked originals. Updated `CONTENT-PAGE-WORKFLOWS.md`; no push. Overall
+  browser, real interaction/passkey, SafeJS and challenge goals remain active.
+
 ### September 15: explicit bounded content-landmark focus
 
 - Added opt-in `main-content-v1` to core extraction, native `extract` and research
