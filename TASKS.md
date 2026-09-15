@@ -6,6 +6,38 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: retain HTTP failure provenance before content processing
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+The saved CNN response was an empty HTTP 403 without Content-Type, but the
+research pipeline reported a generic failure/unsupported loader outcome.
+It now sets http-failure when the primary non-2xx response is summarized,
+before capture/loading/extraction. Later error categories/stages remain intact;
+header/document barriers retain priority and 429 still stops without retry.
+No early throw, MIME sniffing, admission widening or invented network status.
+All 42 new tests pass. The final selected suite is 2,035 passed / 2 failed
+across 23 files; all 1,995 prior case statuses match the final baseline.
+Two known body-capture assertions remain unresolved. The initial five-second
+harness also timed out the existing 50,001-node headings case; an isolated
+diagnostic confirmed that timeout, and unchanged baseline/candidate code passes
+with a 15-second test-only bound. Production deadlines are unchanged; this is
+not a performance improvement claim. Earlier new-test assertion errors remain
+recorded. Build/types/format/lint pass and both candidates' production artifacts
+are identical. Only research-browser production artifact maps/JS change.
+Four guarded offline children (two API, two actual CLI) inject ten saved primary
+responses without network access. CNN's native/reader results now preserve both
+HTTP 403 and unsupported/loader provenance; no content is recovered and its
+receipt stays evidence-only. Zoom's 29,997 Markdown bytes and LinkedIn's
+semantic barrier remain unchanged. All process/transport cleanup and pins pass.
+Original top-100 results and receipts are unchanged; no website was revisited.
+See `HTTP-FAILURE-PROVENANCE.md` and `reports/http-provenance-2026-09-15.json`.
+Next: useful-content versus application-shell reporting, hidden startup data,
+response/redirect diagnostics and source-backed content recovery. Profile large
+native-document work separately before attributing test duration to browser
+performance. Full native release, research conclusions, rendering/interaction
+and separately gated SafeJS, service/socket, TTY/PTY, credentials and passkey
+device acceptance remain open. Original work and historical evidence stay intact.
+
 ### September 15: reuse captured literal text without refetching
 
 **PROGRESS; overall browser goal remains ACTIVE.**

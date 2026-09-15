@@ -595,6 +595,13 @@ produced nonempty, 2xx, unverified extraction; exit 2 means a mixture of those
 extractions and failures/barriers; exit 1 means no extraction successes; exit 64
 means invalid CLI input/setup. Exit 0 is not a website compatibility gate.
 
+A received non-2xx primary response establishes `http-failure` before loading.
+If loading, selection or extraction later fails, `failure.category` and
+`failure.stage` retain that additional execution diagnostic without hiding the
+HTTP outcome. Header/document semantic barriers still take priority; 429 still
+stops without retry. Network failures without a received primary response do
+not acquire an invented HTTP status. See HTTP-FAILURE-PROVENANCE.md.
+
 ## Validation and integration handoff
 
 On September 5, 2026 the explicitly selected new synthetic file

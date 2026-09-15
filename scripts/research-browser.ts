@@ -711,6 +711,8 @@ export async function researchNavigation(
 							if (fragment !== undefined) report.fragment = fragment;
 							report.primaryResponse = summarizePrimaryResponse(response);
 							report.finalUrl = report.primaryResponse.url;
+							if (response.status < 200 || response.status >= 300)
+								report.outcome = "http-failure";
 							if (captureBody) {
 								stage = "body-capture";
 								report.bodyCapture = admissionLimits
