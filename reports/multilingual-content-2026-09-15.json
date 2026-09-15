@@ -1,0 +1,1976 @@
+{
+  "passed": true,
+  "dateUtc": "2026-09-15",
+  "baseCommit": "ae584d14d8450b048e060081bf55116ab0a51ead",
+  "qualification": "Four native public observations and offline inert-declaration recovery, not full browser or interactive acceptance.",
+  "validation": {
+    "baselinePassed": 1452,
+    "baselineFiles": 18,
+    "candidatePassed": 1592,
+    "candidateFiles": 19,
+    "newTests": 140,
+    "newFailures": 0,
+    "unchangedBaselineCases": 1451,
+    "duplicateNamesPreserved": true,
+    "intentionalCaseRevision": {
+      "oldCase": "keeps malformed and nonempty declarations rejected: <?xml version='1.0'?>",
+      "newCase": "keeps malformed and nonempty declarations rejected: <p>Before</p><?xml version='1.0'?>",
+      "reason": "Leading declarations are now accepted; the misplaced equivalent remains rejected."
+    },
+    "selectedFiles": [
+      "src/research-loader.test.ts",
+      "src/research-loader-limits.test.ts",
+      "src/research-workflow.test.ts",
+      "src/research-reader-visibility.test.ts",
+      "src/research-visibility-policy.test.ts",
+      "src/research-inline-visibility.test.ts",
+      "src/research-inline-visibility-policy.test.ts",
+      "src/research-hidden-paragraph-ends.test.ts",
+      "src/research-reader-raw.test.ts",
+      "src/research-reader-raw-cli.test.ts",
+      "src/research-output-limit-recovery.test.ts",
+      "src/research-admission-evidence.test.ts",
+      "src/research-json-replay.test.ts",
+      "src/research-alternates.test.ts",
+      "src/html-parser.test.ts",
+      "src/html-parser-limits.test.ts",
+      "src/document-loader.test.ts",
+      "src/network.test.ts",
+      "src/research-xml-declaration.test.ts"
+    ],
+    "checks": {
+      "baseline": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 0
+      },
+      "release02": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 0
+      }
+    },
+    "fullNativeRelease": false
+  },
+  "priorValidation": {
+    "release01": {
+      "passed": 1592,
+      "failed": 0,
+      "checks": {
+        "build": 0,
+        "types": 2,
+        "format": 0,
+        "lint": 0,
+        "native": 0
+      },
+      "cause": "Two TS2339 errors in new tests calling string includes on union content; corrected with an explicit Markdown format guard. Production unchanged."
+    }
+  },
+  "navigationAttempts": 4,
+  "actualHttpRequests": 4,
+  "retries": 0,
+  "redirects": 0,
+  "capturesVerified": 4,
+  "allLiveCleanupVerified": true,
+  "liveBuildQualification": "Pinned prior build source/scripts/package/config match current HEAD; older archive docs/reports are not all current HEAD.",
+  "pages": [
+    {
+      "rank": 1,
+      "domain": "www.aozora.gr.jp",
+      "url": "https://www.aozora.gr.jp/cards/000081/files/456_15050.html",
+      "startedAt": "2026-09-15T12:06:26.155Z",
+      "finishedAt": "2026-09-15T12:06:27.747730+00:00",
+      "elapsedSeconds": 1.7168292999267578,
+      "exitCode": 1,
+      "timedOut": false,
+      "reaped": true,
+      "signals": [],
+      "childPid": 2646502,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "attempts": 1,
+      "requestsObserved": 1,
+      "parseError": null,
+      "reportCount": 1,
+      "status": 200,
+      "finalUrl": "https://www.aozora.gr.jp/cards/000081/files/456_15050.html",
+      "outcome": "failure",
+      "contentSuccess": false,
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "failure": {
+        "category": "unsupported",
+        "stage": "loader"
+      },
+      "contentType": [
+        "text/html"
+      ],
+      "title": null,
+      "decodedBytes": 124623,
+      "encodedBytes": 124623,
+      "markdownBytes": 0,
+      "receiptSha256": "f1cb61fdf36359dcc2a094402c9448cf9f50f2c3b4477157019349dff2baf6d1",
+      "bodySha256": "3ec8a20a38bc252901857c0d4ee29624ae111a13a7fdc4b040f59bd37e93f469",
+      "guardExited": true,
+      "denied": [],
+      "credentialsObserved": false,
+      "onlyGet": true,
+      "homeEntries": [],
+      "tmpEntries": [],
+      "directory": "001-www.aozora.gr.jp",
+      "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "requestCloses": 1,
+      "socketCloses": 1,
+      "bodyVerified": true
+    },
+    {
+      "rank": 2,
+      "domain": "ja.wikipedia.org",
+      "url": "https://ja.wikipedia.org/wiki/%E9%87%8F%E5%AD%90%E5%8C%96",
+      "startedAt": "2026-09-15T12:06:29.905Z",
+      "finishedAt": "2026-09-15T12:06:30.196138+00:00",
+      "elapsedSeconds": 0.415419964119792,
+      "exitCode": 0,
+      "timedOut": false,
+      "reaped": true,
+      "signals": [],
+      "childPid": 2646544,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "attempts": 1,
+      "requestsObserved": 1,
+      "parseError": null,
+      "reportCount": 1,
+      "status": 200,
+      "finalUrl": "https://ja.wikipedia.org/wiki/%E9%87%8F%E5%AD%90%E5%8C%96",
+      "outcome": "extracted-unverified",
+      "contentSuccess": null,
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "failure": null,
+      "contentType": [
+        "text/html; charset=UTF-8"
+      ],
+      "title": "量子化 - Wikipedia",
+      "decodedBytes": 79027,
+      "encodedBytes": 18126,
+      "markdownBytes": 18426,
+      "receiptSha256": "8403a6272be5ae64f1fdb6cffa8a4867e71719c2433f000654ed63e318e39b54",
+      "bodySha256": "1452477c98a88407801bc75a64c793251072d64e606a15478e07583d3ef480c8",
+      "guardExited": true,
+      "denied": [],
+      "credentialsObserved": false,
+      "onlyGet": true,
+      "homeEntries": [],
+      "tmpEntries": [],
+      "directory": "002-ja.wikipedia.org",
+      "markdownSha256": "0d3b41df44c235ee6745245e0a79d8c86b4ef4c2af23d5eaed867b1d4f2fd1f6",
+      "requestCloses": 1,
+      "socketCloses": 1,
+      "bodyVerified": true
+    },
+    {
+      "rank": 3,
+      "domain": "www.w3.org",
+      "url": "https://www.w3.org/International/articles/ruby/",
+      "startedAt": "2026-09-15T12:06:32.358Z",
+      "finishedAt": "2026-09-15T12:06:32.595473+00:00",
+      "elapsedSeconds": 0.36533807776868343,
+      "exitCode": 0,
+      "timedOut": false,
+      "reaped": true,
+      "signals": [],
+      "childPid": 2646682,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "attempts": 1,
+      "requestsObserved": 1,
+      "parseError": null,
+      "reportCount": 1,
+      "status": 200,
+      "finalUrl": "https://www.w3.org/International/articles/ruby/",
+      "outcome": "extracted-unverified",
+      "contentSuccess": null,
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "failure": null,
+      "contentType": [
+        "text/html; charset=utf-8"
+      ],
+      "title": "Ruby Markup",
+      "decodedBytes": 63521,
+      "encodedBytes": 14973,
+      "markdownBytes": 33538,
+      "receiptSha256": "9217b5a79f003250d11652131835d2a6f74c041eb4d9a288b47575b3ddbe6d84",
+      "bodySha256": "a4b440b02d21a341b7e8521cdccaecdd1c2cc0fb5a9e96646f416a49e0fcb756",
+      "guardExited": true,
+      "denied": [],
+      "credentialsObserved": false,
+      "onlyGet": true,
+      "homeEntries": [],
+      "tmpEntries": [],
+      "directory": "003-www.w3.org",
+      "markdownSha256": "b9ea449f6d699da2f42e9d4d67046748316359c493901d53f7d6008c30799c11",
+      "requestCloses": 1,
+      "socketCloses": 1,
+      "bodyVerified": true
+    },
+    {
+      "rank": 4,
+      "domain": "developer.mozilla.org",
+      "url": "https://developer.mozilla.org/fr/docs/Web/HTML/Reference/Elements/ruby",
+      "startedAt": "2026-09-15T12:06:34.756Z",
+      "finishedAt": "2026-09-15T12:06:35.195597+00:00",
+      "elapsedSeconds": 0.5660315044224262,
+      "exitCode": 0,
+      "timedOut": false,
+      "reaped": true,
+      "signals": [],
+      "childPid": 2646744,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "attempts": 1,
+      "requestsObserved": 1,
+      "parseError": null,
+      "reportCount": 1,
+      "status": 200,
+      "finalUrl": "https://developer.mozilla.org/fr/docs/Web/HTML/Reference/Elements/ruby",
+      "outcome": "extracted-unverified",
+      "contentSuccess": null,
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "failure": null,
+      "contentType": [
+        "text/html"
+      ],
+      "title": "Élément HTML <ruby> : l'élément d'annotation de Ruby - HTML | MDN",
+      "decodedBytes": 203682,
+      "encodedBytes": 20721,
+      "markdownBytes": 44962,
+      "receiptSha256": "fdbb5e2e09dc4a5f8ec1cb7e47546adeba28afaef3b67e61604fccf2248fb5e4",
+      "bodySha256": "2f4d80972df8f758202dc04f3c879b034c4ef3bf1b3e9d81342cff51a2dac9dc",
+      "guardExited": true,
+      "denied": [],
+      "credentialsObserved": false,
+      "onlyGet": true,
+      "homeEntries": [],
+      "tmpEntries": [],
+      "directory": "004-developer.mozilla.org",
+      "markdownSha256": "20deaf33c28f24387d43cbe394bcfba728e0cd79d277a59baa2e7eda12d74304",
+      "requestCloses": 1,
+      "socketCloses": 1,
+      "bodyVerified": true
+    }
+  ],
+  "offline": {
+    "actualHttpRequests": 0,
+    "uniqueCapturedResponses": 18,
+    "inMemoryNavigations": 40,
+    "comparedPolicyCases": 20,
+    "unchangedCases": 17,
+    "recoveredCases": [
+      {
+        "before": {
+          "key": "www.aozora.gr.jp",
+          "originalStatus": 200,
+          "originalOutcome": "failure",
+          "receiptSha256": "f1cb61fdf36359dcc2a094402c9448cf9f50f2c3b4477157019349dff2baf6d1",
+          "bodySha256": "3ec8a20a38bc252901857c0d4ee29624ae111a13a7fdc4b040f59bd37e93f469",
+          "outcome": "failure",
+          "failure": {
+            "category": "unsupported",
+            "stage": "loader"
+          },
+          "markdownBytes": 0,
+          "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "sourceAlternates": null,
+          "sourceDescriptions": null,
+          "sourceMarkdown": null,
+          "cleanupVerified": true,
+          "originalFailedReceiptReplayDenied": true
+        },
+        "after": {
+          "key": "www.aozora.gr.jp",
+          "originalStatus": 200,
+          "originalOutcome": "failure",
+          "receiptSha256": "f1cb61fdf36359dcc2a094402c9448cf9f50f2c3b4477157019349dff2baf6d1",
+          "bodySha256": "3ec8a20a38bc252901857c0d4ee29624ae111a13a7fdc4b040f59bd37e93f469",
+          "outcome": "extracted-unverified",
+          "reader": {
+            "profile": "native-semantic-reader-v1",
+            "partial": true,
+            "scripting": false,
+            "styling": false,
+            "hiddenContentSemantics": "source-attributes-and-inline-display",
+            "visibilityPolicy": "source-hidden-inline-v1",
+            "sourceHiddenSubtrees": 1,
+            "sourceCodeUnits": 82683,
+            "textCodeUnits": 42620,
+            "outputCodeUnits": 73702,
+            "tokens": 11574,
+            "omittedTokens": 18,
+            "omittedSubtrees": {
+              "meta": 5,
+              "link": 2,
+              "script": 3,
+              "div": 1
+            },
+            "ignoredAttributes": 12,
+            "unwrappedElements": 693,
+            "tokenizerIssues": 1,
+            "rawTextPolicy": "separate-omitted-raw-v1",
+            "omittedRaw": {
+              "codeUnits": 0,
+              "workUnits": 65708,
+              "steps": 3,
+              "elements": 3,
+              "maxWorkUnits": 32000000,
+              "maxWindowCodeUnits": 65536
+            },
+            "encoding": "shift_jis"
+          },
+          "markdownBytes": 127443,
+          "markdownSha256": "cf3f283e20303ef71c98d5202c7bc6ba220261e159ffb5c34a5dae4875a8532e",
+          "sourceAlternates": null,
+          "sourceDescriptions": null,
+          "sourceMarkdown": null,
+          "cleanupVerified": true,
+          "originalFailedReceiptReplayDenied": true
+        }
+      },
+      {
+        "before": {
+          "key": "aozora-default",
+          "originalStatus": 200,
+          "originalOutcome": "failure",
+          "receiptSha256": "f1cb61fdf36359dcc2a094402c9448cf9f50f2c3b4477157019349dff2baf6d1",
+          "bodySha256": "3ec8a20a38bc252901857c0d4ee29624ae111a13a7fdc4b040f59bd37e93f469",
+          "outcome": "failure",
+          "failure": {
+            "category": "unsupported",
+            "stage": "loader"
+          },
+          "markdownBytes": 0,
+          "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "sourceAlternates": null,
+          "sourceDescriptions": null,
+          "sourceMarkdown": null,
+          "cleanupVerified": true,
+          "originalFailedReceiptReplayDenied": true
+        },
+        "after": {
+          "key": "aozora-default",
+          "originalStatus": 200,
+          "originalOutcome": "failure",
+          "receiptSha256": "f1cb61fdf36359dcc2a094402c9448cf9f50f2c3b4477157019349dff2baf6d1",
+          "bodySha256": "3ec8a20a38bc252901857c0d4ee29624ae111a13a7fdc4b040f59bd37e93f469",
+          "outcome": "extracted-unverified",
+          "reader": {
+            "profile": "native-semantic-reader-v1",
+            "partial": true,
+            "scripting": false,
+            "styling": false,
+            "hiddenContentSemantics": false,
+            "sourceCodeUnits": 82683,
+            "textCodeUnits": 42620,
+            "outputCodeUnits": 73727,
+            "tokens": 11574,
+            "omittedTokens": 16,
+            "omittedSubtrees": {
+              "meta": 5,
+              "link": 2,
+              "script": 3
+            },
+            "ignoredAttributes": 13,
+            "unwrappedElements": 693,
+            "tokenizerIssues": 1,
+            "rawTextPolicy": "separate-omitted-raw-v1",
+            "omittedRaw": {
+              "codeUnits": 0,
+              "workUnits": 65708,
+              "steps": 3,
+              "elements": 3,
+              "maxWorkUnits": 32000000,
+              "maxWindowCodeUnits": 65536
+            },
+            "encoding": "shift_jis"
+          },
+          "markdownBytes": 127443,
+          "markdownSha256": "cf3f283e20303ef71c98d5202c7bc6ba220261e159ffb5c34a5dae4875a8532e",
+          "sourceAlternates": null,
+          "sourceDescriptions": null,
+          "sourceMarkdown": null,
+          "cleanupVerified": true,
+          "originalFailedReceiptReplayDenied": true
+        }
+      },
+      {
+        "before": {
+          "key": "aozora-source-hidden",
+          "originalStatus": 200,
+          "originalOutcome": "failure",
+          "receiptSha256": "f1cb61fdf36359dcc2a094402c9448cf9f50f2c3b4477157019349dff2baf6d1",
+          "bodySha256": "3ec8a20a38bc252901857c0d4ee29624ae111a13a7fdc4b040f59bd37e93f469",
+          "outcome": "failure",
+          "failure": {
+            "category": "unsupported",
+            "stage": "loader"
+          },
+          "markdownBytes": 0,
+          "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "sourceAlternates": null,
+          "sourceDescriptions": null,
+          "sourceMarkdown": null,
+          "cleanupVerified": true,
+          "originalFailedReceiptReplayDenied": true
+        },
+        "after": {
+          "key": "aozora-source-hidden",
+          "originalStatus": 200,
+          "originalOutcome": "failure",
+          "receiptSha256": "f1cb61fdf36359dcc2a094402c9448cf9f50f2c3b4477157019349dff2baf6d1",
+          "bodySha256": "3ec8a20a38bc252901857c0d4ee29624ae111a13a7fdc4b040f59bd37e93f469",
+          "outcome": "extracted-unverified",
+          "reader": {
+            "profile": "native-semantic-reader-v1",
+            "partial": true,
+            "scripting": false,
+            "styling": false,
+            "hiddenContentSemantics": "source-attributes",
+            "visibilityPolicy": "source-hidden-v1",
+            "sourceHiddenSubtrees": 0,
+            "sourceCodeUnits": 82683,
+            "textCodeUnits": 42620,
+            "outputCodeUnits": 73727,
+            "tokens": 11574,
+            "omittedTokens": 16,
+            "omittedSubtrees": {
+              "meta": 5,
+              "link": 2,
+              "script": 3
+            },
+            "ignoredAttributes": 13,
+            "unwrappedElements": 693,
+            "tokenizerIssues": 1,
+            "rawTextPolicy": "separate-omitted-raw-v1",
+            "omittedRaw": {
+              "codeUnits": 0,
+              "workUnits": 65708,
+              "steps": 3,
+              "elements": 3,
+              "maxWorkUnits": 32000000,
+              "maxWindowCodeUnits": 65536
+            },
+            "encoding": "shift_jis"
+          },
+          "markdownBytes": 127443,
+          "markdownSha256": "cf3f283e20303ef71c98d5202c7bc6ba220261e159ffb5c34a5dae4875a8532e",
+          "sourceAlternates": null,
+          "sourceDescriptions": null,
+          "sourceMarkdown": null,
+          "cleanupVerified": true,
+          "originalFailedReceiptReplayDenied": true
+        }
+      }
+    ],
+    "successfulOriginalReceiptReplays": 24,
+    "originalFailedReceiptDeniedChecks": 8,
+    "originalReceiptsUnchanged": true,
+    "candidateResults": [
+      {
+        "key": "office",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "7a992432bd67439974aca1b54248190374f6fab02bd7ff9761e272f4041ae9d4",
+        "bodySha256": "6db8e6a8e5aae7bafd1507d29c73b3737b1e4b3442fd92b925983542b196df6d",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": false,
+          "sourceCodeUnits": 313898,
+          "textCodeUnits": 48017,
+          "outputCodeUnits": 99319,
+          "tokens": 3704,
+          "omittedTokens": 317,
+          "omittedSubtrees": {
+            "meta": 18,
+            "link": 19,
+            "script": 24,
+            "svg": 29,
+            "source": 5
+          },
+          "ignoredAttributes": 715,
+          "unwrappedElements": 43,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 119927,
+            "workUnits": 1745031,
+            "steps": 25,
+            "elements": 24,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 52523,
+        "markdownSha256": "a3ab6476dd2639b37ccc114be74aff8e162b20a730d0ac4323c65af4fa695cdc",
+        "sourceAlternates": null,
+        "sourceDescriptions": {
+          "kind": "html-meta-descriptions-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "attribute": "name",
+              "name": "description",
+              "text": "Microsoft 365 includes Word, Excel, PowerPoint, Outlook, Teams, and OneDrive, with Microsoft Copilot built in to help you create, communicate, and summarize information. Formerly Office 365.",
+              "truncated": false
+            },
+            {
+              "attribute": "name",
+              "name": "og:description",
+              "text": "Microsoft 365 includes Word, Excel, PowerPoint, Outlook, Teams, and OneDrive, with Microsoft Copilot built in to help you create, communicate, and summarize information. Formerly Office 365.",
+              "truncated": false
+            },
+            {
+              "attribute": "name",
+              "name": "twitter:description",
+              "text": "Microsoft 365 includes Word, Excel, PowerPoint, Outlook, Teams, and OneDrive, with Microsoft Copilot built in to help you create, communicate, and summarize information. Formerly Office 365.",
+              "truncated": false
+            }
+          ]
+        },
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "nasa",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "8abe6a478a6ecd0166f8fb55a7c2ab4179eea07ffc7196e6c402265a550afc66",
+        "bodySha256": "9bf136b480c92b641b81700acadfdd0263a912e02f296591bccf0fbacc6507b7",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": false,
+          "sourceCodeUnits": 360481,
+          "textCodeUnits": 24579,
+          "outputCodeUnits": 127803,
+          "tokens": 7550,
+          "omittedTokens": 1725,
+          "omittedSubtrees": {
+            "meta": 42,
+            "script": 33,
+            "link": 35,
+            "style": 13,
+            "iframe": 2,
+            "svg": 242,
+            "input": 17,
+            "textarea": 1
+          },
+          "ignoredAttributes": 874,
+          "unwrappedElements": 27,
+          "tokenizerIssues": 6,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 57094,
+            "workUnits": 1950533,
+            "steps": 48,
+            "elements": 48,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 48247,
+        "markdownSha256": "985c4ca76a5aac45f348eaf683e8ee878c1274f78756b344ef8f3f38f81eab52",
+        "sourceAlternates": null,
+        "sourceDescriptions": {
+          "kind": "html-meta-descriptions-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "attribute": "name",
+              "name": "description",
+              "text": "We’re launching learning to new heights with STEM resources that connect educators, students, parents and caregivers to the inspiring work at NASA. Find your place in space!",
+              "truncated": false
+            },
+            {
+              "attribute": "property",
+              "name": "og:description",
+              "text": "We’re launching learning to new heights with STEM resources that connect educators, students, parents and caregivers to the inspiring work at NASA. Find your place in space!",
+              "truncated": false
+            },
+            {
+              "attribute": "name",
+              "name": "twitter:description",
+              "text": "We’re launching learning to new heights with STEM resources that connect educators, students, parents and caregivers to the inspiring work at NASA. Find your place in space!",
+              "truncated": false
+            }
+          ]
+        },
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "webdev",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "fbc78bf0d40eac35e8177e9e59f5cf0f5133c6223be44a372b68409f36d68b45",
+        "bodySha256": "f5867f499e77b64d54049a83a85595bae9441c437ad7689c9d556fd65ec9732f",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": false,
+          "sourceCodeUnits": 218545,
+          "textCodeUnits": 44725,
+          "outputCodeUnits": 100994,
+          "tokens": 5175,
+          "omittedTokens": 149,
+          "omittedSubtrees": {
+            "meta": 17,
+            "link": 56,
+            "script": 4,
+            "source": 2,
+            "input": 2,
+            "svg": 5,
+            "style": 1,
+            "video": 1,
+            "template": 1
+          },
+          "ignoredAttributes": 1180,
+          "unwrappedElements": 73,
+          "tokenizerIssues": 50,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 7365,
+            "workUnits": 189024,
+            "steps": 5,
+            "elements": 5,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 34250,
+        "markdownSha256": "c593142eca5d0a3b48e6b37b3f6a403d5f2a6915f951b15c68127640e5c594be",
+        "sourceAlternates": null,
+        "sourceDescriptions": {
+          "kind": "html-meta-descriptions-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "attribute": "name",
+              "name": "description",
+              "text": "Passkeys make a website&#39;s user accounts safer, simpler, easier to use and passwordless. This document discusses how to allow users to create passkeys for your website.",
+              "truncated": false
+            },
+            {
+              "attribute": "property",
+              "name": "og:description",
+              "text": "Passkeys make a website&#39;s user accounts safer, simpler, easier to use and passwordless. This document discusses how to allow users to create passkeys for your website.",
+              "truncated": false
+            }
+          ]
+        },
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "pytorch",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "1343a7a26b3e92755632f49527aaf7cf10094ec587472f933f071313d3432be2",
+        "bodySha256": "8044c90a6489d903273627650f1b0612cd27ef4e530269270b3b62c5adfda175",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": false,
+          "sourceCodeUnits": 18669,
+          "textCodeUnits": 18669,
+          "outputCodeUnits": 0,
+          "tokens": 0,
+          "omittedTokens": 0,
+          "omittedSubtrees": {},
+          "ignoredAttributes": 0,
+          "unwrappedElements": 0,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 0,
+            "workUnits": 0,
+            "steps": 0,
+            "elements": 0,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 18681,
+        "markdownSha256": "483ab0686be927fcbc11245fe6bf3e76e12c1a12a883fcdb2a689b2e91844154",
+        "sourceAlternates": null,
+        "sourceDescriptions": null,
+        "sourceMarkdown": {
+          "kind": "markdown-source-outline-v1",
+          "partial": true,
+          "sourceCodeUnits": 18669,
+          "totalLines": 235,
+          "matchedHeadings": 5,
+          "leadingMetadataLines": 3,
+          "truncated": false,
+          "entries": [
+            {
+              "level": 1,
+              "title": "PyTorch documentation[#](#pytorch-documentation \"Link to this heading\")",
+              "titleTruncated": false,
+              "startLine": 22,
+              "endLine": 235
+            },
+            {
+              "level": 2,
+              "title": "Indices and tables[#](#indices-and-tables \"Link to this heading\")",
+              "titleTruncated": false,
+              "startLine": 168,
+              "endLine": 191
+            },
+            {
+              "level": 2,
+              "title": "Docs",
+              "titleTruncated": false,
+              "startLine": 192,
+              "endLine": 197
+            },
+            {
+              "level": 2,
+              "title": "Tutorials",
+              "titleTruncated": false,
+              "startLine": 198,
+              "endLine": 203
+            },
+            {
+              "level": 2,
+              "title": "Resources",
+              "titleTruncated": false,
+              "startLine": 204,
+              "endLine": 235
+            }
+          ]
+        },
+        "cleanupVerified": true
+      },
+      {
+        "key": "govuk",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "7fee2a0f1f2885a32ebba2e26067f743a0e5e4e34e95b64b80e6317282a0285c",
+        "bodySha256": "642c6cb8515a61967a093ffa6a9d13ddc227f1360a469eaa4189dbae615fe733",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": false,
+          "sourceCodeUnits": 68921,
+          "textCodeUnits": 13425,
+          "outputCodeUnits": 37387,
+          "tokens": 1715,
+          "omittedTokens": 191,
+          "omittedSubtrees": {
+            "meta": 18,
+            "script": 8,
+            "link": 7,
+            "svg": 9,
+            "input": 3,
+            "textarea": 2
+          },
+          "ignoredAttributes": 206,
+          "unwrappedElements": 17,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 749,
+            "workUnits": 388184,
+            "steps": 8,
+            "elements": 8,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 9837,
+        "markdownSha256": "e86d9327058a7aed4cf28b8c9fab86a5d578d71ee3478c55397a4dc4692a5ae2",
+        "sourceAlternates": null,
+        "sourceDescriptions": {
+          "kind": "html-meta-descriptions-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "attribute": "name",
+              "name": "description",
+              "text": "Includes vehicle tax, MOT and driving licences",
+              "truncated": false
+            }
+          ]
+        },
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "julia",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "39caed41a1041d7412f147204f85ee00937d3923cf592c560ddb34cd32d98e8b",
+        "bodySha256": "f386342513621cb120a16f0ed962a19fe429992a12c4febfc6e4741f0f34bc81",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 128858,
+          "textCodeUnits": 75049,
+          "outputCodeUnits": 124055,
+          "tokens": 5022,
+          "omittedTokens": 49,
+          "omittedSubtrees": {
+            "meta": 7,
+            "link": 15,
+            "script": 9,
+            "input": 8
+          },
+          "ignoredAttributes": 31,
+          "unwrappedElements": 20,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 245,
+            "workUnits": 591175,
+            "steps": 9,
+            "elements": 9,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 107037,
+        "markdownSha256": "eb8222b581fa9386f8c977d4ac49b83f407b4e9aeabc5f3d175c9e821772ac18",
+        "sourceAlternates": null,
+        "sourceDescriptions": {
+          "kind": "html-meta-descriptions-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "attribute": "name",
+              "name": "description",
+              "text": "Documentation for The Julia Language.",
+              "truncated": false
+            },
+            {
+              "attribute": "property",
+              "name": "og:description",
+              "text": "Documentation for The Julia Language.",
+              "truncated": false
+            },
+            {
+              "attribute": "property",
+              "name": "twitter:description",
+              "text": "Documentation for The Julia Language.",
+              "truncated": false
+            }
+          ]
+        },
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "numpy",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "2d720d1284effd86021aeae58ad439a4c359893cbc78ba9fae3f09cb13ecdce7",
+        "bodySha256": "4cdee60af5a7f0f9e5850cde7f7f8850a86e92a09a5e796407a53f8a189b049f",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 3,
+          "sourceCodeUnits": 184518,
+          "textCodeUnits": 50622,
+          "outputCodeUnits": 173866,
+          "tokens": 15002,
+          "omittedTokens": 87,
+          "omittedSubtrees": {
+            "meta": 7,
+            "script": 20,
+            "style": 1,
+            "link": 17,
+            "input": 1,
+            "i": 2,
+            "svg": 1
+          },
+          "ignoredAttributes": 112,
+          "unwrappedElements": 11,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 652,
+            "workUnits": 1185552,
+            "steps": 21,
+            "elements": 21,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 62932,
+        "markdownSha256": "f0697c27db64f012eb9fec2ca15b0db31a523aa93a8f20c4884baad7ff5edb4a",
+        "sourceAlternates": null,
+        "sourceDescriptions": null,
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "rfc",
+        "originalStatus": 200,
+        "originalOutcome": "failure",
+        "receiptSha256": "1500c9826255bea97cb6b089851feca38a517bf5a5e89050f544c7c6a5e4c8ec",
+        "bodySha256": "d431760660ea44e130f6e919dab216df2d0b3a490567a98089267523368fe1e5",
+        "outcome": "failure",
+        "failure": {
+          "category": "resource-limit",
+          "stage": "extraction",
+          "resourceLimit": {
+            "kind": "extraction.output",
+            "unit": "bytes",
+            "limit": 256000,
+            "observed": 256604
+          }
+        },
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 1184898,
+          "textCodeUnits": 557074,
+          "outputCodeUnits": 1155955,
+          "tokens": 53240,
+          "omittedTokens": 28,
+          "omittedSubtrees": {
+            "meta": 14,
+            "link": 6,
+            "style": 1,
+            "script": 2
+          },
+          "ignoredAttributes": 529,
+          "unwrappedElements": 0,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 22501,
+            "workUnits": 154867,
+            "steps": 3,
+            "elements": 3,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 0,
+        "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sourceAlternates": null,
+        "sourceDescriptions": null,
+        "sourceMarkdown": null,
+        "cleanupVerified": true
+      },
+      {
+        "key": "apple-html",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "21150e7cffc64ec8392062e59423090ab448fe939e0ec024df7b74969af4c40a",
+        "bodySha256": "7a961caccaf901512f425a91b66c6c6311a1631a68df4c0020c9a25de6bdaf99",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 18208,
+          "textCodeUnits": 573,
+          "outputCodeUnits": 1028,
+          "tokens": 280,
+          "omittedTokens": 191,
+          "omittedSubtrees": {
+            "meta": 14,
+            "link": 15,
+            "script": 6,
+            "template": 1,
+            "style": 1
+          },
+          "ignoredAttributes": 2,
+          "unwrappedElements": 1,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 793,
+            "workUnits": 74879,
+            "steps": 7,
+            "elements": 7,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 285,
+        "markdownSha256": "72a4e83ff515641f5f48a3c97940ee69648d955e01606392ba84268c8e203f83",
+        "sourceAlternates": {
+          "kind": "html-alternate-representations-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "type": "text/markdown",
+              "url": "https://developer.apple.com/documentation/metal.md"
+            }
+          ]
+        },
+        "sourceDescriptions": {
+          "kind": "html-meta-descriptions-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "attribute": "name",
+              "name": "description",
+              "text": "Render advanced 3D graphics and compute data in parallel with graphics processors.",
+              "truncated": false
+            },
+            {
+              "attribute": "property",
+              "name": "og:description",
+              "text": "Render advanced 3D graphics and compute data in parallel with graphics processors.",
+              "truncated": false
+            },
+            {
+              "attribute": "name",
+              "name": "twitter:description",
+              "text": "Render advanced 3D graphics and compute data in parallel with graphics processors.",
+              "truncated": false
+            }
+          ]
+        },
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "apple-markdown",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "1ca46700e1b3083cff6c08d08caed5132d0f27567631ce62dddabec8a08f7ce6",
+        "bodySha256": "eff17062529eadf6906eff8c8e4af4d89614e42cabd89a08dc89969283ecce1f",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": false,
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 12801,
+          "textCodeUnits": 12801,
+          "outputCodeUnits": 0,
+          "tokens": 0,
+          "omittedTokens": 0,
+          "omittedSubtrees": {},
+          "ignoredAttributes": 0,
+          "unwrappedElements": 0,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 0,
+            "workUnits": 0,
+            "steps": 0,
+            "elements": 0,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 12844,
+        "markdownSha256": "b6265f9f20ead6d62e5887a1e4f233a4139e6a15fc8cf146b8062af28c7eb40f",
+        "sourceAlternates": null,
+        "sourceDescriptions": null,
+        "sourceMarkdown": {
+          "kind": "markdown-source-outline-v1",
+          "partial": true,
+          "sourceCodeUnits": 12801,
+          "totalLines": 314,
+          "matchedHeadings": 20,
+          "leadingMetadataLines": 0,
+          "truncated": false,
+          "entries": [
+            {
+              "level": 1,
+              "title": "Metal",
+              "titleTruncated": false,
+              "startLine": 27,
+              "endLine": 314
+            },
+            {
+              "level": 2,
+              "title": "Overview",
+              "titleTruncated": false,
+              "startLine": 31,
+              "endLine": 43
+            },
+            {
+              "level": 2,
+              "title": "Topics",
+              "titleTruncated": false,
+              "startLine": 44,
+              "endLine": 303
+            },
+            {
+              "level": 3,
+              "title": "Essentials",
+              "titleTruncated": false,
+              "startLine": 46,
+              "endLine": 65
+            },
+            {
+              "level": 3,
+              "title": "Samples",
+              "titleTruncated": false,
+              "startLine": 66,
+              "endLine": 73
+            },
+            {
+              "level": 3,
+              "title": "GPU devices",
+              "titleTruncated": false,
+              "startLine": 74,
+              "endLine": 81
+            },
+            {
+              "level": 3,
+              "title": "Command encoders",
+              "titleTruncated": false,
+              "startLine": 82,
+              "endLine": 109
+            },
+            {
+              "level": 3,
+              "title": "Resources",
+              "titleTruncated": false,
+              "startLine": 110,
+              "endLine": 139
+            },
+            {
+              "level": 3,
+              "title": "Shader compilation and libraries",
+              "titleTruncated": false,
+              "startLine": 140,
+              "endLine": 159
+            },
+            {
+              "level": 3,
+              "title": "Presentation",
+              "titleTruncated": false,
+              "startLine": 160,
+              "endLine": 185
+            },
+            {
+              "level": 3,
+              "title": "Developer tools",
+              "titleTruncated": false,
+              "startLine": 186,
+              "endLine": 221
+            },
+            {
+              "level": 3,
+              "title": "Apple silicon",
+              "titleTruncated": false,
+              "startLine": 222,
+              "endLine": 231
+            },
+            {
+              "level": 3,
+              "title": "Reference",
+              "titleTruncated": false,
+              "startLine": 232,
+              "endLine": 243
+            },
+            {
+              "level": 3,
+              "title": "Reference",
+              "titleTruncated": false,
+              "startLine": 244,
+              "endLine": 259
+            },
+            {
+              "level": 3,
+              "title": "Classes",
+              "titleTruncated": false,
+              "startLine": 260,
+              "endLine": 277
+            },
+            {
+              "level": 3,
+              "title": "Protocols",
+              "titleTruncated": false,
+              "startLine": 278,
+              "endLine": 283
+            },
+            {
+              "level": 3,
+              "title": "Structures",
+              "titleTruncated": false,
+              "startLine": 284,
+              "endLine": 287
+            },
+            {
+              "level": 3,
+              "title": "Variables",
+              "titleTruncated": false,
+              "startLine": 288,
+              "endLine": 291
+            },
+            {
+              "level": 3,
+              "title": "Enumerations",
+              "titleTruncated": false,
+              "startLine": 292,
+              "endLine": 303
+            },
+            {
+              "level": 2,
+              "title": "See Also",
+              "titleTruncated": false,
+              "startLine": 304,
+              "endLine": 314
+            }
+          ]
+        },
+        "cleanupVerified": true
+      },
+      {
+        "key": "huggingface.co",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "6068e7227482eeb5698118d133775b82ac5742b8e738bb444574c08fc739916f",
+        "bodySha256": "976f7ff24d4ea426d034c741fd72ce660428946a8423fd80b785cef9acb896d1",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": false,
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 9421,
+          "textCodeUnits": 9421,
+          "outputCodeUnits": 0,
+          "tokens": 0,
+          "omittedTokens": 0,
+          "omittedSubtrees": {},
+          "ignoredAttributes": 0,
+          "unwrappedElements": 0,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 0,
+            "workUnits": 0,
+            "steps": 0,
+            "elements": 0,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 9863,
+        "markdownSha256": "a9230a2883dec7e1857e6049901ba9cbda415ee887e29bee47e89d888a4334a4",
+        "sourceAlternates": null,
+        "sourceDescriptions": null,
+        "sourceMarkdown": {
+          "kind": "markdown-source-outline-v1",
+          "partial": true,
+          "sourceCodeUnits": 9421,
+          "totalLines": 50,
+          "matchedHeadings": 3,
+          "leadingMetadataLines": 0,
+          "truncated": false,
+          "entries": [
+            {
+              "level": 1,
+              "title": "Overview",
+              "titleTruncated": false,
+              "startLine": 1,
+              "endLine": 50
+            },
+            {
+              "level": 2,
+              "title": "Resources",
+              "titleTruncated": false,
+              "startLine": 34,
+              "endLine": 40
+            },
+            {
+              "level": 2,
+              "title": "User-Friendly Quantization Tools",
+              "titleTruncated": false,
+              "startLine": 41,
+              "endLine": 50
+            }
+          ]
+        },
+        "cleanupVerified": true
+      },
+      {
+        "key": "mlcommons.org",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "f0255478f7bd1ae254a67d9dfc6f074e5df92705b3f68c794332bebf3d8b1599",
+        "bodySha256": "016fa3ca57750ddccc33f21cfb46278de443d017a6cf2cc58e5e551a1a7cf670",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 4,
+          "sourceCodeUnits": 146806,
+          "textCodeUnits": 12201,
+          "outputCodeUnits": 47590,
+          "tokens": 2521,
+          "omittedTokens": 390,
+          "omittedSubtrees": {
+            "meta": 13,
+            "script": 39,
+            "link": 25,
+            "style": 17,
+            "svg": 21,
+            "input": 16,
+            "iframe": 2,
+            "div": 2,
+            "aside": 1
+          },
+          "ignoredAttributes": 87,
+          "unwrappedElements": 13,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 71266,
+            "workUnits": 2328731,
+            "steps": 58,
+            "elements": 58,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 16986,
+        "markdownSha256": "f52ba561cc4645bd8ebfa485eb1c7bfaa5c011c9ec7144da1038558f3a57aee4",
+        "sourceAlternates": null,
+        "sourceDescriptions": {
+          "kind": "html-meta-descriptions-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "attribute": "name",
+              "name": "description",
+              "text": "The MLPerf Inference: Datacenter benchmark suite measures how fast systems can process inputs and produce results using a trained model.",
+              "truncated": false
+            },
+            {
+              "attribute": "property",
+              "name": "og:description",
+              "text": "The MLPerf Inference: Datacenter benchmark suite measures how fast systems can process inputs and produce results using a trained model.",
+              "truncated": false
+            }
+          ]
+        },
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "github.com",
+        "originalStatus": 200,
+        "originalOutcome": "failure",
+        "receiptSha256": "c3d8868f71e2f1b7d71a9bcf676e9fbf8fa4ea1ff6c2ac1da12154a60a3afedc",
+        "bodySha256": "5198660e809f45c004a1da0add7c3baff6f9b4d5565aabb7587314bf54410f1e",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 166,
+          "sourceCodeUnits": 643683,
+          "textCodeUnits": 42711,
+          "outputCodeUnits": 148849,
+          "tokens": 7198,
+          "omittedTokens": 1364,
+          "omittedSubtrees": {
+            "meta": 59,
+            "link": 148,
+            "script": 13,
+            "style": 1,
+            "svg": 140,
+            "div": 7,
+            "kbd": 1,
+            "template": 4,
+            "li": 9,
+            "a": 1,
+            "span": 16,
+            "input": 1,
+            "button": 2
+          },
+          "ignoredAttributes": 1268,
+          "unwrappedElements": 45,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 286467,
+            "workUnits": 2611702,
+            "steps": 18,
+            "elements": 14,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 51421,
+        "markdownSha256": "b75255f78b8b3601ef32ca81931c38c68acd559df8d10bfb8389b062ad3955ce",
+        "sourceAlternates": null,
+        "sourceDescriptions": {
+          "kind": "html-meta-descriptions-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "attribute": "name",
+              "name": "description",
+              "text": "LLM inference in C/C++. Contribute to ggml-org/llama.cpp development by creating an account on GitHub.",
+              "truncated": false
+            },
+            {
+              "attribute": "name",
+              "name": "twitter:description",
+              "text": "LLM inference in C/C++. Contribute to ggml-org/llama.cpp development by creating an account on GitHub.",
+              "truncated": false
+            },
+            {
+              "attribute": "property",
+              "name": "og:description",
+              "text": "LLM inference in C/C++. Contribute to ggml-org/llama.cpp development by creating an account on GitHub.",
+              "truncated": false
+            }
+          ]
+        },
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalFailedReceiptReplayDenied": true
+      },
+      {
+        "key": "machinelearning.apple.com",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "787d935f6eaf550e88f2bb1a9f732602928c97042e6d6749e550ef79d30fff5f",
+        "bodySha256": "8ce56f0c5c25d57655c8f4337f81eb0b24225508eee4123783edb2a5c8a77aca",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 11,
+          "sourceCodeUnits": 30360,
+          "textCodeUnits": 3940,
+          "outputCodeUnits": 10375,
+          "tokens": 508,
+          "omittedTokens": 147,
+          "omittedSubtrees": {
+            "meta": 14,
+            "link": 13,
+            "script": 23,
+            "input": 1,
+            "div": 1,
+            "span": 9,
+            "svg": 8,
+            "figcaption": 1
+          },
+          "ignoredAttributes": 48,
+          "unwrappedElements": 11,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 9430,
+            "workUnits": 544039,
+            "steps": 23,
+            "elements": 23,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 5498,
+        "markdownSha256": "08d788146469fc7d078afdafe7235e05e1049bdc84207fba4dcccfc1caffcb75",
+        "sourceAlternates": null,
+        "sourceDescriptions": {
+          "kind": "html-meta-descriptions-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "attribute": "name",
+              "name": "description",
+              "text": "Large language models (LLMs) are central to modern natural language processing, delivering exceptional performance in various tasks…",
+              "truncated": false
+            },
+            {
+              "attribute": "property",
+              "name": "og:description",
+              "text": "Large language models (LLMs) are central to modern natural language processing, delivering exceptional performance in various tasks…",
+              "truncated": false
+            }
+          ]
+        },
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "www.aozora.gr.jp",
+        "originalStatus": 200,
+        "originalOutcome": "failure",
+        "receiptSha256": "f1cb61fdf36359dcc2a094402c9448cf9f50f2c3b4477157019349dff2baf6d1",
+        "bodySha256": "3ec8a20a38bc252901857c0d4ee29624ae111a13a7fdc4b040f59bd37e93f469",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 1,
+          "sourceCodeUnits": 82683,
+          "textCodeUnits": 42620,
+          "outputCodeUnits": 73702,
+          "tokens": 11574,
+          "omittedTokens": 18,
+          "omittedSubtrees": {
+            "meta": 5,
+            "link": 2,
+            "script": 3,
+            "div": 1
+          },
+          "ignoredAttributes": 12,
+          "unwrappedElements": 693,
+          "tokenizerIssues": 1,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 0,
+            "workUnits": 65708,
+            "steps": 3,
+            "elements": 3,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "shift_jis"
+        },
+        "markdownBytes": 127443,
+        "markdownSha256": "cf3f283e20303ef71c98d5202c7bc6ba220261e159ffb5c34a5dae4875a8532e",
+        "sourceAlternates": null,
+        "sourceDescriptions": null,
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalFailedReceiptReplayDenied": true
+      },
+      {
+        "key": "ja.wikipedia.org",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "8403a6272be5ae64f1fdb6cffa8a4867e71719c2433f000654ed63e318e39b54",
+        "bodySha256": "1452477c98a88407801bc75a64c793251072d64e606a15478e07583d3ef480c8",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 12,
+          "sourceCodeUnits": 71747,
+          "textCodeUnits": 3472,
+          "outputCodeUnits": 37700,
+          "tokens": 2125,
+          "omittedTokens": 253,
+          "omittedSubtrees": {
+            "meta": 11,
+            "script": 5,
+            "link": 16,
+            "input": 12,
+            "label": 8,
+            "img": 1,
+            "style": 1,
+            "source": 2,
+            "div": 3
+          },
+          "ignoredAttributes": 383,
+          "unwrappedElements": 13,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 7057,
+            "workUnits": 250551,
+            "steps": 6,
+            "elements": 6,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 18426,
+        "markdownSha256": "0d3b41df44c235ee6745245e0a79d8c86b4ef4c2af23d5eaed867b1d4f2fd1f6",
+        "sourceAlternates": null,
+        "sourceDescriptions": null,
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "www.w3.org",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "9217b5a79f003250d11652131835d2a6f74c041eb4d9a288b47575b3ddbe6d84",
+        "bodySha256": "a4b440b02d21a341b7e8521cdccaecdd1c2cc0fb5a9e96646f416a49e0fcb756",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 62170,
+          "textCodeUnits": 27723,
+          "outputCodeUnits": 45759,
+          "tokens": 3123,
+          "omittedTokens": 88,
+          "omittedSubtrees": {
+            "meta": 1,
+            "script": 13,
+            "link": 3,
+            "style": 16
+          },
+          "ignoredAttributes": 249,
+          "unwrappedElements": 64,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 4474,
+            "workUnits": 1000046,
+            "steps": 29,
+            "elements": 29,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 33538,
+        "markdownSha256": "b9ea449f6d699da2f42e9d4d67046748316359c493901d53f7d6008c30799c11",
+        "sourceAlternates": null,
+        "sourceDescriptions": {
+          "kind": "html-meta-descriptions-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "attribute": "name",
+              "name": "description",
+              "text": "How to use HTML5 markup to support ruby text for Asian languages.",
+              "truncated": false
+            }
+          ]
+        },
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "developer.mozilla.org",
+        "originalStatus": 200,
+        "originalOutcome": "extracted-unverified",
+        "receiptSha256": "fdbb5e2e09dc4a5f8ec1cb7e47546adeba28afaef3b67e61604fccf2248fb5e4",
+        "bodySha256": "2f4d80972df8f758202dc04f3c879b034c4ef3bf1b3e9d81342cff51a2dac9dc",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 203272,
+          "textCodeUnits": 26881,
+          "outputCodeUnits": 68084,
+          "tokens": 5051,
+          "omittedTokens": 957,
+          "omittedSubtrees": {
+            "meta": 18,
+            "script": 7,
+            "link": 28,
+            "svg": 4,
+            "template": 18,
+            "iframe": 2
+          },
+          "ignoredAttributes": 385,
+          "unwrappedElements": 35,
+          "tokenizerIssues": 4,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 68028,
+            "workUnits": 2345897,
+            "steps": 35,
+            "elements": 35,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        },
+        "markdownBytes": 44962,
+        "markdownSha256": "20deaf33c28f24387d43cbe394bcfba728e0cd79d277a59baa2e7eda12d74304",
+        "sourceAlternates": null,
+        "sourceDescriptions": {
+          "kind": "html-meta-descriptions-v1",
+          "partial": true,
+          "truncated": false,
+          "entries": [
+            {
+              "attribute": "name",
+              "name": "description",
+              "text": "L'élément HTML <ruby> représente de petites annotations affichées au-dessus, en dessous ou à côté du texte de base, généralement utilisées pour indiquer la prononciation des caractères d'Asie orientale. Il peut aussi servir à annoter d'autres types de texte, mais cet usage est moins courant.",
+              "truncated": false
+            },
+            {
+              "attribute": "name",
+              "name": "og:description",
+              "text": "L'élément HTML <ruby> représente de petites annotations affichées au-dessus, en dessous ou à côté du texte de base, généralement utilisées pour indiquer la prononciation des caractères d'Asie orientale. Il peut aussi servir à annoter d'autres types de texte, mais cet usage est moins courant.",
+              "truncated": false
+            }
+          ]
+        },
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalReceiptReplayMatches": true
+      },
+      {
+        "key": "aozora-default",
+        "originalStatus": 200,
+        "originalOutcome": "failure",
+        "receiptSha256": "f1cb61fdf36359dcc2a094402c9448cf9f50f2c3b4477157019349dff2baf6d1",
+        "bodySha256": "3ec8a20a38bc252901857c0d4ee29624ae111a13a7fdc4b040f59bd37e93f469",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": false,
+          "sourceCodeUnits": 82683,
+          "textCodeUnits": 42620,
+          "outputCodeUnits": 73727,
+          "tokens": 11574,
+          "omittedTokens": 16,
+          "omittedSubtrees": {
+            "meta": 5,
+            "link": 2,
+            "script": 3
+          },
+          "ignoredAttributes": 13,
+          "unwrappedElements": 693,
+          "tokenizerIssues": 1,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 0,
+            "workUnits": 65708,
+            "steps": 3,
+            "elements": 3,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "shift_jis"
+        },
+        "markdownBytes": 127443,
+        "markdownSha256": "cf3f283e20303ef71c98d5202c7bc6ba220261e159ffb5c34a5dae4875a8532e",
+        "sourceAlternates": null,
+        "sourceDescriptions": null,
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalFailedReceiptReplayDenied": true
+      },
+      {
+        "key": "aozora-source-hidden",
+        "originalStatus": 200,
+        "originalOutcome": "failure",
+        "receiptSha256": "f1cb61fdf36359dcc2a094402c9448cf9f50f2c3b4477157019349dff2baf6d1",
+        "bodySha256": "3ec8a20a38bc252901857c0d4ee29624ae111a13a7fdc4b040f59bd37e93f469",
+        "outcome": "extracted-unverified",
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes",
+          "visibilityPolicy": "source-hidden-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 82683,
+          "textCodeUnits": 42620,
+          "outputCodeUnits": 73727,
+          "tokens": 11574,
+          "omittedTokens": 16,
+          "omittedSubtrees": {
+            "meta": 5,
+            "link": 2,
+            "script": 3
+          },
+          "ignoredAttributes": 13,
+          "unwrappedElements": 693,
+          "tokenizerIssues": 1,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 0,
+            "workUnits": 65708,
+            "steps": 3,
+            "elements": 3,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "shift_jis"
+        },
+        "markdownBytes": 127443,
+        "markdownSha256": "cf3f283e20303ef71c98d5202c7bc6ba220261e159ffb5c34a5dae4875a8532e",
+        "sourceAlternates": null,
+        "sourceDescriptions": null,
+        "sourceMarkdown": null,
+        "cleanupVerified": true,
+        "originalFailedReceiptReplayDenied": true
+      }
+    ],
+    "executions": {
+      "diagnostic/release01": {
+        "exitCode": 0,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "deniedIoAttempts": 0,
+        "elapsedSeconds": 0.3026801832020283
+      },
+      "proof/baseline": {
+        "exitCode": 0,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "deniedIoAttempts": 0,
+        "elapsedSeconds": 3.2069656495004892
+      },
+      "proof/release02": {
+        "exitCode": 0,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "pinsUnchanged": true,
+        "deniedIoAttempts": 0,
+        "elapsedSeconds": 3.5546408016234636
+      }
+    }
+  },
+  "diagnostic": {
+    "encoding": "shift_jis",
+    "decodedCodeUnits": 82683,
+    "decodedTitleVerified": true,
+    "allThreePoliciesRejectedOriginalDeclaration": true,
+    "originalFailure": "Malformed reader input"
+  },
+  "barrierReview": {
+    "mode": "Manual saved-output/current-source inspection; no classifier execution.",
+    "selectedShortExtractions": 14,
+    "originalHttpFailures": 3,
+    "newMissedBarriersSubstantiated": 0,
+    "reportSha256": "9f53a9e1cfbfcf4393ddd26f5ae16cae3263a904961bfb65b8db8130d7433876"
+  },
+  "knownLimits": [
+    "No live candidate re-navigation; recovery verified from exact saved response.",
+    "Original loader failures remain inadmissible to ordinary successful-capture replay.",
+    "256 units bounds declaration acceptance and matcher input, not the preceding tokenizer scan.",
+    "No XML processing, charset override or general processing-instruction support.",
+    "No speed or block-rate improvement measured this turn.",
+    "SafeJS, providers/passkeys, live scripts, TTY/service and broader research gates remain open."
+  ]
+}

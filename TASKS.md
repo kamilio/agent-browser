@@ -6,6 +6,45 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: multilingual content and inert leading XML declarations
+
+**PROGRESS; overall browser goal remains ACTIVE.** Four public native navigations,
+four GETs, no redirects/retries, four verified captures and closed transports/
+children. Japanese Wikipedia returns 18426 Markdown bytes, W3C Ruby Markup 33538,
+and French MDN ruby documentation 44962. Aozora returns HTTP 200 / 124623 body
+bytes but initially fails the reader. Native metadata sniff/decoding already
+selects shift_jis correctly and verifies its Japanese title; the leading XML
+declaration, not charset handling, causes rejection under all three policies.
+
+Allow a complete, syntactically bounded <=256-normalized-unit declaration at
+offset zero as an omitted HTML comment. No XML mode, external entities/resources,
+charset override, general PI support or resource-limit change. Tokenizer issue
+and omission accounting remain. Misplaced, malformed and overlong declarations
+stay rejected; existing empty processing markers and raw/escaped text are intact.
+
+Clean baseline: 1452 passing tests in 18 explicit files. Final candidate: 1592
+in 19 files, 140 new. 1451 baseline cases match unchanged; one negative vector
+intentionally moves the newly accepted declaration after a paragraph, retaining
+misplaced-declaration rejection. Final build/types/format/lint/native all pass.
+Release01's native tests also passed, but two new-test union-content type errors
+required a format guard; that failed type gate is retained, production unchanged.
+Independent static review finds no actionable issue and qualifies the 256-unit
+bound as matcher/acceptance input, not the preceding tokenizer scan.
+
+Eighteen saved responses, 20 policy cases per build: 17 unchanged, all three
+Aozora policies recover the same 127443-byte Japanese Markdown with reading
+annotations. Three offline child groups close with zero HTTP requests: 40 native
+in-memory navigations, 24 successful original-receipt replays, eight denied
+original-failure admission checks, and one three-policy decoder/sanitizer probe.
+Original live failures stay unchanged; no candidate live retry or speed claim.
+
+Manual review of fourteen short top-100 extractions and three HTTP failures finds
+no substantiated new missed barrier; LinkedIn's prior fix is not a new finding.
+Do not broaden CAPTCHA detection to login or JavaScript notices on this evidence.
+See INERT-XML-DECLARATIONS.md and reports/multilingual-content-2026-09-15.md.
+Continue diverse content/research checks; SafeJS/provider/passkey, interactive,
+service/TTY and broader research gates remain open. No push; prior work preserved.
+
 ### September 15: LLM reference pages and hidden paragraph-end recovery
 
 **PROGRESS; overall browser goal remains ACTIVE.** Four public native navigations,

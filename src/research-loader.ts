@@ -245,11 +245,20 @@ export function sanitizeResearchHtml(
 			issue === "bogus-declaration" &&
 			tokenizer.position === tokenStart + 3 &&
 			normalizedSource.startsWith("<?>", tokenStart);
+		const leadingXmlDeclaration =
+			issue === "bogus-declaration" &&
+			tokenStart === 0 &&
+			tokenizer.position <= 256 &&
+			/^<\?xml[ \t\n]+version[ \t\n]*=[ \t\n]*(["'])1\.[01]\1(?:[ \t\n]+encoding[ \t\n]*=[ \t\n]*(["'])[A-Za-z][A-Za-z0-9._-]*\2)?(?:[ \t\n]+standalone[ \t\n]*=[ \t\n]*(["'])(?:yes|no)\3)?[ \t\n]*\?>$/.test(
+				normalizedSource.slice(0, tokenizer.position),
+			);
 		if (
 			issue.startsWith("unterminated-") ||
 			issue === "eof-before-tag-name" ||
 			issue === "cdata-in-html-content" ||
-			(issue === "bogus-declaration" && !emptyProcessingMarker)
+			(issue === "bogus-declaration" &&
+				!emptyProcessingMarker &&
+				!leadingXmlDeclaration)
 		)
 			throw new AgentBrowserError("unsupported", "Malformed reader input");
 	});

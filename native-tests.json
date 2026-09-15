@@ -886,5 +886,6 @@
   "src/research-alternates.test.ts",
   "src/document-namespace-read.test.ts",
   "src/parser-namespace-fast-path.test.ts",
-  "src/research-hidden-paragraph-ends.test.ts"
+  "src/research-hidden-paragraph-ends.test.ts",
+  "src/research-xml-declaration.test.ts"
 ]
