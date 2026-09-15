@@ -67,6 +67,10 @@ import {
 import { documentStyles } from "./styles.js";
 import { rustdocLineNumberAnchor } from "./rustdoc-code-gutters.js";
 import {
+	type GithubSourceBlock,
+	githubSourceBlock,
+} from "./github-source-lines.js";
+import {
 	type TableSourceMetadata,
 	extractTableSource,
 } from "./table-source.js";
@@ -207,6 +211,14 @@ interface ExtractionMetadata {
 	sourceCodeGutters?: Readonly<{
 		kind: "rustdoc-line-number-anchors-v1";
 		anchors: number;
+	}>;
+	sourceCodeBlocks?: Readonly<{
+		kind: "github-ssr-lines-v1";
+		blocks: number;
+		lines: number;
+		gutterLabels: number;
+		lineEndings: "inferred-lf";
+		terminalNewline: "unknown";
 	}>;
 	sectionSelection?: Readonly<HeadingSectionMetadata>;
 	textSelection?: {
@@ -1244,11 +1256,16 @@ export function extractDocument(
 		parent: ExtractedNode;
 		depth: number;
 		lineState?: { atLineStart: boolean };
+		sourceCode?: GithubSourceBlock;
+		omitContent?: boolean;
 	}[] = hidden ? [] : [{ id: start, parent: holder, depth: 0 }];
 	const base = documentBaseUrl(tree);
 	let nodes = 0;
 	let intermediateBytes = 0;
 	let gutterAnchors = 0;
+	let sourceBlocks = 0;
+	let sourceLines = 0;
+	let sourceGutters = 0;
 	while (pending.length) {
 		const current = pending.pop();
 		if (!current) break;
@@ -1262,6 +1279,46 @@ export function extractDocument(
 				"resource-limit",
 				"Extraction structure limit exceeded",
 			);
+		if (
+			current.omitContent ||
+			current.sourceCode?.gutter === source.id ||
+			(current.sourceCode && source.kind === "text")
+		) {
+			for (let index = source.children.length - 1; index >= 0; index--)
+				pending.push({
+					id: source.children[index],
+					parent: current.parent,
+					depth: current.depth + 1,
+					omitContent: true,
+				});
+			continue;
+		}
+		const sourceBlock =
+			visible && !section && !selection && !current.sourceCode
+				? githubSourceBlock(
+						tree,
+						source,
+						(node) => !skip(node) && styles.get(node.id).visible,
+						{ maxNodes: maxNodes - nodes, maxDepth: maxDepth - current.depth },
+					)
+				: undefined;
+		const sourceCode = current.sourceCode ?? sourceBlock;
+		const sourceLine = sourceCode?.lines.get(source.id);
+		if (sourceBlock) {
+			sourceBlocks++;
+			sourceLines += sourceBlock.lines.size;
+			if (sourceBlock.gutter !== null) sourceGutters += sourceBlock.lines.size;
+		}
+		if (sourceCode && !sourceBlock && sourceLine === undefined) {
+			for (let index = source.children.length - 1; index >= 0; index--)
+				pending.push({
+					id: source.children[index],
+					parent: current.parent,
+					depth: current.depth + 1,
+					sourceCode,
+				});
+			continue;
+		}
 		const lineState =
 			current.lineState ??
 			(isHtmlElement(source, "code") ? { atLineStart: true } : undefined);
@@ -1290,17 +1347,22 @@ export function extractDocument(
 				: "container";
 		const node: ExtractedNode = {
 			ref: tree.reference(source.id),
-			type: section?.context.has(source.id)
-				? "container"
-				: source.kind === "text"
+			type: sourceBlock
+				? "pre"
+				: sourceLine !== undefined
 					? "text"
-					: visible && Object.hasOwn(kinds, source.tagName)
-						? kinds[source.tagName]
-						: fallback,
+					: section?.context.has(source.id)
+						? "container"
+						: source.kind === "text"
+							? "text"
+							: visible && Object.hasOwn(kinds, source.tagName)
+								? kinds[source.tagName]
+								: fallback,
 		};
 		if (node.type === "text")
 			node.text = clean(
-				selection?.textNode === source.id ? selection.text : source.data,
+				sourceLine ??
+					(selection?.textNode === source.id ? selection.text : source.data),
 			);
 		else if (node.type === "image")
 			node.text = clean(source.attributes.alt ?? "");
@@ -1352,7 +1414,7 @@ export function extractDocument(
 				"Extraction intermediate limit exceeded",
 			);
 		current.parent.children?.push(node);
-		if (node.children) {
+		if (node.children || sourceLine !== undefined) {
 			const children = section
 				? (section.children.get(source.id) ?? [])
 				: source.children;
@@ -1362,6 +1424,8 @@ export function extractDocument(
 					parent: node,
 					depth: current.depth + 1,
 					...(lineState === undefined ? {} : { lineState }),
+					...(sourceCode === undefined ? {} : { sourceCode }),
+					...(sourceLine === undefined ? {} : { omitContent: true }),
 				});
 			}
 		}
@@ -1370,6 +1434,15 @@ export function extractDocument(
 		metadata.sourceCodeGutters = Object.freeze({
 			kind: "rustdoc-line-number-anchors-v1",
 			anchors: gutterAnchors,
+		});
+	if (sourceBlocks)
+		metadata.sourceCodeBlocks = Object.freeze({
+			kind: "github-ssr-lines-v1",
+			blocks: sourceBlocks,
+			lines: sourceLines,
+			gutterLabels: sourceGutters,
+			lineEndings: "inferred-lf",
+			terminalNewline: "unknown",
 		});
 	const root = holder.children?.[0] ?? {
 		ref: metadata.scope,

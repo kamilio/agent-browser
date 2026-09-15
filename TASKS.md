@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: GitHub code fidelity and complete-source recovery
+
+- Recognize bounded GitHub SSR source layouts; preserve code indentation, blank
+  rows, entities and numeric literals in preformatted Markdown/JSON. Omit only
+  validated gutters/scaffolding while charging source node/depth budgets and
+  retaining DOM refs/revisions. Report rendered-row counts and unknown SSR EOF.
+- All 82 new regressions pass; selected baseline 902/0 and final candidate 984/0
+  across 14 files. Final old production with identical tests is 964/20 expected
+  red. Build/types/format/lint pass; not a full 918-file manifest or actual SDK.
+- Eight saved-page comparisons retain seven control outputs byte-for-byte.
+  API source matches all 180 independently parsed JSON lines; focused Markdown
+  is 7,160 bytes. Successful offline comparison closes 43 documents. Small local
+  timing medians 42.15/40.93ms are observations, not a general speed claim.
+- Fresh API/model HTML plus exact Raw link: three native navigations/four HTTPS
+  GETs/three captures, all observed closures verified, no credentials/scripts/
+  retries/challenge solving. Models SSR has only 1,000 of 1,184 lines; Raw recovers
+  the complete 41,462-byte file and its terminal LF. Preserve that distinction.
+- Automatic complete-file discovery remains open; SSR metadata cannot certify
+  whole-file completeness. Other layouts, UI noise, JS-only content, access
+  barriers and outstanding SDK/interactive gates remain. See
+  `SOURCE-CODE-BLOCKS.md` and GitHub source-lines September 15 reports.
+
 ### September 15: developer content paths and Rustdoc gutters
 
 - Nine source-derived developer targets exercised with the native browser, plus
