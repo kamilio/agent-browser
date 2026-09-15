@@ -1,0 +1,620 @@
+{
+  "date": "2026-09-15",
+  "scope": "eight-retained-shells-and-two-fresh-task-pages",
+  "priorCorpus": {
+    "report": "reports/agent-citation-pages-2026-09-15.md",
+    "attempted": 100,
+    "selection": "AI-citation-derived candidate root pages, not global agent page-visit ranking",
+    "historicalMeasurementsUnchanged": true
+  },
+  "runtime": {
+    "passed": true,
+    "head": "1bf98d77a1f1265c44377f8eaa2352f6676d466d",
+    "candidate": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/empty-outline-recovery-september15/candidate-release01",
+    "compared": 1481,
+    "pins": {
+      "SOURCE-release01.json": "ce62b983abd1e272d49eed186bb72db848777849b8ca60d0318125f3918f6dcb",
+      "COMPILED-release01.json": "b18ba7dabc1f13086a28c64df722c2b48f1dc31feafc30e5b40b046ffab8f4fa"
+    },
+    "newNativeRun": false
+  },
+  "sourceDiagnoses": [
+    {
+      "domain": "www.youtube.com",
+      "kind": "static-video-shell",
+      "note": "No eligible rendered listings; inspected navigation and copyright are explicitly hidden.",
+      "method": "saved-source-structural-review-no-parser-execution",
+      "receipt": "node_modules/.cache/native-validation/agent-citation-pages-september15/live/001-www.youtube.com/stdout.jsonl",
+      "receiptSha256": "ab9ac34b6bd6da9e5d8c14b958c135295f4a0f927996013d4c1507295e3f6a22",
+      "bodySha256": "d874e648e20f1d69ac5a67e1267f6a87e5fa7dbbda2499ac5f2fde1152cecb5a",
+      "bodyBytes": 881814,
+      "originalOutcome": "empty-extraction",
+      "originalContentBytes": 0,
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 18,
+        "sourceCodeUnits": 881810,
+        "textCodeUnits": 284,
+        "outputCodeUnits": 13606,
+        "tokens": 801,
+        "omittedTokens": 208,
+        "omittedSubtrees": {
+          "script": 43,
+          "meta": 8,
+          "link": 17,
+          "style": 5,
+          "iframe": 1,
+          "input": 1,
+          "svg": 1,
+          "a": 15,
+          "div": 1
+        },
+        "ignoredAttributes": 40,
+        "unwrappedElements": 2,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 851381,
+          "workUnits": 7839933,
+          "steps": 60,
+          "elements": 49,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "freshWebsiteRequest": false,
+      "demonstratedExtractionDefect": false
+    },
+    {
+      "domain": "www.tiktok.com",
+      "kind": "client-rendered-video-shell",
+      "note": "App and paint placeholders have no eligible video captions.",
+      "method": "saved-source-structural-review-no-parser-execution",
+      "receipt": "node_modules/.cache/native-validation/agent-citation-pages-september15/live/041-www.tiktok.com/stdout.jsonl",
+      "receiptSha256": "6449f7507caf939ae6984b76adb85345047adedbeec0bf092d5d74eed2049c8d",
+      "bodySha256": "5c675d149ffe9ca1251feff0e191de68f0eef1caff23a0e580267189e6d6cbfd",
+      "bodyBytes": 376824,
+      "originalOutcome": "empty-extraction",
+      "originalContentBytes": 0,
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 1,
+        "sourceCodeUnits": 375748,
+        "textCodeUnits": 90,
+        "outputCodeUnits": 1921,
+        "tokens": 319,
+        "omittedTokens": 243,
+        "omittedSubtrees": {
+          "meta": 3,
+          "script": 68,
+          "link": 63,
+          "svg": 1,
+          "style": 18,
+          "div": 1
+        },
+        "ignoredAttributes": 16,
+        "unwrappedElements": 0,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 346592,
+          "workUnits": 4071835,
+          "steps": 90,
+          "elements": 86,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "freshWebsiteRequest": false,
+      "demonstratedExtractionDefect": false
+    },
+    {
+      "domain": "www.pinterest.com",
+      "kind": "runtime-required-notice",
+      "note": "The JavaScript-required fallback survives; data and deferred boundaries are not visible pins.",
+      "method": "saved-source-structural-review-no-parser-execution",
+      "receipt": "node_modules/.cache/native-validation/agent-citation-pages-september15/live/050-www.pinterest.com/stdout.jsonl",
+      "receiptSha256": "b38d7d71c3b5f305f8f042e25d9f664fbeef8c8bea87ca4dff73e4b723de8067",
+      "bodySha256": "249194fcf95ef07a3204ae9554092ad34b7b99753e9b34b02ca1d69901cd8574",
+      "bodyBytes": 1119204,
+      "originalOutcome": "extracted-unverified",
+      "originalContentBytes": 98,
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 2,
+        "sourceCodeUnits": 1119136,
+        "textCodeUnits": 211,
+        "outputCodeUnits": 635,
+        "tokens": 357,
+        "omittedTokens": 334,
+        "omittedSubtrees": {
+          "meta": 33,
+          "script": 78,
+          "link": 117,
+          "style": 3,
+          "template": 4,
+          "div": 2
+        },
+        "ignoredAttributes": 9,
+        "unwrappedElements": 1,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 1083638,
+          "workUnits": 9470994,
+          "steps": 97,
+          "elements": 82,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "freshWebsiteRequest": false,
+      "demonstratedExtractionDefect": false
+    },
+    {
+      "domain": "www.bestbuy.com",
+      "kind": "hidden-deferred-storefront",
+      "note": "Promotional/navigation HTML exists in explicitly hidden stream chunks, not revealed by the inert reader.",
+      "method": "saved-source-structural-review-no-parser-execution",
+      "receipt": "node_modules/.cache/native-validation/agent-citation-pages-september15/live/010-www.bestbuy.com/stdout.jsonl",
+      "receiptSha256": "ae220dd559a7f0681b9ab9a13321e0beb3c79a48969cec68c0888ebccd601f91",
+      "bodySha256": "8fe07c2c85534c75c950203cc6a07ca85d73771230c43d304c507ce5c80b13a2",
+      "bodyBytes": 441685,
+      "originalOutcome": "extracted-unverified",
+      "originalContentBytes": 43,
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 32,
+        "sourceCodeUnits": 441643,
+        "textCodeUnits": 969,
+        "outputCodeUnits": 7767,
+        "tokens": 1603,
+        "omittedTokens": 1306,
+        "omittedSubtrees": {
+          "meta": 8,
+          "link": 37,
+          "script": 205,
+          "div": 32,
+          "template": 10
+        },
+        "ignoredAttributes": 244,
+        "unwrappedElements": 2,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 350068,
+          "workUnits": 14397407,
+          "steps": 207,
+          "elements": 207,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "freshWebsiteRequest": false,
+      "demonstratedExtractionDefect": false
+    },
+    {
+      "domain": "www.nordstrom.com",
+      "kind": "script-only-shell",
+      "note": "Two body scripts without readable product markup; challenge vendor/runtime result unproven.",
+      "method": "saved-source-structural-review-no-parser-execution",
+      "receipt": "node_modules/.cache/native-validation/agent-citation-pages-september15/live/081-www.nordstrom.com/stdout.jsonl",
+      "receiptSha256": "8b95ea541af7df8d2b7822bc29ae76bc7cd352fa975aa9c14337478ba038865a",
+      "bodySha256": "a6432e894831a81d010ea9a2c1f7252e70208bf39649d564aa144753bb01f1d0",
+      "bodyBytes": 254302,
+      "originalOutcome": "empty-extraction",
+      "originalContentBytes": 0,
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 0,
+        "sourceCodeUnits": 254302,
+        "textCodeUnits": 21,
+        "outputCodeUnits": 75,
+        "tokens": 26,
+        "omittedTokens": 7,
+        "omittedSubtrees": {
+          "style": 1,
+          "script": 2
+        },
+        "ignoredAttributes": 0,
+        "unwrappedElements": 0,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 254163,
+          "workUnits": 1599068,
+          "steps": 6,
+          "elements": 3,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "freshWebsiteRequest": false,
+      "demonstratedExtractionDefect": false
+    },
+    {
+      "domain": "carinterior.alibaba.com",
+      "kind": "http-200-error-shell",
+      "note": "Redirected error-themed shell with empty modules and hidden configuration, not an HTTP-404 status.",
+      "method": "saved-source-structural-review-no-parser-execution",
+      "receipt": "node_modules/.cache/native-validation/agent-citation-pages-september15/live/059-carinterior.alibaba.com/stdout.jsonl",
+      "receiptSha256": "ad42443ad378f00f28e94a196427e9c66eb93860b65afe9832b6b6be55c333f3",
+      "bodySha256": "4d34260c5fb804473c44723d28209a3115631e4228d6fbbd43662fe1dd053d51",
+      "bodyBytes": 270053,
+      "originalOutcome": "empty-extraction",
+      "originalContentBytes": 0,
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 2,
+        "sourceCodeUnits": 270004,
+        "textCodeUnits": 3671,
+        "outputCodeUnits": 1029,
+        "tokens": 225,
+        "omittedTokens": 93,
+        "omittedSubtrees": {
+          "script": 28,
+          "meta": 18,
+          "link": 5,
+          "style": 4,
+          "div": 1,
+          "textarea": 1
+        },
+        "ignoredAttributes": 24,
+        "unwrappedElements": 2,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 258628,
+          "workUnits": 1166175,
+          "steps": 35,
+          "elements": 32,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "freshWebsiteRequest": false,
+      "demonstratedExtractionDefect": false
+    },
+    {
+      "domain": "thelivinglook.com",
+      "kind": "empty-showroom-shell",
+      "note": "Empty app mount and empty captured product/ItemList state do not supply listings.",
+      "method": "saved-source-structural-review-no-parser-execution",
+      "receipt": "node_modules/.cache/native-validation/agent-citation-pages-september15/live/093-thelivinglook.com/stdout.jsonl",
+      "receiptSha256": "3fcd7f24dbda3c825fcc08730d6f89ff2ca2a0e17aad58ba00dc863cd628158c",
+      "bodySha256": "ce2d40398297505a958694ff4b503cce6a427d02a331ad53485ee7d78c500981",
+      "bodyBytes": 13464,
+      "originalOutcome": "empty-extraction",
+      "originalContentBytes": 0,
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 0,
+        "sourceCodeUnits": 13464,
+        "textCodeUnits": 623,
+        "outputCodeUnits": 837,
+        "tokens": 139,
+        "omittedTokens": 64,
+        "omittedSubtrees": {
+          "script": 10,
+          "meta": 16,
+          "link": 27
+        },
+        "ignoredAttributes": 3,
+        "unwrappedElements": 0,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 7454,
+          "workUnits": 79470,
+          "steps": 10,
+          "elements": 10,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "freshWebsiteRequest": false,
+      "demonstratedExtractionDefect": false
+    },
+    {
+      "domain": "www.oreateai.com",
+      "kind": "minimal-promotional-shell",
+      "note": "All five identified source slogans survive; substantive app content is absent.",
+      "method": "saved-source-structural-review-no-parser-execution",
+      "receipt": "node_modules/.cache/native-validation/agent-citation-pages-september15/live/065-www.oreateai.com/stdout.jsonl",
+      "receiptSha256": "e3d27d54936032d0738f52f03fff625191874403eae6f933f7284f925d157829",
+      "bodySha256": "5c7e20f570c924678b61e0721e9f969234a0b54029503796f554a1db075660ae",
+      "bodyBytes": 17403,
+      "originalOutcome": "extracted-unverified",
+      "originalContentBytes": 114,
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 1,
+        "sourceCodeUnits": 17403,
+        "textCodeUnits": 1320,
+        "outputCodeUnits": 1860,
+        "tokens": 235,
+        "omittedTokens": 89,
+        "omittedSubtrees": {
+          "meta": 3,
+          "link": 60,
+          "script": 10,
+          "style": 1,
+          "a": 1
+        },
+        "ignoredAttributes": 1,
+        "unwrappedElements": 0,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 8580,
+          "workUnits": 171114,
+          "steps": 11,
+          "elements": 11,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "freshWebsiteRequest": false,
+      "demonstratedExtractionDefect": false
+    }
+  ],
+  "liveAndReplay": {
+    "passed": true,
+    "rows": [
+      {
+        "key": "01-www.google.com",
+        "target": "https://www.google.com/search?q=HTML+parser",
+        "startedAt": "2026-09-15T19:30:52.993Z",
+        "finishedAt": "2026-09-15T19:30:53.110Z",
+        "status": 200,
+        "outcome": "extracted-unverified",
+        "contentSuccess": null,
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": null,
+          "diagnostic": null
+        },
+        "verdict": "runtime-required-shell",
+        "receiptSha256": "e6ea86ba87bf03bdde17439d6e23a07baa6af264f89e40df48bb08f31a64e61f",
+        "body": {
+          "bytes": 91655,
+          "sha256": "3a6697de72a2e5475f23e34fbc13165cb9f5ae6968b43ba351329c7e4782c4a9"
+        },
+        "liveContent": {
+          "bytes": 149,
+          "codeUnits": 149,
+          "sha256": "8c0bedfccfc18f25186097cdfbb8ea291de29253b5b24a2deaff5eac114e6789"
+        },
+        "replayContent": {
+          "bytes": 149,
+          "codeUnits": 149,
+          "sha256": "8c0bedfccfc18f25186097cdfbb8ea291de29253b5b24a2deaff5eac114e6789"
+        },
+        "replay": {
+          "selector": "body",
+          "receiptSha256": "0773420598013fbf3c2ad64f29f1709ae2098c4fb377f1fc3218cb3bff4d06eb",
+          "networkRequests": 0
+        },
+        "metrics": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 1,
+          "redirects": 0,
+          "encodedBytes": 45725,
+          "decodedBytes": 91655,
+          "active": 0,
+          "closed": true
+        },
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 1,
+          "sourceCodeUnits": 91655,
+          "textCodeUnits": 164,
+          "outputCodeUnits": 212,
+          "tokens": 46,
+          "omittedTokens": 29,
+          "omittedSubtrees": {
+            "style": 3,
+            "script": 5,
+            "meta": 1,
+            "div": 1
+          },
+          "ignoredAttributes": 2,
+          "unwrappedElements": 1,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 90676,
+            "workUnits": 811037,
+            "steps": 8,
+            "elements": 8,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "windows-1252"
+        }
+      },
+      {
+        "key": "02-grokipedia.com",
+        "target": "https://grokipedia.com/page/Web_browser",
+        "startedAt": "2026-09-15T19:30:55.305Z",
+        "finishedAt": "2026-09-15T19:30:55.685Z",
+        "status": 200,
+        "outcome": "extracted-unverified",
+        "contentSuccess": null,
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": null,
+          "diagnostic": null
+        },
+        "verdict": "useful-article-source",
+        "receiptSha256": "aff229c53aeeaef9fe1d2a959fe79689ced0bad9c6fec7f2635ca3ddbbd1ced3",
+        "body": {
+          "bytes": 373212,
+          "sha256": "0a4184bb0eabcf00b66f1fc39dfdd89d5dfdfa9dd08e5bfa9e7576d0f75c2592"
+        },
+        "liveContent": {
+          "bytes": 78304,
+          "codeUnits": 78274,
+          "sha256": "2d1458eb3116445d2ccf54a99f9b128de9f4ff3fa206e82c0cda87c774a82bad"
+        },
+        "replayContent": {
+          "bytes": 73520,
+          "codeUnits": 73494,
+          "sha256": "488c2b867f4933a0fcdc64f725e1c3842e64545858a596c215353254a3a20684"
+        },
+        "replay": {
+          "selector": "article",
+          "receiptSha256": "7a23d11b0709bbd1fe7f4ffbae9696ebdc61042e7b399a7f59ab9a6d589fc6c2",
+          "networkRequests": 0
+        },
+        "metrics": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 1,
+          "redirects": 0,
+          "encodedBytes": 65758,
+          "decodedBytes": 373212,
+          "active": 0,
+          "closed": true
+        },
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 3,
+          "sourceCodeUnits": 370352,
+          "textCodeUnits": 47339,
+          "outputCodeUnits": 198661,
+          "tokens": 5245,
+          "omittedTokens": 506,
+          "omittedSubtrees": {
+            "meta": 17,
+            "link": 9,
+            "script": 15,
+            "svg": 65,
+            "div": 3,
+            "style": 1,
+            "input": 2,
+            "textarea": 3
+          },
+          "ignoredAttributes": 700,
+          "unwrappedElements": 68,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 80811,
+            "workUnits": 1332282,
+            "steps": 16,
+            "elements": 16,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8"
+        }
+      }
+    ],
+    "totals": {
+      "liveNavigations": 2,
+      "requestStarts": 2,
+      "completeResponses": 2,
+      "redirects": 0,
+      "retries": 0,
+      "completeCaptures": 2,
+      "usefulTaskPages": 1,
+      "runtimeRequiredShells": 1,
+      "offlineCliChecks": 2,
+      "offlineNetworkRequests": 0,
+      "mockedNavigations": 0,
+      "closedChildren": 4,
+      "closedGroups": 4,
+      "closedRequests": 2,
+      "closedSockets": 2,
+      "guardDenials": 0
+    },
+    "newNativeSuiteRun": false,
+    "newProductionChanges": false
+  },
+  "sourceTruthOrFullSiteAcceptance": false,
+  "productionChanges": false,
+  "newNativeSuiteRun": false,
+  "evidenceLane": "node_modules/.cache/native-validation/empty-pages-task-followup-september15",
+  "evidence": {
+    "SCOPE.md": "a25087b40316a53a0bf932a531a303b74c0537e73c65036530f5f37bd47429a9",
+    "LIVE-SCOPE.md": "43ebfcb4eb110a4619ad77c4a59fc1db6430a5343a5f652fb9a89958a08570f5",
+    "REPLAY-SCOPE.md": "5a615fdbe41b2c592bde16174f64867916b59c6f19c17eadc5fa236fa316efdb",
+    "PREFLIGHT.json": "757dc1c5f794f73a09fdcff68ffdcc9d64c4029c3c4e53fac8a4662f29415de0",
+    "CORPUS.json": "420e914beaa9124d49600becfd20b09407db1c4094afba710bb1f490856ada99",
+    "AUDIT.json": "5f64c24ba5ad8132d053c55e0055ff6e682d0501dd38ee6b7ec8d070f589da69",
+    "SOURCE-DIAGNOSES.json": "8f7f20e6012324981f777f744a87a75d715a9bf4de946e538ae22402a8d64eab",
+    "SHELL-A.md": "6eeca8830ae683300dc1ecaee84a17eb40d0eda9f92aecb8f5c3384553fc509e",
+    "SHELL-B.md": "a5be641b2da516c0927988449ad2727e710b8c640508f06a318aa17e3c2bfcff",
+    "SHELL-A-PROMPT.md": "648c5f93958768d7170b262b09f95601678a2e5c9e1651a4be0e741ad3258704",
+    "SHELL-B-PROMPT.md": "82d95aab0e88630047c23617473d853e292251c00e601d6842f47b22f984a625",
+    "LIVE-EXECUTIONS.json": "a5401ea3969f71b08ef31725c30026a890c8aa55d27ed8519f393f67d3edf74a",
+    "REPLAY-EXECUTIONS.json": "e3cf8446599a4bacba10abe3af60b7aa828b9a9fce3ec12bcd1e858134dbf92a",
+    "prepare.mjs": "dd687f5bfa632e65f3b7b82ff3ac0602bb38b6f1fbdbfc8bbba89490d0e9d58a",
+    "run-live.py": "36aa3d3db9d99916882aaf120843189552383cb364dd0a4ccafad2491b6ce027",
+    "observe.cjs": "41f9f96f183e270a53c74eca754697e854c91745e867e1994bd8f968ed346370",
+    "run-replay.py": "636028fbf58b56ed5fe655f7f5540731b1c48b21e3f29219ac3c8526175b79b2",
+    "audit.mjs": "2c9e3788c9d3c8d912ceadf3d136c74f78b6b13d77f73d569ce410b40d539274"
+  },
+  "goalStatus": "active",
+  "pushed": false
+}

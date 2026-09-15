@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: diagnose eight shells and validate two task pages
+
+- Source-only reviews of eight pinned original empty/tiny responses distinguish
+  missing server-rendered listings, JavaScript notices, hidden deferred chunks,
+  HTTP-200 error shells and minimal slogans. No concrete extraction text-loss
+  defect is demonstrated. Best Buy contains hidden deferred promotional HTML;
+  do not fabricate visible content by removing its hidden/template boundaries.
+- Two fresh native task-page checks: Google search returns 149 bytes of a
+  script-mediated redirect notice, not results; Grokipedia's Web_browser article
+  yields 78304 bytes of useful source plus UI. Both remain partial,
+  extracted-unverified/contentSuccess null. No redirect-link follow-up or scripts.
+- Existing offline CLI article selection reduces Grokipedia output to 73520 bytes
+  while retaining sampled prose/references and removing contribution UI. Google
+  body selection preserves the same 149-byte hash, not a false search success.
+- Two live GETs/two complete captures/zero redirects or retries; two guarded
+  offline CLI checks/zero actual or mocked network. All four children/groups and
+  both requests/sockets close. Reused clean build matches 1481 committed runtime
+  files; no new native suite/build or production change claimed.
+- Report: `reports/empty-pages-task-followup-2026-09-15.{md,json}`. Original
+  100/100 root-page evidence stays unchanged and is an AI-citation-derived test
+  corpus, not measured global agent visits. Preserve original42 tracked/697
+  untracked work; no push. Broader runtime, access, interaction/passkey and SafeJS
+  gates stay open; the overall browser objective remains active.
+
 ### September 15: explicit empty-outline selection recovers Google Play content
 
 - Added `validateResearchEmptyOutlineAdmission`, `recoverResearchEmptyOutlineSelector`
