@@ -1,0 +1,274 @@
+{
+  "date": "2026-09-15",
+  "writtenAt": "2026-09-15T18:43:00.758Z",
+  "title": "Opt-in failed decoded-response prefixes",
+  "runtime": {
+    "parent": "ad499c66b5de47a27b8584bcd3948b0a03cf83d2",
+    "label": "release04",
+    "productionFiles": [
+      "src/node-transport.ts"
+    ],
+    "cleanArchiveOverlay": true
+  },
+  "coverageContext": {
+    "originalReport": "reports/agent-citation-pages-2026-09-15.md",
+    "originalAttemptedUrls": 100,
+    "new100PageSweep": false,
+    "verifiedGlobalAgentVisitRanking": false
+  },
+  "validation": {
+    "passedForChange": true,
+    "label": "release04",
+    "baseline": {
+      "files": 11,
+      "passed": 811,
+      "failed": 2
+    },
+    "candidate": {
+      "files": 12,
+      "passed": 871,
+      "failed": 2
+    },
+    "newPassed": 60,
+    "unchangedFailures": [
+      {
+        "file": "src/research-body-capture.test.ts",
+        "name": "retains unscoped capture and post-extraction barrier classification (reader=false)"
+      },
+      {
+        "file": "src/research-body-capture.test.ts",
+        "name": "retains unscoped capture and post-extraction barrier classification (reader=true)"
+      }
+    ],
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0,
+      "native": 1
+    }
+  },
+  "live": {
+    "passed": true,
+    "label": "release04",
+    "startedRequests": 2,
+    "guardDeniedAttempts": 1,
+    "responseBearingAttempts": 1,
+    "redirects": 0,
+    "closedChildren": 2,
+    "closedRequests": 2,
+    "closedSockets": 2,
+    "runs": [
+      {
+        "directory": "live",
+        "report": {
+          "target": "https://www.whowhatwear.com/feeds.xml",
+          "startedAt": "2026-09-15T18:39:19.217Z",
+          "finishedAt": "2026-09-15T18:39:19.238Z",
+          "elapsedMs": 20.29088200000001,
+          "outcome": "failure",
+          "contentSuccess": false,
+          "completeResponse": null,
+          "navigation": null,
+          "failure": {
+            "category": "network-error",
+            "message": "Network request failed",
+            "resourceLimit": null,
+            "sameRequestError": true
+          },
+          "prefix": null,
+          "loaderCalls": 0,
+          "metrics": {
+            "mockedRequests": 0,
+            "mockedDecodedBytes": 0,
+            "requests": 1,
+            "redirects": 0,
+            "encodedBytes": 0,
+            "decodedBytes": 0,
+            "active": 0,
+            "closed": true
+          }
+        },
+        "execution": {
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.21486073173582554
+        },
+        "requests": 1,
+        "responses": 0
+      },
+      {
+        "directory": "live-v2",
+        "report": {
+          "target": "https://www.whowhatwear.com/feeds.xml",
+          "startedAt": "2026-09-15T18:40:05.412Z",
+          "finishedAt": "2026-09-15T18:40:05.458Z",
+          "elapsedMs": 46.01289,
+          "outcome": "failure",
+          "contentSuccess": false,
+          "completeResponse": null,
+          "navigation": null,
+          "failure": {
+            "category": "resource-limit",
+            "message": "Decoded response byte limit exceeded",
+            "resourceLimit": {
+              "kind": "network.response-decoded",
+              "unit": "bytes",
+              "limit": 2000000,
+              "observed": 2015232
+            },
+            "sameRequestError": true
+          },
+          "prefix": {
+            "kind": "decoded-response-prefix-v1",
+            "complete": false,
+            "url": "https://www.whowhatwear.com/feeds.xml",
+            "status": 200,
+            "headers": {
+              "content-type": [
+                "application/xml"
+              ],
+              "content-length": [
+                "266142"
+              ],
+              "content-encoding": [
+                "br"
+              ]
+            },
+            "headerCapture": {
+              "kind": "selected-response-headers-v1",
+              "partial": true,
+              "omitted": []
+            },
+            "retainedBytes": 65536,
+            "sha256": "aa3100ff9b09c9926a3c51c17637e627ab8c3b219bf08e09a967e734990ea7dd",
+            "hashScope": "incomplete-transport-decoded-prefix",
+            "encodedBytes": 266142,
+            "decodedBytes": 2015232,
+            "limit": 2000000,
+            "textEvidence": {
+              "encoding": "utf-8",
+              "decodeMode": "fatal-stream-without-final-flush",
+              "bytes": 65536,
+              "sha256": "aa3100ff9b09c9926a3c51c17637e627ab8c3b219bf08e09a967e734990ea7dd",
+              "parsed": false,
+              "executed": false
+            },
+            "availableAfterClose": false
+          },
+          "loaderCalls": 0,
+          "metrics": {
+            "mockedRequests": 0,
+            "mockedDecodedBytes": 0,
+            "requests": 1,
+            "redirects": 0,
+            "encodedBytes": 266142,
+            "decodedBytes": 2015232,
+            "active": 0,
+            "closed": true
+          }
+        },
+        "execution": {
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.21489793993532658
+        },
+        "requests": 1,
+        "responses": 1
+      }
+    ],
+    "review": {
+      "method": "lexical-markers-and-sampled-literal-source-not-XML-validation",
+      "sourceCodeUnits": 65527,
+      "itemsOpened": 2,
+      "itemsClosed": 1,
+      "contentStarts": [
+        10603,
+        64823
+      ],
+      "firstContentEnd": 16430,
+      "sourceSamples": [
+        {
+          "offset": 0,
+          "length": 1100
+        },
+        {
+          "offset": 32000,
+          "length": 1100
+        },
+        {
+          "offset": 64627,
+          "length": 900
+        },
+        {
+          "offset": 10603,
+          "length": 1200
+        },
+        {
+          "offset": 64823,
+          "length": 704
+        }
+      ],
+      "assessment": "First apparent item includes descriptive article prose and product information about patterned sneakers; second item contains shoe/product material and ends inside its embedded article body. Useful literal source, not complete feed or full-article validation.",
+      "completeFeed": false,
+      "fullArticleVerified": false,
+      "parsed": false,
+      "executed": false
+    }
+  },
+  "limits": {
+    "prefixBytes": 65536,
+    "responseBytes": 2000000,
+    "sessionBytes": 8000000,
+    "timeoutMs": 15000,
+    "outerDeadlineSeconds": 45,
+    "heapMiB": 192
+  },
+  "limitations": [
+    "Failure remains failure; no complete response or successful navigation.",
+    "Literal incomplete source only; no XML/document parsing, full-article validation or script execution.",
+    "Raw host-side API is not automatically enabled by the research CLI or admitted by complete-body replay.",
+    "Encoded overflow, timeouts, session/accounting limits, cancellation and decoder failures have no prefix.",
+    "Other missing pages, access barriers, interactions/passkeys and SafeJS acceptance remain outstanding."
+  ],
+  "preservation": {
+    "tracked": 42,
+    "untracked": 697,
+    "push": false
+  },
+  "evidenceDirectory": "node_modules/.cache/native-validation/decoded-prefix-september15",
+  "evidence": {
+    "BEFORE.json": "de6e0a6cfa7da4a4997cc0d5ec17a49439978b9fd087657e55fcfc122b701fd6",
+    "SCOPE.md": "2438ad413870e6e4bd250cda1df1b9996dc187f414eb5e058dd9fb69a3db7da7",
+    "SOURCE-release04.json": "7178a4b260c68dc5b8841c8b12e7f1cf8ce43cf7122bf5d4b8abf9b0dc68d64c",
+    "COMPILED-release04.json": "3008cd572c4848270abe23c31515f74a9985f38b70829097c11842e71cc035d7",
+    "OVERLAY-release04.json": "7c1919e78a42b42f22a975fd5aa147dd5143d2aebec081e5172bc8854f852df5",
+    "CHECK-baseline.json": "d476f028f57f7bda09c5e8084012e698f234c51881dcbc98f6983adff717a024",
+    "CHECK-release04.json": "d476f028f57f7bda09c5e8084012e698f234c51881dcbc98f6983adff717a024",
+    "VERIFY-release04.json": "8f753ddc7049d63558c249fdfa130124194862031ae5f369bce5a28c63bf6912",
+    "REVIEW.md": "e5c6e0864b88287514f8eed363b2affb9ec510a83ecb0bb509234b705f69d7fb",
+    "REVIEW-FOLLOWUP.md": "2fd2ea7260f52946ac16a01e52fe230e0dcbcd8958ab3be6b92772ee901942c1",
+    "RACE-RESOLUTION.md": "f251854b3f9b27cdb7a96938e269572d95cf1abf981d0616bb8bd07a201ad63b",
+    "race-before.json": "d34011354beac12936112de4aab5d4d0472cccf2d28ede4a16aefc48a2b90b8c",
+    "INITIAL-VALIDATION.md": "6f6c9063b1cfbe18c3f6e403e4cde9d5f5a1cc1c19e235791955dda430a6c14b",
+    "SECOND-VALIDATION.md": "43367deeb391f9cd35ffd6c46e67874605d57272223c170265f712932e804d33",
+    "LIVE-FOLLOWUP-SCOPE.md": "70ee46172476ce4684912269e4e6c331c491379565fc8f7ca0a5a23d0619889f",
+    "LIVE-AUDIT.json": "277f7e2f8b7b7d936a10693085df1666445a193df6fc702b0ff1c4d770d34cc6",
+    "live/INVOCATION.json": "edc77fa1f3e54bd818f96e1739cf5d54af69735ae64a41bac7973df9f53f7a49",
+    "live/EXECUTION.json": "32571a302f3faeb2b8293dc9cdbf420b3b0615f8568b462bfe6027a586d93ca6",
+    "live/stdout.jsonl": "dc9acce9bccb3e2c9a41e394d8fec637f66d72899405b099eb231b13d927a27b",
+    "live/http-events.jsonl": "ce50c176734f46476cb56e84fe1d97609268009cadd75049159f42680d1ac989",
+    "live-v2/INVOCATION.json": "865904990818fc25ff03a94b61f9a1e38ebfe9a5049a2754efdc652259155902",
+    "live-v2/EXECUTION.json": "c771dbfcd2e8c1242c04ef378f2a31bd8563673aee0b2b5e1acf1504e759cebd",
+    "live-v2/stdout.jsonl": "320ed9950d7659e47f53da64432513e0687936b0a0974c00973dbe55a02a4bd7",
+    "live-v2/http-events.jsonl": "6db93d3cdc6aa3ed719dbc7c63402e84a1e5fc95966ef0d441dbee78760ff348",
+    "live-v2/prefix.bin": "aa3100ff9b09c9926a3c51c17637e627ab8c3b219bf08e09a967e734990ea7dd",
+    "live-v2/prefix.txt": "aa3100ff9b09c9926a3c51c17637e627ab8c3b219bf08e09a967e734990ea7dd"
+  }
+}

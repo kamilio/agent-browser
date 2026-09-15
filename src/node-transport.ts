@@ -51,6 +51,7 @@ export type AddressResolver = (
 ) => Promise<readonly string[]>;
 
 export interface NodeTransportOptions extends NetworkPolicyOptions {
+	captureDecodedPrefixBytes?: number;
 	resourceCache?: Partial<ResourceReuseCacheOptions>;
 	limits?: Partial<NetworkLimits>;
 	minRequestIntervalMs?: number;
@@ -58,6 +59,23 @@ export interface NodeTransportOptions extends NetworkPolicyOptions {
 	certificateAuthorities?: readonly string[];
 	cookieJar?: CookieJar;
 }
+
+export interface DecodedResponsePrefix {
+	readonly kind: "decoded-response-prefix-v1";
+	readonly complete: false;
+	readonly url: string;
+	readonly status: number;
+	readonly headers: NetworkResponse["headers"];
+	readonly body: Uint8Array;
+	readonly encodedBytes: number;
+	readonly decodedBytes: number;
+	readonly limit: number;
+}
+
+type ResponsePrefixBody = Pick<
+	DecodedResponsePrefix,
+	"body" | "encodedBytes" | "decodedBytes" | "limit"
+>;
 
 interface ResponseAccountingOperation {
 	readonly writer: ResponseAccountingWriter;
@@ -334,6 +352,12 @@ export class NodeNetworkTransport implements NetworkTransport {
 	private readonly certificateAuthorities?: string[];
 	private readonly cookieJar?: CookieJar;
 	private readonly requestPacer?: OriginRequestPacer;
+	private readonly captureDecodedPrefixBytes?: number;
+	private pendingResponsePrefixes = new WeakMap<
+		object,
+		DecodedResponsePrefix
+	>();
+	private responsePrefixes = new WeakMap<object, DecodedResponsePrefix>();
 	private readonly active = new Set<AbortController>();
 	private closed = false;
 	private counts = {
@@ -346,6 +370,18 @@ export class NodeNetworkTransport implements NetworkTransport {
 	};
 
 	constructor(options: NodeTransportOptions = {}) {
+		if (options.captureDecodedPrefixBytes !== undefined) {
+			if (
+				!Number.isSafeInteger(options.captureDecodedPrefixBytes) ||
+				options.captureDecodedPrefixBytes < 1 ||
+				options.captureDecodedPrefixBytes > 65_536
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid decoded response prefix byte limit",
+				);
+			this.captureDecodedPrefixBytes = options.captureDecodedPrefixBytes;
+		}
 		if (typeof Bun !== "undefined")
 			throw new AgentBrowserError(
 				"unsupported",
@@ -443,10 +479,20 @@ export class NodeNetworkTransport implements NetworkTransport {
 
 	close() {
 		this.closed = true;
+		this.pendingResponsePrefixes = new WeakMap();
+		this.responsePrefixes = new WeakMap();
 		for (const controller of this.active)
 			controller.abort(new AgentBrowserError("closed", "Transport is closed"));
 		this.requestPacer?.close();
 		this.resourceCache?.close();
+	}
+
+	responsePrefix(error: unknown): DecodedResponsePrefix | undefined {
+		if (!error || typeof error !== "object") return undefined;
+		const captured = this.responsePrefixes.get(error);
+		return captured
+			? Object.freeze({ ...captured, body: new Uint8Array(captured.body) })
+			: undefined;
 	}
 
 	request(input: NetworkRequest): Promise<NetworkResponse> {
@@ -826,8 +872,17 @@ export class NodeNetworkTransport implements NetworkTransport {
 				url = next;
 			}
 		} catch (error) {
+			const prefix =
+				error && typeof error === "object"
+					? this.pendingResponsePrefixes.get(error)
+					: undefined;
+			if (error && typeof error === "object")
+				this.pendingResponsePrefixes.delete(error);
 			if (signal.aborted) throw abortReason(signal);
-			if (error instanceof AgentBrowserError) throw error;
+			if (error instanceof AgentBrowserError) {
+				if (prefix && !this.closed) this.responsePrefixes.set(error, prefix);
+				throw error;
+			}
 			const code =
 				error &&
 				typeof error === "object" &&
@@ -866,6 +921,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 	): Promise<Omit<NetworkResponse, "url" | "redirects" | "elapsedMs">> {
 		return new Promise((resolve, reject) => {
 			let incoming: IncomingMessage | undefined;
+			let pendingPrefixError: AgentBrowserError | undefined;
 			let finished = false;
 			const abort = () => fail(abortReason(signal));
 			const succeed = (
@@ -968,6 +1024,34 @@ export class NodeNetworkTransport implements NetworkTransport {
 						signal,
 						maxResponseBytes,
 						accounting?.writer,
+						this.captureDecodedPrefixBytes === undefined
+							? undefined
+							: (error, prefix) => {
+									if (finished || signal.aborted || this.closed) return;
+									const capturedHeaders = Object.freeze(
+										Object.fromEntries(
+											Object.entries(responseHeaderValues).map(
+												([name, values]) => [name, Object.freeze([...values])],
+											),
+										),
+									);
+									this.pendingResponsePrefixes.set(
+										error,
+										Object.freeze({
+											kind: "decoded-response-prefix-v1",
+											complete: false,
+											url: url.href,
+											status,
+											headers: capturedHeaders,
+											...prefix,
+										}),
+									);
+								},
+						this.captureDecodedPrefixBytes === undefined
+							? undefined
+							: (error) => {
+									pendingPrefixError = error;
+								},
 					);
 					accounting?.track(consumption);
 					void consumption.then(
@@ -978,6 +1062,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 				},
 			);
 			request.on("error", (error) => {
+				if (pendingPrefixError && error === pendingPrefixError) return;
 				fail(
 					"code" in error && error.code === "HPE_HEADER_OVERFLOW"
 						? new AgentBrowserError(
@@ -1011,8 +1096,12 @@ export class NodeNetworkTransport implements NetworkTransport {
 		signal: AbortSignal,
 		maxResponseBytes: number,
 		accounting?: ResponseAccountingWriter,
+		onPrefix?: (error: AgentBrowserError, prefix: ResponsePrefixBody) => void,
+		onPrefixError?: (error: AgentBrowserError) => void,
 	): Promise<{ body: Uint8Array; encodedBytes: number }> {
 		const chunks: Buffer[] = [];
+		let prefix: Buffer | undefined;
+		let prefixError: AgentBrowserError | undefined;
 		let encodedBytes = 0;
 		let decodedBytes = 0;
 		const encodings = contentEncoding
@@ -1081,13 +1170,31 @@ export class NodeNetworkTransport implements NetworkTransport {
 				try {
 					decodedBytes += chunk.byteLength;
 					count("decodedBytes", chunk.byteLength);
-					if (decodedBytes > maxResponseBytes)
-						throw resourceLimitError(
+					if (decodedBytes > maxResponseBytes) {
+						const error = resourceLimitError(
 							"network.response-decoded",
 							maxResponseBytes,
 							decodedBytes,
 							"Decoded response byte limit exceeded",
 						);
+						if (onPrefix && this.captureDecodedPrefixBytes !== undefined) {
+							const retained = Math.min(
+								this.captureDecodedPrefixBytes,
+								maxResponseBytes,
+							);
+							prefix = Buffer.alloc(retained);
+							let offset = 0;
+							for (const prior of chunks) {
+								offset += prior.copy(prefix, offset, 0, retained - offset);
+								if (offset === retained) break;
+							}
+							if (offset < retained)
+								chunk.copy(prefix, offset, 0, retained - offset);
+							prefixError = error;
+							onPrefixError?.(error);
+						}
+						throw error;
+					}
 					chunks.push(Buffer.from(chunk));
 					callback();
 				} catch (error) {
@@ -1095,7 +1202,18 @@ export class NodeNetworkTransport implements NetworkTransport {
 				}
 			},
 		});
-		await pipeline([response, encodedLimit, ...decoders, output], { signal });
+		try {
+			await pipeline([response, encodedLimit, ...decoders, output], { signal });
+		} catch (error) {
+			if (prefixError && error === prefixError && prefix && !signal.aborted)
+				onPrefix?.(prefixError, {
+					body: prefix,
+					encodedBytes,
+					decodedBytes,
+					limit: maxResponseBytes,
+				});
+			throw error;
+		}
 		return { body: Buffer.concat(chunks, decodedBytes), encodedBytes };
 	}
 }

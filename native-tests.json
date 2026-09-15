@@ -906,5 +906,6 @@
 	"src/research-source-access.test.ts",
 	"src/research-source-access-reader.test.ts",
 	"src/document-feeds.test.ts",
-	"src/research-feed-discovery.test.ts"
+	"src/research-feed-discovery.test.ts",
+	"src/node-response-prefix.test.ts"
 ]

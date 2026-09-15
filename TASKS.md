@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: failure-preserving decoded response prefixes
+
+- Added default-off Node `captureDecodedPrefixBytes` (1..65536) and transport-local
+  `responsePrefix(error)`: bounded raw bytes and immutable hop context for the
+  exact decoded-overflow failure only. Requests still reject; caps, accounting,
+  complete responses, caches and generic replay admission remain unchanged.
+  Copies isolate bytes; close invalidates lookup. Contract: `RESPONSE-PREFIX.md`.
+- Independent review caught coupled request-error teardown ordering and later
+  cancellation before public settlement. Exact-error deferral plus staged
+  publication fixes both. A pre-fix targeted test retains one failure/one pass;
+  both final cases pass. No abort/close, encoded/session/accounting or decoder
+  failure prefix is promoted to success.
+- Clean selected native baseline: 811 pass/two failures in 11 files. Candidate:
+  871 pass/the same two research-body-capture failures in 12 files; 60 new tests
+  pass. Build, selected-test types, format and lint pass. Preserve earlier abort
+  identity/cache-fixture test failures rather than rewriting initial results.
+- Fresh WhoWhatWear feed attempt at 18:40:05 UTC retains 65536 bytes with useful
+  literal item/article source while preserving the original 2,000,000-byte decoded
+  limit failure (2,015,232 observed). No complete response, navigation, document
+  parsing, full-feed/article or decoder-trailer verification. An earlier attempt
+  was denied by our IP-vs-Host observer check, not the site; its evidence remains.
+  Totals: two request starts, one guard denial, one response-bearing GET, zero
+  redirects; both requests/sockets/children/groups close. No credentials/SDK/scripts.
+- Full separate report: `reports/decoded-response-prefix-2026-09-15.{md,json}`.
+  The original 100-page matrix remains historical, not a new sweep/global usage
+  ranking. Preserve 42 tracked/697 untracked original files; no push. Research CLI
+  prefix admission, encoded oversize/timeouts, other missing bodies, access barriers,
+  broader interactions/passkeys and SafeJS acceptance remain outstanding.
+
 ### September 15: advertised feeds and bounded literal-content workflows
 
 - Added separate bounded `sourceFeeds` metadata for RSS/Atom head links; existing
