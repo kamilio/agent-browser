@@ -374,7 +374,7 @@ function inline(nodes: readonly ExtractedNode[]) {
 	const pieces: string[] = [];
 	const pending: (
 		| { node: ExtractedNode; inLink: boolean }
-		| { text: string }
+		| { closingLink: string; openingIndex: number }
 	)[] = nodes
 		.slice()
 		.reverse()
@@ -382,8 +382,20 @@ function inline(nodes: readonly ExtractedNode[]) {
 	while (pending.length) {
 		const current = pending.pop();
 		if (!current) break;
-		if ("text" in current) {
-			pieces.push(current.text);
+		if ("closingLink" in current) {
+			let hasLabel = false;
+			for (
+				let index = current.openingIndex + 1;
+				index < pieces.length;
+				index++
+			) {
+				if (pieces[index].trim()) {
+					hasLabel = true;
+					break;
+				}
+			}
+			if (hasLabel) pieces.push(current.closingLink);
+			else pieces.splice(current.openingIndex, 1);
 			continue;
 		}
 		const { node, inLink } = current;
@@ -405,8 +417,12 @@ function inline(nodes: readonly ExtractedNode[]) {
 		}
 		const link = node.type === "link" && !!node.url && !inLink;
 		if (link) {
+			const openingIndex = pieces.length;
 			pieces.push("[");
-			pending.push({ text: `](<${node.url?.replace(/&/g, "&amp;")}>)` });
+			pending.push({
+				closingLink: `](<${node.url?.replace(/&/g, "&amp;")}>)`,
+				openingIndex,
+			});
 		}
 		if (node.children)
 			for (let index = node.children.length - 1; index >= 0; index--)

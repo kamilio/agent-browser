@@ -55,11 +55,19 @@ See the thirty-seventh website inventory for the exact evidence and limitations.
 - Keep successful captures and use admitted local replay for HTML sections.
 - Inspect preserved source IDs, classes and roles for an exact article target;
   use `READER-ARTICLE-SELECTORS.md` rather than assuming every site has `main`.
+- Markdown omits empty hyperlink wrappers, not source anchors or JSON/discovery
+  records. See `EMPTY-MARKDOWN-LINKS.md` when inspecting icon-only navigation.
 - For plain text, Markdown source, CSV, JSON and the literal XML/feed types,
   native `--find` and `--lines` locate source text. Separate research-CLI invocations navigate again;
   the HTML replay admission is not a generic XML or arbitrary-file reader.
 - Record final canonical URLs for later authorized visits instead of repeatedly
   entering a redirecting legacy path. Do not guess alternate URLs to evade blocks.
+- A successful HTTP status may contain only a client-side redirect stub. Inspect
+  its actual public continuation link rather than claiming article content was
+  retrieved. A separate authorized native navigation can follow a validated link
+  without executing page scripts; count it as another request, not an HTTP
+  redirect. Stop on access restrictions or another unresolved stub. A versioned
+  destination is an observed URL, not proof of the latest software release.
 - Count actual HTTP requests, not just launcher invocations. One navigation can
   follow redirects. State that allowance explicitly in a scope; a strict
   single-request gate needs an enforceable redirect restriction before launch.

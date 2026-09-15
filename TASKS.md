@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: remove empty Markdown links and reach redirected content
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Native Markdown omits empty/whitespace-only hyperlink wrappers while preserving
+source anchors, JSON/discovery records, meaningful labels, whitespace, code and
+existing source/structure/intermediate/output budgets. Hugging Face's captured
+article shrinks from 16,092 to 14,437 bytes: only eighteen empty heading wrappers
+and their now-leading whitespace change. The 43,583-byte Python article remains
+byte-identical, including its nonempty paragraph-sign links.
+Two fresh PyTorch GETs demonstrate why HTTP 200 alone is insufficient: the stable
+URL serves a client-side redirect stub; a separately counted native navigation
+follows its explicit same-origin Continue link without executing scripts. The
+15,267-byte scoped article verifies twelve headings, seven code blocks, twenty
+table cells and 52 paragraphs. The versioned URL is not a latest-release claim.
+Build, fifteen-root strict types, formatting/lint and all **2,045 tests across
+fifteen selected native files pass**, including 26 new cases. Original baseline
+failures and test-authoring corrections remain in separate frozen evidence.
+No timeout or application cap changes; the canonical native manifest has 853
+entries. Previous 24 baseline failures, earlier body-capture failures and old
+ARIA-test lint issues remain outside this selection and unresolved.
+The forty-second inventory and `EMPTY-MARKDOWN-LINKS.md` record the change.
+More sites/research, copy-label and table noise, doctype provenance, JS-only/iframe
+content, interaction/rendering and full-release validation remain open. Service,
+SafeJS/runtime, real TTY/PTY, credential and passkey-device gates remain separate.
+Restrictions are not bypassed; original work and evidence are preserved. No push.
+
 ### September 15: preserve article targets and verify more public content
 
 **PROGRESS; overall browser goal remains ACTIVE.**

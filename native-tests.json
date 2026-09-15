@@ -393,6 +393,7 @@
   "src/events.test.ts",
   "src/extension-page-runtime.test.ts",
   "src/extraction.test.ts",
+  "src/extraction-empty-links.test.ts",
   "src/flex-column-wrap.test.ts",
   "src/flex-column.test.ts",
   "src/flex-document.test.ts",
