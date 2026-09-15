@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: recover bounded, labeled source descriptions
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Native inspection of eight saved application-shell responses confirms there is
+no additional non-script application body content to recover in the sampled
+empty pages. Instagram, Twitch, Roblox and Pinterest do supply public meta
+descriptions that the reader dropped. Retain only inert allowlisted description
+marker/content pairs and expose bounded sourceDescriptions metadata separately
+from body content. Direct head records only; no nested/foreign/body promotion,
+http-equiv behavior, arbitrary metadata export or script/hydration execution.
+Source order and disagreements remain, with eight-entry/2,048-unit bounds and
+explicit truncation. Existing reader text/output and extraction byte limits
+apply. Metadata-only pages remain empty, notices remain unverified, and replay
+admission and semantic/HTTP barriers do not change.
+All 1,054 focused tests pass across 14 explicit files, including 54 new cases;
+all 1,000 prior statuses match. Build/types/format/lint are checked in isolated
+archives. A candidate's two new test-formatting issues were corrected without
+changing production bytes. Ten saved-response research controls preserve every
+body hash and outcome; actual Pinterest CLI replay retains its 98-byte notice
+and now exposes two description records. Zoom's 29,997-byte content and the
+LinkedIn barrier remain intact. Eleven offline children include preserved
+initial proof errors (missing replay selector and omitted existing raw policy),
+then corrected successful recipes; all processes close with zero network
+attempts. Original top-100 captures/results and dirty work remain unchanged.
+See `SOURCE-DESCRIPTIONS.md` and `reports/source-descriptions-2026-09-15.json`.
+Next: broader content recovery and application-shell diagnosis, response/redirect
+limits and source-backed research. Live applications, broad runtime/rendering,
+credentials/passkeys, services/sockets and TTY gates remain open. No push.
+
 ### September 15: remove repeated wide-node snapshots and scope Office content
 
 **PROGRESS; overall browser goal remains ACTIVE.**

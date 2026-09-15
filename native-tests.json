@@ -862,5 +862,7 @@
   "src/word-break-interaction.test.ts",
   "src/hyphen-emergency-layout.test.ts",
   "src/hyphen-emergency-boundaries.test.ts",
-  "src/hyphen-emergency-interaction.test.ts"
+  "src/hyphen-emergency-interaction.test.ts",
+  "src/document-descriptions.test.ts",
+  "src/research-descriptions.test.ts"
 ]

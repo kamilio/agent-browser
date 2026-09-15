@@ -4,6 +4,10 @@ import {
 } from "./aria-table-source.js";
 import { documentTitle } from "./document-title.js";
 import {
+	type DocumentDescriptions,
+	documentDescriptions,
+} from "./document-descriptions.js";
+import {
 	type DateTimeSourceMetadata,
 	extractDateTimeSource,
 } from "./date-time-source.js";
@@ -149,6 +153,7 @@ interface ExtractionMetadata {
 	compactTables?: true;
 	tableRows?: true;
 	reader?: Readonly<ResearchReaderReport>;
+	sourceDescriptions?: DocumentDescriptions;
 	sectionSelection?: Readonly<HeadingSectionMetadata>;
 	textSelection?: {
 		method: "text-lines";
@@ -984,6 +989,7 @@ export function extractDocument(
 	safeUrl.username = "";
 	safeUrl.password = "";
 	const reader = researchReaderInfo(tree);
+	const descriptions = documentDescriptions(tree);
 	const metadata: ExtractionMetadata = {
 		document: tree.reference(tree.root),
 		scope: tree.reference(start),
@@ -994,6 +1000,7 @@ export function extractDocument(
 		...(options.compactTables === true ? { compactTables: true as const } : {}),
 		...(options.tableRows === true ? { tableRows: true as const } : {}),
 		...(reader ? { reader } : {}),
+		...(descriptions ? { sourceDescriptions: descriptions } : {}),
 		...(selection ? { textSelection: selection.metadata } : {}),
 		...(section ? { sectionSelection: section.metadata } : {}),
 	};

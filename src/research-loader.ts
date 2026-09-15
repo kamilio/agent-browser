@@ -3,6 +3,7 @@ import {
 	isAriaTableSourceAttribute,
 } from "./aria-table-source.js";
 import type { DocumentLimits, DocumentTree } from "./document.js";
+import { descriptionMeta } from "./document-descriptions.js";
 import { isDateTimeSourceTag } from "./date-time-source.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlEncoding } from "./html-encoding.js";
@@ -281,6 +282,21 @@ export function sanitizeResearchHtml(
 				check("reader.depth", limits.maxDepth, skipped.length);
 				if (rawTags.has(name)) omitRaw(name);
 			}
+			continue;
+		}
+		const description =
+			token.kind === "start" &&
+			name === "meta" &&
+			open.every((ancestor) => ancestor === "html" || ancestor === "head")
+				? descriptionMeta(token.attributes)
+				: undefined;
+		if (description) {
+			report.textCodeUnits += description.content.length;
+			check("reader.text", limits.maxTextCodeUnits, report.textCodeUnits);
+			emit(
+				`<meta ${description.attribute}="${description.name}" content="${escapeHtml(description.content)}">`,
+			);
+			report.ignoredAttributes += Object.keys(token.attributes).length - 2;
 			continue;
 		}
 		if (omittedTags.has(name)) {
