@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: source-derived search tasks and bounded index recovery
+
+- Fresh Wikipedia and arXiv search pages provide results; source-linked article
+  and abstract retrieval succeeds. Python/Git search responses are empty
+  client-side shells, not lost parser text. An independent saved-body review
+  finds no matching results to recover by changing reader filtering.
+- Existing explicit index workflows reach Python asyncio.timeout via its
+  alphabetic index and Git rebase via its reference index. These are narrow
+  named-item lookups, not working full-text search or native form/click proof.
+- Original arXiv action returns an HTTP308 downgrade and remains policy-denied.
+  Separately navigating its same-host HTTPS counterpart retrieves results without
+  a plaintext HTTP request, retry of the original URL, identity change or weaker policy.
+- 12 native navigations/12 HTTPS GETs/11 complete captures/zero followed
+  redirects. Four guarded offline subtree replays return focused source; Python
+  timeout output shrinks from72719 to7222 bytes without another website request.
+  All16 children/groups and12 observed live requests/sockets close.
+- Reused clean runtime matches1484 committed inputs at6040343; no production
+  change, new native suite/build or actual SDK run claimed. Guide:
+  `SOURCE-SEARCH-WORKFLOWS.md`; report:
+  `reports/source-search-tasks-2026-09-15.{md,json}`. Original100-page evidence and
+  original42 tracked/697 untracked work preserved. No push. Broader runtime,
+  interactive search, access, passkey/device and performance gates remain open.
+
 ### September 15: explicit UTF-8 reader fallback and article retrieval
 
 - Add opt-in `--reader-fallback-encoding utf-8`, requiring reader mode, with
