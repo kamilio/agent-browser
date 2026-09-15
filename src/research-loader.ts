@@ -331,6 +331,8 @@ export function sanitizeResearchHtml(
 		for (const [attribute, value] of Object.entries(token.attributes)) {
 			let keep =
 				attribute === "id" ||
+				(outputName === name &&
+					(attribute === "class" || attribute === "role")) ||
 				(outputName === "a" && ["href", "title", "name"].includes(attribute)) ||
 				(outputName === "base" && attribute === "href") ||
 				(outputName === "img" && attribute === "alt") ||

@@ -53,6 +53,8 @@ See the thirty-seventh website inventory for the exact evidence and limitations.
   retaining HTML fallback in the same response, not an automatic second
   navigation. See `MARKDOWN-NEGOTIATION.md` for compatibility and measured limits.
 - Keep successful captures and use admitted local replay for HTML sections.
+- Inspect preserved source IDs, classes and roles for an exact article target;
+  use `READER-ARTICLE-SELECTORS.md` rather than assuming every site has `main`.
 - For plain text, Markdown source, CSV, JSON and the literal XML/feed types,
   native `--find` and `--lines` locate source text. Separate research-CLI invocations navigate again;
   the HTML replay admission is not a generic XML or arbitrary-file reader.

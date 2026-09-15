@@ -45,13 +45,15 @@ The API accepts a fifth format argument after the optional signal:
 retain their existing JSON return types; explicit Markdown infers the Markdown
 content type. Receipt/body ownership, cleanup and bounded JSONL output are shared.
 
-## Observed targeting limits
+## Observed article targets
 
 The captured MDN content-negotiation page has a unique native `main` element.
 The Python control-flow tutorial instead uses a source `div` with `role="main"`
-and a nested `section` with `id="more-control-flow-tools"`. The reader currently
-retains that ID but drops the div's role and class. Use the observed ID rather
-than assuming `[role="main"]` works in the sanitized reader document.
+and a nested `section` with `id="more-control-flow-tools"`. The reader now retains
+raw class/role attributes on preserved tags, so its observed `.body[role="main"]`
+wrapper can be selected as well as the nested ID. Earlier captured reports still
+record the old stripping behavior; they are not rewritten as new validation.
+See `READER-ARTICLE-SELECTORS.md` for retention and selector boundaries.
 
 Reader output remains partial: no scripts, styling, visual or hidden-content
 fidelity is claimed. Article scoping intentionally omits surrounding material;

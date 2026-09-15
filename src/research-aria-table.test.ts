@@ -115,7 +115,7 @@ function expected(
 }
 
 it.each(roles)(
-	"retains only role-permitted reader attributes for $role",
+	"retains role-permitted metadata and inert selector attributes for $role",
 	({ role, allowed }) => {
 		const attributes: Record<string, string> = {
 			id: "source",
@@ -151,11 +151,14 @@ it.each(roles)(
 		);
 		const sanitized = sanitizeResearchHtml(source);
 		expect(sanitized.report.ignoredAttributes).toBe(
-			Object.keys(attributes).length - allowed.length,
+			Object.keys(attributes).length - allowed.length - 1,
 		);
 		const tree = load(source);
 		const id = element(query(tree), `[role=${role}]`);
-		expect(tree.get(id).attributes).toEqual(retained);
+		expect(tree.get(id).attributes).toEqual({
+			...retained,
+			class: attributes.class,
+		});
 		expect(metadata(record(structured(tree).content, tree, id))).toEqual(
 			expected("div", role, retained),
 		);
@@ -164,7 +167,7 @@ it.each(roles)(
 		trees.push(reparsed);
 		expect(
 			reparsed.get(element(query(reparsed), `[role=${role}]`)).attributes,
-		).toEqual(retained);
+		).toEqual({ ...retained, class: attributes.class });
 	},
 );
 
@@ -262,16 +265,19 @@ it.each([
 	"table\tcell",
 	"\u00a0table\u00a0",
 	"\vtable\v",
-])("does not retain invalid or fallback reader role %j", (role) => {
-	const tree = load(
-		`<div role="${role}" aria-label="discarded" aria-colcount="2">Public</div>`,
-	);
-	const id = element(query(tree), "div");
-	expect(tree.get(id).attributes).toEqual({});
-	expect(record(structured(tree).content, tree, id)).not.toHaveProperty(
-		"ariaTableSource",
-	);
-});
+])(
+	"retains raw selector role %j without promoting ARIA table metadata",
+	(role) => {
+		const tree = load(
+			`<div role="${role}" aria-label="discarded" aria-colcount="2">Public</div>`,
+		);
+		const id = element(query(tree), "div");
+		expect(tree.get(id).attributes).toEqual({ role });
+		expect(record(structured(tree).content, tree, id)).not.toHaveProperty(
+			"ariaTableSource",
+		);
+	},
+);
 
 it.each([
 	{ source: "\r", value: "\n" },

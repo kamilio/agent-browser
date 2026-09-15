@@ -6,6 +6,41 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: preserve article targets and verify more public content
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Two new native GETs recover MLCommons methodology and Hugging Face quantization
+documentation without retries, redirects, scripts or extra resources. Numeric
+MLCommons results remain in an omitted iframe; benchmark/hardware/social research
+is not complete. Captured-source checks verify substantive prose, headings, table
+cells and code rather than treating HTTP 200 as acceptance.
+Reader mode now retains inert source class/role attributes on preserved tags.
+Offline API/CLI comparisons recover Python's `.body[role="main"]` and MLCommons
+class-selected content without another request. Python's 43,583-byte article,
+57 code blocks, 24 headings and 128 paragraphs remain byte-identical to the
+previous verified scope. Equal-scope whole Markdown also stays unchanged;
+retained attributes consume existing reader/document budgets. Hugging Face's
+`.prose-doc` now selects its 16,092-byte article with all 18 article headings,
+eight table cells and 15 code blocks; its pre-article prefix drops from 5,097
+bytes to 11. All seventeen replay children across the three pages make zero
+HTTP requests; four baseline selector failures remain preserved.
+The prior slow receipt cases are diagnosed as deep byte-array assertion cost,
+not 11–13-second browser serialization. Separate commit `0a9ad55` uses exact
+bounded-span comparison; 128 tests pass twice at the original 5-second allowance.
+Reader build, 25-root types and five-file formatting pass. Final expanded native
+validation is **3,054 passed / 24 failed across 25 files**, with the same failing
+case names reproduced in the baseline and no newly failing case after updating
+the old class-stripping assertion. Two baseline ARIA-test lint errors remain;
+four other changed files pass lint. Earlier body-capture failures outside this
+selection also remain unresolved. This is not a green full release.
+See the forty-first inventory, `READER-ARTICLE-SELECTORS.md` and the MLCommons
+research note. Outstanding work includes the 24 baseline cases, Hugging Face
+navigation/copy-label/empty-link/table noise and doctype diagnostics, more sites,
+research, JS-only/iframe content, rendering/interaction and full native release
+validation. Runtime/SafeJS, live service, real TTY/PTY, credential and passkey-device
+gates remain separate. Restricted sites stay stopped; no solver or identity change.
+Original dirty work and historical evidence are preserved. No push.
+
 ### September 15: readable captured articles without another request
 
 **PROGRESS; overall browser goal remains ACTIVE.**

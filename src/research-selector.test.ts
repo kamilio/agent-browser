@@ -237,27 +237,20 @@ it.each([false, true])(
 	},
 );
 
-it.each(["#chosen", ".chosen"])(
-	"preserves reader source IDs but strips classes for %s",
+it.each(["#chosen", ".chosen", '[role="main"]'])(
+	"preserves reader source article targets for %s",
 	async (selector) => {
-		const input = response('<main id="chosen" class="chosen">Body</main>');
+		const input = response(
+			'<main id="chosen" class="chosen" role="main">Body</main>',
+		);
 		const report = await navigate(input, selector, true);
 		if (report.selection?.method !== "css-selector")
 			throw new Error("Expected css-selector selection");
-		if (selector === "#chosen") {
-			expect(report.selection?.matches).toBe(1);
-			expect(report.outcome).toBe("extracted-unverified");
-			expect(report.failure).toBeUndefined();
-			expect(report.extraction?.format).toBe("markdown");
-			expect(report.extraction?.content).toBe("Body\n");
-		} else {
-			expect(report.selection?.matches).toBe(0);
-			expect(report.failure).toEqual({
-				category: "not-found",
-				stage: "selection",
-			});
-			expect(report.extraction).toBeUndefined();
-		}
+		expect(report.selection?.matches).toBe(1);
+		expect(report.outcome).toBe("extracted-unverified");
+		expect(report.failure).toBeUndefined();
+		expect(report.extraction?.format).toBe("markdown");
+		expect(report.extraction?.content).toBe("Body\n");
 	},
 );
 

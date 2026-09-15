@@ -217,7 +217,10 @@ describe.each(profiles)(
 			const { tree, queries } = reader(source);
 			const attributes = (selector: string) =>
 				tree.get(queries.querySelector(selector) as number).attributes;
-			expect(attributes("#block")).toEqual({ id: "block" });
+			expect(attributes("#block")).toEqual({ id: "block", class: "hidden" });
+			expect(queries.querySelector(".hidden")).toBe(
+				queries.querySelector("#block"),
+			);
 			expect(attributes("#span")).toEqual({ id: "span" });
 			expect(attributes("#anchor")).toEqual({
 				id: "anchor",
@@ -238,7 +241,6 @@ describe.each(profiles)(
 			])
 				expect(target(tree, fragment)).toBeNull();
 			for (const attribute of [
-				"class",
 				"style",
 				"onclick",
 				"onmouseover",

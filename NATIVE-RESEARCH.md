@@ -199,9 +199,10 @@ The selector string is not copied into reports or error messages; the optional
 node dist/scripts/research-browser.js --reader --selector 'main > article' https://research.example/paper
 ```
 
-Reader mode still strips source IDs/classes and other unsupported attributes;
-use structural selectors or retained attributes rather than expecting original
-page selector fidelity. Scope limits output, not acquisition: original source,
+Reader mode preserves source IDs and inert class/role strings on preserved tags;
+unwrapped/remapped elements and omitted subtrees do not retain all source
+selector targets. See `READER-ARTICLE-SELECTORS.md`; this does not restore styling,
+hidden-content or general ARIA semantics. Scope limits output, not acquisition: original source,
 DOM, network and extraction ceilings are unchanged. Original response status,
 headers, body hashes and omission provenance remain bound to the report.
 
