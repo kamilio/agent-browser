@@ -12,16 +12,31 @@ const diagnosticOmissions = new Set(
 	),
 );
 
-export function researchDocumentDiagnosticText(tree: DocumentTree): string {
+export function researchDocumentDiagnosticText(
+	tree: DocumentTree,
+	options: { collapseWhitespace?: boolean } = {},
+): string {
 	const styles = documentStyles(tree);
 	const pending: (number | null)[] = [documentBody(tree) ?? tree.root];
 	const scripting = htmlParseInfo(tree)?.scripting ?? false;
 	const limit = researchDiagnosticTextLimit + 1;
 	let text = "";
+	const append = (value: string) => {
+		let selected = options.collapseWhitespace
+			? value.replace(/\s+/g, " ")
+			: value;
+		if (
+			options.collapseWhitespace &&
+			text.endsWith(" ") &&
+			selected.startsWith(" ")
+		)
+			selected = selected.slice(1);
+		text += selected.slice(0, limit - text.length);
+	};
 	while (pending.length && text.length < limit) {
 		const id = pending.pop();
 		if (id === null) {
-			text += " ";
+			append(" ");
 			continue;
 		}
 		if (id === undefined) break;
@@ -39,7 +54,7 @@ export function researchDocumentDiagnosticText(tree: DocumentTree): string {
 		const style = styles.get(id);
 		if (!style.displayed) continue;
 		if (node.tagName === "br") {
-			if (style.visible) text += " ";
+			if (style.visible) append(" ");
 			continue;
 		}
 		const content =
@@ -49,11 +64,11 @@ export function researchDocumentDiagnosticText(tree: DocumentTree): string {
 					? ` ${node.attributes.alt ?? ""} `
 					: undefined;
 		if (content !== undefined) {
-			if (style.visible) text += content.slice(0, limit - text.length);
+			if (style.visible) append(content);
 			continue;
 		}
 		if (!style.display.startsWith("inline")) {
-			text += " ";
+			append(" ");
 			pending.push(null);
 		}
 		for (let index = node.children.length - 1; index >= 0; index--)

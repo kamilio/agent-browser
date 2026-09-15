@@ -5,6 +5,18 @@ export const researchReaderProfile = "native-semantic-reader-v1";
 
 export type ResearchReaderRawPolicy = "separate-omitted-raw-v1";
 
+export type ResearchReaderVisibilityPolicy = "source-hidden-v1";
+
+export function validateResearchReaderVisibilityPolicy(
+	value: unknown,
+): ResearchReaderVisibilityPolicy | undefined {
+	if (value === undefined || value === "source-hidden-v1") return value;
+	throw new AgentBrowserError(
+		"invalid-input",
+		"Invalid reader visibility policy",
+	);
+}
+
 export function validateResearchReaderRawPolicy(
 	value: unknown,
 ): ResearchReaderRawPolicy | undefined {
@@ -29,7 +41,9 @@ export interface ResearchReaderReport {
 	partial: true;
 	scripting: false;
 	styling: false;
-	hiddenContentSemantics: false;
+	hiddenContentSemantics: false | "source-attributes";
+	visibilityPolicy?: ResearchReaderVisibilityPolicy;
+	sourceHiddenSubtrees?: number;
 	encoding?: string;
 	sourceCodeUnits: number;
 	textCodeUnits: number;
@@ -43,6 +57,15 @@ export interface ResearchReaderReport {
 	tokenizerIssues: number;
 	rawTextPolicy?: ResearchReaderRawPolicy;
 	omittedRaw?: Readonly<ResearchReaderOmittedRawReport>;
+}
+
+export function researchReaderNoticeFor(
+	report?: Readonly<ResearchReaderReport>,
+) {
+	return report?.visibilityPolicy === "source-hidden-v1" &&
+		report.hiddenContentSemantics === "source-attributes"
+		? "# Partial research reader: scripts/styles/SVG/MathML omitted; forms inert; source-hidden subtrees omitted; CSS visibility ignored"
+		: researchReaderNotice;
 }
 
 const information = new WeakMap<DocumentTree, Readonly<ResearchReaderReport>>();

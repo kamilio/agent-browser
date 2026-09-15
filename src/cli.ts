@@ -24,7 +24,7 @@ import { runTerminal } from "./node-terminal.js";
 import { NodeNetworkTransport } from "./node-transport.js";
 import { pageRuntimeAdapter } from "./page-runtime-selection.js";
 import { loadResearchDocument } from "./research-loader.js";
-import { researchReaderNotice } from "./research-reader-info.js";
+import { researchReaderNoticeFor } from "./research-reader-info.js";
 import { BrowserSession } from "./session.js";
 import {
 	type SnapshotSearch,
@@ -462,7 +462,7 @@ async function main() {
 	) {
 		const extraction = result.data as DocumentExtraction;
 		console.log(
-			`${extraction.reader ? `${researchReaderNotice}\n` : ""}${extraction.content}`,
+			`${extraction.reader ? `${researchReaderNoticeFor(extraction.reader)}\n` : ""}${extraction.content}`,
 		);
 	} else if (
 		invocation.command === "generate-locator" &&

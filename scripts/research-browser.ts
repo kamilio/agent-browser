@@ -40,7 +40,9 @@ import {
 } from "../src/research-loader.js";
 import {
 	type ResearchReaderRawPolicy,
+	type ResearchReaderVisibilityPolicy,
 	validateResearchReaderRawPolicy,
+	validateResearchReaderVisibilityPolicy,
 } from "../src/research-reader-info.js";
 import {
 	type ResourceLimitDiagnostic,
@@ -69,6 +71,10 @@ import {
 	type ResearchFragmentReport,
 	researchFragmentReport,
 } from "./research-fragment.js";
+import {
+	classifyResearchVisibility,
+	researchVisibilityEvidence,
+} from "./research-visibility.js";
 
 export const researchRunLimits = Object.freeze({
 	maxUrls: 8,
@@ -187,6 +193,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	let reader = false;
 	let preferMarkdown = false;
 	let readerRawPolicy: ResearchReaderRawPolicy | undefined;
+	let readerVisibilityPolicy: ResearchReaderVisibilityPolicy | undefined;
 	let captureBody = false;
 	let format: "markdown" | "json" | undefined;
 	let tableMetadata = false;
@@ -203,6 +210,19 @@ export function parseResearchArguments(args: readonly string[]) {
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (
+			argument === "--reader-visibility-policy" &&
+			readerVisibilityPolicy === undefined
+		) {
+			const value = args[++index];
+			if (value === undefined)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Missing research reader visibility policy",
+				);
+			readerVisibilityPolicy = validateResearchReaderVisibilityPolicy(value);
+			continue;
+		}
 		if (argument === "--reader-raw-policy" && readerRawPolicy === undefined) {
 			const value = args[++index];
 			if (value === undefined)
@@ -324,6 +344,11 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Research reader raw policy requires the reader",
 		);
+	if (readerVisibilityPolicy !== undefined && !reader)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research reader visibility policy requires the reader",
+		);
 	if (
 		preferMarkdown &&
 		(!reader ||
@@ -410,6 +435,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		urls,
 		...(preferMarkdown ? { preferMarkdown: true as const } : {}),
 		...(readerRawPolicy === undefined ? {} : { readerRawPolicy }),
+		...(readerVisibilityPolicy === undefined ? {} : { readerVisibilityPolicy }),
 		...(format === undefined ? {} : { format }),
 		...(tableMetadata ? { tableMetadata: true as const } : {}),
 		...(compactTables ? { compactTables: true as const } : {}),
@@ -437,6 +463,7 @@ export interface ResearchNavigationReport {
 	fragment?: ResearchFragmentReport;
 	admission?: ResearchAdmissionProvenance;
 	readerRawPolicy?: ResearchReaderRawPolicy;
+	readerVisibilityPolicy?: ResearchReaderVisibilityPolicy;
 	rateLimit?: {
 		kind: "http-rate-limit";
 		status: 429;
@@ -484,6 +511,7 @@ export interface ResearchNavigationReport {
 export interface ResearchExecutionOptions {
 	preferMarkdown?: boolean;
 	readerRawPolicy?: ResearchReaderRawPolicy;
+	readerVisibilityPolicy?: ResearchReaderVisibilityPolicy;
 	format?: "markdown" | "json";
 	tableMetadata?: boolean;
 	compactTables?: boolean;
@@ -517,6 +545,7 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 			"Invalid research execution options",
 		);
 	validateResearchReaderRawPolicy(options.readerRawPolicy);
+	validateResearchReaderVisibilityPolicy(options.readerVisibilityPolicy);
 }
 
 export async function researchNavigation(
@@ -538,6 +567,11 @@ export async function researchNavigation(
 			"invalid-input",
 			"Research reader raw policy requires the reader",
 		);
+	if (executionOptions.readerVisibilityPolicy !== undefined && reader !== true)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research reader visibility policy requires the reader",
+		);
 	const selectedDocumentProfile =
 		validateResearchDocumentProfile(documentProfile);
 	if (selectedDocumentProfile === "long-v1" && reader !== true)
@@ -554,6 +588,12 @@ export async function researchNavigation(
 		...(executionOptions.readerRawPolicy === undefined
 			? []
 			: ["--reader-raw-policy", executionOptions.readerRawPolicy]),
+		...(executionOptions.readerVisibilityPolicy === undefined
+			? []
+			: [
+					"--reader-visibility-policy",
+					executionOptions.readerVisibilityPolicy,
+				]),
 		...(executionOptions.format === undefined
 			? []
 			: ["--format", executionOptions.format]),
@@ -595,6 +635,9 @@ export async function researchNavigation(
 		...(validated.readerRawPolicy === undefined
 			? {}
 			: { readerRawPolicy: validated.readerRawPolicy }),
+		...(validated.readerVisibilityPolicy === undefined
+			? {}
+			: { readerVisibilityPolicy: validated.readerVisibilityPolicy }),
 		requestedUrl: reportUrl(validated.urls[0]),
 		finalUrl: null,
 		startedAt: new Date(started).toISOString(),
@@ -638,6 +681,7 @@ export async function researchNavigation(
 		stage = "rate-limit";
 		throw new AgentBrowserError("policy-denied", "Research rate limit reached");
 	};
+	let visibilityTitle: string | undefined;
 	try {
 		session = new BrowserSession({
 			createTransport: (cookieJar) => {
@@ -747,6 +791,53 @@ export async function researchNavigation(
 			loadDocument: (response, context) => {
 				stage = "loader";
 				if (!reader) return loadBrowserDocument(response, context);
+				if (validated.readerVisibilityPolicy !== undefined) {
+					const evidence = researchVisibilityEvidence(
+						response,
+						context,
+						validated.documentProfile,
+						validated.readerRawPolicy,
+						{
+							method: validated.headings
+								? "heading-outline"
+								: validated.section !== undefined
+									? "heading-section"
+									: validated.selector !== undefined
+										? "css-selector"
+										: "document",
+							target: validated.section ?? validated.selector,
+							format: validated.format ?? "markdown",
+							tableMetadata: validated.tableMetadata,
+							tableRows: validated.tableRows,
+							compactTables: validated.compactTables,
+							limits: {
+								maxBytes: researchRunLimits.extractionBytes,
+								maxNodes: 50_000,
+								maxDepth: 128,
+							},
+							headingLimits: admissionLimits?.headings,
+						},
+					);
+					visibilityTitle = evidence?.title;
+					const diagnostic = evidence?.diagnostic;
+					if (diagnostic) {
+						report.classification.diagnostic = diagnostic;
+						report.classification.barrier = diagnostic.kind;
+						report.outcome = "semantic-barrier";
+						stage = "semantic-barrier";
+						throw new AgentBrowserError(
+							"policy-denied",
+							"Research barrier requires user handoff",
+						);
+					}
+					return loadResearchDocument(
+						response,
+						context,
+						validated.documentProfile,
+						validated.readerRawPolicy,
+						validated.readerVisibilityPolicy,
+					);
+				}
 				if (validated.readerRawPolicy !== undefined)
 					return loadResearchDocument(
 						response,
@@ -801,13 +892,16 @@ export async function researchNavigation(
 		let root: string | undefined;
 		let sectionRoot: string | undefined;
 		stage = "document-classification";
-		const documentDiagnostic = classifyBrowserChallenge({
-			status,
-			headers: primaryHeaders,
-			url: primaryUrl,
-			title: documentTitle(tree),
-			text: researchDocumentDiagnosticText(tree),
-		});
+		const documentDiagnostic = classifyResearchVisibility(
+			{
+				status,
+				headers: primaryHeaders,
+				url: primaryUrl,
+				title: documentTitle(tree),
+				text: researchDocumentDiagnosticText(tree),
+			},
+			visibilityTitle,
+		);
 		if (documentDiagnostic) {
 			report.classification.diagnostic = documentDiagnostic;
 			report.classification.barrier = documentDiagnostic.kind;
@@ -850,16 +944,19 @@ export async function researchNavigation(
 					maxDepth: 128,
 				},
 			);
-			report.classification.diagnostic = classifyBrowserChallenge({
-				status,
-				headers: primaryHeaders,
-				url: primaryUrl,
-				title: documentTitle(tree),
-				text: outline.entries
-					.map((entry) => entry.title)
-					.join("\n")
-					.slice(0, researchRunLimits.diagnosticTextCodeUnits),
-			});
+			report.classification.diagnostic = classifyResearchVisibility(
+				{
+					status,
+					headers: primaryHeaders,
+					url: primaryUrl,
+					title: documentTitle(tree),
+					text: outline.entries
+						.map((entry) => entry.title)
+						.join("\n")
+						.slice(0, researchRunLimits.diagnosticTextCodeUnits),
+				},
+				visibilityTitle,
+			);
 			report.classification.barrier =
 				report.classification.diagnostic?.kind ?? null;
 			report.outcome = report.classification.barrier
@@ -903,13 +1000,16 @@ export async function researchNavigation(
 			maxNodes: 50_000,
 			maxDepth: 128,
 		});
-		report.classification.diagnostic = classifyBrowserChallenge({
-			status,
-			headers: primaryHeaders,
-			url: primaryUrl,
-			title: extraction.title,
-			text: researchExtractionDiagnosticText(extraction),
-		});
+		report.classification.diagnostic = classifyResearchVisibility(
+			{
+				status,
+				headers: primaryHeaders,
+				url: primaryUrl,
+				title: extraction.title,
+				text: researchExtractionDiagnosticText(extraction),
+			},
+			visibilityTitle,
+		);
 		report.classification.barrier =
 			report.classification.diagnostic?.kind ?? null;
 		if (report.classification.barrier) report.outcome = "semantic-barrier";
@@ -974,6 +1074,9 @@ export async function* researchBatch(
 					...(options.readerRawPolicy === undefined
 						? {}
 						: { readerRawPolicy: options.readerRawPolicy }),
+					...(options.readerVisibilityPolicy === undefined
+						? {}
+						: { readerVisibilityPolicy: options.readerVisibilityPolicy }),
 					format: options.format,
 					tableMetadata: options.tableMetadata,
 					compactTables: options.compactTables,
@@ -1102,7 +1205,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--capture-body] [--format markdown|json] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; raw policy requires reader; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1] [--capture-body] [--format markdown|json] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies require reader; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});

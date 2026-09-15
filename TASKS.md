@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: explicit source-hidden filtering and six more pages
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Add opt-in --reader-visibility-policy source-hidden-v1 without changing defaults,
+limits or dependencies. Omit explicit hidden/ARIA-hidden source subtrees, not
+CSS/inert content. Preserve literal MIME and legacy source accounting; carry
+policy through capture, replay, output-limit recovery and truthful notices.
+Use a same-budget unfiltered diagnostic tree, including requested selector,
+section, outline or link checks, and retain both titles for later classification.
+Hidden markers must not erase existing bounded challenge/login evidence. This adds HTML work,
+not a speedup or a budget bypass; the temporary tree closes before selected load.
+Six new page attempts: five nonempty content results, one Chrome404, seven GETs,
+zero retries and six verified captures with clean closure. Nine saved controls
+retain exact default output/normalized DOM/discovery. Selected PayPal loses twelve
+explicitly hidden intermediate digits; final spans survive and offline CLI/API
+agree. Office CSS-only config and Microsoft price placeholders remain unresolved.
+All 1,336 selected native tests pass, including 165 new; all 1,171 baseline statuses
+match. Build/format/lint pass. One unchanged baseline snapshot fixture type error
+remains; a separate 22-file strict check passes while keeping it in native runs.
+Review-driven barrier/accounting/metadata fixes, initial failed assertions and
+two corrected offline proof assumptions remain recorded. See
+the final independent static review alongside the native/live evidence in
+READER-SOURCE-VISIBILITY.md. A separate fresh public PayPal policy read returns
+HTTP200/11,547 Markdown bytes in one GET; its own offline replay matches. Its body
+differs from the older control; no cross-capture equality or offer validity is
+claimed. Total new live activity: seven navigations/eight GETs, no retries.
+No full native/runtime/interaction/device acceptance, research recommendation
+or push is claimed. Wider gates
+and the existing large-document/JS-shell/CSS visibility issues remain open.
+
 ### September 15: large-document whitespace design checkpoint
 
 **PROGRESS; overall browser goal remains ACTIVE. No production optimization.**

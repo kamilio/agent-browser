@@ -1087,7 +1087,12 @@ export function validateResearchOutputLimitSectionAdmission(
 		reader.partial !== true ||
 		reader.scripting !== false ||
 		reader.styling !== false ||
-		reader.hiddenContentSemantics !== false ||
+		(reader.hiddenContentSemantics !== false &&
+			!(
+				reader.hiddenContentSemantics === "source-attributes" &&
+				(reader.visibilityPolicy ?? report.readerVisibilityPolicy) ===
+					"source-hidden-v1"
+			)) ||
 		navigation.kind !== "document" ||
 		!boundedString(navigation.tabId, 4096) ||
 		!boundedString(navigation.documentRef, 4096) ||

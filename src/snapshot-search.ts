@@ -3,7 +3,7 @@ import { AgentBrowserError } from "./errors.js";
 import {
 	type ResearchReaderReport,
 	researchReaderInfo,
-	researchReaderNotice,
+	researchReaderNoticeFor,
 } from "./research-reader-info.js";
 import { compileSearchPattern } from "./search-pattern.js";
 import { renderSnapshotEntry, scanSnapshotEntries } from "./snapshot.js";
@@ -173,7 +173,7 @@ export function renderSnapshotSearch(search: SnapshotSearch): string {
 	const lines = [
 		`${search.matched} matching snapshot nodes${search.snapshotTruncated ? " (in a partial snapshot)" : ""}; ${search.matches.length} returned`,
 	];
-	if (search.reader) lines.unshift(researchReaderNotice);
+	if (search.reader) lines.unshift(researchReaderNoticeFor(search.reader));
 	for (const match of search.matches) {
 		lines.push(`\nPath: ${[...match.path, match.ref].join(" > ")}`);
 		for (const line of match.context)

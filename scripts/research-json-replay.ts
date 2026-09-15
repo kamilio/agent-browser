@@ -1,8 +1,5 @@
 import { types } from "node:util";
-import {
-	type BrowserChallengeDiagnostic,
-	classifyBrowserChallenge,
-} from "../src/browser-challenges.js";
+import type { BrowserChallengeDiagnostic } from "../src/browser-challenges.js";
 import { documentTitle } from "../src/document-title.js";
 import type { DocumentTree } from "../src/document.js";
 import { AgentBrowserError } from "../src/errors.js";
@@ -25,10 +22,13 @@ import { loadResearchDocument } from "../src/research-loader.js";
 import {
 	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
+	type ResearchReaderVisibilityPolicy,
 	researchReaderInfo,
 	validateResearchReaderRawPolicy,
+	validateResearchReaderVisibilityPolicy,
 } from "../src/research-reader-info.js";
 import { DocumentQueries, validateSelectorSyntax } from "../src/selectors.js";
+import type { DocumentLoaderContext } from "../src/session.js";
 import {
 	type ResearchBodyPin,
 	type ResearchOutputLimitSectionRecovery,
@@ -42,6 +42,10 @@ import {
 	researchDocumentDiagnosticText,
 	researchExtractionDiagnosticText,
 } from "./research-content.js";
+import {
+	classifyResearchVisibility,
+	researchVisibilityEvidence,
+} from "./research-visibility.js";
 
 export const researchJsonReplayLimits = Object.freeze({
 	maxSelectorCodeUnits: 4_096,
@@ -380,6 +384,47 @@ function replayRawPolicy(
 	return policy;
 }
 
+function replayVisibilityPolicy(
+	metadata: Readonly<Record<string, unknown>>,
+): ResearchReaderVisibilityPolicy | undefined {
+	const topDeclared = Object.hasOwn(metadata, "readerVisibilityPolicy");
+	const reader = metadata.reader;
+	const readerRecord =
+		reader !== null && typeof reader === "object" && !Array.isArray(reader)
+			? (reader as Record<string, unknown>)
+			: undefined;
+	const readerDeclared =
+		readerRecord !== undefined &&
+		Object.hasOwn(readerRecord, "visibilityPolicy");
+	const invalid = (): never => {
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid research replay visibility policy",
+		);
+	};
+	if (topDeclared && Object.hasOwn(metadata, "reader") && !readerRecord)
+		invalid();
+	let policy: ResearchReaderVisibilityPolicy | undefined;
+	for (const declaration of [
+		...(topDeclared ? [metadata.readerVisibilityPolicy] : []),
+		...(readerDeclared ? [readerRecord?.visibilityPolicy] : []),
+	]) {
+		const selected = validateResearchReaderVisibilityPolicy(declaration);
+		if (selected === undefined || (policy !== undefined && policy !== selected))
+			invalid();
+		policy = selected;
+	}
+	if (readerRecord?.hiddenContentSemantics === "source-attributes" && !policy)
+		invalid();
+	if (
+		!policy &&
+		readerRecord &&
+		Object.hasOwn(readerRecord, "sourceHiddenSubtrees")
+	)
+		invalid();
+	return policy;
+}
+
 function replayCheckpoint(signal?: AbortSignal) {
 	const started = performance.now();
 	return () => {
@@ -581,8 +626,16 @@ function extractValidatedReplayJson<
 	try {
 		checkpoint();
 		const rawPolicy = replayRawPolicy(admission.originalMetadata);
-		const policyArguments: [] | [ResearchReaderRawPolicy] =
-			rawPolicy === undefined ? [] : [rawPolicy];
+		const visibilityPolicy = replayVisibilityPolicy(admission.originalMetadata);
+		const policyArguments: [
+			ResearchReaderRawPolicy?,
+			ResearchReaderVisibilityPolicy?,
+		] =
+			visibilityPolicy !== undefined
+				? [rawPolicy, visibilityPolicy]
+				: rawPolicy === undefined
+					? []
+					: [rawPolicy];
 		const primary = admission.originalMetadata.primaryResponse as {
 			url: string;
 			status: number;
@@ -605,6 +658,22 @@ function extractValidatedReplayJson<
 			contentTypes?.length === 1
 				? contentTypes[0].split(";", 1)[0].trim().toLowerCase()
 				: undefined;
+		const originalReader = admission.originalMetadata.reader as
+			| Record<string, unknown>
+			| undefined;
+		if (
+			visibilityPolicy !== undefined &&
+			originalReader &&
+			(originalReader.hiddenContentSemantics !==
+				(mime === "text/html" ? "source-attributes" : false) ||
+				!Number.isSafeInteger(originalReader.sourceHiddenSubtrees) ||
+				(originalReader.sourceHiddenSubtrees as number) < 0 ||
+				(mime !== "text/html" && originalReader.sourceHiddenSubtrees !== 0))
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid research replay visibility semantics",
+			);
 		const textSelection =
 			selected.method === "text-lines" ||
 			selected.method === "text-line-discovery";
@@ -623,35 +692,58 @@ function extractValidatedReplayJson<
 			);
 		const reportedFinalUrl = parseNetworkUrl(primary.url).href;
 		const profile = admission.selectedProfile;
-		tree = loadResearchDocument(
-			{
-				url: reportedFinalUrl,
-				status: primary.status,
-				headers: primary.headers,
-				body: admission.body,
-				encodedBytes: primary.encodedBytes,
-				elapsedMs: primary.elapsedMs,
-				redirects: [],
+		const response: NetworkResponse = {
+			url: reportedFinalUrl,
+			status: primary.status,
+			headers: primary.headers,
+			body: admission.body,
+			encodedBytes: primary.encodedBytes,
+			elapsedMs: primary.elapsedMs,
+			redirects: [],
+		};
+		const context: DocumentLoaderContext = {
+			tabId: "research-json-replay",
+			signal: signal ?? new AbortController().signal,
+			limits:
+				profile === "long-v1"
+					? researchLongDocumentAdmission.document
+					: {
+							maxNodes: 50_000,
+							maxDepth: 128,
+							maxTextCodeUnits: 2_000_000,
+							maxChanges: 1_024,
+						},
+			initializeDocument: (document) => {
+				tree = document;
 			},
-			{
-				tabId: "research-json-replay",
-				signal: signal ?? new AbortController().signal,
-				limits:
-					profile === "long-v1"
-						? researchLongDocumentAdmission.document
-						: {
-								maxNodes: 50_000,
-								maxDepth: 128,
-								maxTextCodeUnits: 2_000_000,
-								maxChanges: 1_024,
-							},
-				initializeDocument: (document) => {
-					tree = document;
-				},
-			},
-			profile,
-			...policyArguments,
-		);
+		};
+		const visibilityEvidence =
+			visibilityPolicy === undefined
+				? undefined
+				: researchVisibilityEvidence(response, context, profile, rawPolicy, {
+						method:
+							selected.method === "text-lines" ||
+							selected.method === "text-line-discovery"
+								? "document"
+								: selected.method,
+						target: "target" in selected ? selected.target : undefined,
+						format,
+						tableMetadata:
+							"tableMetadata" in selected ? selected.tableMetadata : undefined,
+						tableRows: "tableRows" in selected ? selected.tableRows : undefined,
+						limits: {
+							maxBytes: researchJsonReplayLimits.maxExtractionBytes,
+							maxNodes: researchJsonReplayLimits.maxNodes,
+							maxDepth: researchJsonReplayLimits.maxDepth,
+						},
+					});
+		if (visibilityEvidence?.diagnostic)
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Unfiltered research source requires user handoff",
+			);
+		checkpoint();
+		tree = loadResearchDocument(response, context, profile, ...policyArguments);
 		checkpoint();
 		const report: ResearchJsonReplayReport<Format> & Extra = {
 			kind: "native-research-json-replay-v1",
@@ -672,13 +764,16 @@ function extractValidatedReplayJson<
 		};
 		const title = documentTitle(tree);
 		const classify = (text: string) => {
-			const diagnostic = classifyBrowserChallenge({
-				status: primary.status,
-				headers: primary.headers,
-				url: reportedFinalUrl,
-				title,
-				text,
-			});
+			const diagnostic = classifyResearchVisibility(
+				{
+					status: primary.status,
+					headers: primary.headers,
+					url: reportedFinalUrl,
+					title,
+					text,
+				},
+				visibilityEvidence?.title,
+			);
 			report.classification = { barrier: diagnostic?.kind ?? null, diagnostic };
 			if (diagnostic) {
 				report.outcome = "semantic-barrier";

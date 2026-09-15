@@ -869,5 +869,7 @@
   "src/document-markdown-outline.test.ts",
   "src/research-output-limit-selector.test.ts",
   "src/extraction-block-links.test.ts",
-  "src/research-block-links.test.ts"
+  "src/research-block-links.test.ts",
+  "src/research-reader-visibility.test.ts",
+  "src/research-visibility-policy.test.ts"
 ]

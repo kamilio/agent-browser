@@ -14,7 +14,7 @@ import { htmlParseInfo } from "./html-info.js";
 import {
 	type ResearchReaderReport,
 	researchReaderInfo,
-	researchReaderNotice,
+	researchReaderNoticeFor,
 } from "./research-reader-info.js";
 import { isInertRoot } from "./inertness.js";
 import { summaryDetails } from "./details.js";
@@ -677,7 +677,8 @@ export function renderSnapshot(
 					: "# HTML partial; JS off\n",
 			]
 		: [];
-	if (snapshot.reader) lines.unshift(`${researchReaderNotice}\n`);
+	if (snapshot.reader)
+		lines.unshift(`${researchReaderNoticeFor(snapshot.reader)}\n`);
 	let bytes = encoder.encode(lines.join("")).byteLength;
 	const markerBytes = encoder.encode(marker).byteLength;
 	if (

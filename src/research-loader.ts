@@ -28,9 +28,11 @@ import {
 import {
 	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
+	type ResearchReaderVisibilityPolicy,
 	researchReaderProfile,
 	setResearchReaderInfo,
 	validateResearchReaderRawPolicy,
+	validateResearchReaderVisibilityPolicy,
 } from "./research-reader-info.js";
 import {
 	type ResourceLimitKind,
@@ -90,6 +92,33 @@ const reconstructableFormatting = new Set(
 const tableCells = new Set(["td", "th"]);
 const tableSections = new Set(["tbody", "thead", "tfoot"]);
 const listContainers = new Set(["ul", "ol", "menu"]);
+const paragraphClosers = new Set(
+	"address article aside blockquote details dialog div dl fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 header hgroup hr li main menu nav ol p pre search section table ul dd dt".split(
+		" ",
+	),
+);
+
+function closeSourceHiddenImpliedEnds(
+	skipped: string[],
+	open: string[],
+	name: string,
+	start: boolean,
+) {
+	if (skipped.some((ancestor) => ancestor === "svg" || ancestor === "math"))
+		return;
+	const parent = () => skipped.at(-2) ?? open.at(-1);
+	if (
+		skipped.at(-1) === "p" &&
+		((start && paragraphClosers.has(name)) || (!start && name === parent()))
+	)
+		skipped.pop();
+	if (
+		skipped.at(-1) === "li" &&
+		((start && name === "li") ||
+			(!start && listContainers.has(name) && name === parent()))
+	)
+		skipped.pop();
+}
 
 function discardableRaw(name: string): name is HtmlDiscardRawName {
 	return (
@@ -143,8 +172,11 @@ export function sanitizeResearchHtml(
 	signal?: AbortSignal,
 	profile?: ResearchDocumentProfileId,
 	rawPolicy?: ResearchReaderRawPolicy,
+	visibilityPolicy?: ResearchReaderVisibilityPolicy,
 ) {
 	const selectedRawPolicy = validateResearchReaderRawPolicy(rawPolicy);
+	const selectedVisibilityPolicy =
+		validateResearchReaderVisibilityPolicy(visibilityPolicy);
 	const readerLimits =
 		validateResearchDocumentProfile(profile) === "long-v1"
 			? researchLongDocumentAdmission.reader
@@ -182,6 +214,13 @@ export function sanitizeResearchHtml(
 		scripting: false,
 		styling: false,
 		hiddenContentSemantics: false,
+		...(selectedVisibilityPolicy
+			? {
+					visibilityPolicy: selectedVisibilityPolicy,
+					sourceHiddenSubtrees: 0,
+					hiddenContentSemantics: "source-attributes" as const,
+				}
+			: {}),
 		sourceCodeUnits: source.length,
 		textCodeUnits: 0,
 		outputCodeUnits: 0,
@@ -216,6 +255,8 @@ export function sanitizeResearchHtml(
 	const output: string[] = [];
 	const skipped: string[] = [];
 	const open: string[] = [];
+	let sourceHiddenOmission = false;
+	let legacyOmittedDepth = 0;
 	const emit = (value: string) => {
 		report.outputCodeUnits += value.length;
 		check("reader.output", limits.maxOutputCodeUnits, report.outputCodeUnits);
@@ -226,7 +267,7 @@ export function sanitizeResearchHtml(
 		check("reader.text", limits.maxTextCodeUnits, report.textCodeUnits);
 		if (!omit) emit(escapeHtml(value));
 	};
-	const omitRaw = (name: string) => {
+	const omitRaw = (name: string, entities = false) => {
 		if (omittedRaw && discardableRaw(name)) {
 			const discarded = tokenizer.discardRaw(name, (units) => {
 				omittedRaw.workUnits += units;
@@ -239,10 +280,27 @@ export function sanitizeResearchHtml(
 			omittedRaw.codeUnits += discarded.discardedCodeUnits;
 			omittedRaw.steps += discarded.steps;
 			omittedRaw.elements++;
-		} else text(tokenizer.raw(name) ?? "", true);
+		} else
+			text(
+				(entities ? tokenizer.raw(name, true) : tokenizer.raw(name)) ?? "",
+				true,
+			);
 	};
 	for (let token = nextToken(); token; token = nextToken()) {
 		check("reader.tokens", limits.maxTokens, ++report.tokens);
+		if (
+			sourceHiddenOmission &&
+			(token.kind === "start" || token.kind === "end")
+		) {
+			closeSourceHiddenImpliedEnds(
+				skipped,
+				open,
+				token.name,
+				token.kind === "start",
+			);
+			if (skipped.length < legacyOmittedDepth) legacyOmittedDepth = 0;
+			if (!skipped.length) sourceHiddenOmission = false;
+		}
 		const omitting = skipped.length > 0;
 		if (omitting) report.omittedTokens++;
 		if (token.kind === "text") {
@@ -254,6 +312,48 @@ export function sanitizeResearchHtml(
 			continue;
 		}
 		const { name } = token;
+		if (omitting && sourceHiddenOmission) {
+			if (token.kind === "end") {
+				if (skipped.at(-1) !== name)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Malformed source-hidden reader subtree",
+					);
+				skipped.pop();
+				if (skipped.length < legacyOmittedDepth) legacyOmittedDepth = 0;
+				if (!skipped.length) sourceHiddenOmission = false;
+			} else {
+				if (legacyOmittedDepth === 0) {
+					const alternative =
+						name === "math" ? token.attributes.alttext : undefined;
+					if (alternative?.trim()) text(alternative, true);
+					const description =
+						name === "meta" &&
+						[...open, ...skipped].every(
+							(ancestor) => ancestor === "html" || ancestor === "head",
+						)
+							? descriptionMeta(token.attributes)
+							: undefined;
+					if (description) text(description.content, true);
+				}
+				const foreignEmpty =
+					token.selfClosing &&
+					(["svg", "math"].includes(name) ||
+						skipped.some(
+							(ancestor) => ancestor === "svg" || ancestor === "math",
+						));
+				if (!voidTags.has(name) && !foreignEmpty) {
+					skipped.push(name);
+					if (legacyOmittedDepth === 0 && omittedTags.has(name))
+						legacyOmittedDepth = skipped.length;
+					check("reader.depth", limits.maxDepth, open.length + skipped.length);
+					if (rawTags.has(name))
+						omitRaw(name, name === "title" && legacyOmittedDepth === 0);
+					else if (name === "plaintext") text(tokenizer.remainder(), true);
+				}
+			}
+			continue;
+		}
 		if (omitting) {
 			if (
 				token.kind === "start" &&
@@ -284,13 +384,18 @@ export function sanitizeResearchHtml(
 			}
 			continue;
 		}
+		const sourceHidden =
+			selectedVisibilityPolicy !== undefined &&
+			token.kind === "start" &&
+			(Object.hasOwn(token.attributes, "hidden") ||
+				token.attributes["aria-hidden"]?.toLowerCase() === "true");
 		const description =
 			token.kind === "start" &&
 			name === "meta" &&
 			open.every((ancestor) => ancestor === "html" || ancestor === "head")
 				? descriptionMeta(token.attributes)
 				: undefined;
-		if (description) {
+		if (description && !sourceHidden) {
 			report.textCodeUnits += description.content.length;
 			check("reader.text", limits.maxTextCodeUnits, report.textCodeUnits);
 			emit(
@@ -299,26 +404,45 @@ export function sanitizeResearchHtml(
 			report.ignoredAttributes += Object.keys(token.attributes).length - 2;
 			continue;
 		}
-		if (omittedTags.has(name)) {
+		if (sourceHidden || omittedTags.has(name)) {
 			report.omittedTokens++;
 			if (token.kind === "start") {
+				if (sourceHidden) {
+					report.sourceHiddenSubtrees = (report.sourceHiddenSubtrees ?? 0) + 1;
+					if (description) text(description.content, true);
+				}
 				omittedSubtrees[name] = (omittedSubtrees[name] ?? 0) + 1;
 				const alternative =
 					name === "math" && Object.hasOwn(token.attributes, "alttext")
 						? token.attributes.alttext
 						: undefined;
 				if (alternative?.trim()) {
-					emit("<code>MathML source: ");
-					text(alternative, false);
-					emit("</code>");
-					mathAlternatives.elements++;
-					mathAlternatives.codeUnits += alternative.length;
+					if (!sourceHidden) emit("<code>MathML source: ");
+					text(alternative, sourceHidden);
+					if (!sourceHidden) {
+						emit("</code>");
+						mathAlternatives.elements++;
+						mathAlternatives.codeUnits += alternative.length;
+					}
 				}
 				const foreignEmpty =
 					token.selfClosing && ["svg", "math"].includes(name);
-				if (!voidTags.has(name) && !foreignEmpty) {
+				if (sourceHidden && name === "plaintext") {
+					check("reader.depth", limits.maxDepth, open.length + 1);
+					text(tokenizer.remainder(), true);
+				} else if (!voidTags.has(name) && !foreignEmpty) {
 					skipped.push(name);
-					if (rawTags.has(name)) omitRaw(name);
+					if (sourceHidden) {
+						sourceHiddenOmission = true;
+						legacyOmittedDepth = omittedTags.has(name) ? skipped.length : 0;
+						check(
+							"reader.depth",
+							limits.maxDepth,
+							open.length + skipped.length,
+						);
+					}
+					if (rawTags.has(name))
+						omitRaw(name, sourceHidden && name === "title");
 				}
 			}
 			continue;
@@ -439,8 +563,11 @@ export function loadResearchDocument(
 	context: DocumentLoaderContext,
 	profile?: ResearchDocumentProfileId,
 	rawPolicy?: ResearchReaderRawPolicy,
+	visibilityPolicy: ResearchReaderVisibilityPolicy | undefined = undefined,
 ): DocumentTree {
 	const selectedRawPolicy = validateResearchReaderRawPolicy(rawPolicy);
+	const selectedVisibilityPolicy =
+		validateResearchReaderVisibilityPolicy(visibilityPolicy);
 	const selectedProfile = validateResearchDocumentProfile(profile);
 	const readerLimits =
 		selectedProfile === "long-v1"
@@ -488,6 +615,8 @@ export function loadResearchDocument(
 			decoded.text.length,
 			"Decoded reader limit exceeded",
 		);
+	const visibilityArguments: [ResearchReaderVisibilityPolicy?] =
+		selectedVisibilityPolicy ? [selectedVisibilityPolicy] : [];
 	const sanitized = sanitizeResearchHtml(
 		html ? decoded.text : "",
 		{
@@ -512,6 +641,7 @@ export function loadResearchDocument(
 		context.signal,
 		selectedProfile,
 		selectedRawPolicy,
+		...visibilityArguments,
 	);
 	const inertContext = {
 		limits: selectedLimits ?? context.limits,
@@ -530,6 +660,7 @@ export function loadResearchDocument(
 		encoding: decoded.encoding,
 		...(!html
 			? {
+					hiddenContentSemantics: false as const,
 					sourceCodeUnits: decoded.text.length,
 					textCodeUnits: decoded.text.length,
 				}
