@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: recover Zoom content without exposing omitted templates
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+The actual native loader now reproduces the saved Zoom HTTP-200 failure, which
+the previous increment had only statically diagnosed. Repeated direct paragraph
+starts inside an omitted template left an extra paragraph on the stack, causing a
+`Malformed omitted reader subtree` error. The reader closes one directly open
+HTML paragraph on the next p start, excluding SVG/MathML ancestry. Template
+content stays omitted; strict unrelated boundaries, real nesting and all existing
+resource limits remain. No runtime option or dependency is added.
+The same pinned 300,329-byte capture now yields 29,997 bytes of whole-page Markdown
+and 9,888 bytes from its unique #main, with six selected H1/H2 elements. This is
+partial/unverified content, not full source, rendering, interaction or site success.
+Five tokenizer issues remain. Both templates stay omitted. Two guarded offline
+native children reproduce before/after behavior through direct loading and an
+explicitly injected-response research pipeline; zero HTTP requests and clean
+process/tree/transport closure. The original live failure remains unchanged and
+failed-receipt replay admission is not broadened.
+All 1,546 tests across 23 selected native files pass, including 48 new cases;
+all 1,498 original case statuses match. Build/types/format/lint pass. The first
+new-test formatting failure is preserved, and its production output is byte-equal
+to the corrected candidate. Only research-loader production artifacts change.
+See `OMITTED-PARAGRAPHS.md` and `reports/zoom-reader-recovery-2026-09-15.json`.
+Next: LinkedIn barrier detection, shell/useful-content reporting, hidden startup
+configuration and precise response/redirect/HTTP-failure diagnostics. Full native
+release, research conclusions, runtime/rendering/interaction and separately gated
+SafeJS, service/socket, TTY/PTY, credentials and passkey-device acceptance remain
+open. Original work and historical website evidence stay preserved.
+
 ### September 15: attempt every entry in a published top-100 website list
 
 **PROGRESS; overall browser goal remains ACTIVE.**

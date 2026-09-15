@@ -255,6 +255,13 @@ export function sanitizeResearchHtml(
 		const { name } = token;
 		if (omitting) {
 			if (
+				token.kind === "start" &&
+				name === "p" &&
+				skipped.at(-1) === "p" &&
+				!skipped.some((ancestor) => ancestor === "svg" || ancestor === "math")
+			)
+				skipped.pop();
+			if (
 				skipped.at(-1) === "li" &&
 				listContainers.has(skipped.at(-2) ?? "") &&
 				((token.kind === "start" && name === "li") ||
