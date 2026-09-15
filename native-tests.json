@@ -916,5 +916,6 @@
 	"src/node-https-redirect-policy.test.ts",
 	"src/research-https-redirect-cli.test.ts",
 	"src/rustdoc-code-gutters.test.ts",
-	"src/github-source-lines.test.ts"
+	"src/github-source-lines.test.ts",
+	"src/research-source-products.test.ts"
 ]

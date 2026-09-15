@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: consumer detail content and inert product descriptions
+
+- Four source-linked detail pages checked with the native browser: Target,
+  Ulta, App Store and Cambridge Dictionary. Three supply useful task text;
+  Target initially supplies identity/variant UI but lacks description content.
+  Keep the original 100-page results and citation-proxy qualification unchanged.
+- Recover bounded Target product descriptions from route-matched inert Next.js
+  JSON as `sourceProducts`, never as rendered DOM or verified product facts.
+  Separate route product from three variants; retain literal HTML-source strings,
+  explicit normalized UTF-16 offsets and JSON paths. No prices/session state,
+  API calls, scripts, dependency additions or selected-variant inference.
+- 80 new regressions pass. Selected baseline 1198/0 and candidate 1278/0 across
+  19 files; identical tests with old production 1252/26 expected red.
+  Build/types/format/lint pass; not the full 919-file manifest or actual SDK.
+- Four saved Markdown outputs and reader reports remain unchanged; 33 offline
+  documents close. Target gains 26,865 bytes of bounded source metadata. Local
+  timing medians 27.02/28.02ms include assertions/cleanup, not a speed claim.
+- Fresh post-fix Target independently confirms all included source fields:
+  four product records, three descriptions. Five total navigations/HTTPS GETs/
+  captures; all observed closures verified, zero retries or credentials/scripts.
+- Broader source shapes, navigation/dialog noise, duplicate content, JS-only
+  pages, access barriers and SDK/interactive/credential/passkey gates remain.
+  See `SOURCE-PRODUCTS.md` and consumer-content-tasks September 15 reports.
+
 ### September 15: GitHub code fidelity and complete-source recovery
 
 - Recognize bounded GitHub SSR source layouts; preserve code indentation, blank

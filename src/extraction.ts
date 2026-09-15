@@ -56,6 +56,11 @@ import {
 	researchSourceAccess,
 } from "./research-source-access.js";
 import {
+	type ResearchSourceProducts,
+	fitResearchSourceProducts,
+	researchSourceProducts,
+} from "./research-source-products.js";
+import {
 	type DocumentFeeds,
 	documentFeeds,
 	fitDocumentFeeds,
@@ -206,6 +211,7 @@ interface ExtractionMetadata {
 	sourceAlternates?: DocumentAlternates;
 	sourceDataTables?: ResearchSourceDataTables;
 	sourceAccess?: ResearchSourceAccess;
+	sourceProducts?: ResearchSourceProducts;
 	sourceFeeds?: DocumentFeeds;
 	sourceMarkdown?: MarkdownSourceOutline;
 	sourceCodeGutters?: Readonly<{
@@ -1528,13 +1534,26 @@ export function extractDocument(
 			}
 		}
 	}
+	const products = researchSourceProducts(tree);
 	const feeds = documentFeeds(tree);
 	if (feeds) {
 		const remaining =
 			maxBytes - outputBytes - encoder.encode(',"sourceFeeds":').byteLength;
 		if (remaining >= 0) {
 			const sourceFeeds = fitDocumentFeeds(feeds, remaining);
-			if (sourceFeeds) return { ...result, sourceFeeds };
+			if (sourceFeeds) {
+				if (!products) return { ...result, sourceFeeds };
+				result = { ...result, sourceFeeds };
+				outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
+			}
+		}
+	}
+	if (products) {
+		const remaining =
+			maxBytes - outputBytes - encoder.encode(',"sourceProducts":').byteLength;
+		if (remaining >= 0) {
+			const sourceProducts = fitResearchSourceProducts(products, remaining);
+			if (sourceProducts) return { ...result, sourceProducts };
 		}
 	}
 	return result;

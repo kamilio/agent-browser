@@ -33,6 +33,12 @@ import {
 	setResearchSourceAccess,
 } from "./research-source-access.js";
 import {
+	type TargetProductRoute,
+	ResearchSourceProductsCollector,
+	setResearchSourceProducts,
+	targetProductRoute,
+} from "./research-source-products.js";
+import {
 	type ResearchReaderMimePolicy,
 	markdownHtmlDocumentPrefix,
 	validateResearchReaderMimePolicy,
@@ -224,6 +230,7 @@ export function sanitizeResearchHtml(
 	profile?: ResearchDocumentProfileId,
 	rawPolicy?: ResearchReaderRawPolicy,
 	visibilityPolicy?: ResearchReaderVisibilityPolicy,
+	productRoute?: TargetProductRoute,
 ) {
 	const selectedRawPolicy = validateResearchReaderRawPolicy(rawPolicy);
 	const selectedVisibilityPolicy =
@@ -320,6 +327,7 @@ export function sanitizeResearchHtml(
 	let legacyOmittedDepth = 0;
 	let sourceTables: ResearchSourceDataTableCollector | undefined;
 	let sourceAccess: ResearchSourceAccessCollector | undefined;
+	let sourceProducts: ResearchSourceProductsCollector | undefined;
 	const emit = (value: string) => {
 		report.outputCodeUnits += value.length;
 		check("reader.output", limits.maxOutputCodeUnits, report.outputCodeUnits);
@@ -547,6 +555,26 @@ export function sanitizeResearchHtml(
 								tokenStart,
 							);
 						}
+						if (
+							productRoute !== undefined &&
+							name === "script" &&
+							!sourceHidden &&
+							!open.includes("noscript") &&
+							token.attributes.id === "__NEXT_DATA__" &&
+							token.attributes.type?.trim().toLowerCase() ===
+								"application/json" &&
+							!Object.hasOwn(token.attributes, "src")
+						) {
+							sourceProducts ??= new ResearchSourceProductsCollector(
+								productRoute,
+							);
+							sourceProducts.add(
+								normalizedSource,
+								rawStart,
+								tokenizer.position,
+								tokenStart,
+							);
+						}
 					}
 				}
 			}
@@ -642,10 +670,12 @@ export function sanitizeResearchHtml(
 		);
 	const sourceDataTables = sourceTables?.finish();
 	const access = sourceAccess?.finish();
+	const products = sourceProducts?.finish();
 	return {
 		html: output.join(""),
 		...(sourceDataTables ? { sourceDataTables } : {}),
 		...(access ? { sourceAccess: access } : {}),
+		...(products ? { sourceProducts: products } : {}),
 		report: Object.freeze({
 			...report,
 			...(mathAlternatives.elements
@@ -760,8 +790,18 @@ export function loadResearchDocument(
 					prefixCodeUnits,
 				});
 	const effectiveHtml = html || mimeInterpretation !== undefined;
-	const visibilityArguments: [ResearchReaderVisibilityPolicy?] =
-		selectedVisibilityPolicy ? [selectedVisibilityPolicy] : [];
+	const productRoute = effectiveHtml
+		? targetProductRoute(response.url)
+		: undefined;
+	const visibilityArguments: [
+		ResearchReaderVisibilityPolicy?,
+		TargetProductRoute?,
+	] =
+		productRoute !== undefined
+			? [selectedVisibilityPolicy, productRoute]
+			: selectedVisibilityPolicy
+				? [selectedVisibilityPolicy]
+				: [];
 	const sanitized = sanitizeResearchHtml(
 		effectiveHtml ? decoded.text : "",
 		{
@@ -822,6 +862,8 @@ export function loadResearchDocument(
 		setResearchSourceDataTables(tree, sanitized.sourceDataTables);
 	if (effectiveHtml && sanitized.sourceAccess)
 		setResearchSourceAccess(tree, sanitized.sourceAccess);
+	if (effectiveHtml && sanitized.sourceProducts)
+		setResearchSourceProducts(tree, sanitized.sourceProducts);
 	const info = htmlParseInfo(tree);
 	if (info) setHtmlParseInfo(tree, { ...info, encoding: decoded.encoding });
 	return tree;
