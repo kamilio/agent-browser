@@ -89,6 +89,17 @@ export interface ResearchOutputLimitSectionSelection {
 	tableRows?: boolean;
 }
 
+export interface ResearchOutputLimitSelectorSelection {
+	selector: string;
+	tableMetadata?: boolean;
+	tableRows?: boolean;
+}
+
+export type ResearchOutputLimitSelectorRecovery = Omit<
+	ResearchOutputLimitSectionRecovery,
+	"kind"
+> & { readonly kind: "captured-output-limit-selector" };
+
 export type ResearchOutputLimitOutlineRecovery = Omit<
 	ResearchOutputLimitSectionRecovery,
 	"kind"
@@ -138,6 +149,7 @@ export interface ResearchJsonReplayReport<
 	textLines?: DocumentTextLineDiscovery;
 	recovery?:
 		| ResearchOutputLimitSectionRecovery
+		| ResearchOutputLimitSelectorRecovery
 		| ResearchOutputLimitOutlineRecovery;
 }
 
@@ -161,6 +173,14 @@ export interface ResearchOutputLimitOutlineExtraction
 	extends ResearchJsonReplayExtraction {
 	report: ResearchJsonReplayReport & {
 		recovery: ResearchOutputLimitOutlineRecovery;
+	};
+}
+
+export interface ResearchOutputLimitSelectorExtraction<
+	Format extends ResearchReplayFormat = "json",
+> extends ResearchJsonReplayExtraction<Format> {
+	report: ResearchJsonReplayReport<Format> & {
+		recovery: ResearchOutputLimitSelectorRecovery;
 	};
 }
 
@@ -465,6 +485,53 @@ export function recoverResearchOutputLimitSection(
 		checkpoint,
 		signal,
 		{ recovery: admission.recovery },
+		selectedFormat,
+	);
+}
+
+export function recoverResearchOutputLimitSelector<
+	Format extends ResearchReplayFormat,
+>(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchOutputLimitSelectorSelection,
+	signal: AbortSignal | undefined,
+	format: Format,
+): ResearchOutputLimitSelectorExtraction<Format>;
+export function recoverResearchOutputLimitSelector(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchOutputLimitSelectorSelection,
+	signal?: AbortSignal,
+): ResearchOutputLimitSelectorExtraction;
+export function recoverResearchOutputLimitSelector(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchOutputLimitSelectorSelection,
+	signal?: AbortSignal,
+	format: ResearchReplayFormat = "json",
+): ResearchOutputLimitSelectorExtraction<ResearchReplayFormat> {
+	const checkpoint = replayCheckpoint(signal);
+	checkpoint();
+	const selected = selectionSnapshot(selection);
+	if (selected.method !== "css-selector") invalidSelection();
+	const selectedFormat = validateReplayFormat(format, selected);
+	checkpoint();
+	const admission = validateResearchOutputLimitSectionAdmission(
+		rawReceipt,
+		trusted,
+	);
+	return extractValidatedReplayJson(
+		admission,
+		selected,
+		checkpoint,
+		signal,
+		{
+			recovery: {
+				...admission.recovery,
+				kind: "captured-output-limit-selector" as const,
+			},
+		},
 		selectedFormat,
 	);
 }

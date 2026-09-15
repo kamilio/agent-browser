@@ -866,5 +866,6 @@
   "src/document-descriptions.test.ts",
   "src/research-descriptions.test.ts",
   "src/markdown-source-outline.test.ts",
-  "src/document-markdown-outline.test.ts"
+  "src/document-markdown-outline.test.ts",
+  "src/research-output-limit-selector.test.ts"
 ]

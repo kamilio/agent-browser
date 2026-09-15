@@ -12,6 +12,7 @@ import {
 	extractResearchReplayJson,
 	outlineResearchOutputLimitCapture,
 	recoverResearchOutputLimitSection,
+	recoverResearchOutputLimitSelector,
 	researchJsonReplayLimits,
 } from "./research-json-replay.js";
 
@@ -22,7 +23,7 @@ export const researchReplayCliLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--table-metadata] [--table-rows] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --section or --headings. Markdown requires selector/section extraction without table metadata or literal --lines extraction. Table rows require explicit Markdown. Headings require recovery and do not accept table metadata. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
+	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--table-metadata] [--table-rows] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --selector, --section or --headings. Markdown requires selector/section extraction without table metadata or literal --lines extraction. Table rows require explicit Markdown. Headings require recovery and do not accept table metadata. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
 
 function invalidArguments(): never {
 	throw new AgentBrowserError(
@@ -134,7 +135,10 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		};
 	}
 	const mode = modes[0];
-	if (recoverOutputLimit && (profile !== "default" || mode !== "--section"))
+	if (
+		recoverOutputLimit &&
+		(profile !== "default" || (mode !== "--section" && mode !== "--selector"))
+	)
 		invalidArguments();
 	const target = fields.get(mode);
 	if (mode === "--find" || mode === "--lines") {
@@ -367,23 +371,33 @@ export async function runResearchReplayCli(
 				controller.signal,
 			);
 		} else if (options.recoverOutputLimit) {
-			const section = options.selection.section;
-			if (section === undefined) invalidArguments();
-			result = recoverResearchOutputLimitSection(
-				receipt,
-				options.trusted,
-				{
-					section,
-					...(options.selection.tableMetadata === undefined
-						? {}
-						: { tableMetadata: options.selection.tableMetadata }),
-					...(options.selection.tableRows === undefined
-						? {}
-						: { tableRows: options.selection.tableRows }),
-				},
-				controller.signal,
-				options.format ?? "json",
-			);
+			const metadata = {
+				...(options.selection.tableMetadata === undefined
+					? {}
+					: { tableMetadata: options.selection.tableMetadata }),
+				...(options.selection.tableRows === undefined
+					? {}
+					: { tableRows: options.selection.tableRows }),
+			};
+			if (options.selection.selector !== undefined) {
+				result = recoverResearchOutputLimitSelector(
+					receipt,
+					options.trusted,
+					{ selector: options.selection.selector, ...metadata },
+					controller.signal,
+					options.format ?? "json",
+				);
+			} else {
+				const section = options.selection.section;
+				if (section === undefined) invalidArguments();
+				result = recoverResearchOutputLimitSection(
+					receipt,
+					options.trusted,
+					{ section, ...metadata },
+					controller.signal,
+					options.format ?? "json",
+				);
+			}
 		} else {
 			result = extractResearchReplayJson(
 				receipt,

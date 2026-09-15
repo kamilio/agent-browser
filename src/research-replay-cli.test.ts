@@ -188,6 +188,16 @@ function argumentsFor(value: Fixture, selection = ["--selector", "#owned"]) {
 	];
 }
 
+async function outputLimitSelectorFixture() {
+	const destination = `https://example.com/${"x".repeat(4096)}`;
+	return fixture(
+		`<main id="owned"><h1></h1><p>Readable saved introduction.</p><table><tr><th>Item</th><th>Value</th></tr><tr><td>Owned row</td><td>42</td></tr></table></main><h2>References</h2><p>${`<a href="${destination}">Reference</a>`.repeat(70)}</p>`,
+		"default",
+		true,
+		false,
+	);
+}
+
 function revised(
 	value: Fixture,
 	mutate: (report: ResearchNavigationReport) => void,
@@ -302,8 +312,17 @@ describe("bounded replay CLI arguments", () => {
 	);
 
 	it.each([
-		[...parserArgs, "--recover-output-limit"],
+		[
+			...replaceFlag(parserArgs, "--expected-profile", "long-v1"),
+			"--recover-output-limit",
+		],
 		[...parserArgs.slice(0, 8), "--links", "owned", "--recover-output-limit"],
+		[...parserArgs.slice(0, 8), "--find", "owned", "--recover-output-limit"],
+		[...parserArgs.slice(0, 8), "--lines", "1:2", "--recover-output-limit"],
+		[...parserArgs, "--recover-output-limit", "--headings"],
+		[...parserArgs, "--recover-output-limit", "--section", "#owned"],
+		[...parserArgs, "--recover-output-limit", "--selector", "main"],
+		[...parserArgs, "--recover-output-limit", "--recover-output-limit"],
 		[
 			...replaceFlag(parserArgs.slice(0, 8), "--expected-profile", "long-v1"),
 			"--section",
@@ -325,11 +344,68 @@ describe("bounded replay CLI arguments", () => {
 			"true",
 		],
 	])(
-		"rejects recovery outside one explicit default-profile section: %j",
+		"rejects recovery outside one explicit default-profile selector, section or outline: %j",
 		(...args) => {
 			expect(() => parseResearchReplayArguments(args)).toThrow(
 				expect.objectContaining({ code: "invalid-input" }),
 			);
+		},
+	);
+
+	it.each([
+		{ flags: [], selection: { selector: "#owned" } },
+		{
+			flags: ["--table-metadata", "--format", "json"],
+			selection: { selector: "#owned", tableMetadata: true },
+			format: "json",
+		},
+		{
+			flags: ["--format", "markdown"],
+			selection: { selector: "#owned" },
+			format: "markdown",
+		},
+		{
+			flags: ["--table-rows", "--format", "markdown"],
+			selection: { selector: "#owned", tableRows: true },
+			format: "markdown",
+		},
+	])("accepts explicit output-limit selector recovery %#", (options) => {
+		const args = Object.freeze([
+			"--recover-output-limit",
+			...parserArgs,
+			...options.flags,
+		]);
+		expect(parseResearchReplayArguments(args)).toMatchObject({
+			recoverOutputLimit: true,
+			selection: options.selection,
+			...(options.format === undefined ? {} : { format: options.format }),
+		});
+	});
+
+	it.each([
+		["--table-rows"],
+		["--table-rows", "--format", "json"],
+		["--table-metadata", "--format", "markdown"],
+		["--format", "text"],
+	])("retains selector recovery format constraints %j", (...flags) => {
+		expect(() =>
+			parseResearchReplayArguments([
+				...parserArgs,
+				"--recover-output-limit",
+				...flags,
+			]),
+		).toThrowError(expect.objectContaining({ code: "invalid-input" }));
+	});
+
+	it.each(["", " #owned", "#owned ", "main[", "main::before"])(
+		"validates explicit recovery selector syntax %j",
+		(selector) => {
+			expect(() =>
+				parseResearchReplayArguments([
+					...replaceFlag(parserArgs, "--selector", selector),
+					"--recover-output-limit",
+				]),
+			).toThrowError(expect.objectContaining({ code: "invalid-input" }));
 		},
 	);
 
@@ -533,6 +609,154 @@ describe("bounded replay CLI arguments", () => {
 });
 
 describe("pinned offline replay integration", () => {
+	it.each([
+		{ flags: [], format: "json", selection: { selector: "#owned" } },
+		{
+			flags: ["--table-metadata", "--format", "json"],
+			format: "json",
+			selection: { selector: "#owned", tableMetadata: true },
+		},
+		{
+			flags: ["--format", "markdown"],
+			format: "markdown",
+			selection: { selector: "#owned" },
+		},
+		{
+			flags: ["--table-rows", "--format", "markdown"],
+			format: "markdown",
+			selection: { selector: "#owned", tableRows: true },
+		},
+	])(
+		"recovers a bounded source subtree with selector options %#",
+		async (options) => {
+			const value = await outputLimitSelectorFixture();
+			expect(value.report.failure?.resourceLimit?.kind).toBe(
+				"extraction.output",
+			);
+			const before = structuredClone(value);
+			const source = input([value.raw.subarray(0, 17), value.raw.subarray(17)]);
+			const target = sink();
+			const sourceListeners = listeners(source);
+			const outputListeners = listeners(target.output);
+			const recover = vi.spyOn(replay, "recoverResearchOutputLimitSelector");
+			const section = vi.spyOn(replay, "recoverResearchOutputLimitSection");
+			const ordinary = vi.spyOn(replay, "extractResearchReplayJson");
+			expect(
+				await runResearchReplayCli(
+					[...argumentsFor(value), "--recover-output-limit", ...options.flags],
+					source,
+					target.output,
+				),
+			).toBe(0);
+			expect(recover).toHaveBeenCalledOnce();
+			expect(recover).toHaveBeenCalledWith(
+				expect.any(Uint8Array),
+				value.trusted,
+				options.selection,
+				expect.any(AbortSignal),
+				options.format,
+			);
+			expect(section).not.toHaveBeenCalled();
+			expect(ordinary).not.toHaveBeenCalled();
+			expect(record(target)).toMatchObject({
+				outcome: "extracted-unverified",
+				partial: true,
+				contentSuccess: null,
+				networkRequests: 0,
+				source: {
+					profile: "default",
+					receiptSha256: value.trusted.expectedReceiptSha256,
+					body: value.trusted.expectedBody,
+				},
+				selection: { method: "css-selector", matches: 1 },
+				extraction: {
+					format: options.format,
+					...(options.selection.tableRows ? { tableRows: true } : {}),
+				},
+				recovery: {
+					kind: "captured-output-limit-selector",
+					originalOutcome: "failure",
+					originalContentSuccess: false,
+					originalFailure: value.report.failure,
+					originalRequestRetried: false,
+				},
+			});
+			expect(target.text()).toContain(
+				JSON.stringify(
+					options.format === "markdown"
+						? "Readable saved introduction\\."
+						: "Readable saved introduction.",
+				).slice(1, -1),
+			);
+			expect(target.text()).toContain("Owned row");
+			expect(target.text()).not.toContain("https://example.com/");
+			expect(value).toEqual(before);
+			const owned = recover.mock.calls[0][0];
+			expect(owned).not.toBe(value.raw);
+			expect(owned.every((byte) => byte === 0)).toBe(true);
+			await streamCleanupTurn();
+			expect(listeners(source)).toEqual(sourceListeners);
+			expect(listeners(target.output)).toEqual(outputListeners);
+		},
+	);
+
+	it("does not enable ordinary selector replay of the same failed receipt", async () => {
+		const value = await outputLimitSelectorFixture();
+		const recover = vi.spyOn(replay, "recoverResearchOutputLimitSelector");
+		const source = input([value.raw]);
+		const target = sink();
+		await expect(
+			runResearchReplayCli(argumentsFor(value), source, target.output),
+		).rejects.toBeInstanceOf(Error);
+		expect(recover).not.toHaveBeenCalled();
+		expect(target.text()).toBe("");
+		expect(source.destroyed).toBe(true);
+		expect(target.output.destroyed).toBe(true);
+	});
+
+	it.each(["#missing", "p"])(
+		"rejects recovery selector %s unless it identifies exactly one subtree",
+		async (selector) => {
+			const value = await outputLimitSelectorFixture();
+			const source = input([value.raw]);
+			const target = sink();
+			await expect(
+				runResearchReplayCli(
+					argumentsFor(value, [
+						"--selector",
+						selector,
+						"--recover-output-limit",
+					]),
+					source,
+					target.output,
+				),
+			).rejects.toBeInstanceOf(Error);
+			expect(target.text()).toBe("");
+			expect(source.destroyed).toBe(true);
+			expect(target.output.destroyed).toBe(true);
+		},
+	);
+
+	it.each(["--receipt-sha256", "--body-sha256", "--body-bytes"])(
+		"retains the independent %s pin during selector recovery",
+		async (flag) => {
+			const value = await outputLimitSelectorFixture();
+			const source = input([value.raw]);
+			const target = sink();
+			const args = replaceFlag(
+				[...argumentsFor(value), "--recover-output-limit"],
+				flag,
+				flag === "--body-bytes" ? "1" : "0".repeat(64),
+			);
+			await expect(
+				runResearchReplayCli(args, source, target.output),
+			).rejects.toBeInstanceOf(Error);
+			expect(target.text()).toBe("");
+			expect(source.destroyed).toBe(true);
+			expect(target.output.destroyed).toBe(true);
+		},
+	);
+
 	it("discovers a heading then recovers its section from the same failed receipt", async () => {
 		const destination = `https://example.com/${"x".repeat(4096)}`;
 		const source = `<h2 id="owned">Owned section</h2><p>Readable saved content.</p><h2>References</h2><p>${`<a href="${destination}">Reference</a>`.repeat(70)}</p>`;
@@ -881,6 +1105,68 @@ describe("pinned offline replay integration", () => {
 });
 
 describe("bounded byte-stream ownership and lifecycle", () => {
+	it("enforces the CLI output cap after selector recovery and clears owned bytes", async () => {
+		const value = await outputLimitSelectorFixture();
+		const recovered = replay.recoverResearchOutputLimitSelector(
+			value.raw,
+			value.trusted,
+			{ selector: "#owned" },
+		);
+		const recover = vi
+			.spyOn(replay, "recoverResearchOutputLimitSelector")
+			.mockReturnValue({
+				...recovered,
+				jsonl: "x".repeat(replay.researchJsonReplayLimits.maxOutputBytes + 1),
+			});
+		const source = input([value.raw]);
+		const target = sink();
+		await expect(
+			runResearchReplayCli(
+				[...argumentsFor(value), "--recover-output-limit"],
+				source,
+				target.output,
+			),
+		).rejects.toMatchObject({ code: "resource-limit" });
+		expect(recover).toHaveBeenCalledOnce();
+		expect(recover.mock.calls[0][0].every((byte) => byte === 0)).toBe(true);
+		expect(target.text()).toBe("");
+		expect(source.destroyed).toBe(true);
+		expect(target.output.destroyed).toBe(true);
+	});
+
+	it("cancels a pending selector recovery write without retry and restores listeners", async () => {
+		const value = await outputLimitSelectorFixture();
+		const controller = new AbortController();
+		const source = input([value.raw]);
+		const target = sink({ held: true });
+		const sourceListeners = listeners(source);
+		const outputListeners = listeners(target.output);
+		const recover = vi.spyOn(replay, "recoverResearchOutputLimitSelector");
+		const result = observed(
+			runResearchReplayCli(
+				[...argumentsFor(value), "--recover-output-limit"],
+				source,
+				target.output,
+				controller.signal,
+			),
+		);
+		await target.writing;
+		controller.abort();
+		expect(await result).toMatchObject({
+			kind: "failure",
+			error: expect.objectContaining({ code: "aborted" }),
+		});
+		expect(recover).toHaveBeenCalledOnce();
+		expect(recover.mock.calls[0][0].every((byte) => byte === 0)).toBe(true);
+		expect(recover.mock.calls[0][3]?.aborted).toBe(true);
+		expect(target.chunks).toHaveLength(1);
+		expect(source.destroyed).toBe(true);
+		expect(target.output.destroyed).toBe(true);
+		await streamCleanupTurn();
+		expect(listeners(source)).toEqual(sourceListeners);
+		expect(listeners(target.output)).toEqual(outputListeners);
+	});
+
 	it("passes a copied receipt to the extractor and clears it after success without wiping caller bytes", async () => {
 		const value = await fixture();
 		const caller = Buffer.from(value.raw);

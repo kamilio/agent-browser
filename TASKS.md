@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: diverse content coverage and explicit subtree recovery
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Twelve new public content-page attempts using only the frozen native browser:
+12 GETs, zero retries, 11 captured bodies, clean transport/process closure.
+Five supply useful-looking topic/index content, crates.io supplies only a JS
+notice, Chrome returns 404, npm/AP stop at challenges, W3 exceeds response limits,
+and PyPI/RFC exceed whole-page extraction limits. Original results stay intact.
+PyPI's small description is overwhelmed by file metadata; its inner h1 recovery
+also exceeds output limits. Add explicit --recover-output-limit --selector and
+recoverResearchOutputLimitSelector for one pinned eligible HTML source subtree.
+Default profile, exact output-failure admission, source identities, challenge
+checks, uniqueness, existing quotas and cleanup remain unchanged. No automatic
+fallback, raised limits, new dependency, runtime, refetch or ordinary failed replay.
+Saved PyPI now yields a 3,803-byte Markdown introduction; RFC Retry-After yields
+1,719 bytes. CLI/API match direct baseline native extraction of the same source
+subtrees. Oversized selection and ordinary failed replay remain rejected.
+All 1,312 focused tests pass across 18 files, 80 additional cases net; 1,227
+unchanged statuses match and five CLI admission cases are intentionally revised.
+Build/types/format/lint pass, with independent static review. Fourteen guarded
+offline children record zero network attempts and clean closure. Initial
+test-only type/escaping errors and a rejected unescaped dotted-ID proof recipe
+are preserved; final production bytes match the first candidate.
+See RESEARCH-SELECTOR-RECOVERY.md and reports/diverse-content-2026-09-15.md.
+Next: BBC card headings/readability loss, useful content versus JS-only shells,
+response-limit provenance and richer large-document workflows. Full native
+release/rendering/interaction, SafeJS, credentials/passkey-device, service/socket
+and TTY gates remain open; research conclusions remain incomplete. No push.
+
 ### September 15: bounded Markdown source navigation
 
 **PROGRESS; overall browser goal remains ACTIVE.**
