@@ -54,6 +54,7 @@
   "src/passkey-provider-throw.test.ts",
   "src/network-policy-diagnostic.test.ts",
   "src/browser-challenge-truncation.test.ts",
+  "src/browser-recaptcha-challenge.test.ts",
   "src/passkey-exclusion-error.test.ts",
   "src/node-passkey-exclusion-approval.test.ts",
   "src/research-source-section.test.ts",

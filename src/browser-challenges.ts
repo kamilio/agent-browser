@@ -225,7 +225,7 @@ export function classifyBrowserChallenge(
 			);
 		const challengeTitle =
 			!title.truncated &&
-			/^(?:just a moment[.!…]*|attention required!?\s*\|\s*cloudflare|security check|verify (?:that )?you are human|are you (?:a )?human\??|captcha|robot check|duckduckgo)$/.test(
+			/^(?:just a moment[.!…]*|attention required!?\s*\|\s*cloudflare|security check|verify (?:that )?you are human|are you (?:a )?human\??|captcha|robot check|duckduckgo|checking your browser - recaptcha)$/.test(
 				title.value,
 			);
 		const challengeText = hasTextMarker(

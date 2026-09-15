@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: identify the missed browser-check interstitial
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+The saved rank-18 LinkedIn response was an HTTP-200 browser-check page, not useful
+professional content. The shared classifier now accepts its exact normalized
+reCAPTCHA browser-check title only with an existing bounded challenge-text marker.
+HTML/status gates, title/text bounds, truncation checks and confirmed-header
+priority remain unchanged. The result is a possible/unspecified challenge with
+explicit handoff, not a provider claim, solver, identity change or bypass.
+Two guarded actual replay-CLI children and two captured-response-injected native
+API children reproduce the original 184-byte false extraction and the corrected
+semantic-barrier/no-extraction result. The CLI's expected status 1 carries a
+structured handoff report, not an unhandled exception. Four captured responses
+are injected across the API children; no HTTP requests or continuation attempts.
+The recent Zoom recovery remains byte-identical at 29,997 bytes. All process and
+transport cleanup/pin checks pass, and original live receipts remain unchanged.
+All 37 new tests pass. The selected suite is 1,247 passed / 2 failed across 17
+files; all 1,212 original case statuses match the baseline exactly. Two older
+body-capture assertions still expect post-extraction content despite the existing
+pre-extraction barrier behavior. They remain unresolved; no green full release is
+claimed. Build/types/format/lint pass; only the shared classifier's JS/map change.
+See `RECAPTCHA-BROWSER-CHECK.md` and `reports/recaptcha-diagnostic-2026-09-15.json`.
+Next: useful-content versus application-shell reporting, hidden startup data,
+precise HTTP/response/redirect diagnostics and further content recovery from
+saved/public sources. Broader research conclusions, full native release,
+runtime/rendering/interaction and separately gated SafeJS, service/socket,
+TTY/PTY, credentials and passkey-device acceptance remain open. Original work
+and historical evidence stay preserved; access restrictions are not bypassed.
+
 ### September 15: recover Zoom content without exposing omitted templates
 
 **PROGRESS; overall browser goal remains ACTIVE.**
