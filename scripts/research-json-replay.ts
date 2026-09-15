@@ -54,12 +54,19 @@ export type ResearchJsonReplaySelection =
 	| ((
 			| { selector: string; section?: never; links?: never }
 			| { section: string; selector?: never; links?: never }
-	  ) & { tableMetadata?: boolean })
-	| { links: string; selector?: never; section?: never; tableMetadata?: never };
+	  ) & { tableMetadata?: boolean; tableRows?: boolean })
+	| {
+			links: string;
+			selector?: never;
+			section?: never;
+			tableMetadata?: never;
+			tableRows?: never;
+	  };
 
 export interface ResearchOutputLimitSectionSelection {
 	section: string;
 	tableMetadata?: boolean;
+	tableRows?: boolean;
 }
 
 export type ResearchOutputLimitOutlineRecovery = Omit<
@@ -154,11 +161,13 @@ function selectionSnapshot(value: unknown) {
 	const keys = Reflect.ownKeys(value);
 	if (
 		keys.length < 1 ||
-		keys.length > 2 ||
+		keys.length > 3 ||
 		!keys.every(
 			(key) =>
 				typeof key === "string" &&
-				["selector", "section", "links", "tableMetadata"].includes(key),
+				["selector", "section", "links", "tableMetadata", "tableRows"].includes(
+					key,
+				),
 		)
 	)
 		invalidSelection();
@@ -187,7 +196,8 @@ function selectionSnapshot(value: unknown) {
 		target.trim() !== target ||
 		target.length > researchJsonReplayLimits.maxSelectorCodeUnits ||
 		(fields.tableMetadata !== undefined &&
-			typeof fields.tableMetadata !== "boolean")
+			typeof fields.tableMetadata !== "boolean") ||
+		(fields.tableRows !== undefined && typeof fields.tableRows !== "boolean")
 	)
 		invalidSelection();
 	if (links) {
@@ -197,7 +207,8 @@ function selectionSnapshot(value: unknown) {
 				(character) =>
 					character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127,
 			) ||
-			Object.hasOwn(fields, "tableMetadata")
+			Object.hasOwn(fields, "tableMetadata") ||
+			Object.hasOwn(fields, "tableRows")
 		)
 			invalidSelection();
 	} else {
@@ -215,6 +226,7 @@ function selectionSnapshot(value: unknown) {
 				: ("css-selector" as const),
 		target,
 		tableMetadata: fields.tableMetadata === true,
+		tableRows: fields.tableRows === true,
 	};
 }
 
@@ -268,7 +280,8 @@ function validateReplayFormat(
 	if (
 		(format !== "json" && format !== "markdown") ||
 		(format === "markdown" &&
-			(selected.method === "link-url-search" || selected.tableMetadata))
+			(selected.method === "link-url-search" || selected.tableMetadata)) ||
+		(selected.tableRows && format !== "markdown")
 	)
 		throw new AgentBrowserError("invalid-input", "Invalid replay format");
 	return format;
@@ -551,6 +564,7 @@ function extractValidatedReplayJson<
 			const extraction = extractDocument(tree, {
 				format,
 				tableMetadata: selected.tableMetadata,
+				tableRows: selected.tableRows,
 				...(selected.method === "heading-section"
 					? { section: reference }
 					: { root: reference }),

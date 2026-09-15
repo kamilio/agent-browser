@@ -191,6 +191,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	let format: "markdown" | "json" | undefined;
 	let tableMetadata = false;
 	let compactTables = false;
+	let tableRows = false;
 	let minRequestIntervalMs: number | undefined;
 	let documentProfile: ResearchDocumentProfileId | undefined;
 	let selector: string | undefined;
@@ -225,6 +226,10 @@ export function parseResearchArguments(args: readonly string[]) {
 		}
 		if (argument === "--compact-tables" && !compactTables) {
 			compactTables = true;
+			continue;
+		}
+		if (argument === "--table-rows" && !tableRows) {
+			tableRows = true;
 			continue;
 		}
 		if (
@@ -390,6 +395,11 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Compact tables require Markdown extraction, not discovery",
 		);
+	if (tableRows && (format === "json" || headings || find !== undefined))
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Table rows require Markdown extraction, not discovery",
+		);
 	if (format !== undefined && (headings || find !== undefined))
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -403,6 +413,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		...(format === undefined ? {} : { format }),
 		...(tableMetadata ? { tableMetadata: true as const } : {}),
 		...(compactTables ? { compactTables: true as const } : {}),
+		...(tableRows ? { tableRows: true as const } : {}),
 		...(minRequestIntervalMs === undefined ? {} : { minRequestIntervalMs }),
 		...(documentProfile === undefined ? {} : { documentProfile }),
 		...(selector === undefined ? {} : { selector }),
@@ -476,6 +487,7 @@ export interface ResearchExecutionOptions {
 	format?: "markdown" | "json";
 	tableMetadata?: boolean;
 	compactTables?: boolean;
+	tableRows?: boolean;
 	minRequestIntervalMs?: number;
 }
 
@@ -493,6 +505,8 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 			typeof options.tableMetadata !== "boolean") ||
 		(options.compactTables !== undefined &&
 			typeof options.compactTables !== "boolean") ||
+		(options.tableRows !== undefined &&
+			typeof options.tableRows !== "boolean") ||
 		(options.minRequestIntervalMs !== undefined &&
 			(!Number.isSafeInteger(options.minRequestIntervalMs) ||
 				options.minRequestIntervalMs < 0 ||
@@ -545,6 +559,7 @@ export async function researchNavigation(
 			: ["--format", executionOptions.format]),
 		...(executionOptions.tableMetadata ? ["--table-metadata"] : []),
 		...(executionOptions.compactTables ? ["--compact-tables"] : []),
+		...(executionOptions.tableRows ? ["--table-rows"] : []),
 		...(executionOptions.minRequestIntervalMs === undefined
 			? []
 			: [
@@ -878,6 +893,7 @@ export async function researchNavigation(
 			format: validated.format ?? "markdown",
 			...(validated.tableMetadata ? { tableMetadata: true } : {}),
 			...(validated.compactTables ? { compactTables: true } : {}),
+			...(validated.tableRows ? { tableRows: true } : {}),
 			...(root === undefined ? {} : { root }),
 			...(validated.lines === undefined ? {} : { lines: validated.lines }),
 			...(sectionRoot === undefined ? {} : { section: sectionRoot }),
@@ -959,6 +975,7 @@ export async function* researchBatch(
 					format: options.format,
 					tableMetadata: options.tableMetadata,
 					compactTables: options.compactTables,
+					tableRows: options.tableRows,
 					minRequestIntervalMs: options.minRequestIntervalMs,
 				},
 			);
@@ -1083,7 +1100,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--capture-body] [--format markdown|json] [--table-metadata] [--compact-tables] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; raw policy requires reader; compact tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--capture-body] [--format markdown|json] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; raw policy requires reader; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});

@@ -78,6 +78,7 @@ export interface ExtractionOptions {
 	format?: "markdown" | "json";
 	tableMetadata?: boolean;
 	compactTables?: boolean;
+	tableRows?: boolean;
 	root?: string;
 	lines?: { start: number; end: number };
 	section?: string;
@@ -146,6 +147,7 @@ interface ExtractionMetadata {
 	revision: number;
 	partial: true;
 	compactTables?: true;
+	tableRows?: true;
 	reader?: Readonly<ResearchReaderReport>;
 	sectionSelection?: Readonly<HeadingSectionMetadata>;
 	textSelection?: {
@@ -493,10 +495,67 @@ function validateTableStructure(
 	return transparentWrappers;
 }
 
+function rowListCell(node: ExtractedNode): string | null {
+	let children = node.children ?? [];
+	const meaningful = children.filter(
+		(child) => child.type !== "text" || (child.text ?? "").trim(),
+	);
+	if (meaningful.length === 1 && meaningful[0].type === "paragraph")
+		children = meaningful[0].children ?? [];
+	const pending = children.slice();
+	while (pending.length) {
+		const child = pending.pop();
+		if (!child) break;
+		if (!inlineTypes.has(child.type)) return null;
+		for (const descendant of child.children ?? []) pending.push(descendant);
+	}
+	const text = inline(children);
+	return text.includes("\n") || text.includes("\r") ? null : text;
+}
+
+function rowListCells(row: ExtractedNode): string[] | null {
+	const cells: string[] = [];
+	const pending = (row.children ?? []).slice().reverse();
+	while (pending.length) {
+		const node = pending.pop();
+		if (!node) break;
+		if (node.type === "cell") {
+			const text = rowListCell(node);
+			if (text === null) return null;
+			cells.push(text);
+		} else if (node.type === "container" || node.type === "inline") {
+			const children = node.children ?? [];
+			for (let index = children.length - 1; index >= 0; index--)
+				pending.push(children[index]);
+		} else if (node.type !== "text" || (node.text ?? "").trim()) return null;
+	}
+	return cells;
+}
+
+function tableRowList(table: ExtractedNode): string[][] | null {
+	const rows: string[][] = [];
+	const pending = (table.children ?? []).slice().reverse();
+	while (pending.length) {
+		const node = pending.pop();
+		if (!node) break;
+		if (node.type === "row") {
+			const cells = rowListCells(node);
+			if (cells === null) return null;
+			rows.push(cells);
+		} else if (node.type === "container" || node.type === "inline") {
+			const children = node.children ?? [];
+			for (let index = children.length - 1; index >= 0; index--)
+				pending.push(children[index]);
+		} else if (node.type !== "text" || (node.text ?? "").trim()) return null;
+	}
+	return rows;
+}
+
 function markdown(
 	root: ExtractedNode,
 	maxBytes: number,
 	compactTables: boolean,
+	tableRows: boolean,
 ) {
 	const transparentWrappers = validateTableStructure(root);
 	const output: string[] = [];
@@ -577,6 +636,20 @@ function markdown(
 		const children = node.children ?? [];
 		const boundary = tableBoundaryMarkers[node.type];
 		if (boundary) {
+			if (tableRows && node.type === "table") {
+				const rows = tableRowList(node);
+				if (rows !== null) {
+					const lines = [boundary.begin];
+					for (const [rowIndex, cells] of rows.entries()) {
+						lines.push(`- Row ${rowIndex + 1}`);
+						for (const [cellIndex, text] of cells.entries())
+							lines.push(`  - Cell ${cellIndex + 1}:${text ? ` ${text}` : ""}`);
+					}
+					lines.push(boundary.end);
+					emit(lines.join("\n"), prefixes);
+					continue;
+				}
+			}
 			const enclosed =
 				compactTables &&
 				tableDepth > 0 &&
@@ -866,6 +939,15 @@ export function extractDocument(
 			"invalid-input",
 			"Compact tables require a boolean option and Markdown extraction",
 		);
+	if (
+		(options.tableRows !== undefined &&
+			typeof options.tableRows !== "boolean") ||
+		(options.tableRows === true && format !== "markdown")
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Table rows require a boolean option and Markdown extraction",
+		);
 	const maxBytes = options.maxBytes ?? 262_144;
 	const maxNodes = options.maxNodes ?? 10_000;
 	const maxDepth = options.maxDepth ?? 256;
@@ -910,6 +992,7 @@ export function extractDocument(
 		revision: tree.revision,
 		partial: true,
 		...(options.compactTables === true ? { compactTables: true as const } : {}),
+		...(options.tableRows === true ? { tableRows: true as const } : {}),
 		...(reader ? { reader } : {}),
 		...(selection ? { textSelection: selection.metadata } : {}),
 		...(section ? { sectionSelection: section.metadata } : {}),
@@ -1044,7 +1127,12 @@ export function extractDocument(
 			: {
 					...metadata,
 					format,
-					content: markdown(root, maxBytes, options.compactTables === true),
+					content: markdown(
+						root,
+						maxBytes,
+						options.compactTables === true,
+						options.tableRows === true,
+					),
 				};
 	const outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
 	if (outputBytes > maxBytes)

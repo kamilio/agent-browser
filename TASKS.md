@@ -6,6 +6,46 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: readable table rows and broader native reading
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Opt-in `tableRows` / `--table-rows` renders simple native tables as physical
+row/cell lists. Empty cells and source order remain; no header, span or column
+associations are invented. Complex tables keep boundary output. Core, live
+research, admitted replay and bounded section recovery share the preference;
+defaults, source/structure/intermediate/output caps and timeout allowances stay
+unchanged. Integration testing caught and fixed missing CLI recovery forwarding.
+All **125 new cases pass**. Build, 26-root strict types and seven-file formatting
+and lint pass. Expanded native validation is **2,839 passed / 10 failed across
+26 files**; all 2,724 pre-existing case statuses match the clean baseline exactly.
+Those ten older `table-source.test.ts` cases still expect reader attributes to
+exclude the inert class retained by the earlier selector change. They remain
+unresolved, separate from this feature; this is not a green full release.
+The earlier 24 stale depth/attribute/resource-diagnostic cases are repaired in
+separate test-only commit `15a87a6`: all 329 cases pass and production compilation
+is unchanged. Historical failing reports are retained rather than rewritten.
+A new native GitHub Camoufox GET retrieves its README; captured-source checks
+verify forty headings, sixteen code blocks, four tables and 57 cells. Its Firefox
+architecture and detection claims are source descriptions, not tested features
+or dependencies adopted here. Shared-workspace drift remains explicitly recorded.
+A separate native SQLite GET and offline source check recover a 12,727-byte
+`div.fancy` article with all five headings, fifteen exact code blocks and 26
+paragraphs. No SQL is executed; it contains no HTML tables. Bold/italic emphasis
+is flattened but text is retained. Eight actual offline CLI comparisons and two
+native API children verify HF 14,437→13,724 bytes, PyTorch 15,917→14,436 and GitHub
+39,999→38,339 using matched normal-boundary baselines. All non-table Markdown and
+converted-cell inline content stay exact; three complex GitHub tables fall back
+unchanged. Python remains byte-identical at 43,583 bytes. No replay HTTP requests;
+Python's original full-JSON cap failure stays unchanged. Including both website
+inspections, this increment uses two fresh GETs and twelve offline native children.
+See `TABLE-ROWS.md` and the forty-third inventory for contracts and evidence.
+Original work and evidence remain preserved; no push. Broader hardware/benchmark/
+Astra/Poe research, more sites, copy-label noise, doctype provenance, JS-only/
+iframe content, rendering/interaction and full release remain open. Older
+body-capture failures and ARIA-test lint remain outside this selection. Service,
+SafeJS/runtime, TTY/PTY, credential and passkey-device gates remain separate;
+access restrictions are not bypassed.
+
 ### September 15: remove empty Markdown links and reach redirected content
 
 **PROGRESS; overall browser goal remains ACTIVE.**

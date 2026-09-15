@@ -57,6 +57,10 @@ See the thirty-seventh website inventory for the exact evidence and limitations.
   use `READER-ARTICLE-SELECTORS.md` rather than assuming every site has `main`.
 - Markdown omits empty hyperlink wrappers, not source anchors or JSON/discovery
   records. See `EMPTY-MARKDOWN-LINKS.md` when inspecting icon-only navigation.
+- Add `--table-rows` to Markdown article extraction for readable physical row/cell
+  lists instead of per-cell boundary noise. Replay also needs explicit
+  `--format markdown`. Complex tables fall back without dropping content or
+  inferring headers; defaults and budgets stay unchanged. See `TABLE-ROWS.md`.
 - For plain text, Markdown source, CSV, JSON and the literal XML/feed types,
   native `--find` and `--lines` locate source text. Separate research-CLI invocations navigate again;
   the HTML replay admission is not a generic XML or arbitrary-file reader.

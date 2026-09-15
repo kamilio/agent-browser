@@ -22,7 +22,7 @@ export const researchReplayCliLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings) [--format json|markdown] [--table-metadata] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --section or --headings. Markdown requires selector/section extraction without table metadata. Headings require recovery and do not accept table metadata.\n";
+	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings) [--format json|markdown] [--table-metadata] [--table-rows] [--recover-output-limit] < receipt.jsonl\nRecovery requires the default profile and one explicit --section or --headings. Markdown requires selector/section extraction without table metadata. Table rows require explicit Markdown. Headings require recovery and do not accept table metadata.\n";
 
 function invalidArguments(): never {
 	throw new AgentBrowserError(
@@ -45,6 +45,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		invalidArguments();
 	const fields = new Map<string, string>();
 	let tableMetadata = false;
+	let tableRows = false;
 	let recoverOutputLimit = false;
 	let headings = false;
 	const valueFlags = new Set([
@@ -63,6 +64,10 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 			tableMetadata = true;
 			continue;
 		}
+		if (flag === "--table-rows" && !tableRows) {
+			tableRows = true;
+			continue;
+		}
 		if (flag === "--recover-output-limit" && !recoverOutputLimit) {
 			recoverOutputLimit = true;
 			continue;
@@ -78,6 +83,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	}
 	const profile = fields.get("--expected-profile");
 	const format = fields.get("--format");
+	if (tableRows && format !== "markdown") invalidArguments();
 	const receiptSha256 = fields.get("--receipt-sha256");
 	const bodySha256 = fields.get("--body-sha256");
 	const bodyBytes = fields.get("--body-bytes");
@@ -145,7 +151,10 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 			invalidArguments();
 		}
 	}
-	const metadata = tableMetadata ? { tableMetadata: true } : {};
+	const metadata = {
+		...(tableMetadata ? { tableMetadata: true } : {}),
+		...(tableRows ? { tableRows: true } : {}),
+	};
 	return {
 		...(format === undefined ? {} : { format }),
 		...(recoverOutputLimit ? { recoverOutputLimit: true as const } : {}),
@@ -340,6 +349,9 @@ export async function runResearchReplayCli(
 					...(options.selection.tableMetadata === undefined
 						? {}
 						: { tableMetadata: options.selection.tableMetadata }),
+					...(options.selection.tableRows === undefined
+						? {}
+						: { tableRows: options.selection.tableRows }),
 				},
 				controller.signal,
 				options.format ?? "json",
