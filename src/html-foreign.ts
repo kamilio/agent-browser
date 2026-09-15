@@ -202,7 +202,7 @@ export class HtmlForeign {
 		const stack = this.options.stack();
 		return stack.length === 1 && this.options.context
 			? this.options.context
-			: stack[stack.length - 1].tree.get(stack[stack.length - 1].id);
+			: stack[stack.length - 1].tree.elementInfo(stack[stack.length - 1].id);
 	}
 
 	process(token: HtmlToken): boolean {
@@ -276,7 +276,7 @@ export class HtmlForeign {
 			this.options.issue("mismatched-foreign-end-tag");
 		for (let index = stack.length - 1; index > 0; index--) {
 			this.visit();
-			const candidate = stack[index].tree.get(stack[index].id);
+			const candidate = stack[index].tree.elementInfo(stack[index].id);
 			if (elementNamespace(candidate) === htmlNamespace) return false;
 			if (
 				candidate.tagName.replace(/[A-Z]/g, (letter) =>

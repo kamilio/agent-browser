@@ -509,7 +509,7 @@ function* parseHtmlSteps(
 			}
 		};
 		const insertionTarget = (entry = current()) => {
-			if (isHtmlElement(entry.tree.get(entry.id), "template"))
+			if (isHtmlElement(entry.tree.elementInfo(entry.id), "template"))
 				return entry.tree.templateContent(entry.id);
 			return entry;
 		};
@@ -527,7 +527,7 @@ function* parseHtmlSteps(
 			)
 				if (
 					stack[index].tag === tag &&
-					elementNamespace(stack[index].tree.get(stack[index].id)) ===
+					elementNamespace(stack[index].tree.elementInfo(stack[index].id)) ===
 						htmlNamespace
 				)
 					return index;
@@ -571,7 +571,7 @@ function* parseHtmlSteps(
 				const tableIndex = position("table");
 				const table = stack[tableIndex];
 				if (table) {
-					const parent = table.tree.get(table.id).parent;
+					const parent = table.tree.parentOf(table.id);
 					if (parent !== null) {
 						issue("table-foster-parenting");
 						return {

@@ -1061,6 +1061,22 @@ export class DocumentTree {
 			: undefined;
 	}
 
+	elementInfo(
+		id: number,
+	): Readonly<
+		Pick<DocumentNode, "kind" | "tagName" | "namespaceURI" | "attributes">
+	> {
+		const node = this.node(id);
+		return Object.freeze({
+			kind: node.kind,
+			tagName: node.tagName,
+			...(node.namespaceURI === undefined
+				? {}
+				: { namespaceURI: node.namespaceURI }),
+			attributes: snapshotHtmlAttributes(node.attributes),
+		});
+	}
+
 	get(id: number): Readonly<DocumentNode> {
 		const node = this.node(id);
 		const cached = this.nodeViews.get(id);
@@ -2517,6 +2533,10 @@ export class DocumentTree {
 
 	isConnected(id: number) {
 		return this.rootOf(id) === this.root;
+	}
+
+	parentOf(id: number): number | null {
+		return this.node(id).parent;
 	}
 
 	rootOf(id: number) {

@@ -1,0 +1,392 @@
+{
+  "kind": "native-parser-metadata-performance-v1",
+  "date": "2026-09-15",
+  "parentCommit": "843cf8f95776b41f8ef2a2fe1bbc9b0c9e00125e",
+  "scope": "Offline native parsing and saved Office scoping; no fresh website coverage",
+  "evidenceLane": "/dev/shm/agent-browser-content-performance-september15/",
+  "durableEvidence": "node_modules/.cache/native-validation/content-performance-september15/",
+  "at": "2026-09-15T05:14:16.264Z",
+  "passed": true,
+  "baseline": {
+    "passed": 1693,
+    "failed": 0,
+    "files": 28
+  },
+  "candidate": {
+    "passed": 1724,
+    "failed": 0,
+    "files": 30
+  },
+  "firstBaseline": {
+    "passed": 1366,
+    "failed": 0,
+    "files": 22
+  },
+  "firstCandidate": {
+    "passed": 1377,
+    "failed": 0,
+    "files": 23
+  },
+  "secondCandidate": {
+    "passed": 1722,
+    "failed": 2,
+    "files": 30
+  },
+  "finalLabel": "release03",
+  "unchangedPriorCaseStatuses": 1693,
+  "newCases": 31,
+  "finalProductionMatchesRelease02": true,
+  "changedCompiled": [
+    "src/document-image-content-security-policy.d.ts.map",
+    "src/document-image-content-security-policy.js",
+    "src/document-image-content-security-policy.js.map",
+    "src/document.d.ts",
+    "src/document.d.ts.map",
+    "src/document.js",
+    "src/document.js.map",
+    "src/html-foreign.js",
+    "src/html-foreign.js.map",
+    "src/html-formatting.js",
+    "src/html-formatting.js.map",
+    "src/html-parser.js",
+    "src/html-parser.js.map"
+  ],
+  "canonicalNativeTests": 864,
+  "offlineNativeChildren": 11,
+  "profiledChildren": 2,
+  "benchmarkChildren": 3,
+  "officeApiChildren": 3,
+  "actualCliChildren": 3,
+  "httpRequests": 0,
+  "allMeasuredSignaturesUnchanged": true,
+  "comparisons": [
+    {
+      "elements": 1000,
+      "mode": "loader",
+      "samplesPerVersion": 3,
+      "baselineMs": {
+        "min": 39.38668299999995,
+        "median": 39.91988900000001,
+        "max": 96.92863900000003
+      },
+      "firstCandidateMs": {
+        "min": 34.82366000000002,
+        "median": 51.09104000000002,
+        "max": 93.91204399999998
+      },
+      "finalMs": {
+        "min": 37.37754899999999,
+        "median": 38.245835,
+        "max": 104.77501700000005
+      },
+      "medianFactor": 1.0437708838099629,
+      "signaturesUnchanged": true
+    },
+    {
+      "elements": 1000,
+      "mode": "research",
+      "samplesPerVersion": 3,
+      "baselineMs": {
+        "min": 45.21165199999996,
+        "median": 60.77355799999998,
+        "max": 76.74740700000007
+      },
+      "firstCandidateMs": {
+        "min": 54.36885100000006,
+        "median": 56.895624,
+        "max": 76.35664300000002
+      },
+      "finalMs": {
+        "min": 45.636945999999966,
+        "median": 64.69220299999995,
+        "max": 81.77032099999997
+      },
+      "medianFactor": 0.9394263169550746,
+      "signaturesUnchanged": true
+    },
+    {
+      "elements": 10000,
+      "mode": "loader",
+      "samplesPerVersion": 3,
+      "baselineMs": {
+        "min": 146.16045899999983,
+        "median": 151.21178099999997,
+        "max": 276.119768
+      },
+      "firstCandidateMs": {
+        "min": 145.84238300000004,
+        "median": 159.948533,
+        "max": 270.56105
+      },
+      "finalMs": {
+        "min": 81.75675100000012,
+        "median": 112.83283099999994,
+        "max": 187.99829999999986
+      },
+      "medianFactor": 1.340139919027646,
+      "signaturesUnchanged": true
+    },
+    {
+      "elements": 10000,
+      "mode": "research",
+      "samplesPerVersion": 3,
+      "baselineMs": {
+        "min": 168.5449940000001,
+        "median": 188.967758,
+        "max": 192.0214390000001
+      },
+      "firstCandidateMs": {
+        "min": 159.872971,
+        "median": 183.66472000000022,
+        "max": 193.2916090000001
+      },
+      "finalMs": {
+        "min": 99.62766799999986,
+        "median": 107.56226199999992,
+        "max": 139.7058320000001
+      },
+      "medianFactor": 1.7568220906324947,
+      "signaturesUnchanged": true
+    },
+    {
+      "elements": 30000,
+      "mode": "loader",
+      "samplesPerVersion": 3,
+      "baselineMs": {
+        "min": 1481.741615,
+        "median": 1563.032016999999,
+        "max": 1568.2439789999996
+      },
+      "firstCandidateMs": {
+        "min": 1551.067392,
+        "median": 1564.5816860000002,
+        "max": 1569.3128710000005
+      },
+      "finalMs": {
+        "min": 408.9340400000003,
+        "median": 424.6869969999998,
+        "max": 428.8682050000002
+      },
+      "medianFactor": 3.680432949540011,
+      "signaturesUnchanged": true
+    },
+    {
+      "elements": 30000,
+      "mode": "research",
+      "samplesPerVersion": 3,
+      "baselineMs": {
+        "min": 1780.0584249999993,
+        "median": 1807.0716250000005,
+        "max": 1864.4480580000009
+      },
+      "firstCandidateMs": {
+        "min": 1797.9015739999995,
+        "median": 1822.5072200000013,
+        "max": 1858.488043000002
+      },
+      "finalMs": {
+        "min": 434.5190269999998,
+        "median": 459.43134999999984,
+        "max": 462.749511
+      },
+      "medianFactor": 3.9332788783351442,
+      "signaturesUnchanged": true
+    },
+    {
+      "elements": 50001,
+      "mode": "loader",
+      "samplesPerVersion": 3,
+      "baselineMs": {
+        "min": 3535.7116270000024,
+        "median": 3573.148449999999,
+        "max": 3603.8423929999954
+      },
+      "firstCandidateMs": {
+        "min": 3607.3774950000006,
+        "median": 3635.076009999999,
+        "max": 3652.768952999999
+      },
+      "finalMs": {
+        "min": 327.35008000000016,
+        "median": 336.07480100000066,
+        "max": 359.3786779999991
+      },
+      "medianFactor": 10.632003468775368,
+      "signaturesUnchanged": true
+    },
+    {
+      "elements": 50001,
+      "mode": "research",
+      "samplesPerVersion": 3,
+      "baselineMs": {
+        "min": 4185.892518000001,
+        "median": 4195.920710999999,
+        "max": 4202.955875999996
+      },
+      "firstCandidateMs": {
+        "min": 4256.086223999999,
+        "median": 4268.005643,
+        "max": 4299.298013
+      },
+      "finalMs": {
+        "min": 329.98583400000007,
+        "median": 359.95380399999976,
+        "max": 361.19919500000015
+      },
+      "medianFactor": 11.656831138809139,
+      "signaturesUnchanged": true
+    }
+  ],
+  "office": {
+    "baseline": {
+      "passed": true,
+      "label": "baseline",
+      "receiptSha256": "7a992432bd67439974aca1b54248190374f6fab02bd7ff9761e272f4041ae9d4",
+      "bodySha256": "6db8e6a8e5aae7bafd1507d29c73b3737b1e4b3442fd92b925983542b196df6d",
+      "originalMarkdownBytes": 41789,
+      "results": [
+        {
+          "key": "main",
+          "selector": "main#main",
+          "matches": 1,
+          "markdownBytes": 9786,
+          "markdownSha256": "fad59b138cb3e148ce1646bed76508011702da6b2d6bf14affb2c3a255c86744",
+          "contentSuccess": null
+        },
+        {
+          "key": "faq-section",
+          "selector": "main#main .faq-section",
+          "matches": 1,
+          "markdownBytes": 2132,
+          "markdownSha256": "a025d94e8079dc7123b4ad86a29035fd88f29cc2fa387d663a734edf5cab3a11",
+          "contentSuccess": null
+        },
+        {
+          "key": "faq-list",
+          "selector": "main#main #faqList",
+          "matches": 1,
+          "markdownBytes": 1817,
+          "markdownSha256": "67f2fc9c2d0f31e55dd5818091f4511dedacd94681e4d49e72d1911a2efb128c",
+          "contentSuccess": null
+        }
+      ],
+      "faqAnswersRetained": 5,
+      "answerLeafCount": 11,
+      "actualHttpRequests": 0,
+      "originalReceiptUnchanged": true,
+      "existingSelectionFeature": true,
+      "visibilitySemanticsVerified": false
+    },
+    "release01": {
+      "passed": true,
+      "label": "release01",
+      "receiptSha256": "7a992432bd67439974aca1b54248190374f6fab02bd7ff9761e272f4041ae9d4",
+      "bodySha256": "6db8e6a8e5aae7bafd1507d29c73b3737b1e4b3442fd92b925983542b196df6d",
+      "originalMarkdownBytes": 41789,
+      "results": [
+        {
+          "key": "main",
+          "selector": "main#main",
+          "matches": 1,
+          "markdownBytes": 9786,
+          "markdownSha256": "fad59b138cb3e148ce1646bed76508011702da6b2d6bf14affb2c3a255c86744",
+          "contentSuccess": null
+        },
+        {
+          "key": "faq-section",
+          "selector": "main#main .faq-section",
+          "matches": 1,
+          "markdownBytes": 2132,
+          "markdownSha256": "a025d94e8079dc7123b4ad86a29035fd88f29cc2fa387d663a734edf5cab3a11",
+          "contentSuccess": null
+        },
+        {
+          "key": "faq-list",
+          "selector": "main#main #faqList",
+          "matches": 1,
+          "markdownBytes": 1817,
+          "markdownSha256": "67f2fc9c2d0f31e55dd5818091f4511dedacd94681e4d49e72d1911a2efb128c",
+          "contentSuccess": null
+        }
+      ],
+      "faqAnswersRetained": 5,
+      "answerLeafCount": 11,
+      "actualHttpRequests": 0,
+      "originalReceiptUnchanged": true,
+      "existingSelectionFeature": true,
+      "visibilitySemanticsVerified": false
+    },
+    "release03": {
+      "passed": true,
+      "label": "release03",
+      "receiptSha256": "7a992432bd67439974aca1b54248190374f6fab02bd7ff9761e272f4041ae9d4",
+      "bodySha256": "6db8e6a8e5aae7bafd1507d29c73b3737b1e4b3442fd92b925983542b196df6d",
+      "originalMarkdownBytes": 41789,
+      "results": [
+        {
+          "key": "main",
+          "selector": "main#main",
+          "matches": 1,
+          "markdownBytes": 9786,
+          "markdownSha256": "fad59b138cb3e148ce1646bed76508011702da6b2d6bf14affb2c3a255c86744",
+          "contentSuccess": null
+        },
+        {
+          "key": "faq-section",
+          "selector": "main#main .faq-section",
+          "matches": 1,
+          "markdownBytes": 2132,
+          "markdownSha256": "a025d94e8079dc7123b4ad86a29035fd88f29cc2fa387d663a734edf5cab3a11",
+          "contentSuccess": null
+        },
+        {
+          "key": "faq-list",
+          "selector": "main#main #faqList",
+          "matches": 1,
+          "markdownBytes": 1817,
+          "markdownSha256": "67f2fc9c2d0f31e55dd5818091f4511dedacd94681e4d49e72d1911a2efb128c",
+          "contentSuccess": null
+        }
+      ],
+      "faqAnswersRetained": 5,
+      "answerLeafCount": 11,
+      "actualHttpRequests": 0,
+      "originalReceiptUnchanged": true,
+      "existingSelectionFeature": true,
+      "visibilitySemanticsVerified": false
+    }
+  },
+  "benchmarkConditions": {
+    "cpuProfile": false,
+    "affinityCpu": 0,
+    "heapMiB": 192,
+    "warmupsPerChild": 2,
+    "samplesPerConfiguration": 3,
+    "separateSequentialChildren": true,
+    "node": "v22.22.0",
+    "networkAndPageScripts": false,
+    "includesClosure": true,
+    "excludesSignatureChecks": true,
+    "syntheticWideSiblings": true,
+    "universalSpeedupClaim": false,
+    "cappedCaseRetainsFailure": true
+  },
+  "officeOriginalPath": "node_modules/.cache/native-validation/top100-september15/024-office.com/stdout.jsonl",
+  "authoringNotes": [
+    "The first CSP-only candidate passed 1,377 selected tests but did not improve unprofiled timings.",
+    "Profiles showed full-node snapshot creation move from CSP ancestor traversal into HTML parser namespace checks.",
+    "Expanded baseline passes 1,693 cases across 28 files.",
+    "The combined candidate initially had two new test assertion failures: an initial empty-body snapshot was expected to be absent.",
+    "Corrected final candidate passes all 1,724 cases across 30 files; production bytes are identical to release02."
+  ],
+  "limitations": [
+    "Benchmarks are three-sample synthetic wide-sibling cases, not live-network, layout or page-script latency.",
+    "Small-case timings are mixed; no universal speedup is claimed.",
+    "The 50,001-element case still fails at the original 50,000-node limit.",
+    "Office scoping uses an existing feature; hidden/rendered visibility is not established.",
+    "No original website receipt, body, timing or top-100 outcome changed.",
+    "Full native release, research conclusions, runtime/interaction, SafeJS, service/socket, TTY and credential/passkey-device gates remain open."
+  ],
+  "pushed": false,
+  "overallGoal": "active"
+}

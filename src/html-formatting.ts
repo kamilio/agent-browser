@@ -122,7 +122,7 @@ const mathmlBoundaries = new Set([
 
 export function isHtmlParserNode(node: HtmlParserNode, tag?: string): boolean {
 	return (
-		elementNamespace(node.tree.get(node.id)) === htmlNamespace &&
+		elementNamespace(node.tree.elementInfo(node.id)) === htmlNamespace &&
 		(tag === undefined || node.tag === tag)
 	);
 }
@@ -132,7 +132,7 @@ function hasCategory(
 	htmlTags: ReadonlySet<string>,
 ): boolean {
 	if (typeof node === "string") return htmlTags.has(node);
-	const namespaceURI = elementNamespace(node.tree.get(node.id));
+	const namespaceURI = elementNamespace(node.tree.elementInfo(node.id));
 	if (namespaceURI === htmlNamespace) return htmlTags.has(node.tag);
 	if (namespaceURI === svgNamespace) return svgBoundaries.has(node.tag);
 	return namespaceURI === mathmlNamespace && mathmlBoundaries.has(node.tag);
@@ -210,8 +210,8 @@ export class HtmlFormatting {
 			if ("marker" in entry) break;
 			if (
 				entry.node.tag === node.tag &&
-				elementNamespace(entry.node.tree.get(entry.node.id)) ===
-					elementNamespace(node.tree.get(node.id)) &&
+				elementNamespace(entry.node.tree.elementInfo(entry.node.id)) ===
+					elementNamespace(node.tree.elementInfo(node.id)) &&
 				this.sameAttributes(entry.attributes, attributes)
 			)
 				matches.push(index);

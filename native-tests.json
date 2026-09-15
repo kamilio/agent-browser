@@ -484,6 +484,8 @@
   "src/stylesheet-content-security-policy.test.ts",
   "src/stylesheet-csp-lifecycle.test.ts",
   "src/document-image-content-security-policy.test.ts",
+  "src/document-csp-parent-navigation.test.ts",
+  "src/parser-element-info.test.ts",
   "src/image-content-security-policy.test.ts",
   "src/image-csp-lifecycle.test.ts",
   "src/inflate.test.ts",

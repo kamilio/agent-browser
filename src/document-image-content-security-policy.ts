@@ -128,12 +128,14 @@ export class DocumentImageContentSecurityPolicy {
 
 	private scan(start: number): void {
 		if (this.metaBlocked) return;
-		let ancestor = this.tree.get(start);
-		while (ancestor.parent !== null) {
+		let ancestor = start;
+		let parent = this.tree.parentOf(ancestor);
+		while (parent !== null) {
 			this.debit();
-			ancestor = this.tree.get(ancestor.parent);
+			ancestor = parent;
+			parent = this.tree.parentOf(ancestor);
 		}
-		if (ancestor.id !== this.tree.root) return;
+		if (ancestor !== this.tree.root) return;
 		for (const { node } of this.tree.walk(start)) {
 			this.debit();
 			if (

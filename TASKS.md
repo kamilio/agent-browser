@@ -6,6 +6,41 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: remove repeated wide-node snapshots and scope Office content
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Guarded profiling confirms substantial native work behind the slow wide-document
+test: full immutable node snapshots repeatedly copied a growing body child list
+for CSP parent and parser namespace checks. The first CSP-only candidate passed
+tests but did not improve timings; another profile showed the cost move into
+parser checks. Those unsuccessful measurements remain preserved.
+The combined fix adds validated parent-ID reads and small immutable element
+information views, used by CSP/formatting/foreign/parser metadata checks. Full
+get snapshots, exact CSP edge-work accounting, metadata fail-closed behavior,
+foreign/fragment semantics and resource caps remain unchanged.
+All 1,724 tests across 30 selected native files pass, including 31 new cases;
+all 1,693 prior statuses match. Build/types/format/lint pass. Two new assertion
+errors were corrected to allow one initial empty-body snapshot, not repeated
+growing-body snapshots; final production bytes match the preceding candidate.
+Unprofiled three-sample medians on one pinned CPU show the valid 30,000-element
+case improve from 1,563 to 425 ms in direct loading and 1,807 to 459 ms through
+native research. The 50,001-element case retains the exact node-limit failure,
+but reaches it sooner. All measured signatures match. Small-case results are
+mixed, and this is not a live-network/rendering or universal speed claim.
+Saved Office content is usable with the existing main#main replay selector:
+9,786 Markdown bytes versus 41,789 in the original whole-page record, excluding
+startup/trace noise while retaining all five FAQ answers. Baseline/final scoped
+outputs and actual CLI/API output match. Blanket hidden filtering would lose
+four collapsed answers and was not introduced.
+Eleven guarded offline children, zero HTTP attempts, clean process/transport
+closure and unchanged source/compiled/receipt/body pins. Original top-100
+measurements are untouched. See `PARSER-METADATA-PERFORMANCE.md` and
+`reports/parser-metadata-performance-2026-09-15.json`.
+Next: other measured parser costs, useful-content versus application shells,
+response/redirect diagnostics and source-backed research. Full native release,
+rendering/interaction and separately gated SafeJS, service/socket, TTY/PTY,
+credential and passkey-device acceptance remain open. Original work is preserved.
+
 ### September 15: retain HTTP failure provenance before content processing
 
 **PROGRESS; overall browser goal remains ACTIVE.**
