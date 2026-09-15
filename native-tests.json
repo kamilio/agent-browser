@@ -874,5 +874,7 @@
   "src/research-visibility-policy.test.ts",
   "src/research-inline-visibility.test.ts",
   "src/research-inline-visibility-policy.test.ts",
-  "src/research-replay-compact-tables.test.ts"
+  "src/research-replay-compact-tables.test.ts",
+  "src/markdown-source-links.test.ts",
+  "src/document-markdown-links.test.ts"
 ]

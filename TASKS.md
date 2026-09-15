@@ -6,6 +6,40 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: bounded Markdown source-link discovery
+
+**PROGRESS; overall browser goal remains ACTIVE.** Reverified all 100 saved
+top-site receipts and 90 captured bodies without new requests; historical
+65 nonempty/13 empty/7 barrier/3 HTTP/12 other outcomes remain unchanged.
+The full matrix is `reports/top100-websites-2026-09-15.md`, using the published
+May corpus rather than a claimed current September ranking.
+
+Four fresh native navigations used 7 GETs, no retries, and closed all children
+and transports. Mail.ru remains an empty scripted/meta-refresh bootstrap.
+PyTorch root/docs/stable return literal source redirect notes; two explicit
+source-linked follow-ups still do not constitute documentation retrieval.
+The next authored versioned destination was recorded, not fetched in this lane.
+
+Bounded requested Markdown link discovery now exposes source-only candidates
+without DOM anchors/refs or automatic navigation. Explicit pinned default-profile
+replay --links accepts these captures. Ordinary extraction/HTML discovery and
+existing admission/budget/provenance checks remain intact. Four saved controls
+prove 1/28/32 Markdown candidates and unchanged RFC HTML discovery; Cloudflare's
+entry-cap truncation remains explicit. Details: `MARKDOWN-SOURCE-LINKS.md` and
+`reports/source-redirect-runtime-2026-09-15.md`.
+
+Clean isolated selection: 1513/1513 tests, 23 files, 244 new tests; all 1269
+baseline statuses unchanged. Build/types/format/lint pass. Initial expectation
+and comparison-harness errors are retained. Container-code/autolink/code-span
+review fixes have regressions; unsupported tails can suppress to EOF.
+This is not a full native release or proof of Markdown challenge detection.
+
+SafeJS 0.1.599 staged artifact/public contract was inspected only, not executed
+or claimed latest. Dependency closure and legacy API incompatibility remain;
+isolated execution authorization is pending, not granted. Do not change runtime
+defaults from static inspection. Live scripting, providers/passkeys/devices,
+TTY/service/full-release gates and broader research remain open. No push.
+
 ### September 15: content follow-ups and compact replay parity
 
 **PROGRESS; overall browser goal remains ACTIVE.**

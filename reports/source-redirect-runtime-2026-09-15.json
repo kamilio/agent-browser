@@ -1,0 +1,231 @@
+{
+  "passed": true,
+  "dateUtc": "2026-09-15",
+  "parentCommit": "5ad900156ab57ab001782b7e9ed1a7cfb4dfbb90",
+  "nativeBrowsingCommit": "5ad900156ab57ab001782b7e9ed1a7cfb4dfbb90",
+  "candidateLabel": "release03",
+  "actualHttpRequests": 7,
+  "navigationAttempts": 4,
+  "retries": 0,
+  "bodyCapturesVerified": 4,
+  "rows": [
+    {
+      "group": "initial",
+      "domain": "mail.ru",
+      "url": "https://mail.ru/",
+      "status": 200,
+      "outcome": "empty-extraction",
+      "httpRequests": 3,
+      "bodyBytes": 936,
+      "markdownBytes": 0,
+      "receiptSha256": "586e7a55c6b9f094b92f2e21341b07eadfb8e5b0c525cae50462f8c9cf214a33",
+      "bodySha256": "33f81a6f5b8037398d5ab3b93218d0d80058769a01204b8c5b891782ae4f619c",
+      "childAndGroupClosed": true,
+      "failure": null
+    },
+    {
+      "group": "initial",
+      "domain": "docs.pytorch.org",
+      "url": "https://docs.pytorch.org/",
+      "status": 200,
+      "outcome": "extracted-unverified",
+      "httpRequests": 1,
+      "bodyBytes": 115,
+      "markdownBytes": 124,
+      "receiptSha256": "90e73e7cec749989e5a6adf527286a528f6a2f81e59671290c9060234a16f174",
+      "bodySha256": "7203bbdfa74b5843733f99567a2d562bc0f1289fdaba8643cd3bde56ce4efc57",
+      "childAndGroupClosed": true,
+      "failure": null
+    },
+    {
+      "group": "explicit-source-linked-followup",
+      "domain": "docs.pytorch.org",
+      "url": "https://docs.pytorch.org/docs",
+      "status": 200,
+      "outcome": "extracted-unverified",
+      "httpRequests": 2,
+      "bodyBytes": 268,
+      "markdownBytes": 277,
+      "receiptSha256": "8e2741de25ff4366e75004aad461bc6e3d11a3168dc8a41292aa276ce2e3d38c",
+      "bodySha256": "9a7c278b5846d77be9332f9a31c01b843a7e09f0223f94b7ab620c616fa0621c",
+      "childAndGroupClosed": true,
+      "failure": null
+    },
+    {
+      "group": "explicit-source-linked-followup",
+      "domain": "docs.pytorch.org",
+      "url": "https://docs.pytorch.org/docs/stable/index.html",
+      "status": 200,
+      "outcome": "extracted-unverified",
+      "httpRequests": 1,
+      "bodyBytes": 95,
+      "markdownBytes": 104,
+      "receiptSha256": "88ddaab6722d5b12855601e987958ca321cd032ec452337d1e3a1b13c74e24f5",
+      "bodySha256": "ab0695871cfb6e7e4be6c41eb4816415b7b9ee257307eccf99e53699c11ee990",
+      "childAndGroupClosed": true,
+      "failure": null
+    }
+  ],
+  "top100SavedEvidenceRecheck": {
+    "passed": true,
+    "at": "2026-09-15T09:44:24.063Z",
+    "reportFile": "reports/top100-websites-2026-09-15.json",
+    "reportSha256": "323804043415d0b493d183efef9004123a7d5b498689cdebf647eb66df5dcea8",
+    "receiptsVerified": 100,
+    "bodyCapturesVerified": 90,
+    "historicalHttpRequests": 197,
+    "actualNewHttpRequests": 0,
+    "recordedChildAndTransportClosureVerified": 100,
+    "counts": {
+      "extracted-unverified": 65,
+      "empty-extraction": 13,
+      "semantic-barrier": 7,
+      "failure": 12,
+      "http-failure": 3
+    },
+    "qualification": "Revalidation of saved September 15 receipts, not a new live run or current ranking verification."
+  },
+  "validation": {
+    "selectedFiles": 23,
+    "passed": 1513,
+    "failed": 0,
+    "baselinePassed": 1269,
+    "baselineStatusesUnchanged": 1269,
+    "newTests": 244,
+    "newFailures": 0,
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0,
+      "native": 0
+    },
+    "initialCandidatePassed": 1449,
+    "initialCandidateFailed": 2,
+    "qualification": "Selected explicit native manifest files only; not a full native/runtime release."
+  },
+  "savedSourceProof": [
+    {
+      "key": "pytorch",
+      "bodyBytes": 115,
+      "bodySha256": "7203bbdfa74b5843733f99567a2d562bc0f1289fdaba8643cd3bde56ce4efc57",
+      "receiptSha256": "90e73e7cec749989e5a6adf527286a528f6a2f81e59671290c9060234a16f174",
+      "domLinks": 0,
+      "sourceLinks": 1,
+      "sourceTruncated": false,
+      "matches": 1,
+      "extractionSha256": "c6bdc783e0d1d9a9a481a285dc6bf50433dbab28e814728d869798f5a2cf2c08",
+      "serializedHtmlSha256": "9fafe831d300a222ad7711a7f666884300a8db58427594f01032dc59176ad210",
+      "readerSha256": "ffd77c8337783b19700d2e7666d86f138e22eb4a7845392704ebc49c08195c88"
+    },
+    {
+      "key": "huggingface",
+      "bodyBytes": 9855,
+      "bodySha256": "976f7ff24d4ea426d034c741fd72ce660428946a8423fd80b785cef9acb896d1",
+      "receiptSha256": "4ca50d858c9491ebf29bc84954b37883a452cc3e0f660546704fc51991e527be",
+      "domLinks": 0,
+      "sourceLinks": 28,
+      "sourceTruncated": false,
+      "matches": 28,
+      "extractionSha256": "6bfb7f44ae47750c12751ca3235f553dd1ed2a098bbabdbc75d7e90d428af978",
+      "serializedHtmlSha256": "e40c423b57339a7e67c4ac1bc91124e10cc2c159631d7d28c93b7aecafed384c",
+      "readerSha256": "d9f389af9d4b7cdd42bba50c6dbd34f2c029e192f45185d9f612754306677c30"
+    },
+    {
+      "key": "cloudflare",
+      "bodyBytes": 8743,
+      "bodySha256": "79dd3bd65ef0bc952a2a1fcd700c8d28904e46374bf6604e57a1a1d76221bda7",
+      "receiptSha256": "709e0699c90644023f1b07e407efa156db1165cd9b1a9f9567ccba7e3409f0f5",
+      "domLinks": 0,
+      "sourceLinks": 32,
+      "sourceTruncated": true,
+      "matches": 32,
+      "extractionSha256": "a0f1036e8c61981ecf6bc5aa8472d41ae6d3b3ee8c5b79009978a973d3543791",
+      "serializedHtmlSha256": "a9691f2b014ee9042a18cb18b8920af139c33e2abb0d749421a77baca3a12add",
+      "readerSha256": "322f89944f4fbe37db29ce6f54b1d9371beca2f6469e9e9b3c57b5edebffca60"
+    },
+    {
+      "key": "rfc",
+      "bodyBytes": 82367,
+      "bodySha256": "bbaa280636d3e38f0a1a130a5ce40e9753db1ed18c860945b0bf795ff8dc1a87",
+      "receiptSha256": "96e76673b21ae54cd77bbed0595ef7863cae466eb8d0e143cd079a3a2ba3e20f",
+      "domLinks": 32,
+      "sourceLinks": 0,
+      "sourceTruncated": false,
+      "matches": 32,
+      "extractionSha256": "fca18dfbb1ce118937e3025eaac12524cb7cb407b61cf558e6d87b24beaf87bd",
+      "serializedHtmlSha256": "056f45e4a73c5ca3adf2e54427ee58fa6a99655c14dc06567284d57cb84c8c99",
+      "readerSha256": "0215a3bdffbf167ccdfac7fe218efcc26c6d048d95f2aa5b0facad47c8f67e82"
+    }
+  ],
+  "offlineChildren": [
+    {
+      "name": "baseline",
+      "exitCode": 1,
+      "childAbsent": true,
+      "groupAbsent": true
+    },
+    {
+      "name": "baseline-pytorch-cli",
+      "exitCode": 1,
+      "childAbsent": true,
+      "groupAbsent": true
+    },
+    {
+      "name": "baseline02",
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true
+    },
+    {
+      "name": "release02",
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true
+    },
+    {
+      "name": "release02-pytorch-cli",
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true
+    },
+    {
+      "name": "release03",
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true
+    },
+    {
+      "name": "release03-pytorch-cli",
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true
+    }
+  ],
+  "offlineHttpRequests": 0,
+  "safejs": {
+    "inspectionOnly": true,
+    "stagedVersion": "0.1.599",
+    "acquiredDate": "2026-09-14",
+    "latestVersionClaim": false,
+    "inventoryRecordsVerified": 383,
+    "inventoryBytesVerified": 52221857,
+    "packageFilesVerified": 372,
+    "packageBytesVerified": 43071863,
+    "declaredDependencyClosureComplete": false,
+    "executed": false,
+    "executionAuthorization": "Requested asynchronously; pending, not granted.",
+    "legacyDefaultChanged": false,
+    "browserDirectDependenciesAdded": 0
+  },
+  "limitations": [
+    "Source-only partial Markdown parsing, not rendered/clickable anchors.",
+    "Unsupported container tails may suppress remaining candidates.",
+    "Natural Markdown challenge detection is not established by mocked barrier-wiring tests.",
+    "Mail.ru remains an empty scripted/meta-refresh shell; no source refresh was followed.",
+    "PyTorch root/docs/stable attempts returned source redirect notes, not the documentation body; the bounded follow-up scope stopped there.",
+    "Top-100 ranking corpus is published May 2026, not a verified September ranking.",
+    "Original top-100 outcomes and failed captures remain unchanged.",
+    "Full native release, live scripted sites, providers/passkeys/devices, TTY and service gates remain open."
+  ]
+}

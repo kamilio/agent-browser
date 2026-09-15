@@ -700,12 +700,16 @@ function extractValidatedReplayJson<
 		const textSelection =
 			selected.method === "text-lines" ||
 			selected.method === "text-line-discovery";
+		const markdownLinks =
+			selected.method === "link-url-search" &&
+			admission.selectedProfile === "default" &&
+			mime === "text/markdown";
 		if (
 			textSelection
 				? admission.selectedProfile !== "default" ||
 					mime === undefined ||
 					mime === "text/html"
-				: mime !== "text/html"
+				: mime !== "text/html" && !markdownLinks
 		)
 			throw new AgentBrowserError(
 				"unsupported",
@@ -834,12 +838,14 @@ function extractValidatedReplayJson<
 				maxDepth: researchJsonReplayLimits.maxDepth,
 				checkpoint,
 			});
-			report.selection.matches = report.links.entries.length;
+			const entries = [
+				...report.links.entries,
+				...(report.links.sourceMarkdown?.entries ?? []),
+			];
+			report.selection.matches = entries.length;
 			if (
-				!classify(
-					report.links.entries.map((entry) => entry.label).join("\n"),
-				) &&
-				!report.links.entries.length
+				!classify(entries.map((entry) => entry.label).join("\n")) &&
+				!entries.length
 			) {
 				report.outcome = "empty-extraction";
 				report.contentSuccess = false;

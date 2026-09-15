@@ -26,6 +26,10 @@ import {
 import { htmlParseInfo } from "./html-info.js";
 import { type LinkTarget, collectLinkTargets } from "./link-discovery.js";
 import {
+	type MarkdownSourceLinks,
+	discoverMarkdownSourceLinks,
+} from "./markdown-source-links.js";
+import {
 	type ResearchReaderReport,
 	researchReaderInfo,
 } from "./research-reader-info.js";
@@ -139,6 +143,7 @@ export interface DocumentLinkDiscovery {
 	entries: LinkTarget[];
 	scannedNodes: number;
 	truncated: boolean;
+	sourceMarkdown?: MarkdownSourceLinks;
 }
 
 export interface DocumentTextLineDiscovery extends TextLineDiscovery {
@@ -892,6 +897,18 @@ export function discoverDocumentLinks(
 		descend,
 		checkpoint: options.checkpoint,
 	});
+	const source =
+		textDocumentInfo(tree)?.mime === "text/markdown"
+			? eligibleTextLineSource(tree)
+			: undefined;
+	const sourceMarkdown = source
+		? discoverMarkdownSourceLinks(source.data, tree.url, query, {
+				maxEntries,
+				maxLabelCodeUnits,
+				maxUrlCodeUnits,
+				checkpoint: options.checkpoint,
+			})
+		: undefined;
 	const result: DocumentLinkDiscovery = {
 		method: "link-discovery",
 		document: tree.reference(tree.root),
@@ -899,6 +916,13 @@ export function discoverDocumentLinks(
 		partial: true,
 		query,
 		...targets,
+		...(sourceMarkdown &&
+		(sourceMarkdown.entries.length || sourceMarkdown.truncated)
+			? {
+					sourceMarkdown,
+					truncated: targets.truncated || sourceMarkdown.truncated,
+				}
+			: {}),
 	};
 	if (encoder.encode(JSON.stringify(result)).byteLength > maxBytes)
 		throw new AgentBrowserError(
