@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: equal-output extraction byte-accounting performance
+
+- Profile 1,500 extractions of five saved articles before changing code. UTF-8
+  encoding accounts for roughly 1.41 seconds of sampled self time in a 9.01-second
+  process; defer the smaller source-probe hypothesis rather than optimizing blind.
+- Replace byte-array allocation in extraction.ts length checks with a pure,
+  constant-space UTF-8 length counter. Preserve serialization, output content,
+  source metadata, Unicode replacement behavior, and existing byte/structure caps.
+  No new dependency, script execution, default change or access behavior change.
+- All 59 new regressions pass, including exhaustive single UTF-16-unit comparison,
+  mixed/pair/long-string oracles, no-encoding spies and exact-cap integration.
+  Selected baseline1278/0 and final1337/0 across21 files; old extraction with new
+  standalone helper/tests1335/2 expected red. Build/types/format/lint pass.
+- Two socket-denied ten-page comparisons preserve Markdown exactly and JSON/
+  metadata after node-ref normalization. Includes article, product, dictionary,
+  app-listing and GitHub source-code cases. Forty comparison documents close;
+  five profiling documents also close. No new website requests or SDK execution.
+- Twenty alternating batches of five calls per runtime/page yield lower median
+  extraction time on every case:9.6–18.0% in the first run,9.2–19.4% in the separate
+  reverse-page-order run. Same-tree extraction only, not load/network/end-to-end
+  speed; original historical measurements remain unchanged.
+- Remaining work includes other extraction allocations, broader compatibility,
+  dynamic content, access/CAPTCHA handling and SDK/interactive/credential/passkey
+  gates. Not a full921-file manifest pass. See `EXTRACTION-BYTE-ACCOUNTING.md` and
+  extraction-byte-accounting September15 reports. Overall browser goal is active.
+
 ### September 15: article/review tasks and request-free follow-up reading
 
 - Five new source-linked article/review targets checked: CNET, Consumer Reports,

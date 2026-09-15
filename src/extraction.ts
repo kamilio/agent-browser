@@ -1,3 +1,4 @@
+import { utf8ByteLength } from "./utf8-byte-length.js";
 import {
 	type AriaTableSourceMetadata,
 	extractAriaTableSource,
@@ -314,7 +315,6 @@ const tableBoundaryMarkers: Partial<
 	},
 };
 const leafElements = new Set(["img", "br", "hr"]);
-const encoder = new TextEncoder();
 
 function eligibleTextLineSource(tree: DocumentTree) {
 	const root = tree.get(tree.root);
@@ -721,7 +721,7 @@ function markdown(
 				)
 				.join("");
 			const line = `${prefix}${lines[index]}\n`;
-			bytes += encoder.encode(line).byteLength;
+			bytes += utf8ByteLength(line);
 			if (bytes > maxBytes)
 				throw resourceLimitError(
 					"extraction.output",
@@ -985,7 +985,7 @@ export function discoverDocumentLinks(
 				}
 			: {}),
 	};
-	if (encoder.encode(JSON.stringify(result)).byteLength > maxBytes)
+	if (utf8ByteLength(JSON.stringify(result)) > maxBytes)
 		throw new AgentBrowserError(
 			"resource-limit",
 			"Link discovery byte limit exceeded",
@@ -1040,7 +1040,7 @@ export function discoverDocumentHeadings(
 			title: clean(entry.title).replace(/\s+/g, " ").trim(),
 		})),
 	};
-	if (encoder.encode(JSON.stringify(outline)).byteLength > maxBytes)
+	if (utf8ByteLength(JSON.stringify(outline)) > maxBytes)
 		throw new AgentBrowserError(
 			"resource-limit",
 			"Heading outline byte limit exceeded",
@@ -1084,7 +1084,7 @@ export function discoverDocumentTextLines(
 		partial: true,
 		...discoverTextLines(text, query, { maxEntries }),
 	};
-	if (encoder.encode(JSON.stringify(result)).byteLength > maxBytes)
+	if (utf8ByteLength(JSON.stringify(result)) > maxBytes)
 		throw new AgentBrowserError(
 			"resource-limit",
 			"Text discovery byte limit exceeded",
@@ -1237,7 +1237,7 @@ export function extractDocument(
 		...(selection ? { textSelection: selection.metadata } : {}),
 		...(section ? { sectionSelection: section.metadata } : {}),
 	};
-	if (encoder.encode(JSON.stringify(metadata)).byteLength > maxBytes)
+	if (utf8ByteLength(JSON.stringify(metadata)) > maxBytes)
 		throw new AgentBrowserError(
 			"resource-limit",
 			"Extraction metadata limit exceeded",
@@ -1413,7 +1413,7 @@ export function extractDocument(
 			if (url) node.url = url;
 			else node.blocked = true;
 		}
-		intermediateBytes += encoder.encode(JSON.stringify(node)).byteLength + 1;
+		intermediateBytes += utf8ByteLength(JSON.stringify(node)) + 1;
 		if (intermediateBytes > 4_194_304)
 			throw new AgentBrowserError(
 				"resource-limit",
@@ -1471,7 +1471,7 @@ export function extractDocument(
 							options.tableRows === true,
 						),
 					};
-		outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
+		outputBytes = utf8ByteLength(JSON.stringify(result));
 		if (outputBytes > maxBytes)
 			throw resourceLimitError(
 				"extraction.output",
@@ -1496,7 +1496,7 @@ export function extractDocument(
 		);
 		if (!prefix) throw error;
 		result = { ...metadata, format, ...prefix };
-		outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
+		outputBytes = utf8ByteLength(JSON.stringify(result));
 	}
 	if (outputBytes > maxBytes)
 		throw resourceLimitError(
@@ -1508,9 +1508,7 @@ export function extractDocument(
 	const sourceData = researchSourceDataTables(tree);
 	if (sourceData) {
 		const remaining =
-			maxBytes -
-			outputBytes -
-			encoder.encode(',"sourceDataTables":').byteLength;
+			maxBytes - outputBytes - utf8ByteLength(',"sourceDataTables":');
 		if (remaining >= 0) {
 			const sourceDataTables = fitResearchSourceDataTables(
 				sourceData,
@@ -1518,19 +1516,19 @@ export function extractDocument(
 			);
 			if (sourceDataTables) {
 				result = { ...result, sourceDataTables };
-				outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
+				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
 		}
 	}
 	const access = researchSourceAccess(tree);
 	if (access) {
 		const remaining =
-			maxBytes - outputBytes - encoder.encode(',"sourceAccess":').byteLength;
+			maxBytes - outputBytes - utf8ByteLength(',"sourceAccess":');
 		if (remaining >= 0) {
 			const sourceAccess = fitResearchSourceAccess(access, remaining);
 			if (sourceAccess) {
 				result = { ...result, sourceAccess };
-				outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
+				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
 		}
 	}
@@ -1538,19 +1536,19 @@ export function extractDocument(
 	const feeds = documentFeeds(tree);
 	if (feeds) {
 		const remaining =
-			maxBytes - outputBytes - encoder.encode(',"sourceFeeds":').byteLength;
+			maxBytes - outputBytes - utf8ByteLength(',"sourceFeeds":');
 		if (remaining >= 0) {
 			const sourceFeeds = fitDocumentFeeds(feeds, remaining);
 			if (sourceFeeds) {
 				if (!products) return { ...result, sourceFeeds };
 				result = { ...result, sourceFeeds };
-				outputBytes = encoder.encode(JSON.stringify(result)).byteLength;
+				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
 		}
 	}
 	if (products) {
 		const remaining =
-			maxBytes - outputBytes - encoder.encode(',"sourceProducts":').byteLength;
+			maxBytes - outputBytes - utf8ByteLength(',"sourceProducts":');
 		if (remaining >= 0) {
 			const sourceProducts = fitResearchSourceProducts(products, remaining);
 			if (sourceProducts) return { ...result, sourceProducts };

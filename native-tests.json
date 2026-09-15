@@ -917,5 +917,7 @@
 	"src/research-https-redirect-cli.test.ts",
 	"src/rustdoc-code-gutters.test.ts",
 	"src/github-source-lines.test.ts",
-	"src/research-source-products.test.ts"
+	"src/research-source-products.test.ts",
+	"src/utf8-byte-length.test.ts",
+	"src/extraction-byte-accounting.test.ts"
 ]
