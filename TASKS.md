@@ -6,6 +6,33 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: attempt every entry in a published top-100 website list
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Completed 100/100 public-homepage navigation attempts with the native browser,
+using Similarweb's published May 2026 corpus, not a claimed September ranking.
+Four disjoint batches made 197 observed HTTP GETs including redirects; zero
+retries, supplied credentials/cookie headers, page scripts or challenge bypasses.
+The original native outcomes are 65 extracted-unverified, 13 empty-extraction,
+seven semantic barriers, three HTTP failures and twelve other failures. Nonempty
+text includes login/JavaScript/compatibility shells and is not site success.
+All 100 children and transports closed; 197 request/socket closes matched the
+197 starts, and all 90 saved decoded-body hashes verified. Frozen source and
+compiled ledgers matched before/after; no production changes occurred in the sweep.
+The full 100-row matrix and machine-readable URL/result/hash inventory are in
+`reports/top100-websites-2026-09-15.md` and its matching JSON file. Raw evidence
+remains in `node_modules/.cache/native-validation/top100-september15/`; redirect
+logs are private and can contain server-generated query values. Exported report
+URLs redact queries. No supplied secret access or cookie jar was used.
+Priorities: Zoom's HTTP-200 reader failure; LinkedIn's missed browser-check barrier;
+useful-content versus shell reporting and Office's hidden configuration pollution;
+decoded-response and redirect-limit diagnostics; CNN's empty 403 mislabeled as
+a loader failure; animated-counter/template artifacts and safe observer export.
+Fix these against saved captures with isolated tests rather than recrawling the
+same sites. Full native release, research conclusions, runtime/rendering,
+interaction, SafeJS, service/socket, TTY/PTY, credential and passkey-device gates
+remain open and separate. Original work and historical evidence stay preserved.
+
 ### September 15: retain explicit formula text and read product specifications
 
 **PROGRESS; overall browser goal remains ACTIVE.**
