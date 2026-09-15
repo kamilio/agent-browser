@@ -185,6 +185,7 @@ function researchLines(value: unknown): ResearchLineRange {
 
 export function parseResearchArguments(args: readonly string[]) {
 	let reader = false;
+	let preferMarkdown = false;
 	let readerRawPolicy: ResearchReaderRawPolicy | undefined;
 	let captureBody = false;
 	let format: "markdown" | "json" | undefined;
@@ -292,6 +293,10 @@ export function parseResearchArguments(args: readonly string[]) {
 			reader = true;
 			continue;
 		}
+		if (argument === "--prefer-markdown" && !preferMarkdown) {
+			preferMarkdown = true;
+			continue;
+		}
 		if (
 			argument.startsWith("-") ||
 			argument.length > researchRunLimits.maxUrlCodeUnits ||
@@ -313,6 +318,18 @@ export function parseResearchArguments(args: readonly string[]) {
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Research reader raw policy requires the reader",
+		);
+	if (
+		preferMarkdown &&
+		(!reader ||
+			selector !== undefined ||
+			section !== undefined ||
+			headings ||
+			documentProfile === "long-v1")
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Markdown preference requires the default reader without DOM selection",
 		);
 	if (selector !== undefined && lines !== undefined)
 		throw new AgentBrowserError(
@@ -381,6 +398,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	return {
 		reader,
 		urls,
+		...(preferMarkdown ? { preferMarkdown: true as const } : {}),
 		...(readerRawPolicy === undefined ? {} : { readerRawPolicy }),
 		...(format === undefined ? {} : { format }),
 		...(tableMetadata ? { tableMetadata: true as const } : {}),
@@ -404,6 +422,7 @@ export type ResearchOutcome =
 	| "failure";
 
 export interface ResearchNavigationReport {
+	representationPreference?: "markdown";
 	fragment?: ResearchFragmentReport;
 	admission?: ResearchAdmissionProvenance;
 	readerRawPolicy?: ResearchReaderRawPolicy;
@@ -452,6 +471,7 @@ export interface ResearchNavigationReport {
 }
 
 export interface ResearchExecutionOptions {
+	preferMarkdown?: boolean;
 	readerRawPolicy?: ResearchReaderRawPolicy;
 	format?: "markdown" | "json";
 	tableMetadata?: boolean;
@@ -464,6 +484,8 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 		!options ||
 		typeof options !== "object" ||
 		Array.isArray(options) ||
+		(options.preferMarkdown !== undefined &&
+			typeof options.preferMarkdown !== "boolean") ||
 		(options.format !== undefined &&
 			options.format !== "markdown" &&
 			options.format !== "json") ||
@@ -514,6 +536,7 @@ export async function researchNavigation(
 	const lineRange =
 		lines === undefined ? undefined : validateResearchLines(lines);
 	const validated = parseResearchArguments([
+		...(executionOptions.preferMarkdown ? ["--prefer-markdown"] : []),
 		...(executionOptions.readerRawPolicy === undefined
 			? []
 			: ["--reader-raw-policy", executionOptions.readerRawPolicy]),
@@ -549,6 +572,9 @@ export async function researchNavigation(
 	const started = Date.now();
 	const fragment = researchFragmentReport(validated.urls[0]);
 	const report: ResearchNavigationReport = {
+		...(validated.preferMarkdown
+			? { representationPreference: "markdown" as const }
+			: {}),
 		...(fragment === undefined ? {} : { fragment }),
 		...(admissionLimits ? { admission: researchLongAdmissionProvenance } : {}),
 		...(validated.readerRawPolicy === undefined
@@ -635,6 +661,14 @@ export async function researchNavigation(
 						}
 						const response = await native.request({
 							...request,
+							...(validated.preferMarkdown
+								? {
+										headers: {
+											...request.headers,
+											accept: "text/markdown, text/html;q=0.9",
+										},
+									}
+								: {}),
 							cookieContext: {
 								siteUrl: null,
 								...request.cookieContext,
@@ -918,6 +952,7 @@ export async function* researchBatch(
 				options.find,
 				options.documentProfile,
 				{
+					preferMarkdown: options.preferMarkdown,
 					...(options.readerRawPolicy === undefined
 						? {}
 						: { readerRawPolicy: options.readerRawPolicy }),
@@ -1048,7 +1083,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--reader-raw-policy separate-omitted-raw-v1] [--capture-body] [--format markdown|json] [--table-metadata] [--compact-tables] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; raw policy requires reader; compact tables require Markdown)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--prefer-markdown] [--reader-raw-policy separate-omitted-raw-v1] [--capture-body] [--format markdown|json] [--table-metadata] [--compact-tables] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; raw policy requires reader; compact tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});

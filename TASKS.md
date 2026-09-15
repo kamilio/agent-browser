@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: opt-in publisher Markdown negotiation
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Five native requests across two public URLs compare default and preferred text
+representations, then verify the actual new `--reader --prefer-markdown` CLI.
+Ollama supplies the same hardware Markdown as its publisher source with 90.1%
+fewer encoded body bytes than the observed HTML response. MDN ignores the
+preference and retains byte-identical HTML/extraction without a retry. The
+fixed Accept preference is opt-in, preserves identity/credential omission and
+limits, and rejects DOM-selection/long-profile conflicts before networking.
+All 51 new tests pass. The selected 22-file run remains non-green: 1,914 pass,
+four existing failures reproduce exactly on unmodified baseline (252 pass/four
+fail there). Initial new assertion mistakes and all failure logs are retained;
+no old tests are dropped or weakened. Build, 22 strict roots, formatting and
+lint pass. The thirty-ninth inventory and `MARKDOWN-NEGOTIATION.md` describe
+evidence and limitations. MDN navigation clutter, broader site/research coverage,
+rendering/interaction, comparative latency, restricted sites, full native release
+and separate runtime/service/device/credential gates remain open. No push.
+
 ### September 14–15 UTC: Markdown documentation and CSV content recovered
 
 **PROGRESS; overall browser goal remains ACTIVE.**

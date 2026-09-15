@@ -44,6 +44,10 @@ See the thirty-seventh website inventory for the exact evidence and limitations.
 
 ## Avoid unnecessary requests
 
+- For publishers supporting content negotiation, opt in to
+  `--reader --prefer-markdown` at the same public URL. This asks for Markdown while
+  retaining HTML fallback in the same response, not an automatic second
+  navigation. See `MARKDOWN-NEGOTIATION.md` for compatibility and measured limits.
 - Keep successful captures and use admitted local replay for HTML sections.
 - For plain text, Markdown source, CSV, JSON and the literal XML/feed types,
   native `--find` and `--lines` locate source text. Separate research-CLI invocations navigate again;
