@@ -24,6 +24,8 @@ export function loadTextDocument(
 	const mime = contentTypes[0].split(";", 1)[0].trim().toLowerCase();
 	if (
 		mime !== "text/plain" &&
+		mime !== "text/markdown" &&
+		mime !== "text/csv" &&
 		mime !== "application/json" &&
 		mime !== "text/xml" &&
 		mime !== "application/xml" &&
@@ -33,7 +35,7 @@ export function loadTextDocument(
 	)
 		throw new AgentBrowserError(
 			"unsupported",
-			"This loader supports plain text, JSON and literal XML feeds, not HTML or executable documents",
+			"This loader supports plain text, Markdown, CSV, JSON and literal XML feeds, not HTML or executable documents",
 		);
 	if (response.body.byteLength > context.limits.maxTextCodeUnits * 4 + 3)
 		throw resourceLimitError(

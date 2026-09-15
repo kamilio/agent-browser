@@ -103,6 +103,8 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 		documentFormats: [
 			"text/html",
 			"text/plain",
+			"text/markdown",
+			"text/csv",
 			"application/json",
 			"application/*+json",
 			"text/xml",

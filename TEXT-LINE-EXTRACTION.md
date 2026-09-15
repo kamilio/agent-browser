@@ -1,5 +1,8 @@
 # Bounded native plaintext line selection
 
+`LITERAL-TEXT-FORMATS.md` additionally admits Markdown and CSV source. Line
+selection uses physical source lines, not rendered Markdown or parsed CSV records.
+
 September 14 extension: `LITERAL-FEEDS.md` adds four explicitly admitted XML/feed
 MIME types to the same literal-text loader. They also qualify for line selection;
 this does not add XML parsing or change the historical measurements below.

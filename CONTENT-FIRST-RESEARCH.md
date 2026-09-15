@@ -45,8 +45,8 @@ See the thirty-seventh website inventory for the exact evidence and limitations.
 ## Avoid unnecessary requests
 
 - Keep successful captures and use admitted local replay for HTML sections.
-- For plain text, JSON and the literal XML/feed types, native `--find` and
-  `--lines` locate source text. Separate research-CLI invocations navigate again;
+- For plain text, Markdown source, CSV, JSON and the literal XML/feed types,
+  native `--find` and `--lines` locate source text. Separate research-CLI invocations navigate again;
   the HTML replay admission is not a generic XML or arbitrary-file reader.
 - Record final canonical URLs for later authorized visits instead of repeatedly
   entering a redirecting legacy path. Do not guess alternate URLs to evade blocks.

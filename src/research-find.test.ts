@@ -657,23 +657,56 @@ it.each([false, true])(
 	},
 );
 
-it.each([false, true])(
-	"retains text/markdown refusal before discovery (reader=%s)",
-	async (reader) => {
-		const report = await navigate(
-			response(`# ${privateQuery}\n${privateSource}`, {
-				headers: { "content-type": ["text/markdown; charset=utf-8"] },
-			}),
-			reader,
-			true,
-		);
-		expect(report).toMatchObject({
-			outcome: "failure",
-			contentSuccess: false,
-			failure: { category: "unsupported", stage: "loader" },
+it.each(
+	[false, true].flatMap((reader) =>
+		[false, true].map((captureBody) => ({ reader, captureBody })),
+	),
+)(
+	"discovers literal text/markdown source without heading semantics (reader=$reader, capture=$captureBody)",
+	async ({ reader, captureBody }) => {
+		const source = `# 😀${privateQuery}\r\n\r\n| ${privateQuery} | ${privateSource} |\r[${privateQuery}](https://research.example/no-follow)\n`;
+		const input = response(source, {
+			headers: { "content-type": ["text/markdown; charset=utf-8"] },
 		});
-		expect(report.textLines).toBeUndefined();
-		expect(extraction.discoverDocumentTextLines).not.toHaveBeenCalled();
+		const report = await navigate(input, reader, captureBody);
+		expect(report).toMatchObject({
+			outcome: "extracted-unverified",
+			contentSuccess: null,
+			profile: reader ? readerLoader.researchReaderProfile : "native",
+			classification: { barrier: null },
+		});
+		expect(report.failure).toBeUndefined();
+		expect(discovery(report)).toMatchObject({
+			entries: [
+				{ line: 1, column: 5 },
+				{ line: 3, column: 3 },
+				{ line: 4, column: 2 },
+			],
+			totalLines: 5,
+			matchedLines: 3,
+			sourceCodeUnits: source.length,
+			truncated: false,
+		});
+		if (captureBody) {
+			expect(report.bodyCapture).toMatchObject({
+				encoding: "base64",
+				decodedBytes: input.body.byteLength,
+				sha256: createHash("sha256").update(input.body).digest("hex"),
+			});
+			expect(
+				new TextDecoder().decode(decodeResearchBodyCapture(report.bodyCapture)),
+			).toBe(source);
+		}
+		if (reader)
+			expect(report.reader).toMatchObject({
+				partial: true,
+				scripting: false,
+				styling: false,
+				hiddenContentSemantics: false,
+				sourceCodeUnits: source.length,
+				textCodeUnits: source.length,
+			});
+		expect(researchExitCode([report])).toBe(0);
 	},
 );
 

@@ -129,16 +129,28 @@ it.each(
 	["text/markdown", "TEXT/MARKDOWN; charset=UTF-8"].flatMap((mime) =>
 		loaders.map((loader) => ({ mime, ...loader })),
 	),
-)("retains $mime refusal through the $name loader", async ({ mime, load }) => {
-	await expect(
-		Promise.resolve().then(async () =>
-			retain(await load(response(`# ${privateSentinel}`, mime), context())),
-		),
-	).rejects.toMatchObject({
-		code: "unsupported",
-		message: expect.not.stringContaining(privateSentinel),
-	});
-});
+)(
+	"discovers literal $mime source through the $name loader",
+	async ({ mime, load }) => {
+		const source = `# ${privateSentinel}\r\n| ${privateSentinel} | value |\n`;
+		const tree = retain(await load(response(source, mime), context()));
+		const result = discoverDocumentTextLines(tree, privateSentinel);
+		expect(result).toMatchObject({
+			partial: true,
+			entries: [
+				{ line: 1, column: 3 },
+				{ line: 2, column: 3 },
+			],
+			totalLines: 3,
+			matchedLines: 2,
+			sourceCodeUnits: source.length,
+			truncated: false,
+		});
+		expect(tree.textContent(tree.root)).toBe(source);
+		expect(textDocumentInfo(tree)?.revision).toBe(tree.revision);
+		expect(JSON.stringify(result)).not.toContain(privateSentinel);
+	},
+);
 
 it.each([
 	{ source: "", query: "x", totalLines: 1, entries: [] },

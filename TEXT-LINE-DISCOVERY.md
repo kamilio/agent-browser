@@ -1,5 +1,8 @@
 # Native text-line discovery
 
+`LITERAL-TEXT-FORMATS.md` additionally admits Markdown and CSV source to this
+same literal discovery path. The initial Markdown-refusal scope below is historical.
+
 September 14 extension: `LITERAL-FEEDS.md` adds four explicitly admitted XML/feed
 MIME types to the same literal-text loader and line discovery. The initial MIME
 scope and historical measurements below retain their original context.

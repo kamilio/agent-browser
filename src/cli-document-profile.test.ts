@@ -247,6 +247,8 @@ describe("mocked CLI document profile boundaries", () => {
 				documentFormats: [
 					"text/html",
 					"text/plain",
+					"text/markdown",
+					"text/csv",
 					"application/json",
 					"application/*+json",
 					"text/xml",

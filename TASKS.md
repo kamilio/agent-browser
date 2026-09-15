@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 14–15 UTC: Markdown documentation and CSV content recovered
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+The publisher's Ollama index yields a real hardware Markdown link; that page and
+an academic CSV both return 200 but expose unsupported MIME loading. Exact
+text/markdown and text/csv admission now reuses bounded inert text, not parsers,
+scripts, formulas or automatic link following. Native CLI capabilities and
+literal find/line tests cover the formats. Eight same-body socket-denied loader
+calls recover both inputs without HTTP; separate fresh native requests recover
+12,580 bytes of Markdown source and 329 bytes of CSV source. Original failed
+receipts, hashes and September 14 scope paths remain intact across UTC midnight.
+Five real requests cover three URLs/two hosts, with zero redirects or mocks.
+All 1,429 tests across 20 selected native files pass, with build, 20 strict roots,
+formatting and lint. Six initial obsolete refusal assertions are replaced by
+positive discovery checks; the initial failure log and source pin are retained.
+The thirty-eighth inventory and `LITERAL-TEXT-FORMATS.md` record results and limits.
+No dependency, wildcard MIME admission, network-policy/budget relaxation or push; original
+dirty work is preserved. Broad research, site coverage, rendering/interaction,
+restricted sites, comparative performance, full native release and separate
+runtime/device/credential/service gates remain open.
+
 ### September 14: large-page content recovered and find regressions aligned
 
 **PROGRESS; overall browser goal remains ACTIVE.**

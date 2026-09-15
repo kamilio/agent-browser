@@ -104,6 +104,8 @@
   "src/text-line-extraction.test.ts",
   "src/text-loader.test.ts",
   "src/literal-feed.test.ts",
+  "src/literal-markdown.test.ts",
+  "src/literal-csv.test.ts",
   "src/research-lines.test.ts",
   "src/script-dom-namespaces.test.ts",
   "src/script-namespace-collections.test.ts",

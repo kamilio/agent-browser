@@ -258,6 +258,8 @@ describe("synthetic CLI resource cache startup", () => {
 				documentFormats: [
 					"text/html",
 					"text/plain",
+					"text/markdown",
+					"text/csv",
 					"application/json",
 					"application/*+json",
 					"text/xml",
