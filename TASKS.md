@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: native link workflows and original hundred-site evidence audit
+
+- Re-audited the original citation-derived 100-target selection, all receipt and
+  available body hashes, all executions, and native/reviewer counts. No mismatch;
+  still a citation-host-root proxy, not measured global agent page popularity.
+  Original 48 useful-source-content results and all failures remain unchanged.
+- Four new native workflows across three existing corpus roots used eight HTTPS
+  GETs with zero retries and six captured bodies. Cambridge pointer navigation
+  extracted a definition; Wikipedia's source-linked article exceeded the unchanged
+  2MB response cap; RunRepeat pointer activation stopped at unsupported
+  block-in-inline geometry before a destination request.
+- A separate fresh RunRepeat targeted-Enter workflow navigated to the source-linked
+  review and extracted 27,423 Markdown bytes. Kernel/network-denied saved-body
+  replay independently reproduced pointer rejection then keyboard success. This
+  documents an existing explicit keyboard path, not a pointer fix or silent
+  fallback. See `NATIVE-LINK-WORKFLOWS.md` and
+  `reports/native-link-workflows-2026-09-15.md`.
+- Added eight synthetic regression cases in the explicit native manifest. Clean
+  baseline 343/0 across six selected files; candidate 351/0 across seven; build,
+  strict selected types, format and lint pass. Not a full-manifest run or actual
+  SafeJS acceptance. No production runtime or dependency changes.
+- All four sessions/transports, eight observed requests/sockets and child groups
+  closed. Two trees in the keyboard live run and two in offline replay have
+  independently observed close calls; the original pointer harness's absent
+  `resourceUsage().closed` property is explicitly not tree-closure proof.
+- Overall browser goal remains active. Outstanding: split-inline pointer geometry,
+  bounded content recovery after response-size limits, other original source/access
+  failures, and separately authorized SDK/credential/passkey acceptance gates.
+  No account actions, credential access, scripts, challenge solving or push.
+
 ### September 15: connection-verification handoff and full captured-corpus control
 
 - The saved Trustpilot403 contains a connection-verification notice, not reviews.

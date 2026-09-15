@@ -921,5 +921,6 @@
 	"src/utf8-byte-length.test.ts",
 	"src/extraction-byte-accounting.test.ts",
 	"src/browser-connection-challenge.test.ts",
-	"src/research-connection-challenge.test.ts"
+	"src/research-connection-challenge.test.ts",
+	"src/session-reader-link-workflows.test.ts"
 ]
