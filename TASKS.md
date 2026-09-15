@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: preserve block-linked card structure
+
+**PROGRESS; overall browser goal remains ACTIVE.**
+Fix Markdown's unconditional inline treatment of anchors containing block source.
+Preserve headings, paragraphs, containers and quote/list prefixes while carrying
+sanitized outer destinations to nonempty text groups. Keep literal pre code and
+one fallback autolink for code-only source, without inventing empty-link labels.
+Ordinary inline paths, true sinks and unsupported table cases stay unchanged.
+JSON, DOM, discovery, admission/classification and limits remain unchanged.
+Saved BBC output now retains all nine story h2 headings; whole Markdown grows
+15,263→17,231 bytes and a selected card 385→604 bytes. Actual replay CLI/API
+agree, and card JSON is identical. Seven saved sources retain DOM/discovery,
+titles and outcomes; five retain exact Markdown and Chrome's 404 changes only
+boundary whitespace on 28 link labels. Original AP barrier replay remains denied.
+All 1,177 selected tests across 22 files pass, including 68 new cases; all 1,109
+prior statuses match. Build/types/format/lint and independent static review pass.
+One new test below the existing byte-limit minimum was corrected without any
+production changes. An invalid projected-header AP reinjection assumption is
+preserved; corrected checks do not fabricate headers or rewrite its challenge.
+Seven offline children, zero network attempts and clean closure/pins. Warm
+extraction medians add about 0.260 ms for 500 inline links, 1.051 ms for 250
+block cards with larger output, and 0.093 ms for 1,600 plain paragraphs. This is
+not a speedup or live-rendering claim. See BLOCK-LINK-CONTENT.md and its JSON
+report. Original dirty work and website evidence are preserved. No push.
+Next: further useful-content recovery, shell/response-limit diagnostics and
+source-backed research. Full rendering/interaction/native release, SafeJS,
+credential/passkey-device, service/socket and TTY gates remain open.
+
 ### September 15: diverse content coverage and explicit subtree recovery
 
 **PROGRESS; overall browser goal remains ACTIVE.**

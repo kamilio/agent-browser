@@ -390,7 +390,49 @@ function fence(text: string, minimum: number) {
 	return "`".repeat(length);
 }
 
-function inline(nodes: readonly ExtractedNode[]) {
+interface MarkdownLinkContext {
+	url?: string;
+	linked: boolean;
+	preformatted: boolean;
+}
+
+function flowLinkStructure(root: ExtractedNode) {
+	const blockNodes = new Set<ExtractedNode>();
+	const links = new Set<ExtractedNode>();
+	const wrappers = new Set<ExtractedNode>();
+	const sinks = new Set<ExtractionType>([
+		"heading",
+		"paragraph",
+		"pre",
+		"code",
+		"strong",
+		"emphasis",
+	]);
+	const ordered: ExtractedNode[] = [];
+	const pending = [root];
+	while (pending.length) {
+		const node = pending.pop();
+		if (!node) break;
+		ordered.push(node);
+		if (!sinks.has(node.type))
+			for (const child of node.children ?? []) pending.push(child);
+	}
+	for (let index = ordered.length - 1; index >= 0; index--) {
+		const node = ordered[index];
+		const children = sinks.has(node.type) ? [] : (node.children ?? []);
+		const childBlock = children.some((child) => blockNodes.has(child));
+		if (!inlineTypes.has(node.type) || childBlock) blockNodes.add(node);
+		if (node.type === "link" && childBlock) links.add(node);
+		if (links.has(node) || children.some((child) => wrappers.has(child)))
+			wrappers.add(node);
+	}
+	return { blockNodes, links, wrappers };
+}
+
+function inline(
+	nodes: readonly ExtractedNode[],
+	inherited?: MarkdownLinkContext,
+) {
 	const pieces: string[] = [];
 	const pending: (
 		| { node: ExtractedNode; inLink: boolean }
@@ -398,7 +440,7 @@ function inline(nodes: readonly ExtractedNode[]) {
 	)[] = nodes
 		.slice()
 		.reverse()
-		.map((node) => ({ node, inLink: false }));
+		.map((node) => ({ node, inLink: !!inherited?.url }));
 	while (pending.length) {
 		const current = pending.pop();
 		if (!current) break;
@@ -448,7 +490,12 @@ function inline(nodes: readonly ExtractedNode[]) {
 			for (let index = node.children.length - 1; index >= 0; index--)
 				pending.push({ node: node.children[index], inLink: inLink || link });
 	}
-	return pieces.join("").trim();
+	const text = pieces.join("").trim();
+	if (text && inherited?.url) {
+		inherited.linked = true;
+		return `[${text}](<${inherited.url.replace(/&/g, "&amp;")}>)`;
+	}
+	return text;
 }
 
 interface Prefix {
@@ -576,13 +623,24 @@ function markdown(
 	tableRows: boolean,
 ) {
 	const transparentWrappers = validateTableStructure(root);
+	const flow = flowLinkStructure(root);
 	const output: string[] = [];
 	let bytes = 0;
 	let tableDepth = 0;
 	type Task =
-		| { node: ExtractedNode; prefixes: Prefix[]; ordinal?: number }
-		| { nodes: ExtractedNode[]; prefixes: Prefix[] }
+		| {
+				node: ExtractedNode;
+				prefixes: Prefix[];
+				ordinal?: number;
+				link?: MarkdownLinkContext;
+		  }
+		| {
+				nodes: ExtractedNode[];
+				prefixes: Prefix[];
+				link?: MarkdownLinkContext;
+		  }
 		| { closingMarker: string; prefixes: Prefix[]; closesTable: boolean }
+		| { closingFlowLink: MarkdownLinkContext; prefixes: Prefix[] }
 		| { emptyItem: Prefix; prefixes: Prefix[] };
 	const pending: Task[] = [{ node: root, prefixes: [] }];
 	const emit = (text: string, prefixes: Prefix[]) => {
@@ -618,25 +676,40 @@ function markdown(
 			);
 		output.push("\n");
 	};
-	const schedule = (children: ExtractedNode[], prefixes: Prefix[]) => {
+	const schedule = (
+		children: ExtractedNode[],
+		prefixes: Prefix[],
+		link?: MarkdownLinkContext,
+	) => {
 		const tasks: Task[] = [];
 		let group: ExtractedNode[] = [];
 		for (const node of children) {
-			if (inlineTypes.has(node.type) && !transparentWrappers.has(node))
+			if (
+				inlineTypes.has(node.type) &&
+				!transparentWrappers.has(node) &&
+				!flow.wrappers.has(node) &&
+				!(link && flow.blockNodes.has(node))
+			)
 				group.push(node);
 			else {
-				if (group.length) tasks.push({ nodes: group, prefixes });
+				if (group.length) tasks.push({ nodes: group, prefixes, link });
 				group = [];
-				tasks.push({ node, prefixes });
+				tasks.push({ node, prefixes, link });
 			}
 		}
-		if (group.length) tasks.push({ nodes: group, prefixes });
+		if (group.length) tasks.push({ nodes: group, prefixes, link });
 		for (let index = tasks.length - 1; index >= 0; index--)
 			pending.push(tasks[index]);
 	};
 	while (pending.length) {
 		const task = pending.pop();
 		if (!task) break;
+		if ("closingFlowLink" in task) {
+			const link = task.closingFlowLink;
+			if (link.url && !link.linked && link.preformatted)
+				emit(`<${link.url.replace(/&/g, "&amp;")}>`, task.prefixes);
+			continue;
+		}
 		if ("closingMarker" in task) {
 			emit(task.closingMarker, task.prefixes);
 			if (task.closesTable) tableDepth--;
@@ -647,11 +720,19 @@ function markdown(
 			continue;
 		}
 		if ("nodes" in task) {
-			emit(inline(task.nodes), task.prefixes);
+			emit(inline(task.nodes, task.link), task.prefixes);
 			continue;
 		}
-		const { node, prefixes } = task;
+		const { node, prefixes, link } = task;
 		const children = node.children ?? [];
+		if (flow.links.has(node)) {
+			const nested = link?.url
+				? link
+				: { url: node.url, linked: false, preformatted: false };
+			if (nested !== link) pending.push({ closingFlowLink: nested, prefixes });
+			schedule(children, prefixes, nested);
+			continue;
+		}
 		const boundary = tableBoundaryMarkers[node.type];
 		if (boundary) {
 			if (tableRows && node.type === "table") {
@@ -679,12 +760,16 @@ function markdown(
 			const closesTable = node.type === "table";
 			if (closesTable) tableDepth++;
 			pending.push({ closingMarker: boundary.end, prefixes, closesTable });
-			schedule(children, prefixes);
+			schedule(children, prefixes, link);
 		} else if (node.type === "heading")
-			emit(`${"#".repeat(node.level ?? 1)} ${inline(children)}`, prefixes);
-		else if (node.type === "paragraph") emit(inline(children), prefixes);
+			emit(
+				`${"#".repeat(node.level ?? 1)} ${inline(children, link)}`,
+				prefixes,
+			);
+		else if (node.type === "paragraph") emit(inline(children, link), prefixes);
 		else if (node.type === "pre") {
 			const text = plain(children);
+			if (link && text.trim()) link.preformatted = true;
 			const marker = fence(text, 3);
 			emit(
 				`${marker}\n${text}${text.endsWith("\n") ? "" : "\n"}${marker}`,
@@ -692,12 +777,13 @@ function markdown(
 			);
 		} else if (node.type === "separator") emit("---", prefixes);
 		else if (node.type === "blockquote")
-			schedule(children, [...prefixes, { marker: "> " }]);
+			schedule(children, [...prefixes, { marker: "> " }], link);
 		else if (node.type === "list") {
 			let ordinal = node.start ?? 1;
 			const tasks: Task[] = children.map((child) => ({
 				node: child,
 				prefixes,
+				link,
 				...(node.ordered && child.type === "list-item"
 					? { ordinal: ordinal++ }
 					: {}),
@@ -714,10 +800,15 @@ function markdown(
 			const item = { marker, item: true };
 			const nested = [...prefixes, item];
 			pending.push({ emptyItem: item, prefixes: nested });
-			schedule(children, nested);
-		} else if (transparentWrappers.has(node)) schedule(children, prefixes);
-		else if (inlineTypes.has(node.type)) emit(inline([node]), prefixes);
-		else schedule(children, prefixes);
+			schedule(children, nested, link);
+		} else if (
+			transparentWrappers.has(node) ||
+			flow.wrappers.has(node) ||
+			(link && flow.blockNodes.has(node))
+		)
+			schedule(children, prefixes, link);
+		else if (inlineTypes.has(node.type)) emit(inline([node], link), prefixes);
+		else schedule(children, prefixes, link);
 	}
 	return output.length ? output.join("").slice(0, -1) : "";
 }

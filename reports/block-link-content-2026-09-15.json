@@ -1,0 +1,679 @@
+{
+  "passed": true,
+  "date": "2026-09-15",
+  "parent": "b5e8dc66198d801f61b033061862c14398ef20c2",
+  "overallGoal": "active",
+  "native": {
+    "baseline": {
+      "passed": 1109,
+      "failed": 0,
+      "files": 20
+    },
+    "final": {
+      "passed": 1177,
+      "failed": 0,
+      "files": 22
+    },
+    "newCases": 68,
+    "priorCaseStatusesUnchanged": true
+  },
+  "checks": {
+    "baseline": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0,
+      "native": 0
+    },
+    "release01": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0,
+      "native": 1
+    },
+    "release02": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0,
+      "native": 0
+    }
+  },
+  "frozen": {
+    "baseline": {
+      "source": 3045,
+      "compiled": 2216
+    },
+    "release01": {
+      "source": 3047,
+      "compiled": 2216
+    },
+    "release02": {
+      "source": 3047,
+      "compiled": 2216
+    }
+  },
+  "changedCompiled": [
+    "src/extraction.d.ts.map",
+    "src/extraction.js",
+    "src/extraction.js.map"
+  ],
+  "initialAndFinalProductionIdentical": true,
+  "actualHttpRequests": 0,
+  "offlineChildren": 7,
+  "executions": {
+    "baseline-api": {
+      "exitCode": 1,
+      "elapsedSeconds": 1.1107928920537233,
+      "timedOut": false,
+      "reaped": true,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "guard": {
+        "attempts": []
+      },
+      "kernelGuard": {
+        "installed": true,
+        "deniedSyscalls": [
+          "socket",
+          "socketpair",
+          "connect",
+          "bind",
+          "listen",
+          "accept",
+          "accept4",
+          "sendto",
+          "sendmsg",
+          "sendmmsg",
+          "io_uring_setup",
+          "io_uring_enter",
+          "io_uring_register"
+        ],
+        "action": "EPERM",
+        "fileLimitBytes": 16777216,
+        "noTty": true,
+        "socketProbePerformed": false
+      }
+    },
+    "baseline-api-corrected": {
+      "exitCode": 0,
+      "elapsedSeconds": 1.0541691072285175,
+      "timedOut": false,
+      "reaped": true,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "guard": {
+        "attempts": []
+      },
+      "kernelGuard": {
+        "installed": true,
+        "deniedSyscalls": [
+          "socket",
+          "socketpair",
+          "connect",
+          "bind",
+          "listen",
+          "accept",
+          "accept4",
+          "sendto",
+          "sendmsg",
+          "sendmmsg",
+          "io_uring_setup",
+          "io_uring_enter",
+          "io_uring_register"
+        ],
+        "action": "EPERM",
+        "fileLimitBytes": 16777216,
+        "noTty": true,
+        "socketProbePerformed": false
+      }
+    },
+    "baseline-cli": {
+      "exitCode": 0,
+      "elapsedSeconds": 0.38747053779661655,
+      "timedOut": false,
+      "reaped": true,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "guard": {
+        "attempts": []
+      },
+      "kernelGuard": {
+        "installed": true,
+        "deniedSyscalls": [
+          "socket",
+          "socketpair",
+          "connect",
+          "bind",
+          "listen",
+          "accept",
+          "accept4",
+          "sendto",
+          "sendmsg",
+          "sendmmsg",
+          "io_uring_setup",
+          "io_uring_enter",
+          "io_uring_register"
+        ],
+        "action": "EPERM",
+        "fileLimitBytes": 16777216,
+        "noTty": true,
+        "socketProbePerformed": false
+      }
+    },
+    "baseline-performance": {
+      "exitCode": 0,
+      "elapsedSeconds": 1.0522920601069927,
+      "timedOut": false,
+      "reaped": true,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "guard": {
+        "attempts": []
+      },
+      "kernelGuard": {
+        "installed": true,
+        "deniedSyscalls": [
+          "socket",
+          "socketpair",
+          "connect",
+          "bind",
+          "listen",
+          "accept",
+          "accept4",
+          "sendto",
+          "sendmsg",
+          "sendmmsg",
+          "io_uring_setup",
+          "io_uring_enter",
+          "io_uring_register"
+        ],
+        "action": "EPERM",
+        "fileLimitBytes": 16777216,
+        "noTty": true,
+        "socketProbePerformed": false
+      }
+    },
+    "release02-api": {
+      "exitCode": 0,
+      "elapsedSeconds": 1.0537057146430016,
+      "timedOut": false,
+      "reaped": true,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "guard": {
+        "attempts": []
+      },
+      "kernelGuard": {
+        "installed": true,
+        "deniedSyscalls": [
+          "socket",
+          "socketpair",
+          "connect",
+          "bind",
+          "listen",
+          "accept",
+          "accept4",
+          "sendto",
+          "sendmsg",
+          "sendmmsg",
+          "io_uring_setup",
+          "io_uring_enter",
+          "io_uring_register"
+        ],
+        "action": "EPERM",
+        "fileLimitBytes": 16777216,
+        "noTty": true,
+        "socketProbePerformed": false
+      }
+    },
+    "release02-cli": {
+      "exitCode": 0,
+      "elapsedSeconds": 0.38292241655290127,
+      "timedOut": false,
+      "reaped": true,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "guard": {
+        "attempts": []
+      },
+      "kernelGuard": {
+        "installed": true,
+        "deniedSyscalls": [
+          "socket",
+          "socketpair",
+          "connect",
+          "bind",
+          "listen",
+          "accept",
+          "accept4",
+          "sendto",
+          "sendmsg",
+          "sendmmsg",
+          "io_uring_setup",
+          "io_uring_enter",
+          "io_uring_register"
+        ],
+        "action": "EPERM",
+        "fileLimitBytes": 16777216,
+        "noTty": true,
+        "socketProbePerformed": false
+      }
+    },
+    "release02-performance": {
+      "exitCode": 0,
+      "elapsedSeconds": 1.1027175281196833,
+      "timedOut": false,
+      "reaped": true,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "guard": {
+        "attempts": []
+      },
+      "kernelGuard": {
+        "installed": true,
+        "deniedSyscalls": [
+          "socket",
+          "socketpair",
+          "connect",
+          "bind",
+          "listen",
+          "accept",
+          "accept4",
+          "sendto",
+          "sendmsg",
+          "sendmmsg",
+          "io_uring_setup",
+          "io_uring_enter",
+          "io_uring_register"
+        ],
+        "action": "EPERM",
+        "fileLimitBytes": 16777216,
+        "noTty": true,
+        "socketProbePerformed": false
+      }
+    }
+  },
+  "results": [
+    {
+      "key": "001-github.com",
+      "receiptSha256": "d01b7a8cebfa6fd420c48b2a50d835fcb888091c1e57f0c4779e041ec6db7d7f",
+      "bodySha256": "3ccca946d02db5cedeeb36bf3e07ed2d7b3a51cbf8121623901c168e782b6064",
+      "bodyBytes": 555508,
+      "outcome": "extracted-unverified",
+      "contentSuccess": null,
+      "title": "GitHub - daijro/camoufox: 🦊 Anti-detect browser · GitHub",
+      "markdownBytes": 62215,
+      "markdownSha256": "a0b3c9015b2173981b4b8ed68b24b42a6d1dd93d344d299c105728aefe19350d",
+      "sourceSignature": "8b1fdf844f5536b653cbb35b0aa462ac754e875db2bec76e60f18441d6cc7b75",
+      "headingSignature": "81d4f81fc90deabd960492336d0921f1a46e87ec8e65491daabe6e3d1c1c3330",
+      "linkSignature": "8b65fd7dad9e49082bf2965e0640390a74a5cba444b2ed4c246bf7513b347fe8",
+      "sourceHeadingLevels": {
+        "1": 5,
+        "2": 27,
+        "3": 24,
+        "4": 5
+      },
+      "selectedCard": null,
+      "sourceUnchanged": true,
+      "baselineMarkdownBytes": 62215,
+      "baselineMarkdownSha256": "a0b3c9015b2173981b4b8ed68b24b42a6d1dd93d344d299c105728aefe19350d",
+      "baselineSelectedCard": null,
+      "markdownChanged": false
+    },
+    {
+      "key": "002-news.ycombinator.com",
+      "receiptSha256": "6231179d8e518f4cced5a7b17742aae2666dc2ec48b685807844915d33021828",
+      "bodySha256": "caefe788ee27b6c5f8da8fd1bced6d5398176a9afab1d1b8542a94807dc39b58",
+      "bodyBytes": 34500,
+      "outcome": "extracted-unverified",
+      "contentSuccess": null,
+      "title": "Hacker News",
+      "markdownBytes": 33130,
+      "markdownSha256": "cadb4c9b1c0547095de71629036a078a1d70a6c1d4f62fab3df7c8be53c243a1",
+      "sourceSignature": "0ef9c034e00cae26c91ab7a8d12e966357a72dbfa7f3ebed4bb78485d0e089bd",
+      "headingSignature": "df91ddb99213a339d2f49d9bbb0ff9ab28c1b54b5784a5dac9742df016ca240e",
+      "linkSignature": "ccad2cac8598d1fce4de4098f49f2979738fa4fa5ba5531c93d20d77cb910548",
+      "sourceHeadingLevels": {},
+      "selectedCard": null,
+      "sourceUnchanged": true,
+      "baselineMarkdownBytes": 33130,
+      "baselineMarkdownSha256": "cadb4c9b1c0547095de71629036a078a1d70a6c1d4f62fab3df7c8be53c243a1",
+      "baselineSelectedCard": null,
+      "markdownChanged": false
+    },
+    {
+      "key": "004-crates.io",
+      "receiptSha256": "9b503ddeecd9e37ecf33a239021513466d52f76330c41b7765b49c461f509b48",
+      "bodySha256": "064b37c9066d9a76dd73d6312a7685569e5ccfc039a80b8af2d030ed71210c34",
+      "bodyBytes": 5056,
+      "outcome": "extracted-unverified",
+      "contentSuccess": null,
+      "title": "crates.io: Rust Package Registry",
+      "markdownBytes": 75,
+      "markdownSha256": "d57392ac20d43a5b819c4a4ec81be44b7f9833a5ecb9517bdfd0f086d9a03f98",
+      "sourceSignature": "ba81e7dbdac9f075986543cfe8fadc8e8f1a6db71bbc13a11315540159506598",
+      "headingSignature": "f88d95efeca7060376cc2e2e329d7d7041f01ffb0bc2794e02d6f6d7faa88a84",
+      "linkSignature": "0b349961b1f13d8e43a4e5e0fcf732d4370f077d66f8848b49dcd05952bb4f3c",
+      "sourceHeadingLevels": {},
+      "selectedCard": null,
+      "sourceUnchanged": true,
+      "baselineMarkdownBytes": 75,
+      "baselineMarkdownSha256": "d57392ac20d43a5b819c4a4ec81be44b7f9833a5ecb9517bdfd0f086d9a03f98",
+      "baselineSelectedCard": null,
+      "markdownChanged": false
+    },
+    {
+      "key": "005-docs.rs",
+      "receiptSha256": "9a5408e2a6573ab2dfd50914c378b1bc3b318816a5e1f4d446955972e960fe4d",
+      "bodySha256": "d8ac192a363c64978c63216a3a3e8219e96f1c4d8c5b0036e13565405d034d75",
+      "bodyBytes": 25647,
+      "outcome": "extracted-unverified",
+      "contentSuccess": null,
+      "title": "serde - Rust",
+      "markdownBytes": 9411,
+      "markdownSha256": "59db64742d346ca8becd453bcf939a1d377db96e22edd5b97106fb3f0e0b799a",
+      "sourceSignature": "abe2594fc3128d22bf731ae10a5cc6102d0036815c7a9610b1fdb50593e81378",
+      "headingSignature": "e12af5029db41fa53f7f81cfcfff4b7979a37bd976739f2f9e03be57ba75077d",
+      "linkSignature": "b973b4e9cb729ff521451f76ed57f4d1c234a46517016667d5069adfc1fdc0cd",
+      "sourceHeadingLevels": {
+        "1": 1,
+        "2": 7,
+        "3": 4
+      },
+      "selectedCard": null,
+      "sourceUnchanged": true,
+      "baselineMarkdownBytes": 9411,
+      "baselineMarkdownSha256": "59db64742d346ca8becd453bcf939a1d377db96e22edd5b97106fb3f0e0b799a",
+      "baselineSelectedCard": null,
+      "markdownChanged": false
+    },
+    {
+      "key": "007-developer.chrome.com",
+      "receiptSha256": "d585b05d72dcd6acacd46b716f4ed0c4ad2e8387a7a552bd02b3c736498c7760",
+      "bodySha256": "a9a1a53fea12e0ae23ce62c1686b10666484082260ede67f3a625a838d2c4977",
+      "bodyBytes": 75454,
+      "outcome": "http-failure",
+      "contentSuccess": false,
+      "title": "404  |  Page Not Found  |  Chrome for Developers",
+      "markdownBytes": 6274,
+      "markdownSha256": "165c881ce7d246b885ba66a5b7ee39efae1b25a5749912065b93f73d7d5a53f3",
+      "sourceSignature": "f4a49efa34cc5ab63ee2b0fefbf9320d217f7c2655e1ffe8becee826f61c63f3",
+      "headingSignature": "b3fb44cfb6392e6d767ec5e2b6b35800b077a1cfbbc2668d0b85d06e1ced06d1",
+      "linkSignature": "bc40043a223527416957a0fdb4536da2e9686831edcaea03fd41ee5f1572230d",
+      "sourceHeadingLevels": {
+        "3": 4
+      },
+      "selectedCard": null,
+      "sourceUnchanged": true,
+      "baselineMarkdownBytes": 6386,
+      "baselineMarkdownSha256": "f83b293114d8d582c25010712be477a971adff85eef2b2566192e7e60c97b1c7",
+      "baselineSelectedCard": null,
+      "markdownChanged": true
+    },
+    {
+      "key": "008-webauthn.guide",
+      "receiptSha256": "8037b64ad2794d7fcddf07cc127beb9121704eb57526a101be0b7cdb639d46b1",
+      "bodySha256": "7a7b1e6c3676443b4900f541d793abf1237c21bab3a0f120bc264c37e5ea7e7c",
+      "bodyBytes": 76777,
+      "outcome": "extracted-unverified",
+      "contentSuccess": null,
+      "title": "Guide to Web Authentication",
+      "markdownBytes": 24138,
+      "markdownSha256": "3a8893fc8eba6640e2677c92d6cdee93c192001e8bc45068b1fe84fcb765520a",
+      "sourceSignature": "fa008f998ffb95c1ee1f6d231f2d427d8457bb88a70a3d4cebe8e0c10a602135",
+      "headingSignature": "9f55a9235c7dc95168932d6d31e1ad8a9995b8034882269ca86efa3bb100ec4a",
+      "linkSignature": "232fec180261bc746e15e36c42879695d821f3fd18f4b27bc37d72bf0b82f410",
+      "sourceHeadingLevels": {
+        "1": 1,
+        "2": 5,
+        "3": 6,
+        "4": 1,
+        "5": 16
+      },
+      "selectedCard": null,
+      "sourceUnchanged": true,
+      "baselineMarkdownBytes": 24138,
+      "baselineMarkdownSha256": "3a8893fc8eba6640e2677c92d6cdee93c192001e8bc45068b1fe84fcb765520a",
+      "baselineSelectedCard": null,
+      "markdownChanged": false
+    },
+    {
+      "key": "010-www.bbc.com",
+      "receiptSha256": "91a1873827eedb92059d0d201017bf319ff69abbf4b8d9d1b94de46ac7e49dca",
+      "bodySha256": "658b075e21d5391327c6eb48d5b146005e1b785e72903246cc2233ae77ab10cf",
+      "bodyBytes": 240702,
+      "outcome": "extracted-unverified",
+      "contentSuccess": null,
+      "title": "BBC",
+      "markdownBytes": 17231,
+      "markdownSha256": "a3877b1eb6c9cb80446b2a81f91af142d3b37cc2f9bf0dd37c6bb380b9a0a739",
+      "sourceSignature": "0cbbcf3a63336bb045eaee0a8bed6f5e7f908bec7dcd45c6eefea47428e870c9",
+      "headingSignature": "5f8c813909b8fa85cf6681e3700b3299b9261c0e5482c90e4823db199d12a222",
+      "linkSignature": "2d37ec6430e368c56778391d5faccb6d29a047ef2c397548b70fa815d4fbeea5",
+      "sourceHeadingLevels": {
+        "1": 1,
+        "2": 9,
+        "3": 1,
+        "4": 1
+      },
+      "selectedCard": {
+        "selector": "html:root:nth-child(1) > body:nth-child(2) > div:nth-child(1) > div:nth-child(1) > main:nth-child(9) > article:nth-child(1) > section:nth-child(3) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > a:nth-child(1)",
+        "href": "/news/articles/cy459y5y9yxo",
+        "jsonSha256": "c56fa2efe94ce12c6a5e55673e96563037f4b2cd6f34d13d25da2df8bbd5c391",
+        "markdownBytes": 604,
+        "markdownSha256": "e4e9418cf168dcdce8031caeca1d94932ce750d516f841de74bc256c346898b7",
+        "level2Headings": 1
+      },
+      "sourceUnchanged": true,
+      "baselineMarkdownBytes": 15263,
+      "baselineMarkdownSha256": "c4ed1dec42e6be0ea4c1e5b75c125edd675b7d6ae32aa2d36d7c938d6b8c09f9",
+      "baselineSelectedCard": {
+        "selector": "html:root:nth-child(1) > body:nth-child(2) > div:nth-child(1) > div:nth-child(1) > main:nth-child(9) > article:nth-child(1) > section:nth-child(3) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > a:nth-child(1)",
+        "href": "/news/articles/cy459y5y9yxo",
+        "jsonSha256": "c56fa2efe94ce12c6a5e55673e96563037f4b2cd6f34d13d25da2df8bbd5c391",
+        "markdownBytes": 385,
+        "markdownSha256": "fea0c37de0f6889e7580dda75fce8f62add915366cc02903aace1968c5e9b33c",
+        "level2Headings": 0
+      },
+      "markdownChanged": true
+    }
+  ],
+  "cli": {
+    "baseline": {
+      "markdownBytes": 385,
+      "markdownSha256": "fea0c37de0f6889e7580dda75fce8f62add915366cc02903aace1968c5e9b33c",
+      "matchesApi": true
+    },
+    "release02": {
+      "markdownBytes": 604,
+      "markdownSha256": "e4e9418cf168dcdce8031caeca1d94932ce750d516f841de74bc256c346898b7",
+      "matchesApi": true
+    }
+  },
+  "bbc": {
+    "sourceLevel2Headings": 9,
+    "baselineMarkdownLevel2Headings": 0,
+    "finalMarkdownLevel2Headings": 9,
+    "oldMarkdownBytes": 15263,
+    "newMarkdownBytes": 17231,
+    "jsonCardUnchanged": true
+  },
+  "chromeWhitespaceOnlyChanges": 28,
+  "barrierReplayStillDenied": true,
+  "performance": {
+    "scope": "warm native extraction only, same pinned CPU, three warmups and twelve samples",
+    "cases": [
+      {
+        "name": "inline-links",
+        "baseline": {
+          "name": "inline-links",
+          "sourceSha256": "f12f81bbd3318d72959128bbc982c1c67c27198b51665c2c0cf48fb48229dae0",
+          "sourceBytes": 32293,
+          "nodeCount": 3005,
+          "markdownSha256": "70e5f3d564e0eddba64eb1de71eba819565d67b0eaeb6a2fe1719cbb4886bb22",
+          "markdownBytes": 36279,
+          "milliseconds": [
+            7.555948,
+            21.732512,
+            11.587959,
+            13.204665,
+            4.624507,
+            5.84646,
+            4.506036,
+            4.472875,
+            5.482347,
+            4.495486,
+            4.427385,
+            5.274244
+          ],
+          "medianMilliseconds": 5.3782955
+        },
+        "final": {
+          "name": "inline-links",
+          "sourceSha256": "f12f81bbd3318d72959128bbc982c1c67c27198b51665c2c0cf48fb48229dae0",
+          "sourceBytes": 32293,
+          "nodeCount": 3005,
+          "markdownSha256": "70e5f3d564e0eddba64eb1de71eba819565d67b0eaeb6a2fe1719cbb4886bb22",
+          "markdownBytes": 36279,
+          "milliseconds": [
+            7.398518,
+            27.20263,
+            11.267763,
+            10.968781,
+            4.682373,
+            5.612672,
+            6.703022,
+            4.521591,
+            5.36768,
+            4.487641,
+            5.663272,
+            4.475501
+          ],
+          "medianMilliseconds": 5.6379719999999995
+        },
+        "medianRatio": 1.0482823043099807
+      },
+      {
+        "name": "block-cards",
+        "baseline": {
+          "name": "block-cards",
+          "sourceSha256": "977acea9c69a4b1b2eba515a932b0b35f44346b029755ab9d6de412722718cd6",
+          "sourceBytes": 17433,
+          "nodeCount": 1505,
+          "markdownSha256": "5c53fcd77f67ffd3248700740a59f7fbfd7440c2de1286bc4b51894c7aa9a419",
+          "markdownBytes": 17171,
+          "milliseconds": [
+            2.114692,
+            11.792731,
+            1.747558,
+            1.635567,
+            3.453245,
+            1.660177,
+            1.627737,
+            1.601116,
+            1.599596,
+            1.606167,
+            2.586017,
+            1.645627
+          ],
+          "medianMilliseconds": 1.652902
+        },
+        "final": {
+          "name": "block-cards",
+          "sourceSha256": "977acea9c69a4b1b2eba515a932b0b35f44346b029755ab9d6de412722718cd6",
+          "sourceBytes": 17433,
+          "nodeCount": 1505,
+          "markdownSha256": "771aa8e1bc0344971313bada43173ff85420efa91077a67b826230fe70e3465f",
+          "markdownBytes": 31309,
+          "milliseconds": [
+            14.219051,
+            10.117483,
+            2.718654,
+            2.688565,
+            3.433722,
+            3.212209,
+            2.13523,
+            2.115249,
+            2.09838,
+            3.135529,
+            2.153249,
+            2.13489
+          ],
+          "medianMilliseconds": 2.7036094999999998
+        },
+        "medianRatio": 1.6356744077991312
+      },
+      {
+        "name": "plain-paragraphs",
+        "baseline": {
+          "name": "plain-paragraphs",
+          "sourceSha256": "45600fe91159e54d577d30dec224090abd66c74a6637ee74e4e58123df71db21",
+          "sourceBytes": 64013,
+          "nodeCount": 3205,
+          "markdownSha256": "62bedae3b317b4993d1a9fddec936e2c17610ae997fa187805d017f65e224b98",
+          "markdownBytes": 57599,
+          "milliseconds": [
+            5.319684,
+            6.250164,
+            5.319915,
+            6.213224,
+            5.274674,
+            6.167253,
+            5.251094,
+            6.133253,
+            5.235234,
+            6.110862,
+            5.239914,
+            6.114783
+          ],
+          "medianMilliseconds": 5.7153884999999995
+        },
+        "final": {
+          "name": "plain-paragraphs",
+          "sourceSha256": "45600fe91159e54d577d30dec224090abd66c74a6637ee74e4e58123df71db21",
+          "sourceBytes": 64013,
+          "nodeCount": 3205,
+          "markdownSha256": "62bedae3b317b4993d1a9fddec936e2c17610ae997fa187805d017f65e224b98",
+          "markdownBytes": 57599,
+          "milliseconds": [
+            6.598011,
+            5.49537,
+            6.52052,
+            5.476381,
+            6.439109,
+            5.4891,
+            6.256688,
+            5.455381,
+            6.159316,
+            5.43947,
+            6.120437,
+            5.443919
+          ],
+          "medianMilliseconds": 5.8079035
+        },
+        "medianRatio": 1.0161870011111231
+      }
+    ]
+  },
+  "retainedFailures": [
+    "Initial exact-byte unit fixture used a limit below the existing 256-byte minimum; corrected only synthetic payload size.",
+    "Initial AP response reinjection used projected headers insufficient to reproduce the live header challenge. Corrected proof excludes that reconstruction and verifies original failed receipt admission remains closed."
+  ],
+  "limitations": [
+    "No fresh website browsing or rendering/runtime acceptance.",
+    "True inline sinks and unsupported table-through-link structures retain existing behavior.",
+    "Output can grow because block text groups retain clickable destinations; output limits stay unchanged.",
+    "Formatting adds measured cost, not a speed improvement.",
+    "Application shells, access challenges, missing pages, over-cap bodies and broader research/device/runtime gates remain open."
+  ],
+  "pushed": false
+}
