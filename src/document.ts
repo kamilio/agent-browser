@@ -1061,6 +1061,10 @@ export class DocumentTree {
 			: undefined;
 	}
 
+	namespaceOf(id: number): string {
+		return elementNamespace(this.node(id));
+	}
+
 	elementInfo(
 		id: number,
 	): Readonly<

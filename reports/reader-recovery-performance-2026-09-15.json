@@ -1,0 +1,929 @@
+{
+  "passed": true,
+  "dateUtc": "2026-09-15",
+  "baseCommit": "3ac3de8e5bd164001c13064575a54a7347faa4f4",
+  "qualification": "Scoped native tests and saved-source performance, not live website latency or full browser acceptance.",
+  "actualHttpRequests": 0,
+  "navigationAttempts": 0,
+  "validation": {
+    "baselinePassed": 1356,
+    "baselineFiles": 22,
+    "candidatePassed": 1424,
+    "candidateFiles": 24,
+    "newTests": 68,
+    "newFailures": 0,
+    "baselineOutcomesUnchanged": true,
+    "duplicateNamesPreserved": true,
+    "selectedFiles": [
+      "src/document.test.ts",
+      "src/document-views.test.ts",
+      "src/parser-element-info.test.ts",
+      "src/attribute-order.test.ts",
+      "src/html-formatting.test.ts",
+      "src/html-tables.test.ts",
+      "src/html-parser.test.ts",
+      "src/html-parser-limits.test.ts",
+      "src/html-foreign.test.ts",
+      "src/template-parser.test.ts",
+      "src/parser-forms.test.ts",
+      "src/foreign-document.test.ts",
+      "src/foreign-selectors-serialization.test.ts",
+      "src/formatting-tree.test.ts",
+      "src/research-loader.test.ts",
+      "src/research-workflow.test.ts",
+      "src/research-output-limit-recovery.test.ts",
+      "src/research-admission-evidence.test.ts",
+      "src/research-json-replay.test.ts",
+      "src/document-alternates.test.ts",
+      "src/image-csp-enforcement.test.ts",
+      "src/image-csp-lifecycle.test.ts",
+      "src/document-namespace-read.test.ts",
+      "src/parser-namespace-fast-path.test.ts"
+    ],
+    "checks": {
+      "baseline": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 0
+      },
+      "release01": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 0
+      }
+    },
+    "fullNativeRelease": false
+  },
+  "methodology": {
+    "pairs": 5,
+    "order": "AB/BA alternating",
+    "selectedCpu": 0,
+    "freshProcesses": 10,
+    "timedCalls": 90,
+    "warmupCalls": 30,
+    "heapMiB": 192,
+    "deadlineSeconds": 45,
+    "fixedWorkloadOrder": [
+      "rfc",
+      "julia",
+      "numpy"
+    ],
+    "cpuProfilerInBenchmark": false,
+    "concurrentActivity": "Shared host; source review and short source-parity checks ran during the benchmark. No exclusive CPU/host claim.",
+    "qualification": "One machine, three captures, aggregate and per-pair medians; no statistical significance or global speed claim."
+  },
+  "benchmarks": [
+    {
+      "key": "rfc",
+      "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/scientific-docs-content-september15/live/003-www.rfc-editor.org/stdout.jsonl",
+      "receiptSha256": "1500c9826255bea97cb6b089851feca38a517bf5a5e89050f544c7c6a5e4c8ec",
+      "bodySha256": "d431760660ea44e130f6e919dab216df2d0b3a490567a98089267523368fe1e5",
+      "bodyBytes": 1187554,
+      "title": "9.2.2. Idempotent Methods",
+      "selector": "html:root:nth-child(1) > body:nth-child(2) > div:nth-child(18) > section:nth-child(1) > div:nth-child(3) > section:nth-child(1) > div:nth-child(3) > section:nth-child(1) > h4:nth-child(1)",
+      "markdownSha256": "17b7d6f54b91b8efaf2ee3918a838336a12b45d3e3b5d9c72919b9f2911b23ab",
+      "markdownBytes": 3035,
+      "baseline": {
+        "samples": 15,
+        "medianMs": 1994.8530030000002,
+        "minimumMs": 1919.2218000000003,
+        "maximumMs": 2147.177453
+      },
+      "candidate": {
+        "samples": 15,
+        "medianMs": 1584.1312309999998,
+        "minimumMs": 1485.110893,
+        "maximumMs": 1760.100403
+      },
+      "speedRatio": 1.259272567804075,
+      "reductionPercent": 20.589074552477204,
+      "pairs": [
+        {
+          "pair": 1,
+          "order": [
+            "baseline",
+            "release01"
+          ],
+          "baselineMedianMs": 1981.4216930000002,
+          "candidateMedianMs": 1592.287464,
+          "speedRatio": 1.2443869199487714,
+          "reductionPercent": 19.639142458909188
+        },
+        {
+          "pair": 2,
+          "order": [
+            "release01",
+            "baseline"
+          ],
+          "baselineMedianMs": 1990.8693640000001,
+          "candidateMedianMs": 1607.5784980000003,
+          "speedRatio": 1.2384274649585414,
+          "reductionPercent": 19.25243679624977
+        },
+        {
+          "pair": 3,
+          "order": [
+            "baseline",
+            "release01"
+          ],
+          "baselineMedianMs": 2037.3460960000002,
+          "candidateMedianMs": 1549.3085570000003,
+          "speedRatio": 1.3150034489869533,
+          "reductionPercent": 23.954572075808954
+        },
+        {
+          "pair": 4,
+          "order": [
+            "release01",
+            "baseline"
+          ],
+          "baselineMedianMs": 1992.2192429999996,
+          "candidateMedianMs": 1557.2300349999996,
+          "speedRatio": 1.2793352287223256,
+          "reductionPercent": 21.834404497818618
+        },
+        {
+          "pair": 5,
+          "order": [
+            "baseline",
+            "release01"
+          ],
+          "baselineMedianMs": 2042.1150390000012,
+          "candidateMedianMs": 1584.1312309999998,
+          "speedRatio": 1.2891072400049168,
+          "reductionPercent": 22.426934783471864
+        }
+      ]
+    },
+    {
+      "key": "julia",
+      "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/scientific-docs-content-september15/live/001-docs.julialang.org/stdout.jsonl",
+      "receiptSha256": "39caed41a1041d7412f147204f85ee00937d3923cf592c560ddb34cd32d98e8b",
+      "bodySha256": "f386342513621cb120a16f0ed962a19fe429992a12c4febfc6e4741f0f34bc81",
+      "bodyBytes": 128936,
+      "markdownBytes": 107037,
+      "markdownSha256": "eb8222b581fa9386f8c977d4ac49b83f407b4e9aeabc5f3d175c9e821772ac18",
+      "baseline": {
+        "samples": 15,
+        "medianMs": 200.03291100000024,
+        "minimumMs": 120.82777299999907,
+        "maximumMs": 434.87419000000045
+      },
+      "candidate": {
+        "samples": 15,
+        "medianMs": 192.11167899999964,
+        "minimumMs": 101.32698600000003,
+        "maximumMs": 411.88838099999975
+      },
+      "speedRatio": 1.0412324333493572,
+      "reductionPercent": 3.9599643680637064,
+      "pairs": [
+        {
+          "pair": 1,
+          "order": [
+            "baseline",
+            "release01"
+          ],
+          "baselineMedianMs": 210.045795,
+          "candidateMedianMs": 229.60240299999987,
+          "speedRatio": 0.9148240273426064,
+          "reductionPercent": -9.310640091604716
+        },
+        {
+          "pair": 2,
+          "order": [
+            "release01",
+            "baseline"
+          ],
+          "baselineMedianMs": 200.03291100000024,
+          "candidateMedianMs": 189.00933200000054,
+          "speedRatio": 1.0583229350813201,
+          "reductionPercent": 5.510882656704275
+        },
+        {
+          "pair": 3,
+          "order": [
+            "baseline",
+            "release01"
+          ],
+          "baselineMedianMs": 208.0035110000008,
+          "candidateMedianMs": 192.11167899999964,
+          "speedRatio": 1.0827218422259544,
+          "reductionPercent": 7.64017488147164
+        },
+        {
+          "pair": 4,
+          "order": [
+            "release01",
+            "baseline"
+          ],
+          "baselineMedianMs": 183.8882219999996,
+          "candidateMedianMs": 188.85568200000034,
+          "speedRatio": 0.9736970582648355,
+          "reductionPercent": -2.701347561020384
+        },
+        {
+          "pair": 5,
+          "order": [
+            "baseline",
+            "release01"
+          ],
+          "baselineMedianMs": 173.87772100000075,
+          "candidateMedianMs": 238.68568700000014,
+          "speedRatio": 0.728479881577485,
+          "reductionPercent": -37.272150582189376
+        }
+      ]
+    },
+    {
+      "key": "numpy",
+      "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/scientific-docs-content-september15/live/002-numpy.org/stdout.jsonl",
+      "receiptSha256": "2d720d1284effd86021aeae58ad439a4c359893cbc78ba9fae3f09cb13ecdce7",
+      "bodySha256": "4cdee60af5a7f0f9e5850cde7f7f8850a86e92a09a5e796407a53f8a189b049f",
+      "bodyBytes": 184737,
+      "markdownBytes": 62932,
+      "markdownSha256": "f0697c27db64f012eb9fec2ca15b0db31a523aa93a8f20c4884baad7ff5edb4a",
+      "baseline": {
+        "samples": 15,
+        "medianMs": 502.92542200000025,
+        "minimumMs": 424.4912089999998,
+        "maximumMs": 577.6277910000008
+      },
+      "candidate": {
+        "samples": 15,
+        "medianMs": 345.77595499999916,
+        "minimumMs": 285.28402800000003,
+        "maximumMs": 418.763570000001
+      },
+      "speedRatio": 1.45448350218569,
+      "reductionPercent": 31.24707165827084,
+      "pairs": [
+        {
+          "pair": 1,
+          "order": [
+            "baseline",
+            "release01"
+          ],
+          "baselineMedianMs": 509.0858499999995,
+          "candidateMedianMs": 345.77595499999916,
+          "speedRatio": 1.4722997439194427,
+          "reductionPercent": 32.07904816054119
+        },
+        {
+          "pair": 2,
+          "order": [
+            "release01",
+            "baseline"
+          ],
+          "baselineMedianMs": 499.36816200000067,
+          "candidateMedianMs": 345.1621869999999,
+          "speedRatio": 1.4467638136734857,
+          "reductionPercent": 30.880217589843173
+        },
+        {
+          "pair": 3,
+          "order": [
+            "baseline",
+            "release01"
+          ],
+          "baselineMedianMs": 528.1453090000014,
+          "candidateMedianMs": 353.18828199999916,
+          "speedRatio": 1.4953647556178056,
+          "reductionPercent": 33.12668389145945
+        },
+        {
+          "pair": 4,
+          "order": [
+            "release01",
+            "baseline"
+          ],
+          "baselineMedianMs": 502.92542200000025,
+          "candidateMedianMs": 333.82848600000034,
+          "speedRatio": 1.5065383665311287,
+          "reductionPercent": 33.62266622505311
+        },
+        {
+          "pair": 5,
+          "order": [
+            "baseline",
+            "release01"
+          ],
+          "baselineMedianMs": 501.2460350000001,
+          "candidateMedianMs": 330.9505109999991,
+          "speedRatio": 1.5145649223669018,
+          "reductionPercent": 33.97443812198952
+        }
+      ]
+    }
+  ],
+  "sourceParity": [
+    {
+      "key": "office",
+      "originalStatus": 200,
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "7a992432bd67439974aca1b54248190374f6fab02bd7ff9761e272f4041ae9d4",
+      "bodySha256": "6db8e6a8e5aae7bafd1507d29c73b3737b1e4b3442fd92b925983542b196df6d",
+      "outcome": "extracted-unverified",
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": false,
+        "sourceCodeUnits": 313898,
+        "textCodeUnits": 48017,
+        "outputCodeUnits": 99319,
+        "tokens": 3704,
+        "omittedTokens": 317,
+        "omittedSubtrees": {
+          "meta": 18,
+          "link": 19,
+          "script": 24,
+          "svg": 29,
+          "source": 5
+        },
+        "ignoredAttributes": 715,
+        "unwrappedElements": 43,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 119927,
+          "workUnits": 1745031,
+          "steps": 25,
+          "elements": 24,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "markdownBytes": 52523,
+      "markdownSha256": "a3ab6476dd2639b37ccc114be74aff8e162b20a730d0ac4323c65af4fa695cdc",
+      "sourceAlternates": null,
+      "cleanupVerified": true,
+      "originalReceiptReplayMatches": true
+    },
+    {
+      "key": "nasa",
+      "originalStatus": 200,
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "8abe6a478a6ecd0166f8fb55a7c2ab4179eea07ffc7196e6c402265a550afc66",
+      "bodySha256": "9bf136b480c92b641b81700acadfdd0263a912e02f296591bccf0fbacc6507b7",
+      "outcome": "extracted-unverified",
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": false,
+        "sourceCodeUnits": 360481,
+        "textCodeUnits": 24579,
+        "outputCodeUnits": 127803,
+        "tokens": 7550,
+        "omittedTokens": 1725,
+        "omittedSubtrees": {
+          "meta": 42,
+          "script": 33,
+          "link": 35,
+          "style": 13,
+          "iframe": 2,
+          "svg": 242,
+          "input": 17,
+          "textarea": 1
+        },
+        "ignoredAttributes": 874,
+        "unwrappedElements": 27,
+        "tokenizerIssues": 6,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 57094,
+          "workUnits": 1950533,
+          "steps": 48,
+          "elements": 48,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "markdownBytes": 48247,
+      "markdownSha256": "985c4ca76a5aac45f348eaf683e8ee878c1274f78756b344ef8f3f38f81eab52",
+      "sourceAlternates": null,
+      "cleanupVerified": true,
+      "originalReceiptReplayMatches": true
+    },
+    {
+      "key": "webdev",
+      "originalStatus": 200,
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "fbc78bf0d40eac35e8177e9e59f5cf0f5133c6223be44a372b68409f36d68b45",
+      "bodySha256": "f5867f499e77b64d54049a83a85595bae9441c437ad7689c9d556fd65ec9732f",
+      "outcome": "extracted-unverified",
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": false,
+        "sourceCodeUnits": 218545,
+        "textCodeUnits": 44725,
+        "outputCodeUnits": 100994,
+        "tokens": 5175,
+        "omittedTokens": 149,
+        "omittedSubtrees": {
+          "meta": 17,
+          "link": 56,
+          "script": 4,
+          "source": 2,
+          "input": 2,
+          "svg": 5,
+          "style": 1,
+          "video": 1,
+          "template": 1
+        },
+        "ignoredAttributes": 1180,
+        "unwrappedElements": 73,
+        "tokenizerIssues": 50,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 7365,
+          "workUnits": 189024,
+          "steps": 5,
+          "elements": 5,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "markdownBytes": 34250,
+      "markdownSha256": "c593142eca5d0a3b48e6b37b3f6a403d5f2a6915f951b15c68127640e5c594be",
+      "sourceAlternates": null,
+      "cleanupVerified": true,
+      "originalReceiptReplayMatches": true
+    },
+    {
+      "key": "pytorch",
+      "originalStatus": 200,
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "1343a7a26b3e92755632f49527aaf7cf10094ec587472f933f071313d3432be2",
+      "bodySha256": "8044c90a6489d903273627650f1b0612cd27ef4e530269270b3b62c5adfda175",
+      "outcome": "extracted-unverified",
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": false,
+        "sourceCodeUnits": 18669,
+        "textCodeUnits": 18669,
+        "outputCodeUnits": 0,
+        "tokens": 0,
+        "omittedTokens": 0,
+        "omittedSubtrees": {},
+        "ignoredAttributes": 0,
+        "unwrappedElements": 0,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 0,
+          "workUnits": 0,
+          "steps": 0,
+          "elements": 0,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "markdownBytes": 18681,
+      "markdownSha256": "483ab0686be927fcbc11245fe6bf3e76e12c1a12a883fcdb2a689b2e91844154",
+      "sourceAlternates": null,
+      "cleanupVerified": true
+    },
+    {
+      "key": "govuk",
+      "originalStatus": 200,
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "7fee2a0f1f2885a32ebba2e26067f743a0e5e4e34e95b64b80e6317282a0285c",
+      "bodySha256": "642c6cb8515a61967a093ffa6a9d13ddc227f1360a469eaa4189dbae615fe733",
+      "outcome": "extracted-unverified",
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": false,
+        "sourceCodeUnits": 68921,
+        "textCodeUnits": 13425,
+        "outputCodeUnits": 37387,
+        "tokens": 1715,
+        "omittedTokens": 191,
+        "omittedSubtrees": {
+          "meta": 18,
+          "script": 8,
+          "link": 7,
+          "svg": 9,
+          "input": 3,
+          "textarea": 2
+        },
+        "ignoredAttributes": 206,
+        "unwrappedElements": 17,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 749,
+          "workUnits": 388184,
+          "steps": 8,
+          "elements": 8,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "markdownBytes": 9837,
+      "markdownSha256": "e86d9327058a7aed4cf28b8c9fab86a5d578d71ee3478c55397a4dc4692a5ae2",
+      "sourceAlternates": null,
+      "cleanupVerified": true,
+      "originalReceiptReplayMatches": true
+    },
+    {
+      "key": "julia",
+      "originalStatus": 200,
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "39caed41a1041d7412f147204f85ee00937d3923cf592c560ddb34cd32d98e8b",
+      "bodySha256": "f386342513621cb120a16f0ed962a19fe429992a12c4febfc6e4741f0f34bc81",
+      "outcome": "extracted-unverified",
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 0,
+        "sourceCodeUnits": 128858,
+        "textCodeUnits": 75049,
+        "outputCodeUnits": 124055,
+        "tokens": 5022,
+        "omittedTokens": 49,
+        "omittedSubtrees": {
+          "meta": 7,
+          "link": 15,
+          "script": 9,
+          "input": 8
+        },
+        "ignoredAttributes": 31,
+        "unwrappedElements": 20,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 245,
+          "workUnits": 591175,
+          "steps": 9,
+          "elements": 9,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "markdownBytes": 107037,
+      "markdownSha256": "eb8222b581fa9386f8c977d4ac49b83f407b4e9aeabc5f3d175c9e821772ac18",
+      "sourceAlternates": null,
+      "cleanupVerified": true,
+      "originalReceiptReplayMatches": true
+    },
+    {
+      "key": "numpy",
+      "originalStatus": 200,
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "2d720d1284effd86021aeae58ad439a4c359893cbc78ba9fae3f09cb13ecdce7",
+      "bodySha256": "4cdee60af5a7f0f9e5850cde7f7f8850a86e92a09a5e796407a53f8a189b049f",
+      "outcome": "extracted-unverified",
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 3,
+        "sourceCodeUnits": 184518,
+        "textCodeUnits": 50622,
+        "outputCodeUnits": 173866,
+        "tokens": 15002,
+        "omittedTokens": 87,
+        "omittedSubtrees": {
+          "meta": 7,
+          "script": 20,
+          "style": 1,
+          "link": 17,
+          "input": 1,
+          "i": 2,
+          "svg": 1
+        },
+        "ignoredAttributes": 112,
+        "unwrappedElements": 11,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 652,
+          "workUnits": 1185552,
+          "steps": 21,
+          "elements": 21,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "markdownBytes": 62932,
+      "markdownSha256": "f0697c27db64f012eb9fec2ca15b0db31a523aa93a8f20c4884baad7ff5edb4a",
+      "sourceAlternates": null,
+      "cleanupVerified": true,
+      "originalReceiptReplayMatches": true
+    },
+    {
+      "key": "rfc",
+      "originalStatus": 200,
+      "originalOutcome": "failure",
+      "receiptSha256": "1500c9826255bea97cb6b089851feca38a517bf5a5e89050f544c7c6a5e4c8ec",
+      "bodySha256": "d431760660ea44e130f6e919dab216df2d0b3a490567a98089267523368fe1e5",
+      "outcome": "failure",
+      "failure": {
+        "category": "resource-limit",
+        "stage": "extraction",
+        "resourceLimit": {
+          "kind": "extraction.output",
+          "unit": "bytes",
+          "limit": 256000,
+          "observed": 256604
+        }
+      },
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 0,
+        "sourceCodeUnits": 1184898,
+        "textCodeUnits": 557074,
+        "outputCodeUnits": 1155955,
+        "tokens": 53240,
+        "omittedTokens": 28,
+        "omittedSubtrees": {
+          "meta": 14,
+          "link": 6,
+          "style": 1,
+          "script": 2
+        },
+        "ignoredAttributes": 529,
+        "unwrappedElements": 0,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 22501,
+          "workUnits": 154867,
+          "steps": 3,
+          "elements": 3,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "markdownBytes": 0,
+      "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceAlternates": null,
+      "cleanupVerified": true
+    },
+    {
+      "key": "apple-html",
+      "originalStatus": 200,
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "21150e7cffc64ec8392062e59423090ab448fe939e0ec024df7b74969af4c40a",
+      "bodySha256": "7a961caccaf901512f425a91b66c6c6311a1631a68df4c0020c9a25de6bdaf99",
+      "outcome": "extracted-unverified",
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 0,
+        "sourceCodeUnits": 18208,
+        "textCodeUnits": 573,
+        "outputCodeUnits": 1028,
+        "tokens": 280,
+        "omittedTokens": 191,
+        "omittedSubtrees": {
+          "meta": 14,
+          "link": 15,
+          "script": 6,
+          "template": 1,
+          "style": 1
+        },
+        "ignoredAttributes": 2,
+        "unwrappedElements": 1,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 793,
+          "workUnits": 74879,
+          "steps": 7,
+          "elements": 7,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "markdownBytes": 285,
+      "markdownSha256": "72a4e83ff515641f5f48a3c97940ee69648d955e01606392ba84268c8e203f83",
+      "sourceAlternates": {
+        "kind": "html-alternate-representations-v1",
+        "partial": true,
+        "truncated": false,
+        "entries": [
+          {
+            "type": "text/markdown",
+            "url": "https://developer.apple.com/documentation/metal.md"
+          }
+        ]
+      },
+      "cleanupVerified": true,
+      "originalReceiptReplayMatches": true
+    },
+    {
+      "key": "apple-markdown",
+      "originalStatus": 200,
+      "originalOutcome": "extracted-unverified",
+      "receiptSha256": "1ca46700e1b3083cff6c08d08caed5132d0f27567631ce62dddabec8a08f7ce6",
+      "bodySha256": "eff17062529eadf6906eff8c8e4af4d89614e42cabd89a08dc89969283ecce1f",
+      "outcome": "extracted-unverified",
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": false,
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 0,
+        "sourceCodeUnits": 12801,
+        "textCodeUnits": 12801,
+        "outputCodeUnits": 0,
+        "tokens": 0,
+        "omittedTokens": 0,
+        "omittedSubtrees": {},
+        "ignoredAttributes": 0,
+        "unwrappedElements": 0,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 0,
+          "workUnits": 0,
+          "steps": 0,
+          "elements": 0,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8"
+      },
+      "markdownBytes": 12844,
+      "markdownSha256": "b6265f9f20ead6d62e5887a1e4f233a4139e6a15fc8cf146b8062af28c7eb40f",
+      "sourceAlternates": null,
+      "cleanupVerified": true
+    }
+  ],
+  "profile": {
+    "sampledMs": 12377.632,
+    "profileSha256": "10de0a359a33912666be79f3ee26c8c04abfb6ce4fb908364f0130d8729245ed",
+    "attributeSnapshotSelfMs": 2635.456,
+    "optimizedNamespaceCallerSnapshotSelfMs": 1872.659,
+    "qualification": "Baseline six-call diagnostic with profiler overhead; not benchmark latency."
+  },
+  "initialProbeFailure": {
+    "exitCode": 1,
+    "reason": "deepStrictEqual distinguished hardened null-prototype originalFailure from JSON ordinary prototype; values matched. Corrected only probe comparison; original attempt retained."
+  },
+  "executions": {
+    "profile/baseline-profile": {
+      "exitCode": 1,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 2.5532062109559774
+    },
+    "profile/baseline-profile02": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 12.570638250559568
+    },
+    "proof/baseline": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 3.556321881711483
+    },
+    "proof/release01": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 2.65584434568882
+    },
+    "benchmark/pair01-baseline": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 12.120436903089285
+    },
+    "benchmark/pair01-release01": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 9.973362911492586
+    },
+    "benchmark/pair02-release01": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 9.817631684243679
+    },
+    "benchmark/pair02-baseline": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 12.071214158087969
+    },
+    "benchmark/pair03-baseline": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 12.420698426663876
+    },
+    "benchmark/pair03-release01": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 9.71837317571044
+    },
+    "benchmark/pair04-release01": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 9.617400955408812
+    },
+    "benchmark/pair04-baseline": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 12.171915240585804
+    },
+    "benchmark/pair05-baseline": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 12.320697980001569
+    },
+    "benchmark/pair05-release01": {
+      "exitCode": 0,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsUnchanged": true,
+      "deniedIoAttempts": 0,
+      "elapsedSeconds": 9.766443567350507
+    }
+  },
+  "knownLimits": [
+    "RFC whole-page output limit remains a failure; benchmark recovers one explicit observed section.",
+    "Existing work/node/text budgets and defaults unchanged.",
+    "No website scripts, credentials, passkeys, SafeJS runtime or interactive acceptance.",
+    "No block-rate, CAPTCHA or live network latency improvement measured."
+  ]
+}

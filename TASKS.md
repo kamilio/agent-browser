@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: namespace-only parser reads and measured recovery performance
+
+**PROGRESS; overall browser goal remains ACTIVE.** Baseline CPU profiling of the
+saved RFC 9110 recovery identifies avoidable attribute snapshots in namespace-only
+parser checks. Add a scalar DocumentTree.namespaceOf read and use it only where
+the parser/formatter needs a namespace, preserving attribute-aware foreign-content
+logic, mutation semantics and work/node/text limits. No caches or dependencies.
+
+Clean baseline: 1356 passing tests in 22 explicit files. Candidate: 1424 in 24,
+68 new, all baseline outcomes unchanged; build/types/format/lint pass. Independent
+source review finds no concrete issue. Ten saved-page comparisons preserve every
+compared output, reader report, source-alternative hint and original failure.
+
+Five alternating baseline/candidate pairs, fresh guarded processes pinned to one
+CPU, measure three captured workloads with 15 timed calls per variant/workload.
+RFC section recovery median: 1994.85 to 1584.13 ms (20.59% lower); NumPy full
+extraction: 502.93 to 345.78 ms (31.25% lower), all five pairs improve for each.
+Julia: 200.03 to 192.11 ms aggregate, but three of five pair medians regress,
+including 37.27% more time in one pair; no consistent Julia speedup claimed.
+Shared-host activity and sample variability remain explicit. These are offline
+processing measurements, not website-network, page-JS or block-rate improvements.
+
+Zero new HTTP requests. All 14 offline child groups close, including the initial
+profile probe whose assertion wrongly distinguished equal values by prototype;
+that failed attempt is retained. Original RFC full-output failure stays intact.
+See PARSER-NAMESPACE-PERFORMANCE.md and
+reports/reader-recovery-performance-2026-09-15.md. Continue targeted website
+content checks and isolate short-document allocation/JIT variability; SafeJS,
+credentials/passkeys, interactive acceptance and broad research gates stay open.
+
 ### September 15: scientific documentation and advertised Markdown alternatives
 
 **PROGRESS; overall browser goal remains ACTIVE.** Four public native probes plus

@@ -883,5 +883,7 @@
   "src/browser-challenge-noscript.test.ts",
   "src/research-noscript-challenge.test.ts",
   "src/document-alternates.test.ts",
-  "src/research-alternates.test.ts"
+  "src/research-alternates.test.ts",
+  "src/document-namespace-read.test.ts",
+  "src/parser-namespace-fast-path.test.ts"
 ]

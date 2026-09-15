@@ -527,8 +527,7 @@ function* parseHtmlSteps(
 			)
 				if (
 					stack[index].tag === tag &&
-					elementNamespace(stack[index].tree.elementInfo(stack[index].id)) ===
-						htmlNamespace
+					stack[index].tree.namespaceOf(stack[index].id) === htmlNamespace
 				)
 					return index;
 			return -1;
