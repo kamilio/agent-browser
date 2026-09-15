@@ -6,6 +6,22 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 15: large-document whitespace design checkpoint
+
+**PROGRESS; overall browser goal remains ACTIVE. No production optimization.**
+Investigate the previously failed W3 long-profile body as pinned development
+input only, not successful source evidence or ordinary failed-capture replay.
+The unchanged reader still exceeds 50,000 nodes. Experimental block-gap removal
+fits at 49,170 nodes and 230 headings, but static review identifies semantic
+risks; a conservative structural/matched-stack rule removes only ten chunks
+and still fails. Its early dd/dl mismatch can be a valid optional HTML end,
+not a finding that the source is malformed. Six finite offline diagnostics,
+zero HTTP requests; final three reproduce with unchanged pins and clean child
+closure. No production, limits, defaults or native manifest changes. No new
+native-suite/build pass, live success, replay admission or research conclusion
+is claimed. See READER-WHITESPACE-CHECKPOINT.md. Next: reviewed bounded parsing
+that preserves words, headings, labels and literals; all wider gates remain open.
+
 ### September 15: preserve block-linked card structure
 
 **PROGRESS; overall browser goal remains ACTIVE.**
