@@ -200,9 +200,18 @@ function rejects(
 	return caught;
 }
 
+function expectEqualBytes(actual: Uint8Array, expected: Uint8Array): void {
+	expect(actual.byteLength).toBe(expected.byteLength);
+	expect(
+		Buffer.from(actual.buffer, actual.byteOffset, actual.byteLength).equals(
+			Buffer.from(expected.buffer, expected.byteOffset, expected.byteLength),
+		),
+	).toBe(true);
+}
+
 function measured(emission: ResearchJsonlEmission): void {
 	expect(emission.receiptBytes).toBe(emission.jsonl.byteLength);
-	expect(emission.jsonl).toEqual(jsonl(emission.record));
+	expectEqualBytes(emission.jsonl, jsonl(emission.record));
 	expect(emission.exitReport.outcome).toBe(emission.record.outcome);
 	if (emission.metadataBytes !== null)
 		expect(emission.metadataBytes).toBe(
@@ -263,6 +272,36 @@ function nestedObjects(depth: number): Fixture {
 	return nested;
 }
 
+it("compares exact byte contents including empty spans", () => {
+	expectEqualBytes(new Uint8Array(), new Uint8Array());
+	expectEqualBytes(Uint8Array.of(0, 128, 255), Uint8Array.of(0, 128, 255));
+});
+
+it("rejects equal-length bytes that differ at any position", () => {
+	const expected = Uint8Array.of(0, 128, 255);
+	for (const index of [0, 1, 2]) {
+		const actual = expected.slice();
+		actual[index] ^= 1;
+		expect(() => expectEqualBytes(actual, expected)).toThrow();
+	}
+});
+
+it("rejects different byte lengths even with equal prefixes", () => {
+	const longer = Uint8Array.of(1, 2, 3);
+	const shorter = longer.subarray(0, 2);
+	expect(() => expectEqualBytes(longer, shorter)).toThrow();
+	expect(() => expectEqualBytes(shorter, longer)).toThrow();
+});
+
+it("compares only requested Uint8Array subarray spans", () => {
+	const actual = Uint8Array.of(8, 0, 128, 255, 9).subarray(1, 4);
+	const expected = Uint8Array.of(7, 6, 0, 128, 255, 5).subarray(2, 5);
+	expectEqualBytes(actual, expected);
+	expectEqualBytes(actual.subarray(1, 1), expected.subarray(2, 2));
+	const shifted = Uint8Array.of(8, 0, 128, 255, 9).subarray(0, 3);
+	expect(() => expectEqualBytes(actual, shifted)).toThrow();
+});
+
 it("exports canonical deeply frozen provenance with explicit local codec guards", () => {
 	expect(researchEvidenceCodecLimits).toEqual({
 		maxDepth: 32,
@@ -319,7 +358,7 @@ it("does not apply the new receipt cap to trusted default serialization", () => 
 	expect(emission.disposition).toBe("complete");
 	expect(emission.receiptBytes).toBeGreaterThan(maxReceiptBytes);
 	expect(emission.metadataBytes).toBeNull();
-	expect(emission.jsonl).toEqual(jsonl(report));
+	expectEqualBytes(emission.jsonl, jsonl(report));
 });
 
 it("measures escaped UTF8 and LF while retaining all non-payload metadata", () => {
