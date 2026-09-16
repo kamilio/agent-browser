@@ -1,0 +1,310 @@
+{
+  "schema": "native-practical-content-workflows-v1",
+  "recordedAt": "2026-09-16T13:06:07.411Z",
+  "evidenceDirectory": "node_modules/.cache/native-validation/reader-practical-workflows-september16",
+  "seal": {
+    "at": "2026-09-16T13:06:07.411Z",
+    "files": 108,
+    "bytes": 8635109,
+    "artifactsSha256": "9613f4c487b154289af0d5bfdf52b2804b44eb1caa8d010642778098cbfb1d19",
+    "writersClosed": true
+  },
+  "runtime": {
+    "root": "/tmp/agent-browser-asset-literals-mPJA4k/candidate-release01",
+    "manifests": {
+      "SOURCE": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/asset-literals-september16/SOURCE-release01.json",
+        "base": "/tmp/agent-browser-asset-literals-mPJA4k/candidate-release01",
+        "sha256": "7939252f6df18bcf65d5b89935cc96cbefd615fe1c9adbcbe7a9880f7b8ae4b8"
+      },
+      "COMPILED": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/asset-literals-september16/COMPILED-release01.json",
+        "base": "/tmp/agent-browser-asset-literals-mPJA4k/candidate-release01/dist",
+        "sha256": "0b5290214ab3f996a2541c6a0fb767ee35c9fa9dddc945af0ab1c62550778933"
+      }
+    },
+    "committedInputs": 1523,
+    "priorNative": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/asset-literals-september16/native-release01/EXECUTION.json",
+    "priorQuality": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/asset-literals-september16/CHECK-release01.json"
+  },
+  "audit": {
+    "passed": true,
+    "at": "2026-09-16T13:06:07.399Z",
+    "runtimeCommit": "f20e9fc49edcaa7a66d9828a0010d023748f28a2",
+    "runtimeCounts": {
+      "SOURCE": 1524,
+      "COMPILED": 2300
+    },
+    "preservedTracked": 42,
+    "preservedUntracked": 697,
+    "liveRequests": 6,
+    "liveDecodedBytes": 3123292,
+    "replayPassed": true,
+    "sectionIsExactWholeOutputSlice": true,
+    "retainedNumberedSteps": 10,
+    "uniqueOriginalCorpusUrls": 100
+  },
+  "original100": {
+    "report": "reports/agent-citation-revalidation-v2.md",
+    "json": "reports/agent-citation-revalidation-v2.json",
+    "csv": "reports/agent-citation-revalidation-v2.csv",
+    "reportSha256": "9fbce409f120ce9755140bb9f7d8104bbb5f3bf04d9b2e416a9580488e08b48c",
+    "assessments": {
+      "empty": 6,
+      "useful-source-content": 33,
+      "navigation-only": 19,
+      "other-failure": 6,
+      "http-error": 8,
+      "consent-or-access": 23,
+      "login-required": 3,
+      "transport-failure": 2
+    },
+    "navigationAttempts": 100,
+    "requests": 108,
+    "captures": 96,
+    "retries": 0
+  },
+  "workflows": [
+    {
+      "ordinal": 23,
+      "sourceUrl": "https://www.wikihow.com/Main-Page",
+      "targetUrl": "https://www.wikihow.com/Transcribe-Online-Meetings-Automatically",
+      "startedAt": "2026-09-16T12:40:31.914796+00:00",
+      "elapsedSeconds": 2.3727647829800844,
+      "nativeOutcome": "extracted-unverified",
+      "contentSuccess": null,
+      "assessment": "useful-article-content-with-limitations",
+      "markdownBytes": 27133,
+      "markdownLines": 514,
+      "markdownSha256": "ea5334830c549f99d021c4ce33a890ef1056ea4a244d74a6c6adc21f07c86e27",
+      "selection": {
+        "policy": "main-content-v2",
+        "selected": "main",
+        "reason": "unique-main",
+        "mainCandidates": 1,
+        "articleCandidates": 0,
+        "scannedNodes": 2256,
+        "outsideArticleContent": true
+      },
+      "responses": [
+        {
+          "url": "https://www.wikihow.com/Main-Page",
+          "status": 200,
+          "decodedBytes": 372150,
+          "bodySha256": "b21de03e865806437a02c0961776a9f679f8f6b674c6839940a3dd2f80d5b1de"
+        },
+        {
+          "url": "https://www.wikihow.com/Transcribe-Online-Meetings-Automatically",
+          "status": 200,
+          "decodedBytes": 534154,
+          "bodySha256": "62546cdb8169ebf38587faddfbbeefa3ff09b618a359430ba7af97108563d213"
+        }
+      ],
+      "resultSha256": "12e81ba17b7e1e1949cb47cfdfc87b4e360f699e54f56905ba0d2b9551acb254"
+    },
+    {
+      "ordinal": 43,
+      "sourceUrl": "https://www.pcmag.com/",
+      "targetUrl": "https://www.pcmag.com/reviews/acer-swift-go-16-ai",
+      "startedAt": "2026-09-16T12:40:34.289677+00:00",
+      "elapsedSeconds": 2.4931894689798355,
+      "nativeOutcome": "extracted-unverified",
+      "contentSuccess": null,
+      "assessment": "useful-article-content-with-limitations",
+      "markdownBytes": 38130,
+      "markdownLines": 538,
+      "markdownSha256": "2c5100f12972203f91b27d6567e33ee7cc78976c180854438aa9421684705ced",
+      "selection": {
+        "policy": "main-content-v2",
+        "selected": "main",
+        "reason": "unique-main",
+        "mainCandidates": 1,
+        "articleCandidates": 1,
+        "scannedNodes": 4541,
+        "outsideArticleContent": true
+      },
+      "responses": [
+        {
+          "url": "https://www.pcmag.com/",
+          "status": 200,
+          "decodedBytes": 699397,
+          "bodySha256": "a451e77930409c93fcfd55cf4fea10f226d08c05f3ba3e66039f5e9d87fb0fb3"
+        },
+        {
+          "url": "https://www.pcmag.com/reviews/acer-swift-go-16-ai",
+          "status": 200,
+          "decodedBytes": 1107598,
+          "bodySha256": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f"
+        }
+      ],
+      "resultSha256": "84d57e58b069de2552f5184b15f6d87efdd6db47df366cea8f3eb08e2b36e715"
+    },
+    {
+      "ordinal": 84,
+      "sourceUrl": "https://www.outdoorgearlab.com/",
+      "targetUrl": "https://www.outdoorgearlab.com/reviews/camping-and-hiking/soft-cooler/yeti-daytrip-9l",
+      "startedAt": "2026-09-16T12:40:36.784784+00:00",
+      "elapsedSeconds": 2.489702356979251,
+      "nativeOutcome": "extracted-unverified",
+      "contentSuccess": null,
+      "assessment": "useful-article-content-with-limitations",
+      "markdownBytes": 21289,
+      "markdownLines": 1332,
+      "markdownSha256": "357e9c877915d4cc17f1cf820ed30bf23d0176277621d520d794e92cc009184d",
+      "selection": {
+        "policy": "main-content-v2",
+        "selected": "main",
+        "reason": "unique-main",
+        "mainCandidates": 1,
+        "articleCandidates": 1,
+        "scannedNodes": 1831,
+        "outsideArticleContent": true
+      },
+      "responses": [
+        {
+          "url": "https://www.outdoorgearlab.com/",
+          "status": 200,
+          "decodedBytes": 203573,
+          "bodySha256": "b7077f53fe328d744603a41691bca344674724f7d7536793f3f3a52e3060ad1d"
+        },
+        {
+          "url": "https://www.outdoorgearlab.com/reviews/camping-and-hiking/soft-cooler/yeti-daytrip-9l",
+          "status": 200,
+          "decodedBytes": 206420,
+          "bodySha256": "62454f06a4e3c8edd06a275b90355df69e4bfa372d6ff4d1e017569a263ca13e"
+        }
+      ],
+      "resultSha256": "20fbbc28b7ab0b3c2fd52a647eea29273ba2b5ce4718962a5e6076c0a67f9660"
+    }
+  ],
+  "replay": {
+    "passed": true,
+    "newLiveRequests": 0,
+    "fixtureRequests": 6,
+    "scope": "Native click replay of all three freshly captured complete source/target pairs; exact Markdown and normalized full extraction match live outputs",
+    "results": [
+      {
+        "ordinal": 23,
+        "sourceUrl": "https://www.wikihow.com/Main-Page",
+        "targetUrl": "https://www.wikihow.com/Transcribe-Online-Meetings-Automatically",
+        "passed": true,
+        "fixtureRequests": 2,
+        "markdownBytes": 27133,
+        "markdownSha256": "ea5334830c549f99d021c4ce33a890ef1056ea4a244d74a6c6adc21f07c86e27",
+        "normalizedExtractionSha256": "c1e1408f091b4342aed5bbe7478c0ffaf442cc9f0a5a22d0bdc08af53a96cdd3",
+        "discovery": {
+          "strategy": "first-eligible-target-v1",
+          "anchorMatches": 284,
+          "targetCandidates": 1,
+          "eligibleCandidates": 1
+        }
+      },
+      {
+        "ordinal": 43,
+        "sourceUrl": "https://www.pcmag.com/",
+        "targetUrl": "https://www.pcmag.com/reviews/acer-swift-go-16-ai",
+        "passed": true,
+        "fixtureRequests": 2,
+        "markdownBytes": 38130,
+        "markdownSha256": "2c5100f12972203f91b27d6567e33ee7cc78976c180854438aa9421684705ced",
+        "normalizedExtractionSha256": "8942d58b317fb0420c77fd1f28c96034f5b581c1c1c312f09ecc2dc98d065292",
+        "discovery": {
+          "strategy": "first-eligible-target-v1",
+          "anchorMatches": 471,
+          "targetCandidates": 1,
+          "eligibleCandidates": 1
+        }
+      },
+      {
+        "ordinal": 84,
+        "sourceUrl": "https://www.outdoorgearlab.com/",
+        "targetUrl": "https://www.outdoorgearlab.com/reviews/camping-and-hiking/soft-cooler/yeti-daytrip-9l",
+        "passed": true,
+        "fixtureRequests": 2,
+        "markdownBytes": 21289,
+        "markdownSha256": "357e9c877915d4cc17f1cf820ed30bf23d0176277621d520d794e92cc009184d",
+        "normalizedExtractionSha256": "8f35963d159398fa95b50d612ca77c831818f344488ed2387a2d9923950bbf9b",
+        "discovery": {
+          "strategy": "first-eligible-target-v1",
+          "anchorMatches": 190,
+          "targetCandidates": 2,
+          "eligibleCandidates": 1
+        }
+      }
+    ]
+  },
+  "section": {
+    "passed": true,
+    "newLiveRequests": 0,
+    "wholeMarkdownBytes": 27133,
+    "sectionMarkdownBytes": 11450,
+    "sectionMarkdownSha256": "d69b588148af7e7266de4cdd0ab0766508f0df2e5152c784cc3bedb409fe8a99",
+    "retainedHeadingCount": 5,
+    "sourceBodySha256": "62546cdb8169ebf38587faddfbbeefa3ff09b618a359430ba7af97108563d213",
+    "section": {
+      "method": "heading-section",
+      "heading": "e611",
+      "level": 2,
+      "end": "e1109",
+      "scannedNodes": 1099,
+      "selectedNodes": 498,
+      "contextNodes": 10
+    },
+    "limitations": [
+      "Existing API only, no production change",
+      "Sponsor and byline outside selected section must remain in provenance",
+      "Static source extraction, not rendered CSS visibility or action success"
+    ],
+    "documentClosed": true,
+    "reductionPercent": 57.8,
+    "exactWholeOutputSlice": true,
+    "retainedNumberedSteps": 10
+  },
+  "reviews": {
+    "wikiHow": {
+      "coverage": "Sampled whole extraction and targeted source inspection; exact selected-output slice and step count verified offline",
+      "findings": [
+        "Sponsored five-section ten-step tutorial retained",
+        "Conditional thanks-for-tip template is not proof of submission",
+        "Existing heading section removes Q&A and recommendation tail but excludes sponsor/byline provenance"
+      ]
+    },
+    "pcmag": {
+      "coverage": "Independent full extraction read and targeted HTML review; all 29 marked article paragraphs matched with bounded normalization",
+      "reviewMarkdown": "node_modules/.cache/native-validation/reader-practical-workflows-september16/pcmag-review.md",
+      "reviewJson": "node_modules/.cache/native-validation/reader-practical-workflows-september16/pcmag-review.json",
+      "findings": [
+        "Identity, verdict, six pros/cons items and static specifications retained",
+        "Pros/cons group boundary lost",
+        "One SVG-only specification blank; not a negative value",
+        "Four empty dynamic chart placeholders do not supply benchmark values",
+        "Recommendation material and differing source price/specification assertions retained without reconciliation"
+      ]
+    },
+    "outdoorGearLab": {
+      "coverage": "Sampled extraction and targeted source inspection, not a full human reading",
+      "findings": [
+        "Verdict, score categories, comparisons and testing narrative retained",
+        "Long table output is intentionally structural; compactTables does not remove end markers",
+        "Publisher scores/prices are not independent measurements or verified current offers"
+      ]
+    }
+  },
+  "diagnosticCorrections": [
+    "First offline section attempt incorrectly read extraction.markdown instead of extraction.content and failed before result publication",
+    "Second attempt compared raw Markdown headings without accounting for emitted backslash/hyphen and amp-entity syntax; failed",
+    "Third attempt corrects checks, validates exact whole-output equality and all five headings, and closes the document; first two failed receipts retained"
+  ],
+  "limitations": [
+    "No global page-level agent-visit ranking established; original list is a citation-derived host/root proxy",
+    "Three new article workflows do not revise historical 100-entry verdicts",
+    "Static source retrieval, not rendered behavior or independent fact checking",
+    "No page scripts, SafeJS, credentials, account/form actions, retries, redirects, alternate client or challenge solving",
+    "No new native suite/build claim; prior selected gate 809/0 in nine files, broad residual 62 failures and 22 missing committed manifest inputs remain open",
+    "Captured original-request failures can be masked by the wrapper captureFailure path; not exercised by this all-200 run",
+    "Empty HOME/TMP are not a private-file acceptance test: repository ancestor permissions remain outside that gate"
+  ],
+  "productionChanges": false,
+  "pushed": false,
+  "overallGoal": "active"
+}

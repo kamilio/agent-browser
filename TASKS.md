@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Practical article retrieval after the 100-entry corpus
+
+- Keep the complete100-entry checklist and immutable original verdicts in
+  reports/agent-citation-revalidation-v2.md; citation-derived roots are not a
+  verified global ranking of agent page visits.
+- Three further source-linked native workflows retrieve useful wikiHow, PCMag
+  and OutdoorGearLab articles: six GET200,3123292 decoded bytes.
+  Native click, anonymous scope and request/socket/process cleanup pass.
+- Complete-capture offline replay matches exact Markdown and normalized full
+  extraction for all three. Existing heading-section extraction cuts wikiHow
+  from27133 to11450 bytes while retaining five sections and ten steps, exactly
+  matching the corresponding full-output slice. Preserve sponsor/byline context.
+- PCMag retains all29 marked article paragraphs but merges adjacent pros/cons
+  groups and lacks four dynamic chart datasets. Investigate list boundaries
+  with a minimal synthetic fixture; do not infer missing icon/chart values.
+- No production change, new native-suite run, SDK/credential/device test or push.
+  Prior62 broad failures and22 missing committed manifest inputs stay open.
+  See reports/reader-practical-workflows-2026-09-16.md and companion JSON.
+
 ### Maintained pinned source-asset literal recovery
 
 - Add a dependency-free bounded literal parser and native one-GET asset CLI, plus
