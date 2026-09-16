@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Public SafeJS scheduler candidate — static only
+
+- Record a conditional public-API composition using an already-running outer
+  guest driver, bounded host inbox, genuinely owned nested turns and real
+  guest-await boundaries. External evaluate overlap remains intentionally denied;
+  no runtime implementation or SDK execution follows from source inspection.
+- Pin ten inspected SafeJS source/doc/test files at fetched4f6988bededc4c663682d6be8f5f7408ee4230e7.
+  See SAFEJS-SCHEDULER-CANDIDATE.md and its retained feasibility/source-hash lane.
+- Resolve source return values/options, suspended-source limits, inbox authority,
+  budgets, event order, tail errors and queued cancellation/close before adoption.
+  Obtain upstream composite-contract evidence; preserve19 core and10 extension
+  expectations plus separate live-script gates. Overall browser goal stays open.
+
 ### Compact output for native reader link workflows
 
 - Expose the existing compact-table formatter through one optional --compact-tables

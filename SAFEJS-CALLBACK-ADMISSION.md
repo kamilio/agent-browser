@@ -60,8 +60,12 @@ checks unchanged. Exact hashes and the fetch log are retained in
 ## Required public capability
 
 The mismatch is between an additional browser requirement and the current public
-SDK contract. It needs a supported public scheduling capability or contract
-change, with upstream acceptance evidence—not another identical SDK retry.
+SDK contract. It needs a supported browser scheduling design composing public
+APIs, or a public capability/contract change, with upstream acceptance evidence—not
+another identical SDK retry. The static candidate in
+`SAFEJS-SCHEDULER-CANDIDATE.md` explores the first possibility; it is not an
+implemented solution or SDK acceptance. External `realm.evaluate` still rejects
+the overlap, and `evaluateNested` is not a drop-in replacement.
 
 Required behavior is to admit host-scheduled later source after relevant callback
 prefixes, without waiting for those callbacks' async tails, while preserving the
