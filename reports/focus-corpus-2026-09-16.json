@@ -1,0 +1,278 @@
+{
+  "date": "2026-09-16",
+  "runtimeCommit": "efcec30cb81d74adf162c34225a0f23329e71643",
+  "runtimeWasUncommittedAtRequests": true,
+  "protectedRuntimeRoot": "/tmp/agent-browser-nested-article-focus-2oy0yw/release06",
+  "productionChanged": false,
+  "evidenceDirectory": "node_modules/.cache/native-validation/focus-corpus-september16",
+  "evidence": {
+    "corpus01/CHECK.json": "7f32b210d37257de74edda641329ab534024a53170426017d672827d487630be",
+    "live-followup/proof01/CHECK.json": "4e0930cfe2c6b4d809af29c1945854c9244252eabfc67cb8c2f3fb460b3d581c",
+    "live-followup/live/CHECK.json": "063c549aac647f5b965d42b2abc295fdeca3779bf50750b9ee2127e924bf097a"
+  },
+  "corpus": {
+    "inputs": 135,
+    "loaded": 128,
+    "loadFailures": 7,
+    "interpretation": {
+      "profile": "long-v1",
+      "rawWork": "separate-omitted-raw-v1",
+      "visibility": "source-hidden-inline-v1"
+    },
+    "profiles": {
+      "complete": {
+        "pairs": 128,
+        "beforeSucceeded": 128,
+        "afterSucceeded": 128,
+        "recovered": 0,
+        "regressed": 0,
+        "changedContent": 3,
+        "nestedArticle": 5,
+        "sourceScopeMatches": 5
+      },
+      "prefix": {
+        "pairs": 128,
+        "beforeSucceeded": 128,
+        "afterSucceeded": 128,
+        "recovered": 0,
+        "regressed": 0,
+        "changedContent": 3,
+        "nestedArticle": 5,
+        "sourceScopeMatches": 5
+      }
+    },
+    "changedPages": [
+      {
+        "id": "entry-84",
+        "url": "https://www.outdoorgearlab.com/",
+        "sourceStatus": 200,
+        "beforeBytes": 21610,
+        "afterBytes": 20617,
+        "savedBodySha256": "b7077f53fe328d744603a41691bca344674724f7d7536793f3f3a52e3060ad1d"
+      },
+      {
+        "id": "app-react-learn",
+        "url": "https://react.dev/learn",
+        "sourceStatus": 200,
+        "beforeBytes": 17992,
+        "afterBytes": 16795,
+        "savedBodySha256": "00e6b528475f9a8a34f749211f3d419eb94ba1dd3915272832f6805d3aefe092"
+      },
+      {
+        "id": "pypi-json-docs",
+        "url": "https://docs.pypi.org/api/json/",
+        "sourceStatus": 200,
+        "beforeBytes": 24754,
+        "afterBytes": 20682,
+        "savedBodySha256": "73c821e9b18cc7497d1b6a94726e973066ff536e3b364a56188b949ec64a98c7"
+      }
+    ],
+    "nonHtmlFailures": [
+      {
+        "id": "entry-54",
+        "url": "https://www.bbb.org/",
+        "error": {
+          "name": "AgentBrowserError",
+          "code": "unsupported",
+          "message": "Long reader requires text/html"
+        }
+      },
+      {
+        "id": "entry-60",
+        "url": "https://www.ziprecruiter.com/",
+        "error": {
+          "name": "AgentBrowserError",
+          "code": "unsupported",
+          "message": "Long reader requires text/html"
+        }
+      },
+      {
+        "id": "entry-89",
+        "url": "https://kateminimalist.com/",
+        "error": {
+          "name": "AgentBrowserError",
+          "code": "unsupported",
+          "message": "Long reader requires text/html"
+        }
+      },
+      {
+        "id": "app-next-installation",
+        "url": "https://nextjs.org/docs/app/getting-started/installation",
+        "error": {
+          "name": "AgentBrowserError",
+          "code": "unsupported",
+          "message": "Long reader requires text/html"
+        }
+      },
+      {
+        "id": "app-next-agent-guide",
+        "url": "https://nextjs.org/docs/app/guides/ai-agents",
+        "error": {
+          "name": "AgentBrowserError",
+          "code": "unsupported",
+          "message": "Long reader requires text/html"
+        }
+      },
+      {
+        "id": "pypi-requests",
+        "url": "https://pypi.org/pypi/requests/json",
+        "error": {
+          "name": "AgentBrowserError",
+          "code": "unsupported",
+          "message": "Long reader requires text/html"
+        }
+      },
+      {
+        "id": "npm-typescript",
+        "url": "https://registry.npmjs.org/typescript/latest",
+        "error": {
+          "name": "AgentBrowserError",
+          "code": "unsupported",
+          "message": "Long reader requires text/html"
+        }
+      }
+    ]
+  },
+  "live": {
+    "requests": 3,
+    "sourceVisibility": "source-hidden-inline-v1",
+    "rawWork": "separate-omitted-raw-v1",
+    "documentProfile": "default",
+    "rows": [
+      {
+        "id": "outdoorgearlab",
+        "corpusId": "entry-84",
+        "url": "https://www.outdoorgearlab.com/",
+        "receivedAt": "2026-09-16T23:10:11.019Z",
+        "status": 200,
+        "decodedBytes": 203577,
+        "encodedBytes": 39994,
+        "bodySha256": "deb50acae2b77e36e8733ccee9a883407e447109ca440e261772049608bd883c",
+        "originalBodySha256": "b7077f53fe328d744603a41691bca344674724f7d7536793f3f3a52e3060ad1d",
+        "bodyMatchesSaved": false,
+        "markdownMatchesSaved": false,
+        "previousScopedMarkdownBytes": 20617,
+        "markdownBytes": 20690,
+        "markdownSha256": "c2539b2938af487c9dbc54d60cb6146f6306c8b5359eeb73655313c9d0e2cf24",
+        "selection": {
+          "policy": "main-content-v3",
+          "selected": "article",
+          "reason": "unique-article-in-main",
+          "mainCandidates": 1,
+          "articleCandidates": 1,
+          "scannedNodes": 1787,
+          "outsideArticleContent": false,
+          "mainArticleCandidates": 1,
+          "outsideMainArticleContent": false
+        },
+        "nativeOutcome": "extracted-unverified",
+        "nativeContentSuccess": null,
+        "receiptSha256": "cbb545129c9a80a8851442be6f0a34873c82ba9182ea7fd32ee8f203fc8deed1",
+        "stdoutBytes": 299471,
+        "metrics": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 1,
+          "redirects": 0,
+          "encodedBytes": 39994,
+          "decodedBytes": 203577,
+          "active": 0,
+          "closed": true
+        }
+      },
+      {
+        "id": "react-learn",
+        "corpusId": "app-react-learn",
+        "url": "https://react.dev/learn",
+        "receivedAt": "2026-09-16T23:10:13.448Z",
+        "status": 200,
+        "decodedBytes": 265160,
+        "encodedBytes": 38142,
+        "bodySha256": "00e6b528475f9a8a34f749211f3d419eb94ba1dd3915272832f6805d3aefe092",
+        "originalBodySha256": "00e6b528475f9a8a34f749211f3d419eb94ba1dd3915272832f6805d3aefe092",
+        "bodyMatchesSaved": true,
+        "markdownMatchesSaved": true,
+        "previousScopedMarkdownBytes": 16795,
+        "markdownBytes": 16795,
+        "markdownSha256": "26c92974a482aa723a1713f5593828120e0943cc114416fbd9613eae1849bcf6",
+        "selection": {
+          "policy": "main-content-v3",
+          "selected": "article",
+          "reason": "unique-article-in-main",
+          "mainCandidates": 1,
+          "articleCandidates": 1,
+          "scannedNodes": 3743,
+          "outsideArticleContent": false,
+          "mainArticleCandidates": 1,
+          "outsideMainArticleContent": false
+        },
+        "nativeOutcome": "extracted-unverified",
+        "nativeContentSuccess": null,
+        "receiptSha256": "38525f4f307f84ea47137b48469235cc2818d5b9252284e6ceb38467d0924c7b",
+        "stdoutBytes": 387018,
+        "metrics": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 1,
+          "redirects": 0,
+          "encodedBytes": 38142,
+          "decodedBytes": 265160,
+          "active": 0,
+          "closed": true
+        }
+      },
+      {
+        "id": "pypi-json",
+        "corpusId": "pypi-json-docs",
+        "url": "https://docs.pypi.org/api/json/",
+        "receivedAt": "2026-09-16T23:10:15.949Z",
+        "status": 200,
+        "decodedBytes": 112286,
+        "encodedBytes": 15063,
+        "bodySha256": "73c821e9b18cc7497d1b6a94726e973066ff536e3b364a56188b949ec64a98c7",
+        "originalBodySha256": "73c821e9b18cc7497d1b6a94726e973066ff536e3b364a56188b949ec64a98c7",
+        "bodyMatchesSaved": true,
+        "markdownMatchesSaved": true,
+        "previousScopedMarkdownBytes": 20682,
+        "markdownBytes": 20682,
+        "markdownSha256": "439b3b1521c54e60c3e92238fc7bc69d7f4e9532f64f0c2a3016687175392ad8",
+        "selection": {
+          "policy": "main-content-v3",
+          "selected": "article",
+          "reason": "unique-article-in-main",
+          "mainCandidates": 1,
+          "articleCandidates": 1,
+          "scannedNodes": 5346,
+          "outsideArticleContent": true,
+          "mainArticleCandidates": 1,
+          "outsideMainArticleContent": false
+        },
+        "nativeOutcome": "extracted-unverified",
+        "nativeContentSuccess": null,
+        "receiptSha256": "3b5ff2f2b0338662a8d586501391be7b29ada7d1d1fc6f7c83022b5ea3766dca",
+        "stdoutBytes": 178246,
+        "metrics": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 1,
+          "redirects": 0,
+          "encodedBytes": 15063,
+          "decodedBytes": 112286,
+          "active": 0,
+          "closed": true
+        }
+      }
+    ]
+  },
+  "nativeGateRerun": false,
+  "historical100VerdictsChanged": false,
+  "overallGoalComplete": false,
+  "contentReview": {
+    "artifact": "node_modules/.cache/native-validation/focus-corpus-september16/CONTENT-REVIEW.md",
+    "sha256": "7ca6448fc9a28bf315d6c6df8378cdfa965c05666f1f2a5353a47bf23019bbce",
+    "acceptanceSha256": "f867eb8ee949e6674d95615dd17dafb4a94b0a8eb7a58f09269f9e837e61f119",
+    "contentPreservationPassed": false,
+    "blockingFinding": "OutdoorGearLab main header funding disclosure is omitted from saved and fresh v3 article output.",
+    "nextAction": "Preserve outside-article non-navigation context with generic admission rules and regression coverage."
+  }
+}

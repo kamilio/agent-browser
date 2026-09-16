@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Revalidate nested focus across saved pages and three live content checks
+
+- Commit efcec30 adds opt-in nested article selection. Compare v2/v3 across135
+  pinned saved responses under identical explicit long-reader/hidden-inline
+  interpretation:128 HTML loads and7 non-HTML refusals. Both complete and prefix
+  profiles retain128 successful extractions, zero new failures and zero recoveries.
+- Five selections refine to article; CNET/Go retain identical Markdown. Outdoor-
+  GearLab, React Learn and PyPI JSON docs shrink by993/1197/4072 bytes. Exact
+  selected-node extraction matches all five; document trees/revisions stay intact.
+- Three fresh anonymous native GETs at23:10 UTC September16 return200 and select
+  articles under explicit v3/hidden-inline options and default document limits.
+  React/PyPI bodies and full Markdown match saved sources; OutdoorGearLab's body
+  and Markdown drift is retained and reviewed. All requests/processes close.
+- Independent source review finds a content blocker: GearLab's header funding/
+  affiliate disclosure is omitted while article independence claims remain.
+  React loses footer credits. Successful extraction is not content preservation;
+  fix generic outside-article context admission before calling this a clean pass.
+- No production changes or new full-native run in this follow-up;1555 source
+  entries match efcec30 and2328 compiled entries match tested runtime pins. Keep
+  the original wrapper exit1/count reconciliation and22 missing files explicit.
+- See reports/focus-corpus-2026-09-16.md/JSON and separate content review. Smaller
+  source selections do not fix the67 other historical citation-entry verdicts.
+  Continue SafeJS/dynamic pages, access/CAPTCHA, performance, real credentials/
+  passkeys/devices and unfinished research. The overall browser goal remains open.
+
 ### Focus nested articles conservatively and validate fresh vLLM retrieval
 
 - Add opt-in main-content-v3 and explicit complete failed-output content-focus
