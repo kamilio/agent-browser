@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Validate JSON field extraction through a fresh public API request
+
+- One actual native CLI GET retrieves PyPI Requests /info on committed runtime
+  d20b2f0, after its isolated same-path proof. HTTP200; one real
+  request/TLS connection, no scripts, credentials, redirects, retries or bypass.
+- Independent Python audit matches the selected object and exact UTF16 span:
+  5054 literal bytes /5065 Markdown bytes from a192973-byte decoded response.
+  All30 source fields survive; useful package metadata fields have expected types.
+- Full body capture is deliberate audit overhead (267849 total CLI JSONL bytes),
+  not reduced complete output or network transfer. Package facts are not verified.
+- See reports/json-package-field-live-2026-09-16.md/JSON. Native46,333/0 in942
+  available files is separate from live, SafeJS, real-authenticator and rendering
+  acceptance. Keep the full browser objective and remaining access/research gates.
+
 ### Confirm checkpoint bytes when timestamps miss a rewrite
 
 - Trace32 synthetic mid-read rewrites on unchanged production:9 incorrectly

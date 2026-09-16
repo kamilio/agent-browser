@@ -1,0 +1,142 @@
+{
+  "passed": true,
+  "method": "Independent Python JSON semantic and UTF-16 source-span audit of a native live response; no additional requests.",
+  "runtimeCommit": "d20b2f0b0162fdeb04b06850e5ba3c8466af7448",
+  "receiptSha256": "e27a945133f4e35b7bc15132c5ab13b1fc4cb49ff0f236276330154624be7b0d",
+  "primaryResponse": {
+    "url": "https://pypi.org/pypi/requests/json",
+    "status": 200,
+    "receivedAt": "2026-09-16T21:42:06.348Z",
+    "headers": {
+      "content-type": [
+        "application/json"
+      ],
+      "content-length": [
+        "43299"
+      ],
+      "content-encoding": [
+        "gzip"
+      ]
+    },
+    "headerCapture": {
+      "kind": "selected-response-headers-v1",
+      "partial": true,
+      "omitted": []
+    },
+    "decodedBytes": 192973,
+    "encodedBytes": 43299,
+    "bodySha256": "bcfc6a202592e4e90f5a28ff002694eaa7c58ba741b76077f432b8bee1480111",
+    "hashScope": "transport-decoded-body-before-loader",
+    "redirects": 0,
+    "elapsedMs": 25.200529000000003
+  },
+  "nativeOutcome": "extracted-unverified",
+  "nativeContentSuccess": null,
+  "sourceSelectionVerified": true,
+  "selection": {
+    "kind": "json-source-selection-v1",
+    "method": "json-pointer",
+    "pointer": "/info",
+    "start": 8,
+    "end": 5050,
+    "sourceCodeUnits": 192961,
+    "selectedCodeUnits": 5042,
+    "offsetBasis": "document-text-utf16",
+    "valueKind": "object",
+    "duplicateMembers": "rejected"
+  },
+  "selectedFields": 30,
+  "usefulFieldsVerified": [
+    "name",
+    "version",
+    "summary",
+    "requires_python",
+    "project_urls",
+    "requires_dist"
+  ],
+  "literalBytes": 5054,
+  "markdownBytes": 5065,
+  "liveJsonlBytes": 267849,
+  "includesFullBodyCaptureForAudit": true,
+  "metrics": {
+    "mockedRequests": 0,
+    "mockedDecodedBytes": 0,
+    "requests": 1,
+    "redirects": 0,
+    "encodedBytes": 43299,
+    "decodedBytes": 192973,
+    "active": 0,
+    "closed": true
+  },
+  "prior": {
+    "receiptSha256": "5d62bd0b8cf100b8a4b21d4220e5503092f5cf5fd291c7e6478e8de38843dbad",
+    "receivedAt": "2026-09-16T20:25:46.934Z",
+    "bodySha256": "bcfc6a202592e4e90f5a28ff002694eaa7c58ba741b76077f432b8bee1480111",
+    "wholeMarkdownBytes": 192983,
+    "sameDecodedBody": true
+  },
+  "networkSavingsClaimed": false,
+  "independentPackageFactsVerified": false,
+  "goalComplete": false,
+  "nativeGate": {
+    "passedTests": 46333,
+    "failedTests": 0,
+    "files": 942,
+    "executionMode": "four-isolated-native-shards"
+  },
+  "runtimeSourceManifestSha256": "53ad69ca81b98992299ae399553533de5a3dac2b23a326ea9c0bc1c5e6dab048",
+  "runtimeCompiledManifestSha256": "684dd6e09de5a51a76b1e516307e2303aefa7ac997972a7a231c8bcf213b60e1",
+  "executions": [
+    {
+      "ordinal": "pypi-requests-info",
+      "mode": "offline",
+      "version": "proof",
+      "entry": {
+        "id": "pypi-requests-info",
+        "url": "https://pypi.org/pypi/requests/json",
+        "pointer": "/info",
+        "task": "Read exact public project metadata via JSON Pointer; validate against captured source, not package installations.",
+        "ordinal": "pypi-requests-info",
+        "sourceUrl": "https://pypi.org/pypi/requests/json"
+      },
+      "approvalSha256": null,
+      "pid": 822879,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "safetyErrors": [],
+      "safetyPassed": true,
+      "terminationSignal": null,
+      "elapsedSeconds": 0.26072370633482933
+    },
+    {
+      "ordinal": "pypi-requests-info",
+      "mode": "live",
+      "version": "live",
+      "entry": {
+        "id": "pypi-requests-info",
+        "url": "https://pypi.org/pypi/requests/json",
+        "pointer": "/info",
+        "task": "Read exact public project metadata via JSON Pointer; validate against captured source, not package installations.",
+        "ordinal": "pypi-requests-info",
+        "sourceUrl": "https://pypi.org/pypi/requests/json"
+      },
+      "approvalSha256": "d6ab804f200da17d99f0f30b1ac99177174f904ede52a8aa4ea9bbbdb74ef11e",
+      "pid": 823344,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "safetyErrors": [],
+      "safetyPassed": true,
+      "reservation": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/json-package-field-live-september16/source-reservations/a4aa2ac280bb8d1a0ce7a1be5a7bfb10292b49fe9435ad5cff19f421f3c70e41.json",
+      "terminationSignal": null,
+      "elapsedSeconds": 0.2794813346117735
+    }
+  ],
+  "preservedTracked": 42,
+  "preservedUntracked": 697
+}
