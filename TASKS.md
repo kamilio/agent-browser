@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Preserve paragraph boundaries and validate three reference workflows
+
+- Four anonymous native GETs cover Rust futures, PostgreSQL WITH and SQLite SELECT;
+  SQLite's default2M encoded-budget failure remains recorded. One explicit existing
+  long-v1 follow-up captures2033807 bytes/19 headings; two zero-request section CLI
+  replays recover4396 and1654 Markdown bytes. Do not count headings as body content.
+- Independent source reviews retain all34 Rust/PostgreSQL code blocks, with stated
+  boundary-newline differences and source-qualification losses. SQLite's two chosen
+  sections retain13/13 and11/11 substantive units and all three SQL examples; no
+  whole-reference, diagram rendering, factual or code-execution claim.
+- Fix generic inline wrappers flattening paragraphs into adjacent dates. Preserve
+  true block boundaries while joining continuous inline text across wrapper edges;
+  retain code, links, lists, tables, image-source annotations and existing budgets.
+- Final release03:3716 passed/0 failed across43 selected manifest files, including
+  99 new wrapper cases plus2 annotation cases; build/types/format/lint pass. Exact
+  new99-case file gives37/62 on pre-change production and74/25 on the initial
+  edge-splitting candidate. Independent review's P2 is fixed and re-reviewed.
+-120 saved responses yield117 successful pairs/3 matching non-HTML failures.
+  Source DOM and metadata match;113 bounded structured JSON pairs succeed and4
+  match JSON-limit failures.12 Markdown outputs change:9 whitespace-only and3
+  recover authored headings. All four Car and Driver date joins separate; three
+  final native CLI checks match complete API extraction with zero real requests.
+- Reports: reports/agent-reference-workflows-2026-09-16.md/JSON and
+  reports/inline-block-boundaries-2026-09-16.md/JSON. No speedup or challenge-bypass
+  claim. Runtime contract review confirms existing diagnostic repairs, not SafeJS
+  acceptance. Historical100-page verdicts,62 broader failures/22 missing committed
+  tests, credentials/passkeys/devices/TTY/rendering/access gates and full goal remain.
+
 ### Validate deep article content and avoid premature raw-work exhaustion
 
 - Three fresh anonymous native GET200 follow links from previously navigation-only

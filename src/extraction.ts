@@ -520,7 +520,11 @@ function flowLinkStructure(root: ExtractedNode) {
 		const childBlock = children.some((child) => blockNodes.has(child));
 		if (!inlineTypes.has(node.type) || childBlock) blockNodes.add(node);
 		if (node.type === "link" && childBlock) links.add(node);
-		if (links.has(node) || children.some((child) => wrappers.has(child)))
+		if (
+			(node.type === "inline" && childBlock) ||
+			links.has(node) ||
+			children.some((child) => wrappers.has(child))
+		)
 			wrappers.add(node);
 	}
 	return { blockNodes, links, wrappers };
@@ -818,7 +822,20 @@ function markdown(
 	) => {
 		const tasks: Task[] = [];
 		let group: ExtractedNode[] = [];
-		for (const node of children) {
+		const remaining = children.slice().reverse();
+		while (remaining.length) {
+			const node = remaining.pop();
+			if (!node) break;
+			if (
+				node.type === "inline" &&
+				flow.wrappers.has(node) &&
+				!node.imageSource
+			) {
+				const nested = node.children ?? [];
+				for (let index = nested.length - 1; index >= 0; index--)
+					remaining.push(nested[index]);
+				continue;
+			}
 			if (
 				inlineTypes.has(node.type) &&
 				!transparentWrappers.has(node) &&

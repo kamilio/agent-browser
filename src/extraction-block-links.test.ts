@@ -80,12 +80,12 @@ it.each([
 	);
 });
 
-it("leaves generic non-link inline wrappers on their existing flattening path", () => {
+it("preserves block boundaries through generic non-link inline wrappers", () => {
 	const tree = fixture();
 	const wrapper = append(tree, tree.root, "span", "Before");
 	append(tree, wrapper, "div", "Middle");
 	append(tree, wrapper, "span", "After");
-	expect(extractDocument(tree).content).toBe("BeforeMiddleAfter\n");
+	expect(extractDocument(tree).content).toBe("Before\n\nMiddle\n\nAfter\n");
 });
 
 it.each([

@@ -582,7 +582,7 @@ it("emits one annotation for a directly selected inline wrapper with block conte
 	);
 });
 
-it("does not insert source annotations into pre text flattened through an inline wrapper", () => {
+it("does not insert source annotations into pre text preserved through an inline wrapper", () => {
 	const source =
 		'<div style="display:inline"><pre>before <span role="img" title="Not code">after</span></pre></div>';
 	const tree = native(source);
@@ -591,8 +591,23 @@ it("does not insert source annotations into pre text flattened through an inline
 		expected({ title: "Not code" }),
 	]);
 	expect(markdown(tree).content).toBe(markdown(baseline).content);
-	expect(markdown(tree).content).toBe("before after\n");
+	expect(markdown(tree).content).toBe("```\nbefore after\n```\n");
 });
+
+it.each(["span", "small"])(
+	"retains %s wrapper image-source metadata while preserving its blocks",
+	(tag) => {
+		const tree = native(
+			`<span><${tag} role="img" title="Wrapper"><p>Summary</p></${tag}></span>`,
+		);
+		expect(markdown(tree).content).toBe(
+			'\\[Image source: title="Wrapper"\\]\n\nSummary\n',
+		);
+		expect(sources(structured(tree).content)).toEqual([
+			expected({ title: "Wrapper" }),
+		]);
+	},
+);
 
 describe.each(readerModes)("image-role anchor title bounds: $name", (mode) => {
 	it.each([8192, 8193])("handles a %i-unit image anchor title", (length) => {

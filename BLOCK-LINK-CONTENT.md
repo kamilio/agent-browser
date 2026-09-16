@@ -28,7 +28,10 @@ visual layout or a claim that a complete linked article was retrieved.
   only non-whitespace preformatted source and no linked text group, its URL is
   emitted once afterward as an autolink, not inside a fence or an invented label.
 - Empty links still receive no invented labels. Ordinary inline links and
-  generic non-link inline wrappers retain their existing formatting path.
+  purely inline non-link wrappers retain their existing formatting path.
+  Since September 16, generic wrappers containing blocks also preserve those
+  boundaries without a link; see `GENERIC-INLINE-BLOCKS.md`. The historical
+  measurements below describe the original linked-block change only.
 - Existing true text/inline sinks (heading, paragraph, pre, code, strong and
   emphasis) do not promote nested block links. Unsupported table-through-link
   structures remain unsupported. This is not full HTML rendering semantics.

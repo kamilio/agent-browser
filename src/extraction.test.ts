@@ -1037,7 +1037,7 @@ it.each([
 	},
 );
 
-it("keeps unmarked generic wrappers on the old text-only and ordinary-block inline path", () => {
+it("keeps text-only wrappers inline and preserves ordinary block boundaries", () => {
 	const tree = new DocumentTree("https://example.com/");
 	try {
 		const wrapper = appendTableNode(tree, tree.root, "span", "A");
@@ -1096,9 +1096,9 @@ it("keeps unmarked generic wrappers on the old text-only and ordinary-block inli
 				{ ref: tree.reference(suffix), type: "text", text: "Z" },
 			],
 		});
-		expect(extractDocument(tree).content).toBe("ABCDWXYZ\n");
+		expect(extractDocument(tree).content).toBe("ABCDW\n\nX\n\nYZ\n");
 		expect(extractDocument(tree, { root: ordinaryRoot }).content).toBe(
-			"WXYZ\n",
+			"W\n\nX\n\nYZ\n",
 		);
 		expect(
 			extractDocument(tree, {
