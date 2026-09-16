@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Recover authored no-script template notices as source metadata
+
+- Add bounded sourceTemplateFallbacks metadata from eligible omitted HTML
+  templates. Recover exact inner noscript HTML and normalized source offsets;
+  do not execute templates, claim shadow DOM support or promote it to visibility.
+- The MDN compatibility notice is now accessible as document-source metadata.
+  The source has no support matrix to recover; ordinary Markdown stays unchanged.
+  This supersedes only the missing-source-notice gap in the entries below.
+- Release02:3,316 passed/0 failed across38 selected native files, including198 new
+  cases. Build/types/format/lint pass. The exact102-case integration file against
+  pre-feature reader/extractor production gives41 passed/61 failed.
+- Replay114 saved bodies:111 successful pairs and3 matching non-HTML failures.
+  Entire previous extraction, reader counters, diagnostics and classifications
+  match after excluding only the new optional metadata; only MDN gains an entry.
+- Three native CLI saved-response checks preserve Python/MDN/GitHub output and
+  verify the new field. Independent Python source parsing matches the exact MDN
+  inner HTML, template attributes and offsets. No new live requests or scripts.
+- See SOURCE-TEMPLATE-FALLBACKS.md and reports/template-fallbacks-2026-09-16.md/JSON.
+  Historical100-page verdicts, broader62 failures/22 missing committed tests,
+  SDK/rendering/credential/passkey/device/TTY/access gates and overall goal remain.
+
 ### Preserve image-role source qualifications in extracted content
 
 - Recover bounded aria-label/title attributes from included role=img HTML nodes

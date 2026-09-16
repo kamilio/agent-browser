@@ -73,11 +73,13 @@ preserve the labels and longer title warnings; the original report retains its
 unfixed-runtime measurements. These are author-supplied source qualifications,
 not independently verified support claims or evidence of rendered tooltips.
 
-**Remaining content gap:** the compatibility section loses a template's no-script
-explanation that its table is unavailable without JavaScript. No support rows
-were present in that captured template. Successful code-block and image-source
-comparison is therefore not an unqualified full-page MDN pass. Fallback recovery
-must not invent support values, execute templates or weaken access checks.
+The omitted template's no-script explanation is now retained separately as
+`sourceTemplateFallbacks` document-source metadata; see
+`SOURCE-TEMPLATE-FALLBACKS.md`. Ordinary Markdown still omits the inert template.
+No support rows were present in that captured template, and none are invented.
+This is not a rendered compatibility table or an unqualified full-page MDN pass;
+templates remain unexecuted and access checks unchanged. The original report
+retains its missing-fallback result for the runtime it actually tested.
 
 For Python, carry `extraction.title` with the Markdown: the exact documentation
 version is in the title, outside the selected main text. Captured version-change

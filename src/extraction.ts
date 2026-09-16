@@ -83,6 +83,11 @@ import {
 	researchSourceReviews,
 } from "./research-source-reviews.js";
 import {
+	type ResearchSourceTemplateFallbacks,
+	fitResearchSourceTemplateFallbacks,
+	researchSourceTemplateFallbacks,
+} from "./research-source-template-fallbacks.js";
+import {
 	type DocumentFeeds,
 	documentFeeds,
 	fitDocumentFeeds,
@@ -238,6 +243,7 @@ interface ExtractionMetadata {
 	sourceProducts?: ResearchSourceProducts;
 	sourceVideos?: ResearchSourceVideos;
 	sourceReviews?: ResearchSourceReviews;
+	sourceTemplateFallbacks?: ResearchSourceTemplateFallbacks;
 	sourceFeeds?: DocumentFeeds;
 	sourceMarkdown?: MarkdownSourceOutline;
 	sourceCodeGutters?: Readonly<{
@@ -1629,6 +1635,7 @@ export function extractDocument(
 	const videos = researchSourceVideos(tree);
 	const charts = researchSourceChartTables(tree);
 	const reviews = researchSourceReviews(tree);
+	const templateFallbacks = researchSourceTemplateFallbacks(tree);
 	const feeds = documentFeeds(tree);
 	if (feeds) {
 		const remaining =
@@ -1636,7 +1643,7 @@ export function extractDocument(
 		if (remaining >= 0) {
 			const sourceFeeds = fitDocumentFeeds(feeds, remaining);
 			if (sourceFeeds) {
-				if (!products && !videos && !charts && !reviews)
+				if (!products && !videos && !charts && !reviews && !templateFallbacks)
 					return { ...result, sourceFeeds };
 				result = { ...result, sourceFeeds };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
@@ -1649,7 +1656,7 @@ export function extractDocument(
 		if (remaining >= 0) {
 			const sourceProducts = fitResearchSourceProducts(products, remaining);
 			if (sourceProducts) {
-				if (!videos && !charts && !reviews)
+				if (!videos && !charts && !reviews && !templateFallbacks)
 					return { ...result, sourceProducts };
 				result = { ...result, sourceProducts };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
@@ -1662,7 +1669,8 @@ export function extractDocument(
 		if (remaining >= 0) {
 			const sourceVideos = fitResearchSourceVideos(videos, remaining);
 			if (sourceVideos) {
-				if (!charts && !reviews) return { ...result, sourceVideos };
+				if (!charts && !reviews && !templateFallbacks)
+					return { ...result, sourceVideos };
 				result = { ...result, sourceVideos };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1674,7 +1682,8 @@ export function extractDocument(
 		if (remaining >= 0) {
 			const sourceChartTables = fitResearchSourceChartTables(charts, remaining);
 			if (sourceChartTables) {
-				if (!reviews) return { ...result, sourceChartTables };
+				if (!reviews && !templateFallbacks)
+					return { ...result, sourceChartTables };
 				result = { ...result, sourceChartTables };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1685,7 +1694,23 @@ export function extractDocument(
 			maxBytes - outputBytes - utf8ByteLength(',"sourceReviews":');
 		if (remaining >= 0) {
 			const sourceReviews = fitResearchSourceReviews(reviews, remaining);
-			if (sourceReviews) return { ...result, sourceReviews };
+			if (sourceReviews) {
+				if (!templateFallbacks) return { ...result, sourceReviews };
+				result = { ...result, sourceReviews };
+				outputBytes = utf8ByteLength(JSON.stringify(result));
+			}
+		}
+	}
+	if (templateFallbacks) {
+		const remaining =
+			maxBytes - outputBytes - utf8ByteLength(',"sourceTemplateFallbacks":');
+		if (remaining >= 0) {
+			const sourceTemplateFallbacks = fitResearchSourceTemplateFallbacks(
+				templateFallbacks,
+				remaining,
+			);
+			if (sourceTemplateFallbacks)
+				return { ...result, sourceTemplateFallbacks };
 		}
 	}
 	return result;

@@ -948,5 +948,7 @@
   "src/research-source-reviews.test.ts",
   "src/research-source-reviews-reader.test.ts",
   "src/image-source.test.ts",
-  "src/research-image-source.test.ts"
+  "src/research-image-source.test.ts",
+  "src/research-source-template-fallbacks.test.ts",
+  "src/research-source-template-fallbacks-reader.test.ts"
 ]

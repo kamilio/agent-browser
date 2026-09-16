@@ -74,7 +74,8 @@ is no persistent metadata registry or added page-runtime dependency.
 The MDN compatibility-widget fallback captured in
 `reports/developer-content-2026-09-16.md` is a different omission inside a template
 and `noscript`. Image-source annotations do not restore it or manufacture absent
-browser-support rows. Template fallback recovery remains separate work.
+browser-support rows. Separate bounded document-source recovery is described in
+`SOURCE-TEMPLATE-FALLBACKS.md`; it does not render or execute that template.
 
 Historical website verdicts retain their original measurements. Validation of this
 change is recorded separately in `reports/image-source-2026-09-16.md` and JSON.

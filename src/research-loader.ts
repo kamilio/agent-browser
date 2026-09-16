@@ -66,6 +66,11 @@ import {
 	setResearchSourceReviews,
 } from "./research-source-reviews.js";
 import {
+	ResearchSourceTemplateFallbackCollector,
+	setResearchSourceTemplateFallbacks,
+	sourceTemplateFallbackHidden,
+} from "./research-source-template-fallbacks.js";
+import {
 	type ResearchReaderFallbackEncoding,
 	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
@@ -354,6 +359,10 @@ export function sanitizeResearchHtml(
 	let sourceVideos: ResearchSourceVideosCollector | undefined;
 	let sourceCharts: ResearchSourceChartTableCollector | undefined;
 	let sourceReviews: ResearchSourceReviewsCollector | undefined;
+	let sourceTemplateFallbacks:
+		| ResearchSourceTemplateFallbackCollector
+		| undefined;
+	let templateFallbackHiddenDepth = 0;
 	const emit = (value: string) => {
 		report.outputCodeUnits += value.length;
 		check("reader.output", limits.maxOutputCodeUnits, report.outputCodeUnits);
@@ -400,6 +409,19 @@ export function sanitizeResearchHtml(
 		}
 		const omitting = skipped.length > 0;
 		if (omitting) report.omittedTokens++;
+		if (
+			omitting &&
+			!sourceHiddenOmission &&
+			skipped[0] === "template" &&
+			token.kind !== "start" &&
+			token.kind !== "end"
+		)
+			sourceTemplateFallbacks?.observe(
+				token,
+				tokenStart,
+				tokenizer.position,
+				skipped,
+			);
 		if (token.kind === "text") {
 			text(token.data, omitting);
 			continue;
@@ -477,6 +499,13 @@ export function sanitizeResearchHtml(
 				!skipped.some((ancestor) => ancestor === "svg" || ancestor === "math")
 			)
 				skipped.pop();
+			if (skipped[0] === "template")
+				sourceTemplateFallbacks?.observe(
+					token,
+					tokenStart,
+					tokenizer.position,
+					skipped,
+				);
 			if (token.kind === "end") {
 				if (skipped[skipped.length - 1] !== name)
 					throw new AgentBrowserError(
@@ -530,6 +559,18 @@ export function sanitizeResearchHtml(
 		if (sourceHidden || omittedTags.has(name)) {
 			report.omittedTokens++;
 			if (token.kind === "start") {
+				if (
+					name === "template" &&
+					!sourceHidden &&
+					!templateFallbackHiddenDepth &&
+					!sourceTemplateFallbackHidden(token.attributes) &&
+					!open.includes("head") &&
+					!open.includes("noscript")
+				) {
+					sourceTemplateFallbacks ??=
+						new ResearchSourceTemplateFallbackCollector(normalizedSource);
+					sourceTemplateFallbacks.begin(token.attributes, tokenStart);
+				}
 				if (sourceHidden) {
 					report.sourceHiddenSubtrees = (report.sourceHiddenSubtrees ?? 0) + 1;
 					if (description) text(description.content, true);
@@ -672,6 +713,8 @@ export function sanitizeResearchHtml(
 			const index = open.lastIndexOf(name);
 			if (index >= 0) {
 				open.length = index;
+				if (open.length < templateFallbackHiddenDepth)
+					templateFallbackHiddenDepth = 0;
 				if (unwrappedControlBoundaries.has(name)) emit(" ");
 			}
 			if (outputName) emit(`</${outputName}>`);
@@ -697,7 +740,14 @@ export function sanitizeResearchHtml(
 			}
 			if ((name === "p" || name === "li") && open.at(-1) === "p") open.pop();
 			if (name === "li" && open.at(-1) === "li") open.pop();
+			if (open.length < templateFallbackHiddenDepth)
+				templateFallbackHiddenDepth = 0;
 			open.push(name);
+			if (
+				!templateFallbackHiddenDepth &&
+				sourceTemplateFallbackHidden(token.attributes)
+			)
+				templateFallbackHiddenDepth = open.length;
 			check("reader.depth", limits.maxDepth, open.length);
 		}
 		if (!outputName) {
@@ -763,6 +813,7 @@ export function sanitizeResearchHtml(
 	const videos = sourceVideos?.finish();
 	const sourceChartTables = sourceCharts?.finish();
 	const reviews = sourceReviews?.finish();
+	const templateFallbacks = sourceTemplateFallbacks?.finish();
 	return {
 		html: output.join(""),
 		...(sourceDataTables ? { sourceDataTables } : {}),
@@ -771,6 +822,9 @@ export function sanitizeResearchHtml(
 		...(videos ? { sourceVideos: videos } : {}),
 		...(sourceChartTables ? { sourceChartTables } : {}),
 		...(reviews ? { sourceReviews: reviews } : {}),
+		...(templateFallbacks
+			? { sourceTemplateFallbacks: templateFallbacks }
+			: {}),
 		report: Object.freeze({
 			...report,
 			...(mathAlternatives.elements
@@ -989,6 +1043,8 @@ export function loadResearchDocument(
 		setResearchSourceChartTables(tree, sanitized.sourceChartTables);
 	if (effectiveHtml && sanitized.sourceReviews)
 		setResearchSourceReviews(tree, sanitized.sourceReviews);
+	if (effectiveHtml && sanitized.sourceTemplateFallbacks)
+		setResearchSourceTemplateFallbacks(tree, sanitized.sourceTemplateFallbacks);
 	const info = htmlParseInfo(tree);
 	if (info) setHtmlParseInfo(tree, { ...info, encoding: decoded.encoding });
 	return tree;
