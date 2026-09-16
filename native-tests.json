@@ -452,6 +452,7 @@
   "src/time-control-rendering.test.ts",
   "src/dialog-display.test.ts",
   "src/forms.test.ts",
+  "src/native-search-submit.test.ts",
   "src/geometry-command.test.ts",
   "src/history-archive.test.ts",
   "src/history.test.ts",

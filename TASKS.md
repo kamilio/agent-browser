@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Native public search form validation
+
+- Exercise actual native fill/requestSubmit on parsed source forms, not manually
+  constructed destination navigation. Fresh Wikipedia yields search listings;
+  Python submits but returns only a JavaScript search shell. arXiv times out on
+  initial navigation before any live form action; no retries or inferred cause.
+- Three workflows/five HTTPS GETs/four complete responses, all recorded request,
+  socket, process and native subsystem closures verified. Exact phase/header
+  admission, one-shot claims and39 isolated policy cases protect the live scope.
+- Added18 synthetic parsed-form/session regressions: final187pass/0 in7 manifest
+  files, build/types/format/lint pass. No production behavior change, full native
+  manifest, actual CLI, SafeJS or rendered-UI claim. See NATIVE-SEARCH-FORMS.md and
+  reports/native-search-forms-2026-09-16.md for every URL and retained failure.
+- arXiv's hidden header overlay is correctly refused. Its separate visible
+  search-results form serializes correctly offline, but its live target is not
+  requested after the initial timeout. Do not remove hidden attributes or claim
+  the script toggle works. Python's static index remains a different workflow.
+- Original100-page judgments stay unchanged. Dynamic search, arXiv timeout/live
+  form completion, challenge/handoff, SafeJS, credential/passkey and real-input
+  gates remain open; overall goal remains active.
+
 ### Authored reader names and chart-source diagnosis
 
 - Restore bounded literal aria-label/aria-labelledby on preserved anchors and
