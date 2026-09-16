@@ -91,3 +91,25 @@ tag or URL: do not treat it as a complete feed or follow an incomplete URL.
 These command examples are separate navigations, not permission for retries or
 an automatic fallback sequence. Preserve original receipts and distinguish fresh
 loads, saved-body configuration checks, and completeness/access claims.
+
+## Fresh feed-to-article validation
+
+On September 16, 2026, three fresh source-advertised feeds from PCMag, RTINGS and
+IGN each supplied a complete literal first-item link. Manual inspection preceded
+one separate native navigation to each same-origin article URL. This is not a
+new XML parser, automatic item-following feature or native rendered-link click.
+
+All six GETs returned complete HTTP200 responses with no redirects or retries.
+All three feeds were item-bearing. PCMag and IGN yielded substantive article
+prose; RTINGS yielded only navigation/membership text around an unhydrated review
+component. Its feed introduction is not evidence of a readable full review.
+Unverified access metadata and null serialized scores do not authorize or
+establish subscriber content. No scripts, credentials or access bypass were used.
+
+Article requests explicitly selected the existing `long-v1` profile initially;
+none retried a default-limit failure. Captured bodies happened to be below the
+default network cap, but other default-profile limits were not exercised by
+those requests. Full media, interactive content and rendered equivalence remain
+unverified. See `reports/feed-article-workflows-2026-09-16.md` for every URL,
+measurement, separate content verdict and evidence hash. Original feed and
+100-entry reports retain their original results.

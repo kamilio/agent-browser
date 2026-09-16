@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Native feed-to-article content workflows
+
+- Freshly read three source-advertised PCMag, RTINGS and IGN feeds, then manually
+  inspect and follow each first complete literal same-origin article link.
+  Six native GETs, six HTTP200 complete captures, no redirects or retries;
+  request/socket/native subsystem/process closure and source hashes all pass.
+- All three feeds contain items. PCMag and IGN provide useful article prose;
+  RTINGS returns navigation/membership boilerplate around an unhydrated review
+  component, not readable review content. Keep this failure despite HTTP200.
+  Source access declarations and null scores do not establish full paid content.
+- Fresh598pass/0 in9 native files plus60pass/0 in the response-prefix file;
+  six final isolated fixture workflows and62 policy cases per phase pass.
+  Reuse unchanged build/types/format/lint; no full-manifest, SafeJS, credentials,
+  passkeys, rendered-media or real-input acceptance claim. No production change.
+- See reports/feed-article-workflows-2026-09-16.md and SOURCE-FEEDS.md. Original
+  100-entry citation-proxy results stay33 useful/67 other; new deep-page results
+  do not rewrite them or imply a measured global agent-traffic ranking.
+  Dynamic hydration/search, cleaner content focus, challenge handoff and the
+  remaining runtime/input gates stay open; overall browser goal remains active.
+
 ### Preserve option-label text boundaries
 
 - Fix real reader output such as `2550100200` and `20 items50 items`: admitted
