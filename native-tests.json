@@ -939,5 +939,7 @@
   "src/research-link-content.test.ts",
   "src/research-target-link.test.ts",
   "src/research-link-compact.test.ts",
-  "src/parser-foreign-read.test.ts"
+  "src/parser-foreign-read.test.ts",
+  "src/source-literal.test.ts",
+  "src/research-asset-literal.test.ts"
 ]

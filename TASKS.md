@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Maintained pinned source-asset literal recovery
+
+- Add a dependency-free bounded literal parser and native one-GET asset CLI, plus
+  an offline pinned-body API. Require explicit public script URL, decoded-body
+  SHA-256 and byte ranges; reject executable syntax, unsafe keys, stale pins,
+  malformed UTF-8 and resource overruns. Do not infer exports, evaluate filters,
+  introduce a runtime dependency or change ordinary reader behavior.
+- Final selected gate:809pass/0 in nine native-manifest files, including378 new
+  parser/API/CLI cases. Build, strict types, formatting and lint pass. All2292
+  prior compiled artifacts remain identical; eight artifacts are added. The
+  committed manifest has943 entries; pre-existing working additions stay separate.
+- Actual compiled CLI proof under kernel denial and a separate live GET200 both
+  return four pinned literal selections in10829 JSONL bytes from a66520-byte
+  Bankrate asset. Values exactly match the independent prior recovery:51 state
+  rows,52 alternative rows before its PR filter, five income and three loan rows.
+  Keep duplicates, PR filtering and factor1000 unit distinctions explicit; these
+  are not111 independent observations or proof of a rendered chart.
+- Confirm one live request, no redirects/retries/credentials/scripts, TLS and
+  request/socket/process closure. The original article and100-root verdicts do
+  not change. See SOURCE-ASSET-LITERALS.md and reports/source-asset-literals-2026-09-16.md.
+- Continue source discovery/context attribution and broader website compatibility.
+  Prior62 unresolved native assertions,22 missing committed manifest inputs,
+  actual SDK, rendering, map/ZIP data and credential/device/access gates stay open.
+
 ### Bundled chart content and broad native validation
 
 - Fetch the five advertised Bankrate script assets through the pinned native
