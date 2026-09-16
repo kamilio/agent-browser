@@ -59,3 +59,35 @@ The RunRepeat keyboard result also has a network-denied saved-body replay.
 Eight focused regression cases cover the supported keyboard path and cancellation.
 No pointer-geometry implementation, automatic fallback, dependency, or production
 API changed. The original website outcomes are not retrospectively upgraded.
+
+## September 16 publisher-reader follow-up
+
+The latest complete entry-page checklist is
+`reports/agent-citation-revalidation-v2.md:85`. A separate source-linked follow-up
+is recorded in `reports/reader-publisher-workflows-2026-09-16.md`: CNET,
+Engineerfix and Reviewed each complete an actual native reader-profile click
+from a fresh landing page to one exact, source-audited article URL. Six native
+GETs return HTTP200 and nonempty extracted target text, with no retries or
+redirects. Content availability is reviewed separately in that report.
+
+This deliberately uses `loadResearchDocument` for both pages. It is a useful
+content-reading workflow, not evidence that the original site's full CSS,
+scripts, widgets or physical layout work. In particular, CNET's prior full-source
+click remains unsupported even though this explicitly different reader workflow
+can retrieve the article. Do not silently switch profiles after a failed action
+and call that the same workflow passing.
+
+Choose references and selectors from the actual current reader document, not
+solely from raw-source attributes. The reader omits `rel=bookmark`, so
+Engineerfix's source selector needed that predicate removed while retaining the
+same heading and exact href. Reviewed's source card has an inline handler;
+the reader omits it and tests only the retained public hyperlink's default
+action. Checks on projected attributes do not prove their absence in raw source.
+
+The follow-up requires one eligible exact-target anchor, same-origin HTTPS,
+unchanged document base, native actionability, actual click events, and the
+resulting destination document before extraction. It has no direct-navigation
+fallback, alternate link, login, form submission, identity impersonation or
+challenge solver. Barriers remain reasons to stop. Main-content-v2 and explicit
+text-prefix-v1 retain their existing partial/fallback provenance; nonempty text
+is not a claim of factual accuracy, completeness or successful scripted behavior.

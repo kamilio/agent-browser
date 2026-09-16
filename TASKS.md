@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Native reader publisher workflows
+
+- Complete three fresh landing-to-article native click workflows on CNET,
+  Engineerfix and Reviewed. Each revalidates one exact source-audited public
+  same-origin target, performs BrowserSession.click and extracts its resulting
+  document. Six native GETs return200; no retries, redirects, credentials,
+  scripts, challenge solving or direct-navigation fallback. All observed
+  requests/sockets and child/process groups close.
+- Use the explicit semantic reader on both pages. This is practical article
+  retrieval, not full-source rendering recovery: CNET's earlier full-source
+  CSS/layout failure remains. Reviewed's source handler is intentionally omitted;
+  Engineerfix's selector stops relying on rel=bookmark, which the existing reader
+  also omits. Source target URLs and production behavior do not change.
+- Separate nonempty output from the article-availability reviews in
+  reports/reader-publisher-workflows-2026-09-16.md. Native target outputs contain
+  20676,10610 and19255 Markdown bytes respectively, with partial-reader metadata;
+  no text-prefix overflow fallback occurs. Historical100-entry verdicts remain
+  unchanged, rather than adding these deep-page successes to the root-page tally.
+- Fresh428pass/0 in6 explicit native-manifest files;126 isolated policy checks
+  and3 captured-source/synthetic-destination click proofs pass. Earlier failed
+  selector/supervisor setup remains recorded. Reuse unchanged build/types/format;
+  prior22 matched scoped lint errors remain, not a fresh green lint gate.
+- See NATIVE-LINK-WORKFLOWS.md for reader selector/interaction distinctions.
+  No production change is justified by this batch. Keep expanding source-linked
+  content tasks and investigating genuine extraction/runtime failures. Full
+  rendering, access handoff, actual SafeJS, credentials/passkeys and real-input
+  acceptance remain separate; overall browser goal stays active.
+
 ### Formatting-owned SVG clip references
 
 - Share one bounded, lazy document ID index across embedded SVG scenes per
