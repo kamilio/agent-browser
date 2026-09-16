@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Cooking, dictionary and product content workflows
+
+- Validate three exact source-linked native workflows: Tasting Table cooking
+  advice3898 Markdown bytes, Cambridge enormous definitions18964 bytes, and Ulta
+  product details4604 bytes. Read every emitted line; keep partial/unverified
+  provenance and do not infer facts, audio, cart, inventory or variant behavior.
+- Three saved-source/synthetic-target click proofs pass under kernel-denied
+  network. Separately make six live GET200 with real native clicks, no redirects,
+  retries, credentials or scripts; all observed resources/process groups close.
+  Reuse the unchanged1518-input runtime and its prior1006/0 selected gate; no new
+  unit/build or full940-file manifest claim. Preserve two excluded challenge-source
+  choices and correct the original scope's2MB claim to the actual unchanged4MB
+  response limit; all observed responses remain below2MB individually.
+- Extend RTINGS diagnosis: native tokenization independently confirms substantive
+  embedded component descriptions, but nine null scores, false unblurred flags
+  and explicit access configuration. Do not expose restricted fields or invent
+  measurements. Resolve schema/provenance/restriction policy before a collector;
+  keep the historical navigation-shell result. Preserve the first audit helper's
+  evidence-path failure and the corrected offline confirmation.
+- See reports/reader-task-variety-2026-09-16.md. Original100-root results remain
+  unchanged; dynamic-runtime/rendering/access/device/credential gates remain open.
+
 ### Public SafeJS scheduler candidate — static only
 
 - Record a conditional public-API composition using an already-running outer

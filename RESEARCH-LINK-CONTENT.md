@@ -154,6 +154,16 @@ a60s cancellation deadline, not an independent process/CPU sandbox. Existing
 long-document ownership/work limits remain in effect. These settings do not
 change ordinary browser defaults.
 
+## Additional task coverage
+
+Separate live source-link checks retrieve a Tasting Table cooking-advice article,
+Cambridge's enormous dictionary entry, and an Ulta product's description,
+directions and ingredients. See `reports/reader-task-variety-2026-09-16.md` for
+exact targets, hashes, content review and limitations. These are public reader
+tasks, not recipe completeness, audio, shopping, inventory or account validation.
+All automatic results remain partial and unverified. A successful article or
+product does not change the earlier host-root corpus verdict.
+
 ## Programmatic ownership
 
 `scripts/research-link-content.ts` exports
