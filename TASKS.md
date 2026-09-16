@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Authored reader names and chart-source diagnosis
+
+- Restore bounded literal aria-label/aria-labelledby on preserved anchors and
+  nonblank-role elements. No invented roles, controls, prose or chart rows;
+  existing table metadata rules remain separate. See READER-NAMES.md.
+- Clean724pass/0 in11 selected native files,148 new cases; production build,
+  formatting, owned types/lint pass. Identical existing snapshot-test type error
+  and two adjacent-test lint findings remain explicit. Old production produces
+  83 expected failures under the final tests; no full-manifest claim.
+- Historical and fresh Google Play bodies each restore all three category-button
+  names; old/new Markdown hashes match. One fresh native GET retains complete
+  source, status200, no retries/redirects, all closed. Its heading outline remains
+  empty-extraction/exit1, not a content-success claim.
+- Literal Google charts contain numbered skeletons, not app rankings; historical
+  CNBC tables have empty tbody elements. Do not fabricate missing dynamic data.
+  See reports/reader-names-2026-09-16.md for evidence and supervisor limitations.
+- Original100-entry reviews stay unchanged. The list is a citation-derived proxy,
+  not measured agent traffic. Dynamic content, challenge/handoff, credential/
+  passkey, SafeJS and interactive acceptance remain open; overall goal stays active.
+
 ### One-shot large-page content retrieval
 
 - Added scripts/research-long-content.ts: one explicit4MB long-v1 capture and

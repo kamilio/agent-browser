@@ -269,10 +269,13 @@ it.each([
 	"retains raw selector role %j without promoting ARIA table metadata",
 	(role) => {
 		const tree = load(
-			`<div role="${role}" aria-label="discarded" aria-colcount="2">Public</div>`,
+			`<div role="${role}" aria-label="Authored name" aria-colcount="2">Public</div>`,
 		);
 		const id = element(query(tree), "div");
-		expect(tree.get(id).attributes).toEqual({ role });
+		expect(tree.get(id).attributes).toEqual({
+			role,
+			"aria-label": "Authored name",
+		});
 		expect(record(structured(tree).content, tree, id)).not.toHaveProperty(
 			"ariaTableSource",
 		);

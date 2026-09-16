@@ -652,6 +652,10 @@ export function sanitizeResearchHtml(
 		if (!outputName) report.unwrappedElements++;
 		const ariaTableRole =
 			outputName === name ? ariaTableSourceRole(token.attributes) : undefined;
+		const namedRole =
+			outputName === name &&
+			Object.hasOwn(token.attributes, "role") &&
+			token.attributes.role.trim().length > 0;
 		let attributes = "";
 		for (const [attribute, value] of Object.entries(token.attributes)) {
 			let keep =
@@ -660,8 +664,10 @@ export function sanitizeResearchHtml(
 					(attribute === "class" || attribute === "role")) ||
 				(outputName === "a" &&
 					(["href", "title", "name"].includes(attribute) ||
-						(attribute === "data-nosnippet" && value === "") ||
-						(attribute === "aria-label" && value.length <= 8192))) ||
+						(attribute === "data-nosnippet" && value === ""))) ||
+				((outputName === "a" || namedRole) &&
+					(attribute === "aria-label" || attribute === "aria-labelledby") &&
+					value.length <= 8192) ||
 				(outputName === "base" && attribute === "href") ||
 				(outputName === "img" && attribute === "alt") ||
 				(outputName === "ol" && attribute === "start") ||

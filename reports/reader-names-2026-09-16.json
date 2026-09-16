@@ -1,0 +1,1188 @@
+{
+  "passed": true,
+  "scope": "Authored reader naming recovery; not a full native, 100-site, dynamic-control or factual-content acceptance gate",
+  "at": "2026-09-16T03:28:54.266Z",
+  "parent": "a09dbf8368bca1e9a8639951f50071fefe9e4f97",
+  "overlay": {
+    "src/research-loader.ts": "e8a347e3082931464f1ec92a55fe038946773c6e62b1226a240e1b191be70bc3",
+    "src/research-reader-names.test.ts": "b51e19027361cb1885e5c8158c64eaef3f778e004d022dca79af28e96b22107b",
+    "src/research-aria-table.test.ts": "550ebe621b59d5c6d789a695ae1b7ad4786055d8bb094581fb0889dc85148e66"
+  },
+  "validation": {
+    "passed": true,
+    "native": 724,
+    "files": 11,
+    "build": 0,
+    "format": 0,
+    "ownedTypes": 0,
+    "ownedLint": 0,
+    "baselineSelectedTypeExit": 2,
+    "candidateSelectedTypeExit": 2,
+    "identicalTypeDiagnostics": true,
+    "baselineAdjacentLintExit": 1,
+    "candidateAdjacentLintExit": 1,
+    "identicalLintDiagnostics": true
+  },
+  "negativeControl": {
+    "passed": 113,
+    "expectedFailures": 83,
+    "suites": [
+      {
+        "file": "research-aria-table.test.ts",
+        "passed": 39,
+        "failed": 9
+      },
+      {
+        "file": "research-reader-names.test.ts",
+        "passed": 74,
+        "failed": 74
+      }
+    ],
+    "scope": "Final naming tests and updated ARIA-table expectations on unchanged parent production"
+  },
+  "historical": {
+    "passed": true,
+    "scope": "Naming metadata and unchanged Markdown; not working dynamic controls or complete charts.",
+    "results": [
+      {
+        "passed": true,
+        "variant": "baseline",
+        "mode": "historical",
+        "input": {
+          "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/oversized-html-followup-september15/long/01-play.google.com/stdout.jsonl",
+          "receiptSha256": "d70b9289373a438f45f00603c8250a6cf0df114bf87f4387c841feea0a3ccecb",
+          "bodySha256": "c4a5d8db3ae22c66477ec75546c2dc950894e90fa0f859eed20b265a2b2d3102",
+          "bodyBytes": 2535808
+        },
+        "controls": [
+          {
+            "id": "ct|apps_topselling_free",
+            "attributes": {
+              "role": "button",
+              "id": "ct|apps_topselling_free",
+              "class": "D3Qfie VfPpkd-ksKsZd-XxIAqe  KKjvXb kofMvc  EFMXQ"
+            },
+            "snapshot": {
+              "document": "e1",
+              "scope": "e624",
+              "revision": 2762,
+              "entries": [
+                {
+                  "ref": "e624",
+                  "role": "button",
+                  "name": "",
+                  "depth": 0
+                }
+              ],
+              "truncated": false,
+              "reader": {
+                "profile": "native-semantic-reader-v1",
+                "partial": true,
+                "scripting": false,
+                "styling": false,
+                "hiddenContentSemantics": "source-attributes-and-inline-display",
+                "visibilityPolicy": "source-hidden-inline-v1",
+                "sourceHiddenSubtrees": 380,
+                "sourceCodeUnits": 2533785,
+                "textCodeUnits": 6861,
+                "outputCodeUnits": 90760,
+                "tokens": 6371,
+                "omittedTokens": 1171,
+                "omittedSubtrees": {
+                  "link": 120,
+                  "meta": 34,
+                  "script": 26,
+                  "style": 2,
+                  "div": 28,
+                  "svg": 11,
+                  "span": 130,
+                  "i": 72,
+                  "img": 144
+                },
+                "ignoredAttributes": 1641,
+                "unwrappedElements": 96,
+                "tokenizerIssues": 0,
+                "rawTextPolicy": "separate-omitted-raw-v1",
+                "omittedRaw": {
+                  "codeUnits": 1878665,
+                  "workUnits": 9471098,
+                  "steps": 54,
+                  "elements": 28,
+                  "maxWorkUnits": 32000000,
+                  "maxWindowCodeUnits": 65536
+                },
+                "encoding": "utf-8",
+                "fallbackEncoding": "utf-8"
+              },
+              "html": {
+                "partial": true,
+                "scripting": false,
+                "issues": 2
+              }
+            }
+          },
+          {
+            "id": "ct|apps_topgrossing",
+            "attributes": {
+              "role": "button",
+              "id": "ct|apps_topgrossing",
+              "class": "D3Qfie VfPpkd-ksKsZd-XxIAqe  kofMvc  EFMXQ"
+            },
+            "snapshot": {
+              "document": "e1",
+              "scope": "e625",
+              "revision": 2762,
+              "entries": [
+                {
+                  "ref": "e625",
+                  "role": "button",
+                  "name": "",
+                  "depth": 0
+                }
+              ],
+              "truncated": false,
+              "reader": {
+                "profile": "native-semantic-reader-v1",
+                "partial": true,
+                "scripting": false,
+                "styling": false,
+                "hiddenContentSemantics": "source-attributes-and-inline-display",
+                "visibilityPolicy": "source-hidden-inline-v1",
+                "sourceHiddenSubtrees": 380,
+                "sourceCodeUnits": 2533785,
+                "textCodeUnits": 6861,
+                "outputCodeUnits": 90760,
+                "tokens": 6371,
+                "omittedTokens": 1171,
+                "omittedSubtrees": {
+                  "link": 120,
+                  "meta": 34,
+                  "script": 26,
+                  "style": 2,
+                  "div": 28,
+                  "svg": 11,
+                  "span": 130,
+                  "i": 72,
+                  "img": 144
+                },
+                "ignoredAttributes": 1641,
+                "unwrappedElements": 96,
+                "tokenizerIssues": 0,
+                "rawTextPolicy": "separate-omitted-raw-v1",
+                "omittedRaw": {
+                  "codeUnits": 1878665,
+                  "workUnits": 9471098,
+                  "steps": 54,
+                  "elements": 28,
+                  "maxWorkUnits": 32000000,
+                  "maxWindowCodeUnits": 65536
+                },
+                "encoding": "utf-8",
+                "fallbackEncoding": "utf-8"
+              },
+              "html": {
+                "partial": true,
+                "scripting": false,
+                "issues": 2
+              }
+            }
+          },
+          {
+            "id": "ct|apps_topselling_paid",
+            "attributes": {
+              "role": "button",
+              "id": "ct|apps_topselling_paid",
+              "class": "D3Qfie VfPpkd-ksKsZd-XxIAqe  kofMvc  EFMXQ"
+            },
+            "snapshot": {
+              "document": "e1",
+              "scope": "e626",
+              "revision": 2762,
+              "entries": [
+                {
+                  "ref": "e626",
+                  "role": "button",
+                  "name": "",
+                  "depth": 0
+                }
+              ],
+              "truncated": false,
+              "reader": {
+                "profile": "native-semantic-reader-v1",
+                "partial": true,
+                "scripting": false,
+                "styling": false,
+                "hiddenContentSemantics": "source-attributes-and-inline-display",
+                "visibilityPolicy": "source-hidden-inline-v1",
+                "sourceHiddenSubtrees": 380,
+                "sourceCodeUnits": 2533785,
+                "textCodeUnits": 6861,
+                "outputCodeUnits": 90760,
+                "tokens": 6371,
+                "omittedTokens": 1171,
+                "omittedSubtrees": {
+                  "link": 120,
+                  "meta": 34,
+                  "script": 26,
+                  "style": 2,
+                  "div": 28,
+                  "svg": 11,
+                  "span": 130,
+                  "i": 72,
+                  "img": 144
+                },
+                "ignoredAttributes": 1641,
+                "unwrappedElements": 96,
+                "tokenizerIssues": 0,
+                "rawTextPolicy": "separate-omitted-raw-v1",
+                "omittedRaw": {
+                  "codeUnits": 1878665,
+                  "workUnits": 9471098,
+                  "steps": 54,
+                  "elements": 28,
+                  "maxWorkUnits": 32000000,
+                  "maxWindowCodeUnits": 65536
+                },
+                "encoding": "utf-8",
+                "fallbackEncoding": "utf-8"
+              },
+              "html": {
+                "partial": true,
+                "scripting": false,
+                "issues": 2
+              }
+            }
+          }
+        ],
+        "originalOutcome": "empty-extraction",
+        "contentSuccess": false,
+        "markdownBytes": 27716,
+        "markdownSha256": "7e3a0f3d787b25ec1cb9e0b0420b3a6df9fe80ca703610eabb226fb07ebb9833",
+        "treeClosed": true
+      },
+      {
+        "passed": true,
+        "variant": "candidate",
+        "mode": "historical",
+        "input": {
+          "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/oversized-html-followup-september15/long/01-play.google.com/stdout.jsonl",
+          "receiptSha256": "d70b9289373a438f45f00603c8250a6cf0df114bf87f4387c841feea0a3ccecb",
+          "bodySha256": "c4a5d8db3ae22c66477ec75546c2dc950894e90fa0f859eed20b265a2b2d3102",
+          "bodyBytes": 2535808
+        },
+        "controls": [
+          {
+            "id": "ct|apps_topselling_free",
+            "attributes": {
+              "role": "button",
+              "id": "ct|apps_topselling_free",
+              "class": "D3Qfie VfPpkd-ksKsZd-XxIAqe  KKjvXb kofMvc  EFMXQ",
+              "aria-label": "Top free"
+            },
+            "snapshot": {
+              "document": "e1",
+              "scope": "e624",
+              "revision": 2762,
+              "entries": [
+                {
+                  "ref": "e624",
+                  "role": "button",
+                  "name": "Top free",
+                  "depth": 0
+                }
+              ],
+              "truncated": false,
+              "reader": {
+                "profile": "native-semantic-reader-v1",
+                "partial": true,
+                "scripting": false,
+                "styling": false,
+                "hiddenContentSemantics": "source-attributes-and-inline-display",
+                "visibilityPolicy": "source-hidden-inline-v1",
+                "sourceHiddenSubtrees": 380,
+                "sourceCodeUnits": 2533785,
+                "textCodeUnits": 6861,
+                "outputCodeUnits": 93835,
+                "tokens": 6371,
+                "omittedTokens": 1171,
+                "omittedSubtrees": {
+                  "link": 120,
+                  "meta": 34,
+                  "script": 26,
+                  "style": 2,
+                  "div": 28,
+                  "svg": 11,
+                  "span": 130,
+                  "i": 72,
+                  "img": 144
+                },
+                "ignoredAttributes": 1573,
+                "unwrappedElements": 96,
+                "tokenizerIssues": 0,
+                "rawTextPolicy": "separate-omitted-raw-v1",
+                "omittedRaw": {
+                  "codeUnits": 1878665,
+                  "workUnits": 9471098,
+                  "steps": 54,
+                  "elements": 28,
+                  "maxWorkUnits": 32000000,
+                  "maxWindowCodeUnits": 65536
+                },
+                "encoding": "utf-8",
+                "fallbackEncoding": "utf-8"
+              },
+              "html": {
+                "partial": true,
+                "scripting": false,
+                "issues": 2
+              }
+            }
+          },
+          {
+            "id": "ct|apps_topgrossing",
+            "attributes": {
+              "role": "button",
+              "id": "ct|apps_topgrossing",
+              "class": "D3Qfie VfPpkd-ksKsZd-XxIAqe  kofMvc  EFMXQ",
+              "aria-label": "Top grossing"
+            },
+            "snapshot": {
+              "document": "e1",
+              "scope": "e625",
+              "revision": 2762,
+              "entries": [
+                {
+                  "ref": "e625",
+                  "role": "button",
+                  "name": "Top grossing",
+                  "depth": 0
+                }
+              ],
+              "truncated": false,
+              "reader": {
+                "profile": "native-semantic-reader-v1",
+                "partial": true,
+                "scripting": false,
+                "styling": false,
+                "hiddenContentSemantics": "source-attributes-and-inline-display",
+                "visibilityPolicy": "source-hidden-inline-v1",
+                "sourceHiddenSubtrees": 380,
+                "sourceCodeUnits": 2533785,
+                "textCodeUnits": 6861,
+                "outputCodeUnits": 93835,
+                "tokens": 6371,
+                "omittedTokens": 1171,
+                "omittedSubtrees": {
+                  "link": 120,
+                  "meta": 34,
+                  "script": 26,
+                  "style": 2,
+                  "div": 28,
+                  "svg": 11,
+                  "span": 130,
+                  "i": 72,
+                  "img": 144
+                },
+                "ignoredAttributes": 1573,
+                "unwrappedElements": 96,
+                "tokenizerIssues": 0,
+                "rawTextPolicy": "separate-omitted-raw-v1",
+                "omittedRaw": {
+                  "codeUnits": 1878665,
+                  "workUnits": 9471098,
+                  "steps": 54,
+                  "elements": 28,
+                  "maxWorkUnits": 32000000,
+                  "maxWindowCodeUnits": 65536
+                },
+                "encoding": "utf-8",
+                "fallbackEncoding": "utf-8"
+              },
+              "html": {
+                "partial": true,
+                "scripting": false,
+                "issues": 2
+              }
+            }
+          },
+          {
+            "id": "ct|apps_topselling_paid",
+            "attributes": {
+              "role": "button",
+              "id": "ct|apps_topselling_paid",
+              "class": "D3Qfie VfPpkd-ksKsZd-XxIAqe  kofMvc  EFMXQ",
+              "aria-label": "Top paid"
+            },
+            "snapshot": {
+              "document": "e1",
+              "scope": "e626",
+              "revision": 2762,
+              "entries": [
+                {
+                  "ref": "e626",
+                  "role": "button",
+                  "name": "Top paid",
+                  "depth": 0
+                }
+              ],
+              "truncated": false,
+              "reader": {
+                "profile": "native-semantic-reader-v1",
+                "partial": true,
+                "scripting": false,
+                "styling": false,
+                "hiddenContentSemantics": "source-attributes-and-inline-display",
+                "visibilityPolicy": "source-hidden-inline-v1",
+                "sourceHiddenSubtrees": 380,
+                "sourceCodeUnits": 2533785,
+                "textCodeUnits": 6861,
+                "outputCodeUnits": 93835,
+                "tokens": 6371,
+                "omittedTokens": 1171,
+                "omittedSubtrees": {
+                  "link": 120,
+                  "meta": 34,
+                  "script": 26,
+                  "style": 2,
+                  "div": 28,
+                  "svg": 11,
+                  "span": 130,
+                  "i": 72,
+                  "img": 144
+                },
+                "ignoredAttributes": 1573,
+                "unwrappedElements": 96,
+                "tokenizerIssues": 0,
+                "rawTextPolicy": "separate-omitted-raw-v1",
+                "omittedRaw": {
+                  "codeUnits": 1878665,
+                  "workUnits": 9471098,
+                  "steps": 54,
+                  "elements": 28,
+                  "maxWorkUnits": 32000000,
+                  "maxWindowCodeUnits": 65536
+                },
+                "encoding": "utf-8",
+                "fallbackEncoding": "utf-8"
+              },
+              "html": {
+                "partial": true,
+                "scripting": false,
+                "issues": 2
+              }
+            }
+          }
+        ],
+        "originalOutcome": "empty-extraction",
+        "contentSuccess": false,
+        "markdownBytes": 27716,
+        "markdownSha256": "7e3a0f3d787b25ec1cb9e0b0420b3a6df9fe80ca703610eabb226fb07ebb9833",
+        "treeClosed": true
+      }
+    ]
+  },
+  "fresh": {
+    "passed": true,
+    "scope": "Naming metadata and unchanged Markdown; not working dynamic controls or complete charts.",
+    "results": [
+      {
+        "passed": true,
+        "variant": "baseline",
+        "mode": "fresh",
+        "input": {
+          "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/chart-source-diagnostics-september16/live/candidate/stdout.jsonl",
+          "receiptSha256": "7c78ba26355c1b41b296b9e976959f1c743034aa7628d7a3f00842981d8898e5",
+          "bodySha256": "97c2cf245e8acdf1f78ff47dd278e5869f73353db032d7b275baab044a8a1e1e",
+          "bodyBytes": 2708333
+        },
+        "controls": [
+          {
+            "id": "ct|apps_topselling_free",
+            "attributes": {
+              "role": "button",
+              "id": "ct|apps_topselling_free",
+              "class": "D3Qfie VfPpkd-ksKsZd-XxIAqe  KKjvXb kofMvc  EFMXQ"
+            },
+            "snapshot": {
+              "document": "e1",
+              "scope": "e624",
+              "revision": 2936,
+              "entries": [
+                {
+                  "ref": "e624",
+                  "role": "button",
+                  "name": "",
+                  "depth": 0
+                }
+              ],
+              "truncated": false,
+              "reader": {
+                "profile": "native-semantic-reader-v1",
+                "partial": true,
+                "scripting": false,
+                "styling": false,
+                "hiddenContentSemantics": "source-attributes-and-inline-display",
+                "visibilityPolicy": "source-hidden-inline-v1",
+                "sourceHiddenSubtrees": 416,
+                "sourceCodeUnits": 2705965,
+                "textCodeUnits": 7191,
+                "outputCodeUnits": 97464,
+                "tokens": 6781,
+                "omittedTokens": 1234,
+                "omittedSubtrees": {
+                  "link": 120,
+                  "meta": 34,
+                  "script": 26,
+                  "style": 2,
+                  "div": 28,
+                  "svg": 11,
+                  "span": 139,
+                  "i": 81,
+                  "img": 162
+                },
+                "ignoredAttributes": 1686,
+                "unwrappedElements": 96,
+                "tokenizerIssues": 0,
+                "rawTextPolicy": "separate-omitted-raw-v1",
+                "omittedRaw": {
+                  "codeUnits": 2020907,
+                  "workUnits": 10324448,
+                  "steps": 56,
+                  "elements": 28,
+                  "maxWorkUnits": 32000000,
+                  "maxWindowCodeUnits": 65536
+                },
+                "encoding": "utf-8",
+                "fallbackEncoding": "utf-8"
+              },
+              "html": {
+                "partial": true,
+                "scripting": false,
+                "issues": 2
+              }
+            }
+          },
+          {
+            "id": "ct|apps_topgrossing",
+            "attributes": {
+              "role": "button",
+              "id": "ct|apps_topgrossing",
+              "class": "D3Qfie VfPpkd-ksKsZd-XxIAqe  kofMvc  EFMXQ"
+            },
+            "snapshot": {
+              "document": "e1",
+              "scope": "e625",
+              "revision": 2936,
+              "entries": [
+                {
+                  "ref": "e625",
+                  "role": "button",
+                  "name": "",
+                  "depth": 0
+                }
+              ],
+              "truncated": false,
+              "reader": {
+                "profile": "native-semantic-reader-v1",
+                "partial": true,
+                "scripting": false,
+                "styling": false,
+                "hiddenContentSemantics": "source-attributes-and-inline-display",
+                "visibilityPolicy": "source-hidden-inline-v1",
+                "sourceHiddenSubtrees": 416,
+                "sourceCodeUnits": 2705965,
+                "textCodeUnits": 7191,
+                "outputCodeUnits": 97464,
+                "tokens": 6781,
+                "omittedTokens": 1234,
+                "omittedSubtrees": {
+                  "link": 120,
+                  "meta": 34,
+                  "script": 26,
+                  "style": 2,
+                  "div": 28,
+                  "svg": 11,
+                  "span": 139,
+                  "i": 81,
+                  "img": 162
+                },
+                "ignoredAttributes": 1686,
+                "unwrappedElements": 96,
+                "tokenizerIssues": 0,
+                "rawTextPolicy": "separate-omitted-raw-v1",
+                "omittedRaw": {
+                  "codeUnits": 2020907,
+                  "workUnits": 10324448,
+                  "steps": 56,
+                  "elements": 28,
+                  "maxWorkUnits": 32000000,
+                  "maxWindowCodeUnits": 65536
+                },
+                "encoding": "utf-8",
+                "fallbackEncoding": "utf-8"
+              },
+              "html": {
+                "partial": true,
+                "scripting": false,
+                "issues": 2
+              }
+            }
+          },
+          {
+            "id": "ct|apps_topselling_paid",
+            "attributes": {
+              "role": "button",
+              "id": "ct|apps_topselling_paid",
+              "class": "D3Qfie VfPpkd-ksKsZd-XxIAqe  kofMvc  EFMXQ"
+            },
+            "snapshot": {
+              "document": "e1",
+              "scope": "e626",
+              "revision": 2936,
+              "entries": [
+                {
+                  "ref": "e626",
+                  "role": "button",
+                  "name": "",
+                  "depth": 0
+                }
+              ],
+              "truncated": false,
+              "reader": {
+                "profile": "native-semantic-reader-v1",
+                "partial": true,
+                "scripting": false,
+                "styling": false,
+                "hiddenContentSemantics": "source-attributes-and-inline-display",
+                "visibilityPolicy": "source-hidden-inline-v1",
+                "sourceHiddenSubtrees": 416,
+                "sourceCodeUnits": 2705965,
+                "textCodeUnits": 7191,
+                "outputCodeUnits": 97464,
+                "tokens": 6781,
+                "omittedTokens": 1234,
+                "omittedSubtrees": {
+                  "link": 120,
+                  "meta": 34,
+                  "script": 26,
+                  "style": 2,
+                  "div": 28,
+                  "svg": 11,
+                  "span": 139,
+                  "i": 81,
+                  "img": 162
+                },
+                "ignoredAttributes": 1686,
+                "unwrappedElements": 96,
+                "tokenizerIssues": 0,
+                "rawTextPolicy": "separate-omitted-raw-v1",
+                "omittedRaw": {
+                  "codeUnits": 2020907,
+                  "workUnits": 10324448,
+                  "steps": 56,
+                  "elements": 28,
+                  "maxWorkUnits": 32000000,
+                  "maxWindowCodeUnits": 65536
+                },
+                "encoding": "utf-8",
+                "fallbackEncoding": "utf-8"
+              },
+              "html": {
+                "partial": true,
+                "scripting": false,
+                "issues": 2
+              }
+            }
+          }
+        ],
+        "originalOutcome": "empty-extraction",
+        "contentSuccess": false,
+        "markdownBytes": 29972,
+        "markdownSha256": "1e4ecbce0bbb7372d28afba4b309cb57bcd36fa34953826a51e68bab16671e4f",
+        "treeClosed": true
+      },
+      {
+        "passed": true,
+        "variant": "candidate",
+        "mode": "fresh",
+        "input": {
+          "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/chart-source-diagnostics-september16/live/candidate/stdout.jsonl",
+          "receiptSha256": "7c78ba26355c1b41b296b9e976959f1c743034aa7628d7a3f00842981d8898e5",
+          "bodySha256": "97c2cf245e8acdf1f78ff47dd278e5869f73353db032d7b275baab044a8a1e1e",
+          "bodyBytes": 2708333
+        },
+        "controls": [
+          {
+            "id": "ct|apps_topselling_free",
+            "attributes": {
+              "role": "button",
+              "id": "ct|apps_topselling_free",
+              "class": "D3Qfie VfPpkd-ksKsZd-XxIAqe  KKjvXb kofMvc  EFMXQ",
+              "aria-label": "Top free"
+            },
+            "snapshot": {
+              "document": "e1",
+              "scope": "e624",
+              "revision": 2936,
+              "entries": [
+                {
+                  "ref": "e624",
+                  "role": "button",
+                  "name": "Top free",
+                  "depth": 0
+                }
+              ],
+              "truncated": false,
+              "reader": {
+                "profile": "native-semantic-reader-v1",
+                "partial": true,
+                "scripting": false,
+                "styling": false,
+                "hiddenContentSemantics": "source-attributes-and-inline-display",
+                "visibilityPolicy": "source-hidden-inline-v1",
+                "sourceHiddenSubtrees": 416,
+                "sourceCodeUnits": 2705965,
+                "textCodeUnits": 7191,
+                "outputCodeUnits": 100962,
+                "tokens": 6781,
+                "omittedTokens": 1234,
+                "omittedSubtrees": {
+                  "link": 120,
+                  "meta": 34,
+                  "script": 26,
+                  "style": 2,
+                  "div": 28,
+                  "svg": 11,
+                  "span": 139,
+                  "i": 81,
+                  "img": 162
+                },
+                "ignoredAttributes": 1609,
+                "unwrappedElements": 96,
+                "tokenizerIssues": 0,
+                "rawTextPolicy": "separate-omitted-raw-v1",
+                "omittedRaw": {
+                  "codeUnits": 2020907,
+                  "workUnits": 10324448,
+                  "steps": 56,
+                  "elements": 28,
+                  "maxWorkUnits": 32000000,
+                  "maxWindowCodeUnits": 65536
+                },
+                "encoding": "utf-8",
+                "fallbackEncoding": "utf-8"
+              },
+              "html": {
+                "partial": true,
+                "scripting": false,
+                "issues": 2
+              }
+            }
+          },
+          {
+            "id": "ct|apps_topgrossing",
+            "attributes": {
+              "role": "button",
+              "id": "ct|apps_topgrossing",
+              "class": "D3Qfie VfPpkd-ksKsZd-XxIAqe  kofMvc  EFMXQ",
+              "aria-label": "Top grossing"
+            },
+            "snapshot": {
+              "document": "e1",
+              "scope": "e625",
+              "revision": 2936,
+              "entries": [
+                {
+                  "ref": "e625",
+                  "role": "button",
+                  "name": "Top grossing",
+                  "depth": 0
+                }
+              ],
+              "truncated": false,
+              "reader": {
+                "profile": "native-semantic-reader-v1",
+                "partial": true,
+                "scripting": false,
+                "styling": false,
+                "hiddenContentSemantics": "source-attributes-and-inline-display",
+                "visibilityPolicy": "source-hidden-inline-v1",
+                "sourceHiddenSubtrees": 416,
+                "sourceCodeUnits": 2705965,
+                "textCodeUnits": 7191,
+                "outputCodeUnits": 100962,
+                "tokens": 6781,
+                "omittedTokens": 1234,
+                "omittedSubtrees": {
+                  "link": 120,
+                  "meta": 34,
+                  "script": 26,
+                  "style": 2,
+                  "div": 28,
+                  "svg": 11,
+                  "span": 139,
+                  "i": 81,
+                  "img": 162
+                },
+                "ignoredAttributes": 1609,
+                "unwrappedElements": 96,
+                "tokenizerIssues": 0,
+                "rawTextPolicy": "separate-omitted-raw-v1",
+                "omittedRaw": {
+                  "codeUnits": 2020907,
+                  "workUnits": 10324448,
+                  "steps": 56,
+                  "elements": 28,
+                  "maxWorkUnits": 32000000,
+                  "maxWindowCodeUnits": 65536
+                },
+                "encoding": "utf-8",
+                "fallbackEncoding": "utf-8"
+              },
+              "html": {
+                "partial": true,
+                "scripting": false,
+                "issues": 2
+              }
+            }
+          },
+          {
+            "id": "ct|apps_topselling_paid",
+            "attributes": {
+              "role": "button",
+              "id": "ct|apps_topselling_paid",
+              "class": "D3Qfie VfPpkd-ksKsZd-XxIAqe  kofMvc  EFMXQ",
+              "aria-label": "Top paid"
+            },
+            "snapshot": {
+              "document": "e1",
+              "scope": "e626",
+              "revision": 2936,
+              "entries": [
+                {
+                  "ref": "e626",
+                  "role": "button",
+                  "name": "Top paid",
+                  "depth": 0
+                }
+              ],
+              "truncated": false,
+              "reader": {
+                "profile": "native-semantic-reader-v1",
+                "partial": true,
+                "scripting": false,
+                "styling": false,
+                "hiddenContentSemantics": "source-attributes-and-inline-display",
+                "visibilityPolicy": "source-hidden-inline-v1",
+                "sourceHiddenSubtrees": 416,
+                "sourceCodeUnits": 2705965,
+                "textCodeUnits": 7191,
+                "outputCodeUnits": 100962,
+                "tokens": 6781,
+                "omittedTokens": 1234,
+                "omittedSubtrees": {
+                  "link": 120,
+                  "meta": 34,
+                  "script": 26,
+                  "style": 2,
+                  "div": 28,
+                  "svg": 11,
+                  "span": 139,
+                  "i": 81,
+                  "img": 162
+                },
+                "ignoredAttributes": 1609,
+                "unwrappedElements": 96,
+                "tokenizerIssues": 0,
+                "rawTextPolicy": "separate-omitted-raw-v1",
+                "omittedRaw": {
+                  "codeUnits": 2020907,
+                  "workUnits": 10324448,
+                  "steps": 56,
+                  "elements": 28,
+                  "maxWorkUnits": 32000000,
+                  "maxWindowCodeUnits": 65536
+                },
+                "encoding": "utf-8",
+                "fallbackEncoding": "utf-8"
+              },
+              "html": {
+                "partial": true,
+                "scripting": false,
+                "issues": 2
+              }
+            }
+          }
+        ],
+        "originalOutcome": "empty-extraction",
+        "contentSuccess": false,
+        "markdownBytes": 29972,
+        "markdownSha256": "1e4ecbce0bbb7372d28afba4b309cb57bcd36fa34953826a51e68bab16671e4f",
+        "treeClosed": true
+      }
+    ]
+  },
+  "live": {
+    "passed": true,
+    "input": {
+      "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/chart-source-diagnostics-september16/live/candidate/stdout.jsonl",
+      "receiptSha256": "7c78ba26355c1b41b296b9e976959f1c743034aa7628d7a3f00842981d8898e5",
+      "bodySha256": "97c2cf245e8acdf1f78ff47dd278e5869f73353db032d7b275baab044a8a1e1e",
+      "bodyBytes": 2708333
+    },
+    "execution": {
+      "mode": "live",
+      "variant": "candidate",
+      "exitCode": 1,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.6647629495710135
+    },
+    "requests": 1,
+    "redirects": 0,
+    "retries": 0,
+    "originalOutcome": "empty-extraction",
+    "contentSuccess": false,
+    "auditCorrection": "Original supervisor expected request.host to be the hostname. Native transport pins a public IP in request.host; the HTTP authority retains play.google.com. This separate offline audit verifies both. No repeat navigation or rewritten receipt.",
+    "observerLimitation": "Diagnostic observation, not a pre-dispatch allowlist. Native public-network checks remain authoritative."
+  },
+  "sourceInventories": {
+    "historicalGoogle": {
+      "receiptPath": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/oversized-html-followup-september15/long/01-play.google.com/stdout.jsonl",
+      "receiptSha256": "d70b9289373a438f45f00603c8250a6cf0df114bf87f4387c841feea0a3ccecb",
+      "bodyBytes": 2535808,
+      "bodySha256": "c4a5d8db3ae22c66477ec75546c2dc950894e90fa0f859eed20b265a2b2d3102",
+      "offsets": {
+        "basis": "zero-based end-exclusive",
+        "unicodeCodePoints": [
+          1146923,
+          1151505
+        ],
+        "utf16CodeUnits": [
+          1146923,
+          1151505
+        ],
+        "decodedUtf8Bytes": [
+          1146934,
+          1151516
+        ]
+      },
+      "fragmentBytes": 4582,
+      "fragmentSha256": "f6afa3ad6004190dc8c70e240151b8b30788a097d22e7654e40a0853b1742caa",
+      "tags": {
+        "section": 1,
+        "header": 1,
+        "div": 95,
+        "span": 7
+      },
+      "controls": [
+        {
+          "id": "ct|apps_topselling_free",
+          "role": "button",
+          "aria-label": "Top free",
+          "aria-pressed": "true"
+        },
+        {
+          "id": "ct|apps_topgrossing",
+          "role": "button",
+          "aria-label": "Top grossing",
+          "aria-pressed": "false"
+        },
+        {
+          "id": "ct|apps_topselling_paid",
+          "role": "button",
+          "aria-label": "Top paid",
+          "aria-pressed": "false"
+        }
+      ],
+      "textChunks": [
+        "Top charts",
+        "Top free",
+        "Top grossing",
+        "Top paid",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "rankContainers": 9,
+      "skeletonLines": 27,
+      "finding": "Literal chart section has category controls and numbered placeholders, not app entries or ranking associations",
+      "limitation": "Static historical source only; no script/config interpretation, current-body diagnosis, runtime loading or chart interaction claim"
+    },
+    "freshGoogle": {
+      "receiptPath": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/chart-source-diagnostics-september16/live/candidate/stdout.jsonl",
+      "receiptSha256": "7c78ba26355c1b41b296b9e976959f1c743034aa7628d7a3f00842981d8898e5",
+      "bodyBytes": 2708333,
+      "bodySha256": "97c2cf245e8acdf1f78ff47dd278e5869f73353db032d7b275baab044a8a1e1e",
+      "offsets": {
+        "basis": "zero-based end-exclusive",
+        "unicodeCodePoints": [
+          1147048,
+          1151630
+        ],
+        "utf16CodeUnits": [
+          1147048,
+          1151630
+        ],
+        "decodedUtf8Bytes": [
+          1147059,
+          1151641
+        ]
+      },
+      "fragmentBytes": 4582,
+      "fragmentSha256": "f6afa3ad6004190dc8c70e240151b8b30788a097d22e7654e40a0853b1742caa",
+      "tags": {
+        "section": 1,
+        "header": 1,
+        "div": 95,
+        "span": 7
+      },
+      "controls": [
+        {
+          "id": "ct|apps_topselling_free",
+          "role": "button",
+          "aria-label": "Top free",
+          "aria-pressed": "true"
+        },
+        {
+          "id": "ct|apps_topgrossing",
+          "role": "button",
+          "aria-label": "Top grossing",
+          "aria-pressed": "false"
+        },
+        {
+          "id": "ct|apps_topselling_paid",
+          "role": "button",
+          "aria-label": "Top paid",
+          "aria-pressed": "false"
+        }
+      ],
+      "textChunks": [
+        "Top charts",
+        "Top free",
+        "Top grossing",
+        "Top paid",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "rankContainers": 9,
+      "skeletonLines": 27,
+      "finding": "Literal chart section has category controls and numbered placeholders, not app entries or ranking associations",
+      "limitation": "Static fresh source only; no script/config interpretation, runtime loading or chart interaction claim"
+    }
+  },
+  "corpus": {
+    "report": "reports/agent-citation-revalidation-v2.md",
+    "attempted": 100,
+    "reviewed": 100,
+    "rerunThisTurn": false,
+    "ranking": "Citation-derived entry-page proxy, not measured agent traffic",
+    "categories": {
+      "usefulSourceContent": 33,
+      "navigationOnly": 19,
+      "consentOrAccess": 23,
+      "loginRequired": 3,
+      "empty": 6,
+      "httpError": 8,
+      "transportFailure": 2,
+      "otherFailure": 6
+    }
+  },
+  "closure": {
+    "groups": 6,
+    "offlineGroups": 5,
+    "liveGroups": 1,
+    "offlineAttempts": 0,
+    "liveRequests": 1,
+    "allRecordedClosed": true
+  },
+  "evidence": {
+    "VERIFIED-CHECKS.json": "a464bc199b310267f909f8d96f45f11218227a345cd52576702b3ca60eebd25e",
+    "RED-CHECK.json": "384ba99702f87f6061fd951cd41cca406860c6e33c5ed4f2e88dee978155e23d",
+    "KNOWN-BASELINE-TYPECHECK.md": "70c9551ef5890cb5ea587043f8678fee4d853c1cfb55fa6b5d977def3e08ad60",
+    "CHECK-baseline.json": "5e3067a1930cbeab796cb1aafb55c833cacb48f3720119954245585c037a4174",
+    "CHECK-release01.json": "bf819ec79cfdd9ecf982431a6744dab5461e72e22fe3a98abeae953db02ffd80",
+    "CHECK-release02.json": "cadb8ea6023462baed1a7488eaa6e93a303a0c1500ce34fba5dc7b9f8fd28995",
+    "CHECK-red01.json": "77339df86a934b2aa0db38e2c4024316dc4e43eafa6ba26c84ce6d716ca4de86",
+    "native-baseline.json": "0787bc6dc62694e196db1cf5f2f52aadc380092cd6e03588baaacf2481148ae2",
+    "native-release01.json": "fe5925866c0704054e8de61a9e7c485c68888177a9a17ad2a61f9a15d5ef5280",
+    "native-release02.json": "cde451e6f89c0ebe9e0a5447333e4a14fac175f80d4fff2eddec49bec4c20366",
+    "native-red01.json": "37f3c51b4ecfa159c59945e92a3eed9840f20091d80d0ee80243b8c05db40b70",
+    "types-baseline.log": "f66d172e861db91503464595525aad3184d399ecad7b82b1bd5be5ebef50d4fb",
+    "types-release02.log": "f66d172e861db91503464595525aad3184d399ecad7b82b1bd5be5ebef50d4fb",
+    "baseline-adjacent-lint.log": "28f797386548385504f54ed76ac5c8b11a6ae17416dd76b7c0da07c2682b6169",
+    "lint-release02.log": "3b87b1fe1a5922e61de28dae0cf3f244e830a9378ef9a2ac2199e56f5b4c405b",
+    "owned-lint-release02.log": "ea8da84394d5ebdf969f7e609674657186a865817df5f1fb6313a14101b57d1e",
+    "OWNED-TYPES-release02.json": "69b2356b7647f44398821bd68782d80aa6e3f74f333918a651ff6406a499d59d",
+    "OVERLAY-release02.json": "1542ee64174e0cdf14c11b30cab825602d40493faea3a2cc4343ab17f489812a",
+    "HISTORICAL-CHECK.json": "de3605e712b0874bb026ba899d712f0fc740fb2fec2da95bd368b24b9e58ee7c",
+    "LIVE-CHECK.json": "d5156b746951b3822144ec697f4cc16ce140e99581bdba13153cd52012d1ebd5",
+    "FRESH-CHECK.json": "ffa27fc5df010a82105a1266fffe94c3d69540f5398e771a9f60d18769802cb5",
+    "HISTORICAL-INPUT.json": "195c3bca5d6b40ef7e763fd150d503e16a4dae7ff3d225e5ef0af0db36e0424a",
+    "FRESH-INPUT.json": "6b9959a8abbf8f4b442fac8b96d09d6d48a2b7c93de50def9a852296201dcde8",
+    "GOOGLE-SOURCE.json": "225bfda005536301d311d4ea6a7f738f00cb2ea2d26a985097264f59df5a6c5f",
+    "FRESH-GOOGLE-SOURCE.json": "f18e1b6f84d64a5c2db5d99eb33a59fe9ac8cbd2ecbf6b19b71161effeb02288",
+    "CNBC-SOURCE.json": "2799157e5b10e6e3e0bdefc0706ff3e419b79d26adfb77f4a639a69842b2bf43",
+    "CNBC-SOURCE.md": "12fff5e39b82c3086085611107987c4dd08f8d2743b55b40abe0ba9e9797c41a",
+    "NAMING-REVIEW.md": "1354b2c6a6b5730d6c2a9f63ad9ca0561a1c3e4db285c29a7caf87fab1d4b118",
+    "CORPUS-AUDIT.md": "d819d117e361122d6e14dac9f1047260762eef30969b71c00edebbfe1174893a",
+    "SCOPE.md": "714faac9e68664cd74aa9b82c389479ed04adfbe14173bd42d26c63626131f1e",
+    "run-proof.py": "69fb8435168a19a41a7e89e45da14a451ef0afdf3da58c15359aeb703605e955",
+    "audit-live.py": "7ab9dfe4b1045903218d46abc86341bda4435d19ed4538fef5b2403c00325f71",
+    "probe-names.mjs": "3fad9a50ea07a59d37dd66f8203a43f1dcb42e67b9ecdceac33568ecbe9b458c",
+    "SOURCE-baseline.json": "c53dc73614575b246931296af6aa01c1dbdbde2db91f452ea76117af05f4b878",
+    "COMPILED-baseline.json": "a1528bdc8c63e1b1d2411ccc965ef7c99d284935c95a66e34125ae7df2cdb762",
+    "SOURCE-release01.json": "4f038d302894a3cadd11bdd1b1b4b658994a0a7b53b51ce1bf695449c40c74e8",
+    "COMPILED-release01.json": "fcb26dc5a99d6191c44a8305377ba59d27fe97eb29910cac6e5952ecd1dd736c",
+    "SOURCE-release02.json": "d1f3b40bd967b216b2d78c6187cdcf9af5884cb6f4006b4bc310789317caaa7a",
+    "COMPILED-release02.json": "fcb26dc5a99d6191c44a8305377ba59d27fe97eb29910cac6e5952ecd1dd736c",
+    "SOURCE-red01.json": "de4f2af91647917b9662f60b7a46de7fc3496c9bb688ebf1fdb8b407365dd294",
+    "COMPILED-red01.json": "a1528bdc8c63e1b1d2411ccc965ef7c99d284935c95a66e34125ae7df2cdb762",
+    "baseline/EXECUTION.json": "7a3a6d17b9fa548187f418081d19cbae57411a32c410327bb6dad36bbd4cd71e",
+    "baseline/INVOCATION.json": "d754413d8cf5defbbaa70608d0a1c175aab771330eb81984466c7e37a8f7f0ed",
+    "baseline/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "baseline/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "baseline/BASELINE.json": "f97cb0836f3bbc7d8612dc8c6392d99a3d9598452476da5670cc037ffecbdd67",
+    "historical/baseline/EXECUTION.json": "adb327d5bbbfac36be826d8353fbc026439930cfa8ea753ee452fa5b4de4faf5",
+    "historical/baseline/INVOCATION.json": "7240f34853904956aa6134087cc02b85832d097ec6ba17b237b3469a36681eee",
+    "historical/baseline/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "historical/baseline/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "historical/baseline/RESULT.json": "de70eac5015e664ebc50398d2682a44c12a80c2aad1c3ef75967ddf720474da4",
+    "historical/candidate/EXECUTION.json": "032da92e0bc6aabe781f421a3f98f55719107ee252aa1dfde44ebad6e55c8fbd",
+    "historical/candidate/INVOCATION.json": "b5fc0e1a84aa0873852cd5f72a8a307315fbab4fd37ed67e35bf8c52b26d26e8",
+    "historical/candidate/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "historical/candidate/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "historical/candidate/RESULT.json": "03396baf2417bc5784ba1ca89b3c4379f709fe1d84fbf85d615879c8724b2eaa",
+    "live/candidate/EXECUTION.json": "4bbe39d38dc9a02ee9f8e744ca23f7f7b10b54fd07801776ac3b5c008e579f33",
+    "live/candidate/INVOCATION.json": "b8d6fb4a43997dd1d92297b63077b79da0e536d1155d518b01c51bbec5624cd8",
+    "live/candidate/stdout.jsonl": "7c78ba26355c1b41b296b9e976959f1c743034aa7628d7a3f00842981d8898e5",
+    "live/candidate/http-events.jsonl": "ea66d034186479d76c3bb89bc9079ade462fe13e8b1d839219cbd89d788c6811",
+    "fresh/baseline/EXECUTION.json": "2d1cc8de5495792eceea80e90f19cd61130406136994ff7458f4549b00c7938b",
+    "fresh/baseline/INVOCATION.json": "18beb1e47d5e093335f22acadd387f33998ce7e6d1b7218235614237b954ea51",
+    "fresh/baseline/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "fresh/baseline/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "fresh/baseline/RESULT.json": "3acc01756d1fab0a3b3428b4d50a920a8c3bb4d151aa77a8b8a8a847258cf77a",
+    "fresh/candidate/EXECUTION.json": "969162ea9dbff14fa53ba300e02f3348c240a21d65b6fda6667fc101e3a94afe",
+    "fresh/candidate/INVOCATION.json": "38558edb0621703f50857b8d8ef6b60f813873e58f6aa0d98ddaeb1f61bdd958",
+    "fresh/candidate/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "fresh/candidate/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "fresh/candidate/RESULT.json": "cd74db21ba8b5e1848878d8bed28aee93de6a758ac51b4fd3801e304458ae5b8"
+  },
+  "pushed": false,
+  "overallGoal": "active"
+}
