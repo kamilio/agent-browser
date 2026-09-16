@@ -6,6 +6,20 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### September 16 SafeJS source refresh
+
+- Fetch neighboring poe-code origin main as requested. Its clean main checkout
+  already equals fetched4f6988bededc4c663682d6be8f5f7408ee4230e7; no fast-forward
+  changes are pending. The entire SafeJS package is unchanged from the previously
+  inspected3057055465eea7b2017d83cd601c61fb408e8d41 source.
+- The public callback-phase test still intentionally rejects source evaluation
+  after a suspended callback's synchronous prefix. Do not weaken the browser
+  requirement or repeat an identical SDK probe. This is not a published release
+  check, build, import, dependency replacement or live-script acceptance.
+- Record fresh source hashes/logs in SAFEJS-CALLBACK-ADMISSION.md's referenced
+  lane. Keep scheduling, launcher hardening and actual SDK gates open while
+  continuing unblocked browser performance/content work; overall goal stays active.
+
 ### Product and reference-page reader workflows
 
 - Complete three fresh source-linked native workflows: Wikipedia's reference

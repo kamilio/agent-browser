@@ -41,6 +41,22 @@ These source paths/line numbers refer to that pinned neighboring checkout, not
 files added to this browser. Exact copies, hashes and deltas are retained in
 `node_modules/.cache/native-validation/safejs-contract-diagnostics-september15/`.
 
+## September 16 remote source refresh
+
+An explicit `origin main` fetch on September16,2026 confirms the neighboring
+checkout is already at fetched commit
+`4f6988bededc4c663682d6be8f5f7408ee4230e7`, with a clean main worktree and no
+fast-forward changes to apply. The entire `packages/safe-js` source tree is
+unchanged from the September15 inspected commit above. Its callback-phase test
+still intentionally rejects source evaluation while an async callback remains
+suspended after its synchronous prefix.
+
+This is a fresh remote-source check, not a latest published-version check or
+SDK execution. No package is installed, built, imported or substituted, and no
+page scripts run. Keep the public scheduling requirement and all acceptance
+checks unchanged. Exact hashes and the fetch log are retained in
+`node_modules/.cache/native-validation/safejs-refresh-september16/`.
+
 ## Required public capability
 
 The mismatch is between an additional browser requirement and the current public
