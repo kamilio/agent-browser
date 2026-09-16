@@ -159,7 +159,7 @@ it("refines a navigation-heavy main without changing source or document metadata
 		(_, index) => `<a href="/nav-${index}">Navigation ${index}</a>`,
 	).join("");
 	const tree = document(
-		`<title>Original document title</title><main id="main"><nav>${navigation}</nav><div><article id="article"><h1>Research evidence</h1><p>Owned finding 雪.</p><a href="/evidence">Evidence link</a></article></div><footer>Local footer</footer></main>`,
+		`<title>Original document title</title><main id="main"><nav>${navigation}</nav><div><article id="article"><h1>Research evidence</h1><p>Owned finding 雪.</p><a href="/evidence">Evidence link</a></article></div><footer><nav>Local footer</nav></footer></main>`,
 	);
 	assertRefined(tree);
 	for (const format of formats) {
@@ -215,6 +215,7 @@ it.each([
 		body: "<aside><article>Related finding</article></aside>",
 		articleCandidates: 1,
 		mainArticleCandidates: 0,
+		outsideMainArticleContent: true,
 	},
 	{
 		name: "substantive main text without an article",
@@ -289,28 +290,44 @@ it.each([
 );
 
 it.each([
-	["header", ""],
-	["footer", ""],
-	["nav", ""],
-	["aside", ""],
-	["div", 'role="banner"'],
-	["div", 'role="contentinfo"'],
-	["div", 'role="navigation"'],
-	["div", 'role="complementary"'],
-	["div", 'role="unknown navigation"'],
-	["nav", 'role="none"'],
-	["div", 'role="navigation" style="visibility:hidden"'],
+	{ tag: "header", attributes: "", navigation: false },
+	{ tag: "footer", attributes: "", navigation: false },
+	{ tag: "nav", attributes: "", navigation: true },
+	{ tag: "aside", attributes: "", navigation: false },
+	{ tag: "div", attributes: 'role="banner"', navigation: false },
+	{ tag: "div", attributes: 'role="contentinfo"', navigation: false },
+	{ tag: "div", attributes: 'role="navigation"', navigation: true },
+	{ tag: "div", attributes: 'role="complementary"', navigation: false },
+	{ tag: "div", attributes: 'role="unknown navigation"', navigation: true },
+	{ tag: "nav", attributes: 'role="none"', navigation: true },
+	{
+		tag: "div",
+		attributes: 'role="navigation" style="visibility:hidden"',
+		navigation: true,
+	},
 ])(
-	"excludes ancillary %s %s text and article cards locally",
-	(tag, attributes) => {
+	"excludes ancillary $tag $attributes cards but preserves non-navigation context",
+	({ tag, attributes, navigation }) => {
 		const ancillary = `<${tag} ${attributes}><section style="visibility:visible"><h2>Ancillary heading</h2><img alt="Ancillary diagram"><article>Ancillary card</article></section></${tag}>`;
 		for (const body of [
 			`${ancillary}<article id="article">Owned finding</article>`,
 			`<article id="article">Owned finding</article>${ancillary}`,
-		])
-			assertRefined(document(`<main id="main">${body}</main>`), {
-				articleCandidates: 2,
-			});
+		]) {
+			const tree = document(`<main id="main">${body}</main>`);
+			if (navigation) assertRefined(tree, { articleCandidates: 2 });
+			else
+				assertSelection(
+					tree,
+					{
+						...refined,
+						selected: "main",
+						reason: "unique-main",
+						articleCandidates: 2,
+						outsideMainArticleContent: true,
+					},
+					element(tree, "#main"),
+				);
+		}
 	},
 );
 

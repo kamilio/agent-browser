@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Preserve article-adjacent funding context and source credits
+
+- Correct v3's generic main-local rule after the GearLab source audit: only
+  navigation ancestry excludes outside context. Header/footer/aside prose and
+  image alternatives retain main; ancillary article cards remain ineligible and
+  cannot hide their own context. Keep v1/v2/global decisions, one traversal and
+  existing bounds. No site/wording heuristic or automatic source-policy change.
+- Final release01:2581/0 in38 explicit files;109 new cases all pass. Old-code
+  control2505/76 includes69 new regressions and7 updated old contracts. Build,
+  strict selected types, format and lint pass. Static review finds no blocker.
+  Canonical968 manifest entries still include22 missing files; no new full run.
+-137 saved responses:130 legacy pairs identical/seven matching non-HTML failures.
+  Corrected v3 preserves GearLab disclosure and React footer credits by retaining
+  main, while PyPI/vLLM retain article focus. Known vLLM guide17451 bytes still
+  recovers from v2's complete-output failure. Core/final compiled files match.
+- Two actual saved-body CLI controls match full v2 output. Fresh native GETs at
+  23:30:49.975Z/23:30:52.379Z September16 return200, retain main and close resources.
+  Independent source check matches the entire184-byte normalized GearLab funding
+  statement; React source/full v2 Markdown match and credits remain. Hero drift
+  and all earlier omissions stay recorded, not rewritten as old successes.
+- See reports/navigation-context-2026-09-16.md/JSON. Actual navigation context,
+  dynamic/SafeJS pages, access/CAPTCHA, rendering, real credentials/passkeys/devices,
+  missing tests and research completion remain open. Overall goal stays active.
+
 ### Revalidate nested focus across saved pages and three live content checks
 
 - Commit efcec30 adds opt-in nested article selection. Compare v2/v3 across135

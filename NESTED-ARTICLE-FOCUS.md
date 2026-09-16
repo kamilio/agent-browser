@@ -25,11 +25,15 @@ outer main, it can refine that scope when all of these hold:
 - Exactly one nonempty outer semantic article exists within that main outside
   ancillary subtrees. Nested articles belong to their outer article.
 - No admitted visible nonwhitespace text or nonblank HTML image alt text exists
-  outside local semantic article ancestry, except within ancillary subtrees.
+  outside eligible local article ancestry, except within navigation subtrees.
 - Ancillary means HTML header/footer/nav/aside or the native banner/contentinfo/
-  navigation/complementary role, not a CSS class, ID, domain or text heuristic.
+  navigation/complementary role. Their articles cannot become local candidates,
+  but only HTML nav or the native navigation role excludes outside context.
+  Header/footer/aside prose, credits, disclosures and image alternatives retain
+  the main unless they are within navigation. No CSS class, ID, domain, wording
+  or content-length heuristic identifies which prose matters.
 
-The main boundary resets local article/ancillary ancestry. An outer article or
+The main boundary resets local article/ancillary/navigation ancestry. An outer article or
 navigation ancestor cannot suppress substantive evidence inside the main.
 Nested main landmarks remain part of the selected outer main. Multiple local
 articles, outside warnings/headings/text/image alternatives, or no local article
@@ -41,6 +45,14 @@ omission, namespace, visibility and leaf-descent rules apply. Ancillary context
 only affects the refinement decision: it does not hide nodes inside a selected
 article or change global landmark counts. It is not a complete readability or
 rendering algorithm and does not identify important information from image pixels.
+
+The initial September 16 implementation excluded all ancillary context. The
+saved/live source review in `reports/focus-corpus-2026-09-16.md` found that this
+discarded a funding disclosure in a main header and source credits in a footer.
+The corrected local rule retains such context without domain-specific exceptions.
+Historical outputs and measurements in that report are unchanged. Content placed
+inside an actual navigation landmark can still be excluded by this explicit
+policy; it does not promise complete rendered-page context preservation.
 
 ## Metadata
 

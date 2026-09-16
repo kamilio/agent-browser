@@ -52,6 +52,7 @@ interface FocusFrame {
 	mainFocus?: MainArticleFocus;
 	mainArticleAncestor?: boolean;
 	mainAncillaryAncestor?: boolean;
+	mainNavigationAncestor?: boolean;
 }
 
 export function selectContentFocus(
@@ -136,13 +137,18 @@ export function selectContentFocus(
 					};
 					current.mainArticleAncestor = false;
 					current.mainAncillaryAncestor = false;
-				} else if (ancillary) current.mainAncillaryAncestor = true;
+					current.mainNavigationAncestor = false;
+				} else {
+					if (ancillary) current.mainAncillaryAncestor = true;
+					if (html && (node.tagName === "nav" || role === "navigation"))
+						current.mainNavigationAncestor = true;
+				}
 				if (
 					current.mainFocus &&
 					current.nonempty &&
 					!current.mainArticleAncestor &&
-					current.role !== "article" &&
-					!current.mainAncillaryAncestor
+					!(current.role === "article" && !current.mainAncillaryAncestor) &&
+					!current.mainNavigationAncestor
 				)
 					current.mainFocus.outsideArticleContent = true;
 			}
@@ -160,8 +166,10 @@ export function selectContentFocus(
 			if (refineMain) {
 				child.mainFocus = current.mainFocus;
 				child.mainArticleAncestor =
-					current.mainArticleAncestor || current.role === "article";
+					current.mainArticleAncestor ||
+					(current.role === "article" && !current.mainAncillaryAncestor);
 				child.mainAncillaryAncestor = current.mainAncillaryAncestor;
+				child.mainNavigationAncestor = current.mainNavigationAncestor;
 			}
 			pending.push(child);
 			continue;
