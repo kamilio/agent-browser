@@ -1,0 +1,1049 @@
+{
+  "schema": "native-link-activation-2026-09-16",
+  "passed": true,
+  "recordedAt": "2026-09-16T02:35:48.923Z",
+  "claim": "Three actual native live link activations plus a separately validated bounded font cache; not a new 100-page sweep or general speedup",
+  "parentCommit": "dc41c5cfbf5fd317c34cf98da893e915fe9f455b",
+  "liveRuntime": "Pinned pre-cache build matching parent runtime inputs",
+  "liveInvocations": 3,
+  "liveRequests": 6,
+  "liveRedirects": 0,
+  "liveRetries": 0,
+  "candidateLiveExecutions": 0,
+  "priorChecklist": "reports/agent-citation-revalidation-v2.md",
+  "priorChecklistRewritten": false,
+  "evidenceDirectory": "node_modules/.cache/native-validation/native-link-activation-september16",
+  "overlay": {
+    "src/font-family.ts": "0c6d8a11ba0db4162455abf2dc6020163a3faa35c8d1bcc346ddabcc30dd0d5b",
+    "src/native-font-resolution-cache.test.ts": "a69c59cf67db803234e3ca97173297d8309d420a58092bff404b5a0c2c2cbd62"
+  },
+  "validation": {
+    "label": "release02",
+    "baseline": {
+      "passed": 364,
+      "failed": 0,
+      "failedSuites": 0,
+      "files": 9,
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 0
+      }
+    },
+    "release02": {
+      "passed": 390,
+      "failed": 0,
+      "failedSuites": 0,
+      "files": 10,
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 0
+      }
+    },
+    "red02": {
+      "passed": 12,
+      "failed": 14,
+      "failedSuites": 1,
+      "files": 1,
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 1
+      }
+    },
+    "fullNativeManifestRun": false,
+    "newTests": 26
+  },
+  "comparison": {
+    "passed": true,
+    "records": 18,
+    "workflows": [
+      {
+        "ordinal": 1,
+        "samplesMs": {
+          "baseline": [
+            1239.608424,
+            1239.307592,
+            1251.0277339999998
+          ],
+          "release02": [
+            1195.486806,
+            1239.863625,
+            1161.1789159999998
+          ]
+        },
+        "medianMs": {
+          "baseline": 1239.608424,
+          "release02": 1195.486806
+        },
+        "reductionPercent": 3.5593189870094077,
+        "sameExtraction": true,
+        "sameEvents": true
+      },
+      {
+        "ordinal": 2,
+        "samplesMs": {
+          "baseline": [
+            375.493277,
+            374.431199,
+            378.37417000000005
+          ],
+          "release02": [
+            366.90774,
+            361.432677,
+            367.41198399999996
+          ]
+        },
+        "medianMs": {
+          "baseline": 375.493277,
+          "release02": 366.90774
+        },
+        "reductionPercent": 2.2864688999478355,
+        "sameExtraction": true,
+        "sameEvents": true
+      },
+      {
+        "ordinal": 3,
+        "samplesMs": {
+          "baseline": [
+            180.68526300000002,
+            181.321979,
+            185.030958
+          ],
+          "release02": [
+            181.57788999999997,
+            182.53803799999997,
+            185.80638299999998
+          ]
+        },
+        "medianMs": {
+          "baseline": 181.321979,
+          "release02": 182.53803799999997
+        },
+        "reductionPercent": -0.6706627661503539,
+        "sameExtraction": true,
+        "sameEvents": true
+      }
+    ],
+    "limitation": "Three fresh-process samples per variant per saved page; local observations, not broad benchmarks"
+  },
+  "workflows": [
+    {
+      "ordinal": 1,
+      "startUrl": "https://en.wikipedia.org/wiki/Main_Page",
+      "targetUrl": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+      "action": "click",
+      "selected": {
+        "ref": "e4540",
+        "url": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+        "label": "Grace Coolidge",
+        "labelTruncated": false,
+        "matches": 2,
+        "choice": "first exact-URL nonempty-label source-order match"
+      },
+      "events": [
+        "mousedown",
+        "mouseup",
+        "click"
+      ],
+      "responses": [
+        {
+          "number": 1,
+          "url": "https://en.wikipedia.org/wiki/Main_Page",
+          "status": 200,
+          "headers": {
+            "content-type": [
+              "text/html; charset=UTF-8"
+            ],
+            "content-encoding": [
+              "gzip"
+            ]
+          },
+          "decodedBytes": 259607,
+          "bodySha256": "73c19f2412af33710b51ee86662613823085121102e9868c04955c799befa575",
+          "encodedBytes": 51532,
+          "elapsedMs": 23.570785,
+          "redirects": 0
+        },
+        {
+          "number": 2,
+          "url": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+          "status": 200,
+          "headers": {
+            "content-type": [
+              "text/html; charset=UTF-8"
+            ],
+            "content-encoding": [
+              "gzip"
+            ]
+          },
+          "decodedBytes": 722767,
+          "bodySha256": "8298f909df06ef37ff875065ffb0363f4d132409c9920cd4e52c42785bc218f5",
+          "encodedBytes": 102872,
+          "elapsedMs": 1049.2771349999998,
+          "redirects": 0
+        }
+      ],
+      "activationPassed": true,
+      "contentSuccess": null,
+      "contentVerified": false,
+      "markdownBytes": 212988,
+      "markdownSha256": "b14c5a4253b3c4d1252d94f5092272eb041ebab4b6e02ac923720c3d1831e8cf",
+      "actionElapsedMs": 2177.098997,
+      "metrics": {
+        "tabs": 0,
+        "selectedTab": null,
+        "pendingLoads": 0,
+        "pageTraversals": [],
+        "navigations": 2,
+        "commits": 2,
+        "cleanupErrors": 0,
+        "closed": true,
+        "network": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 2,
+          "redirects": 0,
+          "encodedBytes": 154404,
+          "decodedBytes": 982374,
+          "active": 0,
+          "closed": true
+        },
+        "routes": {
+          "routes": 0,
+          "retainedBytes": 0,
+          "fulfilled": 0,
+          "servedBytes": 0,
+          "closed": true,
+          "limits": {
+            "maxRoutes": 32,
+            "maxBodyBytes": 262144,
+            "maxRetainedBytes": 1048576,
+            "maxFulfilled": 512,
+            "maxServedBytes": 8388608,
+            "maxMatchSteps": 2000000
+          },
+          "partial": true,
+          "automaticRedirects": false
+        },
+        "cookies": {
+          "cookies": 0,
+          "accepted": 0,
+          "rejected": 0,
+          "rejections": {},
+          "closed": true
+        },
+        "storage": {
+          "tabs": 0,
+          "areas": 0,
+          "entries": 0,
+          "bytes": 0,
+          "revision": 1,
+          "notificationFailures": 0,
+          "closed": true
+        },
+        "storageEvents": {
+          "documents": 0,
+          "accepted": 0,
+          "delivered": 0,
+          "canceled": 0,
+          "dropped": 0,
+          "failed": 0,
+          "pending": 0,
+          "active": false,
+          "retainedBytes": 0,
+          "peakBytes": 0,
+          "closed": true
+        }
+      },
+      "documentClosedStates": [
+        true,
+        true
+      ]
+    },
+    {
+      "ordinal": 2,
+      "startUrl": "https://runrepeat.com/",
+      "targetUrl": "https://runrepeat.com/brooks-revel-max",
+      "action": "click",
+      "selected": {
+        "ref": "e928",
+        "url": "https://runrepeat.com/brooks-revel-max",
+        "label": "Brooks Revel Max Sep 15, 2026",
+        "labelTruncated": false,
+        "matches": 1,
+        "choice": "first exact-URL nonempty-label source-order match"
+      },
+      "events": [
+        "mousedown",
+        "mouseup",
+        "click"
+      ],
+      "responses": [
+        {
+          "number": 1,
+          "url": "https://runrepeat.com/",
+          "status": 200,
+          "headers": {
+            "content-type": [
+              "text/html;charset=utf-8"
+            ],
+            "content-encoding": [
+              "br"
+            ]
+          },
+          "decodedBytes": 380615,
+          "bodySha256": "7bb4278a3424ed8d9fcbcbcc366fe6f53843d74669837cf28f1cc66acaaac725",
+          "encodedBytes": 62898,
+          "elapsedMs": 34.616372999999996,
+          "redirects": 0
+        },
+        {
+          "number": 2,
+          "url": "https://runrepeat.com/brooks-revel-max",
+          "status": 200,
+          "headers": {
+            "content-type": [
+              "text/html;charset=utf-8"
+            ],
+            "content-encoding": [
+              "br"
+            ]
+          },
+          "decodedBytes": 639224,
+          "bodySha256": "3df21acff4b719f945df83b59946e4d74a19ae16f26d929cadc90c0eae16b6e9",
+          "encodedBytes": 97162,
+          "elapsedMs": 1744.787663,
+          "redirects": 0
+        }
+      ],
+      "activationPassed": true,
+      "contentSuccess": null,
+      "contentVerified": false,
+      "markdownBytes": 19465,
+      "markdownSha256": "45225ae2ae57b64edf01e4badce6b198ce3027d208af4e8345346dbffc7daefb",
+      "actionElapsedMs": 2081.3396940000002,
+      "metrics": {
+        "tabs": 0,
+        "selectedTab": null,
+        "pendingLoads": 0,
+        "pageTraversals": [],
+        "navigations": 2,
+        "commits": 2,
+        "cleanupErrors": 0,
+        "closed": true,
+        "network": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 2,
+          "redirects": 0,
+          "encodedBytes": 160060,
+          "decodedBytes": 1019839,
+          "active": 0,
+          "closed": true
+        },
+        "routes": {
+          "routes": 0,
+          "retainedBytes": 0,
+          "fulfilled": 0,
+          "servedBytes": 0,
+          "closed": true,
+          "limits": {
+            "maxRoutes": 32,
+            "maxBodyBytes": 262144,
+            "maxRetainedBytes": 1048576,
+            "maxFulfilled": 512,
+            "maxServedBytes": 8388608,
+            "maxMatchSteps": 2000000
+          },
+          "partial": true,
+          "automaticRedirects": false
+        },
+        "cookies": {
+          "cookies": 0,
+          "accepted": 0,
+          "rejected": 0,
+          "rejections": {},
+          "closed": true
+        },
+        "storage": {
+          "tabs": 0,
+          "areas": 0,
+          "entries": 0,
+          "bytes": 0,
+          "revision": 1,
+          "notificationFailures": 0,
+          "closed": true
+        },
+        "storageEvents": {
+          "documents": 0,
+          "accepted": 0,
+          "delivered": 0,
+          "canceled": 0,
+          "dropped": 0,
+          "failed": 0,
+          "pending": 0,
+          "active": false,
+          "retainedBytes": 0,
+          "peakBytes": 0,
+          "closed": true
+        }
+      },
+      "documentClosedStates": [
+        true,
+        true
+      ]
+    },
+    {
+      "ordinal": 3,
+      "startUrl": "https://dictionary.cambridge.org/",
+      "targetUrl": "https://dictionary.cambridge.org/dictionary/english/patronize",
+      "action": "enter",
+      "selected": {
+        "ref": "e3658",
+        "url": "https://dictionary.cambridge.org/dictionary/english/patronize",
+        "label": "patronize",
+        "labelTruncated": false,
+        "matches": 1,
+        "choice": "first exact-URL nonempty-label source-order match"
+      },
+      "events": [
+        "keydown",
+        "keypress",
+        "click",
+        "keyup"
+      ],
+      "responses": [
+        {
+          "number": 1,
+          "url": "https://dictionary.cambridge.org/",
+          "status": 200,
+          "headers": {
+            "content-type": [
+              "text/html;charset=UTF-8"
+            ],
+            "content-encoding": [
+              "gzip"
+            ]
+          },
+          "decodedBytes": 270511,
+          "bodySha256": "e5a05098f1528d33a53c8726c3b36eec9ad1f357ddfb55cc2093c3f409009386",
+          "encodedBytes": 45534,
+          "elapsedMs": 107.36470500000001,
+          "redirects": 0
+        },
+        {
+          "number": 2,
+          "url": "https://dictionary.cambridge.org/dictionary/english/patronize",
+          "status": 200,
+          "headers": {
+            "content-type": [
+              "text/html;charset=UTF-8"
+            ],
+            "content-encoding": [
+              "gzip"
+            ]
+          },
+          "decodedBytes": 331680,
+          "bodySha256": "039bf0db9649c72a6e23dba24d2ae23ad190c597e3c887adf068fe6974fb6d91",
+          "encodedBytes": 53631,
+          "elapsedMs": 1895.44983,
+          "redirects": 0
+        }
+      ],
+      "activationPassed": true,
+      "contentSuccess": null,
+      "contentVerified": false,
+      "markdownBytes": 20400,
+      "markdownSha256": "e9d9da54f02ce79ba7e296526c81809014276b05c5e23dc49978f9335d5e8155",
+      "actionElapsedMs": 2050.866264,
+      "metrics": {
+        "tabs": 0,
+        "selectedTab": null,
+        "pendingLoads": 0,
+        "pageTraversals": [],
+        "navigations": 2,
+        "commits": 2,
+        "cleanupErrors": 0,
+        "closed": true,
+        "network": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 2,
+          "redirects": 0,
+          "encodedBytes": 99165,
+          "decodedBytes": 602191,
+          "active": 0,
+          "closed": true
+        },
+        "routes": {
+          "routes": 0,
+          "retainedBytes": 0,
+          "fulfilled": 0,
+          "servedBytes": 0,
+          "closed": true,
+          "limits": {
+            "maxRoutes": 32,
+            "maxBodyBytes": 262144,
+            "maxRetainedBytes": 1048576,
+            "maxFulfilled": 512,
+            "maxServedBytes": 8388608,
+            "maxMatchSteps": 2000000
+          },
+          "partial": true,
+          "automaticRedirects": false
+        },
+        "cookies": {
+          "cookies": 0,
+          "accepted": 0,
+          "rejected": 0,
+          "rejections": {},
+          "closed": true
+        },
+        "storage": {
+          "tabs": 0,
+          "areas": 0,
+          "entries": 0,
+          "bytes": 0,
+          "revision": 1,
+          "notificationFailures": 0,
+          "closed": true
+        },
+        "storageEvents": {
+          "documents": 0,
+          "accepted": 0,
+          "delivered": 0,
+          "canceled": 0,
+          "dropped": 0,
+          "failed": 0,
+          "pending": 0,
+          "active": false,
+          "retainedBytes": 0,
+          "peakBytes": 0,
+          "closed": true
+        }
+      },
+      "documentClosedStates": [
+        true,
+        true
+      ]
+    }
+  ],
+  "contentReview": {
+    "reviewDate": "2026-09-16",
+    "reviewMode": "offline-saved-live03-content-inspection",
+    "verdict": "useful-substantive-content-observed-in-all-three-saved-outputs",
+    "executionPerformed": false,
+    "networkAccessed": false,
+    "credentialsAccessed": false,
+    "baselineLiveWorkflows": true,
+    "fontCacheLiveValidation": false,
+    "factualAccuracyVerified": false,
+    "renderingCompletenessVerified": false,
+    "extractionCompletenessVerified": false,
+    "machineResultsModified": false,
+    "historicalJudgmentsModified": false,
+    "pathBase": "node_modules/.cache/native-validation/native-link-activation-september16",
+    "evidenceMethod": {
+      "activation": "Read saved result/discovery identity, selection, navigation, response, event, and result fields; no new execution or wire-level audit.",
+      "extractionJson": "Inspected metadata with the embedded content string omitted from display; inspected prose separately in extracted.md.",
+      "hashes": "SHA-256 computed from all twelve saved files; Markdown sizes and hashes match their recorded RESULT.json values.",
+      "accessMarkerSearch": "Text-only full-file search across all three extracted.md files for CAPTCHA, human-verification, just-a-moment, access-denied, enable-JavaScript, sign-in/login, Cloudflare, rate-limit, and cookie-consent markers; no matches. Not a comprehensive classifier."
+    },
+    "rows": [
+      {
+        "ordinal": 1,
+        "site": "Wikipedia",
+        "contentKind": "biographical-article",
+        "targetUrl": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+        "verdict": "useful-substantive-article-observed-in-samples",
+        "usefulSubstantiveContentObserved": true,
+        "nativeActivationEvidence": {
+          "source": "live03/1/RESULT.json",
+          "recordedPassed": true,
+          "recordedActivationPassed": true,
+          "action": "click",
+          "selectedReference": "e4540",
+          "selectedLabel": "Grace Coolidge",
+          "discoveryMatches": 2,
+          "targetDocumentReference": "e19667",
+          "events": [
+            "mousedown",
+            "mouseup",
+            "click"
+          ],
+          "recordedGetRequests": 2,
+          "recordedResponseStatuses": [
+            200,
+            200
+          ],
+          "recordedRedirects": 0,
+          "recordedMockedRequests": 0,
+          "machineContentSuccess": null,
+          "machineContentVerified": false
+        },
+        "inspection": {
+          "markdown": "live03/1/extracted.md",
+          "coverage": "sampled",
+          "fullMarkdownRead": false,
+          "bytes": 212988,
+          "lines": 2373,
+          "primaryInspectedLineRanges": [
+            [
+              1,
+              25
+            ],
+            [
+              683,
+              712
+            ],
+            [
+              1175,
+              1200
+            ],
+            [
+              2341,
+              2373
+            ]
+          ],
+          "fullHeadingListInspected": true,
+          "completeSubstantiveSectionRead": "Early life, including Childhood and Education, lines 697-712",
+          "selection": "main-content-v1: unique main",
+          "extractionDeclaredPartial": true
+        },
+        "excerpts": [
+          {
+            "path": "live03/1/extracted.md",
+            "line": 1,
+            "text": "# Grace Coolidge",
+            "role": "beginning and subject identity"
+          },
+          {
+            "path": "live03/1/extracted.md",
+            "line": 707,
+            "text": "### Education",
+            "role": "complete substantive subsection"
+          },
+          {
+            "path": "live03/1/extracted.md",
+            "line": 711,
+            "text": "She graduated from the University of Vermont in 1902",
+            "role": "article claim, not fact-checked"
+          },
+          {
+            "path": "live03/1/extracted.md",
+            "line": 2355,
+            "text": "Hidden categories:",
+            "role": "end-of-output apparatus, not an interstitial"
+          }
+        ],
+        "usefulContent": [
+          {
+            "path": "live03/1/extracted.md",
+            "lineStart": 689,
+            "lineEnd": 695,
+            "description": "Connected biographical lead covering public roles, teaching, family, White House activities, and later life."
+          },
+          {
+            "path": "live03/1/extracted.md",
+            "lineStart": 697,
+            "lineEnd": 712,
+            "description": "Detailed childhood and education narrative, university activities, and teaching at Clarke School, with citation links."
+          },
+          {
+            "path": "live03/1/extracted.md",
+            "lineStart": 1175,
+            "lineEnd": 1200,
+            "description": "Middle-of-file sample retains numbered bibliographic citations rather than error-page text."
+          }
+        ],
+        "accessEvidence": {
+          "blockingInterstitialObserved": false,
+          "proseInspectionScope": "samples only",
+          "savedBarrierFieldPresent": false,
+          "savedFailureFieldPresent": false,
+          "fullMarkdownAccessMarkerMatches": 0,
+          "universalBarrierAbsenceClaim": false
+        },
+        "limitations": [
+          "Not a full read of the 2373-line Markdown or a completeness/factual-accuracy judgment.",
+          "Language links, citations, and category apparatus add substantial clutter despite main selection.",
+          "Reader output declares partial, scripting false, and styling false; visual/hidden-content fidelity was not verified."
+        ],
+        "inputs": {
+          "live03/1/RESULT.json": "05c236936cca70dc340a21c28e776da9449a9f4a91937a459dbf0dcfa98e0b89",
+          "live03/1/discovery.json": "224fd8e74a6335df0580dd33c6d5aa037b9a1d56192e311a4a7fd3f345fb4729",
+          "live03/1/extracted.md": "b14c5a4253b3c4d1252d94f5092272eb041ebab4b6e02ac923720c3d1831e8cf",
+          "live03/1/extraction.json": "85b9972ff7fa9b277c59ec60b6247cc48501470db180451b15eba9c5a414394e"
+        }
+      },
+      {
+        "ordinal": 2,
+        "site": "RunRepeat",
+        "contentKind": "shoe-review",
+        "targetUrl": "https://runrepeat.com/brooks-revel-max",
+        "verdict": "useful-substantive-review-observed",
+        "usefulSubstantiveContentObserved": true,
+        "nativeActivationEvidence": {
+          "source": "live03/2/RESULT.json",
+          "recordedPassed": true,
+          "recordedActivationPassed": true,
+          "action": "click",
+          "selectedReference": "e928",
+          "selectedLabel": "Brooks Revel Max Sep 15, 2026",
+          "discoveryMatches": 1,
+          "targetDocumentReference": "e5243",
+          "events": [
+            "mousedown",
+            "mouseup",
+            "click"
+          ],
+          "recordedGetRequests": 2,
+          "recordedResponseStatuses": [
+            200,
+            200
+          ],
+          "recordedRedirects": 0,
+          "recordedMockedRequests": 0,
+          "machineContentSuccess": null,
+          "machineContentVerified": false
+        },
+        "inspection": {
+          "markdown": "live03/2/extracted.md",
+          "coverage": "full-extracted-markdown",
+          "fullMarkdownRead": true,
+          "bytes": 19465,
+          "lines": 839,
+          "inspectedLineRanges": [
+            [
+              1,
+              180
+            ],
+            [
+              181,
+              400
+            ],
+            [
+              401,
+              620
+            ],
+            [
+              621,
+              839
+            ]
+          ],
+          "selection": "main-content-v1: unique main",
+          "extractionDeclaredPartial": true
+        },
+        "excerpts": [
+          {
+            "path": "live03/2/extracted.md",
+            "line": 1,
+            "text": "## Our verdict",
+            "role": "review opening"
+          },
+          {
+            "path": "live03/2/extracted.md",
+            "line": 41,
+            "text": "Narrow toebox may bother wide feet",
+            "role": "specific con in the source review"
+          },
+          {
+            "path": "live03/2/extracted.md",
+            "line": 89,
+            "text": "selected structure only; associations unspecified",
+            "role": "explicit table-fidelity limitation"
+          },
+          {
+            "path": "live03/2/extracted.md",
+            "line": 816,
+            "text": "### Price",
+            "role": "review content persists to the final section"
+          }
+        ],
+        "usefulContent": [
+          {
+            "path": "live03/2/extracted.md",
+            "lineStart": 1,
+            "lineEnd": 69,
+            "description": "Verdict, pros/cons, audience recommendations, and comparisons; substantially more than a product title or teaser."
+          },
+          {
+            "path": "live03/2/extracted.md",
+            "lineStart": 73,
+            "lineEnd": 212,
+            "description": "Cushioning, shock absorption, energy return, stack, and measured-versus-stated drop discussion with numerical result rows."
+          },
+          {
+            "path": "live03/2/extracted.md",
+            "lineStart": 302,
+            "lineEnd": 375,
+            "description": "Fit and toebox measurements with explanatory prose."
+          },
+          {
+            "path": "live03/2/extracted.md",
+            "lineStart": 648,
+            "lineEnd": 698,
+            "description": "Outsole wear and thickness discussion with retained test-result values."
+          },
+          {
+            "path": "live03/2/extracted.md",
+            "lineStart": 816,
+            "lineEnd": 839,
+            "description": "Price/value discussion and comparison figures; source claims only, not current buying advice or verified pricing."
+          }
+        ],
+        "accessEvidence": {
+          "blockingInterstitialObserved": false,
+          "proseInspectionScope": "full extracted Markdown",
+          "savedBarrierFieldPresent": false,
+          "savedFailureFieldPresent": false,
+          "fullMarkdownAccessMarkerMatches": 0,
+          "universalBarrierAbsenceClaim": false
+        },
+        "limitations": [
+          "Full inspection of saved Markdown does not establish full website or rendered-page coverage.",
+          "Images/video are labels or omitted; tables explicitly disclaim associations; chart/range text is flattened.",
+          "Repeated comparison labels and a size-vote Submit control remain; no form was exercised.",
+          "Measurements, standards, recommendations, and prices were not independently checked."
+        ],
+        "inputs": {
+          "live03/2/RESULT.json": "7f6cdfca2630ab3c56e46a44804b18be536153ded6c178813253493e2ebd8ca9",
+          "live03/2/discovery.json": "0ee83fe42973f32e29b1b73f1ca8905c97c2c6af0f2dc3810999ce23b9ff5795",
+          "live03/2/extracted.md": "45225ae2ae57b64edf01e4badce6b198ce3027d208af4e8345346dbffc7daefb",
+          "live03/2/extraction.json": "d20b17daa00e1b97ba21a8d9823ef8dc124f4e0152160cd3e06de62114aa33d9"
+        }
+      },
+      {
+        "ordinal": 3,
+        "site": "Cambridge Dictionary",
+        "contentKind": "dictionary-entry",
+        "targetUrl": "https://dictionary.cambridge.org/dictionary/english/patronize",
+        "verdict": "useful-substantive-dictionary-content-observed",
+        "usefulSubstantiveContentObserved": true,
+        "nativeActivationEvidence": {
+          "source": "live03/3/RESULT.json",
+          "recordedPassed": true,
+          "recordedActivationPassed": true,
+          "action": "enter",
+          "selectedReference": "e3658",
+          "selectedLabel": "patronize",
+          "discoveryMatches": 1,
+          "targetDocumentReference": "e9720",
+          "events": [
+            "keydown",
+            "keypress",
+            "click",
+            "keyup"
+          ],
+          "recordedGetRequests": 2,
+          "recordedResponseStatuses": [
+            200,
+            200
+          ],
+          "recordedRedirects": 0,
+          "recordedMockedRequests": 0,
+          "machineContentSuccess": null,
+          "machineContentVerified": false
+        },
+        "inspection": {
+          "markdown": "live03/3/extracted.md",
+          "coverage": "full-extracted-markdown",
+          "fullMarkdownRead": true,
+          "bytes": 20400,
+          "lines": 415,
+          "inspectedLineRanges": [
+            [
+              1,
+              100
+            ],
+            [
+              101,
+              205
+            ],
+            [
+              206,
+              310
+            ],
+            [
+              311,
+              415
+            ]
+          ],
+          "selection": "main-content-v1: unique main",
+          "extractionDeclaredPartial": true,
+          "recordedTokenizerIssues": 2
+        },
+        "excerpts": [
+          {
+            "path": "live03/3/extracted.md",
+            "line": 1,
+            "text": "# Meaning of patronize in English",
+            "role": "entry identity"
+          },
+          {
+            "path": "live03/3/extracted.md",
+            "line": 9,
+            "text": "ACT SUPERIOR",
+            "role": "first explicitly labeled sense"
+          },
+          {
+            "path": "live03/3/extracted.md",
+            "line": 65,
+            "text": "BE CUSTOMER",
+            "role": "second explicitly labeled sense"
+          },
+          {
+            "path": "live03/3/extracted.md",
+            "line": 175,
+            "text": "## Examples of patronize",
+            "role": "substantive usage material"
+          },
+          {
+            "path": "live03/3/extracted.md",
+            "line": 407,
+            "text": "has been added to list",
+            "role": "inert UI residue, not evidence of an action"
+          }
+        ],
+        "usefulContent": [
+          {
+            "path": "live03/3/extracted.md",
+            "lineStart": 1,
+            "lineEnd": 17,
+            "description": "Entry, pronunciations, verb label, spelling note, condescension definition, and usage example."
+          },
+          {
+            "path": "live03/3/extracted.md",
+            "lineStart": 65,
+            "lineEnd": 71,
+            "description": "Regular-customer sense and restaurant example."
+          },
+          {
+            "path": "live03/3/extracted.md",
+            "lineStart": 121,
+            "lineEnd": 173,
+            "description": "American and Business English treatments, including customer, condescension, and support/funding senses."
+          },
+          {
+            "path": "live03/3/extracted.md",
+            "lineStart": 175,
+            "lineEnd": 241,
+            "description": "Corpus examples with attribution and a source disclaimer."
+          },
+          {
+            "path": "live03/3/extracted.md",
+            "lineStart": 245,
+            "lineEnd": 361,
+            "description": "Translation snippets and destination links; translations were not independently verified."
+          }
+        ],
+        "accessEvidence": {
+          "blockingInterstitialObserved": false,
+          "proseInspectionScope": "full extracted Markdown",
+          "savedBarrierFieldPresent": false,
+          "savedFailureFieldPresent": false,
+          "fullMarkdownAccessMarkerMatches": 0,
+          "universalBarrierAbsenceClaim": false
+        },
+        "limitations": [
+          "Related-vocabulary and navigation links, duplicated Add to word list text, and other inert UI residue remain.",
+          "Additional language names precede translation snippets rather than preserving complete visual associations.",
+          "Two tokenizer issues are reported without detailed effects; output declares partial, scripting false, and styling false.",
+          "Audio, widgets, and lists were not exercised; definitions, pronunciations, translations, and examples were not fact-checked."
+        ],
+        "inputs": {
+          "live03/3/RESULT.json": "898239dc75667db0d9125ad90d98d05bae5d2eb28a366fe334d3adde48df60e2",
+          "live03/3/discovery.json": "05a993609feee95fba82e8ba5b618d72ece584ff70d635e52653ce0ec715f9bd",
+          "live03/3/extracted.md": "e9d9da54f02ce79ba7e296526c81809014276b05c5e23dc49978f9335d5e8155",
+          "live03/3/extraction.json": "438d9f1819ffa09c357c987844d8aa94828b1e8540baf8868453132de8177c72"
+        }
+      }
+    ]
+  },
+  "safety": {
+    "successfulGroupsAudited": 30,
+    "allRecordedGroupsClosed": true,
+    "allObservedRequestsAndSocketsClosed": true,
+    "credentialsObserved": false,
+    "pageScripts": 0,
+    "safejsExecutions": 0,
+    "offlineKernelNetworkDenied": true,
+    "offlineIoAttempts": 0
+  },
+  "evidence": {
+    "AUDIT.json": "e44973de5fadbe2d552b14dcf142a21beeee5e8b54cfd166780494bf0b2f94a2",
+    "SOURCE-baseline.json": "400b02b43af89ff7583220210d5d5feaf9d8caa52b9a7429c6a191a9845db01a",
+    "COMPILED-baseline.json": "0161e78df1bbca8ad4a8c3770a803d2d02bff396e400d6c98a57d9488514dee0",
+    "SOURCE-release02.json": "d056edbed1cd44da5a86c87619317575d664292cbce867974baa741b02ba94ed",
+    "COMPILED-release02.json": "977ef60f2478729f49673d5e86a6f1ba2f44b277eb2c22f9f6703a828b979940",
+    "OVERLAY-release02.json": "5f243b8a9ea76825e98982d6d3bd0d3f821505a8b2f1f5c6b4c4f296964e3482",
+    "CHECK-baseline.json": "c9025ecfc92448c758d29f36adcebac0a736f0994edac401978bc3fd5293fd5a",
+    "CHECK-release02.json": "c9025ecfc92448c758d29f36adcebac0a736f0994edac401978bc3fd5293fd5a",
+    "CHECK-red02.json": "d476f028f57f7bda09c5e8084012e698f234c51881dcbc98f6983adff717a024",
+    "native-baseline.json": "3fd11deaeeeadf04019c9cae070e110f004d1cb73b86c03623df8a48afe0dfc8",
+    "native-release02.json": "4a3d4905b8bc5ad1d074a9284aaa95fe71b9cc6ecd75728766cfabb04b8c968b",
+    "native-red02.json": "37d17d72c21fcc93264a399752423c310c8a6ce12b5483e9be727a18f8bdb860",
+    "CORPUS03.json": "0cf6607ab61c708913687535d95780b143576a4c3ae05df9f5e14dea8be9a363",
+    "PREFLIGHT03.json": "2be635d968856aad572ae7005fef549b7f755464c947bd1b55d050c9e3641692",
+    "SCOPE03.md": "2180b3b95d77ff817f958237a74f0cf8d14855aa6b6ac2dacdb83ad8ff1c6346",
+    "activate03.mjs": "fd42f10ae1b5915c3e412e482af36bd0bb03fc00d078edb5cd8d3d405e7a3971",
+    "observe03.cjs": "1f68f956a8174256133d24f050b43453e998d4dd4b4a96f91b1c13d72f95c2d9",
+    "run-workflows03.py": "e93e35bf2941db5184d91f081e118b2eda085796e0d815cb04047f0cc522e6f0",
+    "REVIEW03.md": "91002bfdb0dcfcb3ac84fe27f93a72bedf3e2933b45e416e342ea1d0ad79ad08",
+    "REVIEW03-DECISION.json": "5ca11dc30b6760816dfd2690a720492968e316892e9a4674713f0e50787febf8",
+    "LIVE-APPROVAL03.json": "1ea1318ac7cb5cb218d4c90460cd5b4899ad93e420ba419d701982448075543f",
+    "CACHE-REVIEW.md": "4574ffb33e53b74aeb683c7f2c6e11f35cc41cb7bdd76bd0f3cf0e5f14c8b93f",
+    "LIVE-CONTENT-REVIEW.md": "81043b0921baa313ee325ea06926a2671d872b9a60b253d77f0353d6901e7c56",
+    "LIVE-CONTENT-REVIEW.json": "857c9ba512b30bf1a6d3a3ab95406418f73be9cd962f0b53c021c951c6805f81",
+    "OFFLINE03-CHECK.json": "28721188d50f93748032fd055d8442ed6b36bb816dd6e035baa46a710a79646d",
+    "LIVE03-CHECK.json": "28721188d50f93748032fd055d8442ed6b36bb816dd6e035baa46a710a79646d",
+    "OFFLINE03-EXECUTIONS.json": "e22dd995d8a08c71861b818de6a5016951f497bf72b444774668ee997a3eb816",
+    "LIVE03-EXECUTIONS.json": "07c22e69f0a2e6fadeda70e9c01b1fff786128072cfec231c69bb2d24acd81a5",
+    "CACHE-COMPARISON-SCOPE.md": "1d5f59acdc73baf9e400f1f3a561d58a8199d51253fac07a7e9fd92f0f7d3ad3",
+    "activate-cache.mjs": "18428910a86820fe40612ff4ae1e25782c919bf7ff14e6a8a84b2ba017f9d248",
+    "run-cache-comparison.py": "a512780fe550dba6a9d5039c2614c35c6ea141e67e2c507cc7ccab7a89886685",
+    "cache-comparison/RECORDS.json": "0e1ef312b64a7b69ac21b8514f1fd62bc7152d82966cdd1c80484978af266c01",
+    "cache-comparison/SUMMARY.json": "a084981fbd1f8b0d2661baaa223f71e7e099b2c4da34b3e6324868f6eae58c6f",
+    "profile/SUMMARY.json": "935a7ee8bf875291aeb996a67533b247b5b0fefa3566c7129c9314489f09e98b",
+    "live03/1/RESULT.json": "05c236936cca70dc340a21c28e776da9449a9f4a91937a459dbf0dcfa98e0b89",
+    "live03/1/INVOCATION.json": "5ee64894a5388bf9d10df9c8c833da70108f592bfb14fb95ef8ff188fc38422d",
+    "live03/1/EXECUTION.json": "a0b1771aba4fbe8f9f0ea34f3be4de464790006113f6b510a1de2f5de6b16fe9",
+    "live03/1/http-events.jsonl": "f353d1fd451488f6496657c0b3025bd1b459f2b39a1e92510ce681fbb2ad0a8c",
+    "live03/1/extraction.json": "85b9972ff7fa9b277c59ec60b6247cc48501470db180451b15eba9c5a414394e",
+    "live03/1/extracted.md": "b14c5a4253b3c4d1252d94f5092272eb041ebab4b6e02ac923720c3d1831e8cf",
+    "live03/1/response-1.json": "9721c2aee4e29b5b38f712b310f1533b06c168c3aea7c70108b8830d90efb6d5",
+    "live03/1/response-2.json": "42f7c6de899957828a7c84b2f352b9a21097044ae559af76e8d7a37511b592fb",
+    "live03/2/RESULT.json": "7f6cdfca2630ab3c56e46a44804b18be536153ded6c178813253493e2ebd8ca9",
+    "live03/2/INVOCATION.json": "ad13187e867cf297eafb5f438bca665de94afe67af7fcc47349d94092da625b6",
+    "live03/2/EXECUTION.json": "7f09d23e647e1b360fede48a1661109906e6d5dfc5167b8dade6641f00ba45f7",
+    "live03/2/http-events.jsonl": "30edcbc3da18c526196c256f8c08ac13e2a12f3e04db2394c4b52543c3b1e5b3",
+    "live03/2/extraction.json": "d20b17daa00e1b97ba21a8d9823ef8dc124f4e0152160cd3e06de62114aa33d9",
+    "live03/2/extracted.md": "45225ae2ae57b64edf01e4badce6b198ce3027d208af4e8345346dbffc7daefb",
+    "live03/2/response-1.json": "6c3f2856b075e2762ec75778aa9c0cdba1858e640d699af1b9c28041e3177718",
+    "live03/2/response-2.json": "07dba99f8b4a03658b3a7f5091fece25eecbfb6721a80854d2451a2b01d7dd36",
+    "live03/3/RESULT.json": "898239dc75667db0d9125ad90d98d05bae5d2eb28a366fe334d3adde48df60e2",
+    "live03/3/INVOCATION.json": "60e0e63ca28e0a789be82c442cc82fd9a2829698557a1e19587a1230df778e95",
+    "live03/3/EXECUTION.json": "106f1ac9574f6e92679e0d8ccba98b07d838892102476ccbb56f2837ffc8b67e",
+    "live03/3/http-events.jsonl": "d7ac76fce73c5dd53062dd37a428cbbad039a65e5389ddcf7436786da40c3974",
+    "live03/3/extraction.json": "438d9f1819ffa09c357c987844d8aa94828b1e8540baf8868453132de8177c72",
+    "live03/3/extracted.md": "e9d9da54f02ce79ba7e296526c81809014276b05c5e23dc49978f9335d5e8155",
+    "live03/3/response-1.json": "a78be76eeee0b0ca16d63bb9b2256bc055e8656977ac84b6eff58862df653096",
+    "live03/3/response-2.json": "d7bfc343f3ade359f2374ca411454eb5558779a78188d1e7b34f0c36ad92fd31"
+  },
+  "limitations": [
+    "Citation-proxy corpus is not measured global agent traffic",
+    "Live activation uses pre-cache runtime; cache validated only in native tests and saved-body comparison",
+    "Nonempty extraction is not substantive-content or factual-verification success",
+    "Three timing samples per variant/page; small mixed local observations without statistical confidence",
+    "30 audited successful workflow groups exclude separate profile and failed synthetic experiment",
+    "Wider dynamic content, challenge/handoff, credential/passkey, SafeJS and interactive gates remain open"
+  ]
+}

@@ -9,6 +9,8 @@ export interface FontFamily {
 
 const maxCodeUnits = 4096;
 const maxFamilies = 64;
+const maxCachedNativeFonts = 64;
+const nativeFontCache = new Map<string, ReturnType<typeof resolveNativeFont>>();
 const genericFamilies = new Set([
 	"serif",
 	"sans-serif",
@@ -184,17 +186,36 @@ export function resolveNativeFont(value: string): Readonly<{
 	family: string | null;
 	kind: "named" | "generic" | "fallback";
 }> {
+	const cached =
+		typeof value === "string" && value.length <= maxCodeUnits
+			? nativeFontCache.get(value)
+			: undefined;
+	if (cached) return { ...cached };
 	const families = parseFontFamily(value);
 	if (!families)
 		throw new AgentBrowserError(
 			"unsupported",
 			"Unsupported or unresolved native font-family value",
 		);
+	let selected: ReturnType<typeof resolveNativeFont> = {
+		font: bitmapFont,
+		family: null,
+		kind: "fallback",
+	};
 	for (const family of families) {
-		if (family.generic)
-			return { font: bitmapFont, family: family.name, kind: "generic" };
-		if (family.name.toLowerCase() === bitmapFont.family.toLowerCase())
-			return { font: bitmapFont, family: bitmapFont.family, kind: "named" };
+		if (family.generic) {
+			selected = { font: bitmapFont, family: family.name, kind: "generic" };
+			break;
+		}
+		if (family.name.toLowerCase() === bitmapFont.family.toLowerCase()) {
+			selected = { font: bitmapFont, family: bitmapFont.family, kind: "named" };
+			break;
+		}
 	}
-	return { font: bitmapFont, family: null, kind: "fallback" };
+	if (nativeFontCache.size === maxCachedNativeFonts) {
+		const oldest = nativeFontCache.keys().next().value;
+		if (oldest !== undefined) nativeFontCache.delete(oldest);
+	}
+	nativeFontCache.set(value, Object.freeze(selected));
+	return { ...selected };
 }

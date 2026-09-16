@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Native link activation and bounded font cache
+
+- Three fresh native workflows discover and activate actual homepage links:
+  Wikipedia and RunRepeat click, Cambridge targeted Enter. Six GETs, no redirects
+  or retries; expected events and exact installed destination URLs verified.
+  See reports/native-link-activation-2026-09-16.md for all URLs and limitations.
+- Added a bounded64-entry exact-string FIFO font-resolution cache after profiling
+  repeated parsing during native layout. Fresh returned records preserve caller
+  isolation; invalid inputs and public parsing/normalization remain uncached.
+- Clean candidate:390 passing tests in10 manifest files,26 new cases; build/types/
+  format/lint pass. Final tests on old production:12pass/14 expected failures.
+  No full-manifest claim; pre-existing work and its three test entries stay separate.
+- Eighteen isolated saved-body comparisons preserve output hashes/events. Local
+  three-sample median reductions:Wikipedia3.56%, RunRepeat2.29%, Cambridge-0.67%.
+  Small mixed observations, not a broad speedup; the cache itself was not run live.
+- Thirty successful workflow groups audited closed; six live request/socket pairs
+  close, offline guards have zero attempts. Exact phase checks and native
+  redirect:error replace the rejected experimental redirect-following harness.
+- Original100-page results stay unchanged. Broader dynamic content, challenge
+  handoff, SafeJS, credential/passkey and interactive acceptance remain open.
+
 ### Source-linked content-page coverage
 
 - Followed eight exact links from saved citation-proxy homepages with the pinned

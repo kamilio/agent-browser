@@ -424,6 +424,7 @@
   "src/font-family-baseline.test.ts",
   "src/font-family.test.ts",
   "src/font-family-style.test.ts",
+  "src/native-font-resolution-cache.test.ts",
   "src/text-decoration-baseline.test.ts",
   "src/css-text-decoration.test.ts",
   "src/css-text-underline-offset.test.ts",
