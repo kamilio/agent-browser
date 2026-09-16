@@ -84,8 +84,16 @@ export function documentSvgScene(
 	tree: DocumentTree,
 	id: number,
 	charge: (amount: number) => void,
-	options: { readonly outerOpacityHandled?: boolean } = {},
+	options: {
+		readonly outerOpacityHandled?: boolean;
+		readonly clipReference?: (fragment: string) => number | undefined;
+	} = {},
 ): SvgScene {
+	if (
+		options.clipReference !== undefined &&
+		typeof options.clipReference !== "function"
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid SVG clip resolver");
 	return buildSvgScene(
 		tree,
 		id,
@@ -93,6 +101,7 @@ export function documentSvgScene(
 		"inline",
 		undefined,
 		options.outerOpacityHandled,
+		options.clipReference,
 	);
 }
 
@@ -137,6 +146,7 @@ function buildSvgScene(
 	context: "inline" | "image",
 	styleOwner?: DocumentStyles,
 	outerOpacityHandled = false,
+	clipReference?: (fragment: string) => number | undefined,
 ): SvgScene {
 	let sourceCodeUnits = 0;
 	let nodeCount = 0;
@@ -339,9 +349,24 @@ function buildSvgScene(
 		} catch {
 			return undefined;
 		}
-		const target = clipReferenceId(fragment);
+		const target = clipReference
+			? clipReference(fragment)
+			: clipReferenceId(fragment);
 		if (target === undefined) return undefined;
+		if (clipReference && (!Number.isSafeInteger(target) || target < 1))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid SVG clip resolver result",
+			);
 		const node = tree.get(target);
+		if (
+			clipReference &&
+			(node.kind !== "element" || node.attributes.id !== fragment)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"SVG clip resolver returned a mismatched ID",
+			);
 		return node.kind === "element" &&
 			elementNamespace(node) === svgNamespace &&
 			node.tagName === "clipPath"

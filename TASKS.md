@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Formatting-owned SVG clip references
+
+- Share one bounded, lazy document ID index across embedded SVG scenes per
+  formatting pass. Preserve first connected ID, document order, namespace
+  shadowing, detached/template exclusions and fresh mutation visibility.
+  Standalone fallback remains unchanged; owner-context admission/accounting
+  intentionally uses existing formatting limits rather than each scene's
+  smaller document-search cap. Geometry limits remain independently enforced.
+- Final589pass/0 in8 explicit native-manifest files,70 new cases. Exact final
+  tests on old production211pass/52 expected new-case failures. Build/types/format
+  pass; lint retains22 verified pre-existing diagnostics across4 owned files,
+  with0 new diagnostics. No full-manifest or unrelated dirty-runtime claim.
+- Same saved5345-node CNET source now constructs a partial formatting tree with
+  all32 SVG scenes; geometry matches all29 prior standalone-inspection successes,
+  and3 footer scenes newly construct. This does not mean the old formatter
+  constructed29 scenes: it aborted. Scene source accounting differs.
+- Actual full-source click advances past the SVG limit but still rejects
+  unsupported CSS/layout, including13 unloaded external stylesheets. No click
+  event or destination request occurs. All6 baseline/core/final source replays
+  are kernel-network-denied; no fresh website validation or live recovery claim.
+- See FORMATTING-SVG-REFERENCES.md and
+  reports/formatting-svg-references-2026-09-16.md for the trusted synchronous host
+  callback contract, regression controls and failures. The100-page checklist
+  remains reports/agent-citation-revalidation-v2.md:33 useful/67 other historical
+  outcomes, not a global agent-visit ranking. Prioritize source-linked content
+  workflows next; CSS/layout, human access handoff, actual SafeJS, credentials,
+  passkeys and real-input acceptance remain separate. Overall goal stays active.
+
 ### Lazy bounded SVG clip-reference prefixes
 
 - Replace eager whole-document clip-ID indexing with a shared resumable

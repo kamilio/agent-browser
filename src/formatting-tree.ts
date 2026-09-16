@@ -324,6 +324,37 @@ export function buildFormattingTree(
 				"Formatting work limit exceeded",
 			);
 	};
+	const svgClipReferences = new Map<string, number>();
+	let svgClipNodes: ReturnType<DocumentTree["walk"]> | undefined;
+	let indexedSvgClipNodes = 0;
+	const clipReference = (fragment: string): number | undefined => {
+		charge(fragment.length + 1);
+		const known = svgClipReferences.get(fragment);
+		if (known !== undefined) return known;
+		svgClipNodes ??= tree.walk();
+		while (true) {
+			const entry = svgClipNodes.next();
+			if (entry.done) return undefined;
+			charge();
+			if (++indexedSvgClipNodes > limits.maxOwnedNodes)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Formatting fragment node limit exceeded",
+				);
+			if (entry.value.depth > limits.maxDepth)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Formatting fragment depth limit exceeded",
+				);
+			const { node } = entry.value;
+			const identifier = node.attributes.id;
+			if (node.kind !== "element" || identifier === undefined) continue;
+			charge(identifier.length + 1);
+			if (!svgClipReferences.has(identifier))
+				svgClipReferences.set(identifier, node.id);
+			if (identifier === fragment) return svgClipReferences.get(fragment);
+		}
+	};
 	const languages = new Map<number, string>();
 	const contentLanguage = (id: number): string => {
 		const visited: number[] = [];
@@ -1235,6 +1266,7 @@ export function buildFormattingTree(
 					);
 				const svg = documentSvgScene(tree, id, charge, {
 					outerOpacityHandled: true,
+					clipReference,
 				});
 				const intrinsic = svgIntrinsicSize(svg, styles.box(id));
 				return [

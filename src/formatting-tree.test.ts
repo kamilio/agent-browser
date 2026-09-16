@@ -5,6 +5,11 @@ import { documentGeometry } from "./document-geometry.js";
 import { layoutDocument } from "./document-layout.js";
 import { rasterizeDocument } from "./document-raster.js";
 import {
+	htmlNamespace,
+	mathmlNamespace,
+	svgNamespace,
+} from "./dom-namespaces.js";
+import {
 	type FormattingTree,
 	buildFormattingTree,
 	resolveDocumentBlockWidths,
@@ -80,6 +85,483 @@ function verifyTree(formatting: FormattingTree) {
 		);
 	expect(formatting.nodes[formatting.root].parent).toBeNull();
 }
+
+function formattingClipFixture(references = ["Crop"]) {
+	const owner = fixture(
+		'<div id="definitions" style="display:none"></div><main></main><div id="tail" style="display:none"></div>',
+	);
+	const { tree, id } = owner;
+	const definitions = id("#definitions");
+	const tail = id("#tail");
+	const main = id("main");
+	const targets: number[] = [];
+	const roots = references.map((reference) => {
+		const root = tree.createParserElement(
+			"svg",
+			{ width: "12", height: "12", viewBox: "0 0 12 12" },
+			svgNamespace,
+		);
+		const target = tree.createParserElement(
+			"rect",
+			{
+				width: "12",
+				height: "12",
+				fill: "red",
+				"clip-path": `url(#${reference})`,
+			},
+			svgNamespace,
+		);
+		tree.append(root, target);
+		tree.append(main, root);
+		targets.push(target);
+		return root;
+	});
+	const definition = (name = "Crop", width = "6", parent = definitions) => {
+		const root = tree.createParserElement("svg", {}, svgNamespace);
+		const clip = tree.createParserElement(
+			"clipPath",
+			{ id: name },
+			svgNamespace,
+		);
+		const shape = tree.createParserElement(
+			"rect",
+			{ width, height: "12" },
+			svgNamespace,
+		);
+		tree.append(clip, shape);
+		tree.append(root, clip);
+		tree.append(parent, root);
+		return { root, clip, shape };
+	};
+	const padding = (count: number, parent = definitions) => {
+		for (let index = 0; index < count; index++)
+			tree.append(parent, tree.createElement("span"));
+	};
+	return { ...owner, definitions, tail, roots, targets, definition, padding };
+}
+
+function expectFormattingClip(
+	formatting: FormattingTree,
+	rootRef: string,
+	width?: number,
+) {
+	const node = formatting.nodes.find((entry) => entry.ref === rootRef);
+	expect(node?.kind).toBe("replaced");
+	const scene = node?.svg;
+	if (!scene) throw new Error(`Missing formatting SVG scene ${rootRef}`);
+	expect(scene.shapes).toHaveLength(1);
+	expect(scene.shapes[0].fill).toEqual([255, 0, 0, 255]);
+	expect(scene.shapes[0].path.map((segment) => segment.end)).toEqual([
+		{ x: 0, y: 0 },
+		{ x: 12, y: 0 },
+		{ x: 12, y: 12 },
+		{ x: 0, y: 12 },
+		{ x: 0, y: 0 },
+	]);
+	if (width === undefined) expect(scene.shapes[0].clips).toBeUndefined();
+	else {
+		const clips = scene.shapes[0].clips;
+		expect(clips).toHaveLength(1);
+		expect(clips?.[0].shapes).toHaveLength(1);
+		expect(clips?.[0].shapes[0].transform).toEqual([1, 0, 0, 1, 0, 0]);
+		expect(clips?.[0].shapes[0].path.map((segment) => segment.end)).toEqual([
+			{ x: 0, y: 0 },
+			{ x: width, y: 0 },
+			{ x: width, y: 12 },
+			{ x: 0, y: 12 },
+			{ x: 0, y: 0 },
+		]);
+	}
+	return scene;
+}
+
+it("resolves document clips beyond 4096 nodes across SVG roots and resumes for later IDs", () => {
+	const owner = formattingClipFixture(["First", "Earlier", "Later", "First"]);
+	const { tree, roots, padding, definition } = owner;
+	padding(4200);
+	definition("Earlier", "3");
+	const first = definition("First", "6");
+	padding(32);
+	definition("Later", "9");
+	expect(
+		[...tree.walk()].findIndex(({ node }) => node.id === first.clip),
+	).toBeGreaterThan(4096);
+	const revision = tree.revision;
+	const result = buildFormattingTree(tree);
+	for (const [index, width] of [6, 3, 9, 6].entries())
+		expectFormattingClip(result, tree.reference(roots[index]), width);
+	expect(result.issues).toEqual({});
+	expect(tree.revision).toBe(revision);
+});
+
+it.each(["Crop", "Missing"])(
+	"shares one document scan across repeated SVG roots for %s without timing assertions",
+	(reference) => {
+		const measure = (paddingCount: number, rootCount: number) => {
+			const owner = formattingClipFixture(Array(rootCount).fill(reference));
+			owner.padding(paddingCount);
+			owner.definition();
+			const result = buildFormattingTree(owner.tree);
+			for (const root of owner.roots)
+				expectFormattingClip(
+					result,
+					owner.tree.reference(root),
+					reference === "Crop" ? 6 : undefined,
+				);
+			return { ...owner, result };
+		};
+		const shortSingle = measure(0, 1);
+		const longSingle = measure(4200, 1);
+		const shortRepeated = measure(0, 6);
+		const longRepeated = measure(4200, 6);
+		const scanWork =
+			longSingle.result.metrics.work - shortSingle.result.metrics.work;
+		expect(scanWork).toBeGreaterThanOrEqual(4200);
+		expect(
+			longRepeated.result.metrics.work - shortRepeated.result.metrics.work,
+		).toBe(scanWork);
+		const maxWork = shortRepeated.result.metrics.work + scanWork;
+		const bounded = buildFormattingTree(longRepeated.tree, { maxWork });
+		for (const root of longRepeated.roots)
+			expectFormattingClip(
+				bounded,
+				longRepeated.tree.reference(root),
+				reference === "Crop" ? 6 : undefined,
+			);
+		expect(() =>
+			buildFormattingTree(longRepeated.tree, { maxWork: maxWork - 1 }),
+		).toThrow("Formatting work limit exceeded");
+	},
+);
+
+it("uses the first duplicate clip in document order rather than creation order or SVG-local order", () => {
+	const { tree, definitions, roots, definition } = formattingClipFixture();
+	const createdFirst = definition("Crop", "9");
+	const orderedFirst = definition("Crop", "3");
+	tree.insert(definitions, orderedFirst.root, createdFirst.root);
+	const local = tree.createParserElement(
+		"clipPath",
+		{ id: "Crop" },
+		svgNamespace,
+	);
+	tree.append(
+		local,
+		tree.createParserElement(
+			"rect",
+			{ width: "12", height: "12" },
+			svgNamespace,
+		),
+	);
+	tree.append(roots[0], local);
+	expectFormattingClip(buildFormattingTree(tree), tree.reference(roots[0]), 3);
+	tree.insert(definitions, createdFirst.root, orderedFirst.root);
+	expectFormattingClip(buildFormattingTree(tree), tree.reference(roots[0]), 9);
+});
+
+it.each([
+	["div", htmlNamespace],
+	["clipPath", htmlNamespace],
+	["clipPath", mathmlNamespace],
+	["rect", svgNamespace],
+])(
+	"honors a hidden first duplicate %s in namespace %s even when it is not a clip",
+	(tagName, namespace) => {
+		const { tree, definitions, roots, definition } = formattingClipFixture();
+		const blocker = tree.createParserElement(
+			tagName,
+			{ id: "Crop" },
+			namespace,
+		);
+		tree.append(definitions, blocker);
+		definition();
+		expectFormattingClip(buildFormattingTree(tree), tree.reference(roots[0]));
+		tree.remove(blocker);
+		expectFormattingClip(
+			buildFormattingTree(tree),
+			tree.reference(roots[0]),
+			6,
+		);
+	},
+);
+
+it("resolves hidden outside definitions but not their detached trees", () => {
+	const { tree, definitions, roots, definition } = formattingClipFixture();
+	const outside = definition();
+	const first = buildFormattingTree(tree);
+	expect(
+		first.nodes.some((node) => node.ref === tree.reference(definitions)),
+	).toBe(false);
+	expectFormattingClip(first, tree.reference(roots[0]), 6);
+	tree.remove(outside.root);
+	expectFormattingClip(buildFormattingTree(tree), tree.reference(roots[0]));
+	tree.append(definitions, outside.root);
+	expectFormattingClip(buildFormattingTree(tree), tree.reference(roots[0]), 6);
+});
+
+it("excludes template-content clip IDs from the document reference scan", () => {
+	const { tree, ref } = fixture(
+		'<template><svg><clipPath id="Crop"><rect width="6" height="12"/></clipPath></svg></template><main><svg width="12" height="12"><rect width="12" height="12" fill="red" clip-path="url(#Crop)"/></svg></main>',
+	);
+	expect(
+		[...tree.walkIncludingTemplateContents()].some(
+			({ node }) => node.attributes.id === "Crop",
+		),
+	).toBe(true);
+	expect(
+		[...tree.walk()].some(({ node }) => node.attributes.id === "Crop"),
+	).toBe(false);
+	expectFormattingClip(buildFormattingTree(tree), ref("main svg"));
+});
+
+it("rebuilds found and missing clip IDs after mutations without changing earlier scenes", () => {
+	const { tree, roots, targets, definition } = formattingClipFixture();
+	const missing = buildFormattingTree(tree);
+	expectFormattingClip(missing, tree.reference(roots[0]));
+	const outside = definition();
+	const clipped = buildFormattingTree(tree);
+	expectFormattingClip(clipped, tree.reference(roots[0]), 6);
+	tree.setAttribute(outside.shape, "width", "3");
+	expectFormattingClip(buildFormattingTree(tree), tree.reference(roots[0]), 3);
+	tree.setAttribute(outside.clip, "id", "Renamed");
+	expectFormattingClip(buildFormattingTree(tree), tree.reference(roots[0]));
+	tree.setAttribute(targets[0], "clip-path", "url(#Renamed)");
+	expectFormattingClip(buildFormattingTree(tree), tree.reference(roots[0]), 3);
+	expectFormattingClip(missing, tree.reference(roots[0]));
+	expectFormattingClip(clipped, tree.reference(roots[0]), 6);
+});
+
+it("completes a bounded document scan for missing clips including hidden trailing nodes", () => {
+	const { tree, roots, tail, padding } = formattingClipFixture(["Missing"]);
+	const short = buildFormattingTree(tree);
+	padding(4200, tail);
+	const result = buildFormattingTree(tree);
+	expectFormattingClip(result, tree.reference(roots[0]));
+	expect(result.metrics.work - short.metrics.work).toBeGreaterThanOrEqual(4200);
+	expect(() =>
+		buildFormattingTree(tree, { maxWork: short.metrics.work }),
+	).toThrow("Formatting work limit exceeded");
+	expectFormattingClip(
+		buildFormattingTree(tree, { maxWork: result.metrics.work }),
+		tree.reference(roots[0]),
+	);
+});
+
+it.each(["Crop", "Missing"])(
+	"charges %s reference scanning to a custom formatting work budget",
+	(reference) => {
+		const { tree, roots, targets, padding, definition } = formattingClipFixture(
+			[reference],
+		);
+		padding(4200);
+		definition();
+		tree.setAttribute(targets[0], "clip-path", "none");
+		const baseline = buildFormattingTree(tree);
+		const maxWork = baseline.metrics.work + 1000;
+		expectFormattingClip(
+			buildFormattingTree(tree, { maxWork }),
+			tree.reference(roots[0]),
+		);
+		tree.setAttribute(targets[0], "clip-path", `url(#${reference})`);
+		const revision = tree.revision;
+		expect(() => buildFormattingTree(tree, { maxWork })).toThrow(
+			"Formatting work limit exceeded",
+		);
+		expect(tree.revision).toBe(revision);
+		expectFormattingClip(
+			buildFormattingTree(tree),
+			tree.reference(roots[0]),
+			reference === "Crop" ? 6 : undefined,
+		);
+	},
+);
+
+it("uses the formatting depth boundary for outside clip lookup beyond SVG depth 64", () => {
+	const { tree, definitions, roots, definition } = formattingClipFixture();
+	let parent = definitions;
+	for (let depth = 0; depth < 70; depth++) {
+		const child = tree.createElement("div");
+		tree.append(parent, child);
+		parent = child;
+	}
+	const outside = definition("Crop", "6", parent);
+	const depth = [...tree.walk()].find(
+		({ node }) => node.id === outside.clip,
+	)?.depth;
+	if (depth === undefined) throw new Error("Missing outside clip depth");
+	expect(depth).toBeGreaterThan(64);
+	expectFormattingClip(
+		buildFormattingTree(tree, { maxDepth: depth }),
+		tree.reference(roots[0]),
+		6,
+	);
+	expect(() => buildFormattingTree(tree, { maxDepth: depth - 1 })).toThrow(
+		/Formatting .*depth limit exceeded/,
+	);
+});
+
+it("does not turn hidden-tail depth exhaustion for a missing clip into an unclipped success", () => {
+	const { tree, roots, targets, tail, definition } = formattingClipFixture();
+	definition();
+	let parent = tail;
+	for (let depth = 0; depth < 32; depth++) {
+		const child = tree.createElement("div");
+		tree.append(parent, child);
+		parent = child;
+	}
+	expectFormattingClip(
+		buildFormattingTree(tree, { maxDepth: 16 }),
+		tree.reference(roots[0]),
+		6,
+	);
+	tree.setAttribute(targets[0], "clip-path", "url(#Missing)");
+	expect(() => buildFormattingTree(tree, { maxDepth: 16 })).toThrow(
+		/Formatting .*depth limit exceeded/,
+	);
+	expectFormattingClip(buildFormattingTree(tree), tree.reference(roots[0]));
+});
+
+it("does not scan or charge a large unrelated identifier after an already resolved clip", () => {
+	const { tree, roots, tail, definition } = formattingClipFixture();
+	definition();
+	const baseline = buildFormattingTree(tree);
+	tree.append(tail, tree.createElement("span", { id: "x".repeat(262145) }));
+	const result = buildFormattingTree(tree, { maxWork: baseline.metrics.work });
+	expect(result.metrics.work).toBe(baseline.metrics.work);
+	expectFormattingClip(result, tree.reference(roots[0]), 6);
+});
+
+it("charges examined irrelevant identifier lengths to formatting work rather than SVG source limits", () => {
+	const { tree, definitions, roots, definition } = formattingClipFixture();
+	const unrelated = tree.createElement("span", { id: "x" });
+	tree.append(definitions, unrelated);
+	definition();
+	const baseline = buildFormattingTree(tree);
+	const initialScene = expectFormattingClip(
+		baseline,
+		tree.reference(roots[0]),
+		6,
+	);
+	const identifier = "x".repeat(262145);
+	tree.setAttribute(unrelated, "id", identifier);
+	const revision = tree.revision;
+	expect(() =>
+		buildFormattingTree(tree, {
+			maxWork: baseline.metrics.work + identifier.length - 2,
+		}),
+	).toThrow("Formatting work limit exceeded");
+	const result = buildFormattingTree(tree);
+	const scene = expectFormattingClip(result, tree.reference(roots[0]), 6);
+	expect(result.metrics.work - baseline.metrics.work).toBeGreaterThanOrEqual(
+		identifier.length - 1,
+	);
+	expect(scene.sourceCodeUnits).toBe(initialScene.sourceCodeUnits);
+	expect(tree.revision).toBe(revision);
+});
+
+it("honors the document owned-node boundary including detached nodes during full-document clip lookup", () => {
+	const { tree, roots, padding, definition } = formattingClipFixture();
+	padding(4200);
+	definition();
+	const maxOwnedNodes = tree.nodeCount;
+	expectFormattingClip(
+		buildFormattingTree(tree, { maxOwnedNodes }),
+		tree.reference(roots[0]),
+		6,
+	);
+	expect(() =>
+		buildFormattingTree(tree, { maxOwnedNodes: maxOwnedNodes - 1 }),
+	).toThrow("Formatting owned-node limit exceeded");
+	tree.createElement("aside");
+	expect(() => buildFormattingTree(tree, { maxOwnedNodes })).toThrow(
+		"Formatting owned-node limit exceeded",
+	);
+	expectFormattingClip(
+		buildFormattingTree(tree, { maxOwnedNodes: maxOwnedNodes + 1 }),
+		tree.reference(roots[0]),
+		6,
+	);
+});
+
+it("propagates unsupported malformed outside clip geometry rather than silently removing the clip", () => {
+	const { tree, roots, padding, definition } = formattingClipFixture();
+	padding(4200);
+	const outside = definition();
+	const baseline = buildFormattingTree(tree);
+	const initialScene = expectFormattingClip(
+		baseline,
+		tree.reference(roots[0]),
+		6,
+	);
+	tree.setAttribute(outside.shape, "width", "not-a-length");
+	const revision = tree.revision;
+	expect(() => buildFormattingTree(tree)).toThrow(
+		expect.objectContaining({
+			code: "unsupported",
+			message: "Unsupported SVG presentation attribute",
+		}),
+	);
+	expect(tree.revision).toBe(revision);
+	tree.setAttribute(outside.shape, "width", "6");
+	const recovered = buildFormattingTree(tree);
+	expect(expectFormattingClip(recovered, tree.reference(roots[0]), 6)).toEqual(
+		initialScene,
+	);
+	expect(recovered.issues).toEqual(baseline.issues);
+});
+
+it.each(["nodes", "source", "shapes", "segments", "depth", "field"])(
+	"preserves SVG geometry %s limits when formatting supplies a full-document clip reference",
+	(limit) => {
+		const { tree, padding, definition } = formattingClipFixture();
+		padding(4200);
+		const outside = definition();
+		let message: RegExp;
+		if (limit === "nodes") {
+			for (let index = 0; index < 4096; index++)
+				tree.append(outside.clip, tree.createComment(""));
+			message = /SVG scene: visited node limit exceeded/;
+		} else if (limit === "source") {
+			tree.setAttribute(outside.shape, "data-padding", "x".repeat(262145));
+			message = /SVG scene: source code unit limit exceeded/;
+		} else if (limit === "shapes") {
+			for (let index = 0; index < 512; index++)
+				tree.append(
+					outside.clip,
+					tree.createParserElement(
+						"rect",
+						{ width: "1", height: "1" },
+						svgNamespace,
+					),
+				);
+			message = /SVG scene: clip shape limit exceeded/;
+		} else if (limit === "segments") {
+			for (let index = 0; index < 33; index++)
+				tree.append(
+					outside.clip,
+					tree.createParserElement(
+						"path",
+						{ d: `M0 0${"H1".repeat(511)}` },
+						svgNamespace,
+					),
+				);
+			message = /SVG scene: .*segment.*limit/i;
+		} else if (limit === "depth") {
+			let parent = outside.clip;
+			for (let depth = 0; depth < 65; depth++) {
+				const child = tree.createParserElement("g", {}, svgNamespace);
+				tree.append(parent, child);
+				parent = child;
+			}
+			message = /SVG scene: ancestry depth limit exceeded/;
+		} else {
+			tree.setAttribute(outside.clip, "transform", " ".repeat(4097));
+			message = /SVG scene: style or attribute field limit exceeded/;
+		}
+		const revision = tree.revision;
+		expect(() => buildFormattingTree(tree)).toThrow(message);
+		expect(tree.revision).toBe(revision);
+	},
+);
 
 it("builds immutable block/inline/text records without altering the native document", () => {
 	const { tree, ref } = fixture(

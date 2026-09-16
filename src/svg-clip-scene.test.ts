@@ -1239,3 +1239,371 @@ it("propagates caller work exhaustion and retains an unchanged reusable document
 		),
 	).toThrow(expect.objectContaining({ code: "resource-limit" }));
 });
+
+it("passes the case-preserved decoded fragment to the owner clip resolver", () => {
+	withFixture(
+		`${definition(half, "", "CrOp")}${target('clip-path="url(#%43r%4Fp)"')}`,
+		({ tree, root, id }) => {
+			const clip = id("#CrOp");
+			const fragments: string[] = [];
+			const result = documentSvgScene(tree, root, noCharge, {
+				clipReference: (fragment) => {
+					fragments.push(fragment);
+					return clip;
+				},
+			});
+			expect(fragments).toEqual(["CrOp"]);
+			expect(result.shapes[0].clips?.[0].shapes).toHaveLength(1);
+			const raster = rasterizeSvgScene(result, 12, 12, noCharge);
+			expect(pixel(raster, 2, 6)).toEqual(red);
+			expect(pixel(raster, 9, 6)[3]).toBe(0);
+		},
+	);
+});
+
+it("accepts an owner-resolved outside clip beyond the standalone prefix cap", () => {
+	withFixture(target(), (fixture) => {
+		const { tree, root, id, scene } = fixture;
+		insertUnrelated(tree, id("main"), 4097);
+		const { clip } = insertOutsideDefinition(fixture);
+		expect(scene).toThrow("clip reference node limit exceeded");
+		const fragments: string[] = [];
+		const result = documentSvgScene(tree, root, noCharge, {
+			clipReference: (fragment) => {
+				fragments.push(fragment);
+				return clip;
+			},
+		});
+		expect(fragments).toEqual(["Crop"]);
+		expect(result.shapes[0].clips?.[0].shapes).toHaveLength(1);
+		const raster = rasterizeSvgScene(result, 12, 12, noCharge);
+		expect(pixel(raster, 2, 6)).toEqual(red);
+		expect(pixel(raster, 9, 6)[3]).toBe(0);
+		expect(scene).toThrow("clip reference node limit exceeded");
+	});
+});
+
+it.each([true, false])(
+	"treats owner undefined as final without scanning a long tail with localClip=%s",
+	(localClip) => {
+		withFixture(`${localClip ? definition() : ""}${target()}`, (fixture) => {
+			const { tree, root, id, scene } = fixture;
+			const fragments: string[] = [];
+			const options = {
+				clipReference: (fragment: string) => {
+					fragments.push(fragment);
+					return undefined;
+				},
+			};
+			let baselineWork = 0;
+			const baseline = documentSvgScene(
+				tree,
+				root,
+				(amount) => {
+					baselineWork += amount;
+				},
+				options,
+			);
+			insertUnrelated(tree, id("main"), 4097);
+			let work = 0;
+			const result = documentSvgScene(
+				tree,
+				root,
+				(amount) => {
+					work += amount;
+				},
+				options,
+			);
+			expect(fragments).toEqual(["Crop", "Crop"]);
+			expect(result.shapes[0].clips).toBeUndefined();
+			expect(result).toEqual(baseline);
+			expect(work).toBe(baselineWork);
+			expect(pixel(rasterizeSvgScene(result, 12, 12, noCharge), 9, 6)).toEqual(
+				red,
+			);
+			if (localClip) expect(scene().shapes[0].clips).toHaveLength(1);
+			else expect(scene).toThrow("clip reference node limit exceeded");
+		});
+	},
+);
+
+it.each(["%", "%ZZ", "%E0%A4%A", "%FF"])(
+	"does not call the owner resolver for malformed percent fragment %s",
+	(fragment) => {
+		withFixture(target(`clip-path="url(#${fragment})"`), ({ tree, root }) => {
+			const fragments: string[] = [];
+			const result = documentSvgScene(tree, root, noCharge, {
+				clipReference: (value) => {
+					fragments.push(value);
+					throw new Error("Malformed fragment reached owner resolver");
+				},
+			});
+			expect(fragments).toEqual([]);
+			expect(result.shapes[0].clips).toBeUndefined();
+			expect(pixel(rasterizeSvgScene(result, 12, 12, noCharge), 9, 6)).toEqual(
+				red,
+			);
+		});
+	},
+);
+
+it.each([null, false, 0, "Crop", {}, [], 1n].map((value) => ({ value })))(
+	"rejects a nonfunction owner clip resolver $value even without a clip reference",
+	({ value }) => {
+		withFixture(rectangle, ({ tree, root }) => {
+			expect(() =>
+				documentSvgScene(tree, root, noCharge, {
+					clipReference: value as unknown as (
+						fragment: string,
+					) => number | undefined,
+				}),
+			).toThrow(expect.objectContaining({ code: "invalid-input" }));
+		});
+	},
+);
+
+it.each(
+	[
+		null,
+		true,
+		false,
+		"",
+		"1",
+		0,
+		-1,
+		1.5,
+		Number.NaN,
+		Number.POSITIVE_INFINITY,
+		Number.NEGATIVE_INFINITY,
+		Number.MAX_SAFE_INTEGER + 1,
+		{},
+		[],
+		1n,
+	].map((value) => ({ value })),
+)("rejects an invalid owner clip node result $value", ({ value }) => {
+	withFixture(`${definition()}${target()}`, ({ tree, root }) => {
+		expect(() =>
+			documentSvgScene(tree, root, noCharge, {
+				clipReference: () => value as unknown as number,
+			}),
+		).toThrow(expect.objectContaining({ code: "invalid-input" }));
+	});
+});
+
+it.each(["Other", "crop"])(
+	"rejects an owner clip node whose ID %s differs from the decoded fragment",
+	(name) => {
+		withFixture(`${definition()}${target()}`, (fixture) => {
+			const { tree, root } = fixture;
+			const { clip } = insertOutsideDefinition(fixture, name);
+			expect(() =>
+				documentSvgScene(tree, root, noCharge, {
+					clipReference: () => clip,
+				}),
+			).toThrow(expect.objectContaining({ code: "invalid-input" }));
+		});
+	},
+);
+
+it("rejects an owner clip result resolving a non-element node", () => {
+	withFixture(`${definition()}${target()}`, ({ tree, root, id }) => {
+		const text = tree.createText("Crop");
+		tree.append(id("main"), text);
+		expect(() =>
+			documentSvgScene(tree, root, noCharge, { clipReference: () => text }),
+		).toThrow(expect.objectContaining({ code: "invalid-input" }));
+	});
+});
+
+it("does not fall back when an owner clip result identifies an unknown node", () => {
+	withFixture(`${definition()}${target()}`, ({ tree, root }) => {
+		expect(() =>
+			documentSvgScene(tree, root, noCharge, {
+				clipReference: () => Number.MAX_SAFE_INTEGER,
+			}),
+		).toThrow(
+			expect.objectContaining({
+				code: expect.stringMatching(/^(?:invalid-input|not-found)$/),
+			}),
+		);
+	});
+});
+
+it.each([
+	["rect", svgNamespace],
+	["clipPath", htmlNamespace],
+] as const)(
+	"honors an owner-resolved first-ID blocker %s in %s without falling back",
+	(tag, namespace) => {
+		withFixture(`${definition()}${target()}`, ({ tree, root, id, scene }) => {
+			const blocker = tree.createParserElement(tag, { id: "Crop" }, namespace);
+			tree.insert(id("main"), blocker, root);
+			insertUnrelated(tree, id("main"), 4097);
+			expect(id("#Crop")).toBe(blocker);
+			const fragments: string[] = [];
+			const result = documentSvgScene(tree, root, noCharge, {
+				clipReference: (fragment) => {
+					fragments.push(fragment);
+					return blocker;
+				},
+			});
+			expect(fragments).toEqual(["Crop"]);
+			expect(result.shapes[0].clips).toBeUndefined();
+			expect(result.shapes).toEqual(scene().shapes);
+			expect(pixel(rasterizeSvgScene(result, 12, 12, noCharge), 9, 6)).toEqual(
+				red,
+			);
+		});
+	},
+);
+
+it.each([512, 513])(
+	"retains the clip geometry shape cap for owner-resolved %s shapes",
+	(count) => {
+		withFixture(target(), (fixture) => {
+			const { tree, root } = fixture;
+			const { clip } = insertOutsideDefinition(fixture);
+			for (let index = 1; index < count; index++)
+				tree.append(
+					clip,
+					tree.createParserElement(
+						"rect",
+						{ width: "6", height: "12" },
+						svgNamespace,
+					),
+				);
+			const scene = () =>
+				documentSvgScene(tree, root, noCharge, { clipReference: () => clip });
+			if (count > 512) expect(scene).toThrow("clip shape limit exceeded");
+			else expect(scene().shapes[0].clips?.[0].shapes).toHaveLength(count);
+		});
+	},
+);
+
+it.each([0, 1])(
+	"retains outside geometry source admission with an owner and overflow=%s",
+	(overflow) => {
+		withFixture(target(), (fixture) => {
+			const { tree, root } = fixture;
+			const { clip } = insertOutsideDefinition(fixture);
+			const shape = tree.get(clip).children[0];
+			tree.setAttribute(shape, "id", "");
+			const scene = () =>
+				documentSvgScene(tree, root, noCharge, { clipReference: () => clip });
+			const baseline = scene();
+			tree.setAttribute(
+				shape,
+				"id",
+				"x".repeat(262144 - baseline.sourceCodeUnits + overflow),
+			);
+			if (overflow) expect(scene).toThrow("source code unit limit exceeded");
+			else {
+				const result = scene();
+				expect(result.sourceCodeUnits).toBe(262144);
+				expect(result.shapes).toEqual(baseline.shapes);
+			}
+		});
+	},
+);
+
+it("still validates owner-resolved clip geometry", () => {
+	withFixture(target(), (fixture) => {
+		const { tree, root } = fixture;
+		const { clip } = insertOutsideDefinition(fixture, "Crop", undefined, "-1");
+		expect(() =>
+			documentSvgScene(tree, root, noCharge, { clipReference: () => clip }),
+		).toThrow(expect.objectContaining({ code: "unsupported" }));
+	});
+});
+
+it("propagates the exact owner resolver exception without mutating the source", () => {
+	withFixture(`${definition()}${target()}`, ({ tree, root, scene }) => {
+		const revision = tree.revision;
+		const nodeCount = tree.nodeCount;
+		const failure = new Error("Owner clip resolver budget exhausted");
+		let caught: unknown;
+		try {
+			documentSvgScene(tree, root, noCharge, {
+				clipReference: () => {
+					throw failure;
+				},
+			});
+		} catch (error) {
+			caught = error;
+		}
+		expect(caught).toBe(failure);
+		expect(tree.revision).toBe(revision);
+		expect(tree.nodeCount).toBe(nodeCount);
+		expect(scene().shapes[0].clips).toHaveLength(1);
+	});
+});
+
+it("propagates caller work exhaustion after owner clip resolution", () => {
+	withFixture(target(), (fixture) => {
+		const { tree, root } = fixture;
+		const { clip } = insertOutsideDefinition(fixture);
+		const revision = tree.revision;
+		const nodeCount = tree.nodeCount;
+		const failure = new Error("Owner-resolved clip geometry budget exhausted");
+		let resolved = false;
+		let caught: unknown;
+		try {
+			documentSvgScene(
+				tree,
+				root,
+				() => {
+					if (resolved) throw failure;
+				},
+				{
+					clipReference: () => {
+						resolved = true;
+						return clip;
+					},
+				},
+			);
+		} catch (error) {
+			caught = error;
+		}
+		expect(resolved).toBe(true);
+		expect(caught).toBe(failure);
+		expect(tree.revision).toBe(revision);
+		expect(tree.nodeCount).toBe(nodeCount);
+		expect(
+			documentSvgScene(tree, root, noCharge, { clipReference: () => clip })
+				.shapes[0].clips,
+		).toHaveLength(1);
+	});
+});
+
+it("revisits the same source with new owner resolvers and no retained callback", () => {
+	withFixture(`${definition()}${target()}`, ({ tree, root, id, scene }) => {
+		const clip = id("#Crop");
+		const firstFragments: string[] = [];
+		const first = documentSvgScene(tree, root, noCharge, {
+			clipReference: (fragment) => {
+				firstFragments.push(fragment);
+				return clip;
+			},
+		});
+		const secondFragments: string[] = [];
+		const second = documentSvgScene(tree, root, noCharge, {
+			clipReference: (fragment) => {
+				secondFragments.push(fragment);
+				return undefined;
+			},
+		});
+		expect(first.shapes[0].clips).toHaveLength(1);
+		expect(second.shapes[0].clips).toBeUndefined();
+		expect(scene().shapes).toEqual(first.shapes);
+		expect(
+			documentSvgScene(tree, root, noCharge, { clipReference: () => clip })
+				.shapes,
+		).toEqual(first.shapes);
+		expect(firstFragments).toEqual(["Crop"]);
+		expect(secondFragments).toEqual(["Crop"]);
+		expect(pixel(rasterizeSvgScene(first, 12, 12, noCharge), 9, 6)[3]).toBe(0);
+		expect(pixel(rasterizeSvgScene(second, 12, 12, noCharge), 9, 6)).toEqual(
+			red,
+		);
+	});
+});
