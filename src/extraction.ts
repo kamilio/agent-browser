@@ -78,6 +78,11 @@ import {
 	researchSourceProducts,
 } from "./research-source-products.js";
 import {
+	type ResearchSourcePlaygrounds,
+	fitResearchSourcePlaygrounds,
+	researchSourcePlaygrounds,
+} from "./research-source-playgrounds.js";
+import {
 	type ResearchSourceVideos,
 	fitResearchSourceVideos,
 	researchSourceVideos,
@@ -246,6 +251,7 @@ interface ExtractionMetadata {
 	sourceChartTables?: ResearchSourceChartTables;
 	sourceAccess?: ResearchSourceAccess;
 	sourceProducts?: ResearchSourceProducts;
+	sourcePlaygrounds?: ResearchSourcePlaygrounds;
 	sourceVideos?: ResearchSourceVideos;
 	sourceReviews?: ResearchSourceReviews;
 	sourceTemplateFallbacks?: ResearchSourceTemplateFallbacks;
@@ -1667,6 +1673,21 @@ export function extractDocument(
 			const sourceAccess = fitResearchSourceAccess(access, remaining);
 			if (sourceAccess) {
 				result = { ...result, sourceAccess };
+				outputBytes = utf8ByteLength(JSON.stringify(result));
+			}
+		}
+	}
+	const playgrounds = researchSourcePlaygrounds(tree);
+	if (playgrounds) {
+		const remaining =
+			maxBytes - outputBytes - utf8ByteLength(',"sourcePlaygrounds":');
+		if (remaining >= 0) {
+			const sourcePlaygrounds = fitResearchSourcePlaygrounds(
+				playgrounds,
+				remaining,
+			);
+			if (sourcePlaygrounds) {
+				result = { ...result, sourcePlaygrounds };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
 		}

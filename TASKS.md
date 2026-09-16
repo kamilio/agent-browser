@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Recover supporting playground code and validate application documentation
+
+- Five real native GETs across React Learn, Next.js installation, its observed
+  AI-agent guide and Transformers installation, including one React post-fix GET.
+  Next.js supplies Markdown directly; both complete source bodies are preserved.
+  Native source-link discovery and exact module-alias line replay work offline.
+- Independent source review finds3 React supporting CSS occurrences missing from
+  HTML. Recover8 complete source code entries across5 serialized Sandpacks with
+  route binding, original offsets/owner paths, limits and immutable cleanup.
+  This is sourcePlaygrounds metadata, not rendered code, JS execution or filenames.
+- Fresh React response has the identical265,160-byte body and17,992-byte Markdown;
+  only3,862 metadata bytes are added. All8 entries match independent source audit.
+- Core02:5,022/0 in44 files,106 new tests; build/types/format/lint pass. Full02:
+  46,100/0 in937 available files;959 manifest entries still include22 missing files.
+-132 saved-body pairs:127 existing extractions/DOM/counters/classifications
+  unchanged apart from React metadata;5 matching long-profile non-HTML refusals.
+  Next Markdown has separate successful default-profile/CLI evidence. Preserve
+  failed fixture/profile/schema attempts; no historical capture is rewritten.
+- Static review finds no blocker, with outer-vs-inner integration-cancellation
+  and mixed-metadata budget coverage limits explicit. No performance claim.
+- See SOURCE-PLAYGROUNDS.md and reports/source-playgrounds-2026-09-16.md plus
+  reports/app-documentation-2026-09-16.md/JSON. Historical100-page verdicts and
+  SafeJS/dynamic-site, rendering, research, access/CAPTCHA, credential/passkey/
+  device/TTY gates remain open. The full browser objective is not complete.
+
 ### Validate infrastructure documentation and source-linked redirect stubs
 
 - Four real anonymous native GETs: NGINX proxy documentation, Docker multistage,

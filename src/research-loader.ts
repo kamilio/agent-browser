@@ -39,6 +39,12 @@ import {
 	targetProductRoute,
 } from "./research-source-products.js";
 import {
+	type ReactPlaygroundRoute,
+	ResearchSourcePlaygroundsCollector,
+	reactPlaygroundRoute,
+	setResearchSourcePlaygrounds,
+} from "./research-source-playgrounds.js";
+import {
 	type YoutubeSearchRoute,
 	ResearchSourceVideosCollector,
 	setResearchSourceVideos,
@@ -259,6 +265,7 @@ export function sanitizeResearchHtml(
 	videoRoute?: YoutubeSearchRoute,
 	chartRoute?: InfogramChartRoute,
 	reviewRoute?: RtingsReviewRoute,
+	playgroundRoute?: ReactPlaygroundRoute,
 ) {
 	const selectedRawPolicy = validateResearchReaderRawPolicy(rawPolicy);
 	const selectedVisibilityPolicy =
@@ -357,6 +364,7 @@ export function sanitizeResearchHtml(
 	let sourceTables: ResearchSourceDataTableCollector | undefined;
 	let sourceAccess: ResearchSourceAccessCollector | undefined;
 	let sourceProducts: ResearchSourceProductsCollector | undefined;
+	let sourcePlaygrounds: ResearchSourcePlaygroundsCollector | undefined;
 	let sourceVideos: ResearchSourceVideosCollector | undefined;
 	let sourceCharts: ResearchSourceChartTableCollector | undefined;
 	let sourceReviews: ResearchSourceReviewsCollector | undefined;
@@ -641,6 +649,27 @@ export function sanitizeResearchHtml(
 							);
 						}
 						if (
+							playgroundRoute !== undefined &&
+							name === "script" &&
+							!sourceHidden &&
+							!open.includes("noscript") &&
+							token.attributes.id === "__NEXT_DATA__" &&
+							token.attributes.type?.trim().toLowerCase() ===
+								"application/json" &&
+							!Object.hasOwn(token.attributes, "src")
+						) {
+							sourcePlaygrounds ??= new ResearchSourcePlaygroundsCollector(
+								playgroundRoute,
+								check,
+							);
+							sourcePlaygrounds.add(
+								normalizedSource,
+								rawStart,
+								tokenizer.position,
+								tokenStart,
+							);
+						}
+						if (
 							productRoute !== undefined &&
 							name === "script" &&
 							!sourceHidden &&
@@ -828,6 +857,7 @@ export function sanitizeResearchHtml(
 	const sourceDataTables = sourceTables?.finish();
 	const access = sourceAccess?.finish();
 	const products = sourceProducts?.finish();
+	const playgrounds = sourcePlaygrounds?.finish();
 	const videos = sourceVideos?.finish();
 	const sourceChartTables = sourceCharts?.finish();
 	const reviews = sourceReviews?.finish();
@@ -837,6 +867,7 @@ export function sanitizeResearchHtml(
 		...(sourceDataTables ? { sourceDataTables } : {}),
 		...(access ? { sourceAccess: access } : {}),
 		...(products ? { sourceProducts: products } : {}),
+		...(playgrounds ? { sourcePlaygrounds: playgrounds } : {}),
 		...(videos ? { sourceVideos: videos } : {}),
 		...(sourceChartTables ? { sourceChartTables } : {}),
 		...(reviews ? { sourceReviews: reviews } : {}),
@@ -969,30 +1000,43 @@ export function loadResearchDocument(
 	const reviewRoute = effectiveHtml
 		? rtingsReviewRoute(response.url)
 		: undefined;
+	const playgroundRoute = effectiveHtml
+		? reactPlaygroundRoute(response.url)
+		: undefined;
 	const visibilityArguments: [
 		ResearchReaderVisibilityPolicy?,
 		TargetProductRoute?,
 		YoutubeSearchRoute?,
 		InfogramChartRoute?,
 		RtingsReviewRoute?,
+		ReactPlaygroundRoute?,
 	] =
-		reviewRoute !== undefined
+		playgroundRoute !== undefined
 			? [
 					selectedVisibilityPolicy,
 					productRoute,
 					videoRoute,
 					chartRoute,
 					reviewRoute,
+					playgroundRoute,
 				]
-			: chartRoute !== undefined
-				? [selectedVisibilityPolicy, productRoute, videoRoute, chartRoute]
-				: videoRoute !== undefined
-					? [selectedVisibilityPolicy, productRoute, videoRoute]
-					: productRoute !== undefined
-						? [selectedVisibilityPolicy, productRoute]
-						: selectedVisibilityPolicy
-							? [selectedVisibilityPolicy]
-							: [];
+			: reviewRoute !== undefined
+				? [
+						selectedVisibilityPolicy,
+						productRoute,
+						videoRoute,
+						chartRoute,
+						reviewRoute,
+					]
+				: chartRoute !== undefined
+					? [selectedVisibilityPolicy, productRoute, videoRoute, chartRoute]
+					: videoRoute !== undefined
+						? [selectedVisibilityPolicy, productRoute, videoRoute]
+						: productRoute !== undefined
+							? [selectedVisibilityPolicy, productRoute]
+							: selectedVisibilityPolicy
+								? [selectedVisibilityPolicy]
+								: [];
 	const sanitized = sanitizeResearchHtml(
 		effectiveHtml ? decoded.text : "",
 		{
@@ -1055,6 +1099,8 @@ export function loadResearchDocument(
 		setResearchSourceAccess(tree, sanitized.sourceAccess);
 	if (effectiveHtml && sanitized.sourceProducts)
 		setResearchSourceProducts(tree, sanitized.sourceProducts);
+	if (effectiveHtml && sanitized.sourcePlaygrounds)
+		setResearchSourcePlaygrounds(tree, sanitized.sourcePlaygrounds);
 	if (effectiveHtml && sanitized.sourceVideos)
 		setResearchSourceVideos(tree, sanitized.sourceVideos);
 	if (effectiveHtml && sanitized.sourceChartTables)
