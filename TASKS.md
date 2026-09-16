@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Explicit native target-link discovery
+
+- Add --target-link as a separate maintained reader-command mode for a known
+  exact destination. Scan retained anchors, choose the first eligible match and
+  perform one native click. Tolerate duplicate image/headline links and changing
+  title/heading markup without weakening CSS-mode uniqueness or adding fallback.
+- Bound discovery at10,000 retained anchors and64 attribute/URL-qualified target
+  candidates. Keep URL policy, projected-attribute checks, nonempty labels,
+  barrier stops, request limits and caller-owned output/cleanup behavior.
+- Final723pass/0 in9 explicit native-manifest files,102 new cases; exact final
+  tests against old production43pass/59fail. Build/types/format/scoped lint pass.
+  Preserve the initial722pass/1fail test run: its incorrect10,001-result assertion
+  is corrected to expect the native query bound; production remains unchanged.
+- Eight saved-source workflows and five actual CLI preflight controls pass with
+  kernel-denied network. Seven destinations are synthetic; CNET is a full captured
+  pair reproducing20,676 reviewed Markdown bytes. No fresh sites in those checks.
+- Separately validate the final compiled mode live on CarBuzz: two GET200,
+  291 retained anchors,2 target candidates,1 eligible anchor and a real click.
+  Extract12,245 Markdown bytes; all210 lines compared with the prior reviewed
+  article, with only four changed related-card lines, separately inspected.
+  All observed requests/sockets/documents/process groups close. No credentials,
+  scripts, redirects, retries, alternate clients or direct-target fallback.
+- See reports/reader-target-link-2026-09-16.md. Keep the historical100-entry
+  citation-proxy checklist and33 useful/67 other verdicts unchanged. Continue
+  practical content workflows; full rendering, dynamic sites, access handoff,
+  actual SafeJS, credentials/passkeys and real-input gates remain open. Overall
+  browser goal stays active; this feature is not a100-site rerun or global rank.
+
 ### Diverse native reader workflows and stable selectors
 
 - Exercise six more source-to-article tasks with the maintained native CLI:

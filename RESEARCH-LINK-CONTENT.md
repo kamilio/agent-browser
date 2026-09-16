@@ -18,6 +18,22 @@ Both flags are required once, in either order, with exactly one source URL.
 Inspect the current reader document when choosing the selector: it need not
 retain all raw-source attributes. Use `--help` for the command synopsis.
 
+When the exact destination is known but card markup varies, explicitly select
+target-link mode instead of supplying a CSS selector:
+
+```sh
+node dist/scripts/research-link-content.js \
+  --target-link https://engineerfix.com/plc-programming-languages-a-comparative-guide/ \
+  https://engineerfix.com/
+```
+
+This mode requires exactly one source and one `--target-link` value. It cannot
+mix with `--target` or `--selector`. It scans retained `a[href]` elements and
+chooses the first eligible exact-target anchor in document order. Duplicate
+image/headline links are allowed; empty text labels remain ineligible. It makes
+one native click attempt, not an automatic fallback after a selector or click
+failure. A known target is still required; this is not an article-search command.
+
 Do not overconstrain the selector with incidental metadata or a particular
 heading rank. One measured publisher variant moved `title` from its article
 anchor to the parent heading and changed that heading from `h3` to `h5`.
@@ -38,6 +54,12 @@ actual native event sequence, response status/body hashes/byte counts, optional
 message is dumped. Response hashes identify bodies seen during execution, not
 exported replayable receipts; use the existing capture/replay workflow when you
 need complete source artifacts.
+
+Target-link reports omit `selector`, set `selectionMode` to `exact-target-v1`,
+and publish `targetLinkDiscovery` only after a complete scan. Its counts separate
+all retained anchors, attribute/URL-qualified target candidates, and candidates
+with eligible text labels. `selection.candidates` counts target candidates in
+this mode; CSS mode retains its original all-selector-matches meaning.
 
 - Exit0 means `extracted-unverified`: the native click navigated to the exact
   target and extraction is nonempty. `contentSuccess` remains `null`; article
@@ -60,9 +82,14 @@ public-content workflow, not a universal URL navigator. Native address/TLS
 policy still applies. URL and selector arguments are each bounded to4096 code
 units; pseudo-element and untrimmed selectors are rejected before navigation.
 
-Selection considers at most64 native selector matches, requires one eligible
-anchor with nonempty bounded text and the exact target, and checks the current
-document base, projected attributes and normal native actionability. Both pages
+CSS selection considers at most64 native selector matches and requires exactly
+one eligible anchor. Target-link mode allows at most10,000 retained anchors and
+64 attribute/URL-qualified target candidates, including empty or overlong labels.
+It completes this bounded scan before choosing the first eligible candidate;
+later overflow cannot be hidden by an earlier match. Both modes require nonempty
+bounded text and the exact target, and check the current document base, projected
+attributes and normal native actionability. The first policy-eligible candidate
+can still fail actionability; no second anchor is tried. Both pages
 use the existing `long-v1` semantic reader with source-hidden-inline visibility,
 separate omitted raw text and UTF-8 fallback. Source declarations can still
 select another supported encoding. Main-content-v2, table rows and explicit
@@ -108,7 +135,8 @@ command timer or caller AbortSignal listener. This is explicit outstanding-write
 ownership, not a guarantee that arbitrary stream implementations will settle.
 
 Validation and remaining acceptance limits are recorded in
-`reports/research-link-content-2026-09-16.md`. Historical publisher workflows and
+`reports/research-link-content-2026-09-16.md` and, for explicit target-link mode,
+`reports/reader-target-link-2026-09-16.md`. Historical publisher workflows and
 the original100-entry checklist retain their own measurements and verdicts.
 Full rendering, actual SafeJS compatibility, credentials/passkeys and real-input
 acceptance remain separate work in `TASKS.md`.
