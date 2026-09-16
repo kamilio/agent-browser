@@ -207,23 +207,99 @@ it("returns zero after detach, then remeasures after reattachment", () => {
 	expect(read().clientWidth).toBe(100);
 });
 
-it("rejects unsupported layout and block-in-inline offsets instead of publishing guessed zeros", () => {
-	for (const css of [
-		"#target{display:flex;flex-direction:column;flex-wrap:wrap;position:sticky}",
-		"#target{border-left:2px dashed red}",
-		"#target{transform:scale(2)}",
-	])
-		expect(() => fixture(undefined, css).read()).toThrow();
+it.each([
+	"display:flex;flex-direction:column;flex-wrap:wrap;position:sticky",
+	"display:grid",
+])(
+	"measures %s boxes and replaces cached sizes after mutation",
+	(declaration) => {
+		const { tree, id, sizes, read } = fixture(
+			'<div id="target"><div></div><div></div></div>',
+			`#target{${declaration};width:30px;height:20px;padding:2px 3px;border:1px solid black}#target>div{flex:none;width:10px;height:12px}`,
+		);
+		const expected = {
+			clientWidth: 36,
+			clientHeight: 24,
+			clientTop: 1,
+			clientLeft: 1,
+			offsetWidth: 38,
+			offsetHeight: 26,
+		};
+		const previous = read();
+		expect(previous).toEqual(expected);
+		expect(read()).toBe(previous);
+		expect(sizes.metrics()).toMatchObject({ retained: 1, measurements: 1 });
+		tree.setAttribute(
+			id("#target"),
+			"style",
+			"width:40px;height:30px;padding:4px;border-width:2px",
+		);
+		expect(read()).toEqual({
+			clientWidth: 48,
+			clientHeight: 38,
+			clientTop: 2,
+			clientLeft: 2,
+			offsetWidth: 52,
+			offsetHeight: 42,
+		});
+		expect(previous).toEqual(expected);
+		expect(Object.isFrozen(previous)).toBe(true);
+		expect(sizes.metrics()).toMatchObject({ retained: 1, measurements: 2 });
+	},
+);
+
+it("includes dashed border widths in offsets but not client dimensions after mutation", () => {
+	const { tree, id, read } = fixture(
+		undefined,
+		"#target{width:30px;height:10px;padding:2px 3px;border-left:2px dashed red}",
+	);
+	expect(read()).toEqual({
+		clientWidth: 36,
+		clientHeight: 14,
+		clientTop: 0,
+		clientLeft: 2,
+		offsetWidth: 38,
+		offsetHeight: 14,
+	});
+	tree.setAttribute(
+		id("#target"),
+		"style",
+		"border-left-width:4px;border-top:3px dashed blue",
+	);
+	expect(read()).toEqual({
+		clientWidth: 36,
+		clientHeight: 14,
+		clientTop: 3,
+		clientLeft: 4,
+		offsetWidth: 40,
+		offsetHeight: 17,
+	});
+});
+
+it("rejects unsupported transforms and block-in-inline sizes instead of publishing guessed zeros", () => {
+	expect(() =>
+		fixture(undefined, "#target{transform:scale(2)}").read(),
+	).toThrow(expect.objectContaining({ code: "unsupported" }));
 	const split = fixture('<span id="target">a<div>b</div>c</span>');
 	expect(() => split.read()).toThrow(/block-in-inline/);
 });
 
 it("does not cache an unsupported measurement as zero and recovers on a supported revision", () => {
-	const { tree, id, sizes, read } = fixture(undefined, "#target{display:grid}");
-	expect(read).toThrow();
+	const { tree, id, sizes, read } = fixture(
+		'<div id="target" style="transform:scale(2)">a</div>',
+		"#target{width:30px;height:10px}",
+	);
+	expect(read).toThrow(expect.objectContaining({ code: "unsupported" }));
 	expect(sizes.metrics()).toMatchObject({ retained: 0, measurements: 0 });
-	tree.setAttribute(id("#target"), "style", "display:block");
-	expect(read().clientWidth).toBe(100);
+	tree.setAttribute(id("#target"), "style", "");
+	expect(read()).toEqual({
+		clientWidth: 30,
+		clientHeight: 10,
+		clientTop: 0,
+		clientLeft: 0,
+		offsetWidth: 30,
+		offsetHeight: 10,
+	});
 	expect(sizes.metrics()).toMatchObject({ retained: 1, measurements: 1 });
 });
 

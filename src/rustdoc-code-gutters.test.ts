@@ -373,13 +373,34 @@ it("rechecks live marker, id, href, text, line position and code ancestry mutati
 });
 
 it.each(formats)(
-	"charges omitted anchor/text nodes and exact UTF-8 output limits in %s",
+	"charges omitted nodes and fits optional code contexts after required UTF-8 output in %s",
 	(format) => {
 		const tree = native(rust(`${anchor()}let 雪 = 42;`));
 		const root = tree.reference(element(tree, "pre"));
 		const options = { root, format, maxNodes: 5, maxDepth: 3 };
 		const result = extractDocument(tree, options);
 		gutters(result, 1);
+		const { sourceCodeContexts, ...required } = result;
+		expect(sourceCodeContexts).toEqual({
+			kind: "native-code-source-context-v1",
+			scope: "selected-extracted-pre-text",
+			offsetUnit: "utf-16-code-unit",
+			partial: true,
+			rendered: false,
+			verified: false,
+			entries: [
+				{
+					ref: root,
+					textCodeUnits: 11,
+					attributes: [
+						{ tag: "pre", class: "source rust highlighted", start: 0, end: 11 },
+					],
+					ranges: [],
+					truncated: false,
+				},
+			],
+			truncated: false,
+		});
 		for (const maxNodes of [2, 3, 4])
 			expect(() => extractDocument(tree, { ...options, maxNodes })).toThrow(
 				expect.objectContaining({ code: "resource-limit" }),
@@ -391,8 +412,29 @@ it.each(formats)(
 		expect(extractDocument(tree, { ...options, maxBytes: bytes })).toEqual(
 			result,
 		);
+		const shortened = extractDocument(tree, {
+			...options,
+			maxBytes: bytes - 1,
+		});
+		expect(shortened).toEqual({
+			...required,
+			sourceCodeContexts: {
+				...sourceCodeContexts,
+				entries: [],
+				truncated: true,
+			},
+		});
+		expect(
+			new TextEncoder().encode(JSON.stringify(shortened)).byteLength,
+		).toBeLessThanOrEqual(bytes - 1);
+		const requiredBytes = new TextEncoder().encode(
+			JSON.stringify(required),
+		).byteLength;
+		expect(
+			extractDocument(tree, { ...options, maxBytes: requiredBytes }),
+		).toEqual(required);
 		expect(() =>
-			extractDocument(tree, { ...options, maxBytes: bytes - 1 }),
+			extractDocument(tree, { ...options, maxBytes: requiredBytes - 1 }),
 		).toThrow(expect.objectContaining({ code: "resource-limit" }));
 	},
 );

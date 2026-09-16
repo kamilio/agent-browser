@@ -543,10 +543,11 @@ it("exposes the separate total host-object ceiling without claiming full-pool ru
 		0,
 	);
 	expect(registered).toHaveLength(pageFocusLimits.maxBindings * 2);
-	expect(setupObjects).toBe(6);
+	expect(setupObjects).toBe(8);
 	expect(setupDefinitionWork).toBeGreaterThan(setupObjects);
 	expect(setupDefinitionWork).toBeLessThan(scriptLimits().maxSteps);
 	const available = extensionPageRuntimeLimits.hostObjects - setupObjects;
+	expect(available).toBe(4088);
 	for (let index = 0; index < available; index++) {
 		const id = document.createElement("button");
 		const capability = bindings.dom.node(id);
@@ -557,6 +558,7 @@ it("exposes the separate total host-object ceiling without claiming full-pool ru
 	}
 	const rejected = document.createElement("button");
 	const remaining = pageFocusLimits.maxBindings - available;
+	expect(remaining).toBe(8);
 	for (let index = 0; index < remaining; index++)
 		expect(() => bindings.dom.node(rejected)).toThrow(
 			"Realm host object limit exceeded",
@@ -576,11 +578,11 @@ it("exposes the separate total host-object ceiling without claiming full-pool ru
 	const elementDefinitionWork = new Set(
 		definitions.slice(setupObjects).map(definitionWork),
 	);
-	expect([...elementDefinitionWork]).toEqual([109]);
+	expect([...elementDefinitionWork]).toEqual([116]);
 	const definitionOnlyMaxElements = Math.floor(
-		(scriptLimits().maxSteps - setupDefinitionWork) / 109,
+		(scriptLimits().maxSteps - setupDefinitionWork) / 116,
 	);
-	expect(definitionOnlyMaxElements).toBe(916);
+	expect(definitionOnlyMaxElements).toBe(860);
 	expect(refused).toHaveLength(remaining);
 	expect(retainedState(bindings.focus)).toEqual({
 		slots: 4096,

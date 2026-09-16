@@ -57,7 +57,7 @@ function fixture() {
 		host: new BrowserCommandHost({ createSession: () => session }),
 	};
 }
-it("advertises mouse commands while keeping pointer/scroll/OS defaults explicitly partial", async () => {
+it("advertises nested-scrollport mouse commands while keeping pointer and OS defaults explicitly partial", async () => {
 	const { host } = fixture();
 	try {
 		expect((await host.execute(["capabilities"])).data).toMatchObject({
@@ -65,7 +65,9 @@ it("advertises mouse commands while keeping pointer/scroll/OS defaults explicitl
 				commands: ["mousemove", "mousedown", "mouseup", "mousewheel"],
 				stateScope: "document",
 				pointerEvents: false,
-				scrolling: "root-viewport-pixel-wheel",
+				scrolling: "nested-scrollport-pixel-wheel",
+				wheelDeltaMode: "pixel",
+				modifierWheelDefaults: false,
 				nativeMenus: false,
 				partial: true,
 			},

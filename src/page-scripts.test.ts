@@ -302,6 +302,7 @@ it("creates one persistent realm with live document/window aliases and explicit 
 		"getSelection",
 		"location",
 		"matchMedia",
+		"navigator",
 		"outerHeight",
 		"outerWidth",
 		"performance",

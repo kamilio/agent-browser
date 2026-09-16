@@ -297,12 +297,23 @@ it("preserves the explicit unsupported pseudo-element computed-style boundary", 
 	);
 });
 
-it("supports the legacy alias without advertising neighboring text features", () => {
-	expect(pageCssSupports("word-wrap", "anywhere")).toBe(true);
+it("distinguishes supported neighboring text values from unsupported wrapping modes", () => {
+	for (const [name, value] of [
+		["word-wrap", "anywhere"],
+		["word-break", "normal"],
+		["word-break", "break-word"],
+		["hyphens", "none"],
+		["hyphens", "manual"],
+		["hyphens", "auto"],
+	]) {
+		expect(pageCssSupports(name, value)).toBe(true);
+		expect(pageCssSupports(`(${name}:${value})`)).toBe(true);
+	}
 	for (const [name, value] of [
 		["word-break", "break-all"],
 		["line-break", "anywhere"],
-		["hyphens", "auto"],
-	])
+	]) {
 		expect(pageCssSupports(name, value)).toBe(false);
+		expect(pageCssSupports(`(${name}:${value})`)).toBe(false);
+	}
 });

@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Reconcile native contracts and run every available committed manifest test
+
+- Reconcile27 test files with existing reader, layout, inventory, cleanup and
+  optional metadata contracts. Preserve positive geometry/cache and real error
+  checks; production build artifacts are byte-identical to commit279113a.
+- Final full03:45,875 passes/0 failures across934 available committed manifest
+  files; build, strict touched-test types, format and lint pass. Independent
+  source review finds no blocking issues. This is not a live or actual SDK gate.
+- Earlier full02:45,873 passes/2 failures; correct optional-context budget
+  expectations and retain both records. Focused follow-up passes40/0. The original
+  62 contract failures are reconciled, not described as62 production fixes.
+- Canonical manifest remains956 entries:22 tests are missing from the committed
+  checkout. Source-only admission audit maps their5 additional untracked helpers;
+  it neither executes nor admits that pre-existing work. Full-manifest gate open.
+- Preserve42 prior tracked edits and697 untracked files, including pre-existing
+  changes inside3 touched tests, by testing/staging only owned canonical deltas.
+- New Node.js stream documentation GET200 captures the full body but extraction
+  fails on table structure. Doctype/document-mode interaction is under diagnosis,
+  not a confirmed fix. Continue real-page recovery and broader website testing.
+- SafeJS callback admission, rendering, access/CAPTCHA handling, credentials,
+  passkey/device/TTY acceptance and the original four research topics remain open.
+  See NATIVE-CONTRACT-RECONCILIATION.md and the dated reconciliation reports.
+
 ### Retain code-example qualifications and validate more reference pages
 
 - Add optional bounded sourceCodeContexts for actual HTML pre/code classes,

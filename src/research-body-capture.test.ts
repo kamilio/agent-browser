@@ -14,6 +14,7 @@ import {
 } from "../scripts/research-browser.js";
 import * as documentLoader from "./document-loader.js";
 import { AgentBrowserError } from "./errors.js";
+import * as extraction from "./extraction.js";
 import type { NetworkResponse } from "./network.js";
 import { NodeNetworkTransport } from "./node-transport.js";
 import * as readerLoader from "./research-loader.js";
@@ -736,8 +737,9 @@ it.each([undefined, false])(
 );
 
 it.each([false, true])(
-	"retains unscoped capture and post-extraction barrier classification (reader=%s)",
+	"retains unscoped capture while stopping before challenge extraction (reader=%s)",
 	async (reader) => {
+		const extract = vi.spyOn(extraction, "extractDocument");
 		const input = response(
 			"<title>Just a moment...</title><main>Checking your browser</main>",
 		);
@@ -755,8 +757,12 @@ it.each([false, true])(
 		expect(report.outcome).toBe("semantic-barrier");
 		expect(report.contentSuccess).toBe(false);
 		expect(report.classification.barrier).toBe("challenge");
-		expect(report.extraction?.content).toContain("Checking your browser");
-		expect(report.failure).toBeUndefined();
+		expect(report.extraction).toBeUndefined();
+		expect(extract).not.toHaveBeenCalled();
+		expect(report.failure).toEqual({
+			category: "policy-denied",
+			stage: "semantic-barrier",
+		});
 		expect(Object.hasOwn(report, "selection")).toBe(false);
 		expect(NodeNetworkTransport.prototype.request).toHaveBeenCalledOnce();
 		expect(report.metrics?.closed).toBe(true);

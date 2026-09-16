@@ -118,7 +118,11 @@ it("exposes the hit-test and scroll-into-view commands without changing inspecti
 			containerScope: "nested-scrollports",
 		},
 		clientGeometry: { scroll: "root-viewport" },
-		interactionStyles: { properties: ["pointer-events"] },
+		interactionStyles: {
+			properties: ["pointer-events", "cursor"],
+			cursorImages: false,
+			systemCursor: false,
+		},
 	});
 	scroll.to(100, 140);
 	const revision = tree.revision;

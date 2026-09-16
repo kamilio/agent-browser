@@ -5,6 +5,7 @@ import { documentImages } from "./document-images.js";
 import { layoutDocument } from "./document-layout.js";
 import { renderDocumentPdf } from "./document-pdf.js";
 import { prepareDocumentRaster, rasterizeDocument } from "./document-raster.js";
+import { documentScroll } from "./document-scroll.js";
 import type { DocumentTree } from "./document.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { encodePng } from "./png.js";
@@ -276,21 +277,83 @@ it("bounds page flex and relative layout work", () => {
 	expect(() => layoutDocument(tree)).not.toThrow();
 });
 
-it.each(["position:sticky", "overflow:hidden", "float:left", "display:grid"])(
-	"keeps unsupported %s layout explicit and recoverable",
-	(value) => {
-		const { tree, id, rect } = fixture(
-			`#target{display:inline-block;width:10px;height:10px;${value}}`,
-			'<div id="target"></div>',
-		);
-		expect(() => rect("#target")).toThrow(
-			expect.objectContaining({ code: "unsupported" }),
-		);
-		tree.setAttribute(
-			id("#target"),
-			"style",
-			"position:static;overflow:visible;float:none;display:inline-block",
-		);
-		expect(rect("#target")).toMatchObject({ width: 10, height: 10 });
-	},
-);
+it("projects sticky geometry without moving sibling flow and resets after mutation", () => {
+	const { tree, id, rect } = fixture(
+		"main{height:100px}#before{height:20px}#target{position:sticky;top:5px;width:10px;height:10px}#after{height:10px}#tail{height:100px}",
+		'<main><div id="before"></div><div id="target"></div><footer id="after"></footer></main><div id="tail"></div>',
+	);
+	expect(rect("#target")).toMatchObject({
+		x: 0,
+		y: 20,
+		width: 10,
+		height: 10,
+	});
+	expect(rect("#after").y).toBe(30);
+	const scroll = documentScroll(tree);
+	scroll.to(0, 30);
+	expect(scroll.get()).toEqual({ x: 0, y: 30 });
+	expect(rect("#target")).toMatchObject({ x: 0, y: 5, width: 10, height: 10 });
+	expect(rect("#after").y).toBe(0);
+	tree.setAttribute(id("#target"), "style", "top:8px");
+	expect(rect("#target").y).toBe(8);
+	tree.setAttribute(id("#target"), "style", "position:static");
+	expect(rect("#target")).toMatchObject({
+		x: 0,
+		y: -10,
+		width: 10,
+		height: 10,
+	});
+	expect(rect("#after").y).toBe(0);
+});
+
+it("clips overflow paint but not child rectangles and restores visible overflow", () => {
+	const { tree, id, rect } = fixture(
+		"body{background:white}#target{width:10px;height:10px;overflow:hidden}#child{width:20px;height:20px;background:red}",
+		'<div id="target"><div id="child"></div></div>',
+	);
+	expect(rect("#target")).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
+	expect(rect("#child")).toMatchObject({ x: 0, y: 0, width: 20, height: 20 });
+	const clipped = rasterizeDocument(tree).image;
+	expect(pixel(clipped, 5, 5)).toEqual([255, 0, 0, 255]);
+	expect(pixel(clipped, 15, 5)).toEqual([255, 255, 255, 255]);
+	expect(pixel(clipped, 5, 15)).toEqual([255, 255, 255, 255]);
+	tree.setAttribute(id("#target"), "style", "overflow:visible");
+	expect(rect("#target")).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
+	expect(rect("#child")).toMatchObject({ x: 0, y: 0, width: 20, height: 20 });
+	const visible = rasterizeDocument(tree).image;
+	expect(pixel(visible, 15, 5)).toEqual([255, 0, 0, 255]);
+	expect(pixel(visible, 5, 15)).toEqual([255, 0, 0, 255]);
+});
+
+it("places opposing floats inside a flow root and repositions them after mutation", () => {
+	const { tree, id, rect } = fixture(
+		"main{display:flow-root;width:60px}#target{display:inline-block;float:left;width:10px;height:10px}#peer{float:right;width:20px;height:15px}#after{height:5px}",
+		'<main><div id="target"></div><div id="peer"></div></main><footer id="after"></footer>',
+	);
+	expect(rect("#target")).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
+	expect(rect("#peer")).toMatchObject({ x: 40, y: 0, width: 20, height: 15 });
+	expect(rect("main")).toMatchObject({ x: 0, y: 0, width: 60, height: 15 });
+	expect(rect("#after").y).toBe(15);
+	tree.setAttribute(id("#target"), "style", "float:right");
+	expect(rect("#target")).toMatchObject({ x: 50, y: 0, width: 10, height: 10 });
+	expect(rect("#peer")).toMatchObject({ x: 30, y: 0, width: 20, height: 15 });
+	expect(rect("main").height).toBe(15);
+	expect(rect("#after").y).toBe(15);
+});
+
+it("places grid tracks and gaps and rebuilds geometry after track mutation", () => {
+	const { tree, id, rect } = fixture(
+		"main{display:grid;width:60px;grid-template-columns:20px 30px;grid-template-rows:10px 15px;gap:5px 10px}",
+		rowContent,
+	);
+	expect(rect("#first")).toMatchObject({ x: 0, y: 0, width: 20, height: 10 });
+	expect(rect("#second")).toMatchObject({ x: 30, y: 0, width: 30, height: 10 });
+	expect(rect("#third")).toMatchObject({ x: 0, y: 15, width: 20, height: 15 });
+	expect(rect("main")).toMatchObject({ x: 0, y: 0, width: 60, height: 30 });
+	expect(rect("#after").y).toBe(30);
+	tree.setAttribute(id("main"), "style", "grid-template-columns:30px 20px");
+	expect(rect("#first")).toMatchObject({ x: 0, y: 0, width: 30, height: 10 });
+	expect(rect("#second")).toMatchObject({ x: 40, y: 0, width: 20, height: 10 });
+	expect(rect("#third")).toMatchObject({ x: 0, y: 15, width: 30, height: 15 });
+	expect(rect("#after").y).toBe(30);
+});

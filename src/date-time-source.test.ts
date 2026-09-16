@@ -145,10 +145,10 @@ function append(
 }
 
 it.each(readerModes.flatMap((mode) => tags.map((tag) => ({ ...mode, tag }))))(
-	"retains $tag datetime through the $name reader",
+	"retains $tag datetime and inert class through the $name reader",
 	(mode) => {
 		const value = "2026-09-13T08:15:00+05:45";
-		const source = `<${mode.tag} id="date" datetime="${value}" onclick="discard()" class="discarded">Public label</${mode.tag}>`;
+		const source = `<${mode.tag} id="date" datetime="${value}" onclick="discard()" class="retained">Public label</${mode.tag}>`;
 		const sanitized = sanitizeResearchHtml(
 			source,
 			{},
@@ -157,13 +157,17 @@ it.each(readerModes.flatMap((mode) => tags.map((tag) => ({ ...mode, tag }))))(
 			mode.rawPolicy,
 		);
 		expect(sanitized.html).toBe(
-			`<${mode.tag} id="date" datetime="${value}">Public label</${mode.tag}>`,
+			`<${mode.tag} id="date" datetime="${value}" class="retained">Public label</${mode.tag}>`,
 		);
-		expect(sanitized.report.ignoredAttributes).toBe(2);
+		expect(sanitized.report.ignoredAttributes).toBe(1);
 		const tree = load(source, mode);
 		const id = element(query(tree), "#date");
 		expect(tree.get(id).tagName).toBe(mode.tag);
-		expect(tree.get(id).attributes).toEqual({ id: "date", datetime: value });
+		expect(tree.get(id).attributes).toEqual({
+			id: "date",
+			datetime: value,
+			class: "retained",
+		});
 		const result = structured(tree);
 		expect(record(result.content, tree, id).dateTimeSource).toEqual(
 			expected(mode.tag, value),

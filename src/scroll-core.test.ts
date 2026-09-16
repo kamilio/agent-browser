@@ -284,21 +284,40 @@ it("bounds offset traversal and scroll update admission", () => {
 
 it.each([
 	"position:sticky;transform:translateY(1px)",
-	"display:grid",
-	"overflow:hidden",
+	"display:table-cell;align-content:center",
+	"overflow:hidden;align-content:baseline",
 ])("rejects unsupported layout and recovers after reset: %s", (style) => {
 	const { tree, id, offsets, scroll } = fixture();
+	scroll.to(10, 20);
+	expect(offsets.get(id("#target"))).toEqual({
+		offsetParent: id("body"),
+		offsetLeft: 0,
+		offsetTop: 60,
+	});
 	tree.setAttribute(id("main"), "style", style);
-	expect(() => offsets.get(id("#target"))).toThrow();
-	expect(() => scroll.get()).toThrow();
+	expect(() => offsets.get(id("#target"))).toThrow(
+		expect.objectContaining({ code: "unsupported" }),
+	);
+	expect(() => scroll.get()).toThrow(
+		expect.objectContaining({ code: "unsupported" }),
+	);
 	tree.setAttribute(id("main"), "style", "");
-	expect(offsets.get(id("#target")).offsetTop).toBe(60);
+	expect(offsets.get(id("#target"))).toEqual({
+		offsetParent: id("body"),
+		offsetLeft: 0,
+		offsetTop: 60,
+	});
 	expect(scroll.bounds()).toEqual({ x: 60, y: 100 });
+	expect(scroll.get()).toEqual({ x: 10, y: 20 });
 });
 
-it.each(["table", "td", "th"])(
+it.each([
+	["table", 0, 4, 5],
+	["td", 1, 5, 6],
+	["th", 1, 5, 6],
+])(
 	"skips a static %s ancestor for a relatively positioned target",
-	(tag) => {
+	(tag, initialOffset, relativeLeft, relativeTop) => {
 		const content =
 			tag === "table"
 				? '<table id="parent"><caption><div id="target"></div></caption></table>'
@@ -307,7 +326,11 @@ it.each(["table", "td", "th"])(
 			"table,tbody,tr,td,th,caption{display:block}#target{width:20px;height:20px}",
 			content,
 		);
-		expect(offsets.get(id("#target")).offsetParent).toBe(id("#parent"));
+		expect(offsets.get(id("#target"))).toEqual({
+			offsetParent: id("#parent"),
+			offsetLeft: initialOffset,
+			offsetTop: initialOffset,
+		});
 		tree.setAttribute(
 			id("#target"),
 			"style",
@@ -315,8 +338,8 @@ it.each(["table", "td", "th"])(
 		);
 		expect(offsets.get(id("#target"))).toEqual({
 			offsetParent: id("body"),
-			offsetLeft: 4,
-			offsetTop: 5,
+			offsetLeft: relativeLeft,
+			offsetTop: relativeTop,
 		});
 		tree.setAttribute(
 			id("#parent"),

@@ -363,11 +363,27 @@ it("rejects overlapping native actions instead of corrupting mouse state", () =>
 });
 
 it("clears a released button even if fresh hit testing fails", () => {
-	const { tree, mouse, id } = fixture();
+	const { tree, mouse, id, events } = fixture();
 	mouse.move(5, 5);
 	mouse.down();
-	tree.setAttribute(id("#first"), "style", "position:sticky");
-	expect(() => mouse.up()).toThrow();
+	expect(mouse.metrics().buttons).toBe(1);
+	const hit = vi.spyOn(documentHitTesting(tree), "elementFromPoint");
+	tree.setAttribute(
+		id("#first"),
+		"style",
+		"position:sticky;align-content:baseline",
+	);
+	expect(() => mouse.up()).toThrow(
+		expect.objectContaining({ code: "unsupported" }),
+	);
+	expect(hit).toHaveBeenCalledWith(5, 5);
+	expect(mouse.metrics()).toMatchObject({ buttons: 0, busy: false });
+	tree.removeAttribute(id("#first"), "style");
+	mouse.up();
+	expect(events.filter((event) => event.type === "click")).toHaveLength(0);
+	mouse.down();
+	mouse.up();
+	expect(events.filter((event) => event.type === "click")).toHaveLength(1);
 	expect(mouse.metrics()).toMatchObject({ buttons: 0, busy: false });
 });
 

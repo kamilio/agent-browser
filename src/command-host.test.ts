@@ -192,7 +192,7 @@ it("submits a focused button through the session only when Space is released", a
 	expect(requests.at(-1)?.url).toBe(`${url}submit?go=yes`);
 });
 
-it("advertises bounded node relations without claiming full Node or namespace support", async () => {
+it("advertises bounded namespace-aware node relations without claiming full Node support", async () => {
 	const { host } = fixture();
 	const result = await host.execute(["capabilities"]);
 	expect(result.data).toMatchObject({
@@ -206,7 +206,7 @@ it("advertises bounded node relations without claiming full Node or namespace su
 			],
 			attributeNodes: true,
 			constantExposure: "node-instances",
-			namespaces: false,
+			namespaces: true,
 			shadowTrees: false,
 			maxWork: 100_000,
 			maxDepth: 1024,

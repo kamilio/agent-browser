@@ -43,7 +43,7 @@ const candidateAttributes: Record<string, string> = {
 	style: "color: red",
 	href: "/discarded-link",
 	src: "/discarded-image",
-	class: "discarded-class",
+	class: "retained-class",
 	title: "discarded-title",
 	"data-source": "discarded-data",
 };
@@ -147,7 +147,7 @@ function fixture(tagName: string, attributes: string) {
 }
 
 it.each(tags.flatMap((entry) => routes.map((route) => ({ ...entry, route }))))(
-	"retains only the exact $tagName allowlist through $route",
+	"exports only the exact $tagName metadata allowlist through $route",
 	({ tagName, allowed, route }) => {
 		const attributes = Object.entries(candidateAttributes)
 			.map(([name, value]) => `${name}="${value}"`)
@@ -162,14 +162,19 @@ it.each(tags.flatMap((entry) => routes.map((route) => ({ ...entry, route }))))(
 			sourceMetadata(tagName, expected),
 		);
 		if (route === "reader") {
-			expect(tree.get(id).attributes).toEqual(expected);
+			const expectedReaderAttributes = {
+				...expected,
+				class: candidateAttributes.class,
+			};
+			expect(tree.get(id).attributes).toEqual(expectedReaderAttributes);
 			const sanitized = sanitizeResearchHtml(source);
 			const sanitizedTree = load(sanitized.html, "native");
 			expect(
 				sanitizedTree.get(element(sanitizedTree, tagName)).attributes,
-			).toEqual(expected);
+			).toEqual(expectedReaderAttributes);
 			expect(sanitized.report.ignoredAttributes).toBe(
-				Object.keys(candidateAttributes).length - allowed.length,
+				Object.keys(candidateAttributes).length -
+					Object.keys(expectedReaderAttributes).length,
 			);
 		}
 	},

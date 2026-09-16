@@ -13,6 +13,7 @@ import {
 	pageBindingGlobalNames,
 } from "./page-bindings.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
+import { documentStyles } from "./styles.js";
 
 const documents: DocumentTree[] = [];
 const owners: PageBindings[] = [];
@@ -164,8 +165,8 @@ it.each(["userAgent", "language", "languages"] as const)(
 	},
 );
 
-it("does not invent platform, GPU, physical display or client-hint properties", () => {
-	const { owner, navigator } = fixture();
+it("exposes only a virtual screen without inventing platform, GPU or physical display identity", () => {
+	const { document, owner, navigator, definitions } = fixture();
 	for (const name of [
 		"platform",
 		"vendor",
@@ -176,7 +177,57 @@ it("does not invent platform, GPU, physical display or client-hint properties", 
 		"gpu",
 	])
 		expect(navigator).not.toHaveProperty(name);
-	expect(owner.window).not.toHaveProperty("screen");
+	const screen = owner.screen as Readonly<Record<string, number>>;
+	expect((owner.window as { screen: object }).screen).toBe(screen);
+	expect(owner.globals.screen).toBe(screen);
+	expect(
+		pageBindingGlobalNames(document).filter((name) => name === "screen"),
+	).toEqual(["screen"]);
+	const expected = {
+		width: 1280,
+		height: 720,
+		availWidth: 1280,
+		availHeight: 720,
+		colorDepth: 24,
+		pixelDepth: 24,
+	};
+	expect(Reflect.ownKeys(screen)).toEqual(Object.keys(expected));
+	for (const [name, value] of Object.entries(expected)) {
+		expect(screen[name]).toBe(value);
+		expect(definitions.get(screen)?.properties?.[name]?.get).toBeTypeOf(
+			"function",
+		);
+		expect(definitions.get(screen)?.properties?.[name]?.set).toBeUndefined();
+		expect(Reflect.set(screen, name, 999)).toBe(false);
+		expect(screen[name]).toBe(value);
+	}
+	for (const name of [
+		"Screen",
+		"getScreenDetails",
+		"screenX",
+		"screenY",
+		"screenLeft",
+		"screenTop",
+	])
+		expect(owner.window).not.toHaveProperty(name);
+	expect(owner.window).toHaveProperty("devicePixelRatio", 1);
+	expect(owner.window).toHaveProperty("outerWidth", 0);
+	expect(owner.window).toHaveProperty("outerHeight", 0);
+	documentStyles(document).setViewport(640, 480);
+	expect((owner.window as { screen: object }).screen).toBe(screen);
+	for (const [name, value] of Object.entries({
+		width: 640,
+		height: 480,
+		availWidth: 640,
+		availHeight: 480,
+		colorDepth: 24,
+		pixelDepth: 24,
+	}))
+		expect(screen[name]).toBe(value);
+	owner.close();
+	expect(() => (owner.window as { screen: object }).screen).toThrow();
+	for (const name of Object.keys(expected))
+		expect(() => screen[name]).toThrow();
 });
 
 it("revokes Window identity access after document close", () => {

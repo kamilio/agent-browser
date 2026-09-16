@@ -381,7 +381,7 @@ it("distinguishes compressible input controls from button-like controls", () => 
 });
 it.each([
 	"main{display:flex;flex-direction:column;flex-wrap:wrap;position:absolute}",
-	"main{display:grid}",
+	"main{display:table-cell;align-content:center}",
 	"main{position:absolute}",
 ])("does not guess intrinsic sizes for unsupported formatting: %s", (css) => {
 	expect(() => fixture("aa", css).measure()).toThrowError(

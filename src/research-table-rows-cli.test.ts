@@ -166,14 +166,6 @@ it.each(
 			"markdown",
 			"--table-rows",
 		],
-		[
-			"--selector",
-			"main",
-			"--recover-output-limit",
-			"--format",
-			"markdown",
-			"--table-rows",
-		],
 		["--selector", "main", "--format", "html", "--table-rows"],
 		["--selector", "main", "--format", "MARKDOWN", "--table-rows"],
 		["--selector", "main", "--table-rows", "--format"],
@@ -198,31 +190,35 @@ it.each(
 	},
 );
 
-it("accepts the full 14-argument row recovery form only for default admission", async () => {
-	const args = [
-		...pins,
-		"--section",
-		"#wanted",
-		"--recover-output-limit",
-		"--format",
-		"markdown",
-		"--table-rows",
-	];
-	expect(args).toHaveLength(14);
-	expect(parseResearchReplayArguments(args)).toMatchObject({
-		format: "markdown",
-		recoverOutputLimit: true,
-		selection: { section: "#wanted", tableRows: true },
-	});
-	args[1] = "long-v1";
-	const target = captureStreams(Uint8Array.of(123));
-	const read = vi.spyOn(target.input, "read");
-	await expect(
-		runResearchReplayCli(args, target.input, target.output),
-	).rejects.toMatchObject({ code: "invalid-input" });
-	expect(read).not.toHaveBeenCalled();
-	expect(target.text()).toBe("");
-});
+it.each(["selector", "section"] as const)(
+	"accepts the full 14-argument %s row recovery form only for default admission",
+	async (selection) => {
+		const targetSelector = selection === "selector" ? "main" : "#wanted";
+		const args = [
+			...pins,
+			`--${selection}`,
+			targetSelector,
+			"--recover-output-limit",
+			"--format",
+			"markdown",
+			"--table-rows",
+		];
+		expect(args).toHaveLength(14);
+		expect(parseResearchReplayArguments(args)).toMatchObject({
+			format: "markdown",
+			recoverOutputLimit: true,
+			selection: { [selection]: targetSelector, tableRows: true },
+		});
+		args[1] = "long-v1";
+		const target = captureStreams(Uint8Array.of(123));
+		const read = vi.spyOn(target.input, "read");
+		await expect(
+			runResearchReplayCli(args, target.input, target.output),
+		).rejects.toMatchObject({ code: "invalid-input" });
+		expect(read).not.toHaveBeenCalled();
+		expect(target.text()).toBe("");
+	},
+);
 
 it.each([
 	{ profile: "default", selection: "selector", recovery: false },
@@ -230,6 +226,7 @@ it.each([
 	{ profile: "long-v1", selection: "selector", recovery: false },
 	{ profile: "long-v1", selection: "section", recovery: false },
 	{ profile: "default", selection: "section", recovery: true },
+	{ profile: "default", selection: "selector", recovery: true },
 ] as const)(
 	"emits pinned $profile $selection rows (recovery=$recovery) without network",
 	async ({ profile, selection, recovery }) => {
@@ -325,7 +322,7 @@ it.each([
 		});
 		if (recovery)
 			expect(output.recovery).toMatchObject({
-				kind: "captured-output-limit-section",
+				kind: `captured-output-limit-${selection}`,
 				originalOutcome: "failure",
 				originalContentSuccess: false,
 				originalFailure: report.failure,

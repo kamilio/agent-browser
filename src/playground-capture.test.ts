@@ -81,7 +81,7 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 	vi.useRealTimers();
 });
-async function fixture(unsupported = false, content = "Hello") {
+async function fixture(sticky = false, content = "Hello") {
 	vi.useFakeTimers();
 	const source = parseHtmlDocument(
 		playgroundHtml,
@@ -171,7 +171,7 @@ async function fixture(unsupported = false, content = "Hello") {
 				}),
 				loadDocument: (response) =>
 					parseHtmlDocument(
-						`<main style="height:20px;background-color:navy;color:aquamarine${unsupported ? ";position:sticky" : ""}">${content}</main>`,
+						`<main style="height:20px;background-color:navy;color:aquamarine${sticky ? ";position:sticky;top:0" : ""}">${content}</main>`,
 						response.url,
 					),
 			}),
@@ -1248,24 +1248,32 @@ it("disables viewport mutations on malformed server state while keeping other in
 	expect(calls.some((argv) => argv[0] === "mousewheel")).toBe(false);
 });
 
-it("renders actual PNG bytes through the UI command flow and revokes the preview on disconnect", async () => {
-	const { get, host, calls, blobs, revoked } = await fixture();
-	get("capture-render").click();
-	await settle();
-	expect(get("render-image").src).toBe("blob:fixture/1");
-	expect(get("render-image").hidden).toBe(false);
-	expect(get("render-state").textContent).toContain("40 × 40");
-	expect(get("render-state").textContent).toContain("not a live view");
-	expect([
-		...new Uint8Array(await blobs[0].arrayBuffer()).subarray(0, 8),
-	]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
-	expect(calls.some((argv) => argv[0] === "artifact-read")).toBe(true);
-	expect(host.metrics().captureArtifacts.bytes).toBe(0);
-	get("disconnect").click();
-	await settle();
-	expect(get("render-image").src).toBe("");
-	expect(revoked).toHaveBeenCalledWith("blob:fixture/1");
-});
+it.each([false, true])(
+	"renders actual PNG bytes and revokes the preview on disconnect (sticky=%s)",
+	async (sticky) => {
+		const { get, host, calls, blobs, revoked } = await fixture(sticky);
+		get("capture-render").click();
+		await settle();
+		expect(get("render-image").src).toBe("blob:fixture/1");
+		expect(get("render-image").hidden).toBe(false);
+		expect(get("render-state").textContent).toContain("40 × 40");
+		expect(get("render-state").textContent).toContain("not a live view");
+		const bytes = new Uint8Array(await blobs[0].arrayBuffer());
+		expect([...bytes.subarray(0, 8)]).toEqual([
+			137, 80, 78, 71, 13, 10, 26, 10,
+		]);
+		const image = decodePng(bytes).image;
+		expect(image.width).toBe(40);
+		expect(image.height).toBe(40);
+		expect([...image.pixels.subarray(0, 4)]).toEqual([0, 0, 128, 255]);
+		expect(calls.some((argv) => argv[0] === "artifact-read")).toBe(true);
+		expect(host.metrics().captureArtifacts.bytes).toBe(0);
+		get("disconnect").click();
+		await settle();
+		expect(get("render-image").src).toBe("");
+		expect(revoked).toHaveBeenCalledWith("blob:fixture/1");
+	},
+);
 
 it("downloads a fresh PNG using a separate short-lived blob URL", async () => {
 	const { get, body, blobs, revoked } = await fixture();
@@ -1279,45 +1287,60 @@ it("downloads a fresh PNG using a separate short-lived blob URL", async () => {
 	expect(get("render-image").src).toBe("blob:fixture/1");
 });
 
-it("downloads actual PDF bytes and releases its blob and remote artifact", async () => {
-	const { get, host, calls, body, blobs, revoked } = await fixture();
-	expect(get("download-pdf").disabled).toBe(false);
-	get("download-pdf").click();
-	await settle();
-	expect(calls).toContainEqual(["pdf"]);
-	expect(blobs).toHaveLength(1);
-	expect(blobs[0].type).toBe("application/pdf");
-	expect(
-		new TextDecoder().decode(
-			new Uint8Array(await blobs[0].arrayBuffer()).subarray(0, 9),
-		),
-	).toBe("%PDF-1.4\n");
-	expect(body.children.at(-1)?.download).toBe("agent-browser.pdf");
-	expect(get("render-state").textContent).toContain("not print media");
-	expect(host.metrics().captureArtifacts.bytes).toBe(0);
-	await vi.advanceTimersByTimeAsync(1001);
-	expect(revoked).toHaveBeenCalledWith("blob:fixture/1");
-});
+it.each([false, true])(
+	"downloads actual PDF bytes and releases its blob and artifact (sticky=%s)",
+	async (sticky) => {
+		const { get, host, calls, body, blobs, revoked } = await fixture(sticky);
+		expect(get("download-pdf").disabled).toBe(false);
+		get("download-pdf").click();
+		await settle();
+		expect(calls).toContainEqual(["pdf"]);
+		expect(blobs).toHaveLength(1);
+		expect(blobs[0].type).toBe("application/pdf");
+		expect(
+			new TextDecoder().decode(
+				new Uint8Array(await blobs[0].arrayBuffer()).subarray(0, 9),
+			),
+		).toBe("%PDF-1.4\n");
+		expect(body.children.at(-1)?.download).toBe("agent-browser.pdf");
+		expect(get("render-state").textContent).toContain("not print media");
+		expect(host.metrics().captureArtifacts.bytes).toBe(0);
+		await vi.advanceTimersByTimeAsync(1001);
+		expect(revoked).toHaveBeenCalledWith("blob:fixture/1");
+	},
+);
 
 it("does not download a substitute PDF when native layout is unsupported", async () => {
-	const { get, host, blobs } = await fixture(true);
+	const { get, host, body, blobs } = await fixture(
+		false,
+		'<span>A<div style="position:fixed">X</div>B</span>',
+	);
 	get("download-pdf").click();
 	await settle();
 	expect(get("error").hidden).toBe(false);
+	expect(get("error").textContent).toContain("block-in-inline");
 	expect(get("render-state").textContent).toContain("no substitute");
 	expect(blobs).toHaveLength(0);
+	expect(body.children.some((element) => element.download !== "")).toBe(false);
 	expect(host.metrics().captureArtifacts.bytes).toBe(0);
+	expect(host.metrics().captureArtifacts.artifacts).toBe(0);
 });
 
 it("displays native unsupported-layout errors without fabricating a PNG", async () => {
-	const { get, host, blobs } = await fixture(true);
+	const { get, host, blobs } = await fixture(
+		false,
+		'<span>A<div style="position:fixed">X</div>B</span>',
+	);
 	get("capture-render").click();
 	await settle();
 	expect(get("render-state").textContent).toContain("no placeholder");
 	expect(get("error").hidden).toBe(false);
+	expect(get("error").textContent).toContain("block-in-inline");
 	expect(get("render-image").hidden).toBe(true);
+	expect(get("render-image").src).toBe("");
 	expect(blobs).toHaveLength(0);
 	expect(host.metrics().captureArtifacts.artifacts).toBe(0);
+	expect(host.metrics().captureArtifacts.bytes).toBe(0);
 });
 
 it.each(["capture-render", "download-png"])(

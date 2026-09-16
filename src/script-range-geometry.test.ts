@@ -187,10 +187,21 @@ it("publishes boxless hidden text without masking unsupported visible layout", (
 	const { range, target } = fixture();
 	target.setAttribute("style", "display:none");
 	expect(range.getClientRects().length).toBe(0);
-	target.setAttribute("style", "position:sticky");
+	target.setAttribute("style", "position:sticky;align-content:baseline");
+	expect(() => range.getClientRects()).toThrow(
+		expect.objectContaining({ code: "unsupported" }),
+	);
 	expect(() => range.getBoundingClientRect()).toThrow(
 		expect.objectContaining({ code: "unsupported" }),
 	);
+	target.removeAttribute("style");
+	expect(range.getClientRects().length).toBe(3);
+	expect(range.getBoundingClientRect()).toMatchObject({
+		x: 0,
+		y: 1,
+		width: 12,
+		height: 28,
+	});
 });
 
 it("keeps fixed published rectangles stable while ordinary rectangles scroll", () => {

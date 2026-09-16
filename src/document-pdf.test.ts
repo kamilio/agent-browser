@@ -87,11 +87,44 @@ it("does not expose display-none, hidden or transparent text in the search layer
 it("rejects unsupported CSS instead of printing a fallback", () => {
 	expect(() =>
 		renderDocumentPdf(
-			fixture(
-				'<main style="display:flex;flex-direction:column;flex-wrap:wrap;position:sticky">unsupported</main>',
-			),
+			fixture('<span>A<div style="position:fixed">X</div>B</span>'),
 		),
-	).toThrowError(expect.objectContaining({ code: "unsupported" }));
+	).toThrowError(
+		expect.objectContaining({
+			code: "unsupported",
+			message:
+				"Static positioning across block-in-inline splits is not implemented",
+		}),
+	);
+});
+
+it("embeds the exact sticky flex background pixels in a single-page PDF", () => {
+	const result = renderDocumentPdf(
+		fixture(
+			'<main style="display:flex;flex-direction:column;flex-wrap:wrap;position:sticky;top:0;height:16px;background-color:#123456"></main>',
+		),
+	);
+	expect(result.metrics.pages).toBe(1);
+	expect(result.metrics.layoutPasses).toBe(1);
+	expect(result.clips).toEqual([{ x: 0, y: 0, width: 64, height: 16 }]);
+	expect(result.width).toBe(64);
+	expect(result.height).toBe(16);
+	const source = Buffer.from(result.bytes).toString("latin1");
+	expect(source.startsWith("%PDF-1.4\n")).toBe(true);
+	const pattern =
+		/<< \/Type \/XObject \/Subtype \/Image.*?\/Length (\d+) >>\nstream\n/gs;
+	const match = pattern.exec(source);
+	if (!match) throw new Error("Missing sticky PDF image");
+	const pixels = inflateSync(
+		result.bytes.subarray(
+			pattern.lastIndex,
+			pattern.lastIndex + Number(match[1]),
+		),
+	);
+	const expected = Buffer.alloc(64 * 16 * 3);
+	for (let pixel = 0; pixel < 64 * 16; pixel++)
+		expected.set([18, 52, 86], pixel * 3);
+	expect(pixels).toEqual(expected);
 });
 
 it("rejects an unbroken line taller than the page", () => {

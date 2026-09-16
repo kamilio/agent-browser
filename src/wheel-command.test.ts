@@ -54,17 +54,25 @@ afterEach(() => {
 	for (const host of hosts.splice(0)) host.close();
 });
 
-it("advertises actual pixel-wheel support while retaining explicit viewport-only limits", async () => {
+it("advertises bounded nested-scrollport pixel-wheel support without smooth or modifier defaults", async () => {
 	const { host } = await fixture();
 	expect((await host.execute(["capabilities"])).data).toMatchObject({
 		viewportScrolling: {
 			partial: true,
 			command: "mousewheel",
-			elementScrolling: false,
+			elementScrolling: true,
+			smooth: false,
+			scrollbars: false,
 			programmaticGuestScrolling: true,
 		},
+		elementScrolling: {
+			partial: true,
+			profile: "physical-ltr-nested-overflow",
+			nestedScrolling: true,
+			controlMetrics: false,
+		},
 		mouse: {
-			scrolling: "root-viewport-pixel-wheel",
+			scrolling: "nested-scrollport-pixel-wheel",
 			modifierWheelDefaults: false,
 		},
 	});

@@ -211,10 +211,10 @@ it.each([
 		issue: "css:unimplemented-or-invalid-css-value",
 	},
 	{
-		name: "unsupported display",
-		css: "main{display:grid}",
+		name: "unsupported table-cell alignment",
+		css: "main{display:table-cell;align-content:center}",
 		markup: '<main id="target">ab</main>',
-		issue: "display-layout-not-supported",
+		issue: "block-content-alignment-not-supported",
 	},
 	{
 		name: "unsupported relative legend",

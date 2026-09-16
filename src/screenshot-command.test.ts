@@ -7,6 +7,7 @@ import type { DocumentTree } from "./document.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { scriptFrame, scriptFrameLimit } from "./node-script-protocol.js";
 import { encodePng } from "./png.js";
+import { createRaster } from "./raster.js";
 import { BrowserSession } from "./session.js";
 
 const hosts: BrowserCommandHost[] = [];
@@ -179,16 +180,50 @@ it("supports hires truthfully at device scale one and never writes server-side f
 	expect(host.capabilities().screenshots.transport).toBe("artifact-chunks");
 });
 
+it("captures the exact pixels and projected border box of a supported sticky target", async () => {
+	const { host } = fixture(
+		'<main style="height:40px"><div id="target" style="position:sticky;top:5px;width:20px;height:10px;background-color:#123456"></div></main>',
+	);
+	await host.execute(["open", "https://fixture.invalid/"]);
+	await host.execute(["resize", "40", "40"]);
+	const result = await capturePng((argv) => host.execute(argv), "#target");
+	expect(result.artifact).toMatchObject({
+		width: 20,
+		height: 10,
+		clip: { x: 0, y: 5, width: 20, height: 10 },
+	});
+	expect(result.bytes).toEqual(
+		encodePng(createRaster(20, 10, [18, 52, 86, 255])),
+	);
+	expect(result.released).toBe(true);
+	expect(host.metrics().captureArtifacts.artifacts).toBe(0);
+	expect(host.metrics().captureArtifacts.bytes).toBe(0);
+});
+
+it("rejects unsupported block-in-inline layout without publishing an artifact", async () => {
+	const { host } = fixture(
+		'<main><span>A<div style="position:fixed">X</div>B</span></main>',
+	);
+	await host.execute(["open", "https://fixture.invalid/"]);
+	await expect(host.execute(["screenshot", "main"])).rejects.toMatchObject({
+		code: "unsupported",
+		message:
+			"Static positioning across block-in-inline splits is not implemented",
+	});
+	expect(host.metrics().captureArtifacts.artifacts).toBe(0);
+	expect(host.metrics().captureArtifacts.bytes).toBe(0);
+});
+
 it.each([
 	'<main style="display:none">X</main>',
 	'<main style="height:0"></main>',
 	'<span id="target"></span>',
-	'<main style="position:sticky">X</main>',
-])("rejects unsupported or invisible element captures: %s", async (markup) => {
+])("rejects invisible element captures: %s", async (markup) => {
 	const { host } = fixture(markup);
 	await host.execute(["open", "https://fixture.invalid/"]);
 	await expect(
 		host.execute(["screenshot", markup.startsWith("<span") ? "span" : "main"]),
 	).rejects.toThrow();
+	expect(host.metrics().captureArtifacts.artifacts).toBe(0);
 	expect(host.metrics().captureArtifacts.bytes).toBe(0);
 });

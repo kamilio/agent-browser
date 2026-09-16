@@ -262,10 +262,17 @@ describe("runtime-independent page capability setup", () => {
 		expect(
 			() => new PageBindings(test.page, test.context, test.lifecycle),
 		).toThrow("registration failed");
-		expect(test.objects.length).toBeGreaterThan(0);
+		const performanceIndex = test.definitions.findIndex((definition) =>
+			Object.hasOwn(definition.properties ?? {}, "timeOrigin"),
+		);
+		expect(performanceIndex).toBeGreaterThanOrEqual(0);
 		expect(
-			() => (test.objects[0] as { timeOrigin: number }).timeOrigin,
+			() =>
+				(test.objects[performanceIndex] as { timeOrigin: number }).timeOrigin,
 		).toThrow("closed");
+		expect(() => (test.objects[0] as { userAgent: string }).userAgent).toThrow(
+			"closed",
+		);
 		expect(test.page.interactions.events.metrics().closed).toBe(false);
 	});
 
@@ -279,9 +286,10 @@ describe("runtime-independent page capability setup", () => {
 		expect(
 			() => new PageBindings(test.page, test.context, test.lifecycle),
 		).toThrow("host limit");
-		expect(
-			() => (test.objects[0] as { timeOrigin: number }).timeOrigin,
-		).toThrow("closed");
+		expect(test.objects).toHaveLength(1);
+		expect(() => (test.objects[0] as { userAgent: string }).userAgent).toThrow(
+			"closed",
+		);
 	});
 
 	it("rejects a closed lifecycle before constructing any capability", () => {

@@ -355,15 +355,45 @@ it("recomputes downstream offsets after loaded image dimensions change", async (
 });
 
 it.each([
-	"position:sticky",
-	"position:absolute;inset:0",
-	"position:fixed;overflow:hidden",
-	"transform:translateX(2px)",
-	"border:1px dashed red",
-	"zoom:2",
-	"display:grid",
-	"display:flex;flex-direction:column;flex-wrap:wrap;position:sticky",
-])(
+	["position:sticky", "main", 7, 8],
+	["position:fixed;overflow:hidden", "main", 7, 8],
+	["border:1px dashed red", "body", 8, 9],
+	["display:grid", "body", 9, 10],
+	[
+		"display:flex;flex-direction:column;flex-wrap:wrap;position:sticky",
+		"main",
+		7,
+		8,
+	],
+] as const)(
+	"measures supported %s offsets and refreshes the padding edge after mutation",
+	(declaration, parent, offsetLeft, offsetTop) => {
+		const { tree, id, offsets, read } = fixture(
+			undefined,
+			`main{height:40px;padding:3px;border:2px solid black;${declaration}}#target{margin:5px 0 0 4px;width:10px;height:6px}`,
+		);
+		const expected = { offsetParent: id(parent), offsetLeft, offsetTop };
+		const previous = read();
+		expect(previous).toEqual(expected);
+		expect(read()).toBe(previous);
+		expect(offsets.metrics()).toMatchObject({ retained: 1, measurements: 1 });
+		tree.setAttribute(
+			id("main"),
+			"style",
+			"position:static;display:block;overflow:visible;border:4px dashed red;padding:6px",
+		);
+		expect(read()).toEqual({
+			offsetParent: id("body"),
+			offsetLeft: 14,
+			offsetTop: 15,
+		});
+		expect(previous).toEqual(expected);
+		expect(Object.isFrozen(previous)).toBe(true);
+		expect(offsets.metrics()).toMatchObject({ retained: 1, measurements: 2 });
+	},
+);
+
+it.each(["position:absolute;inset:0", "transform:translateX(2px)", "zoom:2"])(
 	"refuses unsupported geometry rather than returning plausible offsets for %s",
 	(declaration) => {
 		const { tree, id, offsets, read } = fixture(
@@ -375,7 +405,12 @@ it.each([
 		);
 		expect(offsets.metrics().retained).toBe(0);
 		tree.setAttribute(id("style"), "type", "text/plain");
-		expect(() => read()).not.toThrow();
+		expect(read()).toEqual({
+			offsetParent: id("body"),
+			offsetLeft: 0,
+			offsetTop: 0,
+		});
+		expect(offsets.metrics()).toMatchObject({ retained: 1, measurements: 1 });
 	},
 );
 

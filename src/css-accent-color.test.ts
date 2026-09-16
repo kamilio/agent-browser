@@ -381,12 +381,147 @@ it("shares literal, camel and method access with one canonical inline slot and n
 	expect(test.tree.revision).toBe(revision);
 });
 
-it("enumerates exactly 75 unique computed properties with one accent-color entry", () => {
+it("enumerates exactly 132 unique computed properties with one accent-color entry", () => {
 	const test = fixture();
-	expect(computedStyleProperties).toHaveLength(75);
-	expect(test.computed.length).toBe(75);
-	expect(names(test.computed)).toEqual(computedStyleProperties);
-	expect(new Set(names(test.computed)).size).toBe(75);
+	const expected = [
+		"accent-color",
+		"align-content",
+		"align-items",
+		"align-self",
+		"background-attachment",
+		"background-clip",
+		"background-color",
+		"background-image",
+		"background-origin",
+		"background-position",
+		"background-repeat",
+		"background-size",
+		"border-bottom-color",
+		"border-bottom-left-radius",
+		"border-bottom-right-radius",
+		"border-bottom-style",
+		"border-bottom-width",
+		"border-collapse",
+		"border-left-color",
+		"border-left-style",
+		"border-left-width",
+		"border-right-color",
+		"border-right-style",
+		"border-right-width",
+		"border-spacing",
+		"border-top-color",
+		"border-top-left-radius",
+		"border-top-right-radius",
+		"border-top-style",
+		"border-top-width",
+		"bottom",
+		"box-sizing",
+		"caption-side",
+		"caret-color",
+		"clear",
+		"clip-path",
+		"clip-rule",
+		"color",
+		"column-gap",
+		"cursor",
+		"display",
+		"empty-cells",
+		"fill",
+		"fill-opacity",
+		"fill-rule",
+		"flex-basis",
+		"flex-direction",
+		"flex-grow",
+		"flex-shrink",
+		"flex-wrap",
+		"float",
+		"font-family",
+		"font-size",
+		"font-style",
+		"font-weight",
+		"grid-auto-columns",
+		"grid-auto-flow",
+		"grid-auto-rows",
+		"grid-column-end",
+		"grid-column-start",
+		"grid-row-end",
+		"grid-row-start",
+		"grid-template-areas",
+		"grid-template-columns",
+		"grid-template-rows",
+		"height",
+		"hyphens",
+		"justify-content",
+		"left",
+		"letter-spacing",
+		"line-height",
+		"list-style-image",
+		"list-style-position",
+		"list-style-type",
+		"margin-block-end",
+		"margin-block-start",
+		"margin-bottom",
+		"margin-inline-end",
+		"margin-inline-start",
+		"margin-left",
+		"margin-right",
+		"margin-top",
+		"max-height",
+		"max-width",
+		"min-height",
+		"min-width",
+		"opacity",
+		"order",
+		"outline-color",
+		"outline-offset",
+		"outline-style",
+		"outline-width",
+		"overflow-wrap",
+		"overflow-x",
+		"overflow-y",
+		"padding-block-end",
+		"padding-block-start",
+		"padding-bottom",
+		"padding-inline-end",
+		"padding-inline-start",
+		"padding-left",
+		"padding-right",
+		"padding-top",
+		"pointer-events",
+		"position",
+		"right",
+		"row-gap",
+		"stop-color",
+		"stop-opacity",
+		"stroke",
+		"stroke-linecap",
+		"stroke-linejoin",
+		"stroke-miterlimit",
+		"stroke-opacity",
+		"stroke-width",
+		"table-layout",
+		"text-align",
+		"text-decoration-color",
+		"text-decoration-line",
+		"text-decoration-style",
+		"text-decoration-thickness",
+		"text-indent",
+		"text-transform",
+		"text-underline-offset",
+		"top",
+		"vertical-align",
+		"visibility",
+		"white-space",
+		"width",
+		"word-break",
+		"word-spacing",
+		"z-index",
+	];
+	expect(computedStyleProperties).toHaveLength(132);
+	expect(computedStyleProperties).toEqual(expected);
+	expect(test.computed.length).toBe(132);
+	expect(names(test.computed)).toEqual(expected);
+	expect(new Set(names(test.computed)).size).toBe(132);
 	expect(
 		names(test.computed).filter((name) => name === "accent-color"),
 	).toHaveLength(1);
@@ -398,9 +533,12 @@ it("enumerates exactly 75 unique computed properties with one accent-color entry
 			{ length: test.computed.length },
 			(_value, index) => test.computed[index],
 		),
-	).toEqual(computedStyleProperties);
-	expect(test.computed.item(75)).toBe("");
-	expect(test.computed[75]).toBeUndefined();
+	).toEqual(expected);
+	expect(test.computed.item(131)).toBe("z-index");
+	expect(test.computed[131]).toBe("z-index");
+	expect(test.computed.item(-1)).toBe("");
+	expect(test.computed.item(132)).toBe("");
+	expect(test.computed[132]).toBeUndefined();
 });
 
 it("keeps custom-property case and method spelling separate from the camel accessor", () => {
@@ -601,7 +739,7 @@ it("keeps detached inline style live and restores computed values on reattachmen
 	test.style.accentColor = "currentcolor";
 	test.tree.append(parent, test.target);
 	expect(test.computed.accentColor).toBe("currentcolor");
-	expect(test.computed.length).toBe(75);
+	expect(test.computed.length).toBe(132);
 });
 
 it.each(["document", "dom"])(
