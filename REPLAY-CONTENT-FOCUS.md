@@ -121,3 +121,17 @@ a footer can also remove commercial qualifications. Product amounts, stock,
 review authenticity and offers remain unverified captured claims. The browser
 does not automatically widen scope based on output size, retry, or treat a
 diagnostic response prefix as a complete replayable page.
+
+## Conservative automatic alternative
+
+`--content-focus main-content-v2` adds an opt-in structural safeguard for the
+promotional-article case. With no main and one article, admitted visible content
+outside article/ancillary contexts causes document fallback. No output-size or
+domain heuristic is involved. `main-content-v1`, absent-policy extraction,
+manual selectors, admission and budgets retain their existing behavior.
+
+V2 automatically reproduces the saved Home Depot whole-document output without
+the site-specific selector;11 other saved-page content outputs remain unchanged.
+See `CONSERVATIVE-CONTENT-FOCUS.md` for the exact signal, metadata, limits and
+remaining quality tradeoffs. This does not rewrite the earlier manual replay
+measurements or turn saved-body comparisons into fresh website validation.

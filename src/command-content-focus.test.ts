@@ -9,10 +9,12 @@ import { BrowserSession } from "./session.js";
 const hosts: BrowserCommandHost[] = [];
 const url = "https://content-focus.fixture.invalid/";
 const focusFlag = "--content-focus=main-content-v1";
+const policies = ["main-content-v1", "main-content-v2"] as const;
 
 async function fixture(
 	mains = ["Main evidence"],
 	articles = ["Article evidence"],
+	sibling = "",
 ) {
 	const tree = new DocumentTree(url);
 	const body = tree.createElement("body");
@@ -30,6 +32,7 @@ async function fixture(
 	const mainNodes = mains.map((text, index) =>
 		append("main", text, `main-${index}`),
 	);
+	if (sibling) append("section", sibling, "sibling");
 	append("footer", "Footer outside landmarks", "footer");
 	const requests: string[] = [];
 	let closed = false;
@@ -72,18 +75,23 @@ afterEach(() => {
 	for (const host of hosts.splice(0)) host.close();
 });
 
-it.each([["--content-focus", "main-content-v1"], [focusFlag]])(
-	"parses the string content-focus option %j",
-	(...flags) => {
-		expect(
-			parseInvocation(["extract", ...flags, "--format=json"]),
-		).toMatchObject({
+it.each(
+	policies.flatMap((policy) => [
+		["--content-focus", policy],
+		[`--content-focus=${policy}`],
+	]),
+)("parses the string content-focus option %j", (...flags) => {
+	expect(parseInvocation(["extract", ...flags, "--format=json"])).toMatchObject(
+		{
 			command: "extract",
 			arguments: [],
-			options: { "content-focus": "main-content-v1", format: "json" },
-		});
-	},
-);
+			options: {
+				"content-focus": flags.length === 1 ? flags[0].split("=")[1] : flags[1],
+				format: "json",
+			},
+		},
+	);
+});
 
 it("leaves content focus absent by default and defers policy validation to core", () => {
 	expect(parseInvocation(["extract"]).options).not.toHaveProperty(
@@ -257,18 +265,108 @@ it.each([
 	expect(requests).toEqual([url]);
 });
 
+it.each(
+	["markdown", "json"].flatMap((format) =>
+		[
+			{ mains: [], sibling: "Useful sibling product" },
+			{ mains: [], sibling: "" },
+			{ mains: ["Main evidence"], sibling: "Useful sibling product" },
+		].map((scenario) => ({ format, ...scenario })),
+	),
+)(
+	"preserves v1 and forwards v2 through the host as $format with mains=$mains sibling='$sibling'",
+	async ({ format, mains, sibling }) => {
+		const { host, session, tree, requests } = await fixture(
+			mains,
+			["Article evidence"],
+			sibling,
+		);
+		const tabs = session.tabs();
+		const baseline = await host.execute(["extract", `--format=${format}`]);
+		const original = await host.execute([
+			"extract",
+			focusFlag,
+			`--format=${format}`,
+		]);
+		for (const policy of policies) {
+			const fallback =
+				policy === "main-content-v2" && mains.length === 0 && sibling !== "";
+			const landmark = mains.length ? "main" : "article";
+			const result = (
+				await host.execute([
+					"extract",
+					`--content-focus=${policy}`,
+					`--format=${format}`,
+				])
+			).data as DocumentExtraction;
+			expect(result.contentSelection).toMatchObject({
+				policy,
+				selected: fallback ? "document" : landmark,
+				reason: fallback
+					? "article-with-outside-content"
+					: `unique-${landmark}`,
+				mainCandidates: mains.length,
+				articleCandidates: 1,
+			});
+			if (policy === "main-content-v2")
+				expect(result.contentSelection).toHaveProperty(
+					"outsideArticleContent",
+					sibling !== "",
+				);
+			else {
+				expect(result).toEqual(original.data);
+				expect(result.contentSelection).not.toHaveProperty(
+					"outsideArticleContent",
+				);
+			}
+			if (fallback) {
+				expect(result.scope).toBe(tree.reference(tree.root));
+				expect(result.content).toEqual(
+					(baseline.data as DocumentExtraction).content,
+				);
+				expect(JSON.stringify(result.content)).toContain(
+					"Useful sibling product",
+				);
+			} else {
+				expect(result.scope).not.toBe(tree.reference(tree.root));
+				expect(JSON.stringify(result.content)).not.toContain(
+					"Useful sibling product",
+				);
+			}
+		}
+		expect(
+			(await host.execute(["extract", focusFlag, `--format=${format}`])).data,
+		).toEqual(original.data);
+		expect(
+			(await host.execute(["extract", `--format=${format}`])).data,
+		).toEqual(baseline.data);
+		expect(session.tabs()).toEqual(tabs);
+		expect(requests).toEqual([url]);
+	},
+);
+
 it("rejects invalid policies and positional roots without navigating or changing defaults", async () => {
 	const { host, session, tree, mainNodes, requests } = await fixture();
 	const tabs = session.tabs();
 	const baseline = await host.execute(["extract"]);
-	for (const policy of ["false", "true", "main", "main-content-v2", " "])
+	for (const policy of [
+		"false",
+		"true",
+		"main",
+		"main-content-v3",
+		"MAIN-CONTENT-V2",
+		" main-content-v2",
+		"main-content-v2\n",
+		" ",
+	])
 		await expect(
 			host.execute(["extract", `--content-focus=${policy}`]),
 		).rejects.toMatchObject({ code: "invalid-input" });
 	for (const target of ["#main-0", tree.reference(mainNodes[0])]) {
-		await expect(
-			host.execute(["extract", target, focusFlag]),
-		).rejects.toMatchObject({ code: "invalid-input" });
+		for (const policy of policies)
+			await expect(
+				host.execute(["extract", target, `--content-focus=${policy}`]),
+			).rejects.toMatchObject({ code: "invalid-input" });
 		expect((await host.execute(["extract", target])).data).toMatchObject({
 			scope: tree.reference(mainNodes[0]),
 		});

@@ -1,6 +1,7 @@
 import type { Readable, Writable } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { AgentBrowserError } from "../src/errors.js";
+import type { ContentFocusPolicy } from "../src/extraction-content-focus.js";
 import { researchLongDocumentAdmission } from "../src/research-admission.js";
 import { validateSelectorSyntax } from "../src/selectors.js";
 import type { TrustedResearchReplayAdmission } from "./research-admission-evidence.js";
@@ -24,7 +25,7 @@ export const researchReplayCliLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--content-focus main-content-v1 | --selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--reader-mime-policy markdown-html-document-v1] [--output-limit-policy text-prefix-v1] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit | --recover-empty-outline] < receipt.jsonl\nOutput-limit recovery requires the default profile and one explicit --selector, --section or --headings. Empty-outline recovery requires long-v1 and one explicit --selector. Recovery flags are mutually exclusive. Content focus requires an ordinary complete capture and cannot use recovery flags. Reader MIME policy requires default-profile ordinary selector/section/content-focus replay of a complete text/markdown capture with a recognized HTML document prefix and no captured MIME policy or interpretation; it never rewrites capture metadata or admits genuine Markdown as HTML. Text-prefix output requires ordinary selector/section/content-focus Markdown replay; it never admits incomplete bodies. Markdown requires selector/section/content-focus extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section/content-focus extraction and may be combined. Headings require output-limit recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
+	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--content-focus main-content-v1|main-content-v2 | --selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--reader-mime-policy markdown-html-document-v1] [--output-limit-policy text-prefix-v1] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit | --recover-empty-outline] < receipt.jsonl\nOutput-limit recovery requires the default profile and one explicit --selector, --section or --headings. Empty-outline recovery requires long-v1 and one explicit --selector. Recovery flags are mutually exclusive. Content focus requires an ordinary complete capture and cannot use recovery flags. Reader MIME policy requires default-profile ordinary selector/section/content-focus replay of a complete text/markdown capture with a recognized HTML document prefix and no captured MIME policy or interpretation; it never rewrites capture metadata or admits genuine Markdown as HTML. Text-prefix output requires ordinary selector/section/content-focus Markdown replay; it never admits incomplete bodies. Markdown requires selector/section/content-focus extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section/content-focus extraction and may be combined. Headings require output-limit recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
 
 function invalidArguments(): never {
 	throw new AgentBrowserError(
@@ -212,7 +213,8 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	}
 	if (!target || target.trim() !== target) invalidArguments();
 	if (mode === "--content-focus") {
-		if (target !== "main-content-v1") invalidArguments();
+		if (target !== "main-content-v1" && target !== "main-content-v2")
+			invalidArguments();
 	} else if (mode === "--links") {
 		if (
 			tableMetadata ||
@@ -250,7 +252,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		trusted,
 		selection:
 			mode === "--content-focus"
-				? { contentFocus: "main-content-v1", ...metadata }
+				? { contentFocus: target as ContentFocusPolicy, ...metadata }
 				: mode === "--links"
 					? { links: target }
 					: mode === "--section"

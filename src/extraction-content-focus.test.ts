@@ -56,6 +56,7 @@ interface Selection {
 		| "unique-article"
 		| "ambiguous-main"
 		| "ambiguous-article"
+		| "article-with-outside-content"
 		| "no-nonempty-landmark";
 	mainCandidates: number;
 	articleCandidates: number;
@@ -89,6 +90,248 @@ function assertFocused(
 		if (target === tree.root) expect(ordinary).toEqual(baseline);
 	}
 }
+
+function assertConservative(
+	tree: DocumentTree,
+	expected: Selection & { outsideArticleContent: boolean },
+	target = tree.root,
+) {
+	const revision = tree.revision;
+	const source = serializeHtml(tree, tree.root);
+	for (const format of formats) {
+		const result = extractDocument(tree, {
+			contentFocus: "main-content-v2",
+			format,
+		});
+		const { contentSelection, ...ordinary } = result;
+		expect(contentSelection).toEqual({
+			policy: "main-content-v2",
+			...expected,
+			scannedNodes: expect.any(Number),
+		});
+		expect(Object.isFrozen(contentSelection)).toBe(true);
+		expect(result.scope).toBe(tree.reference(target));
+		expect(ordinary).toEqual(
+			extractDocument(tree, { format, root: tree.reference(target) }),
+		);
+		const legacy = extractDocument(tree, { ...focus, format });
+		expect(contentSelection?.scannedNodes).toBe(
+			legacy.contentSelection?.scannedNodes,
+		);
+		expect(legacy.contentSelection).not.toHaveProperty("outsideArticleContent");
+	}
+	expect(tree.revision).toBe(revision);
+	expect(serializeHtml(tree, tree.root)).toBe(source);
+}
+
+it.each([
+	"<p>Other substantive text</p>",
+	"<section><h2>Product Alpha</h2><p>Weatherproof light</p></section>",
+	'<a href="/product">Product details</a>',
+	'<img alt="Product diagram">',
+	"<table><tr><td>Product measurement</td></tr></table>",
+	"<div><section><div>Nested content</div></section></div>",
+	"Loose sibling text",
+	'<div style="visibility:hidden"><p style="visibility:visible">Visible child</p></div>',
+])("v2 retains admitted outside article content: %s", (outside) => {
+	for (const source of [
+		`${outside}<article>Daily promotion</article>`,
+		`<article>Daily promotion</article>${outside}`,
+	]) {
+		const tree = html(source);
+		assertConservative(tree, {
+			selected: "document",
+			reason: "article-with-outside-content",
+			mainCandidates: 0,
+			articleCandidates: 1,
+			outsideArticleContent: true,
+		});
+		expect(extractDocument(tree, focus).contentSelection?.selected).toBe(
+			"article",
+		);
+	}
+});
+
+it.each([
+	"<nav><div>Navigation</div></nav>",
+	"<aside><p>Related story</p></aside>",
+	"<header><h1>Site title</h1></header>",
+	"<footer><p>Footer qualification</p></footer>",
+	'<div role="navigation"><p>Navigation</p></div>',
+	'<div role="banner"><p>Banner</p></div>',
+	'<div role="contentinfo"><p>Footer</p></div>',
+	'<div role="complementary"><img alt="Sidebar diagram"></div>',
+	'<div role="unknown navigation"><p>Fallback role</p></div>',
+	'<nav role="none"><p>Presentational nav tag</p></nav>',
+	'<div role="navigation" style="visibility:hidden"><p style="visibility:visible">Visible navigation child</p></div>',
+])(
+	"v2 keeps a lone article when surrounded by ancillary context: %s",
+	(outside) => {
+		const tree = html(`${outside}<article id="chosen">Owned article</article>`);
+		assertConservative(
+			tree,
+			{
+				selected: "article",
+				reason: "unique-article",
+				mainCandidates: 0,
+				articleCandidates: 1,
+				outsideArticleContent: false,
+			},
+			element(tree, "#chosen"),
+		);
+	},
+);
+
+it.each([
+	" \n\t&nbsp; ",
+	"<!-- Outside comment -->",
+	"<title>Document title</title>",
+	"<script>Outside script</script>",
+	"<style>.outside { display: block }</style>",
+	"<template>Template content</template>",
+	"<p hidden>Hidden outside text</p>",
+	"<p inert>Inert outside text</p>",
+	'<p aria-hidden="true">ARIA hidden outside text</p>',
+	'<p style="display:none">Display hidden outside text</p>',
+	'<p style="visibility:hidden">Invisible outside text</p>',
+	'<img alt=" \t ">',
+	'<input value="Input value">',
+	'<div title="Attribute-only content"></div>',
+	"<article> </article>",
+])("v2 does not widen for omitted or empty outside content: %s", (outside) => {
+	const tree = html(`${outside}<article id="chosen">Owned article</article>`);
+	assertConservative(
+		tree,
+		{
+			selected: "article",
+			reason: "unique-article",
+			mainCandidates: 0,
+			articleCandidates: 1,
+			outsideArticleContent: false,
+		},
+		element(tree, "#chosen"),
+	);
+});
+
+it("v2 keeps article descendants inside their owning article context", () => {
+	const tree = html(
+		'<article id="chosen"><h1>Owned title</h1><article><p>Nested article</p><img alt="Owned diagram"></article><p>Closing paragraph</p></article>',
+	);
+	assertConservative(
+		tree,
+		{
+			selected: "article",
+			reason: "unique-article",
+			mainCandidates: 0,
+			articleCandidates: 1,
+			outsideArticleContent: false,
+		},
+		element(tree, "#chosen"),
+	);
+});
+
+it("v2 preserves explicit main priority despite outside content", () => {
+	const tree = html(
+		'<p>Outside evidence</p><main id="chosen"><article>Owned article</article><p>Main context</p></main>',
+	);
+	assertConservative(
+		tree,
+		{
+			selected: "main",
+			reason: "unique-main",
+			mainCandidates: 1,
+			articleCandidates: 1,
+			outsideArticleContent: true,
+		},
+		element(tree, "#chosen"),
+	);
+});
+
+it.each([
+	{
+		source:
+			"<main>First main</main><main>Second main</main><article>Article</article>",
+		reason: "ambiguous-main" as const,
+		mainCandidates: 2,
+		articleCandidates: 1,
+		outsideArticleContent: true,
+	},
+	{
+		source: "<article>First article</article><article>Second article</article>",
+		reason: "ambiguous-article" as const,
+		mainCandidates: 0,
+		articleCandidates: 2,
+		outsideArticleContent: false,
+	},
+	{
+		source: "<p>No landmark</p>",
+		reason: "no-nonempty-landmark" as const,
+		mainCandidates: 0,
+		articleCandidates: 0,
+		outsideArticleContent: true,
+	},
+])("v2 preserves $reason document fallback", ({ source, ...expected }) => {
+	assertConservative(html(source), { selected: "document", ...expected });
+});
+
+it("v2 does not treat foreign namespace ancillary names as HTML contexts", () => {
+	const tree = document();
+	append(tree, tree.root, "article", "Owned article");
+	const foreign = tree.createParserElement(
+		"aside",
+		{ role: "complementary" },
+		svgNamespace,
+	);
+	tree.append(tree.root, foreign);
+	const text = tree.createText("Foreign outside content");
+	tree.append(foreign, text);
+	assertConservative(tree, {
+		selected: "document",
+		reason: "article-with-outside-content",
+		mainCandidates: 0,
+		articleCandidates: 1,
+		outsideArticleContent: true,
+	});
+});
+
+it("v2 re-evaluates outside content after mutation without caching a scope", () => {
+	const tree = html(
+		'<article id="chosen">Owned article</article><div id="extra"></div>',
+	);
+	const extra = element(tree, "#extra");
+	expect(
+		extractDocument(tree, { contentFocus: "main-content-v2" }).contentSelection,
+	).toMatchObject({ selected: "article", outsideArticleContent: false });
+	tree.setTextContent(extra, "New outside evidence");
+	assertConservative(tree, {
+		selected: "document",
+		reason: "article-with-outside-content",
+		mainCandidates: 0,
+		articleCandidates: 1,
+		outsideArticleContent: true,
+	});
+});
+
+it("v2 uses the same bounded scan without a second traversal allowance", () => {
+	const tree = html(
+		"<article>Daily promotion</article><section>Other evidence</section>",
+	);
+	const nodes = extractDocument(tree, focus).contentSelection?.scannedNodes;
+	if (nodes === undefined) throw new Error("Expected bounded scan metadata");
+	expect(
+		extractDocument(tree, { contentFocus: "main-content-v2", maxNodes: nodes })
+			.contentSelection?.scannedNodes,
+	).toBe(nodes);
+	expect(() =>
+		extractDocument(tree, {
+			contentFocus: "main-content-v2",
+			maxNodes: nodes - 1,
+		}),
+	).toThrow(expect.objectContaining({ code: "resource-limit" }));
+	expect(() =>
+		extractDocument(tree, { contentFocus: "main-content-v2", maxDepth: 0 }),
+	).toThrow(expect.objectContaining({ code: "resource-limit" }));
+});
 
 it("selects the full main subtree without changing the default or the tree", () => {
 	const tree = html(
@@ -491,7 +734,7 @@ it.each(["root", "section", "lines"] as const)(
 	},
 );
 
-it.each(["", "main-content-v2", "main", null, false, 1, {}])(
+it.each(["", "main-content-v3", "main", null, false, 1, {}])(
 	"rejects unsupported focus policy %j",
 	(contentFocus) => {
 		const tree = html("<main>Content</main>");

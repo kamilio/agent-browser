@@ -8,6 +8,7 @@ import {
 import { loadBrowserDocument } from "../src/document-loader.js";
 import { documentTitle } from "../src/document-title.js";
 import { AgentBrowserError } from "../src/errors.js";
+import type { ContentFocusPolicy } from "../src/extraction-content-focus.js";
 import {
 	type HttpsRedirectPolicy,
 	validateHttpsRedirectPolicy,
@@ -229,7 +230,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	let captureBody = false;
 	let format: "markdown" | "json" | undefined;
 	let outputLimitPolicy: "text-prefix-v1" | undefined;
-	let contentFocus: "main-content-v1" | undefined;
+	let contentFocus: ContentFocusPolicy | undefined;
 	let tableMetadata = false;
 	let compactTables = false;
 	let tableRows = false;
@@ -272,7 +273,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		}
 		if (argument === "--content-focus" && contentFocus === undefined) {
 			const value = args[++index];
-			if (value !== "main-content-v1")
+			if (value !== "main-content-v1" && value !== "main-content-v2")
 				throw new AgentBrowserError(
 					"invalid-input",
 					"Invalid research content focus policy",
@@ -595,7 +596,7 @@ export type ResearchOutcome =
 export interface ResearchNavigationReport {
 	httpsRedirectPolicy?: HttpsRedirectPolicy;
 	readerFallbackEncoding?: ResearchReaderFallbackEncoding;
-	contentFocus?: "main-content-v1";
+	contentFocus?: ContentFocusPolicy;
 	representationPreference?: "markdown";
 	readerMimePolicy?: ResearchReaderMimePolicy;
 	outputLimitPolicy?: "text-prefix-v1";
@@ -650,7 +651,7 @@ export interface ResearchNavigationReport {
 export interface ResearchExecutionOptions {
 	httpsRedirectPolicy?: HttpsRedirectPolicy;
 	readerFallbackEncoding?: ResearchReaderFallbackEncoding;
-	contentFocus?: "main-content-v1";
+	contentFocus?: ContentFocusPolicy;
 	preferMarkdown?: boolean;
 	readerMimePolicy?: ResearchReaderMimePolicy;
 	outputLimitPolicy?: "text-prefix-v1";
@@ -673,7 +674,8 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 		(options.outputLimitPolicy !== undefined &&
 			options.outputLimitPolicy !== "text-prefix-v1") ||
 		(options.contentFocus !== undefined &&
-			options.contentFocus !== "main-content-v1") ||
+			options.contentFocus !== "main-content-v1" &&
+			options.contentFocus !== "main-content-v2") ||
 		(options.format !== undefined &&
 			options.format !== "markdown" &&
 			options.format !== "json") ||
@@ -1457,7 +1459,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});

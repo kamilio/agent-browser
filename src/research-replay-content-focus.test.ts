@@ -18,6 +18,7 @@ import { resourceLimitDiagnostic } from "./resource-limit.js";
 const encoder = new TextEncoder();
 const url = "https://content-focus-replay.fixture.invalid/article";
 const focus = { contentFocus: "main-content-v1" } as const;
+const policies = ["main-content-v1", "main-content-v2"] as const;
 const prefixPolicy = { outputLimitPolicy: "text-prefix-v1" } as const;
 const formats = ["json", "markdown"] as const;
 const source =
@@ -236,17 +237,21 @@ function observeOwnership() {
 
 const contexts = (["default", "long-v1"] as const).flatMap((profile) =>
 	formats.flatMap((format) =>
-		(["main", "article"] as const).map((landmark) => ({
-			profile,
-			format,
-			landmark,
-		})),
+		(["main", "article"] as const).flatMap((landmark) =>
+			policies.map((contentFocus) => ({
+				profile,
+				format,
+				landmark,
+				contentFocus,
+			})),
+		),
 	),
 );
 
 it.each(contexts)(
-	"replays a unique $landmark as $format from a complete $profile capture",
-	async ({ profile, format, landmark }) => {
+	"replays a unique $landmark with $contentFocus as $format from a complete $profile capture",
+	async ({ profile, format, landmark, contentFocus }) => {
+		const focus = { contentFocus };
 		const input = await fixture(source.replaceAll("main>", `${landmark}>`), {
 			profile,
 		});
@@ -262,7 +267,7 @@ it.each(contexts)(
 				url,
 				partial: true,
 				contentSelection: {
-					policy: "main-content-v1",
+					policy: contentFocus,
 					selected: landmark,
 					reason: `unique-${landmark}`,
 					mainCandidates: landmark === "main" ? 1 : 0,
@@ -295,6 +300,15 @@ it.each(contexts)(
 		expect(content).toContain(`${url.replace("/article", "")}/details`);
 		expect(content).not.toContain("Outside navigation");
 		expect(content).not.toContain("Outside footer");
+		if (contentFocus === "main-content-v2")
+			expect(result.report.extraction?.contentSelection).toHaveProperty(
+				"outsideArticleContent",
+				landmark === "main",
+			);
+		else
+			expect(result.report.extraction?.contentSelection).not.toHaveProperty(
+				"outsideArticleContent",
+			);
 		expect(result.report.selection).toEqual({
 			method: "content-focus",
 			matches: null,
@@ -370,6 +384,7 @@ it.each(
 			{ profile, visibility: true },
 		);
 		const released = observeOwnership();
+		const extract = vi.spyOn(extraction, "extractDocument");
 		const focused = execute(input, focus, format);
 		expect(focused.report.extraction?.contentSelection).toMatchObject({
 			selected: "article",
@@ -381,6 +396,31 @@ it.each(
 		expect(focusedContent).toContain("Daily promotion");
 		expect(focusedContent).not.toContain("Product Alpha");
 		expect(focusedContent).not.toContain("Product Beta");
+		expect(focused.report.extraction?.contentSelection).not.toHaveProperty(
+			"outsideArticleContent",
+		);
+		const conservative = execute(
+			input,
+			{ contentFocus: "main-content-v2" },
+			format,
+		);
+		expect(extract.mock.calls.at(-1)?.[1]?.contentFocus).toBe(
+			"main-content-v2",
+		);
+		expect(conservative.report.extraction?.contentSelection).toMatchObject({
+			policy: "main-content-v2",
+			selected: "document",
+			reason: "article-with-outside-content",
+			mainCandidates: 0,
+			articleCandidates: 1,
+			outsideArticleContent: true,
+		});
+		expect(conservative.report.extraction?.scope).toBe(
+			conservative.report.extraction?.document,
+		);
+		const conservativeContent = JSON.stringify(
+			conservative.report.extraction?.content,
+		);
 		const broader = execute(input, { selector }, format);
 		expect(broader.report.selection).toMatchObject({
 			method: "css-selector",
@@ -395,17 +435,21 @@ it.each(
 			"Product Beta",
 			"Rechargeable workshop lamp",
 			"https://content-focus-replay.fixture.invalid/products/alpha",
-		])
+		]) {
 			expect(content).toContain(marker);
+			expect(conservativeContent).toContain(marker);
+		}
 		expect(content).toContain(format === "markdown" ? "19\\\\.00" : "19.00");
-		for (const marker of ["Hidden stock payload", "Script-only inventory"])
+		for (const marker of ["Hidden stock payload", "Script-only inventory"]) {
 			expect(content).not.toContain(marker);
+			expect(conservativeContent).not.toContain(marker);
+		}
 		for (const marker of ["Outside navigation", "Outside footer"]) {
 			if (selector === "body") expect(content).toContain(marker);
 			else expect(content).not.toContain(marker);
 		}
 		expect(broader.report.contentSuccess).toBeNull();
-		released(2, 4);
+		released(3, 6);
 	},
 );
 
@@ -488,7 +532,10 @@ it("rejects invalid focus tokens and nonboolean table values before admission", 
 		1,
 		"",
 		"main",
-		"main-content-v2",
+		"main-content-v3",
+		"MAIN-CONTENT-V2",
+		" main-content-v2",
+		"main-content-v2\n",
 		" main-content-v1",
 		"main-content-v1 ",
 		["main-content-v1"],
@@ -507,101 +554,118 @@ it("rejects invalid focus tokens and nonboolean table values before admission", 
 	expect(load).not.toHaveBeenCalled();
 });
 
-it("rejects proxies, accessors and inherited focus without invoking user code", async () => {
-	const input = await fixture();
-	const trap = vi.fn(() => {
-		throw new Error("Selection must not invoke user code");
-	});
-	const validate = vi.spyOn(admission, "validateResearchReplayAdmission");
-	const revoked = Proxy.revocable({ ...focus }, {});
-	revoked.revoke();
-	for (const selection of [
-		new Proxy(focus, {
-			get: trap,
-			getPrototypeOf: trap,
-			ownKeys: trap,
-			getOwnPropertyDescriptor: trap,
-		}),
-		revoked.proxy,
-		Object.defineProperty({}, "contentFocus", { get: trap, enumerable: true }),
-		Object.defineProperty({ ...focus }, "tableMetadata", {
-			get: trap,
-			enumerable: true,
-		}),
-		Object.create(focus),
-		{ contentFocus: { toString: trap, valueOf: trap } },
-		{ ...focus, [Symbol("extra")]: true },
-	])
-		expect(() => execute(input, selection)).toThrow(
-			expect.objectContaining({ code: "invalid-input" }),
-		);
-	expect(trap).not.toHaveBeenCalled();
-	expect(validate).not.toHaveBeenCalled();
-	const ownData = Object.create(null);
-	Object.defineProperty(ownData, "contentFocus", { value: focus.contentFocus });
-	expect(execute(input, ownData).report.selection).toEqual({
-		method: "content-focus",
-		matches: null,
-	});
-});
+it.each(policies)(
+	"rejects proxies, accessors and inherited %s without invoking user code",
+	async (contentFocus) => {
+		const focus = { contentFocus };
+		const input = await fixture();
+		const trap = vi.fn(() => {
+			throw new Error("Selection must not invoke user code");
+		});
+		const validate = vi.spyOn(admission, "validateResearchReplayAdmission");
+		const revoked = Proxy.revocable({ ...focus }, {});
+		revoked.revoke();
+		for (const selection of [
+			new Proxy(focus, {
+				get: trap,
+				getPrototypeOf: trap,
+				ownKeys: trap,
+				getOwnPropertyDescriptor: trap,
+			}),
+			revoked.proxy,
+			Object.defineProperty({}, "contentFocus", {
+				get: trap,
+				enumerable: true,
+			}),
+			Object.defineProperty({ ...focus }, "tableMetadata", {
+				get: trap,
+				enumerable: true,
+			}),
+			Object.create(focus),
+			{ contentFocus: { toString: trap, valueOf: trap } },
+			{ ...focus, [Symbol("extra")]: true },
+		])
+			expect(() => execute(input, selection)).toThrow(
+				expect.objectContaining({ code: "invalid-input" }),
+			);
+		expect(trap).not.toHaveBeenCalled();
+		expect(validate).not.toHaveBeenCalled();
+		const ownData = Object.create(null);
+		Object.defineProperty(ownData, "contentFocus", {
+			value: focus.contentFocus,
+		});
+		expect(execute(input, ownData).report.selection).toEqual({
+			method: "content-focus",
+			matches: null,
+		});
+	},
+);
 
-it("rejects every mixed focus selection including own undefined selectors", async () => {
-	const input = await fixture();
-	const validate = vi.spyOn(admission, "validateResearchReplayAdmission");
-	for (const other of [
-		{ selector: "main" },
-		{ section: "#owned" },
-		{ links: "details" },
-		{ find: "Owned" },
-		{ lines: { start: 1, end: 2 } },
-		{ selector: undefined },
-		{ section: undefined },
-		{ links: undefined },
-		{ find: undefined },
-		{ lines: undefined },
-	])
-		expect(() => execute(input, { ...focus, ...other })).toThrow(
-			expect.objectContaining({ code: "invalid-input" }),
-		);
-	expect(validate).not.toHaveBeenCalled();
-});
+it.each(policies)(
+	"rejects every mixed %s selection including own undefined selectors",
+	async (contentFocus) => {
+		const focus = { contentFocus };
+		const input = await fixture();
+		const validate = vi.spyOn(admission, "validateResearchReplayAdmission");
+		for (const other of [
+			{ selector: "main" },
+			{ section: "#owned" },
+			{ links: "details" },
+			{ find: "Owned" },
+			{ lines: { start: 1, end: 2 } },
+			{ selector: undefined },
+			{ section: undefined },
+			{ links: undefined },
+			{ find: undefined },
+			{ lines: undefined },
+		])
+			expect(() => execute(input, { ...focus, ...other })).toThrow(
+				expect.objectContaining({ code: "invalid-input" }),
+			);
+		expect(validate).not.toHaveBeenCalled();
+	},
+);
 
-it("does not widen named output-limit or empty-outline recovery selection", async () => {
-	const input = await fixture();
-	const outputAdmission = vi.spyOn(
-		admission,
-		"validateResearchOutputLimitSectionAdmission",
-	);
-	const emptyAdmission = vi.spyOn(
-		admission,
-		"validateResearchEmptyOutlineAdmission",
-	);
-	const load = vi.spyOn(loader, "loadResearchDocument");
-	for (const format of formats) {
-		for (const selection of [focus, { ...focus, section: "#owned" }])
-			expect(() =>
-				replay.recoverResearchOutputLimitSection(
-					input.raw,
-					input.trusted,
-					selection as unknown as replay.ResearchOutputLimitSectionSelection,
-					undefined,
-					format,
-				),
-			).toThrow(expect.objectContaining({ code: "invalid-input" }));
-		for (const recover of selectorRecoveries)
-			for (const selection of [focus, { ...focus, selector: "main" }])
+it.each(policies)(
+	"does not widen named output-limit or empty-outline recovery with %s",
+	async (contentFocus) => {
+		const focus = { contentFocus };
+		const input = await fixture();
+		const outputAdmission = vi.spyOn(
+			admission,
+			"validateResearchOutputLimitSectionAdmission",
+		);
+		const emptyAdmission = vi.spyOn(
+			admission,
+			"validateResearchEmptyOutlineAdmission",
+		);
+		const load = vi.spyOn(loader, "loadResearchDocument");
+		for (const format of formats) {
+			for (const selection of [focus, { ...focus, section: "#owned" }])
 				expect(() =>
-					recover(
-						input,
-						selection as unknown as replay.ResearchOutputLimitSelectorSelection,
+					replay.recoverResearchOutputLimitSection(
+						input.raw,
+						input.trusted,
+						selection as unknown as replay.ResearchOutputLimitSectionSelection,
+						undefined,
 						format,
 					),
 				).toThrow(expect.objectContaining({ code: "invalid-input" }));
-	}
-	expect(outputAdmission).not.toHaveBeenCalled();
-	expect(emptyAdmission).not.toHaveBeenCalled();
-	expect(load).not.toHaveBeenCalled();
-});
+			for (const recover of selectorRecoveries)
+				for (const selection of [focus, { ...focus, selector: "main" }])
+					expect(() =>
+						recover(
+							input,
+							selection as unknown as replay.ResearchOutputLimitSelectorSelection,
+							format,
+						),
+					).toThrow(expect.objectContaining({ code: "invalid-input" }));
+		}
+		expect(outputAdmission).not.toHaveBeenCalled();
+		expect(emptyAdmission).not.toHaveBeenCalled();
+		expect(load).not.toHaveBeenCalled();
+	},
+);
 
 it("retains receipt and body pins and rejects altered captured bytes before loading", async () => {
 	const input = await fixture();
@@ -659,11 +723,52 @@ it("refuses failed, challenged and incomplete captures rather than rescuing them
 	});
 	const load = vi.spyOn(loader, "loadResearchDocument");
 	for (const input of [failed, blocked, missing, incomplete])
-		expect(() => execute(input)).toThrow(
-			expect.objectContaining({ code: "policy-denied" }),
-		);
+		for (const contentFocus of policies)
+			expect(() => execute(input, { contentFocus })).toThrow(
+				expect.objectContaining({ code: "policy-denied" }),
+			);
 	expect(load).not.toHaveBeenCalled();
 });
+
+it.each(["default", "long-v1"] as const)(
+	"v2 keeps output bounds when broader %s content needs explicit text-prefix fallback",
+	async (profile) => {
+		const input = await fixture(
+			`<article><h1>Daily promotion</h1></article><section><p>${"Outside product details. ".repeat(16_000)}</p></section>`,
+			{ profile },
+		);
+		const released = observeOwnership();
+		const legacy = execute(input, focus, "markdown");
+		expect(legacy.report.extraction?.contentSelection?.selected).toBe(
+			"article",
+		);
+		expect(legacy.report.extraction?.content).not.toContain("Outside product");
+		const conservative = { contentFocus: "main-content-v2" } as const;
+		expect(() => execute(input, conservative, "markdown")).toThrow(
+			expect.objectContaining({ code: "resource-limit" }),
+		);
+		const bounded = execute(
+			input,
+			{ ...conservative, ...prefixPolicy },
+			"markdown",
+		);
+		expect(bounded.report.extraction?.contentSelection).toMatchObject({
+			policy: "main-content-v2",
+			selected: "document",
+			reason: "article-with-outside-content",
+			outsideArticleContent: true,
+		});
+		expect(bounded.report.extraction?.contentFallback).toMatchObject({
+			policy: "text-prefix-v1",
+			truncated: true,
+			trigger: { kind: "extraction.output", limit: 256_000 },
+		});
+		expect(bounded.report.extraction?.content).toContain("Outside product");
+		expect(bounded.outputBytes).toBeLessThanOrEqual(327_680);
+		expect(bounded.report.networkRequests).toBe(0);
+		released(3);
+	},
+);
 
 it("retains MIME admission and recorded fallback encoding checks", async () => {
 	const plain = await fixture("# Literal source", {

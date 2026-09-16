@@ -22,6 +22,7 @@ import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import {
 	type ContentFocusMetadata,
+	type ContentFocusPolicy,
 	selectContentFocus,
 } from "./extraction-content-focus.js";
 import {
@@ -135,7 +136,7 @@ export interface ExtractedNode {
 
 export interface ExtractionOptions {
 	format?: "markdown" | "json";
-	contentFocus?: "main-content-v1";
+	contentFocus?: ContentFocusPolicy;
 	outputLimitPolicy?: "text-prefix-v1";
 	tableMetadata?: boolean;
 	compactTables?: boolean;
@@ -1104,14 +1105,15 @@ export function extractDocument(
 ): DocumentExtraction {
 	if (
 		options.contentFocus !== undefined &&
-		(options.contentFocus !== "main-content-v1" ||
+		((options.contentFocus !== "main-content-v1" &&
+			options.contentFocus !== "main-content-v2") ||
 			options.root !== undefined ||
 			options.section !== undefined ||
 			options.lines !== undefined)
 	)
 		throw new AgentBrowserError(
 			"invalid-input",
-			"Content focus requires main-content-v1 without root, section or lines",
+			"Content focus requires main-content-v1 or main-content-v2 without root, section or lines",
 		);
 	if (options.lines !== undefined && options.root !== undefined)
 		throw new AgentBrowserError(
@@ -1192,6 +1194,7 @@ export function extractDocument(
 		options.contentFocus === undefined
 			? undefined
 			: selectContentFocus(tree, {
+					policy: options.contentFocus,
 					maxNodes,
 					maxDepth,
 					skip,

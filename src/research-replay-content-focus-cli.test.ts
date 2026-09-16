@@ -15,6 +15,7 @@ import { NodeNetworkTransport } from "./node-transport.js";
 import { researchLongDocumentAdmission } from "./research-admission.js";
 
 const policy = "main-content-v1";
+const policies = [policy, "main-content-v2"] as const;
 const profiles = ["default", "long-v1"] as const;
 const pins = [
 	"--expected-profile",
@@ -31,8 +32,17 @@ const outputPolicy = "text-prefix-v1";
 const outputPolicyFlags = ["--output-limit-policy", outputPolicy];
 const streams: Array<Readable | Writable> = [];
 
-function argumentsFor(profile: "default" | "long-v1" = "default") {
-	return ["--expected-profile", profile, ...pins.slice(2), ...focus];
+function argumentsFor(
+	profile: "default" | "long-v1" = "default",
+	contentFocus: (typeof policies)[number] = policy,
+) {
+	return [
+		"--expected-profile",
+		profile,
+		...pins.slice(2),
+		"--content-focus",
+		contentFocus,
+	];
 }
 
 function invalid(args: string[]) {
@@ -95,27 +105,29 @@ afterEach(() => {
 describe("ordinary content-focus replay arguments", () => {
 	it.each(
 		profiles.flatMap((profile) =>
-			([undefined, "json", "markdown"] as const).map((format) => ({
-				profile,
-				format,
-			})),
+			([undefined, "json", "markdown"] as const).flatMap((format) =>
+				policies.map((contentFocus) => ({ profile, format, contentFocus })),
+			),
 		),
-	)("accepts $profile capture with format $format", ({ profile, format }) => {
-		expect(
-			parseResearchReplayArguments([
-				...argumentsFor(profile),
-				...(format === undefined ? [] : ["--format", format]),
-			]),
-		).toEqual({
-			trusted: {
-				expectedProfile: profile,
-				expectedReceiptSha256: "a".repeat(64),
-				expectedBody: { bytes: 64, sha256: "b".repeat(64) },
-			},
-			selection: { contentFocus: policy },
-			...(format === undefined ? {} : { format }),
-		});
-	});
+	)(
+		"accepts $contentFocus for $profile capture with format $format",
+		({ profile, format, contentFocus }) => {
+			expect(
+				parseResearchReplayArguments([
+					...argumentsFor(profile, contentFocus),
+					...(format === undefined ? [] : ["--format", format]),
+				]),
+			).toEqual({
+				trusted: {
+					expectedProfile: profile,
+					expectedReceiptSha256: "a".repeat(64),
+					expectedBody: { bytes: 64, sha256: "b".repeat(64) },
+				},
+				selection: { contentFocus },
+				...(format === undefined ? {} : { format }),
+			});
+		},
+	);
 
 	it("preserves table options and accepts focus before the trusted pins", () => {
 		const options = [
@@ -157,7 +169,10 @@ describe("ordinary content-focus replay arguments", () => {
 	it("rejects unknown, empty, case-changed and whitespace policies", () => {
 		for (const value of [
 			"",
-			"main-content-v2",
+			"main-content-v3",
+			"MAIN-CONTENT-V2",
+			" main-content-v2",
+			"main-content-v2\n",
 			"MAIN-CONTENT-V1",
 			` ${policy}`,
 			`${policy} `,
@@ -169,6 +184,8 @@ describe("ordinary content-focus replay arguments", () => {
 
 	it("rejects repeated focus flags and equals-style flags", () => {
 		invalid([...argumentsFor(), ...focus]);
+		invalid([...argumentsFor(), "--content-focus", "main-content-v2"]);
+		invalid([...argumentsFor("default", "main-content-v2"), ...focus]);
 		invalid([...pins, `--content-focus=${policy}`]);
 	});
 
@@ -187,8 +204,11 @@ describe("ordinary content-focus replay arguments", () => {
 	])("rejects mixed selection $selection in either order", ({ selection }) => {
 		for (const profile of profiles) {
 			const trusted = argumentsFor(profile).slice(0, 8);
-			invalid([...trusted, ...focus, ...selection]);
-			invalid([...trusted, ...selection, ...focus]);
+			for (const contentFocus of policies) {
+				const focus = ["--content-focus", contentFocus];
+				invalid([...trusted, ...focus, ...selection]);
+				invalid([...trusted, ...selection, ...focus]);
+			}
 		}
 	});
 
@@ -196,8 +216,10 @@ describe("ordinary content-focus replay arguments", () => {
 		"rejects %s without broadening named recovery contracts",
 		(recovery) => {
 			for (const profile of profiles) {
-				invalid([...argumentsFor(profile), recovery]);
-				invalid([recovery, ...argumentsFor(profile)]);
+				for (const contentFocus of policies) {
+					invalid([...argumentsFor(profile, contentFocus), recovery]);
+					invalid([recovery, ...argumentsFor(profile, contentFocus)]);
+				}
 			}
 		},
 	);
@@ -479,31 +501,52 @@ describe("ordinary replay output-limit policy arguments", () => {
 	});
 });
 
-it.each([
-	{
-		profile: "default",
-		format: "json",
-		flags: [],
-		outputLimitPolicy: undefined,
-	},
-	{
-		profile: "long-v1",
-		format: "markdown",
-		flags: ["--format", "markdown"],
-		outputLimitPolicy: undefined,
-	},
-	{
-		profile: "long-v1",
-		format: "markdown",
-		flags: ["--format", "markdown", ...outputPolicyFlags],
-		outputLimitPolicy: outputPolicy,
-	},
-] as const)(
-	"replays fitting $format from synthetic $profile capture without fallback (output policy $outputLimitPolicy) and cleans up",
-	async ({ profile, format, flags, outputLimitPolicy }) => {
+it.each(
+	(
+		[
+			{
+				profile: "default",
+				format: "json",
+				flags: [],
+				outputLimitPolicy: undefined,
+			},
+			{
+				profile: "long-v1",
+				format: "markdown",
+				flags: ["--format", "markdown"],
+				outputLimitPolicy: undefined,
+			},
+			{
+				profile: "long-v1",
+				format: "markdown",
+				flags: ["--format", "markdown", ...outputPolicyFlags],
+				outputLimitPolicy: outputPolicy,
+			},
+		] as const
+	).flatMap((scenario) =>
+		policies.flatMap((contentFocus) =>
+			(["main", "article"] as const).map((landmark) => ({
+				...scenario,
+				contentFocus,
+				landmark,
+			})),
+		),
+	),
+)(
+	"replays $contentFocus $landmark as $format from synthetic $profile capture (output policy $outputLimitPolicy) and cleans up",
+	async ({
+		profile,
+		format,
+		flags,
+		outputLimitPolicy,
+		contentFocus,
+		landmark,
+	}) => {
+		const fallback =
+			contentFocus === "main-content-v2" && landmark === "article";
 		const url = "https://content-focus-replay.fixture.invalid/article";
 		const body = new TextEncoder().encode(
-			'<!doctype html><html><head><title>Saved article</title></head><body><nav><h2>Outside navigation</h2></nav><main><h1 id="owned">Owned article</h1><p>Owned evidence survives replay.</p></main><footer>Outside footer</footer></body></html>',
+			`<!doctype html><html><head><title>Saved article</title></head><body><nav><h2>Outside navigation</h2></nav><${landmark}><h1 id="owned">Owned article</h1><p>Owned evidence survives replay.</p></${landmark}><section><h2>Useful sibling product</h2><p>Product evidence survives replay.</p></section><footer>Outside footer</footer></body></html>`,
 		);
 		vi.mocked(NodeNetworkTransport.prototype.request).mockResolvedValueOnce({
 			url,
@@ -547,7 +590,8 @@ it.each([
 			hash(body),
 			"--body-bytes",
 			String(body.byteLength),
-			...focus,
+			"--content-focus",
+			contentFocus,
 			...flags,
 		];
 		expect(await runResearchReplayCli(args, target.input, target.output)).toBe(
@@ -557,7 +601,7 @@ it.each([
 			expect.any(Uint8Array),
 			parseResearchReplayArguments(args).trusted,
 			{
-				contentFocus: policy,
+				contentFocus,
 				...(outputLimitPolicy === undefined ? {} : { outputLimitPolicy }),
 			},
 			expect.any(AbortSignal),
@@ -578,11 +622,13 @@ it.each([
 			extraction: {
 				format,
 				contentSelection: {
-					policy,
-					selected: "main",
-					reason: "unique-main",
-					mainCandidates: 1,
-					articleCandidates: 0,
+					policy: contentFocus,
+					selected: fallback ? "document" : landmark,
+					reason: fallback
+						? "article-with-outside-content"
+						: `unique-${landmark}`,
+					mainCandidates: landmark === "main" ? 1 : 0,
+					articleCandidates: landmark === "article" ? 1 : 0,
 				},
 			},
 		});
@@ -604,7 +650,23 @@ it.each([
 				? "Owned evidence survives replay\\."
 				: "Owned evidence survives replay.",
 		);
-		expect(content).not.toContain("Outside");
+		if (fallback) {
+			expect(content).toContain("Useful sibling product");
+			expect(content).toContain("Outside navigation");
+			expect(output.extraction.scope).toBe(output.extraction.document);
+		} else {
+			expect(content).not.toContain("Useful sibling product");
+			expect(content).not.toContain("Outside");
+		}
+		if (contentFocus === "main-content-v2")
+			expect(output.extraction.contentSelection).toHaveProperty(
+				"outsideArticleContent",
+				true,
+			);
+		else
+			expect(output.extraction.contentSelection).not.toHaveProperty(
+				"outsideArticleContent",
+			);
 		expect(target.text().trim().split("\n")).toHaveLength(1);
 		expect(raw).toEqual(original);
 		expect(extract.mock.calls[0][0]).not.toBe(raw);

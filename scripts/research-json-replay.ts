@@ -3,6 +3,7 @@ import type { BrowserChallengeDiagnostic } from "../src/browser-challenges.js";
 import { documentTitle } from "../src/document-title.js";
 import type { DocumentTree } from "../src/document.js";
 import { AgentBrowserError } from "../src/errors.js";
+import type { ContentFocusPolicy } from "../src/extraction-content-focus.js";
 import {
 	type DocumentExtraction,
 	type DocumentHeadingOutline,
@@ -88,7 +89,7 @@ type ResearchHtmlReplaySelection =
 					contentFocus?: never;
 			  }
 			| {
-					contentFocus: "main-content-v1";
+					contentFocus: ContentFocusPolicy;
 					selector?: never;
 					section?: never;
 					links?: never;
@@ -400,7 +401,8 @@ function selectionSnapshot(value: unknown) {
 	)
 		invalidSelection();
 	if (focus) {
-		if (target !== "main-content-v1") invalidSelection();
+		if (target !== "main-content-v1" && target !== "main-content-v2")
+			invalidSelection();
 	} else if (links) {
 		if (
 			target.length > 256 ||
@@ -1285,7 +1287,7 @@ function extractValidatedReplayJson<
 					? { outputLimitPolicy: selected.outputLimitPolicy }
 					: {}),
 				...(selected.method === "content-focus"
-					? { contentFocus: "main-content-v1" as const }
+					? { contentFocus: selected.target as ContentFocusPolicy }
 					: selected.method === "text-lines"
 						? { lines: selected.lines }
 						: selected.method === "heading-section"

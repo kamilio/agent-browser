@@ -21,6 +21,7 @@ import { BrowserSession } from "./session.js";
 const url = "https://content-focus.fixture.invalid/article";
 const encoder = new TextEncoder();
 const policy = "main-content-v1";
+const policies = [policy, "main-content-v2"] as const;
 const flags = ["--content-focus", policy];
 const enabled: ResearchExecutionOptions = {
 	contentFocus: policy,
@@ -220,26 +221,30 @@ function expectNoSetup() {
 	expect(extraction.extractDocument).not.toHaveBeenCalled();
 }
 
-function expectFocused(report: ResearchNavigationReport) {
+function expectFocused(
+	report: ResearchNavigationReport,
+	contentFocus: ResearchExecutionOptions["contentFocus"] = policy,
+) {
 	expect(report).toMatchObject({
-		contentFocus: policy,
+		contentFocus,
 		outcome: "extracted-unverified",
 		contentSuccess: null,
 		classification: { barrier: null, diagnostic: null },
 	});
 	expect(report.failure).toBeUndefined();
 	const selection = report.extraction?.contentSelection;
-	expect(selection?.policy).toBe(policy);
+	expect(selection?.policy).toBe(contentFocus);
 	expect(Number.isSafeInteger(selection?.scannedNodes)).toBe(true);
 	expect(selection?.scannedNodes).toBeGreaterThan(0);
 	const calls = vi.mocked(extraction.extractDocument).mock.calls;
 	expect(
-		calls.filter(([, options]) => options?.contentFocus === policy),
+		calls.filter(([, options]) => options?.contentFocus === contentFocus),
 	).toHaveLength(1);
-	expect(calls.at(-1)?.[1]?.contentFocus).toBe(policy);
+	expect(calls.at(-1)?.[1]?.contentFocus).toBe(contentFocus);
 }
 
-describe("content focus argument validation", () => {
+describe.each(policies)("%s argument validation", (contentFocus) => {
+	const flags = ["--content-focus", contentFocus];
 	it.each(
 		[
 			[],
@@ -253,7 +258,7 @@ describe("content focus argument validation", () => {
 		].map((args) => ({ args })),
 	)("accepts focus with $args", ({ args }) => {
 		expect(parseResearchArguments([...args, ...flags, url])).toMatchObject({
-			contentFocus: policy,
+			contentFocus,
 			urls: [url],
 		});
 		expectNoSetup();
@@ -264,7 +269,12 @@ describe("content focus argument validation", () => {
 			["--content-focus"],
 			["--content-focus", "--reader", url],
 			["--content-focus", "unknown", url],
+			["--content-focus", "main-content-v3", url],
+			["--content-focus", "MAIN-CONTENT-V2", url],
+			["--content-focus", " main-content-v2", url],
+			["--content-focus", "main-content-v2\n", url],
 			[...flags, ...flags, url],
+			[...flags, "--content-focus", "main-content-v2", url],
 			[...flags, "--output-limit-policy", "text-prefix-v1", url],
 			[
 				"--reader",
@@ -303,20 +313,30 @@ describe("content focus argument validation", () => {
 		expectNoSetup();
 	});
 
-	it.each([null, false, true, 1, {}, [], "", "unknown", "main-content-v2"])(
-		"rejects invalid API focus %j before setup",
-		async (contentFocus) => {
-			await expect(
-				navigate({
-					execution: {
-						...enabled,
-						contentFocus,
-					} as unknown as ResearchExecutionOptions,
-				}),
-			).rejects.toMatchObject({ code: "invalid-input" });
-			expectNoSetup();
-		},
-	);
+	it.each([
+		null,
+		false,
+		true,
+		1,
+		{},
+		[],
+		"",
+		"unknown",
+		"main-content-v3",
+		"MAIN-CONTENT-V2",
+		" main-content-v2",
+		"main-content-v2\n",
+	])("rejects invalid API focus %j before setup", async (contentFocus) => {
+		await expect(
+			navigate({
+				execution: {
+					...enabled,
+					contentFocus,
+				} as unknown as ResearchExecutionOptions,
+			}),
+		).rejects.toMatchObject({ code: "invalid-input" });
+		expectNoSetup();
+	});
 
 	it.each<NavigationOptions>([
 		{ selector: "main" },
@@ -337,7 +357,12 @@ describe("content focus argument validation", () => {
 			},
 		},
 	])("rejects API selection conflicts before setup: %j", async (options) => {
-		await expect(navigate(options)).rejects.toMatchObject({
+		await expect(
+			navigate({
+				...options,
+				execution: { ...enabled, ...options.execution, contentFocus },
+			}),
+		).rejects.toMatchObject({
 			code: "invalid-input",
 		});
 		expectNoSetup();
@@ -444,29 +469,86 @@ describe.each(modes)(
 			},
 		);
 
-		it("threads CLI focus through batch execution", async () => {
-			vi.mocked(NodeNetworkTransport.prototype.request).mockResolvedValueOnce(
-				response(),
+		it.each(policies)(
+			"threads CLI %s through batch execution",
+			async (contentFocus) => {
+				vi.mocked(NodeNetworkTransport.prototype.request).mockResolvedValueOnce(
+					response(),
+				);
+				const reports: ResearchNavigationReport[] = [];
+				for await (const report of researchBatch([
+					...(reader ? ["--reader"] : []),
+					"--content-focus",
+					contentFocus,
+					"--format",
+					format,
+					"--min-request-interval-ms",
+					"0",
+					url,
+				]))
+					reports.push(report);
+				expect(reports).toHaveLength(1);
+				expectFocused(reports[0], contentFocus);
+				expect(reports[0].extraction?.format).toBe(format);
+				expect(content(reports[0])).toContain("Useful main evidence");
+				expect(content(reports[0])).not.toContain("Outside evidence");
+				expect(NodeNetworkTransport.prototype.request).toHaveBeenCalledOnce();
+				expectClosed();
+			},
+		);
+	},
+);
+
+it.each(
+	modes.flatMap((mode) =>
+		[
+			{ landmark: "article", sibling: "Useful sibling product" },
+			{ landmark: "article", sibling: "" },
+			{ landmark: "main", sibling: "Useful sibling product" },
+		].map((scenario) => ({ ...mode, ...scenario })),
+	),
+)(
+	"preserves policy selection for $landmark with sibling '$sibling', reader=$reader format=$format",
+	async ({ reader, format, landmark, sibling }) => {
+		for (const contentFocus of policies) {
+			const fallback =
+				contentFocus === "main-content-v2" &&
+				landmark === "article" &&
+				sibling !== "";
+			const { report } = await fixture(
+				response(
+					`<html><body><nav>Outside navigation</nav><${landmark} id="selected"><h1>Owned heading</h1><p>Owned evidence</p></${landmark}><section>${sibling}</section><aside>Outside ancillary</aside></body></html>`,
+				),
+				{ reader, execution: { ...enabled, contentFocus, format } },
 			);
-			const reports: ResearchNavigationReport[] = [];
-			for await (const report of researchBatch([
-				...(reader ? ["--reader"] : []),
-				...flags,
-				"--format",
-				format,
-				"--min-request-interval-ms",
-				"0",
-				url,
-			]))
-				reports.push(report);
-			expect(reports).toHaveLength(1);
-			expectFocused(reports[0]);
-			expect(reports[0].extraction?.format).toBe(format);
-			expect(content(reports[0])).toContain("Useful main evidence");
-			expect(content(reports[0])).not.toContain("Outside evidence");
-			expect(NodeNetworkTransport.prototype.request).toHaveBeenCalledOnce();
-			expectClosed();
-		});
+			expectFocused(report, contentFocus);
+			expect(report.extraction?.contentSelection).toMatchObject({
+				policy: contentFocus,
+				selected: fallback ? "document" : landmark,
+				reason: fallback
+					? "article-with-outside-content"
+					: `unique-${landmark}`,
+			});
+			if (contentFocus === "main-content-v2")
+				expect(report.extraction?.contentSelection).toHaveProperty(
+					"outsideArticleContent",
+					sibling !== "",
+				);
+			else
+				expect(report.extraction?.contentSelection).not.toHaveProperty(
+					"outsideArticleContent",
+				);
+			expect(content(report)).toContain("Owned evidence");
+			if (fallback) {
+				expect(report.extraction?.scope).toBe(report.extraction?.document);
+				expect(content(report)).toContain("Useful sibling product");
+				expect(content(report)).toContain("Outside navigation");
+			} else {
+				expect(report.extraction?.scope).not.toBe(report.extraction?.document);
+				expect(content(report)).not.toContain("Useful sibling product");
+				expect(content(report)).not.toContain("Outside navigation");
+			}
+		}
 	},
 );
 
@@ -649,23 +731,26 @@ it.each<BarrierFixture>([
 ])(
 	"preserves $name before focus can erase it",
 	async ({ reader, prefix, execution, headers, evidence }) => {
-		const { report } = await fixture(
-			response(
-				`${prefix}<main id="selected"><h1>Useful heading</h1><p>Useful main evidence</p></main>`,
-				{ headers },
-			),
-			{ reader, execution },
-		);
-		expect(report).toMatchObject({
-			contentFocus: policy,
-			outcome: "semantic-barrier",
-			contentSuccess: false,
-			classification: { barrier: "challenge" },
-		});
-		expect(report.classification.diagnostic?.evidence).toContain(evidence);
-		expect(report.extraction).toBeUndefined();
-		for (const [, options] of vi.mocked(extraction.extractDocument).mock.calls)
-			expect(options?.contentFocus).toBeUndefined();
+		for (const contentFocus of policies) {
+			const { report } = await fixture(
+				response(
+					`${prefix}<main id="selected"><h1>Useful heading</h1><p>Useful main evidence</p></main>`,
+					{ headers },
+				),
+				{ reader, execution: { ...execution, contentFocus } },
+			);
+			expect(report).toMatchObject({
+				contentFocus,
+				outcome: "semantic-barrier",
+				contentSuccess: false,
+				classification: { barrier: "challenge" },
+			});
+			expect(report.classification.diagnostic?.evidence).toContain(evidence);
+			expect(report.extraction).toBeUndefined();
+			for (const [, options] of vi.mocked(extraction.extractDocument).mock
+				.calls)
+				expect(options?.contentFocus).toBeUndefined();
+		}
 	},
 );
 

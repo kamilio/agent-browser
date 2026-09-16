@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Conservative automatic article focus
+
+- Add opt-in `main-content-v2` across core, command host, research browser and
+  complete-capture replay. With no main and one article, admitted outside content
+  beyond semantic article/ancillary contexts causes document fallback. No domain,
+  length/ratio heuristic, new traversal, source admission or budget relaxation.
+- Same-body12-page comparison: v1 extractions are identical to the prior runtime;
+  v2 preserves11 content outputs and automatically recovers Home Depot's22 product
+  cards,153 to36201 Markdown bytes. Actual replay CLI matches without a selector.
+  Same focus scan counts; no fresh network request or speed benchmark claim.
+- Baseline661pass/0; final813pass/0 in10 manifest files,152 additional cases.
+  Core42 new cases fail on old production; new core subset172pass/0. Build,
+  selected types, formatting and lint pass. V2-specific barrier/admission and
+  strict/explicit-prefix output-limit tests pass under unchanged constraints.
+- See CONSERVATIVE-CONTENT-FOCUS.md and reports/conservative-content-focus-2026-09-16.md.
+  Default/v1 valid behavior stays unchanged; original100 outcomes remain frozen.
+  Misleading main landmarks, broader live coverage, dynamic hydration/search,
+  challenge handoff, SafeJS, credential/passkey and real-input gates remain open.
+  Overall browser goal remains active.
+
 ### Recover homepage content outside a promotional article
 
 - Confirm that Home Depot's153-byte unique-article output selected a daily-deals
