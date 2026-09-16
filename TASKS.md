@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Acquire SafeJS0.1.640 and inspect its new source-module contract
+
+- Native registry latest metadata at23:44:29.022Z September16 reports0.1.640.
+  One further native GET retrieves its8666098-byte archive; both HTTP200 and all
+  request/TLS/process resources close. Corrected archive launcher follows a
+  preserved pre-child sourceUrl failure and a new offline proof, not an HTTP retry.
+- Verify published SHA512/SHA1,380 package files and43728393 unpacked bytes in a
+  private temporary store. No SDK import/build/execution, project dependency
+  change, installation hooks or runtime activation. Dependency closure unstaged.
+- Public declarations expose sourceResolver and module evaluation. Three mapped
+  source files match neighboring5da5de84d byte-for-byte; independent static review
+  specifies explicit source identity/budgets/cancellation and namespace handling.
+  In-memory module admission, native-network resolution and HTML loading remain
+  implementation/acceptance work, not newly working browser features.
+- Source-module support does not remove the mapped realm's active-operation
+  rejection or clear the historical0.1.599 callback-tail gate. Keep all19 core,
+  ten page-extension and later scripted-site expectations. No actual0.1.640 gate.
+- See SAFEJS-SOURCE-MODULES.md and reports/safejs-published-module-2026-09-16.md/JSON.
+  Continue runtime integration, diverse website content, performance/access/CAPTCHA,
+  real credentials/passkeys/devices, missing tests and research. Goal stays active.
+
 ### Preserve article-adjacent funding context and source credits
 
 - Correct v3's generic main-local rule after the GearLab source audit: only
