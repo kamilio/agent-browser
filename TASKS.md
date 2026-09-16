@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### One-shot large-page content retrieval
+
+- Added scripts/research-long-content.ts: one explicit4MB long-v1 capture and
+  strict offline body/unique-selector Markdown replay in a single command. The
+  default2MB cap and existing admission/recovery validators remain unchanged.
+- Actual compiled CLI retrieves source from Google Play /store/games, TechRadar,
+  Tom's Guide and CNBC:four GETs,zero redirects/retries,all closed. Google keeps
+  its original empty heading outcome and separately labels selector recovery.
+- Eight isolated historical-body comparisons match the manual workflow's content
+  hashes and recovery provenance. Final clean837pass/0 in10 native files,63new
+  tests; build/types/format/lint pass. Four real CLI help/usage controls pass with
+  zero I/O attempts. No full-manifest or rendered/factual-completeness claim.
+- Fixed reviewed selector preflight/error leakage, missing replay failure-stage
+  metadata and caller-owned stream cleanup. Prior failed checks remain archived.
+- Output contains selected content and capture metadata/hashes, not exported raw
+  bodies/receipts; use the manual workflow when independently replayable evidence
+  is needed. See LARGE-PAGE-WORKFLOW.md and
+  reports/long-content-workflow-2026-09-16.md for every URL and limitation.
+- Original100-page judgments remain historical. Dynamic sites, challenge/handoff,
+  credential/passkey, SafeJS and interactive acceptance remain open.
+
 ### Native link activation and bounded font cache
 
 - Three fresh native workflows discover and activate actual homepage links:

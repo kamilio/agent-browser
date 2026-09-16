@@ -5,7 +5,46 @@ that ceiling is not proof of a JavaScript-only page or a CAPTCHA. Some sites
 deliver megabytes of head CSS/script before their useful content. A small failed
 response prefix can therefore help diagnosis without containing readable content.
 
-## Explicit long capture, then offline selection
+## Single-command content retrieval
+
+For one authorized public page, the convenience command performs the existing
+long capture and strict offline selection in one process:
+
+```sh
+node dist/scripts/research-long-content.js \
+  https://www.techradar.com/ > result.jsonl
+```
+
+It emits one bounded JSONL record. Markdown is in `replay.extraction.content`;
+`capture` retains the original capture outcome, classification, failure details,
+closed transport metrics and receipt/body hashes. Content remains unverified.
+The default selector is `body`; use `--selector CSS` for an inspected unique
+container. Invalid, untrimmed and pseudo-element selectors fail before navigation;
+missing or ambiguous matches fail after capture without a fallback request.
+
+This command explicitly selects the existing 4,000,000-byte `long-v1` budget.
+The ordinary browser/research default remains 2,000,000 bytes. There is one
+navigation, no automatic network retry, no scripts or credentials, and native
+redirect/network limits still apply. Raw-text separation, source-inline visibility,
+UTF-8 fallback, table rows and 2-second per-origin pacing are enabled. Extraction
+remains bounded to 256,000 bytes; rich-output overflow is not silently truncated.
+
+An eligible complete capture with no headings takes the existing strict
+empty-outline selector recovery path. Its original `capture.outcome` remains
+`empty-extraction`; the separate `replay.recovery` records the recovery. Other
+failed, incomplete, HTTP-error or blocked captures are not promoted to content.
+Exit status is 0 only for `extracted-unverified`, 1 for execution/content failure,
+and 64 for invalid command usage. No claim of factual or rendering completeness
+follows from a zero exit status.
+
+The convenience output omits the full body/receipt rather than writing a file or
+dumping megabytes of evidence alongside the content. Its receipt hash identifies
+an in-memory artifact, not an exported replayable receipt. Use the manual workflow
+below when you need to retain that full artifact for independent later replay.
+The exported CLI runner leaves caller-owned Writable streams under the caller's
+control, including on cancellation; it removes only its own listeners and timer.
+
+## Manual long capture, then offline selection
 
 The existing `long-v1` research workflow allows one explicitly selected HTML
 capture up to 4,000,000 bytes, with independently bounded reader and heading work.
