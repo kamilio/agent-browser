@@ -73,6 +73,11 @@ import {
 	researchSourceVideos,
 } from "./research-source-videos.js";
 import {
+	type ResearchSourceReviews,
+	fitResearchSourceReviews,
+	researchSourceReviews,
+} from "./research-source-reviews.js";
+import {
 	type DocumentFeeds,
 	documentFeeds,
 	fitDocumentFeeds,
@@ -226,6 +231,7 @@ interface ExtractionMetadata {
 	sourceAccess?: ResearchSourceAccess;
 	sourceProducts?: ResearchSourceProducts;
 	sourceVideos?: ResearchSourceVideos;
+	sourceReviews?: ResearchSourceReviews;
 	sourceFeeds?: DocumentFeeds;
 	sourceMarkdown?: MarkdownSourceOutline;
 	sourceCodeGutters?: Readonly<{
@@ -1585,6 +1591,7 @@ export function extractDocument(
 	const products = researchSourceProducts(tree);
 	const videos = researchSourceVideos(tree);
 	const charts = researchSourceChartTables(tree);
+	const reviews = researchSourceReviews(tree);
 	const feeds = documentFeeds(tree);
 	if (feeds) {
 		const remaining =
@@ -1592,7 +1599,8 @@ export function extractDocument(
 		if (remaining >= 0) {
 			const sourceFeeds = fitDocumentFeeds(feeds, remaining);
 			if (sourceFeeds) {
-				if (!products && !videos && !charts) return { ...result, sourceFeeds };
+				if (!products && !videos && !charts && !reviews)
+					return { ...result, sourceFeeds };
 				result = { ...result, sourceFeeds };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1604,7 +1612,8 @@ export function extractDocument(
 		if (remaining >= 0) {
 			const sourceProducts = fitResearchSourceProducts(products, remaining);
 			if (sourceProducts) {
-				if (!videos && !charts) return { ...result, sourceProducts };
+				if (!videos && !charts && !reviews)
+					return { ...result, sourceProducts };
 				result = { ...result, sourceProducts };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1616,7 +1625,7 @@ export function extractDocument(
 		if (remaining >= 0) {
 			const sourceVideos = fitResearchSourceVideos(videos, remaining);
 			if (sourceVideos) {
-				if (!charts) return { ...result, sourceVideos };
+				if (!charts && !reviews) return { ...result, sourceVideos };
 				result = { ...result, sourceVideos };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1627,7 +1636,19 @@ export function extractDocument(
 			maxBytes - outputBytes - utf8ByteLength(',"sourceChartTables":');
 		if (remaining >= 0) {
 			const sourceChartTables = fitResearchSourceChartTables(charts, remaining);
-			if (sourceChartTables) return { ...result, sourceChartTables };
+			if (sourceChartTables) {
+				if (!reviews) return { ...result, sourceChartTables };
+				result = { ...result, sourceChartTables };
+				outputBytes = utf8ByteLength(JSON.stringify(result));
+			}
+		}
+	}
+	if (reviews) {
+		const remaining =
+			maxBytes - outputBytes - utf8ByteLength(',"sourceReviews":');
+		if (remaining >= 0) {
+			const sourceReviews = fitResearchSourceReviews(reviews, remaining);
+			if (sourceReviews) return { ...result, sourceReviews };
 		}
 	}
 	return result;

@@ -60,6 +60,12 @@ import {
 	setResearchSourceChartTables,
 } from "./research-source-chart-tables.js";
 import {
+	type RtingsReviewRoute,
+	ResearchSourceReviewsCollector,
+	rtingsReviewRoute,
+	setResearchSourceReviews,
+} from "./research-source-reviews.js";
+import {
 	type ResearchReaderFallbackEncoding,
 	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
@@ -246,6 +252,7 @@ export function sanitizeResearchHtml(
 	productRoute?: TargetProductRoute,
 	videoRoute?: YoutubeSearchRoute,
 	chartRoute?: InfogramChartRoute,
+	reviewRoute?: RtingsReviewRoute,
 ) {
 	const selectedRawPolicy = validateResearchReaderRawPolicy(rawPolicy);
 	const selectedVisibilityPolicy =
@@ -345,6 +352,7 @@ export function sanitizeResearchHtml(
 	let sourceProducts: ResearchSourceProductsCollector | undefined;
 	let sourceVideos: ResearchSourceVideosCollector | undefined;
 	let sourceCharts: ResearchSourceChartTableCollector | undefined;
+	let sourceReviews: ResearchSourceReviewsCollector | undefined;
 	const emit = (value: string) => {
 		report.outputCodeUnits += value.length;
 		check("reader.output", limits.maxOutputCodeUnits, report.outputCodeUnits);
@@ -642,6 +650,16 @@ export function sanitizeResearchHtml(
 			sourceTables ??= new ResearchSourceDataTableCollector();
 			sourceTables.add(name, token.attributes, tokenStart);
 		}
+		if (
+			reviewRoute !== undefined &&
+			token.kind === "start" &&
+			name === "div" &&
+			token.attributes["data-vue"] === "ProductVuePage" &&
+			!open.includes("noscript")
+		) {
+			sourceReviews ??= new ResearchSourceReviewsCollector(reviewRoute);
+			sourceReviews.add(token.attributes["data-props"], tokenStart);
+		}
 		const outputName = blockReplacements.has(name)
 			? "div"
 			: name === "xmp"
@@ -740,6 +758,7 @@ export function sanitizeResearchHtml(
 	const products = sourceProducts?.finish();
 	const videos = sourceVideos?.finish();
 	const sourceChartTables = sourceCharts?.finish();
+	const reviews = sourceReviews?.finish();
 	return {
 		html: output.join(""),
 		...(sourceDataTables ? { sourceDataTables } : {}),
@@ -747,6 +766,7 @@ export function sanitizeResearchHtml(
 		...(products ? { sourceProducts: products } : {}),
 		...(videos ? { sourceVideos: videos } : {}),
 		...(sourceChartTables ? { sourceChartTables } : {}),
+		...(reviews ? { sourceReviews: reviews } : {}),
 		report: Object.freeze({
 			...report,
 			...(mathAlternatives.elements
@@ -870,21 +890,33 @@ export function loadResearchDocument(
 	const chartRoute = effectiveHtml
 		? infogramChartRoute(response.url)
 		: undefined;
+	const reviewRoute = effectiveHtml
+		? rtingsReviewRoute(response.url)
+		: undefined;
 	const visibilityArguments: [
 		ResearchReaderVisibilityPolicy?,
 		TargetProductRoute?,
 		YoutubeSearchRoute?,
 		InfogramChartRoute?,
+		RtingsReviewRoute?,
 	] =
-		chartRoute !== undefined
-			? [selectedVisibilityPolicy, productRoute, videoRoute, chartRoute]
-			: videoRoute !== undefined
-				? [selectedVisibilityPolicy, productRoute, videoRoute]
-				: productRoute !== undefined
-					? [selectedVisibilityPolicy, productRoute]
-					: selectedVisibilityPolicy
-						? [selectedVisibilityPolicy]
-						: [];
+		reviewRoute !== undefined
+			? [
+					selectedVisibilityPolicy,
+					productRoute,
+					videoRoute,
+					chartRoute,
+					reviewRoute,
+				]
+			: chartRoute !== undefined
+				? [selectedVisibilityPolicy, productRoute, videoRoute, chartRoute]
+				: videoRoute !== undefined
+					? [selectedVisibilityPolicy, productRoute, videoRoute]
+					: productRoute !== undefined
+						? [selectedVisibilityPolicy, productRoute]
+						: selectedVisibilityPolicy
+							? [selectedVisibilityPolicy]
+							: [];
 	const sanitized = sanitizeResearchHtml(
 		effectiveHtml ? decoded.text : "",
 		{
@@ -951,6 +983,8 @@ export function loadResearchDocument(
 		setResearchSourceVideos(tree, sanitized.sourceVideos);
 	if (effectiveHtml && sanitized.sourceChartTables)
 		setResearchSourceChartTables(tree, sanitized.sourceChartTables);
+	if (effectiveHtml && sanitized.sourceReviews)
+		setResearchSourceReviews(tree, sanitized.sourceReviews);
 	const info = htmlParseInfo(tree);
 	if (info) setHtmlParseInfo(tree, { ...info, encoding: decoded.encoding });
 	return tree;

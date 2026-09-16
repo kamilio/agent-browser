@@ -944,5 +944,7 @@
   "src/research-asset-literal.test.ts",
   "src/extraction-list-boundaries.test.ts",
   "src/research-source-chart-tables.test.ts",
-  "src/research-source-chart-reader.test.ts"
+  "src/research-source-chart-reader.test.ts",
+  "src/research-source-reviews.test.ts",
+  "src/research-source-reviews-reader.test.ts"
 ]

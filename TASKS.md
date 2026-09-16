@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Recover RTINGS source-review descriptions without page execution
+
+- Add bounded sourceReviews metadata for exact public-style RTINGS component
+  responses. Preserve source HTML, identities, qualifiers and blur/score-state
+  markers; exclude numerical score fields and unrelated private/global state.
+  Do not claim rendered visibility, unrestricted access or verified review facts.
+- Selected native gate:2,963pass/0 in34 files, including201 new cases. Identical
+  integration cases over prior integration/new codec give18pass/80fail. Build,
+  strict types, format and lint pass; no full-manifest or actual SDK claim.
+- Replay110 saved bodies:107 successful pairs/three unchanged non-HTML failures.
+  Two reviews acquire56 exact source records; prior fields/classifications remain
+  unchanged. Both actual CLI fixture checks pass under kernel network denial.
+- One new native CLI GET yields30 laptop source records/4,242 HTML units. A
+  separate HTML decoder and strict JSON comparison reproduce metadata exactly;
+  no scores, page scripts, credentials, redirects/retries or alternate client.
+- Ordinary Markdown and historical100-root verdicts remain unchanged. Source
+  schema eligibility is not authorization; access/SDK/rendering/password/passkey/
+  device/TTY gates and prior62 failures/22 missing committed tests remain open.
+- See SOURCE-REVIEWS.md and reports/rtings-source-reviews-2026-09-16.md/JSON.
+
 ### Test review content and manual discovery beyond landing pages
 
 - Six native GETs across RTINGS, RunRepeat and Manuals.plus, with exact prior
