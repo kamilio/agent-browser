@@ -61,6 +61,20 @@ all retained anchors, attribute/URL-qualified target candidates, and candidates
 with eligible text labels. `selection.candidates` counts target candidates in
 this mode; CSS mode retains its original all-selector-matches meaning.
 
+Do not inspect only `extraction.content` when researching a product. The reader
+can also attach `extraction.sourceProducts`: bounded route-matched Target product
+descriptions from inert source JSON. A live product workflow returned a thin
+Markdown shell but useful specifications, highlights and descriptions in this
+separate field. See `SOURCE-PRODUCTS.md` for its schema and limits.
+
+Keep each entry's `tcin` and `relation` with its fields: the route product is not
+necessarily the selected variant, and parent/variant specifications can differ.
+These literal `html-source` strings are not rendered HTML or verified facts;
+do not execute them or merge variants. Honor `partial`, `truncated`,
+`rendered:false` and `verified:false`. Prices and session state are deliberately
+not exposed by this adapter. Source metadata does not turn an empty Markdown
+extraction into an `extracted-unverified` workflow result.
+
 - Exit0 means `extracted-unverified`: the native click navigated to the exact
   target and extraction is nonempty. `contentSuccess` remains `null`; article
   usefulness and factual accuracy are not automatically certified.
@@ -138,5 +152,7 @@ Validation and remaining acceptance limits are recorded in
 `reports/research-link-content-2026-09-16.md` and, for explicit target-link mode,
 `reports/reader-target-link-2026-09-16.md`. Historical publisher workflows and
 the original100-entry checklist retain their own measurements and verdicts.
+Product/reference workflows and source-metadata integration coverage are in
+`reports/reader-product-reference-2026-09-16.md`.
 Full rendering, actual SafeJS compatibility, credentials/passkeys and real-input
 acceptance remain separate work in `TASKS.md`.

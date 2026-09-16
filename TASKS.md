@@ -6,6 +6,33 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Product and reference-page reader workflows
+
+- Complete three fresh source-linked native workflows: Wikipedia's reference
+  article and Target's product return content; Home Depot's exact product returns
+  403 after successful source-link discovery. Preserve the denial without retry,
+  alternate product, challenge-provider attribution or false content success.
+- Record six initial native GETs plus one separately admitted Target source-only
+  diagnostic. No redirects, credentials, scripts, alternate client or account/cart
+  actions. All observed requests/sockets/documents/process groups close.
+- Wikipedia yields213087 Markdown bytes; heading outline and introduction/later
+  body/end samples show substantive article text with large ancillary overhead.
+  Target yields2282 Markdown bytes plus26865 compact-JSON bytes of sourceProducts
+  already present in the original workflow. Correct the Markdown-only review;
+  no missing collector or new runtime fix is claimed.
+- Compare all four included product IDs and110 text fields with the separate
+  fresh native capture. Keep route/variant fields distinct and source metadata
+  unrendered, unverified and truncated. Parent/variant band sizes differ; no
+  selected-variant, price, inventory or marketing-claim inference is justified.
+- Add3 CLI/reader integration regressions for metadata propagation, route mismatch
+  and empty-content outcomes. Final806pass/0 in10 explicit manifest files includes
+  80 additionally selected existing product tests, not83 new cases. Build/types/
+  format/scoped lint pass; all2292 compiled production artifacts are unchanged.
+- See reports/reader-product-reference-2026-09-16.md and RESEARCH-LINK-CONTENT.md.
+  Keep the original100-entry proxy outcomes unchanged. Full rendering, dynamic
+  interactions, access handoff, actual SafeJS, credentials/passkeys and real-input
+  gates remain open; overall browser goal stays active.
+
 ### Explicit native target-link discovery
 
 - Add --target-link as a separate maintained reader-command mode for a known

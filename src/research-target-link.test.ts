@@ -778,6 +778,144 @@ describe.each(["source", "target"] as const)(
 	},
 );
 
+describe("target-link source product metadata", () => {
+	const sourcePage = "https://www.target.com/";
+	const productPage = "https://www.target.com/p/device/-/A-12345678";
+
+	function serveProduct(validRoute: boolean, visibleContent: string) {
+		const product = (tcin: string, title: string, band: string) => ({
+			tcin,
+			item: {
+				product_description: {
+					title,
+					bullet_descriptions: [`<b>Band:</b> ${band}`],
+					soft_bullets: { bullets: ["Source feature"] },
+					downstream_description: "<p>Unrendered source description</p>",
+				},
+			},
+			price: "PRIVATE_PRICE_SENTINEL",
+		});
+		const data = {
+			page: "/p/[...subpath]",
+			query: { subpath: [validRoute ? "device" : "other", "-", "A-12345678"] },
+			props: {
+				visitorId: "PRIVATE_VISITOR_SENTINEL",
+				dehydratedState: {
+					queries: [
+						{
+							state: {
+								data: {
+									data: {
+										data_source_modules: [
+											{
+												module_data: {
+													data: {
+														product: {
+															...product("12345678", "Parent device", "M/L"),
+															children: [
+																product("22345678", "Small device", "S/M"),
+																product("32345678", "Large device", "M/L"),
+																product("42345678", "Other device", "XL"),
+																product("52345678", "Omitted variant", "XXL"),
+															],
+														},
+													},
+												},
+											},
+										],
+									},
+								},
+							},
+						},
+					],
+				},
+			},
+		};
+		vi.mocked(NodeNetworkTransport.prototype.request)
+			.mockResolvedValueOnce(
+				response(sourcePage, `<a href="${productPage}">Read product</a>`),
+			)
+			.mockResolvedValueOnce(
+				response(
+					productPage,
+					`<main>${visibleContent}</main><script id="__NEXT_DATA__" type="application/json">${JSON.stringify(data)}</script>`,
+				),
+			);
+	}
+
+	it("preserves bounded route and variant descriptions separately in CLI JSON", async () => {
+		serveProduct(true, "<h1>Visible product shell</h1>");
+		const output = sink();
+		expect(
+			await runResearchLinkContentCli(
+				args(productPage, sourcePage),
+				output.output,
+			),
+		).toBe(0);
+		const report: Report = JSON.parse(output.text());
+		expect(report.outcome).toBe("extracted-unverified");
+		expect(report.contentSuccess).toBeNull();
+		const products = report.extraction?.sourceProducts;
+		expect(products).toMatchObject({
+			kind: "nextjs-target-product-descriptions-v1",
+			routeTcin: "12345678",
+			rendered: false,
+			verified: false,
+			partial: true,
+			truncated: true,
+			textFormat: "html-source",
+		});
+		expect(products?.entries).toHaveLength(4);
+		expect(products?.entries[0]).toMatchObject({
+			tcin: "12345678",
+			relation: "route-product",
+			specifications: ["<b>Band:</b> M/L"],
+		});
+		expect(products?.entries[1]).toMatchObject({
+			tcin: "22345678",
+			relation: "variant-of-route-product",
+			specifications: ["<b>Band:</b> S/M"],
+		});
+		expect(report.extraction?.content).not.toContain(
+			"Unrendered source description",
+		);
+		for (const omitted of [
+			"PRIVATE_PRICE_SENTINEL",
+			"PRIVATE_VISITOR_SENTINEL",
+			"Omitted variant",
+		])
+			expect(output.text()).not.toContain(omitted);
+		requests([sourcePage, productPage]);
+		closed(report);
+	});
+
+	it("does not attach source product data for a mismatched route", async () => {
+		serveProduct(false, "<h1>Visible product shell</h1>");
+		const report = await researchLinkContent(args(productPage, sourcePage));
+		expect(report.outcome).toBe("extracted-unverified");
+		expect(report.extraction).not.toHaveProperty("sourceProducts");
+		requests([sourcePage, productPage]);
+		closed(report);
+	});
+
+	it("does not promote source metadata to a nonempty rendered extraction", async () => {
+		serveProduct(true, "");
+		const output = sink();
+		expect(
+			await runResearchLinkContentCli(
+				args(productPage, sourcePage),
+				output.output,
+			),
+		).toBe(1);
+		const report: Report = JSON.parse(output.text());
+		expect(report.outcome).toBe("empty-extraction");
+		expect(report.extraction?.content).toBe("");
+		expect(report.extraction?.sourceProducts?.entries).toHaveLength(4);
+		requests([sourcePage, productPage]);
+		closed(report);
+	});
+});
+
 describe("target-link in-memory CLI lifecycle", () => {
 	it("pre-aborts without navigation or output", async () => {
 		const cancellation = controller();

@@ -1,0 +1,515 @@
+{
+  "schema": "native-reader-product-reference-workflows-v1",
+  "recordedAt": "2026-09-16T10:19:33.751Z",
+  "runtimeCommit": "feac628899caea37d5f15c3007084ba56b6164e3",
+  "productionUnchanged": true,
+  "compiledProductionFiles": 2292,
+  "compiledProductionByteIdentical": true,
+  "initialWorkflows": 3,
+  "initialRequests": 6,
+  "completedNativeExtractions": 2,
+  "httpFailures": 1,
+  "diagnosticRequests": 1,
+  "totalNewRequests": 7,
+  "retries": 0,
+  "redirects": 0,
+  "credentials": false,
+  "pageScripts": false,
+  "alternateClient": false,
+  "results": [
+    {
+      "ordinal": 8,
+      "sourceUrl": "https://www.homedepot.com/",
+      "targetUrl": "https://www.homedepot.com/p/Home-Decorators-Collection-Marsden-Patina-Wood-Finish-3-Drawer-Rattan-Cane-Chest-of-Drawers-38-in-W-x-36-in-H-05-633-543/327654656",
+      "startedAt": "2026-09-16T10:10:02.258392+00:00",
+      "elapsedSeconds": 2.3727804757654667,
+      "outcome": "http-failure",
+      "stage": "native-click",
+      "failure": {
+        "category": "policy-denied",
+        "stage": "native-click"
+      },
+      "contentSuccess": false,
+      "partial": true,
+      "responses": [
+        {
+          "url": "https://www.homedepot.com/",
+          "status": 200,
+          "decodedBytes": 1248589,
+          "bodySha256": "bd82085d8071b3d099ce2f855031557ef4ed6f3795307d68bbc4bccf98f63b24"
+        },
+        {
+          "url": "https://www.homedepot.com/p/Home-Decorators-Collection-Marsden-Patina-Wood-Finish-3-Drawer-Rattan-Cane-Chest-of-Drawers-38-in-W-x-36-in-H-05-633-543/327654656",
+          "status": 403,
+          "decodedBytes": 2410,
+          "bodySha256": "7272347f8450a97089e65b351fd630c8330e3eeadb079a733fc2049a1f97b0d1"
+        }
+      ],
+      "selection": {
+        "reference": "e3817",
+        "label": "Home Decorators CollectionMarsden Patina Wood Finish 3-​Drawer Rattan Cane Chest of Drawers (38 in.​ W x 36 in.​ H)​",
+        "url": "https://www.homedepot.com/p/Home-Decorators-Collection-Marsden-Patina-Wood-Finish-3-Drawer-Rattan-Cane-Chest-of-Drawers-38-in-W-x-36-in-H-05-633-543/327654656",
+        "candidates": 3
+      },
+      "discovery": {
+        "strategy": "first-eligible-target-v1",
+        "anchorMatches": 205,
+        "targetCandidates": 3,
+        "eligibleCandidates": 2
+      },
+      "events": [
+        "mousedown",
+        "mouseup",
+        "click"
+      ],
+      "markdownBytes": 0,
+      "markdownSha256": null,
+      "contentSelection": null,
+      "contentFallback": null,
+      "review": {
+        "verdict": "http-access-denied",
+        "inspection": "receipt-only",
+        "note": "The source link is selected and native mouse events dispatch, but the exact product response returns403. No destination content, challenge-provider attribution, retry or alternative product is claimed."
+      }
+    },
+    {
+      "ordinal": 2,
+      "sourceUrl": "https://en.wikipedia.org/wiki/Main_Page",
+      "targetUrl": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+      "startedAt": "2026-09-16T10:10:04.633080+00:00",
+      "elapsedSeconds": 2.663325736299157,
+      "outcome": "extracted-unverified",
+      "stage": "complete",
+      "failure": null,
+      "contentSuccess": null,
+      "partial": true,
+      "responses": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Main_Page",
+          "status": 200,
+          "decodedBytes": 259504,
+          "bodySha256": "2a366bf33beef03ba9755df6f1d210b12832835ab5c0619da1098017afefa1ea"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+          "status": 200,
+          "decodedBytes": 723331,
+          "bodySha256": "2de5adcf12d24384305c63b857c5eef291831f562797b25d588a3413418508de"
+        }
+      ],
+      "selection": {
+        "reference": "e4537",
+        "label": "Grace Coolidge",
+        "url": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+        "candidates": 2
+      },
+      "discovery": {
+        "strategy": "first-eligible-target-v1",
+        "anchorMatches": 662,
+        "targetCandidates": 2,
+        "eligibleCandidates": 2
+      },
+      "events": [
+        "mousedown",
+        "mouseup",
+        "click"
+      ],
+      "markdownBytes": 213087,
+      "markdownSha256": "c87f95d640b3e9985dfc2b31f60d00cf03100a9b344ba47efc7eb0a3bd1efc49",
+      "contentSelection": {
+        "policy": "main-content-v2",
+        "selected": "main",
+        "reason": "unique-main",
+        "mainCandidates": 1,
+        "articleCandidates": 0,
+        "scannedNodes": 11977,
+        "outsideArticleContent": true
+      },
+      "contentFallback": null,
+      "review": {
+        "verdict": "substantive-reference-article-available",
+        "inspection": "sampled-extraction",
+        "sampledLines": [
+          [
+            1,
+            35
+          ],
+          [
+            689,
+            695
+          ],
+          [
+            893,
+            895
+          ],
+          [
+            2355,
+            2374
+          ]
+        ],
+        "note": "Complete heading outline plus sampled introduction, later-body and end-category content inspected. Sustained biography prose is available, with substantial language links, tables, citations, navigation and categories retained. Not a full-text factual review or a complete rendering claim."
+      }
+    },
+    {
+      "ordinal": 7,
+      "sourceUrl": "https://www.target.com/",
+      "targetUrl": "https://www.target.com/p/apple-watch-series-12/-/A-1013556561",
+      "startedAt": "2026-09-16T10:10:07.298274+00:00",
+      "elapsedSeconds": 2.974303036928177,
+      "outcome": "extracted-unverified",
+      "stage": "complete",
+      "failure": null,
+      "contentSuccess": null,
+      "partial": true,
+      "responses": [
+        {
+          "url": "https://www.target.com/",
+          "status": 200,
+          "decodedBytes": 393668,
+          "bodySha256": "c1a601d0a0bf84debd1f854ffd6bb8f7541b3799d5124f403808e9e1b0e9cca6"
+        },
+        {
+          "url": "https://www.target.com/p/apple-watch-series-12/-/A-1013556561",
+          "status": 200,
+          "decodedBytes": 792916,
+          "bodySha256": "c4561a2d38bb72913a9cbe757d494ecc475753a35e45e57b58b33fa0eef9af46"
+        }
+      ],
+      "selection": {
+        "reference": "e1579",
+        "label": "Apple Watch Series 12The most accurate heart rate sensing in a wearable.",
+        "url": "https://www.target.com/p/apple-watch-series-12/-/A-1013556561",
+        "candidates": 1
+      },
+      "discovery": {
+        "strategy": "first-eligible-target-v1",
+        "anchorMatches": 67,
+        "targetCandidates": 1,
+        "eligibleCandidates": 1
+      },
+      "events": [
+        "mousedown",
+        "mouseup",
+        "click"
+      ],
+      "markdownBytes": 2282,
+      "markdownSha256": "e13785ad3c8ca77154172fd37cd17f79a77c1c6b8e981b93bab54c50880e5006",
+      "contentSelection": {
+        "policy": "main-content-v2",
+        "selected": "main",
+        "reason": "unique-main",
+        "mainCandidates": 1,
+        "articleCandidates": 0,
+        "scannedNodes": 838,
+        "outsideArticleContent": true
+      },
+      "contentFallback": null,
+      "review": {
+        "verdict": "product-content-with-separate-source-descriptions",
+        "inspection": "full-130-line-markdown-plus-metadata-field-audit",
+        "note": "Markdown supplies identity, selectable variant labels and two feature labels, but detail/specification sections are empty. The original workflow already includes26865 JSON bytes of sourceProducts with four separate records and110 text fields. Parent band M/L and one variant S/M must not be merged or treated as a selected-variant inference. No price, inventory, medical/safety marketing claim or purchase interaction is verified."
+      }
+    }
+  ],
+  "targetSourceDataAudit": {
+    "passed": true,
+    "mode": "Offline static JSON field comparison; no scripts or native probes",
+    "captureFile": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-product-reference-september16/target-diagnostic/source/capture.json",
+    "captureSha256": "8a04f381c733248334ebae0b1967b7ff0e798585677d6c3ed328d9c6e556c855",
+    "workflowFile": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-product-reference-september16/live/7/RESULT.json",
+    "workflowSha256": "db131ea2a7377c8c6afdeed8293ae4d3b49749b62d72bedf70976b579383b50a",
+    "originalWorkflowBodySha256": "c4561a2d38bb72913a9cbe757d494ecc475753a35e45e57b58b33fa0eef9af46",
+    "diagnosticBodySha256": "5892d6093edaa637bdbf9701e9c037fa99c846ffbadb9c44ed3e57d88659724b",
+    "sameResponseBody": false,
+    "records": 4,
+    "textFields": 110,
+    "sourceMetadataBytes": 26865,
+    "allIncludedSourceValuesMatchSeparateFreshCapture": true,
+    "entries": [
+      {
+        "tcin": "1013556561",
+        "relation": "route-product",
+        "title": "Apple Watch Series 12",
+        "path": "$.props.dehydratedState.queries[4].state.data.data.data_source_modules[1].module_data.data.product",
+        "specifications": 19,
+        "highlights": 0,
+        "descriptionBytes": 0,
+        "matchingIncludedFields": true,
+        "sourceChildren": 21
+      },
+      {
+        "tcin": "91122649",
+        "relation": "variant-of-route-product",
+        "title": "Apple Watch Series 12 GPS 42mm Dark Bronze Aluminum Case with Olive Sport Band - S/M",
+        "path": "$.props.dehydratedState.queries[4].state.data.data.data_source_modules[1].module_data.data.product.children[0]",
+        "specifications": 19,
+        "highlights": 9,
+        "descriptionBytes": 4758,
+        "matchingIncludedFields": true,
+        "sourceChildren": 0
+      },
+      {
+        "tcin": "91122502",
+        "relation": "variant-of-route-product",
+        "title": "Apple Watch Series 12 GPS + Cellular 42mm Dark Bronze Aluminum Case with Olive Sport Band - S/M",
+        "path": "$.props.dehydratedState.queries[4].state.data.data.data_source_modules[1].module_data.data.product.children[1]",
+        "specifications": 19,
+        "highlights": 9,
+        "descriptionBytes": 4764,
+        "matchingIncludedFields": true,
+        "sourceChildren": 0
+      },
+      {
+        "tcin": "91122539",
+        "relation": "variant-of-route-product",
+        "title": "Apple Watch Series 12 GPS 42mm Dark Bronze Aluminum Case with Olive Sport Band - M/L",
+        "path": "$.props.dehydratedState.queries[4].state.data.data.data_source_modules[1].module_data.data.product.children[2]",
+        "specifications": 19,
+        "highlights": 9,
+        "descriptionBytes": 4764,
+        "matchingIncludedFields": true,
+        "sourceChildren": 0
+      }
+    ],
+    "limits": "This verifies included values against a separately captured body. It does not reconstruct the original response bytes, select a variant, validate prices or product claims, or establish full catalog coverage."
+  },
+  "diagnostic": {
+    "scope": "One separate native product-source capture; not a retry of a failed request",
+    "sourceUrl": "https://www.target.com/p/apple-watch-series-12/-/A-1013556561",
+    "requests": 1,
+    "status": 200,
+    "outcome": "extracted-unverified",
+    "barrier": null,
+    "bodySha256": "5892d6093edaa637bdbf9701e9c037fa99c846ffbadb9c44ed3e57d88659724b",
+    "previousWorkflowBodySha256": "c4561a2d38bb72913a9cbe757d494ecc475753a35e45e57b58b33fa0eef9af46",
+    "sameBodyAsWorkflow": false,
+    "captureSha256": "8a04f381c733248334ebae0b1967b7ff0e798585677d6c3ed328d9c6e556c855",
+    "metrics": {
+      "mockedRequests": 0,
+      "mockedDecodedBytes": 0,
+      "requests": 1,
+      "redirects": 0,
+      "encodedBytes": 122702,
+      "decodedBytes": 799021,
+      "active": 0,
+      "closed": true
+    }
+  },
+  "validation": {
+    "priorLiveAdmissionNativeTests": 723,
+    "finalNative": {
+      "label": "release01",
+      "pid": 180459,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 6.426011264324188,
+      "passedTests": 806,
+      "failedTests": 0,
+      "files": 10,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "newTests": 3,
+    "additionalExistingTests": 80,
+    "selectedFiles": 10,
+    "canonicalManifestFiles": 939,
+    "quality": {
+      "label": "release01",
+      "executions": [
+        {
+          "name": "build",
+          "pid": 180282,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 6.575045727193356
+        },
+        {
+          "name": "types",
+          "pid": 180361,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 3.820196660235524
+        },
+        {
+          "name": "format",
+          "pid": 180409,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.03171263448894024
+        },
+        {
+          "name": "lint",
+          "pid": 180428,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.03159511834383011
+        }
+      ],
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0
+      },
+      "allProcessesClosed": true
+    },
+    "offlineClickProof": {
+      "passed": true,
+      "newLiveRequests": 0,
+      "scope": "Saved real source plus synthetic destination; real native click, no real product or reference destination validation",
+      "results": [
+        {
+          "ordinal": 8,
+          "sourceUrl": "https://www.homedepot.com/",
+          "targetUrl": "https://www.homedepot.com/p/Home-Decorators-Collection-Marsden-Patina-Wood-Finish-3-Drawer-Rattan-Cane-Chest-of-Drawers-38-in-W-x-36-in-H-05-633-543/327654656",
+          "passed": true,
+          "outcome": "extracted-unverified",
+          "stage": "complete",
+          "failure": null,
+          "selection": {
+            "reference": "e3817",
+            "label": "Home Decorators CollectionMarsden Patina Wood Finish 3-​Drawer Rattan Cane Chest of Drawers (38 in.​ W x 36 in.​ H)​",
+            "url": "https://www.homedepot.com/p/Home-Decorators-Collection-Marsden-Patina-Wood-Finish-3-Drawer-Rattan-Cane-Chest-of-Drawers-38-in-W-x-36-in-H-05-633-543/327654656",
+            "candidates": 3
+          },
+          "discovery": {
+            "strategy": "first-eligible-target-v1",
+            "anchorMatches": 205,
+            "targetCandidates": 3,
+            "eligibleCandidates": 2
+          },
+          "fixtureRequests": 2
+        },
+        {
+          "ordinal": 2,
+          "sourceUrl": "https://en.wikipedia.org/wiki/Main_Page",
+          "targetUrl": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+          "passed": true,
+          "outcome": "extracted-unverified",
+          "stage": "complete",
+          "failure": null,
+          "selection": {
+            "reference": "e10640",
+            "label": "Grace Coolidge",
+            "url": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+            "candidates": 2
+          },
+          "discovery": {
+            "strategy": "first-eligible-target-v1",
+            "anchorMatches": 663,
+            "targetCandidates": 2,
+            "eligibleCandidates": 2
+          },
+          "fixtureRequests": 2
+        },
+        {
+          "ordinal": 7,
+          "sourceUrl": "https://www.target.com/",
+          "targetUrl": "https://www.target.com/p/apple-watch-series-12/-/A-1013556561",
+          "passed": true,
+          "outcome": "extracted-unverified",
+          "stage": "complete",
+          "failure": null,
+          "selection": {
+            "reference": "e15237",
+            "label": "Apple Watch Series 12The most accurate heart rate sensing in a wearable.",
+            "url": "https://www.target.com/p/apple-watch-series-12/-/A-1013556561",
+            "candidates": 1
+          },
+          "discovery": {
+            "strategy": "first-eligible-target-v1",
+            "anchorMatches": 67,
+            "targetCandidates": 1,
+            "eligibleCandidates": 1
+          },
+          "fixtureRequests": 2
+        }
+      ]
+    },
+    "nativeGuard": "JavaScript guard; offline click/inspection proofs additionally use kernel network denial"
+  },
+  "reviewCorrection": "Initial main review inspected only Markdown and overlooked existing sourceProducts. The full original workflow JSON already carries the source data; no missing collector or new runtime fix is claimed. The additional diagnostic is separately counted and has a different response hash.",
+  "historicalCorpus": {
+    "report": "reports/agent-citation-revalidation-v2.md",
+    "selected": 100,
+    "useful": 33,
+    "other": 67,
+    "changed": false,
+    "limitation": "Citation-derived host-root proxy, not global agent-page traffic"
+  },
+  "evidence": {
+    "node_modules/.cache/native-validation/reader-product-reference-september16/BEFORE.json": "f599077c6d56311fab43b6dccc43720efa1dbd94689a79e86e275c8f9a7d327f",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/RUNTIME.json": "1d83bc43c183f5b4fb5db0b1075b85d556c01965d7612b2530b16032f2862081",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/SOURCES.json": "e110c596eb7946fa66fccf39219efc70829e7e2c81db97081894e5196a4a3d9c",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/ENTRIES.json": "1763943b0273d9b721261b15df6e36300fb64a76276eea49a3285d7e9ef49715",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/SCOPE.md": "37f497371a96981c4aa7d75cc5ffd2f6852e4ef23b1e8edfad4195625d71846a",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/target-candidates.md": "ed44f5a9a803f491d3028ce433106e7521e1be9d0bf8cb2192079ee1b73e3a8b",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/target-candidates.json": "7909ce9b468faeb8fb85b72c0b8d60c98b0dde4c3c55aeabc79243e5fe034000",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/inspect/CHECK.json": "367fc249bea4e6bd0a96e528346a9d095ccc639ecda7f98dcc617b5b7d71b874",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/inspect/proof/RESULT.json": "689b45a14588a40d908483a2a83f1f66fea41efed9558d5ed819269f312a4e94",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/inspect/proof/INVOCATION.json": "52ecedff1c8462f9bd49cf9649788213485660ee9f8e3d1a4ca380370cdf7ea3",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/inspect/proof/EXECUTION.json": "f7335d53eee1b5189e8771389b7afd7806e33cd3a1a855df53f33965700a2704",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/inspect/proof/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/inspect/proof/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/proof/CHECK.json": "d72ad65861b68294ef33a72c6eeedd4fc458c33680ee0cce4117c5188c35049a",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/proof/proof/RESULT.json": "ec4fb1689326eb31cf29d91434835d9ce45f79f0ef69d62948b3c2d70cbabe9f",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/proof/proof/INVOCATION.json": "8e152a42f18fd0251a3aeb856055fdca61300e86eedfdbd575c95b482de685db",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/proof/proof/EXECUTION.json": "f0b268c364ea1caefb3c6622ca91f3d344e9a2409fbe3f8b7ec7c405698e12d7",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/proof/proof/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/proof/proof/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/LIVE-APPROVAL.json": "fc334d72fa848a51c5a8a0921aee288d9561edaf7584b8768313dceef889a54e",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/CHECK.json": "0a2e7c69673a8a47c239d336530b1946688626639a1d57185024a6ace955d159",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/TARGET-DIAGNOSTIC.md": "5e0f9bc26e447b9d7448aab1ec6aed7ca5d767d6728b8ec7fd158ca3cf018ef2",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/TARGET-DIAGNOSTIC-ONCE.json": "68ac64f5d26196f85f7b2aa94278ae1dcbdb90463a239d891b7927ae9032afab",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/target-diagnostic/CHECK.json": "6f4208a29c135c8481390520c009508943c22ffd936ba807de1e1156fd93ef6d",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/PRODUCT-DATA-AUDIT.json": "8fdb4f5e8e87a80ab8c61241011ee0fc63a51fea0235194b9638b74592114ea1",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/SOURCE-release01.json": "af64028cf08ee100cf191db3b9d423f900b8ee6bcf5ddb32d80eb6f00bdd7626",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/COMPILED-release01.json": "3cab1620a529b2b8cbc782d6ac427a543f875bdab989a867c8dd75aecb53e202",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/CHECK-release01.json": "8666bd07b463070fb1f9a6b5c987c861ff2d02ffce300b837fc5d94b9c5d5cf2",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/OVERLAY-release01.json": "a3345c884c24fe0dfe76ed53468090a248eb8105abe96a75e1ec5cd69692734a",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/native-release01/INVOCATION.json": "6d95ad3b878eead23131a33cb961fbb06723c901bdddb29865e7c9f8edb30a46",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/native-release01/EXECUTION.json": "7d231afeb788d0155683d33bbb1ac4f0974de477ffa7f02e6a771a08bf4947a2",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/native-release01/native.json": "25f962780c9ce7c2bfbdca99cd6b5e67c14aef78ca59b1278c79fc9ff2ac29e7",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/proof/proof/8.json": "7503d2bd30db7b641b332bf0f02c4a71d6df212ed79af0c423289c747aa0eca0",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/8/INVOCATION.json": "60a925b614b60f9784a8770df0ce711e82e4690f155de9ee744049cd29eb9ed3",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/8/EXECUTION.json": "5348797fdce9c4f30b513a6f4eef5e443233d50d40108c70cb2caa7d32fafd73",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/8/RESULT.json": "6b8cdf4466d755a0c6339f1c44add28451902d5791035029cd8370e2c4a3c9af",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/8/stdout.log": "2721c30d1f25fceed52ac50ddd39ac2bd7e3860b6069bcf58b4273daee4f634f",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/8/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/8/http-events.jsonl": "d30fb1278430d5a438044915a82f2bea48c98c8e6b2241c77364ac212a5b60b0",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/proof/proof/2.json": "b9ae9a7facd43f494169c22dbf58170f66f2078c10a0037140aa11e77e07a5ae",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/2/INVOCATION.json": "bd72c9f6d1cfe92991b2f6b627949e0aaac43f1f4f5fc4624108390d1294f511",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/2/EXECUTION.json": "a4b2da133bd34bbbdc9a84449a585835aa22a43f1a5188ca56594b530f213fd7",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/2/RESULT.json": "963246a05703b1336e492cd37c5bb9157a47229ee23886c38f018f4adfc5f785",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/2/stdout.log": "3e294d242a79814cdff2a4d615fc45b16c45d56e6bc4245cd5fca53bb6128fb5",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/2/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/2/http-events.jsonl": "d794a2ccf0db71a3ff54d647121abb68e196e49fb839d5aa1acbdffee18ee8fe",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/proof/proof/7.json": "60c14c9018142f6619a803b79f1e18d05fc2e1ab98007db9dc6b9cdd0e4ec1ee",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/7/INVOCATION.json": "57c8d28f54a6dd74e7da872e0252bb85471d7376a39a8cfdc7d6d0d20c2f8183",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/7/EXECUTION.json": "9775fe9fa36a73c5b477956b157ed6f98b4d91dc4a15403c2a965983d05d46cd",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/7/RESULT.json": "db131ea2a7377c8c6afdeed8293ae4d3b49749b62d72bedf70976b579383b50a",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/7/stdout.log": "6a1e921d1d18fdbf8e4d4c7b678bc7858aa39decede389216c758842afbbbcd4",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/7/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/live/7/http-events.jsonl": "1c80026b50fd963c386dd8a460f94adbdfd96e2d6c48f15e6a2fb53c1135dde4",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/target-diagnostic/source/INVOCATION.json": "e183a1156d62f1e12c0e2119ac66771038c3c2fe1e709c3d5001bf1982fcaa3b",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/target-diagnostic/source/EXECUTION.json": "0e49d0be0642024bd966ea046fbc2fb62fc0d09c14f4c89d98c41930fd8cd0e2",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/target-diagnostic/source/RESULT.json": "aae80797e4581b14b2f8fcbc77622c6002160983076ec478f0307d64d0f9ef7f",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/target-diagnostic/source/capture.json": "8a04f381c733248334ebae0b1967b7ff0e798585677d6c3ed328d9c6e556c855",
+    "node_modules/.cache/native-validation/reader-product-reference-september16/target-diagnostic/source/http-events.jsonl": "787b8bcb8199a1715c99b0028e7a458f06439be4b3fdfd0011dc663953859886"
+  }
+}
