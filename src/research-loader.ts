@@ -117,6 +117,7 @@ const preservedTags = new Set(
 const blockReplacements = new Set(
 	"form details summary dialog fieldset legend center search".split(" "),
 );
+const unwrappedControlBoundaries = new Set(["select", "optgroup", "option"]);
 const reconstructableFormatting = new Set(
 	"a b big code em font i nobr s small strike strong tt u".split(" "),
 );
@@ -622,7 +623,10 @@ export function sanitizeResearchHtml(
 					: undefined;
 		if (token.kind === "end") {
 			const index = open.lastIndexOf(name);
-			if (index >= 0) open.length = index;
+			if (index >= 0) {
+				open.length = index;
+				if (unwrappedControlBoundaries.has(name)) emit(" ");
+			}
 			if (outputName) emit(`</${outputName}>`);
 			continue;
 		}
@@ -649,7 +653,10 @@ export function sanitizeResearchHtml(
 			open.push(name);
 			check("reader.depth", limits.maxDepth, open.length);
 		}
-		if (!outputName) report.unwrappedElements++;
+		if (!outputName) {
+			report.unwrappedElements++;
+			if (unwrappedControlBoundaries.has(name)) emit(" ");
+		}
 		const ariaTableRole =
 			outputName === name ? ariaTableSourceRole(token.attributes) : undefined;
 		const namedRole =

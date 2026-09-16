@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Preserve option-label text boundaries
+
+- Fix real reader output such as `2550100200` and `20 items50 items`: admitted
+  select/optgroup/option boundaries now add bounded ASCII spaces while retaining
+  literal child text. No control/value/label/selected-state invention or change
+  to native full-parser forms, visibility policy or optional-end stack behavior.
+- Clean baseline598pass/0 in7 files; final717pass/0 in8 files,119 new tests.
+  Final tests on old production:23pass/96 expected failures. Build, selected
+  types, formatting and lint pass. Initial18 failures were a corrected test
+  text-length miscount; original failed runs remain preserved.
+- Three captured-host old/new replays under kernel-denied network pass: arXiv
+  adds24 Markdown bytes and Wikipedia8; Python remains byte-identical. Only
+  whitespace changes, all711 link destinations remain unchanged, and all source/
+  omission fields except output length match. No new website or performance claim.
+- See READER-OPTION-TEXT.md and reports/reader-option-text-2026-09-16.md.
+  Original100 results remain unchanged. Dynamic search/content, optional-end
+  parsing gaps, challenge handoff, SafeJS, credentials/passkeys, connection
+  fallback and real-input gates remain open; overall browser goal stays active.
+
 ### Lightweight arXiv search and complete corpus audit
 
 - Independently audit the original100-entry corpus:100 distinct URLs,100 outcomes
