@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Recover source-list boundaries in native Markdown
+
+- Fix consecutive source lists merging into one Markdown run. Insert a neutral
+  source-group boundary only when the next list emits in the same prefix context;
+  preserve nesting, numbering, links, JSON nodes and output-byte limits. Do not
+  infer pros/cons labels, icon meaning or missing chart values.
+- Final selected native gate:955pass/0 in15 files, including51 new cases. The
+  identical new cases against prior production give11pass/40fail. Build, strict
+  types, formatting and lint pass; correct two initial fixture assumptions only.
+- Kernel-denied replay of99 saved bodies yields96 successful extraction pairs
+  and three matching non-HTML failures. Eleven pages gain24 boundaries; all other
+  content and normalized metadata match. PCMag now retains two three-item groups
+  with one47-byte boundary. No fresh live requests or revised100-root verdicts.
+- Only extraction JavaScript and two maps change among2300 compiled artifacts.
+  Canonical native manifest has944 entries; preserve the three separate working
+  additions. Prior62 broad failures,22 missing committed tests, SDK, rendering,
+  credential/device and access-handoff gates remain open. Continue dynamic-chart
+  retrieval and other captured content gaps without guessing missing values.
+- See EXTRACTION-LIST-BOUNDARIES.md and
+  reports/extraction-list-boundaries-2026-09-16.md with companion JSON.
+
 ### Practical article retrieval after the 100-entry corpus
 
 - Keep the complete100-entry checklist and immutable original verdicts in

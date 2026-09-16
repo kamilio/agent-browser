@@ -700,6 +700,9 @@ function markdown(
 	const output: string[] = [];
 	let bytes = 0;
 	let tableDepth = 0;
+	let completedListPrefixes: Prefix[] | undefined;
+	type ListBoundary = { prefixes: Prefix[] };
+	let pendingListBoundary: ListBoundary | undefined;
 	type Task =
 		| {
 				node: ExtractedNode;
@@ -713,10 +716,14 @@ function markdown(
 				link?: MarkdownLinkContext;
 		  }
 		| { closingMarker: string; prefixes: Prefix[]; closesTable: boolean }
+		| {
+				closingList: { startBytes: number; boundary?: ListBoundary };
+				prefixes: Prefix[];
+		  }
 		| { closingFlowLink: MarkdownLinkContext; prefixes: Prefix[] }
 		| { emptyItem: Prefix; prefixes: Prefix[] };
 	const pending: Task[] = [{ node: root, prefixes: [] }];
-	const emit = (text: string, prefixes: Prefix[]) => {
+	const emitBlock = (text: string, prefixes: Prefix[]) => {
 		if (!text) return;
 		const lines = text.split("\n");
 		for (let index = 0; index < lines.length; index++) {
@@ -749,6 +756,19 @@ function markdown(
 			);
 		output.push("\n");
 	};
+	const emit = (text: string, prefixes: Prefix[]) => {
+		if (!text) return;
+		if (pendingListBoundary) {
+			const boundary = pendingListBoundary;
+			pendingListBoundary = undefined;
+			emitBlock(
+				"**Native list boundary (source groups only)**",
+				boundary.prefixes,
+			);
+		}
+		completedListPrefixes = undefined;
+		emitBlock(text, prefixes);
+	};
 	const schedule = (
 		children: ExtractedNode[],
 		prefixes: Prefix[],
@@ -777,6 +797,13 @@ function markdown(
 	while (pending.length) {
 		const task = pending.pop();
 		if (!task) break;
+		if ("closingList" in task) {
+			if (bytes > task.closingList.startBytes)
+				completedListPrefixes = task.prefixes;
+			if (pendingListBoundary === task.closingList.boundary)
+				pendingListBoundary = undefined;
+			continue;
+		}
 		if ("closingFlowLink" in task) {
 			const link = task.closingFlowLink;
 			if (link.url && !link.linked && link.preformatted)
@@ -852,6 +879,14 @@ function markdown(
 		else if (node.type === "blockquote")
 			schedule(children, [...prefixes, { marker: "> " }], link);
 		else if (node.type === "list") {
+			const boundary =
+				!pendingListBoundary &&
+				completedListPrefixes?.length === prefixes.length &&
+				completedListPrefixes.every((part, index) => part === prefixes[index])
+					? { prefixes }
+					: undefined;
+			if (boundary) pendingListBoundary = boundary;
+			pending.push({ closingList: { startBytes: bytes, boundary }, prefixes });
 			let ordinal = node.start ?? 1;
 			const tasks: Task[] = children.map((child) => ({
 				node: child,

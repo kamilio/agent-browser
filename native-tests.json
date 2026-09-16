@@ -941,5 +941,6 @@
   "src/research-link-compact.test.ts",
   "src/parser-foreign-read.test.ts",
   "src/source-literal.test.ts",
-  "src/research-asset-literal.test.ts"
+  "src/research-asset-literal.test.ts",
+  "src/extraction-list-boundaries.test.ts"
 ]
