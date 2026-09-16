@@ -40,6 +40,14 @@ unique inspected selector or heading section instead. Replay retains source
 visibility and barrier checks, a 256,000-byte extraction limit and a 327,680-byte
 serialized result limit. Failed/partial/blocked captures remain inadmissible.
 
+For an ordinary complete capture, the replay CLI can select the existing main-
+content policy without manually choosing a CSS selector. Replace `--selector body`
+with `--content-focus main-content-v1`. If rich Markdown exceeds the output bound,
+an additional explicit `--output-limit-policy text-prefix-v1` can retain bounded
+indented plain text with loss/truncation metadata. Defaults and byte ceilings do
+not change. These options do not combine with the named recovery flags below;
+see `REPLAY-CONTENT-FOCUS.md` for their admission and output contracts.
+
 ## Observed coverage and limitations
 
 On September 15, 2026, this existing workflow captured and selected source from

@@ -923,5 +923,7 @@
 	"src/browser-connection-challenge.test.ts",
 	"src/research-connection-challenge.test.ts",
 	"src/session-reader-link-workflows.test.ts",
-	"src/split-inline-actions.test.ts"
+	"src/split-inline-actions.test.ts",
+	"src/research-replay-content-focus.test.ts",
+	"src/research-replay-content-focus-cli.test.ts"
 ]

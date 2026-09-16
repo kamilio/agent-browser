@@ -6,6 +6,39 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Complete-capture focus and bounded text replay
+
+- Added ordinary replay `--content-focus main-content-v1` and API contentFocus,
+  reusing the existing main/article/document selection policy. Selection metadata
+  remains explicit; no manually invented CSS target or network request is needed.
+- Added explicit ordinary HTML replay `--output-limit-policy text-prefix-v1` for
+  Markdown selector/section/focus output. Rich-output overflow can retain bounded
+  indented plain text with original trigger and source/retained counts. Default
+  strict failure, 256KB extraction and 327680-byte envelope bounds remain unchanged.
+  Named recovery modes and partial/failed/blocked capture admission stay closed.
+- One separate long-v1 Wikipedia article GET on September 15 captured 2,266,381
+  decoded bytes and 68 headings under the existing 4MB profile. Strict rich output
+  still fails; explicit focused text fallback retains all 218,129 selected source
+  UTF-16 units in 231,283 Markdown bytes. This is not default-limit recovery or
+  full rendered/factual article acceptance; original failed attempt is unchanged.
+- Actual network-denied replay CLI checks on that capture and existing CNET and
+  RunRepeat captures return 231283 / 26686 / 19688 bytes. The two smaller outputs
+  remain rich Markdown without fallback. API results match existing core behavior;
+  baseline/candidate ordinary body selection stays identical, including failures.
+- Final clean selected validation: 875 passed, zero failed in 11 manifest files;
+  64 new cases. Build, strict selected types, format and changed-file lint pass.
+  Old production with identical final new tests: 25 pass/39 expected failures.
+  Failed early test-import/overload/Markdown assertions remain archived. Not a
+  full-manifest, SDK, credential or passkey acceptance run.
+- See `REPLAY-CONTENT-FOCUS.md`, updated `LARGE-PAGE-WORKFLOW.md` and
+  `reports/replay-content-focus-2026-09-15.md`. Source capture and all five offline
+  proof/CLI child groups closed; observed requests/sockets closed. Four direct
+  tree closes and API close observations are recorded without claiming a complete
+  CLI allocation census. No scripts, credentials, challenge solving or push.
+- Overall goal remains active: generic incomplete-body admission, automatic focus
+  within named recovery modes, remaining site/access/interaction issues and the
+  separately authorized SDK/credential/passkey gates are still outstanding.
+
 ### September 15: native split-inline pointer action ownership
 
 - Fixed the observed RunRepeat pointer failure at its ownership source. Normal-flow

@@ -24,7 +24,7 @@ export const researchReplayCliLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit | --recover-empty-outline] < receipt.jsonl\nOutput-limit recovery requires the default profile and one explicit --selector, --section or --headings. Empty-outline recovery requires long-v1 and one explicit --selector. Recovery flags are mutually exclusive. Markdown requires selector/section extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section extraction and may be combined. Headings require output-limit recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
+	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--content-focus main-content-v1 | --selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--output-limit-policy text-prefix-v1] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit | --recover-empty-outline] < receipt.jsonl\nOutput-limit recovery requires the default profile and one explicit --selector, --section or --headings. Empty-outline recovery requires long-v1 and one explicit --selector. Recovery flags are mutually exclusive. Content focus requires an ordinary complete capture and cannot use recovery flags. Text-prefix output requires ordinary selector/section/content-focus Markdown replay; it never admits incomplete bodies. Markdown requires selector/section/content-focus extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section/content-focus extraction and may be combined. Headings require output-limit recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
 
 function invalidArguments(): never {
 	throw new AgentBrowserError(
@@ -42,7 +42,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 } {
 	if (
 		!Array.isArray(args) ||
-		args.length > 15 ||
+		args.length > 17 ||
 		args.some((value) => typeof value !== "string" || value.length > 4096)
 	)
 		invalidArguments();
@@ -59,11 +59,13 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		"--body-sha256",
 		"--body-bytes",
 		"--selector",
+		"--content-focus",
 		"--section",
 		"--links",
 		"--find",
 		"--lines",
 		"--format",
+		"--output-limit-policy",
 	]);
 	for (let index = 0; index < args.length; index++) {
 		const flag = args[index];
@@ -98,6 +100,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	}
 	const profile = fields.get("--expected-profile");
 	const format = fields.get("--format");
+	const outputLimitPolicy = fields.get("--output-limit-policy");
 	if ((tableRows || compactTables) && format !== "markdown") invalidArguments();
 	const receiptSha256 = fields.get("--receipt-sha256");
 	const bodySha256 = fields.get("--body-sha256");
@@ -120,12 +123,22 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	if (Number(bodyBytes) > cap) invalidArguments();
 	const modes = [
 		"--selector",
+		"--content-focus",
 		"--section",
 		"--links",
 		"--find",
 		"--lines",
 	].filter((flag) => fields.has(flag));
 	if (modes.length + Number(headings) !== 1) invalidArguments();
+	if (
+		outputLimitPolicy !== undefined &&
+		(outputLimitPolicy !== "text-prefix-v1" ||
+			format !== "markdown" ||
+			recoverOutputLimit ||
+			recoverEmptyOutline ||
+			!["--selector", "--section", "--content-focus"].includes(modes[0]))
+	)
+		invalidArguments();
 	if (
 		recoverEmptyOutline &&
 		(recoverOutputLimit || profile !== "long-v1" || modes[0] !== "--selector")
@@ -187,7 +200,9 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		};
 	}
 	if (!target || target.trim() !== target) invalidArguments();
-	if (mode === "--links") {
+	if (mode === "--content-focus") {
+		if (target !== "main-content-v1") invalidArguments();
+	} else if (mode === "--links") {
 		if (
 			tableMetadata ||
 			target.length > 256 ||
@@ -210,6 +225,9 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		...(tableMetadata ? { tableMetadata: true } : {}),
 		...(tableRows ? { tableRows: true } : {}),
 		...(compactTables ? { compactTables: true } : {}),
+		...(outputLimitPolicy
+			? { outputLimitPolicy: "text-prefix-v1" as const }
+			: {}),
 	};
 	return {
 		...(format === undefined ? {} : { format }),
@@ -217,11 +235,13 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		...(recoverEmptyOutline ? { recoverEmptyOutline: true as const } : {}),
 		trusted,
 		selection:
-			mode === "--links"
-				? { links: target }
-				: mode === "--section"
-					? { section: target, ...metadata }
-					: { selector: target, ...metadata },
+			mode === "--content-focus"
+				? { contentFocus: "main-content-v1", ...metadata }
+				: mode === "--links"
+					? { links: target }
+					: mode === "--section"
+						? { section: target, ...metadata }
+						: { selector: target, ...metadata },
 	};
 }
 

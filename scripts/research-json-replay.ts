@@ -75,20 +75,39 @@ export interface ResearchReplayLineRange {
 
 type ResearchHtmlReplaySelection =
 	| ((
-			| { selector: string; section?: never; links?: never }
-			| { section: string; selector?: never; links?: never }
+			| {
+					selector: string;
+					section?: never;
+					links?: never;
+					contentFocus?: never;
+			  }
+			| {
+					section: string;
+					selector?: never;
+					links?: never;
+					contentFocus?: never;
+			  }
+			| {
+					contentFocus: "main-content-v1";
+					selector?: never;
+					section?: never;
+					links?: never;
+			  }
 	  ) & {
 			tableMetadata?: boolean;
 			tableRows?: boolean;
 			compactTables?: boolean;
+			outputLimitPolicy?: "text-prefix-v1";
 	  })
 	| {
 			links: string;
+			contentFocus?: never;
 			selector?: never;
 			section?: never;
 			tableMetadata?: never;
 			tableRows?: never;
 			compactTables?: never;
+			outputLimitPolicy?: never;
 	  };
 
 export type ResearchJsonReplaySelection =
@@ -100,9 +119,11 @@ export type ResearchJsonReplaySelection =
 			selector?: never;
 			section?: never;
 			links?: never;
+			contentFocus?: never;
 			tableMetadata?: never;
 			tableRows?: never;
 			compactTables?: never;
+			outputLimitPolicy?: never;
 	  });
 
 export interface ResearchOutputLimitSectionSelection {
@@ -158,12 +179,14 @@ export interface ResearchJsonReplayReport<
 	selection: {
 		method:
 			| "css-selector"
+			| "content-focus"
 			| "heading-section"
 			| "link-url-search"
 			| "heading-outline"
 			| "text-lines"
 			| "text-line-discovery";
 		matches: number | null;
+		outputLimitPolicy?: "text-prefix-v1";
 	};
 	classification: {
 		barrier: BrowserChallengeDiagnostic["kind"] | null;
@@ -280,7 +303,7 @@ function selectionSnapshot(value: unknown) {
 	const keys = Reflect.ownKeys(value);
 	if (
 		keys.length < 1 ||
-		keys.length > 4 ||
+		keys.length > 5 ||
 		!keys.every(
 			(key) =>
 				typeof key === "string" &&
@@ -290,9 +313,11 @@ function selectionSnapshot(value: unknown) {
 					"links",
 					"lines",
 					"find",
+					"contentFocus",
 					"tableMetadata",
 					"tableRows",
 					"compactTables",
+					"outputLimitPolicy",
 				].includes(key),
 		)
 	)
@@ -305,8 +330,8 @@ function selectionSnapshot(value: unknown) {
 		fields[key] = descriptor.value;
 	}
 	if (
-		["selector", "section", "links", "lines", "find"].filter((key) =>
-			Object.hasOwn(fields, key),
+		["selector", "section", "links", "lines", "find", "contentFocus"].filter(
+			(key) => Object.hasOwn(fields, key),
 		).length !== 1
 	)
 		invalidSelection();
@@ -319,6 +344,7 @@ function selectionSnapshot(value: unknown) {
 			tableMetadata: false,
 			tableRows: false,
 			compactTables: false,
+			outputLimitPolicy: undefined,
 		};
 	}
 	if (Object.hasOwn(fields, "find")) {
@@ -337,15 +363,19 @@ function selectionSnapshot(value: unknown) {
 			tableMetadata: false,
 			tableRows: false,
 			compactTables: false,
+			outputLimitPolicy: undefined,
 		};
 	}
 	const section = Object.hasOwn(fields, "section");
 	const links = Object.hasOwn(fields, "links");
-	const target = links
-		? fields.links
-		: section
-			? fields.section
-			: fields.selector;
+	const focus = Object.hasOwn(fields, "contentFocus");
+	const target = focus
+		? fields.contentFocus
+		: links
+			? fields.links
+			: section
+				? fields.section
+				: fields.selector;
 	if (
 		typeof target !== "string" ||
 		!target.length ||
@@ -355,10 +385,14 @@ function selectionSnapshot(value: unknown) {
 			typeof fields.tableMetadata !== "boolean") ||
 		(fields.tableRows !== undefined && typeof fields.tableRows !== "boolean") ||
 		(fields.compactTables !== undefined &&
-			typeof fields.compactTables !== "boolean")
+			typeof fields.compactTables !== "boolean") ||
+		(Object.hasOwn(fields, "outputLimitPolicy") &&
+			fields.outputLimitPolicy !== "text-prefix-v1")
 	)
 		invalidSelection();
-	if (links) {
+	if (focus) {
+		if (target !== "main-content-v1") invalidSelection();
+	} else if (links) {
 		if (
 			target.length > 256 ||
 			Array.from(target).some(
@@ -367,7 +401,8 @@ function selectionSnapshot(value: unknown) {
 			) ||
 			Object.hasOwn(fields, "tableMetadata") ||
 			Object.hasOwn(fields, "tableRows") ||
-			Object.hasOwn(fields, "compactTables")
+			Object.hasOwn(fields, "compactTables") ||
+			Object.hasOwn(fields, "outputLimitPolicy")
 		)
 			invalidSelection();
 	} else {
@@ -378,15 +413,21 @@ function selectionSnapshot(value: unknown) {
 		}
 	}
 	return {
-		method: links
-			? ("link-url-search" as const)
-			: section
-				? ("heading-section" as const)
-				: ("css-selector" as const),
+		method: focus
+			? ("content-focus" as const)
+			: links
+				? ("link-url-search" as const)
+				: section
+					? ("heading-section" as const)
+					: ("css-selector" as const),
 		target,
 		tableMetadata: fields.tableMetadata === true,
 		tableRows: fields.tableRows === true,
 		compactTables: fields.compactTables === true,
+		outputLimitPolicy:
+			fields.outputLimitPolicy === "text-prefix-v1"
+				? ("text-prefix-v1" as const)
+				: undefined,
 	};
 }
 
@@ -588,7 +629,10 @@ function validateReplayFormat(
 			(selected.method === "link-url-search" ||
 				selected.method === "text-line-discovery" ||
 				selected.tableMetadata)) ||
-		((selected.tableRows || selected.compactTables) && format !== "markdown")
+		((selected.tableRows ||
+			selected.compactTables ||
+			selected.outputLimitPolicy) &&
+			format !== "markdown")
 	)
 		throw new AgentBrowserError("invalid-input", "Invalid replay format");
 	return format;
@@ -660,7 +704,11 @@ export function recoverResearchOutputLimitSection(
 	const checkpoint = replayCheckpoint(signal);
 	checkpoint();
 	const selected = selectionSnapshot(selection);
-	if (selected.method !== "heading-section") invalidSelection();
+	if (
+		selected.method !== "heading-section" ||
+		selected.outputLimitPolicy !== undefined
+	)
+		invalidSelection();
 	const selectedFormat = validateReplayFormat(format, selected);
 	checkpoint();
 	const admission = validateResearchOutputLimitSectionAdmission(
@@ -702,7 +750,11 @@ export function recoverResearchOutputLimitSelector(
 	const checkpoint = replayCheckpoint(signal);
 	checkpoint();
 	const selected = selectionSnapshot(selection);
-	if (selected.method !== "css-selector") invalidSelection();
+	if (
+		selected.method !== "css-selector" ||
+		selected.outputLimitPolicy !== undefined
+	)
+		invalidSelection();
 	const selectedFormat = validateReplayFormat(format, selected);
 	checkpoint();
 	const admission = validateResearchOutputLimitSectionAdmission(
@@ -749,7 +801,11 @@ export function recoverResearchEmptyOutlineSelector(
 	const checkpoint = replayCheckpoint(signal);
 	checkpoint();
 	const selected = selectionSnapshot(selection);
-	if (selected.method !== "css-selector") invalidSelection();
+	if (
+		selected.method !== "css-selector" ||
+		selected.outputLimitPolicy !== undefined
+	)
+		invalidSelection();
 	const selectedFormat = validateReplayFormat(format, selected);
 	checkpoint();
 	const admission = validateResearchEmptyOutlineAdmission(rawReceipt, trusted);
@@ -952,10 +1008,14 @@ function extractValidatedReplayJson<
 						{
 							method:
 								selected.method === "text-lines" ||
-								selected.method === "text-line-discovery"
+								selected.method === "text-line-discovery" ||
+								selected.method === "content-focus"
 									? "document"
 									: selected.method,
-							target: "target" in selected ? selected.target : undefined,
+							target:
+								"target" in selected && selected.method !== "content-focus"
+									? selected.target
+									: undefined,
 							format,
 							tableMetadata:
 								"tableMetadata" in selected
@@ -1050,7 +1110,13 @@ function extractValidatedReplayJson<
 				receiptSha256: admission.receiptSha256,
 				body: admission.bodyIdentity,
 			},
-			selection: { method: selected.method, matches: null },
+			selection: {
+				method: selected.method,
+				matches: null,
+				...("outputLimitPolicy" in selected && selected.outputLimitPolicy
+					? { outputLimitPolicy: selected.outputLimitPolicy }
+					: {}),
+			},
 			classification: { barrier: null, diagnostic: null },
 			reader,
 			...extra,
@@ -1146,7 +1212,10 @@ function extractValidatedReplayJson<
 		) {
 			checkpoint();
 			let reference: string | undefined;
-			if (selected.method !== "text-lines") {
+			if (
+				selected.method !== "text-lines" &&
+				selected.method !== "content-focus"
+			) {
 				const queries = new DocumentQueries(tree);
 				const matches = queries.querySelectorAll(selected.target);
 				report.selection.matches = matches.length;
@@ -1163,11 +1232,16 @@ function extractValidatedReplayJson<
 				tableMetadata: selected.tableMetadata,
 				tableRows: selected.tableRows,
 				...(selected.compactTables ? { compactTables: true } : {}),
-				...(selected.method === "text-lines"
-					? { lines: selected.lines }
-					: selected.method === "heading-section"
-						? { section: reference }
-						: { root: reference }),
+				...(selected.outputLimitPolicy
+					? { outputLimitPolicy: selected.outputLimitPolicy }
+					: {}),
+				...(selected.method === "content-focus"
+					? { contentFocus: "main-content-v1" as const }
+					: selected.method === "text-lines"
+						? { lines: selected.lines }
+						: selected.method === "heading-section"
+							? { section: reference }
+							: { root: reference }),
 				maxBytes: researchJsonReplayLimits.maxExtractionBytes,
 				maxNodes: researchJsonReplayLimits.maxNodes,
 				maxDepth: researchJsonReplayLimits.maxDepth,
