@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Validate developer documentation and focused repository content
+
+- Three new anonymous native GET200: Python asyncio tasks, MDN Promise reference
+  and the user-specified GitHub repository. Useful text on each; no scripts,
+  credentials, redirects/retries, alternate clients or challenge solving.
+- Independent source comparison matches all53 fenced blocks (34/18/1), including
+  indentation and blank lines. Three captured responses replay complete output.
+  This is content fidelity, not executed-example or rendered/API acceptance.
+- Existing --selector article retrieves the unique README at32,630 bytes instead
+  of76,842: an exact main-content substring,44,212 bytes/57.54% less output. No
+  extra GET or automatic-policy change; see DEVELOPER-CONTENT.md.
+- MDN's four tokenizer issues are already-supported empty processing markers.
+  Diagnostic replay distinguishes unfiltered visibility preflight from filtered
+  loading; retain both safety checks and the honest issue count.
+- Priority next fix: MDN's two experimental method warnings are lost from empty
+  role=img spans. Native sanitizer keeps aria-label but drops title; ordinary
+  extraction emits neither. Also retain/label the omitted no-script compatibility
+  fallback without executing templates or inventing unavailable support values.
+  MDN is a qualified content failure, not an unqualified successful reference.
+- No new production patch or native-unit gate; reference the unchanged2,963-case
+  gate only. Historical100 verdicts, prior62 failures/22 missing committed tests,
+  SDK/rendering/credential/passkey/device/TTY/access gates and overall goal remain.
+- Evidence and independent review: reports/developer-content-2026-09-16.md/JSON.
+
 ### Recover RTINGS source-review descriptions without page execution
 
 - Add bounded sourceReviews metadata for exact public-style RTINGS component
