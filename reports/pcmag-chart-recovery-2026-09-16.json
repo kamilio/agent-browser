@@ -1,0 +1,3985 @@
+{
+  "schema": "native-public-embedded-chart-recovery-v1",
+  "recordedAt": "2026-09-16T13:37:03.062Z",
+  "runtimeCommit": "382a9186e28e2fd5b6e99e63d13bdc8744d0eb7d",
+  "evidenceDirectory": "node_modules/.cache/native-validation/pcmag-charts-september16",
+  "seal": {
+    "at": "2026-09-16T13:36:25.210Z",
+    "files": 180,
+    "bytes": 2856753,
+    "artifactsSha256": "e9bfcb1159f02e56562814ce47f522110f5255f507ca0ab920606fd978a52b63",
+    "writersClosed": true
+  },
+  "verification": {
+    "passed": true,
+    "at": "2026-09-16T13:31:46.507Z",
+    "liveRequests": 5,
+    "decodedBytes": 163198,
+    "encodedBytes": 50723,
+    "gapsSeconds": [
+      95.379,
+      2.173,
+      2.174,
+      2.174
+    ],
+    "rows": [
+      {
+        "phase": "loader02",
+        "ordinal": 1,
+        "url": "https://e.infogram.com/js/dist/embed-loader-min.js",
+        "kind": "script",
+        "requestedAt": "2026-09-16T13:24:13.805Z",
+        "status": 200,
+        "decodedBytes": 10311,
+        "encodedBytes": 4135,
+        "bodySha256": "a83355ed1111152d074826cec19b54fabedd060076232dc9c7beb80e800cc2b1",
+        "elapsedSeconds": 0.22344164736568928,
+        "provenance": {
+          "file": "node_modules/.cache/native-validation/reader-practical-workflows-september16/live/43/response-43-2.json",
+          "fileSha256": "51ceaf022cc81d32292ff1eb6672f551b11421e4b8a69112460f44213f0b48cf",
+          "bodySha256": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "utf16Offset": 1107207,
+          "claim": "Literal o.src assignment in the captured article; code not executed"
+        }
+      },
+      {
+        "phase": "charts02",
+        "ordinal": 2,
+        "url": "https://e.infogram.com/db767a28-2200-4b0e-821f-dfa74141df6d?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "kind": "html",
+        "requestedAt": "2026-09-16T13:25:49.184Z",
+        "status": 200,
+        "decodedBytes": 34465,
+        "encodedBytes": 10803,
+        "bodySha256": "25d5ee84cd11131e74d4783db9f2e4c11820347e4d48d3af827162bec86e16d8",
+        "elapsedSeconds": 0.3225968927145004,
+        "provenance": {
+          "articleFile": "node_modules/.cache/native-validation/reader-practical-workflows-september16/live/43/response-43-2.json",
+          "articleBodySha256": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "embedId": "db767a28-2200-4b0e-821f-dfa74141df6d",
+          "articleUtf16Offset": 722907,
+          "loaderFile": "node_modules/.cache/native-validation/pcmag-charts-september16/live-loader02/1/body.txt",
+          "loaderSha256": "a83355ed1111152d074826cec19b54fabedd060076232dc9c7beb80e800cc2b1",
+          "constructionUtf16Offset": 8375,
+          "claim": "Derive public iframe request from captured loader string concatenation and article data-id; no optional type/page attributes present; fragment omitted from HTTP URL; no code executed"
+        }
+      },
+      {
+        "phase": "charts02",
+        "ordinal": 3,
+        "url": "https://e.infogram.com/80aaf3df-38e6-45f6-8aa6-e07dfec60ef4?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "kind": "html",
+        "requestedAt": "2026-09-16T13:25:51.357Z",
+        "status": 200,
+        "decodedBytes": 40433,
+        "encodedBytes": 12134,
+        "bodySha256": "a6bdce9b227d02845506929d8915c023d7ad6be51221a0a827c32902a7e2aac1",
+        "elapsedSeconds": 2.172377374023199,
+        "provenance": {
+          "articleFile": "node_modules/.cache/native-validation/reader-practical-workflows-september16/live/43/response-43-2.json",
+          "articleBodySha256": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "embedId": "80aaf3df-38e6-45f6-8aa6-e07dfec60ef4",
+          "articleUtf16Offset": 725917,
+          "loaderFile": "node_modules/.cache/native-validation/pcmag-charts-september16/live-loader02/1/body.txt",
+          "loaderSha256": "a83355ed1111152d074826cec19b54fabedd060076232dc9c7beb80e800cc2b1",
+          "constructionUtf16Offset": 8375,
+          "claim": "Derive public iframe request from captured loader string concatenation and article data-id; no optional type/page attributes present; fragment omitted from HTTP URL; no code executed"
+        }
+      },
+      {
+        "phase": "charts02",
+        "ordinal": 4,
+        "url": "https://e.infogram.com/050a99fc-36c9-4ede-8c11-cb32ce33d048?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "kind": "html",
+        "requestedAt": "2026-09-16T13:25:53.531Z",
+        "status": 200,
+        "decodedBytes": 39527,
+        "encodedBytes": 11847,
+        "bodySha256": "6d5ae41b59e56992132e35f12bed686e35ff0572ea4f9438ad26fda1bec7337b",
+        "elapsedSeconds": 2.422338904812932,
+        "provenance": {
+          "articleFile": "node_modules/.cache/native-validation/reader-practical-workflows-september16/live/43/response-43-2.json",
+          "articleBodySha256": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "embedId": "050a99fc-36c9-4ede-8c11-cb32ce33d048",
+          "articleUtf16Offset": 728841,
+          "loaderFile": "node_modules/.cache/native-validation/pcmag-charts-september16/live-loader02/1/body.txt",
+          "loaderSha256": "a83355ed1111152d074826cec19b54fabedd060076232dc9c7beb80e800cc2b1",
+          "constructionUtf16Offset": 8375,
+          "claim": "Derive public iframe request from captured loader string concatenation and article data-id; no optional type/page attributes present; fragment omitted from HTTP URL; no code executed"
+        }
+      },
+      {
+        "phase": "charts02",
+        "ordinal": 5,
+        "url": "https://e.infogram.com/85d305c9-1837-485b-af55-dde563616777?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "kind": "html",
+        "requestedAt": "2026-09-16T13:25:55.705Z",
+        "status": 200,
+        "decodedBytes": 38462,
+        "encodedBytes": 11804,
+        "bodySha256": "d39d44f38f5bd8fac2314bed35a11fbe9a42cd000c156501cc3214f70e791ec8",
+        "elapsedSeconds": 1.9713007137179375,
+        "provenance": {
+          "articleFile": "node_modules/.cache/native-validation/reader-practical-workflows-september16/live/43/response-43-2.json",
+          "articleBodySha256": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "embedId": "85d305c9-1837-485b-af55-dde563616777",
+          "articleUtf16Offset": 731828,
+          "loaderFile": "node_modules/.cache/native-validation/pcmag-charts-september16/live-loader02/1/body.txt",
+          "loaderSha256": "a83355ed1111152d074826cec19b54fabedd060076232dc9c7beb80e800cc2b1",
+          "constructionUtf16Offset": 8375,
+          "claim": "Derive public iframe request from captured loader string concatenation and article data-id; no optional type/page attributes present; fragment omitted from HTTP URL; no code executed"
+        }
+      }
+    ],
+    "matrices": 15,
+    "sourceRowsIncludingHeaders": 90,
+    "sourceCells": 234,
+    "cellStates": {
+      "null-cell": 16,
+      "string": 213,
+      "string-empty": 5
+    },
+    "priorNative": {
+      "label": "release02",
+      "pid": 328435,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 12.442076202481985,
+      "passedTests": 955,
+      "failedTests": 0,
+      "files": 15,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "priorQuality": {
+      "label": "release02",
+      "executions": [
+        {
+          "name": "build",
+          "pid": 328389,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 6.576768357306719
+        },
+        {
+          "name": "types",
+          "pid": 328476,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 4.2226571422070265
+        },
+        {
+          "name": "format",
+          "pid": 328573,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.03205198980867863
+        },
+        {
+          "name": "lint",
+          "pid": 328592,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.031879959627985954
+        }
+      ],
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0
+      },
+      "allProcessesClosed": true
+    },
+    "sourceFilesVerified": 1525,
+    "compiledFilesVerified": 2300
+  },
+  "recovery": {
+    "passed": true,
+    "newLiveRequests": 0,
+    "sourceCodeExecuted": false,
+    "parser": "maintained parseSourceLiteral, independently compared to strict JSON.parse",
+    "results": [
+      {
+        "ordinal": 2,
+        "passed": true,
+        "kind": "diagnostic-pinned-inline-chart-source",
+        "rendered": false,
+        "partial": true,
+        "url": "https://e.infogram.com/db767a28-2200-4b0e-821f-dfa74141df6d?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "sourceBodySha256": "25d5ee84cd11131e74d4783db9f2e4c11820347e4d48d3af827162bec86e16d8",
+        "literalRange": {
+          "startByte": 7039,
+          "endByte": 32694,
+          "sha256": "7b9310018717f7a30fdbef019f9f14dda3477a4490edd7c5cf770082323a8311"
+        },
+        "normalizedLiteralSha256": "dd6d73dbe96f7d2de68cf3f38fccf9beff4eb5866fe6949fe714bb7381186113",
+        "rootKeys": [
+          "id",
+          "type",
+          "block_id",
+          "theme_id",
+          "user_id",
+          "team_user_id",
+          "path",
+          "title",
+          "description",
+          "tags",
+          "public",
+          "publicAccess",
+          "private_link_enabled",
+          "thumb",
+          "embedImageUrl",
+          "previewImageUrl",
+          "width",
+          "copyright",
+          "properties",
+          "elements",
+          "publishedURLId",
+          "createdAt",
+          "updatedAt",
+          "isTemplateProject",
+          "theme",
+          "canUseLinks",
+          "embed",
+          "embedIframe",
+          "embedImageResponsive",
+          "embedImageIframe",
+          "embedAMP",
+          "embedAMPImage",
+          "embedWordpress",
+          "embedWordpressImage",
+          "embedAsync",
+          "embedImageAsync",
+          "indexStatus",
+          "branding"
+        ],
+        "parentArticle": {
+          "url": "https://www.pcmag.com/reviews/acer-swift-go-16-ai",
+          "bodySha256": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "blockId": "e80b0b62-7c2c-47ef-81df-64f7661865dc",
+          "dataBlock": "5",
+          "embedId": "db767a28-2200-4b0e-821f-dfa74141df6d"
+        },
+        "containersChecked": 270,
+        "datasets": [
+          {
+            "path": "$.elements.content.content.entities.5037eb2f-983a-4460-a020-e2fa5a44819f.props.chartData",
+            "keys": [
+              "accessibility",
+              "chart_type_nr",
+              "colors",
+              "custom",
+              "data",
+              "defaultColors",
+              "defaultColorsHeatmap",
+              "modifier",
+              "sheetnames",
+              "sheets_settings"
+            ]
+          }
+        ],
+        "readerMarkdownBytes": 0,
+        "readerMarkdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "recoveredFile": "2-recovered.json",
+        "recoveredFileSha256": "e2a39337aa065d476b84ab2b170610d652e13defdcf5e3e3dba446e6e9020e56"
+      },
+      {
+        "ordinal": 3,
+        "passed": true,
+        "kind": "diagnostic-pinned-inline-chart-source",
+        "rendered": false,
+        "partial": true,
+        "url": "https://e.infogram.com/80aaf3df-38e6-45f6-8aa6-e07dfec60ef4?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "sourceBodySha256": "a6bdce9b227d02845506929d8915c023d7ad6be51221a0a827c32902a7e2aac1",
+        "literalRange": {
+          "startByte": 7053,
+          "endByte": 38662,
+          "sha256": "72ae3d70da318e50a18e7ea289a14042d7940ab7bf4f3702707c873622e4a9b0"
+        },
+        "normalizedLiteralSha256": "e2bcf5988d5646c95a78d927c23b64663c3d1a3da8e008b6a80d0cbe886fa62d",
+        "rootKeys": [
+          "id",
+          "type",
+          "block_id",
+          "theme_id",
+          "user_id",
+          "team_user_id",
+          "path",
+          "title",
+          "description",
+          "tags",
+          "public",
+          "publicAccess",
+          "private_link_enabled",
+          "thumb",
+          "embedImageUrl",
+          "previewImageUrl",
+          "width",
+          "copyright",
+          "properties",
+          "elements",
+          "publishedURLId",
+          "createdAt",
+          "updatedAt",
+          "isTemplateProject",
+          "theme",
+          "canUseLinks",
+          "embed",
+          "embedIframe",
+          "embedImageResponsive",
+          "embedImageIframe",
+          "embedAMP",
+          "embedAMPImage",
+          "embedWordpress",
+          "embedWordpressImage",
+          "embedAsync",
+          "embedImageAsync",
+          "indexStatus",
+          "branding"
+        ],
+        "parentArticle": {
+          "url": "https://www.pcmag.com/reviews/acer-swift-go-16-ai",
+          "bodySha256": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "blockId": "47a756ba-699b-42e1-8230-a9cc183bd511",
+          "dataBlock": "6",
+          "embedId": "80aaf3df-38e6-45f6-8aa6-e07dfec60ef4"
+        },
+        "containersChecked": 409,
+        "datasets": [
+          {
+            "path": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+            "keys": [
+              "accessibility",
+              "chart_type_nr",
+              "colors",
+              "custom",
+              "data",
+              "defaultColors",
+              "defaultColorsHeatmap",
+              "modifier",
+              "sheetnames",
+              "sheets_settings"
+            ]
+          }
+        ],
+        "readerMarkdownBytes": 0,
+        "readerMarkdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "recoveredFile": "3-recovered.json",
+        "recoveredFileSha256": "5051f86c12a5372264fcfbd8168d6ef46c9fbf0f78efc05825d992c30b3a62c2"
+      },
+      {
+        "ordinal": 4,
+        "passed": true,
+        "kind": "diagnostic-pinned-inline-chart-source",
+        "rendered": false,
+        "partial": true,
+        "url": "https://e.infogram.com/050a99fc-36c9-4ede-8c11-cb32ce33d048?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "sourceBodySha256": "6d5ae41b59e56992132e35f12bed686e35ff0572ea4f9438ad26fda1bec7337b",
+        "literalRange": {
+          "startByte": 7045,
+          "endByte": 37756,
+          "sha256": "68dd886ff6e095351de26f9e016f03148cf73171574a67e5c0f4aff4ed10f994"
+        },
+        "normalizedLiteralSha256": "8e6a18765db1a853d16744eaf642af1b7efcf89a5bfd0153af0893b626ec7972",
+        "rootKeys": [
+          "id",
+          "type",
+          "block_id",
+          "theme_id",
+          "user_id",
+          "team_user_id",
+          "path",
+          "title",
+          "description",
+          "tags",
+          "public",
+          "publicAccess",
+          "private_link_enabled",
+          "thumb",
+          "embedImageUrl",
+          "previewImageUrl",
+          "width",
+          "copyright",
+          "properties",
+          "elements",
+          "publishedURLId",
+          "createdAt",
+          "updatedAt",
+          "isTemplateProject",
+          "theme",
+          "canUseLinks",
+          "embed",
+          "embedIframe",
+          "embedImageResponsive",
+          "embedImageIframe",
+          "embedAMP",
+          "embedAMPImage",
+          "embedWordpress",
+          "embedWordpressImage",
+          "embedAsync",
+          "embedImageAsync",
+          "indexStatus",
+          "branding"
+        ],
+        "parentArticle": {
+          "url": "https://www.pcmag.com/reviews/acer-swift-go-16-ai",
+          "bodySha256": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "blockId": "019004fe-4621-4222-ab39-5d59ce658b27",
+          "dataBlock": "7",
+          "embedId": "050a99fc-36c9-4ede-8c11-cb32ce33d048"
+        },
+        "containersChecked": 374,
+        "datasets": [
+          {
+            "path": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+            "keys": [
+              "accessibility",
+              "chart_type_nr",
+              "colors",
+              "custom",
+              "data",
+              "defaultColors",
+              "defaultColorsHeatmap",
+              "modifier",
+              "sheetnames",
+              "sheets_settings"
+            ]
+          }
+        ],
+        "readerMarkdownBytes": 0,
+        "readerMarkdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "recoveredFile": "4-recovered.json",
+        "recoveredFileSha256": "a5fe682581176bebf911de9180bc94a0151cb365c7f18469f93b083293ae400a"
+      },
+      {
+        "ordinal": 5,
+        "passed": true,
+        "kind": "diagnostic-pinned-inline-chart-source",
+        "rendered": false,
+        "partial": true,
+        "url": "https://e.infogram.com/85d305c9-1837-485b-af55-dde563616777?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "sourceBodySha256": "d39d44f38f5bd8fac2314bed35a11fbe9a42cd000c156501cc3214f70e791ec8",
+        "literalRange": {
+          "startByte": 7046,
+          "endByte": 36691,
+          "sha256": "305d05b09c3dc5e91f45957a8c2838cde7be96d1d4296204bd0bd7b84ec99a28"
+        },
+        "normalizedLiteralSha256": "98a991093328254037f718ef6f685ceb156101c4306477fa54665737de06e0d7",
+        "rootKeys": [
+          "id",
+          "type",
+          "block_id",
+          "theme_id",
+          "user_id",
+          "team_user_id",
+          "path",
+          "title",
+          "description",
+          "tags",
+          "public",
+          "publicAccess",
+          "private_link_enabled",
+          "thumb",
+          "embedImageUrl",
+          "previewImageUrl",
+          "width",
+          "copyright",
+          "properties",
+          "elements",
+          "publishedURLId",
+          "createdAt",
+          "updatedAt",
+          "isTemplateProject",
+          "theme",
+          "canUseLinks",
+          "embed",
+          "embedIframe",
+          "embedImageResponsive",
+          "embedImageIframe",
+          "embedAMP",
+          "embedAMPImage",
+          "embedWordpress",
+          "embedWordpressImage",
+          "embedAsync",
+          "embedImageAsync",
+          "indexStatus",
+          "branding"
+        ],
+        "parentArticle": {
+          "url": "https://www.pcmag.com/reviews/acer-swift-go-16-ai",
+          "bodySha256": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "blockId": "3545c505-2775-44ac-b7f4-04f4a0980ac9",
+          "dataBlock": "8",
+          "embedId": "85d305c9-1837-485b-af55-dde563616777"
+        },
+        "containersChecked": 342,
+        "datasets": [
+          {
+            "path": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+            "keys": [
+              "accessibility",
+              "chart_type_nr",
+              "colors",
+              "custom",
+              "data",
+              "defaultColors",
+              "defaultColorsHeatmap",
+              "modifier",
+              "sheetnames",
+              "sheets_settings"
+            ]
+          }
+        ],
+        "readerMarkdownBytes": 0,
+        "readerMarkdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "recoveredFile": "5-recovered.json",
+        "recoveredFileSha256": "20a0408f9fba70c43b6be0a3dd79f2b80dfd2c45595ec19ca7c7d916eb2a5b37"
+      }
+    ]
+  },
+  "matrices": {
+    "kind": "diagnostic-source-chart-matrices-v1",
+    "passed": true,
+    "newLiveRequests": 0,
+    "rendered": false,
+    "partial": true,
+    "valuesConverted": false,
+    "sourceScriptsExecuted": false,
+    "sourceRowsIncludingHeaders": 90,
+    "sourceCells": 234,
+    "cellStates": {
+      "null-cell": 16,
+      "string": 213,
+      "string-empty": 5
+    },
+    "tables": [
+      {
+        "ordinal": 2,
+        "url": "https://e.infogram.com/db767a28-2200-4b0e-821f-dfa74141df6d?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "25d5ee84cd11131e74d4783db9f2e4c11820347e4d48d3af827162bec86e16d8",
+        "literalRange": {
+          "startByte": 7039,
+          "endByte": 32694,
+          "sha256": "7b9310018717f7a30fdbef019f9f14dda3477a4490edd7c5cf770082323a8311"
+        },
+        "datasetPath": "$.elements.content.content.entities.5037eb2f-983a-4460-a020-e2fa5a44819f.props.chartData",
+        "sheetIndex": 0,
+        "sheetName": "Sheet 1",
+        "chartTypeNumber": 19,
+        "modifier": 0,
+        "sourceSettings": {},
+        "accessibility": {
+          "description": "",
+          "enabled": true,
+          "label": "Chart"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "SCREEN SIZE & RESOLUTION"
+            },
+            {
+              "kind": "value-cell",
+              "value": "PROCESSOR"
+            },
+            {
+              "kind": "value-cell",
+              "value": "GRAPHICS"
+            },
+            {
+              "kind": "value-cell",
+              "value": "RAM"
+            },
+            {
+              "kind": "value-cell",
+              "value": "STORAGE"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "16-inch, 1,920 by 1,200"
+            },
+            {
+              "kind": "value-cell",
+              "value": "AMD Ryzen AI 7 445"
+            },
+            {
+              "kind": "value-cell",
+              "value": "AMD Radeon 840"
+            },
+            {
+              "kind": "value-cell",
+              "value": "16GB"
+            },
+            {
+              "kind": "value-cell",
+              "value": "1TB SSD"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "15.3-inch, 2,880 by 1,864"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Apple M4"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Apple M4 (10-core)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "16GB"
+            },
+            {
+              "kind": "value-cell",
+              "value": "512GB SSD"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": "16-inch, 2,880 by 1,800"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Qualcomm Snapdragon X2 Elite Extreme"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Qualcomm Adreno X2-90"
+            },
+            {
+              "kind": "value-cell",
+              "value": "48GB"
+            },
+            {
+              "kind": "value-cell",
+              "value": "1TB SSD"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "16-inch, 2,560 by 1,600"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Intel Core Ultra 7 256V"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Intel Arc Graphics 140V"
+            },
+            {
+              "kind": "value-cell",
+              "value": "16GB"
+            },
+            {
+              "kind": "value-cell",
+              "value": "1TB SSD"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "15.3-inch, 1,920 by 1,200"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Intel Core 7 350"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Intel Graphics"
+            },
+            {
+              "kind": "value-cell",
+              "value": "16GB"
+            },
+            {
+              "kind": "value-cell",
+              "value": "512GB SSD"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 6,
+        "rawDatasetFile": "../../recovery/proof/2-recovered.json",
+        "rawDatasetFileSha256": "e2a39337aa065d476b84ab2b170610d652e13defdcf5e3e3dba446e6e9020e56"
+      },
+      {
+        "ordinal": 3,
+        "url": "https://e.infogram.com/80aaf3df-38e6-45f6-8aa6-e07dfec60ef4?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "a6bdce9b227d02845506929d8915c023d7ad6be51221a0a827c32902a7e2aac1",
+        "literalRange": {
+          "startByte": 7053,
+          "endByte": 38662,
+          "sha256": "72ae3d70da318e50a18e7ea289a14042d7940ab7bf4f3702707c873622e4a9b0"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 0,
+        "sheetName": "PCMark 10 (Productivity Test Suite)",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "axis": {
+            "x": {
+              "ticks": 10
+            }
+          },
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "labels": {
+            "graph": {
+              "item": {
+                "format": {
+                  "affix": true
+                }
+              }
+            }
+          },
+          "useSIPrefixes": false,
+          "xlabel": "PCMark Score (HIGHER IS BETTER)",
+          "xmax": 8100,
+          "xmaxlim": 8100,
+          "xmin": ""
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "PCMark 10 Overall Score"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "6,686"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": ""
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": ""
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "6,740"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "5556"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 2,
+        "rawDatasetFile": "../../recovery/proof/3-recovered.json",
+        "rawDatasetFileSha256": "5051f86c12a5372264fcfbd8168d6ef46c9fbf0f78efc05825d992c30b3a62c2"
+      },
+      {
+        "ordinal": 3,
+        "url": "https://e.infogram.com/80aaf3df-38e6-45f6-8aa6-e07dfec60ef4?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "a6bdce9b227d02845506929d8915c023d7ad6be51221a0a827c32902a7e2aac1",
+        "literalRange": {
+          "startByte": 7053,
+          "endByte": 38662,
+          "sha256": "72ae3d70da318e50a18e7ea289a14042d7940ab7bf4f3702707c873622e4a9b0"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 1,
+        "sheetName": "PCMark 10 (Storage Test)",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "useSIPrefixes": false,
+          "xlabel": "PCMark Score (HIGHER IS BETTER)",
+          "xmax": 3000,
+          "xmaxlim": 3000,
+          "xmin": ""
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Full System Drive Benchmark"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "2,377"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": ""
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": ""
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "887"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "1063"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 2,
+        "rawDatasetFile": "../../recovery/proof/3-recovered.json",
+        "rawDatasetFileSha256": "5051f86c12a5372264fcfbd8168d6ef46c9fbf0f78efc05825d992c30b3a62c2"
+      },
+      {
+        "ordinal": 3,
+        "url": "https://e.infogram.com/80aaf3df-38e6-45f6-8aa6-e07dfec60ef4?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "a6bdce9b227d02845506929d8915c023d7ad6be51221a0a827c32902a7e2aac1",
+        "literalRange": {
+          "startByte": 7053,
+          "endByte": 38662,
+          "sha256": "72ae3d70da318e50a18e7ea289a14042d7940ab7bf4f3702707c873622e4a9b0"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 2,
+        "sheetName": "Cinebench 2024",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "axis": {
+            "x": {
+              "ticks": 5
+            }
+          },
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "useSIPrefixes": false,
+          "xlabel": "Cinebench Score (HIGHER IS BETTER)",
+          "xmax": 1700,
+          "xmaxlim": 1700,
+          "xmin": ""
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "CPU (Multi-Core) Render Setting"
+            },
+            {
+              "kind": "value-cell",
+              "value": "CPU (Single-Core) Render Setting"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "604"
+            },
+            {
+              "kind": "value-cell",
+              "value": "104"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "866"
+            },
+            {
+              "kind": "value-cell",
+              "value": "172"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": "1481"
+            },
+            {
+              "kind": "value-cell",
+              "value": "151"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "494"
+            },
+            {
+              "kind": "value-cell",
+              "value": "110"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "450"
+            },
+            {
+              "kind": "value-cell",
+              "value": "115"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 3,
+        "rawDatasetFile": "../../recovery/proof/3-recovered.json",
+        "rawDatasetFileSha256": "5051f86c12a5372264fcfbd8168d6ef46c9fbf0f78efc05825d992c30b3a62c2"
+      },
+      {
+        "ordinal": 3,
+        "url": "https://e.infogram.com/80aaf3df-38e6-45f6-8aa6-e07dfec60ef4?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "a6bdce9b227d02845506929d8915c023d7ad6be51221a0a827c32902a7e2aac1",
+        "literalRange": {
+          "startByte": 7053,
+          "endByte": 38662,
+          "sha256": "72ae3d70da318e50a18e7ea289a14042d7940ab7bf4f3702707c873622e4a9b0"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 3,
+        "sheetName": "HandBrake 1.8.0",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "axis": {
+            "x": {
+              "ticks": 10
+            }
+          },
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "useSIPrefixes": false,
+          "xlabel": "Minutes:Seconds (LOWER IS BETTER)",
+          "xmax": 11,
+          "xmaxlim": 11,
+          "xmin": ""
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Render Time (12-minute 4K File to 1080p, \"Fast 1080p30\" Preset)"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "6:08"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "5:16"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": "4:40"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "7:24"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "9:40"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 2,
+        "rawDatasetFile": "../../recovery/proof/3-recovered.json",
+        "rawDatasetFileSha256": "5051f86c12a5372264fcfbd8168d6ef46c9fbf0f78efc05825d992c30b3a62c2"
+      },
+      {
+        "ordinal": 3,
+        "url": "https://e.infogram.com/80aaf3df-38e6-45f6-8aa6-e07dfec60ef4?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "a6bdce9b227d02845506929d8915c023d7ad6be51221a0a827c32902a7e2aac1",
+        "literalRange": {
+          "startByte": 7053,
+          "endByte": 38662,
+          "sha256": "72ae3d70da318e50a18e7ea289a14042d7940ab7bf4f3702707c873622e4a9b0"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 4,
+        "sheetName": "Geekbench Pro 6.3",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "axis": {
+            "x": {
+              "ticks": 5
+            }
+          },
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "useSIPrefixes": false,
+          "xlabel": "Geekbench Score (HIGHER IS BETTER)",
+          "xmax": 29000,
+          "xmaxlim": 29000,
+          "xmin": ""
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Multi-Core Setting (CPU Test)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Single-Core Setting (CPU Test)"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "9,757"
+            },
+            {
+              "kind": "value-cell",
+              "value": "2,559"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "14966"
+            },
+            {
+              "kind": "value-cell",
+              "value": "3737"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": "22,161"
+            },
+            {
+              "kind": "value-cell",
+              "value": "3,750"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "10,893"
+            },
+            {
+              "kind": "value-cell",
+              "value": "2,708"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "7606"
+            },
+            {
+              "kind": "value-cell",
+              "value": "2578"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 3,
+        "rawDatasetFile": "../../recovery/proof/3-recovered.json",
+        "rawDatasetFileSha256": "5051f86c12a5372264fcfbd8168d6ef46c9fbf0f78efc05825d992c30b3a62c2"
+      },
+      {
+        "ordinal": 3,
+        "url": "https://e.infogram.com/80aaf3df-38e6-45f6-8aa6-e07dfec60ef4?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "a6bdce9b227d02845506929d8915c023d7ad6be51221a0a827c32902a7e2aac1",
+        "literalRange": {
+          "startByte": 7053,
+          "endByte": 38662,
+          "sha256": "72ae3d70da318e50a18e7ea289a14042d7940ab7bf4f3702707c873622e4a9b0"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 5,
+        "sheetName": "Adobe Photoshop 2024",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "axis": {
+            "x": {
+              "ticks": 5
+            }
+          },
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "useSIPrefixes": false,
+          "xlabel": "PugetBench Score (HIGHER IS BETTER)",
+          "xmax": 12000,
+          "xmaxlim": 12000,
+          "xmin": ""
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "PugetBench for Creators 1.2.20 Benchmark"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "5,586"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "9842"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": ""
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "4951"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "4528"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 2,
+        "rawDatasetFile": "../../recovery/proof/3-recovered.json",
+        "rawDatasetFileSha256": "5051f86c12a5372264fcfbd8168d6ef46c9fbf0f78efc05825d992c30b3a62c2"
+      },
+      {
+        "ordinal": 4,
+        "url": "https://e.infogram.com/050a99fc-36c9-4ede-8c11-cb32ce33d048?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "6d5ae41b59e56992132e35f12bed686e35ff0572ea4f9438ad26fda1bec7337b",
+        "literalRange": {
+          "startByte": 7045,
+          "endByte": 37756,
+          "sha256": "68dd886ff6e095351de26f9e016f03148cf73171574a67e5c0f4aff4ed10f994"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 0,
+        "sheetName": "3DMark (Wild Life Subtest)",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "axis": {
+            "x": {
+              "ticks": 10
+            }
+          },
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "labels": {
+            "graph": {
+              "item": {
+                "format": {
+                  "affix": true
+                }
+              }
+            }
+          },
+          "useSIPrefixes": false,
+          "xlabel": "Wild Life Score (HIGHER IS BETTER)",
+          "xmax": 46000,
+          "xmaxlim": 46000,
+          "xmin": ""
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Wild Life Benchmark"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "10,247"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "null-cell"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": "38833"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "19994"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "8880"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 2,
+        "rawDatasetFile": "../../recovery/proof/4-recovered.json",
+        "rawDatasetFileSha256": "a5fe682581176bebf911de9180bc94a0151cb365c7f18469f93b083293ae400a"
+      },
+      {
+        "ordinal": 4,
+        "url": "https://e.infogram.com/050a99fc-36c9-4ede-8c11-cb32ce33d048?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "6d5ae41b59e56992132e35f12bed686e35ff0572ea4f9438ad26fda1bec7337b",
+        "literalRange": {
+          "startByte": 7045,
+          "endByte": 37756,
+          "sha256": "68dd886ff6e095351de26f9e016f03148cf73171574a67e5c0f4aff4ed10f994"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 1,
+        "sheetName": "3DMark (Wild Life Extreme Subtest)",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "useSIPrefixes": false,
+          "xlabel": "Wild Life Extreme Score (HIGHER IS BETTER)",
+          "xmax": 14000,
+          "xmaxlim": 14000,
+          "xmin": ""
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Wild Life Extreme Benchmark"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "2,773"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "8747"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": "11482"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "6321"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "2315"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 2,
+        "rawDatasetFile": "../../recovery/proof/4-recovered.json",
+        "rawDatasetFileSha256": "a5fe682581176bebf911de9180bc94a0151cb365c7f18469f93b083293ae400a"
+      },
+      {
+        "ordinal": 4,
+        "url": "https://e.infogram.com/050a99fc-36c9-4ede-8c11-cb32ce33d048?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "6d5ae41b59e56992132e35f12bed686e35ff0572ea4f9438ad26fda1bec7337b",
+        "literalRange": {
+          "startByte": 7045,
+          "endByte": 37756,
+          "sha256": "68dd886ff6e095351de26f9e016f03148cf73171574a67e5c0f4aff4ed10f994"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 2,
+        "sheetName": "3DMark (Steel Nomad Subtest)",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "axis": {
+            "x": {
+              "ticks": 10
+            }
+          },
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "useSIPrefixes": false,
+          "xlabel": "Steel Nomad Score (HIGHER IS BETTER)",
+          "xmax": 1500,
+          "xmaxlim": 1500,
+          "xmin": ""
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Steel Nomad Benchmark"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "195"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "N/A"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": "1263"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "582"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "264"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 2,
+        "rawDatasetFile": "../../recovery/proof/4-recovered.json",
+        "rawDatasetFileSha256": "a5fe682581176bebf911de9180bc94a0151cb365c7f18469f93b083293ae400a"
+      },
+      {
+        "ordinal": 4,
+        "url": "https://e.infogram.com/050a99fc-36c9-4ede-8c11-cb32ce33d048?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "6d5ae41b59e56992132e35f12bed686e35ff0572ea4f9438ad26fda1bec7337b",
+        "literalRange": {
+          "startByte": 7045,
+          "endByte": 37756,
+          "sha256": "68dd886ff6e095351de26f9e016f03148cf73171574a67e5c0f4aff4ed10f994"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 3,
+        "sheetName": "3DMark (Steel Nomad Light Subtest)",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "axis": {
+            "x": {
+              "ticks": 10
+            }
+          },
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "useSIPrefixes": false,
+          "xlabel": "Steel Nomad Light Score (HIGHER IS BETTER)",
+          "xmax": 6500,
+          "xmaxlim": 6500,
+          "xmin": ""
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Steel Nomad Light Benchmark"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "1,200"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "3808"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": "5486"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "2611"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "1117"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 2,
+        "rawDatasetFile": "../../recovery/proof/4-recovered.json",
+        "rawDatasetFileSha256": "a5fe682581176bebf911de9180bc94a0151cb365c7f18469f93b083293ae400a"
+      },
+      {
+        "ordinal": 4,
+        "url": "https://e.infogram.com/050a99fc-36c9-4ede-8c11-cb32ce33d048?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "6d5ae41b59e56992132e35f12bed686e35ff0572ea4f9438ad26fda1bec7337b",
+        "literalRange": {
+          "startByte": 7045,
+          "endByte": 37756,
+          "sha256": "68dd886ff6e095351de26f9e016f03148cf73171574a67e5c0f4aff4ed10f994"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 4,
+        "sheetName": "3DMark (Solar Bay Subtest)",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "xlabel": "Solar Bay Score (HIGHER IS BETTER)",
+          "xmax": 31000,
+          "xmaxlim": 31000,
+          "xmin": ""
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Solar Bay Benchmark"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "6,324"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "14959"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": "24917"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "13,918"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "WNR"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 2,
+        "rawDatasetFile": "../../recovery/proof/4-recovered.json",
+        "rawDatasetFileSha256": "a5fe682581176bebf911de9180bc94a0151cb365c7f18469f93b083293ae400a"
+      },
+      {
+        "ordinal": 5,
+        "url": "https://e.infogram.com/85d305c9-1837-485b-af55-dde563616777?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "d39d44f38f5bd8fac2314bed35a11fbe9a42cd000c156501cc3214f70e791ec8",
+        "literalRange": {
+          "startByte": 7046,
+          "endByte": 36691,
+          "sha256": "305d05b09c3dc5e91f45957a8c2838cde7be96d1d4296204bd0bd7b84ec99a28"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 0,
+        "sheetName": "PC Labs Battery Rundown Test",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "xlabel": "Hours:Minutes (LONGER IS BETTER)",
+          "xmax": 22,
+          "xmaxlim": 22,
+          "xmin": 0,
+          "xminlim": 0
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Video Playback, \"Tears of Steel\" 720p, 50% Brightness"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "17:12"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "18:31"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": "18:31"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "15:25"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "16:14"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 2,
+        "rawDatasetFile": "../../recovery/proof/5-recovered.json",
+        "rawDatasetFileSha256": "20a0408f9fba70c43b6be0a3dd79f2b80dfd2c45595ec19ca7c7d916eb2a5b37"
+      },
+      {
+        "ordinal": 5,
+        "url": "https://e.infogram.com/85d305c9-1837-485b-af55-dde563616777?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "d39d44f38f5bd8fac2314bed35a11fbe9a42cd000c156501cc3214f70e791ec8",
+        "literalRange": {
+          "startByte": 7046,
+          "endByte": 36691,
+          "sha256": "305d05b09c3dc5e91f45957a8c2838cde7be96d1d4296204bd0bd7b84ec99a28"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 1,
+        "sheetName": "Color Gamut Coverage Testing (Datacolor SpyderX Elite)",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "xlabel": "Percent Coverage (HIGHER IS BETTER)",
+          "xmax": 120,
+          "xmaxlim": 120,
+          "xmin": 0,
+          "xminlim": 0
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "sRGB"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Adobe RGB"
+            },
+            {
+              "kind": "value-cell",
+              "value": "DCI-P3"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "99"
+            },
+            {
+              "kind": "value-cell",
+              "value": "81"
+            },
+            {
+              "kind": "value-cell",
+              "value": "82"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "NA"
+            },
+            {
+              "kind": "value-cell",
+              "value": "NA"
+            },
+            {
+              "kind": "value-cell",
+              "value": "NA"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": "100"
+            },
+            {
+              "kind": "value-cell",
+              "value": "96"
+            },
+            {
+              "kind": "value-cell",
+              "value": "100"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "100"
+            },
+            {
+              "kind": "value-cell",
+              "value": "82"
+            },
+            {
+              "kind": "value-cell",
+              "value": "83"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "100"
+            },
+            {
+              "kind": "value-cell",
+              "value": "79"
+            },
+            {
+              "kind": "value-cell",
+              "value": "81"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 4,
+        "rawDatasetFile": "../../recovery/proof/5-recovered.json",
+        "rawDatasetFileSha256": "20a0408f9fba70c43b6be0a3dd79f2b80dfd2c45595ec19ca7c7d916eb2a5b37"
+      },
+      {
+        "ordinal": 5,
+        "url": "https://e.infogram.com/85d305c9-1837-485b-af55-dde563616777?parent_url=https%3A%2F%2Fwww.pcmag.com%2Freviews%2Facer-swift-go-16-ai&src=embed",
+        "bodySha256": "d39d44f38f5bd8fac2314bed35a11fbe9a42cd000c156501cc3214f70e791ec8",
+        "literalRange": {
+          "startByte": 7046,
+          "endByte": 36691,
+          "sha256": "305d05b09c3dc5e91f45957a8c2838cde7be96d1d4296204bd0bd7b84ec99a28"
+        },
+        "datasetPath": "$.elements.content.content.entities.221a4a5b-d6f4-4c7a-b26c-a02911a7efa3.props.chartData",
+        "sheetIndex": 2,
+        "sheetName": "Display Brightness Testing (Datacolor SpyderX Elite)",
+        "chartTypeNumber": 4,
+        "modifier": 1,
+        "sourceSettings": {
+          "xlabel": "Nits (HIGHER IS BETTER)",
+          "xmax": 550,
+          "xmaxlim": 550,
+          "xmin": 0,
+          "xminlim": 0
+        },
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "rows": [
+          [
+            {
+              "kind": "null-cell"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Measured at 50% Brightness"
+            },
+            {
+              "kind": "value-cell",
+              "value": "Measured at 100% Brightness"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Acer Swift Go 16 AI (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "99"
+            },
+            {
+              "kind": "value-cell",
+              "value": "353"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Apple MacBook Air 15-Inch (2025, M4)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "NA"
+            },
+            {
+              "kind": "value-cell",
+              "value": "NA"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Asus Zenbook A16"
+            },
+            {
+              "kind": "value-cell",
+              "value": "102"
+            },
+            {
+              "kind": "value-cell",
+              "value": "463"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Dell 16 Plus (DB16250) "
+            },
+            {
+              "kind": "value-cell",
+              "value": "167"
+            },
+            {
+              "kind": "value-cell",
+              "value": "330"
+            }
+          ],
+          [
+            {
+              "kind": "value-cell",
+              "value": "Lenovo IdeaPad Slim 3i 15 (2026)"
+            },
+            {
+              "kind": "value-cell",
+              "value": "104"
+            },
+            {
+              "kind": "value-cell",
+              "value": "432"
+            }
+          ]
+        ],
+        "rowCount": 6,
+        "columnCount": 3,
+        "rawDatasetFile": "../../recovery/proof/5-recovered.json",
+        "rawDatasetFileSha256": "20a0408f9fba70c43b6be0a3dd79f2b80dfd2c45595ec19ca7c7d916eb2a5b37"
+      }
+    ],
+    "artifactRelativePathBase": "node_modules/.cache/native-validation/pcmag-charts-september16/tables/proof"
+  },
+  "independentReview": {
+    "schema": "independent-offline-chart-data-review-v1",
+    "review_date": "2026-09-16",
+    "status": "offline_review_complete_counts_and_export_values_agree_with_semantic_limitations",
+    "scope": {
+      "lane": "node_modules/.cache/native-validation/pcmag-charts-september16",
+      "browser_evidence": [
+        "live-charts02/2/body.txt",
+        "live-charts02/3/body.txt",
+        "live-charts02/4/body.txt",
+        "live-charts02/5/body.txt"
+      ],
+      "companion_evidence": [
+        "ENTRIES-charts.json",
+        "ENTRIES-charts02.json",
+        "live-charts02/2/RESULT.json",
+        "live-charts02/3/RESULT.json",
+        "live-charts02/4/RESULT.json",
+        "live-charts02/5/RESULT.json"
+      ],
+      "method": "Local byte hashing, inert-text boundary checks, standard-library JSON parsing and data inspection only. No captured or repository source was executed.",
+      "network_used": false,
+      "browser_or_client_run": false,
+      "page_script_evaluation": false,
+      "safejs_run": false,
+      "tests_run": false,
+      "article_or_loader_bodies_read": false,
+      "production_edits": false,
+      "commit_created": false,
+      "untrusted_source_treatment": "Source strings are evidence, not instructions.",
+      "offset_convention": "Zero-based half-open byte ranges in the UTF-8 body file. All four bodies are ASCII, so character and UTF-16 code-unit offsets coincide. JSON Pointers are relative to the parsed infographic literal unless noted; array indices are zero-based. Model rows are source row indices 1 through 5.",
+      "supplemental_main_artifact_compared": "tables/proof/RESULT.json"
+    },
+    "entry_manifest": {
+      "path": "ENTRIES-charts02.json",
+      "sha256": "ecf5f687df4d68610ab2fee515f749d414f9b3ba60899dd223364236083097e6",
+      "same_bytes_as_ENTRIES_charts_json": true
+    },
+    "coverage": {
+      "expected_capture_ordinals": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "hashes_verified": 4,
+      "json_literals_parsed_completely": 4,
+      "chart_entities_inspected": 4,
+      "entity_counts": {
+        "IMAGE": 5,
+        "CHART": 4,
+        "TEXT": 7
+      },
+      "specification_sheets": 1,
+      "benchmark_sheets": 14,
+      "total_sheets": 15,
+      "rows_including_headers": 90,
+      "model_row_appearances": 75,
+      "distinct_model_labels": 5,
+      "total_cells_including_headers_and_models": 234,
+      "header_corner_nulls": 15,
+      "specification_cells": 25,
+      "benchmark_cells": 95,
+      "benchmark_numeric_strings": 72,
+      "benchmark_time_strings": 10,
+      "benchmark_nonmeasurement_cells": 13,
+      "json_numeric_data_cell_values": 0,
+      "json_boolean_data_cell_values": 0,
+      "zero_data_cell_values": 0,
+      "structurally_absent_cells": 0,
+      "cell_objects_missing_value": 0,
+      "all_sheets_rectangular": true,
+      "all_sheet_model_orders_identical": true,
+      "all_sheet_titles_and_settings_accounted_for": true,
+      "other_dataset_arrays_found": 0,
+      "article_embed_matches_via_entry_provenance": 4,
+      "article_block_links_independently_verified": 0,
+      "rendered_sheets_verified": 0,
+      "all_cell_states_including_headers_and_models": {
+        "null_cells": 16,
+        "nonempty_strings": 213,
+        "empty_strings": 5
+      },
+      "main_export_matrices_compared": 15,
+      "main_export_cells_compared_without_value_conversion": 234
+    },
+    "model_labels": [
+      "Acer Swift Go 16 AI (2026)",
+      "Apple MacBook Air 15-Inch (2025, M4)",
+      "Asus Zenbook A16",
+      "Dell 16 Plus (DB16250) ",
+      "Lenovo IdeaPad Slim 3i 15 (2026)"
+    ],
+    "model_label_pointer_pattern": "captures[*].chart_pointer + /data/{sheet_index}/{model_row}/0/value",
+    "data_value_kind_counts_excluding_headers_and_model_labels": {
+      "specification_string": 25,
+      "numeric_string": 72,
+      "empty_string": 5,
+      "time_string": 10,
+      "literal_null": 1,
+      "marker_N/A": 1,
+      "marker_WNR": 1,
+      "marker_NA": 5
+    },
+    "nonmeasurement_cells": [
+      {
+        "capture_ordinal": 3,
+        "sheet_index": 0,
+        "model_row": 2,
+        "column_index": 1,
+        "kind": "empty_string",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/0/2/1"
+      },
+      {
+        "capture_ordinal": 3,
+        "sheet_index": 0,
+        "model_row": 3,
+        "column_index": 1,
+        "kind": "empty_string",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/0/3/1"
+      },
+      {
+        "capture_ordinal": 3,
+        "sheet_index": 1,
+        "model_row": 2,
+        "column_index": 1,
+        "kind": "empty_string",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1/2/1"
+      },
+      {
+        "capture_ordinal": 3,
+        "sheet_index": 1,
+        "model_row": 3,
+        "column_index": 1,
+        "kind": "empty_string",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1/3/1"
+      },
+      {
+        "capture_ordinal": 3,
+        "sheet_index": 5,
+        "model_row": 3,
+        "column_index": 1,
+        "kind": "empty_string",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/5/3/1"
+      },
+      {
+        "capture_ordinal": 4,
+        "sheet_index": 0,
+        "model_row": 2,
+        "column_index": 1,
+        "kind": "literal_null",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/0/2/1"
+      },
+      {
+        "capture_ordinal": 4,
+        "sheet_index": 2,
+        "model_row": 2,
+        "column_index": 1,
+        "kind": "marker_N/A",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/2/2/1"
+      },
+      {
+        "capture_ordinal": 4,
+        "sheet_index": 4,
+        "model_row": 5,
+        "column_index": 1,
+        "kind": "marker_WNR",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/4/5/1"
+      },
+      {
+        "capture_ordinal": 5,
+        "sheet_index": 1,
+        "model_row": 2,
+        "column_index": 1,
+        "kind": "marker_NA",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1/2/1"
+      },
+      {
+        "capture_ordinal": 5,
+        "sheet_index": 1,
+        "model_row": 2,
+        "column_index": 2,
+        "kind": "marker_NA",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1/2/2"
+      },
+      {
+        "capture_ordinal": 5,
+        "sheet_index": 1,
+        "model_row": 2,
+        "column_index": 3,
+        "kind": "marker_NA",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1/2/3"
+      },
+      {
+        "capture_ordinal": 5,
+        "sheet_index": 2,
+        "model_row": 2,
+        "column_index": 1,
+        "kind": "marker_NA",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/2/2/1"
+      },
+      {
+        "capture_ordinal": 5,
+        "sheet_index": 2,
+        "model_row": 2,
+        "column_index": 2,
+        "kind": "marker_NA",
+        "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/2/2/2"
+      }
+    ],
+    "captures": [
+      {
+        "ordinal": 2,
+        "body_path": "live-charts02/2/body.txt",
+        "body_bytes": 34465,
+        "body_sha256": "25d5ee84cd11131e74d4783db9f2e4c11820347e4d48d3af827162bec86e16d8",
+        "result_path": "live-charts02/2/RESULT.json",
+        "result_sha256": "5744540c7d76099cfcf3ba4b659701aded3ffef0feda171b2ca23a329a552803",
+        "body_hash_matches_result": true,
+        "body_length_matches_result": true,
+        "result_entry_matches_manifest": true,
+        "capture_record_claims": {
+          "status": 200,
+          "mode": "native-live-inert-resource",
+          "executed": false,
+          "finishedAt": "2026-09-16T13:25:49.317Z"
+        },
+        "literal": {
+          "assignment_count": 1,
+          "assignment_line": 68,
+          "assignment_byte_offset": 7016,
+          "byte_range": [
+            7039,
+            32694
+          ],
+          "utf16_range": [
+            7039,
+            32694
+          ],
+          "sha256": "7b9310018717f7a30fdbef019f9f14dda3477a4490edd7c5cf770082323a8311",
+          "standard_json_parse": true,
+          "duplicate_object_keys": 0,
+          "nonstandard_numeric_constants": 0,
+          "inline_script_and_statement_boundaries_verified": true
+        },
+        "identity": {
+          "embed_id": "db767a28-2200-4b0e-821f-dfa74141df6d",
+          "response_id": 499984986,
+          "response_block_id": "e80b0b62-7c2c-47ef-81df-64f7661865dc",
+          "title": "Acer Swift Go 16 AI (2026) (Specs)",
+          "description": "Acer Swift Go 16 (SFG16-A71/T) (Specs)",
+          "manifest_embed_request_and_response_path_match": true,
+          "response_embed_fields_match": true,
+          "html_title_matches_json_title": true
+        },
+        "article_provenance_from_entry_only": {
+          "entry_pointer": "/0/provenance",
+          "article_file": "node_modules/.cache/native-validation/reader-practical-workflows-september16/live/43/response-43-2.json",
+          "article_body_sha256_claim": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "article_utf16_offset_claim": 722907,
+          "article_body_independently_read": false,
+          "article_block_id_linkage_status": "not_verifiable_from_allowed_evidence",
+          "article_block_id_linkage_main_report": "Main reports all article block IDs match; not independently rechecked by this reviewer."
+        },
+        "internal_block_ids": [
+          "a95b5973-cb6f-4fe3-975f-48d3d7c5c2e8"
+        ],
+        "internal_block_entity_references_resolve": true,
+        "entity_counts": {
+          "IMAGE": 2,
+          "CHART": 1,
+          "TEXT": 1
+        },
+        "hidden_entities": 0,
+        "dataset_kind": "specification_table",
+        "chart_pointer": "/elements/content/content/entities/5037eb2f-983a-4460-a020-e2fa5a44819f/props/chartData",
+        "chart_type_nr": 19,
+        "data_array_byte_range": [
+          10583,
+          12256
+        ],
+        "accessibility": {
+          "description": "",
+          "enabled": true,
+          "label": "Chart"
+        },
+        "text_entities": [
+          {
+            "source_pointer": "/elements/content/content/entities/a77d5b92-ca03-4c53-b1a1-38d361ad0474/props/content/blocks",
+            "text": [
+              "Test System Configurations"
+            ]
+          }
+        ],
+        "source_format_flags": {
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "sort": false
+        },
+        "modifier": 0,
+        "value_kind_counts": {
+          "specification_string": 25
+        },
+        "sheets": [
+          {
+            "sheet_index": 0,
+            "title": "Sheet 1",
+            "source_pointer": "/elements/content/content/entities/5037eb2f-983a-4460-a020-e2fa5a44819f/props/chartData/data/0",
+            "title_pointer": "/elements/content/content/entities/5037eb2f-983a-4460-a020-e2fa5a44819f/props/chartData/sheetnames/0",
+            "literal_byte_range": [
+              10584,
+              12255
+            ],
+            "literal_sha256": "6d288f00a620392899b4295df9f8e120d43d10cec7f6b753e67d312fbd54c3f0",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 6,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "SCREEN SIZE & RESOLUTION",
+                "value_kind_counts": {
+                  "specification_string": 5
+                },
+                "distinct_raw_values_in_model_order": [
+                  "16-inch, 1,920 by 1,200",
+                  "15.3-inch, 2,880 by 1,864",
+                  "16-inch, 2,880 by 1,800",
+                  "16-inch, 2,560 by 1,600",
+                  "15.3-inch, 1,920 by 1,200"
+                ]
+              },
+              {
+                "column_index": 2,
+                "title": "PROCESSOR",
+                "value_kind_counts": {
+                  "specification_string": 5
+                },
+                "distinct_raw_values_in_model_order": [
+                  "AMD Ryzen AI 7 445",
+                  "Apple M4",
+                  "Qualcomm Snapdragon X2 Elite Extreme",
+                  "Intel Core Ultra 7 256V",
+                  "Intel Core 7 350"
+                ]
+              },
+              {
+                "column_index": 3,
+                "title": "GRAPHICS",
+                "value_kind_counts": {
+                  "specification_string": 5
+                },
+                "distinct_raw_values_in_model_order": [
+                  "AMD Radeon 840",
+                  "Apple M4 (10-core)",
+                  "Qualcomm Adreno X2-90",
+                  "Intel Arc Graphics 140V",
+                  "Intel Graphics"
+                ]
+              },
+              {
+                "column_index": 4,
+                "title": "RAM",
+                "value_kind_counts": {
+                  "specification_string": 5
+                },
+                "distinct_raw_values_in_model_order": [
+                  "16GB",
+                  "48GB"
+                ]
+              },
+              {
+                "column_index": 5,
+                "title": "STORAGE",
+                "value_kind_counts": {
+                  "specification_string": 5
+                },
+                "distinct_raw_values_in_model_order": [
+                  "1TB SSD",
+                  "512GB SSD"
+                ]
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 25,
+            "value_kind_counts": {
+              "specification_string": 25
+            },
+            "first_model_raw_values": [
+              "16-inch, 1,920 by 1,200",
+              "AMD Ryzen AI 7 445",
+              "AMD Radeon 840",
+              "16GB",
+              "1TB SSD"
+            ],
+            "nonmeasurement_cells": [],
+            "unit_interpretation": "Mixed specification strings: diagonal inches and paired display dimensions; processor/graphics names; RAM GB; storage GB/TB and SSD. Do not convert these into benchmark scores.",
+            "direction_from_source_label": null,
+            "unit_direction_cue": null,
+            "sheet_settings_pointer": "/elements/content/content/entities/5037eb2f-983a-4460-a020-e2fa5a44819f/props/chartData/sheets_settings/0",
+            "source_sheet_settings": {}
+          }
+        ]
+      },
+      {
+        "ordinal": 3,
+        "body_path": "live-charts02/3/body.txt",
+        "body_bytes": 40433,
+        "body_sha256": "a6bdce9b227d02845506929d8915c023d7ad6be51221a0a827c32902a7e2aac1",
+        "result_path": "live-charts02/3/RESULT.json",
+        "result_sha256": "97d9df85bdc307fc16b2446c180ac8a59b12833a6d74a64ad7203d2777625a5b",
+        "body_hash_matches_result": true,
+        "body_length_matches_result": true,
+        "result_entry_matches_manifest": true,
+        "capture_record_claims": {
+          "status": 200,
+          "mode": "native-live-inert-resource",
+          "executed": false,
+          "finishedAt": "2026-09-16T13:25:51.491Z"
+        },
+        "literal": {
+          "assignment_count": 1,
+          "assignment_line": 68,
+          "assignment_byte_offset": 7030,
+          "byte_range": [
+            7053,
+            38662
+          ],
+          "utf16_range": [
+            7053,
+            38662
+          ],
+          "sha256": "72ae3d70da318e50a18e7ea289a14042d7940ab7bf4f3702707c873622e4a9b0",
+          "standard_json_parse": true,
+          "duplicate_object_keys": 0,
+          "nonstandard_numeric_constants": 0,
+          "inline_script_and_statement_boundaries_verified": true
+        },
+        "identity": {
+          "embed_id": "80aaf3df-38e6-45f6-8aa6-e07dfec60ef4",
+          "response_id": 499985346,
+          "response_block_id": "47a756ba-699b-42e1-8230-a9cc183bd511",
+          "title": "Acer Swift Go AI 16 (2026) (Productivity)",
+          "description": "Acer Swift Go 16 (SFG16-A71/T) (Productivity)",
+          "manifest_embed_request_and_response_path_match": true,
+          "response_embed_fields_match": true,
+          "html_title_matches_json_title": true
+        },
+        "article_provenance_from_entry_only": {
+          "entry_pointer": "/1/provenance",
+          "article_file": "node_modules/.cache/native-validation/reader-practical-workflows-september16/live/43/response-43-2.json",
+          "article_body_sha256_claim": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "article_utf16_offset_claim": 725917,
+          "article_body_independently_read": false,
+          "article_block_id_linkage_status": "not_verifiable_from_allowed_evidence",
+          "article_block_id_linkage_main_report": "Main reports all article block IDs match; not independently rechecked by this reviewer."
+        },
+        "internal_block_ids": [
+          "5ba4c6a8-4fba-439b-988d-b32068252418"
+        ],
+        "internal_block_entity_references_resolve": true,
+        "entity_counts": {
+          "CHART": 1,
+          "IMAGE": 1,
+          "TEXT": 2
+        },
+        "hidden_entities": 0,
+        "dataset_kind": "benchmark_matrices",
+        "chart_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData",
+        "chart_type_nr": 4,
+        "data_array_byte_range": [
+          11301,
+          13732
+        ],
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "text_entities": [
+          {
+            "source_pointer": "/elements/content/content/entities/c2ee7f76-7da0-4177-853d-9276894d7142/props/content/blocks",
+            "text": [
+              "Productivity and Content Creation Tests"
+            ]
+          },
+          {
+            "source_pointer": "/elements/content/content/entities/ca41ef73-7881-49ec-b049-44b00368157dce9cd228-19a2-408e-b1e9-9c4700691b3a/props/content/blocks",
+            "text": [
+              "Click dropdowns or arrows to see results for different tests"
+            ]
+          }
+        ],
+        "source_format_flags": {
+          "absoluteDistribution": true,
+          "aggregateData": false,
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "useSIPrefixes": false
+        },
+        "modifier": 1,
+        "value_kind_counts": {
+          "numeric_string": 30,
+          "empty_string": 5,
+          "time_string": 5
+        },
+        "sheets": [
+          {
+            "sheet_index": 0,
+            "title": "PCMark 10 (Productivity Test Suite)",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/0",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/0",
+            "literal_byte_range": [
+              11302,
+              11633
+            ],
+            "literal_sha256": "2e8e7c3e8bf117e408f6236d6f4a920b199481435c8dfe140b8f9c164926aa07",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 2,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "PCMark 10 Overall Score",
+                "value_kind_counts": {
+                  "numeric_string": 3,
+                  "empty_string": 2
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 5,
+            "value_kind_counts": {
+              "numeric_string": 3,
+              "empty_string": 2
+            },
+            "first_model_raw_values": [
+              "6,686"
+            ],
+            "nonmeasurement_cells": [
+              {
+                "model_row": 2,
+                "column_index": 1,
+                "kind": "empty_string",
+                "raw_cell": {
+                  "value": ""
+                },
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/0/2/1"
+              },
+              {
+                "model_row": 3,
+                "column_index": 1,
+                "kind": "empty_string",
+                "raw_cell": {
+                  "value": ""
+                },
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/0/3/1"
+              }
+            ],
+            "unit_interpretation": "Test-specific score; not a common scale across sheets and not frames per second",
+            "direction_from_source_label": "higher",
+            "unit_direction_cue": "PCMark Score (HIGHER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/0",
+            "source_sheet_settings": {
+              "axis": {
+                "x": {
+                  "ticks": 10
+                }
+              },
+              "decimalSeparator": ".",
+              "groupingSymbol": ",",
+              "labels": {
+                "graph": {
+                  "item": {
+                    "format": {
+                      "affix": true
+                    }
+                  }
+                }
+              },
+              "useSIPrefixes": false,
+              "xlabel": "PCMark Score (HIGHER IS BETTER)",
+              "xmax": 8100,
+              "xmaxlim": 8100,
+              "xmin": ""
+            }
+          },
+          {
+            "sheet_index": 1,
+            "title": "PCMark 10 (Storage Test)",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/1",
+            "literal_byte_range": [
+              11634,
+              11967
+            ],
+            "literal_sha256": "68c66d95d490975c02fd40f1cd50a63b94153ffa4de6e00337b7d4ba47301392",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 2,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "Full System Drive Benchmark",
+                "value_kind_counts": {
+                  "numeric_string": 3,
+                  "empty_string": 2
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 5,
+            "value_kind_counts": {
+              "numeric_string": 3,
+              "empty_string": 2
+            },
+            "first_model_raw_values": [
+              "2,377"
+            ],
+            "nonmeasurement_cells": [
+              {
+                "model_row": 2,
+                "column_index": 1,
+                "kind": "empty_string",
+                "raw_cell": {
+                  "value": ""
+                },
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1/2/1"
+              },
+              {
+                "model_row": 3,
+                "column_index": 1,
+                "kind": "empty_string",
+                "raw_cell": {
+                  "value": ""
+                },
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1/3/1"
+              }
+            ],
+            "unit_interpretation": "Test-specific score; not a common scale across sheets and not frames per second",
+            "direction_from_source_label": "higher",
+            "unit_direction_cue": "PCMark Score (HIGHER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/1",
+            "source_sheet_settings": {
+              "decimalSeparator": ".",
+              "groupingSymbol": ",",
+              "useSIPrefixes": false,
+              "xlabel": "PCMark Score (HIGHER IS BETTER)",
+              "xmax": 3000,
+              "xmaxlim": 3000,
+              "xmin": ""
+            }
+          },
+          {
+            "sheet_index": 2,
+            "title": "Cinebench 2024",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/2",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/2",
+            "literal_byte_range": [
+              11968,
+              12464
+            ],
+            "literal_sha256": "461a0e557ca31c26bbfef867228c9b68d86f792d956c702b9b15a6459508eb7f",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 3,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "CPU (Multi-Core) Render Setting",
+                "value_kind_counts": {
+                  "numeric_string": 5
+                }
+              },
+              {
+                "column_index": 2,
+                "title": "CPU (Single-Core) Render Setting",
+                "value_kind_counts": {
+                  "numeric_string": 5
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 10,
+            "value_kind_counts": {
+              "numeric_string": 10
+            },
+            "first_model_raw_values": [
+              "604",
+              "104"
+            ],
+            "nonmeasurement_cells": [],
+            "unit_interpretation": "Test-specific score; not a common scale across sheets and not frames per second",
+            "direction_from_source_label": "higher",
+            "unit_direction_cue": "Cinebench Score (HIGHER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/2",
+            "source_sheet_settings": {
+              "axis": {
+                "x": {
+                  "ticks": 5
+                }
+              },
+              "decimalSeparator": ".",
+              "groupingSymbol": ",",
+              "useSIPrefixes": false,
+              "xlabel": "Cinebench Score (HIGHER IS BETTER)",
+              "xmax": 1700,
+              "xmaxlim": 1700,
+              "xmin": ""
+            }
+          },
+          {
+            "sheet_index": 3,
+            "title": "HandBrake 1.8.0",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/3",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/3",
+            "literal_byte_range": [
+              12465,
+              12844
+            ],
+            "literal_sha256": "e266be0dc70bba6c70b32ff51aea4941c58c1d692a4c6c7bad059207cd7ee391",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 2,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "Render Time (12-minute 4K File to 1080p, \"Fast 1080p30\" Preset)",
+                "value_kind_counts": {
+                  "time_string": 5
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 5,
+            "value_kind_counts": {
+              "time_string": 5
+            },
+            "first_model_raw_values": [
+              "6:08"
+            ],
+            "nonmeasurement_cells": [],
+            "unit_interpretation": "Minutes:Seconds, not decimal minutes and not Hours:Minutes",
+            "direction_from_source_label": "lower",
+            "unit_direction_cue": "Minutes:Seconds (LOWER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/3",
+            "source_sheet_settings": {
+              "axis": {
+                "x": {
+                  "ticks": 10
+                }
+              },
+              "decimalSeparator": ".",
+              "groupingSymbol": ",",
+              "useSIPrefixes": false,
+              "xlabel": "Minutes:Seconds (LOWER IS BETTER)",
+              "xmax": 11,
+              "xmaxlim": 11,
+              "xmin": ""
+            }
+          },
+          {
+            "sheet_index": 4,
+            "title": "Geekbench Pro 6.3",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/4",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/4",
+            "literal_byte_range": [
+              12845,
+              13355
+            ],
+            "literal_sha256": "e02cf8437ce874c648419db35e642353f85edf22790c2b087e0226063438c06c",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 3,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "Multi-Core Setting (CPU Test)",
+                "value_kind_counts": {
+                  "numeric_string": 5
+                }
+              },
+              {
+                "column_index": 2,
+                "title": "Single-Core Setting (CPU Test)",
+                "value_kind_counts": {
+                  "numeric_string": 5
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 10,
+            "value_kind_counts": {
+              "numeric_string": 10
+            },
+            "first_model_raw_values": [
+              "9,757",
+              "2,559"
+            ],
+            "nonmeasurement_cells": [],
+            "unit_interpretation": "Test-specific score; not a common scale across sheets and not frames per second",
+            "direction_from_source_label": "higher",
+            "unit_direction_cue": "Geekbench Score (HIGHER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/4",
+            "source_sheet_settings": {
+              "axis": {
+                "x": {
+                  "ticks": 5
+                }
+              },
+              "decimalSeparator": ".",
+              "groupingSymbol": ",",
+              "useSIPrefixes": false,
+              "xlabel": "Geekbench Score (HIGHER IS BETTER)",
+              "xmax": 29000,
+              "xmaxlim": 29000,
+              "xmin": ""
+            }
+          },
+          {
+            "sheet_index": 5,
+            "title": "Adobe Photoshop 2024",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/5",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/5",
+            "literal_byte_range": [
+              13356,
+              13731
+            ],
+            "literal_sha256": "c8bea5ad1ece81c87d70eaf9a5c371aeba9c2115d97fc841d4cc4f7d8276b031",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 2,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "PugetBench for Creators 1.2.20 Benchmark",
+                "value_kind_counts": {
+                  "numeric_string": 4,
+                  "empty_string": 1
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 5,
+            "value_kind_counts": {
+              "numeric_string": 4,
+              "empty_string": 1
+            },
+            "first_model_raw_values": [
+              "5,586"
+            ],
+            "nonmeasurement_cells": [
+              {
+                "model_row": 3,
+                "column_index": 1,
+                "kind": "empty_string",
+                "raw_cell": {
+                  "value": ""
+                },
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/5/3/1"
+              }
+            ],
+            "unit_interpretation": "Test-specific score; not a common scale across sheets and not frames per second",
+            "direction_from_source_label": "higher",
+            "unit_direction_cue": "PugetBench Score (HIGHER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/5",
+            "source_sheet_settings": {
+              "axis": {
+                "x": {
+                  "ticks": 5
+                }
+              },
+              "decimalSeparator": ".",
+              "groupingSymbol": ",",
+              "useSIPrefixes": false,
+              "xlabel": "PugetBench Score (HIGHER IS BETTER)",
+              "xmax": 12000,
+              "xmaxlim": 12000,
+              "xmin": ""
+            }
+          }
+        ]
+      },
+      {
+        "ordinal": 4,
+        "body_path": "live-charts02/4/body.txt",
+        "body_bytes": 39527,
+        "body_sha256": "6d5ae41b59e56992132e35f12bed686e35ff0572ea4f9438ad26fda1bec7337b",
+        "result_path": "live-charts02/4/RESULT.json",
+        "result_sha256": "891ba05fd100b89fa3e60f46f809527a64a97a5511624ba9c582f4bafe4b1c00",
+        "body_hash_matches_result": true,
+        "body_length_matches_result": true,
+        "result_entry_matches_manifest": true,
+        "capture_record_claims": {
+          "status": 200,
+          "mode": "native-live-inert-resource",
+          "executed": false,
+          "finishedAt": "2026-09-16T13:25:53.901Z"
+        },
+        "literal": {
+          "assignment_count": 1,
+          "assignment_line": 68,
+          "assignment_byte_offset": 7022,
+          "byte_range": [
+            7045,
+            37756
+          ],
+          "utf16_range": [
+            7045,
+            37756
+          ],
+          "sha256": "68dd886ff6e095351de26f9e016f03148cf73171574a67e5c0f4aff4ed10f994",
+          "standard_json_parse": true,
+          "duplicate_object_keys": 0,
+          "nonstandard_numeric_constants": 0,
+          "inline_script_and_statement_boundaries_verified": true
+        },
+        "identity": {
+          "embed_id": "050a99fc-36c9-4ede-8c11-cb32ce33d048",
+          "response_id": 499986456,
+          "response_block_id": "019004fe-4621-4222-ab39-5d59ce658b27",
+          "title": "Acer Swift Go 16 AI (2026) (Graphics)",
+          "description": "Acer Swift Go 16 (SFG16-A71/T) (Graphics)",
+          "manifest_embed_request_and_response_path_match": true,
+          "response_embed_fields_match": true,
+          "html_title_matches_json_title": true
+        },
+        "article_provenance_from_entry_only": {
+          "entry_pointer": "/2/provenance",
+          "article_file": "node_modules/.cache/native-validation/reader-practical-workflows-september16/live/43/response-43-2.json",
+          "article_body_sha256_claim": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "article_utf16_offset_claim": 728841,
+          "article_body_independently_read": false,
+          "article_block_id_linkage_status": "not_verifiable_from_allowed_evidence",
+          "article_block_id_linkage_main_report": "Main reports all article block IDs match; not independently rechecked by this reviewer."
+        },
+        "internal_block_ids": [
+          "5ba4c6a8-4fba-439b-988d-b32068252418"
+        ],
+        "internal_block_entity_references_resolve": true,
+        "entity_counts": {
+          "CHART": 1,
+          "IMAGE": 1,
+          "TEXT": 2
+        },
+        "hidden_entities": 0,
+        "dataset_kind": "benchmark_matrices",
+        "chart_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData",
+        "chart_type_nr": 4,
+        "data_array_byte_range": [
+          11302,
+          13141
+        ],
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "text_entities": [
+          {
+            "source_pointer": "/elements/content/content/entities/c2ee7f76-7da0-4177-853d-9276894d7142/props/content/blocks",
+            "text": [
+              "Graphics Tests"
+            ]
+          },
+          {
+            "source_pointer": "/elements/content/content/entities/ca41ef73-7881-49ec-b049-44b00368157d9698fc3d-20e8-4bb1-9299-5acbac3f538a/props/content/blocks",
+            "text": [
+              "Click the dropdowns or arrows to see results for different tests"
+            ]
+          }
+        ],
+        "source_format_flags": {
+          "absoluteDistribution": true,
+          "aggregateData": false,
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "useSIPrefixes": false
+        },
+        "modifier": 1,
+        "value_kind_counts": {
+          "numeric_string": 22,
+          "literal_null": 1,
+          "marker_N/A": 1,
+          "marker_WNR": 1
+        },
+        "sheets": [
+          {
+            "sheet_index": 0,
+            "title": "3DMark (Wild Life Subtest)",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/0",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/0",
+            "literal_byte_range": [
+              11303,
+              11658
+            ],
+            "literal_sha256": "0e0c9b466b6dacbad4cfe4688e57f4240caca54c7114545e0cfdb3f1cd2c450d",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 2,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "Wild Life Benchmark",
+                "value_kind_counts": {
+                  "numeric_string": 4,
+                  "literal_null": 1
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 5,
+            "value_kind_counts": {
+              "numeric_string": 4,
+              "literal_null": 1
+            },
+            "first_model_raw_values": [
+              "10,247"
+            ],
+            "nonmeasurement_cells": [
+              {
+                "model_row": 2,
+                "column_index": 1,
+                "kind": "literal_null",
+                "raw_cell": null,
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/0/2/1"
+              }
+            ],
+            "unit_interpretation": "Test-specific score; not a common scale across sheets and not frames per second",
+            "direction_from_source_label": "higher",
+            "unit_direction_cue": "Wild Life Score (HIGHER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/0",
+            "source_sheet_settings": {
+              "axis": {
+                "x": {
+                  "ticks": 10
+                }
+              },
+              "decimalSeparator": ".",
+              "groupingSymbol": ",",
+              "labels": {
+                "graph": {
+                  "item": {
+                    "format": {
+                      "affix": true
+                    }
+                  }
+                }
+              },
+              "useSIPrefixes": false,
+              "xlabel": "Wild Life Score (HIGHER IS BETTER)",
+              "xmax": 46000,
+              "xmaxlim": 46000,
+              "xmin": ""
+            }
+          },
+          {
+            "sheet_index": 1,
+            "title": "3DMark (Wild Life Extreme Subtest)",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/1",
+            "literal_byte_range": [
+              11659,
+              12032
+            ],
+            "literal_sha256": "06553798720f4f86168dd3524af729f4072a6ba8749946fa63d6d2dfdcd5bb67",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 2,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "Wild Life Extreme Benchmark",
+                "value_kind_counts": {
+                  "numeric_string": 5
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 5,
+            "value_kind_counts": {
+              "numeric_string": 5
+            },
+            "first_model_raw_values": [
+              "2,773"
+            ],
+            "nonmeasurement_cells": [],
+            "unit_interpretation": "Test-specific score; not a common scale across sheets and not frames per second",
+            "direction_from_source_label": "higher",
+            "unit_direction_cue": "Wild Life Extreme Score (HIGHER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/1",
+            "source_sheet_settings": {
+              "decimalSeparator": ".",
+              "groupingSymbol": ",",
+              "useSIPrefixes": false,
+              "xlabel": "Wild Life Extreme Score (HIGHER IS BETTER)",
+              "xmax": 14000,
+              "xmaxlim": 14000,
+              "xmin": ""
+            }
+          },
+          {
+            "sheet_index": 2,
+            "title": "3DMark (Steel Nomad Subtest)",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/2",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/2",
+            "literal_byte_range": [
+              12033,
+              12399
+            ],
+            "literal_sha256": "79e87fe9b8630483617aafcdd776bc012c8a3cd27829d9c3a3346644d019a917",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 2,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "Steel Nomad Benchmark",
+                "value_kind_counts": {
+                  "numeric_string": 4,
+                  "marker_N/A": 1
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 5,
+            "value_kind_counts": {
+              "numeric_string": 4,
+              "marker_N/A": 1
+            },
+            "first_model_raw_values": [
+              "195"
+            ],
+            "nonmeasurement_cells": [
+              {
+                "model_row": 2,
+                "column_index": 1,
+                "kind": "marker_N/A",
+                "raw_cell": {
+                  "value": "N/A"
+                },
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/2/2/1"
+              }
+            ],
+            "unit_interpretation": "Test-specific score; not a common scale across sheets and not frames per second",
+            "direction_from_source_label": "higher",
+            "unit_direction_cue": "Steel Nomad Score (HIGHER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/2",
+            "source_sheet_settings": {
+              "axis": {
+                "x": {
+                  "ticks": 10
+                }
+              },
+              "decimalSeparator": ".",
+              "groupingSymbol": ",",
+              "useSIPrefixes": false,
+              "xlabel": "Steel Nomad Score (HIGHER IS BETTER)",
+              "xmax": 1500,
+              "xmaxlim": 1500,
+              "xmin": ""
+            }
+          },
+          {
+            "sheet_index": 3,
+            "title": "3DMark (Steel Nomad Light Subtest)",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/3",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/3",
+            "literal_byte_range": [
+              12400,
+              12772
+            ],
+            "literal_sha256": "f38e07a0f5f66759d9bee2e297f8753df65c2f7ea8bd732fc702c8ca037dc50d",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 2,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "Steel Nomad Light Benchmark",
+                "value_kind_counts": {
+                  "numeric_string": 5
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 5,
+            "value_kind_counts": {
+              "numeric_string": 5
+            },
+            "first_model_raw_values": [
+              "1,200"
+            ],
+            "nonmeasurement_cells": [],
+            "unit_interpretation": "Test-specific score; not a common scale across sheets and not frames per second",
+            "direction_from_source_label": "higher",
+            "unit_direction_cue": "Steel Nomad Light Score (HIGHER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/3",
+            "source_sheet_settings": {
+              "axis": {
+                "x": {
+                  "ticks": 10
+                }
+              },
+              "decimalSeparator": ".",
+              "groupingSymbol": ",",
+              "useSIPrefixes": false,
+              "xlabel": "Steel Nomad Light Score (HIGHER IS BETTER)",
+              "xmax": 6500,
+              "xmaxlim": 6500,
+              "xmin": ""
+            }
+          },
+          {
+            "sheet_index": 4,
+            "title": "3DMark (Solar Bay Subtest)",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/4",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/4",
+            "literal_byte_range": [
+              12773,
+              13140
+            ],
+            "literal_sha256": "b3c13f3a10b7a96275c7bcf46220b8904796035ce264cc200e273f084b2c5de7",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 2,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "Solar Bay Benchmark",
+                "value_kind_counts": {
+                  "numeric_string": 4,
+                  "marker_WNR": 1
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 5,
+            "value_kind_counts": {
+              "numeric_string": 4,
+              "marker_WNR": 1
+            },
+            "first_model_raw_values": [
+              "6,324"
+            ],
+            "nonmeasurement_cells": [
+              {
+                "model_row": 5,
+                "column_index": 1,
+                "kind": "marker_WNR",
+                "raw_cell": {
+                  "value": "WNR"
+                },
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/4/5/1"
+              }
+            ],
+            "unit_interpretation": "Test-specific score; not a common scale across sheets and not frames per second",
+            "direction_from_source_label": "higher",
+            "unit_direction_cue": "Solar Bay Score (HIGHER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/4",
+            "source_sheet_settings": {
+              "xlabel": "Solar Bay Score (HIGHER IS BETTER)",
+              "xmax": 31000,
+              "xmaxlim": 31000,
+              "xmin": ""
+            }
+          }
+        ]
+      },
+      {
+        "ordinal": 5,
+        "body_path": "live-charts02/5/body.txt",
+        "body_bytes": 38462,
+        "body_sha256": "d39d44f38f5bd8fac2314bed35a11fbe9a42cd000c156501cc3214f70e791ec8",
+        "result_path": "live-charts02/5/RESULT.json",
+        "result_sha256": "7a7da05db9ebfeec949cc5cd562a578341a237f8729336468a55c88c15213356",
+        "body_hash_matches_result": true,
+        "body_length_matches_result": true,
+        "result_entry_matches_manifest": true,
+        "capture_record_claims": {
+          "status": 200,
+          "mode": "native-live-inert-resource",
+          "executed": false,
+          "finishedAt": "2026-09-16T13:25:55.852Z"
+        },
+        "literal": {
+          "assignment_count": 1,
+          "assignment_line": 68,
+          "assignment_byte_offset": 7023,
+          "byte_range": [
+            7046,
+            36691
+          ],
+          "utf16_range": [
+            7046,
+            36691
+          ],
+          "sha256": "305d05b09c3dc5e91f45957a8c2838cde7be96d1d4296204bd0bd7b84ec99a28",
+          "standard_json_parse": true,
+          "duplicate_object_keys": 0,
+          "nonstandard_numeric_constants": 0,
+          "inline_script_and_statement_boundaries_verified": true
+        },
+        "identity": {
+          "embed_id": "85d305c9-1837-485b-af55-dde563616777",
+          "response_id": 499987386,
+          "response_block_id": "3545c505-2775-44ac-b7f4-04f4a0980ac9",
+          "title": "Acer Swift Go 16 AI (2026) (Batt/Disp)",
+          "description": "Acer Swift Go 16 (SFG16-A71/T) (Batt/Disp)",
+          "manifest_embed_request_and_response_path_match": true,
+          "response_embed_fields_match": true,
+          "html_title_matches_json_title": true
+        },
+        "article_provenance_from_entry_only": {
+          "entry_pointer": "/3/provenance",
+          "article_file": "node_modules/.cache/native-validation/reader-practical-workflows-september16/live/43/response-43-2.json",
+          "article_body_sha256_claim": "cec0dacc056c52b49917641451396d9e552d17bcffb1dc22d3770e230898df1f",
+          "article_utf16_offset_claim": 731828,
+          "article_body_independently_read": false,
+          "article_block_id_linkage_status": "not_verifiable_from_allowed_evidence",
+          "article_block_id_linkage_main_report": "Main reports all article block IDs match; not independently rechecked by this reviewer."
+        },
+        "internal_block_ids": [
+          "5ba4c6a8-4fba-439b-988d-b32068252418"
+        ],
+        "internal_block_entity_references_resolve": true,
+        "entity_counts": {
+          "CHART": 1,
+          "IMAGE": 1,
+          "TEXT": 2
+        },
+        "hidden_entities": 0,
+        "dataset_kind": "benchmark_matrices",
+        "chart_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData",
+        "chart_type_nr": 4,
+        "data_array_byte_range": [
+          11363,
+          12704
+        ],
+        "accessibility": {
+          "description": "PCMag Multiplayer Testing: High End GPUs 2020",
+          "enabled": true,
+          "label": "Multiplayer Testing: High End GPUs 2020"
+        },
+        "text_entities": [
+          {
+            "source_pointer": "/elements/content/content/entities/c2ee7f76-7da0-4177-853d-9276894d7142/props/content/blocks",
+            "text": [
+              "Battery and Display Tests"
+            ]
+          },
+          {
+            "source_pointer": "/elements/content/content/entities/ca41ef73-7881-49ec-b049-44b00368157d36a42d16-bc7f-4c84-86ef-9fcf92950397/props/content/blocks",
+            "text": [
+              "Click the dropdowns or arrows to see results for different tests"
+            ]
+          }
+        ],
+        "source_format_flags": {
+          "absoluteDistribution": false,
+          "aggregateData": false,
+          "decimalSeparator": ".",
+          "groupingSymbol": ",",
+          "useSIPrefixes": true,
+          "switchRowsColumns": false
+        },
+        "modifier": 1,
+        "value_kind_counts": {
+          "time_string": 5,
+          "numeric_string": 20,
+          "marker_NA": 5
+        },
+        "sheets": [
+          {
+            "sheet_index": 0,
+            "title": "PC Labs Battery Rundown Test",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/0",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/0",
+            "literal_byte_range": [
+              11364,
+              11746
+            ],
+            "literal_sha256": "f6e8fc8e1bfd7dbbf8ac1af00be1caef045f20ada872ba8578316e3b66bd4531",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 2,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "Video Playback, \"Tears of Steel\" 720p, 50% Brightness",
+                "value_kind_counts": {
+                  "time_string": 5
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 5,
+            "value_kind_counts": {
+              "time_string": 5
+            },
+            "first_model_raw_values": [
+              "17:12"
+            ],
+            "nonmeasurement_cells": [],
+            "unit_interpretation": "Hours:Minutes, not decimal hours and not Minutes:Seconds",
+            "direction_from_source_label": "longer",
+            "unit_direction_cue": "Hours:Minutes (LONGER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/0",
+            "source_sheet_settings": {
+              "xlabel": "Hours:Minutes (LONGER IS BETTER)",
+              "xmax": 22,
+              "xmaxlim": 22,
+              "xmin": 0,
+              "xminlim": 0
+            }
+          },
+          {
+            "sheet_index": 1,
+            "title": "Color Gamut Coverage Testing (Datacolor SpyderX Elite)",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/1",
+            "literal_byte_range": [
+              11747,
+              12250
+            ],
+            "literal_sha256": "13e82b069ed43d2b470d13f1c2cf1caca8b7ddb685e8708b7a36c72c4ef32286",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 4,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "sRGB",
+                "value_kind_counts": {
+                  "numeric_string": 4,
+                  "marker_NA": 1
+                }
+              },
+              {
+                "column_index": 2,
+                "title": "Adobe RGB",
+                "value_kind_counts": {
+                  "numeric_string": 4,
+                  "marker_NA": 1
+                }
+              },
+              {
+                "column_index": 3,
+                "title": "DCI-P3",
+                "value_kind_counts": {
+                  "numeric_string": 4,
+                  "marker_NA": 1
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 15,
+            "value_kind_counts": {
+              "numeric_string": 12,
+              "marker_NA": 3
+            },
+            "first_model_raw_values": [
+              "99",
+              "81",
+              "82"
+            ],
+            "nonmeasurement_cells": [
+              {
+                "model_row": 2,
+                "column_index": 1,
+                "kind": "marker_NA",
+                "raw_cell": {
+                  "value": "NA"
+                },
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1/2/1"
+              },
+              {
+                "model_row": 2,
+                "column_index": 2,
+                "kind": "marker_NA",
+                "raw_cell": {
+                  "value": "NA"
+                },
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1/2/2"
+              },
+              {
+                "model_row": 2,
+                "column_index": 3,
+                "kind": "marker_NA",
+                "raw_cell": {
+                  "value": "NA"
+                },
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/1/2/3"
+              }
+            ],
+            "unit_interpretation": "Percent coverage, separate color-space columns",
+            "direction_from_source_label": "higher",
+            "unit_direction_cue": "Percent Coverage (HIGHER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/1",
+            "source_sheet_settings": {
+              "xlabel": "Percent Coverage (HIGHER IS BETTER)",
+              "xmax": 120,
+              "xmaxlim": 120,
+              "xmin": 0,
+              "xminlim": 0
+            }
+          },
+          {
+            "sheet_index": 2,
+            "title": "Display Brightness Testing (Datacolor SpyderX Elite)",
+            "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/2",
+            "title_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheetnames/2",
+            "literal_byte_range": [
+              12251,
+              12703
+            ],
+            "literal_sha256": "6c8c0c4eec958993ca9abde41154d08ee9330d057271a89612d5caca82e392a6",
+            "rows_including_header": 6,
+            "model_rows": 5,
+            "columns_including_model_label": 3,
+            "model_labels_reference": "/model_labels",
+            "columns": [
+              {
+                "column_index": 1,
+                "title": "Measured at 50% Brightness",
+                "value_kind_counts": {
+                  "numeric_string": 4,
+                  "marker_NA": 1
+                }
+              },
+              {
+                "column_index": 2,
+                "title": "Measured at 100% Brightness",
+                "value_kind_counts": {
+                  "numeric_string": 4,
+                  "marker_NA": 1
+                }
+              }
+            ],
+            "data_cell_count_excluding_headers_and_models": 10,
+            "value_kind_counts": {
+              "numeric_string": 8,
+              "marker_NA": 2
+            },
+            "first_model_raw_values": [
+              "99",
+              "353"
+            ],
+            "nonmeasurement_cells": [
+              {
+                "model_row": 2,
+                "column_index": 1,
+                "kind": "marker_NA",
+                "raw_cell": {
+                  "value": "NA"
+                },
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/2/2/1"
+              },
+              {
+                "model_row": 2,
+                "column_index": 2,
+                "kind": "marker_NA",
+                "raw_cell": {
+                  "value": "NA"
+                },
+                "source_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/data/2/2/2"
+              }
+            ],
+            "unit_interpretation": "Nits; column percentages specify brightness settings, not measurement units",
+            "direction_from_source_label": "higher",
+            "unit_direction_cue": "Nits (HIGHER IS BETTER)",
+            "sheet_settings_pointer": "/elements/content/content/entities/221a4a5b-d6f4-4c7a-b26c-a02911a7efa3/props/chartData/sheets_settings/2",
+            "source_sheet_settings": {
+              "xlabel": "Nits (HIGHER IS BETTER)",
+              "xmax": 550,
+              "xmaxlim": 550,
+              "xmin": 0,
+              "xminlim": 0
+            }
+          }
+        ]
+      }
+    ],
+    "findings": [
+      {
+        "id": "article-linkage",
+        "severity": "coverage_limit",
+        "evidence": [
+          "ENTRIES-charts02.json/*/provenance",
+          "live-charts02/{2,3,4,5}/RESULT.json#/entry/provenance"
+        ],
+        "detail": "All four manifest embed IDs match request paths and response /path identities. The article body is outside the permitted four-body/companion-entry scope; its claimed hash and offsets were not independently verified. No article block IDs are present in entry provenance. Main subsequently reports all article block IDs match. Record this as main-reported linkage, not as an independently repeated article-body verification or an unresolved claim about main recovery."
+      },
+      {
+        "id": "identity-namespaces",
+        "severity": "interpretation",
+        "evidence": [
+          "/path",
+          "/block_id",
+          "/elements/content/content/blockOrder"
+        ],
+        "detail": "Public embed UUID, response block UUID, and internal layout block UUID are distinct. Captures 3, 4 and 5 reuse the same internal block and chart entity UUIDs. Use capture identity plus JSON Pointer, not an internal entity UUID alone, as the dataset key. Internal block/entity references resolve in all four literals; this does not establish article linkage."
+      },
+      {
+        "id": "stale-accessibility",
+        "severity": "source_inconsistency",
+        "evidence": [
+          "live-charts02/{3,4,5}/body.txt",
+          "chart_pointer + /accessibility"
+        ],
+        "detail": "All three benchmark records retain identical accessibility descriptions and labels about 2020 high-end GPU multiplayer testing, inconsistent with these laptop productivity, graphics, battery and display datasets. Treat these as stale template metadata, not benchmark definitions. Capture 2 has a generic accessibility label and an empty description; its table still contains specification data."
+      },
+      {
+        "id": "name-variants",
+        "severity": "source_inconsistency",
+        "evidence": [
+          "/title",
+          "/description",
+          "each chart data/*/1/0/value"
+        ],
+        "detail": "Capture 3 title swaps the order of AI and 16 relative to the other titles and the model rows. All four descriptions use the SFG16-A71/T variant while titles/model labels use 2026 naming. These differences do not establish hardware equivalence or a factual configuration error. Every model row list is otherwise exactly identical, including a trailing space on the Dell label."
+      },
+      {
+        "id": "measurement-gaps",
+        "severity": "data_completeness",
+        "evidence": [
+          "/nonmeasurement_cells",
+          "each captures/*/sheets/*/nonmeasurement_cells"
+        ],
+        "detail": "Of 95 benchmark cells, 82 contain numeric or time strings and 13 do not: five empty strings, one direct null cell, one N/A, one WNR and five NA strings. These distinct representations are preserved. No reason for each absence, or expansion of WNR, is established by the allowed evidence. Fifteen header-corner nulls are structural and excluded from this gap count."
+      },
+      {
+        "id": "raw-types",
+        "severity": "interpretation",
+        "evidence": [
+          "each chart_pointer + /data",
+          "each chart_pointer + /custom",
+          "each sheet_settings_pointer"
+        ],
+        "detail": "All non-null dataset cell values are strings, including digit strings, grouped numbers, times and specifications; there are no JSON numeric or boolean data cells, no data-cell zeros, no absent array entries and no cell objects lacking value. Configurations contain numeric/boolean values and axis zeros, which are not measurements. Reported dataset values retain source types and spellings. All 234 main-export cells match the independent parse without numeric conversion."
+      },
+      {
+        "id": "units",
+        "severity": "interpretation",
+        "evidence": [
+          "each sheet_settings_pointer + /xlabel",
+          "each chart_pointer + /sheetnames",
+          "each sheet source_pointer + /0"
+        ],
+        "detail": "Scoring scales differ by test. Productivity time uses minutes:seconds and lower is favored; battery time uses hours:minutes and longer is favored. Display coverage is percent, display brightness is nits, and brightness percentages in headers are settings. Configuration strings mix dimensions, component labels and GB/TB capacities. Do not pool units or treat colon times as decimal quantities."
+      },
+      {
+        "id": "renderer-boundary",
+        "severity": "coverage_limit",
+        "evidence": [
+          "each captures/*/source_format_flags",
+          "each captures/*/modifier",
+          "each sheet source_sheet_settings"
+        ],
+        "detail": "The review reads labels and configuration only. Numeric coercion, empty/null/NA treatment, time conversion, sorting, default sheet choice, formatting, scaling, normalization and accessibility output require renderer behavior not tested here. absoluteDistribution is true in captures 3/4 and false in 5; useSIPrefixes is false in 3/4 and true in 5. These flags cannot by themselves prove any rendered transformation or displayed result."
+      },
+      {
+        "id": "mechanical-count-agreement",
+        "severity": "verified",
+        "evidence": [
+          "tables/proof/RESULT.json",
+          "live-charts02/{2,3,4,5}/body.txt"
+        ],
+        "detail": "All counts agree: 15 matrices, 90 rows including headers, 234 cells, 16 direct null cells, 213 nonempty strings and five empty strings. Each exported cell matches its native source value and state; titles, settings and provenance also match. Of the 16 nulls, only one is a benchmark cell; seven nonempty strings are nonmeasurement markers. Rendering and ordinary extraction remain distinct acceptance questions."
+      }
+    ],
+    "limitations": [
+      "No independently tested laptop performance, current offers, rendered behavior, accessibility output or live-site acceptance is claimed.",
+      "RESULT mode/status/executed fields are capture-record claims; this review independently verifies only the saved bytes, JSON and recorded identity consistency.",
+      "Article file/hash/offset provenance is inherited from entries. Reading the referenced out-of-lane article or loader was deliberately excluded.",
+      "No full recovery matrices, renderer implementation, replay artifacts, acceptance-gate changes or integration changes are produced. Main owns bounded recovery, live evidence and integration."
+    ],
+    "written_paths": [
+      "node_modules/.cache/native-validation/pcmag-charts-september16/review.md",
+      "node_modules/.cache/native-validation/pcmag-charts-september16/review.json"
+    ],
+    "main_reconciliation": {
+      "path": "tables/proof/RESULT.json",
+      "sha256": "9101d4ff726b043620b4590b452638a67b7eaee01bedb5896ab49475e2d02d80",
+      "comparison_method": "Read main artifact as inert JSON and compare every exported cell, exact string value/type, null-cell state, sheet identity, dimensions, title, settings, accessibility and body/literal provenance against the four independently parsed native bodies. No recovery code or tests were run.",
+      "independent_counts": {
+        "matrices": 15,
+        "rows_including_headers": 90,
+        "cells": 234,
+        "null_cells": 16,
+        "nonempty_strings": 213,
+        "empty_strings": 5
+      },
+      "main_counts_agree": true,
+      "all_234_cell_values_and_states_agree": true,
+      "all_15_sheet_identities_metadata_and_provenance_agree": true,
+      "numeric_conversion_required_for_comparison": false,
+      "null_breakdown": {
+        "structural_header_corners": 15,
+        "benchmark_measurement_cell": 1
+      },
+      "nonempty_string_breakdown": {
+        "model_labels": 75,
+        "column_headers": 24,
+        "specification_values": 25,
+        "numeric_measurement_strings": 72,
+        "time_measurement_strings": 10,
+        "nonmeasurement_marker_strings": 7
+      },
+      "main_artifact_flags": {
+        "passed": true,
+        "newLiveRequests": 0,
+        "rendered": false,
+        "partial": true,
+        "valuesConverted": false,
+        "sourceScriptsExecuted": false
+      },
+      "main_user_report_not_independently_reexecuted": {
+        "recovery_under_kernel_denial": true,
+        "maintained_parser": "parseSourceLiteral",
+        "whole_literals_equal_strict_JSON_parse": 4,
+        "all_article_block_ids_match": true,
+        "ordinary_native_iframe_extractions_empty": 4
+      },
+      "meaning": "Mechanical counts and values agree, but complete recovery of literal cells is not complete benchmark measurement coverage. The reported empty ordinary iframe extractions distinguish diagnostic source-data recovery from ordinary native extraction or rendering. Main-reported article linkage does not expand this independent review into a direct article-body check."
+    }
+  },
+  "independentReviewMarkdown": "node_modules/.cache/native-validation/pcmag-charts-september16/review.md",
+  "ordinaryReaderOutcome": "All four standalone iframe HTML extractions remain empty; recovered chart matrices are explicit source-data evidence, not automatic reader integration",
+  "failuresAndCorrections": [
+    "Initial routed proof accessed cookieContext on the route callback argument, which exposes only URL/method/signal; it failed before network. Correct the callback assertion and request accounting (routed requests increment both requests and mockedRequests).",
+    "The original per-host reservation rejected the first chart before process launch because the loader used the same host. Preserve that failed admission, then use a separate per-resource harness with duplicate URL refusal and observed two-second origin pacing.",
+    "No live request was retried. Failed proofs/admissions remain separate from the five successful native GETs."
+  ],
+  "limitations": [
+    "Raw captured source and literal syntax do not establish rendered behavior or independent benchmark accuracy",
+    "Empty strings, null cells and textual missing-value tokens remain distinct; no numeric parsing, sorting, interpolation or time/unit conversion",
+    "Do not use stale accessibility descriptions as chart identity",
+    "Prior selected native955/0 and quality gates are inherited; no fresh suite/build run or production patch",
+    "Prior62 broader native failures,22 missing committed manifest inputs, actual SDK, rendering, credentials/passkeys/devices and access-handoff gates remain open"
+  ],
+  "productionChanges": false,
+  "pushed": false,
+  "overallGoal": "active"
+}

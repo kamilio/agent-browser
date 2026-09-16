@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Recover public embedded chart matrices without page execution
+
+- Follow the PCMag article's literal loader URL and four source-derived iframe
+  URLs using native transport only: five GET200,163198 decoded bytes, authorized
+  TLS, observed origin pacing and request/socket/process closure. No retries,
+  credentials, tracker/viewer loads, fingerprint changes or challenge solving.
+- Parse four pinned inline literals with the maintained bounded source parser;
+  compare strict JSON values and article block identities under kernel denial.
+  Recover15 source matrices,90 rows including headers and234 cells. Preserve
+  all string values,16 null cells, five empty strings and source axis qualifiers.
+- Ordinary native iframe extraction remains empty. Next add a bounded known-schema
+  source-table codec/workflow with provenance, missing-state fidelity, limits and
+  lifecycle tests; do not expose arbitrary globals or weaken script omission.
+- Independent review and typed matrices are in
+  reports/pcmag-chart-recovery-2026-09-16.md and companion JSON. Historical article
+  and100-root verdicts remain unchanged. No production change or new native gate;
+  prior62 broad failures,22 missing committed tests, SDK/rendering and credential,
+  device and access-handoff gates remain open.
+
 ### Recover source-list boundaries in native Markdown
 
 - Fix consecutive source lists merging into one Markdown run. Insert a neutral
