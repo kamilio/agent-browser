@@ -927,5 +927,7 @@
 	"src/research-replay-content-focus.test.ts",
 	"src/research-replay-content-focus-cli.test.ts",
 	"src/research-replay-mime-override.test.ts",
-	"src/research-replay-mime-override-cli.test.ts"
+	"src/research-replay-mime-override-cli.test.ts",
+	"src/research-source-videos.test.ts",
+	"src/research-source-videos-reader.test.ts"
 ]

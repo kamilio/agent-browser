@@ -62,6 +62,11 @@ import {
 	researchSourceProducts,
 } from "./research-source-products.js";
 import {
+	type ResearchSourceVideos,
+	fitResearchSourceVideos,
+	researchSourceVideos,
+} from "./research-source-videos.js";
+import {
 	type DocumentFeeds,
 	documentFeeds,
 	fitDocumentFeeds,
@@ -213,6 +218,7 @@ interface ExtractionMetadata {
 	sourceDataTables?: ResearchSourceDataTables;
 	sourceAccess?: ResearchSourceAccess;
 	sourceProducts?: ResearchSourceProducts;
+	sourceVideos?: ResearchSourceVideos;
 	sourceFeeds?: DocumentFeeds;
 	sourceMarkdown?: MarkdownSourceOutline;
 	sourceCodeGutters?: Readonly<{
@@ -1533,6 +1539,7 @@ export function extractDocument(
 		}
 	}
 	const products = researchSourceProducts(tree);
+	const videos = researchSourceVideos(tree);
 	const feeds = documentFeeds(tree);
 	if (feeds) {
 		const remaining =
@@ -1540,7 +1547,7 @@ export function extractDocument(
 		if (remaining >= 0) {
 			const sourceFeeds = fitDocumentFeeds(feeds, remaining);
 			if (sourceFeeds) {
-				if (!products) return { ...result, sourceFeeds };
+				if (!products && !videos) return { ...result, sourceFeeds };
 				result = { ...result, sourceFeeds };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1551,7 +1558,19 @@ export function extractDocument(
 			maxBytes - outputBytes - utf8ByteLength(',"sourceProducts":');
 		if (remaining >= 0) {
 			const sourceProducts = fitResearchSourceProducts(products, remaining);
-			if (sourceProducts) return { ...result, sourceProducts };
+			if (sourceProducts) {
+				if (!videos) return { ...result, sourceProducts };
+				result = { ...result, sourceProducts };
+				outputBytes = utf8ByteLength(JSON.stringify(result));
+			}
+		}
+	}
+	if (videos) {
+		const remaining =
+			maxBytes - outputBytes - utf8ByteLength(',"sourceVideos":');
+		if (remaining >= 0) {
+			const sourceVideos = fitResearchSourceVideos(videos, remaining);
+			if (sourceVideos) return { ...result, sourceVideos };
 		}
 	}
 	return result;

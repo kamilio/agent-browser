@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Bounded video-search source recovery
+
+- Added inert YouTube primary-search sourceVideos metadata: whitelisted public
+  fields, canonical watch URLs, immutable provenance, bounded strict JSON and
+  whole-entry UTF-8 fitting. No page scripts, internal endpoint/config export,
+  continuation requests or fabricated DOM nodes. See SOURCE-VIDEOS.md.
+- Same saved response plus independently recorded request context recovers all19
+  primary records versus none before. Unmodified query-redacted receipt replay
+  still excludes this metadata; do not infer routes or rewrite original evidence.
+- Separate final native CLI GET returns19 records within default limits, while
+  truthfully retaining empty-extraction/exit1 for empty DOM. Two total query GETs,
+  zero redirects/retries/credentials, all request/socket/process groups closed.
+- Final clean selected validation:1168pass/0fail across14 manifest files,367new
+  tests; build/types/format/lint pass. Integration-negative control gives151
+  expected failures. Fixed reviewed quadratic whitespace trimming with a linear
+  scan and five adversarial cases; local timing samples are not broad benchmarks.
+- reports/source-videos-2026-09-16.md supplements, not revises, the100-entry checklist.
+  Homepage-only, TikTok, rendering, playback, receipt-replay route recovery and
+  wider website compatibility remain unproven. Broader gates remain open.
+
 ### Replay-time MIME interpretation and storefront scope
 
 - Added explicit ordinary replay readerMimePolicy/--reader-mime-policy using
