@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Namespace-only parser dispatch and measured reader loading
+
+- Profile150 saved-page loads/extractions; identify repeated immutable attribute
+  snapshots in ordinary namespace and insertion-target checks. Add a namespace-only
+  foreign read and a template-tag prefilter, without new caches or changed output,
+  visibility, resource limits, namespace rules, cancellation or error behavior.
+- Baseline/core1206pass/0 in24 manifest files; final1236/0 in25 with30 new cases.
+  Exact new tests against old production13pass/17fail. Build/types/scoped format/
+  lint pass; final2292 compiled artifacts equal the benchmarked candidate, with
+  only six artifacts from the two parser modules differing from baseline.
+- Two ten-page same-response comparisons preserve retained HTML, resource usage
+  and normalized extraction for1000 closed documents. Median reader-load reductions
+  are5.0–21.6% forward and6.0–20.5% reverse; these are warmed local parsing/loading
+  measurements, not network/startup/rendered-app speed or new access success.
+- See PARSER-FOREIGN-READS.md and reports/parser-foreign-reads-2026-09-16.md. Native
+  unit guard is JavaScript-only; profiles/comparisons are kernel-network-denied.
+  No new website, SDK, credential or device operation. Keep the full941-file gate,
+  live scripted functionality, rendering and access-handoff work distinct/open.
+
 ### Cooking, dictionary and product content workflows
 
 - Validate three exact source-linked native workflows: Tasting Table cooking

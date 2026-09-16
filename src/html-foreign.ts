@@ -205,10 +205,18 @@ export class HtmlForeign {
 			: stack[stack.length - 1].tree.elementInfo(stack[stack.length - 1].id);
 	}
 
+	currentNamespace(): string {
+		const stack = this.options.stack();
+		if (stack.length === 1 && this.options.context)
+			return elementNamespace(this.options.context);
+		const current = stack[stack.length - 1];
+		return current.tree.namespaceOf(current.id);
+	}
+
 	process(token: HtmlToken): boolean {
-		const node = this.current();
-		const namespaceURI = elementNamespace(node);
+		const namespaceURI = this.currentNamespace();
 		if (namespaceURI === htmlNamespace) return false;
+		const node = this.current();
 		if (
 			(token.kind === "text" || token.kind === "start") &&
 			(htmlPoint(node) ||

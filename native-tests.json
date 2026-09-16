@@ -938,5 +938,6 @@
 	"src/research-source-videos-reader.test.ts",
   "src/research-link-content.test.ts",
   "src/research-target-link.test.ts",
-  "src/research-link-compact.test.ts"
+  "src/research-link-compact.test.ts",
+  "src/parser-foreign-read.test.ts"
 ]

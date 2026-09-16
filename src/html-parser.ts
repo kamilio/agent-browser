@@ -509,7 +509,10 @@ function* parseHtmlSteps(
 			}
 		};
 		const insertionTarget = (entry = current()) => {
-			if (isHtmlElement(entry.tree.elementInfo(entry.id), "template"))
+			if (
+				entry.tag === "template" &&
+				isHtmlElement(entry.tree.elementInfo(entry.id), "template")
+			)
 				return entry.tree.templateContent(entry.id);
 			return entry;
 		};
@@ -776,7 +779,7 @@ function* parseHtmlSteps(
 		});
 		const nextToken = () => {
 			const token = tokenizer.next(
-				elementNamespace(foreign.current()) !== htmlNamespace,
+				foreign.currentNamespace() !== htmlNamespace,
 			);
 			checkInput();
 			if (token && ++tokens > tree.limits.maxNodes * 8)
