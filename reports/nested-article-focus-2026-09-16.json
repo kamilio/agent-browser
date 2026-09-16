@@ -1,0 +1,219 @@
+{
+  "date": "2026-09-16",
+  "baseCommit": "41d52e416abe9c86acfcf3c96397c34951ca8d65",
+  "runtimeRoot": "/tmp/agent-browser-nested-article-focus-2oy0yw/release06",
+  "candidateAtLiveTime": true,
+  "sourceManifestSha256": "8b14d54ca46b9f580b5ab062097ebf3c2233a130739b3c9e45fe60aca763da92",
+  "compiledManifestSha256": "ad8f97b5e5023a05af06fc48054caee87f2d4ee507f5312501d6078f50e04439",
+  "productionChanges": [
+    "src/extraction-content-focus.ts",
+    "src/extraction.ts",
+    "scripts/research-browser.ts",
+    "scripts/research-link-content.ts",
+    "scripts/research-json-replay.ts",
+    "scripts/research-replay-cli.ts"
+  ],
+  "newTests": [
+    "src/extraction-content-focus-nested.test.ts",
+    "src/research-focus-recovery.test.ts",
+    "src/nested-focus-integration.test.ts"
+  ],
+  "focused": {
+    "release02": {
+      "label": "release02",
+      "pid": 859929,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 134.262879088521,
+      "passedTests": 2469,
+      "failedTests": 0,
+      "files": 36,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "release06": {
+      "label": "release06",
+      "pid": 879455,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 3.0197177063673735,
+      "passedTests": 3,
+      "failedTests": 0,
+      "files": 1,
+      "homeEntries": [],
+      "tmpEntries": []
+    }
+  },
+  "native": {
+    "passed": 46488,
+    "failed": 0,
+    "pending": 0,
+    "files": 945,
+    "missingManifestFiles": [
+      "src/borders.test.ts",
+      "src/css-flex.test.ts",
+      "src/css-flow.test.ts",
+      "src/css-math.test.ts",
+      "src/css-variables.test.ts",
+      "src/flex-column-wrap.test.ts",
+      "src/flex-column.test.ts",
+      "src/flex-document.test.ts",
+      "src/flex-nested.test.ts",
+      "src/font-relative-box.test.ts",
+      "src/inline-block.test.ts",
+      "src/inline-borders.test.ts",
+      "src/inline-flex.test.ts",
+      "src/page-base64.test.ts",
+      "src/portable-boundary.test.ts",
+      "src/reference-images.test.ts",
+      "src/reference-renderer.test.ts",
+      "src/relative-positioning.test.ts",
+      "src/response-archive.test.ts",
+      "src/select-keyboard.test.ts",
+      "src/select-typeahead.test.ts",
+      "src/stacking-order.test.ts"
+    ],
+    "perShardExitCodes": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "originalAggregateExitCode": 1,
+    "incorrectOriginalExpectedTests": 48805,
+    "independentCountAuditAccepted": true,
+    "independentCountAuditSha256": "6bbc8a963ccbcc9405ecf30c684565a02de2a46c907da3777435a187c3a4bd61"
+  },
+  "regressionReplay": {
+    "inputs": 135,
+    "successfulPairs": 128,
+    "matchingFailurePairs": 7,
+    "exactLegacyExtractionAndStructuredObjects": true
+  },
+  "offlineCli": [
+    {
+      "id": "default-v3",
+      "exitCode": 1,
+      "safetyPassed": true
+    },
+    {
+      "id": "hidden-v2",
+      "exitCode": 1,
+      "safetyPassed": true
+    },
+    {
+      "id": "hidden-v3",
+      "exitCode": 0,
+      "safetyPassed": true
+    },
+    {
+      "id": "hidden-unfocused",
+      "exitCode": 1,
+      "safetyPassed": true
+    },
+    {
+      "id": "original-v3-recovery",
+      "exitCode": 1,
+      "safetyPassed": true
+    },
+    {
+      "id": "hidden-v2-recovery",
+      "exitCode": 1,
+      "safetyPassed": true
+    },
+    {
+      "id": "hidden-v3-markdown",
+      "exitCode": 0,
+      "safetyPassed": true
+    },
+    {
+      "id": "hidden-v3-json",
+      "exitCode": 0,
+      "safetyPassed": true
+    }
+  ],
+  "live": {
+    "url": "https://docs.vllm.ai/en/stable/serving/online_serving/",
+    "response": {
+      "url": "https://docs.vllm.ai/en/stable/serving/online_serving/",
+      "status": 200,
+      "receivedAt": "2026-09-16T22:49:52.680Z",
+      "headers": {
+        "content-type": [
+          "text/html; charset=utf-8"
+        ],
+        "content-encoding": [
+          "br"
+        ]
+      },
+      "headerCapture": {
+        "kind": "selected-response-headers-v1",
+        "partial": true,
+        "omitted": []
+      },
+      "decodedBytes": 636652,
+      "encodedBytes": 49181,
+      "bodySha256": "52e20035779c0d9b63a95eb5bb49929a5a2bf1db6dcc1f75e5d799288ef88830",
+      "hashScope": "transport-decoded-body-before-loader",
+      "redirects": 0,
+      "elapsedMs": 158.51617000000002
+    },
+    "nativeOutcome": "extracted-unverified",
+    "nativeContentSuccess": null,
+    "selectedMarkdownBytes": 17451,
+    "stdoutBytes": 872782,
+    "selection": {
+      "policy": "main-content-v3",
+      "selected": "article",
+      "reason": "unique-article-in-main",
+      "mainCandidates": 1,
+      "articleCandidates": 1,
+      "scannedNodes": 29556,
+      "outsideArticleContent": true,
+      "mainArticleCandidates": 1,
+      "outsideMainArticleContent": false
+    },
+    "readerPolicy": "source-hidden-v1",
+    "receiptSha256": "8b10bb474d49be93dc2bfb20f8b2e0fe8f64598fb1a854dce4e8ebd310eaec28",
+    "metrics": {
+      "mockedRequests": 0,
+      "mockedDecodedBytes": 0,
+      "requests": 1,
+      "redirects": 0,
+      "encodedBytes": 49181,
+      "decodedBytes": 636652,
+      "active": 0,
+      "closed": true
+    },
+    "contentAudit": {
+      "passed": true,
+      "method": "Fresh decoded-body SHA and complete selected Markdown equality against previously independently audited source selection; no new request.",
+      "liveReceiptSha256": "8b10bb474d49be93dc2bfb20f8b2e0fe8f64598fb1a854dce4e8ebd310eaec28",
+      "previousReceiptSha256": "de0105fcfa0fbc39d86411c5d21ae8147efee4252adbcc85dcce993c4194f952",
+      "previousReviewedSelectionSha256": "1029dc2da4b0cf037f232f7f7ebd2eb7e979e100c94439afbec98193fc1b3f06",
+      "bodySha256": "52e20035779c0d9b63a95eb5bb49929a5a2bf1db6dcc1f75e5d799288ef88830",
+      "selectedMarkdownBytes": 17451,
+      "matchedHeadingLabels": 28,
+      "matchedLiteralPreBlocks": 3,
+      "sourceFactsVerified": false,
+      "nativeOutcomeUnchanged": "extracted-unverified",
+      "nativeContentSuccessUnchanged": null
+    }
+  },
+  "preservedTracked": 42,
+  "preservedUntracked": 697,
+  "goalComplete": false,
+  "limitations": [
+    "V3 is opt-in and does not rewrite captured source visibility.",
+    "Original default-reader vLLM capture still fails automatic focus.",
+    "Original full supervisor count-check exit1 is preserved; per-file audit validates all zero-exit shards.",
+    "No verified model facts, complete rendering, general speedup or access/CAPTCHA solution.",
+    "SafeJS, real credentials/authenticators and unfinished research remain open."
+  ]
+}

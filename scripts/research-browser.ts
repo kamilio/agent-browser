@@ -275,7 +275,11 @@ export function parseResearchArguments(args: readonly string[]) {
 		}
 		if (argument === "--content-focus" && contentFocus === undefined) {
 			const value = args[++index];
-			if (value !== "main-content-v1" && value !== "main-content-v2")
+			if (
+				value !== "main-content-v1" &&
+				value !== "main-content-v2" &&
+				value !== "main-content-v3"
+			)
 				throw new AgentBrowserError(
 					"invalid-input",
 					"Invalid research content focus policy",
@@ -700,7 +704,8 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 			options.outputLimitPolicy !== "text-prefix-v1") ||
 		(options.contentFocus !== undefined &&
 			options.contentFocus !== "main-content-v1" &&
-			options.contentFocus !== "main-content-v2") ||
+			options.contentFocus !== "main-content-v2" &&
+			options.contentFocus !== "main-content-v3") ||
 		(options.format !== undefined &&
 			options.format !== "markdown" &&
 			options.format !== "json") ||
@@ -1503,7 +1508,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --json-pointer POINTER | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; empty JSON pointer selects root; JSON pointer excludes content-focus, text-prefix and long-v1; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2|main-content-v3] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --json-pointer POINTER | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; empty JSON pointer selects root; JSON pointer excludes content-focus, text-prefix and long-v1; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});

@@ -3,7 +3,10 @@ import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { snapshotElementRole } from "./snapshot.js";
 
-export type ContentFocusPolicy = "main-content-v1" | "main-content-v2";
+export type ContentFocusPolicy =
+	| "main-content-v1"
+	| "main-content-v2"
+	| "main-content-v3";
 
 export interface ContentFocusMetadata {
 	policy: ContentFocusPolicy;
@@ -11,6 +14,7 @@ export interface ContentFocusMetadata {
 	reason:
 		| "unique-main"
 		| "unique-article"
+		| "unique-article-in-main"
 		| "ambiguous-main"
 		| "ambiguous-article"
 		| "article-with-outside-content"
@@ -19,6 +23,8 @@ export interface ContentFocusMetadata {
 	articleCandidates: number;
 	scannedNodes: number;
 	outsideArticleContent?: boolean;
+	mainArticleCandidates?: number;
+	outsideMainArticleContent?: boolean;
 }
 
 const ancillaryTags = new Set(["header", "footer", "nav", "aside"]);
@@ -29,6 +35,12 @@ const ancillaryRoles = new Set([
 	"complementary",
 ]);
 
+interface MainArticleFocus {
+	articleRoot: number;
+	articleCandidates: number;
+	outsideArticleContent: boolean;
+}
+
 interface FocusFrame {
 	node: Readonly<DocumentNode>;
 	childIndex: number;
@@ -37,6 +49,9 @@ interface FocusFrame {
 	ancillaryAncestor: boolean;
 	role?: "main" | "article";
 	nonempty: boolean;
+	mainFocus?: MainArticleFocus;
+	mainArticleAncestor?: boolean;
+	mainAncillaryAncestor?: boolean;
 }
 
 export function selectContentFocus(
@@ -65,8 +80,10 @@ export function selectContentFocus(
 	let articleCandidates = 0;
 	let mainRoot = tree.root;
 	let articleRoot = tree.root;
-	const conservative = options.policy === "main-content-v2";
+	const refineMain = options.policy === "main-content-v3";
+	const conservative = options.policy === "main-content-v2" || refineMain;
 	let outsideArticleContent = false;
+	let selectedMainFocus: MainArticleFocus | undefined;
 	while (pending.length) {
 		const current = pending[pending.length - 1];
 		const node = current.node;
@@ -89,12 +106,11 @@ export function selectContentFocus(
 				html && (visible || conservative)
 					? snapshotElementRole(tree, node.id)
 					: undefined;
-			if (
+			const ancillary =
 				conservative &&
 				html &&
-				(ancillaryTags.has(node.tagName) || ancillaryRoles.has(role ?? ""))
-			)
-				current.ancillaryAncestor = true;
+				(ancillaryTags.has(node.tagName) || ancillaryRoles.has(role ?? ""));
+			if (ancillary) current.ancillaryAncestor = true;
 			if (visible) {
 				if (node.kind === "text") current.nonempty = /\S/u.test(node.data);
 				else if (html) {
@@ -111,26 +127,62 @@ export function selectContentFocus(
 				!current.ancillaryAncestor
 			)
 				outsideArticleContent = true;
+			if (refineMain) {
+				if (current.role === "main" && !current.mainAncestor) {
+					current.mainFocus = {
+						articleRoot: tree.root,
+						articleCandidates: 0,
+						outsideArticleContent: false,
+					};
+					current.mainArticleAncestor = false;
+					current.mainAncillaryAncestor = false;
+				} else if (ancillary) current.mainAncillaryAncestor = true;
+				if (
+					current.mainFocus &&
+					current.nonempty &&
+					!current.mainArticleAncestor &&
+					current.role !== "article" &&
+					!current.mainAncillaryAncestor
+				)
+					current.mainFocus.outsideArticleContent = true;
+			}
 			current.childIndex = options.descend(node) ? 0 : node.children.length;
 		}
 		if (current.childIndex < node.children.length) {
-			pending.push({
+			const child: FocusFrame = {
 				node: tree.get(node.children[current.childIndex++]),
 				childIndex: -1,
 				mainAncestor: current.mainAncestor || current.role === "main",
 				articleAncestor: current.articleAncestor || current.role === "article",
 				ancillaryAncestor: current.ancillaryAncestor,
 				nonempty: false,
-			});
+			};
+			if (refineMain) {
+				child.mainFocus = current.mainFocus;
+				child.mainArticleAncestor =
+					current.mainArticleAncestor || current.role === "article";
+				child.mainAncillaryAncestor = current.mainAncillaryAncestor;
+			}
+			pending.push(child);
 			continue;
 		}
 		if (current.nonempty) {
 			if (current.role === "main" && !current.mainAncestor) {
 				mainCandidates++;
 				mainRoot = node.id;
+				selectedMainFocus = current.mainFocus;
 			} else if (current.role === "article" && !current.articleAncestor) {
 				articleCandidates++;
 				articleRoot = node.id;
+			}
+			if (
+				current.mainFocus &&
+				current.role === "article" &&
+				!current.mainArticleAncestor &&
+				!current.mainAncillaryAncestor
+			) {
+				current.mainFocus.articleCandidates++;
+				current.mainFocus.articleRoot = node.id;
 			}
 		}
 		pending.pop();
@@ -142,8 +194,14 @@ export function selectContentFocus(
 		mainCandidates === 0 &&
 		articleCandidates === 1 &&
 		outsideArticleContent;
-	const selected =
-		mainCandidates === 1
+	const mainFocus = selectedMainFocus;
+	const articleInMain =
+		mainCandidates === 1 &&
+		mainFocus?.articleCandidates === 1 &&
+		!mainFocus.outsideArticleContent;
+	const selected = articleInMain
+		? "article"
+		: mainCandidates === 1
 			? "main"
 			: mainCandidates === 0 &&
 					articleCandidates === 1 &&
@@ -155,7 +213,9 @@ export function selectContentFocus(
 			selected === "main"
 				? mainRoot
 				: selected === "article"
-					? articleRoot
+					? articleInMain
+						? mainFocus.articleRoot
+						: articleRoot
 					: tree.root,
 		metadata: Object.freeze({
 			policy: options.policy,
@@ -163,19 +223,27 @@ export function selectContentFocus(
 			reason:
 				mainCandidates > 1
 					? "ambiguous-main"
-					: selected === "main"
-						? "unique-main"
-						: articleCandidates > 1
-							? "ambiguous-article"
-							: selected === "article"
-								? "unique-article"
-								: articleWithOutsideContent
-									? "article-with-outside-content"
-									: "no-nonempty-landmark",
+					: articleInMain
+						? "unique-article-in-main"
+						: selected === "main"
+							? "unique-main"
+							: articleCandidates > 1
+								? "ambiguous-article"
+								: selected === "article"
+									? "unique-article"
+									: articleWithOutsideContent
+										? "article-with-outside-content"
+										: "no-nonempty-landmark",
 			mainCandidates,
 			articleCandidates,
 			scannedNodes,
 			...(conservative ? { outsideArticleContent } : {}),
+			...(mainCandidates === 1 && selectedMainFocus
+				? {
+						mainArticleCandidates: selectedMainFocus.articleCandidates,
+						outsideMainArticleContent: selectedMainFocus.outsideArticleContent,
+					}
+				: {}),
 		}),
 	};
 }

@@ -71,12 +71,14 @@ Do not treat fallback text as a complete rendered page or verified facts.
 
 ## Admission remains strict
 
-Neither option admits incomplete bodies, failed receipts, denied statuses,
-tampered pins, access barriers or unsupported MIME. Named `--recover-output-limit`
-and `--recover-empty-outline` workflows retain their explicit selector/section
-contracts and reject these new options. Existing manual recovery remains
-available; this feature does not silently convert those receipts to ordinary
-successful captures. Literal text/link/heading modes reject the output policy.
+These ordinary replay options do not admit incomplete bodies, failed receipts,
+denied statuses, tampered pins, access barriers or unsupported MIME. Explicit
+`--recover-output-limit --content-focus` now supports v1/v2/v3 on complete
+default-profile failed-output captures; see `NESTED-ARTICLE-FOCUS.md`. It retains
+the same strict admission, original failure and captured reader policies, and
+rejects text-prefix/MIME overrides. Empty-outline recovery still requires its
+explicit selector. No failed receipt silently becomes an ordinary successful
+capture. Literal text/link/heading modes reject the output policy.
 
 `RESPONSE-PREFIX.md` describes a different, diagnostic-only incomplete transport
 prefix. It remains inadmissible here. No SDK, page scripts, alternate browser,

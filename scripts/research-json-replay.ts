@@ -150,6 +150,13 @@ export interface ResearchOutputLimitSelectorSelection {
 	compactTables?: boolean;
 }
 
+export interface ResearchOutputLimitContentFocusSelection {
+	contentFocus: ContentFocusPolicy;
+	tableMetadata?: boolean;
+	tableRows?: boolean;
+	compactTables?: boolean;
+}
+
 export type ResearchEmptyOutlineSelectorSelection =
 	ResearchOutputLimitSelectorSelection;
 
@@ -157,6 +164,11 @@ export type ResearchOutputLimitSelectorRecovery = Omit<
 	ResearchOutputLimitSectionRecovery,
 	"kind"
 > & { readonly kind: "captured-output-limit-selector" };
+
+export type ResearchOutputLimitContentFocusRecovery = Omit<
+	ResearchOutputLimitSectionRecovery,
+	"kind"
+> & { readonly kind: "captured-output-limit-content-focus" };
 
 export type ResearchOutputLimitOutlineRecovery = Omit<
 	ResearchOutputLimitSectionRecovery,
@@ -214,6 +226,7 @@ export interface ResearchJsonReplayReport<
 		| ResearchEmptyOutlineRecovery
 		| ResearchOutputLimitSectionRecovery
 		| ResearchOutputLimitSelectorRecovery
+		| ResearchOutputLimitContentFocusRecovery
 		| ResearchOutputLimitOutlineRecovery;
 }
 
@@ -253,6 +266,14 @@ export interface ResearchEmptyOutlineSelectorExtraction<
 > extends ResearchJsonReplayExtraction<Format> {
 	report: ResearchJsonReplayReport<Format> & {
 		recovery: ResearchEmptyOutlineRecovery;
+	};
+}
+
+export interface ResearchOutputLimitContentFocusExtraction<
+	Format extends ResearchReplayFormat = "json",
+> extends ResearchJsonReplayExtraction<Format> {
+	report: ResearchJsonReplayReport<Format> & {
+		recovery: ResearchOutputLimitContentFocusRecovery;
 	};
 }
 
@@ -428,7 +449,11 @@ function selectionSnapshot(value: unknown) {
 	)
 		invalidSelection();
 	if (focus) {
-		if (target !== "main-content-v1" && target !== "main-content-v2")
+		if (
+			target !== "main-content-v1" &&
+			target !== "main-content-v2" &&
+			target !== "main-content-v3"
+		)
 			invalidSelection();
 	} else if (links) {
 		if (
@@ -815,6 +840,58 @@ export function recoverResearchOutputLimitSelector(
 			recovery: {
 				...admission.recovery,
 				kind: "captured-output-limit-selector" as const,
+			},
+		},
+		selectedFormat,
+	);
+}
+
+export function recoverResearchOutputLimitContentFocus<
+	Format extends ResearchReplayFormat,
+>(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchOutputLimitContentFocusSelection,
+	signal: AbortSignal | undefined,
+	format: Format,
+): ResearchOutputLimitContentFocusExtraction<Format>;
+export function recoverResearchOutputLimitContentFocus(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchOutputLimitContentFocusSelection,
+	signal?: AbortSignal,
+): ResearchOutputLimitContentFocusExtraction;
+export function recoverResearchOutputLimitContentFocus(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchOutputLimitContentFocusSelection,
+	signal?: AbortSignal,
+	format: ResearchReplayFormat = "json",
+): ResearchOutputLimitContentFocusExtraction<ResearchReplayFormat> {
+	const checkpoint = replayCheckpoint(signal);
+	checkpoint();
+	const selected = selectionSnapshot(selection);
+	if (
+		selected.method !== "content-focus" ||
+		selected.outputLimitPolicy !== undefined ||
+		selected.readerMimePolicy !== undefined
+	)
+		invalidSelection();
+	const selectedFormat = validateReplayFormat(format, selected);
+	checkpoint();
+	const admission = validateResearchOutputLimitSectionAdmission(
+		rawReceipt,
+		trusted,
+	);
+	return extractValidatedReplayJson(
+		admission,
+		selected,
+		checkpoint,
+		signal,
+		{
+			recovery: {
+				...admission.recovery,
+				kind: "captured-output-limit-content-focus" as const,
 			},
 		},
 		selectedFormat,

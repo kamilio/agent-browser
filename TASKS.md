@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Focus nested articles conservatively and validate fresh vLLM retrieval
+
+- Add opt-in main-content-v3 and explicit complete failed-output content-focus
+  recovery. Preserve v1/v2/default behavior, admission, bounded single traversal,
+  outside substantive text, source policy and no-retry provenance. No dependencies.
+- Final focused2469/0 plus integration3/0; compiled runtime inventories match.
+  Build/types/format/lint pass.155 new cases are in the canonical manifest.
+  Full four-shard execution:46488/0 across945 available files, zero pending;
+  967 entries retain22 missing files. The wrapper's wrong48805 expectation exits1;
+  an independent per-file/root/count audit validates46488 and preserves all records.
+-135 saved regression pairs preserve legacy output; eight actual offline CLI
+  cases verify source-hidden/v3 success and conservative failures. The original
+  default-reader vLLM capture remains too broad because hidden control text is
+  admitted. Never rewrite that policy or drop arbitrary controls to force success.
+- One fresh anonymous native GET with explicit source-hidden-v1/v3 returns the
+  same636652-byte body and exact17451-byte audited article at22:49:52.680Z on
+  September16.28 headings/3 literal code blocks match; all resources close.
+  Full captured CLI output872782 bytes is not a transfer-saving or speed claim.
+- See NESTED-ARTICLE-FOCUS.md and reports/nested-article-focus-2026-09-16.md/JSON.
+  Keep historical100-root verdicts and SafeJS/dynamic/rendering/access/CAPTCHA,
+  real credential/device, missing-test and research gates open. Goal remains active.
+
 ### Validate model documentation and recover a large guide without retrying
 
 - Five distinct anonymous native GETs across Hugging Face, Ollama and vLLM.

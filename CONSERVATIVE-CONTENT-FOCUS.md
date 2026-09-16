@@ -81,10 +81,12 @@ node dist/scripts/research-replay-cli.js \
 ```
 
 Use the capture's actual profile. Focus remains mutually exclusive with manual
-selector/section and other discovery modes. Named recovery contracts still do
-not accept focus. Neither version admits incomplete response prefixes, failed
-captures, unsupported MIME, tampered pins or access barriers. Source-level
-challenge checks still precede focused extraction.
+selector/section and other discovery modes. Ordinary focus does not admit failed
+captures, incomplete response prefixes, unsupported MIME, tampered pins or access
+barriers. Explicit default-profile output-limit focus recovery is now supported
+under the unchanged failed-capture admission; see `NESTED-ARTICLE-FOCUS.md`.
+It retains original failure/reader policy and rejects text-prefix/MIME overrides.
+Source-level challenge checks still precede focused extraction.
 
 V2 can exceed the same old output cap by selecting more content. Strict failure
 remains the default; the separate explicit Markdown text-prefix policy can

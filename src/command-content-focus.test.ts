@@ -353,7 +353,7 @@ it("rejects invalid policies and positional roots without navigating or changing
 		"false",
 		"true",
 		"main",
-		"main-content-v3",
+		"main-content-v4",
 		"MAIN-CONTENT-V2",
 		" main-content-v2",
 		"main-content-v2\n",

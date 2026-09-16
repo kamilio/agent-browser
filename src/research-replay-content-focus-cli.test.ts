@@ -169,7 +169,7 @@ describe("ordinary content-focus replay arguments", () => {
 	it("rejects unknown, empty, case-changed and whitespace policies", () => {
 		for (const value of [
 			"",
-			"main-content-v3",
+			"main-content-v4",
 			"MAIN-CONTENT-V2",
 			" main-content-v2",
 			"main-content-v2\n",
@@ -213,12 +213,26 @@ describe("ordinary content-focus replay arguments", () => {
 	});
 
 	it.each(["--recover-output-limit", "--recover-empty-outline"])(
-		"rejects %s without broadening named recovery contracts",
+		"admits %s only for its supported focus recovery profile",
 		(recovery) => {
 			for (const profile of profiles) {
 				for (const contentFocus of policies) {
-					invalid([...argumentsFor(profile, contentFocus), recovery]);
-					invalid([recovery, ...argumentsFor(profile, contentFocus)]);
+					for (const args of [
+						[...argumentsFor(profile, contentFocus), recovery],
+						[recovery, ...argumentsFor(profile, contentFocus)],
+					]) {
+						if (profile === "default" && recovery === "--recover-output-limit")
+							expect(parseResearchReplayArguments(args)).toEqual({
+								trusted: {
+									expectedProfile: profile,
+									expectedReceiptSha256: "a".repeat(64),
+									expectedBody: { bytes: 64, sha256: "b".repeat(64) },
+								},
+								selection: { contentFocus },
+								recoverOutputLimit: true,
+							});
+						else invalid(args);
+					}
 				}
 			}
 		},
@@ -310,7 +324,7 @@ describe("ordinary content-focus replay arguments", () => {
 		const outputListeners = listeners(target.output);
 		await expect(
 			runResearchReplayCli(
-				[...argumentsFor(), "--recover-output-limit"],
+				[...argumentsFor(), "--recover-empty-outline"],
 				target.input,
 				target.output,
 			),

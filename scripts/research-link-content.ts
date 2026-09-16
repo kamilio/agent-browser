@@ -5,6 +5,7 @@ import type { BrowserChallengeDiagnostic } from "../src/browser-challenges.js";
 import { documentBaseTarget, documentBaseUrl } from "../src/document-url.js";
 import type { DocumentTree } from "../src/document.js";
 import { AgentBrowserError, type ErrorCode } from "../src/errors.js";
+import type { ContentFocusPolicy } from "../src/extraction-content-focus.js";
 import { type DocumentExtraction, extractDocument } from "../src/extraction.js";
 import { NodeNetworkTransport } from "../src/node-transport.js";
 import { researchLongDocumentAdmission } from "../src/research-admission.js";
@@ -25,7 +26,7 @@ export const researchLinkContentLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-link-content [--compact-tables] --target HTTPS_URL --selector CSS SOURCE_HTTPS_URL\n       research-link-content [--compact-tables] --target-link HTTPS_URL SOURCE_HTTPS_URL\nExplicit native reader on both pages; exact same-origin link, real click, no scripts, credentials, redirects or retries. Target-link mode chooses the first eligible matching anchor, not a fallback after a failed selector or click. Compact tables shorten enclosed table markers without changing content or limits.\n";
+	"Usage: research-link-content [--compact-tables] [--content-focus main-content-v1|main-content-v2|main-content-v3] --target HTTPS_URL --selector CSS SOURCE_HTTPS_URL\n       research-link-content [--compact-tables] [--content-focus main-content-v1|main-content-v2|main-content-v3] --target-link HTTPS_URL SOURCE_HTTPS_URL\nExplicit native reader on both pages; exact same-origin link, real click, no scripts, credentials, redirects or retries. Target-link mode chooses the first eligible matching anchor, not a fallback after a failed selector or click. Content focus defaults to main-content-v2. Compact tables shorten enclosed table markers without changing content or limits.\n";
 const forbiddenSegments = new Set(
 	"account accounts action cart checkout delete edit login logout purchase register signin signout signup submit subscribe unsubscribe wp-admin wp-login.php".split(
 		" ",
@@ -73,6 +74,7 @@ export type ResearchLinkContentArguments = {
 	url: string;
 	targetUrl: string;
 	compactTables?: true;
+	contentFocus?: ContentFocusPolicy;
 } & (
 	| { selector: string; targetLink?: never }
 	| { selector?: never; targetLink: true }
@@ -81,7 +83,7 @@ export type ResearchLinkContentArguments = {
 export function parseResearchLinkContentArguments(
 	args: readonly string[],
 ): ResearchLinkContentArguments {
-	if (!Array.isArray(args) || args.length < 3 || args.length > 6)
+	if (!Array.isArray(args) || args.length < 3 || args.length > 8)
 		invalidArguments();
 	for (const value of args)
 		if (typeof value !== "string" || value.length > 4096) invalidArguments();
@@ -90,6 +92,7 @@ export function parseResearchLinkContentArguments(
 	let selector: string | undefined;
 	let targetLink = false;
 	let compactTables = false;
+	let contentFocus: ContentFocusPolicy | undefined;
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
 		if (argument === "--target" && targetUrl === undefined)
@@ -99,7 +102,16 @@ export function parseResearchLinkContentArguments(
 			targetLink = true;
 		} else if (argument === "--selector" && selector === undefined)
 			selector = args[++index];
-		else if (argument === "--compact-tables" && !compactTables)
+		else if (argument === "--content-focus" && contentFocus === undefined) {
+			const value = args[++index];
+			if (
+				value !== "main-content-v1" &&
+				value !== "main-content-v2" &&
+				value !== "main-content-v3"
+			)
+				invalidArguments();
+			contentFocus = value;
+		} else if (argument === "--compact-tables" && !compactTables)
 			compactTables = true;
 		else if (!argument.startsWith("--") && url === undefined) url = argument;
 		else invalidArguments();
@@ -108,8 +120,11 @@ export function parseResearchLinkContentArguments(
 		url === undefined ||
 		targetUrl === undefined ||
 		(targetLink
-			? args.length !== 3 + Number(compactTables) || selector !== undefined
-			: args.length !== 5 + Number(compactTables))
+			? args.length !==
+					3 + Number(compactTables) + 2 * Number(contentFocus !== undefined) ||
+				selector !== undefined
+			: args.length !==
+				5 + Number(compactTables) + 2 * Number(contentFocus !== undefined))
 	)
 		invalidArguments();
 	try {
@@ -117,7 +132,10 @@ export function parseResearchLinkContentArguments(
 		const target = publicUrl(targetUrl);
 		if (source.origin !== target.origin || source.href === target.href)
 			invalidArguments();
-		const formatting = compactTables ? { compactTables: true as const } : {};
+		const formatting = {
+			...(compactTables ? { compactTables: true as const } : {}),
+			...(contentFocus === undefined ? {} : { contentFocus }),
+		};
 		if (targetLink)
 			return {
 				url: source.href,
@@ -463,7 +481,7 @@ export async function researchLinkContent(
 		result.stage = "extraction";
 		result.extraction = extractDocument(session.page(tab.id).document, {
 			format: "markdown",
-			contentFocus: "main-content-v2",
+			contentFocus: options.contentFocus ?? "main-content-v2",
 			outputLimitPolicy: "text-prefix-v1",
 			tableRows: true,
 			...(options.compactTables ? { compactTables: true } : {}),

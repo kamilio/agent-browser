@@ -734,7 +734,7 @@ it.each(["root", "section", "lines"] as const)(
 	},
 );
 
-it.each(["", "main-content-v3", "main", null, false, 1, {}])(
+it.each(["", "main-content-v4", "main", null, false, 1, {}])(
 	"rejects unsupported focus policy %j",
 	(contentFocus) => {
 		const tree = html("<main>Content</main>");

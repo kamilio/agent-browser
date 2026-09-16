@@ -962,5 +962,8 @@
   "src/document-json-selection.test.ts",
   "src/research-json-pointer-cli.test.ts",
   "src/research-json-pointer-replay.test.ts",
-  "src/node-passkey-checkpoint-reread.test.ts"
+  "src/node-passkey-checkpoint-reread.test.ts",
+  "src/extraction-content-focus-nested.test.ts",
+  "src/research-focus-recovery.test.ts",
+  "src/nested-focus-integration.test.ts"
 ]

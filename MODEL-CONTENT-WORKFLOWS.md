@@ -49,8 +49,11 @@ selects structured content instead. Normal successful captures use the same
 selector replay without `--recover-output-limit`.
 
 Do not treat every `<main>` as a small article: vLLM's main wrapper contains
-navigation, and the recorded `main` replay still fails. Automatic nested-article
-focus remains a follow-up, not an implemented policy in this workflow.
+navigation, and the recorded `main` replay still fails. Opt-in `main-content-v3`
+now supports conservative nested-article focus; see `NESTED-ARTICLE-FOCUS.md`.
+It preserves admitted outside text. The original default-reader vLLM capture
+still needs explicit selection; separate source-hidden interpretation can permit
+automatic article focus without rewriting that historical receipt.
 
 ## Follow relocation evidence explicitly
 

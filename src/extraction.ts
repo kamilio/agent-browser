@@ -1247,14 +1247,15 @@ export function extractDocument(
 	if (
 		options.contentFocus !== undefined &&
 		((options.contentFocus !== "main-content-v1" &&
-			options.contentFocus !== "main-content-v2") ||
+			options.contentFocus !== "main-content-v2" &&
+			options.contentFocus !== "main-content-v3") ||
 			options.root !== undefined ||
 			options.section !== undefined ||
 			options.lines !== undefined)
 	)
 		throw new AgentBrowserError(
 			"invalid-input",
-			"Content focus requires main-content-v1 or main-content-v2 without root, section or lines",
+			"Content focus requires main-content-v1, main-content-v2 or main-content-v3 without root, section or lines",
 		);
 	if (options.lines !== undefined && options.root !== undefined)
 		throw new AgentBrowserError(
