@@ -1,0 +1,384 @@
+{
+  "schema": "replay-mime-override-validation-v1",
+  "passed": true,
+  "at": "2026-09-16T01:09:48.679Z",
+  "baseCommit": "aa8f3a21a506b6e64d7de1fd8711802f7db68212",
+  "evidenceDirectory": "node_modules/.cache/native-validation/content-quality-followups-september16",
+  "overlay": {
+    "scripts/research-json-replay.ts": "95145385357ea9249fd7cb9d7d72e43b02708edd272bf939328045d36644c559",
+    "scripts/research-replay-cli.ts": "e3bf6fda278bb1f0cea2eb40179afaffef2e72cb1d81cb78cdc3baa918922dd1",
+    "src/research-replay-mime-override.test.ts": "6cac13fcd8c5ac99a511f1b6e1901bd66713e7f454ae9fa8ae61fedba6eb91bf",
+    "src/research-replay-mime-override-cli.test.ts": "523cfff72df8129e05506cfbb82296d99d9c04f80684630548e5724f5db1b275"
+  },
+  "evidence": {
+    "SCOPE.md": "99c757df7062c517d78762f6beb2197275198c7f35a518c28a9a7d83d3707083",
+    "REPLAY-MIME-DESIGN.md": "fa65c12536c17daf0bcf9af1d469da784b9c110faea4b137183dfa7cc5b6f383",
+    "PREFLIGHT.json": "dd1d13779174e6a4c5ce9cf25356fb6779c57c83d4855c604a543b59252de915",
+    "PATCH-REVIEW.md": "0c3171deaef813508ead0c01334cacdba87ee19664c123ccf7094731c6a2fce0",
+    "HOME-DEPOT-ANALYSIS.md": "85d08d9bbee6adc4cc52ba57422dabfc3cdf07c3a0e0386ef8695b643767eaed",
+    "PRODUCT-INVENTORY.json": "ef23b68b17d14744c09253290829b066723f43f29ce35810acfbcafac3ec0962",
+    "REPLAY-CORPUS.json": "d90f035e166b8f14a7576be05b60539249e84fa2c595b6a7564f4b892ec40d16",
+    "AUDIT.json": "4d1740e119f2f7c0830add74749d745823954686b31aee2316a3e8d210970f2e",
+    "inspection/RESULT.json": "38f01569cc94c5501efa4c36261a985d90dabe01325870c1048641add46d679f",
+    "inspection/EXECUTION.json": "fae87b6181035645bb6b4c9b99051562d7f2a31a893447e7f00b9524c128a4ec",
+    "inspection/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "CHECK-baseline.json": "c9025ecfc92448c758d29f36adcebac0a736f0994edac401978bc3fd5293fd5a",
+    "native-baseline.json": "cdc512ea371fdaad0b3c546fc19f626860e67fab100bd0731b0a68816338ca8e",
+    "CHECK-release04.json": "c9025ecfc92448c758d29f36adcebac0a736f0994edac401978bc3fd5293fd5a",
+    "native-release04.json": "ada03125122f3b763033a4711f81dab7bb0c1e110ed5bbb2f5085fc8b0fd37c0",
+    "CHECK-red04.json": "d476f028f57f7bda09c5e8084012e698f234c51881dcbc98f6983adff717a024",
+    "native-red04.json": "b23abd961c8585044dfdb2dfb12356076f3941d9e269d97875d470c3a02981f6",
+    "SOURCE-release04.json": "2f4871081c59c437efaf5bb3a87e8477ca24f4aea2413510171402c942a36fcf",
+    "COMPILED-release04.json": "4a03227538dbdaeba0f9281fe9f1ee9d52f321e0fcaf6b49361dc6fb5f7cf026",
+    "comparison-release04/RESULT.json": "a5c223758dd9542917bc93355c40b8526758f292557f48acc5adc98aba7637ca",
+    "comparison-release04/EXECUTION.json": "9e980ba8e59a7c8a27a9e776a108242c2beb64e9b0b58a7588965d27d02e21d1",
+    "comparison-release04/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "audit-results-final.mjs": "fd4c6e62c6aadafda5ae2e8fa4ec9e594dc7b92e5934e2484500ef87025c2b27",
+    "AUDIT-ATTEMPT01.md": "27a7e8bfea82bac6e8f6f9681f007ae6ea66c6ff483860675ae9ded71bfa691b",
+    "replay-cli-release04/kateminimalist-interpreted/INVOCATION.json": "f0d4d7daa07c2f4639937bc7323bcd9c16c10e9b87066043d4544dac35d6cf3a",
+    "replay-cli-release04/kateminimalist-interpreted/EXECUTION.json": "3d86f7fa3ab38db5b47e9912fb817deeeaa7df8bceaa03560908429bf8465972",
+    "replay-cli-release04/kateminimalist-interpreted/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-cli-release04/kateminimalist-interpreted/stdout.jsonl": "1394ed1e913340fbbb2a750570c8741e52da3b240ab5f3de6e6c1fc811e4bcba",
+    "replay-cli-release04/kateminimalist-interpreted/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "replay-cli-release04/kateminimalist-default-refusal/INVOCATION.json": "71620566f63a87ff71ffb1a16f5813cbc1327af937cdb193fb2f4fb53ae8021f",
+    "replay-cli-release04/kateminimalist-default-refusal/EXECUTION.json": "3c39fb3be0a4401849d2faf6fe854d4d0974cfc923c519e9c37de6feb7af2223",
+    "replay-cli-release04/kateminimalist-default-refusal/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-cli-release04/kateminimalist-default-refusal/stdout.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "replay-cli-release04/kateminimalist-default-refusal/stderr.log": "29b03835fb5fbdd4a8bd9f7433e5a0c0a566cfd48977bf1743cbd05d578af685",
+    "replay-cli-release04/home-focus/INVOCATION.json": "a1d43eb2449a5cfe6e2226c505e723a93a47683d026cdbc1ca4cd4fff6c5749e",
+    "replay-cli-release04/home-focus/EXECUTION.json": "9b18ab6ffd0888e7d081e96c08cb0f7a05642fbbbd8e3f3149e5334f79892c2f",
+    "replay-cli-release04/home-focus/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-cli-release04/home-focus/stdout.jsonl": "837667f3aed86b66732b1bba627b9b9b6660c69b89a568b6038bca50fd2144e1",
+    "replay-cli-release04/home-focus/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "replay-cli-release04/home-container/INVOCATION.json": "f83b10aec7d6cc59fb3f2a0ab51d508c18d01db6fac995591453b9dc2f8c8cc5",
+    "replay-cli-release04/home-container/EXECUTION.json": "0a70d9248d1b888b97eb3b339af4f752490a1c09dd36cfdfda19bcd02494f9f1",
+    "replay-cli-release04/home-container/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-cli-release04/home-container/stdout.jsonl": "3bf6a3ae82057d5e08fac50b93139e31694c6fb83db271678c64af5d53987db3",
+    "replay-cli-release04/home-container/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "replay-cli-release04/home-shelf/INVOCATION.json": "9cd1478fc322d99c377b9cc98ca86705f7a3d69df6cd50cf15405d345993d911",
+    "replay-cli-release04/home-shelf/EXECUTION.json": "083d6615b4b91087d463be44aa627bb27ba287a696ca8d5dbf3dc5404006cbc6",
+    "replay-cli-release04/home-shelf/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-cli-release04/home-shelf/stdout.jsonl": "eba41edb986a2fe8ea9323bc2eda409feffb8c56161874418eed729f157fd4fe",
+    "replay-cli-release04/home-shelf/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "replay-cli-release04/genuine-markdown-refusal/INVOCATION.json": "eeadb8c1b45f64af2f237576de0ced5e887450e71d21067cd9a246e8783e10de",
+    "replay-cli-release04/genuine-markdown-refusal/EXECUTION.json": "23be03566fa2332805e265e066c44b4ae3f4b736cae9a72533dbaf4e0fa8da4e",
+    "replay-cli-release04/genuine-markdown-refusal/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-cli-release04/genuine-markdown-refusal/stdout.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "replay-cli-release04/genuine-markdown-refusal/stderr.log": "29b03835fb5fbdd4a8bd9f7433e5a0c0a566cfd48977bf1743cbd05d578af685",
+    "replay-cli-release04/barrier-refusal/INVOCATION.json": "63340473f175996daacc1325efbb6adaf86f62ea4437a3210f339606ee026fc5",
+    "replay-cli-release04/barrier-refusal/EXECUTION.json": "d5f1fd4b09d9e31ed29b83d4b9acba6b390e25be8f8a4a2ed2bc213ab953e0e0",
+    "replay-cli-release04/barrier-refusal/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-cli-release04/barrier-refusal/stdout.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "replay-cli-release04/barrier-refusal/stderr.log": "29b03835fb5fbdd4a8bd9f7433e5a0c0a566cfd48977bf1743cbd05d578af685"
+  },
+  "validation": {
+    "label": "release04",
+    "redLabel": "red04",
+    "baselinePassed": 1077,
+    "candidatePassed": 1217,
+    "failed": 0,
+    "failedSuites": 0,
+    "newTests": 140,
+    "selectedFiles": 15,
+    "redPassed": 40,
+    "redFailed": 100,
+    "redChecks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0,
+      "native": 1
+    },
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0,
+      "native": 0
+    },
+    "fullManifestRun": false
+  },
+  "sourceCaptureReport": "reports/agent-citation-revalidation-v2.json",
+  "sourceCaptures": [
+    {
+      "priority": 89,
+      "source": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/089-kateminimalist.com/stdout.jsonl",
+      "receiptSha256": "5d97954922c4a776a6d0f87c737ebc3b54d94dac0b54e35cdc3407d3ae0e7992",
+      "body": {
+        "bytes": 525157,
+        "sha256": "41ff7400720daff623046a07aadff05995ad1084fb8e5c46d368f74296db4bc1"
+      }
+    },
+    {
+      "priority": 8,
+      "source": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/008-www.homedepot.com/stdout.jsonl",
+      "receiptSha256": "c4cca4067388f48e0774b2d3b542eefb0c0170767ad7830f3443e029f9ac78db",
+      "body": {
+        "bytes": 1247687,
+        "sha256": "b75b1495c0bd39f4881a951bceeef7adb942dd86f2e8ddef865857784a4ad9bc"
+      }
+    },
+    {
+      "priority": 54,
+      "source": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/054-www.bbb.org/stdout.jsonl",
+      "receiptSha256": "84e1967c70ba81e2aef6cb98b18b461b3c164d3d1e1d9c2d4c4b65a7013236ac",
+      "body": {
+        "bytes": 2031,
+        "sha256": "904d22711a1555bd96b042102de7e9053fbe692dcc8d213f4b76947e108b6a8f"
+      }
+    },
+    {
+      "priority": 13,
+      "source": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/013-www.trustpilot.com/stdout.jsonl",
+      "receiptSha256": "6edf2a12ff9f23812c94ae51cd2af1db9c6700e8eb460ca83f36566eff4813a6",
+      "body": {
+        "bytes": 991,
+        "sha256": "92d97ed45d6cc267c657b864c4deee1c2d896cda361adc660bc16538a75700f2"
+      }
+    }
+  ],
+  "websiteRequests": 0,
+  "actualSdkExecutions": 0,
+  "comparisons": [
+    {
+      "name": "kateminimalist-interpreted",
+      "baselineSucceeded": false,
+      "candidateSucceeded": true,
+      "markdownBytes": 11565,
+      "productPaths": [],
+      "kateminimalistProductPaths": [
+        "18-corner-shower-foot-rest-wooden-showers-stool-seat-for-shaving-legs-small-corner-shower-benches-for-inside-shower-waterproof-bath-step-stools-bench-for-bathroom-height-18in-acacia",
+        "abkd-ionic-shaping-sleeveless-shirt-skillfulg-2023-new-version-ionic-shaping-sleeveless-shirt-skillful-shirt-male-shaper-tank-mens-sleeveless-vest-men-shaper-tank-running-vest-for-men-black-m",
+        "amlactin-crepe-firming-cream-12-oz-body-cream-with-15-lactic-acid-exfoliator-and-moisturizer-for-crepey-dry-skin",
+        "disco-eye-stick-for-men-anti-aging-and-repairing-for-puffiness-and-dark-circles-all-natural-and-paraben-free-10-ml",
+        "generic-instant-firm-eye-cream-temporary-eye-tightener-instant-under-eye-tightener-instant-firm-eye-tightener-eye-bag-cream-1pcs",
+        "maelys-cosmetics-b-tight-leave-on-butt-mask-cellulite-cream-visibly-firms-skin-helps-reduce-appearance-of-cellulite"
+      ]
+    },
+    {
+      "name": "kateminimalist-default-refusal",
+      "baselineSucceeded": false,
+      "candidateSucceeded": false
+    },
+    {
+      "name": "home-focus",
+      "baselineSucceeded": true,
+      "candidateSucceeded": true,
+      "markdownBytes": 153,
+      "productPaths": []
+    },
+    {
+      "name": "home-container",
+      "baselineSucceeded": true,
+      "candidateSucceeded": true,
+      "markdownBytes": 28240,
+      "productPaths": [
+        "DANYA-B-Urbanne-Industrial-Aged-3-Tiered-Wood-Print-MDF-and-Metal-Pipe-Floating-Wall-Shelf-GH073/302908293",
+        "Empire-Art-Direct-Autumn-Blossoms-Heavily-Textured-Hand-Painted-Framed-Canvas-Wall-Art-40-in-x-40-in-MAR-02056-4040LW/334225032",
+        "Even-Embers-26-in-Santa-Maria-Charcoal-and-Wood-Grill-in-Black-with-Cover-Included-ARG6028AS/341330932",
+        "Hampton-Bay-Baywood-5-Piece-White-Metal-with-Woven-Rope-Outdoor-Conversation-Set-with-CushionGuard-Cushions-in-Mist-505-2610-100/340440297",
+        "Hampton-Bay-Sadler-29-33-in-D-19-21-in-H-Round-Steel-Wood-Fire-Pit-in-Bronze-with-Spark-Screen-and-Poker-OFW284R-HD/312727258",
+        "Hampton-Bay-Sapphire-Grove-5-Piece-Wicker-Outdoor-Gas-Fire-Pit-Dining-Counter-Height-Set-SH25S1766J/337721734",
+        "Home-Accents-Holiday-12-FT-Giant-Sized-Skelly-with-LifeEyes-LCD-Eyes-24SV24386/328196728",
+        "Home-Accents-Holiday-3-5-FT-Wicked-Woods-Animated-LED-Hell-Hound-26PA05422/339864958",
+        "Home-Accents-Holiday-3-5-FT-Wicked-Woods-Animated-LED-Plague-Rat-26SV25392/339865652",
+        "Home-Accents-Holiday-6-5-FT-Grave-Bones-Animated-LED-Grave-Robber-26PA05417/339864937",
+        "Home-Accents-Holiday-6-FT-Grave-Bones-Animated-LED-John-the-Last-Call-Mixologist-26SV25320/339865644",
+        "Home-Accents-Holiday-7-FT-Wicked-Woods-Animated-LED-App-Controlled-Lethal-Lily-26SV25589/338667904",
+        "Home-Accents-Holiday-7-FT-Wicked-Woods-Animated-LED-Macabre-Witch-26SV25457/339865753",
+        "Home-Accents-Holiday-9-FT-Wicked-Woods-Giant-Sized-LED-Dry-Rot-Dennis-26SV25324/339865663",
+        "Home-Decorators-Collection-Marsden-Patina-Wood-Finish-3-Drawer-Rattan-Cane-Chest-of-Drawers-38-in-W-x-36-in-H-05-633-543/327654656",
+        "JAYDEN-CREATION-Roland-Walnut-3-Drawer-28-in-W-Nightstand-Set-of-2-with-Built-In-Charging-Station-NSE1427-WAL-S2/338060026",
+        "Kingdely-Beige-Wood-Grain-8-Drawer-54-6-in-Width-x-33-1-in-Height-Wooden-Dresser-Chest-of-Drawers-with-Large-Storage-Space-L-THD-260150-01-c/334759480",
+        "Litton-Lane-Seagrass-Handmade-Large-Woven-Storage-Basket-with-Ring-Metal-Handles-49044/301874359",
+        "LuxHomez-22-in-W-x-60-in-H-Irregular-Natural-Wood-Frame-Wall-Mirror-Distinctive-Asymmetric-Design-WMYX-2260GO1/340944976",
+        "Pit-Boss-1600-Navigator-Series-Wood-Pellet-Grill-in-Black-11113/343251104",
+        "StyleWell-Goodwin-75-6-in-Square-Arm-Faux-Leather-Rectangle-Sofa-with-Bolster-Pillows-in-Caramel-Brown-113A007CML/326374022",
+        "Weber-Spirit-E-425C-4-Burner-Propane-Gas-Grill-in-Titanium-with-Sear-Zone-1502272/338146588"
+      ]
+    },
+    {
+      "name": "home-shelf",
+      "baselineSucceeded": true,
+      "candidateSucceeded": true,
+      "markdownBytes": 15246,
+      "productPaths": [
+        "DANYA-B-Urbanne-Industrial-Aged-3-Tiered-Wood-Print-MDF-and-Metal-Pipe-Floating-Wall-Shelf-GH073/302908293",
+        "Empire-Art-Direct-Autumn-Blossoms-Heavily-Textured-Hand-Painted-Framed-Canvas-Wall-Art-40-in-x-40-in-MAR-02056-4040LW/334225032",
+        "Even-Embers-26-in-Santa-Maria-Charcoal-and-Wood-Grill-in-Black-with-Cover-Included-ARG6028AS/341330932",
+        "Hampton-Bay-Baywood-5-Piece-White-Metal-with-Woven-Rope-Outdoor-Conversation-Set-with-CushionGuard-Cushions-in-Mist-505-2610-100/340440297",
+        "Hampton-Bay-Sadler-29-33-in-D-19-21-in-H-Round-Steel-Wood-Fire-Pit-in-Bronze-with-Spark-Screen-and-Poker-OFW284R-HD/312727258",
+        "Hampton-Bay-Sapphire-Grove-5-Piece-Wicker-Outdoor-Gas-Fire-Pit-Dining-Counter-Height-Set-SH25S1766J/337721734",
+        "Home-Accents-Holiday-12-FT-Giant-Sized-Skelly-with-LifeEyes-LCD-Eyes-24SV24386/328196728",
+        "Home-Accents-Holiday-3-5-FT-Wicked-Woods-Animated-LED-Hell-Hound-26PA05422/339864958",
+        "Home-Accents-Holiday-3-5-FT-Wicked-Woods-Animated-LED-Plague-Rat-26SV25392/339865652",
+        "Home-Accents-Holiday-6-5-FT-Grave-Bones-Animated-LED-Grave-Robber-26PA05417/339864937",
+        "Home-Accents-Holiday-6-FT-Grave-Bones-Animated-LED-John-the-Last-Call-Mixologist-26SV25320/339865644",
+        "Home-Accents-Holiday-7-FT-Wicked-Woods-Animated-LED-App-Controlled-Lethal-Lily-26SV25589/338667904",
+        "Home-Accents-Holiday-7-FT-Wicked-Woods-Animated-LED-Macabre-Witch-26SV25457/339865753",
+        "Home-Accents-Holiday-9-FT-Wicked-Woods-Giant-Sized-LED-Dry-Rot-Dennis-26SV25324/339865663",
+        "Home-Decorators-Collection-Marsden-Patina-Wood-Finish-3-Drawer-Rattan-Cane-Chest-of-Drawers-38-in-W-x-36-in-H-05-633-543/327654656",
+        "JAYDEN-CREATION-Roland-Walnut-3-Drawer-28-in-W-Nightstand-Set-of-2-with-Built-In-Charging-Station-NSE1427-WAL-S2/338060026",
+        "Kingdely-Beige-Wood-Grain-8-Drawer-54-6-in-Width-x-33-1-in-Height-Wooden-Dresser-Chest-of-Drawers-with-Large-Storage-Space-L-THD-260150-01-c/334759480",
+        "Litton-Lane-Seagrass-Handmade-Large-Woven-Storage-Basket-with-Ring-Metal-Handles-49044/301874359",
+        "LuxHomez-22-in-W-x-60-in-H-Irregular-Natural-Wood-Frame-Wall-Mirror-Distinctive-Asymmetric-Design-WMYX-2260GO1/340944976",
+        "Pit-Boss-1600-Navigator-Series-Wood-Pellet-Grill-in-Black-11113/343251104",
+        "StyleWell-Goodwin-75-6-in-Square-Arm-Faux-Leather-Rectangle-Sofa-with-Bolster-Pillows-in-Caramel-Brown-113A007CML/326374022",
+        "Weber-Spirit-E-425C-4-Burner-Propane-Gas-Grill-in-Titanium-with-Sear-Zone-1502272/338146588"
+      ]
+    },
+    {
+      "name": "genuine-markdown-refusal",
+      "baselineSucceeded": false,
+      "candidateSucceeded": false
+    },
+    {
+      "name": "barrier-refusal",
+      "baselineSucceeded": false,
+      "candidateSucceeded": false
+    }
+  ],
+  "cliResults": [
+    {
+      "directory": "kateminimalist-interpreted",
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.41430448181927204,
+      "markdownBytes": 11565,
+      "receiptSha256": "5d97954922c4a776a6d0f87c737ebc3b54d94dac0b54e35cdc3407d3ae0e7992"
+    },
+    {
+      "directory": "kateminimalist-default-refusal",
+      "exitCode": 1,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.1638997532427311,
+      "markdownBytes": 0,
+      "receiptSha256": "5d97954922c4a776a6d0f87c737ebc3b54d94dac0b54e35cdc3407d3ae0e7992"
+    },
+    {
+      "directory": "home-focus",
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.4143370632082224,
+      "markdownBytes": 153,
+      "receiptSha256": "c4cca4067388f48e0774b2d3b542eefb0c0170767ad7830f3443e029f9ac78db"
+    },
+    {
+      "directory": "home-container",
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.41423056460916996,
+      "markdownBytes": 28240,
+      "receiptSha256": "c4cca4067388f48e0774b2d3b542eefb0c0170767ad7830f3443e029f9ac78db"
+    },
+    {
+      "directory": "home-shelf",
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.41430519334971905,
+      "markdownBytes": 15246,
+      "receiptSha256": "c4cca4067388f48e0774b2d3b542eefb0c0170767ad7830f3443e029f9ac78db"
+    },
+    {
+      "directory": "genuine-markdown-refusal",
+      "exitCode": 1,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.16385629028081894,
+      "markdownBytes": 0,
+      "receiptSha256": "84e1967c70ba81e2aef6cb98b18b461b3c164d3d1e1d9c2d4c4b65a7013236ac"
+    },
+    {
+      "directory": "barrier-refusal",
+      "exitCode": 1,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.16384832374751568,
+      "markdownBytes": 0,
+      "receiptSha256": "6edf2a12ff9f23812c94ae51cd2af1db9c6700e8eb460ca83f36566eff4813a6"
+    }
+  ],
+  "earlierAttempts": [
+    {
+      "label": "release01",
+      "passed": 1191,
+      "failed": 17,
+      "checks": {
+        "build": 0,
+        "types": 2,
+        "format": 0,
+        "lint": 0,
+        "native": 1
+      }
+    },
+    {
+      "label": "release02",
+      "passed": 1207,
+      "failed": 1,
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0,
+        "native": 1
+      }
+    },
+    {
+      "label": "release03",
+      "passed": 1217,
+      "failed": 0,
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 1,
+        "lint": 0,
+        "native": 0
+      }
+    }
+  ],
+  "observedCloses": {
+    "baseline": {
+      "uniqueClosedTrees": 6,
+      "calls": 6,
+      "eachObservedOnce": true
+    },
+    "release04": {
+      "uniqueClosedTrees": 10,
+      "calls": 10,
+      "eachObservedOnce": true
+    }
+  },
+  "allNineOfflineProofGroupsClosed": true,
+  "guardsEmpty": true,
+  "sourceAndCompiledPinsUnchanged": true,
+  "limitations": [
+    "Saved captures only; no fresh website navigation or current price/inventory/checkout verification.",
+    "Explicit interpretation supports only complete ordinary default-profile Markdown-labeled HTML captures without a captured MIME policy.",
+    "Recognized HTML prefix is not a guarantee of author intent; no generic MIME sniffing or automatic retries.",
+    "Existing failed/partial/HTTP/barrier/tamper gates and limits remain; no challenge solving.",
+    "Home Depot recovery changes replay scope, not main-content-v1 semantics or original100-page outcomes.",
+    "Tree-close observations are not an independent allocation census; CLI internal allocations were not independently instrumented.",
+    "Selected native tests are not full-manifest, SafeJS, credential or passkey acceptance."
+  ],
+  "pushed": false,
+  "overallGoal": "active"
+}

@@ -24,7 +24,7 @@ export const researchReplayCliLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--content-focus main-content-v1 | --selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--output-limit-policy text-prefix-v1] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit | --recover-empty-outline] < receipt.jsonl\nOutput-limit recovery requires the default profile and one explicit --selector, --section or --headings. Empty-outline recovery requires long-v1 and one explicit --selector. Recovery flags are mutually exclusive. Content focus requires an ordinary complete capture and cannot use recovery flags. Text-prefix output requires ordinary selector/section/content-focus Markdown replay; it never admits incomplete bodies. Markdown requires selector/section/content-focus extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section/content-focus extraction and may be combined. Headings require output-limit recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
+	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--content-focus main-content-v1 | --selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--reader-mime-policy markdown-html-document-v1] [--output-limit-policy text-prefix-v1] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit | --recover-empty-outline] < receipt.jsonl\nOutput-limit recovery requires the default profile and one explicit --selector, --section or --headings. Empty-outline recovery requires long-v1 and one explicit --selector. Recovery flags are mutually exclusive. Content focus requires an ordinary complete capture and cannot use recovery flags. Reader MIME policy requires default-profile ordinary selector/section/content-focus replay of a complete text/markdown capture with a recognized HTML document prefix and no captured MIME policy or interpretation; it never rewrites capture metadata or admits genuine Markdown as HTML. Text-prefix output requires ordinary selector/section/content-focus Markdown replay; it never admits incomplete bodies. Markdown requires selector/section/content-focus extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section/content-focus extraction and may be combined. Headings require output-limit recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
 
 function invalidArguments(): never {
 	throw new AgentBrowserError(
@@ -42,7 +42,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 } {
 	if (
 		!Array.isArray(args) ||
-		args.length > 17 ||
+		args.length > 19 ||
 		args.some((value) => typeof value !== "string" || value.length > 4096)
 	)
 		invalidArguments();
@@ -66,6 +66,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		"--lines",
 		"--format",
 		"--output-limit-policy",
+		"--reader-mime-policy",
 	]);
 	for (let index = 0; index < args.length; index++) {
 		const flag = args[index];
@@ -101,6 +102,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	const profile = fields.get("--expected-profile");
 	const format = fields.get("--format");
 	const outputLimitPolicy = fields.get("--output-limit-policy");
+	const readerMimePolicy = fields.get("--reader-mime-policy");
 	if ((tableRows || compactTables) && format !== "markdown") invalidArguments();
 	const receiptSha256 = fields.get("--receipt-sha256");
 	const bodySha256 = fields.get("--body-sha256");
@@ -130,6 +132,15 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		"--lines",
 	].filter((flag) => fields.has(flag));
 	if (modes.length + Number(headings) !== 1) invalidArguments();
+	if (
+		readerMimePolicy !== undefined &&
+		(readerMimePolicy !== "markdown-html-document-v1" ||
+			profile !== "default" ||
+			recoverOutputLimit ||
+			recoverEmptyOutline ||
+			!["--selector", "--section", "--content-focus"].includes(modes[0]))
+	)
+		invalidArguments();
 	if (
 		outputLimitPolicy !== undefined &&
 		(outputLimitPolicy !== "text-prefix-v1" ||
@@ -225,6 +236,9 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		...(tableMetadata ? { tableMetadata: true } : {}),
 		...(tableRows ? { tableRows: true } : {}),
 		...(compactTables ? { compactTables: true } : {}),
+		...(readerMimePolicy
+			? { readerMimePolicy: "markdown-html-document-v1" as const }
+			: {}),
 		...(outputLimitPolicy
 			? { outputLimitPolicy: "text-prefix-v1" as const }
 			: {}),

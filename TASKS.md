@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Replay-time MIME interpretation and storefront scope
+
+- Added explicit ordinary replay readerMimePolicy/--reader-mime-policy using
+  markdown-html-document-v1. Complete originally uninterpreted Markdown-labeled
+  HTML can be recovered without another website request or rewritten metadata.
+  Restrict to default-profile selector/section/focus; keep genuine Markdown,
+  malformed/failed/partial/blocked captures and named recovery modes excluded.
+- Validate captured literal visibility and encoding even without prior visibility
+  or fallback options. Reuse unfiltered challenge checks and bounded recognition;
+  original hashes/headers, extraction limits and no-option behavior stay intact.
+- Exact saved Kateminimalist capture now gives11565 rich Markdown bytes
+  with six product destinations, instead of245189 bytes of source/code. No text
+  fallback needed. Original100-page verdict is unchanged, not retroactively fixed.
+- Home Depot's focus contract is correct but wrong for the product-discovery task.
+  Existing explicit container/shelf replay gives28240/15246 bytes and all22
+  independently inventoried product destinations. Baseline/candidate scope outputs
+  match; no focus heuristic or site-specific production exception was added.
+- Clean selected validation: 1217 passed/0failed in15 manifest files,
+  140 new cases; build/types/format/lint pass. Identical final tests on old
+  production: 40pass/100 expected failures. Earlier test errors and two
+  metadata-validation findings remain archived with fixes and review follow-up.
+- Seven actual compiled CLI checks under kernel network denial match API outcomes:
+  four extraction controls/workflows and three expected refusals. Nine proof
+  groups close; no guard attempts, new website requests, scripts, SDK or secrets.
+  Close observations are not a complete allocation census. No full-manifest claim.
+- See REPLAY-MIME-OVERRIDE.md and reports/replay-mime-override-2026-09-16.md.
+  Overall goal remains active: transport caps/timeouts, access/shell handling,
+  price/text structure and broader task-level/SDK/credential gates remain open.
+
 ### Full 100-entry content revalidation
 
 - Retested every URL in the frozen 100-entry AI-citation proxy using the clean

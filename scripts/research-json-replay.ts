@@ -98,6 +98,7 @@ type ResearchHtmlReplaySelection =
 			tableRows?: boolean;
 			compactTables?: boolean;
 			outputLimitPolicy?: "text-prefix-v1";
+			readerMimePolicy?: ResearchReaderMimePolicy;
 	  })
 	| {
 			links: string;
@@ -108,6 +109,7 @@ type ResearchHtmlReplaySelection =
 			tableRows?: never;
 			compactTables?: never;
 			outputLimitPolicy?: never;
+			readerMimePolicy?: never;
 	  };
 
 export type ResearchJsonReplaySelection =
@@ -124,6 +126,7 @@ export type ResearchJsonReplaySelection =
 			tableRows?: never;
 			compactTables?: never;
 			outputLimitPolicy?: never;
+			readerMimePolicy?: never;
 	  });
 
 export interface ResearchOutputLimitSectionSelection {
@@ -187,6 +190,7 @@ export interface ResearchJsonReplayReport<
 			| "text-line-discovery";
 		matches: number | null;
 		outputLimitPolicy?: "text-prefix-v1";
+		readerMimePolicy?: ResearchReaderMimePolicy;
 	};
 	classification: {
 		barrier: BrowserChallengeDiagnostic["kind"] | null;
@@ -303,7 +307,7 @@ function selectionSnapshot(value: unknown) {
 	const keys = Reflect.ownKeys(value);
 	if (
 		keys.length < 1 ||
-		keys.length > 5 ||
+		keys.length > 6 ||
 		!keys.every(
 			(key) =>
 				typeof key === "string" &&
@@ -318,6 +322,7 @@ function selectionSnapshot(value: unknown) {
 					"tableRows",
 					"compactTables",
 					"outputLimitPolicy",
+					"readerMimePolicy",
 				].includes(key),
 		)
 	)
@@ -345,6 +350,7 @@ function selectionSnapshot(value: unknown) {
 			tableRows: false,
 			compactTables: false,
 			outputLimitPolicy: undefined,
+			readerMimePolicy: undefined,
 		};
 	}
 	if (Object.hasOwn(fields, "find")) {
@@ -364,6 +370,7 @@ function selectionSnapshot(value: unknown) {
 			tableRows: false,
 			compactTables: false,
 			outputLimitPolicy: undefined,
+			readerMimePolicy: undefined,
 		};
 	}
 	const section = Object.hasOwn(fields, "section");
@@ -387,7 +394,9 @@ function selectionSnapshot(value: unknown) {
 		(fields.compactTables !== undefined &&
 			typeof fields.compactTables !== "boolean") ||
 		(Object.hasOwn(fields, "outputLimitPolicy") &&
-			fields.outputLimitPolicy !== "text-prefix-v1")
+			fields.outputLimitPolicy !== "text-prefix-v1") ||
+		(Object.hasOwn(fields, "readerMimePolicy") &&
+			fields.readerMimePolicy !== "markdown-html-document-v1")
 	)
 		invalidSelection();
 	if (focus) {
@@ -402,7 +411,8 @@ function selectionSnapshot(value: unknown) {
 			Object.hasOwn(fields, "tableMetadata") ||
 			Object.hasOwn(fields, "tableRows") ||
 			Object.hasOwn(fields, "compactTables") ||
-			Object.hasOwn(fields, "outputLimitPolicy")
+			Object.hasOwn(fields, "outputLimitPolicy") ||
+			Object.hasOwn(fields, "readerMimePolicy")
 		)
 			invalidSelection();
 	} else {
@@ -427,6 +437,10 @@ function selectionSnapshot(value: unknown) {
 		outputLimitPolicy:
 			fields.outputLimitPolicy === "text-prefix-v1"
 				? ("text-prefix-v1" as const)
+				: undefined,
+		readerMimePolicy:
+			fields.readerMimePolicy === "markdown-html-document-v1"
+				? ("markdown-html-document-v1" as const)
 				: undefined,
 	};
 }
@@ -706,7 +720,8 @@ export function recoverResearchOutputLimitSection(
 	const selected = selectionSnapshot(selection);
 	if (
 		selected.method !== "heading-section" ||
-		selected.outputLimitPolicy !== undefined
+		selected.outputLimitPolicy !== undefined ||
+		selected.readerMimePolicy !== undefined
 	)
 		invalidSelection();
 	const selectedFormat = validateReplayFormat(format, selected);
@@ -752,7 +767,8 @@ export function recoverResearchOutputLimitSelector(
 	const selected = selectionSnapshot(selection);
 	if (
 		selected.method !== "css-selector" ||
-		selected.outputLimitPolicy !== undefined
+		selected.outputLimitPolicy !== undefined ||
+		selected.readerMimePolicy !== undefined
 	)
 		invalidSelection();
 	const selectedFormat = validateReplayFormat(format, selected);
@@ -803,7 +819,8 @@ export function recoverResearchEmptyOutlineSelector(
 	const selected = selectionSnapshot(selection);
 	if (
 		selected.method !== "css-selector" ||
-		selected.outputLimitPolicy !== undefined
+		selected.outputLimitPolicy !== undefined ||
+		selected.readerMimePolicy !== undefined
 	)
 		invalidSelection();
 	const selectedFormat = validateReplayFormat(format, selected);
@@ -868,8 +885,19 @@ function extractValidatedReplayJson<
 		const rawPolicy = replayRawPolicy(admission.originalMetadata);
 		const fallbackEncoding = replayFallbackEncoding(admission.originalMetadata);
 		const visibilityPolicy = replayVisibilityPolicy(admission.originalMetadata);
-		const { policy: mimePolicy, interpretation: mimeInterpretation } =
+		const { policy: capturedMimePolicy, interpretation: mimeInterpretation } =
 			replayMimePolicy(admission.originalMetadata);
+		const replayMimePolicyOverride =
+			"readerMimePolicy" in selected ? selected.readerMimePolicy : undefined;
+		if (
+			replayMimePolicyOverride !== undefined &&
+			capturedMimePolicy !== undefined
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Replay MIME selection requires an originally uninterpreted capture",
+			);
+		const mimePolicy = replayMimePolicyOverride ?? capturedMimePolicy;
 		if (mimePolicy !== undefined && admission.selectedProfile !== "default")
 			throw new AgentBrowserError(
 				"invalid-input",
@@ -915,6 +943,11 @@ function extractValidatedReplayJson<
 		const originalReader = admission.originalMetadata.reader as
 			| Record<string, unknown>
 			| undefined;
+		if (replayMimePolicyOverride !== undefined && mime !== "text/markdown")
+			throw new AgentBrowserError(
+				"unsupported",
+				"Replay MIME selection requires declared text/markdown",
+			);
 		if (mimeInterpretation !== undefined && mime !== "text/markdown")
 			throw new AgentBrowserError(
 				"invalid-input",
@@ -939,7 +972,17 @@ function extractValidatedReplayJson<
 		};
 		const markdownHtmlCandidate =
 			mimePolicy !== undefined && mime === "text/markdown";
-		if (!markdownHtmlCandidate)
+		if (replayMimePolicyOverride !== undefined) {
+			if (
+				originalReader !== undefined &&
+				originalReader?.hiddenContentSemantics !== false
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Replay MIME selection requires literal captured visibility semantics",
+				);
+			validateVisibilitySemantics(false);
+		} else if (!markdownHtmlCandidate)
 			validateVisibilitySemantics(mime === "text/html");
 		const textSelection =
 			selected.method === "text-lines" ||
@@ -1044,9 +1087,12 @@ function extractValidatedReplayJson<
 		checkpoint();
 		const reader = researchReaderInfo(tree);
 		if (
-			fallbackEncoding !== undefined &&
-			(reader?.fallbackEncoding !== fallbackEncoding ||
-				originalReader?.encoding !== reader?.encoding)
+			(fallbackEncoding !== undefined &&
+				(reader?.fallbackEncoding !== fallbackEncoding ||
+					originalReader?.encoding !== reader?.encoding)) ||
+			(replayMimePolicyOverride !== undefined &&
+				originalReader !== undefined &&
+				originalReader.encoding !== reader?.encoding)
 		)
 			throw new AgentBrowserError(
 				"invalid-input",
@@ -1084,7 +1130,7 @@ function extractValidatedReplayJson<
 					? "Text replay requires a default-profile literal text document"
 					: "Research JSON replay requires text/html",
 			);
-		if (markdownHtmlCandidate) {
+		if (markdownHtmlCandidate && replayMimePolicyOverride === undefined) {
 			validateVisibilitySemantics(interpretedHtml);
 			if (
 				visibilityPolicy !== undefined &&
@@ -1116,6 +1162,9 @@ function extractValidatedReplayJson<
 				...("outputLimitPolicy" in selected && selected.outputLimitPolicy
 					? { outputLimitPolicy: selected.outputLimitPolicy }
 					: {}),
+				...(replayMimePolicyOverride === undefined
+					? {}
+					: { readerMimePolicy: replayMimePolicyOverride }),
 			},
 			classification: { barrier: null, diagnostic: null },
 			reader,

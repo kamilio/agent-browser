@@ -925,5 +925,7 @@
 	"src/session-reader-link-workflows.test.ts",
 	"src/split-inline-actions.test.ts",
 	"src/research-replay-content-focus.test.ts",
-	"src/research-replay-content-focus-cli.test.ts"
+	"src/research-replay-content-focus-cli.test.ts",
+	"src/research-replay-mime-override.test.ts",
+	"src/research-replay-mime-override-cli.test.ts"
 ]

@@ -48,6 +48,14 @@ re-recognizes the original bytes, and rejects contradictory MIME or prefix
 claims. Converted documents use DOM operations, not literal-text selections.
 Genuine Markdown retains its existing literal-text and source-link behavior.
 
+For an ordinarily admitted default-profile capture that was originally read
+without this policy, replay can now explicitly request interpretation with
+`--reader-mime-policy markdown-html-document-v1` on a selector, section or content
+focus. It validates the original literal-reader evidence, leaves the receipt and
+headers unchanged, and records the request separately in replay selection
+metadata. A recognized complete-document prefix is required. This is not a
+failed-capture recovery path; see `REPLAY-MIME-OVERRIDE.md` for restrictions.
+
 This policy does not enable partial output or raise a cap. The separate
 `text-prefix-v1` output policy is documented in `EXTRACTION-PREFIX.md`. Recovery
 from an extraction limit still requires its own explicit contract. The existing
