@@ -58,3 +58,18 @@ The synthetic regressions are in `src/native-search-submit.test.ts`. The dated
 live report, `reports/native-search-forms-2026-09-16.md`, distinguishes form/API
 completion from content review, records every attempted URL and retains failures.
 No password, passkey, SafeJS, page-script or real-UI acceptance is implied.
+
+## Lightweight arXiv search entry
+
+A separate September 16 follow-up starts at `https://arxiv.org/search/`, reads
+the freshly returned main GET form, fills the literal query `transformer
+inference`, and submits that actual form. It succeeds with two HTTP200 responses
+and a 50-record search listing. The full initial source parser, exact destination
+gate, credential omission and resource limits remain unchanged.
+
+This is a practical alternative entry workflow, not an automatic retry or proof
+that the previous different-URL timeout was fixed. Both requests have positively
+observed TCP connect, authorized TLS, local request completion, response headers
+and closure. No inference about the earlier timeout or a partial-DNS fix follows.
+See `reports/arxiv-search-phases-2026-09-16.md` for URLs, timings, content limits,
+isolated checks and the unchanged original 100-page validation results.

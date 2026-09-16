@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Lightweight arXiv search and complete corpus audit
+
+- Independently audit the original100-entry corpus:100 distinct URLs,100 outcomes
+  and100 linked reviews; all803 sealed artifacts match. Counts remain33 useful
+  and67 other judgments. This citation-derived root-page proxy is not measured
+  worldwide agent-page traffic; no original verdict or measurement is rewritten.
+- One new native workflow starts at arXiv's lightweight `/search/` page, fills
+  and submits its freshly parsed visible main GET form. Two HTTP200 responses,
+  50 numbered paper listings,59960 Markdown bytes; no redirects or retries.
+- Positively record TCP connect, authorized TLS, local request finish, headers
+  and both socket/request closures. All native subsystems and the child group
+  close. No diagnosis of the prior different-URL timeout or DNS-fix effect.
+- Fresh389pass/0 in9 selected native files; unchanged runtime quality gate is
+  reused, not rerun. One kernel-denied form fixture,39 policy checks and11
+  synthetic observer scenarios pass. No new production behavior or native tests.
+- See reports/arxiv-search-phases-2026-09-16.md and NATIVE-SEARCH-FORMS.md.
+  Python dynamic search, timeout cause/connection fallback, challenge handoff,
+  SafeJS, credential/passkey and real-input gates remain open; overall goal active.
+
 ### Preserve usable partial DNS results
 
 - The default resolver no longer discards fulfilled A/AAAA addresses solely
