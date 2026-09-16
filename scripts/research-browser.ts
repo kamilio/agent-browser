@@ -21,6 +21,7 @@ import {
 	discoverDocumentTextLines,
 	extractDocument,
 } from "../src/extraction.js";
+import { validateJsonSourcePointer } from "../src/json-source-selection.js";
 import {
 	type NetworkPolicyDiagnostic,
 	networkPolicyDiagnostic,
@@ -238,6 +239,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	let documentProfile: ResearchDocumentProfileId | undefined;
 	let selector: string | undefined;
 	let lines: ResearchLineRange | undefined;
+	let jsonPointer: string | undefined;
 	let section: string | undefined;
 	let headings = false;
 	let find: string | undefined;
@@ -400,6 +402,10 @@ export function parseResearchArguments(args: readonly string[]) {
 			lines = researchLines(args[++index]);
 			continue;
 		}
+		if (argument === "--json-pointer" && jsonPointer === undefined) {
+			jsonPointer = validateJsonSourcePointer(args[++index]);
+			continue;
+		}
 		if (argument === "--capture-body" && !captureBody) {
 			captureBody = true;
 			continue;
@@ -459,6 +465,21 @@ export function parseResearchArguments(args: readonly string[]) {
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Markdown preference requires the default reader without DOM selection",
+		);
+	if (
+		jsonPointer !== undefined &&
+		(selector !== undefined ||
+			section !== undefined ||
+			lines !== undefined ||
+			headings ||
+			find !== undefined ||
+			contentFocus !== undefined ||
+			outputLimitPolicy !== undefined ||
+			documentProfile === "long-v1")
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Research JSON pointer cannot be combined with other selection, discovery, content focus, text-prefix output or long research",
 		);
 	if (selector !== undefined && lines !== undefined)
 		throw new AgentBrowserError(
@@ -530,6 +551,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		readerMimePolicy !== undefined &&
 		(!reader ||
 			documentProfile === "long-v1" ||
+			jsonPointer !== undefined ||
 			lines !== undefined ||
 			find !== undefined)
 	)
@@ -579,6 +601,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		...(documentProfile === undefined ? {} : { documentProfile }),
 		...(selector === undefined ? {} : { selector }),
 		...(lines === undefined ? {} : { lines }),
+		...(jsonPointer === undefined ? {} : { jsonPointer }),
 		...(section === undefined ? {} : { section }),
 		...(headings ? { headings: true as const } : {}),
 		...(find === undefined ? {} : { find }),
@@ -632,6 +655,7 @@ export interface ResearchNavigationReport {
 		| { method: "heading-section"; matches: number | null }
 		| { method: "heading-outline" }
 		| { method: "text-line-discovery" }
+		| { method: "json-pointer"; pointer: string }
 		| { method: "text-lines"; start: number; end: number };
 	outcome: ResearchOutcome;
 	failure?: {
@@ -649,6 +673,7 @@ export interface ResearchNavigationReport {
 }
 
 export interface ResearchExecutionOptions {
+	jsonPointer?: string;
 	httpsRedirectPolicy?: HttpsRedirectPolicy;
 	readerFallbackEncoding?: ResearchReaderFallbackEncoding;
 	contentFocus?: ContentFocusPolicy;
@@ -699,6 +724,8 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 	validateResearchReaderVisibilityPolicy(options.readerVisibilityPolicy);
 	validateResearchReaderMimePolicy(options.readerMimePolicy);
 	validateResearchReaderFallbackEncoding(options.readerFallbackEncoding);
+	if (options.jsonPointer !== undefined)
+		validateJsonSourcePointer(options.jsonPointer);
 }
 
 export async function researchNavigation(
@@ -742,6 +769,9 @@ export async function researchNavigation(
 	const lineRange =
 		lines === undefined ? undefined : validateResearchLines(lines);
 	const validated = parseResearchArguments([
+		...(executionOptions.jsonPointer === undefined
+			? []
+			: ["--json-pointer", executionOptions.jsonPointer]),
 		...(executionOptions.httpsRedirectPolicy === undefined
 			? []
 			: ["--https-redirect-policy", executionOptions.httpsRedirectPolicy]),
@@ -849,6 +879,14 @@ export async function researchNavigation(
 		...(validated.lines === undefined
 			? {}
 			: { selection: { method: "text-lines" as const, ...validated.lines } }),
+		...(validated.jsonPointer === undefined
+			? {}
+			: {
+					selection: {
+						method: "json-pointer" as const,
+						pointer: validated.jsonPointer,
+					},
+				}),
 		...(validated.section === undefined
 			? {}
 			: { selection: { method: "heading-section" as const, matches: null } }),
@@ -1239,6 +1277,9 @@ export async function researchNavigation(
 			...(validated.tableRows ? { tableRows: true } : {}),
 			...(root === undefined ? {} : { root }),
 			...(validated.lines === undefined ? {} : { lines: validated.lines }),
+			...(validated.jsonPointer === undefined
+				? {}
+				: { jsonPointer: validated.jsonPointer }),
 			...(sectionRoot === undefined ? {} : { section: sectionRoot }),
 			maxBytes: extractionBudget,
 			maxNodes: 50_000,
@@ -1315,6 +1356,9 @@ export async function* researchBatch(
 				options.find,
 				options.documentProfile,
 				{
+					...(options.jsonPointer === undefined
+						? {}
+						: { jsonPointer: options.jsonPointer }),
 					...(options.httpsRedirectPolicy === undefined
 						? {}
 						: { httpsRedirectPolicy: options.httpsRedirectPolicy }),
@@ -1459,7 +1503,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --json-pointer POINTER | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; empty JSON pointer selects root; JSON pointer excludes content-focus, text-prefix and long-v1; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});

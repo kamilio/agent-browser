@@ -957,5 +957,9 @@
   "src/research-code-source-context.test.ts",
   "src/research-document-mode.test.ts",
   "src/research-source-playground-collector.test.ts",
-  "src/research-source-playgrounds.test.ts"
+  "src/research-source-playgrounds.test.ts",
+  "src/json-source-selection.test.ts",
+  "src/document-json-selection.test.ts",
+  "src/research-json-pointer-cli.test.ts",
+  "src/research-json-pointer-replay.test.ts"
 ]

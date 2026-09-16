@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Extract exact JSON fields and validate package API workflows
+
+- Three real anonymous native GETs retrieve PyPI API docs and Requests/TypeScript
+  metadata. No scripts, credentials, package installation, retries or challenge
+  bypass. One separate native RFC6901 lookup informs pointer semantics.
+- Add bounded lossless JSON Pointer selection to extraction, CLI and saved replay.
+  Preserve literal spelling/UTF16 offsets, reject full-source invalid/duplicate
+  members, and never return a partial JSON value on output overflow.
+-26 replay plus26 parsed-CLI checks and4 actual isolated CLI processes pass;
+  independent Python value/span audit matches all26. Requests /info selects5,054
+  literal bytes from192,973 downloaded bytes; no network saving/speed claim.
+- Release01:2,957/0 in38 files,205 new cases; build/types/format/lint pass. Full02:
+  46,304/1 in941 files;963 manifest entries retain22 missing files. Full gate is
+  not green: unchanged checkpoint mutation case also fails in1/3 isolated
+  candidate runs;3 baseline runs pass. Cause unresolved; no assertion weakened.
+-135 saved comparisons preserve all successful extraction/DOM/classification
+  fields (128 successes,7 matching long-profile non-HTML refusals). Package JSON
+  has separate default-profile success. Preserve failed fixture/harness attempts.
+- See JSON-SOURCE-SELECTION.md and reports/json-source-selection-2026-09-16.md/JSON.
+  Historical100-page33/67 verdicts and SafeJS/dynamics, rendering, access/CAPTCHA,
+  credentials/passkeys/devices/TTY and research gates remain open; goal active.
+
 ### Recover supporting playground code and validate application documentation
 
 - Five real native GETs across React Learn, Next.js installation, its observed

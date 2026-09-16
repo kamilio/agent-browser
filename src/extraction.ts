@@ -118,6 +118,10 @@ import {
 } from "./table-source.js";
 import { textDocumentInfo } from "./text-document-info.js";
 import {
+	type JsonSourceSelection,
+	selectJsonSource,
+} from "./json-source-selection.js";
+import {
 	type MarkdownSourceOutline,
 	markdownSourceOutlineLimits,
 	outlineMarkdownSource,
@@ -174,6 +178,7 @@ export interface ExtractionOptions {
 	tableRows?: boolean;
 	root?: string;
 	lines?: { start: number; end: number };
+	jsonPointer?: string;
 	section?: string;
 	maxBytes?: number;
 	maxNodes?: number;
@@ -258,6 +263,7 @@ interface ExtractionMetadata {
 	sourceFeeds?: DocumentFeeds;
 	sourceMarkdown?: MarkdownSourceOutline;
 	sourceCodeContexts?: CodeSourceContexts;
+	jsonSelection?: JsonSourceSelection;
 	sourceCodeGutters?: Readonly<{
 		kind: "rustdoc-line-number-anchors-v1";
 		anchors: number;
@@ -443,6 +449,19 @@ function selectTextLines(
 			sourceCodeUnits: text.length,
 			selectedCodeUnits: endOffset - startOffset,
 		},
+	};
+}
+
+function selectDocumentJsonSource(tree: DocumentTree, pointer: string) {
+	const source = eligibleTextLineSource(tree);
+	if (!source)
+		throw new AgentBrowserError(
+			"unsupported",
+			"JSON selection requires an unchanged native text-loader document",
+		);
+	return {
+		textNode: source.id,
+		...selectJsonSource(source.data, pointer),
 	};
 }
 
@@ -1214,6 +1233,18 @@ export function extractDocument(
 	options: ExtractionOptions = {},
 ): DocumentExtraction {
 	if (
+		options.jsonPointer !== undefined &&
+		(options.root !== undefined ||
+			options.section !== undefined ||
+			options.lines !== undefined ||
+			options.contentFocus !== undefined ||
+			options.outputLimitPolicy !== undefined)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"JSON selection cannot be combined with another selection or text-prefix fallback",
+		);
+	if (
 		options.contentFocus !== undefined &&
 		((options.contentFocus !== "main-content-v1" &&
 			options.contentFocus !== "main-content-v2") ||
@@ -1294,9 +1325,11 @@ export function extractDocument(
 			);
 	}
 	const selection =
-		options.lines === undefined
-			? undefined
-			: selectTextLines(tree, options.lines);
+		options.jsonPointer !== undefined
+			? selectDocumentJsonSource(tree, options.jsonPointer)
+			: options.lines === undefined
+				? undefined
+				: selectTextLines(tree, options.lines);
 	const requestedRoot =
 		options.root === undefined ? tree.root : tree.resolve(options.root).id;
 	const { styles, skip, visible, descend } = extractionAdmission(tree);
@@ -1353,7 +1386,11 @@ export function extractDocument(
 		...(descriptions ? { sourceDescriptions: descriptions } : {}),
 		...(alternates ? { sourceAlternates: alternates } : {}),
 		...(sourceMarkdown?.entries.length ? { sourceMarkdown } : {}),
-		...(selection ? { textSelection: selection.metadata } : {}),
+		...(selection?.metadata.method === "text-lines"
+			? { textSelection: selection.metadata }
+			: selection
+				? { jsonSelection: selection.metadata }
+				: {}),
 		...(section ? { sectionSelection: section.metadata } : {}),
 	};
 	if (utf8ByteLength(JSON.stringify(metadata)) > maxBytes)
@@ -1486,10 +1523,16 @@ export function extractDocument(
 								: fallback,
 		};
 		if (node.type === "text")
-			node.text = clean(
-				sourceLine ??
-					(selection?.textNode === source.id ? selection.text : source.data),
-			);
+			node.text =
+				selection?.metadata.method === "json-pointer" &&
+				selection.textNode === source.id
+					? selection.text
+					: clean(
+							sourceLine ??
+								(selection?.textNode === source.id
+									? selection.text
+									: source.data),
+						);
 		else if (node.type === "image")
 			node.text = clean(source.attributes.alt ?? "");
 		else if (node.type !== "break" && node.type !== "separator")

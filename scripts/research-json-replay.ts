@@ -14,6 +14,7 @@ import {
 	discoverDocumentTextLines,
 	extractDocument,
 } from "../src/extraction.js";
+import { validateJsonSourcePointer } from "../src/json-source-selection.js";
 import { type NetworkResponse, parseNetworkUrl } from "../src/network.js";
 import {
 	type ResearchDocumentProfileId,
@@ -114,10 +115,15 @@ type ResearchHtmlReplaySelection =
 	  };
 
 export type ResearchJsonReplaySelection =
-	| (ResearchHtmlReplaySelection & { lines?: never; find?: never })
+	| (ResearchHtmlReplaySelection & {
+			lines?: never;
+			find?: never;
+			jsonPointer?: never;
+	  })
 	| ((
-			| { lines: ResearchReplayLineRange; find?: never }
-			| { find: string; lines?: never }
+			| { lines: ResearchReplayLineRange; find?: never; jsonPointer?: never }
+			| { find: string; lines?: never; jsonPointer?: never }
+			| { jsonPointer: string; lines?: never; find?: never }
 	  ) & {
 			selector?: never;
 			section?: never;
@@ -187,9 +193,11 @@ export interface ResearchJsonReplayReport<
 			| "heading-section"
 			| "link-url-search"
 			| "heading-outline"
+			| "json-pointer"
 			| "text-lines"
 			| "text-line-discovery";
 		matches: number | null;
+		pointer?: string;
 		outputLimitPolicy?: "text-prefix-v1";
 		readerMimePolicy?: ResearchReaderMimePolicy;
 	};
@@ -318,6 +326,7 @@ function selectionSnapshot(value: unknown) {
 					"links",
 					"lines",
 					"find",
+					"jsonPointer",
 					"contentFocus",
 					"tableMetadata",
 					"tableRows",
@@ -336,11 +345,29 @@ function selectionSnapshot(value: unknown) {
 		fields[key] = descriptor.value;
 	}
 	if (
-		["selector", "section", "links", "lines", "find", "contentFocus"].filter(
-			(key) => Object.hasOwn(fields, key),
-		).length !== 1
+		[
+			"selector",
+			"section",
+			"links",
+			"lines",
+			"find",
+			"jsonPointer",
+			"contentFocus",
+		].filter((key) => Object.hasOwn(fields, key)).length !== 1
 	)
 		invalidSelection();
+	if (Object.hasOwn(fields, "jsonPointer")) {
+		if (keys.length !== 1) invalidSelection();
+		return {
+			method: "json-pointer" as const,
+			target: validateJsonSourcePointer(fields.jsonPointer),
+			tableMetadata: false,
+			tableRows: false,
+			compactTables: false,
+			outputLimitPolicy: undefined,
+			readerMimePolicy: undefined,
+		};
+	}
 	if (Object.hasOwn(fields, "lines")) {
 		if (keys.length !== 1) invalidSelection();
 		return {
@@ -987,6 +1014,7 @@ function extractValidatedReplayJson<
 		} else if (!markdownHtmlCandidate)
 			validateVisibilitySemantics(mime === "text/html");
 		const textSelection =
+			selected.method === "json-pointer" ||
 			selected.method === "text-lines" ||
 			selected.method === "text-line-discovery";
 		const markdownLinks =
@@ -1052,6 +1080,7 @@ function extractValidatedReplayJson<
 						rawPolicy,
 						{
 							method:
+								selected.method === "json-pointer" ||
 								selected.method === "text-lines" ||
 								selected.method === "text-line-discovery" ||
 								selected.method === "content-focus"
@@ -1161,6 +1190,9 @@ function extractValidatedReplayJson<
 			selection: {
 				method: selected.method,
 				matches: null,
+				...(selected.method === "json-pointer"
+					? { pointer: selected.target }
+					: {}),
 				...("outputLimitPolicy" in selected && selected.outputLimitPolicy
 					? { outputLimitPolicy: selected.outputLimitPolicy }
 					: {}),
@@ -1264,6 +1296,7 @@ function extractValidatedReplayJson<
 			checkpoint();
 			let reference: string | undefined;
 			if (
+				selected.method !== "json-pointer" &&
 				selected.method !== "text-lines" &&
 				selected.method !== "content-focus"
 			) {
@@ -1286,13 +1319,15 @@ function extractValidatedReplayJson<
 				...(selected.outputLimitPolicy
 					? { outputLimitPolicy: selected.outputLimitPolicy }
 					: {}),
-				...(selected.method === "content-focus"
-					? { contentFocus: selected.target as ContentFocusPolicy }
-					: selected.method === "text-lines"
-						? { lines: selected.lines }
-						: selected.method === "heading-section"
-							? { section: reference }
-							: { root: reference }),
+				...(selected.method === "json-pointer"
+					? { jsonPointer: selected.target }
+					: selected.method === "content-focus"
+						? { contentFocus: selected.target as ContentFocusPolicy }
+						: selected.method === "text-lines"
+							? { lines: selected.lines }
+							: selected.method === "heading-section"
+								? { section: reference }
+								: { root: reference }),
 				maxBytes: researchJsonReplayLimits.maxExtractionBytes,
 				maxNodes: researchJsonReplayLimits.maxNodes,
 				maxDepth: researchJsonReplayLimits.maxDepth,
@@ -1303,6 +1338,7 @@ function extractValidatedReplayJson<
 					"Research replay extraction format mismatch",
 				);
 			report.extraction = extraction as ReplayDocumentByFormat[Format];
+			if (selected.method === "json-pointer") report.selection.matches = 1;
 			if (selected.method === "text-lines")
 				report.selection.matches =
 					selected.lines.end - selected.lines.start + 1;

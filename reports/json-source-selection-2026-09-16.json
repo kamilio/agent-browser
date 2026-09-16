@@ -1,0 +1,755 @@
+{
+  "at": "2026-09-16T21:05:46.397Z",
+  "baselineCommit": "e289944bc6ce3f5540e1b31e80cb0ed1d8bc5caf",
+  "selectedNative": {
+    "label": "release01",
+    "pid": 765397,
+    "exitCode": 0,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 152.48347776569426,
+    "passedTests": 2957,
+    "failedTests": 0,
+    "files": 38,
+    "homeEntries": [],
+    "tmpEntries": []
+  },
+  "fullNative": {
+    "label": "full02",
+    "pid": 768770,
+    "exitCode": 1,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 591.4685950037092,
+    "passedTests": 46304,
+    "failedTests": 1,
+    "files": 941,
+    "homeEntries": [],
+    "tmpEntries": []
+  },
+  "fullNativePass": false,
+  "fullFailures": [
+    {
+      "file": "/tmp/agent-browser-json-selection-KmOcNI/release01/src/node-passkey-checkpoint-file.test.ts",
+      "name": "rejects mutation during a checkpoint read",
+      "messages": [
+        "Error: promise resolved \"[]\" instead of rejecting\n    at _Assertion.__VITEST_REJECTS__ (file:///home/kjopek/project/agent-browser/node_modules/.bun/@vitest+expect@4.1.10/node_modules/@vitest/expect/dist/index.js:1747:17)\n    at _Assertion.propertyGetter (file:///home/kjopek/project/agent-browser/node_modules/.bun/chai@6.2.2/node_modules/chai/index.js:1570:27)\n    at Object.proxyGetter [as get] (file:///home/kjopek/project/agent-browser/node_modules/.bun/chai@6.2.2/node_modules/chai/index.js:1659:22)\n    at /tmp/agent-browser-json-selection-KmOcNI/release01/src/node-passkey-checkpoint-file.test.ts:603:29\n    at file:///home/kjopek/project/agent-browser/node_modules/.bun/@vitest+runner@4.1.10/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20"
+      ]
+    }
+  ],
+  "checkpointComparison": [
+    {
+      "label": "baseline01",
+      "pid": 783878,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 1.2158185001462698,
+      "passedTests": 58,
+      "failedTests": 0,
+      "files": 1,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    {
+      "label": "candidate01",
+      "pid": 783990,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 1.1658305991441011,
+      "passedTests": 58,
+      "failedTests": 0,
+      "files": 1,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    {
+      "label": "baseline02",
+      "pid": 784365,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 1.1155979447066784,
+      "passedTests": 58,
+      "failedTests": 0,
+      "files": 1,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    {
+      "label": "candidate02",
+      "pid": 784414,
+      "exitCode": 1,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 1.1657248008996248,
+      "passedTests": 57,
+      "failedTests": 1,
+      "files": 1,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    {
+      "label": "baseline03",
+      "pid": 784463,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 1.1156137716025114,
+      "passedTests": 58,
+      "failedTests": 0,
+      "files": 1,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    {
+      "label": "candidate03",
+      "pid": 784527,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 1.1156155206263065,
+      "passedTests": 58,
+      "failedTests": 0,
+      "files": 1,
+      "homeEntries": [],
+      "tmpEntries": []
+    }
+  ],
+  "checkpointReviewSha256": "b328ca1ea5deadd498e23e26024f3009aec9aad29f0bb9f4b26fc2ca4ed27cb6",
+  "newTests": {
+    "scanner": 20,
+    "document": 66,
+    "cli": 73,
+    "replay": 46,
+    "total": 205
+  },
+  "quality": {
+    "build": 0,
+    "types": 0,
+    "format": 0,
+    "lint": 0
+  },
+  "canonicalManifest": {
+    "entries": 963,
+    "available": 941,
+    "missing": [
+      "src/borders.test.ts",
+      "src/css-flex.test.ts",
+      "src/css-flow.test.ts",
+      "src/css-math.test.ts",
+      "src/css-variables.test.ts",
+      "src/flex-column-wrap.test.ts",
+      "src/flex-column.test.ts",
+      "src/flex-document.test.ts",
+      "src/flex-nested.test.ts",
+      "src/font-relative-box.test.ts",
+      "src/inline-block.test.ts",
+      "src/inline-borders.test.ts",
+      "src/inline-flex.test.ts",
+      "src/page-base64.test.ts",
+      "src/portable-boundary.test.ts",
+      "src/reference-images.test.ts",
+      "src/reference-renderer.test.ts",
+      "src/relative-positioning.test.ts",
+      "src/response-archive.test.ts",
+      "src/select-keyboard.test.ts",
+      "src/select-typeahead.test.ts",
+      "src/stacking-order.test.ts"
+    ]
+  },
+  "runtimeSourceFiles": 1551,
+  "compiledArtifacts": 2328,
+  "sourceManifestSha256": "7d0ffe01d5d2cdf02c5c70ec81aca3e63db9a78391c7ae50d7dd7b87e85b40c4",
+  "compiledManifestSha256": "ff6f708785de914a3a8c252706671878ba2685c0492d6e6f641ac84ef57bae93",
+  "differential": {
+    "passed": true,
+    "scope": "135 pinned saved-body comparisons; no new requests",
+    "inputs": 135,
+    "successfulPairs": 128,
+    "matchingFailurePairs": 7,
+    "changedMarkdown": 0,
+    "changedExtractionFields": 0,
+    "changedReaderOrHtml": 0
+  },
+  "api": {
+    "passed": true,
+    "checks": 26,
+    "method": "Independent Python JSON decoding with exact integer/Decimal values, pointer lookup and UTF-16 source-span comparison; no network or native runtime execution.",
+    "records": [
+      {
+        "id": "pypi-requests",
+        "pointer": "",
+        "format": "markdown",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 192972,
+        "replayOutputBytes": 210901,
+        "cliOutputBytes": 213879
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "",
+        "format": "json",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 192972,
+        "replayOutputBytes": 211001,
+        "cliOutputBytes": 213984
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "/info",
+        "format": "markdown",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 5054,
+        "replayOutputBytes": 7427,
+        "cliOutputBytes": 10405
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "/info",
+        "format": "json",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 5054,
+        "replayOutputBytes": 7530,
+        "cliOutputBytes": 10508
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "/info/name",
+        "format": "markdown",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 10,
+        "replayOutputBytes": 2144,
+        "cliOutputBytes": 5122
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "/info/name",
+        "format": "json",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 10,
+        "replayOutputBytes": 2249,
+        "cliOutputBytes": 5227
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "/info/version",
+        "format": "markdown",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 8,
+        "replayOutputBytes": 2147,
+        "cliOutputBytes": 5125
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "/info/version",
+        "format": "json",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 8,
+        "replayOutputBytes": 2252,
+        "cliOutputBytes": 5231
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "/info/requires_python",
+        "format": "markdown",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 8,
+        "replayOutputBytes": 2163,
+        "cliOutputBytes": 5142
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "/info/requires_python",
+        "format": "json",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 8,
+        "replayOutputBytes": 2268,
+        "cliOutputBytes": 5246
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "/info/project_urls",
+        "format": "markdown",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 94,
+        "replayOutputBytes": 2250,
+        "cliOutputBytes": 5228
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "/info/project_urls",
+        "format": "json",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 94,
+        "replayOutputBytes": 2355,
+        "cliOutputBytes": 5334
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "/vulnerabilities",
+        "format": "markdown",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 2,
+        "replayOutputBytes": 2148,
+        "cliOutputBytes": 5126
+      },
+      {
+        "id": "pypi-requests",
+        "pointer": "/vulnerabilities",
+        "format": "json",
+        "bodyBytes": 192973,
+        "originalMarkdownBytes": 192983,
+        "literalBytes": 2,
+        "replayOutputBytes": 2253,
+        "cliOutputBytes": 5232
+      },
+      {
+        "id": "npm-typescript",
+        "pointer": "",
+        "format": "markdown",
+        "bodyBytes": 4833,
+        "originalMarkdownBytes": 4842,
+        "literalBytes": 4833,
+        "replayOutputBytes": 7432,
+        "cliOutputBytes": 10414
+      },
+      {
+        "id": "npm-typescript",
+        "pointer": "",
+        "format": "json",
+        "bodyBytes": 4833,
+        "originalMarkdownBytes": 4842,
+        "literalBytes": 4833,
+        "replayOutputBytes": 7537,
+        "cliOutputBytes": 10519
+      },
+      {
+        "id": "npm-typescript",
+        "pointer": "/name",
+        "format": "markdown",
+        "bodyBytes": 4833,
+        "originalMarkdownBytes": 4842,
+        "literalBytes": 12,
+        "replayOutputBytes": 2140,
+        "cliOutputBytes": 5125
+      },
+      {
+        "id": "npm-typescript",
+        "pointer": "/name",
+        "format": "json",
+        "bodyBytes": 4833,
+        "originalMarkdownBytes": 4842,
+        "literalBytes": 12,
+        "replayOutputBytes": 2250,
+        "cliOutputBytes": 5233
+      },
+      {
+        "id": "npm-typescript",
+        "pointer": "/version",
+        "format": "markdown",
+        "bodyBytes": 4833,
+        "originalMarkdownBytes": 4842,
+        "literalBytes": 7,
+        "replayOutputBytes": 2144,
+        "cliOutputBytes": 5127
+      },
+      {
+        "id": "npm-typescript",
+        "pointer": "/version",
+        "format": "json",
+        "bodyBytes": 4833,
+        "originalMarkdownBytes": 4842,
+        "literalBytes": 7,
+        "replayOutputBytes": 2252,
+        "cliOutputBytes": 5235
+      },
+      {
+        "id": "npm-typescript",
+        "pointer": "/engines",
+        "format": "markdown",
+        "bodyBytes": 4833,
+        "originalMarkdownBytes": 4842,
+        "literalBytes": 20,
+        "replayOutputBytes": 2158,
+        "cliOutputBytes": 5141
+      },
+      {
+        "id": "npm-typescript",
+        "pointer": "/engines",
+        "format": "json",
+        "bodyBytes": 4833,
+        "originalMarkdownBytes": 4842,
+        "literalBytes": 20,
+        "replayOutputBytes": 2266,
+        "cliOutputBytes": 5249
+      },
+      {
+        "id": "npm-typescript",
+        "pointer": "/repository",
+        "format": "markdown",
+        "bodyBytes": 4833,
+        "originalMarkdownBytes": 4842,
+        "literalBytes": 70,
+        "replayOutputBytes": 2220,
+        "cliOutputBytes": 5203
+      },
+      {
+        "id": "npm-typescript",
+        "pointer": "/repository",
+        "format": "json",
+        "bodyBytes": 4833,
+        "originalMarkdownBytes": 4842,
+        "literalBytes": 70,
+        "replayOutputBytes": 2328,
+        "cliOutputBytes": 5311
+      },
+      {
+        "id": "npm-typescript",
+        "pointer": "/license",
+        "format": "markdown",
+        "bodyBytes": 4833,
+        "originalMarkdownBytes": 4842,
+        "literalBytes": 12,
+        "replayOutputBytes": 2150,
+        "cliOutputBytes": 5133
+      },
+      {
+        "id": "npm-typescript",
+        "pointer": "/license",
+        "format": "json",
+        "bodyBytes": 4833,
+        "originalMarkdownBytes": 4842,
+        "literalBytes": 12,
+        "replayOutputBytes": 2258,
+        "cliOutputBytes": 5240
+      }
+    ]
+  },
+  "actualCliProcesses": 4,
+  "actualLiveApplicationRequests": 3,
+  "standardsLookup": {
+    "separateFromWebsiteAcceptance": true,
+    "receiptSha256": "ff0498c333211097b93518b8506834ffa38edbec3ead7f6bcb10093e3e340180",
+    "primaryResponse": {
+      "url": "https://www.rfc-editor.org/rfc/rfc6901.txt",
+      "status": 200,
+      "receivedAt": "2026-09-16T20:35:17.254Z",
+      "headers": {
+        "content-type": [
+          "text/plain;charset=utf-8"
+        ],
+        "content-encoding": [
+          "gzip"
+        ]
+      },
+      "headerCapture": {
+        "kind": "selected-response-headers-v1",
+        "partial": true,
+        "omitted": []
+      },
+      "decodedBytes": 13037,
+      "encodedBytes": 4498,
+      "bodySha256": "12f9f4fc13d686aa4fbe7d144d70166cd3fcd4ab89174c2b13bda8f4b55e49da",
+      "hashScope": "transport-decoded-body-before-loader",
+      "redirects": 0,
+      "elapsedMs": 117.965239
+    }
+  },
+  "visits": [
+    {
+      "id": "pypi-json-docs",
+      "receiptFile": "node_modules/.cache/native-validation/package-api-content-september16/live/pypi-json-docs/RESULT.json",
+      "receiptSha256": "8e2087669ed968182303c6e6245e031c5ada3068c663d8f3962dda471ecafba1",
+      "primaryResponse": {
+        "url": "https://docs.pypi.org/api/json/",
+        "status": 200,
+        "receivedAt": "2026-09-16T20:25:44.445Z",
+        "headers": {
+          "content-type": [
+            "text/html; charset=utf-8"
+          ],
+          "content-encoding": [
+            "gzip"
+          ]
+        },
+        "headerCapture": {
+          "kind": "selected-response-headers-v1",
+          "partial": true,
+          "omitted": []
+        },
+        "decodedBytes": 112286,
+        "encodedBytes": 15063,
+        "bodySha256": "73c821e9b18cc7497d1b6a94726e973066ff536e3b364a56188b949ec64a98c7",
+        "hashScope": "transport-decoded-body-before-loader",
+        "redirects": 0,
+        "elapsedMs": 169.35362400000002
+      },
+      "markdownBytes": 24754
+    },
+    {
+      "id": "pypi-requests",
+      "receiptFile": "node_modules/.cache/native-validation/package-api-content-september16/live/pypi-requests/RESULT.json",
+      "receiptSha256": "5d62bd0b8cf100b8a4b21d4220e5503092f5cf5fd291c7e6478e8de38843dbad",
+      "primaryResponse": {
+        "url": "https://pypi.org/pypi/requests/json",
+        "status": 200,
+        "receivedAt": "2026-09-16T20:25:46.934Z",
+        "headers": {
+          "content-type": [
+            "application/json"
+          ],
+          "content-length": [
+            "43299"
+          ],
+          "content-encoding": [
+            "gzip"
+          ]
+        },
+        "headerCapture": {
+          "kind": "selected-response-headers-v1",
+          "partial": true,
+          "omitted": []
+        },
+        "decodedBytes": 192973,
+        "encodedBytes": 43299,
+        "bodySha256": "bcfc6a202592e4e90f5a28ff002694eaa7c58ba741b76077f432b8bee1480111",
+        "hashScope": "transport-decoded-body-before-loader",
+        "redirects": 0,
+        "elapsedMs": 25.706379
+      },
+      "markdownBytes": 192983,
+      "sourceLiteral": {
+        "jsonSourcePreservedApartFromTerminalLf": true,
+        "sourceHasTerminalLf": true,
+        "sourceBytes": 192973
+      }
+    },
+    {
+      "id": "npm-typescript",
+      "receiptFile": "node_modules/.cache/native-validation/package-api-content-september16/live/npm-typescript/RESULT.json",
+      "receiptSha256": "5edd3cadd8ab973ba94dfae8d645c021c5e08c9ac696ad00b6fed0fa2b796b3d",
+      "primaryResponse": {
+        "url": "https://registry.npmjs.org/typescript/latest",
+        "status": 200,
+        "receivedAt": "2026-09-16T20:25:49.235Z",
+        "headers": {
+          "content-type": [
+            "application/json"
+          ],
+          "content-encoding": [
+            "gzip"
+          ]
+        },
+        "headerCapture": {
+          "kind": "selected-response-headers-v1",
+          "partial": true,
+          "omitted": []
+        },
+        "decodedBytes": 4833,
+        "encodedBytes": 1537,
+        "bodySha256": "28a8ef314c6bbc3fddb831088f80eb2fcac6351cb618c8ac029f7229f587b8aa",
+        "hashScope": "transport-decoded-body-before-loader",
+        "redirects": 0,
+        "elapsedMs": 55.74518499999999
+      },
+      "markdownBytes": 4842,
+      "sourceLiteral": {
+        "jsonSourcePreservedApartFromTerminalLf": true,
+        "sourceHasTerminalLf": false,
+        "sourceBytes": 4833
+      }
+    }
+  ],
+  "review": {
+    "file": "node_modules/.cache/native-validation/json-source-selection-september16/REVIEW.md",
+    "sha256": "dae8951a23e3eeeef0b04c5049351fd454e8b997d0ccc2235a90672ad710b2a9",
+    "resolutionSha256": "a9b31b9b5556df9f67133b897a014de5cecaf6b0a2822bf348ab6f884108e12c"
+  },
+  "preservedTracked": 42,
+  "preservedUntracked": 697,
+  "terminalRecords": [
+    {
+      "file": "node_modules/.cache/native-validation/package-api-content-september16/live/npm-typescript/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 738632
+    },
+    {
+      "file": "node_modules/.cache/native-validation/package-api-content-september16/live/pypi-json-docs/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 738570
+    },
+    {
+      "file": "node_modules/.cache/native-validation/package-api-content-september16/live/pypi-requests/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 738590
+    },
+    {
+      "file": "node_modules/.cache/native-validation/package-api-content-september16/proof03/npm-typescript/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 738522
+    },
+    {
+      "file": "node_modules/.cache/native-validation/package-api-content-september16/proof03/pypi-json-docs/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 738508
+    },
+    {
+      "file": "node_modules/.cache/native-validation/package-api-content-september16/proof03/pypi-requests/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 738515
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/checkpoint-baseline01/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 783878
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/checkpoint-baseline02/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 784365
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/checkpoint-baseline03/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 784463
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/checkpoint-candidate01/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 783990
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/checkpoint-candidate02/EXECUTION.json",
+      "exitCode": 1,
+      "pid": 784414
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/checkpoint-candidate03/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 784527
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/cli-saved/pypi-requests-markdown/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": false,
+      "pid": 771336
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/cli-saved02/npm-typescript-json/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 771883
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/cli-saved02/npm-typescript-markdown/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 771875
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/cli-saved02/pypi-requests-json/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 771868
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/cli-saved02/pypi-requests-markdown/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 771860
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/native-core01/EXECUTION.json",
+      "exitCode": 1,
+      "pid": 753539
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/native-core02/EXECUTION.json",
+      "exitCode": 1,
+      "pid": 760063
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/native-core03/EXECUTION.json",
+      "exitCode": 1,
+      "pid": 764191
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/native-full02/EXECUTION.json",
+      "exitCode": 1,
+      "pid": 768770
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/native-release01/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 765397
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/replay-api/proof/EXECUTION.json",
+      "exitCode": 1,
+      "safetyPassed": false,
+      "pid": 769124
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/replay-api02/proof/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 770147
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/replay-differential/proof/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 769300
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/standard/live/rfc6901/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 748453
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-source-selection-september16/standard/proof03/rfc6901/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 748294
+    }
+  ],
+  "goalComplete": false
+}
