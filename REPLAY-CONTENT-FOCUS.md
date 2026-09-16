@@ -81,3 +81,43 @@ successful captures. Literal text/link/heading modes reject the output policy.
 `RESPONSE-PREFIX.md` describes a different, diagnostic-only incomplete transport
 prefix. It remains inadmissible here. No SDK, page scripts, alternate browser,
 credentials or automatic retry is introduced.
+
+## When a unique article is only a promotional card
+
+`main-content-v1` is a structural policy, not a content-quality detector. A
+homepage can have one small promotional `article` and a much larger product
+shelf in sibling `div` elements. In that case, successful article selection can
+omit the information the browsing task actually needs. Neither HTTP200 nor
+nonempty focused output establishes that the page was adequately read.
+
+Inspect the recorded scope/reason and the complete captured source before
+requesting the same page again. For an admitted complete HTML receipt, replay
+with `--selector body` to inspect broader source text, or use an exact enclosing
+selector found in that source. Replace the focus flag; do not combine focus and
+selector. For example, after verifying the source's unique content container:
+
+```sh
+node dist/scripts/research-replay-cli.js \
+  --expected-profile default \
+  --receipt-sha256 "$HOST_RECEIPT_SHA256" \
+  --body-sha256 "$HOST_BODY_SHA256" \
+  --body-bytes "$HOST_BODY_BYTES" \
+  --selector "$SOURCE_VERIFIED_CONTENT_SELECTOR" \
+  --format markdown --output-limit-policy text-prefix-v1 --table-rows \
+  < receipt.jsonl
+```
+
+On a saved September16 Home Depot capture, article focus retained153 bytes;
+whole-document extraction retained36201 bytes. A source-verified unique
+`#default-layout` selector retained28240 bytes, including the same22 product
+destinations, while removing outer navigation/footer. This exact selector was
+tested through the native replay CLI with kernel-denied network; it is not a
+universal selector or a new live request. See
+`reports/content-focus-investigation-2026-09-16.md` for evidence and limitations.
+
+Broader extraction still respects source visibility, admission and output caps;
+it does not expose scripts, unlock access or complete dynamic widgets. Removing
+a footer can also remove commercial qualifications. Product amounts, stock,
+review authenticity and offers remain unverified captured claims. The browser
+does not automatically widen scope based on output size, retry, or treat a
+diagnostic response prefix as a complete replayable page.

@@ -1,0 +1,178 @@
+{
+  "schema": "native-content-focus-investigation-v1",
+  "recordedAt": "2026-09-16T05:57:25.072Z",
+  "auditPassed": true,
+  "runtimeCommit": "53576833ee775aea83294af5cf254cf28e3532ab",
+  "committedRuntimeInputs": 1514,
+  "productionBehaviorChanged": false,
+  "nativeManifestChanged": false,
+  "sourceTestFilesChanged": [
+    "src/research-replay-content-focus.test.ts"
+  ],
+  "evidenceDirectory": "node_modules/.cache/native-validation/content-focus-investigation-september16",
+  "source": {
+    "url": "https://www.homedepot.com/",
+    "receiptPath": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/008-www.homedepot.com/stdout.jsonl",
+    "receiptSha256": "c4cca4067388f48e0774b2d3b542eefb0c0170767ad7830f3443e029f9ac78db",
+    "decodedBodyBytes": 1247687,
+    "bodySha256": "b75b1495c0bd39f4881a951bceeef7adb942dd86f2e8ddef865857784a4ad9bc"
+  },
+  "outcomes": [
+    {
+      "operation": "main-content-v1",
+      "bytes": 153,
+      "verdict": "promotional-card-only",
+      "productDestinations": 0,
+      "markdownSha256": "0228736d7607a49c23569779d2a2f5621a9d1e013380f4a08bcd15c7f20c2cd8"
+    },
+    {
+      "operation": "whole-document extraction",
+      "bytes": 36201,
+      "verdict": "useful-product-content-with-outer-boilerplate",
+      "productDestinations": 22,
+      "markdownSha256": "8ce33ca1f47e7f6a4abcd5b7076777098006ed0a6098999c979bdae27acc82df"
+    },
+    {
+      "operation": "native replay CLI selector",
+      "selector": "#default-layout",
+      "matches": 1,
+      "bytes": 28240,
+      "verdict": "useful-product-content-with-limitations",
+      "productDestinations": 22,
+      "markdownSha256": "e9e7cf1ee800d087ffb3e2a71c9ac3359d0723d4f085732eed46c9ed193cae99",
+      "stdoutSha256": "09848e011e6d798d8cd9921ed10767f01191084c7395765552a7029492612aad"
+    }
+  ],
+  "comparison": {
+    "preservedProductLinkOccurrences": 66,
+    "distinctProductDestinations": 22,
+    "preservedPriceLines": 31,
+    "removedOuterBytes": 7961,
+    "selectorIsExactDocumentSubstring": true
+  },
+  "validation": {
+    "baselineTests": 387,
+    "initialTests": {
+      "passed": 391,
+      "failed": 4,
+      "cause": "New test expected an unescaped decimal in serialized Markdown"
+    },
+    "finalTests": 395,
+    "failedTests": 0,
+    "selectedFiles": 6,
+    "newTests": 8,
+    "fullManifestRun": false,
+    "compiledFilesCompared": 2288,
+    "productionCompiledOutputByteIdentical": true,
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0,
+      "native": 0
+    },
+    "freshWebsiteRequests": 0,
+    "freshSocketProbes": 0,
+    "replayKernelNetworkDenied": true,
+    "replayHomeTmpEmpty": true,
+    "developmentCaches": [
+      {
+        "file": "release/tmp/node-compile-cache/v22.22.0-x64-9de703df-150124/155ad9dd",
+        "bytes": 1322060,
+        "sha256": "e67b00fa4c3dff68c441ee7b658a62c6451231d977c99dba803d410c399ac6bb"
+      },
+      {
+        "file": "release02/tmp/node-compile-cache/v22.22.0-x64-9de703df-150124/155ad9dd",
+        "bytes": 1322060,
+        "sha256": "98c2c237c3184d78d6390e4acfb197437e82a8959de7f118e0e47ccc58739e26"
+      }
+    ],
+    "allReplayGroupsClosed": true
+  },
+  "historical100": {
+    "file": "reports/agent-citation-revalidation-v2.json",
+    "sha256": "4ab14a3dd29561ffae965a706eadf1472182e70c877743275528486bd0244be6",
+    "unchanged": true,
+    "sourceVerdict": "navigation-only",
+    "assessmentCounts": {
+      "empty": 6,
+      "useful-source-content": 33,
+      "navigation-only": 19,
+      "other-failure": 6,
+      "http-error": 8,
+      "consent-or-access": 23,
+      "login-required": 3,
+      "transport-failure": 2
+    },
+    "measuredGlobalAgentTrafficRanking": false
+  },
+  "limitations": [
+    "This corrects manual scope choice using an existing replay feature; automatic main-content-v1 still follows its structural unique-landmark contract.",
+    "The source-derived selector is not a universal rule, permission for broader capture, or evidence of current live behavior.",
+    "Useful saved product text does not verify prices, stock, offer terms, authentic reviews, carousel behavior, rendering, checkout or purchases.",
+    "The selector removes footer qualifications as well as outer navigation. Internal category/promotion links and widget placeholders remain.",
+    "No source visibility, script execution, access admission, network budget or extraction limit was relaxed; incomplete response prefixes remain inadmissible.",
+    "Initial test and audit failures remain retained. Opaque compiler cache contents are independently hashed, not required to be deterministic.",
+    "Smarter automatic focus, dynamic hydration/search, challenge handoff, SafeJS callback admission and credential/passkey/real-input gates remain open."
+  ],
+  "evidence": {
+    "AUDIT.json": "5ba6ff869afe61fb478ede5d6d87e50322aee226eaf3d6acd1747dca9ab01227",
+    "AUDIT01-FAILURE.json": "a9b64a44522f3f2ede27d16331c3f186b7d94a03a44fcecd9b415b15a4a0b472",
+    "AUDIT02-FAILURE.json": "9005984be68bf0190a9f716762685cc4be6b4aeba5c27d1bd3e9317b627917ea",
+    "BEFORE.json": "25a9e18520edb477d44345a15c4ace61fc7110a5f10295f62162c0f87fcb9156",
+    "CHECK-release.json": "de0909d605883025724eeeab1d49f2d5f4d10e5b6020709fa1ae37b287ba28cb",
+    "CHECK-release02.json": "99a454bfebdde19924a33d0b6d42a28a754ac929879b6acf08427b34220350bf",
+    "COMPILED-release.json": "f8fcaf0777e28be391aa141b78612d6f5892bf8950dfad3c2e515269915eef12",
+    "COMPILED-release02.json": "f8fcaf0777e28be391aa141b78612d6f5892bf8950dfad3c2e515269915eef12",
+    "OVERLAY-release.json": "efb177aafd02569eada70bf4d45dc70de00f33e38d907cb170349bf9dd6c44be",
+    "OVERLAY-release02.json": "e8d6c1bd4fd5f9193dc8351ce703c070346e38265e391f43ff84af8838720f6b",
+    "RUNTIME.json": "4befdeae437b8045c4e187f6ce053b98878e6041160f78c36b2e74c0735793b8",
+    "SCOPE.md": "f12601bbaeacaa24e016d8e93f54a66c3dd366464b6af1f21f210b3566db77b1",
+    "SOURCE-REVIEW-PROMPT.md": "b48e76d7d21e1486620edad4032268271397520af35054a90600528010583f9d",
+    "SOURCE-REVIEW.md": "51939382267fa1009cd44303b39cd46c83b42b9719aaeb13bb120676e48a7c43",
+    "SOURCE-release.json": "591aa91a7cedb68ba973e778b2180589c06710ec8709521f446b9f7964afd99d",
+    "SOURCE-release02.json": "ee086d3a56a9e51b6ecff25d295913d104e684107509c709a4d04fa476e12deb",
+    "audit.mjs": "a41e62b24e9545f15819d01c309ae082b9e2f7058061f8c5f9222905e0bb9c7c",
+    "audit02.mjs": "dc42e1dc0a66c3dac31f014fdeb1f0b12cf658be6614ca7df03f42863750e184",
+    "audit03.mjs": "f4a06e43d7bc504cefb28f25ae847b525906a6fe06ea0f1d918207de7e333cc4",
+    "check-release.py": "88c0cafd16182fe2788706456165c2871167cef1783cc7aa504779be2207018c",
+    "check-release02.py": "a2fbc2beb60fb7ea3dae76192a8cf383f79de68431546b372d85b79c6abf1976",
+    "commit-audit.mjs": "df73cd57f626d692e2c26c425e3569c12aa3d50f67063e8ceb35f6e302bf2be5",
+    "native-release.config.mjs": "fb9e5647c13bd683cbdfffc276d878204d4b7677b98272852cad95536823d507",
+    "native-release02.config.mjs": "9d83d43aebccc2db22714375c0e7fe973721253a84af93142aa63254cc9d4b36",
+    "native.config.mjs": "3863d5319371041fe3abba8a29e92d7cdca6bc2f3c825305de1449001bb70a4b",
+    "native/EXECUTION.json": "4c047b89ffc7456969ac84fbbc39685f50195964c5c9c1dbaf8a5f0ba17fbde3",
+    "native/INVOCATION.json": "750e9382aef03dc51ed458e022ddc7275f74ac4378dcb6aaf4f52bbeb443e52f",
+    "native/native.json": "e0c07dd2ca74e238aa0287ea4815ec0e112766122b47de4f74fc6400178357ad",
+    "prepare-release.mjs": "efc074993e288fcf967ad00cdf5c767326bee1db89ae1cc0ad4e892bc31220c5",
+    "prepare-release02.mjs": "fa0d4b7c1347b74d1cf1526c0dca9ca6f898435622fa0c309a938ea99c1db992",
+    "prepare.mjs": "61cae8aa4dc8de06085e903f48b21e0cc839d2e67fb54e0ca7d3c9d7f55b4eb9",
+    "release/native.json": "db9b61bdbabd1d6cbb3b2f865b1e0fb4abdfad8d6fd440fb91154e0c1fb1e8b7",
+    "release02/native.json": "f0ecf5f400badbbe1e7cc28e959b513bacca11acda1019e099300d4fb844ac5e",
+    "replay.mjs": "f775e4a21c129d49ee44964541974b6cd9be2ad1dacd96988a35f431aa892259",
+    "replay/EXECUTION.json": "b3bf0a593adb3dd7717d26a4e7fa2a775aa2e52a8053569d1e7f850e46ee272e",
+    "replay/INVOCATION.json": "a9fb40bf1b5b9a6b4183eb68033a7bb3384cd6903903edf9a81b8aa776f74d07",
+    "replay/RESULT.json": "bfbbec05c1445ff20457bb32801c610c604a65e499ebeca6ed91a1a2538f2eb2",
+    "replay/document.json": "4291d4b54d659e45d31fe5541aa4a41d31cdc90685d2bb415103a855bc9a1ac7",
+    "replay/document.md": "8ce33ca1f47e7f6a4abcd5b7076777098006ed0a6098999c979bdae27acc82df",
+    "replay/focus.json": "b171c97aaddb2eae0f27428030d60a9a6deab9380bbaaf9436944adedeb531cc",
+    "replay/focus.md": "0228736d7607a49c23569779d2a2f5621a9d1e013380f4a08bcd15c7f20c2cd8",
+    "replay/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "report.mjs": "c486d1a16260b6104f0fd2a4f268e4172323313fc8a0e385f1f99f8189a029c7",
+    "run-selector.py": "6217b700968736ba83a84a7a40a1fbc4792258ec60c5623840a565442b03e046",
+    "run.py": "b7e18b1b0e55040cb5f03c00a3ede312618c34862e2bfeb7f2c12e684f48d12c",
+    "seal.mjs": "9bd90d9f5d7167f2fc0a2042ee40e42d43bc199b1f2adee667ac62356e527a7d",
+    "selector/EXECUTION.json": "a3b562cf3774892769122277cebfbea7131b9f4ec54a5af4740a85ab16b8db1f",
+    "selector/INVOCATION.json": "a40c7a95ca28238ea4a5d3b04d436f4d6a5d1948ef87e27f2d4860c7a0e80c69",
+    "selector/RESULT.json": "e770964c683ac8215329935473d48955108f07e406ca015e712a12569a519e7a",
+    "selector/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "selector/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "selector/replay.md": "e9e7cf1ee800d087ffb3e2a71c9ac3359d0723d4f085732eed46c9ed193cae99",
+    "selector/stdout.jsonl": "09848e011e6d798d8cd9921ed10767f01191084c7395765552a7029492612aad",
+    "types-release.json": "3fc8a54a349e462a2ccdf75cb30169eb8132ad719dd80471ccf399c22b30fc44",
+    "types-release02.json": "2e620399fb88ed6a10363b471ee5b0cade001fc0d203ab86d716257dd03dcb93"
+  },
+  "pushed": false,
+  "overallGoal": "active"
+}

@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Recover homepage content outside a promotional article
+
+- Confirm that Home Depot's153-byte unique-article output selected a daily-deals
+  card, omitting22 populated sibling product cards in ordinary source markup.
+  Same-body whole-document replay yields36201 bytes; a source-verified unique
+  `#default-layout` selector yields28240 through the actual native replay CLI.
+- Preserve all66 product-link occurrences/22 destinations and31 price lines;
+  remove7961 outer navigation/footer bytes. The scoped result is an exact
+  substring of the document output, not reconstructed product data. Footer
+  qualifications, current offers/stock, media and dynamic widgets are not proven.
+- Add8 synthetic replay regressions across both profiles, formats and two
+  explicit scopes, including source visibility, pinned-input immutability and
+  ownership cleanup. Final395pass/0 in6 files; build/types/format/lint pass.
+  Initial4 failures were incorrect Markdown-escaping expectations in new tests.
+- No fresh website request, production policy change or historical verdict
+  rewrite. All2288 compiled production artifacts remain byte-identical. This
+  corrects the manual retrieval workflow, not automatic article selection.
+  See REPLAY-CONTENT-FOCUS.md and reports/content-focus-investigation-2026-09-16.md.
+  Smarter automatic focus, hydration/search, challenge handoff, SafeJS and
+  credential/passkey/real-input gates remain open; overall goal stays active.
+
 ### Native feed-to-article content workflows
 
 - Freshly read three source-advertised PCMag, RTINGS and IGN feeds, then manually

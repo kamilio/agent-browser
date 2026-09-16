@@ -352,6 +352,63 @@ it.each([
 	},
 );
 
+it.each(
+	(["default", "long-v1"] as const).flatMap((profile) =>
+		formats.flatMap((format) =>
+			["#default-layout", "body"].map((selector) => ({
+				profile,
+				format,
+				selector,
+			})),
+		),
+	),
+)(
+	"recovers sibling product content with $selector as $format from a focused $profile landing page",
+	async ({ profile, format, selector }) => {
+		const input = await fixture(
+			'<title>Storefront</title><body><nav>Outside navigation</nav><div id="default-layout"><article><h2>Daily promotion</h2><a href="/sale">Browse savings</a></article><section><h2>Product Alpha</h2><p>Weatherproof garden light</p><p>Price 19.00</p><a href="/products/alpha">Product details</a></section><section><h2>Product Beta</h2><p>Rechargeable workshop lamp</p></section><p hidden>Hidden stock payload</p><script>"Script-only inventory"</script></div><footer>Outside footer</footer></body>',
+			{ profile, visibility: true },
+		);
+		const released = observeOwnership();
+		const focused = execute(input, focus, format);
+		expect(focused.report.extraction?.contentSelection).toMatchObject({
+			selected: "article",
+			reason: "unique-article",
+			mainCandidates: 0,
+			articleCandidates: 1,
+		});
+		const focusedContent = JSON.stringify(focused.report.extraction?.content);
+		expect(focusedContent).toContain("Daily promotion");
+		expect(focusedContent).not.toContain("Product Alpha");
+		expect(focusedContent).not.toContain("Product Beta");
+		const broader = execute(input, { selector }, format);
+		expect(broader.report.selection).toMatchObject({
+			method: "css-selector",
+			matches: 1,
+		});
+		expect(broader.report.extraction).not.toHaveProperty("contentSelection");
+		const content = JSON.stringify(broader.report.extraction?.content);
+		for (const marker of [
+			"Daily promotion",
+			"Product Alpha",
+			"Weatherproof garden light",
+			"Product Beta",
+			"Rechargeable workshop lamp",
+			"https://content-focus-replay.fixture.invalid/products/alpha",
+		])
+			expect(content).toContain(marker);
+		expect(content).toContain(format === "markdown" ? "19\\\\.00" : "19.00");
+		for (const marker of ["Hidden stock payload", "Script-only inventory"])
+			expect(content).not.toContain(marker);
+		for (const marker of ["Outside navigation", "Outside footer"]) {
+			if (selector === "body") expect(content).toContain(marker);
+			else expect(content).not.toContain(marker);
+		}
+		expect(broader.report.contentSuccess).toBeNull();
+		released(2, 4);
+	},
+);
+
 it("keeps implicit JSON typing and explicit selector replay unchanged", async () => {
 	const input = await fixture();
 	const selected: replay.ResearchJsonReplaySelection = focus;
