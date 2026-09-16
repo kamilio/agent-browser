@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Preserve usable partial DNS results
+
+- The default resolver no longer discards fulfilled A/AAAA addresses solely
+  because the other family has a non-absence lookup failure. All returned
+  addresses still pass through the unchanged private/reserved/invalid-address
+  policy; no retry, racing, identity, TLS or network-budget change.
+- Clean baseline346pass/0 in7 files; final371pass/0 in8 files,25 new cases.
+  Identical final tests on old production:17pass/8 expected failures. Build,
+  selected types, focused formatting and lint pass; no full-manifest claim.
+- Mocked DNS and a refused synthetic wire boundary prove admission/policy,
+  ordering, cancellation, deadlines and owned-listener cleanup. Initial global
+  listener-spy failures remain archived as harness errors, not production results.
+- Both DNS families are still awaited. No live DNS, socket or website recovery
+  is claimed, and the prior arXiv timeout is not attributed to this defect.
+  See DNS-PARTIAL-RESULTS.md and reports/dns-partial-results-2026-09-16.md.
+- Connection fallback/live diagnosis, dynamic content/search, challenge handoff,
+  SafeJS and credential/passkey/real-input gates remain open; overall goal active.
+
 ### Native public search form validation
 
 - Exercise actual native fill/requestSubmit on parsed source forms, not manually

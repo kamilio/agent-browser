@@ -159,13 +159,17 @@ async function resolveAddresses(
 		]);
 		if (signal.aborted) throw abortReason(signal);
 		const addresses: string[] = [];
+		let lookupFailed = false;
 		for (const result of results) {
 			if (result.status === "fulfilled") addresses.push(...result.value);
 			else if (!["ENODATA", "ENOTFOUND"].includes(result.reason?.code))
-				throw new AgentBrowserError("network-error", "DNS resolution failed");
+				lookupFailed = true;
 		}
 		if (!addresses.length)
-			throw new AgentBrowserError("network-error", "DNS returned no addresses");
+			throw new AgentBrowserError(
+				"network-error",
+				lookupFailed ? "DNS resolution failed" : "DNS returned no addresses",
+			);
 		return addresses;
 	} finally {
 		signal.removeEventListener("abort", cancel);
