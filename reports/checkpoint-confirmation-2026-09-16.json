@@ -1,0 +1,402 @@
+{
+  "at": "2026-09-16T21:40:58.057Z",
+  "baselineCommit": "3d54b63aadec6689ca9a8469688f3fb5a7fe0188",
+  "selectedNative": {
+    "label": "release02",
+    "pid": 802286,
+    "exitCode": 0,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 1.917375298216939,
+    "passedTests": 200,
+    "failedTests": 0,
+    "files": 4,
+    "homeEntries": [],
+    "tmpEntries": []
+  },
+  "fullNative": {
+    "label": "full03",
+    "executionMode": "four-isolated-native-shards",
+    "pid": null,
+    "exitCode": 0,
+    "timedOut": false,
+    "signals": [],
+    "supervisorSignals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 304.4304099548608,
+    "passedTests": 46333,
+    "failedTests": 0,
+    "files": 942,
+    "homeEntries": [],
+    "tmpEntries": [],
+    "shards": [
+      {
+        "label": "full03-shard1",
+        "pid": 816174,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "supervisorSignals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 151.54086153581738,
+        "passedTests": 11114,
+        "failedTests": 0,
+        "files": 233,
+        "expectedAvailableFiles": 233,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "testReportSha256": "a2702e3fecd3c403a57ea9a24b58b37856594c7dd8140b1ad45a9839cca93d73"
+      },
+      {
+        "label": "full03-shard2",
+        "pid": 816175,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "supervisorSignals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 151.56274621374905,
+        "passedTests": 11578,
+        "failedTests": 0,
+        "files": 234,
+        "expectedAvailableFiles": 234,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "testReportSha256": "52e73e1ac5e3c22825586a5885e0cd8cd1bd7f40624f931cbac128cd671ca206"
+      },
+      {
+        "label": "full03-shard4",
+        "pid": 818835,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "supervisorSignals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 151.93928365781903,
+        "passedTests": 11526,
+        "failedTests": 0,
+        "files": 238,
+        "expectedAvailableFiles": 238,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "testReportSha256": "7e145c51df2460d592289aa08eb56292d80e96ea33c43108a192c6e7bd873f09"
+      },
+      {
+        "label": "full03-shard3",
+        "pid": 818834,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "supervisorSignals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 152.76564668864012,
+        "passedTests": 12115,
+        "failedTests": 0,
+        "files": 237,
+        "expectedAvailableFiles": 237,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "testReportSha256": "b2352fa30f4133f3073876ab1f6116121e7039f94537c053d67a09ad6e49e701"
+      }
+    ],
+    "planSha256": "9484e47a5b73debfab86fb16def48d22d28e9da1951b0b073149b355f1323023"
+  },
+  "fullNativePass": true,
+  "interruptedFull": {
+    "at": "2026-09-16T21:31:35.046799+00:00",
+    "pid": 802848,
+    "processStartTicks": "1080840438",
+    "launcherToolSession": 70945,
+    "launcherExitCode": 143,
+    "originalExecutionReceiptExists": false,
+    "childAbsent": true,
+    "groupAbsent": true,
+    "observedChildExitCode": null,
+    "signals": [],
+    "reportedSuccess": true,
+    "passedTests": 46333,
+    "failedTests": 0,
+    "files": 942,
+    "gateAccepted": false,
+    "note": "Observed the same surviving child after launcher termination; no duplicate run started while it was live. Original launcher exit/cleanup evidence is incomplete; this is not a normal successful full-gate receipt."
+  },
+  "negativeControl": {
+    "execution": {
+      "label": "red02",
+      "pid": 802224,
+      "exitCode": 1,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 2.0179719887673855,
+      "passedTests": 172,
+      "failedTests": 28,
+      "files": 4,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "identicalCases": 200,
+    "existingCasesUnchanged": 172,
+    "newCasesFailingBeforeAndPassingAfter": 28,
+    "regressions": [
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "cleans owned resources after a masked rewrite during initial open"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "confirms a small envelope with one-byte progress through EOF"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "confirms stable +0-record envelopes with bounded, positioned short reads"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "confirms stable 1-record envelopes with bounded, positioned short reads"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "confirms stable 64-record envelopes with bounded, positioned short reads"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects a masked same-size 'boundary' ciphertext rewrite after reading 64 records on 'load'"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects a masked same-size 'first' ciphertext rewrite after reading +0 records on 'load'"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects a masked same-size 'first' ciphertext rewrite after reading 1 records on 'save'"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects a masked same-size 'last' ciphertext rewrite after reading +0 records on 'save'"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects a masked same-size 'last' ciphertext rewrite after reading 1 records on 'load'"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects a masked same-size 'last' ciphertext rewrite after reading 64 records on 'load'"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects a masked same-size 'last' ciphertext rewrite after reading 64 records on 'save'"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects fractional confirmation data reads, wipes buffers and poisons"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects fractional confirmation EOF results and releases the descriptor"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects growth after the last confirmation data read"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects infinite confirmation data reads, wipes buffers and poisons"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects infinite confirmation EOF results and releases the descriptor"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects missing confirmation data reads, wipes buffers and poisons"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects missing confirmation EOF results and releases the descriptor"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects nan confirmation data reads, wipes buffers and poisons"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects nan confirmation EOF results and releases the descriptor"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects negative confirmation data reads, wipes buffers and poisons"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects negative confirmation EOF results and releases the descriptor"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects oversized confirmation data reads, wipes buffers and poisons"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects replacement after the last confirmation data read"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects throw confirmation data reads, wipes buffers and poisons"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects throw confirmation EOF results and releases the descriptor"
+      },
+      {
+        "file": "node-passkey-checkpoint-reread.test.ts",
+        "name": "rejects zero confirmation data reads, wipes buffers and poisons"
+      }
+    ]
+  },
+  "trace": {
+    "passed": true,
+    "scope": "Audits one fixed32-attempt synthetic native trace, not real credentials or an atomic filesystem guarantee.",
+    "attempts": 32,
+    "acceptedRewrites": 9,
+    "rejectedRewrites": 23,
+    "allInterceptionsObserved": true,
+    "acceptedIfAndOnlyIfTimestampsUnchangedInThisTrace": true
+  },
+  "fixedTrace": {
+    "passed": true,
+    "attempts": 32,
+    "acceptedRewrites": 0,
+    "rejectedRewrites": 32,
+    "rejectedDespiteIdenticalTimestamps": 9
+  },
+  "quality": {
+    "build": 0,
+    "types": 0,
+    "format": 0,
+    "lint": 0
+  },
+  "canonicalManifest": {
+    "entries": 964,
+    "available": 942,
+    "missing": [
+      "src/borders.test.ts",
+      "src/css-flex.test.ts",
+      "src/css-flow.test.ts",
+      "src/css-math.test.ts",
+      "src/css-variables.test.ts",
+      "src/flex-column-wrap.test.ts",
+      "src/flex-column.test.ts",
+      "src/flex-document.test.ts",
+      "src/flex-nested.test.ts",
+      "src/font-relative-box.test.ts",
+      "src/inline-block.test.ts",
+      "src/inline-borders.test.ts",
+      "src/inline-flex.test.ts",
+      "src/page-base64.test.ts",
+      "src/portable-boundary.test.ts",
+      "src/reference-images.test.ts",
+      "src/reference-renderer.test.ts",
+      "src/relative-positioning.test.ts",
+      "src/response-archive.test.ts",
+      "src/select-keyboard.test.ts",
+      "src/select-typeahead.test.ts",
+      "src/stacking-order.test.ts"
+    ]
+  },
+  "differential": {
+    "passed": true,
+    "scope": "135 pinned saved-body comparisons; no new requests",
+    "inputs": 135,
+    "successfulPairs": 128,
+    "matchingFailurePairs": 7,
+    "changedMarkdown": 0,
+    "changedExtractionFields": 0,
+    "changedReaderOrHtml": 0
+  },
+  "runtimeSourceFiles": 1552,
+  "compiledArtifacts": 2328,
+  "sourceManifestSha256": "53ad69ca81b98992299ae399553533de5a3dac2b23a326ea9c0bc1c5e6dab048",
+  "compiledManifestSha256": "684dd6e09de5a51a76b1e516307e2303aefa7ac997972a7a231c8bcf213b60e1",
+  "reviewSha256": "5b4935739d3694583ac716185edde534043eb26cd206b689fe78cde805d9e5bc",
+  "preservedTracked": 42,
+  "preservedUntracked": 697,
+  "terminalRecords": [
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/native-core01/EXECUTION.json",
+      "exitCode": 1,
+      "pid": 791438
+    },
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/native-core02/EXECUTION.json",
+      "exitCode": 1,
+      "pid": 793121
+    },
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/native-core03/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 796921
+    },
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/native-full03/EXECUTION.json",
+      "exitCode": 0,
+      "pid": null
+    },
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/native-full03/shard-1/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 816174
+    },
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/native-full03/shard-2/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 816175
+    },
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/native-full03/shard-3/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 818834
+    },
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/native-full03/shard-4/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 818835
+    },
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/native-red01/EXECUTION.json",
+      "exitCode": 1,
+      "pid": 797674
+    },
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/native-red02/EXECUTION.json",
+      "exitCode": 1,
+      "pid": 802224
+    },
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/native-release01/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 797867
+    },
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/native-release02/EXECUTION.json",
+      "exitCode": 0,
+      "pid": 802286
+    },
+    {
+      "file": "node_modules/.cache/native-validation/checkpoint-confirmation-september16/replay-differential/proof/EXECUTION.json",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "pid": 803675
+    }
+  ],
+  "realCredentialOrDeviceChecks": 0,
+  "actualLiveRequests": 0,
+  "goalComplete": false
+}

@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Confirm checkpoint bytes when timestamps miss a rewrite
+
+- Trace32 synthetic mid-read rewrites on unchanged production:9 incorrectly
+  return the original authenticated empty snapshot with identical timestamps;
+  all injected writes run. This resolves the mechanism in the new reproduction,
+  without inventing observations for the historical full-suite failure.
+- Add bounded same-descriptor content confirmation with64KiB scratch, exact
+  comparison/EOF and post-read metadata checks. Preserve ownership, poisoning,
+  cleanup and the original mutation test. Not an atomic-writer guarantee.
+-28 new cases fail before/pass after;172 adjacent cases unchanged. Release02:
+  200/0 in4 files; build/types/format/lint pass. Fixed trace rejects32/32 including
+  9 identical-timestamp rewrites. Full03:46,333/0 across4 isolated shards covering
+  all942 available files exactly once;964 manifest
+  entries still include22 missing files. Original failed results remain intact.
+  A prior full child reported the same passing tests after losing its launcher;
+  its unknown exit status is retained, not accepted as a normal completed gate.
+-135 saved-response pairs remain unchanged (128 successes,7 matched non-HTML
+  refusals). No real credentials/devices/SDK or new live requests in this gate.
+- See PASSKEY-CHECKPOINT-CONFIRMATION.md and reports/checkpoint-confirmation-2026-09-16.md/JSON.
+  Broader website/SafeJS, rendering, access/CAPTCHA, research, authentication and
+  device gates remain open. Continue public native browsing; full goal active.
+
 ### Extract exact JSON fields and validate package API workflows
 
 - Three real anonymous native GETs retrieve PyPI API docs and Requests/TypeScript

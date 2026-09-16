@@ -68,6 +68,34 @@ function wipe(snapshot: Snapshot | undefined): void {
 	snapshot?.hash.fill(0);
 }
 
+async function confirmSnapshotContents(
+	file: FileHandle,
+	bytes: Buffer,
+): Promise<void> {
+	const confirmation = Buffer.alloc(Math.min(bytes.length, 64 * 1024));
+	try {
+		let offset = 0;
+		while (offset < bytes.length) {
+			const length = Math.min(confirmation.length, bytes.length - offset);
+			const { bytesRead } = await file.read(confirmation, 0, length, offset);
+			if (
+				!Number.isInteger(bytesRead) ||
+				bytesRead <= 0 ||
+				bytesRead > length ||
+				!bytes
+					.subarray(offset, offset + bytesRead)
+					.equals(confirmation.subarray(0, bytesRead))
+			)
+				throw denied();
+			offset += bytesRead;
+		}
+		if ((await file.read(confirmation, 0, 1, offset)).bytesRead !== 0)
+			throw denied();
+	} finally {
+		confirmation.fill(0);
+	}
+}
+
 export class NodePasskeyCheckpointFile {
 	#path: string;
 	#codec: NodePasskeyCheckpointCodec;
@@ -217,6 +245,12 @@ export class NodePasskeyCheckpointFile {
 			} finally {
 				extra.fill(0);
 			}
+			if (
+				!sameState(before, await file.stat({ bigint: true })) ||
+				!sameState(before, await lstat(path, { bigint: true }))
+			)
+				throw denied();
+			await confirmSnapshotContents(file, bytes);
 			if (
 				!sameState(before, await file.stat({ bigint: true })) ||
 				!sameState(before, await lstat(path, { bigint: true }))

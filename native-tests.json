@@ -961,5 +961,6 @@
   "src/json-source-selection.test.ts",
   "src/document-json-selection.test.ts",
   "src/research-json-pointer-cli.test.ts",
-  "src/research-json-pointer-replay.test.ts"
+  "src/research-json-pointer-replay.test.ts",
+  "src/node-passkey-checkpoint-reread.test.ts"
 ]
