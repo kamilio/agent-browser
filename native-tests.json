@@ -937,5 +937,6 @@
 	"src/research-source-videos.test.ts",
 	"src/research-source-videos-reader.test.ts",
   "src/research-link-content.test.ts",
-  "src/research-target-link.test.ts"
+  "src/research-target-link.test.ts",
+  "src/research-link-compact.test.ts"
 ]

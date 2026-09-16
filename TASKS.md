@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Compact output for native reader link workflows
+
+- Expose the existing compact-table formatter through one optional --compact-tables
+  flag in either maintained link-command selection mode. Preserve defaults, URL/
+  access policy, exact native click, row-list preference, limits and cleanup.
+  Disclose compact provenance only in destination extraction metadata.
+- Measure the same saved Wikipedia article at212988 versus208126 Markdown bytes:
+  4862 bytes saved,2.28%, with only existing marker substitutions. CNET and Target
+  content sizes remain unchanged. This is output-size evidence, not speed.
+- Six full captured-pair native-click workflows and six actual CLI controls pass
+  with kernel-denied network. Final1006pass/0 in13 explicit manifest files includes
+  81 new cases; final tests against old production33pass/48fail. Build/types/format/
+  scoped lint pass. Preserve initial test-assumption failures and one duplicate
+  run after a failed patch; production remains unchanged after the core candidate.
+- Separately validate final compact mode live on Wikipedia: two GET200, exact
+  native click and208230 Markdown bytes. Six lines differ from the marker-normalized
+  prior output: revision links and article text, all deltas inspected. Do not
+  attribute the fresh size difference solely to compaction or claim factual review.
+- All observed resources/process groups close; no retries, redirects, credentials,
+  scripts, alternate clients or challenge solving. See
+  reports/reader-link-compact-2026-09-16.md. Keep historical100-entry outcomes
+  unchanged and continue dynamic
+  runtime, rendering, access handoff, credential/passkey and real-input work.
+
 ### September 16 SafeJS source refresh
 
 - Fetch neighboring poe-code origin main as requested. Its clean main checkout

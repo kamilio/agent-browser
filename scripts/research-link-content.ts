@@ -25,7 +25,7 @@ export const researchLinkContentLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-link-content --target HTTPS_URL --selector CSS SOURCE_HTTPS_URL\n       research-link-content --target-link HTTPS_URL SOURCE_HTTPS_URL\nExplicit native reader on both pages; exact same-origin link, real click, no scripts, credentials, redirects or retries. Target-link mode chooses the first eligible matching anchor, not a fallback after a failed selector or click.\n";
+	"Usage: research-link-content [--compact-tables] --target HTTPS_URL --selector CSS SOURCE_HTTPS_URL\n       research-link-content [--compact-tables] --target-link HTTPS_URL SOURCE_HTTPS_URL\nExplicit native reader on both pages; exact same-origin link, real click, no scripts, credentials, redirects or retries. Target-link mode chooses the first eligible matching anchor, not a fallback after a failed selector or click. Compact tables shorten enclosed table markers without changing content or limits.\n";
 const forbiddenSegments = new Set(
 	"account accounts action cart checkout delete edit login logout purchase register signin signout signup submit subscribe unsubscribe wp-admin wp-login.php".split(
 		" ",
@@ -72,6 +72,7 @@ function publicUrl(value: string): URL {
 export type ResearchLinkContentArguments = {
 	url: string;
 	targetUrl: string;
+	compactTables?: true;
 } & (
 	| { selector: string; targetLink?: never }
 	| { selector?: never; targetLink: true }
@@ -80,7 +81,7 @@ export type ResearchLinkContentArguments = {
 export function parseResearchLinkContentArguments(
 	args: readonly string[],
 ): ResearchLinkContentArguments {
-	if (!Array.isArray(args) || (args.length !== 5 && args.length !== 3))
+	if (!Array.isArray(args) || args.length < 3 || args.length > 6)
 		invalidArguments();
 	for (const value of args)
 		if (typeof value !== "string" || value.length > 4096) invalidArguments();
@@ -88,6 +89,7 @@ export function parseResearchLinkContentArguments(
 	let targetUrl: string | undefined;
 	let selector: string | undefined;
 	let targetLink = false;
+	let compactTables = false;
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
 		if (argument === "--target" && targetUrl === undefined)
@@ -97,6 +99,8 @@ export function parseResearchLinkContentArguments(
 			targetLink = true;
 		} else if (argument === "--selector" && selector === undefined)
 			selector = args[++index];
+		else if (argument === "--compact-tables" && !compactTables)
+			compactTables = true;
 		else if (!argument.startsWith("--") && url === undefined) url = argument;
 		else invalidArguments();
 	}
@@ -104,8 +108,8 @@ export function parseResearchLinkContentArguments(
 		url === undefined ||
 		targetUrl === undefined ||
 		(targetLink
-			? args.length !== 3 || selector !== undefined
-			: args.length !== 5)
+			? args.length !== 3 + Number(compactTables) || selector !== undefined
+			: args.length !== 5 + Number(compactTables))
 	)
 		invalidArguments();
 	try {
@@ -113,12 +117,23 @@ export function parseResearchLinkContentArguments(
 		const target = publicUrl(targetUrl);
 		if (source.origin !== target.origin || source.href === target.href)
 			invalidArguments();
+		const formatting = compactTables ? { compactTables: true as const } : {};
 		if (targetLink)
-			return { url: source.href, targetUrl: target.href, targetLink: true };
+			return {
+				url: source.href,
+				targetUrl: target.href,
+				targetLink: true,
+				...formatting,
+			};
 		if (!selector || selector.trim() !== selector || selector.startsWith("--"))
 			invalidArguments();
 		validateSelectorSyntax(selector, { pseudoElements: false });
-		return { url: source.href, targetUrl: target.href, selector };
+		return {
+			url: source.href,
+			targetUrl: target.href,
+			selector,
+			...formatting,
+		};
 	} catch {
 		invalidArguments();
 	}
@@ -451,6 +466,7 @@ export async function researchLinkContent(
 			contentFocus: "main-content-v2",
 			outputLimitPolicy: "text-prefix-v1",
 			tableRows: true,
+			...(options.compactTables ? { compactTables: true } : {}),
 			maxBytes: 256_000,
 			maxNodes: 50_000,
 			maxDepth: 128,

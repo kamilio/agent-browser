@@ -45,6 +45,30 @@ an intentional selector change separately. See
 `reports/reader-diverse-workflows-2026-09-16.md` for the original failure and
 corrected native click, with no substitution of a different article.
 
+## Compact table output
+
+Either selection mode accepts one optional standalone `--compact-tables` flag:
+
+```sh
+node dist/scripts/research-link-content.js --compact-tables \
+  --target-link https://en.wikipedia.org/wiki/Grace_Coolidge \
+  https://en.wikipedia.org/wiki/Main_Page
+```
+
+The destination must still be linked from the current source page. This flag
+does not alter link selection or enable a fallback when that link disappears.
+It shortens repeated enclosed row/cell begin markers using the existing native
+Markdown formatter, while keeping text, links, cell order and table warnings.
+The existing row-list preference stays enabled. Simple row lists and non-table
+content may not shrink at all. No input, output or request limits increase.
+
+The flag takes no value and cannot be repeated. Omitted means the prior output
+and parser shape remain unchanged; enabled reports disclose
+`extraction.compactTables:true`. It does not add a top-level report flag. See
+`COMPACT-MARKDOWN-TABLES.md` for the formatting contract and
+`reports/reader-link-compact-2026-09-16.md` for saved-body size measurements.
+Smaller output is not a claim of faster page loading or fuller rendering.
+
 ## Output and failure behavior
 
 One bounded JSONL record contains `outcome`, source/target URLs, the selection,

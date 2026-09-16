@@ -1,0 +1,697 @@
+{
+  "schema": "native-reader-link-compact-v1",
+  "recordedAt": "2026-09-16T10:44:34.654Z",
+  "baselineCommit": "ac94c34283d02dc5b6c96e22be1840717e9bafee",
+  "finalCandidate": "release04",
+  "productionSha256": "59bed41e71e9a552e9d3889822b45f2100b07e0f722caca4100fb07492b0f72b",
+  "compiledFiles": 2292,
+  "changedCompiled": [
+    "scripts/research-link-content.d.ts",
+    "scripts/research-link-content.d.ts.map",
+    "scripts/research-link-content.js",
+    "scripts/research-link-content.js.map"
+  ],
+  "productionUnchangedSinceCore": true,
+  "measurements": {
+    "passed": true,
+    "newLiveRequests": 0,
+    "scope": "Same saved body and retained tree; output bytes, not speed or live measurements",
+    "results": [
+      {
+        "id": "wikipedia",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Main_Page",
+        "targetUrl": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+        "ordinaryBytes": 212988,
+        "compactBytes": 208126,
+        "savedBytes": 4862,
+        "savedPercent": 2.282757714049618,
+        "ordinarySha256": "b14c5a4253b3c4d1252d94f5092272eb041ebab4b6e02ac923720c3d1831e8cf",
+        "compactSha256": "0c5af42964df341d5409e7787bc43a5e8f10e58d1ecb963cbc6cfc4b4e0ba7d2",
+        "onlyDocumentedMarkerChanges": true,
+        "metadataOtherwiseIdentical": true,
+        "documentClosed": true
+      },
+      {
+        "id": "cnet",
+        "sourceUrl": "https://www.cnet.com/",
+        "targetUrl": "https://www.cnet.com/tech/computing/visiting-shenzhen-chinas-silicon-valley/",
+        "ordinaryBytes": 20676,
+        "compactBytes": 20676,
+        "savedBytes": 0,
+        "savedPercent": 0,
+        "ordinarySha256": "7e5a88949e390fe923236f9118dd12725eac144bbf87cb4dc770a8749e560b8b",
+        "compactSha256": "7e5a88949e390fe923236f9118dd12725eac144bbf87cb4dc770a8749e560b8b",
+        "onlyDocumentedMarkerChanges": true,
+        "metadataOtherwiseIdentical": true,
+        "documentClosed": true
+      },
+      {
+        "id": "target",
+        "sourceUrl": "https://www.target.com/",
+        "targetUrl": "https://www.target.com/p/apple-watch-series-12/-/A-1013556561",
+        "ordinaryBytes": 2282,
+        "compactBytes": 2282,
+        "savedBytes": 0,
+        "savedPercent": 0,
+        "ordinarySha256": "e13785ad3c8ca77154172fd37cd17f79a77c1c6b8e981b93bab54c50880e5006",
+        "compactSha256": "e13785ad3c8ca77154172fd37cd17f79a77c1c6b8e981b93bab54c50880e5006",
+        "onlyDocumentedMarkerChanges": true,
+        "metadataOtherwiseIdentical": true,
+        "documentClosed": true
+      }
+    ]
+  },
+  "validation": {
+    "core": {
+      "label": "core01",
+      "pid": 195191,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 7.027422990649939,
+      "passedTests": 925,
+      "failedTests": 0,
+      "files": 12,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "final": {
+      "label": "release04",
+      "pid": 211186,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 7.428211376070976,
+      "passedTests": 1006,
+      "failedTests": 0,
+      "files": 13,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "finalNegativeControl": {
+      "label": "red03",
+      "pid": 211092,
+      "exitCode": 1,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 1.7674249671399593,
+      "passedTests": 33,
+      "failedTests": 48,
+      "files": 1,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "quality": {
+      "label": "release04",
+      "executions": [
+        {
+          "name": "build",
+          "pid": 209471,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 6.474412590265274
+        },
+        {
+          "name": "types",
+          "pid": 210162,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 4.171370988711715
+        },
+        {
+          "name": "format",
+          "pid": 211136,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.03173099271953106
+        },
+        {
+          "name": "lint",
+          "pid": 211155,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.03159672953188419
+        }
+      ],
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0
+      },
+      "allProcessesClosed": true
+    },
+    "newTests": 81,
+    "canonicalManifestFiles": 940,
+    "initialCandidates": [
+      {
+        "label": "release01",
+        "pid": 200659,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 7.378709524869919,
+        "passedTests": 994,
+        "failedTests": 12,
+        "files": 13,
+        "homeEntries": [],
+        "tmpEntries": []
+      },
+      {
+        "label": "release02",
+        "pid": 203380,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 7.378212267532945,
+        "passedTests": 994,
+        "failedTests": 12,
+        "files": 13,
+        "homeEntries": [],
+        "tmpEntries": []
+      },
+      {
+        "label": "release03",
+        "pid": 207039,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 7.377794748172164,
+        "passedTests": 998,
+        "failedTests": 8,
+        "files": 13,
+        "homeEntries": [],
+        "tmpEntries": []
+      }
+    ],
+    "initialFailureExplanation": "An assertion expected an unescaped Markdown period, then an internal optional field to be absent rather than present with undefined. Both test assumptions were corrected. A failed patch command left release02 identical to release01; both duplicate failing runs are retained. No production correction was needed after core01.",
+    "nativeIsolation": "JavaScript guard; not kernel isolation"
+  },
+  "replays": {
+    "passed": true,
+    "label": "release04",
+    "newLiveRequests": 0,
+    "fixtureRequests": 12,
+    "scope": "Three fully captured source/destination pairs, each in unchanged-default and explicit compact modes; no new websites",
+    "results": [
+      {
+        "id": "wikipedia",
+        "compact": false,
+        "sourceUrl": "https://en.wikipedia.org/wiki/Main_Page",
+        "targetUrl": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+        "fixtureRequests": 2,
+        "markdownBytes": 212988,
+        "markdownSha256": "b14c5a4253b3c4d1252d94f5092272eb041ebab4b6e02ac923720c3d1831e8cf",
+        "outcome": "extracted-unverified",
+        "discovery": {
+          "strategy": "first-eligible-target-v1",
+          "anchorMatches": 663,
+          "targetCandidates": 2,
+          "eligibleCandidates": 2
+        }
+      },
+      {
+        "id": "wikipedia",
+        "compact": true,
+        "sourceUrl": "https://en.wikipedia.org/wiki/Main_Page",
+        "targetUrl": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+        "fixtureRequests": 2,
+        "markdownBytes": 208126,
+        "markdownSha256": "0c5af42964df341d5409e7787bc43a5e8f10e58d1ecb963cbc6cfc4b4e0ba7d2",
+        "outcome": "extracted-unverified",
+        "discovery": {
+          "strategy": "first-eligible-target-v1",
+          "anchorMatches": 663,
+          "targetCandidates": 2,
+          "eligibleCandidates": 2
+        }
+      },
+      {
+        "id": "cnet",
+        "compact": false,
+        "sourceUrl": "https://www.cnet.com/",
+        "targetUrl": "https://www.cnet.com/tech/computing/visiting-shenzhen-chinas-silicon-valley/",
+        "fixtureRequests": 2,
+        "markdownBytes": 20676,
+        "markdownSha256": "7e5a88949e390fe923236f9118dd12725eac144bbf87cb4dc770a8749e560b8b",
+        "outcome": "extracted-unverified",
+        "discovery": {
+          "strategy": "first-eligible-target-v1",
+          "anchorMatches": 452,
+          "targetCandidates": 2,
+          "eligibleCandidates": 1
+        }
+      },
+      {
+        "id": "cnet",
+        "compact": true,
+        "sourceUrl": "https://www.cnet.com/",
+        "targetUrl": "https://www.cnet.com/tech/computing/visiting-shenzhen-chinas-silicon-valley/",
+        "fixtureRequests": 2,
+        "markdownBytes": 20676,
+        "markdownSha256": "7e5a88949e390fe923236f9118dd12725eac144bbf87cb4dc770a8749e560b8b",
+        "outcome": "extracted-unverified",
+        "discovery": {
+          "strategy": "first-eligible-target-v1",
+          "anchorMatches": 452,
+          "targetCandidates": 2,
+          "eligibleCandidates": 1
+        }
+      },
+      {
+        "id": "target",
+        "compact": false,
+        "sourceUrl": "https://www.target.com/",
+        "targetUrl": "https://www.target.com/p/apple-watch-series-12/-/A-1013556561",
+        "fixtureRequests": 2,
+        "markdownBytes": 2282,
+        "markdownSha256": "e13785ad3c8ca77154172fd37cd17f79a77c1c6b8e981b93bab54c50880e5006",
+        "outcome": "extracted-unverified",
+        "discovery": {
+          "strategy": "first-eligible-target-v1",
+          "anchorMatches": 67,
+          "targetCandidates": 1,
+          "eligibleCandidates": 1
+        }
+      },
+      {
+        "id": "target",
+        "compact": true,
+        "sourceUrl": "https://www.target.com/",
+        "targetUrl": "https://www.target.com/p/apple-watch-series-12/-/A-1013556561",
+        "fixtureRequests": 2,
+        "markdownBytes": 2282,
+        "markdownSha256": "e13785ad3c8ca77154172fd37cd17f79a77c1c6b8e981b93bab54c50880e5006",
+        "outcome": "extracted-unverified",
+        "discovery": {
+          "strategy": "first-eligible-target-v1",
+          "anchorMatches": 67,
+          "targetCandidates": 1,
+          "eligibleCandidates": 1
+        }
+      }
+    ]
+  },
+  "cliControls": {
+    "passed": true,
+    "mode": "controls",
+    "label": "release04",
+    "pins": {
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-link-compact-september16/run-final.py": "0f0a544245d1a697ddb9e864938f0cf0ce71bd5f7c6c84d7ae869c74f9f717b6",
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-diverse-workflows-september16/run.py": "36fe84cf2c065be826304c0e7cc23beefb98e45a90dac88b679f72d5c6a9b7c1",
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-link-compact-september16/proof-final.mjs": "53bba568d906851dcbacb3ccbc116458a56f2de2709729f31fa44e2de6e23ad2",
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-link-compact-september16/FIXTURES.json": "079fb05149806ddb14d848b9c8d3e3751e11c1f3c5b1d6b490f685c761ee2a08",
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-link-compact-september16/measure/proof/RESULT.json": "f9405b108a6ed3973da71fcbb997f42a2a07079cc859a1ff99e326eff82e411b",
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-link-compact-september16/SOURCE-release04.json": "68688c63df430f9d1913459e1f282f19c81fa1b122be73ecb835b187c7e0d414",
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-link-compact-september16/COMPILED-release04.json": "c45af1fe630185ee5fcad003b58af771f8b5fe594d1409da5078c4c765ceef22",
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/block-link-content-september15/proof/sealed-exec.py": "e024d0882b099e995acc8980de9164a9db2ac2362417835fe5ad568a33068ac7",
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/block-link-content-september15/proof/replay-guard.cjs": "8e95384c687db7f5352dbd5cc76fb03cd066831b3dfb457d5b9c7c36d485efb0",
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/arxiv-search-phases-september16/observe.cjs": "4f15b589fbf0ee331ce9816f7810c45f6adbb2260b2bd1eb330edf41d3dd3a8c"
+    },
+    "approvalSha256": null,
+    "executions": [
+      {
+        "ordinal": "help",
+        "mode": "offline",
+        "version": "release04",
+        "entry": {
+          "ordinal": "help",
+          "args": [
+            "--help"
+          ],
+          "exit": 0
+        },
+        "approvalSha256": null,
+        "pid": 211995,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "safetyErrors": [],
+        "safetyPassed": true,
+        "terminationSignal": null,
+        "elapsedSeconds": 0.2545638643205166
+      },
+      {
+        "ordinal": "duplicate",
+        "mode": "offline",
+        "version": "release04",
+        "entry": {
+          "ordinal": "duplicate",
+          "args": [
+            "--compact-tables",
+            "--compact-tables",
+            "--target-link",
+            "https://en.wikipedia.org/wiki/Grace_Coolidge",
+            "https://en.wikipedia.org/wiki/Main_Page"
+          ],
+          "exit": 64
+        },
+        "approvalSha256": null,
+        "pid": 212002,
+        "exitCode": 64,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "safetyErrors": [],
+        "safetyPassed": true,
+        "terminationSignal": null,
+        "elapsedSeconds": 0.25535161048173904
+      },
+      {
+        "ordinal": "value",
+        "mode": "offline",
+        "version": "release04",
+        "entry": {
+          "ordinal": "value",
+          "args": [
+            "--compact-tables",
+            "true",
+            "--target-link",
+            "https://en.wikipedia.org/wiki/Grace_Coolidge",
+            "https://en.wikipedia.org/wiki/Main_Page"
+          ],
+          "exit": 64
+        },
+        "approvalSha256": null,
+        "pid": 212012,
+        "exitCode": 64,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "safetyErrors": [],
+        "safetyPassed": true,
+        "terminationSignal": null,
+        "elapsedSeconds": 0.25546522438526154
+      },
+      {
+        "ordinal": "target-value",
+        "mode": "offline",
+        "version": "release04",
+        "entry": {
+          "ordinal": "target-value",
+          "args": [
+            "--target-link",
+            "--compact-tables",
+            "https://en.wikipedia.org/wiki/Main_Page"
+          ],
+          "exit": 64
+        },
+        "approvalSha256": null,
+        "pid": 212019,
+        "exitCode": 64,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "safetyErrors": [],
+        "safetyPassed": true,
+        "terminationSignal": null,
+        "elapsedSeconds": 0.2552971914410591
+      },
+      {
+        "ordinal": "mixed",
+        "mode": "offline",
+        "version": "release04",
+        "entry": {
+          "ordinal": "mixed",
+          "args": [
+            "--compact-tables",
+            "--target-link",
+            "https://en.wikipedia.org/wiki/Grace_Coolidge",
+            "--selector",
+            "a",
+            "https://en.wikipedia.org/wiki/Main_Page"
+          ],
+          "exit": 64
+        },
+        "approvalSha256": null,
+        "pid": 212026,
+        "exitCode": 64,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "safetyErrors": [],
+        "safetyPassed": true,
+        "terminationSignal": null,
+        "elapsedSeconds": 0.255745904520154
+      },
+      {
+        "ordinal": "userinfo",
+        "mode": "offline",
+        "version": "release04",
+        "entry": {
+          "ordinal": "userinfo",
+          "args": [
+            "--compact-tables",
+            "--target-link",
+            "https://fixture:PRIVATE_COMPACT@en.wikipedia.org/wiki/Owned",
+            "https://en.wikipedia.org/wiki/Main_Page"
+          ],
+          "exit": 64
+        },
+        "approvalSha256": null,
+        "pid": 212093,
+        "exitCode": 64,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "safetyErrors": [],
+        "safetyPassed": true,
+        "terminationSignal": null,
+        "elapsedSeconds": 0.2564849629998207
+      }
+    ],
+    "errors": [],
+    "terminationSignal": null,
+    "scope": "Orderly safety success is not automatic live content success"
+  },
+  "live": {
+    "startedAt": "2026-09-16T10:41:16.347364+00:00",
+    "execution": {
+      "ordinal": 1,
+      "mode": "live",
+      "version": "release04",
+      "entry": {
+        "ordinal": 1,
+        "sourceUrl": "https://en.wikipedia.org/wiki/Main_Page",
+        "targetUrl": "https://en.wikipedia.org/wiki/Grace_Coolidge"
+      },
+      "approvalSha256": "338eb82f79f90c9d3974fb35631fbbd6971a3c1decb858f80b54d5b132d7d6c8",
+      "pid": 212938,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "safetyErrors": [],
+      "safetyPassed": true,
+      "reservation": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-link-compact-september16/source-reservations/b71288d6f0880c7cebf45524835c14108156260bbcd46ed419ef2c243aeda771.json",
+      "terminationSignal": null,
+      "elapsedSeconds": 2.6622146386653185
+    },
+    "sourceUrl": "https://en.wikipedia.org/wiki/Main_Page",
+    "targetUrl": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+    "outcome": "extracted-unverified",
+    "contentSuccess": null,
+    "partial": true,
+    "extractionCompactTables": true,
+    "responses": [
+      {
+        "url": "https://en.wikipedia.org/wiki/Main_Page",
+        "status": 200,
+        "decodedBytes": 259504,
+        "bodySha256": "2a366bf33beef03ba9755df6f1d210b12832835ab5c0619da1098017afefa1ea"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+        "status": 200,
+        "decodedBytes": 723402,
+        "bodySha256": "992f98bdcea0ed8e13c67cdcaeb0731eeece357395fcea182b52a04bde45e952"
+      }
+    ],
+    "selection": {
+      "reference": "e4537",
+      "label": "Grace Coolidge",
+      "url": "https://en.wikipedia.org/wiki/Grace_Coolidge",
+      "candidates": 2
+    },
+    "discovery": {
+      "strategy": "first-eligible-target-v1",
+      "anchorMatches": 662,
+      "targetCandidates": 2,
+      "eligibleCandidates": 2
+    },
+    "events": [
+      "mousedown",
+      "mouseup",
+      "click"
+    ],
+    "review": {
+      "verdict": "substantive-reference-article-available",
+      "mode": "Full output equality comparison after documented marker normalization, plus inspection of all six changed line deltas; prior content review was sampled, not full factual review",
+      "priorFile": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-product-reference-september16/live/2/RESULT.json",
+      "priorSha256": "963246a05703b1336e492cd37c5bb9157a47229ee23886c38f018f4adfc5f785",
+      "priorMarkdownBytes": 213087,
+      "normalizedPriorBytes": 208225,
+      "currentMarkdownBytes": 208230,
+      "currentMarkdownSha256": "cc5c8fd747b71fa57b08dcde3c9208ef01703fad09051e60dbb481362b6e971e",
+      "totalLines": 2374,
+      "unchangedAfterNormalization": 2368,
+      "changedLines": [
+        {
+          "line": 123,
+          "previousSha256": "5d25d029b0d417ab3a9b00b74d8e5313e77dafb7362f8d0c534e8cb55ccdc427",
+          "currentSha256": "a2229d72e07078531efa54e5afcdb5eee78b40e6b35ea3530a1cae5a2bcc950a"
+        },
+        {
+          "line": 127,
+          "previousSha256": "ce5d167adf98206a01c06bcd87fa5c9f5476de5d8743ba5521f3a87c5eff6719",
+          "currentSha256": "4c10ff0534bc7fcd9878dd75a00b0b515091c381329ecdc8ddd5abc0c2b719bd"
+        },
+        {
+          "line": 719,
+          "previousSha256": "4280497ac4625c1ee8034e897c2d39ae590a35bb1a78611c1b21505d9eaee6bf",
+          "currentSha256": "832370d9d18b0c7a8a83bd63706b062e9ecdc118e9538726dbc1b8bb448270e4"
+        },
+        {
+          "line": 721,
+          "previousSha256": "d010eaa28267e9e3964f9bfdd6159d01a99d66c7965d8237b061afb68ef8e67b",
+          "currentSha256": "e6fcc1c12696cccc3eacda021dc4c20f8960e5844f5200093c920c00bdda712b"
+        },
+        {
+          "line": 723,
+          "previousSha256": "7e3aa08f01dfac36ab50a4bef56aebf82aea97e060ad26c0b8f2b3b085f1b34b",
+          "currentSha256": "b09f38d80364f5e95f479d49792f9b6bf092a2cac8fa976ae3cdb7b40a013ba2"
+        },
+        {
+          "line": 2309,
+          "previousSha256": "3e47e4bb6439fe941f6f18df95f3bf173ebffa9ec402a6631403dbee77b53b36",
+          "currentSha256": "12d6c66081ccb4c0a73be1fbff1c9403430e80ddbbc595fcc0db9143951fc1d2"
+        }
+      ],
+      "note": "Three revision-link lines and three article paragraphs differ. Do not attribute the entire live byte difference to compaction; factual accuracy and full rendering remain unverified."
+    },
+    "newRequests": 2,
+    "retries": 0,
+    "redirects": 0,
+    "credentials": false,
+    "pageScripts": false
+  },
+  "historicalCorpusChanged": false,
+  "evidence": {
+    "node_modules/.cache/native-validation/reader-link-compact-september16/BEFORE.json": "313cc3678d12704d53e7a49be24fc4d71af760abae68d8f474b340f153729a8e",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/RUNTIME.json": "8339f80459f4282b5f83a8d192c8e56608c1d5f6c3cbf101c86528e47f3d32c9",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/FIXTURES.json": "079fb05149806ddb14d848b9c8d3e3751e11c1f3c5b1d6b490f685c761ee2a08",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/measure/CHECK.json": "e0573fbd2d76db202455b58a117ffefa2c659a190cea28ed6d30353decaa4d82",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/measure/proof/RESULT.json": "f9405b108a6ed3973da71fcbb997f42a2a07079cc859a1ff99e326eff82e411b",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/measure/proof/EXECUTION.json": "f2ab7d58c34c07bf0b222f566f7bed8a96796486212b7f11886642a20e103873",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/measure/proof/INVOCATION.json": "a1fb30515356c2da24ee28f475ebd40237b7dc22d95e8f66893aa7e34ec6b045",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/measure/proof/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/measure/proof/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/SOURCE-release04.json": "68688c63df430f9d1913459e1f282f19c81fa1b122be73ecb835b187c7e0d414",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/COMPILED-release04.json": "c45af1fe630185ee5fcad003b58af771f8b5fe594d1409da5078c4c765ceef22",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/OVERLAY-release04.json": "72ff06f855f9c34ac4714bb1b96f48a93dba730bab7e8ed48c94e782a82934ed",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/CHECK-release04.json": "c1fc9d34c854cea14850549bee71c459fefc6ee56cd1cf588b1d38673f7a5972",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/PRODUCTION-REVIEW.json": "6056881cc8f8053fddbdeb3963ed698258404204e2e9ca61debf410bdc58961a",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/LIVE-PLAN.md": "5f638589723a176b29689a2d633bd330e85e0f8d9f73a542a2cae5b55c625a91",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/LIVE-APPROVAL-release04.json": "338eb82f79f90c9d3974fb35631fbbd6971a3c1decb858f80b54d5b132d7d6c8",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/CONTENT-REVIEW.json": "829d9981e32777ba27de1c147b73665a413d8db014e6e108fefbf7376687e9f4",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-core01/INVOCATION.json": "3434545d54b882372abceeb2ea038ed80f9f3afe93920e5925920d4540fc361b",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-core01/EXECUTION.json": "f9e0189aa0289fd1e280e97def3413eae5a6bed745a3007d50f3749cb4e4b505",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-core01/native.json": "8d8e9242103061cb478d79b5f513c3161d8e359036dbe980de926648c11e61f7",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-red01/INVOCATION.json": "430d4bd9308e3520c8741aa4a35b553f817e90ac74f5702593108be4ec11be61",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-red01/EXECUTION.json": "bf94c57617535db0353ad873d17e5fe6ac0172933316a61567b9783b75d800f2",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-red01/native.json": "499ba98d6f89c964079ba0223fe5fb59e37fa6c3c99d62e2ecc651b08241591e",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-red02/INVOCATION.json": "93c1676a3bd54538198131ba7c498b09bf61f8e1f4256fe3f23f30950bb1394d",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-red02/EXECUTION.json": "e1d5b75101def0e7142e1b7f59fca9b75730faf14ca0723a11149f7b67c74e05",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-red02/native.json": "bc2868543619c5fdd8a3a22e502ffe0158d4267dcf5b5cb1343a6a327fd2dbd7",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-red03/INVOCATION.json": "a864ed025acaae70f5aea12d04e8fae40460ad6bf15f01b2833ae6546ca9485a",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-red03/EXECUTION.json": "fdb42de829df0d8a11132046b97d733fb3b050be5968f00e4eaeab7a706c503b",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-red03/native.json": "24127665905f08e1cd7c2883599726c720e4fa2f97621c4fa764bdb8910d7339",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-release01/INVOCATION.json": "f389d06e515baa519a638b6fb2eba873dfc40a968929141ad9c73a3650b996c7",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-release01/EXECUTION.json": "85ee2e2bb897612fd5fcd5177e7d40824d9d0269344f61cc1449fdae6cc84e85",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-release01/native.json": "60c56999ea97e14bc1f83faca21b3049dde602d52c571544509a798a5c5fd8d6",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-release02/INVOCATION.json": "b3b4ab305080b46e7141f6b1161416f4b4ba4675847683d978bc032dd328f1eb",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-release02/EXECUTION.json": "1fc86b13e6c8077924d54311c236f01ef37477662cb78c9f7e9bf71c4894b112",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-release02/native.json": "cac9763febebfc7e947d082b015d07726c1dcd0d223649a70e80016742409493",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-release03/INVOCATION.json": "bdc71a2aaf249291741153fa330956e22614d745d6c666a933910a96ab682f72",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-release03/EXECUTION.json": "72a9dd461953821586aaba2d48655c5c9990b3dd328709dbabd0c1e441fb8f57",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-release03/native.json": "c8079811b724c9ebdc3e67b35aebfb2236ffaf2e0ff5a5f52d275de1ebd34de9",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-release04/INVOCATION.json": "2bc928b0aacc920fcef45ea4a765f7aa7edbf94d370845d001ff94417d0341d7",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-release04/EXECUTION.json": "27b0c94d250c7f642ca16ee18e20d5b8bfb93f5f16b96584c510f5d46541c315",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/native-release04/native.json": "1147ccaf2aaf80b66642665a78692a064e47e98f60bcd084bd88db2e02d31d3c",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/proof-core01/CHECK.json": "8f88069a6fcb74565f91625196accd3b8666ad78d6e69193a1c5db3c7c3a23d6",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/proof-core01/proof/RESULT.json": "6bd4b45f992a0eea344f60120c1dcff0e1c3f9921ef8b9795a3f8f2ecad17400",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/proof-core01/proof/INVOCATION.json": "e64f58b928056c6a98f5da92fb38a808aae518abef8f009305624ccd17ffa64a",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/proof-core01/proof/EXECUTION.json": "becfbec7d972171c8f6f56329ffa5ec46192ea6fcf5eeed98ff0ca8f1eee6bc8",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/proof-core01/proof/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/proof-core01/proof/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/proof-release04/CHECK.json": "9a8849d3d8270c404ab29f662779736a83eb6d7eb21e98a9f189b62363f7308b",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/proof-release04/proof/RESULT.json": "8da97bbc84650d6e660ae3368a52418346ee40fd470dcf44142b75101c3268c5",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/proof-release04/proof/INVOCATION.json": "21f578dd0aa3f04b89b4f7b52108a468cc7bee372d32017e9359b7a13608e697",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/proof-release04/proof/EXECUTION.json": "88b49428b2ed352526a308e33c207155f8f4e33a8f3060880763226d8fd6d6ad",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/proof-release04/proof/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/proof-release04/proof/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/CHECK.json": "653e29019ed3479a07733e24a7e637a6a82174ec24d060658480fa71c68a3e79",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/live-release04/CHECK.json": "ca47832e4d1bc79a0a6fda0614a143b3d2288339756588d46e8737dc2de01e39",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/help/INVOCATION.json": "230f08e223e65427401aa855127c3cfc7d5223748e7d99f7f7f2aff3236f71d4",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/help/EXECUTION.json": "70fe9561c883252cbf139760717f5e42b70da7640649691ce9f401abff175d7f",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/help/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/help/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/duplicate/INVOCATION.json": "39c1aad5b2648dec0be3e7a3f0d35daf2d0b57991726b2f8a121472b7804d06c",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/duplicate/EXECUTION.json": "43eda1b1e6c6b0f43929ff70d42fa80cafc0b55ba95e36df2558bad74cdc9522",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/duplicate/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/duplicate/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/value/INVOCATION.json": "da49987fbdda9946a967c6bf3088114dc6c204848dee895cfedd0e6acb8ee380",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/value/EXECUTION.json": "b311799c907559b8c6f069bb1974e19547ea7f59078e03628ffa57cc74303f85",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/value/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/value/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/target-value/INVOCATION.json": "9cd7c96adb96e68f3804655dc957da7469bde388cd6ebdc1242dc9a804bc56c8",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/target-value/EXECUTION.json": "e5cc5c66a62e5f2e8f9ae59ca54fa371f0ad41b6098fdd17dfee7d7ae8420a8d",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/target-value/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/target-value/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/mixed/INVOCATION.json": "4bdce24e7ebbc75435cf392d411fc82af9e03ebb120eec685b572c8746f3d624",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/mixed/EXECUTION.json": "6b49da1fc550ab71d2bb2a8f448edfc54589b16a6139cb3d4b783cae5a7f6a62",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/mixed/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/mixed/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/userinfo/INVOCATION.json": "af53d540fd05235fec10ae47cfd55fddfb21d4eb53b59d10a1abba0d4deeae70",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/userinfo/EXECUTION.json": "6ea6317dcd5c781921b4bccedf11d6ed20a1b2a06ca15f47be2d5798bcc2ce0e",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/userinfo/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/controls-release04/userinfo/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/live-release04/1/INVOCATION.json": "232ea85ea923710bf695c292e27db4bfaafcbfed0fac9f0f84878a1ce7bbd607",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/live-release04/1/EXECUTION.json": "8adfe0e99fc62a07a559eb96773b7bd5542a6661c8a058324e4d4d54fa3b0ccc",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/live-release04/1/RESULT.json": "04927892c5a2709c03fe2cd90d0ad22c5ed6cb47b8e47716d1fdc4f4456b9d27",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/live-release04/1/http-events.jsonl": "e96b991730120985d6dbfbac0a8cb65f9065eff750ea0a2fd862bd502d06c6a7",
+    "node_modules/.cache/native-validation/reader-link-compact-september16/live-release04/1/stdout.log": "5723efa72b4721e05e67d35efe474cf578a8382c94b88fead43a2910640ccaa2"
+  }
+}
