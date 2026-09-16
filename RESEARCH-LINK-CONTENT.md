@@ -164,6 +164,13 @@ tasks, not recipe completeness, audio, shopping, inventory or account validation
 All automatic results remain partial and unverified. A successful article or
 product does not change the earlier host-root corpus verdict.
 
+The optimized parser is also validated on Medical News Today, Biology Insights
+and Bankrate articles, with complete captured-pair replay matching each live
+extraction. Bankrate supplies useful research prose but not populated chart data;
+empty component props are not a dataset. See
+`reports/reader-explainer-workflows-2026-09-16.md` for the separate source diagnosis
+and untested external-code, ZIP-lookup and report-request boundaries.
+
 ## Programmatic ownership
 
 `scripts/research-link-content.ts` exports

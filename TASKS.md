@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Optimized reader: health, biology and housing explainers
+
+- Validate the committed parser live through three exact source-linked native
+  workflows: Medical News Today11984 Markdown bytes, Biology Insights3955, and
+  Bankrate2447. Read all emitted content; classify substantive article/research
+  prose, not factual accuracy, full charts, forms or rendered app functionality.
+- Preserve six GET200 and six complete anonymous captures totaling3121776 decoded
+  bytes. Only the five approved response headers are retained; bodies remain local
+  diagnostics. No redirects, retries, supplied credentials, scripts or actions on
+  ZIP/report forms. All observed requests/sockets/documents/process groups close.
+- Three pre-live synthetic-destination proofs and three post-live complete-pair
+  native-click replays pass with kernel-denied network, twelve mocked GETs total.
+  Replay Markdown and normalized extraction match the live outputs exactly.
+  No production change, new build or fresh unit run: prior1236/0 gate stays separate.
+- Bankrate's two chart component props are empty; the supported data-json table
+  format is absent. Main static JSON verification confirms the references and
+  empty props. Five public script references remain uninspected; no dataset URL
+  or source collector is justified yet. Keep four partial prose observations
+  distinct, preserve report-request/ZIP boundaries and inspect advertised public
+  implementation only under a separate bounded scope before considering a fix.
+- See reports/reader-explainer-workflows-2026-09-16.md. Original100-root results,
+  global agent-traffic claims and SDK/rendering/access/device gates are unchanged.
+
 ### Namespace-only parser dispatch and measured reader loading
 
 - Profile150 saved-page loads/extractions; identify repeated immutable attribute
