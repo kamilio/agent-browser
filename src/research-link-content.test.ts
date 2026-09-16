@@ -84,6 +84,19 @@ function articleCard(headingTag: "h3" | "h5", titleOn: "anchor" | "heading") {
 	</article></main>`;
 }
 
+function redirectStub(destination = targetUrl, visibleAnchor = true) {
+	return `<!DOCTYPE html>
+<html><head>
+	<title>Synthetic documentation redirect</title>
+	<script>location.replace("${destination}" + location.search + location.hash);</script>
+	<meta http-equiv="refresh" content="0; url=${destination}">
+	<link rel="canonical" href="${destination}">
+</head><body><main>
+	<h1>Documentation moved</h1>
+	${visibleAnchor ? `<a id="chosen" href="${targetUrl}">Continue</a>` : ""}
+</main></body></html>`;
+}
+
 function controller() {
 	const value = new AbortController();
 	controllers.push(value);
@@ -556,6 +569,140 @@ describe("native source-present link navigation", () => {
 			pendingLoads: 0,
 			network: { active: 0, closed: true },
 		});
+		closed();
+	});
+
+	it("follows an observed documentation redirect-stub anchor through an explicit native target-link click", async () => {
+		serve(redirectStub());
+		const observedEvents: string[] = [];
+		let anchorReference = "";
+		vi.mocked(BrowserSession.prototype.click).mockImplementationOnce(function (
+			this: BrowserSession,
+			tab,
+			reference,
+			options,
+		) {
+			const page = this.page(tab);
+			const anchor = page.queries.querySelector(selector);
+			if (anchor === null) throw new Error("Missing fixture redirect anchor");
+			anchorReference = page.document.reference(anchor);
+			expect(reference).toBe(anchorReference);
+			for (const event of ["mousedown", "mouseup", "click"])
+				page.interactions.events.addEventListener(anchor, event, () =>
+					observedEvents.push(event),
+				);
+			return originalClick.call(this, tab, reference, options);
+		});
+		const report = await researchLinkContent([
+			"--target-link",
+			targetUrl,
+			sourceUrl,
+		]);
+		expect(report).toMatchObject({
+			outcome: "extracted-unverified",
+			partial: true,
+			contentSuccess: null,
+			sourceUrl,
+			targetUrl,
+			selectionMode: "exact-target-v1",
+			selection: {
+				reference: anchorReference,
+				label: "Continue",
+				url: targetUrl,
+				candidates: 1,
+			},
+			events: ["mousedown", "mouseup", "click"],
+			stage: "complete",
+			documentClosedStates: [true, true],
+		});
+		expect(observedEvents).toEqual(["mousedown", "mouseup", "click"]);
+		expect(BrowserSession.prototype.click).toHaveBeenCalledOnce();
+		const click = await vi.mocked(BrowserSession.prototype.click).mock
+			.results[0].value;
+		expect(click.navigation).toMatchObject({
+			kind: "document",
+			url: targetUrl,
+		});
+		expect(report.extraction?.content).toContain("Owned article");
+		expect(report.extraction?.content).toContain("Saved introduction: café\\.");
+		expect(report.extraction?.content).toContain("Owned row");
+		expect(report.extraction?.content).not.toContain("Documentation moved");
+		expect(report.responses).toHaveLength(2);
+		requests([sourceUrl, targetUrl]);
+		closed();
+	});
+
+	it("stops a documentation redirect stub without a visible anchor at target-link selection", async () => {
+		serve(redirectStub(targetUrl, false));
+		const report = await researchLinkContent([
+			"--target-link",
+			targetUrl,
+			sourceUrl,
+		]);
+		expect(report).toMatchObject({
+			outcome: "failure",
+			partial: true,
+			contentSuccess: false,
+			sourceUrl,
+			targetUrl,
+			selectionMode: "exact-target-v1",
+			stage: "link-selection",
+			failure: { category: "not-found", stage: "link-selection" },
+			events: [],
+			documentClosedStates: [true],
+		});
+		expect(report.selection).toBeUndefined();
+		expect(report.responses).toHaveLength(1);
+		expect(BrowserSession.prototype.click).not.toHaveBeenCalled();
+		requests([sourceUrl]);
+		noExtraction();
+		closed();
+	});
+
+	it("clicks the explicit target anchor instead of a conflicting declarative redirect destination", async () => {
+		const declarativeUrl =
+			"https://link-content.fixture.invalid/articles/declarative";
+		serve(redirectStub(declarativeUrl));
+		const report = await researchLinkContent([
+			"--target-link",
+			targetUrl,
+			sourceUrl,
+		]);
+		expect(report).toMatchObject({
+			outcome: "extracted-unverified",
+			partial: true,
+			contentSuccess: null,
+			sourceUrl,
+			targetUrl,
+			selectionMode: "exact-target-v1",
+			selection: {
+				reference: expect.any(String),
+				label: "Continue",
+				url: targetUrl,
+				candidates: 1,
+			},
+			events: ["mousedown", "mouseup", "click"],
+			stage: "complete",
+			documentClosedStates: [true, true],
+		});
+		expect(BrowserSession.prototype.click).toHaveBeenCalledOnce();
+		expect(BrowserSession.prototype.click).toHaveBeenCalledWith(
+			expect.any(String),
+			report.selection?.reference,
+			expect.any(Object),
+		);
+		const click = await vi.mocked(BrowserSession.prototype.click).mock
+			.results[0].value;
+		expect(click.navigation).toMatchObject({
+			kind: "document",
+			url: targetUrl,
+		});
+		expect(report.extraction?.content).toContain("Owned article");
+		expect(report.extraction?.content).toContain("Saved introduction: café\\.");
+		expect(report.extraction?.content).toContain("Owned row");
+		expect(report.extraction?.content).not.toContain(declarativeUrl);
+		expect(report.responses).toHaveLength(2);
+		requests([sourceUrl, targetUrl]);
 		closed();
 	});
 

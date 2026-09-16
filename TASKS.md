@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Validate infrastructure documentation and source-linked redirect stubs
+
+- Four real anonymous native GETs: NGINX proxy documentation, Docker multistage,
+  PyTorch stable CUDA stub and its observed versioned target. The stub alone is
+  not useful CUDA content. An exact visible-link native click retrieves95,972
+  Markdown bytes from the target; no page scripts, retries or challenge bypass.
+- Saved-body native selectors reduce Docker83,068→8,486 and NGINX106,693→105,638
+  bytes as exact full-output substrings. No new GETs or automatic-focus change.
+- Independent static comparison matches all176 source pre blocks to Markdown
+  fences under explicit normalization. This is not complete prose/rendered or
+  example-execution verification. Preserve the first Python audit failure.
+- Three new native link regression cases pass in a238/0 two-file gate; build,
+  types, format and lint pass.2,320 production artifacts match the committed
+  runtime. Prior full gate45,991/0 remains separate;22 manifest files missing.
+- Preserve the prelaunch hostname-reservation failure and disclose follow02's
+  stale admission digest. Actual invocation pins match the intended plan/proof,
+  but the supplemental audit does not rewrite or repair historical linkage.
+- See INFRASTRUCTURE-DOCUMENTATION.md and reports/infrastructure-docs-2026-09-16.md
+  and JSON. Historical100-page verdicts, SafeJS/dynamic-site, rendering, access,
+  credential/passkey/device/TTY and research gates remain open; goal incomplete.
+
 ### Preserve reader document mode and recover Node.js stream documentation
 
 - Retain only the effective initial doctype's exact normalized source span.

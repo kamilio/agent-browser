@@ -1,0 +1,268 @@
+{
+  "title": "Infrastructure documentation source reading and native link follow",
+  "audit": {
+    "at": "2026-09-16T19:47:28.639Z",
+    "baseline": "59e92c0d412e280193206a76e7c2cff76451a168",
+    "previousGoalTurn": "No progress: status review only. This continuation finishes verified native/live work and preserves its limits.",
+    "runtimeSourceFiles": 1543,
+    "compiledIdenticalFiles": 2320,
+    "native": {
+      "label": "core01",
+      "pid": 687460,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 3.8224188573658466,
+      "passedTests": 238,
+      "failedTests": 0,
+      "files": 2,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "quality": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    },
+    "visits": [
+      {
+        "id": "nginx-proxy",
+        "response": {
+          "url": "https://nginx.org/en/docs/http/ngx_http_proxy_module.html",
+          "status": 200,
+          "receivedAt": "2026-09-16T19:26:25.866Z",
+          "headers": {
+            "content-type": [
+              "text/html; charset=utf-8"
+            ],
+            "content-length": [
+              "18661"
+            ],
+            "content-encoding": [
+              "gzip"
+            ]
+          },
+          "headerCapture": {
+            "kind": "selected-response-headers-v1",
+            "partial": true,
+            "omitted": []
+          },
+          "decodedBytes": 131667,
+          "encodedBytes": 18661,
+          "bodySha256": "a5bfd211a60beb22f4586bd18a1c3d313b40eaf5ae3702ed560de978ef0a6148",
+          "hashScope": "transport-decoded-body-before-loader",
+          "redirects": 0,
+          "elapsedMs": 95.978245
+        },
+        "markdownBytes": 106693,
+        "outcome": "extracted-unverified",
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": null,
+          "diagnostic": null
+        },
+        "contentSuccess": null,
+        "usefulDocumentation": true
+      },
+      {
+        "id": "docker-multistage",
+        "response": {
+          "url": "https://docs.docker.com/build/building/multi-stage/",
+          "status": 200,
+          "receivedAt": "2026-09-16T19:26:28.410Z",
+          "headers": {
+            "content-type": [
+              "text/html"
+            ],
+            "content-encoding": [
+              "gzip"
+            ]
+          },
+          "headerCapture": {
+            "kind": "selected-response-headers-v1",
+            "partial": true,
+            "omitted": []
+          },
+          "decodedBytes": 544036,
+          "encodedBytes": 85499,
+          "bodySha256": "c4506799283fdc9c418078a21a8f9452315202561ff932af8106b0a6b91023b2",
+          "hashScope": "transport-decoded-body-before-loader",
+          "redirects": 0,
+          "elapsedMs": 52.931664
+        },
+        "markdownBytes": 83068,
+        "outcome": "extracted-unverified",
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": null,
+          "diagnostic": null
+        },
+        "contentSuccess": null,
+        "usefulDocumentation": true
+      },
+      {
+        "id": "pytorch-cuda",
+        "response": {
+          "url": "https://docs.pytorch.org/docs/stable/notes/cuda.html",
+          "status": 200,
+          "receivedAt": "2026-09-16T19:26:31.009Z",
+          "headers": {
+            "content-type": [
+              "text/html; charset=utf-8"
+            ],
+            "content-encoding": [
+              "gzip"
+            ]
+          },
+          "headerCapture": {
+            "kind": "selected-response-headers-v1",
+            "partial": true,
+            "omitted": []
+          },
+          "decodedBytes": 1320,
+          "encodedBytes": 654,
+          "bodySha256": "9a7b53454b9f85f6ec4e60e8c9e798ec3b3283122b2b07824d41e9fc80c32137",
+          "hashScope": "transport-decoded-body-before-loader",
+          "redirects": 0,
+          "elapsedMs": 114.459697
+        },
+        "markdownBytes": 101,
+        "outcome": "extracted-unverified",
+        "classification": {
+          "classifier": "browser-challenges",
+          "barrier": null,
+          "diagnostic": null
+        },
+        "contentSuccess": null,
+        "usefulDocumentation": false
+      }
+    ],
+    "actualLiveRequests": 4,
+    "follow": {
+      "response": {
+        "url": "https://docs.pytorch.org/docs/2.14/notes/cuda.html",
+        "status": 200,
+        "headers": {
+          "content-type": [
+            "text/html; charset=utf-8"
+          ],
+          "content-encoding": [
+            "gzip"
+          ]
+        },
+        "decodedBytes": 464672,
+        "encodedBytes": 88494,
+        "bodySha256": "73489b7a782dd5cbee391fe7eff903054a387ebbcebdc2421caafdc7296bc97d",
+        "redirects": [],
+        "receivedAt": "2026-09-16T19:32:02.716Z"
+      },
+      "markdownBytes": 95972,
+      "selection": {
+        "reference": "e20",
+        "label": "Continue to ../../2.14/notes/cuda.html",
+        "url": "https://docs.pytorch.org/docs/2.14/notes/cuda.html",
+        "candidates": 1
+      },
+      "events": [
+        "mousedown",
+        "mouseup",
+        "click"
+      ],
+      "metrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 1320,
+        "requests": 2,
+        "redirects": 0,
+        "encodedBytes": 88494,
+        "decodedBytes": 465992,
+        "active": 0,
+        "closed": true
+      },
+      "contentSuccess": null
+    },
+    "focus": [
+      {
+        "id": "nginx-proxy",
+        "passed": true,
+        "selector": "#content",
+        "originalBytes": 106693,
+        "focusedBytes": 105638,
+        "savedBytes": 1055,
+        "exactSubstring": true,
+        "bodySha256": "a5bfd211a60beb22f4586bd18a1c3d313b40eaf5ae3702ed560de978ef0a6148",
+        "newLiveRequests": 0
+      },
+      {
+        "id": "docker-multistage",
+        "passed": true,
+        "selector": "article",
+        "originalBytes": 83068,
+        "focusedBytes": 8486,
+        "savedBytes": 74582,
+        "exactSubstring": true,
+        "bodySha256": "c4506799283fdc9c418078a21a8f9452315202561ff932af8106b0a6b91023b2",
+        "newLiveRequests": 0
+      }
+    ],
+    "codeAudit": {
+      "scope": "Static independent HTMLParser text decoding of native-captured pre blocks versus native Markdown fences. Normalize CR, one HTML pre-leading LF and one closing-fence boundary LF; remove only recorded Markdown quote/list prefix. Interior characters/indentation and occurrence counts must match. Not page/example execution, rendered visibility or complete prose/qualifier verification.",
+      "records": [
+        {
+          "id": "nginx-proxy",
+          "sourceBodySha256": "a5bfd211a60beb22f4586bd18a1c3d313b40eaf5ae3702ed560de978ef0a6148",
+          "markdownSha256": "906b6b320693e2bfd425682265c553ed5ee2c04ddf230d9ac98710c27bb55aca",
+          "sourcePreBlocks": 109,
+          "extractedFences": 109,
+          "matchedOccurrences": 109,
+          "missing": [],
+          "extra": []
+        },
+        {
+          "id": "docker-multistage",
+          "sourceBodySha256": "c4506799283fdc9c418078a21a8f9452315202561ff932af8106b0a6b91023b2",
+          "markdownSha256": "9cfe07ec70eb4a280ea360a244c6b1d19cb7cbabcd7769021374669d04dbade7",
+          "sourcePreBlocks": 9,
+          "extractedFences": 9,
+          "matchedOccurrences": 9,
+          "missing": [],
+          "extra": []
+        },
+        {
+          "id": "pytorch-versioned",
+          "sourceBodySha256": "73489b7a782dd5cbee391fe7eff903054a387ebbcebdc2421caafdc7296bc97d",
+          "markdownSha256": "add0fce96df8d70a6d1a549305fe9f105d713881fc69365b585c6f8b460e7d5b",
+          "sourcePreBlocks": 58,
+          "extractedFences": 58,
+          "matchedOccurrences": 58,
+          "missing": [],
+          "extra": []
+        }
+      ]
+    },
+    "provenance": {
+      "status": "supplemental-audit-with-historical-linkage-defect",
+      "recordedAdmissionSha256": "c8afa9674a1e5af3d31ad297be16987ff18ab7a9c0e45b761f6c7a6de147e1ce",
+      "intendedAdmissionSha256": "f9c7eec6814804c1e3fed85a0ac416ad6b6f79d356a46362bb9bc38a685f0040",
+      "recordedFile": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/infrastructure-docs-september16/FOLLOW-ADMISSION.json",
+      "intendedFile": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/infrastructure-docs-september16/FOLLOW02-ADMISSION.json",
+      "actualInvocationPinsMatchIntendedPlanAndPriorProof": true,
+      "sameEntryAndScopeInBothPlans": true,
+      "historicalFilesRewritten": false,
+      "additionalRequests": 0,
+      "limitation": "The live receipt references the earlier admission file, not FOLLOW02-ADMISSION.json. Matching independently retained pins/scope does not repair or erase this historical linkage defect."
+    },
+    "preservedPrelaunchFailure": true,
+    "terminalRecordsChecked": 16,
+    "previousDirtyTracked": 42,
+    "previousUntracked": 697,
+    "fullManifestAccepted": false,
+    "safejsExecuted": false,
+    "credentialsUsed": false,
+    "challengeBypassClaimed": false,
+    "goalComplete": false
+  },
+  "evidenceDirectory": "node_modules/.cache/native-validation/infrastructure-docs-september16"
+}
