@@ -83,6 +83,7 @@ import {
 } from "./resource-limit.js";
 import type { DocumentLoaderContext } from "./session.js";
 import { isTableSourceAttribute } from "./table-source.js";
+import { imageSourceRole } from "./image-source.js";
 import { loadTextDocument } from "./text-loader.js";
 
 export {
@@ -709,6 +710,7 @@ export function sanitizeResearchHtml(
 			outputName === name &&
 			Object.hasOwn(token.attributes, "role") &&
 			token.attributes.role.trim().length > 0;
+		const namedImage = outputName === name && imageSourceRole(token.attributes);
 		let attributes = "";
 		for (const [attribute, value] of Object.entries(token.attributes)) {
 			let keep =
@@ -716,8 +718,10 @@ export function sanitizeResearchHtml(
 				(outputName === name &&
 					(attribute === "class" || attribute === "role")) ||
 				(outputName === "a" &&
-					(["href", "title", "name"].includes(attribute) ||
+					(["href", "name"].includes(attribute) ||
+						(attribute === "title" && (!namedImage || value.length <= 8192)) ||
 						(attribute === "data-nosnippet" && value === ""))) ||
+				(namedImage && attribute === "title" && value.length <= 8192) ||
 				((outputName === "a" || namedRole) &&
 					(attribute === "aria-label" || attribute === "aria-labelledby") &&
 					value.length <= 8192) ||

@@ -38,6 +38,11 @@ import {
 	collectHeadingTargets,
 } from "./heading-discovery.js";
 import { htmlParseInfo } from "./html-info.js";
+import {
+	type ImageSourceMetadata,
+	extractImageSource,
+	imageSourceText,
+} from "./image-source.js";
 import { type LinkTarget, collectLinkTargets } from "./link-discovery.js";
 import {
 	type MarkdownSourceLinks,
@@ -132,6 +137,7 @@ export type ExtractionType =
 export interface ExtractedNode {
 	ref: string;
 	type: ExtractionType;
+	imageSource?: ImageSourceMetadata;
 	text?: string;
 	level?: number;
 	ordered?: boolean;
@@ -520,7 +526,7 @@ function inline(
 ) {
 	const pieces: string[] = [];
 	const pending: (
-		| { node: ExtractedNode; inLink: boolean }
+		| { node: ExtractedNode; inLink: boolean; literal?: boolean }
 		| { closingLink: string; openingIndex: number }
 	)[] = nodes
 		.slice()
@@ -546,15 +552,23 @@ function inline(
 			continue;
 		}
 		const { node, inLink } = current;
+		const imageAnnotation =
+			node.imageSource && !current.literal
+				? `${escaped(imageSourceText(node.imageSource))} `
+				: "";
 		if (node.type === "text" || node.type === "image") {
-			pieces.push(escaped((node.text ?? "").replace(/\s+/gu, " ")));
+			pieces.push(
+				imageAnnotation,
+				escaped((node.text ?? "").replace(/\s+/gu, " ")),
+			);
 			continue;
 		}
 		if (node.type === "break") {
-			pieces.push("  \n");
+			pieces.push(imageAnnotation, "  \n");
 			continue;
 		}
 		if (node.type === "code") {
+			pieces.push(imageAnnotation);
 			const text = plain(node.children ?? []).replace(/\n/g, " ");
 			if (!text) continue;
 			const marker = fence(text, 1);
@@ -571,9 +585,14 @@ function inline(
 				openingIndex,
 			});
 		}
+		pieces.push(imageAnnotation);
 		if (node.children)
 			for (let index = node.children.length - 1; index >= 0; index--)
-				pending.push({ node: node.children[index], inLink: inLink || link });
+				pending.push({
+					node: node.children[index],
+					inLink: inLink || link,
+					literal: current.literal || node.type === "pre",
+				});
 	}
 	const text = pieces.join("").trim();
 	if (text && inherited?.url) {
@@ -646,12 +665,15 @@ function validateTableStructure(
 }
 
 function rowListCell(node: ExtractedNode): string | null {
+	if (node.imageSource) return null;
 	let children = node.children ?? [];
 	const meaningful = children.filter(
 		(child) => child.type !== "text" || (child.text ?? "").trim(),
 	);
-	if (meaningful.length === 1 && meaningful[0].type === "paragraph")
+	if (meaningful.length === 1 && meaningful[0].type === "paragraph") {
+		if (meaningful[0].imageSource) return null;
 		children = meaningful[0].children ?? [];
+	}
 	const pending = children.slice();
 	while (pending.length) {
 		const child = pending.pop();
@@ -669,6 +691,7 @@ function rowListCells(row: ExtractedNode): string[] | null {
 	while (pending.length) {
 		const node = pending.pop();
 		if (!node) break;
+		if (node.imageSource) return null;
 		if (node.type === "cell") {
 			const text = rowListCell(node);
 			if (text === null) return null;
@@ -688,6 +711,7 @@ function tableRowList(table: ExtractedNode): string[][] | null {
 	while (pending.length) {
 		const node = pending.pop();
 		if (!node) break;
+		if (node.imageSource) return null;
 		if (node.type === "row") {
 			const cells = rowListCells(node);
 			if (cells === null) return null;
@@ -837,6 +861,15 @@ function markdown(
 		}
 		const { node, prefixes, link } = task;
 		const children = node.children ?? [];
+		const unwrap =
+			transparentWrappers.has(node) ||
+			flow.wrappers.has(node) ||
+			(link !== undefined && flow.blockNodes.has(node));
+		if (
+			node.imageSource &&
+			(unwrap || flow.links.has(node) || !inlineTypes.has(node.type))
+		)
+			emit(escaped(imageSourceText(node.imageSource)), prefixes);
 		if (flow.links.has(node)) {
 			const nested = link?.url
 				? link
@@ -921,12 +954,7 @@ function markdown(
 			const nested = [...prefixes, item];
 			pending.push({ emptyItem: item, prefixes: nested });
 			schedule(children, nested, link);
-		} else if (
-			transparentWrappers.has(node) ||
-			flow.wrappers.has(node) ||
-			(link && flow.blockNodes.has(node))
-		)
-			schedule(children, prefixes, link);
+		} else if (unwrap) schedule(children, prefixes, link);
 		else if (inlineTypes.has(node.type)) emit(inline([node], link), prefixes);
 		else schedule(children, prefixes, link);
 	}
@@ -1431,6 +1459,15 @@ export function extractDocument(
 		else if (node.type !== "break" && node.type !== "separator")
 			node.children = [];
 		if (node.type === "heading") node.level = Number(source.tagName.slice(1));
+		if (
+			visible &&
+			source.kind === "element" &&
+			isHtmlElement(source) &&
+			!section?.context.has(source.id)
+		) {
+			const imageSource = extractImageSource(source.attributes);
+			if (imageSource) node.imageSource = imageSource;
+		}
 		if (
 			format === "json" &&
 			visible &&

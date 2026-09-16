@@ -67,15 +67,17 @@ no additional live request. It does not change automatic selection policy.
 
 ## Diagnostic and access boundaries
 
-**Known content gap:** the captured MDN page loses two method-specific
-experimental warnings carried by empty `span[role=img]` elements. The sanitizer
-retains their `aria-label` values but drops their `title` warnings; ordinary
-extraction emits neither. The compatibility section also loses a template's
-no-script explanation that its table is unavailable without JavaScript. No
-support rows were present in that captured template. These are unresolved content
-limitations: successful code-block comparison is not an unqualified MDN pass.
-The next repair must preserve source qualifications without inventing support
-values, executing templates or weakening hidden-content/access checks.
+The original MDN check lost two experimental warnings carried by empty
+`span[role=img]` elements. `IMAGE-SOURCE.md` now documents source annotations that
+preserve the labels and longer title warnings; the original report retains its
+unfixed-runtime measurements. These are author-supplied source qualifications,
+not independently verified support claims or evidence of rendered tooltips.
+
+**Remaining content gap:** the compatibility section loses a template's no-script
+explanation that its table is unavailable without JavaScript. No support rows
+were present in that captured template. Successful code-block and image-source
+comparison is therefore not an unqualified full-page MDN pass. Fallback recovery
+must not invent support values, execute templates or weaken access checks.
 
 For Python, carry `extraction.title` with the Markdown: the exact documentation
 version is in the title, outside the selected main text. Captured version-change

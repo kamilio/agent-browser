@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Preserve image-role source qualifications in extracted content
+
+- Recover bounded aria-label/title attributes from included role=img HTML nodes
+  as explicit imageSource JSON metadata and escaped Markdown annotations. Keep
+  original text, children, link destinations, code literals and access policies.
+- MDN's two experimental API warnings now survive extraction. The separate
+  template/noscript compatibility notice remains missing; no support matrix or
+  rendered-browser acceptance is inferred. This supersedes only the image-warning
+  gap in the developer-documentation entry below.
+- Final candidate: 3,118 passed/0 failed across36 selected native files, including
+  155 new cases. Build/types/format/lint pass. Not the full native manifest.
+- Differential replay:114 saved bodies,111 successful pairs and3 matching non-HTML
+  failures. Five pages gain43 source annotations; ordinary content projections
+  and classifications remain unchanged. These are not new live website visits.
+- One new MDN GET200 used release02. Final release05 replays that exact receipt;
+  Python/MDN/GitHub CLI outputs match independently checked output in full.
+  Exact code-block checks cover34/18/1 distinct blocks, plus18 on the fresh MDN.
+- Independent review's three defects are reproduced and fixed; final static
+  review has no remaining patch blockers. Initial failed attempts are preserved.
+- Evidence: reports/image-source-2026-09-16.md/JSON and IMAGE-SOURCE.md. Historical
+  100-page verdicts stay unchanged. Prior62 failures/22 missing committed tests,
+  SDK/rendering/credential/passkey/device/TTY/access gates and overall goal remain.
+
 ### Validate developer documentation and focused repository content
 
 - Three new anonymous native GET200: Python asyncio tasks, MDN Promise reference

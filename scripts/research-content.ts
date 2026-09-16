@@ -5,6 +5,7 @@ import type {
 	DocumentLinkDiscovery,
 } from "../src/extraction.js";
 import { htmlParseInfo } from "../src/html-info.js";
+import { imageSourceText } from "../src/image-source.js";
 import { documentStyles } from "../src/styles.js";
 
 export const researchDiagnosticTextLimit = 8192;
@@ -123,6 +124,7 @@ export function hasResearchExtractionContent(
 			node.type === "table" ||
 			node.tableSource !== undefined ||
 			node.ariaTableSource !== undefined ||
+			node.imageSource !== undefined ||
 			!!node.dateTimeSource?.value.trim()
 		)
 			return true;
@@ -141,10 +143,14 @@ export function researchExtractionDiagnosticText(
 	while (pending.length && text.length < limit) {
 		const node = pending.pop();
 		if (!node) break;
-		if (node.text) {
-			if (text) text += " ";
-			text += node.text.slice(0, limit - text.length);
-		}
+		for (const value of [
+			node.imageSource ? imageSourceText(node.imageSource) : undefined,
+			node.text,
+		])
+			if (value && text.length < limit) {
+				if (text) text += " ";
+				text += value.slice(0, limit - text.length);
+			}
 		if (node.children)
 			for (let index = node.children.length - 1; index >= 0; index--)
 				pending.push(node.children[index]);

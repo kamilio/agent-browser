@@ -1,4 +1,5 @@
 import type { ExtractedNode } from "./extraction.js";
+import { imageSourceText } from "./image-source.js";
 import type { ResourceLimitDiagnostic } from "./resource-limit.js";
 
 export interface ExtractionContentFallback {
@@ -26,9 +27,10 @@ const encoder = new TextEncoder();
 
 function plainText(root: ExtractedNode): string {
 	const pieces: string[] = [];
-	const pending: ({ node: ExtractedNode } | { separator: true })[] = [
-		{ node: root },
-	];
+	const pending: (
+		| { node: ExtractedNode; literal?: boolean }
+		| { separator: true }
+	)[] = [{ node: root }];
 	let separator = false;
 	const append = (text: string) => {
 		if (!text) return;
@@ -56,11 +58,17 @@ function plainText(root: ExtractedNode): string {
 			separator = true;
 			pending.push({ separator: true });
 		}
+		if (node.imageSource && !current.literal)
+			append(`${imageSourceText(node.imageSource)} `);
 		if (node.text !== undefined) append(node.text);
 		if (node.type === "break") append("\n");
 		if (node.children)
 			for (let index = node.children.length - 1; index >= 0; index--)
-				pending.push({ node: node.children[index] });
+				pending.push({
+					node: node.children[index],
+					literal:
+						current.literal || node.type === "pre" || node.type === "code",
+				});
 	}
 	return pieces.join("");
 }
