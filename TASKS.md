@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Test review content and manual discovery beyond landing pages
+
+- Six native GETs across RTINGS, RunRepeat and Manuals.plus, with exact prior
+  source-linked targets, two-second origin pacing and no redirects/retries.
+- RunRepeat returns 19,465 bytes of review content. RTINGS returns 4,726 bytes of
+  navigation rather than the review; all three native extraction-focus modes
+  yield identical text. Retain the source-access declaration without inferring
+  that every page section is paid or attempting subscriber-only recovery.
+- A saved-response actual CLI check without main-content focus restores RunRepeat
+  author/date/methodology and two supplemental tables:27,113 bytes with the original
+  article unchanged. See READER-DOCUMENT-SCOPE.md. No extra live request or new
+  production feature; selected-state, media and interactive-control limits remain.
+- Manuals.plus Logitech category returns 403 with confirmed Cloudflare challenge;
+  stop at that boundary. No model manual was retrieved or alternate path tried.
+- All three complete pairs replay exact content or failure/barrier outcomes under
+  kernel denial. Requests/sockets/documents/processes close; native identity and
+  credential omission are unchanged. No production repair or new unit gate claimed.
+- Independent content reviews and source diagnostics are in
+  reports/review-manual-workflows-2026-09-16.md and companion JSON. Continue from
+  evidenced content gaps; historical100-root results and remaining gates stand.
+
 ### Expose bounded source-chart tables through the native reader
 
 - Add known-schema Infogram chart metadata without executing scripts or fetching

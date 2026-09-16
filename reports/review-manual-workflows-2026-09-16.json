@@ -1,0 +1,2988 @@
+{
+  "schema": "native-review-manual-workflows-v1",
+  "recordedAt": "2026-09-16T14:26:31.431Z",
+  "evidenceDirectory": "node_modules/.cache/native-validation/review-manual-workflows-september16",
+  "seal": {
+    "at": "2026-09-16T14:26:31.431Z",
+    "files": 146,
+    "bytes": 7681007,
+    "artifactsSha256": "3b48dc60be1fdcdfb8cd6eaef491eee89e1d28874edb150aba8866768730290f",
+    "validationWritersClosed": true
+  },
+  "audit": {
+    "at": "2026-09-16T14:26:31.420Z",
+    "passed": true,
+    "baseCommit": "648abb2ffb0e2040e7827645f7cc56f8147a2e70",
+    "requests": 6,
+    "redirects": 0,
+    "retries": 0,
+    "decodedBytes": 1617921,
+    "encodedBytes": 273441,
+    "preservedTracked": 42,
+    "preservedUntracked": 697,
+    "priorNative": {
+      "label": "release01",
+      "pid": 361009,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 18.90649115666747,
+      "passedTests": 2762,
+      "failedTests": 0,
+      "files": 32,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "priorQuality": {
+      "label": "release01",
+      "executions": [
+        {
+          "name": "build",
+          "pid": 360959,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 6.927222920581698
+        },
+        {
+          "name": "types",
+          "pid": 361234,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 4.572667483240366
+        },
+        {
+          "name": "format",
+          "pid": 361247,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.03178258799016476
+        },
+        {
+          "name": "lint",
+          "pid": 361266,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.06383679993450642
+        }
+      ],
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0
+      },
+      "allProcessesClosed": true
+    },
+    "newNativeUnitRun": false,
+    "independentAgentsClosed": true
+  },
+  "runtime": {
+    "root": "/tmp/agent-browser-source-charts-0UOtin/candidate-release01",
+    "manifests": {
+      "SOURCE": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-chart-tables-september16/SOURCE-release01.json",
+        "base": "/tmp/agent-browser-source-charts-0UOtin/candidate-release01",
+        "sha256": "a325340e4e17b7a8dd4dcc32038b38156514caac7ba6b0753689b9ac75c40db8"
+      },
+      "COMPILED": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-chart-tables-september16/COMPILED-release01.json",
+        "base": "/tmp/agent-browser-source-charts-0UOtin/candidate-release01/dist",
+        "sha256": "c9369c3080fa76cfda1561a5970cc7da13c83e245b1ecb406cd7652e0bfc711f"
+      }
+    },
+    "committedInputs": 1527,
+    "priorNative": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-chart-tables-september16/native-release01/EXECUTION.json",
+    "priorQuality": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-chart-tables-september16/CHECK-release01.json"
+  },
+  "results": [
+    {
+      "ordinal": 58,
+      "targetUrl": "https://www.rtings.com/laptop/reviews/microsoft/surface-pro-13-12th-edition-2026",
+      "task": "Read a public laptop review and identify retained text, measurement tables and any access limitations",
+      "sourceUrl": "https://www.rtings.com/",
+      "capture": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/058-www.rtings.com/stdout.jsonl",
+        "sha256": "b66a63a56ec9728c31ed7d13e09ad5da999ba243426b912b93c1d99b07d15446",
+        "bodySha256": "2721d70643cd16d45cd1e443e0fa70cd57f8721f90824f779e3e86ee4627eb4a",
+        "decodedBytes": 269192
+      },
+      "sourceMarkdown": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/058-www.rtings.com/extracted.md",
+        "sha256": "c6aa2589b6abb6e117c037385977075a962531f2aae08a55918bf931a75ab3e1"
+      },
+      "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately",
+      "receiptFile": "node_modules/.cache/native-validation/review-manual-workflows-september16/live/58/RESULT.json",
+      "receiptSha256": "f9b88cf0bcdfee1d6d5e81728672b7bc3870d67c4399cc48012a8157bf273626",
+      "execution": {
+        "ordinal": 58,
+        "mode": "live",
+        "version": "live",
+        "entry": {
+          "ordinal": 58,
+          "targetUrl": "https://www.rtings.com/laptop/reviews/microsoft/surface-pro-13-12th-edition-2026",
+          "task": "Read a public laptop review and identify retained text, measurement tables and any access limitations",
+          "sourceUrl": "https://www.rtings.com/",
+          "capture": {
+            "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/058-www.rtings.com/stdout.jsonl",
+            "sha256": "b66a63a56ec9728c31ed7d13e09ad5da999ba243426b912b93c1d99b07d15446",
+            "bodySha256": "2721d70643cd16d45cd1e443e0fa70cd57f8721f90824f779e3e86ee4627eb4a",
+            "decodedBytes": 269192
+          },
+          "sourceMarkdown": {
+            "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/058-www.rtings.com/extracted.md",
+            "sha256": "c6aa2589b6abb6e117c037385977075a962531f2aae08a55918bf931a75ab3e1"
+          },
+          "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+        },
+        "approvalSha256": "1dc80c59f2e58017f10f6b9af1e36e805c9464cf8dc2f4dd975ea57ebcb97088",
+        "pid": 370129,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "safetyErrors": [],
+        "safetyPassed": true,
+        "reservation": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/source-reservations/e85520acce6ebaa3ede2ac66da90acca491d22e5dae50a456299f32ceac84009.json",
+        "terminationSignal": null,
+        "elapsedSeconds": 2.3718508668243885
+      },
+      "invocation": {
+        "at": "2026-09-16T14:11:48.204380+00:00",
+        "mode": "live",
+        "version": "live",
+        "command": [
+          "/home/kjopek/.nvm/versions/node/v22.22.0/bin/node",
+          "--no-addons",
+          "--max-old-space-size=256",
+          "--require",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/arxiv-search-phases-september16/observe.cjs",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/capture.mjs",
+          "live",
+          "58"
+        ],
+        "environment": {
+          "PATH": "/usr/bin:/bin",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C",
+          "TZ": "UTC",
+          "HOME": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/live/58/home",
+          "TMPDIR": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/live/58/tmp"
+        },
+        "pins": {
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/run.py": "b1d13751e2caf638ada0f4dd2758eeef86c5e8c909a8d2d018f9339b3004b216",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-diverse-workflows-september16/run.py": "36fe84cf2c065be826304c0e7cc23beefb98e45a90dac88b679f72d5c6a9b7c1",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/RUNTIME.json": "8c71ec2bcc1a83fa8e08ebe5fa648bf20c17a2443e95d6a9b4847bd490aa5f49",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/ENTRIES.json": "9c143ea555fbc047ef1536a474483f93681ed14562cf24ddd55b4a0338e57c46",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/SCOPE.md": "d7dd881d384582abc5b237058ed602f4f6b0cf77a1d58887e34cc4832b6f964f",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/capture.mjs": "9b66b349c3ac477bdf0c216dbbc54034a10f5e3a5708044454a82d561ef91ffc",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/block-link-content-september15/proof/sealed-exec.py": "e024d0882b099e995acc8980de9164a9db2ac2362417835fe5ad568a33068ac7",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/block-link-content-september15/proof/replay-guard.cjs": "8e95384c687db7f5352dbd5cc76fb03cd066831b3dfb457d5b9c7c36d485efb0",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/arxiv-search-phases-september16/observe.cjs": "4f15b589fbf0ee331ce9816f7810c45f6adbb2260b2bd1eb330edf41d3dd3a8c"
+        },
+        "approvalSha256": "1dc80c59f2e58017f10f6b9af1e36e805c9464cf8dc2f4dd975ea57ebcb97088",
+        "approvalEvidence": {
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/SCOPE.md": "d7dd881d384582abc5b237058ed602f4f6b0cf77a1d58887e34cc4832b6f964f",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/ENTRIES.json": "9c143ea555fbc047ef1536a474483f93681ed14562cf24ddd55b4a0338e57c46",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/CHECK.json": "b469f8195572ffdb7702da221138e29ba82907c4281f0a8a087c35bb69934efd",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/RESULT.json": "6984acd52f4642a9850818481eec139d21ebeef2795f12d988c85d77b3262dfd",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/INVOCATION.json": "fac7b0ccc06586e2d1d53fbdf933a4c80051c799b4ae182f0c2e8bdc70af76ef",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/EXECUTION.json": "b88fb042f9db7ab03c82d8d96af910ee5677466ca3c9313cc16315e518f7085d",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/CAPTURES.json": "de7fc51f458b5bbe25b0d76021b5f306f44cefa70d43e896d73f200994ccd420",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-chart-tables-september16/native-release01/EXECUTION.json": "2c62ed1069e7193508cb038cb97ad6efe31f983f737c7c9b841404a1b892c5e1",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-chart-tables-september16/CHECK-release01.json": "0ffc65370d92cf9f1a7efa2c4b28dbc9b2ba11136bdfc6694da677dc11a27990"
+        },
+        "deadlineSeconds": 60,
+        "entry": {
+          "ordinal": 58,
+          "targetUrl": "https://www.rtings.com/laptop/reviews/microsoft/surface-pro-13-12th-edition-2026",
+          "task": "Read a public laptop review and identify retained text, measurement tables and any access limitations",
+          "sourceUrl": "https://www.rtings.com/",
+          "capture": {
+            "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/058-www.rtings.com/stdout.jsonl",
+            "sha256": "b66a63a56ec9728c31ed7d13e09ad5da999ba243426b912b93c1d99b07d15446",
+            "bodySha256": "2721d70643cd16d45cd1e443e0fa70cd57f8721f90824f779e3e86ee4627eb4a",
+            "decodedBytes": 269192
+          },
+          "sourceMarkdown": {
+            "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/058-www.rtings.com/extracted.md",
+            "sha256": "c6aa2589b6abb6e117c037385977075a962531f2aae08a55918bf931a75ab3e1"
+          },
+          "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+        },
+        "entries": [
+          {
+            "ordinal": 58,
+            "targetUrl": "https://www.rtings.com/laptop/reviews/microsoft/surface-pro-13-12th-edition-2026",
+            "task": "Read a public laptop review and identify retained text, measurement tables and any access limitations",
+            "sourceUrl": "https://www.rtings.com/",
+            "capture": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/058-www.rtings.com/stdout.jsonl",
+              "sha256": "b66a63a56ec9728c31ed7d13e09ad5da999ba243426b912b93c1d99b07d15446",
+              "bodySha256": "2721d70643cd16d45cd1e443e0fa70cd57f8721f90824f779e3e86ee4627eb4a",
+              "decodedBytes": 269192
+            },
+            "sourceMarkdown": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/058-www.rtings.com/extracted.md",
+              "sha256": "c6aa2589b6abb6e117c037385977075a962531f2aae08a55918bf931a75ab3e1"
+            },
+            "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+          },
+          {
+            "ordinal": 97,
+            "targetUrl": "https://runrepeat.com/brooks-revel-max",
+            "task": "Read a shoe review and identify retained verdicts, laboratory measurements and source qualifiers",
+            "sourceUrl": "https://runrepeat.com/",
+            "capture": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/097-runrepeat.com/stdout.jsonl",
+              "sha256": "e880f07a48314e17770b6bf9d9074266ee8027f583142676cc5d3258bb2872cc",
+              "bodySha256": "7bb4278a3424ed8d9fcbcbcc366fe6f53843d74669837cf28f1cc66acaaac725",
+              "decodedBytes": 380615
+            },
+            "sourceMarkdown": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/097-runrepeat.com/extracted.md",
+              "sha256": "7b1c14827e434420e86521b7656bbf9efd900e96e89a1b3d64bd977dc8115a10"
+            },
+            "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+          },
+          {
+            "ordinal": 82,
+            "targetUrl": "https://manuals.plus/category/logitech",
+            "task": "Discover model-specific manuals from the advertised brand category; category listings are not manual contents",
+            "sourceUrl": "https://manuals.plus/",
+            "capture": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/082-manuals.plus/stdout.jsonl",
+              "sha256": "6d5786784a33562a30489ed74e45ad996778d68cf941d6650c351643090ecaf2",
+              "bodySha256": "b327fbf888ac08e72b762c16c70aa49f765a68c626a49ec15a110b7cae562d36",
+              "decodedBytes": 58084
+            },
+            "sourceMarkdown": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/082-manuals.plus/extracted.md",
+              "sha256": "278f7a017648d68d09fc6a0f232db73bf059396fc2d29f33e1ae1a2e186608e0"
+            },
+            "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+          }
+        ]
+      },
+      "requestStartTimes": [
+        "2026-09-16T14:11:48.394Z",
+        "2026-09-16T14:11:50.397Z"
+      ],
+      "originStartGapMs": 2003,
+      "responseCaptures": [
+        {
+          "ordinal": 58,
+          "request": 1,
+          "file": "response-58-1.json",
+          "sha256": "61dc8810d45d8a827d9045541bf62218acb3c0e7fa536bf38d5ae7f23ddb324a",
+          "url": "https://www.rtings.com/",
+          "status": 200,
+          "bodySha256": "20479e546a6ab9d570e4877cbf89c5d6b8c53fefd1b1e75edf62cbc9a023243d",
+          "decodedBytes": 269172
+        },
+        {
+          "ordinal": 58,
+          "request": 2,
+          "file": "response-58-2.json",
+          "sha256": "37bd14a6ec19144f597b5c97110dcd9a7084bbc4aba33fafe2107c4392aea8ca",
+          "url": "https://www.rtings.com/laptop/reviews/microsoft/surface-pro-13-12th-edition-2026",
+          "status": 200,
+          "bodySha256": "0be8f72745c242d75ea067c00f2b74425e51ee0a895e2e614c4bdf64ffd53129",
+          "decodedBytes": 253085
+        }
+      ],
+      "responses": [
+        {
+          "url": "https://www.rtings.com/",
+          "status": 200,
+          "decodedBytes": 269172,
+          "bodySha256": "20479e546a6ab9d570e4877cbf89c5d6b8c53fefd1b1e75edf62cbc9a023243d"
+        },
+        {
+          "url": "https://www.rtings.com/laptop/reviews/microsoft/surface-pro-13-12th-edition-2026",
+          "status": 200,
+          "decodedBytes": 253085,
+          "bodySha256": "0be8f72745c242d75ea067c00f2b74425e51ee0a895e2e614c4bdf64ffd53129"
+        }
+      ],
+      "outcome": "extracted-unverified",
+      "contentSuccess": null,
+      "selection": {
+        "reference": "e3012",
+        "label": "Microsoft Surface Pro 13 12th Edition (2026) Review",
+        "url": "https://www.rtings.com/laptop/reviews/microsoft/surface-pro-13-12th-edition-2026",
+        "candidates": 2
+      },
+      "discovery": {
+        "strategy": "first-eligible-target-v1",
+        "anchorMatches": 165,
+        "targetCandidates": 2,
+        "eligibleCandidates": 1
+      },
+      "markdownBytes": 4726,
+      "markdownSha256": "b7650a69e3a4e41da2ca58cded9836e69ce09616a6b3f1aa1562adafe76316e1",
+      "sourceAccess": {
+        "kind": "jsonld-free-access-declarations-v1",
+        "scope": "document-source",
+        "partial": true,
+        "verified": false,
+        "truncated": false,
+        "entries": [
+          {
+            "source": {
+              "offset": 13017
+            },
+            "path": "$.hasPart",
+            "value": "False"
+          }
+        ]
+      },
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 0,
+        "sourceCodeUnits": 253081,
+        "textCodeUnits": 5575,
+        "outputCodeUnits": 13219,
+        "tokens": 722,
+        "omittedTokens": 110,
+        "omittedSubtrees": {
+          "meta": 17,
+          "link": 50,
+          "script": 21
+        },
+        "ignoredAttributes": 111,
+        "unwrappedElements": 1,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 165839,
+          "workUnits": 2142450,
+          "steps": 23,
+          "elements": 21,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8",
+        "fallbackEncoding": "utf-8"
+      },
+      "metrics": {
+        "tabs": 0,
+        "selectedTab": null,
+        "pendingLoads": 0,
+        "pageTraversals": [],
+        "navigations": 2,
+        "commits": 2,
+        "cleanupErrors": 0,
+        "closed": true,
+        "network": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 2,
+          "redirects": 0,
+          "encodedBytes": 91036,
+          "decodedBytes": 522257,
+          "active": 0,
+          "closed": true
+        },
+        "routes": {
+          "routes": 0,
+          "retainedBytes": 0,
+          "fulfilled": 0,
+          "servedBytes": 0,
+          "closed": true,
+          "limits": {
+            "maxRoutes": 32,
+            "maxBodyBytes": 262144,
+            "maxRetainedBytes": 1048576,
+            "maxFulfilled": 512,
+            "maxServedBytes": 8388608,
+            "maxMatchSteps": 2000000
+          },
+          "partial": true,
+          "automaticRedirects": false
+        },
+        "cookies": {
+          "cookies": 0,
+          "accepted": 0,
+          "rejected": 0,
+          "rejections": {},
+          "closed": true
+        },
+        "storage": {
+          "tabs": 0,
+          "areas": 0,
+          "entries": 0,
+          "bytes": 0,
+          "revision": 1,
+          "notificationFailures": 0,
+          "closed": true
+        },
+        "storageEvents": {
+          "documents": 0,
+          "accepted": 0,
+          "delivered": 0,
+          "canceled": 0,
+          "dropped": 0,
+          "failed": 0,
+          "pending": 0,
+          "active": false,
+          "retainedBytes": 0,
+          "peakBytes": 0,
+          "closed": true
+        }
+      }
+    },
+    {
+      "ordinal": 97,
+      "targetUrl": "https://runrepeat.com/brooks-revel-max",
+      "task": "Read a shoe review and identify retained verdicts, laboratory measurements and source qualifiers",
+      "sourceUrl": "https://runrepeat.com/",
+      "capture": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/097-runrepeat.com/stdout.jsonl",
+        "sha256": "e880f07a48314e17770b6bf9d9074266ee8027f583142676cc5d3258bb2872cc",
+        "bodySha256": "7bb4278a3424ed8d9fcbcbcc366fe6f53843d74669837cf28f1cc66acaaac725",
+        "decodedBytes": 380615
+      },
+      "sourceMarkdown": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/097-runrepeat.com/extracted.md",
+        "sha256": "7b1c14827e434420e86521b7656bbf9efd900e96e89a1b3d64bd977dc8115a10"
+      },
+      "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately",
+      "receiptFile": "node_modules/.cache/native-validation/review-manual-workflows-september16/live/97/RESULT.json",
+      "receiptSha256": "960c4ad9e0bd3dceaaf698ab21cef19deb289af835d4c8da2e7f59f21265ee45",
+      "execution": {
+        "ordinal": 97,
+        "mode": "live",
+        "version": "live",
+        "entry": {
+          "ordinal": 97,
+          "targetUrl": "https://runrepeat.com/brooks-revel-max",
+          "task": "Read a shoe review and identify retained verdicts, laboratory measurements and source qualifiers",
+          "sourceUrl": "https://runrepeat.com/",
+          "capture": {
+            "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/097-runrepeat.com/stdout.jsonl",
+            "sha256": "e880f07a48314e17770b6bf9d9074266ee8027f583142676cc5d3258bb2872cc",
+            "bodySha256": "7bb4278a3424ed8d9fcbcbcc366fe6f53843d74669837cf28f1cc66acaaac725",
+            "decodedBytes": 380615
+          },
+          "sourceMarkdown": {
+            "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/097-runrepeat.com/extracted.md",
+            "sha256": "7b1c14827e434420e86521b7656bbf9efd900e96e89a1b3d64bd977dc8115a10"
+          },
+          "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+        },
+        "approvalSha256": "1dc80c59f2e58017f10f6b9af1e36e805c9464cf8dc2f4dd975ea57ebcb97088",
+        "pid": 370146,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "safetyErrors": [],
+        "safetyPassed": true,
+        "reservation": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/source-reservations/5966cbe0d30395348308d9908d15edeb73d3fe26783c3a0f4a212877f6e289e5.json",
+        "terminationSignal": null,
+        "elapsedSeconds": 2.4230129532516003
+      },
+      "invocation": {
+        "at": "2026-09-16T14:11:50.578293+00:00",
+        "mode": "live",
+        "version": "live",
+        "command": [
+          "/home/kjopek/.nvm/versions/node/v22.22.0/bin/node",
+          "--no-addons",
+          "--max-old-space-size=256",
+          "--require",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/arxiv-search-phases-september16/observe.cjs",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/capture.mjs",
+          "live",
+          "97"
+        ],
+        "environment": {
+          "PATH": "/usr/bin:/bin",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C",
+          "TZ": "UTC",
+          "HOME": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/live/97/home",
+          "TMPDIR": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/live/97/tmp"
+        },
+        "pins": {
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/run.py": "b1d13751e2caf638ada0f4dd2758eeef86c5e8c909a8d2d018f9339b3004b216",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-diverse-workflows-september16/run.py": "36fe84cf2c065be826304c0e7cc23beefb98e45a90dac88b679f72d5c6a9b7c1",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/RUNTIME.json": "8c71ec2bcc1a83fa8e08ebe5fa648bf20c17a2443e95d6a9b4847bd490aa5f49",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/ENTRIES.json": "9c143ea555fbc047ef1536a474483f93681ed14562cf24ddd55b4a0338e57c46",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/SCOPE.md": "d7dd881d384582abc5b237058ed602f4f6b0cf77a1d58887e34cc4832b6f964f",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/capture.mjs": "9b66b349c3ac477bdf0c216dbbc54034a10f5e3a5708044454a82d561ef91ffc",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/block-link-content-september15/proof/sealed-exec.py": "e024d0882b099e995acc8980de9164a9db2ac2362417835fe5ad568a33068ac7",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/block-link-content-september15/proof/replay-guard.cjs": "8e95384c687db7f5352dbd5cc76fb03cd066831b3dfb457d5b9c7c36d485efb0",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/arxiv-search-phases-september16/observe.cjs": "4f15b589fbf0ee331ce9816f7810c45f6adbb2260b2bd1eb330edf41d3dd3a8c"
+        },
+        "approvalSha256": "1dc80c59f2e58017f10f6b9af1e36e805c9464cf8dc2f4dd975ea57ebcb97088",
+        "approvalEvidence": {
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/SCOPE.md": "d7dd881d384582abc5b237058ed602f4f6b0cf77a1d58887e34cc4832b6f964f",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/ENTRIES.json": "9c143ea555fbc047ef1536a474483f93681ed14562cf24ddd55b4a0338e57c46",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/CHECK.json": "b469f8195572ffdb7702da221138e29ba82907c4281f0a8a087c35bb69934efd",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/RESULT.json": "6984acd52f4642a9850818481eec139d21ebeef2795f12d988c85d77b3262dfd",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/INVOCATION.json": "fac7b0ccc06586e2d1d53fbdf933a4c80051c799b4ae182f0c2e8bdc70af76ef",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/EXECUTION.json": "b88fb042f9db7ab03c82d8d96af910ee5677466ca3c9313cc16315e518f7085d",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/CAPTURES.json": "de7fc51f458b5bbe25b0d76021b5f306f44cefa70d43e896d73f200994ccd420",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-chart-tables-september16/native-release01/EXECUTION.json": "2c62ed1069e7193508cb038cb97ad6efe31f983f737c7c9b841404a1b892c5e1",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-chart-tables-september16/CHECK-release01.json": "0ffc65370d92cf9f1a7efa2c4b28dbc9b2ba11136bdfc6694da677dc11a27990"
+        },
+        "deadlineSeconds": 60,
+        "entry": {
+          "ordinal": 97,
+          "targetUrl": "https://runrepeat.com/brooks-revel-max",
+          "task": "Read a shoe review and identify retained verdicts, laboratory measurements and source qualifiers",
+          "sourceUrl": "https://runrepeat.com/",
+          "capture": {
+            "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/097-runrepeat.com/stdout.jsonl",
+            "sha256": "e880f07a48314e17770b6bf9d9074266ee8027f583142676cc5d3258bb2872cc",
+            "bodySha256": "7bb4278a3424ed8d9fcbcbcc366fe6f53843d74669837cf28f1cc66acaaac725",
+            "decodedBytes": 380615
+          },
+          "sourceMarkdown": {
+            "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/097-runrepeat.com/extracted.md",
+            "sha256": "7b1c14827e434420e86521b7656bbf9efd900e96e89a1b3d64bd977dc8115a10"
+          },
+          "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+        },
+        "entries": [
+          {
+            "ordinal": 58,
+            "targetUrl": "https://www.rtings.com/laptop/reviews/microsoft/surface-pro-13-12th-edition-2026",
+            "task": "Read a public laptop review and identify retained text, measurement tables and any access limitations",
+            "sourceUrl": "https://www.rtings.com/",
+            "capture": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/058-www.rtings.com/stdout.jsonl",
+              "sha256": "b66a63a56ec9728c31ed7d13e09ad5da999ba243426b912b93c1d99b07d15446",
+              "bodySha256": "2721d70643cd16d45cd1e443e0fa70cd57f8721f90824f779e3e86ee4627eb4a",
+              "decodedBytes": 269192
+            },
+            "sourceMarkdown": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/058-www.rtings.com/extracted.md",
+              "sha256": "c6aa2589b6abb6e117c037385977075a962531f2aae08a55918bf931a75ab3e1"
+            },
+            "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+          },
+          {
+            "ordinal": 97,
+            "targetUrl": "https://runrepeat.com/brooks-revel-max",
+            "task": "Read a shoe review and identify retained verdicts, laboratory measurements and source qualifiers",
+            "sourceUrl": "https://runrepeat.com/",
+            "capture": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/097-runrepeat.com/stdout.jsonl",
+              "sha256": "e880f07a48314e17770b6bf9d9074266ee8027f583142676cc5d3258bb2872cc",
+              "bodySha256": "7bb4278a3424ed8d9fcbcbcc366fe6f53843d74669837cf28f1cc66acaaac725",
+              "decodedBytes": 380615
+            },
+            "sourceMarkdown": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/097-runrepeat.com/extracted.md",
+              "sha256": "7b1c14827e434420e86521b7656bbf9efd900e96e89a1b3d64bd977dc8115a10"
+            },
+            "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+          },
+          {
+            "ordinal": 82,
+            "targetUrl": "https://manuals.plus/category/logitech",
+            "task": "Discover model-specific manuals from the advertised brand category; category listings are not manual contents",
+            "sourceUrl": "https://manuals.plus/",
+            "capture": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/082-manuals.plus/stdout.jsonl",
+              "sha256": "6d5786784a33562a30489ed74e45ad996778d68cf941d6650c351643090ecaf2",
+              "bodySha256": "b327fbf888ac08e72b762c16c70aa49f765a68c626a49ec15a110b7cae562d36",
+              "decodedBytes": 58084
+            },
+            "sourceMarkdown": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/082-manuals.plus/extracted.md",
+              "sha256": "278f7a017648d68d09fc6a0f232db73bf059396fc2d29f33e1ae1a2e186608e0"
+            },
+            "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+          }
+        ]
+      },
+      "requestStartTimes": [
+        "2026-09-16T14:11:50.765Z",
+        "2026-09-16T14:11:52.768Z"
+      ],
+      "originStartGapMs": 2003,
+      "responseCaptures": [
+        {
+          "ordinal": 97,
+          "request": 1,
+          "file": "response-97-1.json",
+          "sha256": "25af0c4df68776893875a837d56aa4189d178abbfa308ccd1a7225f2f51e9b10",
+          "url": "https://runrepeat.com/",
+          "status": 200,
+          "bodySha256": "34f22c40aa39fadb0db90a0971fecda980c1ad344fd063aae12299b56a5cea97",
+          "decodedBytes": 380985
+        },
+        {
+          "ordinal": 97,
+          "request": 2,
+          "file": "response-97-2.json",
+          "sha256": "0adfbcec74acd12d3515cbdd8e35fb3fa252a0499e14556035cbb0c9a44ea10f",
+          "url": "https://runrepeat.com/brooks-revel-max",
+          "status": 200,
+          "bodySha256": "0e1f3aa2fdd3b0c6979a25ba5e358212bea6e7fa9b0ea611f5f7d6bc6865420c",
+          "decodedBytes": 639304
+        }
+      ],
+      "responses": [
+        {
+          "url": "https://runrepeat.com/",
+          "status": 200,
+          "decodedBytes": 380985,
+          "bodySha256": "34f22c40aa39fadb0db90a0971fecda980c1ad344fd063aae12299b56a5cea97"
+        },
+        {
+          "url": "https://runrepeat.com/brooks-revel-max",
+          "status": 200,
+          "decodedBytes": 639304,
+          "bodySha256": "0e1f3aa2fdd3b0c6979a25ba5e358212bea6e7fa9b0ea611f5f7d6bc6865420c"
+        }
+      ],
+      "outcome": "extracted-unverified",
+      "contentSuccess": null,
+      "selection": {
+        "reference": "e928",
+        "label": "Brooks Revel Max Sep 15, 2026",
+        "url": "https://runrepeat.com/brooks-revel-max",
+        "candidates": 1
+      },
+      "discovery": {
+        "strategy": "first-eligible-target-v1",
+        "anchorMatches": 62,
+        "targetCandidates": 1,
+        "eligibleCandidates": 1
+      },
+      "markdownBytes": 19465,
+      "markdownSha256": "45225ae2ae57b64edf01e4badce6b198ce3027d208af4e8345346dbffc7daefb",
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": "source-attributes-and-inline-display",
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 6,
+        "sourceCodeUnits": 639220,
+        "textCodeUnits": 19270,
+        "outputCodeUnits": 97652,
+        "tokens": 8610,
+        "omittedTokens": 2230,
+        "omittedSubtrees": {
+          "meta": 24,
+          "link": 66,
+          "style": 39,
+          "script": 6,
+          "div": 3,
+          "svg": 27,
+          "input": 7,
+          "span": 2,
+          "video": 12,
+          "canvas": 1
+        },
+        "ignoredAttributes": 3195,
+        "unwrappedElements": 10,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 319367,
+          "workUnits": 4017175,
+          "steps": 48,
+          "elements": 45,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8",
+        "fallbackEncoding": "utf-8"
+      },
+      "metrics": {
+        "tabs": 0,
+        "selectedTab": null,
+        "pendingLoads": 0,
+        "pageTraversals": [],
+        "navigations": 2,
+        "commits": 2,
+        "cleanupErrors": 0,
+        "closed": true,
+        "network": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 2,
+          "redirects": 0,
+          "encodedBytes": 160208,
+          "decodedBytes": 1020289,
+          "active": 0,
+          "closed": true
+        },
+        "routes": {
+          "routes": 0,
+          "retainedBytes": 0,
+          "fulfilled": 0,
+          "servedBytes": 0,
+          "closed": true,
+          "limits": {
+            "maxRoutes": 32,
+            "maxBodyBytes": 262144,
+            "maxRetainedBytes": 1048576,
+            "maxFulfilled": 512,
+            "maxServedBytes": 8388608,
+            "maxMatchSteps": 2000000
+          },
+          "partial": true,
+          "automaticRedirects": false
+        },
+        "cookies": {
+          "cookies": 0,
+          "accepted": 0,
+          "rejected": 0,
+          "rejections": {},
+          "closed": true
+        },
+        "storage": {
+          "tabs": 0,
+          "areas": 0,
+          "entries": 0,
+          "bytes": 0,
+          "revision": 1,
+          "notificationFailures": 0,
+          "closed": true
+        },
+        "storageEvents": {
+          "documents": 0,
+          "accepted": 0,
+          "delivered": 0,
+          "canceled": 0,
+          "dropped": 0,
+          "failed": 0,
+          "pending": 0,
+          "active": false,
+          "retainedBytes": 0,
+          "peakBytes": 0,
+          "closed": true
+        }
+      }
+    },
+    {
+      "ordinal": 82,
+      "targetUrl": "https://manuals.plus/category/logitech",
+      "task": "Discover model-specific manuals from the advertised brand category; category listings are not manual contents",
+      "sourceUrl": "https://manuals.plus/",
+      "capture": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/082-manuals.plus/stdout.jsonl",
+        "sha256": "6d5786784a33562a30489ed74e45ad996778d68cf941d6650c351643090ecaf2",
+        "bodySha256": "b327fbf888ac08e72b762c16c70aa49f765a68c626a49ec15a110b7cae562d36",
+        "decodedBytes": 58084
+      },
+      "sourceMarkdown": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/082-manuals.plus/extracted.md",
+        "sha256": "278f7a017648d68d09fc6a0f232db73bf059396fc2d29f33e1ae1a2e186608e0"
+      },
+      "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately",
+      "receiptFile": "node_modules/.cache/native-validation/review-manual-workflows-september16/live/82/RESULT.json",
+      "receiptSha256": "6b08c40420c40afdae08a50b2b6018f74b74354efd1d9c1a14c93f07d341eabe",
+      "execution": {
+        "ordinal": 82,
+        "mode": "live",
+        "version": "live",
+        "entry": {
+          "ordinal": 82,
+          "targetUrl": "https://manuals.plus/category/logitech",
+          "task": "Discover model-specific manuals from the advertised brand category; category listings are not manual contents",
+          "sourceUrl": "https://manuals.plus/",
+          "capture": {
+            "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/082-manuals.plus/stdout.jsonl",
+            "sha256": "6d5786784a33562a30489ed74e45ad996778d68cf941d6650c351643090ecaf2",
+            "bodySha256": "b327fbf888ac08e72b762c16c70aa49f765a68c626a49ec15a110b7cae562d36",
+            "decodedBytes": 58084
+          },
+          "sourceMarkdown": {
+            "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/082-manuals.plus/extracted.md",
+            "sha256": "278f7a017648d68d09fc6a0f232db73bf059396fc2d29f33e1ae1a2e186608e0"
+          },
+          "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+        },
+        "approvalSha256": "1dc80c59f2e58017f10f6b9af1e36e805c9464cf8dc2f4dd975ea57ebcb97088",
+        "pid": 370161,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "safetyErrors": [],
+        "safetyPassed": true,
+        "reservation": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/source-reservations/9b5abbe9131eb015aa2ab4db6d707165a6b94631a93739c3ee64c37619dde378.json",
+        "terminationSignal": null,
+        "elapsedSeconds": 2.2568531930446625
+      },
+      "invocation": {
+        "at": "2026-09-16T14:11:53.003071+00:00",
+        "mode": "live",
+        "version": "live",
+        "command": [
+          "/home/kjopek/.nvm/versions/node/v22.22.0/bin/node",
+          "--no-addons",
+          "--max-old-space-size=256",
+          "--require",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/arxiv-search-phases-september16/observe.cjs",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/capture.mjs",
+          "live",
+          "82"
+        ],
+        "environment": {
+          "PATH": "/usr/bin:/bin",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C",
+          "TZ": "UTC",
+          "HOME": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/live/82/home",
+          "TMPDIR": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/live/82/tmp"
+        },
+        "pins": {
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/run.py": "b1d13751e2caf638ada0f4dd2758eeef86c5e8c909a8d2d018f9339b3004b216",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-diverse-workflows-september16/run.py": "36fe84cf2c065be826304c0e7cc23beefb98e45a90dac88b679f72d5c6a9b7c1",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/RUNTIME.json": "8c71ec2bcc1a83fa8e08ebe5fa648bf20c17a2443e95d6a9b4847bd490aa5f49",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/ENTRIES.json": "9c143ea555fbc047ef1536a474483f93681ed14562cf24ddd55b4a0338e57c46",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/SCOPE.md": "d7dd881d384582abc5b237058ed602f4f6b0cf77a1d58887e34cc4832b6f964f",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/capture.mjs": "9b66b349c3ac477bdf0c216dbbc54034a10f5e3a5708044454a82d561ef91ffc",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/block-link-content-september15/proof/sealed-exec.py": "e024d0882b099e995acc8980de9164a9db2ac2362417835fe5ad568a33068ac7",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/block-link-content-september15/proof/replay-guard.cjs": "8e95384c687db7f5352dbd5cc76fb03cd066831b3dfb457d5b9c7c36d485efb0",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/arxiv-search-phases-september16/observe.cjs": "4f15b589fbf0ee331ce9816f7810c45f6adbb2260b2bd1eb330edf41d3dd3a8c"
+        },
+        "approvalSha256": "1dc80c59f2e58017f10f6b9af1e36e805c9464cf8dc2f4dd975ea57ebcb97088",
+        "approvalEvidence": {
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/SCOPE.md": "d7dd881d384582abc5b237058ed602f4f6b0cf77a1d58887e34cc4832b6f964f",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/ENTRIES.json": "9c143ea555fbc047ef1536a474483f93681ed14562cf24ddd55b4a0338e57c46",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/CHECK.json": "b469f8195572ffdb7702da221138e29ba82907c4281f0a8a087c35bb69934efd",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/RESULT.json": "6984acd52f4642a9850818481eec139d21ebeef2795f12d988c85d77b3262dfd",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/INVOCATION.json": "fac7b0ccc06586e2d1d53fbdf933a4c80051c799b4ae182f0c2e8bdc70af76ef",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/EXECUTION.json": "b88fb042f9db7ab03c82d8d96af910ee5677466ca3c9313cc16315e518f7085d",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/proof03/proof/CAPTURES.json": "de7fc51f458b5bbe25b0d76021b5f306f44cefa70d43e896d73f200994ccd420",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-chart-tables-september16/native-release01/EXECUTION.json": "2c62ed1069e7193508cb038cb97ad6efe31f983f737c7c9b841404a1b892c5e1",
+          "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-chart-tables-september16/CHECK-release01.json": "0ffc65370d92cf9f1a7efa2c4b28dbc9b2ba11136bdfc6694da677dc11a27990"
+        },
+        "deadlineSeconds": 60,
+        "entry": {
+          "ordinal": 82,
+          "targetUrl": "https://manuals.plus/category/logitech",
+          "task": "Discover model-specific manuals from the advertised brand category; category listings are not manual contents",
+          "sourceUrl": "https://manuals.plus/",
+          "capture": {
+            "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/082-manuals.plus/stdout.jsonl",
+            "sha256": "6d5786784a33562a30489ed74e45ad996778d68cf941d6650c351643090ecaf2",
+            "bodySha256": "b327fbf888ac08e72b762c16c70aa49f765a68c626a49ec15a110b7cae562d36",
+            "decodedBytes": 58084
+          },
+          "sourceMarkdown": {
+            "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/082-manuals.plus/extracted.md",
+            "sha256": "278f7a017648d68d09fc6a0f232db73bf059396fc2d29f33e1ae1a2e186608e0"
+          },
+          "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+        },
+        "entries": [
+          {
+            "ordinal": 58,
+            "targetUrl": "https://www.rtings.com/laptop/reviews/microsoft/surface-pro-13-12th-edition-2026",
+            "task": "Read a public laptop review and identify retained text, measurement tables and any access limitations",
+            "sourceUrl": "https://www.rtings.com/",
+            "capture": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/058-www.rtings.com/stdout.jsonl",
+              "sha256": "b66a63a56ec9728c31ed7d13e09ad5da999ba243426b912b93c1d99b07d15446",
+              "bodySha256": "2721d70643cd16d45cd1e443e0fa70cd57f8721f90824f779e3e86ee4627eb4a",
+              "decodedBytes": 269192
+            },
+            "sourceMarkdown": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/058-www.rtings.com/extracted.md",
+              "sha256": "c6aa2589b6abb6e117c037385977075a962531f2aae08a55918bf931a75ab3e1"
+            },
+            "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+          },
+          {
+            "ordinal": 97,
+            "targetUrl": "https://runrepeat.com/brooks-revel-max",
+            "task": "Read a shoe review and identify retained verdicts, laboratory measurements and source qualifiers",
+            "sourceUrl": "https://runrepeat.com/",
+            "capture": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/097-runrepeat.com/stdout.jsonl",
+              "sha256": "e880f07a48314e17770b6bf9d9074266ee8027f583142676cc5d3258bb2872cc",
+              "bodySha256": "7bb4278a3424ed8d9fcbcbcc366fe6f53843d74669837cf28f1cc66acaaac725",
+              "decodedBytes": 380615
+            },
+            "sourceMarkdown": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/097-runrepeat.com/extracted.md",
+              "sha256": "7b1c14827e434420e86521b7656bbf9efd900e96e89a1b3d64bd977dc8115a10"
+            },
+            "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+          },
+          {
+            "ordinal": 82,
+            "targetUrl": "https://manuals.plus/category/logitech",
+            "task": "Discover model-specific manuals from the advertised brand category; category listings are not manual contents",
+            "sourceUrl": "https://manuals.plus/",
+            "capture": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/082-manuals.plus/stdout.jsonl",
+              "sha256": "6d5786784a33562a30489ed74e45ad996778d68cf941d6650c351643090ecaf2",
+              "bodySha256": "b327fbf888ac08e72b762c16c70aa49f765a68c626a49ec15a110b7cae562d36",
+              "decodedBytes": 58084
+            },
+            "sourceMarkdown": {
+              "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/082-manuals.plus/extracted.md",
+              "sha256": "278f7a017648d68d09fc6a0f232db73bf059396fc2d29f33e1ae1a2e186608e0"
+            },
+            "selectionBasis": "Literal target link in hash-verified earlier native homepage capture; native eligibility proved separately"
+          }
+        ]
+      },
+      "requestStartTimes": [
+        "2026-09-16T14:11:53.192Z",
+        "2026-09-16T14:11:55.195Z"
+      ],
+      "originStartGapMs": 2003,
+      "responseCaptures": [
+        {
+          "ordinal": 82,
+          "request": 1,
+          "file": "response-82-1.json",
+          "sha256": "dc4e0d9e7b0b5caf09b3f41c6e791f9e761a2873e3e5ad4d925e2567bd21622d",
+          "url": "https://manuals.plus/",
+          "status": 200,
+          "bodySha256": "8a8ec60e7da0f5d4d4f5593d22bd919de79a763a3a8b39154fdedbb0b5eb307c",
+          "decodedBytes": 59184
+        },
+        {
+          "ordinal": 82,
+          "request": 2,
+          "file": "response-82-2.json",
+          "sha256": "2f4c850764c0e0c56cb8238fe05cf76b84e608a6c9506bca179dad9ffc2df822",
+          "url": "https://manuals.plus/category/logitech",
+          "status": 403,
+          "bodySha256": "7d04507d149aa14ff594669c7798769025dda98984604f9567aa8eaa9b1785bd",
+          "decodedBytes": 16191
+        }
+      ],
+      "responses": [
+        {
+          "url": "https://manuals.plus/",
+          "status": 200,
+          "decodedBytes": 59184,
+          "bodySha256": "8a8ec60e7da0f5d4d4f5593d22bd919de79a763a3a8b39154fdedbb0b5eb307c"
+        },
+        {
+          "url": "https://manuals.plus/category/logitech",
+          "status": 403,
+          "decodedBytes": 16191,
+          "bodySha256": "7d04507d149aa14ff594669c7798769025dda98984604f9567aa8eaa9b1785bd"
+        }
+      ],
+      "outcome": "semantic-barrier",
+      "contentSuccess": false,
+      "failure": {
+        "category": "policy-denied",
+        "stage": "native-click"
+      },
+      "barrier": {
+        "kind": "challenge",
+        "provider": "cloudflare",
+        "confidence": "confirmed",
+        "evidence": [
+          "cf-mitigated-challenge"
+        ],
+        "action": "stop-and-request-user-handoff"
+      },
+      "selection": {
+        "reference": "e810",
+        "label": "Logitech",
+        "url": "https://manuals.plus/category/logitech",
+        "candidates": 1
+      },
+      "discovery": {
+        "strategy": "first-eligible-target-v1",
+        "anchorMatches": 58,
+        "targetCandidates": 1,
+        "eligibleCandidates": 1
+      },
+      "markdownBytes": 0,
+      "metrics": {
+        "tabs": 0,
+        "selectedTab": null,
+        "pendingLoads": 0,
+        "pageTraversals": [],
+        "navigations": 2,
+        "commits": 1,
+        "cleanupErrors": 0,
+        "closed": true,
+        "network": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 2,
+          "redirects": 0,
+          "encodedBytes": 22197,
+          "decodedBytes": 75375,
+          "active": 0,
+          "closed": true
+        },
+        "routes": {
+          "routes": 0,
+          "retainedBytes": 0,
+          "fulfilled": 0,
+          "servedBytes": 0,
+          "closed": true,
+          "limits": {
+            "maxRoutes": 32,
+            "maxBodyBytes": 262144,
+            "maxRetainedBytes": 1048576,
+            "maxFulfilled": 512,
+            "maxServedBytes": 8388608,
+            "maxMatchSteps": 2000000
+          },
+          "partial": true,
+          "automaticRedirects": false
+        },
+        "cookies": {
+          "cookies": 0,
+          "accepted": 0,
+          "rejected": 0,
+          "rejections": {},
+          "closed": true
+        },
+        "storage": {
+          "tabs": 0,
+          "areas": 0,
+          "entries": 0,
+          "bytes": 0,
+          "revision": 1,
+          "notificationFailures": 0,
+          "closed": true
+        },
+        "storageEvents": {
+          "documents": 0,
+          "accepted": 0,
+          "delivered": 0,
+          "canceled": 0,
+          "dropped": 0,
+          "failed": 0,
+          "pending": 0,
+          "active": false,
+          "retainedBytes": 0,
+          "peakBytes": 0,
+          "closed": true
+        }
+      }
+    }
+  ],
+  "replay": {
+    "passed": true,
+    "newLiveRequests": 0,
+    "fixtureRequests": 6,
+    "scope": "Native click replay of all three freshly captured complete source/target pairs; exact available Markdown/normalized extraction and failure/barrier outcomes match live outputs, including the403 challenge",
+    "results": [
+      {
+        "ordinal": 58,
+        "sourceUrl": "https://www.rtings.com/",
+        "targetUrl": "https://www.rtings.com/laptop/reviews/microsoft/surface-pro-13-12th-edition-2026",
+        "passed": true,
+        "fixtureRequests": 2,
+        "outcome": "extracted-unverified",
+        "markdownBytes": 4726,
+        "markdownSha256": "b7650a69e3a4e41da2ca58cded9836e69ce09616a6b3f1aa1562adafe76316e1",
+        "normalizedExtractionSha256": "1ef20e78b2c88f0d3e1744c4dfc8a203f5e6c5c755ac7008fd9638948d48029f",
+        "discovery": {
+          "strategy": "first-eligible-target-v1",
+          "anchorMatches": 165,
+          "targetCandidates": 2,
+          "eligibleCandidates": 1
+        }
+      },
+      {
+        "ordinal": 97,
+        "sourceUrl": "https://runrepeat.com/",
+        "targetUrl": "https://runrepeat.com/brooks-revel-max",
+        "passed": true,
+        "fixtureRequests": 2,
+        "outcome": "extracted-unverified",
+        "markdownBytes": 19465,
+        "markdownSha256": "45225ae2ae57b64edf01e4badce6b198ce3027d208af4e8345346dbffc7daefb",
+        "normalizedExtractionSha256": "695f0a3560842941c1b2c04e3f5cf581cbd226a5a7271d41df7b348d42c51d39",
+        "discovery": {
+          "strategy": "first-eligible-target-v1",
+          "anchorMatches": 62,
+          "targetCandidates": 1,
+          "eligibleCandidates": 1
+        }
+      },
+      {
+        "ordinal": 82,
+        "sourceUrl": "https://manuals.plus/",
+        "targetUrl": "https://manuals.plus/category/logitech",
+        "passed": true,
+        "fixtureRequests": 2,
+        "outcome": "semantic-barrier",
+        "failure": {
+          "category": "policy-denied",
+          "stage": "native-click"
+        },
+        "barrier": {
+          "kind": "challenge",
+          "provider": "cloudflare",
+          "confidence": "confirmed",
+          "evidence": [
+            "cf-mitigated-challenge"
+          ],
+          "action": "stop-and-request-user-handoff"
+        },
+        "markdownBytes": 0,
+        "discovery": {
+          "strategy": "first-eligible-target-v1",
+          "anchorMatches": 58,
+          "targetCandidates": 1,
+          "eligibleCandidates": 1
+        }
+      }
+    ]
+  },
+  "rtingsDiagnostic": {
+    "passed": true,
+    "newLiveRequests": 0,
+    "captureSha256": "37bd14a6ec19144f597b5c97110dcd9a7084bbc4aba33fafe2107c4392aea8ca",
+    "bodySha256": "0be8f72745c242d75ea067c00f2b74425e51ee0a895e2e614c4bdf64ffd53129",
+    "results": [
+      {
+        "contentFocus": "document",
+        "markdownBytes": 4726,
+        "markdownSha256": "b7650a69e3a4e41da2ca58cded9836e69ce09616a6b3f1aa1562adafe76316e1",
+        "matchesLiveText": true,
+        "sourceAccess": {
+          "kind": "jsonld-free-access-declarations-v1",
+          "scope": "document-source",
+          "partial": true,
+          "verified": false,
+          "truncated": false,
+          "entries": [
+            {
+              "source": {
+                "offset": 13017
+              },
+              "path": "$.hasPart",
+              "value": "False"
+            }
+          ]
+        },
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 253081,
+          "textCodeUnits": 5575,
+          "outputCodeUnits": 13219,
+          "tokens": 722,
+          "omittedTokens": 110,
+          "omittedSubtrees": {
+            "meta": 17,
+            "link": 50,
+            "script": 21
+          },
+          "ignoredAttributes": 111,
+          "unwrappedElements": 1,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 165839,
+            "workUnits": 2142450,
+            "steps": 23,
+            "elements": 21,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8",
+          "fallbackEncoding": "utf-8"
+        },
+        "headingLines": 0,
+        "membershipTextPresent": true,
+        "reviewTitlePresent": true,
+        "outputTruncated": false
+      },
+      {
+        "contentFocus": "main-content-v1",
+        "markdownBytes": 4726,
+        "markdownSha256": "b7650a69e3a4e41da2ca58cded9836e69ce09616a6b3f1aa1562adafe76316e1",
+        "matchesLiveText": true,
+        "selection": {
+          "policy": "main-content-v1",
+          "selected": "document",
+          "reason": "no-nonempty-landmark",
+          "mainCandidates": 0,
+          "articleCandidates": 0,
+          "scannedNodes": 374
+        },
+        "sourceAccess": {
+          "kind": "jsonld-free-access-declarations-v1",
+          "scope": "document-source",
+          "partial": true,
+          "verified": false,
+          "truncated": false,
+          "entries": [
+            {
+              "source": {
+                "offset": 13017
+              },
+              "path": "$.hasPart",
+              "value": "False"
+            }
+          ]
+        },
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 253081,
+          "textCodeUnits": 5575,
+          "outputCodeUnits": 13219,
+          "tokens": 722,
+          "omittedTokens": 110,
+          "omittedSubtrees": {
+            "meta": 17,
+            "link": 50,
+            "script": 21
+          },
+          "ignoredAttributes": 111,
+          "unwrappedElements": 1,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 165839,
+            "workUnits": 2142450,
+            "steps": 23,
+            "elements": 21,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8",
+          "fallbackEncoding": "utf-8"
+        },
+        "headingLines": 0,
+        "membershipTextPresent": true,
+        "reviewTitlePresent": true,
+        "outputTruncated": false
+      },
+      {
+        "contentFocus": "main-content-v2",
+        "markdownBytes": 4726,
+        "markdownSha256": "b7650a69e3a4e41da2ca58cded9836e69ce09616a6b3f1aa1562adafe76316e1",
+        "matchesLiveText": true,
+        "selection": {
+          "policy": "main-content-v2",
+          "selected": "document",
+          "reason": "no-nonempty-landmark",
+          "mainCandidates": 0,
+          "articleCandidates": 0,
+          "scannedNodes": 374,
+          "outsideArticleContent": true
+        },
+        "sourceAccess": {
+          "kind": "jsonld-free-access-declarations-v1",
+          "scope": "document-source",
+          "partial": true,
+          "verified": false,
+          "truncated": false,
+          "entries": [
+            {
+              "source": {
+                "offset": 13017
+              },
+              "path": "$.hasPart",
+              "value": "False"
+            }
+          ]
+        },
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 253081,
+          "textCodeUnits": 5575,
+          "outputCodeUnits": 13219,
+          "tokens": 722,
+          "omittedTokens": 110,
+          "omittedSubtrees": {
+            "meta": 17,
+            "link": 50,
+            "script": 21
+          },
+          "ignoredAttributes": 111,
+          "unwrappedElements": 1,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 165839,
+            "workUnits": 2142450,
+            "steps": 23,
+            "elements": 21,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8",
+          "fallbackEncoding": "utf-8"
+        },
+        "headingLines": 0,
+        "membershipTextPresent": true,
+        "reviewTitlePresent": true,
+        "outputTruncated": false
+      }
+    ],
+    "documentDiagnostic": {
+      "characters": 4982,
+      "membershipTextPresent": true
+    },
+    "scope": "Same reader/source-hidden policy; only extraction focus changes. No subscriber-only text recovery or page execution."
+  },
+  "reviews": {
+    "rtings": {
+      "kind": "rtings-static-content-gap-review-v1",
+      "reviewDate": "2026-09-16",
+      "lane": "node_modules/.cache/native-validation/review-manual-workflows-september16",
+      "targetUrl": "https://www.rtings.com/laptop/reviews/microsoft/surface-pro-13-12th-edition-2026",
+      "verdict": {
+        "classification": "missing-ordinary-static-review-text-with-opaque-application-mount",
+        "novelty": "Second structural sample of the already-known inert ProductVuePage limitation; not a new defect or a validated adapter schema.",
+        "contentSuccess": null,
+        "outcome": "extracted-unverified",
+        "concreteCodeDefectEstablished": false,
+        "focusSelectionExcludedForThisCapture": true,
+        "focusExclusionEvidenceOwner": "main",
+        "sourceHiddenTextLossObserved": false,
+        "partLevelAccessDeclarationPresent": true,
+        "wholePageSubscriberOnlyEstablished": false,
+        "captureTruncationEvidence": false,
+        "runtimeAvailability": "unresolved",
+        "embeddedReviewFields": "not-interpreted"
+      },
+      "scope": {
+        "mode": "static-local-artifact-review",
+        "networkRequestsByReviewer": 0,
+        "runtimeProbesByReviewer": 0,
+        "testSuitesRunByReviewer": 0,
+        "productionOrTestChanges": false,
+        "historicalReportsChanged": false,
+        "commitsMade": false,
+        "sdkOrCredentialsUsed": false,
+        "subscriberOnlyTextRecoveredOrExposed": false,
+        "dataPropsJsonDeserialized": false,
+        "scriptsExecutedOrSemanticallyAudited": false,
+        "currentSourceComparedToCapturedExecutable": false,
+        "edits": [
+          "rtings-review.md",
+          "rtings-review.json"
+        ],
+        "mainDiagnosticAttribution": "Read main's saved result after explicit user update. Kernel-denied execution is attributed to main; this reviewer did not inspect guard artifacts or rerun it."
+      },
+      "inspection": {
+        "extractedContent": {
+          "extent": "complete",
+          "range": [
+            0,
+            4726
+          ],
+          "utf8Bytes": 4726,
+          "utf16CodeUnits": 4726,
+          "sha256": "b7650a69e3a4e41da2ca58cded9836e69ce09616a6b3f1aa1562adafe76316e1",
+          "markdownLinks": 56,
+          "headingLines": 0,
+          "sectionStarts": {
+            "best": 0,
+            "tools": 1567,
+            "popular": 2080,
+            "laptopCount": 4241,
+            "membershipDisclosure": 4273,
+            "breadcrumbs": 4428
+          },
+          "lastNonWhitespaceRange": [
+            4716,
+            4725
+          ],
+          "lastNonWhitespaceText": "6. Review"
+        },
+        "targetSource": {
+          "extent": "Entire decoded HTML structurally scanned; ordinary body text inventoried; script and data-props payloads not semantically reviewed.",
+          "range": [
+            0,
+            253081
+          ],
+          "utf8Bytes": 253085,
+          "utf16CodeUnits": 253081,
+          "sha256": "0be8f72745c242d75ea067c00f2b74425e51ee0a895e2e614c4bdf64ffd53129",
+          "offsetConvention": "zero-based end-exclusive UTF-16 code units in decoded HTML, not capture JSON/base64 or UTF-8 byte offsets",
+          "carriageReturns": 0,
+          "nonBmpCharacters": 0,
+          "normalizationChangesOffsets": false,
+          "staticInventoryMethod": "Python standard-library HTMLParser; exclude head/script/style/template/noscript from ordinary body text; strip each non-whitespace data run; compare all runs to extracted Markdown after escaping parentheses, hyphens and periods.",
+          "nonWhitespaceBodyTextRuns": 62,
+          "strippedBodyTextCodePoints": 1107,
+          "bodyTextRunsMatchedInExtraction": 62,
+          "firstBodyTextRange": [
+            204999,
+            205004
+          ],
+          "lastBodyTextRange": [
+            222418,
+            222424
+          ],
+          "bodyEntityReferenceCallbacks": 0,
+          "nonWhitespaceNoscriptRuns": 0,
+          "mainOrArticleRoles": 0,
+          "tagCounts": {
+            "a": 57,
+            "body": 1,
+            "div": 54,
+            "head": 1,
+            "html": 1,
+            "li": 6,
+            "link": 51,
+            "meta": 19,
+            "noscript": 1,
+            "ol": 1,
+            "script": 21,
+            "span": 14,
+            "title": 1
+          },
+          "inventoryLimitation": "Not CSS visibility, standards-complete DOM equivalence, script evaluation or embedded application-data interpretation."
+        },
+        "landingResponse": "Capture envelope and file hash only; no landing-page article-content review.",
+        "mainDiagnostic": "Complete saved RESULT.json; no native replay or kernel-guard inspection by reviewer."
+      },
+      "confirmedObservations": [
+        {
+          "id": "navigation-only",
+          "finding": "Complete extracted Markdown contains navigation, membership/affiliate disclosure and breadcrumbs, with no substantive review prose or headings.",
+          "evidence": [
+            "live/58/RESULT.json#/extraction/content",
+            "inspection.extractedContent",
+            "inspection.targetSource"
+          ]
+        },
+        {
+          "id": "empty-review-mount",
+          "finding": "ProductVuePage div has opaque data-props but whitespace-only children. Ordinary static review text is absent, while application data is present.",
+          "evidence": [
+            "reviewMount",
+            "sourceFragments"
+          ]
+        },
+        {
+          "id": "reader-boundary",
+          "finding": "Recorded reader is nonscripting/nonstyling, with zero source-hidden omissions or tokenizer issues. Current reader preserves divs but excludes scripts and arbitrary data-props/data-vue attributes; no unexpected text omission or code defect established.",
+          "evidence": [
+            "readerReceipt",
+            "codeReferences"
+          ]
+        },
+        {
+          "id": "focus-excluded",
+          "finding": "Main's separate saved comparison produces identical live-text hash and 4726 bytes under document, main-content-v1 and main-content-v2. Focus selection is not this capture's cause.",
+          "evidence": [
+            "mainDiagnostic"
+          ]
+        },
+        {
+          "id": "part-level-access",
+          "finding": "JSON-LD hasPart declares the string False for .ld-paywall. This is partial/unverified source metadata, not established whole-page denial or proof of the empty mount's cause.",
+          "evidence": [
+            "sourceAccess",
+            "sourceFragments"
+          ]
+        },
+        {
+          "id": "capture-consistency",
+          "finding": "Decoded target bytes and hash agree with capture/result/manifest, and the source ends with closing body/html tags. No capture-truncation evidence; completeness of application content remains unproved.",
+          "evidence": [
+            "captureReceipt",
+            "sourceFragments"
+          ]
+        }
+      ],
+      "reviewMount": {
+        "tag": "div",
+        "dataVue": "ProductVuePage",
+        "startTagRange": [
+          222978,
+          248497
+        ],
+        "dataPropsRawValueRange": [
+          223021,
+          248495
+        ],
+        "dataPropsRawCodeUnits": 25474,
+        "dataPropsRawUtf8Sha256": "14eda37d99d8bbace79c1a08a44354eb246295b300219094665228bf15b67e3a",
+        "attributePayloadInterpretation": "none; raw value measured/hashed only, not JSON-deserialized",
+        "childRange": [
+          248497,
+          248503
+        ],
+        "childrenWhitespaceOnly": true,
+        "closeTagRange": [
+          248503,
+          248509
+        ]
+      },
+      "sourceFragments": [
+        {
+          "range": [
+            174630,
+            174636
+          ],
+          "text": "<body>"
+        },
+        {
+          "range": [
+            222978,
+            223008
+          ],
+          "text": "<div data-vue=\"ProductVuePage\""
+        },
+        {
+          "range": [
+            248495,
+            248509
+          ],
+          "text": "\">\n    \n</div>"
+        },
+        {
+          "range": [
+            13672,
+            13703
+          ],
+          "text": "\"isAccessibleForFree\": \"False\","
+        },
+        {
+          "range": [
+            13712,
+            13741
+          ],
+          "text": "\"cssSelector\" : \".ld-paywall\""
+        },
+        {
+          "range": [
+            253065,
+            253081
+          ],
+          "text": "</body>\n</html>\n"
+        }
+      ],
+      "sourceAccess": {
+        "kind": "jsonld-free-access-declarations-v1",
+        "scope": "document-source",
+        "partial": true,
+        "verified": false,
+        "truncated": false,
+        "entries": [
+          {
+            "source": {
+              "offset": 13017
+            },
+            "path": "$.hasPart",
+            "value": "False"
+          }
+        ],
+        "declarationScriptRange": [
+          13017,
+          13769
+        ],
+        "declarationType": "WebPageElement",
+        "valueJsonType": "string",
+        "cssSelector": ".ld-paywall",
+        "literalLdPaywallOccurrencesInSource": 1,
+        "staticElementsMatchingDeclaredClass": 0,
+        "secondJsonLdScriptRange": [
+          13774,
+          15033
+        ],
+        "secondJsonLdHasPartPresent": false,
+        "sourceOffsetMeaning": "opening script tag, not property location",
+        "limitation": "Does not establish whole-page subscriber status, runtime selector matches, field-level permissions or causal access denial."
+      },
+      "readerReceipt": {
+        "profile": "native-semantic-reader-v1",
+        "scripting": false,
+        "styling": false,
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 0,
+        "tokenizerIssues": 0,
+        "ignoredAttributes": 111,
+        "unwrappedElements": 1,
+        "tokens": 722,
+        "omittedTokens": 110,
+        "omittedSubtrees": {
+          "meta": 17,
+          "link": 50,
+          "script": 21
+        },
+        "omittedRawCodeUnits": 165839,
+        "sourceCodeUnits": 253081,
+        "textCodeUnits": 5575,
+        "outputCodeUnits": 13219,
+        "metricLimitation": "Reader text/output code units are intermediate metrics, not final extracted Markdown length or omitted prose measurements.",
+        "liveContentSelection": {
+          "policy": "main-content-v2",
+          "selected": "document",
+          "reason": "no-nonempty-landmark",
+          "mainCandidates": 0,
+          "articleCandidates": 0,
+          "scannedNodes": 374,
+          "outsideArticleContent": true
+        }
+      },
+      "captureReceipt": {
+        "status": 200,
+        "contentType": "text/html; charset=utf-8",
+        "contentEncoding": "gzip",
+        "encodedBytes": 47577,
+        "decodedBytes": 253085,
+        "redirects": 0,
+        "bodyCaptureEncoding": "base64",
+        "decodedBodyMatchesRecordedHashAndLength": true,
+        "captureFileMatchesManifestHash": true,
+        "limitation": "Only selected headers retained. Artifact consistency and closing HTML do not independently prove transport or application-content completeness."
+      },
+      "mainDiagnostic": {
+        "path": "rtings-diagnostic/proof/RESULT.json",
+        "owner": "main",
+        "reviewerExecuted": false,
+        "passed": true,
+        "newLiveRequests": 0,
+        "captureSha256": "37bd14a6ec19144f597b5c97110dcd9a7084bbc4aba33fafe2107c4392aea8ca",
+        "bodySha256": "0be8f72745c242d75ea067c00f2b74425e51ee0a895e2e614c4bdf64ffd53129",
+        "variants": [
+          "document",
+          "main-content-v1",
+          "main-content-v2"
+        ],
+        "eachMarkdownBytes": 4726,
+        "eachMarkdownSha256": "b7650a69e3a4e41da2ca58cded9836e69ce09616a6b3f1aa1562adafe76316e1",
+        "eachMatchesLiveText": true,
+        "eachHeadingLines": 0,
+        "eachOutputTruncated": false,
+        "eachSourceHiddenSubtrees": 0,
+        "eachTokenizerIssues": 0,
+        "focusedVariantsMainCandidates": 0,
+        "focusedVariantsArticleCandidates": 0,
+        "documentVariantCandidateMetadataPresent": false,
+        "separateDocumentDiagnosticCharacters": 4982,
+        "limitation": "Only focus changes, same reader/source-hidden policy; not visibility on/off or JavaScript rendering. The separate 4982-character document diagnostic is not extracted review prose."
+      },
+      "codeReferences": [
+        {
+          "path": "src/research-loader.ts",
+          "lines": [
+            110,
+            122
+          ],
+          "purpose": "Omitted script tags and preserved divs."
+        },
+        {
+          "path": "src/research-loader.ts",
+          "lines": [
+            283,
+            312
+          ],
+          "purpose": "Nonscripting/nonstyling report and newline normalization."
+        },
+        {
+          "path": "src/research-loader.ts",
+          "lines": [
+            354,
+            377
+          ],
+          "purpose": "Raw omission and text accounting."
+        },
+        {
+          "path": "src/research-loader.ts",
+          "lines": [
+            484,
+            536
+          ],
+          "purpose": "Source-hidden checks, description retention and omitted-subtree accounting."
+        },
+        {
+          "path": "src/research-loader.ts",
+          "lines": [
+            570,
+            759
+          ],
+          "purpose": "Source collectors, preserved tag output and attribute allowlist."
+        },
+        {
+          "path": "src/table-source.ts",
+          "lines": [
+            1,
+            39
+          ],
+          "purpose": "No table-attribute exception for plain div data-props/data-vue."
+        },
+        {
+          "path": "src/extraction-content-focus.ts",
+          "lines": [
+            1,
+            181
+          ],
+          "purpose": "Landmark detection and document fallback."
+        },
+        {
+          "path": "src/research-source-access.ts",
+          "lines": [
+            1,
+            151
+          ],
+          "purpose": "Declaration offset/value storage and hasPart traversal; inspected relevant matching sections."
+        }
+      ],
+      "inferences": [
+        "Empty ProductVuePage mount with opaque props is consistent with client-side rendering, but eventual rendering success is not established.",
+        "The static content gap and nonscripting reader explain navigation-only extraction without demonstrating a code defect.",
+        "Part-level access restrictions may govern runtime content, but their causal role in this gap is unresolved."
+      ],
+      "notEstablished": [
+        "Laptop blurring flags or a field-level adapter schema; projector metadata is not transferred to this capture.",
+        "Contents or exposure permissions of this capture's opaque review data-props.",
+        "A whole-page paywall or current early-access status.",
+        "Complete public review prose, numerical scores or eventual runtime rendering.",
+        "Missing review information from all delivered application data, rather than missing ordinary static text nodes.",
+        "A native parser/visibility defect, transport truncation or runtime/source build equivalence."
+      ],
+      "historicalContext": [
+        {
+          "path": "reports/deep-content-pages-2026-09-16.md",
+          "inspectedLines": [
+            36,
+            78
+          ],
+          "priorSourceBytes": 237561,
+          "priorMarkdownBytes": 3640,
+          "use": "Different capture; navigation-shell precedent, not this capture's measurements."
+        },
+        {
+          "path": "reports/reader-task-variety-2026-09-16.md",
+          "inspectedLines": [
+            59,
+            110
+          ],
+          "use": "Prior JMGO embedded-data diagnosis and access caveats; no fields or confirmations transferred to Surface Pro."
+        },
+        {
+          "path": "reports/structured-source-access-2026-09-15.md",
+          "inspectedLines": [
+            1,
+            52
+          ],
+          "use": "Part-level source declaration does not establish whole-page access denial."
+        }
+      ],
+      "inputManifestPathBase": "repository root",
+      "inputManifest": [
+        {
+          "path": "node_modules/.cache/native-validation/review-manual-workflows-september16/rtings-review-prompt.md",
+          "bytes": 908,
+          "sha256": "33e85e2cf6e31eda2d0bda0510b19bc08327d46acdee948f9460e6fe223cf92c"
+        },
+        {
+          "path": "node_modules/.cache/native-validation/review-manual-workflows-september16/live/58/RESULT.json",
+          "bytes": 10508,
+          "sha256": "f9b88cf0bcdfee1d6d5e81728672b7bc3870d67c4399cc48012a8157bf273626"
+        },
+        {
+          "path": "node_modules/.cache/native-validation/review-manual-workflows-september16/live/58/response-58-1.json",
+          "bytes": 359551,
+          "sha256": "61dc8810d45d8a827d9045541bf62218acb3c0e7fa536bf38d5ae7f23ddb324a"
+        },
+        {
+          "path": "node_modules/.cache/native-validation/review-manual-workflows-september16/live/58/response-58-2.json",
+          "bytes": 338160,
+          "sha256": "37bd14a6ec19144f597b5c97110dcd9a7084bbc4aba33fafe2107c4392aea8ca"
+        },
+        {
+          "path": "node_modules/.cache/native-validation/review-manual-workflows-september16/live/58/CAPTURES.json",
+          "bytes": 960,
+          "sha256": "6fe4af40a1f8ae3c7ad4c8f8e9e16b886d5a8ff836ce9852e0bc2d31e48143a8"
+        },
+        {
+          "path": "node_modules/.cache/native-validation/review-manual-workflows-september16/rtings-diagnostic/proof/RESULT.json",
+          "bytes": 6149,
+          "sha256": "a3e048796562c64a019bcf1b4be5956d59142f03786f1aa0c2d5fbbd23cd965c"
+        },
+        {
+          "path": "src/research-loader.ts",
+          "bytes": 31239,
+          "sha256": "f7751bda6729bb101c9d78c4f997369f963c4ac187d13e0dfad006700d8c1e75"
+        },
+        {
+          "path": "src/extraction-content-focus.ts",
+          "bytes": 4855,
+          "sha256": "238b8ba5065ff875af7062616cf09e234f5f6ed1967daeb2d996089a716e589a"
+        },
+        {
+          "path": "src/research-source-access.ts",
+          "bytes": 4772,
+          "sha256": "57dd9bb1cbf4eedc40c4159d97b433f6531761c9dbe6d4e51e4bb3856e4c94a9"
+        },
+        {
+          "path": "src/table-source.ts",
+          "bytes": 1652,
+          "sha256": "1c05c76f335c75fb68b1503d219a45c8c5aa412691701b1d3f33c93f4f4d7b05"
+        },
+        {
+          "path": "reports/deep-content-pages-2026-09-16.md",
+          "bytes": 6482,
+          "sha256": "93fc14358922fb2c3a24480fdfc4827a0fb48c35251e4cab04371e25514c9df7"
+        },
+        {
+          "path": "reports/reader-task-variety-2026-09-16.md",
+          "bytes": 6911,
+          "sha256": "92ae9ccc46aa1e531f624e009d5b4f2d383ebe7e92ee21b5fe7cdd9d7818a2c9"
+        },
+        {
+          "path": "reports/structured-source-access-2026-09-15.md",
+          "bytes": 5462,
+          "sha256": "64ce1c786e221c7d66cacc1ed0e76ba25bee35c52bce1dc84f1e54b8b9d1ca01"
+        }
+      ],
+      "validation": {
+        "offlineChecksPassed": true,
+        "verifiedInputHashesAndLengths": 13,
+        "verifiedExactSourceFragments": 6,
+        "method": "Offline JSON parsing, input hash/byte checks, source-slice checks, complete text/structure inventory and saved-receipt comparisons only.",
+        "initialHelperFailure": "A disposable HTMLParser helper method named offset collided with an existing integer field; renamed to source_position and complete static inventory rerun successfully.",
+        "acceptanceGateClaim": "none",
+        "nextWorkOwner": "main",
+        "nextWorkBoundary": "Any runtime or access-policy comparison requires separate authorization; no further requests or payload recovery authorized by this review."
+      }
+    },
+    "runrepeat": {
+      "kind": "runrepeat-static-extraction-review-v1",
+      "reviewDate": "2026-09-16",
+      "lane": "node_modules/.cache/native-validation/review-manual-workflows-september16",
+      "evidenceDirectory": "live/97",
+      "targetUrl": "https://runrepeat.com/brooks-revel-max",
+      "decision": {
+        "meaningfulContentAvailable": true,
+        "completeFidelity": false,
+        "sourceAccuracyVerified": false,
+        "interactiveBehaviorVerified": false,
+        "newRuntimeAcceptanceClaim": false,
+        "summary": "Useful verdict, audience caveats and selected laboratory text/tables survive; active states, provenance, supplemental specifications and visual evidence do not fully survive.",
+        "originalResultUnchanged": {
+          "partial": true,
+          "contentSuccess": null,
+          "outcome": "extracted-unverified"
+        }
+      },
+      "scope": {
+        "readOnlyEvidence": true,
+        "networkUsed": false,
+        "browserOrSdkOrSafejsProbesRun": false,
+        "runtimeTestsRun": false,
+        "runtimeTestOwner": "main",
+        "productionFilesReadForThisReview": [],
+        "productionChanges": false,
+        "commitsMade": false,
+        "claimFactCheckingOrEndorsement": false,
+        "onlyOutputFiles": [
+          "runrepeat-review.md",
+          "runrepeat-review.json"
+        ],
+        "excludedEvidence": [
+          "older captures",
+          "other site lanes",
+          "proof runs",
+          "live pages",
+          "image and video asset contents",
+          "executed source scripts"
+        ],
+        "sourceCoordinates": "Zero-based UTF-16 offsets after UTF-8 decoding; end-exclusive.",
+        "markdownCoordinates": "One-based lines in parsed RESULT.json.extraction.content, not JSON file lines.",
+        "markdownReviewed": {
+          "jsonPointer": "/extraction/content",
+          "startLine": 1,
+          "endLine": 840,
+          "finalLineEmpty": true,
+          "utf16CodeUnits": 19447,
+          "utf8Bytes": 19465,
+          "distinctPayloads": 1,
+          "identicalRepresentations": [
+            "live/97/RESULT.json",
+            "live/97/stdout.log"
+          ],
+          "standaloneMarkdownFilesFoundUnderEvidenceDirectory": 0,
+          "startText": "## Our verdict",
+          "lastNonemptyLine": "$310"
+        },
+        "homepageReviewedRange": [
+          218661,
+          219458
+        ],
+        "homepageReviewLimit": "Only the exact target anchor and its label; other homepage content not audited.",
+        "selectedArticleRange": [
+          264204,
+          417736
+        ],
+        "selectedArticleSourceTag": "article#main.shoe-review[role=main]",
+        "sourceInspectionLimit": "Full structural/text comparisons listed under staticChecks; surrounding HTML manually sampled. Not a full visual, DOM, attribute, script or stylesheet audit.",
+        "sampledReviewSourceWindows": [
+          {
+            "range": [
+              238250,
+              240350
+            ],
+            "purpose": "H1, byline, timestamp and methodology outside selected article"
+          },
+          {
+            "range": [
+              264000,
+              264500
+            ],
+            "purpose": "Selected article start and main role"
+          },
+          {
+            "range": [
+              273220,
+              273850
+            ],
+            "purpose": "Shock absorption prose and qualification"
+          },
+          {
+            "range": [
+              274300,
+              278950
+            ],
+            "purpose": "Image alt, active heel selector, selected table and chart bars"
+          },
+          {
+            "range": [
+              278940,
+              280050
+            ],
+            "purpose": "Energy-return prose and video sources"
+          },
+          {
+            "range": [
+              301190,
+              302220
+            ],
+            "purpose": "Softness note, prose and video"
+          },
+          {
+            "range": [
+              302900,
+              306300
+            ],
+            "purpose": "Room-temperature/cold selectors, table and chart"
+          },
+          {
+            "range": [
+              303800,
+              304220
+            ],
+            "purpose": "Exact active Room temp markup"
+          },
+          {
+            "range": [
+              309550,
+              311960
+            ],
+            "purpose": "Five size radios, no checked attributes, disabled Submit"
+          },
+          {
+            "range": [
+              393390,
+              393650
+            ],
+            "purpose": "Source wording inconsistency under Insole thickness"
+          },
+          {
+            "range": [
+              416650,
+              418350
+            ],
+            "purpose": "Price ending and article boundary before supplemental table"
+          },
+          {
+            "range": [
+              417736,
+              418450
+            ],
+            "purpose": "Supplemental lab table header and explicit heel row labels"
+          },
+          {
+            "range": [
+              421500,
+              424000
+            ],
+            "purpose": "Supplemental table ending and brand-specification start"
+          },
+          {
+            "range": [
+              449686,
+              450036
+            ],
+            "purpose": "Unrendered popularity canvas outside selected article"
+          }
+        ],
+        "supplementalTableInspection": {
+          "labSummaryTableRange": [
+            417835,
+            422208
+          ],
+          "brandHeadingThroughTableRange": [
+            422209,
+            448128
+          ],
+          "method": "Static structural/text inspection; not rendered visibility or interactive expansion."
+        }
+      },
+      "evidence": [
+        {
+          "path": "live/97/RESULT.json",
+          "bytes": 27101,
+          "sha256": "960c4ad9e0bd3dceaaf698ab21cef19deb289af835d4c8da2e7f59f21265ee45",
+          "extent": "Full emitted Markdown and result metadata"
+        },
+        {
+          "path": "live/97/stdout.log",
+          "bytes": 25628,
+          "sha256": "87e2622b661e11cd0183ce8076b650079fca01ed838cc662b07a55bbf1eb9833",
+          "extent": "Parsed JSON equality with RESULT.json"
+        },
+        {
+          "path": "live/97/CAPTURES.json",
+          "bytes": 917,
+          "sha256": "29a8d0eeaaa7f63df720e781a8bd04623563ab4c06603b5e33e4b2490732cfd4",
+          "extent": "Full manifest and hash/byte-count checks"
+        },
+        {
+          "path": "live/97/EXECUTION.json",
+          "bytes": 1634,
+          "sha256": "81e514088789184065226ee8e9a30d6984142e5fcd51c1fccc92a4f10f723fac",
+          "extent": "Recorded exit/timeout metadata only; historical referenced evidence not opened"
+        },
+        {
+          "path": "live/97/response-97-1.json",
+          "bytes": 508630,
+          "sha256": "25af0c4df68776893875a837d56aa4189d178abbfa308ccd1a7225f2f51e9b10",
+          "decodedBodyBytes": 380985,
+          "decodedBodyUtf16CodeUnits": 380981,
+          "decodedBodySha256": "34f22c40aa39fadb0db90a0971fecda980c1ad344fd063aae12299b56a5cea97",
+          "extent": "Envelope/hash verification and exact target anchor only"
+        },
+        {
+          "path": "live/97/response-97-2.json",
+          "bytes": 853075,
+          "sha256": "0adfbcec74acd12d3515cbdd8e35fb3fa252a0499e14556035cbb0c9a44ea10f",
+          "decodedBodyBytes": 639304,
+          "decodedBodyUtf16CodeUnits": 639220,
+          "decodedBodySha256": "0e1f3aa2fdd3b0c6979a25ba5e358212bea6e7fa9b0ea611f5f7d6bc6865420c",
+          "extent": "Envelope/hash verification, full selected structural checks, sampled relevant source"
+        }
+      ],
+      "markdownSha256": "45225ae2ae57b64edf01e4badce6b198ce3027d208af4e8345346dbffc7daefb",
+      "staticChecks": {
+        "captureEnvelopeFileHashesMatchManifest": true,
+        "decodedBodyHashesAndLengthsMatchEnvelopeAndManifest": true,
+        "stdoutResultObjectEquality": true,
+        "selectedSourceTableCount": 28,
+        "emittedTableCount": 28,
+        "tableCountWithProductAndAverageRows": 24,
+        "tableCountWithProductRowOnly": 4,
+        "tableCellStringsCompared": 104,
+        "tableCellStringsMatchedInOrder": 104,
+        "selectedSourceHeadingCount": 44,
+        "headingsMatchedInOrderAndLevel": 44,
+        "selectedSourceParagraphCount": 50,
+        "normalizedParagraphTextsPresent": 50,
+        "selectedSourceImageCount": 27,
+        "imageAltStringsRetainedAsPlainText": 27,
+        "selectedSourceVideoCount": 12,
+        "withinSelectedArticleTextCutoffDetected": false,
+        "normalization": "Strip source tags; normalize whitespace; remove Markdown punctuation escapes. For paragraph presence, HTML-unescape source and replace Markdown links with labels. Counts do not assert rendered or semantic equivalence."
+      },
+      "observedReaderMetadata": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "visibilityPolicy": "source-hidden-inline-v1",
+        "sourceHiddenSubtrees": 6,
+        "omittedTokens": 2230,
+        "ignoredAttributes": 3195,
+        "tokenizerIssues": 0,
+        "omittedVideoSubtrees": 12,
+        "omittedCanvasSubtrees": 1,
+        "contentSelectionPolicy": "main-content-v2",
+        "contentSelectionReason": "unique-main",
+        "outsideArticleContent": true,
+        "sourceDescriptionEntries": 3,
+        "sourceDescriptionsTruncated": false,
+        "interpretation": "Partial and omitted-token counts are not by themselves evidence of length truncation; source scope and semantic omissions were checked separately."
+      },
+      "tableComparisons": [
+        {
+          "ordinal": 1,
+          "section": "Shock absorption",
+          "sourceRange": [
+            275385,
+            275723
+          ],
+          "markdownLines": [
+            89,
+            96
+          ],
+          "cells": [
+            "Revel Max",
+            "134 SA",
+            "Average",
+            "131 SA"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 2,
+          "section": "Energy return",
+          "sourceRange": [
+            280478,
+            280814
+          ],
+          "markdownLines": [
+            118,
+            125
+          ],
+          "cells": [
+            "Revel Max",
+            "56.6%",
+            "Average",
+            "58.7%"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 3,
+          "section": "Heel stack",
+          "sourceRange": [
+            286796,
+            287136
+          ],
+          "markdownLines": [
+            149,
+            156
+          ],
+          "cells": [
+            "Revel Max",
+            "38.5 mm",
+            "Average",
+            "35.6 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 4,
+          "section": "Forefoot stack",
+          "sourceRange": [
+            292020,
+            292360
+          ],
+          "markdownLines": [
+            176,
+            183
+          ],
+          "cells": [
+            "Revel Max",
+            "26.0 mm",
+            "Average",
+            "27.1 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 5,
+          "section": "Drop",
+          "sourceRange": [
+            297623,
+            297962
+          ],
+          "markdownLines": [
+            205,
+            212
+          ],
+          "cells": [
+            "Revel Max",
+            "12.5 mm",
+            "Average",
+            "8.5 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 6,
+          "section": "Midsole softness",
+          "sourceRange": [
+            304210,
+            304550
+          ],
+          "markdownLines": [
+            240,
+            247
+          ],
+          "cells": [
+            "Revel Max",
+            "23.6 AC",
+            "Average",
+            "35.5 AC"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 7,
+          "section": "Internal length",
+          "sourceRange": [
+            313725,
+            314067
+          ],
+          "markdownLines": [
+            283,
+            290
+          ],
+          "cells": [
+            "Revel Max",
+            "271.6 mm",
+            "Average",
+            "269.3 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 8,
+          "section": "Width / Fit",
+          "sourceRange": [
+            319840,
+            320180
+          ],
+          "markdownLines": [
+            312,
+            319
+          ],
+          "cells": [
+            "Revel Max",
+            "94.3 mm",
+            "Average",
+            "95.2 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 9,
+          "section": "Toebox width",
+          "sourceRange": [
+            325189,
+            325529
+          ],
+          "markdownLines": [
+            339,
+            346
+          ],
+          "cells": [
+            "Revel Max",
+            "70.8 mm",
+            "Average",
+            "73.2 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 10,
+          "section": "Toebox height",
+          "sourceRange": [
+            331258,
+            331598
+          ],
+          "markdownLines": [
+            368,
+            375
+          ],
+          "cells": [
+            "Revel Max",
+            "26.6 mm",
+            "Average",
+            "27.1 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 11,
+          "section": "Traction test",
+          "sourceRange": [
+            336461,
+            336795
+          ],
+          "markdownLines": [
+            395,
+            402
+          ],
+          "cells": [
+            "Revel Max",
+            "0.59",
+            "Average",
+            "0.52"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 12,
+          "section": "Flexibility / Stiffness",
+          "sourceRange": [
+            343887,
+            344223
+          ],
+          "markdownLines": [
+            430,
+            437
+          ],
+          "cells": [
+            "Revel Max",
+            "18.3N",
+            "Average",
+            "15.5N"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 13,
+          "section": "Weight",
+          "sourceRange": [
+            349605,
+            349957
+          ],
+          "markdownLines": [
+            459,
+            466
+          ],
+          "cells": [
+            "Revel Max",
+            "9.9 oz (281g)",
+            "Average",
+            "9.2 oz (261g)"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 14,
+          "section": "Torsional rigidity",
+          "sourceRange": [
+            357145,
+            357485
+          ],
+          "markdownLines": [
+            494,
+            501
+          ],
+          "cells": [
+            "Revel Max",
+            "16.2 Nm",
+            "Average",
+            "14.5 Nm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 15,
+          "section": "Heel counter stiffness",
+          "sourceRange": [
+            362040,
+            362368
+          ],
+          "markdownLines": [
+            519,
+            526
+          ],
+          "cells": [
+            "Revel Max",
+            "5",
+            "Average",
+            "3"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 16,
+          "section": "Midsole width - forefoot",
+          "sourceRange": [
+            366335,
+            366677
+          ],
+          "markdownLines": [
+            548,
+            555
+          ],
+          "cells": [
+            "Revel Max",
+            "114.4 mm",
+            "Average",
+            "115.1 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 17,
+          "section": "Midsole width - heel",
+          "sourceRange": [
+            371781,
+            372121
+          ],
+          "markdownLines": [
+            575,
+            582
+          ],
+          "cells": [
+            "Revel Max",
+            "97.2 mm",
+            "Average",
+            "91.1 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 18,
+          "section": "Toebox durability",
+          "sourceRange": [
+            376975,
+            377305
+          ],
+          "markdownLines": [
+            604,
+            611
+          ],
+          "cells": [
+            "Revel Max",
+            "2",
+            "Average",
+            "2.6"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 19,
+          "section": "Heel padding durability",
+          "sourceRange": [
+            380556,
+            380886
+          ],
+          "markdownLines": [
+            629,
+            636
+          ],
+          "cells": [
+            "Revel Max",
+            "4",
+            "Average",
+            "3.4"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 20,
+          "section": "Outsole durability",
+          "sourceRange": [
+            384264,
+            384602
+          ],
+          "markdownLines": [
+            654,
+            661
+          ],
+          "cells": [
+            "Revel Max",
+            "0.5 mm",
+            "Average",
+            "1.1 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 21,
+          "section": "Outsole thickness",
+          "sourceRange": [
+            389577,
+            389915
+          ],
+          "markdownLines": [
+            681,
+            688
+          ],
+          "cells": [
+            "Revel Max",
+            "3.1 mm",
+            "Average",
+            "3.1 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 22,
+          "section": "Insole thickness",
+          "sourceRange": [
+            395079,
+            395417
+          ],
+          "markdownLines": [
+            710,
+            717
+          ],
+          "cells": [
+            "Revel Max",
+            "4.8 mm",
+            "Average",
+            "4.4 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 23,
+          "section": "Removable insole",
+          "sourceRange": [
+            400362,
+            400586
+          ],
+          "markdownLines": [
+            737,
+            741
+          ],
+          "cells": [
+            "Revel Max",
+            "Yes"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 24,
+          "section": "Reflective elements",
+          "sourceRange": [
+            402543,
+            402766
+          ],
+          "markdownLines": [
+            751,
+            755
+          ],
+          "cells": [
+            "Revel Max",
+            "No"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 25,
+          "section": "Tongue padding",
+          "sourceRange": [
+            405772,
+            406110
+          ],
+          "markdownLines": [
+            769,
+            776
+          ],
+          "cells": [
+            "Revel Max",
+            "5.0 mm",
+            "Average",
+            "5.8 mm"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 26,
+          "section": "Tongue: gusset type",
+          "sourceRange": [
+            411086,
+            411311
+          ],
+          "markdownLines": [
+            796,
+            800
+          ],
+          "cells": [
+            "Revel Max",
+            "None"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 27,
+          "section": "Heel tab",
+          "sourceRange": [
+            413128,
+            413353
+          ],
+          "markdownLines": [
+            810,
+            814
+          ],
+          "cells": [
+            "Revel Max",
+            "None"
+          ],
+          "match": true
+        },
+        {
+          "ordinal": 28,
+          "section": "Price",
+          "sourceRange": [
+            414236,
+            414570
+          ],
+          "markdownLines": [
+            822,
+            829
+          ],
+          "cells": [
+            "Revel Max",
+            "$120",
+            "Average",
+            "$157"
+          ],
+          "match": true
+        }
+      ],
+      "findings": [
+        {
+          "id": "RR-01",
+          "severity": "medium",
+          "classification": "reader-fidelity-defect",
+          "title": "Active measurement context is flattened",
+          "sourceEvidence": [
+            {
+              "offset": 275031,
+              "snippet": "<div class=\"active two-circles\" data-v-746f675d>Heel</div>"
+            },
+            {
+              "offset": 280124,
+              "snippet": "<div class=\"active two-circles\" data-v-746f675d>Heel</div>"
+            },
+            {
+              "offset": 303852,
+              "snippet": "<div class=\"active two-circles\" data-v-746f675d>Room temp</div>"
+            }
+          ],
+          "markdownEvidence": [
+            {
+              "lines": [
+                83,
+                96
+              ],
+              "description": "Heel and Forefoot precede a single 134 SA / 131 SA table with no selected-state marker."
+            },
+            {
+              "lines": [
+                112,
+                125
+              ],
+              "description": "Heel and Forefoot precede a single 56.6% / 58.7% table with no selected-state marker."
+            },
+            {
+              "lines": [
+                234,
+                247
+              ],
+              "description": "Room temp and In cold precede a single 23.6 AC / 35.5 AC table with no selected-state marker."
+            }
+          ],
+          "impact": "Product/average row text survives, but explicit heel or room-temperature context is lost; do not apply a selected result to both states.",
+          "mitigationAlreadyPresent": "Prose at lines 77, 110 and 230 retains forefoot values and the claimed cold percentage change.",
+          "limit": "Only one selected table exists in each sampled static selector block; alternate rendered states were not exercised or reconstructed.",
+          "minimalSourcePatternCandidate": "<div class=\"active two-circles\">Heel</div><div class=\"two-circles\">Forefoot</div><table><tr><td>Revel Max</td><td>134 SA</td></tr></table>",
+          "candidateExecuted": false,
+          "followUpCaution": "The active class is publisher-specific, not a universal HTML selected-state contract; do not infer selected measurements from every active class.",
+          "followUpNotImplemented": "Preserve or disclose active measurement state without inventing alternate measurements."
+        },
+        {
+          "id": "RR-02",
+          "severity": "medium",
+          "classification": "content-selection-limitation",
+          "title": "Attribution and supplemental specifications fall outside selected article",
+          "sourceEvidence": [
+            {
+              "range": [
+                238250,
+                240350
+              ],
+              "description": "H1, Carlos Sánchez byline, September 15, 2026 timestamp, methodology 2.3."
+            },
+            {
+              "range": [
+                417835,
+                422208
+              ],
+              "description": "Lab summary table with explicit Shock absorption heel and Energy return heel row labels."
+            },
+            {
+              "range": [
+                422209,
+                448128
+              ],
+              "description": "Specs (brand): heel 36 mm; forefoot 30 mm; drop 6 mm; men's weight 9.8 oz / 277g; women's 9 oz / 255g."
+            }
+          ],
+          "markdownEvidence": [
+            {
+              "lines": [
+                1,
+                840
+              ],
+              "description": "Starts at Our verdict and ends after Price; source attribution and appended tables are absent."
+            }
+          ],
+          "impact": "Standalone Markdown lacks source provenance and complete brand-versus-lab specification context.",
+          "mitigationAlreadyPresent": "Envelope title/URL and partial/outsideArticleContent flags survive; paragraph 197 still distinguishes claimed 6 mm official drop from claimed 12.5 mm measurement.",
+          "limit": "Demonstrated selection-boundary exclusion, not proof of token-budget truncation. Source specifications are unverified claims.",
+          "followUpNotImplemented": "Preserve provenance and disclose or separately expose supplemental tables."
+        },
+        {
+          "id": "RR-03",
+          "severity": "medium",
+          "classification": "nonvisual-extraction-limitation",
+          "title": "Distributions and media evidence are not recoverable from the Markdown",
+          "sourceEvidence": [
+            {
+              "offset": 276286,
+              "snippet": "<div class=\"lab-test-distribution-bar\" style=\"height:3.841269841269841px;\" data-v-17332be4></div>"
+            },
+            {
+              "range": [
+                278940,
+                280050
+              ],
+              "description": "Energy-return video sources."
+            },
+            {
+              "offset": 449686,
+              "snippet": "<canvas width=\"100%\" height=\"56.25%\" data-v-ea6ac35f></canvas>"
+            }
+          ],
+          "markdownEvidence": [
+            {
+              "lines": [
+                81,
+                106
+              ],
+              "description": "Plain image alt label and selected table retained, then population label and range endpoints without distribution data."
+            },
+            {
+              "lines": [
+                1,
+                840
+              ],
+              "description": "All 27 article image alt labels occur as text, without image targets; article videos have no emitted media references."
+            }
+          ],
+          "impact": "Range endpoints are not product measurements or bin counts. Images and videos cannot substantiate visual claims from this output alone.",
+          "limit": "Assets were not fetched or inspected; exact additional visual information is unknown. Popularity canvas is outside the selected article.",
+          "followUpNotImplemented": "Clearly label graphical omissions and retain safe source media references where an authorized design supports them."
+        },
+        {
+          "id": "RR-04",
+          "severity": "low",
+          "classification": "reader-state-loss",
+          "title": "Size voting form loses radio and disabled semantics",
+          "sourceEvidence": [
+            {
+              "range": [
+                309550,
+                311960
+              ],
+              "description": "Five radio inputs without checked attributes inside a size-rating-vote form."
+            },
+            {
+              "offset": 311721,
+              "snippet": "<button class=\"submit-button white-cta-btn\" disabled data-v-ec46a4bf>Submit</button>"
+            }
+          ],
+          "markdownEvidence": [
+            {
+              "lines": [
+                269,
+                273
+              ],
+              "description": "Question, five size labels in one line, then bare Submit."
+            }
+          ],
+          "impact": "An unsubmitted input form can be confused with size findings; True to size is an option, not a result.",
+          "limit": "No form action or post-interaction state was tested.",
+          "minimalSourcePatternCandidate": "<button disabled>Submit</button>",
+          "comparisonPatternCandidate": "<button>Submit</button>",
+          "candidateExecuted": false,
+          "followUpCaution": "Confirm the minimal reproduction and the reader's intended disabled-state annotation contract in an authorized runtime follow-up.",
+          "followUpNotImplemented": "Distinguish controls from results and preserve disabled state."
+        },
+        {
+          "id": "RR-05",
+          "severity": "informational",
+          "classification": "source-wording-not-reader-bug",
+          "title": "Outsole wording under Insole thickness is present in source",
+          "sourceEvidence": [
+            {
+              "range": [
+                393390,
+                393650
+              ],
+              "description": "Insole thickness heading followed by There are no surprises from the outsole and 4.8 mm thickness."
+            }
+          ],
+          "markdownEvidence": [
+            {
+              "lines": [
+                702,
+                704
+              ],
+              "description": "Same heading and wording retained."
+            }
+          ],
+          "impact": "Do not misattribute the source's wording inconsistency to the extractor.",
+          "limit": "No correction, fact check or shoe claim is made."
+        }
+      ]
+    },
+    "manuals": "# Manuals.plus category attempt — main review\n\nThe intended path was the public root to its literal Logitech category link.\nThis was a discovery step, not yet a model-manual request.\n\n- Root: HTTP200,59,184 decoded bytes. Exact target discovery found one eligible\n  Logitech link; native mousedown/mouseup/click dispatch occurred.\n- Category: HTTP403,16,191 decoded bytes. Selected response headers include\n  `cf-mitigated: challenge`. Native outcome is semantic-barrier, with provider\n  Cloudflare and confirmed confidence specifically from that response header.\n- Failure is policy-denied at native-click. No target extraction, manual content,\n  model selection, download or success claim follows from the source click.\n- Two GETs only. Observed starts14:11:53.192Z and14:11:55.195Z on September16,2026,\n  separated by2.003 seconds. No retries, redirects, credentials or bypass attempt.\n  Source document and native transport/child groups close; HOME/TMP stay empty.\n- Category decoded-body SHA256:\n  `7d04507d149aa14ff594669c7798769025dda98984604f9567aa8eaa9b1785bd`.\n\nThis is header/receipt-based barrier review, not inspection of manual content or\na claim about the barrier's cause. The saved source/403 pair replays the same\noutcome, evidence and failure under kernel-denied networking. Human handoff is\nrequired to continue this particular category path; other browser work is not\nblocked. No alternate URL/client is tried to avoid the restriction.\n"
+  },
+  "documentScopeRecovery": {
+    "proof": {
+      "passed": true,
+      "newLiveRequests": 0,
+      "executableEntrypoint": true,
+      "fixtureRequests": 1,
+      "markdownBytes": 27113,
+      "markdownSha256": "70fb035216bfff7dfe168c04a30fd042c533885ab9d62e90917b219086ca3a25",
+      "bodySha256": "0e1f3aa2fdd3b0c6979a25ba5e358212bea6e7fa9b0ea611f5f7d6bc6865420c",
+      "documentScope": true
+    },
+    "audit": {
+      "passed": true,
+      "newLiveRequests": 0,
+      "method": "Static comparison of actual compiled CLI output with focused extraction and independently reviewed source windows; no new browser run",
+      "bodySha256": "0e1f3aa2fdd3b0c6979a25ba5e358212bea6e7fa9b0ea611f5f7d6bc6865420c",
+      "documentMarkdownSha256": "70fb035216bfff7dfe168c04a30fd042c533885ab9d62e90917b219086ca3a25",
+      "focusedMarkdownSha256": "45225ae2ae57b64edf01e4badce6b198ce3027d208af4e8345346dbffc7daefb",
+      "documentBytes": 27113,
+      "focusedBytes": 19465,
+      "additionalBytes": 7648,
+      "originalArticleExactContiguousSlice": true,
+      "articleUtf16Range": [
+        1817,
+        21264
+      ],
+      "tableCounts": {
+        "focused": 28,
+        "document": 30
+      },
+      "restoredProvenance": [
+        "# Brooks Revel Max review",
+        "Carlos Sánchez",
+        "Sep 15, 2026",
+        "methodology 2\\.3"
+      ],
+      "labHeadingOffset": 21265,
+      "brandHeadingOffset": 23842,
+      "scope": "Attribution and explicit supplemental labels/specification samples recovered. Not a complete30-table independent cell comparison; no hidden/alternate states, images, videos or interactive vote state recovered."
+    },
+    "execution": {
+      "ordinal": "proof",
+      "mode": "offline",
+      "version": "full-page",
+      "entry": {
+        "ordinal": "proof"
+      },
+      "approvalSha256": null,
+      "pid": 378929,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "safetyErrors": [],
+      "safetyPassed": true,
+      "terminationSignal": null,
+      "elapsedSeconds": 0.4876832105219364
+    },
+    "command": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/block-link-content-september15/proof/sealed-exec.py",
+      "/home/kjopek/.nvm/versions/node/v22.22.0/bin/node",
+      "--no-addons",
+      "--max-old-space-size=256",
+      "--require",
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/block-link-content-september15/proof/replay-guard.cjs",
+      "--import",
+      "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/review-manual-workflows-september16/full-page-guard.mjs",
+      "/tmp/agent-browser-source-charts-0UOtin/candidate-release01/dist/scripts/research-browser.js",
+      "--reader",
+      "--reader-raw-policy",
+      "separate-omitted-raw-v1",
+      "--reader-visibility-policy",
+      "source-hidden-inline-v1",
+      "--reader-fallback-encoding",
+      "utf-8",
+      "--compact-tables",
+      "--table-rows",
+      "--output-limit-policy",
+      "text-prefix-v1",
+      "https://runrepeat.com/brooks-revel-max"
+    ],
+    "scope": "Separate actual compiled CLI check over one saved response; no additional live GET"
+  },
+  "scope": {
+    "browser": "Pinned standalone native reader with existing compact exact-target programmatic CLI",
+    "liveExecutableEntrypointTest": false,
+    "offlineDocumentScopeExecutableEntrypointTest": true,
+    "pageScripts": false,
+    "credentials": false,
+    "alternateClients": false,
+    "challengeSolving": false,
+    "fullRendering": false,
+    "sourceFactChecking": false
+  },
+  "initialAdmission": "Three offline proofs were run. First live admission stopped before launch on a stale prior-native count; second admission stopped before launch on an incorrect proof directory. Original versions/receipts retained; proof03 and LIVE-APPROVAL02 admit the only live batch.",
+  "historicalCorpusUnchanged": true,
+  "pushed": false,
+  "overallGoal": "active"
+}
