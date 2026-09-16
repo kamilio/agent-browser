@@ -9,6 +9,11 @@ import {
 } from "./document-alternates.js";
 import { documentTitle } from "./document-title.js";
 import {
+	type CodeSourceContexts,
+	collectCodeSourceContexts,
+	fitCodeSourceContexts,
+} from "./code-source-context.js";
+import {
 	type DocumentDescriptions,
 	documentDescriptions,
 } from "./document-descriptions.js";
@@ -246,6 +251,7 @@ interface ExtractionMetadata {
 	sourceTemplateFallbacks?: ResearchSourceTemplateFallbacks;
 	sourceFeeds?: DocumentFeeds;
 	sourceMarkdown?: MarkdownSourceOutline;
+	sourceCodeContexts?: CodeSourceContexts;
 	sourceCodeGutters?: Readonly<{
 		kind: "rustdoc-line-number-anchors-v1";
 		anchors: number;
@@ -1379,6 +1385,7 @@ export function extractDocument(
 	let sourceBlocks = 0;
 	let sourceLines = 0;
 	let sourceGutters = 0;
+	let hasPreSource = false;
 	while (pending.length) {
 		const current = pending.pop();
 		if (!current) break;
@@ -1482,6 +1489,8 @@ export function extractDocument(
 		else if (node.type !== "break" && node.type !== "separator")
 			node.children = [];
 		if (node.type === "heading") node.level = Number(source.tagName.slice(1));
+		if (node.type === "pre" && isHtmlElement(source, "pre"))
+			hasPreSource = true;
 		if (
 			visible &&
 			source.kind === "element" &&
@@ -1570,6 +1579,20 @@ export function extractDocument(
 		ref: metadata.scope,
 		type: "container" as const,
 		children: [],
+	};
+	const finish = (extraction: DocumentExtraction): DocumentExtraction => {
+		if (!hasPreSource || extraction.contentFallback) return extraction;
+		const remaining =
+			maxBytes -
+			utf8ByteLength(JSON.stringify(extraction)) -
+			utf8ByteLength(',"sourceCodeContexts":');
+		if (remaining < 0) return extraction;
+		const contexts = collectCodeSourceContexts(tree, root);
+		if (!contexts) return extraction;
+		const sourceCodeContexts = fitCodeSourceContexts(contexts, remaining);
+		return sourceCodeContexts
+			? { ...extraction, sourceCodeContexts }
+			: extraction;
 	};
 	let result: DocumentExtraction;
 	let outputBytes: number;
@@ -1661,7 +1684,7 @@ export function extractDocument(
 			const sourceFeeds = fitDocumentFeeds(feeds, remaining);
 			if (sourceFeeds) {
 				if (!products && !videos && !charts && !reviews && !templateFallbacks)
-					return { ...result, sourceFeeds };
+					return finish({ ...result, sourceFeeds });
 				result = { ...result, sourceFeeds };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1674,7 +1697,7 @@ export function extractDocument(
 			const sourceProducts = fitResearchSourceProducts(products, remaining);
 			if (sourceProducts) {
 				if (!videos && !charts && !reviews && !templateFallbacks)
-					return { ...result, sourceProducts };
+					return finish({ ...result, sourceProducts });
 				result = { ...result, sourceProducts };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1687,7 +1710,7 @@ export function extractDocument(
 			const sourceVideos = fitResearchSourceVideos(videos, remaining);
 			if (sourceVideos) {
 				if (!charts && !reviews && !templateFallbacks)
-					return { ...result, sourceVideos };
+					return finish({ ...result, sourceVideos });
 				result = { ...result, sourceVideos };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1700,7 +1723,7 @@ export function extractDocument(
 			const sourceChartTables = fitResearchSourceChartTables(charts, remaining);
 			if (sourceChartTables) {
 				if (!reviews && !templateFallbacks)
-					return { ...result, sourceChartTables };
+					return finish({ ...result, sourceChartTables });
 				result = { ...result, sourceChartTables };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1712,7 +1735,7 @@ export function extractDocument(
 		if (remaining >= 0) {
 			const sourceReviews = fitResearchSourceReviews(reviews, remaining);
 			if (sourceReviews) {
-				if (!templateFallbacks) return { ...result, sourceReviews };
+				if (!templateFallbacks) return finish({ ...result, sourceReviews });
 				result = { ...result, sourceReviews };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1727,8 +1750,8 @@ export function extractDocument(
 				remaining,
 			);
 			if (sourceTemplateFallbacks)
-				return { ...result, sourceTemplateFallbacks };
+				return finish({ ...result, sourceTemplateFallbacks });
 		}
 	}
-	return result;
+	return finish(result);
 }

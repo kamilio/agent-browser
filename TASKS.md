@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Retain code-example qualifications and validate more reference pages
+
+- Add optional bounded sourceCodeContexts for actual HTML pre/code classes,
+  span.boring ranges and source emphasis. Preserve exact extracted code text;
+  source labels are not inferred languages, visual hiding or execution results.
+- Fit whole entries after existing content/access metadata. UTF16 ranges describe
+  selected extracted pre text; omit contexts for text-prefix fallback. Native
+  DOM, reader accounting, Markdown and structured content remain unchanged.
+- Release02:3838 passed/0 failed across45 selected manifest files, including64
+  helper and58 integration cases. Build/types/format/lint pass. The identical58
+  integration cases on prior extraction give15 passes/43 failures; initial12
+  newline-expectation failures are preserved and corrected, not hidden.
+-123 saved responses give120 successful pairs/3 matching non-HTML failures;
+  116 structured pairs succeed and4 match output-limit failures. No previous
+  extraction fields, content, source DOM or classifications change. Five pages
+  acquire context metadata; five actual native CLI saved-response checks match.
+- Three fresh baseline-runtime GET200 cover Rust Future, Reqwest and Go generics.
+  Independent review compares26 code blocks plus explanations; no example was
+  executed. Later feature validation reuses bodies without additional GETs.
+- Warm extraction timing on six saved pages shows added metadata cost, not a
+  speedup. Broader62 failures/22 missing committed tests and SafeJS, credentials,
+  passkeys, devices, rendering, TTY and access gates remain open; goal remains.
+- See CODE-SOURCE-CONTEXT.md and reports/code-source-context-2026-09-16.md/JSON;
+  fresh-page scope is in reports/code-reference-pages-2026-09-16.md/JSON.
+
 ### Preserve paragraph boundaries and validate three reference workflows
 
 - Four anonymous native GETs cover Rust futures, PostgreSQL WITH and SQLite SELECT;

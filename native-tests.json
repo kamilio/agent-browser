@@ -952,5 +952,7 @@
   "src/research-source-template-fallbacks.test.ts",
   "src/research-source-template-fallbacks-reader.test.ts",
   "src/html-raw-discard-windows.test.ts",
-  "src/extraction-inline-blocks.test.ts"
+  "src/extraction-inline-blocks.test.ts",
+  "src/code-source-context.test.ts",
+  "src/research-code-source-context.test.ts"
 ]
