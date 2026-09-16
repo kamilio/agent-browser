@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Bundled chart content and broad native validation
+
+- Fetch the five advertised Bankrate script assets through the pinned native
+  transport: five GET200,535410 decoded bytes, no redirects/retries/credentials or
+  page-script execution. Verify exact bodies, authorized TLS, request/socket/process
+  closure and empty HOME/TMP; retain pre-network wrapper corrections separately.
+- Locate the actual chart modules and independently recover literals under
+  kernel-denied network: eight risk-chart rows and51 distinct state/DC records.
+  Preserve decimals, field meanings, string FIPS and the alternative52-row source
+  whose export excludes PR. Keep the factor1000 annual-field distinction explicit.
+  Twelve dataflow snippets and nine nonliteral rejection fixtures are verified.
+  This is diagnostic source recovery, not yet an automatic browser feature; the
+  earlier2447-byte article output and historical100-page verdicts stay unchanged.
+- Attempt all941 committed native manifest entries:43802pass/154fail with919
+  reported files. Twenty-two referenced tests are untracked pre-existing work and
+  absent from the committed snapshot. A fixture-complete protected checkout with
+  identical runtime inputs reruns41 failed files:1455pass/62fail. This resolves92
+  assertions and four collection errors (235 additional passing cases), without
+  source changes or new failures among matched cases. Full native acceptance fails.
+- Use protected temporary ancestors and complete fixtures in future broad runs;
+  reconcile22 missing manifest inputs without silently dropping or committing
+  unrelated work. Triage the remaining62 failures in26 files against actual
+  contracts. Do not confuse prior selected gates with full-suite success.
+- Next content work: expose verified script-asset literals through an explicit
+  bounded/provenance-bearing workflow. Map consumers, geometry and ZIP dataset
+  remain unrequested; do not infer their rendered behavior, units or accessibility.
+  See reports/bankrate-chart-assets-2026-09-16.md. Actual SDK, scripted websites,
+  credentials/devices and access-handoff gates stay open; no production change.
+
 ### Optimized reader: health, biology and housing explainers
 
 - Validate the committed parser live through three exact source-linked native
