@@ -954,5 +954,6 @@
   "src/html-raw-discard-windows.test.ts",
   "src/extraction-inline-blocks.test.ts",
   "src/code-source-context.test.ts",
-  "src/research-code-source-context.test.ts"
+  "src/research-code-source-context.test.ts",
+  "src/research-document-mode.test.ts"
 ]

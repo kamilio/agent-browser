@@ -6,6 +6,38 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Preserve reader document mode and recover Node.js stream documentation
+
+- Retain only the effective initial doctype's exact normalized source span.
+  Track original significant tokens before omission so removed script/style/link
+  or hidden content cannot promote a later declaration. Preserve genuine quirks,
+  limited-quirks, malformed declarations and existing decoded/raw BOM behavior.
+- Final release02:4756/0 in57 selected native files;116 new cases give46/70 on
+  the prior reader. Full02:45,991/0 across935 available manifest files. Build,
+  strict selected-test types, format and lint pass.957 manifest entries still
+  include22 missing committed tests, so full-manifest acceptance remains open.
+- Replay124 saved bodies:120 prior successful pairs retain identical Markdown
+  and HTML-element trees, three non-HTML failures match, and Node recovers.115
+  pairs gain charged doctype nodes;39 structured roots expose the existing empty
+  doctype-container representation. Accounting deltas are explicit, not erased.
+- Fresh Node GET200 at19:06:20.660Z on September16 captures the same857597-byte
+  body as the18:29 failure. Corrected native CLI yields222068 Markdown bytes,
+  45 table pairs and99 fenced blocks, no prefix fallback; complete extraction
+  matches the saved-body API result. No scripts/examples executed or credentials.
+- Whole structured Node output still exceeds its budget. Independent cell/code/
+  warning fidelity review remains incomplete; the optional review worker was
+  closed without artifacts. Do not equate table/block counts with source fidelity.
+  Six-page warm reader-cost measurements are not a general speed claim.
+- Existing heading-section selection retrieves the pipeline API as36937 JSON
+  bytes/699 nodes in one actual CLI saved-body check, with no new GET. Both code
+  examples exactly match full Markdown; no global output limit is increased.
+- Native source review finds no blocking issues and identifies follow-up tests
+  for cleanup, combined collector offsets/raw capture and malformed tails.
+  Historical failed fixtures/verifiers remain preserved. See
+  RESEARCH-DOCUMENT-MODE.md and the dated document-mode/Node-recovery reports.
+- Continue dynamic-site/SafeJS, access/CAPTCHA, rendering, credential/passkey/
+  device/TTY validation and unfinished research; the overall browser goal remains.
+
 ### Reconcile native contracts and run every available committed manifest test
 
 - Reconcile27 test files with existing reader, layout, inventory, cleanup and

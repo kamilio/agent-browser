@@ -1,0 +1,154 @@
+{
+  "audit": {
+    "at": "2026-09-16T19:22:51.200Z",
+    "baselineCommit": "c5d7d3ee37a2a48c95f3826565fc76639f72e6b8",
+    "candidate": "release02",
+    "bodySha256": "20363608cd74ec5af9ff38b1a88c6b18c89689fd61e97593596c9b5e715aa59e",
+    "baseline": {
+      "receivedAt": "2026-09-16T18:29:13.279Z",
+      "outcome": "failure",
+      "failure": {
+        "category": "unsupported",
+        "stage": "loader"
+      },
+      "metrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 62521,
+        "decodedBytes": 857597,
+        "active": 0,
+        "closed": true
+      },
+      "receiptSha256": "163d394e37a49ce2c3599e16085a7bd40a60b6e89619290482a960977ba3000b"
+    },
+    "fresh": {
+      "receivedAt": "2026-09-16T19:06:20.660Z",
+      "outcome": "extracted-unverified",
+      "contentSuccess": null,
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "metrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 61595,
+        "decodedBytes": 857597,
+        "active": 0,
+        "closed": true
+      },
+      "receiptSha256": "9b26ee9ab35176eff9da069c643aa684b58425e0ca08de9715cb4e5ce7177f4a"
+    },
+    "markdownBytes": 222068,
+    "markdownSha256": "c4a813396ba828b8025473960f2f71841cd96a98b50bcd39b8f0e1feda37b5e5",
+    "tablePairs": 45,
+    "fencedCodeBlocks": 99,
+    "textPrefixFallback": false,
+    "completeExtractionMatchesSavedReplay": true,
+    "structured": {
+      "ok": false,
+      "error": {
+        "name": "AgentBrowserError",
+        "code": "resource-limit",
+        "message": "Extraction output limit exceeded"
+      }
+    },
+    "structuredSectionRecovery": {
+      "at": "2026-09-16T19:20:18.235Z",
+      "passed": true,
+      "newLiveRequests": 0,
+      "source": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-document-mode-september16/section01/node-pipeline-json/SECTION.json",
+      "sourceSha256": "d4b937ca9b05c3fcd997916fe06ec2cd160600c5001f069a5ea18f8ef35f5624",
+      "liveReceiptSha256": "9b26ee9ab35176eff9da069c643aa684b58425e0ca08de9715cb4e5ce7177f4a",
+      "bodySha256": "20363608cd74ec5af9ff38b1a88c6b18c89689fd61e97593596c9b5e715aa59e",
+      "jsonBytes": 36937,
+      "selector": "h4:has(a#streampipelinestreams-callback)",
+      "sectionSelection": {
+        "method": "heading-section",
+        "heading": "e51822",
+        "level": 4,
+        "end": "e52514",
+        "scannedNodes": 20007,
+        "selectedNodes": 692,
+        "contextNodes": 7
+      },
+      "nodes": 699,
+      "codeBlocks": [
+        {
+          "codeUnits": 456,
+          "sha256": "e259b2a33b5c290e231c1b5809559d2032c8838a8c8595c14b4b7a6b533e5d45",
+          "exactMatchInFullMarkdown": true
+        },
+        {
+          "codeUnits": 558,
+          "sha256": "954ca587c61b2ca8cf57e75bc12ae5dee4d7230d1fa28a5123c520c190890d05",
+          "exactMatchInFullMarkdown": true
+        }
+      ],
+      "scope": "Post-run audit of browser-produced JSON/Markdown; two exact code matches, not independent execution or source verification. The original SUMMARY.json used an absent section field; authoritative sectionSelection is explicitly audited here."
+    },
+    "sourceMode": "no-quirks",
+    "paragraphTables": 0,
+    "sourceDiagnosis": {
+      "sha256": "fc0079c8ee663535bafdbef134b75bb8a66103129b0542aef1fa93a05e3c23d2",
+      "diagnosticSha256": "2aec05a5c9f7091bf3a45e85e656a5ccac31370f6c8cb54e5a801634cc623a20"
+    },
+    "contentReview": {
+      "sha256": "1df3e17ddf25cb7fa429f9cc895390bc6939e3db2175eb892b68f3cf73827919",
+      "result": {
+        "at": "2026-09-16T19:22:05Z",
+        "status": "incomplete",
+        "agent": "01a0ab9c-a53b-7f30-9a05-c873ddfde37f",
+        "shutdownConfirmed": true,
+        "artifactsProduced": false,
+        "independentContentReviewCompleted": false,
+        "reason": "The optional bounded source-content review returned no artifacts after waiting and a scope-reduction interruption. The agent was shut down rather than treating that extra review as a publication barrier.",
+        "completedEvidence": [
+          "Separate independent source review of the production/test patch has no blocking findings.",
+          "Actual fresh native CLI output matches complete saved-body API extraction after opaque-ref normalization only.",
+          "The retained body has 45 source tables, the output has 45 table pairs and 99 fenced blocks, and no text-prefix fallback is used.",
+          "Actual saved-body JSON section selection yields 36937 bytes and 699 nodes; both selected code examples exactly match full Markdown."
+        ],
+        "remaining": [
+          "Independent source-to-output cell-by-cell review of the repaired table.",
+          "Independent code and nearby warning/qualifier fidelity review against original source.",
+          "Example execution and full-document structured extraction acceptance."
+        ]
+      }
+    },
+    "originalLane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/node-stream-reference-september16",
+    "recoveryLane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/node-stream-recovery-september16",
+    "newLiveRequestsThisTurn": 1,
+    "totalLiveRequestsAcrossOriginalAndRecovery": 2,
+    "uniqueUrls": 1,
+    "examplesExecuted": false,
+    "pageRuntimeExecuted": false,
+    "credentialAccess": false
+  },
+  "originalSeal": {
+    "at": "2026-09-16T19:22:51.306Z",
+    "files": 70,
+    "bytes": 2479049,
+    "artifactsSha256": "51e0f654e4e68c60cc1adae00c011d72ef724cd2ca6914d00c31f35edd932e9a",
+    "validationWritersClosed": true
+  },
+  "recoverySeal": {
+    "at": "2026-09-16T19:22:51.332Z",
+    "files": 39,
+    "bytes": 3146075,
+    "artifactsSha256": "57b0b2452062d8638ab1f6d54898a29ac2f964bb6f7183fd3a85948218512267",
+    "validationWritersClosed": true
+  },
+  "featureSeal": {
+    "at": "2026-09-16T19:22:51.926Z",
+    "files": 495,
+    "bytes": 96273091,
+    "artifactsSha256": "f8acc7b1bcd24bb752ad438d6bde301247baa39c3dea4aa1fd6e15fb117f0d06",
+    "validationWritersClosed": true
+  }
+}

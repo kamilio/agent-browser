@@ -349,6 +349,7 @@ export function sanitizeResearchHtml(
 		return tokenizer.next();
 	};
 	const output: string[] = [];
+	let sourceInitial = true;
 	const skipped: string[] = [];
 	const open: string[] = [];
 	let sourceHiddenOmission = false;
@@ -394,6 +395,23 @@ export function sanitizeResearchHtml(
 	};
 	for (let token = nextToken(); token; token = nextToken()) {
 		check("reader.tokens", limits.maxTokens, ++report.tokens);
+		if (sourceInitial) {
+			if (token.kind === "doctype") {
+				sourceInitial = false;
+				emit(normalizedSource.slice(tokenStart, tokenizer.position));
+				continue;
+			}
+			if (
+				token.kind !== "comment" &&
+				(token.kind !== "text" ||
+					/[^\t\n\f\r ]/.test(
+						tokenStart === 0 && normalizedSource.startsWith("\ufeff")
+							? token.data.slice(1)
+							: token.data,
+					))
+			)
+				sourceInitial = false;
+		}
 		if (
 			sourceHiddenOmission &&
 			(token.kind === "start" || token.kind === "end")
