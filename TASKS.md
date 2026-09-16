@@ -6,6 +6,33 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Diverse native reader workflows and stable selectors
+
+- Exercise six more source-to-article tasks with the maintained native CLI:
+  Business Insider, Good Housekeeping, Car and Driver, Bob Vila, CarBuzz and IGN.
+  Preserve the initial five completed extractions and one CarBuzz selection
+  failure. The failure makes no target request and is not an access verdict.
+- Diagnose the later CarBuzz markup variant with one source-only native capture:
+  title moved to the heading and h3 became h5. A fixed-h3 correction also fails
+  offline. An explicit retained-class/exact-href selector completes one separate
+  corrected live workflow for the same article. Changed response bodies prevent
+  an exact-body causal claim about the original failure.
+- Record all14 GETs:11 initial,1 diagnostic,2 explicit corrected validation.
+  No automatic retries, redirects, scripts, credentials, alternate clients or
+  direct target fallback. All observed requests/sockets and process groups close.
+- Add3 synthetic regressions for old-selector refusal and both markup variants.
+  Final621pass/0 in8 explicit manifest files; build/types/format/scoped lint pass.
+  All2292 compiled production artifacts remain byte-identical. This fixes the
+  tested selector/workflow guidance, not browser runtime behavior or site access.
+- Harden the isolated batch supervisor with exact evidence admission, consumed
+  approval digests, spent publisher-host reservations and catchable termination
+  cleanup. Its18 mocked controls pass; real abnormal-signal/host-failure handling
+  is not claimed as tested. Preserve failed preflights and original reservations.
+- See reports/reader-diverse-workflows-2026-09-16.md for all exact URLs, separate
+  content reviews and limitations. Keep100-entry historical outcomes unchanged.
+  Full rendering, dynamic sites, SafeJS, access handoff, credential/passkey and
+  real-input gates remain open; the overall browser goal stays active.
+
 ### Maintained native reader link-content command
 
 - Add scripts/research-link-content.ts as an explicit source-to-article reader

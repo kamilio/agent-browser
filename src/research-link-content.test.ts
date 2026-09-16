@@ -74,6 +74,16 @@ function serve(
 	return responses;
 }
 
+function articleCard(headingTag: "h3" | "h5", titleOn: "anchor" | "heading") {
+	const title = ' title="Synthetic card metadata"';
+	return `<main><article>
+		<a id="card-image" href="${targetUrl}"><img alt="Synthetic card image"></a>
+		<${headingTag} class="display-card-title"${titleOn === "heading" ? title : ""}>
+			<a id="chosen" href="${targetUrl}"${titleOn === "anchor" ? title : ""}>Synthetic card headline</a>
+		</${headingTag}>
+	</article></main>`;
+}
+
 function controller() {
 	const value = new AbortController();
 	controllers.push(value);
@@ -599,6 +609,102 @@ describe("native source-present link navigation", () => {
 		requests([sourceUrl, targetUrl]);
 		closed();
 	});
+
+	it("refuses an anchor-title selector when article-card metadata moves to the h5 heading", async () => {
+		serve(articleCard("h5", "heading"));
+		const selected = `a[href="${targetUrl}"][title]`;
+		const report = await researchLinkContent(
+			args(targetUrl, sourceUrl, selected),
+		);
+		expect(report).toMatchObject({
+			outcome: "failure",
+			partial: true,
+			contentSuccess: false,
+			sourceUrl,
+			targetUrl,
+			selector: selected,
+			stage: "link-selection",
+			failure: { category: "not-found", stage: "link-selection" },
+			events: [],
+			documentClosedStates: [true],
+		});
+		expect(report.selection).toBeUndefined();
+		expect(report.responses).toHaveLength(1);
+		expect(BrowserSession.prototype.click).not.toHaveBeenCalled();
+		requests([sourceUrl]);
+		noExtraction();
+		closed();
+	});
+
+	it.each([
+		{ headingTag: "h3", titleOn: "anchor" },
+		{ headingTag: "h5", titleOn: "heading" },
+	] as const)(
+		"selects the article-card headline under $headingTag with title metadata on the $titleOn",
+		async ({ headingTag, titleOn }) => {
+			serve(articleCard(headingTag, titleOn));
+			const selected = `.display-card-title > a[href="${targetUrl}"]`;
+			const observedEvents: string[] = [];
+			let headlineReference = "";
+			vi.mocked(BrowserSession.prototype.click).mockImplementationOnce(
+				function (this: BrowserSession, tab, reference, options) {
+					const page = this.page(tab);
+					const headline = page.queries.querySelector(selector);
+					const image = page.queries.querySelector("#card-image");
+					if (headline === null || image === null)
+						throw new Error("Missing fixture article-card anchors");
+					expect(
+						page.queries.querySelectorAll(`a[href="${targetUrl}"]`),
+					).toEqual([image, headline]);
+					expect(page.queries.querySelectorAll(selected)).toEqual([headline]);
+					headlineReference = page.document.reference(headline);
+					expect(reference).toBe(headlineReference);
+					expect(reference).not.toBe(page.document.reference(image));
+					for (const event of ["mousedown", "mouseup", "click"])
+						page.interactions.events.addEventListener(headline, event, () =>
+							observedEvents.push(event),
+						);
+					return originalClick.call(this, tab, reference, options);
+				},
+			);
+			const report = await researchLinkContent(
+				args(targetUrl, sourceUrl, selected),
+			);
+			expect(BrowserSession.prototype.click).toHaveBeenCalledOnce();
+			expect(report).toMatchObject({
+				outcome: "extracted-unverified",
+				partial: true,
+				contentSuccess: null,
+				sourceUrl,
+				targetUrl,
+				selector: selected,
+				selection: {
+					reference: headlineReference,
+					label: "Synthetic card headline",
+					url: targetUrl,
+					candidates: 1,
+				},
+				events: ["mousedown", "mouseup", "click"],
+				stage: "complete",
+				documentClosedStates: [true, true],
+			});
+			expect(observedEvents).toEqual(["mousedown", "mouseup", "click"]);
+			const click = await vi.mocked(BrowserSession.prototype.click).mock
+				.results[0].value;
+			expect(click.navigation).toMatchObject({
+				kind: "document",
+				url: targetUrl,
+			});
+			expect(report.extraction?.content).toContain("Owned article");
+			expect(report.extraction?.content).toContain("Owned row");
+			expect(report.extraction?.content).not.toContain(
+				"Synthetic card headline",
+			);
+			expect(report.responses).toHaveLength(2);
+			requests([sourceUrl, targetUrl]);
+			closed();
+		},
+	);
 
 	it("accepts the 1000-character label boundary without truncating it", async () => {
 		const label = "x".repeat(1000);

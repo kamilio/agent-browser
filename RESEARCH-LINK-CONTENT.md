@@ -18,6 +18,17 @@ Both flags are required once, in either order, with exactly one source URL.
 Inspect the current reader document when choosing the selector: it need not
 retain all raw-source attributes. Use `--help` for the command synopsis.
 
+Do not overconstrain the selector with incidental metadata or a particular
+heading rank. One measured publisher variant moved `title` from its article
+anchor to the parent heading and changed that heading from `h3` to `h5`.
+The explicit selector `.display-card-title > a[href="EXACT_SOURCE_HREF"]`
+worked for both observed structures; `[title]` and the fixed `h3` predicate did
+not. This is a source-audited example, not a universal class name or automatic
+fallback. Preserve the failed attempt, inspect the current source, and validate
+an intentional selector change separately. See
+`reports/reader-diverse-workflows-2026-09-16.md` for the original failure and
+corrected native click, with no substitution of a different article.
+
 ## Output and failure behavior
 
 One bounded JSONL record contains `outcome`, source/target URLs, the selection,

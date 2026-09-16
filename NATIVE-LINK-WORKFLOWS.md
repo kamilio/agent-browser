@@ -91,3 +91,22 @@ fallback, alternate link, login, form submission, identity impersonation or
 challenge solver. Barriers remain reasons to stop. Main-content-v2 and explicit
 text-prefix-v1 retain their existing partial/fallback provenance; nonempty text
 is not a claim of factual accuracy, completeness or successful scripted behavior.
+
+## Six additional publisher tasks
+
+`reports/reader-diverse-workflows-2026-09-16.md` records native reader workflows
+for Business Insider, Good Housekeeping, Car and Driver, Bob Vila, CarBuzz and
+IGN. The initial batch completes five article extractions; CarBuzz stops before
+requesting its target because the supplied selector does not match.
+
+A separate source-only diagnostic shows title metadata on an `h5` headline
+container rather than the older `h3` anchor. A fixed-`h3` correction also fails
+offline. An explicit class-and-exact-href selector succeeds in a second offline
+proof and one separately planned live validation of the same requested article.
+The diagnostic body differs from the failed run, so it is a later observation,
+not exact-body proof of the original cause. Keep the first attempt failed.
+
+Total new traffic is fourteen native GETs: eleven in the initial batch, one
+source diagnostic and two in the explicit corrected-selector follow-up. There
+are no automatic retries, redirects, credential use, script execution or direct
+target-navigation fallback. The historical100-root-page verdicts do not change.

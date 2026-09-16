@@ -1,0 +1,832 @@
+{
+  "schema": "native-reader-diverse-workflows-v1",
+  "recordedAt": "2026-09-16T09:29:30.728Z",
+  "runtimeCommit": "1034f53815b49c42bd14c1abfa8d2194540df6c3",
+  "finalTestOverlay": "src/research-link-content.test.ts",
+  "compiledProductionFiles": 2292,
+  "compiledProductionByteIdentical": true,
+  "initialBatch": {
+    "workflows": 6,
+    "completedArticleExtractions": 5,
+    "selectionFailures": 1,
+    "requests": 11,
+    "results": [
+      {
+        "ordinal": 1,
+        "sourceUrl": "https://www.businessinsider.com/",
+        "targetUrl": "https://www.businessinsider.com/boeing-777x-jet-cabin-what-passengers-can-expect-2026-9",
+        "selector": "a.tout-title-link[href=\"/boeing-777x-jet-cabin-what-passengers-can-expect-2026-9\"]",
+        "outcome": "extracted-unverified",
+        "contentSuccess": null,
+        "partial": true,
+        "stage": "complete",
+        "selection": {
+          "reference": "e5813",
+          "label": "Boeing's new 777X is finally expected to fly passengers next year. Here are the 5 coolest cabin features.",
+          "url": "https://www.businessinsider.com/boeing-777x-jet-cabin-what-passengers-can-expect-2026-9",
+          "candidates": 1
+        },
+        "responses": [
+          {
+            "url": "https://www.businessinsider.com/",
+            "status": 200,
+            "decodedBytes": 595268,
+            "bodySha256": "2748f0168f91e218ebf7f156a9978cd21a205e2e076647849a11218f5283b464"
+          },
+          {
+            "url": "https://www.businessinsider.com/boeing-777x-jet-cabin-what-passengers-can-expect-2026-9",
+            "status": 200,
+            "decodedBytes": 459312,
+            "bodySha256": "639544fe431d429e891e5fa524e5a6eeb03a7db7cfbcf16fb6a97dd53b55e980"
+          }
+        ],
+        "review": {
+          "verdict": "substantive-article-available",
+          "contentBytes": 14824,
+          "contentSha256": "4cd29d7f5be5984f850c848d550b2a2fdcda4924a124ab4ae7af481db36557e2",
+          "inspection": {
+            "kind": "full-extraction",
+            "sampled": false,
+            "decodedContentLines": 182,
+            "lineNumbering": "One-based lines after splitting parsed extraction.content on LF; includes the final empty line when present, not physical JSON-file line numbers.",
+            "readChunksInclusive": [
+              [
+                1,
+                95
+              ],
+              [
+                96,
+                182
+              ]
+            ],
+            "coveredUtf8ByteRange": {
+              "startInclusive": 0,
+              "endExclusive": 14824
+            },
+            "skippedContentLines": [],
+            "substantiveAndSupportingBodyLineRangesInclusive": [
+              [
+                21,
+                111
+              ]
+            ],
+            "coverage": "Read all 182 decoded content lines: opening category/headline/byline and metadata (1-19), introduction and all five substantive feature sections (21-111), then video/comments/recommendations, author biographies and footer (113-182). Read in two contiguous chunks, 1-95 and 96-182; no content sampling or skipped lines.",
+            "limits": "Full means all emitted Markdown text, not all original HTML/visual content. No raw response-body reconstruction, page scripts, rendering, images/videos, linked pages, current access behavior or external factual corroboration was inspected. Reader and extraction remain partial."
+          },
+          "justification": "The exact target URL and aviation subject match. Beyond the headline/byline, the extraction contains a sustained introduction and all five cabin-feature sections, including explanatory paragraphs and attributed reporting, through the final window-design discussion. It then transitions to video/comments, recommendations and author biographies. This is substantive article text, not just a preview, headline list, navigation shell or access-gate message.",
+          "caveats": [
+            "The native sourceAccess metadata declares false at $ and $.hasPart[0], with verified=false. Those publisher-supplied access declarations do not negate the substantive text actually present here, and do not establish that the article is generally free, ungated, licensed for reuse, or accessible to every client.",
+            "Generic subscription navigation, duplicated image descriptions, author-follow text and unavailable comment placeholders coexist with the article. They are not counted as substantive reporting or treated as an article-wide barrier.",
+            "All five promised feature discussions are present through an apparent article end; completeness relative to the original HTML, visual page, omitted material or any later version is not established."
+          ]
+        },
+        "lifecycle": {
+          "requests": 2,
+          "requestCloses": 2,
+          "socketCloses": 2,
+          "firstRequestAt": "2026-09-16T09:12:28.084Z",
+          "processExitAt": "2026-09-16T09:12:30.218Z"
+        },
+        "elapsedSeconds": 2.373211009427905
+      },
+      {
+        "ordinal": 2,
+        "sourceUrl": "https://www.goodhousekeeping.com/",
+        "targetUrl": "https://www.goodhousekeeping.com/what-to-buy/home-products/a73494518/how-we-test-air-fryers/",
+        "selector": "a[href=\"/what-to-buy/home-products/a73494518/how-we-test-air-fryers/\"]",
+        "outcome": "extracted-unverified",
+        "contentSuccess": null,
+        "partial": true,
+        "stage": "complete",
+        "selection": {
+          "reference": "e2352",
+          "label": "Inside Our Air Fryer Testing: How the GH Kitchen Lab Chooses the Best",
+          "url": "https://www.goodhousekeeping.com/what-to-buy/home-products/a73494518/how-we-test-air-fryers/",
+          "candidates": 1
+        },
+        "responses": [
+          {
+            "url": "https://www.goodhousekeeping.com/",
+            "status": 200,
+            "decodedBytes": 912808,
+            "bodySha256": "c9a63e36607cb2dcd2e06e178e2a23c3d5f08f68df47e5412493003b8e9498f6"
+          },
+          {
+            "url": "https://www.goodhousekeeping.com/what-to-buy/home-products/a73494518/how-we-test-air-fryers/",
+            "status": 200,
+            "decodedBytes": 682033,
+            "bodySha256": "451a0c8f764185a8924119cf6499d926576ba916ba34009ac9a80ab009a5a20a"
+          }
+        ],
+        "review": {
+          "verdict": "substantive-article-available",
+          "contentBytes": 12909,
+          "contentSha256": "b5770d7c3e60cf0c114a5f83e080a5d89e32867d75252e27031b399852769e15",
+          "inspection": {
+            "kind": "full-extraction",
+            "sampled": false,
+            "decodedContentLines": 178,
+            "lineNumbering": "One-based lines after splitting parsed extraction.content on LF; includes the final empty line when present, not physical JSON-file line numbers.",
+            "readChunksInclusive": [
+              [
+                1,
+                90
+              ],
+              [
+                91,
+                178
+              ]
+            ],
+            "coveredUtf8ByteRange": {
+              "startInclusive": 0,
+              "endExclusive": 12909
+            },
+            "skippedContentLines": [],
+            "substantiveAndSupportingBodyLineRangesInclusive": [
+              [
+                37,
+                89
+              ],
+              [
+                91,
+                103
+              ]
+            ],
+            "coverage": "Read all 178 decoded content lines: breadcrumb/title/byline/expert metadata and contents links (1-35), introduction and substantive methodology through recommendation synthesis (37-89), expert profiles (91-103), then related articles, repeated expert biography, recommendations and advertising placeholders (105-178). Read in contiguous chunks 1-90 and 91-178; no content sampling or skipped lines.",
+            "limits": "Full means all emitted Markdown text, not all original HTML/visual content. No raw response-body reconstruction, page scripts, rendering, images/videos, linked pages, current access behavior or external factual corroboration was inspected. Reader and extraction remain partial."
+          },
+          "justification": "The exact target URL and kitchen-lab methodology subject match. The body explains market research, specifications, usability evaluation, four distinct cooking-performance assessments, home/consumer follow-up and recommendation synthesis. It reaches the expert profiles and subsequent related-content tail. These are substantive article sections, not merely the jump links, promotional claims, a partial lead or a navigation shell.",
+          "caveats": [
+            "The native sourceAccess declarations are mixed: false at $[0] and true at $[0].hasPart; verified=false. They are unverified publisher metadata, not an independent entitlement decision or proof of either a paywall or universal free access.",
+            "The expert-verification badge and product-testing assertions are source claims, not reviewer verification or endorsement. Related recommendations and advertising placeholders are ancillary to the article.",
+            "The article narrative reaches its recommendation conclusion and expert profiles, but full original-page completeness, product performance, cooking safety and consumer guidance were not verified."
+          ]
+        },
+        "lifecycle": {
+          "requests": 2,
+          "requestCloses": 2,
+          "socketCloses": 2,
+          "firstRequestAt": "2026-09-16T09:12:30.464Z",
+          "processExitAt": "2026-09-16T09:12:32.628Z"
+        },
+        "elapsedSeconds": 2.424022128805518
+      },
+      {
+        "ordinal": 3,
+        "sourceUrl": "https://www.caranddriver.com/",
+        "targetUrl": "https://www.caranddriver.com/news/a73748838/kia-pv7-electric-van-revealed/",
+        "selector": "a[href=\"/news/a73748838/kia-pv7-electric-van-revealed/\"]",
+        "outcome": "extracted-unverified",
+        "contentSuccess": null,
+        "partial": true,
+        "stage": "complete",
+        "selection": {
+          "reference": "e1801",
+          "label": "Kia Reveals Larger PV7 Electric Commercial Van",
+          "url": "https://www.caranddriver.com/news/a73748838/kia-pv7-electric-van-revealed/",
+          "candidates": 1
+        },
+        "responses": [
+          {
+            "url": "https://www.caranddriver.com/",
+            "status": 200,
+            "decodedBytes": 802011,
+            "bodySha256": "3a8dc652570dea47b015fec2100c2f4420ecbdd5ba81ecf94aa8231334c74a29"
+          },
+          {
+            "url": "https://www.caranddriver.com/news/a73748838/kia-pv7-electric-van-revealed/",
+            "status": 200,
+            "decodedBytes": 537347,
+            "bodySha256": "d5fbf2305cacd256f7a4207100f88b3f1f9e2d9373ba3ccd36491aac97a68eb3"
+          }
+        ],
+        "review": {
+          "verdict": "substantive-article-available",
+          "contentBytes": 10538,
+          "contentSha256": "0efc28943440b0731b9286c9219743d826dafb83665acc58082e9eb3b17b308f",
+          "inspection": {
+            "kind": "full-extraction",
+            "sampled": false,
+            "decodedContentLines": 156,
+            "lineNumbering": "One-based lines after splitting parsed extraction.content on LF; includes the final empty line when present, not physical JSON-file line numbers.",
+            "readChunksInclusive": [
+              [
+                1,
+                86
+              ],
+              [
+                87,
+                156
+              ]
+            ],
+            "coveredUtf8ByteRange": {
+              "startInclusive": 0,
+              "endExclusive": 10538
+            },
+            "skippedContentLines": [],
+            "substantiveAndSupportingBodyLineRangesInclusive": [
+              [
+                25,
+                73
+              ]
+            ],
+            "coverage": "Read all 156 decoded content lines: breadcrumb/headline/byline and summary bullets (1-23), substantive article body including interleaved local-sales modules and image captions (25-73), related links (75-81), and shopping links, author biography, video placeholder and news/recommendation tail (83-156). Read in contiguous chunks 1-86 and 87-156; no content sampling or skipped lines.",
+            "limits": "Full means all emitted Markdown text, not all original HTML/visual content. No raw response-body reconstruction, page scripts, rendering, images/videos, linked pages, current access behavior or external factual corroboration was inspected. Reader and extraction remain partial."
+          },
+          "justification": "The selected and extracted URLs exactly equal the requested Kia PV7 article. The destination headline differs from the homepage teaser but retains the same vehicle/announcement subject. After summary bullets, detailed paragraphs cover platform and variants, batteries/powertrain, charging, design, cargo/passenger configurations, cabin/software and rollout. The body reaches a concluding production/future-lineup paragraph before related links and author information. It is not a missing target, gallery-only shell or summary-only preview.",
+          "caveats": [
+            "The different destination headline is not a target mismatch: requested, selected, response and extraction URLs agree and the body discusses the expected Kia PV7 announcement.",
+            "No sourceAccess field is emitted; absence is not proof of unrestricted public access. Sales modules, image descriptions and a video placeholder are present but do not replace or block the article body.",
+            "Specifications, range/charging statements, market dates and safety/product implications are not verified or endorsed. No linked sales page, video or other target was opened for this review."
+          ]
+        },
+        "lifecycle": {
+          "requests": 2,
+          "requestCloses": 2,
+          "socketCloses": 2,
+          "firstRequestAt": "2026-09-16T09:12:32.903Z",
+          "processExitAt": "2026-09-16T09:12:35.018Z"
+        },
+        "elapsedSeconds": 2.373969167470932
+      },
+      {
+        "ordinal": 4,
+        "sourceUrl": "https://www.bobvila.com/",
+        "targetUrl": "https://www.bobvila.com/diy/september-must-do-projects/",
+        "selector": "a[href=\"https://www.bobvila.com/diy/september-must-do-projects/\"]",
+        "outcome": "extracted-unverified",
+        "contentSuccess": null,
+        "partial": true,
+        "stage": "complete",
+        "selection": {
+          "reference": "e6535",
+          "label": "10 “Must Do” Home Projects for September",
+          "url": "https://www.bobvila.com/diy/september-must-do-projects/",
+          "candidates": 1
+        },
+        "responses": [
+          {
+            "url": "https://www.bobvila.com/",
+            "status": 200,
+            "decodedBytes": 221801,
+            "bodySha256": "532186209b9094ddbe0b8dde09e5a93cdd7dba590ad8130f5b17acbf55f1c92f"
+          },
+          {
+            "url": "https://www.bobvila.com/diy/september-must-do-projects/",
+            "status": 200,
+            "decodedBytes": 181636,
+            "bodySha256": "2b8433844ef8070922b68ca316535fdd3abeeae265820451a85424c08f5dd26d"
+          }
+        ],
+        "review": {
+          "verdict": "substantive-article-available",
+          "contentBytes": 14639,
+          "contentSha256": "e54b7fd0f4e87c8ae52448ce82353a5cd4407dcbb0af669c9df3e8d2df987944",
+          "inspection": {
+            "mode": "full-extracted-content",
+            "lineRangesInclusive": [
+              [
+                1,
+                115
+              ],
+              [
+                116,
+                224
+              ]
+            ],
+            "totalLinesIncludingTrailingEmptyLine": 224,
+            "sampled": false,
+            "description": "Read all 224 lines of the decoded extraction.content string, in two consecutive non-overlapping blocks; includes beginning, all substantive body sections, product inserts and complete related-content ending.",
+            "relevantSections": [
+              {
+                "linesInclusive": [
+                  1,
+                  27
+                ],
+                "description": "Article identification, byline, introduction and newsletter disclosure material."
+              },
+              {
+                "linesInclusive": [
+                  29,
+                  143
+                ],
+                "description": "All ten numbered project sections with body prose, including middle seed-saving discussion at lines 97–105 and final project at lines 137–143."
+              },
+              {
+                "linesInclusive": [
+                  145,
+                  224
+                ],
+                "description": "Author/editorial boundary followed by trending, newsletter and related-content sections through the extraction end."
+              }
+            ]
+          },
+          "justification": "The selected URL, article response URL and extraction URL are the exact requested target. The heading and byline identify the September project article. Its introduction and all ten numbered project sections contain explanatory prose, including detailed seed-saving discussion in the middle and a final roof section before the author/editorial boundary. Newsletter, affiliate/product inserts and related links coexist with the body; this is not merely a preview, navigation shell or access barrier.",
+          "caveats": [
+            "Full inspection means all saved extracted markdown was read, not that all source HTML, rendered content, media or browser functionality was retained or verified.",
+            "Native top-level and extraction partial flags remain true; native outcome stays extracted-unverified and contentSuccess stays null.",
+            "The observed list reaches its tenth section and editorial boundary, but source-to-extraction completeness is not independently proven.",
+            "Affiliate links, promotional inserts and newsletters remain in the extraction; none prevented reading the substantive body.",
+            "No factual, financial, product, home-maintenance or safety claim was verified or endorsed."
+          ]
+        },
+        "lifecycle": {
+          "requests": 2,
+          "requestCloses": 2,
+          "socketCloses": 2,
+          "firstRequestAt": "2026-09-16T09:12:35.266Z",
+          "processExitAt": "2026-09-16T09:12:37.353Z"
+        },
+        "elapsedSeconds": 2.323901964351535
+      },
+      {
+        "ordinal": 5,
+        "sourceUrl": "https://carbuzz.com/",
+        "targetUrl": "https://carbuzz.com/mazda-sports-car-chassis-patent-sept-14/",
+        "selector": "a[href=\"/mazda-sports-car-chassis-patent-sept-14/\"][title]",
+        "outcome": "failure",
+        "contentSuccess": false,
+        "partial": true,
+        "stage": "link-selection",
+        "selection": null,
+        "responses": [
+          {
+            "url": "https://carbuzz.com/",
+            "status": 200,
+            "decodedBytes": 888937,
+            "bodySha256": "6fa817e9a27e199a64cb4ca7187984cc5521ec638e1c0fac52cf671843ab6707"
+          }
+        ],
+        "review": {
+          "verdict": "missing-target-at-link-selection",
+          "contentBytes": 0,
+          "contentSha256": null,
+          "inspection": {
+            "mode": "full-failure-receipt-no-extraction",
+            "lineRangesInclusive": [],
+            "totalLinesIncludingTrailingEmptyLine": null,
+            "sampled": false,
+            "description": "Read the complete 1,481-byte stdout.log failure receipt; parsed and compared the complete RESULT.json, reviewed all saved execution/observer records and empty stderr. No extraction.content field or article body exists to inspect.",
+            "relevantSections": []
+          },
+          "justification": "The saved run fails at link-selection with category not-found. It records only the homepage HTTP 200, no selected link or action events, no article response and no extraction. Observer evidence likewise contains only a GET of the homepage. Therefore this run supplies no evidence about destination article content or access: it is a source-link workflow failure, not a destination 404, preview, paywall, article shell or demonstrated article unavailability.",
+          "caveats": [
+            "Missing target denotes failure to select the requested source link in this run; it does not mean that the destination URL is missing or that the publisher denies access.",
+            "The article target was never requested. Its HTTP status, response body, accessibility and substantive availability remain unknown.",
+            "The failure receipt does not establish whether source markup changed, selector matching failed, or another selection precondition failed; no root-cause inference is made.",
+            "No diagnostic reruns, sibling diagnostic artifacts, alternate selectors or other requests were used for this content review.",
+            "Reported extracted content byte count is zero because the field is absent; content SHA256 is null rather than an invented empty-string hash."
+          ]
+        },
+        "lifecycle": {
+          "requests": 1,
+          "requestCloses": 1,
+          "socketCloses": 1,
+          "firstRequestAt": "2026-09-16T09:12:37.591Z",
+          "processExitAt": "2026-09-16T09:12:37.953Z"
+        },
+        "elapsedSeconds": 0.5723213870078325
+      },
+      {
+        "ordinal": 6,
+        "sourceUrl": "https://www.ign.com/",
+        "targetUrl": "https://www.ign.com/articles/silent-hill-townfall-could-finally-restore-survival-horrors-missing-mystery",
+        "selector": "a[href=\"/articles/silent-hill-townfall-could-finally-restore-survival-horrors-missing-mystery\"]",
+        "outcome": "extracted-unverified",
+        "contentSuccess": null,
+        "partial": true,
+        "stage": "complete",
+        "selection": {
+          "reference": "e1241",
+          "label": "Silent Hill: Townfall Could Finally Restore Survival Horror’s Missing Mystery",
+          "url": "https://www.ign.com/articles/silent-hill-townfall-could-finally-restore-survival-horrors-missing-mystery",
+          "candidates": 1
+        },
+        "responses": [
+          {
+            "url": "https://www.ign.com/",
+            "status": 200,
+            "decodedBytes": 339497,
+            "bodySha256": "e35f8dc9c1f6f838bc89411f3a9c8222336e3a8a9f34704f8f0d14085a89a9ed"
+          },
+          {
+            "url": "https://www.ign.com/articles/silent-hill-townfall-could-finally-restore-survival-horrors-missing-mystery",
+            "status": 200,
+            "decodedBytes": 260468,
+            "bodySha256": "b6ceb29417fc28f527b9f142f0ea257996aad07cc0f2943b8c47d9d2341f1fa6"
+          }
+        ],
+        "review": {
+          "verdict": "substantive-article-available",
+          "contentBytes": 15963,
+          "contentSha256": "821f6754012e0f11a91ae5d84b009591effd6fe48cc7a83af58e32b58229b4cc",
+          "inspection": {
+            "mode": "full-extracted-content",
+            "lineRangesInclusive": [
+              [
+                1,
+                40
+              ],
+              [
+                41,
+                82
+              ]
+            ],
+            "totalLinesIncludingTrailingEmptyLine": 82,
+            "sampled": false,
+            "description": "Read all 82 lines of the decoded extraction.content string, including long prose paragraphs, in two consecutive non-overlapping blocks; includes identification, the complete saved essay, conclusion, author biography and recommendation/game/comment ending.",
+            "relevantSections": [
+              {
+                "linesInclusive": [
+                  1,
+                  11
+                ],
+                "description": "Article identification, byline, publication text and opinion-piece introduction."
+              },
+              {
+                "linesInclusive": [
+                  13,
+                  47
+                ],
+                "description": "Sustained article argument and comparisons, with substantive middle discussion continuing across the reading-block boundary."
+              },
+              {
+                "linesInclusive": [
+                  49,
+                  53
+                ],
+                "description": "Return to the requested Townfall topic, concluding argument and author biography."
+              },
+              {
+                "linesInclusive": [
+                  55,
+                  82
+                ],
+                "description": "Recommendations, game card and comments label through the extraction end."
+              }
+            ]
+          },
+          "justification": "The exact selected article URL was requested and is the extraction URL. The extracted heading matches the requested article despite a differently phrased document title. Byline and introduction lead into sustained multi-paragraph opinion analysis, comparisons with several horror games, a developed middle discussion of Rule of Rose, and a concluding return to Townfall before the author biography. The recommendation/game/comment material is an appended tail, not a substitute for the requested article. No access barrier or preview cutoff is evident in the fully read extraction.",
+          "caveats": [
+            "Full inspection means every saved extraction line was read; it does not prove completeness against original HTML, images, videos, interactive comments or a rendered page.",
+            "Native outcome remains extracted-unverified; native contentSuccess is null and both native partial flags remain true.",
+            "Native main-content-v2 reports unique-main, zero article candidates and outsideArticleContent=true. The full prose review supports substantive availability despite that structural limitation; the flags are preserved rather than reclassified.",
+            "The document title differs from the on-page headline. Exact target/extraction URLs, matching on-page heading and coherent topic/body identify the requested article.",
+            "Recommendations and the associated game card remain after the essay. Related links were not followed; opinions, release/date statements and other factual claims were not verified."
+          ]
+        },
+        "lifecycle": {
+          "requests": 2,
+          "requestCloses": 2,
+          "socketCloses": 2,
+          "firstRequestAt": "2026-09-16T09:12:38.164Z",
+          "processExitAt": "2026-09-16T09:12:40.226Z"
+        },
+        "elapsedSeconds": 2.276250021532178
+      }
+    ]
+  },
+  "sourceDiagnostic": {
+    "scope": "One separate source-only native capture; no article retry or target request",
+    "pid": 122698,
+    "processGroup": 122697,
+    "requests": 1,
+    "sourceUrl": "https://carbuzz.com/",
+    "status": 200,
+    "outcome": "extracted-unverified",
+    "bodySha256": "883dfc66db6d52ecf95c727c0a1a15556d68234349b1fa366e5c93847e1c8e53",
+    "failedWorkflowBodySha256": "6fa817e9a27e199a64cb4ca7187984cc5521ec638e1c0fac52cf671843ab6707",
+    "metrics": {
+      "mockedRequests": 0,
+      "mockedDecodedBytes": 0,
+      "requests": 1,
+      "redirects": 0,
+      "encodedBytes": 102583,
+      "decodedBytes": 889245,
+      "active": 0,
+      "closed": true
+    },
+    "sameBodyAsFailedWorkflow": false,
+    "rawContainsTargetPath": true,
+    "nativeHrefMatches": 2,
+    "nativeSelectorMatches": 0,
+    "diagnosticDocumentClosed": true,
+    "lifecycle": {
+      "requests": 1,
+      "requestCloses": 1,
+      "socketCloses": 1,
+      "firstRequestAt": "2026-09-16T09:16:58.672Z",
+      "processExitAt": "2026-09-16T09:16:59.146Z"
+    },
+    "causalLimit": "Later body differs from the failed workflow; do not infer an exact-body cause"
+  },
+  "correctedFollowUp": {
+    "ordinal": 5,
+    "sourceUrl": "https://carbuzz.com/",
+    "targetUrl": "https://carbuzz.com/mazda-sports-car-chassis-patent-sept-14/",
+    "selector": ".display-card-title > a[href=\"/mazda-sports-car-chassis-patent-sept-14/\"]",
+    "outcome": "extracted-unverified",
+    "contentSuccess": null,
+    "partial": true,
+    "stage": "complete",
+    "selection": {
+      "reference": "e5809",
+      "label": "Mazda's New Sports Car Is Quietly Shaping Up To Be Awesome",
+      "url": "https://carbuzz.com/mazda-sports-car-chassis-patent-sept-14/",
+      "candidates": 1
+    },
+    "responses": [
+      {
+        "url": "https://carbuzz.com/",
+        "status": 200,
+        "decodedBytes": 889202,
+        "bodySha256": "14cf6c5790d253be10f71b13278ef01f6d0a64ce8939aff559efff5572e89612"
+      },
+      {
+        "url": "https://carbuzz.com/mazda-sports-car-chassis-patent-sept-14/",
+        "status": 200,
+        "decodedBytes": 490140,
+        "bodySha256": "2313ac812b420d03bed5f3c5b60f0efa7cd06d17457e45ebfd26515e236b4b50"
+      }
+    ],
+    "review": {
+      "verdict": "substantive-article-available",
+      "contentBytes": 12223,
+      "contentSha256": "c2dca341d4f78408f3303de6a6c479f4e88ab15c0756a890a91672c67fa897f2",
+      "inspection": {
+        "mode": "full-extracted-content",
+        "sampled": false,
+        "totalLinesIncludingTrailingEmptyLine": 210,
+        "lineRangesInclusive": [
+          [
+            1,
+            110
+          ],
+          [
+            111,
+            210
+          ]
+        ],
+        "description": "Read every line of the saved extraction in two consecutive, non-overlapping blocks, including introduction/controls, substantive beginning and middle, pricing inserts, conclusion, patent caveat, source attribution and complete promotional/related-story ending.",
+        "relevantSections": [
+          {
+            "linesInclusive": [
+              1,
+              51
+            ],
+            "description": "Article heading/byline, author biography, sign-in and newsletter/registration controls."
+          },
+          {
+            "linesInclusive": [
+              53,
+              83
+            ],
+            "description": "Update note and sustained article introduction, chassis/packaging and door-design discussion."
+          },
+          {
+            "linesInclusive": [
+              85,
+              137
+            ],
+            "description": "Pricing update with prose around two model-year price-data blocks."
+          },
+          {
+            "linesInclusive": [
+              139,
+              151
+            ],
+            "description": "Closing interpretation, production caveat and cited-source boundary."
+          },
+          {
+            "linesInclusive": [
+              153,
+              210
+            ],
+            "description": "Promotional links, topic tags, sharing controls and related stories through extraction end."
+          }
+        ],
+        "fullInspectionLimit": "Full refers to the entire saved extraction, not independently verified completeness of the original source or rendered article."
+      },
+      "justification": "The exact requested target is the selected URL, second response URL and extraction URL, and the article heading/byline identify the intended story. Beyond login/newsletter controls, the extraction contains a sustained patent/chassis discussion, explanations of structural packaging and door-design ideas, a pricing update with intervening prose, and a concluding analysis followed by a patent-production caveat and source attribution. This is substantive article text reaching an apparent editorial ending, not just a summary, navigation shell, preview or access barrier. Full source fidelity is not claimed.",
+      "caveats": [
+        "This is one separately authorized corrected-selector follow-up, not a replacement for original live02/5. The original failure and original six-workflow batch results are unchanged; the batch must not be relabeled all successful.",
+        "The substantive-article verdict describes the saved extracted content only. Native outcome remains extracted-unverified, contentSuccess remains null, and both top-level and extraction partial flags remain true.",
+        "The entire saved extraction was read, but source-to-extraction completeness and rendered-page fidelity were not independently established. Source HTML, images, charts, interactive controls and omitted subtrees were not inspected or executed.",
+        "The extraction includes sign-in, registration, newsletter and summary controls before the body, and promotional/social/related-story material after it. These do not block the sustained article text in this saved output; they do not prove every site feature is public or functional.",
+        "Native main-content-v2 reports unique-main and one article candidate, but outsideArticleContent=true. Retained surrounding material is acknowledged rather than treating the extraction as article-only.",
+        "Native sourceAccess metadata contains free-access declarations but explicitly marks them unverified and partial. Availability is assessed from actual extracted body prose, not solely from HTTP 200, metadata or byte count.",
+        "No patent, engineering, safety, product, pricing, market-trend, date or production-intent claim was verified or endorsed. External links, including the cited patent, were not followed.",
+        "Prompt/execution notes describe changed title placement and heading rank plus prior offline attempts. Those are attributed context only: this reviewer did not inspect diagnostic/offline artifacts, rerun selectors or infer a complete root cause.",
+        "Lifecycle and action observations come from saved native evidence, not newly run process, socket, TTY, browser or network checks. Main retains ownership of final aggregation and integrity audit."
+      ]
+    },
+    "lifecycle": {
+      "requests": 2,
+      "requestCloses": 2,
+      "socketCloses": 2,
+      "firstRequestAt": "2026-09-16T09:22:51.498Z",
+      "processExitAt": "2026-09-16T09:22:53.754Z"
+    },
+    "elapsedSeconds": 2.464575421065092
+  },
+  "totalNewRequests": 14,
+  "automaticRetries": 0,
+  "explicitCorrectedSelectorReruns": 1,
+  "distinctPublishersWithReviewedArticles": 6,
+  "validation": {
+    "baseline": {
+      "label": "baseline",
+      "pid": 104660,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 4.522681023925543,
+      "passedTests": 618,
+      "failedTests": 0,
+      "files": 8,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "final": {
+      "label": "release01",
+      "pid": 131258,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 4.672815807163715,
+      "passedTests": 621,
+      "failedTests": 0,
+      "files": 8,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "quality": {
+      "label": "release01",
+      "executions": [
+        {
+          "name": "build",
+          "pid": 131157,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 6.474607314914465
+        },
+        {
+          "name": "types",
+          "pid": 131194,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 3.7702076639980078
+        },
+        {
+          "name": "format",
+          "pid": 131208,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.031717127189040184
+        },
+        {
+          "name": "lint",
+          "pid": 131227,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.03162097744643688
+        }
+      ],
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0
+      },
+      "allProcessesClosed": true
+    },
+    "supervisorMockedTests": 18,
+    "supervisorControlScope": "Pure mocked admission/reservation/lifecycle tests under kernel-denied network, not real abnormal-signal execution",
+    "offlineSourceProofs": 6,
+    "correctedSourceProof": 1,
+    "originalH3CorrectionEligible": false
+  },
+  "limitations": [
+    "Historical100-root-page verdicts unchanged; corpus is citation proxy, not measured agent visits",
+    "Original six-workflow batch is five successes and one preserved selection failure",
+    "Reader/source projection, not full CSS/page-script fidelity",
+    "Nonempty output stays extracted-unverified; content reviews do not verify factual claims or unrestricted access",
+    "No actual SafeJS, credential/passkey or real-input acceptance",
+    "Missing original failed source body prevents exact causal attribution from later diagnostic bytes",
+    "No general speed benchmark or universal supervisor-death containment claim"
+  ],
+  "evidenceDirectory": "node_modules/.cache/native-validation/reader-diverse-workflows-september16",
+  "evidencePins": {
+    "BEFORE.json": "eb2b090f5a7a5421e55000b4d307dbf8de61700eaf6401993d6c04859f10f9cf",
+    "CARBUZZ-DIAGNOSTIC.md": "013c2a18393c47cccd50b9d6ff14a6bd66dbd565a01a6cd0409d5658b15245de",
+    "CHECK-release01.json": "ff4ced7e6254f79a1c4f52253c19910620896e53f49c23d31799a0c7bd0ab9ec",
+    "COMPILED-release01.json": "1612fa6b45e710e0dcc4ed7735f989087e7cc918d44a319a9126102696386e59",
+    "CORRECTION-PLAN.md": "d60d1582fee88240e2e04cae733488ef119afdd1b9fae5037476681651c6fa81",
+    "CORRECTION-PLAN02.md": "230711a08fa752669ff8ab6f7fadc73899602fe811433b122bde52f23084a245",
+    "CORRECTION-PREFLIGHT01.json": "2e69660c0eeeacea95a9dd55108bd8246d4aa44996b7307e5339a2a94c770fa3",
+    "ENTRIES02.json": "7b56b4850b7cdfc32120bfa97877e52f8619627658b9d094a8fafe1ba1e3e708",
+    "ENTRIES03.json": "e5016a1b949789f082deeb261f206d87d0d9e87a4911379ef6e27ec38641e12d",
+    "ENTRIES04.json": "ed7972b80a9ea5fee9d02169b3bcc2dda5cee0c9c937eb909023b5305d2932a6",
+    "LIVE-APPROVAL02.json": "3fa5d57cff356ce02f165d44b5c8b87419021ad2c1cf3db6b95c27e886a07770",
+    "LIVE-PLAN.md": "bcb9266b42c3e0537c00f8a104324e6c53457bbed7a3b2e663d001a1a87a3b80",
+    "MAIN-REVIEW.md": "b31c36817789acb00c5dc15094c022a855c0d91beae7e33b67f2c973534e57e9",
+    "OVERLAY-release01.json": "d7eaf44f90c92545568862e8683c40fc9fd13aced8b96c0b500fd38cf5697e79",
+    "RUNTIME.json": "dcc3f3466b9a27a4238f40e7e88167b42415d2002b4a4fbb43fd5c52a647fe2c",
+    "SOURCE-release01.json": "71b0ddd438d42870b02fd8fb3eb4c65533f95e8aa3b0542b89e3396966100cf4",
+    "carbuzz-corrected01/5/EXECUTION.json": "079811d62b3666af13b7f4e287fe1ea5e1deb887699fe37bebb205d381587718",
+    "carbuzz-corrected01/5/INVOCATION.json": "996ef99a1724bd01a16cef504ff9f78f59330af28031e810d098a9939ad7cbf1",
+    "carbuzz-corrected01/5/RESULT.json": "9b98cdf23205130843261f954ab7f6864d305fa26091e0441fc6627f3a76eec4",
+    "carbuzz-corrected01/5/http-events.jsonl": "71c9a9f1a6f260710287bf3cf00683b80b00d804131eb0d4f9a1d438edbc416b",
+    "carbuzz-corrected01/5/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "carbuzz-corrected01/5/stdout.log": "7c1b8c91b336e8b2da2c06e9874e3f21a6607579b1bc87794619bcdd178c3946",
+    "carbuzz-corrected01/ALLOWANCE.json": "16fd07d4cb30e51f0692c395b90a08c99bc6922779ff5535731f986e8d6395ee",
+    "carbuzz-diagnostic01/RESULT.json": "cd62dfd90886075c9cb99b9a09a9c5d33f93c3777d53d728b6f3bb9fc10d79a8",
+    "carbuzz-diagnostic01/capture.json": "66cecdd035058f48c7a68ec868de5a7ff214cd30252d6923bbb178f93f20eea7",
+    "carbuzz-diagnostic01/http-events.jsonl": "12284279ec89dd28ae9ee0c70feaec2e868f6d9b1ce74980010138a554dbe0c5",
+    "carbuzz-diagnostic01/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "carbuzz-diagnostic01/stdout.log": "465feb3188b4f09eda8a85c17ad92025ad3cb3239fe971454fe95cf04f3c8ce5",
+    "content-a/review.json": "32347f98a8280264e7a0082ae2ddea67274febe7fadca5d7dacb94eb8626dad9",
+    "content-b/corrected-review.json": "600df38eaeaa2992973e681f97a120bc49db5943caa28e10ded584589ea1591d",
+    "content-b/review.json": "12a58ca3ba7ee8855aec415ab6db8443daf6b089c83057bae60d37c3597ef03c",
+    "control02/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "control02/stderr.log": "216667978ab0a47e71dce5658acb4c4292aa1542fcc028d658e72ee2e37bbff7",
+    "helper-fix/HANDOFF.md": "5a7bc9dd14a7ef975b8cae26a9fc3ea72c80180352a5039ad9bb6e2464ec1ed6",
+    "helper-review/review.json": "7ad88cbc09aa95c1b1054f17de66d7eaf88f9fa4aaff29d80a3e36ff76066fd1",
+    "live02/1/EXECUTION.json": "e3427bb3f404789ef8717e0f028720e27c40a9486988cc923e1e2646b3c80148",
+    "live02/1/INVOCATION.json": "3b44e3a78c99dd8987ca81eb4084986dff8223086da7afd5c4a7afc707568c6b",
+    "live02/1/RESULT.json": "8ca424ddcbf410a72124917dc7fb6291093b46f45af74b0d1af717e88214df0d",
+    "live02/1/http-events.jsonl": "140045c0cacca24310cbcef413770dd14d7929edc6255813104adc4abe4ad110",
+    "live02/1/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "live02/1/stdout.log": "42ee4548dde488a737493d715c7f80c4cada40d5f344678f7643d6c73e37a0f5",
+    "live02/2/EXECUTION.json": "b56a9f6612002bd546ab0e93675b550856218f6dead44ae00819476f3caef23e",
+    "live02/2/INVOCATION.json": "3a0baa71433c2d1f9c2227074d7c40910e2533ac939e6f349222c6fb827c5cc2",
+    "live02/2/RESULT.json": "9669dd24f26b673e03f264d7e17edd9a776231e4a952a7481c15d30d9afcaadd",
+    "live02/2/http-events.jsonl": "2b30ece97f7abe3b785d250ab0f36a0c4c1b2973dff09763602fc514082b99fc",
+    "live02/2/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "live02/2/stdout.log": "eef79885c67b7d0ea0b64e5ebfff410681fa4e75e7e99c74bd5c48beb76d8539",
+    "live02/3/EXECUTION.json": "f3bacf3bd6f6d4f6412788e21cdacd36bb56f6341a9f1d50cb276dcabedc2d9c",
+    "live02/3/INVOCATION.json": "6658aa4836f5d126c964e95523c39a59be9b3394daae5967270f5d1b8483f7b1",
+    "live02/3/RESULT.json": "757ccd6a93ca9ea3fb2f4af0743cc2c775e2d2cb3e5b7d5ab3a82f72df22b473",
+    "live02/3/http-events.jsonl": "6eb58320d6bd9ca4b07c86afc69c5d403b527c6c9f04a052b7ab6a34da08730c",
+    "live02/3/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "live02/3/stdout.log": "fb98f5cb50f911da6e689fd3031bab18148b44f44b348aa8ad201d67c3c0092c",
+    "live02/4/EXECUTION.json": "b3e095fc40ea48a97475d62dff8bf7ee8e9c5b941b8a8cb74a216db14e5101eb",
+    "live02/4/INVOCATION.json": "66050a9379fe2f054ea4afa9af7b850d4fa031f1666b9585ae45a520e3aa9b04",
+    "live02/4/RESULT.json": "7bfffc87bb20bf72be940eca17b7c5e22613d87260c89b45a6e422b118126b5c",
+    "live02/4/http-events.jsonl": "b1c80d6c91c9804ab816e8ac7f7913d99f815bb9bf9314aee95df86d84a09edf",
+    "live02/4/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "live02/4/stdout.log": "44bb3f3cd7c3e5aa95e879f84a3ea64a1cef9efabcccc3cd7c6b0112f0259149",
+    "live02/5/EXECUTION.json": "b6423a99291786f5ce1d017233a456561c85dc248591a5069d9a60e4b7b581d0",
+    "live02/5/INVOCATION.json": "a48a4726be48e03791f578469cdb4c481f2b8461787a63d4dfe18db84243d81f",
+    "live02/5/RESULT.json": "04bd44f1f9c2d701a38b6ea177e9a48d6bad869a3af8184b710caa64b8059660",
+    "live02/5/http-events.jsonl": "ea7157574c130ad8a35b6a8d12fddb0b5bedd4fa06c5f6b8d6a5ca2fcc42827d",
+    "live02/5/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "live02/5/stdout.log": "3309b0b4e3b576bfbd984c2c018cce0f0fe3c7a5b0eadda78c4e980a7455b4be",
+    "live02/6/EXECUTION.json": "102d3bfc5ce51461ca032d49c1e0effa8406097372809e64775c8e03609abecb",
+    "live02/6/INVOCATION.json": "ec8f4e749a137b65e904fca05989d05a65e9c9a25274cb32a8a1636ec9e939e8",
+    "live02/6/RESULT.json": "0c012d76487fb130b1892d9e7088db63f9b1722d74426bcb114bf0b7931e208f",
+    "live02/6/http-events.jsonl": "b87647e0f1a7952987f6628921a56ebdda9a9beb8ab22cd302b178a8a042c807",
+    "live02/6/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "live02/6/stdout.log": "14dc341917bc8b3d665379697d0534e3642efee1ef627597753339c1a15a2d78",
+    "native-baseline/EXECUTION.json": "0a58d3d99afd5091d196abd8de10f9e46c93714143d1cb39514ceb795a17dbc8",
+    "native-release01/EXECUTION.json": "3652bfa92f4ce906477e294d18d78b53a92ca5d76f37912f37b8bbf45f20e984",
+    "native-release01/native.json": "766ae90d4e176f7c916c655045f9dc7d9eee9a6114e988a63980a826612e1e92",
+    "offline01/proof/RESULT.json": "710990ff10d02129388e15c49ceefd10e737dad7b7eee396802f9d502c91c0b3",
+    "offline02/CHECK.json": "95fb1002145a516803ea3a5e0181bf62753679ca03204820220a09e9b70a9fb8",
+    "offline02/proof/RESULT.json": "daab6f9f1101ef5aac381998b596be3bd4c42778e24971cb8260eb8891286bd9",
+    "offline03/proof/RESULT.json": "1ef879d357f32072b16c3ec3e27fed070917ad679fa99a8065a48ad3253cd496",
+    "offline04/CHECK.json": "96a6a47e0d303d4f8c9fcfa035c4f8f8a3abac5562c0d65fb47688aed0fdf7aa",
+    "offline04/proof/RESULT.json": "2fc13c33e224fc5e37bd4a2a3191eef137978a66288549ea227a244d27909ddf",
+    "preflight-header02/stderr.log": "98eac110b835602b72f87b95bf4456d9fbf349c3f90f3091651c229b68385cde",
+    "preflight-marker03/RESULT.json": "f105f2fd757a902403d511ffbaeabe2bb42d6730cee4c1cbfc8ca2d52b3af3cf",
+    "run-corrected-preflight01.py": "0a53d1c2d789c4de3e797ace4af350ebface0a87b02a2bdd809abb9eeefb45c4",
+    "run-corrected.py": "c8aa6a88af64d5b61d94c6741c801224e4ad0f57285a0db1e5d8954399454cc2",
+    "selection-a/results.json": "319a56836f3655e7bda53b0343d60ccaeb3540eafcc97384bdd8741e9ac1c404",
+    "selection-b/results.json": "4a954672a2336f1e5e0ef3bda1ba586dfd51702f4e1d757e3ebdfc04d787b918",
+    "source-reservations/017521bbfc92f0e52d5f615a45b508cc448bb5a016f3a64deeceddffd3b69ca8.json": "15f59f34aaaa110ca8d13bbb8532bf4de088a7935ec465cae888ace47d86dfd5",
+    "source-reservations/049fa9bf76df08798728df1a62dc955b2a6c27e4fecb4ab8785779a5ab843185.json": "e4991e765189fd06c42250d5ef24f8061b80e00a2b8008f9b44ff3c4d455d42d",
+    "source-reservations/250eacbda3c6b49b7b23fd48e4653d1e3a1c6786d10abe89056ed44775925e3a.json": "62b7b06ca5265f46f2ac185af20248b5ca285d47c8b4d2ef53d0a918b820d8d3",
+    "source-reservations/90193c5d8486ac4549c541b5ae800e836ca1aa879a2c0959fa133e07c9190614.json": "dd4e87f821d8241ebefb6498a61c128fa0904a6bdd6b87e7607cc40fef4aa77d",
+    "source-reservations/94d7285b37e29809ded1400481c43e71bce135afff9f3a40add294013335937e.json": "8a0d78d23e37d6d32f80818067a549bd66a8d97cbf63655c3c9af09de9a87995",
+    "source-reservations/cc4e78917bc55325f56c41acfaa791a4a803b797587d13545ea10ad9657eecb9.json": "8e667531d3f2b0ec055c8aef2a0053231010e5cee0ce5609ab8f73a07cea8cd5",
+    "test-worker/HANDOFF.md": "b0e3f536d9595de2442babdd595ab6b36328ca171a0ad83c7e65c056e3501c1b"
+  },
+  "pushed": false,
+  "overallGoal": "active"
+}
