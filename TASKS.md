@@ -6,6 +6,40 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Full 100-entry content revalidation
+
+- Retested every URL in the frozen 100-entry AI-citation proxy using the clean
+  committed native runtime ebdaf31. This is not measured global agent page-visit
+  traffic: five captured publisher rankings identify frequently cited hosts,
+  whose source-linked root pages are not necessarily their cited deep pages.
+- Recorded September 16 UTC: 100 navigations, 108 GETs including redirects,
+  96 complete decoded bodies and zero retries. All child groups and observed
+  requests/sockets closed; source/compiled pins and unrelated work are unchanged.
+  No credentials, page scripts, SafeJS, alternate browser or challenge solver.
+- Four disjoint reviewers checked all100 fresh outputs: 33 substantive source
+  content, 19 navigation-only, 23 consent/access, 3 login, 6 empty, 8 HTTP errors,
+  2 transport timeouts and 6 other failures. The stricter substantive-content
+  rubric excludes title-only discovery lists; 25 changed judgments are not a
+  controlled code-only comparison against the original48 useful verdicts.
+- Google Play/TechRadar exceed the default2MB response bound; TomsGuide/CNBC time
+  out. Kateminimalist returns HTML-looking code labeled Markdown; explicit text
+  fallback produces245189 bytes but no accepted substantive content. Investigate
+  representation mismatch separately; source labeling versus negotiation/native
+  handling is not yet isolated. Do not count output size as successful retrieval.
+- Additional follow-ups: potentially over-narrow unique-article focus on Home
+  Depot; unclassified continue-shopping/JavaScript interstitials; title-only,
+  placeholder and script-dependent entry pages; concatenated text/empty tables.
+  These are observed candidates, not yet diagnosed production defects.
+- Independent source audit reproduces250 rows,113 hosts,100 selections and13
+  exclusions and rehashes897 historical evidence files. Original reports remain
+  unchanged. Current build matches1502 committed runtime source/script/config
+  files; the earlier875-case selected gate is reused, not claimed as a fresh
+  full-manifest or SDK/credential/passkey test run.
+- Complete URL-by-URL checklist, exact timestamps, hashes, review notes and
+  historical comparison: `reports/agent-citation-revalidation-v2.md`, adjacent
+  JSON and CSV. Overall goal remains active: source-linked task/deep-page flows,
+  access handoffs and unresolved reader/transport issues need further work.
+
 ### Complete-capture focus and bounded text replay
 
 - Added ordinary replay `--content-focus main-content-v1` and API contentFocus,
