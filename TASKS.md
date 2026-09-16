@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Full-source content click limits and complete corpus audit
+
+- Re-audit all100 original entry URLs/outcome-review pairs and CSV rows against
+  the frozen five-source citation corpus. All5205 structural/hash checks pass,
+  including1700 sealed files; original counts remain100 navigations,108GETs,
+  96 captures and33 useful/67 other outcomes. This is not a new live sweep or a
+  worldwide agent-visit ranking. Keep historical evidence unchanged.
+- Test three full inert native source workflows offline, not reconstructed
+  reader DOM: Home Depot fails initial CSS source admission; Wikipedia identifies
+  its featured-article link but click rejects unsupported formatting; CNET finds
+  its article link but click hits the SVG clip-reference node cap. No click events
+  or destination responses occur. Preserve failures; no forced/direct fallback.
+- Fresh698pass/0 in7 explicit native-manifest files;78 separate isolated policy
+  assertions pass, including rejection of both failed click proofs for live
+  admission. Reuse unchanged build/types/format/lint. No new website requests,
+  production changes, full-manifest, SafeJS, credentials/passkeys or real-input
+  acceptance. Harness-only setup/regex/file-cap failures are retained separately.
+- See NATIVE-CONTENT-CLICKS.md and reports/native-content-clicks-2026-09-16.md.
+  Next investigate the bounded document-wide SVG clip-ID scan without weakening
+  first-ID, namespace, work/depth/node limits; default CSS caps and unsupported
+  layout remain separate gates. Reader extraction/activation is not evidence of
+  full-source click compatibility. Overall browser goal remains active.
+
 ### Conservative automatic article focus
 
 - Add opt-in `main-content-v2` across core, command host, research browser and
