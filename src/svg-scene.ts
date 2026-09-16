@@ -143,7 +143,6 @@ function buildSvgScene(
 	let segmentCount = 0;
 	const references = new Map<string, number>();
 	const preflighted = new Set<number>();
-	let clipReferences: Map<string, number> | undefined;
 	charge(1);
 	const root = tree.get(id);
 	if (
@@ -303,26 +302,33 @@ function buildSvgScene(
 	const resolvedClips = new Map<ClipRequest, SvgSceneClip>();
 	let clipShapeCount = 0;
 	let clipInstanceCount = 0;
-	function indexClipReferences(): Map<string, number> {
-		if (clipReferences) return clipReferences;
-		const indexed = new Map<string, number>();
-		let visited = 0;
-		function visit(node: Readonly<DocumentNode>, depth: number): void {
-			charge(1);
-			if (++visited > limits.nodes)
-				resource("clip reference node limit exceeded");
-			if (depth > limits.depth) resource("clip reference depth limit exceeded");
-			const identifier = node.attributes.id;
-			if (node.kind === "element" && identifier !== undefined) {
-				if (!preflighted.has(node.id)) source(identifier);
-				else charge(identifier.length + 1);
-				if (!indexed.has(identifier)) indexed.set(identifier, node.id);
-			}
-			for (const child of node.children) visit(tree.get(child), depth + 1);
+	const clipReferences = new Map<string, number>();
+	let clipReferenceNodes: Generator<void> | undefined;
+	let clipReferenceNodeCount = 0;
+	function* indexClipReferenceNodes(
+		node: Readonly<DocumentNode>,
+		depth: number,
+	): Generator<void> {
+		charge(1);
+		if (++clipReferenceNodeCount > limits.nodes)
+			resource("clip reference node limit exceeded");
+		if (depth > limits.depth) resource("clip reference depth limit exceeded");
+		const identifier = node.attributes.id;
+		if (node.kind === "element" && identifier !== undefined) {
+			if (!preflighted.has(node.id)) source(identifier);
+			else charge(identifier.length + 1);
+			if (!clipReferences.has(identifier))
+				clipReferences.set(identifier, node.id);
 		}
-		visit(tree.get(tree.root), 0);
-		clipReferences = indexed;
-		return indexed;
+		yield;
+		for (const child of node.children)
+			yield* indexClipReferenceNodes(tree.get(child), depth + 1);
+	}
+	function clipReferenceId(fragment: string): number | undefined {
+		clipReferenceNodes ??= indexClipReferenceNodes(tree.get(tree.root), 0);
+		while (!clipReferences.has(fragment))
+			if (clipReferenceNodes.next().done) return undefined;
+		return clipReferences.get(fragment);
 	}
 	function clipTarget(reference: string | null): number | undefined {
 		if (reference === null) return undefined;
@@ -333,7 +339,7 @@ function buildSvgScene(
 		} catch {
 			return undefined;
 		}
-		const target = indexClipReferences().get(fragment);
+		const target = clipReferenceId(fragment);
 		if (target === undefined) return undefined;
 		const node = tree.get(target);
 		return node.kind === "element" &&

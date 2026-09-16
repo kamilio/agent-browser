@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Lazy bounded SVG clip-reference prefixes
+
+- Replace eager whole-document clip-ID indexing with a shared resumable
+  depth-first prefix. Stop at the first requested ID; preserve document-order
+  shadowing, namespace/kind checks, outside-root references and fresh per-scene
+  mutation visibility. No reference-budget reset or CSS/layout/admission change.
+- Keep4096 examined nodes/64depth and source/caller work limits. Unneeded trailing
+  nodes/IDs/depth are intentionally not scanned or charged; missing/needed-late
+  IDs retain bounded failure. SVG geometry preflight remains independent.
+- Deferred lookup can avoid a duplicate source charge for already-preflighted
+  outside descendants. Added exact-cap/overflow coverage; accounting and error
+  timing are not universally identical even for the same eventually scanned nodes.
+- Final456pass/0 in7 manifest files,21 new cases; exact final tests on old
+  production94pass/14 expected failures. Build/types/format pass; lint retains
+  9 verified pre-existing diagnostics with no new diagnostics, not a green gate.
+- Same saved5345-node CNET source:27 to29 of32 SVG scenes construct;27 prior
+  scene values unchanged,2 headerlogos recovered. Three footerlogos and actual
+  full-source click still hit the index cap. Preserve this failure; no live
+  recovery, full-manifest, SafeJS, credential/passkey or real-input claim.
+- See SVG-CLIP-PREFIX.md and reports/svg-clip-prefix-2026-09-16.md. Later document
+  references, complete content-click/layout support, challenges/handoff and
+  remaining acceptance gates stay open; overall browser goal remains active.
+
 ### Full-source content click limits and complete corpus audit
 
 - Re-audit all100 original entry URLs/outcome-review pairs and CSV rows against

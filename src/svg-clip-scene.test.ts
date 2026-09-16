@@ -132,6 +132,40 @@ function pixel(image: RasterImage, column: number, row: number) {
 	return Array.from(image.pixels.slice(offset, offset + 4));
 }
 
+function insertUnrelated(
+	tree: DocumentTree,
+	parent: number,
+	count: number,
+	before?: number,
+) {
+	for (let index = 0; index < count; index++)
+		tree.insert(parent, tree.createElement("div"), before);
+}
+
+function insertOutsideDefinition(
+	fixture: Fixture,
+	name = "Crop",
+	before?: number,
+	width = "6",
+) {
+	const { tree, id } = fixture;
+	const sibling = tree.createParserElement(
+		"svg",
+		{ style: "display:none" },
+		svgNamespace,
+	);
+	const clip = tree.createParserElement("clipPath", { id: name }, svgNamespace);
+	const shape = tree.createParserElement(
+		"rect",
+		{ width, height: "12" },
+		svgNamespace,
+	);
+	tree.append(clip, shape);
+	tree.append(sibling, clip);
+	tree.insert(id("main"), sibling, before);
+	return { sibling, clip };
+}
+
 it("preserves the unclipped scene and decoded raster defaults", () => {
 	withFixture(rectangle, ({ scene, value }) => {
 		expect(value("#target", "clip-path")).toBe("none");
@@ -386,6 +420,332 @@ it("honors the first outside wrong-kind ID over a local valid clipPath", () => {
 		const raster = rasterizeSvgScene(result, 12, 12, noCharge);
 		expect(pixel(raster, 2, 6)).toEqual(red);
 		expect(pixel(raster, 9, 6)).toEqual(red);
+	});
+});
+
+it("resolves an early clip without charging an unrelated tail over 4096 nodes", () => {
+	withFixture(`${definition()}${target()}`, ({ tree, id, scene }) => {
+		let baselineWork = 0;
+		const baseline = scene((amount) => {
+			baselineWork += amount;
+		});
+		insertUnrelated(tree, id("main"), 4097);
+		let work = 0;
+		const result = scene((amount) => {
+			work += amount;
+		});
+		expect(result.shapes[0].clips).toHaveLength(1);
+		expect(result).toEqual(baseline);
+		expect(work).toBe(baselineWork);
+	});
+});
+
+it.each([true, false])(
+	"stops at an outside-root clip before a long tail with beforeRoot=%s",
+	(beforeRoot) => {
+		withFixture(target(), (fixture) => {
+			const { tree, root, id, scene } = fixture;
+			insertOutsideDefinition(fixture, "Crop", beforeRoot ? root : undefined);
+			insertUnrelated(tree, id("main"), 4097);
+			const result = scene();
+			expect(result.shapes[0].clips).toHaveLength(1);
+			const raster = rasterizeSvgScene(result, 12, 12, noCharge);
+			expect(pixel(raster, 2, 6)).toEqual(red);
+			expect(pixel(raster, 9, 6)[3]).toBe(0);
+		});
+	},
+);
+
+it.each([
+	["rect", svgNamespace],
+	["clipPath", htmlNamespace],
+] as const)(
+	"stops at the first wrong-kind %s in %s before a duplicate and long tail",
+	(tag, namespace) => {
+		withFixture(`${definition()}${target()}`, ({ tree, root, id, scene }) => {
+			const blocker = tree.createParserElement(tag, { id: "Crop" }, namespace);
+			tree.insert(id("main"), blocker, root);
+			insertUnrelated(tree, id("main"), 4097);
+			expect(scene().shapes[0].clips).toBeUndefined();
+		});
+	},
+);
+
+it("resumes clip lookup and reuses earlier IDs without recharging the prefix", () => {
+	const names = ["Crop", "Later", "Earlier", "Crop"];
+	withFixture(
+		names.map((name) => target(`clip-path="url(#${name})"`)).join(""),
+		(fixture) => {
+			const { tree, root, id, scene } = fixture;
+			insertOutsideDefinition(fixture, "Earlier", undefined, "2");
+			insertOutsideDefinition(fixture, "Crop", undefined, "4");
+			insertOutsideDefinition(fixture, "Later");
+			let baselineWork = 0;
+			const baseline = scene((amount) => {
+				baselineWork += amount;
+			});
+			const identifier = "prefix".repeat(24000);
+			tree.insert(
+				id("main"),
+				tree.createElement("div", { id: identifier }),
+				root,
+			);
+			insertUnrelated(tree, id("main"), 1024, root);
+			insertUnrelated(tree, id("main"), 4097);
+			let work = 0;
+			const result = scene((amount) => {
+				work += amount;
+			});
+			expect(result.sourceCodeUnits - baseline.sourceCodeUnits).toBe(
+				identifier.length,
+			);
+			expect(work - baselineWork).toBeLessThan(150000);
+			expect(result.shapes).toHaveLength(4);
+			for (const [index, width] of [4, 6, 2, 4].entries()) {
+				const shape = result.shapes[index];
+				expect(shape.clips).toHaveLength(1);
+				const raster = rasterizeSvgScene(
+					{ ...result, shapes: [shape] },
+					12,
+					12,
+					noCharge,
+				);
+				expect(pixel(raster, 1, 6)).toEqual(red);
+				expect(pixel(raster, width + 1, 6)[3]).toBe(0);
+			}
+		},
+	);
+});
+
+it.each([4096, 4097])(
+	"bounds the examined clip prefix when the requested ID is node %s",
+	(position) => {
+		withFixture(target(), (fixture) => {
+			const { tree, id, scene } = fixture;
+			const { sibling, clip } = insertOutsideDefinition(fixture);
+			const prefix =
+				Array.from(tree.walk()).findIndex(({ node }) => node.id === clip) + 1;
+			insertUnrelated(tree, id("main"), position - prefix, sibling);
+			expect(
+				Array.from(tree.walk()).findIndex(({ node }) => node.id === clip) + 1,
+			).toBe(position);
+			if (position === 4096) expect(scene().shapes[0].clips).toHaveLength(1);
+			else expect(scene).toThrow("clip reference node limit exceeded");
+		});
+	},
+);
+
+it("keeps the clip index node cap cumulative across resumed references", () => {
+	withFixture(
+		`${target().repeat(3)}${target('clip-path="url(#Later)"')}`,
+		(fixture) => {
+			const { tree, id, scene } = fixture;
+			const first = insertOutsideDefinition(fixture);
+			const later = insertOutsideDefinition(fixture, "Later");
+			for (const [entry, position] of [
+				[first, 2048],
+				[later, 4097],
+			] as const) {
+				const prefix =
+					Array.from(tree.walk()).findIndex(
+						({ node }) => node.id === entry.clip,
+					) + 1;
+				insertUnrelated(tree, id("main"), position - prefix, entry.sibling);
+			}
+			expect(scene).toThrow("clip reference node limit exceeded");
+		},
+	);
+});
+
+it("still exhausts the clip prefix cap for a missing ID", () => {
+	withFixture(target(), ({ tree, id, scene }) => {
+		insertUnrelated(tree, id("main"), 4097);
+		expect(scene).toThrow("clip reference node limit exceeded");
+	});
+});
+
+it.each([64, 65])(
+	"bounds the requested clip's absolute document depth at %s",
+	(depth) => {
+		withFixture(target(), (fixture) => {
+			const { tree, id, scene } = fixture;
+			const { sibling, clip } = insertOutsideDefinition(fixture);
+			const initialDepth = Array.from(tree.walk()).find(
+				({ node }) => node.id === clip,
+			)?.depth;
+			if (initialDepth === undefined) throw new Error("Missing outside clip");
+			let outer = sibling;
+			for (let current = initialDepth; current < depth; current++) {
+				const wrapper = tree.createElement("div");
+				tree.insert(id("main"), wrapper, outer);
+				tree.append(wrapper, outer);
+				outer = wrapper;
+			}
+			expect(
+				Array.from(tree.walk()).find(({ node }) => node.id === clip)?.depth,
+			).toBe(depth);
+			if (depth === 64) expect(scene().shapes[0].clips).toHaveLength(1);
+			else expect(scene).toThrow("clip reference depth limit exceeded");
+		});
+	},
+);
+
+it.each(["depth", "source"])(
+	"does not charge an irrelevant trailing %s overflow after resolving a clip",
+	(limit) => {
+		withFixture(`${definition()}${target()}`, ({ tree, id, scene }) => {
+			let baselineWork = 0;
+			const baseline = scene((amount) => {
+				baselineWork += amount;
+			});
+			let parent = id("main");
+			if (limit === "source")
+				tree.append(
+					parent,
+					tree.createElement("div", { id: "x".repeat(262145) }),
+				);
+			else
+				for (let depth = 0; depth < 65; depth++) {
+					const child = tree.createElement("div");
+					tree.append(parent, child);
+					parent = child;
+				}
+			let work = 0;
+			expect(
+				scene((amount) => {
+					work += amount;
+				}),
+			).toEqual(baseline);
+			expect(work).toBe(baselineWork);
+		});
+	},
+);
+
+it.each([0, 1])(
+	"charges examined outside IDs against the source limit with overflow=%s",
+	(overflow) => {
+		withFixture(`${definition()}${target()}`, ({ tree, root, id, scene }) => {
+			const baseline = scene();
+			const identifier = "x".repeat(
+				262144 - baseline.sourceCodeUnits + overflow,
+			);
+			tree.insert(
+				id("main"),
+				tree.createElement("div", { id: identifier }),
+				root,
+			);
+			if (overflow) expect(scene).toThrow("source code unit limit exceeded");
+			else {
+				const result = scene();
+				expect(result.sourceCodeUnits).toBe(262144);
+				expect(result.shapes[0].clips).toHaveLength(1);
+			}
+		});
+	},
+);
+
+it("charges an outside clip descendant once when missing nested lookup resumes after preflight", () => {
+	withFixture(target(), (fixture) => {
+		const { tree, root, scene } = fixture;
+		const { clip } = insertOutsideDefinition(fixture);
+		const shape = tree.get(clip).children[0];
+		tree.setAttribute(shape, "id", "clip-descendant");
+		tree.setAttribute(clip, "clip-path", "url(#Missing)");
+		const sourceSize = (start: number) =>
+			Array.from(tree.walk(start)).reduce(
+				(total, { node }) =>
+					total +
+					node.tagName.length +
+					node.data.length +
+					Object.entries(node.attributes).reduce(
+						(size, [name, value]) => size + name.length + value.length,
+						0,
+					),
+				0,
+			);
+		const result = scene();
+		expect(result.sourceCodeUnits).toBe(
+			sourceSize(root) + sourceSize(clip) + 4,
+		);
+		expect(result.shapes[0].clips).toHaveLength(1);
+		expect(pixel(rasterizeSvgScene(result, 12, 12, noCharge), 9, 6)[3]).toBe(0);
+	});
+});
+
+it.each([0, 1])(
+	"retains geometry source admission during resumed lookup with overflow=%s",
+	(overflow) => {
+		withFixture(target(), (fixture) => {
+			const { tree, scene } = fixture;
+			const { clip } = insertOutsideDefinition(fixture);
+			const shape = tree.get(clip).children[0];
+			tree.setAttribute(shape, "id", "");
+			tree.setAttribute(clip, "clip-path", "url(#Missing)");
+			const baseline = scene();
+			tree.setAttribute(
+				shape,
+				"id",
+				"x".repeat(262144 - baseline.sourceCodeUnits + overflow),
+			);
+			if (overflow) expect(scene).toThrow("source code unit limit exceeded");
+			else {
+				const result = scene();
+				expect(result.sourceCodeUnits).toBe(262144);
+				expect(result.shapes[0].clips).toHaveLength(1);
+			}
+		});
+	},
+);
+
+it("rebuilds first-ID lookup after insertion and ID mutation, not creation order", () => {
+	withFixture(`${definition()}${target()}`, (fixture) => {
+		const { tree, root, id, scene } = fixture;
+		const originalClip = id("#Crop");
+		insertUnrelated(tree, id("main"), 4097);
+		const original = scene();
+		const { clip } = insertOutsideDefinition(fixture, "Crop", root, "3");
+		expect(clip).toBeGreaterThan(originalClip);
+		const replaced = scene();
+		expect(pixel(rasterizeSvgScene(original, 12, 12, noCharge), 4, 6)).toEqual(
+			red,
+		);
+		expect(pixel(rasterizeSvgScene(replaced, 12, 12, noCharge), 4, 6)[3]).toBe(
+			0,
+		);
+		tree.setAttribute(clip, "id", "Other");
+		const restored = scene();
+		expect(restored.shapes).toEqual(original.shapes);
+		expect(pixel(rasterizeSvgScene(replaced, 12, 12, noCharge), 4, 6)[3]).toBe(
+			0,
+		);
+	});
+});
+
+it("propagates work exhaustion while indexing an outside ID without mutating the document", () => {
+	withFixture(`${definition()}${target()}`, ({ tree, root, id, scene }) => {
+		const identifier = "x".repeat(8192);
+		tree.insert(
+			id("main"),
+			tree.createElement("div", { id: identifier }),
+			root,
+		);
+		insertUnrelated(tree, id("main"), 4097);
+		const revision = tree.revision;
+		const nodeCount = tree.nodeCount;
+		const failure = new Error("Clip prefix caller budget exhausted");
+		let exhausted = false;
+		expect(() =>
+			scene((amount) => {
+				if (amount === identifier.length + 1) {
+					exhausted = true;
+					throw failure;
+				}
+			}),
+		).toThrow(failure);
+		expect(exhausted).toBe(true);
+		expect(tree.revision).toBe(revision);
+		expect(tree.nodeCount).toBe(nodeCount);
+		expect(scene().shapes[0].clips).toHaveLength(1);
 	});
 });
 

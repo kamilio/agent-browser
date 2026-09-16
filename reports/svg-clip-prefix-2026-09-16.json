@@ -1,0 +1,623 @@
+{
+  "schema": "svg-clip-prefix-v1",
+  "at": "2026-09-16T07:09:22.329Z",
+  "auditPassed": true,
+  "overallGoal": "active",
+  "baseHead": "8c649f701ad33d3560d5e84a72bb2040099ccf17",
+  "productionSha256": "5f0fc9847e9696dd75240b9f5af8257776a3acd3a99e1ef054c3953bd3c9fac3",
+  "compiledChanges": [
+    "src/svg-scene.js",
+    "src/svg-scene.js.map"
+  ],
+  "native": {
+    "baselinePassed": 435,
+    "finalPassed": 456,
+    "finalFailed": 0,
+    "files": 7,
+    "newCases": 21,
+    "originalClipCases": 87,
+    "redPassed": 94,
+    "redFailed": 14,
+    "redFailureNames": [
+      "resolves an early clip without charging an unrelated tail over 4096 nodes",
+      "stops at an outside-root clip before a long tail with beforeRoot=true",
+      "stops at an outside-root clip before a long tail with beforeRoot=false",
+      "stops at the first wrong-kind rect in http://www.w3.org/2000/svg before a duplicate and long tail",
+      "stops at the first wrong-kind clipPath in http://www.w3.org/1999/xhtml before a duplicate and long tail",
+      "resumes clip lookup and reuses earlier IDs without recharging the prefix",
+      "bounds the examined clip prefix when the requested ID is node 4096",
+      "bounds the requested clip's absolute document depth at 64",
+      "does not charge an irrelevant trailing depth overflow after resolving a clip",
+      "does not charge an irrelevant trailing source overflow after resolving a clip",
+      "charges an outside clip descendant once when missing nested lookup resumes after preflight",
+      "retains geometry source admission during resumed lookup with overflow=0",
+      "rebuilds first-ID lookup after insertion and ID mutation, not creation order",
+      "propagates work exhaustion while indexing an outside ID without mutating the document"
+    ],
+    "runs": [
+      {
+        "label": "baseline",
+        "passed": 435,
+        "failed": 0,
+        "files": 7,
+        "execution": {
+          "label": "baseline",
+          "pid": 4178097,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 3.119881520047784,
+          "passedTests": 435,
+          "failedTests": 0,
+          "files": 7,
+          "homeEntries": [],
+          "tmpEntries": []
+        }
+      },
+      {
+        "label": "core01",
+        "passed": 435,
+        "failed": 0,
+        "files": 7,
+        "execution": {
+          "label": "core01",
+          "pid": 4181395,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 3.1699259765446186,
+          "passedTests": 435,
+          "failedTests": 0,
+          "files": 7,
+          "homeEntries": [],
+          "tmpEntries": []
+        }
+      },
+      {
+        "label": "release01",
+        "passed": 453,
+        "failed": 0,
+        "files": 7,
+        "execution": {
+          "label": "release01",
+          "pid": 4186000,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 3.470374956727028,
+          "passedTests": 453,
+          "failedTests": 0,
+          "files": 7,
+          "homeEntries": [],
+          "tmpEntries": []
+        }
+      },
+      {
+        "label": "release02",
+        "passed": 453,
+        "failed": 0,
+        "files": 7,
+        "execution": {
+          "label": "release02",
+          "pid": 4188506,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 3.4708581399172544,
+          "passedTests": 453,
+          "failedTests": 0,
+          "files": 7,
+          "homeEntries": [],
+          "tmpEntries": []
+        }
+      },
+      {
+        "label": "release03",
+        "passed": 456,
+        "failed": 0,
+        "files": 7,
+        "execution": {
+          "label": "release03",
+          "pid": 3062,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 3.420292379334569,
+          "passedTests": 456,
+          "failedTests": 0,
+          "files": 7,
+          "homeEntries": [],
+          "tmpEntries": []
+        }
+      },
+      {
+        "label": "release04",
+        "passed": 456,
+        "failed": 0,
+        "files": 7,
+        "execution": {
+          "label": "release04",
+          "pid": 7421,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 3.4202794805169106,
+          "passedTests": 456,
+          "failedTests": 0,
+          "files": 7,
+          "homeEntries": [],
+          "tmpEntries": []
+        }
+      },
+      {
+        "label": "red01",
+        "passed": 93,
+        "failed": 12,
+        "files": 1,
+        "execution": {
+          "label": "red01",
+          "pid": 4185509,
+          "exitCode": 1,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 2.0178030245006084,
+          "passedTests": 93,
+          "failedTests": 12,
+          "files": 1,
+          "homeEntries": [],
+          "tmpEntries": []
+        }
+      },
+      {
+        "label": "red02",
+        "passed": 93,
+        "failed": 12,
+        "files": 1,
+        "execution": {
+          "label": "red02",
+          "pid": 4191017,
+          "exitCode": 1,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 1.8170511163771152,
+          "passedTests": 93,
+          "failedTests": 12,
+          "files": 1,
+          "homeEntries": [],
+          "tmpEntries": []
+        }
+      },
+      {
+        "label": "red03",
+        "passed": 94,
+        "failed": 14,
+        "files": 1,
+        "execution": {
+          "label": "red03",
+          "pid": 2953,
+          "exitCode": 1,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 2.067970857024193,
+          "passedTests": 94,
+          "failedTests": 14,
+          "files": 1,
+          "homeEntries": [],
+          "tmpEntries": []
+        }
+      },
+      {
+        "label": "red04",
+        "passed": 94,
+        "failed": 14,
+        "files": 1,
+        "execution": {
+          "label": "red04",
+          "pid": 7293,
+          "exitCode": 1,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 1.9677227977663279,
+          "passedTests": 94,
+          "failedTests": 14,
+          "files": 1,
+          "homeEntries": [],
+          "tmpEntries": []
+        }
+      }
+    ]
+  },
+  "quality": {
+    "buildPassed": true,
+    "typesPassed": true,
+    "formatPassed": true,
+    "lintPassed": false,
+    "preExistingLintErrors": 9,
+    "newLintDiagnostics": 0,
+    "details": {
+      "label": "release04",
+      "executions": [
+        {
+          "name": "build",
+          "pid": 7265,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 6.525011820718646
+        },
+        {
+          "name": "types",
+          "pid": 7357,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 3.3195333629846573
+        },
+        {
+          "name": "format",
+          "pid": 7370,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.03170540742576122
+        },
+        {
+          "name": "lint",
+          "pid": 7389,
+          "exitCode": 1,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.06366408988833427
+        }
+      ],
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 1
+      },
+      "allProcessesClosed": true
+    }
+  },
+  "savedSource": {
+    "url": "https://www.cnet.com/",
+    "bytes": 425688,
+    "sha256": "87636e3c0737c0c8af0f721a3ab223b5b704c6909ac47c43d9076684d92e0dba",
+    "walkedNodes": 5345,
+    "inlineSvgRoots": 32,
+    "baselineConstructed": 27,
+    "candidateConstructed": 29,
+    "unchangedPriorSceneValues": 27,
+    "recovered": [
+      {
+        "id": 4914,
+        "sceneSha256": "dee15fc8ec8aaf0bca6655507bb1a0b50fcf85487f538a29f89712d6c9dac198",
+        "shapes": 5,
+        "clippedShapes": 1
+      },
+      {
+        "id": 4989,
+        "sceneSha256": "32ca48638de3e896e50ec63eb3bfd5d0ac460c0707c32a7cdae20781b8508ef4",
+        "shapes": 5,
+        "clippedShapes": 1
+      }
+    ],
+    "remaining": [
+      {
+        "id": 9650,
+        "failure": {
+          "name": "AgentBrowserError",
+          "code": "resource-limit",
+          "message": "SVG scene: clip reference node limit exceeded"
+        }
+      },
+      {
+        "id": 9701,
+        "failure": {
+          "name": "AgentBrowserError",
+          "code": "resource-limit",
+          "message": "SVG scene: clip reference node limit exceeded"
+        }
+      },
+      {
+        "id": 9737,
+        "failure": {
+          "name": "AgentBrowserError",
+          "code": "resource-limit",
+          "message": "SVG scene: clip reference node limit exceeded"
+        }
+      }
+    ],
+    "fullClickPassed": false,
+    "clickEvents": 0,
+    "newLiveRequests": 0,
+    "source": {
+      "ordinal": 5,
+      "label": "cnet-root",
+      "url": "https://www.cnet.com/",
+      "receiptPath": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/017-www.cnet.com/stdout.jsonl",
+      "receiptSchema": "primaryResponse",
+      "receiptSha256": "e57144e4188538f86c227ab35d99d2f7d8879236b43356ae79054b5007176498",
+      "bodySha256": "87636e3c0737c0c8af0f721a3ab223b5b704c6909ac47c43d9076684d92e0dba",
+      "bodyBytes": 425688,
+      "responseUrl": "https://www.cnet.com/",
+      "originalSelection": {
+        "policy": "main-content-v1",
+        "selected": "main",
+        "reason": "unique-main",
+        "mainCandidates": 1,
+        "articleCandidates": 1,
+        "scannedNodes": 4508
+      },
+      "originalOutcome": "extracted-unverified",
+      "originalProfile": "default",
+      "originalOrdinal": 17,
+      "historicalVerdict": "useful-source-content",
+      "originReport": "/home/kjopek/project/agent-browser/reports/agent-citation-revalidation-v2.json",
+      "originReportSha256": "4ab14a3dd29561ffae965a706eadf1472182e70c877743275528486bd0244be6",
+      "originPath": "/results/16",
+      "admissionEvidence": {
+        "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/017-www.cnet.com/stdout.jsonl",
+        "outcomePath": "/outcome",
+        "sourceBarrierPath": "/classification/barrier",
+        "sourceBarrier": null,
+        "hashScope": "transport-decoded-body-before-loader"
+      }
+    }
+  },
+  "replayExecutions": [
+    {
+      "label": "baseline",
+      "phase": "click",
+      "directory": "replay-baseline-click",
+      "execution": {
+        "label": "baseline",
+        "phase": "click",
+        "pid": 4180982,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.6148323453962803,
+        "safetyErrors": [],
+        "safetyPassed": true
+      }
+    },
+    {
+      "label": "baseline",
+      "phase": "scenes",
+      "directory": "replay-baseline-scenes",
+      "execution": {
+        "label": "baseline",
+        "phase": "scenes",
+        "pid": 4181004,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.6150234956294298,
+        "safetyErrors": [],
+        "safetyPassed": true
+      }
+    },
+    {
+      "label": "core01",
+      "phase": "click",
+      "directory": "replay-core01-click",
+      "execution": {
+        "label": "core01",
+        "phase": "click",
+        "pid": 4181453,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.6649943999946117,
+        "safetyErrors": [],
+        "safetyPassed": true
+      }
+    },
+    {
+      "label": "core01",
+      "phase": "scenes",
+      "directory": "replay-core01-scenes",
+      "execution": {
+        "label": "core01",
+        "phase": "scenes",
+        "pid": 4181496,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.6148994211107492,
+        "safetyErrors": [],
+        "safetyPassed": true
+      }
+    },
+    {
+      "label": "release02",
+      "phase": "click",
+      "directory": "replay-release02-click",
+      "execution": {
+        "label": "release02",
+        "phase": "click",
+        "pid": 4191124,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.6649433076381683,
+        "safetyErrors": [],
+        "safetyPassed": true
+      }
+    },
+    {
+      "label": "release02",
+      "phase": "scenes",
+      "directory": "replay-release02-scenes",
+      "execution": {
+        "label": "release02",
+        "phase": "scenes",
+        "pid": 4191143,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.6649757362902164,
+        "safetyErrors": [],
+        "safetyPassed": true
+      }
+    }
+  ],
+  "finalRuntimeReplayBasis": "release04 compiled artifacts exactly match directly replayed release02 and core01; added tests/formatting do not alter production.",
+  "review": {
+    "scope": "Static review of main-authored src/svg-scene.ts production diff against HEAD and read-only inspection of main-authored validation evidence. Not independent review of this worker's test additions.",
+    "verdict": "passed_with_nonblocking_accounting_and_complexity_caveats",
+    "blockingFindings": [],
+    "nonblockingFindings": [
+      {
+        "id": "accounting-change",
+        "locations": [
+          "src/svg-scene.ts:318",
+          "src/svg-scene.ts:614"
+        ],
+        "assessment": "This is intentionally not byte-identical accounting. Unexamined trailing IDs no longer contribute lookup source or work. Additionally, an outside-definition descendant ID can now be preflighted before a deferred lookup reaches it: old eager indexing charged its ID to sourceCodeUnits before geometry preflight charged it again; the new order charges the source once during preflight and only work during indexing. A missing nested clip reference can trigger this interleaving in an otherwise successful scene. The requested outside definition's own ID, if indexed before preflight, retains the previous double source contribution. sourceCodeUnits, source-limit admission and error timing can therefore differ even when a later lookup ultimately scans the same nodes. Required geometry and ID contents remain accounted for, and per-ID lookup work is not skipped."
+      },
+      {
+        "id": "existing-node-snapshot-cost",
+        "locations": [
+          "src/svg-scene.ts:325",
+          "src/svg-scene.ts:328",
+          "src/document.ts:1084"
+        ],
+        "assessment": "The generator continuation is O(depth), but that is not a bound on total document-access allocation or CPU. Existing DocumentTree.get() creates and caches immutable copies of a node's complete children array and attributes on a cache miss. Visiting a wide ancestor may therefore copy references to unvisited tail siblings without proportional SVG work charging. This pre-existing API cost is not introduced or fixed by the production diff; do not describe this patch as eliminating all tail-dependent allocation or establishing an end-to-end O(depth) memory bound."
+      }
+    ],
+    "liveApproved": false
+  },
+  "limitations": [
+    "No full-page click/live/rendered recovery. Three footer scenes still fail.",
+    "Unexamined tail accounting changes; interleaved preflight can also eliminate duplicate descendant ID source charges.",
+    "O(depth) continuation is not a total document-access memory bound; node-view snapshots retain existing costs.",
+    "No full-manifest, actual SDK, credential/passkey or real-input gate claimed.",
+    "Lint retains9 confirmed pre-existing diagnostics."
+  ],
+  "evidence": {
+    "BEFORE.json": "74fbe707cef7905f8101721b28d97d8a69bbe9dc8220362f43b8a0ed9247ea5b",
+    "CHECK-release04.json": "f78baea108578e13df398965a1749f8003e0a4082dafbc304d1b523a63358c61",
+    "COMPILED-release04.json": "21b988a9be2d9ca9b87773adf95a47bd85dc88ed6e4e14e180eeaafecc579e65",
+    "DESIGN.md": "d23225fb874fe3f26bcf9c0d6c3f8e51120a73ec817298bcc5b3826a2cdf1c43",
+    "LINT-COMPARISON04.json": "f32445311989cb78b6a32cfde8b36f4f440a1293d0f028000ae3ec87c017b726",
+    "OVERLAY-release04.json": "d389f4381ba015f212c0e5922a200250fe788bee90212e7ab56b5ae466598c62",
+    "RUNTIME.json": "e1d1af8b4892fe5fa1e6591b842e23985aa95090b2bd2df5c8eda7c559f36c03",
+    "SELECTED.json": "e729857301412a6633a7e4337d6326b2e405cd20f619c521e751f596d733c99a",
+    "SOURCE-red04.json": "17f79d1d2fe37f6cb105ff937b2a98c8ec6216fd88a4978fdbf9578ce96932fb",
+    "SOURCE-release04.json": "21bbea510233a591d83ec7bd9f5f3ed56dba48a9dff06c09a6dc66bbe62c7ea4",
+    "lint-compare/baseline.json": "827c5979d0df901c03469817aa538364658b6dd8b7bbaa9af2ef63e893fd0166",
+    "lint-final04/EXECUTIONS.json": "ae17fa5a75bb2a17da1a90c775c3d51c6ce21424151db0ac36a2e256ac71bd50",
+    "lint-final04/release04.json": "09fc2057213f8b1782c1d83667f08ca5141a4ef5ac40671f412189d6031fac15",
+    "native-baseline/EXECUTION.json": "33edeb98b0530dfc86087a0a21a59acd2736fdf38e125aacbbe440cfd08973ba",
+    "native-baseline/INVOCATION.json": "201337f86a2a53c715536a27b5f6d4c50dacd9683f6ad226e653479c64f770c8",
+    "native-baseline/native.json": "aca88717fa8af77eb9a556dec114dd3cdaf04f0e9f0fc1e1226dc711ec3634e7",
+    "native-core01/EXECUTION.json": "013e9d3647e0bcd625ef8bfe2d2ebcfb82051445ab694901dcbdf490a1325b52",
+    "native-core01/INVOCATION.json": "f18105de09928c2ffafc0502b0fb4fd05d7267a947e47beb187eb3e1ffa68290",
+    "native-core01/native.json": "0d4c27aa37bb1d43cfc2a357ed6bada9aff165efea588eabb6b8e85fab5a33ea",
+    "native-red01/EXECUTION.json": "28d26b10bf4c9b5d99118be0fb5c7fb37934670ee1e0d2c8c42fb15a11eb7b15",
+    "native-red01/INVOCATION.json": "d902997984338398f71105bb1f23eaf654f60c341a9c2ee3d6cc17c0e784c38e",
+    "native-red01/native.json": "6a956c1482e8f07b0fd8f9657f6ee0da4d874730d7f44186bf4562478d9c6cb5",
+    "native-red02/EXECUTION.json": "09679ba50ed748ee5cf0c67a640809e5397038eda2ee02a5b04c30c1239e67c9",
+    "native-red02/INVOCATION.json": "a7d59ac078f45a1b3fb6f88260b7bb3271fe1834948a9db1df268e7bdaa1ca6f",
+    "native-red02/native.json": "a8c57fa586af66a41db511213e46d90e0d1f92b9cd48741cfdba6120b44bd7a8",
+    "native-red03/EXECUTION.json": "17c16cf9cd33b85910d4b71a713957db8b076f3723fb8bc4854b1f17ed4b0362",
+    "native-red03/INVOCATION.json": "d715243854d8da728235e1f86417b683960df1834aa2c3fe55ff9c4b991c6524",
+    "native-red03/native.json": "84b068fce79fc5c4047603753749d45739a7d8575cb5ba533a60773ce5adb0a4",
+    "native-red04/EXECUTION.json": "57125e720c68c26d0b28b0b3dbec8f1bee2c03bcd3fc008bea3a78abc151e865",
+    "native-red04/INVOCATION.json": "7ab7afafdb3c64bf477bb9bd02cc0a4561b3c14dde73d21fc5b77e21b3c4fac2",
+    "native-red04/native.json": "cfb7a3cd7fddfa2f32296275f77ed769e7fd58727453793edcbe65112c73b3d4",
+    "native-release01/EXECUTION.json": "a19ce540645bc7d40bb06014068e535c41772c3e551379acdad78cbadfb7bee3",
+    "native-release01/INVOCATION.json": "63b8b6ba6b03853a882c8856128247a91a6f19bd80eb4d23eddc295950237403",
+    "native-release01/native.json": "5e18697bb5fe6c7b4f112e4e040d9228adae9bfefd29048f00f61162be4d23fd",
+    "native-release02/EXECUTION.json": "c51dc52a3c0cb7334298ada7b5ceaec271062ab63d9f99d4046a394fbb48f703",
+    "native-release02/INVOCATION.json": "ee6d5d2f802549786bd2dc01e96a5a38b63bbc6001e2dfc52be8483290cba33f",
+    "native-release02/native.json": "f8bb8b02cb27eb211497cd6213ab0a7dc90bbb5d312c5260b4e7759708648fb7",
+    "native-release03/EXECUTION.json": "ffd4e11ffba579d2fdfca2e742b0ce83c0440bbcf56065f358eeadc9ac7cdc1c",
+    "native-release03/INVOCATION.json": "eaaf741f3d9a47a1d2e1ebdc2007ed9c3d40f2258683bbb6c6e59bb30d1daa3e",
+    "native-release03/native.json": "557959220b11ee6e29f3a6cfb5ed0abc6fe5492173f55ba87fedbf2df413aa53",
+    "native-release04/EXECUTION.json": "258e3ca442b2590b096ced4ad7ca929373104d1df10c8a3a9925c102e5364d52",
+    "native-release04/INVOCATION.json": "a258924d97b1a079381efffe0d0cb0d0692a4cd5c203205d5ab7e167ed07b491",
+    "native-release04/native.json": "d911bbc77cae22bfdff1afd664c49b3b0bfad7d8fa22a6f46102733f0ef627ae",
+    "replay-baseline-click/EXECUTION.json": "2bd8018f59159e85f8dc7ee42512f5b7ce66bf36d834124ec057c15c22f5b4d0",
+    "replay-baseline-click/INVOCATION.json": "ab3ce8ef4738c3a3d49857c91e3d29704d66ded5644c8769db1e964ffdae00e4",
+    "replay-baseline-click/RESULT.json": "1f69122af3273a0c1bf0c1e7f5f1bedd97b2ed30c4de26f2414b42edca101b9a",
+    "replay-baseline-click/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-baseline-click/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "replay-baseline-scenes/EXECUTION.json": "4826d974c1c7d891fc3b954da22dac9054c6492c067af2df670fb53c755a8c0f",
+    "replay-baseline-scenes/INVOCATION.json": "b4d220bd967cf6e9ba3f37f7fcebb952b0581807c8e0207029f94839973c0408",
+    "replay-baseline-scenes/RESULT.json": "0da15b6a57b666dcf9f511c07601c1d0202f5667d28b009f4369deb73db26d06",
+    "replay-baseline-scenes/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-baseline-scenes/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "replay-baseline-scenes/scenes.json": "905619b53ce08c45742f979cd44b557d5681e1f92a287121127d3ceba3b61e1c",
+    "replay-core01-click/EXECUTION.json": "c5b3580e265289f5b368f33f95463118457c73442fb657a8032fa846b89fe633",
+    "replay-core01-click/INVOCATION.json": "d37b273282a17e9939942fb223198b6b2960dbc0345bc8aa29668cbab4ef53d4",
+    "replay-core01-click/RESULT.json": "77a3cadd405afc2b5e656914e631c9b6f166005d70e509d135fbae30b4cca609",
+    "replay-core01-click/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-core01-click/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "replay-core01-scenes/EXECUTION.json": "92756fb9a8a55768706d5a94e0da1b8576c961b688dd4b6d1658ae3f03f9950e",
+    "replay-core01-scenes/INVOCATION.json": "bda3c49fd0281c32234dda7371454d6780611fca570617a1428ceb2f0c1cdbcd",
+    "replay-core01-scenes/RESULT.json": "a08029634e9d13cdf0c22829cb154be46e1fe89f5bf7dce140659ca565945bc8",
+    "replay-core01-scenes/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-core01-scenes/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "replay-core01-scenes/scenes.json": "e26468965b8ea70e96293feda7f04e2c348d8bb0bfe090e7aa372df827fbee3e",
+    "replay-release02-click/EXECUTION.json": "26e3c15f20860bc5fff702c74215f00f5a251d3a0a849449c1321e1defc6ebd0",
+    "replay-release02-click/INVOCATION.json": "6ac1a23f68127ce87db0fc6d6c87f5c7971374ee228ee971fc332bc3e366376f",
+    "replay-release02-click/RESULT.json": "40afe28e6b701758eb9eb70a5d4e1ed8741c2e5edbbba2f54852de073fd2d5a5",
+    "replay-release02-click/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-release02-click/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "replay-release02-scenes/EXECUTION.json": "28d7a9e9b508e0f7e19e2df48171dcddfb2ec9982c9fcb2317f8be0ef85ad4bc",
+    "replay-release02-scenes/INVOCATION.json": "c1ad695d0f40cd6baf857e9416bcd80f432ace9a50053a97e1fa03c9648720bc",
+    "replay-release02-scenes/RESULT.json": "671f49ff4e6a3f629a2d88729c307de43fba4ea41562e422fef8ee295a8c849b",
+    "replay-release02-scenes/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "replay-release02-scenes/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "replay-release02-scenes/scenes.json": "e26468965b8ea70e96293feda7f04e2c348d8bb0bfe090e7aa372df827fbee3e",
+    "replay.mjs": "b55654841632574037f4b8f119cee0432bd436501d09c9b4148d2ae4dc2f1b3c",
+    "run-replay.py": "73ec32b14c4a6a3d229acba70b008df3cd4f4e04ff36fdf7866577be0a61951b",
+    "test-worker/HANDOFF.md": "c7dd4ba418f2d31139f4235b39885917afb9a2d77d470f6a7bb07d18baa9bdf5",
+    "test-worker/production-review.json": "01368ada4858af4c415b8e1dd0cc245c4e63cfbf05db684c1c34824047aa6cea",
+    "test-worker/production-review.md": "eaed76233d7ed6019b2791239fef6c5bf43f068ceb1fcc7e7661cdf39b63897d"
+  },
+  "pushed": false
+}
