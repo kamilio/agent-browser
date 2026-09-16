@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Maintained native reader link-content command
+
+- Add scripts/research-link-content.ts as an explicit source-to-article reader
+  command. Require an exact same-origin target and selector, perform a real
+  native click, and return bounded JSONL with extraction and closed-resource
+  metrics. Never silently replace a failed click with direct navigation.
+- Preserve reader limitations: projected attributes are not raw-source proof,
+  nonempty extraction is unverified, and full CSS/page-script behavior is not
+  restored. Stop at access restrictions; no credentials, redirects or retries.
+- Reject C1 URL controls without rejecting ordinary Unicode paths. Retain owned
+  error/close guards for an outstanding output write after cancellation; release
+  them on settlement without removing caller listeners or destroying its stream.
+- Final618pass/0 in8 explicit native-manifest files, including127 new cases.
+  The exact pre-fix control has107pass/20fail; build/types/format/scoped lint pass.
+  Three saved-source replays reproduce previously reviewed article Markdown;
+  five actual CLI controls pass with kernel-denied network. These are not fresh
+  website requests, full-manifest coverage or actual SafeJS acceptance.
+- Separately run the compiled command live on CNET: two GET200 responses, a
+  native click and20676 Markdown bytes identical to the previously reviewed
+  article. Both requests/sockets, documents and process group close. No retries,
+  redirects, credentials, page scripts or alternate client; no other new sites.
+- An offline integrity audit confirms all100 unique prior corpus entries have
+  individual reviews and668 saved evidence artifacts retain their hashes. Keep
+  its33 useful/67 other verdicts and citation-proxy ranking limitations intact.
+- See RESEARCH-LINK-CONTENT.md and reports/research-link-content-2026-09-16.md
+  for command usage, separate live evidence and outstanding gates. Continue
+  task-level website coverage, full rendering, access handoff, actual SafeJS,
+  credentials/passkeys and real-input validation; the overall goal stays active.
+
 ### Native reader publisher workflows
 
 - Complete three fresh landing-to-article native click workflows on CNET,

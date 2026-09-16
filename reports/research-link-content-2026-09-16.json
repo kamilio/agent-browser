@@ -1,0 +1,446 @@
+{
+  "schema": "native-research-link-content-validation-v1",
+  "recordedAt": "2026-09-16T08:42:59.167Z",
+  "parentCommit": "9c773175ed6f21ea23a572f1810994e5152cfbb9",
+  "candidate": "release02",
+  "scope": "New maintained native reader source-to-article CLI; selected native tests, saved-response replays, isolated actual CLI controls and one separate live workflow",
+  "sourceInputs": 1516,
+  "sourceHashes": {
+    "production": "e41fa86acaf7c59099b79306d8306e833fa180d6c8f74aaf08c13b84993ea093",
+    "test": "3309525410fd0e43413cc18aef500dd3ef39c85c00b123de7f05367529c913df"
+  },
+  "validation": {
+    "baseline": {
+      "label": "baseline",
+      "pid": 72348,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 3.7714062351733446,
+      "passedTests": 491,
+      "failedTests": 0,
+      "files": 7,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "final": {
+      "label": "release02",
+      "pid": 92190,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 4.47301778383553,
+      "passedTests": 618,
+      "failedTests": 0,
+      "files": 8,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "preFix": {
+      "label": "red02",
+      "pid": 90002,
+      "exitCode": 1,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 1.86723180860281,
+      "passedTests": 107,
+      "failedTests": 20,
+      "files": 1,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "preFixTestIdentity": "Final test bytes match after existing Biome formatting only",
+    "quality": {
+      "label": "release02",
+      "executions": [
+        {
+          "name": "build",
+          "pid": 92051,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 6.424966560676694
+        },
+        {
+          "name": "types",
+          "pid": 92116,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 3.820314744487405
+        },
+        {
+          "name": "format",
+          "pid": 92140,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.0317269004881382
+        },
+        {
+          "name": "lint",
+          "pid": 92159,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.03157604858279228
+        }
+      ],
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0
+      },
+      "allProcessesClosed": true
+    },
+    "replay": {
+      "passed": true,
+      "label": "release02",
+      "scope": "Maintained CLI runner API over two explicitly mocked saved native responses per publisher; real native reader/selection/click/extraction/output, not fresh live or actual CLI main",
+      "results": [
+        {
+          "ordinal": 1,
+          "startUrl": "https://www.cnet.com/",
+          "targetUrl": "https://www.cnet.com/tech/computing/visiting-shenzhen-chinas-silicon-valley/",
+          "args": [
+            "--target",
+            "https://www.cnet.com/tech/computing/visiting-shenzhen-chinas-silicon-valley/",
+            "--selector",
+            "main#main article.grid-entry h3.grid-entry__title > a[href=\"https://www.cnet.com/tech/computing/visiting-shenzhen-chinas-silicon-valley/\"]",
+            "https://www.cnet.com/"
+          ],
+          "exitCode": 0,
+          "fixtureRequests": 2,
+          "markdownBytes": 20676,
+          "markdownSha256": "7e5a88949e390fe923236f9118dd12725eac144bbf87cb4dc770a8749e560b8b",
+          "exactPriorMarkdown": true,
+          "outputBytes": 24304
+        },
+        {
+          "ordinal": 2,
+          "startUrl": "https://engineerfix.com/",
+          "targetUrl": "https://engineerfix.com/plc-programming-languages-a-comparative-guide/",
+          "args": [
+            "--target",
+            "https://engineerfix.com/plc-programming-languages-a-comparative-guide/",
+            "--selector",
+            "h3.entry-title > a[href=\"https://engineerfix.com/plc-programming-languages-a-comparative-guide/\"]",
+            "https://engineerfix.com/"
+          ],
+          "exitCode": 0,
+          "fixtureRequests": 2,
+          "markdownBytes": 10610,
+          "markdownSha256": "dfb068c45ae835ebdadda7db2f2c2af86c5dbac81b804c9c5790c21f2f14dbd2",
+          "exactPriorMarkdown": true,
+          "outputBytes": 15164
+        },
+        {
+          "ordinal": 3,
+          "startUrl": "https://www.reviewed.com/",
+          "targetUrl": "https://www.reviewed.com/cooking/features/30-inch-vs-36-inch-range-guide",
+          "args": [
+            "--target",
+            "https://www.reviewed.com/cooking/features/30-inch-vs-36-inch-range-guide",
+            "--selector",
+            "a.hero-section__featured-container",
+            "https://www.reviewed.com/"
+          ],
+          "exitCode": 0,
+          "fixtureRequests": 2,
+          "markdownBytes": 19255,
+          "markdownSha256": "805e67361cae9da7434b52ab3581505c2cce27a49f9d8c36d40608860e7bef49",
+          "exactPriorMarkdown": true,
+          "outputBytes": 23643
+        }
+      ],
+      "newLiveRequests": 0
+    },
+    "offlineCli": {
+      "passed": true,
+      "executions": [
+        {
+          "name": "help",
+          "label": "release02",
+          "mode": "offline",
+          "pid": 92507,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.2150353454053402,
+          "safetyErrors": [],
+          "safetyPassed": true
+        },
+        {
+          "name": "missing-target",
+          "label": "release02",
+          "mode": "offline",
+          "pid": 92514,
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.2150160688906908,
+          "safetyErrors": [],
+          "safetyPassed": true
+        },
+        {
+          "name": "cross-origin",
+          "label": "release02",
+          "mode": "offline",
+          "pid": 92521,
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.21508579514920712,
+          "safetyErrors": [],
+          "safetyPassed": true
+        },
+        {
+          "name": "invalid-selector",
+          "label": "release02",
+          "mode": "offline",
+          "pid": 92528,
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.21495106630027294,
+          "safetyErrors": [],
+          "safetyPassed": true
+        },
+        {
+          "name": "private-error",
+          "label": "release02",
+          "mode": "offline",
+          "pid": 92552,
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.21543174050748348,
+          "safetyErrors": [],
+          "safetyPassed": true
+        }
+      ]
+    },
+    "review": {
+      "status": "no-blocking-findings-static-review",
+      "remainingBlockers": []
+    }
+  },
+  "live": {
+    "invocationAt": "2026-09-16T08:40:53.053933+00:00",
+    "observedExitAt": "2026-09-16T08:40:55.291Z",
+    "execution": {
+      "name": "cnet",
+      "label": "release02",
+      "mode": "live",
+      "pid": 97097,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 2.2682675682008266,
+      "safetyErrors": [],
+      "safetyPassed": true
+    },
+    "outcome": "extracted-unverified",
+    "contentSuccess": null,
+    "sourceUrl": "https://www.cnet.com/",
+    "targetUrl": "https://www.cnet.com/tech/computing/visiting-shenzhen-chinas-silicon-valley/",
+    "selection": {
+      "reference": "e5239",
+      "label": "Shenzhen Is China’s Silicon Valley. Here’s What It’s Like to Visit",
+      "url": "https://www.cnet.com/tech/computing/visiting-shenzhen-chinas-silicon-valley/",
+      "candidates": 1
+    },
+    "events": [
+      "mousedown",
+      "mouseup",
+      "click"
+    ],
+    "responses": [
+      {
+        "url": "https://www.cnet.com/",
+        "status": 200,
+        "decodedBytes": 454430,
+        "bodySha256": "14219a9d9494d8e94920932665b876829faa0d29cd31ec2db3d22f7c0dc29f6d"
+      },
+      {
+        "url": "https://www.cnet.com/tech/computing/visiting-shenzhen-chinas-silicon-valley/",
+        "status": 200,
+        "decodedBytes": 283511,
+        "bodySha256": "7e26f342b786e109ba9ff3d42cc02d7a93b480eff025684e743d79b2d2821d8f"
+      }
+    ],
+    "markdownBytes": 20676,
+    "markdownSha256": "7e5a88949e390fe923236f9118dd12725eac144bbf87cb4dc770a8749e560b8b",
+    "exactPreviouslyReviewedMarkdown": true,
+    "contentAssessment": "Article retrievable; byte-identical to prior sampled content review, beginning and tail sampled again, navigation tail remains, factual accuracy not verified",
+    "metrics": {
+      "tabs": 0,
+      "selectedTab": null,
+      "pendingLoads": 0,
+      "pageTraversals": [],
+      "navigations": 2,
+      "commits": 2,
+      "cleanupErrors": 0,
+      "closed": true,
+      "network": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 2,
+        "redirects": 0,
+        "encodedBytes": 154530,
+        "decodedBytes": 737941,
+        "active": 0,
+        "closed": true
+      },
+      "routes": {
+        "routes": 0,
+        "retainedBytes": 0,
+        "fulfilled": 0,
+        "servedBytes": 0,
+        "closed": true,
+        "limits": {
+          "maxRoutes": 32,
+          "maxBodyBytes": 262144,
+          "maxRetainedBytes": 1048576,
+          "maxFulfilled": 512,
+          "maxServedBytes": 8388608,
+          "maxMatchSteps": 2000000
+        },
+        "partial": true,
+        "automaticRedirects": false
+      },
+      "cookies": {
+        "cookies": 0,
+        "accepted": 0,
+        "rejected": 0,
+        "rejections": {},
+        "closed": true
+      },
+      "storage": {
+        "tabs": 0,
+        "areas": 0,
+        "entries": 0,
+        "bytes": 0,
+        "revision": 1,
+        "notificationFailures": 0,
+        "closed": true
+      },
+      "storageEvents": {
+        "documents": 0,
+        "accepted": 0,
+        "delivered": 0,
+        "canceled": 0,
+        "dropped": 0,
+        "failed": 0,
+        "pending": 0,
+        "active": false,
+        "retainedBytes": 0,
+        "peakBytes": 0,
+        "closed": true
+      }
+    },
+    "documentClosedStates": [
+      true,
+      true
+    ],
+    "newLiveRequests": 2
+  },
+  "corpusAudit": {
+    "at": "2026-09-16T08:36:49.409Z",
+    "scope": "Offline integrity audit of previously completed 100-site run, not a new live run",
+    "passed": true,
+    "uniqueUrls": 100,
+    "reviewed": 100,
+    "hashedArtifacts": 668,
+    "priorRequests": 108,
+    "newLiveRequests": 0,
+    "assessmentCounts": {
+      "empty": 6,
+      "useful-source-content": 33,
+      "navigation-only": 19,
+      "other-failure": 6,
+      "http-error": 8,
+      "consent-or-access": 23,
+      "login-required": 3,
+      "transport-failure": 2
+    },
+    "report": {
+      "file": "reports/agent-citation-revalidation-v2.json",
+      "sha256": "4ab14a3dd29561ffae965a706eadf1472182e70c877743275528486bd0244be6"
+    }
+  },
+  "limitations": [
+    "Citation-proxy corpus is not measured global agent page popularity",
+    "No historical100-entry verdict changes",
+    "Partial semantic reader, not original-source CSS/script/attribute equivalence",
+    "Nonempty extraction is not automatic content acceptance",
+    "Outstanding unacknowledged writes can retain owned guards until acknowledgement/error/close",
+    "No full native-manifest, actual SafeJS, credential, passkey or real-input acceptance",
+    "One live workflow is not general performance or website compatibility evidence"
+  ],
+  "evidenceDirectory": "node_modules/.cache/native-validation/research-link-command-september16",
+  "evidencePins": {
+    "BEFORE.json": "e250380c1532402ebf9780ba9a8456461b346bc57f54044357daa51a11dbdc71",
+    "RUNTIME.json": "f3be4b44c2993ad5f3c47017b16b86f62dc2005d716bf2b37395def55d3b88a2",
+    "SELECTED.json": "ff4bcaa69d3d34368a2ba12c760be3331ac8b7766f7aefc74acf14fc9abfbccf",
+    "OVERLAY-release02.json": "019f11892872fab7ee6b3267657453081ec4f3993f5fec71894ba7aaef0460e5",
+    "SOURCE-release02.json": "5a9bf6d7e1f10b52591d50ab4a79e1bb6094522f6da1fb83e0a23eb23dcb0ff5",
+    "COMPILED-release02.json": "1612fa6b45e710e0dcc4ed7735f989087e7cc918d44a319a9126102696386e59",
+    "CHECK-core01.json": "346e132557c211a7aa4c6a262a10b5d3960dcbc30eb47236ec246023d514f6a1",
+    "CHECK-release01.json": "e3537b34fa530c8f2238e5a13dd086e2a6a53ab599e411188d871b5a3a2cc7e3",
+    "CHECK-release02.json": "c883315329a08a19f2cff7d781009a785b619c440df3eb1d6b21219e78d89efd",
+    "native-baseline/EXECUTION.json": "08557412e156302bb1cd9dfcd564326772e04b3f14d3ba9787b9996cab5e5b8f",
+    "native-core01/EXECUTION.json": "dc3696e77023362fe0ee9a1ac25b82c1973d6e3e068e82fae8f653c9dd8a2671",
+    "native-release01/EXECUTION.json": "98e3c8814c0454c756d12d2a06cadf7fe08900fb41f2ff80ddd5ac52a17a89e5",
+    "native-red02/EXECUTION.json": "1f0dcc9d78feb9e86007ad61fc131f24725d5d250e8eeeaa47c9396138407501",
+    "native-red02/native.json": "5fcedfa1b92229edc63d7a4530fd45873c91011c4bc4510a87bf09b57598f137",
+    "native-release02/EXECUTION.json": "2d76fc4daa41964da99185a3820d5b6f91cc461178f771145cb69b713fac2e60",
+    "native-release02/native.json": "e5eef9340a5e9ef7d549c46fe3edd97d680a7b5e41b6052176315f2582a6271c",
+    "replay-core01/RESULT.json": "3231dea3cafbb8d43e12e79a9c52c1501f11936d6cf2e145bfc366ab2338bec4",
+    "replay-release02/RESULT.json": "9263f509b6d1cf6049101ea20babc12e062e45976e23e7b83f5ebc8ec5cf6f3b",
+    "replay-release02/EXECUTION.json": "d86411c6f2fbadd443c7444a664cd176892b07841cf00a7802dfb3bc6ca3c716",
+    "cli-release02-offline/CHECK.json": "2b40c282192515200f7d60ed1f9ddc6ef38ffd7a1f4893df8e60574ba146255e",
+    "cli-release02-live/CHECK.json": "8b647f86c99808d65fc4a084d914ba3ed926e919187811c99d1361e28656836f",
+    "cli-release02-live/cnet/RESULT.json": "f45544468b77018b9a3bba56c77a84229118231b1e1f35382351c4a83343db97",
+    "cli-release02-live/cnet/EXECUTION.json": "ddb355c3c70be1c1b6c8d37c20c920375e3db0786c857a0f10ff638d0fc29998",
+    "cli-release02-live/cnet/INVOCATION.json": "bf21ec4154c552c10ee9b976509fc13303643dbba8f12c06477477c997247e71",
+    "cli-release02-live/cnet/http-events.jsonl": "0672fff3ed958800140a3e48c401e36e914193a77004c5d75ac5e84bb6a1b530",
+    "cli-release02-live/cnet/stdout.log": "08a3449cdeba3459239619edc59a68b16102783e8a061c2c88aa9eaabad5c577",
+    "cli-release02-live/cnet/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "production-review/review.json": "1f30781188099b27871ef2ca16c8791516c687fd864899450adcb4697935a948",
+    "production-review-final/review.json": "d1541bad4bf73b816a96da5847f9bece913f6bb9003157457cda8ff430cbb127",
+    "production-review-final/review.md": "de77db1a38e29e767e18f20e75d51979974e0d5ceb28d372a001cd814721848e",
+    "CLI-LIVE-APPROVAL-release02.json": "40ccf47f5b7cd3c14f1325202684dae7d78d5a349db37637470be722698aab7f",
+    "cli-live-plan.md": "f32f8020f70677a4abd466cc9de06d3c8b7691d6adf459940edccf8cd7faa1fc",
+    "CORPUS-AUDIT.json": "c2321e268e95f77aff4fa3a96610da8504174e01d32ffba36dd575ba04df9419"
+  },
+  "pushed": false,
+  "overallGoal": "active"
+}
