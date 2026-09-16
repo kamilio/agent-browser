@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Source-linked content-page coverage
+
+- Followed eight exact links from saved citation-proxy homepages with the pinned
+  native bdecf4f runtime: six substantive pages, one RTINGS navigation shell and
+  one Manuals+ challenge. Eight GETs, no retries/redirects/credentials/scripts;
+  all recorded request/socket/process groups closed. See
+  reports/deep-content-pages-2026-09-16.md for every URL and limits.
+- RTINGS filtered/unfiltered outputs match and no hidden subtrees are omitted.
+  Independent static text inventory has navigation only, not a review; no app
+  configuration was mined. Runtime-rendered availability/paywall cause remains
+  unproven. Manuals+ yielded no validated individual-manual continuation.
+- Saved-body scopes reduce Wikipedia to Early life(9592bytes), PCMag to its
+  article(7137), and Cambridge to English senses(6654). These are narrower tasks,
+  not lossless full-page replacements. Cambridge duplicate IDs correctly refuse
+  ambiguous selection; selecting the unique dictionary ancestor works.
+- Actual compiled CLI verifies three successful scopes and one expected refusal.
+  Offline proof groups have zero network attempts. No production fix was justified
+  by this batch; historical100-page verdicts and source evidence stay unchanged.
+- Broader goals remain active: dynamic sites, challenge/handoff behavior, manual
+  coverage and separate runtime/credential/passkey/interactive gates are open.
+
 ### Bounded video-search source recovery
 
 - Added inert YouTube primary-search sourceVideos metadata: whitelisted public
