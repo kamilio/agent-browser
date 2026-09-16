@@ -20,6 +20,13 @@ scanner operations debit that quota. The existing whole-source cap still bounds
 every omitted character. Exceeding the new quota reports reader.omitted-work;
 work units are conservative accounting, not CPU time or a memory benchmark.
 
+Since the September16 adaptive-window fix, each discarded element starts with
+a1,024-unit window and grows by4x after incomplete steps up to that same65,536-unit
+maximum. This reduces repeated prepayment for short raw bodies without raising
+the aggregate cap or changing scanner semantics. Some inputs incur more overlap
+work; a lower aggregate debit is not a wall-clock speedup. See
+RAW-DISCARD-WINDOWS.md for the separate validation and capacity result.
+
 Only discarded nonentity raw payload stops consuming textCodeUnits. Ordinary
 text within omitted subtrees, title/textarea raw processing, retained xmp and
 plaintext retain their previous accounting and decoding. Source, output, token,

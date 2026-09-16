@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Validate deep article content and avoid premature raw-work exhaustion
+
+- Three fresh anonymous native GET200 follow links from previously navigation-only
+  Business Insider, Yahoo and Reviewed homepages. Independent source reviews match
+  BI's20 paragraphs/embedded quote, Yahoo's8 paragraphs/15 list items, and Reviewed's
+  372 non-overlapping text blocks across14 detailed products. No new factual,
+  rendered or unrestricted-access claims: BI explicitly declares restricted access.
+- Saved-response native selectors reduce BI output7001→3976 bytes and Yahoo
+  14603→2716 bytes as exact full-output substrings. Preserve title/sourceAccess;
+  BI byline/time/caption context must be carried separately. No extra GETs.
+- Fix HtmlTokenizer.discardRaw to grow per-element windows1024→4096→16384→65536,
+  retaining prepaid/scanner debits, cancellation/EOF semantics and all caps. A
+  76397-byte600-script fixture now completes at625800 work units instead of failing
+  the unchanged32M cap; its complete paragraph and legacy sanitized HTML match.
+- Release02:3615 passed/0 failed across42 selected native files; build/types/format/
+  lint pass. New96-case file is87/9 on pre-change production and96/0 after the fix.
+  Independent static review finds no blockers in identical production code.
+-117 saved-body pairs:114 successful extractions unchanged except raw work/step
+  counters,3 matching non-HTML failures. Aggregate charged work358720303→129469488;
+  17 pages increase slightly. All three final CLI replays and two focused selectors
+  preserve content/access metadata. These are not additional live visits.
+- Local sanitizer medians are0.7–1.2% higher with overlapping ranges: no measured
+  speedup claim. This fixes internal budget exhaustion, not remote crawler blocks.
+- Evidence: RAW-DISCARD-WINDOWS.md and reports/deep-content-2026-09-16.md/JSON plus
+  reports/raw-discard-windows-2026-09-16.md/JSON. Historical100-page verdicts, broader
+  62 failures/22 missing committed tests, SDK/rendering/credential/passkey/device/
+  TTY/access gates and the complete browser goal remain open.
+
 ### Recover authored no-script template notices as source metadata
 
 - Add bounded sourceTemplateFallbacks metadata from eligible omitted HTML

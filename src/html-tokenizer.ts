@@ -663,13 +663,14 @@ export class HtmlTokenizer {
 		const start = this.offset;
 		const session = new HtmlRawDiscardSession(name);
 		let steps = 0;
+		let windowCodeUnits = 1024;
 		this.pending = false;
 		try {
 			for (;;) {
 				const windowStart = this.offset;
 				const length = Math.min(
 					this.source.length - windowStart,
-					htmlRawDiscardWindowCodeUnits,
+					windowCodeUnits,
 				);
 				debit(length);
 				const input = this.source.slice(windowStart, windowStart + length);
@@ -689,6 +690,10 @@ export class HtmlTokenizer {
 						discardedCodeUnits: this.offset - start,
 						steps,
 					});
+				windowCodeUnits = Math.min(
+					htmlRawDiscardWindowCodeUnits,
+					windowCodeUnits * 4,
+				);
 			}
 		} finally {
 			this.work += Math.max(0, this.offset - start);

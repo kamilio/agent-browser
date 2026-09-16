@@ -1,0 +1,289 @@
+{
+  "schema": "native-deep-content-validation-v1",
+  "evidenceDirectory": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/reader-deep-content-september16",
+  "seal": {
+    "at": "2026-09-16T16:52:11.449Z",
+    "files": 129,
+    "bytes": 13536429,
+    "artifactsSha256": "d2b439adf0452016a326708c38c11e6ce742a2669fb88bf2d6e300a9cd53f82d",
+    "validationWritersClosed": true
+  },
+  "runtime": {
+    "root": "/tmp/agent-browser-template-fallbacks-JoXD4F/candidate-release02",
+    "manifests": {
+      "SOURCE": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/template-fallbacks-september16/SOURCE-release02.json",
+        "base": "/tmp/agent-browser-template-fallbacks-JoXD4F/candidate-release02",
+        "sha256": "40eb0bc7713eef040c400c537db0b1f83a6ad3dd29160b29b6a5614c31196016"
+      },
+      "COMPILED": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/template-fallbacks-september16/COMPILED-release02.json",
+        "base": "/tmp/agent-browser-template-fallbacks-JoXD4F/candidate-release02/dist",
+        "sha256": "ede77f0ca50559acc35b1e077da3fcd10c4822171a94b2513911f2ae951ebf4e"
+      }
+    },
+    "native": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/template-fallbacks-september16/native-release02/EXECUTION.json",
+    "quality": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/template-fallbacks-september16/CHECK-release02.json",
+    "runtimeCommit": "03c04322138b78a9c2ca168559851b54eb33e0dc",
+    "committedInputs": 1537
+  },
+  "audit": {
+    "passed": true,
+    "at": "2026-09-16T16:52:11.374Z",
+    "runtimeCommit": "03c04322138b78a9c2ca168559851b54eb33e0dc",
+    "visits": [
+      {
+        "id": "businessinsider",
+        "url": "https://www.businessinsider.com/jacob-coxon-explains-disagreements-anthropic-leadership-warning-2026-9",
+        "sourceHomepage": "https://www.businessinsider.com/",
+        "sourceLink": {
+          "url": "https://www.businessinsider.com/",
+          "nativeExtraction": "node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/016-www.businessinsider.com/extracted.md",
+          "sha256": "3cdbe73d4fe3d0a6152dd3fd39c1f7806560a7736e3c8e4d13fba1f813d3e953",
+          "linkOffsetCodePoints": 72,
+          "historicalVerdict": "navigation-only",
+          "offsetCorrection": "Original linkOffsetCodePoints is a JavaScript UTF16 offset; corrected coordinates follow.",
+          "utf16Offset": 72,
+          "codePointOffset": 72
+        },
+        "status": 200,
+        "receivedAt": "2026-09-16T16:26:47.650Z",
+        "decodedBytes": 417413,
+        "encodedBytes": 61446,
+        "bodySha256": "98cfb34636f04e476746ed8b32ec3c68f0dc8516d2197ed770c3d416aa4085f7",
+        "receiptSha256": "2da36191bff160ea5dbb14dbce071ef8939c1dac98e2533b29131b2a8de18f3f",
+        "markdownBytes": 7001,
+        "markdownSha256": "ccea35acbad02bb945eb090793dc5064acfc5d2447f4e3798e5bd236e9237411",
+        "contentSuccess": null,
+        "outcome": "extracted-unverified",
+        "sourceAccess": {
+          "kind": "jsonld-free-access-declarations-v1",
+          "scope": "document-source",
+          "partial": true,
+          "verified": false,
+          "truncated": false,
+          "entries": [
+            {
+              "source": {
+                "offset": 70190
+              },
+              "path": "$",
+              "value": false
+            },
+            {
+              "source": {
+                "offset": 70190
+              },
+              "path": "$.hasPart[0]",
+              "value": false
+            }
+          ]
+        },
+        "finalCliParity": true
+      },
+      {
+        "id": "yahoo",
+        "url": "https://www.yahoo.com/news/us/article/spongebob-meets-one-piece-for-mcdonalds-new-happy-meal-collab-201123880.html",
+        "sourceHomepage": "https://www.yahoo.com/",
+        "sourceLink": {
+          "url": "https://www.yahoo.com/",
+          "nativeExtraction": "node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/032-www.yahoo.com/extracted.md",
+          "sha256": "f3763b9480e44d7088fa10d3a21d7a1eb3fa7fa0d2ac952d0cd70b5f8183c358",
+          "linkOffsetCodePoints": 3232,
+          "historicalVerdict": "navigation-only",
+          "offsetCorrection": "Original linkOffsetCodePoints is a JavaScript UTF16 offset; corrected coordinates follow.",
+          "utf16Offset": 3232,
+          "codePointOffset": 3232
+        },
+        "status": 200,
+        "receivedAt": "2026-09-16T16:26:50.461Z",
+        "decodedBytes": 839101,
+        "encodedBytes": 188918,
+        "bodySha256": "b20641099d6d4e6ffa36f5414bbe915292955d0ea70c0890fcb419f9a90d668e",
+        "receiptSha256": "36b839446f97c3146794b1a1c8048b2289dfad693f1ac1727fdb9eb651784e94",
+        "markdownBytes": 14603,
+        "markdownSha256": "df81d0cf197a0f805f6df432c6bf05fe80a61e285f10518fc7a20ccfb0aa5bf9",
+        "contentSuccess": null,
+        "outcome": "extracted-unverified",
+        "sourceAccess": null,
+        "finalCliParity": true
+      },
+      {
+        "id": "reviewed",
+        "url": "https://www.reviewed.com/headphones/best-right-now/the-best-true-wireless-earbuds",
+        "sourceHomepage": "https://www.reviewed.com/",
+        "sourceLink": {
+          "url": "https://www.reviewed.com/",
+          "nativeExtraction": "node_modules/.cache/native-validation/agent-citation-revalidation-v2/live/079-www.reviewed.com/extracted.md",
+          "sha256": "f503f35bb8ba69d9d092c87475a45807fbb52b0e324c831534ea5ee911a82109",
+          "linkOffsetCodePoints": 876,
+          "historicalVerdict": "navigation-only",
+          "offsetCorrection": "Original linkOffsetCodePoints is a JavaScript UTF16 offset; corrected coordinates follow.",
+          "utf16Offset": 876,
+          "codePointOffset": 876
+        },
+        "status": 200,
+        "receivedAt": "2026-09-16T16:26:53.515Z",
+        "decodedBytes": 229897,
+        "encodedBytes": 39476,
+        "bodySha256": "665c2eaf5dc1c4bd871acb1902f750793837c83f68fd341a449cac6f5c14f3c6",
+        "receiptSha256": "d758e5f618f327e6ec7336cbb19091e7210ff23a193950e3c96c9cc422cb326d",
+        "markdownBytes": 54830,
+        "markdownSha256": "06b1a04528f4f70719488a9ce34195a37a7443bfefa64dbe8b0f362dba3fa625",
+        "contentSuccess": null,
+        "outcome": "extracted-unverified",
+        "sourceAccess": null,
+        "finalCliParity": true
+      }
+    ],
+    "totals": {
+      "liveGetRequests": 3,
+      "redirects": 0,
+      "retries": 0,
+      "decodedBytes": 1486411,
+      "encodedBytes": 289840,
+      "markdownBytes": 76434
+    },
+    "focus": [
+      {
+        "passed": true,
+        "selector": "#post-body section.post-body-content",
+        "fullBytes": 7001,
+        "focusedBytes": 3976,
+        "exactSubstring": true,
+        "titleAndAccessMetadataPreserved": true,
+        "newLiveRequests": 0,
+        "id": "businessinsider",
+        "allReviewedNarrativeAndListLinesRetained": true,
+        "reductionPercent": 43.20811312669619
+      },
+      {
+        "passed": true,
+        "selector": "main#article-container article#article-902b96a7-a1f2-49e2-aa78-0f2ca3e523f8",
+        "fullBytes": 14603,
+        "focusedBytes": 2716,
+        "exactSubstring": true,
+        "titleAndAccessMetadataPreserved": true,
+        "newLiveRequests": 0,
+        "id": "yahoo",
+        "allReviewedNarrativeAndListLinesRetained": true,
+        "reductionPercent": 81.40108196945833
+      }
+    ],
+    "newsReviewSha256": "7496a630bb1806b5dd2be62cdde421d0e768f4259cd7b1a37e0848af461619f7",
+    "productReviewSha256": "481befbddec30ae96f3ffecf6ccdf57e57064f88003210123df55e7f1d6a2506",
+    "lifecycle": {
+      "allRecordedProcessesAbsentNow": true,
+      "records": [
+        {
+          "file": "focus-baseline/businessinsider/EXECUTION.json",
+          "name": "businessinsider",
+          "pid": 487059,
+          "exitCode": 0
+        },
+        {
+          "file": "focus-baseline/yahoo/EXECUTION.json",
+          "name": "yahoo",
+          "pid": 487069,
+          "exitCode": 0
+        },
+        {
+          "file": "focus-final/businessinsider/EXECUTION.json",
+          "name": "businessinsider",
+          "pid": 487864,
+          "exitCode": 0
+        },
+        {
+          "file": "focus-final/yahoo/EXECUTION.json",
+          "name": "yahoo",
+          "pid": 487871,
+          "exitCode": 0
+        },
+        {
+          "file": "live/businessinsider/EXECUTION.json",
+          "name": "businessinsider",
+          "pid": 471926,
+          "exitCode": 0
+        },
+        {
+          "file": "live/reviewed/EXECUTION.json",
+          "name": "reviewed",
+          "pid": 471957,
+          "exitCode": 0
+        },
+        {
+          "file": "live/yahoo/EXECUTION.json",
+          "name": "yahoo",
+          "pid": 471943,
+          "exitCode": 0
+        },
+        {
+          "file": "proof/businessinsider/EXECUTION.json",
+          "name": "businessinsider",
+          "pid": 471483,
+          "exitCode": 0
+        },
+        {
+          "file": "proof02/businessinsider/EXECUTION.json",
+          "name": "businessinsider",
+          "pid": 471852,
+          "exitCode": 0
+        },
+        {
+          "file": "proof02/reviewed/EXECUTION.json",
+          "name": "reviewed",
+          "pid": 471866,
+          "exitCode": 0
+        },
+        {
+          "file": "proof02/yahoo/EXECUTION.json",
+          "name": "yahoo",
+          "pid": 471859,
+          "exitCode": 0
+        }
+      ],
+      "pinnedFilesChecked": 16,
+      "emptyProbeDirectories": [
+        "focus-baseline/businessinsider/home",
+        "focus-baseline/businessinsider/tmp",
+        "focus-baseline/yahoo/home",
+        "focus-baseline/yahoo/tmp",
+        "focus-final/businessinsider/home",
+        "focus-final/businessinsider/tmp",
+        "focus-final/yahoo/home",
+        "focus-final/yahoo/tmp",
+        "live/businessinsider/home",
+        "live/businessinsider/tmp",
+        "live/reviewed/home",
+        "live/reviewed/tmp",
+        "live/yahoo/home",
+        "live/yahoo/tmp",
+        "proof/businessinsider/home",
+        "proof/businessinsider/tmp",
+        "proof02/businessinsider/home",
+        "proof02/businessinsider/tmp",
+        "proof02/reviewed/home",
+        "proof02/reviewed/tmp",
+        "proof02/yahoo/home",
+        "proof02/yahoo/tmp"
+      ],
+      "qualityTmpEmptinessNotClaimed": true
+    },
+    "contentReview": {
+      "businessinsiderParagraphs": 20,
+      "businessinsiderEmbeddedQuote": true,
+      "businessinsiderRestrictedSourceDeclarations": true,
+      "yahooParagraphs": 8,
+      "yahooListItems": 15,
+      "reviewedNonoverlappingBlocks": 372,
+      "reviewedDetailedProducts": 14,
+      "unrestrictedOrRenderedAccessVerified": false
+    },
+    "priorWork": {
+      "tracked": 42,
+      "untracked": 697,
+      "unchanged": true
+    },
+    "initialSyntheticProofFailurePreserved": true
+  }
+}

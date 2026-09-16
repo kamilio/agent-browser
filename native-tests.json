@@ -950,5 +950,6 @@
   "src/image-source.test.ts",
   "src/research-image-source.test.ts",
   "src/research-source-template-fallbacks.test.ts",
-  "src/research-source-template-fallbacks-reader.test.ts"
+  "src/research-source-template-fallbacks-reader.test.ts",
+  "src/html-raw-discard-windows.test.ts"
 ]

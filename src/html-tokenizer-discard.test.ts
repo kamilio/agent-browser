@@ -132,24 +132,50 @@ describe("bounded no-payload raw discard", () => {
 		const body = "a".repeat(windowProgress * 12 + 37);
 		const source = `${body}</style>tail`;
 		const tokenizer = new HtmlTokenizer(source, vi.fn());
-		const step = vi.spyOn(HtmlRawDiscardSession.prototype, "step");
 		let charged = 0;
+		let completedStepCharge = 0;
+		const original = HtmlRawDiscardSession.prototype.step;
+		const step = vi
+			.spyOn(HtmlRawDiscardSession.prototype, "step")
+			.mockImplementation(function (
+				this: HtmlRawDiscardSession,
+				input,
+				final,
+				debit,
+				emitIssue,
+			) {
+				const position = tokenizer.position;
+				expect(charged - completedStepCharge).toBe(input.length);
+				expect(input).toBe(source.slice(position, position + input.length));
+				expect(final).toBe(position + input.length === source.length);
+				const result = original.call(this, input, final, debit, emitIssue);
+				expect(tokenizer.position).toBe(position);
+				completedStepCharge = charged;
+				return result;
+			});
 		const windowCharges: number[] = [];
 		const result = tokenizer.discardRaw("style", (units) => {
 			charged += units;
 			if (units > 10) windowCharges.push(units);
 		});
-		expect(result).toEqual({ discardedCodeUnits: body.length, steps: 13 });
+		expect(result).toEqual({ discardedCodeUnits: body.length, steps: 15 });
 		expect(Object.keys(result)).toEqual(["discardedCodeUnits", "steps"]);
 		expect(Object.isFrozen(result)).toBe(true);
 		expect(step).toHaveBeenCalledTimes(result.steps);
 		const lengths = step.mock.calls.map(([input]) => input.length);
+		expect(lengths).toEqual([
+			1024,
+			4096,
+			16_384,
+			...Array<number>(11).fill(windowSize),
+			44_101,
+		]);
 		expect(lengths.every((length) => length <= windowSize)).toBe(true);
 		expect(lengths).toEqual(windowCharges);
 		expect(charged).toBe(
 			lengths.reduce((total, length) => total + length, 0) +
 				body.length +
-				12 * 2 +
+				14 * 2 +
 				9,
 		);
 		expect(tokenizer.position).toBe(body.length);
@@ -319,29 +345,43 @@ describe("bounded no-payload raw discard", () => {
 	);
 
 	it.each([
-		windowSize,
-		windowSize + 1,
-		windowSize + windowProgress + 2,
-		2 * windowSize + windowProgress + 3,
-	])("propagates aggregate work cap cancellation at %i", (limit) => {
-		const tokenizer = new HtmlTokenizer("a".repeat(windowSize * 3), vi.fn());
-		const failure = new Error("synthetic work cap");
-		let charged = 0;
-		expect(
-			caught(() =>
-				tokenizer.discardRaw("style", (units) => {
-					charged += units;
-					if (charged > limit) throw failure;
-				}),
-			),
-		).toBe(failure);
-		const progress =
-			limit >= windowSize + windowProgress + 2 ? windowProgress : 0;
-		expect(charged).toBeGreaterThan(limit);
-		expect(tokenizer.position).toBe(progress);
-		expect(tokenizer.workUnits).toBe(progress);
-		expect(tokenizer.issueCount).toBe(0);
-	});
+		{ limit: 1023, observed: 1024, progress: 0 },
+		{ limit: 1024, observed: 1025, progress: 0 },
+		{ limit: 2038, observed: 2040, progress: 0 },
+		{ limit: 2040, observed: 6136, progress: 1014 },
+		{ limit: 6136, observed: 6137, progress: 1014 },
+		{ limit: 10_222, observed: 10_224, progress: 1014 },
+		{ limit: 10_224, observed: 26_608, progress: 5100 },
+		{ limit: 42_984, observed: 108_520, progress: 21_474 },
+		{ limit: 174_048, observed: 239_584, progress: 87_000 },
+	])(
+		"propagates aggregate work cap cancellation at $limit",
+		({ limit, observed, progress }) => {
+			const tokenizer = new HtmlTokenizer("a".repeat(windowSize * 3), vi.fn());
+			const failure = new Error("synthetic work cap");
+			const step = vi.spyOn(HtmlRawDiscardSession.prototype, "step");
+			let charged = 0;
+			expect(
+				caught(() =>
+					tokenizer.discardRaw("style", (units) => {
+						charged += units;
+						if (charged > limit) throw failure;
+					}),
+				),
+			).toBe(failure);
+			const completedProgress = step.mock.results.reduce(
+				(total, result) =>
+					result.type === "return" ? total + result.value.consumed : total,
+				0,
+			);
+			expect(charged).toBe(observed);
+			expect(charged).toBeGreaterThan(limit);
+			expect(completedProgress).toBe(progress);
+			expect(tokenizer.position).toBe(progress);
+			expect(tokenizer.workUnits).toBe(progress);
+			expect(tokenizer.issueCount).toBe(0);
+		},
+	);
 
 	it("accounts only discarded source after ordinary tokens and across calls", () => {
 		const source =
