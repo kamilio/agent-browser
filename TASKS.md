@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Validate model documentation and recover a large guide without retrying
+
+- Five distinct anonymous native GETs across Hugging Face, Ollama and vLLM.
+  Model card/catalog content is useful; vLLM first returns an HTTP302, then an
+  HTML relocation stub, then a complete guide whose whole extraction exceeds
+  256000 bytes. Preserve all original outcomes; no automatic redirects/bypass.
+- Existing pinned-receipt CLI recovery selects the vLLM article as17451 Markdown
+  bytes or74963 bytes of structured CLI JSONL with zero new requests. Its main
+  wrapper still fails in a recorded control; default whole-page behavior is not
+  fixed. Source-selected HF/Ollama outputs are16411/1719 Markdown bytes.
+- Independent source audit matches44 headings and19 literal code blocks across
+  the three selected scopes. Strong emphasis and code-fence language labels
+  remain known formatting limitations, not missing prose or executable proofs.
+- See MODEL-CONTENT-WORKFLOWS.md and reports/model-workflows-2026-09-16.md/JSON.
+  No production change or new native suite; reuse the exact pinned runtime's
+  46333/0 gate in942 files, with22 missing manifest files still open. Next:
+  conservative nested-article focus, SafeJS scheduling/dynamic pages, access,
+  real credential/device acceptance and incomplete research. Goal remains active.
+
 ### Validate JSON field extraction through a fresh public API request
 
 - One actual native CLI GET retrieves PyPI Requests /info on committed runtime
