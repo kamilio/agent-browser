@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Expose bounded source-chart tables through the native reader
+
+- Add known-schema Infogram chart metadata without executing scripts or fetching
+  viewers/trackers. Preserve typed cells, source names/positions/qualifiers and
+  bounded whole matrices; do not infer absent units, scaling or missing values.
+- Selected native gate:2,762pass/0 in32 files, including369 new cases. Identical
+  integration cases over prior integration/new codec give32pass/170fail. Build,
+  strict types, format and lint pass; this is not the full manifest or SDK gate.
+- Replay103 saved bodies:100 successful pairs/three unchanged non-HTML failures.
+  Four chart captures gain15 matrices/234 exact typed cells; all prior extraction
+  fields remain unchanged. Four actual CLI routed proofs pass under kernel denial.
+- One new anonymous native CLI GET returns six tables/84 cells/five empty strings;
+  source-only outcome remains extracted-unverified/contentSuccess:null. Fresh body
+  differs only in four root embed-code fields; source elements/qualifiers match.
+- No automatic article-to-chart navigation, page execution, challenge solving,
+  credential access or inferred benchmark accuracy. Preserve historical100-root
+  verdicts; prior62 broad failures,22 missing committed tests and separate SDK,
+  rendering, credential/passkey/device/TTY/access-handoff gates remain open.
+- See SOURCE-CHART-TABLES.md and reports/source-chart-tables-2026-09-16.md/JSON.
+
 ### Recover public embedded chart matrices without page execution
 
 - Follow the PCMag article's literal loader URL and four source-derived iframe

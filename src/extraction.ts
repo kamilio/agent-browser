@@ -53,6 +53,11 @@ import {
 	researchSourceDataTables,
 } from "./research-source-data-tables.js";
 import {
+	type ResearchSourceChartTables,
+	fitResearchSourceChartTables,
+	researchSourceChartTables,
+} from "./research-source-chart-tables.js";
+import {
 	type ResearchSourceAccess,
 	fitResearchSourceAccess,
 	researchSourceAccess,
@@ -217,6 +222,7 @@ interface ExtractionMetadata {
 	sourceDescriptions?: DocumentDescriptions;
 	sourceAlternates?: DocumentAlternates;
 	sourceDataTables?: ResearchSourceDataTables;
+	sourceChartTables?: ResearchSourceChartTables;
 	sourceAccess?: ResearchSourceAccess;
 	sourceProducts?: ResearchSourceProducts;
 	sourceVideos?: ResearchSourceVideos;
@@ -1578,6 +1584,7 @@ export function extractDocument(
 	}
 	const products = researchSourceProducts(tree);
 	const videos = researchSourceVideos(tree);
+	const charts = researchSourceChartTables(tree);
 	const feeds = documentFeeds(tree);
 	if (feeds) {
 		const remaining =
@@ -1585,7 +1592,7 @@ export function extractDocument(
 		if (remaining >= 0) {
 			const sourceFeeds = fitDocumentFeeds(feeds, remaining);
 			if (sourceFeeds) {
-				if (!products && !videos) return { ...result, sourceFeeds };
+				if (!products && !videos && !charts) return { ...result, sourceFeeds };
 				result = { ...result, sourceFeeds };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1597,7 +1604,7 @@ export function extractDocument(
 		if (remaining >= 0) {
 			const sourceProducts = fitResearchSourceProducts(products, remaining);
 			if (sourceProducts) {
-				if (!videos) return { ...result, sourceProducts };
+				if (!videos && !charts) return { ...result, sourceProducts };
 				result = { ...result, sourceProducts };
 				outputBytes = utf8ByteLength(JSON.stringify(result));
 			}
@@ -1608,7 +1615,19 @@ export function extractDocument(
 			maxBytes - outputBytes - utf8ByteLength(',"sourceVideos":');
 		if (remaining >= 0) {
 			const sourceVideos = fitResearchSourceVideos(videos, remaining);
-			if (sourceVideos) return { ...result, sourceVideos };
+			if (sourceVideos) {
+				if (!charts) return { ...result, sourceVideos };
+				result = { ...result, sourceVideos };
+				outputBytes = utf8ByteLength(JSON.stringify(result));
+			}
+		}
+	}
+	if (charts) {
+		const remaining =
+			maxBytes - outputBytes - utf8ByteLength(',"sourceChartTables":');
+		if (remaining >= 0) {
+			const sourceChartTables = fitResearchSourceChartTables(charts, remaining);
+			if (sourceChartTables) return { ...result, sourceChartTables };
 		}
 	}
 	return result;

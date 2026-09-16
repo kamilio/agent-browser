@@ -54,6 +54,12 @@ import {
 	setResearchSourceDataTables,
 } from "./research-source-data-tables.js";
 import {
+	type InfogramChartRoute,
+	ResearchSourceChartTableCollector,
+	infogramChartRoute,
+	setResearchSourceChartTables,
+} from "./research-source-chart-tables.js";
+import {
 	type ResearchReaderFallbackEncoding,
 	type ResearchReaderRawPolicy,
 	type ResearchReaderReport,
@@ -239,6 +245,7 @@ export function sanitizeResearchHtml(
 	visibilityPolicy?: ResearchReaderVisibilityPolicy,
 	productRoute?: TargetProductRoute,
 	videoRoute?: YoutubeSearchRoute,
+	chartRoute?: InfogramChartRoute,
 ) {
 	const selectedRawPolicy = validateResearchReaderRawPolicy(rawPolicy);
 	const selectedVisibilityPolicy =
@@ -337,6 +344,7 @@ export function sanitizeResearchHtml(
 	let sourceAccess: ResearchSourceAccessCollector | undefined;
 	let sourceProducts: ResearchSourceProductsCollector | undefined;
 	let sourceVideos: ResearchSourceVideosCollector | undefined;
+	let sourceCharts: ResearchSourceChartTableCollector | undefined;
 	const emit = (value: string) => {
 		report.outputCodeUnits += value.length;
 		check("reader.output", limits.maxOutputCodeUnits, report.outputCodeUnits);
@@ -602,6 +610,26 @@ export function sanitizeResearchHtml(
 								tokenStart,
 							);
 						}
+						if (
+							chartRoute !== undefined &&
+							name === "script" &&
+							!sourceHidden &&
+							!open.includes("noscript") &&
+							!Object.hasOwn(token.attributes, "src") &&
+							["", "text/javascript", "application/javascript"].includes(
+								token.attributes.type?.trim().toLowerCase() ?? "",
+							)
+						) {
+							sourceCharts ??= new ResearchSourceChartTableCollector(
+								chartRoute,
+							);
+							sourceCharts.add(
+								normalizedSource,
+								rawStart,
+								tokenizer.position,
+								tokenStart,
+							);
+						}
 					}
 				}
 			}
@@ -711,12 +739,14 @@ export function sanitizeResearchHtml(
 	const access = sourceAccess?.finish();
 	const products = sourceProducts?.finish();
 	const videos = sourceVideos?.finish();
+	const sourceChartTables = sourceCharts?.finish();
 	return {
 		html: output.join(""),
 		...(sourceDataTables ? { sourceDataTables } : {}),
 		...(access ? { sourceAccess: access } : {}),
 		...(products ? { sourceProducts: products } : {}),
 		...(videos ? { sourceVideos: videos } : {}),
+		...(sourceChartTables ? { sourceChartTables } : {}),
 		report: Object.freeze({
 			...report,
 			...(mathAlternatives.elements
@@ -837,18 +867,24 @@ export function loadResearchDocument(
 	const videoRoute = effectiveHtml
 		? youtubeSearchRoute(response.url)
 		: undefined;
+	const chartRoute = effectiveHtml
+		? infogramChartRoute(response.url)
+		: undefined;
 	const visibilityArguments: [
 		ResearchReaderVisibilityPolicy?,
 		TargetProductRoute?,
 		YoutubeSearchRoute?,
+		InfogramChartRoute?,
 	] =
-		videoRoute !== undefined
-			? [selectedVisibilityPolicy, productRoute, videoRoute]
-			: productRoute !== undefined
-				? [selectedVisibilityPolicy, productRoute]
-				: selectedVisibilityPolicy
-					? [selectedVisibilityPolicy]
-					: [];
+		chartRoute !== undefined
+			? [selectedVisibilityPolicy, productRoute, videoRoute, chartRoute]
+			: videoRoute !== undefined
+				? [selectedVisibilityPolicy, productRoute, videoRoute]
+				: productRoute !== undefined
+					? [selectedVisibilityPolicy, productRoute]
+					: selectedVisibilityPolicy
+						? [selectedVisibilityPolicy]
+						: [];
 	const sanitized = sanitizeResearchHtml(
 		effectiveHtml ? decoded.text : "",
 		{
@@ -913,6 +949,8 @@ export function loadResearchDocument(
 		setResearchSourceProducts(tree, sanitized.sourceProducts);
 	if (effectiveHtml && sanitized.sourceVideos)
 		setResearchSourceVideos(tree, sanitized.sourceVideos);
+	if (effectiveHtml && sanitized.sourceChartTables)
+		setResearchSourceChartTables(tree, sanitized.sourceChartTables);
 	const info = htmlParseInfo(tree);
 	if (info) setHtmlParseInfo(tree, { ...info, encoding: decoded.encoding });
 	return tree;

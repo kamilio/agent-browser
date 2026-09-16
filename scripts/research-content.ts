@@ -96,6 +96,21 @@ export function researchDocumentDiagnosticText(
 export function hasResearchExtractionContent(
 	extraction: DocumentExtraction,
 ): boolean {
+	for (const table of extraction.sourceChartTables?.tables ?? []) {
+		for (let rowIndex = 1; rowIndex < table.rows.length; rowIndex++) {
+			const row = table.rows[rowIndex];
+			for (let columnIndex = 1; columnIndex < row.length; columnIndex++) {
+				const cell = row[columnIndex];
+				if (cell.kind !== "value-cell") continue;
+				if (
+					(typeof cell.value === "string" && cell.value.trim().length > 0) ||
+					(typeof cell.value === "number" && Number.isFinite(cell.value)) ||
+					typeof cell.value === "boolean"
+				)
+					return true;
+			}
+		}
+	}
 	if (extraction.format === "markdown") return !!extraction.content.trim();
 	const pending = [extraction.content];
 	while (pending.length) {
