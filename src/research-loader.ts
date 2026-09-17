@@ -147,6 +147,18 @@ const blockReplacements = new Set(
 	"form details summary dialog fieldset legend center search".split(" "),
 );
 const unwrappedControlBoundaries = new Set(["select", "optgroup", "option"]);
+
+function sourceAlternative(
+	name: string,
+	attributes: Readonly<Record<string, string>>,
+): string | undefined {
+	const attribute =
+		name === "math" ? "alttext" : name === "svg" ? "aria-label" : undefined;
+	return attribute !== undefined && Object.hasOwn(attributes, attribute)
+		? attributes[attribute]
+		: undefined;
+}
+
 const reconstructableFormatting = new Set(
 	"a b big code em font i nobr s small strike strong tt u".split(" "),
 );
@@ -300,6 +312,7 @@ export function sanitizeResearchHtml(
 	check("reader.source", limits.maxSourceCodeUnits, source.length);
 	const omittedSubtrees: Record<string, number> = Object.create(null);
 	const mathAlternatives = { elements: 0, codeUnits: 0 };
+	const svgAlternatives = { elements: 0, codeUnits: 0 };
 	const omittedRaw = selectedRawPolicy
 		? {
 				codeUnits: 0,
@@ -503,8 +516,7 @@ export function sanitizeResearchHtml(
 				if (!skipped.length) sourceHiddenOmission = false;
 			} else {
 				if (legacyOmittedDepth === 0) {
-					const alternative =
-						name === "math" ? token.attributes.alttext : undefined;
+					const alternative = sourceAlternative(name, token.attributes);
 					if (alternative?.trim()) text(alternative, true);
 					const description =
 						name === "meta" &&
@@ -626,17 +638,21 @@ export function sanitizeResearchHtml(
 					if (description) text(description.content, true);
 				}
 				omittedSubtrees[name] = (omittedSubtrees[name] ?? 0) + 1;
-				const alternative =
-					name === "math" && Object.hasOwn(token.attributes, "alttext")
-						? token.attributes.alttext
-						: undefined;
+				const alternative = sourceAlternative(name, token.attributes);
 				if (alternative?.trim()) {
-					if (!sourceHidden) emit("<code>MathML source: ");
+					if (!sourceHidden)
+						emit(
+							name === "svg"
+								? "<code>SVG source aria-label: "
+								: "<code>MathML source: ",
+						);
 					text(alternative, sourceHidden);
 					if (!sourceHidden) {
 						emit("</code>");
-						mathAlternatives.elements++;
-						mathAlternatives.codeUnits += alternative.length;
+						const alternatives =
+							name === "svg" ? svgAlternatives : mathAlternatives;
+						alternatives.elements++;
+						alternatives.codeUnits += alternative.length;
 					}
 				}
 				const foreignEmpty =
@@ -916,6 +932,16 @@ export function sanitizeResearchHtml(
 			...report,
 			...(mathAlternatives.elements
 				? { mathAlternatives: Object.freeze(mathAlternatives) }
+				: {}),
+			...(svgAlternatives.elements
+				? {
+						svgAlternatives: Object.freeze({
+							...svgAlternatives,
+							attribute: "aria-label" as const,
+							rendered: false as const,
+							verified: false as const,
+						}),
+					}
 				: {}),
 			omittedSubtrees: Object.freeze(omittedSubtrees),
 			...(omittedRaw ? { omittedRaw: Object.freeze({ ...omittedRaw }) } : {}),

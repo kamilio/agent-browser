@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Retain literal SVG labels and verify fresh public content
+
+- The reader preserves nonblank own SVG aria-label text as escaped, explicitly
+  labeled code, restoring owning-anchor text without rendering SVG or inferring
+  accessibility names. Frozen metadata marks source labels unrendered/unverified.
+  Existing hidden-source, omission and text/output budgets remain unchanged.
+- Add168 cases; focused qualification is960/0 in12 files, build/types/format/lint
+  pass. The full available run is50057/0 in1000 files. Preserve the
+  earlier49967/90 result: protected-file checks rejected writable temp ancestry;
+  all nine affected files pass181/0 with protected HOME/TMP, then the whole suite
+  passes unchanged. Canonical1022-entry manifest still lacks22 committed files.
+- Saved Home Depot, Consumer Reports and Target captures pass six before/after
+  replays. One fresh Consumer Reports GET at19:25:21.922 UTC on September17
+  returns200; its two additional offline replays restore explicit source labels
+  and retain public content. The exact synthetic driver makes zero wire requests.
+  No scripts/SDK/assets/credentials/devices/TTY or challenge solver is used.
+- Responsive duplicates and icon labels are authored source, not computed
+  visibility or enabled controls. Historical100-entry33/67 remains unchanged.
+  See SVG-SOURCE-LABELS.md and reports/svg-source-labels-2026-09-17.md/JSON.
+  Continue real SDK/HTML module execution, varied website interactions, speed,
+  crawler-block/CAPTCHA handling, real credentials/passkeys/devices and research.
+  The full browser goal remains active.
+
 ### Retest weak entry content and source-linked review reading
 
 - Two new native GETs on September17 retrieve Home Depot's exact root200 at

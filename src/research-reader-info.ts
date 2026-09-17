@@ -87,6 +87,13 @@ export interface ResearchReaderReport {
 	sourceCodeUnits: number;
 	textCodeUnits: number;
 	mathAlternatives?: Readonly<{ elements: number; codeUnits: number }>;
+	svgAlternatives?: Readonly<{
+		elements: number;
+		codeUnits: number;
+		attribute: "aria-label";
+		rendered: false;
+		verified: false;
+	}>;
 	outputCodeUnits: number;
 	tokens: number;
 	omittedTokens: number;
@@ -135,6 +142,9 @@ export function setResearchReaderInfo(
 				: {}),
 			...(report.mathAlternatives
 				? { mathAlternatives: Object.freeze({ ...report.mathAlternatives }) }
+				: {}),
+			...(report.svgAlternatives
+				? { svgAlternatives: Object.freeze({ ...report.svgAlternatives }) }
 				: {}),
 			...(report.omittedRaw
 				? { omittedRaw: Object.freeze({ ...report.omittedRaw }) }

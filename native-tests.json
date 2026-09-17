@@ -407,6 +407,8 @@
   "src/research-table-rows.test.ts",
   "src/research-table-rows-cli.test.ts",
   "src/research-math-alternatives.test.ts",
+  "src/research-svg-alternatives.test.ts",
+  "src/research-svg-alternatives-replay.test.ts",
   "src/research-omitted-paragraphs.test.ts",
   "src/flex-column-wrap.test.ts",
   "src/flex-column.test.ts",

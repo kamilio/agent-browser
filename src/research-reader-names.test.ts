@@ -282,15 +282,25 @@ describe.each(profiles)("authored reader names in %s", (profile) => {
 		"noframes",
 		"template",
 		"svg",
-	])("does not recover names from omitted %s subtrees", (tag) => {
-		const source = `<${tag} id="omitted" role="button" aria-label="Omitted name" aria-labelledby="label">Omitted text</${tag}><p>Kept</p>`;
-		expect(sanitize(source).html).toBe("<p>Kept</p>");
-		const { tree, queries } = reader(source);
-		expect(
-			queries.querySelector("#omitted, [aria-label], [aria-labelledby]"),
-		).toBeNull();
-		expect(tree.textContent(tree.root)).toBe("Kept");
-	});
+	])(
+		"does not restore roles or descendant names from omitted %s subtrees",
+		(tag) => {
+			const source = `<${tag} id="omitted" role="button" aria-label="Omitted name" aria-labelledby="label">Omitted text</${tag}><p>Kept</p>`;
+			const annotation =
+				tag === "svg" ? "SVG source aria-label: Omitted name" : "";
+			expect(sanitize(source).html).toBe(
+				`${annotation ? `<code>${annotation}</code>` : ""}<p>Kept</p>`,
+			);
+			const { tree, queries } = reader(source);
+			expect(
+				queries.querySelector("#omitted, [aria-label], [aria-labelledby]"),
+			).toBeNull();
+			expect(tree.textContent(tree.root)).toBe(`${annotation}Kept`);
+			expect(
+				snapshotDocument(tree).entries.some((item) => item.role === "button"),
+			).toBe(false);
+		},
+	);
 
 	it("keeps xmp literal text without transferring its role or name", () => {
 		const source =
