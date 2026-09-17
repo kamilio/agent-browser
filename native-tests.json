@@ -1007,5 +1007,6 @@
   "src/research-pagefind.test.ts",
   "src/script-fetch.test.ts",
   "src/script-loader-policy.test.ts",
-  "src/session-script-policy.test.ts"
+  "src/session-script-policy.test.ts",
+  "src/research-csp-admission.test.ts"
 ]

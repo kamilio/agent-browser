@@ -371,7 +371,7 @@ it.each([
 	["number", 1],
 	["empty object", {}],
 	["missing kind", { partial: true, omitted: [] }],
-	["wrong kind", { ...marker(), kind: "selected-response-headers-v2" }],
+	["wrong kind", { ...marker(), kind: "selected-response-headers-v3" }],
 	["missing partial", { kind: "selected-response-headers-v1", omitted: [] }],
 	["false partial", { ...marker(), partial: false }],
 	["string partial", { ...marker(), partial: "true" }],

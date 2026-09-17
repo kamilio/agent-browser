@@ -1,5 +1,9 @@
 # Bounded response-header evidence
 
+September 17 update: `RESEARCH-CSP-EVIDENCE.md` defines version 2, which also
+captures bounded enforced and report-only CSP fields. Version 1 receipts retain
+the five-field contract documented below; they do not establish CSP absence.
+
 New native research response summaries retain selected header values without
 clipping them. This keeps challenge and retry evidence available to capture
 inspection and replay without exposing general response headers.

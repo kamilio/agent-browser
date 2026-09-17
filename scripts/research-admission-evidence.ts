@@ -20,6 +20,7 @@ import {
 import {
 	captureResearchResponseHeaders,
 	researchResponseHeaderNames,
+	researchResponseHeaderNamesV1,
 } from "../src/research-response-headers.js";
 import {
 	sourceLinkLabelLimits,
@@ -590,24 +591,28 @@ function primaryProjection(value: unknown): DataRecord | null {
 		headerCapture = record(primary.headerCapture);
 		if (
 			Object.keys(headerCapture).length !== 3 ||
-			headerCapture.kind !== "selected-response-headers-v1" ||
+			(headerCapture.kind !== "selected-response-headers-v1" &&
+				headerCapture.kind !== "selected-response-headers-v2") ||
 			headerCapture.partial !== true ||
 			!Array.isArray(headerCapture.omitted)
 		)
 			invalidEvidence();
 		const captured = captureResearchResponseHeaders(
 			headers as Readonly<Record<string, readonly string[]>>,
+			headerCapture.kind,
 		);
 		if (
 			captured.headerCapture.omitted.length !== 0 ||
 			Object.keys(headers).length !== Object.keys(captured.headers).length
 		)
 			invalidEvidence();
+		const selectedNames =
+			headerCapture.kind === "selected-response-headers-v1"
+				? researchResponseHeaderNamesV1
+				: researchResponseHeaderNames;
 		let previous = -1;
 		for (const name of headerCapture.omitted) {
-			const index = researchResponseHeaderNames.findIndex(
-				(selected) => selected === name,
-			);
+			const index = selectedNames.findIndex((selected) => selected === name);
 			if (index <= previous || Object.hasOwn(headers, name)) invalidEvidence();
 			previous = index;
 		}

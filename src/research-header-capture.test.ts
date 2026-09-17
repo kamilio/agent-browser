@@ -19,6 +19,7 @@ import { NodeNetworkTransport } from "./node-transport.js";
 import {
 	captureResearchResponseHeaders,
 	researchResponseHeaderNames,
+	researchResponseHeaderNamesV1,
 } from "./research-response-headers.js";
 import { BrowserSession } from "./session.js";
 
@@ -202,6 +203,8 @@ describe("primary response selected-header summaries", () => {
 			"content-encoding": [" identity ", "identity", "gzip"],
 			"cf-mitigated": [" challenge\t", " challenge\t", "not-challenge"],
 			"retry-after": [" 120\t", " 120\t", "240"],
+			"content-security-policy": ["script-src 'self'", "object-src 'none'"],
+			"content-security-policy-report-only": ["default-src 'none'"],
 		});
 		const before = structuredClone(input);
 		const bodyReference = input.body;
@@ -213,7 +216,7 @@ describe("primary response selected-header summaries", () => {
 			captureResearchResponseHeaders(input.headers),
 		);
 		expect(summary.headerCapture).toEqual({
-			kind: "selected-response-headers-v1",
+			kind: "selected-response-headers-v2",
 			partial: true,
 			omitted: [],
 		});
@@ -282,7 +285,7 @@ describe("primary response selected-header summaries", () => {
 	])(
 		"omits a whole selected field with $name, never its conflicting tail",
 		({ values }) => {
-			for (const name of researchResponseHeaderNames) {
+			for (const name of researchResponseHeaderNamesV1) {
 				const input = response({
 					[name]: values,
 				} as unknown as NetworkResponse["headers"]);
@@ -290,7 +293,7 @@ describe("primary response selected-header summaries", () => {
 				const summary = summarizePrimaryResponse(input);
 				expect(summary.headers).toEqual({});
 				expect(summary.headerCapture).toEqual({
-					kind: "selected-response-headers-v1",
+					kind: "selected-response-headers-v2",
 					partial: true,
 					omitted: [name],
 				});
@@ -315,7 +318,7 @@ describe("primary response selected-header summaries", () => {
 			"retry-after",
 		]);
 		expect(summarizePrimaryResponse(response({})).headerCapture).toEqual({
-			kind: "selected-response-headers-v1",
+			kind: "selected-response-headers-v2",
 			partial: true,
 			omitted: [],
 		});
@@ -323,6 +326,33 @@ describe("primary response selected-header summaries", () => {
 });
 
 describe("mocked native header-capture workflows", () => {
+	it.each([false, true])(
+		"preserves actual CSP policy evidence through capture and replay (reader=%s)",
+		async (reader) => {
+			const policies = {
+				"content-security-policy": [
+					"default-src 'self'; script-src 'nonce-synthetic' https://scripts.example.invalid",
+					"object-src 'none'; report-uri /synthetic-report",
+				],
+				"content-security-policy-report-only": ["script-src 'none'"],
+			};
+			const input = response({
+				...privateHeaders,
+				...policies,
+				"content-type": ["text/html; charset=utf-8"],
+			});
+			const report = await navigate(input, { reader });
+			expect(report.primaryResponse?.headers).toMatchObject(policies);
+			expect(report.primaryResponse?.headerCapture).toEqual({
+				kind: "selected-response-headers-v2",
+				partial: true,
+				omitted: [],
+			});
+			roundTrip(report, input.body);
+			assertPrivateHeadersAbsent(report);
+		},
+	);
+
 	it.each([false, true])(
 		"retains header-essential challenge evidence without retrying or replaying content (reader=%s)",
 		async (reader) => {

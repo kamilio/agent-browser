@@ -6,6 +6,33 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Preserve versioned CSP evidence before widening script compatibility
+
+- New selected-response-headers-v2 captures enforced and report-only CSP separately,
+  with whole-field omission rather than policy clipping. Original five header
+  budgets and overall metadata limits remain; no arbitrary/cookie/auth fields.
+- Receipt validation preserves exact v1/unmarked contracts and rejects CSP fields
+  smuggled under v1. Old v1 omission lists never proved CSP absence. No script,
+  report endpoint, SDK or relaxed CSP enforcement is introduced by this change.
+- Clean HEAD3b334f5 plus six owned overlays passes1228/0 in13 selected native files,
+  including84 dedicated new receipt cases; build/selected types/format/lint pass.
+  Source1615/compiled2396 pins match. Canonical manifest1010 has22 missing paths,
+  all present in the dirty workspace's1013 entries; no full-suite qualification.
+- All100 historical citation-corpus receipts match previous codec admission
+  exactly (61 validated-capture,39 evidence-only;96 v1,4 unmarked), with unchanged
+  source hashes and zero new requests under kernel/JS denial. This is not100
+  website retests; independent content outcomes remain33 useful/67 other.
+- See RESEARCH-CSP-EVIDENCE.md and reports/csp-response-evidence-2026-09-17.md.
+  Two fresh native homepage GETs return200: OutdoorGearLab22675 Markdown bytes,
+  Target8438, with exact enforced CSP retained and report-only absence explicit.
+  Target has a frame-ancestors-only policy, a concrete avoidable loader refusal
+  to address next. Target still has loading placeholders; no rendered storefront
+  or interaction acceptance. Both requests/groups close, no scripts/credentials.
+  Original offline prototype-comparison failure remains; revised proof passes.
+  Continue real-site content tasks, CSP and actualSafeJS scheduling, performance,
+  access/challenge handling, credentials/passkeys/devices and unfinished research.
+  The overall browser objective remains active and incomplete.
+
 ### Admit classic scripts through native CORS and integrity checks
 
 - ScriptLoader no longer unconditionally skips external classic scripts carrying
