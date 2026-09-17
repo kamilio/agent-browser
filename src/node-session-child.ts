@@ -133,6 +133,7 @@ async function receive(raw: unknown) {
 								? {
 										scripts: new ScriptLoader({
 											response,
+											topLevelDocument: context.topLevelDocument,
 											signal: context.signal,
 											fetch: context.fetchScript,
 											fetchWithPolicy: context.fetchScriptWithPolicy,

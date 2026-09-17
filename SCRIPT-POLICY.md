@@ -1,5 +1,9 @@
 # Native classic-script CORS and integrity
 
+September 17 framing update: `FRAMING-CSP.md` describes the explicit top-level
+exception for empty or framing/reporting-only response policies. Script/source,
+sandbox, unknown and meta-CSP refusals remain; actual SafeJS is still separate.
+
 `ScriptLoader` can now admit external classic scripts declaring `crossorigin`
 and/or `integrity` when a policy-aware fetch provider is supplied. It previously
 skipped these declarations even when their resources could be fetched safely.

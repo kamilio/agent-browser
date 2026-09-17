@@ -101,6 +101,7 @@ const host = new BrowserCommandHost({
 					...context,
 					scripts: new ScriptLoader({
 						response,
+						topLevelDocument: context.topLevelDocument,
 						signal: context.signal,
 						fetch: context.fetchScript,
 						fetchWithPolicy: context.fetchScriptWithPolicy,

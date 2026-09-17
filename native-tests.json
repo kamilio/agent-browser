@@ -1008,5 +1008,7 @@
   "src/script-fetch.test.ts",
   "src/script-loader-policy.test.ts",
   "src/session-script-policy.test.ts",
-  "src/research-csp-admission.test.ts"
+  "src/research-csp-admission.test.ts",
+  "src/execution-content-security-policy.test.ts",
+  "src/script-csp-context.test.ts"
 ]

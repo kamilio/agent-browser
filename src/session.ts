@@ -1,5 +1,6 @@
 import { CookieJar, type CookieLimits } from "./cookies.js";
 import { ContentSecurityPolicy } from "./content-security-policy.js";
+import { hasUnsupportedExecutionCsp } from "./execution-content-security-policy.js";
 import { NetworkRequestQueue } from "./network-request-queue.js";
 import {
 	fetchStylesheetResource,
@@ -98,6 +99,7 @@ import { BrowserStorage, type StorageLimits } from "./storage.js";
 import { type DocumentStyles, documentStyles } from "./styles.js";
 
 export interface DocumentLoaderContext {
+	readonly topLevelDocument?: true;
 	readonly initializeDocument?: (tree: DocumentTree) => void;
 	readonly fetch?: PageFetchTransport;
 	readonly signal: AbortSignal;
@@ -1696,9 +1698,7 @@ export class BrowserSession {
 			fetchLifetime.signal,
 			bootstrapLifetime.signal,
 		]);
-		const fetchCspBlocked = Object.keys(response.headers).some(
-			(name) => name.toLowerCase() === "content-security-policy",
-		);
+		const fetchCspBlocked = hasUnsupportedExecutionCsp(response.headers, true);
 		const imageCspHeaders = imageContentSecurityPolicyValues(response.headers);
 		const imageCsp = new ImageContentSecurityPolicy(
 			responseUrl,
@@ -2125,6 +2125,7 @@ export class BrowserSession {
 				response,
 				Object.freeze({
 					initializeDocument,
+					topLevelDocument: true,
 					signal,
 					tabId: tab.id,
 					limits: this.documentLimits,
@@ -2237,6 +2238,11 @@ export class BrowserSession {
 					fetchScript: (resourceUrl: string) =>
 						journal.run("script", resourceUrl, "GET", async () => {
 							this.assertCurrent(job);
+							if (fetchCspBlocked)
+								throw new AgentBrowserError(
+									"policy-denied",
+									"Script CSP enforcement is not implemented",
+								);
 							if (++scriptResources > 16)
 								throw new AgentBrowserError(
 									"resource-limit",

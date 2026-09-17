@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Respect framing-only CSP in explicitly top-level documents
+
+- BrowserSession supplies frozen topLevelDocument:true context; the committed
+  child and three owned script diagnostics propagate it to ScriptLoader.
+  Only empty or frame-ancestors/report-uri/report-to response policies receive
+  the exception. Unknown/false context, all other directives and meta CSP retain
+  refusal. Source/script/default/connect/sandbox restrictions are not bypassed.
+- A bounded descriptor-based classifier checks every case alias/policy/directive,
+  refuses malformed/inherited/overbudget evidence, and uses linear whitespace
+  trimming. No new runtime dependency or automatic script activation.
+- Both script ports and page-fetch use the classification; the legacy script
+  port now also rejects unsupported response policies before making requests.
+  CORS/SRI/mixed-content, budgets, ownership and cancellation remain in place.
+- Clean HEAD2f6a612 plus nine owned overlays passes845/0 in20 selected native
+  files,116 new cases (85 classifier,31 integration); build/types/format/lint pass.
+  Original-runtime integration control is5 passed/26 failed. Preliminary845/0
+  had test-only type/lint errors; fixed release02 retains the original records.
+  Source1618/compiled2400 pins match; canonical manifest1012 has22 absent paths,
+  all present in the dirty workspace. No full-suite or actual-SDK acceptance.
+- See FRAMING-CSP.md and reports/framing-csp-2026-09-17.md.
+  The full unchanged Target-source asset proof confirms its active classic tag
+  and admits a synthetic57-byte CORS asset, then fails final layout on SVG
+  color="" (node207). Native diagnosis finds1 failure among60 SVG/1450 total nodes.
+  Zero wire GETs; failed proof does not authorize live. Fix empty color next,
+  retaining malformed-geometry safeguards and the original failed evidence.
+  Continue source-asset/live-content checks, general CSP and
+  SafeJS scheduling, dynamic workflows, performance and access/challenge handling,
+  real credentials/passkeys/devices and unfinished research. Goal stays active.
+
 ### Preserve versioned CSP evidence before widening script compatibility
 
 - New selected-response-headers-v2 captures enforced and report-only CSP separately,

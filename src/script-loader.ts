@@ -7,6 +7,7 @@ import { documentImages } from "./document-images.js";
 import { withDocumentWrite } from "./document-write.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { hasUnsupportedExecutionCsp } from "./execution-content-security-policy.js";
 import { BrowserEvent } from "./events.js";
 import { documentHistory } from "./history.js";
 import type { HtmlScriptContext, HtmlScriptHooks } from "./html-parser.js";
@@ -114,6 +115,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 	constructor(
 		private readonly options: {
 			response: NetworkResponse;
+			topLevelDocument?: boolean;
 			signal: AbortSignal;
 			owner: (tree: DocumentTree) => ScriptRunner;
 			fetch?: (url: string) => Promise<NetworkResponse>;
@@ -138,7 +140,18 @@ export class ScriptLoader implements HtmlScriptHooks {
 					"invalid-input",
 					"Invalid script loading limits",
 				);
-		this.csp = !!options.response.headers["content-security-policy"]?.length;
+		if (
+			options.topLevelDocument !== undefined &&
+			typeof options.topLevelDocument !== "boolean"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid script document context",
+			);
+		this.csp = hasUnsupportedExecutionCsp(
+			options.response.headers,
+			options.topLevelDocument === true,
+		);
 		options.signal.addEventListener("abort", this.abort, { once: true });
 		if (options.signal.aborted) this.abort();
 	}
