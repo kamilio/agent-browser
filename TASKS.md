@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Trace Git search initialization, entry and binary metadata
+
+- Four fresh native GETs retrieve source-advertised application JS, conditionally
+  source-derived Pagefind module, entry JSON and exact-hash English metadata. All
+  HTTP200; JS/binary document refusals remain failures, while entry root JSON text
+  is extracted exactly. No JS/WASM/SDK, credentials, redirects, retries or bypass.
+- Application constructor has no bundlePath override; its separate source loader
+  conditionally agrees with /pagefind/pagefind.js. This is not executed runtime
+  configuration. Entry cache-buster is omitted explicitly; no atomic asset claim.
+- Entry reports version1.5.2,34 languages and English page_count442—not442 tested
+  pages. Metadata4419 compressed-body bytes yields7889 CBOR payload bytes after
+  bounded gzip/signature handling. Six fields decode via existing bounded prefix
+  calls; CTAP7609-byte whole-value limit is unchanged. Semantic schema/query,
+  stemming/ranking, postings and fragments remain unverified. Zero queries run.
+-175 sealed acquisition artifacts and9 closed native proof/live groups retained;
+  initial synthetic supervisor failure and local decoding incidents remain. Prior
+  3804 selected tests/1604 source/2380 compiled pins are prior/runtime evidence,
+  not new native tests or actualSDK/full-suite acceptance. No production change.
+- Older Python index failure and Git UI report were stale next-step pointers:
+  latest evidence already completed Python index queries and captured Git UI.
+  Proposed Python duplicate is cancelled before any child/GET; no refetch of either.
+- See reports/pagefind-source-chain-2026-09-17.md/JSON. Next build bounded source
+  data querying and validate query-to-fragment content, without weakening auth
+  codec bounds. Broader sites/performance/access/CAPTCHA, actualSafeJS, real
+  credentials/passkeys/devices/TTY and research remain open; goal stays active.
+
 ### Retrieve and focus two additional source-linked destinations
 
 - Two new anonymous native GETs on0b49d8a follow literal homepage links to a
