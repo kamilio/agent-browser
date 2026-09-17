@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Validate four module-related documentation workflows with the native browser
+
+- Four anonymous native GETs to MDN modules, web.dev module workers, Python
+  importlib and Rust async concurrency return200 and substantive source content.
+  No redirects/retries, credentials, scripts, SDK or alternative client. Default
+  limits and explicit v3/source-visibility/raw policies; all resources close.
+- Independent saved-source comparison matches101 pre/code payloads in order;
+  eight Rust payloads add only a terminal LF before the fence. Four successful
+  compiled CLI heading replays retain seven source code blocks with zero requests.
+  Python's initial section-container target fails; its explicit child-h3 selector
+  recovers the recipe and caution. Preserve that original failure.
+- Prose review preserves substantive content and qualifications. Remaining
+  web.dev SVG-only author links lose fallback accessibility labels; address this
+  source-context limitation without inventing visible prose. Two apparent MDN
+  defects are corrected as entity serialization and documented list annotation.
+- Runtime matches31f3fe9 and its existing1025/0 selected gate, not a new unit/full
+  run. No production change here; no measured general speedup or CAPTCHA solution.
+  See reports/module-content-workflows-2026-09-17.md/JSON for exact URLs/evidence.
+  Continue real SDK/HTML modules, callback scheduling, diverse dynamic pages,
+  access/performance work, credentials/passkeys, missing tests and research.
+
 ### Implement bounded host-source module admission through the page adapter
 
 - Explicit extensionPageRuntime sourceModules configuration snapshots immutable
