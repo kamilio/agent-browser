@@ -1,3 +1,5 @@
+import { browserChallengeStructure } from "../src/browser-challenge-structure.js";
+import { researchResponseChallengeStructure } from "./research-challenge-structure.js";
 import {
 	type BrowserChallengeDiagnostic,
 	type BrowserChallengeResponse,
@@ -135,6 +137,9 @@ export function researchVisibilityEvidence(
 			return;
 		const interpretation = researchReaderInfo(tree)?.mimeInterpretation;
 		const title = documentTitle(tree).slice(0, 257);
+		const structure =
+			browserChallengeStructure(tree) ??
+			researchResponseChallengeStructure(response, context.signal);
 		const classify = (text: string) =>
 			classifyResearchVisibility(
 				{
@@ -143,6 +148,7 @@ export function researchVisibilityEvidence(
 					url: response.url,
 					title,
 					text,
+					structure,
 				},
 				undefined,
 				interpretation,

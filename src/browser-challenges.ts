@@ -4,6 +4,7 @@ export interface BrowserChallengeResponse {
 	readonly url?: string;
 	readonly title?: string;
 	readonly text?: string;
+	readonly structure?: "behavioral-challenge-shell-v1";
 }
 
 export interface BrowserChallengeDiagnostic {
@@ -13,6 +14,7 @@ export interface BrowserChallengeDiagnostic {
 	readonly evidence: readonly (
 		| "cf-mitigated-challenge"
 		| "html-challenge-markers"
+		| "html-behavioral-challenge-shell"
 		| "html-login-markers"
 		| "login-url-and-html-markers"
 		| "html-network-security-block"
@@ -211,6 +213,14 @@ export function classifyBrowserChallenge(
 			return null;
 		const title = boundedText(response, "title", 256);
 		const text = boundedText(response, "text", 8192);
+		if (ownValue(response, "structure") === "behavioral-challenge-shell-v1")
+			return diagnostic(
+				headers,
+				"challenge",
+				"unspecified",
+				"possible",
+				"html-behavioral-challenge-shell",
+			);
 		if (
 			!title.truncated &&
 			title.value === "client challenge" &&

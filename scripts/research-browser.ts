@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import type { Writable } from "node:stream";
 import { pathToFileURL } from "node:url";
+import { browserChallengeStructure } from "../src/browser-challenge-structure.js";
+import { researchResponseChallengeStructure } from "./research-challenge-structure.js";
 import {
 	type BrowserChallengeDiagnostic,
 	classifyBrowserChallenge,
@@ -1044,10 +1046,21 @@ export async function researchNavigation(
 							}
 							primaryHeaders = response.headers;
 							primaryUrl = response.url;
-							const diagnostic = classifyBrowserChallenge({
+							const challengeResponse = {
 								status: response.status,
 								headers: primaryHeaders,
-							});
+							};
+							const diagnostic =
+								classifyBrowserChallenge(challengeResponse) ??
+								(rateLimited
+									? null
+									: classifyBrowserChallenge({
+											...challengeResponse,
+											structure: researchResponseChallengeStructure(
+												response,
+												request.signal,
+											),
+										}));
 							if (diagnostic) {
 								report.classification.diagnostic = diagnostic;
 								report.classification.barrier = diagnostic.kind;
@@ -1211,6 +1224,7 @@ export async function researchNavigation(
 				url: primaryUrl,
 				title: documentTitle(tree),
 				text: researchDocumentDiagnosticText(tree),
+				structure: browserChallengeStructure(tree),
 			},
 			visibilityTitle,
 			report.reader?.mimeInterpretation,

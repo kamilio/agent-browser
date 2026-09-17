@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Diagnose hidden behavioral challenge shells and inspect storefront source
+
+- New bounded structural diagnostic catches the saved Edmunds shell that was
+  previously empty or78 bytes of branding. Native/reader/replay/JSON workflows
+  report a possible unspecified challenge and handoff, not useful source. Preserve
+  source attributes via a small owned inert parse; do not weaken reader filtering.
+- Final1200/0 across19 explicit native files,182 new cases; build/types/format/lint
+  pass. Reviews and regressions cover incomplete tokens/raw text/bogus declarations
+  and doctypes. Canonical manifest980 retains22 missing files; no full-manifest gate.
+- Final bounded inspection of96 historical complete sources matches only Edmunds.
+  Two fresh native GETs at02:38 UTC September17 (release05, before final hardening):
+  Edmunds returns a different403 page; Best Buy returns200 but only43 placeholder
+  bytes. No retries, identity changes, credentials, scripts, SDK or bypass.
+- Final release08 controls of those same fresh bodies preserve exact outcomes and
+  output. Best Buy's explicit legacy source scope yields2556 bytes of outlet copy
+  and links, matching old/fresh captures with an independent source statement
+  audit. No extra GET or functioning storefront claim; default output stays43.
+- See BEHAVIORAL-CHALLENGES.md and reports/behavioral-challenge-2026-09-17.md/JSON.
+  Historical100-entry33/67 verdicts stay unchanged. Continue actual access/handoff,
+  dynamic/SafeJS sites, broader content workflows, measured performance, real
+  credentials/passkeys/devices/TTY and unfinished research; overall goal stays active.
+
 ### Retrieve native public JSON source in one command
 
 - New researchJsonContent API and compiled research-json-content-cli combine one

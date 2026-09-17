@@ -1,4 +1,6 @@
 import { types } from "node:util";
+import { browserChallengeStructure } from "../src/browser-challenge-structure.js";
+import { researchResponseChallengeStructure } from "./research-challenge-structure.js";
 import type { BrowserChallengeDiagnostic } from "../src/browser-challenges.js";
 import { documentTitle } from "../src/document-title.js";
 import type { DocumentTree } from "../src/document.js";
@@ -1344,6 +1346,9 @@ function extractValidatedReplayJson<
 			...extra,
 		};
 		const title = documentTitle(tree);
+		const structure =
+			browserChallengeStructure(tree) ??
+			researchResponseChallengeStructure(response, context.signal);
 		const classify = (text: string) => {
 			const diagnostic = classifyResearchVisibility(
 				{
@@ -1352,6 +1357,7 @@ function extractValidatedReplayJson<
 					url: reportedFinalUrl,
 					title,
 					text,
+					structure,
 				},
 				visibilityEvidence?.title,
 				reader?.mimeInterpretation,

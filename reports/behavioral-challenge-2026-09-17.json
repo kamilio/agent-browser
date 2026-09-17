@@ -1,0 +1,637 @@
+{
+  "date": "2026-09-17",
+  "parentCommit": "4f889b2c4044a4a539f0bf016ff638a57130d7d7",
+  "goalStatus": "active",
+  "finalRuntime": "release08",
+  "native": {
+    "label": "release08",
+    "pid": 1123608,
+    "exitCode": 0,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 17.448294319212437,
+    "passedTests": 1200,
+    "failedTests": 0,
+    "files": 19,
+    "homeEntries": [],
+    "tmpEntries": [],
+    "newTests": 182,
+    "manifestEntries": 980,
+    "availableFiles": 958,
+    "missingFiles": [
+      "src/borders.test.ts",
+      "src/css-flex.test.ts",
+      "src/css-flow.test.ts",
+      "src/css-math.test.ts",
+      "src/css-variables.test.ts",
+      "src/flex-column-wrap.test.ts",
+      "src/flex-column.test.ts",
+      "src/flex-document.test.ts",
+      "src/flex-nested.test.ts",
+      "src/font-relative-box.test.ts",
+      "src/inline-block.test.ts",
+      "src/inline-borders.test.ts",
+      "src/inline-flex.test.ts",
+      "src/page-base64.test.ts",
+      "src/portable-boundary.test.ts",
+      "src/reference-images.test.ts",
+      "src/reference-renderer.test.ts",
+      "src/relative-positioning.test.ts",
+      "src/response-archive.test.ts",
+      "src/select-keyboard.test.ts",
+      "src/select-typeahead.test.ts",
+      "src/stacking-order.test.ts"
+    ],
+    "fullManifestAcceptance": false
+  },
+  "quality": {
+    "label": "release08",
+    "executions": [
+      {
+        "name": "build",
+        "pid": 1123412,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 6.525922361761332
+      },
+      {
+        "name": "types",
+        "pid": 1123555,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 4.071779187768698
+      },
+      {
+        "name": "format",
+        "pid": 1123570,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.03200068883597851
+      },
+      {
+        "name": "lint",
+        "pid": 1123589,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.03190797008574009
+      }
+    ],
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    },
+    "allProcessesClosed": true
+  },
+  "savedBaseline": [
+    {
+      "id": "edmunds",
+      "variant": "filtered",
+      "outcome": "empty-extraction",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "selectedBytes": 0,
+      "contentSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "metrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 2383,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 2383,
+        "active": 0,
+        "closed": true
+      }
+    },
+    {
+      "id": "edmunds",
+      "variant": "legacy",
+      "outcome": "extracted-unverified",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "selectedBytes": 78,
+      "contentSha256": "72767c0321085acad217c8820bfea62a2f99f4e98c5aa410410375f451be6248",
+      "metrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 2383,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 2383,
+        "active": 0,
+        "closed": true
+      }
+    },
+    {
+      "id": "bestbuy",
+      "variant": "filtered",
+      "outcome": "extracted-unverified",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "selectedBytes": 43,
+      "contentSha256": "47e957ff3053b5aeebcbed591c54c6ed7e273a663bb743ba546c2b182affaab5",
+      "metrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 440361,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 440361,
+        "active": 0,
+        "closed": true
+      }
+    },
+    {
+      "id": "bestbuy",
+      "variant": "source-s4",
+      "outcome": "extracted-unverified",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "selectedBytes": 2556,
+      "contentSha256": "253946ce5cf915b9f09f893eb190174d4b2cc8cb50a3dd237e942ff4c9d65681",
+      "metrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 440361,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 440361,
+        "active": 0,
+        "closed": true
+      }
+    }
+  ],
+  "savedFinal": [
+    {
+      "id": "edmunds",
+      "variant": "filtered",
+      "outcome": "semantic-barrier",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": "challenge",
+        "diagnostic": {
+          "kind": "challenge",
+          "provider": "unspecified",
+          "confidence": "possible",
+          "evidence": [
+            "html-behavioral-challenge-shell"
+          ],
+          "action": "stop-and-request-user-handoff"
+        }
+      },
+      "selectedBytes": 0,
+      "contentSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "metrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 2383,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 2383,
+        "active": 0,
+        "closed": true
+      }
+    },
+    {
+      "id": "edmunds",
+      "variant": "legacy",
+      "outcome": "semantic-barrier",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": "challenge",
+        "diagnostic": {
+          "kind": "challenge",
+          "provider": "unspecified",
+          "confidence": "possible",
+          "evidence": [
+            "html-behavioral-challenge-shell"
+          ],
+          "action": "stop-and-request-user-handoff"
+        }
+      },
+      "selectedBytes": 0,
+      "contentSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "metrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 2383,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 2383,
+        "active": 0,
+        "closed": true
+      }
+    },
+    {
+      "id": "bestbuy",
+      "variant": "filtered",
+      "outcome": "extracted-unverified",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "selectedBytes": 43,
+      "contentSha256": "47e957ff3053b5aeebcbed591c54c6ed7e273a663bb743ba546c2b182affaab5",
+      "metrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 440361,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 440361,
+        "active": 0,
+        "closed": true
+      }
+    },
+    {
+      "id": "bestbuy",
+      "variant": "source-s4",
+      "outcome": "extracted-unverified",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "selectedBytes": 2556,
+      "contentSha256": "253946ce5cf915b9f09f893eb190174d4b2cc8cb50a3dd237e942ff4c9d65681",
+      "metrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 440361,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 440361,
+        "active": 0,
+        "closed": true
+      }
+    }
+  ],
+  "freshSourceFinal": [
+    {
+      "id": "bestbuy-fresh",
+      "variant": "source-s4",
+      "outcome": "extracted-unverified",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "selectedBytes": 2556,
+      "contentSha256": "253946ce5cf915b9f09f893eb190174d4b2cc8cb50a3dd237e942ff4c9d65681",
+      "metrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 435094,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 435094,
+        "active": 0,
+        "closed": true
+      }
+    }
+  ],
+  "live": [
+    {
+      "id": "edmunds-landing",
+      "url": "https://www.edmunds.com/",
+      "startedAt": "2026-09-17T02:38:53.852Z",
+      "status": 403,
+      "bodyBytes": 16270,
+      "bodySha256": "ef9df9abdd0cfecea7ab67f0984f1bf9baf07be81dcffd263eb223425e4a9915",
+      "outcome": "http-failure",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "markdownBytes": 475,
+      "elapsedMs": 114,
+      "metrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 6435,
+        "decodedBytes": 16270,
+        "active": 0,
+        "closed": true
+      },
+      "runtime": "release05 before incomplete-source hardening",
+      "finalRuntimeSavedControl": "final-live-release08"
+    },
+    {
+      "id": "bestbuy-landing",
+      "url": "https://www.bestbuy.com/",
+      "startedAt": "2026-09-17T02:38:56.181Z",
+      "status": 200,
+      "bodyBytes": 435094,
+      "bodySha256": "952348750a11a56359019fa3281400c9c15b34b9cddbf83d551d2af3b37004e7",
+      "outcome": "extracted-unverified",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "markdownBytes": 43,
+      "elapsedMs": 589,
+      "metrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 62173,
+        "decodedBytes": 435094,
+        "active": 0,
+        "closed": true
+      },
+      "runtime": "release05 before incomplete-source hardening",
+      "finalRuntimeSavedControl": "final-live-release08"
+    }
+  ],
+  "corpus": {
+    "sources": 96,
+    "matches": [
+      {
+        "priority": 6,
+        "url": "https://www.edmunds.com/",
+        "originalOutcome": "empty-extraction",
+        "structure": "behavioral-challenge-shell-v1",
+        "sourceBytes": 2383,
+        "sourceSha256": "65a385540def3c207fe06e6f654896fe99005a17ba6dc6b7079751f594af0e1a"
+      }
+    ],
+    "scope": "Bounded structural source inspection, not navigation/content revalidation",
+    "newNetworkRequests": 0
+  },
+  "sourceAudit": {
+    "passed": true,
+    "method": "Independent Python HTML parser for hidden S:4 and exact escaped outlet statement; full native output byte comparison",
+    "rows": [
+      {
+        "label": "baseline",
+        "sourceSha256": "09afaa925769a7a35c2278d5863df3286fe543d7c62833c6a6c57f0c4b030cb4",
+        "selectedBytes": 2556,
+        "selectedSha256": "253946ce5cf915b9f09f893eb190174d4b2cc8cb50a3dd237e942ff4c9d65681",
+        "uniqueHiddenSourceScope": true,
+        "outletStatementMatchesSource": true,
+        "rendered": false
+      },
+      {
+        "label": "final-saved",
+        "sourceSha256": "09afaa925769a7a35c2278d5863df3286fe543d7c62833c6a6c57f0c4b030cb4",
+        "selectedBytes": 2556,
+        "selectedSha256": "253946ce5cf915b9f09f893eb190174d4b2cc8cb50a3dd237e942ff4c9d65681",
+        "uniqueHiddenSourceScope": true,
+        "outletStatementMatchesSource": true,
+        "rendered": false
+      },
+      {
+        "label": "final-fresh",
+        "sourceSha256": "952348750a11a56359019fa3281400c9c15b34b9cddbf83d551d2af3b37004e7",
+        "selectedBytes": 2556,
+        "selectedSha256": "253946ce5cf915b9f09f893eb190174d4b2cc8cb50a3dd237e942ff4c9d65681",
+        "uniqueHiddenSourceScope": true,
+        "outletStatementMatchesSource": true,
+        "rendered": false
+      }
+    ],
+    "newNetworkRequests": 0,
+    "fullOutputSemanticsVerified": false,
+    "legacyProbeLiteralUnescapedFlag": false,
+    "literalFlagExplanation": "The earlier plain-text substring check does not match Markdown backslash escaping; original flags remain unchanged."
+  },
+  "scope": {
+    "liveGetRequests": 2,
+    "liveRedirects": 0,
+    "liveRetries": 0,
+    "liveRuntime": "release05",
+    "finalSavedNativeNavigations": 7,
+    "suppliedCredentials": false,
+    "pageScripts": false,
+    "safeJs": false,
+    "alternateClients": false,
+    "challengeSolving": false
+  },
+  "reviews": [
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/BESTBUY-REVIEW-RESULT.md",
+      "sha256": "9f491f0b7f54b230a9adeca03db41c88b22a9dcc36aecf46056e7e4af19deac4"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/IMPLEMENTATION-REVIEW-RESULT.md",
+      "sha256": "09e0cff64e68b8986a2c1eb8721ab56289fad713f7db91dcd4dca811a230315b"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/REVIEW-FOLLOWUP-RESULT.md",
+      "sha256": "41e0f2bbb1b9f334675b40d59e0d708da577faf7cd08e7db894defe60a81b6f6"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/REVIEW-FINAL-RESULT.md",
+      "sha256": "231bf49db78277267bb8cbdf86c443f30772515c0161aba47289c4ed13ad8e3f"
+    }
+  ],
+  "evidence": [
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/CHECK-release08.json",
+      "sha256": "ca1bd1760b6a755a955356a9d66338a5b2bb66c3809b0c366a1a2fe1536c48e8"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/native-release08/EXECUTION.json",
+      "sha256": "29e17d421cbe91f88bccdb716b024f0625691a08cb5260a77a858d0bed6a38c4"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/native-release08/native.json",
+      "sha256": "b06739267d4c689b7213f639d0873fe892dce885690a1f592a5beec1ba2b3b83"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/RUNTIME-release08.json",
+      "sha256": "d9a31075f807e3667345d48bc53c742c68e19acf32bbcd91f036d546a3104559"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/SOURCE-release08.json",
+      "sha256": "93b8077039811d38e0a03833ac235a37917202ebd1f87b8c2c31b8338086a8c2"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/COMPILED-release08.json",
+      "sha256": "90e8f4e5af085216cdc4cb084d15f5a86ef27b30b4a143ec38bd48cc90aa72a2"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/CONTENT-AUDIT.json",
+      "sha256": "30b2017293035418e91804c4db408ebea82b274abb3c876d4fca072fcd998a9b"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/CORPUS.json",
+      "sha256": "239908d68dfc56f1c2dbccbbe6b2038c64e766afe35a4fcbf48ea2e77d7982d9"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/INPUTS.json",
+      "sha256": "ef7234c00c687f4ace9db7a34fd13e4b47e00de44d02f861683e3be802e090ba"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/FRESH-INPUTS.json",
+      "sha256": "894cd7b43f5f28781a1b71ff51ee6b27c5f5a16ab7272103734d9a2382735095"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/LIVE-CONTROLS.json",
+      "sha256": "57a9422f9a49afca0809b807400b84cc49dcff919b7388e9d1eb234b98355f40"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/SCOPE.md",
+      "sha256": "c1a5195c18f82b647bb901ba3af032db7c3601b629a37cf48c774ee85314adf5"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/RUNTIME.json",
+      "sha256": "896877a650a56d186fb3f6cbecb9f7c05cacdbb0423987d89ad74658981ab394"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/ADMISSION.json",
+      "sha256": "5d57d8a9581dc81b1ca5dafa3a2093f452aa5f0ce4231dc2119d52851c4622ca"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/probe-v3-baseline/CHECK.json",
+      "sha256": "264c65e56f318c358f4f750c62ccc74f0dcd4fbf9b806f3f505fb9d7637dc69c"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/probe-v3-baseline/proof/EXECUTION.json",
+      "sha256": "6594f9ed7cb5849d4cf428c1d3e8a231a7440d691939812c795979cf017ae20b"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/probe-v3-baseline/proof/RESULT.json",
+      "sha256": "43821ffe6f565afb28590bcc91ccb799cd38bf68adfce84581df5ed27cd3b1e9"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/probe-v3-release08/CHECK.json",
+      "sha256": "b23383a70d117112a0f5b6c0f403213d4b3e641a6af7cc67c0d8669e1d5bfaa7"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/probe-v3-release08/proof/EXECUTION.json",
+      "sha256": "2b12c478fdb7e1a3482356648aceb128764af9e264c5df78c566d8048621be7d"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/probe-v3-release08/proof/RESULT.json",
+      "sha256": "32fe57fd01b09a37fb379b7653f19b1e336981c44f28a244d47dae5620258770"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/fresh-release08/CHECK.json",
+      "sha256": "8e6467cb99ccc0d44bad552fb69dfd4c93bdb01b935f879ffd613e10e20fe2cd"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/fresh-release08/proof/EXECUTION.json",
+      "sha256": "8f17b48bbad10c913b56060b8c9f288d0995231ebaea0f686be2f9bcd65a15bf"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/fresh-release08/proof/RESULT.json",
+      "sha256": "9e042b130f280bc664a734f080bbd04dbc83728893e2a3f825003f7401ac4a8c"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/final-live-release08/CHECK.json",
+      "sha256": "6930031ea0a0215dd19b5f9a80764743fb6785f8cf7c4d2fffa8bd7b29940e07"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/final-live-release08/proof/EXECUTION.json",
+      "sha256": "44da2b9387941a961bf7a7cb50eb92c70b0719f22244fc68ffb21a887a47ddca"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/final-live-release08/proof/RESULT.json",
+      "sha256": "4509861f82fe5de2d0ed53ded697cd44e94a40115955d56f11fea3b213525b7b"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/corpus-release08/CHECK.json",
+      "sha256": "43d81d981e89f641ac615f7244768200216bf040014b049c4a8755bf0d3bfcbf"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/corpus-release08/proof/EXECUTION.json",
+      "sha256": "8b15044f08f3d749d095aecee8a39122c5362fc86835f86665b490a1888782d1"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/corpus-release08/proof/RESULT.json",
+      "sha256": "5553d72d0f6d994524c4f3dad7e64a95fb9193b015807d3e28808a934aa9dca9"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/proof02/CHECK.json",
+      "sha256": "ef4cf5811f2f4a2ba25a3b83f5332814575a306e271c3956d4ea0c784a505b69"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/live/CHECK.json",
+      "sha256": "d75b9ce0aef9a4e3e9ccde5133749e44cfde9cf5e283c36384f3148b56608760"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/live/edmunds-landing/RESULT.json",
+      "sha256": "efac1214e7b4a8538a843f649ba04a8eed32f4512ba44e61282b110bb1acad83"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/live/edmunds-landing/EXECUTION.json",
+      "sha256": "f72200327d4c9736d287a01b4f588982a29ab91c34343d991582aac6753fb17f"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/live/edmunds-landing/INVOCATION.json",
+      "sha256": "78e03a35d70f9960f25210af16ce91d42e715a9ce24081bfe30363d6d5e501d2"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/live/edmunds-landing/REQUEST-GUARD.json",
+      "sha256": "66e650041c3e9d7e1f0815a0befc06d26389c0c6b73ead993e55a52e1a77559e"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/live/edmunds-landing/http-events.jsonl",
+      "sha256": "36213329bf7cb725015f5b72505831815ed306b5441171b14b5988837e53b5c4"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/live/bestbuy-landing/RESULT.json",
+      "sha256": "9445586058506b1931131ad19a3244527f12a46937ede1b89dfd8d766725e766"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/live/bestbuy-landing/EXECUTION.json",
+      "sha256": "ce8894fb1a9aa9f451c273d5e247bbd1f0ab9d0024206b27cb7a104f291b5d3e"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/live/bestbuy-landing/INVOCATION.json",
+      "sha256": "f385df3a0d5a0037a76b7b283a86b1c7e735ac140068cb2c9453aa4d8d00cad9"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/live/bestbuy-landing/REQUEST-GUARD.json",
+      "sha256": "3a343a7628351e9713d8077bd7957b21228785c088fdc0d7dea77f6e754a261c"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/behavioral-challenge-september17/live-validation/live/bestbuy-landing/http-events.jsonl",
+      "sha256": "c31f16feaafaab81a697fed8cee11544bf69562f5ba3755412ff4c7cb6796833"
+    }
+  ],
+  "limitations": [
+    "No live reproduction of the historical Edmunds shell; fresh response is different HTTP403",
+    "Final runtime uses saved-response controls, not another live run",
+    "Best Buy normal visibility-filtered output remains 43-byte placeholder",
+    "Legacy hidden source selection is not rendered storefront support",
+    "No general provider identification or CAPTCHA solver",
+    "Bounded HTML-only source recognition, incomplete/unsupported shapes remain inconclusive",
+    "22 missing canonical native tests and real SDK/credential/passkey/device/TTY gates remain",
+    "Historical citation usefulness stays 33/67; original research and broad browser goal remain open"
+  ]
+}
