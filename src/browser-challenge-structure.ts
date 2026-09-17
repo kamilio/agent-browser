@@ -1,6 +1,7 @@
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { htmlParseInfo } from "./html-info.js";
+import { sourceInlineDisplayHidden } from "./research-inline-visibility.js";
 
 const maxNodes = 512;
 const maxDepth = 32;
@@ -41,9 +42,204 @@ const rejectedIssues = [
 	"unclosed-head-noscript",
 ];
 
+function continueShoppingChallenge(
+	nodes: ReadonlyMap<number, Readonly<DocumentNode>>,
+	root: number,
+	url: string,
+): boolean {
+	const destination = new URL(url);
+	const region = /^(?:www\.)?amazon\.(com|co\.uk)$/.exec(
+		destination.hostname,
+	)?.[1];
+	if (
+		!region ||
+		destination.protocol !== "https:" ||
+		destination.port ||
+		destination.username ||
+		destination.password
+	)
+		return false;
+	const elements = [...nodes.values()].filter(
+		(node) => node.kind === "element",
+	);
+	const allowed = new Set([
+		"html",
+		"head",
+		"body",
+		"title",
+		"meta",
+		"link",
+		"script",
+		"style",
+		"div",
+		"span",
+		"i",
+		"h4",
+		"form",
+		"input",
+		"button",
+		"a",
+	]);
+	if (
+		elements.some((node) => !isHtmlElement(node) || !allowed.has(node.tagName))
+	)
+		return false;
+	const named = (tag: string) =>
+		elements.filter((node) => node.tagName === tag);
+	const single = (tag: string) => {
+		const matches = named(tag);
+		return matches.length === 1 ? matches[0] : undefined;
+	};
+	const html = single("html");
+	const head = single("head");
+	const body = single("body");
+	const title = single("title");
+	const form = single("form");
+	const heading = single("h4");
+	const button = single("button");
+	if (
+		!html ||
+		!head ||
+		!body ||
+		!title ||
+		!form ||
+		!heading ||
+		!button ||
+		html.parent !== root ||
+		head.parent !== html.id ||
+		body.parent !== html.id ||
+		title.parent !== head.id
+	)
+		return false;
+	for (const parent of [nodes.get(root), html, head]) {
+		if (!parent) return false;
+		for (const child of parent.children) {
+			const node = nodes.get(child);
+			if (!node) return false;
+			if (
+				node.kind === "comment" ||
+				(node.kind === "text" && whitespace.test(node.data))
+			)
+				continue;
+			if (
+				parent.id === root &&
+				(node.id === html.id || node.kind === "doctype")
+			)
+				continue;
+			if (parent.id === html.id && (node.id === head.id || node.id === body.id))
+				continue;
+			if (
+				parent.id === head.id &&
+				(node.id === title.id || metadataTags.has(node.tagName))
+			)
+				continue;
+			return false;
+		}
+	}
+	const within = (node: Readonly<DocumentNode>, ancestor: number): boolean => {
+		let parent = node.parent;
+		for (let depth = 0; parent !== null && depth < maxDepth; depth++) {
+			if (parent === ancestor) return true;
+			const owner = nodes.get(parent);
+			if (!owner) return false;
+			parent = owner.parent;
+		}
+		return false;
+	};
+	const text = (ancestor: number): string =>
+		[...nodes.values()]
+			.filter(
+				(node) =>
+					node.kind === "text" &&
+					within(node, ancestor) &&
+					!metadataTags.has(nodes.get(node.parent ?? root)?.tagName ?? ""),
+			)
+			.map((node) => node.data)
+			.join(" ")
+			.replace(/[\t\n\f\r ]+/g, " ")
+			.trim();
+	const formOverrides = [
+		"form",
+		"formaction",
+		"formmethod",
+		"formenctype",
+		"formtarget",
+		"formnovalidate",
+	];
+	if (
+		text(title.id) !== `Amazon.${region}` ||
+		!within(form, body.id) ||
+		!within(heading, body.id) ||
+		!within(button, form.id) ||
+		form.attributes.method?.trim().toLowerCase() !== "get" ||
+		form.attributes.action !== "/errors_page/validateCaptcha" ||
+		button.attributes.type?.trim().toLowerCase() !== "submit" ||
+		text(heading.id) !== "Click the button below to continue shopping" ||
+		text(button.id) !== "Continue shopping" ||
+		elements.some(
+			(node) =>
+				(within(node, body.id) || node.id === body.id || node.id === html.id) &&
+				node.tagName !== "input" &&
+				(Object.hasOwn(node.attributes, "hidden") ||
+					Object.hasOwn(node.attributes, "inert") ||
+					node.attributes["aria-hidden"]?.trim().toLowerCase() === "true" ||
+					sourceInlineDisplayHidden(node.attributes.style)),
+		) ||
+		[body, button].some(
+			(node) =>
+				Object.hasOwn(node.attributes, "disabled") ||
+				Object.hasOwn(node.attributes, "hidden") ||
+				Object.hasOwn(node.attributes, "inert") ||
+				node.attributes["aria-hidden"]?.trim().toLowerCase() === "true",
+		) ||
+		formOverrides.some((attribute) =>
+			Object.hasOwn(button.attributes, attribute),
+		)
+	)
+		return false;
+	const inputs = named("input");
+	if (
+		inputs.length !== 3 ||
+		new Set(inputs.map((node) => node.attributes.name)).size !== 3 ||
+		inputs.some(
+			(node) =>
+				!within(node, form.id) ||
+				node.attributes.type?.trim().toLowerCase() !== "hidden" ||
+				!["amzn", "amzn-r", "field-keywords"].includes(node.attributes.name) ||
+				Object.hasOwn(node.attributes, "disabled") ||
+				formOverrides.some((attribute) =>
+					Object.hasOwn(node.attributes, attribute),
+				),
+		)
+	)
+		return false;
+	const links = named("a");
+	const terms =
+		region === "com" ? "Conditions of Use" : "Conditions of Use & Sale";
+	const privacy = region === "com" ? "Privacy Policy" : "Privacy Notice";
+	if (
+		links.length !== 2 ||
+		links.some((node) => !within(node, body.id) || !node.attributes.href) ||
+		text(links[0].id) !== terms ||
+		text(links[1].id) !== privacy
+	)
+		return false;
+	const expected = `Click the button below to continue shopping Continue shopping ${terms} ${privacy} `;
+	const bodyText = text(body.id);
+	return (
+		bodyText.startsWith(expected) &&
+		/^© 1996-\d{4}, Amazon\.com, Inc\. or its affiliates$/.test(
+			bodyText.slice(expected.length),
+		)
+	);
+}
+
 export function browserChallengeStructure(
 	tree: DocumentTree,
-): "behavioral-challenge-shell-v1" | undefined {
+):
+	| "behavioral-challenge-shell-v1"
+	| "continue-shopping-challenge-v1"
+	| undefined {
 	try {
 		const usage = tree.resourceUsage();
 		const issues = htmlParseInfo(tree)?.issues;
@@ -149,6 +345,8 @@ export function browserChallengeStructure(
 					depth: entry.depth + 1,
 				});
 		}
+		if (continueShoppingChallenge(nodes, tree.root, tree.url))
+			return "continue-shopping-challenge-v1";
 		if (ids.size !== markerIds.size || classes.size !== markerClasses.size)
 			return undefined;
 		const root = ids.get("sec-if-cpt-container");

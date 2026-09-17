@@ -39,7 +39,11 @@ export function researchResponseChallengeStructure(
 			32_768,
 			checkpoint,
 		);
-		if (!source.text.includes("sec-if-cpt-container")) return undefined;
+		if (
+			!source.text.includes("sec-if-cpt-container") &&
+			!source.text.includes("validateCaptcha")
+		)
+			return undefined;
 		tree = parseHtmlDocument(source.text, response.url, {
 			signal,
 			limits: {

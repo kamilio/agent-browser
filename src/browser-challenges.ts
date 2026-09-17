@@ -4,7 +4,9 @@ export interface BrowserChallengeResponse {
 	readonly url?: string;
 	readonly title?: string;
 	readonly text?: string;
-	readonly structure?: "behavioral-challenge-shell-v1";
+	readonly structure?:
+		| "behavioral-challenge-shell-v1"
+		| "continue-shopping-challenge-v1";
 }
 
 export interface BrowserChallengeDiagnostic {
@@ -15,6 +17,7 @@ export interface BrowserChallengeDiagnostic {
 		| "cf-mitigated-challenge"
 		| "html-challenge-markers"
 		| "html-behavioral-challenge-shell"
+		| "html-continue-shopping-challenge"
 		| "html-login-markers"
 		| "login-url-and-html-markers"
 		| "html-network-security-block"
@@ -220,6 +223,14 @@ export function classifyBrowserChallenge(
 				"unspecified",
 				"possible",
 				"html-behavioral-challenge-shell",
+			);
+		if (ownValue(response, "structure") === "continue-shopping-challenge-v1")
+			return diagnostic(
+				headers,
+				"challenge",
+				"unspecified",
+				"possible",
+				"html-continue-shopping-challenge",
 			);
 		if (
 			!title.truncated &&

@@ -987,6 +987,8 @@
   "src/research-json-content.test.ts",
   "src/research-json-content-cli.test.ts",
   "src/browser-challenge-structure.test.ts",
+  "src/browser-continue-shopping-challenge.test.ts",
+  "src/research-continue-shopping-challenge.test.ts",
   "src/browser-structural-challenge.test.ts",
   "src/research-structural-challenge.test.ts",
   "src/source-headings.test.ts",

@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Diagnose continue-shopping interstitials without submitting challenges
+
+- Add a bounded source signature for the saved Amazon.com/.co.uk HTTPS shells:
+  matching title, exact challenge form and hidden-input names, one submit button,
+  source instruction and legal-only footer. Diagnose possible/unspecified challenge
+  with stop-and-request-user-handoff, not useful content, bypass or vendor proof.
+- Final native qualification passes 1310/0 across 15 explicit files, including
+  160 new cases. Build/new-test types/format/lint pass. Preserve the initial
+  Markdown-escaping fixture failure and subsequent line-wrap formatter finding.
+  Unchanged-production negative control fails 23 new cases; 1209 pass in 13 files.
+- Both runtimes inspect all 96 saved corpus bodies: only the two Amazon entries
+  change structural classification. Twelve offline native navigations additionally
+  compare those entries plus Walmart, Target, Best Buy and eBay; the four controls
+  retain identical extraction hashes and outcomes. No new website requests or
+  challenge submissions; do not change the historical 100-entry 33/67 result.
+- Canonical manifest now has 1026 entries with 22 absent committed paths. No new
+  full-suite or live/SDK/credential/device acceptance claim. See
+  CONTINUE-SHOPPING-CHALLENGES.md and reports/continue-shopping-challenge-2026-09-17.md/JSON.
+  Continue productive deep-page tasks, actual SDK/HTML modules, diverse websites,
+  performance/access handling, real secrets/passkeys and unfinished research.
+  The overall browser goal remains active.
+
 ### Retrieve explicit source-video search results through the actual CLI
 
 - New research-video-search --query command uses the native reader/source-video
