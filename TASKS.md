@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Query captured Pagefind data and return a retrieved result fragment
+
+- Independent bounded source CBOR decoding and a Pagefind 1.5.2 API/CLI now
+  query saved metadata/index chunks without downloaded JS/WASM, SDK or network.
+  Literal terms/variants and intersections return document-ID order, not site
+  relevance, stemming, UI parity, automatic acquisition or full-site search.
+- Two native GETs since 0a9be78 capture the derived English index chunk and first
+  rebas posting's fragment. Both 200 and complete, but binary loader refusals
+  stay failures. Earlier metadata is reused, not fetched again.
+- Final release04 passes 830 tests across 10 selected native files, including
+  101 new cases. Build/selected types/six-file format/lint pass. The source codec
+  is independent of CTAP; authentication code and limits remain unchanged.
+- All 32,081 index CBOR nodes/offsets match an independent reference; all six
+  metadata fields match prior decoding. Six API/CLI queries agree: rebas 85,
+  rebase 0, ref 179, rebas+ref 56, rätta 1, ratta 0. Scope is supplied chunks;
+  empty stored ratta differs from absent rebase. Ref returns 100 under its limit.
+- First returned fragment is Reference (/docs.html): 1,202 UTF-8 content bytes,
+  reported 145 words matching metadata. The compiled CLI preserves exact text.
+  This validates one retrieved fragment, not 85/442 pages or live search UI.
+- Eight offline guarded children close with zero network attempts. Initial
+  formatting/type/lint/test and synthetic scope-copy incidents are retained.
+  Canonical manifest 1006 still lacks 22 paths in the isolated tree; all exist
+  in the dirty workspace, whose manifest 1009 is not qualified. All 1610 source
+  and 2392 compiled pins match the tested candidate.
+- See PAGEFIND-SOURCE-SEARCH.md and reports/pagefind-source-query-2026-09-17.md/JSON.
+  Historical 100-entry 33-useful/67-other outcomes stay unchanged. Prioritize
+  actual SafeJS/dynamic-page qualification and task-level website outcomes next;
+  performance, access/CAPTCHA, real credentials/passkeys/devices/TTY and research
+  remain open. Overall browser goal stays active.
+
 ### Trace Git search initialization, entry and binary metadata
 
 - Four fresh native GETs retrieve source-advertised application JS, conditionally

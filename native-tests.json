@@ -1001,5 +1001,8 @@
   "src/research-strategy-admission.test.ts",
   "src/research-strategy-replay-admission.test.ts",
   "src/research-strategy-replay.test.ts",
-  "src/research-strategy-replay-cli.test.ts"
+  "src/research-strategy-replay-cli.test.ts",
+  "src/source-cbor.test.ts",
+  "src/source-pagefind.test.ts",
+  "src/research-pagefind.test.ts"
 ]
