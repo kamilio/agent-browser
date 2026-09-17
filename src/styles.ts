@@ -189,9 +189,9 @@ import {
 import {
 	cssVariableLimits,
 	parseVariableValue,
-	resolveCustomProperties,
 	substituteVariables,
 } from "./css-variables.js";
+import { CustomPropertyResolutionCache } from "./css-variable-resolution-cache.js";
 import {
 	DocumentQueries,
 	type SelectorSpecificity,
@@ -1929,23 +1929,35 @@ export class DocumentStyles {
 			ReadonlyMap<string, string | null>
 		>();
 		const emptyCustom = new Map<string, string | null>();
-		let unchangedCustom:
-			| {
-					parent: ReadonlyMap<string, string | null>;
-					declarations: readonly CssDeclaration[];
-			  }
-			| undefined;
+		const customResolution = new CustomPropertyResolutionCache(charge);
+		const retainedCustom = new WeakSet<ReadonlyMap<string, string | null>>();
 		let retainedBindings = 0;
 		let retainedCodeUnits = 0;
+		const retainCustom = (
+			values: ReadonlyMap<string, string | null>,
+			parent: ReadonlyMap<string, string | null>,
+		) => {
+			if (values === parent || retainedCustom.has(values)) return;
+			retainedCustom.add(values);
+			retainedBindings += values.size;
+			for (const [name, value] of values)
+				retainedCodeUnits += name.length + (value?.length ?? 0);
+			if (
+				retainedBindings > cssVariableLimits.maxRetainedBindings ||
+				retainedCodeUnits > cssVariableLimits.maxRetainedCodeUnits
+			)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"CSS variable retention limit exceeded",
+				);
+		};
 		const elementContent = new Map<number, string>();
 		for (const node of nodes) {
 			const properties = winners.get(node.id);
-			const specified = new Map<string, string>();
 			const customDeclarations: CssDeclaration[] = [];
 			for (const [name, winner] of properties ?? []) {
 				charge(1);
 				if (name.startsWith("--")) {
-					specified.set(name, winner.declaration.value);
 					customDeclarations.push(winner.declaration);
 				}
 			}
@@ -1953,31 +1965,8 @@ export class DocumentStyles {
 				node.parent === null
 					? emptyCustom
 					: (customComputed.get(node.parent) ?? emptyCustom);
-			const unchanged =
-				unchangedCustom?.parent === parent &&
-				unchangedCustom.declarations.length === customDeclarations.length &&
-				customDeclarations.every((declaration, index) => {
-					charge(1);
-					return declaration === unchangedCustom?.declarations[index];
-				});
-			const values = unchanged
-				? parent
-				: resolveCustomProperties(specified, parent, charge);
-			if (specified.size && values === parent)
-				unchangedCustom = { parent, declarations: customDeclarations };
-			if (values !== parent) {
-				retainedBindings += values.size;
-				for (const [name, value] of values)
-					retainedCodeUnits += name.length + (value?.length ?? 0);
-				if (
-					retainedBindings > cssVariableLimits.maxRetainedBindings ||
-					retainedCodeUnits > cssVariableLimits.maxRetainedCodeUnits
-				)
-					throw new AgentBrowserError(
-						"resource-limit",
-						"CSS variable retention limit exceeded",
-					);
-			}
+			const values = customResolution.resolve(customDeclarations, parent);
+			retainCustom(values, parent);
 			customComputed.set(node.id, values);
 			for (const [name, winner] of properties ?? []) {
 				const original = winner.declaration;
@@ -2041,26 +2030,14 @@ export class DocumentStyles {
 		};
 		for (const target of ["before", "after"] as const) {
 			for (const [id, properties] of pseudoWinners[target]) {
-				const custom = new Map<string, string>();
+				const custom: CssDeclaration[] = [];
 				for (const [name, winner] of properties) {
 					charge(1);
-					if (name.startsWith("--")) custom.set(name, winner.declaration.value);
+					if (name.startsWith("--")) custom.push(winner.declaration);
 				}
 				const parent = customComputed.get(id) ?? emptyCustom;
-				const values = resolveCustomProperties(custom, parent, charge);
-				if (values !== parent) {
-					retainedBindings += values.size;
-					for (const [name, value] of values)
-						retainedCodeUnits += name.length + (value?.length ?? 0);
-					if (
-						retainedBindings > cssVariableLimits.maxRetainedBindings ||
-						retainedCodeUnits > cssVariableLimits.maxRetainedCodeUnits
-					)
-						throw new AgentBrowserError(
-							"resource-limit",
-							"CSS variable retention limit exceeded",
-						);
-				}
+				const values = customResolution.resolve(custom, parent);
+				retainCustom(values, parent);
 				const specified: Record<string, string> = Object.create(null);
 				for (const [name, winner] of properties) {
 					if (name.startsWith("--")) continue;

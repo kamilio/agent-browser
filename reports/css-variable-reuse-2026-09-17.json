@@ -1,0 +1,423 @@
+{
+  "kind": "native-css-variable-reuse-validation-v1",
+  "at": "2026-09-17T22:06:55.995Z",
+  "baseline": "d3fae08413b5bde70ac58dac316263c5fdd1adfc",
+  "runtime": {
+    "root": "/dev/shm/agent-browser-style-cache-XAGZvd/candidate",
+    "baseline": "d3fae08413b5bde70ac58dac316263c5fdd1adfc",
+    "qualifiedOwnedOverlays": [
+      "src/styles.ts",
+      "src/css-variable-resolution-cache.ts",
+      "src/css-variable-resolution-cache.test.ts",
+      "src/css-variable-retention.test.ts",
+      "src/css-variables-core.test.ts",
+      "src/generated-content-style.test.ts",
+      "native-tests.json"
+    ],
+    "manifests": {
+      "SOURCE": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-style-grouping-september17/SOURCE-release01.json",
+        "base": "/dev/shm/agent-browser-style-cache-XAGZvd/candidate",
+        "count": 1639,
+        "sha256": "2660e8c907508fc27871d03dbbbd92fd3bc5f7ac8a2afc2c9849a2a5d5d78f6c"
+      },
+      "COMPILED": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-style-grouping-september17/COMPILED-release01.json",
+        "base": "/dev/shm/agent-browser-style-cache-XAGZvd/candidate/dist",
+        "count": 2420,
+        "sha256": "90b1887d53cdd64a8d3586891751c333b7f8fc20193c8afe6815299eea152f85"
+      }
+    },
+    "native": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-style-grouping-september17/native-release01/EXECUTION.json",
+    "quality": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-style-grouping-september17/CHECK-release01.json"
+  },
+  "captures": [
+    {
+      "id": "katex-css",
+      "url": "https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css",
+      "receivedAt": "2026-09-17T21:38:57.397Z",
+      "status": 200,
+      "decodedBytes": 23352,
+      "encodedBytes": 3417,
+      "bodySha256": "f787891b550d554c214aa8902f39ac46df2dbd48fdec500a2040a5dce1e8ab58",
+      "sourceSha256": "f787891b550d554c214aa8902f39ac46df2dbd48fdec500a2040a5dce1e8ab58",
+      "responseEnvelopeSha256": "e88122a8d54ff9691f40fd471fff5ed17e156c63b8a08de77a5515ad984a88e2",
+      "executionSha256": "88e861559c201c5b5b25365ca59a1565d95986be4bbad63b2228341917e637d3",
+      "corsType": "cors",
+      "fetchPolicy": {
+        "mode": "cors",
+        "credentials": "omit"
+      }
+    },
+    {
+      "id": "activity-clg-css",
+      "url": "https://grokipedia.com/_astro/activity.Clg-wNwt.css",
+      "receivedAt": "2026-09-17T21:38:58.668Z",
+      "status": 200,
+      "decodedBytes": 34007,
+      "encodedBytes": 7256,
+      "bodySha256": "6df0b325406ab0b980f6c26bf6be513d6abbb0567003ed92945e53a0d662655b",
+      "sourceSha256": "6df0b325406ab0b980f6c26bf6be513d6abbb0567003ed92945e53a0d662655b",
+      "responseEnvelopeSha256": "1ccd712fb0f4e077d1eb69d5db90e99bbf9fc17ab139ef00897697b283e0ce7d",
+      "executionSha256": "745c6ba8e56238118ae83838b0aec1c96afdd94696932b01a9263fb1de954ba5",
+      "corsType": "basic",
+      "fetchPolicy": {
+        "mode": "no-cors",
+        "credentials": "omit"
+      }
+    },
+    {
+      "id": "activity-b8hn-css",
+      "url": "https://grokipedia.com/_astro/activity.B8hnKYSI.css",
+      "receivedAt": "2026-09-17T21:38:59.947Z",
+      "status": 200,
+      "decodedBytes": 38158,
+      "encodedBytes": 8175,
+      "bodySha256": "8bf059642c01513ffe0172238464b6f687c0c326171b316e4bc78e70317c9aff",
+      "sourceSha256": "8bf059642c01513ffe0172238464b6f687c0c326171b316e4bc78e70317c9aff",
+      "responseEnvelopeSha256": "236deb2b0dc130ae0232b11afa00d7b0bb9eee3766b919745097b7f22a7367a9",
+      "executionSha256": "73e7702dc696f5ecead7e46c8b7118c5db4f50228650cddf05c0ca8e933eee6d",
+      "corsType": "basic",
+      "fetchPolicy": {
+        "mode": "no-cors",
+        "credentials": "omit"
+      }
+    }
+  ],
+  "requests": 3,
+  "newArticleRequests": 0,
+  "native": {
+    "focused": {
+      "label": "release01",
+      "pid": 2342453,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 5.577384799718857,
+      "passedTests": 671,
+      "failedTests": 0,
+      "files": 14,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "fullAvailable": {
+      "label": "release02",
+      "pid": 2346783,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 668.808885211125,
+      "passedTests": 50425,
+      "failedTests": 0,
+      "files": 1006,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "negativeControl": {
+      "label": "red01",
+      "pid": 2343228,
+      "exitCode": 1,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 6.248670671135187,
+      "passedTests": 666,
+      "failedTests": 5,
+      "files": 14,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "quality": {
+      "label": "release01",
+      "executions": [
+        {
+          "name": "build",
+          "pid": 2342636,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 7.585386265069246
+        },
+        {
+          "name": "types",
+          "pid": 2343116,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 4.190972527489066
+        },
+        {
+          "name": "format",
+          "pid": 2343260,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.06521845422685146
+        },
+        {
+          "name": "lint",
+          "pid": 2343280,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.06470872275531292
+        }
+      ],
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0
+      },
+      "allProcessesClosed": true
+    }
+  },
+  "newTests": 35,
+  "manifestEntries": 1028,
+  "missingCommittedTestPaths": [
+    "src/borders.test.ts",
+    "src/css-flex.test.ts",
+    "src/css-flow.test.ts",
+    "src/css-math.test.ts",
+    "src/css-variables.test.ts",
+    "src/flex-column-wrap.test.ts",
+    "src/flex-column.test.ts",
+    "src/flex-document.test.ts",
+    "src/flex-nested.test.ts",
+    "src/font-relative-box.test.ts",
+    "src/inline-block.test.ts",
+    "src/inline-borders.test.ts",
+    "src/inline-flex.test.ts",
+    "src/page-base64.test.ts",
+    "src/portable-boundary.test.ts",
+    "src/reference-images.test.ts",
+    "src/reference-renderer.test.ts",
+    "src/relative-positioning.test.ts",
+    "src/response-archive.test.ts",
+    "src/select-keyboard.test.ts",
+    "src/select-typeahead.test.ts",
+    "src/stacking-order.test.ts"
+  ],
+  "probes": [
+    {
+      "name": "native-style-probe-v2",
+      "execution": {
+        "at": "2026-09-17T21:42:45.478344+00:00",
+        "pid": 2330227,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.7156683057546616,
+        "passed": false,
+        "errors": [
+          "AssertionError: "
+        ]
+      },
+      "executionSha256": "c9f25832f9949ecfdfd130422ceb632c9ce7a17dcda87be1ae822d2d6cc16e57",
+      "resultSha256": "ced941e3acb867a8f58cb4ecdbd686f5fc0072001648eed0d35b62d878762275",
+      "results": [
+        {
+          "mode": "unloaded",
+          "passed": true,
+          "closed": true,
+          "wrapperCount": 63,
+          "blockDisplays": 0,
+          "inlineDisplays": 63,
+          "extraction": {
+            "bytes": 66052,
+            "sha256": "a0266336ffd47163bc6927b198c9bbec5536e21ff3c0630a2599c6591d6a5078",
+            "paragraphBlocks": 132
+          },
+          "failures": []
+        },
+        {
+          "mode": "captured-styles",
+          "passed": false,
+          "closed": true,
+          "failures": [
+            {
+              "name": "AgentBrowserError",
+              "code": "resource-limit",
+              "message": "CSS variable retention limit exceeded"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "native-style-probe-release01",
+      "execution": {
+        "at": "2026-09-17T21:52:53.702065+00:00",
+        "pid": 2344843,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.7657564505934715,
+        "passed": false,
+        "errors": [
+          "AssertionError: "
+        ]
+      },
+      "executionSha256": "b9f4e11e692fddc84108f9a3c3d8123b754150540f6a4db4a1e52603ec099e1b",
+      "resultSha256": "f93c24af07f33d07b8ad465fa4035cc9d59cb0788232965221fabb378dba42d5",
+      "results": [
+        {
+          "mode": "unloaded",
+          "passed": true,
+          "closed": true,
+          "wrapperCount": 63,
+          "blockDisplays": 0,
+          "inlineDisplays": 63,
+          "extraction": {
+            "bytes": 66052,
+            "sha256": "a0266336ffd47163bc6927b198c9bbec5536e21ff3c0630a2599c6591d6a5078",
+            "paragraphBlocks": 132
+          },
+          "failures": []
+        },
+        {
+          "mode": "captured-styles",
+          "passed": false,
+          "closed": true,
+          "failures": [
+            {
+              "name": "AgentBrowserError",
+              "code": "resource-limit",
+              "message": "CSS cascade work limit exceeded"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "native-style-probe-profile",
+      "execution": {
+        "at": "2026-09-17T21:53:58.293058+00:00",
+        "pid": 2345832,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.765753211453557,
+        "passed": false,
+        "errors": [
+          "AssertionError: "
+        ]
+      },
+      "executionSha256": "092e8f028ff76d0e7cb56d666a8d7f84afcf790f1a366cc289673dfce8ed6681",
+      "resultSha256": "df1fd880ef8ac2f4975cdf8e5369eddc510f868e5bee51e6ff154dc90186deb2",
+      "results": [
+        {
+          "mode": "unloaded",
+          "passed": true,
+          "closed": true,
+          "wrapperCount": 63,
+          "blockDisplays": 0,
+          "inlineDisplays": 63,
+          "extraction": {
+            "bytes": 66052,
+            "sha256": "a0266336ffd47163bc6927b198c9bbec5536e21ff3c0630a2599c6591d6a5078",
+            "paragraphBlocks": 132
+          },
+          "failures": []
+        },
+        {
+          "mode": "captured-styles",
+          "passed": false,
+          "closed": true,
+          "failures": [
+            {
+              "name": "AgentBrowserError",
+              "code": "resource-limit",
+              "message": "CSS cascade work limit exceeded",
+              "stack": [
+                "AgentBrowserError: CSS cascade work limit exceeded",
+                "    at charge (file:///dev/shm/agent-browser-style-cache-XAGZvd/candidate/dist/src/styles.js:1018:23)",
+                "    at DocumentStyles.refresh (file:///dev/shm/agent-browser-style-cache-XAGZvd/candidate/dist/src/styles.js:1493:21)",
+                "    at DocumentStyles.get (file:///dev/shm/agent-browser-style-cache-XAGZvd/candidate/dist/src/styles.js:359:14)",
+                "    at file:///home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-style-grouping-september17/style-probe-profile.mjs:37:75",
+                "    at Array.map (<anonymous>)",
+                "    at file:///home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-style-grouping-september17/style-probe-profile.mjs:37:27"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "budgetDiagnostic": {
+    "execution": {
+      "at": "2026-09-17T22:00:48.424575+00:00",
+      "pid": 2354084,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 1.066629059612751,
+      "passed": true,
+      "errors": [],
+      "networkRequests": 0,
+      "resultSha256": "b3485e2fa7702111384f909438c0542a1d5c2628720a9cc233d06dcf820c2ed4"
+    },
+    "resultSha256": "b3485e2fa7702111384f909438c0542a1d5c2628720a9cc233d06dcf820c2ed4",
+    "diagnosticOnly": true,
+    "fullExtractionPerformed": false,
+    "maxWorkOverride": 10000000,
+    "measuredWork": 5699541,
+    "wrapperCount": 63,
+    "blockDisplays": 63,
+    "rules": 1485,
+    "declarations": 2310,
+    "codeUnits": 97225,
+    "issues": {
+      "unimplemented-css-at-rule": 30,
+      "unimplemented-or-invalid-css-value": 30,
+      "unimplemented-css-property": 239,
+      "unimplemented-or-invalid-css-selector": 34
+    },
+    "productionLimitsChanged": false
+  },
+  "fullStyledPagePassed": false,
+  "styleApplicationClassification": "retention-fixed-work-budget-still-exceeded",
+  "scriptOrSdkAcceptance": false,
+  "renderedAcceptance": false,
+  "historical100EntryResultUnchanged": true,
+  "reviewFiles": [
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-style-grouping-september17/LIVE-AUDIT.md",
+      "sha256": "00e783bdc42323e87517b9f487243b317f9d5420ff446dacb3aa160713b5c629"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-style-grouping-september17/CODE-REVIEW.md",
+      "sha256": "20b31a72df8768918012423fd28b6b5884808cd8b4da071c4f25807329fe8447"
+    }
+  ],
+  "preservedFailures": [
+    "v1 proof response identity assertion",
+    "v2 pre-wire cookie-context API rejection",
+    "offline v1 module URL guard rejection",
+    "core01 two generated-content expectation failures and two duplicate-map limit fixtures",
+    "core01 three formatter findings",
+    "original full CSS retention limit",
+    "release01/profile full CSS work limit"
+  ]
+}

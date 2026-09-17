@@ -161,7 +161,7 @@ it("does not retain duplicate inherited theme maps across wildcard redeclaration
 	expect(read("--theme")).toBe("red");
 });
 
-it("bounds repeated unchanged variable resolution without retaining a result cache", () => {
+it("bounds repeated unchanged variable resolution", () => {
 	const payload = "token".repeat(500);
 	const { tree, id } = fixture(
 		`#parent{--theme:${payload};--alias:var(--theme)}#parent *{--alias:var(--theme)}`,
@@ -574,12 +574,12 @@ it("charges resolution work and closes independent style owners", () => {
 it("recovers from failed retained-binding rebuilds without exposing stale values", () => {
 	const { tree, id, read } = fixture(
 		"#target{--theme:red}",
-		`<div id="target" class="scope">Text</div>${'<div class="scope"></div>'.repeat(35)}`,
+		`<div id="target" class="scope" style="--unique:target">Text</div>${Array.from({ length: 35 }, (_value, index) => `<div class="scope" style="--unique:${index}"></div>`).join("")}`,
 	);
 	expect(read("--theme")).toBe("red");
 	tree.setTextContent(
 		id("style"),
-		`.scope{${Array.from({ length: 512 }, (_value, index) => `--v${index}:red`).join(";")}}`,
+		`.scope{${Array.from({ length: 511 }, (_value, index) => `--v${index}:red`).join(";")}}`,
 	);
 	expect(() => read("--theme")).toThrow("retention limit");
 	expect(() => read("--theme")).toThrow("retention limit");

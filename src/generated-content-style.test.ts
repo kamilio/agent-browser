@@ -471,7 +471,7 @@ it("charges generated style work once per cached target and revokes reads on clo
 
 it("bounds retained bindings across both pseudo targets and recovers without stale content", () => {
 	const declarations = Array.from(
-		{ length: cssVariableLimits.maxProperties },
+		{ length: cssVariableLimits.maxProperties - 2 },
 		(_value, index) => `--value${index}:"text"`,
 	).join(";");
 	const count =
@@ -481,13 +481,13 @@ it("bounds retained bindings across both pseudo targets and recovers without sta
 		) + 1;
 	const { tree, styles, target, id, generated } = fixture(
 		'#target::before{content:"original"}',
-		`<div id="target" class="scope"></div>${'<div class="scope"></div>'.repeat(count - 1)}`,
+		`<div id="target" class="scope" style="--element:target"></div>${Array.from({ length: count - 1 }, (_value, index) => `<div class="scope" style="--element:${index}"></div>`).join("")}`,
 		{ maxWork: 50_000_000 },
 	);
 	expect(generated().content).toBe("original");
 	tree.setTextContent(
 		id("style"),
-		`.scope::before,.scope::after{${declarations};content:var(--value0)}`,
+		`.scope::before,.scope::after{${declarations};content:var(--value0)}.scope::before{--kind:before}.scope::after{--kind:after}`,
 	);
 	expect(() => styles.generatedContent(target, "before")).toThrow(
 		"CSS variable retention limit exceeded",
@@ -507,8 +507,8 @@ it("bounds retained custom-property text across pseudo targets", () => {
 		Math.floor(cssVariableLimits.maxRetainedCodeUnits / (2 * payload.length)) +
 		1;
 	const { tree, styles, target } = fixture(
-		`.scope::before,.scope::after{--payload:${payload};content:"text"}`,
-		`<div id="target" class="scope"></div>${'<div class="scope"></div>'.repeat(count - 1)}`,
+		`.scope::before,.scope::after{--payload:${payload};content:"text"}.scope::before{--kind:before}.scope::after{--kind:after}`,
+		`<div id="target" class="scope" style="--element:target"></div>${Array.from({ length: count - 1 }, (_value, index) => `<div class="scope" style="--element:${index}"></div>`).join("")}`,
 		{ maxWork: 50_000_000 },
 	);
 	expect(() => styles.generatedContent(target, "before")).toThrow(

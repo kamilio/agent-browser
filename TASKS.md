@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Reuse equivalent CSS custom-property maps without raising limits
+
+- Three exact source-linked Grokipedia stylesheets are retrieved on September17
+  through native CSP/CORS/transport: three HTTP200 GETs after zero-network proofs.
+  No page refetch, imports/fonts/images/scripts/SDK, credential use or challenge
+  solving. Two captured sheets contain the block display rule; none has @layer.
+- Applying all captured CSS to the saved article originally fails native custom
+  property retention. Add a bounded per-cascade parent/declaration-identity cache
+  shared by elements and pseudo-elements; count retained result maps once. Keep
+  existing property, retention, text and work limits. Refresh discards the cache.
+- Thirty-five new cases cover shared sibling/pseudo maps, grouping, mutations,
+  saturation, errors and isolation. Existing retention tests now use genuinely
+  distinct maps; they still assert limits and stale-state recovery. Focused native
+  qualification passes671/0 in14 files; unchanged style integration fails five
+  new regressions. Build/types/format/lint pass; the report records the separate
+  full-available native result and all original harness/fixture failures.
+- This is NOT a full styled-page pass: the same complete CSS now reaches the
+  existing CSS cascade work limit during pseudo-element property processing.
+  Unstyled article extraction stays byte-identical. Continue measuring and
+  reducing that repeated work, then verify real CSS-backed paragraph grouping;
+  do not raise limits or infer utility-class semantics merely to claim success.
+- Keep historical100-entry33/67 results unchanged. The native manifest still
+  has22 absent committed paths. ActualSDK/HTML modules, broader website workflows,
+  performance/access handling, real credentials/passkeys and original research
+  remain open. See reports/css-variable-reuse-2026-09-17.md/JSON. Goal stays active.
+
 ### Retrieve three source-linked articles and replay focused sections
 
 - Three fresh anonymous native GETs on September 17 retrieve the exact Science
