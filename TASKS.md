@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Inspect source-advertised embedded MLCommons results
+
+- One exact native GET to the historical Datacenter page's Tableau iframe at
+  06:45:23.752 UTC September17 returns200 and6569HTML bytes, but zero benchmark
+  rows. The138-byte extracted error message is a stylesheet-hidden template;
+  do not diagnose a real application failure from source-only extraction.
+- Strict inert JSON inspection finds ten static configuration fields, no scores;
+  visualization/tsConfig placeholders are empty. One script asset/two CSS links
+  remain unfetched. No complete data/export URL is advertised; vizql is a prefix.
+- Exact synthetic proof and1593 source/2372 compiled pins on committed5ca9d5a
+  pass; one request/TLS/socket/process group closes, no redirects/retries/scripts,
+  credentials or SDK. Three offline harness incidents remain. The64-file worker
+  seal is verified; this is not live validation of newer output fix a035372.
+- See reports/mlcommons-embedded-results-2026-09-17.md/JSON. Next work is scoped
+  dynamic initialization or a source-advertised static export, plus stylesheet
+  visibility. Numerical hardware results and broader browser/research/runtime/
+  access/CAPTCHA/provider/passkey/device/TTY gates remain open. Historical10033/67
+  stays unchanged; overall browser goal remains active.
+
 ### Cancel blocked research output and verify content workflows
 
 - Shared writer preserves binary/text payloads, callback/drain ordering and caller

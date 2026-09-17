@@ -1,0 +1,60 @@
+{
+  "status": "closed-bounded-scope",
+  "exactUrl": "https://public.tableau.com/views/MLCommons-InferenceDatacenter/MLCommons-Inference?:embed=y&:showVizHome=no&:host_url=https%3A%2F%2Fpublic.tableau.com%2F&:embed_code_version=3&:tabs=yes&:toolbar=yes&:animate_transition=no&:display_static_image=no&:display_spinner=no&:display_overlay=no&:display_count=yes&:language=en-US&:loadOrderID=0",
+  "captureTime": "2026-09-17T06:45:23.752Z",
+  "httpStatus": 200,
+  "contentType": [
+    "text/html;charset=utf-8"
+  ],
+  "outcome": "extracted-unverified",
+  "classificationBarrier": null,
+  "contentUsefulness": "Tableau bootstrap shell only; no benchmark rows",
+  "actualApplicationErrorEstablished": false,
+  "extractedErrorTemplateIsCssHidden": true,
+  "responseBytes": 6569,
+  "encodedResponseBytes": 2419,
+  "bodySha256": "e11bef2be741058279e7f5305b6d2418ab9eab12ae667e3f47f27b49bb1d5df4",
+  "extractionBytes": 138,
+  "numericalSystemPerformanceRows": 0,
+  "inertJson": "Empty tsConfigContainer; staticConfigContainer has 10 bootstrap/navigation/prefix fields, no benchmark values",
+  "nextRequirement": "A successful dynamic visualization would require loading the literal PreBootstrap.min.js asset and performing Tableau initialization and any subsequently advertised data requests. Those are outside this one-GET/no-page-script scope; the empty tsConfigContainer may also need investigation by the publisher. Alternatively, a source-advertised server-rendered or static data export is required for script-free benchmark rows. No complete benchmark-data endpoint or export is advertised in this capture; vizql is only a route prefix, not an authorized endpoint. Further investigation needs separately authorized scope, not a retry or guessed endpoint.",
+  "liveRequests": 1,
+  "remainingAuthorizedRequests": 0,
+  "syntheticProofPassed": true,
+  "safetyAuditPassed": true,
+  "sourceCaptureTime": "2026-09-15T11:54:44.246Z",
+  "sourcePublicationTime": null,
+  "runtimeCommit": "5ca9d5a30704cb5b4c1e71b70b5eeb6dade026f8",
+  "limitations": [
+    "One anonymous exact-URL capture only; no redirects, retries, assets, API calls, credentials, SDK/SafeJS, actual page scripts or TTY.",
+    "The extracted error text is a stylesheet-hidden template, not evidence of a real application error. No CSS rendering or dynamic initialization was attempted.",
+    "No useful numerical system-performance data exists in the captured document or bounded strictly parsed inert configuration. This does not establish absence in the dynamic Tableau workbook.",
+    "The query is preserved in input/guard/HTTP observer evidence; the compiled CLI intentionally redacts report URLs to ?redacted.",
+    "Capture time is not a source publication/update date. The historical Datacenter source is from September 15, 2026.",
+    "This source/compiled-pinned 5ca9d5a release07 runtime excludes the output-lifecycle fix the parent reports committed as a035372ed86280561f2c3ca4979116c18180ce2b. Historical 1696-test evidence and this bounded probe do not validate that newer commit or broader browser gates.",
+    "No rankings, current hardware recommendations, independent performance measurements or speed claims. Overall browser goal and TASKS.md gates remain open; no production edits or commits."
+  ],
+  "evidence": [
+    "AUDIT.json",
+    "RAW-EXTRACTION-REVIEW.json",
+    "INERT-JSON-REVIEW.json",
+    "UNFETCHED-ASSETS.json",
+    "INCIDENTS.md",
+    "source-datacenter/iframe-PROVENANCE.json",
+    "embedded/proof/CHECK.json",
+    "embedded/live/embedded/RESULT.json",
+    "embedded/live/embedded/http-events.jsonl"
+  ],
+  "parentReview": {
+    "at": "2026-09-17T06:53:06.115Z",
+    "sourcePins": 1593,
+    "compiledPins": 2372,
+    "workerArtifactsVerified": 64,
+    "workerManifest": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/mlcommons-embedded-results-september17/EVIDENCE-MANIFEST.json",
+    "workerManifestSha256": "94f0e370d01f099a9ed0bac3a3a978ec7e48c48563690208bc8b99514b2a0de6",
+    "sourceRuntimeUnchanged": true,
+    "newFullSuiteRun": false,
+    "newOutputFixLiveValidated": false,
+    "goalComplete": false
+  }
+}
