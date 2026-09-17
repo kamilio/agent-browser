@@ -58,6 +58,10 @@ instructions. The password-provider/runtime boundaries are unchanged.
 
 ## Offline CLI
 
+For a fresh native capture and selection in one command, see
+`JSON-CONTENT-WORKFLOW.md`. The offline command below remains available for
+explicit already-captured source bytes without any new network request.
+
 `research-html-json` reads raw response-body bytes from stdin. Supply the exact
 body SHA256, original URL/content type, script ID and JSON pointer:
 

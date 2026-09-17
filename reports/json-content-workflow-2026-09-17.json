@@ -1,0 +1,592 @@
+{
+  "date": "2026-09-17",
+  "parentCommit": "088d4d6fcc58a444390b9cd9fc2aaca533f1de4c",
+  "runtimeLabel": "release02",
+  "goalStatus": "active",
+  "native": {
+    "label": "release02",
+    "pid": 1090522,
+    "exitCode": 0,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 7.930420709773898,
+    "passedTests": 657,
+    "failedTests": 0,
+    "files": 8,
+    "homeEntries": [],
+    "tmpEntries": [],
+    "newTests": 83,
+    "manifestEntries": 977,
+    "availableFiles": 955,
+    "missingFiles": [
+      "src/borders.test.ts",
+      "src/css-flex.test.ts",
+      "src/css-flow.test.ts",
+      "src/css-math.test.ts",
+      "src/css-variables.test.ts",
+      "src/flex-column-wrap.test.ts",
+      "src/flex-column.test.ts",
+      "src/flex-document.test.ts",
+      "src/flex-nested.test.ts",
+      "src/font-relative-box.test.ts",
+      "src/inline-block.test.ts",
+      "src/inline-borders.test.ts",
+      "src/inline-flex.test.ts",
+      "src/page-base64.test.ts",
+      "src/portable-boundary.test.ts",
+      "src/reference-images.test.ts",
+      "src/reference-renderer.test.ts",
+      "src/relative-positioning.test.ts",
+      "src/response-archive.test.ts",
+      "src/select-keyboard.test.ts",
+      "src/select-typeahead.test.ts",
+      "src/stacking-order.test.ts"
+    ],
+    "fullManifestAcceptance": false
+  },
+  "quality": {
+    "label": "release02",
+    "executions": [
+      {
+        "name": "build",
+        "pid": 1090245,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 6.526593515649438
+      },
+      {
+        "name": "types",
+        "pid": 1090342,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 4.0212208814918995
+      },
+      {
+        "name": "format",
+        "pid": 1090484,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.031997060403227806
+      },
+      {
+        "name": "lint",
+        "pid": 1090503,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.031854867935180664
+      }
+    ],
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    },
+    "allProcessesClosed": true
+  },
+  "scope": {
+    "navigationCallsPerCommand": 1,
+    "liveRequests": 2,
+    "liveRedirects": 0,
+    "liveRetries": 0,
+    "credentials": "omitted",
+    "pageScripts": false,
+    "safeJs": false,
+    "alternateClient": false,
+    "challengeSolving": false,
+    "testPolicyRedirects": "disabled",
+    "productionRedirects": "existing bounded native policy",
+    "sourceNetworkRequests": 0
+  },
+  "results": [
+    {
+      "mode": "proof",
+      "id": "roblox-catalog",
+      "at": "2026-09-17T02:07:24.624712+00:00",
+      "url": "https://www.roblox.com/",
+      "status": 200,
+      "nativeOutcome": "empty-extraction",
+      "sourceOutcome": "source-extracted-unverified",
+      "rendered": false,
+      "verified": false,
+      "bodyBytes": 275,
+      "bodySha256": "f857cdbd3b60964dd676afb9b277587414dfca797ce4402799ae48939337cecc",
+      "selectedBytes": 69,
+      "selectedSha256": "f2006e8028ecb8aea25dce80e0cf2bf2ed54b383c6de5906583c0ef35cda5b66",
+      "outputBytes": 2578,
+      "nativeMetrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 275,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 275,
+        "active": 0,
+        "closed": true
+      },
+      "elapsedSupervisorSeconds": 0.2646129038184881,
+      "contentSummary": {
+        "synthetic": true
+      }
+    },
+    {
+      "mode": "proof",
+      "id": "tiktok-navigation",
+      "at": "2026-09-17T02:07:24.891225+00:00",
+      "url": "https://www.tiktok.com/",
+      "status": 200,
+      "nativeOutcome": "empty-extraction",
+      "sourceOutcome": "source-extracted-unverified",
+      "rendered": false,
+      "verified": false,
+      "bodyBytes": 288,
+      "bodySha256": "2db5d3e9600ad776660e7c75f9ab31756c409ad7210ba2f12235b06e9ee5a2c0",
+      "selectedBytes": 69,
+      "selectedSha256": "f2006e8028ecb8aea25dce80e0cf2bf2ed54b383c6de5906583c0ef35cda5b66",
+      "outputBytes": 2619,
+      "nativeMetrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 288,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 288,
+        "active": 0,
+        "closed": true
+      },
+      "elapsedSupervisorSeconds": 0.26301727816462517,
+      "contentSummary": {
+        "synthetic": true
+      }
+    },
+    {
+      "mode": "saved",
+      "id": "roblox-catalog",
+      "at": "2026-09-17T02:07:30.378302+00:00",
+      "url": "https://www.roblox.com/",
+      "status": 200,
+      "nativeOutcome": "empty-extraction",
+      "sourceOutcome": "source-extracted-unverified",
+      "rendered": false,
+      "verified": false,
+      "bodyBytes": 100480,
+      "bodySha256": "496f283c415581fe14209f02992fdb6721d860f8948647f128fb03ad9581b2ff",
+      "selectedBytes": 7080,
+      "selectedSha256": "f86148d9eff06970f46f9050cad2f89c7d34135f8303ad723b501b2d3785d62b",
+      "outputBytes": 10696,
+      "nativeMetrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 100480,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 100480,
+        "active": 0,
+        "closed": true
+      },
+      "elapsedSupervisorSeconds": 0.33089883998036385,
+      "contentSummary": {
+        "carousels": [
+          {
+            "title": "Games to get you started",
+            "entries": 6
+          },
+          {
+            "title": "What’s trending",
+            "entries": 8
+          }
+        ],
+        "gameEntries": 14,
+        "uniqueGamesVerified": false
+      }
+    },
+    {
+      "mode": "saved",
+      "id": "tiktok-navigation",
+      "at": "2026-09-17T02:07:30.711217+00:00",
+      "url": "https://www.tiktok.com/",
+      "status": 200,
+      "nativeOutcome": "empty-extraction",
+      "sourceOutcome": "source-extracted-unverified",
+      "rendered": false,
+      "verified": false,
+      "bodyBytes": 367642,
+      "bodySha256": "15606955fbd094c641270436d2b995799b12c86082ffe1e4b6037b2071da1bb5",
+      "selectedBytes": 2221,
+      "selectedSha256": "534521996b863db2c8e1ced1d0cc99cec8a4a8c60760ae2d9711671539826192",
+      "outputBytes": 5067,
+      "nativeMetrics": {
+        "mockedRequests": 1,
+        "mockedDecodedBytes": 367642,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 0,
+        "decodedBytes": 367642,
+        "active": 0,
+        "closed": true
+      },
+      "elapsedSupervisorSeconds": 0.38091176748275757,
+      "contentSummary": {
+        "groups": [
+          {
+            "title": "Company",
+            "links": 4
+          },
+          {
+            "title": "Programs",
+            "links": 7
+          },
+          {
+            "title": "Support",
+            "links": 7
+          },
+          {
+            "title": "Legal",
+            "links": 2
+          }
+        ],
+        "navigationLinks": 20,
+        "videoFeed": false
+      }
+    },
+    {
+      "mode": "live",
+      "id": "roblox-catalog",
+      "at": "2026-09-17T02:07:39.149528+00:00",
+      "url": "https://www.roblox.com/",
+      "status": 200,
+      "nativeOutcome": "empty-extraction",
+      "sourceOutcome": "source-extracted-unverified",
+      "rendered": false,
+      "verified": false,
+      "bodyBytes": 101359,
+      "bodySha256": "0db6379a08273acd8274a12319a424e0beaf593e3670607f31c572afa0d34ab0",
+      "selectedBytes": 7497,
+      "selectedSha256": "b7804258af80157b53cdeeb5c56026a5c523adc0cff648615e299fa50503d864",
+      "outputBytes": 11169,
+      "nativeMetrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 18630,
+        "decodedBytes": 101359,
+        "active": 0,
+        "closed": true
+      },
+      "elapsedSupervisorSeconds": 0.5833646152168512,
+      "contentSummary": {
+        "carousels": [
+          {
+            "title": "Games to get you started",
+            "entries": 6
+          },
+          {
+            "title": "What’s trending",
+            "entries": 8
+          }
+        ],
+        "gameEntries": 14,
+        "uniqueGamesVerified": false
+      }
+    },
+    {
+      "mode": "live",
+      "id": "tiktok-navigation",
+      "at": "2026-09-17T02:07:41.737132+00:00",
+      "url": "https://www.tiktok.com/",
+      "status": 200,
+      "nativeOutcome": "empty-extraction",
+      "sourceOutcome": "source-extracted-unverified",
+      "rendered": false,
+      "verified": false,
+      "bodyBytes": 366177,
+      "bodySha256": "4f7f459d2494fbc1c9461c94896a8da8b5b1e22d0756c1737087d871ddb0c4f2",
+      "selectedBytes": 2221,
+      "selectedSha256": "534521996b863db2c8e1ced1d0cc99cec8a4a8c60760ae2d9711671539826192",
+      "outputBytes": 5087,
+      "nativeMetrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 78881,
+        "decodedBytes": 366177,
+        "active": 0,
+        "closed": true
+      },
+      "elapsedSupervisorSeconds": 0.8339317515492439,
+      "contentSummary": {
+        "groups": [
+          {
+            "title": "Company",
+            "links": 4
+          },
+          {
+            "title": "Programs",
+            "links": 7
+          },
+          {
+            "title": "Support",
+            "links": 7
+          },
+          {
+            "title": "Legal",
+            "links": 2
+          }
+        ],
+        "navigationLinks": 20,
+        "videoFeed": false
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/CHECK-core01.json",
+      "sha256": "5ca622a5d540d9f56a650726fc40e64f37878d619e5952efdc6da1ae9d65ea3f"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/quality-core01/types.log",
+      "sha256": "442b9b65982b9ea811265909c10d5e247b64d44755c09992c006e044b522211a"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/CHECK-release01.json",
+      "sha256": "39f9fd02ce794554935d4f64436c427335a1330f926f65c7a643499594be72f9"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/CHECK-release02.json",
+      "sha256": "f99b867b0540681b299d804a56ffbe17efca0ce34bf57a6cadb30faf53d75a2c"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/native-release01/EXECUTION.json",
+      "sha256": "e4f91aa9937547f67cac18b2554bec7198afc613171796227e889f38e183d072"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/native-release02/EXECUTION.json",
+      "sha256": "048e0663a03417d0d5c633b77c645d8857f4e498cff450f0f4f77776cded1bac"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/OVERLAY-release02.json",
+      "sha256": "6f1688ecbded1a8462cf62c427d967c37f6ed83a6013f103b80666b1f71fc88b"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/SOURCE-release02.json",
+      "sha256": "a4557aa64cdfa8eac572affadad7b309b336c24be9f0e5559694c5f7e4ba1238"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/COMPILED-release02.json",
+      "sha256": "86044ec502d9af6a6eb97c891b0376d0dec747ed97c09a31c024cfa7b86d6792"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/RUNTIME.json",
+      "sha256": "f8100ef4a0c62385b564132a02c935042cd09f8660d67a3c25964586ae2cdd90"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/INPUTS.json",
+      "sha256": "c09d644cda52ee959b4d1b2d2d018b8667840aaf5e3d4f3868fecdd79c0a7dcd"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/SCOPE.md",
+      "sha256": "eaa8e4931798c2c272cc986fe582a1f02e6b2bc9aa7679dc4925dc00352b74f5"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/ADMISSION.json",
+      "sha256": "60a6ea560c2e20e64fe72660e7842615e82984e7cc8d7e09f400f70132859e6f"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/CHECK.json",
+      "sha256": "dfe21da1b0d6fb98cc0ee2bcbd94581e9582e7f57f91869adf918a4eece013a6"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/roblox-catalog/RESULT.json",
+      "sha256": "b253039fb24ca973c4977995ecd28a72beb9c5aae3a70f55291a4f05be6190d2"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/roblox-catalog/SOURCE-AUDIT.json",
+      "sha256": "583eed8a1d73abfe69cce423759a5677f3dacca1024de261fa729122ba84976f"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/roblox-catalog/EXECUTION.json",
+      "sha256": "f1e60955f4d6ebe3567a7c247d70760630df723029981fe2492e9816c44351ac"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/roblox-catalog/INVOCATION.json",
+      "sha256": "642114cc7a1833feca4ecfc20ecf938ff5bfdba188348ea3a9500fdfaf63a0af"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/roblox-catalog/REQUEST-GUARD.json",
+      "sha256": "9dce66fe844bb6d8e79a8716a109507ef0ce0fb46cf5124d031fd5b92f37bcdc"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/roblox-catalog/RESPONSE.json",
+      "sha256": "70ab9368949f5baaaac73dea6ab4560cb407fa00247d95c3d863f174ac6b5393"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/tiktok-navigation/RESULT.json",
+      "sha256": "af68672977b6e8d176a24c9ff34f73b0781f04cab4c0d818472541fd9a32a4cd"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/tiktok-navigation/SOURCE-AUDIT.json",
+      "sha256": "e14aedb5f1575cd88252404c5d963a8c365cdd914ce65f3340103f38366e7718"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/tiktok-navigation/EXECUTION.json",
+      "sha256": "a69bdd39758aa1201f22837b50f7c9643d16c5576e3648e4c6a9768c03eb76ed"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/tiktok-navigation/INVOCATION.json",
+      "sha256": "4fc5aabd4e9cae5f89956a03a7f2948d0f5f921e7ad65297d3d4a6c6bee9189b"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/tiktok-navigation/REQUEST-GUARD.json",
+      "sha256": "fc632dfb8e27140f87ebaeb6d39aaa53a2744882a10ec0bff0fe1154c46dde87"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/proof/tiktok-navigation/RESPONSE.json",
+      "sha256": "d8cd01eeba06fca95879b664749ec54a135cf5b5bb8fe94ebac5362e6bc30186"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/CHECK.json",
+      "sha256": "19fae36dd2605333100b5dd050d6cbe62d28e6819bbf54f06df4f2fbc420e2ae"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/roblox-catalog/RESULT.json",
+      "sha256": "78310701e05f23f42a3a7609d6b1756c06ad4f486a02513778d56f0f21c7ebee"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/roblox-catalog/SOURCE-AUDIT.json",
+      "sha256": "cf0d9cf6645e7100fdb2797206c79a84aa7c9369e11c129b5f6fe5669f463a7d"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/roblox-catalog/EXECUTION.json",
+      "sha256": "d0b3ee8ce8dcdc5434c2e9686df08a9ce342357521f5f1bb771faeadabbca1f4"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/roblox-catalog/INVOCATION.json",
+      "sha256": "898999836a1efa99b1b4ca712ae1727b40a053d4036fec4b2775f0021c1ad509"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/roblox-catalog/REQUEST-GUARD.json",
+      "sha256": "e52a75aca4cef7b79059d8ff2e6cc9f28e2c0a90c4e62fdb7418cf647dacb3f9"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/roblox-catalog/RESPONSE.json",
+      "sha256": "8c18fe961b3d28b9281231eef3a0c687f3f08ce6d1fd5c377f72c39507627697"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/tiktok-navigation/RESULT.json",
+      "sha256": "b181bc58a4e96ade7d94d7e25a0f294498b8580fd8b8f6c65a1249df818afd7e"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/tiktok-navigation/SOURCE-AUDIT.json",
+      "sha256": "7419554e29b0ddf9fcddac4ff4df8791aedc7ad0865bc75b78530bbce4aefdaa"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/tiktok-navigation/EXECUTION.json",
+      "sha256": "10af4b2d2d055c81fbff7489f6adb90ef17a179fdc33cd0e8e9dc2613ced8e92"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/tiktok-navigation/INVOCATION.json",
+      "sha256": "e002931ead66069be5bb2ac97f93e50f453b16e6e190230d012935b103cf6d90"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/tiktok-navigation/REQUEST-GUARD.json",
+      "sha256": "1142cc6c2161f3691e62708789d4563f4bbb43b4d63b5ee9dc5a801a2271f039"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/saved/tiktok-navigation/RESPONSE.json",
+      "sha256": "ad9cc65f08e012b6a982a8d2fb0e6b1da3054a2e4afc19cf40a4e86ffa077933"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/CHECK.json",
+      "sha256": "1c9525e6798a3599041d943c1961eb222670d01093839eae26dd4925ae1794d7"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/roblox-catalog/RESULT.json",
+      "sha256": "6c895cf0c0c946599c32999671788298ac220fdf8413876b43600356230105ad"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/roblox-catalog/SOURCE-AUDIT.json",
+      "sha256": "dbbe01a635278d27ec78880e6a0b702ad7da98f6ed4fa6b5532df78b97c595ca"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/roblox-catalog/EXECUTION.json",
+      "sha256": "88b56061de67d1c25bbe1cacfed5491f35608521756548685c49df6ece7e0a16"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/roblox-catalog/INVOCATION.json",
+      "sha256": "211f2e9c334282f4a78acadd55d2dd2c814862d4dbb8bc93a79dfd9e60bf2d87"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/roblox-catalog/REQUEST-GUARD.json",
+      "sha256": "7687f6ff42f88fd4d759aed93870adeebfbaa27d01da52b0b38ad80672ca4f2d"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/roblox-catalog/RESPONSE.json",
+      "sha256": "6e7728a5efa3432e00e331b29baae55a9a91b3667290ea38efed50b3420d6d5c"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/tiktok-navigation/RESULT.json",
+      "sha256": "30a002fe11c6b7dfd2e4cafd2629e2a543ebf84dd8e170273efce1c3638fb544"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/tiktok-navigation/SOURCE-AUDIT.json",
+      "sha256": "f7c9072295b26f4afb7382edb550a84526c7a68ae4c9549580b9231bbda664c0"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/tiktok-navigation/EXECUTION.json",
+      "sha256": "fda27a1b9242d5625b6bd198b785c1c586805a3c6415e1ba6f06e70db7efbe98"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/tiktok-navigation/INVOCATION.json",
+      "sha256": "a96f260eccc4e47dae6385400cbba5d8e5641f58bc97650a399ac91855a55f73"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/tiktok-navigation/REQUEST-GUARD.json",
+      "sha256": "3a95964a87b2e06567508f8c30ff713e0ea6ee24bd82710189c54cf8aed0dbac"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/workflows/live/tiktok-navigation/RESPONSE.json",
+      "sha256": "de3eed381ddc34ffe4ea3754948c9064d0d1131c5fd7108433313dfe997b0ec3"
+    }
+  ],
+  "reviews": [
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/API-REVIEW-RESULT.md",
+      "sha256": "26756de7b84beb6b391f3df677c5699ca1898331011c75707a2659647bdede1a"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-work-september17-CLI-REVIEW.md",
+      "sha256": "c54137bf8c22d875bf8e56089990b75a910a1ffab70b7431de6ac2ddda355537"
+    },
+    {
+      "file": "node_modules/.cache/native-validation/json-content-workflow-september17/FINAL-REVIEW-RESULT.md",
+      "sha256": "0b465ccde3911abb3fd00138a59e34ce30edc36ecbf91be57f0e8d49482017e4"
+    }
+  ],
+  "limitations": [
+    "Source-only, not rendered or fact-verified",
+    "Explicit script ID and pointer required",
+    "No transactional stream delivery",
+    "Cooperative deadline; cleanup may finish later",
+    "Skipped title/textarea retains inherited 65536-unit window bound",
+    "22 missing canonical native tests",
+    "Actual SafeJS 0.1.640, real credentials/passkeys/devices/TTY acceptance open",
+    "Research and broad access/CAPTCHA/performance objective incomplete",
+    "Historical citation-proxy result remains 33 useful / 67 other"
+  ]
+}

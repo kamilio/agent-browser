@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Retrieve native public JSON source in one command
+
+- New researchJsonContent API and compiled research-json-content-cli combine one
+  native reader navigation with bounded explicit JSON-source selection. No raw
+  capture export/digest flags, extra request, page runtime or new dependency.
+- Two fresh public GETs at02:07 UTC September17 return200: Roblox yields7497
+  source JSON bytes/14 game entries; TikTok yields2221 bytes/20 navigation links,
+  not videos. Both native reader outcomes remain empty-extraction; source success
+  is separately labeled unverified. Whole CLI records are11169/5087 bytes.
+- Two synthetic and two saved exact-command runs precede live use. All six have
+  independent HTML/JSON and exact UTF16 range checks. Requests/TLS/processes close;
+  no retries, supplied credentials, scripts, SDK or challenge bypass. Test policy
+  disables redirects while production retains existing bounded native redirects.
+-83 new cases pass; broader657/0 across8 explicit native files; build/selected
+  types/format/lint pass. Fix initial fixture typing and propagate native failure
+  categories instead of relabeling transport errors as policy denials. Canonical
+  manifest977 retains22 missing files; no new full-manifest acceptance.
+- See JSON-CONTENT-WORKFLOW.md and reports/json-content-workflow-2026-09-17.md/JSON.
+  Continue dynamic/SafeJS modules, broader practical site content, access/CAPTCHA,
+  performance, real credentials/passkeys/devices/TTY and unfinished research.
+  Historical100-entry33/67 verdicts stay unchanged; overall goal remains active.
+
 ### Recover useful inert JSON from failed reader pages without page execution
 
 - New generic selectHtmlJsonSource and offline research-html-json CLI select
