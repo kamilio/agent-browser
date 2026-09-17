@@ -98,12 +98,20 @@ Real SDK namespace behavior remains an independent acceptance gate.
 
 ## Browser work still required
 
+An explicit `networkSourceModules` alternative now supplies bounded dependency
+resolution through the native policy-fetch contract. It preserves immutable
+sources, shared requests, cached failures, CORS/credential policy and scope
+cancellation. Its selected native tests and one inert live module acquisition
+are documented in `NETWORK-SOURCE-MODULES.md`; no SDK/source execution or HTML
+module lifecycle acceptance is claimed.
+
 - Execute and qualify the adapter against the published SDK, including module
   namespace exports, cycles, static/dynamic imports, top-level await, failures,
   cancellation, retained graphs and all existing callback/lifecycle expectations.
-- Qualify native-network source resolution separately, with explicit credentials,
-  origin/redirect/CORS policy and effective cancellation. The current classic
-  fetch closure includes credentials and cannot simply become a module resolver.
+- Extend native-network source-resolution coverage beyond the single anonymous
+  same-origin asset and mocked redirect/CORS cases. Cross-origin live graphs,
+  real cancellation/deadlines and complete module semantics remain unverified.
+  The older classic-fetch closure cannot simply become a module resolver.
 - Then add and qualify HTML module discovery and lifecycle semantics. The current
   loader skips module/importmap/speculationrules, reports classic mode, and uses
   classic currentScript/document-write behavior. A resolver alone changes none

@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Resolve native module dependencies with bounded shared fetches
+
+- Add explicit networkSourceModules to the existing extension adapter, backed
+  by PageNetworkModuleRegistry and the native policy-fetch contract. Snapshot
+  canonical entries/configuration, enforce CORS/MIME/source bounds, share
+  in-flight requests and retain failed attempts without retry. Revoke pending
+  resolutions on owner/realm close without poisoning another shared caller.
+- Final isolated qualification passes362/0 across11 selected native files,
+  including80 new registry/integration cases; build/types/format/lint pass.
+  Unchanged extension adapter with new registry present gives350/12 on the same
+  final tests. Preserve development failures, including alias-cache precedence,
+  composed identity bounds, MIME casing/scalars and a corrected test-only CSP
+  observation. All1,629 source/2,412 compiled pins are verified.
+- One new native GET retrieves the MDN source-declared module resource at
+  September17 17:41:06.629 UTC:200,text/javascript,19,705 decoded/source bytes.
+  Two resolver calls reuse one immutable result with no additional request;
+  post-close resolution is denied. Complete response/socket/process closure,
+  empty cookies and prior zero-network proof are recorded. Source is not executed.
+- See NETWORK-SOURCE-MODULES.md and reports/network-source-modules-2026-09-17.md/
+  JSON. The1,020-entry manifest retains22 absent committed files. Actual SafeJS,
+  callback scheduling, HTML module discovery/lifecycle and scripted websites
+  remain separate gates. No new challenge-avoidance or general speed claim;
+  historical10033/67 stays unchanged. Continue credentials/passkeys and research
+  alongside broad website/functionality/performance goals. Goal remains active.
+
 ### Submit a real public form and verify manual content
 
 - Restore the freshly captured Debian manpages entry into the qualified native

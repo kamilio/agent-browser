@@ -227,6 +227,11 @@ export {
 	type PageSourceImport,
 	type PageSourceModuleOptions,
 } from "./page-source-modules.js";
+export {
+	PageNetworkModuleRegistry,
+	pageNetworkModuleLimits,
+	type PageNetworkModuleOptions,
+} from "./page-network-modules.js";
 export type {
 	ReleasedCore,
 	ReleasedContext,

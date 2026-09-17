@@ -1,4 +1,8 @@
 import { AgentBrowserError } from "./errors.js";
+import {
+	type PageNetworkModuleOptions,
+	PageNetworkModuleRegistry,
+} from "./page-network-modules.js";
 import type {
 	PageRuntimeError,
 	PageRuntimeEvaluationOptions,
@@ -27,6 +31,7 @@ const extensionName = "agent-browser-page";
 
 export interface ExtensionPageRuntimeOptions {
 	sourceModules?: PageSourceModuleOptions;
+	networkSourceModules?: PageNetworkModuleOptions;
 }
 
 function errorDetails(error: unknown): PageRuntimeError {
@@ -76,10 +81,18 @@ export function extensionPageRuntime(
 			"Invalid extension page runtime options",
 		);
 	const moduleOptions = configuration.sourceModules;
+	const networkModuleOptions = configuration.networkSourceModules;
+	if (moduleOptions !== undefined && networkModuleOptions !== undefined)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Static and network source modules cannot be configured together",
+		);
 	const modules =
-		moduleOptions === undefined
-			? undefined
-			: new PageSourceModuleRegistry(moduleOptions);
+		moduleOptions !== undefined
+			? new PageSourceModuleRegistry(moduleOptions)
+			: networkModuleOptions !== undefined
+				? new PageNetworkModuleRegistry(networkModuleOptions)
+				: undefined;
 	return {
 		createPageRuntime(options) {
 			if (options.signal.aborted)
@@ -126,6 +139,7 @@ export function extensionPageRuntime(
 				closed = true;
 				if (notified) return;
 				notified = true;
+				controller.abort();
 				options.onClosed();
 			};
 			const close = () => {

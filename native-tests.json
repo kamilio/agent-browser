@@ -1,4 +1,6 @@
 [
+	"src/page-network-modules.test.ts",
+	"src/extension-page-runtime-network-modules.test.ts",
 	"src/opacity-style.test.ts",
 	"src/raster-opacity.test.ts",
 	"src/opacity-svg.test.ts",
