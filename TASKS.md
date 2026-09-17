@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Retrieve and focus two additional source-linked destinations
+
+- Two new anonymous native GETs on0b49d8a follow literal homepage links to a
+  Mayo Clinic institutional care page and a Bankrate editorial article. Both200
+  and native, with exact-command synthetic proofs first and no retries/redirects,
+  scripts/SDK/credentials/subresources or bypass. All live/proof closures pass.
+- Separate committed strategy replay selects saved content with zero new requests:
+  Mayo29059 ->11347 Markdown bytes,18/18 selected paragraphs retained;
+  Bankrate36397 ->16472 bytes,40/40 retained. Whole normalized texts match;
+  source-pattern coverage, not rendered completeness or medical/financial facts.
+- Mayo16 headings/headline and Bankrate6 subheadings/5 blockquotes/headline remain.
+  Mayo nested-parent list stays9/10 strict matches,10/10 after separately removing
+  Markdown bullets; do not count overlapping lists/paragraphs as independent prose.
+- Worker160 sealed artifacts plus parent replay/source checks retain provenance
+  and incidents.1604 source/2380 compiled pins match committed runtime; prior3804
+  selected tests are prior evidence, not new tests or full-suite acceptance.
+- See reports/focused-live-workflows-2026-09-17.md/JSON. Historical10033/67 stays.
+  Continue actualSafeJS/dynamic pages, broader website tasks, access/CAPTCHA,
+  performance, real credentials/passkeys/devices/TTY and research; goal active.
+
 ### Focus saved native-first captures without refetching
 
 - Explicit strategy-aware asynchronous replay and CLI opt-in preserve native vs
