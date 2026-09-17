@@ -93,6 +93,11 @@ import {
 	resourceLimitError,
 } from "./resource-limit.js";
 import type { DocumentLoaderContext } from "./session.js";
+import {
+	type SourceHeadingPolicy,
+	extractSourceHeading,
+	validateSourceHeadingPolicy,
+} from "./source-headings.js";
 import { isTableSourceAttribute } from "./table-source.js";
 import { imageSourceRole } from "./image-source.js";
 import { loadTextDocument } from "./text-loader.js";
@@ -266,7 +271,10 @@ export function sanitizeResearchHtml(
 	chartRoute?: InfogramChartRoute,
 	reviewRoute?: RtingsReviewRoute,
 	playgroundRoute?: ReactPlaygroundRoute,
+	sourceHeadingPolicy?: SourceHeadingPolicy,
 ) {
+	const selectedSourceHeadingPolicy =
+		validateSourceHeadingPolicy(sourceHeadingPolicy);
 	const selectedRawPolicy = validateResearchReaderRawPolicy(rawPolicy);
 	const selectedVisibilityPolicy =
 		validateResearchReaderVisibilityPolicy(visibilityPolicy);
@@ -307,6 +315,9 @@ export function sanitizeResearchHtml(
 		scripting: false,
 		styling: false,
 		hiddenContentSemantics: false,
+		...(selectedSourceHeadingPolicy
+			? { sourceHeadingPolicy: selectedSourceHeadingPolicy }
+			: {}),
 		...(selectedVisibilityPolicy
 			? {
 					visibilityPolicy: selectedVisibilityPolicy,
@@ -808,10 +819,23 @@ export function sanitizeResearchHtml(
 			Object.hasOwn(token.attributes, "role") &&
 			token.attributes.role.trim().length > 0;
 		const namedImage = outputName === name && imageSourceRole(token.attributes);
+		const sourceHeadingCandidate =
+			selectedSourceHeadingPolicy &&
+			outputName === name &&
+			Object.hasOwn(token.attributes, "role")
+				? extractSourceHeading(outputName, { role: token.attributes.role })
+				: undefined;
+		const oversizedSourceHeadingLevel =
+			sourceHeadingCandidate !== undefined &&
+			Object.hasOwn(token.attributes, "aria-level") &&
+			token.attributes["aria-level"].length > 64;
 		let attributes = "";
 		for (const [attribute, value] of Object.entries(token.attributes)) {
 			let keep =
 				attribute === "id" ||
+				(sourceHeadingCandidate !== undefined &&
+					attribute === "aria-level" &&
+					value.length <= 64) ||
 				(outputName === name &&
 					(attribute === "class" || attribute === "role")) ||
 				(outputName === "a" &&
@@ -832,6 +856,7 @@ export function sanitizeResearchHtml(
 					isAriaTableSourceAttribute(ariaTableRole, attribute)) ||
 				(outputName !== undefined &&
 					isTableSourceAttribute(outputName, attribute));
+			if (oversizedSourceHeadingLevel && attribute === "role") keep = false;
 			if (keep && attribute === "href") {
 				try {
 					parseNetworkUrl(new URL(value, "https://reader.invalid/").href);
@@ -913,7 +938,10 @@ export function loadResearchDocument(
 	visibilityPolicy: ResearchReaderVisibilityPolicy | undefined = undefined,
 	mimePolicy?: ResearchReaderMimePolicy,
 	fallbackEncoding?: ResearchReaderFallbackEncoding,
+	sourceHeadingPolicy?: SourceHeadingPolicy,
 ): DocumentTree {
+	const selectedSourceHeadingPolicy =
+		validateSourceHeadingPolicy(sourceHeadingPolicy);
 	const selectedFallbackEncoding =
 		validateResearchReaderFallbackEncoding(fallbackEncoding);
 	const selectedRawPolicy = validateResearchReaderRawPolicy(rawPolicy);
@@ -988,6 +1016,11 @@ export function loadResearchDocument(
 					prefixCodeUnits,
 				});
 	const effectiveHtml = html || mimeInterpretation !== undefined;
+	if (selectedSourceHeadingPolicy !== undefined && !effectiveHtml)
+		throw new AgentBrowserError(
+			"unsupported",
+			"Source heading policy requires effective text/html",
+		);
 	const productRoute = effectiveHtml
 		? targetProductRoute(response.url)
 		: undefined;
@@ -1010,6 +1043,7 @@ export function loadResearchDocument(
 		InfogramChartRoute?,
 		RtingsReviewRoute?,
 		ReactPlaygroundRoute?,
+		SourceHeadingPolicy?,
 	] =
 		playgroundRoute !== undefined
 			? [
@@ -1037,6 +1071,10 @@ export function loadResearchDocument(
 							: selectedVisibilityPolicy
 								? [selectedVisibilityPolicy]
 								: [];
+	if (selectedSourceHeadingPolicy !== undefined) {
+		visibilityArguments.length = 6;
+		visibilityArguments.push(selectedSourceHeadingPolicy);
+	}
 	const sanitized = sanitizeResearchHtml(
 		effectiveHtml ? decoded.text : "",
 		{

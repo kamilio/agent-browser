@@ -978,5 +978,9 @@
   "src/research-json-content-cli.test.ts",
   "src/browser-challenge-structure.test.ts",
   "src/browser-structural-challenge.test.ts",
-  "src/research-structural-challenge.test.ts"
+  "src/research-structural-challenge.test.ts",
+  "src/source-headings.test.ts",
+  "src/source-heading-extraction.test.ts",
+  "src/research-source-heading-loader.test.ts",
+  "src/research-aria-headings.test.ts"
 ]

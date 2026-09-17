@@ -4,6 +4,7 @@ import type {
 	ResearchMimeInterpretation,
 	ResearchReaderMimePolicy,
 } from "./research-mime-policy.js";
+import type { SourceHeadingPolicy } from "./source-headings.js";
 
 export const researchReaderProfile = "native-semantic-reader-v1";
 
@@ -77,6 +78,7 @@ export interface ResearchReaderReport {
 		| "source-attributes"
 		| "source-attributes-and-inline-display";
 	visibilityPolicy?: ResearchReaderVisibilityPolicy;
+	sourceHeadingPolicy?: SourceHeadingPolicy;
 	mimePolicy?: ResearchReaderMimePolicy;
 	readonly mimeInterpretation?: Readonly<ResearchMimeInterpretation>;
 	sourceHiddenSubtrees?: number;

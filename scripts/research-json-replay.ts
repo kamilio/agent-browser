@@ -47,6 +47,10 @@ import {
 	validateSourceLinkLabelPolicy,
 } from "../src/source-link-labels.js";
 import {
+	type SourceHeadingPolicy,
+	validateSourceHeadingPolicy,
+} from "../src/source-headings.js";
+import {
 	type ResearchBodyPin,
 	type ResearchEmptyOutlineRecovery,
 	type ResearchOutputLimitSectionRecovery,
@@ -208,6 +212,7 @@ export interface ResearchJsonReplayReport<
 		receiptSha256: string;
 		body: ResearchBodyPin;
 		capturedOutcome?: ResearchOutcome;
+		sourceHeadingPolicy?: SourceHeadingPolicy;
 		sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
 	};
 	selection: {
@@ -221,6 +226,7 @@ export interface ResearchJsonReplayReport<
 			| "text-lines"
 			| "text-line-discovery";
 		matches: number | null;
+		sourceHeadingPolicy?: SourceHeadingPolicy;
 		pointer?: string;
 		outputLimitPolicy?: "text-prefix-v1";
 		readerMimePolicy?: ResearchReaderMimePolicy;
@@ -558,6 +564,33 @@ function replayRawPolicy(
 		policy = selected;
 	}
 	return policy;
+}
+
+function replaySourceHeadingPolicy(
+	metadata: Readonly<Record<string, unknown>>,
+): SourceHeadingPolicy | undefined {
+	const topDeclared = Object.hasOwn(metadata, "sourceHeadingPolicy");
+	const reader = metadata.reader;
+	const readerRecord =
+		reader !== null && typeof reader === "object" && !Array.isArray(reader)
+			? (reader as Record<string, unknown>)
+			: undefined;
+	const readerDeclared =
+		readerRecord !== undefined &&
+		Object.hasOwn(readerRecord, "sourceHeadingPolicy");
+	if (!topDeclared && !readerDeclared) return undefined;
+	const selected = validateSourceHeadingPolicy(metadata.sourceHeadingPolicy);
+	if (
+		!topDeclared ||
+		!readerDeclared ||
+		selected === undefined ||
+		readerRecord?.sourceHeadingPolicy !== selected
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid research replay source heading policy",
+		);
+	return selected;
 }
 
 function replayFallbackEncoding(
@@ -1021,6 +1054,9 @@ function extractValidatedReplayJson<
 	let tree: DocumentTree | undefined;
 	try {
 		checkpoint();
+		const sourceHeadingPolicy = replaySourceHeadingPolicy(
+			admission.originalMetadata,
+		);
 		const sourceLinkLabelPolicy =
 			"sourceLinkLabelPolicy" in selected
 				? selected.sourceLinkLabelPolicy
@@ -1062,16 +1098,25 @@ function extractValidatedReplayJson<
 			ResearchReaderVisibilityPolicy?,
 			ResearchReaderMimePolicy?,
 			ResearchReaderFallbackEncoding?,
+			SourceHeadingPolicy?,
 		] =
-			fallbackEncoding !== undefined
-				? [rawPolicy, visibilityPolicy, mimePolicy, fallbackEncoding]
-				: mimePolicy !== undefined
-					? [rawPolicy, visibilityPolicy, mimePolicy]
-					: visibilityPolicy !== undefined
-						? [rawPolicy, visibilityPolicy]
-						: rawPolicy === undefined
-							? []
-							: [rawPolicy];
+			sourceHeadingPolicy !== undefined
+				? [
+						rawPolicy,
+						visibilityPolicy,
+						mimePolicy,
+						fallbackEncoding,
+						sourceHeadingPolicy,
+					]
+				: fallbackEncoding !== undefined
+					? [rawPolicy, visibilityPolicy, mimePolicy, fallbackEncoding]
+					: mimePolicy !== undefined
+						? [rawPolicy, visibilityPolicy, mimePolicy]
+						: visibilityPolicy !== undefined
+							? [rawPolicy, visibilityPolicy]
+							: rawPolicy === undefined
+								? []
+								: [rawPolicy];
 		const primary = admission.originalMetadata.primaryResponse as {
 			url: string;
 			status: number;
@@ -1216,6 +1261,9 @@ function extractValidatedReplayJson<
 									? selected.target
 									: undefined,
 							format,
+							...(sourceHeadingPolicy === undefined
+								? {}
+								: { sourceHeadingPolicy }),
 							...(sourceLinkLabelPolicy === undefined
 								? {}
 								: { sourceLinkLabelPolicy }),
@@ -1314,8 +1362,10 @@ function extractValidatedReplayJson<
 				reportedFinalUrl,
 				receiptSha256: admission.receiptSha256,
 				body: admission.bodyIdentity,
+				...(sourceHeadingPolicy === undefined ? {} : { sourceHeadingPolicy }),
 				...(sourceLinkLabelPolicy === undefined &&
-				capturedSourceLinkLabelPolicy === undefined
+				capturedSourceLinkLabelPolicy === undefined &&
+				sourceHeadingPolicy === undefined
 					? {}
 					: {
 							capturedOutcome: admission.originalMetadata
@@ -1328,6 +1378,7 @@ function extractValidatedReplayJson<
 			selection: {
 				method: selected.method,
 				matches: null,
+				...(sourceHeadingPolicy === undefined ? {} : { sourceHeadingPolicy }),
 				...(sourceLinkLabelPolicy === undefined
 					? {}
 					: { sourceLinkLabelPolicy }),
@@ -1372,10 +1423,10 @@ function extractValidatedReplayJson<
 		const documentBarrier = classify(researchDocumentDiagnosticText(tree));
 		if (!documentBarrier && requireEmptyOutline) {
 			checkpoint();
-			const outline = discoverDocumentHeadings(
-				tree,
-				researchLongDocumentAdmission.headings,
-			);
+			const outline = discoverDocumentHeadings(tree, {
+				...researchLongDocumentAdmission.headings,
+				...(sourceHeadingPolicy === undefined ? {} : { sourceHeadingPolicy }),
+			});
 			if (outline.entries.length !== 0 || outline.truncated)
 				throw new AgentBrowserError(
 					"policy-denied",
@@ -1386,6 +1437,7 @@ function extractValidatedReplayJson<
 		if (!documentBarrier && selected.method === "heading-outline") {
 			checkpoint();
 			report.headings = discoverDocumentHeadings(tree, {
+				...(sourceHeadingPolicy === undefined ? {} : { sourceHeadingPolicy }),
 				maxBytes: researchJsonReplayLimits.maxExtractionBytes,
 				maxNodes: researchJsonReplayLimits.maxNodes,
 				maxDepth: researchJsonReplayLimits.maxDepth,
@@ -1458,6 +1510,7 @@ function extractValidatedReplayJson<
 			checkpoint();
 			const extraction = extractDocument(tree, {
 				format,
+				...(sourceHeadingPolicy === undefined ? {} : { sourceHeadingPolicy }),
 				...(sourceLinkLabelPolicy === undefined
 					? {}
 					: { sourceLinkLabelPolicy }),

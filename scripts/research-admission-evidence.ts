@@ -15,6 +15,7 @@ import {
 	sourceLinkLabelLimits,
 	validateSourceLinkLabelPolicy,
 } from "../src/source-link-labels.js";
+import { validateSourceHeadingPolicy } from "../src/source-headings.js";
 import {
 	decodeResearchBodyCapture,
 	researchBodyCaptureLimit,
@@ -670,6 +671,7 @@ function validateLong(report: DataRecord): void {
 
 function validatePolicyFragments(report: DataRecord): void {
 	validateSourceLinkLabelEvidence(report);
+	validateSourceHeadingEvidence(report);
 	const prior =
 		isRecord(report.outputLimit) && isRecord(report.outputLimit.prior)
 			? report.outputLimit.prior
@@ -690,6 +692,51 @@ function validatePolicyFragments(report: DataRecord): void {
 		)
 			invalidEvidence();
 	}
+}
+
+function validSourceHeading(value: unknown, level: unknown): boolean {
+	return (
+		isRecord(value) &&
+		value.policy === "source-aria-heading-v1" &&
+		value.level === level &&
+		integer(value.level) &&
+		(value.level as number) >= 1 &&
+		(value.level as number) <= 2_147_483_647 &&
+		(value.levelBasis === "aria-level" ||
+			(value.levelBasis === "missing-level-default" && value.level === 2)) &&
+		value.rendered === false &&
+		value.verified === false
+	);
+}
+
+function validateSourceHeadingEvidence(report: DataRecord): void {
+	const declared = Object.hasOwn(report, "sourceHeadingPolicy");
+	const outputs = [report.reader, report.extraction, report.headings];
+	if (!declared) {
+		if (
+			outputs.some(
+				(value) =>
+					isRecord(value) && Object.hasOwn(value, "sourceHeadingPolicy"),
+			)
+		)
+			invalidEvidence();
+		return;
+	}
+	const policy = validateSourceHeadingPolicy(report.sourceHeadingPolicy);
+	if (
+		policy === undefined ||
+		report.profile !== "native-semantic-reader-v1" ||
+		Object.hasOwn(report, "textLines") ||
+		outputs.some(
+			(value) =>
+				value !== undefined &&
+				(!isRecord(value) || value.sourceHeadingPolicy !== policy),
+		) ||
+		(isRecord(report.extraction) &&
+			(Object.hasOwn(report.extraction, "textSelection") ||
+				Object.hasOwn(report.extraction, "jsonSelection")))
+	)
+		invalidEvidence();
 }
 
 function validateSourceLinkLabelEvidence(report: DataRecord): void {
@@ -795,7 +842,16 @@ function validatePayloadShape(report: DataRecord): void {
 				typeof entry.ref !== "string" ||
 				!integer(entry.level) ||
 				entry.level < 1 ||
-				entry.level > 6 ||
+				(entry.level > 6 &&
+					!(
+						report.sourceHeadingPolicy === "source-aria-heading-v1" &&
+						validSourceHeading(entry.sourceHeading, entry.level)
+					)) ||
+				(Object.hasOwn(entry, "sourceHeading") &&
+					!(
+						report.sourceHeadingPolicy === "source-aria-heading-v1" &&
+						validSourceHeading(entry.sourceHeading, entry.level)
+					)) ||
 				typeof entry.title !== "string" ||
 				typeof entry.titleTruncated !== "boolean" ||
 				!(entry.selector === null || typeof entry.selector === "string")
@@ -1092,7 +1148,11 @@ function outlineReady(report: DataRecord, allowEmpty = false): boolean {
 			!boundedString(entry.ref, 4096) ||
 			!integer(entry.level) ||
 			entry.level < 1 ||
-			entry.level > 6 ||
+			(entry.level > 6 &&
+				!(
+					report.sourceHeadingPolicy === "source-aria-heading-v1" &&
+					validSourceHeading(entry.sourceHeading, entry.level)
+				)) ||
 			!boundedString(entry.title, limits.maxTitleCodeUnits, true) ||
 			typeof entry.titleTruncated !== "boolean" ||
 			!(

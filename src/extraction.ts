@@ -137,6 +137,12 @@ import {
 	type TextLineDiscoveryOptions,
 	discoverTextLines,
 } from "./text-line-discovery.js";
+import {
+	type SourceHeadingMetadata,
+	type SourceHeadingPolicy,
+	documentHeading,
+	validateSourceHeadingPolicy,
+} from "./source-headings.js";
 
 export type ExtractionType =
 	| "container"
@@ -165,6 +171,7 @@ export interface ExtractedNode {
 	imageSource?: ImageSourceMetadata;
 	text?: string;
 	level?: number;
+	sourceHeading?: SourceHeadingMetadata;
 	ordered?: boolean;
 	start?: number;
 	url?: string;
@@ -176,6 +183,7 @@ export interface ExtractedNode {
 }
 
 export interface ExtractionOptions {
+	sourceHeadingPolicy?: SourceHeadingPolicy;
 	format?: "markdown" | "json";
 	sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
 	contentFocus?: ContentFocusPolicy;
@@ -193,6 +201,7 @@ export interface ExtractionOptions {
 }
 
 export interface HeadingDiscoveryOptions {
+	sourceHeadingPolicy?: SourceHeadingPolicy;
 	maxBytes?: number;
 	maxNodes?: number;
 	maxDepth?: number;
@@ -202,6 +211,7 @@ export interface HeadingDiscoveryOptions {
 }
 
 export interface DocumentHeadingOutline {
+	sourceHeadingPolicy?: SourceHeadingPolicy;
 	method: "heading-outline";
 	document: string;
 	revision: number;
@@ -246,6 +256,7 @@ export interface DocumentTextLineDiscovery extends TextLineDiscovery {
 }
 
 interface ExtractionMetadata {
+	sourceHeadingPolicy?: SourceHeadingPolicy;
 	document: string;
 	scope: string;
 	url: string;
@@ -533,10 +544,17 @@ interface MarkdownLinkContext {
 	node?: ExtractedNode;
 }
 
-function flowLinkStructure(root: ExtractedNode) {
+function flowLinkStructure(root: ExtractedNode, sourceHeadings: boolean) {
 	const blockNodes = new Set<ExtractedNode>();
 	const links = new Set<ExtractedNode>();
 	const wrappers = new Set<ExtractedNode>();
+	const sourceContainers = new Set<ExtractedNode>();
+	const sourceDescendants = new Set<ExtractedNode>();
+	const sourceTransparentTypes = new Set<ExtractionType>([
+		"paragraph",
+		"strong",
+		"emphasis",
+	]);
 	const sinks = new Set<ExtractionType>([
 		"heading",
 		"paragraph",
@@ -551,23 +569,36 @@ function flowLinkStructure(root: ExtractedNode) {
 		const node = pending.pop();
 		if (!node) break;
 		ordered.push(node);
-		if (!sinks.has(node.type))
+		if (
+			!sinks.has(node.type) ||
+			(sourceHeadings && sourceTransparentTypes.has(node.type))
+		)
 			for (const child of node.children ?? []) pending.push(child);
 	}
 	for (let index = ordered.length - 1; index >= 0; index--) {
 		const node = ordered[index];
-		const children = sinks.has(node.type) ? [] : (node.children ?? []);
+		const hasSource =
+			sourceHeadings &&
+			(node.children ?? []).some((child) => sourceDescendants.has(child));
+		if (node.sourceHeading || hasSource) sourceDescendants.add(node);
+		if (hasSource && sourceTransparentTypes.has(node.type))
+			sourceContainers.add(node);
+		const children =
+			sinks.has(node.type) && !sourceContainers.has(node)
+				? []
+				: (node.children ?? []);
 		const childBlock = children.some((child) => blockNodes.has(child));
 		if (!inlineTypes.has(node.type) || childBlock) blockNodes.add(node);
 		if (node.type === "link" && childBlock) links.add(node);
 		if (
+			sourceContainers.has(node) ||
 			(node.type === "inline" && childBlock) ||
 			links.has(node) ||
 			children.some((child) => wrappers.has(child))
 		)
 			wrappers.add(node);
 	}
-	return { blockNodes, links, wrappers };
+	return { blockNodes, links, wrappers, sourceContainers };
 }
 
 function inline(
@@ -804,9 +835,10 @@ function markdown(
 	compactTables: boolean,
 	tableRows: boolean,
 	sourceLinkLabels?: SourceLinkLabelScope,
+	sourceHeadingPolicy?: SourceHeadingPolicy,
 ) {
 	const transparentWrappers = validateTableStructure(root);
-	const flow = flowLinkStructure(root);
+	const flow = flowLinkStructure(root, sourceHeadingPolicy !== undefined);
 	const output: string[] = [];
 	let bytes = 0;
 	let tableDepth = 0;
@@ -1001,9 +1033,11 @@ function markdown(
 			if (closesTable) tableDepth++;
 			pending.push({ closingMarker: boundary.end, prefixes, closesTable });
 			schedule(children, prefixes, link);
-		} else if (node.type === "heading")
+		} else if (flow.sourceContainers.has(node))
+			schedule(children, prefixes, link);
+		else if (node.type === "heading")
 			emit(
-				`${"#".repeat(node.level ?? 1)} ${inline(children, link, sourceLinkLabels)}`,
+				`${"#".repeat(Math.min(node.level ?? 1, 6))} ${inline(children, link, sourceLinkLabels)}`,
 				prefixes,
 			);
 		else if (node.type === "paragraph")
@@ -1177,6 +1211,9 @@ export function discoverDocumentHeadings(
 	tree: DocumentTree,
 	options: HeadingDiscoveryOptions = {},
 ): DocumentHeadingOutline {
+	const sourceHeadingPolicy = validateSourceHeadingPolicy(
+		options.sourceHeadingPolicy,
+	);
 	const maxBytes = options.maxBytes ?? 262_144;
 	const maxNodes = options.maxNodes ?? 50_000;
 	const maxDepth = options.maxDepth ?? 128;
@@ -1199,6 +1236,7 @@ export function discoverDocumentHeadings(
 	}
 	const { skip, visible, descend } = extractionAdmission(tree);
 	const targets = collectHeadingTargets(tree, {
+		sourceHeadingPolicy,
 		maxNodes,
 		maxDepth,
 		maxEntries,
@@ -1209,6 +1247,7 @@ export function discoverDocumentHeadings(
 		descend,
 	});
 	const outline: DocumentHeadingOutline = {
+		...(sourceHeadingPolicy === undefined ? {} : { sourceHeadingPolicy }),
 		method: "heading-outline",
 		document: tree.reference(tree.root),
 		revision: tree.revision,
@@ -1275,6 +1314,19 @@ export function extractDocument(
 	tree: DocumentTree,
 	options: ExtractionOptions = {},
 ): DocumentExtraction {
+	const sourceHeadingPolicy = validateSourceHeadingPolicy(
+		options.sourceHeadingPolicy,
+	);
+	if (
+		sourceHeadingPolicy !== undefined &&
+		(options.lines !== undefined ||
+			options.jsonPointer !== undefined ||
+			textDocumentInfo(tree) !== undefined)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Source headings require HTML extraction without literal source selections",
+		);
 	const sourceLinkLabelPolicy = validateSourceLinkLabelPolicy(
 		options.sourceLinkLabelPolicy,
 	);
@@ -1412,6 +1464,7 @@ export function extractDocument(
 		options.section === undefined
 			? undefined
 			: selectHeadingSection(tree, options.section, {
+					sourceHeadingPolicy,
 					maxNodes,
 					maxDepth,
 					skip,
@@ -1436,6 +1489,7 @@ export function extractDocument(
 			? outlineMarkdownSource(markdownSource.data)
 			: undefined;
 	const metadata: ExtractionMetadata = {
+		...(sourceHeadingPolicy === undefined ? {} : { sourceHeadingPolicy }),
 		document: tree.reference(tree.root),
 		scope: tree.reference(start),
 		url: safeUrl.href,
@@ -1483,6 +1537,7 @@ export function extractDocument(
 		lineState?: { atLineStart: boolean };
 		sourceCode?: GithubSourceBlock;
 		omitContent?: boolean;
+		sourceHeadingText?: boolean;
 	}[] = hidden ? [] : [{ id: start, parent: holder, depth: 0 }];
 	const base = documentBaseUrl(tree);
 	let nodes = 0;
@@ -1571,6 +1626,12 @@ export function extractDocument(
 			styles.get(source.id).display.startsWith("inline")
 				? "inline"
 				: "container";
+		const heading =
+			visible && !section?.context.has(source.id)
+				? documentHeading(source, sourceHeadingPolicy)
+				: undefined;
+		const sourceHeadingText =
+			current.sourceHeadingText || heading?.sourceHeading !== undefined;
 		const node: ExtractedNode = {
 			ref: tree.reference(source.id),
 			type: sourceBlock
@@ -1581,9 +1642,11 @@ export function extractDocument(
 						? "container"
 						: source.kind === "text"
 							? "text"
-							: visible && Object.hasOwn(kinds, source.tagName)
-								? kinds[source.tagName]
-								: fallback,
+							: heading
+								? "heading"
+								: visible && Object.hasOwn(kinds, source.tagName)
+									? kinds[source.tagName]
+									: fallback,
 		};
 		if (node.type === "text")
 			node.text =
@@ -1597,16 +1660,17 @@ export function extractDocument(
 									: source.data),
 						);
 		else if (node.type === "image")
-			node.text = clean(source.attributes.alt ?? "");
+			node.text = sourceHeadingText ? "" : clean(source.attributes.alt ?? "");
 		else if (node.type !== "break" && node.type !== "separator")
 			node.children = [];
-		if (node.type === "heading") node.level = Number(source.tagName.slice(1));
+		if (node.type === "heading" && heading) Object.assign(node, heading);
 		if (node.type === "pre" && isHtmlElement(source, "pre"))
 			hasPreSource = true;
 		if (
 			visible &&
 			source.kind === "element" &&
 			isHtmlElement(source) &&
+			!sourceHeadingText &&
 			!section?.context.has(source.id)
 		) {
 			const imageSource = extractImageSource(source.attributes);
@@ -1651,6 +1715,7 @@ export function extractDocument(
 				node.url = url;
 				if (
 					sourceLinkLabels &&
+					!sourceHeadingText &&
 					isHtmlElement(source, "a") &&
 					Object.hasOwn(source.attributes, "aria-label")
 				)
@@ -1673,6 +1738,7 @@ export function extractDocument(
 					id: children[index],
 					parent: node,
 					depth: current.depth + 1,
+					...(sourceHeadingText ? { sourceHeadingText: true } : {}),
 					...(lineState === undefined ? {} : { lineState }),
 					...(sourceCode === undefined ? {} : { sourceCode }),
 					...(sourceLine === undefined ? {} : { omitContent: true }),
@@ -1728,6 +1794,7 @@ export function extractDocument(
 							options.compactTables === true,
 							options.tableRows === true,
 							sourceLinkLabels,
+							sourceHeadingPolicy,
 						),
 						...(sourceLinkLabels
 							? { sourceLinkLabels: sourceLinkLabels.report() }

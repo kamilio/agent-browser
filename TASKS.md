@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Structure source headings and validate practical section retrieval
+
+- Add opt-in source-aria-heading-v1 across native extraction/heading discovery,
+  section selection, reader retention and research capture/replay. Native default
+  headings remain unchanged; authored source is not rendered accessibility.
+- Whole-document legacy source mode already recovers5544 saved Best Buy bytes;
+  new heading separation produces5549 structured bytes. Filtered storefront
+  rendering is still unqualified. Do not silently reveal hidden content.
+- Independent source audit matches27 added headings across Best Buy/Wikipedia/
+  Bankrate; all27 unique selectors work as native replay sections. Added headings
+  include navigation/language labels, not27 new articles. Three saved default
+  Markdown outputs remain byte-identical; outline comparisons normalize local IDs.
+- Three fresh native GETs at03:27 UTC September17 return200: Wikipedia57301,
+  Bankrate24409 and Best Buy5549 Markdown bytes in explicit legacy source mode.
+  No retries/redirects/credentials/scripts/SDK/identity changes/CAPTCHA solving;
+  request/TLS/process closure is verified. Outcomes remain extracted-unverified.
+- Final2374/0 across20 distinct explicit native files,188 new cases; build,
+  selected types/format/lint pass. Canonical manifest984 retains22 missing files.
+  Malformed level handling, initial fixture failures and a test-name collision
+  are corrected; original suite restored and included in the final isolated run.
+- See SOURCE-ARIA-HEADINGS.md and reports/source-aria-headings-2026-09-17.md/JSON.
+  Continue dynamic/SafeJS acceptance, practical sites, performance/access work,
+  real credential/passkey/device/TTY gates, missing tests and unfinished research.
+  Historical100-entry33/67 verdicts stay unchanged; overall goal remains active.
+
 ### Diagnose hidden behavioral challenge shells and inspect storefront source
 
 - New bounded structural diagnostic catches the saved Edmunds shell that was

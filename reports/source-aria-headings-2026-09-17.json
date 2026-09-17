@@ -1,0 +1,1131 @@
+{
+  "kind": "native-source-aria-headings-v1",
+  "createdAt": "2026-09-17T03:34:18.421876+00:00",
+  "parentCommit": "e86557de0f4ef767fc59253256affdb5bcd4b1e0",
+  "policy": "source-aria-heading-v1",
+  "runtime": {
+    "root": "/tmp/agent-browser-source-headings-dIpxnG/release02",
+    "sourceHeadings": true,
+    "manifests": {
+      "SOURCE": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/SOURCE-release02.json",
+        "sha256": "841b13206e3ec1c9c58ad624c7fbec9c3083d09408ea4cabb329604c30e5fc93",
+        "base": "/tmp/agent-browser-source-headings-dIpxnG/release02"
+      },
+      "COMPILED": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/COMPILED-release02.json",
+        "sha256": "46190d1804e8a89a24466ef1e0881530c65c7fb04db0f228734f9c417dc9fe2b",
+        "base": "/tmp/agent-browser-source-headings-dIpxnG/release02/dist"
+      }
+    },
+    "native": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release02/EXECUTION.json",
+    "quality": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/CHECK-release02.json",
+    "nativeAggregate": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release02/EXECUTION.json",
+    "focusedQuality": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/CHECK-release02.json",
+    "expectedNativeTests": 2374
+  },
+  "native": {
+    "label": "release02",
+    "pid": 1148952,
+    "exitCode": 0,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 21.910662418231368,
+    "passedTests": 2374,
+    "failedTests": 0,
+    "files": 20,
+    "homeEntries": [],
+    "tmpEntries": [],
+    "newTests": 188,
+    "newTestCounts": {
+      "research-aria-headings.test.ts": 31,
+      "research-source-heading-loader.test.ts": 74,
+      "source-heading-extraction.test.ts": 17,
+      "source-headings.test.ts": 66
+    },
+    "canonicalManifestEntries": 984,
+    "availableManifestFiles": 962,
+    "missingManifestFiles": [
+      "src/borders.test.ts",
+      "src/css-flex.test.ts",
+      "src/css-flow.test.ts",
+      "src/css-math.test.ts",
+      "src/css-variables.test.ts",
+      "src/flex-column-wrap.test.ts",
+      "src/flex-column.test.ts",
+      "src/flex-document.test.ts",
+      "src/flex-nested.test.ts",
+      "src/font-relative-box.test.ts",
+      "src/inline-block.test.ts",
+      "src/inline-borders.test.ts",
+      "src/inline-flex.test.ts",
+      "src/page-base64.test.ts",
+      "src/portable-boundary.test.ts",
+      "src/reference-images.test.ts",
+      "src/reference-renderer.test.ts",
+      "src/relative-positioning.test.ts",
+      "src/response-archive.test.ts",
+      "src/select-keyboard.test.ts",
+      "src/select-typeahead.test.ts",
+      "src/stacking-order.test.ts"
+    ],
+    "fullManifestRun": false
+  },
+  "quality": {
+    "label": "release02",
+    "executions": [
+      {
+        "name": "build",
+        "pid": 1148903,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 6.575670640915632
+      },
+      {
+        "name": "types",
+        "pid": 1148959,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 4.623439121991396
+      },
+      {
+        "name": "format",
+        "pid": 1149024,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.03210186026990414
+      },
+      {
+        "name": "lint",
+        "pid": 1149043,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.06413380429148674
+      }
+    ],
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    },
+    "allProcessesClosed": true
+  },
+  "sourceAudit": {
+    "passed": true,
+    "audits": [
+      {
+        "id": "bestbuy",
+        "receiptSha256": "b9db64667b5df3ef69756dda0c37d1099a8971837eb08fcaa0f9bbd265771fa7",
+        "bodySha256": "09afaa925769a7a35c2278d5863df3286fe543d7c62833c6a6c57f0c4b030cb4",
+        "sourceHeadings": 1,
+        "levelBasisCounts": {
+          "aria-level": 1
+        },
+        "sourceTitlesAndLevelsMatch": true,
+        "defaultDocumentAndOutlineSemanticsUnchanged": true
+      },
+      {
+        "id": "wikipedia",
+        "receiptSha256": "fe8df21f45ba716487e2981799c979e9e7eebd8785e7c13c1d007a838893a066",
+        "bodySha256": "8e4b698d5eb312ff504c3571b1feae4c288077410e220d2fc18414327055f2c9",
+        "sourceHeadings": 3,
+        "levelBasisCounts": {
+          "aria-level": 3
+        },
+        "sourceTitlesAndLevelsMatch": true,
+        "defaultDocumentAndOutlineSemanticsUnchanged": true
+      },
+      {
+        "id": "bankrate",
+        "receiptSha256": "d1a007f685afa6d7ec91bc2f21a1d88b3775b245050c9e6b9fcc2cbeda0ffb10",
+        "bodySha256": "8800972ba06916a29204d01c96484c5866ebdc432da8a8cd0a6a75fb782fa48f",
+        "sourceHeadings": 23,
+        "levelBasisCounts": {
+          "missing-level-default": 23
+        },
+        "sourceTitlesAndLevelsMatch": true,
+        "defaultDocumentAndOutlineSemanticsUnchanged": true
+      }
+    ],
+    "outlineComparison": "Node references normalized to document-relative IDs because extra opt-in runs advance global allocation; titles, levels, selectors, revision, budgets and other outline fields compared.",
+    "sourceHeadingTotal": 27,
+    "bestbuyHeadingBodySeparated": true,
+    "newNetworkRequests": 0,
+    "limitations": [
+      "Source titles/levels and unchanged default outputs only; not all links/offers verified.",
+      "Legacy source visibility includes hidden navigation and streamed HTML, not rendered content."
+    ]
+  },
+  "savedControls": {
+    "initialScopeNavigations": 4,
+    "baselineNavigations": 6,
+    "finalNavigations": 12,
+    "sectionReplays": 27,
+    "newNetworkRequests": 0
+  },
+  "live": [
+    {
+      "id": "wikipedia-main",
+      "url": "https://en.wikipedia.org/wiki/Main_Page",
+      "startedAt": "2026-09-17T03:27:05.844Z",
+      "httpStatus": 200,
+      "decodedBodyBytes": 253104,
+      "bodySha256": "9a6790d3000a4db1cc17a489de3211858f88e6b2fa1500d6fa86a4b2c8d3a7e2",
+      "outcome": "extracted-unverified",
+      "markdownBytes": 57301,
+      "markdownSha256": "44f6d59100c6a4593fdbdd6b77d47359ab6d68a838398b77a25b212ead8ed299",
+      "nativeElapsedMs": 142,
+      "processElapsedSeconds": 0.38239208422601223,
+      "matchesSavedSourceMarkdown": false,
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": false,
+        "sourceHeadingPolicy": "source-aria-heading-v1",
+        "sourceCodeUnits": 245928,
+        "textCodeUnits": 13333,
+        "outputCodeUnits": 147057,
+        "tokens": 6113,
+        "omittedTokens": 86,
+        "omittedSubtrees": {
+          "meta": 19,
+          "script": 5,
+          "link": 24,
+          "input": 10,
+          "style": 6,
+          "source": 2
+        },
+        "ignoredAttributes": 2595,
+        "unwrappedElements": 19,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 16496,
+          "workUnits": 88997,
+          "steps": 17,
+          "elements": 11,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8",
+        "fallbackEncoding": "utf-8"
+      },
+      "metrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 50326,
+        "decodedBytes": 253104,
+        "active": 0,
+        "closed": true
+      },
+      "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/wikipedia-main/stdout.log"
+    },
+    {
+      "id": "bankrate-landing",
+      "url": "https://www.bankrate.com/",
+      "startedAt": "2026-09-17T03:27:08.231Z",
+      "httpStatus": 200,
+      "decodedBodyBytes": 1292150,
+      "bodySha256": "93ed60e78c05e54c66e65b70dd1743b65bb8ccb9af9adda1c5b45180f74fe931",
+      "outcome": "extracted-unverified",
+      "markdownBytes": 24409,
+      "markdownSha256": "2199a8157d9520fd11ad9c2b8d00cafc2d1c6fc1e9365a1fc59e857da503cbf0",
+      "nativeElapsedMs": 141,
+      "processElapsedSeconds": 0.390078566968441,
+      "matchesSavedSourceMarkdown": true,
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": false,
+        "sourceHeadingPolicy": "source-aria-heading-v1",
+        "sourceCodeUnits": 1292011,
+        "textCodeUnits": 13846,
+        "outputCodeUnits": 82933,
+        "tokens": 6434,
+        "omittedTokens": 2271,
+        "omittedSubtrees": {
+          "meta": 4,
+          "link": 54,
+          "script": 151,
+          "svg": 106,
+          "template": 25,
+          "input": 1,
+          "style": 1
+        },
+        "ignoredAttributes": 2622,
+        "unwrappedElements": 38,
+        "tokenizerIssues": 98,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 707899,
+          "workUnits": 4587799,
+          "steps": 242,
+          "elements": 152,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8",
+        "fallbackEncoding": "utf-8"
+      },
+      "metrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 292385,
+        "decodedBytes": 1292150,
+        "active": 0,
+        "closed": true
+      },
+      "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bankrate-landing/stdout.log"
+    },
+    {
+      "id": "bestbuy-landing",
+      "url": "https://www.bestbuy.com/",
+      "startedAt": "2026-09-17T03:27:10.626Z",
+      "httpStatus": 200,
+      "decodedBodyBytes": 435138,
+      "bodySha256": "2f193401c4c54870ef98834d39ceceb4f7a53a8af87e15ed561210cea4ca23eb",
+      "outcome": "extracted-unverified",
+      "markdownBytes": 5549,
+      "markdownSha256": "925ecedad728338c411f59b59a6c7b20078f50faf27c194641be157c3cdebfca",
+      "nativeElapsedMs": 379,
+      "processElapsedSeconds": 0.6334240399301052,
+      "matchesSavedSourceMarkdown": true,
+      "reader": {
+        "profile": "native-semantic-reader-v1",
+        "partial": true,
+        "scripting": false,
+        "styling": false,
+        "hiddenContentSemantics": false,
+        "sourceHeadingPolicy": "source-aria-heading-v1",
+        "sourceCodeUnits": 435096,
+        "textCodeUnits": 954,
+        "outputCodeUnits": 31378,
+        "tokens": 1568,
+        "omittedTokens": 567,
+        "omittedSubtrees": {
+          "meta": 8,
+          "link": 37,
+          "script": 202,
+          "template": 11,
+          "svg": 6,
+          "textarea": 1,
+          "style": 2
+        },
+        "ignoredAttributes": 908,
+        "unwrappedElements": 10,
+        "tokenizerIssues": 0,
+        "rawTextPolicy": "separate-omitted-raw-v1",
+        "omittedRaw": {
+          "codeUnits": 345084,
+          "workUnits": 2619881,
+          "steps": 314,
+          "elements": 204,
+          "maxWorkUnits": 32000000,
+          "maxWindowCodeUnits": 65536
+        },
+        "encoding": "utf-8",
+        "fallbackEncoding": "utf-8"
+      },
+      "metrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 62115,
+        "decodedBytes": 435138,
+        "active": 0,
+        "closed": true
+      },
+      "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bestbuy-landing/stdout.log"
+    }
+  ],
+  "evidence": [
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/BEFORE.json",
+      "sha256": "bf8de21de616d2c1dba34298733e71bf53bd247c2b716ca5633426c82975fc17",
+      "bytes": 89585
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/CHECK-release01.json",
+      "sha256": "762d6426eae7fd29a34f997344feb97a72d04e8ddf288fc8dff764d29ed308b3",
+      "bytes": 1049
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/CHECK-release02.json",
+      "sha256": "54d7c037b3ebf50f535464d03c8e576d2e0f48baf4a9c21913c037ea6ad6cc34",
+      "bytes": 1048
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/COMPILED-release01.json",
+      "sha256": "46190d1804e8a89a24466ef1e0881530c65c7fb04db0f228734f9c417dc9fe2b",
+      "bytes": 239178
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/COMPILED-release02.json",
+      "sha256": "46190d1804e8a89a24466ef1e0881530c65c7fb04db0f228734f9c417dc9fe2b",
+      "bytes": 239178
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/CONTENT-AUDIT.json",
+      "sha256": "eec97979be743f7a42eb9c18f84faca36d3dd89f572f36374fea000ec5e68b3c",
+      "bytes": 1768
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/CONTENT-INPUTS.json",
+      "sha256": "b4d6a15c524ae501880928013200955259e5ae1d3d482fbdf74d52f572559706",
+      "bytes": 1221
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/CORE-PROMPT.md",
+      "sha256": "c3998ef5c4905c2c0f90268980a1fc02b8e778ce6b85b6596aa3495b04c7dafe",
+      "bytes": 3417
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/INPUTS.json",
+      "sha256": "5a8177bde365c4344ba5c858b94556c9b4aa31100aebd7c99edc3960076ac409",
+      "bytes": 840
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/LOADER-FOLLOWUP.md",
+      "sha256": "f9918cce6f7c0d77de752213468c478d178e34d8c6250f50ee1092b7bf621265",
+      "bytes": 744
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/LOADER-PROMPT.md",
+      "sha256": "1abffcdd5f326255eefcd5ed10eaa01b78c9a1671898b24226e98aa32510517b",
+      "bytes": 2362
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/OVERLAY-release01.json",
+      "sha256": "13e81ecad8348d18959836ac33ca7f70708897d7db3fcc3b80b4a30d12651107",
+      "bytes": 3317
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/OVERLAY-release02.json",
+      "sha256": "d848b1157c7a7dd10fe97cc7e944b1c04326a194aef650393522306e8793d23c",
+      "bytes": 3353
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/REVIEW-PROMPT.md",
+      "sha256": "3d16b8a0db59fd4c6ef490896b87eff1f8ae597fe27bd8e575883d3f577b6165",
+      "bytes": 1469
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/REVIEW-RESULT.md",
+      "sha256": "a453e6e7fd6f71838e47d4290129b6f0e5a8fa8ee3fc0fe3427478d82327fce8",
+      "bytes": 4109
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/RUNTIME-baseline.json",
+      "sha256": "d9a31075f807e3667345d48bc53c742c68e19acf32bbcd91f036d546a3104559",
+      "bytes": 1080
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/RUNTIME-release02.json",
+      "sha256": "045efa6d111e2e6a9ea746feb7098afd2567cd847f3672375f1bccf5a9ae12c0",
+      "bytes": 1373
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/SCOPE.md",
+      "sha256": "6c633dbd69d4b70f5b12efa4a76a380c80c3562fb81c8b1964db8c7e4f99954b",
+      "bytes": 1618
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/SECTION-INPUTS.json",
+      "sha256": "3d7ab40efc7507558542603d611f8d8c0f6833f57e17c9c20b828525ede3e8b7",
+      "bytes": 879
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/SOURCE-release01.json",
+      "sha256": "c34e5e627f24556a27de538ed20bcc671d203f842a02e16d38be03dcf150f0c2",
+      "bytes": 161597
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/SOURCE-release02.json",
+      "sha256": "841b13206e3ec1c9c58ad624c7fbec9c3083d09408ea4cabb329604c30e5fc93",
+      "bytes": 161705
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/audit-content-v2.py",
+      "sha256": "7a97a28c1f0e9deecfc809f20a913571e1eb6e27d543172b084615693e35c3d4",
+      "bytes": 4956
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/audit-content.py",
+      "sha256": "7951d494ce04526db5eb5eff5c2b7e033598371f71a9741a1e0c030737969b34",
+      "bytes": 4345
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/check-quality.py",
+      "sha256": "4ffec345b3ea6135458bc9732def368fe4195a019ac2b636b799994b8abaf44b",
+      "bytes": 3634
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-baseline/CHECK.json",
+      "sha256": "2fe0569bd56dfef6e7579d976ffdf73697960c786a895d8049f4412b3b7a5c65",
+      "bytes": 2505
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-baseline/proof/EXECUTION.json",
+      "sha256": "ddc6f73984c5a51fd091786e7c67d86866f2e00806ed3bbe9ac6b9f3ab6727e0",
+      "bytes": 372
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-baseline/proof/INVOCATION.json",
+      "sha256": "badc021c0cf668522ca05fdd76409a7511ae3f085fd0928f6fabf5f837e891bd",
+      "bytes": 3569
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-baseline/proof/RESULT.json",
+      "sha256": "1583b13bf6febc9288ef20c3fb8a1e97c325a369b00671e5356e83a0b54cce75",
+      "bytes": 17565
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-baseline/proof/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+      "bytes": 15
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-baseline/proof/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+      "bytes": 296
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-baseline/proof/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-baseline/proof/stdout.log",
+      "sha256": "cc5fcea1081a06d0c4e030ebbf9a501a3948689083d9e8ab7aff4888943f5608",
+      "bytes": 679
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-probe.mjs",
+      "sha256": "eebca4aa8094521f3008f47441b8c5f72a1e7b15509eb724b2f42ee9ed4bd6be",
+      "bytes": 3529
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-release02/CHECK.json",
+      "sha256": "836f9facd252b2885c13e3f3254b0725ec2be261d198b8a02f06b590d45dfac8",
+      "bytes": 2507
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-release02/proof/EXECUTION.json",
+      "sha256": "745c9bba505447c244dd52f3d532affeab9634249c6071ae8f37e61333ca5f6e",
+      "bytes": 373
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-release02/proof/INVOCATION.json",
+      "sha256": "633da45132681fd6d8a874e481cc794123f89c2a475fb0c478ec8e623b96d6be",
+      "bytes": 3575
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-release02/proof/RESULT.json",
+      "sha256": "eacb89392dae2ef6839e7ab546ed6e0bda4f8b704b1d59404285dbf1d95dce93",
+      "bytes": 51755
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-release02/proof/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+      "bytes": 15
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-release02/proof/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+      "bytes": 296
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-release02/proof/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/content-release02/proof/stdout.log",
+      "sha256": "f5b7ca76fac74304631800f1651bf33f298a65749fa400ffe758ecfc56be469f",
+      "bytes": 1320
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/ADMISSION.json",
+      "sha256": "144efebed4e5df3481c6f2096950b2c1779cb588f4c288f11430c536a3173590",
+      "bytes": 3309
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/INPUTS.json",
+      "sha256": "431b35202d93d83926fc8bc8f4e5d6743c1e2c05ce3e089add39d126e6c37a8b",
+      "bytes": 247
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/RUNTIME.json",
+      "sha256": "045efa6d111e2e6a9ea746feb7098afd2567cd847f3672375f1bccf5a9ae12c0",
+      "bytes": 1373
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/SCOPE.md",
+      "sha256": "aa9a5ce88a333d90ed669074897d5dd93f8562e9f491f05b079ad0a9363b0b81",
+      "bytes": 1140
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/cli-guard.mjs",
+      "sha256": "d3b651d5aabbf14a88b2d79ded37552b13ef3cbae609deba54ada0bc52b8e8ba",
+      "bytes": 2338
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/CHECK.json",
+      "sha256": "5b79f5e7d941daa27028ff2001815ac62a2af834a30d7f252927daeb7ee9940c",
+      "bytes": 4937
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bankrate-landing/EXECUTION.json",
+      "sha256": "a98ddf7c90e169a23e26d88647ee4a651270388ef17cec2dc17fff79b2e9153e",
+      "bytes": 791
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bankrate-landing/INVOCATION.json",
+      "sha256": "56738e724029110bcf60b4697f5164eb0b245eddd11adb3abdf5f6e57a59a26b",
+      "bytes": 4517
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bankrate-landing/REQUEST-GUARD.json",
+      "sha256": "8ca7f30ce135855e39c1483654d619cfd6dd8f760cb3689684870703d71eea8e",
+      "bytes": 152
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bankrate-landing/RESULT.json",
+      "sha256": "e31648b723d5479d3322ad1397d9fcc056971867b8195bdef28a8f7038e2762e",
+      "bytes": 1757207
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bankrate-landing/extracted.md",
+      "sha256": "2199a8157d9520fd11ad9c2b8d00cafc2d1c6fc1e9365a1fc59e857da503cbf0",
+      "bytes": 24409
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bankrate-landing/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bankrate-landing/stdout.log",
+      "sha256": "ba9a09697ee9ce279f38b00be60f4dbf7291dbf8f7bb5ada863d57aad4307d62",
+      "bytes": 1754387
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bestbuy-landing/EXECUTION.json",
+      "sha256": "ee51ad4336168760cd2fc387b03014315228d5ffaf5e1b7add74b60f5250f2d1",
+      "bytes": 787
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bestbuy-landing/INVOCATION.json",
+      "sha256": "7ffd686d931d6762a26a14987c6908892526c95db8db4ce09a16067002a376a8",
+      "bytes": 4509
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bestbuy-landing/REQUEST-GUARD.json",
+      "sha256": "3a343a7628351e9713d8077bd7957b21228785c088fdc0d7dea77f6e754a261c",
+      "bytes": 151
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bestbuy-landing/RESULT.json",
+      "sha256": "a8c6d17f3cf0dab57b26dca535778cbcbe6add93a5fd0b00181ebf144fa5a077",
+      "bytes": 594851
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bestbuy-landing/extracted.md",
+      "sha256": "925ecedad728338c411f59b59a6c7b20078f50faf27c194641be157c3cdebfca",
+      "bytes": 5549
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bestbuy-landing/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/bestbuy-landing/stdout.log",
+      "sha256": "1c7acd36efa152d5d8cda77e9b65c967c4f827e43b66462b8ea2323242bd53dc",
+      "bytes": 592122
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/wikipedia-main/EXECUTION.json",
+      "sha256": "1750ae347165d3289646e81c1a7a57ee216f2f634bf2f0aa0dc2924fdb8db493",
+      "bytes": 815
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/wikipedia-main/INVOCATION.json",
+      "sha256": "f3a9ab6b450dc6bc4a9bfc93c547cd1453953943d047135fc7ea57b69178f3bf",
+      "bytes": 4549
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/wikipedia-main/REQUEST-GUARD.json",
+      "sha256": "f139c4028f75f492cbd0037e6a342c567e99a029eea66087633f63368c08f30e",
+      "bytes": 166
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/wikipedia-main/RESULT.json",
+      "sha256": "db89fddbd23405fa548539297f42632d48fb050d9065d3953070d5c2e7c39489",
+      "bytes": 409733
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/wikipedia-main/extracted.md",
+      "sha256": "44f6d59100c6a4593fdbdd6b77d47359ab6d68a838398b77a25b212ead8ed299",
+      "bytes": 57301
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/wikipedia-main/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/live/wikipedia-main/stdout.log",
+      "sha256": "34f3784706690e229eef1683d6136a8883f018c859532b43412df17b56279879",
+      "bytes": 402823
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/CHECK.json",
+      "sha256": "b2ee222e5fc81f5b37f500bb0901593041833fba9ef77ac981260e6905152b50",
+      "bytes": 4072
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bankrate-landing/EXECUTION.json",
+      "sha256": "66603c1c3d6895bfa42436e5fff461642b47dcbde781eb835497c94ff1c1b878",
+      "bytes": 508
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bankrate-landing/INVOCATION.json",
+      "sha256": "5475f50af33e746c78a120407d9e4b07f586dc8b30347639fdd863e07755a9a7",
+      "bytes": 4825
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bankrate-landing/REQUEST-GUARD.json",
+      "sha256": "6e5621cbed4630bb1e74fc7ad7851ab6a7c9d6cfad2840a82d755efedc1fb4d2",
+      "bytes": 153
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bankrate-landing/RESULT.json",
+      "sha256": "e6465b5ed6ccb49b75aa7a401572e5ce70c514368f8c661ef172ce97716e8042",
+      "bytes": 8538
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bankrate-landing/extracted.md",
+      "sha256": "3d05df1ab09832dfd639b4cffc69c9adae742540adacb8c27790646c3025c205",
+      "bytes": 105
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bankrate-landing/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+      "bytes": 15
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bankrate-landing/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+      "bytes": 296
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bankrate-landing/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bankrate-landing/stdout.log",
+      "sha256": "ecb324fe93f31c6bbeb2aab8e26c215ae8a660aec6bf55cb12afa5a6f4ad8e29",
+      "bytes": 6105
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bestbuy-landing/EXECUTION.json",
+      "sha256": "49e1bc5db91d39f749ceaa9d9ea40e222f2073cd2763a52027c024a97bf9efa0",
+      "bytes": 502
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bestbuy-landing/INVOCATION.json",
+      "sha256": "effdb1f6d1851f920016af9449a48d7906dd1bdaa442e0249d15ee645320c54f",
+      "bytes": 4816
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bestbuy-landing/REQUEST-GUARD.json",
+      "sha256": "7da948bd0c8f94419021dac51a1d27c8125719f71947518efb8ea01071371a49",
+      "bytes": 152
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bestbuy-landing/RESULT.json",
+      "sha256": "6cf8aa0e71a41a6840e64687389b4775a19d2a061ed4cb20971332fa48a0969a",
+      "bytes": 8529
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bestbuy-landing/extracted.md",
+      "sha256": "45d8c82af84c41da87053a8f281a3a59aefc5de1f80e38c5848b1db4a66934cc",
+      "bytes": 104
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bestbuy-landing/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+      "bytes": 15
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bestbuy-landing/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+      "bytes": 296
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bestbuy-landing/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/bestbuy-landing/stdout.log",
+      "sha256": "8439dc0946169157ffcdc5e19d5bc289e3af2c71dbedb88317dbb0684af53e7a",
+      "bytes": 6096
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/wikipedia-main/EXECUTION.json",
+      "sha256": "55ea9341c2d82ea7a944d9db8f4a2816b3c820f4ca1046f8e74fd3a76f055d9a",
+      "bytes": 530
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/wikipedia-main/INVOCATION.json",
+      "sha256": "db2d2fba7b4896af08b74bbb2117e0ae6ac6728ff499604c309b5c9a6abef047",
+      "bytes": 4855
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/wikipedia-main/REQUEST-GUARD.json",
+      "sha256": "a197f5f3cc08fb1f2834c82917a0734624cef51c8a048c29330a67f6a4cdc457",
+      "bytes": 167
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/wikipedia-main/RESULT.json",
+      "sha256": "79f6a97a982739eb56df775a7e990e28a2666b4bb446934234826a519bf32dc3",
+      "bytes": 8618
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/wikipedia-main/extracted.md",
+      "sha256": "7b16953b94794e527bc1f9bbbc363f9fbe6b28c9a1bb4c6153a8724d91e79b28",
+      "bytes": 103
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/wikipedia-main/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+      "bytes": 15
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/wikipedia-main/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+      "bytes": 296
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/wikipedia-main/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/proof02/wikipedia-main/stdout.log",
+      "sha256": "cb861b63bab24217159133ee5792558a2953763568fd5ae2373f8ac6131e6919",
+      "bytes": 6185
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/run.py",
+      "sha256": "b4ebf1af5ad4d7b2257468b47daf610c294958dde30e702bff954fb1b869195f",
+      "bytes": 8721
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/source-reservations/b71288d6f0880c7cebf45524835c14108156260bbcd46ed419ef2c243aeda771.json",
+      "sha256": "69e4263b0817fb038c421f576cbc4bb0cd2145eb5f051f2eb16acc7d5977520c",
+      "bytes": 2654
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/source-reservations/cb35de58f828199e4306eb197cc91511e90f3e348dc733b1aa000f7c15d17aae.json",
+      "sha256": "cabf446eb8814bdcb8ee46259fbd6acc3c691744ef7a445dbd05d0f50c063cad",
+      "bytes": 2644
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/live-validation/source-reservations/dcbfe3de8027a33e9f6b5a314bc5918532e656ecd8c4a39300ac0c758f7aa8d2.json",
+      "sha256": "dbd79f7213bd56d64645a44d2e90f01e495ef7e1a9b1f93538dd27db78e25f6b",
+      "bytes": 2640
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release01/EXECUTION.json",
+      "sha256": "c2a7e040dbc114e3c295b746b8b589082f8445ac10cb1f3acfcf177af6d15d47",
+      "bytes": 285
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release01/INVOCATION.json",
+      "sha256": "90b29f245bd4f72dedd19389082d0a4bbdaa4484968464112643dba9f5ccf7c4",
+      "bytes": 947
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release01/native.json",
+      "sha256": "91e40a42d3030caa07f75019445a65e39d254b41ebbbea40e9f4b4605b681dae",
+      "bytes": 407372
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release01/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release01/stdout.log",
+      "sha256": "ebce60da286e0c0ed442f62f27e3dc95421ecce067090a1a8662aa3bdfcb4e9f",
+      "bytes": 153
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release01.config.mjs",
+      "sha256": "aa8f841dcea5169f67df953cbc57bfd7f5d264b16c5b4da61a47c0b6e9d76474",
+      "bytes": 1511
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release02/EXECUTION.json",
+      "sha256": "fb4100ba9ab8180e4cfaf618e25069eb5622968cecc098c86ac54fb6d5920cdb",
+      "bytes": 285
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release02/INVOCATION.json",
+      "sha256": "aff73b1e8fc5351fbdc6249ab1b04612008baa484e2f5493876964fd4a642709",
+      "bytes": 947
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release02/native.json",
+      "sha256": "e84b5c6ded8e122117b3d985a8a02d16b1d277aee075c793010ca2045eb284d5",
+      "bytes": 778573
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release02/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release02/stdout.log",
+      "sha256": "ebab2d3f0584bf8fd6f8cad948e81cc41f249662fc4dd68e2e5cbe5f0635a5a5",
+      "bytes": 153
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/native-release02.config.mjs",
+      "sha256": "ff259e6a3c51f24790323cf43525cc8d6ed10d9d481aa8b6772600048857c99b",
+      "bytes": 1509
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/pin-runtime.mjs",
+      "sha256": "cea9d7b60aa1fd6aa4fef5e19bc39eaf9b734a8aaa9f2ade7d815a537cb7bf44",
+      "bytes": 1808
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/prepare.mjs",
+      "sha256": "f4f04c3e8357cd635667b08a1545cc6ab3e64ff371c1a3d113613f3b6004e327",
+      "bytes": 1210
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/probe-v3-baseline/CHECK.json",
+      "sha256": "db39733508e67407aaf2d58617d0681c07e42be242f722aba29b998091a0d6a4",
+      "bytes": 2052
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/probe-v3-baseline/proof/EXECUTION.json",
+      "sha256": "77b7de84de611119c4581791bf6bfae30581fc2be850b69358db0da1bb601e60",
+      "bytes": 373
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/probe-v3-baseline/proof/INVOCATION.json",
+      "sha256": "50b0a57b953587dbf89e0932d025494b02b3b9c8266bc314ca34229a6cb82a10",
+      "bytes": 3113
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/probe-v3-baseline/proof/RESULT.json",
+      "sha256": "018c71ba074da4fb5eb29b8a8d07ea1f716a132430d75596ecc39334ecc75375",
+      "bytes": 4664
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/probe-v3-baseline/proof/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+      "bytes": 15
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/probe-v3-baseline/proof/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+      "bytes": 296
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/probe-v3-baseline/proof/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/probe-v3-baseline/proof/stdout.log",
+      "sha256": "bbcd5d87e7fc8f807858ce08a95d99d520eb8e9d63d5bb7e901d11d6acd0c774",
+      "bytes": 855
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/probe-v3.mjs",
+      "sha256": "a2c8aec56ffde360b957111a31878f18f2c2e72bf3666e38e621a7f92c66241a",
+      "bytes": 3187
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/quality-release01/INVOCATION.json",
+      "sha256": "63c72ca1a3cad067117c7700773ea24b1078d40a5159688233060b8be07b7f26",
+      "bytes": 5937
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/quality-release01/build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/quality-release01/format.log",
+      "sha256": "417959be9e3b18069ae6575f03cb301b0b48cb92a2fd8bb2de278d29d5309738",
+      "bytes": 44
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/quality-release01/lint.log",
+      "sha256": "879c257b44a5e1b20d82e887ff3f07ec4711056ca57e327624c7920dd6850c3b",
+      "bytes": 3881
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/quality-release01/types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/quality-release02/INVOCATION.json",
+      "sha256": "21533ba5d3bbf8105c6469a85217671d16dd44d3c0a47eadb0ec9c6caebad5ae",
+      "bytes": 5971
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/quality-release02/build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/quality-release02/format.log",
+      "sha256": "9a5c00b7cee8adf795a14b284d9e20f916974df5dee96bd9ed79a87b7d90fd26",
+      "bytes": 43
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/quality-release02/lint.log",
+      "sha256": "977d4bf8a1ebeb47a5559bf06cb6517e37bca4aad40f357780872e5d9f998d0e",
+      "bytes": 44
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/quality-release02/types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/run-content-probe.py",
+      "sha256": "a22837a21d78a4d31eeb9be5d9770af56040538d5f180dcddf1b11ee0f28e8e0",
+      "bytes": 2571
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/run-native.py",
+      "sha256": "3eea30876c28537545f81a0e7bf1fe9c25a5456ac340e15b3ef7d96d942e600a",
+      "bytes": 2985
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/run-probe-v3.py",
+      "sha256": "2eb22436280da44835cd651843799ce259a0fd5a9fa221b55666695a67e1a434",
+      "bytes": 2503
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/run-section-probe.py",
+      "sha256": "1c018e01325869b6d97783b696749ca011b1edb8e3b7be05432d454c18088247",
+      "bytes": 2523
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/section-probe.mjs",
+      "sha256": "0c601a0b99eacb12dccf28821b8b8797512d7de1af96a454891628fab552e1fa",
+      "bytes": 3146
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/sections-release02/CHECK.json",
+      "sha256": "4c32ed41b837c1e5e7f43c185157e00ab34e8f48d519534103a88865e2eb9201",
+      "bytes": 2543
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/sections-release02/proof/EXECUTION.json",
+      "sha256": "768b22aba947e0848b882e92a14f6e12096dc325cefe26cb990661e54c8cd95d",
+      "bytes": 372
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/sections-release02/proof/INVOCATION.json",
+      "sha256": "1a309b64f29f2b4f1a3d8f0da691ec1ee176f74dbac1b6b532ebe04b771092b4",
+      "bytes": 3615
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/sections-release02/proof/RESULT.json",
+      "sha256": "92b0a4e049e4b5cf8403c3f31e265303b594b1f05cbd38a9b93f12f5a4d97849",
+      "bytes": 18567
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/sections-release02/proof/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+      "bytes": 15
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/sections-release02/proof/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+      "bytes": 296
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/sections-release02/proof/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/sections-release02/proof/stdout.log",
+      "sha256": "725a0b3d06e63633f60187173bb0d05f293e504c76e9556423329c61594765d6",
+      "bytes": 51
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/stage.mjs",
+      "sha256": "ca7e6c9c63a2687103f8902fffebaef636714e2a0db332b6a00fde65df31a455",
+      "bytes": 4660
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/types-release01.json",
+      "sha256": "f2237b752982bbdf44ab17e9ed5a1a170c78e2d80ad47534f69aed90459c6f29",
+      "bytes": 2094
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-headings-september17/types-release02.json",
+      "sha256": "7021b84d72ac0b55ffcdd4ff4aedd6fa33d0bc6c36d4010692779cfd22273cba",
+      "bytes": 2092
+    }
+  ],
+  "preservation": {
+    "trackedBefore": 42,
+    "untrackedBefore": 697,
+    "existingSourceHeadingSuiteRestored": true
+  },
+  "remainingGates": [
+    "Actual SafeJS 0.1.640 execution and dynamic sites",
+    "Real credential/passkey/device/TTY acceptance",
+    "22 missing canonical native tests",
+    "Controlled broad performance evidence and access/handoff",
+    "Hardware/benchmark/Astra/Poe research"
+  ],
+  "historicalCitationVerdicts": {
+    "useful": 33,
+    "other": 67,
+    "updatedByThisRun": false
+  },
+  "goalComplete": false,
+  "pushed": false
+}

@@ -1,10 +1,17 @@
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { selectorSyntaxLimits } from "./selectors.js";
+import {
+	type SourceHeadingMetadata,
+	type SourceHeadingPolicy,
+	documentHeading,
+	validateSourceHeadingPolicy,
+} from "./source-headings.js";
 
 export interface HeadingTarget {
 	ref: string;
 	level: number;
+	sourceHeading?: SourceHeadingMetadata;
 	title: string;
 	titleTruncated: boolean;
 	selector: string | null;
@@ -26,6 +33,7 @@ interface HeadingFrame {
 export function collectHeadingTargets(
 	tree: DocumentTree,
 	options: {
+		sourceHeadingPolicy?: SourceHeadingPolicy;
 		maxNodes: number;
 		maxDepth: number;
 		maxEntries: number;
@@ -40,6 +48,9 @@ export function collectHeadingTargets(
 	scannedNodes: number;
 	truncated: boolean;
 } {
+	const sourceHeadingPolicy = validateSourceHeadingPolicy(
+		options.sourceHeadingPolicy,
+	);
 	const entries: HeadingTarget[] = [];
 	const active: HeadingTarget[] = [];
 	const pending: HeadingFrame[] = [
@@ -127,14 +138,15 @@ export function collectHeadingTargets(
 						current.selectorComponents = components;
 					}
 				}
-				if (/^h[1-6]$/.test(node.tagName) && options.visible(node.id)) {
+				const interpretation = documentHeading(node, sourceHeadingPolicy);
+				if (interpretation && options.visible(node.id)) {
 					if (entries.length === options.maxEntries) {
 						for (const heading of active) heading.titleTruncated = true;
 						return { entries, scannedNodes, truncated: true };
 					}
 					const heading: HeadingTarget = {
 						ref: tree.reference(node.id),
-						level: Number(node.tagName.slice(1)),
+						...interpretation,
 						title: "",
 						titleTruncated: false,
 						selector: null,

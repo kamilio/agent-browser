@@ -1,10 +1,17 @@
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	type SourceHeadingMetadata,
+	type SourceHeadingPolicy,
+	documentHeading,
+	validateSourceHeadingPolicy,
+} from "./source-headings.js";
 
 export interface HeadingSectionMetadata {
 	method: "heading-section";
 	heading: string;
 	level: number;
+	sourceHeading?: SourceHeadingMetadata;
 	end: string | null;
 	scannedNodes: number;
 	selectedNodes: number;
@@ -15,6 +22,7 @@ export function selectHeadingSection(
 	tree: DocumentTree,
 	headingReference: string,
 	options: {
+		sourceHeadingPolicy?: SourceHeadingPolicy;
 		maxNodes: number;
 		maxDepth: number;
 		skip: (node: Readonly<DocumentNode>) => boolean;
@@ -27,6 +35,9 @@ export function selectHeadingSection(
 	children: Map<number, number[]>;
 	metadata: HeadingSectionMetadata;
 } {
+	const sourceHeadingPolicy = validateSourceHeadingPolicy(
+		options.sourceHeadingPolicy,
+	);
 	if (typeof headingReference !== "string")
 		throw new AgentBrowserError("invalid-input", "Invalid heading reference");
 	if (!/^e[1-9][0-9]*$/.test(headingReference)) tree.resolve(headingReference);
@@ -54,10 +65,13 @@ export function selectHeadingSection(
 		context.add(ancestor.id);
 	}
 	tree.resolve(headingReference);
-	if (heading.kind !== "element" || !/^h[1-6]$/.test(heading.tagName))
+	const interpretation = documentHeading(heading, sourceHeadingPolicy);
+	if (!interpretation)
 		throw new AgentBrowserError(
 			"unsupported",
-			"Heading section requires a native h1 through h6 element",
+			sourceHeadingPolicy === undefined
+				? "Heading section requires a native h1 through h6 element"
+				: "Heading section requires a native or admitted source heading",
 		);
 	let skipped = options.skip(heading);
 	for (const id of context) {
@@ -69,7 +83,7 @@ export function selectHeadingSection(
 			"not-actionable",
 			"Heading section target is not visible or admitted",
 		);
-	const level = Number(heading.tagName.slice(1));
+	const { level } = interpretation;
 	const included = new Set(context);
 	const pending = [{ node: tree.get(tree.root), childIndex: -1 }];
 	let selected = false;
@@ -91,12 +105,14 @@ export function selectHeadingSection(
 				pending.pop();
 				continue;
 			}
+			const boundary = selected
+				? documentHeading(current.node, sourceHeadingPolicy)
+				: undefined;
 			if (current.node.id === heading.id) selected = true;
 			else if (
 				selected &&
-				current.node.kind === "element" &&
-				/^h[1-6]$/.test(current.node.tagName) &&
-				Number(current.node.tagName.slice(1)) <= level &&
+				boundary &&
+				boundary.level <= level &&
 				options.visible(current.node.id)
 			) {
 				end = tree.reference(current.node.id);
@@ -139,7 +155,7 @@ export function selectHeadingSection(
 		metadata: Object.freeze({
 			method: "heading-section",
 			heading: tree.reference(heading.id),
-			level,
+			...interpretation,
 			end,
 			scannedNodes,
 			selectedNodes,

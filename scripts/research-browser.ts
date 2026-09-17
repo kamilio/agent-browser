@@ -70,6 +70,10 @@ import {
 	validateSourceLinkLabelPolicy,
 } from "../src/source-link-labels.js";
 import {
+	type SourceHeadingPolicy,
+	validateSourceHeadingPolicy,
+} from "../src/source-headings.js";
+import {
 	type ResearchAdmissionProvenance,
 	type ResearchExitReport,
 	researchLongAdmissionProvenance,
@@ -238,6 +242,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	let format: "markdown" | "json" | undefined;
 	let outputLimitPolicy: "text-prefix-v1" | undefined;
 	let sourceLinkLabelPolicy: SourceLinkLabelPolicy | undefined;
+	let sourceHeadingPolicy: SourceHeadingPolicy | undefined;
 	let contentFocus: ContentFocusPolicy | undefined;
 	let tableMetadata = false;
 	let compactTables = false;
@@ -254,6 +259,19 @@ export function parseResearchArguments(args: readonly string[]) {
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (
+			argument === "--source-heading-policy" &&
+			sourceHeadingPolicy === undefined
+		) {
+			const value = args[++index];
+			if (value === undefined)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Missing research source heading policy",
+				);
+			sourceHeadingPolicy = validateSourceHeadingPolicy(value);
+			continue;
+		}
 		if (
 			argument === "--source-link-label-policy" &&
 			sourceLinkLabelPolicy === undefined
@@ -580,6 +598,17 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Source link-label policy requires reader HTML Markdown extraction without discovery, literal selection or text-prefix output",
 		);
+	if (
+		sourceHeadingPolicy !== undefined &&
+		(!reader ||
+			find !== undefined ||
+			lines !== undefined ||
+			jsonPointer !== undefined)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Source heading policy requires reader HTML extraction or heading discovery",
+		);
 	if (tableMetadata && format !== "json")
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -632,6 +661,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		...(format === undefined ? {} : { format }),
 		...(outputLimitPolicy === undefined ? {} : { outputLimitPolicy }),
 		...(sourceLinkLabelPolicy === undefined ? {} : { sourceLinkLabelPolicy }),
+		...(sourceHeadingPolicy === undefined ? {} : { sourceHeadingPolicy }),
 		...(contentFocus === undefined ? {} : { contentFocus }),
 		...(tableMetadata ? { tableMetadata: true as const } : {}),
 		...(compactTables ? { compactTables: true as const } : {}),
@@ -656,6 +686,7 @@ export type ResearchOutcome =
 	| "failure";
 
 export interface ResearchNavigationReport {
+	sourceHeadingPolicy?: SourceHeadingPolicy;
 	sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
 	httpsRedirectPolicy?: HttpsRedirectPolicy;
 	readerFallbackEncoding?: ResearchReaderFallbackEncoding;
@@ -713,6 +744,7 @@ export interface ResearchNavigationReport {
 }
 
 export interface ResearchExecutionOptions {
+	sourceHeadingPolicy?: SourceHeadingPolicy;
 	sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
 	jsonPointer?: string;
 	httpsRedirectPolicy?: HttpsRedirectPolicy;
@@ -763,6 +795,7 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 		);
 	validateHttpsRedirectPolicy(options.httpsRedirectPolicy);
 	validateSourceLinkLabelPolicy(options.sourceLinkLabelPolicy);
+	validateSourceHeadingPolicy(options.sourceHeadingPolicy);
 	validateResearchReaderRawPolicy(options.readerRawPolicy);
 	validateResearchReaderVisibilityPolicy(options.readerVisibilityPolicy);
 	validateResearchReaderMimePolicy(options.readerMimePolicy);
@@ -812,6 +845,9 @@ export async function researchNavigation(
 	const lineRange =
 		lines === undefined ? undefined : validateResearchLines(lines);
 	const validated = parseResearchArguments([
+		...(executionOptions.sourceHeadingPolicy === undefined
+			? []
+			: ["--source-heading-policy", executionOptions.sourceHeadingPolicy]),
 		...(executionOptions.sourceLinkLabelPolicy === undefined
 			? []
 			: ["--source-link-label-policy", executionOptions.sourceLinkLabelPolicy]),
@@ -879,6 +915,9 @@ export async function researchNavigation(
 	const started = Date.now();
 	const fragment = researchFragmentReport(validated.urls[0]);
 	const report: ResearchNavigationReport = {
+		...(validated.sourceHeadingPolicy === undefined
+			? {}
+			: { sourceHeadingPolicy: validated.sourceHeadingPolicy }),
 		...(validated.sourceLinkLabelPolicy === undefined
 			? {}
 			: { sourceLinkLabelPolicy: validated.sourceLinkLabelPolicy }),
@@ -1111,6 +1150,9 @@ export async function researchNavigation(
 							tableMetadata: validated.tableMetadata,
 							tableRows: validated.tableRows,
 							compactTables: validated.compactTables,
+							...(validated.sourceHeadingPolicy === undefined
+								? {}
+								: { sourceHeadingPolicy: validated.sourceHeadingPolicy }),
 							...(validated.sourceLinkLabelPolicy === undefined
 								? {}
 								: { sourceLinkLabelPolicy: validated.sourceLinkLabelPolicy }),
@@ -1135,6 +1177,17 @@ export async function researchNavigation(
 							"Research barrier requires user handoff",
 						);
 					}
+					if (validated.sourceHeadingPolicy !== undefined)
+						return loadResearchDocument(
+							response,
+							context,
+							validated.documentProfile,
+							validated.readerRawPolicy,
+							validated.readerVisibilityPolicy,
+							validated.readerMimePolicy,
+							validated.readerFallbackEncoding,
+							validated.sourceHeadingPolicy,
+						);
 					return loadResearchDocument(
 						response,
 						context,
@@ -1144,6 +1197,17 @@ export async function researchNavigation(
 						...decodingArguments,
 					);
 				}
+				if (validated.sourceHeadingPolicy !== undefined)
+					return loadResearchDocument(
+						response,
+						context,
+						validated.documentProfile,
+						validated.readerRawPolicy,
+						undefined,
+						validated.readerMimePolicy,
+						validated.readerFallbackEncoding,
+						validated.sourceHeadingPolicy,
+					);
 				if (validated.readerFallbackEncoding !== undefined)
 					return loadResearchDocument(
 						response,
@@ -1263,14 +1327,16 @@ export async function researchNavigation(
 		}
 		if (validated.headings) {
 			stage = "extraction";
-			const outline = discoverDocumentHeadings(
-				tree,
-				admissionLimits?.headings ?? {
+			const outline = discoverDocumentHeadings(tree, {
+				...(admissionLimits?.headings ?? {
 					maxBytes: researchRunLimits.extractionBytes,
 					maxNodes: 50_000,
 					maxDepth: 128,
-				},
-			);
+				}),
+				...(validated.sourceHeadingPolicy === undefined
+					? {}
+					: { sourceHeadingPolicy: validated.sourceHeadingPolicy }),
+			});
 			report.classification.diagnostic = classifyResearchVisibility(
 				{
 					status,
@@ -1330,6 +1396,9 @@ export async function researchNavigation(
 		}
 		const extraction = extractDocument(tree, {
 			format: validated.format ?? "markdown",
+			...(validated.sourceHeadingPolicy === undefined
+				? {}
+				: { sourceHeadingPolicy: validated.sourceHeadingPolicy }),
 			...(validated.sourceLinkLabelPolicy === undefined
 				? {}
 				: { sourceLinkLabelPolicy: validated.sourceLinkLabelPolicy }),
@@ -1435,6 +1504,9 @@ export async function* researchBatch(
 						? {}
 						: { readerFallbackEncoding: options.readerFallbackEncoding }),
 					outputLimitPolicy: options.outputLimitPolicy,
+					...(options.sourceHeadingPolicy === undefined
+						? {}
+						: { sourceHeadingPolicy: options.sourceHeadingPolicy }),
 					...(options.sourceLinkLabelPolicy === undefined
 						? {}
 						: { sourceLinkLabelPolicy: options.sourceLinkLabelPolicy }),

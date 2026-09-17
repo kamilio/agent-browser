@@ -30,6 +30,7 @@ import { resourceLimitDiagnostic } from "../src/resource-limit.js";
 import { DocumentQueries } from "../src/selectors.js";
 import type { DocumentLoaderContext } from "../src/session.js";
 import type { SourceLinkLabelPolicy } from "../src/source-link-labels.js";
+import type { SourceHeadingPolicy } from "../src/source-headings.js";
 import {
 	researchDocumentDiagnosticText,
 	researchExtractionDiagnosticText,
@@ -49,6 +50,7 @@ interface VisibilityOperation {
 	tableRows?: boolean;
 	compactTables?: boolean;
 	sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
+	sourceHeadingPolicy?: SourceHeadingPolicy;
 	limits: { maxBytes: number; maxNodes: number; maxDepth: number };
 	headingLimits?: Parameters<typeof discoverDocumentHeadings>[1];
 }
@@ -112,12 +114,20 @@ export function researchVisibilityEvidence(
 			undefined?,
 			ResearchReaderMimePolicy?,
 			ResearchReaderFallbackEncoding?,
+			SourceHeadingPolicy?,
 		] =
-			selectedFallbackEncoding !== undefined
-				? [undefined, selectedMimePolicy, selectedFallbackEncoding]
-				: selectedMimePolicy
-					? [undefined, selectedMimePolicy]
-					: [];
+			operation.sourceHeadingPolicy !== undefined
+				? [
+						undefined,
+						selectedMimePolicy,
+						selectedFallbackEncoding,
+						operation.sourceHeadingPolicy,
+					]
+				: selectedFallbackEncoding !== undefined
+					? [undefined, selectedMimePolicy, selectedFallbackEncoding]
+					: selectedMimePolicy
+						? [undefined, selectedMimePolicy]
+						: [];
 		tree = loadResearchDocument(
 			response,
 			{
@@ -159,10 +169,12 @@ export function researchVisibilityEvidence(
 		if (!diagnostic) {
 			try {
 				if (operation.method === "heading-outline") {
-					const outline = discoverDocumentHeadings(
-						tree,
-						operation.headingLimits ?? operation.limits,
-					);
+					const outline = discoverDocumentHeadings(tree, {
+						...(operation.headingLimits ?? operation.limits),
+						...(operation.sourceHeadingPolicy === undefined
+							? {}
+							: { sourceHeadingPolicy: operation.sourceHeadingPolicy }),
+					});
 					diagnostic = classify(
 						outline.entries.map((entry) => entry.title).join("\n"),
 					);
@@ -184,6 +196,9 @@ export function researchVisibilityEvidence(
 					}
 					const extraction = extractDocument(tree, {
 						...operation.limits,
+						...(operation.sourceHeadingPolicy === undefined
+							? {}
+							: { sourceHeadingPolicy: operation.sourceHeadingPolicy }),
 						format: operation.format,
 						tableMetadata: operation.tableMetadata,
 						tableRows: operation.tableRows,
