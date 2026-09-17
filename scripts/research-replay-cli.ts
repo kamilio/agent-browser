@@ -12,6 +12,7 @@ import {
 	type ResearchJsonReplaySelection,
 	type ResearchReplayFormat,
 	extractResearchReplayJson,
+	extractResearchStrategyReplayJson,
 	outlineResearchOutputLimitCapture,
 	recoverResearchEmptyOutlineSelector,
 	recoverResearchOutputLimitContentFocus,
@@ -27,6 +28,7 @@ export const researchReplayCliLimits = Object.freeze({
 });
 
 const usage =
+	"Explicit strategy replay: --expected-document-strategy native-reader-fallback-v1 requires the default profile and an ordinary HTML selector, section, content-focus or links selection; recovery and interpretation overrides are unsupported.\n" +
 	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--content-focus main-content-v1|main-content-v2|main-content-v3 | --selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--source-link-label-policy source-aria-label-v1] [--reader-mime-policy markdown-html-document-v1] [--output-limit-policy text-prefix-v1] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit | --recover-empty-outline] < receipt.jsonl\nSource link-label policy requires default-profile ordinary selector/section/content-focus HTML Markdown replay, without recovery or text-prefix output; it records a current interpretation without changing captured policy or outcome. Output-limit recovery requires the default profile and one explicit --selector, --section, --content-focus or --headings. Empty-outline recovery requires long-v1 and one explicit --selector. Recovery flags are mutually exclusive. Content focus requires an ordinary complete capture or explicit output-limit recovery of a complete failed capture; it cannot use empty-outline recovery. Reader MIME policy requires default-profile ordinary selector/section/content-focus replay of a complete text/markdown capture with a recognized HTML document prefix and no captured MIME policy or interpretation; it never rewrites capture metadata or admits genuine Markdown as HTML. Text-prefix output requires ordinary selector/section/content-focus Markdown replay; it never admits incomplete bodies. Markdown requires selector/section/content-focus extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section/content-focus extraction and may be combined. Headings require output-limit recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
 
 function invalidArguments(): never {
@@ -45,7 +47,8 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 } {
 	if (
 		!Array.isArray(args) ||
-		args.length > 21 ||
+		args.length > 23 ||
+		(args.length > 21 && !args.includes("--expected-document-strategy")) ||
 		args.some((value) => typeof value !== "string" || value.length > 4096)
 	)
 		invalidArguments();
@@ -58,6 +61,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	let headings = false;
 	const valueFlags = new Set([
 		"--expected-profile",
+		"--expected-document-strategy",
 		"--receipt-sha256",
 		"--body-sha256",
 		"--body-bytes",
@@ -104,6 +108,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		fields.set(flag, value);
 	}
 	const profile = fields.get("--expected-profile");
+	const documentStrategy = fields.get("--expected-document-strategy");
 	const format = fields.get("--format");
 	const outputLimitPolicy = fields.get("--output-limit-policy");
 	const readerMimePolicy = fields.get("--reader-mime-policy");
@@ -139,6 +144,21 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		"--lines",
 	].filter((flag) => fields.has(flag));
 	if (modes.length + Number(headings) !== 1) invalidArguments();
+	if (
+		documentStrategy !== undefined &&
+		(documentStrategy !== "native-reader-fallback-v1" ||
+			profile !== "default" ||
+			recoverOutputLimit ||
+			recoverEmptyOutline ||
+			headings ||
+			readerMimePolicy !== undefined ||
+			outputLimitPolicy !== undefined ||
+			sourceLinkLabelPolicy !== undefined ||
+			!["--selector", "--section", "--content-focus", "--links"].includes(
+				modes[0],
+			))
+	)
+		invalidArguments();
 	if (
 		sourceLinkLabelPolicy !== undefined &&
 		(profile !== "default" ||
@@ -179,6 +199,9 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		invalidArguments();
 	const trusted: TrustedResearchReplayAdmission = {
 		expectedProfile: profile,
+		...(documentStrategy === undefined
+			? {}
+			: { expectedDocumentStrategy: documentStrategy }),
 		expectedReceiptSha256: receiptSha256,
 		expectedBody: { bytes: Number(bodyBytes), sha256: bodySha256 },
 	};
@@ -448,7 +471,18 @@ export async function runResearchReplayCli(
 		receipt = await readReceipt(input, controller.signal);
 		checkpoint();
 		let result: ResearchJsonReplayExtraction<ResearchReplayFormat>;
-		if ("headings" in options.selection) {
+		if (
+			options.trusted.expectedDocumentStrategy !== undefined &&
+			!("headings" in options.selection)
+		) {
+			result = await extractResearchStrategyReplayJson(
+				receipt,
+				options.trusted,
+				options.selection,
+				controller.signal,
+				options.format ?? "json",
+			);
+		} else if ("headings" in options.selection) {
 			if (!options.recoverOutputLimit) invalidArguments();
 			result = outlineResearchOutputLimitCapture(
 				receipt,

@@ -1,7 +1,17 @@
 import { createHash } from "node:crypto";
-import { types } from "node:util";
+import { isDeepStrictEqual, types } from "node:util";
 import { AgentBrowserError } from "../src/errors.js";
+import type { DocumentExtraction } from "../src/extraction.js";
 import { isNetworkPolicyReason } from "../src/network-policy-diagnostic.js";
+import type {
+	ResearchDocumentStrategy,
+	ResearchDocumentStrategyInfo,
+} from "../src/research-fallback-loader.js";
+import {
+	type ResourceLimitKind,
+	resourceLimitDiagnostic,
+	resourceLimitError,
+} from "../src/resource-limit.js";
 import {
 	type ResearchDocumentProfileId,
 	researchLongDocumentAdmission,
@@ -20,6 +30,7 @@ import {
 	decodeResearchBodyCapture,
 	researchBodyCaptureLimit,
 } from "./research-body-capture.js";
+import { hasResearchExtractionContent } from "./research-content.js";
 import type {
 	ResearchNavigationReport,
 	ResearchOutcome,
@@ -99,6 +110,7 @@ export interface TrustedResearchReplayAdmission {
 	readonly expectedProfile: ResearchDocumentProfileId;
 	readonly expectedReceiptSha256: string;
 	readonly expectedBody?: ResearchBodyPin;
+	readonly expectedDocumentStrategy?: ResearchDocumentStrategy;
 }
 
 export interface ResearchReplayMetadata {
@@ -107,6 +119,7 @@ export interface ResearchReplayMetadata {
 	readonly selectedProfile: ResearchDocumentProfileId;
 	readonly originalMetadata: Readonly<Record<string, unknown>>;
 	readonly originalFieldPresence: Readonly<Record<string, boolean>>;
+	readonly documentStrategy?: Readonly<ResearchDocumentStrategyInfo>;
 }
 
 export type ResearchReplayAdmission = ResearchReplayMetadata &
@@ -1064,10 +1077,19 @@ function trustedAdmission(
 		!digest(trusted.expectedReceiptSha256) ||
 		Object.keys(trusted).some(
 			(key) =>
-				!["expectedProfile", "expectedReceiptSha256", "expectedBody"].includes(
-					key,
-				),
+				![
+					"expectedProfile",
+					"expectedReceiptSha256",
+					"expectedBody",
+					"expectedDocumentStrategy",
+				].includes(key),
 		)
+	)
+		invalidEvidence();
+	if (
+		Object.hasOwn(trusted, "expectedDocumentStrategy") &&
+		(trusted.expectedDocumentStrategy !== "native-reader-fallback-v1" ||
+			trusted.expectedProfile !== "default")
 	)
 		invalidEvidence();
 	if (Object.hasOwn(trusted, "expectedBody")) {
@@ -1168,10 +1190,201 @@ function outlineReady(report: DataRecord, allowEmpty = false): boolean {
 	return true;
 }
 
+function strategyProjection(
+	value: unknown,
+): Readonly<ResearchDocumentStrategyInfo> {
+	const strategy = record(value);
+	if (
+		strategy.policy !== "native-reader-fallback-v1" ||
+		(strategy.mode !== "native" && strategy.mode !== "reader") ||
+		Object.keys(strategy).length !== (strategy.mode === "native" ? 2 : 3) ||
+		(strategy.mode === "native" && Object.hasOwn(strategy, "nativeFailure"))
+	)
+		invalidEvidence();
+	if (strategy.mode === "reader") {
+		const failure = record(strategy.nativeFailure);
+		if (
+			(failure.category !== "unsupported" &&
+				failure.category !== "resource-limit") ||
+			failure.stage !== "loader" ||
+			Object.keys(failure).some(
+				(key) => !["category", "stage", "resourceLimit"].includes(key),
+			)
+		)
+			invalidEvidence();
+		if (Object.hasOwn(failure, "resourceLimit")) {
+			const diagnostic = record(failure.resourceLimit);
+			if (
+				failure.category !== "resource-limit" ||
+				Object.keys(diagnostic).length !== 4 ||
+				!integer(diagnostic.limit) ||
+				!integer(diagnostic.observed) ||
+				diagnostic.observed <= diagnostic.limit ||
+				typeof diagnostic.kind !== "string"
+			)
+				invalidEvidence();
+			const expected = resourceLimitDiagnostic(
+				resourceLimitError(
+					diagnostic.kind as ResourceLimitKind,
+					diagnostic.limit,
+					diagnostic.observed,
+					"Strategy replay resource diagnostic",
+				),
+			);
+			if (!expected || !sameCanonical(diagnostic, expected)) invalidEvidence();
+		}
+	}
+	return strategy as unknown as Readonly<ResearchDocumentStrategyInfo>;
+}
+
+function validateStrategyExtractionContent(extraction: DataRecord): void {
+	if (!Object.hasOwn(extraction, "content")) invalidEvidence();
+	if (extraction.format === "markdown") {
+		if (typeof extraction.content !== "string") invalidEvidence();
+	} else {
+		const pending = [record(extraction.content)];
+		const types = new Set([
+			"container",
+			"inline",
+			"text",
+			"paragraph",
+			"heading",
+			"list",
+			"list-item",
+			"blockquote",
+			"pre",
+			"code",
+			"strong",
+			"emphasis",
+			"link",
+			"image",
+			"break",
+			"separator",
+			"table",
+			"row",
+			"cell",
+		]);
+		while (pending.length) {
+			const node = pending.pop() as DataRecord;
+			if (
+				!boundedString(node.ref, 4096) ||
+				typeof node.type !== "string" ||
+				!types.has(node.type) ||
+				(Object.hasOwn(node, "text") && typeof node.text !== "string")
+			)
+				invalidEvidence();
+			for (const field of ["tableSource", "ariaTableSource", "imageSource"])
+				if (Object.hasOwn(node, field)) record(node[field]);
+			if (Object.hasOwn(node, "dateTimeSource")) {
+				const dateTime = record(node.dateTimeSource);
+				if (typeof dateTime.value !== "string") invalidEvidence();
+			}
+			if (Object.hasOwn(node, "children")) {
+				if (!Array.isArray(node.children)) invalidEvidence();
+				for (const child of node.children) pending.push(record(child));
+			}
+		}
+	}
+	if (Object.hasOwn(extraction, "sourceChartTables")) {
+		const charts = record(extraction.sourceChartTables);
+		if (!Array.isArray(charts.tables)) invalidEvidence();
+		for (const value of charts.tables) {
+			const table = record(value);
+			if (!Array.isArray(table.rows)) invalidEvidence();
+			for (const row of table.rows) {
+				if (!Array.isArray(row)) invalidEvidence();
+				for (const value of row) {
+					const cell = record(value);
+					if (typeof cell.kind !== "string") invalidEvidence();
+				}
+			}
+		}
+	}
+	if (
+		!hasResearchExtractionContent(extraction as unknown as DocumentExtraction)
+	)
+		invalidEvidence();
+}
+
+function validateSuccessfulStrategyCapture(
+	report: DataRecord,
+	strategy: Readonly<ResearchDocumentStrategyInfo>,
+): void {
+	const primary = primaryProjection(report.primaryResponse);
+	const extraction = record(report.extraction);
+	const metrics = record(report.metrics);
+	const classification = record(report.classification);
+	const contentTypes = primary && record(primary.headers)["content-type"];
+	if (
+		!primary ||
+		!Array.isArray(contentTypes) ||
+		contentTypes.length !== 1 ||
+		typeof contentTypes[0] !== "string" ||
+		contentTypes[0].split(";", 1)[0].trim().toLowerCase() !== "text/html" ||
+		extraction.partial !== true ||
+		(extraction.format !== "json" && extraction.format !== "markdown") ||
+		metrics.closed !== true ||
+		metrics.active !== 0 ||
+		classification.classifier !== "browser-challenges" ||
+		!Object.hasOwn(classification, "diagnostic") ||
+		classification.diagnostic !== null ||
+		[
+			"selection",
+			"headings",
+			"textLines",
+			"contentFocus",
+			"outputLimitPolicy",
+			"readerMimePolicy",
+			"sourceLinkLabelPolicy",
+			"sourceHeadingPolicy",
+		].some((field) => Object.hasOwn(report, field))
+	)
+		invalidEvidence();
+	validateStrategyExtractionContent(extraction);
+	if (strategy.mode === "native") {
+		if (
+			report.profile !== "native" ||
+			Object.hasOwn(extraction, "reader") ||
+			[
+				"reader",
+				"readerRawPolicy",
+				"readerVisibilityPolicy",
+				"readerFallbackEncoding",
+			].some((field) => Object.hasOwn(report, field))
+		)
+			invalidEvidence();
+		return;
+	}
+	const reader = record(report.reader);
+	if (
+		primary.status !== 200 ||
+		report.profile !== "native-semantic-reader-v1" ||
+		report.readerRawPolicy !== "separate-omitted-raw-v1" ||
+		report.readerVisibilityPolicy !== "source-hidden-inline-v1" ||
+		report.readerFallbackEncoding !== "utf-8" ||
+		reader.profile !== "native-semantic-reader-v1" ||
+		reader.partial !== true ||
+		reader.scripting !== false ||
+		reader.styling !== false ||
+		reader.rawTextPolicy !== report.readerRawPolicy ||
+		reader.visibilityPolicy !== report.readerVisibilityPolicy ||
+		reader.fallbackEncoding !== report.readerFallbackEncoding ||
+		reader.hiddenContentSemantics !== "source-attributes-and-inline-display" ||
+		!integer(reader.sourceHiddenSubtrees) ||
+		!boundedString(reader.encoding, 128) ||
+		Object.hasOwn(reader, "mimePolicy") ||
+		Object.hasOwn(reader, "mimeInterpretation") ||
+		Object.hasOwn(reader, "sourceHeadingPolicy") ||
+		!isDeepStrictEqual(extraction.reader, reader)
+	)
+		invalidEvidence();
+}
+
 function replayEvidence(
 	rawReceipt: Uint8Array,
 	trusted: TrustedResearchReplayAdmission,
 	defaultOnly = false,
+	allowDocumentStrategy = false,
 ) {
 	const raw = receiptSnapshot(rawReceipt);
 	const authority = trustedAdmission(trusted);
@@ -1193,11 +1406,19 @@ function replayEvidence(
 		invalidEvidence();
 	}
 	const report = record(snapshot(parsed));
-	if (Object.hasOwn(report, "documentStrategy"))
-		throw new AgentBrowserError(
-			"unsupported",
-			"Strategy-aware research replay is not implemented",
-		);
+	let documentStrategy: Readonly<ResearchDocumentStrategyInfo> | undefined;
+	if (Object.hasOwn(report, "documentStrategy")) {
+		if (
+			!allowDocumentStrategy ||
+			authority.expectedDocumentStrategy === undefined
+		)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Strategy replay requires explicit ordinary strategy admission",
+			);
+		documentStrategy = strategyProjection(report.documentStrategy);
+	} else if (authority.expectedDocumentStrategy !== undefined)
+		invalidEvidence();
 	const selectedProfile = authority.expectedProfile;
 	if (selectedProfile === "long-v1") {
 		validateLong(report);
@@ -1220,6 +1441,7 @@ function replayEvidence(
 		selectedProfile,
 		originalMetadata,
 		originalFieldPresence,
+		...(documentStrategy === undefined ? {} : { documentStrategy }),
 	};
 	return { report, authority, metadata };
 }
@@ -1228,7 +1450,12 @@ export function validateResearchReplayAdmission(
 	rawReceipt: Uint8Array,
 	trusted: TrustedResearchReplayAdmission,
 ): ResearchReplayAdmission {
-	const { report, authority, metadata } = replayEvidence(rawReceipt, trusted);
+	const { report, authority, metadata } = replayEvidence(
+		rawReceipt,
+		trusted,
+		false,
+		true,
+	);
 	const selectedProfile = metadata.selectedProfile;
 	function evidenceOnly(reason: EvidenceReason): ResearchReplayAdmission {
 		return Object.freeze({
@@ -1276,6 +1503,8 @@ export function validateResearchReplayAdmission(
 		)
 			return evidenceOnly("discovery-incomplete");
 	}
+	if (metadata.documentStrategy !== undefined)
+		validateSuccessfulStrategyCapture(report, metadata.documentStrategy);
 	return validatedCapture(report, authority, metadata);
 }
 

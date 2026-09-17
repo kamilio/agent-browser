@@ -1,4 +1,4 @@
-import { types } from "node:util";
+import { isDeepStrictEqual, types } from "node:util";
 import { browserChallengeStructure } from "../src/browser-challenge-structure.js";
 import { researchResponseChallengeStructure } from "./research-challenge-structure.js";
 import type { BrowserChallengeDiagnostic } from "../src/browser-challenges.js";
@@ -23,6 +23,10 @@ import {
 	researchLongDocumentAdmission,
 } from "../src/research-admission.js";
 import { loadResearchDocument } from "../src/research-loader.js";
+import {
+	type ResearchDocumentStrategyInfo,
+	loadNativeReaderFallbackDocument,
+} from "../src/research-fallback-loader.js";
 import {
 	type ResearchMimeInterpretation,
 	type ResearchReaderMimePolicy,
@@ -212,6 +216,7 @@ export interface ResearchJsonReplayReport<
 		receiptSha256: string;
 		body: ResearchBodyPin;
 		capturedOutcome?: ResearchOutcome;
+		documentStrategy?: Readonly<ResearchDocumentStrategyInfo>;
 		sourceHeadingPolicy?: SourceHeadingPolicy;
 		sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
 	};
@@ -237,6 +242,7 @@ export interface ResearchJsonReplayReport<
 		diagnostic: BrowserChallengeDiagnostic | null;
 	};
 	reader?: Readonly<ResearchReaderReport>;
+	documentStrategy?: Readonly<ResearchDocumentStrategyInfo>;
 	extraction?: ReplayDocumentByFormat[Format];
 	links?: DocumentLinkDiscovery;
 	headings?: DocumentHeadingOutline;
@@ -738,11 +744,24 @@ function replayMimePolicy(metadata: Readonly<Record<string, unknown>>): {
 	};
 }
 
-function replayCheckpoint(signal?: AbortSignal) {
+function closeReplayDocument(
+	tree: DocumentTree | undefined,
+	preserveFailure: boolean,
+): void {
+	try {
+		tree?.close();
+	} catch (error) {
+		if (!preserveFailure) throw error;
+	}
+}
+
+function replayCheckpoint(signal?: AbortSignal, preserveReason = false) {
 	const started = performance.now();
 	return () => {
 		if (signal?.aborted)
-			throw new AgentBrowserError("aborted", "Research JSON replay aborted");
+			throw preserveReason && signal.reason instanceof AgentBrowserError
+				? signal.reason
+				: new AgentBrowserError("aborted", "Research JSON replay aborted");
 		if (performance.now() - started >= researchJsonReplayLimits.timeoutMs)
 			throw new AgentBrowserError("timeout", "Research JSON replay timed out");
 	};
@@ -807,6 +826,138 @@ export function extractResearchReplayJson(
 		{},
 		selectedFormat,
 	);
+}
+
+export function extractResearchStrategyReplayJson<
+	Format extends ResearchReplayFormat,
+>(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchJsonReplaySelection,
+	signal: AbortSignal | undefined,
+	format: Format,
+): Promise<ResearchJsonReplayExtraction<Format>>;
+export function extractResearchStrategyReplayJson(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchJsonReplaySelection,
+	signal?: AbortSignal,
+): Promise<ResearchJsonReplayExtraction>;
+export async function extractResearchStrategyReplayJson(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchJsonReplaySelection,
+	signal?: AbortSignal,
+	format: ResearchReplayFormat = "json",
+): Promise<ResearchJsonReplayExtraction<ResearchReplayFormat>> {
+	const checkpoint = replayCheckpoint(signal, true);
+	checkpoint();
+	if (
+		selection &&
+		typeof selection === "object" &&
+		!types.isProxy(selection) &&
+		Reflect.ownKeys(selection).some((key) =>
+			[
+				"headings",
+				"recoverOutputLimit",
+				"recoverEmptyOutline",
+				"recovery",
+				"lines",
+				"find",
+				"jsonPointer",
+				"readerMimePolicy",
+				"outputLimitPolicy",
+				"sourceLinkLabelPolicy",
+				"sourceHeadingPolicy",
+			].includes(key as string),
+		)
+	)
+		throw new AgentBrowserError(
+			"unsupported",
+			"Strategy replay requires an ordinary HTML selection without interpretation overrides",
+		);
+	const selected = selectionSnapshot(selection);
+	const selectedFormat = validateReplayFormat(format, selected);
+	checkpoint();
+	const admission = validateResearchReplayAdmission(rawReceipt, trusted);
+	if (admission.kind !== "validated-capture")
+		throw new AgentBrowserError(
+			"policy-denied",
+			"Research replay requires a validated capture",
+		);
+	let tree: DocumentTree | undefined;
+	let transferred = false;
+	try {
+		if (
+			admission.documentStrategy?.policy !== "native-reader-fallback-v1" ||
+			admission.selectedProfile !== "default" ||
+			admission.originalMetadata.documentStrategy === undefined
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Strategy replay requires explicit default-profile strategy trust",
+			);
+		checkpoint();
+		const primary = admission.originalMetadata.primaryResponse as {
+			url: string;
+			status: number;
+			headers: NetworkResponse["headers"];
+			encodedBytes: number;
+			elapsedMs: number;
+		};
+		let strategy: Readonly<ResearchDocumentStrategyInfo> | undefined;
+		tree = await loadNativeReaderFallbackDocument(
+			{
+				...primary,
+				url: parseNetworkUrl(primary.url).href,
+				body: admission.body,
+				redirects: [],
+			},
+			{
+				tabId: "research-json-replay",
+				signal: signal ?? new AbortController().signal,
+				limits: {
+					maxNodes: 50_000,
+					maxDepth: 128,
+					maxTextCodeUnits: 2_000_000,
+					maxChanges: 1_024,
+				},
+			},
+			(information) => {
+				strategy = information;
+			},
+		);
+		checkpoint();
+		if (
+			strategy === undefined ||
+			!isDeepStrictEqual(
+				strategy,
+				JSON.parse(JSON.stringify(admission.originalMetadata.documentStrategy)),
+			)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Research replay strategy does not match captured bytes",
+			);
+		transferred = true;
+		return extractValidatedReplayJson(
+			admission,
+			selected,
+			checkpoint,
+			signal,
+			{},
+			selectedFormat,
+			false,
+			{ tree, strategy },
+		);
+	} finally {
+		if (!transferred) {
+			try {
+				tree?.close();
+			} catch {}
+			admission.body.fill(0);
+		}
+	}
 }
 
 export function recoverResearchOutputLimitSection<
@@ -1048,12 +1199,22 @@ function extractValidatedReplayJson<
 	extra: Extra,
 	format: Format,
 	requireEmptyOutline = false,
+	preloaded?: {
+		tree: DocumentTree;
+		strategy: Readonly<ResearchDocumentStrategyInfo>;
+	},
 ): ResearchJsonReplayExtraction<Format> & {
 	report: ResearchJsonReplayReport<Format> & Extra;
 } {
-	let tree: DocumentTree | undefined;
+	let tree: DocumentTree | undefined = preloaded?.tree;
+	let succeeded = false;
 	try {
 		checkpoint();
+		if (!preloaded && admission.originalMetadata.documentStrategy !== undefined)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Strategy captures require asynchronous strategy replay",
+			);
 		const sourceHeadingPolicy = replaySourceHeadingPolicy(
 			admission.originalMetadata,
 		);
@@ -1227,9 +1388,13 @@ function extractValidatedReplayJson<
 							maxTextCodeUnits: 2_000_000,
 							maxChanges: 1_024,
 						},
-			initializeDocument: (document) => {
-				tree = document;
-			},
+			...(preloaded
+				? {}
+				: {
+						initializeDocument: (document: DocumentTree) => {
+							tree = document;
+						},
+					}),
 		};
 		const mimeArguments: [
 			ResearchReaderMimePolicy?,
@@ -1290,7 +1455,12 @@ function extractValidatedReplayJson<
 				"Unfiltered research source requires user handoff",
 			);
 		checkpoint();
-		tree = loadResearchDocument(response, context, profile, ...policyArguments);
+		tree ??= loadResearchDocument(
+			response,
+			context,
+			profile,
+			...policyArguments,
+		);
 		checkpoint();
 		const reader = researchReaderInfo(tree);
 		if (
@@ -1362,6 +1532,14 @@ function extractValidatedReplayJson<
 				reportedFinalUrl,
 				receiptSha256: admission.receiptSha256,
 				body: admission.bodyIdentity,
+				...(preloaded === undefined
+					? {}
+					: {
+							documentStrategy: admission.originalMetadata
+								.documentStrategy as Readonly<ResearchDocumentStrategyInfo>,
+							capturedOutcome: admission.originalMetadata
+								.outcome as ResearchOutcome,
+						}),
 				...(sourceHeadingPolicy === undefined ? {} : { sourceHeadingPolicy }),
 				...(sourceLinkLabelPolicy === undefined &&
 				capturedSourceLinkLabelPolicy === undefined &&
@@ -1394,6 +1572,9 @@ function extractValidatedReplayJson<
 			},
 			classification: { barrier: null, diagnostic: null },
 			reader,
+			...(preloaded === undefined
+				? {}
+				: { documentStrategy: preloaded.strategy }),
 			...extra,
 		};
 		const title = documentTitle(tree);
@@ -1561,10 +1742,11 @@ function extractValidatedReplayJson<
 				"Research JSON replay output limit exceeded",
 			);
 		checkpoint();
+		succeeded = true;
 		return { report, jsonl, outputBytes };
 	} finally {
 		try {
-			tree?.close();
+			closeReplayDocument(tree, preloaded !== undefined && !succeeded);
 		} finally {
 			admission.body.fill(0);
 		}

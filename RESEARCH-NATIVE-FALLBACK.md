@@ -62,8 +62,10 @@ and body capture. It cannot be combined with `--reader`, reader-specific policie
 long-document mode, selectors/sections/discovery, content focus, JSON pointers,
 text-prefix output, source label/heading policies or Markdown negotiation.
 
-Strategy-tagged captures are explicitly refused by ordinary replay and recovery
-admission until strategy-aware replay is implemented. Retaining a complete body
+Strategy-tagged captures remain refused by default replay and recovery admission.
+Explicit asynchronous replay with
+`--expected-document-strategy native-reader-fallback-v1` revalidates the same loading strategy before applying
+a supported selection. See `RESEARCH-STRATEGY-REPLAY.md`. Retaining a complete body
 does not silently authorize replay through a different interpretation.
 
 This is not automatic best-content selection. Reader-only source enrichments,

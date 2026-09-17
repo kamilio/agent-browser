@@ -998,5 +998,8 @@
   "src/research-emission-cancellation.test.ts",
   "src/research-fallback-loader.test.ts",
   "src/research-native-fallback.test.ts",
-  "src/research-strategy-admission.test.ts"
+  "src/research-strategy-admission.test.ts",
+  "src/research-strategy-replay-admission.test.ts",
+  "src/research-strategy-replay.test.ts",
+  "src/research-strategy-replay-cli.test.ts"
 ]

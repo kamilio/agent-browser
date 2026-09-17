@@ -1,0 +1,453 @@
+{
+  "at": "2026-09-17T09:18:01.833Z",
+  "runtimeLabel": "release02",
+  "runtimeRoot": "/tmp/agent-browser-strategy-replay-LwEarG/release02",
+  "parentCommit": "e7b3817e5fe38cf179e75447c45478a0e381e680",
+  "native": {
+    "passedTests": 3804,
+    "failedTests": 0,
+    "files": 52,
+    "newTests": 381,
+    "newTestsByFile": {
+      "src/research-strategy-replay-admission.test.ts": 292,
+      "src/research-strategy-replay.test.ts": 42,
+      "src/research-strategy-replay-cli.test.ts": 47
+    },
+    "seconds": 177.94602608121932,
+    "quality": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    }
+  },
+  "diagnostic": {
+    "passed": 171,
+    "failed": 1,
+    "baselineEqual": 172,
+    "failedNames": [
+      "src/research-admission-cli.test.ts::uses actual operation-local long limits and selected capture/reader/heading implementations::occurrence-1"
+    ]
+  },
+  "manifests": {
+    "source": 1604,
+    "compiled": 2380,
+    "canonicalEntries": 1003,
+    "isolatedMissing": [
+      "src/borders.test.ts",
+      "src/css-flex.test.ts",
+      "src/css-flow.test.ts",
+      "src/css-math.test.ts",
+      "src/css-variables.test.ts",
+      "src/flex-column-wrap.test.ts",
+      "src/flex-column.test.ts",
+      "src/flex-document.test.ts",
+      "src/flex-nested.test.ts",
+      "src/font-relative-box.test.ts",
+      "src/inline-block.test.ts",
+      "src/inline-borders.test.ts",
+      "src/inline-flex.test.ts",
+      "src/page-base64.test.ts",
+      "src/portable-boundary.test.ts",
+      "src/reference-images.test.ts",
+      "src/reference-renderer.test.ts",
+      "src/relative-positioning.test.ts",
+      "src/response-archive.test.ts",
+      "src/select-keyboard.test.ts",
+      "src/select-typeahead.test.ts",
+      "src/stacking-order.test.ts"
+    ],
+    "workingEntries": 1006,
+    "workingMissing": []
+  },
+  "comparison": {
+    "legacyCaptures": 110,
+    "legacyCalls": 220,
+    "legacyProjectionsEqual": 110,
+    "scope": "Outcome/barrier/content bytes and SHA/reader/content-selection projection or error category; not full-record equality",
+    "legacyOutcomes": {
+      "extracted-unverified": 68,
+      "policy-denied": 37,
+      "unsupported": 5
+    },
+    "focusedCaptures": 5,
+    "focusedSelections": 6,
+    "newNetworkRequests": 0,
+    "seconds": 10.420355822890997,
+    "focused": [
+      {
+        "id": "nerdwallet-home",
+        "selectionName": "focus",
+        "selection": {
+          "contentFocus": "main-content-v3"
+        },
+        "url": "https://www.nerdwallet.com/",
+        "receivedAt": "2026-09-17T07:52:47.261Z",
+        "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/native-fallback-nerdwallet-final-september17/live/030-www.nerdwallet.com/RESULT.json",
+        "receiptSha256": "80535d336bccbe0d402c86c13e34f2b2c3dca26c38390f71416f87584451b9ee",
+        "bodySha256": "9ca2f8ecbc0aa4b6b9cd4682b736c4067aef7fd3778cd99a77644949355cb12a",
+        "mode": "reader",
+        "originalBytes": 44656,
+        "bytes": 12042,
+        "sha256": "b890351bef03357ec6b0a3d4a93e5c123d04e4b68e35a86ecda7d83c7392b3ce",
+        "outputFile": "nerdwallet-home-focus.md",
+        "metadataFile": "nerdwallet-home-focus.json",
+        "contentFocus": {
+          "policy": "main-content-v3",
+          "selected": "main",
+          "reason": "unique-main",
+          "mainCandidates": 1,
+          "articleCandidates": 5,
+          "scannedNodes": 1868,
+          "outsideArticleContent": true,
+          "mainArticleCandidates": 5,
+          "outsideMainArticleContent": true
+        },
+        "networkRequests": 0,
+        "reductionPercent": 73
+      },
+      {
+        "id": "pcmag-home",
+        "selectionName": "focus",
+        "selection": {
+          "contentFocus": "main-content-v3"
+        },
+        "url": "https://www.pcmag.com/",
+        "receivedAt": "2026-09-17T07:58:39.133Z",
+        "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/native-fallback-diverse-final-september17/live/043-www.pcmag.com/RESULT.json",
+        "receiptSha256": "bd0be641f3ba61a08fec5ab1cad5102cc11e8567d494442a941f4bcf53ab31e1",
+        "bodySha256": "82ea9df9e91216a38ad4109e22c2892188a722bb21932336b96e25ac3604c033",
+        "mode": "reader",
+        "originalBytes": 48340,
+        "bytes": 18601,
+        "sha256": "be1da5d83285114e8d5e8b6448bd028c60e5000eb4376b340e09f24e1462e161",
+        "outputFile": "pcmag-home-focus.md",
+        "metadataFile": "pcmag-home-focus.json",
+        "contentFocus": {
+          "policy": "main-content-v3",
+          "selected": "main",
+          "reason": "unique-main",
+          "mainCandidates": 1,
+          "articleCandidates": 0,
+          "scannedNodes": 3727,
+          "outsideArticleContent": true,
+          "mainArticleCandidates": 0,
+          "outsideMainArticleContent": true
+        },
+        "networkRequests": 0,
+        "reductionPercent": 61.5
+      },
+      {
+        "id": "mayo-home",
+        "selectionName": "focus",
+        "selection": {
+          "contentFocus": "main-content-v3"
+        },
+        "url": "https://www.mayoclinic.org/",
+        "receivedAt": "2026-09-17T07:58:41.117Z",
+        "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/native-fallback-diverse-final-september17/live/074-www.mayoclinic.org/RESULT.json",
+        "receiptSha256": "956765e8694cf1f6566b2f46d4256b2a4b8b15f4fd2fc5727560ead045b6c0f0",
+        "bodySha256": "1f36c61a78703980284f2d2c8b7f58d5e952dedd371c63188c36028434418b6e",
+        "mode": "reader",
+        "originalBytes": 22614,
+        "bytes": 6074,
+        "sha256": "14220fd6b2441d69da4d247df3a06695f962b1fb3d5963e6a22881fa23135662",
+        "outputFile": "mayo-home-focus.md",
+        "metadataFile": "mayo-home-focus.json",
+        "contentFocus": {
+          "policy": "main-content-v3",
+          "selected": "main",
+          "reason": "unique-main",
+          "mainCandidates": 1,
+          "articleCandidates": 0,
+          "scannedNodes": 3072,
+          "outsideArticleContent": true,
+          "mainArticleCandidates": 0,
+          "outsideMainArticleContent": true
+        },
+        "networkRequests": 0,
+        "reductionPercent": 73.1
+      },
+      {
+        "id": "pcmag-article",
+        "selectionName": "focus",
+        "selection": {
+          "contentFocus": "main-content-v3"
+        },
+        "url": "https://www.pcmag.com/opinions/with-ios-27-apple-is-laying-the-groundwork-to-paywall-your-iphone",
+        "receivedAt": "2026-09-17T08:17:18.793Z",
+        "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/pcmag-article-september17/live/RESULT.json",
+        "receiptSha256": "46099235e6db6189fe82afcdef37a88cb5e4f326e2684ccab2615713963a7328",
+        "bodySha256": "ebd7bfb18a8ff000dc9c75f85bc970584210e48e442828610a55added88b5d58",
+        "mode": "reader",
+        "originalBytes": 46991,
+        "bytes": 16785,
+        "sha256": "8746138a3a39533ca38d4a152d8db3f793a52810fff344be8606e71d85d8144c",
+        "outputFile": "pcmag-article-focus.md",
+        "metadataFile": "pcmag-article-focus.json",
+        "contentFocus": {
+          "policy": "main-content-v3",
+          "selected": "main",
+          "reason": "unique-main",
+          "mainCandidates": 1,
+          "articleCandidates": 1,
+          "scannedNodes": 3533,
+          "outsideArticleContent": true,
+          "mainArticleCandidates": 1,
+          "outsideMainArticleContent": true
+        },
+        "networkRequests": 0,
+        "reductionPercent": 64.3
+      },
+      {
+        "id": "pcmag-article",
+        "selectionName": "article",
+        "selection": {
+          "selector": "#article"
+        },
+        "url": "https://www.pcmag.com/opinions/with-ios-27-apple-is-laying-the-groundwork-to-paywall-your-iphone",
+        "receivedAt": "2026-09-17T08:17:18.793Z",
+        "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/pcmag-article-september17/live/RESULT.json",
+        "receiptSha256": "46099235e6db6189fe82afcdef37a88cb5e4f326e2684ccab2615713963a7328",
+        "bodySha256": "ebd7bfb18a8ff000dc9c75f85bc970584210e48e442828610a55added88b5d58",
+        "mode": "reader",
+        "originalBytes": 46991,
+        "bytes": 8733,
+        "sha256": "788bb8b935f36975ff70e17eac7e1ac1ef9fb3af8e7f5850b2145e2370b96aed",
+        "outputFile": "pcmag-article-article.md",
+        "metadataFile": "pcmag-article-article.json",
+        "networkRequests": 0,
+        "reductionPercent": 81.4
+      },
+      {
+        "id": "nerdwallet-article",
+        "selectionName": "focus",
+        "selection": {
+          "contentFocus": "main-content-v3"
+        },
+        "url": "https://www.nerdwallet.com/travel/news/amex-centurion-lounge-amsterdam",
+        "receivedAt": "2026-09-17T08:18:01.605Z",
+        "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/nerdwallet-article-september17/live/001-nerdwallet-editorial-article/RESULT.json",
+        "receiptSha256": "8df8340655ade7dfedcbefda1aabcab336d091860258ee77d83c82e7379a3e83",
+        "bodySha256": "1ec03931231ede2108177e39ff8ca62d9bace002c121bec2d6ba2d51f4bcbf19",
+        "mode": "native",
+        "originalBytes": 21508,
+        "bytes": 15310,
+        "sha256": "3100227a007cad7fcb2bb00ee157a566fcd9282502e67e1430a73698ddfdcd6f",
+        "outputFile": "nerdwallet-article-focus.md",
+        "metadataFile": "nerdwallet-article-focus.json",
+        "contentFocus": {
+          "policy": "main-content-v3",
+          "selected": "main",
+          "reason": "unique-main",
+          "mainCandidates": 1,
+          "articleCandidates": 1,
+          "scannedNodes": 1247,
+          "outsideArticleContent": true,
+          "mainArticleCandidates": 1,
+          "outsideMainArticleContent": true
+        },
+        "networkRequests": 0,
+        "reductionPercent": 28.8
+      }
+    ]
+  },
+  "coverage": [
+    {
+      "id": "pcmag-article-focus",
+      "bytes": 16785,
+      "sha256": "8746138a3a39533ca38d4a152d8db3f793a52810fff344be8606e71d85d8144c",
+      "sourceHeadlineInMetadata": true,
+      "originalDocumentTitlePreserved": true,
+      "summary": {
+        "paragraphs": {
+          "total": 13,
+          "matched": 13
+        },
+        "headings": {
+          "total": 3,
+          "matched": 3
+        },
+        "titles": {
+          "total": 1,
+          "matched": 1
+        }
+      }
+    },
+    {
+      "id": "pcmag-article-article",
+      "bytes": 8733,
+      "sha256": "788bb8b935f36975ff70e17eac7e1ac1ef9fb3af8e7f5850b2145e2370b96aed",
+      "sourceHeadlineInMetadata": true,
+      "originalDocumentTitlePreserved": true,
+      "summary": {
+        "paragraphs": {
+          "total": 13,
+          "matched": 13
+        },
+        "headings": {
+          "total": 3,
+          "matched": 3
+        },
+        "titles": {
+          "total": 1,
+          "matched": 0
+        }
+      }
+    },
+    {
+      "id": "nerdwallet-article-focus",
+      "bytes": 15310,
+      "sha256": "3100227a007cad7fcb2bb00ee157a566fcd9282502e67e1430a73698ddfdcd6f",
+      "sourceHeadlineInMetadata": false,
+      "originalDocumentTitlePreserved": true,
+      "summary": {
+        "paragraphs": {
+          "total": 21,
+          "matched": 21
+        },
+        "headings": {
+          "total": 7,
+          "matched": 7
+        },
+        "listItems": {
+          "total": 8,
+          "matched": 8
+        },
+        "titles": {
+          "total": 1,
+          "matched": 1
+        }
+      }
+    }
+  ],
+  "cli": {
+    "executed": 6,
+    "passed": 6,
+    "apiProjectionEqual": 6,
+    "controls": [
+      {
+        "id": "nerdwallet-home",
+        "selectionName": "focus",
+        "bytes": 12042,
+        "sha256": "b890351bef03357ec6b0a3d4a93e5c123d04e4b68e35a86ecda7d83c7392b3ce",
+        "mode": "reader",
+        "apiProjectionEqual": true,
+        "exitCode": 0,
+        "networkRequests": 0,
+        "processClosed": true
+      },
+      {
+        "id": "pcmag-home",
+        "selectionName": "focus",
+        "bytes": 18601,
+        "sha256": "be1da5d83285114e8d5e8b6448bd028c60e5000eb4376b340e09f24e1462e161",
+        "mode": "reader",
+        "apiProjectionEqual": true,
+        "exitCode": 0,
+        "networkRequests": 0,
+        "processClosed": true
+      },
+      {
+        "id": "mayo-home",
+        "selectionName": "focus",
+        "bytes": 6074,
+        "sha256": "14220fd6b2441d69da4d247df3a06695f962b1fb3d5963e6a22881fa23135662",
+        "mode": "reader",
+        "apiProjectionEqual": true,
+        "exitCode": 0,
+        "networkRequests": 0,
+        "processClosed": true
+      },
+      {
+        "id": "pcmag-article",
+        "selectionName": "focus",
+        "bytes": 16785,
+        "sha256": "8746138a3a39533ca38d4a152d8db3f793a52810fff344be8606e71d85d8144c",
+        "mode": "reader",
+        "apiProjectionEqual": true,
+        "exitCode": 0,
+        "networkRequests": 0,
+        "processClosed": true
+      },
+      {
+        "id": "nerdwallet-article",
+        "selectionName": "focus",
+        "bytes": 15310,
+        "sha256": "3100227a007cad7fcb2bb00ee157a566fcd9282502e67e1430a73698ddfdcd6f",
+        "mode": "native",
+        "apiProjectionEqual": true,
+        "exitCode": 0,
+        "networkRequests": 0,
+        "processClosed": true
+      },
+      {
+        "id": "pcmag-article",
+        "selectionName": "article",
+        "bytes": 8733,
+        "sha256": "788bb8b935f36975ff70e17eac7e1ac1ef9fb3af8e7f5850b2145e2370b96aed",
+        "mode": "reader",
+        "apiProjectionEqual": true,
+        "exitCode": 0,
+        "networkRequests": 0,
+        "processClosed": true
+      }
+    ],
+    "limitations": [
+      "Offline saved receipts only; no live, SDK, SafeJS, credential, socket, or TTY probes.",
+      "The actual compiled CLI entry point runs directly, without an API wrapper.",
+      "Same-process API comparison is not performed; per-selection content hashes are emitted for parent comparison.",
+      "Zero JavaScript denied attempts and reported networkRequests are checked; seccomp enforces denial but does not count kernel attempts.",
+      "Process closure is observed by direct-child wait and process-group absence; child_process APIs are denied.",
+      "Output caps are per-file RLIMIT_FSIZE; the external deadline is 45 seconds per child."
+    ]
+  },
+  "staticReviewFile": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/strategy-replay-september17/FINAL-INTEGRATION-REVIEW.md",
+  "sealedInputs": [
+    {
+      "name": "native-fallback-nerdwallet-final-september17",
+      "artifacts": 59
+    },
+    {
+      "name": "native-fallback-diverse-final-september17",
+      "artifacts": 73
+    },
+    {
+      "name": "pcmag-article-september17",
+      "artifacts": 46
+    },
+    {
+      "name": "nerdwallet-article-september17",
+      "artifacts": 56
+    }
+  ],
+  "red": [
+    {
+      "label": "red01",
+      "passed": 201,
+      "failed": 180,
+      "allCasesPassFinal": true,
+      "failureNamesArtifact": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/strategy-replay-september17/ANALYSIS.json"
+    },
+    {
+      "label": "red02",
+      "passed": 248,
+      "failed": 44,
+      "allCasesPassFinal": true,
+      "failureNamesArtifact": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/strategy-replay-september17/ANALYSIS.json"
+    }
+  ],
+  "verifiedExternalFiles": 8327,
+  "newLiveRequests": 0,
+  "evidence": {
+    "lane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/strategy-replay-september17",
+    "analysisSha256": "060c1f24b75819ff8d26078914bb42619496fd91ad49a36df15ef284d8431892"
+  },
+  "limitations": [
+    "Selected native tests, not full manifest or dirty runtime",
+    "110 matching legacy projections include refusals",
+    "Saved sources, not fresh website checks",
+    "Declared source-block normalized presence, not rendered or factual completeness",
+    "Dynamic runtime, real credentials/passkeys, broad performance and access/CAPTCHA remain open"
+  ]
+}

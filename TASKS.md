@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Focus saved native-first captures without refetching
+
+- Explicit strategy-aware asynchronous replay and CLI opt-in preserve native vs
+  reader loading, fixed limits and original provenance before selecting content.
+  No scripts, transport or override/recovery shortcuts. Existing synchronous and
+  default replay behavior is retained; historical fallback replay limitation below
+  is superseded by this explicitly opted-in path, not rewritten retroactively.
+- Final release02 passes3804/0 across52 selected native files,381 new cases.
+  Build/selected types/six-overlay format/lint pass. Red controls180 and44 failures
+  all pass final. Separate admission diagnostic171/1 remains172-outcome equal.
+  Canonical1003-entry isolated manifest lacks22 paths which all exist in the dirty
+  workspace's1006-entry manifest; no full-suite/dirty-runtime acceptance claimed.
+- 110 saved untagged captures produce110 equal old/new projections (68 extraction,
+  37 policy-denied,5 unsupported), not110 working pages. Five saved strategy
+  captures yield six focused selections; six compiled CLI controls match API
+  content and inspected provenance/strategy/classification/selection projections.
+- PCMag article46991 ->16785 bytes with main focus, or8733 with #article;
+  all13 identified paragraphs and3 subheadings remain. NerdWallet21508 ->15310,
+  all21 identified paragraph containers,7 headings and8 list items remain.
+  Full normalized-text matching, not excerpt-only or rendered/factual completeness.
+- Zero new GETs/network requests/SDK/credentials/TTY probes; private processes
+  close and saved-source seals verify. See reports/strategy-replay-2026-09-17.md
+  and RESEARCH-STRATEGY-REPLAY.md. Historical10033/67 remains. Continue deeper
+  site tasks, performance, actualSafeJS/dynamic runtime, access/CAPTCHA, real
+  credential/passkey/device/TTY and unfinished research work; goal stays active.
+
 ### Follow source-advertised article links
 
 - Two source-advertised links from the sealed PCMag/NerdWallet homepages are
