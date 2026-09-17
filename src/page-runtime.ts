@@ -47,13 +47,20 @@ export type PageRuntimeResult =
 	| { ok: true; returnValue?: unknown }
 	| { ok: false; error: PageRuntimeError };
 
+export interface PageRuntimeEvaluationOptions {
+	signal: AbortSignal;
+	filename?: string;
+	sourceType?: "module";
+}
+
 export interface PageRuntime {
 	readonly budget: SafeJsBudget;
 	readonly closed: boolean;
+	readonly supportsSourceModules?: boolean;
 	initialize(): Promise<void>;
 	evaluate(
 		source: string,
-		options: { signal: AbortSignal; filename?: string },
+		options: PageRuntimeEvaluationOptions,
 	): Promise<PageRuntimeResult>;
 	copyResult(value: unknown): unknown;
 	startCallback: ScriptCallbackRuntime["startCallback"];
@@ -117,6 +124,11 @@ export function legacyPageRuntime(core: PageScriptCore): PageRuntimeFactory {
 				},
 				async initialize() {},
 				async evaluate(source, options) {
+					if (options.sourceType !== undefined)
+						throw new AgentBrowserError(
+							"unsupported",
+							"The legacy page runtime does not support source modules",
+						);
 					const result = await realm.evaluate(source, options);
 					return { ok: true, returnValue: result.returnValue };
 				},

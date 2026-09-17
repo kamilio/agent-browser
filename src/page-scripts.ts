@@ -188,6 +188,7 @@ export class PageScripts {
 			signal?: AbortSignal;
 			filename?: string;
 			discardResult?: boolean;
+			sourceType?: "module";
 		} = {},
 	): Promise<ScriptEvaluation> {
 		this.ensureOpen();
@@ -203,13 +204,20 @@ export class PageScripts {
 				"invalid-input",
 				"Invalid page script evaluation",
 			);
+		const filename = options.filename;
+		const sourceType = options.sourceType;
 		if (
-			options.filename !== undefined &&
-			(typeof options.filename !== "string" || options.filename.length > 4096)
+			filename !== undefined &&
+			(typeof filename !== "string" || filename.length > 4096)
 		)
 			throw new AgentBrowserError(
 				"invalid-input",
 				"Invalid script source label",
+			);
+		if (sourceType !== undefined && (sourceType !== "module" || !filename))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Source modules require an explicit source type and identity",
 			);
 		if (options.signal?.aborted)
 			throw new AgentBrowserError("aborted", "Page script request was aborted");
@@ -229,6 +237,11 @@ export class PageScripts {
 		const runtime = this.runtime;
 		if (!runtime)
 			throw new AgentBrowserError("closed", "Page realm is unavailable");
+		if (sourceType === "module" && runtime.supportsSourceModules !== true)
+			throw new AgentBrowserError(
+				"unsupported",
+				"The selected page runtime does not support source modules",
+			);
 		const controller = new AbortController();
 		const abort = () => controller.abort();
 		let timedOut = false;
@@ -261,7 +274,8 @@ export class PageScripts {
 			this.ensureOpen();
 			const evaluated = await runtime.evaluate(source, {
 				signal: controller.signal,
-				filename: options.filename,
+				filename,
+				...(sourceType === "module" ? { sourceType: "module" } : {}),
 			});
 			await interrupted();
 			if (!evaluated.ok) {

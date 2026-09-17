@@ -1,5 +1,19 @@
 import type { SafeJsBudget } from "./safejs.js";
 
+export interface ReleasedSourceModule {
+	readonly id: string;
+	readonly source: string;
+}
+
+export type ReleasedSourceResolver = (
+	specifier: string,
+	referrer: string,
+	context: { signal?: AbortSignal },
+) =>
+	| ReleasedSourceModule
+	| undefined
+	| Promise<ReleasedSourceModule | undefined>;
+
 export interface ReleasedInvocation {
 	synchronous: Promise<void>;
 	result: Promise<unknown>;
@@ -49,7 +63,7 @@ export interface ReleasedContext {
 export interface ReleasedRealm {
 	evaluate(
 		source: string,
-		options?: { filename?: string },
+		options?: { filename?: string; sourceType?: "module" },
 	): Promise<{ ok: boolean; returnValue?: unknown; error?: unknown }>;
 	startCallback: ReleasedContext["startCallback"];
 	releaseCallback: ReleasedContext["releaseCallback"];
@@ -75,6 +89,7 @@ export interface ReleasedCore {
 		setup(context: ReleasedContext): { globals: Record<string, unknown> };
 	}): unknown;
 	createRealm(options: {
+		sourceResolver?: ReleasedSourceResolver;
 		extensions: readonly unknown[];
 		builtinOverrides?: { console?: string };
 		grants?: readonly string[];

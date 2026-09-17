@@ -1,9 +1,14 @@
 import { AgentBrowserError } from "./errors.js";
 import type {
 	PageRuntimeError,
+	PageRuntimeEvaluationOptions,
 	PageRuntimeFactory,
 	PageRuntimeResult,
 } from "./page-runtime.js";
+import {
+	type PageSourceModuleOptions,
+	PageSourceModuleRegistry,
+} from "./page-source-modules.js";
 import type {
 	ReleasedContext,
 	ReleasedCore,
@@ -19,6 +24,10 @@ export const extensionPageRuntimeLimits = Object.freeze({
 	nestedEvaluations: 8,
 });
 const extensionName = "agent-browser-page";
+
+export interface ExtensionPageRuntimeOptions {
+	sourceModules?: PageSourceModuleOptions;
+}
 
 function errorDetails(error: unknown): PageRuntimeError {
 	const read = (name: string) => {
@@ -43,7 +52,10 @@ function errorDetails(error: unknown): PageRuntimeError {
 	};
 }
 
-export function extensionPageRuntime(core: ReleasedCore): PageRuntimeFactory {
+export function extensionPageRuntime(
+	core: ReleasedCore,
+	configuration: ExtensionPageRuntimeOptions = {},
+): PageRuntimeFactory {
 	if (
 		!core ||
 		![core.Budget, core.defineExtension, core.createRealm].every(
@@ -54,6 +66,20 @@ export function extensionPageRuntime(core: ReleasedCore): PageRuntimeFactory {
 			"unsupported",
 			"The public SafeJS extension core is required",
 		);
+	if (
+		!configuration ||
+		typeof configuration !== "object" ||
+		Array.isArray(configuration)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid extension page runtime options",
+		);
+	const moduleOptions = configuration.sourceModules;
+	const modules =
+		moduleOptions === undefined
+			? undefined
+			: new PageSourceModuleRegistry(moduleOptions);
 	return {
 		createPageRuntime(options) {
 			if (options.signal.aborted)
@@ -62,6 +88,10 @@ export function extensionPageRuntime(core: ReleasedCore): PageRuntimeFactory {
 					"Page runtime creation was aborted",
 				);
 			const controller = new AbortController();
+			const moduleScope = modules?.createScope(
+				controller.signal,
+				options.limits.maxSourceCodeUnits,
+			);
 			let realm: ReleasedRealm | undefined;
 			let context: ReleasedContext | undefined;
 			let closed = false;
@@ -168,6 +198,14 @@ export function extensionPageRuntime(core: ReleasedCore): PageRuntimeFactory {
 			});
 			try {
 				realm = core.createRealm({
+					...(moduleScope
+						? {
+								sourceResolver: (specifier, referrer, resolution) => {
+									ensureOpen();
+									return moduleScope.resolve(specifier, referrer, resolution);
+								},
+							}
+						: {}),
 					extensions: [extension],
 					builtinOverrides: { console: extensionName },
 					grants: ["guest:retain", "source:nested"],
@@ -184,9 +222,24 @@ export function extensionPageRuntime(core: ReleasedCore): PageRuntimeFactory {
 			}
 			const evaluate = async (
 				source: string,
-				evaluation: { signal?: AbortSignal; filename?: string } = {},
+				evaluation: Partial<PageRuntimeEvaluationOptions> = {},
 			): Promise<PageRuntimeResult> => {
 				ensureOpen();
+				const sourceType = evaluation.sourceType;
+				const filename = evaluation.filename;
+				if (sourceType !== undefined) {
+					if (sourceType !== "module")
+						throw new AgentBrowserError(
+							"invalid-input",
+							"Invalid page source type",
+						);
+					if (!moduleScope)
+						throw new AgentBrowserError(
+							"unsupported",
+							"Source modules require explicit host configuration",
+						);
+					moduleScope.validateEntry(source, filename);
+				}
 				if (!realm)
 					throw new AgentBrowserError(
 						"closed",
@@ -198,12 +251,10 @@ export function extensionPageRuntime(core: ReleasedCore): PageRuntimeFactory {
 				}
 				evaluation.signal?.addEventListener("abort", abort, { once: true });
 				try {
-					const result = await realm.evaluate(
-						source,
-						evaluation.filename === undefined
-							? {}
-							: { filename: evaluation.filename },
-					);
+					const result = await realm.evaluate(source, {
+						...(filename === undefined ? {} : { filename }),
+						...(sourceType === "module" ? { sourceType: "module" } : {}),
+					});
 					if (!result || typeof result.ok !== "boolean")
 						throw new AgentBrowserError(
 							"unsupported",
@@ -232,6 +283,7 @@ export function extensionPageRuntime(core: ReleasedCore): PageRuntimeFactory {
 			};
 			return {
 				budget,
+				supportsSourceModules: moduleScope !== undefined,
 				get closed() {
 					return closed;
 				},

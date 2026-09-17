@@ -966,5 +966,7 @@
   "src/extraction-content-focus-nested.test.ts",
   "src/research-focus-recovery.test.ts",
   "src/nested-focus-integration.test.ts",
-  "src/extraction-content-focus-context.test.ts"
+  "src/extraction-content-focus-context.test.ts",
+  "src/page-source-modules.test.ts",
+  "src/extension-page-runtime-modules.test.ts"
 ]

@@ -31,21 +31,76 @@ permission for arbitrary network/filesystem/package access. A standalone source
 module needs no dependency resolver, but that does not make every module source
 safe to grant or every website compatible.
 
+## Explicit in-memory adapter
+
+The extension adapter now accepts a host-supplied source graph. This is explicit
+opt-in to the new public SDK contract, not runtime version detection or proof
+that the installed SDK implements modules. Automatic runtime selection and CLI
+defaults do not enable it. Use only with a separately qualified public core.
+
+```ts
+const source = 'export { answer } from "answer";';
+const factory = extensionPageRuntime(core, {
+  sourceModules: {
+    sources: [
+      { id: "app:entry", source },
+      { id: "app:answer", source: "export const answer = 42;" },
+    ],
+    imports: [
+      { referrer: "app:entry", specifier: "answer", id: "app:answer" },
+    ],
+  },
+});
+const scripts = new PageScripts(page, factory);
+try {
+  await scripts.evaluate(source, {
+    sourceType: "module",
+    filename: "app:entry",
+  });
+} finally {
+  await scripts.close();
+}
+```
+
+This illustrates the browser API, not an executed SDK example. Source kind and
+entry identity are snapshotted before asynchronous initialization. Initialization
+itself remains classic. A module entry must match a declared ID and exact source;
+legacy or unconfigured runtimes reject module mode rather than silently running
+it as classic. Omitting sourceType preserves classic evaluation.
+
+Sources and import mappings are snapshotted at factory creation; mutations of
+caller arrays/records do not affect later realms. IDs/specifiers are opaque exact
+strings, not paths or URLs. Only explicit referrer/specifier mappings resolve;
+unknown pairs are denied. Targets and referrers must name declared sources.
+Duplicate source IDs or mapping pairs are rejected. There is no filesystem,
+package, network, fallback, normalization or import-map lookup.
+
+`pageSourceModuleLimits` bounds 128 sources, 512 import mappings, 262,144 code
+units per source, 1,048,576 total source code units and 4,096 code units per
+identity/specifier. Page-specific smaller source limits apply to dependencies
+as well as entries. Each realm additionally allows at most 1,024 resolver
+invocations, including denials/repeats; the host keeps no unbounded request log.
+The SDK's own cache may satisfy repeated imports without invoking the resolver.
+Existing SDK execution/data budgets and page run/deadline limits still apply.
+These are separate host-source bounds, not browser-wide memory guarantees.
+
+Returned dependency records are frozen. Cancellation and runtime/owner closure
+revoke captured resolvers. Graph updates require a new factory and realm; there
+is no loaded-module eviction or revocation API. Input records are data-only;
+this validation does not sandbox arbitrary host Proxies or the supplied core.
+
+Public SDK results continue through bounded JSON conversion. Plain copied
+namespace exports can be returned; callbacks, accessors and other non-JSON values
+are rejected rather than invoked or silently dropped. Existing explicit
+`discardResult: true` suppresses browser result conversion, not the SDK's own
+namespace export/conversion work. No default export is invoked automatically.
+Real SDK namespace behavior remains an independent acceptance gate.
+
 ## Browser work still required
 
-- Add an explicit host-only module capability and bounded immutable in-memory
-  source admission. Deny unknown mappings and avoid guest-controlled filesystem
-  or unrestricted fetching. Keep classic defaults and bootstrap unchanged.
-- Carry source kind, stable entry identity and resolver through the page/runtime
-  interfaces. Legacy runtime adapters must reject unsupported module requests,
-  not silently execute them as classic scripts. Different inline entries need
-  different canonical identities with a defined base mapping.
-- Bound dependency count, request identities, total/per-source bytes, in-flight
-  work and lifetime; existing page-run counts are not dependency-execution counts.
-  Preserve the shared SDK budget, abort/close handling and late-result rejection.
-- Define module namespace/result handling explicitly. Do not assume the classic
-  return-value copier is valid for live module namespaces or invoke a default
-  export as though the module were a harness entry function.
+- Execute and qualify the adapter against the published SDK, including module
+  namespace exports, cycles, static/dynamic imports, top-level await, failures,
+  cancellation, retained graphs and all existing callback/lifecycle expectations.
 - Qualify native-network source resolution separately, with explicit credentials,
   origin/redirect/CORS policy and effective cancellation. The current classic
   fetch closure includes credentials and cannot simply become a module resolver.
@@ -54,8 +109,9 @@ safe to grant or every website compatible.
   classic currentScript/document-write behavior. A resolver alone changes none
   of those facts. Import maps and unsupported browser-module features stay explicit.
 
-These are integration requirements, not an implemented module feature or a
-substitute for the full dynamic-browser goal.
+The in-memory adapter is a prerequisite, not completed HTML module support or a
+substitute for the full dynamic-browser goal. Native fake-core tests do not prove
+that source modules execute in the actual SDK or on websites.
 
 ## Scheduling and acceptance remain separate
 

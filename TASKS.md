@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Implement bounded host-source module admission through the page adapter
+
+- Explicit extensionPageRuntime sourceModules configuration snapshots immutable
+  source/import mappings. PageScripts forwards module mode and exact entry ID;
+  legacy, unconfigured and old custom adapters reject unsupported module mode.
+  Default selection and classic bootstrap stay unchanged. No automatic fetching.
+- Bound source count/text, mapping/identifier sizes and per-realm resolver calls,
+  including denied/repeated requests; enforce smaller page source limits on all
+  dependencies. Owner/evaluation cancellation and closure revoke resolver access.
+  Module results retain bounded JSON conversion, without invoking exports.
+- Release01 passes1025/0 across41 explicit native files, including53 new cases.
+  Old-adapter control has25 failures/3 passes in the28 integration cases. Build,
+  strict selected types, format and lint pass. Independent static review finds
+  no actionable blocker. Exact source/compiled pins and closed processes audited.
+- Canonical manifest970 entries still includes22 missing files; no full-native
+  run here. No SDK code, live websites, credentials, devices or TTY probes run.
+  Native fake-core tests do not qualify actual module execution or website parity.
+- See SAFEJS-SOURCE-MODULES.md and reports/source-module-adapter-native.md/JSON.
+  Actual SDK closure/execution, callback scheduling, network/CORS and HTML module
+  loading, live scripted pages, access/CAPTCHA handling, real credentials/passkeys,
+  missing tests and research remain open. Overall browser objective stays active.
+
 ### Acquire SafeJS0.1.640 and inspect its new source-module contract
 
 - Native registry latest metadata at23:44:29.022Z September16 reports0.1.640.

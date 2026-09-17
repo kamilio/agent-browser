@@ -220,6 +220,13 @@ export {
 	extensionPageRuntime,
 	extensionPageRuntimeLimits,
 } from "./extension-page-runtime.js";
+export type { ExtensionPageRuntimeOptions } from "./extension-page-runtime.js";
+export {
+	pageSourceModuleLimits,
+	type PageSourceModule,
+	type PageSourceImport,
+	type PageSourceModuleOptions,
+} from "./page-source-modules.js";
 export type {
 	ReleasedCore,
 	ReleasedContext,
