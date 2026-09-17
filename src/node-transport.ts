@@ -58,6 +58,7 @@ export interface NodeTransportOptions extends NetworkPolicyOptions {
 	httpsRedirectPolicy?: HttpsRedirectPolicy;
 	captureDecodedPrefixBytes?: number;
 	captureServiceBackoff?: boolean;
+	captureRateLimit?: boolean;
 	resourceCache?: Partial<ResourceReuseCacheOptions>;
 	limits?: Partial<NetworkLimits>;
 	minRequestIntervalMs?: number;
@@ -83,6 +84,13 @@ export interface ServiceBackoffObservation {
 	readonly url: string;
 	readonly receivedAt: string;
 	readonly retryAfter: Readonly<RetryAfterAdvice>;
+}
+
+export interface RateLimitObservation {
+	readonly status: 429;
+	readonly url: string;
+	readonly receivedAt: string;
+	readonly retryAfter?: Readonly<RetryAfterAdvice>;
 }
 
 type ResponsePrefixBody = Pick<
@@ -374,6 +382,8 @@ export class NodeNetworkTransport implements NetworkTransport {
 	private readonly captureDecodedPrefixBytes?: number;
 	private readonly captureServiceBackoff: boolean;
 	private capturedServiceBackoff?: Readonly<ServiceBackoffObservation>;
+	private readonly captureRateLimit: boolean;
+	private capturedRateLimit?: Readonly<RateLimitObservation>;
 	private pendingResponsePrefixes = new WeakMap<
 		object,
 		DecodedResponsePrefix
@@ -400,6 +410,15 @@ export class NodeNetworkTransport implements NetworkTransport {
 				"Invalid service backoff capture option",
 			);
 		this.captureServiceBackoff = options.captureServiceBackoff ?? false;
+		if (
+			options.captureRateLimit !== undefined &&
+			typeof options.captureRateLimit !== "boolean"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid rate limit capture option",
+			);
+		this.captureRateLimit = options.captureRateLimit ?? false;
 		this.httpsRedirectPolicy = validateHttpsRedirectPolicy(
 			options.httpsRedirectPolicy,
 		);
@@ -516,6 +535,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 	close() {
 		this.closed = true;
 		this.capturedServiceBackoff = undefined;
+		this.capturedRateLimit = undefined;
 		this.pendingResponsePrefixes = new WeakMap();
 		this.responsePrefixes = new WeakMap();
 		for (const controller of this.active)
@@ -534,6 +554,10 @@ export class NodeNetworkTransport implements NetworkTransport {
 
 	serviceBackoff(): Readonly<ServiceBackoffObservation> | undefined {
 		return this.capturedServiceBackoff;
+	}
+
+	rateLimit(): Readonly<RateLimitObservation> | undefined {
+		return this.capturedRateLimit;
 	}
 
 	request(input: NetworkRequest): Promise<NetworkResponse> {
@@ -1055,11 +1079,25 @@ export class NodeNetworkTransport implements NetworkTransport {
 					const responseHeaderValues = responseHeaders(response);
 					try {
 						if (
-							(this.requestPacer || this.captureServiceBackoff) &&
+							(this.requestPacer ||
+								this.captureServiceBackoff ||
+								this.captureRateLimit) &&
 							(status === 429 || status === 503)
 						) {
 							const receivedAt = Date.now();
 							const advice = parseRetryAfter(responseHeaderValues, receivedAt);
+							if (
+								this.captureRateLimit &&
+								status === 429 &&
+								!this.capturedRateLimit
+							) {
+								this.capturedRateLimit = Object.freeze({
+									status,
+									url: url.href,
+									receivedAt: new Date(receivedAt).toISOString(),
+									...(advice ? { retryAfter: advice } : {}),
+								});
+							}
 							if (advice) {
 								if (
 									this.captureServiceBackoff &&

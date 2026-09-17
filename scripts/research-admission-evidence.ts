@@ -1251,6 +1251,7 @@ export function validateResearchReplayAdmission(
 		report.outcome !== "extracted-unverified" ||
 		report.contentSuccess === false ||
 		Object.hasOwn(report, "failure") ||
+		Object.hasOwn(report, "rateLimit") ||
 		Object.hasOwn(report, "serviceBackoff") ||
 		report.classification.barrier !== null
 	)

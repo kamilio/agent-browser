@@ -6,6 +6,33 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Retain rate-limit headers and test deeper content/search assets
+
+- Opt-in native captureRateLimit/rateLimit retains first429 status before body
+  consumption, even without valid Retry-After. Research observes request entry,
+  settlement and outer catch; body failures/cancellation no longer lose a stop.
+  Original errors remain, URL redaction preserved, no fake complete capture.
+  Ordinary replay rejects declaredrateLimit;503 and pacing behavior remain intact.
+- Release03 passes1352/0 in24 explicit native files,86 new cases (70header/research,
+  16admission). Build/selected types/format/lint pass;75 new cases fail old source,
+  11 new controls pass. Prior selected cases remain. Three wrong routed metric
+  fixture expectations are corrected; initial failures stay recorded.
+- Final105-response offline controls preserve prior103 projections and match two
+  fresh article captures. No new network during controls. Canonical manifest991
+  retains22 missing files; no full-manifest/dirty-runtime acceptance claimed.
+- Separate native GETs at04:46–04:48 UTC September17: EngineerFix/Biology Insights
+  linked articles return200 and19/19+10/10 eligible paragraphs match. Python's
+  advertised index returns200headers but exceeds2MB decoded cap, no completeasset.
+  No Git request: only a UI reference in savedHTML. No full-text search proved.
+- Live uses prior372a5c8, not this patch;141 sealed worker artifacts and all9
+  proof/live child groups checked. No retries, redirects, limits raised, scripts,
+  credentials, identity changes or CAPTCHA solver. Existing homepage verdicts stay.
+- See RESEARCH-RATE-LIMIT-HEADERS.md and reports/rate-limit-headers-2026-09-17.md,
+  plus thin-entry-deep-workflows/source-search-assets September17 reports. Continue
+  bounded complete search-data acquisition, actualSDK/dynamicpages, broader sites,
+  performance/access, real credentials/passkeys/TTY, missing tests and research.
+  Historical100-entry33/67 results unchanged; overall browser goal stays active.
+
 ### Preserve service backoff across research requests and failed bodies
 
 - Research stops on503 with accepted Retry-After rather than advancing a batch

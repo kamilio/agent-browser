@@ -1,5 +1,14 @@
 # Early research rate-limit handling
 
+## September 17, 2026 update
+
+Header-time observation now retains429 evidence across body failures and outer
+navigation cancellation. See `RESEARCH-RATE-LIMIT-HEADERS.md` for the current
+contract. The original completed-response boundary and historical measurements
+below are retained; its response-size limitation is superseded by that update.
+
+## Original September 11 behavior and evidence
+
 The native research runner stops on an HTTP 429 returned by its transport. This
 extends the earlier batch-only stop to primary documents and stylesheet fetches.
 It does not bypass restrictions, change browser identity, or retry requests.

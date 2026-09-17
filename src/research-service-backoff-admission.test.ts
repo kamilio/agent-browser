@@ -253,3 +253,56 @@ it.each(profiles)(
 		);
 	},
 );
+
+it.each(
+	profiles.flatMap((profile) =>
+		[
+			{
+				name: "without advice",
+				value: {
+					kind: "http-rate-limit",
+					status: 429,
+					url,
+					receivedAt: timestamp,
+					action: "stop-without-retry",
+				},
+			},
+			...stopFields.map((field) =>
+				field.name === "valid advice"
+					? {
+							name: field.name,
+							value: {
+								...serviceBackoff,
+								kind: "http-rate-limit",
+								status: 429,
+							},
+						}
+					: field,
+			),
+		].map((field) => ({ profile, ...field })),
+	),
+)(
+	"refuses caller-pinned rateLimit metadata: $profile / $name",
+	({ profile, value }) => {
+		const report = fixture(profile);
+		report.rateLimit = value;
+		const raw = serialize(report);
+		const trusted = authority(raw, profile);
+		expect(validateResearchReplayAdmission(raw, trusted)).toMatchObject({
+			kind: "evidence-only",
+			reason: "native-failure",
+			body: null,
+			bodyIdentity: null,
+			originalMetadata: { rateLimit: value },
+			originalFieldPresence: { rateLimit: true },
+		});
+		expect(() =>
+			extractResearchReplayJson(raw, trusted, { selector: "#owned" }),
+		).toThrowError(
+			expect.objectContaining({
+				name: "AgentBrowserError",
+				code: "policy-denied",
+			}),
+		);
+	},
+);

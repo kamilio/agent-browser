@@ -1,0 +1,1101 @@
+{
+  "at": "2026-09-17T04:55:12.071Z",
+  "kind": "passive-source-search-asset-feasibility-v1",
+  "liveRuntime": "/tmp/agent-browser-service-backoff-nyADOl/release05",
+  "requestAllowance": {
+    "maximum": 2,
+    "used": 1,
+    "furtherRequestsPlanned": 0
+  },
+  "sourcePages": [
+    {
+      "sourceUrl": "https://docs.python.org/3/search.html?q=asyncio+timeout",
+      "capturedAt": "2026-09-15T20:30:21.608Z",
+      "receiptSha256": "1e9be3134b2e40957b023e7430755af1dab2b1d37191b5cb9ceff77fdd86556b",
+      "bodySha256": "97cc3e2b277b364ffe5953c74d40587aa017f7018d870806c1633f06c5cc60d0",
+      "bodyBytes": 9487,
+      "completeCapture": true,
+      "originalReceipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-tasks-september15/live/02-docs.python.org/stdout.jsonl",
+      "references": [
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "rel",
+              "stylesheet"
+            ],
+            [
+              "type",
+              "text/css"
+            ],
+            [
+              "href",
+              "_static/pygments.css?v=b86133f3"
+            ]
+          ],
+          "sourceTag": "<link rel=\"stylesheet\" type=\"text/css\" href=\"_static/pygments.css?v=b86133f3\" />",
+          "startByte": 313,
+          "endByte": 393,
+          "resolvedUrl": "https://docs.python.org/3/_static/pygments.css?v=b86133f3"
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "rel",
+              "stylesheet"
+            ],
+            [
+              "type",
+              "text/css"
+            ],
+            [
+              "href",
+              "_static/classic.css?v=234b1a7c"
+            ]
+          ],
+          "sourceTag": "<link rel=\"stylesheet\" type=\"text/css\" href=\"_static/classic.css?v=234b1a7c\" />",
+          "startByte": 398,
+          "endByte": 477,
+          "resolvedUrl": "https://docs.python.org/3/_static/classic.css?v=234b1a7c"
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "rel",
+              "stylesheet"
+            ],
+            [
+              "type",
+              "text/css"
+            ],
+            [
+              "href",
+              "_static/pydoctheme.css?v=4365c8fe"
+            ]
+          ],
+          "sourceTag": "<link rel=\"stylesheet\" type=\"text/css\" href=\"_static/pydoctheme.css?v=4365c8fe\" />",
+          "startByte": 482,
+          "endByte": 564,
+          "resolvedUrl": "https://docs.python.org/3/_static/pydoctheme.css?v=4365c8fe"
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "id",
+              "pygments_dark_css"
+            ],
+            [
+              "media",
+              "(prefers-color-scheme: dark)"
+            ],
+            [
+              "rel",
+              "stylesheet"
+            ],
+            [
+              "type",
+              "text/css"
+            ],
+            [
+              "href",
+              "_static/pygments_dark.css?v=0fc419ee"
+            ]
+          ],
+          "sourceTag": "<link id=\"pygments_dark_css\" media=\"(prefers-color-scheme: dark)\" rel=\"stylesheet\" type=\"text/css\" href=\"_static/pygments_dark.css?v=0fc419ee\" />",
+          "startByte": 569,
+          "endByte": 714,
+          "resolvedUrl": "https://docs.python.org/3/_static/pygments_dark.css?v=0fc419ee"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "_static/documentation_options.js?v=f83f2336"
+            ]
+          ],
+          "sourceTag": "<script src=\"_static/documentation_options.js?v=f83f2336\">",
+          "startByte": 729,
+          "endByte": 787,
+          "resolvedUrl": "https://docs.python.org/3/_static/documentation_options.js?v=f83f2336"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "_static/doctools.js?v=9bcbadda"
+            ]
+          ],
+          "sourceTag": "<script src=\"_static/doctools.js?v=9bcbadda\">",
+          "startByte": 801,
+          "endByte": 846,
+          "resolvedUrl": "https://docs.python.org/3/_static/doctools.js?v=9bcbadda"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "_static/sphinx_highlight.js?v=dc90522c"
+            ]
+          ],
+          "sourceTag": "<script src=\"_static/sphinx_highlight.js?v=dc90522c\">",
+          "startByte": 860,
+          "endByte": 913,
+          "resolvedUrl": "https://docs.python.org/3/_static/sphinx_highlight.js?v=dc90522c"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "_static/sidebar.js"
+            ]
+          ],
+          "sourceTag": "<script src=\"_static/sidebar.js\">",
+          "startByte": 932,
+          "endByte": 965,
+          "resolvedUrl": "https://docs.python.org/3/_static/sidebar.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "_static/searchtools.js"
+            ]
+          ],
+          "sourceTag": "<script src=\"_static/searchtools.js\">",
+          "startByte": 984,
+          "endByte": 1021,
+          "resolvedUrl": "https://docs.python.org/3/_static/searchtools.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "_static/language_data.js"
+            ]
+          ],
+          "sourceTag": "<script src=\"_static/language_data.js\">",
+          "startByte": 1035,
+          "endByte": 1074,
+          "resolvedUrl": "https://docs.python.org/3/_static/language_data.js"
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "rel",
+              "search"
+            ],
+            [
+              "type",
+              "application/opensearchdescription+xml"
+            ],
+            [
+              "title",
+              "Search within Python 3.14.7 documentation"
+            ],
+            [
+              "href",
+              "_static/opensearch.xml"
+            ]
+          ],
+          "sourceTag": "<link rel=\"search\" type=\"application/opensearchdescription+xml\"\n          title=\"Search within Python 3.14.7 documentation\"\n          href=\"_static/opensearch.xml\"/>",
+          "startByte": 1088,
+          "endByte": 1253,
+          "resolvedUrl": "https://docs.python.org/3/_static/opensearch.xml"
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "rel",
+              "author"
+            ],
+            [
+              "title",
+              "About these documents"
+            ],
+            [
+              "href",
+              "about.html"
+            ]
+          ],
+          "sourceTag": "<link rel=\"author\" title=\"About these documents\" href=\"about.html\" />",
+          "startByte": 1258,
+          "endByte": 1327,
+          "resolvedUrl": "https://docs.python.org/3/about.html"
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "rel",
+              "index"
+            ],
+            [
+              "title",
+              "Index"
+            ],
+            [
+              "href",
+              "genindex.html"
+            ]
+          ],
+          "sourceTag": "<link rel=\"index\" title=\"Index\" href=\"genindex.html\" />",
+          "startByte": 1332,
+          "endByte": 1387,
+          "resolvedUrl": "https://docs.python.org/3/genindex.html"
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "rel",
+              "search"
+            ],
+            [
+              "title",
+              "Search"
+            ],
+            [
+              "href",
+              "#"
+            ]
+          ],
+          "sourceTag": "<link rel=\"search\" title=\"Search\" href=\"#\" />",
+          "startByte": 1392,
+          "endByte": 1437,
+          "resolvedUrl": "https://docs.python.org/3/search.html?q=asyncio+timeout"
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "rel",
+              "copyright"
+            ],
+            [
+              "title",
+              "Copyright"
+            ],
+            [
+              "href",
+              "copyright.html"
+            ]
+          ],
+          "sourceTag": "<link rel=\"copyright\" title=\"Copyright\" href=\"copyright.html\" />",
+          "startByte": 1442,
+          "endByte": 1506,
+          "resolvedUrl": "https://docs.python.org/3/copyright.html"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "searchindex.js"
+            ],
+            [
+              "defer",
+              "defer"
+            ]
+          ],
+          "sourceTag": "<script src=\"searchindex.js\" defer=\"defer\">",
+          "startByte": 1516,
+          "endByte": 1559,
+          "resolvedUrl": "https://docs.python.org/3/searchindex.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "defer",
+              null
+            ],
+            [
+              "file-types",
+              "bz2,epub,zip"
+            ],
+            [
+              "data-domain",
+              "docs.python.org"
+            ],
+            [
+              "src",
+              "https://analytics.python.org/js/script.file-downloads.outbound-links.js"
+            ]
+          ],
+          "sourceTag": "<script defer file-types=\"bz2,epub,zip\" data-domain=\"docs.python.org\" src=\"https://analytics.python.org/js/script.file-downloads.outbound-links.js\">",
+          "startByte": 1637,
+          "endByte": 1785,
+          "resolvedUrl": "https://analytics.python.org/js/script.file-downloads.outbound-links.js"
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "rel",
+              "canonical"
+            ],
+            [
+              "href",
+              "https://docs.python.org/3/search.html"
+            ]
+          ],
+          "sourceTag": "<link rel=\"canonical\" href=\"https://docs.python.org/3/search.html\">",
+          "startByte": 1808,
+          "endByte": 1875,
+          "resolvedUrl": "https://docs.python.org/3/search.html"
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "rel",
+              "stylesheet"
+            ],
+            [
+              "href",
+              "_static/pydoctheme_dark.css"
+            ],
+            [
+              "media",
+              "(prefers-color-scheme: dark)"
+            ],
+            [
+              "id",
+              "pydoctheme_dark_css"
+            ]
+          ],
+          "sourceTag": "<link rel=\"stylesheet\" href=\"_static/pydoctheme_dark.css\" media=\"(prefers-color-scheme: dark)\" id=\"pydoctheme_dark_css\">",
+          "startByte": 2022,
+          "endByte": 2142,
+          "resolvedUrl": "https://docs.python.org/3/_static/pydoctheme_dark.css"
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "rel",
+              "shortcut icon"
+            ],
+            [
+              "type",
+              "image/png"
+            ],
+            [
+              "href",
+              "_static/py.svg"
+            ]
+          ],
+          "sourceTag": "<link rel=\"shortcut icon\" type=\"image/png\" href=\"_static/py.svg\">",
+          "startByte": 2147,
+          "endByte": 2212,
+          "resolvedUrl": "https://docs.python.org/3/_static/py.svg"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "type",
+              "text/javascript"
+            ],
+            [
+              "src",
+              "_static/copybutton.js"
+            ]
+          ],
+          "sourceTag": "<script type=\"text/javascript\" src=\"_static/copybutton.js\">",
+          "startByte": 2225,
+          "endByte": 2284,
+          "resolvedUrl": "https://docs.python.org/3/_static/copybutton.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "type",
+              "text/javascript"
+            ],
+            [
+              "src",
+              "_static/menu.js"
+            ]
+          ],
+          "sourceTag": "<script type=\"text/javascript\" src=\"_static/menu.js\">",
+          "startByte": 2306,
+          "endByte": 2359,
+          "resolvedUrl": "https://docs.python.org/3/_static/menu.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "type",
+              "text/javascript"
+            ],
+            [
+              "src",
+              "_static/search-focus.js"
+            ]
+          ],
+          "sourceTag": "<script type=\"text/javascript\" src=\"_static/search-focus.js\">",
+          "startByte": 2381,
+          "endByte": 2442,
+          "resolvedUrl": "https://docs.python.org/3/_static/search-focus.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "type",
+              "text/javascript"
+            ],
+            [
+              "src",
+              "_static/themetoggle.js"
+            ]
+          ],
+          "sourceTag": "<script type=\"text/javascript\" src=\"_static/themetoggle.js\">",
+          "startByte": 2464,
+          "endByte": 2524,
+          "resolvedUrl": "https://docs.python.org/3/_static/themetoggle.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "type",
+              "text/javascript"
+            ],
+            [
+              "src",
+              "_static/rtd_switcher.js"
+            ]
+          ],
+          "sourceTag": "<script type=\"text/javascript\" src=\"_static/rtd_switcher.js\">",
+          "startByte": 2547,
+          "endByte": 2608,
+          "resolvedUrl": "https://docs.python.org/3/_static/rtd_switcher.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "type",
+              "text/javascript"
+            ],
+            [
+              "src",
+              "_static/glossary_search.js"
+            ]
+          ],
+          "sourceTag": "<script type=\"text/javascript\" src=\"_static/glossary_search.js\">",
+          "startByte": 2736,
+          "endByte": 2800,
+          "resolvedUrl": "https://docs.python.org/3/_static/glossary_search.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "type",
+              "text/javascript"
+            ],
+            [
+              "src",
+              "_static/switchers.js"
+            ]
+          ],
+          "sourceTag": "<script type=\"text/javascript\" src=\"_static/switchers.js\">",
+          "startByte": 9402,
+          "endByte": 9460,
+          "resolvedUrl": "https://docs.python.org/3/_static/switchers.js"
+        }
+      ]
+    },
+    {
+      "sourceUrl": "https://git-scm.com/search/results?search=rebase",
+      "capturedAt": "2026-09-15T20:30:23.866Z",
+      "receiptSha256": "250d33c96a77c1a300b9d78b320d9a09c33e77ff04acd4cf1a89e3c308823a7a",
+      "bodySha256": "b3d1d2dd26d648c2b750c060875e5ca1ae26da84a3530a3aca6dc381a478fa84",
+      "bodyBytes": 4392,
+      "completeCapture": true,
+      "originalReceipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-tasks-september15/live/03-git-scm.com/stdout.jsonl",
+      "references": [
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "type",
+              "text/javascript"
+            ]
+          ],
+          "sourceTag": "<script type=\"text/javascript\">",
+          "startByte": 51,
+          "endByte": 82,
+          "resolvedUrl": null
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "href",
+              "/favicon.ico"
+            ],
+            [
+              "rel",
+              "shortcut icon"
+            ],
+            [
+              "type",
+              "image/x-icon"
+            ]
+          ],
+          "sourceTag": "<link href=\"/favicon.ico\" rel='shortcut icon' type='image/x-icon'>",
+          "startByte": 749,
+          "endByte": 815,
+          "resolvedUrl": "https://git-scm.com/favicon.ico"
+        },
+        {
+          "tag": "link",
+          "attributes": [
+            [
+              "rel",
+              "stylesheet"
+            ],
+            [
+              "href",
+              "/application.min.a539a1b3b39434720f6027f87719717a75e6503c652ec14e45d292281667c10a.css"
+            ]
+          ],
+          "sourceTag": "<link rel=\"stylesheet\" href=\"/application.min.a539a1b3b39434720f6027f87719717a75e6503c652ec14e45d292281667c10a.css\">",
+          "startByte": 822,
+          "endByte": 938,
+          "resolvedUrl": "https://git-scm.com/application.min.a539a1b3b39434720f6027f87719717a75e6503c652ec14e45d292281667c10a.css"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "/js/modernizr.js"
+            ]
+          ],
+          "sourceTag": "<script src=\"/js/modernizr.js\">",
+          "startByte": 941,
+          "endByte": 972,
+          "resolvedUrl": "https://git-scm.com/js/modernizr.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "type",
+              "text/javascript"
+            ]
+          ],
+          "sourceTag": "<script type=\"text/javascript\">",
+          "startByte": 1195,
+          "endByte": 1226,
+          "resolvedUrl": null
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "/pagefind/pagefind-ui.js"
+            ]
+          ],
+          "sourceTag": "<script src=\"/pagefind/pagefind-ui.js\">",
+          "startByte": 3694,
+          "endByte": 3733,
+          "resolvedUrl": "https://git-scm.com/pagefind/pagefind-ui.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "https://code.jquery.com/jquery-3.7.1.min.js"
+            ]
+          ],
+          "sourceTag": "<script src=\"https://code.jquery.com/jquery-3.7.1.min.js\">",
+          "startByte": 4009,
+          "endByte": 4067,
+          "resolvedUrl": "https://code.jquery.com/jquery-3.7.1.min.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "https://code.jquery.com/ui/1.14.1/jquery-ui.min.js"
+            ]
+          ],
+          "sourceTag": "<script src=\"https://code.jquery.com/ui/1.14.1/jquery-ui.min.js\">",
+          "startByte": 4077,
+          "endByte": 4142,
+          "resolvedUrl": "https://code.jquery.com/ui/1.14.1/jquery-ui.min.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "/js/jquery.defaultvalue.js"
+            ]
+          ],
+          "sourceTag": "<script src=\"/js/jquery.defaultvalue.js\">",
+          "startByte": 4152,
+          "endByte": 4193,
+          "resolvedUrl": "https://git-scm.com/js/jquery.defaultvalue.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "/js/session.min.js"
+            ]
+          ],
+          "sourceTag": "<script src=\"/js/session.min.js\">",
+          "startByte": 4203,
+          "endByte": 4236,
+          "resolvedUrl": "https://git-scm.com/js/session.min.js"
+        },
+        {
+          "tag": "script",
+          "attributes": [
+            [
+              "src",
+              "/js/application.min.9fa9fb38ef6c02fbb5e3624499214101f82d3b15ce4ba8856f64c2c3456798c8.js"
+            ]
+          ],
+          "sourceTag": "<script src=\"/js/application.min.9fa9fb38ef6c02fbb5e3624499214101f82d3b15ce4ba8856f64c2c3456798c8.js\">",
+          "startByte": 4247,
+          "endByte": 4349,
+          "resolvedUrl": "https://git-scm.com/js/application.min.9fa9fb38ef6c02fbb5e3624499214101f82d3b15ce4ba8856f64c2c3456798c8.js"
+        }
+      ]
+    }
+  ],
+  "python": {
+    "url": "https://docs.python.org/3/searchindex.js",
+    "sourceReference": {
+      "tag": "script",
+      "attributes": [
+        [
+          "src",
+          "searchindex.js"
+        ],
+        [
+          "defer",
+          "defer"
+        ]
+      ],
+      "sourceTag": "<script src=\"searchindex.js\" defer=\"defer\">",
+      "startByte": 1516,
+      "endByte": 1559,
+      "resolvedUrl": "https://docs.python.org/3/searchindex.js"
+    },
+    "responseAt": "2026-09-17T04:48:29.905Z",
+    "httpStatus": 200,
+    "responseHeaders": {
+      "content-type": "application/javascript",
+      "content-encoding": "gzip"
+    },
+    "outcome": "failure",
+    "failure": {
+      "category": "resource-limit",
+      "stage": "network",
+      "resourceLimit": {
+        "kind": "network.response-decoded",
+        "unit": "bytes",
+        "limit": 2000000,
+        "observed": 2015232
+      }
+    },
+    "metrics": {
+      "mockedRequests": 0,
+      "mockedDecodedBytes": 0,
+      "requests": 1,
+      "redirects": 0,
+      "encodedBytes": 491520,
+      "decodedBytes": 2015232,
+      "active": 0,
+      "closed": true
+    },
+    "completeCapture": false,
+    "assetBodySha256": null,
+    "assetSyntax": "Unknown: native body limit aborted before complete capture",
+    "strictJsonValidated": false,
+    "searchResultsValidated": false,
+    "readerMimeRefusal": "Observed only in synthetic complete JavaScript proof; live response failed at transport before reader",
+    "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/live/01-python-index/stdout.log",
+    "receiptSha256": "d5ee7fc68e5d8257615f52f23097ee07ef507a5dbd14efc380b17a4e3dfd8d1e"
+  },
+  "git": {
+    "literalSearchDataReferenceFound": false,
+    "requests": 0,
+    "uiScript": "https://git-scm.com/pagefind/pagefind-ui.js",
+    "uiScriptAcquired": false,
+    "inlineScripts": "Theme and tagline code; no result payload, not executed",
+    "scope": "Complete saved September 15 search HTML only, not current site or external script contents"
+  },
+  "existingSupport": {
+    "file": "scripts/research-asset-literal.ts",
+    "capability": "Explicit complete-body SHA256 plus audited small byte ranges, dependency-free literal parser; no automatic index evaluation",
+    "limits": {
+      "maxBodyBytes": 2000000,
+      "maxRangeBytes": 65536,
+      "maxRanges": 8
+    },
+    "sufficientForObservedPythonAsset": false
+  },
+  "proofs": {
+    "proof": false,
+    "proof02": false,
+    "proof03": true,
+    "proof04": true,
+    "live": true
+  },
+  "closedChildGroups": 5,
+  "completeAcquiredAssets": 0,
+  "searchResultsValidated": false,
+  "actualScriptExecutions": 0,
+  "actualSdkExecutions": 0,
+  "limitations": [
+    "No complete newly acquired asset bytes exist to hash or parse; no truncated body is treated as complete.",
+    "HTTP 200 headers do not imply usable content. Body size is at least the observed 2015232 decoded bytes, not a known total length.",
+    "Synthetic Search.setIndex fixture does not establish the real asset syntax or schema.",
+    "Neither failure is demonstrated to be CAPTCHA, authentication or crawler blocking.",
+    "No index parsing, query matching, ranking, rendered behavior or current documentation facts validated."
+  ],
+  "nextActions": [
+    "Keep using previously source-linked static Python/Git indexes for narrow lookups; not equivalent to full-text search.",
+    "Python requires separately authorized complete bounded acquisition or supplied complete snapshot before passive grammar/schema review; do not silently raise default limits.",
+    "If an index is data-only, consider a bounded source-index parser and separately tested query semantics; actual grammar is unverified here.",
+    "Git requires separately scoped passive inspection of the explicitly advertised UI script to identify real literal data/module references; no guessed Pagefind routes."
+  ],
+  "sealedArtifactsVerified": 77,
+  "evidence": [
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/INCIDENTS.md",
+      "sha256": "c1dfefec8c075ad8c8d04244cf9222e0c4e6d84e872711e239c85693d6a6d7a1"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/PREPARATION.json",
+      "sha256": "3aa2162212a3e633486f00f2cb0a5c2bf954efe2e6097b4c7106796fc86635c6"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/RESULT.json",
+      "sha256": "fd7786b376d0cbe3f78f84ffb9cbceb58ace216efeed5fa2dded311eed2516e0"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/RESULT.md",
+      "sha256": "f67d494cd0c08d51d27bfaf2d0932333ab7a23b179434d52f8dece4d6b89a877"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/RUNTIME.json",
+      "sha256": "7b277f85d87bd36ad4a1b6a91337f9a2e470d0816d98961881ff75ab8df453dd"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/SCOPE.md",
+      "sha256": "22450849d20258d9855c1f077d48cc668112b763604e4ba5f695963afb44a1a4"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/ADMISSION.json",
+      "sha256": "1a3887853bbc2012d6ea21064964c9b7e3bd1fa7edb699aaf8bdbe63031d8e78"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/DISCOVERY.json",
+      "sha256": "9ce941874aed84f715a3ae2c9dd0a81b78e5b9a6d93c87d8d6e14435afbeaca1"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/INPUTS.json",
+      "sha256": "36e9e189a6c807d7526d133af0552644ed65a7cc385285223ad972f76c9f0b1e"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/live/01-python-index/EXECUTION.json",
+      "sha256": "0dbd6b79efcf2278a4fca48f3ace97825bc0b5b537e6511f224849247975c00a"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/live/01-python-index/INVOCATION.json",
+      "sha256": "a848e0b92d8bacd5cbbd21ffe75521e619dd55da4d7fe98e1792bbef7eb5bc71"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/live/01-python-index/REQUEST-GUARD.json",
+      "sha256": "fa1938308e83f26d2293bd1b7961e4b81bb27b750a1a279f4f8dd82cb34a0a58"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/live/01-python-index/RESULT.json",
+      "sha256": "b0d3c1f0b4f3fdcfc31b1aff90c235c2a7175886f03d0fca53e8bc865dacdef2"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/live/01-python-index/http-events.jsonl",
+      "sha256": "7befc7997ecfe56b8e6a9eb2c1ab2fa571fb7ccd142283519b11c007c107da8e"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/live/01-python-index/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/live/01-python-index/stdout.log",
+      "sha256": "d5ee7fc68e5d8257615f52f23097ee07ef507a5dbd14efc380b17a4e3dfd8d1e"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/live/CHECK.json",
+      "sha256": "86ecaee106af4cdd0a7e166de2046be08c1756d2ab505714707ba4020a8f0664"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof/01-python-index/EXECUTION.json",
+      "sha256": "8636c42e57f73bcf3b95e3d544fa550ceea9ba59591d3efee992374106120f63"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof/01-python-index/INVOCATION.json",
+      "sha256": "04c3fbfca102545e46230e63cc0f5cba3c35d34cc4bf577020bd21d69c9661e6"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof/01-python-index/REQUEST-GUARD.json",
+      "sha256": "ec5e51ae93d7196b08609c0478c1b4f1e4af1f2f6a9fad980e607ff3fbdf2114"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof/01-python-index/RESULT.json",
+      "sha256": "cdb5b56183d78bc3c48f2ce2eca3fd9c0d70d3fbdc03adc5a3b1cd99c08a0dc3"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof/01-python-index/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof/01-python-index/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof/01-python-index/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof/01-python-index/stdout.log",
+      "sha256": "2048fbef0ac80d2401e241be33d9885e9b73d902686cca1aad1da44ffe5f3fb8"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof/CHECK.json",
+      "sha256": "2afe8829e8068d806fb04b202ef2c5dd6564958ff79453f99f903602a7f08048"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof02/01-python-index/EXECUTION.json",
+      "sha256": "b907ccc131be7e69443a187c09d445594ce032bbf305241f3e0fab5eaf73c907"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof02/01-python-index/INVOCATION.json",
+      "sha256": "efe118d265a000952909f429fbc5d67bb724bcb3ce7e9bcd57566811da1c1901"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof02/01-python-index/REQUEST-GUARD.json",
+      "sha256": "61d4aab47252e42fd5de8a4bfbe8e089b311e3643d8df8e043eba6a4ce9f2f32"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof02/01-python-index/RESULT.json",
+      "sha256": "12e758f33d52bbd2463860cfc1674525fb29b3c51b25e5195767808fd25b6a11"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof02/01-python-index/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof02/01-python-index/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof02/01-python-index/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof02/01-python-index/stdout.log",
+      "sha256": "6b333049d0b4172f17959b3fd09c219af1be2b613956fd47633834e70218c24a"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof02/CHECK.json",
+      "sha256": "b4da3f8c14cd643b1845f6c8ee94081e16181a6787195059463b0f754a51ba58"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof03/01-python-index/EXECUTION.json",
+      "sha256": "f58dab6fa7e027adb9c6476c0d8a74bd22ee6a6e978e58a071e54cea0993c322"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof03/01-python-index/INVOCATION.json",
+      "sha256": "2a70cd0496da5bf631af9e3bd8a66f1e7209cf8c7f085460c2dd40b5f6959f74"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof03/01-python-index/REQUEST-GUARD.json",
+      "sha256": "9c7c75facc2f7bbcd00ec85f2dc86126ceec2d10d4a9b15430eb13e03b6fcbba"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof03/01-python-index/RESULT.json",
+      "sha256": "2c317e8a5e3998556f9e8a8a4ba29e5a1e75c807f6278d7364f74cb78544409b"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof03/01-python-index/body.asset",
+      "sha256": "150017686f48e3d07d4707f70a1584cd34882375ffe5558da1542495dd68966e"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof03/01-python-index/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof03/01-python-index/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof03/01-python-index/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof03/01-python-index/stdout.log",
+      "sha256": "36a35a3f31ed94532910b6c854f87f89ac80bf3d81c3bdf25d335ee1d6876f07"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof03/CHECK.json",
+      "sha256": "d361248ce020dafafe3e8e78c294ece9ab14f3473372cf1eca673c91abd742ad"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof04/01-python-index/EXECUTION.json",
+      "sha256": "e8a8116119a0c1bc25f0f462a87ff8853140b4d314bf4e887588c7242b22a28b"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof04/01-python-index/INVOCATION.json",
+      "sha256": "df2a6d2ace1b6cc28090cb0483106b6d7bf162dbb02568f46a98b0ae30439fb0"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof04/01-python-index/REQUEST-GUARD.json",
+      "sha256": "9c7c75facc2f7bbcd00ec85f2dc86126ceec2d10d4a9b15430eb13e03b6fcbba"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof04/01-python-index/RESULT.json",
+      "sha256": "cf251df98752646c9b4fe76e2c1380efb7fd2de2079c76d5d9de7ef4ecbce9e0"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof04/01-python-index/body.asset",
+      "sha256": "150017686f48e3d07d4707f70a1584cd34882375ffe5558da1542495dd68966e"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof04/01-python-index/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof04/01-python-index/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof04/01-python-index/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof04/01-python-index/stdout.log",
+      "sha256": "52261ed5f7dc1cb1183b10b3270fb69333422de75b3993b4a1ff413d16594f77"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/asset/proof04/CHECK.json",
+      "sha256": "cdca9a98f9263c0349c60ed0c84b925446722c3ad3bebaf7e4043bf0eb2deedd"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/cli-guard.mjs",
+      "sha256": "70790a76deace3e9390ead2c13f510d44d004241e4060573a743370a08c0cacf"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/observe.cjs",
+      "sha256": "4f15b589fbf0ee331ce9816f7810c45f6adbb2260b2bd1eb330edf41d3dd3a8c"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/prepare.py",
+      "sha256": "f9fa5dd052f5aa59f2d43ba50956da602545519944085d7718b81f8b4a5f0d93"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/replay-guard.cjs",
+      "sha256": "8e95384c687db7f5352dbd5cc76fb03cd066831b3dfb457d5b9c7c36d485efb0"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/request-reservations/01-python-index.json",
+      "sha256": "d86a8af2c31b0edd8300868ddf93747c5cad3dd20d4bd8fc266f2fa5bc1a51e4"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/review.py",
+      "sha256": "059a9884097f946d12dfe396e0f59330868ee8a65833ab5740778b7cfd660ef8"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/run.py",
+      "sha256": "bb3b65fc2a25cb194a8c77b15465517ba17d9b2866b989a61eb1505370d3ae77"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/seal.py",
+      "sha256": "b509fd7f59f8dbae2c85e6f8f31b0d935ddad759422b751a50e6fd3ce4581d73"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/sealed-exec.py",
+      "sha256": "e024d0882b099e995acc8980de9164a9db2ac2362417835fe5ad568a33068ac7"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/source-02-docs.python.org/EXECUTION.json",
+      "sha256": "dd0c3abdf83979e610d65a0bcabd1a5422e2378e04ce6d75d5339fa5b2958e3d"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/source-02-docs.python.org/INVOCATION.json",
+      "sha256": "56201abc6651a914134239b5daf5934d4a74c296143dfa7640334bc39df2456b"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/source-02-docs.python.org/PROVENANCE.json",
+      "sha256": "f4d32d1c506f058dae3fbfd700f07024a8cf51bf0e5d8fce17207d5427341e65"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/source-02-docs.python.org/body.html",
+      "sha256": "97cc3e2b277b364ffe5953c74d40587aa017f7018d870806c1633f06c5cc60d0"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/source-02-docs.python.org/http-events.jsonl",
+      "sha256": "7af55ac1946d596427953832ec2ce1a4e02f52a5d8b1a888a3d97b4c0ae1326b"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/source-02-docs.python.org/stdout.jsonl",
+      "sha256": "1e9be3134b2e40957b023e7430755af1dab2b1d37191b5cb9ceff77fdd86556b"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/source-03-git-scm.com/EXECUTION.json",
+      "sha256": "ff4f489afaaa5b5610cbe6d348529985071381544afd942a345a8058a93c64ce"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/source-03-git-scm.com/INVOCATION.json",
+      "sha256": "fefcc8ede94f6254700d8b4b69b1fb951f5ea714aafa50aac476ccca3b9c7c39"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/source-03-git-scm.com/PROVENANCE.json",
+      "sha256": "5854c6b851db3778507f047050b113abfc5c73312dcb2cfa81eda4f19e0375d9"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/source-03-git-scm.com/body.html",
+      "sha256": "b3d1d2dd26d648c2b750c060875e5ca1ae26da84a3530a3aca6dc381a478fa84"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/source-03-git-scm.com/http-events.jsonl",
+      "sha256": "68ea7720992c94f25f45610094ec57a849885c65f9430307cd4059e244b15d94"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/source-03-git-scm.com/stdout.jsonl",
+      "sha256": "250d33c96a77c1a300b9d78b320d9a09c33e77ff04acd4cf1a89e3c308823a7a"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-assets-september17/supervisor.py",
+      "sha256": "36fe84cf2c065be826304c0e7cc23beefb98e45a90dac88b679f72d5c6a9b7c1"
+    }
+  ]
+}

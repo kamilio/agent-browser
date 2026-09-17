@@ -1,0 +1,451 @@
+{
+  "kind": "thin-entry-deep-workflows",
+  "date": "2026-09-17",
+  "liveRuntimeCommit": "372a5c8fd67dae276ae7a806b2ede958d3b53dc2",
+  "at": "2026-09-17T04:51:00.115Z",
+  "workerSeal": {
+    "at": "2026-09-17T04:49:20.278020+00:00",
+    "fileCount": 64,
+    "manifestSha256": "5e198f83f1aa7b4dd98bee0252a5ce4dad1715a3557e86847046e71c86d8b767",
+    "remainingAuthorizedGETs": 0,
+    "runtimeEdits": false,
+    "allEvidenceHashesReverified": true
+  },
+  "inventorySha256": "5e198f83f1aa7b4dd98bee0252a5ce4dad1715a3557e86847046e71c86d8b767",
+  "artifactsVerified": 64,
+  "runtime": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/RUNTIME.json",
+  "requests": [
+    {
+      "id": "engineerfix-article",
+      "url": "https://engineerfix.com/how-do-fuses-work/",
+      "invokedAt": "2026-09-17T04:46:37.826908+00:00",
+      "requestStartedAt": "2026-09-17T04:46:38.131Z",
+      "receivedAt": "2026-09-17T04:46:38.402Z",
+      "processExitedAt": "2026-09-17T04:46:38.453Z",
+      "gapAfterPreviousProcessExitSeconds": null,
+      "status": 200,
+      "bodyBytes": 152036,
+      "bodySha256": "0ab147e6832056a83fe630e3b9f25d3834a4af413411ce9ea818ed10c53848eb",
+      "markdownBytes": 7291,
+      "markdownSha256": "85803ed8e2b45e6b82e9c19c3289a0d987943c760c87a319e85883b3b8142a25",
+      "nativeTransportElapsedMs": 288.798447,
+      "outcome": "extracted-unverified",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "contentSuccess": null,
+      "metrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 44876,
+        "decodedBytes": 152036,
+        "active": 0,
+        "closed": true
+      },
+      "captureCompleteAgainstDecodedResponse": true,
+      "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/RESULT.json",
+      "receiptSha256": "3c0216806ba48435873ab363c8feab85672ceada7481cc501fd2e2b248926bd7",
+      "invocation": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/INVOCATION.json",
+      "closureEvents": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/http-events.jsonl"
+    },
+    {
+      "id": "biologyinsights-article",
+      "url": "https://biologyinsights.com/why-do-birds-chirp-before-a-storm/",
+      "invokedAt": "2026-09-17T04:46:40.660788+00:00",
+      "requestStartedAt": "2026-09-17T04:46:40.957Z",
+      "receivedAt": "2026-09-17T04:46:40.986Z",
+      "processExitedAt": "2026-09-17T04:46:41.030Z",
+      "gapAfterPreviousProcessExitSeconds": 2.504,
+      "status": 200,
+      "bodyBytes": 172234,
+      "bodySha256": "e7819d0bb9aa55b91afc650eb3a1100b76e1517f1b57cb259cb6d9a58cbd5005",
+      "markdownBytes": 3408,
+      "markdownSha256": "4036733bbedaf0e158a1420e7e286bb11d2756879e53412688f6d1297e9bf27d",
+      "nativeTransportElapsedMs": 43.429766,
+      "outcome": "extracted-unverified",
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "contentSuccess": null,
+      "metrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 44612,
+        "decodedBytes": 172234,
+        "active": 0,
+        "closed": true
+      },
+      "captureCompleteAgainstDecodedResponse": true,
+      "receipt": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/RESULT.json",
+      "receiptSha256": "9c27ee01408f159d616d81c4a11b50241b98b156334c244419581a48481421a1",
+      "invocation": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/INVOCATION.json",
+      "closureEvents": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/http-events.jsonl"
+    }
+  ],
+  "contentReviews": [
+    {
+      "id": "engineerfix-article",
+      "scope": "p over 80 normalized characters inside .entry-content",
+      "bodyParagraphsReviewed": 19,
+      "bodyParagraphsMatched": 19,
+      "introParagraphs": 2,
+      "paragraphsBeyondIntro": 17,
+      "missingParagraphs": [],
+      "contentSelection": {
+        "policy": "main-content-v3",
+        "selected": "main",
+        "reason": "unique-main",
+        "mainCandidates": 1,
+        "articleCandidates": 1,
+        "scannedNodes": 435,
+        "outsideArticleContent": true,
+        "mainArticleCandidates": 1,
+        "outsideMainArticleContent": true
+      },
+      "sourceAccess": null,
+      "tokenizerIssues": 0,
+      "outputLimit": null,
+      "concreteExtractionDefect": null,
+      "nonBodyContent": "Native Markdown retains an author biography outside .entry-content; excluded from body assertions."
+    },
+    {
+      "id": "biologyinsights-article",
+      "scope": "p over 80 normalized characters inside .entry-content",
+      "bodyParagraphsReviewed": 10,
+      "bodyParagraphsMatched": 10,
+      "introParagraphs": 1,
+      "paragraphsBeyondIntro": 9,
+      "missingParagraphs": [],
+      "contentSelection": {
+        "policy": "main-content-v3",
+        "selected": "article",
+        "reason": "unique-article-in-main",
+        "mainCandidates": 1,
+        "articleCandidates": 1,
+        "scannedNodes": 314,
+        "outsideArticleContent": false,
+        "mainArticleCandidates": 1,
+        "outsideMainArticleContent": false
+      },
+      "sourceAccess": null,
+      "tokenizerIssues": 0,
+      "outputLimit": null,
+      "concreteExtractionDefect": null,
+      "nonBodyContent": "Native Markdown includes title/date plus body; no unrelated article-card text observed."
+    }
+  ],
+  "closure": {
+    "processes": 4,
+    "allClosedNow": true,
+    "records": [
+      {
+        "execution": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/EXECUTION.json",
+        "pid": 1240060,
+        "mode": "live",
+        "allClosedNow": true
+      },
+      {
+        "execution": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/EXECUTION.json",
+        "pid": 1240037,
+        "mode": "live",
+        "allClosedNow": true
+      },
+      {
+        "execution": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/biologyinsights-article/EXECUTION.json",
+        "pid": 1239709,
+        "mode": "offline",
+        "allClosedNow": true
+      },
+      {
+        "execution": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/engineerfix-article/EXECUTION.json",
+        "pid": 1239702,
+        "mode": "offline",
+        "allClosedNow": true
+      }
+    ]
+  },
+  "limitations": [
+    "Only two selected deep pages; original root navigation-only verdicts unchanged; no site-wide acceptance or improved blocking-rate claim.",
+    "Uses sealed HEAD372a5c8 runtime; no live 503, Retry-After or RateLimit-header behavior validated.",
+    "Native outcomes remain extracted-unverified and contentSuccess null.",
+    "Source text comparison only: no rendered JavaScript/CSS, SafeJS, credentials, devices or CAPTCHA solving.",
+    "No electrical-safety, scientific, medical, commercial or other factual-accuracy endorsement.",
+    "Paragraph scopes exclude short paragraphs and lists; not a complete visible-page equivalence audit.",
+    "EngineerFix retains an author biography; no claim of perfectly isolated article content.",
+    "60-second process deadlines, 16-MiB per-file output cap, 4-million-byte CLI validation cap, 256-MiB V8 old-space; not a total RSS limit.",
+    "Historical 1266-test gate was inspected, not rerun; current dirty worktree not validated."
+  ],
+  "evidence": [
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/FINAL-AUDIT.json",
+      "sha256": "6ba3e6f138dc154a52fe2ecb958ca338a94ebba6c0159a55bf62f3e6c89e943b"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/PREPARATION.json",
+      "sha256": "5158d05ef676b9b8c02fde2b85195d5ff451d397cfb43ed890f240d8fa5c38be"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/RESULT.json",
+      "sha256": "dd55f47404fcce7b50c720f22e6d6526c70e3f1d16536cf3b750b879054dfca3"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/RESULT.md",
+      "sha256": "5c8dfa3f808257796dc946a726c2a8158e7f07f7c53f3014fc33870233a6ad7e"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/RUNTIME.json",
+      "sha256": "7b277f85d87bd36ad4a1b6a91337f9a2e470d0816d98961881ff75ab8df453dd"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/SCOPE.md",
+      "sha256": "c3287a452334cbf41e7cb026540ebae50067cfb789047cac7d800ef904b7dfc5"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/cli-guard.mjs",
+      "sha256": "7cec717af78550f648838b3165d2cffd0765b7533c6d72137ec4a6756011065e"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/ADMISSION.json",
+      "sha256": "6d3a1166b525cad3f6e18a262d83a3bc7606cbee97f8a6f8c75f5ab1c05a3846"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/DISCOVERY.json",
+      "sha256": "7680a49aeb5aca2bdbbfcfb6b4066e98fbe50ce65396dc48a354fdd7167e76c5"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/INPUTS.json",
+      "sha256": "1609a73de42980d05356ba7702dec00f0fbae27ffce6331c4bcb067aa2dd91e9"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/CHECK.json",
+      "sha256": "8de365af2d4f6ec01c6a750efa9c37899fe89dd37ff753d142d1bc88a97a05d4"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/EXECUTION.json",
+      "sha256": "909391874feceb163a1df7c03d688c11e9d6cca0f6b66c8f421dcf98e4c3d60a"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/INVOCATION.json",
+      "sha256": "7797b502df43747a1e5eeef04790af2a1e4ac8901609bfb528d8224ef65b67d7"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/REQUEST-GUARD.json",
+      "sha256": "56b15bda43542b7e74b614c4c2a726a34540d3f95990ca4daf809f1f5279ba3b"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/RESULT.json",
+      "sha256": "9c27ee01408f159d616d81c4a11b50241b98b156334c244419581a48481421a1"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/body.html",
+      "sha256": "e7819d0bb9aa55b91afc650eb3a1100b76e1517f1b57cb259cb6d9a58cbd5005"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/extracted.md",
+      "sha256": "4036733bbedaf0e158a1420e7e286bb11d2756879e53412688f6d1297e9bf27d"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/http-events.jsonl",
+      "sha256": "27b45522bcb72c3a035ad4f983ef64ca77d1c5f8a339aaa6d901e0861971204c"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/biologyinsights-article/stdout.log",
+      "sha256": "5e82b8a962cc774ad7d6e3765c342806ea1cb877e612eb3984f87ccc88940345"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/EXECUTION.json",
+      "sha256": "33c218c99064002fdbb0d4383dc9ccabb243377e0d4ef19cbae16bd37ae1aea4"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/INVOCATION.json",
+      "sha256": "4da990dbd702487c45be9151b62257365604ba28fff4aee4c6fb1e6721591345"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/REQUEST-GUARD.json",
+      "sha256": "f772495e7ed3ddf90a2b1752762711a7a6bd07aea322ce4aad7023111be8d777"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/RESULT.json",
+      "sha256": "3c0216806ba48435873ab363c8feab85672ceada7481cc501fd2e2b248926bd7"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/body.html",
+      "sha256": "0ab147e6832056a83fe630e3b9f25d3834a4af413411ce9ea818ed10c53848eb"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/extracted.md",
+      "sha256": "85803ed8e2b45e6b82e9c19c3289a0d987943c760c87a319e85883b3b8142a25"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/http-events.jsonl",
+      "sha256": "f9729278db0ba2c8f63bb80dc9dc70dfc7e7fb5c6a27fd0a17a6359a3f9dea0d"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/live/engineerfix-article/stdout.log",
+      "sha256": "defae89b5665868c268b8988cb71896feda31dd3c6eb8b0fd5e1186dc090b430"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/CHECK.json",
+      "sha256": "8230f055cf396f5702d787fae62493e6384adf72a8dcfb3e1fe346e4bd97bd76"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/biologyinsights-article/EXECUTION.json",
+      "sha256": "872834354a98e9a40181abf776f1d671e64712c925236ab910eae39866a4a3f0"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/biologyinsights-article/INVOCATION.json",
+      "sha256": "9d405513dda279618ff774e695ceee9db22269392505f4899170629e356e385e"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/biologyinsights-article/REQUEST-GUARD.json",
+      "sha256": "00bbb4bc37db8e7617e069fe99eebe8f3ea5e3b84105fc12e1eb5326868b9844"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/biologyinsights-article/RESULT.json",
+      "sha256": "5c0d17f7e81d7a174d6c8572d550b3d6d40005e9411931653f9fabdb8a8662d2"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/biologyinsights-article/body.html",
+      "sha256": "16a9fa5065b3f337694b9514d6144ebbcec5f77e642e01b7be024e7d22e46fca"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/biologyinsights-article/extracted.md",
+      "sha256": "5a14ac9322346c24e29b8b49dd59a5b3ae69e844a492e055462d2b53f50ed7b6"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/biologyinsights-article/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/biologyinsights-article/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/biologyinsights-article/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/biologyinsights-article/stdout.log",
+      "sha256": "920a043e1fc1758ed2d81eca7ab33852662952634ceb6ea8c0d5e5f657ef0d5b"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/engineerfix-article/EXECUTION.json",
+      "sha256": "dfbbfde41e4f104151b49a0d8d1f1f35d68bbe117a2ef8098a4e8b8918dc6b64"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/engineerfix-article/INVOCATION.json",
+      "sha256": "d1957ffb869bd6d1ea5bfc56706692e01ebaed34d8fdd19384cc4147db3654c9"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/engineerfix-article/REQUEST-GUARD.json",
+      "sha256": "0705f03e6c76f9352a2e1b6df89da288b6136461e8677d62d5b651129874deee"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/engineerfix-article/RESULT.json",
+      "sha256": "d3856d6ae62615ed0c9c3c5f1bf71e48a293c900828e834d3466e6be413bbd6f"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/engineerfix-article/body.html",
+      "sha256": "16a9fa5065b3f337694b9514d6144ebbcec5f77e642e01b7be024e7d22e46fca"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/engineerfix-article/extracted.md",
+      "sha256": "5a14ac9322346c24e29b8b49dd59a5b3ae69e844a492e055462d2b53f50ed7b6"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/engineerfix-article/guard.json",
+      "sha256": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/engineerfix-article/kernel-guard.json",
+      "sha256": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/engineerfix-article/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/deep/proof/engineerfix-article/stdout.log",
+      "sha256": "ab6b3ff13906aa418642b35068cd584e8a49e03ccaeae533506ed62c16ec11f2"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/final-audit.py",
+      "sha256": "59739f3f04ca83d0b1d2f297bf867762800310ab910b019ca85f3b4ad634e6c5"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/prepare.py",
+      "sha256": "39c1b5b78ee2830cbc38a70c25ce605747e564c3581e69325bc6ec22c5b554e8"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/request-reservations/biologyinsights-article.json",
+      "sha256": "cd9d44ffa589d360b1dd33b6116e248f0005854a057f7e5d12244d1ed0cfdec8"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/request-reservations/engineerfix-article.json",
+      "sha256": "fb0a85f9c5e7d321b82a20bcaf59d0424ea44e6cd7e5bdbddb562986f87bab73"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/review-template.py",
+      "sha256": "23b9bb36e2d7873fd496a8a1fb44c6b77e1cfbd9db983369edd4e653236c3988"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/review.py",
+      "sha256": "f0cf11b153cf07aaa974a4e3804c72659b9b4d7ed111eb918a9038d0b218e0b3"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/run.py",
+      "sha256": "8ca1db4c3ff78f269e39cf081329fa94259c5fa9fd6f699d10b5c9655badb8e7"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/seal.py",
+      "sha256": "66623b68ae8901ceffd11fe03ff404a5416dfc5a693360befd07db394f684d62"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/source-biologyinsights/PROVENANCE.json",
+      "sha256": "855e6a71389dbbe7c7d3c4c7bb89a72432583a8a1f003f149eea65be2c7a42b6"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/source-biologyinsights/body.html",
+      "sha256": "ddfc72b775c6cc6b6c09a8a7e053b84069b6d6e55d24443237e6bb4bb6e6164e"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/source-biologyinsights/receipt.json",
+      "sha256": "07225fb1c4fdb3eb5dc5eb936794a29b1855a9e2f1aca3ade8654ebad3ed9502"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/source-engineerfix/PROVENANCE.json",
+      "sha256": "9cf978dc04ee84eb5eaab78478114b9e118a1b980f045282bc16d872af351940"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/source-engineerfix/body.html",
+      "sha256": "3eb6b8adb2db228058e36ba715c1d88e721b2af68fcf03c1c952262465d23cf6"
+    },
+    {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/thin-entry-deep-workflows-september17/source-engineerfix/receipt.json",
+      "sha256": "56a39a558d3659eb3603c371e6cc6f044074e2377960d44f988ae31086b559fb"
+    }
+  ],
+  "freshGETs": 2,
+  "offlineMockedGETs": 2,
+  "retries": 0,
+  "redirects": 0,
+  "originalHomepageVerdictsUnchanged": true,
+  "renderedValidation": false,
+  "factualClaimsVerified": false
+}

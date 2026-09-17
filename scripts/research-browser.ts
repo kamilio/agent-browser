@@ -1002,7 +1002,17 @@ export async function researchNavigation(
 	let primaryUrl: string | undefined;
 	let rateLimited = false;
 	let serviceBackoffReceived = false;
-	const captureServiceBackoff = () => {
+	const captureServerBackoff = () => {
+		const rateLimit = transport?.rateLimit();
+		if (rateLimit && !rateLimited) {
+			rateLimited = true;
+			report.rateLimit = {
+				...rateLimit,
+				kind: "http-rate-limit",
+				url: reportUrl(rateLimit.url),
+				action: "stop-without-retry",
+			};
+		}
 		const observation = transport?.serviceBackoff();
 		if (!observation || serviceBackoffReceived) return;
 		serviceBackoffReceived = true;
@@ -1030,6 +1040,7 @@ export async function researchNavigation(
 				const native = new NodeNetworkTransport({
 					cookieJar,
 					captureServiceBackoff: true,
+					captureRateLimit: true,
 					limits: admissionLimits?.network ?? researchRunLimits.network,
 					...(validated.httpsRedirectPolicy === undefined
 						? {}
@@ -1041,7 +1052,7 @@ export async function researchNavigation(
 				transport = native;
 				return {
 					async request(request) {
-						captureServiceBackoff();
+						captureServerBackoff();
 						if (rateLimited || serviceBackoffReceived) stopForServerBackoff();
 						const primary = !primaryStarted;
 						primaryStarted = true;
@@ -1084,9 +1095,9 @@ export async function researchNavigation(
 								},
 							});
 						} finally {
-							captureServiceBackoff();
+							captureServerBackoff();
 						}
-						if (response.status === 429) {
+						if (response.status === 429 && !rateLimited) {
 							rateLimited = true;
 							const receivedAt = Date.now();
 							const retryAfter = parseRetryAfter(response.headers, receivedAt);
@@ -1490,8 +1501,8 @@ export async function researchNavigation(
 			report.contentSuccess = false;
 		report.extraction = { ...extraction, url: reportUrl(extraction.url) };
 	} catch (error) {
-		captureServiceBackoff();
-		if (serviceBackoffReceived && report.outcome === "failure")
+		captureServerBackoff();
+		if ((rateLimited || serviceBackoffReceived) && report.outcome === "failure")
 			report.outcome = "http-failure";
 		const resourceLimit =
 			error instanceof AgentBrowserError && error.code === "resource-limit"
