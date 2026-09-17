@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Recover source-delivered summaries without executing JavaScript
+
+- Add explicit selectHtmlJsonBindingSource and offline research-html-json
+  --binding mode for an initial const object/array JSON literal. Preserve exact
+  source spelling/spans, strict duplicate-member checks, bounded work and
+  cleanup. Report trailing source as unevaluated and values as unrendered,
+  unverified source data, not runtime bindings. Existing application/json and
+  default reader contracts stay unchanged; no new dependency or cap increase.
+- The saved September16 Business Insider homepage contains four summaries
+  omitted from ordinary extraction. All12 title/description/public-URL fields
+  match independent source expectations through the native API and12 actual
+  CLI invocations. Original navigation-only evidence remains; no new GET or SDK.
+- Final isolated gate passes907/0 in7 files, including256 new cases; build,
+  selected types and5-file TS format/lint pass. Preserve the844/0 first run,
+  lint/manifest-format findings and848/48 reserved-name regression run. The
+  restricted-name fix and CLI pre-read checks pass. Manifest1016 retains22
+  absent committed paths; this is not a new full-suite or live-runtime gate.
+- Thirteen guarded offline groups close25 source cursors and2 documents with
+  zero network. Correct the aggregate verifier's source-hash field without
+  rerunning successful CLIs. Runtime source1624/compiled2408 pins match.
+- See HTML-JSON-BINDING-SOURCE.md and reports/source-json-binding-2026-09-17.md.
+  Historical100-page33/67 stays unchanged. Continue diverse content failures,
+  SafeJS/guarded-adapter integration, performance/access/CAPTCHA, real secrets,
+  passkeys/devices and unfinished research. The full browser goal stays active.
+
 ### Validate source-linked detail reading and smaller useful replay output
 
 - Two fresh September17 native GETs retrieve the source-linked Target product

@@ -6,6 +6,10 @@ source operation: it has no hostname or framework-specific recognizer and does
 not run page code. It can recover useful hydration data from an otherwise empty
 reader page without claiming that the application rendered or worked.
 
+Initial `const` object/array literals in classic scripts use the separate,
+explicit operation in `HTML-JSON-BINDING-SOURCE.md` and CLI `--binding` mode.
+They are not admitted by this operation's application/json contract.
+
 ```ts
 const selected = selectHtmlJsonSource(decodedHtml, {
   scriptId: "landing-page-api-response",

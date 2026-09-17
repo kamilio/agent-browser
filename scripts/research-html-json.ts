@@ -8,6 +8,11 @@ import {
 	htmlSourceJsonLimits,
 	selectHtmlJsonSource,
 } from "../src/html-source-json.js";
+import {
+	type HtmlJsonBindingSourceSelection,
+	selectHtmlJsonBindingSource,
+	validateHtmlJsonBindingSourceSelection,
+} from "../src/html-source-json-binding.js";
 import { validateJsonSourcePointer } from "../src/json-source-selection.js";
 import { parseNetworkUrl } from "../src/network.js";
 import { admitResearchHtmlSource } from "./research-source-input.js";
@@ -24,13 +29,13 @@ export const researchHtmlJsonCliLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-html-json --url HTTPS_URL --content-type HTML_MIME --sha256 HEX --script-id ID --json-pointer POINTER < body.html\nAn explicit empty --json-pointer '' selects the complete JSON value. Stdin is a bounded raw HTML response body, not an HTTP-success receipt. Output is unverified lexical document-source JSON; no navigation, rendering, or script execution occurs.\n";
+	"Usage: research-html-json --url HTTPS_URL --content-type HTML_MIME --sha256 HEX --script-id ID --json-pointer POINTER [--binding IDENTIFIER] < body.html\nAn explicit empty --json-pointer '' selects the complete JSON value. Without --binding, the script must have application/json MIME. --binding explicitly selects an initial const JSON literal in a classic inline script, not its runtime value; trailing source is not evaluated. Stdin is a bounded raw HTML response body, not an HTTP-success receipt. Output is unverified lexical document-source JSON; no navigation, rendering, or script execution occurs.\n";
 
 export interface ResearchHtmlJsonArguments {
 	url: string;
 	contentType: string;
 	sha256: string;
-	selection: HtmlJsonSourceSelection;
+	selection: HtmlJsonSourceSelection | HtmlJsonBindingSourceSelection;
 }
 
 function invalidArguments(): never {
@@ -45,7 +50,7 @@ export function parseResearchHtmlJsonArguments(
 ): ResearchHtmlJsonArguments {
 	if (
 		!Array.isArray(args) ||
-		args.length !== 10 ||
+		(args.length !== 10 && args.length !== 12) ||
 		args.some((value) => typeof value !== "string" || value.length > 8192)
 	)
 		invalidArguments();
@@ -55,6 +60,7 @@ export function parseResearchHtmlJsonArguments(
 		"--sha256",
 		"--script-id",
 		"--json-pointer",
+		"--binding",
 	]);
 	const fields = new Map<string, string>();
 	for (let index = 0; index < args.length; index += 2) {
@@ -98,11 +104,18 @@ export function parseResearchHtmlJsonArguments(
 		/[\s\p{Cc}\p{Cf}]/u.test(scriptId)
 	)
 		invalidArguments();
+	const selection = fields.has("--binding")
+		? validateHtmlJsonBindingSourceSelection({
+				scriptId,
+				binding: fields.get("--binding"),
+				pointer,
+			})
+		: { scriptId, pointer };
 	return {
 		url,
 		contentType,
 		sha256: sha256.toLowerCase(),
-		selection: { scriptId, pointer },
+		selection,
 	};
 }
 
@@ -227,14 +240,20 @@ export async function runResearchHtmlJsonCli(
 			checkpoint,
 		);
 		owned.fill(0);
-		const selected = selectHtmlJsonSource(
-			admitted.text,
-			options.selection,
-			checkpoint,
-		);
+		const selected =
+			"binding" in options.selection
+				? selectHtmlJsonBindingSource(
+						admitted.text,
+						options.selection,
+						checkpoint,
+					)
+				: selectHtmlJsonSource(admitted.text, options.selection, checkpoint);
 		checkpoint();
 		const jsonl = `${JSON.stringify({
-			kind: "html-json-source-selection-v1",
+			kind:
+				"binding" in options.selection
+					? "html-json-binding-source-selection-v1"
+					: "html-json-source-selection-v1",
 			partial: true,
 			rendered: false,
 			verified: false,
