@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Retest weak entry content and source-linked review reading
+
+- Two new native GETs on September17 retrieve Home Depot's exact root200 at
+  18:32:56.500 UTC and the saved-source-linked RunRepeat review200 at18:38:25.876.
+  No redirects/retries/scripts/SDK/credentials/assets; both prior synthetic
+  proofs make zero wire requests. Source, transport/session/document/process
+  closure and private-state checks pass. RTINGS remains a source-only review
+  candidate with restrictions; no new RTINGS request or denied-path retry.
+- Same fresh Home Depot body: actual CLI v1 gives153 Markdown bytes, v2/v3 give
+  identical40,296 bytes. Independent source review verifies all22 product names
+  and destinations versus none in v1. A fourth offline CLI with the existing
+  source-aria-label policy restores five missing promotional links,41,022 bytes,
+  without losing product destinations. SVG-home/SMS omissions remain explicit.
+- Fresh RunRepeat actual CLI main scope gives37,927 bytes/29 tables; body scope
+  gives47,474/31. Compact body retains31 tables and all non-boundary bytes in
+  41,468 bytes,12.7% smaller. Independent review checks all433 cell texts and51
+  main paragraphs; dynamic/control/media limits remain. Preserve two original
+  collector failures from the
+  wrong selector enum; separate artifact verification passes without reruns.
+- Seven offline CLI executions are separate from the two live GETs and their
+  two synthetic proofs. Reuse the387/0 selected native qualification and verified
+  1,629 source/2,412 compiled pins; no production change/new unit/full-suite run.
+  Canonical manifest still has22 absent paths. See
+  reports/entry-content-retest-2026-09-17.md/JSON and updated retrieval docs.
+  Historical10033/67 stays unchanged.
+  Continue actual SDK/HTML modules, varied websites/interactions, performance,
+  crawler blocks/CAPTCHA handoff, real credentials/passkeys/devices and original
+  research. Overall browser goal remains active.
+
 ### Preserve module request identity across real redirects
 
 - Separate a module's canonical requested identity from its response import

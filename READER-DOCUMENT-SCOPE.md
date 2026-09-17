@@ -61,3 +61,30 @@ not weaker visibility filtering. Manuals.plus' confirmed challenge requires a
 human handoff, not a scope or client workaround.
 
 Evidence: `reports/review-manual-workflows-2026-09-16.md` and companion JSON.
+
+## Fresh scope and compact-output check
+
+A separate September 17, 2026 native GET of the same source-linked RunRepeat
+review returns a new 780,668-byte body. The earlier capture and measurements
+above remain unchanged. Three actual offline replay CLI invocations compare:
+
+| Selection | Markdown bytes | Native tables |
+| --- | ---: | ---: |
+| `--content-focus main-content-v3` | 37,927 | 29 |
+| `--selector body` | 47,474 | 31 |
+| `--selector body --compact-tables` | 41,468 | 31 |
+
+All three use `--format markdown --table-rows` and the same capture pins.
+Document scope includes the entire main output as an exact contiguous slice.
+The compact document saves 6,006 bytes, or 12.7%, solely by shortening the native
+row/cell begin-boundary labels. All other output bytes are identical, including
+table contents, row order and remaining structural warnings. This is output
+serialization size, not network or execution speed, and does not establish that
+every source or dynamic measurement was extracted correctly.
+
+All CLI children exit successfully. The original document-mode collectors
+incorrectly expect `selection.method` to be `selector`; the actual public value
+is `css-selector`. Their failures remain recorded. Separate saved-output
+verification checks the correct schema, content, pins and closure without
+rerunning the commands or website. Evidence and remaining source-fidelity gaps:
+`reports/entry-content-retest-2026-09-17.md` and companion JSON.

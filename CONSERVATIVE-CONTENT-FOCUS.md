@@ -107,3 +107,33 @@ navigation-like content outside recognized contexts can broaden scope;
 content inside ignored ancillary contexts does not trigger broadening. Retained
 source is not full computed visibility, dynamic rendering, verified offers or
 complete article/media content. Further live-site coverage remains necessary.
+
+## Fresh product-content check
+
+A new native Home Depot root capture on September 17, 2026 confirms the same
+failure mode. Actual offline CLI comparisons on that one response yield 153
+Markdown bytes with v1, versus 40,296 identical bytes with v2 and v3. Independent
+source review verifies all 22 product cards' descriptive names and distinct
+destinations in v2/v3, with none in v1. This does not update the historical
+100-entry corpus or verify current product offers.
+
+Five additional empty-text promotional links have explicit source `aria-label`
+values. The existing label policy restores them without executing scripts:
+
+```sh
+node dist/scripts/research-replay-cli.js \
+  --expected-profile default \
+  --receipt-sha256 "$HOST_RECEIPT_SHA256" \
+  --body-sha256 "$HOST_BODY_SHA256" \
+  --body-bytes "$HOST_BODY_BYTES" \
+  --content-focus main-content-v2 --format markdown \
+  --source-link-label-policy source-aria-label-v1 --table-rows < receipt.jsonl
+```
+
+Do not combine this label policy with `--output-limit-policy text-prefix-v1`;
+the tested invocation uses the unchanged strict output bound. The 41,022-byte
+result retains all product destinations and adds exactly the five source-labeled
+destinations, explicitly marked unrendered and unverified. The SVG-logo home link
+and SMS destination remain omitted. This is a tested retrieval option, not a
+default change, complete accessibility result or another live request. See
+`reports/entry-content-retest-2026-09-17.md` and its JSON evidence.
