@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Supervise isolated gate lifecycles without activating SafeJS
+
+- Add a host-owned supervisor with mandatory prerequisite/guard/pin/acceptance
+  callbacks and immediate synchronous ownership registration. Cleanup runs across
+  exit/error/timeout/cancellation; timer failures trigger best-effort operations,
+  not unverified success. Error accessors/coercion cannot suppress later cleanup.
+- Keep primary, cleanup and evidence failures separate. Final verdict and the
+  acknowledged persisted snapshot can differ after cancellation/timer teardown;
+  preserve both and never blindly retry uncertain writes or SDK operations.
+- Clean HEAD3adcb07 plus two new overlays passes197/0 in7 selected native files,
+  including45 fake-process cases; unchanged six-file baseline is152/0. Final
+  build/types/format/lint pass; preliminary197/0 with format/lint failures remains.
+  Canonical manifest1014 retains22 absent committed paths. No actual SDK, real
+  process-group fixture, live website, credential, device or TTY acceptance.
+- Local SafeJS source at8356115 (September17,13:08:23 UTC commit) still rejects
+  later external evaluation during callback tails. No published-release refresh
+  or supported scheduler replacement is established. Keep19 core and10 page
+  expectations unchanged; wire a concrete guarded adapter and verify dependency
+  staging before a separately scoped actual SDK attempt.
+- See SAFEJS-GATE-LIFECYCLE.md and reports/safejs-gate-lifecycle-2026-09-17.md.
+  The broader pre-supervisor991-file run records49234 passed/91 failed. A protected
+  temp-directory rerun of its ten failing files gives352 passed/1 failed; the
+  remaining heading-options identity assertion is under separate correction.
+  Do not turn that selected rerun into a full-suite pass. Continue actual dynamic
+  workflows, content/performance/access, credentials/passkeys and research.
+
 ### Ignore empty SVG color and complete a real policy-checked asset fetch
 
 - Omit only color attributes whose existing trim produces an empty value, after
