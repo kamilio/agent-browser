@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Retrieve three source-linked articles and replay focused sections
+
+- Three fresh anonymous native GETs on September 17 retrieve the exact Science
+  Insights salmon article, Yahoo restaurant article and Grokipedia DOM article.
+  All return HTTP 200 with source content, complete captured bytes and closed
+  request/socket/session/document/process resources. No redirects or retries.
+- Entry-page receipts supply the links without new entry-page requests. Yahoo's
+  source anchor is aria-hidden: this is explicit direct-URL retrieval, not a
+  visible-link discovery or click pass. All destination reads retain the explicit
+  source-hidden-inline policy; no UI or access boundary is relaxed.
+- Three actual offline section CLI replays return 906, 354 and 7963 Markdown
+  bytes versus 3990, 21218 and 71526 whole-page bytes. Each selected section is
+  an exact substring of its original output. These are intentionally narrower
+  answers, not lossless whole-page compression or a live speed benchmark.
+- Grokipedia retains all measured prose but merges source span-wrapper groups.
+  Do not infer paragraph semantics from utility classes without style evidence.
+  A fourth offline CLI, JSON with table metadata, exposes all 3 header/36 data
+  cell source tags; independent audit matches their tags, attributes and text.
+  Preserve the initial post-collector schema mismatch; actual CLI exit was zero.
+- Exact zero-network proofs precede the three GETs; offline section replays use
+  kernel/JS network denial and independent host receipt/body pins. No scripts,
+  SDK, credentials, assets, alternate client, devices/TTY or challenge solver.
+  Reuse the current 1310/0 selected native qualification without claiming a new
+  test run or full-suite/live-JavaScript acceptance. Historical 100-entry 33/67
+  results remain unchanged. See reports/deep-page-workflows-2026-09-17.md/JSON.
+- Continue actual SDK/HTML-module functionality, varied agent tasks, measured
+  performance and safe access handling, real credentials/passkeys and original
+  research. The overall browser objective remains active.
+
 ### Diagnose continue-shopping interstitials without submitting challenges
 
 - Add a bounded source signature for the saved Amazon.com/.co.uk HTTPS shells:
