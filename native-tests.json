@@ -992,5 +992,8 @@
   "src/node-rate-limit-observation.test.ts",
   "src/json-source-spans.test.ts",
   "src/source-search-index.test.ts",
-  "src/research-source-index-cli.test.ts"
+  "src/research-source-index-cli.test.ts",
+  "src/research-stream-output.test.ts",
+  "src/research-source-output-lifecycle.test.ts",
+  "src/research-emission-cancellation.test.ts"
 ]

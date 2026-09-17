@@ -633,11 +633,12 @@ it("cleans up an aborted pending write while preserving the caller stream", asyn
 	await writing;
 	controller.abort();
 	await rejected;
-	expect(listeners(output)).toEqual(before);
+	expect(output.listenerCount("error")).toBe(before[2].length + 1);
 	expect(getEventListeners(controller.signal, "abort")).toEqual([]);
 	expect(output.destroyed).toBe(false);
 	expect(output.writableEnded).toBe(false);
 	acknowledge?.();
+	expect(listeners(output)).toEqual(before);
 });
 
 it("sanitizes output callback failures and removes owned listeners", async () => {
@@ -657,6 +658,7 @@ it("sanitizes output callback failures and removes owned listeners", async () =>
 		code: "closed",
 		message: "Research HTML JSON operation failed",
 	});
+	await new Promise<void>((resolve) => setImmediate(resolve));
 	expect(listeners(output)).toEqual(before);
 	expect(output.destroyed).toBe(false);
 });

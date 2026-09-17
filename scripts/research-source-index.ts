@@ -5,6 +5,11 @@ import { types } from "node:util";
 import { AgentBrowserError } from "../src/errors.js";
 import { NetworkPolicy } from "../src/network.js";
 import { searchSourceIndex } from "../src/source-search-index.js";
+import {
+	exitResearchCliFailure,
+	researchOutputFailureGraceMs,
+	writeResearchOutput,
+} from "./research-stream-output.js";
 
 export const researchSourceIndexCliLimits = Object.freeze({
 	maxInputBytes: 2_000_000,
@@ -19,7 +24,7 @@ export const researchSourceIndexCliLimits = Object.freeze({
 	maxLimit: 100,
 	defaultLimit: 20,
 	timeoutMs: 30_000,
-	failureExitTimeoutMs: 100,
+	failureExitTimeoutMs: researchOutputFailureGraceMs,
 });
 
 const usage =
@@ -202,100 +207,6 @@ function readBody(
 	});
 }
 
-function writeRecord(
-	output: Writable,
-	text: string,
-	signal: AbortSignal,
-): Promise<void> {
-	return new Promise((resolve, reject) => {
-		let settled = false;
-		let returned = false;
-		let acknowledged = false;
-		let drained = false;
-		let needsDrain = false;
-		let callbackPending = false;
-		let writeFailure: ReturnType<typeof setImmediate> | undefined;
-		let lateRelease: ReturnType<typeof setImmediate> | undefined;
-		let releaseGuard: (() => void) | undefined;
-		const protectPendingWrite = () => {
-			const release = () => {
-				if (lateRelease) clearImmediate(lateRelease);
-				output.off("error", onLateError);
-				output.off("close", release);
-				releaseGuard = undefined;
-			};
-			const onLateError = () => {
-				if (!callbackPending) release();
-			};
-			releaseGuard = release;
-			output.on("error", onLateError);
-			output.once("close", release);
-		};
-		const releaseAfterErrorDelivery = () => {
-			lateRelease = setImmediate(() => {
-				if (!output.destroyed || output.closed) releaseGuard?.();
-			});
-		};
-		const finish = (error?: AgentBrowserError) => {
-			if (settled) return;
-			if (!error && (!returned || !acknowledged || (needsDrain && !drained)))
-				return;
-			settled = true;
-			if (error && (callbackPending || writeFailure) && !output.closed) {
-				protectPendingWrite();
-				if (!callbackPending) releaseAfterErrorDelivery();
-			}
-			if (writeFailure) clearImmediate(writeFailure);
-			output.off("error", onError);
-			output.off("close", onError);
-			output.off("finish", onError);
-			output.off("drain", onDrain);
-			signal.removeEventListener("abort", onAbort);
-			if (error) reject(error);
-			else resolve();
-		};
-		const onError = () => finish(failure("closed"));
-		const onAbort = () => finish(cancellation(signal));
-		const onDrain = () => {
-			drained = true;
-			finish();
-		};
-		output.on("error", onError);
-		output.on("close", onError);
-		output.on("finish", onError);
-		output.on("drain", onDrain);
-		signal.addEventListener("abort", onAbort, { once: true });
-		if (signal.aborted) onAbort();
-		else if (output.destroyed || output.writableEnded || output.errored)
-			onError();
-		else {
-			try {
-				callbackPending = true;
-				needsDrain = !output.write(text, (error) => {
-					callbackPending = false;
-					if (settled) {
-						if (error && releaseGuard) {
-							releaseAfterErrorDelivery();
-						} else releaseGuard?.();
-						return;
-					}
-					if (error) {
-						writeFailure = setImmediate(onError);
-						return;
-					}
-					acknowledged = true;
-					finish();
-				});
-				returned = true;
-				finish();
-			} catch {
-				callbackPending = false;
-				onError();
-			}
-		}
-	});
-}
-
 export async function runResearchSourceIndexCli(
 	args: readonly string[],
 	input: Readable,
@@ -328,7 +239,10 @@ export async function runResearchSourceIndexCli(
 		if (output.destroyed || output.writableEnded || output.errored)
 			throw failure("closed");
 		if (!options) {
-			await writeRecord(output, usage, controller.signal);
+			await writeResearchOutput(output, usage, controller.signal, {
+				closed: () => failure("closed"),
+				aborted: cancellation,
+			});
 			checkpoint();
 			return 0;
 		}
@@ -373,7 +287,10 @@ export async function runResearchSourceIndexCli(
 		if (Buffer.byteLength(jsonl) > researchSourceIndexCliLimits.maxOutputBytes)
 			throw failure("resource-limit");
 		checkpoint();
-		await writeRecord(output, jsonl, controller.signal);
+		await writeResearchOutput(output, jsonl, controller.signal, {
+			closed: () => failure("closed"),
+			aborted: cancellation,
+		});
 		checkpoint();
 		return 0;
 	} catch (error) {
@@ -390,19 +307,6 @@ export async function runResearchSourceIndexCli(
 	}
 }
 
-function exitCli(code: number, message: string): void {
-	const fallback = setTimeout(
-		() => process.exit(code),
-		researchSourceIndexCliLimits.failureExitTimeoutMs,
-	);
-	process.stdin.destroy();
-	process.stdout.destroy();
-	process.stderr.write(message, () => {
-		clearTimeout(fallback);
-		process.exit(code);
-	});
-}
-
 async function main(): Promise<void> {
 	const args = process.argv.slice(2);
 	process.stdout.on("error", () => {
@@ -415,7 +319,7 @@ async function main(): Promise<void> {
 		try {
 			parseResearchSourceIndexArguments(args);
 		} catch {
-			exitCli(64, usage);
+			exitResearchCliFailure(64, usage);
 			return;
 		}
 	}
@@ -426,7 +330,7 @@ async function main(): Promise<void> {
 			process.stdout,
 		);
 	} catch {
-		exitCli(
+		exitResearchCliFailure(
 			1,
 			"Research source index failed; no network fallback was attempted.\n",
 		);
@@ -435,5 +339,8 @@ async function main(): Promise<void> {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
 	void main().catch(() => {
-		process.exit(1);
+		exitResearchCliFailure(
+			1,
+			"Research source index failed; no network fallback was attempted.\n",
+		);
 	});

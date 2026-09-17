@@ -101,6 +101,10 @@ import {
 	classifyResearchVisibility,
 	researchVisibilityEvidence,
 } from "./research-visibility.js";
+import {
+	exitResearchCliFailure,
+	writeResearchOutput,
+} from "./research-stream-output.js";
 
 export const researchRunLimits = Object.freeze({
 	maxUrls: 8,
@@ -1621,46 +1625,16 @@ export async function emitResearchReport(
 	output: Writable,
 	report: ResearchNavigationReport,
 	documentProfile?: ResearchDocumentProfileId,
+	signal?: AbortSignal,
 ): Promise<ResearchExitReport> {
+	if (signal?.aborted) {
+		throw new AgentBrowserError("aborted", "Research output was cancelled");
+	}
 	const emission = serializeResearchReport(report, documentProfile);
-	if (output.destroyed || output.writableEnded || output.errored)
-		throw outputFailure();
-	await new Promise<void>((resolve, reject) => {
-		let settled = false;
-		const cleanup = () => {
-			output.off("error", onError);
-			output.off("close", onClose);
-		};
-		const fail = () => {
-			if (settled) return;
-			settled = true;
-			reject(outputFailure());
-		};
-		const onError = () => {
-			cleanup();
-			fail();
-		};
-		const onClose = () => {
-			cleanup();
-			fail();
-		};
-		output.once("error", onError);
-		output.once("close", onClose);
-		try {
-			output.write(emission.jsonl, (error) => {
-				if (error) {
-					fail();
-					return;
-				}
-				cleanup();
-				if (settled) return;
-				settled = true;
-				resolve();
-			});
-		} catch {
-			cleanup();
-			fail();
-		}
+	await writeResearchOutput(output, emission.jsonl, signal, {
+		closed: outputFailure,
+		aborted: () =>
+			new AgentBrowserError("aborted", "Research output was cancelled"),
 	});
 	return emission.exitReport;
 }
@@ -1686,15 +1660,19 @@ async function main() {
 		for await (const report of researchBatch(args, controller.signal)) {
 			if (outputFailed) throw outputFailure();
 			reports.push(
-				await emitResearchReport(process.stdout, report, documentProfile),
+				await emitResearchReport(
+					process.stdout,
+					report,
+					documentProfile,
+					controller.signal,
+				),
 			);
 		}
 		process.exitCode = outputFailed ? 1 : researchExitCode(reports);
 	} catch {
 		outputFailed = true;
 		controller.abort();
-		process.stderr.write("Research execution or output failed.\n");
-		process.exitCode = 1;
+		exitResearchCliFailure(1, "Research execution or output failed.\n");
 	} finally {
 		clearTimeout(timer);
 		if (!outputFailed) process.stdout.off("error", onOutputError);
@@ -1706,9 +1684,9 @@ if (
 	import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
 	void main().catch(() => {
-		process.stderr.write(
+		exitResearchCliFailure(
+			64,
 			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--source-link-label-policy source-aria-label-v1] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2|main-content-v3] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --json-pointer POINTER | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; empty JSON pointer selects root; JSON pointer excludes content-focus, text-prefix and long-v1; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; source link-label policy requires reader HTML Markdown extraction and excludes discovery, literal selection and text-prefix; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
-		process.exitCode = 64;
 	});
 }

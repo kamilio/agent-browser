@@ -1,0 +1,694 @@
+{
+  "at": "2026-09-17T06:47:32.254Z",
+  "parentCommit": "5ca9d5a30704cb5b4c1e71b70b5eeb6dade026f8",
+  "runtimeLabel": "release03",
+  "sourcePins": 1597,
+  "compiledPins": 2376,
+  "implementation": "Shared cancellation-aware research output; no extraction/network/identity/dependency changes",
+  "native": {
+    "label": "release03",
+    "pid": 1350069,
+    "exitCode": 0,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 25.817277941852808,
+    "passedTests": 1711,
+    "failedTests": 0,
+    "files": 25,
+    "homeEntries": [],
+    "tmpEntries": [],
+    "newTests": 75,
+    "newFiles": [
+      "src/research-stream-output.test.ts",
+      "src/research-source-output-lifecycle.test.ts",
+      "src/research-emission-cancellation.test.ts"
+    ],
+    "retainedSelectedTests": 1636,
+    "red": {
+      "passed": 10,
+      "failed": 18
+    },
+    "knownAdmissionFailure": {
+      "file": "src/research-admission-cli.test.ts",
+      "baselinePassed": 171,
+      "baselineFailed": 1,
+      "finalPassed": 171,
+      "finalFailed": 1,
+      "all172OutcomesIdentical": true
+    }
+  },
+  "quality": {
+    "label": "release03",
+    "executions": [
+      {
+        "name": "build",
+        "pid": 1350033,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 7.28053830191493
+      },
+      {
+        "name": "types",
+        "pid": 1350248,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 4.824222905561328
+      },
+      {
+        "name": "format",
+        "pid": 1350280,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.0320734828710556
+      },
+      {
+        "name": "lint",
+        "pid": 1350299,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.0319877564907074
+      }
+    ],
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    },
+    "allProcessesClosed": true
+  },
+  "manifest": {
+    "entries": 997,
+    "missing": [
+      "src/borders.test.ts",
+      "src/css-flex.test.ts",
+      "src/css-flow.test.ts",
+      "src/css-math.test.ts",
+      "src/css-variables.test.ts",
+      "src/flex-column-wrap.test.ts",
+      "src/flex-column.test.ts",
+      "src/flex-document.test.ts",
+      "src/flex-nested.test.ts",
+      "src/font-relative-box.test.ts",
+      "src/inline-block.test.ts",
+      "src/inline-borders.test.ts",
+      "src/inline-flex.test.ts",
+      "src/page-base64.test.ts",
+      "src/portable-boundary.test.ts",
+      "src/reference-images.test.ts",
+      "src/reference-renderer.test.ts",
+      "src/relative-positioning.test.ts",
+      "src/response-archive.test.ts",
+      "src/select-keyboard.test.ts",
+      "src/select-typeahead.test.ts",
+      "src/stacking-order.test.ts"
+    ]
+  },
+  "stdio": {
+    "before": {
+      "at": "2026-09-17T06:16:41.720570+00:00",
+      "expected": "blocked",
+      "matched": true,
+      "observation": {
+        "elapsedSeconds": 123.00157275609672,
+        "exitCode": null,
+        "childAlive": true,
+        "groupAlive": true,
+        "stderr": ""
+      },
+      "pid": 1333478,
+      "exitCode": 1,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "signals": [],
+      "peerReleasedAfterObservation": true,
+      "elapsedSeconds": 123.00941781699657,
+      "guard": {
+        "attempts": []
+      },
+      "native": {
+        "calls": 1,
+        "syntheticBytes": 124137,
+        "metrics": [
+          {
+            "mockedRequests": 1,
+            "mockedDecodedBytes": 124137,
+            "requests": 1,
+            "redirects": 0,
+            "encodedBytes": 0,
+            "decodedBytes": 124137,
+            "active": 0,
+            "closed": true
+          }
+        ]
+      },
+      "homeEntries": [],
+      "tmpEntries": [],
+      "passed": true
+    },
+    "after": {
+      "at": "2026-09-17T06:39:14.715057+00:00",
+      "expected": "closed",
+      "matched": true,
+      "observation": {
+        "elapsedSeconds": 120.27633866481483,
+        "exitCode": 1,
+        "childAlive": false,
+        "groupAlive": false,
+        "stderr": "Research execution or output failed.\n"
+      },
+      "pid": 1351809,
+      "exitCode": 1,
+      "childAbsent": true,
+      "groupAbsent": true,
+      "signals": [],
+      "peerReleasedAfterObservation": true,
+      "elapsedSeconds": 120.27677065692842,
+      "guard": {
+        "attempts": []
+      },
+      "native": {
+        "calls": 1,
+        "syntheticBytes": 124137,
+        "metrics": [
+          {
+            "mockedRequests": 1,
+            "mockedDecodedBytes": 124137,
+            "requests": 1,
+            "redirects": 0,
+            "encodedBytes": 0,
+            "decodedBytes": 124137,
+            "active": 0,
+            "closed": true
+          }
+        ]
+      },
+      "homeEntries": [],
+      "tmpEntries": [],
+      "passed": true
+    },
+    "additional": {
+      "at": "2026-09-17T06:39:44.044870+00:00",
+      "results": [
+        {
+          "id": "research-browser-file-usage",
+          "pid": 1353241,
+          "observation": {
+            "elapsedSeconds": 0.21423205360770226,
+            "exitCode": 64,
+            "childAbsent": true,
+            "groupAbsent": true,
+            "peersStillOpen": 0
+          },
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "guard": {
+            "attempts": []
+          },
+          "kernelInstalled": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "stderr": "Usage: research-browser [--document-profile default|long-v1] [--reader] [--https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--source-link-label-policy source-aria-label-v1] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2|main-content-v3] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --json-pointer POINTER | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; empty JSON pointer selects root; JSON pointer excludes content-focus, text-prefix and long-v1; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; source link-label policy requires reader HTML Markdown extraction and excludes discovery, literal selection and text-prefix; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+          "passed": true
+        },
+        {
+          "id": "research-browser-full-usage",
+          "pid": 1353248,
+          "observation": {
+            "elapsedSeconds": 0.31426073238253593,
+            "exitCode": 64,
+            "childAbsent": true,
+            "groupAbsent": true,
+            "peersStillOpen": 1
+          },
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "guard": {
+            "attempts": []
+          },
+          "kernelInstalled": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "stderr": null,
+          "passed": true
+        },
+        {
+          "id": "research-browser-broken-usage",
+          "pid": 1353255,
+          "observation": {
+            "elapsedSeconds": 0.2141092400997877,
+            "exitCode": 64,
+            "childAbsent": true,
+            "groupAbsent": true,
+            "peersStillOpen": 0
+          },
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "guard": {
+            "attempts": []
+          },
+          "kernelInstalled": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "stderr": null,
+          "passed": true
+        },
+        {
+          "id": "research-html-json-file-usage",
+          "pid": 1353262,
+          "observation": {
+            "elapsedSeconds": 0.06390586122870445,
+            "exitCode": 64,
+            "childAbsent": true,
+            "groupAbsent": true,
+            "peersStillOpen": 0
+          },
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "guard": {
+            "attempts": []
+          },
+          "kernelInstalled": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "stderr": "Usage: research-html-json --url HTTPS_URL --content-type HTML_MIME --sha256 HEX --script-id ID --json-pointer POINTER < body.html\nAn explicit empty --json-pointer '' selects the complete JSON value. Stdin is a bounded raw HTML response body, not an HTTP-success receipt. Output is unverified lexical document-source JSON; no navigation, rendering, or script execution occurs.\n",
+          "passed": true
+        },
+        {
+          "id": "research-html-json-full-usage",
+          "pid": 1353269,
+          "observation": {
+            "elapsedSeconds": 0.16402360424399376,
+            "exitCode": 64,
+            "childAbsent": true,
+            "groupAbsent": true,
+            "peersStillOpen": 1
+          },
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "guard": {
+            "attempts": []
+          },
+          "kernelInstalled": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "stderr": null,
+          "passed": true
+        },
+        {
+          "id": "research-html-json-broken-usage",
+          "pid": 1353276,
+          "observation": {
+            "elapsedSeconds": 0.06394102983176708,
+            "exitCode": 64,
+            "childAbsent": true,
+            "groupAbsent": true,
+            "peersStillOpen": 0
+          },
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "guard": {
+            "attempts": []
+          },
+          "kernelInstalled": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "stderr": null,
+          "passed": true
+        },
+        {
+          "id": "research-source-index-file-usage",
+          "pid": 1353283,
+          "observation": {
+            "elapsedSeconds": 0.0639276821166277,
+            "exitCode": 64,
+            "childAbsent": true,
+            "groupAbsent": true,
+            "peersStillOpen": 0
+          },
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "guard": {
+            "attempts": []
+          },
+          "kernelInstalled": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "stderr": "Usage: research-source-index --url HTTPS_URL --content-type JS_MIME --sha256 HEX --term TERM [--term TERM ...] [--profile default|long-v1] [--limit 1..100] < body.js\nStdin is a bounded captured response body, not proof of successful HTTP retrieval. Output is unverified, source-only literal-term search; no network, navigation, rendering, or script execution occurs.\n",
+          "passed": true
+        },
+        {
+          "id": "research-source-index-full-usage",
+          "pid": 1353293,
+          "observation": {
+            "elapsedSeconds": 0.16404280439019203,
+            "exitCode": 64,
+            "childAbsent": true,
+            "groupAbsent": true,
+            "peersStillOpen": 1
+          },
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "guard": {
+            "attempts": []
+          },
+          "kernelInstalled": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "stderr": null,
+          "passed": true
+        },
+        {
+          "id": "research-source-index-broken-usage",
+          "pid": 1353300,
+          "observation": {
+            "elapsedSeconds": 0.06400185450911522,
+            "exitCode": 64,
+            "childAbsent": true,
+            "groupAbsent": true,
+            "peersStillOpen": 0
+          },
+          "exitCode": 64,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "guard": {
+            "attempts": []
+          },
+          "kernelInstalled": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "stderr": null,
+          "passed": true
+        },
+        {
+          "id": "research-html-json-full-deadline",
+          "pid": 1353307,
+          "observation": {
+            "elapsedSeconds": 30.20374687574804,
+            "exitCode": 1,
+            "childAbsent": true,
+            "groupAbsent": true,
+            "peersStillOpen": 2
+          },
+          "exitCode": 1,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "guard": {
+            "attempts": []
+          },
+          "kernelInstalled": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "stderr": null,
+          "passed": true
+        },
+        {
+          "id": "research-source-index-full-deadline",
+          "pid": 1353841,
+          "observation": {
+            "elapsedSeconds": 30.204431150108576,
+            "exitCode": 1,
+            "childAbsent": true,
+            "groupAbsent": true,
+            "peersStillOpen": 2
+          },
+          "exitCode": 1,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "guard": {
+            "attempts": []
+          },
+          "kernelInstalled": true,
+          "homeEntries": [],
+          "tmpEntries": [],
+          "stderr": null,
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "newNetworkRequests": 0
+    }
+  },
+  "contentControls": {
+    "counts": {
+      "totalCases": 108,
+      "historicalCorpus": 96,
+      "previousFreshWorkflow": 9,
+      "newSealedSources": 3,
+      "priorProjectionsCompared": 105,
+      "priorProjectionsEqual": 105,
+      "freshOriginalComparisons": 12,
+      "freshOriginalComparisonsEqual": 12,
+      "receiptHashesVerified": 108,
+      "bodyHashesVerified": 108,
+      "requests": 108,
+      "mockRouteResponses": 108,
+      "newNetworkRequests": 0,
+      "emissions": 108,
+      "emissionBytesEqual": 108,
+      "emissionExitReportsEqual": 108,
+      "backpressureDrains": 108,
+      "closedTransports": 108,
+      "closedOutputStreams": 108,
+      "clearedBodies": 108,
+      "failedCurrentControls": 0,
+      "failedPriorAttempts": 0,
+      "failedPreparationAttempts": 1,
+      "inspectionOutputDeviations": 1
+    },
+    "all105ProjectionsEqual": true,
+    "emissionTotalBytes": 6204975,
+    "emissionMaxBytes": 1105370,
+    "inspectionOutputCompliant": false,
+    "entireWorkerInstructionCompliant": false,
+    "result": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/output-content-controls-september17/RESULT.json",
+    "outcomes": {
+      "empty-extraction": 6,
+      "extracted-unverified": 71,
+      "semantic-barrier": 20,
+      "http-failure": 10,
+      "failure": 1
+    },
+    "execution": {
+      "mode": "offline",
+      "version": "release03",
+      "pid": 1359215,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "pinsBefore": true,
+      "pinsAfter": true,
+      "safetyErrors": [],
+      "terminationSignal": null,
+      "elapsedSeconds": 5.109626784920692,
+      "safetyPassed": true
+    }
+  },
+  "live": {
+    "runtimeCommit": "5ca9d5a30704cb5b4c1e71b70b5eeb6dade026f8",
+    "newGETs": 3,
+    "bestBuy": [
+      {
+        "id": "historical-root",
+        "url": "https://www.bestbuy.com/",
+        "receivedAt": "2026-09-16T00:24:34.206Z",
+        "receiptSha256": "b9db64667b5df3ef69756dda0c37d1099a8971837eb08fcaa0f9bbd265771fa7",
+        "bodySha256": "09afaa925769a7a35c2278d5863df3286fe543d7c62833c6a6c57f0c4b030cb4",
+        "bodyBytes": 440361,
+        "outcome": "extracted-unverified",
+        "markdownBytes": 43,
+        "markdownSha256": "47e957ff3053b5aeebcbed591c54c6ed7e273a663bb743ba546c2b182affaab5",
+        "exactReplayMatch": true,
+        "sourceAnalysis": "historical-root-source.json",
+        "title": "Best Buy | Official Online Store | Shop Now & Save",
+        "scripts": 204,
+        "inertScripts": 0,
+        "staticBodyText": [
+          "$(csi.user.businessName)",
+          "Main Content",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          "."
+        ],
+        "links": 35,
+        "linksUnderHiddenAncestors": 35
+      },
+      {
+        "id": "fresh-appliances",
+        "url": "https://www.bestbuy.com/site/promo/save-select-major-appliances",
+        "receivedAt": "2026-09-17T06:14:29.048Z",
+        "receiptSha256": "001141c3e3b8bb5d72ff15436aa61eec888b97f50fb24c1a2894e4212c1d6532",
+        "bodySha256": "096dade5eb2e42bbf1fb82cf13dc04ea3be50dfff7ab5feab7f6882f176033b6",
+        "bodyBytes": 579790,
+        "outcome": "empty-extraction",
+        "markdownBytes": 0,
+        "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "exactReplayMatch": true,
+        "sourceAnalysis": "fresh-appliances-source.json",
+        "title": "PAGE_NOT_FOUND_ERROR",
+        "scripts": 166,
+        "inertScripts": 0,
+        "staticBodyText": [],
+        "links": 14,
+        "linksUnderHiddenAncestors": 14
+      }
+    ],
+    "mlcommons": [
+      {
+        "label": "change-log",
+        "url": "https://mlcommons.org/results-change-log/",
+        "status": 200,
+        "captureDate": "2026-09-17T06:14:09.483Z",
+        "receiptSha256": "242691cc7b227e304f984e6bb3d51f232f54763d03202c224d28f1c751e89d4b",
+        "bodySha256": "3efd804005e017d7bfbf0b1afaf4c0954b570bfd5929e30f2a14abe751037dcc",
+        "decodedBytes": 136285,
+        "markdownSha256": "c6c326f3939c38b3010054778094c3f6c743a241c3345da1687da71cc585a03f",
+        "markdownBytes": 11659,
+        "eventCounts": {
+          "request-start": 1,
+          "request-close": 1,
+          "socket-secure-connect": 1,
+          "socket-close": 1,
+          "process-exit": 1
+        },
+        "exactSyntheticCommandPassed": true,
+        "allPinnedInputsReverified": true,
+        "cleanupVerified": true,
+        "elapsedSupervisorSeconds": 1.2058349959552288
+      },
+      {
+        "label": "rules",
+        "url": "https://github.com/mlcommons/inference_policies/blob/master/inference_rules.adoc",
+        "status": 200,
+        "captureDate": "2026-09-17T06:14:51.292Z",
+        "receiptSha256": "1bd2fd65d9811369efa964c795e73d1d956554db7c604e589c89a3924430694a",
+        "bodySha256": "c1f19f96189af0ea361fc3e4c779cc3b5b166a4ab7f06c05e01d774b89797e2d",
+        "decodedBytes": 741978,
+        "markdownSha256": "2cec15905c60ed2e5c0d94d78eeffcbe2133636cd8d105a936da639970365e06",
+        "markdownBytes": 104136,
+        "eventCounts": {
+          "request-start": 1,
+          "request-close": 1,
+          "socket-secure-connect": 1,
+          "socket-close": 1,
+          "process-exit": 1
+        },
+        "exactSyntheticCommandPassed": true,
+        "allPinnedInputsReverified": true,
+        "cleanupVerified": true,
+        "elapsedSupervisorSeconds": 1.1050250474363565
+      }
+    ],
+    "verification": {
+      "allChangeLogStaticTables": 6,
+      "allChangeLogDataRows": 44,
+      "changeLogRowsIncludingHeaders": 50,
+      "datacenterChangeLogDataRows": 13,
+      "edgeChangeLogDataRows": 2,
+      "trainingChangeLogDataRows": 29,
+      "rulesParagraphSamples": 13,
+      "rulesScenarioTableCells": 35,
+      "rulesHeadings": 55,
+      "fullRulesProseCoverage": false,
+      "numericalSystemPerformanceRows": 0
+    },
+    "retailTaskSuccessful": false,
+    "numericalHardwareResultsTaskComplete": false
+  },
+  "evidence": [
+    {
+      "lane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/bestbuy-content-september17",
+      "artifacts": 72,
+      "result": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/bestbuy-content-september17/RESULT.json",
+      "seal": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/bestbuy-content-september17/SEALED.json"
+    },
+    {
+      "lane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/mlcommons-workflow-september17",
+      "artifacts": 78,
+      "result": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/mlcommons-workflow-september17/RESULT.json",
+      "seal": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/mlcommons-workflow-september17/SEALED.json"
+    },
+    {
+      "lane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/output-content-controls-september17",
+      "artifacts": 23,
+      "result": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/output-content-controls-september17/RESULT.json",
+      "seal": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/output-content-controls-september17/SEALED.json"
+    }
+  ],
+  "externalArtifactsAndInputsVerified": 566,
+  "limitations": [
+    "Selected native suite, not full-manifest pass; 22 missing files and separately reproduced unchanged admission assertion failure.",
+    "Saved-response substitution is not fresh browsing, rendered equivalence or ordinary failed-receipt admission.",
+    "Live workflows use the parent commit, not the changed output writer.",
+    "One pre-harness worker output-instruction violation is retained; no blanket protocol-compliance claim.",
+    "Anonymous-pipe timer checks require event-loop availability and do not qualify real TTY/PTY, SDK, credentials or devices.",
+    "Broader dynamic compatibility, performance/access/CAPTCHA, credential/passkey acceptance and original research remain open."
+  ],
+  "scope": {
+    "fullSuitePassed": false,
+    "liveCandidateValidated": false,
+    "goalComplete": false
+  }
+}

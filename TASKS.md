@@ -6,6 +6,36 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Cancel blocked research output and verify content workflows
+
+- Shared writer preserves binary/text payloads, callback/drain ordering and caller
+  stream ownership across the main, HTML JSON and source-index CLIs. Main emission
+  now receives its real overall deadline signal. Late successful callbacks during
+  asynchronous destruction retain error protection; executable failures have a
+  sanitized stderr path with100ms event-loop fallback, not a universal I/O bound.
+- Clean release03 passes1711/0 in25 explicit native files,75 new cases; build,
+  selected types/format/lint pass. Eighteen new consumer regressions fail old code.
+  Separate172-case admission diagnostic is171/1 on baseline and final candidate:
+  unchanged heading-options reference-identity assertion. No full-suite claim;
+  canonical997 entries still include22 missing files and the known failing test.
+- Actual main-CLI anonymous-pipe baseline stays alive at123sec; final exits1 at
+  120.276sec with peer still open. Eleven additional real executable checks cover
+  regular/full/broken stderr and both source-CLI30sec deadlines; all close. No
+  socket/TTY/credentials/SDK or network in these isolated checks.
+- Three separate native GETs on committed5ca9d5a: BestBuy promotion gives200 with
+  an application-error shell and no content; MLCommons change log/rules give useful
+  source. Verify44 change-log rows,13 sampled rules paragraphs,35 scenario cells,
+  and55 headings, not numerical system-performance scores or all rules prose.
+- Final108 saved-response controls preserve all105 prior projections and12 fresh
+  captures;108 serialized outputs/exit reports match through real backpressure.
+  No new network in replay. One worker pre-harness full-receipt output violation
+  is retained explicitly; functional pass is not blanket instruction compliance.
+- See RESEARCH-OUTPUT-LIFECYCLE.md and reports/research-output-lifecycle-2026-09-17
+  Markdown/JSON. Continue embedded results, wider tasks and saved-content controls,
+  dynamic/SafeJS compatibility, performance/access/CAPTCHA, real credentials and
+  passkeys/devices/TTY, missing tests and unfinished research. Historical10033/67
+  remains unchanged. Overall browser goal remains active.
+
 ### Query source indexes and follow matching documents without page scripts
 
 - New bounded multi-pointer JSON span scanner validates once without building a

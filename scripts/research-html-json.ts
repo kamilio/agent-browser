@@ -11,6 +11,10 @@ import {
 import { validateJsonSourcePointer } from "../src/json-source-selection.js";
 import { parseNetworkUrl } from "../src/network.js";
 import { admitResearchHtmlSource } from "./research-source-input.js";
+import {
+	exitResearchCliFailure,
+	writeResearchOutput,
+} from "./research-stream-output.js";
 
 export const researchHtmlJsonCliLimits = Object.freeze({
 	maxInputBytes: 2_000_000,
@@ -170,66 +174,6 @@ function readBody(
 	});
 }
 
-function writeRecord(
-	output: Writable,
-	text: string,
-	signal: AbortSignal,
-): Promise<void> {
-	return new Promise((resolve, reject) => {
-		let settled = false;
-		let returned = false;
-		let acknowledged = false;
-		let drained = false;
-		let needsDrain = false;
-		let writeFailure: ReturnType<typeof setImmediate> | undefined;
-		const finish = (error?: AgentBrowserError) => {
-			if (settled) return;
-			if (!error && (!returned || !acknowledged || (needsDrain && !drained)))
-				return;
-			settled = true;
-			if (writeFailure) clearImmediate(writeFailure);
-			output.off("error", onError);
-			output.off("close", onError);
-			output.off("finish", onError);
-			output.off("drain", onDrain);
-			signal.removeEventListener("abort", onAbort);
-			if (error) reject(error);
-			else resolve();
-		};
-		const onError = () => finish(failure("closed"));
-		const onAbort = () => finish(cancellation(signal));
-		const onDrain = () => {
-			drained = true;
-			finish();
-		};
-		output.on("error", onError);
-		output.on("close", onError);
-		output.on("finish", onError);
-		output.on("drain", onDrain);
-		signal.addEventListener("abort", onAbort, { once: true });
-		if (signal.aborted) onAbort();
-		else if (output.destroyed || output.writableEnded || output.errored)
-			onError();
-		else {
-			try {
-				needsDrain = !output.write(text, (error) => {
-					if (settled) return;
-					if (error) {
-						writeFailure = setImmediate(onError);
-						return;
-					}
-					acknowledged = true;
-					finish();
-				});
-				returned = true;
-				finish();
-			} catch {
-				onError();
-			}
-		}
-	});
-}
-
 export async function runResearchHtmlJsonCli(
 	args: readonly string[],
 	input: Readable,
@@ -262,7 +206,10 @@ export async function runResearchHtmlJsonCli(
 		if (output.destroyed || output.writableEnded || output.errored)
 			throw failure("closed");
 		if (!options) {
-			await writeRecord(output, usage, controller.signal);
+			await writeResearchOutput(output, usage, controller.signal, {
+				closed: () => failure("closed"),
+				aborted: cancellation,
+			});
 			checkpoint();
 			return 0;
 		}
@@ -301,7 +248,10 @@ export async function runResearchHtmlJsonCli(
 		if (Buffer.byteLength(jsonl) > researchHtmlJsonCliLimits.maxOutputBytes)
 			throw failure("resource-limit");
 		checkpoint();
-		await writeRecord(output, jsonl, controller.signal);
+		await writeResearchOutput(output, jsonl, controller.signal, {
+			closed: () => failure("closed"),
+			aborted: cancellation,
+		});
 		checkpoint();
 		return 0;
 	} catch (error) {
@@ -330,8 +280,7 @@ async function main(): Promise<void> {
 		try {
 			parseResearchHtmlJsonArguments(args);
 		} catch {
-			process.stderr.write(usage);
-			process.exitCode = 64;
+			exitResearchCliFailure(64, usage);
 			return;
 		}
 	}
@@ -342,14 +291,17 @@ async function main(): Promise<void> {
 			process.stdout,
 		);
 	} catch {
-		process.stderr.write(
+		exitResearchCliFailure(
+			1,
 			"Research HTML JSON failed; no network fallback was attempted.\n",
 		);
-		process.exitCode = 1;
 	}
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
 	void main().catch(() => {
-		process.exitCode = 1;
+		exitResearchCliFailure(
+			1,
+			"Research HTML JSON failed; no network fallback was attempted.\n",
+		);
 	});
