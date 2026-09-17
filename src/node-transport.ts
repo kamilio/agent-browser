@@ -37,7 +37,7 @@ import {
 } from "./network.js";
 import { OriginRequestPacer } from "./origin-request-pacer.js";
 import { resourceLimitError } from "./resource-limit.js";
-import { parseRetryAfter } from "./retry-after.js";
+import { type RetryAfterAdvice, parseRetryAfter } from "./retry-after.js";
 import {
 	ResourceReuseCache,
 	type ResourceReuseCacheOptions,
@@ -57,6 +57,7 @@ export type AddressResolver = (
 export interface NodeTransportOptions extends NetworkPolicyOptions {
 	httpsRedirectPolicy?: HttpsRedirectPolicy;
 	captureDecodedPrefixBytes?: number;
+	captureServiceBackoff?: boolean;
 	resourceCache?: Partial<ResourceReuseCacheOptions>;
 	limits?: Partial<NetworkLimits>;
 	minRequestIntervalMs?: number;
@@ -75,6 +76,13 @@ export interface DecodedResponsePrefix {
 	readonly encodedBytes: number;
 	readonly decodedBytes: number;
 	readonly limit: number;
+}
+
+export interface ServiceBackoffObservation {
+	readonly status: 503;
+	readonly url: string;
+	readonly receivedAt: string;
+	readonly retryAfter: Readonly<RetryAfterAdvice>;
 }
 
 type ResponsePrefixBody = Pick<
@@ -364,6 +372,8 @@ export class NodeNetworkTransport implements NetworkTransport {
 	private readonly httpsRedirectPolicy?: HttpsRedirectPolicy;
 	private httpsRedirectUpgrades = 0;
 	private readonly captureDecodedPrefixBytes?: number;
+	private readonly captureServiceBackoff: boolean;
+	private capturedServiceBackoff?: Readonly<ServiceBackoffObservation>;
 	private pendingResponsePrefixes = new WeakMap<
 		object,
 		DecodedResponsePrefix
@@ -381,6 +391,15 @@ export class NodeNetworkTransport implements NetworkTransport {
 	};
 
 	constructor(options: NodeTransportOptions = {}) {
+		if (
+			options.captureServiceBackoff !== undefined &&
+			typeof options.captureServiceBackoff !== "boolean"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid service backoff capture option",
+			);
+		this.captureServiceBackoff = options.captureServiceBackoff ?? false;
 		this.httpsRedirectPolicy = validateHttpsRedirectPolicy(
 			options.httpsRedirectPolicy,
 		);
@@ -496,6 +515,7 @@ export class NodeNetworkTransport implements NetworkTransport {
 
 	close() {
 		this.closed = true;
+		this.capturedServiceBackoff = undefined;
 		this.pendingResponsePrefixes = new WeakMap();
 		this.responsePrefixes = new WeakMap();
 		for (const controller of this.active)
@@ -510,6 +530,10 @@ export class NodeNetworkTransport implements NetworkTransport {
 		return captured
 			? Object.freeze({ ...captured, body: new Uint8Array(captured.body) })
 			: undefined;
+	}
+
+	serviceBackoff(): Readonly<ServiceBackoffObservation> | undefined {
+		return this.capturedServiceBackoff;
 	}
 
 	request(input: NetworkRequest): Promise<NetworkResponse> {
@@ -1030,10 +1054,30 @@ export class NodeNetworkTransport implements NetworkTransport {
 					const status = response.statusCode ?? 0;
 					const responseHeaderValues = responseHeaders(response);
 					try {
-						if (this.requestPacer && (status === 429 || status === 503)) {
-							const advice = parseRetryAfter(responseHeaderValues, Date.now());
-							if (advice)
-								this.requestPacer.defer(url.origin, advice.delaySeconds * 1000);
+						if (
+							(this.requestPacer || this.captureServiceBackoff) &&
+							(status === 429 || status === 503)
+						) {
+							const receivedAt = Date.now();
+							const advice = parseRetryAfter(responseHeaderValues, receivedAt);
+							if (advice) {
+								if (
+									this.captureServiceBackoff &&
+									status === 503 &&
+									!this.capturedServiceBackoff
+								) {
+									this.capturedServiceBackoff = Object.freeze({
+										status,
+										url: url.href,
+										receivedAt: new Date(receivedAt).toISOString(),
+										retryAfter: advice,
+									});
+								}
+								this.requestPacer?.defer(
+									url.origin,
+									advice.delaySeconds * 1000,
+								);
+							}
 						}
 						onHeaders?.(responseHeaderValues);
 					} catch (error) {

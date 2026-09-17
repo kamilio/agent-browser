@@ -40,6 +40,7 @@ type CaptureMetadata = Pick<
 	| "primaryResponse"
 	| "failure"
 	| "rateLimit"
+	| "serviceBackoff"
 	| "metrics"
 > & {
 	receiptSha256: string;
@@ -206,6 +207,9 @@ export async function researchJsonContent(
 			primaryResponse: captured.primaryResponse,
 			...(captured.failure ? { failure: captured.failure } : {}),
 			...(captured.rateLimit ? { rateLimit: captured.rateLimit } : {}),
+			...(captured.serviceBackoff
+				? { serviceBackoff: captured.serviceBackoff }
+				: {}),
 			...(captured.metrics ? { metrics: captured.metrics } : {}),
 			receiptSha256: createHash("sha256").update(receipt).digest("hex"),
 			receiptBytes: receipt.byteLength,
@@ -221,6 +225,7 @@ export async function researchJsonContent(
 			captured.bodyCapture === undefined ||
 			captured.classification.barrier !== null ||
 			captured.rateLimit !== undefined ||
+			captured.serviceBackoff !== undefined ||
 			captured.failure !== undefined ||
 			!captured.metrics?.closed ||
 			captured.metrics.active !== 0 ||

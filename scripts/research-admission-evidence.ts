@@ -1251,6 +1251,7 @@ export function validateResearchReplayAdmission(
 		report.outcome !== "extracted-unverified" ||
 		report.contentSuccess === false ||
 		Object.hasOwn(report, "failure") ||
+		Object.hasOwn(report, "serviceBackoff") ||
 		report.classification.barrier !== null
 	)
 		return evidenceOnly("native-failure");
@@ -1295,6 +1296,7 @@ export function validateResearchOutputLimitSectionAdmission(
 		report.contentSuccess !== false ||
 		report.profile !== "native-semantic-reader-v1" ||
 		Object.hasOwn(report, "rateLimit") ||
+		Object.hasOwn(report, "serviceBackoff") ||
 		Object.hasOwn(report, "outputLimit") ||
 		classification.classifier !== "browser-challenges" ||
 		classification.barrier !== null ||
@@ -1381,6 +1383,7 @@ export function validateResearchEmptyOutlineAdmission(
 		report.profile !== "native-semantic-reader-v1" ||
 		Object.hasOwn(report, "failure") ||
 		Object.hasOwn(report, "rateLimit") ||
+		Object.hasOwn(report, "serviceBackoff") ||
 		Object.hasOwn(report, "outputLimit") ||
 		classification.classifier !== "browser-challenges" ||
 		classification.barrier !== null ||

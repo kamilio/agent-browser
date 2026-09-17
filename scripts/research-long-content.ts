@@ -84,6 +84,7 @@ type CaptureMetadata = Pick<
 	| "classification"
 	| "failure"
 	| "rateLimit"
+	| "serviceBackoff"
 	| "metrics"
 	| "primaryResponse"
 > & {
@@ -160,6 +161,9 @@ export async function researchLongContent(
 		primaryResponse: captured.primaryResponse,
 		...(captured.failure ? { failure: captured.failure } : {}),
 		...(captured.rateLimit ? { rateLimit: captured.rateLimit } : {}),
+		...(captured.serviceBackoff
+			? { serviceBackoff: captured.serviceBackoff }
+			: {}),
 		...(captured.metrics ? { metrics: captured.metrics } : {}),
 		receiptSha256: createHash("sha256").update(receipt).digest("hex"),
 		receiptBytes: receipt.byteLength,
@@ -181,6 +185,7 @@ export async function researchLongContent(
 			captured.bodyCapture === undefined ||
 			captured.classification.barrier !== null ||
 			captured.rateLimit !== undefined ||
+			captured.serviceBackoff !== undefined ||
 			!["extracted-unverified", "empty-extraction"].includes(captured.outcome)
 		) {
 			result.failure = {

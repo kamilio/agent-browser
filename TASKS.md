@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Preserve service backoff across research requests and failed bodies
+
+- Research stops on503 with accepted Retry-After rather than advancing a batch
+  through a new transport that has lost its predecessor's cooldown. No retry,
+  wait, identity change or CAPTCHA bypass. Service advice remains separate from429.
+- Opt-in native first-header observation survives body failure and cancellation;
+  research checks request entry/settlement and outer catch before close. Original
+  network/resource/abort errors remain. Source wrappers and all replay admission
+  paths refuse declared backoff; header challenges retain existing precedence.
+- Release05 passes1266/0 across23 explicit native files,181 new cases; build,
+  selected strict types, format and lint pass. Identical181 pre-change cases:
+  55pass/126fail. Removing only outer-catch observation fails both cancellation
+  controls. Independent review findings and initial fixture/lint failures retained.
+- Final103-response offline run preserves prior100 recorded results and matches
+  three fresh article captures. No new network in controls; no503 in old100.
+  Canonical manifest990 has968 available/22 missing; not full-suite acceptance.
+- Three separate native GETs at04:17 UTC September17 retrieve KBB, Cleveland Clinic
+  and Cosmopolitan articles: all200,43/43+20/20+6/6 eligible paragraphs match.
+  Live uses prior098f0cf; final backoff candidate reuses bodies offline. Original
+  87 worker artifacts, runtime/input hashes and all proof/live closures verified.
+- See RESEARCH-SERVICE-BACKOFF.md, reports/research-service-backoff-2026-09-17.md
+  and reports/public-deep-workflows-2026-09-17.md/JSON. No real-server503 or lower
+  blocking-rate claim. Continue practical sites, actual SDK/dynamic pages, access,
+  performance, real credentials/passkeys/TTY, missing tests and topic research.
+  Historical100-entry33/67 verdicts unchanged; full browser goal remains active.
+
 ### Reduce raw-reader CPU overhead and extend feed/article validation
 
 - Profiled saved retrieval identifies raw-discard/per-charge abort getter overhead.

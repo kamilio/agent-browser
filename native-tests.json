@@ -984,5 +984,9 @@
   "src/research-source-heading-loader.test.ts",
   "src/research-aria-headings.test.ts",
   "src/research-raw-batch.test.ts",
-  "src/html-raw-batch.test.ts"
+  "src/html-raw-batch.test.ts",
+  "src/research-service-backoff-content.test.ts",
+  "src/research-service-backoff.test.ts",
+  "src/node-service-backoff.test.ts",
+  "src/research-service-backoff-admission.test.ts"
 ]

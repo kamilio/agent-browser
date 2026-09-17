@@ -706,6 +706,14 @@ export interface ResearchNavigationReport {
 		action: "stop-without-retry";
 		retryAfter?: Readonly<RetryAfterAdvice>;
 	};
+	serviceBackoff?: {
+		kind: "http-service-backoff";
+		status: 503;
+		url: string;
+		receivedAt: string;
+		action: "stop-without-retry";
+		retryAfter: Readonly<RetryAfterAdvice>;
+	};
 	requestedUrl: string;
 	finalUrl: string | null;
 	startedAt: string;
@@ -993,10 +1001,27 @@ export async function researchNavigation(
 	let primaryHeaders: NetworkResponse["headers"] = {};
 	let primaryUrl: string | undefined;
 	let rateLimited = false;
-	const stopForRateLimit = (): never => {
+	let serviceBackoffReceived = false;
+	const captureServiceBackoff = () => {
+		const observation = transport?.serviceBackoff();
+		if (!observation || serviceBackoffReceived) return;
+		serviceBackoffReceived = true;
+		report.serviceBackoff = {
+			...observation,
+			kind: "http-service-backoff",
+			url: reportUrl(observation.url),
+			action: "stop-without-retry",
+		};
+	};
+	const stopForServerBackoff = (): never => {
 		report.outcome = "http-failure";
-		stage = "rate-limit";
-		throw new AgentBrowserError("policy-denied", "Research rate limit reached");
+		stage = rateLimited ? "rate-limit" : "service-backoff";
+		throw new AgentBrowserError(
+			"policy-denied",
+			rateLimited
+				? "Research rate limit reached"
+				: "Research service requested backoff",
+		);
 	};
 	let visibilityTitle: string | undefined;
 	try {
@@ -1004,6 +1029,7 @@ export async function researchNavigation(
 			createTransport: (cookieJar) => {
 				const native = new NodeNetworkTransport({
 					cookieJar,
+					captureServiceBackoff: true,
 					limits: admissionLimits?.network ?? researchRunLimits.network,
 					...(validated.httpsRedirectPolicy === undefined
 						? {}
@@ -1015,7 +1041,8 @@ export async function researchNavigation(
 				transport = native;
 				return {
 					async request(request) {
-						if (rateLimited) stopForRateLimit();
+						captureServiceBackoff();
+						if (rateLimited || serviceBackoffReceived) stopForServerBackoff();
 						const primary = !primaryStarted;
 						primaryStarted = true;
 						if (primary) stage = "network";
@@ -1038,22 +1065,27 @@ export async function researchNavigation(
 									"Research credentials are disabled",
 								);
 						}
-						const response = await native.request({
-							...request,
-							...(validated.preferMarkdown
-								? {
-										headers: {
-											...request.headers,
-											accept: "text/markdown, text/html;q=0.9",
-										},
-									}
-								: {}),
-							cookieContext: {
-								siteUrl: null,
-								...request.cookieContext,
-								credentials: "omit",
-							},
-						});
+						let response: NetworkResponse;
+						try {
+							response = await native.request({
+								...request,
+								...(validated.preferMarkdown
+									? {
+											headers: {
+												...request.headers,
+												accept: "text/markdown, text/html;q=0.9",
+											},
+										}
+									: {}),
+								cookieContext: {
+									siteUrl: null,
+									...request.cookieContext,
+									credentials: "omit",
+								},
+							});
+						} finally {
+							captureServiceBackoff();
+						}
 						if (response.status === 429) {
 							rateLimited = true;
 							const receivedAt = Date.now();
@@ -1066,6 +1098,21 @@ export async function researchNavigation(
 								action: "stop-without-retry",
 								...(retryAfter ? { retryAfter } : {}),
 							};
+						}
+						if (response.status === 503 && !serviceBackoffReceived) {
+							const receivedAt = Date.now();
+							const retryAfter = parseRetryAfter(response.headers, receivedAt);
+							if (retryAfter) {
+								serviceBackoffReceived = true;
+								report.serviceBackoff = {
+									kind: "http-service-backoff",
+									status: 503,
+									url: reportUrl(response.url),
+									receivedAt: new Date(receivedAt).toISOString(),
+									action: "stop-without-retry",
+									retryAfter,
+								};
+							}
 						}
 						if (primary) {
 							const fragment = researchFragmentReport(
@@ -1091,7 +1138,7 @@ export async function researchNavigation(
 							};
 							const diagnostic =
 								classifyBrowserChallenge(challengeResponse) ??
-								(rateLimited
+								(rateLimited || serviceBackoffReceived
 									? null
 									: classifyBrowserChallenge({
 											...challengeResponse,
@@ -1112,7 +1159,7 @@ export async function researchNavigation(
 							}
 							stage = "navigation";
 						}
-						if (rateLimited) stopForRateLimit();
+						if (rateLimited || serviceBackoffReceived) stopForServerBackoff();
 						return response;
 					},
 					metrics: () => native.metrics(),
@@ -1255,7 +1302,7 @@ export async function researchNavigation(
 		const navigation = await session.navigate(tab.id, validated.urls[0], {
 			signal,
 		});
-		if (rateLimited) stopForRateLimit();
+		if (rateLimited || serviceBackoffReceived) stopForServerBackoff();
 		report.navigation = {
 			...navigation,
 			url: navigation.url ? reportUrl(navigation.url) : null,
@@ -1443,6 +1490,9 @@ export async function researchNavigation(
 			report.contentSuccess = false;
 		report.extraction = { ...extraction, url: reportUrl(extraction.url) };
 	} catch (error) {
+		captureServiceBackoff();
+		if (serviceBackoffReceived && report.outcome === "failure")
+			report.outcome = "http-failure";
 		const resourceLimit =
 			error instanceof AgentBrowserError && error.code === "resource-limit"
 				? resourceLimitDiagnostic(error)
@@ -1528,6 +1578,7 @@ export async function* researchBatch(
 				report.outcome === "semantic-barrier" ||
 				report.classification.barrier !== null ||
 				report.rateLimit !== undefined ||
+				report.serviceBackoff !== undefined ||
 				report.primaryResponse?.status === 429;
 			yield report;
 			if (stop) return;
