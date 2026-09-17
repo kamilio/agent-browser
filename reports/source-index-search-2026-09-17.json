@@ -1,0 +1,899 @@
+{
+  "kind": "source-index-search-validation-v1",
+  "at": "2026-09-17T05:59:42.721Z",
+  "parentCommit": "ca71616b80cff4b79bd915e563973db2f649dd38",
+  "scope": "Bounded source-only literal index lookup and two source-layout-derived native document retrievals; not full site search or rendered browsing.",
+  "runtime": {
+    "label": "release07",
+    "root": "/tmp/agent-browser-source-index-a2e57F/release07",
+    "sourceFiles": 1593,
+    "compiledFiles": 2372,
+    "documentRuntime": "release01",
+    "allDocumentRuntimeCompiledFilesMatchFinal": true
+  },
+  "native": {
+    "passed": 1696,
+    "failed": 0,
+    "selectedFiles": 21,
+    "newTests": 320,
+    "newCaseCounts": [
+      {
+        "file": "src/json-source-spans.test.ts",
+        "tests": 36
+      },
+      {
+        "file": "src/research-source-index-cli.test.ts",
+        "tests": 133
+      },
+      {
+        "file": "src/source-search-index.test.ts",
+        "tests": 151
+      }
+    ],
+    "priorSelectedCasesPreserved": 1376,
+    "dateFixtureTitleComparison": [
+      {
+        "runtime": "release07",
+        "file": "src/research-asset-literal.test.ts",
+        "recordedTitle": "pinned asset API rejects a non-envelope \"2026-09-17T05:51:39.296Z\""
+      },
+      {
+        "runtime": "core01",
+        "file": "src/research-asset-literal.test.ts",
+        "recordedTitle": "pinned asset API rejects a non-envelope \"2026-09-17T05:26:02.428Z\""
+      }
+    ],
+    "canonicalManifest": {
+      "entries": 994,
+      "available": 972,
+      "missing": [
+        "src/borders.test.ts",
+        "src/css-flex.test.ts",
+        "src/css-flow.test.ts",
+        "src/css-math.test.ts",
+        "src/css-variables.test.ts",
+        "src/flex-column-wrap.test.ts",
+        "src/flex-column.test.ts",
+        "src/flex-document.test.ts",
+        "src/flex-nested.test.ts",
+        "src/font-relative-box.test.ts",
+        "src/inline-block.test.ts",
+        "src/inline-borders.test.ts",
+        "src/inline-flex.test.ts",
+        "src/page-base64.test.ts",
+        "src/portable-boundary.test.ts",
+        "src/reference-images.test.ts",
+        "src/reference-renderer.test.ts",
+        "src/relative-positioning.test.ts",
+        "src/response-archive.test.ts",
+        "src/select-keyboard.test.ts",
+        "src/select-typeahead.test.ts",
+        "src/stacking-order.test.ts"
+      ]
+    },
+    "fullManifestAcceptance": false
+  },
+  "quality": {
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    },
+    "allProcessesClosed": true
+  },
+  "sourceIndex": {
+    "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-data-september17/asset/live/python-index-long",
+    "bytes": 3927697,
+    "sha256": "5f23cbcb2e6d806f9920d45e4a029f479eedac40e2bd8c1633575a9fcefdacfa",
+    "receivedAt": "2026-09-17T05:08:23.696Z",
+    "httpStatus": 200,
+    "readerOutcome": "failure",
+    "readerFailure": {
+      "category": "unsupported",
+      "stage": "loader"
+    },
+    "documents": 538,
+    "nodes": 536551,
+    "depth": 4,
+    "scriptExecution": false,
+    "querySemantics": "literal stored terms, not full site search",
+    "queries": [
+      {
+        "terms": [
+          "asyncio",
+          "timeout"
+        ],
+        "totalMatches": 25,
+        "truncated": false,
+        "topDocuments": [
+          {
+            "docId": 177,
+            "docname": "library/asyncio-runner",
+            "title": "Runners",
+            "titleMatches": 1
+          },
+          {
+            "docId": 181,
+            "docname": "library/asyncio-task",
+            "title": "Coroutines and tasks",
+            "titleMatches": 1
+          },
+          {
+            "docId": 398,
+            "docname": "library/subprocess",
+            "title": "<code class=\"xref py py-mod docutils literal notranslate\"><span class=\"pre\">subprocess</span></code> — Subprocess management",
+            "titleMatches": 1
+          }
+        ],
+        "independentComparison": true,
+        "limitedComparison": true
+      },
+      {
+        "terms": [
+          "json",
+          "load"
+        ],
+        "totalMatches": 26,
+        "truncated": false,
+        "topDocuments": [
+          {
+            "docId": 310,
+            "docname": "library/json",
+            "title": "<code class=\"xref py py-mod docutils literal notranslate\"><span class=\"pre\">json</span></code> — JSON encoder and decoder",
+            "titleMatches": 1
+          },
+          {
+            "docId": 347,
+            "docname": "library/pickle",
+            "title": "<code class=\"xref py py-mod docutils literal notranslate\"><span class=\"pre\">pickle</span></code> — Python object serialization",
+            "titleMatches": 1
+          },
+          {
+            "docId": 495,
+            "docname": "tutorial/inputoutput",
+            "title": "<span class=\"section-number\">7. </span>Input and Output",
+            "titleMatches": 1
+          }
+        ],
+        "independentComparison": true,
+        "limitedComparison": true
+      },
+      {
+        "terms": [
+          "json",
+          "loads"
+        ],
+        "totalMatches": 0,
+        "truncated": false,
+        "topDocuments": [],
+        "independentComparison": true,
+        "limitedComparison": true
+      },
+      {
+        "terms": [
+          "importlib"
+        ],
+        "totalMatches": 53,
+        "truncated": false,
+        "topDocuments": [
+          {
+            "docId": 298,
+            "docname": "library/importlib",
+            "title": "<code class=\"xref py py-mod docutils literal notranslate\"><span class=\"pre\">importlib</span></code> — The implementation of <code class=\"xref std std-keyword docutils literal notranslate\"><span class=\"pre\">import</span></code>",
+            "titleMatches": 1
+          },
+          {
+            "docId": 299,
+            "docname": "library/importlib.metadata",
+            "title": "<code class=\"xref py py-mod docutils literal notranslate\"><span class=\"pre\">importlib.metadata</span></code> – Accessing package metadata",
+            "titleMatches": 1
+          },
+          {
+            "docId": 300,
+            "docname": "library/importlib.resources",
+            "title": "<code class=\"xref py py-mod docutils literal notranslate\"><span class=\"pre\">importlib.resources</span></code> – Package resource reading, opening and access",
+            "titleMatches": 1
+          }
+        ],
+        "independentComparison": true,
+        "limitedComparison": true
+      },
+      {
+        "terms": [
+          "not-a-stored-term-absent"
+        ],
+        "totalMatches": 0,
+        "truncated": false,
+        "topDocuments": [],
+        "independentComparison": true,
+        "limitedComparison": true
+      }
+    ]
+  },
+  "finalCli": {
+    "networkRequests": 0,
+    "checks": [
+      {
+        "name": "asyncio-timeout",
+        "pid": 1306248,
+        "exitCode": 0,
+        "expectedExitCode": 0,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "timedOut": false,
+        "signals": [],
+        "elapsedSeconds": 0.21454750932753086,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "totalMatches": 25,
+        "passed": true,
+        "errors": []
+      },
+      {
+        "name": "json-load",
+        "pid": 1306259,
+        "exitCode": 0,
+        "expectedExitCode": 0,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "timedOut": false,
+        "signals": [],
+        "elapsedSeconds": 0.16445601731538773,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "totalMatches": 26,
+        "passed": true,
+        "errors": []
+      },
+      {
+        "name": "json-loads-literal-miss",
+        "pid": 1306270,
+        "exitCode": 0,
+        "expectedExitCode": 0,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "timedOut": false,
+        "signals": [],
+        "elapsedSeconds": 0.21459899097681046,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "totalMatches": 0,
+        "passed": true,
+        "errors": []
+      },
+      {
+        "name": "default-limit-refusal",
+        "pid": 1306303,
+        "exitCode": 1,
+        "expectedExitCode": 1,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "timedOut": false,
+        "signals": [],
+        "elapsedSeconds": 0.06427754648029804,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "passed": true,
+        "errors": []
+      },
+      {
+        "name": "hash-mismatch-refusal",
+        "pid": 1306314,
+        "exitCode": 1,
+        "expectedExitCode": 1,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "timedOut": false,
+        "signals": [],
+        "elapsedSeconds": 0.0642346553504467,
+        "homeEntries": [],
+        "tmpEntries": [],
+        "passed": true,
+        "errors": []
+      }
+    ]
+  },
+  "lifecycle": {
+    "priorAsyncDestroyCandidate": {
+      "execution": {
+        "label": "red01",
+        "pid": 1306876,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.6653744354844093,
+        "passedTests": 131,
+        "failedTests": 2,
+        "files": 1,
+        "homeEntries": [],
+        "tmpEntries": []
+      },
+      "failures": [
+        "retains error protection through asynchronous destruction (abort first false)",
+        "retains error protection through asynchronous destruction (abort first true)"
+      ]
+    },
+    "anonymousPipe": {
+      "before": {
+        "at": "2026-09-17T05:47:03.891674+00:00",
+        "expected": "blocked",
+        "matched": true,
+        "observation": {
+          "atElapsedSeconds": 32.000502951443195,
+          "exitCode": null,
+          "childAlive": true,
+          "groupAlive": true,
+          "stderr": "Research source index failed; no network fallback was attempted.\n"
+        },
+        "pid": 1301770,
+        "exitCode": 1,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "signals": [],
+        "peerReleasedAfterObservation": true,
+        "elapsedSeconds": 32.01651622541249,
+        "guard": {
+          "attempts": []
+        },
+        "homeEntries": [],
+        "tmpEntries": [],
+        "passed": true
+      },
+      "after": {
+        "at": "2026-09-17T05:53:00.139505+00:00",
+        "expected": "closed",
+        "matched": true,
+        "observation": {
+          "atElapsedSeconds": 30.103626994416118,
+          "exitCode": 1,
+          "childAlive": false,
+          "groupAlive": false,
+          "stderr": "Research source index failed; no network fallback was attempted.\n"
+        },
+        "pid": 1306372,
+        "exitCode": 1,
+        "childAbsent": true,
+        "groupAbsent": true,
+        "signals": [],
+        "peerReleasedAfterObservation": true,
+        "elapsedSeconds": 30.10403608903289,
+        "guard": {
+          "attempts": []
+        },
+        "homeEntries": [],
+        "tmpEntries": [],
+        "passed": true
+      }
+    }
+  },
+  "sourceConfiguration": {
+    "assets": [
+      {
+        "id": "01-options",
+        "url": "https://docs.python.org/3/_static/documentation_options.js?v=f83f2336",
+        "body": "asset/live/01-options/body.asset",
+        "completeCapture": true,
+        "response": {
+          "url": "https://docs.python.org/3/_static/documentation_options.js?redacted",
+          "status": 200,
+          "receivedAt": "2026-09-17T05:24:16.502Z",
+          "headers": {
+            "content-type": [
+              "application/javascript"
+            ],
+            "content-length": [
+              "221"
+            ],
+            "content-encoding": [
+              "gzip"
+            ]
+          },
+          "headerCapture": {
+            "kind": "selected-response-headers-v1",
+            "partial": true,
+            "omitted": []
+          },
+          "decodedBytes": 330,
+          "encodedBytes": 221,
+          "bodySha256": "124506a923ffec7f5ab78bc05aef64f327162b4a97ef1672c8a77b8994dda021",
+          "hashScope": "transport-decoded-body-before-loader",
+          "redirects": 0,
+          "elapsedMs": 24.304135000000002
+        },
+        "nativeOutcome": "failure",
+        "nativeFailure": {
+          "category": "unsupported",
+          "stage": "loader"
+        },
+        "exactWireRequest": {
+          "at": "2026-09-17T05:24:16.489Z",
+          "elapsedMs": 130.067596,
+          "event": "request-start",
+          "ordinal": 1,
+          "method": "GET",
+          "host": "151.101.64.223",
+          "path": "/3/_static/documentation_options.js?v=f83f2336",
+          "protocol": "https:",
+          "authority": "docs.python.org",
+          "credentialHeaders": [],
+          "socketPresent": true,
+          "writableFinished": false,
+          "destroyed": false,
+          "closed": false
+        },
+        "tlsAuthorized": true,
+        "requestClosed": true,
+        "socketClosed": true
+      },
+      {
+        "id": "02-searchtools",
+        "url": "https://docs.python.org/3/_static/searchtools.js",
+        "body": "asset/live/02-searchtools/body.asset",
+        "completeCapture": true,
+        "response": {
+          "url": "https://docs.python.org/3/_static/searchtools.js",
+          "status": 200,
+          "receivedAt": "2026-09-17T05:24:18.975Z",
+          "headers": {
+            "content-type": [
+              "application/javascript"
+            ],
+            "content-length": [
+              "6690"
+            ],
+            "content-encoding": [
+              "gzip"
+            ]
+          },
+          "headerCapture": {
+            "kind": "selected-response-headers-v1",
+            "partial": true,
+            "omitted": []
+          },
+          "decodedBytes": 21782,
+          "encodedBytes": 6690,
+          "bodySha256": "371b49c7f094b525244e2a59d7809a6b946fc1c8791201d10dda1dd191133bb7",
+          "hashScope": "transport-decoded-body-before-loader",
+          "redirects": 0,
+          "elapsedMs": 22.25002699999999
+        },
+        "nativeOutcome": "failure",
+        "nativeFailure": {
+          "category": "unsupported",
+          "stage": "loader"
+        },
+        "exactWireRequest": {
+          "at": "2026-09-17T05:24:18.964Z",
+          "elapsedMs": 126.177153,
+          "event": "request-start",
+          "ordinal": 1,
+          "method": "GET",
+          "host": "151.101.64.223",
+          "path": "/3/_static/searchtools.js",
+          "protocol": "https:",
+          "authority": "docs.python.org",
+          "credentialHeaders": [],
+          "socketPresent": true,
+          "writableFinished": false,
+          "destroyed": false,
+          "closed": false
+        },
+        "tlsAuthorized": true,
+        "requestClosed": true,
+        "socketClosed": true
+      }
+    ],
+    "liveRequests": 2,
+    "allSafetyPassed": true,
+    "closedChildGroups": 4,
+    "layout": {
+      "establishedFromCapturedSource": true,
+      "builder": "html",
+      "fileSuffix": ".html",
+      "linkSuffix": ".html",
+      "sourceLinkSuffix": ".txt",
+      "hasSource": false,
+      "contentRootFromSavedHtml": "./",
+      "documentBase": "https://docs.python.org/3/search.html?q=asyncio+timeout",
+      "baseTagPresent": false,
+      "requestExpression": "contentRoot + docName + docFileSuffix",
+      "linkExpression": "docName + docLinkSuffix + anchor",
+      "resultDocnameSource": "Search._index.docnames[file] (or docnames[match[0]] for objects)",
+      "filenamesNotUsedAsHref": true,
+      "conclusion": "For ordinary relative docnames in this captured html configuration, links append .html and the result anchor, resolved relative to the saved search document base. Summary request paths use the saved ./ content root and FILE_SUFFIX. No concrete index-derived document URL was invented or requested.",
+      "alternateBuilder": "dirhtml has a distinct directory/index normalization branch; it is not selected by this captured html configuration.",
+      "summaryFetchNotPerformed": true,
+      "limitations": "This is static dataflow evidence, not execution equivalence, a fetched-document existence check, a safe-URL validator for arbitrary docnames, or an atomic HTML/index/config deployment snapshot."
+    },
+    "matchingDifferences": [
+      "Default splitQuery splits on characters outside Unicode Letter/Number/underscore/Emoji_Presentation, drops empty tokens, and can be overridden; query terms are trimmed/lowercased.",
+      "Full-text terms skip the external stopwords list and pure numeric tokens, then call an external Stemmer.stemWord. The actual stemmer implementation, stopwords and any tokenizer override were not acquired, so exact stemming parity is not established.",
+      "The default splitter removes hyphens, while the later stemmed-word branch recognizes a leading minus for exclusion. Do not infer usable negative-query syntax without the actual language/runtime configuration.",
+      "terms and titleterms both use own-property exact keys; for words longer than two characters, each dictionary lacking that exact key additionally scans its keys for escaped, unanchored substring matches. Exact stored-term lookup alone omits this fallback and the separate title dictionary.",
+      "Full-text membership accepts wordList length equal to all searchTerms or equal to the count of searchTerms longer than two characters. This is the observed count condition, not a claim of strict Boolean AND semantics.",
+      "Full-text per-document score is the maximum stored score across matched words. Exclusion uses exact term postings; its literal loop uses break on an excluded match, rather than continue. No exclusion behavior was executed.",
+      "Object matches use lowercased full-name substring matching, dotted-name exact/partial score boosts, object priorities, and require other object tokens in the combined prefix/name/type/title text. Object tokens are not stemmed or filtered like full-text terms.",
+      "Additional alltitle and indexentry substring groups require query length at least half the candidate length. Titles are lowercased/trimmed explicitly; indexentry keys are used as stored. Main/non-main groups, score/title ordering, optional Scorer override and deduplication further differ from a term-key lookup."
+    ]
+  },
+  "gitInvestigation": {
+    "url": "https://git-scm.com/pagefind/pagefind-ui.js",
+    "response": {
+      "url": "https://git-scm.com/pagefind/pagefind-ui.js",
+      "status": 200,
+      "receivedAt": "2026-09-17T05:07:01.535Z",
+      "headers": {
+        "content-type": [
+          "application/javascript; charset=utf-8"
+        ],
+        "content-length": [
+          "30220"
+        ],
+        "content-encoding": [
+          "gzip"
+        ]
+      },
+      "headerCapture": {
+        "kind": "selected-response-headers-v1",
+        "partial": true,
+        "omitted": []
+      },
+      "decodedBytes": 119987,
+      "encodedBytes": 30220,
+      "bodySha256": "2efa93f2e80a199ca742a69bd4cfffabc5c591ebe7763f64f7c655fd00d2209f",
+      "hashScope": "transport-decoded-body-before-loader",
+      "redirects": 0,
+      "elapsedMs": 38.457076000000015
+    },
+    "nativeOutcome": "failure",
+    "nativeFailure": {
+      "category": "unsupported",
+      "stage": "loader"
+    },
+    "liveRequests": 1,
+    "successfulSearches": 0,
+    "closedChildGroups": 2,
+    "nextStep": "Separately scope passive acquisition of the conditional module reference only if its source-derived base assumptions are admitted; retain URL/base provenance. Inspect that module before choosing any data format, shard paths or execution integration. No follow-up is authorized in this lane."
+  },
+  "documents": {
+    "liveRequests": 2,
+    "requestStartGapSeconds": 2.843,
+    "offlineProofsPassed": 2,
+    "allSafetyPassed": true,
+    "closedChildGroups": 4,
+    "closedTlsRequests": 2,
+    "exactCodePayloads": 49,
+    "eligibleParagraphsMatched": 218,
+    "eligibleProseCharactersMatched": 40586,
+    "entries": [
+      {
+        "id": "01-asyncio-task",
+        "url": "https://docs.python.org/3/library/asyncio-task.html",
+        "startedAt": "2026-09-17T05:38:12.230Z",
+        "finishedAt": "2026-09-17T05:38:12.558Z",
+        "requestStart": {
+          "at": "2026-09-17T05:38:12.245Z",
+          "elapsedMs": 126.213894,
+          "event": "request-start",
+          "ordinal": 1,
+          "method": "GET",
+          "host": "151.101.64.223",
+          "path": "/3/library/asyncio-task.html",
+          "protocol": "https:",
+          "authority": "docs.python.org",
+          "credentialHeaders": [],
+          "socketPresent": true,
+          "writableFinished": false,
+          "destroyed": false,
+          "closed": false
+        },
+        "response": {
+          "url": "https://docs.python.org/3/library/asyncio-task.html",
+          "status": 200,
+          "receivedAt": "2026-09-17T05:38:12.256Z",
+          "headers": {
+            "content-type": [
+              "text/html"
+            ],
+            "content-length": [
+              "25543"
+            ],
+            "content-encoding": [
+              "gzip"
+            ]
+          },
+          "headerCapture": {
+            "kind": "selected-response-headers-v1",
+            "partial": true,
+            "omitted": []
+          },
+          "decodedBytes": 177603,
+          "encodedBytes": 25543,
+          "bodySha256": "5bd867b44aec83df4236c39f915261fc6505f71999df53cd97d0cbd0288bb7a6",
+          "hashScope": "transport-decoded-body-before-loader",
+          "redirects": 0,
+          "elapsedMs": 22.837004000000007
+        },
+        "metrics": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 1,
+          "redirects": 0,
+          "encodedBytes": 25543,
+          "decodedBytes": 177603,
+          "active": 0,
+          "closed": true
+        },
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 177444,
+          "textCodeUnits": 48513,
+          "outputCodeUnits": 170136,
+          "tokens": 13086,
+          "omittedTokens": 70,
+          "omittedSubtrees": {
+            "meta": 15,
+            "link": 14,
+            "script": 13,
+            "style": 1,
+            "input": 7,
+            "svg": 1
+          },
+          "ignoredAttributes": 59,
+          "unwrappedElements": 16,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 1386,
+            "workUnits": 20028,
+            "steps": 14,
+            "elements": 14,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8",
+          "fallbackEncoding": "utf-8"
+        },
+        "contentSelection": {
+          "policy": "main-content-v3",
+          "selected": "main",
+          "reason": "unique-main",
+          "mainCandidates": 1,
+          "articleCandidates": 0,
+          "scannedNodes": 8858,
+          "outsideArticleContent": true,
+          "mainArticleCandidates": 0,
+          "outsideMainArticleContent": true
+        },
+        "outputLimit": null,
+        "nativeOutcome": "extracted-unverified",
+        "nativePartial": true,
+        "nativeContentSuccess": null,
+        "bodyPath": "document/live/01-asyncio-task/body.html",
+        "markdownPath": "document/live/01-asyncio-task/extracted.md",
+        "markdownSha256": "321ee9572698ca434ea55a29f089b675b662ed5d769a501ae8aaf23013645ec1",
+        "markdownBytes": 65798,
+        "captureComplete": true,
+        "safetyPassed": true,
+        "substantiveContentPassedWithinReviewScope": true,
+        "sourceCodeBlocks": 34,
+        "exactCodeBlocks": 34,
+        "eligibleParagraphs": 139,
+        "matchedParagraphs": 139,
+        "eligibleCharacters": 24548,
+        "matchedCharacters": 24548,
+        "shortParagraphsExcluded": 133,
+        "blockedParagraphsExcluded": 15,
+        "reviewScope": "All p descendants of the unique source role=main/main, not in source-hidden or script/style/template/noscript/nav/input/svg ancestry, with >=80 whitespace-normalized characters. Code fences removed from prose matching. Excludes headings, dt/dd-only text, lists without p, tables outside p, short paragraphs, navigation and rendered/CSS visibility."
+      },
+      {
+        "id": "02-json",
+        "url": "https://docs.python.org/3/library/json.html",
+        "startedAt": "2026-09-17T05:38:15.074Z",
+        "finishedAt": "2026-09-17T05:38:15.302Z",
+        "requestStart": {
+          "at": "2026-09-17T05:38:15.088Z",
+          "elapsedMs": 125.75761,
+          "event": "request-start",
+          "ordinal": 1,
+          "method": "GET",
+          "host": "151.101.64.223",
+          "path": "/3/library/json.html",
+          "protocol": "https:",
+          "authority": "docs.python.org",
+          "credentialHeaders": [],
+          "socketPresent": true,
+          "writableFinished": false,
+          "destroyed": false,
+          "closed": false
+        },
+        "response": {
+          "url": "https://docs.python.org/3/library/json.html",
+          "status": 200,
+          "receivedAt": "2026-09-17T05:38:15.099Z",
+          "headers": {
+            "content-type": [
+              "text/html"
+            ],
+            "content-length": [
+              "18089"
+            ],
+            "content-encoding": [
+              "gzip"
+            ]
+          },
+          "headerCapture": {
+            "kind": "selected-response-headers-v1",
+            "partial": true,
+            "omitted": []
+          },
+          "decodedBytes": 112700,
+          "encodedBytes": 18089,
+          "bodySha256": "cd73fbcc5dec5b9ec362331d26eb044a31439c60e2300f89724d5d7e79710ec6",
+          "hashScope": "transport-decoded-body-before-loader",
+          "redirects": 0,
+          "elapsedMs": 21.57049400000001
+        },
+        "metrics": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 1,
+          "redirects": 0,
+          "encodedBytes": 18089,
+          "decodedBytes": 112700,
+          "active": 0,
+          "closed": true
+        },
+        "reader": {
+          "profile": "native-semantic-reader-v1",
+          "partial": true,
+          "scripting": false,
+          "styling": false,
+          "hiddenContentSemantics": "source-attributes-and-inline-display",
+          "visibilityPolicy": "source-hidden-inline-v1",
+          "sourceHiddenSubtrees": 0,
+          "sourceCodeUnits": 112551,
+          "textCodeUnits": 28550,
+          "outputCodeUnits": 105546,
+          "tokens": 7933,
+          "omittedTokens": 70,
+          "omittedSubtrees": {
+            "meta": 15,
+            "link": 14,
+            "script": 13,
+            "style": 1,
+            "input": 7,
+            "svg": 1
+          },
+          "ignoredAttributes": 55,
+          "unwrappedElements": 16,
+          "tokenizerIssues": 0,
+          "rawTextPolicy": "separate-omitted-raw-v1",
+          "omittedRaw": {
+            "codeUnits": 1370,
+            "workUnits": 19948,
+            "steps": 14,
+            "elements": 14,
+            "maxWorkUnits": 32000000,
+            "maxWindowCodeUnits": 65536
+          },
+          "encoding": "utf-8",
+          "fallbackEncoding": "utf-8"
+        },
+        "contentSelection": {
+          "policy": "main-content-v3",
+          "selected": "main",
+          "reason": "unique-main",
+          "mainCandidates": 1,
+          "articleCandidates": 0,
+          "scannedNodes": 5251,
+          "outsideArticleContent": true,
+          "mainArticleCandidates": 0,
+          "outsideMainArticleContent": true
+        },
+        "outputLimit": null,
+        "nativeOutcome": "extracted-unverified",
+        "nativePartial": true,
+        "nativeContentSuccess": null,
+        "bodyPath": "document/live/02-json/body.html",
+        "markdownPath": "document/live/02-json/extracted.md",
+        "markdownSha256": "91e21f48711efd8785ef997d0d2445d08a86d133340f290ee792699d3d6b23bd",
+        "markdownBytes": 36312,
+        "captureComplete": true,
+        "safetyPassed": true,
+        "substantiveContentPassedWithinReviewScope": true,
+        "sourceCodeBlocks": 15,
+        "exactCodeBlocks": 15,
+        "eligibleParagraphs": 79,
+        "matchedParagraphs": 79,
+        "eligibleCharacters": 16038,
+        "matchedCharacters": 16038,
+        "shortParagraphsExcluded": 99,
+        "blockedParagraphsExcluded": 0,
+        "reviewScope": "All p descendants of the unique source role=main/main, not in source-hidden or script/style/template/noscript/nav/input/svg ancestry, with >=80 whitespace-normalized characters. Code fences removed from prose matching. Excludes headings, dt/dd-only text, lists without p, tables outside p, short paragraphs, navigation and rendered/CSS visibility."
+      }
+    ]
+  },
+  "evidence": {
+    "privateLane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-index-search-september17",
+    "analysis": {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-index-search-september17/ANALYSIS.json",
+      "sha256": "da410a93226e461eddbb3d9f8f705477e11fa387079dd1a77c72ec3711d28a70"
+    },
+    "verifiedExternalArtifacts": 241,
+    "sealedExternalLanes": [
+      {
+        "name": "git-search-ui-september17",
+        "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/git-search-ui-september17",
+        "seal": {
+          "at": "2026-09-17T05:09:44.685195+00:00",
+          "files": 45,
+          "manifestSha256": "7036fac98b5e81d198570e7890d5eb02922b4d7640e1255343fbab418bee04b7",
+          "liveRequests": 1,
+          "futureRequestsPlanned": 0,
+          "completeAcquiredAssets": 1,
+          "closedChildGroups": 2,
+          "successfulSearches": 0,
+          "scope": "Complete Git UI capture; expected native reader MIME refusal; passive source inspection only. Safety/lifecycle passed."
+        }
+      },
+      {
+        "name": "python-search-config-september17",
+        "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/python-search-config-september17",
+        "seal": {
+          "at": "2026-09-17T05:27:52.212860+00:00",
+          "files": 65,
+          "manifestSha256": "e63119b5b8f12be9d74c5e41ebf1e3ac5bc0ef92a716d109f8a6a00cb099e291",
+          "liveRequests": 2,
+          "futureRequestsPlanned": 0,
+          "completeAcquiredAssets": 2,
+          "closedChildGroups": 4,
+          "successfulSearches": 0,
+          "scope": "Two complete Python configuration/searchtools captures; expected reader MIME refusals; passive inspection only. Safety/lifecycle passed."
+        }
+      },
+      {
+        "name": "source-index-documents-september17",
+        "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-index-documents-september17",
+        "seal": {
+          "at": "2026-09-17T05:45:13.482405+00:00",
+          "files": 83,
+          "manifestSha256": "a293ab4f644df741d4ebb525c3a41c0e3bcdefedb0e276c251a2545bcd927b63",
+          "actualLiveRequests": 2,
+          "futureRequestsPlanned": 0,
+          "closedChildGroups": 4,
+          "completeCapturedDocuments": 2,
+          "exactCodePayloads": 49,
+          "eligibleParagraphsMatched": 218,
+          "scope": "Two bounded audited-query/source-layout document workflows; source-to-Markdown review only, not factual truth or full search acceptance"
+        }
+      }
+    ],
+    "longIndexLane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/source-search-data-september17",
+    "historicalReportsRewritten": false
+  },
+  "limits": {
+    "fullSiteSearch": false,
+    "renderedUiAcceptance": false,
+    "actualSafeJsAcceptance": false,
+    "credentialPasskeyAcceptance": false,
+    "generalPerformanceImprovement": false,
+    "reducedBlockingRate": false,
+    "captchaSolution": false,
+    "historicalHundredPageVerdictsChanged": false,
+    "goalComplete": false
+  },
+  "preservation": {
+    "tracked": 42,
+    "untracked": 697
+  }
+}

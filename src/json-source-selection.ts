@@ -8,6 +8,27 @@ export const jsonSourceSelectionLimits = Object.freeze({
 	maxDepth: 128,
 });
 
+export const jsonSourceSpanProfiles = Object.freeze({
+	default: jsonSourceSelectionLimits,
+	"long-v1": Object.freeze({
+		...jsonSourceSelectionLimits,
+		maxSourceCodeUnits: 4_000_000,
+		maxNodes: 1_000_000,
+	}),
+});
+
+export type JsonSourceSelectionProfile = keyof typeof jsonSourceSpanProfiles;
+
+export interface JsonSourceSpanOptions {
+	readonly profile?: JsonSourceSelectionProfile;
+	readonly checkpoint?: () => void;
+}
+
+interface PointerNode {
+	selectionIndex?: number;
+	children: Map<string, PointerNode>;
+}
+
 export interface JsonSourceSelection {
 	readonly kind: "json-source-selection-v1";
 	readonly method: "json-pointer";
@@ -75,6 +96,33 @@ export function selectJsonSource(
 	pointer: unknown,
 	checkpoint?: () => void,
 ): { text: string; metadata: JsonSourceSelection } {
+	const metadata = selectJsonSourceSpans(source, [pointer], { checkpoint })
+		.selections[0];
+	if (!metadata) {
+		throw new AgentBrowserError(
+			"not-found",
+			"JSON pointer target was not found",
+		);
+	}
+	return { text: source.slice(metadata.start, metadata.end), metadata };
+}
+
+export function selectJsonSourceSpans(
+	source: string,
+	pointers: readonly unknown[],
+	options: JsonSourceSpanOptions = {},
+): {
+	readonly profile: JsonSourceSelectionProfile;
+	readonly selections: readonly (JsonSourceSelection | null)[];
+} {
+	if (
+		options === null ||
+		typeof options !== "object" ||
+		Array.isArray(options)
+	) {
+		throw new AgentBrowserError("invalid-input", "Invalid JSON span options");
+	}
+	const { checkpoint, profile = "default" } = options;
 	if (checkpoint !== undefined && typeof checkpoint !== "function") {
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -82,37 +130,60 @@ export function selectJsonSource(
 		);
 	}
 	checkpoint?.();
+	if (profile !== "default" && profile !== "long-v1") {
+		throw new AgentBrowserError("invalid-input", "Invalid JSON source profile");
+	}
+	const limits = jsonSourceSpanProfiles[profile];
 	if (typeof source !== "string") {
 		throw new AgentBrowserError(
 			"invalid-input",
 			"JSON source must be a string",
 		);
 	}
-	if (source.length > jsonSourceSelectionLimits.maxSourceCodeUnits) {
+	if (source.length > limits.maxSourceCodeUnits) {
 		resourceLimit("JSON source exceeds the code-unit limit");
 	}
-	const validatedPointer = validateJsonSourcePointer(pointer);
-	const segments =
-		validatedPointer === ""
-			? []
-			: validatedPointer
-					.slice(1)
-					.split("/")
-					.map((segment) =>
-						segment.replace(/~[01]/g, (escaped) =>
-							escaped === "~0" ? "~" : "/",
-						),
-					);
+	if (!Array.isArray(pointers) || pointers.length === 0) {
+		throw new AgentBrowserError(
+			"invalid-input",
+			"JSON pointers must be a nonempty array",
+		);
+	}
+	if (pointers.length > 32) {
+		resourceLimit("JSON pointer count exceeds the limit");
+	}
+	const validatedPointers = Array.from(pointers, validateJsonSourcePointer);
+	const root: PointerNode = { children: new Map() };
+	for (const [selectionIndex, pointer] of validatedPointers.entries()) {
+		let node = root;
+		const segments = pointer === "" ? [] : pointer.slice(1).split("/");
+		for (const segment of segments) {
+			const key = segment.replace(/~[01]/g, (escaped) =>
+				escaped === "~0" ? "~" : "/",
+			);
+			let child = node.children.get(key);
+			if (!child) {
+				child = { children: new Map() };
+				node.children.set(key, child);
+			}
+			node = child;
+		}
+		if (node.selectionIndex !== undefined) {
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Duplicate JSON pointers are not allowed",
+			);
+		}
+		node.selectionIndex = selectionIndex;
+	}
 	let position = 0;
 	let nodes = 0;
 	let nextCheckpoint = 1024;
-	let selection:
-		| {
-				start: number;
-				end: number;
-				valueKind: JsonSourceSelection["valueKind"];
-		  }
-		| undefined;
+	const selections: ({
+		start: number;
+		end: number;
+		valueKind: JsonSourceSelection["valueKind"];
+	} | null)[] = validatedPointers.map(() => null);
 
 	function scanCheckpoint() {
 		if (position >= nextCheckpoint) {
@@ -190,9 +261,9 @@ export function selectJsonSource(
 		}
 	}
 
-	function value(depth: number, pathPosition: number) {
+	function value(depth: number, pointerNode: PointerNode | undefined) {
 		checkpoint?.();
-		if (++nodes > jsonSourceSelectionLimits.maxNodes) {
+		if (++nodes > limits.maxNodes) {
 			resourceLimit("JSON source exceeds the node limit");
 		}
 		whitespace();
@@ -200,7 +271,7 @@ export function selectJsonSource(
 		const first = source[position];
 		let valueKind: JsonSourceSelection["valueKind"];
 		if (first === "{" || first === "[") {
-			if (depth >= jsonSourceSelectionLimits.maxDepth) {
+			if (depth >= limits.maxDepth) {
 				resourceLimit("JSON source exceeds the nesting-depth limit");
 			}
 			valueKind = first === "{" ? "object" : "array";
@@ -212,7 +283,7 @@ export function selectJsonSource(
 				let index = 0;
 				while (true) {
 					checkpoint?.();
-					let childPathPosition = -1;
+					let childPointerNode: PointerNode | undefined;
 					if (keys) {
 						const keyStart = position;
 						stringLiteral();
@@ -225,18 +296,13 @@ export function selectJsonSource(
 							);
 						}
 						keys.add(key);
-						if (pathPosition >= 0 && segments[pathPosition] === key) {
-							childPathPosition = pathPosition + 1;
-						}
+						childPointerNode = pointerNode?.children.get(key);
 						whitespace();
 						if (source[position++] !== ":") invalidJson();
-					} else if (
-						pathPosition >= 0 &&
-						segments[pathPosition] === String(index)
-					) {
-						childPathPosition = pathPosition + 1;
+					} else {
+						childPointerNode = pointerNode?.children.get(String(index));
 					}
-					value(depth + 1, childPathPosition);
+					value(depth + 1, childPointerNode);
 					index++;
 					whitespace();
 					if (source[position] === closing) break;
@@ -263,32 +329,38 @@ export function selectJsonSource(
 		} else {
 			invalidJson();
 		}
-		if (pathPosition === segments.length) {
-			selection = { start, end: position, valueKind };
+		if (pointerNode?.selectionIndex !== undefined) {
+			selections[pointerNode.selectionIndex] = {
+				start,
+				end: position,
+				valueKind,
+			};
 		}
 	}
 
-	value(0, 0);
+	value(0, root);
 	whitespace();
 	if (position !== source.length) invalidJson();
 	checkpoint?.();
-	if (!selection) {
-		throw new AgentBrowserError(
-			"not-found",
-			"JSON pointer target was not found",
-		);
-	}
-	const metadata: JsonSourceSelection = Object.freeze({
-		kind: "json-source-selection-v1",
-		method: "json-pointer",
-		pointer: validatedPointer,
-		start: selection.start,
-		end: selection.end,
-		sourceCodeUnits: source.length,
-		selectedCodeUnits: selection.end - selection.start,
-		offsetBasis: "document-text-utf16",
-		valueKind: selection.valueKind,
-		duplicateMembers: "rejected",
+	return Object.freeze({
+		profile,
+		selections: Object.freeze(
+			selections.map((selection, index): JsonSourceSelection | null =>
+				selection === null
+					? null
+					: Object.freeze({
+							kind: "json-source-selection-v1",
+							method: "json-pointer",
+							pointer: validatedPointers[index],
+							start: selection.start,
+							end: selection.end,
+							sourceCodeUnits: source.length,
+							selectedCodeUnits: selection.end - selection.start,
+							offsetBasis: "document-text-utf16",
+							valueKind: selection.valueKind,
+							duplicateMembers: "rejected",
+						}),
+			),
+		),
 	});
-	return { text: source.slice(selection.start, selection.end), metadata };
 }

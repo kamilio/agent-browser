@@ -989,5 +989,8 @@
   "src/research-service-backoff.test.ts",
   "src/node-service-backoff.test.ts",
   "src/research-service-backoff-admission.test.ts",
-  "src/node-rate-limit-observation.test.ts"
+  "src/node-rate-limit-observation.test.ts",
+  "src/json-source-spans.test.ts",
+  "src/source-search-index.test.ts",
+  "src/research-source-index-cli.test.ts"
 ]

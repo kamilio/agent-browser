@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Query source indexes and follow matching documents without page scripts
+
+- New bounded multi-pointer JSON span scanner validates once without building a
+  tree. Legacy single-pointer defaults/metadata remain; explicit long-v1 supports
+  4M units/1M values. Inert Search.setIndex source lookup and offline pinned-input
+  CLI return literal term intersections, not full Sphinx/Pagefind search parity.
+- Complete Python index capture has538 documents/3927697 bytes; earlier2MB failure
+  is retained. Five independent reference-query checks and five final compiled
+  CLI checks pass offline. asyncio+timeout gives25 matches, json+load26, while
+  json+loads gives0 without stemming. No guessed URLs or downloaded JS execution.
+- Captured Python configuration establishes ordinary docname -> .html layout.
+  Two native linked-by-index document GETs return200; independent review preserves
+  49/49 main code payloads and218/218 eligible paragraphs. Native outcomes remain
+  extracted-unverified; no rendered/factual/general search claim. Git UI captured,
+  but actual Pagefind data and search remain unresolved. Historical10033/67 stays.
+- Final release07 passes1696/0 in21 explicit native files,320 new cases; build,
+  selected types/format/lint pass. Canonical994 retains22 missing files. All2368
+  release01 compiled files used for document retrieval match final release07.
+- Review catches and fixes CLI blocked-stdout exit and late-write-error guards,
+  including asynchronous destruction. Two new async-destroy cases fail the prior
+  candidate. Isolated anonymous-pipe check reproduces old32sec hang and verifies
+  final exit at30.104sec without peer release; no socket/TTY/credentials/SDK.
+- See SOURCE-INDEX-SEARCH.md and reports/source-index-search-2026-09-17.md/JSON.
+  Continue real task/site coverage, natural-language search/runtime support,
+  performance/access/CAPTCHA, actualSafeJS, credentials/passkeys/devices/TTY,
+  missing tests and research. Audit other source CLIs for cancelled-output issues.
+  Overall browser goal remains active; no new full100-site crawl or full-suite pass.
+
+
 ### Retain rate-limit headers and test deeper content/search assets
 
 - Opt-in native captureRateLimit/rateLimit retains first429 status before body
