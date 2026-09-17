@@ -1,0 +1,431 @@
+{
+  "at": "2026-09-17T14:41:59.674Z",
+  "baseline": "0138b240cbb4e9c3081770f4da575aedb559811d",
+  "runtime": {
+    "root": "/tmp/agent-browser-heading-contract-QLhK4R/candidate",
+    "baseline": "0138b240cbb4e9c3081770f4da575aedb559811d",
+    "manifests": {
+      "SOURCE": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/native-heading-contract-september17/SOURCE-release01.json",
+        "sha256": "51653904be33f841e9c69129f1d9fed3fbd8daa118b253da3353d73b57486757",
+        "base": "/tmp/agent-browser-heading-contract-QLhK4R/candidate",
+        "count": 1621
+      },
+      "COMPILED": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/native-heading-contract-september17/COMPILED-release01.json",
+        "sha256": "27d5c58e81267947a31d1de79c18c606ecac32ce5320108adec2628feaa0ba39",
+        "base": "/tmp/agent-browser-heading-contract-QLhK4R/candidate/dist",
+        "count": 2404
+      }
+    },
+    "native": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/native-heading-contract-september17/native-release01/EXECUTION.json",
+    "quality": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/native-heading-contract-september17/CHECK-release01.json"
+  },
+  "websites": [
+    {
+      "target": "target-watch",
+      "url": "https://www.target.com/p/apple-watch-series-12/-/A-1013556561",
+      "receivedAt": "2026-09-17T14:06:19.363Z",
+      "status": 200,
+      "receipt": {
+        "bytes": 1112748,
+        "sha256": "1c6d329fbaa0c81c2916c7917ef5688919d2005092077f0ec61201a438793c3c",
+        "disposition": "complete"
+      },
+      "body": {
+        "bytes": 807116,
+        "sha256": "a74c61bc407df99de2ddca28be889119f44b2fefea3f39c5e7705849c6e1c164"
+      },
+      "markdown": {
+        "bytes": 3398,
+        "sha256": "2b79a4d3529de75c8111ef30502125381f9a70c72b8e722910097203ceb7cbff",
+        "bounded": true
+      },
+      "outcome": "extracted-unverified",
+      "classification": null,
+      "execution": {
+        "mode": "live",
+        "target": {
+          "id": "target-watch",
+          "url": "https://www.target.com/p/apple-watch-series-12/-/A-1013556561"
+        },
+        "pid": 1789700,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 1.6936892792582512,
+        "wireRequests": 1,
+        "safetyPassed": true,
+        "capturePassed": true,
+        "contentAvailable": true,
+        "passed": true,
+        "errors": [],
+        "workflowFailures": []
+      },
+      "scriptEvaluationRequested": false,
+      "sdkRequested": false
+    },
+    {
+      "target": "gearlab-coolers",
+      "url": "https://www.outdoorgearlab.com/topics/camping-and-hiking/best-soft-cooler",
+      "receivedAt": "2026-09-17T14:06:19.485Z",
+      "status": 200,
+      "receipt": {
+        "bytes": 757814,
+        "sha256": "141847c89be505ef79115731e43f2948b190ae4c0923ccb983bbd9a4a8997918",
+        "disposition": "complete"
+      },
+      "body": {
+        "bytes": 464490,
+        "sha256": "2235f262267cb1b0dd9a28786c1ffde4db3cdb5bdec4ea54a835454d08643855"
+      },
+      "markdown": {
+        "bytes": 125300,
+        "sha256": "00b8882cc362e867f0f7376d11b2e3a425314028568448f3c45cda0c2db2b4f8",
+        "bounded": true
+      },
+      "outcome": "extracted-unverified",
+      "classification": null,
+      "execution": {
+        "mode": "live",
+        "target": {
+          "id": "gearlab-coolers",
+          "url": "https://www.outdoorgearlab.com/topics/camping-and-hiking/best-soft-cooler"
+        },
+        "pid": 1789707,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 1.8437138963490725,
+        "wireRequests": 1,
+        "safetyPassed": true,
+        "capturePassed": true,
+        "contentAvailable": true,
+        "passed": true,
+        "errors": [],
+        "workflowFailures": []
+      },
+      "scriptEvaluationRequested": false,
+      "sdkRequested": false
+    }
+  ],
+  "markdownModes": [
+    {
+      "id": "default",
+      "bytes": 125300,
+      "sha256": "00b8882cc362e867f0f7376d11b2e3a425314028568448f3c45cda0c2db2b4f8",
+      "selection": {
+        "method": "css-selector",
+        "matches": 1
+      },
+      "tableRows": false,
+      "compactTables": false
+    },
+    {
+      "id": "rows",
+      "bytes": 114036,
+      "sha256": "967ec9102be049a4d405c03079e366ddd99c24f7e48576529ec14474d29fd8fd",
+      "selection": {
+        "method": "css-selector",
+        "matches": 1
+      },
+      "tableRows": true,
+      "compactTables": false
+    },
+    {
+      "id": "compact",
+      "bytes": 104526,
+      "sha256": "3aeda2185e7b80f4464e764a2d33f0c33a60ef4a07b22a52207504d70149180d",
+      "selection": {
+        "method": "css-selector",
+        "matches": 1
+      },
+      "tableRows": false,
+      "compactTables": true
+    },
+    {
+      "id": "both",
+      "bytes": 98202,
+      "sha256": "e81dbdc1457c937853e4d3b79fd156512115afdda4e8dc9f0420ae03ea54dd28",
+      "selection": {
+        "method": "css-selector",
+        "matches": 1
+      },
+      "tableRows": true,
+      "compactTables": true
+    }
+  ],
+  "compact": {
+    "at": "2026-09-17T14:29:52.653Z",
+    "apiCliMarkdownIdentical": true,
+    "markdownBytes": 98202,
+    "markdownSha256": "e81dbdc1457c937853e4d3b79fd156512115afdda4e8dc9f0420ae03ea54dd28",
+    "cliEnvelopeSha256": "da4ecf092bcaeaa720e79e35bdd767e2eaae4cd2b1771b0af499f46b2518831f",
+    "source": {
+      "receiptSha256": "141847c89be505ef79115731e43f2948b190ae4c0923ccb983bbd9a4a8997918",
+      "body": {
+        "bytes": 464490,
+        "sha256": "2235f262267cb1b0dd9a28786c1ffde4db3cdb5bdec4ea54a835454d08643855"
+      },
+      "url": "https://www.outdoorgearlab.com/topics/camping-and-hiking/best-soft-cooler"
+    },
+    "beforeBytes": 125300,
+    "afterBytes": 98202,
+    "savedBytes": 27098,
+    "nonTableMarkdownByteIdentical": true,
+    "nonTableMarkdownBytes": 49152,
+    "cliExecution": {
+      "mode": "compact-cli",
+      "pid": 1803528,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.6179150249809027,
+      "errors": [],
+      "newRequests": 0,
+      "documents": {
+        "observed": 1,
+        "closed": 1
+      },
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "newRequests": 0,
+    "actualSdkExecuted": false,
+    "limitation": "Output byte reduction only; no token, network, speed, rendering, table-association or full-page-completeness claim."
+  },
+  "sections": {
+    "at": "2026-09-17T14:35:44.445Z",
+    "cases": [
+      {
+        "target": "premium",
+        "markdownBytes": 2501,
+        "markdownSha256": "48f9b9149c0e4c7f740de33bb068d2104b14e0b599bd75befdf1d22f6dad2d9b",
+        "envelopeSha256": "bcfe8a1b2acc19d701e9330c888f3e3ead76f69b629706b7b1831491b2e33697",
+        "apiCliMarkdownIdentical": true,
+        "selection": {
+          "method": "heading-section",
+          "matches": 1
+        },
+        "execution": {
+          "mode": "premium-cli",
+          "pid": 1810739,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.6174153666943312,
+          "errors": [],
+          "newRequests": 0,
+          "documents": {
+            "observed": 1,
+            "closed": 1
+          },
+          "homeEntries": [],
+          "tmpEntries": []
+        }
+      },
+      {
+        "target": "popular",
+        "markdownBytes": 2480,
+        "markdownSha256": "54b8ec0bc297b4bbed2fcc082597c47097846546d8c9a1268079f9015965874a",
+        "envelopeSha256": "9257feec3dd2aa3125f753a1dcbe97003c28ff7051c3cbd6c37b1500c1b3b20e",
+        "apiCliMarkdownIdentical": true,
+        "selection": {
+          "method": "heading-section",
+          "matches": 1
+        },
+        "execution": {
+          "mode": "popular-cli",
+          "pid": 1810750,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.6173192262649536,
+          "errors": [],
+          "newRequests": 0,
+          "documents": {
+            "observed": 1,
+            "closed": 1
+          },
+          "homeEntries": [],
+          "tmpEntries": []
+        }
+      }
+    ],
+    "newRequests": 0,
+    "actualSdkExecuted": false
+  },
+  "sourceTextReview": {
+    "complete_text_checks": 23,
+    "complete_text_checks_matched": 23,
+    "exact_link_checks": 4,
+    "exact_link_checks_matched": 4,
+    "mismatches": [],
+    "formatting_differences": [
+      {
+        "file": "node_modules/.cache/native-validation/source-linked-details-september17/sections/premium.md",
+        "line": 66,
+        "source_strong_text": "Arctic Zone Titan Deep Freeze 30",
+        "text_retained": true,
+        "difference": "Source strong emphasis is not represented in Markdown."
+      },
+      {
+        "file": "node_modules/.cache/native-validation/source-linked-details-september17/sections/premium.md",
+        "line": 68,
+        "source_strong_text": "Read more:",
+        "text_retained": true,
+        "difference": "Source strong emphasis is not represented in Markdown."
+      },
+      {
+        "file": "node_modules/.cache/native-validation/source-linked-details-september17/sections/popular.md",
+        "line": 66,
+        "source_strong_text": "Read more:",
+        "text_retained": true,
+        "difference": "Source strong emphasis is not represented in Markdown."
+      }
+    ],
+    "table_associations_validated": false,
+    "publisher_claims_validated": false
+  },
+  "sourceTextReviewEvidence": {
+    "file": "node_modules/.cache/native-validation/source-linked-details-september17/SECTION-CONTENT-REVIEW.json",
+    "sha256": "3254f00d2d367819a636215e5800adcee683190dd99df27920e867319d7fa627"
+  },
+  "target": {
+    "titles": 4,
+    "specifications": 76,
+    "highlights": 27,
+    "descriptions": 3,
+    "totalTextFields": 110,
+    "metadataBytes": 26865,
+    "retainedChildren": 3,
+    "omittedChildren": 18,
+    "rendered": false,
+    "verified": false,
+    "partial": true,
+    "contentVerdict": "Limited visible detail plus bounded source product metadata, not a rendered storefront."
+  },
+  "replayExecutions": [
+    {
+      "mode": "analysis",
+      "pid": 1799195,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 1.369212692603469,
+      "errors": [],
+      "newRequests": 0,
+      "documents": {
+        "observed": 9,
+        "closed": 9
+      },
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    {
+      "mode": "compact-cli",
+      "pid": 1803528,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.6179150249809027,
+      "errors": [],
+      "newRequests": 0,
+      "documents": {
+        "observed": 1,
+        "closed": 1
+      },
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    {
+      "mode": "sections",
+      "pid": 1810229,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.9681889247149229,
+      "errors": [],
+      "newRequests": 0,
+      "documents": {
+        "observed": 5,
+        "closed": 5
+      },
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    {
+      "mode": "premium-cli",
+      "pid": 1810739,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.6174153666943312,
+      "errors": [],
+      "newRequests": 0,
+      "documents": {
+        "observed": 1,
+        "closed": 1
+      },
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    {
+      "mode": "popular-cli",
+      "pid": 1810750,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.6173192262649536,
+      "errors": [],
+      "newRequests": 0,
+      "documents": {
+        "observed": 1,
+        "closed": 1
+      },
+      "homeEntries": [],
+      "tmpEntries": []
+    }
+  ],
+  "replayDocumentCount": 17,
+  "productionChanged": false,
+  "newNativeTestRun": false,
+  "actualSdkExecuted": false,
+  "historicalCorpus": {
+    "attempted": 100,
+    "useful": 33,
+    "other": 67,
+    "revalidatedByThisWork": false
+  },
+  "pendingImplementation": [
+    "src/html-source-json-binding.ts",
+    "src/html-source-json-binding.test.ts"
+  ],
+  "limitations": [
+    "No table associations or publisher claims validated",
+    "No whole-page completeness claim",
+    "No token or browsing-speed benchmark",
+    "No actual scripts, credentials, passkeys, devices, or challenge-solving acceptance"
+  ],
+  "goal": "active-incomplete"
+}

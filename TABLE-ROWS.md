@@ -36,9 +36,11 @@ simple inner table can still use row lists. Partial row/cell selections retain
 their original context warnings. ARIA roles do not manufacture native tables.
 
 `compactTables: true` / `--compact-tables` can coexist with this preference in
-the core/live research API. It shortens fallback row/cell boundaries within a
-table; it is not required for row lists. The replay CLI does not add a compact
-tables flag. Existing unsupported-structure checks and source/node/depth,
+the core/live research API and captured-HTML replay API/CLI. It shortens fallback
+row/cell boundaries within a table; it is not required for row lists. In the
+replay CLI, combine `--format markdown --table-rows --compact-tables` with the
+existing capture pins and selection. See `RESEARCH-COMPACT-REPLAY.md` for the
+replay contract. Existing unsupported-structure checks and source/node/depth,
 intermediate and output budgets remain in force: no truncation or wider caps.
 
 ## Live and captured reading

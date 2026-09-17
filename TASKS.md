@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Validate source-linked detail reading and smaller useful replay output
+
+- Two fresh September17 native GETs retrieve the source-linked Target product
+  and OutdoorGearLab comparison page, both HTTP200, without retries, credentials
+  or page scripts. Each request/session/group closes. HTTP200 is not the content
+  verdict: Target exposes limited visible detail plus existing bounded metadata;
+  GearLab retains substantive review content. Original captures remain unchanged.
+- Same-body GearLab table options reduce125300 Markdown bytes to98202, saving
+  21.6%, with49152 non-table bytes identical. Actual compact replay CLI matches
+  the API. This is serialization size, not a token or browser-speed benchmark.
+- Correct a selector-workflow mistake: summary wrappers omit sibling narratives.
+  Actual h2 section extraction gives2501/2480-byte recommendation excerpts;
+  both actual CLIs match their APIs. Independent bounded review matches23 text
+  checks and4 links. Preserve the original underscoped analysis and source checks. No
+  inferred table associations, rendered equivalence or complete-page claim.
+- Correct TABLE-ROWS.md's stale replay compact-flag statement. No production
+  code/default changes; reuse the49370/0 native qualification, not a new full
+  run. Five new offline replay invocations close17 documents with no network.
+- See reports/source-linked-details-2026-09-17.md/JSON. Historical100-page33/67
+  stays unchanged. Continue actionable website failures, actual SafeJS and its
+  guarded adapter, performance/access/CAPTCHA, real credentials/passkeys/devices
+  and unfinished research. The overall browser objective remains active.
+
 ### Revalidate every available native file with protected temp ancestry
 
 - Fresh complete available-file run passes49370/0 in992 native files; no skipped
