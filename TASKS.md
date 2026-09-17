@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Recover explicitly source-declared names for empty reader links
+
+- Opt-in source-aria-label-v1 restores otherwise empty admitted HTML anchors
+  using their own aria-label, explicitly marked as source metadata. Default
+  extraction, source visibility, literal code and safe-URL admission stay intact.
+  Bounded names/scanning/counters; CLI and replay preserve policy provenance.
+- Release04 passes6547/0 in68 selected native files, including194 new cases in
+  three files. Build/selected types/format/lint pass. The same48 core cases fail
+  against the old extractor. Independent review findings are fixed and rechecked.
+- Saved137-response comparison preserves130 successful Markdown/JSON results and
+  seven matching refusals. Its1876 compiled core files match final release04.
+  Four saved documentation pages preserve101 code blocks and default output;
+  web.dev gains three explicitly labeled author links with the opt-in.
+- One fresh native web.dev GET returns200,11005 Markdown bytes and three exact
+  source author links; all11 source code blocks match. Four compiled CLI replays
+  pass without requests and do not implicitly inherit the capture's policy.
+  Original test/audit failures remain recorded, not overwritten as successes.
+- See READER-SOURCE-LINK-LABELS.md and reports/source-link-labels-2026-09-17.md/JSON.
+  Canonical manifest973 retains22 missing files; no full run or general speedup.
+  Continue difficult-site recovery, actual SafeJS/HTML modules, access/CAPTCHA,
+  dynamic pages, credential/passkey/device/TTY acceptance and unfinished research.
+  Historical100-entry33-useful/67-other verdicts and overall goal stay open.
+
 ### Validate four module-related documentation workflows with the native browser
 
 - Four anonymous native GETs to MDN modules, web.dev module workers, Python

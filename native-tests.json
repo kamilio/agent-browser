@@ -968,5 +968,8 @@
   "src/nested-focus-integration.test.ts",
   "src/extraction-content-focus-context.test.ts",
   "src/page-source-modules.test.ts",
-  "src/extension-page-runtime-modules.test.ts"
+  "src/extension-page-runtime-modules.test.ts",
+  "src/extraction-source-link-labels.test.ts",
+  "src/source-link-labels.test.ts",
+  "src/research-source-link-labels.test.ts"
 ]

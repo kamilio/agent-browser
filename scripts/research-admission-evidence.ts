@@ -12,6 +12,10 @@ import {
 	researchResponseHeaderNames,
 } from "../src/research-response-headers.js";
 import {
+	sourceLinkLabelLimits,
+	validateSourceLinkLabelPolicy,
+} from "../src/source-link-labels.js";
+import {
 	decodeResearchBodyCapture,
 	researchBodyCaptureLimit,
 } from "./research-body-capture.js";
@@ -665,6 +669,7 @@ function validateLong(report: DataRecord): void {
 }
 
 function validatePolicyFragments(report: DataRecord): void {
+	validateSourceLinkLabelEvidence(report);
 	const prior =
 		isRecord(report.outputLimit) && isRecord(report.outputLimit.prior)
 			? report.outputLimit.prior
@@ -682,6 +687,80 @@ function validatePolicyFragments(report: DataRecord): void {
 			!Object.hasOwn(diagnostic, "reason") ||
 			diagnostic.kind !== "network-policy-v1" ||
 			!isNetworkPolicyReason(diagnostic.reason)
+		)
+			invalidEvidence();
+	}
+}
+
+function validateSourceLinkLabelEvidence(report: DataRecord): void {
+	const extraction = isRecord(report.extraction)
+		? report.extraction
+		: undefined;
+	const declared = Object.hasOwn(report, "sourceLinkLabelPolicy");
+	if (!declared) {
+		if (extraction && Object.hasOwn(extraction, "sourceLinkLabels"))
+			invalidEvidence();
+		return;
+	}
+	const policy = validateSourceLinkLabelPolicy(report.sourceLinkLabelPolicy);
+	if (
+		policy === undefined ||
+		report.profile !== "native-semantic-reader-v1" ||
+		Object.hasOwn(report, "admission") ||
+		Object.hasOwn(report, "outputLimitPolicy") ||
+		Object.hasOwn(report, "headings") ||
+		Object.hasOwn(report, "textLines") ||
+		(Object.hasOwn(report, "extraction") && extraction === undefined) ||
+		(report.outcome === "extracted-unverified" && extraction === undefined) ||
+		(report.selection !== undefined &&
+			(!isRecord(report.selection) ||
+				!["css-selector", "heading-section"].includes(
+					report.selection.method as string,
+				))) ||
+		(extraction !== undefined &&
+			(extraction.format !== "markdown" ||
+				Object.hasOwn(extraction, "contentFallback") ||
+				Object.hasOwn(extraction, "textSelection") ||
+				Object.hasOwn(extraction, "jsonSelection") ||
+				!isRecord(extraction.sourceLinkLabels)))
+	)
+		invalidEvidence();
+	if (extraction) {
+		const labels = record(extraction.sourceLinkLabels);
+		if (
+			labels.policy !== policy ||
+			labels.attribute !== "aria-label" ||
+			labels.rendered !== false ||
+			labels.verified !== false ||
+			!integer(labels.links) ||
+			(labels.links as number) > sourceLinkLabelLimits.maxLinks ||
+			!integer(labels.truncatedLabels) ||
+			!integer(labels.omittedCandidates) ||
+			(labels.truncatedLabels as number) > (labels.links as number)
+		)
+			invalidEvidence();
+	}
+	const primary = report.primaryResponse;
+	if (primary !== null && primary !== undefined) {
+		const headers = record(record(primary).headers);
+		const types = headers["content-type"];
+		const mime =
+			Array.isArray(types) && types.length === 1 && typeof types[0] === "string"
+				? types[0].split(";", 1)[0].trim().toLowerCase()
+				: undefined;
+		const reader = isRecord(report.reader) ? report.reader : undefined;
+		const interpretation = reader?.mimeInterpretation;
+		if (
+			mime !== "text/html" &&
+			!(
+				mime === "text/markdown" &&
+				report.readerMimePolicy === "markdown-html-document-v1" &&
+				reader?.mimePolicy === report.readerMimePolicy &&
+				isRecord(interpretation) &&
+				interpretation.policy === report.readerMimePolicy &&
+				interpretation.declaredMime === "text/markdown" &&
+				interpretation.effectiveMime === "text/html"
+			)
 		)
 			invalidEvidence();
 	}

@@ -64,6 +64,10 @@ import { type RetryAfterAdvice, parseRetryAfter } from "../src/retry-after.js";
 import { validateSelectorSyntax } from "../src/selectors.js";
 import { BrowserSession, type NavigationResult } from "../src/session.js";
 import {
+	type SourceLinkLabelPolicy,
+	validateSourceLinkLabelPolicy,
+} from "../src/source-link-labels.js";
+import {
 	type ResearchAdmissionProvenance,
 	type ResearchExitReport,
 	researchLongAdmissionProvenance,
@@ -231,6 +235,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	let captureBody = false;
 	let format: "markdown" | "json" | undefined;
 	let outputLimitPolicy: "text-prefix-v1" | undefined;
+	let sourceLinkLabelPolicy: SourceLinkLabelPolicy | undefined;
 	let contentFocus: ContentFocusPolicy | undefined;
 	let tableMetadata = false;
 	let compactTables = false;
@@ -247,6 +252,19 @@ export function parseResearchArguments(args: readonly string[]) {
 	const policy = new NetworkPolicy();
 	for (let index = 0; index < args.length; index++) {
 		const argument = args[index];
+		if (
+			argument === "--source-link-label-policy" &&
+			sourceLinkLabelPolicy === undefined
+		) {
+			const value = args[++index];
+			if (value === undefined)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Missing research source link-label policy",
+				);
+			sourceLinkLabelPolicy = validateSourceLinkLabelPolicy(value);
+			continue;
+		}
 		if (
 			argument === "--https-redirect-policy" &&
 			httpsRedirectPolicy === undefined
@@ -546,6 +564,20 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Research content focus cannot be combined with selection or discovery",
 		);
+	if (
+		sourceLinkLabelPolicy !== undefined &&
+		(!reader ||
+			format === "json" ||
+			headings ||
+			find !== undefined ||
+			lines !== undefined ||
+			jsonPointer !== undefined ||
+			outputLimitPolicy !== undefined)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Source link-label policy requires reader HTML Markdown extraction without discovery, literal selection or text-prefix output",
+		);
 	if (tableMetadata && format !== "json")
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -597,6 +629,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		...(readerFallbackEncoding === undefined ? {} : { readerFallbackEncoding }),
 		...(format === undefined ? {} : { format }),
 		...(outputLimitPolicy === undefined ? {} : { outputLimitPolicy }),
+		...(sourceLinkLabelPolicy === undefined ? {} : { sourceLinkLabelPolicy }),
 		...(contentFocus === undefined ? {} : { contentFocus }),
 		...(tableMetadata ? { tableMetadata: true as const } : {}),
 		...(compactTables ? { compactTables: true as const } : {}),
@@ -621,6 +654,7 @@ export type ResearchOutcome =
 	| "failure";
 
 export interface ResearchNavigationReport {
+	sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
 	httpsRedirectPolicy?: HttpsRedirectPolicy;
 	readerFallbackEncoding?: ResearchReaderFallbackEncoding;
 	contentFocus?: ContentFocusPolicy;
@@ -677,6 +711,7 @@ export interface ResearchNavigationReport {
 }
 
 export interface ResearchExecutionOptions {
+	sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
 	jsonPointer?: string;
 	httpsRedirectPolicy?: HttpsRedirectPolicy;
 	readerFallbackEncoding?: ResearchReaderFallbackEncoding;
@@ -725,6 +760,7 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 			"Invalid research execution options",
 		);
 	validateHttpsRedirectPolicy(options.httpsRedirectPolicy);
+	validateSourceLinkLabelPolicy(options.sourceLinkLabelPolicy);
 	validateResearchReaderRawPolicy(options.readerRawPolicy);
 	validateResearchReaderVisibilityPolicy(options.readerVisibilityPolicy);
 	validateResearchReaderMimePolicy(options.readerMimePolicy);
@@ -774,6 +810,9 @@ export async function researchNavigation(
 	const lineRange =
 		lines === undefined ? undefined : validateResearchLines(lines);
 	const validated = parseResearchArguments([
+		...(executionOptions.sourceLinkLabelPolicy === undefined
+			? []
+			: ["--source-link-label-policy", executionOptions.sourceLinkLabelPolicy]),
 		...(executionOptions.jsonPointer === undefined
 			? []
 			: ["--json-pointer", executionOptions.jsonPointer]),
@@ -838,6 +877,9 @@ export async function researchNavigation(
 	const started = Date.now();
 	const fragment = researchFragmentReport(validated.urls[0]);
 	const report: ResearchNavigationReport = {
+		...(validated.sourceLinkLabelPolicy === undefined
+			? {}
+			: { sourceLinkLabelPolicy: validated.sourceLinkLabelPolicy }),
 		...(validated.httpsRedirectPolicy === undefined
 			? {}
 			: { httpsRedirectPolicy: validated.httpsRedirectPolicy }),
@@ -1056,6 +1098,9 @@ export async function researchNavigation(
 							tableMetadata: validated.tableMetadata,
 							tableRows: validated.tableRows,
 							compactTables: validated.compactTables,
+							...(validated.sourceLinkLabelPolicy === undefined
+								? {}
+								: { sourceLinkLabelPolicy: validated.sourceLinkLabelPolicy }),
 							limits: {
 								maxBytes: researchRunLimits.extractionBytes,
 								maxNodes: 50_000,
@@ -1271,6 +1316,9 @@ export async function researchNavigation(
 		}
 		const extraction = extractDocument(tree, {
 			format: validated.format ?? "markdown",
+			...(validated.sourceLinkLabelPolicy === undefined
+				? {}
+				: { sourceLinkLabelPolicy: validated.sourceLinkLabelPolicy }),
 			...(validated.contentFocus === undefined
 				? {}
 				: { contentFocus: validated.contentFocus }),
@@ -1373,6 +1421,9 @@ export async function* researchBatch(
 						? {}
 						: { readerFallbackEncoding: options.readerFallbackEncoding }),
 					outputLimitPolicy: options.outputLimitPolicy,
+					...(options.sourceLinkLabelPolicy === undefined
+						? {}
+						: { sourceLinkLabelPolicy: options.sourceLinkLabelPolicy }),
 					contentFocus: options.contentFocus,
 					...(options.readerRawPolicy === undefined
 						? {}
@@ -1508,7 +1559,7 @@ if (
 ) {
 	void main().catch(() => {
 		process.stderr.write(
-			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2|main-content-v3] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --json-pointer POINTER | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; empty JSON pointer selects root; JSON pointer excludes content-focus, text-prefix and long-v1; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-profile default|long-v1] [--reader] [--https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--source-link-label-policy source-aria-label-v1] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2|main-content-v3] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --json-pointer POINTER | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; empty JSON pointer selects root; JSON pointer excludes content-focus, text-prefix and long-v1; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; source link-label policy requires reader HTML Markdown extraction and excludes discovery, literal selection and text-prefix; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 		process.exitCode = 64;
 	});

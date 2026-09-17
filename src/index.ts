@@ -271,6 +271,11 @@ export {
 	type ExtractionOptions,
 	type ExtractionType,
 } from "./extraction.js";
+export {
+	sourceLinkLabelLimits,
+	type SourceLinkLabelPolicy,
+	type SourceLinkLabels,
+} from "./source-link-labels.js";
 export { DocumentFocus, BrowserFocusEvent } from "./focus.js";
 export {
 	DocumentKeyboard,

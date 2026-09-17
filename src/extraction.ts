@@ -26,6 +26,12 @@ import { documentBaseUrl } from "./document-url.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import {
+	type SourceLinkLabelPolicy,
+	type SourceLinkLabels,
+	SourceLinkLabelScope,
+	validateSourceLinkLabelPolicy,
+} from "./source-link-labels.js";
+import {
 	type ContentFocusMetadata,
 	type ContentFocusPolicy,
 	selectContentFocus,
@@ -171,6 +177,7 @@ export interface ExtractedNode {
 
 export interface ExtractionOptions {
 	format?: "markdown" | "json";
+	sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
 	contentFocus?: ContentFocusPolicy;
 	outputLimitPolicy?: "text-prefix-v1";
 	tableMetadata?: boolean;
@@ -245,6 +252,7 @@ interface ExtractionMetadata {
 	title: string;
 	revision: number;
 	partial: true;
+	sourceLinkLabels?: Readonly<SourceLinkLabels>;
 	contentFallback?: Readonly<ExtractionContentFallback>;
 	contentSelection?: Readonly<ContentFocusMetadata>;
 	compactTables?: true;
@@ -522,6 +530,7 @@ interface MarkdownLinkContext {
 	url?: string;
 	linked: boolean;
 	preformatted: boolean;
+	node?: ExtractedNode;
 }
 
 function flowLinkStructure(root: ExtractedNode) {
@@ -564,11 +573,12 @@ function flowLinkStructure(root: ExtractedNode) {
 function inline(
 	nodes: readonly ExtractedNode[],
 	inherited?: MarkdownLinkContext,
+	sourceLinkLabels?: SourceLinkLabelScope,
 ) {
 	const pieces: string[] = [];
 	const pending: (
 		| { node: ExtractedNode; inLink: boolean; literal?: boolean }
-		| { closingLink: string; openingIndex: number }
+		| { closingLink: string; openingIndex: number; source?: ExtractedNode }
 	)[] = nodes
 		.slice()
 		.reverse()
@@ -588,7 +598,12 @@ function inline(
 					break;
 				}
 			}
-			if (hasLabel) pieces.push(current.closingLink);
+			const sourceLabel =
+				!hasLabel && current.source
+					? sourceLinkLabels?.label(current.source)
+					: undefined;
+			if (sourceLabel) pieces.push(escaped(sourceLabel));
+			if (hasLabel || sourceLabel) pieces.push(current.closingLink);
 			else pieces.splice(current.openingIndex, 1);
 			continue;
 		}
@@ -624,6 +639,7 @@ function inline(
 			pending.push({
 				closingLink: `](<${node.url?.replace(/&/g, "&amp;")}>)`,
 				openingIndex,
+				...(current.literal ? {} : { source: node }),
 			});
 		}
 		pieces.push(imageAnnotation);
@@ -705,7 +721,11 @@ function validateTableStructure(
 	return transparentWrappers;
 }
 
-function rowListCell(node: ExtractedNode): string | null {
+function rowListCell(
+	node: ExtractedNode,
+	sourceLinkLabels?: SourceLinkLabelScope,
+	link?: MarkdownLinkContext,
+): string | null {
 	if (node.imageSource) return null;
 	let children = node.children ?? [];
 	const meaningful = children.filter(
@@ -722,11 +742,19 @@ function rowListCell(node: ExtractedNode): string | null {
 		if (!inlineTypes.has(child.type)) return null;
 		for (const descendant of child.children ?? []) pending.push(descendant);
 	}
-	const text = inline(children);
+	const text = inline(
+		children,
+		sourceLinkLabels ? link : undefined,
+		sourceLinkLabels,
+	);
 	return text.includes("\n") || text.includes("\r") ? null : text;
 }
 
-function rowListCells(row: ExtractedNode): string[] | null {
+function rowListCells(
+	row: ExtractedNode,
+	sourceLinkLabels?: SourceLinkLabelScope,
+	link?: MarkdownLinkContext,
+): string[] | null {
 	const cells: string[] = [];
 	const pending = (row.children ?? []).slice().reverse();
 	while (pending.length) {
@@ -734,7 +762,7 @@ function rowListCells(row: ExtractedNode): string[] | null {
 		if (!node) break;
 		if (node.imageSource) return null;
 		if (node.type === "cell") {
-			const text = rowListCell(node);
+			const text = rowListCell(node, sourceLinkLabels, link);
 			if (text === null) return null;
 			cells.push(text);
 		} else if (node.type === "container" || node.type === "inline") {
@@ -746,7 +774,11 @@ function rowListCells(row: ExtractedNode): string[] | null {
 	return cells;
 }
 
-function tableRowList(table: ExtractedNode): string[][] | null {
+function tableRowList(
+	table: ExtractedNode,
+	sourceLinkLabels?: SourceLinkLabelScope,
+	link?: MarkdownLinkContext,
+): string[][] | null {
 	const rows: string[][] = [];
 	const pending = (table.children ?? []).slice().reverse();
 	while (pending.length) {
@@ -754,7 +786,7 @@ function tableRowList(table: ExtractedNode): string[][] | null {
 		if (!node) break;
 		if (node.imageSource) return null;
 		if (node.type === "row") {
-			const cells = rowListCells(node);
+			const cells = rowListCells(node, sourceLinkLabels, link);
 			if (cells === null) return null;
 			rows.push(cells);
 		} else if (node.type === "container" || node.type === "inline") {
@@ -771,6 +803,7 @@ function markdown(
 	maxBytes: number,
 	compactTables: boolean,
 	tableRows: boolean,
+	sourceLinkLabels?: SourceLinkLabelScope,
 ) {
 	const transparentWrappers = validateTableStructure(root);
 	const flow = flowLinkStructure(root);
@@ -898,6 +931,14 @@ function markdown(
 			const link = task.closingFlowLink;
 			if (link.url && !link.linked && link.preformatted)
 				emit(`<${link.url.replace(/&/g, "&amp;")}>`, task.prefixes);
+			else if (link.url && !link.linked && link.node) {
+				const label = sourceLinkLabels?.label(link.node);
+				if (label)
+					emit(
+						`[${escaped(label)}](<${link.url.replace(/&/g, "&amp;")}>)`,
+						task.prefixes,
+					);
+			}
 			continue;
 		}
 		if ("closingMarker" in task) {
@@ -910,7 +951,7 @@ function markdown(
 			continue;
 		}
 		if ("nodes" in task) {
-			emit(inline(task.nodes, task.link), task.prefixes);
+			emit(inline(task.nodes, task.link, sourceLinkLabels), task.prefixes);
 			continue;
 		}
 		const { node, prefixes, link } = task;
@@ -927,7 +968,7 @@ function markdown(
 		if (flow.links.has(node)) {
 			const nested = link?.url
 				? link
-				: { url: node.url, linked: false, preformatted: false };
+				: { url: node.url, linked: false, preformatted: false, node };
 			if (nested !== link) pending.push({ closingFlowLink: nested, prefixes });
 			schedule(children, prefixes, nested);
 			continue;
@@ -935,7 +976,7 @@ function markdown(
 		const boundary = tableBoundaryMarkers[node.type];
 		if (boundary) {
 			if (tableRows && node.type === "table") {
-				const rows = tableRowList(node);
+				const rows = tableRowList(node, sourceLinkLabels, link);
 				if (rows !== null) {
 					const lines = [boundary.begin];
 					for (const [rowIndex, cells] of rows.entries()) {
@@ -962,10 +1003,11 @@ function markdown(
 			schedule(children, prefixes, link);
 		} else if (node.type === "heading")
 			emit(
-				`${"#".repeat(node.level ?? 1)} ${inline(children, link)}`,
+				`${"#".repeat(node.level ?? 1)} ${inline(children, link, sourceLinkLabels)}`,
 				prefixes,
 			);
-		else if (node.type === "paragraph") emit(inline(children, link), prefixes);
+		else if (node.type === "paragraph")
+			emit(inline(children, link, sourceLinkLabels), prefixes);
 		else if (node.type === "pre") {
 			const text = plain(children);
 			if (link && text.trim()) link.preformatted = true;
@@ -1009,7 +1051,8 @@ function markdown(
 			pending.push({ emptyItem: item, prefixes: nested });
 			schedule(children, nested, link);
 		} else if (unwrap) schedule(children, prefixes, link);
-		else if (inlineTypes.has(node.type)) emit(inline([node], link), prefixes);
+		else if (inlineTypes.has(node.type))
+			emit(inline([node], link, sourceLinkLabels), prefixes);
 		else schedule(children, prefixes, link);
 	}
 	return output.length ? output.join("").slice(0, -1) : "";
@@ -1232,6 +1275,25 @@ export function extractDocument(
 	tree: DocumentTree,
 	options: ExtractionOptions = {},
 ): DocumentExtraction {
+	const sourceLinkLabelPolicy = validateSourceLinkLabelPolicy(
+		options.sourceLinkLabelPolicy,
+	);
+	if (
+		sourceLinkLabelPolicy !== undefined &&
+		((options.format !== undefined && options.format !== "markdown") ||
+			options.lines !== undefined ||
+			options.jsonPointer !== undefined ||
+			options.outputLimitPolicy !== undefined ||
+			textDocumentInfo(tree) !== undefined)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Source link labels require HTML Markdown extraction without text-prefix fallback",
+		);
+	const sourceLinkLabels =
+		sourceLinkLabelPolicy === undefined
+			? undefined
+			: new SourceLinkLabelScope(clean);
 	if (
 		options.jsonPointer !== undefined &&
 		(options.root !== undefined ||
@@ -1585,8 +1647,15 @@ export function extractDocument(
 		}
 		if (node.type === "link" && source.attributes.href !== undefined) {
 			const url = destination(source.attributes.href, base);
-			if (url) node.url = url;
-			else node.blocked = true;
+			if (url) {
+				node.url = url;
+				if (
+					sourceLinkLabels &&
+					isHtmlElement(source, "a") &&
+					Object.hasOwn(source.attributes, "aria-label")
+				)
+					sourceLinkLabels.bind(node, source.attributes["aria-label"]);
+			} else node.blocked = true;
 		}
 		intermediateBytes += utf8ByteLength(JSON.stringify(node)) + 1;
 		if (intermediateBytes > 4_194_304)
@@ -1658,7 +1727,11 @@ export function extractDocument(
 							maxBytes,
 							options.compactTables === true,
 							options.tableRows === true,
+							sourceLinkLabels,
 						),
+						...(sourceLinkLabels
+							? { sourceLinkLabels: sourceLinkLabels.report() }
+							: {}),
 					};
 		outputBytes = utf8ByteLength(JSON.stringify(result));
 		if (outputBytes > maxBytes)

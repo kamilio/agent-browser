@@ -41,6 +41,10 @@ import {
 import { DocumentQueries, validateSelectorSyntax } from "../src/selectors.js";
 import type { DocumentLoaderContext } from "../src/session.js";
 import {
+	type SourceLinkLabelPolicy,
+	validateSourceLinkLabelPolicy,
+} from "../src/source-link-labels.js";
+import {
 	type ResearchBodyPin,
 	type ResearchEmptyOutlineRecovery,
 	type ResearchOutputLimitSectionRecovery,
@@ -50,6 +54,7 @@ import {
 	validateResearchOutputLimitSectionAdmission,
 	validateResearchReplayAdmission,
 } from "./research-admission-evidence.js";
+import type { ResearchOutcome } from "./research-browser.js";
 import {
 	hasResearchExtractionContent,
 	researchDocumentDiagnosticText,
@@ -101,6 +106,7 @@ type ResearchHtmlReplaySelection =
 			compactTables?: boolean;
 			outputLimitPolicy?: "text-prefix-v1";
 			readerMimePolicy?: ResearchReaderMimePolicy;
+			sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
 	  })
 	| {
 			links: string;
@@ -112,6 +118,7 @@ type ResearchHtmlReplaySelection =
 			compactTables?: never;
 			outputLimitPolicy?: never;
 			readerMimePolicy?: never;
+			sourceLinkLabelPolicy?: never;
 	  };
 
 export type ResearchJsonReplaySelection =
@@ -134,6 +141,7 @@ export type ResearchJsonReplaySelection =
 			compactTables?: never;
 			outputLimitPolicy?: never;
 			readerMimePolicy?: never;
+			sourceLinkLabelPolicy?: never;
 	  });
 
 export interface ResearchOutputLimitSectionSelection {
@@ -197,6 +205,8 @@ export interface ResearchJsonReplayReport<
 		reportedFinalUrl: string;
 		receiptSha256: string;
 		body: ResearchBodyPin;
+		capturedOutcome?: ResearchOutcome;
+		sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
 	};
 	selection: {
 		method:
@@ -212,6 +222,7 @@ export interface ResearchJsonReplayReport<
 		pointer?: string;
 		outputLimitPolicy?: "text-prefix-v1";
 		readerMimePolicy?: ResearchReaderMimePolicy;
+		sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
 	};
 	classification: {
 		barrier: BrowserChallengeDiagnostic["kind"] | null;
@@ -337,7 +348,7 @@ function selectionSnapshot(value: unknown) {
 	const keys = Reflect.ownKeys(value);
 	if (
 		keys.length < 1 ||
-		keys.length > 6 ||
+		keys.length > 7 ||
 		!keys.every(
 			(key) =>
 				typeof key === "string" &&
@@ -354,6 +365,7 @@ function selectionSnapshot(value: unknown) {
 					"compactTables",
 					"outputLimitPolicy",
 					"readerMimePolicy",
+					"sourceLinkLabelPolicy",
 				].includes(key),
 		)
 	)
@@ -387,6 +399,7 @@ function selectionSnapshot(value: unknown) {
 			compactTables: false,
 			outputLimitPolicy: undefined,
 			readerMimePolicy: undefined,
+			sourceLinkLabelPolicy: undefined,
 		};
 	}
 	if (Object.hasOwn(fields, "lines")) {
@@ -400,6 +413,7 @@ function selectionSnapshot(value: unknown) {
 			compactTables: false,
 			outputLimitPolicy: undefined,
 			readerMimePolicy: undefined,
+			sourceLinkLabelPolicy: undefined,
 		};
 	}
 	if (Object.hasOwn(fields, "find")) {
@@ -420,6 +434,7 @@ function selectionSnapshot(value: unknown) {
 			compactTables: false,
 			outputLimitPolicy: undefined,
 			readerMimePolicy: undefined,
+			sourceLinkLabelPolicy: undefined,
 		};
 	}
 	const section = Object.hasOwn(fields, "section");
@@ -448,6 +463,15 @@ function selectionSnapshot(value: unknown) {
 			fields.readerMimePolicy !== "markdown-html-document-v1")
 	)
 		invalidSelection();
+	const sourceLinkLabelPolicy = validateSourceLinkLabelPolicy(
+		fields.sourceLinkLabelPolicy,
+	);
+	if (
+		Object.hasOwn(fields, "sourceLinkLabelPolicy") &&
+		(sourceLinkLabelPolicy === undefined ||
+			fields.outputLimitPolicy !== undefined)
+	)
+		invalidSelection();
 	if (focus) {
 		if (
 			target !== "main-content-v1" &&
@@ -466,7 +490,8 @@ function selectionSnapshot(value: unknown) {
 			Object.hasOwn(fields, "tableRows") ||
 			Object.hasOwn(fields, "compactTables") ||
 			Object.hasOwn(fields, "outputLimitPolicy") ||
-			Object.hasOwn(fields, "readerMimePolicy")
+			Object.hasOwn(fields, "readerMimePolicy") ||
+			Object.hasOwn(fields, "sourceLinkLabelPolicy")
 		)
 			invalidSelection();
 	} else {
@@ -488,6 +513,7 @@ function selectionSnapshot(value: unknown) {
 		tableMetadata: fields.tableMetadata === true,
 		tableRows: fields.tableRows === true,
 		compactTables: fields.compactTables === true,
+		sourceLinkLabelPolicy,
 		outputLimitPolicy:
 			fields.outputLimitPolicy === "text-prefix-v1"
 				? ("text-prefix-v1" as const)
@@ -699,7 +725,8 @@ function validateReplayFormat(
 				selected.tableMetadata)) ||
 		((selected.tableRows ||
 			selected.compactTables ||
-			selected.outputLimitPolicy) &&
+			selected.outputLimitPolicy ||
+			selected.sourceLinkLabelPolicy) &&
 			format !== "markdown")
 	)
 		throw new AgentBrowserError("invalid-input", "Invalid replay format");
@@ -774,6 +801,7 @@ export function recoverResearchOutputLimitSection(
 	const selected = selectionSnapshot(selection);
 	if (
 		selected.method !== "heading-section" ||
+		selected.sourceLinkLabelPolicy !== undefined ||
 		selected.outputLimitPolicy !== undefined ||
 		selected.readerMimePolicy !== undefined
 	)
@@ -821,6 +849,7 @@ export function recoverResearchOutputLimitSelector(
 	const selected = selectionSnapshot(selection);
 	if (
 		selected.method !== "css-selector" ||
+		selected.sourceLinkLabelPolicy !== undefined ||
 		selected.outputLimitPolicy !== undefined ||
 		selected.readerMimePolicy !== undefined
 	)
@@ -873,6 +902,7 @@ export function recoverResearchOutputLimitContentFocus(
 	const selected = selectionSnapshot(selection);
 	if (
 		selected.method !== "content-focus" ||
+		selected.sourceLinkLabelPolicy !== undefined ||
 		selected.outputLimitPolicy !== undefined ||
 		selected.readerMimePolicy !== undefined
 	)
@@ -925,6 +955,7 @@ export function recoverResearchEmptyOutlineSelector(
 	const selected = selectionSnapshot(selection);
 	if (
 		selected.method !== "css-selector" ||
+		selected.sourceLinkLabelPolicy !== undefined ||
 		selected.outputLimitPolicy !== undefined ||
 		selected.readerMimePolicy !== undefined
 	)
@@ -988,6 +1019,21 @@ function extractValidatedReplayJson<
 	let tree: DocumentTree | undefined;
 	try {
 		checkpoint();
+		const sourceLinkLabelPolicy =
+			"sourceLinkLabelPolicy" in selected
+				? selected.sourceLinkLabelPolicy
+				: undefined;
+		const capturedSourceLinkLabelPolicy = validateSourceLinkLabelPolicy(
+			admission.originalMetadata.sourceLinkLabelPolicy,
+		);
+		if (
+			sourceLinkLabelPolicy !== undefined &&
+			admission.selectedProfile !== "default"
+		)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Source link-label replay requires a default-profile HTML capture",
+			);
 		const rawPolicy = replayRawPolicy(admission.originalMetadata);
 		const fallbackEncoding = replayFallbackEncoding(admission.originalMetadata);
 		const visibilityPolicy = replayVisibilityPolicy(admission.originalMetadata);
@@ -1168,6 +1214,9 @@ function extractValidatedReplayJson<
 									? selected.target
 									: undefined,
 							format,
+							...(sourceLinkLabelPolicy === undefined
+								? {}
+								: { sourceLinkLabelPolicy }),
 							tableMetadata:
 								"tableMetadata" in selected
 									? selected.tableMetadata
@@ -1263,10 +1312,23 @@ function extractValidatedReplayJson<
 				reportedFinalUrl,
 				receiptSha256: admission.receiptSha256,
 				body: admission.bodyIdentity,
+				...(sourceLinkLabelPolicy === undefined &&
+				capturedSourceLinkLabelPolicy === undefined
+					? {}
+					: {
+							capturedOutcome: admission.originalMetadata
+								.outcome as ResearchOutcome,
+						}),
+				...(capturedSourceLinkLabelPolicy === undefined
+					? {}
+					: { sourceLinkLabelPolicy: capturedSourceLinkLabelPolicy }),
 			},
 			selection: {
 				method: selected.method,
 				matches: null,
+				...(sourceLinkLabelPolicy === undefined
+					? {}
+					: { sourceLinkLabelPolicy }),
 				...(selected.method === "json-pointer"
 					? { pointer: selected.target }
 					: {}),
@@ -1390,6 +1452,9 @@ function extractValidatedReplayJson<
 			checkpoint();
 			const extraction = extractDocument(tree, {
 				format,
+				...(sourceLinkLabelPolicy === undefined
+					? {}
+					: { sourceLinkLabelPolicy }),
 				tableMetadata: selected.tableMetadata,
 				tableRows: selected.tableRows,
 				...(selected.compactTables ? { compactTables: true } : {}),

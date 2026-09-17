@@ -27,6 +27,7 @@ import {
 import { resourceLimitDiagnostic } from "../src/resource-limit.js";
 import { DocumentQueries } from "../src/selectors.js";
 import type { DocumentLoaderContext } from "../src/session.js";
+import type { SourceLinkLabelPolicy } from "../src/source-link-labels.js";
 import {
 	researchDocumentDiagnosticText,
 	researchExtractionDiagnosticText,
@@ -45,6 +46,7 @@ interface VisibilityOperation {
 	tableMetadata?: boolean;
 	tableRows?: boolean;
 	compactTables?: boolean;
+	sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
 	limits: { maxBytes: number; maxNodes: number; maxDepth: number };
 	headingLimits?: Parameters<typeof discoverDocumentHeadings>[1];
 }
@@ -180,6 +182,9 @@ export function researchVisibilityEvidence(
 						tableMetadata: operation.tableMetadata,
 						tableRows: operation.tableRows,
 						compactTables: operation.compactTables,
+						...(operation.sourceLinkLabelPolicy === undefined
+							? {}
+							: { sourceLinkLabelPolicy: operation.sourceLinkLabelPolicy }),
 						...(operation.method === "heading-section"
 							? { section: reference }
 							: { root: reference }),
