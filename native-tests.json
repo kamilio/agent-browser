@@ -995,5 +995,8 @@
   "src/research-source-index-cli.test.ts",
   "src/research-stream-output.test.ts",
   "src/research-source-output-lifecycle.test.ts",
-  "src/research-emission-cancellation.test.ts"
+  "src/research-emission-cancellation.test.ts",
+  "src/research-fallback-loader.test.ts",
+  "src/research-native-fallback.test.ts",
+  "src/research-strategy-admission.test.ts"
 ]

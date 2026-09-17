@@ -1193,6 +1193,11 @@ function replayEvidence(
 		invalidEvidence();
 	}
 	const report = record(snapshot(parsed));
+	if (Object.hasOwn(report, "documentStrategy"))
+		throw new AgentBrowserError(
+			"unsupported",
+			"Strategy-aware research replay is not implemented",
+		);
 	const selectedProfile = authority.expectedProfile;
 	if (selectedProfile === "long-v1") {
 		validateLong(report);

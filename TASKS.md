@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Native-first fallback and fresh content checks
+
+- Opt-in native-reader-fallback-v1 keeps native CSS handling and retries only
+  eligible HTML loader failures through the bounded reader on the same bytes.
+  No extra fetch, raised limits or scripts. Empty native results remain empty;
+  normal access/rate-limit barriers remain. Strategy-aware replay is unsupported.
+- Final clean candidate passes2732/0 across38 selected native files,237 new cases,
+  build/selected types and six-overlay format/lint. Admission diagnostic stays171/1,
+  all172 outcomes baseline-equal. Isolated manifest1000 has22 absent paths;
+  all exist in the dirty workspace, which was not the qualified runtime.
+- 110 saved sources x three modes yield330 mock requests,zero network requests,
+  and218 unchanged prior projections. Reader fallback recovers13 nonempty outputs,
+  not13 newly working sites; native58/strategy71 nonempty is not task success.
+- Three fresh final-candidate native checks make3 GETs: www.nerdwallet.com: useful-source-content; www.pcmag.com: useful-source-content; www.mayoclinic.org: useful-source-content.
+  No retries/scripts/credentials; closure checks pass. Historical10033/67 remains.
+- One separate pre-feature Tableau bootstrap GET returns73037JS bytes; inert
+  source points to dynamic session configuration,not benchmark rows. No POST or
+  downloaded code executes. See reports/native-reader-fallback-2026-09-17.md/JSON.
+- Continue task-level website checks, fidelity/performance and dynamic-runtime
+  work. Broad access/CAPTCHA, actualSafeJS, credentials/passkeys/devices/TTY,
+  missing tests and unfinished research gates remain open; goal stays active.
+
 ### Inspect source-advertised embedded MLCommons results
 
 - One exact native GET to the historical Datacenter page's Tableau iframe at
