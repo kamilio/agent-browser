@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Submit a real public form and verify manual content
+
+- Restore the freshly captured Debian manpages entry into the qualified native
+  session, fill the public constant printf and press Enter. The actual native
+  action follows302/307 redirects and retrieves the trixie/coreutils manual200;
+  three real anonymous GETs, one explicitly restored memory delivery, no retry.
+- Retain26,110 decoded HTML bytes and8,629 Markdown bytes. Artifact checks verify
+  all11 complete manual paragraphs in order/exactly once plus both qualified
+  %b/%q definitions. Independent review confirms meaningful source content.
+- Preserve the original aggregate execution failure: its collector incorrectly
+  requires response-end for discarded redirect bodies. Native content passes;
+  separate artifact review verifies all request/response/socket closures, final
+  response completion,2/2 closed documents, empty cookies and child/group absence.
+  Sixteen mutated event histories are rejected; no live request is repeated.
+- Final isolated driver proof passes27 pure policy checks with zero wire calls.
+  Both pre-live review findings are fixed in version2, with prior proofs and
+  failed verifier attempts retained. No production change/new native-suite run;
+  the1,626-source/2,408-compiled qualified runtime still matches335946f.
+- See reports/native-form-workflow-2026-09-17.md/JSON. Keep partial presentation,
+  restored entry and synthetic/live distinctions explicit. Historical10033/67
+  stays unchanged. Continue varied real interactions, dynamic/SafeJS integration,
+  access/CAPTCHA friction, performance, credentials/passkeys and research. The
+  broad browser goal remains active; no push occurs.
+
 ### Reuse resources with quoted freshness and validate fresh reference content
 
 - Accept quoted decimal max-age arguments, including quoted-pair escaped digits,
