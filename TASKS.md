@@ -6,6 +6,23 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Follow source-advertised article links
+
+- Two source-advertised links from the sealed PCMag/NerdWallet homepages are
+  retrieved with two fresh native GETs on45a7e4d; both destinations also appear
+  in homepage Markdown. This is source-link discovery plus new navigation,
+  not a DOM-click or persistent-session interaction test. No retries/redirects.
+- PCMag: reader, 46991 Markdown bytes; NerdWallet: native, 21508 Markdown bytes.
+  Independent source/body reviews are in reports/article-workflows-2026-09-17.md/JSON.
+  Source text is retrieved, not publisher facts or rendered completeness verified.
+- Synthetic proofs precede both GETs;1601 source/2380 compiled pins match the
+  committed runtime. Closure passes. No new native tests/browser code change,
+  SDK/scripts/credentials/subresources or access-barrier bypass. Prior2732 selected
+  tests remain prior evidence; no full-suite or new100-page success claim.
+- Next improve task-focused cached extraction without extra fetches and test
+  additional destinations. Broad performance, dynamic runtime, access/CAPTCHA,
+  real credentials/passkeys/devices/TTY and research gates remain open; goal active.
+
 ### Native-first fallback and fresh content checks
 
 - Opt-in native-reader-fallback-v1 keeps native CSS handling and retries only
