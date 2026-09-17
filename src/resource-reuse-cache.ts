@@ -232,7 +232,12 @@ function freshness(headers: Headers): number | undefined {
 		const directive = part.trim().toLowerCase();
 		if (directive.startsWith("max-age=")) {
 			if (seen.has("max-age")) return undefined;
-			maxAge = seconds(directive.slice(8));
+			const argument = directive.slice(8);
+			maxAge = seconds(
+				/^"(?:\\?[0-9])+"$/.test(argument)
+					? argument.slice(1, -1).replace(/\\([0-9])/g, "$1")
+					: argument,
+			);
 			if (!maxAge) return undefined;
 			seen.add("max-age");
 		} else {

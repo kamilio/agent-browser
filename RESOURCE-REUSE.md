@@ -73,6 +73,21 @@ transports report `cacheHits`, `cachedDecodedBytes`, `cacheEntries` and
 `cacheBytes`. Journals preserve the memory-delivery marker while reporting the
 delivered body size. Closing the transport clears retained entries/bytes.
 
+## Quoted freshness arguments
+
+An otherwise eligible `Cache-Control` response can use `max-age="60"` as well
+as `max-age=60`. Quoted decimal values may contain HTTP quoted-pair escaped
+digits; for example, `max-age="\6\0"` also decodes to sixty seconds. The decoded
+value still must be a positive safe integer with safe millisecond conversion.
+Malformed quoting/escaping, nondecimal values, zero, overflow and duplicate
+max-age directives remain ineligible. This is not JavaScript string decoding.
+
+This change does not admit quoted `Age` fields, additional cache directives,
+private/no-store/no-cache responses, new resource types or credentials. Request
+eligibility, copying, freshness accounting, local caps and expiry are unchanged.
+The quoted-argument check uses mocked native transport exchanges, not a new
+live request-reduction benchmark. See `reports/cache-quoted-age-2026-09-17.md`.
+
 ## September 14 live comparison
 
 Two separate native Lobsters flows load Search, select Stories with Space, fill

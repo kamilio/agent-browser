@@ -199,6 +199,8 @@ it.each(imageMediaTypes)(
 
 it.each([
 	"public, max-age=10",
+	'public, max-age="60"',
+	'public, max-age="9007199254740"',
 	"PUBLIC, MAX-AGE=10, MUST-REVALIDATE",
 	"immutable, max-age=00010, public, must-revalidate",
 ])("accepts explicit freshness policy %s", (policy) => {
@@ -226,7 +228,41 @@ it.each([
 	"public, max-age=+1",
 	"public, max-age=1.5",
 	"public, max-age=1e3",
-	'public, max-age="60"',
+	'public, max-age="0"',
+	'public, max-age="\\0"',
+	'public, max-age="9007199254741"',
+	'public, max-age="9007199254740991"',
+	'public, max-age="9007199254740992"',
+	'public, max-age="\\9007199254740992"',
+	'public, max-age=""',
+	'public, max-age="60',
+	'public, max-age=60"',
+	'public, max-age="60"x',
+	'public, max-age="6"0"',
+	'public, max-age="60\\',
+	'public, max-age="60\\"',
+	'public, max-age="6\\\\0"',
+	'public, max-age="6\\"0"',
+	'public, max-age="\\x36\\x30"',
+	'public, max-age="\\u0036\\u0030"',
+	'public, max-age="-1"',
+	'public, max-age="+1"',
+	'public, max-age="1.5"',
+	'public, max-age="1e3"',
+	'public, max-age=" 60"',
+	'public, max-age="60 "',
+	'public, max-age="6\t0"',
+	'public, max-age="6\\ 0"',
+	'public, max-age="6,0"',
+	'public, max-age="６０"',
+	'public, max-age="60", MAX-AGE=60',
+	'public, max-age=60, max-age="60"',
+	'public, max-age="60", max-age="\\6\\0"',
+	'max-age="60"',
+	'public, max-age="60", private',
+	'public, max-age="60", no-cache',
+	'public, max-age="60", no-store',
+	'public, max-age="60", s-maxage="60"',
 	"public, max-age=9007199254740991",
 	"public, max-age=9007199254740992",
 	"public, max-age=60, private",
@@ -510,15 +546,29 @@ it("copies Buffer-backed bytes rather than retaining a shared slice", () => {
 	expect(cache.get(request, 3)?.body).toEqual(new Uint8Array([1, 2, 3]));
 });
 
-it("uses corrected Age plus the larger request delay and monotonic residence", () => {
-	const { cache, advance } = fixture();
-	const stamp = cache.start();
-	advance(1200, 2300);
-	cache.put(request, withHeaders({ age: ["4"] }), stamp);
-	expect(cache.get(request, 1000)?.headers.age).toEqual(["6"]);
-	advance(1, 1750);
-	expect(cache.get(request, 1000)?.headers.age).toEqual(["8"]);
-});
+it.each(["10", '"10"', '"\\1\\0"'])(
+	"uses corrected Age, request delay and residence with max-age=%s",
+	(argument) => {
+		const { cache, advance } = fixture();
+		const stamp = cache.start();
+		advance(1200, 2300);
+		cache.put(
+			request,
+			withHeaders({
+				"cache-control": [`public, max-age=${argument}`],
+				age: ["4"],
+			}),
+			stamp,
+		);
+		expect(cache.get(request, 1000)?.headers.age).toEqual(["6"]);
+		advance(1, 1750);
+		expect(cache.get(request, 1000)?.headers.age).toEqual(["8"]);
+		advance(1949.5);
+		expect(cache.get(request, 1000)?.headers.age).toEqual(["9"]);
+		advance(0.5);
+		expect(cache.get(request, 1000)).toBeUndefined();
+	},
+);
 
 it("uses apparent age when it exceeds corrected age", () => {
 	const { cache, store, advance } = fixture();
@@ -551,22 +601,42 @@ it("does not trust response elapsedMs in place of the start stamp", () => {
 	expect(cache.get(request, 1000)?.headers.age).toEqual(["2"]);
 });
 
-it("expires strictly at the remaining server freshness bound", () => {
-	const { cache, store, advance } = fixture();
-	store(
-		request,
-		withHeaders({ "cache-control": ["public, max-age=10"], age: ["8"] }),
-	);
-	advance(1999.5);
-	expect(cache.get(request, 1000)?.headers.age).toEqual(["9"]);
-	advance(0.5);
-	expect(cache.get(request, 1000)).toBeUndefined();
-	expect(cache.metrics()).toMatchObject({
-		cacheEntries: 0,
-		cacheBytes: 0,
-		cacheHits: 1,
-	});
-});
+it.each(["10", "00010", '"10"', '"00010"', '"\\1\\0"', '"0\\01\\0"'])(
+	"expires strictly at equivalent remaining freshness for max-age=%s",
+	(argument) => {
+		const { cache, store, advance } = fixture();
+		store(
+			request,
+			withHeaders({
+				"cache-control": [`public, max-age=${argument}`],
+				age: ["8"],
+			}),
+		);
+		advance(1999.5);
+		expect(cache.get(request, 1000)?.headers.age).toEqual(["9"]);
+		advance(0.5);
+		expect(cache.get(request, 1000)).toBeUndefined();
+		expect(cache.metrics()).toMatchObject({
+			cacheEntries: 0,
+			cacheBytes: 0,
+			cacheHits: 1,
+		});
+	},
+);
+
+it.each(['"1"', '"\\1"'])(
+	"still rejects quoted Age %s with quoted max-age",
+	(age) => {
+		const { cache, store } = fixture();
+		store();
+		store(
+			request,
+			withHeaders({ "cache-control": ['public, max-age="10"'], age: [age] }),
+		);
+		expect(cache.get(request, 1000)).toBeUndefined();
+		expect(cache.metrics().cacheEntries).toBe(0);
+	},
+);
 
 it("caps local residence rather than discarding otherwise fresh older responses", () => {
 	const { cache, store, advance } = fixture({ maxAgeMs: 1000 });

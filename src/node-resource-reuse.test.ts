@@ -78,7 +78,12 @@ const transports: NodeNetworkTransport[] = [];
 const jars: CookieJar[] = [];
 const pending: Promise<unknown>[] = [];
 const streams: Readable[] = [];
-const plans: { body?: string; contentType?: string; deferred?: boolean }[] = [];
+const plans: {
+	body?: string;
+	contentType?: string;
+	cacheControl?: string;
+	deferred?: boolean;
+}[] = [];
 const exchanges: {
 	options: RequestOptions;
 	deliver: () => void;
@@ -101,7 +106,7 @@ beforeEach(() => {
 			const plan = plans.shift() ?? {};
 			const headers = {
 				"content-type": plan.contentType ?? "text/css",
-				"cache-control": "public, max-age=3600",
+				"cache-control": plan.cacheControl ?? "public, max-age=3600",
 				date: new Date().toUTCString(),
 			};
 			const response = Object.assign(
@@ -291,6 +296,34 @@ it.each([
 		});
 		expect(test.resolver).toHaveBeenCalledTimes(1);
 		expect(network.request).toHaveBeenCalledTimes(1);
+	},
+);
+
+it.each(['public, max-age="60"', 'public, max-age="\\6\\0"'])(
+	"reuses quoted freshness %s after one mocked HTTP exchange",
+	async (cacheControl) => {
+		const test = fixture();
+		plans.push({ cacheControl });
+		const first = await test.request();
+		const second = await test.request();
+		expect(first).not.toHaveProperty("delivery");
+		expect(first.headers["cache-control"]).toEqual([cacheControl]);
+		expect(second).toEqual({
+			...first,
+			headers: { ...first.headers, age: ["0"] },
+			body: new Uint8Array(Buffer.from(assetBody)),
+			encodedBytes: 0,
+			delivery: "memory-cache",
+		});
+		expect(test.resolver).toHaveBeenCalledTimes(1);
+		expect(network.request).toHaveBeenCalledTimes(1);
+		expect(exchanges).toHaveLength(1);
+		expectNetwork(test.transport, {
+			requests: 1,
+			encodedBytes: assetBytes,
+			decodedBytes: assetBytes,
+		});
+		expectCache(test.transport, 1, assetBytes, 1);
 	},
 );
 

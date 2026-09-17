@@ -6,6 +6,33 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Reuse resources with quoted freshness and validate fresh reference content
+
+- Accept quoted decimal max-age arguments, including quoted-pair escaped digits,
+  in the existing opt-in public-anonymous stylesheet/image cache. Preserve all
+  positive/safe-integer, eligibility, Age, copying, expiry, lifetime and policy
+  boundaries; no new cacheable resource types, directives or credential changes.
+- Identical seven-file tests on unchanged production give 606 passed/10 failed;
+  the focused fix gives 616 passed/0 failed. Build/selected types and three-file
+  format/lint pass. Two mocked transport cases verify two requests use one HTTP
+  exchange and one cache delivery. This is not a new live request-savings claim.
+- Fresh native arXiv abstract and RFC9111 GETs on September17 both return200 with
+  no classified barrier. Captured-source text checks produce 1,886 and 2,690
+  Markdown bytes, retaining all13 required text blocks. Independent review and
+  artifact-only typed/order/occurrence checks confirm the content and attribution.
+  No repeated GET, script, SDK, credentials or subresources are used.
+- Review four older empty/placeholder entries without retrying them. Nordstrom,
+  Car Interior and Living Look do not expose omitted product/article content;
+  Best Buy's explicit hidden-source promotional path was already documented.
+  Preserve original outcomes instead of inventing an extraction fix or retrying
+  a script-mediated replacement response.
+- See RESOURCE-REUSE.md and reports/cache-quoted-age-2026-09-17.md/JSON. The
+  1,018-entry manifest retains22 absent committed files; this is not a full-suite,
+  actual SDK/socket/device or authenticated acceptance gate. Historical10033/67
+  is unchanged. Continue diverse websites, dynamic/SafeJS integration, avoidable
+  access/CAPTCHA friction, speed, real secrets/passkeys and unfinished research.
+  The overall browser goal stays active.
+
 ### Batch source fields and verify compact reference workflows
 
 - Add selectHtmlJsonBindingSources and explicit offline --json-pointers mode:
