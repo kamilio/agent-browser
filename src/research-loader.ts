@@ -395,14 +395,27 @@ export function sanitizeResearchHtml(
 	};
 	const omitRaw = (name: string, entities = false) => {
 		if (omittedRaw && discardableRaw(name)) {
-			const discarded = tokenizer.discardRaw(name, (units) => {
+			const debit = (units: number) => {
 				omittedRaw.workUnits += units;
 				check(
 					"reader.omitted-work",
 					omittedRaw.maxWorkUnits,
 					omittedRaw.workUnits,
 				);
-			});
+			};
+			const discarded = tokenizer.discardRaw(
+				name,
+				debit,
+				(codeUnits, scriptData) => {
+					const cycle = scriptData ? 5 : 1;
+					const units = codeUnits * cycle;
+					const remaining = omittedRaw.maxWorkUnits - omittedRaw.workUnits;
+					if (units > remaining) {
+						debit(Math.floor(remaining / cycle) * cycle + 1);
+						if (scriptData) debit(4);
+					} else debit(units);
+				},
+			);
 			omittedRaw.codeUnits += discarded.discardedCodeUnits;
 			omittedRaw.steps += discarded.steps;
 			omittedRaw.elements++;

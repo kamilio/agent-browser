@@ -44,6 +44,9 @@ export const htmlRawDiscardWindowCodeUnits = 65_536;
 
 type ScriptState = "data" | "escaped" | "double";
 type RawWorkDebit = (units: number) => void;
+type RawWorkBatchDebit = (codeUnits: number, scriptData: boolean) => void;
+
+export const htmlRawDiscardBatchCodeUnits = 1_024;
 
 const rawEndings = Object.freeze({
 	script: "</script",
@@ -160,10 +163,29 @@ export class HtmlRawDiscardSession {
 		final: boolean,
 		debit: RawWorkDebit,
 		emitIssue: (code: string) => void,
+		batch?: RawWorkBatchDebit,
 	): { consumed: number; status: "more" | "end-tag" | "eof" } {
+		if (batch !== undefined && typeof batch !== "function")
+			throw new AgentBrowserError("invalid-input", "Invalid raw batch debit");
 		const boundary = final ? input.length : input.length - 10;
 		let consumed = 0;
 		while (consumed < boundary) {
+			if (batch !== undefined) {
+				const scriptData = this.#name === "script" && this.#state === "data";
+				const greaterThanBoundary = this.#name === "script" && !scriptData;
+				const end = Math.min(boundary, consumed + htmlRawDiscardBatchCodeUnits);
+				let spanEnd = consumed;
+				while (spanEnd < end) {
+					const code = input.charCodeAt(spanEnd);
+					if (code === 60 || (greaterThanBoundary && code === 62)) break;
+					spanEnd++;
+				}
+				if (spanEnd > consumed) {
+					batch(spanEnd - consumed, scriptData);
+					consumed = spanEnd;
+					continue;
+				}
+			}
 			debit(1);
 			if (this.#name === "script") {
 				const transition = scriptTransition(
@@ -651,11 +673,13 @@ export class HtmlTokenizer {
 	discardRaw(
 		name: HtmlDiscardRawName,
 		debit: (units: number) => void,
+		batch?: RawWorkBatchDebit,
 	): Readonly<{ discardedCodeUnits: number; steps: number }> {
 		if (
 			typeof name !== "string" ||
 			!Object.hasOwn(rawEndings, name) ||
 			typeof debit !== "function" ||
+			(batch !== undefined && typeof batch !== "function") ||
 			this.bounded
 		)
 			throw new AgentBrowserError("invalid-input", "Invalid raw discard input");
@@ -674,15 +698,15 @@ export class HtmlTokenizer {
 				);
 				debit(length);
 				const input = this.source.slice(windowStart, windowStart + length);
-				const result = session.step(
-					input,
-					windowStart + length === this.source.length,
-					debit,
-					(code) => {
-						this.offset = windowStart + length;
-						this.issue(code);
-					},
-				);
+				const emitIssue = (code: string) => {
+					this.offset = windowStart + length;
+					this.issue(code);
+				};
+				const final = windowStart + length === this.source.length;
+				const result =
+					batch === undefined
+						? session.step(input, final, debit, emitIssue)
+						: session.step(input, final, debit, emitIssue, batch);
 				this.offset = windowStart + result.consumed;
 				steps++;
 				if (result.status !== "more")

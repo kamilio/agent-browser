@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Reduce raw-reader CPU overhead and extend feed/article validation
+
+- Profiled saved retrieval identifies raw-discard/per-charge abort getter overhead.
+  Optional1024-unit batching preserves the unbatched API, source boundaries,
+  successful work totals and exact first-over-limit diagnostics. No cap increase,
+  new dependency, script execution or CAPTCHA bypass. Opted-in cancellation
+  observer cadence is bounded, not per character.
+- Controlled unprofiled baseline/candidate/candidate/baseline runs use16 samples
+  per workload/version: Best Buy medians34–42% lower, Bankrate22–25% lower;
+  Wikipedia mixed, including a3.3% slower mode. These are local warm routed
+  workloads, not live-network/cold-start or broad browser speedup claims.
+- Final870/0 across15 explicit native files,111 new cases; build/selected types/
+  format/lint pass. Canonical manifest986 retains22 missing files. Tests and exact
+  100-case comparisons preserve96 historical sources plus4 fresh workflow captures.
+  Recorded outcomes, Markdown identities, reader counters and failures match.
+- Parallel native-only browsing makes4 fresh GETs at03:47–03:49 UTC September17:
+  two advertised feeds and articles, all200;5/5 Tasting Table and27/27
+  ScienceInsights eligible paragraphs match saved HTML. No factual verification,
+  retries/redirects/credentials/scripts/SDK/identity change; all resources close.
+  Live uses the previous sealed runtime; optimized followups reuse bodies offline.
+- See RAW-SCAN-BATCHING.md and reports/retrieval-performance-2026-09-17.md/JSON,
+  plus reports/feed-article-workflows-2026-09-17.md/JSON. Continue actual SDK,
+  dynamic sites, broader performance/access, real authentication/passkeys/TTY,
+  missing tests and research. Historical33/67 verdicts and overall goal stay open.
+
 ### Structure source headings and validate practical section retrieval
 
 - Add opt-in source-aria-heading-v1 across native extraction/heading discovery,

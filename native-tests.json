@@ -982,5 +982,7 @@
   "src/source-headings.test.ts",
   "src/source-heading-extraction.test.ts",
   "src/research-source-heading-loader.test.ts",
-  "src/research-aria-headings.test.ts"
+  "src/research-aria-headings.test.ts",
+  "src/research-raw-batch.test.ts",
+  "src/html-raw-batch.test.ts"
 ]
