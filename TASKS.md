@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Revalidate every available native file with protected temp ancestry
+
+- Fresh complete available-file run passes49370/0 in992 native files; no skipped
+  or todo tests. Manifest1014 retains22 missing committed paths. Focused gate
+  passes398/0 in11 files; build/selected types/format/lint pass.
+- Only the stale heading-limit identity assertion changes. Require exact copied
+  values, unchanged frozen shared limits, no unrequested source policy, and one
+  discovery call. All2404 compiled production artifacts remain byte-identical.
+- Preserve the earlier49234/91 broad attempt and its protected-temp352/1 focused
+  rerun. Ninety failures were test environment ancestry, not weakened file guards;
+  the remaining assertion is now corrected. The final full run is separate.
+- Source1621/compiled2404 pins match; all native and quality groups close, private
+  HOME/TMP remain empty, and original42 dirty tracked/697 untracked files remain.
+- See reports/native-available-2026-09-17.md/JSON. This closes the available-file
+  native regression follow-up, not the22 missing files or actual SafeJS, guarded
+  adapter, live-site, device/credential/passkey, TTY or rendering-interop gates.
+  Continue practical content workflows, performance/access challenges and research;
+  the full browser objective stays active.
+
 ### Supervise isolated gate lifecycles without activating SafeJS
 
 - Add a host-owned supervisor with mandatory prerequisite/guard/pin/acceptance

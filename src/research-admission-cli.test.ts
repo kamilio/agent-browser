@@ -632,6 +632,7 @@ it.each([
 
 it("uses actual operation-local long limits and selected capture/reader/heading implementations", async () => {
 	const body = enqueue(htmlBytes(2_000_128));
+	const headingLimits = { ...researchLongDocumentAdmission.headings };
 	const report = await navigate("long-v1");
 	expect(requests).toHaveLength(1);
 	expect(requests[0].limits).toEqual(researchLongDocumentAdmission.network);
@@ -659,9 +660,14 @@ it("uses actual operation-local long limits and selected capture/reader/heading 
 		expect.any(Object),
 		researchLongDocumentAdmission.headings,
 	);
-	expect(vi.mocked(extraction.discoverDocumentHeadings).mock.calls[0][1]).toBe(
-		researchLongDocumentAdmission.headings,
-	);
+	const headingOptions = vi.mocked(extraction.discoverDocumentHeadings).mock
+		.calls[0][1];
+	expect(headingOptions).toStrictEqual(headingLimits);
+	expect(headingOptions).not.toHaveProperty("sourceHeadingPolicy");
+	expect(researchLongDocumentAdmission.headings).toStrictEqual(headingLimits);
+	expect(Object.isFrozen(researchLongDocumentAdmission.headings)).toBe(true);
+	expect(report.headings).not.toHaveProperty("sourceHeadingPolicy");
+	expect(extraction.discoverDocumentHeadings).toHaveBeenCalledTimes(1);
 	expect(documentLoader.loadBrowserDocument).not.toHaveBeenCalled();
 	expect(extraction.extractDocument).not.toHaveBeenCalled();
 	expect(report.reader).toMatchObject({ sourceCodeUnits: body.byteLength });
