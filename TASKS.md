@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Retrieve explicit source-video search results through the actual CLI
+
+- New research-video-search --query command uses the native reader/source-video
+  adapter and reports source-results-unverified/exit0 only for eligible records.
+  Keep nativeOutcome, partial/unrendered/unverified provenance and contentSuccess:null;
+  generic empty DOM still means empty-extraction/exit1. No manufactured DOM or
+  change to generic CLI defaults. API-only redirectMode:manual prevents follow-ups.
+- Clean selected qualification passes1417/0 across15 files, including173 new cases;
+  build/types/format/lint pass. Manual-mode negative control is1362/55, all failures
+  in the new core tests. Preserve initial1396/5 fixture failures and formatter findings.
+  Canonical manifest1024 still lacks22 committed paths; no new full-suite claim.
+- One fresh native query at20:08:44.049 UTC on September17 returns200 and19 public
+  source records; actual CLI exits0 in1.731 seconds with nativeOutcome empty-extraction.
+  Same captured response through both actual CLIs preserves every source record:
+  generic exits1, explicit source command exits0. These two replays make zero requests.
+- Preserve two preflight compatibility failures, one failed zero-network proof
+  that incorrectly rejected the honest native User-Agent, and one failed offline
+  default-redirect spelling assertion. Corrected proof/replays pass; no live retry,
+  scripts/SDK/assets/credentials/devices/TTY/alternate client or challenge solver.
+  See SOURCE-VIDEOS.md and reports/video-search-command-2026-09-17.md/JSON.
+- Source records are discovery content, not hardware recommendations or playback/
+  transcript acceptance. Historical100-entry33/67 and original research limits stay
+  unchanged. Continue dynamic SDK/HTML modules, diverse tasks/performance/access,
+  real credentials/passkeys/devices and research. Overall browser goal remains active.
+
 ### Retain literal SVG labels and verify fresh public content
 
 - The reader preserves nonblank own SVG aria-label text as escaped, explicitly

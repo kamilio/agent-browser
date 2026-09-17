@@ -799,6 +799,7 @@ export interface ResearchNavigationReport {
 }
 
 export interface ResearchExecutionOptions {
+	redirectMode?: "manual";
 	documentStrategy?: ResearchDocumentStrategy;
 	sourceHeadingPolicy?: SourceHeadingPolicy;
 	sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
@@ -823,6 +824,7 @@ function validateExecutionOptions(options: ResearchExecutionOptions): void {
 		!options ||
 		typeof options !== "object" ||
 		Array.isArray(options) ||
+		(options.redirectMode !== undefined && options.redirectMode !== "manual") ||
 		(options.preferMarkdown !== undefined &&
 			typeof options.preferMarkdown !== "boolean") ||
 		(options.outputLimitPolicy !== undefined &&
@@ -1140,6 +1142,9 @@ export async function researchNavigation(
 						try {
 							response = await native.request({
 								...request,
+								...(executionOptions.redirectMode === undefined
+									? {}
+									: { redirect: executionOptions.redirectMode }),
 								...(validated.preferMarkdown
 									? {
 											headers: {

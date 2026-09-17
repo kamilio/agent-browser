@@ -1,0 +1,1277 @@
+{
+  "kind": "native-source-video-search-command-v1",
+  "at": "2026-09-17T20:18:52.791Z",
+  "baseline": "bb22e423a2ac146eca61ddf1fdd04850350a6464",
+  "native": {
+    "label": "release01",
+    "pid": 2202216,
+    "exitCode": 0,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 10.69551888667047,
+    "passedTests": 1417,
+    "failedTests": 0,
+    "files": 15,
+    "homeEntries": [],
+    "tmpEntries": []
+  },
+  "quality": {
+    "label": "release01",
+    "executions": [
+      {
+        "name": "build",
+        "pid": 2202251,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 7.529283104464412
+      },
+      {
+        "name": "types",
+        "pid": 2202490,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 4.023717969655991
+      },
+      {
+        "name": "format",
+        "pid": 2202583,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.032007090747356415
+      },
+      {
+        "name": "lint",
+        "pid": 2202602,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.031908243894577026
+      }
+    ],
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    },
+    "allProcessesClosed": true
+  },
+  "cases": {
+    "research-video-search-cli.test.ts": 68,
+    "research-video-search.test.ts": 105
+  },
+  "addedCases": 173,
+  "runtime": {
+    "root": "/tmp/agent-browser-video-search-faJ0Ix/candidate",
+    "baseline": "bb22e423a2ac146eca61ddf1fdd04850350a6464",
+    "qualifiedOwnedOverlays": [
+      "scripts/research-browser.ts",
+      "scripts/research-video-search.ts",
+      "src/research-video-search.test.ts",
+      "src/research-video-search-cli.test.ts",
+      "native-tests.json"
+    ],
+    "manifests": {
+      "SOURCE": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-command-september17/SOURCE-release01.json",
+        "base": "/tmp/agent-browser-video-search-faJ0Ix/candidate",
+        "count": 1634,
+        "sha256": "5cf9c14671d50f57a6c8c714eb57a237479620334cb3910caaf294dd4835f68b"
+      },
+      "COMPILED": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-command-september17/COMPILED-release01.json",
+        "base": "/tmp/agent-browser-video-search-faJ0Ix/candidate/dist",
+        "count": 2416,
+        "sha256": "21dd14f92895d00a7fbcfcd6d4610464f8ea4e1bb829968887d52cfcc3540c13"
+      }
+    },
+    "native": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-command-september17/native-release01/EXECUTION.json",
+    "quality": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-command-september17/CHECK-release01.json"
+  },
+  "preservedRuns": {
+    "core01": {
+      "label": "core01",
+      "pid": 2198030,
+      "exitCode": 1,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 10.092083055526018,
+      "passedTests": 1396,
+      "failedTests": 5,
+      "files": 15,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "release01": {
+      "label": "release01",
+      "pid": 2202216,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 10.69551888667047,
+      "passedTests": 1417,
+      "failedTests": 0,
+      "files": 15,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "red01": {
+      "label": "red01",
+      "pid": 2202275,
+      "exitCode": 1,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 10.711919927969575,
+      "passedTests": 1362,
+      "failedTests": 55,
+      "files": 15,
+      "homeEntries": [],
+      "tmpEntries": []
+    }
+  },
+  "preservedQuality": {
+    "core01": {
+      "label": "core01",
+      "executions": [
+        {
+          "name": "build",
+          "pid": 2198065,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 7.128630675375462
+        },
+        {
+          "name": "types",
+          "pid": 2198144,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 3.8216588459908962
+        },
+        {
+          "name": "format",
+          "pid": 2198218,
+          "exitCode": 1,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.06412906758487225
+        },
+        {
+          "name": "lint",
+          "pid": 2198237,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.03196260705590248
+        }
+      ],
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 1,
+        "lint": 0
+      },
+      "allProcessesClosed": true
+    },
+    "release01": {
+      "label": "release01",
+      "executions": [
+        {
+          "name": "build",
+          "pid": 2202251,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 7.529283104464412
+        },
+        {
+          "name": "types",
+          "pid": 2202490,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 4.023717969655991
+        },
+        {
+          "name": "format",
+          "pid": 2202583,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.032007090747356415
+        },
+        {
+          "name": "lint",
+          "pid": 2202602,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.031908243894577026
+        }
+      ],
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0
+      },
+      "allProcessesClosed": true
+    }
+  },
+  "manifest": {
+    "entries": 1024,
+    "absentCommitted": [
+      "src/borders.test.ts",
+      "src/css-flex.test.ts",
+      "src/css-flow.test.ts",
+      "src/css-math.test.ts",
+      "src/css-variables.test.ts",
+      "src/flex-column-wrap.test.ts",
+      "src/flex-column.test.ts",
+      "src/flex-document.test.ts",
+      "src/flex-nested.test.ts",
+      "src/font-relative-box.test.ts",
+      "src/inline-block.test.ts",
+      "src/inline-borders.test.ts",
+      "src/inline-flex.test.ts",
+      "src/page-base64.test.ts",
+      "src/portable-boundary.test.ts",
+      "src/reference-images.test.ts",
+      "src/reference-renderer.test.ts",
+      "src/relative-positioning.test.ts",
+      "src/response-archive.test.ts",
+      "src/select-keyboard.test.ts",
+      "src/select-typeahead.test.ts",
+      "src/stacking-order.test.ts"
+    ],
+    "fullSuiteRerun": false
+  },
+  "live": {
+    "execution": {
+      "mode": "live",
+      "target": {
+        "id": "youtube-local-llm-hardware",
+        "query": "local llm hardware",
+        "url": "https://www.youtube.com/results?search_query=local+llm+hardware"
+      },
+      "pid": 2213131,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 1.7309270575642586,
+      "wireRequests": 1,
+      "sourceEligible": true,
+      "usableSourceResults": true,
+      "safeClosedHttpFailure": false,
+      "outcome": "source-results-unverified",
+      "nativeOutcome": "empty-extraction",
+      "responseCaptured": true,
+      "stdoutSha256": "6d46d7f1c4e9ff4e926e8e25ee32269d7aa79a05f034d50b6afb704f7ae0e816",
+      "safetyPassed": true,
+      "passed": true,
+      "errors": [],
+      "retryAuthorized": false
+    },
+    "proof": {
+      "mode": "proof",
+      "target": {
+        "id": "youtube-local-llm-hardware",
+        "query": "local llm hardware",
+        "url": "https://www.youtube.com/results?search_query=local+llm+hardware"
+      },
+      "pid": 2212955,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 1.0797146372497082,
+      "wireRequests": 0,
+      "sourceEligible": true,
+      "usableSourceResults": true,
+      "safeClosedHttpFailure": false,
+      "outcome": "source-results-unverified",
+      "nativeOutcome": "empty-extraction",
+      "responseCaptured": true,
+      "stdoutSha256": "28181bb1a5b9be8564fe8f97cf9422dab7fb84550cc253e7853fecb332d7dc31",
+      "safetyPassed": true,
+      "passed": true,
+      "errors": [],
+      "retryAuthorized": false
+    },
+    "output": {
+      "kind": "native-video-search-v1",
+      "query": "local llm hardware",
+      "url": "https://www.youtube.com/results?search_query=local+llm+hardware",
+      "partial": true,
+      "rendered": false,
+      "verified": false,
+      "outcome": "source-results-unverified",
+      "contentSuccess": null,
+      "nativeOutcome": "empty-extraction",
+      "source": {
+        "url": "https://www.youtube.com/results?redacted",
+        "status": 200,
+        "receivedAt": "2026-09-17T20:08:44.056Z",
+        "headers": {
+          "content-type": [
+            "text/html; charset=utf-8"
+          ],
+          "content-encoding": [
+            "gzip"
+          ],
+          "content-security-policy": [
+            "base-uri 'self';object-src 'none';script-src 'report-sample' 'nonce-LFbodsacveuR4qWmaAE7DA' 'unsafe-inline' 'strict-dynamic' https: http: 'unsafe-eval';report-uri https://csp.withgoogle.com/csp/youtube_main/strict",
+            "require-trusted-types-for 'script'"
+          ]
+        },
+        "headerCapture": {
+          "kind": "selected-response-headers-v2",
+          "partial": true,
+          "omitted": []
+        },
+        "decodedBytes": 1594843,
+        "encodedBytes": 317155,
+        "bodySha256": "e0ef50736534184f519d116ee7a7bb28ff1cc91fe7380af414308e96441a3b7a",
+        "hashScope": "transport-decoded-body-before-loader",
+        "redirects": 0,
+        "elapsedMs": 641.9057110000001
+      },
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "sourceVideos": {
+        "kind": "youtube-search-video-results-v1",
+        "scope": "document-source",
+        "partial": true,
+        "rendered": false,
+        "verified": false,
+        "textFormat": "plain-text",
+        "query": "local llm hardware",
+        "truncated": false,
+        "entries": [
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[0].videoRenderer"
+            },
+            "videoId": "mevUEQcumzU",
+            "url": "https://www.youtube.com/watch?v=mevUEQcumzU",
+            "title": "What Computer Should You Buy for Local AI",
+            "authorText": "Alex Ziskind",
+            "durationText": "11:05",
+            "publishedText": "1 month ago",
+            "viewsText": "112,393 views",
+            "snippetText": "I turned years of local AI benchmarks into an app that helps you figure out what hardware actually makes sense for the models ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[1].videoRenderer"
+            },
+            "videoId": "WLX87R-PPvM",
+            "url": "https://www.youtube.com/watch?v=WLX87R-PPvM",
+            "title": "Don't Buy Local AI Hardware Until You Watch This",
+            "authorText": "Marfil Draws",
+            "durationText": "15:48",
+            "publishedText": "8 hours ago",
+            "viewsText": "1,241 views",
+            "snippetText": "A person on Reddit asked those who spent more than $10000 on a local AI setup whether they regret it. Meanwhile a used RTX ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[2].videoRenderer"
+            },
+            "videoId": "sR8sJ2mybQU",
+            "url": "https://www.youtube.com/watch?v=sR8sJ2mybQU",
+            "title": "Best Hardware for Running Local LLMs in 2026: Mac vs NVIDIA vs Cloud",
+            "authorText": "Kai",
+            "durationText": "13:48",
+            "publishedText": "1 month ago",
+            "viewsText": "96,873 views",
+            "snippetText": "Trying to build a local AI machine in 2026 without wasting thousands of dollars? In this video, Kai breaks down the real hardware ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[3].videoRenderer"
+            },
+            "videoId": "QKdKcFjjZhE",
+            "url": "https://www.youtube.com/watch?v=QKdKcFjjZhE",
+            "title": "Local AI Explained | Hardware, Setup and Models",
+            "authorText": "Syntax",
+            "durationText": "25:00",
+            "publishedText": "6 months ago",
+            "viewsText": "351,880 views",
+            "snippetText": "In this video CJ guides you through the wide world of local AI. He shows how he set up his new 128GB memory mini PC and gives ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[4].videoRenderer"
+            },
+            "videoId": "L4UV6b2Xc64",
+            "url": "https://www.youtube.com/watch?v=L4UV6b2Xc64",
+            "title": "Don't Buy a Local AI Hardware Until You See This",
+            "authorText": "Kai",
+            "durationText": "15:26",
+            "publishedText": "6 days ago",
+            "viewsText": "125,654 views",
+            "snippetText": "Before you buy a local AI workstation in 2026, you need to look beyond VRAM, benchmark charts, and the price on the box.",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[5].videoRenderer"
+            },
+            "videoId": "oqvZJf5Vz7U",
+            "url": "https://www.youtube.com/watch?v=oqvZJf5Vz7U",
+            "title": "Best Hardware for Running Local LLMs in 2026: Mac vs NVIDIA vs Xiomi",
+            "authorText": "Marfil Draws",
+            "durationText": "22:11",
+            "publishedText": "3 days ago",
+            "viewsText": "13,266 views",
+            "snippetText": "Mac Studio M5 Ultra: 1.2 TB/s. DGX Spark: 273 GB/s. Xiaomi AI Cube: 1.22 TB/s. Three memory bandwidth numbers that look ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[6].videoRenderer"
+            },
+            "videoId": "uefMWJ1GBWg",
+            "url": "https://www.youtube.com/watch?v=uefMWJ1GBWg",
+            "title": "Can a Local LLM Actually Replace Claude or Codex for Coding?",
+            "authorText": "Kai",
+            "durationText": "12:51",
+            "publishedText": "4 weeks ago",
+            "viewsText": "6,385 views",
+            "snippetText": "A local LLM can now write real code on hardware from 2020 but the biggest question isn't how smart the model is. It's whether ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[7].videoRenderer"
+            },
+            "videoId": "les2xFvY5V4",
+            "url": "https://www.youtube.com/watch?v=les2xFvY5V4",
+            "title": "The Bare Minimum Setup You Need to Run AI Agents Locally",
+            "authorText": "Daniel Jindoo ",
+            "durationText": "11:44",
+            "publishedText": "1 month ago",
+            "viewsText": "60,546 views",
+            "snippetText": "Join the Free Local AI Guild, 250+ Members : https://www.skool.com/join-dlag/about Read Practical AI on Substack, 3K+ ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[8].videoRenderer"
+            },
+            "videoId": "9CAZapI_WTE",
+            "url": "https://www.youtube.com/watch?v=9CAZapI_WTE",
+            "title": "Best Local AI Model for EVERY GPU (8GB to 512GB+)",
+            "authorText": "RepoChad",
+            "durationText": "19:42",
+            "publishedText": "3 weeks ago",
+            "viewsText": "27,740 views",
+            "snippetText": "What's the best local AI model your GPU can actually run? In this video, I break down the best open-weight AI models for virtually ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[9].videoRenderer"
+            },
+            "videoId": "1d2NfzSRRUw",
+            "url": "https://www.youtube.com/watch?v=1d2NfzSRRUw",
+            "title": "Before You Buy Local AI Hardware, Watch This",
+            "authorText": "Manolo Remiddi",
+            "durationText": "23:25",
+            "publishedText": "3 months ago",
+            "viewsText": "75,141 views",
+            "snippetText": "Join the Inner Circle: https://discord.gg/MRESQnf4R4 Companion Substack Article to this video: ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[10].videoRenderer"
+            },
+            "videoId": "gQ7iJuciMg0",
+            "url": "https://www.youtube.com/watch?v=gQ7iJuciMg0",
+            "title": "Best Hardware for Running Local LLMs in 2026: Mac vs NVIDIA vs Cloud",
+            "authorText": "Kai",
+            "durationText": "15:29",
+            "publishedText": "2 weeks ago",
+            "viewsText": "51,999 views",
+            "snippetText": "Trying to build a local AI machine in 2026 without wasting thousands of dollars? In this video, Kai breaks down the real hardware ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[12].videoRenderer"
+            },
+            "videoId": "eaEtNXWMwLY",
+            "url": "https://www.youtube.com/watch?v=eaEtNXWMwLY",
+            "title": "My Complete Local AI Setup - $7000+",
+            "authorText": "Tech With Tim",
+            "durationText": "18:44",
+            "publishedText": "2 weeks ago",
+            "viewsText": "113,087 views",
+            "snippetText": "Want to LEARN how to build useful AI agents that actually get things done? Go here: https://aiagentbuilders.co/yt Local AI is ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[13].videoRenderer"
+            },
+            "videoId": "C5uH9wVbClc",
+            "url": "https://www.youtube.com/watch?v=C5uH9wVbClc",
+            "title": "How To Serve a Local LLM to Many Users at Once",
+            "authorText": "Devsplainers",
+            "durationText": "8:45",
+            "publishedText": "2 days ago",
+            "viewsText": "22,066 views",
+            "snippetText": "Your local LLM can serve dozens of users from one GPU, but every user gets slower. This video shows what happens inside a ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[15].videoRenderer"
+            },
+            "videoId": "Cmsx01H-0xY",
+            "url": "https://www.youtube.com/watch?v=Cmsx01H-0xY",
+            "title": "Dev Workloads and LLMs… under $1000",
+            "authorText": "Alex Ziskind",
+            "durationText": "21:09",
+            "publishedText": "11 months ago",
+            "viewsText": "669,400 views",
+            "snippetText": "Under-$1K Geekom A9 Max: dev builds and local LLMs. 🛡️Go to https://surfshark.com/alexziskind or use code ALEXZISKIND at ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[16].videoRenderer"
+            },
+            "videoId": "lm7NORuZWSQ",
+            "url": "https://www.youtube.com/watch?v=lm7NORuZWSQ",
+            "title": "Stop Guessing! I Built an LLM Hardware Calculator",
+            "authorText": "Alex Ziskind",
+            "durationText": "14:43",
+            "publishedText": "1 year ago",
+            "viewsText": "62,771 views",
+            "snippetText": "I Built an LLM Hardware Calculator. Thanks to Sevalla for sponsoring and hosting it! Check them out at: ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[17].videoRenderer"
+            },
+            "videoId": "mUGsv_IHT-g",
+            "url": "https://www.youtube.com/watch?v=mUGsv_IHT-g",
+            "title": "Run Local LLMs on Hardware from $50 to $50,000 - We Test and Compare!",
+            "authorText": "Dave's Garage",
+            "durationText": "15:05",
+            "publishedText": "1 year ago",
+            "viewsText": "413,784 views",
+            "snippetText": "Dave tests llama3.1 and llama3.2 using Ollama on a Raspberry Pi, a Herk Orion Mini PC, a 3970X, an M2 Mac Pro, and a ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[19].videoRenderer"
+            },
+            "videoId": "0ujh7hfutq0",
+            "url": "https://www.youtube.com/watch?v=0ujh7hfutq0",
+            "title": "Llama.cpp vs vLLM: Which Local LLM Engine Actually Scales?",
+            "authorText": "IBM Technology",
+            "durationText": "10:36",
+            "publishedText": "1 month ago",
+            "viewsText": "83,017 views",
+            "snippetText": "Learn more about Large Language Models (LLMs) here → https://ibm.biz/~uLCBj5HLQ Choosing a local LLM engine can make ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[20].videoRenderer"
+            },
+            "videoId": "P-Fmo_CCIbY",
+            "url": "https://www.youtube.com/watch?v=P-Fmo_CCIbY",
+            "title": "Want to Run AI Agents Locally? Here is The Bare Minimum Setup/Build",
+            "authorText": "Daniel Jindoo ",
+            "durationText": "16:18",
+            "publishedText": "6 months ago",
+            "viewsText": "677,754 views",
+            "snippetText": "Heads up ! Updated version here: https://www.youtube.com/watch?v=les2xFvY5V4 Join Weekly HomeLab 101 with 350+ ...",
+            "truncated": false
+          },
+          {
+            "source": {
+              "offset": 753013,
+              "offsetBasis": "lf-normalized-utf16",
+              "path": "$.contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents[21].videoRenderer"
+            },
+            "videoId": "QeAHC1jGxck",
+            "url": "https://www.youtube.com/watch?v=QeAHC1jGxck",
+            "title": "Your OS Changes Everything for Local AI",
+            "authorText": "Alex Ziskind",
+            "durationText": "14:13",
+            "publishedText": "2 months ago",
+            "viewsText": "123,438 views",
+            "snippetText": "One benchmark made me double-check my numbers. The rest tell a different story. Try out ChatLLM - http://chatllm.abacus.ai/ltf ...",
+            "truncated": false
+          }
+        ]
+      },
+      "metrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 317155,
+        "decodedBytes": 1594843,
+        "active": 0,
+        "closed": true
+      }
+    },
+    "outputBytes": 13221,
+    "outputSha256": "6d46d7f1c4e9ff4e926e8e25ee32269d7aa79a05f034d50b6afb704f7ae0e816",
+    "envelopeSha256": "7be3df96b7cbeae73a996bdca8114009cf30a7fc1b0ed150aaf50dc879505eed",
+    "response": {
+      "receivedAt": "2026-09-17T20:08:44.049Z",
+      "receivedAtBasis": "native-adapter-fulfilled",
+      "url": "https://www.youtube.com/results?search_query=local+llm+hardware",
+      "status": 200,
+      "decodedBytes": 1594843,
+      "encodedBytes": 317155,
+      "sha256": "e0ef50736534184f519d116ee7a7bb28ff1cc91fe7380af414308e96441a3b7a"
+    },
+    "closure": {
+      "mode": "live",
+      "target": {
+        "id": "youtube-local-llm-hardware",
+        "query": "local llm hardware",
+        "url": "https://www.youtube.com/results?search_query=local+llm+hardware"
+      },
+      "driver": "actual-compiled-cli-with-import-v1",
+      "transportCalls": 1,
+      "mockedRequests": 0,
+      "actualRequests": 1,
+      "request": {
+        "url": "https://www.youtube.com/results?search_query=local+llm+hardware",
+        "method": "GET",
+        "redirect": "manual",
+        "credentials": "omit",
+        "bodyAbsent": true,
+        "userAgent": "AgentBrowser/0.1",
+        "headerNames": [
+          "Accept-Language",
+          "User-Agent"
+        ]
+      },
+      "response": {
+        "file": "response.json",
+        "sha256": "7be3df96b7cbeae73a996bdca8114009cf30a7fc1b0ed150aaf50dc879505eed",
+        "bodySha256": "e0ef50736534184f519d116ee7a7bb28ff1cc91fe7380af414308e96441a3b7a",
+        "decodedBytes": 1594843,
+        "status": 200
+      },
+      "transportFailure": null,
+      "transport": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 317155,
+        "decodedBytes": 1594843,
+        "active": 0,
+        "closed": true
+      },
+      "sessions": [
+        {
+          "tabs": 0,
+          "selectedTab": null,
+          "pendingLoads": 0,
+          "pageTraversals": [],
+          "navigations": 1,
+          "commits": 1,
+          "cleanupErrors": 0,
+          "closed": true,
+          "network": {
+            "mockedRequests": 0,
+            "mockedDecodedBytes": 0,
+            "requests": 1,
+            "redirects": 0,
+            "encodedBytes": 317155,
+            "decodedBytes": 1594843,
+            "active": 0,
+            "closed": true
+          },
+          "routes": {
+            "routes": 0,
+            "retainedBytes": 0,
+            "fulfilled": 0,
+            "servedBytes": 0,
+            "closed": true,
+            "limits": {
+              "maxRoutes": 32,
+              "maxBodyBytes": 262144,
+              "maxRetainedBytes": 1048576,
+              "maxFulfilled": 512,
+              "maxServedBytes": 8388608,
+              "maxMatchSteps": 2000000
+            },
+            "partial": true,
+            "automaticRedirects": false
+          },
+          "cookies": {
+            "cookies": 0,
+            "accepted": 0,
+            "rejected": 0,
+            "rejections": {},
+            "closed": true
+          },
+          "storage": {
+            "tabs": 0,
+            "areas": 0,
+            "entries": 0,
+            "bytes": 0,
+            "revision": 1,
+            "notificationFailures": 0,
+            "closed": true
+          },
+          "storageEvents": {
+            "documents": 0,
+            "accepted": 0,
+            "delivered": 0,
+            "canceled": 0,
+            "dropped": 0,
+            "failed": 0,
+            "pending": 0,
+            "active": false,
+            "retainedBytes": 0,
+            "peakBytes": 0,
+            "closed": true
+          }
+        }
+      ],
+      "documents": {
+        "observed": 2,
+        "closed": 2
+      },
+      "safetyErrors": [],
+      "exitCode": 0
+    }
+  },
+  "replays": {
+    "generic": {
+      "execution": {
+        "at": "2026-09-17T20:13:36.465697+00:00",
+        "mode": "generic",
+        "pid": 2220383,
+        "exitCode": 1,
+        "expectedExitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 1.0245649088174105,
+        "passed": true,
+        "newRequests": 0,
+        "errors": []
+      },
+      "closure": {
+        "mode": "generic",
+        "exitCode": 1,
+        "calls": 1,
+        "newRequests": 0,
+        "bodySha256": "e0ef50736534184f519d116ee7a7bb28ff1cc91fe7380af414308e96441a3b7a",
+        "originalReceivedAt": "2026-09-17T20:08:44.049Z",
+        "metrics": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 0,
+          "redirects": 0,
+          "encodedBytes": 0,
+          "decodedBytes": 0,
+          "active": 0,
+          "closed": true
+        },
+        "sessionMetrics": [
+          {
+            "tabs": 0,
+            "selectedTab": null,
+            "pendingLoads": 0,
+            "pageTraversals": [],
+            "navigations": 1,
+            "commits": 1,
+            "cleanupErrors": 0,
+            "closed": true,
+            "network": {
+              "mockedRequests": 0,
+              "mockedDecodedBytes": 0,
+              "requests": 0,
+              "redirects": 0,
+              "encodedBytes": 0,
+              "decodedBytes": 0,
+              "active": 0,
+              "closed": true
+            },
+            "routes": {
+              "routes": 0,
+              "retainedBytes": 0,
+              "fulfilled": 0,
+              "servedBytes": 0,
+              "closed": true,
+              "limits": {
+                "maxRoutes": 32,
+                "maxBodyBytes": 262144,
+                "maxRetainedBytes": 1048576,
+                "maxFulfilled": 512,
+                "maxServedBytes": 8388608,
+                "maxMatchSteps": 2000000
+              },
+              "partial": true,
+              "automaticRedirects": false
+            },
+            "cookies": {
+              "cookies": 0,
+              "accepted": 0,
+              "rejected": 0,
+              "rejections": {},
+              "closed": true
+            },
+            "storage": {
+              "tabs": 0,
+              "areas": 0,
+              "entries": 0,
+              "bytes": 0,
+              "revision": 1,
+              "notificationFailures": 0,
+              "closed": true
+            },
+            "storageEvents": {
+              "documents": 0,
+              "accepted": 0,
+              "delivered": 0,
+              "canceled": 0,
+              "dropped": 0,
+              "failed": 0,
+              "pending": 0,
+              "active": false,
+              "retainedBytes": 0,
+              "peakBytes": 0,
+              "closed": true
+            }
+          }
+        ],
+        "documents": {
+          "observed": 2,
+          "closed": 2
+        },
+        "sdkExecuted": false,
+        "sourceScriptsExecuted": false,
+        "errors": []
+      },
+      "outputSha256": "ddcab2bb4a98bc4472d5c3b61c549bbd4f07b7f950b4f8914cdb1e4160158b30",
+      "outputBytes": 18019,
+      "outcome": "empty-extraction"
+    },
+    "source": {
+      "execution": {
+        "at": "2026-09-17T20:13:36.465674+00:00",
+        "mode": "source",
+        "pid": 2220390,
+        "exitCode": 0,
+        "expectedExitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.9703492484986782,
+        "passed": true,
+        "newRequests": 0,
+        "errors": []
+      },
+      "closure": {
+        "mode": "source",
+        "exitCode": 0,
+        "calls": 1,
+        "newRequests": 0,
+        "bodySha256": "e0ef50736534184f519d116ee7a7bb28ff1cc91fe7380af414308e96441a3b7a",
+        "originalReceivedAt": "2026-09-17T20:08:44.049Z",
+        "metrics": {
+          "mockedRequests": 0,
+          "mockedDecodedBytes": 0,
+          "requests": 0,
+          "redirects": 0,
+          "encodedBytes": 0,
+          "decodedBytes": 0,
+          "active": 0,
+          "closed": true
+        },
+        "sessionMetrics": [
+          {
+            "tabs": 0,
+            "selectedTab": null,
+            "pendingLoads": 0,
+            "pageTraversals": [],
+            "navigations": 1,
+            "commits": 1,
+            "cleanupErrors": 0,
+            "closed": true,
+            "network": {
+              "mockedRequests": 0,
+              "mockedDecodedBytes": 0,
+              "requests": 0,
+              "redirects": 0,
+              "encodedBytes": 0,
+              "decodedBytes": 0,
+              "active": 0,
+              "closed": true
+            },
+            "routes": {
+              "routes": 0,
+              "retainedBytes": 0,
+              "fulfilled": 0,
+              "servedBytes": 0,
+              "closed": true,
+              "limits": {
+                "maxRoutes": 32,
+                "maxBodyBytes": 262144,
+                "maxRetainedBytes": 1048576,
+                "maxFulfilled": 512,
+                "maxServedBytes": 8388608,
+                "maxMatchSteps": 2000000
+              },
+              "partial": true,
+              "automaticRedirects": false
+            },
+            "cookies": {
+              "cookies": 0,
+              "accepted": 0,
+              "rejected": 0,
+              "rejections": {},
+              "closed": true
+            },
+            "storage": {
+              "tabs": 0,
+              "areas": 0,
+              "entries": 0,
+              "bytes": 0,
+              "revision": 1,
+              "notificationFailures": 0,
+              "closed": true
+            },
+            "storageEvents": {
+              "documents": 0,
+              "accepted": 0,
+              "delivered": 0,
+              "canceled": 0,
+              "dropped": 0,
+              "failed": 0,
+              "pending": 0,
+              "active": false,
+              "retainedBytes": 0,
+              "peakBytes": 0,
+              "closed": true
+            }
+          }
+        ],
+        "documents": {
+          "observed": 2,
+          "closed": 2
+        },
+        "sdkExecuted": false,
+        "sourceScriptsExecuted": false,
+        "errors": []
+      },
+      "outputSha256": "0f65879bdbd7923b2f13dd376b198e56554e8a4ecaf24c741e0f333d4284acdf",
+      "outputBytes": 13194,
+      "outcome": "source-results-unverified"
+    }
+  },
+  "reviews": {
+    "REVIEW.md": {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-command-september17/REVIEW.md",
+      "sha256": "448e60c410093dc1042a38c9454e7ec27d30ad1dfd48903add98ecdff156750c"
+    },
+    "REVIEW-RESOLUTION.md": {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-command-september17/REVIEW-RESOLUTION.md",
+      "sha256": "b50190b020e9c9cd8fdb8023d6d3f082a83a36be815fab8e91533b766980ce01"
+    },
+    "FRESH-REVIEW.md": {
+      "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-command-september17/FRESH-REVIEW.md",
+      "sha256": "78f0368706c68e2b8f4547c9da82a06169744ac701bc23331ed4f4bbcca72981"
+    }
+  },
+  "preservedHarnessRevisions": {
+    "LIVE-REVISION.json": {
+      "at": "2026-09-17T20:05:49.999Z",
+      "previous": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-live-september17",
+      "lane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-live-september17-r2",
+      "cause": "AttributeError: module 'hashlib' has no attribute 'file_digest'",
+      "previousChildSpawned": false,
+      "previousProofDirectoryExists": false,
+      "previousGETs": 0,
+      "priorPins": {
+        "SCOPE.md": "362f05a643b561687f9f2b23f3a6da3764067824409f32060e835ea69b366bd3",
+        "run.py": "43d9729440a957c91eb5072f10d59f2c527b4a65a5d5e1fbb92fcc02a4f70731",
+        "check.mjs": "93bd701dbe269ff78e41226e5e8df8e928cad4f36fe0270e1970d777ead3e026",
+        "scope-guard.cjs": "1ca845879b127656b51d0b9b5ea95f26b9935119ab2bcc3cfbdd524dad4a3670",
+        "observe.cjs": "ec6ce030cec6f186eca5a0dc767baf045b6115b849b9963390ed7f3bf3995ad9",
+        "replay-guard.cjs": "8e95384c687db7f5352dbd5cc76fb03cd066831b3dfb457d5b9c7c36d485efb0",
+        "sealed-exec.py": "e024d0882b099e995acc8980de9164a9db2ac2362417835fe5ad568a33068ac7",
+        "fixture.html": "ad1f5a2dd40bbaab21f3e6c1262915d0bef86bfbd9ddcf80113f5549e9d05d9c",
+        "REUSED-GUARDS.json": "3bacdf7ed11b53904b7af9507a5aaa53fc79d4d783fde746d23f7bbc6872e799",
+        "INPUTS.json": "cfb29e8c8a569b48908a57f85175a19513aba6897edf57c6493e938558ce5b18",
+        "RUNTIME.json": "b181a87697dc405149ff886022b8a92bbcd0506a25f5a86407ad512f481b88cb"
+      },
+      "priorAuthorizationSha256": "18720462fbe4fb8eee1f00f0b476a0ca9b356f83c187d705b1b5874e6ed44e07",
+      "productionChanged": false,
+      "authorizationSha256": "e25969671261b165830a49ffea419aada2cb9858abe372eba228bfc55f836836"
+    },
+    "LIVE-REVISION-2.json": {
+      "at": "2026-09-17T20:07:03.416Z",
+      "previous": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-live-september17-r2",
+      "lane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-live-september17-r3",
+      "cause": "AttributeError: 'PosixPath' object has no attribute 'is_relative_to'",
+      "pythonVersion": "3.8.10",
+      "previousChildSpawned": false,
+      "previousProofDirectoryExists": false,
+      "previousGETs": 0,
+      "priorPins": {
+        "SCOPE.md": "4d383543f4dc73b2863c5a1d6f5ae1d9eb3f8733b0aa1612287817f51779e934",
+        "run.py": "b912d0061c47fdf656607d33c1400bcdeec739f46a3102355c5719bb4205b9a3",
+        "check.mjs": "93bd701dbe269ff78e41226e5e8df8e928cad4f36fe0270e1970d777ead3e026",
+        "scope-guard.cjs": "1ca845879b127656b51d0b9b5ea95f26b9935119ab2bcc3cfbdd524dad4a3670",
+        "observe.cjs": "ec6ce030cec6f186eca5a0dc767baf045b6115b849b9963390ed7f3bf3995ad9",
+        "replay-guard.cjs": "8e95384c687db7f5352dbd5cc76fb03cd066831b3dfb457d5b9c7c36d485efb0",
+        "sealed-exec.py": "e024d0882b099e995acc8980de9164a9db2ac2362417835fe5ad568a33068ac7",
+        "fixture.html": "ad1f5a2dd40bbaab21f3e6c1262915d0bef86bfbd9ddcf80113f5549e9d05d9c",
+        "REUSED-GUARDS.json": "3bacdf7ed11b53904b7af9507a5aaa53fc79d4d783fde746d23f7bbc6872e799",
+        "INPUTS.json": "cfb29e8c8a569b48908a57f85175a19513aba6897edf57c6493e938558ce5b18",
+        "RUNTIME.json": "b181a87697dc405149ff886022b8a92bbcd0506a25f5a86407ad512f481b88cb"
+      },
+      "priorAuthorizationSha256": "e25969671261b165830a49ffea419aada2cb9858abe372eba228bfc55f836836",
+      "productionChanged": false,
+      "authorizationSha256": "4a19d69f33c3c6e1c1cfc03256af53af1eaa4d662b48fa5008a906ad68fdda0e"
+    },
+    "LIVE-REVISION-3.json": {
+      "at": "2026-09-17T20:08:30.708Z",
+      "previous": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-live-september17-r3",
+      "lane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-live-september17-r4",
+      "cause": "Host proof incorrectly denied the built-in AgentBrowser/0.1 request identity",
+      "previousExecution": {
+        "mode": "proof",
+        "target": {
+          "id": "youtube-local-llm-hardware",
+          "query": "local llm hardware",
+          "url": "https://www.youtube.com/results?search_query=local+llm+hardware"
+        },
+        "pid": 2211038,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 1.0698615238070488,
+        "safetyPassed": false,
+        "passed": false,
+        "errors": [
+          "RuntimeError: Host safety failed"
+        ],
+        "retryAuthorized": false
+      },
+      "previousGETs": 0,
+      "priorPins": {
+        "SCOPE.md": "276d24eb9f95fadbe571f3c85ca1751115cb6d49fdbfa718383268f8f6c27a68",
+        "run.py": "15956f5666b8b98bb3522b995b154457399842979f841963857239f9bd6205c8",
+        "check.mjs": "93bd701dbe269ff78e41226e5e8df8e928cad4f36fe0270e1970d777ead3e026",
+        "scope-guard.cjs": "1ca845879b127656b51d0b9b5ea95f26b9935119ab2bcc3cfbdd524dad4a3670",
+        "observe.cjs": "ec6ce030cec6f186eca5a0dc767baf045b6115b849b9963390ed7f3bf3995ad9",
+        "replay-guard.cjs": "8e95384c687db7f5352dbd5cc76fb03cd066831b3dfb457d5b9c7c36d485efb0",
+        "sealed-exec.py": "e024d0882b099e995acc8980de9164a9db2ac2362417835fe5ad568a33068ac7",
+        "fixture.html": "ad1f5a2dd40bbaab21f3e6c1262915d0bef86bfbd9ddcf80113f5549e9d05d9c",
+        "REUSED-GUARDS.json": "3bacdf7ed11b53904b7af9507a5aaa53fc79d4d783fde746d23f7bbc6872e799",
+        "INPUTS.json": "cfb29e8c8a569b48908a57f85175a19513aba6897edf57c6493e938558ce5b18",
+        "RUNTIME.json": "b181a87697dc405149ff886022b8a92bbcd0506a25f5a86407ad512f481b88cb"
+      },
+      "priorAuthorizationSha256": "4a19d69f33c3c6e1c1cfc03256af53af1eaa4d662b48fa5008a906ad68fdda0e",
+      "productionChanged": false,
+      "authorizationSha256": "01317ecb5afc668b7cb55973a8fd93dad03d386af0c89266433ff974f154924b"
+    },
+    "REPLAY-REVISION.json": {
+      "at": "2026-09-17T20:13:29.285Z",
+      "previous": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-replay-september17",
+      "lane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-replay-september17-r2",
+      "previousExecution": {
+        "at": "2026-09-17T20:12:19.412369+00:00",
+        "mode": "generic",
+        "pid": 2217890,
+        "exitCode": 1,
+        "expectedExitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.9246863964945078,
+        "passed": false,
+        "newRequests": 0,
+        "errors": [
+          "AssertionError: "
+        ]
+      },
+      "priorPins": {
+        "INPUTS.json": "cfb29e8c8a569b48908a57f85175a19513aba6897edf57c6493e938558ce5b18",
+        "PLAN.md": "764435dce6fefa39aa37e032347cf7f0d091e07018100191a80fefd1c1238d13",
+        "RUNTIME.json": "b181a87697dc405149ff886022b8a92bbcd0506a25f5a86407ad512f481b88cb",
+        "SOURCE.json": "f97a29e28367fefe46174417b0bb975d6a6abb6ee79b4556bbdc7186d51ce6c5",
+        "check.mjs": "e82f81ca67a3e1dd1173a33655e0310f61b4e92cdcfee0d463939849feed227b",
+        "prepare.mjs": "12f0221462dadba82eafa8294f6a842ba7e410af6b90379836b11651f7df54e9",
+        "replay-guard.cjs": "8e95384c687db7f5352dbd5cc76fb03cd066831b3dfb457d5b9c7c36d485efb0",
+        "run.py": "fac9c5c00c3b9ed76aeeb5db5dad19a86a53da3d1f014710422bf773237f52a6",
+        "scope-guard.cjs": "1ca845879b127656b51d0b9b5ea95f26b9935119ab2bcc3cfbdd524dad4a3670",
+        "sealed-exec.py": "e024d0882b099e995acc8980de9164a9db2ac2362417835fe5ad568a33068ac7"
+      },
+      "productionChanged": false,
+      "newRequests": 0,
+      "cause": "Generic native requests omit redirect; the transport default is follow. Source command still requires manual."
+    }
+  },
+  "historicalAgentCorpus": {
+    "attempted": 100,
+    "useful": 33,
+    "other": 67,
+    "unchanged": true
+  },
+  "newLiveGETs": 1,
+  "successfulOfflineCliReplays": 2,
+  "sdkExecuted": false,
+  "sourceScriptsExecuted": false,
+  "limitations": [
+    "No rendered video/playback/transcripts or verified source claims",
+    "Source schema/size/visibility and redacted-receipt limitations remain",
+    "No general crawler-block/CAPTCHA or overall speed result",
+    "Actual SDK, real credentials/passkeys/devices and original research remain open"
+  ],
+  "broaderGoal": "active",
+  "push": false,
+  "seals": [
+    {
+      "at": "2026-09-17T20:18:52.822Z",
+      "directory": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-command-september17",
+      "fileCount": 74,
+      "manifestSha256": "3d2e10fe0f7721d52919cfec3b59ccf5d737346914950162d5b8374699295986"
+    },
+    {
+      "at": "2026-09-17T20:18:52.808Z",
+      "directory": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-live-september17",
+      "fileCount": 12,
+      "manifestSha256": "c9639766218fd65526d64447be2dcf8319c0dfc168f0b64fc54b015297899ec2"
+    },
+    {
+      "at": "2026-09-17T20:18:52.808Z",
+      "directory": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-live-september17-r2",
+      "fileCount": 12,
+      "manifestSha256": "319270d9632be727291e77633e670580807a53bd6f0f3a49ed3a5b02c55f3eb0"
+    },
+    {
+      "at": "2026-09-17T20:18:52.810Z",
+      "directory": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-live-september17-r3",
+      "fileCount": 21,
+      "manifestSha256": "a6ee2ef1331ccbacbeb4ec71e94f3aea3cbdcefadf9546cc497257fc805c3165"
+    },
+    {
+      "at": "2026-09-17T20:18:52.814Z",
+      "directory": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-live-september17-r4",
+      "fileCount": 32,
+      "manifestSha256": "bd7264c31f2942950e7e1a1630a5fb4841d58c68420cc9fd9613ba899411b897"
+    },
+    {
+      "at": "2026-09-17T20:18:52.815Z",
+      "directory": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-replay-september17",
+      "fileCount": 18,
+      "manifestSha256": "5ab3b62c430cd4fcdc07409b365f0ee00280eeb5c73fe7bd9326ca6950e5b3c5"
+    },
+    {
+      "at": "2026-09-17T20:18:52.816Z",
+      "directory": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/video-search-replay-september17-r2",
+      "fileCount": 26,
+      "manifestSha256": "c9dedbdeff7be9a7651ef1b5a9258ca5d74d31f551265808197e6f105b68fd14"
+    }
+  ]
+}
