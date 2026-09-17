@@ -71,6 +71,7 @@ export function svgPresentationDeclarations(
 		let value = svgPaint
 			? source.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "")
 			: source.trim();
+		if (property === "color" && value === "") continue;
 		if (
 			property === "opacity" &&
 			/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?%?$/.test(value)

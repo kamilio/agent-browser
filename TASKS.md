@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Ignore empty SVG color and complete a real policy-checked asset fetch
+
+- Omit only color attributes whose existing trim produces an empty value, after
+  the source-length check and work charge. Inherited/currentColor and author CSS
+  remain effective; source attributes are unchanged. Unsupported nonempty color,
+  declaration injection, bad geometry and resource limits retain rejection.
+- Clean HEAD3a1192d plus two owned overlays passes872/0 in13 selected native
+  files, including17 new cases; build/types/format/lint pass. Original-runtime
+  control is5 passed/12 failed. Source1619/compiled2400 pins match; canonical
+  manifest1013 still has22 absent committed paths. No full-suite/SDK acceptance.
+- Full unchanged Target source from12:13:57.980 UTC September17 now completes
+  native navigation/layout. One actual source-declared asset GET at12:59:00.768
+  returns200/CORS with4760 decoded bytes,1632 gzip bytes, no redirects/retries.
+  The homepage is reconstructed from its saved response, not refetched. The
+  asset is captured inert; no websiteJavaScript/SDK/credentials/device/TTY use.
+- Original framing-only proof's SVG failure remains sealed. The initial SVG
+  harness passes offline but its live attempt fails before wire I/O because its
+  transport omitted the session jar. A separate corrected harness passes its
+  own offline proof and the asset GET; both spent markers and failures remain.
+  All relevant processes, sessions/documents and network resources close.
+- See SVG-EMPTY-COLOR.md and reports/svg-empty-color-2026-09-17.md/JSON.
+  This supersedes the preceding section's SVG-next-action, not its historical
+  measurements. Continue actual SafeJS/dynamic pages, useful content workflows,
+  performance/access challenges, credentials/passkeys/devices and research.
+  Historical100-entry33/67 verdicts and the overall goal remain open.
+
 ### Respect framing-only CSP in explicitly top-level documents
 
 - BrowserSession supplies frozen topLevelDocument:true context; the committed

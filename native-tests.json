@@ -1010,5 +1010,6 @@
   "src/session-script-policy.test.ts",
   "src/research-csp-admission.test.ts",
   "src/execution-content-security-policy.test.ts",
-  "src/script-csp-context.test.ts"
+  "src/script-csp-context.test.ts",
+  "src/svg-empty-color.test.ts"
 ]
