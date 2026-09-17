@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Build native Zoom participation and notetaking, not a browser fallback
+
+- User requests the Zoom workflow performed by ~/automations. Keep the full
+  outcome: actual native join, permitted incoming audio, retained recording,
+  transcript/summary and verified requested delivery. No meeting is joined yet.
+- One fresh native GET on September 17 captures HTTP 200/11,539 bytes from the
+  supplied entry URL, but extraction is empty. An exact zero-network proof and
+  closure checks pass; the live content/workflow gate remains failed. No scripts,
+  credentials, assets, join action, audio/device/TTY or challenge solver is used.
+- Add bounded, no-dependency WebSocket frame encoding/decoding as one prerequisite.
+  Final selected native checks pass267/0 in3 files, including125 new cases;
+  build/types/format/lint pass. This is not a socket, browser-WebSocket, SDK or
+  Zoom-media pass. Canonical native manifest retains22 absent committed paths.
+- Implement actual module/binary/realtime capabilities and native receive-audio
+  transport/decode/PCM lifecycle, then a genuine meeting driver. Reuse notetaker
+  orchestration contracts, not its Chromium/CDP launcher. Verify admission,
+  sustained real audio, pause/final flush, transcript/summary and delivery.
+- Resolve critically low disk headroom before recording. Keep the unrelated
+  selector-reuse patch and its final qualification outstanding, and preserve
+  historical100-page33/67 results. Original research, varied websites, actual
+  SafeJS, credentials/passkeys and the overall browser objective remain open.
+  See reports/native-zoom-foundation-2026-09-17.md/JSON.
+
 ### Reuse equivalent CSS custom-property maps without raising limits
 
 - Three exact source-linked Grokipedia stylesheets are retrieved on September17

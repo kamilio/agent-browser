@@ -1,0 +1,173 @@
+{
+  "date": "2026-09-17",
+  "status": "native-zoom-not-supported-yet",
+  "meetingJoined": false,
+  "audioReceived": false,
+  "recordingStarted": false,
+  "transcriptProduced": false,
+  "summaryDelivered": false,
+  "scope": "Native Zoom meeting participation and the existing automations notetaker outcome, without a Chromium/Firefox/remote-browser substitute.",
+  "landing": {
+    "startedAt": "2026-09-17T23:07:16.087Z",
+    "finishedAt": "2026-09-17T23:07:16.209Z",
+    "status": 200,
+    "decodedBytes": 11539,
+    "bodySha256": "f46041ac94f237e18bffcab463f7bf97bfc893e416f526df0d80ffe5be2909e3",
+    "receiptSha256": "3ad0a72eea67b068eaeb0a4a3adc2a4ccfe8751ccca0975fcbed657cc5d7ce4c",
+    "wireRequests": 1,
+    "redirects": 0,
+    "retries": 0,
+    "extractedMarkdownBytes": 0,
+    "title": "Launch Meeting - Zoom",
+    "capturePassed": true,
+    "contentAvailable": false,
+    "workflowPassed": false,
+    "proof": {
+      "mode": "proof",
+      "target": {
+        "id": "zoom-entry",
+        "url": "https://quora.zoom.us/j/7982110526"
+      },
+      "pid": 2426440,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.8974104356020689,
+      "wireRequests": 0,
+      "safetyPassed": true,
+      "capturePassed": true,
+      "contentAvailable": true,
+      "passed": true,
+      "errors": [],
+      "workflowFailures": []
+    },
+    "execution": {
+      "mode": "live",
+      "target": {
+        "id": "zoom-entry",
+        "url": "https://quora.zoom.us/j/7982110526"
+      },
+      "pid": 2426801,
+      "exitCode": 1,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 0.9489406011998653,
+      "wireRequests": 1,
+      "safetyPassed": true,
+      "capturePassed": true,
+      "contentAvailable": false,
+      "passed": false,
+      "errors": [],
+      "workflowFailures": [
+        "native-outcome-not-extracted",
+        "content-unavailable-or-unadmitted"
+      ]
+    },
+    "limitations": [
+      "No authentication, join submission, scripts, assets, SDK, devices, recording or delivery.",
+      "The title and script shell do not establish the meeting state or exact media protocol."
+    ]
+  },
+  "implementation": {
+    "commit": "7ee726a1f846094560bea8406c93a15af387efa7",
+    "files": [
+      "src/websocket-frames.ts",
+      "src/websocket-frames.test.ts"
+    ],
+    "newTests": 125,
+    "capability": "Bounded no-extensions WebSocket frame primitives only.",
+    "limits": [
+      "Explicit positive safe-integer payload bounds",
+      "Fresh client masking keys must be supplied by the future connection owner",
+      "No connection/message buffering is implemented"
+    ],
+    "notImplemented": [
+      "Opening handshake",
+      "Socket transport",
+      "Fragment sequencing",
+      "Text and close-reason UTF-8 validation",
+      "Close status validation",
+      "Compression",
+      "Page WebSocket API",
+      "SafeJS binary publication",
+      "Workers/WebAssembly integration",
+      "Native media reception and decode",
+      "Meeting driver and notetaker delivery"
+    ]
+  },
+  "qualification": {
+    "native": {
+      "label": "core03",
+      "pid": 2436604,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 2.7272427044808865,
+      "passedTests": 267,
+      "failedTests": 0,
+      "files": 3,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "quality": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    },
+    "runtime": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-notetaker-september17/RUNTIME-core03.json",
+    "sourcePins": 1641,
+    "compiledPins": 2424,
+    "manifestEntries": 1029,
+    "missingCommittedTestPaths": [
+      "src/borders.test.ts",
+      "src/css-flex.test.ts",
+      "src/css-flow.test.ts",
+      "src/css-math.test.ts",
+      "src/css-variables.test.ts",
+      "src/flex-column-wrap.test.ts",
+      "src/flex-column.test.ts",
+      "src/flex-document.test.ts",
+      "src/flex-nested.test.ts",
+      "src/font-relative-box.test.ts",
+      "src/inline-block.test.ts",
+      "src/inline-borders.test.ts",
+      "src/inline-flex.test.ts",
+      "src/page-base64.test.ts",
+      "src/portable-boundary.test.ts",
+      "src/reference-images.test.ts",
+      "src/reference-renderer.test.ts",
+      "src/relative-positioning.test.ts",
+      "src/response-archive.test.ts",
+      "src/select-keyboard.test.ts",
+      "src/select-typeahead.test.ts",
+      "src/stacking-order.test.ts"
+    ],
+    "fullSuiteRun": false,
+    "realSocketTest": false
+  },
+  "preservedFailures": [
+    "core01 native/build/types/format passed but lint failed on six test-style violations; corrected in the final test overlay.",
+    "core02 preparation had a SyntaxError and then failed before spawning a native child; its empty run directory and preparation note remain.",
+    "The live Zoom entry workflow remains a failed content extraction, despite complete HTTP 200 capture."
+  ],
+  "reviews": {
+    "workflow": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-notetaker-september17/WORKFLOW-REVIEW.md",
+    "nativeGaps": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-notetaker-september17/NATIVE-GAPS.md"
+  },
+  "outstanding": [
+    "Qualify actual SafeJS and HTML-module execution against the dynamic launch/client path",
+    "Provide lossless, owned guest binary buffers and genuine realtime connection APIs",
+    "Implement native media transport, decode, track clocks and a bounded receive-only PCM recording path",
+    "Join with the requested identity through legitimate authentication/lobby/host admission",
+    "Validate sustained non-synthetic incoming audio, pause/stop/final flush and cleanup",
+    "Produce transcript and summary from retained evidence and verify any requested delivery by readback",
+    "Resolve critically low disk headroom before sustained recording"
+  ]
+}

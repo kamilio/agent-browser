@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { describe, expect, it } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 import { AgentBrowserError } from "./errors.js";
 import {
 	type NativeWebSocketFrame,
@@ -83,12 +83,13 @@ describe("native no-extensions server frame decoding", () => {
 	it("reports consumed bytes independently of coalesced frames", () => {
 		const bytes = new Uint8Array([0x81, 2, 72, 105, 0x89, 0, 0x82]);
 		const first = decodeNativeWebSocketServerFrame(bytes, 2);
+		assert(first);
 		expect(first).toEqual({
 			frame: { fin: true, opcode: 1, payload: new Uint8Array([72, 105]) },
 			bytesConsumed: 4,
 		});
 		const second = decodeNativeWebSocketServerFrame(
-			bytes.subarray(first!.bytesConsumed),
+			bytes.subarray(first.bytesConsumed),
 			2,
 		);
 		expect(second).toEqual({
@@ -256,7 +257,8 @@ describe("native no-extensions server frame decoding", () => {
 			const result = decodeNativeWebSocketServerFrame(
 				backing.subarray(1, 5),
 				2,
-			)!;
+			);
+			assert(result);
 			expect(Array.from(backing)).toEqual(before);
 			expect(result.frame.payload.buffer).not.toBe(backing.buffer);
 			expect(result.frame.payload.buffer.byteLength).toBe(2);
@@ -384,7 +386,7 @@ describe("native no-extensions client frame encoding", () => {
 		);
 	});
 
-	it.each([...reservedOpcodes, -1, 16, 256, 1.5, NaN, "1", undefined])(
+	it.each([...reservedOpcodes, -1, 16, 256, 1.5, Number.NaN, "1", undefined])(
 		"rejects invalid caller opcode %s",
 		(opcode) => {
 			const frame = {
@@ -484,9 +486,9 @@ describe("native frame caller validation", () => {
 		0,
 		-1,
 		1.5,
-		NaN,
-		Infinity,
-		-Infinity,
+		Number.NaN,
+		Number.POSITIVE_INFINITY,
+		Number.NEGATIVE_INFINITY,
 		Number.MAX_SAFE_INTEGER + 1,
 		undefined,
 		null,

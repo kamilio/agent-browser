@@ -1,4 +1,5 @@
 [
+	"src/websocket-frames.test.ts",
 	"src/css-variable-resolution-cache.test.ts",
 	"src/css-variable-retention.test.ts",
 	"src/page-network-modules.test.ts",
