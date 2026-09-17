@@ -2,6 +2,7 @@ import { expect, it, vi } from "vitest";
 import { AgentBrowserError, type ErrorCode } from "./errors.js";
 import type { NetworkRequest, NetworkResponse } from "./network.js";
 import {
+	type PageNetworkModuleEntry,
 	PageNetworkModuleRegistry,
 	pageNetworkModuleLimits,
 } from "./page-network-modules.js";
@@ -207,7 +208,7 @@ it.each([
 		response(finalUrl, dependencySource, { type: "cors" }),
 	);
 	await expect(cors.scope.resolve(requested, entryId, {})).resolves.toEqual({
-		id: finalUrl,
+		id: requested,
 		source: dependencySource,
 	});
 	expect(basic.fetchWithPolicy).toHaveBeenCalledTimes(1);
@@ -244,7 +245,10 @@ it("accepts case-insensitive Content-Type headers from the policy-fetch result",
 });
 
 it("snapshots entries, document URL, credentials and the supplied callback", async () => {
-	const entries = [{ id: entryId, source: entrySource }];
+	const baseUrl = "https://page.example/releases/entry.js";
+	const entries = [
+		{ id: entryId, source: entrySource, baseUrl },
+	] satisfies PageNetworkModuleEntry[];
 	const fetchWithPolicy = vi.fn<PolicyFetch>(async (url) => response(url));
 	const replacement = vi.fn<PolicyFetch>(async (url) =>
 		response(url, "changed"),
@@ -258,7 +262,12 @@ it("snapshots entries, document URL, credentials and the supplied callback", asy
 	const registry = new PageNetworkModuleRegistry(options);
 	entries[0].id = "https://changed.example/entry.js";
 	entries[0].source = "changed";
-	entries.push({ id: "https://changed.example/extra.js", source: "" });
+	entries[0].baseUrl = "https://changed.example/base.js";
+	entries.push({
+		id: "https://changed.example/extra.js",
+		source: "",
+		baseUrl: "https://changed.example/extra.js",
+	});
 	options.documentUrl = "http://changed.example/";
 	options.credentials = "include";
 	options.fetchWithPolicy = replacement;
@@ -274,7 +283,7 @@ it("snapshots entries, document URL, credentials and the supplied callback", asy
 	await scope.resolve("./dependency.js", entryId, {});
 	expect(fetchWithPolicy).toHaveBeenCalledTimes(1);
 	expect(fetchWithPolicy).toHaveBeenCalledWith(
-		"https://page.example/modules/dependency.js",
+		"https://page.example/releases/dependency.js",
 		{ mode: "cors", credentials: "omit" },
 		expect.any(AbortSignal),
 	);
@@ -283,6 +292,88 @@ it("snapshots entries, document URL, credentials and the supplied callback", asy
 	);
 	expect(fetchWithPolicy).toHaveBeenCalledTimes(1);
 	expect(replacement).not.toHaveBeenCalled();
+});
+
+it("uses explicit entry base metadata without admitting or caching the base URL", async () => {
+	const baseUrl = "https://cdn.example/releases/entry.js#response";
+	const childId = "https://cdn.example/releases/child.js";
+	const test = fixture(
+		async (url) => response(url, dependencySource, { type: "cors" }),
+		{ entries: [{ id: entryId, source: entrySource, baseUrl }] },
+	);
+	expect(test.scope.validateEntry(entrySource, entryId)).toBeUndefined();
+	failure(
+		() => test.scope.validateEntry(entrySource, baseUrl),
+		"invalid-input",
+	);
+	await expect(test.scope.resolve(entryId, entryId, {})).resolves.toEqual({
+		id: entryId,
+		source: entrySource,
+	});
+	await expect(
+		test.scope.resolve("./child.js", baseUrl, {}),
+	).resolves.toBeUndefined();
+	expect(test.fetchWithPolicy).not.toHaveBeenCalled();
+	await expect(test.scope.resolve("./child.js", entryId, {})).resolves.toEqual({
+		id: childId,
+		source: dependencySource,
+	});
+	await expect(test.scope.resolve(baseUrl, entryId, {})).resolves.toEqual({
+		id: baseUrl,
+		source: dependencySource,
+	});
+	expect(test.fetchWithPolicy.mock.calls.map(([url]) => url)).toEqual([
+		childId,
+		baseUrl,
+	]);
+});
+
+it.each([
+	"",
+	"./relative.js",
+	"not a URL",
+	"HTTPS://PAGE.EXAMPLE/base.js",
+	"https://page.example:443/base.js",
+	"https://page.example/path/../base.js",
+	"https://page.example/base.js\n",
+	"http://page.example/base.js",
+	"https://user:password@page.example/base.js",
+	"file:///base.js",
+	"data:text/javascript,export default 1",
+	null,
+	42,
+])("rejects invalid or prohibited entry base metadata %s", (baseUrl) => {
+	const fetchWithPolicy = vi.fn<PolicyFetch>(async (url) => response(url));
+	failure(
+		() =>
+			new PageNetworkModuleRegistry({
+				documentUrl,
+				entries: [
+					{ id: entryId, source: entrySource, baseUrl },
+				] as unknown as RegistryOptions["entries"],
+				fetchWithPolicy,
+			}),
+	);
+	expect(fetchWithPolicy).not.toHaveBeenCalled();
+});
+
+it("bounds an explicit entry base independently of its identity", () => {
+	const prefix = "https://page.example/";
+	const baseUrl =
+		prefix +
+		"x".repeat(pageNetworkModuleLimits.identifierCodeUnits - prefix.length);
+	const test = fixture(undefined, {
+		entries: [{ id: entryId, source: entrySource, baseUrl }],
+	});
+	expect(test.scope.validateEntry(entrySource, entryId)).toBeUndefined();
+	failure(
+		() =>
+			fixture(undefined, {
+				entries: [{ id: entryId, source: entrySource, baseUrl: `${baseUrl}x` }],
+			}),
+		"resource-limit",
+	);
+	expect(test.fetchWithPolicy).not.toHaveBeenCalled();
 });
 
 it("rejects non-exact entry source and unknown entry identity synchronously", () => {
@@ -373,22 +464,36 @@ it("retains decoded source independently of mutable response bytes", async () =>
 	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(1);
 });
 
-it("keeps a successful request identity when a later alias populates its requested URL", async () => {
+it("keeps a successful request identity when a later alias responds from its requested URL", async () => {
 	const requested = "https://page.example/modules/first.js";
-	const destination = "https://page.example/modules/final.js";
+	const destination = "https://page.example/releases/final.js";
 	const test = fixture(async (url) =>
 		response(url === requested ? destination : requested, dependencySource),
 	);
 	const first = await test.scope.resolve(requested, entryId, {});
 	const alias = await test.scope.resolve("./alias.js", entryId, {});
-	expect(first?.id).toBe(destination);
-	expect(alias?.id).toBe(requested);
+	expect(first?.id).toBe(requested);
+	expect(alias?.id).toBe("https://page.example/modules/alias.js");
 	expect(await test.scope.resolve(requested, entryId, {})).toBe(first);
+	expect(await test.scope.resolve("./alias.js", entryId, {})).toBe(alias);
 	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(2);
+	await expect(
+		test.scope.resolve("./child.js", requested, {}),
+	).resolves.toMatchObject({
+		id: "https://page.example/releases/child.js",
+	});
+	await expect(
+		test.scope.resolve(
+			"./child.js",
+			"https://page.example/modules/alias.js",
+			{},
+		),
+	).resolves.toMatchObject({ id: "https://page.example/modules/child.js" });
+	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(4);
 	test.owner.abort();
 });
 
-it("keeps a failed request rejected when a later alias populates its requested URL", async () => {
+it("keeps a failed request rejected when a later alias responds from its requested URL", async () => {
 	const requested = "https://page.example/modules/failed.js";
 	const test = fixture(async (url) =>
 		response(requested, dependencySource, {
@@ -399,7 +504,14 @@ it("keeps a failed request rejected when a later alias populates its requested U
 		test.scope.resolve(requested, entryId, {}),
 		"network-error",
 	);
-	await test.scope.resolve("./alias.js", entryId, {});
+	const alias = await test.scope.resolve("./alias.js", entryId, {});
+	expect(alias).toEqual({
+		id: "https://page.example/modules/alias.js",
+		source: dependencySource,
+	});
+	await expect(
+		test.scope.resolve("./child.js", requested, {}),
+	).resolves.toBeUndefined();
 	expect(
 		await rejection(
 			test.scope.resolve(requested, entryId, {}),
@@ -410,22 +522,38 @@ it("keeps a failed request rejected when a later alias populates its requested U
 	test.owner.abort();
 });
 
-it("bounds the final identity after restoring a requested fragment", async () => {
+it("does not append a request fragment to a response base at its length limit", async () => {
 	const prefix = "https://page.example/";
 	const destination =
 		prefix +
 		"x".repeat(pageNetworkModuleLimits.identifierCodeUnits - prefix.length);
 	const test = fixture(async () => response(destination));
-	await rejection(
+	const module = await test.scope.resolve("./fragment.js#section", entryId, {});
+	expect(module).toEqual({
+		id: "https://page.example/modules/fragment.js#section",
+		source: dependencySource,
+	});
+	await expect(
 		test.scope.resolve("./fragment.js#section", entryId, {}),
-		"resource-limit",
-	);
-	await rejection(
-		test.scope.resolve("./fragment.js#section", entryId, {}),
-		"resource-limit",
-	);
+	).resolves.toBe(module);
 	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(1);
 	test.owner.abort();
+});
+
+it("rejects and memoizes an overlong response base independently of request length", async () => {
+	const destination = `https://page.example/${"x".repeat(pageNetworkModuleLimits.identifierCodeUnits)}`;
+	const test = fixture(async () => response(destination));
+	const first = await rejection(
+		test.scope.resolve("./short.js#request", entryId, {}),
+		"resource-limit",
+	);
+	expect(
+		await rejection(
+			test.scope.resolve("./short.js#request", entryId, {}),
+			"resource-limit",
+		),
+	).toBe(first);
+	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(1);
 });
 
 it("rejects malformed scalar Content-Type values from a host callback", async () => {
@@ -508,57 +636,161 @@ it.each([
 	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(1);
 });
 
-it("uses the canonical final identity as a known referrer and caches matching aliases", async () => {
-	const finalId = "https://cdn.example/releases/dependency.js";
+it("keeps redirect request identities separate while resolving imports from the response base", async () => {
+	const requestId = "https://page.example/modules/redirect.js";
+	const aliasId = "https://page.example/modules/another-alias.js";
+	const finalUrl = "https://cdn.example/releases/dependency.js";
 	const childId = "https://cdn.example/releases/child.js";
 	const test = fixture(async (url) =>
-		response(url === childId ? childId : finalId, dependencySource, {
+		response(url === childId ? childId : finalUrl, dependencySource, {
 			type: "cors",
 		}),
 	);
 	const first = await test.scope.resolve("./redirect.js", entryId, {});
-	expect(first).toEqual({ id: finalId, source: dependencySource });
-	await expect(test.scope.resolve(finalId, entryId, {})).resolves.toEqual(
-		first,
-	);
+	expect(first).toEqual({ id: requestId, source: dependencySource });
+	await expect(
+		test.scope.resolve("./child.js", finalUrl, {}),
+	).resolves.toBeUndefined();
 	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(1);
 	await expect(
-		test.scope.resolve("./another-alias.js", entryId, {}),
-	).resolves.toEqual(first);
-	await expect(test.scope.resolve("./child.js", finalId, {})).resolves.toEqual({
+		test.scope.resolve("./child.js", requestId, {}),
+	).resolves.toEqual({
 		id: childId,
 		source: dependencySource,
 	});
+	const alias = await test.scope.resolve("./another-alias.js", entryId, {});
+	expect(alias).toEqual({ id: aliasId, source: dependencySource });
+	expect(alias).not.toBe(first);
+	await expect(
+		test.scope.resolve("./child.js", aliasId, {}),
+	).resolves.toMatchObject({ id: childId });
 	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(3);
+	await expect(test.scope.resolve(finalUrl, entryId, {})).resolves.toEqual({
+		id: finalUrl,
+		source: dependencySource,
+	});
+	await expect(test.scope.resolve("./child.js", finalUrl, {})).resolves.toEqual(
+		{
+			id: childId,
+			source: dependencySource,
+		},
+	);
+	await expect(test.scope.resolve(requestId, entryId, {})).resolves.toBe(first);
+	await expect(test.scope.resolve(aliasId, entryId, {})).resolves.toBe(alias);
+	expect(test.fetchWithPolicy.mock.calls.map(([url]) => url)).toEqual([
+		requestId,
+		childId,
+		aliasId,
+		finalUrl,
+	]);
 });
 
-it("rejects conflicting sources for the same final identity without replacing the cached source", async () => {
-	const finalId = "https://cdn.example/shared.js";
+it("retains independent sources for aliases and a direct request to their shared response URL", async () => {
+	const firstId = "https://page.example/modules/first.js";
+	const secondId = "https://page.example/modules/second.js";
+	const finalUrl = "https://cdn.example/shared.js";
+	const secondSource = "export const value = 99;";
+	const directSource = "export const direct = true;";
 	const test = fixture(async (url) =>
 		response(
-			finalId,
-			url.endsWith("first.js") ? dependencySource : "export const value = 99;",
+			finalUrl,
+			url === firstId
+				? dependencySource
+				: url === secondId
+					? secondSource
+					: directSource,
 			{ type: "cors" },
 		),
 	);
-	const first = await test.scope.resolve("./first.js", entryId, {});
-	await rejection(test.scope.resolve("./second.js", entryId, {}));
-	await rejection(test.scope.resolve("./second.js", entryId, {}));
-	await expect(test.scope.resolve(finalId, entryId, {})).resolves.toEqual(
-		first,
-	);
-	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(2);
+	for (let pass = 0; pass < 2; pass++) {
+		for (const [id, source] of [
+			[firstId, dependencySource],
+			[secondId, secondSource],
+			[finalUrl, directSource],
+		]) {
+			await expect(test.scope.resolve(id, entryId, {})).resolves.toEqual({
+				id,
+				source,
+			});
+		}
+	}
+	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(3);
 });
 
 it("does not let a fetched alias replace a configured entry source", async () => {
 	const test = fixture(async () => response(entryId, dependencySource));
-	await rejection(test.scope.resolve("./alias.js", entryId, {}));
+	const alias = await test.scope.resolve("./alias.js", entryId, {});
+	expect(alias).toEqual({
+		id: "https://page.example/modules/alias.js",
+		source: dependencySource,
+	});
+	await expect(test.scope.resolve("./alias.js", entryId, {})).resolves.toBe(
+		alias,
+	);
 	expect(test.scope.validateEntry(entrySource, entryId)).toBeUndefined();
 	await expect(test.scope.resolve(entryId, entryId, {})).resolves.toEqual({
 		id: entryId,
 		source: entrySource,
 	});
 	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(1);
+});
+
+it.each(["", "#response"])(
+	"keeps request fragments independent of a response base ending in %s",
+	async (fragment) => {
+		const responseBase = `https://page.example/releases/module.js${fragment}`;
+		const childId = "https://page.example/releases/child.js";
+		const test = fixture(async (url) =>
+			response(url === childId ? childId : responseBase),
+		);
+		for (const requestFragment of ["#first", "#second"]) {
+			const id = `https://page.example/modules/alias.js${requestFragment}`;
+			const module = await test.scope.resolve(id, entryId, {});
+			expect(module).toEqual({ id, source: dependencySource });
+			await expect(test.scope.resolve(id, entryId, {})).resolves.toBe(module);
+			await expect(test.scope.resolve("./child.js", id, {})).resolves.toEqual({
+				id: childId,
+				source: dependencySource,
+			});
+		}
+		await expect(
+			test.scope.resolve("./child.js", responseBase, {}),
+		).resolves.toBeUndefined();
+		expect(test.fetchWithPolicy.mock.calls.map(([url]) => url)).toEqual([
+			"https://page.example/modules/alias.js#first",
+			childId,
+			"https://page.example/modules/alias.js#second",
+		]);
+	},
+);
+
+it("does not merge concurrent aliases that receive the same response URL", async () => {
+	const gate = gatedFetch();
+	const test = fixture(gate.fetchWithPolicy);
+	const firstId = "https://page.example/modules/first.js";
+	const secondId = "https://page.example/modules/second.js";
+	const first = test.scope.resolve(firstId, entryId, {});
+	const second = test.scope.resolve(secondId, entryId, {});
+	await flushSettlement();
+	expect(gate.requests).toHaveLength(2);
+	for (const request of gate.requests) {
+		request.pending.resolve(
+			response("https://page.example/releases/shared.js"),
+		);
+	}
+	const modules = await Promise.all([first, second]);
+	expect(modules).toEqual([
+		{ id: firstId, source: dependencySource },
+		{ id: secondId, source: dependencySource },
+	]);
+	expect(modules[0]).not.toBe(modules[1]);
+	await expect(test.scope.resolve(firstId, entryId, {})).resolves.toBe(
+		modules[0],
+	);
+	await expect(test.scope.resolve(secondId, entryId, {})).resolves.toBe(
+		modules[1],
+	);
+	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(2);
 });
 
 it("applies smaller page source limits to configured entries", () => {
@@ -626,24 +858,41 @@ it("rejects oversized response bytes", async () => {
 	);
 });
 
-it("charges distinct sources against the cumulative budget without charging cache hits twice", async () => {
-	const source = " ".repeat(pageSourceModuleLimits.sourceCodeUnits);
-	const test = fixture(
-		async (url) => response(url, url.endsWith("over.js") ? " " : source),
-		{ entries: [{ id: entryId, source: "" }] },
-	);
-	const count = pageSourceModuleLimits.totalSourceCodeUnits / source.length;
-	for (let index = 0; index < count; index++) {
-		const specifier = `./part-${index}.js`;
-		await test.scope.resolve(specifier, entryId, {});
-		await test.scope.resolve(specifier, entryId, {});
-	}
-	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(count);
-	await rejection(
-		test.scope.resolve("./over.js", entryId, {}),
-		"resource-limit",
-	);
-});
+it.each(["distinct URLs", "redirect aliases"])(
+	"charges %s against the cumulative budget without charging cache hits twice",
+	async (kind) => {
+		const source = " ".repeat(pageSourceModuleLimits.sourceCodeUnits);
+		const test = fixture(
+			async (url) =>
+				response(
+					kind === "redirect aliases" ? "https://page.example/shared.js" : url,
+					url.endsWith("over.js") ? " " : source,
+				),
+			{ entries: [{ id: entryId, source: "" }] },
+		);
+		const count = pageSourceModuleLimits.totalSourceCodeUnits / source.length;
+		for (let index = 0; index < count; index++) {
+			const specifier = `./part-${index}.js`;
+			await test.scope.resolve(specifier, entryId, {});
+			await test.scope.resolve(specifier, entryId, {});
+		}
+		expect(test.fetchWithPolicy).toHaveBeenCalledTimes(count);
+		const denied = await rejection(
+			test.scope.resolve("./over.js", entryId, {}),
+			"resource-limit",
+		);
+		expect(
+			await rejection(
+				test.scope.resolve("./over.js", entryId, {}),
+				"resource-limit",
+			),
+		).toBe(denied);
+		await expect(
+			test.scope.resolve("./part-0.js", entryId, {}),
+		).resolves.toMatchObject({ source });
+		expect(test.fetchWithPolicy).toHaveBeenCalledTimes(count + 1);
+	},
+);
 
 it("includes entry sources in the cumulative budget", async () => {
 	const source = " ".repeat(pageSourceModuleLimits.sourceCodeUnits);
@@ -659,19 +908,33 @@ it("includes entry sources in the cumulative budget", async () => {
 	);
 });
 
-it("bounds distinct sources including configured entries", async () => {
-	const test = fixture(async (url) => response(url, ""));
-	for (let index = 1; index < pageSourceModuleLimits.sources; index++) {
-		await test.scope.resolve(`./dependency-${index}.js`, entryId, {});
-	}
-	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(
-		pageSourceModuleLimits.sources - 1,
-	);
-	await rejection(
-		test.scope.resolve("./over.js", entryId, {}),
-		"resource-limit",
-	);
-});
+it.each(["distinct URLs", "redirect aliases"])(
+	"bounds source slots for %s including configured entries",
+	async (kind) => {
+		const test = fixture(async (url) =>
+			response(
+				kind === "redirect aliases" ? "https://page.example/shared.js" : url,
+				"",
+			),
+		);
+		for (let index = 1; index < pageSourceModuleLimits.sources; index++) {
+			await test.scope.resolve(`./dependency-${index}.js`, entryId, {});
+		}
+		await rejection(
+			test.scope.resolve("./over.js", entryId, {}),
+			"resource-limit",
+		);
+		await expect(
+			test.scope.resolve("./dependency-1.js", entryId, {}),
+		).resolves.toEqual({
+			id: "https://page.example/modules/dependency-1.js",
+			source: "",
+		});
+		expect(test.fetchWithPolicy).toHaveBeenCalledTimes(
+			pageSourceModuleLimits.sources - 1,
+		);
+	},
+);
 
 it("reserves source slots for active and queued imports and releases failed reservations", async () => {
 	const pendingCount = pageNetworkModuleLimits.activeFetches + 2;
@@ -890,6 +1153,40 @@ it("denies cached and new resolutions plus entry validation after scope revocati
 	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(1);
 });
 
+it("revokes redirected identities and bases without leaking them into a fresh scope", async () => {
+	const requestId = "https://page.example/modules/redirect.js";
+	const finalUrl = "https://page.example/releases/redirect.js";
+	const test = fixture(async () => response(finalUrl));
+	await test.scope.resolve(requestId, entryId, {});
+	test.owner.abort();
+	for (const referrer of [entryId, requestId, finalUrl]) {
+		await rejection(test.scope.resolve("./child.js", referrer, {}), "aborted");
+	}
+	await rejection(test.scope.resolve(requestId, entryId, {}), "aborted");
+	const owner = new AbortController();
+	const scope = test.registry.createScope(
+		owner.signal,
+		pageSourceModuleLimits.sourceCodeUnits,
+	);
+	for (const referrer of [requestId, finalUrl]) {
+		await expect(
+			scope.resolve("./child.js", referrer, {}),
+		).resolves.toBeUndefined();
+	}
+	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(1);
+	await expect(scope.resolve(requestId, entryId, {})).resolves.toEqual({
+		id: requestId,
+		source: dependencySource,
+	});
+	await expect(
+		scope.resolve("./child.js", requestId, {}),
+	).resolves.toMatchObject({
+		id: "https://page.example/releases/child.js",
+	});
+	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(3);
+	owner.abort();
+});
+
 it("rejects creating a scope with an already-aborted owner", () => {
 	const test = fixture();
 	test.owner.abort();
@@ -934,7 +1231,7 @@ it("resolves dependencies through native policy-fetch redirects and CORS checks"
 	await expect(
 		test.scope.resolve("./redirect.js", entryId, {}),
 	).resolves.toEqual({
-		id: target,
+		id: "https://page.example/modules/redirect.js",
 		source: dependencySource,
 	});
 	expect(request).toHaveBeenCalledTimes(2);

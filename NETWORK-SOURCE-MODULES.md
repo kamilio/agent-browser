@@ -21,6 +21,16 @@ must be a canonical HTTP(S) URL and its exact source must match when evaluated
 with `{ sourceType: "module", filename: entryUrl }`. Both registry options cannot
 be configured together. Classic evaluation and initialization remain unchanged.
 
+Each `PageNetworkModuleEntry` also accepts optional `baseUrl` metadata for the
+entry's import base, for example `{ id: entryUrl, source: entrySource, baseUrl:
+entryResponseUrl }`. It defaults to `id` and must be an exact canonical HTTP(S)
+URL under the existing mixed-content, credential and length restrictions. Entry
+fields are snapshotted from own data properties without executing accessors;
+accessor-backed fields are rejected. Later mutations do not change the snapshot.
+The base does not register another source identity: evaluation still requires
+the exact entry `id` and `source`, not `baseUrl`. The host remains responsible
+for obtaining and authorizing preloaded entry source and its response base.
+
 ## Host fetch contract
 
 The callback has the existing `ScriptFetchPolicy`/`ScriptFetchResult` contract:
@@ -45,21 +55,34 @@ independent CORS reimplementation or a sandbox for malicious host callbacks.
 
 ## Resolution and lifetime
 
-- Only known source identities may be referrers. Relative, root-relative and
-  absolute HTTP(S) dependencies resolve against that identity; bare specifiers
-  and unknown referrers are denied without fetching. Import maps and package,
-  filesystem, data-URL or executable resolution are not implemented.
-- Returned sources are immutable and use the canonical final URL. Requested
-  fragments are retained in that identity and checked against the identity
-  bound. This is not full browser import metadata or module-map conformance.
-- Repeated/in-flight requests share one promise. Failed attempts remain failed
-  for the scope, without retry. A later redirect alias cannot replace a prior
-  requested URL's success identity or cached rejection. Reusing a final identity
-  with different source is rejected.
+- Only known source identities may be referrers. Relative and root-relative
+  dependencies resolve against the referrer's separately retained import base:
+  the final response URL for fetched modules, or `baseUrl` (defaulting to `id`)
+  for declared entries. Absolute HTTP(S) dependencies are also supported. Bare
+  specifiers and unknown referrers are denied without fetching. Import maps and
+  package, filesystem, data-URL or executable resolution are not implemented.
+- Returned sources are immutable `{ id, source }` records whose identity is the
+  canonical requested URL, not the final response URL. Distinct requested aliases
+  remain distinct module instances even when they receive the same response URL
+  and source; their sources may also differ. A final response URL is not implicitly
+  registered as another identity, known referrer or cache hit. Requesting it
+  directly requires its own fetch unless that exact identity is already known.
+- Request fragments remain part of the requested identity and distinguish cache
+  entries. They are not appended to or substituted into the response import base;
+  any fragment in the response URL belongs only to that base. For example,
+  requesting `/alias.js#first` with response URL `/release/module.js#response`
+  retains `/alias.js#first` as the identity, while `./child.js` resolves to
+  `/release/child.js`. Requested identities and response bases are independently
+  length-bounded. This is not full browser import metadata or module-map conformance.
+- Repeated/in-flight requests for the same canonical requested URL share one
+  promise. Failed attempts remain failed for the scope, without retry. A later
+  redirect alias cannot replace a prior requested URL's source, import base or
+  cached rejection, including when its response URL matches a declared entry.
 - A canceled caller stops waiting without canceling another caller's shared
   request. Owner/realm closure aborts the shared fetch signal, rejects queued
-  work, clears scope caches and prevents publication of late results. The host
-  fetch must honor cancellation/deadlines for its own underlying resources.
+  work, clears scope caches and retained import bases, and prevents publication
+  of late results. The host fetch must honor cancellation/deadlines for its own
+  underlying resources.
 - Changing source graphs or recovering a cached failure requires a new owning
   scope. There is no hot reload or eviction of already evaluated SDK modules.
 
@@ -84,16 +107,40 @@ source or instantiate a SafeJS realm.
 Entry sources count toward the retained-source budgets. Page-specific smaller
 source limits apply to dependencies too. Pending requests reserve source slots;
 failed reservations release their slots but not their consumed fetch attempt.
+Distinct requested aliases each consume a fetch attempt, source slot and retained
+source budget, even when they share a response URL or identical source text.
+Entry bases and final response bases independently obey the 4,096-code-unit URL
+bound; they do not themselves register or charge another source identity.
 These are host-source bounds, not whole-process or SDK execution-memory limits.
 
 ## Evidence and remaining gates
 
-The September17 native gate passes362 tests across11 selected files, including
-80 new registry/integration cases. It covers native policy-fetch composition
-with mocked requests, not real SDK evaluation. A separate single live MDN module
-acquisition resolves the same URL twice with one anonymous GET, preserves19,705
-source bytes, and verifies closure/revocation. Downloaded source is not executed.
-See `reports/network-source-modules-2026-09-17.md` and its JSON evidence.
+The earlier September 17, 2026 native gate recorded 362 passed tests across 11
+selected files, including 80 new registry/integration cases. It covered native
+policy-fetch composition with mocked requests, not real SDK evaluation. Its
+separate single live MDN module acquisition resolved the same URL twice with one
+anonymous GET, preserved 19,705 source bytes, and verified closure/revocation.
+Downloaded source was not executed. These remain historical results, not live
+validation of the request-identity change. The original report and JSON evidence
+remain at `reports/network-source-modules-2026-09-17.md` and its companion paths.
+
+The subsequent isolated request-identity qualification on September 17, 2026
+recorded **387 passed / 0 failed across 11 selected files**, with build, selected
+strict test types, format and lint passing. Existing evidence is in
+`node_modules/.cache/native-validation/module-request-identity-september17/native-release02/EXECUTION.json`
+and `node_modules/.cache/native-validation/module-request-identity-september17/CHECK-release02.json`.
+This qualifies the selected native registry and fake-core integration cases,
+not a full-suite, actual SDK or HTML module execution result.
+
+A separate native live check at September 17 18:17:47.854 UTC follows the public
+`https://unpkg.com/lit` alias through one server redirect to
+`https://unpkg.com/lit@3.3.3/index.js`. The two anonymous GETs retain 157 source
+bytes, keep the requested alias as the module identity, and reuse the immutable
+result on repeated resolution without another request. Both responses and TLS
+sockets close; owner revocation and empty cookies are verified. The source is
+not executed and its dependencies are not fetched. The synthetic proof's three
+mock requests are separate from these two real requests. See
+`reports/module-request-identity-2026-09-17.md` and its JSON evidence.
 
 Actual SafeJS source-module execution, namespaces/cycles/top-level await,
 callback-tail scheduling, HTML module discovery/order/lifecycle, and scripted

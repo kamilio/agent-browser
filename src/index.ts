@@ -230,6 +230,7 @@ export {
 export {
 	PageNetworkModuleRegistry,
 	pageNetworkModuleLimits,
+	type PageNetworkModuleEntry,
 	type PageNetworkModuleOptions,
 } from "./page-network-modules.js";
 export type {

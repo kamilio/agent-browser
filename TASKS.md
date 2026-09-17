@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Preserve module request identity across real redirects
+
+- Separate a module's canonical requested identity from its response import
+  base. Relative dependencies use that base; distinct aliases remain distinct
+  sources and budget charges. Add snapshotted canonical entry baseUrl metadata;
+  evaluation still matches exact entry id/source. Closing a scope clears bases.
+- Final isolated gate passes387/0 in11 selected native files, with25 additional
+  registry/integration cases and build/types/format/lint passing. Unchanged
+  registry with the behavioral tests gives352/35. Preserve the first387/0 run
+  with its test-only lint failure, fixed before final qualification. Verify all
+  1,629 source/2,412 compiled pins; manifest1,020 still has22 absent paths.
+- Fresh native public unpkg/lit alias check at September17 18:17:47.854 UTC
+  follows302 to lit@3.3.3/index.js200, retaining157 source bytes. Two actual GETs,
+  one policy-fetch invocation; repeated resolution reuses the same immutable
+  requested identity. Both response/TLS/socket closures, owner revocation and
+  empty cookies pass. The prior synthetic proof makes zero wire requests.
+- See reports/module-request-identity-2026-09-17.md/JSON. No downloaded source
+  execution, dependency graph, SDK or HTML module loading is qualified. Keep
+  SafeJS scheduling/scripted websites, diverse content/interaction/performance,
+  crawler blocks/CAPTCHA handoff, real credentials/passkeys/devices and original
+  research open. Historical100-page33/67 is unchanged. Overall goal stays active.
+
 ### Resolve native module dependencies with bounded shared fetches
 
 - Add explicit networkSourceModules to the existing extension adapter, backed

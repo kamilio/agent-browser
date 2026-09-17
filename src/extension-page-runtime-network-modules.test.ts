@@ -30,12 +30,15 @@ const dependency = {
 	source: "export const answer = 42;",
 };
 
-function response(source = dependency.source): Readonly<ScriptFetchResult> {
+function response(
+	source = dependency.source,
+	url = dependency.id,
+): Readonly<ScriptFetchResult> {
 	const body = new TextEncoder().encode(source);
 	return {
 		type: "basic",
 		response: {
-			url: dependency.id,
+			url,
 			status: 200,
 			headers: { "content-type": ["text/javascript; charset=utf-8"] },
 			body,
@@ -200,6 +203,69 @@ it("forwards asynchronous dependencies and exact module options to the fake core
 	]);
 });
 
+it("keeps redirected request identity and resolves children against the response base", async () => {
+	const finalUrl = "https://example.com/releases/answer.js";
+	const redirectedSource = 'export { answer } from "./value.js";';
+	const child = {
+		id: "https://example.com/releases/value.js",
+		source: dependency.source,
+	};
+	const configuration = graph();
+	configuration.fetchWithPolicy = vi.fn<FetchWithPolicy>(async (url) => {
+		if (url === dependency.id) return response(redirectedSource, finalUrl);
+		if (url === child.id) return response(child.source, child.id);
+		throw new Error(`Unexpected module request: ${url}`);
+	});
+	const test = fixture({ networkSourceModules: configuration });
+	await test.runtime.initialize();
+	const resolve = test.realm.options.sourceResolver;
+	const redirected = await resolve?.("./answer.js", entry.id, {});
+	expect(redirected).toEqual({ id: dependency.id, source: redirectedSource });
+	if (!redirected) throw new Error("Expected redirected module");
+	await expect(resolve?.("./value.js", finalUrl, {})).resolves.toBeUndefined();
+	await expect(resolve?.("./value.js", redirected.id, {})).resolves.toEqual(
+		child,
+	);
+	await expect(resolve?.("./answer.js", entry.id, {})).resolves.toBe(
+		redirected,
+	);
+	expect(configuration.fetchWithPolicy.mock.calls.map(([url]) => url)).toEqual([
+		dependency.id,
+		child.id,
+	]);
+});
+
+it("keeps aliases and their shared response URL distinct at the fake-core resolver", async () => {
+	const aliases = [dependency.id, "https://example.com/app/alias.js"];
+	const finalUrl = "https://example.com/releases/shared.js";
+	const configuration = graph();
+	configuration.fetchWithPolicy = vi.fn<FetchWithPolicy>(async () =>
+		response(dependency.source, finalUrl),
+	);
+	const test = fixture({ networkSourceModules: configuration });
+	await test.runtime.initialize();
+	const resolve = test.realm.options.sourceResolver;
+	const resolved = await Promise.all(
+		aliases.map((id) => resolve?.(id, entry.id, {})),
+	);
+	expect(resolved).toEqual(
+		aliases.map((id) => ({ id, source: dependency.source })),
+	);
+	expect(resolved[0]).not.toBe(resolved[1]);
+	for (const [index, id] of aliases.entries()) {
+		await expect(resolve?.(id, entry.id, {})).resolves.toBe(resolved[index]);
+	}
+	expect(configuration.fetchWithPolicy).toHaveBeenCalledTimes(2);
+	await expect(resolve?.(finalUrl, entry.id, {})).resolves.toEqual({
+		id: finalUrl,
+		source: dependency.source,
+	});
+	expect(configuration.fetchWithPolicy.mock.calls.map(([url]) => url)).toEqual([
+		...aliases,
+		finalUrl,
+	]);
+});
+
 it.each([false, true])(
 	"keeps classic evaluation unchanged with network configuration %s",
 	async (configured) => {
@@ -313,6 +379,57 @@ it("snapshots network configuration before later runtime creation", async () => 
 	).resolves.toEqual(dependency);
 	expect(fetchWithPolicy).toHaveBeenCalledOnce();
 	expect(configuration.fetchWithPolicy).not.toHaveBeenCalled();
+});
+
+it("snapshots an entry response base without changing its direct evaluation identity", async () => {
+	const test = fakeCore();
+	const baseUrl = "https://example.com/releases/entry.js";
+	const entries = [{ ...entry, baseUrl }];
+	const imported = {
+		...dependency,
+		id: "https://example.com/releases/answer.js",
+	};
+	const configuration = { ...graph(), entries };
+	configuration.fetchWithPolicy = vi.fn<FetchWithPolicy>(async () =>
+		response(imported.source, imported.id),
+	);
+	const factory = extensionPageRuntime(test.core, {
+		networkSourceModules: configuration,
+	});
+	entries[0].id = "https://example.com/changed/entry.js";
+	entries[0].source = "changed";
+	entries[0].baseUrl = "https://example.com/changed/base.js";
+	const runtime = factory.createPageRuntime(runtimeOptions());
+	cleanups.push(() => runtime.close());
+	await expect(
+		runtime.evaluate(entry.source, {
+			signal: new AbortController().signal,
+			filename: baseUrl,
+			sourceType: "module",
+		}),
+	).rejects.toMatchObject({ code: "invalid-input" });
+	expect(test.realms[0].evaluate).not.toHaveBeenCalled();
+	await runtime.initialize();
+	await expect(
+		runtime.evaluate(entry.source, {
+			signal: new AbortController().signal,
+			filename: entry.id,
+			sourceType: "module",
+		}),
+	).resolves.toMatchObject({ ok: true });
+	expect(test.realms[0].evaluate.mock.calls).toEqual([
+		["", {}],
+		[entry.source, { filename: entry.id, sourceType: "module" }],
+	]);
+	await expect(
+		test.realms[0].options.sourceResolver?.("./answer.js", entry.id, {}),
+	).resolves.toEqual(imported);
+	expect(configuration.fetchWithPolicy).toHaveBeenCalledOnce();
+	expect(configuration.fetchWithPolicy).toHaveBeenCalledWith(
+		imported.id,
+		{ mode: "cors", credentials: "same-origin" },
+		expect.any(AbortSignal),
+	);
 });
 
 it.each([

@@ -7,9 +7,13 @@ import {
 } from "./page-source-modules.js";
 import type { ScriptFetchPolicy, ScriptFetchResult } from "./script-fetch.js";
 
+export interface PageNetworkModuleEntry extends PageSourceModule {
+	readonly baseUrl?: string;
+}
+
 export interface PageNetworkModuleOptions {
 	readonly documentUrl: string;
-	readonly entries: readonly PageSourceModule[];
+	readonly entries: readonly PageNetworkModuleEntry[];
 	readonly fetchWithPolicy: (
 		url: string,
 		policy: ScriptFetchPolicy,
@@ -131,6 +135,7 @@ function awaitResult<Value>(
 export class PageNetworkModuleRegistry {
 	readonly #document: URL;
 	readonly #entries = new Map<string, Readonly<PageSourceModule>>();
+	readonly #entryBases = new Map<string, string>();
 	readonly #fetch: PageNetworkModuleOptions["fetchWithPolicy"];
 	readonly #policy: Readonly<ScriptFetchPolicy>;
 	readonly #entryUnits: number;
@@ -172,6 +177,10 @@ export class PageNetworkModuleRegistry {
 			const identity = data(entry, "id");
 			const id = moduleUrl(identity, this.#document).href;
 			if (id !== identity || this.#entries.has(id)) throw invalid();
+			const configuredBase = data(entry, "baseUrl", true);
+			const base = configuredBase === undefined ? id : configuredBase;
+			const baseUrl = moduleUrl(base, this.#document).href;
+			if (baseUrl !== base) throw invalid();
 			const source = text(
 				data(entry, "source"),
 				pageNetworkModuleLimits.sourceCodeUnits,
@@ -180,6 +189,7 @@ export class PageNetworkModuleRegistry {
 			units += source.length;
 			if (units > pageNetworkModuleLimits.totalSourceCodeUnits) throw limited();
 			this.#entries.set(id, Object.freeze({ id, source }));
+			this.#entryBases.set(id, baseUrl);
 		}
 		this.#entryUnits = units;
 	}
@@ -195,6 +205,7 @@ export class PageNetworkModuleRegistry {
 		for (const entry of this.#entries.values())
 			if (entry.source.length > maximum) throw limited();
 		const sources = new Map(this.#entries);
+		const bases = new Map(this.#entryBases);
 		const requests = new Map<string, Promise<Readonly<PageSourceModule>>>();
 		const waiters: { resolve(): void; reject(error: unknown): void }[] = [];
 		let closed = false;
@@ -209,6 +220,7 @@ export class PageNetworkModuleRegistry {
 		const close = () => {
 			closed = true;
 			sources.clear();
+			bases.clear();
 			requests.clear();
 			for (const waiter of waiters.splice(0)) waiter.reject(aborted());
 		};
@@ -291,8 +303,7 @@ export class PageNetworkModuleRegistry {
 					throw limited();
 				const source = new TextDecoder("utf-8").decode(response.body);
 				if (source.length > maximum) throw limited();
-				finalUrl.hash = url.hash;
-				const id = moduleUrl(finalUrl.href, this.#document).href;
+				const id = url.href;
 				const prior = sources.get(id);
 				if (prior) {
 					if (prior.source !== source) throw invalid();
@@ -306,6 +317,7 @@ export class PageNetworkModuleRegistry {
 				const value = Object.freeze({ id, source });
 				units += source.length;
 				sources.set(id, value);
+				bases.set(id, finalUrl.href);
 				return value;
 			} finally {
 				release();
@@ -342,7 +354,7 @@ export class PageNetworkModuleRegistry {
 				if (!sources.has(parent)) return undefined;
 				if (!/^(?:\.{0,2}\/|[A-Za-z][A-Za-z0-9+.-]*:)/.test(requested))
 					return undefined;
-				const url = moduleUrl(requested, this.#document, parent);
+				const url = moduleUrl(requested, this.#document, bases.get(parent));
 				let operation = requests.get(url.href);
 				if (!operation) {
 					const known = sources.get(url.href);
