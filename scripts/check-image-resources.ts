@@ -103,6 +103,7 @@ const host = new BrowserCommandHost({
 						response,
 						signal: context.signal,
 						fetch: context.fetchScript,
+						fetchWithPolicy: context.fetchScriptWithPolicy,
 						owner: (tree) => {
 							const page = new PageScripts(
 								{ document: tree, interactions: documentInteractions(tree) },

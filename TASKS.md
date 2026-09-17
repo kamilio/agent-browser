@@ -6,6 +6,38 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Admit classic scripts through native CORS and integrity checks
+
+- ScriptLoader no longer unconditionally skips external classic scripts carrying
+  crossorigin/integrity when a policy-aware provider is supplied. Native manual
+  redirect/CORS/credential handling and existing strongest-algorithm SRI checks
+  gate original bytes before decoding/evaluation. Missing providers retain skips;
+  policy failures never fall back to plain fetch. CSP/modules stay conservative.
+- BrowserSession supplies the new port with cancellation, omit override, journal
+  and shared 16-script budget. The owned-process child and three committed script
+  diagnostics are wired. A pre-existing untracked response-archive checker is
+  preserved byte-for-byte, not bundled into this change. SDK defaults unchanged.
+- Release01 passes 948 tests across 19 selected native files: 149 new cases and
+  799 existing cases. Build/selected types/ten-file format/lint pass. Core01 also
+  passes 882/0. Final runtime has 1614 source and 2396 compiled pins. Canonical
+  manifest 1009 still lacks 22 paths present in dirty workspace manifest 1012;
+  no full-suite, actual-SDK, credential/device/TTY or website-JS acceptance claim.
+- Offline discovery inspects 70 saved bodies and finds three classic anonymous
+  CORS candidates, none with SRI. Selected-header receipts do not capture CSP:
+  absence is unknown, not proof of eligibility. No historical evidence is changed.
+- One fresh native OutdoorGearLab GET at 11:35:19.186 UTC on September17 returns
+  HTTP200 and 203590 bytes, but full native headers reveal enforced CSP. The
+  scoped script-policy probe stops before its asset GET; no retries, extra
+  resources, SDK/scripts or bypass. This is not a native-reader failure.
+- A separate kernel/JS-network-denied source view of that same body yields 22688
+  Markdown bytes with review/category links. No new request or script execution,
+  and no rendered/CSP equivalence or successful live script load is inferred.
+- See SCRIPT-POLICY.md and reports/script-policy-2026-09-17.md/JSON. Continue CSP
+  semantics, actual SafeJS/callback-source qualification and task-level websites.
+  The requested offline 19-core/10-page-extension SDK authorization is pending;
+  it is not granted by native tests. Performance, access/CAPTCHA, authentication,
+  passkeys and research remain open. Historical 100-entry 33/67 stays unchanged.
+
 ### Query captured Pagefind data and return a retrieved result fragment
 
 - Independent bounded source CBOR decoding and a Pagefind 1.5.2 API/CLI now

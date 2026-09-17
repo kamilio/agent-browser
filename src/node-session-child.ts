@@ -135,6 +135,7 @@ async function receive(raw: unknown) {
 											response,
 											signal: context.signal,
 											fetch: context.fetchScript,
+											fetchWithPolicy: context.fetchScriptWithPolicy,
 											owner: (document) => ownerFor(document, context.fetch),
 										}),
 									}

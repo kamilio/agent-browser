@@ -7,6 +7,11 @@ import {
 	type StylesheetFetchResult,
 } from "./stylesheet-fetch.js";
 import {
+	fetchScriptResource,
+	type ScriptFetchPolicy,
+	type ScriptFetchResult,
+} from "./script-fetch.js";
+import {
 	type BrowserIdentity,
 	type BrowserIdentityOptions,
 	browserIdentityHeaders,
@@ -104,6 +109,11 @@ export interface DocumentLoaderContext {
 		policy: StylesheetFetchPolicy,
 	) => Promise<Readonly<StylesheetFetchResult>>;
 	readonly fetchScript?: (url: string) => Promise<NetworkResponse>;
+	readonly fetchScriptWithPolicy?: (
+		url: string,
+		policy: ScriptFetchPolicy,
+		signal: AbortSignal,
+	) => Promise<Readonly<ScriptFetchResult>>;
 	readonly fetchImage?: ImageFetch;
 	readonly scripts?: HtmlScriptHooks;
 }
@@ -2160,6 +2170,61 @@ export class BrowserSession {
 											);
 											this.assertCurrent(job);
 											return sheet;
+										},
+									},
+								);
+								type = result.type;
+								return result.response;
+							},
+						);
+						return Object.freeze({ response, type });
+					},
+					fetchScriptWithPolicy: async (
+						resourceUrl: string,
+						policy: ScriptFetchPolicy,
+						scriptSignal: AbortSignal,
+					) => {
+						const policySignal = AbortSignal.any([
+							bootstrapSignal,
+							scriptSignal,
+						]);
+						let type: ScriptFetchResult["type"] = "opaque";
+						const response = await journal.run(
+							"script",
+							resourceUrl,
+							"GET",
+							async () => {
+								this.assertCurrent(job);
+								policySignal.throwIfAborted();
+								if (++scriptResources > 16)
+									throw new AgentBrowserError(
+										"resource-limit",
+										"Script request limit exceeded",
+									);
+								const result = await fetchScriptResource(
+									resourceUrl,
+									this.resourceCredentials === "omit"
+										? { ...policy, credentials: "omit" }
+										: policy,
+									{
+										documentUrl: responseUrl,
+										signal: policySignal,
+										maxRedirects: this.transport.limits?.maxRedirects ?? 10,
+										checkContentSecurityPolicy: () => {
+											if (fetchCspBlocked)
+												throw new AgentBrowserError(
+													"policy-denied",
+													"Script Content Security Policy is not supported",
+												);
+										},
+										request: async (input) => {
+											this.assertCurrent(job);
+											const script = await withAbort(
+												this.fetchNetwork({ ...input, signal: policySignal }),
+												policySignal,
+											);
+											this.assertCurrent(job);
+											return script;
 										},
 									},
 								);

@@ -1,5 +1,11 @@
 # Automatic classic-script loading
 
+September 17, 2026 policy update: `SCRIPT-POLICY.md` describes the new optional
+native CORS/SRI fetch path for external classic scripts. Missing-provider skips,
+CSP/module refusals and separate actual-SafeJS acceptance remain. The September
+1/2 material and package paths below retain their historical context; this update
+does not activate or newly qualify those runtimes.
+
 September 2 fetch addition: `PAGE-FETCH.md` connects the page realm to its
 document-owned network port. Real interpreted Promise/JSON callbacks update our
 DOM in a mock-transport fixture. The later `PAGE-CORS.md` adds checked cross-origin

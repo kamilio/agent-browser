@@ -122,6 +122,7 @@ for (const url of [
 					response,
 					signal: context.signal,
 					fetch: context.fetchScript,
+					fetchWithPolicy: context.fetchScriptWithPolicy,
 					owner: ownerFor,
 				}),
 			}),

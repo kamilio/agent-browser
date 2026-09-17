@@ -97,6 +97,7 @@ const browser = new BrowserSession({
 				response,
 				signal: context.signal,
 				fetch: context.fetchScript,
+				fetchWithPolicy: context.fetchScriptWithPolicy,
 				owner: (document) => ownerFor(document, context.fetch),
 			}),
 		}),

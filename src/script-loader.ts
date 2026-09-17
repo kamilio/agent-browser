@@ -17,6 +17,11 @@ import {
 	parseNetworkUrl,
 } from "./network.js";
 import type { ScriptEvaluation } from "./safejs.js";
+import type { ScriptFetchPolicy, ScriptFetchResult } from "./script-fetch.js";
+import {
+	parseIntegrityMetadata,
+	verifyIntegrityMetadata,
+} from "./subresource-integrity.js";
 
 export interface ScriptLoaderOptions {
 	maxScripts?: number;
@@ -112,6 +117,11 @@ export class ScriptLoader implements HtmlScriptHooks {
 			signal: AbortSignal;
 			owner: (tree: DocumentTree) => ScriptRunner;
 			fetch?: (url: string) => Promise<NetworkResponse>;
+			fetchWithPolicy?: (
+				url: string,
+				policy: ScriptFetchPolicy,
+				signal: AbortSignal,
+			) => Promise<Readonly<ScriptFetchResult>>;
 			limits?: ScriptLoaderOptions;
 		},
 	) {
@@ -259,11 +269,10 @@ export class ScriptLoader implements HtmlScriptHooks {
 				source: { id, text: source, url: tree.url, external: false },
 			};
 		}
-		if (
-			["integrity", "crossorigin"].some((name) =>
-				Object.hasOwn(attributes, name),
-			)
-		) {
+		const requiresPolicy = ["integrity", "crossorigin"].some((name) =>
+			Object.hasOwn(attributes, name),
+		);
+		if (requiresPolicy && !this.options.fetchWithPolicy) {
 			this.skip("integrity-or-cors-not-supported");
 			return { mode: "skip" };
 		}
@@ -272,7 +281,25 @@ export class ScriptLoader implements HtmlScriptHooks {
 			this.skip("external-count-limit");
 			return { mode: "skip" };
 		}
-		const source = this.fetchSource(id, attributes.src, attributes.charset);
+		const crossorigin = attributes.crossorigin;
+		const source = this.fetchSource(
+			id,
+			attributes.src,
+			attributes.charset,
+			requiresPolicy
+				? {
+						policy: {
+							mode: crossorigin === undefined ? "no-cors" : "cors",
+							credentials:
+								crossorigin === undefined ||
+								crossorigin.toLowerCase() === "use-credentials"
+									? "include"
+									: "same-origin",
+						},
+						integrity: attributes.integrity ?? "",
+					}
+				: undefined,
+		);
 		const mode = Object.hasOwn(attributes, "async")
 			? "async"
 			: Object.hasOwn(attributes, "defer")
@@ -313,6 +340,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 		id: number,
 		value: string,
 		encoding?: string,
+		selection?: { policy: ScriptFetchPolicy; integrity: string },
 	): Promise<Source> {
 		let url = this.options.response.url;
 		const baseUrl = this.tree ? documentBaseUrl(this.tree) : url;
@@ -331,12 +359,49 @@ export class ScriptLoader implements HtmlScriptHooks {
 					"policy-denied",
 					"Mixed-content script blocked",
 				);
-			if (!this.options.fetch)
-				throw new AgentBrowserError(
-					"unsupported",
-					"Script fetch is unavailable",
+			const integrity = selection
+				? parseIntegrityMetadata(selection.integrity)
+				: null;
+			let response: NetworkResponse;
+			if (selection) {
+				if (!this.options.fetchWithPolicy)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Script policy fetch is unavailable",
+					);
+				const result = await this.options.fetchWithPolicy(
+					url,
+					selection.policy,
+					this.controller.signal,
 				);
-			const response = await this.options.fetch(url);
+				this.live();
+				if (
+					!["basic", "cors", "opaque"].includes(result.type) ||
+					(result.type === "opaque" &&
+						(selection.policy.mode === "cors" || integrity !== null))
+				)
+					throw new AgentBrowserError(
+						"policy-denied",
+						"Script policy response is not eligible",
+					);
+				response = result.response;
+				const finalUrl = parseNetworkUrl(response.url);
+				if (
+					new URL(this.tree.url).protocol === "https:" &&
+					finalUrl.protocol !== "https:"
+				)
+					throw new AgentBrowserError(
+						"policy-denied",
+						"Mixed-content script response blocked",
+					);
+			} else {
+				if (!this.options.fetch)
+					throw new AgentBrowserError(
+						"unsupported",
+						"Script fetch is unavailable",
+					);
+				response = await this.options.fetch(url);
+			}
 			this.live();
 			if (response.status < 200 || response.status >= 300)
 				throw new AgentBrowserError("network-error", "Script response failed");
@@ -351,6 +416,14 @@ export class ScriptLoader implements HtmlScriptHooks {
 				);
 			if (response.body.byteLength > this.maxBytes)
 				throw new AgentBrowserError("resource-limit", "Script body too large");
+			if (
+				integrity &&
+				!verifyIntegrityMetadata(response.body, integrity, this.maxBytes)
+			)
+				throw new AgentBrowserError(
+					"policy-denied",
+					"Script integrity verification failed",
+				);
 			return {
 				id,
 				text: decodeResponseText(response, encoding ?? "utf-8").text,
