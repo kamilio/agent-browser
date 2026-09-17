@@ -974,6 +974,8 @@
   "src/research-source-link-labels.test.ts",
   "src/html-source-json.test.ts",
   "src/html-source-json-binding.test.ts",
+  "src/html-source-json-binding-batch.test.ts",
+  "src/research-html-json-binding-batch.test.ts",
   "src/research-html-json-binding.test.ts",
   "src/research-html-json.test.ts",
   "src/research-json-content.test.ts",

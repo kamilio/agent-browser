@@ -10,8 +10,11 @@ import {
 } from "../src/html-source-json.js";
 import {
 	type HtmlJsonBindingSourceSelection,
+	type HtmlJsonBindingSourcesSelection,
 	selectHtmlJsonBindingSource,
+	selectHtmlJsonBindingSources,
 	validateHtmlJsonBindingSourceSelection,
+	validateHtmlJsonBindingSourcesSelection,
 } from "../src/html-source-json-binding.js";
 import { validateJsonSourcePointer } from "../src/json-source-selection.js";
 import { parseNetworkUrl } from "../src/network.js";
@@ -29,13 +32,16 @@ export const researchHtmlJsonCliLimits = Object.freeze({
 });
 
 const usage =
-	"Usage: research-html-json --url HTTPS_URL --content-type HTML_MIME --sha256 HEX --script-id ID --json-pointer POINTER [--binding IDENTIFIER] < body.html\nAn explicit empty --json-pointer '' selects the complete JSON value. Without --binding, the script must have application/json MIME. --binding explicitly selects an initial const JSON literal in a classic inline script, not its runtime value; trailing source is not evaluated. Stdin is a bounded raw HTML response body, not an HTTP-success receipt. Output is unverified lexical document-source JSON; no navigation, rendering, or script execution occurs.\n";
+	"Usage: research-html-json --url HTTPS_URL --content-type HTML_MIME --sha256 HEX --script-id ID (--json-pointer POINTER | --json-pointers JSON_ARRAY) [--binding IDENTIFIER] < body.html\nAn explicit empty --json-pointer '' selects the complete JSON value. --json-pointers requires --binding and 1..32 unique pointers; all values are selected in one bounded scan, and any missing pointer rejects the batch. Without --binding, the script must have application/json MIME. --binding explicitly selects an initial const JSON literal in a classic inline script, not its runtime value; trailing source is not evaluated. Stdin is a bounded raw HTML response body, not an HTTP-success receipt. Output is unverified lexical document-source JSON; no navigation, rendering, or script execution occurs.\n";
 
 export interface ResearchHtmlJsonArguments {
 	url: string;
 	contentType: string;
 	sha256: string;
-	selection: HtmlJsonSourceSelection | HtmlJsonBindingSourceSelection;
+	selection:
+		| HtmlJsonSourceSelection
+		| HtmlJsonBindingSourceSelection
+		| HtmlJsonBindingSourcesSelection;
 }
 
 function invalidArguments(): never {
@@ -60,6 +66,7 @@ export function parseResearchHtmlJsonArguments(
 		"--sha256",
 		"--script-id",
 		"--json-pointer",
+		"--json-pointers",
 		"--binding",
 	]);
 	const fields = new Map<string, string>();
@@ -73,12 +80,14 @@ export function parseResearchHtmlJsonArguments(
 	const sha256 = fields.get("--sha256");
 	const scriptId = fields.get("--script-id");
 	const pointer = fields.get("--json-pointer");
+	const pointers = fields.get("--json-pointers");
 	if (
 		url === undefined ||
 		contentType === undefined ||
 		sha256 === undefined ||
 		scriptId === undefined ||
-		pointer === undefined
+		(pointer === undefined) === (pointers === undefined) ||
+		(pointers !== undefined && !fields.has("--binding"))
 	)
 		invalidArguments();
 	try {
@@ -89,7 +98,7 @@ export function parseResearchHtmlJsonArguments(
 			url.includes("#")
 		)
 			invalidArguments();
-		validateJsonSourcePointer(pointer);
+		if (pointer !== undefined) validateJsonSourcePointer(pointer);
 	} catch {
 		invalidArguments();
 	}
@@ -104,18 +113,65 @@ export function parseResearchHtmlJsonArguments(
 		/[\s\p{Cc}\p{Cf}]/u.test(scriptId)
 	)
 		invalidArguments();
-	const selection = fields.has("--binding")
-		? validateHtmlJsonBindingSourceSelection({
+	let selection: ResearchHtmlJsonArguments["selection"];
+	if (pointers !== undefined) {
+		try {
+			selection = validateHtmlJsonBindingSourcesSelection({
 				scriptId,
 				binding: fields.get("--binding"),
-				pointer,
-			})
-		: { scriptId, pointer };
+				pointers: JSON.parse(pointers),
+			});
+		} catch {
+			invalidArguments();
+		}
+	} else {
+		if (pointer === undefined) invalidArguments();
+		selection = fields.has("--binding")
+			? validateHtmlJsonBindingSourceSelection({
+					scriptId,
+					binding: fields.get("--binding"),
+					pointer,
+				})
+			: { scriptId, pointer };
+	}
 	return {
 		url,
 		contentType,
 		sha256: sha256.toLowerCase(),
 		selection,
+	};
+}
+
+function selectContent(
+	source: string,
+	selection: ResearchHtmlJsonArguments["selection"],
+	checkpoint: () => void,
+) {
+	if ("pointers" in selection) {
+		const selected = selectHtmlJsonBindingSources(
+			source,
+			selection,
+			checkpoint,
+		);
+		return {
+			kind: "html-json-binding-source-batch-selection-v1",
+			metadata: selected.metadata,
+			format: "json-source-batch",
+			content: selected.values,
+		};
+	}
+	const selected =
+		"binding" in selection
+			? selectHtmlJsonBindingSource(source, selection, checkpoint)
+			: selectHtmlJsonSource(source, selection, checkpoint);
+	return {
+		kind:
+			"binding" in selection
+				? "html-json-binding-source-selection-v1"
+				: "html-json-source-selection-v1",
+		metadata: selected.metadata,
+		format: "json-source",
+		content: selected.text,
 	};
 }
 
@@ -240,28 +296,22 @@ export async function runResearchHtmlJsonCli(
 			checkpoint,
 		);
 		owned.fill(0);
-		const selected =
-			"binding" in options.selection
-				? selectHtmlJsonBindingSource(
-						admitted.text,
-						options.selection,
-						checkpoint,
-					)
-				: selectHtmlJsonSource(admitted.text, options.selection, checkpoint);
+		const selected = selectContent(
+			admitted.text,
+			options.selection,
+			checkpoint,
+		);
 		checkpoint();
 		const jsonl = `${JSON.stringify({
-			kind:
-				"binding" in options.selection
-					? "html-json-binding-source-selection-v1"
-					: "html-json-source-selection-v1",
+			kind: selected.kind,
 			partial: true,
 			rendered: false,
 			verified: false,
 			scope: "document-source",
 			source: admitted.identity,
 			selection: selected.metadata,
-			format: "json-source",
-			content: selected.text,
+			format: selected.format,
+			content: selected.content,
 			networkRequests: 0,
 		})}\n`;
 		if (Buffer.byteLength(jsonl) > researchHtmlJsonCliLimits.maxOutputBytes)

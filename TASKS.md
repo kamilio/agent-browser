@@ -6,6 +6,38 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Batch source fields and verify compact reference workflows
+
+- Add selectHtmlJsonBindingSources and explicit offline --json-pointers mode:
+  one HTML scan and one strict JSON selection pass, 1..32 unique ordered data
+  pointers, atomic missing-field rejection, aggregate 65,536-byte output cap.
+  Preserve single-field behavior, source spelling/provenance and all old limits;
+  no source JavaScript, new runtime dependency or default behavior change.
+- Qualify clean HEAD cfba706 plus owned overlays: 1,018/0 in nine selected native
+  files, including 111 new cases; build/types/scoped format/lint pass. All 1,626
+  source and 2,408 compiled pins match. The 1,018-entry canonical test manifest
+  retains 22 absent committed paths; this is not a new full-suite run.
+- One fresh native Business Insider capture on September 17 recovers four
+  titles/descriptions/publisher URLs absent as complete descriptions from the
+  ordinary reader. All 12 fields match committed single-selection output, new
+  batch API and actual compiled batch CLI. Same-body local instrumented medians
+  are 263.853 ms for 12 singles versus 22.041 ms for one batch; output envelopes
+  shrink 21,215 to 7,056 bytes. Not a network, model-token or general speed claim.
+- Two source-linked fresh native GETs validate Rust Waker and an Engineer Fix
+  article. Offline compact outputs retain all 12+5 reviewed source paragraphs
+  in JSON and normalized Markdown, totaling 3,927 and 1,008 Markdown bytes.
+  Preserve the failed raw-details selector and literal Markdown-signature checks;
+  final reader-aware selectors retain the original complete-content requirement.
+  Independent review and a stronger saved-output verifier also confirm complete
+  declaration/receivers, all three application headings and paragraph order;
+  retain JSONL companions for article attribution. No additional replay or GET.
+- Keep all three live visits distinct from offline replay and native tests;
+  no retries, SDK/page execution, credentials or challenge solving. See
+  reports/json-binding-batch-2026-09-17.md and its JSON evidence. Historical
+  100-page outcomes remain 33 useful/67 other. Continue diverse website tasks,
+  dynamic/SafeJS integration, avoidable access/CAPTCHA friction, performance,
+  real secrets/passkeys/devices and unfinished research. Full goal stays active.
+
 ### Recover source-delivered summaries without executing JavaScript
 
 - Add explicit selectHtmlJsonBindingSource and offline research-html-json

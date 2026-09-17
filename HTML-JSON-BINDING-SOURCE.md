@@ -71,6 +71,44 @@ limits from `HTML-JSON-SOURCE.md` still apply. No source-literal cap is enlarged
 
 ## Offline CLI
 
+### Multiple fields in one scan
+
+Use `selectHtmlJsonBindingSources(decodedHtml, { scriptId, binding, pointers })`
+when several values are needed from the same initializer. The ordered `pointers`
+list must be a dense ordinary array of 1..32 unique valid JSON pointers. Its
+data indices are copied and frozen without invoking getters or custom iterators;
+holes, extra properties and duplicate pointers reject. A missing pointer fails
+the whole operation rather than returning an apparently complete partial batch.
+
+The result has shared `metadata` and ordered `values` entries containing
+`pointer`, exact JSON-source `text`, and relative `json` span metadata. Add shared
+`metadata.literal.start` to each entry's `json.start`/`end` for decoded-HTML
+coordinates. HTML and the complete strict JSON literal are scanned once, not
+once per requested value. All selected UTF-8 text counts toward a single
+65,536-byte aggregate limit, including overlapping selections. Existing input,
+script, JSON, tokenizer, cancellation and cleanup limits still apply.
+
+In the CLI, replace `--json-pointer` with an explicitly quoted JSON array:
+
+```sh
+node dist/scripts/research-html-json.js \
+  --url https://source.fixture.invalid/document \
+  --content-type 'text/html; charset=utf-8' --sha256 "$BODY_SHA256" \
+  --script-id news-data --binding newsData \
+  --json-pointers '["/stories/0/title","/stories/0/description"]' < body.html
+```
+
+Batch mode requires `--binding`; the two pointer flags are mutually exclusive.
+The existing 8,192-code-unit per-argument cap also applies to the JSON array.
+Output uses `html-json-binding-source-batch-selection-v1`,
+`format: "json-source-batch"`, and a `content` array of the selected entries.
+The single-pointer APIs, limits and output envelopes remain unchanged.
+
+See `reports/json-binding-batch-2026-09-17.md` for a same-body field comparison,
+actual compiled CLI validation, and a scoped local API timing experiment.
+
+### One field
+
 Add the explicit `--binding` flag to the existing raw-body command:
 
 ```sh

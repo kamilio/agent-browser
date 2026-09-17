@@ -289,6 +289,13 @@ export {
 	type HtmlJsonBindingSourceSelection,
 	type HtmlJsonBindingSourceMetadata,
 } from "./html-source-json-binding.js";
+export {
+	selectHtmlJsonBindingSources,
+	validateHtmlJsonBindingSourcesSelection,
+	htmlSourceJsonBindingBatchLimits,
+	type HtmlJsonBindingSourcesSelection,
+	type HtmlJsonBindingSourcesMetadata,
+} from "./html-source-json-binding.js";
 export { DocumentFocus, BrowserFocusEvent } from "./focus.js";
 export {
 	DocumentKeyboard,

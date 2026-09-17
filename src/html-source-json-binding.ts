@@ -9,6 +9,7 @@ import {
 	type JsonSourceSelection,
 	jsonSourceSelectionLimits,
 	selectJsonSource,
+	selectJsonSourceSpans,
 	validateJsonSourcePointer,
 } from "./json-source-selection.js";
 import { utf8ByteLength } from "./utf8-byte-length.js";
@@ -18,10 +19,21 @@ export const htmlSourceJsonBindingLimits = Object.freeze({
 	maxBindingCodeUnits: 256,
 });
 
+export const htmlSourceJsonBindingBatchLimits = Object.freeze({
+	maxPointers: 32,
+	maxOutputBytes: htmlSourceJsonBindingLimits.maxOutputBytes,
+});
+
 export interface HtmlJsonBindingSourceSelection {
 	readonly scriptId: string;
 	readonly binding: string;
 	readonly pointer: string;
+}
+
+export interface HtmlJsonBindingSourcesSelection {
+	readonly scriptId: string;
+	readonly binding: string;
+	readonly pointers: readonly string[];
 }
 
 interface SourceSpan {
@@ -55,6 +67,12 @@ export interface HtmlJsonBindingSourceMetadata {
 		workUnits: number;
 		issues: number;
 	}>;
+}
+
+export interface HtmlJsonBindingSourcesMetadata
+	extends Omit<HtmlJsonBindingSourceMetadata, "kind" | "pointer" | "json"> {
+	readonly kind: "html-json-binding-sources-v1";
+	readonly pointers: readonly string[];
 }
 
 function invalid(
@@ -158,6 +176,66 @@ export function validateHtmlJsonBindingSourceSelection(
 	});
 }
 
+function validatePointers(value: unknown): readonly string[] {
+	if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype)
+		invalid("JSON binding pointers must be an ordinary dense array");
+	const lengthDescriptor = Object.getOwnPropertyDescriptor(value, "length");
+	if (!lengthDescriptor || !Object.hasOwn(lengthDescriptor, "value"))
+		invalid("Invalid JSON binding pointer array length");
+	const length: unknown = lengthDescriptor.value;
+	if (typeof length !== "number" || !Number.isInteger(length) || length < 1)
+		invalid("JSON binding pointers must be nonempty");
+	if (length > htmlSourceJsonBindingBatchLimits.maxPointers)
+		resourceLimit("JSON binding pointer count limit exceeded");
+	const descriptors = Object.getOwnPropertyDescriptors(value);
+	if (Reflect.ownKeys(descriptors).length !== length + 1)
+		invalid("Unexpected JSON binding pointer array properties");
+	const pointers: string[] = [];
+	const seen = new Set<string>();
+	for (let index = 0; index < length; index++) {
+		const descriptor = descriptors[String(index)];
+		if (!descriptor || !Object.hasOwn(descriptor, "value"))
+			invalid("JSON binding pointers must have own data indices");
+		const pointer = validateJsonSourcePointer(descriptor.value);
+		if (seen.has(pointer))
+			invalid("Duplicate JSON binding pointers are not allowed");
+		seen.add(pointer);
+		pointers.push(pointer);
+	}
+	return Object.freeze(pointers);
+}
+
+export function validateHtmlJsonBindingSourcesSelection(
+	value: unknown,
+): Readonly<HtmlJsonBindingSourcesSelection> {
+	if (value === null || typeof value !== "object" || Array.isArray(value))
+		invalid();
+	const prototype = Object.getPrototypeOf(value);
+	if (prototype !== Object.prototype && prototype !== null) invalid();
+	const descriptors = Object.getOwnPropertyDescriptors(value);
+	const keys = Reflect.ownKeys(descriptors);
+	if (
+		keys.length !== 3 ||
+		!keys.every(
+			(key) => key === "scriptId" || key === "binding" || key === "pointers",
+		) ||
+		!Object.hasOwn(descriptors.scriptId ?? {}, "value") ||
+		!Object.hasOwn(descriptors.binding ?? {}, "value") ||
+		!Object.hasOwn(descriptors.pointers ?? {}, "value")
+	)
+		invalid();
+	const selected = validateHtmlJsonBindingSourceSelection({
+		scriptId: descriptors.scriptId.value,
+		binding: descriptors.binding.value,
+		pointer: "",
+	});
+	return Object.freeze({
+		scriptId: selected.scriptId,
+		binding: selected.binding,
+		pointers: validatePointers(descriptors.pointers.value),
+	});
+}
+
 function discardName(name: string): name is HtmlDiscardRawName {
 	return (
 		name === "script" ||
@@ -254,14 +332,17 @@ function bindingLiteral(
 	invalid("Unterminated JSON binding literal");
 }
 
-export function selectHtmlJsonBindingSource(
+function withHtmlJsonBindingSource<Result>(
 	source: string,
-	selection: HtmlJsonBindingSourceSelection,
-	checkpoint?: () => void,
-): Readonly<{ text: string; metadata: HtmlJsonBindingSourceMetadata }> {
-	if (typeof source !== "string") invalid();
-	if (checkpoint !== undefined && typeof checkpoint !== "function") invalid();
-	const selected = validateHtmlJsonBindingSourceSelection(selection);
+	selected: Pick<HtmlJsonBindingSourceSelection, "scriptId" | "binding">,
+	checkpoint: (() => void) | undefined,
+	extract: (
+		literal: ReturnType<typeof bindingLiteral>,
+		candidate: { scriptStart: number; start: number; end: number },
+		cursor: HtmlTokenCursor,
+		tokens: number,
+	) => Result,
+): Result {
 	checkpoint?.();
 	if (source.length > htmlSourceJsonBindingLimits.maxSourceCodeUnits)
 		resourceLimit("HTML JSON binding source limit exceeded");
@@ -352,49 +433,153 @@ export function selectHtmlJsonBindingSource(
 			selected.binding,
 			checkpoint,
 		);
-		const json = selectJsonSource(
-			source.slice(literal.start, literal.end),
-			selected.pointer,
-			checkpoint,
-		);
-		if (utf8ByteLength(json.text) > htmlSourceJsonBindingLimits.maxOutputBytes)
-			resourceLimit("HTML JSON binding output limit exceeded");
-		checkpoint?.();
-		return Object.freeze({
-			text: json.text,
-			metadata: Object.freeze({
-				kind: "html-json-binding-source-v1",
-				scope: "lexical-html-source",
-				valueBasis: "initial-const-json-literal",
-				scriptingMode: "disabled",
-				rendered: false,
-				verified: false,
-				...selected,
-				...candidate,
-				sourceCodeUnits: source.length,
-				offsetBasis: "decoder-output-utf16",
-				literal: Object.freeze({
-					start: literal.start,
-					end: literal.end,
-					offsetBasis: "decoder-output-utf16",
-				}),
-				json: json.metadata,
-				jsonOffsetBasis: "literal-relative-utf16",
-				trailingSource: Object.freeze({
-					start: literal.trailingStart,
-					end: candidate.end,
-					offsetBasis: "decoder-output-utf16",
-					evaluated: false,
-				}),
-				counters: Object.freeze({
-					tokens,
-					operations: cursor.operations,
-					workUnits: cursor.workUnits,
-					issues: cursor.issueCount,
-				}),
-			}),
-		});
+		return extract(literal, candidate, cursor, tokens);
 	} finally {
 		cursor.close();
 	}
+}
+
+export function selectHtmlJsonBindingSource(
+	source: string,
+	selection: HtmlJsonBindingSourceSelection,
+	checkpoint?: () => void,
+): Readonly<{ text: string; metadata: HtmlJsonBindingSourceMetadata }> {
+	if (typeof source !== "string") invalid();
+	if (checkpoint !== undefined && typeof checkpoint !== "function") invalid();
+	const selected = validateHtmlJsonBindingSourceSelection(selection);
+	return withHtmlJsonBindingSource(
+		source,
+		selected,
+		checkpoint,
+		(literal, candidate, cursor, tokens) => {
+			const json = selectJsonSource(
+				source.slice(literal.start, literal.end),
+				selected.pointer,
+				checkpoint,
+			);
+			if (
+				utf8ByteLength(json.text) > htmlSourceJsonBindingLimits.maxOutputBytes
+			)
+				resourceLimit("HTML JSON binding output limit exceeded");
+			checkpoint?.();
+			return Object.freeze({
+				text: json.text,
+				metadata: Object.freeze({
+					kind: "html-json-binding-source-v1",
+					scope: "lexical-html-source",
+					valueBasis: "initial-const-json-literal",
+					scriptingMode: "disabled",
+					rendered: false,
+					verified: false,
+					...selected,
+					...candidate,
+					sourceCodeUnits: source.length,
+					offsetBasis: "decoder-output-utf16",
+					literal: Object.freeze({
+						start: literal.start,
+						end: literal.end,
+						offsetBasis: "decoder-output-utf16",
+					}),
+					json: json.metadata,
+					jsonOffsetBasis: "literal-relative-utf16",
+					trailingSource: Object.freeze({
+						start: literal.trailingStart,
+						end: candidate.end,
+						offsetBasis: "decoder-output-utf16",
+						evaluated: false,
+					}),
+					counters: Object.freeze({
+						tokens,
+						operations: cursor.operations,
+						workUnits: cursor.workUnits,
+						issues: cursor.issueCount,
+					}),
+				}),
+			});
+		},
+	);
+}
+
+export function selectHtmlJsonBindingSources(
+	source: string,
+	selection: HtmlJsonBindingSourcesSelection,
+	checkpoint?: () => void,
+): Readonly<{
+	values: readonly Readonly<{
+		pointer: string;
+		text: string;
+		json: Readonly<JsonSourceSelection>;
+	}>[];
+	metadata: HtmlJsonBindingSourcesMetadata;
+}> {
+	if (typeof source !== "string") invalid();
+	if (checkpoint !== undefined && typeof checkpoint !== "function") invalid();
+	const selected = validateHtmlJsonBindingSourcesSelection(selection);
+	return withHtmlJsonBindingSource(
+		source,
+		selected,
+		checkpoint,
+		(literal, candidate, cursor, tokens) => {
+			const literalSource = source.slice(literal.start, literal.end);
+			const spans = selectJsonSourceSpans(literalSource, selected.pointers, {
+				checkpoint,
+			}).selections;
+			const values: Readonly<{
+				pointer: string;
+				text: string;
+				json: Readonly<JsonSourceSelection>;
+			}>[] = [];
+			let bytes = 0;
+			for (let index = 0; index < selected.pointers.length; index++) {
+				checkpoint?.();
+				const json = spans[index];
+				if (!json)
+					throw new AgentBrowserError(
+						"not-found",
+						"JSON pointer target was not found",
+					);
+				const text = literalSource.slice(json.start, json.end);
+				bytes += utf8ByteLength(text);
+				if (bytes > htmlSourceJsonBindingBatchLimits.maxOutputBytes)
+					resourceLimit("HTML JSON binding batch output limit exceeded");
+				values.push(
+					Object.freeze({ pointer: selected.pointers[index], text, json }),
+				);
+			}
+			checkpoint?.();
+			return Object.freeze({
+				values: Object.freeze(values),
+				metadata: Object.freeze({
+					kind: "html-json-binding-sources-v1",
+					scope: "lexical-html-source",
+					valueBasis: "initial-const-json-literal",
+					scriptingMode: "disabled",
+					rendered: false,
+					verified: false,
+					...selected,
+					...candidate,
+					sourceCodeUnits: source.length,
+					offsetBasis: "decoder-output-utf16",
+					literal: Object.freeze({
+						start: literal.start,
+						end: literal.end,
+						offsetBasis: "decoder-output-utf16",
+					}),
+					jsonOffsetBasis: "literal-relative-utf16",
+					trailingSource: Object.freeze({
+						start: literal.trailingStart,
+						end: candidate.end,
+						offsetBasis: "decoder-output-utf16",
+						evaluated: false,
+					}),
+					counters: Object.freeze({
+						tokens,
+						operations: cursor.operations,
+						workUnits: cursor.workUnits,
+						issues: cursor.issueCount,
+					}),
+				}),
+			});
+		},
+	);
 }
