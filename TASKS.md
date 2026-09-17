@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Recover useful inert JSON from failed reader pages without page execution
+
+- New generic selectHtmlJsonSource and offline research-html-json CLI select
+  exact JSON values from an explicitly named inline application/json source
+  script. No site-specific recognizer, script execution, fabricated DOM or
+  automatic navigation-success upgrade. Source mode/provenance are explicit.
+- Saved Roblox header/catalog and TikTok navigation selections match independent
+  JSON parsing and exact UTF16 source ranges. Roblox's two source carousels hold
+  14 game entries; TikTok supplies four groups/20 navigation links, not a feed.
+- One fresh anonymous native Roblox GET returns200 and empty-extraction. The
+  same101365-byte capture then yields its158-byte attribution and7497-byte catalog
+  in two network-denied compiled CLI runs, with14 source game entries retained.
+  Original empty results and the100-entry33/67 historical verdicts stay unchanged.
+- Release04 passes893/0 across9 explicit native files, including140 new cases.
+  Build/selected types/format/lint pass. Reviews resolve source-mode ambiguity and
+  a paused-input stream stall; the large skipped-RCDATA window limit stays explicit.
+  Canonical manifest975 retains22 missing files; no full-manifest acceptance.
+- See HTML-JSON-SOURCE.md and reports/html-json-source-2026-09-17.md/JSON. Continue
+  practical one-shot source workflows, difficult-site recovery, actual SafeJS and
+  HTML modules, dynamic pages, access/CAPTCHA, credential/passkey/device/TTY gates
+  and unfinished research. The full browser objective remains active.
+
 ### Recover explicitly source-declared names for empty reader links
 
 - Opt-in source-aria-label-v1 restores otherwise empty admitted HTML anchors

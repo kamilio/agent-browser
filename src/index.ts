@@ -276,6 +276,12 @@ export {
 	type SourceLinkLabelPolicy,
 	type SourceLinkLabels,
 } from "./source-link-labels.js";
+export {
+	selectHtmlJsonSource,
+	htmlSourceJsonLimits,
+	type HtmlJsonSourceSelection,
+	type HtmlJsonSourceMetadata,
+} from "./html-source-json.js";
 export { DocumentFocus, BrowserFocusEvent } from "./focus.js";
 export {
 	DocumentKeyboard,

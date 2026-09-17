@@ -971,5 +971,7 @@
   "src/extension-page-runtime-modules.test.ts",
   "src/extraction-source-link-labels.test.ts",
   "src/source-link-labels.test.ts",
-  "src/research-source-link-labels.test.ts"
+  "src/research-source-link-labels.test.ts",
+  "src/html-source-json.test.ts",
+  "src/research-html-json.test.ts"
 ]
