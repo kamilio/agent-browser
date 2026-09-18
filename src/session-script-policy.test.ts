@@ -439,6 +439,7 @@ describe("constructed BrowserSession script policy transport fixtures", () => {
 			const tab = session.createTab().id;
 			await session.navigate(tab, initialUrl);
 			expect(requests).toHaveLength(17);
+			expect(session.limits.maxScriptRequests).toBe(16);
 			const entries = session
 				.requests(tab)
 				.entries.filter((entry) => entry.kind === "script");
@@ -456,6 +457,128 @@ describe("constructed BrowserSession script policy transport fixtures", () => {
 					error: "resource-limit",
 				})),
 			);
+		},
+	);
+
+	it.each(
+		[1, 19, 128].flatMap((maxScriptRequests) =>
+			[true, false].map((policyFirst) => ({ maxScriptRequests, policyFirst })),
+		),
+	)(
+		"shares configured $maxScriptRequests script requests across both paths (policy first=$policyFirst)",
+		async ({ maxScriptRequests, policyFirst }) => {
+			const { session, requests } = fixture({
+				limits: { maxScriptRequests },
+				loadDocument: async (input, context) => {
+					for (let index = 0; index < maxScriptRequests + 2; index++) {
+						const url = `https://example.com/configured-${index}.js`;
+						const pending =
+							(index % 2 === 0) === policyFirst
+								? policyFetch(context)(
+										url,
+										{ mode: "cors", credentials: "same-origin" },
+										new AbortController().signal,
+									).then((result) => result.response)
+								: legacyFetch(context)(url);
+						if (index < maxScriptRequests)
+							await expect(pending).resolves.toMatchObject({ status: 200 });
+						else
+							await expect(pending).rejects.toMatchObject({
+								code: "resource-limit",
+							});
+					}
+					return documentFixture(input, context);
+				},
+			});
+			const tab = session.createTab().id;
+			await session.navigate(tab, initialUrl);
+			expect(session.limits.maxScriptRequests).toBe(maxScriptRequests);
+			expect(requests).toHaveLength(maxScriptRequests + 1);
+			const entries = session
+				.requests(tab)
+				.entries.filter((entry) => entry.kind === "script");
+			expect(
+				entries.slice(0, -2).every((entry) => entry.state === "complete"),
+			).toBe(true);
+			expect(entries.slice(-2)).toMatchObject([
+				{ state: "failed", error: "resource-limit" },
+				{ state: "failed", error: "resource-limit" },
+			]);
+		},
+	);
+
+	it.each([true, false])(
+		"resets the configured shared script budget for each navigation (policy first=%s)",
+		async (policyFirst) => {
+			const maxScriptRequests = 19;
+			let loadedDocuments = 0;
+			const { session, requests } = fixture({
+				limits: { maxScriptRequests },
+				loadDocument: async (input, context) => {
+					loadedDocuments++;
+					for (let index = 0; index <= maxScriptRequests; index++) {
+						const url = `https://example.com/page-${loadedDocuments}-${index}.js`;
+						const pending =
+							(index % 2 === 0) === policyFirst
+								? policyFetch(context)(
+										url,
+										{ mode: "cors", credentials: "same-origin" },
+										new AbortController().signal,
+									).then((result) => result.response)
+								: legacyFetch(context)(url);
+						if (index < maxScriptRequests)
+							await expect(pending).resolves.toMatchObject({ status: 200 });
+						else
+							await expect(pending).rejects.toMatchObject({
+								code: "resource-limit",
+							});
+					}
+					return documentFixture(input, context);
+				},
+			});
+			const tab = session.createTab().id;
+			await session.navigate(tab, initialUrl);
+			await session.navigate(tab, `${initialUrl}?next`);
+			expect(loadedDocuments).toBe(2);
+			expect(requests).toHaveLength(2 * (maxScriptRequests + 1));
+			expect(
+				requests.filter((request) => request.url.endsWith("-19.js")),
+			).toHaveLength(0);
+		},
+	);
+
+	it.each([
+		0,
+		-1,
+		1.5,
+		Number.NaN,
+		Number.POSITIVE_INFINITY,
+		Number.NEGATIVE_INFINITY,
+		129,
+		"19",
+		null,
+		undefined,
+	])(
+		"rejects invalid script allowance %s before creating transport",
+		(value) => {
+			let transportCreated = false;
+			expect(
+				() =>
+					new BrowserSession({
+						createTransport: () => {
+							transportCreated = true;
+							throw new Error("Unexpected transport construction");
+						},
+						loadDocument: documentFixture,
+						limits: { maxScriptRequests: value as number },
+					}),
+			).toThrow(
+				expect.objectContaining({
+					code: "invalid-input",
+					message: "Invalid session limit: maxScriptRequests",
+				}),
+			);
+			expect(transportCreated).toBe(false);
 		},
 	);
 

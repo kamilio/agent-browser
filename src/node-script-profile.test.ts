@@ -5,6 +5,87 @@ const selected = {
 	AGENT_BROWSER_PAGE_RUNTIME: "extension",
 };
 
+it.each(["bounded-v1", "large-source-v1"])(
+	"selects independent finite script loading profile %s",
+	async (profile) => {
+		const { scriptProfileFromEnvironment } = await import(
+			"./node-script-profile.js"
+		);
+		const result = scriptProfileFromEnvironment({
+			...selected,
+			AGENT_BROWSER_SCRIPT_LOADING_PROFILE: profile,
+		});
+		expect(result).toEqual({
+			scriptLoading:
+				profile === "large-source-v1"
+					? {
+							maxScripts: 256,
+							maxExternal: 64,
+							maxSourceBytes: 8_388_608,
+							navigationTimeoutMs: 300_000,
+						}
+					: {
+							maxScripts: 64,
+							maxExternal: 16,
+							maxSourceBytes: 1_048_576,
+							navigationTimeoutMs: 30_000,
+						},
+		});
+		expect(Object.isFrozen(result.scriptLoading)).toBe(true);
+	},
+);
+
+it.each(["", "application-v1", "unlimited", "large-source-v1 "])(
+	"rejects invalid loading profile %j",
+	async (profile) => {
+		const { scriptProfileFromEnvironment } = await import(
+			"./node-script-profile.js"
+		);
+		expect(() =>
+			scriptProfileFromEnvironment({
+				...selected,
+				AGENT_BROWSER_SCRIPT_LOADING_PROFILE: profile,
+			}),
+		).toThrow(/SCRIPT_LOADING_PROFILE/);
+	},
+);
+
+it("requires an SDK, rejects reader mode and refuses inherited/accessor loading profiles", async () => {
+	const { scriptProfileFromEnvironment } = await import(
+		"./node-script-profile.js"
+	);
+	expect(() =>
+		scriptProfileFromEnvironment({
+			AGENT_BROWSER_SCRIPT_LOADING_PROFILE: "large-source-v1",
+		}),
+	).toThrow(/explicit SafeJS/);
+	expect(() =>
+		scriptProfileFromEnvironment({
+			...selected,
+			AGENT_BROWSER_SCRIPT_LOADING_PROFILE: "large-source-v1",
+			AGENT_BROWSER_DOCUMENT_PROFILE: "reader",
+		}),
+	).toThrow(/Reader/);
+	const getter = vi.fn(() => "large-source-v1");
+	for (const input of [
+		Object.assign(
+			Object.create({
+				AGENT_BROWSER_SCRIPT_LOADING_PROFILE: "large-source-v1",
+			}),
+			selected,
+		),
+		Object.defineProperty(
+			{ ...selected },
+			"AGENT_BROWSER_SCRIPT_LOADING_PROFILE",
+			{ enumerable: true, get: getter },
+		),
+	])
+		expect(() => scriptProfileFromEnvironment(input)).toThrow(
+			/SCRIPT_LOADING_PROFILE/,
+		);
+	expect(getter).not.toHaveBeenCalled();
+});
+
 it("keeps absent selections empty and immutable without requiring an SDK", async () => {
 	const { scriptProfileFromEnvironment } = await import(
 		"./node-script-profile.js"

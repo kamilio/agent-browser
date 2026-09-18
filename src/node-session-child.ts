@@ -16,6 +16,7 @@ import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 import { pageRuntimeRequest } from "./page-runtime-selection.js";
 import { type PageScriptOptions, PageScripts } from "./page-scripts.js";
 import { ScriptLoader } from "./script-loader.js";
+import { scriptLoadingSelection } from "./script-loading-options.js";
 import { BrowserSession } from "./session.js";
 
 const decoder = new ScriptFrameDecoder();
@@ -98,6 +99,7 @@ async function receive(raw: unknown) {
 				"Module website scripts require the extension page runtime",
 			);
 		const identity = sessionIdentityOptions(message.identity);
+		const scriptLoading = scriptLoadingSelection(message);
 		const cookiePolicy = await cookiePolicyFromInitialize(message);
 		const sdk = await loadPageRuntime(message.packageRoot, {
 			adapter: runtimeAdapter,
@@ -145,6 +147,20 @@ async function receive(raw: unknown) {
 			createSession: () =>
 				new BrowserSession({
 					identity,
+					...(scriptLoading
+						? {
+								limits: {
+									...(scriptLoading.maxExternal === undefined
+										? {}
+										: { maxScriptRequests: scriptLoading.maxExternal }),
+									...(scriptLoading.navigationTimeoutMs === undefined
+										? {}
+										: {
+												navigationTimeoutMs: scriptLoading.navigationTimeoutMs,
+											}),
+								},
+							}
+						: {}),
 					...(cookiePolicy ? { cookiePolicy: cookiePolicy.options } : {}),
 					createTransport: (cookieJar) =>
 						new NodeNetworkTransport({
@@ -177,9 +193,18 @@ async function receive(raw: unknown) {
 											signal: context.signal,
 											fetch: context.fetchScript,
 											fetchWithPolicy: context.fetchScriptWithPolicy,
-											...(networkSourceModules
-												? { limits: { modules: true } }
-												: {}),
+											limits: {
+												...(scriptLoading?.maxScripts === undefined
+													? {}
+													: { maxScripts: scriptLoading.maxScripts }),
+												...(scriptLoading?.maxExternal === undefined
+													? {}
+													: { maxExternal: scriptLoading.maxExternal }),
+												...(scriptLoading?.maxSourceBytes === undefined
+													? {}
+													: { maxSourceBytes: scriptLoading.maxSourceBytes }),
+												...(networkSourceModules ? { modules: true } : {}),
+											},
 											owner: (document) =>
 												ownerFor(document, context.fetch, networkSourceModules),
 										}),

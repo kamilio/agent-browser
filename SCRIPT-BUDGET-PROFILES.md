@@ -129,3 +129,31 @@ This proves that narrow owned-runtime capability, not external-script loading,
 policy-preserving live navigation, meeting admission or audio. The previous
 oversized-route, heartbeat and separate child-timeout failures remain preserved.
 Ordinary16s performance remains unpassed.
+
+## Explicit document loading limits
+
+Runtime budgets do not control how many external scripts a document may fetch.
+`SessionProcessOptions.scriptLoading` now independently accepts finite
+`maxScripts` (1–256), `maxExternal` (1–64), `maxSourceBytes` (1–8388608), and
+`navigationTimeoutMs` (1–300000). Values are snapshotted before SDK-root reading
+and validated again in the child. Omitted fields retain existing defaults.
+The external limit is applied to both ScriptLoader and the session's shared
+script-request counter, not just one layer. The session also exposes
+`limits.maxScriptRequests` (default16, maximum128) for direct native embedders.
+
+`AGENT_BROWSER_SCRIPT_LOADING_PROFILE` provides two explicit CLI selections:
+
+| Profile | Script elements | External requests | Source bytes | Navigation ms |
+| --- | ---: | ---: | ---: | ---: |
+| `bounded-v1` | 64 | 16 | 1048576 | 30000 |
+| `large-source-v1` | 256 | 64 | 8388608 | 300000 |
+
+This variable requires an explicit SDK root and conflicts with reader mode.
+It does not enable scripting, select an interpreter budget or change command,
+heartbeat, heap, network-response or output limits. A longer navigation remains
+subject to the independently selected parent and public-command deadlines.
+CSP/CORS, redirects, cancellation and shared request counting remain enforced.
+
+The observed Zoom join page exceeds the old16-external-script session ceiling.
+The configurable path passes2523 selected native tests in54 files with build,
+types, format and lint checks. This is not a live Zoom loader acceptance gate.

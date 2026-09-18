@@ -142,6 +142,7 @@ export interface SessionLimits {
 	maxNavigations: number;
 	maxPendingNavigations: number;
 	maxStylesheetRequests: number;
+	maxScriptRequests: number;
 	navigationTimeoutMs: number;
 }
 
@@ -369,6 +370,7 @@ export class BrowserSession {
 			maxNavigations: 500,
 			maxPendingNavigations: 8,
 			maxStylesheetRequests: 8,
+			maxScriptRequests: 16,
 			navigationTimeoutMs: 30_000,
 			...options.limits,
 		});
@@ -2242,7 +2244,7 @@ export class BrowserSession {
 							async () => {
 								this.assertCurrent(job);
 								policySignal.throwIfAborted();
-								if (++scriptResources > 16)
+								if (++scriptResources > this.limits.maxScriptRequests)
 									throw new AgentBrowserError(
 										"resource-limit",
 										"Script request limit exceeded",
@@ -2288,7 +2290,7 @@ export class BrowserSession {
 									"policy-denied",
 									"Script CSP enforcement is not implemented",
 								);
-							if (++scriptResources > 16)
+							if (++scriptResources > this.limits.maxScriptRequests)
 								throw new AgentBrowserError(
 									"resource-limit",
 									"Script request limit exceeded",

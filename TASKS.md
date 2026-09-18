@@ -35,6 +35,37 @@ next target is that document's actual join entry and dependencies. Successful
 HTTP responses and runtime prerequisites do not establish usable meeting UI,
 admission, audio reception, recording, transcript or delivery; all remain open.
 
+September18,16:38UTC: four actual public join assets are captured through native
+transport in0.965s with four200 responses and verified closure, at
+`/tmp/agent-browser-zoom-join-assets-guard-fixed-kSH8AS/HANDOFF.md`. The entry is
+a pre-join form controller using jQuery/validation, actual page bootstrap and
+site CAPTCHA helpers; it is not the incoming-media client. No CAPTCHA bypass,
+form submission, invented hidden values or meeting join occurred. A fresh exact
+158521-byte join HTML/CSP capture is kept privately at
+`/tmp/agent-browser-zoom-join-document-september18-w90jet/live`; credentials and
+cookie headers are not persisted. Its nonce-bearing policy remains intact.
+
+Actual unchanged all.min.js execution exposes a concrete DOM compatibility bug:
+jQuery cannot write its expando data property on a native host object. The
+transparent SDK diagnostic at
+`/tmp/agent-browser-zoom-join-all-runtime-Pd4KaP/stage01/execution/OBSERVATIONS.json`
+records the TypeError after50812.079ms; supervisor55.949s, all owners/processes
+closed. The earlier synthetic gate's masked interruption failure is retained.
+Neither gate initializes the whole dependency or uses the real join HTML.
+Bounded opt-in guest expandos and retained-value accounting are now the immediate
+runtime fix; no fake jQuery, native prototype replacement or source patching.
+
+The owned path now has explicit scriptLoading limits, including a navigation
+deadline independent of runtime and command deadlines. Both session fetch ports
+share configurable maxScriptRequests rather than a hard-coded16; default16 and
+all other default bounds remain unchanged. Native integration passes2523 tests
+in54 files at
+`/tmp/agent-browser-script-loading-green02-VM0V02/candidate`, with build/types/
+format/lint passing. Prior green01 native success and two test-style lint failures
+remain preserved. Native HOME/TMP are empty; quality-tool cache directories are
+retained, not claimed empty. Actual owned/live loading with the new selection is
+still an acceptance gate. See SCRIPT-BUDGET-PROFILES.md.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,

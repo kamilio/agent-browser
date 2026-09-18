@@ -25,6 +25,10 @@ import {
 	pageRuntimeRequest,
 } from "./page-runtime-selection.js";
 import type { PageScriptOptions } from "./page-scripts.js";
+import {
+	type ScriptLoadingOptions,
+	scriptLoadingSelection,
+} from "./script-loading-options.js";
 
 export interface SessionProcessOptions {
 	packageRoot: string;
@@ -41,6 +45,7 @@ export interface SessionProcessOptions {
 	maxPendingCommands?: number;
 	scripts?: Omit<PageScriptOptions, "fetch" | "networkSourceModules">;
 	websiteScripts?: "classic" | "module";
+	scriptLoading?: Readonly<ScriptLoadingOptions>;
 	network?: NetworkPolicyOptions;
 }
 
@@ -137,6 +142,7 @@ export class BrowserSessionProcess {
 		runtime: ReturnType<typeof pageRuntimeRequest>,
 		cookiePolicy: Awaited<ReturnType<typeof loadNodeCookiePolicy>>,
 		private readonly heartbeatPolicy: "always" | "idle-only",
+		scriptLoading: Readonly<ScriptLoadingOptions> | undefined,
 	) {
 		this.cookiePolicy = cookiePolicy?.cookiePolicy;
 		this.runtimeAdapter = runtime.adapter;
@@ -201,6 +207,7 @@ export class BrowserSessionProcess {
 				Math.min(250, Math.floor(this.heartbeatTimeout / 4)),
 			),
 			scripts: options.scripts,
+			...(scriptLoading ? { scriptLoading } : {}),
 			websiteScripts: options.websiteScripts,
 			network: options.network,
 		});
@@ -294,6 +301,7 @@ export class BrowserSessionProcess {
 		const selectedCookiePolicy = cookiePolicySelection(options);
 		const runtime = pageRuntimeRequest(options, "runtimeAdapter");
 		const heartbeatPolicy = heartbeatPolicySelection(options);
+		const scriptLoading = scriptLoadingSelection(options);
 		const runtimeAdapter = runtime.adapter;
 		if (
 			options?.websiteScripts !== undefined &&
@@ -319,6 +327,7 @@ export class BrowserSessionProcess {
 			runtime,
 			cookiePolicy,
 			heartbeatPolicy,
+			scriptLoading,
 		);
 		try {
 			await actor.ready;

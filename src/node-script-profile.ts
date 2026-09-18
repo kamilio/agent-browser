@@ -1,10 +1,12 @@
 import { AgentBrowserError } from "./errors.js";
 import type { ScriptBudgetProfile } from "./safejs.js";
+import type { ScriptLoadingOptions } from "./script-loading-options.js";
 
 export interface ScriptProfileConfiguration {
 	readonly scripts?: Readonly<{ budgetProfile: ScriptBudgetProfile }>;
 	readonly commandTimeoutMs?: number;
 	readonly heartbeatPolicy?: "always" | "idle-only";
+	readonly scriptLoading?: Readonly<ScriptLoadingOptions>;
 }
 
 export function scriptProfileFromEnvironment(
@@ -41,6 +43,16 @@ export function scriptProfileFromEnvironment(
 	const budgetProfile = read("AGENT_BROWSER_SCRIPT_BUDGET_PROFILE");
 	const timeout = read("AGENT_BROWSER_COMMAND_TIMEOUT_MS");
 	const heartbeatPolicy = read("AGENT_BROWSER_HEARTBEAT_POLICY");
+	const loadingProfile = read("AGENT_BROWSER_SCRIPT_LOADING_PROFILE");
+	if (
+		loadingProfile !== undefined &&
+		loadingProfile !== "bounded-v1" &&
+		loadingProfile !== "large-source-v1"
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"AGENT_BROWSER_SCRIPT_LOADING_PROFILE must be bounded-v1 or large-source-v1 when provided",
+		);
 	if (
 		heartbeatPolicy !== undefined &&
 		heartbeatPolicy !== "always" &&
@@ -81,13 +93,14 @@ export function scriptProfileFromEnvironment(
 	if (
 		budgetProfile === undefined &&
 		commandTimeoutMs === undefined &&
-		heartbeatPolicy === undefined
+		heartbeatPolicy === undefined &&
+		loadingProfile === undefined
 	)
 		return Object.freeze({});
 	if (read("AGENT_BROWSER_DOCUMENT_PROFILE") === "reader")
 		throw new AgentBrowserError(
 			"invalid-input",
-			`Reader document profile is incompatible with ${budgetProfile !== undefined ? "AGENT_BROWSER_SCRIPT_BUDGET_PROFILE" : commandTimeoutMs !== undefined ? "AGENT_BROWSER_COMMAND_TIMEOUT_MS" : "AGENT_BROWSER_HEARTBEAT_POLICY"}`,
+			`Reader document profile is incompatible with ${budgetProfile !== undefined ? "AGENT_BROWSER_SCRIPT_BUDGET_PROFILE" : commandTimeoutMs !== undefined ? "AGENT_BROWSER_COMMAND_TIMEOUT_MS" : heartbeatPolicy !== undefined ? "AGENT_BROWSER_HEARTBEAT_POLICY" : "AGENT_BROWSER_SCRIPT_LOADING_PROFILE"}`,
 		);
 	if (!read("AGENT_BROWSER_SAFEJS_ROOT"))
 		throw new AgentBrowserError(
@@ -103,6 +116,25 @@ export function scriptProfileFromEnvironment(
 			"AGENT_BROWSER_SCRIPT_BUDGET_PROFILE requires the explicit extension page runtime",
 		);
 	return Object.freeze({
+		...(loadingProfile === undefined
+			? {}
+			: {
+					scriptLoading: Object.freeze(
+						loadingProfile === "large-source-v1"
+							? {
+									maxScripts: 256,
+									maxExternal: 64,
+									maxSourceBytes: 8_388_608,
+									navigationTimeoutMs: 300_000,
+								}
+							: {
+									maxScripts: 64,
+									maxExternal: 16,
+									maxSourceBytes: 1_048_576,
+									navigationTimeoutMs: 30_000,
+								},
+					),
+				}),
 		...(budgetProfile !== undefined
 			? { scripts: Object.freeze({ budgetProfile }) }
 			: {}),

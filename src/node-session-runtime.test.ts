@@ -475,6 +475,50 @@ it("forwards explicit extension selection independently of classic script opt-in
 	});
 });
 
+it("snapshots explicit script loading bounds before asynchronous root validation", async () => {
+	const scriptLoading = {
+		maxExternal: 32,
+		maxSourceBytes: 4_000_000,
+		navigationTimeoutMs: 180_000,
+	};
+	const child = new FakeChild();
+	boundary.spawn.mockReturnValue(child);
+	boundary.readRoot.mockImplementationOnce(async () => {
+		scriptLoading.maxExternal = 64;
+		return "/trusted/fixture";
+	});
+	const actor = await BrowserSessionProcess.create({
+		packageRoot: "/trusted/fixture",
+		scriptLoading,
+	});
+	actors.push(actor);
+	expect(child.frames[0]).toMatchObject({
+		scriptLoading: {
+			maxExternal: 32,
+			maxSourceBytes: 4_000_000,
+			navigationTimeoutMs: 180_000,
+		},
+	});
+	expect(child.frames[0]).not.toHaveProperty("websiteScripts");
+});
+
+it("rejects invalid and accessor loading selection before root reading or spawn", async () => {
+	const getter = vi.fn(() => ({ maxExternal: 32 }));
+	for (const options of [
+		{ packageRoot: "/unused", scriptLoading: { maxExternal: 65 } },
+		Object.defineProperty({ packageRoot: "/unused" }, "scriptLoading", {
+			enumerable: true,
+			get: getter,
+		}),
+	])
+		await expect(
+			BrowserSessionProcess.create(options as SessionProcessOptions),
+		).rejects.toMatchObject({ code: "invalid-input" });
+	expect(getter).not.toHaveBeenCalled();
+	expect(boundary.readRoot).not.toHaveBeenCalled();
+	expect(boundary.spawn).not.toHaveBeenCalled();
+});
+
 it.each([
 	["poe-code", "./safe-js"],
 	["@poe-code/safe-js", "./core"],

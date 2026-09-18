@@ -297,6 +297,7 @@ it("composes explicit profiles, timeout, website scripting, runtime semantics an
 		AGENT_BROWSER_SCRIPT_BUDGET_PROFILE: "application-v1",
 		AGENT_BROWSER_COMMAND_TIMEOUT_MS: "120000",
 		AGENT_BROWSER_HEARTBEAT_POLICY: "idle-only",
+		AGENT_BROWSER_SCRIPT_LOADING_PROFILE: "large-source-v1",
 		AGENT_BROWSER_PAGE_SCRIPTS: "classic",
 		AGENT_BROWSER_PAGE_GLOBALS: "classic",
 		AGENT_BROWSER_CALLBACK_SCHEDULING: "after-prefix",
@@ -314,6 +315,12 @@ it("composes explicit profiles, timeout, website scripting, runtime semantics an
 			scripts: { budgetProfile: "application-v1" },
 			commandTimeoutMs: 120000,
 			heartbeatPolicy: "idle-only",
+			scriptLoading: {
+				maxScripts: 256,
+				maxExternal: 64,
+				maxSourceBytes: 8_388_608,
+				navigationTimeoutMs: 300_000,
+			},
 			runtimeOptions: {
 				classicScripts: true,
 				callbackScheduling: "after-prefix",
@@ -334,6 +341,7 @@ it.each([
 	["AGENT_BROWSER_COMMAND_TIMEOUT_MS", "20.0"],
 	["AGENT_BROWSER_COMMAND_TIMEOUT_MS", "2e1"],
 	["AGENT_BROWSER_HEARTBEAT_POLICY", "off"],
+	["AGENT_BROWSER_SCRIPT_LOADING_PROFILE", "unlimited"],
 ])(
 	"rejects malformed CLI %s=%j before secrets, connection reuse, or process allocation",
 	async (key, value) => {
