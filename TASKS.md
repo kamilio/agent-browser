@@ -162,6 +162,22 @@ groups close and HOME/TMP stay empty. The initial recursive harness-type error
 is preserved; corrected types pass. This is not a website, full captured Zoom
 policy, actual CLI entrypoint, publisher-performance recovery or meeting pass.
 
+September18,18:10UTC: the private stable-kind SDK candidate at
+`/tmp/agent-browser-sdk-graph-kinds-TtHZ0m` passes1542 tests in103 files and strict
+build/types. Its paired synthetic large-graph improvement is15.08%; this is not
+a Zoom-runtime success. One exact captured dependency replay with only that SDK
+changed, unchanged native source and unchanged120s script limit still fails at
+`/tmp/agent-browser-zoom-join-dependency-recovery-xtNvCr/stage04/execution`.
+The real bootstrap/expando checks pass, but all.min.js is interrupted after
+124290.635ms; supervisor129.204s. Both this and the earlier Bq replay stop at
+435938 steps/487108 peak data, with no verified final exports. This fixed-step
+coincidence now needs accounting/scheduler diagnosis, not another blind retry.
+All native owners close, SDK data/retained values reach0, processes/groups are
+absent, pins match and HOME/TMP are empty. Typecheck passes separately. Do not
+reinterpret shorter failed duration as successful execution or meeting progress.
+Full-policy integration, usable join UI, admission, audio, recording, transcript
+and delivery remain open; the goal is active.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,
