@@ -35,14 +35,30 @@ structured extraction inside those entries, not a different pagination protocol.
 
 Prefer one ordinary `extract` selection when the desired article already fits
 its output budget. Pagination is for bounded windows of repeated content, not
-automatic output compression: each entry retains its own extraction metadata.
+automatic output compression: by default each entry retains its own extraction
+metadata.
 Across many small entries, that metadata can outweigh the content. The build-guide
 revalidation in `reports/llama-build-revalidation-2026-09-18.md` demonstrates this
 tradeoff. A per-page cap does not cap the aggregate bytes of every page.
 
+Use `--reader-metadata=page` (library option `readerMetadata: "page"`) to share
+the document-level reader report once per page. The result then contains
+`readerMetadata: "page"` and, when a reader report exists, `reader`; entries omit
+only their duplicate `reader` field. Other entry metadata and content remain
+unchanged. Restore that shared field when a downstream consumer needs complete
+individual extraction records. Raw/native documents without reader metadata do
+not acquire a fabricated reader report.
+
+Default or explicit `--reader-metadata=entry` preserves the original output
+representation. Sharing is opt-in, not removal of provenance, and does not change
+ordinary per-item extraction limits. The shared report and placement marker
+count toward the page byte cap, including for an empty result. This can reduce
+serialized output and let more entries fit; it is not a network or CPU benchmark.
+
 | Option | Default | Allowed range |
 | --- | ---: | ---: |
 | `--limit` | 20 entries | 1–100 |
+| `--reader-metadata` | `entry` | `entry` or `page` |
 | `--max-bytes` | 256,000 | 1,024–1,048,576 |
 | `--item-max-bytes` | min(65,536, page limit) | 256–page limit |
 | `--max-nodes` | 10,000 per item | 1–50,000 |

@@ -4,6 +4,7 @@ import { BrowserCommandHost } from "./command-host.js";
 import type { DocumentTree } from "./document.js";
 import type { DocumentExtractionPage } from "./extraction-page.js";
 import { parseHtmlDocument } from "./html-parser.js";
+import { loadResearchDocument } from "./research-loader.js";
 import { BrowserSession } from "./session.js";
 
 const hosts: BrowserCommandHost[] = [];
@@ -13,7 +14,7 @@ afterEach(() => {
 	for (const host of hosts.splice(0)) host.close();
 });
 
-async function fixture() {
+async function fixture(reader = false) {
 	const trees: DocumentTree[] = [];
 	const requests: string[] = [];
 	let closed = false;
@@ -44,10 +45,27 @@ async function fixture() {
 			},
 		}),
 		loadDocument(response) {
-			const tree = parseHtmlDocument(
-				'<main><p class="comment">First <code> \t </code></p><p class="comment">Second</p><p class="comment">Third</p></main>',
-				response.url,
-			);
+			const source =
+				'<main><p class="comment">First <code> \t </code></p><p class="comment">Second</p><p class="comment">Third</p></main>';
+			const tree = reader
+				? loadResearchDocument(
+						{
+							...response,
+							headers: { "content-type": ["text/html; charset=utf-8"] },
+							body: new TextEncoder().encode(source),
+						},
+						{
+							tabId: "shared-reader",
+							signal: new AbortController().signal,
+							limits: {
+								maxNodes: 100,
+								maxDepth: 16,
+								maxTextCodeUnits: 1000,
+								maxChanges: 100,
+							},
+						},
+					)
+				: parseHtmlDocument(source, response.url);
 			trees.push(tree);
 			return tree;
 		},
@@ -87,6 +105,113 @@ it("registers bounded extraction page options", () => {
 		},
 	});
 });
+
+it.each(["entry", "page"])(
+	"parses reader metadata placement %s",
+	(placement) => {
+		expect(
+			parseInvocation([
+				"extract-page",
+				".comment",
+				`--reader-metadata=${placement}`,
+			]),
+		).toMatchObject({ options: { "reader-metadata": placement } });
+	},
+);
+
+it.each([
+	{ reader: false, format: "markdown" },
+	{ reader: true, format: "markdown" },
+	{ reader: false, format: "json" },
+	{ reader: true, format: "json" },
+])(
+	"shares reader metadata without changing entries: $reader/$format",
+	async ({ reader, format }) => {
+		const { host, requests } = await fixture(reader);
+		const normal = (
+			await host.execute(["extract-page", ".comment", `--format=${format}`])
+		).data as DocumentExtractionPage;
+		const shared = (
+			await host.execute([
+				"extract-page",
+				".comment",
+				`--format=${format}`,
+				"--reader-metadata=page",
+			])
+		).data as DocumentExtractionPage;
+		expect(shared.readerMetadata).toBe("page");
+		expect(shared.reader).toEqual(normal.entries[0].reader);
+		for (const entry of shared.entries)
+			expect(entry).not.toHaveProperty("reader");
+		expect(
+			shared.entries.map((entry) =>
+				shared.reader ? { ...entry, reader: shared.reader } : entry,
+			),
+		).toEqual(normal.entries);
+		expect(shared.nextCursor).toBe(normal.nextCursor);
+		expect(requests).toEqual([url]);
+	},
+);
+
+it.each([false, true])(
+	"preserves explicit entry mode output with reader %s",
+	async (reader) => {
+		const { host } = await fixture(reader);
+		const normal = (await host.execute(["extract-page", ".comment"])).data;
+		const explicit = (
+			await host.execute([
+				"extract-page",
+				".comment",
+				"--reader-metadata=entry",
+			])
+		).data;
+		expect(JSON.stringify(explicit)).toBe(JSON.stringify(normal));
+	},
+);
+
+it("counts shared reader metadata in the command's exact page bound", async () => {
+	const { host, requests } = await fixture(true);
+	const full = (
+		await host.execute(["extract-page", ".comment", "--reader-metadata=page"])
+	).data as DocumentExtractionPage;
+	const cap = Math.max(
+		1024,
+		new TextEncoder().encode(JSON.stringify(full)).length,
+	);
+	const shared = (
+		await host.execute([
+			"extract-page",
+			".comment",
+			"--reader-metadata=page",
+			`--max-bytes=${cap}`,
+		])
+	).data as DocumentExtractionPage;
+	const normal = (
+		await host.execute(["extract-page", ".comment", `--max-bytes=${cap}`])
+	).data as DocumentExtractionPage;
+	expect(shared.entries).toHaveLength(3);
+	expect(shared.selectionExhausted).toBe(true);
+	expect(normal.entries.length).toBeLessThan(shared.entries.length);
+	expect(
+		new TextEncoder().encode(JSON.stringify(shared)).length,
+	).toBeLessThanOrEqual(cap);
+	expect(requests).toEqual([url]);
+});
+
+it.each(["none", "true", ""])(
+	"rejects invalid reader metadata placement %j",
+	async (placement) => {
+		const { host, requests } = await fixture();
+		await expect(
+			host.execute([
+				"extract-page",
+				".comment",
+				`--reader-metadata=${placement}`,
+			]),
+		).rejects.toMatchObject({ code: "invalid-input" });
+		expect(requests).toEqual([url]);
+	},
+);
 
 it.each(
 	[

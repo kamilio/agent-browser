@@ -8,6 +8,8 @@ import {
 import * as extraction from "./extraction.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { serializeHtml } from "./html-serialization.js";
+import { loadResearchDocument } from "./research-loader.js";
+import * as readerInformation from "./research-reader-info.js";
 import { resourceLimitDiagnostic } from "./resource-limit.js";
 import { DocumentQueries } from "./selectors.js";
 
@@ -17,6 +19,33 @@ const encoder = new TextEncoder();
 
 function fixture(source: string) {
 	const tree = parseHtmlDocument(source, url);
+	trees.push(tree);
+	return tree;
+}
+
+function readerFixture(source: string) {
+	const body = encoder.encode(source);
+	const tree = loadResearchDocument(
+		{
+			url,
+			status: 200,
+			headers: { "content-type": ["text/html; charset=utf-8"] },
+			body,
+			encodedBytes: body.byteLength,
+			redirects: [],
+			elapsedMs: 0,
+		},
+		{
+			tabId: "synthetic-shared-reader-pages",
+			signal: new AbortController().signal,
+			limits: {
+				maxNodes: 50_000,
+				maxDepth: 256,
+				maxTextCodeUnits: 2_000_000,
+				maxChanges: 1024,
+			},
+		},
+	);
 	trees.push(tree);
 	return tree;
 }
@@ -688,4 +717,479 @@ it("serializes individual entries and empty envelopes rather than growing pages"
 	expect(envelopes.slice(1).every((value) => value.entries.length === 0)).toBe(
 		true,
 	);
+});
+
+it.each([
+	{ format: "markdown", reader: false },
+	{ format: "markdown", reader: true },
+	{ format: "json", reader: false },
+	{ format: "json", reader: true },
+] as const)("retains byte-identical entry mode: %j", ({ format, reader }) => {
+	const tree = (reader ? readerFixture : fixture)(
+		"<p>First café 中文 😀</p><p>Second</p><p>Third</p>",
+	);
+	for (const start of [0, 1, 3]) {
+		const options = { format, limit: 1, cursor: cursor(tree, "p", start) };
+		const original = extractDocumentPage(tree, "p", options);
+		const explicit = extractDocumentPage(tree, "p", {
+			...options,
+			readerMetadata: "entry",
+		});
+		expect(JSON.stringify(explicit)).toBe(JSON.stringify(original));
+		expect(explicit).not.toHaveProperty("readerMetadata");
+		expect(explicit).not.toHaveProperty("reader");
+		for (const entry of explicit.entries) {
+			expect(entry.reader).toBe(readerInformation.researchReaderInfo(tree));
+		}
+	}
+});
+
+it.each(["markdown", "json"] as const)(
+	"roundtrips shared-reader %s pages to ordinary extraction without losing metadata",
+	(format) => {
+		const tree = readerFixture(
+			'<html><head><title>Reader café 中文 😀</title><meta name="description" content="Kept description"><link rel="alternate" type="text/markdown" href="/article.md"></head><body>' +
+				'<article><h2>First</h2><p>café 中文 😀</p><table><tr><td>Cell</td><td>Value</td></tr></table></article><article><p>Second <a href="/next">Next</a></p></article><article><p>Third</p></article><script>omitted()</script></body></html>',
+		);
+		const options = {
+			format,
+			...(format === "markdown"
+				? { tableRows: true, compactTables: true }
+				: {}),
+		};
+		const expected = references(tree, "article").map((root) =>
+			extraction.extractDocument(tree, { root, ...options }),
+		);
+		expect(expected[0]).toHaveProperty("sourceDescriptions");
+		expect(expected[0]).toHaveProperty("sourceAlternates");
+		const restored: extraction.DocumentExtraction[] = [];
+		let nextCursor: string | undefined;
+		for (let start = 0; start < expected.length; start++) {
+			const page = extractDocumentPage(tree, "article", {
+				...options,
+				readerMetadata: "page",
+				limit: 1,
+				cursor: nextCursor,
+			});
+			expect(page).toMatchObject({
+				method: "selector-extraction-page-v1",
+				readerMetadata: "page",
+				start,
+				partial: true,
+			});
+			expect(page.reader).toBe(readerInformation.researchReaderInfo(tree));
+			expect(page.entries[0]).not.toHaveProperty("reader");
+			restored.push({ ...page.entries[0], reader: page.reader });
+			nextCursor = page.nextCursor ?? undefined;
+			expect(page.nextCursor).toBe(
+				start + 1 === expected.length
+					? null
+					: cursor(tree, "article", start + 1),
+			);
+		}
+		expect(restored).toEqual(expected);
+		expect(JSON.parse(JSON.stringify(restored))).toEqual(
+			JSON.parse(JSON.stringify(expected)),
+		);
+	},
+);
+
+it.each([false, true])(
+	"keeps reader=%s empty trees, missing matches and terminal cursors meaningful",
+	(reader) => {
+		for (const source of ["", "<p>Body</p>"]) {
+			const tree = (reader ? readerFixture : fixture)(source);
+			for (const selector of [".absent", "p"]) {
+				const totalMatches = references(tree, selector).length;
+				const page = extractDocumentPage(tree, selector, {
+					readerMetadata: "page",
+					cursor: cursor(tree, selector, totalMatches),
+				});
+				expect(page).toMatchObject({
+					readerMetadata: "page",
+					start: totalMatches,
+					totalMatches,
+					entries: [],
+					nextCursor: null,
+					selectionExhausted: true,
+					partial: true,
+				});
+				if (reader) {
+					expect(page.reader).toBe(readerInformation.researchReaderInfo(tree));
+					expect(page.reader).toBeDefined();
+				} else {
+					expect(page).not.toHaveProperty("reader");
+				}
+			}
+		}
+	},
+);
+
+it.each(["markdown", "json"] as const)(
+	"adds only the page marker on ordinary no-reader %s trees",
+	(format) => {
+		const tree = fixture("<p>First</p><p>Second</p>");
+		const original = extractDocumentPage(tree, "p", { format, limit: 1 });
+		const shared = extractDocumentPage(tree, "p", {
+			format,
+			limit: 1,
+			readerMetadata: "page",
+		});
+		expect(shared).toEqual({ ...original, readerMetadata: "page" });
+		expect(shared).not.toHaveProperty("reader");
+	},
+);
+
+it("reads the shared report once without mutating frozen ordinary entries or document state", () => {
+	const tree = readerFixture("<p>First</p><p>Second</p>");
+	const expected = references(tree, "p").map((root) =>
+		Object.freeze(extraction.extractDocument(tree, { root })),
+	);
+	const reader = readerInformation.researchReaderInfo(tree);
+	const report = JSON.stringify(reader);
+	const source = serializeHtml(tree, tree.root);
+	const revision = tree.revision;
+	const usage = tree.resourceUsage();
+	const mutations = tree.mutationMetrics();
+	const read = vi.spyOn(readerInformation, "researchReaderInfo");
+	vi.spyOn(extraction, "extractDocument")
+		.mockReturnValueOnce(expected[0])
+		.mockReturnValueOnce(expected[1]);
+	const page = extractDocumentPage(tree, "p", { readerMetadata: "page" });
+	expect(read).toHaveBeenCalledTimes(1);
+	expect(read).toHaveBeenCalledWith(tree);
+	expect(page.reader).toBe(reader);
+	expect(Object.isFrozen(page.reader)).toBe(true);
+	for (const [index, entry] of page.entries.entries()) {
+		expect(entry).not.toBe(expected[index]);
+		expect(entry).not.toHaveProperty("reader");
+		expect({ ...entry, reader: page.reader }).toEqual(expected[index]);
+		expect(expected[index].reader).toBe(reader);
+	}
+	expect(JSON.stringify(reader)).toBe(report);
+	expect(serializeHtml(tree, tree.root)).toBe(source);
+	expect(tree.revision).toBe(revision);
+	expect(tree.resourceUsage()).toEqual(usage);
+	expect(tree.mutationMetrics()).toEqual(mutations);
+});
+
+it.each([
+	{ readerMetadata: "" },
+	{ readerMetadata: "PAGE" },
+	{ readerMetadata: "document" },
+	{ readerMetadata: null },
+	{ readerMetadata: false },
+	{ readerMetadata: 1 },
+	{ readerMetadata: [] },
+	{ readerMetadata: {} },
+])(
+	"rejects invalid reader metadata %j before querying",
+	({ readerMetadata }) => {
+		const tree = fixture("<p>Body</p>");
+		const query = vi.spyOn(DocumentQueries.prototype, "querySelectorAll");
+		const read = vi.spyOn(readerInformation, "researchReaderInfo");
+		expect(() =>
+			extractDocumentPage(tree, ".absent", {
+				readerMetadata,
+			} as ExtractionPageOptions),
+		).toThrow(expect.objectContaining({ code: "invalid-input" }));
+		expect(query).not.toHaveBeenCalled();
+		expect(read).not.toHaveBeenCalled();
+	},
+);
+
+it.each(["markdown", "json"] as const)(
+	"counts shared metadata and escaped Unicode nonterminal cursors at exact %s byte caps",
+	(format) => {
+		const tree = readerFixture(
+			`<p class="café 中文 😀">${'café 中文 😀 " \\ '.repeat(100)}</p>`.repeat(
+				5,
+			),
+		);
+		const selector = '[class="café 中文 😀"]';
+		const options = { format, readerMetadata: "page", limit: 2 } as const;
+		const expected = extractDocumentPage(tree, selector, options);
+		const maxBytes = bytes(expected);
+		expect(maxBytes).toBeGreaterThan(1024);
+		expect(maxBytes).toBeGreaterThan(JSON.stringify(expected).length);
+		expect(expected.nextCursor).toBe(cursor(tree, selector, 2));
+		const exact = extractDocumentPage(tree, selector, { ...options, maxBytes });
+		expect(exact).toEqual(expected);
+		expect(bytes(exact)).toBe(maxBytes);
+		const shorter = extractDocumentPage(tree, selector, {
+			...options,
+			maxBytes: maxBytes - 1,
+		});
+		expect(shorter.entries).toEqual(expected.entries.slice(0, 1));
+		expect(shorter.nextCursor).toBe(cursor(tree, selector, 1));
+		expect(bytes(shorter)).toBeLessThanOrEqual(maxBytes - 1);
+		const resumed = extractDocumentPage(tree, selector, {
+			...options,
+			cursor: shorter.nextCursor ?? undefined,
+			maxBytes,
+		});
+		expect(resumed.start).toBe(1);
+		expect(resumed.entries[0]).toEqual(expected.entries[1]);
+	},
+);
+
+it.each([false, true])(
+	"counts the shared marker and reader=%s in exact empty envelope caps",
+	(reader) => {
+		const tree = (reader ? readerFixture : fixture)("<p>Body</p>");
+		const selector = `.absent${" ".repeat(1200)}`;
+		const options = { readerMetadata: "page" } as const;
+		const expected = extractDocumentPage(tree, selector, options);
+		const maxBytes = bytes(expected);
+		expect(
+			extractDocumentPage(tree, selector, { ...options, maxBytes }),
+		).toEqual(expected);
+		try {
+			extractDocumentPage(tree, selector, {
+				...options,
+				maxBytes: maxBytes - 1,
+			});
+			throw new Error("Expected shared envelope rejection");
+		} catch (error) {
+			expect(error).toMatchObject({
+				code: "resource-limit",
+				message: "Extraction page envelope exceeds byte limit",
+			});
+			expect(resourceLimitDiagnostic(error)).toEqual({
+				kind: "extraction.output",
+				unit: "bytes",
+				limit: maxBytes - 1,
+				observed: maxBytes,
+			});
+		}
+	},
+);
+
+it.each([false, true])(
+	"rejects the first shared entry at one byte below its reader=%s envelope",
+	(reader) => {
+		const tree = (reader ? readerFixture : fixture)(
+			`<p>${"café 中文 😀 ".repeat(100)}</p>`.repeat(3),
+		);
+		const options = { readerMetadata: "page", limit: 1 } as const;
+		const expected = extractDocumentPage(tree, "p", options);
+		const maxBytes = bytes(expected);
+		expect(expected.nextCursor).toBe(cursor(tree, "p", 1));
+		expect(extractDocumentPage(tree, "p", { ...options, maxBytes })).toEqual(
+			expected,
+		);
+		try {
+			extractDocumentPage(tree, "p", { ...options, maxBytes: maxBytes - 1 });
+			throw new Error("Expected first shared entry rejection");
+		} catch (error) {
+			expect(error).toMatchObject({
+				code: "resource-limit",
+				message: "First extraction page entry exceeds byte limit",
+			});
+			expect(resourceLimitDiagnostic(error)).toEqual({
+				kind: "extraction.output",
+				unit: "bytes",
+				limit: maxBytes - 1,
+				observed: maxBytes,
+			});
+		}
+	},
+);
+
+it("packs more entries without changing per-item output or skipping continuations", () => {
+	const tree = readerFixture("<p>Small café 中文 😀</p>".repeat(12));
+	const options = { readerMetadata: "page", limit: 4 } as const;
+	const maxBytes = bytes(extractDocumentPage(tree, "p", options));
+	const ordinary = extractDocumentPage(tree, "p", { limit: 4, maxBytes });
+	expect(ordinary.entries.length).toBeLessThan(4);
+	const restored: extraction.DocumentExtraction[] = [];
+	let nextCursor: string | undefined;
+	for (let pageIndex = 0; pageIndex < 12; pageIndex++) {
+		const page = extractDocumentPage(tree, "p", {
+			...options,
+			maxBytes,
+			cursor: nextCursor,
+		});
+		expect(page.entries.length).toBeGreaterThan(0);
+		expect(bytes(page)).toBeLessThanOrEqual(maxBytes);
+		expect(page.start).toBe(restored.length);
+		restored.push(
+			...page.entries.map((entry) => ({ ...entry, reader: page.reader })),
+		);
+		if (page.selectionExhausted) break;
+		nextCursor = page.nextCursor ?? undefined;
+		expect(nextCursor).toBe(cursor(tree, "p", restored.length));
+	}
+	expect(restored).toEqual(
+		references(tree, "p").map((root) =>
+			extraction.extractDocument(tree, { root }),
+		),
+	);
+});
+
+it.each(["missing", "different", "unexpected"] as const)(
+	"rejects %s entry reader metadata rather than silently losing provenance",
+	(outcome) => {
+		const tree = readerFixture("<p>Body</p>");
+		const root = references(tree, "p")[0];
+		const entry = extraction.extractDocument(tree, { root });
+		if (!entry.reader) throw new Error("Expected reader fixture metadata");
+		const changed = {
+			...entry,
+			reader:
+				outcome === "missing" ? undefined : { ...entry.reader, tokens: -1 },
+		};
+		if (outcome === "unexpected") {
+			vi.spyOn(readerInformation, "researchReaderInfo").mockReturnValue(
+				undefined,
+			);
+		}
+		vi.spyOn(extraction, "extractDocument").mockReturnValue(changed);
+		const close = vi.spyOn(DocumentQueries.prototype, "close");
+		expect(() =>
+			extractDocumentPage(tree, "p", { readerMetadata: "page" }),
+		).toThrow("Extraction page reader metadata mismatch");
+		expect(close).toHaveBeenCalledOnce();
+	},
+);
+
+it("counts a Unicode reader report even when the page has no entries", () => {
+	const tree = readerFixture("");
+	const reader = readerInformation.researchReaderInfo(tree);
+	if (!reader) throw new Error("Expected reader fixture metadata");
+	readerInformation.setResearchReaderInfo(tree, {
+		...reader,
+		omittedSubtrees: { ['café 中文 😀 " \\ '.repeat(100)]: 1 },
+	});
+	const options = { readerMetadata: "page" } as const;
+	const expected = extractDocumentPage(tree, "p", options);
+	const maxBytes = bytes(expected);
+	expect(maxBytes).toBeGreaterThan(1024);
+	expect(maxBytes).toBeGreaterThan(JSON.stringify(expected).length);
+	expect(expected.entries).toEqual([]);
+	const extract = vi.spyOn(extraction, "extractDocument");
+	const read = vi.spyOn(readerInformation, "researchReaderInfo");
+	const close = vi.spyOn(DocumentQueries.prototype, "close");
+	expect(extractDocumentPage(tree, "p", { ...options, maxBytes })).toEqual(
+		expected,
+	);
+	expect(read).toHaveBeenCalledTimes(1);
+	expect(read).toHaveBeenCalledWith(tree);
+	try {
+		extractDocumentPage(tree, "p", { ...options, maxBytes: maxBytes - 1 });
+		throw new Error("Expected reader-only envelope rejection");
+	} catch (error) {
+		expect(error).toMatchObject({
+			code: "resource-limit",
+			message: "Extraction page envelope exceeds byte limit",
+		});
+		expect(resourceLimitDiagnostic(error)).toEqual({
+			kind: "extraction.output",
+			unit: "bytes",
+			limit: maxBytes - 1,
+			observed: maxBytes,
+		});
+	}
+	expect(read).toHaveBeenCalledTimes(2);
+	expect(extract).not.toHaveBeenCalled();
+	expect(close).toHaveBeenCalledTimes(2);
+});
+
+it.each(["markdown", "json"] as const)(
+	"retains ordinary per-item %s output caps before sharing reader metadata",
+	(format) => {
+		const tree = readerFixture(`<p>${"café 中文 😀 ".repeat(100)}</p>`);
+		const root = references(tree, "p")[0];
+		const ordinary = extraction.extractDocument(tree, { root, format });
+		const itemMaxBytes = bytes(ordinary);
+		const options = { format, readerMetadata: "page", itemMaxBytes } as const;
+		const page = extractDocumentPage(tree, "p", options);
+		expect({ ...page.entries[0], reader: page.reader }).toEqual(ordinary);
+		const close = vi.spyOn(DocumentQueries.prototype, "close");
+		try {
+			extractDocumentPage(tree, "p", {
+				...options,
+				itemMaxBytes: itemMaxBytes - 1,
+			});
+			throw new Error("Expected ordinary item output rejection");
+		} catch (error) {
+			expect(error).toMatchObject({
+				code: "resource-limit",
+				message: "Extraction output limit exceeded",
+			});
+			expect(resourceLimitDiagnostic(error)).toEqual({
+				kind: "extraction.output",
+				unit: "bytes",
+				limit: itemMaxBytes - 1,
+				observed: itemMaxBytes,
+			});
+		}
+		expect(close).toHaveBeenCalled();
+	},
+);
+
+it.each([
+	"success",
+	"empty",
+	"syntax",
+	"range",
+	"envelope",
+	"entry",
+	"extraction",
+	"query",
+	"item-metadata",
+	"later-extraction",
+])("closes shared-page queries on %s without swallowing errors", (outcome) => {
+	const tree = readerFixture(`<p>${"Body ".repeat(250)}</p><p>Second</p>`);
+	const options: ExtractionPageOptions = { readerMetadata: "page" };
+	let selector = "p";
+	const failure = new AgentBrowserError("resource-limit", "Synthetic failure");
+	if (outcome === "empty") selector = ".absent";
+	if (outcome === "syntax") selector = "[";
+	if (outcome === "range") options.cursor = cursor(tree, selector, 3);
+	if (outcome === "envelope") {
+		selector = `p${" ".repeat(1500)}`;
+		options.maxBytes = 1024;
+	}
+	if (outcome === "entry") {
+		options.limit = 1;
+		options.maxBytes = bytes(extractDocumentPage(tree, selector, options)) - 1;
+	}
+	if (outcome === "extraction") options.maxNodes = 1;
+	if (outcome === "item-metadata") options.itemMaxBytes = 256;
+	if (outcome === "query") {
+		vi.spyOn(DocumentQueries.prototype, "querySelectorAll").mockImplementation(
+			() => {
+				throw failure;
+			},
+		);
+	}
+	if (outcome === "later-extraction") {
+		const original = extraction.extractDocument;
+		vi.spyOn(extraction, "extractDocument")
+			.mockImplementationOnce(original)
+			.mockImplementationOnce(() => {
+				throw failure;
+			});
+	}
+	const close = vi.spyOn(DocumentQueries.prototype, "close");
+	if (outcome === "success" || outcome === "empty") {
+		extractDocumentPage(tree, selector, options);
+	} else {
+		expect(() => extractDocumentPage(tree, selector, options)).toThrow(
+			outcome === "query" || outcome === "later-extraction"
+				? failure
+				: AgentBrowserError,
+		);
+	}
+	expect(close).toHaveBeenCalled();
+	for (const query of close.mock.contexts) {
+		if (!(query instanceof DocumentQueries))
+			throw new Error("Expected a document query receiver");
+		expect(query.metrics()).toMatchObject({
+			closed: true,
+			indexedNodes: 0,
+			cachedSelectors: 0,
+		});
+	}
 });

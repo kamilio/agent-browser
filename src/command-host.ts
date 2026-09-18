@@ -266,6 +266,7 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 		"cursor",
 		"limit",
 		"format",
+		"reader-metadata",
 		"max-bytes",
 		"item-max-bytes",
 		"max-nodes",
@@ -1875,6 +1876,9 @@ export class BrowserCommandHost {
 				cursor: options.cursor as string | undefined,
 				limit: options.limit as number | undefined,
 				format: options.format as ExtractionPageOptions["format"],
+				readerMetadata: options[
+					"reader-metadata"
+				] as ExtractionPageOptions["readerMetadata"],
 				maxBytes: options["max-bytes"] as number | undefined,
 				itemMaxBytes: options["item-max-bytes"] as number | undefined,
 				maxNodes: options["max-nodes"] as number | undefined,

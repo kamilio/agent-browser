@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Share reader provenance once per extraction page
+
+- Add opt-in `extract-page --reader-metadata=page` and library
+  `readerMetadata: "page"`. Preserve default output, content, other metadata,
+  partial semantics, item caps and the complete JSON page byte cap.
+- Old production plus new tests:114 passes/31 failures; changed immutable native
+  overlay:487 passes/0 failures across nine explicit native-test files, with
+  green build/types/format/lint. Not qualification of the entire dirty worktree.
+- One anonymous native Python asyncio documentation request on September18:
+  HTTP200,177603 body bytes,72719 whole-reader Markdown bytes, no retry/redirect.
+  Capture remains extracted-unverified/partial; no SDK or source scripts run.
+- Zero-network command-host replays preserve all56 GitHub code blocks,414 HN
+  comment bodies and34 Python code blocks. At32000 bytes/page, shared metadata
+  reduces aggregate JSON113459→67958,364618→202463 and66044→44406 bytes;
+  pages4→3,12→7 and3→2 respectively. No CPU/token/network benchmark claim.
+- See reports/shared-reader-pages-2026-09-18.md/JSON. Prior captures retain their
+  original outcomes; HN's whole-page extraction failure is not relabeled.
+- Zoom classic-Script and scheduler proposals remain unactivated. SDK execution,
+  window identity, client compatibility, native media/decode, meeting admission,
+  permitted recording, transcription and delivery remain outstanding; no join.
+
 ### Propose persistent classic-Script globals for the native Zoom path
 
 - Prepare an unactivated pristine-based SafeJS contribution: opt-in classic

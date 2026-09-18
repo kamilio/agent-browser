@@ -1,6 +1,7 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { type DocumentExtraction, extractDocument } from "./extraction.js";
+import { researchReaderInfo } from "./research-reader-info.js";
 import { resourceLimitError } from "./resource-limit.js";
 import { DocumentQueries } from "./selectors.js";
 import { utf8ByteLength } from "./utf8-byte-length.js";
@@ -9,6 +10,7 @@ export interface ExtractionPageOptions {
 	cursor?: string;
 	limit?: number;
 	format?: "markdown" | "json";
+	readerMetadata?: "entry" | "page";
 	maxBytes?: number;
 	itemMaxBytes?: number;
 	maxNodes?: number;
@@ -25,6 +27,8 @@ export interface DocumentExtractionPage {
 	start: number;
 	totalMatches: number;
 	partial: true;
+	readerMetadata?: "page";
+	reader?: DocumentExtraction["reader"];
 	entries: DocumentExtraction[];
 	nextCursor: string | null;
 	selectionExhausted: boolean;
@@ -107,6 +111,16 @@ export function extractDocumentPage(
 			"invalid-input",
 			"Invalid extraction page options",
 		);
+	const readerMetadata = options.readerMetadata;
+	if (
+		readerMetadata !== undefined &&
+		readerMetadata !== "entry" &&
+		readerMetadata !== "page"
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Extraction page reader metadata must be entry or page",
+		);
 	const format = options.format === undefined ? "markdown" : options.format;
 	if (format !== "markdown" && format !== "json")
 		throw new AgentBrowserError(
@@ -149,6 +163,8 @@ export function extractDocumentPage(
 			"Extraction page cursor belongs to a different document or revision",
 		);
 	const start = cursor?.[4] ?? 0;
+	const reader =
+		readerMetadata === "page" ? researchReaderInfo(tree) : undefined;
 	const queries = new DocumentQueries(tree);
 	try {
 		const matches = queries.querySelectorAll(selector);
@@ -172,6 +188,9 @@ export function extractDocumentPage(
 			start,
 			totalMatches: matches.length,
 			partial: true,
+			...(readerMetadata === "page"
+				? { readerMetadata, ...(reader ? { reader } : {}) }
+				: {}),
 			entries: [],
 			...continuation(start),
 		};
@@ -186,7 +205,7 @@ export function extractDocumentPage(
 		let entriesBytes = 0;
 		const end = Math.min(matches.length, start + limit);
 		for (let index = start; index < end; index++) {
-			const entry = extractDocument(tree, {
+			let entry = extractDocument(tree, {
 				root: tree.reference(matches[index]),
 				format,
 				maxBytes: itemMaxBytes,
@@ -195,6 +214,15 @@ export function extractDocumentPage(
 				tableRows: options.tableRows,
 				compactTables: options.compactTables,
 			});
+			if (readerMetadata === "page") {
+				const { reader: entryReader, ...sharedEntry } = entry;
+				if (entryReader !== reader)
+					throw new AgentBrowserError(
+						"invalid-input",
+						"Extraction page reader metadata mismatch",
+					);
+				entry = sharedEntry;
+			}
 			const next = continuation(index + 1);
 			const candidateEntriesBytes =
 				entriesBytes +

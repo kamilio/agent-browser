@@ -258,6 +258,7 @@ const definitions: CommandDefinition[] = [
 			cursor: stringOption,
 			limit: { ...positiveInteger, maximum: 100 },
 			format: stringOption,
+			"reader-metadata": stringOption,
 			"max-bytes": { ...positiveInteger, minimum: 1024, maximum: 1_048_576 },
 			"item-max-bytes": {
 				...positiveInteger,
