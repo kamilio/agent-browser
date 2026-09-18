@@ -34,8 +34,10 @@ focused worker gate and is not claimed fixed.
 The first actual SafeJS synthetic gate passes 17 of 18 checks: constructors,
 query behavior, isolation, bounds and native revocation pass. Its remaining
 private harness check rejects a default abort reason but cannot classify it
-through own error descriptors. That failed suite is preserved; a separate
-closure-classification check is pending, not assumed successful.
+through own error descriptors. That failed suite is preserved. A separate
+authorized corrected gate passes all 18 checks in 8.731 seconds: it verifies the
+SDK rejection is exactly the captured aborted signal's reason, with zero new URL
+capability calls. Production code and all other assertions are unchanged.
 
 On September 18, 2026, ASSETS31 executes all nine unchanged captured Zoom inline
 bodies, decodes the recorded 149-byte CDN PNG and reaches the real core-script

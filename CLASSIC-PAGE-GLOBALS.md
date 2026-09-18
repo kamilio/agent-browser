@@ -56,6 +56,17 @@ gate; network connections remained denied. Production close terminates the child
 with SIGKILL and leaves no pending commands. This proves startup and liveness,
 not page execution, scheduler behavior or a meeting join.
 
+A subsequent corrected owned-page gate passes all 13 actual commands in 2.003
+seconds using the compiled current regex-capable core. A fulfilled synthetic
+document runs its parser script; later evaluations share classic state, mutate
+the native DOM, and are independently checked through native text extraction.
+A real click callback completes its prefix, then immediate evaluation succeeds
+while its promise tail is still suspended; release and tail completion are also
+checked. Four heartbeats arrive, and the request journal contains only the one
+mocked document request. The first harness's invalid text-command argument remains
+recorded as a failed run. This proves the specified synthetic owned-page scenario,
+not publisher execution, general conformance, live Zoom or incoming media.
+
 ## Native integration
 
 - The guest's actual global object supplies `window`, `self`, `top` and `parent`

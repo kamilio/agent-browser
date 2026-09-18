@@ -62,7 +62,12 @@ in13 files and build/types/format/lint. A separate actual owned-process gate now
 imports a freshly compiled public core, verifies options/capabilities and three
 heartbeats, and closes with no pending commands. Its reviewed anonymous Unix
 stdio IPC allowance does not allow network connections; production child256Mi
-and permissions remain unchanged. It does not yet execute a page realm.
+and permissions remain unchanged. A later corrected owned-page gate executes13
+actual commands in2.003s: mocked document/parser script, sharedclassicstate,
+nativeDOM/text, realclickprefix, immediateevaluation whilethetailissuspended,
+tailrelease andrequestaudit allpass. Fourheartbeats andpending0/PIDclosure are
+verified. Earlierprivate text-command-shape failure remainsrecorded; this is
+syntheticpageexecution, notZoomnavigation or admission.
 See CLASSIC-PAGE-GLOBALS.md and SCRIPT-BUDGET-PROFILES.md.
 The budget profile preserves ordinary defaults and the16s/16MiB ceilings while
 allowing16M steps; it advances the2.7M vendor beyond parsing's old1.6M ceiling,
@@ -117,7 +122,8 @@ in41 files with all quality checks. ASSETS31 then executes all nine unchanged
 inline bodies, completes the recorded149-byte CDN image and reaches the core
 request in8.544s. Backup/tracking requests stay refused and core execution is
 held until cleanup. The first synthetic URL SDK suite retains one post-close
-classifier failure despite17 passed checks; corrected classification is pending.
+classifier failure despite17 passed checks; a separatecorrectedgate passes18/18
+in8.731s, verifyingtheidenticalabortedreason andzero newURLcapabilitycalls.
 See NATIVE-URL-GLOBALS.md. OriginalCSPrefusal remains unchanged.
 See NATIVE-IMAGE-CONSTRUCTOR.md. No meeting/audio/notetaking success yet.
 
