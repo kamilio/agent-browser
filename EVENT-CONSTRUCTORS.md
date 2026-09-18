@@ -142,3 +142,14 @@ event references, pending work and SDK data reach zero; processes are absent.
 Parent verifies7,093 input pins and53 artifact hashes/sizes/modes. Evidence:
 `/tmp/agent-browser-legacy-event-boundary-september18-9hkHyf/HANDOFF.md`.
 One new bounded live Zoom load is released; its outcome remains separate.
+
+The first core48 live entry request times out before receiving a response or
+executing scripts; see `reports/zoom-legacy-event-load-timeout-2026-09-18.md`.
+Also, identical event/performance clock origins are not qualified: the actual
+factory case observes a6.827-second offset under its coarse bounded clock check.
+Timestamp preservation across initialization is exact; clock alignment remains
+an explicit limitation rather than being inferred from the eight-case PASS.
+The one authorized retry receives the document and fails later in script17 at
+a Unicode regexp compilation quota, not the previous createEvent call. See
+`reports/zoom-unicode-regex-budget-2026-09-18.md`; full application execution
+and all meeting/notetaking gates remain open.

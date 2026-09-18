@@ -12,6 +12,25 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September18,23:09UTC: the one network retry receives Zoom and executes16 scripts.
+Script17 now fails later at a7978-byte Unicode regexp: SDK compile allocation
+quota34722>32768, labeled dataSize. The original createEvent failure and initial
+request timeout are preserved separately. Parent verifies9900 input hashes/76
+artifacts, complete observed closure. A bounded exact-literal SDK diagnostic is
+measuring an adequate explicit allowance before any profile change; ordinary
+and existing application limits are not silently raised. See
+`reports/zoom-unicode-regex-budget-2026-09-18.md`. Usable meeting UI, admission,
+audio, recording, transcription and delivery remain OPEN.
+
+September18,23:01UTC: the first core48 live entry GET times out at15.003s before
+any HTTP response or script evaluation. No Event compatibility outcome can be
+inferred. Resources close; parent verifies9857 inputs/41 artifacts. One explicitly
+disclosed retry is released in a new directory, without increasing timeouts or
+changing source/runtime/filter/guards. See
+`reports/zoom-legacy-event-load-timeout-2026-09-18.md`. The latest script progress
+remains16 and Zoom is not joined. Event/performance clock alignment also remains
+unqualified despite exact timestamp preservation in the passing SDK tests.
+
 September18,22:55UTC: generic legacy events now pass all eight actual SDK cases
 in12.138s with complete observed closure. Core48 passes5089/122 native tests,
 build/types/format0 and only the pre-existing ranges lint finding. The failed
