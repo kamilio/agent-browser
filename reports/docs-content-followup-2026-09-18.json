@@ -1,0 +1,747 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-18",
+  "evidenceVerifiedAt": "2026-09-18T06:01:33.823Z",
+  "scope": "Bounded public-content follow-up and explicit manual redirect diagnostics. Five parent-authorized fresh GETs are separate from offline captured-byte checks. No meeting join, full-suite or overall-research completion claim.",
+  "implementation": {
+    "flag": "--redirect-mode manual",
+    "defaultRedirectBehaviorChanged": false,
+    "automaticLocationFollow": false,
+    "automaticRetry": false,
+    "incompatiblePolicy": "same-origin-upgrade-v1",
+    "diagnosticKind": "http-redirect-handoff-v1",
+    "diagnosticAction": "review-before-new-request",
+    "diagnosticGrantsPermission": false,
+    "destinationNetworkSafetyCertified": false,
+    "existingManualResponseBodyExtractionPreserved": true,
+    "queryRedaction": true,
+    "fragmentOmissionFlagged": true,
+    "defaultAndLongEvidenceValidation": true,
+    "limitsRaised": false,
+    "documentation": [
+      "NATIVE-RESEARCH.md",
+      "RESEARCH-REDIRECTS.md"
+    ]
+  },
+  "qualification": {
+    "runtime": {
+      "descriptor": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/RUNTIME-core02.json",
+      "root": "/tmp/agent-browser-redirect-handoff-mwal8q/candidate",
+      "manifestCounts": {
+        "SOURCE": 1692,
+        "COMPILED": 2512
+      }
+    },
+    "finalNative": {
+      "passed": 817,
+      "failed": 0,
+      "files": 9,
+      "elapsedSeconds": 30.97493990510702,
+      "selectedTests": [
+        {
+          "path": "src/network-policy-diagnostic.test.ts",
+          "cases": 62
+        },
+        {
+          "path": "src/research-admission-evidence.test.ts",
+          "cases": 128
+        },
+        {
+          "path": "src/research-https-redirect-cli.test.ts",
+          "cases": 13
+        },
+        {
+          "path": "src/research-loader-limit-admission.test.ts",
+          "cases": 142
+        },
+        {
+          "path": "src/research-loader-limit-replay.test.ts",
+          "cases": 48
+        },
+        {
+          "path": "src/research-redirect-handoff.test.ts",
+          "cases": 24
+        },
+        {
+          "path": "src/research-redirect.test.ts",
+          "cases": 137
+        },
+        {
+          "path": "src/research-response-headers.test.ts",
+          "cases": 48
+        },
+        {
+          "path": "src/research-workflow.test.ts",
+          "cases": 215
+        }
+      ],
+      "newHelperCases": 137,
+      "newIntegrationCases": 24,
+      "execution": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-core02/EXECUTION.json"
+    },
+    "quality": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    },
+    "qualityEvidence": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/CHECK-core02.json",
+    "fullSuite": false,
+    "rerunForPublication": false,
+    "priorContentRuntimeQualificationReusedNotAddedTo817": true
+  },
+  "liveReads": [
+    {
+      "id": "docs-introduction",
+      "url": "https://docs.prismml.com/get-started/introduction",
+      "receivedAt": "2026-09-18T05:19:49.185Z",
+      "httpStatus": 200,
+      "outcome": "extracted-unverified",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "bodyBytes": 268252,
+      "bodySha256": "e38c61d27a480ceba7b83868c5c6efdbc1050d03d635d0727e496665c2934ea2",
+      "mime": [
+        "text/html; charset=utf-8"
+      ],
+      "markdownBytes": 8540,
+      "markdownSha256": "db73595ef7a23c8e71ee1ff0c145f5b22f7ddbc6fccb53a5bd334c9355378503",
+      "partial": true,
+      "contentSuccess": null,
+      "contentFallback": null,
+      "redirectMode": null,
+      "redirectDiagnosticPresent": false,
+      "newGETs": 1,
+      "mockedRequests": 0,
+      "redirectsFollowed": 0,
+      "verifiedTlsObserved": true,
+      "ownedResourcesClosed": true,
+      "elapsedSeconds": 0.5828773528337479,
+      "runtime": {
+        "descriptor": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/bounded-content-reading-september18/fresh/RUNTIME.json",
+        "root": "/tmp/agent-browser-formatting-membership-UVa9qy/candidate",
+        "manifestCounts": {
+          "SOURCE": 1687,
+          "COMPILED": 2508
+        }
+      },
+      "artifactDirectory": "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/live"
+    },
+    {
+      "id": "prism-llms",
+      "url": "https://docs.prismml.com/llms.txt",
+      "receivedAt": "2026-09-18T05:31:37.581Z",
+      "httpStatus": 200,
+      "outcome": "extracted-unverified",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "bodyBytes": 2615,
+      "bodySha256": "ff78e15815cc62f851c01431ce81ea9e4d43615221f567fc758cec940e3749a5",
+      "mime": [
+        "text/plain; charset=utf-8"
+      ],
+      "markdownBytes": 2623,
+      "markdownSha256": "3e190a83c1ea25b2065d671bf32f4054cd2e02959673e1b704f61bf834239752",
+      "partial": true,
+      "contentSuccess": null,
+      "contentFallback": null,
+      "redirectMode": null,
+      "redirectDiagnosticPresent": false,
+      "newGETs": 1,
+      "mockedRequests": 0,
+      "redirectsFollowed": 0,
+      "verifiedTlsObserved": true,
+      "ownedResourcesClosed": true,
+      "elapsedSeconds": 0.5429309085011482,
+      "runtime": {
+        "descriptor": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/source-linked/RUNTIME.json",
+        "root": "/tmp/agent-browser-loader-limit-replay-B4k1Sf/candidate",
+        "manifestCounts": {
+          "SOURCE": 1689,
+          "COMPILED": 2508
+        }
+      },
+      "artifactDirectory": "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/live"
+    },
+    {
+      "id": "prism-formats",
+      "url": "https://docs.prismml.com/download/formats",
+      "receivedAt": "2026-09-18T05:31:39.522Z",
+      "httpStatus": 200,
+      "outcome": "extracted-unverified",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "bodyBytes": 291384,
+      "bodySha256": "07e99c1981fe6e9a99c9ab583c2aa340e64adb4009e810c8e4e8509dfa4d5546",
+      "mime": [
+        "text/html; charset=utf-8"
+      ],
+      "markdownBytes": 18335,
+      "markdownSha256": "e342d147d9568213721c933a9504f64e2135f2786d4b12a79059300785692b23",
+      "partial": true,
+      "contentSuccess": null,
+      "contentFallback": null,
+      "redirectMode": null,
+      "redirectDiagnosticPresent": false,
+      "newGETs": 1,
+      "mockedRequests": 0,
+      "redirectsFollowed": 0,
+      "verifiedTlsObserved": true,
+      "ownedResourcesClosed": true,
+      "elapsedSeconds": 0.5872872527688742,
+      "runtime": {
+        "descriptor": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/source-linked/RUNTIME.json",
+        "root": "/tmp/agent-browser-loader-limit-replay-B4k1Sf/candidate",
+        "manifestCounts": {
+          "SOURCE": 1689,
+          "COMPILED": 2508
+        }
+      },
+      "artifactDirectory": "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/live"
+    },
+    {
+      "id": "arxiv-experimental-html",
+      "url": "https://arxiv.org/html/2105.00272v1",
+      "receivedAt": "2026-09-18T05:31:37.627Z",
+      "httpStatus": 200,
+      "outcome": "extracted-unverified",
+      "exitCode": 0,
+      "safetyPassed": true,
+      "bodyBytes": 116307,
+      "bodySha256": "dff662ce23ae13fd10e143fc87c6ef9a6023d3fe2a5eec2ec122be2b557dadb2",
+      "mime": [
+        "text/html; charset=utf-8"
+      ],
+      "markdownBytes": 49812,
+      "markdownSha256": "4c69ddb06eed1927047ce3e1ed0af3c47ce555da88bdc940f55855a1cc0dfba9",
+      "partial": true,
+      "contentSuccess": null,
+      "contentFallback": null,
+      "redirectMode": null,
+      "redirectDiagnosticPresent": false,
+      "newGETs": 1,
+      "mockedRequests": 0,
+      "redirectsFollowed": 0,
+      "verifiedTlsObserved": true,
+      "ownedResourcesClosed": true,
+      "elapsedSeconds": 0.5905591193586588,
+      "runtime": {
+        "descriptor": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/source-linked/RUNTIME.json",
+        "root": "/tmp/agent-browser-loader-limit-replay-B4k1Sf/candidate",
+        "manifestCounts": {
+          "SOURCE": 1689,
+          "COMPILED": 2508
+        }
+      },
+      "artifactDirectory": "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/live"
+    },
+    {
+      "id": "manual-quickstart",
+      "url": "https://docs.prismml.com/quickstart",
+      "receivedAt": "2026-09-18T05:55:40.332Z",
+      "httpStatus": 404,
+      "outcome": "http-failure",
+      "exitCode": 1,
+      "safetyPassed": true,
+      "bodyBytes": 104276,
+      "bodySha256": "e5bd35474b93d49aa25aa55dd8f3abbf9ed80d7fc1b76275a5cebae1716707cb",
+      "mime": [
+        "text/html; charset=utf-8"
+      ],
+      "markdownBytes": 0,
+      "markdownSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "partial": true,
+      "contentSuccess": false,
+      "contentFallback": null,
+      "redirectMode": "manual",
+      "redirectDiagnosticPresent": false,
+      "newGETs": 1,
+      "mockedRequests": 0,
+      "redirectsFollowed": 0,
+      "verifiedTlsObserved": true,
+      "ownedResourcesClosed": true,
+      "elapsedSeconds": 0.5889861471951008,
+      "runtime": {
+        "descriptor": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/RUNTIME-core02.json",
+        "root": "/tmp/agent-browser-redirect-handoff-mwal8q/candidate",
+        "manifestCounts": {
+          "SOURCE": 1692,
+          "COMPILED": 2512
+        }
+      },
+      "artifactDirectory": "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/live"
+    }
+  ],
+  "freshLiveGETs": 5,
+  "freshHTTP200Reads": 4,
+  "manualLiveAssessment": {
+    "actualStatus": 404,
+    "receivedAt": "2026-09-18T05:55:40.332Z",
+    "exitCode": 1,
+    "safetyPassed": true,
+    "outcome": "http-failure",
+    "contentSuccess": false,
+    "markdownBytes": 0,
+    "redirectDiagnosticPresent": false,
+    "validates": "One-shot bounded manual CLI execution and cleanup, not successful content retrieval or a real Location handoff.",
+    "realLocationHandoffValidated": false,
+    "spent": true,
+    "retryAllowed": false
+  },
+  "manualSyntheticProof": {
+    "synthetic": true,
+    "httpStatus": 308,
+    "exitCode": 1,
+    "outcome": "http-failure",
+    "contentSuccess": false,
+    "responseBodyExtractionRetained": true,
+    "redirect": {
+      "kind": "http-redirect-handoff-v1",
+      "status": 308,
+      "action": "review-before-new-request",
+      "followed": false,
+      "reason": "available",
+      "location": {
+        "url": "https://docs.prismml.com/get-started/quickstart",
+        "sameOrigin": true,
+        "queryRedacted": false,
+        "fragmentOmitted": false
+      }
+    },
+    "bodyBytes": 301,
+    "markdownBytes": 174,
+    "mockedRoutes": 1,
+    "liveGETs": 0,
+    "completeCliTailElementsIncludingEntry": 8,
+    "proofPassed": true,
+    "execution": "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/proof/EXECUTION.json",
+    "proof": "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/proof/CHECK.json"
+  },
+  "compactContentChecks": {
+    "newNetworkRequests": 0,
+    "introduction": {
+      "capturedBodyBytes": 268252,
+      "wholeMarkdownBytes": 8540,
+      "alternatives": [
+        {
+          "name": "focused",
+          "flags": [
+            "--content-focus",
+            "main-content-v3"
+          ],
+          "markdownBytes": 6323,
+          "sha256": "578fc9111935ccd76cd1646b063a6f1f106ddb9e5c355a274522656fb7384431"
+        },
+        {
+          "name": "compact",
+          "flags": [
+            "--content-focus",
+            "main-content-v3",
+            "--compact-tables"
+          ],
+          "markdownBytes": 5413,
+          "sha256": "a9be5c3fcba2fa309238d0fbb2de35266e287e08ac9b469fd9f2bd7f773dd56b"
+        },
+        {
+          "name": "rows",
+          "flags": [
+            "--content-focus",
+            "main-content-v3",
+            "--table-rows"
+          ],
+          "markdownBytes": 4250,
+          "sha256": "f62cfd62bcb315154994cf9493aa2459f9961d91b3d1d0293cdf0a885ee2352a"
+        }
+      ],
+      "tableRows": 7,
+      "tableCells": 28,
+      "sourceAndReaderCellSequenceEqual": true,
+      "allObservedCellsPresentInMeasuredMarkdown": true,
+      "readerRevisionAndJsonExtractionUnchanged": true,
+      "sourceCardsWithoutEnclosingHref": 6,
+      "renderedCardClickabilityOrHydrationEstablished": false,
+      "result": "/tmp/agent-browser-docs-compact-v2-7pdw16uc/RESULT.json"
+    },
+    "llmsIndex": {
+      "id": "prism-llms",
+      "originalLiveAt": "2026-09-18T05:31:37.581Z",
+      "bodyBytes": 2615,
+      "mime": [
+        "text/plain; charset=utf-8"
+      ],
+      "baselineBytes": 2623,
+      "baselineMatchesLive": true,
+      "newNetworkRequests": 0,
+      "partial": true,
+      "contentSuccess": null,
+      "plainTextMatchesSourceExactly": true,
+      "fenceOverheadBytes": 8,
+      "followedIndexLinks": false,
+      "qualification": "Decoded source text exactly preserved inside a Markdown fence; no index link was followed."
+    },
+    "formats": {
+      "id": "prism-formats",
+      "originalLiveAt": "2026-09-18T05:31:39.522Z",
+      "bodyBytes": 291384,
+      "mime": [
+        "text/html; charset=utf-8"
+      ],
+      "baselineBytes": 18335,
+      "baselineMatchesLive": true,
+      "newNetworkRequests": 0,
+      "partial": true,
+      "contentSuccess": null,
+      "sourcePreservation": {
+        "headings": {
+          "sourceCount": 10,
+          "readerCount": 10,
+          "equal": true
+        },
+        "code": {
+          "sourceCount": 1,
+          "readerCount": 1,
+          "equal": true
+        },
+        "cells": {
+          "sourceCount": 77,
+          "readerCount": 77,
+          "equal": true
+        },
+        "links": {
+          "sourceCount": 23,
+          "readerCount": 23,
+          "equal": true
+        }
+      },
+      "sourceFigures": 0,
+      "sourceMathElements": 0,
+      "figuresInterpreted": false,
+      "selector": "#content-area",
+      "selectedBytes": 8784,
+      "selectedSha256": "40636df013b2d028386cad0770291b884d079eba75dbcc96dc35498accd69074",
+      "contentFallback": null,
+      "flags": [
+        "--selector",
+        "#content-area",
+        "--format",
+        "markdown",
+        "--table-rows",
+        "--compact-tables"
+      ],
+      "comparisonLayer": "Source-parser DOM versus semantic-reader DOM within the selected root; not exhaustive emitted-Markdown link validation."
+    },
+    "arxivHtml": {
+      "id": "arxiv-experimental-html",
+      "originalLiveAt": "2026-09-18T05:31:37.627Z",
+      "bodyBytes": 116307,
+      "mime": [
+        "text/html; charset=utf-8"
+      ],
+      "baselineBytes": 49812,
+      "baselineMatchesLive": true,
+      "newNetworkRequests": 0,
+      "partial": true,
+      "contentSuccess": null,
+      "sourcePreservation": {
+        "headings": {
+          "sourceCount": 17,
+          "readerCount": 17,
+          "equal": true
+        },
+        "code": {
+          "sourceCount": 0,
+          "readerCount": 0,
+          "equal": true
+        },
+        "cells": {
+          "sourceCount": 0,
+          "readerCount": 0,
+          "equal": true
+        },
+        "links": {
+          "sourceCount": 125,
+          "readerCount": 124,
+          "equal": false
+        }
+      },
+      "sourceFigures": 9,
+      "sourceMathElements": 0,
+      "figuresInterpreted": false,
+      "selector": "article.ltx_document",
+      "selectedBytes": 45570,
+      "selectedSha256": "1e6f25182745ffaab23c967b66637d13206b9a2f05025821bccfe586ed0bb3a7",
+      "contentFallback": null,
+      "flags": [
+        "--selector",
+        "article.ltx_document",
+        "--format",
+        "markdown",
+        "--table-rows",
+        "--compact-tables"
+      ],
+      "comparisonLayer": "Source-parser DOM versus semantic-reader DOM within the selected article; not all rendered links.",
+      "linkDifference": {
+        "sourceOnlyCount": 1,
+        "scheme": "mailto",
+        "readerOnlyCount": 0,
+        "rawAddressPublished": false
+      }
+    },
+    "sourceLinkedResult": "/tmp/agent-browser-source-linked-content-2n3tepjd/RESULT.json",
+    "reusedReadme": {
+      "freshGETs": 0,
+      "originalCapture": {
+        "path": "/tmp/agent-browser-bounded-content-fresh-jGh0qk/bonsai-demo-repository/live",
+        "bodyBytes": 501587,
+        "bodySha256": "bd850747cc275067828b625b339cb30e19ad54e50bdc64067041fae66364c95d",
+        "markdownBytes": 76825,
+        "outcome": "extracted-unverified",
+        "partial": true,
+        "contentSuccess": null,
+        "contentFallback": null
+      },
+      "originalReceivedAt": "2026-09-18T04:55:32.075Z",
+      "selector": "article.markdown-body",
+      "flags": [
+        "--selector",
+        "article.markdown-body",
+        "--format",
+        "markdown",
+        "--table-rows",
+        "--compact-tables",
+        "--output-limit-policy",
+        "text-prefix-v1"
+      ],
+      "markdownBytes": 37618,
+      "originalMarkdownBytes": 76825,
+      "reductionBytes": 39207,
+      "reductionPercent": 51.034168564920265,
+      "sha256": "36911a0471d5e99f2dfcf5edd89118c944a71483914d72b52ea7c80333c92946",
+      "headings": 42,
+      "codeBlocks": 29,
+      "nonPermalinkLinks": 79,
+      "distinctContentDestinations": 59,
+      "emptyHeadingPermalinksOmitted": 42,
+      "tables": 11,
+      "rows": 71,
+      "cells": 204,
+      "codeComparisonNormalization": "final newline only",
+      "nonPermalinkLinkOrderPreserved": true,
+      "tableAssociationInferenceClaimed": false,
+      "remoteRepositoryRevisionPinned": false,
+      "rawReadmeFetched": false,
+      "contentFallback": null,
+      "newPolicyNeeded": false,
+      "concreteNativeBugPreventingTask": null,
+      "guardedCapturedReplayCases": 8,
+      "result": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/readme-review/RESULT.json"
+    }
+  },
+  "preservedFailures": {
+    "baseline": {
+      "passed": 0,
+      "failed": 1,
+      "scope": "One explicitly filtered CLI regression on the prior implementation; not an unfiltered suite.",
+      "reason": "Prior CLI rejects the new manual flag.",
+      "execution": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-baseline/EXECUTION.json"
+    },
+    "core01": {
+      "nativePassed": 817,
+      "nativeFailed": 0,
+      "quality": {
+        "build": 0,
+        "types": 2,
+        "format": 0,
+        "lint": 1
+      },
+      "issues": [
+        "Fixture header union allowed an undefined Location value.",
+        "Self-referential fixture toString lacked an explicit return type.",
+        "Legacy-header fixture used delete; final fixture uses Reflect.deleteProperty."
+      ],
+      "execution": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-core01/EXECUTION.json",
+      "qualityEvidence": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/CHECK-core01.json"
+    },
+    "compactHarness": {
+      "initialExpectedCells": 32,
+      "observedCells": 28,
+      "initialExitCode": 1,
+      "initialExecution": "/tmp/agent-browser-docs-compact-s6q_uoaw/EXECUTION.json",
+      "correctedSourceRows": 7,
+      "correctedSourceCells": 28,
+      "correctedExecution": "/tmp/agent-browser-docs-compact-v2-7pdw16uc/EXECUTION.json",
+      "nativeBrowserFailure": false
+    },
+    "originalDocsRoot": {
+      "retried": false,
+      "originalWrapperFailurePreserved": true,
+      "execution": "/tmp/agent-browser-bounded-content-fresh-jGh0qk/prismml-docs/live/EXECUTION.json"
+    },
+    "manualAuxiliaryHandoffCheck": {
+      "issue": "An auxiliary assertion expected an unescaped period; a separate verifier accounted for normal Markdown escaping without changing the passing synthetic proof.",
+      "originalVerifier": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/manual-live/verify.mjs",
+      "correctedVerifier": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/manual-live/verify-final.mjs"
+    }
+  },
+  "publicationVerification": {
+    "newNetworkRequests": 0,
+    "testsRun": 0,
+    "buildsRun": 0,
+    "sourceRuntimeOrOldEvidenceModified": false,
+    "tasksBeforeSha256": "12849904df55d67410dd65232635246df39f179db86f6e0164e4f0ac5f37217d",
+    "tasksInsertionBefore": "### Explicit loader-limit replay and bounded content reading",
+    "pinEntriesChecked": 17924,
+    "fullCapturedTextPublished": false,
+    "rawIpOrMailtoAddressPublished": false
+  },
+  "limitations": [
+    "HTTP404 safetyPassed is not content success and does not validate a real server Location handoff.",
+    "Four HTTP200 bodies and compact source checks do not establish full rendered-site compatibility, hidden/dynamic-link equivalence or image/figure interpretation.",
+    "Source and vendor claims were not independently fact-checked; captured commands were not executed.",
+    "No Zoom admission, native client execution, real media/decode, recording, transcript, summary or delivery qualification occurred.",
+    "No actual SafeJS, vault/credentials, devices, identity changes or alternative browser were used for these checks.",
+    "Full-suite, 100-site coverage and the overall research/browser goal remain open."
+  ],
+  "artifactPins": {
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/RUNTIME-core02.json": "74673c1a6b9dceea0f48d2d70b1dc4a215815a6ad508d8a42d5ca3f55943489a",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/SOURCE-core02.json": "569b4b631d96cd1b123eb4e36b799d74819e13d2b5e52f7e25d7d2a93b838240",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/COMPILED-core02.json": "d763aecae044c017619691646d96d6530990fff1debb6133fc45d0846f3290db",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-core02/EXECUTION.json": "ba2157c24114f1d7366844ec8fa896e9ad913eefef44d77933c6ee15b535528d",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-core02/native.json": "752f1ca911fc26d1c1a3adf462b1db44ed2f152815803f412ac9a52a102bcf24",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-core02/INVOCATION.json": "022adf1c9ddad5491222b48294cb747f3431d6ba1332f03d87b6b71415e0044f",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/CHECK-core02.json": "498ccf7fc5c166129139e8ac75b58211584535a893752874f1822f3039237c80",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/quality-core02/INVOCATION.json": "e1b2068874f12c1101c7d0cf40456a1727482757e46aad3cfc01244a208fc58a",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-baseline/EXECUTION.json": "4e61af0afb2ae75e3b5b2c323c246e7745ecf1091ce95a0836897b15b9ac2d87",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-baseline/INVOCATION.json": "6691486e660bf44968f8f2882bdb2918ac47d712d50926b6dca9edae3623f5a7",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-baseline/native.json": "f09a2f445b37db7686bb5a221975ffaffce925c6ee829a402d0d99d9118d8c9e",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-baseline.config.mjs": "bdecd7720f85c934f2e2985ef14af11ffae3739065bc6a0086ca11950073fb22",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-core01/EXECUTION.json": "f88cc9c322f526a15c72f9b92be8752952d932ae294ef23f70be3b29c56812f6",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-core01/native.json": "21ce6d3503561be50c4d5bf3bb0947911dc80ea4f7a8de7b5b9c186d9fbcfe80",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/CHECK-core01.json": "c089fa7eedc646e7d5ce7f21876708f5dde522d9fc6d4634751db8f81be0154b",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/quality-core01/types.log": "7eb328526775789374bc5aebb515aacb200aa28d887fc4bf1fe5b376c4d4a4f0",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/quality-core01/lint.log": "5601a5926d5af6e17826ad0460cdb11dd924496af5b93b9f165446eb896b2442",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/bounded-content-reading-september18/fresh/RUNTIME.json": "ecce0191fa8a861d484e4287f1e42968c1c9e69efe7221a82f78f61d010b925d",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/formatting-marker-membership-september18/SOURCE-core02.json": "ea01b3b747a9227aad0c33769607c3fc6f9212cb418f16037dfc275ae6e35a69",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/formatting-marker-membership-september18/COMPILED-core02.json": "f3f4b35343f658d07e8103920652f77ee8db94746dc178fe7a83c4fa4d64d725",
+    "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/live/RESULT.json": "805b1f8c822e735c2448ab569ed421dce47be4f6099c3e4d4bd023987ad4a63b",
+    "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/live/EXECUTION.json": "0de2425a631da0b0a8a122f9ce0d2fb147ae00ba2a511c667d3a8c59d6129185",
+    "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/live/CHECK.json": "46052d70d86030883e82e1e8631c002ccd9c7cfa88cd2536f1649225b80f0241",
+    "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/live/INVOCATION.json": "08949f1072af0178e7614f29f3a89d74b159b5d83da361c652f91867ca3157b2",
+    "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/live/REQUEST-GUARD.json": "5ff324ee4cd4c2c60f6119fdf91d282d9a18f0c9be84d631e331310687ed3b58",
+    "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/live/body.html": "e38c61d27a480ceba7b83868c5c6efdbc1050d03d635d0727e496665c2934ea2",
+    "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/live/extracted.md": "db73595ef7a23c8e71ee1ff0c145f5b22f7ddbc6fccb53a5bd334c9355378503",
+    "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/live/http-events.jsonl": "318a82b9bba7f584f11a788961b73ba2f68a06d78872ad9fe865465c7d83cc05",
+    "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/PREPARED-AUTHORIZATION.json": "07baf891d875878b616161eb0928d0e9cf31903327fbc7166eba23a83c493f61",
+    "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/FINAL-AUTHORIZATION.json": "4274a974d158f829d619f52c231e74ceaeb5861342829ad7ce82aa933e715324",
+    "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/LIVE-REQUEST-SPENT.json": "5808724f3223dee9a82902749442da7f7ed0a63e121a467c7353cc3bb49ba88c",
+    "/tmp/agent-browser-docs-continuation-yPtYNB/docs-introduction/PROVENANCE.json": "c389e62df8fd47d22becdb718d86b0d602402e22680c6d3ac141fc3d07810eee",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/source-linked/RUNTIME.json": "6355314376b88d60f0d09687e616107e245c7648461935ac7d8d972fb2060cfc",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/bounded-content-reading-september18/SOURCE-core03.json": "2a0b5de4fee3c36383528cba9c2166021ee2a2081303ee6e02a37f7ee6a09892",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/bounded-content-reading-september18/COMPILED-core03.json": "6c2dab67a8b61f8c220aa2a714a171a47d0606b8f9be4c70a4d3947c27d423f7",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/live/RESULT.json": "8eb7837f6bc7d9f8ce783e198b0184a77f99b7a5037bdb76dee30548c69e0d27",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/live/EXECUTION.json": "8c5282911dbd9b2d9b6638a1c2cafb50626104006854e9a1d0e1fe022d67be95",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/live/CHECK.json": "54e7f0ddb074b81c0cd66b8bdb8c9ab40db8311db0d1f176bba37e5251e55512",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/live/INVOCATION.json": "fd29a527060f9ab5d93f881f67117892a4135692333c67b586f6f92724a451e1",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/live/REQUEST-GUARD.json": "8a61912261a9f684a995c667a23053819325feb592fec40f510a3f9a24eaa004",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/live/body.html": "ff78e15815cc62f851c01431ce81ea9e4d43615221f567fc758cec940e3749a5",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/live/extracted.md": "3e190a83c1ea25b2065d671bf32f4054cd2e02959673e1b704f61bf834239752",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/live/http-events.jsonl": "e0f9c3557b5dcecda7d8a95ac49fcdccdd04ac2963454129449ff4ed4b2d005d",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/PREPARED-AUTHORIZATION.json": "e99a56f32eb72a2ea284afff13a888cc73a04b842cea5d424ed0eaeb15619237",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/FINAL-AUTHORIZATION.json": "8c640da512f8aa5bd8ff5805f256d7941f7780ccacc0d8f51ee4321778619acd",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/LIVE-REQUEST-SPENT.json": "6a3cb8b4a917a2578b0ef5583046bdcba7784d420737d40237100a0ed0a03304",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-llms/PROVENANCE.json": "1ca75ba18419cb56959f2aac509f131280031a40c38b135687bb5c357145264d",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/live/RESULT.json": "d73ea8cdf4bb0e27ecbcd385f37b23a18ce8be38ef584104d1e931c18da9e761",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/live/EXECUTION.json": "711ee0daeccc1fcedde3b1fdb22d13542124cdc09a0dd317d9ffd66ca3753c53",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/live/CHECK.json": "b29f8aefcdc1ecabdd977f6133393d76315338517380882c54e8af3c2d8eb4fe",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/live/INVOCATION.json": "38c8ebae2fd311fa0e8f8556f8b0a329dcc6ca0b454ea92da768db5fbee403f4",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/live/REQUEST-GUARD.json": "529663e9b0f4e3a7ae5e5bf9202d3053a308a5054c6abbe391e3569f4bf29357",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/live/body.html": "07e99c1981fe6e9a99c9ab583c2aa340e64adb4009e810c8e4e8509dfa4d5546",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/live/extracted.md": "e342d147d9568213721c933a9504f64e2135f2786d4b12a79059300785692b23",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/live/http-events.jsonl": "0f94a10d48e2f2981e1a15fe0267646166e6cdd74e635decb0117ad617221f1d",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/PREPARED-AUTHORIZATION.json": "fd380be244bdc7fa7bf1d7a611631e17f569eadabc2323ab3cb7659cd14b7ab1",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/FINAL-AUTHORIZATION.json": "da9d1911048e607693aed7d545306adc28dee1f4c39a210c512326f10db44303",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/LIVE-REQUEST-SPENT.json": "f573676c947acdf07005d8d902585db26a6e2bff779540d151d2dd688fefe4e5",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/prism-formats/PROVENANCE.json": "30cfb9a834a6624e40f7f834ccf5c08ce1f8a2e863d8b1d8b5c480bbf6fbd726",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/live/RESULT.json": "6090145c671e64e4fda753107e441119d1d53f377b54c1e685549f297f420dc7",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/live/EXECUTION.json": "3590c9e9b4cf4b734f924da01b1eccc27199ea610b5cfe564b5d35ee5465e64c",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/live/CHECK.json": "31669b04739bb584994d60c18217b7bdbb2a0e81430bce29456eb10b74d0a020",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/live/INVOCATION.json": "750579a4e78d380c5760cb46fd5c48621f5bf6486e14825ab5dbded69b7638ad",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/live/REQUEST-GUARD.json": "c965dbcd14532eea21bba8cac16e8998ed2346fdffa23fe920adf3dee9395845",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/live/body.html": "dff662ce23ae13fd10e143fc87c6ef9a6023d3fe2a5eec2ec122be2b557dadb2",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/live/extracted.md": "4c69ddb06eed1927047ce3e1ed0af3c47ce555da88bdc940f55855a1cc0dfba9",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/live/http-events.jsonl": "40a8791e0cac8c3f2fbad0216761a0463b1c62c74e22a6dffbd0f4db0472cb8d",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/PREPARED-AUTHORIZATION.json": "2587aafb4f4f9e53a5d5fa2bd476f8b827dba583eadaeca574be43c5ee4ee14e",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/FINAL-AUTHORIZATION.json": "931416f801840a49bea285f9a8efbcba313fea8db83cec1bf657c038387fec7d",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/LIVE-REQUEST-SPENT.json": "51008b5bc93b370460d7aa56bbc03063ac17b791a5a47f649ac153b1b3091e49",
+    "/tmp/agent-browser-source-linked-docs-K6hMAu/arxiv-experimental-html/PROVENANCE.json": "7b51a978edcf4b8684bec270275881318b526ec960181e25ee687b1c7a5a157f",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/live/RESULT.json": "6a8c3bf14ea13dd93617f1334eaefb8282c9cce6bf4e13833fca07b2dbd9fcdb",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/live/EXECUTION.json": "f303bf16e239cbbfb011b31e939ba828aa54facc9529ca838f00f4347a9f12d2",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/live/CHECK.json": "1704d0f827acb79a7a7b5f4d3c7cd86372d541db20fa4acb4dcbcee5e1f0928d",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/live/INVOCATION.json": "c3f7d870c29a9143bb9b139029683e18bfc6d1c2e4d032bd8ae760775162ba69",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/live/REQUEST-GUARD.json": "5adbc759bd80b8dbb204433f51f239a84ecd45e991111deb3927d8751fa19636",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/live/body.html": "e5bd35474b93d49aa25aa55dd8f3abbf9ed80d7fc1b76275a5cebae1716707cb",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/live/extracted.md": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/live/http-events.jsonl": "b691fed632de2e6b0d4a517e442b5057084a7e0d8644a4de171c29b55371df32",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/PREPARED-AUTHORIZATION.json": "4b58e8790908f9df54926fd5705f59eb7b32e5114af57ee292c1a64774889120",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/FINAL-AUTHORIZATION.json": "71323540866ed50b429209963b2accae1a39a3cd0a69c15cd5bc79732e76e498",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/LIVE-REQUEST-SPENT.json": "706f375ee9515cb6438e68f3dc4da435f818e139d9305eadb784a36970532ce9",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/PROVENANCE.json": "10bad97888a269e5a1b01afd33ea30703223fc6a3fdd7e206aed215d06e0c3b8",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/bounded-content-reading-september18/RUNTIME-core03.json": "2018fe8839183009a2172a8810064d2a481f5552d4d043729e35098c78865012",
+    "/tmp/agent-browser-docs-extraction-2mugb5ck/EXECUTION.json": "6224e64beaac282d5a549ae2546eb9220ae7265f685bd355bf1536b67b4fe320",
+    "/tmp/agent-browser-docs-extraction-2mugb5ck/INVOCATION.json": "e6c6c6be9718f3eec586e1d63797f22d059ac5158ffcf0d8dd8d1f00f07e3679",
+    "/tmp/agent-browser-docs-extraction-2mugb5ck/INPUTS.json": "178c52dc53ceb4a95fa8413eab3bd4d65c8f171f99eef9311e073e26f8417693",
+    "/tmp/agent-browser-docs-extraction-2mugb5ck/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "/tmp/agent-browser-docs-extraction-2mugb5ck/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "/tmp/agent-browser-docs-extraction-2mugb5ck/RESULT.json": "6effe4236905c886b08fd8675a7ee8e9d03c560f35868dcf14cd3bf6d44e3ec6",
+    "/tmp/agent-browser-docs-compact-v2-7pdw16uc/EXECUTION.json": "6d94c05f7962c85c47e92870d0f2abea3f9760a2fc59d1d1855adea068f6da95",
+    "/tmp/agent-browser-docs-compact-v2-7pdw16uc/INVOCATION.json": "450ba40089dc0e1bd1925f968d35e513850c1f17929d03011c02d52937ce5045",
+    "/tmp/agent-browser-docs-compact-v2-7pdw16uc/INPUTS.json": "212bbb88011851658ca1de55c5bef14961c180a7ded67ee8233987eac09e3ff9",
+    "/tmp/agent-browser-docs-compact-v2-7pdw16uc/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "/tmp/agent-browser-docs-compact-v2-7pdw16uc/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "/tmp/agent-browser-docs-compact-v2-7pdw16uc/RESULT.json": "64a34115f71135f183d5c266da90eefff4a5f657d27cea599211b1e4bc9625ba",
+    "/tmp/agent-browser-docs-compact-v2-7pdw16uc/focused.md": "578fc9111935ccd76cd1646b063a6f1f106ddb9e5c355a274522656fb7384431",
+    "/tmp/agent-browser-docs-compact-v2-7pdw16uc/compact.md": "a9be5c3fcba2fa309238d0fbb2de35266e287e08ac9b469fd9f2bd7f773dd56b",
+    "/tmp/agent-browser-docs-compact-v2-7pdw16uc/rows.md": "f62cfd62bcb315154994cf9493aa2459f9961d91b3d1d0293cdf0a885ee2352a",
+    "/tmp/agent-browser-docs-compact-s6q_uoaw/EXECUTION.json": "aa2aab59e7e795d39a3dccbbb8e1ed527650c5fd28181e2541c2e44808e85025",
+    "/tmp/agent-browser-docs-compact-s6q_uoaw/INVOCATION.json": "bcd4223ca8d2c4cb56aa9f75cc82c5c1ff44940469ca927a9ecb411e7595f1bc",
+    "/tmp/agent-browser-docs-compact-s6q_uoaw/INPUTS.json": "40d900711b21c3d5ab59e6fc599eefec8a3a50fe84a9249b80a71f5deccb3c28",
+    "/tmp/agent-browser-docs-compact-s6q_uoaw/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "/tmp/agent-browser-docs-compact-s6q_uoaw/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "/tmp/agent-browser-docs-compact-s6q_uoaw/stderr.log": "3e171d67b47fd4e1e96d414eb9f6a58793246add5d932b5f514b12ee0f36ec75",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/COMPACT-STAGE.json": "536b3cd9e53a6030d9a4097e6df023fb2fc2454f47b13895b61abc7d15fc70f2",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/COMPACT-V2-STAGE.json": "fa5f382564eac97d97764bcc605af92d33a2e5b659ee7f960d1a516dc76abb49",
+    "/tmp/agent-browser-source-linked-content-2n3tepjd/EXECUTION.json": "2726d0b02140d31253dfd47934f1f1a7f04420d773c018286fa1c3dc2bca144c",
+    "/tmp/agent-browser-source-linked-content-2n3tepjd/INVOCATION.json": "7d3c04fe0c4a4d122e359a571f6d54b3ff45fba330cdccf83d1e59522914d160",
+    "/tmp/agent-browser-source-linked-content-2n3tepjd/INPUTS.json": "447523e8e2445a92d24ee1640eda44cabcf15aed9aae61f964662f687240ed97",
+    "/tmp/agent-browser-source-linked-content-2n3tepjd/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "/tmp/agent-browser-source-linked-content-2n3tepjd/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "/tmp/agent-browser-source-linked-content-2n3tepjd/RESULT.json": "89be652aa4c3647162206a092b1130119eb39225938d73ce75457a4052c5effc",
+    "/tmp/agent-browser-source-linked-content-2n3tepjd/prism-formats-selected.md": "40636df013b2d028386cad0770291b884d079eba75dbcc96dc35498accd69074",
+    "/tmp/agent-browser-source-linked-content-2n3tepjd/prism-formats-selected.json": "b6130569d38b08ebdf29d8ca2d4772e3b5323fdfbb247392926b2d63aa1299f9",
+    "/tmp/agent-browser-source-linked-content-2n3tepjd/prism-formats-inventory.json": "ae778e7b64fa0191b846b9ce88b66974e99678a97badeb44c56c802fcd7a3721",
+    "/tmp/agent-browser-source-linked-content-2n3tepjd/arxiv-experimental-html-selected.md": "1e6f25182745ffaab23c967b66637d13206b9a2f05025821bccfe586ed0bb3a7",
+    "/tmp/agent-browser-source-linked-content-2n3tepjd/arxiv-experimental-html-selected.json": "02d816a2c9c11fec09fb245e5b574b23ba050ea7de25bf4874652d734f9febb6",
+    "/tmp/agent-browser-source-linked-content-2n3tepjd/arxiv-experimental-html-inventory.json": "eb718b420ccb2f10ad62fe8006006842022bc52e2b72894939711a02f4ac4613",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/ARXIV-LINK-DIFFERENCE.json": "b82fd6c4126cfa7ffae96e820ccd07e7c4c027434e82aa99e3b1acb1f327cc7e",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/readme-review/RESULT.json": "342d0cd0588f5f2562adc147cb556b4d48a2d620d8113495d6ca5080d341e02d",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/readme-review/REPORT.md": "b6942567eeeb630a5ece7aa3178b988dafec68e0dc61dcac1e969032e53e5d90",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/readme-review/SECTION-OPTIONS.json": "8bf6ba9249312512a0483a2f777cde7fcc1acf52e5d21b1c62ebd3c04d612c7a",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/readme-review/SEALED.json": "80c56872038717db4e81c3b21bc89c12d1eacf04a63b7b7202fa9abfa356e584",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/readme-review/EVIDENCE-MANIFEST.json": "6ab66827e555a1ca140b321c215202b23ecbcdd519905709ff8ae7a00e85eade",
+    "/tmp/agent-browser-readme-review-Js7HfG/EXECUTION.json": "8b246b2bf3c73a2d97c48b6ebc7302498af18843ae492b9ee91246446e7a9229",
+    "/tmp/agent-browser-readme-preservation-UhQK2V/EXECUTION.json": "307ba3dd2170aa5801756401b793d72ebb3264d82ba01dfe5079743067356e23",
+    "/tmp/agent-browser-readme-preservation-UhQK2V/readme-rows-prefix.md": "36911a0471d5e99f2dfcf5edd89118c944a71483914d72b52ea7c80333c92946",
+    "/tmp/agent-browser-readme-review-Js7HfG/RESULT.json": "c789f6ad64a95f0f6361771371c1074e77c0dddff7702248b46550a533dd6d1b",
+    "/tmp/agent-browser-readme-preservation-UhQK2V/RESULT.json": "79ddeac75f1da656eda67779fd2ff55f68e4472e913783595757385b5d72c69b",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/proof/EXECUTION.json": "f10f0a76efdc31d3d224dc7f18f5c7a5ed8978f158a639151a1206babb0d93fd",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/proof/RESULT.json": "174073e115ecff8172cab988564e620f3fe1bc073a5c64d6acdaced06c8a4200",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/proof/CHECK.json": "40492356d0ec625610293ddfcfaebab2bf6193430238c12408dcfda98beb48bc",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/proof/INVOCATION.json": "e3ef47c408ab54bde6aa41ddaed7374b4b2b9cf60ac9ea83017c47259f107fef",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/proof/REQUEST-GUARD.json": "71ab4f139b208d09d88e19c39c0e04a1212702237eca1c7d824df90998e711c4",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/proof/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "/tmp/agent-browser-manual-quickstart-mYWJRD/manual-quickstart/proof/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "/tmp/agent-browser-bounded-content-fresh-jGh0qk/prismml-docs/live/EXECUTION.json": "e0d61a41efe5ec7230974cbf8d78aa817e41c4ca3942c46c1186807ba2f39c21",
+    "/tmp/agent-browser-bounded-content-fresh-jGh0qk/bonsai-demo-repository/live/RESULT.json": "6b894e013a657ecd7a02cac1f7a883b58228dfd1d01fd08478fd335cfec78938",
+    "/tmp/agent-browser-bounded-content-fresh-jGh0qk/bonsai-demo-repository/live/CHECK.json": "fd4f194a6d3e986a4509c0572f42597e019cedcf2bc45857aa2dcec212bae007"
+  }
+}

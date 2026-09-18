@@ -1,5 +1,35 @@
 # Opt-in native research reader
 
+## Manual redirect inspection
+
+Use `--redirect-mode manual` to receive a redirect without following its Location:
+
+```sh
+node dist/scripts/research-browser.js --reader --capture-body --redirect-mode manual PUBLIC_HTTP_URL
+```
+
+The report can expose a bounded, query-redacted `redirect` hint for explicit
+review. HTTP3xx remains a failure, not a destination-content success. Defaults
+are unchanged; this mode excludes the HTTPS redirect-upgrade policy. See
+`RESEARCH-REDIRECTS.md` for unavailable targets, origin/redaction limitations and
+the distinction between reading a redirect body and following its destination.
+
+## Read compactly before adding requests
+
+For an article-like page, `--content-focus main-content-v3 --table-rows
+--compact-tables` uses existing main-content selection and compact structural
+tables. For a README-specific task, inspect the document before choosing a
+selector such as `article.markdown-body`; the whole repository main can also
+contain file listings and navigation. These are explicit selections, not a
+promise that every site's main or article is its desired content.
+
+Prefer replaying an existing complete capture with its recorded receipt/body
+pins instead of refetching just to change selection or formatting. Table rows
+retain explicit cell boundaries without inventing header associations. Keep
+partial/fallback/truncation metadata and check the content needed for the task.
+See `RESEARCH-COMPACT-REPLAY.md`, `LOADER-LIMIT-REPLAY.md` and the September18
+documentation/README measurements in `reports/docs-content-followup-2026-09-18.md`.
+
 ## Bounded heading discovery
 
 Use `--headings` to list native h1–h6 titles and anchored structural selectors

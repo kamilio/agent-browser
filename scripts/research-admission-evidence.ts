@@ -33,6 +33,7 @@ import {
 	researchBodyCaptureLimit,
 } from "./research-body-capture.js";
 import { hasResearchExtractionContent } from "./research-content.js";
+import { validateResearchRedirectHandoff } from "./research-redirect.js";
 import type {
 	ResearchNavigationReport,
 	ResearchOutcome,
@@ -705,7 +706,24 @@ function validateLong(report: DataRecord): void {
 	}
 }
 
+function validateRedirectEvidence(report: DataRecord): void {
+	if (Object.hasOwn(report, "redirectMode") && report.redirectMode !== "manual")
+		invalidEvidence();
+	if (Object.hasOwn(report, "redirect")) {
+		if (report.redirectMode !== "manual") invalidEvidence();
+		const primary = record(report.primaryResponse);
+		if (typeof primary.url !== "string" || typeof primary.status !== "number")
+			invalidEvidence();
+		validateResearchRedirectHandoff(
+			report.redirect,
+			primary.url,
+			primary.status,
+		);
+	}
+}
+
 function validatePolicyFragments(report: DataRecord): void {
+	validateRedirectEvidence(report);
 	validateSourceLinkLabelEvidence(report);
 	validateSourceHeadingEvidence(report);
 	const prior =
@@ -1011,7 +1029,11 @@ export function serializeResearchReport(
 		const primary = primaryDescriptor?.value;
 		if (types.isProxy(primary)) invalidEvidence();
 		let serialized: ResearchNavigationReport = report;
-		if (isRecord(primary) && Object.hasOwn(primary, "headerCapture")) {
+		if (
+			(isRecord(primary) && Object.hasOwn(primary, "headerCapture")) ||
+			Object.hasOwn(report, "redirectMode") ||
+			Object.hasOwn(report, "redirect")
+		) {
 			const detached = record(
 				snapshot(report, {
 					maxDepth: Number.POSITIVE_INFINITY,
@@ -1019,6 +1041,7 @@ export function serializeResearchReport(
 				}),
 			);
 			validateExplicitHeaderCapture(detached.primaryResponse);
+			validateRedirectEvidence(detached);
 			serialized = detached as unknown as ResearchNavigationReport;
 		}
 		if (Object.hasOwn(serialized, "fragment"))

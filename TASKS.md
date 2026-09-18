@@ -6,6 +6,35 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Source-linked content follow-up and explicit manual redirects
+
+- Five separately authorized one-GET reads: documentation introduction200/8540
+  Markdown bytes, llms.txt200/2623, formats200/18335, arXiv experimental HTML200/
+  49812, and manual /quickstart404/0 at05:55:40.332UTC. No retries or Location
+  follows. The manual lane exits1 with safetyPassed and no redirect diagnostic:
+  bounded execution, not successful content retrieval or a real Location handoff.
+- Existing offline options reduce introduction to4250 bytes with all7 source
+  rows/28 cells checked, formats to8784 and paper HTML to45570. Index text matches
+  its2615-byte source plus8 fence bytes. Paper DOM anchors are125/124 with one
+  source-only mailto; nine figures are not interpreted. Do not equate DOM counts
+  with all rendered links or hydrated card behavior. Preserve the32-cell harness
+  guess/failure and corrected28-cell source comparison.
+- Reuse the prior GitHub README capture, not a new GET: explicit article plus
+  table-row/compact options reduces76825 to37618 bytes without prefix fallback.
+  Preserve42 headings,29 code blocks,79 non-permalink links and11 tables/71 rows/
+  204 cells;42 empty permalink controls remain explicitly omitted.
+- Expose --redirect-mode manual without changing default handling or following
+  Location. Retain benign redirect-body extraction, bounded redacted diagnostics,
+  challenge precedence and redirect-only evidence validation. Synthetic308 proof
+  exits1 with http-failure/contentSuccessfalse and retained body; zero live IO.
+- Final native817/0 in9 files includes137 helper and24 integration cases; all
+  quality checks pass. Preserve filtered baseline CLI0/1 and initial core01
+  native817/0 with type/lint failures. No full-suite or live308 claim.
+- See reports/docs-content-followup-2026-09-18.md/JSON. No Zoom join, SDK/media,
+  vault/device, recording/delivery or overall research completion qualification.
+  Keep native client execution/real media, broader access,100-site and original
+  browser goals open; historical evidence remains unchanged.
+
 ### Explicit loader-limit replay and bounded content reading
 
 - Add --recover-loader-limit for complete pinned default-profile HTML captures

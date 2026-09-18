@@ -1,4 +1,6 @@
 [
+	"src/research-redirect.test.ts",
+	"src/research-redirect-handoff.test.ts",
 	"src/research-loader-limit-admission.test.ts",
 	"src/research-loader-limit-replay.test.ts",
 	"src/pcm-capture.test.ts",

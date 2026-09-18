@@ -111,6 +111,10 @@ import {
 	exitResearchCliFailure,
 	writeResearchOutput,
 } from "./research-stream-output.js";
+import {
+	type ResearchRedirectHandoff,
+	summarizeResearchRedirect,
+} from "./research-redirect.js";
 
 export const researchRunLimits = Object.freeze({
 	maxUrls: 8,
@@ -244,6 +248,7 @@ export function parseResearchArguments(args: readonly string[]) {
 	let reader = false;
 	let documentStrategy: ResearchDocumentStrategy | undefined;
 	let httpsRedirectPolicy: HttpsRedirectPolicy | undefined;
+	let redirectMode: "manual" | undefined;
 	let preferMarkdown = false;
 	let readerRawPolicy: ResearchReaderRawPolicy | undefined;
 	let readerVisibilityPolicy: ResearchReaderVisibilityPolicy | undefined;
@@ -317,6 +322,15 @@ export function parseResearchArguments(args: readonly string[]) {
 					"Missing research HTTPS redirect policy",
 				);
 			httpsRedirectPolicy = validateHttpsRedirectPolicy(value);
+			continue;
+		}
+		if (argument === "--redirect-mode" && redirectMode === undefined) {
+			if (args[++index] !== "manual")
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Research redirect mode must be manual",
+				);
+			redirectMode = "manual";
 			continue;
 		}
 		if (
@@ -526,6 +540,11 @@ export function parseResearchArguments(args: readonly string[]) {
 			"invalid-input",
 			"Research document strategy requires default whole-document extraction without reader policies",
 		);
+	if (redirectMode !== undefined && httpsRedirectPolicy !== undefined)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Manual redirects cannot be combined with a redirect upgrade policy",
+		);
 	if (readerFallbackEncoding !== undefined && !reader)
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -699,6 +718,7 @@ export function parseResearchArguments(args: readonly string[]) {
 		urls,
 		...(documentStrategy === undefined ? {} : { documentStrategy }),
 		...(httpsRedirectPolicy === undefined ? {} : { httpsRedirectPolicy }),
+		...(redirectMode === undefined ? {} : { redirectMode }),
 		...(preferMarkdown ? { preferMarkdown: true as const } : {}),
 		...(readerRawPolicy === undefined ? {} : { readerRawPolicy }),
 		...(readerVisibilityPolicy === undefined ? {} : { readerVisibilityPolicy }),
@@ -732,6 +752,8 @@ export type ResearchOutcome =
 	| "failure";
 
 export interface ResearchNavigationReport {
+	redirectMode?: "manual";
+	redirect?: ResearchRedirectHandoff;
 	documentStrategy?: Readonly<ResearchDocumentStrategyInfo>;
 	sourceHeadingPolicy?: SourceHeadingPolicy;
 	sourceLinkLabelPolicy?: SourceLinkLabelPolicy;
@@ -904,6 +926,9 @@ export async function researchNavigation(
 	const lineRange =
 		lines === undefined ? undefined : validateResearchLines(lines);
 	const validated = parseResearchArguments([
+		...(executionOptions.redirectMode === undefined
+			? []
+			: ["--redirect-mode", executionOptions.redirectMode]),
 		...(executionOptions.documentStrategy === undefined
 			? []
 			: ["--document-strategy", executionOptions.documentStrategy]),
@@ -1017,6 +1042,9 @@ export async function researchNavigation(
 		...(validated.readerVisibilityPolicy === undefined
 			? {}
 			: { readerVisibilityPolicy: validated.readerVisibilityPolicy }),
+		...(validated.redirectMode === undefined
+			? {}
+			: { redirectMode: validated.redirectMode }),
 		requestedUrl: reportUrl(validated.urls[0]),
 		finalUrl: null,
 		startedAt: new Date(started).toISOString(),
@@ -1142,9 +1170,9 @@ export async function researchNavigation(
 						try {
 							response = await native.request({
 								...request,
-								...(executionOptions.redirectMode === undefined
+								...(validated.redirectMode === undefined
 									? {}
-									: { redirect: executionOptions.redirectMode }),
+									: { redirect: validated.redirectMode }),
 								...(validated.preferMarkdown
 									? {
 											headers: {
@@ -1232,6 +1260,10 @@ export async function researchNavigation(
 									"policy-denied",
 									"Research barrier requires user handoff",
 								);
+							}
+							if (validated.redirectMode === "manual") {
+								const redirect = summarizeResearchRedirect(response);
+								if (redirect !== undefined) report.redirect = redirect;
 							}
 							stage = "navigation";
 						}
@@ -1672,6 +1704,9 @@ export async function* researchBatch(
 				options.find,
 				options.documentProfile,
 				{
+					...(options.redirectMode === undefined
+						? {}
+						: { redirectMode: options.redirectMode }),
 					...(options.documentStrategy === undefined
 						? {}
 						: { documentStrategy: options.documentStrategy }),
@@ -1804,7 +1839,7 @@ if (
 	void main().catch(() => {
 		exitResearchCliFailure(
 			64,
-			"Usage: research-browser [--document-strategy native-reader-fallback-v1] [--document-profile default|long-v1] [--reader] [--https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--source-link-label-policy source-aria-label-v1] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2|main-content-v3] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --json-pointer POINTER | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; document strategy requires default whole-document extraction without reader, reader policies, selection/discovery, content-focus, JSON-pointer, text-prefix, source labels/headings or Markdown preference; empty JSON pointer selects root; JSON pointer excludes content-focus, text-prefix and long-v1; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; source link-label policy requires reader HTML Markdown extraction and excludes discovery, literal selection and text-prefix; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-strategy native-reader-fallback-v1] [--document-profile default|long-v1] [--reader] [--redirect-mode manual | --https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--source-link-label-policy source-aria-label-v1] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2|main-content-v3] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --json-pointer POINTER | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; manual mode reports redirects without following their Location, and response-body extraction may still occur; document strategy requires default whole-document extraction without reader, reader policies, selection/discovery, content-focus, JSON-pointer, text-prefix, source labels/headings or Markdown preference; empty JSON pointer selects root; JSON pointer excludes content-focus, text-prefix and long-v1; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; source link-label policy requires reader HTML Markdown extraction and excludes discovery, literal selection and text-prefix; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 	});
 }
