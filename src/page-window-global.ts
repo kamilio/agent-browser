@@ -1,4 +1,6 @@
 import { AgentBrowserError } from "./errors.js";
+import { pageUrlBootstrapSource } from "./page-url-bootstrap.js";
+import { PageUrls } from "./page-urls.js";
 import type {
 	ReleasedContext,
 	ReleasedHostDefinition,
@@ -43,6 +45,7 @@ export class PageWindowGlobal {
 				value: Image, writable: true, configurable: true, enumerable: false
 			});
 		}
+		${pageUrlBootstrapSource}
 	})();`;
 	private readonly definitions = new WeakMap<object, ReleasedHostDefinition>();
 	private window?: object;
@@ -134,7 +137,9 @@ export class PageWindowGlobal {
 			this.reference = reference;
 			this.bound = true;
 		}, 0);
+		const urls = new PageUrls(owner);
 		owner.onCleanup(() => {
+			urls.close();
 			this.bound = false;
 			this.reference = undefined;
 			this.window = undefined;
@@ -145,6 +150,7 @@ export class PageWindowGlobal {
 			),
 			[bridgeName]: owner.createHostObject({
 				properties: {
+					urls: { get: () => urls.port },
 					hasNativeDocument: { get: () => createElement !== undefined },
 					window: { get: () => window },
 					names: { get: () => names },

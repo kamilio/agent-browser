@@ -112,7 +112,13 @@ and IDL limitations. The source-linkedCDN PNG andvbPreload are captured200 at
 14:22:02.441/14:22:03.283UTC,149/1388bytes. ASSETS28 retains an incorrect classic-
 fetch fixture failure; correctedASSETS29 reaches the externals script request,
 but not its combinedimage assertion. It confirms missingURL/URLSearchParams
-globals. These are the next startup APIs; originalCSPrefusal remains unchanged.
+globals. Bounded native URL/URLSearchParams now pass1558 integrated native tests
+in41 files with all quality checks. ASSETS31 then executes all nine unchanged
+inline bodies, completes the recorded149-byte CDN image and reaches the core
+request in8.544s. Backup/tracking requests stay refused and core execution is
+held until cleanup. The first synthetic URL SDK suite retains one post-close
+classifier failure despite17 passed checks; corrected classification is pending.
+See NATIVE-URL-GLOBALS.md. OriginalCSPrefusal remains unchanged.
 See NATIVE-IMAGE-CONSTRUCTOR.md. No meeting/audio/notetaking success yet.
 
 The bounded combined startup diagnostic ASSETS30 executes all nine captured
@@ -122,7 +128,8 @@ the test fails; the process closes after336.508s. Externals takes139300.8ms and
 vendors27628.4ms in this larger context; these wall times include overshoot and
 are not120s/16s performance passes. The fixture is offline and sanitized, with
 uncaptured resources refused; it does not establish full navigation or meeting
-readiness. Missing URL globals, performance and remaining execution gates persist.
+readiness. URL globals are now implemented; performance and remaining execution
+gates persist.
 
 The native browser fetched the missing main.js on September18 at12:14:14.901UTC:
 HTTP200,843255 JavaScript bytes. The vendors request stopped at the existing

@@ -1,23 +1,59 @@
 import { createContext, runInContext } from "node:vm";
 import { afterEach, expect, it, vi } from "vitest";
 import {
-	documentImages,
 	type DocumentImageOptions,
+	documentImages,
 } from "./document-images.js";
+import { AgentBrowserError } from "./errors.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { documentInteractions } from "./interactions.js";
+import { PageWindowGlobal } from "./page-window-global.js";
 import { encodePng } from "./png.js";
 import { createRaster } from "./raster.js";
-import { ScriptDom } from "./script-dom.js";
-import { AgentBrowserError } from "./errors.js";
-import { PageWindowGlobal } from "./page-window-global.js";
 import type {
 	ReleasedContext,
 	ReleasedHostDefinition,
 } from "./safejs-extension-types.js";
+import { ScriptDom } from "./script-dom.js";
 
 const bridgeName = "__agentBrowserWindowGlobal";
 const aliases = ["window", "self", "top", "parent"];
+
+it("installs guest URL globals on the classic Window without requiring a document", async () => {
+	const test = fixture();
+	const context = createContext(test.installed);
+	runInContext(test.windowGlobal.source, context);
+	expect(
+		runInContext(
+			`
+		var SavedURL = URL, SavedParams = URLSearchParams;
+		var parsed = new URL('../path?a=1', 'https://example.test/base/');
+		[window.URL === URL, self.URLSearchParams === URLSearchParams,
+		 parsed.origin, parsed.pathname, parsed.searchParams.get('a')]
+	`,
+			context,
+		),
+	).toEqual([true, true, "https://example.test", "/path", "1"]);
+	runInContext(
+		"URL = function PublisherURL() {}; URLSearchParams = function PublisherParams() {};",
+		context,
+	);
+	expect(() => runInContext(test.windowGlobal.source, context)).toThrow();
+	expect(
+		runInContext(
+			"[URL.name, URLSearchParams.name, new SavedURL('https://example.test').host]",
+			context,
+		),
+	).toEqual(["PublisherURL", "PublisherParams", "example.test"]);
+	await test.close();
+	for (const source of [
+		"new SavedURL('https://example.test')",
+		"new SavedParams()",
+		"parsed.href",
+		"parsed.searchParams.append('b','2')",
+	])
+		expect(() => runInContext(source, context)).toThrow(/closed/);
+});
 
 const imageCleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
