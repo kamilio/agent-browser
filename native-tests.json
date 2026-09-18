@@ -1,4 +1,6 @@
 [
+	"src/document-script-csp.test.ts",
+	"src/document-nonce.test.ts",
 	"src/node-cookie-redirect-policy.test.ts",
 	"src/script-image-properties.test.ts",
 	"src/session-domain-cookies.test.ts",

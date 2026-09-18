@@ -176,6 +176,10 @@ export class DocumentTree {
 	readonly limits: Readonly<DocumentLimits>;
 	private nodes = new Map<number, MutableNode>();
 	private nodeViews = new Map<number, Readonly<DocumentNode>>();
+	private nonceHidingEnabled = false;
+	private nonceHidingExhausted = false;
+	private nonceWorkRemaining = 0;
+	private hiddenNonceNodes = new Set<number>();
 	private attributeRecords = new Map<number, DocumentAttribute>();
 	private attachedAttributes = new Map<number, Map<string, number>>();
 	private attributeNamespaces = new Map<
@@ -721,7 +725,7 @@ export class DocumentTree {
 				"resource-limit",
 				"Document depth limit exceeded",
 			);
-		const sources = entries.map(({ node }) => node);
+		const sources = entries.map(({ node }) => sourceTree.cloneSource(node));
 		this.detailsToggleTasks.checkAdditional(
 			sources.filter(
 				(node) =>
@@ -767,6 +771,7 @@ export class DocumentTree {
 			);
 			const copy = this.node(copyId);
 			copy.attributes = createHtmlAttributes(source.attributes);
+			this.copyNonceState(sourceTree, source.id, copyId);
 			this.copyAttributeNamespaces(sourceTree, source.id, copyId);
 			this.detailsGroups.sync(copyId);
 			if (
@@ -813,16 +818,21 @@ export class DocumentTree {
 		id: number,
 		deep: boolean,
 	): number {
-		const entries = deep
-			? [...sourceTree.walkIncludingTemplateContents(id)]
-			: [
-					{
-						tree: sourceTree,
-						node: sourceTree.get(id),
-						depth: 0,
-						host: undefined,
-					},
-				];
+		const entries = (
+			deep
+				? [...sourceTree.walkIncludingTemplateContents(id)]
+				: [
+						{
+							tree: sourceTree,
+							node: sourceTree.get(id),
+							depth: 0,
+							host: undefined,
+						},
+					]
+		).map((entry) => ({
+			...entry,
+			node: entry.tree.cloneSource(entry.node),
+		}));
 		if (entries.some(({ depth }) => depth > this.limits.maxDepth))
 			throw new AgentBrowserError(
 				"resource-limit",
@@ -937,6 +947,7 @@ export class DocumentTree {
 			);
 			const copy = target.node(copyId);
 			copy.attributes = createHtmlAttributes(source.attributes);
+			target.copyNonceState(entry.tree, source.id, copyId);
 			target.copyAttributeNamespaces(entry.tree, source.id, copyId);
 			target.detailsGroups.sync(copyId);
 			if (
@@ -1065,6 +1076,117 @@ export class DocumentTree {
 		return elementNamespace(this.node(id));
 	}
 
+	bindNonceHiding(maxWork: number) {
+		this.ensureOpen();
+		if (!Number.isSafeInteger(maxWork) || maxWork < 1 || maxWork > 2_000_000)
+			throw new AgentBrowserError("invalid-input", "Invalid nonce work limit");
+		if (this.nonceHidingEnabled) return;
+		this.nonceHidingEnabled = true;
+		this.nonceWorkRemaining = maxWork;
+		this.hideConnectedNonces(this.root);
+		this.currentRevision++;
+		this.changes = [];
+	}
+
+	get nonceHidingFailed(): boolean {
+		this.ensureOpen();
+		return this.nonceHidingExhausted;
+	}
+
+	nonceValue(id: number): string {
+		const node = this.element(id);
+		return this.attributeNamespaces.get(id)?.get("nonce")?.namespaceURI
+			? ""
+			: (node.attributes.nonce ?? "");
+	}
+
+	private nonceHidden(id: number): boolean {
+		return (
+			this.hiddenNonceNodes.has(id) ||
+			(this.nonceHidingExhausted && isHtmlElement(this.node(id)))
+		);
+	}
+
+	private debitNonceWork(): boolean {
+		if (--this.nonceWorkRemaining >= 0) return true;
+		this.nonceHidingExhausted = true;
+		this.nodeViews.clear();
+		this.currentRevision++;
+		this.changes = [];
+		return false;
+	}
+
+	private hideConnectedNonces(start: number) {
+		if (!this.nonceHidingEnabled || this.nonceHidingExhausted) return;
+		let ancestor: number | null = start;
+		while (ancestor !== this.root) {
+			if (ancestor === null || !this.debitNonceWork()) return;
+			ancestor = this.node(ancestor).parent;
+		}
+		const pending = [start];
+		while (pending.length) {
+			if (!this.debitNonceWork()) return;
+			const id = pending.pop();
+			if (id === undefined) break;
+			const node = this.node(id);
+			if (isHtmlElement(node)) {
+				this.hiddenNonceNodes.add(id);
+				this.nodeViews.delete(id);
+			}
+			for (const child of node.children) {
+				if (!this.debitNonceWork()) return;
+				pending.push(child);
+			}
+		}
+	}
+
+	private visibleAttributes(
+		node: MutableNode,
+	): Readonly<Record<string, string>> {
+		if (
+			!this.nonceHidden(node.id) ||
+			!Object.hasOwn(node.attributes, "nonce") ||
+			this.attributeNamespaces.get(node.id)?.get("nonce")?.namespaceURI
+		)
+			return snapshotHtmlAttributes(node.attributes);
+		const attributes = createHtmlAttributes(node.attributes);
+		setHtmlAttribute(attributes, "nonce", "");
+		return snapshotHtmlAttributes(attributes);
+	}
+
+	private cloneSource(node: Readonly<DocumentNode>): Readonly<DocumentNode> {
+		return this.nonceHidden(node.id)
+			? {
+					...node,
+					attributes: snapshotHtmlAttributes(this.node(node.id).attributes),
+				}
+			: node;
+	}
+
+	private copyNonceState(
+		source: DocumentTree,
+		sourceId: number,
+		copyId: number,
+	) {
+		if (source.nonceHidden(sourceId)) this.hiddenNonceNodes.add(copyId);
+	}
+
+	private visibleAttributeValue(attribute: DocumentAttribute): string {
+		return attribute.ownerElement !== null &&
+			attribute.name === "nonce" &&
+			!attribute.namespaceURI &&
+			this.nonceHidden(attribute.ownerElement)
+			? ""
+			: attribute.value;
+	}
+
+	private detachAttribute(attribute: DocumentAttribute) {
+		const visible = this.visibleAttributeValue(attribute);
+		this.textCodeUnits += visible.length - attribute.value.length;
+		attribute.value = visible;
+		attribute.ownerElement = null;
+	}
+
 	elementInfo(
 		id: number,
 	): Readonly<
@@ -1077,7 +1199,7 @@ export class DocumentTree {
 			...(node.namespaceURI === undefined
 				? {}
 				: { namespaceURI: node.namespaceURI }),
-			attributes: snapshotHtmlAttributes(node.attributes),
+			attributes: this.visibleAttributes(node),
 		});
 	}
 
@@ -1087,7 +1209,7 @@ export class DocumentTree {
 		if (cached) return cached;
 		const view = Object.freeze({
 			...node,
-			attributes: snapshotHtmlAttributes(node.attributes),
+			attributes: this.visibleAttributes(node),
 			children: Object.freeze([...node.children]),
 			control: Object.freeze({ ...node.control }),
 		});
@@ -1307,6 +1429,7 @@ export class DocumentTree {
 				.concat(children, parent.children.slice(index));
 			child.children = [];
 			for (const moving of children) this.node(moving).parent = parentId;
+			for (const moving of children) this.hideConnectedNonces(moving);
 			if (closures.length) {
 				this.nodeViews.delete(parentId);
 				for (const moving of children) this.nodeViews.delete(moving);
@@ -1364,6 +1487,7 @@ export class DocumentTree {
 			const nextSibling = parent.children[index] ?? null;
 			parent.children.splice(index, 0, moving);
 			node.parent = parentId;
+			this.hideConnectedNonces(moving);
 			if (closures.length) {
 				this.nodeViews.delete(parentId);
 				this.nodeViews.delete(moving);
@@ -1756,7 +1880,7 @@ export class DocumentTree {
 		const attributeId = this.attachedAttributes.get(id)?.get(key);
 		if (attributeId !== undefined) {
 			const attribute = this.attributeRecord(attributeId);
-			attribute.ownerElement = null;
+			this.detachAttribute(attribute);
 			this.attachedAttributes.get(id)?.delete(key);
 		}
 		this.applyInputValueChange(id, inputChange);
@@ -1865,7 +1989,11 @@ export class DocumentTree {
 	}
 
 	getAttributeRecord(id: number): Readonly<DocumentAttribute> {
-		return Object.freeze({ ...this.attributeRecord(id) });
+		const attribute = this.attributeRecord(id);
+		return Object.freeze({
+			...attribute,
+			value: this.visibleAttributeValue(attribute),
+		});
 	}
 
 	cloneAttribute(id: number): number {
@@ -1873,7 +2001,7 @@ export class DocumentTree {
 	}
 
 	copyAttributeFrom(sourceTree: DocumentTree, id: number): number {
-		const source = sourceTree.attributeRecord(id);
+		const source = sourceTree.getAttributeRecord(id);
 		const copy = this.allocateAttribute(source.name, source.value, true, true);
 		if (source.namespaceURI !== undefined)
 			Object.assign(this.attributeRecord(copy), {
@@ -1963,7 +2091,7 @@ export class DocumentTree {
 			change + captureCost + this.inputValueDelta(id, inputChange),
 		);
 		const original = this.captureAttribute(id, attribute.name, true);
-		if (original !== null) this.attributeRecord(original).ownerElement = null;
+		if (original !== null) this.detachAttribute(this.attributeRecord(original));
 		setHtmlAttribute(node.attributes, attribute.name, attribute.value);
 		if (attribute.namespaceURI !== undefined)
 			this.storeAttributeNamespace(id, attribute.name, {
@@ -2665,6 +2793,7 @@ export class DocumentTree {
 		this.attachedDoctype = undefined;
 		this.nodeViews.clear();
 		this.attributeRecords.clear();
+		this.hiddenNonceNodes.clear();
 		this.attachedAttributes.clear();
 		this.attributeNamespaces.clear();
 		this.currentTarget = null;
@@ -2890,7 +3019,17 @@ export class DocumentTree {
 					? null
 					: (this.attributeNamespaces.get(target)?.get(values.attributeName)
 							?.namespaceURI ?? null)),
-			oldValue: values.oldValue ?? null,
+			oldValue:
+				type === "attributes" &&
+				values.attributeName === "nonce" &&
+				!(
+					values.attributeNamespace ??
+					this.attributeNamespaces.get(target)?.get("nonce")?.namespaceURI
+				) &&
+				this.nonceHidden(target) &&
+				values.oldValue != null
+					? ""
+					: (values.oldValue ?? null),
 		});
 		if (values.characterDataEdit)
 			characterDataEdits.set(

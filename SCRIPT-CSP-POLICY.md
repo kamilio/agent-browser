@@ -19,6 +19,29 @@ input denies admission without invoking property getters.
 
 Hashes, script URL sources, eval/wasm keywords and other security directives are
 currently unsupported and fail closed. This is not full Zoom CSP support. Real
-integration still needs document ownership, nonceability/hiding, base selection,
-meta-policy lifecycle and all resource-destination enforcement; do not strip or
-ignore a publisher's policy to activate this evaluator.
+integration still needs trusted parser nonceability, loader admission and all
+resource-destination enforcement; do not strip or ignore a publisher's policy
+to activate this evaluator.
+
+## Document ownership and nonce hiding
+
+`bindDocumentScriptCsp(tree, headers, limits?)` binds immutable response policy
+to one native document. Verified dynamic script nodes can be checked through
+`allowsScript(id)`. Parser, unknown, inert, cloned and detached eligibility is
+refused until trusted creation and nonceability metadata is available. Meta
+policies, missed mutations, exhausted work and close cause sticky refusal.
+
+Bound documents hide connected HTML nonce attributes before mutation observers
+run. Generic node/Attr reads, selectors, serialization and mutation old values
+cannot expose the stored nonce; script nonce IDL still uses the private native
+value. Cloning preserves hidden state without granting script eligibility.
+Stored values remain charged to native text limits. Unbound behavior and prior
+immutable snapshots remain unchanged. Base selection respects the bound policy,
+including cache invalidation when policy state changes.
+
+The parent integration passes 1148 tests in 34 explicitly selected native files,
+plus production build, selected-test typecheck, formatting and lint. Earlier
+missing-fixture and test-type failures remain preserved; the latter required an
+explicit response type in a new cookie-redirect test, not a runtime behavior
+change. This gate includes Image and cookie-redirect regressions, but no actual
+SDK, publisher, network or meeting execution. Live loader refusal remains intact.

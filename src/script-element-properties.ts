@@ -1,9 +1,10 @@
+import { documentNonce, setDocumentNonce } from "./document-nonce.js";
 import type { DocumentTree } from "./document.js";
+import type { ScriptHostObjectDefinition } from "./script-dom.js";
 import {
 	scriptElementAsync,
 	setScriptElementAsync,
 } from "./script-element-state.js";
-import type { ScriptHostObjectDefinition } from "./script-dom.js";
 
 export function scriptElementProperties(
 	tree: DocumentTree,
@@ -12,6 +13,16 @@ export function scriptElementProperties(
 	string: (value: unknown) => string,
 ): NonNullable<ScriptHostObjectDefinition["properties"]> {
 	const properties: NonNullable<ScriptHostObjectDefinition["properties"]> = {
+		nonce: {
+			get: () => {
+				read();
+				return documentNonce(tree, id);
+			},
+			set: (value) => {
+				read();
+				setDocumentNonce(tree, id, string(value));
+			},
+		},
 		async: {
 			get: () => {
 				read();
@@ -23,7 +34,7 @@ export function scriptElementProperties(
 			},
 		},
 	};
-	for (const name of ["type", "charset", "integrity", "nonce"])
+	for (const name of ["type", "charset", "integrity"])
 		properties[name] = {
 			get: () => {
 				read();

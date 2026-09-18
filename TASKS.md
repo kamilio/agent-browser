@@ -49,6 +49,12 @@ requests. The evaluator is not wired into the live loader and still rejects
 unsupported directives/sources. Existing CSP refusal remains in force; see
 SCRIPT-CSP-POLICY.md. It does not yet permit the captured Zoom policy.
 
+Native document policy ownership and prepublication nonce hiding now integrate
+with base selection, Attr/clone/mutation/selector privacy and close revocation.
+Parent checks pass1148 tests in34 files with build, selected-test types, format
+and lint. Trusted parser nonceability and loader admission remain outstanding;
+unknown/parser/inert provenance and unsupported policies are still refused.
+
 Explicit classic-global/after-prefix options now flow through native CLI,
 runtime selection, SDK loading and process initialization/ready validation.
 Together with an opt-in large-source budget, parent native checks pass370 tests
@@ -105,6 +111,15 @@ fetch fixture failure; correctedASSETS29 reaches the externals script request,
 but not its combinedimage assertion. It confirms missingURL/URLSearchParams
 globals. These are the next startup APIs; originalCSPrefusal remains unchanged.
 See NATIVE-IMAGE-CONSTRUCTOR.md. No meeting/audio/notetaking success yet.
+
+The bounded combined startup diagnostic ASSETS30 executes all nine captured
+inline bodies and naturally loads externals, pwa-webim and vendors through the
+native dynamic loader. Main is requested but has no completed evaluation before
+the test fails; the process closes after336.508s. Externals takes139300.8ms and
+vendors27628.4ms in this larger context; these wall times include overshoot and
+are not120s/16s performance passes. The fixture is offline and sanitized, with
+uncaptured resources refused; it does not establish full navigation or meeting
+readiness. Missing URL globals, performance and remaining execution gates persist.
 
 The native browser fetched the missing main.js on September18 at12:14:14.901UTC:
 HTTP200,843255 JavaScript bytes. The vendors request stopped at the existing

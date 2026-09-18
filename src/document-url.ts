@@ -1,9 +1,19 @@
+import {
+	type DocumentScriptCsp,
+	documentScriptCsp,
+} from "./document-script-csp.js";
 import type { DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 
 const baseUrlCache = new WeakMap<
 	DocumentTree,
-	{ revision: number; notifications: number; url: string }
+	{
+		revision: number;
+		notifications: number;
+		url: string;
+		policy: DocumentScriptCsp | undefined;
+		policyVersion: number | undefined;
+	}
 >();
 
 export function canRewriteDocumentUrl(current: URL, target: URL) {
@@ -59,8 +69,15 @@ export function documentBaseUrl(tree: DocumentTree) {
 	tree.get(tree.root);
 	const revision = tree.revision;
 	const notifications = tree.mutationMetrics().notifications;
+	const policy = documentScriptCsp(tree);
+	const policyVersion = policy?.version;
 	const cached = baseUrlCache.get(tree);
-	if (cached?.revision === revision && cached.notifications === notifications)
+	if (
+		cached?.revision === revision &&
+		cached.notifications === notifications &&
+		cached.policy === policy &&
+		cached.policyVersion === policyVersion
+	)
 		return cached.url;
 	let baseUrl = tree.url;
 	for (const { node } of tree.walk()) {
@@ -68,15 +85,23 @@ export function documentBaseUrl(tree: DocumentTree) {
 			continue;
 		try {
 			const url = new URL(node.attributes.href, tree.url);
-			baseUrl = ["data:", "javascript:"].includes(url.protocol)
-				? tree.url
-				: url.href;
+			baseUrl =
+				["data:", "javascript:"].includes(url.protocol) ||
+				(policy !== undefined && !policy.allowsBase(url.href))
+					? tree.url
+					: url.href;
 		} catch {
 			baseUrl = tree.url;
 		}
 		break;
 	}
-	baseUrlCache.set(tree, { revision, notifications, url: baseUrl });
+	baseUrlCache.set(tree, {
+		revision,
+		notifications,
+		url: baseUrl,
+		policy,
+		policyVersion,
+	});
 	return baseUrl;
 }
 
