@@ -1,6 +1,10 @@
 import { AgentBrowserError } from "./errors.js";
 import { parseNetworkUrl } from "./network.js";
 import {
+	type PinnedPublicSuffixSnapshot,
+	isPinnedPublicSuffixSnapshot,
+} from "./pinned-public-suffix.js";
+import {
 	type StateReplacement,
 	prepareStateReplacement,
 } from "./state-replacement.js";
@@ -10,6 +14,10 @@ export interface CookieLimits {
 	maxCookiesPerHost: number;
 	maxCookieBytes: number;
 	maxHeaderBytes: number;
+}
+
+export interface CookieJarOptions {
+	publicSuffixSnapshot?: PinnedPublicSuffixSnapshot;
 }
 
 export interface CookieContext {
@@ -42,6 +50,7 @@ export interface CookieStateEntry {
 	readonly name: string;
 	readonly value: string;
 	readonly host: string;
+	readonly hostOnly?: false;
 	readonly path: string;
 	readonly secure: boolean;
 	readonly httpOnly: boolean;
@@ -119,11 +128,93 @@ export function cookiePathMatches(path: string, cookiePath: string) {
 	);
 }
 
-export function cookieSameSite(url: string, siteUrl: string | null) {
+function cookieSnapshot(options: CookieJarOptions) {
+	if (
+		!options ||
+		typeof options !== "object" ||
+		Array.isArray(options) ||
+		![Object.prototype, null].includes(Object.getPrototypeOf(options)) ||
+		Reflect.ownKeys(options).some((name) => name !== "publicSuffixSnapshot")
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid cookie policy");
+	const descriptor = Object.getOwnPropertyDescriptor(
+		options,
+		"publicSuffixSnapshot",
+	);
+	if (descriptor && !("value" in descriptor))
+		throw new AgentBrowserError("invalid-input", "Invalid cookie policy field");
+	const snapshot: unknown = descriptor?.value;
+	if (snapshot !== undefined && !isPinnedPublicSuffixSnapshot(snapshot))
+		throw new AgentBrowserError("invalid-input", "Invalid cookie PSL snapshot");
+	return snapshot;
+}
+
+function registrableSite(
+	host: string,
+	snapshot: PinnedPublicSuffixSnapshot | undefined,
+) {
+	if (!snapshot || host.endsWith(".")) return undefined;
+	try {
+		const result = snapshot.match(host);
+		return result.domain === host
+			? (result.registrableDomain ?? undefined)
+			: undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function domainMatches(
+	host: string,
+	domain: string,
+	snapshot: PinnedPublicSuffixSnapshot | undefined,
+) {
+	const site = registrableSite(domain, snapshot);
+	return (
+		site !== undefined &&
+		(host === domain || host.endsWith(`.${domain}`)) &&
+		site === registrableSite(host, snapshot)
+	);
+}
+
+function cookieHostMatches(
+	host: string,
+	cookie: CookieStateEntry,
+	snapshot: PinnedPublicSuffixSnapshot | undefined,
+) {
+	return cookie.hostOnly === false
+		? domainMatches(host, cookie.host, snapshot)
+		: host === cookie.host;
+}
+
+function cookieKey(
+	cookie: Pick<CookieStateEntry, "host" | "name" | "path" | "hostOnly">,
+) {
+	return JSON.stringify([
+		cookie.host,
+		cookie.name,
+		cookie.path,
+		cookie.hostOnly !== false,
+	]);
+}
+
+export function cookieSameSite(
+	url: string,
+	siteUrl: string | null,
+	snapshot?: PinnedPublicSuffixSnapshot,
+) {
+	if (snapshot !== undefined && !isPinnedPublicSuffixSnapshot(snapshot))
+		throw new AgentBrowserError("invalid-input", "Invalid cookie PSL snapshot");
 	const target = parseNetworkUrl(url);
 	if (siteUrl === null) return false;
 	const site = parseNetworkUrl(siteUrl);
-	return target.protocol === site.protocol && target.hostname === site.hostname;
+	if (target.protocol !== site.protocol) return false;
+	if (target.hostname === site.hostname) return true;
+	const targetSite = registrableSite(target.hostname, snapshot);
+	return (
+		targetSite !== undefined &&
+		targetSite === registrableSite(site.hostname, snapshot)
+	);
 }
 
 export function normalizeCookieContext(context: CookieContext): CookieContext {
@@ -216,6 +307,7 @@ function parseCookieDate(value: string): number | undefined {
 
 export class CookieJar {
 	readonly limits: Readonly<CookieLimits>;
+	readonly #publicSuffixSnapshot: PinnedPublicSuffixSnapshot | undefined;
 	private cookies = new Map<string, StoredCookie>();
 	private closed = false;
 	private sequence = 0;
@@ -226,7 +318,9 @@ export class CookieJar {
 	constructor(
 		limits: Partial<CookieLimits> = {},
 		private readonly clock: () => number = Date.now,
+		options: CookieJarOptions = {},
 	) {
+		this.#publicSuffixSnapshot = cookieSnapshot(options);
 		this.limits = Object.freeze({
 			maxCookies: 3000,
 			maxCookiesPerHost: 180,
@@ -328,7 +422,14 @@ export class CookieJar {
 					"invalid-input",
 					"Invalid cookie state array entry",
 				);
-			const row = stateRecord(descriptor.value, stateFields);
+			const hasScope =
+				descriptor.value !== null &&
+				typeof descriptor.value === "object" &&
+				Object.hasOwn(descriptor.value, "hostOnly");
+			const row = stateRecord(
+				descriptor.value,
+				hasScope ? [...stateFields, "hostOnly"] : stateFields,
+			);
 			if (
 				typeof row.name !== "string" ||
 				typeof row.value !== "string" ||
@@ -369,7 +470,10 @@ export class CookieJar {
 				(row.sameSite === "none" && !row.secure) ||
 				(row.name.toLowerCase().startsWith("__secure-") && !row.secure) ||
 				(row.name.toLowerCase().startsWith("__host-") &&
-					(!row.secure || row.path !== "/"))
+					(!row.secure || row.path !== "/" || hasScope)) ||
+				(hasScope &&
+					(row.hostOnly !== false ||
+						!registrableSite(row.host, this.#publicSuffixSnapshot)))
 			)
 				throw new AgentBrowserError(
 					"invalid-input",
@@ -391,6 +495,7 @@ export class CookieJar {
 				name: row.name,
 				value: row.value,
 				host: row.host,
+				...(hasScope ? { hostOnly: false as const } : {}),
 				path: row.path,
 				secure: row.secure,
 				httpOnly: row.httpOnly,
@@ -398,7 +503,7 @@ export class CookieJar {
 				expires: row.expires as number | null,
 			};
 			bytes = stateSize(bytes, cookie, index);
-			const key = JSON.stringify([cookie.host, cookie.name, cookie.path]);
+			const key = cookieKey(cookie);
 			if (keys.has(key))
 				throw new AgentBrowserError(
 					"invalid-input",
@@ -515,6 +620,7 @@ export class CookieJar {
 		let sameSite: StoredCookie["sameSite"] = "lax";
 		let expires: number | null = null;
 		let maxAge: number | undefined;
+		let domain: string | undefined;
 		for (const attribute of attributes) {
 			const separator = attribute.indexOf("=");
 			const key = (separator < 0 ? attribute : attribute.slice(0, separator))
@@ -522,7 +628,15 @@ export class CookieJar {
 				.toLowerCase();
 			const content =
 				separator < 0 ? "" : attribute.slice(separator + 1).trim();
-			if (key === "domain") return reject("domain-unsupported");
+			if (key === "domain") {
+				if (!this.#publicSuffixSnapshot) return reject("domain-unsupported");
+				const candidate = content.replace(/^\./, "").toLowerCase();
+				if (
+					!domainMatches(target.hostname, candidate, this.#publicSuffixSnapshot)
+				)
+					return reject("invalid-cookie");
+				domain = candidate;
+			}
 			if (key === "partitioned") return reject("partitioned-unsupported");
 			if (key === "secure") secure = true;
 			if (key === "httponly") httpOnly = true;
@@ -549,27 +663,40 @@ export class CookieJar {
 		const lowerName = name.toLowerCase();
 		if (
 			(lowerName.startsWith("__secure-") && !secure) ||
-			(lowerName.startsWith("__host-") && (!secure || !explicitRoot))
+			(lowerName.startsWith("__host-") &&
+				(!secure || !explicitRoot || domain !== undefined))
 		)
 			return reject("prefix");
 		if (
 			sameSite !== "none" &&
-			(context.crossSiteRedirect || !cookieSameSite(url, context.siteUrl)) &&
+			(context.crossSiteRedirect ||
+				!cookieSameSite(url, context.siteUrl, this.#publicSuffixSnapshot)) &&
 			(script || !context.topLevelNavigation)
 		)
 			return reject("same-site");
-		const key = JSON.stringify([target.hostname, name, path]);
+		const host = domain ?? target.hostname;
+		const scope = domain === undefined ? {} : { hostOnly: false as const };
+		const key = cookieKey({ host, name, path, ...scope });
 		const old = this.cookies.get(key);
-		if (script && old?.httpOnly) return reject("http-only");
-		if (target.protocol !== "https:")
-			for (const cookie of this.cookies.values())
-				if (
-					cookie.secure &&
-					cookie.host === target.hostname &&
-					cookie.name === name &&
-					cookiePathMatches(path, cookie.path)
+		for (const cookie of this.cookies.values()) {
+			if (
+				cookie.name !== name ||
+				!(
+					cookieHostMatches(host, cookie, this.#publicSuffixSnapshot) ||
+					(domain !== undefined &&
+						domainMatches(cookie.host, host, this.#publicSuffixSnapshot))
 				)
-					return reject("insecure");
+			)
+				continue;
+			if (script && cookie.httpOnly && cookie.path === path)
+				return reject("http-only");
+			if (
+				target.protocol !== "https:" &&
+				cookie.secure &&
+				cookiePathMatches(path, cookie.path)
+			)
+				return reject("insecure");
+		}
 		if (maxAge !== undefined)
 			expires =
 				maxAge <= 0 ? 0 : now + Math.min(maxAge * 1000, maximumLifetime);
@@ -583,14 +710,15 @@ export class CookieJar {
 			!old &&
 			(this.cookies.size >= this.limits.maxCookies ||
 				Array.from(this.cookies.values()).filter(
-					(cookie) => cookie.host === target.hostname,
+					(cookie) => cookie.host === host,
 				).length >= this.limits.maxCookiesPerHost)
 		)
 			return reject("capacity");
 		this.cookies.set(key, {
 			name,
 			value,
-			host: target.hostname,
+			host,
+			...scope,
 			path,
 			secure,
 			httpOnly,
@@ -608,10 +736,15 @@ export class CookieJar {
 		const context = normalizeCookieContext(input);
 		this.prune(this.now());
 		const sameSite =
-			!context.crossSiteRedirect && cookieSameSite(url, context.siteUrl);
+			!context.crossSiteRedirect &&
+			cookieSameSite(url, context.siteUrl, this.#publicSuffixSnapshot);
 		const matches = Array.from(this.cookies.values()).filter((cookie) => {
 			if (
-				cookie.host !== target.hostname ||
+				!cookieHostMatches(
+					target.hostname,
+					cookie,
+					this.#publicSuffixSnapshot,
+				) ||
 				!cookiePathMatches(target.pathname, cookie.path) ||
 				(cookie.secure && target.protocol !== "https:") ||
 				(script && cookie.httpOnly)

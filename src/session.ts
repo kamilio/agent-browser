@@ -1,4 +1,8 @@
-import { CookieJar, type CookieLimits } from "./cookies.js";
+import {
+	CookieJar,
+	type CookieJarOptions,
+	type CookieLimits,
+} from "./cookies.js";
 import { ContentSecurityPolicy } from "./content-security-policy.js";
 import type { DocumentWebSockets } from "./document-websockets.js";
 import {
@@ -151,6 +155,7 @@ export interface BrowserSessionOptions {
 	documentLimits?: Partial<DocumentLimits>;
 	storageLimits?: Partial<StorageLimits>;
 	cookieLimits?: Partial<CookieLimits>;
+	cookiePolicy?: CookieJarOptions;
 	colorSchemePreference?: ColorSchemePreference;
 }
 
@@ -406,7 +411,24 @@ export class BrowserSession {
 					"invalid-input",
 					`Invalid session document limit: ${name}`,
 				);
-		this.cookies = new CookieJar(options.cookieLimits);
+		const cookiePolicy = Object.getOwnPropertyDescriptor(
+			options,
+			"cookiePolicy",
+		);
+		if (
+			cookiePolicy
+				? !Object.hasOwn(cookiePolicy, "value") || !cookiePolicy.enumerable
+				: "cookiePolicy" in options
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid session cookie policy",
+			);
+		this.cookies = new CookieJar(
+			options.cookieLimits,
+			Date.now,
+			cookiePolicy?.value,
+		);
 		this.storage = new BrowserStorage(
 			{
 				...options.storageLimits,

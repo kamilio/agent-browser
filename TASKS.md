@@ -67,15 +67,25 @@ default/single-option rejection controls. ASSETS25 now registers the complete
 2713574-byte vendor through the native page/public SDK at the ordinary16s cap:
 3094986 steps,3498483 peak logical data units, clean closure. Module bodies and
 meeting UI are not thereby executed. Actual React still fails the ordinary16s
-gate. A separate explicit application-v1 profile supports finite120s evaluation
+gate. The combined scheduling/accounting/regex SDK now passes1113 tests in75
+files, preserving all1055 prior passes plus58 regex controls. A separate explicit
+application-v1 profile supports finite120s evaluation
 with unchanged work/data/regex safety limits;434 native tests in14 files and
-quality checks pass. This is capability policy, not a performance improvement.
+quality checks pass. ASSETS26 initializes the unchanged React/ReactDOM bundle in
+118937ms under this explicit profile (413674 steps,573049 peak logical data,
+exports verified, clean process closure). This is slow capability, not a pass of
+the ordinary16s performance gate or combined startup/meeting readiness.
 
 The one-GET fresh-session metadata run onSeptember18 at13:55:46.939UTC returns
 HTTP200/71193 decoded bytes, with no outgoing cookies or credentials and clean
 session/transport/jar closure. It observes14 Domain-cookie rejections in the
 selected immutable core, establishing a compatibility gap, not the cause of the
-child302. Pinned-PSL domain-cookie support is now being implemented. The observed
+child302. Explicit pinned-PSL domain-cookie support and native session wiring now
+pass783 tests in10 native files with all quality checks passing. Domain state is
+explicit and old host-only state is not widened; private-suffix boundaries,
+HttpOnly/Secure/SameSite and cleanup remain enforced. CLI/process selection and
+PSL-aware redirect-taint integration remain outstanding; no live cookie-policy
+retry is claimed. See DOMAIN-COOKIES.md. The observed
 Referrer-Policy is strict-origin-when-cross-origin; conservative cookie-echo
 redaction withheld CSP values. No response body or cookie values were persisted.
 

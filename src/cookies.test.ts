@@ -1,10 +1,19 @@
-import { expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { exportBrowserState, replaceBrowserState } from "./browser-state.js";
 import {
 	type CookieContext,
 	CookieJar,
+	type CookieJarOptions,
 	cookiePathMatches,
 	cookieSameSite,
 } from "./cookies.js";
+import {
+	type PinnedPublicSuffixSnapshot,
+	createPinnedPublicSuffixSnapshot,
+} from "./pinned-public-suffix.js";
+import { StateTransfers, encodeStateChunk } from "./state-transfer.js";
+import { BrowserStorage } from "./storage.js";
 
 const url = "https://example.com/account/page";
 const context = { siteUrl: url };
@@ -357,4 +366,483 @@ it("validates contexts, limits, URLs and clock without leaking input values", ()
 	expect(() => new CookieJar({}, () => Number.NaN).metrics()).toThrow(
 		"Invalid cookie clock",
 	);
+});
+
+describe("pinned domain cookies", () => {
+	let snapshot: PinnedPublicSuffixSnapshot;
+	const jars: CookieJar[] = [];
+	const parent = "https://example.com/";
+	const child = "https://app.example.com/";
+	const sibling = "https://media.example.com/";
+	const now = Date.UTC(2026, 8, 18);
+	beforeAll(async () => {
+		snapshot = await createPinnedPublicSuffixSnapshot(
+			readFileSync(
+				new URL(
+					"../vendor/public-suffix/public_suffix_list.dat",
+					import.meta.url,
+				),
+			),
+		);
+	});
+	afterEach(() => {
+		for (const jar of jars.splice(0)) {
+			jar.close();
+			expect(jar.metrics()).toMatchObject({ closed: true, cookies: 0 });
+		}
+	});
+	function configured(
+		limits = {},
+		options: CookieJarOptions = { publicSuffixSnapshot: snapshot },
+	) {
+		const jar = new CookieJar(limits, () => now, options);
+		jars.push(jar);
+		return jar;
+	}
+
+	it("admits canonical domain scope only with the branded pinned snapshot", () => {
+		const jar = configured();
+		expect(
+			jar.setCookie(
+				child,
+				"shared=synthetic; Domain=.EXAMPLE.com; Path=/; Secure",
+				{ siteUrl: child },
+			).accepted,
+		).toBe(true);
+		for (const target of [parent, sibling, "https://deep.app.example.com/"])
+			expect(jar.cookieHeader(target, { siteUrl: child })).toBe(
+				"shared=synthetic",
+			);
+		for (const target of [
+			"https://notexample.com/",
+			"https://example.com.evil.test/",
+			"http://app.example.com/",
+		])
+			expect(jar.cookieHeader(target, { siteUrl: target })).toBe("");
+		expect(jar.exportState().cookies[0]).toMatchObject({
+			host: "example.com",
+			hostOnly: false,
+		});
+		const legacy = configured({}, {});
+		expect(
+			legacy.setCookie(child, "shared=synthetic; Domain=example.com", {
+				siteUrl: child,
+			}),
+		).toMatchObject({ reason: "domain-unsupported" });
+	});
+
+	it.each([
+		"",
+		".",
+		"..example.com",
+		"example.com.",
+		"example..com",
+		"com",
+		".com",
+		"other.com",
+		"ample.com",
+		"child.app.example.com",
+		"app.example.com.evil.test",
+		"example.com:443",
+		"user@example.com",
+		"https://example.com",
+		"example.com/",
+		"ex ample.com",
+		"example.com%00",
+		"*.example.com",
+		"-example.com",
+		"example_.com",
+		'"example.com"',
+		"127.0.0.1",
+		"0x7f000001",
+		"[::1]",
+	])("rejects malformed or out-of-scope Domain=%s", (domain) => {
+		const jar = configured();
+		expect(
+			jar.setCookie(child, `bad=synthetic; Domain=${domain}`, {
+				siteUrl: child,
+			}).accepted,
+		).toBe(false);
+		expect(jar.metrics().cookies).toBe(0);
+	});
+
+	it.each([
+		["https://127.0.0.1/", "127.0.0.1"],
+		["https://[::1]/", "[::1]"],
+		["https://foo.co.uk/", "co.uk"],
+		["https://foo.github.io/", "github.io"],
+		["https://foo.blogspot.com/", "blogspot.com"],
+		["https://a.b.ck/", "b.ck"],
+		["https://com/", "com"],
+		["https://localhost/", "localhost"],
+		["https://example.com./", "example.com"],
+	])(
+		"rejects IP, public/private suffix or rooted scope at %s",
+		(target, domain) => {
+			const jar = configured();
+			expect(
+				jar.setCookie(target, `bad=synthetic; Domain=${domain}`, {
+					siteUrl: target,
+				}).accepted,
+			).toBe(false);
+		},
+	);
+
+	it.each([
+		["https://a.www.ck/", "www.ck"],
+		["https://a.foo.github.io/", "foo.github.io"],
+		["https://a.xn--bcher-kva.de/", "xn--bcher-kva.de"],
+	])(
+		"honors PSL exceptions, tenant boundaries and canonical IDNA at %s",
+		(target, domain) => {
+			const jar = configured();
+			expect(
+				jar.setCookie(target, `good=synthetic; Domain=${domain}`, {
+					siteUrl: target,
+				}).accepted,
+			).toBe(true);
+			expect(jar.cookieHeader(`https://${domain}/`, { siteUrl: target })).toBe(
+				"good=synthetic",
+			);
+		},
+	);
+
+	it("fails closed on any invalid duplicate Domain rather than salvaging a later attribute", () => {
+		const jar = configured();
+		for (const attributes of [
+			"Domain=com; Domain=example.com",
+			"Domain=example.com; Domain=other.com",
+			"Domain=; Domain=example.com",
+		])
+			expect(
+				jar.setCookie(child, `bad=synthetic; ${attributes}`, { siteUrl: child })
+					.accepted,
+			).toBe(false);
+		expect(
+			jar.setCookie(
+				child,
+				"good=synthetic; Domain=EXAMPLE.com; Domain=.example.com",
+				{ siteUrl: child },
+			).accepted,
+		).toBe(true);
+	});
+
+	it("snapshots descriptor-validated configuration without invoking getters", () => {
+		const options: CookieJarOptions = { publicSuffixSnapshot: snapshot };
+		const jar = configured({}, options);
+		options.publicSuffixSnapshot = undefined;
+		expect(
+			jar.setCookie(child, "good=synthetic; Domain=example.com", {
+				siteUrl: child,
+			}).accepted,
+		).toBe(true);
+		const absent: CookieJarOptions = {};
+		const legacy = configured({}, absent);
+		absent.publicSuffixSnapshot = snapshot;
+		expect(
+			legacy.setCookie(child, "bad=synthetic; Domain=example.com", {
+				siteUrl: child,
+			}).accepted,
+		).toBe(false);
+		const getter = vi.fn(() => snapshot);
+		for (const invalid of [
+			null,
+			[],
+			Object.create({ publicSuffixSnapshot: snapshot }),
+			{ extra: true },
+			{ [Symbol()]: snapshot },
+			{ publicSuffixSnapshot: { ...snapshot } },
+			{ publicSuffixSnapshot: null },
+			Object.defineProperty({}, "publicSuffixSnapshot", { get: getter }),
+		])
+			expect(() => configured({}, invalid as CookieJarOptions)).toThrow();
+		expect(getter).not.toHaveBeenCalled();
+		expect(() =>
+			configured(
+				{},
+				Object.assign(Object.create(null), { publicSuffixSnapshot: snapshot }),
+			),
+		).not.toThrow();
+	});
+
+	it("extends schemeful same-site only with a branded snapshot and not across private tenants", () => {
+		expect(cookieSameSite(child, sibling)).toBe(false);
+		expect(cookieSameSite(child, sibling, snapshot)).toBe(true);
+		for (const site of [
+			"http://example.com/",
+			"https://other.com/",
+			"https://example.com.evil.test/",
+		])
+			expect(cookieSameSite(child, site, snapshot)).toBe(false);
+		expect(
+			cookieSameSite("https://a.github.io/", "https://b.github.io/", snapshot),
+		).toBe(false);
+		expect(
+			cookieSameSite("https://127.0.0.1/", "https://127.0.0.2/", snapshot),
+		).toBe(false);
+		expect(() => cookieSameSite(child, sibling, { ...snapshot })).toThrow();
+		const jar = configured();
+		expect(
+			jar.setCookie(
+				child,
+				"strict=synthetic; Domain=example.com; SameSite=Strict",
+				{ siteUrl: sibling },
+			).accepted,
+		).toBe(true);
+		expect(jar.cookieHeader(parent, { siteUrl: sibling })).toBe(
+			"strict=synthetic",
+		);
+		expect(
+			jar.cookieHeader(parent, {
+				siteUrl: sibling,
+				crossSiteRedirect: true,
+				topLevelNavigation: true,
+			}),
+		).toBe("");
+		expect(
+			jar.setDocumentCookie(
+				child,
+				"script=synthetic; Domain=example.com",
+				sibling,
+			).accepted,
+		).toBe(true);
+		expect(
+			jar.setCookie(
+				child,
+				"cross=synthetic; Domain=example.com; SameSite=Strict",
+				{ siteUrl: "https://other.com/" },
+			).accepted,
+		).toBe(false);
+	});
+
+	it("keeps host-only and domain identities, deletion, ordering and capacity separate", () => {
+		const jar = configured({ maxCookiesPerHost: 2 });
+		jar.setCookie(parent, "same=host; Path=/", { siteUrl: parent });
+		jar.setCookie(parent, "same=domain; Domain=example.com; Path=/", {
+			siteUrl: parent,
+		});
+		expect(jar.cookieHeader(parent, { siteUrl: parent })).toBe(
+			"same=host; same=domain",
+		);
+		expect(jar.cookieHeader(child, { siteUrl: child })).toBe("same=domain");
+		expect(
+			jar.setCookie(child, "extra=synthetic; Domain=example.com", {
+				siteUrl: child,
+			}),
+		).toMatchObject({ reason: "capacity" });
+		jar.setCookie(parent, "same=updated; Path=/", { siteUrl: parent });
+		expect(jar.cookieHeader(parent, { siteUrl: parent })).toBe(
+			"same=updated; same=domain",
+		);
+		jar.setCookie(parent, "same=gone; Max-Age=0; Path=/", { siteUrl: parent });
+		expect(jar.cookieHeader(child, { siteUrl: child })).toBe("same=domain");
+		jar.setCookie(child, "same=gone; Domain=example.com; Path=/; Max-Age=0", {
+			siteUrl: child,
+		});
+		expect(jar.metrics().cookies).toBe(0);
+	});
+
+	it("preserves prefixes, HttpOnly, partition rejection and overlapping secure protection", () => {
+		const jar = configured();
+		for (const header of [
+			"__Host-bad=synthetic; Secure; Path=/; Domain=app.example.com",
+			"__Secure-bad=synthetic; Domain=example.com",
+			"bad=synthetic; Domain=example.com; SameSite=None",
+			"bad=synthetic; Domain=example.com; Partitioned",
+		])
+			expect(jar.setCookie(child, header, { siteUrl: child }).accepted).toBe(
+				false,
+			);
+		jar.setCookie(
+			parent,
+			"protected=synthetic; Domain=example.com; Path=/; Secure; HttpOnly",
+			{ siteUrl: parent },
+		);
+		expect(jar.documentCookie(child, child)).toBe("");
+		expect(
+			jar.setDocumentCookie(child, "protected=script; Path=/", child),
+		).toMatchObject({ reason: "http-only" });
+		for (const target of ["http://example.com/", "http://app.example.com/"])
+			for (const scope of ["", "; Domain=example.com"])
+				expect(
+					jar.setCookie(target, `protected=overwrite; Path=/account${scope}`, {
+						siteUrl: target,
+					}),
+				).toMatchObject({ reason: "insecure" });
+		const reverse = configured();
+		reverse.setCookie(child, "protected=host; Path=/; Secure", {
+			siteUrl: child,
+		});
+		expect(
+			reverse.setCookie(
+				"http://example.com/",
+				"protected=domain; Domain=example.com; Path=/",
+				{ siteUrl: "http://example.com/" },
+			),
+		).toMatchObject({ reason: "insecure" });
+	});
+
+	it("round-trips an explicit domain marker without widening old host-only state", () => {
+		const source = configured();
+		source.setCookie(parent, "same=host; Path=/", { siteUrl: parent });
+		source.setCookie(
+			parent,
+			"same=domain; Domain=example.com; Path=/; Secure; HttpOnly",
+			{ siteUrl: parent },
+		);
+		const state = JSON.parse(JSON.stringify(source.exportState()));
+		expect(Object.hasOwn(state.cookies[0], "hostOnly")).toBe(false);
+		expect(state.cookies[1].hostOnly).toBe(false);
+		const restored = configured();
+		restored.replaceState(state);
+		expect(restored.exportState()).toEqual(source.exportState());
+		expect(restored.cookieHeader(child, { siteUrl: child })).toBe(
+			"same=domain",
+		);
+		const legacy = configured({}, {});
+		expect(() => legacy.replaceState(state)).toThrow();
+		expect(legacy.metrics().cookies).toBe(0);
+		legacy.replaceState({ schemaVersion: 1, cookies: [state.cookies[0]] });
+		expect(legacy.cookieHeader(child, { siteUrl: child })).toBe("");
+		restored.replaceState({ schemaVersion: 1, cookies: [state.cookies[0]] });
+		expect(restored.cookieHeader(child, { siteUrl: child })).toBe("");
+	});
+
+	it("rejects invalid or unenforceable state scopes atomically and without accessor evaluation", () => {
+		const jar = configured();
+		jar.setCookie(parent, "retained=synthetic; Path=/", { siteUrl: parent });
+		const before = jar.exportState();
+		const row = { ...before.cookies[0], hostOnly: false };
+		const getter = vi.fn(() => false);
+		for (const changed of [
+			{ ...row, hostOnly: true },
+			{ ...row, hostOnly: undefined },
+			{ ...row, hostOnly: "false" },
+			{ ...row, host: "com" },
+			{ ...row, host: "github.io" },
+			{ ...row, host: "127.0.0.1" },
+			{ ...row, host: ".example.com" },
+			{ ...row, host: "example.com." },
+			{ ...row, name: "__Host-bad", secure: true },
+			Object.defineProperty({ ...row }, "hostOnly", { get: getter }),
+		]) {
+			expect(() =>
+				jar.replaceState({ schemaVersion: 1, cookies: [changed] }),
+			).toThrow();
+			expect(jar.exportState()).toEqual(before);
+		}
+		expect(getter).not.toHaveBeenCalled();
+		expect(() =>
+			jar.replaceState({ schemaVersion: 1, cookies: [row, { ...row }] }),
+		).toThrow();
+	});
+
+	it("retains path priority, header/global limits and domain expiry", () => {
+		let clock = now;
+		const jar = new CookieJar(
+			{ maxCookies: 2, maxHeaderBytes: 64 },
+			() => clock,
+			{ publicSuffixSnapshot: snapshot },
+		);
+		jars.push(jar);
+		jar.setCookie(parent, "same=root; Domain=example.com; Path=/; Max-Age=1", {
+			siteUrl: parent,
+		});
+		jar.setCookie(child, "same=deep; Domain=example.com; Path=/account", {
+			siteUrl: child,
+		});
+		expect(jar.cookieHeader(`${sibling}account/page`, { siteUrl: child })).toBe(
+			"same=deep; same=root",
+		);
+		expect(jar.cookieHeader(`${sibling}accounts`, { siteUrl: child })).toBe(
+			"same=root",
+		);
+		expect(
+			jar.setCookie("https://other.com/", "extra=synthetic", {
+				siteUrl: "https://other.com/",
+			}),
+		).toMatchObject({ reason: "capacity" });
+		clock += 1000;
+		expect(jar.cookieHeader(sibling, { siteUrl: sibling })).toBe("");
+		expect(jar.metrics().cookies).toBe(1);
+		const bounded = configured({ maxHeaderBytes: 3 });
+		bounded.setCookie(child, "large=synthetic; Domain=example.com", {
+			siteUrl: child,
+		});
+		expect(() => bounded.cookieHeader(parent, { siteUrl: parent })).toThrow(
+			"Cookie header limit",
+		);
+		const restored = configured({ maxCookiesPerHost: 1 });
+		const entry = jar.exportState().cookies[0];
+		expect(() =>
+			restored.replaceState({
+				schemaVersion: 1,
+				cookies: [entry, { ...entry, name: "other" }],
+			}),
+		).toThrow("per-host limit");
+		expect(restored.metrics().cookies).toBe(0);
+	});
+
+	it("state consumers reject domain scope without policy and preserve it with policy", () => {
+		const source = configured();
+		source.setCookie(child, "shared=synthetic; Domain=example.com; Path=/", {
+			siteUrl: child,
+		});
+		const storage = new BrowserStorage();
+		const transfers = new StateTransfers();
+		const owners = [
+			{ cookies: configured({}, {}), storage },
+			{ cookies: configured(), storage },
+		];
+		try {
+			const state = { ...source.exportState(), origins: [] };
+			const previous = exportBrowserState(owners[0]);
+			expect(() => replaceBrowserState(owners[0], state)).toThrow();
+			expect(exportBrowserState(owners[0])).toEqual(previous);
+			const bytes = new TextEncoder().encode(JSON.stringify(state));
+			for (const [index, owner] of owners.entries()) {
+				const transfer = transfers.begin(owner, bytes.length);
+				transfers.append(owner, transfer.id, 0, encodeStateChunk(bytes));
+				if (index === 0)
+					expect(() => transfers.commit(owner, transfer.id)).toThrow();
+				else expect(transfers.commit(owner, transfer.id).loaded).toBe(true);
+				expect(transfers.metrics()).toMatchObject({ transfers: 0, bytes: 0 });
+			}
+			expect(
+				owners[0].cookies.cookieHeader(sibling, { siteUrl: sibling }),
+			).toBe("");
+			expect(
+				owners[1].cookies.cookieHeader(sibling, { siteUrl: sibling }),
+			).toBe("shared=synthetic");
+		} finally {
+			for (const owner of owners) transfers.clear(owner);
+			storage.close();
+		}
+	});
+
+	it("does not cross a nested private suffix through a registrable ancestor", () => {
+		const jar = configured();
+		const tenant = "https://bucket.s3.amazonaws.com/";
+		const ancestor = "https://amazonaws.com/";
+		expect(
+			jar.setCookie(
+				tenant,
+				"upward=synthetic; Domain=amazonaws.com; Secure; SameSite=None",
+				{ siteUrl: tenant },
+			).accepted,
+		).toBe(false);
+		expect(
+			jar.setCookie(
+				ancestor,
+				"downward=synthetic; Domain=amazonaws.com; Secure; SameSite=None",
+				{ siteUrl: ancestor },
+			).accepted,
+		).toBe(true);
+		expect(jar.cookieHeader(tenant, { siteUrl: tenant })).toBe("");
+		expect(
+			jar.cookieHeader("https://ordinary.amazonaws.com/", {
+				siteUrl: ancestor,
+			}),
+		).toBe("downward=synthetic");
+	});
 });
