@@ -69,25 +69,44 @@ it("explicitly admits bounded application initialization with only a longer time
 	expect(Object.isFrozen(limits)).toBe(true);
 });
 
-it.each(["bounded-v1", "large-source-v1", "application-v1"])(
-	"keeps every %s ceiling finite and rejects one unit above it",
-	(profile) => {
-		const ceilings: ScriptLimits = {
-			maxSourceCodeUnits: 4_194_304,
-			maxSteps: profile === "bounded-v1" ? 1_600_000 : 16_000_000,
-			maxCallDepth: 1024,
-			maxStringLength: 4_194_304,
-			maxArrayLength: 262_144,
-			maxDataSize: 16_777_216,
-			timeoutMs: profile === "application-v1" ? 120_000 : 16_000,
-			maxRuns: 2048,
-			maxResultBytes: 1_048_576,
-		};
-		expect(select(ceilings, profile)).toEqual(ceilings);
-		for (const [key, value] of Object.entries(ceilings))
-			expect(() => select({ [key]: value + 1 }, profile)).toThrow(/limit/);
-	},
-);
+it("admits Unicode application compilation without changing other application limits", () => {
+	expect(select({}, "application-unicode-v1")).toEqual(
+		select({}, "application-v1"),
+	);
+	expect(Object.isFrozen(select({}, "application-unicode-v1"))).toBe(true);
+	expect(
+		select({ timeoutMs: 2000, maxSteps: 3000 }, "application-unicode-v1"),
+	).toEqual({
+		...select({}, "application-v1"),
+		timeoutMs: 2000,
+		maxSteps: 3000,
+	});
+});
+
+it.each([
+	"bounded-v1",
+	"large-source-v1",
+	"application-v1",
+	"application-unicode-v1",
+])("keeps every %s ceiling finite and rejects one unit above it", (profile) => {
+	const ceilings: ScriptLimits = {
+		maxSourceCodeUnits: 4_194_304,
+		maxSteps: profile === "bounded-v1" ? 1_600_000 : 16_000_000,
+		maxCallDepth: 1024,
+		maxStringLength: 4_194_304,
+		maxArrayLength: 262_144,
+		maxDataSize: 16_777_216,
+		timeoutMs:
+			profile === "application-v1" || profile === "application-unicode-v1"
+				? 120_000
+				: 16_000,
+		maxRuns: 2048,
+		maxResultBytes: 1_048_576,
+	};
+	expect(select(ceilings, profile)).toEqual(ceilings);
+	for (const [key, value] of Object.entries(ceilings))
+		expect(() => select({ [key]: value + 1 }, profile)).toThrow(/limit/);
+});
 
 it("snapshots smaller application overrides without mutating any profile", () => {
 	const overrides: ScriptLimits = {
@@ -150,6 +169,11 @@ it.each([
 	{ profile: "bounded-v1", limits: {} },
 	{ profile: "large-source-v1", limits: { maxSteps: 3_000_000 } },
 	{ profile: "application-v1", limits: {} },
+	{ profile: "application-unicode-v1", limits: {} },
+	{
+		profile: "application-unicode-v1",
+		limits: { maxSteps: 3000, timeoutMs: 2000 },
+	},
 	{
 		profile: "application-v1",
 		limits: { maxSteps: 3_000_000, timeoutMs: 2000 },
@@ -196,9 +220,16 @@ it.each([
 		);
 		expect(received?.limits).toBe(scripts.limits);
 		expect(received?.limits).toEqual(select(limits, profile));
-		if (profile === "large-source-v1" || profile === "application-v1") {
+		if (
+			profile === "large-source-v1" ||
+			profile === "application-v1" ||
+			profile === "application-unicode-v1"
+		) {
 			expect(received).toHaveProperty("regexSourceLength", 8192);
-			expect(received).toHaveProperty("regexCompileAllocations", 32768);
+			expect(received).toHaveProperty(
+				"regexCompileAllocations",
+				profile === "application-unicode-v1" ? 65536 : 32768,
+			);
 		} else {
 			expect(received).not.toHaveProperty("regexSourceLength");
 			expect(received).not.toHaveProperty("regexCompileAllocations");

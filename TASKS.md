@@ -12,6 +12,17 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September18: exact-literal SDK diagnostics reproduce32k failure and demonstrate
+65,536 compilation units are sufficient, with all source/data/step/matcher/depth
+guards active and seven realms closed. New opt-in application-unicode-v1 now
+passes5096/122 native tests (core50), build/types/format0; baseline ranges lint
+remains. Existing profiles/caps are unchanged; source allowance stays8192.
+The new profile passes all nine actual native/runtime cases in12.636s, including
+the original eight Event cases and the exact Unicode literal's11 checks. Full
+closure holds; parent verifies7095 input pins/25 execution artifacts. One fresh
+live load is released with the explicit new profile and all other limits intact.
+See `SCRIPT-BUDGET-PROFILES.md`. Overall Zoom acceptance remains OPEN.
+
 September18,23:09UTC: the one network retry receives Zoom and executes16 scripts.
 Script17 now fails later at a7978-byte Unicode regexp: SDK compile allocation
 quota34722>32768, labeled dataSize. The original createEvent failure and initial

@@ -158,8 +158,13 @@ export class PageScripts {
 					? {}
 					: { stringCompilation: this.scriptPolicy.stringCompilation }),
 				...(budgetProfile === "large-source-v1" ||
-				budgetProfile === "application-v1"
-					? { regexSourceLength: 8192, regexCompileAllocations: 32768 }
+				budgetProfile === "application-v1" ||
+				budgetProfile === "application-unicode-v1"
+					? {
+							regexSourceLength: 8192,
+							regexCompileAllocations:
+								budgetProfile === "application-unicode-v1" ? 65536 : 32768,
+						}
 					: {}),
 				...(existingDocumentWebSockets(page.document) ||
 				xmlHttpRequests ||

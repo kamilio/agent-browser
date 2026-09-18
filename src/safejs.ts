@@ -59,7 +59,8 @@ export interface ScriptLimits {
 export type ScriptBudgetProfile =
 	| "bounded-v1"
 	| "large-source-v1"
-	| "application-v1";
+	| "application-v1"
+	| "application-unicode-v1";
 
 const defaults: ScriptLimits = {
 	maxSourceCodeUnits: 262_144,
@@ -96,18 +97,20 @@ export function scriptLimits(
 	if (
 		profile !== "bounded-v1" &&
 		profile !== "large-source-v1" &&
-		profile !== "application-v1"
+		profile !== "application-v1" &&
+		profile !== "application-unicode-v1"
 	)
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Invalid script budget profile",
 		);
-	const profileDefaults =
-		profile === "application-v1"
-			? applicationDefaults
-			: profile === "large-source-v1"
-				? largeSourceDefaults
-				: defaults;
+	const application =
+		profile === "application-v1" || profile === "application-unicode-v1";
+	const profileDefaults = application
+		? applicationDefaults
+		: profile === "large-source-v1"
+			? largeSourceDefaults
+			: defaults;
 	const limits = Object.freeze({
 		...profileDefaults,
 		...overrides,
@@ -116,7 +119,7 @@ export function scriptLimits(
 		let ceiling = defaults[key] * 16;
 		if (profile !== "bounded-v1" && key === "maxSteps")
 			ceiling = largeSourceDefaults.maxSteps;
-		if (profile === "application-v1" && key === "timeoutMs")
+		if (application && key === "timeoutMs")
 			ceiling = applicationDefaults.timeoutMs;
 		if (
 			!Number.isSafeInteger(limits[key]) ||

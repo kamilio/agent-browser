@@ -70,7 +70,7 @@ not replace the child CommandHost's independent default30000ms timeout.
 ## CLI selection
 
 `AGENT_BROWSER_SCRIPT_BUDGET_PROFILE` accepts `bounded-v1`, `large-source-v1`
-or `application-v1`. It requires an explicit `AGENT_BROWSER_SAFEJS_ROOT` and
+`application-v1`, or `application-unicode-v1`. It requires an explicit `AGENT_BROWSER_SAFEJS_ROOT` and
 `AGENT_BROWSER_PAGE_RUNTIME=extension`; it does not enable website scripting.
 Reader mode conflicts with explicit script profile or command-timeout selection.
 
@@ -157,3 +157,49 @@ CSP/CORS, redirects, cancellation and shared request counting remain enforced.
 The observed Zoom join page exceeds the old16-external-script session ceiling.
 The configurable path passes2523 selected native tests in54 files with build,
 types, format and lint checks. This is not a live Zoom loader acceptance gate.
+
+## Explicit Unicode application compilation
+
+`application-unicode-v1` is a new opt-in profile for large Unicode character
+patterns. It preserves every `application-v1` default, override and ceiling,
+except that it requests65,536 per-pattern regex compilation allocation units.
+The regex-source allowance remains8,192. Existing `bounded-v1`, `large-source-v1`
+and `application-v1` behavior is unchanged; in particular the latter two still
+request32,768 compilation units. No default is silently raised.
+
+```ts
+const scripts = new PageScripts(page, runtime, {
+  budgetProfile: "application-unicode-v1",
+});
+```
+
+The environment selector also accepts
+`AGENT_BROWSER_SCRIPT_BUDGET_PROFILE=application-unicode-v1`, retaining the
+explicit SDK-root and extension-runtime requirements. It neither enables
+scripting nor changes command, heartbeat, heap, network, loader or output limits.
+Source/owner-data/steps/depth/deadline and regex matching guards remain active.
+A supporting public SDK is required; the validated package remains experimental.
+
+Motivation: Zoom's captured script17 reaches a7,978-byte Unicode regexp literal
+and fails the separate compilation quota at34,722>32,768. The SDK labels this
+failure `dataSize`; it is not exhaustion of the16MiB whole-application allowance.
+A private exact-fragment diagnostic reproduces the failure at32,768 and compiles
+and runs11 fixed matching checks at65,536. The latter is the smallest tested
+sufficient quota, not an exact minimum. Lower source, owner-data and step caps,
+matcher repeat and regex nesting controls still reject, and all seven realms
+close with no retained data. No SDK source or matcher is changed.
+
+Evidence: `/tmp/agent-browser-zoom-regex-quota-gIuH0u/HANDOFF.md`.
+The fragment diagnostic does not run the remaining publisher bundle or website.
+Core50 passes5,096 native tests across122 explicit files in51.925 seconds;
+build/types/format pass, with only the pre-existing ScriptDom.ranges lint finding.
+The failure-first native profile selection retains44 pass/4 fail. Source/build:
+`/tmp/agent-browser-event-union13-duJvuD/candidate`.
+All nine actual native/runtime cases pass in12.636 seconds: the original eight
+Event scenarios plus the exact Unicode literal and11 matching checks, with full
+observed closure. The selected profile is explicit, and the synthetic harness
+retains its existing smaller execution bounds. Parent verifies7,095 inputs and
+25 execution artifacts; the final55-file seal is retained at
+`/tmp/agent-browser-unicode-profile-actual-september18-FnUo0Z/HANDOFF.md`.
+A fresh live load with the new profile is released. No usable Zoom UI, admission,
+audio or notetaking is claimed by these synthetic results.

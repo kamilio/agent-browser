@@ -579,15 +579,26 @@ it("rejects a getter or inherited SDK echo for a page-only requirement", async (
 	expect(getter).not.toHaveBeenCalled();
 });
 
-it.each([undefined, "bounded-v1", "large-source-v1"] as const)(
-	"requests larger regex compilation only for explicit large-source profile %s",
+it.each([
+	undefined,
+	"bounded-v1",
+	"large-source-v1",
+	"application-v1",
+	"application-unicode-v1",
+] as const)(
+	"requests exactly the regex compilation quota selected by profile %s",
 	(budgetProfile) => {
 		const test = fixture(fakeCore(), 1000, {}, { budgetProfile });
-		if (budgetProfile === "large-source-v1")
+		if (
+			budgetProfile === "large-source-v1" ||
+			budgetProfile === "application-v1" ||
+			budgetProfile === "application-unicode-v1"
+		)
 			expect(test.budgetOptions[0]).toMatchObject({
 				maxSteps: 16_000_000,
 				regexSourceLength: 8192,
-				regexCompileAllocations: 32768,
+				regexCompileAllocations:
+					budgetProfile === "application-unicode-v1" ? 65536 : 32768,
 			});
 		else {
 			expect(test.budgetOptions[0]).not.toHaveProperty("regexSourceLength");

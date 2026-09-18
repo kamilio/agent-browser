@@ -104,7 +104,12 @@ it("keeps absent selections empty and immutable without requiring an SDK", async
 	}
 });
 
-it.each(["bounded-v1", "large-source-v1", "application-v1"])(
+it.each([
+	"bounded-v1",
+	"large-source-v1",
+	"application-v1",
+	"application-unicode-v1",
+])(
 	"selects %s without enabling scripting or raising any watchdog",
 	async (budgetProfile) => {
 		const { scriptProfileFromEnvironment } = await import(
