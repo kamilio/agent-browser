@@ -19,14 +19,35 @@ document.defaultView and idle timer identity now have runtime evidence.
 This is not a meeting join or a complete SDK/browser gate. Captured React
 externals still exceed the native deadline; a CPU profile identifies retained
 graph accounting as the dominant cost. Immediate source after a controlled
-event callback still hits SDK re-entry. Scheduler-only tests have157 passes and
-4 failures; combined SDK repairs and sound accounting optimization are active.
+event callback originally hit SDK re-entry. The explicit after-prefix adapter
+option now passes five actual SDK/native window contracts, including immediate
+source after callback dispatch. Scheduler-only tests retain157 passes and4
+failures; combined SDK repairs and sound accounting optimization are active.
+
+Final native script loading/property/state and scheduling-option integration
+passes401 tests in17 files. Seven actual SDK/native cases also pass, including
+out-of-order fetch completion with async=false execution ordering, the captured
+Zoom Webpack chunk, and real script load callback identity. Build, typecheck and
+format pass; whole-file ScriptDom lint retains its independently reproduced
+pre-existing noAssignInExpressions finding. All nine captured inline startup
+scripts execute successfully with
+fresh empty native cookie/storage bindings; a separate DOMContentLoaded plus
+3.5-second timer diagnostic also passes. These are bounded offline capability
+checks, not a CSP-preserving navigation or proof of loaded external bundles.
+The captured main bundle is a PWA shell hosting the actual meeting in a child
+iframe; faithful child-URL derivation is now on the critical path. React runtime
+performance, dynamic ordered loading, full CSP enforcement, child execution and
+incoming media decoding remain open. No meeting admission or audio succeeded.
 
 The native browser fetched the missing main.js on September18 at12:14:14.901UTC:
 HTTP200,843255 JavaScript bytes. The vendors request stopped at the existing
 2000000-byte decoded limit; retain that failure and use only a separately proved,
-explicit larger admission for any next request. Dynamic script loading and the
-actual loader's async=false/property-reflection path are being implemented.
+explicit larger admission for any next request. A separately proved4M request
+returns HTTP200/2713574 JavaScript bytes at13:04:42.311UTC. The source-derived
+meeting iframe URL returns302 back to the PWA route at13:04:41.821UTC; no redirect
+was followed. Preserve this result, investigate the real client-selection
+prerequisite, and do not claim the child was captured. Dynamic loading and the
+async=false/property-reflection path now have the scoped checks described above.
 See CLASSIC-PAGE-GLOBALS.md. Preserve all failed harness/runtime attempts,
 including the initial missing-root-tsconfig failure and the separate longer
 diagnostic that did not complete React initialization. JSON command work stays

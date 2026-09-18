@@ -1,4 +1,7 @@
 [
+	"src/script-loader-dynamic.test.ts",
+	"src/script-element-state.test.ts",
+	"src/script-element-properties.test.ts",
 	"src/script-dom-window.test.ts",
 	"src/page-window-global.test.ts",
 	"src/extraction-page.test.ts",

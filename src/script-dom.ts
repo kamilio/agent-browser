@@ -80,6 +80,8 @@ import { scriptMutationMethods } from "./script-mutations.js";
 import { scriptSelectBindings } from "./script-select.js";
 import type { ScriptStorage } from "./script-storage.js";
 import { scriptUrlProperties } from "./script-urls.js";
+import { scriptElementProperties } from "./script-element-properties.js";
+import { initializeScriptElement } from "./script-element-state.js";
 import { DocumentQueries } from "./selectors.js";
 import { documentHitTesting, type DocumentHitTesting } from "./hit-testing.js";
 
@@ -704,7 +706,10 @@ export class ScriptDom {
 				},
 				createElement: (name: unknown) => {
 					this.read(id);
-					return this.node(this.tree.createElement(domString(name)));
+					const created = this.tree.createElement(domString(name));
+					if (isHtmlElement(this.tree.get(created), "script"))
+						initializeScriptElement(this.tree, created, "dynamic");
+					return this.node(created);
 				},
 				createTextNode: (data: unknown) => {
 					this.read(id);
@@ -815,6 +820,29 @@ export class ScriptDom {
 					this.read(id);
 					return images.decode(id);
 				};
+				if (this.eventBindings)
+					for (const type of ["load", "error"])
+						definition.properties[`on${type}`] = {
+							get: () => {
+								this.read(id);
+								return this.eventBindings?.getHandler(id, type);
+							},
+							set: (value) => {
+								this.read(id);
+								this.eventBindings?.setHandler(id, type, value);
+							},
+						};
+			}
+			if (isHtmlElement(initial, "script")) {
+				Object.assign(
+					definition.properties,
+					scriptElementProperties(
+						this.tree,
+						id,
+						() => this.read(id),
+						domString,
+					),
+				);
 				if (this.eventBindings)
 					for (const type of ["load", "error"])
 						definition.properties[`on${type}`] = {

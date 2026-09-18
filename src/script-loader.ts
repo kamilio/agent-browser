@@ -5,7 +5,8 @@ import {
 import { documentBaseUrl } from "./document-url.js";
 import { documentImages } from "./document-images.js";
 import { withDocumentWrite } from "./document-write.js";
-import type { DocumentTree } from "./document.js";
+import type { DocumentMutation, DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { hasUnsupportedExecutionCsp } from "./execution-content-security-policy.js";
 import { BrowserEvent } from "./events.js";
@@ -20,6 +21,12 @@ import {
 } from "./network.js";
 import type { ScriptEvaluation } from "./safejs.js";
 import type { ScriptFetchPolicy, ScriptFetchResult } from "./script-fetch.js";
+import {
+	initializeScriptElement,
+	markScriptElementStarted,
+	scriptElementAsync,
+	scriptElementState,
+} from "./script-element-state.js";
 import {
 	parseIntegrityMetadata,
 	verifyIntegrityMetadata,
@@ -59,7 +66,10 @@ interface Source {
 type PreparedScript =
 	| { mode: "skip" }
 	| { mode: "inline"; source: Source }
-	| { mode: "blocking" | "async" | "defer"; source: Promise<Source> };
+	| {
+			mode: "blocking" | "async" | "defer" | "ordered";
+			source: Promise<Source>;
+	  };
 
 const javascriptTypes = new Set([
 	"application/ecmascript",
@@ -100,11 +110,16 @@ export class ScriptLoader implements HtmlScriptHooks {
 	private readonly asynchronous: Promise<void>[] = [];
 	private readonly fetchWaiters: (() => void)[] = [];
 	private readonly prepared = new Map<number, PreparedScript>();
+	private readonly started = new Set<number>();
+	private readonly dynamic = new Set<Promise<void>>();
+	private unsubscribeMutations?: () => void;
+	private parserDepth = 0;
 	private readonly moduleResults = new Map<string, { error?: string }>();
 	private modules = false;
 	private activeFetches = 0;
 	private parsingFinished = false;
 	private tail = Promise.resolve();
+	private ordered = Promise.resolve();
 	private csp = false;
 	private readonly counts = {
 		mode: "classic" as ScriptLoadReport["mode"],
@@ -121,8 +136,21 @@ export class ScriptLoader implements HtmlScriptHooks {
 	};
 	private readonly abort = () => {
 		this.controller.abort();
+		this.unsubscribeMutations?.();
+		this.unsubscribeMutations = undefined;
+		this.options.signal.removeEventListener("abort", this.abort);
+		this.fetchWaiters.length = 0;
+		this.deferred.length = 0;
+		this.asynchronous.length = 0;
+		this.dynamic.clear();
+		this.ordered = Promise.resolve();
+		this.started.clear();
 		this.prepared.clear();
 		this.moduleResults.clear();
+		if (this.tree && !this.tree.mutationMetrics().closed)
+			updateDocumentScriptState(this.tree, { currentScript: null });
+		this.tree = undefined;
+		this.runner = undefined;
 	};
 
 	constructor(
@@ -200,6 +228,9 @@ export class ScriptLoader implements HtmlScriptHooks {
 			this.runner.supportsHtmlModules === true &&
 			typeof this.runner.prepareModule === "function";
 		if (this.modules) this.counts.mode = "classic-and-module";
+		this.unsubscribeMutations = tree.onMutation((record) =>
+			this.mutation(record),
+		);
 		this.publish();
 	}
 
@@ -214,8 +245,93 @@ export class ScriptLoader implements HtmlScriptHooks {
 
 	runParser(step: () => void): Promise<void> {
 		return this.enqueue(async () => {
-			step();
+			this.parserStep(step);
 		});
+	}
+	private parserStep(step: () => void) {
+		this.parserDepth++;
+		try {
+			step();
+		} finally {
+			this.parserDepth--;
+		}
+	}
+
+	private mutation(record: DocumentMutation) {
+		const tree = this.tree;
+		if (!tree || this.controller.signal.aborted) return;
+		if (this.parserDepth) {
+			for (const id of record.addedNodes)
+				for (const { node } of tree.walk(id))
+					if (
+						isHtmlElement(node, "script") &&
+						scriptElementState(tree, node.id).origin === "unknown"
+					)
+						initializeScriptElement(tree, node.id, "parser");
+			return;
+		}
+		if (record.type === "attributes") {
+			if (record.attributeName === "src" && record.attributeNamespace === null)
+				this.inserted(record.target);
+			return;
+		}
+		if (record.type === "characterData") {
+			const parent = tree.get(record.target).parent;
+			if (parent !== null) this.inserted(parent);
+			return;
+		}
+		this.inserted(record.target);
+		for (const id of record.addedNodes) {
+			if (!tree.isConnected(id)) continue;
+			for (const { node } of tree.walk(id)) this.inserted(node.id);
+		}
+	}
+
+	private inserted(id: number) {
+		const tree = this.tree;
+		if (!tree || this.started.has(id) || !tree.isConnected(id)) return;
+		const node = tree.get(id);
+		if (!isHtmlElement(node, "script")) return;
+		const state = scriptElementState(tree, id);
+		if (state.alreadyStarted || state.origin === "parser") return;
+		if (!Object.hasOwn(node.attributes, "src") && !tree.textContent(id).trim())
+			return;
+		if (this.options.signal.aborted) {
+			this.abort();
+			return;
+		}
+		this.options.signal.addEventListener("abort", this.abort, { once: true });
+		const prepared = this.prepare(tree, id, true);
+		if (prepared.mode === "skip") {
+			this.releaseAbort();
+			return;
+		}
+		const execution =
+			prepared.mode === "inline"
+				? this.enqueue(() => this.execute(prepared.source))
+				: prepared.mode === "ordered"
+					? this.enqueueOrdered(prepared.source)
+					: this.enqueueSource(prepared.source);
+		this.dynamic.add(execution);
+		const complete = () => {
+			this.dynamic.delete(execution);
+			this.releaseAbort();
+		};
+		void execution.then(complete, complete);
+	}
+
+	private releaseAbort() {
+		if (this.counts.complete && !this.dynamic.size)
+			this.options.signal.removeEventListener("abort", this.abort);
+	}
+
+	async settle() {
+		this.live();
+		do {
+			await this.awaitOperation(Promise.all([...this.dynamic]));
+			await this.tail;
+			this.live();
+		} while (this.dynamic.size);
 	}
 	async parsed(tree: DocumentTree) {
 		if (this.parsingFinished) return;
@@ -260,13 +376,25 @@ export class ScriptLoader implements HtmlScriptHooks {
 		this.publish();
 	}
 
-	private prepare(tree: DocumentTree, id: number): PreparedScript {
+	private prepare(
+		tree: DocumentTree,
+		id: number,
+		dynamic = false,
+	): PreparedScript {
 		this.live();
 		if (tree !== this.tree)
 			throw new AgentBrowserError(
 				"invalid-input",
 				"Script loader document mismatch",
 			);
+		if (this.started.has(id)) return { mode: "skip" };
+		let state = scriptElementState(tree, id);
+		if (!dynamic && state.origin === "unknown") {
+			initializeScriptElement(tree, id, "parser");
+			state = scriptElementState(tree, id);
+		}
+		if (state.alreadyStarted) return { mode: "skip" };
+		this.started.add(id);
 		this.counts.discovered++;
 		if (this.counts.discovered > this.maxScripts) {
 			this.counts.halted = true;
@@ -278,10 +406,17 @@ export class ScriptLoader implements HtmlScriptHooks {
 			this.skip("realm-halted");
 			return { mode: "skip" };
 		}
+		if (state.origin === "unknown" || state.origin === "inert") {
+			this.skip(
+				state.origin === "unknown" ? "unknown-script-origin" : "inert-script",
+			);
+			return { mode: "skip" };
+		}
+		markScriptElementStarted(tree, id);
 		const node = tree.get(id);
 		const attributes = node.attributes;
 		const type = scriptType(attributes);
-		const module = type === "module" && this.modules;
+		const module = type === "module" && this.modules && !dynamic;
 		if (type && !javascriptTypes.has(type) && !module) {
 			this.skip(
 				["module", "importmap", "speculationrules"].includes(type)
@@ -338,6 +473,15 @@ export class ScriptLoader implements HtmlScriptHooks {
 			return { mode: "skip" };
 		}
 		const crossorigin = attributes.crossorigin;
+		const mode = dynamic
+			? scriptElementAsync(tree, id)
+				? "async"
+				: "ordered"
+			: Object.hasOwn(attributes, "async")
+				? "async"
+				: Object.hasOwn(attributes, "defer")
+					? "defer"
+					: "blocking";
 		const source = this.fetchSource(
 			id,
 			attributes.src,
@@ -356,15 +500,11 @@ export class ScriptLoader implements HtmlScriptHooks {
 					}
 				: undefined,
 		);
-		const mode = Object.hasOwn(attributes, "async")
-			? "async"
-			: Object.hasOwn(attributes, "defer")
-				? "defer"
-				: "blocking";
 		return { mode, source };
 	}
 
 	async finish(tree: DocumentTree) {
+		this.live();
 		if (tree !== this.tree)
 			throw new AgentBrowserError(
 				"invalid-input",
@@ -376,6 +516,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 			await this.enqueue(() => this.event(tree.root, "DOMContentLoaded", true));
 			await Promise.all(this.asynchronous);
 			await documentImages(tree).settle(this.controller.signal);
+			await this.settle();
 			await this.enqueue(async () => {
 				updateDocumentScriptState(tree, { readyState: "complete" });
 				await this.event(tree.root, "readystatechange");
@@ -385,7 +526,8 @@ export class ScriptLoader implements HtmlScriptHooks {
 			this.counts.complete = true;
 			this.publish();
 		} finally {
-			this.options.signal.removeEventListener("abort", this.abort);
+			if (!this.dynamic.size)
+				this.options.signal.removeEventListener("abort", this.abort);
 			this.deferred.length = 0;
 			this.asynchronous.length = 0;
 			this.prepared.clear();
@@ -411,7 +553,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 					"unsupported",
 					"Module preparation unavailable",
 				);
-			const prepared = await this.awaitModule(
+			const prepared = await this.awaitOperation(
 				this.runner.prepareModule({
 					id: url,
 					...(external ? {} : { source: tree.textContent(id) }),
@@ -446,7 +588,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 		}
 	}
 
-	private awaitModule<Value>(operation: Promise<Value>): Promise<Value> {
+	private awaitOperation<Value>(operation: Promise<Value>): Promise<Value> {
 		const signal = this.controller.signal;
 		return new Promise((resolve, reject) => {
 			const cancel = () =>
@@ -477,9 +619,14 @@ export class ScriptLoader implements HtmlScriptHooks {
 	): Promise<Source> {
 		let url = this.options.response.url;
 		const baseUrl = this.tree ? documentBaseUrl(this.tree) : url;
-		if (this.activeFetches < 4) this.activeFetches++;
-		else await new Promise<void>((resolve) => this.fetchWaiters.push(resolve));
+		let acquired = false;
 		try {
+			if (this.activeFetches < 4) this.activeFetches++;
+			else
+				await this.awaitOperation(
+					new Promise<void>((resolve) => this.fetchWaiters.push(resolve)),
+				);
+			acquired = true;
 			this.live();
 			if (!value.trim() || !this.tree)
 				throw new AgentBrowserError("invalid-input", "Missing script URL");
@@ -502,10 +649,12 @@ export class ScriptLoader implements HtmlScriptHooks {
 						"unsupported",
 						"Script policy fetch is unavailable",
 					);
-				const result = await this.options.fetchWithPolicy(
-					url,
-					selection.policy,
-					this.controller.signal,
+				const result = await this.awaitOperation(
+					this.options.fetchWithPolicy(
+						url,
+						selection.policy,
+						this.controller.signal,
+					),
 				);
 				this.live();
 				if (
@@ -518,24 +667,24 @@ export class ScriptLoader implements HtmlScriptHooks {
 						"Script policy response is not eligible",
 					);
 				response = result.response;
-				const finalUrl = parseNetworkUrl(response.url);
-				if (
-					new URL(this.tree.url).protocol === "https:" &&
-					finalUrl.protocol !== "https:"
-				)
-					throw new AgentBrowserError(
-						"policy-denied",
-						"Mixed-content script response blocked",
-					);
 			} else {
 				if (!this.options.fetch)
 					throw new AgentBrowserError(
 						"unsupported",
 						"Script fetch is unavailable",
 					);
-				response = await this.options.fetch(url);
+				response = await this.awaitOperation(this.options.fetch(url));
 			}
 			this.live();
+			const finalUrl = parseNetworkUrl(response.url);
+			if (
+				new URL(this.tree.url).protocol === "https:" &&
+				finalUrl.protocol !== "https:"
+			)
+				throw new AgentBrowserError(
+					"policy-denied",
+					"Mixed-content script response blocked",
+				);
 			if (response.status < 200 || response.status >= 300)
 				throw new AgentBrowserError("network-error", "Script response failed");
 			const types = response.headers["content-type"];
@@ -572,10 +721,21 @@ export class ScriptLoader implements HtmlScriptHooks {
 					error instanceof AgentBrowserError ? error.code : "network-error",
 			};
 		} finally {
-			const next = this.fetchWaiters.shift();
-			if (next) next();
-			else this.activeFetches--;
+			if (acquired) {
+				const next = this.fetchWaiters.shift();
+				if (next) next();
+				else this.activeFetches--;
+			}
 		}
+	}
+
+	private enqueueOrdered(source: Promise<Source>): Promise<void> {
+		const execution = this.ordered.then(() => {
+			this.live();
+			return this.enqueueSource(source);
+		});
+		this.ordered = execution.catch(() => undefined);
+		return execution;
 	}
 
 	private async enqueueSource(
@@ -634,17 +794,25 @@ export class ScriptLoader implements HtmlScriptHooks {
 		this.counts.sourceBytes += bytes;
 		if (source.module) return this.executeModule(source, text);
 		const runner = this.runner;
-		return withDocumentWrite(tree, context, async () => {
+		const writer = context
+			? { write: (text: string) => this.parserStep(() => context.write(text)) }
+			: undefined;
+		return withDocumentWrite(tree, writer, async () => {
+			let succeeded = false;
 			updateDocumentScriptState(tree, { currentScript: source.id });
 			try {
-				const result = await runner.evaluate(text, {
-					signal: this.controller.signal,
-					filename: source.url,
-					discardResult: true,
-				});
+				const result = await this.awaitOperation(
+					runner.evaluate(text, {
+						signal: this.controller.signal,
+						filename: source.url,
+						discardResult: true,
+					}),
+				);
 				this.live();
-				if (result.ok) this.counts.executed++;
-				else {
+				if (result.ok) {
+					succeeded = true;
+					this.counts.executed++;
+				} else {
 					this.counts.failed++;
 					this.counts.halted = true;
 					this.issue(`execution-${result.error?.code ?? "failed"}`);
@@ -664,7 +832,13 @@ export class ScriptLoader implements HtmlScriptHooks {
 					this.publish();
 				}
 			}
-			if (source.external) await this.event(source.id, "load");
+			if (source.external)
+				await this.event(
+					source.id,
+					succeeded ? "load" : "error",
+					false,
+					!succeeded,
+				);
 		});
 	}
 
@@ -676,7 +850,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 		const outcome: { error?: string } = {};
 		updateDocumentScriptState(tree, { currentScript: null });
 		try {
-			const result = await this.awaitModule(
+			const result = await this.awaitOperation(
 				runner.evaluate(text, {
 					signal: this.controller.signal,
 					filename: source.url,
@@ -704,8 +878,18 @@ export class ScriptLoader implements HtmlScriptHooks {
 		await this.event(source.id, outcome.error ? "error" : "load");
 	}
 
-	private async event(target: number, type: string, bubbles = false) {
-		if (!this.tree || this.counts.halted || this.runner?.closed) return;
+	private async event(
+		target: number,
+		type: string,
+		bubbles = false,
+		allowHalted = false,
+	) {
+		if (
+			!this.tree ||
+			(this.counts.halted && !allowHalted) ||
+			this.runner?.closed
+		)
+			return;
 		const events = documentInteractions(this.tree).events;
 		if (events.metrics().closed) {
 			this.counts.halted = true;
@@ -752,6 +936,8 @@ export class ScriptLoader implements HtmlScriptHooks {
 			});
 	}
 	private live() {
+		if (this.options.signal.aborted && !this.controller.signal.aborted)
+			this.abort();
 		if (this.controller.signal.aborted)
 			throw new AgentBrowserError("aborted", "Page script loading aborted");
 	}

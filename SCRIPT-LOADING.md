@@ -1,5 +1,26 @@
 # Automatic classic-script loading
 
+September 18, 2026 dynamic-loading update: the native loader observes connected
+HTML scripts created through `document.createElement`. External scripts default
+to asynchronous execution. Setting `script.async = false` before preparation
+selects an insertion-ordered queue while allowing bounded concurrent fetching;
+independent async scripts need not wait for that queue. Preparation captures the
+URL, mode and policy inputs. Changing or reinserting an already-started element
+does not execute it again. Inline dynamic scripts use the serialized execution
+queue, without inheriting parser `document.write` ownership.
+
+Script properties `type`, `charset`, `integrity`, `nonce`, `defer`, `noModule`,
+`crossOrigin` and `async` reflect their native state. `onload` and `onerror` use
+the existing controlled event dispatcher, with `currentScript` reset before
+delivery. Loader cancellation, source/script/fetch limits, MIME, CORS/SRI and
+the conservative CSP refusal remain enforced. Trusted hosts can await
+`ScriptLoader.settle()` for currently pending dynamic work.
+
+This is still a subset: copied/imported scripts with unknown provenance and
+fragment-created scripts are not activated; dynamic modules, full lifecycle
+conformance and original Zoom CSP execution are not established. Unchanged
+historical statements below describe the earlier parser-only implementation.
+
 September 18, 2026 integration update: `HTML-MODULES.md` documents the new
 explicit module mode and its extension-runtime requirement. Classic mode stays
 unchanged. Native fake-SDK checks are not actual module/SafeJS/site acceptance;
