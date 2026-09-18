@@ -283,6 +283,11 @@ export {
 	type ExtractionType,
 } from "./extraction.js";
 export {
+	extractDocumentPage,
+	type DocumentExtractionPage,
+	type ExtractionPageOptions,
+} from "./extraction-page.js";
+export {
 	sourceLinkLabelLimits,
 	type SourceLinkLabelPolicy,
 	type SourceLinkLabels,

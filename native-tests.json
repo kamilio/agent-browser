@@ -1,4 +1,6 @@
 [
+	"src/extraction-page.test.ts",
+	"src/command-extraction-page.test.ts",
 	"src/extraction-code-whitespace.test.ts",
 	"src/research-redirect.test.ts",
 	"src/research-redirect-handoff.test.ts",

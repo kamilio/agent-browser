@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Retrieve repeated content through bounded extraction pages
+
+- Add extract-page and the exported extractDocumentPage API: DOM-order selector
+  windows, document/revision-bound continuation, strict compact-JSON UTF8 page
+  caps, per-item bounds and query cleanup. Never skip failed/oversized entries
+  or label selector exhaustion as complete website content. Existing extract is
+  unchanged; see EXTRACTION-PAGES.md.
+- Actual in-process command-host replay of the unchanged414-comment HN capture
+  retrieves21 pages /107455 Markdown bytes; every body matches earlier verified
+  source extraction. Largest compact page23296 bytes under64000. Whole-page
+  extraction still fails at256000. Zero new website requests or actual IO.
+- Native433/0 in9 selected files, including72 helper +19 command cases; isolated
+  build/types/format/lint pass. Preserve initial421/12 fixture failures and the
+  first replay's omitted-method assertion. No full-worktree, CLI socket, SDK or
+  live-site pass follows. See reports/extraction-pages-2026-09-18.md/JSON.
+- Broad website/crawler/research goals and Zoom globals/execution/media/admission/
+  recording/transcription/delivery remain unverified. No alternate engine or push.
+
 ### Preserve inline-code whitespace in extracted content
 
 - Replace the inline-code padding trim() check with an ASCII-space distinction,

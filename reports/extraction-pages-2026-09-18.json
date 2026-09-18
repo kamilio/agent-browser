@@ -1,0 +1,568 @@
+{
+  "date": "2026-09-18",
+  "status": "bounded-selector-extraction-implemented",
+  "native": {
+    "label": "core02",
+    "pid": 3051780,
+    "exitCode": 0,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 4.4247155375778675,
+    "passedTests": 433,
+    "failedTests": 0,
+    "files": 9,
+    "homeEntries": [],
+    "tmpEntries": []
+  },
+  "quality": {
+    "label": "core02",
+    "executions": [
+      {
+        "name": "build",
+        "pid": 3051899,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 7.228745682165027
+      },
+      {
+        "name": "types",
+        "pid": 3051985,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 3.9223789907991886
+      },
+      {
+        "name": "format",
+        "pid": 3052115,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.06432077288627625
+      },
+      {
+        "name": "lint",
+        "pid": 3052134,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.06423916295170784
+      }
+    ],
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    },
+    "allProcessesClosed": true,
+    "homeEntries": [
+      ".cache"
+    ],
+    "tmpEntries": [
+      "node-compile-cache"
+    ]
+  },
+  "newTests": {
+    "helper": 72,
+    "command": 19
+  },
+  "selected": [
+    "src/extraction-page.test.ts",
+    "src/command-extraction-page.test.ts",
+    "src/command-content-focus.test.ts",
+    "src/cli-parser.test.ts",
+    "src/extraction.test.ts",
+    "src/extraction-inline-blocks.test.ts",
+    "src/extraction-block-links.test.ts",
+    "src/extraction-byte-accounting.test.ts",
+    "src/extraction-code-whitespace.test.ts"
+  ],
+  "sourceRoot": "/tmp/agent-browser-extraction-pages-wR4tLt/candidate",
+  "qualifiedSourceHashes": {
+    "src/extraction-page.test.ts": "6678cde751ad532c7d180fbbdfb57caa14a0cd14a42fa60eeb22979891d609be",
+    "src/command-extraction-page.test.ts": "2e1a8c6025cf09ba4ee325f02e11fe994d1f3c603e2c30282b2ae8da40118bef",
+    "src/extraction-page.ts": "97dc334cb4717e8931671ee89ce9bcc872a5633db5974ba20ff25c564fab63ef",
+    "src/commands.ts": "5b9437bb93fe9905eb197032e201a53253508b7214676211b7e280b706f9ae5d",
+    "src/command-host.ts": "0dde6e890625f92e29bc0515bea92fcf1c83d4178c9faa682947d248a0a4b39a",
+    "src/index.ts": "770d2ba5be4b4848152aae71780483596d2c9fd450af3a489b972d699ea59197"
+  },
+  "workingSourceHashes": {
+    "src/extraction-page.test.ts": "6678cde751ad532c7d180fbbdfb57caa14a0cd14a42fa60eeb22979891d609be",
+    "src/command-extraction-page.test.ts": "2e1a8c6025cf09ba4ee325f02e11fe994d1f3c603e2c30282b2ae8da40118bef",
+    "src/extraction-page.ts": "97dc334cb4717e8931671ee89ce9bcc872a5633db5974ba20ff25c564fab63ef",
+    "src/commands.ts": "5b9437bb93fe9905eb197032e201a53253508b7214676211b7e280b706f9ae5d",
+    "src/command-host.ts": "ab8728ea9523bfabfcdc239da2f6ee86271fe22084a544e8c7bf4000d1b2bf46",
+    "src/index.ts": "74b4278a982ef918a431b1c1aa53a392aad8915e800f3ff6eac2ba0b914e6822"
+  },
+  "replay": {
+    "sourceReceivedAt": "2026-09-18T04:15:02.383Z",
+    "originalLiveOutcome": "failure",
+    "bodyBytes": 605306,
+    "bodySha256": "9e1b3e5f83f72838fd4cd6a45071cbe6499f821160de82f1ea8fc5e47d527c8f",
+    "newWebsiteRequests": 0,
+    "sdkExecuted": false,
+    "meetingJoined": false,
+    "pages": [
+      {
+        "file": "page-001.json",
+        "entries": 20,
+        "start": 0,
+        "serializedBytes": 23296,
+        "sha256": "88e2ac82c9cb21e52d20b403e06f34f91274b795a77ff14fc80800743ca1d9c2",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-002.json",
+        "entries": 20,
+        "start": 20,
+        "serializedBytes": 19633,
+        "sha256": "602b028614d4bc36f905e4a05831f06583c1c0e65135b025ed2c6d9c8104700f",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-003.json",
+        "entries": 20,
+        "start": 40,
+        "serializedBytes": 17894,
+        "sha256": "a833eed955277ca6262c0b44438be21227153511a8728cedeacc0951c96fa443",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-004.json",
+        "entries": 20,
+        "start": 60,
+        "serializedBytes": 17652,
+        "sha256": "7255bf0bc8421a7d047c4c8fda87055e6eeddb0ff37369a0c5451481f7ca37dd",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-005.json",
+        "entries": 20,
+        "start": 80,
+        "serializedBytes": 19385,
+        "sha256": "05ac0eca847cc0754b5276c74878c687090f21f524a616094a8c971d0625beea",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-006.json",
+        "entries": 20,
+        "start": 100,
+        "serializedBytes": 17776,
+        "sha256": "85cb6d467e18770e96a962ed7b2b743815f7284ff93ecf4be55208b20af60ccf",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-007.json",
+        "entries": 20,
+        "start": 120,
+        "serializedBytes": 17762,
+        "sha256": "a5a3f244bd1a980f947bf8f91f2d72368a4e51a8c9e02291aaaba93897de81b5",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-008.json",
+        "entries": 20,
+        "start": 140,
+        "serializedBytes": 19118,
+        "sha256": "0692ac10e4b69c4d172fa340104b0944e4372da7fd159d014c1119c5fd6d02cd",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-009.json",
+        "entries": 20,
+        "start": 160,
+        "serializedBytes": 17666,
+        "sha256": "07c803606e8ad4a7f6aebab4e11a94272cc2ac8a5e752c61dda96378cc366870",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-010.json",
+        "entries": 20,
+        "start": 180,
+        "serializedBytes": 17792,
+        "sha256": "58d91e3dbebfb9c0b9b615e7c9712bd906da349e2948a5772f8194ce3d7c533c",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-011.json",
+        "entries": 20,
+        "start": 200,
+        "serializedBytes": 17268,
+        "sha256": "29a0884c45e812e304a26a3340a8ce3ac2a30e1677057dfe5dd9aab23a08bcef",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-012.json",
+        "entries": 20,
+        "start": 220,
+        "serializedBytes": 17726,
+        "sha256": "3309e1b3dc3c053ef6ad4ba0f70fd4d8a9e04b29e446b9f28747986c64c9e450",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-013.json",
+        "entries": 20,
+        "start": 240,
+        "serializedBytes": 18649,
+        "sha256": "36e01e16c0951c0cd8764dc521312631ba4ddb7574e443e03edfd22c777a9353",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-014.json",
+        "entries": 20,
+        "start": 260,
+        "serializedBytes": 16799,
+        "sha256": "a335426588c5ee20c58ab34058ff59f8ecc0c3b9a853b90a8fc4839c3993d076",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-015.json",
+        "entries": 20,
+        "start": 280,
+        "serializedBytes": 15403,
+        "sha256": "e2a336eda9a6f7e72a4fd1c1dae2af3fd626711c54c83d1a70edf545c966e0f4",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-016.json",
+        "entries": 20,
+        "start": 300,
+        "serializedBytes": 16266,
+        "sha256": "1ccbd78af00152a171bbf679c980a3f5e05a03e5a6821f3e8342167f43ec0715",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-017.json",
+        "entries": 20,
+        "start": 320,
+        "serializedBytes": 17540,
+        "sha256": "71fb2f0a6999486512adf8c3f9bc2f27454856d35e09b65b1ae66d3a3c7f7321",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-018.json",
+        "entries": 20,
+        "start": 340,
+        "serializedBytes": 15352,
+        "sha256": "38016a0cb78a1fab15d58ed1be6a96fcc942355553e3ba3117ac7420164e8767",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-019.json",
+        "entries": 20,
+        "start": 360,
+        "serializedBytes": 15844,
+        "sha256": "1fb372080ad067f5521ca66416a0883517de01a6e63ab536d083e37d2cec0ef9",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-020.json",
+        "entries": 20,
+        "start": 380,
+        "serializedBytes": 15935,
+        "sha256": "17a9534317af5479b2b8bd8c2ccc8fd3c81a0b0d53399e152b5e3b740ad24333",
+        "selectionExhausted": false
+      },
+      {
+        "file": "page-021.json",
+        "entries": 14,
+        "start": 400,
+        "serializedBytes": 11939,
+        "sha256": "4887cdfa91c5989a647eaff2911385422ac8eb5f1521ce2ecb1b2285542299f4",
+        "selectionExhausted": true
+      }
+    ],
+    "wholePage": {
+      "code": "resource-limit",
+      "diagnostic": {
+        "kind": "extraction.output",
+        "unit": "bytes",
+        "limit": 256000,
+        "observed": 256053
+      }
+    },
+    "comments": 414,
+    "markdownBytes": 107455,
+    "allBodiesEqualPriorSourceVerifiedMarkdown": true,
+    "noDuplicateElementReferences": true,
+    "documentUnmodified": true,
+    "documents": [
+      {
+        "collectors": 0,
+        "notifications": 19819,
+        "collectorFailures": 0,
+        "closed": true
+      }
+    ],
+    "transportClosed": true,
+    "syntheticRequests": 1,
+    "directory": "/tmp/agent-browser-selector-page-replay-sLSXEO",
+    "execution": {
+      "exitCode": 0,
+      "pid": 3053110,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 2.068386733531952,
+      "ioAttempts": [],
+      "kernelInstalled": true,
+      "socketProbePerformed": false,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "maximumPageBytes": 23296
+  },
+  "previousCandidate": {
+    "label": "core01",
+    "pid": 3048162,
+    "exitCode": 1,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 3.973887760192156,
+    "passedTests": 421,
+    "failedTests": 12,
+    "files": 9,
+    "homeEntries": [],
+    "tmpEntries": []
+  },
+  "firstReplayDirectory": "/tmp/agent-browser-selector-page-replay-lRcmSD",
+  "review": {
+    "date": "2026-09-18",
+    "review_mode": "local-source-only",
+    "verdict": "approve",
+    "conclusion": "No unresolved correctness or security defect found in the pinned pagination API, command integration and corrected tests. Approval is source-level only; parent core02 validation remains pending as reported.",
+    "findings": [],
+    "resolved_findings": [
+      {
+        "id": "R1",
+        "path": "src/extraction-page.test.ts",
+        "line": 105,
+        "description": "The initial assertion required raw U+0001 even though ordinary extraction escapes controls.",
+        "initial_input_sha256": "8ff68ef3d547781adbf3c2888cfd7a4f6388b21439142d730fb490ba9672b3e6",
+        "resolution": "The current assertion expects source.replace(\"\\u0001\", \"\\\\u{1}\") and retains equality with ordinary extraction.",
+        "status": "resolved-by-current-source-inspection",
+        "execution_verified": false
+      }
+    ],
+    "corrections_inspected": [
+      "Invalid-argv and invalid-semantic-flags command matrices now pass complete arrays through named row objects.",
+      "Unknown mock receivers are narrowed with instanceof DocumentQueries before accessing metrics or limits.",
+      "Numeric lint constants use Number.NaN and Number.POSITIVE_INFINITY/NEGATIVE_INFINITY; the navigation URL uses a template literal.",
+      "The production extraction-page helper hash is unchanged."
+    ],
+    "analysis": {
+      "cursor_validity": "Bounded canonical JSON tuple validation checks exact selector, version, safe numeric fields and reference syntax. Live document identity/revision and match range are checked; end-position cursors are permitted. No evaluation or authentication claim is involved.",
+      "selector_state": "Focus, pointer and target changes increment DocumentTree revision, invalidating continuations even without structural edits.",
+      "ordering_and_overlap": "All matching elements are queried in DOM order. Each accepted item advances continuation exactly once; nested scopes intentionally remain separate.",
+      "failures": "Extraction and query failures propagate. A candidate rejected only for remaining page capacity stays unreturned at the continuation index.",
+      "utf8_accounting": "The sum of individually serialized entry bytes, inter-entry commas, and an empty-entry envelope with candidate continuation equals the serialized page byte count. Array brackets are already in the envelope. The command transport wrapper is deliberately excluded.",
+      "empty_and_first_entry": "Empty/end selections terminate. Oversized initial envelopes or first entries throw. No nonterminal empty page is returned; provisional-envelope rejection is explicitly conservative.",
+      "query_cleanup": "The query is owned by try/finally. close clears the index/cache and unregisters the document-close hook on success and failures.",
+      "command_integration": "One selector and all ten typed options are registered, allowlisted and mapped to the helper on the active tab document. Public API/types are exported. The dispatch branch introduces no request/navigation/script execution.",
+      "unchanged_defaults": "Ordinary extract remains a separate unchanged branch. Page entries delegate to ordinary scoped extraction with explicit bounds; overlapping content and control cleaning retain their established semantics.",
+      "boundedness": "Pagination retains existing eager query limits, including the 10000-match ceiling. Per-item traversal limits are not advertised as an aggregate one-extraction traversal budget."
+    },
+    "coverage_gaps": [
+      {
+        "id": "G1",
+        "severity": "low",
+        "blocking": false,
+        "path": "src/extraction-page.test.ts",
+        "line": 417,
+        "description": "State mutation tests invalidate cursors using selector p, rather than a selector whose match membership depends on focus/pointer/target state.",
+        "suggestion": "Add a multi-match state-dependent selector case and assert a stale-reference error after membership changes. Native revision invalidation is already supported by source inspection."
+      },
+      {
+        "id": "G2",
+        "severity": "low",
+        "blocking": false,
+        "path": "src/extraction-page.test.ts",
+        "line": 513,
+        "description": "The Unicode empty-envelope test does not cover a nonterminal cursor with JSON-escaped quotes/backslashes in its selector.",
+        "suggestion": "Add a matching escaped selector across multiple entries and assert exact serialized bytes plus continuation round-trip. Existing JSON serialization handles the case by inspection."
+      }
+    ],
+    "validation": {
+      "independently_executed": false,
+      "run_receipts_independently_verified": false,
+      "correction_note_read": true,
+      "parent_reported_core01": {
+        "passed": 421,
+        "failed": 12,
+        "files": 9,
+        "production_build_exit_code": 0,
+        "formatting": "pass",
+        "test_types": "fail",
+        "lint": "fail"
+      },
+      "parent_reported_core02": "tests and quality running; no outcome claimed",
+      "source_tests_compiler_sdk_browser_network_credentials_devices_run": false,
+      "production_edits": false,
+      "commits_or_pushes": false,
+      "acceptance_gates_qualified": [],
+      "limitations": [
+        "Source approval applies only to pinned inputs, including current corrected tests, not subsequent edits.",
+        "Parent execution reports and the correction note are attributed information, not independently verified run evidence.",
+        "Pre-existing unrelated dirty changes in shared files are outside the owned-change review.",
+        "Earlier byte-accounting review is supporting context, not a new execution receipt.",
+        "No live-site, socket, TTY/PTY, SafeJS, rendering, hydration or source-completeness qualification is made."
+      ]
+    },
+    "hash_algorithm": "sha256",
+    "hash_scope": "complete files; shared/supporting inputs inspected in relevant sections",
+    "reviewed_inputs": [
+      {
+        "path": "src/extraction-page.ts",
+        "sha256": "97dc334cb4717e8931671ee89ce9bcc872a5633db5974ba20ff25c564fab63ef"
+      },
+      {
+        "path": "src/extraction-page.test.ts",
+        "sha256": "6678cde751ad532c7d180fbbdfb57caa14a0cd14a42fa60eeb22979891d609be",
+        "version": "current-corrected-tests"
+      },
+      {
+        "path": "src/commands.ts",
+        "sha256": "5b9437bb93fe9905eb197032e201a53253508b7214676211b7e280b706f9ae5d"
+      },
+      {
+        "path": "src/command-host.ts",
+        "sha256": "ab8728ea9523bfabfcdc239da2f6ee86271fe22084a544e8c7bf4000d1b2bf46"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "74b4278a982ef918a431b1c1aa53a392aad8915e800f3ff6eac2ba0b914e6822"
+      },
+      {
+        "path": "src/command-extraction-page.test.ts",
+        "sha256": "2e1a8c6025cf09ba4ee325f02e11fe994d1f3c603e2c30282b2ae8da40118bef",
+        "version": "current-corrected-tests"
+      },
+      {
+        "path": "EXTRACTION-PAGES.md",
+        "sha256": "9a7f1158df8b4608e91fdcfc7bd9d9148bbe496bfccb2ef90f5b9670728c1562"
+      },
+      {
+        "path": "src/extraction.ts",
+        "sha256": "5aec7251257c008b743b9215eda74ade7dbd031086f90ae0da3359e0ab5102e8"
+      },
+      {
+        "path": "src/document.ts",
+        "sha256": "8fd335b79e6fffbee210e9acae2c049a0353c97d37a4e79de072f76762ad130f"
+      },
+      {
+        "path": "src/selectors.ts",
+        "sha256": "dfa6b29ad15a04f7d8c6faa4e2286fb80afe0819fce0b2b8c3365bd74cdc726b"
+      },
+      {
+        "path": "node_modules/.cache/native-validation/extraction-pages-september18/REVIEW-PROMPT.md",
+        "sha256": "69cddfb003bd431b90e582ba64660de23839f8cea7988aaabb05e70af0048fde"
+      },
+      {
+        "path": "node_modules/.cache/native-validation/extraction-pages-september18/CORE01-CORRECTIONS.md",
+        "sha256": "646daeeb060da2ed5c9d327db821ee6041eb957d823b63e024b96cfcf9343b6f"
+      }
+    ],
+    "written_files": [
+      "node_modules/.cache/native-validation/extraction-pages-september18/REVIEW.md",
+      "node_modules/.cache/native-validation/extraction-pages-september18/REVIEW.json"
+    ]
+  },
+  "documentationClarification": {
+    "path": "EXTRACTION-PAGES.md",
+    "reviewedSha256": "9a7f1158df8b4608e91fdcfc7bd9d9148bbe496bfccb2ef90f5b9670728c1562",
+    "currentSha256": "c3dcd3a7003b4e51a96937fabe4be5fcc44ac3f4b121e4e0a6fee0ff98f2c327",
+    "change": "Clarifies compact JSON byte accounting excludes presentation whitespace and outer command envelope; no source or budget change."
+  },
+  "newLiveWebsiteRequests": 0,
+  "sdkExecuted": false,
+  "meetingJoined": false,
+  "fullSuitePassed": false,
+  "limitations": [
+    "Command parser/host replay, not a spawned CLI or command-server socket.",
+    "Selector exhaustion is not complete website content.",
+    "Native/SDK/Zoom and broader live website gates remain separate."
+  ],
+  "artifactPins": {
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/OVERLAY-core02.json": "4f8dc0c3640c24b9c2a4f10faedaf9b4d59c9fb67301511afee046f9faa8a13c",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/native-core02/EXECUTION.json": "6a8a44cc45107488a8a3885ce208c701a42d2fd7f84aa382ad87c67ac55050c0",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/CHECK-core02.json": "313243b8ba36b45186b765b5c86268d7a1da7c2345766e43efa97bac802f1a02",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/native-core01/EXECUTION.json": "724234a3277502669efd0b041149691ae09db48c1259a54bcc87e69a308fc11e",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/OVERLAY-core01.json": "dcb029c4d8723611f956071e923e276e1a4b48bc584deff324435872d231270f",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/SOURCE-core01.json": "cb08ff6ef4a270018d14fb8bc60319fbfada57f07976647d25cf111389824e5c",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/native-core01/native.json": "23f364c4525bf435cfc3e991077007e9b9f92e5f605b2b85e899b0bac4b5a752",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/native-core01/INVOCATION.json": "6ae18ed057279dccaa3d4c187606bc18aeb91c5377307ff3002df96e3e03e458",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/native-core01.config.mjs": "d8071a7ff932bcc65ac6895f05029e776ab68528f5cebe513ec8038846c2871d",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/CHECK-core01.json": "4dd877a3780ccad0efb1aeae1a53d2c2a6e0142c75aee37d9873c204a24e8d66",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/SOURCE-core02.json": "ce7b2a198f7b16d9dda08d39d55714feb567c0c8fedd0a5ba22934ec58a61b2e",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/native-core02/native.json": "5a5d3883de1047c5b02274bea888e2b9123401661429659016dbc13f9665af1e",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/native-core02/INVOCATION.json": "aa7baf102df5083f647ac199ed3f55d15f9ac4be16b9c88bc4983502442db53c",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/native-core02.config.mjs": "6c26c9b1ced0081ee75fb49a6fa061a8737aac2c2b389b4dc4ccbac9b508527e",
+    "src/extraction-page.test.ts": "6678cde751ad532c7d180fbbdfb57caa14a0cd14a42fa60eeb22979891d609be",
+    "src/command-extraction-page.test.ts": "2e1a8c6025cf09ba4ee325f02e11fe994d1f3c603e2c30282b2ae8da40118bef",
+    "src/extraction-page.ts": "97dc334cb4717e8931671ee89ce9bcc872a5633db5974ba20ff25c564fab63ef",
+    "src/commands.ts": "5b9437bb93fe9905eb197032e201a53253508b7214676211b7e280b706f9ae5d",
+    "src/command-host.ts": "ab8728ea9523bfabfcdc239da2f6ee86271fe22084a544e8c7bf4000d1b2bf46",
+    "src/index.ts": "74b4278a982ef918a431b1c1aa53a392aad8915e800f3ff6eac2ba0b914e6822",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/COMPILED-core02.json": "89bcfed436fa6c9a3bc14f695bf82d71e302819eb45be5c8314bdfd70edcecf7",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/REPLAY-core02-V2-STAGE.json": "e6734af1f38e2b8a1dac463c92006a1a73411e4fba316e733fcd7e85f78cbd96",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/INPUTS.json": "4daedefb147ccaa00335882b0dba852d4e180d70b4c9db78e480e8482ae63932",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/RESULT.json": "3fe0d915e7d20d58391e8040360d1477e2d6bc7051ae84fd2f6afefc83895461",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/EXECUTION.json": "1caadac5c37a0ecccb359a74f8c6ff379462c021cb8270efae7874fa8fe94b7e",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-001.json": "88e2ac82c9cb21e52d20b403e06f34f91274b795a77ff14fc80800743ca1d9c2",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-002.json": "602b028614d4bc36f905e4a05831f06583c1c0e65135b025ed2c6d9c8104700f",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-003.json": "a833eed955277ca6262c0b44438be21227153511a8728cedeacc0951c96fa443",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-004.json": "7255bf0bc8421a7d047c4c8fda87055e6eeddb0ff37369a0c5451481f7ca37dd",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-005.json": "05ac0eca847cc0754b5276c74878c687090f21f524a616094a8c971d0625beea",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-006.json": "85cb6d467e18770e96a962ed7b2b743815f7284ff93ecf4be55208b20af60ccf",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-007.json": "a5a3f244bd1a980f947bf8f91f2d72368a4e51a8c9e02291aaaba93897de81b5",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-008.json": "0692ac10e4b69c4d172fa340104b0944e4372da7fd159d014c1119c5fd6d02cd",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-009.json": "07c803606e8ad4a7f6aebab4e11a94272cc2ac8a5e752c61dda96378cc366870",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-010.json": "58d91e3dbebfb9c0b9b615e7c9712bd906da349e2948a5772f8194ce3d7c533c",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-011.json": "29a0884c45e812e304a26a3340a8ce3ac2a30e1677057dfe5dd9aab23a08bcef",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-012.json": "3309e1b3dc3c053ef6ad4ba0f70fd4d8a9e04b29e446b9f28747986c64c9e450",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-013.json": "36e01e16c0951c0cd8764dc521312631ba4ddb7574e443e03edfd22c777a9353",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-014.json": "a335426588c5ee20c58ab34058ff59f8ecc0c3b9a853b90a8fc4839c3993d076",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-015.json": "e2a336eda9a6f7e72a4fd1c1dae2af3fd626711c54c83d1a70edf545c966e0f4",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-016.json": "1ccbd78af00152a171bbf679c980a3f5e05a03e5a6821f3e8342167f43ec0715",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-017.json": "71fb2f0a6999486512adf8c3f9bc2f27454856d35e09b65b1ae66d3a3c7f7321",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-018.json": "38016a0cb78a1fab15d58ed1be6a96fcc942355553e3ba3117ac7420164e8767",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-019.json": "1fb372080ad067f5521ca66416a0883517de01a6e63ab536d083e37d2cec0ef9",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-020.json": "17a9534317af5479b2b8bd8c2ccc8fd3c81a0b0d53399e152b5e3b740ad24333",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/page-021.json": "4887cdfa91c5989a647eaff2911385422ac8eb5f1521ce2ecb1b2285542299f4",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "/tmp/agent-browser-selector-page-replay-sLSXEO/INVOCATION.json": "781f6d995290621bbc04f65d349a44daa876de08183824905e0c58d56db803ab",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/REPLAY-core02-STAGE.json": "a4d7719da9b8f4cf56b83049ebf74909fa3a0ffd26ed29080f9d2e7177242b45",
+    "/tmp/agent-browser-selector-page-replay-lRcmSD/INPUTS.json": "7bc632233e63afdd1bf176a1f22b983f6883703b8a8cfe7098fcc329176278c0",
+    "/tmp/agent-browser-selector-page-replay-lRcmSD/EXECUTION.json": "3daa55c901b49cba12c8474baeb5d8d8c71b50760716f25b120fcc82ad93e1bc",
+    "/tmp/agent-browser-selector-page-replay-lRcmSD/RESULT.json": "f1f473e8ae3406002a170e313404623bf5208c8bfbc4abd04c62c56cd45f6c9d",
+    "/tmp/agent-browser-selector-page-replay-lRcmSD/stderr.log": "8bdab9667763577b43ecab23bde9c7ecb4231c89be2d6fcc290bc82452331f96",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/REVIEW.json": "4aa538860e9bb466570b871aa81e69b53e5d4c7af58104d0d99999b3b761ec54",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/REVIEW.md": "5d4f938cb8a8605268f3f658ab6ee6eeb1dbfbae06c91ab4826857295c2f9a26",
+    "EXTRACTION-PAGES.md": "c3dcd3a7003b4e51a96937fabe4be5fcc44ac3f4b121e4e0a6fee0ff98f2c327",
+    "src/extraction.ts": "5aec7251257c008b743b9215eda74ade7dbd031086f90ae0da3359e0ab5102e8",
+    "src/document.ts": "8fd335b79e6fffbee210e9acae2c049a0353c97d37a4e79de072f76762ad130f",
+    "src/selectors.ts": "dfa6b29ad15a04f7d8c6faa4e2286fb80afe0819fce0b2b8c3365bd74cdc726b",
+    "node_modules/.cache/native-validation/extraction-pages-september18/REVIEW-PROMPT.md": "69cddfb003bd431b90e582ba64660de23839f8cea7988aaabb05e70af0048fde",
+    "node_modules/.cache/native-validation/extraction-pages-september18/CORE01-CORRECTIONS.md": "646daeeb060da2ed5c9d327db821ee6041eb957d823b63e024b96cfcf9343b6f",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/SCOPE.md": "282a50cf13471b723c410e097978e849bbeab4861748be10b385a20badc2f3e4",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/CORE01-CORRECTIONS.md": "646daeeb060da2ed5c9d327db821ee6041eb957d823b63e024b96cfcf9343b6f",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/extraction-pages-september18/REPLAY-V1-CORRECTION.md": "2eb85a3c0aa806d96483ae567b117fbe0e3bafedacc4637e1948ae43eae76ffc",
+    "/dev/shm/agent-browser-hyphen-emergency-september14/native-guard.mjs": "9cd532a0c27b1e97fafbd7f1e77f75093c92f1bbc9df1b54fd82f3bc68c053d8"
+  }
+}

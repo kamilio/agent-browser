@@ -64,6 +64,10 @@ import {
 	elementSizeProperties,
 } from "./element-sizes.js";
 import { type ExtractionOptions, extractDocument } from "./extraction.js";
+import {
+	type ExtractionPageOptions,
+	extractDocumentPage,
+} from "./extraction-page.js";
 import { serializeHtml } from "./html-serialization.js";
 import {
 	generateLocator,
@@ -257,6 +261,17 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 		"max-bytes",
 		"max-nodes",
 		"depth",
+	],
+	"extract-page": [
+		"cursor",
+		"limit",
+		"format",
+		"max-bytes",
+		"item-max-bytes",
+		"max-nodes",
+		"depth",
+		"table-rows",
+		"compact-tables",
 	],
 	requests: [],
 	images: [],
@@ -1853,6 +1868,19 @@ export class BrowserCommandHost {
 				maxDepth: options.depth as number | undefined,
 				maxNodes: options["max-nodes"] as number | undefined,
 				maxCodeUnits: options["max-code-units"] as number | undefined,
+			});
+		}
+		if (invocation.command === "extract-page") {
+			return extractDocumentPage(browser.page(tabId).document, args[0], {
+				cursor: options.cursor as string | undefined,
+				limit: options.limit as number | undefined,
+				format: options.format as ExtractionPageOptions["format"],
+				maxBytes: options["max-bytes"] as number | undefined,
+				itemMaxBytes: options["item-max-bytes"] as number | undefined,
+				maxNodes: options["max-nodes"] as number | undefined,
+				maxDepth: options.depth as number | undefined,
+				tableRows: options["table-rows"] as boolean | undefined,
+				compactTables: options["compact-tables"] as boolean | undefined,
 			});
 		}
 		if (invocation.command === "extract") {
