@@ -6,6 +6,25 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Native notetaker PCM output, not a meeting join
+
+- Add package-root PcmCapture for already decoded PCM16: bounded copied input,
+  owned chunks, synchronous writer backpressure, compact retained timestamps,
+  source-gap diagnostics, pause discard and exact final-tail flush. Empty capture
+  fails; reentrancy/async sinks fail explicitly; terminal cleanup drops buffers.
+- Match the local automations RecordingWriter raw-PCM contract (16 kHz mono
+  capture; store owns WAV) without importing its Chromium launcher or storage
+  dependencies. Do not register a fake MeetingDriver or browser media global.
+- Native641/0 in6 files includes149 new cases; build/types/format/lint pass.
+  Intrinsic view metadata blocks a review-found input-bound/shared-buffer bypass.
+  Preserve two earlier native-green but fixture-lint-failing runs. No live audio,
+  SDK, device, socket, credentials, daemon change or meeting admission tested.
+- See PCM-CAPTURE.md and reports/native-pcm-capture-2026-09-18.md/JSON. Native
+  receive/decode, actual Zoom driver/admission, sustained permitted audio,
+  speaker clocks, lease/storage finalization, transcription and verified delivery
+  remain open. Preserve the wider research/site/credential/passkey/access gates;
+  full goal active, no push/default switch and no claim the meeting was joined.
+
 ### Fresh public content and escaped Markdown labels
 
 - Three new scoped anonymous GETs on September18 at03:35UTC retrieve MDN

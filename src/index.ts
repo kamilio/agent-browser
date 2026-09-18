@@ -1,4 +1,9 @@
 export {
+	PcmCapture,
+	type PcmCaptureOptions,
+	type PcmCaptureChunk,
+} from "./pcm-capture.js";
+export {
 	PasskeyBroker,
 	passkeyLimits,
 	type PasskeyAuthenticator,

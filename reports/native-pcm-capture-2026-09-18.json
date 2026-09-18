@@ -1,0 +1,249 @@
+{
+  "at": "2026-09-18T04:24:54.477Z",
+  "baseline": "6d9b154d954b0f8f141b0219ae6bec7bad2a3080",
+  "runtime": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-next-september18/RUNTIME-core03.json",
+  "native": {
+    "label": "core03",
+    "pid": 2804984,
+    "exitCode": 0,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 4.327971136197448,
+    "passedTests": 641,
+    "failedTests": 0,
+    "files": 6,
+    "homeEntries": [],
+    "tmpEntries": []
+  },
+  "newPcmCases": 149,
+  "quality": {
+    "label": "core03",
+    "executions": [
+      {
+        "name": "build",
+        "pid": 2805023,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 7.4309965912252665
+      },
+      {
+        "name": "types",
+        "pid": 2805087,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.6153679005801678
+      },
+      {
+        "name": "format",
+        "pid": 2805094,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.03216359205543995
+      },
+      {
+        "name": "lint",
+        "pid": 2805113,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.03201177343726158
+      }
+    ],
+    "checks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    },
+    "allProcessesClosed": true,
+    "homeEntries": [
+      ".cache"
+    ],
+    "tmpEntries": [
+      "node-compile-cache"
+    ]
+  },
+  "sourcePins": 1687,
+  "compiledPins": 2508,
+  "preservedPaths": 739,
+  "contractSourcePins": {
+    "/home/kjopek/automations/packages/zoom-notetaker/src/audio.ts": "6e503948c9648c255858c1422e145749f13e3bb10c7a85ed4972a720f5a10f02",
+    "/home/kjopek/automations/packages/zoom-notetaker/src/recordings.ts": "a08fd0a88986e985966671e5893c4d90bce59c3c4d4de2008f8d77928e129e51",
+    "/home/kjopek/automations/packages/zoom-notetaker/src/meeting-types.ts": "df0fc0ed54d6adad8e4c83e633663c142b276437c9826907b96fd89d39630451",
+    "/home/kjopek/automations/packages/zoom-notetaker/src/tab-capture.ts": "5fbdfed3dc660b47bf3c897ff458394655adcfbb728202725ca3793e954331f8",
+    "/home/kjopek/automations/packages/zoom-notetaker/src/capture-worklet.js": "f7a2ff96b5666851460401028d5690ed013231ac541785a7490430a4e6823c0f"
+  },
+  "earlierRuns": [
+    {
+      "label": "core01",
+      "native": {
+        "label": "core01",
+        "pid": 2803271,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 4.377453176304698,
+        "passedTests": 641,
+        "failedTests": 0,
+        "files": 6,
+        "homeEntries": [],
+        "tmpEntries": []
+      },
+      "quality": {
+        "label": "core01",
+        "executions": [
+          {
+            "name": "build",
+            "pid": 2803306,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 7.580022374168038
+          },
+          {
+            "name": "types",
+            "pid": 2803380,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 0.6152955442667007
+          },
+          {
+            "name": "format",
+            "pid": 2803389,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 0.06420494988560677
+          },
+          {
+            "name": "lint",
+            "pid": 2803408,
+            "exitCode": 1,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 0.064167819917202
+          }
+        ],
+        "checks": {
+          "build": 0,
+          "types": 0,
+          "format": 0,
+          "lint": 1
+        },
+        "allProcessesClosed": true,
+        "homeEntries": [
+          ".cache"
+        ],
+        "tmpEntries": [
+          "node-compile-cache"
+        ]
+      }
+    },
+    {
+      "label": "core02",
+      "native": {
+        "label": "core02",
+        "pid": 2804096,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 4.681791039183736,
+        "passedTests": 641,
+        "failedTests": 0,
+        "files": 6,
+        "homeEntries": [],
+        "tmpEntries": []
+      },
+      "quality": {
+        "label": "core02",
+        "executions": [
+          {
+            "name": "build",
+            "pid": 2804131,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 7.5834827944636345
+          },
+          {
+            "name": "types",
+            "pid": 2804184,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 0.6153742093592882
+          },
+          {
+            "name": "format",
+            "pid": 2804191,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 0.03212730027735233
+          },
+          {
+            "name": "lint",
+            "pid": 2804210,
+            "exitCode": 1,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 0.03204826079308987
+          }
+        ],
+        "checks": {
+          "build": 0,
+          "types": 0,
+          "format": 0,
+          "lint": 1
+        },
+        "allProcessesClosed": true,
+        "homeEntries": [
+          ".cache"
+        ],
+        "tmpEntries": [
+          "node-compile-cache"
+        ]
+      }
+    }
+  ],
+  "realAudio": false,
+  "devices": false,
+  "meetingJoined": false,
+  "automationsDriverRegistered": false,
+  "goalComplete": false,
+  "pushed": false
+}
