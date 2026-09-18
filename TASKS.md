@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Propose persistent classic-Script globals for the native Zoom path
+
+- Prepare an unactivated pristine-based SafeJS contribution: opt-in classic
+  Script parsing/global environment, persistent lexical declarations and intrinsic
+  receiver; keep explicit modules and omitted/false legacy grammar distinct.
+- Source review drives retained-source/bridge accounting and global declaration
+  history/deletion/snapshot corrections. Source-resolved Script imports and
+  referrer attribution remain explicitly unsupported; no browser alias shortcut.
+- Final no-emit TypeScript5.9.3 check:597 source/declaration files,0 errors.
+  Pristine plus new contracts:59 missing-API type errors, not runtime failures.
+  Four test files contain60 authored definitions/126 expanded cases; none run.
+  Strict patch application reproduces all13 changed candidate files exactly.
+- See reports/zoom-classic-script-proposal-2026-09-18.md/JSON and contributions/
+  safejs-classic-scripts. No installed SDK, native runtime default or upstream
+  checkout changes. Isolated SDK execution remains separately unapproved.
+- Browser window/self identity, scheduler composition, client execution,
+  source-resolved imports, native media/decode, admission, permitted recording,
+  transcription and delivery remain open. No Zoom join, alternate engine or push;
+  broader website/crawler/research goals remain unverified.
+
 ### Revalidate the public llama.cpp build guide
 
 - One fresh native GET at09:10:09.751UTC returns200/text/html,642230 complete
