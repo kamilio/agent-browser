@@ -12,6 +12,18 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September18,22:27UTC: all six unchanged actual Event integration scenarios PASS
+with complete observed closure, unchanged native core44 and the explicitly
+selected callback-prefix SDK correction. This fixes completed synchronous
+listener reuse without disabling active-body/async/thenable reentry guards.
+Scoped SDK regression149/149, strict types and fresh build pass; the full SDK
+union/default-release gate is not claimed. Parent verifies7079 integration input
+pins and19 execution artifacts. One fresh bounded live Zoom run is released
+after its zero-network rehearsal; no live improvement is claimed yet. The source
+contribution is retained under `contributions/safejs-callback-prefix-reuse/`.
+Usable UI, legitimate admission, audio, recording, transcription and delivery
+remain OPEN. Older failed gates below retain their original outcomes.
+
 September18: native Event/CustomEvent and host-capability dispatch now pass5059
 tests across121 explicit native files (core44); build/types/format pass, with only
 the independently reproduced pre-existing ranges lint finding. Three actual SDK

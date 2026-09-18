@@ -46,7 +46,7 @@ independently reproduced, pre-existing ScriptDom.ranges assignment finding.
 Process/group are absent and execution HOME/TMP are empty. Qualification source:
 `/tmp/agent-browser-event-union07-EZ0CzC/candidate`.
 
-The actual ClrIn4 SDK gate passes its first three scenarios, including complete
+The historical ClrIn4 SDK gate passes its first three scenarios, including complete
 observed closure: constructors/coercions, guest event/detail/receiver identity,
 native capture/bubble/cancellation, and direct Window/document dispatch with path
 aliases. Scenario four, propagation/reuse, still fails with SDK `reentry` during
@@ -54,15 +54,33 @@ immediate callback reuse. The final two scenarios are not executed. **The overal
 SDK gate is FAIL**, not partial acceptance relabeled success. See
 `/tmp/agent-browser-event-actual-core44-1rZR4k/HANDOFF.md`.
 
+September18,22:27UTC: a fresh actual SDK gate passes **all six unchanged
+scenarios** in7.597 seconds using the same core44 native build and an explicitly
+selected experimental SDK correction. This includes propagation/reuse/rejection,
+nonclassic aliases and close-mid-dispatch in addition to the first three cases.
+All observed owners close, pending/references/cleanup failures and SDK data/
+retained values reach zero; processes are absent and execution HOME/TMP empty.
+Parent verifies7,079 input pins and19 execution artifacts. No website/socket,
+credential, TTY or media access occurs in this synthetic integration gate.
+Evidence: `/tmp/agent-browser-event-actual-prefix-sdk-1AyC4V/HANDOFF.md`.
+
+The SDK now releases a completed ordinary synchronous callback's running lock
+before publishing prefix completion. Still-active bodies and asynchronous/
+thenable results retain their existing protections. Scoped SDK tests pass149/149
+after a clean four-failure baseline; strict types and fresh build pass. Only
+`realm.js` differs in the2,863-file experimental package. This is not an installed
+SDK upgrade, default-release acceptance or full SDK union. The incremental patch
+and exact ancestry are retained in `contributions/safejs-callback-prefix-reuse/`.
+
 Earlier failures remain preserved: native node-publication wrapping, old mock
 initialization expectations, a harness listener-owner lookup, opaque guest-reference
 identity, and document-close listener retention. Listener ownership now clears
 before external teardown; a native early-close regression demonstrates the former
 failure. Same-event recursion is rejected locally with an error named
 `InvalidStateError` before host suspension and its guard resets in `finally`;
-this does not supply a general DOMException implementation. The remaining SDK
-callback scheduling issue requires separate public-API reproduction/correction
-and a fresh complete SDK gate before the prepared live Zoom run.
+this does not supply a general DOMException implementation. With the separate
+SDK reproduction/correction and six-case gate now passing, one fresh bounded
+live Zoom run is released. Its outcome remains separate from synthetic success.
 
 Zoom's previous filtered run executes fifteen scripts and the real native CSRF
 request. The next captured script uses event APIs, but its original exception is

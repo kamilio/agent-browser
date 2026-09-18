@@ -1,0 +1,276 @@
+--- a/packages/safe-js/src/realm.ts
++++ b/packages/safe-js/src/realm.ts
+@@ -13,6 +13,7 @@
+ import { interpret, Scope, type InterpreterResult } from "./interp/interpreter.js";
+ import { attachExecutionControl, SandboxJobQueue, runAsyncPrefix, suspendJob, type ExecutionControl } from "./interp/jobs.js";
+ import { withCancellationSignal, awaitSandboxValue } from "./interp/cancel.js";
++import { requiresPromiseResolution } from "./interp/promise.js";
+ import { enterRunningState } from "./interp/running-state.js";
+ import { retainValues, runResources, type RunResources } from "./interp/resources.js";
+ import {
+@@ -664,11 +665,13 @@
+           : closure.call(values[1] as SandboxValue[], {
+             thisValue: values[0], compilation: this.compilation, stack: []
+           }));
++        const synchronous = !requiresPromiseResolution(value, this.budget);
+         const settlement = awaitSandboxValue(value, this.controller.signal, this.budget);
+         void settlement.catch(() => undefined);
+         if (isSandboxPromise(value) && value.synchronousPrefix !== undefined)
+           await value.synchronousPrefix;
+         this.assertOpen();
++        if (synchronous) leave();
+         record.prefixComplete = true;
+         completeSynchronous?.();
+         const settled = await suspendJob(settlement);
+--- /dev/null
++++ b/packages/safe-js/src/realm-callback-prefix-reuse.test.ts
+@@ -0,0 +1,249 @@
++import { describe, expect, it, vi } from "vitest";
++import { Budget, createRealm, defineExtension, type RealmOptions } from "./core.js";
++
++function deferred() {
++  let resolve!: () => void;
++  const promise = new Promise<void>(complete => { resolve = complete; });
++  return { promise, resolve };
++}
++
++function fixture(options: RealmOptions = {}) {
++  const callbacks: unknown[] = [];
++  const marks: unknown[] = [];
++  const marked = deferred();
++  const tail = deferred();
++  const budget = new Budget({ maxSteps: 1_000_000, dataSize: 1_048_576 });
++  const cleanup = vi.fn();
++  const realm = createRealm({
++    callbackScheduling: "after-prefix",
++    ...options,
++    budget,
++    bindings: {
++      save: (callback: unknown) => { callbacks.push(callback); },
++      mark: (value: unknown) => { marks.push(value); marked.resolve(); },
++      wait: () => tail.promise,
++      ...options.bindings
++    },
++    extensions: [...(options.extensions ?? []), defineExtension({
++      manifest: { version: 1, name: "callback-prefix-cleanup" },
++      setup(context) { context.onCleanup(cleanup); return {}; }
++    })]
++  });
++  return { realm, callbacks, marks, marked, tail, budget, cleanup };
++}
++
++async function close(state: ReturnType<typeof fixture>) {
++  state.tail.resolve();
++  await state.realm.close();
++  expect(state.realm.executionState).toBe("finished");
++  expect(state.budget.currentDataSize).toBe(0);
++  expect([...state.budget.retainedValues()]).toEqual([]);
++  expect(state.cleanup).toHaveBeenCalledTimes(1);
++}
++
++describe("completed synchronous callback running-state release", () => {
++  it.each([false, true])("immediately reuses a synchronous callback after its prefix with classicScripts=%s", async classicScripts => {
++    const state = fixture({ classicScripts });
++    const results: Promise<unknown>[] = [];
++    try {
++      expect(await state.realm.evaluate("let count = 0; save(() => ++count); void 0;")).toMatchObject({ ok: true });
++      for (let index = 0; index < 32; index++) {
++        const invocation = state.realm.startCallback(state.callbacks[0]);
++        void invocation.result.catch(() => undefined);
++        results.push(invocation.result);
++        await invocation.synchronous;
++      }
++      expect(await Promise.all(results)).toEqual(Array.from({ length: 32 }, (_, index) => index + 1));
++      expect(state.cleanup).not.toHaveBeenCalled();
++    } finally {
++      await close(state);
++      await Promise.allSettled(results);
++    }
++  });
++
++  it("reuses a synchronous callback across two nested dispatch calls in one active guest script", async () => {
++    let state!: ReturnType<typeof fixture>;
++    const results: Promise<unknown>[] = [];
++    const dispatch = async () => {
++      const invocation = state.realm.startCallback(state.callbacks[0]);
++      void invocation.result.catch(() => undefined);
++      results.push(invocation.result);
++      await invocation.synchronous;
++      return true;
++    };
++    state = fixture({
++      classicScripts: true,
++      grants: ["source:nested"],
++      extensions: [defineExtension({
++        manifest: { version: 1, name: "prefix-dispatch", globals: ["dispatch"], capabilities: ["source:nested"] },
++        setup(context) {
++          context.nestedOperation(dispatch);
++          return { globals: { dispatch } };
++        }
++      })]
++    });
++    try {
++      expect(await state.realm.evaluate("let count = 0; save(function sync() { count++; }); const first = dispatch(); const second = dispatch(); [first, second, count];")).toMatchObject({ ok: true, returnValue: [true, true, 2] });
++      expect(await Promise.all(results)).toEqual([undefined, undefined]);
++    } finally {
++      await close(state);
++      await Promise.allSettled(results);
++    }
++  });
++
++  it("preserves synchronous callback return values and thrown errors", async () => {
++    const state = fixture();
++    try {
++      expect(await state.realm.evaluate('save(() => ({ value: 17 })); save(() => { throw new Error("sync callback failure"); });')).toMatchObject({ ok: true });
++      const success = state.realm.startCallback(state.callbacks[0]);
++      await success.synchronous;
++      expect(await success.result).toEqual({ value: 17 });
++      const failure = state.realm.startCallback(state.callbacks[1]);
++      const results = await Promise.allSettled([failure.synchronous, failure.result]);
++      expect(results.map(result => result.status)).toEqual(["rejected", "rejected"]);
++      for (const result of results) {
++        if (result.status === "rejected") expect(result.reason).toMatchObject({ message: "sync callback failure" });
++      }
++    } finally { await close(state); }
++  });
++
++  it("still rejects reentry while the synchronous callback body is active", async () => {
++    let reenter!: () => void;
++    const duplicates: Promise<unknown>[] = [];
++    const state = fixture({ bindings: { attempt: () => { reenter(); } } });
++    let attempts = 0;
++    reenter = () => {
++      if (++attempts > 1) throw new Error("Active callback reentry was admitted");
++      const duplicate = state.realm.startCallback(state.callbacks[0]);
++      void duplicate.result.catch(() => undefined);
++      duplicates.push(duplicate.result);
++    };
++    try {
++      expect(await state.realm.evaluate("save(() => { attempt(); return 1; });")).toMatchObject({ ok: true });
++      const first = state.realm.startCallback(state.callbacks[0]);
++      void first.result.catch(() => undefined);
++      await Promise.allSettled([first.synchronous, first.result]);
++      expect(attempts).toBe(1);
++      expect(duplicates).toHaveLength(1);
++      await expect(duplicates[0]).rejects.toMatchObject({ code: "reentry" });
++    } finally {
++      await close(state);
++      await Promise.allSettled(duplicates);
++    }
++  });
++
++  it("does not wait for an asynchronous tail before reporting its prefix", async () => {
++    const state = fixture();
++    try {
++      expect(await state.realm.evaluate('save(async () => { mark("prefix"); await wait(); mark("tail"); return 42; });')).toMatchObject({ ok: true });
++      const invocation = state.realm.startCallback(state.callbacks[0]);
++      const settled = vi.fn();
++      void invocation.result.then(settled, settled);
++      await invocation.synchronous;
++      expect(state.marks).toEqual(["prefix"]);
++      expect(settled).not.toHaveBeenCalled();
++      expect(await state.realm.evaluate("return 7;")).toMatchObject({ ok: true, returnValue: 7 });
++      expect(settled).not.toHaveBeenCalled();
++      state.tail.resolve();
++      expect(await invocation.result).toBe(42);
++      expect(state.marks).toEqual(["prefix", "tail"]);
++    } finally { await close(state); }
++  });
++
++  it("keeps the running-state guard for a pending asynchronous callback", async () => {
++    const state = fixture();
++    const pending: Promise<unknown>[] = [];
++    try {
++      expect(await state.realm.evaluate("save(async () => { await wait(); return 42; });")).toMatchObject({ ok: true });
++      const first = state.realm.startCallback(state.callbacks[0]);
++      void first.result.catch(() => undefined);
++      pending.push(first.result);
++      await first.synchronous;
++      const duplicate = state.realm.startCallback(state.callbacks[0]);
++      void duplicate.result.catch(() => undefined);
++      pending.push(duplicate.result);
++      await expect(duplicate.result).rejects.toMatchObject({ code: "reentry" });
++      await expect(duplicate.synchronous).rejects.toMatchObject({ code: "reentry" });
++    } finally {
++      await close(state);
++      await Promise.allSettled(pending);
++    }
++  });
++
++  it.each(["method", "getter", "proxy"])("keeps the guard while a returned %s thenable is pending", async kind => {
++    const state = fixture();
++    const pending: Promise<unknown>[] = [];
++    const thenable = kind === "method"
++      ? "({ then(resolve) { wait().then(() => resolve(42)); } })"
++      : kind === "getter"
++        ? '({ get then() { mark("get"); return resolve => { wait().then(() => resolve(42)); }; } })'
++        : 'new Proxy({}, { get(target, key) { if (key === "then") { mark("get"); return resolve => { wait().then(() => resolve(42)); }; } } })';
++    try {
++      expect(await state.realm.evaluate(`save(() => ${thenable});`)).toMatchObject({ ok: true });
++      const first = state.realm.startCallback(state.callbacks[0]);
++      void first.result.catch(() => undefined);
++      pending.push(first.result);
++      await first.synchronous;
++      const duplicate = state.realm.startCallback(state.callbacks[0]);
++      void duplicate.result.catch(() => undefined);
++      pending.push(duplicate.result);
++      await expect(duplicate.result).rejects.toMatchObject({ code: "reentry" });
++      if (kind !== "method") {
++        expect(state.marks.length).toBeLessThanOrEqual(1);
++        expect(state.marks.every(value => value === "get")).toBe(true);
++      }
++    } finally {
++      await close(state);
++      await Promise.allSettled(pending);
++    }
++  });
++
++  it("reuses callbacks returning synchronous data objects without changing results", async () => {
++    const state = fixture();
++    const pending: Promise<unknown>[] = [];
++    try {
++      expect(await state.realm.evaluate("let count = 0; save(() => ({ value: ++count }));")).toMatchObject({ ok: true });
++      for (let index = 0; index < 4; index++) {
++        const invocation = state.realm.startCallback(state.callbacks[0]);
++        void invocation.result.catch(() => undefined);
++        pending.push(invocation.result);
++        await invocation.synchronous;
++      }
++      expect(await Promise.all(pending)).toEqual([{ value: 1 }, { value: 2 }, { value: 3 }, { value: 4 }]);
++    } finally {
++      await close(state);
++      await Promise.allSettled(pending);
++    }
++  });
++
++  it("reads a thenable getter once and preserves its later result", async () => {
++    const state = fixture();
++    try {
++      expect(await state.realm.evaluate('save(() => ({ get then() { mark("get"); return resolve => { wait().then(() => resolve(42)); }; } }));')).toMatchObject({ ok: true });
++      const invocation = state.realm.startCallback(state.callbacks[0]);
++      const settled = vi.fn();
++      void invocation.result.then(settled, settled);
++      await invocation.synchronous;
++      await state.marked.promise;
++      expect(state.marks).toEqual(["get"]);
++      expect(settled).not.toHaveBeenCalled();
++      state.tail.resolve();
++      expect(await invocation.result).toBe(42);
++      expect(state.marks).toEqual(["get"]);
++    } finally { await close(state); }
++  });
++
++  it("closes a pending asynchronous tail without resuming guest work", async () => {
++    const state = fixture();
++    try {
++      expect(await state.realm.evaluate('save(async () => { mark("prefix"); await wait(); mark("forbidden-tail"); });')).toMatchObject({ ok: true });
++      const invocation = state.realm.startCallback(state.callbacks[0]);
++      void invocation.result.catch(() => undefined);
++      await invocation.synchronous;
++      await state.realm.close();
++      state.tail.resolve();
++      expect((await Promise.allSettled([invocation.result]))[0].status).toBe("rejected");
++      expect(state.marks).toEqual(["prefix"]);
++    } finally { await close(state); }
++  });
++});
