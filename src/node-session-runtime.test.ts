@@ -82,6 +82,166 @@ beforeEach(() => {
 });
 afterEach(async () => {
 	for (const actor of actors.splice(0)) await actor.close();
+	vi.useRealTimers();
+});
+
+function emitFrame(child: FakeChild, frame: Record<string, unknown>) {
+	child.stdout.emit(
+		"data",
+		Buffer.from(`${JSON.stringify({ schemaVersion: 1, ...frame })}\n`),
+	);
+}
+
+function completeCommand(child: FakeChild, id: number) {
+	emitFrame(child, {
+		type: "result",
+		id,
+		result: {
+			schemaVersion: 1,
+			command: "capabilities",
+			session: "runtime",
+			data: {},
+		},
+	});
+}
+
+it("keeps the default heartbeat deadline active during a command", async () => {
+	vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+	const { actor, child } = await fixture({
+		heartbeatTimeoutMs: 100,
+		commandTimeoutMs: 500,
+	});
+	const result = actor.execute(["capabilities"]).catch((error) => error);
+	await vi.advanceTimersByTimeAsync(100);
+	expect(await result).toMatchObject({
+		code: "timeout",
+		message: "Session process heartbeat deadline exceeded",
+	});
+	expect(child.kill).toHaveBeenCalledExactlyOnceWith("SIGKILL");
+});
+
+it("explicit idle-only policy permits bounded busy work then restores the idle watchdog", async () => {
+	vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+	const { actor, child } = await fixture({
+		heartbeatPolicy: "idle-only",
+		heartbeatTimeoutMs: 100,
+		commandTimeoutMs: 500,
+	});
+	const result = actor.execute(["capabilities"]);
+	await vi.advanceTimersByTimeAsync(400);
+	expect(child.kill).not.toHaveBeenCalled();
+	expect(actor.metrics().pending).toBe(1);
+	completeCommand(child, 1);
+	await expect(result).resolves.toMatchObject({ command: "capabilities" });
+	await vi.advanceTimersByTimeAsync(99);
+	expect(child.kill).not.toHaveBeenCalled();
+	await vi.advanceTimersByTimeAsync(1);
+	await actor.exited;
+	expect(child.kill).toHaveBeenCalledExactlyOnceWith("SIGKILL");
+	expect(actor.metrics()).toMatchObject({
+		pending: 0,
+		closed: true,
+		failure: "timeout",
+	});
+});
+
+it("busy heartbeat traffic never extends the finite command hard deadline", async () => {
+	vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+	const { actor, child } = await fixture({
+		heartbeatPolicy: "idle-only",
+		heartbeatTimeoutMs: 100,
+		commandTimeoutMs: 500,
+	});
+	const result = actor
+		.execute(["capabilities", "--timeout=200"])
+		.catch((error) => error);
+	for (let sequence = 1; sequence <= 3; sequence++) {
+		await vi.advanceTimersByTimeAsync(50);
+		emitFrame(child, { type: "heartbeat", sequence });
+	}
+	expect(child.kill).not.toHaveBeenCalled();
+	await vi.advanceTimersByTimeAsync(50);
+	expect(await result).toMatchObject({
+		code: "timeout",
+		message: "Session command hard deadline exceeded",
+	});
+	expect(child.kill).toHaveBeenCalledExactlyOnceWith("SIGKILL");
+	expect(vi.getTimerCount()).toBe(0);
+});
+
+it("does not restore the idle watchdog until every pending command completes", async () => {
+	vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+	const { actor, child } = await fixture({
+		heartbeatPolicy: "idle-only",
+		heartbeatTimeoutMs: 100,
+		commandTimeoutMs: 500,
+	});
+	const first = actor.execute(["capabilities"]);
+	const second = actor.execute(["capabilities"]);
+	completeCommand(child, 1);
+	await first;
+	await vi.advanceTimersByTimeAsync(300);
+	expect(child.kill).not.toHaveBeenCalled();
+	completeCommand(child, 2);
+	await second;
+	await vi.advanceTimersByTimeAsync(100);
+	await actor.exited;
+	expect(child.kill).toHaveBeenCalledExactlyOnceWith("SIGKILL");
+});
+
+it("still rejects invalid heartbeat sequences while explicitly busy", async () => {
+	vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+	const { actor, child } = await fixture({ heartbeatPolicy: "idle-only" });
+	const result = actor.execute(["capabilities"]).catch((error) => error);
+	emitFrame(child, { type: "heartbeat", sequence: 2 });
+	expect(await result).toMatchObject({ code: "invalid-input" });
+	expect(child.kill).toHaveBeenCalledExactlyOnceWith("SIGKILL");
+	expect(vi.getTimerCount()).toBe(0);
+});
+
+it("abort still terminates a busy child and clears all command/watchdog timers", async () => {
+	vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+	const { actor, child } = await fixture({ heartbeatPolicy: "idle-only" });
+	const controller = new AbortController();
+	const result = actor
+		.execute(["capabilities"], { signal: controller.signal })
+		.catch((error) => error);
+	controller.abort();
+	expect(await result).toMatchObject({ code: "aborted" });
+	expect(child.kill).toHaveBeenCalledExactlyOnceWith("SIGKILL");
+	expect(actor.metrics().pending).toBe(0);
+	expect(vi.getTimerCount()).toBe(0);
+});
+
+it.each([null, true, 0, "", "disabled", "idle", {}, []])(
+	"rejects malformed heartbeat policy before reading the SDK root (%j)",
+	async (heartbeatPolicy) => {
+		await expect(
+			fixture({ heartbeatPolicy: heartbeatPolicy as "always" }),
+		).rejects.toMatchObject({ code: "invalid-input" });
+		expect(boundary.readRoot).not.toHaveBeenCalled();
+		expect(boundary.spawn).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects inherited/accessor heartbeat policy without invoking getters", async () => {
+	const getter = vi.fn(() => "idle-only");
+	for (const options of [
+		Object.assign(Object.create({ heartbeatPolicy: "idle-only" }), {
+			packageRoot: "/trusted/fixture",
+		}),
+		Object.defineProperty(
+			{ packageRoot: "/trusted/fixture" },
+			"heartbeatPolicy",
+			{ get: getter, enumerable: true },
+		),
+	])
+		await expect(BrowserSessionProcess.create(options)).rejects.toMatchObject({
+			code: "invalid-input",
+		});
+	expect(getter).not.toHaveBeenCalled();
+	expect(boundary.readRoot).not.toHaveBeenCalled();
+	expect(boundary.spawn).not.toHaveBeenCalled();
 });
 
 async function fixture(

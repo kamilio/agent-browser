@@ -60,6 +60,7 @@ beforeEach(() => {
 		"AGENT_BROWSER_SAFEJS_ROOT",
 		"AGENT_BROWSER_SCRIPT_BUDGET_PROFILE",
 		"AGENT_BROWSER_COMMAND_TIMEOUT_MS",
+		"AGENT_BROWSER_HEARTBEAT_POLICY",
 		"AGENT_BROWSER_COOKIE_POLICY",
 		"AGENT_BROWSER_PAGE_RUNTIME",
 		"AGENT_BROWSER_PAGE_SCRIPTS",
@@ -295,6 +296,7 @@ it("composes explicit profiles, timeout, website scripting, runtime semantics an
 		AGENT_BROWSER_PAGE_RUNTIME: "extension",
 		AGENT_BROWSER_SCRIPT_BUDGET_PROFILE: "application-v1",
 		AGENT_BROWSER_COMMAND_TIMEOUT_MS: "120000",
+		AGENT_BROWSER_HEARTBEAT_POLICY: "idle-only",
 		AGENT_BROWSER_PAGE_SCRIPTS: "classic",
 		AGENT_BROWSER_PAGE_GLOBALS: "classic",
 		AGENT_BROWSER_CALLBACK_SCHEDULING: "after-prefix",
@@ -311,6 +313,7 @@ it("composes explicit profiles, timeout, website scripting, runtime semantics an
 			identity: { languages: ["en-US"] },
 			scripts: { budgetProfile: "application-v1" },
 			commandTimeoutMs: 120000,
+			heartbeatPolicy: "idle-only",
 			runtimeOptions: {
 				classicScripts: true,
 				callbackScheduling: "after-prefix",
@@ -330,6 +333,7 @@ it.each([
 	["AGENT_BROWSER_COMMAND_TIMEOUT_MS", "Infinity"],
 	["AGENT_BROWSER_COMMAND_TIMEOUT_MS", "20.0"],
 	["AGENT_BROWSER_COMMAND_TIMEOUT_MS", "2e1"],
+	["AGENT_BROWSER_HEARTBEAT_POLICY", "off"],
 ])(
 	"rejects malformed CLI %s=%j before secrets, connection reuse, or process allocation",
 	async (key, value) => {

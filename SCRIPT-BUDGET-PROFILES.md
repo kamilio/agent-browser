@@ -84,3 +84,32 @@ immutable native configuration and forwarded through the existing process option
 Source and compiled mocked checks each pass310 tests across7 selected files.
 Actual CLI process startup with these variables remains a separate acceptance
 gate; this is not a successful Zoom navigation.
+
+## Busy initialization and heartbeat policy
+
+The actual owned-process Zoom prerequisite exposed a separate watchdog problem:
+seventeen public commands, including bounded assembly of the unchanged captured
+React source, succeeded; its one indirect guest eval was terminated by the2s
+heartbeat deadline after1851.7ms. It did not reach React initialization or the
+explicit120s script/180s command deadlines. This was not external-script loading.
+
+`SessionProcessOptions.heartbeatPolicy` now accepts `always` (the unchanged
+default) or explicit `idle-only`. The latter suspends only the heartbeat-absence
+timer while a command is pending. Every command retains its independent finite
+parent hard deadline; heartbeats cannot extend it. After the final pending
+command returns or fails, the ordinary idle heartbeat timer restarts. Sequence
+validation, cancellation, startup deadline, process failures and hard termination
+remain active. Background work without a pending command remains subject to the
+idle watchdog; this is not an unlimited busy mode.
+
+`AGENT_BROWSER_HEARTBEAT_POLICY` exposes the same explicit selection through the
+existing primitive CLI configuration. It requires an owned SDK root, rejects
+reader mode and does not enable scripts or change heap/timeout limits. Malformed,
+inherited and accessor selections reject before SDK-root reading/process launch.
+The child cannot select this parent-owned policy through a protocol message.
+
+Parent native/mock checks pass2344 tests in51 files, with build/types/format/lint
+passing. Tests retain the default busy-heartbeat rejection and prove idle restart,
+multiple pending commands, unextendable hard deadline, invalid sequence and abort
+cleanup. The unchanged-production red gate retains22 failures. A separate actual
+owned Zoom replay is required to establish behavior with this new selection.

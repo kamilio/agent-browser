@@ -36,6 +36,7 @@ export interface SessionProcessOptions {
 	commandTimeoutMs?: number;
 	startupTimeoutMs?: number;
 	heartbeatTimeoutMs?: number;
+	heartbeatPolicy?: "always" | "idle-only";
 	maxOldSpaceMiB?: number;
 	maxPendingCommands?: number;
 	scripts?: Omit<PageScriptOptions, "fetch" | "networkSourceModules">;
@@ -78,6 +79,32 @@ const errorCodes = new Set<ErrorCode>([
 	"closed",
 ]);
 
+function heartbeatPolicySelection(
+	options: SessionProcessOptions,
+): "always" | "idle-only" {
+	const descriptor = Object.getOwnPropertyDescriptor(
+		options,
+		"heartbeatPolicy",
+	);
+	if (
+		descriptor
+			? !Object.hasOwn(descriptor, "value") || !descriptor.enumerable
+			: "heartbeatPolicy" in options
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid session heartbeat policy",
+		);
+	const value = descriptor?.value;
+	if (value === undefined) return "always";
+	if (value !== "always" && value !== "idle-only")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid session heartbeat policy",
+		);
+	return value;
+}
+
 export class BrowserSessionProcess {
 	readonly session: string;
 	readonly ready: Promise<void>;
@@ -109,6 +136,7 @@ export class BrowserSessionProcess {
 		identity: Readonly<BrowserIdentityOptions>,
 		runtime: ReturnType<typeof pageRuntimeRequest>,
 		cookiePolicy: Awaited<ReturnType<typeof loadNodeCookiePolicy>>,
+		private readonly heartbeatPolicy: "always" | "idle-only",
 	) {
 		this.cookiePolicy = cookiePolicy?.cookiePolicy;
 		this.runtimeAdapter = runtime.adapter;
@@ -265,6 +293,7 @@ export class BrowserSessionProcess {
 	static async create(options: SessionProcessOptions) {
 		const selectedCookiePolicy = cookiePolicySelection(options);
 		const runtime = pageRuntimeRequest(options, "runtimeAdapter");
+		const heartbeatPolicy = heartbeatPolicySelection(options);
 		const runtimeAdapter = runtime.adapter;
 		if (
 			options?.websiteScripts !== undefined &&
@@ -289,6 +318,7 @@ export class BrowserSessionProcess {
 			identity,
 			runtime,
 			cookiePolicy,
+			heartbeatPolicy,
 		);
 		try {
 			await actor.ready;
@@ -372,6 +402,7 @@ export class BrowserSessionProcess {
 				cleanup: () => options.signal?.removeEventListener("abort", abort),
 			});
 			this.commands = id;
+			if (this.heartbeatPolicy === "idle-only") this.watchHeartbeat();
 			options.signal?.addEventListener("abort", abort, { once: true });
 			this.child.stdin.write(frame);
 		});
@@ -413,6 +444,14 @@ export class BrowserSessionProcess {
 
 	private watchHeartbeat() {
 		clearTimeout(this.heartbeatTimer);
+		this.heartbeatTimer = undefined;
+		if (
+			this.failure ||
+			this.ended ||
+			!this.information ||
+			(this.heartbeatPolicy === "idle-only" && this.pending.size > 0)
+		)
+			return;
 		this.heartbeatTimer = setTimeout(
 			() =>
 				this.terminate(
@@ -518,5 +557,6 @@ export class BrowserSessionProcess {
 		this.pending.delete(message.id as number);
 		clearTimeout(pending.timer);
 		pending.cleanup();
+		if (this.heartbeatPolicy === "idle-only") this.watchHeartbeat();
 	}
 }

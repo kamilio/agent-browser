@@ -139,6 +139,7 @@ it.each([
 it.each([
 	"AGENT_BROWSER_SCRIPT_BUDGET_PROFILE",
 	"AGENT_BROWSER_COMMAND_TIMEOUT_MS",
+	"AGENT_BROWSER_HEARTBEAT_POLICY",
 ])("requires an explicit SDK root for %s", async (key) => {
 	const { scriptProfileFromEnvironment } = await import(
 		"./node-script-profile.js"
@@ -236,12 +237,55 @@ it("never coerces hostile timeout or profile objects", async () => {
 	for (const key of [
 		"AGENT_BROWSER_SCRIPT_BUDGET_PROFILE",
 		"AGENT_BROWSER_COMMAND_TIMEOUT_MS",
+		"AGENT_BROWSER_HEARTBEAT_POLICY",
 	])
 		expect(() =>
 			scriptProfileFromEnvironment({ ...selected, [key]: value }),
 		).toThrowError(expect.objectContaining({ code: "invalid-input" }));
 	expect(conversion).not.toHaveBeenCalled();
 });
+
+it.each(["always", "idle-only"] as const)(
+	"selects explicit heartbeat policy %s without changing any deadlines",
+	async (heartbeatPolicy) => {
+		const { scriptProfileFromEnvironment } = await import(
+			"./node-script-profile.js"
+		);
+		expect(
+			scriptProfileFromEnvironment({
+				...selected,
+				AGENT_BROWSER_HEARTBEAT_POLICY: heartbeatPolicy,
+			}),
+		).toEqual({ heartbeatPolicy });
+		expect(() =>
+			scriptProfileFromEnvironment({
+				AGENT_BROWSER_HEARTBEAT_POLICY: heartbeatPolicy,
+			}),
+		).toThrow("explicit SafeJS package root");
+		expect(() =>
+			scriptProfileFromEnvironment({
+				...selected,
+				AGENT_BROWSER_DOCUMENT_PROFILE: "reader",
+				AGENT_BROWSER_HEARTBEAT_POLICY: heartbeatPolicy,
+			}),
+		).toThrow("Reader document profile");
+	},
+);
+
+it.each(["", "off", "idle", "IDLE-ONLY", "idle-only "])(
+	"rejects invalid CLI heartbeat policy %j",
+	async (setting) => {
+		const { scriptProfileFromEnvironment } = await import(
+			"./node-script-profile.js"
+		);
+		expect(() =>
+			scriptProfileFromEnvironment({
+				...selected,
+				AGENT_BROWSER_HEARTBEAT_POLICY: setting,
+			}),
+		).toThrow("AGENT_BROWSER_HEARTBEAT_POLICY");
+	},
+);
 
 it.each([null, undefined, false, "settings", []])(
 	"rejects non-record environment %#",

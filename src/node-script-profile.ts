@@ -4,6 +4,7 @@ import type { ScriptBudgetProfile } from "./safejs.js";
 export interface ScriptProfileConfiguration {
 	readonly scripts?: Readonly<{ budgetProfile: ScriptBudgetProfile }>;
 	readonly commandTimeoutMs?: number;
+	readonly heartbeatPolicy?: "always" | "idle-only";
 }
 
 export function scriptProfileFromEnvironment(
@@ -39,6 +40,16 @@ export function scriptProfileFromEnvironment(
 	};
 	const budgetProfile = read("AGENT_BROWSER_SCRIPT_BUDGET_PROFILE");
 	const timeout = read("AGENT_BROWSER_COMMAND_TIMEOUT_MS");
+	const heartbeatPolicy = read("AGENT_BROWSER_HEARTBEAT_POLICY");
+	if (
+		heartbeatPolicy !== undefined &&
+		heartbeatPolicy !== "always" &&
+		heartbeatPolicy !== "idle-only"
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"AGENT_BROWSER_HEARTBEAT_POLICY must be always or idle-only when provided",
+		);
 	if (
 		budgetProfile !== undefined &&
 		budgetProfile !== "bounded-v1" &&
@@ -67,12 +78,16 @@ export function scriptProfileFromEnvironment(
 				"AGENT_BROWSER_COMMAND_TIMEOUT_MS must be a decimal integer from 20 through 300000",
 			);
 	}
-	if (budgetProfile === undefined && commandTimeoutMs === undefined)
+	if (
+		budgetProfile === undefined &&
+		commandTimeoutMs === undefined &&
+		heartbeatPolicy === undefined
+	)
 		return Object.freeze({});
 	if (read("AGENT_BROWSER_DOCUMENT_PROFILE") === "reader")
 		throw new AgentBrowserError(
 			"invalid-input",
-			`Reader document profile is incompatible with ${budgetProfile !== undefined ? "AGENT_BROWSER_SCRIPT_BUDGET_PROFILE" : "AGENT_BROWSER_COMMAND_TIMEOUT_MS"}`,
+			`Reader document profile is incompatible with ${budgetProfile !== undefined ? "AGENT_BROWSER_SCRIPT_BUDGET_PROFILE" : commandTimeoutMs !== undefined ? "AGENT_BROWSER_COMMAND_TIMEOUT_MS" : "AGENT_BROWSER_HEARTBEAT_POLICY"}`,
 		);
 	if (!read("AGENT_BROWSER_SAFEJS_ROOT"))
 		throw new AgentBrowserError(
@@ -92,5 +107,6 @@ export function scriptProfileFromEnvironment(
 			? { scripts: Object.freeze({ budgetProfile }) }
 			: {}),
 		...(commandTimeoutMs !== undefined ? { commandTimeoutMs } : {}),
+		...(heartbeatPolicy !== undefined ? { heartbeatPolicy } : {}),
 	});
 }

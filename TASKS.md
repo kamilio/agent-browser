@@ -65,6 +65,14 @@ Parent native/mock checks pass2320 tests in51 files with all quality checks.
 Actual SDK interpreter denial and document-CSP wiring are still being implemented;
 the native forwarding gate does not establish eval/Function enforcement by itself.
 
+Actual owned captured-React testing reached17 successful public commands, then
+the2s heartbeat watchdog killed indirect guest eval before either its120s script
+or180s command limit. No React initialization succeeded in that run. The native
+parent now offers explicit idle-only heartbeat policy while retaining independent
+finite hard command deadlines and normal idle/startup/abort/sequence enforcement.
+Default always-on heartbeat behavior is unchanged. Native/mock integration passes
+2344 tests in51 files with all quality checks; actual selected replay is pending.
+
 Explicit classic-global/after-prefix options now flow through native CLI,
 runtime selection, SDK loading and process initialization/ready validation.
 Together with an opt-in large-source budget, parent native checks pass370 tests
@@ -164,6 +172,11 @@ It advances from3665570 to4553541 cumulative steps, with5316083 peak logical dat
 units and clean closure. Repeated retained-data graph traversal and allocation
 are the measured optimization targets; no main completion or meeting UI is
 claimed. Preserve both failures and the ordinary16s failed performance gate.
+The scope-snapshot allocation optimization qualifies1324 SDK tests in96 files
+and strict build, but ASSETS35 still times out in externals after128181.4ms
+(134.715s total, clean closure) before reaching main. It is not a Zoom startup
+pass; work now targets the dominant full visitor cost as well as the owned
+process watchdog identified separately.
 
 The native browser fetched the missing main.js on September18 at12:14:14.901UTC:
 HTTP200,843255 JavaScript bytes. The vendors request stopped at the existing
