@@ -1,0 +1,61 @@
+{
+  "date": "2026-09-18",
+  "baseline": "17cf3b01d5905e604194354d0828aae910cc8827",
+  "phase": "node_modules/.cache/native-validation/safejs-guarded-adapter-september18",
+  "candidate": "/tmp/agent-browser-safejs-adapter-uqszEG/candidate",
+  "native": {
+    "passed": 442,
+    "failed": 0,
+    "files": 8,
+    "elapsedSeconds": 2.8262384086847305,
+    "newTestFiles": 3,
+    "newTestCases": 227,
+    "manifestEntries": 1041,
+    "missingManifestPaths": 22,
+    "completeManifestRun": false,
+    "homeEmpty": true,
+    "tmpEmpty": true
+  },
+  "quality": {
+    "build": 0,
+    "types": 0,
+    "format": 0,
+    "lint": 0,
+    "validationProcessesClosed": true,
+    "ownedCompilerCachesInventoried": true
+  },
+  "pins": {
+    "source": 1662,
+    "compiled": 2460,
+    "unchangedCanonicalSource": 1654,
+    "preExistingDirtyTrackedPreserved": 42,
+    "preExistingUntrackedPreserved": 700
+  },
+  "negativeRegression": { "passed": 0, "expectedFailed": 2 },
+  "stagesPrepared": { "guard": true, "coreChecks": 19, "pageChecks": 10, "moduleChecks": 7 },
+  "dependencyAudit": {
+    "version": "0.1.640",
+    "targetFilesVerified": 380,
+    "archiveSha256": "f464a1db14b8b08deeb558c152e93846e89e1c1664eda8237b380966278d0eeb",
+    "knownPackagesIncludingSdk": 15,
+    "knownEdges": 19,
+    "availableExactArtifacts": 14,
+    "missingExactArtifact": "@poe-platform/safe-fs@0.1.640",
+    "artifactBackedClosureVerified": false,
+    "dependencyStagingPerformed": false,
+    "latestReleaseClaim": false,
+    "wrongPathAuditPreserved": true
+  },
+  "authorization": "pending-new-bounded-scope",
+  "actualSafeJsExecuted": false,
+  "actualGateProcessControlExecuted": false,
+  "actualKernelControlExecuted": false,
+  "websiteAccess": false,
+  "credentialAccess": false,
+  "deviceAccess": false,
+  "meetingJoined": false,
+  "audioCaptured": false,
+  "defaultRuntimeChanged": false,
+  "runtimeDependenciesAdded": false,
+  "pushed": false
+}

@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Prepare actual SafeJS acceptance for native Zoom support
+
+- Connect the lifecycle supervisor to an owned POSIX process adapter and a
+  pinned, explicit four-stage runner: synthetic guard control, unchanged19 core
+  checks, unchanged10 page checks, then7 real-SDK synthetic HTML-module checks.
+  Exact evidence, empty native HOME/TMP, input pins and cleanup are required;
+  failures stop progression without retries or default-runtime activation.
+- Final native442/0 in8 files, including227 mocked cases in3 new test files;
+  build/types/format/lint pass. Verify1662 source/2460 compiled pins and preserve
+  all42 pre-existing dirty tracked/700 untracked files. The1041-entry manifest
+  retains22 missing committed paths; this is not a complete-manifest run.
+- Review caught HOME beneath a forbidden policy grant and blocking FIFO opens.
+  Move HOME/TMP outside grants, use nonblocking/no-follow input opens, and retain
+  two failing old-code regressions plus the no-new-blocker source follow-up.
+  Native test HOME/TMP are empty; owned compiler/formatter caches are inventoried
+  separately, not misreported as absent.
+- Reverify380 SafeJS0.1.640 package files and its pinned archive. The corrected
+  dependency audit finds14 of15 exact artifacts available; safe-fs0.1.640 is
+  still missing. Preserve the original wrong-directory audit as a parent prompt
+  error, not evidence of deleted artifacts. No claim about the latest release.
+- Updated dependency acquisition, real process/kernel control and SDK execution
+  remain pending separately scoped authorization. No new attempt has run.
+  Host-only WebSocket support is not a page WebSocket bridge. Zoom admission,
+  WebRTC/media/audio capture, recording, transcription and verified delivery
+  remain incomplete. Keep website/research/credential/passkey gates open.
+- See SAFEJS-ISOLATED-RUNNER.md and reports/safejs-isolated-runner-2026-09-18.md.
+  Preserve all historical live results and unfinished selector work. No push.
+
 ### Connect HTML modules to the native page runtime
 
 - Add explicit AGENT_BROWSER_PAGE_SCRIPTS=module with extension-runtime

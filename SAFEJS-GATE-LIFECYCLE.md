@@ -1,5 +1,10 @@
 # Host-owned isolated gate supervision
 
+September 18 follow-up: `SAFEJS-ISOLATED-RUNNER.md` describes the concrete
+POSIX adapter and four-stage release runner. Their native mocked tests do not
+replace the still-pending real process/kernel and SDK acceptance. The original
+supervisor contract and historical evidence below retain their scope.
+
 `scripts/run-safejs-gate.ts` exports `runSafeJsGate`. It is a dependency-injected
 lifecycle supervisor, not an executable SDK launcher or a new browser runtime.
 Importing it does not start a process, load SafeJS or grant network access.

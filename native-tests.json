@@ -1,4 +1,7 @@
 [
+	"src/node-safejs-gate-process.test.ts",
+	"src/safejs-release-evidence.test.ts",
+	"src/isolated-safejs-gate.test.ts",
 	"src/page-html-modules.test.ts",
 	"src/script-loader-modules.test.ts",
 	"src/cli-module-mode.test.ts",
