@@ -58,6 +58,12 @@ The focused worker passes1681 tests in40 files; parent URL/CLI/parser integratio
 passes2187 in49 files with all quality checks. Only eligible completed parser
 scripts can pass owner admission; unknown/inert/cloned provenance remains refused.
 Live loader admission and unsupported policy directives remain outstanding.
+Native extension/runtime selection now carries an explicit guest string-compilation
+policy and requires an immutable matching SDK realm echo before page evaluation.
+Older/ignoring SDKs fail closed for explicit selection; defaults are unchanged.
+Parent native/mock checks pass2320 tests in51 files with all quality checks.
+Actual SDK interpreter denial and document-CSP wiring are still being implemented;
+the native forwarding gate does not establish eval/Function enforcement by itself.
 
 Explicit classic-global/after-prefix options now flow through native CLI,
 runtime selection, SDK loading and process initialization/ready validation.

@@ -12,6 +12,7 @@ export type PageRuntimeAdapter = "legacy" | "extension";
 export interface PageRuntimeConfiguration {
 	classicScripts?: boolean;
 	callbackScheduling?: "after-prefix";
+	stringCompilation?: "allow" | "deny";
 }
 
 export interface PageRuntimeSelection {
@@ -62,15 +63,21 @@ export function pageRuntimeConfiguration(
 	if (prototype !== Object.prototype && prototype !== null) throw invalid();
 	const descriptors = Object.getOwnPropertyDescriptors(value);
 	for (const key of Reflect.ownKeys(descriptors)) {
-		if (key !== "classicScripts" && key !== "callbackScheduling")
+		if (
+			key !== "classicScripts" &&
+			key !== "callbackScheduling" &&
+			key !== "stringCompilation"
+		)
 			throw invalid();
 		const descriptor = descriptors[key];
 		if (!Object.hasOwn(descriptor, "value") || !descriptor.enumerable)
 			throw invalid();
 		if (
-			key === "classicScripts"
-				? typeof descriptor.value !== "boolean"
-				: descriptor.value !== "after-prefix"
+			(key === "classicScripts" && typeof descriptor.value !== "boolean") ||
+			(key === "callbackScheduling" && descriptor.value !== "after-prefix") ||
+			(key === "stringCompilation" &&
+				descriptor.value !== "allow" &&
+				descriptor.value !== "deny")
 		)
 			throw invalid();
 	}
@@ -80,6 +87,13 @@ export function pageRuntimeConfiguration(
 			: {}),
 		...(descriptors.callbackScheduling
 			? { callbackScheduling: "after-prefix" as const }
+			: {}),
+		...(descriptors.stringCompilation
+			? {
+					stringCompilation: descriptors.stringCompilation.value as
+						| "allow"
+						| "deny",
+				}
 			: {}),
 	};
 	if (!Object.keys(runtimeOptions).length) return undefined;

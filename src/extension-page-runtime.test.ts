@@ -28,7 +28,7 @@ afterEach(async () => {
 	vi.useRealTimers();
 });
 
-function fakeCore() {
+function fakeCore(stringPolicy?: PropertyDescriptor) {
 	const budgetOptions: ConstructorParameters<ReleasedCore["Budget"]>[0][] = [];
 	class Budget {
 		stepsUsed = 0;
@@ -160,12 +160,15 @@ function fakeCore() {
 	const createRealm = vi.fn((options: RealmOptions): ReleasedRealm => {
 		const state = makeRealm(options);
 		realms.push(state);
-		return {
+		const realm = {
 			evaluate: state.evaluate,
 			startCallback: state.startCallback,
 			releaseCallback() {},
 			close: state.close,
 		};
+		if (stringPolicy)
+			Object.defineProperty(realm, "stringCompilation", stringPolicy);
+		return realm;
 	});
 	const core: ReleasedCore = { Budget, defineExtension, createRealm };
 	return { core, realms, defineExtension, createRealm, budgetOptions };
@@ -287,6 +290,109 @@ it("forwards explicit callback-prefix scheduling without enabling classic Script
 it("leaves callback scheduling to the SDK when no option is selected", () => {
 	const test = fixture();
 	expect(test.state.options).not.toHaveProperty("callbackScheduling");
+});
+
+it.each(["allow", "deny"] as const)(
+	"forwards and verifies the immutable guest string policy %s",
+	async (stringCompilation) => {
+		const configuration = { stringCompilation };
+		const test = fixture(
+			fakeCore({ value: stringCompilation }),
+			1000,
+			configuration,
+		);
+		configuration.stringCompilation =
+			stringCompilation === "allow" ? "deny" : "allow";
+		expect(test.state.options.stringCompilation).toBe(stringCompilation);
+		expect(test.state.options).not.toHaveProperty("classicScripts");
+		await expect(
+			test.scripts.evaluate("trusted source"),
+		).resolves.toMatchObject({ ok: true });
+	},
+);
+
+it.each([null, true, false, 0, "", "DENY", "block", {}, []])(
+	"rejects invalid guest string policy %j before realm creation",
+	(stringCompilation) => {
+		const shared = fakeCore();
+		expect(() =>
+			extensionPageRuntime(shared.core, {
+				stringCompilation: stringCompilation as "deny",
+			}),
+		).toThrow("Invalid guest string compilation policy");
+		expect(shared.createRealm).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects inherited or accessor guest string policies without invoking getters", () => {
+	const getter = vi.fn(() => "deny");
+	for (const configuration of [
+		Object.create({ stringCompilation: "deny" }),
+		Object.defineProperty({}, "stringCompilation", {
+			get: getter,
+			enumerable: true,
+		}),
+		Object.defineProperty({}, "stringCompilation", { value: "deny" }),
+	])
+		expect(() => extensionPageRuntime(fakeCore().core, configuration)).toThrow(
+			"Invalid guest string compilation policy",
+		);
+	expect(getter).not.toHaveBeenCalled();
+});
+
+it.each([
+	undefined,
+	{ value: "allow" },
+	{ value: "deny", writable: true },
+	{ value: "deny", configurable: true },
+])(
+	"closes SDKs that cannot attest immutable denial before evaluating %#",
+	async (policy) => {
+		const shared = fakeCore(policy);
+		const tree = new DocumentTree("https://example.com/");
+		try {
+			expect(
+				() =>
+					new PageScripts(
+						{ document: tree, interactions: new DocumentInteractions(tree) },
+						extensionPageRuntime(shared.core, { stringCompilation: "deny" }),
+					),
+			).toThrow("SafeJS guest string compilation policy is unavailable");
+			await Promise.resolve();
+			expect(shared.realms).toHaveLength(1);
+			expect(shared.realms[0].disposals).toBe(1);
+			expect(shared.realms[0].evaluate).not.toHaveBeenCalled();
+			expect(shared.realms[0].signal.signal.aborted).toBe(true);
+		} finally {
+			tree.close();
+		}
+	},
+);
+
+it("refuses a getter-based SDK policy echo without executing it", async () => {
+	const getter = vi.fn(() => "deny");
+	const shared = fakeCore({ get: getter });
+	const tree = new DocumentTree("https://example.com/");
+	try {
+		expect(
+			() =>
+				new PageScripts(
+					{ document: tree, interactions: new DocumentInteractions(tree) },
+					extensionPageRuntime(shared.core, { stringCompilation: "deny" }),
+				),
+		).toThrow("SafeJS guest string compilation policy is unavailable");
+		await Promise.resolve();
+		expect(getter).not.toHaveBeenCalled();
+		expect(shared.realms[0].evaluate).not.toHaveBeenCalled();
+		expect(shared.realms[0].disposals).toBe(1);
+	} finally {
+		tree.close();
+	}
+});
+
+it("leaves default guest string policy to older SDKs", () => {
+	const test = fixture();
+	expect(test.state.options).not.toHaveProperty("stringCompilation");
 });
 
 it("declares owned console, retention, and focus await-result grants before lazy setup", async () => {

@@ -34,6 +34,7 @@ const extensionName = "agent-browser-page";
 export interface ExtensionPageRuntimeOptions {
 	classicScripts?: boolean;
 	callbackScheduling?: "after-prefix";
+	stringCompilation?: "allow" | "deny";
 	sourceModules?: PageSourceModuleOptions;
 	networkSourceModules?: PageNetworkModuleOptions;
 }
@@ -83,6 +84,30 @@ export function extensionPageRuntime(
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Invalid extension page runtime options",
+		);
+	const stringPolicyDescriptor = Object.getOwnPropertyDescriptor(
+		configuration,
+		"stringCompilation",
+	);
+	if (
+		stringPolicyDescriptor
+			? !Object.hasOwn(stringPolicyDescriptor, "value") ||
+				!stringPolicyDescriptor.enumerable
+			: "stringCompilation" in configuration
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid guest string compilation policy",
+		);
+	const stringCompilation = stringPolicyDescriptor?.value;
+	if (
+		stringCompilation !== undefined &&
+		stringCompilation !== "allow" &&
+		stringCompilation !== "deny"
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid guest string compilation policy",
 		);
 	const moduleOptions = configuration.sourceModules;
 	if (
@@ -280,6 +305,7 @@ export function extensionPageRuntime(
 				realm = core.createRealm({
 					...(classicScripts ? { classicScripts: true } : {}),
 					...(callbackScheduling ? { callbackScheduling } : {}),
+					...(stringCompilation === undefined ? {} : { stringCompilation }),
 					...(moduleScope
 						? {
 								sourceResolver: (specifier, referrer, resolution) => {
@@ -296,6 +322,23 @@ export function extensionPageRuntime(
 					sink: options.sink,
 					limits: extensionPageRuntimeLimits,
 				});
+				if (stringCompilation !== undefined) {
+					const policy = Object.getOwnPropertyDescriptor(
+						realm,
+						"stringCompilation",
+					);
+					if (
+						!policy ||
+						!Object.hasOwn(policy, "value") ||
+						policy.value !== stringCompilation ||
+						policy.writable ||
+						policy.configurable
+					)
+						throw new AgentBrowserError(
+							"unsupported",
+							"SafeJS guest string compilation policy is unavailable",
+						);
+				}
 				options.signal.addEventListener("abort", abort, { once: true });
 				if (options.signal.aborted) abort();
 			} catch (error) {

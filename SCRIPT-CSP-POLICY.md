@@ -65,3 +65,26 @@ Parent integration with URL and CLI startup controls passes2187 in49 files;
 build, selected-test types, format and lint pass. Earlier missing-vendor,
 test-nullability and formatter-wrapper failures remain recorded separately.
 No actual SDK, publisher policy activation or meeting execution is claimed.
+
+## Guest string-compilation control
+
+The extension adapter and serializable `runtimeOptions` now accept an explicit
+`stringCompilation: "allow" | "deny"`. Absence leaves existing behavior unchanged;
+the legacy adapter rejects either explicit selection. This is a realm setting,
+not automatic document CSP activation or a new CLI environment variable.
+
+The adapter forwards a primitive snapshot to the public SDK. Before evaluating
+bootstrap or page source, it requires the returned realm to expose a matching
+own, non-writable, non-configurable data property named `stringCompilation`.
+Missing, mismatched, mutable or getter-backed echoes close the realm and refuse
+execution; an older SDK cannot silently ignore requested denial. Configuration
+getters/inherited entries are rejected without invoking the getter.
+
+Parent native/mock integration passes2320 tests in51 selected files, with build,
+types, format and lint passing. The unchanged-production red gate retains21
+failures. The first green attempt retains five mock cleanup-call-count failures;
+corrected checks verify one actual disposal despite idempotent repeated close
+calls. This gate verifies forwarding/refusal, not real guest eval enforcement.
+The SDK interpreter restriction, actual SDK qualification, eval/Function coverage
+and policy-to-document wiring remain separate requirements. No WASM support or
+publisher CSP admission is implied.

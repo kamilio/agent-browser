@@ -111,6 +111,52 @@ it("keeps default selection metadata free of configuration", () => {
 	).not.toHaveProperty("runtimeOptions");
 });
 
+it.each(["allow", "deny"] as const)(
+	"preserves explicit guest string policy %s in a frozen runtime snapshot",
+	async (stringCompilation) => {
+		const test = extensionFixture();
+		Object.defineProperty(test.realm, "stringCompilation", {
+			value: stringCompilation,
+		});
+		const requested = { stringCompilation };
+		const selected = selectPageRuntime(test.core, "extension", requested);
+		requested.stringCompilation =
+			stringCompilation === "allow" ? "deny" : "allow";
+		expect(selected.runtimeOptions).toEqual({ stringCompilation });
+		expect(Object.isFrozen(selected.runtimeOptions)).toBe(true);
+		expect(JSON.parse(JSON.stringify(selected.runtimeOptions))).toEqual({
+			stringCompilation,
+		});
+		const runtime = selected.factory.createPageRuntime(options());
+		expect(test.core.createRealm.mock.calls[0][0].stringCompilation).toBe(
+			stringCompilation,
+		);
+		await runtime.close();
+	},
+);
+
+it.each([undefined, null, "", "DENY", true, false, 1, {}, []])(
+	"rejects invalid explicit serialized guest string policy %j",
+	(stringCompilation) => {
+		const test = extensionFixture();
+		expect(() =>
+			selectPageRuntime(test.core, "extension", {
+				stringCompilation: stringCompilation as "deny",
+			}),
+		).toThrow("Invalid page runtime configuration");
+		expect(test.core.createRealm).not.toHaveBeenCalled();
+	},
+);
+
+it.each(["allow", "deny"] as const)(
+	"refuses guest string policy %s on the legacy adapter",
+	(stringCompilation) => {
+		expect(() =>
+			selectPageRuntime(legacyFixture().core, "legacy", { stringCompilation }),
+		).toThrow("extension");
+	},
+);
+
 it("normalizes null-prototype configuration into a frozen serializable snapshot", () => {
 	const configuration = Object.assign(Object.create(null), {
 		callbackScheduling: "after-prefix",

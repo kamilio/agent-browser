@@ -61,6 +61,7 @@ export interface ReleasedContext {
 }
 
 export interface ReleasedRealm {
+	readonly stringCompilation?: "allow" | "deny";
 	evaluate(
 		source: string,
 		options?: { filename?: string; sourceType?: "module" },
@@ -93,6 +94,7 @@ export interface ReleasedCore {
 	createRealm(options: {
 		classicScripts?: boolean;
 		callbackScheduling?: "after-prefix";
+		stringCompilation?: "allow" | "deny";
 		sourceResolver?: ReleasedSourceResolver;
 		extensions: readonly unknown[];
 		builtinOverrides?: { console?: string };
