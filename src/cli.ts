@@ -52,10 +52,31 @@ function runtimeConfiguration() {
 	const websiteScripts = process.env.AGENT_BROWSER_PAGE_SCRIPTS;
 	const pageGlobals = process.env.AGENT_BROWSER_PAGE_GLOBALS;
 	const callbackScheduling = process.env.AGENT_BROWSER_CALLBACK_SCHEDULING;
+	const expandoDescriptor = Object.getOwnPropertyDescriptor(
+		process.env,
+		"AGENT_BROWSER_DOM_EXPANDOS",
+	);
+	if (
+		expandoDescriptor
+			? !Object.hasOwn(expandoDescriptor, "value") ||
+				!expandoDescriptor.enumerable
+			: "AGENT_BROWSER_DOM_EXPANDOS" in process.env
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid AGENT_BROWSER_DOM_EXPANDOS configuration",
+		);
+	const domExpandos: unknown = expandoDescriptor?.value;
+	if (domExpandos !== undefined && domExpandos !== "bounded-v1")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"AGENT_BROWSER_DOM_EXPANDOS must be bounded-v1 when provided",
+		);
 	if (process.env.AGENT_BROWSER_DOCUMENT_PROFILE === "reader")
 		for (const [name, value] of [
 			["AGENT_BROWSER_PAGE_GLOBALS", pageGlobals],
 			["AGENT_BROWSER_CALLBACK_SCHEDULING", callbackScheduling],
+			["AGENT_BROWSER_DOM_EXPANDOS", domExpandos],
 		])
 			if (value !== undefined)
 				throw new AgentBrowserError(
@@ -82,7 +103,9 @@ function runtimeConfiguration() {
 			"AGENT_BROWSER_CALLBACK_SCHEDULING must be after-prefix when provided",
 		);
 	if (
-		(pageGlobals !== undefined || callbackScheduling !== undefined) &&
+		(pageGlobals !== undefined ||
+			callbackScheduling !== undefined ||
+			domExpandos !== undefined) &&
 		!packageRoot
 	)
 		throw new AgentBrowserError(
@@ -93,6 +116,7 @@ function runtimeConfiguration() {
 		{
 			...(pageGlobals === "classic" ? { classicScripts: true } : {}),
 			...(callbackScheduling ? { callbackScheduling } : {}),
+			...(domExpandos === "bounded-v1" ? { domExpandos } : {}),
 		},
 		runtimeAdapter,
 	);

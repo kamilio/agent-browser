@@ -66,6 +66,7 @@ beforeEach(() => {
 		"AGENT_BROWSER_PAGE_SCRIPTS",
 		"AGENT_BROWSER_PAGE_GLOBALS",
 		"AGENT_BROWSER_CALLBACK_SCHEDULING",
+		"AGENT_BROWSER_DOM_EXPANDOS",
 		"AGENT_BROWSER_LANGUAGES",
 		"AGENT_BROWSER_DOCUMENT_PROFILE",
 		"AGENT_BROWSER_RESOURCE_CACHE",
@@ -197,6 +198,7 @@ it.each(["", "true", "false", "immediate", "after-prefix "])(
 it.each([
 	["AGENT_BROWSER_PAGE_GLOBALS", "classic"],
 	["AGENT_BROWSER_CALLBACK_SCHEDULING", "after-prefix"],
+	["AGENT_BROWSER_DOM_EXPANDOS", "bounded-v1"],
 ])(
 	"requires a package root for %s before reusing a connection",
 	async (name, value) => {
@@ -301,6 +303,7 @@ it("composes explicit profiles, timeout, website scripting, runtime semantics an
 		AGENT_BROWSER_PAGE_SCRIPTS: "classic",
 		AGENT_BROWSER_PAGE_GLOBALS: "classic",
 		AGENT_BROWSER_CALLBACK_SCHEDULING: "after-prefix",
+		AGENT_BROWSER_DOM_EXPANDOS: "bounded-v1",
 		AGENT_BROWSER_COOKIE_POLICY: "pinned-psl-v1",
 	}))
 		vi.stubEnv(key, value);
@@ -324,6 +327,7 @@ it("composes explicit profiles, timeout, website scripting, runtime semantics an
 			runtimeOptions: {
 				classicScripts: true,
 				callbackScheduling: "after-prefix",
+				domExpandos: "bounded-v1",
 			},
 			cookiePolicy: "pinned-psl-v1",
 		},
@@ -445,9 +449,11 @@ it("snapshots CLI selections before asynchronous secret configuration", async ()
 	vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", "extension");
 	vi.stubEnv("AGENT_BROWSER_SCRIPT_BUDGET_PROFILE", "application-v1");
 	vi.stubEnv("AGENT_BROWSER_COMMAND_TIMEOUT_MS", "120000");
+	vi.stubEnv("AGENT_BROWSER_DOM_EXPANDOS", "bounded-v1");
 	runtime.secrets.mockImplementationOnce(async () => {
 		vi.stubEnv("AGENT_BROWSER_SCRIPT_BUDGET_PROFILE", "bounded-v1");
 		vi.stubEnv("AGENT_BROWSER_COMMAND_TIMEOUT_MS", "20");
+		vi.stubEnv("AGENT_BROWSER_DOM_EXPANDOS", undefined);
 		return undefined;
 	});
 	const { error } = await invoke();
@@ -455,5 +461,106 @@ it("snapshots CLI selections before asynchronous secret configuration", async ()
 	expect(runtime.configured.mock.calls[0][0].process).toMatchObject({
 		scripts: { budgetProfile: "application-v1" },
 		commandTimeoutMs: 120000,
+		runtimeOptions: { domExpandos: "bounded-v1" },
 	});
 });
+
+it("forwards DOM expandos without enabling website scripts or other profiles", async () => {
+	vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/trusted/fixture");
+	vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", "extension");
+	vi.stubEnv("AGENT_BROWSER_DOM_EXPANDOS", "bounded-v1");
+	const { error } = await invoke();
+	expect(error).not.toHaveBeenCalled();
+	expect(runtime.configured).toHaveBeenCalledExactlyOnceWith({
+		process: {
+			packageRoot: "/trusted/fixture",
+			runtimeAdapter: "extension",
+			websiteScripts: undefined,
+			identity: { languages: ["en-US"] },
+			runtimeOptions: { domExpandos: "bounded-v1" },
+		},
+	});
+});
+
+it.each(["", "true", "false", "auto", "bounded-v1 ", "BOUNDED-V1"])(
+	"rejects invalid DOM expando environment selection %s before secrets",
+	async (value) => {
+		vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/trusted/fixture");
+		vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", "extension");
+		vi.stubEnv("AGENT_BROWSER_DOM_EXPANDOS", value);
+		const { error } = await invoke();
+		expect(JSON.parse(error.mock.calls[0][0])).toMatchObject({
+			error: {
+				code: "invalid-input",
+				message: expect.stringContaining("AGENT_BROWSER_DOM_EXPANDOS"),
+			},
+		});
+		expect(runtime.secrets).not.toHaveBeenCalled();
+		expect(runtime.configured).not.toHaveBeenCalled();
+	},
+);
+
+it.each([undefined, "legacy"])(
+	"rejects DOM expandos with adapter %s",
+	async (adapter) => {
+		vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/trusted/fixture");
+		vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", adapter);
+		vi.stubEnv("AGENT_BROWSER_DOM_EXPANDOS", "bounded-v1");
+		const { error } = await invoke();
+		expect(JSON.parse(error.mock.calls[0][0])).toMatchObject({
+			error: { code: "unsupported" },
+		});
+		expect(runtime.secrets).not.toHaveBeenCalled();
+		expect(runtime.configured).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects DOM expandos with the reader profile", async () => {
+	vi.stubEnv("AGENT_BROWSER_DOCUMENT_PROFILE", "reader");
+	vi.stubEnv("AGENT_BROWSER_DOM_EXPANDOS", "bounded-v1");
+	const { error } = await invoke();
+	expect(JSON.parse(error.mock.calls[0][0])).toMatchObject({
+		error: {
+			code: "invalid-input",
+			message: expect.stringContaining("AGENT_BROWSER_DOM_EXPANDOS"),
+		},
+	});
+	expect(runtime.secrets).not.toHaveBeenCalled();
+	expect(runtime.configured).not.toHaveBeenCalled();
+});
+
+it.each(["accessor", "inherited", "hidden", "non-string"])(
+	"rejects a malformed %s DOM expando selection without reading getters",
+	async (kind) => {
+		const original = process.env;
+		const getter = vi.fn(() => "bounded-v1");
+		const environment = {
+			...original,
+			AGENT_BROWSER_SAFEJS_ROOT: "/trusted/fixture",
+			AGENT_BROWSER_PAGE_RUNTIME: "extension",
+		};
+		if (kind === "inherited")
+			Object.setPrototypeOf(environment, {
+				AGENT_BROWSER_DOM_EXPANDOS: "bounded-v1",
+			});
+		else
+			Object.defineProperty(environment, "AGENT_BROWSER_DOM_EXPANDOS", {
+				...(kind === "accessor"
+					? { get: getter }
+					: { value: kind === "non-string" ? 1 : "bounded-v1" }),
+				enumerable: kind !== "hidden",
+			});
+		process.env = environment;
+		try {
+			const { error } = await invoke();
+			expect(JSON.parse(error.mock.calls[0][0])).toMatchObject({
+				error: { code: "invalid-input" },
+			});
+			expect(getter).not.toHaveBeenCalled();
+			expect(runtime.secrets).not.toHaveBeenCalled();
+			expect(runtime.configured).not.toHaveBeenCalled();
+		} finally {
+			process.env = original;
+		}
+	},
+);

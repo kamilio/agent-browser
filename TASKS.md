@@ -92,6 +92,34 @@ Its harness types pass after correcting type discovery and module mode; the two
 earlier compiler failures are preserved. No publisher recovery or join success
 is claimed before that actual runtime gate completes.
 
+September18,17:14UTC: that combined gate completes with a failure, not recovery.
+The actual native/SDK expando identity/mutation/hasOwn/deletion preflight and the
+unchanged captured759-unit SB bootstrap both pass. Unchanged all.min.js then
+exceeds its120s native script deadline (136644.479ms observed); exports are not
+verified. Supervisor141.848s, one failed test, all native/SDK owners and process
+groups closed, SDK retained values/data zero, empty private HOME/TMP and no pin
+mismatches. No new requests or credential access occurred. A fresh same-input,
+same-bound in-process CPU diagnostic is active in stage03; stage02 was never
+executed because its profiler callback typecheck required explicit annotations.
+The performance fix and proper CSP-loader integration are now separate active
+work items. The user-facing meeting, audio and notetaking outcome remains open.
+
+September18,17:22UTC: the same-input CPU diagnostic completes with the same
+deadline failure and clean closure (142.240s supervisor). About96.7% of137040.8ms
+sampled execution is retained-data reconciliation,95.4% is graph measurement;
+recursive frame percentages are not additive. Its private CPU-PROFILE.json and
+CPU-SUMMARY.json in stage03 drive a targeted SDK performance fix, not another
+timeout increase. No full dependency recovery or publisher-source alteration.
+
+The owned CLI now accepts explicit AGENT_BROWSER_DOM_EXPANDOS=bounded-v1,
+forwarding only that requested extension runtime option. Root/adapter/reader
+checks precede side effects; malformed and accessor configuration reject without
+reading getters, default omission and all unrelated profiles remain unchanged.
+Qualification at `/tmp/agent-browser-cli-dom-expandos-green01-4KAOv6/candidate`
+passes291 native tests in6 files,6.326s, with build/types/format/lint passing.
+The failure-first17 assertion failures remain preserved. This is mocked CLI
+qualification, not actual SDK/process/website admission. See DOM-EXPANDOS.md.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,

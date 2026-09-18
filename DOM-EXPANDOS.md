@@ -32,9 +32,12 @@ option shape, not authorization to load or execute an SDK or publisher asset.
   allocation. Later changes to the caller's configuration do not change it.
 - The legacy adapter refuses this option; there is no silent downgrade or
   retry without the requested semantics.
-- There is no dedicated CLI flag or environment-variable switch for this
-  option. It does not enable classic scripts, string compilation or any CSP
-  bypass; those policies remain separate.
+- The CLI accepts `AGENT_BROWSER_DOM_EXPANDOS=bounded-v1`, requiring an explicit
+  `AGENT_BROWSER_SAFEJS_ROOT` and `AGENT_BROWSER_PAGE_RUNTIME=extension`. Reader
+  profile, legacy runtime and malformed values reject before secret loading,
+  process creation or connection reuse. Selection is snapshotted before async
+  setup. It does not enable website/classic scripts, string compilation or any
+  CSP bypass; those policies remain separate.
 
 The internal `ScriptHostObjectFactory.domExpandos` marker is readonly. The
 extension supplies an own, nonwritable, nonconfigurable marker on its
@@ -147,3 +150,17 @@ Native mocks and SDK synthetic tests are separate gates. As of this documentatio
 handoff, parent owns and is running the combined captured-dependency recovery
 gate; this document does not claim its result. None of the results above proves
 whole Zoom page startup, meeting admission, media operation or notetaking.
+
+Subsequent combined recovery at
+`/tmp/agent-browser-zoom-join-dependency-recovery-xtNvCr/stage01` verifies the
+actual expando preflight and unchanged captured bootstrap, but the original
+Zoom dependency exceeds its120s script deadline. Stage03's same-input CPU
+diagnostic attributes about96.7% of sampled execution to retained-data
+reconciliation. Both failed gates close owners/process groups and release all
+SDK-retained values/data. Neither verifies the final jQuery exports.
+
+CLI forwarding is separately qualified by291 native tests in6 files at
+`/tmp/agent-browser-cli-dom-expandos-green01-4KAOv6/candidate`, with build, types,
+format and lint passing for the scoped change. The failure-first run retains17
+failed assertions. This mock-only qualification does not execute an SDK, create
+a real process, visit a website or establish actual owned Zoom recovery.
