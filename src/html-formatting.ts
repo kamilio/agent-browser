@@ -185,10 +185,23 @@ export class HtmlFormatting {
 	}
 
 	sync() {
+		if (this.entries.length === 0) return;
+		let stack: HtmlParserNode[] | undefined;
+		let cursor = 0;
+		const examined = new Set<HtmlParserNode>();
 		for (let index = 0; index < this.entries.length; index++) {
 			this.visit();
 			const entry = this.entries[index];
-			if ("marker" in entry && this.stackIndex(entry.marker) < 0) {
+			if (!("marker" in entry)) continue;
+			if (stack === undefined) {
+				stack = this.options.stack();
+				cursor = stack.length;
+			}
+			while (!examined.has(entry.marker) && cursor > 0) {
+				this.visit();
+				examined.add(stack[--cursor]);
+			}
+			if (!examined.has(entry.marker)) {
 				this.entries.length = index;
 				return;
 			}

@@ -6,6 +6,28 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Source-linked research and bounded formatting-marker reuse
+
+- Three anonymous native GETs on September18: OpenAI Astra article403 barrier,
+  PrismML Bonsai article200/13908 Markdown bytes, HN discussion200/605306 body
+  bytes but loader resource-limit. No retry, redirect, authentication or challenge
+  solver. Preserve the original query-redaction proof mistake and corrected proof.
+- Diagnose captured HN failure at1600001 formatting visits (cap1600000): repeated
+  marker stack scans consume84.99% of charged work before failure. Reuse examined
+  identities lazily within one sync, with no cross-call cache or raised budget.
+- Native729/0 in12 files includes13 added cases; baseline/new-tests728/1 proves
+  the repeated-scan regression. Build/types/format/lint pass; preserve the initial
+  test-formatting failure. Corrected offline loader completes at1246627 visits.
+- Whole-page plain/compact/focused Markdown still hits256000 bytes. Bounded
+  existing root selection retrieves all414 comment bodies in107455 Markdown
+  bytes total, max1411 per piece; exact source-body Markdown,414 author records,
+  347 parent links and25 body links verified. No site refetch or full-page success
+  claim. Preserve a separate harness node-id/reference mistake before that pass.
+- See reports/source-linked-research-2026-09-18.md/JSON. HN is not Twitter, vendor
+  claims are not fact-checked, and Reddit/Poe/hardware research is not complete.
+  Keep100-site, native Zoom/media, actual SDK, credentials/passkeys and broader
+  access gates open. Overall goal active; no push or default runtime switch.
+
 ### Native notetaker PCM output, not a meeting join
 
 - Add package-root PcmCapture for already decoded PCM16: bounded copied input,

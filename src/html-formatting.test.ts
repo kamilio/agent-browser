@@ -242,7 +242,7 @@ it("checks cancellation while repairing rather than returning a partial live doc
 	expect(() => tree?.get(tree.root)).toThrow("closed");
 });
 
-function state(limits = { maxWork: 10000, maxText: 10000 }) {
+function state(limits = { maxWork: 10000, maxText: 10000 }, check = () => {}) {
 	const tree = new DocumentTree("https://example.com/");
 	trees.push(tree);
 	const root: HtmlParserNode = { tree, id: tree.createFragment(), tag: "body" };
@@ -256,7 +256,7 @@ function state(limits = { maxWork: 10000, maxText: 10000 }) {
 		},
 		place: (node, parent) => tree.append(parent.id, node.id),
 		issue() {},
-		check() {},
+		check,
 		...limits,
 	};
 	const formatter = new HtmlFormatting(options);
@@ -267,8 +267,131 @@ function state(limits = { maxWork: 10000, maxText: 10000 }) {
 		formatter.add(node, attributes);
 		return node;
 	};
-	return { tree, stack, formatter, add, options };
+	const mark = () => {
+		const node = { tree, id: tree.createElement("td"), tag: "td" };
+		tree.append(stack[stack.length - 1].id, node.id);
+		stack.push(node);
+		formatter.mark(node);
+		return node;
+	};
+	return { tree, stack, formatter, add, mark, options };
 }
+
+it("examines each stack node only once while syncing multiple markers", () => {
+	let checks = 0;
+	const { stack, formatter, mark } = state(undefined, () => checks++);
+	const outer = mark();
+	const middle = mark();
+	const inner = mark();
+	checks = 0;
+	formatter.sync();
+	expect(checks).toBe(6);
+	stack.splice(1, 3, inner, middle, outer);
+	checks = 0;
+	formatter.sync();
+	expect(checks).toBe(6);
+});
+
+it("stops the lazy scan at a single near-top marker", () => {
+	const { tree, stack, formatter, mark } = state({
+		maxWork: 2,
+		maxText: 1000,
+	});
+	for (let index = 0; index < 64; index++)
+		stack.push({ tree, id: tree.createElement("span"), tag: "span" });
+	mark();
+	expect(() => formatter.sync()).not.toThrow();
+	expect(() => formatter.sync()).toThrow("formatting work limit");
+});
+
+it.each([
+	{ missing: "outer", markerIndex: 0 },
+	{ missing: "middle", markerIndex: 1 },
+	{ missing: "inner", markerIndex: 2 },
+])("truncates at the first missing $missing marker", ({ markerIndex }) => {
+	const { stack, formatter, add, mark } = state();
+	const formatting = [add("b")];
+	const markers: HtmlParserNode[] = [];
+	for (const tag of ["i", "u", "em"]) {
+		markers.push(mark());
+		formatting.push(add(tag));
+	}
+	stack.splice(stack.indexOf(markers[markerIndex]), 1);
+	formatter.sync();
+	const retained = formatting[markerIndex];
+	expect(formatter.find(retained.tag)).toBe(retained);
+	for (const discarded of formatting.slice(markerIndex + 1))
+		expect(formatter.find(discarded.tag)).toBeUndefined();
+});
+
+it("matches duplicate marker objects by identity rather than equal fields", () => {
+	const { stack, formatter, add, mark } = state();
+	const bold = add("b");
+	const marker = mark();
+	formatter.mark(marker);
+	const italic = add("i");
+	formatter.sync();
+	expect(formatter.find("i")).toBe(italic);
+	stack[stack.indexOf(marker)] = { ...marker };
+	formatter.sync();
+	expect(formatter.find("b")).toBe(bold);
+	expect(formatter.find("i")).toBeUndefined();
+});
+
+it("does not reuse marker membership after the stack changes between syncs", () => {
+	const { stack, formatter, add, mark } = state();
+	const bold = add("b");
+	const marker = mark();
+	const italic = add("i");
+	formatter.sync();
+	expect(formatter.find("i")).toBe(italic);
+	stack.splice(stack.indexOf(marker), 1);
+	formatter.sync();
+	expect(formatter.find("b")).toBe(bold);
+	stack.push(marker);
+	formatter.sync();
+	expect(formatter.find("i")).toBeUndefined();
+});
+
+it("charges every newly examined stack node against the work budget", () => {
+	let checks = 0;
+	const { tree, stack, formatter, mark } = state(
+		{ maxWork: 2, maxText: 1000 },
+		() => checks++,
+	);
+	mark();
+	stack.push({ tree, id: tree.createElement("span"), tag: "span" });
+	expect(() => formatter.sync()).toThrow("formatting work limit");
+	expect(checks).toBe(3);
+});
+
+it.each([1, 2, 3, 4])(
+	"checks cancellation at marker-sync visit %i",
+	(cancelAt) => {
+		let checks = 0;
+		let armed = false;
+		const cancelled = new Error("cancelled");
+		const { formatter, mark } = state(undefined, () => {
+			if (++checks === cancelAt && armed) throw cancelled;
+		});
+		mark();
+		mark();
+		checks = 0;
+		armed = true;
+		expect(() => formatter.sync()).toThrow(cancelled);
+		expect(checks).toBe(cancelAt);
+	},
+);
+
+it("preserves exact nested-table discussion serialization across repeated markers", () => {
+	const rows = Array.from(
+		{ length: 1000 },
+		(_unused, index) =>
+			`<tr><td><table><tbody><tr><td><a href="user?id=reader${index}">reader${index}</a></td></tr><tr><td><p><b>comment ${index}</b></p><!--reply--><p><i>reply ${index}</i></p></td></tr></tbody></table></td></tr>`,
+	).join("");
+	const source = `<table><tbody><tr><td><table><tbody>${rows}</tbody></table></td></tr></tbody></table><p>after</p>`;
+	expect(parse(source).html).toBe(source);
+});
 
 it("bounds formatting-list and stack-search work", () => {
 	const { formatter, add } = state({ maxWork: 5, maxText: 1000 });

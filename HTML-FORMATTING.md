@@ -69,6 +69,23 @@ Resource or cancellation failure closes the candidate parser document and its
 associated contents owners. Existing fragment-based HTML replacement retains its
 staging boundary; the formatter does not bypass native import/replacement checks.
 
+## Marker membership follow-up — September 18, 2026
+
+Marker synchronization now uses a lazy reverse scan and an identity set local to
+that invocation. Each newly examined stack node is charged once, rather than
+rescanned for each marker. The scan stops on a match, preserving the inexpensive
+near-top single-marker case. Empty active lists allocate nothing. Membership is
+never reused across stack changes; clearing still stops at the first missing
+marker. Cancellation and all existing bounds remain in place.
+
+Selected native tests pass 729/0 in 12 files, including 13 new regression cases.
+A preserved Hacker News discussion that failed the formatting-work ceiling now
+loads in 1,246,627 visits under the same 1,600,000 cap. This is not a wall-clock
+speedup measurement. Whole-page Markdown still exceeds its separate 256,000-byte
+output cap; bounded per-comment replay retrieves all 414 captured comment bodies
+without increasing it. See `reports/source-linked-research-2026-09-18.md` for
+fresh-request failures, offline validation and remaining limitations.
+
 ## Remaining compatibility
 
 The parser remains an independent HTML subset. Broader malformed-table handling,
