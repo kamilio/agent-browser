@@ -26,7 +26,8 @@ handoff at access restrictions. Those broader outcomes remain unverified.
 - Actual Zoom join, permitted sustained audio, durable recording, transcript,
   summary and verified requested delivery remain unimplemented/unverified.
   No additional live request or meeting/audio/credential/device action occurs
-  in this phase. Critically low disk space remains a recording blocker.
+  in this phase. Disk space recovered externally after qualification (15.16 GB
+  available at 2026-09-18T00:07:22Z); recheck capacity before recording.
 - Preserve unrelated CSS selector work, historical website evidence and open
   research/credentials/passkey gates. See NATIVE-WEBSOCKET.md and
   reports/native-websocket-connections-2026-09-17.md/JSON for exact qualification.
