@@ -12,6 +12,16 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September18,23:53UTC: an offline minimal-document run reproduces the exact vendor
+timeout at120.287s with continuing SDK steps and166.407s aggregate process CPU.
+This is not an idle-only wait, but no CPU profile is emitted and no function-level
+hotspot is established. Parent verifies7086 input hashes/modes and24 artifacts;
+all observed resources close. The earlier tab-identifier harness failure remains
+preserved separately. A tiny owned profiler-output control precedes another
+asset run; no deadline or isolation limit changes. See
+`reports/zoom-offline-initialization-timeout-2026-09-18.md`. Zoom remains unjoined;
+UI, admission, audio, recording, transcription and delivery remain OPEN.
+
 September18,23:36UTC: the first core50/application-unicode-v1 live load executes
 16 scripts, then script17 reaches its unchanged120s evaluation deadline. The
 former immediate32k regexp error does not recur, but no internal timeout span
