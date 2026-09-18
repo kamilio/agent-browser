@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Capture the first two executable Zoom client assets
+
+- Two separately scoped native GETs retrieve the loader's configured initial-CDN
+  externals and webim assets: HTTP200, 337218 and75102 complete JavaScript bytes
+  at08:00:56.280 and08:03:26.926UTC. Both intentionally fail article extraction
+  as unsupported/loader with zero Markdown. No retries, alternate CDN, SDK/source
+  execution or meeting action; synthetic proofs and live processes close.
+- Source-only review finds seven externals wrappers, eager embedded modal/toast
+  styles and a detached modal root, not an executed React application. Webim
+  registers chunk962/module19776 through top-level this.webpackChunkzoom; no
+  explicit startup argument. Preserve the broad this.* inventory caveat.
+- Reviewed extension-adapter/candidate composition lacks the top-level receiver
+  and writable host-window registry. Public binding/named-property APIs exist,
+  but naive host copies lose guest-array identity. This is not a runtime failure
+  receipt or a claim about all SDK embeddings. The scheduling proposal does not
+  fix these gaps; host Script mode/global declarations need separate integration.
+- Externals exceeds the default262144 source-code-unit limit; existing bounded
+  overrides are available. No limit increase or execution is performed. Require
+  an explicit execution budget, not just successful transport capture.
+- See reports/zoom-client-assets-2026-09-18.md/JSON. Remaining three loader assets
+  are unfetched here. Next qualify public classic globals/registry identity and
+  the scheduling proposal in separately authorized isolated SDK tests, preserving
+  all existing expectations. Native media/decode, host admission, permitted
+  recording/transcription/delivery and broader browser goals remain open.
+
 ### Capture the real Zoom client and propose callback scheduling
 
 - Three native GETs cover two distinct private client URLs: an intentionally

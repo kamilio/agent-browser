@@ -1,0 +1,1542 @@
+{
+  "date": "2026-09-18",
+  "status": "client-assets-captured-not-executed",
+  "meetingJoined": false,
+  "audioReceived": false,
+  "recordingStarted": false,
+  "transcriptProduced": false,
+  "summaryDelivered": false,
+  "sdkExecuted": false,
+  "scriptsExecuted": false,
+  "newLiveRequests": 2,
+  "distinctAssetUrls": 2,
+  "retries": 0,
+  "redirects": 0,
+  "completeSourceBytes": 412320,
+  "requests": [
+    {
+      "url": "https://st1.zoom.us/web_client_pwa/7.1.0.3117/js/externals.0.min.js",
+      "lane": "/tmp/agent-browser-zoom-externals-F1oqX7",
+      "receivedAt": "2026-09-18T08:00:56.280Z",
+      "status": 200,
+      "mime": "application/javascript",
+      "completeCapture": true,
+      "bodyBytes": 337218,
+      "bodySha256": "80b5be74d9a31b1d5d5706eb2bc7d19ccaf103171b190884ef35e9c449ca0fee",
+      "readerFailure": {
+        "category": "unsupported",
+        "stage": "loader"
+      },
+      "execution": {
+        "mode": "live",
+        "pid": 3003409,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.2865122929215431,
+        "safetyPassed": true,
+        "safetyErrors": [],
+        "summary": {
+          "outcome": "failure",
+          "admission": null,
+          "partial": true,
+          "contentSuccess": false,
+          "contentFallback": null,
+          "extractionPartial": null,
+          "status": 200,
+          "mime": [
+            "application/javascript"
+          ],
+          "redirect": null,
+          "failure": {
+            "category": "unsupported",
+            "stage": "loader"
+          },
+          "receivedAt": "2026-09-18T08:00:56.280Z",
+          "bodyBytes": 337218,
+          "markdownBytes": 0,
+          "requests": 1,
+          "mockedRequests": 0
+        }
+      },
+      "syntheticProof": {
+        "mode": "proof",
+        "pid": 3002421,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.2827649265527725,
+        "safetyPassed": true,
+        "safetyErrors": [],
+        "summary": {
+          "outcome": "failure",
+          "admission": null,
+          "partial": true,
+          "contentSuccess": false,
+          "contentFallback": null,
+          "extractionPartial": null,
+          "status": 200,
+          "mime": [
+            "application/javascript"
+          ],
+          "redirect": null,
+          "failure": {
+            "category": "unsupported",
+            "stage": "loader"
+          },
+          "receivedAt": "2026-09-18T07:59:48.597Z",
+          "bodyBytes": 66,
+          "markdownBytes": 0,
+          "requests": 1,
+          "mockedRequests": 1
+        }
+      }
+    },
+    {
+      "url": "https://st1.zoom.us/web_client_pwa/7.1.0.3117/js/pwa-webim.js",
+      "lane": "/tmp/agent-browser-zoom-webim-9Ike9M",
+      "receivedAt": "2026-09-18T08:03:26.926Z",
+      "status": 200,
+      "mime": "application/javascript",
+      "completeCapture": true,
+      "bodyBytes": 75102,
+      "bodySha256": "2a82144a9699b2cc1feeb95779e0f62b4ce6e94d5825c696e40be7f1b9240286",
+      "readerFailure": {
+        "category": "unsupported",
+        "stage": "loader"
+      },
+      "execution": {
+        "mode": "live",
+        "pid": 3006648,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.28463554196059704,
+        "safetyPassed": true,
+        "safetyErrors": [],
+        "summary": {
+          "outcome": "failure",
+          "admission": null,
+          "partial": true,
+          "contentSuccess": false,
+          "contentFallback": null,
+          "extractionPartial": null,
+          "status": 200,
+          "mime": [
+            "application/javascript"
+          ],
+          "redirect": null,
+          "failure": {
+            "category": "unsupported",
+            "stage": "loader"
+          },
+          "receivedAt": "2026-09-18T08:03:26.926Z",
+          "bodyBytes": 75102,
+          "markdownBytes": 0,
+          "requests": 1,
+          "mockedRequests": 0
+        }
+      },
+      "syntheticProof": {
+        "mode": "proof",
+        "pid": 3006301,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.2847307287156582,
+        "safetyPassed": true,
+        "safetyErrors": [],
+        "summary": {
+          "outcome": "failure",
+          "admission": null,
+          "partial": true,
+          "contentSuccess": false,
+          "contentFallback": null,
+          "extractionPartial": null,
+          "status": 200,
+          "mime": [
+            "application/javascript"
+          ],
+          "redirect": null,
+          "failure": {
+            "category": "unsupported",
+            "stage": "loader"
+          },
+          "receivedAt": "2026-09-18T08:03:06.879Z",
+          "bodyBytes": 66,
+          "markdownBytes": 0,
+          "requests": 1,
+          "mockedRequests": 1
+        }
+      }
+    }
+  ],
+  "analyses": {
+    "externals": {
+      "review": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/externals-analysis/REVIEW.md",
+      "result": {
+        "schemaVersion": 1,
+        "reviewDate": "2026-09-18",
+        "scope": "Source-only analysis of captured externals.0.min.js; all behavioral descriptions are static control-flow findings, not observations of execution.",
+        "source": {
+          "path": "/tmp/agent-browser-zoom-externals-F1oqX7/live/body.bin",
+          "publicUrl": "https://st1.zoom.us/web_client_pwa/7.1.0.3117/js/externals.0.min.js",
+          "bytes": 337218,
+          "sha256": "80b5be74d9a31b1d5d5706eb2bc7d19ccaf103171b190884ef35e9c449ca0fee"
+        },
+        "captureVerification": {
+          "receiptPath": "/tmp/agent-browser-zoom-externals-F1oqX7/live/RESULT.json",
+          "receiptFileSha256": "8b868470dbe45c7705e435005a26f2aa328ee6f9b99beba3c333465327f38e4b",
+          "executionPath": "/tmp/agent-browser-zoom-externals-F1oqX7/live/EXECUTION.json",
+          "executionFileSha256": "da773fcf36db5bc41cea6bbd45911c90da4389a502abda3bc2a663007a371416",
+          "matchingHashFields": [
+            "primaryResponse.bodySha256",
+            "bodyCapture.sha256"
+          ],
+          "matchingByteFields": [
+            "primaryResponse.decodedBytes",
+            "bodyCapture.decodedBytes",
+            "EXECUTION.summary.bodyBytes"
+          ],
+          "hashScope": "transport-decoded-body-before-loader",
+          "httpStatus": 200,
+          "mime": [
+            "application/javascript"
+          ],
+          "receivedAt": "2026-09-18T08:00:56.280Z",
+          "parentCaptureRequests": 1,
+          "readerOutcome": "failure",
+          "readerFailure": {
+            "category": "unsupported",
+            "stage": "loader"
+          },
+          "markdownBytes": 0,
+          "captureProcessExitCode": 1,
+          "captureTimedOut": false,
+          "interpretation": "Transport captured the full JavaScript body; the reader refused JavaScript at unsupported/loader. This is not a JavaScript execution or compatibility result."
+        },
+        "analysis": {
+          "staticTool": "Existing local TypeScript createSourceFile, ScriptKind.JS",
+          "parseDiagnostics": 0,
+          "topLevelStatements": 1,
+          "sequentialWrapperCalls": 7,
+          "newNetworkRequests": 0,
+          "capturedSourceExecuted": false,
+          "repositorySourceExecuted": false,
+          "sdkExecuted": false,
+          "testsRun": false,
+          "deviceOperations": false,
+          "credentialsAccessed": false,
+          "receiptEmbeddedBodyPrintedOrDecoded": false
+        },
+        "byteConvention": "Zero-based body byte offsets; ends exclusive; evidence hashes cover those exact bytes.",
+        "evaluationModel": {
+          "wrapperOrder": [
+            "React",
+            "ReactDOM",
+            "RTK",
+            "ReactRedux",
+            "ReactRouterDOM",
+            "PWAModal",
+            "PWAToast"
+          ],
+          "unconditionalSyntacticSetup": "Seven immediately invoked UMD wrappers occur in one comma expression, left to right, unless an earlier exception aborts evaluation.",
+          "browserGlobalBranch": "Without matching CommonJS/AMD branches, each wrapper immediately calls its factory and exposes the listed global if that factory completes.",
+          "conditionalAlternatives": "CommonJS uses the listed module specifiers; AMD registers factories. PWA wrappers also have an exports-only branch. These are not network URL derivations.",
+          "factoryEffectMeaning": "Unconditional below means attempted when the selected synchronous factory/module path reaches it; no such path was run in this review."
+        },
+        "segments": [
+          {
+            "order": 1,
+            "globalNameInBrowserBranch": "React",
+            "bytes": [
+              0,
+              10407
+            ],
+            "sha256": "411b6d149adef074ff72212826aacd8bf1092ab19b5fb00253b0505ea576b9ae",
+            "wrapperEvidence": "React_wrapper",
+            "observedExportedVersions": [
+              {
+                "value": "18.3.1",
+                "evidence": "React_exported_version"
+              }
+            ],
+            "versionClaimForUnversionedLibraries": null,
+            "namedExports": [
+              "Children",
+              "Component",
+              "Fragment",
+              "Profiler",
+              "PureComponent",
+              "StrictMode",
+              "Suspense",
+              "__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED",
+              "act",
+              "cloneElement",
+              "createContext",
+              "createElement",
+              "createFactory",
+              "createRef",
+              "forwardRef",
+              "isValidElement",
+              "lazy",
+              "memo",
+              "startTransition",
+              "unstable_act",
+              "useCallback",
+              "useContext",
+              "useDebugValue",
+              "useDeferredValue",
+              "useEffect",
+              "useId",
+              "useImperativeHandle",
+              "useInsertionEffect",
+              "useLayoutEffect",
+              "useMemo",
+              "useReducer",
+              "useRef",
+              "useState",
+              "useSyncExternalStore",
+              "useTransition",
+              "version"
+            ],
+            "browserGlobalInputs": [],
+            "conditionalModuleSpecifiers": []
+          },
+          {
+            "order": 2,
+            "globalNameInBrowserBranch": "ReactDOM",
+            "bytes": [
+              10408,
+              140034
+            ],
+            "sha256": "de2ac77b8fddcce63f28416c3328ad7f746cdad1d8dffa407e1e23a00d44c4a0",
+            "wrapperEvidence": "ReactDOM_wrapper",
+            "observedExportedVersions": [
+              {
+                "value": "18.3.1-next-f1338f8080-20240426",
+                "evidence": "ReactDOM_exported_version"
+              }
+            ],
+            "versionClaimForUnversionedLibraries": null,
+            "namedExports": [
+              "__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED",
+              "createPortal",
+              "createRoot",
+              "findDOMNode",
+              "flushSync",
+              "hydrate",
+              "hydrateRoot",
+              "render",
+              "unmountComponentAtNode",
+              "unstable_batchedUpdates",
+              "unstable_renderSubtreeIntoContainer",
+              "version"
+            ],
+            "browserGlobalInputs": [
+              "React"
+            ],
+            "conditionalModuleSpecifiers": [
+              "react"
+            ]
+          },
+          {
+            "order": 3,
+            "globalNameInBrowserBranch": "RTK",
+            "bytes": [
+              140035,
+              178240
+            ],
+            "sha256": "0a887ba304ff5bfdfbe90df29ca9242a738d780b5b62bdaa6c30f28f6a0ebd48",
+            "wrapperEvidence": "RTK_wrapper",
+            "observedExportedVersions": [],
+            "versionClaimForUnversionedLibraries": null,
+            "namedExports": [
+              "MiddlewareArray",
+              "TaskAbortError",
+              "__DO_NOT_USE__ActionTypes",
+              "addListener",
+              "applyMiddleware",
+              "bindActionCreators",
+              "clearAllListeners",
+              "combineReducers",
+              "compose",
+              "configureStore",
+              "createAction",
+              "createAsyncThunk",
+              "createDraftSafeSelector",
+              "createEntityAdapter",
+              "createImmutableStateInvariantMiddleware",
+              "createListenerMiddleware",
+              "createNextState",
+              "createReducer",
+              "createSelector",
+              "createSerializableStateInvariantMiddleware",
+              "createSlice",
+              "createStore",
+              "current",
+              "findNonSerializableValue",
+              "freeze",
+              "getDefaultMiddleware",
+              "getType",
+              "isAllOf",
+              "isAnyOf",
+              "isAsyncThunkAction",
+              "isDraft",
+              "isFulfilled",
+              "isImmutableDefault",
+              "isPending",
+              "isPlain",
+              "isPlainObject",
+              "isRejected",
+              "isRejectedWithValue",
+              "miniSerializeError",
+              "nanoid",
+              "original",
+              "removeListener",
+              "unwrapResult"
+            ],
+            "browserGlobalInputs": [],
+            "conditionalModuleSpecifiers": []
+          },
+          {
+            "order": 4,
+            "globalNameInBrowserBranch": "ReactRedux",
+            "bytes": [
+              178241,
+              192890
+            ],
+            "sha256": "72669358f4c85efd7482965875ba293080961c891e47be2549921fef76518e6f",
+            "wrapperEvidence": "ReactRedux_wrapper",
+            "observedExportedVersions": [],
+            "versionClaimForUnversionedLibraries": null,
+            "namedExports": [
+              "batch",
+              "Provider",
+              "ReactReduxContext",
+              "connect",
+              "createDispatchHook",
+              "createSelectorHook",
+              "createStoreHook",
+              "shallowEqual",
+              "useDispatch",
+              "useSelector",
+              "useStore"
+            ],
+            "browserGlobalInputs": [
+              "React",
+              "ReactDOM"
+            ],
+            "conditionalModuleSpecifiers": [
+              "react",
+              "react-dom"
+            ]
+          },
+          {
+            "order": 5,
+            "globalNameInBrowserBranch": "ReactRouterDOM",
+            "bytes": [
+              192891,
+              222703
+            ],
+            "sha256": "fdab88eb1d06651ddc453f2aaa34f1c91bd70455902984f06e4acba93bfa66ad",
+            "wrapperEvidence": "ReactRouterDOM_wrapper",
+            "observedExportedVersions": [],
+            "versionClaimForUnversionedLibraries": null,
+            "namedExports": [
+              "BrowserRouter",
+              "HashRouter",
+              "Link",
+              "MemoryRouter",
+              "NavLink",
+              "Prompt",
+              "Redirect",
+              "Route",
+              "Router",
+              "StaticRouter",
+              "Switch",
+              "generatePath",
+              "matchPath",
+              "useHistory",
+              "useLocation",
+              "useParams",
+              "useRouteMatch",
+              "withRouter"
+            ],
+            "browserGlobalInputs": [
+              "React"
+            ],
+            "conditionalModuleSpecifiers": [
+              "react"
+            ]
+          },
+          {
+            "order": 6,
+            "globalNameInBrowserBranch": "PWAModal",
+            "bytes": [
+              222704,
+              282792
+            ],
+            "sha256": "885ecc7cf80b4c3172e22bf86c2da6fab679a2ab33bfd2f384353dc016689b25",
+            "wrapperEvidence": "PWAModal_wrapper",
+            "observedExportedVersions": [],
+            "versionClaimForUnversionedLibraries": null,
+            "namedExports": [
+              "Modal",
+              "ModalEvents"
+            ],
+            "browserGlobalInputs": [
+              "React",
+              "ReactDOM"
+            ],
+            "conditionalModuleSpecifiers": [
+              "React",
+              "ReactDOM"
+            ]
+          },
+          {
+            "order": 7,
+            "globalNameInBrowserBranch": "PWAToast",
+            "bytes": [
+              282793,
+              337217
+            ],
+            "sha256": "f340e3f55d9c26c17b0da7c68f4fcee4ba8942ca18f6ef020e66f801260b42bb",
+            "wrapperEvidence": "PWAToast_wrapper",
+            "observedExportedVersions": [],
+            "versionClaimForUnversionedLibraries": null,
+            "namedExports": [
+              "ICON_TYPE",
+              "ToastContainer",
+              "_globalProps",
+              "_propsSetterCache",
+              "actionButtonCls",
+              "inherit",
+              "toast",
+              "toastHasAnimatedCls",
+              "toastHiddenClassName",
+              "toastVisibleClassName",
+              "updateContent",
+              "updateToastDisplay"
+            ],
+            "browserGlobalInputs": [
+              "React",
+              "ReactDOM",
+              "ReactRouterDOM"
+            ],
+            "conditionalModuleSpecifiers": [
+              "React",
+              "ReactDOM",
+              "ReactRouterDOM"
+            ]
+          }
+        ],
+        "embeddedContent": [
+          {
+            "component": "RTK",
+            "identification": "Redux Toolkit-shaped public API with Redux and Immer error/symbol markers; exact package versions not established"
+          },
+          {
+            "component": "PWAModal",
+            "identification": "Custom Modal/ModalEvents exports with react-draggable and react-modal named implementation markers; local numeric module cache/loader"
+          },
+          {
+            "component": "PWAToast",
+            "identification": "Custom toast/ToastContainer exports with Toastify-named CSS/behavior; local numeric module cache/loader; package version not established"
+          }
+        ],
+        "setupFindings": [
+          {
+            "component": "React",
+            "phase": "guarded_factory_setup",
+            "finding": "Select performance.now or Date.now clock; prefer setImmediate, then instantiate MessageChannel and assign its port handler, otherwise use setTimeout. Scheduler work is deferred.",
+            "evidence": [
+              "React_clock_selection",
+              "React_scheduler_selection"
+            ]
+          },
+          {
+            "component": "ReactDOM",
+            "phase": "guarded_factory_setup",
+            "finding": "With DOM availability, register/remove a passive-option test listener and create a detached div to inspect animation/transition support. Conditionally inject renderer metadata into the devtools hook.",
+            "evidence": [
+              "ReactDOM_canUseDOM",
+              "ReactDOM_passive_probe",
+              "ReactDOM_animation_probe",
+              "ReactDOM_devtools_setup"
+            ]
+          },
+          {
+            "component": "RTK",
+            "phase": "guarded_factory_setup",
+            "finding": "Select optional window Redux-devtools compose hook; expose store/reducer/thunk/listener APIs, not a configured application store.",
+            "evidence": [
+              "RTK_devtools_selection",
+              "RTK_wrapper"
+            ]
+          },
+          {
+            "component": "ReactRedux",
+            "phase": "guarded_factory_setup",
+            "finding": "Select DOM/server snapshot-hook implementation and initialize React contexts/binding exports; application store subscription is deferred.",
+            "evidence": [
+              "ReactRedux_store_hook_guard",
+              "ReactRedux_wrapper"
+            ]
+          },
+          {
+            "component": "PWAModal",
+            "phase": "unconditional_if_factory_reached",
+            "finding": "Execute one embedded CSS installation to head and create a detached div with id pwaModalRoot; initialize exports and an in-memory event registry. No DOM-availability guard surrounds this startup path.",
+            "evidence": [
+              "Modal_style_startup",
+              "Modal_style_element",
+              "Modal_style_target",
+              "Modal_detached_root",
+              "Modal_late_methods"
+            ]
+          },
+          {
+            "component": "PWAToast",
+            "phase": "unconditional_if_factory_reached",
+            "finding": "Execute two embedded CSS installations to head; initialize exported wrappers, Maps and internal toast event registry. Container DOM creation/rendering occurs later, not at initial export setup.",
+            "evidence": [
+              "Toast_style_startup_1",
+              "Toast_style_startup_2",
+              "Toast_style_element",
+              "Toast_style_target",
+              "Toast_registry_setup",
+              "Toast_deferred_root"
+            ]
+          }
+        ],
+        "deferredAndMentionFindings": [
+          {
+            "component": "ReactDOM",
+            "phase": "deferred",
+            "finding": "Rendering/hydration entry points implement DOM mutation, event subscriptions and property handling. The script-tag branch constructs a node through div.innerHTML; it does not provide a concrete script URL.",
+            "evidence": [
+              "ReactDOM_script_element_branch"
+            ]
+          },
+          {
+            "component": "RTK",
+            "phase": "deferred_guarded_and_unguarded_paths",
+            "finding": "Async-thunk creation selects native AbortController or a stub; listener execution also contains direct new AbortController calls. These are optional invoked paths, not asset-load-time network activity.",
+            "evidence": [
+              "RTK_abort_fallback",
+              "RTK_listener_abort"
+            ]
+          },
+          {
+            "component": "ReactRouterDOM",
+            "phase": "deferred",
+            "finding": "History initialization/use can subscribe popstate/hashchange, push/replace history state, or assign location fallbacks; no concrete additional asset URL is derived.",
+            "evidence": [
+              "Router_history_events",
+              "Router_pushState",
+              "Router_replaceState"
+            ]
+          },
+          {
+            "component": "PWAModal",
+            "phase": "deferred",
+            "finding": "Modal opening can schedule requestAnimationFrame and focus handling. Modal.setAppElement later appends the detached root; Modal.unmountAll removes it. Drag/focus helpers also contain DOM-event, geometry and getComputedStyle calls.",
+            "evidence": [
+              "Modal_deferred_animation",
+              "Modal_late_methods",
+              "Modal_draggable_export"
+            ]
+          },
+          {
+            "component": "PWAToast",
+            "phase": "deferred",
+            "finding": "Toast use can create/append/render its container after configuration, schedule timers/animation frames, and run focus/navigation helpers.",
+            "evidence": [
+              "Toast_deferred_root"
+            ]
+          },
+          {
+            "component": "PWAModal",
+            "phase": "mention_only_capability_flag",
+            "finding": "The Worker identifier occurs only in a typeof Worker capability flag. No worker construction or worker asset URL was found.",
+            "evidence": [
+              "Modal_environment_flags"
+            ]
+          },
+          {
+            "component": "React",
+            "phase": "guarded_reference_not_api_invocation",
+            "finding": "navigator.scheduling.isInputPending is existence-checked and bound; the displayed expression does not invoke isInputPending.",
+            "evidence": [
+              "React_scheduler_capability_probe"
+            ]
+          }
+        ],
+        "furtherDependencies": {
+          "concreteAdditionalFetchUrlsFound": [],
+          "executableChunkLoaderFound": false,
+          "limitation": "No concrete further fetch target identified, not a proof that application callbacks, renderer props or later assets cannot cause network requests.",
+          "embeddedStyleInstallations": {
+            "PWAModal": 1,
+            "PWAToast": 2
+          },
+          "cssExternalUrlFunctionSubstringCount": 0,
+          "sourceMapHandling": "Two style runtimes can serialize supplied source-map metadata into a data: comment, guarded by metadata and btoa availability; not an external source-map fetch.",
+          "moduleLoading": "PWA numeric loaders synchronously invoke already embedded module functions from local tables and caches. Their external adapters read the UMD-supplied React/ReactDOM/ReactRouterDOM values.",
+          "urlMentions": [
+            {
+              "url": "https://reactjs.org/docs/error-decoder.html",
+              "classification": "diagnostic/documentation link",
+              "queryOmitted": true,
+              "containingLiteralEvidence": "url_literal_1"
+            },
+            {
+              "url": "http://www.w3.org/2000/svg",
+              "classification": "namespace identifier",
+              "queryOmitted": false,
+              "containingLiteralEvidence": "url_literal_2"
+            },
+            {
+              "url": "http://www.w3.org/1998/Math/MathML",
+              "classification": "namespace identifier",
+              "queryOmitted": false,
+              "containingLiteralEvidence": "url_literal_3"
+            },
+            {
+              "url": "http://www.w3.org/1999/xhtml",
+              "classification": "namespace identifier",
+              "queryOmitted": false,
+              "containingLiteralEvidence": "url_literal_4"
+            },
+            {
+              "url": "http://www.w3.org/1999/xlink",
+              "classification": "namespace identifier",
+              "queryOmitted": false,
+              "containingLiteralEvidence": "url_literal_5"
+            },
+            {
+              "url": "http://www.w3.org/XML/1998/namespace",
+              "classification": "namespace identifier",
+              "queryOmitted": false,
+              "containingLiteralEvidence": "url_literal_6"
+            },
+            {
+              "url": "https://bit.ly/3cXEKWf",
+              "classification": "diagnostic/documentation link",
+              "queryOmitted": false,
+              "containingLiteralEvidence": "url_literal_7"
+            },
+            {
+              "url": "https://redux.js.org/Errors",
+              "classification": "diagnostic/documentation link",
+              "queryOmitted": true,
+              "containingLiteralEvidence": "url_literal_8"
+            },
+            {
+              "url": "http://fb.me/use-check-prop-types",
+              "classification": "diagnostic/documentation link",
+              "queryOmitted": false,
+              "containingLiteralEvidence": "url_literal_9"
+            },
+            {
+              "url": "https://fb.me/react-async-component-lifecycle-hooks",
+              "classification": "diagnostic/documentation link",
+              "queryOmitted": false,
+              "containingLiteralEvidence": "url_literal_10"
+            }
+          ],
+          "evidence": [
+            "Modal_module_loader",
+            "Toast_module_loader",
+            "Modal_embedded_css_module",
+            "Toast_embedded_css_module_1",
+            "Toast_embedded_css_module_2",
+            "Modal_style_runtime",
+            "Toast_style_runtime"
+          ]
+        },
+        "boundedIdentifierScan": {
+          "kind": "Exact AST Identifier.text counts, not a capability or runtime-requirement inventory",
+          "counts": {
+            "fetch": 0,
+            "XMLHttpRequest": 0,
+            "WebSocket": 0,
+            "RTCPeerConnection": 0,
+            "getUserMedia": 0,
+            "mediaDevices": 0,
+            "AudioContext": 0,
+            "MediaStream": 0,
+            "WebAssembly": 0,
+            "importScripts": 0,
+            "Worker": 1
+          }
+        },
+        "limitations": [
+          "Zero syntax diagnostics establish parsing only; no evaluation, browser API implementation, execution compatibility or media support was validated.",
+          "Versions are literal observations in this capture, never claims about current/latest upstream releases.",
+          "No source map, package manifest or external library body was fetched to infer additional package versions.",
+          "Concrete startup statements can throw or be bypassed by module-system branches; factory completion and exposed globals were not observed.",
+          "No private query values, credentials, raw receipt body or full source are copied into outputs.",
+          "Only this phase creates new output files; earlier sealed evidence and production/TASKS files are unchanged. No commits or pushes."
+        ],
+        "evidence": {
+          "React_exported_version": {
+            "bytes": [
+              10234,
+              10252
+            ],
+            "sha256": "9a7cd6deb0fc7fe4b96b996ce225dde06e57062db5f51b60fa0adb63e03101e9"
+          },
+          "React_wrapper": {
+            "bytes": [
+              10254,
+              10404
+            ],
+            "sha256": "d9d0c4f553579de826bd55e9d2e7b84b530cbc7a18cb2a0f81986396559af6d7"
+          },
+          "ReactDOM_exported_version": {
+            "bytes": [
+              139800,
+              139843
+            ],
+            "sha256": "1b5dd17fb0744072b8b712a211adffbdf320f464001d309490168a4ea9a2d488"
+          },
+          "ReactDOM_wrapper": {
+            "bytes": [
+              139845,
+              140031
+            ],
+            "sha256": "2d69308c7dafdc3d3ffd35863073bfce3f062a40d7b408adc28492b0533153fa"
+          },
+          "RTK_wrapper": {
+            "bytes": [
+              140049,
+              140240
+            ],
+            "sha256": "b8cdfbf07b070556ce548c023e479df2d05b31d6ce452410f49a1e564c6915cf"
+          },
+          "ReactRedux_wrapper": {
+            "bytes": [
+              178255,
+              178526
+            ],
+            "sha256": "fc9a2fd5903e440fc28e828a8f985c671a54e17d3ca08b4077a9fa3eb530dfb9"
+          },
+          "ReactRouterDOM_wrapper": {
+            "bytes": [
+              192905,
+              193094
+            ],
+            "sha256": "2f25c0519667a07524f1dc982435825967fcc9cdbfed862581e91ae687994265"
+          },
+          "PWAModal_wrapper": {
+            "bytes": [
+              222718,
+              223006
+            ],
+            "sha256": "9bf67517fb0440d383bd7bff4fb30d949965b2f4a2f63b0e398e9c6794eeb0b8"
+          },
+          "PWAToast_wrapper": {
+            "bytes": [
+              282807,
+              283181
+            ],
+            "sha256": "c8dbbd89b41039ed3a15231280b980463a4cd6ce89e28fb0fab0158f9ac4c2bb"
+          },
+          "React_clock_selection": {
+            "bytes": [
+              4975,
+              5149
+            ],
+            "sha256": "43d8b78e3385b057e30952cb946912636848e7025b68e6c4d25f5ccae569eba3"
+          },
+          "React_scheduler_capability_probe": {
+            "bytes": [
+              5354,
+              5526
+            ],
+            "sha256": "8adb5004c9eb2a9424cb67a11f21865609c6edbb5cd3f17bd5c38ee351e8f1b7"
+          },
+          "React_scheduler_selection": {
+            "bytes": [
+              5672,
+              5891
+            ],
+            "sha256": "2fbf4164f475fe1bbecdcdc8cd3e5442476176a1d3c177322ba5e393f1ab3f71"
+          },
+          "ReactDOM_canUseDOM": {
+            "bytes": [
+              110251,
+              110374
+            ],
+            "sha256": "7bf505fd6e5983ee4155d9eff882fbdedd2649e71de00ba7e28988bd6a1ffe35"
+          },
+          "ReactDOM_passive_probe": {
+            "bytes": [
+              116243,
+              116418
+            ],
+            "sha256": "e437540d02f9ebcb2070be631c3ea9675d56e485078c47f65ab56c9dc5245d87"
+          },
+          "ReactDOM_animation_probe": {
+            "bytes": [
+              121385,
+              121629
+            ],
+            "sha256": "63b6f84651b8da36c95d43f1d94ecdeae56ee67df2c6f416e3be6dea938e6b4f"
+          },
+          "ReactDOM_devtools_setup": {
+            "bytes": [
+              136746,
+              137695
+            ],
+            "sha256": "c74ab3f38d7713d7a6420d83fb9a1201acf51eb95d36a171a5a4f7bad6cf272c"
+          },
+          "ReactDOM_script_element_branch": {
+            "bytes": [
+              77860,
+              78178
+            ],
+            "sha256": "78ac98e67800106da2a19f7200a685867e6507a7758edcdb4e9dec4dba1da8b1"
+          },
+          "RTK_devtools_selection": {
+            "bytes": [
+              156821,
+              157039
+            ],
+            "sha256": "5e0894e12a51b92f9ea0fc0fbab44f98eac1b59ab96d4a754ccda2b3a271cf30"
+          },
+          "RTK_abort_fallback": {
+            "bytes": [
+              167425,
+              168234
+            ],
+            "sha256": "fa2b6e270a35de86adaaa30216f986e2b4f06171d3041521109354be8d65d7cf"
+          },
+          "RTK_listener_abort": {
+            "bytes": [
+              172694,
+              174753
+            ],
+            "sha256": "a9b15bc7d85d8423de05ecd267ffe0ed8ad098e1fbfcfd1650b33f00265d140f"
+          },
+          "ReactRedux_store_hook_guard": {
+            "bytes": [
+              179139,
+              179497
+            ],
+            "sha256": "55b88ca69ddad575e1157edf9192f6982e0c9add757cfd18701e82959c54c1c7"
+          },
+          "Router_history_events": {
+            "bytes": [
+              215891,
+              216062
+            ],
+            "sha256": "79eec1cf4dee883c4caba05ebf03e72c9b762c6b680df4db9e27a1c9bdccc983"
+          },
+          "Router_pushState": {
+            "bytes": [
+              216207,
+              216463
+            ],
+            "sha256": "d3d2acbbcf7a439d084bc72634414e11b0338ca88ed92f2b4c76824ee0a357e8"
+          },
+          "Router_replaceState": {
+            "bytes": [
+              216556,
+              216795
+            ],
+            "sha256": "e304b0b4adeac67f79f6c1fb1ea1324f03bc7094a9a3b8fb3ac446aeb8b4964d"
+          },
+          "Modal_environment_flags": {
+            "bytes": [
+              224949,
+              225310
+            ],
+            "sha256": "b74e083a689906abecde28d55d31b9207869978697df79b291996c8497ad3e3c"
+          },
+          "Modal_draggable_export": {
+            "bytes": [
+              243427,
+              243555
+            ],
+            "sha256": "c3f52347b6c862dbcac14abceadba55c366bc71533712dd59221ebdbe696fad6"
+          },
+          "Modal_deferred_animation": {
+            "bytes": [
+              262104,
+              262538
+            ],
+            "sha256": "769779db5c4a222413579cd1cf4178c3e465e8240d2066a9b10708fc103fe68e"
+          },
+          "Modal_style_target": {
+            "bytes": [
+              275818,
+              276222
+            ],
+            "sha256": "393d674d30469779beffc653f39abe7d89e969dfdbc0705808ceb512da48e958"
+          },
+          "Modal_style_element": {
+            "bytes": [
+              276223,
+              276368
+            ],
+            "sha256": "aa30947759ae75f6ad484406908fb6ab5a02d58e87e34a59d87192b3e0b98025"
+          },
+          "Modal_style_runtime": {
+            "bytes": [
+              276460,
+              277156
+            ],
+            "sha256": "979074de834fc366496503f0ce229de9c9b1662ec4065a3a2ce5fa9a03e61b15"
+          },
+          "Modal_module_loader": {
+            "bytes": [
+              277456,
+              277578
+            ],
+            "sha256": "5cb17834d81626fc5651d6ea62ea79f1d4b19a49e7d77e202419fc40114276d4"
+          },
+          "Modal_exports": {
+            "bytes": [
+              278013,
+              278051
+            ],
+            "sha256": "f79947c8ba7380bcb0547995cd4a1caf283b0023443d06c294e612900c89dc12"
+          },
+          "Modal_style_startup": {
+            "bytes": [
+              278583,
+              278734
+            ],
+            "sha256": "5f9bab6965aa1e7f374088496027d6345a7b04f323df34265b84edc75ce85a0d"
+          },
+          "Modal_detached_root": {
+            "bytes": [
+              279077,
+              279159
+            ],
+            "sha256": "90de7c57310735530b4c4c1eb61a48f80287f7724a4dfc5ee1466539d9b3473a"
+          },
+          "Modal_late_methods": {
+            "bytes": [
+              282303,
+              282781
+            ],
+            "sha256": "85182aa8d5fd0344fb489beccf7fed18435a24310c474b5ce3f2c9a4908b47c5"
+          },
+          "Toast_style_target": {
+            "bytes": [
+              302045,
+              302436
+            ],
+            "sha256": "7f7016c205efa7bbe54c1104a446f5bd96e16cdcc04be64bc9b4d142bcd64ef3"
+          },
+          "Toast_style_element": {
+            "bytes": [
+              302437,
+              302569
+            ],
+            "sha256": "f15562ffb3cd8a672f042334ac04412d1ade26a49054f82f144de0dba48b7ff8"
+          },
+          "Toast_style_runtime": {
+            "bytes": [
+              302648,
+              303331
+            ],
+            "sha256": "7d81e998c88e2fe024d695667dbfeccb472ffa62a29a305ac1f0e23ea759bf9b"
+          },
+          "Toast_module_loader": {
+            "bytes": [
+              303568,
+              303690
+            ],
+            "sha256": "1b6d9e291ee1a3604ecf03de2ae599b7254a1773615e4f14141c8c67bc9bd724"
+          },
+          "Toast_exports": {
+            "bytes": [
+              304105,
+              304387
+            ],
+            "sha256": "6e87ec8f8a45e15ae3ed4caaa1f70e802e5f13ed6bc10b548b12e4ca6bb98ff7"
+          },
+          "Toast_style_startup_1": {
+            "bytes": [
+              304530,
+              304682
+            ],
+            "sha256": "80dc664fcd7ee7a3f0f9019f979db6b11ad20029a9e61925353ef21cee7fffa1"
+          },
+          "Toast_style_startup_2": {
+            "bytes": [
+              305044,
+              305196
+            ],
+            "sha256": "1712750c8fb080ad5a081ab06b87e0042d4066add8bb951207e585d4defadaeb"
+          },
+          "Toast_canUseDOM": {
+            "bytes": [
+              305794,
+              305875
+            ],
+            "sha256": "2ae1bcc2387860833dfbb17f89f76b2e493defba6ed9966def669bfe28e070ca"
+          },
+          "Toast_deferred_root": {
+            "bytes": [
+              320695,
+              320917
+            ],
+            "sha256": "508bab19d2138fb645a0a3947fff0eb594eec15b87b5ab30ae4f6bb96d4234f4"
+          },
+          "Toast_registry_setup": {
+            "bytes": [
+              322610,
+              322835
+            ],
+            "sha256": "3b1645b78a701167913e626dfc2371dc3d660be7104b7df11934d45b086f2781"
+          },
+          "Modal_embedded_css_module": {
+            "bytes": [
+              223434,
+              224029
+            ],
+            "sha256": "8c73ea5ec16fae64d7b8f22c711970833510f8e144e8bc7f894c6c33c9127ebb"
+          },
+          "Toast_embedded_css_module_1": {
+            "bytes": [
+              283223,
+              297976
+            ],
+            "sha256": "ba55959099a119d9863dd8c492dbb3f7576a7840a5dbceda389f27f909cea195"
+          },
+          "Toast_embedded_css_module_2": {
+            "bytes": [
+              297977,
+              300224
+            ],
+            "sha256": "d9fbeefb08eed84bbfd3150777f170fcbb43ead54e90dafb1692c740130f4259"
+          },
+          "url_literal_1": {
+            "bytes": [
+              10487,
+              10543
+            ],
+            "sha256": "dbdbf4c57f9f548902ac0b16d2fa6f6958000703b9ca75e14aac9cbea6b894a6"
+          },
+          "url_literal_2": {
+            "bytes": [
+              18660,
+              18688
+            ],
+            "sha256": "1a2182c5522c91dd110576d30e9e0feca94483aaca6f659cd823170701c4e615"
+          },
+          "url_literal_3": {
+            "bytes": [
+              18706,
+              18742
+            ],
+            "sha256": "1af4343065ee6ccadcfac91737b77aee1f8964bb4d05e60f85ce566ef818b1c5"
+          },
+          "url_literal_4": {
+            "bytes": [
+              18757,
+              18787
+            ],
+            "sha256": "56136f721751170629b12514b8efeebdd18eac5aa24b1ee400e0e46f7a04adfa"
+          },
+          "url_literal_5": {
+            "bytes": [
+              113457,
+              113487
+            ],
+            "sha256": "d1ebd3dd6d9919266d2ea7fa54960035041348714133acdda1dac78facf70882"
+          },
+          "url_literal_6": {
+            "bytes": [
+              113597,
+              113635
+            ],
+            "sha256": "5ae0c2a4cd1c42f24a83bfce151e12199dc084f8221973bdefb3620ea5347142"
+          },
+          "url_literal_7": {
+            "bytes": [
+              142799,
+              142849
+            ],
+            "sha256": "defd9371e8db84c9ca9da800c872425cc5867e24790c0b4ab3caa4a39e2d0b94"
+          },
+          "url_literal_8": {
+            "bytes": [
+              151258,
+              151301
+            ],
+            "sha256": "ee676cfb350fa2d115b6e38b43e4368e6e1809c8bd4a8832261ee3b7f9008f1b"
+          },
+          "url_literal_9": {
+            "bytes": [
+              197125,
+              197302
+            ],
+            "sha256": "5fffb984662504910b9e54877d0d593048b4cfa7c5cf53db7eee2cf269dc7d9b"
+          },
+          "url_literal_10": {
+            "bytes": [
+              253629,
+              253763
+            ],
+            "sha256": "54a8ca9c238dba8066a1b32fa0a20066be7a878346fefdf0e19f03a6d19c1f43"
+          }
+        }
+      }
+    },
+    "classicGlobal": {
+      "review": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/classic-global-review/REVIEW.md",
+      "result": {
+        "schemaVersion": 1,
+        "date": "2026-09-18",
+        "status": "source_review_complete_execution_unverified",
+        "scope": "Current browser extension adapter composed with frozen SDK source; only the captured top-level chunk registry expression.",
+        "conclusion": "Current adapter lacks the top-level receiver and writable host-window registry. Public binding injection can supply the narrow primitives; no complete public host Script mode was found in the reviewed exports/options.",
+        "asset": {
+          "path": "/tmp/agent-browser-zoom-webim-9Ike9M/live/body.bin",
+          "sha256": "2a82144a9699b2cc1feeb95779e0f62b4ce6e94d5825c696e40be7f1b9240286",
+          "bytes": 75102,
+          "chunkId": 962,
+          "factoryId": 19776,
+          "startupArgumentPresent": false,
+          "structuralResult": "/tmp/agent-browser-zoom-webim-analysis-v2-juhQCr/RESULT.json",
+          "structuralResultSha256": "295b1419c4b13ce0a0c0a395d3dd77a26ad5ee242f975947c8746ea186fb9a94",
+          "broadThisInventoryUsedAsGlobalExports": false
+        },
+        "findings": [
+          {
+            "id": "receiver",
+            "status": "source_confirmed_current_configuration_gap",
+            "detail": "No explicit this binding is installed; Scope.lookupThis does not infer it from builtin globalThis or window.",
+            "browser": "src/extension-page-runtime.ts:244",
+            "sdk": "src/interp/scope.ts:230"
+          },
+          {
+            "id": "registry",
+            "status": "source_confirmed_independent_current_window_gap",
+            "detail": "Even with this bound to the existing host window, webpackChunkzoom has neither a setter nor named.set; unknown host writes reject.",
+            "browser": "src/page-bindings.ts:344",
+            "sdk": "src/interp/host-capabilities.ts:301"
+          }
+        ],
+        "publicAlternatives": [
+          {
+            "api": "createRealm({bindings}) / defineExtension globals",
+            "status": "source_supported_narrow_receiver_and_guest_object_path",
+            "qualification": "The this key is accepted. Shared ordinary data aliases share one writable guest copy. Not configured by this browser and not full Script/global-environment semantics."
+          },
+          {
+            "api": "HostObjectNamedDefinition",
+            "status": "public_bounded_dynamic_properties_exist",
+            "qualification": "Current window does not use them. Ordinary setter/getter values cross copy boundaries; a naive host array dictionary does not preserve the guest registry identity."
+          },
+          {
+            "api": "run / module evaluation / callback thisValue / evaluateNested",
+            "status": "not_a_full_public_classic_source_entrypoint",
+            "qualification": "Run shares executable-source behavior; modules explicitly bind undefined this; callback receivers do not apply to arbitrary source evaluation."
+          },
+          {
+            "api": "guest eval and internal Script support",
+            "status": "exists_but_not_current_host_script_route",
+            "qualification": "Internal Script/global environment support is present. No corresponding host Script option is exposed in reviewed exports; no trampoline or source wrapping is proposed."
+          }
+        ],
+        "acceptance": [
+          "Separately authorize SDK/source execution through the intended public page entrypoint.",
+          "Verify this/window/self/globalThis identity with actual page capabilities intact.",
+          "Register a cold chunk using the unchanged outer expression; verify chunk 962 and unexecuted factory 19776.",
+          "Verify registry, array and factory identity plus cross-alias mutation across later evaluations.",
+          "Distinguish global var properties from persistent lexical bindings before claiming full Script semantics."
+        ],
+        "execution": {
+          "sdk": false,
+          "capturedSource": false,
+          "tests": false,
+          "compiler": false,
+          "networkRequests": 0,
+          "devicesOrCredentials": false
+        },
+        "limitations": [
+          "Source prediction, not a reproduced runtime error; full SafeJS parse of the asset is unverified.",
+          "Extension adapter reviewed as requested; browser selection otherwise defaults to legacy. No claim about the adapter used for capture.",
+          "Candidate source is not asserted equivalent to an installed or published SDK.",
+          "No externals asset analysis, source rewriting, wrapping, private Scope mutation or engine substitution.",
+          "Parent owns capture publication; no production or contribution changes."
+        ],
+        "browserRoot": "/home/kjopek/project/agent-browser",
+        "browserPins": {
+          "src/extension-page-runtime.ts": "3d23e5474584421895078f206d6e9e1fbd9a29258d79bec79c9069f38ebc0d70",
+          "src/page-scripts.ts": "ce939570e2ac35c570f2d11dafb8f04fb1e761777ae84ac966421832e4973965",
+          "src/page-bindings.ts": "df2864c647b461b3e28c68d8455fd2fa2cae5b3c203632ae50a0e8a1ff78801b",
+          "src/page-websocket-bootstrap.ts": "e60a828e34f8e77a461dbb5492860deba9303528ea7f9b2a84b796b44a039f91",
+          "src/page-runtime.ts": "c04a1deda9bf3446e97c555455231792bfdacf09c9b67a1f3add53a241018ada",
+          "src/safejs-extension-types.ts": "248268cd0f5643fd9a4159d16389f33e52fe22d926192b8e551546d0589bbf34",
+          "src/page-runtime-selection.ts": "3c82c1da574962f4937c9fbdd58ac52d81717f0e6aac4b5f584fd974f7185e9c"
+        },
+        "sdkRoot": "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js",
+        "sdkPins": {
+          "package.json": "5667777c222660b0c55bfa5cf9425c548d593bfd4e769aa10239d0ed56303db8",
+          "src/realm.ts": "ffa369636d57517c2699c5861de99cc884ccdddb8c94bf97b4fb567e9aa64b11",
+          "src/core.ts": "e25b1c15beb91c03538c4457eef30cea47084116983d2a15f9271fce7bb71f1e",
+          "src/index.ts": "40c7f98a427b92d11049616764f15799dc718a49b2530053dd376b1ef25b0a1a",
+          "src/run.ts": "1cd196e65f6c1291088e6a3371478b99f4d19234bac2c06d392d365c766f7eff",
+          "src/extensions.ts": "62f90e6125ad4189731c22f995c15abad9e9b7be377f6c29fa2b6c974e30c7d9",
+          "src/interp/scope.ts": "e66bcee9f9851c94842b6c0ebb7a059b88f17e231ec130f5d7054dc62c1aa727",
+          "src/interp/globals.ts": "efed65d372500a40d93eb16bc3018d4793ca99fddc43d2dbe2c3189694657a79",
+          "src/interp/interpreter.ts": "7514fbc960f70c30437d5b86d8f1f0d7fe93fa1d7969799877197039a9f51d04",
+          "src/interp/host-capabilities.ts": "361ded48c44027c437adac61767b33140c0502fd3489e936a60aec03fbb7bc8a",
+          "src/interp/host-bridge.ts": "2afe850e9d430bd2f8ac8956befd812a097007dfb8cdf365f6ce2cd7c0e1e904",
+          "src/interp/globals/eval.ts": "7510ec3663d345556e28e1cb2a8ed3fce5aba8019e1799f2d3c48042dd382d20",
+          "src/parse/parser.ts": "920f009ccb9a08629cbbc6b827f17c11c33a627f1c38f0d9197d931570c8c814",
+          "src/modules/source-graph.ts": "2f5aef4008e141940d291f573f498de424f48cdcf8883fc200e2961acec7ec8b"
+        },
+        "baseComparison": {
+          "root": "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js",
+          "byteIdenticalToCandidate": [
+            "package.json",
+            "src/core.ts",
+            "src/index.ts",
+            "src/run.ts",
+            "src/extensions.ts",
+            "src/interp/scope.ts",
+            "src/interp/globals.ts",
+            "src/interp/globals/eval.ts",
+            "src/interp/host-capabilities.ts",
+            "src/interp/host-bridge.ts",
+            "src/interp/interpreter.ts",
+            "src/parse/parser.ts"
+          ],
+          "realmSha256": "2fa2a86a8b496513da4a4b792ff768b60c702ff2cfd04ca1ed2e14bd61315645",
+          "realmNote": "Scheduling changes differ, but pristine initialization also creates the ordinary child scope without an explicit this binding or Script global-environment mode."
+        }
+      }
+    },
+    "webim": {
+      "directory": "/tmp/agent-browser-zoom-webim-analysis-v2-juhQCr",
+      "bodySha256": "2a82144a9699b2cc1feeb95779e0f62b4ce6e94d5825c696e40be7f1b9240286",
+      "syntaxDiagnostics": 0,
+      "nodes": 26729,
+      "webpackPayloads": [
+        {
+          "target": "(this.webpackChunkzoom=this.webpackChunkzoom||[])",
+          "chunkIds": [
+            "962"
+          ],
+          "modules": [
+            {
+              "id": "19776",
+              "kind": "MethodDeclaration",
+              "codeUnits": [
+                63,
+                74991
+              ],
+              "bytes": [
+                63,
+                74991
+              ]
+            }
+          ],
+          "startupArgumentPresent": false,
+          "startupKind": null,
+          "invocationArgumentCount": 1,
+          "payloadElementCount": 2
+        }
+      ],
+      "execution": {
+        "exitCode": 0,
+        "pid": 3010867,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.3645786941051483,
+        "ioAttempts": [],
+        "kernelInstalled": true,
+        "socketProbePerformed": false,
+        "homeEntries": [],
+        "tmpEntries": []
+      },
+      "inventoryCaveat": "The earlier globalAssignments field is syntactic and includes this.* instance members; it is not used as a global-export inventory.",
+      "review": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/WEBIM-ANALYSIS.md"
+    }
+  },
+  "limitPreflight": {
+    "method": "Static source-constant/guard inspection and captured-text length comparison; not PageScripts.evaluate or an SDK probe",
+    "defaultMaxSourceCodeUnits": 262144,
+    "existingOverrideMultiplierCap": 16,
+    "captures": [
+      {
+        "lane": "/tmp/agent-browser-zoom-externals-F1oqX7",
+        "bodySha256": "80b5be74d9a31b1d5d5706eb2bc7d19ccaf103171b190884ef35e9c449ca0fee",
+        "bytes": 337218,
+        "codeUnits": 337218,
+        "exceedsDefaultSourceLimit": true
+      },
+      {
+        "lane": "/tmp/agent-browser-zoom-webim-9Ike9M",
+        "bodySha256": "2a82144a9699b2cc1feeb95779e0f62b4ce6e94d5825c696e40be7f1b9240286",
+        "bytes": 75102,
+        "codeUnits": 75102,
+        "exceedsDefaultSourceLimit": false
+      }
+    ],
+    "sourcePins": {
+      "src/safejs.ts": "3cdf350d5449b2e041586c6be92405b230d1c7958930ae08e36404d24235311f",
+      "src/page-scripts.ts": "ce939570e2ac35c570f2d11dafb8f04fb1e761777ae84ac966421832e4973965",
+      "src/script-loader.ts": "0110073683ba9ac2e1e840cc834a3f2cba6cc3bf7373fe7d85c8c5a55fd4df7a"
+    },
+    "nativeRuntimeInvoked": false,
+    "sdkExecuted": false,
+    "sourceExecuted": false
+  },
+  "reusedQualification": {
+    "runtimeFile": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/RUNTIME-core02.json",
+    "baseHead": "ec470e18e935074facb1b51595fde7bd33ccffe6",
+    "native": {
+      "label": "core02",
+      "pid": 2880276,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 30.97493990510702,
+      "passedTests": 817,
+      "failedTests": 0,
+      "files": 9,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "qualityChecks": {
+      "build": 0,
+      "types": 0,
+      "format": 0,
+      "lint": 0
+    },
+    "reusedNotRerun": true
+  },
+  "limitations": [
+    "Configured initial CDN candidate, not observed runtime CDN selection.",
+    "Reader rejects JavaScript MIME; complete body capture is not page content or source execution.",
+    "Static source findings are not actual SDK, browser or meeting acceptance.",
+    "Scheduling proposal remains unactivated and SDK-test approval is pending.",
+    "Remaining loader-linked assets, native media/decode and complete notetaker workflow are unverified."
+  ],
+  "artifactPins": {
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/ASSET-STAGE.json": "c73feefcb30001c7a7c12fc1d461a3f11e12f0352d5296c79ab8aaf10f42be88",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/live/EXECUTION.json": "da773fcf36db5bc41cea6bbd45911c90da4389a502abda3bc2a663007a371416",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/live/RESULT.json": "8b868470dbe45c7705e435005a26f2aa328ee6f9b99beba3c333465327f38e4b",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/proof/EXECUTION.json": "68d270681d4f8f94fe255e0074c804933cfc58fc62e2bd1e93689811bf95a84d",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/live/body.bin": "80b5be74d9a31b1d5d5706eb2bc7d19ccaf103171b190884ef35e9c449ca0fee",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/proof/CHECK.json": "1cfe5e270cfd039fbfda4ba221790fc32ac16b864e8ae7a9c39fb2ec72a85427",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/proof/INVOCATION.json": "7be26ab7ff808f476fb1da30381264e491d633a256c8705a7fa9c73815c69a35",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/proof/REQUEST-GUARD.json": "e68069d551613622473ca76991362c8c3e667e6b457bd9e88443ea30d1e7005d",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/proof/OPAQUE-ARGUMENT.json": "b5e4120b8a70fe86327215c29f8516fe811888ec54da3e1053c621e64c472350",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/proof/REDIRECT-CAPTURE.json": "f8155db7756ec8e44627437253c992b3ed94a592d9139c9f619e96ffce203fc5",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/live/CHECK.json": "d702ed1bb8394b9428546805c7fcb0cde260005be970239900f052f2dc7cc26d",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/live/INVOCATION.json": "6dec4d61b6a4871978913c6fb9e35a99808a30d9f5abfe0b75e0d466e32d4d15",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/live/REQUEST-GUARD.json": "f8b528741921b5bb4eea06cda9a3b057da14a461d12de013c7dede8fbbe57d83",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/live/OPAQUE-ARGUMENT.json": "b5e4120b8a70fe86327215c29f8516fe811888ec54da3e1053c621e64c472350",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/live/REDIRECT-CAPTURE.json": "f8155db7756ec8e44627437253c992b3ed94a592d9139c9f619e96ffce203fc5",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/proof/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/proof/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/live/http-events.jsonl": "e8f5a41a0d1971c8905cd222699e5a9287bdc1ea0d7d970eb283c4aa96b8333a",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/PROVENANCE.json": "5d404e41c4d2fe52e8065946c5fb450b9ae6d64247c1fe66bf22fc603e5ba038",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/STATIC-PINS.json": "d3027a77fe3f5e9846f4e42e1def158dc6b9e95eb3a8400a64bab9fa85297560",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/FINAL-AUTHORIZATION.json": "a181ca7fef22977bc21ea1481805eb31c26fe18f3dae0875f0e6547b81c369b7",
+    "/tmp/agent-browser-zoom-externals-F1oqX7/LIVE-REQUEST-SPENT.json": "b0749f80a25ab22c9e5b797219c7120a19b0a4d7e29b2709f5c29b3cf619f16f",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/WEBIM-STAGE.json": "db064d711f33d65fb71a5365f87e740286574505772bd4b0bebe8f6905914cb9",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/live/EXECUTION.json": "16c47f15f8cbef09eef3d88c1b1389afd9a099534119b6cc769188ef409da716",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/live/RESULT.json": "8c893ff3f45164a40ec318c1d1f254a5d7e949b0fde87a28d35bdadae15c607b",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/proof/EXECUTION.json": "5bdf3e514e67aa2034cb8161e2c1a00275e9a58ddc2fc09706ef243cd8dfffc3",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/live/body.bin": "2a82144a9699b2cc1feeb95779e0f62b4ce6e94d5825c696e40be7f1b9240286",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/proof/CHECK.json": "08fc00bbb50afc3ac24cc25dd8c40f7f949f0c5b8bf61e781d991121c571b7e6",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/proof/INVOCATION.json": "d037d1d113d09d629923a3de906449558208de7acf61e92812bedcccb182097d",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/proof/REQUEST-GUARD.json": "1edb35f7127989cdad48baf42275da930eff3868ce1a1806ee98774d7016c23c",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/proof/OPAQUE-ARGUMENT.json": "3a51342e8a05dd5e1614744264d92cc1cb7fe5b647bc0521b2de227b3a9ce278",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/proof/REDIRECT-CAPTURE.json": "f8155db7756ec8e44627437253c992b3ed94a592d9139c9f619e96ffce203fc5",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/live/CHECK.json": "6fc792e079ad4858547bf82bb6e5f2e3b4c48f1ff1f462a7364e7d38d655228a",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/live/INVOCATION.json": "727ec6153d6bc8029adb45f2affb061e7fb8cd38932c92853e810726a984226a",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/live/REQUEST-GUARD.json": "57b9d691016d7c332be4d45cfe35d0bea688526d1b3397bcce7dda6bb6c2786d",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/live/OPAQUE-ARGUMENT.json": "3a51342e8a05dd5e1614744264d92cc1cb7fe5b647bc0521b2de227b3a9ce278",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/live/REDIRECT-CAPTURE.json": "f8155db7756ec8e44627437253c992b3ed94a592d9139c9f619e96ffce203fc5",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/proof/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/proof/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/live/http-events.jsonl": "3f6543d69eb921cbbdc67ae19eb02327280f3b2bc77e7067cbdc0415e0fbc3bb",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/PROVENANCE.json": "b96cfc13807d7e1cff799ca7cf77fa2d71fa55369168b0f80901d663c8b526a9",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/STATIC-PINS.json": "a0f291ebc7eca19f82ed1caf02c03cb287514673bb88a2c6d9e416a461c6678c",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/FINAL-AUTHORIZATION.json": "45863a0732dde83af50a2c19c44a98df8a359a80fb8d46622b25312f30807298",
+    "/tmp/agent-browser-zoom-webim-9Ike9M/LIVE-REQUEST-SPENT.json": "8ad0755ed702872cdcab81f721ab0afb1b9a0fbf06a5c6d64fb3bdcdad1a7c6e",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/externals-analysis/RESULT.json": "16a79e28ac26f416cea8235919bff7043dcba0eccc83a207640e21a32e2c3eea",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/externals-analysis/REVIEW.md": "dc77530a23b43929e910da4febb2ead2af464c1d072ffdba7a21d3eb31cd0380",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/classic-global-review/RESULT.json": "d8ea881f58b9f10bb16455508e2efcb8dac0d0418ac81cad0f697458840ddfc6",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/classic-global-review/REVIEW.md": "20ad415182cef062567034443a660fea4fcf71432278eaf947f104f6734211d2",
+    "/home/kjopek/project/agent-browser/src/extension-page-runtime.ts": "3d23e5474584421895078f206d6e9e1fbd9a29258d79bec79c9069f38ebc0d70",
+    "/home/kjopek/project/agent-browser/src/page-scripts.ts": "ce939570e2ac35c570f2d11dafb8f04fb1e761777ae84ac966421832e4973965",
+    "/home/kjopek/project/agent-browser/src/page-bindings.ts": "df2864c647b461b3e28c68d8455fd2fa2cae5b3c203632ae50a0e8a1ff78801b",
+    "/home/kjopek/project/agent-browser/src/page-websocket-bootstrap.ts": "e60a828e34f8e77a461dbb5492860deba9303528ea7f9b2a84b796b44a039f91",
+    "/home/kjopek/project/agent-browser/src/page-runtime.ts": "c04a1deda9bf3446e97c555455231792bfdacf09c9b67a1f3add53a241018ada",
+    "/home/kjopek/project/agent-browser/src/safejs-extension-types.ts": "248268cd0f5643fd9a4159d16389f33e52fe22d926192b8e551546d0589bbf34",
+    "/home/kjopek/project/agent-browser/src/page-runtime-selection.ts": "3c82c1da574962f4937c9fbdd58ac52d81717f0e6aac4b5f584fd974f7185e9c",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/package.json": "5667777c222660b0c55bfa5cf9425c548d593bfd4e769aa10239d0ed56303db8",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/realm.ts": "ffa369636d57517c2699c5861de99cc884ccdddb8c94bf97b4fb567e9aa64b11",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/core.ts": "e25b1c15beb91c03538c4457eef30cea47084116983d2a15f9271fce7bb71f1e",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/index.ts": "40c7f98a427b92d11049616764f15799dc718a49b2530053dd376b1ef25b0a1a",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/run.ts": "1cd196e65f6c1291088e6a3371478b99f4d19234bac2c06d392d365c766f7eff",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/extensions.ts": "62f90e6125ad4189731c22f995c15abad9e9b7be377f6c29fa2b6c974e30c7d9",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/interp/scope.ts": "e66bcee9f9851c94842b6c0ebb7a059b88f17e231ec130f5d7054dc62c1aa727",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/interp/globals.ts": "efed65d372500a40d93eb16bc3018d4793ca99fddc43d2dbe2c3189694657a79",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/interp/interpreter.ts": "7514fbc960f70c30437d5b86d8f1f0d7fe93fa1d7969799877197039a9f51d04",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/interp/host-capabilities.ts": "361ded48c44027c437adac61767b33140c0502fd3489e936a60aec03fbb7bc8a",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/interp/host-bridge.ts": "2afe850e9d430bd2f8ac8956befd812a097007dfb8cdf365f6ce2cd7c0e1e904",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/interp/globals/eval.ts": "7510ec3663d345556e28e1cb2a8ed3fce5aba8019e1799f2d3c48042dd382d20",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/parse/parser.ts": "920f009ccb9a08629cbbc6b827f17c11c33a627f1c38f0d9197d931570c8c814",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/candidate/packages/safe-js/src/modules/source-graph.ts": "2f5aef4008e141940d291f573f498de424f48cdcf8883fc200e2961acec7ec8b",
+    "/tmp/agent-browser-zoom-webim-analysis-v2-juhQCr/RESULT.json": "295b1419c4b13ce0a0c0a395d3dd77a26ad5ee242f975947c8746ea186fb9a94",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/package.json": "5667777c222660b0c55bfa5cf9425c548d593bfd4e769aa10239d0ed56303db8",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/src/core.ts": "e25b1c15beb91c03538c4457eef30cea47084116983d2a15f9271fce7bb71f1e",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/src/index.ts": "40c7f98a427b92d11049616764f15799dc718a49b2530053dd376b1ef25b0a1a",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/src/run.ts": "1cd196e65f6c1291088e6a3371478b99f4d19234bac2c06d392d365c766f7eff",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/src/extensions.ts": "62f90e6125ad4189731c22f995c15abad9e9b7be377f6c29fa2b6c974e30c7d9",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/src/interp/scope.ts": "e66bcee9f9851c94842b6c0ebb7a059b88f17e231ec130f5d7054dc62c1aa727",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/src/interp/globals.ts": "efed65d372500a40d93eb16bc3018d4793ca99fddc43d2dbe2c3189694657a79",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/src/interp/globals/eval.ts": "7510ec3663d345556e28e1cb2a8ed3fce5aba8019e1799f2d3c48042dd382d20",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/src/interp/host-capabilities.ts": "361ded48c44027c437adac61767b33140c0502fd3489e936a60aec03fbb7bc8a",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/src/interp/host-bridge.ts": "2afe850e9d430bd2f8ac8956befd812a097007dfb8cdf365f6ce2cd7c0e1e904",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/src/interp/interpreter.ts": "7514fbc960f70c30437d5b86d8f1f0d7fe93fa1d7969799877197039a9f51d04",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/src/parse/parser.ts": "920f009ccb9a08629cbbc6b827f17c11c33a627f1c38f0d9197d931570c8c814",
+    "/tmp/safejs-browser-scheduling-september18-zjioJ5/base/packages/safe-js/src/realm.ts": "2fa2a86a8b496513da4a4b792ff768b60c702ff2cfd04ca1ed2e14bd61315645",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/WEBIM-ANALYSIS-V2-STAGE.json": "14e98dabb592c016f95648da30b9af11e54fced841e2e7aed5215a48888bd9d9",
+    "/tmp/agent-browser-zoom-webim-analysis-v2-juhQCr/EXECUTION.json": "3a710f7b2e4d12f2b7a55763a47f269ca323a96d7c3ae03bf2c330f46186c23b",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/WEBIM-ANALYSIS.md": "78ec3d5b14d25a6716d7c369e142868b83d3e950897e9810cbb6c81925e32a0d",
+    "/tmp/agent-browser-zoom-webim-analysis-v2-juhQCr/INPUTS.json": "c5e592000ae12441f0e1451847d6901bb986eabef9dac8dcf50de30ea5e44ec8",
+    "/tmp/agent-browser-zoom-webim-analysis-v2-juhQCr/guard.json": "f3be9304880ebc02099dbb4487c2f63f11f1a8f8bc4ff14f405a8888b0fcce64",
+    "/tmp/agent-browser-zoom-webim-analysis-v2-juhQCr/kernel-guard.json": "95171f400a3edf71e4cd7c0e2b8ad793e9583177c892c2104d089e76c795f8fe",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/WEBIM-ANALYSIS-STAGE.json": "b87e40e1f8eeb346d2cf43381915c208a1268e2b903f929d942844f2ce50df71",
+    "/tmp/agent-browser-zoom-webim-analysis-pTnbeN/RESULT.json": "73838f15fa6606b05d3fb350be7b9b907e96689c5e0a4bd1edfb94d454a44da7",
+    "/tmp/agent-browser-zoom-webim-analysis-pTnbeN/EXECUTION.json": "9047a108249a40535a3ef7033f93742672448d4115aad16a2b44de7d829735cd",
+    "/tmp/agent-browser-zoom-webim-analysis-pTnbeN/INPUTS.json": "0f572fe49a52cef2a938c51c5c926ec11e1645ea4d8690256cb8daf5d971cf3d",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/SCRIPT-LIMIT-PREFLIGHT.json": "3a5c7c2e61ab9d591fd0b6b71c56db7a81b50cda85556b4d892f8ad4e2d46700",
+    "src/safejs.ts": "3cdf350d5449b2e041586c6be92405b230d1c7958930ae08e36404d24235311f",
+    "src/page-scripts.ts": "ce939570e2ac35c570f2d11dafb8f04fb1e761777ae84ac966421832e4973965",
+    "src/script-loader.ts": "0110073683ba9ac2e1e840cc834a3f2cba6cc3bf7373fe7d85c8c5a55fd4df7a",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/zoom-client-assets-september18/externals-analysis/PARENT-VERIFICATION.json": "02e1ea90ade2b6b601e5673bb4dc09792380e2c3d0166d3552cfc34e5394c9a6",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/RUNTIME-core02.json": "74673c1a6b9dceea0f48d2d70b1dc4a215815a6ad508d8a42d5ca3f55943489a",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/native-core02/EXECUTION.json": "ba2157c24114f1d7366844ec8fa896e9ad913eefef44d77933c6ee15b535528d",
+    "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/docs-content-followup-september18/CHECK-core02.json": "498ccf7fc5c166129139e8ac75b58211584535a893752874f1822f3039237c80"
+  }
+}
