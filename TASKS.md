@@ -12,6 +12,17 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September18,20:20UTC: the separately filtered core33/ClrIn4 full-document trial
+continues past the explicitly blocked experimentation origin, executes10scripts,
+then fails on a different15722-byte source after115.829ms. Static inspection finds
+mandatory synchronous XMLHttpRequest during CSRF setup; native XHR is absent.
+The public SDK's existing nestedOperation supports the required guest suspension
+(5/5 isolated synthetic cases), so no new SDK primitive is needed. Implement
+native XHR with shared fetch/CORS/CSP/cookie/cancellation bounds and mutable guest
+prototype, then validate actual SDK integration before another live attempt.
+This is not unfiltered compatibility, token bypass, admission or media success.
+See `reports/zoom-filtered-xhr-2026-09-18.md`; previous failures stay unchanged.
+
 September18,16:18UTC: the actual owned native process now passes21 public commands,
 including initialization of unchanged captured Zoom React/ReactDOM source in
 80713.828ms. Verified exports include ReactDOM.createRoot and native URL globals.
